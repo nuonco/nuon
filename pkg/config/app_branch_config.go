@@ -5,21 +5,22 @@ import (
 	"regexp"
 
 	"github.com/invopop/jsonschema"
+
+	"github.com/nuonco/nuon/pkg/labels"
 )
 
 type AppBranchInstallGroupConfig struct {
 	Name  string `mapstructure:"name" toml:"name" jsonschema:"required"`
 	Order int    `mapstructure:"order" toml:"order"`
 
-	InstallIDs    []string          `mapstructure:"install_ids,omitempty" toml:"install_ids,omitempty"`
-	InstallNames  []string          `mapstructure:"install_names,omitempty" toml:"install_names,omitempty"`
 	LabelSelector map[string]string `mapstructure:"label_selector,omitempty" toml:"label_selector,omitempty"`
+	Default       bool              `mapstructure:"default,omitempty" toml:"default,omitempty"`
 
 	AutoApproveOnPoliciesPassing *bool `mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty"`
 }
 
 type AppBranchPreviewConfig struct {
-	Mode          string            `mapstructure:"mode,omitempty" toml:"mode,omitempty" jsonschema:"enum=plan-only,enum=apply,enum=build-only"`
+	Mode          string            `mapstructure:"mode,omitempty" toml:"mode,omitempty" jsonschema:"enum=none,enum=plan-only,enum=apply,enum=build-only"`
 	InstallID     string            `mapstructure:"install_id,omitempty" toml:"install_id,omitempty"`
 	InstallName   string            `mapstructure:"install_name,omitempty" toml:"install_name,omitempty"`
 	LabelSelector map[string]string `mapstructure:"label_selector,omitempty" toml:"label_selector,omitempty"`
@@ -42,7 +43,7 @@ func (c AppBranchRunConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 func (c AppBranchPreviewConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
-	addDescription(schema, "mode", "preview run mode: plan-only, apply, or build-only")
+	addDescription(schema, "mode", "preview run mode: none, plan-only, apply, or build-only")
 	addDescription(schema, "install_id", "default install ID for preview runs")
 	addDescription(schema, "install_name", "default install name for preview runs, resolved to an ID at sync time")
 	addDescription(schema, "label_selector", "label key-value pairs to select the default preview install")
@@ -55,9 +56,8 @@ func (c AppBranchPreviewConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 func (c AppBranchInstallGroupConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "name", "name of the install group")
 	addDescription(schema, "order", "deployment order (lower runs first)")
-	addDescription(schema, "install_ids", "static list of install IDs")
-	addDescription(schema, "install_names", "static list of install names, resolved to IDs at sync time")
 	addDescription(schema, "label_selector", "label key-value pairs to dynamically match installs")
+	addDescription(schema, "default", "whether unmatched installs owned by this branch deploy in this group")
 	addDescription(schema, "auto_approve_on_policies_passing", "Auto-approve this group's plan when all policy checks pass. Defaults to false")
 }
 
@@ -141,13 +141,38 @@ func (c *AppBranchConfig) Validate() error {
 		}
 	}
 
+	defaultGroups := 0
+	groupNames := make(map[string]struct{}, len(c.InstallGroups))
+	selectors := make(map[string]string, len(c.InstallGroups))
 	for _, g := range c.InstallGroups {
-		hasStatic := len(g.InstallIDs) > 0 || len(g.InstallNames) > 0
-		hasLabels := len(g.LabelSelector) > 0
-		if hasStatic && hasLabels {
+		if _, ok := groupNames[g.Name]; ok {
 			return ErrConfig{
-				Description: fmt.Sprintf("install group %q: label_selector is mutually exclusive with install_ids and install_names", g.Name),
+				Description: fmt.Sprintf("branch %q: install group names must be unique; %q is duplicated", c.Name, g.Name),
 			}
+		}
+		groupNames[g.Name] = struct{}{}
+		if key := labels.CanonicalMap(g.LabelSelector); key != "" {
+			if existing, ok := selectors[key]; ok {
+				return ErrConfig{
+					Description: fmt.Sprintf("branch %q: install groups %q and %q have the same label_selector", c.Name, existing, g.Name),
+				}
+			}
+			selectors[key] = g.Name
+		}
+		if g.Default {
+			defaultGroups++
+		}
+	}
+	if defaultGroups > 1 {
+		return ErrConfig{
+			Description: fmt.Sprintf("branch %q: only one install group can be default", c.Name),
+		}
+	}
+	// Installs that match no selector, and installs pinned to a group that was
+	// deleted, have nowhere to land without a default group.
+	if len(c.InstallGroups) > 0 && defaultGroups == 0 {
+		return ErrConfig{
+			Description: fmt.Sprintf("branch %q: one install group must be default", c.Name),
 		}
 	}
 	if c.Preview != nil {
@@ -174,11 +199,15 @@ func (c *AppBranchConfig) Validate() error {
 			mode = "plan-only"
 		}
 		switch mode {
+		case "none":
+			if hasInstallID || hasInstallName || hasLabels {
+				return ErrConfig{Description: fmt.Sprintf("branch %q: preview mode none cannot set install_id, install_name, or label_selector", c.Name)}
+			}
 		case "plan-only", "apply", "build-only":
 		default:
-			return ErrConfig{Description: fmt.Sprintf("branch %q: unknown preview mode %q (valid modes: plan-only, apply, build-only)", c.Name, mode)}
+			return ErrConfig{Description: fmt.Sprintf("branch %q: unknown preview mode %q (valid modes: none, plan-only, apply, build-only)", c.Name, mode)}
 		}
-		if mode != "build-only" && !hasInstallID && !hasInstallName && !hasLabels {
+		if mode != "none" && mode != "build-only" && !hasInstallID && !hasInstallName && !hasLabels {
 			return ErrConfig{
 				Description: fmt.Sprintf("branch %q: preview requires install_id, install_name, or label_selector for mode %q", c.Name, mode),
 			}

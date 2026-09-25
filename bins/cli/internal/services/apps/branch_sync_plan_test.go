@@ -1,8 +1,11 @@
 package apps
 
 import (
+	"context"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/generics"
@@ -109,4 +112,66 @@ func TestAppBranchConfigDiff_CoversInstallGroupAutoApprove(t *testing.T) {
 	if !d.Summary().HasChanged {
 		t.Fatal("expected auto-approve change")
 	}
+}
+
+func TestBranchSyncRunConfigDiff(t *testing.T) {
+	repo := &config.ConnectedRepoConfig{Repo: "acme/platform", Branch: "main", Directory: "."}
+	remoteLatest := func(run *models.AppAppBranchRunConfig) *models.AppAppBranchConfig {
+		return &models.AppAppBranchConfig{
+			ConnectedGithubVcsConfig: &models.AppConnectedGithubVCSConfig{Repo: repo.Repo, Branch: repo.Branch, Directory: repo.Directory},
+			RunConfig:                run,
+			InstallGroups:            []*models.AppAppBranchInstallGroup{{Name: defaultInstallGroupName, Default: true}},
+		}
+	}
+
+	tests := []struct {
+		name    string
+		local   *config.AppBranchRunConfig
+		remote  *models.AppAppBranchRunConfig
+		changed bool
+	}{
+		{name: "absent matches push", local: nil, remote: &models.AppAppBranchRunConfig{Mode: models.AppAppBranchRunModePush}},
+		{name: "absent matches remote without run config", local: nil, remote: nil},
+		{name: "all alias matches push", local: &config.AppBranchRunConfig{Mode: "all"}, remote: &models.AppAppBranchRunConfig{Mode: models.AppAppBranchRunModePush}},
+		{name: "on_tag_prefix alias matches on_tag", local: &config.AppBranchRunConfig{Mode: "on_tag_prefix", TagPrefix: "v"}, remote: &models.AppAppBranchRunConfig{Mode: models.AppAppBranchRunModeOnTag, TagPrefix: "v"}},
+		{name: "mode change", local: &config.AppBranchRunConfig{Mode: "manual_only"}, remote: &models.AppAppBranchRunConfig{Mode: models.AppAppBranchRunModePush}, changed: true},
+		{name: "mode removed", local: nil, remote: &models.AppAppBranchRunConfig{Mode: models.AppAppBranchRunModeManualOnly}, changed: true},
+		{name: "tag prefix change", local: &config.AppBranchRunConfig{Mode: "on_tag", TagPrefix: "release-"}, remote: &models.AppAppBranchRunConfig{Mode: models.AppAppBranchRunModeOnTag, TagPrefix: "v"}, changed: true},
+		{name: "github label change", local: &config.AppBranchRunConfig{Mode: "on_github_label", GithubLabel: "deploy"}, remote: &models.AppAppBranchRunConfig{Mode: models.AppAppBranchRunModeOnGithubLabel, GithubLabel: "ship"}, changed: true},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			resolver := testResolver(nil)
+			local, err := canonicalizeLocalBranch(ctx, resolver, &config.AppBranchConfig{Name: "main", ConnectedRepo: repo, Run: tc.local})
+			require.NoError(t, err)
+			remote, err := normalizeRemoteBranch(ctx, resolver, "main", remoteLatest(tc.remote))
+			require.NoError(t, err)
+
+			plan, err := buildBranchSyncPlan(
+				[]*config.AppBranchConfig{local},
+				[]*models.AppAppBranch{{ID: "br-main", Name: "main", ManagedBy: appBranchManagedByConfig}},
+				map[string]*config.AppBranchConfig{"main": remote},
+				true,
+			)
+			require.NoError(t, err)
+			require.Len(t, plan, 1)
+			want := branchOpUnchanged
+			if tc.changed {
+				want = branchOpUpdate
+			}
+			require.Equal(t, want, plan[0].Op)
+		})
+	}
+}
+
+func TestBranchSyncRunConfigRepoLessBranchUnchanged(t *testing.T) {
+	ctx := context.Background()
+	resolver := testResolver(nil)
+	local, err := canonicalizeLocalBranch(ctx, resolver, &config.AppBranchConfig{Name: "qa"})
+	require.NoError(t, err)
+	remote, err := normalizeRemoteBranch(ctx, resolver, "qa", nil)
+	require.NoError(t, err)
+	require.False(t, local.Diff(remote).Summary().HasChanged)
 }

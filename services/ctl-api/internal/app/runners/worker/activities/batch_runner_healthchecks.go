@@ -39,6 +39,8 @@ type BatchRunnerHealthchecksResponse struct {
 	Skipped        int    `json:"skipped"`
 	AlertsEnqueued int    `json:"alerts_enqueued"`
 	AlertsDeduped  int    `json:"alerts_deduped"`
+	CronsDisabled  int    `json:"crons_disabled"`
+	CronsEnabled   int    `json:"crons_enabled"`
 	Errors         int    `json:"errors"`
 }
 
@@ -93,6 +95,7 @@ func (a *Activities) BatchRunnerHealthchecks(ctx context.Context, req BatchRunne
 
 	now := time.Now()
 	var alerts []runnerAlert
+	cronCandidates := map[string]*installCronCandidate{}
 
 	for i := range runners {
 		if i%batchHeartbeatEvery == 0 {
@@ -104,14 +107,26 @@ func (a *Activities) BatchRunnerHealthchecks(ctx context.Context, req BatchRunne
 		d := decideRunnerHealth(now, &r, presence[r.ID])
 		tags := runnerHealthTags(&r, presence[r.ID], d)
 
+		if r.RunnerGroup.OwnerType == installOwnerType && d.InstallCronToggleDecision != nil {
+			installID := r.RunnerGroup.OwnerID
+			candidate, ok := cronCandidates[installID]
+			if !ok {
+				candidate = &installCronCandidate{orgID: r.OrgID, accountID: r.CreatedByID}
+				cronCandidates[installID] = candidate
+			}
+			if candidate.state == "" || *d.InstallCronToggleDecision == InstallCronsEnabled {
+				candidate.state = *d.InstallCronToggleDecision
+			}
+		}
+
 		switch d.Result {
-		case "skipped":
+		case runnerHealthResultSkipped:
 			resp.Skipped++
-			a.mw.Incr(runnerHealthCheckCounter, metrics.ToTags(tags, metrics.ToTag("result", "skipped")))
+			a.mw.Incr(runnerHealthCheckCounter, metrics.ToTags(tags, metrics.ToTag("result", runnerHealthResultSkipped)))
 			continue
-		case "healthy":
+		case runnerHealthResultHealthy:
 			resp.Healthy++
-		case "unhealthy":
+		case runnerHealthResultUnhealthy:
 			resp.Unhealthy++
 		default:
 			continue
@@ -138,6 +153,15 @@ func (a *Activities) BatchRunnerHealthchecks(ctx context.Context, req BatchRunne
 		a.emitRunnerAlerts(ctx, req.OrgID, alerts, resp)
 	}
 
+	if len(cronCandidates) > 0 {
+		toggleResp, err := a.toggleInstallCronsState(ctx, cronCandidates)
+		if err != nil {
+			return nil, fmt.Errorf("unable to toggle install cron emitters: %w", err)
+		}
+		resp.CronsDisabled += toggleResp.Disabled
+		resp.CronsEnabled += toggleResp.Enabled
+	}
+
 	return resp, nil
 }
 
@@ -154,7 +178,6 @@ func (a *Activities) activeProcessPresence(ctx context.Context, runnerIDs []stri
 		ORDER BY runner_id, type, created_at DESC`,
 		runnerIDs,
 		[]string{
-			string(app.RunnerProcessTypeBuild),
 			string(app.RunnerProcessTypeInstall),
 			string(app.RunnerProcessTypeMng),
 		}).Scan(&rows); res.Error != nil {
@@ -169,8 +192,6 @@ func (a *Activities) activeProcessPresence(ctx context.Context, runnerIDs []stri
 		p := presence[row.RunnerID]
 		active := row.Status == string(app.RunnerProcessStatusActive)
 		switch row.Type {
-		case app.RunnerProcessTypeBuild:
-			p.HasActiveBuild = active
 		case app.RunnerProcessTypeInstall:
 			p.HasActiveInstall = active
 		case app.RunnerProcessTypeMng:
@@ -221,7 +242,7 @@ func (a *Activities) applyRunnerHealthDecision(ectx context.Context, r *app.Runn
 func (a *Activities) emitRunnerAlerts(ctx context.Context, orgID string, alerts []runnerAlert, resp *BatchRunnerHealthchecksResponse) {
 	installIDs := make([]string, 0)
 	for _, al := range alerts {
-		if al.runner.RunnerGroup.OwnerType == "installs" {
+		if al.runner.RunnerGroup.OwnerType == installOwnerType {
 			installIDs = append(installIDs, al.runner.RunnerGroup.OwnerID)
 		}
 	}
@@ -302,16 +323,14 @@ func runnerHealthTags(r *app.Runner, presence runnerProcessPresence, d runnerHea
 		"org_id":        r.OrgID,
 		"org_name":      r.Org.Name,
 	}
-	if r.RunnerGroup.OwnerType == "installs" {
+	if r.RunnerGroup.OwnerType == installOwnerType {
 		tags["install_id"] = r.RunnerGroup.OwnerID
 	}
-	if d.Result == "skipped" {
+	if d.Result == runnerHealthResultSkipped {
 		return tags
 	}
 
 	switch r.RunnerGroup.Type {
-	case app.RunnerGroupTypeOrg:
-		tags["missing_build_process"] = fmt.Sprintf("%t", !presence.HasActiveBuild)
 	case app.RunnerGroupTypeInstall:
 		tags["missing_install_process"] = fmt.Sprintf("%t", !presence.HasActiveInstall)
 		tags["missing_mng_process"] = fmt.Sprintf("%t", presence.MngChecked && !presence.HasActiveMng)

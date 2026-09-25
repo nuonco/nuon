@@ -1,4 +1,5 @@
-import { createContext, useState, type ReactNode } from 'react'
+import { createContext, useEffect, useState, type ReactNode } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useWorkflowMetrics } from '@/hooks/use-workflow-metrics'
 import { useOrg } from '@/hooks/use-org'
 import { useSSEResourceQuery } from '@/lib/sse/use-sse-resource-query'
@@ -6,7 +7,7 @@ import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
 import { getWorkflow } from '@/lib'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { ProviderLoading } from '@/components/layout/ProviderLoading'
-import type { TWorkflow } from '@/types'
+import type { TWorkflow, TWorkflowStep } from '@/types'
 
 interface WorkflowContextValue {
   workflow: TWorkflow
@@ -38,6 +39,7 @@ export const WorkflowProvider = ({
   shouldPoll?: boolean
 }) => {
   const { org } = useOrg()
+  const queryClient = useQueryClient()
   const [sseEnabled, setSseEnabled] = useState(shouldPoll)
 
   const onRefreshError = useRefreshErrorToast()
@@ -57,6 +59,31 @@ export const WorkflowProvider = ({
   })
 
   const metrics = useWorkflowMetrics(workflow)
+
+  useEffect(() => {
+    if (!org?.id || !workflow?.steps) return
+
+    workflow.steps.forEach((step) => {
+      if (!step?.id) return
+
+      const stepQueryKey = ['workflow-step', org.id, workflowId, step.id]
+      const previousStep = queryClient.getQueryData<TWorkflowStep>(stepQueryKey)
+
+      queryClient.setQueryData(stepQueryKey, step)
+
+      const approvalId = step?.approval?.id
+      if (
+        approvalId &&
+        (previousStep?.approval?.id !== approvalId ||
+          (!previousStep?.finished && step?.finished))
+      ) {
+        queryClient.invalidateQueries({
+          queryKey: ['approval-plan', org.id, step.id, approvalId],
+          exact: true,
+        })
+      }
+    })
+  }, [queryClient, org?.id, workflowId, workflow])
 
   if (error && !workflow) return <ProviderError error={error} />
   if (isLoading || !workflow) return <ProviderLoading />

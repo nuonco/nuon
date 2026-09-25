@@ -41,7 +41,6 @@ const (
 type OrgFeature string
 
 const (
-	OrgFeatureOrgRunner           OrgFeature = "org-runner"
 	OrgFeatureAppBranches         OrgFeature = "app-branches"
 	OrgFeatureUserManagedFeatures OrgFeature = "user-managed-features"
 	OrgFeatureSupportRole         OrgFeature = "support-role"
@@ -101,7 +100,12 @@ const (
 	OrgFeatureSandboxOCIArtifacts OrgFeature = "sandbox-oci-artifacts"
 	OrgFeatureDefaultAppBranches  OrgFeature = "default-app-branches"
 	OrgFeatureNewInstallIA        OrgFeature = "new-install-ia"
+	OrgFeatureDisableAppSync      OrgFeature = "disable-app-sync"
 )
+
+type OrgTelemetrySettings struct {
+	Enabled bool `json:"enabled" gorm:"not null;default:false" temporaljson:"enabled,omitempty"`
+}
 
 type Org struct {
 	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
@@ -118,6 +122,8 @@ type Org struct {
 	StatusV2          CompositeStatus `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 
 	SandboxMode bool `json:"sandbox_mode,omitzero" gorm:"notnull" temporaljson:"sandbox_mode,omitzero,omitempty"`
+
+	Telemetry OrgTelemetrySettings `json:"telemetry" gorm:"embedded;embeddedPrefix:telemetry_" temporaljson:"telemetry,omitempty"`
 
 	OrgType   OrgType `json:"-" temporaljson:"org_type,omitzero,omitempty"`
 	DebugMode bool    `json:"-" temporaljson:"debug_mode,omitzero,omitempty"`
@@ -247,7 +253,6 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeaturePulumiUpdatePlans:       false,
 		OrgFeatureNotebooks:               false,
 		OrgFeatureSpaceliftInstallStacks:  false,
-		OrgFeatureOrgRunner:               false,
 		OrgFeatureAWSAccountConnections:   false,
 		OrgFeaturePhoneHomeAuth:           false,
 		OrgFeatureRunbookStudio:           false,
@@ -258,6 +263,7 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeatureSandboxOCIArtifacts:     false,
 		OrgFeatureDefaultAppBranches:      false,
 		OrgFeatureNewInstallIA:            false,
+		OrgFeatureDisableAppSync:          false,
 
 		// Enabled by default
 		OrgFeatureAppBranches:   true,
@@ -268,7 +274,6 @@ func DefaultFeatures() map[OrgFeature]bool {
 // active feature flags for an orgs
 func GetFeatures() []OrgFeature {
 	return []OrgFeature{
-		OrgFeatureOrgRunner,
 		OrgFeatureAppBranches,
 		OrgFeatureUserManagedFeatures,
 		OrgFeatureSupportRole,
@@ -294,6 +299,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureSandboxOCIArtifacts,
 		OrgFeatureDefaultAppBranches,
 		OrgFeatureNewInstallIA,
+		OrgFeatureDisableAppSync,
 	}
 }
 
@@ -309,7 +315,6 @@ type OrgFeatureInfo struct {
 // GetFeatureDescriptions returns a map of feature names to their descriptions
 func GetFeatureDescriptions() map[OrgFeature]string {
 	return map[OrgFeature]string{
-		OrgFeatureOrgRunner:                "Enable organization-specific runner functionality for executing deployments",
 		OrgFeatureAppBranches:              "Support for multiple application branches allowing parallel development and testing",
 		OrgFeatureUserManagedFeatures:      "Allow organization users to manage feature flags through the public API (admin-only flag)",
 		OrgFeatureSupportRole:              "Enable the support role option when inviting users to the organization",
@@ -335,6 +340,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureSandboxOCIArtifacts:      "Build the app sandbox into an OCI artifact during branch runs and resolve sandbox runs against that artifact instead of cloning the sandbox git source. With it off, sandbox runs always clone git.",
 		OrgFeatureDefaultAppBranches:       "Route `nuon apps sync` through an app branch run: every app gets a `default` branch covering all of its installs, and the sync hands its config to a run on that branch instead of the standalone config sync plus install rollout. Requires app-branches.",
 		OrgFeatureNewInstallIA:             "Enable the new install information architecture in the dashboard. Requires app-branches-ui.",
+		OrgFeatureDisableAppSync:           "Block standalone `nuon apps sync`. Config changes ship through config-managed app branches (`nuon branches sync`) instead; on a TTY the CLI offers a wizard that creates a branch config file and moves the app's installs onto it.",
 	}
 }
 

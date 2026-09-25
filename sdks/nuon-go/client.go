@@ -71,7 +71,7 @@ type Client interface {
 
 	// app branch methods
 	GetOrgBranches(ctx context.Context) ([]*models.AppAppBranch, error)
-	GetAppBranches(ctx context.Context, appID string) ([]*models.AppAppBranch, error)
+	GetAppBranches(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppBranch, bool, error)
 	GetAppBranch(ctx context.Context, appID, appBranchID string) (*models.AppAppBranch, error)
 	GetAppBranchAppConfigs(ctx context.Context, appID, appBranchID string, query *models.GetPaginatedQuery) ([]*models.AppAppConfig, bool, error)
 	CreateAppBranch(ctx context.Context, appID string, req *models.ServiceCreateAppBranchRequest) (*models.AppAppBranch, error)
@@ -211,6 +211,7 @@ type Client interface {
 	GetInstall(ctx context.Context, installID string) (*models.AppInstall, error)
 	GetAvailableRoles(ctx context.Context, installID string) ([]*models.ServiceAvailableRole, error)
 	UpdateInstall(ctx context.Context, installID string, req *models.ServiceUpdateInstallRequest) (*models.AppInstall, error)
+	MoveInstallToAppBranch(ctx context.Context, installID, appBranchID, appBranchGroup string) (*models.AppInstall, error)
 	DeleteInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
 	ForgetInstall(ctx context.Context, installID string) (bool, error)
 	ReprovisionInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
@@ -257,6 +258,7 @@ type Client interface {
 	GetInstallCurrentInputs(ctx context.Context, installID string) (*models.AppInstallInputs, error)
 	CreateInstallInputs(ctx context.Context, installID string, req *models.ServiceCreateInstallInputsRequest) (*models.AppInstallInputs, error)
 	UpdateInstallInputs(ctx context.Context, installID string, req *models.ServiceUpdateInstallInputsRequest) (*models.AppInstallInputs, error)
+	GetInstallDeployments(ctx context.Context, installID string, query *GetInstallDeploymentsQuery) (*models.ServiceGetInstallDeploymentsResponse, error)
 
 	// workflows
 	GetWorkflows(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppWorkflow, bool, error)

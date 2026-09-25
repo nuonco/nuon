@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appbranchchanged"
@@ -20,7 +21,9 @@ import (
 type MoveInstallToAppBranchRequest struct {
 	// AppBranchID is the branch to move the install to. It must belong to the
 	// install's app and have an app config to deploy.
-	AppBranchID string `json:"app_branch_id" validate:"required"`
+	AppBranchID    string            `json:"app_branch_id" validate:"required"`
+	AppBranchGroup string            `json:"app_branch_group,omitempty"`
+	Labels         map[string]string `json:"labels,omitempty"`
 }
 
 func (r *MoveInstallToAppBranchRequest) Validate(v *validator.Validate) error {
@@ -97,41 +100,57 @@ func (s *service) MoveInstallToAppBranch(ctx *gin.Context) {
 		return
 	}
 
-	if install.AppBranchID.Valid && install.AppBranchID.String == branch.ID {
-		ctx.JSON(http.StatusOK, install)
-		return
-	}
-
 	// Refusing up front beats moving the install somewhere that has nothing to
 	// deploy and leaving it stranded there.
-	if _, err := s.helpers.LatestActiveBranchAppConfig(ctx, install.AppID, branch.ID); err != nil {
-		ctx.Error(err)
-		return
+	candidate := install
+	candidate.Labels = make(labels.Labels, len(install.Labels)+len(req.Labels))
+	candidate.LabelTemplates = make(labels.Labels, len(install.LabelTemplates))
+	for key, value := range install.Labels {
+		candidate.Labels[key] = value
 	}
-
-	groups, err := s.appsHelpers.LatestConfigInstallGroups(ctx, branch.ID)
+	for key, value := range install.LabelTemplates {
+		candidate.LabelTemplates[key] = value
+	}
+	for key, value := range req.Labels {
+		if defaultValue, managed := install.AppDefaultLabels[key]; managed && value != install.Labels[key] && value != defaultValue {
+			ctx.Error(stderr.ErrUser{
+				Err:         fmt.Errorf("label %q is managed by the app default labels", key),
+				Description: fmt.Sprintf("Label %q is managed by the app config and cannot be changed here.", key),
+			})
+			return
+		}
+		candidate.Labels[key] = value
+		delete(candidate.LabelTemplates, key)
+	}
+	candidate.AppBranchGroup = req.AppBranchGroup
+	candidate.AppBranchGroupAssignmentSource = ""
+	if req.AppBranchGroup != "" {
+		candidate.AppBranchGroupAssignmentSource = app.InstallAppBranchGroupAssignmentSourceExplicit
+	}
+	target, err := s.helpers.ResolveAppBranchRunForInstall(ctx, branch.ID, &candidate)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
-	if err := appshelpers.ValidateInstallSingleGroup(groups, &install); err != nil {
-		ctx.Error(err)
-		return
-	}
 
-	if err := s.appsHelpers.SetInstallAppBranch(ctx, install.ID, branch.ID); err != nil {
+	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if len(req.Labels) > 0 {
+			if err := tx.Model(&app.Install{}).
+				Where(app.Install{ID: install.ID}).
+				Updates(map[string]any{
+					"labels":          candidate.Labels,
+					"label_templates": candidate.LabelTemplates,
+				}).Error; err != nil {
+				return fmt.Errorf("unable to add install labels: %w", err)
+			}
+		}
+		return appshelpers.SetInstallAppBranchGroupAssignmentWithDB(ctx, tx, install.ID, branch.ID, target.InstallGroupName, target.InstallGroupAssignmentSource)
+	}); err != nil {
 		ctx.Error(fmt.Errorf("unable to move install to app branch: %w", err))
 		return
 	}
 
-	var groupID string
-	for i := range groups {
-		if appshelpers.InstallMatchesGroup(&groups[i], &install) {
-			groupID = groups[i].ID
-			break
-		}
-	}
-	if err := appbranchchanged.Enqueue(ctx, s.queueClient, install.ID, branch.ID, groupID); err != nil {
+	if err := appbranchchanged.Enqueue(ctx, s.queueClient, install.ID, branch.ID, target.InstallGroupID); err != nil {
 		ctx.Error(fmt.Errorf("unable to enqueue app branch install update: %w", err))
 		return
 	}

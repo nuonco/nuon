@@ -10,6 +10,7 @@ import (
 type AppBranchRunPreviewMode string
 
 const (
+	AppBranchRunPreviewModeNone      AppBranchRunPreviewMode = "none"
 	AppBranchRunPreviewModePlanOnly  AppBranchRunPreviewMode = "plan-only"
 	AppBranchRunPreviewModeApply     AppBranchRunPreviewMode = "apply"
 	AppBranchRunPreviewModeBuildOnly AppBranchRunPreviewMode = "build-only"
@@ -17,7 +18,7 @@ const (
 
 func (m AppBranchRunPreviewMode) Valid() bool {
 	switch m {
-	case AppBranchRunPreviewModePlanOnly, AppBranchRunPreviewModeApply, AppBranchRunPreviewModeBuildOnly, "":
+	case AppBranchRunPreviewModeNone, AppBranchRunPreviewModePlanOnly, AppBranchRunPreviewModeApply, AppBranchRunPreviewModeBuildOnly, "":
 		return true
 	default:
 		return false
@@ -26,6 +27,8 @@ func (m AppBranchRunPreviewMode) Valid() bool {
 
 func (m AppBranchRunPreviewMode) Label() string {
 	switch m {
+	case AppBranchRunPreviewModeNone:
+		return "none"
 	case AppBranchRunPreviewModeBuildOnly:
 		return "build and validate"
 	case AppBranchRunPreviewModePlanOnly:
@@ -70,7 +73,7 @@ type AppBranchPreviewConfig struct {
 
 func DefaultAppBranchPreviewConfig() AppBranchPreviewConfig {
 	return AppBranchPreviewConfig{
-		Mode:         AppBranchRunPreviewModePlanOnly,
+		Mode:         AppBranchRunPreviewModeNone,
 		SetStatuses:  true,
 		Comment:      true,
 		IgnoreDrafts: true,
@@ -128,6 +131,12 @@ func (c *AppBranchPreviewConfig) Validate() error {
 	hasInstallID := c.InstallID != nil && *c.InstallID != ""
 	hasInstallName := c.InstallName != nil && *c.InstallName != ""
 	hasLabels := c.LabelSelector != nil && len(c.LabelSelector.MatchLabels) > 0
+	if c.Mode == AppBranchRunPreviewModeNone {
+		if hasInstallID || hasInstallName || hasLabels {
+			return fmt.Errorf("preview config: mode none cannot set install_id, install_name, or label_selector")
+		}
+		return nil
+	}
 	if hasInstallID && hasLabels {
 		return fmt.Errorf("preview config: label_selector is mutually exclusive with install_id")
 	}

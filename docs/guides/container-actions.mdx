@@ -80,4 +80,21 @@ image = "{{.nuon.components.migrate_tools.outputs.image.ref}}"
 
 ## Building the image
 
-Nuon does not modify the image. It must include every tool and dependency the action needs
+Nuon does not modify the image. It must include every tool and dependency the action needs.
+
+### Images without a shell
+
+For a binary in a distroless or scratch image, use an absolute executable path in a `command` step without a repository source:
+
+```toml
+[[steps]]
+name = "check"
+command = "/checker --format json"
+
+[steps.env_vars]
+TARGET = "{{.nuon.install.id}}"
+```
+
+Nuon executes this command directly and overrides the image entrypoint. Literal arguments, including quoted strings and empty arguments, are supported. The working directory is the mounted action workspace. The image's configured user is preserved, and the output file is writable by nonroot users.
+
+Commands with shell expressions, variable expansion, redirects, or pipelines still use `/bin/sh`. So do `inline_contents` and repository-backed steps. Pass dynamic values through `env_vars` when the image has no shell. The binary must write outputs to `NUON_ACTIONS_OUTPUT_FILEPATH` itself; the shell helper `nuon_output` is unavailable during direct execution.

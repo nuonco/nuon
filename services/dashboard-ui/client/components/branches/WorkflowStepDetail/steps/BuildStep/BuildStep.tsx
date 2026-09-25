@@ -31,11 +31,7 @@ import {
   getComponents,
   getSandboxBuild,
 } from '@/lib'
-import type {
-  TAppSandboxBuild,
-  TBuild,
-  TComponentType,
-} from '@/types'
+import type { TAppSandboxBuild, TBuild, TComponentType } from '@/types'
 import { changeReasonBadgeTheme, changeReasonLabel } from '../../shared/format'
 
 interface IBuildStep {
@@ -144,7 +140,9 @@ export const BuildRowDetail = ({
               )}
             </div>
             {buildHref && (
-              <Link href={buildHref} className="shrink-0">View build</Link>
+              <Link href={buildHref} className="shrink-0">
+                View build
+              </Link>
             )}
           </div>
         </div>
@@ -290,7 +288,9 @@ export const BuildRow = ({
             <Badge
               theme={changeReasonBadgeTheme(
                 build.change_reason ||
-                  (build.cache_status === 'cache hit' ? 'no_changes' : undefined)
+                  (build.cache_status === 'cache hit'
+                    ? 'no_changes'
+                    : undefined)
               )}
               size="sm"
             >
@@ -379,7 +379,10 @@ export const BuildStep = ({
   }, [branchBuilds])
 
   const filterTypes = useMemo(
-    () => uniqueBuildFilterTypes(builds.map((b: any) => buildFilterType(b, typeMap))),
+    () =>
+      uniqueBuildFilterTypes(
+        builds.map((b: any) => buildFilterType(b, typeMap))
+      ),
     [builds, typeMap]
   )
   const filter = useBuildTypeFilter(filterTypes)
@@ -437,9 +440,7 @@ export const BuildStep = ({
     )
   }
   if (buildSummary.no_changes > 0) {
-    summaryParts.push(
-      `${buildSummary.no_changes} no changes`
-    )
+    summaryParts.push(`${buildSummary.no_changes} no changes`)
   }
 
   const totalDuration = builds.reduce(
@@ -452,7 +453,9 @@ export const BuildStep = ({
       <StepBlock>
         <div className="flex items-center justify-between">
           <Text variant="body" theme="neutral">
-            {summaryParts.length > 0 ? summaryParts.join(' · ') : `${builds.length} components`}
+            {summaryParts.length > 0
+              ? summaryParts.join(' · ')
+              : `${builds.length} components`}
           </Text>
           {totalDuration > 0 && (
             <Text variant="subtext" family="mono" theme="neutral">

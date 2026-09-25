@@ -13,7 +13,10 @@ interface IRuntimeChangesContainer {
   appBranchRunId: string
 }
 
-export const RuntimeChangesContainer = ({ branchId, appBranchRunId }: IRuntimeChangesContainer) => {
+export const RuntimeChangesContainer = ({
+  branchId,
+  appBranchRunId,
+}: IRuntimeChangesContainer) => {
   const { org } = useOrg()
   const { app } = useApp()
 
@@ -21,7 +24,12 @@ export const RuntimeChangesContainer = ({ branchId, appBranchRunId }: IRuntimeCh
     placeholderData: keepPreviousData,
     queryKey: ['branch-run-builds', org?.id, app?.id, branchId, appBranchRunId],
     queryFn: () =>
-      getBranchRunBuilds({ orgId: org!.id, appId: app!.id, branchId, runId: appBranchRunId }),
+      getBranchRunBuilds({
+        orgId: org!.id,
+        appId: app!.id,
+        branchId,
+        runId: appBranchRunId,
+      }),
     enabled: !!org?.id && !!app?.id && !!branchId && !!appBranchRunId,
     refetchInterval: 10000,
   })
@@ -29,7 +37,8 @@ export const RuntimeChangesContainer = ({ branchId, appBranchRunId }: IRuntimeCh
   const { data: componentsResult } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['components', org?.id, app?.id],
-    queryFn: () => getComponents({ orgId: org!.id, appId: app!.id, limit: 100 }),
+    queryFn: () =>
+      getComponents({ orgId: org!.id, appId: app!.id, limit: 100 }),
     enabled: !!org?.id && !!app?.id,
   })
 

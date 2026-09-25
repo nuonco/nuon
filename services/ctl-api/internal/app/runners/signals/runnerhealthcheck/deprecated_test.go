@@ -44,7 +44,6 @@ type runnerHealthCase struct {
 	status        app.RunnerStatus
 	v2Status      app.RunnerStatus
 	metadata      map[string]any
-	activeBuild   bool
 	activeInstall bool
 	activeMng     bool
 	mngChecked    bool
@@ -58,8 +57,7 @@ func runnerHealthCases() []runnerHealthCase {
 	offlineExact := corpusNow.Add(-15 * time.Minute).Unix()
 	offlineStale := corpusNow.Add(-time.Hour).Unix()
 
-	healthyOrg := runnerHealthWant{result: "healthy", reason: "runner healthy"}
-	unhealthyOrgReason := "no active build process"
+	healthyInstall := runnerHealthWant{result: "healthy", reason: "runner healthy"}
 	unhealthyInstallReason := "no active install process"
 
 	cases := []runnerHealthCase{
@@ -68,19 +66,19 @@ func runnerHealthCases() []runnerHealthCase {
 			want: runnerHealthWant{},
 		},
 		{
-			name: "org healthy already active writes nothing", groupType: app.RunnerGroupTypeOrg,
-			status: app.RunnerStatusActive, v2Status: app.RunnerStatusActive, activeBuild: true,
-			want: healthyOrg,
+			name: "org healthy already active writes nothing", groupType: app.RunnerGroupTypeInstall,
+			status: app.RunnerStatusActive, v2Status: app.RunnerStatusActive, activeInstall: true,
+			want: healthyInstall,
 		},
 		{
-			name: "org healthy clears stale offline_ts without resetting", groupType: app.RunnerGroupTypeOrg,
-			status: app.RunnerStatusActive, v2Status: app.RunnerStatusActive, activeBuild: true,
+			name: "org healthy clears stale offline_ts without resetting", groupType: app.RunnerGroupTypeInstall,
+			status: app.RunnerStatusActive, v2Status: app.RunnerStatusActive, activeInstall: true,
 			metadata: map[string]any{app.RunnerOfflineTSMetadataKey: offlineStale},
 			want:     runnerHealthWant{result: "healthy", reason: "runner healthy", clearOfflineTS: true},
 		},
 		{
-			name: "org recovery flips both statuses and clears offline_ts", groupType: app.RunnerGroupTypeOrg,
-			status: app.RunnerStatusOffline, v2Status: app.RunnerStatusOffline, activeBuild: true,
+			name: "org recovery flips both statuses and clears offline_ts", groupType: app.RunnerGroupTypeInstall,
+			status: app.RunnerStatusOffline, v2Status: app.RunnerStatusOffline, activeInstall: true,
 			metadata: map[string]any{app.RunnerOfflineTSMetadataKey: offlineStale},
 			want: runnerHealthWant{
 				result: "healthy", reason: "runner healthy", clearOfflineTS: true,
@@ -88,60 +86,60 @@ func runnerHealthCases() []runnerHealthCase {
 			},
 		},
 		{
-			name: "org first failed check arms and transitions without alert", groupType: app.RunnerGroupTypeOrg,
+			name: "org first failed check arms and transitions without alert", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusActive, v2Status: app.RunnerStatusActive,
 			want: runnerHealthWant{
-				result: "unhealthy", reason: unhealthyOrgReason, armOfflineTS: true,
+				result: "unhealthy", reason: unhealthyInstallReason, armOfflineTS: true,
 				legacyStatus: runnerStatusPtr(app.RunnerStatusOffline), v2Status: runnerStatusPtr(app.RunnerStatusOffline),
 			},
 		},
 		{
-			name: "org unhealthy with existing offline_ts still transitioning does not re-arm", groupType: app.RunnerGroupTypeOrg,
+			name: "org unhealthy with existing offline_ts still transitioning does not re-arm", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusActive, v2Status: app.RunnerStatusActive,
 			metadata: map[string]any{app.RunnerOfflineTSMetadataKey: offlineStale},
 			want: runnerHealthWant{
-				result: "unhealthy", reason: unhealthyOrgReason,
+				result: "unhealthy", reason: unhealthyInstallReason,
 				legacyStatus: runnerStatusPtr(app.RunnerStatusOffline), v2Status: runnerStatusPtr(app.RunnerStatusOffline),
 			},
 		},
 		{
-			name: "org offline under alert delay does nothing", groupType: app.RunnerGroupTypeOrg,
+			name: "org offline under alert delay does nothing", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusOffline, v2Status: app.RunnerStatusOffline,
 			metadata: map[string]any{app.RunnerOfflineTSMetadataKey: offlineFresh},
-			want:     runnerHealthWant{result: "unhealthy", reason: unhealthyOrgReason},
+			want:     runnerHealthWant{result: "unhealthy", reason: unhealthyInstallReason},
 		},
 		{
-			name: "org offline exactly at alert delay alerts", groupType: app.RunnerGroupTypeOrg,
+			name: "org offline exactly at alert delay alerts", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusOffline, v2Status: app.RunnerStatusOffline,
 			metadata: map[string]any{app.RunnerOfflineTSMetadataKey: offlineExact},
-			want:     runnerHealthWant{result: "unhealthy", reason: unhealthyOrgReason, alert: true, alertOfflineAt: offlineExact},
+			want:     runnerHealthWant{result: "unhealthy", reason: unhealthyInstallReason, alert: true, alertOfflineAt: offlineExact},
 		},
 		{
-			name: "org offline past alert delay alerts with persisted offlineAt", groupType: app.RunnerGroupTypeOrg,
+			name: "org offline past alert delay alerts with persisted offlineAt", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusOffline, v2Status: app.RunnerStatusOffline,
 			metadata: map[string]any{app.RunnerOfflineTSMetadataKey: offlineStale},
-			want:     runnerHealthWant{result: "unhealthy", reason: unhealthyOrgReason, alert: true, alertOfflineAt: offlineStale},
+			want:     runnerHealthWant{result: "unhealthy", reason: unhealthyInstallReason, alert: true, alertOfflineAt: offlineStale},
 		},
 		{
-			name: "org offline without timestamp arms only", groupType: app.RunnerGroupTypeOrg,
+			name: "org offline without timestamp arms only", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusOffline, v2Status: app.RunnerStatusOffline,
-			want: runnerHealthWant{result: "unhealthy", reason: unhealthyOrgReason, armOfflineTS: true},
+			want: runnerHealthWant{result: "unhealthy", reason: unhealthyInstallReason, armOfflineTS: true},
 		},
 		{
-			name: "legacy offline but v2 stale repairs v2 only", groupType: app.RunnerGroupTypeOrg,
+			name: "legacy offline but v2 stale repairs v2 only", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusOffline, v2Status: app.RunnerStatusActive,
 			metadata: map[string]any{app.RunnerOfflineTSMetadataKey: offlineStale},
 			want: runnerHealthWant{
-				result: "unhealthy", reason: unhealthyOrgReason,
+				result: "unhealthy", reason: unhealthyInstallReason,
 				v2Status: runnerStatusPtr(app.RunnerStatusOffline),
 			},
 		},
 		{
-			name: "v2 offline but legacy stale repairs legacy only", groupType: app.RunnerGroupTypeOrg,
+			name: "v2 offline but legacy stale repairs legacy only", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusActive, v2Status: app.RunnerStatusOffline,
 			metadata: map[string]any{app.RunnerOfflineTSMetadataKey: offlineStale},
 			want: runnerHealthWant{
-				result: "unhealthy", reason: unhealthyOrgReason,
+				result: "unhealthy", reason: unhealthyInstallReason,
 				legacyStatus: runnerStatusPtr(app.RunnerStatusOffline),
 			},
 		},
@@ -206,10 +204,10 @@ func runnerHealthCases() []runnerHealthCase {
 	} {
 		cases = append(cases, runnerHealthCase{
 			name:      "skippable status " + string(status),
-			groupType: app.RunnerGroupTypeOrg,
+			groupType: app.RunnerGroupTypeInstall,
 			status:    status, v2Status: status,
-			activeBuild: true,
-			want:        runnerHealthWant{result: "skipped"},
+			activeInstall: true,
+			want:          runnerHealthWant{result: "skipped"},
 		})
 	}
 
@@ -319,8 +317,6 @@ func TestOldRunnerHealthcheckCorpus(t *testing.T) {
 				Return(runner, nil)
 
 			switch tc.groupType {
-			case app.RunnerGroupTypeOrg:
-				mockProcessPresence(env, app.RunnerProcessTypeBuild, tc.activeBuild, true)
 			case app.RunnerGroupTypeInstall:
 				mockProcessPresence(env, app.RunnerProcessTypeInstall, tc.activeInstall, true)
 				mockProcessPresence(env, app.RunnerProcessTypeMng, tc.activeMng, tc.mngChecked)
@@ -375,6 +371,8 @@ func TestOldRunnerHealthcheckCorpus(t *testing.T) {
 			if tc.groupType == app.RunnerGroupTypeInstall {
 				env.OnActivity((*runneractivities.Activities).GetInstall, mock.Anything, mock.Anything, mock.Anything).
 					Return(&app.Install{ID: "ins_1", Name: "install one"}, nil)
+				env.OnActivity((*runneractivities.Activities).ToggleInstallCronEmitter, mock.Anything, mock.Anything, mock.Anything).
+					Return(&runneractivities.ToggleInstallCronEmitterResponse{}, nil)
 			}
 
 			env.ExecuteWorkflow(func(ctx workflow.Context) error {

@@ -28,6 +28,7 @@ branch = "staging"
 [[install_groups]]
 name = "canary"
 order = 0
+default = true
 label_selector = { tier = "canary" }
 auto_approve_on_policies_passing = true
 `))
@@ -83,10 +84,38 @@ install_name = "example"
 	if err == nil {
 		t.Fatal("expected invalid preview mode error")
 	}
-	for _, want := range []string{"sometimes", "plan-only", "apply", "build-only"} {
+	for _, want := range []string{"sometimes", "none", "plan-only", "apply", "build-only"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Fatalf("expected error to contain %q, got %v", want, err)
 		}
+	}
+}
+
+func TestParseAppBranchConfig_PreviewNoneNeedsNoInstall(t *testing.T) {
+	cfg, err := ParseAppBranchConfig(strings.NewReader(`
+name = "staging"
+
+[preview]
+mode = "none"
+`))
+	if err != nil {
+		t.Fatalf("expected preview mode none to be valid, got %v", err)
+	}
+	if cfg.Preview == nil || cfg.Preview.Mode != "none" {
+		t.Fatalf("expected preview mode none, got %#v", cfg.Preview)
+	}
+}
+
+func TestParseAppBranchConfig_PreviewNoneRejectsInstall(t *testing.T) {
+	_, err := ParseAppBranchConfig(strings.NewReader(`
+name = "staging"
+
+[preview]
+mode = "none"
+install_name = "example"
+`))
+	if err == nil || !strings.Contains(err.Error(), "mode none cannot set") {
+		t.Fatalf("expected preview mode none target error, got %v", err)
 	}
 }
 

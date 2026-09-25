@@ -30,6 +30,9 @@ func (m AppAppBranchRunPreviewMode) Pointer() *AppAppBranchRunPreviewMode {
 
 const (
 
+	// AppAppBranchRunPreviewModeNone captures enum value "none"
+	AppAppBranchRunPreviewModeNone AppAppBranchRunPreviewMode = "none"
+
 	// AppAppBranchRunPreviewModePlanDashOnly captures enum value "plan-only"
 	AppAppBranchRunPreviewModePlanDashOnly AppAppBranchRunPreviewMode = "plan-only"
 
@@ -45,7 +48,7 @@ var appAppBranchRunPreviewModeEnum []any
 
 func init() {
 	var res []AppAppBranchRunPreviewMode
-	if err := json.Unmarshal([]byte(`["plan-only","apply","build-only"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["none","plan-only","apply","build-only"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

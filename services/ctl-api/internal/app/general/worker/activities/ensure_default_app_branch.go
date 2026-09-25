@@ -101,13 +101,14 @@ func (a *Activities) EnsureDefaultAppBranch(ctx context.Context, req EnsureDefau
 		nil,
 		nil,
 		[]app.AppBranchInstallGroup{{
-			Name:        appshelpers.DefaultAppBranchInstallGroupName,
-			Order:       0,
-			AllInstalls: true,
+			Name:    appshelpers.DefaultAppBranchInstallGroupName,
+			Order:   0,
+			Default: true,
 		}},
 		&[]string{},
 		nil,
 		nil,
+		false,
 		nil,
 	)
 	if err != nil {

@@ -626,7 +626,7 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 						string(app.OrgFeatureUserManagedFeatures): true,
 						string(app.OrgFeatureTraceView):           false,
 						string(app.OrgFeatureAppBranches):         false,
-						string(app.OrgFeatureOrgRunner):           false,
+						string(app.OrgFeatureSupportRole):         false,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -651,7 +651,7 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 				Features: map[string]bool{
 					string(app.OrgFeatureTraceView):   true,
 					string(app.OrgFeatureAppBranches): true,
-					string(app.OrgFeatureOrgRunner):   true,
+					string(app.OrgFeatureSupportRole): true,
 				},
 			},
 			expectedCode: http.StatusOK,
@@ -659,7 +659,7 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 				// Verify all three features were updated
 				assert.True(s.T(), org.Features[string(app.OrgFeatureTraceView)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
-				assert.True(s.T(), org.Features[string(app.OrgFeatureOrgRunner)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureSupportRole)])
 			},
 		},
 	}

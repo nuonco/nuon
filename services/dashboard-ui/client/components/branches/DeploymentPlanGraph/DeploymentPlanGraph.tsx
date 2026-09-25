@@ -6,13 +6,17 @@ import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { Link } from '@/components/common/Link'
-import { matchesSelector } from '@/components/match/matches'
+import { resolveInstallGroupMembership } from '@/components/branches/install-group-membership'
 import { cn } from '@/utils/classnames'
 import type { TAppBranchConfig, TInstall } from '@/types'
 
 import { groupAccent, type GraphAccent } from '../graph/accents'
 import { GraphCanvas } from '../graph/GraphCanvas'
-import { GroupNodeCard, NODE_WIDTH, NODE_WIDTH_COMPACT } from '../graph/GroupNodeCard'
+import {
+  GroupNodeCard,
+  NODE_WIDTH,
+  NODE_WIDTH_COMPACT,
+} from '../graph/GroupNodeCard'
 import { layoutSequential, sequentialEdges } from '../graph/layout'
 import { DeploymentPlanGroupPanel } from './DeploymentPlanGroupPanel'
 
@@ -29,7 +33,7 @@ interface GroupNodeData {
   accent: GraphAccent
   installs: PlanGroupInstall[]
   labelEntries: [string, string][]
-  allInstalls: boolean
+  isDefault: boolean
   maxParallel: number
   compact: boolean
   orgId: string
@@ -65,7 +69,9 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
           {compact ? (
             <span className="text-[9px] opacity-70">{installs.length}</span>
           ) : data.maxParallel > 1 ? (
-            <span className={cn('rounded px-1.5 py-0.5 text-[10px]', accent.pill)}>
+            <span
+              className={cn('rounded px-1.5 py-0.5 text-[10px]', accent.pill)}
+            >
               {data.maxParallel}x parallel
             </span>
           ) : null}
@@ -82,7 +88,9 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
 
       {installs.length === 0 ? (
         <span className="text-[11px] text-cool-grey-500 dark:text-cool-grey-500">
-          {data.allInstalls ? 'All installs — none yet' : 'No matching installs'}
+          {data.isDefault
+            ? 'Default — no installs yet'
+            : 'No matching installs'}
         </span>
       ) : (
         <>
@@ -104,7 +112,9 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
           ))}
           {hidden > 0 &&
             (compact ? (
-              <span className="text-[9px] text-cool-grey-500">+{hidden} more</span>
+              <span className="text-[9px] text-cool-grey-500">
+                +{hidden} more
+              </span>
             ) : (
               <button
                 type="button"
@@ -142,29 +152,33 @@ interface IDeploymentPlanGraph {
   compact?: boolean
 }
 
-export const DeploymentPlanGraph = ({ config, installsById, orgId, compact = false }: IDeploymentPlanGraph) => {
+export const DeploymentPlanGraph = ({
+  config,
+  installsById,
+  orgId,
+  compact = false,
+}: IDeploymentPlanGraph) => {
   const groups = config.install_groups ?? []
 
   const { nodes, edges, height } = useMemo(() => {
     if (groups.length === 0) return { nodes: [], edges: [], height: 0 }
 
+    const membership = resolveInstallGroupMembership(
+      Object.values(installsById),
+      groups
+    )
     const built: Node<GroupNodeData>[] = groups.map((group, idx) => {
-      const labelEntries = Object.entries(group.label_selector?.match_labels ?? {})
-      const installs: PlanGroupInstall[] = group.all_installs
-        ? Object.values(installsById).map((i) => ({
-            id: i.id,
-            name: i.name ?? i.id,
-            labels: i.labels,
-          }))
-        : labelEntries.length > 0
-          ? Object.values(installsById)
-              .filter((i) => matchesSelector(i.labels, group.label_selector))
-              .map((i) => ({ id: i.id, name: i.name ?? i.id, labels: i.labels }))
-          : (group.install_ids ?? []).map((id) => ({
-              id,
-              name: installsById[id]?.name ?? id,
-              labels: installsById[id]?.labels,
-            }))
+      const labelEntries = Object.entries(
+        group.label_selector?.match_labels ?? {}
+      )
+      const isDefault = !!group.default
+      const installs: PlanGroupInstall[] = membership.installsByGroup[idx].map(
+        (install) => ({
+          id: install.id,
+          name: install.name ?? install.id,
+          labels: install.labels,
+        })
+      )
 
       const groupId = group.id || `group-${idx}`
 
@@ -177,7 +191,7 @@ export const DeploymentPlanGraph = ({ config, installsById, orgId, compact = fal
           accent: groupAccent(idx),
           installs,
           labelEntries,
-          allInstalls: !!group.all_installs,
+          isDefault,
           maxParallel: group.max_parallel ?? 1,
           compact,
           orgId,

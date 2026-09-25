@@ -67,34 +67,21 @@ func Resolve(ctx workflow.Context, installGroupID, appBranchID string) (*Resolve
 		return nil, fmt.Errorf("unable to get app branch for label resolution: %w", err)
 	}
 
-	// Explicit IDs go through the same activity as selectors and all-installs so
-	// they are filtered to the installs the branch owns. A group listing an
-	// install that has since moved to another branch resolves without it.
 	resolved, err := activities.AwaitResolveInstallGroupInstalls(ctx, &activities.ResolveInstallGroupInstallsInput{
 		AppID:       branch.AppID,
 		GroupID:     group.ID,
-		InstallIDs:  group.InstallIDs,
 		Selector:    group.LabelSelector,
-		AllInstalls: group.AllInstalls,
+		Default:     group.Default,
 		AppBranchID: appBranchID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve install group: %w", err)
 	}
 
-	resolvedVia := "install_ids"
-	switch {
-	case group.AllInstalls:
-		resolvedVia = "all_installs"
-	case group.LabelSelector != nil:
-		resolvedVia = "label_selector"
-	}
-
 	logger.Info("resolved install group",
 		"install_group_id", group.ID,
 		"install_group_name", group.Name,
 		"install_count", len(resolved.InstallIDs),
-		"resolved_via", resolvedVia,
 	)
 
 	return &Resolved{InstallIDs: resolved.InstallIDs, GroupName: group.Name}, nil

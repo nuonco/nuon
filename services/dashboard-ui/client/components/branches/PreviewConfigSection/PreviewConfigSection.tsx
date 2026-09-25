@@ -32,7 +32,7 @@ export const PreviewConfigSection = ({
     installs.find((install) => install.id === defaults.installId)?.name ??
     currentConfig?.preview_config?.install_name
   const target =
-    defaults.mode === 'build-only'
+    defaults.mode === 'none' || defaults.mode === 'build-only'
       ? 'Not used'
       : labels.length > 0
         ? null
@@ -42,7 +42,7 @@ export const PreviewConfigSection = ({
     <Card>
       <div className="flex items-center justify-between gap-3">
         <Text variant="base" weight="strong">
-          Previews
+          Preview defaults
         </Text>
         <div className="flex items-center gap-2">
           {isLoading ? (
@@ -57,7 +57,11 @@ export const PreviewConfigSection = ({
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <LabeledValue label="Mode" loading={isLoading} loadingWidth={10}>
+        <LabeledValue
+          label="Default mode"
+          loading={isLoading}
+          loadingWidth={10}
+        >
           <Badge size="sm">{previewModeDisplayLabel(defaults.mode)}</Badge>
         </LabeledValue>
         <LabeledValue
@@ -82,7 +86,7 @@ export const PreviewConfigSection = ({
             </Text>
           )}
         </LabeledValue>
-        {hasGithubVCS ? (
+        {hasGithubVCS && defaults.mode !== 'none' ? (
           <>
             <LabeledValue
               label="Commit statuses"
@@ -121,9 +125,10 @@ export const PreviewConfigSection = ({
         ) : null}
       </div>
 
-      {!isLoading && !currentConfig?.preview_config ? (
+      {!isLoading && defaults.mode === 'none' ? (
         <Text variant="subtext" theme="neutral">
-          Platform defaults are used until custom settings are saved.
+          Automated preview runs are off. You can still trigger a preview from
+          this branch.
         </Text>
       ) : null}
     </Card>

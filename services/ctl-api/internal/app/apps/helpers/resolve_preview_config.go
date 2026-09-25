@@ -107,7 +107,6 @@ func (h *Helpers) ListPreviewInstallCandidates(
 	var installs []app.Install
 	if err := h.db.WithContext(ctx).
 		Where(app.Install{AppID: appID}).
-		Preload("AppBranch").
 		Order("name ASC").
 		Find(&installs).Error; err != nil {
 		return nil, fmt.Errorf("unable to list preview install candidates: %w", err)
@@ -130,9 +129,15 @@ func (h *Helpers) BuildAppBranchRunPreview(
 
 	branchSnapshot := branchPreviewConfigOrDefault(branchConfig)
 	branchSnapshot.Normalize()
+	if branchSnapshot.Mode == app.AppBranchRunPreviewModeNone {
+		return nil, stderr.NewInvalidRequest(fmt.Errorf("preview runs are disabled for this app branch"))
+	}
 
 	resolved := mergePreviewConfig(branchSnapshot, input.Override)
 	resolved.Normalize()
+	if resolved.Mode == app.AppBranchRunPreviewModeNone {
+		return nil, stderr.NewInvalidRequest(fmt.Errorf("preview mode none does not create a preview run"))
+	}
 	if err := resolved.Validate(); err != nil {
 		return nil, stderr.NewInvalidRequest(err)
 	}

@@ -25,7 +25,7 @@ const (
 
 	defaultAppBranchesFeature = "default-app-branches"
 	defaultAppBranchName      = "default"
-	defaultInstallGroupName   = "all installs"
+	defaultInstallGroupName   = "default"
 )
 
 // resolveDefaultBranchID returns the app's default branch when the org has
@@ -36,12 +36,8 @@ const (
 // older CLI never ends up with a branch-linked config it will not run: the sync
 // endpoint skips the install rollout for branch-linked configs on the assumption a
 // branch run owns it.
-func (s *Service) resolveDefaultBranchID(ctx context.Context, appID string) (string, error) {
-	org, err := s.api.GetOrg(ctx)
-	if err != nil {
-		return "", fmt.Errorf("unable to read org features: %w", err)
-	}
-	if !org.Features[defaultAppBranchesFeature] {
+func (s *Service) resolveDefaultBranchID(ctx context.Context, appID string, features map[string]bool) (string, error) {
+	if !features[defaultAppBranchesFeature] {
 		return "", nil
 	}
 
@@ -68,9 +64,9 @@ func (s *Service) resolveDefaultBranchID(ctx context.Context, appID string) (str
 
 	if _, err := s.api.CreateAppBranchConfig(ctx, appID, branch.ID, &models.ServiceCreateAppBranchConfigRequest{
 		InstallGroups: []*models.ServiceInstallGroupRequest{{
-			Name:        ptr(defaultInstallGroupName),
-			Order:       ptr(int64(0)),
-			AllInstalls: true,
+			Name:    ptr(defaultInstallGroupName),
+			Order:   ptr(int64(0)),
+			Default: true,
 		}},
 		PostDeployRunbookIds: []string{},
 	}); err != nil {
@@ -81,7 +77,7 @@ func (s *Service) resolveDefaultBranchID(ctx context.Context, appID string) (str
 }
 
 func (s *Service) findBranchIDByName(ctx context.Context, appID, name string) (string, error) {
-	branches, err := s.api.GetAppBranches(ctx, appID)
+	branches, err := nuon.GetAllAppBranches(ctx, s.api, appID)
 	if err != nil {
 		return "", fmt.Errorf("unable to list app branches: %w", err)
 	}

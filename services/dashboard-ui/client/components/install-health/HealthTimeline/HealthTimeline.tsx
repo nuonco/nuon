@@ -15,6 +15,7 @@ import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { Tooltip } from '@/components/common/Tooltip'
 import { HealthBars } from '@/components/common/HealthBars'
 import type {
+  TComponentType,
   THealthTimelineDay,
   TInstallComponentHealthTransition,
   TInstallHealthTimelineComponent,
@@ -216,40 +217,158 @@ function dayAriaLabel(day: THealthTimelineDay): string {
   }`
 }
 
+const IMAGE_COMPONENT_TYPES: TComponentType[] = [
+  'docker_build',
+  'external_image',
+]
+
+export function isImageComponentType(type?: TComponentType): boolean {
+  return !!type && IMAGE_COMPONENT_TYPES.includes(type)
+}
+
+export type THealthTimelineComponent = TInstallHealthTimelineComponent & {
+  component_type?: TComponentType
+}
+
+export type THealthTimelineComponentLink = Pick<
+  THealthTimelineComponent,
+  'component_id' | 'component_name' | 'component_type'
+>
+
+function componentHref(
+  component: THealthTimelineComponent,
+  componentBasePath?: string,
+  getComponentHref?: (component: THealthTimelineComponentLink) => string
+) {
+  if (!component.component_id) return undefined
+  if (getComponentHref) {
+    return getComponentHref({
+      component_id: component.component_id,
+      component_name: component.component_name,
+      component_type: component.component_type,
+    })
+  }
+  if (componentBasePath)
+    return `${componentBasePath}/${component.component_id}`
+  return undefined
+}
+
 function ComponentHealthRows({
   components,
   componentBasePath,
+  getComponentHref,
   className,
 }: {
-  components: TInstallHealthTimelineComponent[]
+  components: THealthTimelineComponent[]
   componentBasePath?: string
+  getComponentHref?: (component: THealthTimelineComponentLink) => string
   className?: string
 }) {
   return (
     <div className={cn('flex flex-col gap-2', className)}>
-      {components.map((component) => (
-        <div
-          key={component.install_component_id}
-          className="flex items-center justify-between gap-3"
-        >
-          {/* Component routes are keyed by component_id; linking with the
-              install-component id dead-ends on an empty page. */}
-          {componentBasePath && component.component_id ? (
-            <Link href={`${componentBasePath}/${component.component_id}`}>
-              {component.component_name || component.component_id}
-            </Link>
-          ) : (
-            <Text>{component.component_name || component.install_component_id}</Text>
-          )}
-          <div className="flex items-center gap-3 shrink-0">
-            <Status status={component.current_health || 'unknown'} variant="badge" />
-            <Text variant="subtext" theme="neutral" className="w-16 text-right">
-              {formatUptime(component.uptime_percent, component.observed_seconds)}
-            </Text>
+      {components.map((component) => {
+        const href = componentHref(
+          component,
+          componentBasePath,
+          getComponentHref
+        )
+
+        return (
+          <div
+            key={component.install_component_id}
+            className="flex items-center justify-between gap-3"
+          >
+            {href ? (
+              <Link href={href}>
+                {component.component_name || component.component_id}
+              </Link>
+            ) : (
+              <Text>
+                {component.component_name || component.install_component_id}
+              </Text>
+            )}
+            <div className="flex items-center gap-3 shrink-0">
+              <Status
+                status={component.current_health || 'unknown'}
+                variant="badge"
+              />
+              <Text
+                variant="subtext"
+                theme="neutral"
+                className="w-16 text-right"
+              >
+                {formatUptime(
+                  component.uptime_percent,
+                  component.observed_seconds
+                )}
+              </Text>
+            </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
+  )
+}
+
+function ComponentHealthGroup({
+  groupKey,
+  label,
+  singularNoun,
+  pluralNoun,
+  components,
+  componentBasePath,
+  getComponentHref,
+}: {
+  groupKey: string
+  label: string
+  singularNoun: string
+  pluralNoun: string
+  components: THealthTimelineComponent[]
+  componentBasePath?: string
+  getComponentHref?: (component: THealthTimelineComponentLink) => string
+}) {
+  const assessed = components.filter((component) =>
+    bearsHealthVerdict(component.current_health)
+  )
+  const unassessed = components.filter(
+    (component) => !bearsHealthVerdict(component.current_health)
+  )
+
+  return (
+    <>
+      <Divider dividerWord={label} />
+      {assessed.length > 0 ? (
+        <ComponentHealthRows
+          components={assessed}
+          componentBasePath={componentBasePath}
+          getComponentHref={getComponentHref}
+        />
+      ) : null}
+      {unassessed.length > 0 ? (
+        <Expand
+          id={`health-timeline-unassessed-${groupKey}`}
+          isIconBeforeHeading
+          // Most installs have no probed components at all; collapsing the
+          // only list there is would leave the card looking broken.
+          isOpen={assessed.length === 0}
+          headerClassName="!px-0 !justify-start"
+          heading={
+            <Text variant="subtext" theme="neutral">
+              {unassessed.length}{' '}
+              {unassessed.length === 1 ? singularNoun : pluralNoun} with no
+              health signal
+            </Text>
+          }
+        >
+          <ComponentHealthRows
+            className="pt-2"
+            components={unassessed}
+            componentBasePath={componentBasePath}
+            getComponentHref={getComponentHref}
+          />
+        </Expand>
+      ) : null}
+    </>
   )
 }
 
@@ -263,8 +382,10 @@ export interface IHealthTimeline {
   uptimePercent?: number
   observedSeconds?: number
   currentHealth?: string
-  components?: TInstallHealthTimelineComponent[]
+  components?: THealthTimelineComponent[]
   componentBasePath?: string
+  getComponentHref?: (component: THealthTimelineComponentLink) => string
+  groupByKind?: boolean
   transitions?: TInstallComponentHealthTransition[]
   deployBasePath?: string
   isLoading?: boolean
@@ -282,6 +403,8 @@ export const HealthTimeline = ({
   currentHealth,
   components,
   componentBasePath,
+  getComponentHref,
+  groupByKind = false,
   transitions,
   deployBasePath,
   isLoading = false,
@@ -329,12 +452,38 @@ export const HealthTimeline = ({
       (a.uptime_percent ?? 100) - (b.uptime_percent ?? 100) ||
       (a.component_name || '').localeCompare(b.component_name || '')
   )
-  const assessed = ranked.filter((component) =>
-    bearsHealthVerdict(component.current_health)
-  )
-  const unassessed = ranked.filter(
-    (component) => !bearsHealthVerdict(component.current_health)
-  )
+  const groups = (
+    groupByKind
+      ? [
+          {
+            groupKey: 'components',
+            label: 'Components',
+            singularNoun: 'component',
+            pluralNoun: 'components',
+            components: ranked.filter(
+              (component) => !isImageComponentType(component.component_type)
+            ),
+          },
+          {
+            groupKey: 'images',
+            label: 'Images',
+            singularNoun: 'image',
+            pluralNoun: 'images',
+            components: ranked.filter((component) =>
+              isImageComponentType(component.component_type)
+            ),
+          },
+        ]
+      : [
+          {
+            groupKey: 'components',
+            label: 'Components',
+            singularNoun: 'component',
+            pluralNoun: 'components',
+            components: ranked,
+          },
+        ]
+  ).filter((group) => group.components.length > 0)
 
   return (
     <div className={cn('flex flex-col gap-4', className)}>
@@ -403,40 +552,18 @@ export const HealthTimeline = ({
         />
       )}
 
-      {components?.length ? (
-        <>
-          <Divider dividerWord="Components" />
-          {assessed.length > 0 ? (
-            <ComponentHealthRows
-              components={assessed}
-              componentBasePath={componentBasePath}
-            />
-          ) : null}
-          {unassessed.length > 0 ? (
-            <Expand
-              id="health-timeline-unassessed-components"
-              isIconBeforeHeading
-              // Most installs have no probed components at all; collapsing the
-              // only list there is would leave the card looking broken.
-              isOpen={assessed.length === 0}
-              headerClassName="!px-0 !justify-start"
-              heading={
-                <Text variant="subtext" theme="neutral">
-                  {unassessed.length}{' '}
-                  {unassessed.length === 1 ? 'component' : 'components'} with no
-                  health signal
-                </Text>
-              }
-            >
-              <ComponentHealthRows
-                className="pt-2"
-                components={unassessed}
-                componentBasePath={componentBasePath}
-              />
-            </Expand>
-          ) : null}
-        </>
-      ) : null}
+      {groups.map((group) => (
+        <ComponentHealthGroup
+          key={group.groupKey}
+          groupKey={group.groupKey}
+          label={group.label}
+          singularNoun={group.singularNoun}
+          pluralNoun={group.pluralNoun}
+          components={group.components}
+          componentBasePath={componentBasePath}
+          getComponentHref={getComponentHref}
+        />
+      ))}
 
       {scope === 'component' ? (
         <>

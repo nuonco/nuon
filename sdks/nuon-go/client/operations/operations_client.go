@@ -624,6 +624,8 @@ type ClientService interface {
 
 	GetInstallDeploy(params *GetInstallDeployParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeployOK, error)
 
+	GetInstallDeployments(params *GetInstallDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeploymentsOK, error)
+
 	GetInstallDeploys(params *GetInstallDeploysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeploysOK, error)
 
 	GetInstallEvent(params *GetInstallEventParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallEventOK, error)
@@ -733,8 +735,6 @@ type ClientService interface {
 	GetOrgMembers(params *GetOrgMembersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgMembersOK, error)
 
 	GetOrgPendingApprovals(params *GetOrgPendingApprovalsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgPendingApprovalsOK, error)
-
-	GetOrgRunnerGroup(params *GetOrgRunnerGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgRunnerGroupOK, error)
 
 	GetOrgStats(params *GetOrgStatsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgStatsOK, error)
 
@@ -1006,8 +1006,6 @@ type ClientService interface {
 
 	UpdateInstallRole(params *UpdateInstallRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallRoleOK, error)
 
-	UpdateInstallTelemetrySettings(params *UpdateInstallTelemetrySettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallTelemetrySettingsOK, error)
-
 	UpdateInstallWorkflow(params *UpdateInstallWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallWorkflowOK, error)
 
 	UpdateNotebook(params *UpdateNotebookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateNotebookOK, error)
@@ -1021,6 +1019,8 @@ type ClientService interface {
 	UpdateOrgAccountRole(params *UpdateOrgAccountRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgAccountRoleOK, error)
 
 	UpdateOrgFeatures(params *UpdateOrgFeaturesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgFeaturesOK, error)
+
+	UpdateOrgTelemetry(params *UpdateOrgTelemetryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgTelemetryOK, error)
 
 	UpdateRunbook(params *UpdateRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunbookOK, error)
 
@@ -12906,6 +12906,58 @@ func (a *Client) GetInstallDeploy(params *GetInstallDeployParams, authInfo runti
 }
 
 /*
+	GetInstallDeployments gets normalized deployment feed for an install
+
+	Returns a normalized, chronological deployment feed for an install.
+
+Each record represents one install-owned workflow that caused a real change: provisioning, reprovisioning, component deploys, input updates, stack reprovisioning, sandbox reprovisioning, action runs, runbook runs, and install-config updates. Plan-only and preview records are excluded.
+
+Records include a `type`, unified `status`, human-readable `title` and `summary`, an optional `workflow` reference, an optional `app_branch` reference (when the change originated from a branch run), an optional primary `component` reference (for single-component operations), a flat `affected_resources` list of component names, and `change_groups` that group the affected resources by logical category.
+
+Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `search`, `created_at_gte`, and `created_at_lte`.
+*/
+func (a *Client) GetInstallDeployments(params *GetInstallDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeploymentsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallDeploymentsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallDeployments",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/deployments",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallDeploymentsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallDeploymentsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallDeployments: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetInstallDeploys gets all deploys to an install
 
 Returns all deployments for an install.
@@ -15418,52 +15470,6 @@ func (a *Client) GetOrgPendingApprovals(params *GetOrgPendingApprovalsParams, au
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetOrgPendingApprovals: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-GetOrgRunnerGroup gets an org s runner group
-
-Get the current org's runner group, which includes the runners and their settings.
-*/
-func (a *Client) GetOrgRunnerGroup(params *GetOrgRunnerGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgRunnerGroupOK, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewGetOrgRunnerGroupParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "GetOrgRunnerGroup",
-		Method:             "GET",
-		PathPattern:        "/v1/orgs/current/runner-group",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &GetOrgRunnerGroupReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*GetOrgRunnerGroupOK)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for GetOrgRunnerGroup: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -21687,50 +21693,6 @@ func (a *Client) UpdateInstallRole(params *UpdateInstallRoleParams, authInfo run
 }
 
 /*
-UpdateInstallTelemetrySettings updates an install s telemetry settings
-*/
-func (a *Client) UpdateInstallTelemetrySettings(params *UpdateInstallTelemetrySettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallTelemetrySettingsOK, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewUpdateInstallTelemetrySettingsParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "UpdateInstallTelemetrySettings",
-		Method:             "PATCH",
-		PathPattern:        "/v1/installs/{install_id}/telemetry",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &UpdateInstallTelemetrySettingsReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*UpdateInstallTelemetrySettingsOK)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for UpdateInstallTelemetrySettings: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
 UpdateInstallWorkflow updates an install workflow
 
 Update a workflow configuration.
@@ -22065,6 +22027,50 @@ func (a *Client) UpdateOrgFeatures(params *UpdateOrgFeaturesParams, authInfo run
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateOrgFeatures: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateOrgTelemetry updates current org telemetry settings
+*/
+func (a *Client) UpdateOrgTelemetry(params *UpdateOrgTelemetryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgTelemetryOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateOrgTelemetryParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateOrgTelemetry",
+		Method:             "PATCH",
+		PathPattern:        "/v1/orgs/current/telemetry",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateOrgTelemetryReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateOrgTelemetryOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateOrgTelemetry: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

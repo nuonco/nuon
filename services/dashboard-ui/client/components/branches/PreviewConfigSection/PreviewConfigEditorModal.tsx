@@ -88,7 +88,7 @@ export const PreviewConfigEditorModal = ({
 
   return (
     <Modal
-      heading="Edit preview settings"
+      heading="Edit preview defaults"
       primaryActionTrigger={{
         children: isPending ? 'Saving...' : 'Save changes',
         disabled: !canSubmit || isPending || isLoading || isUnchanged,
@@ -122,9 +122,13 @@ export const PreviewConfigEditorModal = ({
           {(field) => (
             <FormRadioGroup
               field={field}
-              label="Mode"
+              label="Default mode"
               disabled={isPending || isLoading}
               options={[
+                {
+                  value: 'none',
+                  label: previewModeDisplayLabel('none'),
+                },
                 {
                   value: 'build-only',
                   label: previewModeDisplayLabel('build-only'),
@@ -139,7 +143,7 @@ export const PreviewConfigEditorModal = ({
           )}
         </form.Field>
 
-        {values.mode !== 'build-only' ? (
+        {values.mode !== 'none' && values.mode !== 'build-only' ? (
           <form.Field name="installId">
             {(field) => (
               <FormSelect
@@ -163,7 +167,7 @@ export const PreviewConfigEditorModal = ({
           </form.Field>
         ) : null}
 
-        {hasGithubVCS ? (
+        {hasGithubVCS && values.mode !== 'none' ? (
           <div className="flex flex-col gap-3">
             <form.Field name="setStatuses">
               {(field) => (

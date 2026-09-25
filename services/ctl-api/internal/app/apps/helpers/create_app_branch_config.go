@@ -47,9 +47,32 @@ func (h *Helpers) CreateAppBranchConfig(
 	postDeployRunbookIDs *[]string,
 	ignoreChanges *IgnoreChangesSettings,
 	previewConfig *app.AppBranchPreviewConfig,
+	clearPreviewConfig bool,
 	runConfig *app.AppBranchRunConfig,
 ) (*app.AppBranchConfig, error) {
-	return h.CreateAppBranchConfigWithDB(ctx, h.db, appBranchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, postDeployRunbookIDs, ignoreChanges, previewConfig, runConfig)
+	var config *app.AppBranchConfig
+	err := h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var err error
+		config, err = h.CreateAppBranchConfigWithDB(ctx, tx, appBranchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, postDeployRunbookIDs, ignoreChanges, previewConfig, clearPreviewConfig, runConfig)
+		return err
+	})
+	return config, err
+}
+
+// withDefaultInstallGroup guarantees every config has somewhere for installs to
+// land. A branch block that declares no install_groups, or an API caller that
+// sends none, would otherwise produce a config where no install resolves to a
+// group. Callers that declare groups must mark one default themselves; that is
+// validated before it reaches here.
+func WithDefaultInstallGroup(groups []app.AppBranchInstallGroup) []app.AppBranchInstallGroup {
+	if len(groups) > 0 {
+		return groups
+	}
+	return []app.AppBranchInstallGroup{{
+		Name:    DefaultAppBranchInstallGroupName,
+		Order:   0,
+		Default: true,
+	}}
 }
 
 // Callers inside a transaction must use this, or the app_branch_id FK fails.
@@ -63,6 +86,7 @@ func (h *Helpers) CreateAppBranchConfigWithDB(
 	postDeployRunbookIDs *[]string,
 	ignoreChanges *IgnoreChangesSettings,
 	previewConfig *app.AppBranchPreviewConfig,
+	clearPreviewConfig bool,
 	runConfig *app.AppBranchRunConfig,
 ) (*app.AppBranchConfig, error) {
 	if ignoreChanges != nil && ignoreChanges.Regex != nil {
@@ -79,7 +103,7 @@ func (h *Helpers) CreateAppBranchConfigWithDB(
 
 	config := app.AppBranchConfig{
 		AppBranchID:              appBranchID,
-		InstallGroups:            installGroups,
+		InstallGroups:            WithDefaultInstallGroup(installGroups),
 		ConnectedGithubVCSConfig: connectedGithubVCSConfig,
 		PublicGitVCSConfig:       publicGitVCSConfig,
 	}
@@ -123,7 +147,7 @@ func (h *Helpers) CreateAppBranchConfigWithDB(
 
 	if previewConfig != nil {
 		config.PreviewConfig = previewConfig
-	} else if hasPrevious {
+	} else if hasPrevious && !clearPreviewConfig {
 		config.PreviewConfig = previous.PreviewConfig
 	}
 
@@ -139,6 +163,9 @@ func (h *Helpers) CreateAppBranchConfigWithDB(
 
 	if err := db.WithContext(ctx).Create(&config).Error; err != nil {
 		return nil, fmt.Errorf("unable to create app branch config: %w", err)
+	}
+	if err := ReconcileBranchInstallAppBranchGroupsWithDB(ctx, db, appBranchID, config.InstallGroups); err != nil {
+		return nil, fmt.Errorf("unable to reconcile install branch groups: %w", err)
 	}
 
 	return &config, nil

@@ -123,6 +123,9 @@ func branchDiff(key string, old, new *AppBranchConfig) *diff.Diff {
 	if d := diffBranchPreview(old.Preview, new.Preview); d != nil {
 		children = append(children, d)
 	}
+	if d := diffBranchRun(old.Run, new.Run); d != nil {
+		children = append(children, d)
+	}
 	children = append(children,
 		// post_deploy_runbooks runs in the order listed, so compare the sequence
 		// rather than the set.
@@ -172,8 +175,7 @@ func diffBranchInstallGroup(old, new AppBranchInstallGroupConfig) *diff.Diff {
 
 	children := []*diff.Diff{
 		diff.NewDiff(diff.WithKey("order"), diff.WithStringDiff(strconv.Itoa(old.Order), strconv.Itoa(new.Order))),
-		diff.NewDiff(diff.WithKey("install_ids"), diff.WithStringSliceDiff(old.InstallIDs, new.InstallIDs)),
-		diff.NewDiff(diff.WithKey("install_names"), diff.WithStringSliceDiff(old.InstallNames, new.InstallNames)),
+		diff.NewDiff(diff.WithKey("default"), diff.WithBoolDiff(old.Default, new.Default)),
 		diff.NewDiff(diff.WithKey("auto_approve_on_policies_passing"), diff.WithOptionalBoolDiff(
 			old.AutoApproveOnPoliciesPassing, new.AutoApproveOnPoliciesPassing,
 		)),
@@ -190,10 +192,10 @@ func diffBranchPreview(old, new *AppBranchPreviewConfig) *diff.Diff {
 		return nil
 	}
 	if old == nil {
-		old = &AppBranchPreviewConfig{}
+		old = &AppBranchPreviewConfig{Mode: "none"}
 	}
 	if new == nil {
-		new = &AppBranchPreviewConfig{}
+		new = &AppBranchPreviewConfig{Mode: "none"}
 	}
 
 	children := []*diff.Diff{
@@ -210,6 +212,24 @@ func diffBranchPreview(old, new *AppBranchPreviewConfig) *diff.Diff {
 	}
 
 	return diff.NewDiff(diff.WithKey("preview"), diff.WithChildren(children...))
+}
+
+func diffBranchRun(old, new *AppBranchRunConfig) *diff.Diff {
+	if old == nil && new == nil {
+		return nil
+	}
+	if old == nil {
+		old = &AppBranchRunConfig{}
+	}
+	if new == nil {
+		new = &AppBranchRunConfig{}
+	}
+
+	return diff.NewDiff(diff.WithKey("run"), diff.WithChildren(
+		diff.NewDiff(diff.WithKey("mode"), diff.WithStringDiff(old.Mode, new.Mode)),
+		diff.NewDiff(diff.WithKey("tag_prefix"), diff.WithStringDiff(old.TagPrefix, new.TagPrefix)),
+		diff.NewDiff(diff.WithKey("github_label"), diff.WithStringDiff(old.GithubLabel, new.GithubLabel)),
+	))
 }
 
 // --- Sandbox ---

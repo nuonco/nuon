@@ -27,6 +27,7 @@ func (a *Activities) CreateInstallWorkflowApproval(ctx context.Context, req *Cre
 		OrgID:                 step.OrgID,
 		Type:                  app.NoopApprovalType,
 	}
+	workflowApproval.SetChanges(app.StepChangeCounts{}, app.StepChangeStateUnsupported)
 
 	resp := a.db.WithContext(ctx).Create(&workflowApproval)
 	if resp.Error != nil {

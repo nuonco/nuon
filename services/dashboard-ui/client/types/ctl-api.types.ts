@@ -61,7 +61,11 @@ export type TAppBranchRunMetadata = {
   tag_prefix?: string
 }
 
-export type TAppBranchRunPreviewMode = 'plan-only' | 'apply' | 'build-only'
+export type TAppBranchRunPreviewMode =
+  | 'none'
+  | 'plan-only'
+  | 'apply'
+  | 'build-only'
 export type TAppBranchRunPreviewSource = 'pr' | 'commit' | 'branch' | 'local'
 
 export type TAppBranchPreviewConfig = {
@@ -470,6 +474,13 @@ export type TBuild = TComponentBuild & {
 
 export type TOrg = components['schemas']['app.Org']
 export type TOrgInvite = components['schemas']['app.OrgInvite']
+// Hand-written mirror of app.OrgFeatureInfo: the generated schema lags until
+// the next SDK regen, and the dashboard reads `deprecated` before then.
+export type TOrgFeatureInfo = {
+  name: string
+  description: string
+  forced?: boolean
+}
 export type TOrgMember = components['schemas']['app.OrgMember']
 export type TOrgMemberStatus = components['schemas']['app.OrgMemberStatus']
 export type TOrgStats = {
@@ -1290,6 +1301,99 @@ export type TInstallUpdatesResponse = {
   updates: TInstallUpdate[]
   current_app_branch_run?: TAppBranchRun
   page: number
+  limit: number
+  has_more: boolean
+}
+
+// ─── Install deployments ──────────────────────────────────────────────────────
+
+export type TInstallDeploymentRecordType =
+  | 'provision'
+  | 'reprovision'
+  | 'sandbox_reprovision'
+  | 'app_branch_update'
+  | 'component_deploy'
+  | 'image_update'
+  | 'stack_update'
+  | 'install_config_update'
+
+export type TInstallDeploymentStatus =
+  | 'active'
+  | 'pending'
+  | 'in-progress'
+  | 'error'
+  | 'warn'
+  | 'deprovisioned'
+  | 'unknown'
+  | 'success'
+
+export type TInstallDeploymentChangeScope =
+  | 'stack'
+  | 'sandbox'
+  | 'component'
+  | 'image'
+  | 'app_branch'
+  | 'install_config'
+  | 'workflow'
+
+export type TInstallDeploymentConfigChange = {
+  path: string
+  operation: 'add' | 'remove' | 'change'
+  previous_value?: string
+  next_value?: string
+  is_redacted?: boolean
+}
+
+export type TInstallDeploymentChangeGroup = {
+  id: string
+  scope: TInstallDeploymentChangeScope
+  label: string
+  resource_name?: string
+  summary: string
+  changes: TInstallDeploymentConfigChange[]
+  file_diff?: string
+  diff_language?: 'toml' | 'yaml' | 'json' | 'diff'
+}
+
+export type TInstallDeploymentAffectedResources = {
+  stack?: boolean
+  sandbox?: boolean
+  components: string[]
+  images: string[]
+}
+
+export type TInstallDeploymentRecord = {
+  id: string
+  type: TInstallDeploymentRecordType
+  status: TInstallDeploymentStatus
+  created_at: string
+  title: string
+  summary: string
+  workflow?: {
+    id: string
+    name: string
+    type: string
+  }
+  app_branch?: {
+    id: string
+    name: string
+    run_id?: string
+    sha?: string
+  }
+  component_name?: string
+  image?: {
+    repository: string
+    previous_tag?: string
+    next_tag: string
+  }
+  affected_resources: TInstallDeploymentAffectedResources
+  change_groups: TInstallDeploymentChangeGroup[]
+}
+
+export type TInstallDeploymentsResponse = {
+  deployments: TInstallDeploymentRecord[]
+  page: number
+  offset: number
   limit: number
   has_more: boolean
 }

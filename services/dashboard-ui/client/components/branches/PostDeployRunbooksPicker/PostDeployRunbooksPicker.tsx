@@ -65,8 +65,8 @@ export const PostDeployRunbooksPicker = ({
         </Text>
       </Label>
       <Text variant="subtext" theme="neutral">
-        Run after each install deploys, in order. A failure fails the install and
-        stops the rollout.
+        Run after each install deploys, in order. A failure fails the install
+        and stops the rollout.
       </Text>
 
       {runbooks.length === 0 ? (
@@ -111,7 +111,9 @@ export const PostDeployRunbooksPicker = ({
                       variant="ghost"
                       size="xs"
                       onClick={() => move(idx, 1)}
-                      disabled={disabled || idx === selectedRunbookIds.length - 1}
+                      disabled={
+                        disabled || idx === selectedRunbookIds.length - 1
+                      }
                       title="Move later"
                       className="!p-1 shrink-0"
                     >

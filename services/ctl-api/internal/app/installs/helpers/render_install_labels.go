@@ -93,5 +93,5 @@ func (h *Helpers) RenderInstallLabels(ctx context.Context, installID string) err
 		return errors.Wrap(err, "unable to persist rendered labels")
 	}
 
-	return nil
+	return h.appsHelpers.ReconcileInstallAppBranchGroup(ctx, installID)
 }

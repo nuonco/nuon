@@ -10,6 +10,7 @@ import {
   NewInstallPlaceholder,
   NewInstallPlaceholderBody,
 } from './NewInstallPlaceholder'
+import { Deployments } from './Deployments'
 import {
   NewInstallConfigurationLayout,
   NewInstallOperationsLayout,
@@ -18,8 +19,15 @@ import {
 import { NewInstallComponents } from './NewInstallComponents'
 import { NewInstallImages } from './NewInstallImages'
 import { NewInstallSandbox } from './NewInstallSandbox'
+import { NewInstallHealth } from './NewInstallHealth'
 import { NewInstallState } from './NewInstallState'
 import { NewInstallStack } from './NewInstallStack'
+import {
+  NewInstallAppBranch,
+  NewInstallConfigFile,
+  NewInstallInputs,
+  NewInstallOverrides,
+} from './NewInstallConfiguration'
 import { Actions } from './Actions'
 import { Roles } from './Roles'
 import { Policies } from './Policies'
@@ -159,13 +167,11 @@ export const installRoutes: RouteObject[] = [
         children: [
           {
             path: ':orgId/installs/:installId/deployments',
-            element: (
-              <NewInstallPlaceholder path="/deployments" title="Deployments" />
-            ),
+            element: <Deployments />,
           },
           {
             path: ':orgId/installs/:installId/health',
-            element: <NewInstallPlaceholder path="/health" title="Health" />,
+            element: <NewInstallHealth />,
           },
           {
             path: ':orgId/installs/:installId/operations',
@@ -199,19 +205,19 @@ export const installRoutes: RouteObject[] = [
             children: [
               {
                 index: true,
-                element: <NewInstallPlaceholderBody title="App branch" />,
+                element: <NewInstallAppBranch />,
               },
               {
                 path: 'inputs',
-                element: <NewInstallPlaceholderBody title="Inputs" />,
+                element: <NewInstallInputs />,
               },
               {
                 path: 'config-file',
-                element: <NewInstallPlaceholderBody title="Config file" />,
+                element: <NewInstallConfigFile />,
               },
               {
                 path: 'overrides',
-                element: <NewInstallPlaceholderBody title="Overrides" />,
+                element: <NewInstallOverrides />,
               },
               {
                 path: 'state',

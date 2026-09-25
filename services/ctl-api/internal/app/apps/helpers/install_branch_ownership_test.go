@@ -33,11 +33,6 @@ func TestInstallMatchesGroup(t *testing.T) {
 			group: nil,
 		},
 		{
-			name:  "all installs takes everything the branch owns",
-			group: &app.AppBranchInstallGroup{AllInstalls: true},
-			want:  true,
-		},
-		{
 			name:  "matching selector",
 			group: &app.AppBranchInstallGroup{LabelSelector: &labels.Selector{MatchLabels: labels.Labels{"env": "prod"}}},
 			want:  true,
@@ -47,13 +42,8 @@ func TestInstallMatchesGroup(t *testing.T) {
 			group: &app.AppBranchInstallGroup{LabelSelector: &labels.Selector{MatchLabels: labels.Labels{"env": "staging"}}},
 		},
 		{
-			name:  "explicit id",
-			group: &app.AppBranchInstallGroup{InstallIDs: []string{"install-0", "install-1"}},
-			want:  true,
-		},
-		{
-			name:  "explicit id for another install",
-			group: &app.AppBranchInstallGroup{InstallIDs: []string{"install-2"}},
+			name:  "default does not match directly",
+			group: &app.AppBranchInstallGroup{Default: true},
 		},
 		{
 			name:  "empty group targets nothing",
@@ -86,29 +76,44 @@ func TestValidateInstallSingleGroup(t *testing.T) {
 		}, install))
 	})
 
-	t.Run("selector and explicit id both claim it", func(t *testing.T) {
+	t.Run("two selectors claim it", func(t *testing.T) {
 		err := ValidateInstallSingleGroup([]app.AppBranchInstallGroup{
 			{Name: "by-label", LabelSelector: &labels.Selector{MatchLabels: labels.Labels{"env": "prod"}}},
-			{Name: "by-id", InstallIDs: []string{"install-1"}},
+			{Name: "also-by-label", LabelSelector: &labels.Selector{MatchLabels: labels.Labels{"env": "prod"}}},
 		}, install)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "by-id")
+		assert.Contains(t, err.Error(), "also-by-label")
 		assert.Contains(t, err.Error(), "by-label")
 	})
 
-	t.Run("all installs alongside a matching selector", func(t *testing.T) {
-		err := ValidateInstallSingleGroup([]app.AppBranchInstallGroup{
-			{Name: "everything", AllInstalls: true},
+	t.Run("label selector precedes default", func(t *testing.T) {
+		groups := []app.AppBranchInstallGroup{
+			{Name: "default", Default: true},
 			{Name: "prod", LabelSelector: &labels.Selector{MatchLabels: labels.Labels{"env": "prod"}}},
-		}, install)
-		require.Error(t, err)
+		}
+		resolved, err := ResolveInstallGroup(groups, install)
+		require.NoError(t, err)
+		require.NotNil(t, resolved)
+		assert.Equal(t, "prod", resolved.Name)
+
+		unmatched := prodInstall()
+		unmatched.Labels = labels.Labels{"env": "dev"}
+		resolved, err = ResolveInstallGroup(groups, unmatched)
+		require.NoError(t, err)
+		require.NotNil(t, resolved)
+		assert.Equal(t, "default", resolved.Name)
 	})
 
-	t.Run("all installs alongside a selector that misses", func(t *testing.T) {
-		require.NoError(t, ValidateInstallSingleGroup([]app.AppBranchInstallGroup{
-			{Name: "everything", AllInstalls: true},
-			{Name: "staging", LabelSelector: &labels.Selector{MatchLabels: labels.Labels{"env": "staging"}}},
-		}, install))
+	t.Run("explicit group overrides matching selector", func(t *testing.T) {
+		explicit := prodInstall()
+		explicit.AppBranchGroup = "canary"
+		resolved, err := ResolveInstallGroup([]app.AppBranchInstallGroup{
+			{Name: "canary", Default: true},
+			{Name: "prod", LabelSelector: &labels.Selector{MatchLabels: labels.Labels{"env": "prod"}}},
+		}, explicit)
+		require.NoError(t, err)
+		require.NotNil(t, resolved)
+		assert.Equal(t, "canary", resolved.Name)
 	})
 }
 
@@ -116,10 +121,10 @@ func TestInstallGroupsMatching(t *testing.T) {
 	t.Parallel()
 
 	got := InstallGroupsMatching([]app.AppBranchInstallGroup{
-		{Name: "everything", AllInstalls: true},
+		{Name: "default", Default: true},
+		{Name: "prod", LabelSelector: &labels.Selector{MatchLabels: labels.Labels{"env": "prod"}}},
 		{Name: "staging", LabelSelector: &labels.Selector{MatchLabels: labels.Labels{"env": "staging"}}},
-		{Name: "by-id", InstallIDs: []string{"install-1"}},
 	}, prodInstall())
 
-	assert.Equal(t, []string{"everything", "by-id"}, got)
+	assert.Equal(t, []string{"prod"}, got)
 }

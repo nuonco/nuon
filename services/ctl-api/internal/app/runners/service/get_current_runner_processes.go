@@ -68,5 +68,7 @@ func (s *service) getCurrentRunnerProcesses(ctx context.Context, runnerID, orgID
 		}
 	}
 
+	s.attachScheduledRestarts(runnerProcessPtrs(result))
+
 	return result, nil
 }

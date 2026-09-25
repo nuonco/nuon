@@ -1897,6 +1897,19 @@ export interface paths {
      */
     patch: operations["UpdateInstallConfig"];
   };
+  "/v1/installs/{install_id}/deployments": {
+    /**
+     * get normalized deployment feed for an install
+     * @description Returns a normalized, chronological deployment feed for an install.
+     *
+     * Each record represents one install-owned workflow that caused a real change: provisioning, reprovisioning, component deploys, input updates, stack reprovisioning, sandbox reprovisioning, action runs, runbook runs, and install-config updates. Plan-only and preview records are excluded.
+     *
+     * Records include a `type`, unified `status`, human-readable `title` and `summary`, an optional `workflow` reference, an optional `app_branch` reference (when the change originated from a branch run), an optional primary `component` reference (for single-component operations), a flat `affected_resources` list of component names, and `change_groups` that group the affected resources by logical category.
+     *
+     * Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `search`, `created_at_gte`, and `created_at_lte`.
+     */
+    get: operations["GetInstallDeployments"];
+  };
   "/v1/installs/{install_id}/deploys": {
     /**
      * get all deploys to an install
@@ -2267,8 +2280,6 @@ export interface paths {
   "/v1/installs/{install_id}/telemetry": {
     /** Get an install's telemetry settings */
     get: operations["GetInstallTelemetrySettings"];
-    /** Update an install's telemetry settings */
-    patch: operations["UpdateInstallTelemetrySettings"];
   };
   "/v1/installs/{install_id}/updates": {
     /**
@@ -2470,7 +2481,6 @@ export interface paths {
      * {
      *   "api-pagination": true,
      *   "org-dashboard": true,
-     *   "org-runner": true,
      *   "stratus-layout": true,
      *   "user-managed-features": false
      * }
@@ -2547,19 +2557,16 @@ export interface paths {
      */
     post: operations["RemoveUser"];
   };
-  "/v1/orgs/current/runner-group": {
-    /**
-     * Get an org's runner group
-     * @description Get the current org's runner group, which includes the runners and their settings.
-     */
-    get: operations["GetOrgRunnerGroup"];
-  };
   "/v1/orgs/current/stats": {
     /**
      * Get an org
      * @description Returns statistics for the provided organization.
      */
     get: operations["GetOrgStats"];
+  };
+  "/v1/orgs/current/telemetry": {
+    /** Update current org telemetry settings */
+    patch: operations["UpdateOrgTelemetry"];
   };
   "/v1/orgs/current/user": {
     /**
@@ -3694,18 +3701,12 @@ export interface components {
       workflows?: components["schemas"]["app.Workflow"][];
     };
     "app.AppBranchInstallGroup": {
-      /**
-       * @description AllInstalls targets every install owned by this group's app branch.
-       * A nil LabelSelector already means "use InstallIDs", so there is no
-       * selector shape that expresses "everything" — hence the explicit flag.
-       */
-      all_installs?: boolean;
       app_branch_config_id?: string;
       auto_approve_on_policies_passing?: boolean | null;
       created_at?: string;
       created_by_id?: string;
+      default?: boolean;
       id?: string;
-      install_ids?: string[];
       label_selector?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Selector"];
       max_parallel?: number;
       name?: string;
@@ -3817,7 +3818,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.AppBranchRunPreviewMode": "plan-only" | "apply" | "build-only";
+    "app.AppBranchRunPreviewMode": "none" | "plan-only" | "apply" | "build-only";
     /** @enum {string} */
     "app.AppBranchRunPreviewSource": "pr" | "commit" | "branch" | "local";
     /** @enum {string} */
@@ -3872,6 +3873,13 @@ export interface components {
       vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"];
       /** @description fields that are filled in via after query or views */
       version?: number;
+    };
+    "app.AppConfigRef": {
+      applied_config_at?: string;
+      applied_config_by_id?: string;
+      applied_config_by_type?: string;
+      applied_config_id?: string;
+      expected_config_id?: string;
     };
     /** @enum {string} */
     "app.AppConfigStatus": "active" | "pending" | "syncing" | "error" | "outdated";
@@ -4749,8 +4757,11 @@ export interface components {
     "app.Install": {
       app_branch?: components["schemas"]["app.AppBranch"];
       app_branch_connections?: components["schemas"]["app.InstallAppBranchConnection"][];
+      app_branch_group?: string;
+      app_branch_group_assignment_source?: components["schemas"]["app.InstallAppBranchGroupAssignmentSource"];
       app_branch_id?: string;
       app_config_id?: string;
+      app_config_ref?: components["schemas"]["app.AppConfigRef"];
       /**
        * @description AppDefaultLabels is the snapshot of the app's default labels applied to
        * this install. It is the lock set for label mutation endpoints, and lets
@@ -4872,6 +4883,7 @@ export interface components {
     "app.InstallActionWorkflow": {
       action_workflow?: components["schemas"]["app.ActionWorkflow"];
       action_workflow_id?: string;
+      app_config_ref?: components["schemas"]["app.AppConfigRef"];
       created_at?: string;
       created_by_id?: string;
       id?: string;
@@ -4945,6 +4957,8 @@ export interface components {
       activated_at?: string;
       active?: boolean;
       app_branch?: components["schemas"]["app.AppBranch"];
+      app_branch_group?: string;
+      app_branch_group_assignment_source?: components["schemas"]["app.InstallAppBranchGroupAssignmentSource"];
       app_branch_id?: string;
       created_at?: string;
       created_by_id?: string;
@@ -4953,6 +4967,8 @@ export interface components {
       install_id?: string;
       updated_at?: string;
     };
+    /** @enum {string} */
+    "app.InstallAppBranchGroupAssignmentSource": "explicit" | "labels" | "default";
     "app.InstallAppConfigVersion": {
       app_branch_run?: components["schemas"]["app.AppBranchRun"];
       app_branch_run_id?: string;
@@ -4982,6 +4998,7 @@ export interface components {
       type?: string;
     };
     "app.InstallComponent": {
+      app_config_ref?: components["schemas"]["app.AppConfigRef"];
       component?: components["schemas"]["app.Component"];
       component_id?: string;
       created_at?: string;
@@ -5054,6 +5071,7 @@ export interface components {
       labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       org_id?: string;
       runner_nested_template_url?: string;
+      telemetry_enabled?: boolean | null;
       updated_at?: string;
       /** @description Per-install stack template overrides (nil = use app config default) */
       vpc_nested_template_url?: string;
@@ -5335,6 +5353,7 @@ export interface components {
       updated_at?: string;
     };
     "app.InstallSandbox": {
+      app_config_ref?: components["schemas"]["app.AppConfigRef"];
       created_at?: string;
       created_by_id?: string;
       id?: string;
@@ -5386,6 +5405,7 @@ export interface components {
       workflow_id?: string;
     };
     "app.InstallStack": {
+      app_config_ref?: components["schemas"]["app.AppConfigRef"];
       created_at?: string;
       created_by_id?: string;
       id?: string;
@@ -5768,6 +5788,7 @@ export interface components {
       status_description?: string;
       status_v2?: components["schemas"]["app.CompositeStatus"];
       tags?: string[];
+      telemetry?: components["schemas"]["app.OrgTelemetrySettings"];
       updated_at?: string;
       vcs_connections?: components["schemas"]["app.VCSConnection"][];
     };
@@ -5807,6 +5828,9 @@ export interface components {
     };
     /** @enum {string} */
     "app.OrgMemberStatus": "active" | "invited";
+    "app.OrgTelemetrySettings": {
+      enabled?: boolean;
+    };
     "app.OtelLogRecord": {
       body?: string;
       created_at?: string;
@@ -6439,7 +6463,18 @@ export interface components {
       /** @description Labels are computed server-side and not persisted. */
       labels?: string[];
       log_stream_id?: string;
+      /**
+       * @description NextScheduledRestartAt is the scheduled uptime TTL restart time for this
+       * process (install and mng only). Set on process creation and not persisted.
+       */
+      next_scheduled_restart_at?: string;
       org_id?: string;
+      /**
+       * @description PreviousScheduledRestartAt is the scheduled restart time of the previous
+       * process of the same type, if one exists. Set on process creation and not
+       * persisted.
+       */
+      previous_scheduled_restart_at?: string;
       restart_requested?: boolean;
       runner_id?: string;
       shutdowns?: components["schemas"]["app.RunnerProcessShutdown"][];
@@ -6550,7 +6585,9 @@ export interface components {
     /** @enum {string} */
     "app.StackVersionRunType": "workflow-run" | "out-of-band-update";
     /** @enum {string} */
-    "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "failed-pending-retry" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
+    "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "failed-pending-retry" | "disabled" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
+    /** @enum {string} */
+    "app.StepChangeState": "" | "ok" | "unsupported" | "error";
     "app.TerraformLock": {
       created?: string;
       id?: string;
@@ -6927,6 +6964,12 @@ export interface components {
     "app.WorkflowStepApproval": {
       app_branch_id?: string;
       app_id?: string;
+      changes_create?: number;
+      changes_delete?: number;
+      changes_noop?: number;
+      changes_replace?: number;
+      changes_state?: components["schemas"]["app.StepChangeState"];
+      changes_update?: number;
       created_at?: string;
       created_by_id?: string;
       id?: string;
@@ -7101,6 +7144,9 @@ export interface components {
       repoURL?: string;
       version?: string;
     };
+    "config.InstallTelemetry": {
+      enabled?: boolean | null;
+    };
     "configs.ACRAppRegistration": {
       clientCertificateName?: string;
       clientID?: string;
@@ -7273,6 +7319,7 @@ export interface components {
         [key: string]: string;
       };
       runner_nested_template_url?: string;
+      telemetry?: components["schemas"]["config.InstallTelemetry"];
       vpc_nested_template_url?: string;
     };
     "helpers.CreateInstallGCPAccountParams": {
@@ -8173,6 +8220,7 @@ export interface components {
       name?: string;
     };
     "service.CreateAppBranchConfigRequest": {
+      clear_preview_config?: boolean;
       connected_github_vcs_config?: components["schemas"]["helpers.ConnectedGithubVCSConfigRequest"];
       /**
        * @description IgnoreChangesRegex marks a run not-attempted when every changed file path in
@@ -8489,6 +8537,7 @@ export interface components {
         [key: string]: string;
       };
       runner_nested_template_url?: string;
+      telemetry?: components["schemas"]["config.InstallTelemetry"];
       vpc_nested_template_url?: string;
     };
     "service.CreateInstallDeployRequest": {
@@ -8504,6 +8553,7 @@ export interface components {
       };
     };
     "service.CreateInstallRequest": {
+      app_branch_group?: string;
       /**
        * @description AppBranchID is the optional app branch this install belongs to. When set,
        * the install starts on that branch's active app config and stays on the
@@ -8534,6 +8584,7 @@ export interface components {
       stack_only?: boolean;
     };
     "service.CreateInstallV2Request": {
+      app_branch_group?: string;
       /**
        * @description AppBranchID is the optional app branch this install belongs to. When set,
        * the install starts on that branch's active app config and stays on the
@@ -8886,6 +8937,13 @@ export interface components {
     "service.ForceShutdownRequest": Record<string, never>;
     "service.ForgetInstallComponentRequest": Record<string, never>;
     "service.ForgetInstallRequest": Record<string, never>;
+    "service.GetInstallDeploymentsResponse": {
+      deployments?: components["schemas"]["service.InstallDeployment"][];
+      has_more?: boolean;
+      limit?: number;
+      offset?: number;
+      page?: number;
+    };
     "service.GetInstallURLResponse": {
       url?: string;
     };
@@ -8952,22 +9010,63 @@ export interface components {
     "service.InstallConfigUpdate": {
       version?: components["schemas"]["app.InstallConfigVersion"];
     };
+    "service.InstallDeployment": {
+      affected_resources?: components["schemas"]["service.InstallDeploymentAffectedResources"];
+      app_branch?: components["schemas"]["service.InstallDeploymentAppBranchRef"];
+      change_groups?: components["schemas"]["service.InstallDeploymentChangeGroup"][];
+      component_name?: string;
+      created_at?: string;
+      id?: string;
+      status?: string;
+      summary?: string;
+      title?: string;
+      type?: components["schemas"]["service.InstallDeploymentType"];
+      workflow?: components["schemas"]["service.InstallDeploymentWorkflowRef"];
+    };
+    "service.InstallDeploymentAffectedResources": {
+      components?: string[];
+      images?: string[];
+      sandbox?: boolean;
+      stack?: boolean;
+    };
+    "service.InstallDeploymentAppBranchRef": {
+      git_ref?: string;
+      id?: string;
+      name?: string;
+      run_id?: string;
+      sha?: string;
+    };
+    "service.InstallDeploymentChangeGroup": {
+      changes?: components["schemas"]["service.InstallDeploymentConfigChange"][];
+      diff_language?: string;
+      file_diff?: string;
+      id?: string;
+      label?: string;
+      resource_name?: string;
+      scope?: string;
+      summary?: string;
+    };
+    "service.InstallDeploymentConfigChange": {
+      is_redacted?: boolean;
+      next_value?: string;
+      operation?: string;
+      path?: string;
+      previous_value?: string;
+    };
+    /** @enum {string} */
+    "service.InstallDeploymentType": "provision" | "reprovision" | "sandbox_reprovision" | "app_branch_update" | "component_deploy" | "image_update" | "stack_update" | "install_config_update";
+    "service.InstallDeploymentWorkflowRef": {
+      id?: string;
+      name?: string;
+      type?: components["schemas"]["app.WorkflowType"];
+    };
     "service.InstallGroupRequest": {
-      /**
-       * @description AllInstalls targets every install owned by this branch.
-       * Mutually exclusive with InstallIDs and LabelSelector.
-       */
-      all_installs?: boolean;
       /**
        * @description AutoApproveOnPoliciesPassing approves this group's plan step without user
        * input when its policy checks pass. Omit to leave it unset (off).
        */
       auto_approve_on_policies_passing?: boolean | null;
-      install_ids?: string[];
-      /**
-       * @description LabelSelector dynamically resolves installs at deploy time.
-       * Mutually exclusive with InstallIDs.
-       */
+      default?: boolean;
       label_selector?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Selector"];
       name: string;
       order?: number;
@@ -9040,6 +9139,8 @@ export interface components {
     };
     "service.InstallTelemetrySettings": {
       enabled?: boolean;
+      org_default?: boolean;
+      override?: boolean | null;
     };
     "service.InstallUpdate": {
       app_config?: components["schemas"]["service.InstallAppConfigUpdate"];
@@ -9127,11 +9228,15 @@ export interface components {
     "service.MngUpdateRequest": Record<string, never>;
     "service.MngVMShutDownRequest": Record<string, never>;
     "service.MoveInstallToAppBranchRequest": {
+      app_branch_group?: string;
       /**
        * @description AppBranchID is the branch to move the install to. It must belong to the
        * install's app and have an app config to deploy.
        */
       app_branch_id: string;
+      labels?: {
+        [key: string]: string;
+      };
     };
     "service.OperationRoleRuleRequest": {
       operation: components["schemas"]["app.OperationType"];
@@ -9452,6 +9557,7 @@ export interface components {
         [key: string]: string;
       };
       runner_nested_template_url?: string;
+      telemetry?: components["schemas"]["config.InstallTelemetry"];
       vpc_nested_template_url?: string;
     };
     "service.UpdateInstallInputsRequest": {
@@ -9472,9 +9578,6 @@ export interface components {
       name?: string;
     };
     "service.UpdateInstallRoleRequest": {
-      enabled: boolean;
-    };
-    "service.UpdateInstallTelemetryRequest": {
       enabled: boolean;
     };
     "service.UpdateNotebookRequest": {
@@ -9504,6 +9607,9 @@ export interface components {
     };
     "service.UpdateOrgRequest": {
       name: string;
+    };
+    "service.UpdateOrgTelemetryRequest": {
+      enabled: boolean;
     };
     "service.UpdateRunbookRequest": {
       description?: string;
@@ -23766,6 +23872,82 @@ export interface operations {
     };
   };
   /**
+   * get normalized deployment feed for an install
+   * @description Returns a normalized, chronological deployment feed for an install.
+   *
+   * Each record represents one install-owned workflow that caused a real change: provisioning, reprovisioning, component deploys, input updates, stack reprovisioning, sandbox reprovisioning, action runs, runbook runs, and install-config updates. Plan-only and preview records are excluded.
+   *
+   * Records include a `type`, unified `status`, human-readable `title` and `summary`, an optional `workflow` reference, an optional `app_branch` reference (when the change originated from a branch run), an optional primary `component` reference (for single-component operations), a flat `affected_resources` list of component names, and `change_groups` that group the affected resources by logical category.
+   *
+   * Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `search`, `created_at_gte`, and `created_at_lte`.
+   */
+  GetInstallDeployments: {
+    parameters: {
+      query?: {
+        /** @description page number */
+        page?: number;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description page size */
+        limit?: number;
+        /** @description filter by deployment type (comma-separated) */
+        type?: string;
+        /** @description filter by workflow status (comma-separated) */
+        status?: string;
+        /** @description filter by affected stack, sandbox, or component name */
+        resource?: string;
+        /** @description case-insensitive substring match on id or title */
+        search?: string;
+        /** @description include deployments created at or after this RFC3339 timestamp */
+        created_at_gte?: string;
+        /** @description include deployments created at or before this RFC3339 timestamp */
+        created_at_lte?: string;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.GetInstallDeploymentsResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * get all deploys to an install
    * @deprecated
    * @description Returns all deployments for an install.
@@ -26723,59 +26905,6 @@ export interface operations {
       };
     };
   };
-  /** Update an install's telemetry settings */
-  UpdateInstallTelemetrySettings: {
-    parameters: {
-      path: {
-        /** @description Install ID */
-        install_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.UpdateInstallTelemetryRequest"];
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["service.InstallTelemetrySettings"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
   /**
    * get typed updates for an install
    * @description Returns app config, input, stack, and install config updates in reverse chronological order.
@@ -28123,7 +28252,6 @@ export interface operations {
    * {
    *   "api-pagination": true,
    *   "org-dashboard": true,
-   *   "org-runner": true,
    *   "stratus-layout": true,
    *   "user-managed-features": false
    * }
@@ -28512,15 +28640,15 @@ export interface operations {
     };
   };
   /**
-   * Get an org's runner group
-   * @description Get the current org's runner group, which includes the runners and their settings.
+   * Get an org
+   * @description Returns statistics for the provided organization.
    */
-  GetOrgRunnerGroup: {
+  GetOrgStats: {
     responses: {
       /** @description OK */
       200: {
         content: {
-          "application/json": components["schemas"]["app.RunnerGroup"];
+          "application/json": components["schemas"]["app.Org"];
         };
       };
       /** @description Bad Request */
@@ -28555,11 +28683,14 @@ export interface operations {
       };
     };
   };
-  /**
-   * Get an org
-   * @description Returns statistics for the provided organization.
-   */
-  GetOrgStats: {
+  /** Update current org telemetry settings */
+  UpdateOrgTelemetry: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateOrgTelemetryRequest"];
+      };
+    };
     responses: {
       /** @description OK */
       200: {

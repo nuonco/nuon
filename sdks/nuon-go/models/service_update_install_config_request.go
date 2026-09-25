@@ -32,6 +32,9 @@ type ServiceUpdateInstallConfigRequest struct {
 	// runner nested template url
 	RunnerNestedTemplateURL string `json:"runner_nested_template_url,omitempty"`
 
+	// telemetry
+	Telemetry *ConfigInstallTelemetry `json:"telemetry,omitempty"`
+
 	// vpc nested template url
 	VpcNestedTemplateURL string `json:"vpc_nested_template_url,omitempty"`
 }
@@ -45,6 +48,10 @@ func (m *ServiceUpdateInstallConfigRequest) Validate(formats strfmt.Registry) er
 	}
 
 	if err := m.validateCustomNestedStacks(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateTelemetry(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -105,6 +112,29 @@ func (m *ServiceUpdateInstallConfigRequest) validateCustomNestedStacks(formats s
 	return nil
 }
 
+func (m *ServiceUpdateInstallConfigRequest) validateTelemetry(formats strfmt.Registry) error {
+	if swag.IsZero(m.Telemetry) { // not required
+		return nil
+	}
+
+	if m.Telemetry != nil {
+		if err := m.Telemetry.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("telemetry")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("telemetry")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this service update install config request based on the context it is used
 func (m *ServiceUpdateInstallConfigRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -114,6 +144,10 @@ func (m *ServiceUpdateInstallConfigRequest) ContextValidate(ctx context.Context,
 	}
 
 	if err := m.contextValidateCustomNestedStacks(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateTelemetry(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -169,6 +203,31 @@ func (m *ServiceUpdateInstallConfigRequest) contextValidateCustomNestedStacks(ct
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *ServiceUpdateInstallConfigRequest) contextValidateTelemetry(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Telemetry != nil {
+
+		if swag.IsZero(m.Telemetry) { // not required
+			return nil
+		}
+
+		if err := m.Telemetry.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("telemetry")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("telemetry")
+			}
+
+			return err
+		}
 	}
 
 	return nil

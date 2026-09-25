@@ -27,22 +27,33 @@ const (
 
 const defaultPollDuration = time.Second * 10
 
+// ErrSyncAborted means an interrupted confirm dialog should stop the whole
+// batch, unlike an explicit "No" which only skips the current install.
+var ErrSyncAborted = errors.New("sync aborted by user")
+
 type appInstallSyncer struct {
-	api          nuon.Client
-	appID, orgID string
-	interactive  bool
-	asJSON       bool
-	approveAll   bool
+	api               nuon.Client
+	appID, orgID      string
+	interactive       bool
+	asJSON            bool
+	approveAll        bool
+	branchesByInstall map[string]*models.AppAppBranch
 }
 
-func newAppInstallSyncer(api nuon.Client, appID, orgID string, interactive, asJSON, approveAll bool) *appInstallSyncer {
+func newAppInstallSyncer(
+	api nuon.Client,
+	appID, orgID string,
+	interactive, asJSON, approveAll bool,
+	branchesByInstall map[string]*models.AppAppBranch,
+) *appInstallSyncer {
 	return &appInstallSyncer{
-		api:         api,
-		appID:       appID,
-		orgID:       orgID,
-		interactive: interactive,
-		asJSON:      asJSON,
-		approveAll:  approveAll,
+		api:               api,
+		appID:             appID,
+		orgID:             orgID,
+		interactive:       interactive,
+		asJSON:            asJSON,
+		approveAll:        approveAll,
+		branchesByInstall: branchesByInstall,
 	}
 }
 
@@ -77,9 +88,10 @@ func (s *appInstallSyncer) syncInstall(
 }
 
 func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *config.Install, confirm, wait, dryRun bool) (*models.AppInstall, error) {
-	appInputCfg, err := s.api.GetAppInputLatestConfig(ctx, s.appID)
+	branch := s.branchesByInstall[installCfg.Name]
+	appInputCfg, err := s.inputConfigForNewInstall(ctx, branch)
 	if err != nil {
-		return nil, fmt.Errorf("error getting latest input config for app %s: %w", s.appID, err)
+		return nil, err
 	}
 
 	// Use defaults for any missing inputs. Customer-owned inputs are excluded: they
@@ -125,20 +137,23 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 			fmt.Sprintf("Install %q does not exist and will be created.", installCfg.Name),
 			s.interactive,
 		)
+		if errors.Is(err, bubbles.ErrConfirmInterrupted) {
+			return nil, ErrSyncAborted
+		}
 		if err != nil {
-			ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installCfg.Name))
-			return nil, nil
+			return nil, fmt.Errorf("error confirming install %s: %w", installCfg.Name, err)
 		}
 		if !ok {
-			ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installCfg.Name))
+			ui.PrintSuccess(fmt.Sprintf("skipping install %s, declined by user", installCfg.Name))
 			return nil, nil
 		}
 	}
 
 	req := models.ServiceCreateInstallRequest{
-		Name:   &installCfg.Name,
-		Inputs: installCfg.FlattenedInputs(),
-		Labels: installCfg.Labels,
+		Name:        &installCfg.Name,
+		Inputs:      installCfg.FlattenedInputs(),
+		Labels:      installCfg.Labels,
+		AppBranchID: branchID(branch),
 		Metadata: &models.HelpersInstallMetadata{
 			ManagedBy: ManagedByNuonCLIConfig,
 		},
@@ -162,8 +177,11 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		}
 	}
 	if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
-		installCfg.StackOverrides.HasOverrides() {
+		installCfg.StackOverrides.HasOverrides() || installCfg.Telemetry != nil {
 		icParams := &models.HelpersCreateInstallConfigParams{}
+		if installCfg.Telemetry != nil {
+			icParams.Telemetry = &models.ConfigInstallTelemetry{Enabled: installCfg.Telemetry.Enabled}
+		}
 		if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
 			icParams.ApprovalOption = installCfg.ApprovalOption.APIType()
 		}
@@ -203,9 +221,17 @@ func (s *appInstallSyncer) syncExistingInstall(
 ) (*models.AppInstall, error) {
 	var err error
 
-	appConfig, err := s.api.GetAppConfig(ctx, appInstall.AppID, appInstall.AppConfigID, generics.ToPtr(true))
+	branch := s.branchesByInstall[installCfg.Name]
+	targetAppConfigID := appInstall.AppConfigID
+	if branch != nil {
+		if branch.LatestRun == nil || branch.LatestRun.AppConfigID == "" {
+			return nil, fmt.Errorf("app branch %q has no app config to apply", branch.Name)
+		}
+		targetAppConfigID = branch.LatestRun.AppConfigID
+	}
+	appConfig, err := s.api.GetAppConfig(ctx, appInstall.AppID, targetAppConfigID, generics.ToPtr(true))
 	if err != nil {
-		return nil, fmt.Errorf("error getting app config for install %s: %w", appInstall.Name, err)
+		return nil, fmt.Errorf("error getting target app config for install %s: %w", appInstall.Name, err)
 	}
 
 	if appConfig == nil || appConfig.Input == nil {
@@ -245,7 +271,9 @@ func (s *appInstallSyncer) syncExistingInstall(
 		return nil, fmt.Errorf("error generating diff for install %s: %w", installCfg.Name, err)
 	}
 	diffRes := diff.Summary()
-	if !diffRes.HasChanged {
+	branchChanged := branch != nil &&
+		(appInstall.AppBranchID != branch.ID || appInstall.AppBranchGroup != installCfg.AppBranchGroup)
+	if !diffRes.HasChanged && !branchChanged {
 		if !s.asJSON {
 			ui.PrintSuccess(fmt.Sprintf("install %s is up to date, no changes needed", installCfg.Name))
 		}
@@ -261,18 +289,20 @@ func (s *appInstallSyncer) syncExistingInstall(
 
 	if !confirm {
 		ok, err := bubbles.ShowConfirmDialog("Do you want to proceed with updating this install?", s.interactive)
+		if errors.Is(err, bubbles.ErrConfirmInterrupted) {
+			return nil, ErrSyncAborted
+		}
 		if err != nil {
-			ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installCfg.Name))
-			return nil, nil
+			return nil, fmt.Errorf("error confirming install %s: %w", installCfg.Name, err)
 		}
 		if !ok {
-			ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installCfg.Name))
+			ui.PrintSuccess(fmt.Sprintf("skipping install %s, declined by user", installCfg.Name))
 			return nil, nil
 		}
 	}
 
 	hasConfigFields := installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
-		installCfg.StackOverrides.HasOverrides()
+		installCfg.StackOverrides.HasOverrides() || installCfg.Telemetry != nil
 
 	if hasConfigFields {
 		so := installCfg.StackOverrides
@@ -282,6 +312,9 @@ func (s *appInstallSyncer) syncExistingInstall(
 
 		if appInstall.InstallConfig == nil {
 			createReq := &models.ServiceCreateInstallConfigRequest{}
+			if installCfg.Telemetry != nil {
+				createReq.Telemetry = &models.ConfigInstallTelemetry{Enabled: installCfg.Telemetry.Enabled}
+			}
 			if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
 				createReq.ApprovalOption = installCfg.ApprovalOption.APIType()
 			}
@@ -302,20 +335,26 @@ func (s *appInstallSyncer) syncExistingInstall(
 			updateReq := &models.ServiceUpdateInstallConfigRequest{}
 			needsUpdate := false
 
+			if installCfg.Telemetry != nil && installCfg.Telemetry.Enabled != nil &&
+				(appInstall.InstallConfig.TelemetryEnabled == nil || *appInstall.InstallConfig.TelemetryEnabled != *installCfg.Telemetry.Enabled) {
+				updateReq.Telemetry = &models.ConfigInstallTelemetry{Enabled: installCfg.Telemetry.Enabled}
+				needsUpdate = true
+			}
+
 			if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown &&
 				appInstall.InstallConfig.ApprovalOption != installCfg.ApprovalOption.APIType() {
 				updateReq.ApprovalOption = installCfg.ApprovalOption.APIType()
 				needsUpdate = true
 			}
-			if so.VPCNestedTemplateURL != appInstall.InstallConfig.VpcNestedTemplateURL {
+			if installCfg.StackOverrides != nil && so.VPCNestedTemplateURL != appInstall.InstallConfig.VpcNestedTemplateURL {
 				updateReq.VpcNestedTemplateURL = so.VPCNestedTemplateURL
 				needsUpdate = true
 			}
-			if so.RunnerNestedTemplateURL != appInstall.InstallConfig.RunnerNestedTemplateURL {
+			if installCfg.StackOverrides != nil && so.RunnerNestedTemplateURL != appInstall.InstallConfig.RunnerNestedTemplateURL {
 				updateReq.RunnerNestedTemplateURL = so.RunnerNestedTemplateURL
 				needsUpdate = true
 			}
-			if !customNestedStacksEqual(so.CustomNestedStacks, appInstall.InstallConfig.CustomNestedStacks) {
+			if installCfg.StackOverrides != nil && !customNestedStacksEqual(so.CustomNestedStacks, appInstall.InstallConfig.CustomNestedStacks) {
 				updateReq.CustomNestedStacks = toAPICustomNestedStacks(so.CustomNestedStacks)
 				needsUpdate = true
 			}
@@ -378,10 +417,49 @@ func (s *appInstallSyncer) syncExistingInstall(
 		return nil, fmt.Errorf("error syncing labels for install %s: %w", appInstall.Name, err)
 	}
 
+	if branchChanged {
+		moved, err := s.api.MoveInstallToAppBranch(ctx, appInstall.ID, branch.ID, installCfg.AppBranchGroup)
+		if err != nil {
+			return nil, fmt.Errorf("error moving install %s to app branch %s: %w", appInstall.Name, branch.Name, err)
+		}
+		appInstall = moved
+	}
+
 	if !s.asJSON {
 		ui.PrintSuccess(fmt.Sprintf("install %s updated successfully", appInstall.Name))
 	}
 	return appInstall, nil
+}
+
+func (s *appInstallSyncer) inputConfigForNewInstall(
+	ctx context.Context,
+	branch *models.AppAppBranch,
+) (*models.AppAppInputConfig, error) {
+	if branch == nil {
+		appInputCfg, err := s.api.GetAppInputLatestConfig(ctx, s.appID)
+		if err != nil {
+			return nil, fmt.Errorf("error getting latest input config for app %s: %w", s.appID, err)
+		}
+		return appInputCfg, nil
+	}
+	if branch.LatestRun == nil || branch.LatestRun.AppConfigID == "" {
+		return nil, fmt.Errorf("app branch %q has no app config to apply", branch.Name)
+	}
+	appConfig, err := s.api.GetAppConfig(ctx, s.appID, branch.LatestRun.AppConfigID, generics.ToPtr(true))
+	if err != nil {
+		return nil, fmt.Errorf("error getting latest app config for app branch %q: %w", branch.Name, err)
+	}
+	if appConfig.Input == nil {
+		return nil, fmt.Errorf("latest app config %s for app branch %q has no input configuration", appConfig.ID, branch.Name)
+	}
+	return appConfig.Input, nil
+}
+
+func branchID(branch *models.AppAppBranch) string {
+	if branch == nil {
+		return ""
+	}
+	return branch.ID
 }
 
 func (s *appInstallSyncer) syncLabels(ctx context.Context, installID string, desired, current map[string]string) error {
