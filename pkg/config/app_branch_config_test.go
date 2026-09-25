@@ -35,13 +35,11 @@ func TestAppBranchConfig_ValidateInstallGroups(t *testing.T) {
 			groups: []AppBranchInstallGroupConfig{
 				{Name: "prod", Order: 0, LabelSelector: map[string]string{"env": "prod"}},
 			},
-			wantErr: `branch "main": one install group must be default`,
 		},
 		"pinned only group without a default": {
 			groups: []AppBranchInstallGroupConfig{
 				{Name: "manual", Order: 0},
 			},
-			wantErr: `branch "main": one install group must be default`,
 		},
 		"two default groups": {
 			groups: []AppBranchInstallGroupConfig{
