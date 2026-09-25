@@ -1,5 +1,32 @@
 import { describe, expect, test } from 'bun:test'
-import { normalizeDiffOperation, serializeTerraform, terraformDiff } from '.'
+import {
+  fileCacheKey,
+  normalizeDiffOperation,
+  serializeTerraform,
+  terraformDiff,
+} from '.'
+
+describe('fileCacheKey', () => {
+  test('repeats for identical contents', () => {
+    expect(fileCacheKey('ctl-api.yaml', 'yaml', 'kind: Role')).toBe(
+      fileCacheKey('ctl-api.yaml', 'yaml', 'kind: Role')
+    )
+  })
+
+  test('separates resources that share a filename', () => {
+    const keys = ['kind: Role', 'kind: ConfigMap', 'kind: Service'].map(
+      (contents) => fileCacheKey('ctl-api.yaml', 'yaml', contents)
+    )
+
+    expect(new Set(keys).size).toBe(keys.length)
+  })
+
+  test('separates contents that differ only in trailing whitespace', () => {
+    expect(fileCacheKey('a.yaml', 'yaml', 'kind: Role')).not.toBe(
+      fileCacheKey('a.yaml', 'yaml', 'kind: Role ')
+    )
+  })
+})
 
 describe('normalizeDiffOperation', () => {
   test('normalizes provider action vocabularies', () => {
