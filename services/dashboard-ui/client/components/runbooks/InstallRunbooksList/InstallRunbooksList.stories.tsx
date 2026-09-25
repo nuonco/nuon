@@ -26,10 +26,17 @@ const run: TInstallRunbookRun = {
   },
 }
 
-const runButton = (
-  <Button variant="secondary" size="sm">
-    Run runbook
-  </Button>
+const cardActions = (withReadme = true) => (
+  <div className="flex items-center gap-2">
+    {withReadme ? (
+      <Button variant="secondary" size="sm">
+        Readme
+      </Button>
+    ) : null}
+    <Button variant="secondary" size="sm">
+      Run runbook
+    </Button>
+  </div>
 )
 
 const latestRun = (entry?: TInstallRunbookRun) => (
@@ -44,7 +51,7 @@ const item = (
   href: '#',
   description: 'Rotates API keys and secrets for this install.',
   stepCount: 4,
-  actions: runButton,
+  actions: cardActions(),
   latestRun: latestRun(run),
   ...overrides,
 })
@@ -62,6 +69,7 @@ const items: TInstallRunbookListItem[] = [
     name: 'drain-nodes',
     description: undefined,
     stepCount: 1,
+    actions: cardActions(false),
     latestRun: latestRun({
       ...run,
       install_workflow: {
