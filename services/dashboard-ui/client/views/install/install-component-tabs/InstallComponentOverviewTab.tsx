@@ -1,7 +1,5 @@
 import { useOutletContext, useParams } from 'react-router'
 import { Card } from '@/components/common/Card'
-import { Cron } from '@/components/common/Cron'
-import { LabeledValue } from '@/components/common/LabeledValue'
 import { Toggle } from '@/components/common/form/Toggle'
 import { LatestDeployCard } from '@/components/install-components/LatestDeployCard'
 import { ToggleComponentModalContainer } from '@/components/install-components/management/ToggleComponent/ToggleComponentContainer'
@@ -19,7 +17,6 @@ export const InstallComponentOverviewTab = () => {
   const { install } = useInstall()
   const { addModal } = useSurfaces()
   const {
-    config,
     installComponent,
     isDisabled,
     isLoading,
@@ -33,16 +30,8 @@ export const InstallComponentOverviewTab = () => {
     <>
       <PageTitle segments={[component?.name ?? 'Component', install?.name]} />
 
-      <div className="flex items-start justify-between gap-6">
-        {config?.drift_schedule ? (
-          <LabeledValue label="Drift schedule">
-            <Cron cron={config.drift_schedule} variant="subtext" />
-          </LabeledValue>
-        ) : (
-          <div />
-        )}
-
-        {isToggleable && component ? (
+      {isToggleable && component ? (
+        <div className="flex justify-end">
           <Toggle
             checked={!isDisabled}
             onChange={() => {
@@ -60,8 +49,8 @@ export const InstallComponentOverviewTab = () => {
                 : `${component.name} can be disabled on this install.`
             }
           />
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-4">
         <SectionHeader title="Latest deploy" />
