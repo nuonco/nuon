@@ -6,12 +6,13 @@ import (
 	"testing"
 
 	"github.com/hashicorp/go-hclog"
-	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
-	"github.com/nuonco/nuon/pkg/terraform/workspace"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
+	"github.com/nuonco/nuon/pkg/terraform/workspace"
 )
 
 const oldProviderState = `{"version":4,"resources":[
