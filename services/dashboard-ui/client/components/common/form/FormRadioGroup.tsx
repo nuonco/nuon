@@ -14,7 +14,8 @@ export interface IFormRadioGroupOption {
 export interface IFormRadioGroup {
   field: AnyFieldApi
   options: IFormRadioGroupOption[]
-  label?: string
+  label?: ReactNode
+  description?: ReactNode
   disabled?: boolean
 }
 
@@ -22,13 +23,19 @@ export const FormRadioGroup = ({
   field,
   options,
   label,
+  description,
   disabled,
 }: IFormRadioGroup) => {
   const errorMessage = fieldErrorMessage(field)
 
   return (
     <div className="flex flex-col gap-2">
-      {label ? <Label>{label}</Label> : null}
+      {label || description ? (
+        <div className="flex flex-col gap-1">
+          {label ? <Label>{label}</Label> : null}
+          {description}
+        </div>
+      ) : null}
       <div className="flex flex-col gap-1">
         {options.map((option) => (
           <RadioInput

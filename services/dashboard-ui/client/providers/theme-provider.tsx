@@ -13,6 +13,7 @@ export type TThemePreference =
   | 'dark'
   | 'classic'
   | 'high-contrast'
+  | 'monochrome'
 export type TResolvedTheme = Exclude<TThemePreference, 'system'>
 export type TColorScheme = 'light' | 'dark'
 
@@ -28,12 +29,14 @@ export const THEME_PREFERENCES: readonly TThemePreference[] = [
   'dark',
   'classic',
   'high-contrast',
+  'monochrome',
 ]
 
 const DARK_THEMES: readonly TResolvedTheme[] = [
   'dark',
   'classic',
   'high-contrast',
+  'monochrome',
 ]
 
 export interface IThemeContext {

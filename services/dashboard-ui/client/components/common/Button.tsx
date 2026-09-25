@@ -123,6 +123,7 @@ export const Button = forwardRef<
       SIZE_CLASSES[size],
       'has-[svg]:flex has-[svg]:items-center has-[svg]:gap-1.5',
       {
+        'link-button-secondary': href && variant === 'secondary',
         '!border-primary-600 !hover:!border-primary-600':
           isActive && variant === 'tab',
         '!p-2 text-sm !leading-none h-8 w-full flex justify-between !rounded-md !bg-transparent !border-0 !shadow-none !text-cool-grey-800 dark:!text-white/70 hover:!bg-cool-grey-500/8 dark:hover:!bg-cool-grey-500/8 focus:!bg-cool-grey-500/8 dark:focus:!bg-cool-grey-500/8 focus-visible:[--tw-outline-style:solid] focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-primary-400/80 active:!bg-cool-grey-500/16 dark:active:!bg-cool-grey-500/16':
