@@ -13,7 +13,7 @@ import { SearchInput } from '@/components/common/SearchInput'
 import { Text } from '@/components/common/Text'
 import { useDashboardPreferences } from '@/hooks/use-dashboard-preferences'
 import { SYNTAX_THEME, registerSyntax, resolveLanguage } from '@/lib/syntax'
-import { endWithNewline } from '@/lib/diffs'
+import { endWithNewline, fileCacheKey } from '@/lib/diffs'
 import { MATCH_NAV_TOOLTIP, diffMatches, matchNavKeyDown } from './code-search'
 
 registerSyntax()
@@ -93,6 +93,7 @@ export const Diff = ({
       name,
       contents,
       lang: lang as FileContents['lang'],
+      cacheKey: fileCacheKey(name, lang, contents),
     })
     return parseDiffFromFile(file(beforeText), file(afterText))
   }, [afterText, beforeText, lang, name])
