@@ -192,10 +192,10 @@ func diffBranchPreview(old, new *AppBranchPreviewConfig) *diff.Diff {
 		return nil
 	}
 	if old == nil {
-		old = &AppBranchPreviewConfig{Mode: "none"}
+		old = &AppBranchPreviewConfig{Mode: "plan-only"}
 	}
 	if new == nil {
-		new = &AppBranchPreviewConfig{Mode: "none"}
+		new = &AppBranchPreviewConfig{Mode: "plan-only"}
 	}
 
 	children := []*diff.Diff{
