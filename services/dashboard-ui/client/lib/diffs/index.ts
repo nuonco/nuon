@@ -108,6 +108,21 @@ export interface IChangeCounts {
 export const endWithNewline = (value: string) =>
   !value || value.endsWith('\n') ? value : `${value}\n`
 
+// @pierre/diffs matches its highlight cache on cacheKey alone, ignoring
+// contents, and defaults the key to the filename.
+export const fileCacheKey = (
+  name: string,
+  lang: string,
+  contents: string
+): string => {
+  let hash = 0x811c9dc5
+  for (let index = 0; index < contents.length; index++) {
+    hash = Math.imul(hash ^ contents.charCodeAt(index), 0x01000193)
+  }
+
+  return `${name}:${lang}:${contents.length}:${(hash >>> 0).toString(36)}`
+}
+
 export const changeCounts = (before: string, after: string): IChangeCounts => {
   const file = (contents: string) => ({
     name: 'change.txt',

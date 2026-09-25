@@ -18,7 +18,7 @@ import {
   registerSyntax,
   resolveLanguage,
 } from '../../utils/syntax'
-import { endWithNewline } from '../../utils/diffs'
+import { endWithNewline, fileCacheKey } from '../../utils/diffs'
 import { Button } from '../atoms/Button'
 import { Icon } from '../atoms/Icon'
 import { Text } from '../atoms/Text'
@@ -101,6 +101,7 @@ export const Diff = ({
       name,
       contents,
       lang: lang as FileContents['lang'],
+      cacheKey: fileCacheKey(name, lang, contents),
     })
     return parseDiffFromFile(file(beforeText), file(afterText))
   }, [afterText, beforeText, lang, name])
