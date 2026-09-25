@@ -810,7 +810,7 @@ const contactUs = () => {
 const DOCS_MCP = 'https://docs.nuon.co/guides/agents/mcp-walkthrough'
 const DOCS_RUNNERS = 'https://docs.nuon.co/concepts/runners'
 const DOCS_SANDBOXES = 'https://docs.nuon.co/concepts/sandboxes'
-const CLI_SETUP = 'brew install nuonco/tap/nuon\nnuon auth login'
+const CLI_SETUP = 'brew install nuonco/tap/nuon\nnuon login'
 const MCP_ADD_CLAUDE = 'claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes'
 const DOCS_CONFIG_FILES = 'https://docs.nuon.co/configuration-files'
 const AWS_QUICK_CREATE_DOCS =
@@ -873,7 +873,7 @@ const OWN_APP_STEPS: { icon: TIconVariant; title: string }[] = [
 
 // The step's live moment: Nuon watching the tracked branch. In the prototype the
 // review panel's "Simulate push" stands in for the push.
-const PushListener = ({ detected }: { detected: boolean }) => (
+const PushListener = ({ detected, cloud }: { detected: boolean; cloud: TCloud }) => (
   <div
     className={cn(
       'flex items-start justify-between gap-3 rounded-md bg-background p-4 ring-1 transition-shadow',
@@ -908,8 +908,12 @@ const PushListener = ({ detected }: { detected: boolean }) => (
             <Link href={DOCS_SANDBOXES} isExternal textVariant="subtext" className="!inline-flex align-baseline">
               Nuon sandbox
             </Link>{' '}
-            in your test account. Your app deploys when the push lands. Or wait for the push and watch it all
-            deploy in one workflow.
+            in your test{' '}
+            <span className="inline-flex items-center gap-1 align-middle whitespace-nowrap">
+              <Icon variant={CLOUD_ICON[cloud]} size={cloud === 'aws' ? 16 : 14} />
+              {CLOUD_LABEL[cloud]}
+            </span>
+            . Your app deploys when the push lands. Or wait for the push and watch it all deploy in one workflow.
           </Text>
         )}
       </div>
@@ -1495,7 +1499,7 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
     <div className="flex flex-col gap-6">
       <Card className="!gap-10 !p-5 !border-0 !shadow-none bg-primary-50 dark:bg-primary-950/40 ring-1 ring-primary-200 dark:ring-primary-800">
         <AgentSetup />
-        <PushListener detected={detected} />
+        <PushListener detected={detected} cloud={cloud} />
       </Card>
       <ManualExits appName={appName} repo={repo} cloud={cloud} />
       <CollapsibleRow id="mcp-setup" icon="SparkleIcon" summary="MCP setup and dependencies">
@@ -1697,7 +1701,7 @@ const TestCloudPicker = ({
   <fieldset aria-describedby={error ? 'test-cloud-error' : 'test-cloud-hint'}>
     <legend className="mb-2">
       <Text variant="body" weight="strong">
-        Test cloud
+        Test cloud where your app will be installed
       </Text>
     </legend>
     <div className="flex flex-col gap-2">
@@ -2331,7 +2335,7 @@ const ProvisionStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponent
               </Badge>
               then
               <Badge size="sm" variant="code">
-                nuon auth login
+                nuon login
               </Badge>
             </Text>
           </div>
