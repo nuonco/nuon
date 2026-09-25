@@ -103,6 +103,7 @@ export const InstallActionManualRunModalContainer = ({
           operationType="trigger"
           principalType="action"
           principalId={action?.id}
+          workflowType="action_workflow_run"
           value={selectedRole}
           onChange={setSelectedRole}
           name="role"
