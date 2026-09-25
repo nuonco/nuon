@@ -233,6 +233,21 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		if req.AzureAccount.SubscriptionID != "" {
 			targetSource = app.CloudPlatformTargetSourceUser
 		}
+		if req.CloudConnectionID != "" {
+			connection, err := s.ValidateCloudConnection(ctx, parentApp.OrgID, req.CloudConnectionID, app.CloudPlatformAzure, app.CloudConnectionCapabilityStacks)
+			if err != nil {
+				return nil, err
+			}
+			if req.AzureAccount.SubscriptionID != "" && req.AzureAccount.SubscriptionID != connection.TargetID {
+				return nil, stderr.ErrUser{
+					Err:         fmt.Errorf("azure_account.subscription_id %q conflicts with connection %s subscription %q", req.AzureAccount.SubscriptionID, connection.ID, connection.TargetID),
+					Description: "azure_account.subscription_id does not match the subscription of the selected cloud connection",
+				}
+			}
+			req.AzureAccount.SubscriptionID = connection.TargetID
+			install.CloudConnectionID = &req.CloudConnectionID
+			targetSource = app.CloudPlatformTargetSourceConnection
+		}
 	case app.AppRunnerTypeAWS, app.AppRunnerTypeAWSEKS, app.AppRunnerTypeAWSECS:
 		if req.AWSAccount == nil {
 			return nil, stderr.ErrUser{

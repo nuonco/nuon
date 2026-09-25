@@ -79,6 +79,13 @@ func shouldCreateManagedAWSCloudFormationStack(createManagedStack bool, install 
 		install.CloudConnectionID != nil
 }
 
+func shouldCreateManagedAzureARMStack(createManagedStack bool, install *app.Install, appCfg *app.AppConfig) bool {
+	return createManagedStack &&
+		!install.SandboxMode.Bool &&
+		appCfg.RunnerConfig.Type == app.AppRunnerTypeAzure &&
+		install.CloudConnectionID != nil
+}
+
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
@@ -123,6 +130,19 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			ConnectionID:   *install.CloudConnectionID,
 		}); err != nil {
 			return errors.Wrap(err, "unable to create managed cloudformation stack")
+		}
+		statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID:     version.ID,
+			Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusProvisioning),
+		})
+	}
+	if shouldCreateManagedAzureARMStack(s.CreateManagedStack, install, appCfg) {
+		if err := activities.AwaitCreateManagedAzureARMStack(ctx, &activities.CreateManagedAzureARMStackRequest{
+			InstallID:      install.ID,
+			StackVersionID: version.ID,
+			ConnectionID:   *install.CloudConnectionID,
+		}); err != nil {
+			return errors.Wrap(err, "unable to create managed ARM deployment")
 		}
 		statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID:     version.ID,

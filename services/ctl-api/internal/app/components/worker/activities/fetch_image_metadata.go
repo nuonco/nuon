@@ -129,6 +129,7 @@ func (a *Activities) getComponentBuildWithExternalImageConfig(ctx context.Contex
 func (a *Activities) getACRAuth(ctx context.Context, acrCfg *app.AzureACRImageConfig, componentID string) (*metadata.RegistryAuth, error) {
 	tok, err := a.sharedActs.GetACRAccessToken(ctx, &sharedactivities.GetACRAccessTokenRequest{
 		ComponentID:           componentID,
+		ConnectionID:          acrCfg.CloudConnectionID,
 		LoginServer:           acrCfg.RegistryURL,
 		TenantID:              acrCfg.TenantID,
 		ClientID:              acrCfg.ClientID,

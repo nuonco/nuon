@@ -29,9 +29,10 @@ type OCIRegistryAuth struct {
 // plan. The control plane resolves these refs, mints a short-lived registry
 // token, and puts that in OCIAuth for the runner.
 type ACRAppRegistration struct {
-	ComponentID string `hcl:"component_id,optional"`
-	TenantID    string `hcl:"tenant_id,optional"`
-	ClientID    string `hcl:"client_id,optional"`
+	ComponentID  string `hcl:"component_id,optional"`
+	ConnectionID string `hcl:"connection_id,optional"`
+	TenantID     string `hcl:"tenant_id,optional"`
+	ClientID     string `hcl:"client_id,optional"`
 
 	// App secret names holding the credential. Exactly one is set.
 	ClientSecretName      string `hcl:"client_secret_name,optional"`

@@ -35,6 +35,7 @@ func EnsureACRAuth(ctx workflow.Context, cfg *configs.OCIRegistryRepository) err
 	reg := cfg.ACRAppRegistration
 	token, err := AwaitGetACRAccessToken(ctx, &GetACRAccessTokenRequest{
 		ComponentID:           reg.ComponentID,
+		ConnectionID:          reg.ConnectionID,
 		LoginServer:           cfg.LoginServer,
 		TenantID:              reg.TenantID,
 		ClientID:              reg.ClientID,

@@ -17,6 +17,49 @@ type AWSConnectionResolution struct {
 	Implicit   bool
 }
 
+type AzureConnectionResolution struct {
+	Connection *app.CloudConnection
+	Implicit   bool
+}
+
+func ResolveAzureConnection(connectionName, clientID, tenantID, orgID string, connections []app.CloudConnection) (AzureConnectionResolution, error) {
+	if connectionName != "" {
+		matches := filterConnections(connections, func(connection app.CloudConnection) bool {
+			return connection.Name == connectionName
+		})
+		if len(matches) != 1 {
+			return AzureConnectionResolution{}, fmt.Errorf("cloud connection %q must identify exactly one connection", connectionName)
+		}
+		return validateAzureImageConnection(&matches[0])
+	}
+	if clientID == "" {
+		return AzureConnectionResolution{}, nil
+	}
+	matches := filterConnections(connections, func(connection app.CloudConnection) bool {
+		return connection.Platform == app.CloudPlatformAzure && connection.Principal == clientID
+	})
+	if len(matches) > 1 {
+		return AzureConnectionResolution{}, fmt.Errorf("multiple Azure cloud connections match client_id %q", clientID)
+	}
+	if len(matches) == 1 {
+		return validateAzureImageConnection(&matches[0])
+	}
+	return AzureConnectionResolution{Connection: &app.CloudConnection{
+		OrgID: orgID, Name: clientID, Platform: app.CloudPlatformAzure, Principal: clientID, TenantID: tenantID,
+		AuthMode: app.CloudConnectionAuthModeLegacy, Capabilities: []app.CloudConnectionCapability{app.CloudConnectionCapabilityImages},
+	}, Implicit: true}, nil
+}
+
+func validateAzureImageConnection(connection *app.CloudConnection) (AzureConnectionResolution, error) {
+	if connection.Platform != app.CloudPlatformAzure {
+		return AzureConnectionResolution{}, fmt.Errorf("cloud connection %q is not an Azure connection", connection.Name)
+	}
+	if !connection.HasCapability(app.CloudConnectionCapabilityImages) {
+		return AzureConnectionResolution{}, fmt.Errorf("cloud connection %q does not have the images capability", connection.Name)
+	}
+	return AzureConnectionResolution{Connection: connection}, nil
+}
+
 func ResolveAWSConnection(connectionName, roleARN, imageURL, region, orgID string, connections []app.CloudConnection) (AWSConnectionResolution, error) {
 	targetID, err := ecrAccountID(imageURL)
 	if err != nil {

@@ -26,10 +26,11 @@ import (
 type GetACRAccessTokenRequest struct {
 	// ComponentID rather than an app ID: it is present on every build plan
 	// without depending on a preload, and the activity has a DB handle anyway.
-	ComponentID string
-	LoginServer string
-	TenantID    string
-	ClientID    string
+	ComponentID  string
+	LoginServer  string
+	TenantID     string
+	ClientID     string
+	ConnectionID string
 
 	ClientSecretName      string
 	ClientCertificateName string
@@ -50,6 +51,21 @@ type ACRAccessToken struct {
 // @max-retries 1
 func (a *Activities) GetACRAccessToken(ctx context.Context, req *GetACRAccessTokenRequest) (*ACRAccessToken, error) {
 	l := temporalzap.GetActivityLogger(ctx)
+	if req.ConnectionID != "" {
+		var connection app.CloudConnection
+		if err := a.db.WithContext(ctx).Where(app.CloudConnection{ID: req.ConnectionID}).First(&connection).Error; err != nil {
+			return nil, fmt.Errorf("get Azure cloud connection: %w", err)
+		}
+		credential, err := a.cloudConnections.AzureCredential(&connection)
+		if err != nil {
+			return nil, err
+		}
+		token, err := acr.GetRepositoryTokenWithCredential(ctx, credential, connection.TenantID, req.LoginServer)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get ACR token for %s using cloud connection %s: %w", req.LoginServer, connection.ID, err)
+		}
+		return &ACRAccessToken{Username: acr.DefaultACRUsername, Password: token}, nil
+	}
 
 	cfg := &azurecredentials.Config{
 		TenantID: req.TenantID,

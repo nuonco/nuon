@@ -34,6 +34,7 @@ type gcpGARImageConfigRequest struct {
 }
 
 type azureACRImageConfigRequest struct {
+	Connection  string `json:"connection,omitempty"`
 	RegistryURL string `json:"registry_url"`
 	TenantID    string `json:"tenant_id,omitempty"`
 	ClientID    string `json:"client_id,omitempty"`
@@ -94,6 +95,7 @@ func (c *CreateExternalImageComponentConfigRequest) toConfig() *config.ExternalI
 		}
 	case c.AzureACRImageConfig != nil:
 		obj.AzureACRImageConfig = &config.AzureACRConfig{
+			Connection:            c.AzureACRImageConfig.Connection,
 			RegistryURL:           c.AzureACRImageConfig.RegistryURL,
 			TenantID:              c.AzureACRImageConfig.TenantID,
 			ClientID:              c.AzureACRImageConfig.ClientID,
@@ -162,6 +164,7 @@ func (c *CreateExternalImageComponentConfigRequest) Validate(v *validator.Valida
 	}
 	if c.AzureACRImageConfig != nil {
 		acrCfg := config.AzureACRConfig{
+			Connection:            c.AzureACRImageConfig.Connection,
 			TenantID:              c.AzureACRImageConfig.TenantID,
 			ClientID:              c.AzureACRImageConfig.ClientID,
 			ClientSecretName:      c.AzureACRImageConfig.ClientSecretName,
@@ -288,6 +291,26 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 		}
 		cfg.AWSECRImageConfig.CloudConnectionID = resolution.Connection.ID
 		cfg.AWSECRImageConfig.IAMRoleARN = resolution.Connection.Principal
+	}
+	if cfg.AzureACRImageConfig != nil {
+		var connections []app.CloudConnection
+		if err := s.db.WithContext(ctx).Where(&app.CloudConnection{OrgID: parentCmp.OrgID}).Find(&connections).Error; err != nil {
+			return nil, fmt.Errorf("unable to list cloud connections: %w", err)
+		}
+		resolution, err := build.ResolveAzureConnection(req.AzureACRImageConfig.Connection, req.AzureACRImageConfig.ClientID, req.AzureACRImageConfig.TenantID, parentCmp.OrgID, connections)
+		if err != nil {
+			return nil, stderr.NewInvalidRequest(err)
+		}
+		if resolution.Connection != nil {
+			if resolution.Implicit {
+				if err := s.db.WithContext(ctx).Create(resolution.Connection).Error; err != nil {
+					return nil, fmt.Errorf("unable to create implicit cloud connection: %w", err)
+				}
+			}
+			cfg.AzureACRImageConfig.CloudConnectionID = resolution.Connection.ID
+			cfg.AzureACRImageConfig.ClientID = resolution.Connection.Principal
+			cfg.AzureACRImageConfig.TenantID = resolution.Connection.TenantID
+		}
 	}
 
 	componentConfigConnection, err := build.ComponentConnection(req.buildInput(parentCmp.ID, depIDs))

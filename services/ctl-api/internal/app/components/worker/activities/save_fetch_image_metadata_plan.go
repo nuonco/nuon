@@ -111,10 +111,11 @@ func (a *Activities) getSourceRepository(ctx context.Context, cfg *app.ExternalI
 			},
 		}
 
-		if acr := cfg.AzureACRImageConfig; acr.ClientID != "" || acr.TenantID != "" ||
+		if acr := cfg.AzureACRImageConfig; acr.CloudConnectionID != "" || acr.ClientID != "" || acr.TenantID != "" ||
 			acr.ClientSecretName != "" || acr.ClientCertificateName != "" {
 			acrCfg.ACRAppRegistration = &configs.ACRAppRegistration{
 				ComponentID:           componentID,
+				ConnectionID:          acr.CloudConnectionID,
 				TenantID:              acr.TenantID,
 				ClientID:              acr.ClientID,
 				ClientSecretName:      acr.ClientSecretName,

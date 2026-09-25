@@ -134,10 +134,11 @@ func (b *Planner) getSourceRepository(ctx workflow.Context, cfg *app.ExternalIma
 		// registration is rejected at sync, but attaching it here too means a
 		// config that slipped through fails loudly in the token activity rather
 		// than quietly falling back to an identity that cannot see the registry.
-		if acr := cfg.AzureACRImageConfig; acr.ClientID != "" || acr.TenantID != "" ||
+		if acr := cfg.AzureACRImageConfig; acr.CloudConnectionID != "" || acr.ClientID != "" || acr.TenantID != "" ||
 			acr.ClientSecretName != "" || acr.ClientCertificateName != "" {
 			acrCfg.ACRAppRegistration = &configs.ACRAppRegistration{
 				ComponentID:           componentID,
+				ConnectionID:          acr.CloudConnectionID,
 				TenantID:              acr.TenantID,
 				ClientID:              acr.ClientID,
 				ClientSecretName:      acr.ClientSecretName,

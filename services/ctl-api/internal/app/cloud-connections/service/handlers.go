@@ -65,6 +65,11 @@ func (s *service) usage(ctx context.Context, connectionID string) (ConnectionUsa
 	if err := s.db.WithContext(ctx).Model(&app.AWSECRImageConfig{}).Where(app.AWSECRImageConfig{CloudConnectionID: connectionID}).Count(&usage.Components).Error; err != nil {
 		return usage, fmt.Errorf("count components using cloud connection: %w", err)
 	}
+	var azureComponents int64
+	if err := s.db.WithContext(ctx).Model(&app.AzureACRImageConfig{}).Where(app.AzureACRImageConfig{CloudConnectionID: connectionID}).Count(&azureComponents).Error; err != nil {
+		return usage, fmt.Errorf("count Azure components using cloud connection: %w", err)
+	}
+	usage.Components += azureComponents
 	return usage, nil
 }
 
@@ -225,6 +230,11 @@ func (s *service) delete(ctx context.Context, orgID, connectionID string) error 
 		if err := tx.Model(&app.AWSECRImageConfig{}).Where(app.AWSECRImageConfig{CloudConnectionID: connection.ID}).Count(&componentReferences).Error; err != nil {
 			return fmt.Errorf("count component references: %w", err)
 		}
+		var azureComponentReferences int64
+		if err := tx.Model(&app.AzureACRImageConfig{}).Where(app.AzureACRImageConfig{CloudConnectionID: connection.ID}).Count(&azureComponentReferences).Error; err != nil {
+			return fmt.Errorf("count Azure component references: %w", err)
+		}
+		componentReferences += azureComponentReferences
 		if installReferences > 0 || componentReferences > 0 {
 			return stderr.ErrConflict{Err: fmt.Errorf("cloud connection %s is in use", connection.ID), Description: "Cloud connection cannot be deleted while it is in use"}
 		}

@@ -49,6 +49,7 @@ type GCPGARConfig struct {
 }
 
 type AzureACRConfig struct {
+	Connection  string `mapstructure:"connection,omitempty" toml:"connection,omitempty"`
 	ImageURL    string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
 	Tag         string `mapstructure:"tag,omitempty" toml:"tag,omitempty"`
 	RegistryURL string `mapstructure:"registry_url,omitempty" toml:"registry_url,omitempty" jsonschema:"required"`
@@ -161,6 +162,8 @@ func (g GCPGARConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 func (a AzureACRConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
+		Field("connection").Short("cloud connection name for ACR access").
+		Long("Name of an organization Azure cloud connection with the images capability").
 		Field("image_url").Short("ACR image URL").Required().
 		Long("Full URL to the ACR image (without tag). Format: <registry>.azurecr.io/<repository>/<image>").
 		Example("myregistry.azurecr.io/myapp/api").
@@ -198,6 +201,12 @@ func (a AzureACRConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 // case; anything in between would fall back to ambient and surface as an
 // unexplained 401 against a registry the author believes they configured.
 func (a AzureACRConfig) ValidateCredentials() error {
+	if a.Connection != "" {
+		if a.ClientSecretName != "" || a.ClientCertificateName != "" {
+			return fmt.Errorf("azure_acr: connection cannot be combined with client_secret_name or client_certificate_name")
+		}
+		return nil
+	}
 	if a.ClientSecretName != "" && a.ClientCertificateName != "" {
 		return fmt.Errorf("azure_acr: only one of client_secret_name or client_certificate_name may be set")
 	}

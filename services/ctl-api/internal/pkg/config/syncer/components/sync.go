@@ -182,6 +182,27 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 		ccc.ExternalImageComponentConfig.AWSECRImageConfig.CloudConnectionID = resolution.Connection.ID
 		ccc.ExternalImageComponentConfig.AWSECRImageConfig.IAMRoleARN = resolution.Connection.Principal
 	}
+	if comp.ExternalImage != nil && comp.ExternalImage.AzureACRImageConfig != nil {
+		var connections []app.CloudConnection
+		if err := db.WithContext(ctx).Where(app.CloudConnection{OrgID: apiComp.OrgID}).Find(&connections).Error; err != nil {
+			return sync.SyncInternalErr{Description: "unable to list cloud connections", Err: err}
+		}
+		source := comp.ExternalImage.AzureACRImageConfig
+		resolution, err := build.ResolveAzureConnection(source.Connection, source.ClientID, source.TenantID, apiComp.OrgID, connections)
+		if err != nil {
+			return syncerr.From(fmt.Sprintf("component-%s", comp.Name), "unable to resolve cloud connection", err)
+		}
+		if resolution.Connection != nil {
+			if resolution.Implicit {
+				if err := db.WithContext(ctx).Create(resolution.Connection).Error; err != nil {
+					return sync.SyncInternalErr{Description: "unable to create implicit cloud connection", Err: err}
+				}
+			}
+			ccc.ExternalImageComponentConfig.AzureACRImageConfig.CloudConnectionID = resolution.Connection.ID
+			ccc.ExternalImageComponentConfig.AzureACRImageConfig.ClientID = resolution.Connection.Principal
+			ccc.ExternalImageComponentConfig.AzureACRImageConfig.TenantID = resolution.Connection.TenantID
+		}
+	}
 
 	if params.DispatchBuilds {
 		reusableID, err := reusableConfigID(ctx, db, apiComp.ID, ccc)

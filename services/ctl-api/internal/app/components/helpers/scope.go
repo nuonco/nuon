@@ -76,6 +76,7 @@ func PreloadComponentBuildConfig(db *gorm.DB) *gorm.DB {
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.AWSECRImageConfig.CloudConnection").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.GCPGARImageConfig").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.AzureACRImageConfig").
+		Preload("ComponentConfigConnection.ExternalImageComponentConfig.AzureACRImageConfig.CloudConnection").
 
 		// preload all kubernetes configs
 		Preload("ComponentConfigConnection.KubernetesManifestComponentConfig").
