@@ -53,6 +53,20 @@ const MIXED_ITEMS: TBranchActivityItem[] = [
         href: '/orgs/org-1/installs/install-3',
       },
     ],
+    pendingApprovals: [
+      {
+        id: 'approval-1',
+        installName: 'production-acme',
+        type: 'install group plan',
+        href: '/orgs/org-1/installs/install-2',
+      },
+      {
+        id: 'approval-2',
+        installName: 'production-globex',
+        type: 'helm',
+        href: '/orgs/org-1/installs/install-3',
+      },
+    ],
   },
   {
     appId: 'app-acme-gateway',

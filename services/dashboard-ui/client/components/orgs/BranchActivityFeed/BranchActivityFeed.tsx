@@ -5,11 +5,11 @@ import {
 } from '@/components/branches/BranchCards/BranchPlanDots'
 import { BranchRunCommit } from '@/components/branches/BranchRunCommit/BranchRunCommit'
 import { MiniDeploymentView } from '@/components/branches/MiniDeploymentView'
+import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Expand } from '@/components/common/Expand'
-import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
@@ -50,6 +50,14 @@ export interface TBranchActivityItem {
   commitHref?: string
   planGroups?: TBranchPlanGroup[]
   updatedInstalls?: TRunUpdatedInstall[]
+  pendingApprovals?: TRunPendingApproval[]
+}
+
+export interface TRunPendingApproval {
+  id: string
+  installName: string
+  type: string
+  href?: string
 }
 
 export interface IBranchActivityFeed {
@@ -79,14 +87,57 @@ function matchesFilter(
   return statuses.includes(item.runStatus)
 }
 
+const PendingApprovals = ({
+  approvals,
+}: {
+  approvals: TRunPendingApproval[]
+}) => (
+  <section aria-label="Pending approvals" className="flex flex-col gap-2">
+    <div className="flex items-center gap-2">
+      <Text variant="subtext" weight="strong">
+        Pending approvals
+      </Text>
+      <Badge theme="warn" size="sm" variant="code">
+        {approvals.length}
+      </Badge>
+    </div>
+    <ul className="flex flex-col divide-y rounded-md border">
+      {approvals.map((approval) => (
+        <li
+          key={approval.id}
+          className="flex items-center justify-between gap-3 px-3 py-2"
+        >
+          <span className="flex items-center gap-2 min-w-0">
+            <Status status="approval-awaiting" isWithoutText />
+            {approval.href ? (
+              <Link href={approval.href} className="truncate">
+                <span className="font-mono">{approval.installName}</span>
+              </Link>
+            ) : (
+              <Text variant="subtext" family="mono" className="truncate">
+                {approval.installName}
+              </Text>
+            )}
+          </span>
+          <Badge theme="warn" size="sm" variant="code" className="shrink-0">
+            {approval.type}
+          </Badge>
+        </li>
+      ))}
+    </ul>
+  </section>
+)
+
 const UpdatedInstalls = ({
   installs,
   runId,
   planGroups,
+  approvals,
 }: {
   installs: TRunUpdatedInstall[]
   runId: string
   planGroups: TBranchPlanGroup[]
+  approvals: TRunPendingApproval[]
 }) => (
   <Expand
     id={`${runId}-updated-installs`}
@@ -94,8 +145,9 @@ const UpdatedInstalls = ({
     isIconBeforeHeading
     headerClassName="px-1 py-1 rounded"
   >
-    <div className="pl-7 pr-1 pb-2 pt-1">
+    <div className="flex flex-col gap-4 pl-7 pr-1 pb-2 pt-1">
       <MiniDeploymentView groups={planGroups} installs={installs} />
+      {approvals.length > 0 ? <PendingApprovals approvals={approvals} /> : null}
     </div>
   </Expand>
 )
@@ -119,6 +171,7 @@ const RunPlan = ({ item }: { item: TBranchActivityItem }) => {
       installs={installs}
       runId={item.runId}
       planGroups={planGroups}
+      approvals={item.pendingApprovals ?? []}
     />
   )
 }
@@ -146,7 +199,6 @@ const UpdateCard = ({ item }: { item: TBranchActivityItem }) => (
           <Text variant="subtext" theme="neutral" as="span">
             /
           </Text>
-          <Icon variant="GitBranchIcon" size={13} theme="neutral" />
           {item.branchHref ? (
             <Link href={item.branchHref} variant="inline">
               {item.branchName}

@@ -138,6 +138,51 @@ test('expands to show installs updated by a run', () => {
   expect(screen.getAllByText('staging-example').length).toBeGreaterThan(0)
 })
 
+test('lists pending approvals inside the dropdown', () => {
+  render(
+    <BranchActivityFeed
+      items={[
+        baseItem({
+          runStatus: 'awaiting-approval',
+          planGroups: [{ name: 'canary', installs: 1, hasSelector: false }],
+          updatedInstalls: [
+            { id: 'install-1', name: 'staging-example', group: 'canary' },
+          ],
+          pendingApprovals: [
+            {
+              id: 'approval-1',
+              installName: 'staging-example',
+              type: 'install group plan',
+            },
+          ],
+        }),
+      ]}
+    />
+  )
+
+  fireEvent.click(screen.getByRole('button', { expanded: false }))
+  expect(screen.getByLabelText('Pending approvals')).toBeTruthy()
+  expect(screen.getByText('install group plan')).toBeTruthy()
+})
+
+test('omits the approvals section when a run has none', () => {
+  render(
+    <BranchActivityFeed
+      items={[
+        baseItem({
+          planGroups: [{ name: 'canary', installs: 1, hasSelector: false }],
+          updatedInstalls: [
+            { id: 'install-1', name: 'staging-example', group: 'canary' },
+          ],
+        }),
+      ]}
+    />
+  )
+
+  fireEvent.click(screen.getByRole('button', { expanded: false }))
+  expect(screen.queryByLabelText('Pending approvals')).toBeNull()
+})
+
 test('renders plan dots without an expander when no installs were updated', () => {
   render(
     <BranchActivityFeed
