@@ -73,12 +73,22 @@ type AppBranchPreviewConfig struct {
 
 func DefaultAppBranchPreviewConfig() AppBranchPreviewConfig {
 	return AppBranchPreviewConfig{
-		Mode:         AppBranchRunPreviewModeNone,
+		Mode:         AppBranchRunPreviewModePlanOnly,
 		SetStatuses:  true,
 		Comment:      true,
 		IgnoreDrafts: true,
 		React:        true,
 	}
+}
+
+func (c AppBranchPreviewConfig) HasInstallTarget() bool {
+	if c.InstallID != nil && *c.InstallID != "" {
+		return true
+	}
+	if c.InstallName != nil && *c.InstallName != "" {
+		return true
+	}
+	return c.LabelSelector != nil && len(c.LabelSelector.MatchLabels) > 0
 }
 
 // UnmarshalJSON defaults ignore_drafts and react to true when omitted so existing

@@ -18,6 +18,17 @@ test.describe('PreviewConfig form behavior', () => {
     await expect(submit).toBeEnabled()
   })
 
+  test('disabling automated previews hides mode and install', async ({
+    page,
+  }) => {
+    const dialog = page.getByRole('dialog')
+
+    await expect(dialog.getByLabel('Default install')).toBeVisible()
+    await dialog.getByLabel('Enable automated previews').uncheck()
+    await expect(dialog.getByLabel('Default install')).toBeHidden()
+    await expect(dialog.getByText('Default mode')).toBeHidden()
+  })
+
   test('build and validate mode hides the default install', async ({
     page,
   }) => {

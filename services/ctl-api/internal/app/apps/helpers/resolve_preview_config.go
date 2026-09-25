@@ -129,9 +129,6 @@ func (h *Helpers) BuildAppBranchRunPreview(
 
 	branchSnapshot := branchPreviewConfigOrDefault(branchConfig)
 	branchSnapshot.Normalize()
-	if branchSnapshot.Mode == app.AppBranchRunPreviewModeNone {
-		return nil, stderr.NewInvalidRequest(fmt.Errorf("preview runs are disabled for this app branch"))
-	}
 
 	resolved := mergePreviewConfig(branchSnapshot, input.Override)
 	resolved.Normalize()
