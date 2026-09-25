@@ -99,7 +99,7 @@ func (s *service) Create(ctx *gin.Context) {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
-	connection := app.CloudConnection{OrgID: org.ID, Name: req.Name, Platform: req.Platform, TargetID: req.TargetID, Principal: req.Principal, TenantID: req.TenantID, IdentityProvider: req.IdentityProvider, DefaultRegion: req.DefaultRegion, Capabilities: req.Capabilities}
+	connection := app.CloudConnection{OrgID: org.ID, Name: req.Name, Platform: req.Platform, TargetID: req.TargetID, Principal: req.Principal, TenantID: req.TenantID, IdentityProvider: req.IdentityProvider, DefaultRegion: req.DefaultRegion, RequestedCapabilities: req.Capabilities}
 	if err := validateConnection(&connection); err != nil {
 		ctx.Error(userError(err))
 		return
@@ -300,13 +300,10 @@ func (s *service) verify(ctx context.Context, orgID, connectionID string, option
 		return nil, fmt.Errorf("verify cloud connection: %w", err)
 	}
 	now := time.Now().UTC()
-	// keep the declared capabilities/registries unless verification succeeded;
-	// a failed verify must not wipe what the connection was created with
-	update := app.CloudConnection{Status: result.Status, StatusMessage: result.Message, LastVerifiedAt: &now, Capabilities: connection.Capabilities, Registries: connection.Registries}
+	update := app.CloudConnection{Status: result.Status, StatusMessage: result.Message, LastVerifiedAt: &now, Capabilities: result.Capabilities, Registries: connection.Registries}
 	selected := []string{"status", "status_message", "last_verified_at", "capabilities", "registries"}
 	if result.Status == app.CloudConnectionStatusVerified {
 		update.AuthMode = app.CloudConnectionAuthModeOIDC
-		update.Capabilities = result.Capabilities
 		update.Registries = result.Registries
 		selected = append(selected, "auth_mode")
 	}

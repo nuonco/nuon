@@ -51,7 +51,7 @@ func (v *gcpVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 	}
 
 	capabilities := []app.CloudConnectionCapability{}
-	if connection.HasCapability(app.CloudConnectionCapabilityImages) && v.probeRepositories(ctx, accessToken.AccessToken, connection.TargetID, options.Repositories) == nil {
+	if connection.HasRequestedCapability(app.CloudConnectionCapabilityImages) && v.probeRepositories(ctx, accessToken.AccessToken, connection.TargetID, options.Repositories) == nil {
 		capabilities = append(capabilities, app.CloudConnectionCapabilityImages)
 	}
 	if len(capabilities) == 0 {

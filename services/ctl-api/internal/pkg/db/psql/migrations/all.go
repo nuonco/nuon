@@ -244,5 +244,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "137-drop-aws-account-connections",
 			Fn:   m.Migration137DropAWSAccountConnections,
 		},
+		{
+			Name: "138-cloud-connection-requested-capabilities",
+			Fn:   m.Migration138CloudConnectionRequestedCapabilities,
+		},
 	}
 }

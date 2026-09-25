@@ -173,7 +173,7 @@ func ResolveAWSConnection(connectionName, roleARN, imageURL, region, orgID strin
 			return validateImageConnection(&matches[0], targetID)
 		}
 		name := parsed.Resource[strings.LastIndex(parsed.Resource, "/")+1:]
-		return AWSConnectionResolution{Connection: &app.CloudConnection{OrgID: orgID, Name: name, Platform: app.CloudPlatformAWS, TargetID: targetID, Principal: roleARN, DefaultRegion: region, AuthMode: app.CloudConnectionAuthModeLegacy, Capabilities: []app.CloudConnectionCapability{app.CloudConnectionCapabilityImages}}, Implicit: true}, nil
+		return AWSConnectionResolution{Connection: &app.CloudConnection{OrgID: orgID, Name: name, Platform: app.CloudPlatformAWS, TargetID: targetID, Principal: roleARN, DefaultRegion: region, AuthMode: app.CloudConnectionAuthModeLegacy, RequestedCapabilities: []app.CloudConnectionCapability{app.CloudConnectionCapabilityImages}, Capabilities: []app.CloudConnectionCapability{app.CloudConnectionCapabilityImages}}, Implicit: true}, nil
 	}
 	matches := filterConnections(connections, func(connection app.CloudConnection) bool {
 		return connection.Platform == app.CloudPlatformAWS && connection.TargetID == targetID && connection.HasCapability(app.CloudConnectionCapabilityImages)

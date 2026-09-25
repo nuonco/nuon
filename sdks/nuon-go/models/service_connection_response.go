@@ -56,6 +56,12 @@ type ServiceConnectionResponse struct {
 	// principal
 	Principal string `json:"principal,omitempty"`
 
+	// registries
+	Registries []string `json:"registries"`
+
+	// requested capabilities
+	RequestedCapabilities []AppCloudConnectionCapability `json:"requested_capabilities"`
+
 	// setup
 	Setup *ServiceSetupResponse `json:"setup,omitempty"`
 
@@ -91,6 +97,10 @@ func (m *ServiceConnectionResponse) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validatePlatform(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRequestedCapabilities(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -179,6 +189,31 @@ func (m *ServiceConnectionResponse) validatePlatform(formats strfmt.Registry) er
 	return nil
 }
 
+func (m *ServiceConnectionResponse) validateRequestedCapabilities(formats strfmt.Registry) error {
+	if swag.IsZero(m.RequestedCapabilities) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.RequestedCapabilities); i++ {
+
+		if err := m.RequestedCapabilities[i].Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("requested_capabilities" + "." + strconv.Itoa(i))
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("requested_capabilities" + "." + strconv.Itoa(i))
+			}
+
+			return err
+		}
+
+	}
+
+	return nil
+}
+
 func (m *ServiceConnectionResponse) validateSetup(formats strfmt.Registry) error {
 	if swag.IsZero(m.Setup) { // not required
 		return nil
@@ -259,6 +294,10 @@ func (m *ServiceConnectionResponse) ContextValidate(ctx context.Context, formats
 	}
 
 	if err := m.contextValidatePlatform(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateRequestedCapabilities(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -345,6 +384,32 @@ func (m *ServiceConnectionResponse) contextValidatePlatform(ctx context.Context,
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *ServiceConnectionResponse) contextValidateRequestedCapabilities(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.RequestedCapabilities); i++ {
+
+		if swag.IsZero(m.RequestedCapabilities[i]) { // not required
+			return nil
+		}
+
+		if err := m.RequestedCapabilities[i].ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("requested_capabilities" + "." + strconv.Itoa(i))
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("requested_capabilities" + "." + strconv.Itoa(i))
+			}
+
+			return err
+		}
+
 	}
 
 	return nil

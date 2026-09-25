@@ -96,7 +96,7 @@ func (s *service) mcpCreate(ctx context.Context, _ *mcp.CallToolRequest, in mcpC
 	if in.Platform == "" {
 		in.Platform = app.CloudPlatformAWS
 	}
-	connection := app.CloudConnection{OrgID: orgID, Name: in.Name, Platform: in.Platform, TargetID: in.TargetID, Principal: in.Principal, TenantID: in.TenantID, IdentityProvider: in.IdentityProvider, DefaultRegion: in.DefaultRegion, Capabilities: in.Capabilities}
+	connection := app.CloudConnection{OrgID: orgID, Name: in.Name, Platform: in.Platform, TargetID: in.TargetID, Principal: in.Principal, TenantID: in.TenantID, IdentityProvider: in.IdentityProvider, DefaultRegion: in.DefaultRegion, RequestedCapabilities: in.Capabilities}
 	if err := validateConnection(&connection); err != nil {
 		return nil, nil, err
 	}

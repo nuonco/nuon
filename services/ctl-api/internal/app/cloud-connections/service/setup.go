@@ -46,7 +46,7 @@ func (s *service) setup(connection *app.CloudConnection, options SetupOptions) S
 }
 
 func (s *service) awsSetup(connection *app.CloudConnection, options SetupOptions) SetupResponse {
-	response := SetupResponse{Subject: subject(connection), Audience: "sts.amazonaws.com", Capabilities: connection.Capabilities, Repositories: options.Repositories}
+	response := SetupResponse{Subject: subject(connection), Audience: "sts.amazonaws.com", Capabilities: connection.RequestedCapabilities, Repositories: options.Repositories}
 	if s.issuer == nil {
 		return response
 	}
@@ -66,7 +66,7 @@ func (s *service) awsSetup(connection *app.CloudConnection, options SetupOptions
 		}},
 	}
 	policyJSON, _ := json.Marshal(trustPolicy)
-	capabilitiesJSON, _ := json.Marshal(connection.Capabilities)
+	capabilitiesJSON, _ := json.Marshal(connection.RequestedCapabilities)
 	repositoriesJSON, _ := json.Marshal(options.Repositories)
 	response.IssuerURL = issuerURL
 	response.TrustPolicy = trustPolicy
@@ -86,7 +86,7 @@ func (s *service) azureSetup(connection *app.CloudConnection, options SetupOptio
 	if options.Repositories == nil {
 		options.Repositories = []string{}
 	}
-	response := SetupResponse{Subject: subject(connection), Audience: azureTokenExchangeAudience, Capabilities: connection.Capabilities, Repositories: options.Repositories, Registry: options.Registry}
+	response := SetupResponse{Subject: subject(connection), Audience: azureTokenExchangeAudience, Capabilities: connection.RequestedCapabilities, Repositories: options.Repositories, Registry: options.Registry}
 	if s.issuer == nil {
 		return response
 	}
@@ -98,7 +98,7 @@ func (s *service) azureSetup(connection *app.CloudConnection, options SetupOptio
 		"audiences": []string{azureTokenExchangeAudience},
 	}
 	portalJSON, _ := json.MarshalIndent(federatedCredential, "", "  ")
-	capabilitiesJSON, _ := json.Marshal(connection.Capabilities)
+	capabilitiesJSON, _ := json.Marshal(connection.RequestedCapabilities)
 	repositoriesJSON, _ := json.Marshal(options.Repositories)
 	response.IssuerURL = issuerURL
 	response.TrustPolicy = federatedCredential
@@ -119,10 +119,10 @@ func (s *service) azureSetup(connection *app.CloudConnection, options SetupOptio
 		"JSON",
 		"az ad app federated-credential create --id \"$APP_ID\" --parameters nuon-federated-credential.json",
 	}
-	if connection.HasCapability(app.CloudConnectionCapabilityStacks) {
+	if connection.HasRequestedCapability(app.CloudConnectionCapabilityStacks) {
 		lines = append(lines, fmt.Sprintf("az role assignment create --assignee \"$APP_ID\" --role Owner --scope /subscriptions/%s", connection.TargetID))
 	}
-	if connection.HasCapability(app.CloudConnectionCapabilityImages) {
+	if connection.HasRequestedCapability(app.CloudConnectionCapabilityImages) {
 		lines = append(lines, "REGISTRY_ID=$(az acr show --name "+options.Registry+" --query id -o tsv)", "az role assignment create --assignee \"$APP_ID\" --role AcrPull --scope \"$REGISTRY_ID\"")
 	}
 	response.CLI = strings.Join(lines, "\n")
@@ -138,13 +138,13 @@ func (s *service) gcpSetup(connection *app.CloudConnection, options SetupOptions
 		provider = "projects/<project-number>/locations/global/workloadIdentityPools/<pool-id>/providers/<provider-id>"
 	}
 	audience := "https://iam.googleapis.com/" + strings.TrimPrefix(strings.TrimPrefix(provider, "https://iam.googleapis.com/"), "//iam.googleapis.com/")
-	response := SetupResponse{Subject: subject(connection), Audience: audience, Capabilities: connection.Capabilities, Repositories: options.Repositories}
+	response := SetupResponse{Subject: subject(connection), Audience: audience, Capabilities: connection.RequestedCapabilities, Repositories: options.Repositories}
 	if s.issuer == nil {
 		return response
 	}
 	issuerURL := s.issuer.Issuer()
 	serviceAccountID := strings.SplitN(connection.Principal, "@", 2)[0]
-	capabilitiesJSON, _ := json.Marshal(connection.Capabilities)
+	capabilitiesJSON, _ := json.Marshal(connection.RequestedCapabilities)
 	repositoriesJSON, _ := json.Marshal(options.Repositories)
 	response.IssuerURL = issuerURL
 	response.Terraform = fmt.Sprintf(`module "nuon_cloud_connection" {

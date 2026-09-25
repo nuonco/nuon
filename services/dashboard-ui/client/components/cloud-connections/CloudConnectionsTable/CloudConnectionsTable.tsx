@@ -75,15 +75,16 @@ export const CloudConnectionsTable = ({
       },
     },
     {
-      accessorKey: 'capabilities',
-      header: 'Capabilities',
+      accessorKey: 'requested_capabilities',
+      header: 'Requested / verified',
       cell: ({ row }) => (
-        <div className="flex gap-1 flex-wrap">
-          {row.original.capabilities?.map((capability) => (
-            <Badge key={capability} size="sm">
-              {capability}
-            </Badge>
-          ))}
+        <div className="flex flex-col gap-1">
+          <Text variant="subtext">
+            {row.original.requested_capabilities?.join(', ') || 'None'}
+          </Text>
+          <Text variant="subtext" theme="neutral">
+            Verified: {row.original.capabilities?.join(', ') || 'none'}
+          </Text>
         </div>
       ),
     },

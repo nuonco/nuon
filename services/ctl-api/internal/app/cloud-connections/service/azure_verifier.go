@@ -98,9 +98,9 @@ func (v *azureVerifier) Verify(ctx context.Context, connection *app.CloudConnect
 		return VerificationResult{}, err
 	}
 
-	capabilities := make([]app.CloudConnectionCapability, 0, len(connection.Capabilities))
+	capabilities := make([]app.CloudConnectionCapability, 0, len(connection.RequestedCapabilities))
 	registries := make([]string, 0, len(connection.Registries)+1)
-	for _, capability := range connection.Capabilities {
+	for _, capability := range connection.RequestedCapabilities {
 		switch capability {
 		case app.CloudConnectionCapabilityStacks:
 			ok, err := v.probeStackRoles(ctx, credential, connection.TargetID, claims.OID)

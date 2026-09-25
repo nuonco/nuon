@@ -12,6 +12,8 @@ A cloud connection gives Nuon scoped access to a cloud account without storing a
 
 GCP install stacks remain customer-managed; GCP connections currently support private images only.
 
+Nuon records the capabilities selected at creation as `requested_capabilities`. Verification recomputes `capabilities` as the currently verified subset on every run, so a temporary permission propagation failure does not permanently narrow future probes. Install and image resolution use only verified capabilities, while setup material and verification probes use requested capabilities.
+
 ## OIDC trust model
 
 Nuon mints a short-lived OIDC token only when it needs to perform an operation. Your cloud identity provider validates three values:

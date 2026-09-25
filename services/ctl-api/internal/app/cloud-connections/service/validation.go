@@ -52,14 +52,14 @@ func validateConnection(connection *app.CloudConnection) error {
 		if !gcpProviderPattern.MatchString(connection.IdentityProvider) {
 			return fmt.Errorf("identity_provider must be a GCP Workload Identity Provider resource name")
 		}
-		if len(connection.Capabilities) != 1 || connection.Capabilities[0] != app.CloudConnectionCapabilityImages {
+		if len(connection.RequestedCapabilities) != 1 || connection.RequestedCapabilities[0] != app.CloudConnectionCapabilityImages {
 			return fmt.Errorf("GCP cloud connections support only the images capability")
 		}
 	default:
 		return fmt.Errorf("unsupported cloud platform %q", connection.Platform)
 	}
-	seen := make(map[app.CloudConnectionCapability]struct{}, len(connection.Capabilities))
-	for _, capability := range connection.Capabilities {
+	seen := make(map[app.CloudConnectionCapability]struct{}, len(connection.RequestedCapabilities))
+	for _, capability := range connection.RequestedCapabilities {
 		if capability != app.CloudConnectionCapabilityStacks && capability != app.CloudConnectionCapabilityImages {
 			return fmt.Errorf("unsupported capability %q", capability)
 		}
@@ -68,7 +68,7 @@ func validateConnection(connection *app.CloudConnection) error {
 		}
 		seen[capability] = struct{}{}
 	}
-	if len(connection.Capabilities) == 0 {
+	if len(connection.RequestedCapabilities) == 0 {
 		return fmt.Errorf("at least one capability is required")
 	}
 	return nil

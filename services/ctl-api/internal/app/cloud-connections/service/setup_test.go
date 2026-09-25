@@ -43,7 +43,7 @@ func TestAzureSetup(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			connection := &app.CloudConnection{ID: "cc_example", OrgID: "org_example", Platform: app.CloudPlatformAzure, TargetID: "00000000-0000-0000-0000-000000000001", Capabilities: test.capabilities}
+			connection := &app.CloudConnection{ID: "cc_example", OrgID: "org_example", Platform: app.CloudPlatformAzure, TargetID: "00000000-0000-0000-0000-000000000001", RequestedCapabilities: test.capabilities}
 			got := svc.setup(connection, SetupOptions{Registry: "acme", Repositories: test.repositories})
 			for _, value := range test.want {
 				assert.Contains(t, got.CLI+got.Terraform, value)
@@ -82,7 +82,7 @@ func TestGCPSetup(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			connection := &app.CloudConnection{ID: "cc_example", OrgID: "org_example", Platform: app.CloudPlatformGCP, TargetID: "acme-project", Principal: "nuon-cloud-connection@acme-project.iam.gserviceaccount.com", IdentityProvider: test.identityProvider, Capabilities: []app.CloudConnectionCapability{app.CloudConnectionCapabilityImages}}
+			connection := &app.CloudConnection{ID: "cc_example", OrgID: "org_example", Platform: app.CloudPlatformGCP, TargetID: "acme-project", Principal: "nuon-cloud-connection@acme-project.iam.gserviceaccount.com", IdentityProvider: test.identityProvider, RequestedCapabilities: []app.CloudConnectionCapability{app.CloudConnectionCapabilityImages}}
 			got := svc.setup(connection, SetupOptions{Repositories: test.repositories})
 			for _, value := range test.want {
 				assert.Contains(t, got.CLI+got.Terraform+got.Audience, value)

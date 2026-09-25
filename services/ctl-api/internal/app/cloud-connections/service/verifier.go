@@ -96,8 +96,8 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 	if identity.Account == nil || *identity.Account != connection.TargetID || identity.Arn == nil || !matchesRole(*identity.Arn, connection.Principal) {
 		return verificationFailure("The assumed identity does not match the configured target and principal."), nil
 	}
-	capabilities := make([]app.CloudConnectionCapability, 0, len(connection.Capabilities))
-	for _, capability := range connection.Capabilities {
+	capabilities := make([]app.CloudConnectionCapability, 0, len(connection.RequestedCapabilities))
+	for _, capability := range connection.RequestedCapabilities {
 		switch capability {
 		case app.CloudConnectionCapabilityStacks:
 			_, err = cloudformation.NewFromConfig(assumed).DescribeStacks(ctx, &cloudformation.DescribeStacksInput{})

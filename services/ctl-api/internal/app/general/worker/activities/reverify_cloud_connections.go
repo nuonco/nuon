@@ -43,11 +43,10 @@ func (a *Activities) ReverifyCloudConnections(ctx context.Context, _ ReverifyClo
 			result.Message = fmt.Sprintf("Cloud connection verification failed: %v", verifyErr)
 			a.l.Warn("cloud connection re-verification failed", zap.String("connection_id", connection.ID), zap.Error(verifyErr))
 		}
-		update := app.CloudConnection{Status: result.Status, StatusMessage: result.Message, LastVerifiedAt: &now, Capabilities: connection.Capabilities, Registries: connection.Registries}
+		update := app.CloudConnection{Status: result.Status, StatusMessage: result.Message, LastVerifiedAt: &now, Capabilities: result.Capabilities, Registries: connection.Registries}
 		selected := []string{"status", "status_message", "last_verified_at", "capabilities", "registries"}
 		if result.Status == app.CloudConnectionStatusVerified {
 			update.AuthMode = app.CloudConnectionAuthModeOIDC
-			update.Capabilities = result.Capabilities
 			update.Registries = result.Registries
 			selected = append(selected, "auth_mode")
 		}
