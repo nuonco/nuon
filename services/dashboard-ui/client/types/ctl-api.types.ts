@@ -1393,6 +1393,7 @@ export type TInstallDeploymentRecord = {
 export type TInstallDeploymentsResponse = {
   deployments: TInstallDeploymentRecord[]
   page: number
+  offset: number
   limit: number
   has_more: boolean
 }
