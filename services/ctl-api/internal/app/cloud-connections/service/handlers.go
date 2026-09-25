@@ -300,11 +300,14 @@ func (s *service) verify(ctx context.Context, orgID, connectionID string, option
 		return nil, fmt.Errorf("verify cloud connection: %w", err)
 	}
 	now := time.Now().UTC()
-	updates := map[string]any{"status": result.Status, "status_message": result.Message, "last_verified_at": &now, "capabilities": result.Capabilities, "registries": result.Registries}
+	update := app.CloudConnection{Status: result.Status, StatusMessage: result.Message, LastVerifiedAt: &now, Capabilities: result.Capabilities, Registries: result.Registries}
+	selected := []string{"status", "status_message", "last_verified_at", "capabilities", "registries"}
 	if result.Status == app.CloudConnectionStatusVerified {
-		updates["auth_mode"] = app.CloudConnectionAuthModeOIDC
+		update.AuthMode = app.CloudConnectionAuthModeOIDC
+		selected = append(selected, "auth_mode")
 	}
-	if err := s.db.WithContext(ctx).Model(&app.CloudConnection{}).Where(app.CloudConnection{OrgID: orgID, ID: connection.ID, Principal: connection.Principal}).Updates(updates).Error; err != nil {
+	// struct-based update so the jsonb serializers on capabilities/registries apply
+	if err := s.db.WithContext(ctx).Model(&app.CloudConnection{}).Where(app.CloudConnection{OrgID: orgID, ID: connection.ID, Principal: connection.Principal}).Select(selected).Updates(update).Error; err != nil {
 		return nil, fmt.Errorf("save cloud connection verification: %w", err)
 	}
 	connection, err = s.getContext(ctx, orgID, connection.ID)
