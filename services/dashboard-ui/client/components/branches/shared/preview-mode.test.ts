@@ -3,7 +3,7 @@ import { previewModeDisplayLabel } from './preview-mode'
 
 describe('previewModeDisplayLabel', () => {
   test.each([
-    ['none', 'None'],
+    ['none', 'Off'],
     ['build-only', 'Build and validate'],
     ['plan-only', 'Plan only'],
     ['apply', 'Apply'],

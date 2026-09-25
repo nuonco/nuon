@@ -6,9 +6,9 @@ import {
 } from './PreviewDefaultsEditor'
 
 describe('preview defaults', () => {
-  test('uses none when preview config is omitted', () => {
-    expect(defaultPreviewDefaults().mode).toBe('none')
-    expect(previewDefaultsFromConfig(undefined).mode).toBe('none')
+  test('uses plan-only when preview config is omitted', () => {
+    expect(defaultPreviewDefaults().mode).toBe('plan-only')
+    expect(previewDefaultsFromConfig(undefined).mode).toBe('plan-only')
   })
 
   test('serializes none without an install target', () => {
@@ -16,6 +16,7 @@ describe('preview defaults', () => {
       previewDefaultsToConfig(
         {
           ...defaultPreviewDefaults(),
+          mode: 'none',
           installId: 'install-1',
         },
         []
