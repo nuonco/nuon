@@ -28,6 +28,7 @@ branch = "staging"
 [[install_groups]]
 name = "canary"
 order = 0
+default = true
 label_selector = { tier = "canary" }
 auto_approve_on_policies_passing = true
 `))

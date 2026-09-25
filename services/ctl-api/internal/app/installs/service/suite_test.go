@@ -164,6 +164,14 @@ func (s *InstallsServiceTestSuite) createTestInstall() *app.Install {
 	return install
 }
 
+func (s *InstallsServiceTestSuite) connectInstallToBranch(install *app.Install, branch *app.AppBranch) {
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&app.InstallAppBranchConnection{
+		InstallID:   install.ID,
+		AppBranchID: branch.ID,
+		Active:      true,
+	}).Error)
+}
+
 func (s *InstallsServiceTestSuite) createTestInstallWithActiveRunner() *app.Install {
 	install := s.createTestInstall()
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&app.Queue{

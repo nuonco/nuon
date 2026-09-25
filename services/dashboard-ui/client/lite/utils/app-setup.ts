@@ -9,8 +9,7 @@ export interface IAppSetupState {
 
 const hasQualifyingGroup = (branch: TAppBranch) =>
   (latestBranchConfig(branch)?.install_groups ?? []).some(
-    (group) =>
-      Boolean(group.all_installs) || hasLabelSelector(group.label_selector)
+    (group) => group.default || hasLabelSelector(group.label_selector)
   )
 
 export const appSetupStateFromBranches = (

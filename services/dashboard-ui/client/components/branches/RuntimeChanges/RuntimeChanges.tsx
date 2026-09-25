@@ -23,7 +23,8 @@ export interface IRuntimeChanges {
 
 const HEADER_CLASSES =
   'px-5 py-2.5 text-left text-[12px] font-medium text-cool-grey-500 dark:text-cool-grey-400'
-const CELL_CLASSES = 'px-5 py-3 border-t border-cool-grey-100 dark:border-dark-grey-800'
+const CELL_CLASSES =
+  'px-5 py-3 border-t border-cool-grey-100 dark:border-dark-grey-800'
 
 const imageName = (image: string) =>
   image.split('/').filter(Boolean).at(-1) ?? image
@@ -97,7 +98,10 @@ export const RuntimeChanges = ({ rows }: IRuntimeChanges) => {
                   </td>
                   <td className={CELL_CLASSES}>
                     {row.image ? (
-                      <div className="flex flex-col gap-0.5 min-w-0" title={row.image}>
+                      <div
+                        className="flex flex-col gap-0.5 min-w-0"
+                        title={row.image}
+                      >
                         <span className="truncate font-mono text-[12px] text-cool-grey-900 dark:text-cool-grey-100">
                           {imageName(row.image)}
                         </span>
@@ -168,7 +172,10 @@ export const RuntimeChanges = ({ rows }: IRuntimeChanges) => {
                         </Text>
                       </span>
                     ) : (
-                      <Status status={row.status || 'unknown'} variant="badge" />
+                      <Status
+                        status={row.status || 'unknown'}
+                        variant="badge"
+                      />
                     )}
                   </td>
                 </tr>

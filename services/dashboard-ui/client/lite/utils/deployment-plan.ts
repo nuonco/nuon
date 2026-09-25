@@ -6,10 +6,7 @@ import type {
 import { hasLabelSelector, matchesSelector } from './label-selector'
 import type { TLabelSelector } from './label-selector'
 
-export type TInstallGroupMembership =
-  | 'all_installs'
-  | 'install_ids'
-  | 'label_selector'
+export type TInstallGroupMembership = 'default' | 'label_selector'
 
 export type IDeploymentPlanInstall = Partial<TInstall> & { id: string }
 
@@ -32,9 +29,8 @@ export interface IDeploymentPlanStage {
 const membershipOf = (
   group: TAppBranchInstallGroup
 ): TInstallGroupMembership => {
-  if (group.all_installs) return 'all_installs'
   if (hasLabelSelector(group.label_selector)) return 'label_selector'
-  return 'install_ids'
+  return 'default'
 }
 
 const toPlanInstall = (
@@ -44,39 +40,11 @@ const toPlanInstall = (
   id: install.id,
 })
 
-const membersForGroup = ({
-  group,
-  membership,
-  installs,
-  claimed,
-}: {
-  group: TAppBranchInstallGroup
-  membership: TInstallGroupMembership
-  installs: Array<Partial<TInstall> & { id: string }>
-  claimed: Set<string>
-}): IDeploymentPlanInstall[] => {
-  if (membership === 'all_installs') {
-    return installs
-      .filter((install) => !claimed.has(install.id))
-      .map(toPlanInstall)
-  }
-
-  if (membership === 'label_selector') {
-    return installs
-      .filter(
-        (install) =>
-          !claimed.has(install.id) &&
-          matchesSelector(install.labels, group.label_selector)
-      )
-      .map(toPlanInstall)
-  }
-
-  return (group.install_ids ?? []).flatMap((id) => {
-    if (!id || claimed.has(id)) return []
-    const install = installs.find((candidate) => candidate.id === id)
-    return [install ? toPlanInstall(install) : { id }]
-  })
-}
+const installGroup = (install: Partial<TInstall>) =>
+  install.app_branch_connections?.find((connection) => connection.active)
+    ?.app_branch_group ??
+  install.app_branch_group ??
+  ''
 
 export const resolveDeploymentPlanStages = ({
   groups,
@@ -90,8 +58,7 @@ export const resolveDeploymentPlanStages = ({
   const orderedGroups = [...(groups ?? [])]
     .map((group, index) => ({ group, index }))
     .sort(
-      (a, b) =>
-        (a.group.order ?? 0) - (b.group.order ?? 0) || a.index - b.index
+      (a, b) => (a.group.order ?? 0) - (b.group.order ?? 0) || a.index - b.index
     )
     .map(({ group }) => group)
 
@@ -109,18 +76,31 @@ export const resolveDeploymentPlanStages = ({
     runsByGroupId.set(run.install_group_id, run)
   }
 
-  const claimed = new Set<string>()
+  const membersByGroup = orderedGroups.map(() => [] as IDeploymentPlanInstall[])
+  const defaultGroupIndex = orderedGroups.findIndex((group) => group.default)
+  for (const install of knownInstalls) {
+    let groupIndex = -1
+    const explicitGroup = installGroup(install)
+    if (explicitGroup) {
+      groupIndex = orderedGroups.findIndex(
+        (group) => group.name === explicitGroup
+      )
+    } else {
+      groupIndex = orderedGroups.findIndex(
+        (group) =>
+          hasLabelSelector(group.label_selector) &&
+          matchesSelector(install.labels, group.label_selector)
+      )
+      if (groupIndex === -1) groupIndex = defaultGroupIndex
+    }
+    if (groupIndex !== -1) {
+      membersByGroup[groupIndex].push(toPlanInstall(install))
+    }
+  }
+
   return orderedGroups.map((group, index) => {
     const membership = membershipOf(group)
-    const members = membersForGroup({
-      group,
-      membership,
-      installs: knownInstalls,
-      claimed,
-    })
-    for (const member of members) {
-      claimed.add(member.id)
-    }
+    const members = membersByGroup[index]
 
     const run = group.id ? runsByGroupId.get(group.id) : undefined
     const stage: IDeploymentPlanStage = {
@@ -140,7 +120,8 @@ export const resolveDeploymentPlanStages = ({
       stage.maxParallel = group.max_parallel
     }
     if (group.auto_approve_on_policies_passing != null) {
-      stage.autoApproveOnPoliciesPassing = group.auto_approve_on_policies_passing
+      stage.autoApproveOnPoliciesPassing =
+        group.auto_approve_on_policies_passing
     }
     if (run?.completed_installs !== undefined) {
       stage.completedInstalls = run.completed_installs

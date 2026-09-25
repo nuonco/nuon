@@ -123,7 +123,7 @@ its own:
 
 1. `GET /v1/orgs/current` for the flag, then `GET /v1/apps/:app_id/branches` for a branch named `default`. On the first
    sync it does not exist yet, so `POST /v1/apps/:app_id/branches` creates it and
-   `POST /v1/apps/:app_id/branches/:branch_id/configs` gives it a single `all_installs` install group. A name collision
+   `POST /v1/apps/:app_id/branches/:branch_id/configs` gives it a single default install group. A name collision
    on create means a concurrent sync won the race, so re-list and use theirs.
 2. `POST /v1/apps/:app_id/configs` with `intermediate_config_json` and `app_branch_id`. The config is left unsynced.
    **Resolving the branch here as a side effect of an empty `app_branch_id` does not work**: an older CLI would get a

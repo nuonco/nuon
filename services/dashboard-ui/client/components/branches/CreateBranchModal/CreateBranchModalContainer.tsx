@@ -211,6 +211,7 @@ export const CreateBranchModalContainer = ({
               vcs_connection_id: body.vcs_connection_id || '',
               ...body.connected_github_vcs_config,
             },
+            install_groups: [{ name: 'Default', order: 0, default: true }],
           },
         })
       } else if (body.public_git_vcs_config) {
@@ -220,6 +221,7 @@ export const CreateBranchModalContainer = ({
           orgId: org.id,
           request: {
             public_git_vcs_config: body.public_git_vcs_config,
+            install_groups: [{ name: 'Default', order: 0, default: true }],
           },
         })
       }

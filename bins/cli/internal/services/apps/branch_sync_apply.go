@@ -182,26 +182,13 @@ func installGroupRequests(ctx context.Context, resolver *branchNameResolver, cfg
 		req := &models.ServiceInstallGroupRequest{
 			Name:                         generics.ToPtr(group.Name),
 			Order:                        &order,
+			Default:                      group.Default,
 			AutoApproveOnPoliciesPassing: group.AutoApproveOnPoliciesPassing,
 		}
 
-		ids := append([]string{}, group.InstallIDs...)
-		for _, name := range group.InstallNames {
-			id, err := resolver.installID(ctx, name)
-			if err != nil {
-				return nil, fmt.Errorf("install group %q: %w", group.Name, err)
-			}
-			ids = appendUnique(ids, id)
-		}
-		req.InstallIds = ids
-
 		if len(group.LabelSelector) > 0 {
-			req.LabelSelector = struct {
-				models.GithubComNuoncoNuonPkgLabelsSelector
-			}{
-				GithubComNuoncoNuonPkgLabelsSelector: models.GithubComNuoncoNuonPkgLabelsSelector{
-					MatchLabels: models.GithubComNuoncoNuonPkgLabelsLabels(group.LabelSelector),
-				},
+			req.LabelSelector = &models.GithubComNuoncoNuonPkgLabelsSelector{
+				MatchLabels: models.GithubComNuoncoNuonPkgLabelsLabels(group.LabelSelector),
 			}
 		}
 

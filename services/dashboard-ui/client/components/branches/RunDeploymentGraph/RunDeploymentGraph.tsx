@@ -73,7 +73,12 @@ const GroupRunNode = memo(({ data }: NodeProps<Node<GroupRunNodeData>>) => {
       accent={accent}
       title={data.groupName}
       headerRight={
-        <span className={cn('shrink-0 rounded px-1.5 py-0.5 text-[10px]', accent.pill)}>
+        <span
+          className={cn(
+            'shrink-0 rounded px-1.5 py-0.5 text-[10px]',
+            accent.pill
+          )}
+        >
           {data.completedInstalls}/{data.totalInstalls}
         </span>
       }
@@ -87,13 +92,18 @@ const GroupRunNode = memo(({ data }: NodeProps<Node<GroupRunNodeData>>) => {
       )}
 
       {installs.length === 0 ? (
-        <span className="text-[11px] text-cool-grey-500 dark:text-cool-grey-500">No installs</span>
+        <span className="text-[11px] text-cool-grey-500 dark:text-cool-grey-500">
+          No installs
+        </span>
       ) : (
         <>
           {visible.map((inst) => (
             <div key={inst.id} className="flex items-center gap-1.5 min-w-0">
               <span
-                className={cn('h-1.5 w-1.5 shrink-0 rounded-full', statusAccent(inst.status).dot)}
+                className={cn(
+                  'h-1.5 w-1.5 shrink-0 rounded-full',
+                  statusAccent(inst.status).dot
+                )}
               />
               <Link
                 href={
@@ -173,22 +183,25 @@ export const RunDeploymentGraph = ({
   orgId,
 }: IRunDeploymentGraph) => {
   const { nodes, edges, height } = useMemo(() => {
-    if (installGroupRuns.length === 0) return { nodes: [], edges: [], height: 0 }
+    if (installGroupRuns.length === 0)
+      return { nodes: [], edges: [], height: 0 }
 
     const built: Node<GroupRunNodeData>[] = installGroupRuns.map((groupRun) => {
-      const installs: GroupRunInstall[] = (groupRun.installs ?? []).map((inst) => {
-        const id = inst.install_id ?? ''
-        return {
-          id,
-          name: installsById[id]?.name ?? id,
-          status: inst.status ?? 'unknown',
-          workflowId: inst.workflow_id ?? '',
-          runbooks: (inst.runbooks ?? []).map((rb) => ({
-            name: rb.runbook_name ?? rb.runbook_id ?? '',
-            status: rb.status ?? 'unknown',
-          })),
+      const installs: GroupRunInstall[] = (groupRun.installs ?? []).map(
+        (inst) => {
+          const id = inst.install_id ?? ''
+          return {
+            id,
+            name: installsById[id]?.name ?? id,
+            status: inst.status ?? 'unknown',
+            workflowId: inst.workflow_id ?? '',
+            runbooks: (inst.runbooks ?? []).map((rb) => ({
+              name: rb.runbook_name ?? rb.runbook_id ?? '',
+              status: rb.status ?? 'unknown',
+            })),
+          }
         }
-      })
+      )
 
       const runbookNames = distinctRunbookNames(installs)
       const labelEntries = Object.entries(
@@ -255,5 +268,12 @@ export const RunDeploymentGraph = ({
     )
   }
 
-  return <GraphCanvas nodes={nodes} edges={edges} nodeTypes={nodeTypes} height={height} />
+  return (
+    <GraphCanvas
+      nodes={nodes}
+      edges={edges}
+      nodeTypes={nodeTypes}
+      height={height}
+    />
+  )
 }

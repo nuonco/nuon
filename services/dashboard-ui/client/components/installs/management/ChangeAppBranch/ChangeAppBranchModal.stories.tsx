@@ -4,7 +4,11 @@ export default {
 
 import { useState } from 'react'
 import { ModalStory } from '@/components/__stories__/helpers'
-import { ChangeAppBranchModal } from './ChangeAppBranchModal'
+import type { IModal } from '@/components/surfaces/Modal'
+import {
+  ChangeAppBranchModal,
+  type TBranchGroupAssignmentMode,
+} from './ChangeAppBranchModal'
 import type { TAppBranch, TInstall } from '@/types'
 
 const noop = () => {}
@@ -26,7 +30,11 @@ const mockBranches: TAppBranch[] = [
       {
         id: 'cfg-1',
         install_groups: [
-          { id: 'g1', name: 'Prod', label_selector: { match_labels: { env: 'production' } } },
+          {
+            id: 'g1',
+            name: 'Prod',
+            label_selector: { match_labels: { env: 'production' } },
+          },
         ],
       },
     ],
@@ -38,7 +46,20 @@ const mockBranches: TAppBranch[] = [
       {
         id: 'cfg-2',
         install_groups: [
-          { id: 'g2', name: 'Staging', label_selector: { match_labels: { env: 'staging' } } },
+          {
+            id: 'g2',
+            name: 'Staging',
+            label_selector: { match_labels: { env: 'staging' } },
+          },
+          {
+            id: 'g3',
+            name: 'Manually assigned',
+          },
+          {
+            id: 'g4',
+            name: 'Other installs',
+            default: true,
+          },
         ],
       },
     ],
@@ -50,73 +71,70 @@ const mockBranches: TAppBranch[] = [
   } as unknown as TAppBranch,
 ]
 
-export const Default = () => {
-  const [target, setTarget] = useState<TAppBranch | null>(null)
+const InteractiveModal = ({
+  initialTarget = null,
+  install = mockInstall,
+  isPending = false,
+  ...props
+}: IModal & {
+  initialTarget?: TAppBranch | null
+  install?: TInstall
+  isPending?: boolean
+}) => {
+  const [target, setTarget] = useState<TAppBranch | null>(initialTarget)
+  const [group, setGroup] = useState('')
+  const [assignmentMode, setAssignmentMode] =
+    useState<TBranchGroupAssignmentMode | null>(null)
   return (
-    <ModalStory>
-      <ChangeAppBranchModal
-        install={mockInstall}
-        targetBranch={target}
-        branches={mockBranches}
-        isPending={false}
-        onSelectBranch={setTarget}
-        onConfirm={noop}
-        onClose={noop}
-      />
-    </ModalStory>
+    <ChangeAppBranchModal
+      install={install}
+      targetBranch={target}
+      targetGroup={group}
+      assignmentMode={assignmentMode}
+      branches={mockBranches}
+      isPending={isPending}
+      onSelectBranch={(branch) => {
+        setTarget(branch)
+        setGroup('')
+        setAssignmentMode(null)
+      }}
+      onSelectGroup={(groupName) => {
+        setGroup(groupName)
+        const selectedGroup = target?.configs
+          ?.at(0)
+          ?.install_groups?.find((candidate) => candidate.name === groupName)
+        setAssignmentMode(selectedGroup?.default ? 'default' : null)
+      }}
+      onSelectAssignmentMode={setAssignmentMode}
+      onConfirm={noop}
+      {...props}
+    />
   )
 }
 
-export const WithTargetSelected = () => {
-  const [target, setTarget] = useState<TAppBranch | null>(mockBranches[1])
-  return (
-    <ModalStory>
-      <ChangeAppBranchModal
-        install={mockInstall}
-        targetBranch={target}
-        branches={mockBranches}
-        isPending={false}
-        onSelectBranch={setTarget}
-        onConfirm={noop}
-        onClose={noop}
-      />
-    </ModalStory>
-  )
-}
+export const Default = () => (
+  <ModalStory>
+    <InteractiveModal />
+  </ModalStory>
+)
 
-export const NoMatchingGroupWarning = () => {
-  const [target, setTarget] = useState<TAppBranch | null>(mockBranches[2])
-  return (
-    <ModalStory>
-      <ChangeAppBranchModal
-        install={mockInstall}
-        targetBranch={target}
-        branches={mockBranches}
-        isPending={false}
-        onSelectBranch={setTarget}
-        onConfirm={noop}
-        onClose={noop}
-      />
-    </ModalStory>
-  )
-}
+export const WithTargetSelected = () => (
+  <ModalStory>
+    <InteractiveModal initialTarget={mockBranches[1]} />
+  </ModalStory>
+)
 
-export const Pending = () => {
-  const [target] = useState<TAppBranch | null>(mockBranches[1])
-  return (
-    <ModalStory>
-      <ChangeAppBranchModal
-        install={mockInstall}
-        targetBranch={target}
-        branches={mockBranches}
-        isPending
-        onSelectBranch={noop}
-        onConfirm={noop}
-        onClose={noop}
-      />
-    </ModalStory>
-  )
-}
+export const NoGroups = () => (
+  <ModalStory>
+    <InteractiveModal initialTarget={mockBranches[2]} />
+  </ModalStory>
+)
+
+export const Pending = () => (
+  <ModalStory>
+    <InteractiveModal initialTarget={mockBranches[1]} isPending />
+  </ModalStory>
+)
 
 export const NoBranchInstall = () => {
   const installNoBranch: TInstall = {
@@ -126,15 +144,7 @@ export const NoBranchInstall = () => {
   } as unknown as TInstall
   return (
     <ModalStory>
-      <ChangeAppBranchModal
-        install={installNoBranch}
-        targetBranch={null}
-        branches={mockBranches}
-        isPending={false}
-        onSelectBranch={noop}
-        onConfirm={noop}
-        onClose={noop}
-      />
+      <InteractiveModal install={installNoBranch} />
     </ModalStory>
   )
 }
