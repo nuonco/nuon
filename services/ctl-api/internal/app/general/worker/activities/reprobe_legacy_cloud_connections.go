@@ -22,7 +22,8 @@ type ReprobeLegacyCloudConnectionsRequest struct{}
 func (a *Activities) ReprobeLegacyCloudConnections(ctx context.Context, _ ReprobeLegacyCloudConnectionsRequest) (*ReprobeLegacyCloudConnectionsResponse, error) {
 	var connections []app.CloudConnection
 	if err := a.db.WithContext(ctx).
-		Where("platform = ? AND auth_mode IN ?", app.CloudPlatformAWS, []app.CloudConnectionAuthMode{"", app.CloudConnectionAuthModeLegacy}).
+		Where(app.CloudConnection{Platform: app.CloudPlatformAWS}).
+		Where(map[string]any{"auth_mode": []app.CloudConnectionAuthMode{"", app.CloudConnectionAuthModeLegacy}}).
 		Find(&connections).Error; err != nil {
 		return nil, err
 	}

@@ -26,6 +26,9 @@ func subject(connection *app.CloudConnection) string {
 }
 
 func (s *service) setup(connection *app.CloudConnection, repositories []string) SetupResponse {
+	if s.issuer == nil {
+		return SetupResponse{Subject: subject(connection), Audience: "sts.amazonaws.com", Capabilities: connection.Capabilities, Repositories: repositories}
+	}
 	issuerURL := s.issuer.Issuer()
 	issuer, _ := url.Parse(issuerURL)
 	conditionPrefix := strings.TrimPrefix(issuer.Host+issuer.Path, "/")

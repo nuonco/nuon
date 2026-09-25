@@ -54,6 +54,9 @@ func NewAWSVerifier(issuer *oidcissuer.Issuer) Verifier {
 }
 
 func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnection, repositories []string) (VerificationResult, error) {
+	if v.issuer == nil {
+		return VerificationResult{}, fmt.Errorf("cloud connection OIDC issuer is unavailable")
+	}
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	base, err := config.LoadDefaultConfig(ctx, config.WithRegion(connection.DefaultRegion))
