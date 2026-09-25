@@ -64,13 +64,11 @@ const groupFromApi = (
   if (!group?.id) return undefined
   const labels = group?.label_selector?.match_labels ?? {}
   const values = Object.values(labels)
-  const kind = group?.all_installs
-    ? 'all'
-    : Object.keys(labels).length === 0
-      ? 'install-ids'
-      : values.some((value) => value === '*')
-        ? 'wildcard'
-        : 'labels'
+  const kind = group?.default
+    ? 'default'
+    : values.some((value) => value === '*')
+      ? 'wildcard'
+      : 'labels'
 
   return {
     id: group.id,

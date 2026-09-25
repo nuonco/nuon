@@ -17,20 +17,11 @@ type UpdateInstallAppConfigIDInput struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 30s
 func (a *Activities) UpdateInstallAppConfigID(ctx context.Context, input *UpdateInstallAppConfigIDInput) error {
-	var appConfig app.AppConfig
-	if err := a.db.WithContext(ctx).
-		Select("app_branch_id").
-		Where(app.AppConfig{ID: input.NewAppConfigID}).
-		First(&appConfig).Error; err != nil {
-		return fmt.Errorf("unable to get app config for branch lookup: %w", err)
-	}
-
 	res := a.db.WithContext(ctx).
 		Model(&app.Install{}).
 		Where(app.Install{ID: input.InstallID}).
 		Updates(map[string]interface{}{
 			"app_config_id": input.NewAppConfigID,
-			"app_branch_id": appConfig.AppBranchID,
 			// jsonb_build_object is variadic "any", so the parameter needs an
 			// explicit cast for postgres to infer a type at parse time.
 			"app_config_ref": gorm.Expr(

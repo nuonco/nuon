@@ -25,9 +25,24 @@ export const MultipleBuilds = () => (
   <div className="max-w-3xl">
     <BranchRunBuilds
       builds={[
-        build({ id: 'bld1', component_name: 'ec2', component_config_connection: { type: 'terraform_module' }, status_v2: { status: 'active' } }),
-        build({ id: 'bld2', component_name: 'api', component_config_connection: { type: 'docker_build' }, status_v2: { status: 'building' } }),
-        build({ id: 'bld3', component_name: 'ingress', component_config_connection: { type: 'helm_chart' }, status_v2: { status: 'error' } }),
+        build({
+          id: 'bld1',
+          component_name: 'ec2',
+          component_config_connection: { type: 'terraform_module' },
+          status_v2: { status: 'active' },
+        }),
+        build({
+          id: 'bld2',
+          component_name: 'api',
+          component_config_connection: { type: 'docker_build' },
+          status_v2: { status: 'building' },
+        }),
+        build({
+          id: 'bld3',
+          component_name: 'ingress',
+          component_config_connection: { type: 'helm_chart' },
+          status_v2: { status: 'error' },
+        }),
       ]}
       orgId="org1"
       appId="app1"
@@ -64,7 +79,12 @@ const manyBuilds = Array.from({ length: 26 }, (_, i) =>
     component_id: `cmp${i}`,
     component_name: `component-${i}`,
     component_config_connection: {
-      type: i % 3 === 0 ? 'terraform_module' : i % 3 === 1 ? 'docker_build' : 'helm_chart',
+      type:
+        i % 3 === 0
+          ? 'terraform_module'
+          : i % 3 === 1
+            ? 'docker_build'
+            : 'helm_chart',
     },
     status_v2: { status: i % 5 === 0 ? 'building' : 'active' },
   })
@@ -80,9 +100,24 @@ export const WithSandboxAndTypes = () => (
   <div className="max-w-3xl">
     <BranchRunBuilds
       builds={[
-        build({ id: 'bld1', component_name: 'ec2', component_config_connection: { type: 'terraform_module' }, status_v2: { status: 'active' } }),
-        build({ id: 'bld2', component_name: 'api', component_config_connection: { type: 'docker_build' }, status_v2: { status: 'building' } }),
-        build({ id: 'bld3', component_name: 'ingress', component_config_connection: { type: 'helm_chart' }, status_v2: { status: 'error' } }),
+        build({
+          id: 'bld1',
+          component_name: 'ec2',
+          component_config_connection: { type: 'terraform_module' },
+          status_v2: { status: 'active' },
+        }),
+        build({
+          id: 'bld2',
+          component_name: 'api',
+          component_config_connection: { type: 'docker_build' },
+          status_v2: { status: 'building' },
+        }),
+        build({
+          id: 'bld3',
+          component_name: 'ingress',
+          component_config_connection: { type: 'helm_chart' },
+          status_v2: { status: 'error' },
+        }),
       ]}
       sandboxBuild={{
         id: 'asb1',

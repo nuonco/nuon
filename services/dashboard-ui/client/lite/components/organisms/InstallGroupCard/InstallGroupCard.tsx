@@ -26,25 +26,16 @@ export interface IInstallGroupCard {
 }
 
 const membershipText = (stage: IDeploymentPlanStage) => {
-  if (stage.membership === 'all_installs') {
+  if (stage.membership === 'default') {
     return 'Every install on this branch'
   }
-  if (stage.membership === 'label_selector') {
-    return 'Installs matching these labels'
-  }
-  return `A fixed list of ${stage.installs.length} ${
-    stage.installs.length === 1 ? 'install' : 'installs'
-  }`
+  return 'Installs matching these labels'
 }
 
 const installCountText = (count: number) =>
   `${count} ${count === 1 ? 'install' : 'installs'}`
 
-const InstallStatuses = ({
-  install,
-}: {
-  install: IDeploymentPlanInstall
-}) => (
+const InstallStatuses = ({ install }: { install: IDeploymentPlanInstall }) => (
   <>
     {installStatusFacets(install).map((facet) => (
       <Status
@@ -59,11 +50,7 @@ const InstallStatuses = ({
   </>
 )
 
-const InstallLocation = ({
-  install,
-}: {
-  install: IDeploymentPlanInstall
-}) => {
+const InstallLocation = ({ install }: { install: IDeploymentPlanInstall }) => {
   const location = installCloudLocation(install)
   if (!location.region && !location.location) return null
 
@@ -109,11 +96,7 @@ export const InstallGroupCard = ({
       </header>
 
       <div className="flex flex-col gap-2">
-        <Text
-          color="secondary"
-          loading={loading}
-          loadingWidth={24}
-        >
+        <Text color="secondary" loading={loading} loadingWidth={24}>
           {stage ? membershipText(stage) : '—'}
         </Text>
         {stage?.membership === 'label_selector' ? (
@@ -130,11 +113,7 @@ export const InstallGroupCard = ({
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Text
-          weight="semibold"
-          loading={loading}
-          loadingWidth={10}
-        >
+        <Text weight="semibold" loading={loading} loadingWidth={10}>
           {installCountText(stage?.totalInstalls ?? 0)}
         </Text>
         {stage?.completedInstalls !== undefined ? (
