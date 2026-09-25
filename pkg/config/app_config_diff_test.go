@@ -19,13 +19,13 @@ func TestAppConfigDiffSuite(t *testing.T) {
 func strPtr(s string) *string { return &s }
 func boolPtr(b bool) *bool    { return &b }
 
-func (s *AppConfigDiffSuite) TestRemovingPreviewChangesModeToNone() {
+func (s *AppConfigDiffSuite) TestRemovingPreviewClearsInstallTarget() {
 	got := diffBranchPreview(
 		&AppBranchPreviewConfig{Mode: "plan-only", InstallName: "example"},
 		nil,
 	)
 
-	s.Contains(got.FormatChanged(""), "mode: 'plan-only' -> 'none'")
+	s.NotContains(got.FormatChanged(""), "mode:")
 	s.Contains(got.FormatChanged(""), "install_name: 'example' -> ''")
 }
 
