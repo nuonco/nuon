@@ -25,6 +25,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcissuer"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
@@ -78,6 +79,7 @@ type service struct {
 	emitterClient          *emitterclient.Client
 	queueClient            *queueclient.Client
 	telemetryTokenIssuer   *telemetryTokenIssuer
+	oidcIssuer             *oidcissuer.Issuer
 	telemetryRelayEndpoint string
 	// logStreamCache hits in front of getLogStream on the OTLP ingest
 	// hot path. The fields the writer reads (OwnerType, ParentLogStreamID)
@@ -102,6 +104,7 @@ var _ apiPkg.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/.well-known/jwks.json", s.GetTelemetryJWKS)
+	api.GET("/.well-known/openid-configuration", s.GetOpenIDConfiguration)
 	api.GET("/v1/runners/:runner_id", s.GetRunnerCtlAPI)
 	api.GET("/v1/runners/:runner_id/connected", s.GetRunnerConnectStatus)
 	api.GET("/v1/runners/:runner_id/jobs", s.GetRunnerJobsCtlAPI)
@@ -399,6 +402,10 @@ func New(params Params) (*service, error) {
 	if err != nil {
 		return nil, fmt.Errorf("initialize telemetry token issuer: %w", err)
 	}
+	oidcIssuer, err := newOIDCIssuer(params.Cfg, telemetryTokenIssuer)
+	if err != nil {
+		return nil, err
+	}
 	telemetryRelayEndpoint, err := newTelemetryRelayEndpoint(params.Cfg, telemetryTokenIssuer)
 	if err != nil {
 		return nil, fmt.Errorf("invalid telemetry relay configuration: %w", err)
@@ -428,6 +435,7 @@ func New(params Params) (*service, error) {
 		emitterClient:          params.EmitterClient,
 		queueClient:            params.QueueClient,
 		telemetryTokenIssuer:   telemetryTokenIssuer,
+		oidcIssuer:             oidcIssuer,
 		telemetryRelayEndpoint: telemetryRelayEndpoint,
 		logStreamCache:         expirable.NewLRU[string, *app.LogStream](logStreamCacheSize, nil, logStreamCacheTTL),
 	}, nil
