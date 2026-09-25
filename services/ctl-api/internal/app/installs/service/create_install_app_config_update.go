@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 )
 
 type CreateInstallAppConfigUpdateRequest struct {
@@ -57,7 +58,10 @@ func (s *service) CreateInstallAppConfigUpdate(ctx *gin.Context) {
 		return
 	}
 
-	created, err := s.helpers.CreateAppBranchConfigUpdateWorkflow(ctx, helpers.AppBranchConfigUpdateInput{
+	blobCtx := blobstore.WithBlobService(ctx.Request.Context(), s.blobSvc)
+	blobCtx = blobstore.WithBlobWriteEnabled(blobCtx, true)
+
+	created, err := s.helpers.CreateAppBranchConfigUpdateWorkflow(blobCtx, helpers.AppBranchConfigUpdateInput{
 		InstallID:      installID,
 		NewAppConfigID: req.AppConfigID,
 		PlanOnly:       req.PlanOnly,
