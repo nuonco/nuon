@@ -14,7 +14,6 @@ import { Text } from '@/components/common/Text'
 import { Input } from '@/components/common/form/Input'
 import { Select } from '@/components/common/form/Select'
 import { Toggle } from '@/components/common/form/Toggle'
-import { ToggleButton } from '@/components/common/ToggleButton'
 import {
   OnboardingWizardProvider,
   type IWizardStepComponentProps,
@@ -30,6 +29,7 @@ const NextButton = ({
   onClick,
   onBack,
   showNext = true,
+  secondary,
 }: {
   label?: string
   disabled?: boolean
@@ -37,6 +37,8 @@ const NextButton = ({
   onClick?: () => void
   onBack?: () => void
   showNext?: boolean
+  // Rendered beside the primary (e.g. a cost line while a push is still pending).
+  secondary?: ReactNode
 }) => (
   <div className={cn('flex gap-3', onBack ? 'justify-between' : 'justify-end')}>
     {onBack ? (
@@ -44,16 +46,19 @@ const NextButton = ({
         <Icon variant="CaretLeftIcon" weight="bold" /> Back
       </Button>
     ) : null}
-    {showNext ? (
-      <Button
-        variant="primary"
-        disabled={disabled}
-        onClick={onClick}
-        tooltipProps={disabled && disabledReason ? { tipContent: disabledReason } : undefined}
-      >
-        {label ?? 'Continue'} <Icon variant="CaretRightIcon" weight="bold" />
-      </Button>
-    ) : null}
+    <div className="flex items-center gap-3">
+      {secondary}
+      {showNext ? (
+        <Button
+          variant="primary"
+          disabled={disabled}
+          onClick={onClick}
+          tooltipProps={disabled && disabledReason ? { tipContent: disabledReason } : undefined}
+        >
+          {label ?? 'Continue'} <Icon variant="CaretRightIcon" weight="bold" />
+        </Button>
+      ) : null}
+    </div>
   </div>
 )
 
@@ -513,34 +518,26 @@ export const Minimal = () => <Playground steps={MINIMAL_FLOW} />
 Minimal.meta = { fullBleed: true }
 
 // ---------------------------------------------------------------------------
-// Fork flow: post-login screen that splits into three paths.
+// Fork flow: post-login screen that splits into two paths.
 //   example → deploy Kitchen Sink into the user's own cloud (stack link, pre-filled inputs)
-//   hosted  → deploy Kitchen Sink into an AWS account Nuon runs (no stack step at all)
 //   own     → connect GitHub, set the app up from the terminal or an MCP agent
 // The steps array is swapped when the fork picks a path; the provider reads
 // `steps` from props on every render so the stepper follows the chosen path.
-// Sep 16 direction (Matt): an intro page sits BEFORE the stepper (one sentence,
-// one button, a glanceable diagram), and the fork screen leads with the user's
-// own app as the single primary. The example app is the secondary "kick the
-// tires" path.
+// An intro page sits before the stepper. The fork leads with the user's own app
+// as the single primary; the example app is the secondary path.
 // ---------------------------------------------------------------------------
 
 type TCloud = 'aws' | 'gcp' | 'azure'
-type TPath = 'example' | 'hosted' | 'own'
+type TPath = 'example' | 'own'
 
 interface IForkChoice {
   path: TPath
   cloud?: TCloud
 }
 
-// Review-only: where the template step puts the stubbed files — above the
-// agent/manual tabs (editor view) or beside them (compact rows).
-type TTemplateLayout = 'top' | 'beside'
-
 interface IForkActions {
   choose: (choice: IForkChoice) => void
   backToIntro: () => void
-  templateLayout: TTemplateLayout
   // Review-only: bumps each time "Simulate push" is pressed; the product's trigger is the push itself.
   pushTick: number
 }
@@ -548,10 +545,13 @@ interface IForkActions {
 const ForkContext = createContext<IForkActions>({
   choose: () => {},
   backToIntro: () => {},
-  templateLayout: 'top',
   pushTick: 0,
 })
 const useForkChoice = () => useContext(ForkContext)
+
+// Clouds the example app (Kitchen Sink) can be deployed to from the fork. The
+// own-app path offers all three.
+const EXAMPLE_CLOUDS: TCloud[] = ['aws', 'gcp']
 
 const CLOUD_LABEL: Record<TCloud, string> = { aws: 'AWS', gcp: 'GCP', azure: 'Azure' }
 
@@ -568,6 +568,9 @@ const CLOUD_CONNECT: Record<
   {
     accountNoun: string
     stackLabel: string
+    // What exists once generation finishes. AWS gets a console link; GCP and Azure (at its
+    // default scope) get a template and commands, so the status line must not say "link".
+    artifactNoun: string
     generating: string
     launch: string
     opening: string
@@ -578,63 +581,61 @@ const CLOUD_CONNECT: Record<
   aws: {
     accountNoun: 'AWS account',
     stackLabel: 'CloudFormation stack',
+    artifactNoun: 'CloudFormation stack link',
     generating: 'Generating your CloudFormation stack link...',
     launch: 'Open the CloudFormation stack',
     opening: 'Opening the AWS console...',
     helper:
-      'Opens a pre-filled CloudFormation stack in your AWS console. Create it there, then come back — this page updates on its own.',
+      'Opens a pre-filled CloudFormation stack in your AWS console. Create it there, then come back. This page updates on its own.',
     waitingHint: 'Create the CloudFormation stack in the AWS console tab, then come back.',
   },
   gcp: {
     accountNoun: 'GCP project',
     stackLabel: 'Terraform stack',
+    artifactNoun: 'Terraform stack',
     generating: 'Generating your Terraform stack...',
     launch: 'Get the Terraform stack',
     opening: 'Preparing the Terraform stack...',
     helper:
-      'Nuon generates a Terraform stack for your GCP project. Apply it from your terminal, then come back — this page updates on its own.',
+      'Nuon generates a Terraform stack for your test GCP project. Apply it from your terminal, then come back. This page updates on its own.',
     waitingHint: 'Apply the Terraform stack from your terminal, then come back.',
   },
   azure: {
     accountNoun: 'Azure subscription',
-    stackLabel: 'Azure stack',
-    generating: 'Generating your Azure stack link...',
-    launch: 'Open the Azure stack',
-    opening: 'Opening the Azure portal...',
+    stackLabel: 'Bicep stack',
+    artifactNoun: 'Bicep template',
+    generating: 'Generating your Bicep template...',
+    launch: 'Get the Azure commands',
+    opening: 'Preparing the commands...',
     helper:
-      'Opens Deploy to Azure in the Azure portal with the stack pre-filled. Deploy it there, then come back — this page updates on its own.',
-    waitingHint: 'Deploy the stack in the Azure portal tab, then come back.',
+      'Nuon generates the Bicep template and the az commands that deploy it. Create the resource group and Key Vault, run the commands, then come back. This page updates on its own.',
+    waitingHint: 'Run the az commands from your terminal, then come back.',
   },
 }
 
-const CLOUD_REGIONS: Record<TCloud, { label: string; options: { value: string; label: string }[] }> = {
+const CLOUD_REGIONS: Record<TCloud, { label: string; options: string[] }> = {
   aws: {
     label: 'AWS region',
-    options: [
-      { value: 'us-east-1', label: 'us-east-1 — US East (N. Virginia)' },
-      { value: 'us-west-2', label: 'us-west-2 — US West (Oregon)' },
-      { value: 'eu-west-1', label: 'eu-west-1 — Europe (Ireland)' },
-      { value: 'ap-southeast-1', label: 'ap-southeast-1 — Asia Pacific (Singapore)' },
-    ],
+    options: ['us-east-1', 'us-west-2', 'eu-west-1', 'ap-southeast-1'],
   },
   gcp: {
     label: 'GCP region',
-    options: [
-      { value: 'us-central1', label: 'us-central1 — Iowa' },
-      { value: 'us-east1', label: 'us-east1 — South Carolina' },
-      { value: 'europe-west1', label: 'europe-west1 — Belgium' },
-      { value: 'asia-southeast1', label: 'asia-southeast1 — Singapore' },
-    ],
+    options: ['us-central1', 'us-east1', 'europe-west1', 'asia-southeast1'],
   },
   azure: {
     label: 'Azure location',
-    options: [
-      { value: 'eastus', label: 'eastus — East US' },
-      { value: 'westus2', label: 'westus2 — West US 2' },
-      { value: 'westeurope', label: 'westeurope — West Europe' },
-      { value: 'southeastasia', label: 'southeastasia — Southeast Asia' },
-    ],
+    options: ['eastus', 'westus2', 'westeurope', 'southeastasia'],
   },
+}
+
+const regionOptions = (cloud: TCloud) =>
+  CLOUD_REGIONS[cloud].options.map((value) => ({ value, label: value }))
+
+// The sandbox each cloud lands on, and the repo that provisions it.
+const CLOUD_SANDBOX: Record<TCloud, string> = {
+  aws: 'nuonco/aws-eks-sandbox',
+  gcp: 'nuonco/gcp-gke-sandbox',
+  azure: 'nuonco/azure-aks-sandbox',
 }
 
 const KITCHEN_SINK_REPO = 'https://github.com/nuonco/kitchen-sink'
@@ -688,139 +689,21 @@ const MiniArch = ({ live = false }: { live?: boolean }) => (
   </div>
 )
 
-// What Nuon BYOC puts in the vendor's account (docs/guides/byoc.mdx and
-// self-hosted.mdx — same software: dashboard-ui, ctl-api, build runner;
-// Temporal/Postgres/ClickHouse behind them).
-const NUON_PARTS: { icon: TIconVariant; label: string }[] = [
-  { icon: 'CpuIcon', label: 'Control plane' },
-  { icon: 'GlobeIcon', label: 'Dashboard' },
-  { icon: 'PackageIcon', label: 'Build runner' },
-]
-
-const DEMO_REQUEST = 'https://nuon.co/demo-request'
-
-// Collapses to zero height when closed so the layout above and below slides
-// instead of jumping. grid-rows is the only height transition that needs no
-// measured pixel value.
-const Reveal = ({ open, children, className }: { open: boolean; children: ReactNode; className?: string }) => (
-  <div
-    className={cn(
-      'grid transition-[grid-template-rows,opacity,transform,visibility] duration-500 ease-out',
-      open ? 'visible grid-rows-[1fr] opacity-100 translate-y-0' : 'invisible grid-rows-[0fr] opacity-0 translate-y-3',
-      className
-    )}
-    aria-hidden={!open}
-  >
-    <div className="overflow-hidden">{children}</div>
-  </div>
-)
-
-// Levels. Hosted: your app template → Nuon (the mark on the connector) → the
-// customer's account. BYOC: "Your cloud environment" grows around everything, and
-// inside it a "Nuon BYOC" frame grows around the template — Nuon takes the template
-// and deploys it, so the template sits inside Nuon, which sits inside your account.
-const IntroDiagram = ({ selfHosted = false }: { selfHosted?: boolean }) => (
+const IntroDiagram = () => (
   <div className="flex flex-col gap-3">
-    <div
-      className={cn(
-        'flex flex-col rounded-xl transition-all duration-500 ease-out',
-        selfHosted
-          ? 'gap-3 p-4 bg-neutral-50 dark:bg-neutral-900/60 ring-2 ring-neutral-400 dark:ring-neutral-500'
-          : 'gap-0 p-0 bg-transparent ring-0 ring-transparent'
-      )}
-    >
-      <Reveal open={selfHosted}>
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 pb-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <Icon variant="BuildingsIcon" size={20} weight="fill" theme="neutral" />
-            <Text variant="body" weight="strong">
-              Your cloud environment
-            </Text>
-          </div>
-          <div className="flex items-center gap-2">
-            <Icon variant="AWSColor" size={18} />
-            <Icon variant="GCPColor" size={16} />
-            <Icon variant="AzureColor" size={16} />
-          </div>
-        </div>
-      </Reveal>
-
-      {/* Nuon BYOC frame: nothing in the hosted view, a bordered box around the
-          template in BYOC. Ring, not border — the global border-color rule would
-          paint a transparent border grey. */}
-      <div
-        className={cn(
-          'flex flex-col rounded-lg transition-all duration-500 ease-out',
-          selfHosted
-            ? 'gap-3 p-4 bg-background ring-1 ring-neutral-200 dark:ring-neutral-700 shadow-sm'
-            : 'gap-0 p-0 bg-transparent ring-1 ring-transparent shadow-none'
-        )}
-      >
-        <Reveal open={selfHosted}>
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-              <div className="flex items-center gap-2">
-                <NuonMark className="h-5 w-auto text-neutral-900 dark:text-white" />
-                <Text variant="base" weight="strong">
-                  Nuon BYOC
-                </Text>
-              </div>
-              <Text variant="subtext" theme="neutral">
-                List no subprocessors on your BYOC deals
-              </Text>
-            </div>
-            <div className="flex flex-wrap items-center gap-y-2">
-              {NUON_PARTS.map((part, index) => (
-                <div key={part.label} className="flex items-center">
-                  {index > 0 ? <span className="h-px w-4 bg-neutral-200 dark:bg-neutral-600" aria-hidden /> : null}
-                  <div className="flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1.5">
-                    <Icon variant={part.icon} size={14} theme="neutral" />
-                    <Text variant="subtext" weight="strong">
-                      {part.label}
-                    </Text>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </Reveal>
-
-        <div className="flex flex-col gap-3 rounded-lg border bg-background p-4 shadow-sm">
-          <div className="flex items-center gap-2">
-            <Icon variant="GitBranchIcon" size={18} theme="neutral" />
-            <Text variant="base" weight="strong">
-              Your app template
-            </Text>
-          </div>
-          <MiniArch />
-        </div>
+    <div className="flex flex-col gap-3 rounded-lg border bg-background p-4 shadow-sm">
+      <div className="flex items-center gap-2">
+        <Icon variant="GitBranchIcon" size={18} theme="neutral" />
+        <Text variant="base" weight="strong">
+          Your app template
+        </Text>
       </div>
+      <MiniArch />
     </div>
 
-    {/* The mark leaves the connector as the Nuon box above grows in: one thing moving, not two things swapping. */}
     <div className="flex items-center justify-center gap-3 py-1">
-      <span
-        data-intro-mark="connector"
-        className={cn(
-          'flex overflow-hidden transition-all duration-500 ease-out',
-          selfHosted ? 'invisible w-0 -translate-y-8 scale-50 opacity-0' : 'visible w-7 translate-y-0 scale-100 opacity-100'
-        )}
-        aria-hidden={selfHosted}
-      >
-        <NuonMark className="h-7 w-auto text-neutral-900 dark:text-white" />
-      </span>
+      <NuonMark className="h-7 w-auto text-neutral-900 dark:text-white" />
       <Icon variant="ArrowDownIcon" size={24} weight="bold" theme="neutral" />
-      <span
-        className={cn(
-          'transition-all duration-500 ease-out',
-          selfHosted ? 'visible max-w-xs opacity-100' : 'invisible max-w-0 opacity-0 overflow-hidden'
-        )}
-        aria-hidden={!selfHosted}
-      >
-        <Text variant="subtext" theme="neutral" className="whitespace-nowrap">
-          Deployed from your account
-        </Text>
-      </span>
     </div>
 
     {/* Offset rings behind the account stand in for "every customer". The
@@ -858,23 +741,12 @@ const IntroDiagram = ({ selfHosted = false }: { selfHosted?: boolean }) => (
           </div>
           <MiniArch live />
         </div>
-        <div className="flex items-center gap-2">
-          <Icon variant="CpuIcon" size={14} theme="brand" />
-          <Text variant="subtext" theme="neutral">
-            Nuon runner — you operate it from here, inside their account
-          </Text>
-        </div>
       </div>
     </div>
   </div>
 )
 
-const IntroScreen = ({ onStart }: { onStart: () => void }) => {
-  // A press button, not a link: pressed shows the BYOC picture, pressing again
-  // plays the transition in reverse. The sales link lives in the panel it opens.
-  const [selfHosted, setSelfHosted] = useState(false)
-
-  return (
+const IntroScreen = ({ onStart }: { onStart: () => void }) => (
   <div className="h-screen flex flex-col bg-background overflow-y-auto">
     <div className="flex justify-between w-full px-6 pt-4">
       <Logo />
@@ -897,63 +769,24 @@ const IntroScreen = ({ onStart }: { onStart: () => void }) => {
           <Text variant="body" theme="neutral">
             Deploys into your customers' AWS, GCP, and Azure accounts.
           </Text>
-          <div className="flex flex-col items-start gap-3">
+          <div>
             <Button variant="primary" size="lg" onClick={onStart}>
               Create your first app template <Icon variant="CaretRightIcon" weight="bold" />
             </Button>
-            {/* Pressed = punched in: inset shadow, tint, a 1px drop. Same secondary
-                variant the segmented controls use, so it reads as one family. */}
-            <Button
-              variant="secondary"
-              size="md"
-              aria-pressed={selfHosted}
-              onClick={() => setSelfHosted((prev) => !prev)}
-              className={cn(
-                'transition-all duration-200',
-                selfHosted &&
-                  '!bg-primary-50 dark:!bg-primary-950/40 !shadow-[inset_0_2px_3px_rgba(0,0,0,0.14)] translate-y-px'
-              )}
-            >
-              <Icon variant="BuildingsIcon" size={14} />
-              Operating Nuon on your cloud
-              <span
-                className={cn('flex transition-transform duration-300', selfHosted && 'rotate-90')}
-                aria-hidden
-              >
-                <Icon variant="CaretRightIcon" size={14} weight="bold" />
-              </span>
-            </Button>
           </div>
-          <Reveal open={selfHosted}>
-            <div className="flex flex-col gap-2 rounded-md border p-4">
-              <div className="flex items-center gap-2">
-                <NuonMark className="h-4 w-auto text-neutral-900 dark:text-white" />
-                <Text variant="body" weight="strong">
-                  Nuon BYOC
-                </Text>
-              </div>
-              <Text variant="subtext" theme="neutral">
-                The same Nuon account you are creating here, but hosted by you, managed and supported
-                by us.
-              </Text>
-              <Link href={DEMO_REQUEST} isExternal textVariant="subtext">
-                Contact sales for more
-              </Link>
-            </div>
-          </Reveal>
         </div>
-        <IntroDiagram selfHosted={selfHosted} />
+        <IntroDiagram />
       </div>
     </div>
   </div>
-  )
-}
+)
 
 // --- Step 1: the fork --------------------------------------------------------
 //
 // "Start with your app" does not advance the wizard. It expands the setup in
-// place: connect GitHub, install the CLI, then create the app. The agent/manual
-// either/or is a Clerk-style tab toggle.
+// place: connect GitHub, install the CLI, then create the app. On the Template
+// step the agent path is the whole card; manual setup is a cautioned option
+// below it, beside a way to have Nuon's team write the config.
 //
 // Order, verified against docs/guides/agents: the MCP server is `nuon agents
 // mcp`, a CLI subcommand, so the CLI must be installed and logged in first. The
@@ -961,17 +794,34 @@ const IntroScreen = ({ onStart }: { onStart: () => void }) => {
 // is offered as an optional extra. GitHub is only required for `connected_repo`
 // components (private repos); production onboarding v2 has no GitHub step.
 
-type TSetupMode = 'agent' | 'manual'
+// Where "Contact us" lands. In the product, AuthLayout loads the Pylon chat widget
+// for signed-in users (lib/pylon-chat), so the button opens it with a message
+// started. The playground has no widget, so it falls back to the demo form.
+const DEMO_REQUEST = 'https://nuon.co/demo-request'
+const CONTACT_MESSAGE = 'I would like help writing the app config for my first install.'
+const contactUs = () => {
+  if (typeof window.Pylon === 'function') {
+    window.Pylon('showNewMessage', CONTACT_MESSAGE)
+    return
+  }
+  window.open(DEMO_REQUEST, '_blank', 'noopener,noreferrer')
+}
 
 const DOCS_MCP = 'https://docs.nuon.co/guides/agents/mcp-walkthrough'
-const CLI_SETUP = 'brew install nuonco/tap/nuon\nnuon auth login'
+// Placeholder until the marketing site hosts the prompt as its own text file.
+const PROMPT_TXT_URL = 'https://nuon.co/llms.txt'
+const DOCS_RUNNERS = 'https://docs.nuon.co/concepts/runners'
+const DOCS_SANDBOXES = 'https://docs.nuon.co/concepts/sandboxes'
+const CLI_SETUP = 'brew install nuonco/tap/nuon\nnuon login'
 const MCP_ADD_CLAUDE = 'claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes'
 const DOCS_CONFIG_FILES = 'https://docs.nuon.co/configuration-files'
-const DOCS_APP_BRANCHES = 'https://docs.nuon.co/guides/app-branches'
-const GIT_PUSH = (app: string) => `git add ${app}\ngit commit -m "Add Nuon app template"\ngit push origin main`
-const DOCS_CONFIG_REF = 'https://docs.nuon.co/config-ref'
-const DOCS_SANDBOXES = 'https://docs.nuon.co/concepts/sandboxes'
+const AWS_QUICK_CREATE_DOCS =
+  'https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stacks-quick-create-links.html'
+const GCP_INFRA_MANAGER_DOCS = 'https://cloud.google.com/infrastructure-manager/docs'
+const GIT_PUSH = (app: string) => `git add ${app}\ngit commit -m "Add Nuon app config"\ngit push origin main`
 const VSCODE_EXTENSION = 'https://marketplace.visualstudio.com/items?itemName=Nuon.nuon-lsp'
+const LSP_NEOVIM_SETUP = 'https://github.com/nuonco/nuon/blob/main/bins/lsp/README.md#neovim'
+const DOCS_LSP = 'https://docs.nuon.co/configuration-files#language-server-protocol-lsp'
 // The one layout we show: config at the root of the connected repo, the way every
 // example-app-config does (kitchen-sink: metadata.toml at the top level, components/
 // beside it). Nesting under nuon/<app> exists in the wild but is an anti-pattern.
@@ -986,10 +836,12 @@ const CopyTextButton = ({
   text,
   label,
   size = 'md',
+  variant = 'secondary',
 }: {
   text: string
   label: string
   size?: 'lg' | 'md' | 'sm'
+  variant?: 'primary' | 'secondary'
 }) => {
   const [copied, setCopied] = useState(false)
 
@@ -1001,7 +853,7 @@ const CopyTextButton = ({
 
   return (
     <Button
-      variant="secondary"
+      variant={variant}
       size={size}
       className="shrink-0"
       onClick={() => {
@@ -1015,252 +867,100 @@ const CopyTextButton = ({
   )
 }
 
-// Collapsed preview of what "Start with your app" expands into.
-const OWN_APP_STEPS: { icon: TIconVariant; title: string; body: string }[] = [
-  {
-    icon: 'GitHub',
-    title: 'Connect GitHub',
-    body: 'Needed for private repos. Nuon builds components from the repos you pick.',
-  },
-  {
-    icon: 'RobotIcon',
-    title: 'Create your app template',
-    body: 'One paste into your coding agent, or write a few config files.',
-  },
-  {
-    icon: 'CloudIcon',
-    title: 'Create the first install',
-    body: "Into your own cloud account first, then a customer's.",
-  },
+const OWN_APP_STEPS: { icon: TIconVariant; title: string }[] = [
+  { icon: 'GitHub', title: 'Connect GitHub' },
+  { icon: 'RobotIcon', title: 'Connect your app' },
+  { icon: 'CloudIcon', title: 'Create the first install' },
 ]
-
-const AgentSetup = () => (
-  <div className="flex flex-col gap-4">
-    <div className="flex flex-col gap-3">
-      <Text variant="body" weight="strong">
-        Open the directory that holds your app, paste this to your agent
-      </Text>
-      <div className="flex flex-col gap-4 rounded-md border p-4 sm:flex-row sm:items-center">
-        <div className="line-clamp-3 flex-1">
-          <Text as="span" variant="body" family="mono" weight="strong" theme="brand">
-            /goal
-          </Text>
-          <Text as="span" variant="body" family="mono" theme="neutral">
-            {AGENT_PASTE.slice(5)}
-          </Text>
-        </div>
-        <CopyTextButton text={AGENT_PASTE} label="Copy prompt" size="lg" />
-      </div>
-    </div>
-
-    {/* Same shape as the sections above: strong label, bordered body, docs row. */}
-    <div className="flex flex-col gap-3 rounded-md border p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge size="sm" theme="neutral">
-          Optional
-        </Badge>
-        <Text variant="body" weight="strong">
-          Give your agent the Nuon MCP server
-        </Text>
-      </div>
-      <Text variant="body" theme="neutral">
-        Live access to your org while it works: apps, builds, installs, and logs. For example, in
-        Claude Code:
-      </Text>
-      <CodeBlock language="bash" showCopy wrapLongLines className="!pr-14">
-        {MCP_ADD_CLAUDE}
-      </CodeBlock>
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <Link href={DOCS_MCP} isExternal textVariant="subtext">
-          docs.nuon.co/guides/agents/mcp-walkthrough
-        </Link>
-        <Text variant="subtext" theme="neutral">
-          Cursor, Amp, and other clients take the same server as JSON. Run{' '}
-          <Badge size="sm" variant="code">
-            nuon agents help
-          </Badge>{' '}
-          for each client's file.
-        </Text>
-      </div>
-    </div>
-  </div>
-)
-
-// Manual setup, push-based. The config lives in the repo connected in Set up and the
-// default app branch tracks it, so a push is the sync (docs/guides/app-branches: any
-// push to the tracked branch starts a run). Three steps; the detail lives in the docs.
-const ManualSetup = ({ appName, repo }: { appName: string; repo: string }) => {
-  const steps: { title: string; body: ReactNode; detail?: ReactNode }[] = [
-    {
-      title: 'Put the config at the root of the repo you connected',
-      body: (
-        <>
-          <Badge size="sm" variant="code">{repo}</Badge> holds the files above at its top level —{' '}
-          <Badge size="sm" variant="code">metadata.toml</Badge> next to{' '}
-          <Badge size="sm" variant="code">components/</Badge>, the way nuonco/kitchen-sink does. The
-          directory name matches the app template name.
-        </>
-      ),
-      detail: (
-        <Link href={KITCHEN_SINK_REPO} isExternal textVariant="subtext">
-          Example — nuonco/kitchen-sink
-        </Link>
-      ),
-    },
-    {
-      title: 'Fill in the stubs',
-      body: (
-        <>
-          Point each <Badge size="sm" variant="code">components/*.toml</Badge> at a repo, directory, and
-          branch — a Terraform module, Helm chart, Kubernetes manifests, a container image, or a Pulumi
-          program — and pick a sandbox in <Badge size="sm" variant="code">sandbox.toml</Badge>.
-        </>
-      ),
-      detail: (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          <Link href={DOCS_CONFIG_REF} isExternal textVariant="subtext">
-            Component reference
-          </Link>
-          <Link href={DOCS_SANDBOXES} isExternal textVariant="subtext">
-            Sandboxes — managed or your own
-          </Link>
-        </div>
-      ),
-    },
-    {
-      title: 'Commit and push',
-      body: (
-        <>
-          Your default app branch tracks <Badge size="sm" variant="code">{repo}</Badge> on{' '}
-          <Badge size="sm" variant="code">main</Badge>. Every push starts a run — no CLI step needed.
-        </>
-      ),
-      detail: (
-        <div className="flex flex-col gap-2">
-          <CodeBlock language="bash" showCopy>
-            {GIT_PUSH(appName)}
-          </CodeBlock>
-          <Text variant="subtext" theme="neutral">
-            Optional: <Badge size="sm" variant="code">nuon apps validate</Badge> checks the config before you push.
-          </Text>
-        </div>
-      ),
-    },
-  ]
-
-  return (
-    <div className="flex flex-col gap-4">
-      <ol className="flex flex-col gap-4">
-        {steps.map((step, index) => (
-          <li key={step.title} className="flex gap-3">
-            <Badge size="sm" theme="brand" className="mt-0.5 shrink-0">
-              {index + 1}
-            </Badge>
-            <div className="flex min-w-0 flex-1 flex-col gap-2">
-              <Text variant="body" weight="strong">
-                {step.title}
-              </Text>
-              <Text variant="subtext" theme="neutral">
-                {step.body}
-              </Text>
-              {step.detail}
-            </div>
-          </li>
-        ))}
-      </ol>
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t pt-3">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          <Link href={DOCS_APP_BRANCHES} isExternal textVariant="subtext">
-            How app branches track a repo
-          </Link>
-          <Link href={DOCS_CONFIG_FILES} isExternal textVariant="subtext">
-            Configuration files
-          </Link>
-        </div>
-        <Text variant="subtext" theme="neutral" flex>
-          Editing TOML by hand?
-          <Link href={VSCODE_EXTENSION} isExternal textVariant="subtext">
-            The Nuon VS Code extension
-          </Link>
-          adds autocomplete and inline validation.
-        </Text>
-      </div>
-    </div>
-  )
-}
 
 // The step's live moment: Nuon watching the tracked branch. In the prototype the
 // review panel's "Simulate push" stands in for the push.
-const PushListener = ({ repo, detected }: { repo: string; detected: boolean }) => (
+const PushListener = ({ detected, cloud }: { detected: boolean; cloud: TCloud }) => (
   <div
     className={cn(
-      'flex flex-wrap items-center justify-between gap-3 rounded-md bg-background p-4 ring-1 transition-shadow',
+      'flex items-start justify-between gap-3 rounded-md bg-background p-4 ring-1 transition-shadow',
       detected ? 'ring-green-500 dark:ring-green-400' : 'ring-neutral-200 dark:ring-neutral-700'
     )}
   >
-    <div className="flex items-center gap-3">
+    <div className="flex min-w-0 flex-1 items-start gap-3">
       {detected ? (
         <Icon variant="CheckCircleIcon" size={20} weight="fill" theme="success" />
       ) : (
         <Icon variant="Loading" size={20} />
       )}
-      <div className="flex flex-col gap-0.5">
+      <div className="flex min-w-0 flex-col gap-0.5">
         <Text variant="body" weight="strong">
-          {detected ? 'Config detected on main' : 'Listening for a push'}
+          {detected ? 'Synced from main' : 'The prompt ends with pushing your app config'}
         </Text>
-        <Text variant="subtext" theme="neutral" flex>
-          {detected ? (
-            <>
-              Commit
-              <Badge size="sm" variant="code">
-                a1b2c3d
-              </Badge>
-              synced the default app branch — building your components.
-            </>
-          ) : (
-            <>
-              Push to
-              <Badge size="sm" variant="code">
-                {repo}
-              </Badge>
-              or run
-              <Badge size="sm" variant="code">
-                nuon sync
-              </Badge>
-              and the default app branch picks it up.
-            </>
-          )}
-        </Text>
+        {detected ? (
+          <Text variant="subtext" theme="neutral" flex className="flex-wrap">
+            Commit
+            <Badge size="sm" variant="code">
+              a1b2c3d
+            </Badge>
+            updated the default app branch. Building your components now.
+          </Text>
+        ) : (
+          <Text variant="subtext" theme="neutral">
+            Continue now and the next steps create the install and provision the{' '}
+            <Link href={DOCS_RUNNERS} isExternal textVariant="subtext" className="!inline-flex align-baseline">
+              runner
+            </Link>{' '}
+            and{' '}
+            <Link href={DOCS_SANDBOXES} isExternal textVariant="subtext" className="!inline-flex align-baseline">
+              Nuon sandbox
+            </Link>{' '}
+            in your {CLOUD_LABEL[cloud]} test account. Your app deploys when the push lands. Or wait for the push and
+            watch it all deploy in one workflow.
+          </Text>
+        )}
       </div>
     </div>
-    <Badge size="sm" theme={detected ? 'success' : 'brand'}>
+    <Badge size="sm" theme={detected ? 'success' : 'brand'} className="mt-0.5 shrink-0">
       {detected ? 'Synced' : 'Watching'}
     </Badge>
   </div>
 )
 
-const SETUP_MODES: { value: TSetupMode; label: string }[] = [
-  { value: 'agent', label: 'Agent setup' },
-  { value: 'manual', label: 'Manual setup' },
-]
-
-// The files Nuon stubs out when the app is named. Which ones are required comes
-// from the `jsonschema:"required"` tags on AppConfig (pkg/config/config.go):
-// version (metadata.toml), runner, sandbox. branch.toml is the app branch Nuon
-// creates behind the scenes, tracking the connected repo (docs/guides/app-branches).
-// Components are where the app lives. Contents are placeholders, not a working config.
 interface IAppFileStub {
   name: string
   purpose: string
   badge: string
   required: boolean
-  snippet: (app: string) => string
+  snippet: (app: string, cloud: TCloud) => string
 }
+
+// Policy shapes per cloud, from nuonco/example-app-configs: kitchen-sink (AWS managed
+// policy), gke-simple (gcp_predefined_role), aks-simple (azure_built_in_roles).
+const ROLE_POLICY: Record<TCloud, string[]> = {
+  aws: ['managed_policy_name = "AdministratorAccess"'],
+  gcp: ['name                = "owner"', 'gcp_predefined_role = "roles/owner"'],
+  azure: ['name                 = "contributor"', 'azure_built_in_roles = ["Contributor"]'],
+}
+const PERMISSIONS_STUB = (cloud: TCloud) =>
+  (
+    [
+      ['provision', 'Provision the sandbox and components.'],
+      ['maintenance', 'Operate and update components.'],
+      ['deprovision', 'Tear the install down.'],
+    ] as const
+  )
+    .map(([role, description]) =>
+      [
+        `[${role}_role]`,
+        `name        = "{{.nuon.install.id}}-${role}"`,
+        `description = "${description}"`,
+        ...(cloud === 'aws' ? [] : [`cloud_platform = "${cloud}"`]),
+        `[[${role}_role.policies]]`,
+        ...ROLE_POLICY[cloud],
+      ].join('\n')
+    )
+    .join('\n\n')
 
 const APP_FILE_STUBS: IAppFileStub[] = [
   {
     name: 'metadata.toml',
-    purpose: 'Names the app template and pins the config version.',
+    purpose: 'Names the app and pins the config version.',
     badge: 'Required',
     required: true,
     snippet: (app) =>
@@ -1271,23 +971,30 @@ const APP_FILE_STUBS: IAppFileStub[] = [
     purpose: 'Which cloud the Nuon runner operates in.',
     badge: 'Required',
     required: true,
-    snippet: () => '# aws, azure, or gcp\nrunner_type = "aws"',
+    snippet: (_app, cloud) => `# aws, azure, or gcp\nrunner_type = "${cloud}"`,
   },
   {
     name: 'sandbox.toml',
-    purpose: 'The base infrastructure the app lands on — EKS, AKS, GKE, ECS.',
+    purpose: 'The base infrastructure the app lands on: the Nuon sandbox for your test cloud.',
     badge: 'Required',
     required: true,
-    snippet: () =>
-      'terraform_version = "1.11.3"\n\n[public_repo]\nrepo      = "nuonco/aws-eks-sandbox"\ndirectory = "."\nbranch    = "main"',
+    snippet: (_app, cloud) =>
+      `terraform_version = "1.11.3"\n\n[public_repo]\nrepo      = "${CLOUD_SANDBOX[cloud]}"\ndirectory = "."\nbranch    = "main"`,
+  },
+  {
+    name: 'permissions.toml',
+    purpose: 'The roles Nuon assumes in the customer account: provision, maintenance and deprovision.',
+    badge: 'Required',
+    required: true,
+    snippet: (_app, cloud) => PERMISSIONS_STUB(cloud),
   },
   {
     name: 'branch.toml',
-    purpose: 'Tracks the repo you connected — every push to main syncs the default app branch.',
+    purpose: 'Tracks the repo you connected. Every push to main syncs the default app branch.',
     badge: 'Created for you',
     required: false,
     snippet: (app) =>
-      `name = "main"\n\n[connected_repo]\nrepo      = "jane-doe/${app}"\ndirectory = "."\nbranch    = "main"`,
+      `name = "default"\n\n[connected_repo]\nrepo      = "jane-doe/${app}"\ndirectory = "."\nbranch    = "main"`,
   },
   {
     name: 'components/api.toml',
@@ -1312,10 +1019,10 @@ const staggerClass = (shown: boolean) =>
   cn('transition-all duration-500 ease-out', shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1')
 const staggerDelay = (order: number) => ({ transitionDelay: `${order * 90}ms` })
 
-// Option A: one expandable row per file. First file open so the list reads as content, not a menu.
-const FileStubRows = ({ appName }: { appName: string }) => {
+// One expandable row per file.
+const FileStubRows = ({ appName, cloud }: { appName: string; cloud: TCloud }) => {
   const shown = useMountedReveal()
-  const [open, setOpen] = useState<string[]>([APP_FILE_STUBS[0].name])
+  const [open, setOpen] = useState<string[]>([])
   const toggle = (name: string) =>
     setOpen((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]))
 
@@ -1349,7 +1056,7 @@ const FileStubRows = ({ appName }: { appName: string }) => {
             {isOpen ? (
               <div className="border-t p-3">
                 <CodeBlock language="toml" wrapLongLines>
-                  {file.snippet(appName)}
+                  {file.snippet(appName, cloud)}
                 </CodeBlock>
               </div>
             ) : null}
@@ -1360,97 +1067,79 @@ const FileStubRows = ({ appName }: { appName: string }) => {
   )
 }
 
-// Option B: a read-only editor — file tree on the left, the selected file on the right.
-const FileStubEditor = ({ appName }: { appName: string }) => {
-  const shown = useMountedReveal()
-  const [selected, setSelected] = useState(APP_FILE_STUBS[0].name)
-  const file = APP_FILE_STUBS.find((f) => f.name === selected) ?? APP_FILE_STUBS[0]
 
-  const treeButton = (stub: IAppFileStub, label: string, depth: 1 | 2, order: number) => (
-    <button
-      key={stub.name}
-      type="button"
-      aria-pressed={stub.name === selected}
-      onClick={() => setSelected(stub.name)}
-      style={staggerDelay(order)}
-      className={cn(
-        'flex items-center gap-2 rounded-md px-2 py-1 text-left cursor-pointer hover:bg-cool-grey-500/8',
-        staggerClass(shown),
-        depth === 1 ? 'ml-5' : 'ml-10',
-        stub.name === selected && 'bg-primary-50 dark:bg-primary-950/40'
-      )}
-    >
-      <Icon variant="FileCodeIcon" size={14} theme={stub.name === selected ? 'brand' : 'neutral'} />
-      <Text
-        as="span"
-        variant="subtext"
-        family="mono"
-        theme={stub.name === selected ? 'brand' : 'default'}
-        weight={stub.name === selected ? 'strong' : undefined}
-      >
-        {label}
-      </Text>
-    </button>
-  )
-
-  const rootFiles = APP_FILE_STUBS.filter((f) => !f.name.includes('/'))
-  const componentFiles = APP_FILE_STUBS.filter((f) => f.name.startsWith('components/'))
-
+const EXAMPLE_APP_FACTS = [
+  'Helm chart: API, UI, and worker pods',
+  'Pulumi S3 bucket and CI-built images',
+  'Actions, policies, runbooks, app branches',
+]
+const ExampleAppDrawer = () => {
+  const [open, setOpen] = useState(false)
   return (
-    <div className="grid rounded-md border overflow-hidden md:grid-cols-[220px_1fr]">
-      <div className="flex flex-col gap-0.5 p-2 border-b md:border-b-0 md:border-r">
-        <div className={cn('flex items-center gap-2 px-2 py-1', staggerClass(shown))} style={staggerDelay(0)}>
-          <Icon variant="FolderOpenIcon" size={14} theme="neutral" weight="fill" />
-          <Text as="span" variant="subtext" family="mono" theme="neutral">
-            {appName}/
+    <div className="flex flex-col rounded-md border border-dashed">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls="example-app-drawer"
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left hover:bg-neutral-50 dark:hover:bg-neutral-900"
+      >
+        <span className="flex items-center gap-2">
+          <Icon variant="GithubLogoIcon" size={16} theme="neutral" />
+          <Text variant="subtext" weight="strong">
+            See the example app repo
           </Text>
-        </div>
-        {rootFiles.map((stub, index) => treeButton(stub, stub.name, 1, index + 1))}
-        <div
-          className={cn('ml-5 flex items-center gap-2 px-2 py-1', staggerClass(shown))}
-          style={staggerDelay(rootFiles.length + 1)}
-        >
-          <Icon variant="FolderOpenIcon" size={14} theme="neutral" weight="fill" />
-          <Text as="span" variant="subtext" family="mono" theme="neutral">
-            components/
-          </Text>
-        </div>
-        {componentFiles.map((stub, index) =>
-          treeButton(stub, stub.name.replace('components/', ''), 2, rootFiles.length + 2 + index)
+          <Badge size="sm" variant="code">nuonco/kitchen-sink</Badge>
+        </span>
+        <span className={cn('flex transition-transform duration-300', open && 'rotate-180')} aria-hidden>
+          <Icon variant="CaretDownIcon" size={14} weight="bold" theme="neutral" />
+        </span>
+      </button>
+      <div
+        id="example-app-drawer"
+        className={cn(
+          'grid transition-[grid-template-rows,opacity,visibility] duration-300 ease-out',
+          open ? 'visible grid-rows-[1fr] opacity-100' : 'invisible grid-rows-[0fr] opacity-0'
         )}
-      </div>
-      <div className={cn('flex min-w-0 flex-col', staggerClass(shown))} style={staggerDelay(APP_FILE_STUBS.length + 2)}>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-2">
-          <Text as="span" variant="body" family="mono" weight="strong">
-            {file.name}
-          </Text>
-          <Badge size="sm" theme={file.required ? 'brand' : 'neutral'}>
-            {file.badge}
-          </Badge>
-          <Text as="span" variant="subtext" theme="neutral">
-            {file.purpose}
-          </Text>
+        aria-hidden={!open}
+      >
+        <div className="overflow-hidden">
+          <div className="flex flex-col gap-3 border-t border-dashed px-4 py-3 md:flex-row md:items-start md:justify-between">
+            <div className="flex flex-col gap-1.5">
+              <Text variant="body" weight="strong">
+                Kitchen Sink
+              </Text>
+              <ul className="flex flex-col gap-1">
+                {EXAMPLE_APP_FACTS.map((fact) => (
+                  <li key={fact} className="flex items-start gap-2">
+                    <Icon variant="CheckCircleIcon" size={14} weight="fill" theme="success" className="mt-0.5 shrink-0" />
+                    <Text variant="subtext" theme="neutral">
+                      {fact}
+                    </Text>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <Button variant="secondary" size="sm" href={KITCHEN_SINK_REPO} target="_blank" rel="noreferrer">
+              <Icon variant="GithubLogoIcon" size={14} /> View on GitHub
+            </Button>
+          </div>
         </div>
-        <CodeBlock language="toml" showLineNumbers wrapLongLines className="!rounded-none !shadow-none">
-          {file.snippet(appName)}
-        </CodeBlock>
       </div>
     </div>
   )
 }
 
-// The own path's escape hatch. Quiet and always in the same place, it lands back
-// on the fork with the example options showing, not deep in one cloud's deploy.
 const ExampleEscapeHatch = ({ onExit }: { onExit: () => void }) => (
   <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-dashed px-4 py-3">
     <div className="flex items-center gap-2">
-      <Icon variant="PackageIcon" size={16} theme="neutral" />
+      <Icon variant="TireIcon" size={16} theme="neutral" />
       <Text variant="subtext" theme="neutral">
-        Not ready to package your own app? Kick the tires with our example app instead.
+        Want to see an install work before touching your repo?
       </Text>
     </div>
     <Button variant="ghost" size="sm" onClick={onExit}>
-      Switch to the example app <Icon variant="ArrowRightIcon" size={14} />
+      Use the example app <Icon variant="ArrowRightIcon" size={14} />
     </Button>
   </div>
 )
@@ -1462,6 +1151,8 @@ const OwnAppSetup = ({
   githubDone,
   onGithubDone,
   showErrors,
+  cloud,
+  onCloud,
 }: {
   heading: ReactNode
   appName: string
@@ -1469,6 +1160,8 @@ const OwnAppSetup = ({
   githubDone: boolean
   onGithubDone: () => void
   showErrors: boolean
+  cloud?: TCloud
+  onCloud: (cloud: TCloud) => void
 }) => {
   const [connecting, setConnecting] = useState(false)
   const named = appName.trim().length > 0
@@ -1490,7 +1183,7 @@ const OwnAppSetup = ({
       <Badge size="sm" variant="code">
         jane-doe
       </Badge>
-      — 3 repos
+      · 3 repos
     </Text>
   ) : (
     <Button variant="secondary" size="lg" disabled={connecting} onClick={() => setConnecting(true)}>
@@ -1573,13 +1266,15 @@ const OwnAppSetup = ({
             value={appName}
             onChange={(e) => onAppName(e.currentTarget.value)}
             labelProps={{ labelText: 'App template name' }}
-            helperText="Also the name of the directory that holds its config."
             error={showErrors && !named}
             errorMessage="Name your app template to continue."
             autoComplete="off"
             spellCheck={false}
           />
         </div>
+        {/* Asked here, before the template step, so the stubbed runner, sandbox and
+            permissions match the cloud the install will use. */}
+        <TestCloudPicker value={cloud} onChange={onCloud} error={showErrors && !cloud} />
       </Card>
     </>
   )
@@ -1588,14 +1283,220 @@ const OwnAppSetup = ({
 // --- Step 1b: the template (own path only) ------------------------------------
 //
 // The app exists and its config is stubbed. This step shows the stubs and the
-// two ways to fill them in. Where the stubs sit is a review toggle: above the
-// tabs as a read-only editor, or beside them as compact rows.
+// two ways to fill them in.
+// The optional reading, as one line of fine print under the step. NN/g's progressive
+// disclosure: show the primary task, disclose the rest only when asked, with labels
+// that say what opens. Grey, dotted underline, no border: nothing here competes with
+// "Copy prompt".
+type TFootnote = 'mcp' | 'deps' | 'manual'
+const FOOTNOTE_LINK =
+  'cursor-pointer text-cool-grey-500 underline decoration-dotted underline-offset-2 hover:text-foreground dark:text-cool-grey-400'
+const Footnotes = ({
+  appName,
+  repo,
+  cloud,
+  onExampleExit,
+}: {
+  appName: string
+  repo: string
+  cloud: TCloud
+  onExampleExit: () => void
+}) => {
+  const [open, setOpen] = useState<TFootnote | null>(null)
+  const toggle = (key: TFootnote) => setOpen((prev) => (prev === key ? null : key))
+  return (
+    <div className="flex flex-col gap-3">
+      <Text variant="subtext" theme="neutral" flex className="flex-wrap gap-x-2">
+        <span>Optional:</span>
+        <button
+          type="button"
+          aria-expanded={open === 'mcp'}
+          aria-controls="footnote-mcp"
+          onClick={() => toggle('mcp')}
+          className={FOOTNOTE_LINK}
+        >
+          MCP setup
+        </button>
+        <span aria-hidden>·</span>
+        <button
+          type="button"
+          aria-expanded={open === 'deps'}
+          aria-controls="footnote-deps"
+          onClick={() => toggle('deps')}
+          className={FOOTNOTE_LINK}
+        >
+          Dependencies
+        </button>
+        <span aria-hidden>·</span>
+        <button
+          type="button"
+          aria-expanded={open === 'manual'}
+          aria-controls="footnote-manual"
+          onClick={() => toggle('manual')}
+          className={FOOTNOTE_LINK}
+        >
+          Manual steps
+        </button>
+        <span aria-hidden>·</span>
+        <button type="button" onClick={contactUs} className={FOOTNOTE_LINK}>
+          Get help
+        </button>
+        <span aria-hidden>·</span>
+        <button type="button" onClick={onExampleExit} className={FOOTNOTE_LINK}>
+          Use the example app instead
+        </button>
+      </Text>
+      {open === 'manual' ? (
+        <div id="footnote-manual" className="rounded-md border bg-background p-4">
+          <ManualSetup appName={appName} repo={repo} cloud={cloud} />
+        </div>
+      ) : null}
+      {open === 'mcp' ? (
+        <div id="footnote-mcp" className="flex flex-col gap-1.5 rounded-md border bg-background p-4">
+          <Text variant="subtext" weight="strong">
+            Give your agent the Nuon Model Context Protocol (MCP) server
+          </Text>
+          <Text variant="subtext" theme="neutral">
+            Live access to your org while it works: apps, builds, installs and logs. In Claude Code:
+          </Text>
+          <CodeBlock language="bash" showCopy wrapLongLines className="!pr-14">
+            {MCP_ADD_CLAUDE}
+          </CodeBlock>
+          <Link href={DOCS_MCP} isExternal textVariant="subtext">
+            docs.nuon.co/guides/agents/mcp-walkthrough
+          </Link>
+        </div>
+      ) : null}
+      {open === 'deps' ? (
+        <div id="footnote-deps" className="flex flex-col gap-1.5 rounded-md border bg-background p-4">
+          <Text variant="subtext" weight="strong">
+            Dependencies
+          </Text>
+          <Text variant="subtext" theme="neutral">
+            Databases like Postgres run as components in the customer&apos;s account. Third-party services like
+            Clerk or SendGrid stay external; their keys arrive as install inputs.
+          </Text>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+// Manual setup, push-based. The config lives in the repo connected in Set up and the
+// default app branch tracks it, so a push is the sync (docs/guides/app-branches: any
+// push to the tracked branch starts a run). The six files live here, for the person
+// who chose to fill them in.
+const ManualSetup = ({ appName, repo, cloud }: { appName: string; repo: string; cloud: TCloud }) => {
+  const steps: { title: string; body: ReactNode; detail?: ReactNode }[] = [
+    {
+      title: 'Put the config at the root of the repo',
+      body: (
+        <>
+          Top level of <Badge size="sm" variant="code">{repo}</Badge>, the same layout as{' '}
+          <Link href={KITCHEN_SINK_REPO} isExternal textVariant="subtext" className="!inline-flex align-baseline">
+            nuonco/kitchen-sink
+          </Link>
+        </>
+      ),
+    },
+    {
+      title: 'Fill in the app config templates with your values',
+      body: (
+        <>
+          Point each component at a repo and branch, pick a sandbox, scope roles.{' '}
+          <Link href={DOCS_CONFIG_FILES} isExternal textVariant="subtext" className="!inline-flex align-baseline">
+            Configuration files
+          </Link>
+        </>
+      ),
+      detail: <FileStubRows appName={appName} cloud={cloud} />,
+    },
+    {
+      title: 'Push to main',
+      body: <>Every push syncs the default app branch.</>,
+      detail: (
+        <CodeBlock language="bash" showCopy>
+          {GIT_PUSH(appName)}
+        </CodeBlock>
+      ),
+    },
+  ]
+
+  return (
+    <div className="flex flex-col gap-4">
+      <ol className="flex flex-col gap-4">
+        {steps.map((step, index) => (
+          <li key={step.title} className="flex gap-3">
+            <Badge size="sm" theme="brand" className="mt-0.5 shrink-0">
+              {index + 1}
+            </Badge>
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <Text variant="body" weight="strong">
+                {step.title}
+              </Text>
+              <Text variant="subtext" theme="neutral">
+                {step.body}
+              </Text>
+              {step.detail}
+            </div>
+          </li>
+        ))}
+      </ol>
+      <Text variant="subtext" theme="neutral" flex className="flex-wrap border-t pt-3">
+        Editing TOML by hand? The Nuon language server adds autocomplete and validation:
+        <Link href={VSCODE_EXTENSION} isExternal textVariant="subtext">
+          VS Code extension
+        </Link>
+        <span aria-hidden>·</span>
+        <Link href={LSP_NEOVIM_SETUP} isExternal textVariant="subtext">
+          Neovim setup
+        </Link>
+        <span aria-hidden>·</span>
+        <Link href={DOCS_LSP} isExternal textVariant="subtext">
+          Language server docs
+        </Link>
+      </Text>
+    </div>
+  )
+}
+
+// The agent path is the card. The prompt is the one thing to act on.
+const AgentSetup = () => (
+  <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-1.5">
+      <Text as="h3" variant="h3" weight="strong" flex>
+        <Icon variant="RobotIcon" size={20} />
+        Have your agent write the config
+      </Text>
+      <Text variant="body" theme="neutral">
+        Paste this prompt in the same directory as your app. Then, you&apos;re one step from a test install as if
+        it were a customer&apos;s cloud.
+      </Text>
+    </div>
+    <div className="flex flex-col gap-4 rounded-md border bg-background p-4 sm:flex-row sm:items-center">
+      <div className="line-clamp-1 min-w-0 flex-1">
+        <Text as="span" variant="body" family="mono" weight="strong" theme="brand">
+          /goal
+        </Text>
+        <Text as="span" variant="body" family="mono" theme="neutral">
+          {AGENT_PASTE.slice(5)}
+        </Text>
+      </div>
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <CopyTextButton text={AGENT_PASTE} label="Copy prompt" size="lg" variant="primary" />
+        <Button variant="secondary" size="lg" href={PROMPT_TXT_URL} target="_blank" rel="noreferrer">
+          See full prompt <Icon variant="ArrowSquareOutIcon" size={14} />
+        </Button>
+      </div>
+    </div>
+  </div>
+)
+
 const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
-  const { templateLayout, choose, pushTick } = useForkChoice()
+  const { choose, pushTick } = useForkChoice()
   const appName = readAppName(sharedData)
-  const [mode, setMode] = useState<TSetupMode>('agent')
-  const beside = templateLayout === 'beside'
-  // The connected account from Set up, and a repo named after the template.
+  const cloud = readCloud(sharedData)
+  // The connected account from Set up, and a repo named after the app.
   const repo = `jane-doe/${appName}`
   const detected = pushTick > 0
 
@@ -1603,75 +1504,20 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
   const exitToExample = () => {
     setSharedData('expandOwn', false)
     setSharedData('path', 'example')
-    choose({ path: 'example', cloud: readCloud(sharedData) })
+    setSharedData('cloud', EXAMPLE_CLOUDS[0])
+    setSharedData('region', CLOUD_REGIONS[EXAMPLE_CLOUDS[0]].options[0])
+    choose({ path: 'example', cloud: EXAMPLE_CLOUDS[0] })
     onGoBack?.()
   }
 
-  const stubs = (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <Text variant="body" weight="strong">
-          Your app template
-        </Text>
-        <Badge size="sm" theme="brand">
-          Stubbed by Nuon
-        </Badge>
-        <Text variant="subtext" theme="neutral">
-          Three required files, the branch that tracks your repo, and components/.
-        </Text>
-      </div>
-      {beside ? <FileStubRows appName={appName} /> : <FileStubEditor appName={appName} />}
-    </div>
-  )
-
-  const fill = (
-    <div className="flex flex-col gap-3">
-      <Text variant="body" weight="strong">
-        Fill it in
-      </Text>
-      <ToggleButton<TSetupMode>
-        options={SETUP_MODES}
-        value={mode}
-        onChange={setMode}
-        size="lg"
-        className="self-start"
-      />
-      <div className="rounded-md border bg-background p-4">
-        {mode === 'agent' ? <AgentSetup /> : <ManualSetup appName={appName} repo={repo} />}
-      </div>
-    </div>
-  )
-
   return (
     <div className="flex flex-col gap-6">
-      <Card className="!gap-5 !p-5 !border-0 !shadow-none bg-primary-50 dark:bg-primary-950/40 ring-1 ring-primary-200 dark:ring-primary-800">
-        <Text variant="body" theme="neutral" flex>
-          You are creating
-          <Badge size="sm" variant="code">
-            {appName}
-          </Badge>
-        </Text>
-        {beside ? (
-          <div className="grid gap-5 items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-            {stubs}
-            {fill}
-          </div>
-        ) : (
-          <>
-            {stubs}
-            {fill}
-          </>
-        )}
-        <PushListener repo={repo} detected={detected} />
+      <Card className="!gap-10 !p-5 !border-0 !shadow-none bg-primary-50 dark:bg-primary-950/40 ring-1 ring-primary-200 dark:ring-primary-800">
+        <AgentSetup />
+        <PushListener detected={detected} cloud={cloud} />
       </Card>
-      <ExampleEscapeHatch onExit={exitToExample} />
-      <NextButton
-        label="Set up your first install"
-        disabled={!detected}
-        disabledReason="Cannot continue — waiting for your first push"
-        onClick={onAdvance}
-        onBack={onGoBack}
-      />
+      <Footnotes appName={appName} repo={repo} cloud={cloud} onExampleExit={exitToExample} />
+      <NextButton label="Set up your first install" onClick={onAdvance} onBack={onGoBack} />
     </div>
   )
 }
@@ -1682,16 +1528,17 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
   const setupRef = useRef<HTMLDivElement>(null)
   const named = ((sharedData.appName as string | undefined) ?? '').trim().length > 0
   const githubDone = Boolean(sharedData.githubDone)
+  const testCloud = sharedData.testCloud as TCloud | undefined
   // Errors show only after a failed attempt to continue, on whichever field is missing.
   const [showErrors, setShowErrors] = useState(false)
 
   const tryContinue = () => {
-    if (!named || !githubDone) {
+    if (!named || !githubDone || !testCloud) {
       setShowErrors(true)
       setupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       return
     }
-    go({ path: 'own' })
+    go({ path: 'own', cloud: testCloud })
   }
 
   const go = (choice: IForkChoice) => {
@@ -1703,7 +1550,7 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
 
   // Expanding commits to the own-app path so the stepper stops showing the example path's "Deploy" dot.
   const expand = () => {
-    choose({ path: 'own' })
+    choose({ path: 'own', cloud: readCloud(sharedData) })
     setSharedData('path', 'own')
     // Persisted so Back from the template step remounts this step still expanded.
     setSharedData('expandOwn', true)
@@ -1714,7 +1561,9 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
   const exitToExample = () => {
     setSharedData('expandOwn', false)
     setSharedData('path', 'example')
-    choose({ path: 'example', cloud: readCloud(sharedData) })
+    setSharedData('cloud', EXAMPLE_CLOUDS[0])
+    setSharedData('region', CLOUD_REGIONS[EXAMPLE_CLOUDS[0]].options[0])
+    choose({ path: 'example', cloud: EXAMPLE_CLOUDS[0] })
     setExpanded(false)
   }
 
@@ -1743,6 +1592,13 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
             githubDone={githubDone}
             onGithubDone={() => setSharedData('githubDone', true)}
             showErrors={showErrors}
+            cloud={testCloud}
+            onCloud={(value) => {
+              setSharedData('testCloud', value)
+              setSharedData('cloud', value)
+              setSharedData('region', CLOUD_REGIONS[value].options[0])
+              choose({ path: 'own', cloud: value })
+            }}
           />
           <ExampleEscapeHatch onExit={exitToExample} />
         </div>
@@ -1752,19 +1608,17 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
           {heading}
           <ol className="grid gap-3 sm:grid-cols-3">
               {OWN_APP_STEPS.map((step, index) => (
-                <li key={step.title} className="flex flex-col gap-2 rounded-md border p-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <Icon variant={step.icon} size={20} theme="brand" />
-                    <Badge size="sm" theme="brand">
-                      {index + 1}
-                    </Badge>
-                  </div>
-                  <Text variant="body" weight="strong">
+                <li
+                  key={step.title}
+                  className="flex items-center gap-2.5 rounded-md border px-3.5 py-3"
+                >
+                  <Icon variant={step.icon} size={18} theme="brand" />
+                  <Text variant="body" weight="strong" className="min-w-0 flex-1">
                     {step.title}
                   </Text>
-                  <Text variant="subtext" theme="neutral">
-                    {step.body}
-                  </Text>
+                  <Badge size="sm" theme="brand">
+                    {index + 1}
+                  </Badge>
                 </li>
               ))}
             </ol>
@@ -1777,18 +1631,18 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
       <Card className="!gap-4">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
-            <Icon variant="PackageIcon" size={20} theme="neutral" />
+            <Icon variant="TireIcon" size={20} theme="neutral" />
             <Text variant="h3" role="heading" level={3}>
               Or kick the tires with our example app first
             </Text>
           </div>
           <Text variant="body" theme="neutral">
-            Pre-wired with Terraform, Helm, images, and manifests, and deploys exactly the way a
-            customer would deploy yours.
+            Pre-wired with Terraform, Helm, images, manifests. Deploy it to your cloud account just
+            like your customers would deploy your app.
           </Text>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {(['aws', 'gcp', 'azure'] as TCloud[]).map((cloud) => (
+          {EXAMPLE_CLOUDS.map((cloud) => (
             <Button
               key={cloud}
               variant="secondary"
@@ -1799,25 +1653,15 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
               Deploy to {CLOUD_LABEL[cloud]}
             </Button>
           ))}
-          <Button variant="secondary" size="md" onClick={() => go({ path: 'hosted', cloud: 'aws' })}>
-            <Icon variant="FlaskIcon" size={16} />
-            Use a Nuon-hosted account
-            <Badge size="sm" theme="brand">
-              Fastest
-            </Badge>
-          </Button>
         </div>
-        <Text variant="subtext" theme="neutral">
-          Nuon-hosted. Great way to test out the CLI and product on a real example app — without
-          incurring your own POC cloud costs.
-        </Text>
+        <ExampleAppDrawer />
       </Card>
         </>
       )}
 
 
       {expanded ? (
-        <NextButton label="Create your app template" onClick={tryContinue} onBack={backToIntro} />
+        <NextButton label="Connect your app" onClick={tryContinue} onBack={backToIntro} />
       ) : (
         <NextButton onBack={backToIntro} showNext={false} />
       )}
@@ -1831,11 +1675,73 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
 // the customer launches it, the stack reports back.
 type TStackPhase = 'generating' | 'ready' | 'opening' | 'waiting' | 'done'
 
-const CLOUD_OPTIONS: { value: TCloud; label: string }[] = [
-  { value: 'aws', label: 'AWS' },
-  { value: 'gcp', label: 'GCP' },
-  { value: 'azure', label: 'Azure' },
-]
+const TEST_CLOUDS: TCloud[] = ['aws', 'gcp', 'azure']
+
+// No default: the test cloud is the user's own account, so nothing is preselected.
+const TestCloudPicker = ({
+  value,
+  onChange,
+  error,
+}: {
+  value?: TCloud
+  onChange: (cloud: TCloud) => void
+  error: boolean
+}) => (
+  <fieldset aria-describedby={error ? 'test-cloud-error' : 'test-cloud-hint'}>
+    <legend className="mb-2">
+      <Text variant="body" weight="strong">
+        Test cloud where your app will be installed
+      </Text>
+    </legend>
+    <div className="flex flex-col gap-2">
+      <div className="grid max-w-md grid-cols-3 gap-3">
+        {TEST_CLOUDS.map((cloud) => {
+          const checked = value === cloud
+          return (
+            <label
+              key={cloud}
+              title={CLOUD_LABEL[cloud]}
+              className={cn(
+                'flex h-14 cursor-pointer items-center gap-3 rounded-md px-4 ring-1 transition-shadow',
+                'has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary-500',
+                checked
+                  ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-950/40'
+                  : error
+                    ? 'ring-red-500 dark:ring-red-400 hover:bg-neutral-50 dark:hover:bg-neutral-900'
+                    : 'ring-neutral-200 dark:ring-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-900'
+              )}
+            >
+              <input
+                type="radio"
+                name="test-cloud"
+                value={cloud}
+                checked={checked}
+                onChange={() => onChange(cloud)}
+                required
+                aria-invalid={error || undefined}
+                className="accent-primary-600 focus-visible:outline-none"
+              />
+              <span className="flex flex-1 justify-center">
+                <Icon variant={CLOUD_ICON[cloud]} size={cloud === 'aws' ? 26 : 22} />
+              </span>
+              <span className="sr-only">{CLOUD_LABEL[cloud]}</span>
+            </label>
+          )
+        })}
+      </div>
+      {error ? (
+        <Text id="test-cloud-error" variant="subtext" theme="error" flex>
+          <Icon variant="WarningCircleIcon" size={14} weight="fill" />
+          Select a test cloud to continue.
+        </Text>
+      ) : (
+        <Text id="test-cloud-hint" variant="subtext" theme="neutral">
+          Nuon stubs the runner, sandbox and permissions for this cloud.
+        </Text>
+      )}
+    </div>
+  </fieldset>
+)
 
 // How a customer creates the install stack, per cloud (docs/concepts/stacks.mdx and
 // docs/platform-support/*): Terraform plus the platform's native format, except GCP,
@@ -1851,15 +1757,33 @@ const STACK_METHODS: Record<TCloud, { name: string; how: string }[]> = {
     { name: 'Terraform', how: 'Generated tfvars for the install-stacks/gcp module. gcloud auth, then terraform apply. GCP is Terraform only.' },
   ],
   azure: [
-    { name: 'Deploy to Azure (Bicep)', how: 'One pre-filled link. Your customer deploys in the portal.' },
+    { name: 'Azure CLI (Bicep)', how: 'Create a resource group and Key Vault, then deploy the template with az. Nuon fills in the commands.' },
     { name: 'Terraform', how: 'Generated tfvars for the install-stacks/azure module, applied with terraform.' },
+    { name: 'Deploy to Azure', how: 'A pre-filled portal link. Only when stack.toml sets deployment_scope = "subscription".' },
   ],
 }
 
 // What this install will contain, as a card worth reading: source, sandbox, and
 // components, plus the same three tiers the intro drew. Framing-agnostic — the
 // example and own paths differ only in the facts.
-const InstallSummaryCard = ({ path, appName }: { path: TPath; appName: string }) => {
+// Both repo facts are chips that open the repo.
+const RepoChip = ({ repo }: { repo: string }) => (
+  <Link href={`https://github.com/${repo}`} isExternal textVariant="subtext">
+    <Badge size="sm" variant="code">
+      {repo}
+    </Badge>
+  </Link>
+)
+
+const InstallSummaryCard = ({
+  path,
+  appName,
+  cloud,
+}: {
+  path: TPath
+  appName: string
+  cloud: TCloud
+}) => {
   const own = path === 'own'
   const facts: { label: string; value: ReactNode }[] = own
     ? [
@@ -1876,43 +1800,39 @@ const InstallSummaryCard = ({ path, appName }: { path: TPath; appName: string })
             </>
           ),
         },
-        { label: 'Sandbox', value: 'Nuon-managed, from sandbox.toml' },
-        { label: 'Components', value: 'api — Helm chart, from components/api.toml' },
-      ]
-    : [
         {
-          label: 'Source',
+          label: 'Nuon sandbox',
           value: (
-            <Badge size="sm" variant="code">
-              nuonco/kitchen-sink
-            </Badge>
+            <>
+              <RepoChip repo={CLOUD_SANDBOX[cloud]} />
+              <Text variant="subtext" theme="neutral">
+                from sandbox.toml
+              </Text>
+            </>
           ),
         },
-        { label: 'Sandbox', value: 'Nuon-managed EKS sandbox' },
+        { label: 'Components', value: 'api: Helm chart, from components/api.toml' },
+      ]
+    : [
+        { label: 'Source', value: <RepoChip repo="nuonco/kitchen-sink" /> },
+        { label: 'Nuon sandbox', value: <RepoChip repo={CLOUD_SANDBOX[cloud]} /> },
         { label: 'Components', value: 'Terraform modules, Helm charts, container images' },
       ]
 
   return (
     <Card className="!gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Icon variant={own ? 'GitBranchIcon' : 'PackageIcon'} size={24} theme="brand" />
-          <div className="flex flex-col">
-            <Text variant="base" weight="strong">
-              {own ? appName : 'Nuon Kitchen Sink app'}
-            </Text>
-            <Text variant="subtext" theme="neutral">
-              {own
-                ? 'Your app template. This is what every install of it will contain.'
-                : 'Everything you can do with Nuon, in one example app.'}
-            </Text>
-          </div>
+      <div className="flex items-center gap-3">
+        <Icon variant={own ? 'GitBranchIcon' : 'TireIcon'} size={24} theme="brand" />
+        <div className="flex flex-col">
+          <Text variant="base" weight="strong">
+            {own ? appName : 'Nuon Kitchen Sink app'}
+          </Text>
+          <Text variant="subtext" theme="neutral">
+            {own
+              ? 'Your app template. This is what every install of it will contain.'
+              : 'Everything you can do with Nuon, in one example app.'}
+          </Text>
         </div>
-        {own ? null : (
-          <Link href={KITCHEN_SINK_REPO} isExternal textVariant="subtext">
-            View app config
-          </Link>
-        )}
       </div>
       <dl className="grid gap-4 sm:grid-cols-3">
         {facts.map((fact) => (
@@ -1953,7 +1873,7 @@ const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardS
   const cloud = readCloud(sharedData)
   const regions = CLOUD_REGIONS[cloud]
   const appName = path === 'own' ? readAppName(sharedData) : 'Kitchen Sink'
-  const region = (sharedData.region as string | undefined) ?? regions.options[0].value
+  const region = (sharedData.region as string | undefined) ?? regions.options[0]
   const [autoApprove, setAutoApprove] = useState(true)
 
   return (
@@ -1967,26 +1887,9 @@ const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardS
             Pre-selected for a quick first run. Change anything you like.
           </Text>
         </div>
-        {path === 'own' ? (
-          <div className="flex flex-col gap-2">
-            <Text variant="body" weight="strong">
-              Cloud
-            </Text>
-            <ToggleButton<TCloud>
-              options={CLOUD_OPTIONS}
-              value={cloud}
-              onChange={(value) => {
-                setSharedData('cloud', value)
-                setSharedData('region', CLOUD_REGIONS[value].options[0].value)
-              }}
-              size="md"
-              className="self-start"
-            />
-          </div>
-        ) : null}
         <Select
           id="fork-region"
-          options={regions.options}
+          options={regionOptions(cloud)}
           labelProps={{ labelText: regions.label }}
           value={region}
           onChange={(value) => setSharedData('region', value)}
@@ -1995,11 +1898,11 @@ const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardS
           checked={autoApprove}
           onChange={setAutoApprove}
           label="Auto-approve"
-          description="Applies changes without waiting for you to approve each plan. On by default for a faster first run."
+          description="Applies each plan as soon as it is ready. On by default for a faster first run."
         />
       </Card>
 
-      <InstallSummaryCard path={path} appName={appName} />
+      <InstallSummaryCard path={path} appName={appName} cloud={cloud} />
 
       <NextButton label="Create install" onClick={onAdvance} onBack={onGoBack} />
     </div>
@@ -2019,8 +1922,7 @@ const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProp
   const connect = CLOUD_CONNECT[cloud]
   const regions = CLOUD_REGIONS[cloud]
   const appName = path === 'own' ? readAppName(sharedData) : 'Kitchen Sink'
-  const region = (sharedData.region as string | undefined) ?? regions.options[0].value
-  const regionLabel = regions.options.find((option) => option.value === region)?.label ?? region
+  const region = (sharedData.region as string | undefined) ?? regions.options[0]
   const methods = STACK_METHODS[cloud]
 
   const [phase, setPhase] = useState<TStackPhase>('generating')
@@ -2055,13 +1957,13 @@ const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProp
           : `${connect.stackLabel} created`
 
   const status = generating
-    ? `Generating the ${connect.stackLabel} link for ${regionLabel}. About 30 seconds.`
+    ? `Generating the ${connect.artifactNoun} for ${region}. About 30 seconds.`
     : ready
-      ? `${connect.stackLabel} link ready for ${region}. From launch to a healthy runner is about 11 minutes — this page updates on its own.`
+      ? `${connect.artifactNoun} ready for ${region}. From launch to a healthy runner is about 11 minutes. This page updates on its own.`
       : phase === 'waiting'
         ? `${connect.waitingHint} This page updates on its own.`
         : phase === 'done'
-          ? `${connect.stackLabel} created — ${connect.accountNoun} connected.`
+          ? `${connect.stackLabel} created. Test ${connect.accountNoun} connected.`
           : connect.opening
 
   return (
@@ -2074,7 +1976,7 @@ const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProp
               {connect.stackLabel} for {appName}
             </Text>
             <Text variant="body" theme="neutral">
-              {connect.accountNoun} · {region}
+              Test {connect.accountNoun} · {region}
             </Text>
           </div>
         </div>
@@ -2089,9 +1991,11 @@ const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProp
             How your customers create this install
           </Text>
           <Text variant="body" theme="neutral">
-            Nuon renders the install stack in Terraform and in {CLOUD_LABEL[cloud]}'s native format —
-            same resources either way. Your customer creates it with their own credentials; that is how
-            access is granted. You are about to do it the way they would.
+            {cloud === 'gcp'
+              ? 'On Google Cloud, Nuon renders the install stack in Terraform.'
+              : `Nuon renders the install stack in Terraform and in ${CLOUD_LABEL[cloud]}'s native format.`}{' '}
+            Your customer creates it with their own credentials; that is how access is granted. You are
+            about to do it the way they would.
           </Text>
         </div>
         <ul className="flex flex-col divide-y rounded-md border">
@@ -2142,7 +2046,7 @@ const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProp
           disabled={!ready}
           onClick={() => setPhase('opening')}
           tooltipProps={
-            generating ? { tipContent: `Cannot launch yet — Nuon is still generating the ${connect.stackLabel} link` } : undefined
+            generating ? { tipContent: `Cannot launch until Nuon finishes generating the ${connect.artifactNoun}` } : undefined
           }
         >
           {generating || phase === 'opening' || phase === 'waiting' ? <Icon variant="Loading" size={16} /> : null}
@@ -2155,430 +2059,287 @@ const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProp
 }
 
 // --- Step 4 (all paths): how the install gets built ---------------------------
-//
-// Provisioning is slow, so this step explains the workflow instead of pretending
-// to render it live. The live view is the next step: the install page.
 
-interface IProvisionRow {
-  id: string
-  label: string
-  copy: { pending: string; active: string; done: string }
-}
-
-// Status copy matches the live ProvisioningStep so the prototype reads like production.
-const provisionRows = (path: TPath, cloud: TCloud): IProvisionRow[] => {
-  const stackLabel = path === 'example' ? CLOUD_CONNECT[cloud].stackLabel : 'Install stack'
-  const components = path === 'own' ? ['api', 'web', 'database'] : ['certificate', 'application_load_balancer', 'api', 'ui']
-
-  return [
-    {
-      id: 'stack',
-      label: stackLabel,
-      copy: { pending: 'Waiting to provision...', active: 'Provisioning stack...', done: 'Stack provisioned' },
-    },
-    {
-      id: 'runner',
-      label: 'Runner',
-      copy: { pending: 'Waiting to start...', active: 'Awaiting health check...', done: 'Healthy' },
-    },
-    {
-      id: 'sandbox',
-      label: 'Sandbox',
-      copy: { pending: 'Waiting to configure...', active: 'Setting up your sandbox...', done: 'Sandbox ready' },
-    },
-    ...components.map((name) => ({
-      id: `component-${name}`,
-      label: name,
-      copy: { pending: 'Waiting to deploy...', active: `Deploying ${name}...`, done: 'Deployed' },
-    })),
-  ]
-}
+type TStageId = 'runner' | 'sandbox' | 'components'
+type TStageState = 'done' | 'active' | 'next'
 
 interface IBuildStage {
-  id: string
-  icon: TIconVariant
+  id: TStageId
   label: string
-  text: string
   duration: string
+  activeStatus: string
+  blurb: string
 }
 
-const accountLabel = (path: TPath, cloud: TCloud) =>
-  path === 'hosted' ? 'an AWS account Nuon runs' : `your ${CLOUD_CONNECT[cloud].accountNoun}`
+// Onboarding is a proof of concept, so the account is always framed as a test one.
+const accountLabel = (_path: TPath, cloud: TCloud) => `your test ${CLOUD_CONNECT[cloud].accountNoun}`
 
-// Strict linear order; the chain is the explanation for the duration. Copy is
-// cloud-generic on purpose. Facts: the stack owns the network (the sandbox only
-// tags its subnets), Nuon assumes four roles (provision, deprovision, maintenance,
-// break-glass), and nuonco/aws-eks-sandbox provisions a cluster + node group,
-// registry, storage and policy add-ons, DNS/ingress, namespaces, and RBAC.
-// Durations from docs/get-started: network + machine + healthy runner ≈ 11 min;
-// eks-simple end to end ≈ 35 min.
+const SANDBOX_CLUSTER: Record<TCloud, string> = {
+  aws: 'An EKS cluster and node group',
+  gcp: 'A GKE Autopilot cluster',
+  azure: 'An AKS cluster',
+}
+const SANDBOX_PARTS = ['cluster', 'registry', 'ingress', 'namespaces']
+
+// What is left AFTER the stack, which the user created on the previous step.
+// Durations from docs/get-started: a healthy runner ≈ 1 min after the stack
+// reports home; eks-simple end to end ≈ 35 min.
 const buildStages = (path: TPath, cloud: TCloud, appName: string): IBuildStage[] => [
   {
-    id: 'stack',
-    icon: 'ShieldCheckIcon',
-    label: 'Install stack',
-    text:
-      path === 'hosted'
-        ? 'Network, runner machine, four roles — provision, deprovision, maintenance, break-glass. Nuon runs it in its own account; nothing for you to do.'
-        : 'Network, runner machine, four roles — provision, deprovision, maintenance, break-glass. The one step you run yourself.',
-    duration: 'about 10 min',
-  },
-  {
     id: 'runner',
-    icon: 'CpuIcon',
-    label: 'Runner',
-    text: "Boots on the stack's machine and runs everything after this.",
+    label: 'Nuon runner',
     duration: 'about 1 min',
+    activeStatus: 'Starting',
+    blurb: `Runs in ${accountLabel(path, cloud)} and builds everything else, using the roles your stack granted.`,
   },
   {
     id: 'sandbox',
-    icon: 'StackIcon',
-    label: 'Sandbox',
-    text: 'Where components run: a cluster and nodes, registry, storage and policy add-ons, DNS and ingress, namespaces. Not always Kubernetes. The long one.',
+    label: 'Nuon sandbox',
     duration: 'about 15–20 min',
+    activeStatus: 'Creating',
+    blurb: `${SANDBOX_CLUSTER[cloud]}, a container registry, ingress and namespaces. Takes about 15–20 minutes.`,
   },
   {
     id: 'components',
-    icon: 'PackageIcon',
     label: 'Components',
-    text: `${appName}'s Terraform, Helm, and images, deployed into the sandbox.`,
     duration: 'a few min',
+    activeStatus: 'Deploying',
+    blurb: `${appName}'s Terraform, Helm charts and images, deployed into the sandbox. A few minutes.`,
   },
 ]
 
-// The workflow, live. Stages before activeIndex are done, activeIndex is in
-// progress, the rest show their typical duration — so the chain still answers
-// "why is this slow" while it runs.
-const BuildStages = ({ stages, activeIndex }: { stages: IBuildStage[]; activeIndex: number }) => (
-  <ol className="grid gap-5 md:grid-cols-4 md:gap-0">
-    {stages.map((stage, index) => {
-      const state = index < activeIndex ? 'done' : index === activeIndex ? 'active' : 'next'
-      return (
-        <li key={stage.id} className="relative flex gap-4 md:flex-col md:items-center md:px-3 md:text-center">
-          {index < stages.length - 1 ? (
-            <span
-              aria-hidden
-              className={cn(
-                'absolute left-1/2 top-6 hidden h-px w-full md:block',
-                state === 'done' ? 'bg-green-500 dark:bg-green-400' : 'bg-neutral-200 dark:bg-neutral-600'
-              )}
-            />
-          ) : null}
-          <span
-            className={cn(
-              'relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-background',
-              state === 'active'
-                ? 'ring-2 ring-primary-500'
-                : state === 'done'
-                  ? 'ring-2 ring-green-500 dark:ring-green-400'
-                  : 'ring-1 ring-neutral-200 dark:ring-neutral-600'
-            )}
-          >
-            {state === 'done' ? (
-              <Icon variant="CheckIcon" size={22} weight="bold" theme="success" />
-            ) : (
-              <Icon variant={stage.icon} size={22} theme={state === 'active' ? 'brand' : 'neutral'} />
-            )}
-          </span>
-          <div className="flex flex-col gap-1.5 md:items-center">
-            <Text variant="body" weight="strong">
-              {index + 1}. {stage.label}
-            </Text>
-            {state === 'active' ? (
-              <Badge size="sm" theme="brand">
-                <Icon variant="Loading" size={12} /> In progress
-              </Badge>
-            ) : state === 'done' ? (
-              <Badge size="sm" theme="success">
-                Done
-              </Badge>
-            ) : (
-              <Badge size="sm" theme="neutral">
-                Up next · {stage.duration}
-              </Badge>
-            )}
-            <Text variant="subtext" theme="neutral">
-              {stage.text}
+const stageState = (index: number, activeIndex: number): TStageState =>
+  index < activeIndex ? 'done' : index === activeIndex ? 'active' : 'next'
+
+// Placeholder in Nuon's install-ID shape; the product passes the real one.
+const EXAMPLE_INSTALL_ID = 'inlk3x9q2m7v4w8p1z6r5t0y2c'
+
+const ProvisionAccountView = ({
+  stages,
+  activeIndex,
+  cloud,
+  region,
+}: {
+  stages: IBuildStage[]
+  activeIndex: number
+  cloud: TCloud
+  region: string
+}) => {
+  const [picked, setPicked] = useState<TStageId | null>(null)
+  const [hovered, setHovered] = useState<TStageId | null>(null)
+  const running = stages[Math.min(activeIndex, stages.length - 1)].id
+  const focus = hovered ?? picked ?? running
+  const stateOf = (id: TStageId) => stageState(stages.findIndex((stage) => stage.id === id), activeIndex)
+  const region_ = (id: TStageId) =>
+    focus === id
+      ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-950/40'
+      : 'ring-1 ring-neutral-200 dark:ring-neutral-700 bg-background'
+  const runner = stateOf('runner')
+  const sandbox = stateOf('sandbox')
+  const components = stateOf('components')
+
+  return (
+    <div className="flex flex-col gap-5 md:flex-row">
+      <ol className="flex shrink-0 flex-col gap-2 md:w-60" aria-label="Install stages">
+        {stages.map((stage, index) => {
+          const state = stageState(index, activeIndex)
+          const on = focus === stage.id
+          return (
+            <li key={stage.id}>
+              <button
+                type="button"
+                aria-pressed={on}
+                onClick={() => setPicked(stage.id)}
+                onMouseEnter={() => setHovered(stage.id)}
+                onMouseLeave={() => setHovered(null)}
+                onFocus={() => setHovered(stage.id)}
+                onBlur={() => setHovered(null)}
+                className={cn(
+                  'flex w-full flex-col gap-1.5 rounded-lg px-3 py-2.5 text-left transition-colors',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500',
+                  on
+                    ? 'ring-1 ring-primary-500 bg-primary-50 dark:bg-primary-950/40'
+                    : 'ring-1 ring-neutral-200 dark:ring-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-900'
+                )}
+              >
+                <span className="flex items-center gap-2.5">
+                  <span
+                    className={cn(
+                      'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold',
+                      state === 'done'
+                        ? 'bg-green-600 text-white'
+                        : state === 'active'
+                          ? 'bg-primary-50 text-primary-800 ring-2 ring-primary-500 dark:bg-primary-950'
+                          : 'bg-background text-neutral-500 ring-2 ring-neutral-200 dark:ring-neutral-700'
+                    )}
+                  >
+                    {state === 'done' ? <Icon variant="CheckIcon" size={12} weight="bold" /> : index + 1}
+                  </span>
+                  <Text variant="body" weight="strong" className="min-w-0 flex-1">
+                    {stage.label}
+                  </Text>
+                  <Text
+                    variant="label"
+                    weight="strong"
+                    theme={state === 'done' ? 'success' : state === 'active' ? 'brand' : 'neutral'}
+                  >
+                    {state === 'done' ? 'Done' : state === 'active' ? stage.activeStatus : 'Up next'}
+                  </Text>
+                </span>
+                {on ? (
+                  <Text variant="subtext" theme="neutral" className="pl-8">
+                    {stage.blurb}
+                  </Text>
+                ) : null}
+              </button>
+            </li>
+          )
+        })}
+      </ol>
+
+      <div className="flex min-w-0 flex-1 flex-col gap-3 rounded-xl p-4 ring-2 ring-primary-500 bg-primary-50/40 dark:bg-primary-950/20">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Icon variant={CLOUD_ICON[cloud]} size={18} />
+            <Text variant="base" weight="strong">
+              Your test {CLOUD_CONNECT[cloud].accountNoun}
             </Text>
           </div>
-        </li>
-      )
-    })}
-  </ol>
-)
+          <Badge size="sm" variant="code">
+            {region}
+          </Badge>
+        </div>
 
-// --- Step: the install workflow (the real multi-minute wait) --------------------
-//
-// The stack is creating; when it reports back the runner boots and the workflow
-// takes over. In the product this is driven by install status; here a timer
-// walks the chain. "See your install" ends the flow: the product opens the
-// install's live workflow page.
+        <div className={cn('flex items-center gap-3 rounded-lg px-3.5 py-3 transition-colors', region_('runner'))}>
+          {runner === 'done' ? (
+            <Icon variant="CheckCircleIcon" size={22} weight="fill" theme="success" />
+          ) : (
+            <Icon variant="Loading" size={20} />
+          )}
+          <div className="flex min-w-0 flex-col">
+            <Text variant="body" weight="strong">
+              Nuon runner
+            </Text>
+            <Text variant="subtext" theme="neutral">
+              {runner === 'done'
+                ? 'Running. Everything below is built by it, from inside your account.'
+                : 'Starting on the machine your stack created.'}
+            </Text>
+          </div>
+        </div>
+
+        <div className={cn('flex flex-col gap-3 rounded-lg p-3.5 transition-colors', region_('sandbox'))}>
+          <div className="flex items-center justify-between gap-3">
+            <Text variant="body" weight="strong">
+              Nuon sandbox
+            </Text>
+            <Text variant="subtext" weight="strong" theme={sandbox === 'done' ? 'success' : sandbox === 'active' ? 'brand' : 'neutral'}>
+              {sandbox === 'done' ? 'Ready' : sandbox === 'active' ? 'Creating · 15–20 min' : 'Up next · 15–20 min'}
+            </Text>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {SANDBOX_PARTS.map((part, index) => {
+              const built = sandbox === 'done'
+              const building = sandbox === 'active' && index === 0
+              return (
+                <span
+                  key={part}
+                  className={cn(
+                    'rounded-md px-2 py-1 font-mono text-xs',
+                    built
+                      ? 'ring-1 ring-neutral-300 dark:ring-neutral-600 bg-background'
+                      : building
+                        ? 'ring-1 ring-primary-500 bg-primary-50 dark:bg-primary-950/40'
+                        : 'outline-1 outline-dashed outline-neutral-300 dark:outline-neutral-600 text-neutral-500'
+                  )}
+                >
+                  {part}
+                </span>
+              )
+            })}
+          </div>
+          <div
+            className={cn(
+              'flex items-center justify-between gap-3 rounded-lg px-3.5 py-3 transition-colors',
+              focus === 'components'
+                ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-950/40'
+                : components === 'next'
+                  ? 'outline-1 outline-dashed outline-neutral-300 dark:outline-neutral-600 bg-background'
+                  : 'ring-1 ring-neutral-200 dark:ring-neutral-700 bg-background'
+            )}
+          >
+            <div className="flex min-w-0 flex-col">
+              <Text variant="body" weight="strong">
+                Your components
+              </Text>
+              <Text variant="subtext" theme="neutral">
+                Terraform, Helm charts and images land here once the sandbox is up.
+              </Text>
+            </div>
+            <Text
+              variant="subtext"
+              weight="strong"
+              theme={components === 'done' ? 'success' : components === 'active' ? 'brand' : 'neutral'}
+              className="whitespace-nowrap"
+            >
+              {components === 'done' ? 'Deployed' : components === 'active' ? 'Deploying' : 'Up next'}
+            </Text>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const STAGE_DWELL_MS = [3000, 6000, 3000]
+
 const ProvisionStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
   const path = readPath(sharedData)
   const cloud = readCloud(sharedData)
   const appName = path === 'own' ? readAppName(sharedData) : 'Kitchen Sink'
   const stages = buildStages(path, cloud, appName)
-  const where = accountLabel(path, cloud)
+  const region = (sharedData.region as string | undefined) ?? CLOUD_REGIONS[cloud].options[0]
   const [activeIndex, setActiveIndex] = useState(0)
+  const watchCommand = `nuon installs workflows watch -i ${EXAMPLE_INSTALL_ID}`
 
   useEffect(() => {
-    if (activeIndex >= stages.length - 1) return
-    const timer = setTimeout(() => setActiveIndex((prev) => prev + 1), activeIndex === 0 ? 3000 : 2600)
+    if (activeIndex >= stages.length) return
+    const timer = setTimeout(() => setActiveIndex((prev) => prev + 1), STAGE_DWELL_MS[activeIndex] ?? 3000)
     return () => clearTimeout(timer)
   }, [activeIndex, stages.length])
 
   return (
     <div className="flex flex-col gap-6">
-      <Card className="!gap-0 !p-4 !flex-row items-center justify-between">
-        <div className="flex items-center gap-3">
-          {path === 'hosted' ? (
-            <Icon variant="FlaskIcon" size={24} theme="brand" />
-          ) : (
-            <Icon variant={CLOUD_ICON[cloud]} size={24} />
-          )}
-          <div className="flex flex-col">
-            <Text variant="base" weight="strong">
-              {appName}
+      <Card className="!gap-5">
+        <ProvisionAccountView stages={stages} activeIndex={activeIndex} cloud={cloud} region={region} />
+        <div className="flex flex-col gap-3 border-t pt-5">
+          <div className="flex flex-col gap-1">
+            <Text variant="body" weight="strong">
+              See it in action in the CLI
             </Text>
-            <Text variant="body" theme="neutral">
-              Building the install in {where} — {stages[activeIndex].label.toLowerCase()} in progress
-            </Text>
-          </div>
-        </div>
-        <Badge size="sm" theme={path === 'hosted' ? 'brand' : 'neutral'}>
-          {path === 'hosted' ? 'Nuon-hosted account' : CLOUD_CONNECT[cloud].accountNoun}
-        </Badge>
-      </Card>
-
-      <Card className="!gap-6">
-        <div className="flex flex-col gap-1">
-          <Text variant="h3" role="heading" level={3}>
-            The Nuon install workflow
-          </Text>
-          <Text variant="body" theme="neutral">
-            {path === 'hosted'
-              ? 'Nuon created the stack in its own account. '
-              : 'Your stack is creating. When it reports back, the runner boots and the workflow takes over. '}
-            This creates all the cloud resources needed (network, VM, cluster) in {where}.
-          </Text>
-        </div>
-        <BuildStages stages={stages} activeIndex={activeIndex} />
-      </Card>
-
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border px-4 py-3">
-        <Text variant="body" theme="neutral">
-          You can leave and come back — the install page shows live progress.
-        </Text>
-        <Text variant="subtext" theme="neutral" flex>
-          Or watch from your terminal:
-          <Badge size="sm" variant="code">
-            nuon installs list
-          </Badge>
-        </Text>
-      </div>
-
-      <NextButton label="See your install" onClick={onAdvance} onBack={onGoBack} />
-    </div>
-  )
-}
-
-// --- Step 5 (all paths): the install page, live ---------------------------------
-
-const InstallStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
-  const path = readPath(sharedData)
-  const cloud = readCloud(sharedData)
-  const rows = useMemo(() => provisionRows(path, cloud), [path, cloud])
-
-  const [completed, setCompleted] = useState(0)
-  const isDone = completed >= rows.length
-  const activeRow = rows[completed]
-  const appName = path === 'own' ? readAppName(sharedData) : 'kitchen-sink'
-
-  useEffect(() => {
-    if (isDone) return
-    const timer = setTimeout(() => setCompleted((prev) => prev + 1), 950)
-    return () => clearTimeout(timer)
-  }, [completed, isDone])
-
-  const liveHeading = isDone
-    ? path === 'own'
-      ? `${appName} is live`
-      : path === 'hosted'
-        ? 'Kitchen Sink is live in a Nuon-hosted account'
-        : `Kitchen Sink is live in your ${CLOUD_CONNECT[cloud].accountNoun}`
-    : `${activeRow.label} — ${activeRow.copy.active}`
-
-  return (
-    <div className="flex flex-col gap-6">
-      <Card className="!gap-0 !p-4 !flex-row items-center justify-between">
-        <div className="flex items-center gap-3">
-          {path === 'hosted' ? (
-            <Icon variant="FlaskIcon" size={24} theme="brand" />
-          ) : path === 'own' ? (
-            <Icon variant="CloudIcon" size={24} theme="neutral" />
-          ) : (
-            <Icon variant={CLOUD_ICON[cloud]} size={24} />
-          )}
-          <div className="flex flex-col">
-            <Text variant="base" weight="strong">
-              {appName}
-            </Text>
-            <Text variant="body" theme={isDone ? 'success' : 'neutral'}>
-              {liveHeading}
+            <Text variant="subtext" theme="neutral" flex>
+              Needs the Nuon CLI:
+              <Badge size="sm" variant="code">
+                brew install nuonco/tap/nuon
+              </Badge>
+              then
+              <Badge size="sm" variant="code">
+                nuon login
+              </Badge>
             </Text>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {isDone ? (
-            <Badge size="sm" theme="success">
-              Active
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge size="sm" variant="code">
+              {watchCommand}
             </Badge>
-          ) : (
-            <Badge size="sm" theme="brand">
-              <Icon variant="Loading" size={12} /> Provisioning
-            </Badge>
-          )}
-          {path === 'hosted' ? (
-            <Badge size="sm" theme="brand">
-              Nuon-hosted account
-            </Badge>
-          ) : (
-            <Badge size="sm" theme="neutral">
-              {path === 'own' ? 'Your cloud account' : CLOUD_CONNECT[cloud].accountNoun}
-            </Badge>
-          )}
+            <CopyTextButton text={watchCommand} label="Copy" size="sm" />
+          </div>
         </div>
       </Card>
 
-      <div className="flex items-center justify-between">
-        <Text variant="base" weight="strong">
-          Resources
-        </Text>
-        <Text variant="body" theme="neutral">
-          {isDone ? 'All resources provisioned' : `${completed} of ${rows.length} ready`}
-        </Text>
-      </div>
-
-      <Card className="!gap-0 !p-0 overflow-hidden">
-        {rows.map((row, index) => {
-          const rowDone = index < completed
-          const rowActive = index === completed
-          const status = rowDone ? row.copy.done : rowActive ? row.copy.active : row.copy.pending
-
-          return (
-            <div key={row.id} className={cn('flex items-center gap-3 px-5 py-3', index > 0 && 'border-t')}>
-              {rowDone ? (
-                <Icon variant="CheckCircleIcon" size={18} theme="success" weight="fill" />
-              ) : rowActive ? (
-                <Icon variant="Loading" size={18} />
-              ) : (
-                <Icon variant="ClockCountdownIcon" size={18} theme="neutral" />
-              )}
-              <div className="flex flex-col">
-                <Text
-                  variant="body"
-                  weight="strong"
-                  family={row.id.startsWith('component-') ? 'mono' : 'sans'}
-                  theme={rowDone || rowActive ? 'default' : 'neutral'}
-                >
-                  {row.label}
-                </Text>
-                <Text variant="subtext" theme={rowDone || rowActive ? 'success' : 'neutral'}>
-                  {status}
-                </Text>
-              </div>
-            </div>
-          )
-        })}
-      </Card>
-
-      <Text variant="subtext" theme="neutral">
-        {isDone
-          ? 'Everything is up. This is the page your customer sees for their install.'
-          : 'This page updates on its own. You can leave and come back.'}
-      </Text>
-      <NextButton label="Go to dashboard" onClick={onAdvance} onBack={onGoBack} />
+      <NextButton label="Go to deploy workflow" onClick={onAdvance} onBack={onGoBack} />
     </div>
   )
-}
-
-
-// --- Parked: the "is live" summary page ------------------------------------------
-// Matt likes this design but wants it out of the first critical path. It is not
-// in any flow; the ParkedDone story keeps it reviewable.
-
-const DoneStep = ({ sharedData, onAdvance }: IWizardStepComponentProps) => {
-  const path = readPath(sharedData)
-  const cloud = readCloud(sharedData)
-  const appName = readAppName(sharedData)
-
-  const heading =
-    path === 'own'
-      ? `${appName} is live`
-      : path === 'hosted'
-        ? 'Kitchen Sink is live in a Nuon-hosted account'
-        : `Kitchen Sink is live in your ${CLOUD_CONNECT[cloud].accountNoun}`
-
-  const body =
-    path === 'own'
-      ? 'Everything is provisioned and ready to go.'
-      : path === 'hosted'
-        ? "Everything is provisioned. Point the CLI at it, or connect your own cloud whenever you're ready."
-        : 'Everything is provisioned. This is the install your customer would be looking at right now.'
-
-  const links: IChoice[] =
-    path === 'own'
-      ? [
-          { id: 'invite', title: 'Invite your team', description: 'Add teammates and give them access to this org.', icon: 'UsersIcon' },
-          { id: 'cicd', title: 'Connect CI/CD', description: 'Trigger deploys from GitHub Actions.', icon: 'GitBranchIcon' },
-        ]
-      : [
-          { id: 'action', title: 'Run an action', description: 'Try a runbook or action on the live install.', icon: 'PlayIcon' },
-          { id: 'own', title: 'Swap in your app', description: 'Connect GitHub and deploy your own app the same way.', icon: 'GitBranchIcon' },
-        ]
-
-  return (
-    <div className="flex flex-col gap-8 py-6">
-      <div className="flex flex-col gap-3 items-center text-center">
-        <Icon variant="CheckCircleIcon" size={40} theme="success" weight="fill" />
-        <Text variant="h2" role="heading" level={2}>
-          {heading}
-        </Text>
-        <Badge theme="success">Active</Badge>
-        <Text variant="base" theme="neutral" className="max-w-xl">
-          {body}
-        </Text>
-      </div>
-      <div className="grid sm:grid-cols-2 gap-4">
-        {links.map((link) => (
-          <Card key={link.id} className="!gap-2 !p-4">
-            <div className="flex items-center gap-2">
-              <Icon variant={link.icon} size={18} theme="brand" />
-              <Text variant="base" weight="strong">
-                {link.title}
-              </Text>
-            </div>
-            <Text variant="body" theme="neutral">
-              {link.description}
-            </Text>
-          </Card>
-        ))}
-      </div>
-      <div className="flex justify-center">
-        <Button variant="primary" size="lg" onClick={onAdvance}>
-          View install
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-const PARKED_DONE_STEP: IWizardStepDef = {
-  id: 'parked-done',
-  title: "You're all set",
-  navLabel: 'Done',
-  hideTitle: true,
-  component: DoneStep,
 }
 
 // --- Step definitions ---------------------------------------------------------
@@ -2594,70 +2355,82 @@ const FORK_STEP: IWizardStepDef = {
 
 const TEMPLATE_STEP: IWizardStepDef = {
   id: 'own-template',
-  title: 'Create your app template',
-  navLabel: 'Template',
-  description: 'Your app template is what Nuon uses to deploy your product.',
+  title: 'Connect your app',
+  navLabel: 'Connect',
+  description: "This config is how Nuon installs and upgrades your app in every customer's cloud.",
   component: TemplateStep,
 }
 
 const DEPLOY_STEP: IWizardStepDef = {
   id: 'deploy',
-  title: 'Set up your first install',
+  title: 'Your app is ready for BYOC',
   navLabel: 'Deploy',
-  description: 'Nothing has touched your account yet. Choose where the install goes.',
+  description:
+    'Now you can test the flow your customer will see. Pick a cloud account you want to test with.',
   component: DeployStep,
+}
+
+const STACK_STEP_INTRO: Record<TCloud, ReactNode> = {
+  aws: (
+    <>
+      Nuon is generating a{' '}
+      <Link href={AWS_QUICK_CREATE_DOCS} isExternal textVariant="body" className="!inline-flex align-baseline">
+        CloudFormation quick-create link
+      </Link>
+      . This is a common install method for BYOC customers on AWS.
+    </>
+  ),
+  gcp: (
+    <>
+      Nuon is generating the Terraform for your stack. On Google Cloud, BYOC customers apply it
+      themselves or through{' '}
+      <Link href={GCP_INFRA_MANAGER_DOCS} isExternal textVariant="body" className="!inline-flex align-baseline">
+        Infrastructure Manager
+      </Link>
+      .
+    </>
+  ),
+  azure: (
+    <>
+      Nuon is generating the Bicep template and the commands that deploy it. At the default{' '}
+      <Link href={DOCS_STACKS} isExternal textVariant="body" className="!inline-flex align-baseline">
+        resource group scope
+      </Link>
+      , BYOC customers create a resource group and Key Vault first, then run the commands.
+    </>
+  ),
 }
 
 const INSTALL_STACK_STEP: IWizardStepDef = {
   id: 'install-stack',
   title: 'Create the install stack',
   navLabel: 'Stack',
-  description:
-    'Nuon is generating your stack link — about 30 seconds. While it does, here is how a customer would create the stack.',
+  description: STACK_STEP_INTRO.aws,
   component: StackStep,
 }
 
 const PROVISION_STEP: Record<TPath, IWizardStepDef> = {
   example: {
     id: 'example-provision',
-    title: 'Your install is being created',
+    title: 'Your first BYOC install is deploying',
     navLabel: 'Provision',
-    description: 'The Nuon install workflow, under the hood.',
-    component: ProvisionStep,
-  },
-  hosted: {
-    id: 'hosted-provision',
-    title: 'Your install is being created',
-    navLabel: 'Provision',
-    description: 'The Nuon install workflow, under the hood — in an account Nuon runs.',
     component: ProvisionStep,
   },
   own: {
     id: 'own-provision',
-    title: 'Your install is being created',
+    title: 'Your first BYOC install is deploying',
     navLabel: 'Provision',
-    description: 'The Nuon install workflow, under the hood.',
     component: ProvisionStep,
   },
 }
 
-// Parked: the live install page. "See your install" opens the install's workflow
-// page in the product, so this is no longer a step in the flow.
-const PARKED_INSTALL_STEP: IWizardStepDef = {
-  id: 'parked-install',
-  title: 'Your install',
-  navLabel: 'Install',
-  description: 'Live from the runner. This is the page your customer sees for their install.',
-  component: InstallStep,
-}
-
 const buildForkFlow = (path: TPath, cloud: TCloud): IWizardStepDef[] => {
-  if (path === 'hosted') return [FORK_STEP, PROVISION_STEP.hosted]
-  if (path === 'own') return [FORK_STEP, TEMPLATE_STEP, DEPLOY_STEP, INSTALL_STACK_STEP, PROVISION_STEP.own]
+  const stackStep = { ...INSTALL_STACK_STEP, description: STACK_STEP_INTRO[cloud] }
+  if (path === 'own') return [FORK_STEP, TEMPLATE_STEP, DEPLOY_STEP, stackStep, PROVISION_STEP.own]
   return [
     FORK_STEP,
     { ...DEPLOY_STEP, id: `deploy-${cloud}` },
-    { ...INSTALL_STACK_STEP, id: `install-stack-${cloud}` },
+    { ...stackStep, id: `install-stack-${cloud}` },
     { ...PROVISION_STEP.example, id: `example-provision-${cloud}` },
   ]
 }
@@ -2930,11 +2703,6 @@ const CopyEditor = ({ children, tools }: { children: ReactNode; tools?: ReactNod
 
 // --- Harness ------------------------------------------------------------------
 
-const TEMPLATE_LAYOUTS: { value: TTemplateLayout; label: string }[] = [
-  { value: 'top', label: 'Top' },
-  { value: 'beside', label: 'Beside' },
-]
-
 const BranchingPlayground = ({
   initialPath = 'example',
   initialCloud = 'aws',
@@ -2954,8 +2722,6 @@ const BranchingPlayground = ({
   const [startIndex, setStartIndex] = useState(initialStepIndex)
   const [finished, setFinished] = useState(false)
   const [choice, setChoice] = useState<IForkChoice>({ path: initialPath, cloud: initialCloud })
-  // Review-only: where the template step puts the stubbed files.
-  const [templateLayout, setTemplateLayout] = useState<TTemplateLayout>('top')
   // Review-only: stands in for a git push to the tracked branch.
   const [pushes, setPushes] = useState(0)
 
@@ -2973,7 +2739,7 @@ const BranchingPlayground = ({
     setRunId((prev) => prev + 1)
   }
 
-  const fork: IForkActions = { choose: setChoice, backToIntro: () => reset(true), templateLayout, pushTick: pushes }
+  const fork: IForkActions = { choose: setChoice, backToIntro: () => reset(true), pushTick: pushes }
 
   if (finished) {
     return <FlowComplete onRestart={() => reset(initialStepIndex > 0 || skipIntro)} />
@@ -2983,10 +2749,6 @@ const BranchingPlayground = ({
     <CopyEditor
       tools={
         <div className="flex items-center gap-2">
-          <Text variant="subtext" theme="neutral">
-            Files
-          </Text>
-          <ToggleButton<TTemplateLayout> options={TEMPLATE_LAYOUTS} value={templateLayout} onChange={setTemplateLayout} size="sm" />
           <Button variant="ghost" size="sm" onClick={() => setPushes((prev) => prev + 1)}>
             <Icon variant="GitBranchIcon" size={14} /> Simulate push
           </Button>
@@ -3020,31 +2782,6 @@ export const ForkDeployAws = () => (
 )
 ForkDeployAws.meta = { fullBleed: true }
 
-export const ForkNuonSandbox = () => <BranchingPlayground initialPath="hosted" initialStepIndex={1} />
-ForkNuonSandbox.meta = { fullBleed: true }
 
 export const ForkOwnApp = () => <BranchingPlayground initialPath="own" skipIntro expandOwnApp />
 ForkOwnApp.meta = { fullBleed: true }
-
-// Not part of any flow. Kept so the design is still reviewable.
-export const ParkedDone = () => (
-  <OnboardingWizardProvider
-    steps={[PARKED_DONE_STEP]}
-    initialSharedData={{ path: 'own', cloud: 'aws' }}
-    onComplete={() => {}}
-  >
-    <OnboardingWizardLayout skipHref={null} />
-  </OnboardingWizardProvider>
-)
-ParkedDone.meta = { fullBleed: true }
-
-export const ParkedInstall = () => (
-  <OnboardingWizardProvider
-    steps={[PARKED_INSTALL_STEP]}
-    initialSharedData={{ path: 'own', cloud: 'aws' }}
-    onComplete={() => {}}
-  >
-    <OnboardingWizardLayout skipHref={null} />
-  </OnboardingWizardProvider>
-)
-ParkedInstall.meta = { fullBleed: true }
