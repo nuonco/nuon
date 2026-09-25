@@ -8,9 +8,11 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/imagesync"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/actionworkflowrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitcomponenthealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
@@ -22,6 +24,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/executeactionworkflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/appconfiggraph"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
 // genCtx is the per-workflow-invocation context for step generation. It bundles
@@ -540,6 +543,10 @@ func getImageDepSyncSteps(
 
 	steps := make([]*app.WorkflowStep, 0)
 	groupStarted := false
+	loader := &genCtxDepLoader{
+		InstallDeploys: imagesync.InstallDeploys{InstallID: dg.installID},
+		dg:             dg,
+	}
 
 	for _, depID := range depIDs {
 		if _, already := dg.addedImageDepSyncs[depID]; already {
@@ -558,48 +565,25 @@ func getImageDepSyncSteps(
 			// Dep is not part of this app config snapshot — nothing to do.
 			continue
 		}
-		if !dep.Type.IsImage() {
-			continue
-		}
 
-		if depCCC, hasCCC := dg.cccByComp[depID]; !hasCCC || depCCC == nil {
-			continue
-		}
-
-		latestActive, err := resolvePinnedComponentBuild(ctx, dg, depID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "unable to resolve pinned build for image dep %s", depID)
-		}
-		if latestActive == nil {
-			continue
-		}
-
-		depInstallComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
-			InstallID:   dg.installID,
+		depCCC, hasCCC := dg.cccByComp[depID]
+		decision, err := imagesync.Decide(ctx, imagesync.Dep{
 			ComponentID: depID,
-		})
+			IsImage:     dep.Type.IsImage(),
+			InAppConfig: hasCCC && depCCC != nil,
+		}, loader)
 		if err != nil {
-			return nil, errors.Wrapf(err, "unable to get install component for image dep %s", depID)
+			return nil, err
 		}
-		if depInstallComp == nil {
-			// No install component record yet for this dep — there is no
-			// runner-side state to sync against. The normal install
-			// bootstrapping flow is responsible for creating it; skip
-			// silently here.
-			continue
-		}
-
-		// AwaitGetInstallComponent preloads the most recent InstallDeploy
-		// (any type, ORDER BY created_at DESC LIMIT 1). For image
-		// components every install_deploy is a sync-image, so the most
-		// recent deploy is the currently-synced build. When the deployed
-		// build matches the app-config-version-pinned latest Active
-		// build, no sync is needed.
-		var deployedBuildID string
-		if len(depInstallComp.InstallDeploys) > 0 {
-			deployedBuildID = depInstallComp.InstallDeploys[0].ComponentBuildID
-		}
-		if deployedBuildID == latestActive.ID {
+		if !decision.NeedsSync {
+			if decision.WorthLogging() {
+				if l, lErr := log.WorkflowLogger(ctx); lErr == nil {
+					l.Info("image dependency cannot be synced",
+						zap.String("component_id", depID),
+						zap.String("component_name", dep.Name),
+						zap.String("reason", string(decision.Skip)))
+				}
+			}
 			continue
 		}
 
@@ -609,9 +593,9 @@ func getImageDepSyncSteps(
 		}
 
 		step, err := dg.sg.installSignalStep(ctx, dg.installID, "sync "+dep.Name+" (dep)", pgtype.Hstore{}, &componentsyncimage.Signal{
-			InstallComponentID: depInstallComp.ID,
+			InstallComponentID: decision.InstallComponentID,
 			ComponentID:        dep.ID,
-			BuildID:            latestActive.ID,
+			BuildID:            decision.BuildID,
 			Role:               dg.flw.Role,
 		}, dg.flw.PlanOnly)
 		if err != nil {
@@ -623,6 +607,23 @@ func getImageDepSyncSteps(
 	}
 
 	return steps, nil
+}
+
+type genCtxDepLoader struct {
+	imagesync.InstallDeploys
+
+	dg *genCtx
+}
+
+func (l *genCtxDepLoader) LatestActiveBuildID(ctx workflow.Context, componentID string) (string, error) {
+	build, err := resolvePinnedComponentBuild(ctx, l.dg, componentID)
+	if err != nil {
+		return "", errors.Wrapf(err, "unable to resolve pinned build for image dep %s", componentID)
+	}
+	if build == nil {
+		return "", nil
+	}
+	return build.ID, nil
 }
 
 // gateRunnerHealthy is false when the caller's preceding phase already waited on
