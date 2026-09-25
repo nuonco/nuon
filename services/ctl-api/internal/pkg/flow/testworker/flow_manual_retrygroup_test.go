@@ -101,7 +101,7 @@ func (e *FlowTestSuite) TestManualRetryGroup() {
 // whose signal implements RetryGroup correctly clones the entire group (not just
 // the single step). The test uses ManualRetryGroupCountdownSignal which:
 //   - Auto-retries once (group clone, generation 1) and fails again
-//   - Exhausts max retries → workflow errors
+//   - Exhausts the auto-retry budget → parks as failed-pending-retry
 //   - Manual RetryStep triggers another group clone (generation 2)
 //   - Signal sees GroupRetryCount=2 and succeeds
 func (e *FlowTestSuite) TestManualRetryStepWithRetryGroup() {
