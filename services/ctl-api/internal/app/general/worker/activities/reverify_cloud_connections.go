@@ -13,23 +13,23 @@ import (
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 )
 
-type ReprobeLegacyCloudConnectionsResponse struct {
+type ReverifyCloudConnectionsResponse struct {
 	Probed   int `json:"probed"`
 	OIDC     int `json:"oidc"`
 	Legacy   int `json:"legacy"`
 	Failures int `json:"failures"`
 }
 
-type ReprobeLegacyCloudConnectionsRequest struct{}
+type ReverifyCloudConnectionsRequest struct{}
 
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 30m
-func (a *Activities) ReprobeLegacyCloudConnections(ctx context.Context, _ ReprobeLegacyCloudConnectionsRequest) (*ReprobeLegacyCloudConnectionsResponse, error) {
+func (a *Activities) ReverifyCloudConnections(ctx context.Context, _ ReverifyCloudConnectionsRequest) (*ReverifyCloudConnectionsResponse, error) {
 	var connections []app.CloudConnection
 	if err := a.db.WithContext(ctx).Find(&connections).Error; err != nil {
 		return nil, err
 	}
-	response := &ReprobeLegacyCloudConnectionsResponse{}
+	response := &ReverifyCloudConnectionsResponse{}
 	for i := range connections {
 		connection := &connections[i]
 		response.Probed++
@@ -77,7 +77,7 @@ func (a *Activities) ReprobeLegacyCloudConnections(ctx context.Context, _ Reprob
 			a.l.Info("cloud connection still uses legacy authentication", zap.String("connection_id", connection.ID), zap.String("org_id", connection.OrgID), zap.String("platform", string(connection.Platform)))
 		}
 	}
-	a.mw.Count("cloud_connections.legacy_reprobe", int64(response.Probed), []string{})
+	a.mw.Count("cloud_connections.reverified", int64(response.Probed), []string{})
 	a.mw.Count("cloud_connections.legacy_remaining", int64(response.Legacy), []string{})
 	return response, nil
 }

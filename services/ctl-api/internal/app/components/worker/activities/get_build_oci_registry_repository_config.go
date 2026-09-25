@@ -32,6 +32,7 @@ func (a *Activities) GetComponentOCIRegistryRepository(ctx context.Context, req 
 	cfg := &configs.OCIRegistryRepository{
 		Repository: compApp.Repository.RepositoryURI,
 		Region:     compApp.Repository.Region,
+		OrgID:      comp.OrgID,
 	}
 
 	switch a.cfg.CloudProvider {

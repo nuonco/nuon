@@ -15,12 +15,12 @@ import (
 type EnsureCronWorkflowsRequest struct{}
 
 type EnsureCronWorkflowsResponse struct {
-	SweepStarted                  bool `json:"sweep_started"`
-	ComponentHealthSweepStarted   bool `json:"component_health_sweep_started"`
-	MetricsStarted                bool `json:"metrics_started"`
-	CleanupStarted                bool `json:"cleanup_started"`
-	TriggerEventCleanupStarted    bool `json:"trigger_event_cleanup_started"`
-	CloudConnectionReprobeStarted bool `json:"cloud_connection_reprobe_started"`
+	SweepStarted                   bool `json:"sweep_started"`
+	ComponentHealthSweepStarted    bool `json:"component_health_sweep_started"`
+	MetricsStarted                 bool `json:"metrics_started"`
+	CleanupStarted                 bool `json:"cleanup_started"`
+	TriggerEventCleanupStarted     bool `json:"trigger_event_cleanup_started"`
+	CloudConnectionReverifyStarted bool `json:"cloud_connection_reverify_started"`
 }
 
 // EnsureCronWorkflows starts (or replaces) the enqueuer-sweep and
@@ -81,17 +81,17 @@ func (a *Activities) EnsureCronWorkflows(ctx context.Context, _ EnsureCronWorkfl
 	a.logger.Info("queue signal cleanup cron started/replaced", zap.String("workflow-id", "general-queue-signal-cleanup-cron"))
 
 	cloudConnectionOpts := tclient.StartWorkflowOptions{
-		ID:                    "cloud-connection-legacy-reprobe-cron",
+		ID:                    "cloud-connection-reverify-cron",
 		TaskQueue:             workflows.APITaskQueue,
 		CronSchedule:          "0 1 * * *",
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		RetryPolicy:           &temporal.RetryPolicy{MaximumAttempts: 0},
 	}
-	if _, err := a.tClient.ExecuteWorkflowInNamespace(ctx, "general", cloudConnectionOpts, "ReprobeLegacyCloudConnections"); err != nil {
-		return nil, fmt.Errorf("unable to start cloud connection legacy reprobe workflow: %w", err)
+	if _, err := a.tClient.ExecuteWorkflowInNamespace(ctx, "general", cloudConnectionOpts, "ReverifyCloudConnections"); err != nil {
+		return nil, fmt.Errorf("unable to start cloud connection reverify workflow: %w", err)
 	}
-	resp.CloudConnectionReprobeStarted = true
-	a.logger.Info("cloud connection legacy reprobe cron started/replaced", zap.String("workflow-id", "cloud-connection-legacy-reprobe-cron"))
+	resp.CloudConnectionReverifyStarted = true
+	a.logger.Info("cloud connection reverify cron started/replaced", zap.String("workflow-id", "cloud-connection-reverify-cron"))
 
 	eventCleanupOpts := tclient.StartWorkflowOptions{
 		ID:                    "general-trigger-event-cleanup-cron",

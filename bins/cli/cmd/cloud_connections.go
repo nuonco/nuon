@@ -54,7 +54,7 @@ func (c *cli) cloudConnectionsCmd() *cobra.Command {
 	}
 	create.Flags().StringVar(&name, "name", "", "Connection name")
 	create.Flags().StringVar(&platform, "platform", "aws", "Cloud platform (aws, azure, or gcp)")
-	create.Flags().StringVar(&targetID, "target-id", "", "Cloud account or subscription ID")
+	create.Flags().StringVar(&targetID, "target-id", "", "Cloud account, subscription, or project ID")
 	create.Flags().StringVar(&principal, "principal", "", "Cloud principal")
 	create.Flags().StringVar(&tenantID, "tenant-id", "", "Azure Entra tenant ID")
 	create.Flags().StringVar(&subscriptionID, "subscription-id", "", "Azure subscription ID")

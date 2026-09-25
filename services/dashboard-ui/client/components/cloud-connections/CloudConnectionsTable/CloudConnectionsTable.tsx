@@ -4,13 +4,13 @@ import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 import type { TCloudConnection } from '@/types'
 
 const statusTheme: Record<string, TBadgeTheme> = {
   verified: 'success',
   error: 'error',
   pending: 'warn',
-  unverified: 'neutral',
 }
 
 interface ICloudConnectionsTable {
@@ -66,7 +66,7 @@ export const CloudConnectionsTable = ({
       accessorKey: 'status',
       header: 'Status',
       cell: ({ getValue }) => {
-        const status = String(getValue() || 'unverified')
+        const status = String(getValue() || 'pending')
         return (
           <Badge theme={statusTheme[status] ?? 'neutral'} size="sm">
             {status}
@@ -86,6 +86,20 @@ export const CloudConnectionsTable = ({
           ))}
         </div>
       ),
+    },
+    {
+      accessorKey: 'last_verified_at',
+      header: 'Last verified',
+      cell: ({ row }) =>
+        row.original.last_verified_at ? (
+          <Time
+            time={row.original.last_verified_at}
+            format="relative"
+            className="whitespace-nowrap"
+          />
+        ) : (
+          'Never'
+        ),
     },
     {
       id: 'usedBy',

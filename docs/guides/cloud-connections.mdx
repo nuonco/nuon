@@ -1,0 +1,114 @@
+---
+title: "Cloud Connections"
+description: "Connect Nuon to AWS, Azure, or GCP with short-lived OIDC credentials."
+icon: "cloud"
+keywords: ["cloud connections", "OIDC", "AWS", "Azure", "GCP", "ECR", "ACR", "GAR", "install stacks"]
+---
+
+A cloud connection gives Nuon scoped access to a cloud account without storing a long-lived cloud credential. Connections belong to an organization and can provide either or both of these capabilities:
+
+- **`stacks`** — create, update, and delete AWS CloudFormation or Azure ARM install stacks.
+- **`images`** — pull private images from ECR, GAR, or ACR.
+
+GCP install stacks remain customer-managed; GCP connections currently support private images only.
+
+## OIDC trust model
+
+Nuon mints a short-lived OIDC token only when it needs to perform an operation. Your cloud identity provider validates three values:
+
+- **Issuer** — your Nuon control plane's public API URL.
+- **Subject** — `org:<org_id>:connection:<connection_id>`, unique to one connection.
+- **Audience** — `sts.amazonaws.com` for AWS, `api://AzureADTokenExchange` for Azure, or the GCP Workload Identity Provider audience.
+
+The setup output from `nuon cloud-connections create` or `get` contains the exact issuer, subject, audience, and provider-specific configuration for that connection.
+
+## Create and configure a connection
+
+Create the connection first, apply the returned setup in the target account, and then verify it.
+
+### AWS
+
+```bash
+nuon cloud-connections create \
+  --name acme-production \
+  --platform aws \
+  --target-id 123456789012 \
+  --principal arn:aws:iam::123456789012:role/nuon-cloud-connection \
+  --default-region us-west-2 \
+  --capability stacks,images \
+  --repository acme/api
+```
+
+The response includes a `nuonco/ecr-access/aws` Terraform module, AWS CLI commands, and a CloudFormation role resource. Each option creates an OIDC provider and role trust policy restricted to the connection's issuer, subject, and `sts.amazonaws.com` audience. Grant CloudFormation permissions for `stacks` and ECR read permissions for `images`.
+
+### Azure
+
+```bash
+nuon cloud-connections create \
+  --name acme-production \
+  --platform azure \
+  --subscription-id 00000000-0000-0000-0000-000000000000 \
+  --tenant-id 11111111-1111-1111-1111-111111111111 \
+  --client-id 22222222-2222-2222-2222-222222222222 \
+  --registry acme.azurecr.io \
+  --capability stacks,images
+```
+
+Use the returned Terraform or Azure CLI setup to create an app registration and federated identity credential. Assign **Owner** at the subscription scope for `stacks`. Assign **AcrPull** on each selected registry for `images`. Pass the registry again when verifying so Nuon records the verified registry scope:
+
+```bash
+nuon cloud-connections verify <connection-id> --registry acme.azurecr.io
+```
+
+### GCP
+
+```bash
+nuon cloud-connections create \
+  --name acme-images \
+  --platform gcp \
+  --project-id acme-production \
+  --service-account-email nuon-cloud-connection@acme-production.iam.gserviceaccount.com \
+  --identity-provider projects/123456789/locations/global/workloadIdentityPools/nuon/providers/nuon \
+  --capability images \
+  --repository us-central1/acme
+```
+
+Use the returned Terraform or `gcloud` setup to create the Workload Identity Pool and OIDC provider, permit the connection subject to impersonate the service account, and grant the service account `roles/artifactregistry.reader` on the project or selected repositories.
+
+## Use connections for install stacks
+
+When creating an AWS or Azure install, select an organization connection with the `stacks` capability. The install pins that connection. Nuon then uses it for stack creation, updates, and deletion. If the install has no connection, stack operations keep the customer-managed workflow.
+
+## Use connections for private images
+
+Set `connection` to the connection name in the registry block. This is the recommended and most predictable option:
+
+```toml components/api.toml
+name = "api"
+type = "container_image"
+
+[gcp_gar]
+connection     = "acme-images"
+image_url     = "us-central1-docker.pkg.dev/acme-production/apps/api"
+tag           = "1.2.3"
+region        = "us-central1"
+gcp_project_id = "acme-production"
+```
+
+Resolution follows this order:
+
+1. An explicit `connection = "<name>"`.
+2. A unique connection matching a supplied legacy identity such as an IAM role, service account and provider, or Azure client ID.
+3. A unique `images` connection matching the registry URL: AWS account ID for ECR, GCP project ID for GAR, or a verified registry scope for ACR.
+
+If URL matching finds multiple candidates, app sync fails and lists them so you can set `connection` explicitly.
+
+## CLI and MCP
+
+Use `nuon cloud-connections list|get|create|verify|delete` from the CLI. Agent clients can use `list_cloud_connections`, `get_cloud_connection`, `create_cloud_connection`, `verify_cloud_connection`, and `delete_cloud_connection`. Create and get responses include setup material; verification reports status, capabilities, and the last verification time.
+
+Nuon re-verifies connections daily. If a previously verified connection fails, its status and message are updated and notification subscriptions can emit a webhook or Slack event.
+
+## Legacy compatibility
+
+Existing image configuration continues to work. `iam_role_arn`, the GAR service account and Workload Identity Provider pair, and the Azure tenant/client secret or certificate fields create or reuse a legacy connection. ECR can fall back to the control plane's management-role or GCP-token hop when OIDC trust is not available. Nuon records legacy use so these paths can be retired safely; new configuration should use `connection` and OIDC.

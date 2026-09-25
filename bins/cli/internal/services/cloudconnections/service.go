@@ -28,9 +28,9 @@ func (s *Service) List(ctx context.Context, asJSON bool) error {
 		ui.PrintJSON(connections)
 		return nil
 	}
-	rows := [][]string{{"ID", "NAME", "CLOUD", "TARGET", "PRINCIPAL", "STATUS", "CAPABILITIES"}}
+	rows := [][]string{{"ID", "NAME", "CLOUD", "TARGET", "PRINCIPAL", "STATUS", "LAST VERIFIED", "CAPABILITIES"}}
 	for _, connection := range connections {
-		rows = append(rows, []string{connection.ID, connection.Name, string(connection.Platform), connection.TargetID, connection.Principal, string(connection.Status), capabilitiesString(connection.Capabilities)})
+		rows = append(rows, []string{connection.ID, connection.Name, string(connection.Platform), connection.TargetID, connection.Principal, string(connection.Status), connection.LastVerifiedAt, capabilitiesString(connection.Capabilities)})
 	}
 	ui.NewListView().Render(rows)
 	return nil
@@ -88,7 +88,7 @@ func render(connection *models.ServiceConnectionResponse, asJSON bool) error {
 	ui.NewGetView().Render([][]string{
 		{"id", connection.ID}, {"name", connection.Name}, {"cloud", string(connection.Platform)},
 		{"target", connection.TargetID}, {"principal", connection.Principal},
-		{"status", string(connection.Status)}, {"capabilities", capabilitiesString(connection.Capabilities)},
+		{"status", string(connection.Status)}, {"last verified", connection.LastVerifiedAt}, {"capabilities", capabilitiesString(connection.Capabilities)},
 		{"issuer", connection.Setup.IssuerURL}, {"subject", connection.Setup.Subject},
 	})
 	return nil
