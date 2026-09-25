@@ -300,10 +300,14 @@ func (s *service) verify(ctx context.Context, orgID, connectionID string, option
 		return nil, fmt.Errorf("verify cloud connection: %w", err)
 	}
 	now := time.Now().UTC()
-	update := app.CloudConnection{Status: result.Status, StatusMessage: result.Message, LastVerifiedAt: &now, Capabilities: result.Capabilities, Registries: result.Registries}
+	// keep the declared capabilities/registries unless verification succeeded;
+	// a failed verify must not wipe what the connection was created with
+	update := app.CloudConnection{Status: result.Status, StatusMessage: result.Message, LastVerifiedAt: &now, Capabilities: connection.Capabilities, Registries: connection.Registries}
 	selected := []string{"status", "status_message", "last_verified_at", "capabilities", "registries"}
 	if result.Status == app.CloudConnectionStatusVerified {
 		update.AuthMode = app.CloudConnectionAuthModeOIDC
+		update.Capabilities = result.Capabilities
+		update.Registries = result.Registries
 		selected = append(selected, "auth_mode")
 	}
 	// struct-based update so the jsonb serializers on capabilities/registries apply
