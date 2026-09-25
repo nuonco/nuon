@@ -28,6 +28,12 @@ import {
   NewInstallInputs,
   NewInstallOverrides,
 } from './NewInstallConfiguration'
+import {
+  NewInstallActions,
+  NewInstallPolicies,
+  NewInstallRunbooks,
+  NewInstallRunner,
+} from './NewInstallOperations'
 import { Actions } from './Actions'
 import { Roles } from './Roles'
 import { Policies } from './Policies'
@@ -183,19 +189,19 @@ export const installRoutes: RouteObject[] = [
               },
               {
                 path: 'actions',
-                element: <NewInstallPlaceholderBody title="Actions" />,
+                element: <NewInstallActions />,
               },
               {
                 path: 'runbooks',
-                element: <NewInstallPlaceholderBody title="Runbooks" />,
+                element: <NewInstallRunbooks />,
               },
               {
                 path: 'policies',
-                element: <NewInstallPlaceholderBody title="Policies" />,
+                element: <NewInstallPolicies />,
               },
               {
                 path: 'runner',
-                element: <NewInstallPlaceholderBody title="Runner" />,
+                element: <NewInstallRunner />,
               },
             ],
           },
