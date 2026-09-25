@@ -3,6 +3,9 @@ package testworker
 import (
 	"context"
 	"errors"
+	"fmt"
+	"maps"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -12,6 +15,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -21,6 +26,10 @@ import (
 const (
 	pollTimeout  = 120 * time.Second
 	pollInterval = 150 * time.Millisecond
+
+	// testResidentIdleTimeout keeps parked hosts draining quickly while still
+	// letting a retry issued right after parking land on the warm host.
+	testResidentIdleTimeout = 5 * time.Second
 )
 
 // testQueueCache is per-case (each FlowTestSuite value is one case), so no
@@ -73,7 +82,9 @@ func (e *FlowTestSuite) createTestWorkflow(ctx context.Context, ownerID, ownerTy
 	return &flw
 }
 
-// createTestSteps creates workflow steps for the given workflow.
+// createTestSteps creates workflow steps for the given workflow. Steps without
+// a WorkflowStepGroupID get a group created per GroupIdx, since the schema
+// requires every step to belong to a group.
 func (e *FlowTestSuite) createTestSteps(ctx context.Context, flw *app.Workflow, steps []app.WorkflowStep) {
 	groups := make(map[int]string)
 	for i := range steps {
@@ -139,6 +150,13 @@ func (e *FlowTestSuite) getStep(ctx context.Context, id string) *app.WorkflowSte
 	return &step
 }
 
+func (e *FlowTestSuite) getStepGroup(ctx context.Context, id string) *app.WorkflowStepGroup {
+	var group app.WorkflowStepGroup
+	res := e.service.DB.WithContext(ctx).Where(app.WorkflowStepGroup{ID: id}).First(&group)
+	require.Nil(e.T(), res.Error)
+	return &group
+}
+
 // getStepsByWorkflow fetches all steps for a workflow ordered by Idx.
 func (e *FlowTestSuite) getStepsByWorkflow(ctx context.Context, workflowID string) []app.WorkflowStep {
 	steps, err := e.tryStepsByWorkflow(ctx, workflowID)
@@ -168,6 +186,47 @@ func fakeString() string {
 
 func newTestOwner() (string, string) {
 	return fakeString(), "test_installs"
+}
+
+// testGenerators is the single generator table behind every test owner type.
+// generateworkflowsteps.RegisterGenerators replaces the whole factory for an
+// owner type, so parallel cases each calling it would clobber one another and
+// fail with "no step generator for workflow type". Cases add their workflow
+// type here instead; registerTestGeneratorOwnerTypes wires the owner types
+// once before any case starts.
+var testGenerators = struct {
+	sync.Mutex
+	byOwner map[string]map[app.WorkflowType]flow.WorkflowStepGenerator
+}{byOwner: map[string]map[app.WorkflowType]flow.WorkflowStepGenerator{}}
+
+var testGeneratorOwnerTypes = []string{
+	"test_installs",
+	"app_branches",
+	"test_deadlock_installs",
+	"test_layered_app_branches",
+}
+
+func registerTestGeneratorOwnerTypes() {
+	testGenerators.Lock()
+	defer testGenerators.Unlock()
+	for _, ownerType := range testGeneratorOwnerTypes {
+		testGenerators.byOwner[ownerType] = map[app.WorkflowType]flow.WorkflowStepGenerator{}
+		generateworkflowsteps.RegisterGenerators(ownerType, func() map[app.WorkflowType]flow.WorkflowStepGenerator {
+			testGenerators.Lock()
+			defer testGenerators.Unlock()
+			return maps.Clone(testGenerators.byOwner[ownerType])
+		})
+	}
+}
+
+func registerTestGenerator(ownerType string, workflowType app.WorkflowType, gen flow.WorkflowStepGenerator) {
+	testGenerators.Lock()
+	defer testGenerators.Unlock()
+	gens, ok := testGenerators.byOwner[ownerType]
+	if !ok {
+		panic(fmt.Sprintf("owner type %q is not in testGeneratorOwnerTypes; add it so its factory is registered before cases run", ownerType))
+	}
+	gens[workflowType] = gen
 }
 
 // The waitFor* helpers poll with pure-bool conditions: testify runs
@@ -224,6 +283,16 @@ func (e *FlowTestSuite) waitForWorkflowStatus(ctx context.Context, workflowID st
 		status, ok := e.workflowStatus(ctx, workflowID)
 		return ok && status == expected
 	}, pollTimeout, pollInterval, "workflow %s did not reach status %s", workflowID, expected)
+}
+
+// waitForWorkflowParked polls until the workflow is failed-pending-retry with
+// the awaiting_retry metadata flag — the parked, manually-recoverable state.
+func (e *FlowTestSuite) waitForWorkflowParked(ctx context.Context, workflowID string) {
+	require.Eventually(e.T(), func() bool {
+		flw := e.getWorkflow(ctx, workflowID)
+		awaitingRetry, _ := flw.Status.Metadata["awaiting_retry"].(bool)
+		return flw.Status.Status == app.StatusFailedPendingRetry && awaitingRetry
+	}, pollTimeout, pollInterval, "workflow %s did not park awaiting retry", workflowID)
 }
 
 // waitForStepStatus polls until the step reaches the expected status.

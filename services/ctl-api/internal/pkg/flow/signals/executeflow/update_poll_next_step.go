@@ -15,6 +15,8 @@ type PollNextStepResponse struct {
 }
 
 func (s *Signal) pollNextStepHandler(ctx workflow.Context) (*PollNextStepResponse, error) {
+	defer s.beginReadOnlyUpdate()()
+
 	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
 		FlowID: s.WorkflowID,
 	})

@@ -31,6 +31,7 @@ func (s *Signal) executeGroup(ctx workflow.Context, group *app.WorkflowStepGroup
 		TargetQueueName: cfg.TargetQueueName,
 		Parallel:        group.Parallel,
 		DerivedTimeout:  group.Timeout,
+		ResidentFlow:    s.Resident,
 	}
 
 	signalOwnerID := group.ID

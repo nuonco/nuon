@@ -538,3 +538,40 @@ var _ signal.SignalWithMaxRetries = (*ManualRetryThenBlockSignal)(nil)
 var _ signal.SignalWithMaxAutoRetries = (*ManualRetryThenBlockSignal)(nil)
 var _ signal.SignalWithStepContext = (*ManualRetryThenBlockSignal)(nil)
 var _ signal.SignalWithCancel = (*ManualRetryThenBlockSignal)(nil)
+
+// DelayedCloneManualRetrySignal fails until manually retried; its Clone sleeps so tests can observe the resident flow while a retry clone is in flight.
+
+const DelayedCloneManualRetrySignalType signal.SignalType = "test-flow-delayed-clone-manual-retry"
+
+type DelayedCloneManualRetrySignal struct{}
+
+func init() {
+	catalog.Register(DelayedCloneManualRetrySignalType, func() signal.Signal { return &DelayedCloneManualRetrySignal{} })
+}
+
+func (s *DelayedCloneManualRetrySignal) Type() signal.SignalType {
+	return DelayedCloneManualRetrySignalType
+}
+func (s *DelayedCloneManualRetrySignal) Validate(workflow.Context) error {
+	return nil
+}
+func (s *DelayedCloneManualRetrySignal) Execute(workflow.Context) error {
+	return fmt.Errorf("delayed clone manual retry: waiting for manual retry")
+}
+func (s *DelayedCloneManualRetrySignal) AutoRetry() bool { return true }
+func (s *DelayedCloneManualRetrySignal) MaxRetries() int { return 2 }
+func (s *DelayedCloneManualRetrySignal) MaxAutoRetries(workflow.Context) int {
+	return 0
+}
+func (s *DelayedCloneManualRetrySignal) Clone(ctx workflow.Context, name string) ([]signal.CloneStepDef, error) {
+	if err := workflow.Sleep(ctx, 5*time.Second); err != nil {
+		return nil, err
+	}
+	return []signal.CloneStepDef{{Name: name, Signal: &SuccessSignal{}}}, nil
+}
+func (s *DelayedCloneManualRetrySignal) SleepAfter() time.Duration { return 250 * time.Millisecond }
+
+var _ signal.SignalWithAutoRetry = (*DelayedCloneManualRetrySignal)(nil)
+var _ signal.SignalWithMaxRetries = (*DelayedCloneManualRetrySignal)(nil)
+var _ signal.SignalWithMaxAutoRetries = (*DelayedCloneManualRetrySignal)(nil)
+var _ signal.SignalWithCloneSteps = (*DelayedCloneManualRetrySignal)(nil)

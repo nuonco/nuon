@@ -93,10 +93,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		QueueName:       queuenames.AppWorkflowsQueueName,
 		SignalOwnerID:   wfResult.WorkflowID,
 		SignalOwnerType: "install_workflows",
-		Signal: &executeflow.Signal{
-			WorkflowID: wfResult.WorkflowID,
-		},
-		Callback: cb,
+		Signal:          executeflow.NewSignal(wfResult.WorkflowID),
+		Callback:        cb,
 	})
 	if err != nil {
 		_ = branchactivities.AwaitUpdateAppInstallConfigSyncStatus(ctx, &branchactivities.UpdateAppInstallConfigSyncStatusInput{
