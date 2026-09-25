@@ -37,6 +37,21 @@ const (
 
 var DrainTimeout = callback.QuickTimeout
 
+// handlerCancelledStatusVersion gates the cancelled-status handling on
+// terminal-drain runs and the validate stamp; in-flight histories scheduled
+// neither the callbacks nor the skip.
+const handlerCancelledStatusVersion = "queue-handler-cancelled-status-v1"
+
+// rewarmEligible reports whether a terminal queue signal may re-enter Execute
+// on a fresh Handler run. Only resident signals qualify, and only from success
+// or error: a stale queue run can overwrite a completed resident signal with
+// error, and that must not strand the workflow. Cancelled stays terminal.
+func (h *handler) rewarmEligible(qs *app.QueueSignal) bool {
+	r, ok := h.sig.(signal.AutoExecuteOnTerminalStart)
+	return ok && r.AutoExecuteOnTerminalStart() &&
+		generics.SliceContains(qs.Status.Status, []app.Status{app.StatusSuccess, app.StatusError})
+}
+
 // isTerminalQueueStatus reports whether the queue signal's DB status means the
 // signal has finished processing and no handler run should execute it again.
 func isTerminalQueueStatus(s app.Status) bool {
@@ -96,11 +111,16 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	// Await below forever, leaking the workflow (visible as failed
 	// assert-temporal-drained checks).
 	if !h.finished {
-		_, canRewarm := h.sig.(signal.AutoExecuteOnTerminalStart)
-		rewarmEligible := canRewarm && qs.Status.Status == app.StatusSuccess
-		if isTerminalQueueStatus(qs.Status.Status) && !rewarmEligible {
+		if isTerminalQueueStatus(qs.Status.Status) && !h.rewarmEligible(qs) {
 			l.Debug("terminal signal re-entered via update; draining update handlers")
 			h.setFinished(qs.Status.Status, "")
+			if qs.Status.Status == app.StatusCancelled &&
+				workflow.GetVersion(ctx, handlerCancelledStatusVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+				h.canceled = true
+				if qs.ExecutionCount == 0 {
+					h.sendCompletionCallbacks(ctx)
+				}
+			}
 			// The triggering update is not always admitted into this first
 			// task — closing immediately races it and the update fails with
 			// "unknown update" against a fresh run. Hold the run open briefly
@@ -188,19 +208,13 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	mgr := workflowmanager.New(mgrOpts...)
 	mgr.Start(ctx)
 
-	// Re-warm a resident host that already completed successfully. When such a
-	// host idles out, its Handler closes with the QueueSignal marked
-	// StatusSuccess. A later update-with-start (append-step / retry-step) starts
-	// this fresh Handler run but the queue dispatcher never re-drives execute on
-	// a terminal signal, so the conductor loop would never restart. Self-drive
-	// validate→execute once so the parked-loop semantics resume and the
-	// appended/retried work runs. qs is the durable gate: only the terminal-
-	// success resident case reaches here (cold/in-progress dispatch and warm
-	// hosts are never StatusSuccess at boot), giving execute-exactly-once.
-	if r, ok := h.sig.(signal.AutoExecuteOnTerminalStart); ok &&
-		r.AutoExecuteOnTerminalStart() &&
-		qs.Status.Status == app.StatusSuccess &&
-		!h.finished {
+	// Re-warm a resident host whose QueueSignal is terminal. A later
+	// update-with-start (append-step / retry-step) starts this fresh Handler run,
+	// but the queue dispatcher never re-drives terminal signals, so the conductor
+	// loop would never restart. Self-drive validate→execute once so the parked-loop
+	// semantics resume and the appended/retried work runs. Cancelled signals stay
+	// terminal and cannot be revived by a control update.
+	if h.rewarmEligible(qs) && !h.finished {
 		h.startAutoRewarm(ctx)
 	}
 
@@ -225,6 +239,17 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	if mgr.Stopped {
 		// Entity was deleted or expired. Send callbacks so waiting callers unblock.
 		h.sendCompletionCallbacks(ctx)
+		return true, nil
+	}
+
+	// A terminal signal re-warmed by read-only updates only: it already sent
+	// its completion callbacks when it originally finished. Return without any
+	// yielding work — callback sends or cache sleeps would leave update
+	// handlers registered while yielded, so a racing mutating update could be
+	// accepted and persisted but never executed. Closing immediately makes
+	// such an update fail with "aborted by closing workflow", which the flow
+	// client retries against a fresh Handler run that will re-warm and run it.
+	if h.autoRewarmDeclined {
 		return true, nil
 	}
 

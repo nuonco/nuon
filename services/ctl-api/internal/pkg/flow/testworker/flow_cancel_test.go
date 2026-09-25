@@ -24,8 +24,11 @@ func (e *FlowTestSuite) TestCancelStepCallsInnerCancel() {
 
 	e.enqueueFlow(ctx, queueID, flw, ownerID, ownerType)
 
-	// Wait for the step to be in-progress (inner signal is blocking)
+	// Wait for the inner signal itself to be executing, not just the step: a
+	// cancel that lands before the inner handler accepts updates falls back to
+	// a direct DB status write and never invokes Cancel().
 	stepID := e.waitForStepInProgress(ctx, flw.ID, "cancellable-step")
+	e.waitForQueueSignalStatus(ctx, stepID, "install_workflow_steps", CancellableTestSignalType, app.StatusInProgress)
 
 	// Cancel the step via the flow client
 	_, err := e.service.FlowClient.CancelStep(ctx, &flowclient.CancelStepRequest{

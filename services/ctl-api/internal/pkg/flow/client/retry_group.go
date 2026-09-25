@@ -4,10 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	tclient "go.temporal.io/sdk/client"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
 // RetryGroupRequest is the input for retrying an entire workflow step group.
@@ -32,21 +29,8 @@ func (c *Client) RetryGroup(ctx context.Context, req *RetryGroupRequest) (*Retry
 		return nil, fmt.Errorf("unable to find execute-flow queue signal: %w", err)
 	}
 
-	handle, err := handler.UpdateWithStart(ctx, c.tClient, qs, handler.UpdateWithStartOptions{
-		UpdateName:   "retry-group",
-		WaitForStage: tclient.WorkflowUpdateStageCompleted,
-		Args: []any{
-			executeflow.RetryGroupRequest{
-				StepID: req.StepID,
-			},
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to send retry-group update: %w", err)
-	}
-
 	var resp RetryGroupResponse
-	if err := handle.Get(ctx, &resp); err != nil {
+	if err := c.updateWithStartUntilCompleted(ctx, qs, "retry-group", &resp, executeflow.RetryGroupRequest{StepID: req.StepID}); err != nil {
 		return nil, fmt.Errorf("unable to get retry-group response: %w", err)
 	}
 
