@@ -14,6 +14,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/aws/smithy-go"
+	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google/externalaccount"
@@ -35,7 +36,17 @@ type Helpers struct {
 	mw     metrics.Writer
 }
 
-func New(db *gorm.DB, cfg *internal.Config, l *zap.Logger, mw metrics.Writer) (*Helpers, error) {
+type Params struct {
+	fx.In
+
+	DB  *gorm.DB `name:"psql"`
+	Cfg *internal.Config
+	L   *zap.Logger
+	Mw  metrics.Writer
+}
+
+func New(params Params) (*Helpers, error) {
+	db, cfg, l, mw := params.DB, params.Cfg, params.L, params.Mw
 	if cfg.TelemetryJWKS == "" {
 		return &Helpers{db: db, cfg: cfg, l: l, mw: mw}, nil
 	}
