@@ -23,13 +23,13 @@ const BranchInstallsContent = () => {
     <BranchTabPage
       tab="Installs"
       heading="Installs"
-      subheading="Installs assigned to this branch's deployment plan."
+      subheading="Installs managed by this branch."
       actions={createButton}
     >
       <InstallsTable
         appId={app?.id}
         branchId={branchId}
-        emptyTitle="No installs in this deployment plan"
+        emptyTitle="No installs managed by this branch"
         emptyMessage="Create an install and assign it to one of this branch's deployment groups."
         emptyStateAction={createButton}
       />

@@ -8,7 +8,12 @@ export default {
 const mockBranches: TAppBranch[] = [
   { id: 'brnch_1', name: 'test', app_id: 'app_1', org_id: 'org_1' },
   { id: 'brnch_2', name: 'main', app_id: 'app_1', org_id: 'org_1' },
-  { id: 'brnch_3', name: 'nh/test-app-branches', app_id: 'app_1', org_id: 'org_1' },
+  {
+    id: 'brnch_3',
+    name: 'nh/test-app-branches',
+    app_id: 'app_1',
+    org_id: 'org_1',
+  },
   { id: 'brnch_4', name: 'staging', app_id: 'app_1', org_id: 'org_1' },
 ]
 

@@ -19,6 +19,7 @@ import type {
   TAppBranchPreviewConfig,
 } from '@/types'
 import { carryForwardBranchConfigRequest } from '@/components/branches/shared/branch-config-request'
+import { installAppBranchId } from '@/components/branches/active-app-branch-connection'
 import { PreviewConfigEditorModal } from './PreviewConfigEditorModal'
 import { PreviewConfigSection } from './PreviewConfigSection'
 
@@ -46,7 +47,8 @@ const useAvailableInstalls = ({
     () =>
       (query.data?.data ?? []).filter(
         (install) =>
-          !install.app_branch_id || install.app_branch_id === branch.id
+          !installAppBranchId(install) ||
+          installAppBranchId(install) === branch.id
       ),
     [query.data, branch.id]
   )
@@ -193,7 +195,7 @@ export const EditPreviewConfigButton = ({
 
   return (
     <Button variant="secondary" onClick={() => addModal(modal)} {...props}>
-      Edit preview settings
+      Edit preview defaults
     </Button>
   )
 }

@@ -88,7 +88,11 @@ export const AppBranchSwitcher = ({
                 })}
               >
                 <span className="flex items-center gap-2 min-w-0">
-                  <Icon variant="GitBranchIcon" size={14} className="shrink-0" />
+                  <Icon
+                    variant="GitBranchIcon"
+                    size={14}
+                    className="shrink-0"
+                  />
                   <span className="truncate">{b.name}</span>
                 </span>
                 {isCurrent ? (

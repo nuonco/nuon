@@ -6,7 +6,8 @@ import { CommitStep } from './CommitStep'
 
 const baseMetadata = {
   commit_sha: 'a1b2c3d4e5f6a7b8c9d0',
-  commit_message: 'feat: add deployment plan editor\n\nIntroduces install groups with manual and label-based selection.',
+  commit_message:
+    'feat: add deployment plan editor\n\nIntroduces install groups with manual and label-based selection.',
   author_name: 'Ada Lovelace',
   branch: 'feature/deploy-plans',
   base_branch: 'main',
@@ -25,8 +26,16 @@ export const WithPullRequest = () => (
       additions: 214,
       deletions: 37,
       changed_files: [
-        { path: 'client/components/branches/DeploymentPlanEditor.tsx', additions: 180, deletions: 12 },
-        { path: 'client/lib/ctl-api/apps/branches/index.ts', additions: 34, deletions: 25 },
+        {
+          path: 'client/components/branches/DeploymentPlanEditor.tsx',
+          additions: 180,
+          deletions: 12,
+        },
+        {
+          path: 'client/lib/ctl-api/apps/branches/index.ts',
+          additions: 34,
+          deletions: 25,
+        },
       ],
     }}
   />

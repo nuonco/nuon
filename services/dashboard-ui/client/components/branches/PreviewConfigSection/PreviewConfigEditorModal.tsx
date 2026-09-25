@@ -88,7 +88,7 @@ export const PreviewConfigEditorModal = ({
 
   return (
     <Modal
-      heading="Edit preview settings"
+      heading="Edit preview defaults"
       primaryActionTrigger={{
         children: isPending ? 'Saving...' : 'Save changes',
         disabled: !canSubmit || isPending || isLoading || isUnchanged,
@@ -122,7 +122,7 @@ export const PreviewConfigEditorModal = ({
           {(field) => (
             <FormRadioGroup
               field={field}
-              label="Mode"
+              label="Default mode"
               disabled={isPending || isLoading}
               options={[
                 {
