@@ -1650,15 +1650,23 @@ export interface paths {
   "/v1/installs/{install_id}/available-roles": {
     /**
      * get available IAM roles for a specific operation
-     * @description Returns a list of available IAM roles that can be used for a specific operation on an install.
+     * @description Returns the roles available in the install's stack outputs, including provision,
+     * deprovision, maintenance, custom, and break-glass roles.
      *
-     * The endpoint filters roles based on the operation type:
-     * - **provision/reprovision**: Custom roles, break glass roles, provision IAM role
-     * - **deprovision/teardown**: Custom roles, break glass roles, deprovision IAM role
-     * - **deploy**: Custom roles, break glass roles, maintenance IAM role
-     * - **trigger** (actions): Custom roles, break glass roles, provision + maintenance IAM roles
+     * Pass `workflow_type` to preview the parent workflow's default for component and
+     * action steps. Workflow-type defaults are enabled by default, using the same
+     * mapping as execution. Set `USE_LEGACY_MAINTENANCE_ROLE_DEFAULT=true` to keep the
+     * legacy maintenance default instead. The API and worker must use the same flag
+     * value.
      *
-     * Roles are sourced from the install's stack outputs.
+     * With `principal_type`, `operation_type`, and `principal_id`, the `default` marker
+     * also accounts for entity, break-glass, and operation-matrix configuration. Omit
+     * `principal_id` for adhoc actions. Sandbox defaults follow their operation type
+     * independently of the workflow-default flag.
+     *
+     * Without a principal, the preview is the workflow's base default; individual steps
+     * may use configured role overrides. Omitting `workflow_type` preserves the legacy
+     * component/action maintenance default.
      */
     get: operations["GetAvailableRoles"];
   };
@@ -22435,15 +22443,23 @@ export interface operations {
   };
   /**
    * get available IAM roles for a specific operation
-   * @description Returns a list of available IAM roles that can be used for a specific operation on an install.
+   * @description Returns the roles available in the install's stack outputs, including provision,
+   * deprovision, maintenance, custom, and break-glass roles.
    *
-   * The endpoint filters roles based on the operation type:
-   * - **provision/reprovision**: Custom roles, break glass roles, provision IAM role
-   * - **deprovision/teardown**: Custom roles, break glass roles, deprovision IAM role
-   * - **deploy**: Custom roles, break glass roles, maintenance IAM role
-   * - **trigger** (actions): Custom roles, break glass roles, provision + maintenance IAM roles
+   * Pass `workflow_type` to preview the parent workflow's default for component and
+   * action steps. Workflow-type defaults are enabled by default, using the same
+   * mapping as execution. Set `USE_LEGACY_MAINTENANCE_ROLE_DEFAULT=true` to keep the
+   * legacy maintenance default instead. The API and worker must use the same flag
+   * value.
    *
-   * Roles are sourced from the install's stack outputs.
+   * With `principal_type`, `operation_type`, and `principal_id`, the `default` marker
+   * also accounts for entity, break-glass, and operation-matrix configuration. Omit
+   * `principal_id` for adhoc actions. Sandbox defaults follow their operation type
+   * independently of the workflow-default flag.
+   *
+   * Without a principal, the preview is the workflow's base default; individual steps
+   * may use configured role overrides. Omitting `workflow_type` preserves the legacy
+   * component/action maintenance default.
    */
   GetAvailableRoles: {
     parameters: {
@@ -22452,7 +22468,9 @@ export interface operations {
         principal_type?: "component" | "sandbox" | "action";
         /** @description operation type: provision, reprovision, deprovision, deploy, teardown, trigger */
         operation_type?: "provision" | "deprovision" | "deploy" | "teardown" | "reprovision" | "trigger";
-        /** @description principal ID: component ID or action workflow ID (required for component and action) */
+        /** @description parent workflow type used to preview the default role */
+        workflow_type?: "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "app_branch_config_update" | "app_install_sync" | "reprovision" | "reprovision_stack" | "app_config_build" | "runbook_run" | "component_enabled" | "component_disabled" | "recover_helm_release";
+        /** @description component ID (required for component) or action workflow ID (omit for adhoc actions) */
         principal_id?: string;
       };
       path: {
