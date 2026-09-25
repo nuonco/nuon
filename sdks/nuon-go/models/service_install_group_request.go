@@ -7,6 +7,7 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -19,22 +20,15 @@ import (
 // swagger:model service.InstallGroupRequest
 type ServiceInstallGroupRequest struct {
 
-	// AllInstalls targets every install owned by this branch.
-	// Mutually exclusive with InstallIDs and LabelSelector.
-	AllInstalls bool `json:"all_installs,omitempty"`
-
 	// AutoApproveOnPoliciesPassing approves this group's plan step without user
 	// input when its policy checks pass. Omit to leave it unset (off).
 	AutoApproveOnPoliciesPassing *bool `json:"auto_approve_on_policies_passing,omitempty"`
 
-	// install ids
-	InstallIds []string `json:"install_ids"`
+	// default
+	Default bool `json:"default,omitempty"`
 
-	// LabelSelector dynamically resolves installs at deploy time.
-	// Mutually exclusive with InstallIDs.
-	LabelSelector struct {
-		GithubComNuoncoNuonPkgLabelsSelector
-	} `json:"label_selector,omitempty"`
+	// label selector
+	LabelSelector *GithubComNuoncoNuonPkgLabelsSelector `json:"label_selector,omitempty"`
 
 	// name
 	// Required: true
@@ -71,6 +65,21 @@ func (m *ServiceInstallGroupRequest) Validate(formats strfmt.Registry) error {
 func (m *ServiceInstallGroupRequest) validateLabelSelector(formats strfmt.Registry) error {
 	if swag.IsZero(m.LabelSelector) { // not required
 		return nil
+	}
+
+	if m.LabelSelector != nil {
+		if err := m.LabelSelector.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("label_selector")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("label_selector")
+			}
+
+			return err
+		}
 	}
 
 	return nil
@@ -116,6 +125,26 @@ func (m *ServiceInstallGroupRequest) ContextValidate(ctx context.Context, format
 }
 
 func (m *ServiceInstallGroupRequest) contextValidateLabelSelector(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.LabelSelector != nil {
+
+		if swag.IsZero(m.LabelSelector) { // not required
+			return nil
+		}
+
+		if err := m.LabelSelector.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("label_selector")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("label_selector")
+			}
+
+			return err
+		}
+	}
 
 	return nil
 }

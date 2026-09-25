@@ -42,7 +42,7 @@ export const PreviewConfigSection = ({
     <Card>
       <div className="flex items-center justify-between gap-3">
         <Text variant="base" weight="strong">
-          Previews
+          Preview defaults
         </Text>
         <div className="flex items-center gap-2">
           {isLoading ? (
@@ -57,7 +57,11 @@ export const PreviewConfigSection = ({
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <LabeledValue label="Mode" loading={isLoading} loadingWidth={10}>
+        <LabeledValue
+          label="Default mode"
+          loading={isLoading}
+          loadingWidth={10}
+        >
           <Badge size="sm">{previewModeDisplayLabel(defaults.mode)}</Badge>
         </LabeledValue>
         <LabeledValue
@@ -123,7 +127,8 @@ export const PreviewConfigSection = ({
 
       {!isLoading && defaults.mode === 'none' ? (
         <Text variant="subtext" theme="neutral">
-          Preview runs are disabled for this branch.
+          Automated preview runs are off. You can still trigger a preview from
+          this branch.
         </Text>
       ) : null}
     </Card>

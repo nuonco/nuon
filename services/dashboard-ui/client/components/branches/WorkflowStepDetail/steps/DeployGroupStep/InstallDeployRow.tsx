@@ -14,8 +14,16 @@ export interface IInstallDeployRow {
   installHref?: string
 }
 
-export const InstallDeployRow = ({ installId, install, deployStatus, workflowHref, installHref }: IInstallDeployRow) => {
-  const platform = (install?.cloud_platform?.toLowerCase() as TCloudPlatform | undefined) || 'unknown'
+export const InstallDeployRow = ({
+  installId,
+  install,
+  deployStatus,
+  workflowHref,
+  installHref,
+}: IInstallDeployRow) => {
+  const platform =
+    (install?.cloud_platform?.toLowerCase() as TCloudPlatform | undefined) ||
+    'unknown'
   const region = install?.aws_account?.region || install?.gcp_account?.region
   const location = install?.azure_account?.location
   const hasRegion = platform !== 'unknown' && !!(region || location)
@@ -25,10 +33,17 @@ export const InstallDeployRow = ({ installId, install, deployStatus, workflowHre
       <div className="flex items-center gap-5 min-w-0">
         {installHref ? (
           <Text variant="body" weight="strong" nowrap className="truncate">
-            <Link href={installHref} variant="inline">{install?.name || installId}</Link>
+            <Link href={installHref} variant="inline">
+              {install?.name || installId}
+            </Link>
           </Text>
         ) : (
-          <Text variant="body" weight="strong" nowrap className="block truncate">
+          <Text
+            variant="body"
+            weight="strong"
+            nowrap
+            className="block truncate"
+          >
             {install?.name || installId}
           </Text>
         )}
@@ -56,10 +71,16 @@ export const InstallDeployRow = ({ installId, install, deployStatus, workflowHre
 
       <div className="flex-1" />
 
-      <Status status={deployStatus || 'pending'} variant="badge" className="shrink-0" />
+      <Status
+        status={deployStatus || 'pending'}
+        variant="badge"
+        className="shrink-0"
+      />
 
       {workflowHref && (
-        <Link href={workflowHref} className="shrink-0">View workflow</Link>
+        <Link href={workflowHref} className="shrink-0">
+          View workflow
+        </Link>
       )}
     </StepRow>
   )

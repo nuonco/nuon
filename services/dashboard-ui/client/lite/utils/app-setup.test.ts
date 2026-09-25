@@ -22,18 +22,18 @@ describe('app setup completeness', () => {
     expect(
       isWizardComplete(
         appSetupDescriptor,
-        appSetupStateFromBranches([
-          branch([{ name: 'manual', install_ids: ['inst_a'] }]),
-        ])
+        appSetupStateFromBranches([branch([{ name: 'manual' }])])
       )
     ).toBe(false)
   })
 
-  test('is complete with an all-installs or label-scoped group', () => {
+  test('is complete with a default or label-scoped group', () => {
     expect(
       isWizardComplete(
         appSetupDescriptor,
-        appSetupStateFromBranches([branch([{ name: 'all', all_installs: true }])])
+        appSetupStateFromBranches([
+          branch([{ name: 'default', default: true }]),
+        ])
       )
     ).toBe(true)
     expect(

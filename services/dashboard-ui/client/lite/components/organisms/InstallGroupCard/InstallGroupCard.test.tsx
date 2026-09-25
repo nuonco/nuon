@@ -2,10 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import type { IDeploymentPlanStage } from '../../../utils/deployment-plan'
-import {
-  InstallGroupCard,
-  MAX_INLINE_INSTALLS,
-} from './InstallGroupCard'
+import { InstallGroupCard, MAX_INLINE_INSTALLS } from './InstallGroupCard'
 
 afterEach(cleanup)
 
@@ -16,7 +13,8 @@ const stage = (
   name: 'Core installs',
   order: 0,
   stage: 1,
-  membership: 'install_ids',
+  membership: 'label_selector',
+  selector: { match_labels: { env: 'prod' } },
   installs: [{ id: 'inst_alpha', name: 'alpha' }],
   totalInstalls: 1,
   ...fields,
@@ -34,17 +32,9 @@ const renderCard = (value: IDeploymentPlanStage) =>
   )
 
 describe('InstallGroupCard', () => {
-  test('renders all three membership rules', () => {
-    const view = renderCard(stage())
-    expect(screen.getByText('A fixed list of 1 install')).toBeTruthy()
-
-    view.rerender(
-      <MemoryRouter>
-        <InstallGroupCard
-          stage={stage({ membership: 'all_installs' })}
-          onInstallSelect={() => {}}
-        />
-      </MemoryRouter>
+  test('renders both membership rules', () => {
+    const view = renderCard(
+      stage({ membership: 'default', selector: undefined })
     )
     expect(screen.getByText('Every install on this branch')).toBeTruthy()
 
@@ -87,11 +77,16 @@ describe('InstallGroupCard', () => {
       })
     )
 
-    expect(screen.getByText(/Membership is resolved at rollout time/)).toBeTruthy()
+    expect(
+      screen.getByText(/Membership is resolved at rollout time/)
+    ).toBeTruthy()
 
     view.rerender(
       <MemoryRouter>
-        <InstallGroupCard stage={stage()} onInstallSelect={() => {}} />
+        <InstallGroupCard
+          stage={stage({ membership: 'default', selector: undefined })}
+          onInstallSelect={() => {}}
+        />
       </MemoryRouter>
     )
     expect(

@@ -144,7 +144,7 @@ export const PreviewDefaultsEditor = ({
 
       <div className="flex flex-col gap-2">
         <Text variant="subtext" weight="strong">
-          Mode
+          Default mode
         </Text>
         <ToggleButton<TAppBranchRunPreviewMode>
           value={value.mode}
