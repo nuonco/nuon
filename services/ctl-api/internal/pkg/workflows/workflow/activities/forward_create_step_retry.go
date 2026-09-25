@@ -105,7 +105,7 @@ func (a *Activities) sendCreateStepRetryUpdate(ctx context.Context, qs *app.Queu
 		return isUnknownUpdateError(err), fmt.Errorf("unable to send create-step-retry update to step %s: %w", stepID, err)
 	}
 	if err := rawResp.Get(ctx, result); err != nil {
-		return isUnknownUpdateError(err), err
+		return isUnknownUpdateError(err), updateOutcomeError(fmt.Sprintf("create-step-retry update failed for step %s", stepID), err)
 	}
 	return false, nil
 }
