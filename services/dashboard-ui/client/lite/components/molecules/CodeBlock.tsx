@@ -18,6 +18,7 @@ import {
   resolveLanguage,
   type TSyntaxLanguage,
 } from '../../utils/syntax'
+import { fileCacheKey } from '../../utils/diffs'
 import { Button } from '../atoms/Button'
 import { CopyButton } from '../atoms/CopyButton'
 import { Icon } from '../atoms/Icon'
@@ -75,14 +76,16 @@ export const CodeBlock = ({
   const virtualized = lineCount > VIRTUALIZE_ABOVE_LINES
   const showLineNumbers = lineNumbers ?? lineCount > 1
 
-  const file = useMemo(
-    () => ({
-      name: filename ?? `block.${EXTENSIONS[lang] ?? 'txt'}`,
+  const file = useMemo(() => {
+    const name = filename ?? `block.${EXTENSIONS[lang] ?? 'txt'}`
+
+    return {
+      name,
       contents: value,
       lang: lang as FileContents['lang'],
-    }),
-    [filename, lang, value]
-  )
+      cacheKey: fileCacheKey(name, lang, value),
+    }
+  }, [filename, lang, value])
 
   const matches = useMemo(() => lineMatches(value, query), [query, value])
 
