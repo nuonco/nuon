@@ -6,10 +6,7 @@ import { InstallLayout } from './InstallLayout'
 import { Overview } from './Overview'
 import { Components } from './Components'
 import { Resources } from './Resources'
-import {
-  NewInstallPlaceholder,
-  NewInstallPlaceholderBody,
-} from './NewInstallPlaceholder'
+import { NewInstallPlaceholder } from './NewInstallPlaceholder'
 import { Deployments } from './Deployments'
 import {
   NewInstallConfigurationLayout,
@@ -30,6 +27,7 @@ import {
 } from './NewInstallConfiguration'
 import {
   NewInstallActions,
+  NewInstallActivity,
   NewInstallPolicies,
   NewInstallRunbooks,
   NewInstallRunner,
@@ -185,7 +183,7 @@ export const installRoutes: RouteObject[] = [
             children: [
               {
                 index: true,
-                element: <NewInstallPlaceholderBody title="Activity" />,
+                element: <NewInstallActivity />,
               },
               {
                 path: 'actions',
