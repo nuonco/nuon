@@ -20,7 +20,7 @@ export interface IInstallForm {
   inputConfig?: TAppInputConfig
   install?: TInstall
   installId?: string
-  awsAccountConnections?: TCloudConnection[]
+  cloudConnections?: TCloudConnection[]
   requireTargetAccount?: boolean
   autoApproveDescription?: string
   showNameField?: boolean
@@ -34,7 +34,7 @@ export const InstallForm = ({
   inputConfig,
   install,
   installId,
-  awsAccountConnections,
+  cloudConnections,
   requireTargetAccount,
   autoApproveDescription,
   showNameField = true,
@@ -81,7 +81,7 @@ export const InstallForm = ({
         <InstallPlatformFields
           form={form}
           platform={platform}
-          awsAccountConnections={awsAccountConnections}
+          cloudConnections={cloudConnections}
           requireTargetAccount={requireTargetAccount}
         />
       )}

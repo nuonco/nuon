@@ -24,7 +24,7 @@ export interface ICreateFormTriggerState {
 interface ICreateInstallFormFields {
   app: TApp
   inputConfig: TAppInputConfig
-  awsAccountConnections?: TCloudConnection[]
+  cloudConnections?: TCloudConnection[]
   requireTargetAccount?: boolean
   defaultAutoApprove?: boolean
   defaultStackOnly?: boolean
@@ -38,7 +38,7 @@ interface ICreateInstallFormFields {
 export const CreateInstallFormFields = ({
   app,
   inputConfig,
-  awsAccountConnections,
+  cloudConnections,
   requireTargetAccount,
   defaultAutoApprove,
   defaultStackOnly,
@@ -51,7 +51,10 @@ export const CreateInstallFormFields = ({
   const { addModal, removeModal } = useSurfaces()
   const draftShownRef = useRef(false)
   const platform = app.runner_config?.app_runner_type as
-    'aws' | 'azure' | 'gcp' | undefined
+    | 'aws'
+    | 'azure'
+    | 'gcp'
+    | undefined
 
   const {
     form,
@@ -128,7 +131,7 @@ export const CreateInstallFormFields = ({
         mode="create"
         platform={platform}
         inputConfig={inputConfig}
-        awsAccountConnections={awsAccountConnections}
+        cloudConnections={cloudConnections}
         requireTargetAccount={requireTargetAccount}
         autoApproveDescription={autoApproveDescription}
         validateName={validateName}

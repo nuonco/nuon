@@ -19,8 +19,6 @@ const CLOUD_OPTIONS = [
   {
     value: 'azure',
     label: 'Microsoft Azure',
-    disabled: true,
-    badge: { label: 'Coming soon' },
   },
   {
     value: 'gcp',
@@ -37,6 +35,7 @@ const CAPABILITY_OPTIONS = [
 ]
 
 interface ICreateCloudConnectionModal extends Omit<IModal, 'onSubmit'> {
+  defaultPlatform?: 'aws' | 'azure'
   connection: TCloudConnection | null
   error: TAPIError | null
   isPending: boolean
@@ -48,6 +47,7 @@ interface ICreateCloudConnectionModal extends Omit<IModal, 'onSubmit'> {
 }
 
 export const CreateCloudConnectionModal = ({
+  defaultPlatform = 'aws',
   connection,
   error,
   isPending,
@@ -61,9 +61,11 @@ export const CreateCloudConnectionModal = ({
   const form = useForm({
     defaultValues: {
       name: '',
-      platform: 'aws',
+      platform: defaultPlatform,
       targetId: '',
+      tenantId: '',
       capabilitySet: 'both',
+      registry: '',
       repositories: '',
       principal: '',
     } as CreateCloudConnectionValues,
@@ -74,6 +76,11 @@ export const CreateCloudConnectionModal = ({
     onSubmit: ({ value }) => onSubmit(value),
   })
   const canSubmit = useStore(form.store, (state) => state.canSubmit)
+  const platform = useStore(form.store, (state) => state.values.platform)
+  const capabilitySet = useStore(
+    form.store,
+    (state) => state.values.capabilitySet
+  )
 
   if (connection) {
     const verified = connection.status === 'verified'
@@ -123,29 +130,55 @@ export const CreateCloudConnectionModal = ({
           </div>
         </div>
         <Text theme="neutral">
-          Apply one of these configurations in the AWS account, then verify the
-          connection.
+          Apply one of these configurations in the{' '}
+          {connection.platform === 'azure'
+            ? 'Azure subscription'
+            : 'AWS account'}
+          , then verify the connection.
         </Text>
-        <Tabs
-          tabs={{
-            terraform: (
-              <CodeBlock language="hcl" showCopy>
-                {connection.setup.terraform}
-              </CodeBlock>
-            ),
-            cli: (
-              <CodeBlock language="bash" showCopy>
-                {connection.setup.cli}
-              </CodeBlock>
-            ),
-            cloudformation: (
-              <CodeBlock language="yaml" showCopy>
-                {connection.setup.cloudformation}
-              </CodeBlock>
-            ),
-          }}
-          tabLabels={{ cli: 'AWS CLI', cloudformation: 'CloudFormation' }}
-        />
+        {connection.platform === 'azure' ? (
+          <Tabs
+            tabs={{
+              terraform: (
+                <CodeBlock language="hcl" showCopy>
+                  {connection.setup.terraform}
+                </CodeBlock>
+              ),
+              cli: (
+                <CodeBlock language="bash" showCopy>
+                  {connection.setup.cli}
+                </CodeBlock>
+              ),
+              portal: (
+                <CodeBlock language="json" showCopy>
+                  {connection.setup.portal_json ?? ''}
+                </CodeBlock>
+              ),
+            }}
+            tabLabels={{ cli: 'Azure CLI', portal: 'Portal JSON' }}
+          />
+        ) : (
+          <Tabs
+            tabs={{
+              terraform: (
+                <CodeBlock language="hcl" showCopy>
+                  {connection.setup.terraform}
+                </CodeBlock>
+              ),
+              cli: (
+                <CodeBlock language="bash" showCopy>
+                  {connection.setup.cli}
+                </CodeBlock>
+              ),
+              cloudformation: (
+                <CodeBlock language="yaml" showCopy>
+                  {connection.setup.cloudformation}
+                </CodeBlock>
+              ),
+            }}
+            tabLabels={{ cli: 'AWS CLI', cloudformation: 'CloudFormation' }}
+          />
+        )}
       </Modal>
     )
   }
@@ -184,12 +217,33 @@ export const CreateCloudConnectionModal = ({
             />
           )}
         </form.Field>
+        {platform === 'azure' && (
+          <form.Field name="tenantId">
+            {(field) => (
+              <FormInput
+                field={field}
+                labelProps={{ labelText: 'Entra tenant ID' }}
+                placeholder="00000000-0000-4000-8000-000000000000"
+                disabled={isPending}
+              />
+            )}
+          </form.Field>
+        )}
         <form.Field name="targetId">
           {(field) => (
             <FormInput
               field={field}
-              labelProps={{ labelText: 'AWS account ID' }}
-              placeholder="123456789012"
+              labelProps={{
+                labelText:
+                  platform === 'azure'
+                    ? 'Azure subscription ID'
+                    : 'AWS account ID',
+              }}
+              placeholder={
+                platform === 'azure'
+                  ? '00000000-0000-4000-8000-000000000000'
+                  : '123456789012'
+              }
               disabled={isPending}
             />
           )}
@@ -199,7 +253,9 @@ export const CreateCloudConnectionModal = ({
             <FormInput
               field={field}
               labelProps={{ labelText: 'Name' }}
-              placeholder="Production AWS"
+              placeholder={
+                platform === 'azure' ? 'Production Azure' : 'Production AWS'
+              }
               disabled={isPending}
             />
           )}
@@ -214,26 +270,49 @@ export const CreateCloudConnectionModal = ({
             />
           )}
         </form.Field>
-        <div className="sm:col-span-2">
-          <form.Field name="repositories">
+        {platform === 'azure' && capabilitySet !== 'stacks' && (
+          <form.Field name="registry">
             {(field) => (
-              <FormTextarea
+              <FormInput
                 field={field}
-                labelProps={{ labelText: 'ECR repositories (optional)' }}
-                helperText="One repository name per line. Used to scope image access."
-                placeholder={'backend\nworker'}
+                labelProps={{ labelText: 'Registry name' }}
+                placeholder="acmecontainers"
                 disabled={isPending}
               />
             )}
           </form.Field>
-        </div>
+        )}
+        {capabilitySet !== 'stacks' && (
+          <div className="sm:col-span-2">
+            <form.Field name="repositories">
+              {(field) => (
+                <FormTextarea
+                  field={field}
+                  labelProps={{
+                    labelText: `${platform === 'azure' ? 'ACR' : 'ECR'} repositories (optional)`,
+                  }}
+                  helperText="One repository name per line. Used to scope image access."
+                  placeholder={'backend\nworker'}
+                  disabled={isPending}
+                />
+              )}
+            </form.Field>
+          </div>
+        )}
         <div className="sm:col-span-2">
           <form.Field name="principal">
             {(field) => (
               <FormInput
                 field={field}
-                labelProps={{ labelText: 'IAM role ARN' }}
-                placeholder="arn:aws:iam::123456789012:role/nuon-cloud-connection"
+                labelProps={{
+                  labelText:
+                    platform === 'azure' ? 'Client ID' : 'IAM role ARN',
+                }}
+                placeholder={
+                  platform === 'azure'
+                    ? '00000000-0000-4000-8000-000000000000'
+                    : 'arn:aws:iam::123456789012:role/nuon-cloud-connection'
+                }
                 disabled={isPending}
               />
             )}

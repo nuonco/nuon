@@ -29,6 +29,28 @@ const connection = {
   used_by: { installs: 0, components: 0 },
 } as TCloudConnection
 
+const azureConnection = {
+  ...connection,
+  id: 'cc_01JAZUREEXAMPLE',
+  name: 'Production Azure',
+  platform: 'azure',
+  target_id: '11111111-1111-4111-8111-111111111111',
+  tenant_id: '22222222-2222-4222-8222-222222222222',
+  principal: '33333333-3333-4333-8333-333333333333',
+  setup: {
+    ...connection.setup,
+    subject: 'org:org_01JEXAMPLE:connection:cc_01JAZUREEXAMPLE',
+    audience: 'api://AzureADTokenExchange',
+    terraform:
+      'module "nuon_cloud_connection" {\n  source = "nuonco/acr-access/azure"\n}',
+    cli: 'az ad app create --display-name nuon-cloud-connection',
+    cloudformation: '',
+    portal_json:
+      '{\n  "name": "nuon-cloud-connection",\n  "audiences": ["api://AzureADTokenExchange"]\n}',
+    registry: 'acmecontainers',
+  },
+} as TCloudConnection
+
 export const Default = () => (
   <ModalStory>
     <CreateCloudConnectionModal
@@ -48,6 +70,37 @@ export const Setup = () => (
   <ModalStory>
     <CreateCloudConnectionModal
       connection={connection}
+      error={null}
+      isPending={false}
+      isVerifying={false}
+      verifyError={null}
+      onSubmit={noop}
+      onVerify={noop}
+      onDone={noop}
+    />
+  </ModalStory>
+)
+
+export const AzureCreate = () => (
+  <ModalStory>
+    <CreateCloudConnectionModal
+      defaultPlatform="azure"
+      connection={null}
+      error={null}
+      isPending={false}
+      isVerifying={false}
+      verifyError={null}
+      onSubmit={noop}
+      onVerify={noop}
+      onDone={noop}
+    />
+  </ModalStory>
+)
+
+export const AzureSetup = () => (
+  <ModalStory>
+    <CreateCloudConnectionModal
+      connection={azureConnection}
       error={null}
       isPending={false}
       isVerifying={false}

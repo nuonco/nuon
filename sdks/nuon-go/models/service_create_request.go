@@ -38,6 +38,9 @@ type ServiceCreateRequest struct {
 	// principal
 	Principal string `json:"principal,omitempty"`
 
+	// registry
+	Registry string `json:"registry,omitempty"`
+
 	// repositories
 	Repositories []string `json:"repositories"`
 

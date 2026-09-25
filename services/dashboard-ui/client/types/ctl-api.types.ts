@@ -829,6 +829,8 @@ export type TCloudConnection = {
     terraform: string
     cli: string
     cloudformation: string
+    portal_json?: string
+    registry?: string
     capabilities: ('stacks' | 'images')[]
     repositories?: string[]
   }

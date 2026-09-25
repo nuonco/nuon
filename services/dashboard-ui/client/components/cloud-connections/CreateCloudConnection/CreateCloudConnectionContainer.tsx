@@ -25,6 +25,7 @@ const CreateCloudConnectionModalContainer = (props: Record<string, any>) => {
   const queryClient = useQueryClient()
   const [connection, setConnection] = useState<TCloudConnection | null>(null)
   const [repositories, setRepositories] = useState<string[]>([])
+  const [registry, setRegistry] = useState('')
 
   const createMutation = useMutation({
     mutationFn: (values: CreateCloudConnectionValues) => {
@@ -34,14 +35,19 @@ const CreateCloudConnectionModalContainer = (props: Record<string, any>) => {
           : [values.capabilitySet]
       const nextRepositories = repositoriesFrom(values.repositories)
       setRepositories(nextRepositories)
+      setRegistry(values.registry.trim())
       return createCloudConnection({
         orgId: org.id,
         body: {
           name: values.name.trim(),
-          platform: 'aws',
+          platform: values.platform,
           target_id: values.targetId.trim(),
+          tenant_id:
+            values.platform === 'azure' ? values.tenantId.trim() : undefined,
           principal: values.principal.trim(),
           capabilities,
+          registry:
+            values.platform === 'azure' ? values.registry.trim() : undefined,
           repositories: nextRepositories,
         },
       })
@@ -58,6 +64,7 @@ const CreateCloudConnectionModalContainer = (props: Record<string, any>) => {
         orgId: org.id,
         connectionId: connection!.id,
         repositories,
+        registry,
       }),
     onSuccess: (verified) => {
       setConnection(verified)

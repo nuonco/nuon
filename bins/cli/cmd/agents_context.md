@@ -105,7 +105,7 @@ Tool JSON timestamps are UTC (Zulu) RFC3339 and always end in `Z`, for example `
 
 List tools are paginated (default 20, max 100). If `has_more` is true, tell the user there are more results. Do not keep paging until the list is complete unless they asked for everything; use `offset=next_offset` for the next page.
 
-Cloud connection tools: `list_cloud_connections` and `get_cloud_connection` read connection status and setup material. With writes enabled, `create_cloud_connection`, `verify_cloud_connection`, and `delete_cloud_connection` manage AWS access for install stacks and private image pulls.
+Cloud connection tools: `list_cloud_connections` and `get_cloud_connection` read connection status and setup material. With writes enabled, `create_cloud_connection`, `verify_cloud_connection`, and `delete_cloud_connection` manage AWS or Azure access for install stacks and private image pulls.
 
 ## IAM permission checks (local CLI extension)
 

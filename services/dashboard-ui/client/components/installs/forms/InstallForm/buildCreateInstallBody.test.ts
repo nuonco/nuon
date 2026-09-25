@@ -5,7 +5,7 @@ import type { InstallFormValues } from './schema'
 const base: InstallFormValues = {
   name: '  my-install  ',
   region: 'us-west-2',
-  aws_connection_id: '',
+  cloud_connection_id: '',
   aws_account_id: '',
   location: '',
   azure_subscription_id: '',
@@ -36,7 +36,11 @@ describe('buildCreateInstallBody', () => {
 
   test('aws account carries region + optional connection/account', () => {
     const body = buildCreateInstallBody(
-      { ...base, aws_connection_id: 'conn-1', aws_account_id: '123456789012' },
+      {
+        ...base,
+        cloud_connection_id: 'conn-1',
+        aws_account_id: '123456789012',
+      },
       'aws'
     )
     expect(body.aws_account).toEqual({

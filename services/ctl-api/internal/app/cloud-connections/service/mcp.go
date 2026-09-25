@@ -30,7 +30,7 @@ type mcpConnectionInput struct {
 
 type mcpCreateInput struct {
 	Name          string                          `json:"name" jsonschema:"connection name"`
-	Platform      app.CloudPlatform               `json:"platform" jsonschema:"cloud platform: aws or azure"`
+	Platform      app.CloudPlatform               `json:"platform,omitempty" jsonschema:"cloud platform: aws or azure (defaults to aws)"`
 	TargetID      string                          `json:"target_id" jsonschema:"AWS account ID or Azure subscription ID"`
 	Principal     string                          `json:"principal" jsonschema:"AWS IAM role ARN or Entra application client ID"`
 	TenantID      string                          `json:"tenant_id,omitempty" jsonschema:"Entra tenant ID for Azure"`
@@ -91,6 +91,9 @@ func (s *service) mcpCreate(ctx context.Context, _ *mcp.CallToolRequest, in mcpC
 	orgID, err := require.Write(ctx)
 	if err != nil {
 		return nil, nil, err
+	}
+	if in.Platform == "" {
+		in.Platform = app.CloudPlatformAWS
 	}
 	connection := app.CloudConnection{OrgID: orgID, Name: in.Name, Platform: in.Platform, TargetID: in.TargetID, Principal: in.Principal, TenantID: in.TenantID, DefaultRegion: in.DefaultRegion, Capabilities: in.Capabilities}
 	if err := validateConnection(&connection); err != nil {

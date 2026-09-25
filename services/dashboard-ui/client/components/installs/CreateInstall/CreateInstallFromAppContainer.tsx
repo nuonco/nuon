@@ -104,7 +104,9 @@ export const CreateInstallFromAppContainer = ({
   const queryClient = useQueryClient()
   const platform = app.runner_config?.app_runner_type
   const requireTargetAccount = useOrgFeatureFlag('phone-home-auth')
-  const awsConnectionsEnabled = normalizeInstallPlatform(platform) === 'aws'
+  const installPlatform = normalizeInstallPlatform(platform)
+  const cloudConnectionsEnabled =
+    installPlatform === 'aws' || installPlatform === 'azure'
 
   const [fields, setFields] = useState<ICreateFormTriggerState>({
     canSubmit: false,
@@ -211,15 +213,13 @@ export const CreateInstallFromAppContainer = ({
     enabled: !!org?.id && !!configId && phase === 'form',
   })
 
-  const {
-    data: awsAccountConnections,
-    isLoading: awsAccountConnectionsLoading,
-  } = useQuery({
-    placeholderData: keepPreviousData,
-    queryKey: ['cloud-connections', org?.id],
-    queryFn: () => getCloudConnections({ orgId: org.id }),
-    enabled: !!org?.id && awsConnectionsEnabled && phase === 'form',
-  })
+  const { data: cloudConnections, isLoading: cloudConnectionsLoading } =
+    useQuery({
+      placeholderData: keepPreviousData,
+      queryKey: ['cloud-connections', org?.id],
+      queryFn: () => getCloudConnections({ orgId: org.id }),
+      enabled: !!org?.id && cloudConnectionsEnabled && phase === 'form',
+    })
 
   const componentIds = config?.component_ids ?? []
   const needsComponents = componentIds.length > 0
@@ -296,7 +296,7 @@ export const CreateInstallFromAppContainer = ({
     branchConfigsLoading ||
     configLoading ||
     (needsComponents && componentsLoading) ||
-    (awsConnectionsEnabled && awsAccountConnectionsLoading)
+    (cloudConnectionsEnabled && cloudConnectionsLoading)
 
   const missingBranchConfigError =
     phase === 'form' &&
@@ -534,11 +534,11 @@ export const CreateInstallFromAppContainer = ({
             needsComponents ? componentsResult?.data : []
           )}
           requireTargetAccount={requireTargetAccount}
-          awsAccountConnections={
-            awsConnectionsEnabled
-              ? (awsAccountConnections || []).filter(
+          cloudConnections={
+            cloudConnectionsEnabled
+              ? (cloudConnections || []).filter(
                   (connection) =>
-                    connection.platform === 'aws' &&
+                    connection.platform === installPlatform &&
                     connection.capabilities?.includes('stacks')
                 )
               : undefined

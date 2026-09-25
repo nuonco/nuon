@@ -27,6 +27,9 @@ type AppAzureACRImageConfig struct {
 	// never the material itself.
 	ClientSecretName string `json:"client_secret_name,omitempty"`
 
+	// cloud connection id
+	CloudConnectionID string `json:"cloud_connection_id,omitempty"`
+
 	// connection to parent model
 	ComponentConfigID string `json:"component_config_id,omitempty"`
 

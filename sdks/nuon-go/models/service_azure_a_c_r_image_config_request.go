@@ -26,6 +26,9 @@ type ServiceAzureACRImageConfigRequest struct {
 	// Names of app secrets, never raw values. At most one may be set.
 	ClientSecretName string `json:"client_secret_name,omitempty"`
 
+	// connection
+	Connection string `json:"connection,omitempty"`
+
 	// registry url
 	RegistryURL string `json:"registry_url,omitempty"`
 

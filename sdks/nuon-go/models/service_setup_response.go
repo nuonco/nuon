@@ -35,6 +35,12 @@ type ServiceSetupResponse struct {
 	// issuer url
 	IssuerURL string `json:"issuer_url,omitempty"`
 
+	// portal json
+	PortalJSON string `json:"portal_json,omitempty"`
+
+	// registry
+	Registry string `json:"registry,omitempty"`
+
 	// repositories
 	Repositories []string `json:"repositories"`
 

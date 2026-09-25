@@ -1,6 +1,10 @@
 package cmd
 
-import "github.com/spf13/cobra"
+import (
+	"fmt"
+
+	"github.com/spf13/cobra"
+)
 
 func (c *cli) cloudConnectionsCmd() *cobra.Command {
 	command := &cobra.Command{
@@ -21,34 +25,51 @@ func (c *cli) cloudConnectionsCmd() *cobra.Command {
 	})
 
 	var name, platform, targetID, principal, defaultRegion string
+	var tenantID, subscriptionID, clientID, registry string
 	var capabilities, repositories []string
 	create := &cobra.Command{
 		Use: "create", Short: "Create a cloud connection", Annotations: outputs,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			return c.cloudConnections.Create(cmd.Context(), name, platform, targetID, principal, defaultRegion, capabilities, repositories, PrintJSON)
+			if subscriptionID != "" {
+				targetID = subscriptionID
+			}
+			if clientID != "" {
+				principal = clientID
+			}
+			if targetID == "" {
+				return fmt.Errorf("--target-id or --subscription-id is required")
+			}
+			if principal == "" {
+				return fmt.Errorf("--principal or --client-id is required")
+			}
+			return c.cloudConnections.Create(cmd.Context(), name, platform, targetID, principal, tenantID, defaultRegion, registry, capabilities, repositories, PrintJSON)
 		}),
 	}
 	create.Flags().StringVar(&name, "name", "", "Connection name")
-	create.Flags().StringVar(&platform, "platform", "aws", "Cloud platform (Phase 1 supports aws)")
-	create.Flags().StringVar(&targetID, "target-id", "", "AWS account ID")
-	create.Flags().StringVar(&principal, "principal", "", "AWS IAM role ARN")
+	create.Flags().StringVar(&platform, "platform", "aws", "Cloud platform (aws or azure)")
+	create.Flags().StringVar(&targetID, "target-id", "", "Cloud account or subscription ID")
+	create.Flags().StringVar(&principal, "principal", "", "Cloud principal")
+	create.Flags().StringVar(&tenantID, "tenant-id", "", "Azure Entra tenant ID")
+	create.Flags().StringVar(&subscriptionID, "subscription-id", "", "Azure subscription ID")
+	create.Flags().StringVar(&clientID, "client-id", "", "Azure application client ID")
+	create.Flags().StringVar(&registry, "registry", "", "Azure Container Registry name or login server")
 	create.Flags().StringVar(&defaultRegion, "default-region", "", "Default AWS region")
 	create.Flags().StringSliceVar(&capabilities, "capability", nil, "Capability: stacks or images (repeatable)")
-	create.Flags().StringSliceVar(&repositories, "repository", nil, "ECR repository name (repeatable)")
+	create.Flags().StringSliceVar(&repositories, "repository", nil, "Container repository name (repeatable)")
 	_ = create.MarkFlagRequired("name")
-	_ = create.MarkFlagRequired("target-id")
-	_ = create.MarkFlagRequired("principal")
 	_ = create.MarkFlagRequired("capability")
 	command.AddCommand(create)
 
 	var verifyRepositories []string
+	var verifyRegistry string
 	verify := &cobra.Command{
 		Use: "verify <connection-id>", Short: "Verify a cloud connection", Args: cobra.ExactArgs(1), Annotations: outputs,
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
-			return c.cloudConnections.Verify(cmd.Context(), args[0], verifyRepositories, PrintJSON)
+			return c.cloudConnections.Verify(cmd.Context(), args[0], verifyRegistry, verifyRepositories, PrintJSON)
 		}),
 	}
-	verify.Flags().StringSliceVar(&verifyRepositories, "repository", nil, "ECR repository name to probe (repeatable)")
+	verify.Flags().StringVar(&verifyRegistry, "registry", "", "Azure Container Registry name or login server")
+	verify.Flags().StringSliceVar(&verifyRepositories, "repository", nil, "Container repository name to probe (repeatable)")
 	command.AddCommand(verify)
 
 	command.AddCommand(&cobra.Command{

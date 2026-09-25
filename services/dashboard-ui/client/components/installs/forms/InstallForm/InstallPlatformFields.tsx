@@ -13,7 +13,7 @@ import type { InstallPlatform } from './schema'
 interface IInstallPlatformFields {
   form: InstallFormApi
   platform: InstallPlatform
-  awsAccountConnections?: TCloudConnection[]
+  cloudConnections?: TCloudConnection[]
   requireTargetAccount?: boolean
   disabled?: boolean
 }
@@ -29,7 +29,7 @@ const PlatformLegend = ({ children }: { children: string }) => (
 
 const AwsFields = ({
   form,
-  awsAccountConnections,
+  cloudConnections,
   requireTargetAccount,
   disabled,
 }: Omit<IInstallPlatformFields, 'platform'>) => {
@@ -40,8 +40,8 @@ const AwsFields = ({
       : region.text,
   }))
 
-  const connectionId = useStore(form.store, (s) => s.values.aws_connection_id)
-  const connectionAccountId = awsAccountConnections?.find(
+  const connectionId = useStore(form.store, (s) => s.values.cloud_connection_id)
+  const connectionAccountId = cloudConnections?.find(
     (connection) => connection.id === connectionId
   )?.target_id
 
@@ -69,19 +69,19 @@ const AwsFields = ({
         </form.Field>
       </FieldRow>
 
-      {awsAccountConnections ? (
+      {cloudConnections ? (
         <FieldRow
           labelText="AWS connection"
           optional
           helpText="Select an AWS connection for Nuon to apply the install stack. Leave as None if the customer will apply it."
         >
-          <form.Field name="aws_connection_id">
+          <form.Field name="cloud_connection_id">
             {(field) => (
               <FormSelect
                 field={field}
                 options={[
                   { value: '', label: 'None — customer will apply the stack' },
-                  ...awsAccountConnections.map((connection) => ({
+                  ...cloudConnections.map((connection) => ({
                     value: connection.id,
                     label: `${connection.name} · ${connection.target_id} · ${connection.status === 'verified' ? 'Verified' : connection.status}`,
                     disabled: connection.status !== 'verified',
@@ -121,15 +121,26 @@ const AwsFields = ({
 
 const AzureFields = ({
   form,
+  cloudConnections,
   requireTargetAccount,
   disabled,
-}: Omit<IInstallPlatformFields, 'platform' | 'awsAccountConnections'>) => {
+}: Omit<IInstallPlatformFields, 'platform'>) => {
   const locationOptions = AZURE_REGIONS.map((region) => ({
     value: region.value,
     label: region?.iconVariant
       ? `${getFlagEmoji(region.iconVariant.substring(5))} ${region.text}`
       : region.text,
   }))
+  const connectionId = useStore(form.store, (s) => s.values.cloud_connection_id)
+  const connectionSubscriptionId = cloudConnections?.find(
+    (connection) => connection.id === connectionId
+  )?.target_id
+
+  useEffect(() => {
+    if (connectionSubscriptionId) {
+      form.setFieldValue('azure_subscription_id', connectionSubscriptionId)
+    }
+  }, [connectionSubscriptionId, form])
 
   return (
     <fieldset className="flex flex-col gap-6 border-t pt-6">
@@ -149,16 +160,46 @@ const AzureFields = ({
         </form.Field>
       </FieldRow>
 
+      {cloudConnections ? (
+        <FieldRow
+          labelText="Azure connection"
+          optional
+          helpText="Select an Azure connection for Nuon to apply the install stack. Leave as None if the customer will apply it."
+        >
+          <form.Field name="cloud_connection_id">
+            {(field) => (
+              <FormSelect
+                field={field}
+                options={[
+                  { value: '', label: 'None — customer will apply the stack' },
+                  ...cloudConnections.map((connection) => ({
+                    value: connection.id,
+                    label: `${connection.name} · ${connection.target_id} · ${connection.status === 'verified' ? 'Verified' : connection.status}`,
+                    disabled: connection.status !== 'verified',
+                  })),
+                ]}
+                disabled={disabled}
+              />
+            )}
+          </form.Field>
+        </FieldRow>
+      ) : null}
+
       <FieldRow
         labelText="Azure subscription ID"
         required={!!requireTargetAccount}
-        helpText="The Azure subscription this install is deployed into. Cannot be changed later."
+        helpText={
+          connectionSubscriptionId
+            ? 'Taken from the selected Azure connection.'
+            : 'The Azure subscription this install is deployed into. Cannot be changed later.'
+        }
       >
         <form.Field name="azure_subscription_id">
           {(field) => (
             <FormInput
               field={field}
               placeholder="00000000-0000-0000-0000-000000000000"
+              readOnly={!!connectionSubscriptionId}
               disabled={disabled}
             />
           )}
@@ -172,7 +213,7 @@ const GcpFields = ({
   form,
   requireTargetAccount,
   disabled,
-}: Omit<IInstallPlatformFields, 'platform' | 'awsAccountConnections'>) => (
+}: Omit<IInstallPlatformFields, 'platform' | 'cloudConnections'>) => (
   <fieldset className="flex flex-col gap-6 border-t pt-6">
     <PlatformLegend>Set GCP configuration</PlatformLegend>
 
@@ -197,7 +238,7 @@ const GcpFields = ({
 export const InstallPlatformFields = ({
   form,
   platform,
-  awsAccountConnections,
+  cloudConnections,
   requireTargetAccount,
   disabled,
 }: IInstallPlatformFields) => {
@@ -205,7 +246,7 @@ export const InstallPlatformFields = ({
     return (
       <AwsFields
         form={form}
-        awsAccountConnections={awsAccountConnections}
+        cloudConnections={cloudConnections}
         requireTargetAccount={requireTargetAccount}
         disabled={disabled}
       />
@@ -215,6 +256,7 @@ export const InstallPlatformFields = ({
     return (
       <AzureFields
         form={form}
+        cloudConnections={cloudConnections}
         requireTargetAccount={requireTargetAccount}
         disabled={disabled}
       />

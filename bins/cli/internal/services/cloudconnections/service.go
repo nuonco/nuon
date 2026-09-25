@@ -44,15 +44,15 @@ func (s *Service) Get(ctx context.Context, connectionID string, asJSON bool) err
 	return render(connection, asJSON)
 }
 
-func (s *Service) Create(ctx context.Context, name, platform, targetID, principal, defaultRegion string, capabilities, repositories []string, asJSON bool) error {
+func (s *Service) Create(ctx context.Context, name, platform, targetID, principal, tenantID, defaultRegion, registry string, capabilities, repositories []string, asJSON bool) error {
 	capabilityValues := make([]models.AppCloudConnectionCapability, 0, len(capabilities))
 	for _, capability := range capabilities {
 		capabilityValues = append(capabilityValues, models.AppCloudConnectionCapability(capability))
 	}
 	connection, err := s.api.CreateCloudConnection(ctx, &models.ServiceCreateRequest{
 		Name: name, Platform: models.AppCloudPlatform(platform), TargetID: targetID,
-		Principal: principal, DefaultRegion: defaultRegion,
-		Capabilities: capabilityValues, Repositories: repositories,
+		Principal: principal, TenantID: tenantID, DefaultRegion: defaultRegion,
+		Capabilities: capabilityValues, Registry: registry, Repositories: repositories,
 	})
 	if err != nil {
 		return ui.PrintError(err)
@@ -60,8 +60,8 @@ func (s *Service) Create(ctx context.Context, name, platform, targetID, principa
 	return render(connection, asJSON)
 }
 
-func (s *Service) Verify(ctx context.Context, connectionID string, repositories []string, asJSON bool) error {
-	connection, err := s.api.VerifyCloudConnection(ctx, connectionID, &models.ServiceVerifyRequest{Repositories: repositories})
+func (s *Service) Verify(ctx context.Context, connectionID, registry string, repositories []string, asJSON bool) error {
+	connection, err := s.api.VerifyCloudConnection(ctx, connectionID, &models.ServiceVerifyRequest{Registry: registry, Repositories: repositories})
 	if err != nil {
 		return ui.PrintError(err)
 	}

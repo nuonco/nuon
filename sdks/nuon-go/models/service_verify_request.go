@@ -17,6 +17,9 @@ import (
 // swagger:model service.VerifyRequest
 type ServiceVerifyRequest struct {
 
+	// registry
+	Registry string `json:"registry,omitempty"`
+
 	// repositories
 	Repositories []string `json:"repositories"`
 }
