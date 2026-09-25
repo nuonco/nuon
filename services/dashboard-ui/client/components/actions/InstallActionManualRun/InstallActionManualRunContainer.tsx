@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router'
 import { useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
@@ -37,6 +37,7 @@ export const InstallActionManualRunModalContainer = ({
   const { install } = useInstall()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
+  const queryClient = useQueryClient()
   const [selectedRole, setSelectedRole] = useState<string>('')
 
   const { isPending: isLoading, error, mutate } = useMutation({
@@ -59,6 +60,8 @@ export const InstallActionManualRunModalContainer = ({
         </Toast>
       )
       removeModal(props.modalId)
+      queryClient.invalidateQueries({ queryKey: ['install-action'] })
+      queryClient.invalidateQueries({ queryKey: ['install-actions'] })
       const workflowId = result.data.workflow_id
       if (workflowId) {
         navigate(`/${org.id}/installs/${install.id}/workflows/${workflowId}`)
