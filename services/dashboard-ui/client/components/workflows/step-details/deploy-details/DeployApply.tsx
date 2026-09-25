@@ -51,6 +51,7 @@ export const DeployApply = ({
             <LogStreamProvider logStreamId={deploy?.log_stream?.id}>
               <LogViewerProvider>
                 <Tabs
+                  naturalHeight
                   tabs={{
                     logs: <SSELogs />,
                     trace: (
