@@ -7,6 +7,7 @@ import type {
   TAppBranchRunPreviewMode,
   TInstall,
 } from '@/types'
+import { cn } from '@/utils/classnames'
 import { previewModeDisplayLabel } from './preview-mode'
 
 export type PreviewInstallTargetMode = 'install' | 'labels'
@@ -167,76 +168,104 @@ export const PreviewDefaultsEditor = ({
         }}
       />
 
-      {value.mode !== 'none' ? (
-        <div className="flex flex-col gap-2">
-          <Text variant="subtext" weight="strong">
-            Default mode
-          </Text>
-          <ToggleButton<TAppBranchRunPreviewMode>
-            value={value.mode}
-            onChange={(mode) => onChange({ ...value, mode })}
-            options={[
-              {
-                value: 'build-only',
-                label: previewModeDisplayLabel('build-only'),
-              },
-              {
-                value: 'plan-only',
-                label: previewModeDisplayLabel('plan-only'),
-              },
-              { value: 'apply', label: previewModeDisplayLabel('apply') },
-            ]}
-          />
-        </div>
-      ) : null}
+      <div
+        className={cn(
+          'grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:duration-[1ms]',
+          value.mode !== 'none' ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+        )}
+        aria-hidden={value.mode === 'none'}
+      >
+        <div className="overflow-hidden">
+          <div className="flex flex-col gap-4 pt-4">
+            <div className="flex flex-col gap-2">
+              <Text variant="subtext" weight="strong">
+                Default mode
+              </Text>
+              <ToggleButton<TAppBranchRunPreviewMode>
+                value={value.mode === 'none' ? 'plan-only' : value.mode}
+                onChange={(mode) => onChange({ ...value, mode })}
+                options={[
+                  {
+                    value: 'build-only',
+                    label: previewModeDisplayLabel('build-only'),
+                  },
+                  {
+                    value: 'plan-only',
+                    label: previewModeDisplayLabel('plan-only'),
+                  },
+                  { value: 'apply', label: previewModeDisplayLabel('apply') },
+                ]}
+              />
+            </div>
 
-      {value.mode !== 'none' && value.mode !== 'build-only' ? (
-        <div className="flex flex-col gap-2">
-          <Text variant="subtext" weight="strong">
-            Default install
-          </Text>
-          <Select
-            options={installOptions}
-            value={value.installId}
-            onChange={(installId) =>
-              onChange({ ...value, installId, installTargetMode: 'install' })
-            }
-            placeholder="Select an install"
-            disabled={disabled || installOptions.length === 0}
-            menuPlacement="bottom"
-          />
-        </div>
-      ) : null}
+            <div
+              className={cn(
+                'grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:duration-[1ms]',
+                value.mode !== 'none' && value.mode !== 'build-only'
+                  ? 'grid-rows-[1fr]'
+                  : 'grid-rows-[0fr]'
+              )}
+              aria-hidden={
+                value.mode === 'none' || value.mode === 'build-only'
+              }
+            >
+              <div className="overflow-hidden">
+                <div className="flex flex-col gap-2">
+                  <Text variant="subtext" weight="strong">
+                    Default install
+                  </Text>
+                  <Select
+                    options={installOptions}
+                    value={value.installId}
+                    onChange={(installId) =>
+                      onChange({
+                        ...value,
+                        installId,
+                        installTargetMode: 'install',
+                      })
+                    }
+                    placeholder="Select an install"
+                    disabled={disabled || installOptions.length === 0}
+                    menuPlacement="bottom"
+                  />
+                </div>
+              </div>
+            </div>
 
-      {hasGithubVCS && value.mode !== 'none' ? (
-        <div className="flex flex-col gap-2">
-          <CheckboxInput
-            id="preview-set-statuses"
-            checked={value.setStatuses}
-            onChange={(e) =>
-              onChange({ ...value, setStatuses: e.target.checked })
-            }
-            disabled={disabled}
-            labelProps={{ labelText: 'Set commit statuses' }}
-          />
-          <CheckboxInput
-            id="preview-pr-comment"
-            checked={value.comment}
-            onChange={(e) => onChange({ ...value, comment: e.target.checked })}
-            disabled={disabled}
-            labelProps={{ labelText: 'Comment on pull request' }}
-          />
-          <CheckboxInput
-            id="preview-ignore-drafts"
-            checked={value.ignoreDrafts}
-            onChange={(e) =>
-              onChange({ ...value, ignoreDrafts: e.target.checked })
-            }
-            disabled={disabled}
-            labelProps={{ labelText: 'Ignore draft pull requests' }}
-          />
+            {hasGithubVCS ? (
+              <div className="flex flex-col gap-2">
+                <CheckboxInput
+                  id="preview-set-statuses"
+                  checked={value.setStatuses}
+                  onChange={(e) =>
+                    onChange({ ...value, setStatuses: e.target.checked })
+                  }
+                  disabled={disabled}
+                  labelProps={{ labelText: 'Set commit statuses' }}
+                />
+                <CheckboxInput
+                  id="preview-pr-comment"
+                  checked={value.comment}
+                  onChange={(e) =>
+                    onChange({ ...value, comment: e.target.checked })
+                  }
+                  disabled={disabled}
+                  labelProps={{ labelText: 'Comment on pull request' }}
+                />
+                <CheckboxInput
+                  id="preview-ignore-drafts"
+                  checked={value.ignoreDrafts}
+                  onChange={(e) =>
+                    onChange({ ...value, ignoreDrafts: e.target.checked })
+                  }
+                  disabled={disabled}
+                  labelProps={{ labelText: 'Ignore draft pull requests' }}
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
-      ) : null}
+      </div>
     </div>
   )
 }
