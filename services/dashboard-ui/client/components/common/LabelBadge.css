@@ -35,9 +35,8 @@
   ) !important;
 }
 
-/* Label colours arrive from the API as arbitrary user-chosen values, so they
-   cannot be guaranteed readable on the high-contrast blue. Ignore them there. */
-[data-theme='high-contrast'] .label-badge-value {
+[data-theme='high-contrast'] .label-badge-value,
+[data-theme='monochrome'] .label-badge-value {
   background-color: var(--dark-grey-950);
   color: #ffffff;
   border-color: #ffffff !important;
