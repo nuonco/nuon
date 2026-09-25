@@ -9,6 +9,7 @@ import { cn } from '@/utils/classnames'
 import type { TInstallWorkflowStep } from '@/types'
 import { getWorkflowStepTitle } from '@/utils/workflow-utils'
 import {
+  getStepDisplayStatus,
   stepStatusCategory,
   type TStepStatusCategory,
 } from '../shared/step-status'
@@ -130,7 +131,8 @@ export const WorkflowStepsPipeline = ({
       >
         <div className="flex min-w-full overflow-hidden rounded-md border divide-x">
           {steps.map((step, idx) => {
-            const category = stepStatusCategory(step.status?.status)
+            const displayStatus = getStepDisplayStatus(step)
+            const category = stepStatusCategory(displayStatus)
             const isSelected = selectedStepId === step.id
 
             return (
@@ -146,7 +148,7 @@ export const WorkflowStepsPipeline = ({
                 onClick={() => onSelectStep(step)}
               >
                 <Status
-                  status={step.status?.status}
+                  status={displayStatus}
                   variant="timeline"
                   isWithoutText
                   iconSize={14}
