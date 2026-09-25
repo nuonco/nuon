@@ -43,4 +43,5 @@ var ServicesModule = fx.Module("services",
 	fx.Provide(asService(handlers.NewActionRunTimelineHandler)),
 	fx.Provide(asService(handlers.NewWorkflowTimelineHandler)),
 	fx.Provide(asService(handlers.NewAppBranchRunTimelineHandler)),
+	fx.Provide(asService(handlers.NewDeploymentTimelineHandler)),
 )
