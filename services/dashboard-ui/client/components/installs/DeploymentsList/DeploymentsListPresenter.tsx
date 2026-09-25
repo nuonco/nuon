@@ -1,27 +1,38 @@
+import { useEffect } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
-import { Dropdown } from '@/components/common/Dropdown'
+import { CheckboxFilterDropdown } from '@/components/common/CheckboxFilterDropdown'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Icon, type TIconVariant } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
-import { Loading } from '@/components/common/Loading'
-import { Menu } from '@/components/common/Menu'
+import { Pagination, type IPagination } from '@/components/common/Pagination'
+import { RadioFilterDropdown } from '@/components/common/RadioFilterDropdown'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { usePagination } from '@/hooks/use-pagination'
 import { useSurfaces } from '@/hooks/use-surfaces'
+import { PaginationProvider } from '@/providers/pagination-provider'
 import type {
+  TAPIError,
   TInstallDeploymentRecord,
   TInstallDeploymentRecordType,
 } from '@/types'
-import { humanize } from '@/utils/string-utils'
+import {
+  WORKFLOW_DATE_LABELS,
+  WORKFLOW_STATUS_LABELS,
+  workflowStatusOptions,
+  type TWorkflowDatePreset,
+  type TWorkflowStatusOption,
+} from '@/utils/workflow-filters'
 import { DeploymentDetailPanel } from './DeploymentDetailPanel'
 
-// ─── Type labels ─────────────────────────────────────────────────────────────
-
-const DEPLOYMENT_TYPE_LABELS: Record<TInstallDeploymentRecordType, string> = {
+export const DEPLOYMENT_TYPE_LABELS: Record<
+  TInstallDeploymentRecordType,
+  string
+> = {
   provision: 'Provision',
   reprovision: 'Reprovision',
   sandbox_reprovision: 'Sandbox reprovision',
@@ -43,14 +54,6 @@ const DEPLOYMENT_TYPE_ICON: Record<TInstallDeploymentRecordType, TIconVariant> =
     stack_update: 'StackIcon',
     install_config_update: 'FileCodeIcon',
   }
-
-const DATE_FILTER_LABELS: Record<string, string> = {
-  '24h': 'Last 24 hours',
-  '7d': 'Last 7 days',
-  '30d': 'Last 30 days',
-}
-
-// ─── Individual card ─────────────────────────────────────────────────────────
 
 interface IDeploymentCard {
   deployment: TInstallDeploymentRecord
@@ -90,14 +93,7 @@ const DeploymentCard = ({
           </span>
           <div className="flex flex-col gap-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="!px-0 font-medium"
-                onClick={onViewDetails}
-              >
-                {deployment.title}
-              </Button>
+              <Text weight="strong">{deployment.title}</Text>
               <Status status={deployment.status} variant="badge" />
               <Badge size="sm" theme="neutral">
                 {DEPLOYMENT_TYPE_LABELS[deployment.type]}
@@ -117,6 +113,9 @@ const DeploymentCard = ({
             variant="subtext"
             theme="neutral"
           />
+          <Button variant="secondary" size="sm" onClick={onViewDetails}>
+            View details
+          </Button>
         </div>
       </div>
 
@@ -201,58 +200,88 @@ const DeploymentCard = ({
   )
 }
 
-// ─── Filter bar ───────────────────────────────────────────────────────────────
+const DeploymentCardSkeleton = () => (
+  <Card className="!p-4 !gap-3 !shadow-none">
+    <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start gap-3 min-w-0">
+        <Text variant="subtext" loading loadingWidth={2} className="mt-0.5" />
+        <div className="flex flex-col gap-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Text loading loadingWidth={22} />
+            <Status loading variant="badge" loadingWidth={8} />
+            <Badge loading size="sm" loadingWidth={12} />
+          </div>
+          <Text variant="subtext" loading loadingWidth={44} />
+        </div>
+      </div>
+      <div className="flex items-center gap-3 shrink-0">
+        <Text variant="subtext" loading loadingWidth={10} />
+        <Badge loading size="lg" loadingWidth={11} className="!rounded-lg" />
+      </div>
+    </div>
+
+    <div className="flex items-center gap-x-6 gap-y-2 flex-wrap">
+      <Text variant="subtext" loading loadingWidth={16} />
+      <Text variant="subtext" loading loadingWidth={20} />
+    </div>
+
+    <div className="flex flex-wrap gap-2">
+      <Badge loading size="sm" variant="code" loadingWidth={9} />
+      <Badge loading size="sm" variant="code" loadingWidth={7} />
+      <Badge loading size="sm" variant="code" loadingWidth={11} />
+    </div>
+  </Card>
+)
 
 export interface IDeploymentFilter {
   search: string
-  status: string
-  type: string
-  component: string
-  date: string
+  status: Set<TWorkflowStatusOption>
+  type: Set<TInstallDeploymentRecordType>
+  resource?: string
+  date?: TWorkflowDatePreset
 }
-
-export const DEFAULT_DEPLOYMENTS_FILTER: IDeploymentFilter = {
-  search: '',
-  status: 'all',
-  type: 'all',
-  component: 'all',
-  date: 'all',
-}
-
-// ─── Presenter ───────────────────────────────────────────────────────────────
 
 export interface IDeploymentsListPresenter {
   deployments: TInstallDeploymentRecord[]
   isLoading: boolean
-  error?: Error | null
-  page: number
-  hasMore: boolean
+  error?: TAPIError | null
+  pagination: Omit<IPagination, 'position'>
   orgId: string
   appId: string
   installId: string
+  search: string
   filter: IDeploymentFilter
-  onFilterChange: (patch: Partial<IDeploymentFilter>) => void
+  onSearchChange: (value: string) => void
+  onStatusChange: (value: Set<TWorkflowStatusOption>) => void
+  onTypeChange: (value: Set<TInstallDeploymentRecordType>) => void
+  onResourceChange: (value?: string) => void
+  onDateChange: (value?: string) => void
   onClearFilters: () => void
-  onPageChange: (page: number) => void
 }
 
-export const DeploymentsListPresenter = ({
+const DeploymentsListBase = ({
   deployments,
   isLoading,
   error,
-  page,
-  hasMore,
+  pagination,
   orgId,
   appId,
   installId,
+  search,
   filter,
-  onFilterChange,
+  onSearchChange,
+  onStatusChange,
+  onTypeChange,
+  onResourceChange,
+  onDateChange,
   onClearFilters,
-  onPageChange,
 }: IDeploymentsListPresenter) => {
   const { addPanel } = useSurfaces()
+  const { isPaginating, setIsPaginating } = usePagination()
 
-  const allStatuses = Array.from(new Set(deployments.map((d) => d.status)))
+  useEffect(() => {
+    setIsPaginating(false)
+  }, [deployments])
 
   const allComponents = Array.from(
     new Set(
@@ -267,157 +296,83 @@ export const DeploymentsListPresenter = ({
 
   const hasActiveFilters =
     filter.search !== '' ||
-    filter.status !== 'all' ||
-    filter.type !== 'all' ||
-    filter.component !== 'all' ||
-    filter.date !== 'all'
+    filter.status.size > 0 ||
+    filter.type.size > 0 ||
+    !!filter.resource ||
+    !!filter.date
 
   return (
-    <div className="flex flex-col gap-0">
-      {/* Filter bar */}
-      <div className="flex items-center flex-wrap gap-2 py-3 shrink-0">
+    <div className="flex flex-col gap-4">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
         <SearchInput
           aria-label="Search deployments"
-          value={filter.search}
-          onChange={(v) => onFilterChange({ search: v })}
-          placeholder="Search deployments…"
-          labelClassName="flex-1 min-w-44"
+          placeholder="Search deployments"
+          value={search}
+          onChange={onSearchChange}
+          onClear={() => onSearchChange('')}
         />
-
-        <Dropdown
+        <CheckboxFilterDropdown
           id="deployments-filter-status"
-          variant="secondary"
-          size="sm"
-          buttonText={
-            filter.status === 'all' ? 'Status' : humanize(filter.status)
+          label="Status"
+          options={workflowStatusOptions().map((value) => ({
+            value,
+            label: WORKFLOW_STATUS_LABELS[value],
+          }))}
+          selected={filter.status}
+          onChange={(value) =>
+            onStatusChange(value as Set<TWorkflowStatusOption>)
           }
-          isActive={filter.status !== 'all'}
-        >
-          <Menu>
-            <Button
-              isMenuButton
-              onClick={() => onFilterChange({ status: 'all' })}
-            >
-              All statuses
-            </Button>
-            {allStatuses.map((s) => (
-              <Button
-                isMenuButton
-                key={s}
-                onClick={() => onFilterChange({ status: s })}
-              >
-                {humanize(s)}
-              </Button>
-            ))}
-          </Menu>
-        </Dropdown>
-
-        <Dropdown
+        />
+        <CheckboxFilterDropdown
           id="deployments-filter-type"
-          variant="secondary"
-          size="sm"
-          buttonText={
-            filter.type === 'all'
-              ? 'Type'
-              : (DEPLOYMENT_TYPE_LABELS[
-                  filter.type as TInstallDeploymentRecordType
-                ] ?? humanize(filter.type))
+          label="Type"
+          options={(
+            Object.keys(
+              DEPLOYMENT_TYPE_LABELS
+            ) as TInstallDeploymentRecordType[]
+          ).map((value) => ({
+            value,
+            label: DEPLOYMENT_TYPE_LABELS[value],
+          }))}
+          selected={filter.type}
+          onChange={(value) =>
+            onTypeChange(value as Set<TInstallDeploymentRecordType>)
           }
-          isActive={filter.type !== 'all'}
-        >
-          <Menu>
-            <Button
-              isMenuButton
-              onClick={() => onFilterChange({ type: 'all' })}
-            >
-              All types
-            </Button>
-            {(
-              Object.keys(
-                DEPLOYMENT_TYPE_LABELS
-              ) as TInstallDeploymentRecordType[]
-            ).map((type) => (
-              <Button
-                isMenuButton
-                key={type}
-                onClick={() => onFilterChange({ type })}
-              >
-                {DEPLOYMENT_TYPE_LABELS[type]}
-              </Button>
-            ))}
-          </Menu>
-        </Dropdown>
-
+        />
         {allComponents.length > 0 && (
-          <Dropdown
-            id="deployments-filter-component"
-            variant="secondary"
-            size="sm"
-            buttonText={
-              filter.component === 'all' ? 'Resource' : filter.component
-            }
-            isActive={filter.component !== 'all'}
-          >
-            <Menu>
-              <Button
-                isMenuButton
-                onClick={() => onFilterChange({ component: 'all' })}
-              >
-                All resources
-              </Button>
-              {allComponents.map((c) => (
-                <Button
-                  isMenuButton
-                  key={c}
-                  onClick={() => onFilterChange({ component: c })}
-                >
-                  {c}
-                </Button>
-              ))}
-            </Menu>
-          </Dropdown>
+          <RadioFilterDropdown
+            id="deployments-filter-resource"
+            label="Resource"
+            options={allComponents.map((value) => ({ value, label: value }))}
+            selected={filter.resource}
+            onChange={onResourceChange}
+          />
         )}
-
-        <Dropdown
+        <RadioFilterDropdown
           id="deployments-filter-date"
-          variant="secondary"
-          size="sm"
-          buttonText={
-            filter.date === 'all'
-              ? 'Date'
-              : (DATE_FILTER_LABELS[filter.date] ?? filter.date)
-          }
-          isActive={filter.date !== 'all'}
-        >
-          <Menu>
-            <Button
-              isMenuButton
-              onClick={() => onFilterChange({ date: 'all' })}
-            >
-              All time
-            </Button>
-            {Object.entries(DATE_FILTER_LABELS).map(([key, label]) => (
-              <Button
-                isMenuButton
-                key={key}
-                onClick={() => onFilterChange({ date: key })}
-              >
-                {label}
-              </Button>
-            ))}
-          </Menu>
-        </Dropdown>
-
+          label="Date"
+          options={(
+            Object.keys(WORKFLOW_DATE_LABELS) as TWorkflowDatePreset[]
+          ).map((value) => ({
+            value,
+            label: WORKFLOW_DATE_LABELS[value],
+          }))}
+          selected={filter.date}
+          onChange={onDateChange}
+        />
         {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={onClearFilters}>
+          <Button variant="ghost" onClick={onClearFilters}>
             Clear filters
           </Button>
         )}
       </div>
 
-      {/* Body */}
-      {isLoading && deployments.length === 0 ? (
-        <Loading variant="large" className="my-12" />
+      {isPaginating || (isLoading && deployments.length === 0) ? (
+        <div className="flex flex-col gap-3">
+          {Array.from({ length: pagination.limit ?? 5 }).map((_, index) => (
+            <DeploymentCardSkeleton key={index} />
+          ))}
+        </div>
       ) : error ? (
         <EmptyState
           emptyTitle="Deployments failed to load"
@@ -457,31 +412,18 @@ export const DeploymentsListPresenter = ({
               }
             />
           ))}
-
-          {/* Pagination */}
-          <div className="flex items-center justify-between gap-4 pt-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={page === 0}
-              onClick={() => onPageChange(page - 1)}
-            >
-              Previous
-            </Button>
-            <Text variant="subtext" theme="neutral">
-              Page {page + 1}
-            </Text>
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={!hasMore}
-              onClick={() => onPageChange(page + 1)}
-            >
-              Next
-            </Button>
-          </div>
         </div>
       )}
+
+      {pagination.hasNext || pagination.offset !== 0 ? (
+        <Pagination {...pagination} />
+      ) : null}
     </div>
   )
 }
+
+export const DeploymentsListPresenter = (props: IDeploymentsListPresenter) => (
+  <PaginationProvider>
+    <DeploymentsListBase {...props} />
+  </PaginationProvider>
+)
