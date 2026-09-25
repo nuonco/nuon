@@ -6,10 +6,7 @@ import { InstallLayout } from './InstallLayout'
 import { Overview } from './Overview'
 import { Components } from './Components'
 import { Resources } from './Resources'
-import {
-  NewInstallPlaceholder,
-  NewInstallPlaceholderBody,
-} from './NewInstallPlaceholder'
+import { NewInstallPlaceholder } from './NewInstallPlaceholder'
 import { Deployments } from './Deployments'
 import {
   NewInstallConfigurationLayout,
@@ -28,6 +25,13 @@ import {
   NewInstallInputs,
   NewInstallOverrides,
 } from './NewInstallConfiguration'
+import {
+  NewInstallActions,
+  NewInstallActivity,
+  NewInstallPolicies,
+  NewInstallRunbooks,
+  NewInstallRunner,
+} from './NewInstallOperations'
 import { Actions } from './Actions'
 import { Roles } from './Roles'
 import { Policies } from './Policies'
@@ -179,23 +183,23 @@ export const installRoutes: RouteObject[] = [
             children: [
               {
                 index: true,
-                element: <NewInstallPlaceholderBody title="Activity" />,
+                element: <NewInstallActivity />,
               },
               {
                 path: 'actions',
-                element: <NewInstallPlaceholderBody title="Actions" />,
+                element: <NewInstallActions />,
               },
               {
                 path: 'runbooks',
-                element: <NewInstallPlaceholderBody title="Runbooks" />,
+                element: <NewInstallRunbooks />,
               },
               {
                 path: 'policies',
-                element: <NewInstallPlaceholderBody title="Policies" />,
+                element: <NewInstallPolicies />,
               },
               {
                 path: 'runner',
-                element: <NewInstallPlaceholderBody title="Runner" />,
+                element: <NewInstallRunner />,
               },
             ],
           },
