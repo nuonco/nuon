@@ -65,9 +65,7 @@ func (s *service) SyncSecrets(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
-		WorkflowID: workflow.ID,
-	}, workflow.ID, "install_workflows"); err != nil {
+	if err := s.enqueueInstallSignal(ctx, queueID, executeflow.NewSignal(workflow.ID), workflow.ID, "install_workflows"); err != nil {
 		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 		return
 	}

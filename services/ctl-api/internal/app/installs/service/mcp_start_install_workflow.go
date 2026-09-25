@@ -47,9 +47,7 @@ func (s *service) startInstallWorkflow(
 	if err != nil {
 		return nil, err
 	}
-	if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
-		WorkflowID: workflow.ID,
-	}, workflow.ID, "install_workflows"); err != nil {
+	if err := s.enqueueInstallSignal(ctx, queueID, executeflow.NewSignal(workflow.ID), workflow.ID, "install_workflows"); err != nil {
 		return nil, fmt.Errorf("enqueue signal: %w", err)
 	}
 
