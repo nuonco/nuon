@@ -20,6 +20,7 @@ interface ITabs extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   tabLabels?: Record<string, string>
   tabsClassName?: string
   tabControlsClassName?: string
+  naturalHeight?: boolean
 }
 
 export const Tabs = ({
@@ -29,6 +30,7 @@ export const Tabs = ({
   tabs,
   tabLabels,
   tabsClassName,
+  naturalHeight = false,
   ...props
 }: ITabs) => {
   const tabKeys = Object.keys(tabs)
@@ -64,7 +66,7 @@ export const Tabs = ({
         ? buttonRect.left - parentRect.left
         : buttonRect.left
       setActiveTabLeft(left)
-      setHoveredTabLeft(left) // Always sync hovered left to active left on load/active change
+      setHoveredTabLeft(left)
     }
   }, [activeTab, tabKeys.length])
 
@@ -92,6 +94,8 @@ export const Tabs = ({
   }
 
   useEffect(() => {
+    if (naturalHeight) return
+
     const updateHeight = () => {
       if (activeTab && contentRefs.current[activeTab]) {
         const activeContent = contentRefs.current[activeTab]
@@ -128,7 +132,7 @@ export const Tabs = ({
         resizeObserver.current.disconnect()
       }
     }
-  }, [activeTab])
+  }, [activeTab, naturalHeight])
 
   return (
     <div className={cn('tabs flex flex-col', className)} {...props}>
@@ -170,20 +174,30 @@ export const Tabs = ({
       <div
         ref={containerRef}
         className={cn(
-          'relative transition-all duration-300 ease-in-out',
+          'relative',
+          !naturalHeight && 'transition-all duration-300 ease-in-out',
           tabsClassName
         )}
-        style={{
-          height: containerHeight ? `${containerHeight}px` : 'auto',
-          minHeight: containerHeight ? `${containerHeight}px` : 'auto',
-        }}
+        style={
+          naturalHeight
+            ? undefined
+            : {
+                height: containerHeight ? `${containerHeight}px` : 'auto',
+                minHeight: containerHeight ? `${containerHeight}px` : 'auto',
+              }
+        }
       >
         {tabKeys.map((tabKey, idx) => (
           <TransitionDiv
             ref={(el) => {
               contentRefs.current[tabKey] = el
             }}
-            className="absolute top-0 left-0 w-full tab-content"
+            className={cn(
+              'w-full tab-content',
+              naturalHeight && tabKey === activeTab
+                ? 'relative'
+                : 'absolute top-0 left-0'
+            )}
             key={`${tabKey}-${idx}-tab`}
             isVisible={tabKey === activeTab}
           >

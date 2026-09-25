@@ -52,6 +52,7 @@ export const SandboxRunApply = ({
             <LogStreamProvider logStreamId={sandboxRun?.log_stream?.id}>
               <LogViewerProvider>
                 <Tabs
+                  naturalHeight
                   tabs={{
                     logs: <SSELogs />,
                     trace: (

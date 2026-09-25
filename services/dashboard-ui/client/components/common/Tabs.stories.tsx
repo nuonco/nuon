@@ -2,6 +2,7 @@ export default {
   title: 'Common/Tabs',
 }
 
+import { useState } from 'react'
 import { Tabs } from './Tabs'
 import { Text } from './Text'
 import { Button } from './Button'
@@ -400,3 +401,30 @@ export const CustomStyling = () => (
     </div>
   </div>
 )
+
+export const NaturalHeight = () => {
+  const [lines, setLines] = useState(4)
+
+  return (
+    <div className="space-y-4">
+      <Button onClick={() => setLines((n) => n + 8)}>Add lines</Button>
+      <Tabs
+        naturalHeight
+        tabs={{
+          logs: (
+            <div className="py-4 space-y-1 font-mono text-xs">
+              {Array.from({ length: lines }, (_, i) => (
+                <div key={i}>log line {i + 1}</div>
+              ))}
+            </div>
+          ),
+          trace: (
+            <div className="py-4">
+              <Text>Trace</Text>
+            </div>
+          ),
+        }}
+      />
+    </div>
+  )
+}
