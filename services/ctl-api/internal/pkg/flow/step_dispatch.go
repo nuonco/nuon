@@ -54,20 +54,8 @@ func DispatchStepSignal(ctx workflow.Context, cfg StepConfig, step *app.Workflow
 		"owner_id", cfg.OwnerID,
 	)
 
-	// Mark step as queued so it's visible to users while waiting in the queue
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: step.ID,
-		Status: app.CompositeStatus{
-			Status: app.StatusQueued,
-		},
-	}); err != nil {
-		return errors.Wrapf(err, "unable to mark step %s as queued", step.Name)
-	}
-
-	// Create a callback so the handler signals us on completion.
 	cb := callback.New(ctx, step.ID)
-
-	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+	enqueueReq := &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         cfg.OwnerID,
 		OwnerType:       cfg.OwnerType,
 		QueueName:       cfg.QueueName,
@@ -75,9 +63,42 @@ func DispatchStepSignal(ctx workflow.Context, cfg StepConfig, step *app.Workflow
 		SignalOwnerID:   step.ID,
 		SignalOwnerType: "install_workflow_steps",
 		Callback:        cb,
-	})
-	if err != nil {
-		return errors.Wrapf(err, "unable to enqueue execute-workflow-step signal for step %s", step.Name)
+	}
+
+	markQueued := func() error {
+		return statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: step.ID,
+			Status: app.CompositeStatus{
+				Status: app.StatusQueued,
+			},
+		})
+	}
+
+	var enqueueResp *sharedactivities.EnqueueSignalToOwnerResponse
+	if executeworkflowstep.EnqueueBeforeQueued(ctx) {
+		var err error
+		enqueueResp, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, enqueueReq)
+		if err != nil {
+			_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID:     step.ID,
+				Status: executeworkflowstep.DispatchFailedStatus(err),
+			})
+			return errors.Wrapf(err, "unable to enqueue execute-workflow-step signal for step %s", step.Name)
+		}
+		if err := markQueued(); err != nil {
+			logger.Warn("step execute signal enqueued but queued status write failed",
+				"step_id", step.ID,
+				"error", err)
+		}
+	} else {
+		if err := markQueued(); err != nil {
+			return errors.Wrapf(err, "unable to mark step %s as queued", step.Name)
+		}
+		var err error
+		enqueueResp, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, enqueueReq)
+		if err != nil {
+			return errors.Wrapf(err, "unable to enqueue execute-workflow-step signal for step %s", step.Name)
+		}
 	}
 
 	// Wait for completion via signal channel — zero activity overhead, zero heartbeats.
@@ -86,7 +107,7 @@ func DispatchStepSignal(ctx workflow.Context, cfg StepConfig, step *app.Workflow
 	if stepTimeout == 0 {
 		stepTimeout = callback.FallbackAwaitTimeout
 	}
-	_, err = callback.AwaitWithTimeout(ctx, cb, stepTimeout)
+	_, err := callback.AwaitWithTimeout(ctx, cb, stepTimeout)
 	if err != nil {
 		// If the parent workflow was cancelled, propagate cancellation to the step signal
 		if ctx.Err() != nil {
