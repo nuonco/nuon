@@ -139,12 +139,14 @@ func startFlowApp(t *testing.T) TestService {
 	// test time instead of 3 days. Read at workflow runtime, so setting it
 	// before the worker boots covers every flow the suite starts.
 	callback.MaxWaitCeiling = 5 * time.Second
-	handler.DrainTimeout = 500 * time.Millisecond
+	handler.DrainTimeout = 5 * time.Second
 
 	// Shrink the step-handler cache window: assertTemporalDrained waits for
 	// handlers to close, so the production 5s window is a flat 5s tax on every
 	// drain-asserting test. No flow test depends on the reuse window.
 	executeworkflowstep.CacheWindow = 500 * time.Millisecond
+
+	registerTestGeneratorOwnerTypes()
 
 	var service TestService
 	app := fxtest.New(
@@ -234,6 +236,7 @@ func startFlowApp(t *testing.T) TestService {
 
 		// invokers
 		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
+		fx.Invoke(cleanupStaleWorkflows),
 		fx.Invoke(worker.WithWorkers(func([]worker.Worker) {})),
 
 		fx.Populate(&service),

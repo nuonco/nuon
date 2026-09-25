@@ -131,8 +131,13 @@ COPY --from=generated /src/services/${SERVICE}/internal ./internal/
 COPY --from=generated /src/services/${SERVICE}/docs ./docs/
 COPY --from=generated /src/pkg/temporal/client/mock_client.go /src/pkg/temporal/client/mock_client.go
 
+# Hegel property tests spawn a Python-based hegel-core server via uv; the cache
+# mounts ensure /root/.cache exists (hegel installs uv there) and persist the uv
+# binary, package cache, and managed Python across builds.
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing=shared \
     --mount=type=cache,target=/go/pkg/mod,id=${GOMOD_CACHE_ID},sharing=shared \
+    --mount=type=cache,target=/root/.cache,id=uv-hegel-cache \
+    --mount=type=cache,target=/root/.local/share/uv,id=uv-hegel-python \
     CGO_ENABLED=0 go test -vet=off ./... && \
     touch /go/pkg/build-cache/.nuon-dirty
 
