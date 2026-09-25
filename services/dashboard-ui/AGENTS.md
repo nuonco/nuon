@@ -168,6 +168,7 @@ Before building UI: check `common/` and domain dirs; read `.stories.tsx` first.
 
 ```bash
 bun run dev
+bun run dev:stack -- 4010   # BFF + SPA proxy + Ladle (worktrees)
 bun run lint
 bunx tsc --noEmit --project client/tsconfig.json
 bun run dev:ladle
