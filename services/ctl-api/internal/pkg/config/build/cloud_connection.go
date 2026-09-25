@@ -10,7 +10,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-var ecrAccountPattern = regexp.MustCompile(`^([0-9]{12})\.dkr\.ecr\.[^.]+\.amazonaws\.com(?:\.cn)?/`)
+var (
+	ecrAccountPattern  = regexp.MustCompile(`^([0-9]{12})\.dkr\.ecr\.[^.]+\.amazonaws\.com(?:\.cn)?/`)
+	garProjectPattern  = regexp.MustCompile(`^[a-z0-9-]+-docker\.pkg\.dev/([^/]+)/`)
+	acrRegistryPattern = regexp.MustCompile(`^([a-z0-9-]+\.azurecr\.io)/`)
+)
 
 type AWSConnectionResolution struct {
 	Connection *app.CloudConnection
@@ -27,7 +31,7 @@ type GCPConnectionResolution struct {
 	Implicit   bool
 }
 
-func ResolveGCPConnection(connectionName, serviceAccountEmail, identityProvider, projectID, orgID string, connections []app.CloudConnection) (GCPConnectionResolution, error) {
+func ResolveGCPConnection(connectionName, serviceAccountEmail, identityProvider, projectID, imageURL, orgID string, connections []app.CloudConnection) (GCPConnectionResolution, error) {
 	if connectionName != "" {
 		matches := filterConnections(connections, func(connection app.CloudConnection) bool {
 			return connection.Name == connectionName
@@ -38,7 +42,20 @@ func ResolveGCPConnection(connectionName, serviceAccountEmail, identityProvider,
 		return validateGCPImageConnection(&matches[0], projectID)
 	}
 	if serviceAccountEmail == "" && identityProvider == "" {
-		return GCPConnectionResolution{}, nil
+		targetID, err := garProjectID(imageURL)
+		if err != nil {
+			return GCPConnectionResolution{}, err
+		}
+		matches := filterConnections(connections, func(connection app.CloudConnection) bool {
+			return connection.Platform == app.CloudPlatformGCP && connection.TargetID == targetID && connection.HasCapability(app.CloudConnectionCapabilityImages)
+		})
+		if len(matches) == 0 {
+			return GCPConnectionResolution{}, fmt.Errorf("no images-capable GCP cloud connection matches GAR project %s; set connection or service_account_email", targetID)
+		}
+		if len(matches) > 1 {
+			return GCPConnectionResolution{}, fmt.Errorf("multiple images-capable GCP cloud connections match GAR project %s (%s); set connection explicitly", targetID, connectionNames(matches))
+		}
+		return GCPConnectionResolution{Connection: &matches[0]}, nil
 	}
 	if serviceAccountEmail == "" || identityProvider == "" {
 		return GCPConnectionResolution{}, fmt.Errorf("service_account_email and workload_identity_provider must be set together")
@@ -68,7 +85,7 @@ func validateGCPImageConnection(connection *app.CloudConnection, projectID strin
 	return GCPConnectionResolution{Connection: connection}, nil
 }
 
-func ResolveAzureConnection(connectionName, clientID, tenantID, orgID string, connections []app.CloudConnection) (AzureConnectionResolution, error) {
+func ResolveAzureConnection(connectionName, clientID, tenantID, imageURL, orgID string, connections []app.CloudConnection) (AzureConnectionResolution, error) {
 	if connectionName != "" {
 		matches := filterConnections(connections, func(connection app.CloudConnection) bool {
 			return connection.Name == connectionName
@@ -79,7 +96,28 @@ func ResolveAzureConnection(connectionName, clientID, tenantID, orgID string, co
 		return validateAzureImageConnection(&matches[0])
 	}
 	if clientID == "" {
-		return AzureConnectionResolution{}, nil
+		registry, err := acrRegistry(imageURL)
+		if err != nil {
+			return AzureConnectionResolution{}, err
+		}
+		matches := filterConnections(connections, func(connection app.CloudConnection) bool {
+			if connection.Platform != app.CloudPlatformAzure || !connection.HasCapability(app.CloudConnectionCapabilityImages) {
+				return false
+			}
+			for _, candidate := range connection.Registries {
+				if strings.EqualFold(candidate, registry) {
+					return true
+				}
+			}
+			return false
+		})
+		if len(matches) == 0 {
+			return AzureConnectionResolution{}, fmt.Errorf("no images-capable Azure cloud connection is verified for ACR registry %s; set connection or client_id", registry)
+		}
+		if len(matches) > 1 {
+			return AzureConnectionResolution{}, fmt.Errorf("multiple images-capable Azure cloud connections match ACR registry %s (%s); set connection explicitly", registry, connectionNames(matches))
+		}
+		return AzureConnectionResolution{Connection: &matches[0]}, nil
 	}
 	matches := filterConnections(connections, func(connection app.CloudConnection) bool {
 		return connection.Platform == app.CloudPlatformAzure && connection.Principal == clientID
@@ -144,7 +182,7 @@ func ResolveAWSConnection(connectionName, roleARN, imageURL, region, orgID strin
 		return AWSConnectionResolution{}, fmt.Errorf("no images-capable AWS cloud connection matches ECR account %s; set connection or iam_role_arn", targetID)
 	}
 	if len(matches) > 1 {
-		return AWSConnectionResolution{}, fmt.Errorf("multiple images-capable AWS cloud connections match ECR account %s; set connection explicitly", targetID)
+		return AWSConnectionResolution{}, fmt.Errorf("multiple images-capable AWS cloud connections match ECR account %s (%s); set connection explicitly", targetID, connectionNames(matches))
 	}
 	return AWSConnectionResolution{Connection: &matches[0]}, nil
 }
@@ -175,4 +213,28 @@ func ecrAccountID(imageURL string) (string, error) {
 		return "", fmt.Errorf("image_url must be an AWS ECR URL containing a 12-digit account ID")
 	}
 	return matches[1], nil
+}
+
+func garProjectID(imageURL string) (string, error) {
+	matches := garProjectPattern.FindStringSubmatch(strings.ToLower(imageURL))
+	if len(matches) != 2 {
+		return "", fmt.Errorf("image_url must be a GAR URL in <location>-docker.pkg.dev/<project>/<repository>/... format")
+	}
+	return matches[1], nil
+}
+
+func acrRegistry(imageURL string) (string, error) {
+	matches := acrRegistryPattern.FindStringSubmatch(strings.ToLower(imageURL))
+	if len(matches) != 2 {
+		return "", fmt.Errorf("image_url must be an ACR URL in <registry>.azurecr.io/... format")
+	}
+	return matches[1], nil
+}
+
+func connectionNames(connections []app.CloudConnection) string {
+	names := make([]string, 0, len(connections))
+	for _, connection := range connections {
+		names = append(names, connection.Name)
+	}
+	return strings.Join(names, ", ")
 }

@@ -188,7 +188,7 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 			return sync.SyncInternalErr{Description: "unable to list cloud connections", Err: err}
 		}
 		source := comp.ExternalImage.AzureACRImageConfig
-		resolution, err := build.ResolveAzureConnection(source.Connection, source.ClientID, source.TenantID, apiComp.OrgID, connections)
+		resolution, err := build.ResolveAzureConnection(source.Connection, source.ClientID, source.TenantID, source.ImageURL, apiComp.OrgID, connections)
 		if err != nil {
 			return syncerr.From(fmt.Sprintf("component-%s", comp.Name), "unable to resolve cloud connection", err)
 		}
@@ -209,7 +209,7 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 			return sync.SyncInternalErr{Description: "unable to list cloud connections", Err: err}
 		}
 		source := comp.ExternalImage.GCPGARImageConfig
-		resolution, err := build.ResolveGCPConnection(source.Connection, source.ServiceAccountEmail, source.WorkloadIdentityProvider, source.GCPProjectID, apiComp.OrgID, connections)
+		resolution, err := build.ResolveGCPConnection(source.Connection, source.ServiceAccountEmail, source.WorkloadIdentityProvider, source.GCPProjectID, source.ImageURL, apiComp.OrgID, connections)
 		if err != nil {
 			return syncerr.From(fmt.Sprintf("component-%s", comp.Name), "unable to resolve cloud connection", err)
 		}

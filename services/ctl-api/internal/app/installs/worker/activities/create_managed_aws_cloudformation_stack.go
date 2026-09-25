@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
@@ -21,6 +22,7 @@ type CreateManagedAWSCloudFormationStackRequest struct {
 
 type cloudFormationCreateStackAPI interface {
 	CreateStack(context.Context, *cloudformation.CreateStackInput, ...func(*cloudformation.Options)) (*cloudformation.CreateStackOutput, error)
+	UpdateStack(context.Context, *cloudformation.UpdateStackInput, ...func(*cloudformation.Options)) (*cloudformation.UpdateStackOutput, error)
 	DescribeStackEvents(context.Context, *cloudformation.DescribeStackEventsInput, ...func(*cloudformation.Options)) (*cloudformation.DescribeStackEventsOutput, error)
 }
 
@@ -37,7 +39,19 @@ func createManagedStack(ctx context.Context, client cloudFormationCreateStackAPI
 	if _, err := client.CreateStack(ctx, input); err != nil {
 		var alreadyExists *cloudformationtypes.AlreadyExistsException
 		var tokenAlreadyExists *cloudformationtypes.TokenAlreadyExistsException
-		if !errors.As(err, &alreadyExists) && !errors.As(err, &tokenAlreadyExists) {
+		if errors.As(err, &alreadyExists) {
+			_, updateErr := client.UpdateStack(ctx, &cloudformation.UpdateStackInput{
+				StackName:          input.StackName,
+				TemplateURL:        input.TemplateURL,
+				ClientRequestToken: input.ClientRequestToken,
+				Capabilities:       input.Capabilities,
+			})
+			if updateErr != nil && !strings.Contains(updateErr.Error(), "No updates are to be performed") {
+				return updateErr
+			}
+			return nil
+		}
+		if !errors.As(err, &tokenAlreadyExists) {
 			return err
 		}
 
@@ -94,7 +108,7 @@ func (a *Activities) CreateManagedAWSCloudFormationStack(ctx context.Context, re
 	}
 
 	if err := createManagedStack(ctx, cloudformation.NewFromConfig(awsConfig), managedCreateStackInput(version.StackName, version.TemplateURL, version.ID)); err != nil {
-		return fmt.Errorf("create cloudformation stack %q (existing stacks are not updated): %w", version.StackName, err)
+		return fmt.Errorf("create or update cloudformation stack %q: %w", version.StackName, err)
 	}
 	return nil
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitinstallstackversionrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/deprovisiondns"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/deprovisionsandboxapplyplan"
@@ -102,6 +103,22 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		return nil, err
 	}
 	steps = append(steps, lifecycleSteps...)
+
+	if install.CloudConnectionID != nil && (appCfg.RunnerConfig.Type == app.AppRunnerTypeAWS || appCfg.RunnerConfig.Type == app.AppRunnerTypeAzure) {
+		stack, err := activities.AwaitGetInstallStackByInstallID(ctx, installID)
+		if err != nil {
+			return nil, err
+		}
+		sg.nextGroup()
+		step, err = sg.installSignalStep(ctx, installID, "delete install stack", pgtype.Hstore{}, &awaitinstallstackversionrun.Signal{
+			InstallStackID:     stack.ID,
+			DeleteManagedStack: true,
+		}, flw.PlanOnly, WithSkippable(false))
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
+	}
 
 	return sg.Result(steps), nil
 }

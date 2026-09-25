@@ -25,6 +25,7 @@ type VerificationResult struct {
 	Status       app.CloudConnectionStatus
 	Message      string
 	Capabilities []app.CloudConnectionCapability
+	Registries   []string
 }
 
 type Verifier interface {

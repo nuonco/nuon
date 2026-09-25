@@ -99,6 +99,7 @@ func (v *azureVerifier) Verify(ctx context.Context, connection *app.CloudConnect
 	}
 
 	capabilities := make([]app.CloudConnectionCapability, 0, len(connection.Capabilities))
+	registries := make([]string, 0, len(connection.Registries)+1)
 	for _, capability := range connection.Capabilities {
 		switch capability {
 		case app.CloudConnectionCapabilityStacks:
@@ -110,10 +111,16 @@ func (v *azureVerifier) Verify(ctx context.Context, connection *app.CloudConnect
 				capabilities = append(capabilities, capability)
 			}
 		case app.CloudConnectionCapabilityImages:
-			if options.Registry == "" {
-				continue
+			requestedRegistries := connection.Registries
+			if options.Registry != "" {
+				requestedRegistries = []string{options.Registry}
 			}
-			if err := v.probeRegistry(ctx, credential, connection.TenantID, options.Registry, options.Repositories); err == nil {
+			for _, registry := range requestedRegistries {
+				if err := v.probeRegistry(ctx, credential, connection.TenantID, registry, options.Repositories); err == nil {
+					registries = append(registries, normalizeAzureRegistry(registry))
+				}
+			}
+			if len(registries) > 0 {
 				capabilities = append(capabilities, capability)
 			}
 		}
@@ -121,7 +128,18 @@ func (v *azureVerifier) Verify(ctx context.Context, connection *app.CloudConnect
 	if len(capabilities) == 0 {
 		return VerificationResult{Status: app.CloudConnectionStatusError, Message: "The application lacks all requested capabilities.", Capabilities: capabilities}, nil
 	}
-	return VerificationResult{Status: app.CloudConnectionStatusVerified, Message: "Cloud connection verified.", Capabilities: capabilities}, nil
+	return VerificationResult{Status: app.CloudConnectionStatusVerified, Message: "Cloud connection verified.", Capabilities: capabilities, Registries: registries}, nil
+}
+
+func normalizeAzureRegistry(registry string) string {
+	host := strings.ToLower(strings.TrimSpace(registry))
+	host = strings.TrimPrefix(host, "https://")
+	host = strings.TrimPrefix(host, "http://")
+	host = strings.TrimSuffix(host, "/")
+	if !strings.Contains(host, ".") {
+		host += ".azurecr.io"
+	}
+	return host
 }
 
 func decodeAzureTokenClaims(token string) (azureTokenClaims, error) {
@@ -220,10 +238,7 @@ func azureStackRolesSufficient(assignments []azureRoleAssignment, principalID, s
 }
 
 func (v *azureVerifier) probeRegistry(ctx context.Context, credential azcore.TokenCredential, tenantID, registry string, repositories []string) error {
-	host := registry
-	if !strings.Contains(host, ".") {
-		host += ".azurecr.io"
-	}
+	host := normalizeAzureRegistry(registry)
 	refreshToken, err := acr.GetRepositoryTokenWithCredential(ctx, credential, tenantID, host)
 	if err != nil {
 		return err

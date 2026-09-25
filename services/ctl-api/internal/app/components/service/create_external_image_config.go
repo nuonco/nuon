@@ -299,7 +299,7 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 		if err := s.db.WithContext(ctx).Where(&app.CloudConnection{OrgID: parentCmp.OrgID}).Find(&connections).Error; err != nil {
 			return nil, fmt.Errorf("unable to list cloud connections: %w", err)
 		}
-		resolution, err := build.ResolveAzureConnection(req.AzureACRImageConfig.Connection, req.AzureACRImageConfig.ClientID, req.AzureACRImageConfig.TenantID, parentCmp.OrgID, connections)
+		resolution, err := build.ResolveAzureConnection(req.AzureACRImageConfig.Connection, req.AzureACRImageConfig.ClientID, req.AzureACRImageConfig.TenantID, req.ImageURL, parentCmp.OrgID, connections)
 		if err != nil {
 			return nil, stderr.NewInvalidRequest(err)
 		}
@@ -319,7 +319,7 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 		if err := s.db.WithContext(ctx).Where(&app.CloudConnection{OrgID: parentCmp.OrgID}).Find(&connections).Error; err != nil {
 			return nil, fmt.Errorf("unable to list cloud connections: %w", err)
 		}
-		resolution, err := build.ResolveGCPConnection(req.GCPGARImageConfig.Connection, req.GCPGARImageConfig.ServiceAccountEmail, req.GCPGARImageConfig.WorkloadIdentityProvider, req.GCPGARImageConfig.GCPProjectID, parentCmp.OrgID, connections)
+		resolution, err := build.ResolveGCPConnection(req.GCPGARImageConfig.Connection, req.GCPGARImageConfig.ServiceAccountEmail, req.GCPGARImageConfig.WorkloadIdentityProvider, req.GCPGARImageConfig.GCPProjectID, req.ImageURL, parentCmp.OrgID, connections)
 		if err != nil {
 			return nil, stderr.NewInvalidRequest(err)
 		}

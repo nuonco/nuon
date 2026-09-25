@@ -300,7 +300,7 @@ func (s *service) verify(ctx context.Context, orgID, connectionID string, option
 		return nil, fmt.Errorf("verify cloud connection: %w", err)
 	}
 	now := time.Now().UTC()
-	updates := map[string]any{"status": result.Status, "status_message": result.Message, "last_verified_at": &now, "capabilities": result.Capabilities}
+	updates := map[string]any{"status": result.Status, "status_message": result.Message, "last_verified_at": &now, "capabilities": result.Capabilities, "registries": result.Registries}
 	if result.Status == app.CloudConnectionStatusVerified {
 		updates["auth_mode"] = app.CloudConnectionAuthModeOIDC
 	}

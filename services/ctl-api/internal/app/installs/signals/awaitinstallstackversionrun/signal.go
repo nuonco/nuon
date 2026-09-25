@@ -21,6 +21,7 @@ type Signal struct {
 	InstallStackID     string
 	WorkflowStepID     string
 	CreateManagedStack bool
+	DeleteManagedStack bool
 
 	versionID string
 }
@@ -103,6 +104,18 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get app config")
+	}
+	if s.DeleteManagedStack && install.CloudConnectionID != nil {
+		switch appCfg.RunnerConfig.Type {
+		case app.AppRunnerTypeAWS:
+			err = activities.AwaitDeleteManagedAWSCloudFormationStack(ctx, &activities.DeleteManagedAWSCloudFormationStackRequest{InstallID: install.ID, StackVersionID: version.ID, ConnectionID: *install.CloudConnectionID})
+		case app.AppRunnerTypeAzure:
+			err = activities.AwaitDeleteManagedAzureARMStack(ctx, &activities.DeleteManagedAzureARMStackRequest{InstallID: install.ID, ConnectionID: *install.CloudConnectionID})
+		}
+		if err != nil {
+			return errors.Wrap(err, "unable to delete managed install stack")
+		}
+		return nil
 	}
 
 	if s.WorkflowStepID != "" {

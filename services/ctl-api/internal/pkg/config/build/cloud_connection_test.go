@@ -51,3 +51,53 @@ func TestResolveAWSConnection(t *testing.T) {
 		})
 	}
 }
+
+func TestResolveCloudConnectionByImageURL(t *testing.T) {
+	images := []app.CloudConnection{
+		{ID: "aws-one", Name: "aws-one", Platform: app.CloudPlatformAWS, TargetID: "123456789012", Capabilities: []app.CloudConnectionCapability{app.CloudConnectionCapabilityImages}},
+		{ID: "gcp-one", Name: "gcp-one", Platform: app.CloudPlatformGCP, TargetID: "acme-project", Capabilities: []app.CloudConnectionCapability{app.CloudConnectionCapabilityImages}},
+		{ID: "azure-one", Name: "azure-one", Platform: app.CloudPlatformAzure, Registries: []string{"acme.azurecr.io"}, Capabilities: []app.CloudConnectionCapability{app.CloudConnectionCapabilityImages}},
+	}
+	tests := map[string]struct {
+		resolve func([]app.CloudConnection) (*app.CloudConnection, error)
+		input   []app.CloudConnection
+		wantID  string
+		wantErr string
+	}{
+		"ECR match": {resolve: func(connections []app.CloudConnection) (*app.CloudConnection, error) {
+			result, err := ResolveAWSConnection("", "", "123456789012.dkr.ecr.us-west-2.amazonaws.com/acme/api", "us-west-2", "org-test", connections)
+			return result.Connection, err
+		}, input: images, wantID: "aws-one"},
+		"GAR match": {resolve: func(connections []app.CloudConnection) (*app.CloudConnection, error) {
+			result, err := ResolveGCPConnection("", "", "", "acme-project", "us-docker.pkg.dev/acme-project/repo/api", "org-test", connections)
+			return result.Connection, err
+		}, input: images, wantID: "gcp-one"},
+		"ACR match": {resolve: func(connections []app.CloudConnection) (*app.CloudConnection, error) {
+			result, err := ResolveAzureConnection("", "", "", "acme.azurecr.io/api", "org-test", connections)
+			return result.Connection, err
+		}, input: images, wantID: "azure-one"},
+		"GAR ambiguous lists candidates": {resolve: func(connections []app.CloudConnection) (*app.CloudConnection, error) {
+			result, err := ResolveGCPConnection("", "", "", "acme-project", "us-docker.pkg.dev/acme-project/repo/api", "org-test", connections)
+			return result.Connection, err
+		}, input: append(images, app.CloudConnection{ID: "gcp-two", Name: "gcp-two", Platform: app.CloudPlatformGCP, TargetID: "acme-project", Capabilities: []app.CloudConnectionCapability{app.CloudConnectionCapabilityImages}}), wantErr: "gcp-one, gcp-two"},
+		"ACR no candidates": {resolve: func(connections []app.CloudConnection) (*app.CloudConnection, error) {
+			result, err := ResolveAzureConnection("", "", "", "other.azurecr.io/api", "org-test", connections)
+			return result.Connection, err
+		}, input: images, wantErr: "no images-capable Azure"},
+		"explicit wins over URL candidates": {resolve: func(connections []app.CloudConnection) (*app.CloudConnection, error) {
+			result, err := ResolveAzureConnection("chosen", "", "", "acme.azurecr.io/api", "org-test", connections)
+			return result.Connection, err
+		}, input: append(images, app.CloudConnection{ID: "chosen", Name: "chosen", Platform: app.CloudPlatformAzure, Capabilities: []app.CloudConnectionCapability{app.CloudConnectionCapabilityImages}}), wantID: "chosen"},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			connection, err := test.resolve(test.input)
+			if test.wantErr != "" {
+				require.ErrorContains(t, err, test.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, test.wantID, connection.ID)
+		})
+	}
+}

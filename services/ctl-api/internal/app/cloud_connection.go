@@ -52,6 +52,7 @@ type CloudConnection struct {
 	StatusMessage    string                      `gorm:"notnull;default:''" json:"status_message,omitempty" temporaljson:"status_message,omitempty"`
 	LastVerifiedAt   *time.Time                  `json:"last_verified_at,omitempty" temporaljson:"last_verified_at,omitempty"`
 	Capabilities     []CloudConnectionCapability `gorm:"type:jsonb;serializer:json;notnull;default:'[]'" json:"capabilities" temporaljson:"capabilities,omitempty"`
+	Registries       []string                    `gorm:"type:jsonb;serializer:json" json:"registries,omitempty" temporaljson:"registries,omitempty"`
 }
 
 func (c *CloudConnection) BeforeCreate(tx *gorm.DB) error {
