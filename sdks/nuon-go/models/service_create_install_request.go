@@ -20,6 +20,9 @@ import (
 // swagger:model service.CreateInstallRequest
 type ServiceCreateInstallRequest struct {
 
+	// app branch group
+	AppBranchGroup string `json:"app_branch_group,omitempty"`
+
 	// AppBranchID is the optional app branch this install belongs to. When set,
 	// the install starts on that branch's active app config and stays on the
 	// branch until explicitly moved. When empty, the install uses the latest

@@ -163,6 +163,7 @@ func (s *InstallStackOverrides) HasOverrides() bool {
 type Install struct {
 	Name           string                `mapstructure:"name" toml:"name" comment:"install" jsonschema:"required"`
 	AppBranch      string                `mapstructure:"app_branch,omitempty" toml:"app_branch,omitempty"`
+	AppBranchGroup string                `mapstructure:"app_branch_group,omitempty" toml:"app_branch_group,omitempty"`
 	ApprovalOption InstallApprovalOption `mapstructure:"approval_option,omitempty" toml:"approval_option,omitempty"`
 	Telemetry      *InstallTelemetry     `mapstructure:"telemetry,omitempty" toml:"telemetry,omitempty" json:",omitempty"`
 	Labels         map[string]string     `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
@@ -224,6 +225,9 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("app_branch").Short("app branch name or ID").
 		Long("App branch this install belongs to, by name or ID. Changing it moves the install and applies the branch's latest run. Required when disable-app-sync is enabled for the organization.").
 		Example("main").
+		Field("app_branch_group").Short("app branch deployment group").
+		Long("Deployment group this install belongs to within its app branch. This explicit selection takes precedence over label matching.").
+		Example("canary").
 		Field("approval_option").Short("approval option for the install").
 		Long("Controls how deployments are approved. Options: 'approve-all' (automatic approval) or 'prompt' (requires confirmation)").
 		Example("approve-all").
@@ -260,6 +264,11 @@ func (i *Install) Parse() error {
 func (i *Install) Validate() error {
 	if i == nil {
 		return nil
+	}
+	if i.AppBranchGroup != "" && i.AppBranch == "" {
+		return ErrConfig{
+			Description: fmt.Sprintf("install %q: app_branch_group requires app_branch", i.Name),
+		}
 	}
 
 	// Keys are lookup identifiers on every matching surface, so they can never
@@ -349,6 +358,12 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 		diffs = append(diffs, diff.NewDiff(
 			diff.WithKey("app_branch"),
 			diff.WithStringDiff(upstreamInstall.AppBranch, i.AppBranch),
+		))
+	}
+	if i.AppBranchGroup != "" || upstreamInstall.AppBranchGroup != "" {
+		diffs = append(diffs, diff.NewDiff(
+			diff.WithKey("app_branch_group"),
+			diff.WithStringDiff(upstreamInstall.AppBranchGroup, i.AppBranchGroup),
 		))
 	}
 

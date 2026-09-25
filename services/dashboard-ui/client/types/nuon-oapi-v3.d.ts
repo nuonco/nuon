@@ -2481,7 +2481,6 @@ export interface paths {
      * {
      *   "api-pagination": true,
      *   "org-dashboard": true,
-     *   "org-runner": true,
      *   "stratus-layout": true,
      *   "user-managed-features": false
      * }
@@ -3702,18 +3701,12 @@ export interface components {
       workflows?: components["schemas"]["app.Workflow"][];
     };
     "app.AppBranchInstallGroup": {
-      /**
-       * @description AllInstalls targets every install owned by this group's app branch.
-       * A nil LabelSelector already means "use InstallIDs", so there is no
-       * selector shape that expresses "everything" — hence the explicit flag.
-       */
-      all_installs?: boolean;
       app_branch_config_id?: string;
       auto_approve_on_policies_passing?: boolean | null;
       created_at?: string;
       created_by_id?: string;
+      default?: boolean;
       id?: string;
-      install_ids?: string[];
       label_selector?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Selector"];
       max_parallel?: number;
       name?: string;
@@ -4764,6 +4757,8 @@ export interface components {
     "app.Install": {
       app_branch?: components["schemas"]["app.AppBranch"];
       app_branch_connections?: components["schemas"]["app.InstallAppBranchConnection"][];
+      app_branch_group?: string;
+      app_branch_group_assignment_source?: components["schemas"]["app.InstallAppBranchGroupAssignmentSource"];
       app_branch_id?: string;
       app_config_id?: string;
       app_config_ref?: components["schemas"]["app.AppConfigRef"];
@@ -4962,6 +4957,8 @@ export interface components {
       activated_at?: string;
       active?: boolean;
       app_branch?: components["schemas"]["app.AppBranch"];
+      app_branch_group?: string;
+      app_branch_group_assignment_source?: components["schemas"]["app.InstallAppBranchGroupAssignmentSource"];
       app_branch_id?: string;
       created_at?: string;
       created_by_id?: string;
@@ -4970,6 +4967,8 @@ export interface components {
       install_id?: string;
       updated_at?: string;
     };
+    /** @enum {string} */
+    "app.InstallAppBranchGroupAssignmentSource": "explicit" | "labels" | "default";
     "app.InstallAppConfigVersion": {
       app_branch_run?: components["schemas"]["app.AppBranchRun"];
       app_branch_run_id?: string;
@@ -8554,6 +8553,7 @@ export interface components {
       };
     };
     "service.CreateInstallRequest": {
+      app_branch_group?: string;
       /**
        * @description AppBranchID is the optional app branch this install belongs to. When set,
        * the install starts on that branch's active app config and stays on the
@@ -8584,6 +8584,7 @@ export interface components {
       stack_only?: boolean;
     };
     "service.CreateInstallV2Request": {
+      app_branch_group?: string;
       /**
        * @description AppBranchID is the optional app branch this install belongs to. When set,
        * the install starts on that branch's active app config and stays on the
@@ -9061,20 +9062,11 @@ export interface components {
     };
     "service.InstallGroupRequest": {
       /**
-       * @description AllInstalls targets every install owned by this branch.
-       * Mutually exclusive with InstallIDs and LabelSelector.
-       */
-      all_installs?: boolean;
-      /**
        * @description AutoApproveOnPoliciesPassing approves this group's plan step without user
        * input when its policy checks pass. Omit to leave it unset (off).
        */
       auto_approve_on_policies_passing?: boolean | null;
-      install_ids?: string[];
-      /**
-       * @description LabelSelector dynamically resolves installs at deploy time.
-       * Mutually exclusive with InstallIDs.
-       */
+      default?: boolean;
       label_selector?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Selector"];
       name: string;
       order?: number;
@@ -9236,11 +9228,15 @@ export interface components {
     "service.MngUpdateRequest": Record<string, never>;
     "service.MngVMShutDownRequest": Record<string, never>;
     "service.MoveInstallToAppBranchRequest": {
+      app_branch_group?: string;
       /**
        * @description AppBranchID is the branch to move the install to. It must belong to the
        * install's app and have an app config to deploy.
        */
       app_branch_id: string;
+      labels?: {
+        [key: string]: string;
+      };
     };
     "service.OperationRoleRuleRequest": {
       operation: components["schemas"]["app.OperationType"];
@@ -28256,7 +28252,6 @@ export interface operations {
    * {
    *   "api-pagination": true,
    *   "org-dashboard": true,
-   *   "org-runner": true,
    *   "stratus-layout": true,
    *   "user-managed-features": false
    * }

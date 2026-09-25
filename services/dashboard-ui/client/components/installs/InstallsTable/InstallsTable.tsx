@@ -12,6 +12,7 @@ import { Time } from '@/components/common/Time'
 import { InstallStatuses } from '@/components/installs/InstallStatuses'
 import { QuickManagementDropdown } from '@/components/installs/management/QuickManagementDropdown'
 import { LabelBadge } from '@/components/common/LabelBadge'
+import { installAppBranchGroup } from '@/components/branches/active-app-branch-connection'
 import type { TCloudPlatform, TInstall } from '@/types'
 
 export type TInstallsTableScope = 'org' | 'app' | 'branch'
@@ -20,6 +21,7 @@ export type InstallRow = {
   action: ReactNode
   activity: ReactNode
   branch: ReactNode
+  group: ReactNode
   updatedAt: string
   appHref: string
   appName: string
@@ -32,7 +34,9 @@ export type InstallRow = {
   platform: ReactNode
 }
 
-function getCreatedBySubtitle(install: TInstall): { email: string; source: string } | undefined {
+function getCreatedBySubtitle(
+  install: TInstall
+): { email: string; source: string } | undefined {
   const account = install?.created_by
   if (!account?.email) return undefined
   const source = account.account_type === 'service' ? 'API / CLI' : 'Dashboard'
@@ -61,7 +65,11 @@ function ActivityCell({ install }: { install: TInstall }) {
           id: 'created',
           title: 'Created',
           subtitle: (
-            <Time variant="label" time={install?.created_at} format="long-datetime" />
+            <Time
+              variant="label"
+              time={install?.created_at}
+              format="long-datetime"
+            />
           ),
           leftContent: <Icon variant="PlusCircleIcon" size={16} />,
         },
@@ -69,7 +77,11 @@ function ActivityCell({ install }: { install: TInstall }) {
           id: 'updated',
           title: 'Updated',
           subtitle: (
-            <Time variant="label" time={install?.updated_at} format="long-datetime" />
+            <Time
+              variant="label"
+              time={install?.updated_at}
+              format="long-datetime"
+            />
           ),
           leftContent: <Icon variant="ClockCounterClockwiseIcon" size={16} />,
         },
@@ -104,7 +116,12 @@ export function parseInstallsToTableData(
       />
     ),
     statuses: (
-      <InstallStatuses install={install} isLabelHidden lazyComponents={lazyComponents} tooltipPosition="top" />
+      <InstallStatuses
+        install={install}
+        isLabelHidden
+        lazyComponents={lazyComponents}
+        tooltipPosition="top"
+      />
     ),
     platform: (
       <CloudPlatform
@@ -117,13 +134,20 @@ export function parseInstallsToTableData(
     ),
     labels: (() => {
       const lbls = install.labels
-      if (!lbls || Object.keys(lbls).length === 0) return <Icon variant="MinusIcon" />
+      if (!lbls || Object.keys(lbls).length === 0)
+        return <Icon variant="MinusIcon" />
       return (
         <span className="flex flex-wrap gap-1">
           {Object.keys(lbls)
             .sort()
             .map((k) => (
-              <LabelBadge key={k} size="sm" labelKey={k} labelValue={lbls[k]} customColor={labelColorsByApp?.[install.app_id ?? '']?.[k]} />
+              <LabelBadge
+                key={k}
+                size="sm"
+                labelKey={k}
+                labelValue={lbls[k]}
+                customColor={labelColorsByApp?.[install.app_id ?? '']?.[k]}
+              />
             ))}
         </span>
       )
@@ -141,6 +165,11 @@ export function parseInstallsToTableData(
     ) : (
       <Text variant="subtext" theme="neutral">
         —
+      </Text>
+    ),
+    group: (
+      <Text variant="subtext" theme="neutral" family="mono">
+        {installAppBranchGroup(install) || '—'}
       </Text>
     ),
     activity: <ActivityCell install={install} />,
@@ -208,6 +237,12 @@ const columns: ColumnDef<InstallRow>[] = [
     enableSorting: false,
     accessorKey: 'branch',
     header: 'Branch',
+    cell: (info) => info.getValue() as ReactNode,
+  },
+  {
+    enableSorting: false,
+    accessorKey: 'group',
+    header: 'Group',
     cell: (info) => info.getValue() as ReactNode,
   },
   {

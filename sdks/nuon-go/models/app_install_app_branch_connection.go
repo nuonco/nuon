@@ -28,6 +28,9 @@ type AppInstallAppBranchConnection struct {
 	// app branch
 	AppBranch *AppAppBranch `json:"app_branch,omitempty"`
 
+	// app branch group
+	AppBranchGroup string `json:"app_branch_group,omitempty"`
+
 	// app branch id
 	AppBranchID string `json:"app_branch_id,omitempty"`
 

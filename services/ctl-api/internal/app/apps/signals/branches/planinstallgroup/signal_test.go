@@ -163,9 +163,8 @@ func (s *PlanInstallGroupTestSuite) TestEmptyInstallGroup() {
 
 	s.env.OnActivity("GetInstallGroupByID", mock.Anything, mock.Anything).Return(
 		&app.AppBranchInstallGroup{
-			ID:         "group-1",
-			Name:       "prod",
-			InstallIDs: []string{},
+			ID:   "group-1",
+			Name: "prod",
 		}, nil)
 
 	s.env.OnActivity((*activities.Activities).AppBranchesGetAppBranchByID, mock.Anything, mock.Anything, mock.Anything).Return(
@@ -196,9 +195,8 @@ func (s *PlanInstallGroupTestSuite) TestNoStepIDSkipsApproval() {
 
 	s.env.OnActivity("GetInstallGroupByID", mock.Anything, mock.Anything).Return(
 		&app.AppBranchInstallGroup{
-			ID:         "group-1",
-			Name:       "prod",
-			InstallIDs: []string{"install-1"},
+			ID:   "group-1",
+			Name: "prod",
 		}, nil)
 
 	s.env.OnActivity((*activities.Activities).AppBranchesGetAppBranchByID, mock.Anything, mock.Anything, mock.Anything).Return(

@@ -120,6 +120,7 @@ func TestBranchSyncRunConfigDiff(t *testing.T) {
 		return &models.AppAppBranchConfig{
 			ConnectedGithubVcsConfig: &models.AppConnectedGithubVCSConfig{Repo: repo.Repo, Branch: repo.Branch, Directory: repo.Directory},
 			RunConfig:                run,
+			InstallGroups:            []*models.AppAppBranchInstallGroup{{Name: defaultInstallGroupName, Default: true}},
 		}
 	}
 
