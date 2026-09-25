@@ -75,6 +75,7 @@ func PreloadComponentBuildConfig(db *gorm.DB) *gorm.DB {
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.AWSECRImageConfig").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.AWSECRImageConfig.CloudConnection").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.GCPGARImageConfig").
+		Preload("ComponentConfigConnection.ExternalImageComponentConfig.GCPGARImageConfig.CloudConnection").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.AzureACRImageConfig").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.AzureACRImageConfig.CloudConnection").
 

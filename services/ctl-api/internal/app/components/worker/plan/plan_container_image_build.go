@@ -106,14 +106,22 @@ func (b *Planner) getSourceRepository(ctx workflow.Context, cfg *app.ExternalIma
 
 	if cfg.GCPGARImageConfig != nil {
 		garLoginServer := fmt.Sprintf("%s-docker.pkg.dev", cfg.GCPGARImageConfig.GCPRegion)
-		return &configs.OCIRegistryRepository{
+		repository := &configs.OCIRegistryRepository{
 			RegistryType:             configs.OCIRegistryTypeGAR,
 			Repository:               cfg.ImageURL,
 			Region:                   cfg.GCPGARImageConfig.GCPRegion,
 			LoginServer:              garLoginServer,
 			ServiceAccountEmail:      cfg.GCPGARImageConfig.ServiceAccountEmail,
 			WorkloadIdentityProvider: cfg.GCPGARImageConfig.WorkloadIdentityProvider,
-		}, nil
+		}
+		if connection := cfg.GCPGARImageConfig.CloudConnection; connection != nil && connection.AuthMode != app.CloudConnectionAuthModeLegacy {
+			auth, err := activities.AwaitGetCloudConnectionGARAuth(ctx, &activities.GetCloudConnectionGARAuthRequest{ConnectionID: connection.ID})
+			if err != nil {
+				return nil, fmt.Errorf("get GCP cloud connection credentials: %w", err)
+			}
+			repository.OCIAuth = auth
+		}
+		return repository, nil
 	}
 
 	if cfg.AzureACRImageConfig != nil {

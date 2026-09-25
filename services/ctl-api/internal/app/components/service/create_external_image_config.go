@@ -25,6 +25,7 @@ type awsECRImageConfigRequest struct {
 }
 
 type gcpGARImageConfigRequest struct {
+	Connection               string `json:"connection,omitempty"`
 	GCPProjectID             string `json:"gcp_project_id"`
 	GCPRegion                string `json:"gcp_region"`
 	ImageURL                 string `json:"image_url"`
@@ -85,6 +86,7 @@ func (c *CreateExternalImageComponentConfigRequest) toConfig() *config.ExternalI
 		}
 	case c.GCPGARImageConfig != nil:
 		obj.GCPGARImageConfig = &config.GCPGARConfig{
+			Connection:               c.GCPGARImageConfig.Connection,
 			GCPProjectID:             c.GCPGARImageConfig.GCPProjectID,
 			GCPRegion:                c.GCPGARImageConfig.GCPRegion,
 			ServiceAccountEmail:      c.GCPGARImageConfig.ServiceAccountEmail,
@@ -310,6 +312,26 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 			cfg.AzureACRImageConfig.CloudConnectionID = resolution.Connection.ID
 			cfg.AzureACRImageConfig.ClientID = resolution.Connection.Principal
 			cfg.AzureACRImageConfig.TenantID = resolution.Connection.TenantID
+		}
+	}
+	if cfg.GCPGARImageConfig != nil {
+		var connections []app.CloudConnection
+		if err := s.db.WithContext(ctx).Where(&app.CloudConnection{OrgID: parentCmp.OrgID}).Find(&connections).Error; err != nil {
+			return nil, fmt.Errorf("unable to list cloud connections: %w", err)
+		}
+		resolution, err := build.ResolveGCPConnection(req.GCPGARImageConfig.Connection, req.GCPGARImageConfig.ServiceAccountEmail, req.GCPGARImageConfig.WorkloadIdentityProvider, req.GCPGARImageConfig.GCPProjectID, parentCmp.OrgID, connections)
+		if err != nil {
+			return nil, stderr.NewInvalidRequest(err)
+		}
+		if resolution.Connection != nil {
+			if resolution.Implicit {
+				if err := s.db.WithContext(ctx).Create(resolution.Connection).Error; err != nil {
+					return nil, fmt.Errorf("unable to create implicit cloud connection: %w", err)
+				}
+			}
+			cfg.GCPGARImageConfig.CloudConnectionID = resolution.Connection.ID
+			cfg.GCPGARImageConfig.ServiceAccountEmail = resolution.Connection.Principal
+			cfg.GCPGARImageConfig.WorkloadIdentityProvider = resolution.Connection.IdentityProvider
 		}
 	}
 

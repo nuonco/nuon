@@ -25,10 +25,12 @@ type GCPGARImageConfig struct {
 	ComponentConfigID   string `json:"component_config_id,omitzero" gorm:"notnull" temporaljson:"component_config_id,omitzero,omitempty"`
 	ComponentConfigType string `json:"component_config_type,omitzero" gorm:"notnull" temporaljson:"component_config_type,omitzero,omitempty"`
 
-	GCPProjectID             string `json:"gcp_project_id,omitzero" gorm:"notnull" temporaljson:"gcp_project_id,omitzero,omitempty"`
-	GCPRegion                string `json:"gcp_region,omitzero" gorm:"notnull" temporaljson:"gcp_region,omitzero,omitempty"`
-	ServiceAccountEmail      string `json:"service_account_email,omitzero" temporaljson:"service_account_email,omitzero,omitempty"`
-	WorkloadIdentityProvider string `json:"workload_identity_provider,omitzero" temporaljson:"workload_identity_provider,omitzero,omitempty"`
+	CloudConnectionID        string           `json:"cloud_connection_id,omitzero" temporaljson:"cloud_connection_id,omitzero,omitempty"`
+	CloudConnection          *CloudConnection `json:"-" temporaljson:"cloud_connection,omitzero,omitempty"`
+	GCPProjectID             string           `json:"gcp_project_id,omitzero" gorm:"notnull" temporaljson:"gcp_project_id,omitzero,omitempty"`
+	GCPRegion                string           `json:"gcp_region,omitzero" gorm:"notnull" temporaljson:"gcp_region,omitzero,omitempty"`
+	ServiceAccountEmail      string           `json:"service_account_email,omitzero" temporaljson:"service_account_email,omitzero,omitempty"`
+	WorkloadIdentityProvider string           `json:"workload_identity_provider,omitzero" temporaljson:"workload_identity_provider,omitzero,omitempty"`
 }
 
 func (c *GCPGARImageConfig) Indexes(db *gorm.DB) []migrations.Index {

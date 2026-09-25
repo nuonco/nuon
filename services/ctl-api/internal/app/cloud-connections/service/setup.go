@@ -35,10 +35,14 @@ func subject(connection *app.CloudConnection) string {
 }
 
 func (s *service) setup(connection *app.CloudConnection, options SetupOptions) SetupResponse {
-	if connection.Platform == app.CloudPlatformAzure {
+	switch connection.Platform {
+	case app.CloudPlatformAzure:
 		return s.azureSetup(connection, options)
+	case app.CloudPlatformGCP:
+		return s.gcpSetup(connection, options)
+	default:
+		return s.awsSetup(connection, options)
 	}
-	return s.awsSetup(connection, options)
 }
 
 func (s *service) awsSetup(connection *app.CloudConnection, options SetupOptions) SetupResponse {
@@ -121,6 +125,60 @@ func (s *service) azureSetup(connection *app.CloudConnection, options SetupOptio
 	if connection.HasCapability(app.CloudConnectionCapabilityImages) {
 		lines = append(lines, "REGISTRY_ID=$(az acr show --name "+options.Registry+" --query id -o tsv)", "az role assignment create --assignee \"$APP_ID\" --role AcrPull --scope \"$REGISTRY_ID\"")
 	}
+	response.CLI = strings.Join(lines, "\n")
+	return response
+}
+
+func (s *service) gcpSetup(connection *app.CloudConnection, options SetupOptions) SetupResponse {
+	if options.Repositories == nil {
+		options.Repositories = []string{}
+	}
+	provider := connection.IdentityProvider
+	if provider == "" {
+		provider = "projects/<project-number>/locations/global/workloadIdentityPools/<pool-id>/providers/<provider-id>"
+	}
+	audience := "https://iam.googleapis.com/" + strings.TrimPrefix(strings.TrimPrefix(provider, "https://iam.googleapis.com/"), "//iam.googleapis.com/")
+	response := SetupResponse{Subject: subject(connection), Audience: audience, Capabilities: connection.Capabilities, Repositories: options.Repositories}
+	if s.issuer == nil {
+		return response
+	}
+	issuerURL := s.issuer.Issuer()
+	serviceAccountID := strings.SplitN(connection.Principal, "@", 2)[0]
+	capabilitiesJSON, _ := json.Marshal(connection.Capabilities)
+	repositoriesJSON, _ := json.Marshal(options.Repositories)
+	response.IssuerURL = issuerURL
+	response.Terraform = fmt.Sprintf(`module "nuon_cloud_connection" {
+  source       = "nuonco/gar-access/google"
+  nuon_issuer  = %q
+  nuon_subject = %q
+  capabilities = %s
+  repositories = %s
+  project_id   = %q
+}`, issuerURL, subject(connection), capabilitiesJSON, repositoriesJSON, connection.TargetID)
+	lines := []string{
+		"PROJECT_ID=" + connection.TargetID,
+		"PROJECT_NUMBER=$(gcloud projects describe \"$PROJECT_ID\" --format='value(projectNumber)')",
+		"POOL_ID=<pool-id>",
+		"PROVIDER_ID=<provider-id>",
+		"SERVICE_ACCOUNT_EMAIL=" + connection.Principal,
+		"gcloud iam workload-identity-pools create \"$POOL_ID\" --project \"$PROJECT_ID\" --location global --display-name \"Nuon cloud connection\"",
+		fmt.Sprintf("gcloud iam workload-identity-pools providers create-oidc \"$PROVIDER_ID\" --project \"$PROJECT_ID\" --location global --workload-identity-pool \"$POOL_ID\" --issuer-uri %q --allowed-audiences %q --attribute-mapping=\"google.subject=assertion.sub\"", issuerURL, audience),
+		"gcloud iam service-accounts create " + serviceAccountID + " --project \"$PROJECT_ID\"",
+		fmt.Sprintf("gcloud iam service-accounts add-iam-policy-binding \"$SERVICE_ACCOUNT_EMAIL\" --project \"$PROJECT_ID\" --role roles/iam.workloadIdentityUser --member \"principal://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/$POOL_ID/subject/%s\"", subject(connection)),
+	}
+	if len(options.Repositories) == 0 {
+		lines = append(lines, "gcloud projects add-iam-policy-binding \"$PROJECT_ID\" --role roles/artifactregistry.reader --member \"serviceAccount:$SERVICE_ACCOUNT_EMAIL\"")
+	} else {
+		for _, repository := range options.Repositories {
+			parts := strings.SplitN(strings.Trim(repository, "/"), "/", 2)
+			location, name := "<location>", repository
+			if len(parts) == 2 {
+				location, name = parts[0], parts[1]
+			}
+			lines = append(lines, fmt.Sprintf("gcloud artifacts repositories add-iam-policy-binding %q --project \"$PROJECT_ID\" --location %q --role roles/artifactregistry.reader --member \"serviceAccount:$SERVICE_ACCOUNT_EMAIL\"", name, location))
+		}
+	}
+	lines = append(lines, "gcloud iam workload-identity-pools providers describe \"$PROVIDER_ID\" --project \"$PROJECT_ID\" --location global --workload-identity-pool \"$POOL_ID\" --format='value(name)'", "Paste the provider resource name returned above into identity_provider.")
 	response.CLI = strings.Join(lines, "\n")
 	return response
 }

@@ -37,10 +37,11 @@ type VerifyOptions struct {
 type cloudVerifier struct {
 	aws   Verifier
 	azure Verifier
+	gcp   Verifier
 }
 
 func NewCloudVerifier(issuer *oidcissuer.Issuer) Verifier {
-	return &cloudVerifier{aws: NewAWSVerifier(issuer), azure: &azureVerifier{issuer: issuer, client: http.DefaultClient}}
+	return &cloudVerifier{aws: NewAWSVerifier(issuer), azure: &azureVerifier{issuer: issuer, client: http.DefaultClient}, gcp: &gcpVerifier{issuer: issuer, client: http.DefaultClient}}
 }
 
 func (v *cloudVerifier) Verify(ctx context.Context, connection *app.CloudConnection, options VerifyOptions) (VerificationResult, error) {
@@ -49,6 +50,8 @@ func (v *cloudVerifier) Verify(ctx context.Context, connection *app.CloudConnect
 		return v.aws.Verify(ctx, connection, options)
 	case app.CloudPlatformAzure:
 		return v.azure.Verify(ctx, connection, options)
+	case app.CloudPlatformGCP:
+		return v.gcp.Verify(ctx, connection, options)
 	default:
 		return VerificationResult{}, fmt.Errorf("unsupported cloud platform %q", connection.Platform)
 	}

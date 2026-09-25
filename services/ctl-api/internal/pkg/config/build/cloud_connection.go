@@ -22,6 +22,52 @@ type AzureConnectionResolution struct {
 	Implicit   bool
 }
 
+type GCPConnectionResolution struct {
+	Connection *app.CloudConnection
+	Implicit   bool
+}
+
+func ResolveGCPConnection(connectionName, serviceAccountEmail, identityProvider, projectID, orgID string, connections []app.CloudConnection) (GCPConnectionResolution, error) {
+	if connectionName != "" {
+		matches := filterConnections(connections, func(connection app.CloudConnection) bool {
+			return connection.Name == connectionName
+		})
+		if len(matches) != 1 {
+			return GCPConnectionResolution{}, fmt.Errorf("cloud connection %q must identify exactly one connection", connectionName)
+		}
+		return validateGCPImageConnection(&matches[0], projectID)
+	}
+	if serviceAccountEmail == "" && identityProvider == "" {
+		return GCPConnectionResolution{}, nil
+	}
+	if serviceAccountEmail == "" || identityProvider == "" {
+		return GCPConnectionResolution{}, fmt.Errorf("service_account_email and workload_identity_provider must be set together")
+	}
+	matches := filterConnections(connections, func(connection app.CloudConnection) bool {
+		return connection.Platform == app.CloudPlatformGCP && connection.Principal == serviceAccountEmail && connection.IdentityProvider == identityProvider
+	})
+	if len(matches) > 1 {
+		return GCPConnectionResolution{}, fmt.Errorf("multiple GCP cloud connections match service_account_email %q", serviceAccountEmail)
+	}
+	if len(matches) == 1 {
+		return validateGCPImageConnection(&matches[0], projectID)
+	}
+	return GCPConnectionResolution{Connection: &app.CloudConnection{
+		OrgID: orgID, Name: serviceAccountEmail, Platform: app.CloudPlatformGCP, TargetID: projectID, Principal: serviceAccountEmail, IdentityProvider: identityProvider,
+		AuthMode: app.CloudConnectionAuthModeLegacy, Capabilities: []app.CloudConnectionCapability{app.CloudConnectionCapabilityImages},
+	}, Implicit: true}, nil
+}
+
+func validateGCPImageConnection(connection *app.CloudConnection, projectID string) (GCPConnectionResolution, error) {
+	if connection.Platform != app.CloudPlatformGCP || connection.TargetID != projectID {
+		return GCPConnectionResolution{}, fmt.Errorf("cloud connection %q does not target GCP project %s", connection.Name, projectID)
+	}
+	if !connection.HasCapability(app.CloudConnectionCapabilityImages) {
+		return GCPConnectionResolution{}, fmt.Errorf("cloud connection %q does not have the images capability", connection.Name)
+	}
+	return GCPConnectionResolution{Connection: connection}, nil
+}
+
 func ResolveAzureConnection(connectionName, clientID, tenantID, orgID string, connections []app.CloudConnection) (AzureConnectionResolution, error) {
 	if connectionName != "" {
 		matches := filterConnections(connections, func(connection app.CloudConnection) bool {

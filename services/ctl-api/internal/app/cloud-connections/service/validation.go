@@ -12,6 +12,9 @@ import (
 
 var accountIDPattern = regexp.MustCompile(`^[0-9]{12}$`)
 var azureIDPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+var gcpProjectIDPattern = regexp.MustCompile(`^[a-z][a-z0-9-]{4,28}[a-z0-9]$`)
+var gcpServiceAccountPattern = regexp.MustCompile(`^[a-z][a-z0-9-]{4,28}[a-z0-9]@[a-z][a-z0-9-]{4,28}[a-z0-9]\.iam\.gserviceaccount\.com$`)
+var gcpProviderPattern = regexp.MustCompile(`^(?:https:)?//iam\.googleapis\.com/projects/[0-9]+/locations/global/workloadIdentityPools/[a-z0-9-]+/providers/[a-z0-9-]+$|^projects/[0-9]+/locations/global/workloadIdentityPools/[a-z0-9-]+/providers/[a-z0-9-]+$`)
 
 func validateConnection(connection *app.CloudConnection) error {
 	if strings.TrimSpace(connection.Name) == "" {
@@ -38,6 +41,19 @@ func validateConnection(connection *app.CloudConnection) error {
 		}
 		if !azureIDPattern.MatchString(connection.Principal) {
 			return fmt.Errorf("principal must be an Entra application client ID")
+		}
+	case app.CloudPlatformGCP:
+		if !gcpProjectIDPattern.MatchString(connection.TargetID) {
+			return fmt.Errorf("target_id must be a GCP project ID")
+		}
+		if !gcpServiceAccountPattern.MatchString(connection.Principal) {
+			return fmt.Errorf("principal must be a GCP service account email")
+		}
+		if !gcpProviderPattern.MatchString(connection.IdentityProvider) {
+			return fmt.Errorf("identity_provider must be a GCP Workload Identity Provider resource name")
+		}
+		if len(connection.Capabilities) != 1 || connection.Capabilities[0] != app.CloudConnectionCapabilityImages {
+			return fmt.Errorf("GCP cloud connections support only the images capability")
 		}
 	default:
 		return fmt.Errorf("unsupported cloud platform %q", connection.Platform)

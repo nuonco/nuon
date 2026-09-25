@@ -148,6 +148,13 @@ func (a *Activities) getACRAuth(ctx context.Context, acrCfg *app.AzureACRImageCo
 }
 
 func (a *Activities) getGARAuth(ctx context.Context, garCfg *app.GCPGARImageConfig) (*metadata.RegistryAuth, error) {
+	if garCfg.CloudConnection != nil && garCfg.CloudConnection.AuthMode != app.CloudConnectionAuthModeLegacy {
+		token, err := a.cloudConnections.GCPAccessToken(ctx, garCfg.CloudConnection)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get GAR cloud connection access token")
+		}
+		return &metadata.RegistryAuth{ServerAddress: "https://" + garCfg.GCPRegion + "-docker.pkg.dev", Username: "oauth2accesstoken", Password: token.AccessToken}, nil
+	}
 	tok, err := a.sharedActs.GetGARAccessToken(ctx, &sharedactivities.GetGARAccessTokenRequest{
 		ServiceAccountEmail:      garCfg.ServiceAccountEmail,
 		WorkloadIdentityProvider: garCfg.WorkloadIdentityProvider,

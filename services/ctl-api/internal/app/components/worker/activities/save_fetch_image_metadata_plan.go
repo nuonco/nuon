@@ -91,14 +91,22 @@ func (a *Activities) getSourceRepository(ctx context.Context, cfg *app.ExternalI
 
 	if cfg.GCPGARImageConfig != nil {
 		garLoginServer := fmt.Sprintf("%s-docker.pkg.dev", cfg.GCPGARImageConfig.GCPRegion)
-		return &configs.OCIRegistryRepository{
+		repository := &configs.OCIRegistryRepository{
 			RegistryType:             configs.OCIRegistryTypeGAR,
 			Repository:               cfg.ImageURL,
 			Region:                   cfg.GCPGARImageConfig.GCPRegion,
 			LoginServer:              garLoginServer,
 			ServiceAccountEmail:      cfg.GCPGARImageConfig.ServiceAccountEmail,
 			WorkloadIdentityProvider: cfg.GCPGARImageConfig.WorkloadIdentityProvider,
-		}, nil
+		}
+		if connection := cfg.GCPGARImageConfig.CloudConnection; connection != nil && connection.AuthMode != app.CloudConnectionAuthModeLegacy {
+			token, err := a.cloudConnections.GCPAccessToken(ctx, connection)
+			if err != nil {
+				return nil, fmt.Errorf("get GCP cloud connection credentials: %w", err)
+			}
+			repository.OCIAuth = &configs.OCIRegistryAuth{Username: "oauth2accesstoken", Password: token.AccessToken}
+		}
+		return repository, nil
 	}
 
 	if cfg.AzureACRImageConfig != nil {

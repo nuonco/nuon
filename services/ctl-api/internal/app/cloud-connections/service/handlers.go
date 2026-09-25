@@ -70,6 +70,11 @@ func (s *service) usage(ctx context.Context, connectionID string) (ConnectionUsa
 		return usage, fmt.Errorf("count Azure components using cloud connection: %w", err)
 	}
 	usage.Components += azureComponents
+	var gcpComponents int64
+	if err := s.db.WithContext(ctx).Model(&app.GCPGARImageConfig{}).Where(app.GCPGARImageConfig{CloudConnectionID: connectionID}).Count(&gcpComponents).Error; err != nil {
+		return usage, fmt.Errorf("count GCP components using cloud connection: %w", err)
+	}
+	usage.Components += gcpComponents
 	return usage, nil
 }
 
@@ -235,6 +240,11 @@ func (s *service) delete(ctx context.Context, orgID, connectionID string) error 
 			return fmt.Errorf("count Azure component references: %w", err)
 		}
 		componentReferences += azureComponentReferences
+		var gcpComponentReferences int64
+		if err := tx.Model(&app.GCPGARImageConfig{}).Where(app.GCPGARImageConfig{CloudConnectionID: connection.ID}).Count(&gcpComponentReferences).Error; err != nil {
+			return fmt.Errorf("count GCP component references: %w", err)
+		}
+		componentReferences += gcpComponentReferences
 		if installReferences > 0 || componentReferences > 0 {
 			return stderr.ErrConflict{Err: fmt.Errorf("cloud connection %s is in use", connection.ID), Description: "Cloud connection cannot be deleted while it is in use"}
 		}
