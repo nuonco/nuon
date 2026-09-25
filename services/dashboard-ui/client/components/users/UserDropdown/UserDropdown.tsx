@@ -4,7 +4,6 @@ import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
-import { ThemeSwitcher } from '@/components/common/ThemeSwitcher'
 import { OrgTelemetryButton } from '@/components/orgs/OrgTelemetry'
 import { UserPreferencesPanel } from '../UserPreferencesPanel'
 import { Toast } from '@/components/surfaces/Toast'
@@ -137,9 +136,6 @@ export const UserDropdown = ({
             User settings
           </Text>
         )}
-        <div className="px-1.5 py-1">
-          <ThemeSwitcher />
-        </div>
         <Button onClick={() => onAddPanel(<UserPreferencesPanel />)} isMenuButton>
           Preferences <Icon variant="SlidersHorizontalIcon" />
         </Button>
