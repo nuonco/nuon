@@ -26,27 +26,15 @@ export const Default = () => {
 }
 
 export const Loading = () => (
-  <RoleSelector
-    roles={[]}
-    isLoading={true}
-    isError={false}
-  />
+  <RoleSelector roles={[]} isLoading={true} isError={false} />
 )
 
 export const Error = () => (
-  <RoleSelector
-    roles={[]}
-    isLoading={false}
-    isError={true}
-  />
+  <RoleSelector roles={[]} isLoading={false} isError={true} />
 )
 
 export const Empty = () => (
-  <RoleSelector
-    roles={[]}
-    isLoading={false}
-    isError={false}
-  />
+  <RoleSelector roles={[]} isLoading={false} isError={false} />
 )
 
 export const WithSelectedValue = () => (
@@ -57,4 +45,28 @@ export const WithSelectedValue = () => (
     value="custom-deploy"
     onChange={() => {}}
   />
+)
+
+export const WorkflowDefaults = () => (
+  <div className="flex flex-col gap-8 max-w-xl">
+    {(['maintenance', 'provision', 'deprovision'] as const).map((roleType) => (
+      <RoleSelector
+        key={roleType}
+        roles={[
+          ...mockRoles.map((role) => ({
+            ...role,
+            default: role.role_type === roleType,
+          })),
+          {
+            name: 'default-deprovision',
+            role_type: 'deprovision',
+            default: roleType === 'deprovision',
+          },
+        ]}
+        isLoading={false}
+        isError={false}
+        isWorkflowDefault
+      />
+    ))}
+  </div>
 )
