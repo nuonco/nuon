@@ -17,9 +17,10 @@ type AssumeRoleConfig struct {
 	ExternalID             string `cty:"external_id" hcl:"external_id,optional" mapstructure:"external_id,omitempty" json:"external_id,omitempty" temporaljson:"-"`
 
 	// configuration for two stepping before assuming this role
-	TwoStepConfig *assumerole.TwoStepConfig `cty:"two_step_config" hcl:"two_step_config" mapstructure:"two_step_config,omitempty" json:"two_step_config" temporaljson:"two_step_config"`
-	UseGithubOIDC bool                      `json:"use_github_oidc"`
-	UseGCPOIDC    bool                      `json:"use_gcp_oidc"`
+	TwoStepConfig    *assumerole.TwoStepConfig `cty:"two_step_config" hcl:"two_step_config" mapstructure:"two_step_config,omitempty" json:"two_step_config" temporaljson:"two_step_config"`
+	UseGithubOIDC    bool                      `json:"use_github_oidc"`
+	UseGCPOIDC       bool                      `json:"use_gcp_oidc"`
+	WebIdentityToken string                    `json:"web_identity_token,omitempty" temporaljson:"web_identity_token,omitempty"`
 }
 
 // StaticCredentials are used to create credentials ahead of time, and pass them around for use. Specifically, we do

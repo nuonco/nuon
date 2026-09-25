@@ -15,11 +15,12 @@ import (
 type EnsureCronWorkflowsRequest struct{}
 
 type EnsureCronWorkflowsResponse struct {
-	SweepStarted                bool `json:"sweep_started"`
-	ComponentHealthSweepStarted bool `json:"component_health_sweep_started"`
-	MetricsStarted              bool `json:"metrics_started"`
-	CleanupStarted              bool `json:"cleanup_started"`
-	TriggerEventCleanupStarted  bool `json:"trigger_event_cleanup_started"`
+	SweepStarted                  bool `json:"sweep_started"`
+	ComponentHealthSweepStarted   bool `json:"component_health_sweep_started"`
+	MetricsStarted                bool `json:"metrics_started"`
+	CleanupStarted                bool `json:"cleanup_started"`
+	TriggerEventCleanupStarted    bool `json:"trigger_event_cleanup_started"`
+	CloudConnectionReprobeStarted bool `json:"cloud_connection_reprobe_started"`
 }
 
 // EnsureCronWorkflows starts (or replaces) the enqueuer-sweep and
@@ -78,6 +79,19 @@ func (a *Activities) EnsureCronWorkflows(ctx context.Context, _ EnsureCronWorkfl
 	}
 	resp.CleanupStarted = true
 	a.logger.Info("queue signal cleanup cron started/replaced", zap.String("workflow-id", "general-queue-signal-cleanup-cron"))
+
+	cloudConnectionOpts := tclient.StartWorkflowOptions{
+		ID:                    "cloud-connection-legacy-reprobe-cron",
+		TaskQueue:             workflows.APITaskQueue,
+		CronSchedule:          "0 1 * * *",
+		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		RetryPolicy:           &temporal.RetryPolicy{MaximumAttempts: 0},
+	}
+	if _, err := a.tClient.ExecuteWorkflowInNamespace(ctx, "general", cloudConnectionOpts, "ReprobeLegacyCloudConnections"); err != nil {
+		return nil, fmt.Errorf("unable to start cloud connection legacy reprobe workflow: %w", err)
+	}
+	resp.CloudConnectionReprobeStarted = true
+	a.logger.Info("cloud connection legacy reprobe cron started/replaced", zap.String("workflow-id", "cloud-connection-legacy-reprobe-cron"))
 
 	eventCleanupOpts := tclient.StartWorkflowOptions{
 		ID:                    "general-trigger-event-cleanup-cron",

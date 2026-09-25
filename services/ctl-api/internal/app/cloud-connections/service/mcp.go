@@ -17,11 +17,11 @@ type mcpListInput struct {
 }
 
 type mcpListResult struct {
-	Connections []app.CloudConnection `json:"connections"`
-	HasMore     bool                  `json:"has_more"`
-	Limit       int                   `json:"limit"`
-	Offset      int                   `json:"offset"`
-	NextOffset  int                   `json:"next_offset,omitempty"`
+	Connections []ConnectionResponse `json:"connections"`
+	HasMore     bool                 `json:"has_more"`
+	Limit       int                  `json:"limit"`
+	Offset      int                  `json:"offset"`
+	NextOffset  int                  `json:"next_offset,omitempty"`
 }
 
 type mcpConnectionInput struct {
@@ -56,7 +56,15 @@ func (s *service) mcpList(ctx context.Context, _ *mcp.CallToolRequest, in mcpLis
 		return nil, nil, fmt.Errorf("list cloud connections: %w", err)
 	}
 	connections, hasMore := apiPkg.MCPClipList(connections, limit)
-	return apiPkg.MCPJSONResult(mcpListResult{Connections: connections, HasMore: hasMore, Limit: limit, Offset: offset, NextOffset: apiPkg.MCPNextOffset(offset, limit, hasMore)})
+	responses := make([]ConnectionResponse, 0, len(connections))
+	for i := range connections {
+		response, err := s.response(ctx, &connections[i], nil)
+		if err != nil {
+			return nil, nil, err
+		}
+		responses = append(responses, response)
+	}
+	return apiPkg.MCPJSONResult(mcpListResult{Connections: responses, HasMore: hasMore, Limit: limit, Offset: offset, NextOffset: apiPkg.MCPNextOffset(offset, limit, hasMore)})
 }
 
 func (s *service) mcpGet(ctx context.Context, _ *mcp.CallToolRequest, in mcpConnectionInput) (*mcp.CallToolResult, any, error) {
@@ -68,7 +76,11 @@ func (s *service) mcpGet(ctx context.Context, _ *mcp.CallToolRequest, in mcpConn
 	if err != nil {
 		return nil, nil, err
 	}
-	return apiPkg.MCPJSONResult(s.response(connection, nil))
+	response, err := s.response(ctx, connection, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	return apiPkg.MCPJSONResult(response)
 }
 
 func (s *service) mcpCreate(ctx context.Context, _ *mcp.CallToolRequest, in mcpCreateInput) (*mcp.CallToolResult, any, error) {
@@ -83,7 +95,11 @@ func (s *service) mcpCreate(ctx context.Context, _ *mcp.CallToolRequest, in mcpC
 	if err := s.db.WithContext(ctx).Create(&connection).Error; err != nil {
 		return nil, nil, fmt.Errorf("create cloud connection: %w", err)
 	}
-	return apiPkg.MCPJSONResult(s.response(&connection, in.Repositories))
+	response, err := s.response(ctx, &connection, in.Repositories)
+	if err != nil {
+		return nil, nil, err
+	}
+	return apiPkg.MCPJSONResult(response)
 }
 
 func (s *service) mcpVerify(ctx context.Context, _ *mcp.CallToolRequest, in mcpVerifyInput) (*mcp.CallToolResult, any, error) {
@@ -95,7 +111,11 @@ func (s *service) mcpVerify(ctx context.Context, _ *mcp.CallToolRequest, in mcpV
 	if err != nil {
 		return nil, nil, err
 	}
-	return apiPkg.MCPJSONResult(s.response(connection, in.Repositories))
+	response, err := s.response(ctx, connection, in.Repositories)
+	if err != nil {
+		return nil, nil, err
+	}
+	return apiPkg.MCPJSONResult(response)
 }
 
 func (s *service) mcpDelete(ctx context.Context, _ *mcp.CallToolRequest, in mcpConnectionInput) (*mcp.CallToolResult, any, error) {

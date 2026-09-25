@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/pkg/aws/credentials"
 	ecr "github.com/nuonco/nuon/pkg/aws/ecr-authorization"
 	"github.com/nuonco/nuon/pkg/oci/metadata"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
@@ -167,13 +166,9 @@ func (a *Activities) getGARAuth(ctx context.Context, garCfg *app.GCPGARImageConf
 func (a *Activities) getECRAuth(ctx context.Context, ecrCfg *app.AWSECRImageConfig) (*metadata.RegistryAuth, error) {
 	v := validator.New()
 
-	credsCfg := &credentials.Config{
-		Region: ecrCfg.AWSRegion,
-		AssumeRole: &credentials.AssumeRoleConfig{
-			RoleARN:     ecrCfg.IAMRoleARN,
-			SessionName: "ctl-api-image-metadata-fetch",
-			UseGCPOIDC:  a.cfg.IsGCP(),
-		},
+	credsCfg, err := a.cloudConnections.Credentials(ctx, ecrCfg.CloudConnection, "ctl-api-image-metadata-fetch")
+	if err != nil {
+		return nil, err
 	}
 
 	ecrClient, err := ecr.New(v,

@@ -76,8 +76,7 @@ func shouldCreateManagedAWSCloudFormationStack(createManagedStack bool, install 
 	return createManagedStack &&
 		!install.SandboxMode.Bool &&
 		appCfg.RunnerConfig.Type == app.AppRunnerTypeAWS &&
-		install.AWSAccount != nil &&
-		install.AWSAccount.AWSAccountConnectionID != nil
+		install.CloudConnectionID != nil
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
@@ -121,7 +120,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		if err := activities.AwaitCreateManagedAWSCloudFormationStack(ctx, &activities.CreateManagedAWSCloudFormationStackRequest{
 			InstallID:      install.ID,
 			StackVersionID: version.ID,
-			ConnectionID:   *install.AWSAccount.AWSAccountConnectionID,
+			ConnectionID:   *install.CloudConnectionID,
 		}); err != nil {
 			return errors.Wrap(err, "unable to create managed cloudformation stack")
 		}

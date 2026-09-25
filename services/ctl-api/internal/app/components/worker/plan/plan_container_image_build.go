@@ -9,7 +9,6 @@ import (
 	"github.com/distribution/reference"
 	"github.com/pkg/errors"
 
-	assumerole "github.com/nuonco/nuon/pkg/aws/assume-role"
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
@@ -21,6 +20,7 @@ import (
 
 func (p *Planner) createContainerImageBuildPlan(ctx workflow.Context, bld *app.ComponentBuild) (*plantypes.ContainerImagePullPlan, error) {
 	srcRepo, err := p.getSourceRepository(
+		ctx,
 		bld.ComponentConfigConnection.ExternalImageComponentConfig,
 		bld.ComponentConfigConnection.ComponentID,
 	)
@@ -83,29 +83,16 @@ func (b *Planner) normalizeRepository(repo string) (string, error) {
 	return "", nil
 }
 
-func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig, componentID string) (*configs.OCIRegistryRepository, error) {
+func (b *Planner) getSourceRepository(ctx workflow.Context, cfg *app.ExternalImageComponentConfig, componentID string) (*configs.OCIRegistryRepository, error) {
 	loginServer, err := b.normalizeRepository(cfg.ImageURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to normalize repository")
 	}
 
 	if cfg.AWSECRImageConfig != nil {
-		assumeRole := &credentials.AssumeRoleConfig{
-			RoleARN:                cfg.AWSECRImageConfig.IAMRoleARN,
-			SessionName:            "container-image-build",
-			SessionDurationSeconds: 30 * 60,
-			UseGCPOIDC:             b.cloudProvider == "gcp",
-		}
-
-		// Control-plane builds run as the ctl-api pod identity, which the
-		// vendor's ECR pull role does not trust — vendors grant the Nuon
-		// management account, so hop through the management role first. AWS
-		// is the default cloud provider, so it is represented as anything
-		// other than gcp/azure (including an empty string).
-		if b.cloudProvider != "gcp" && b.cloudProvider != "azure" && b.managementIAMRoleARN != "" {
-			assumeRole.TwoStepConfig = &assumerole.TwoStepConfig{
-				IAMRoleARN: b.managementIAMRoleARN,
-			}
+		var auth credentials.Config
+		if err := workflow.ExecuteActivity(ctx, "GetCloudConnectionCredentials", &activities.GetCloudConnectionCredentialsRequest{ConnectionID: cfg.AWSECRImageConfig.CloudConnectionID, SessionName: "container-image-build"}).Get(ctx, &auth); err != nil {
+			return nil, fmt.Errorf("get cloud connection credentials: %w", err)
 		}
 
 		return &configs.OCIRegistryRepository{
@@ -113,10 +100,7 @@ func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig, com
 			Repository:   cfg.ImageURL,
 			Region:       cfg.AWSECRImageConfig.AWSRegion,
 
-			ECRAuth: &credentials.Config{
-				Region:     cfg.AWSECRImageConfig.AWSRegion,
-				AssumeRole: assumeRole,
-			},
+			ECRAuth: &auth,
 		}, nil
 	}
 

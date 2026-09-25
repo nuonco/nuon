@@ -1098,6 +1098,7 @@ func diffAWSECR(old, new *AWSECRConfig) []*diff.Diff {
 	}
 	return []*diff.Diff{
 		diff.NewDiff(diff.WithKey("aws_ecr"), diff.WithChildren(
+			diff.NewDiff(diff.WithKey("connection"), diff.WithStringDiff(old.Connection, new.Connection)),
 			diff.NewDiff(diff.WithKey("iam_role_arn"), diff.WithStringDiff(old.IAMRoleARN, new.IAMRoleARN)),
 			diff.NewDiff(diff.WithKey("region"), diff.WithStringDiff(old.AWSRegion, new.AWSRegion)),
 			diff.NewDiff(diff.WithKey("image_url"), diff.WithStringDiff(old.ImageURL, new.ImageURL)),

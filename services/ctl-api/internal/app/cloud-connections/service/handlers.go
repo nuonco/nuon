@@ -30,7 +30,13 @@ type CreateRequest struct {
 
 type ConnectionResponse struct {
 	app.CloudConnection
-	Setup SetupResponse `json:"setup"`
+	Setup  SetupResponse   `json:"setup"`
+	UsedBy ConnectionUsage `json:"used_by"`
+}
+
+type ConnectionUsage struct {
+	Installs   int64 `json:"installs"`
+	Components int64 `json:"components"`
 }
 
 type VerifyRequest struct {
@@ -41,8 +47,23 @@ func userError(err error) error {
 	return stderr.ErrUser{Err: err, Description: err.Error()}
 }
 
-func (s *service) response(connection *app.CloudConnection, repositories []string) ConnectionResponse {
-	return ConnectionResponse{CloudConnection: *connection, Setup: s.setup(connection, repositories)}
+func (s *service) response(ctx context.Context, connection *app.CloudConnection, repositories []string) (ConnectionResponse, error) {
+	usage, err := s.usage(ctx, connection.ID)
+	if err != nil {
+		return ConnectionResponse{}, err
+	}
+	return ConnectionResponse{CloudConnection: *connection, Setup: s.setup(connection, repositories), UsedBy: usage}, nil
+}
+
+func (s *service) usage(ctx context.Context, connectionID string) (ConnectionUsage, error) {
+	var usage ConnectionUsage
+	if err := s.db.WithContext(ctx).Model(&app.Install{}).Where(app.Install{CloudConnectionID: &connectionID}).Count(&usage.Installs).Error; err != nil {
+		return usage, fmt.Errorf("count installs using cloud connection: %w", err)
+	}
+	if err := s.db.WithContext(ctx).Model(&app.AWSECRImageConfig{}).Where(app.AWSECRImageConfig{CloudConnectionID: connectionID}).Count(&usage.Components).Error; err != nil {
+		return usage, fmt.Errorf("count components using cloud connection: %w", err)
+	}
+	return usage, nil
 }
 
 // @ID CreateCloudConnection
@@ -75,7 +96,12 @@ func (s *service) Create(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to create cloud connection: %w", err))
 		return
 	}
-	ctx.JSON(http.StatusCreated, s.response(&connection, req.Repositories))
+	response, err := s.response(ctx, &connection, req.Repositories)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	ctx.JSON(http.StatusCreated, response)
 }
 
 // @ID ListCloudConnections
@@ -99,7 +125,12 @@ func (s *service) List(ctx *gin.Context) {
 	}
 	responses := make([]ConnectionResponse, 0, len(connections))
 	for i := range connections {
-		responses = append(responses, s.response(&connections[i], nil))
+		response, err := s.response(ctx, &connections[i], nil)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		responses = append(responses, response)
 	}
 	ctx.JSON(http.StatusOK, responses)
 }
@@ -124,7 +155,12 @@ func (s *service) Get(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	ctx.JSON(http.StatusOK, s.response(connection, nil))
+	response, err := s.response(ctx, connection, nil)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	ctx.JSON(http.StatusOK, response)
 }
 
 // @ID GetCloudConnectionSetup
@@ -179,12 +215,16 @@ func (s *service) delete(ctx context.Context, orgID, connectionID string) error 
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.CloudConnection{OrgID: orgID, ID: connectionID}).First(&connection).Error; err != nil {
 			return fmt.Errorf("cloud connection not found: %w", err)
 		}
-		var references int64
-		if err := tx.Model(&app.Install{}).Where(app.Install{CloudConnectionID: &connection.ID}).Count(&references).Error; err != nil {
-			return fmt.Errorf("count cloud connection references: %w", err)
+		var installReferences int64
+		if err := tx.Model(&app.Install{}).Where(app.Install{CloudConnectionID: &connection.ID}).Count(&installReferences).Error; err != nil {
+			return fmt.Errorf("count install references: %w", err)
 		}
-		if references > 0 {
-			return stderr.ErrConflict{Err: fmt.Errorf("cloud connection %s is in use", connection.ID), Description: "Cloud connection cannot be deleted while it is used by an install"}
+		var componentReferences int64
+		if err := tx.Model(&app.AWSECRImageConfig{}).Where(app.AWSECRImageConfig{CloudConnectionID: connection.ID}).Count(&componentReferences).Error; err != nil {
+			return fmt.Errorf("count component references: %w", err)
+		}
+		if installReferences > 0 || componentReferences > 0 {
+			return stderr.ErrConflict{Err: fmt.Errorf("cloud connection %s is in use", connection.ID), Description: "Cloud connection cannot be deleted while it is in use"}
 		}
 		return tx.Unscoped().Delete(&connection).Error
 	})
@@ -219,7 +259,12 @@ func (s *service) Verify(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	ctx.JSON(http.StatusOK, s.response(connection, req.Repositories))
+	response, err := s.response(ctx, connection, req.Repositories)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (s *service) verify(ctx context.Context, orgID, connectionID string, repositories []string) (*app.CloudConnection, error) {

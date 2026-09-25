@@ -43,6 +43,9 @@ type CredentialsAssumeRoleConfig struct {
 
 	// use github oidc
 	UseGithubOidc bool `json:"use_github_oidc,omitempty"`
+
+	// web identity token
+	WebIdentityToken string `json:"web_identity_token,omitempty"`
 }
 
 // Validate validates this credentials assume role config

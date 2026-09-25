@@ -272,6 +272,23 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 	if err != nil {
 		return nil, stderr.NewInvalidRequest(err)
 	}
+	if cfg.AWSECRImageConfig != nil {
+		var connections []app.CloudConnection
+		if err := s.db.WithContext(ctx).Where(&app.CloudConnection{OrgID: parentCmp.OrgID}).Find(&connections).Error; err != nil {
+			return nil, fmt.Errorf("unable to list cloud connections: %w", err)
+		}
+		resolution, err := build.ResolveAWSConnection("", req.AWSECRImageConfig.IAMRoleARN, req.ImageURL, req.AWSECRImageConfig.AWSRegion, parentCmp.OrgID, connections)
+		if err != nil {
+			return nil, stderr.NewInvalidRequest(err)
+		}
+		if resolution.Implicit {
+			if err := s.db.WithContext(ctx).Create(resolution.Connection).Error; err != nil {
+				return nil, fmt.Errorf("unable to create implicit cloud connection: %w", err)
+			}
+		}
+		cfg.AWSECRImageConfig.CloudConnectionID = resolution.Connection.ID
+		cfg.AWSECRImageConfig.IAMRoleARN = resolution.Connection.Principal
+	}
 
 	componentConfigConnection, err := build.ComponentConnection(req.buildInput(parentCmp.ID, depIDs))
 	if err != nil {

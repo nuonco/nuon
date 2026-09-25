@@ -46,10 +46,12 @@ func (a *assumer) LoadConfigWithAssumedRole(ctx context.Context) (aws.Config, er
 }
 
 func (a *assumer) assumeIamRole(ctx context.Context, client stsRoleAssumer, role, externalID string) (*sts_types.Credentials, error) {
-	if a.UseGithubOIDC || a.UseGCPOIDC {
+	if a.UseGithubOIDC || a.UseGCPOIDC || a.WebIdentityTokenSource != nil {
 		var token string
 		var err error
-		if a.UseGithubOIDC {
+		if a.WebIdentityTokenSource != nil {
+			token, err = a.WebIdentityTokenSource(ctx)
+		} else if a.UseGithubOIDC {
 			token, err = a.getGithubOIDCToken(ctx)
 		} else {
 			token, err = a.getGCPOIDCToken(ctx)

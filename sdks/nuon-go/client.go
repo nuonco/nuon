@@ -53,6 +53,13 @@ type Client interface {
 	ListStaticTokens(ctx context.Context) ([]*models.AppToken, error)
 	DeleteStaticToken(ctx context.Context, tokenID string) error
 
+	// cloud connections
+	CreateCloudConnection(ctx context.Context, req *models.ServiceCreateRequest) (*models.ServiceConnectionResponse, error)
+	ListCloudConnections(ctx context.Context) ([]*models.ServiceConnectionResponse, error)
+	GetCloudConnection(ctx context.Context, connectionID string) (*models.ServiceConnectionResponse, error)
+	VerifyCloudConnection(ctx context.Context, connectionID string, req *models.ServiceVerifyRequest) (*models.ServiceConnectionResponse, error)
+	DeleteCloudConnection(ctx context.Context, connectionID string) error
+
 	// roles and service accounts
 	ListRoles(ctx context.Context) ([]*models.AppRole, error)
 	ListServiceAccounts(ctx context.Context, includeRunners, includeStacks bool, query *models.GetPaginatedQuery) ([]*models.AppAccount, bool, error)

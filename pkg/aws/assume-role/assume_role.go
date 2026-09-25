@@ -1,6 +1,7 @@
 package iam
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -47,8 +48,9 @@ type Settings struct {
 	TwoStepConfig *TwoStepConfig
 
 	// Github Config is an optional config which will direct this to grab the github OIDC role
-	UseGithubOIDC bool
-	UseGCPOIDC    bool
+	UseGithubOIDC          bool
+	UseGCPOIDC             bool
+	WebIdentityTokenSource func(context.Context) (string, error)
 
 	Region string
 }
@@ -65,9 +67,10 @@ type assumer struct {
 
 	Region string
 
-	TwoStepConfig *TwoStepConfig
-	UseGithubOIDC bool
-	UseGCPOIDC    bool
+	TwoStepConfig          *TwoStepConfig
+	UseGithubOIDC          bool
+	UseGCPOIDC             bool
+	WebIdentityTokenSource func(context.Context) (string, error)
 
 	// internal state
 	v *validator.Validate
@@ -99,7 +102,7 @@ func New(v *validator.Validate, opts ...assumerOptions) (*assumer, error) {
 	if a.RoleSessionDuration > maxSessionDuration {
 		return nil, fmt.Errorf("role session duration must be less than %d", maxSessionDuration)
 	}
-	if a.ExternalID != "" && (a.UseGithubOIDC || a.UseGCPOIDC) {
+	if a.ExternalID != "" && (a.UseGithubOIDC || a.UseGCPOIDC || a.WebIdentityTokenSource != nil) {
 		return nil, fmt.Errorf("external ID cannot be used with OIDC")
 	}
 
@@ -119,6 +122,7 @@ func WithSettings(s Settings) assumerOptions {
 		a.TwoStepConfig = s.TwoStepConfig
 		a.UseGithubOIDC = s.UseGithubOIDC
 		a.UseGCPOIDC = s.UseGCPOIDC
+		a.WebIdentityTokenSource = s.WebIdentityTokenSource
 		a.Region = s.Region
 
 		if s.RoleSessionDuration > 0 {

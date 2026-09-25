@@ -21,7 +21,7 @@ import (
 type ServiceTelemetryJSONWebKeySet struct {
 
 	// keys
-	Keys []*ServiceTelemetryJSONWebKey `json:"keys"`
+	Keys []*OidcissuerJWK `json:"keys"`
 }
 
 // Validate validates this service telemetry JSON web key set

@@ -58,6 +58,12 @@ type AppInstall struct {
 	// azure account
 	AzureAccount *AppAzureAccount `json:"azure_account,omitempty"`
 
+	// cloud connection
+	CloudConnection *AppCloudConnection `json:"cloud_connection,omitempty"`
+
+	// cloud connection id
+	CloudConnectionID string `json:"cloud_connection_id,omitempty"`
+
 	// cloud platform
 	CloudPlatform string `json:"cloud_platform,omitempty"`
 
@@ -256,6 +262,10 @@ func (m *AppInstall) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateAzureAccount(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCloudConnection(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -492,6 +502,29 @@ func (m *AppInstall) validateAzureAccount(formats strfmt.Registry) error {
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("azure_account")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppInstall) validateCloudConnection(formats strfmt.Registry) error {
+	if swag.IsZero(m.CloudConnection) { // not required
+		return nil
+	}
+
+	if m.CloudConnection != nil {
+		if err := m.CloudConnection.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("cloud_connection")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("cloud_connection")
 			}
 
 			return err
@@ -979,6 +1012,10 @@ func (m *AppInstall) ContextValidate(ctx context.Context, formats strfmt.Registr
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateCloudConnection(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateDriftedObjects(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -1223,6 +1260,31 @@ func (m *AppInstall) contextValidateAzureAccount(ctx context.Context, formats st
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("azure_account")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppInstall) contextValidateCloudConnection(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.CloudConnection != nil {
+
+		if swag.IsZero(m.CloudConnection) { // not required
+			return nil
+		}
+
+		if err := m.CloudConnection.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("cloud_connection")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("cloud_connection")
 			}
 
 			return err

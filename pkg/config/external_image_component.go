@@ -11,7 +11,8 @@ import (
 )
 
 type AWSECRConfig struct {
-	IAMRoleARN string `mapstructure:"iam_role_arn,omitempty" toml:"iam_role_arn,omitempty" jsonschema:"required"`
+	Connection string `mapstructure:"connection,omitempty" toml:"connection,omitempty"`
+	IAMRoleARN string `mapstructure:"iam_role_arn,omitempty" toml:"iam_role_arn,omitempty"`
 	AWSRegion  string `mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
 	ImageURL   string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
 	Tag        string `mapstructure:"tag,omitempty" toml:"tag,omitempty"`
@@ -78,8 +79,10 @@ type ExternalImageComponentConfig struct {
 
 func (a AWSECRConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
-		Field("iam_role_arn").Short("IAM role ARN for ECR access").Required().
-		Long("ARN of the IAM role with permissions to pull images from the ECR repository").
+		Field("connection").Short("cloud connection name for ECR access").
+		Long("Name of an organization cloud connection with the images capability").
+		Field("iam_role_arn").Short("IAM role ARN for ECR access").
+		Long("Legacy-compatible IAM role ARN. A matching cloud connection is used or created automatically").
 		Example("arn:aws:iam::123456789012:role/ecr-pull-role").
 		Field("region").Short("AWS region for the ECR repository").Required().
 		Long("AWS region where the ECR repository is located").

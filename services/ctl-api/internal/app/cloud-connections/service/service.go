@@ -38,13 +38,16 @@ var _ apiPkg.Service = (*service)(nil)
 var _ apiPkg.MCPService = (*service)(nil)
 
 func New(params Params) (*service, error) {
-	privateKey, keyID, _, err := oidcissuer.ParseJWKS(params.Cfg.TelemetryJWKS)
-	if err != nil {
-		return nil, fmt.Errorf("initialize cloud connection issuer: %w", err)
-	}
-	issuer, err := oidcissuer.New(params.Cfg.PublicAPIURL, privateKey, keyID)
-	if err != nil {
-		return nil, fmt.Errorf("initialize cloud connection issuer: %w", err)
+	var issuer *oidcissuer.Issuer
+	if params.Cfg != nil && params.Cfg.TelemetryJWKS != "" {
+		privateKey, keyID, _, err := oidcissuer.ParseJWKS(params.Cfg.TelemetryJWKS)
+		if err != nil {
+			return nil, fmt.Errorf("initialize cloud connection issuer: %w", err)
+		}
+		issuer, err = oidcissuer.New(params.Cfg.PublicAPIURL, privateKey, keyID)
+		if err != nil {
+			return nil, fmt.Errorf("initialize cloud connection issuer: %w", err)
+		}
 	}
 	verifier := params.Verifier
 	if verifier == nil {

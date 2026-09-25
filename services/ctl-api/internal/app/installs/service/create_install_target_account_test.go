@@ -66,19 +66,31 @@ func (s *InstallsServiceTestSuite) setOrgFeatures(features ...app.OrgFeature) {
 		Updates(map[string]any{"features": org.Features}).Error)
 }
 
-// seedVerifiedAWSAccountConnection creates a connection in a state CreateInstall
-// will accept, so the target account can be derived from it.
-func (s *InstallsServiceTestSuite) seedVerifiedAWSAccountConnection(accountID string) *app.AWSAccountConnection {
-	connection := &app.AWSAccountConnection{
-		OrgID:              s.testOrg.ID,
-		Name:               "test-connection",
-		AccountID:          accountID,
-		DefaultRegion:      "us-west-2",
-		RoleARN:            "arn:aws:iam::" + accountID + ":role/nuon-connection",
-		VerificationStatus: app.AWSAccountConnectionVerificationVerified,
+func (s *InstallsServiceTestSuite) seedVerifiedCloudConnection(accountID string) *app.CloudConnection {
+	connection := &app.CloudConnection{
+		OrgID:         s.testOrg.ID,
+		Name:          "test-connection",
+		Platform:      app.CloudPlatformAWS,
+		TargetID:      accountID,
+		DefaultRegion: "us-west-2",
+		Principal:     "arn:aws:iam::" + accountID + ":role/nuon-connection",
+		Status:        app.CloudConnectionStatusVerified,
+		Capabilities:  []app.CloudConnectionCapability{app.CloudConnectionCapabilityStacks},
 	}
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(connection).Error)
 	return connection
+}
+
+func (s *InstallsServiceTestSuite) createInstallWithAWSConnection(name string, awsAccount *helpers.CreateInstallAWSAccountParams, connectionID string) *httptest.ResponseRecorder {
+	body := CreateInstallV2Request{
+		AppID: s.testApp.ID,
+		CreateInstallParams: helpers.CreateInstallParams{
+			Name:              name,
+			CloudConnectionID: connectionID,
+			AWSAccount:        awsAccount,
+		},
+	}
+	return s.makeRequest(http.MethodPost, "/v1/installs", body)
 }
 
 func (s *InstallsServiceTestSuite) createInstallWithAWSAccount(
@@ -178,13 +190,13 @@ func (s *InstallsServiceTestSuite) TestCreateInstallTargetAccountAcceptedWhenFla
 }
 
 func (s *InstallsServiceTestSuite) TestCreateInstallTargetAccountDerivedFromConnection() {
-	s.setOrgFeatures(app.OrgFeaturePhoneHomeAuth, app.OrgFeatureAWSAccountConnections)
+	s.setOrgFeatures(app.OrgFeaturePhoneHomeAuth)
 	s.expectQueueCreation()
 
-	connection := s.seedVerifiedAWSAccountConnection("210987654321")
+	connection := s.seedVerifiedCloudConnection("210987654321")
 
-	rr := s.createInstallWithAWSAccount("connection-target-account",
-		&helpers.CreateInstallAWSAccountParams{Region: "us-west-2", ConnectionID: connection.ID})
+	rr := s.createInstallWithAWSConnection("connection-target-account",
+		&helpers.CreateInstallAWSAccountParams{Region: "us-west-2"}, connection.ID)
 	require.Equal(s.T(), http.StatusCreated, rr.Code, rr.Body.String())
 
 	var install app.Install
@@ -195,32 +207,30 @@ func (s *InstallsServiceTestSuite) TestCreateInstallTargetAccountDerivedFromConn
 
 // An explicit account ID may agree with the connection but never contradict it.
 func (s *InstallsServiceTestSuite) TestCreateInstallTargetAccountConflictsWithConnection() {
-	s.setOrgFeatures(app.OrgFeaturePhoneHomeAuth, app.OrgFeatureAWSAccountConnections)
+	s.setOrgFeatures(app.OrgFeaturePhoneHomeAuth)
 
-	connection := s.seedVerifiedAWSAccountConnection("210987654321")
+	connection := s.seedVerifiedCloudConnection("210987654321")
 
-	rr := s.createInstallWithAWSAccount("conflicting-target-account",
+	rr := s.createInstallWithAWSConnection("conflicting-target-account",
 		&helpers.CreateInstallAWSAccountParams{
-			Region:       "us-west-2",
-			ConnectionID: connection.ID,
-			AccountID:    "123456789012",
-		})
+			Region:    "us-west-2",
+			AccountID: "123456789012",
+		}, connection.ID)
 	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
 	assert.Contains(s.T(), rr.Body.String(), "does not match")
 }
 
 func (s *InstallsServiceTestSuite) TestCreateInstallTargetAccountAgreesWithConnection() {
-	s.setOrgFeatures(app.OrgFeaturePhoneHomeAuth, app.OrgFeatureAWSAccountConnections)
+	s.setOrgFeatures(app.OrgFeaturePhoneHomeAuth)
 	s.expectQueueCreation()
 
-	connection := s.seedVerifiedAWSAccountConnection("210987654321")
+	connection := s.seedVerifiedCloudConnection("210987654321")
 
-	rr := s.createInstallWithAWSAccount("agreeing-target-account",
+	rr := s.createInstallWithAWSConnection("agreeing-target-account",
 		&helpers.CreateInstallAWSAccountParams{
-			Region:       "us-west-2",
-			ConnectionID: connection.ID,
-			AccountID:    "210987654321",
-		})
+			Region:    "us-west-2",
+			AccountID: "210987654321",
+		}, connection.ID)
 	require.Equal(s.T(), http.StatusCreated, rr.Code, rr.Body.String())
 
 	var install app.Install

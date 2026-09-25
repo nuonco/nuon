@@ -164,6 +164,24 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 			Err:         err,
 		}
 	}
+	if comp.ExternalImage != nil && comp.ExternalImage.AWSECRImageConfig != nil {
+		var connections []app.CloudConnection
+		if err := db.WithContext(ctx).Where(app.CloudConnection{OrgID: apiComp.OrgID}).Find(&connections).Error; err != nil {
+			return sync.SyncInternalErr{Description: "unable to list cloud connections", Err: err}
+		}
+		source := comp.ExternalImage.AWSECRImageConfig
+		resolution, err := build.ResolveAWSConnection(source.Connection, source.IAMRoleARN, source.ImageURL, source.AWSRegion, apiComp.OrgID, connections)
+		if err != nil {
+			return syncerr.From(fmt.Sprintf("component-%s", comp.Name), "unable to resolve cloud connection", err)
+		}
+		if resolution.Implicit {
+			if err := db.WithContext(ctx).Create(resolution.Connection).Error; err != nil {
+				return sync.SyncInternalErr{Description: "unable to create implicit cloud connection", Err: err}
+			}
+		}
+		ccc.ExternalImageComponentConfig.AWSECRImageConfig.CloudConnectionID = resolution.Connection.ID
+		ccc.ExternalImageComponentConfig.AWSECRImageConfig.IAMRoleARN = resolution.Connection.Principal
+	}
 
 	if params.DispatchBuilds {
 		reusableID, err := reusableConfigID(ctx, db, apiComp.ID, ccc)

@@ -39,6 +39,9 @@ type ServiceCreateInstallV2Request struct {
 	// azure account
 	AzureAccount *HelpersCreateInstallAzureAccountParams `json:"azure_account,omitempty"`
 
+	// cloud connection id
+	CloudConnectionID string `json:"cloud_connection_id,omitempty"`
+
 	// gcp account
 	GcpAccount *HelpersCreateInstallGCPAccountParams `json:"gcp_account,omitempty"`
 

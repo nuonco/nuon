@@ -69,7 +69,6 @@ const (
 	// step in the dashboard, letting customers provision the Terraform
 	// install stack through Spacelift instead of running Terraform locally.
 	OrgFeatureSpaceliftInstallStacks   OrgFeature = "spacelift-install-stacks"
-	OrgFeatureAWSAccountConnections    OrgFeature = "aws-account-connections"
 	OrgFeatureServiceAccountsAndTokens OrgFeature = "service-accounts-and-tokens"
 	// OrgFeaturePhoneHomeAuth requires install phone-home requests to carry an
 	// HMAC signature derived from a per-install secret, and requires a target
@@ -253,7 +252,6 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeaturePulumiUpdatePlans:       false,
 		OrgFeatureNotebooks:               false,
 		OrgFeatureSpaceliftInstallStacks:  false,
-		OrgFeatureAWSAccountConnections:   false,
 		OrgFeaturePhoneHomeAuth:           false,
 		OrgFeatureRunbookStudio:           false,
 		OrgFeatureCronNamespaceIsolation:  false,
@@ -288,7 +286,6 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureNotebooks,
 		OrgFeatureVersionsUI,
 		OrgFeatureSpaceliftInstallStacks,
-		OrgFeatureAWSAccountConnections,
 		OrgFeatureServiceAccountsAndTokens,
 		OrgFeaturePhoneHomeAuth,
 		OrgFeatureRunbookStudio,
@@ -329,7 +326,6 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureNotebooks:                "Enable install-scoped Notebooks — a Jupyter-style surface where each cell runs a command on the install's runner via a long-lived, warm per-notebook Temporal workflow, skipping the cold install-workflow step tree for near-real-time adhoc execution.",
 		OrgFeatureVersionsUI:               "Enable the install app config versions tab in the dashboard, showing the history of config updates and component diffs for each install.",
 		OrgFeatureSpaceliftInstallStacks:   "Surface the Spacelift options (blueprint and administrative stack) on the install stack await step, so customers can provision the Terraform install stack through Spacelift instead of running Terraform locally.",
-		OrgFeatureAWSAccountConnections:    "Enable organization-owned cross-account AWS connections with external ID trust verification.",
 		OrgFeatureServiceAccountsAndTokens: "Enable the API tokens and service accounts management pages in the dashboard settings navigation.",
 		OrgFeaturePhoneHomeAuth:            "Require install phone-home requests to carry an HMAC signature derived from a per-install secret, and require a target cloud account identifier (AWS account ID, GCP project ID, or Azure subscription ID) at install creation. Depends on the phone-home CMK and management-role IAM grants being in place.",
 		OrgFeatureRunbookStudio:            "Enable the runbook studio in the dashboard — a literate editor for authoring runbook markdown around executable steps with a live install-state preview.",
@@ -366,9 +362,8 @@ func GetFeaturesWithDescriptions() []OrgFeatureInfo {
 // because they gate the flag system itself or because enabling them depends on
 // infrastructure prerequisites outside the org's control.
 var adminOnlyFeatures = map[OrgFeature]struct{}{
-	OrgFeatureUserManagedFeatures:   {},
-	OrgFeatureAWSAccountConnections: {},
-	OrgFeaturePhoneHomeAuth:         {},
+	OrgFeatureUserManagedFeatures: {},
+	OrgFeaturePhoneHomeAuth:       {},
 }
 
 // GetUserManageableFeatures returns features that users are allowed to toggle

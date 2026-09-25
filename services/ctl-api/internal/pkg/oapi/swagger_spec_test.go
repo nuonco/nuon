@@ -17,7 +17,7 @@ import (
 	accountsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/service"
 	actionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/service"
 	appsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/service"
-	awsaccountconnectionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/aws-account-connections/service"
+	cloudconnectionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/service"
 	componentsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/components/service"
 	generalservice "github.com/nuonco/nuon/services/ctl-api/internal/app/general/service"
 	identityprovidersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/identity-providers/service"
@@ -47,11 +47,13 @@ func testDomainServices(t *testing.T, ea *api.EndpointAudit) []api.Service {
 	t.Helper()
 	runnersService, err := runnersservice.New(runnersservice.Params{EndpointAudit: ea})
 	require.NoError(t, err)
+	cloudConnectionsService, err := cloudconnectionsservice.New(cloudconnectionsservice.Params{EndpointAudit: ea})
+	require.NoError(t, err)
 
 	return []api.Service{
 		accountsservice.New(accountsservice.Params{}),
 		actionsservice.New(actionsservice.Params{EndpointAudit: ea}),
-		awsaccountconnectionsservice.New(awsaccountconnectionsservice.Params{EndpointAudit: ea}),
+		cloudConnectionsService,
 		appsservice.New(appsservice.Params{EndpointAudit: ea}),
 		componentsservice.New(componentsservice.Params{EndpointAudit: ea}),
 		generalservice.New(generalservice.Params{EndpointAudit: ea}),

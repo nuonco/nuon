@@ -240,5 +240,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "141-backfill-install-app-branch-group-assignment-source",
 			Fn:   m.Migration141BackfillInstallAppBranchGroupAssignmentSource,
 		},
+		{
+			Name: "137-drop-aws-account-connections",
+			Fn:   m.Migration137DropAWSAccountConnections,
+		},
 	}
 }
