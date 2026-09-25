@@ -138,7 +138,7 @@ const ApprovalStepTabs = ({
       renderWhilePending
     >
       <LogViewerProvider>
-        <Tabs tabs={tabs} />
+        <Tabs naturalHeight tabs={tabs} />
       </LogViewerProvider>
     </LogStreamProvider>
   )
