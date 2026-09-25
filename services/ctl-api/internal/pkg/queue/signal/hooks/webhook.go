@@ -22,6 +22,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/metrics"
@@ -385,6 +386,14 @@ func (h *WebhookSignalLifecycleHook) AfterPhase(ctx context.Context, event signa
 		return nil
 	}
 
+	suppress, err := resolveFlowCompletionOutcome(ctx, workflowStatusFromDB(h.db), event, &outcome)
+	if err != nil {
+		return fmt.Errorf("unable to resolve workflow outcome before lifecycle completion: %w", err)
+	}
+	if suppress {
+		return nil
+	}
+
 	h.l.Debug("workflow lifecycle webhook after-phase",
 		zap.String("queue_signal_id", event.QueueSignalID),
 		zap.String("phase", string(event.Phase)),
@@ -393,6 +402,83 @@ func (h *WebhookSignalLifecycleHook) AfterPhase(ctx context.Context, event signa
 	)
 
 	return h.publish(ctx, event, &outcome)
+}
+
+type workflowStatusRow struct {
+	ID        string
+	DeletedAt soft_delete.DeletedAt
+	Status    app.CompositeStatus `gorm:"type:jsonb;serializer:json"`
+}
+
+func (workflowStatusRow) TableName() string {
+	return (&app.Workflow{}).TableName()
+}
+
+// workflowStatusLookup loads a workflow row's composite status by id.
+type workflowStatusLookup func(ctx context.Context, workflowID string) (app.CompositeStatus, error)
+
+// workflowStatusFromDB returns a lookup backed by the workflows table, or nil
+// when no DB is configured so resolveFlowCompletionOutcome is a no-op.
+func workflowStatusFromDB(db *gorm.DB) workflowStatusLookup {
+	if db == nil {
+		return nil
+	}
+	return func(ctx context.Context, workflowID string) (app.CompositeStatus, error) {
+		var flw workflowStatusRow
+		err := retryDBRead(ctx, func() error {
+			return db.WithContext(ctx).
+				Select("status").
+				Where(workflowStatusRow{ID: workflowID}).
+				First(&flw).Error
+		})
+		return flw.Status, err
+	}
+}
+
+// resolveFlowCompletionOutcome reconciles an execute-workflow completion
+// event against the workflow row's domain outcome. Resident flows complete
+// their queue signal independently of the workflow row, so the transport
+// status can read "success" while the workflow is actually parked
+// (failed-pending-retry), errored, or cancelled.
+//
+// Returns suppress=true when the workflow is parked awaiting retry — the
+// re-warmed run emits the real completion later. For terminal error /
+// cancelled rows it rewrites outcome in place so the published transition,
+// status, and interests classification reflect the domain outcome. On DB
+// lookup failure it returns an error and callers must not publish: a
+// dropped notification is recoverable noise, a false "succeeded" is not.
+func resolveFlowCompletionOutcome(ctx context.Context, lookup workflowStatusLookup, event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (bool, error) {
+	if lookup == nil ||
+		event.SignalType != signalTypeExecuteWorkflow ||
+		event.Phase != signal.SignalPhaseExecute ||
+		event.WorkflowID == "" ||
+		outcome.Status != signal.SignalStatusSuccess {
+		return false, nil
+	}
+
+	status, err := lookup(ctx, event.WorkflowID)
+	if err != nil {
+		return false, fmt.Errorf("unable to load workflow status for lifecycle completion: %w", err)
+	}
+
+	switch status.Status {
+	case app.StatusFailedPendingRetry:
+		return true, nil
+	case app.StatusError:
+		outcome.Status = signal.SignalStatusError
+		outcome.ErrMessage = status.StatusHumanDescription
+		if outcome.ErrMessage == "" {
+			outcome.ErrMessage = "workflow failed"
+		}
+	case app.StatusCancelled:
+		outcome.Status = signal.SignalStatusCancelled
+		outcome.ErrMessage = status.StatusHumanDescription
+		if outcome.ErrMessage == "" {
+			outcome.ErrMessage = "workflow cancelled"
+		}
+	}
+
+	return false, nil
 }
 
 // CloudEvents v1.0 envelope.
@@ -1664,9 +1750,11 @@ func (h *WebhookSignalLifecycleHook) listOrgWebhookTargets(ctx context.Context, 
 	}
 
 	var webhooks []app.Webhook
-	if err := h.db.WithContext(ctx).
-		Where("org_id = ?", orgID).
-		Find(&webhooks).Error; err != nil {
+	if err := retryDBRead(ctx, func() error {
+		return h.db.WithContext(ctx).
+			Where("org_id = ?", orgID).
+			Find(&webhooks).Error
+	}); err != nil {
 		return nil, fmt.Errorf("unable to list org workflow lifecycle webhooks: %w", err)
 	}
 

@@ -21,6 +21,7 @@ func (a *Activities) PkgWorkflowsFlowGetFlowSteps(ctx context.Context, req GetFl
 		Where(app.WorkflowStep{
 			InstallWorkflowID: req.FlowID,
 		}).
+		Preload("Approval.Response").
 		Order("group_idx, group_retry_idx, idx, created_at asc").
 		Find(&steps)
 	if res.Error != nil {

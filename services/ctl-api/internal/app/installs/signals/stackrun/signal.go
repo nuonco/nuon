@@ -438,12 +438,10 @@ func (s *Signal) processOutputs(ctx workflow.Context, install *app.Install, vers
 
 		if inputResp != nil && inputResp.WorkflowID != "" {
 			if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-				OwnerID:   install.ID,
-				OwnerType: "installs",
-				QueueName: queuenames.InstallWorkflowsQueueName,
-				Signal: &executeflow.Signal{
-					WorkflowID: inputResp.WorkflowID,
-				},
+				OwnerID:         install.ID,
+				OwnerType:       "installs",
+				QueueName:       queuenames.InstallWorkflowsQueueName,
+				Signal:          executeflow.NewSignal(inputResp.WorkflowID),
 				SignalOwnerID:   inputResp.WorkflowID,
 				SignalOwnerType: (&app.Workflow{}).TableName(),
 			}); err != nil {

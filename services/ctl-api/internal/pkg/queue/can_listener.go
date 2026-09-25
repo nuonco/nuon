@@ -38,6 +38,19 @@ type CheckCANResponse struct {
 // but on demand via a Temporal update handler.
 func (q *queue) checkCANHandler(ctx workflow.Context, req *CheckCANRequest) (*CheckCANResponse, error) {
 	l, _ := log.WorkflowLogger(ctx)
+	if q.activeWorkers > 0 {
+		info := workflow.GetInfo(ctx)
+		historyMax := canDefaultHistoryMax
+		if q.cfg != nil && q.cfg.QueueContinueAsNewHistoryMax > 0 {
+			historyMax = q.cfg.QueueContinueAsNewHistoryMax
+		}
+		return &CheckCANResponse{
+			WorkflowType:  info.WorkflowType.Name,
+			Namespace:     info.Namespace,
+			HistoryLength: info.GetCurrentHistoryLength(),
+			HistoryMax:    historyMax,
+		}, nil
+	}
 	restarting, resp := q.runCANCheck(ctx, l)
 	if restarting {
 		q.setStatus(ctx, l, QueueStatusRestartAccepted)
