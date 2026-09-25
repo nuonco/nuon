@@ -142,30 +142,56 @@ export const PreviewDefaultsEditor = ({
         </div>
       )}
 
-      <div className="flex flex-col gap-2">
-        <Text variant="subtext" weight="strong">
-          Default mode
-        </Text>
-        <ToggleButton<TAppBranchRunPreviewMode>
-          value={value.mode}
-          onChange={(mode) => onChange({ ...value, mode })}
-          options={[
-            {
-              value: 'none',
-              label: previewModeDisplayLabel('none'),
-            },
-            {
-              value: 'build-only',
-              label: previewModeDisplayLabel('build-only'),
-            },
-            {
-              value: 'plan-only',
-              label: previewModeDisplayLabel('plan-only'),
-            },
-            { value: 'apply', label: previewModeDisplayLabel('apply') },
-          ]}
-        />
-      </div>
+      <CheckboxInput
+        id="preview-enabled"
+        checked={value.mode !== 'none'}
+        onChange={(e) =>
+          onChange({
+            ...value,
+            mode: e.target.checked ? 'plan-only' : 'none',
+          })
+        }
+        disabled={disabled}
+        labelProps={{
+          labelText: (
+            <>
+              <Text weight="strong">Enable automated previews</Text>
+              <Text variant="subtext" theme="neutral">
+                Turn off to skip automated preview runs. Manual previews still
+                work.
+              </Text>
+            </>
+          ),
+          labelTextProps: {
+            as: 'div',
+            className: 'flex flex-col gap-1',
+          },
+        }}
+        className="items-start"
+      />
+
+      {value.mode !== 'none' ? (
+        <div className="flex flex-col gap-2">
+          <Text variant="subtext" weight="strong">
+            Default mode
+          </Text>
+          <ToggleButton<TAppBranchRunPreviewMode>
+            value={value.mode}
+            onChange={(mode) => onChange({ ...value, mode })}
+            options={[
+              {
+                value: 'build-only',
+                label: previewModeDisplayLabel('build-only'),
+              },
+              {
+                value: 'plan-only',
+                label: previewModeDisplayLabel('plan-only'),
+              },
+              { value: 'apply', label: previewModeDisplayLabel('apply') },
+            ]}
+          />
+        </div>
+      ) : null}
 
       {value.mode !== 'none' && value.mode !== 'build-only' ? (
         <div className="flex flex-col gap-2">

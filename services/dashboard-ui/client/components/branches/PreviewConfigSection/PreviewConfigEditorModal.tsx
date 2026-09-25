@@ -3,6 +3,7 @@ import { FormCheckbox } from '@/components/common/form/FormCheckbox'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { FormRadioGroup } from '@/components/common/form/FormRadioGroup'
 import { FormSelect } from '@/components/common/form/FormSelect'
+import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type {
@@ -120,26 +121,54 @@ export const PreviewConfigEditorModal = ({
 
         <form.Field name="mode">
           {(field) => (
-            <FormRadioGroup
-              field={field}
-              label="Default mode"
-              disabled={isPending || isLoading}
-              options={[
-                {
-                  value: 'none',
-                  label: previewModeDisplayLabel('none'),
-                },
-                {
-                  value: 'build-only',
-                  label: previewModeDisplayLabel('build-only'),
-                },
-                {
-                  value: 'plan-only',
-                  label: previewModeDisplayLabel('plan-only'),
-                },
-                { value: 'apply', label: previewModeDisplayLabel('apply') },
-              ]}
-            />
+            <div className="flex flex-col gap-4">
+              <CheckboxInput
+                id="preview-enabled"
+                checked={field.state.value !== 'none'}
+                onChange={(e) =>
+                  field.handleChange(e.target.checked ? 'plan-only' : 'none')
+                }
+                onBlur={field.handleBlur}
+                disabled={isPending || isLoading}
+                labelProps={{
+                  labelText: (
+                    <>
+                      <Text weight="strong">Enable automated previews</Text>
+                      <Text variant="subtext" theme="neutral">
+                        Turn off to skip automated preview runs. Manual
+                        previews still work.
+                      </Text>
+                    </>
+                  ),
+                  labelTextProps: {
+                    as: 'div',
+                    className: 'flex flex-col gap-1',
+                  },
+                }}
+                className="items-start"
+              />
+              {field.state.value !== 'none' ? (
+                <FormRadioGroup
+                  field={field}
+                  label="Default mode"
+                  disabled={isPending || isLoading}
+                  options={[
+                    {
+                      value: 'build-only',
+                      label: previewModeDisplayLabel('build-only'),
+                    },
+                    {
+                      value: 'plan-only',
+                      label: previewModeDisplayLabel('plan-only'),
+                    },
+                    {
+                      value: 'apply',
+                      label: previewModeDisplayLabel('apply'),
+                    },
+                  ]}
+                />
+              ) : null}
+            </div>
           )}
         </form.Field>
 
