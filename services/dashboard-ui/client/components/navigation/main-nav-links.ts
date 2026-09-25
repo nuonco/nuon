@@ -19,6 +19,12 @@ export const MAIN_LINKS: TNavLink[] = [
     text: 'Installs',
     shortcut: 'g i',
   },
+  {
+    iconVariant: 'CloudIcon',
+    path: `/cloud-connections`,
+    text: 'Cloud connections',
+    shortcut: 'g c',
+  },
 ]
 
 export const SETTINGS_LINKS: TNavLink[] = [

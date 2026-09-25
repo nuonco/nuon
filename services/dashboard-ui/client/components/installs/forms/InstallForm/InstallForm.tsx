@@ -3,7 +3,7 @@ import { FormInput } from '@/components/common/form/FormInput'
 import { Text } from '@/components/common/Text'
 import { Expand } from '@/components/common/Expand'
 import { RoleSelector } from '@/components/roles/RoleSelector'
-import type { TAppInputConfig, TAWSAccountConnection, TInstall } from '@/types'
+import type { TAppInputConfig, TCloudConnection, TInstall } from '@/types'
 import { FieldRow } from './FieldRow'
 import { InstallInputFields } from './InstallInputFields'
 import { InstallPlatformFields } from './InstallPlatformFields'
@@ -20,7 +20,7 @@ export interface IInstallForm {
   inputConfig?: TAppInputConfig
   install?: TInstall
   installId?: string
-  awsAccountConnections?: TAWSAccountConnection[]
+  awsAccountConnections?: TCloudConnection[]
   requireTargetAccount?: boolean
   autoApproveDescription?: string
   showNameField?: boolean

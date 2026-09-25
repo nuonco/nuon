@@ -42,9 +42,9 @@ describe('buildCreateInstallBody', () => {
     expect(body.aws_account).toEqual({
       iam_role_arn: '',
       region: 'us-west-2',
-      connection_id: 'conn-1',
       account_id: '123456789012',
     })
+    expect(body.cloud_connection_id).toBe('conn-1')
   })
 
   test('prompt approval when autoApprove is false', () => {
@@ -77,7 +77,12 @@ describe('buildCreateInstallBody', () => {
 
   test('azure and gcp account mapping', () => {
     const azure = buildCreateInstallBody(
-      { ...base, region: '', location: 'eastus', azure_subscription_id: 'sub-1' },
+      {
+        ...base,
+        region: '',
+        location: 'eastus',
+        azure_subscription_id: 'sub-1',
+      },
       'azure'
     )
     expect(azure.azure_account?.location).toBe('eastus')

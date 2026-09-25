@@ -5,7 +5,7 @@ import { FormSelect } from '@/components/common/form/FormSelect'
 import { Text } from '@/components/common/Text'
 import { AWS_REGIONS, AZURE_REGIONS } from '@/configs/cloud-regions'
 import { getFlagEmoji } from '@/utils/string-utils'
-import type { TAWSAccountConnection } from '@/types'
+import type { TCloudConnection } from '@/types'
 import { FieldRow } from './FieldRow'
 import type { InstallFormApi } from './useInstallForm'
 import type { InstallPlatform } from './schema'
@@ -13,7 +13,7 @@ import type { InstallPlatform } from './schema'
 interface IInstallPlatformFields {
   form: InstallFormApi
   platform: InstallPlatform
-  awsAccountConnections?: TAWSAccountConnection[]
+  awsAccountConnections?: TCloudConnection[]
   requireTargetAccount?: boolean
   disabled?: boolean
 }
@@ -43,7 +43,7 @@ const AwsFields = ({
   const connectionId = useStore(form.store, (s) => s.values.aws_connection_id)
   const connectionAccountId = awsAccountConnections?.find(
     (connection) => connection.id === connectionId
-  )?.account_id
+  )?.target_id
 
   useEffect(() => {
     if (connectionAccountId) {
@@ -83,8 +83,8 @@ const AwsFields = ({
                   { value: '', label: 'None — customer will apply the stack' },
                   ...awsAccountConnections.map((connection) => ({
                     value: connection.id,
-                    label: `${connection.name} · ${connection.account_id} · ${connection.verification_status === 'verified' ? 'Verified' : connection.verification_status}`,
-                    disabled: connection.verification_status !== 'verified',
+                    label: `${connection.name} · ${connection.target_id} · ${connection.status === 'verified' ? 'Verified' : connection.status}`,
+                    disabled: connection.status !== 'verified',
                   })),
                 ]}
                 disabled={disabled}
@@ -183,7 +183,11 @@ const GcpFields = ({
     >
       <form.Field name="gcp_project_id">
         {(field) => (
-          <FormInput field={field} placeholder="my-gcp-project" disabled={disabled} />
+          <FormInput
+            field={field}
+            placeholder="my-gcp-project"
+            disabled={disabled}
+          />
         )}
       </form.Field>
     </FieldRow>

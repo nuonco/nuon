@@ -28,7 +28,7 @@ import {
   getAppBranches,
   getBranchConfigs,
   createAppInstall,
-  getAWSAccountConnections,
+  getCloudConnections,
   getComponents,
   installNameTaken,
 } from '@/lib'
@@ -104,8 +104,7 @@ export const CreateInstallFromAppContainer = ({
   const queryClient = useQueryClient()
   const platform = app.runner_config?.app_runner_type
   const requireTargetAccount = useOrgFeatureFlag('phone-home-auth')
-  const awsConnectionsFlag = useOrgFeatureFlag('aws-account-connections')
-  const awsConnectionsEnabled = platform === 'aws' && awsConnectionsFlag
+  const awsConnectionsEnabled = normalizeInstallPlatform(platform) === 'aws'
 
   const [fields, setFields] = useState<ICreateFormTriggerState>({
     canSubmit: false,
@@ -217,8 +216,8 @@ export const CreateInstallFromAppContainer = ({
     isLoading: awsAccountConnectionsLoading,
   } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['aws-account-connections', org?.id],
-    queryFn: () => getAWSAccountConnections({ orgId: org.id }),
+    queryKey: ['cloud-connections', org?.id],
+    queryFn: () => getCloudConnections({ orgId: org.id }),
     enabled: !!org?.id && awsConnectionsEnabled && phase === 'form',
   })
 
@@ -536,7 +535,13 @@ export const CreateInstallFromAppContainer = ({
           )}
           requireTargetAccount={requireTargetAccount}
           awsAccountConnections={
-            awsConnectionsEnabled ? awsAccountConnections || [] : undefined
+            awsConnectionsEnabled
+              ? (awsAccountConnections || []).filter(
+                  (connection) =>
+                    connection.platform === 'aws' &&
+                    connection.capabilities?.includes('stacks')
+                )
+              : undefined
           }
           submitError={
             !selectedBranch && submitError

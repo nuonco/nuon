@@ -3,25 +3,23 @@ import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
-import { AWSAccountConnections } from '@/components/aws-account-connections/AWSAccountConnections'
 import { ConnectGithubButton } from '@/components/vcs-connections/ConnectGithub'
 import { VCSConnections } from '@/components/vcs-connections/VCSConnections'
-import { useOrgFeatureFlag } from '@/hooks/use-org-feature-flag'
 import { cn } from '@/utils/classnames'
 import '../OrgAvatar.css'
 import { OrgSummary } from '../OrgSummary'
 import { OrgsNavContainer as OrgsNav } from '../OrgsNavContainer'
 import type { TOrg } from '@/types'
 
-interface IOrgSwitcher
-  extends Omit<IDropdown, 'buttonText' | 'children' | 'id'> {
+interface IOrgSwitcher extends Omit<
+  IDropdown,
+  'buttonText' | 'children' | 'id'
+> {
   org: TOrg
   isSidebarOpen: boolean
 }
 
 export const OrgSwitcher = ({ org, isSidebarOpen, ...props }: IOrgSwitcher) => {
-  const awsAccountConnections = useOrgFeatureFlag('aws-account-connections')
-
   return (
     <Dropdown
       alignment="overlay"
@@ -65,9 +63,6 @@ export const OrgSwitcher = ({ org, isSidebarOpen, ...props }: IOrgSwitcher) => {
           <div className="flex flex-col gap-2">
             <VCSConnections vcsConnections={org?.vcs_connections} />
           </div>
-          {awsAccountConnections ? (
-            <AWSAccountConnections />
-          ) : null}
         </div>
         <hr className="border-dashed mx-4" />
         <div className="px-1 py-4 flex flex-col gap-1.5">

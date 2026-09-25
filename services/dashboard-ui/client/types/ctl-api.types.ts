@@ -44,12 +44,7 @@ export type TAppBranchRunConfig = {
 
 export type TAppBranchRunMetadata = {
   trigger?:
-    | 'manual'
-    | 'push'
-    | 'pull_request'
-    | 'tag'
-    | 'github_label'
-    | 'onboarding'
+    'manual' | 'push' | 'pull_request' | 'tag' | 'github_label' | 'onboarding'
   head_sha?: string
   git_ref?: string
   base_branch?: string
@@ -62,10 +57,7 @@ export type TAppBranchRunMetadata = {
 }
 
 export type TAppBranchRunPreviewMode =
-  | 'none'
-  | 'plan-only'
-  | 'apply'
-  | 'build-only'
+  'none' | 'plan-only' | 'apply' | 'build-only'
 export type TAppBranchRunPreviewSource = 'pr' | 'commit' | 'branch' | 'local'
 
 export type TAppBranchPreviewConfig = {
@@ -318,12 +310,7 @@ export type TTriggerEventRaw = {
 }
 
 export type TTriggerAuthType =
-  | 'none'
-  | 'hmac'
-  | 'api_key'
-  | 'basic'
-  | 'bearer_jwt'
-  | 'sns_signature'
+  'none' | 'hmac' | 'api_key' | 'basic' | 'bearer_jwt' | 'sns_signature'
 
 export type TTriggerEnvelope = 'none' | 'pubsub_push' | 'cloudevents' | 'sns'
 
@@ -816,23 +803,35 @@ export type TVCSConnectionReposResponse = {
   total_count: number
 }
 
-export type TAWSAccountConnection = {
+export type TCloudConnection = {
   id: string
+  org_id: string
   created_at: string
   updated_at: string
   name: string
-  account_id: string
-  default_region: string
-  role_arn?: string
-  verification_status: 'pending' | 'verified' | 'error'
-  verification_code?: string
-  verification_message?: string
-  last_checked_at?: string
-  verified_at?: string
-  verified_principal_arn?: string
-  external_id?: string
-  management_principal_arn?: string
-  trust_policy?: Record<string, unknown>
+  platform: 'aws' | 'azure' | 'gcp'
+  target_id: string
+  principal: string
+  tenant_id?: string
+  identity_provider?: string
+  default_region?: string
+  auth_mode?: 'oidc' | 'legacy'
+  status: 'pending' | 'verified' | 'error'
+  status_message?: string
+  last_verified_at?: string
+  capabilities: ('stacks' | 'images')[]
+  used_by: { installs: number; components: number }
+  setup: {
+    issuer_url: string
+    subject: string
+    audience: string
+    trust_policy: Record<string, unknown>
+    terraform: string
+    cli: string
+    cloudformation: string
+    capabilities: ('stacks' | 'images')[]
+    repositories?: string[]
+  }
 }
 
 export type TVCSWebhookSubscription = {
@@ -956,10 +955,7 @@ export interface TRoleInfo {
 }
 
 export type TRoleContext =
-  | 'team'
-  | 'service_account'
-  | 'api_token'
-  | 'oidc_trust_policy'
+  'team' | 'service_account' | 'api_token' | 'oidc_trust_policy'
 
 export interface TCreateServiceAccountBody {
   name: string

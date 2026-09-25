@@ -14,6 +14,7 @@ import { VCSConnectionDetail } from './VCSConnectionDetail'
 import { Slack } from './Slack'
 import { Webhooks } from './Webhooks'
 import { OIDCTrustPolicies } from './OIDCTrustPolicies'
+import { CloudConnections } from './CloudConnections'
 import { Triggers } from './Triggers'
 import { TriggerLayout } from './TriggerLayout'
 import { TriggerOverview } from './trigger-tabs/TriggerOverview'
@@ -43,6 +44,7 @@ export const orgRoutes: RouteObject[] = [
       { path: ':orgId', element: <Dashboard /> },
       { path: ':orgId/apps', element: <Apps /> },
       { path: ':orgId/installs', element: <Installs /> },
+      { path: ':orgId/cloud-connections', element: <CloudConnections /> },
       { path: ':orgId/runner', element: <BuildRunner /> },
       { path: ':orgId/runner/jobs/:jobId', element: <RunnerJobDetail /> },
       { path: ':orgId/runner/processes', element: <RunnerProcesses /> },
