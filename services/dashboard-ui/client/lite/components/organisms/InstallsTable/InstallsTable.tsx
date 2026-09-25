@@ -60,6 +60,12 @@ const installHref = (orgId: string, install: TInstall, incomplete: boolean) =>
 const appHref = (orgId: string, install: TInstall) =>
   `/${orgId}/apps/${install?.app_id ?? ''}`
 
+const installGroup = (install: TInstall) =>
+  install.app_branch_connections?.find((connection) => connection.active)
+    ?.app_branch_group ??
+  install.app_branch_group ??
+  ''
+
 const installPlatform = (install: TInstall): TBrandVariant | undefined => {
   const normalized = (install?.cloud_platform ?? '').toLowerCase()
   if (normalized === 'aws') return 'AWS'
@@ -165,7 +171,7 @@ export const columnsFor = (
   {
     id: 'name',
     header: 'Install',
-    size: 240,
+    size: 200,
     cell: ({ row }) => {
       const incomplete = Boolean(
         row.original?.id && incompleteIds?.has(row.original.id)
@@ -197,7 +203,7 @@ export const columnsFor = (
   {
     id: 'app',
     header: 'App',
-    size: 140,
+    size: 120,
     cell: ({ row }) =>
       row.original?.app_id ? (
         <Link href={appHref(orgId, row.original)} variant="body">
@@ -218,13 +224,13 @@ export const columnsFor = (
   {
     id: 'platform',
     header: 'Cloud',
-    size: 165,
+    size: 140,
     cell: ({ row }) => <Platform install={row.original} />,
   },
   {
     id: 'labels',
     header: 'Labels',
-    size: 145,
+    size: 125,
     cell: ({ row }) => (
       <InstallLabels install={row.original} labelColors={labelColors} />
     ),
@@ -236,6 +242,16 @@ export const columnsFor = (
     cell: ({ row }) => (
       <Text variant="caption" family="mono" color="secondary" lines={1}>
         {row.original?.app_branch?.name ?? '—'}
+      </Text>
+    ),
+  },
+  {
+    id: 'group',
+    header: 'Group',
+    size: 105,
+    cell: ({ row }) => (
+      <Text variant="caption" family="mono" color="secondary" lines={1}>
+        {installGroup(row.original) || '—'}
       </Text>
     ),
   },
@@ -311,6 +327,14 @@ const InstallCard = ({
           </Text>
           <Text as="dd" family="mono" color="secondary" lines={1}>
             {install?.app_branch?.name ?? '—'}
+          </Text>
+        </div>
+        <div className="min-w-0">
+          <Text as="dt" variant="label" color="tertiary">
+            Group
+          </Text>
+          <Text as="dd" family="mono" color="secondary" lines={1}>
+            {installGroup(install) || '—'}
           </Text>
         </div>
         <div className="min-w-0">

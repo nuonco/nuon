@@ -25,7 +25,8 @@ const stages = (
     name: 'Core',
     order: 0,
     stage: 1,
-    membership: 'install_ids',
+    membership: 'label_selector',
+    selector: { match_labels: { env: 'prod', tier: 'core' } },
     installs: [
       { id: 'inst_alpha', name: 'alpha' },
       { id: 'inst_bravo', name: 'bravo' },
@@ -64,7 +65,7 @@ const stages = (
     name: 'Remaining installs',
     order: 2,
     stage: 3,
-    membership: 'all_installs',
+    membership: 'default',
     installs: [{ id: 'inst_foxtrot', name: 'foxtrot' }],
     totalInstalls: 1,
     completedInstalls: statuses[2] ? 0 : undefined,
@@ -73,8 +74,7 @@ const stages = (
   },
 ]
 
-const groupHref = (stage: IDeploymentPlanStage) =>
-  `?panel=group%3A${stage.id}`
+const groupHref = (stage: IDeploymentPlanStage) => `?panel=group%3A${stage.id}`
 
 const Story = ({
   value = stages(),

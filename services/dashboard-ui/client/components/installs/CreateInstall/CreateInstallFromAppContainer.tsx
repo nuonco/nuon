@@ -32,17 +32,13 @@ import {
   getComponents,
   installNameTaken,
 } from '@/lib'
-import type {
-  TApp,
-  TAppBranch,
-  TAppBranchInstallGroup,
-  TAppConfig,
-} from '@/types'
+import type { TApp, TAppBranch, TAppConfig } from '@/types'
 import { shouldDefaultStackOnly } from './app-install-readiness'
 import { BranchStep } from './BranchStep'
 import {
   GroupStep,
-  concreteMatchLabels,
+  appBranchGroupFromSelection,
+  labelsFromGroupSelection,
   type TGroupStepSelection,
 } from './GroupStep'
 import {
@@ -119,7 +115,10 @@ export const CreateInstallFromAppContainer = ({
     useState(!initialBranchId)
   const [pendingFormValues, setPendingFormValues] =
     useState<InstallFormValues | null>(null)
-  const [selectedGroup, setSelectedGroup] = useState<TGroupStepSelection>(null)
+  const [selectedGroup, setSelectedGroup] = useState<TGroupStepSelection>({
+    mode: 'none',
+    group: null,
+  })
 
   const {
     data: branchList,
@@ -341,7 +340,9 @@ export const CreateInstallFromAppContainer = ({
           orgId: org.id,
           name: trimmed,
         })
-        return taken ? `An install named "${trimmed}" already exists` : undefined
+        return taken
+          ? `An install named "${trimmed}" already exists`
+          : undefined
       } catch (err) {
         // A failed lookup shouldn't block creation; the API still enforces
         // uniqueness. Log it so it can't masquerade as an available name.
@@ -352,34 +353,20 @@ export const CreateInstallFromAppContainer = ({
     [app.id, org?.id]
   )
 
-  // Build merged labels for the pick-group → submit step
-  const buildGroupLabels = (
-    formValues: InstallFormValues,
-    group: TGroupStepSelection
-  ): Record<string, string> | undefined => {
-    const formLabels: Record<string, string> = {}
-    for (const { key, value } of formValues.labels ?? []) {
-      const trimmed = key.trim()
-      if (trimmed) formLabels[trimmed] = value.trim()
-    }
-    const groupLabels = group
-      ? concreteMatchLabels(group as TAppBranchInstallGroup)
-      : {}
-    const merged = { ...formLabels, ...groupLabels }
-    return Object.keys(merged).length > 0 ? merged : undefined
-  }
-
   const submitFromPickGroup = () => {
     if (!pendingFormValues || !selectedBranch) return
     const base = buildCreateInstallBody(
       pendingFormValues,
       normalizeInstallPlatform(platform)
     )
-    const mergedLabels = buildGroupLabels(pendingFormValues, selectedGroup)
     mutateAsync({
       ...base,
-      labels: mergedLabels,
+      labels: {
+        ...base.labels,
+        ...labelsFromGroupSelection(selectedGroup),
+      },
       app_branch_id: selectedBranch.id,
+      app_branch_group: appBranchGroupFromSelection(selectedGroup),
     })
   }
 
@@ -396,7 +383,7 @@ export const CreateInstallFromAppContainer = ({
 
     if (phase === 'pick-group') {
       onStateChange({
-        canSubmit: !isSubmitting,
+        canSubmit: selectedGroup.mode !== 'none' && !isSubmitting,
         submit: submitFromPickGroup,
         isSubmitting,
         phase,
@@ -440,7 +427,7 @@ export const CreateInstallFromAppContainer = ({
   const handleBack = () => {
     if (phase === 'pick-group') {
       setPendingFormValues(null)
-      setSelectedGroup(null)
+      setSelectedGroup({ mode: 'none', group: null })
       return
     }
     if (phase === 'form' && branchDecisionMade) {
@@ -486,11 +473,6 @@ export const CreateInstallFromAppContainer = ({
 
   if (phase === 'pick-group') {
     const branchConfig = selectedBranch?.configs?.at(0)
-    const formLabels: Record<string, string> = {}
-    for (const { key, value } of pendingFormValues?.labels ?? []) {
-      const trimmed = key.trim()
-      if (trimmed) formLabels[trimmed] = value.trim()
-    }
 
     return (
       <div className="flex flex-col gap-6">
@@ -505,7 +487,6 @@ export const CreateInstallFromAppContainer = ({
         {branchConfig ? (
           <GroupStep
             config={branchConfig}
-            installLabels={formLabels}
             selected={selectedGroup}
             onSelect={setSelectedGroup}
           />

@@ -1,49 +1,50 @@
 import { Banner } from '@/components/common/Banner'
+import { RadioInput } from '@/components/common/form/RadioInput'
+import { Select } from '@/components/common/form/Select'
 import { Icon } from '@/components/common/Icon'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
-import { matchesSelector } from '@/components/match/matches'
 import type { TAppBranch, TInstall } from '@/types'
 
-const branchHasMatchingGroup = (
-  branch: TAppBranch,
-  install: TInstall
-): boolean => {
-  const groups = branch.configs?.at(0)?.install_groups ?? []
-  return groups.some((g) => {
-    if (g.all_installs) return true
-    if (g.install_ids?.includes(install.id)) return true
-    const matchLabels = g.label_selector?.match_labels ?? {}
-    if (Object.keys(matchLabels).length > 0) {
-      return matchesSelector(install.labels ?? {}, g.label_selector)
-    }
-    return false
-  })
-}
+export type TBranchGroupAssignmentMode = 'default' | 'labels' | 'explicit'
 
 interface IChangeAppBranchModal extends Omit<IModal, 'onSubmit'> {
   install: TInstall
   targetBranch: TAppBranch | null
+  targetGroup: string
+  assignmentMode: TBranchGroupAssignmentMode | null
   branches: TAppBranch[]
   isPending: boolean
   onSelectBranch: (branch: TAppBranch) => void
+  onSelectGroup: (group: string) => void
+  onSelectAssignmentMode: (mode: TBranchGroupAssignmentMode) => void
   onConfirm: () => void
 }
 
 export const ChangeAppBranchModal = ({
   install,
   targetBranch,
+  targetGroup,
+  assignmentMode,
   branches,
   isPending,
   onSelectBranch,
+  onSelectGroup,
+  onSelectAssignmentMode,
   onConfirm,
   ...props
 }: IChangeAppBranchModal) => {
-  const installLabels = install.labels ?? {}
-  const noMatchingGroup =
-    targetBranch !== null &&
-    !branchHasMatchingGroup(targetBranch, install)
+  const targetGroups = targetBranch?.configs?.at(0)?.install_groups ?? []
+  const selectedGroup = targetGroups.find((group) => group.name === targetGroup)
+  const selectedLabels = Object.entries(
+    selectedGroup?.label_selector?.match_labels ?? {}
+  )
+  const assignmentIncomplete =
+    !selectedGroup ||
+    (!selectedGroup.default &&
+      assignmentMode !== 'labels' &&
+      assignmentMode !== 'explicit')
 
   const confirmLabel = isPending ? (
     <span className="flex items-center gap-2">
@@ -65,7 +66,17 @@ export const ChangeAppBranchModal = ({
       }
       primaryActionTrigger={{
         children: confirmLabel,
-        disabled: !targetBranch || isPending,
+        disabled:
+          !targetBranch ||
+          isPending ||
+          targetGroups.length === 0 ||
+          assignmentIncomplete,
+        tooltipProps:
+          targetBranch && !isPending && assignmentIncomplete
+            ? { tipContent: 'Choose how to assign this install to a group' }
+            : targetBranch && !isPending && targetGroups.length === 0
+              ? { tipContent: 'This branch has no deployment groups' }
+              : undefined,
         onClick: onConfirm,
         variant: 'primary',
       }}
@@ -148,19 +159,85 @@ export const ChangeAppBranchModal = ({
           </div>
         </div>
 
-        {noMatchingGroup && targetBranch && (
-          <Banner theme="warn">
-            <strong>Warning:</strong> The current labels on this install
-            don&apos;t match any install group on{' '}
-            <strong>{targetBranch.name}</strong>. This install won&apos;t
-            receive deployments until it&apos;s added to a group.
-            {Object.keys(installLabels).length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {Object.entries(installLabels).map(([k, v]) => (
-                  <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" />
-                ))}
+        {targetBranch && targetGroups.length > 0 && (
+          <div className="flex flex-col gap-3">
+            <Text variant="base" weight="strong">
+              Group assignment
+            </Text>
+            <Select
+              id="app-branch-group"
+              value={targetGroup}
+              onChange={onSelectGroup}
+              labelProps={{ labelText: 'Deployment group' }}
+              options={[
+                {
+                  value: '',
+                  label: 'Select a group',
+                },
+                ...targetGroups
+                  .filter((group) => !!group.name)
+                  .map((group) => ({
+                    value: group.name!,
+                    label: group.name!,
+                    description: group.default ? 'Default group' : undefined,
+                  })),
+              ]}
+            />
+
+            {selectedGroup?.default && (
+              <Text variant="subtext" theme="neutral">
+                This install will join the default group without changing its
+                labels.
+              </Text>
+            )}
+
+            {selectedGroup && !selectedGroup.default && (
+              <div className="flex flex-col gap-3">
+                <Text variant="subtext" theme="neutral">
+                  Choose how this install joins {selectedGroup.name}.
+                </Text>
+                <RadioInput
+                  name="group-assignment"
+                  value="explicit"
+                  checked={assignmentMode === 'explicit'}
+                  onChange={() => onSelectAssignmentMode('explicit')}
+                  labelProps={{
+                    labelText: 'Pin install to this group',
+                  }}
+                />
+                {selectedLabels.length > 0 && (
+                  <RadioInput
+                    name="group-assignment"
+                    value="labels"
+                    checked={assignmentMode === 'labels'}
+                    onChange={() => onSelectAssignmentMode('labels')}
+                    labelProps={{
+                      labelText: 'Add group labels to install',
+                    }}
+                  />
+                )}
+
+                {assignmentMode === 'labels' && selectedLabels.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {selectedLabels.map(([key, value]) => (
+                      <LabelBadge
+                        key={key}
+                        labelKey={key}
+                        labelValue={value}
+                        size="sm"
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
+          </div>
+        )}
+
+        {targetBranch && targetGroups.length === 0 && (
+          <Banner theme="warn">
+            <strong>Warning:</strong> <strong>{targetBranch.name}</strong> has
+            no install groups. Add a group before moving this install.
           </Banner>
         )}
 
@@ -176,8 +253,7 @@ export const ChangeAppBranchModal = ({
             </li>
             <li>
               <Text variant="subtext" theme="neutral">
-                Remove this install from the current branch&apos;s deployment
-                plan
+                Remove this install from the current branch
               </Text>
             </li>
             <li>

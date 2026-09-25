@@ -45,22 +45,41 @@ export const CommitStep = ({ metadata }: ICommitStep) => {
       <StepBlock>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <Text as="p" variant="base" weight="strong" className="leading-snug">
+            <Text
+              as="p"
+              variant="base"
+              weight="strong"
+              className="leading-snug"
+            >
               {title}
               {prNumber && (
                 <>
                   {' ('}
                   {prUrl ? (
-                    <Link href={prUrl} isExternal className="font-semibold" variant="inline">#{prNumber}</Link>
+                    <Link
+                      href={prUrl}
+                      isExternal
+                      className="font-semibold"
+                      variant="inline"
+                    >
+                      #{prNumber}
+                    </Link>
                   ) : (
-                    <span className="text-cool-grey-500 dark:text-cool-grey-400">#{prNumber}</span>
+                    <span className="text-cool-grey-500 dark:text-cool-grey-400">
+                      #{prNumber}
+                    </span>
                   )}
                   {')'}
                 </>
               )}
             </Text>
             {body && (
-              <Text as="p" variant="body" theme="neutral" className="mt-1 whitespace-pre-wrap leading-relaxed">
+              <Text
+                as="p"
+                variant="body"
+                theme="neutral"
+                className="mt-1 whitespace-pre-wrap leading-relaxed"
+              >
                 {body}
               </Text>
             )}
@@ -71,7 +90,9 @@ export const CommitStep = ({ metadata }: ICommitStep) => {
                 {branch}
               </Badge>
             )}
-            <ID className="text-[12.5px] font-mono">{commitSha?.substring(0, 7)}</ID>
+            <ID className="text-[12.5px] font-mono">
+              {commitSha?.substring(0, 7)}
+            </ID>
             {commitUrl && (
               <Link
                 href={commitUrl}
@@ -85,10 +106,15 @@ export const CommitStep = ({ metadata }: ICommitStep) => {
 
         <div className="flex items-center gap-2">
           <div className="w-[24px] h-[24px] rounded-full bg-primary-500 flex items-center justify-center shrink-0">
-            <span className="text-[10px] font-semibold text-white leading-none">{getInitials(authorName)}</span>
+            <span className="text-[10px] font-semibold text-white leading-none">
+              {getInitials(authorName)}
+            </span>
           </div>
           <Text variant="subtext" theme="neutral">
-            <span className="font-semibold text-cool-grey-900 dark:text-white">{authorName}</span> committed
+            <span className="font-semibold text-cool-grey-900 dark:text-white">
+              {authorName}
+            </span>{' '}
+            committed
           </Text>
         </div>
       </StepBlock>
@@ -98,22 +124,52 @@ export const CommitStep = ({ metadata }: ICommitStep) => {
           <div className="flex items-center gap-3 flex-wrap">
             <Text variant="subtext" theme="neutral">
               Showing{' '}
-              <span className="font-semibold text-cool-grey-700 dark:text-cool-grey-200">{filesChanged}</span>{' '}
+              <span className="font-semibold text-cool-grey-700 dark:text-cool-grey-200">
+                {filesChanged}
+              </span>{' '}
               changed {filesChanged === 1 ? 'file' : 'files'}
             </Text>
             {(additions ?? 0) > 0 && (
-              <Text variant="body" weight="strong" theme="success">+{additions?.toLocaleString()}</Text>
+              <Text variant="body" weight="strong" theme="success">
+                +{additions?.toLocaleString()}
+              </Text>
             )}
             {(deletions ?? 0) > 0 && (
-              <Text variant="body" weight="strong" theme="error">−{deletions?.toLocaleString()}</Text>
+              <Text variant="body" weight="strong" theme="error">
+                −{deletions?.toLocaleString()}
+              </Text>
             )}
             {(additions ?? 0) + (deletions ?? 0) > 0 && (
               <div className="flex gap-[2px] ml-1">
-                {Array.from({ length: Math.min(Math.round(((additions ?? 0) / ((additions ?? 0) + (deletions ?? 0))) * 20), 20) }).map((_, i) => (
-                  <div key={`a${i}`} className="w-[8px] h-[8px] rounded-[2px] bg-green-500" />
+                {Array.from({
+                  length: Math.min(
+                    Math.round(
+                      ((additions ?? 0) /
+                        ((additions ?? 0) + (deletions ?? 0))) *
+                        20
+                    ),
+                    20
+                  ),
+                }).map((_, i) => (
+                  <div
+                    key={`a${i}`}
+                    className="w-[8px] h-[8px] rounded-[2px] bg-green-500"
+                  />
                 ))}
-                {Array.from({ length: Math.min(Math.round(((deletions ?? 0) / ((additions ?? 0) + (deletions ?? 0))) * 20), 20) }).map((_, i) => (
-                  <div key={`d${i}`} className="w-[8px] h-[8px] rounded-[2px] bg-red-500" />
+                {Array.from({
+                  length: Math.min(
+                    Math.round(
+                      ((deletions ?? 0) /
+                        ((additions ?? 0) + (deletions ?? 0))) *
+                        20
+                    ),
+                    20
+                  ),
+                }).map((_, i) => (
+                  <div
+                    key={`d${i}`}
+                    className="w-[8px] h-[8px] rounded-[2px] bg-red-500"
+                  />
                 ))}
               </div>
             )}
@@ -126,15 +182,25 @@ export const CommitStep = ({ metadata }: ICommitStep) => {
           {changedFiles.map((file: any, i: number) => (
             <StepRow key={file?.path || i} className="justify-between">
               <div className="flex items-center gap-2 min-w-0">
-                <Icon variant="FileTextIcon" size={14} className="text-cool-grey-400 dark:text-cool-grey-500 shrink-0" />
-                <Text variant="subtext" family="mono" className="truncate">{file?.path}</Text>
+                <Icon
+                  variant="FileTextIcon"
+                  size={14}
+                  className="text-cool-grey-400 dark:text-cool-grey-500 shrink-0"
+                />
+                <Text variant="subtext" family="mono" className="truncate">
+                  {file?.path}
+                </Text>
               </div>
               <div className="flex items-center gap-2 shrink-0 ml-3">
                 {(file?.additions ?? 0) > 0 && (
-                  <Text variant="subtext" weight="strong" theme="success">+{file?.additions}</Text>
+                  <Text variant="subtext" weight="strong" theme="success">
+                    +{file?.additions}
+                  </Text>
                 )}
                 {(file?.deletions ?? 0) > 0 && (
-                  <Text variant="subtext" weight="strong" theme="error">−{file?.deletions}</Text>
+                  <Text variant="subtext" weight="strong" theme="error">
+                    −{file?.deletions}
+                  </Text>
                 )}
               </div>
             </StepRow>
