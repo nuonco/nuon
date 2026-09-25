@@ -88,5 +88,11 @@ func (r *RunbookStepConfig) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &RunbookStepConfig{}, "runbook_config_id"),
+			Columns: []string{
+				"runbook_config_id",
+			},
+		},
 	}
 }
