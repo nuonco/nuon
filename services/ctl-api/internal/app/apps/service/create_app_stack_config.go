@@ -10,10 +10,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/customstacks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
-	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -103,23 +101,8 @@ func (s *service) createAppStackConfig(ctx context.Context, appID string, req *C
 		return nil, res.Error
 	}
 
-	// Upload custom nested stack template contents to S3 asynchronously. The
-	// activity sets each stack's ContentsHash and marks it ready; consumers gate
-	// on Status before generating a stack from these templates.
-	if len(appCloudFormationStackConfig.CustomNestedStacks) > 0 {
-		q, err := s.queueClient.GetDefaultQueueByOwner(ctx, appID, "apps")
-		if err != nil {
-			return nil, fmt.Errorf("unable to get apps queue for app %s: %w", appID, err)
-		}
-
-		if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-			QueueID: q.ID,
-			Signal: &customstacks.Signal{
-				AppStackConfigID: appCloudFormationStackConfig.ID,
-			},
-		}); err != nil {
-			return nil, fmt.Errorf("unable to enqueue custom stacks sync signal: %w", err)
-		}
+	if err := s.helpers.UploadCustomNestedStackTemplates(ctx, s.db, appCloudFormationStackConfig); err != nil {
+		return nil, err
 	}
 
 	return appCloudFormationStackConfig, nil
