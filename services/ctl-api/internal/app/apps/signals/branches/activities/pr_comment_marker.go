@@ -10,11 +10,8 @@ import (
 
 const previewCommentCollapsedMarker = "<!-- nuon-preview-comment-collapsed -->"
 
-// Every preview report carries this marker so a later run can recognise its own
-// earlier comments on the PR without relying on comment order or authorship.
 var previewCommentMarkerRe = regexp.MustCompile(`<!-- nuon-preview-comment name="([^"]*)"(?: run="([^"]*)")? -->`)
 
-// PreviewCommentMarker is the machine-readable header of a preview PR comment.
 type PreviewCommentMarker struct {
 	Name  string
 	RunID string
@@ -38,8 +35,6 @@ func sanitizeMarkerValue(value string) string {
 	}, value)
 }
 
-// ParsePreviewCommentMarker reads the marker out of a PR comment body,
-// reporting false for anything Nuon did not write.
 func ParsePreviewCommentMarker(body string) (PreviewCommentMarker, bool) {
 	match := previewCommentMarkerRe.FindStringSubmatch(body)
 	if match == nil {
@@ -48,12 +43,7 @@ func ParsePreviewCommentMarker(body string) (PreviewCommentMarker, bool) {
 	return PreviewCommentMarker{Name: match[1], RunID: match[2]}, true
 }
 
-// Reports posted before markers existed are recognised from their rendered
-// heading, so PRs that already carry a stack of them still get collapsed. Both
-// the heading and a report-only line are required: a human quoting the heading
-// must not have their comment rewritten.
 var (
-	// Matches both current ("👋 Nuon Preview") and pre-emoji headings.
 	legacyPreviewTitleRe = regexp.MustCompile(`(?m)^## (?:\x{1f44b} )?Nuon Preview \x{2014} (.+)$`)
 	legacyPreviewRunRe   = regexp.MustCompile("(?m)^Preview run: `([^`]+)`")
 )
@@ -91,15 +81,10 @@ func stripPreviewModeLabel(title string) string {
 	return title
 }
 
-// IsCollapsedPreviewComment reports whether the body has already been folded
-// into its collapsed form, so repeated collapse passes are no-ops.
 func IsCollapsedPreviewComment(body string) bool {
 	return strings.Contains(body, previewCommentCollapsedMarker)
 }
 
-// CollapsePreviewCommentBody rewrites a preview report as a collapsed
-// <details> block, keeping the full report one click away. It returns false
-// when the body is not a preview report or is already collapsed.
 func CollapsePreviewCommentBody(body string) (string, bool) {
 	marker, ok := ParsePreviewCommentMarker(body)
 	if !ok || IsCollapsedPreviewComment(body) {

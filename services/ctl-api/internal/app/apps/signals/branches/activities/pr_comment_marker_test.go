@@ -44,8 +44,6 @@ func TestParsePreviewCommentMarkerRejectsForeignComments(t *testing.T) {
 	}
 }
 
-// Comments posted before markers existed are matched on their heading so an
-// already-noisy PR collapses on the next run.
 func TestParsePreviewCommentMarkerFallsBackToHeading(t *testing.T) {
 	body := "## Nuon Preview — acme/payments/production (apply)\n\n" +
 		"Preview run: `abrq7fplr1up5atx5zpxotbabm`\n\n" +
@@ -118,8 +116,6 @@ func TestCollapsePreviewCommentBodyIgnoresForeignComments(t *testing.T) {
 	}
 }
 
-// Reports for different previews coexist on one PR, so only same-named
-// comments are candidates for collapsing.
 func TestPreviewCommentNameSeparatesApps(t *testing.T) {
 	payments := PreviewCommentName("acme", "payments", "production")
 	billing := PreviewCommentName("acme", "billing", "production")

@@ -302,9 +302,6 @@ func previewTitleName(p *PRCommentParams) string {
 	return PreviewCommentName(p.OrgName, p.AppName, p.BranchName)
 }
 
-// PreviewCommentName identifies the preview a PR comment belongs to. Comments
-// sharing a name are reports on the same preview, so all but the newest are
-// collapsed; a PR touching two apps keeps one live report per app.
 func PreviewCommentName(orgName, appName, branchName string) string {
 	parts := make([]string, 0, 3)
 	for _, part := range []string{orgName, appName, branchName} {
