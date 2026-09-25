@@ -23,6 +23,15 @@ Bun-based dev proxy that sits in front of the Go BFF. Proxies all requests to th
 ### `dev.sh`
 Entry point used by nctl to start the dashboard locally. Builds the Go BFF server, starts it in the background, waits for it to write a port file, then runs `bun run dev` with live reload.
 
+### `dev-stack.sh`
+Worktree-friendly supervisor: builds this checkout's Go BFF, then runs the BFF, `bun run dev` (JS/CSS/live-reload proxy), and Ladle together. Pass a BFF port; the proxy is port+1 and Ladle picks `61000 + (port - 4000)` (or the next free port). Restarts in the same checkout replace the previous stack; other worktrees are left alone.
+
+```bash
+bun run dev:stack -- 4010
+HTTP_PORT=4010 bun run dev:stack
+./scripts/dev-stack.sh 4010 --ladle-port 61010
+```
+
 ## Build pipeline
 
 **Dev** (`bun run dev`):
@@ -59,3 +68,4 @@ NUON_OPENAPI_SPEC_FILE=./path/to/spec.json bun run generate-api-types
 | `NUON_API_URL` | `https://api.nuon.co` | API URL to fetch the OpenAPI spec from |
 | `NUON_OPENAPI_SPEC_FILE` | — | Local spec file path (takes precedence over `NUON_API_URL`) |
 | `HTTP_PORT` | `4000` | Port for the Go BFF (dev server proxies from port + 1) |
+| `LADLE_PORT` | derived | Ladle port for `dev:stack` (`61000 + HTTP_PORT - 4000`) |
