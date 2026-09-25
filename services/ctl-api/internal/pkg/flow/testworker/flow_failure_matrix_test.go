@@ -12,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
@@ -52,6 +51,8 @@ func (e *FlowTestSuite) enqueueLifecycleFlow(ctx context.Context, queueID string
 			GenerateStepsQueueName: queuenames.InstallGenerateStepsQueueName,
 			OwnerID:                ownerID,
 			OwnerType:              ownerType,
+			Resident:               true,
+			ResidentIdleTimeout:    testResidentIdleTimeout,
 		},
 		OwnerID:   flw.ID,
 		OwnerType: "install_workflows",
@@ -145,44 +146,40 @@ func (e *FlowTestSuite) TestGeneratedStepsStartPending() {
 	ownerID, ownerType := newTestOwner()
 	workflowType := app.WorkflowType("test_generated_steps_pending")
 
-	generateworkflowsteps.RegisterGenerators(ownerType, func() map[app.WorkflowType]flow.WorkflowStepGenerator {
-		return map[app.WorkflowType]flow.WorkflowStepGenerator{
-			workflowType: func(workflow.Context, *app.Workflow) (*app.GenerateStepsResult, error) {
-				return &app.GenerateStepsResult{
-					Groups: []*app.WorkflowStepGroup{
-						{GroupIdx: 1, Status: app.CompositeStatus{Status: app.StatusPending}},
-						{GroupIdx: 2, Status: app.CompositeStatus{Status: app.StatusPending}},
-						{GroupIdx: 3, Status: app.CompositeStatus{Status: app.StatusPending}},
-					},
-					Steps: []*app.WorkflowStep{
-						{
-							Name:          "blocking-first-step",
-							Idx:           100,
-							GroupIdx:      1,
-							ExecutionType: app.WorkflowStepExecutionTypeSystem,
-							Status:        app.CompositeStatus{Status: app.StatusPending},
-							QueueSignal:   &signaldb.SignalData{Signal: &CancellableTestSignal{}},
-						},
-						{
-							Name:          "second-step",
-							Idx:           200,
-							GroupIdx:      2,
-							ExecutionType: app.WorkflowStepExecutionTypeSystem,
-							Status:        app.CompositeStatus{Status: app.StatusPending},
-							QueueSignal:   &signaldb.SignalData{Signal: &SuccessSignal{}},
-						},
-						{
-							Name:          "third-step",
-							Idx:           300,
-							GroupIdx:      3,
-							ExecutionType: app.WorkflowStepExecutionTypeSystem,
-							Status:        app.CompositeStatus{Status: app.StatusPending},
-							QueueSignal:   &signaldb.SignalData{Signal: &SuccessSignal{}},
-						},
-					},
-				}, nil
+	registerTestGenerator(ownerType, workflowType, func(workflow.Context, *app.Workflow) (*app.GenerateStepsResult, error) {
+		return &app.GenerateStepsResult{
+			Groups: []*app.WorkflowStepGroup{
+				{GroupIdx: 1, Status: app.CompositeStatus{Status: app.StatusPending}},
+				{GroupIdx: 2, Status: app.CompositeStatus{Status: app.StatusPending}},
+				{GroupIdx: 3, Status: app.CompositeStatus{Status: app.StatusPending}},
 			},
-		}
+			Steps: []*app.WorkflowStep{
+				{
+					Name:          "blocking-first-step",
+					Idx:           100,
+					GroupIdx:      1,
+					ExecutionType: app.WorkflowStepExecutionTypeSystem,
+					Status:        app.CompositeStatus{Status: app.StatusPending},
+					QueueSignal:   &signaldb.SignalData{Signal: &CancellableTestSignal{}},
+				},
+				{
+					Name:          "second-step",
+					Idx:           200,
+					GroupIdx:      2,
+					ExecutionType: app.WorkflowStepExecutionTypeSystem,
+					Status:        app.CompositeStatus{Status: app.StatusPending},
+					QueueSignal:   &signaldb.SignalData{Signal: &SuccessSignal{}},
+				},
+				{
+					Name:          "third-step",
+					Idx:           300,
+					GroupIdx:      3,
+					ExecutionType: app.WorkflowStepExecutionTypeSystem,
+					Status:        app.CompositeStatus{Status: app.StatusPending},
+					QueueSignal:   &signaldb.SignalData{Signal: &SuccessSignal{}},
+				},
+			},
+		}, nil
 	})
 
 	workflowQueue := e.createTestQueue(ctx, ownerID, ownerType, "install-workflows")
@@ -219,12 +216,8 @@ func (e *FlowTestSuite) TestGenerateStepsFailureDrains() {
 	ownerID, ownerType := fakeString(), "app_branches"
 	workflowType := app.WorkflowType("test_generate_steps_failure")
 
-	generateworkflowsteps.RegisterGenerators(ownerType, func() map[app.WorkflowType]flow.WorkflowStepGenerator {
-		return map[app.WorkflowType]flow.WorkflowStepGenerator{
-			workflowType: func(workflow.Context, *app.Workflow) (*app.GenerateStepsResult, error) {
-				return nil, errors.New("step generation failed")
-			},
-		}
+	registerTestGenerator(ownerType, workflowType, func(workflow.Context, *app.Workflow) (*app.GenerateStepsResult, error) {
+		return nil, errors.New("step generation failed")
 	})
 
 	workflowQueue := e.createTestQueue(ctx, ownerID, ownerType, "install-workflows")

@@ -1,20 +1,18 @@
 package testworker
 
 import (
-	"strings"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
 // Lifeline tests for PR #2320: cancelled flows write a terminal cancelled
-// status, approval waits and abandoned parks expire at callback.MaxWaitCeiling
-// (shrunk to 15s in SetupSuite), and every stopped flow drains its Temporal
-// workflows. Expected to fail until this branch includes those fixes.
+// status, legacy approval waits expire at callback.MaxWaitCeiling (shrunk to
+// 15s in SetupSuite), and every stopped flow drains its Temporal workflows.
 
 func parkedFailingStep(name string) app.WorkflowStep {
 	return app.WorkflowStep{
@@ -78,10 +76,12 @@ func (e *FlowTestSuite) TestApprovalReceivedWorkflowCompletes() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// With no approval response, the wait expires at MaxWaitCeiling: the step is
-// marked approval-expired with a stop directive, no retry clone is created,
-// and the workflow finishes and drains instead of living forever.
-func (e *FlowTestSuite) TestApprovalExpiresStopsWorkflow() {
+// Legacy only: a resident approval parks with no Temporal workflow open, so
+// there is nothing to expire. On legacy the step blocks in-workflow and the
+// wait expires at MaxWaitCeiling: the step is marked approval-expired with a
+// stop directive, no retry clone is created, and the workflow finishes and
+// drains instead of living forever.
+func (e *FlowTestSuite) TestLegacyApprovalExpiresStopsWorkflow() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 	ownerID, ownerType := newTestOwner()
@@ -91,7 +91,7 @@ func (e *FlowTestSuite) TestApprovalExpiresStopsWorkflow() {
 	flw, queueID := e.setupLifecycleTest(ctx, ownerID, ownerType, steps)
 	e.seedApproval(ctx, &steps[0])
 
-	e.enqueueLifecycleFlow(ctx, queueID, flw, ownerID, ownerType)
+	e.enqueueLegacyFlow(ctx, queueID, flw, ownerID, ownerType)
 	e.awaitApprovalParked(ctx, flw, steps[0].ID)
 
 	// The expire path writes the status before the stop directive lands, so
@@ -143,9 +143,6 @@ func (e *FlowTestSuite) TestApprovalDeniedStopsWorkflow() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// A parked step that never receives a retry or skip is abandoned at
-// MaxWaitCeiling: marked errored with the abandoned reason and stop directive,
-// and the workflow finishes and drains.
 func (e *FlowTestSuite) TestParkedRetryExpiresStopsWorkflow() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -154,26 +151,12 @@ func (e *FlowTestSuite) TestParkedRetryExpiresStopsWorkflow() {
 	flw, queueID := e.setupLifecycleTest(ctx, ownerID, ownerType, steps)
 
 	e.enqueueLifecycleFlow(ctx, queueID, flw, ownerID, ownerType)
-	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusFailedPendingRetry)
-
-	require.Eventually(e.T(), func() bool {
-		step := e.getStep(ctx, steps[0].ID)
-		return step.Status.Status == app.StatusError &&
-			strings.HasPrefix(step.Status.StatusHumanDescription, "step abandoned after failure") &&
-			directive.Step(step.ResultDirective) == directive.StepStop
-	}, ceilingWait, pollInterval, "parked step was not abandoned at the wait ceiling")
+	e.waitForResidentAwaitRetry(ctx, flw, "park-expires")
+	e.waitForQueueSignalStatus(ctx, flw.ID, "install_workflows", executeflow.SignalType, app.StatusSuccess)
+	e.assertTemporalDrained(ctx, flw.ID)
 
 	step := e.getStep(ctx, steps[0].ID)
-	require.Equal(e.T(), true, step.Status.Metadata["abandoned"])
-	require.NotEmpty(e.T(), step.Status.Metadata["original_error"])
-	require.Equal(e.T(), directive.StepStop, directive.Step(step.ResultDirective))
-
-	require.Eventually(e.T(), func() bool {
-		var wf app.Workflow
-		if err := e.service.DB.WithContext(ctx).First(&wf, "id = ?", flw.ID).Error; err != nil {
-			return false
-		}
-		return !wf.FinishedAt.IsZero()
-	}, ceilingWait, pollInterval, "workflow with abandoned step must finish")
-	e.assertTemporalDrained(ctx, flw.ID)
+	require.Equal(e.T(), app.StatusError, step.Status.Status)
+	require.Equal(e.T(), directive.StepAwaitRetry, directive.Step(step.ResultDirective))
+	require.Equal(e.T(), app.StatusFailedPendingRetry, e.getWorkflow(ctx, flw.ID).Status.Status)
 }
