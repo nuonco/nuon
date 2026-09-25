@@ -26,7 +26,7 @@ func (h *Helpers) EnqueueInstallWorkflow(ctx context.Context, installID, workflo
 // callback the caller can await for completion.
 func (h *Helpers) EnqueueInstallWorkflowWithCallback(ctx context.Context, installID, workflowID string, cb callback.Ref) error {
 	return h.enqueueInstallSignal(ctx, installID, InstallWorkflowsQueueName,
-		&executeflow.Signal{WorkflowID: workflowID},
+		executeflow.NewSignal(workflowID),
 		workflowID, (&app.Workflow{}).TableName(), cb)
 }
 

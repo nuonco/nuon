@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"strings"
 
 	"github.com/distribution/reference"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -138,7 +139,13 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 	if !run.ActionWorkflowConfigID.Empty() && run.ActionWorkflowConfig.Image != "" {
 		sourceImage, err := RenderText(run.ActionWorkflowConfig.Image, stateMap)
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "unable to render action image")
+			return nil, nil, fmt.Errorf(
+				"unable to resolve action image %q: %w; if it references a container_image component, that component has no build synced into this install yet",
+				run.ActionWorkflowConfig.Image, err,
+			)
+		}
+		if strings.TrimSpace(sourceImage) == "" {
+			return nil, nil, fmt.Errorf("action image %q rendered empty", run.ActionWorkflowConfig.Image)
 		}
 
 		if err := p.setActionImagePlan(ctx, plan, sourceImage, runID, stack, stateMap, cloudAuth); err != nil {

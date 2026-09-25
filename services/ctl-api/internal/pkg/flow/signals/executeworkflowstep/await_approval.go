@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
@@ -48,7 +49,38 @@ func (s *Signal) awaitApprovalResponse(ctx workflow.Context, step *app.WorkflowS
 		},
 	})
 
+	// Resident flows do not hold a workflow open for a human: the step
+	// returns with await-approval written, the group and flow unwind, and the
+	// response re-dispatches this step with ResumeApproval set.
+	if s.ResidentFlow {
+		return nil, errApprovalParked
+	}
+
 	return s.waitForApprovalResponse(ctx, flw, step)
+}
+
+// errApprovalParked marks a resident step that returned after writing
+// await-approval; the caller returns nil so the group sees the directive.
+var errApprovalParked = errors.New("approval parked")
+
+// resumeApproval applies the persisted response to a step that parked in
+// awaiting-approval. A step that is no longer parked (already resolved,
+// cancelled, or retried) is left alone.
+func (s *Signal) resumeApproval(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow) error {
+	if step.Status.Status != app.AwaitingApproval || step.Approval == nil || step.Approval.Response == nil {
+		l.Debug("step is not parked awaiting approval with a response, exiting",
+			zap.String("step_id", step.ID),
+			zap.String("step_status", string(step.Status.Status)))
+		return nil
+	}
+
+	defer func() {
+		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepFinishedAtByID(ctx, step.ID); err != nil {
+			l.Error("unable to update finished at", zap.Error(err))
+		}
+	}()
+
+	return s.processApprovalResponse(ctx, step, flw, step.Approval.Response)
 }
 
 // dispatchApprovalResponse routes the approval response to the appropriate handler.

@@ -71,6 +71,11 @@ type handler struct {
 	finished  bool
 	canceled  bool
 
+	// autoRewarmDeclined is set when a terminal re-warm saw only read-only
+	// updates: run() must return without any yielding work (callbacks, cache
+	// sleep) so no window remains where a mutating update could be accepted
+	// and persisted but never executed.
+	autoRewarmDeclined bool
 	// autoRewarmStarted guards the resident terminal-success re-warm path so the
 	// internal validate→execute is launched at most once per Handler run.
 	autoRewarmStarted bool

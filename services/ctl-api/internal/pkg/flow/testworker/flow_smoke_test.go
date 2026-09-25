@@ -4,6 +4,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
@@ -25,6 +26,10 @@ func (e *FlowTestSuite) TestSingleStepSuccess() {
 
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusSuccess)
 	e.phase("db-success")
+	require.Eventually(e.T(), func() bool {
+		queueSignal := e.getLatestQueueSignal(ctx, flw.ID, "install_workflows", executeflow.SignalType)
+		return queueSignal.Status.Status == app.StatusSuccess
+	}, testResidentIdleTimeout, pollInterval, "resident success should not wait for the idle timeout")
 
 	steps := e.getStepsByWorkflow(ctx, flw.ID)
 	require.Len(e.T(), steps, 1)

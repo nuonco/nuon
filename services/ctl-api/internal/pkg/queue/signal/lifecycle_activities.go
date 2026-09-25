@@ -196,7 +196,11 @@ func (a *SignalLifecycleActivities) RunSignalLifecycleAfterPhase(ctx context.Con
 		if err := hook.AfterPhase(ctx, req.Event, req.Outcome); err != nil {
 			a.recordHookInvocation(ctx, hook, req.Event, "after", "error")
 			failedHooks++
-			l.Error("after-phase hook failed",
+			// Fail open: the activity never re-fires the whole hook set
+			// (that would duplicate already-delivered Slack posts and
+			// webhooks), so a hook error here means the notification is
+			// dropped for good. Make the drop loud.
+			l.Error("after-phase hook failed; notification dropped",
 				zap.String("hook", hook.Name()),
 				zap.Error(err))
 		} else {
