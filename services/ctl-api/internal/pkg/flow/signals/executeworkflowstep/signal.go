@@ -79,6 +79,13 @@ type Signal struct {
 	// When non-zero, Timeout() returns this instead of the hardcoded fallback.
 	DerivedTimeout time.Duration `json:"derived_timeout,omitempty"`
 
+	ResidentFlow bool `json:"resident_flow,omitempty"`
+
+	// ResumeApproval marks a dispatch of a step that parked in
+	// awaiting-approval and now has a persisted response: Execute skips the
+	// inner signal and only applies the response.
+	ResumeApproval bool `json:"resume_approval,omitempty"`
+
 	// innerQueueSignalID tracks the currently executing inner signal so that
 	// Cancel() can propagate cancellation to it. Set during executeInnerSignal,
 	// read during Cancel. Safe because Temporal workflows are single-threaded.

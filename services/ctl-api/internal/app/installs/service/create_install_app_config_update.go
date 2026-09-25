@@ -95,9 +95,7 @@ func (s *service) CreateInstallAppConfigUpdate(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
-		WorkflowID: wf.ID,
-	}, wf.ID, "install_workflows"); err != nil {
+	if err := s.enqueueInstallSignal(ctx, queueID, executeflow.NewSignal(wf.ID), wf.ID, "install_workflows"); err != nil {
 		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 		return
 	}
