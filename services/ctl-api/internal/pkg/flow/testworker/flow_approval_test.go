@@ -136,6 +136,44 @@ func (e *FlowTestSuite) TestApprovalApproveContinues() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
+// A parked approval holds no Temporal workflow open: step, group, and (after
+// the idle timeout) the flow host all close. Approving re-warms the host cold
+// and the workflow runs to completion.
+func (e *FlowTestSuite) TestApprovalParkDrainsThenApproveResumes() {
+	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
+	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
+	ownerID, ownerType := newTestOwner()
+	steps := []app.WorkflowStep{
+		approvalStep("approve-after-drain", 1, signaldb.SignalData{Signal: &ApprovalInnerSignal{}}),
+		{
+			Name:          "after-approval",
+			Idx:           200,
+			GroupIdx:      2,
+			ExecutionType: app.WorkflowStepExecutionTypeSystem,
+			QueueSignal:   &signaldb.SignalData{Signal: &SuccessSignal{}},
+		},
+	}
+	flw, queueID := e.setupLifecycleTest(ctx, ownerID, ownerType, steps)
+	approval := e.seedApproval(ctx, &steps[0])
+
+	e.enqueueLifecycleFlow(ctx, queueID, flw, ownerID, ownerType)
+	e.awaitApprovalParked(ctx, flw, steps[0].ID)
+	e.assertTemporalDrained(ctx, flw.ID)
+
+	require.Equal(e.T(), app.AwaitingApproval, e.getStep(ctx, steps[0].ID).Status.Status,
+		"step must stay awaiting-approval after the host idles out")
+	require.Equal(e.T(), app.AwaitingApproval, e.getWorkflow(ctx, flw.ID).Status.Status,
+		"workflow must stay awaiting-approval after the host idles out")
+
+	e.respondApproval(ctx, flw, &steps[0], approval.ID, app.WorkflowStepApprovalResponseTypeApprove)
+
+	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusSuccess)
+	for _, s := range e.getStepsByWorkflow(ctx, flw.ID) {
+		require.Equal(e.T(), app.StatusSuccess, s.Status.Status, s.Name)
+	}
+	e.assertTemporalDrained(ctx, flw.ID)
+}
+
 // After approval the workflow reports in-progress while the next step runs.
 func (e *FlowTestSuite) TestApprovalApproveMarksWorkflowRunning() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())

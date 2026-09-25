@@ -53,6 +53,8 @@ type Signal struct {
 	// the loop returns cleanly and the workflow re-warms on the next dispatch.
 	Resident bool `json:"resident,omitempty"`
 
+	ResidentIdleTimeout time.Duration `json:"resident_idle_timeout,omitempty"`
+
 	// Resume state — set by update handlers (approve/retry/skip) to wake the
 	// main execute loop when it is waiting after an approval pause or error.
 	resumeRequested bool
@@ -64,13 +66,27 @@ type Signal struct {
 	// parked resident workflow and run a freshly-added step.
 	appendRequested bool
 
-	// updatesInFlight counts append-step and retry-step update handlers that
+	// hostFinished is set the instant Execute returns. A resident host stays
+	// open briefly afterwards (completion callbacks, handler drain), and a
+	// wake-flag update accepted in that window would persist its step rows but
+	// never run them. Validators reject such updates so the client retries
+	// against a fresh run, which re-warms.
+	hostFinished bool
+
+	// updatesInFlight counts resident update handlers that
 	// are currently executing. Those handlers persist their step rows before
 	// they set appendRequested/resumeRequested, so a resident host that idles
 	// out on its timer alone could close while a step is still being written
 	// and orphan it until the next dispatch re-warms the host. parkResident
 	// will not idle out while this counter is non-zero.
 	updatesInFlight int
+	updatesStarted  int
+	// mutatingUpdatesStarted counts only updates that change flow state
+	// (retry/append/skip/cancel/...). Read-only updates (poll-next-step,
+	// is-retryable) are excluded so they can never re-warm a terminal host
+	// into re-driving the conductor (see AutoExecuteReady).
+	mutatingUpdatesStarted int
+	retryInFlight          map[string]bool
 
 	// Cancel state — set by cancel update handlers.
 	cancelRequested bool
@@ -102,13 +118,21 @@ type Signal struct {
 	tmw tmetrics.Writer
 }
 
+func NewSignal(workflowID string) *Signal {
+	return &Signal{
+		WorkflowID: workflowID,
+		Resident:   true,
+	}
+}
+
 var (
-	_ qsignal.Signal                     = (*Signal)(nil)
-	_ qsignal.SignalWithCancel           = (*Signal)(nil)
-	_ qsignal.SignalWithUpdateHandlers   = (*Signal)(nil)
-	_ qsignal.SignalWithLifecycleContext = (*Signal)(nil)
-	_ qsignal.SignalWithParams           = (*Signal)(nil)
-	_ qsignal.AutoExecuteOnTerminalStart = (*Signal)(nil)
+	_ qsignal.Signal                      = (*Signal)(nil)
+	_ qsignal.SignalWithCancel            = (*Signal)(nil)
+	_ qsignal.SignalWithUpdateHandlers    = (*Signal)(nil)
+	_ qsignal.SignalWithLifecycleContext  = (*Signal)(nil)
+	_ qsignal.SignalWithParams            = (*Signal)(nil)
+	_ qsignal.AutoExecuteOnTerminalStart  = (*Signal)(nil)
+	_ qsignal.CompletionCallbacksWorkflow = (*Signal)(nil)
 )
 
 func (s *Signal) WithParams(p *qsignal.Params) {
@@ -165,6 +189,39 @@ func (s *Signal) SleepAfter() time.Duration {
 // (re)started by update-with-start after it idled out and completed. See the
 // queue handler's re-warm path.
 func (s *Signal) AutoExecuteOnTerminalStart() bool { return s.Resident }
+
+func (s *Signal) AutoExecuteReady() bool { return s.mutatingUpdatesStarted > 0 }
+
+// AutoExecuteDeclined reports that this re-warm was triggered only by
+// read-only updates: at least one update ran, none of them were mutating, and
+// none are still in flight. The Handler finishes instead of re-driving the
+// conductor on a terminal flow.
+func (s *Signal) AutoExecuteDeclined() bool {
+	return s.updatesStarted > 0 && s.mutatingUpdatesStarted == 0 && s.updatesInFlight == 0
+}
+
+func (s *Signal) beginUpdate() func() {
+	s.updatesStarted++
+	s.mutatingUpdatesStarted++
+	s.updatesInFlight++
+	return func() { s.updatesInFlight-- }
+}
+
+// beginReadOnlyUpdate tracks an update that observes flow state without
+// changing it. It still holds updatesInFlight (so parkResident cannot idle
+// out mid-read) but does not arm the auto-rewarm execute path.
+func (s *Signal) beginReadOnlyUpdate() func() {
+	s.updatesStarted++
+	s.updatesInFlight++
+	return func() { s.updatesInFlight-- }
+}
+
+func (s *Signal) CompletionCallbacksWorkflowID() string {
+	if !s.Resident {
+		return ""
+	}
+	return s.WorkflowID
+}
 
 // LifecycleContext exposes the workflow identity + owner so lifecycle hooks
 // can emit workflow.lifecycle.* webhook events without leaking inner-signal
@@ -278,16 +335,34 @@ func (s *Signal) failWorkflow(ctx workflow.Context, err error) error {
 func (s *Signal) Execute(ctx workflow.Context) error {
 	ctx = cctx.SetWorkflowTelemetryWorkflowContext(ctx, s.workflowTelemetry())
 
+	s.hostFinished = false
+	defer func() { s.hostFinished = true }()
 	return s.executeFlow(ctx)
+}
+
+// HostFinishedRejection is the update-rejection message a resident host
+// returns for a wake-flag update that arrives after its conductor exited. The
+// flow client matches on it to retry against a fresh Handler run.
+const HostFinishedRejection = "resident host finished; retry against a fresh run"
+
+func (s *Signal) rejectIfHostFinished() error {
+	if s.Resident && s.hostFinished {
+		return errors.New(HostFinishedRejection)
+	}
+	return nil
+}
+
+func liveHostValidator[T any](s *Signal) func(workflow.Context, T) error {
+	return func(workflow.Context, T) error { return s.rejectIfHostFinished() }
 }
 
 func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 	if err := workflow.SetUpdateHandlerWithOptions(ctx, "retry-step",
-		s.retryStepHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		s.retryStepHandler, workflow.UpdateHandlerOptions{Validator: liveHostValidator[RetryStepRequest](s)}); err != nil {
 		return err
 	}
 	if err := workflow.SetUpdateHandlerWithOptions(ctx, "approve-step",
-		s.approveStepHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		s.approveStepHandler, workflow.UpdateHandlerOptions{Validator: liveHostValidator[ApproveStepRequest](s)}); err != nil {
 		return err
 	}
 	if err := workflow.SetUpdateHandlerWithOptions(ctx, "is-retryable",
@@ -295,7 +370,7 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 		return err
 	}
 	if err := workflow.SetUpdateHandlerWithOptions(ctx, "skip-step",
-		s.skipStepHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		s.skipStepHandler, workflow.UpdateHandlerOptions{Validator: liveHostValidator[SkipStepRequest](s)}); err != nil {
 		return err
 	}
 	if err := workflow.SetUpdateHandlerWithOptions(ctx, "cancel-step",
@@ -315,7 +390,7 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 		return err
 	}
 	if err := workflow.SetUpdateHandlerWithOptions(ctx, "retry-group",
-		s.retryGroupHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		s.retryGroupHandler, workflow.UpdateHandlerOptions{Validator: liveHostValidator[RetryGroupRequest](s)}); err != nil {
 		return err
 	}
 	if err := workflow.SetUpdateHandlerWithOptions(ctx, "pause-workflow",
@@ -323,9 +398,9 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 		return err
 	}
 	if err := workflow.SetUpdateHandlerWithOptions(ctx, "unpause-workflow",
-		s.unpauseWorkflowHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		s.unpauseWorkflowHandler, workflow.UpdateHandlerOptions{Validator: func(workflow.Context) error { return s.rejectIfHostFinished() }}); err != nil {
 		return err
 	}
 	return workflow.SetUpdateHandlerWithOptions(ctx, "append-step",
-		s.appendStepHandler, workflow.UpdateHandlerOptions{})
+		s.appendStepHandler, workflow.UpdateHandlerOptions{Validator: liveHostValidator[AppendStepRequest](s)})
 }
