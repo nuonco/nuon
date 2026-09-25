@@ -170,6 +170,7 @@ export const InstallForm = ({
           {(field) => (
             <RoleSelector
               installId={installId ?? ''}
+              workflowType="input_update"
               value={field.state.value}
               onChange={field.handleChange}
               name="role"

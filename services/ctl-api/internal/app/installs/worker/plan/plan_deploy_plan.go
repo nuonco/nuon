@@ -189,8 +189,8 @@ func (p *Planner) getRoleForDeploy(
 
 // installWorkflowForRoleDefault returns the parent install workflow used to
 // derive a step's lowest-precedence default role, or nil when workflow-type
-// defaulting should not apply. It returns nil when the global config flag is
-// off (WORKFLOW_DEFAULT_ROLE_ENABLED) or the workflow can't be resolved, so the
+// defaulting should not apply. It returns nil when the legacy opt-out is set
+// (USE_LEGACY_MAINTENANCE_ROLE_DEFAULT) or the workflow can't be resolved, so the
 // operation-roles package falls back to the maintenance role and planning never
 // fails on role defaulting.
 func (p *Planner) installWorkflowForRoleDefault(
