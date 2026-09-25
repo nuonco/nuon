@@ -1131,7 +1131,7 @@ const ExampleAppDrawer = () => {
 const ExampleEscapeHatch = ({ onExit }: { onExit: () => void }) => (
   <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-dashed px-4 py-3">
     <div className="flex items-center gap-2">
-      <Icon variant="PackageIcon" size={16} theme="neutral" />
+      <Icon variant="TireIcon" size={16} theme="neutral" />
       <Text variant="subtext" theme="neutral">
         Want to see an install work before touching your repo?
       </Text>
@@ -1638,7 +1638,7 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
       <Card className="!gap-4">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
-            <Icon variant="PackageIcon" size={20} theme="neutral" />
+            <Icon variant="TireIcon" size={20} theme="neutral" />
             <Text variant="h3" role="heading" level={3}>
               Or kick the tires with our example app first
             </Text>
@@ -1829,7 +1829,7 @@ const InstallSummaryCard = ({
   return (
     <Card className="!gap-5">
       <div className="flex items-center gap-3">
-        <Icon variant={own ? 'GitBranchIcon' : 'PackageIcon'} size={24} theme="brand" />
+        <Icon variant={own ? 'GitBranchIcon' : 'TireIcon'} size={24} theme="brand" />
         <div className="flex flex-col">
           <Text variant="base" weight="strong">
             {own ? appName : 'Nuon Kitchen Sink app'}
