@@ -104,6 +104,9 @@ func init() {
 	config.RegisterDefault("runner_container_image_url", "public.ecr.aws/p7e3r5y0/runner")
 	config.RegisterDefault("runner_container_image_url_gcp", "us-west1-docker.pkg.dev/nuon-public/runner/runner")
 	config.RegisterDefault("runner_container_image_url_azure", "")
+	config.RegisterDefault("runner_container_image_verification_mode", "warn")
+	config.RegisterDefault("runner_container_image_signature_issuer", "https://token.actions.githubusercontent.com")
+	config.RegisterDefault("runner_container_image_signature_identity_regexp", `^https://github\.com/nuonco/nuon/\.github/workflows/service\.yml@refs/heads/main$`)
 	config.RegisterDefault("runner_api_url", "http://localhost:8083")
 	config.RegisterDefault("public_api_url", "http://localhost:8081")
 	config.RegisterDefault("temporal_url", "https://app.nuon.co")
@@ -413,6 +416,12 @@ type Config struct {
 	RunnerContainerImageURLAzure string `config:"runner_container_image_url_azure"`
 	RunnerContainerImageTag      string `config:"runner_container_image_tag" validate:"required"`
 	UseLocalRunners              bool   `config:"use_local_runners"`
+
+	// Runner VMs verify the runner image's keyless signature before running it: warn logs a failure,
+	// enforce refuses to run an image that fails.
+	RunnerContainerImageVerificationMode        string `config:"runner_container_image_verification_mode" validate:"omitempty,oneof=disabled warn enforce"`
+	RunnerContainerImageSignatureIssuer         string `config:"runner_container_image_signature_issuer"`
+	RunnerContainerImageSignatureIdentityRegexp string `config:"runner_container_image_signature_identity_regexp"`
 
 	// AWS IID auth
 	AWSIIDCertsDir string `config:"aws_iid_certs_dir"`

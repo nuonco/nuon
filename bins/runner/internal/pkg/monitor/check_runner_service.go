@@ -93,20 +93,7 @@ func (h *Monitor) ensureConfigDirectories(ctx context.Context) error {
 }
 
 func (h *Monitor) ensureImageConfigFile(ctx context.Context) error {
-	// NOTE(fd): this method just writes the settings no matter what
-	// TODO: we should really be comparing the settings to the contents of the file and writing only when they have changed
-	h.l.Debug(fmt.Sprintf("ensuring runner image config file exists: %s", ImageConfigFilename))
-	tmpl := template.Must(template.New("").Parse(imageConfigTemplate))
-	f, err := os.Create(ImageConfigFilename)
-	if err != nil {
-		return errors.Wrap(err, "unable to create image config file")
-	}
-	err = tmpl.Execute(f, h.settings)
-	if err != nil {
-		return errors.Wrap(err, "unable to execute template for image config file")
-	}
-	f.Close()
-	return nil
+	return EnsureImageConfigFile(ctx, h.l, h.settings)
 }
 
 func (h *Monitor) ensureRunnerTokenValid(ctx context.Context) error {
@@ -153,12 +140,16 @@ func EnsureImageConfigFile(ctx context.Context, l *zap.Logger, settings *setting
 	// NOTE(fd): this method just writes the settings no matter what
 	// TODO: we should really be comparing the settings to the contents of the file and writing only when they have changed
 	l.Debug(fmt.Sprintf("ensuring runner image config file exists: %s", ImageConfigFilename))
+	image, err := runnerImageConfig(ctx, l, settings, verifyRunnerImage)
+	if err != nil {
+		return err
+	}
 	tmpl := template.Must(template.New("").Parse(imageConfigTemplate))
 	f, err := os.Create(ImageConfigFilename)
 	if err != nil {
 		return errors.Wrap(err, "unable to create image config file")
 	}
-	err = tmpl.Execute(f, settings)
+	err = tmpl.Execute(f, image)
 	if err != nil {
 		return errors.Wrap(err, "unable to execute template for image config file")
 	}
