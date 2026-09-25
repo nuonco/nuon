@@ -94,24 +94,33 @@ func (s *Selector) Canonical() string {
 	if s == nil {
 		return ""
 	}
-	sortedPairs := func(m Labels) [][2]string {
-		keys := make([]string, 0, len(m))
-		for k := range m {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		pairs := make([][2]string, len(keys))
-		for i, k := range keys {
-			pairs[i] = [2]string{k, m[k]}
-		}
-		return pairs
-	}
 	b, _ := json.Marshal(struct {
 		MatchLabels    [][2]string `json:"match_labels"`
 		NotMatchLabels [][2]string `json:"not_match_labels,omitempty"`
 	}{
-		MatchLabels:    sortedPairs(s.MatchLabels),
-		NotMatchLabels: sortedPairs(s.NotMatchLabels),
+		MatchLabels:    CanonicalPairs(s.MatchLabels),
+		NotMatchLabels: CanonicalPairs(s.NotMatchLabels),
 	})
+	return string(b)
+}
+
+func CanonicalPairs(m map[string]string) [][2]string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	pairs := make([][2]string, len(keys))
+	for i, k := range keys {
+		pairs[i] = [2]string{k, m[k]}
+	}
+	return pairs
+}
+
+func CanonicalMap(m map[string]string) string {
+	if len(m) == 0 {
+		return ""
+	}
+	b, _ := json.Marshal(CanonicalPairs(m))
 	return string(b)
 }

@@ -6,9 +6,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/labeladded"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -84,12 +87,40 @@ func (s *service) RemoveInstallLabels(ctx *gin.Context) {
 		return
 	}
 
+	removedKeys := make([]string, 0, len(req.Keys))
+	for _, key := range req.Keys {
+		if _, exists := install.Labels[key]; exists {
+			removedKeys = append(removedKeys, key)
+		}
+	}
 	install.Labels = remaining
 	install.LabelTemplates.RemoveKeys(req.Keys)
 
-	if err := s.db.WithContext(ctx).Model(&install).Select("labels", "label_templates").Updates(&install).Error; err != nil {
+	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&install).Select("labels", "label_templates").Updates(&install).Error; err != nil {
+			return err
+		}
+		return appshelpers.ReconcileInstallAppBranchGroupWithDB(ctx, tx, install.ID)
+	}); err != nil {
 		ctx.Error(fmt.Errorf("unable to update install labels: %w", err))
 		return
+	}
+
+	if len(removedKeys) > 0 {
+		queueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		for _, labelName := range removedKeys {
+			if err := s.enqueueInstallSignal(ctx, queueID, &labeladded.Signal{
+				InstallID: install.ID,
+				LabelName: labelName,
+			}, "", ""); err != nil {
+				ctx.Error(fmt.Errorf("unable to enqueue label change signal: %w", err))
+				return
+			}
+		}
 	}
 
 	ctx.JSON(http.StatusOK, install)

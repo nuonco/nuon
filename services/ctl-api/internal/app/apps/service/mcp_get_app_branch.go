@@ -50,12 +50,11 @@ type mcpAppBranchOverview struct {
 }
 
 type mcpAppBranchInstallGroup struct {
-	ID            string   `json:"id"`
-	Name          string   `json:"name"`
-	Order         int      `json:"order"`
-	AllInstalls   bool     `json:"all_installs"`
-	InstallIDs    []string `json:"install_ids,omitempty"`
-	LabelSelector bool     `json:"has_label_selector"`
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	Order         int    `json:"order"`
+	Default       bool   `json:"default"`
+	LabelSelector bool   `json:"has_label_selector"`
 }
 
 type mcpAppBranchRunOverview struct {
@@ -176,8 +175,7 @@ func (s *service) mcpGetAppBranch(ctx context.Context, _ *mcp.CallToolRequest, i
 				ID:            g.ID,
 				Name:          g.Name,
 				Order:         g.Order,
-				AllInstalls:   g.AllInstalls,
-				InstallIDs:    []string(g.InstallIDs),
+				Default:       g.Default,
 				LabelSelector: g.LabelSelector != nil,
 			})
 		}

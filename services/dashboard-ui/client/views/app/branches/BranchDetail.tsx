@@ -44,9 +44,15 @@ const BranchDetailContent = () => {
   }, [branch.configs])
 
   const { data: appInstallsResult } = useQuery({
-    queryKey: ['app-installs', orgId, appId],
-    queryFn: () => getAppInstalls({ appId, orgId, limit: 100 }),
-    enabled: !!orgId && !!appId && !!currentConfig,
+    queryKey: ['app-installs', orgId, appId, branchId],
+    queryFn: () =>
+      getAppInstalls({
+        appId,
+        orgId,
+        app_branch_id: branchId,
+        limit: 100,
+      }),
+    enabled: !!orgId && !!appId && !!branchId && !!currentConfig,
     refetchInterval: 10000,
   })
 

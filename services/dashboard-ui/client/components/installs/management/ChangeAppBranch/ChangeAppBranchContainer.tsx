@@ -15,7 +15,10 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { getAppBranches, moveInstallAppBranch } from '@/lib'
 import type { TAppBranch, TInstall } from '@/types'
-import { ChangeAppBranchModal } from './ChangeAppBranchModal'
+import {
+  ChangeAppBranchModal,
+  type TBranchGroupAssignmentMode,
+} from './ChangeAppBranchModal'
 
 interface IChangeAppBranchContainer extends IModal {
   install: TInstall
@@ -33,6 +36,9 @@ export const ChangeAppBranchContainer = ({
   const queryClient = useQueryClient()
   const appId = install.app_id ?? ''
   const [targetBranch, setTargetBranch] = useState<TAppBranch | null>(null)
+  const [targetGroup, setTargetGroup] = useState('')
+  const [assignmentMode, setAssignmentMode] =
+    useState<TBranchGroupAssignmentMode | null>(null)
 
   const { data: branchList } = useQuery({
     placeholderData: keepPreviousData,
@@ -42,12 +48,24 @@ export const ChangeAppBranchContainer = ({
   })
 
   const { mutate: moveInstall, isPending } = useMutation({
-    mutationFn: () =>
-      moveInstallAppBranch({
+    mutationFn: () => {
+      const group = targetBranch?.configs
+        ?.at(0)
+        ?.install_groups?.find((candidate) => candidate.name === targetGroup)
+      return moveInstallAppBranch({
         installId: install.id,
         orgId: org!.id,
-        body: { app_branch_id: targetBranch!.id },
-      }),
+        body: {
+          app_branch_id: targetBranch!.id,
+          app_branch_group:
+            assignmentMode === 'explicit' ? targetGroup : undefined,
+          labels:
+            assignmentMode === 'labels'
+              ? (group?.label_selector?.match_labels ?? {})
+              : undefined,
+        },
+      })
+    },
     onSuccess: () => {
       addToast(
         <Toast heading="Branch changed" theme="success">
@@ -84,9 +102,23 @@ export const ChangeAppBranchContainer = ({
     <ChangeAppBranchModal
       install={install}
       targetBranch={targetBranch}
+      targetGroup={targetGroup}
+      assignmentMode={assignmentMode}
       branches={branchList?.data ?? []}
       isPending={isPending}
-      onSelectBranch={setTargetBranch}
+      onSelectBranch={(branch) => {
+        setTargetBranch(branch)
+        setTargetGroup('')
+        setAssignmentMode(null)
+      }}
+      onSelectGroup={(groupName) => {
+        setTargetGroup(groupName)
+        const group = targetBranch?.configs
+          ?.at(0)
+          ?.install_groups?.find((candidate) => candidate.name === groupName)
+        setAssignmentMode(group?.default ? 'default' : null)
+      }}
+      onSelectAssignmentMode={setAssignmentMode}
       onConfirm={() => targetBranch && moveInstall()}
       {...props}
     />
