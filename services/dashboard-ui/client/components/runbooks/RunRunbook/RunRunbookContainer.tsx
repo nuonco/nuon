@@ -53,6 +53,7 @@ export const RunRunbookModal = ({
       )
       removeModal(props.modalId)
       queryClient.invalidateQueries({ queryKey: ['install-runbook'] })
+      queryClient.invalidateQueries({ queryKey: ['install-runbooks'] })
       const workflowId = result?.install_workflow_id
       if (workflowId) {
         navigate(`/${org!.id}/installs/${install!.id}/workflows/${workflowId}`)
