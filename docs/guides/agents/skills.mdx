@@ -1,0 +1,49 @@
+---
+title: "Skills"
+description: "Guidance for completing tasks in Nuon."
+icon: "graduation-cap"
+keywords: ["MCP", "skills", "agents", "README", "policy", "policies", "rego"]
+---
+
+You can use our catalog of skills to author App Configs and perform other tasks in Nuon.
+
+## Loading Skills
+
+To avoid polluting your agent's context window, skills are not loaded by default. If you are working on a task and want to load relevent skills there two methods.
+
+### Using the MCP
+
+If your client is already [connected to the Nuon MCP](/guides/agents/overview), you can simply ask for skills related to your task.
+
+```
+What skills are available for editing this app config?
+```
+
+If you know what skill you want, you can ask for it by name.
+
+```
+Load the write-rego-policy skill and help me add a policy that blocks public S3 buckets.
+```
+
+### Install skills with npx
+
+If you are not using the MCP, you install the skills from [nuonco/skills](https://github.com/nuonco/skills) using npx.
+
+```sh
+npx skills add nuonco/skills
+```
+
+You can also install individual skills.
+
+```sh
+npx skills add nuonco/skills/write-readme
+```
+
+## Catalog
+
+These are all the skills we publish and maintain.
+
+| Skill | Covers |
+| --- | --- |
+| `write-readme` | App and runbook README templating — `<nuon-*>` display components, defensive rendering so the README never fails to render |
+| `write-rego-policy` | OPA/Rego policies in `policies/` — every policy type, warn vs. deny, testing a policy before syncing |
