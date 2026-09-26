@@ -166,14 +166,14 @@ func (s *installComponentsTestSuite) TestGetInstallComponentLatestDeploy() {
 
 func (s *installComponentsTestSuite) TestTeardownComponents() {
 	s.T().Run("success", func(t *testing.T) {
-		resp, err := s.apiClient.TeardownInstallComponents(s.ctx, s.installID)
+		resp, err := s.apiClient.TeardownInstallComponents(s.ctx, s.installID, "")
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 		require.NotEmpty(t, resp.WorkflowID)
 	})
 
 	s.T().Run("install not found", func(t *testing.T) {
-		_, err := s.apiClient.TeardownInstallComponents(s.ctx, generics.GetFakeObj[string]())
+		_, err := s.apiClient.TeardownInstallComponents(s.ctx, generics.GetFakeObj[string](), "")
 		require.Error(t, err)
 		require.True(t, nuon.IsNotFound(err))
 	})
