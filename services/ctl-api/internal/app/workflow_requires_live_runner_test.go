@@ -12,6 +12,7 @@ func TestWorkflowTypeRequiresLiveInstallRunner(t *testing.T) {
 		WorkflowTypeAppBranchesComponentRepoUpdate,
 		WorkflowTypeAppInstallSync,
 		WorkflowTypeAppConfigBuild,
+		WorkflowTypeAppBranchConfigUpdate,
 	}
 	for _, wt := range noLive {
 		if wt.RequiresLiveInstallRunner() {
@@ -35,7 +36,6 @@ func TestWorkflowTypeRequiresLiveInstallRunner(t *testing.T) {
 		WorkflowTypeRunbookRun,
 		WorkflowTypeComponentEnabled,
 		WorkflowTypeComponentDisabled,
-		WorkflowTypeAppBranchConfigUpdate,
 		WorkflowTypeRecoverHelmRelease,
 	}
 	for _, wt := range live {
