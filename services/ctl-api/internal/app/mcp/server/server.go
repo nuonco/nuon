@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/mcp/skills"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
@@ -221,13 +222,14 @@ func (s *Server) getServerForRequest(r *http.Request) *mcp.Server {
 		Version: "1.0.0",
 	}, &mcp.ServerOptions{
 		SchemaCache:  s.schemaCache,
-		Instructions: fmt.Sprintf("%s Authenticated as account %s in org %q. %s %s %s", s.serverPurpose, accountID, orgID, s.orgInstructions, api.MCPTimeInstructions, api.MCPPoliciesInstructions),
+		Instructions: fmt.Sprintf("%s Authenticated as account %s in org %q. %s %s %s %s", s.serverPurpose, accountID, orgID, s.orgInstructions, api.MCPTimeInstructions, api.MCPPoliciesInstructions, skills.Instructions),
 	})
 	server.AddReceivingMiddleware(s.receivingMetricsMiddleware)
 
 	for _, svc := range s.mcpServices {
 		svc.RegisterMCPTools(server)
 	}
+	skills.Register(server)
 
 	return server
 }
