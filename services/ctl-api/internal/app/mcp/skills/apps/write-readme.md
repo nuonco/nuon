@@ -1,5 +1,5 @@
 ---
-name: update-app-config-readme
+name: write-readme
 description: Write or update the README for a Nuon app or runbook (the `readme` field in metadata.toml / README.md). Use when asked to write, update, or improve an app README, runbook README, or install overview doc.
 domain: apps
 ---

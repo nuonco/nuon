@@ -23,7 +23,7 @@ func TestLoadedSkills(t *testing.T) {
 }
 
 func TestFind(t *testing.T) {
-	s, ok := Find("apps", "update-app-config-readme")
+	s, ok := Find("apps", "write-readme")
 	require.True(t, ok)
 	require.Contains(t, s.Body, "Defensive rendering")
 
@@ -33,14 +33,14 @@ func TestFind(t *testing.T) {
 
 func TestIndex(t *testing.T) {
 	idx := Index()
-	require.Contains(t, idx, "apps/update-app-config-readme")
+	require.Contains(t, idx, "apps/write-readme")
 }
 
 func TestParseSkillURI(t *testing.T) {
-	domain, name, ok := parseSkillURI("skill:///apps/update-app-config-readme.md")
+	domain, name, ok := parseSkillURI("skill:///apps/write-readme.md")
 	require.True(t, ok)
 	require.Equal(t, "apps", domain)
-	require.Equal(t, "update-app-config-readme", name)
+	require.Equal(t, "write-readme", name)
 
 	_, _, ok = parseSkillURI("not-a-skill-uri")
 	require.False(t, ok)
@@ -53,7 +53,7 @@ func TestReadIndexAndSkillResource(t *testing.T) {
 	require.True(t, strings.HasPrefix(res.Contents[0].Text, "# Skill index"))
 
 	res, err = readSkill(context.Background(), &mcp.ReadResourceRequest{
-		Params: &mcp.ReadResourceParams{URI: "skill:///apps/update-app-config-readme.md"},
+		Params: &mcp.ReadResourceParams{URI: "skill:///apps/write-readme.md"},
 	})
 	require.NoError(t, err)
 	require.Len(t, res.Contents, 1)

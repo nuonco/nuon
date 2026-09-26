@@ -109,7 +109,7 @@ func mcpListSkills(_ context.Context, _ *mcp.CallToolRequest, _ listSkillsInput)
 
 type loadSkillInput struct {
 	Domain string `json:"domain" jsonschema:"the skill's domain, e.g. apps"`
-	Name   string `json:"name" jsonschema:"the skill's name, e.g. update-app-config-readme"`
+	Name   string `json:"name" jsonschema:"the skill's name, e.g. write-readme"`
 }
 
 func mcpLoadSkill(_ context.Context, _ *mcp.CallToolRequest, in loadSkillInput) (*mcp.CallToolResult, any, error) {
