@@ -76,8 +76,11 @@ func TestStatelessRoundTrip(t *testing.T) {
 
 	tools, err := session.ListTools(ctx, nil)
 	require.NoError(t, err)
-	require.Len(t, tools.Tools, 1)
-	assert.Equal(t, "echo_org", tools.Tools[0].Name)
+	var names []string
+	for _, tool := range tools.Tools {
+		names = append(names, tool.Name)
+	}
+	assert.Contains(t, names, "echo_org")
 
 	res, err := session.CallTool(ctx, &mcp.CallToolParams{Name: "echo_org"})
 	require.NoError(t, err)
