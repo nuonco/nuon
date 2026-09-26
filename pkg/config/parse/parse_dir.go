@@ -110,7 +110,7 @@ func parseDir(ctx context.Context, parseCfg ParseConfig, source *sourceCapture) 
 
 	// NOTE(jm): this will go away once we deprecate the legacy config, and we can just have a pipeline of
 	// `config.AppConfig` parsers.
-	appCfg, err := obj.toAppConfig()
+	appCfg, err := obj.toAppConfig(parseCfg.SkipBranches)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to convert to app config")
 	}
