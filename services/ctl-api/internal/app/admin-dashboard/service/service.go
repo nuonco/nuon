@@ -262,6 +262,7 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.GET("/workflows", s.Workflows)
 		api.GET("/workflows/table", s.WorkflowsTable)
 		api.GET("/workflows/filter-options", s.WorkflowFilterOptions)
+		api.GET("/workflows/type-stats", s.WorkflowTypeStats)
 		api.POST("/workflows/bulk-cancel", s.BulkCancelWorkflows)
 		api.GET("/workflows/:workflow_id", s.WorkflowDetail)
 

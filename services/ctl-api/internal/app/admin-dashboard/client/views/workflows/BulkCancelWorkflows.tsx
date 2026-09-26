@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { bulkCancelWorkflows, getWorkflowFilterOptions, getWorkflows, type TBulkCancelResponse } from '@/lib/admin-api'
+import { bulkCancelWorkflows, getWorkflowFilterOptions, getWorkflows, getWorkflowTypeStats, type TBulkCancelResponse, type TWorkflowTypeStat } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { ConfirmModal } from '@/components/common/ConfirmModal'
 import { Pagination } from '@/components/common/Pagination'
@@ -82,6 +82,22 @@ export const BulkCancelWorkflows = () => {
     refetchInterval: 10_000,
   })
 
+  const typeStatFilters = useMemo(
+    () => ({
+      search: filters.search,
+      status: filters.status,
+      created_after: filters.created_after,
+      created_before: filters.created_before,
+    }),
+    [filters.search, filters.status, filters.created_after, filters.created_before],
+  )
+
+  const { data: typeStatsData } = useQuery({
+    queryKey: ['bulk-cancel-workflow-type-stats', typeStatFilters],
+    queryFn: () => getWorkflowTypeStats(typeStatFilters),
+    refetchInterval: 10_000,
+  })
+
   const cancelMutation = useMutation({
     mutationFn: (body: { workflow_ids?: string[] }) => bulkCancelWorkflows({ ...filters, ...body }),
     onSuccess: (resp) => {
@@ -90,6 +106,7 @@ export const BulkCancelWorkflows = () => {
       setSelected([])
       setConfirming(null)
       queryClient.invalidateQueries({ queryKey: ['bulk-cancel-workflows'] })
+      queryClient.invalidateQueries({ queryKey: ['bulk-cancel-workflow-type-stats'] })
       if (resp.queue_id && resp.signal_id) {
         navigate(`/queues/${resp.queue_id}/signals/${resp.signal_id}`)
       }
@@ -173,6 +190,12 @@ export const BulkCancelWorkflows = () => {
           </select>
         </label>
       </div>
+
+      <TypeHistogram
+        stats={typeStatsData?.stats || []}
+        selectedType={type}
+        onSelectType={(next) => { setType(next); resetPage() }}
+      />
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <span className="text-sm text-gray-600 dark:text-gray-400">
@@ -277,6 +300,63 @@ export const BulkCancelWorkflows = () => {
         onCancel={() => setConfirming(null)}
         onConfirm={() => cancelMutation.mutate(confirming === 'selected' ? { workflow_ids: selected } : {})}
       />
+    </div>
+  )
+}
+
+function TypeHistogram({
+  stats,
+  selectedType,
+  onSelectType,
+}: {
+  stats: TWorkflowTypeStat[]
+  selectedType: string
+  onSelectType: (type: string) => void
+}) {
+  if (stats.length === 0) return null
+
+  const max = Math.max(...stats.map((s) => s.count), 1)
+  const total = stats.reduce((sum, s) => sum + s.count, 0)
+
+  return (
+    <div className="mt-4 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">By type</h2>
+        <span className="text-xs text-gray-400 dark:text-gray-500">
+          {stats.length} type{stats.length === 1 ? '' : 's'} · {total} matching
+        </span>
+      </div>
+      <ul className="mt-2 flex flex-col gap-1.5">
+        {stats.map((s) => {
+          const pct = total > 0 ? (s.count / total) * 100 : 0
+          const selected = selectedType === s.type
+          return (
+            <li key={s.type}>
+              <button
+                type="button"
+                onClick={() => onSelectType(selected ? '' : s.type)}
+                className={`group flex w-full items-center gap-3 rounded-md px-1.5 py-0.5 text-left hover:bg-gray-50 dark:hover:bg-gray-900 ${selected ? 'bg-gray-50 dark:bg-gray-900' : ''}`}
+                aria-pressed={selected}
+                title={selected ? `Clear type filter (${s.type})` : `Filter to ${s.type}`}
+              >
+                <span className={`w-44 shrink-0 truncate font-mono text-xs ${selected ? 'text-primary-700 dark:text-primary-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                  {s.type}
+                </span>
+                <span className="relative h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                  <span
+                    className={`absolute inset-y-0 left-0 rounded-full ${selected ? 'bg-primary-500 dark:bg-primary-400' : 'bg-gray-400 dark:bg-gray-500 group-hover:bg-gray-500 dark:group-hover:bg-gray-400'}`}
+                    style={{ width: `${(s.count / max) * 100}%` }}
+                  />
+                </span>
+                <span className="w-24 shrink-0 text-right text-xs tabular-nums text-gray-500 dark:text-gray-400">
+                  {s.count}
+                  <span className="ml-1 text-gray-400 dark:text-gray-600">{pct.toFixed(0)}%</span>
+                </span>
+              </button>
+            </li>
+          )
+        })}
+      </ul>
     </div>
   )
 }
