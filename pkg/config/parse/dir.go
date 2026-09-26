@@ -183,12 +183,15 @@ func (c *ConfigDir) getBreakGlass() (*config.BreakGlass, error) {
 	}, nil
 }
 
-func (c *ConfigDir) getBranches() (*config.AppBranchConfig, []*config.AppBranchConfig, error) {
+func (c *ConfigDir) getBranches(skipValidate bool) (*config.AppBranchConfig, []*config.AppBranchConfig, error) {
 	if c.Branch != nil && len(c.Branches) > 0 {
 		return nil, nil, ParseErr{
 			Description: "Can not provide branches both with a branch.toml and branches/ directory",
 			Err:         errors.New("Can not provide branches both with a branch.toml and branches/ directory"),
 		}
+	}
+	if skipValidate {
+		return c.Branch, c.Branches, nil
 	}
 	if c.Branch != nil {
 		if err := c.Branch.Validate(); err != nil {
@@ -203,7 +206,7 @@ func (c *ConfigDir) getBranches() (*config.AppBranchConfig, []*config.AppBranchC
 	return c.Branch, c.Branches, nil
 }
 
-func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
+func (c *ConfigDir) toAppConfig(skipBranches bool) (*config.AppConfig, error) {
 	permissions, err := c.getPermissions()
 	if err != nil {
 		return nil, err
@@ -229,7 +232,7 @@ func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	branch, branches, err := c.getBranches()
+	branch, branches, err := c.getBranches(skipBranches)
 	if err != nil {
 		return nil, err
 	}
