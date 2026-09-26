@@ -20,6 +20,22 @@ const (
 	hasKubeConfigEnvVar string = "NUON_KUBECONFIG_ENABLED"
 )
 
+// actionStepEnv layers the environment an action step runs with. Later layers
+// overwrite earlier ones, so the ordering here is the contract: run env vars
+// are supplied per invocation (a runbook step, an MCP or ad-hoc run), so they
+// have to beat what the action config declares statically in stepEnvVars,
+// while plan overrides win outright.
+func (h *handler) actionStepEnv(builtInEnv, stepEnvVars map[string]string) map[string]string {
+	env := make(map[string]string)
+	env = generics.MergeMap(env, h.state.plan.BuiltinEnvVars)
+	env = generics.MergeMap(env, builtInEnv)
+	env = generics.MergeMap(env, stepEnvVars)
+	env = generics.MergeMap(env, h.state.run.RunEnvVars)
+	env = generics.MergeMap(env, h.state.plan.OverrideEnvVars)
+
+	return env
+}
+
 func (h *handler) getBuiltInEnv(ctx context.Context, cfg *models.AppActionWorkflowStepConfig) (map[string]string, error) {
 	outputsFP := h.outputsFP(cfg)
 	env := map[string]string{
