@@ -55,7 +55,7 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 	planOnly bool,
 	role string,
 ) (*app.Workflow, error) {
-	if workflowType.RequiresInstallRunner() {
+	if workflowType.RequiresInstallRunner() && !stackChangeDefersRunnerGate(workflowType, metadata) {
 		disabled, err := s.IsRunnerDisabled(ctx, installID)
 		if err != nil {
 			return nil, err
@@ -138,5 +138,16 @@ func requiresLiveInstallRunner(workflowType app.WorkflowType, metadata map[strin
 	if workflowType == app.WorkflowTypeInputUpdate && metadata[app.WorkflowMetadataKeyInputsOnly] == "true" {
 		return false
 	}
+	if stackChangeDefersRunnerGate(workflowType, metadata) {
+		return false
+	}
 	return workflowType.RequiresLiveInstallRunner()
+}
+
+// stackChangeDefersRunnerGate reports whether this workflow is an app-branch
+// config update whose stack apply can bring the install runner back. Creation
+// must not reject it for an offline or disabled runner.
+func stackChangeDefersRunnerGate(workflowType app.WorkflowType, metadata map[string]string) bool {
+	return workflowType == app.WorkflowTypeAppBranchConfigUpdate &&
+		metadata[app.WorkflowMetadataKeyStackChanged] == "true"
 }

@@ -111,6 +111,50 @@ app_branch = "main"
 	require.Equal(t, "main", cfg.Triggers.Rules[0].Target.AppBranch)
 }
 
+func TestParseDirSkipBranchesIgnoresInvalidBranch(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.Mkdir(filepath.Join(dir, "branches"), 0755))
+	require.NoError(t, os.Mkdir(filepath.Join(dir, "components"), 0755))
+	files := map[string]string{
+		"metadata.toml": `version = "v2"`,
+		"sandbox.toml": `terraform_version = "1.11.3"
+[public_repo]
+repo = "nuonco/aws-eks-sandbox"
+directory = "."
+branch = "main"
+`,
+		"runner.toml": `runner_type = "aws"
+helm_driver = "configmap"
+init_script_url = "https://example.com/init.sh"
+`,
+		"branches/default.toml": `name = "default"
+
+[[install_groups]]
+name = "canary"
+order = 1
+`,
+	}
+	for name, contents := range files {
+		require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte(contents), 0644))
+	}
+	fileProcessor := func(_ string, obj map[string]any) map[string]any { return obj }
+
+	_, err := ParseDir(context.Background(), ParseConfig{
+		Dirname:       dir,
+		FileProcessor: fileProcessor,
+	})
+	require.ErrorContains(t, err, `branch "default": one install group must be default`)
+
+	cfg, err := ParseDir(context.Background(), ParseConfig{
+		Dirname:       dir,
+		FileProcessor: fileProcessor,
+		SkipBranches:  true,
+	})
+	require.NoError(t, err)
+	require.Len(t, cfg.Branches, 1)
+	require.Equal(t, "default", cfg.Branches[0].Name)
+}
+
 func TestParseDirResolvesHelmValuesFromConfigRoot(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.MkdirAll(filepath.Join(dir, "components"), 0755))

@@ -117,7 +117,7 @@ export const WorkflowStepsPipeline = ({
   }
 
   return (
-    <div className="relative">
+    <div className="relative w-full min-w-0">
       {canScrollLeft && (
         <>
           <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-[var(--background)] to-transparent" />
@@ -127,9 +127,9 @@ export const WorkflowStepsPipeline = ({
 
       <div
         ref={viewportRef}
-        className="overflow-x-auto overflow-y-hidden snap-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className="relative w-full min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain snap-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
-        <div className="flex min-w-full overflow-hidden rounded-md border divide-x">
+        <div className="flex w-max min-w-full overflow-hidden rounded-md border divide-x">
           {steps.map((step, idx) => {
             const displayStatus = getStepDisplayStatus(step)
             const category = stepStatusCategory(displayStatus)
