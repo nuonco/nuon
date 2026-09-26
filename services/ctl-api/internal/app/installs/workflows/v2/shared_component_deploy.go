@@ -9,7 +9,7 @@ import (
 )
 
 // runnerHealthyStepName gates a phase on the install's runner reporting healthy.
-const runnerHealthyStepName = "runner healthy"
+const runnerHealthyStepName = app.RunnerHealthyStepName
 
 type stepGroup struct {
 	idx          int
