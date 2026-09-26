@@ -24,3 +24,9 @@ When starting the agent, also point it at your own resources — Helm charts, Te
 <Tip>
 Works with any agent: Claude Code, Google Gemini CLI, Amp Code, and others. For agents that don't read `CLAUDE.md`, create a symlink — e.g., `ln -s AGENTS.md GEMINI.md`.
 </Tip>
+
+## Other skills
+
+Beyond scaffolding a whole app config, Nuon also exposes narrower [skills](/guides/agents/skills) for specific
+tasks — writing a README, or an OPA/Rego policy, with more added over time. If MCP is connected, just ask;
+otherwise install them directly with `npx skills add nuonco/skills`.
