@@ -7,7 +7,8 @@ import { Time } from '@/components/common/Time'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { useAuth } from '@/hooks/use-auth'
 import { cn } from '@/utils/classnames'
-import type { TInstallWorkflowStep } from '@/types'
+import { SkipStepButton } from '@/components/workflows/step-details/SkipStep'
+import type { TInstallWorkflowStep, TWorkflowStep } from '@/types'
 import { getStepDisplayStatus } from '@/components/branches/shared/step-status'
 import { DetailStatusIcon } from './shared/icons'
 import { formatDuration } from './shared/format'
@@ -44,6 +45,10 @@ export const StepCard = ({ step, children }: IStepCard) => {
       ? undefined
       : step.status?.status_human_description
   const stepIndexStr = String(step.group_idx ?? '').padStart(2, '0') || '—'
+  const canSkip =
+    !!step.skippable &&
+    step.status?.status === 'error' &&
+    !!step.install_workflow_id
 
   return (
     <div
@@ -121,6 +126,27 @@ export const StepCard = ({ step, children }: IStepCard) => {
       {compositeError && (
         <div className={cn('py-4 border-b', GUTTER)}>
           <CompositeError error={compositeError} />
+        </div>
+      )}
+
+      {canSkip && (
+        <div
+          className={cn(
+            'flex items-center justify-between gap-4 py-3 border-b',
+            GUTTER
+          )}
+        >
+          <Text variant="subtext" theme="neutral">
+            Skip this step to continue the run with the remaining steps.
+          </Text>
+          <SkipStepButton
+            size="sm"
+            variant="danger"
+            step={step as TWorkflowStep}
+            className="shrink-0"
+          >
+            Skip and continue
+          </SkipStepButton>
         </div>
       )}
 

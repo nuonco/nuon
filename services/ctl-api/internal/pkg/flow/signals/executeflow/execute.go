@@ -1288,6 +1288,10 @@ func (s *Signal) checkGroupRetriesExhausted(ctx workflow.Context, group *app.Wor
 // histories, which never scheduled the activity, still replay deterministically.
 const runnerDisabledCheckVersion = "execute-flow-runner-disabled-check-v1"
 
+// stackChangedRunnerGateVersion gates the stack-change deferral on that check.
+// Histories that already recorded the activity must keep sending the same input.
+const stackChangedRunnerGateVersion = "execute-flow-stack-changed-runner-gate-v1"
+
 // flowCancelStatusVersion gates the cancelled-status writes added on the
 // cancel-return paths; in-flight histories never scheduled those activities.
 const flowCancelStatusVersion = "execute-flow-cancel-status-v1"
@@ -1331,9 +1335,11 @@ func (s *Signal) stopIfRunnerDisabled(
 		return false, nil
 	}
 
-	disabled, err := workflowactivities.AwaitCheckFlowRunnerDisabled(ctx, workflowactivities.CheckFlowRunnerDisabledRequest{
-		FlowID: s.WorkflowID,
-	})
+	req := workflowactivities.CheckFlowRunnerDisabledRequest{FlowID: s.WorkflowID}
+	if workflow.GetVersion(ctx, stackChangedRunnerGateVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		req.HonorStackChanged = true
+	}
+	disabled, err := workflowactivities.AwaitCheckFlowRunnerDisabled(ctx, req)
 	if err != nil {
 		// A failed check must not take down a workflow that would otherwise run.
 		l.Warn("unable to check whether the install runner is disabled", zap.Error(err))
