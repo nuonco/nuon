@@ -69,6 +69,7 @@ export const SkipStepModalContainer = ({
 
 export const SkipStepButton = ({
   step,
+  children = 'Skip step',
   ...props
 }: ISkipStep & IButtonAsButton) => {
   const { addModal } = useSurfaces()
@@ -76,7 +77,7 @@ export const SkipStepButton = ({
 
   return (
     <Button onClick={() => addModal(modal)} {...props}>
-      Skip step
+      {children}
     </Button>
   )
 }

@@ -93,6 +93,10 @@ func AllWorkflowTypes() []WorkflowType {
 	}
 }
 
+// RequiresLiveInstallRunner reports whether creation must reject the workflow
+// while the install runner is offline. App branch config updates are exempt:
+// their "runner healthy" step checks the runner once the workflow runs, so an
+// offline runner fails that step instead of the whole install group.
 func (i WorkflowType) RequiresLiveInstallRunner() bool {
 	switch i {
 	case WorkflowTypeDeprovision,
@@ -110,7 +114,6 @@ func (i WorkflowType) RequiresLiveInstallRunner() bool {
 		WorkflowTypeRunbookRun,
 		WorkflowTypeComponentEnabled,
 		WorkflowTypeComponentDisabled,
-		WorkflowTypeAppBranchConfigUpdate,
 		WorkflowTypeRecoverHelmRelease:
 		return true
 	default:
@@ -142,6 +145,15 @@ const (
 	WorkflowMetadataKeyChangedInputValues = "changed_input_values"
 	WorkflowMetadataKeyStackOnly          = "stack_only"
 	WorkflowMetadataKeyInputsOnly         = "inputs_only"
+	WorkflowMetadataKeyStackChanged       = "stack_changed"
+)
+
+// AwaitInstallStackStepName is the install workflow step that waits for a stack
+// version run. A stack-changing app branch update defers the runner gate until
+// this step has finished, because that apply is what brings the runner back.
+const (
+	AwaitInstallStackStepName = "await install stack"
+	RunnerHealthyStepName     = "runner healthy"
 )
 
 // IsStackOnly reports whether this workflow was asked to stop once the install
@@ -155,6 +167,14 @@ func (w *Workflow) IsStackOnly() bool {
 // deploying anything against them.
 func (w *Workflow) IsInputsOnly() bool {
 	return generics.FromPtrStr(w.Metadata[WorkflowMetadataKeyInputsOnly]) == "true"
+}
+
+// IsStackChanged reports whether this app-branch config update includes a stack
+// change. That apply can restore a runner that is offline or disabled, so the
+// runner gates defer until AwaitInstallStackStepName finishes.
+func (w *Workflow) IsStackChanged() bool {
+	return w.Type == WorkflowTypeAppBranchConfigUpdate &&
+		generics.FromPtrStr(w.Metadata[WorkflowMetadataKeyStackChanged]) == "true"
 }
 
 func (i WorkflowType) PastTenseName() string {

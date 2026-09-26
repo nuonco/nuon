@@ -24,6 +24,10 @@ type ParseConfig struct {
 	FileProcessor func(name string, obj map[string]any) map[string]any
 
 	FieldTimeout time.Duration
+
+	// SkipBranches loads embedded branch configs without validating them, for
+	// callers that never sync branches from the app config.
+	SkipBranches bool
 }
 
 func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
@@ -96,14 +100,16 @@ func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
 		}
 	}
 
-	if cfg.Branch != nil {
-		if err := cfg.Branch.Validate(); err != nil {
-			return nil, err
+	if !parseCfg.SkipBranches {
+		if cfg.Branch != nil {
+			if err := cfg.Branch.Validate(); err != nil {
+				return nil, err
+			}
 		}
-	}
-	for _, branch := range cfg.Branches {
-		if err := branch.Validate(); err != nil {
-			return nil, err
+		for _, branch := range cfg.Branches {
+			if err := branch.Validate(); err != nil {
+				return nil, err
+			}
 		}
 	}
 
