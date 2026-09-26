@@ -421,6 +421,10 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 
 	cfg := s.stepConfig()
 
+	publishAllStepsOnGeneration := workflow.GetVersion(
+		ctx, allStepsLoadedOnGenerationVersion, workflow.DefaultVersion, 1,
+	) != workflow.DefaultVersion
+
 	// eagerQueueSignalID tracks whether we used eager step group generation.
 	// If non-empty, we must call CompleteStepGeneration before executing
 	// groups beyond the eager set.
@@ -509,11 +513,19 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			completeDone = workflow.NewChannel(ctx)
 			workflow.Go(ctx, func(gCtx workflow.Context) {
 				completedFlw, completeErr = flow.CompleteStepGeneration(gCtx, cfg, flw, eagerQueueSignalID)
+				if completeErr == nil && publishAllStepsOnGeneration {
+					s.markAllStepsLoaded(gCtx, l)
+				}
 				completeDone.Send(gCtx, true)
 			})
+		} else if publishAllStepsOnGeneration {
+			s.markAllStepsLoaded(ctx, l)
 		}
 	} else {
 		l.Debug("steps already exist, skipping generation", zap.Int("step_count", len(flw.Steps)))
+		if publishAllStepsOnGeneration {
+			s.markAllStepsLoaded(ctx, l)
+		}
 	}
 
 	// Load step groups for the workflow.
@@ -736,16 +748,18 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 				return nil
 			}
 
-			_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-				ID: s.WorkflowID,
-				Status: app.CompositeStatus{
-					Status:                 app.StatusInProgress,
-					StatusHumanDescription: "all steps generated",
-					Metadata: map[string]any{
-						"all_steps_loaded": true,
+			if !publishAllStepsOnGeneration {
+				_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+					ID: s.WorkflowID,
+					Status: app.CompositeStatus{
+						Status:                 app.StatusInProgress,
+						StatusHumanDescription: "all steps generated",
+						Metadata: map[string]any{
+							"all_steps_loaded": true,
+						},
 					},
-				},
-			})
+				})
+			}
 
 			// Reload groups from DB now that all are persisted.
 			stepGroups, _ = workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroups(ctx, s.WorkflowID)
@@ -1289,6 +1303,19 @@ const groupStopReasonVersion = "execute-flow-group-stop-reason-v1"
 // workflowCompleteTerminalErrorVersion gates terminal errored steps counting as
 // complete because in-flight histories previously parked after every error.
 const workflowCompleteTerminalErrorVersion = "execute-flow-terminal-error-complete-v1"
+
+const allStepsLoadedOnGenerationVersion = "execute-flow-all-steps-loaded-on-generation-v1"
+
+func (s *Signal) markAllStepsLoaded(ctx workflow.Context, l *zap.Logger) {
+	if err := statusactivities.AwaitUpdateFlowStatusMetadata(ctx, statusactivities.UpdateFlowStatusMetadataRequest{
+		WorkflowID: s.WorkflowID,
+		Metadata: map[string]any{
+			"all_steps_loaded": true,
+		},
+	}); err != nil {
+		l.Error("unable to mark all steps loaded", zap.Error(err))
+	}
+}
 
 // stopIfRunnerDisabled halts a workflow whose install runner was disabled after
 // it started. Creation already rejects these, so without this the workflow would
