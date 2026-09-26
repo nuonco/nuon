@@ -27,6 +27,12 @@ const (
 // todo(sk): cleanup after terminating old workflows
 const installVersionStatusVersion = "install-app-config-version-status-v1"
 
+// installMetadataBeforeEnqueueVersion gates the step metadata write that lists
+// the resolved installs before any install workflow is created.
+const installMetadataBeforeEnqueueVersion = "install-metadata-before-enqueue-v1"
+
+const statusPending = "pending"
+
 type enqueuedInstall struct {
 	installID  string
 	workflowID string
@@ -61,6 +67,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	isPreviewApply := s.PreviewInstallID != "" || s.PreviewLabelSelector != nil
+
+	if workflow.GetVersion(ctx, installMetadataBeforeEnqueueVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		s.writePendingInstallMetadata(ctx, groupName, installIDs)
+	}
 
 	enqueued, err := s.enqueueInstallUpdates(ctx, installIDs, run)
 	if err != nil {
@@ -340,6 +350,33 @@ func (s *Signal) updateInstallAppConfigVersionStatus(ctx workflow.Context, insta
 		InstallID:      installID,
 		Status:         status,
 		StatusDesc:     desc,
+	})
+}
+
+func (s *Signal) writePendingInstallMetadata(ctx workflow.Context, groupName string, installIDs []string) {
+	if s.StepID == "" {
+		return
+	}
+
+	installs := make([]any, 0, len(installIDs))
+	for _, id := range installIDs {
+		installs = append(installs, map[string]any{
+			"install_id": id,
+			"status":     statusPending,
+		})
+	}
+
+	_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: s.StepID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusInProgress,
+			StatusHumanDescription: fmt.Sprintf("starting deploys for %d installs", len(installIDs)),
+			Metadata: map[string]any{
+				"install_group_name": groupName,
+				"total_installs":     len(installIDs),
+				"installs":           installs,
+			},
+		},
 	})
 }
 

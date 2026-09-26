@@ -238,6 +238,9 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 	if input.InstallGroupID != "" {
 		metadata["install_group_id"] = input.InstallGroupID
 	}
+	if diff != nil && diff.StackChanged {
+		metadata[app.WorkflowMetadataKeyStackChanged] = "true"
+	}
 
 	wf, err := h.CreateWorkflow(ctx, input.InstallID, app.WorkflowTypeAppBranchConfigUpdate, metadata, input.PlanOnly)
 	if err != nil {

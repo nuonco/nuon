@@ -53,7 +53,7 @@ export const WorkflowRunPanel = ({
         <Text theme="neutral">Loading workflow run...</Text>
       ) : (
         <>
-          <div className="flex flex-col gap-2">
+          <div className="flex min-w-0 flex-col gap-2">
             <div className="flex items-center justify-between gap-3">
               <Text variant="h3" weight="strong">
                 Workflow progress
@@ -72,7 +72,7 @@ export const WorkflowRunPanel = ({
           </div>
 
           {selectedStep && (
-            <div className="flex flex-col gap-2">
+            <div className="flex min-w-0 flex-col gap-2">
               <div
                 ref={stepDetailRef}
                 className="flex items-baseline gap-3 scroll-mt-4"
