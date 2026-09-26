@@ -90,10 +90,40 @@ fi
 OS=$(uname -s |  awk '{print tolower($0)}')
 echo "✅ using version ${OS}_${ARCH}..."
 
-# Always fetch the latest version first
+# Prefer the control plane's max supported version over the newest binary in the
+# bucket, which can be ahead of what a given control plane accepts. RUNNER_API_URL
+# is optional so callers that predate it (older init scripts) keep working.
+# The `|| true` guards are load-bearing: set -e plus pipefail would abort the
+# script on a 404 or an empty grep instead of letting us fall back.
 echo "calculating latest version..."
-LATEST_VERSION=$(curl -s $BASE_URL/latest.txt)
+LATEST_VERSION=""
+if [ -n "${RUNNER_API_URL:-}" ]; then
+  MAX_VERSION_URL="$RUNNER_API_URL/v1/general/max-runner-version"
+  LATEST_VERSION=$(curl -s -f --max-time 10 "$MAX_VERSION_URL" 2>/dev/null | grep -o '"version":"[^"]*"' | cut -d '"' -f 4 || true)
+  if [ -n "$LATEST_VERSION" ]; then
+    echo "✅ control plane supports up to ${LATEST_VERSION}"
+  else
+    echo "⚠️  could not resolve a version from ${MAX_VERSION_URL}"
+  fi
+fi
+
+if [ -z "$LATEST_VERSION" ]; then
+  if [ -n "${RUNNER_API_URL:-}" ]; then
+    echo "⚠️  falling back to the newest published version, which may be ahead of this control plane"
+  fi
+  LATEST_VERSION=$(curl -s -f --max-time 10 "$BASE_URL/latest.txt" || true)
+fi
+
+if [ -z "$LATEST_VERSION" ]; then
+  echo "❌ Error: unable to determine the latest runner version"
+  exit 1
+fi
 echo "✅ latest version is ${LATEST_VERSION}"
+
+# "latest" is not a real artifact path, so treat it as "no version requested"
+if [ "$RUNNER_VERSION" = "latest" ]; then
+  RUNNER_VERSION=""
+fi
 
 # Try the provided version first, fall back to latest if it fails
 if [ -n "${RUNNER_VERSION:-}" ]; then
