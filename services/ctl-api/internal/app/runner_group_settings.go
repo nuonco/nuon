@@ -129,6 +129,12 @@ type RunnerGroupSettings struct {
 	LongPollJobs bool `json:"long_poll_jobs,omitzero" gorm:"-" temporaljson:"-"`
 
 	TelemetryRelayEndpoint string `json:"telemetry_relay_endpoint,omitzero" gorm:"-" temporaljson:"-"`
+
+	// How the runner VM checks the runner image signature before running it. Not persisted;
+	// populated by the runner-settings handler from control plane config.
+	ContainerImageVerificationMode        string `json:"container_image_verification_mode,omitzero" gorm:"-" temporaljson:"-"`
+	ContainerImageSignatureIssuer         string `json:"container_image_signature_issuer,omitzero" gorm:"-" temporaljson:"-"`
+	ContainerImageSignatureIdentityRegexp string `json:"container_image_signature_identity_regexp,omitzero" gorm:"-" temporaljson:"-"`
 }
 
 func (i *RunnerGroupSettings) Indexes(db *gorm.DB) []migrations.Index {

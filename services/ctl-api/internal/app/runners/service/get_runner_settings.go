@@ -43,6 +43,9 @@ func (s *service) GetRunnerSettings(ctx *gin.Context) {
 	settings := runner.RunnerGroup.Settings
 	settings.LongPollJobs = true
 	settings.VendorTelemetryEnabled = false
+	settings.ContainerImageVerificationMode = s.cfg.RunnerContainerImageVerificationMode
+	settings.ContainerImageSignatureIssuer = s.cfg.RunnerContainerImageSignatureIssuer
+	settings.ContainerImageSignatureIdentityRegexp = s.cfg.RunnerContainerImageSignatureIdentityRegexp
 	installTable := plugins.TableName(s.db, app.Install{})
 	if s.telemetryRelayEndpoint != "" && runner.RunnerGroup.Type == app.RunnerGroupTypeInstall && runner.RunnerGroup.OwnerType == installTable && runner.Status != app.RunnerStatusDisabled && runner.Status != app.RunnerStatusDeprovisioned {
 		// A projection avoids model AfterQuery hooks, which also run with SkipHooks.
