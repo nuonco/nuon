@@ -155,7 +155,7 @@ export const PanelBase = ({
           </header>
           <div
             className={cn(
-              'px-4 md:px-6 pb-4 md:pb-6 flex flex-col flex-auto min-h-0 overflow-y-auto gap-4 md:gap-6',
+              'px-4 md:px-6 pb-4 md:pb-6 flex flex-col flex-auto min-h-0 overflow-x-hidden overflow-y-auto gap-4 md:gap-6',
               childrenClassName
             )}
           >

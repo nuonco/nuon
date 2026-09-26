@@ -31,6 +31,17 @@ func TestRequiresLiveInstallRunner(t *testing.T) {
 			},
 			expected: false,
 		},
+		"app branch config update": {
+			workflowType: app.WorkflowTypeAppBranchConfigUpdate,
+			expected:     false,
+		},
+		"app branch config update with stack change": {
+			workflowType: app.WorkflowTypeAppBranchConfigUpdate,
+			metadata: map[string]string{
+				app.WorkflowMetadataKeyStackChanged: "true",
+			},
+			expected: false,
+		},
 	}
 
 	for name, tt := range tests {
