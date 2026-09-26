@@ -60,10 +60,9 @@ func (h *Helpers) CreateAppBranchConfig(
 }
 
 // withDefaultInstallGroup guarantees every config has somewhere for installs to
-// land. A branch block that declares no install_groups, or an API caller that
-// sends none, would otherwise produce a config where no install resolves to a
-// group. Callers that declare groups must mark one default themselves; that is
-// validated before it reaches here.
+// land when the caller declares no install_groups. When groups are declared,
+// at most one may be marked default; unmatched installs simply do not resolve
+// to a group until they match a selector or an explicit pin.
 func WithDefaultInstallGroup(groups []app.AppBranchInstallGroup) []app.AppBranchInstallGroup {
 	if len(groups) > 0 {
 		return groups

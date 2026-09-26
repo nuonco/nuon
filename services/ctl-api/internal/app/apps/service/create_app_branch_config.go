@@ -115,12 +115,6 @@ func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 			Description: "only one install group can be default",
 		}
 	}
-	if len(c.InstallGroups) > 0 && defaultGroups == 0 {
-		return stderr.ErrUser{
-			Err:         fmt.Errorf("no default install group"),
-			Description: "one install group must be default",
-		}
-	}
 
 	if c.PreviewConfig != nil {
 		if c.ClearPreviewConfig {
