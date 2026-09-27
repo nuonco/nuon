@@ -120,7 +120,7 @@ const trackGroups = (branch: TBranchOverview): TTrackGroup[] => {
 const RecentRuns = ({ branch }: { branch: TBranchOverview }) => (
   <section className="flex flex-col gap-3">
     <SectionHeader
-      title="Recent runs"
+      title="Previous runs"
       actions={<Link href="#activity">View activity</Link>}
     />
     {branch.recentRuns.length === 0 ? (
@@ -915,16 +915,16 @@ export const BranchOverviewPlayground = ({
             onClick={() => setView('overview')}
           />
           <NavButton
-            icon="ListIcon"
-            label="Runs"
-            isActive={view === 'runs'}
-            onClick={() => setView('runs')}
-          />
-          <NavButton
             icon="StackIcon"
             label="Rollout"
             isActive={view === 'rollout'}
             onClick={() => openRollout()}
+          />
+          <NavButton
+            icon="ListIcon"
+            label="Previous runs"
+            isActive={view === 'runs'}
+            onClick={() => setView('runs')}
           />
           <NavButton
             icon="GearIcon"
