@@ -10,6 +10,11 @@ import {
 } from '@/components/branches/shared/step-status'
 import { cn } from '@/utils/classnames'
 
+export type TTrackStatus = {
+  status: string
+  detail?: string
+}
+
 export type TTrackInstall = {
   id: string
   name: string
@@ -17,6 +22,11 @@ export type TTrackInstall = {
   detail?: string
   durationNs?: number
   href?: string
+  resources?: TTrackStatus
+  deployment?: TTrackStatus
+  health?: TTrackStatus
+  overviewHref?: string
+  workflowHref?: string
 }
 
 export type TTrackGroup = {
@@ -191,7 +201,44 @@ const Step = ({
   )
 }
 
+const StatusLine = ({
+  label,
+  value,
+}: {
+  label: string
+  value?: TTrackStatus
+}) => (
+  <span className="flex min-w-0 items-center gap-3">
+    <Text variant="label" theme="neutral" className="w-24 shrink-0">
+      {label}
+    </Text>
+    <Status status={value?.status || 'unknown'} />
+    {value?.detail ? (
+      <Text variant="subtext" theme="neutral" className="truncate">
+        {value.detail}
+      </Text>
+    ) : null}
+  </span>
+)
+
+const InstallDetail = ({ install }: { install: TTrackInstall }) => (
+  <div className="flex flex-col gap-3 border-t bg-black/[0.02] px-3 py-3 dark:bg-white/[0.03]">
+    <StatusLine label="Resources" value={install.resources} />
+    <StatusLine label="Deployment" value={install.deployment} />
+    <StatusLine label="Health" value={install.health} />
+    <span className="flex items-center gap-4">
+      {install.workflowHref ? (
+        <Link href={install.workflowHref}>View workflow</Link>
+      ) : null}
+      {install.overviewHref ? (
+        <Link href={install.overviewHref}>Install overview</Link>
+      ) : null}
+    </span>
+  </div>
+)
+
 const InstallList = ({ group }: { group: TTrackGroup }) => {
+  const [openId, setOpenId] = useState<string>()
   const installs = [...group.installs].sort(
     (a, b) =>
       INSTALL_ORDER.indexOf(stepStatusCategory(a.status)) -
@@ -218,36 +265,42 @@ const InstallList = ({ group }: { group: TTrackGroup }) => {
             : 'No installs match this group.'}
         </Text>
       ) : (
-        <ul className="flex flex-col divide-y border-y">
-          {installs.map((install) => (
-            <li
-              key={install.id}
-              className="grid grid-cols-[minmax(0,12rem)_minmax(0,1fr)_9rem_5rem] items-center gap-4 py-2"
-            >
-              {install.href ? (
-                <Link href={install.href} className="truncate font-mono">
-                  {install.name}
-                </Link>
-              ) : (
-                <Text variant="subtext" family="mono" className="truncate">
-                  {install.name}
-                </Text>
-              )}
-              <Text variant="subtext" theme="neutral" className="truncate">
-                {install.detail}
-              </Text>
-              <Status status={install.status} />
-              <span className="text-right">
-                {install.durationNs ? (
-                  <Duration
-                    nanoseconds={install.durationNs}
-                    variant="subtext"
-                    theme="neutral"
-                  />
-                ) : null}
-              </span>
-            </li>
-          ))}
+        <ul className="flex flex-col border-y">
+          {installs.map((install) => {
+            const isOpen = openId === install.id
+            return (
+              <li key={install.id} className="border-t first:border-t-0">
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  onClick={() =>
+                    setOpenId((current) =>
+                      current === install.id ? undefined : install.id
+                    )
+                  }
+                  className="grid w-full grid-cols-[minmax(0,12rem)_minmax(0,1fr)_9rem_5rem] items-center gap-4 py-2 text-left hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
+                >
+                  <Text variant="subtext" family="mono" className="truncate">
+                    {install.name}
+                  </Text>
+                  <Text variant="subtext" theme="neutral" className="truncate">
+                    {install.detail}
+                  </Text>
+                  <Status status={install.status} />
+                  <span className="text-right">
+                    {install.durationNs ? (
+                      <Duration
+                        nanoseconds={install.durationNs}
+                        variant="subtext"
+                        theme="neutral"
+                      />
+                    ) : null}
+                  </span>
+                </button>
+                {isOpen ? <InstallDetail install={install} /> : null}
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>

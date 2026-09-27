@@ -18,16 +18,26 @@ export interface IRunSourceCard {
 const SOURCE_LABEL: Record<TRunSource['kind'], string> = {
   'pull-request': 'Pull request',
   tag: 'Tag',
+  manual: 'Manual run',
   commit: 'Commit',
 }
 
-const SourceIdentity = ({ source }: { source: TRunSource }) => {
+const TriggeredBy = ({
+  source,
+  shortSha,
+  shaUrl,
+}: {
+  source: TRunSource
+  shortSha?: string
+  shaUrl?: string
+}) => {
   if (source.kind === 'pull-request') {
     const number = `#${source.number}`
     return (
       <span className="flex flex-wrap items-center gap-2">
-        <Text variant="subtext" weight="strong" flex>
+        <Text variant="subtext" flex>
           <Icon variant="GitPullRequestIcon" />
+          Pull request{' '}
           {source.url ? (
             <Link href={source.url} isExternal>
               {number}
@@ -56,20 +66,44 @@ const SourceIdentity = ({ source }: { source: TRunSource }) => {
 
   if (source.kind === 'tag') {
     return (
-      <Text variant="subtext" family="mono" weight="strong" flex>
+      <Text variant="subtext" flex>
         <Icon variant="TagIcon" />
+        Tag{' '}
         {source.url ? (
           <Link href={source.url} isExternal>
             {source.tag}
           </Link>
         ) : (
-          source.tag
+          <Text as="span" variant="subtext" family="mono">
+            {source.tag}
+          </Text>
         )}
       </Text>
     )
   }
 
-  return null
+  if (source.kind === 'manual') {
+    return (
+      <Text variant="subtext" flex>
+        <Icon variant="PlayIcon" />
+        Manual run
+      </Text>
+    )
+  }
+
+  return (
+    <Text variant="subtext" family="mono" flex>
+      <Icon variant="GitCommitIcon" />
+      Commit{' '}
+      {shortSha && shaUrl ? (
+        <Link href={shaUrl} isExternal>
+          {shortSha}
+        </Link>
+      ) : (
+        (shortSha ?? 'push')
+      )}
+    </Text>
+  )
 }
 
 export const RunSourceCard = ({
@@ -90,7 +124,12 @@ export const RunSourceCard = ({
         </Text>
         <Status status={status} />
       </span>
-      <SourceIdentity source={source} />
+      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <Text variant="label" theme="neutral">
+          Triggered by
+        </Text>
+        <TriggeredBy source={source} shortSha={shortSha} shaUrl={shaUrl} />
+      </span>
       <Text variant="body" weight="strong">
         {title}
       </Text>

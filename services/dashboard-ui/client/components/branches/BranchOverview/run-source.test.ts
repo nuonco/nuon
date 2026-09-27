@@ -47,6 +47,19 @@ describe('resolveRunSource', () => {
     })
   })
 
+  test('manual run', () => {
+    expect(
+      resolveRunSource(
+        {
+          run_type: 'manual-run',
+          metadata: { trigger: 'manual' },
+          vcs_connection_commit: { message: 'Rotate db credentials' },
+        },
+        repo
+      )
+    ).toEqual({ kind: 'manual' })
+  })
+
   test('plain commit', () => {
     expect(
       resolveRunSource(

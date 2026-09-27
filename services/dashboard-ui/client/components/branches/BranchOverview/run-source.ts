@@ -13,6 +13,7 @@ export type TRunSource =
       baseBranch?: string
     }
   | { kind: 'tag'; tag: string; url?: string }
+  | { kind: 'manual' }
   | { kind: 'commit' }
 
 const TAG_REF_PREFIX = 'refs/tags/'
@@ -36,6 +37,10 @@ export const resolveRunSource = (
 
   if (meta?.trigger === 'tag' || tag) {
     if (tag) return { kind: 'tag', tag, url: githubTagUrl(repoSlug, tag) }
+  }
+
+  if (meta?.trigger === 'manual' || branchRun?.run_type === 'manual-run') {
+    return { kind: 'manual' }
   }
 
   const pr = resolvePrLink({

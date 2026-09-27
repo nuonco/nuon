@@ -20,7 +20,7 @@ import type {
 } from '@/types'
 import type { TOverviewRollout } from './BranchOverview'
 import { buildRolloutStages } from './rollout-stages'
-import type { TTrackGroup } from './RolloutTrack'
+import type { TTrackGroup, TTrackInstall } from './RolloutTrack'
 import { commitUrl, resolveRunSource } from './run-source'
 
 const TERMINAL = new Set(['success', 'failed', 'error', 'cancelled'])
@@ -41,11 +41,50 @@ const groupRules = (group?: TAppBranchInstallGroup) => {
     .join(' · ')
 }
 
+const installSnapshot = (
+  install: TInstall | undefined,
+  orgId?: string
+): Pick<
+  TTrackInstall,
+  'resources' | 'deployment' | 'health' | 'overviewHref'
+> => {
+  if (!install?.id) return {}
+  const resourcesActive =
+    !!install.sandbox_health_status && install.sandbox_status === 'active'
+  return {
+    resources: (
+      resourcesActive ? install.sandbox_health_status : install.sandbox_status
+    )
+      ? {
+          status: (resourcesActive
+            ? install.sandbox_health_status
+            : install.sandbox_status) as string,
+          detail: resourcesActive
+            ? install.sandbox_health_message
+            : install.sandbox_status_description,
+        }
+      : undefined,
+    deployment: install.composite_component_status
+      ? {
+          status: install.composite_component_status,
+          detail: install.composite_component_status_description,
+        }
+      : undefined,
+    health: install.composite_health_status
+      ? {
+          status: install.composite_health_status,
+          detail: install.composite_health_status_description,
+        }
+      : undefined,
+    overviewHref: orgId ? `/${orgId}/installs/${install.id}` : undefined,
+  }
+}
+
 const fromGroupRuns = (
   groupRuns: TInstallGroupRun[],
   groups: TAppBranchInstallGroup[],
   installsById: Record<string, TInstall>,
-  installHref: (id: string) => string
+  orgId?: string
 ): TTrackGroup[] =>
   groupRuns.map((groupRun) => {
     const group =
@@ -66,10 +105,11 @@ const fromGroupRuns = (
           detail: install.runbooks?.length
             ? `${install.runbooks.length} post-deploy runbooks`
             : undefined,
-          href: id
-            ? installHref(id) +
-              (install.workflow_id ? `/workflows/${install.workflow_id}` : '')
-            : undefined,
+          ...installSnapshot(installsById[id], orgId),
+          workflowHref:
+            id && orgId && install.workflow_id
+              ? `/${orgId}/installs/${id}/workflows/${install.workflow_id}`
+              : undefined,
         }
       }),
     }
@@ -176,9 +216,8 @@ export const useRolloutGroups = () => {
   )
 
   const trackGroups = useMemo<TTrackGroup[]>(() => {
-    const installHref = (id: string) => `/${orgId}/installs/${id}`
     if (groupRuns?.length) {
-      return fromGroupRuns(groupRuns, groups, installsById, installHref)
+      return fromGroupRuns(groupRuns, groups, installsById, orgId)
     }
     return buildRolloutStages({
       groups,
@@ -198,7 +237,7 @@ export const useRolloutGroups = () => {
             name: install.name,
             status: install.status,
             detail: install.region,
-            href: installHref(install.id),
+            ...installSnapshot(installsById[install.id], orgId),
           })),
         }
       })
@@ -222,6 +261,8 @@ export const useRolloutGroups = () => {
   return {
     app,
     branch,
+    orgId,
+    appId,
     branchId,
     basePath,
     repoSlug,

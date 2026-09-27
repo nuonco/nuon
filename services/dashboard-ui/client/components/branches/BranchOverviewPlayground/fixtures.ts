@@ -1,4 +1,5 @@
 import type { TRunSource } from '@/components/branches/BranchOverview/run-source'
+import type { TComponentType } from '@/types'
 
 export type TRolloutState =
   | 'in-progress'
@@ -80,15 +81,42 @@ export type TRecentRun = {
   outcome: string
 }
 
+export type TComponentFixture = {
+  id: string
+  type: TComponentType
+  version: number
+  buildTimeout: string
+  deployTimeout: string
+  config: { label: string; value: string }[]
+  dependents?: string[]
+  source: {
+    message: string
+    author: string
+    sha: string
+    createdAt: string
+  }
+}
+
+export type TTemplateDetail = {
+  summary: string
+  fields: { label: string; value: string }[]
+  dependencies?: string[]
+  steps?: { name: string; detail: string }[]
+  builds?: { sha: string; status: string; when: string }[]
+  component?: TComponentFixture
+}
+
 export type TTemplateEntry = {
   name: string
-  detail: string
+  cells: string[]
+  detail?: TTemplateDetail
 }
 
 export type TTemplateItem = {
   id: string
   label: string
   description: string
+  columns: string[]
   entries: TTemplateEntry[]
 }
 
@@ -307,93 +335,313 @@ const RECENT_RUNS: TRecentRun[] = [
   },
 ]
 
+const COMPONENT_TYPE_LABEL: Partial<Record<TComponentType, string>> = {
+  helm_chart: 'Helm chart',
+  terraform_module: 'Terraform module',
+  kubernetes_manifest: 'Kubernetes manifest',
+  docker_build: 'Docker build',
+}
+
+const componentEntry = ({
+  name,
+  id,
+  type,
+  status,
+  summary,
+  config,
+  dependencies,
+  dependents,
+  minutesAgo,
+}: {
+  name: string
+  id: string
+  type: TComponentType
+  status: 'success' | 'in-progress' | 'error'
+  summary: string
+  config: { label: string; value: string }[]
+  dependencies?: string[]
+  dependents?: string[]
+  minutesAgo: number
+}): TTemplateEntry => ({
+  name,
+  cells: [
+    COMPONENT_TYPE_LABEL[type] ?? type,
+    status === 'in-progress' ? 'Building' : 'Succeeded',
+  ],
+  detail: {
+    summary,
+    fields: [],
+    dependencies,
+    builds: [
+      {
+        sha: 'a1b2c3d4',
+        status,
+        when: `${minutesAgo} minutes ago`,
+      },
+    ],
+    component: {
+      id,
+      type,
+      version: 14,
+      buildTimeout: '1h',
+      deployTimeout: '1h',
+      config,
+      dependents,
+      source: {
+        message: 'Bump api image to 1.4.2',
+        author: 'jane@example.com',
+        sha: 'a1b2c3d4e5f6',
+        createdAt: ago(minutesAgo),
+      },
+    },
+  },
+})
+
 const TEMPLATE: TTemplateItem[] = [
   {
     id: 'components',
     label: 'Components',
-    description: 'What gets built and deployed to every install.',
+    description: 'The components defined by this branch\u2019s configuration.',
+    columns: ['Component', 'Type', 'Latest build'],
     entries: [
-      { name: 'api', detail: 'Helm chart' },
-      { name: 'worker', detail: 'Helm chart' },
-      { name: 'cache', detail: 'Terraform module' },
-      { name: 'database', detail: 'Terraform module' },
-      { name: 'ingress', detail: 'Kubernetes manifest' },
-      { name: 'api-image', detail: 'Docker build' },
+      componentEntry({
+        name: 'api',
+        id: 'cmpxk2a9apiv8d3h1q7rn0wz',
+        type: 'helm_chart',
+        status: 'success',
+        summary: 'Helm chart deployed to every install.',
+        config: [
+          { label: 'Chart name', value: 'api' },
+          { label: 'Namespace', value: 'acme' },
+          { label: 'Storage driver', value: 'secret' },
+        ],
+        dependencies: ['database', 'api-image'],
+        dependents: ['ingress'],
+        minutesAgo: 12,
+      }),
+      componentEntry({
+        name: 'worker',
+        id: 'cmpw4rk8e2rq9s1t6m3bz5yu',
+        type: 'helm_chart',
+        status: 'success',
+        summary: 'Background worker chart.',
+        config: [
+          { label: 'Chart name', value: 'worker' },
+          { label: 'Namespace', value: 'acme' },
+          { label: 'Storage driver', value: 'secret' },
+        ],
+        dependencies: ['database'],
+        minutesAgo: 12,
+      }),
+      componentEntry({
+        name: 'cache',
+        id: 'cmpc4ch3m0d7l2k9p5x8vq1n',
+        type: 'terraform_module',
+        status: 'in-progress',
+        summary: 'Terraform module for the shared cache.',
+        config: [{ label: 'Terraform version', value: '1.9.5' }],
+        minutesAgo: 4,
+      }),
+      componentEntry({
+        name: 'database',
+        id: 'cmpd8b4s3e6m1q0r7t2y9w5k',
+        type: 'terraform_module',
+        status: 'success',
+        summary: 'Terraform module for the primary database.',
+        config: [{ label: 'Terraform version', value: '1.9.5' }],
+        dependents: ['api', 'worker'],
+        minutesAgo: 180,
+      }),
+      componentEntry({
+        name: 'ingress',
+        id: 'cmpi9n6g2r5e8s1s4x7z0c3v',
+        type: 'kubernetes_manifest',
+        status: 'success',
+        summary: 'Ingress manifest for the public API.',
+        config: [{ label: 'Namespace', value: 'acme' }],
+        dependencies: ['api'],
+        minutesAgo: 12,
+      }),
+      componentEntry({
+        name: 'api-image',
+        id: 'cmpa1m5g8e3i6m9a2g4e7b0d',
+        type: 'docker_build',
+        status: 'success',
+        summary: 'Container image for the API.',
+        config: [
+          { label: 'Dockerfile name', value: 'Dockerfile' },
+          { label: 'Target', value: 'release' },
+        ],
+        dependents: ['api'],
+        minutesAgo: 14,
+      }),
     ],
   },
   {
     id: 'inputs',
     label: 'Inputs',
     description: 'Values each install provides at setup.',
+    columns: ['Input', 'Required', 'Default'],
     entries: [
-      { name: 'domain', detail: 'Required' },
-      { name: 'instance_type', detail: 'Default m6i.large' },
-      { name: 'replica_count', detail: 'Default 3' },
-      { name: 'enable_cache', detail: 'Default true' },
+      { name: 'domain', cells: ['Yes', 'None'] },
+      { name: 'instance_type', cells: ['No', 'm6i.large'] },
+      { name: 'replica_count', cells: ['No', '3'] },
+      { name: 'enable_cache', cells: ['No', 'true'] },
     ],
   },
   {
     id: 'actions',
     label: 'Actions',
     description: 'Scripts that run on a trigger or on demand.',
+    columns: ['Action', 'Triggers', 'Steps'],
     entries: [
-      { name: 'migrate-db', detail: 'Before deploy' },
-      { name: 'healthcheck', detail: 'Every 5 minutes' },
-      { name: 'rotate-keys', detail: 'Manual' },
-      { name: 'warm-cache', detail: 'After deploy' },
+      {
+        name: 'migrate-db',
+        cells: ['Before deploy', '2'],
+        detail: {
+          summary: 'Runs before each deploy.',
+          fields: [{ label: 'Trigger', value: 'Before deploy' }],
+          steps: [
+            { name: 'snapshot', detail: 'Take a database snapshot' },
+            { name: 'migrate', detail: 'Apply pending migrations' },
+          ],
+        },
+      },
+      {
+        name: 'healthcheck',
+        cells: ['Every 5 minutes', '1'],
+        detail: {
+          summary: 'Checks that the API is serving traffic.',
+          fields: [{ label: 'Trigger', value: 'Every 5 minutes' }],
+          steps: [{ name: 'probe', detail: 'GET /healthz' }],
+        },
+      },
+      {
+        name: 'rotate-keys',
+        cells: ['Manual', '3'],
+        detail: {
+          summary: 'Rotates signing keys on demand.',
+          fields: [{ label: 'Trigger', value: 'Manual' }],
+          steps: [
+            { name: 'generate', detail: 'Create a new key' },
+            { name: 'publish', detail: 'Publish the public key' },
+            { name: 'retire', detail: 'Retire the previous key' },
+          ],
+        },
+      },
+      {
+        name: 'warm-cache',
+        cells: ['After deploy', '1'],
+        detail: {
+          summary: 'Warms the cache after a deploy.',
+          fields: [{ label: 'Trigger', value: 'After deploy' }],
+          steps: [{ name: 'warm', detail: 'Request the top routes' }],
+        },
+      },
     ],
   },
   {
     id: 'runbooks',
     label: 'Runbooks',
     description: 'Multi-step operations for day-2 tasks.',
+    columns: ['Runbook', 'Steps'],
     entries: [
-      { name: 'restore-backup', detail: '4 steps' },
-      { name: 'scale-out', detail: '2 steps' },
+      {
+        name: 'restore-backup',
+        cells: ['4'],
+        detail: {
+          summary: 'Restores a database backup.',
+          fields: [{ label: 'Steps', value: '4' }],
+          steps: [
+            { name: 'select', detail: 'Choose a snapshot' },
+            { name: 'stop', detail: 'Stop writers' },
+            { name: 'restore', detail: 'Restore the snapshot' },
+            { name: 'verify', detail: 'Check row counts' },
+          ],
+        },
+      },
+      {
+        name: 'scale-out',
+        cells: ['2'],
+        detail: {
+          summary: 'Adds capacity to the worker group.',
+          fields: [{ label: 'Steps', value: '2' }],
+          steps: [
+            { name: 'resize', detail: 'Raise the replica count' },
+            { name: 'wait', detail: 'Wait until the new pods are ready' },
+          ],
+        },
+      },
     ],
   },
   {
     id: 'sandbox',
     label: 'Sandboxes',
     description: 'The base infrastructure each install runs in.',
-    entries: [{ name: 'aws-eks', detail: 'nuonco/aws-eks-sandbox v0.9.2' }],
+    columns: ['Sandbox', 'Version'],
+    entries: [{ name: 'aws-eks', cells: ['nuonco/aws-eks-sandbox v0.9.2'] }],
   },
   {
     id: 'policies',
     label: 'Policies',
     description: 'Checks a plan must pass before it applies.',
+    columns: ['Policy', 'Applies to'],
     entries: [
-      { name: 'no-public-buckets', detail: 'Terraform' },
-      { name: 'require-resource-limits', detail: 'Kubernetes' },
-      { name: 'allowed-regions', detail: 'Terraform' },
+      {
+        name: 'no-public-buckets',
+        cells: ['Terraform'],
+        detail: {
+          summary: 'Denies plans that make a storage bucket public.',
+          fields: [{ label: 'Applies to', value: 'Terraform' }],
+        },
+      },
+      {
+        name: 'require-resource-limits',
+        cells: ['Kubernetes'],
+        detail: {
+          summary: 'Requires CPU and memory limits on every container.',
+          fields: [{ label: 'Applies to', value: 'Kubernetes' }],
+        },
+      },
+      {
+        name: 'allowed-regions',
+        cells: ['Terraform'],
+        detail: {
+          summary: 'Allows resources only in the configured regions.',
+          fields: [{ label: 'Applies to', value: 'Terraform' }],
+        },
+      },
     ],
   },
   {
     id: 'roles',
     label: 'Roles',
     description: 'Cloud permissions the runner assumes.',
+    columns: ['Role', 'Used for'],
     entries: [
-      { name: 'provision', detail: 'Setup and teardown' },
-      { name: 'maintenance', detail: 'Deploys and actions' },
+      { name: 'provision', cells: ['Setup and teardown'] },
+      { name: 'maintenance', cells: ['Deploys and actions'] },
     ],
   },
   {
     id: 'labels',
     label: 'Labels',
     description: 'Keys used to group installs.',
+    columns: ['Label', 'Values'],
     entries: [
-      { name: 'env', detail: 'prod, staging' },
-      { name: 'tier', detail: 'canary, standard' },
-      { name: 'region', detail: '6 values' },
-      { name: 'customer_size', detail: 'small, large' },
-      { name: 'team', detail: '3 values' },
+      { name: 'env', cells: ['prod, staging'] },
+      { name: 'tier', cells: ['canary, standard'] },
+      { name: 'region', cells: ['6 values'] },
+      { name: 'customer_size', cells: ['small, large'] },
+      { name: 'team', cells: ['3 values'] },
     ],
   },
   {
     id: 'readme',
     label: 'README',
     description: 'Notes shown to operators on every install.',
-    entries: [{ name: 'README.md', detail: '48 lines' }],
+    columns: ['File', 'Length'],
+    entries: [{ name: 'README.md', cells: ['48 lines'] }],
   },
 ]
 
@@ -531,7 +779,7 @@ export const failedFixture: TBranchOverview = {
   rollout: {
     id: 'run_182',
     number: 182,
-    source: { kind: 'commit' },
+    source: { kind: 'manual' },
     title: 'Rotate db credentials',
     sha: '4c5d6e7f8a9b',
     author: 'sam@example.com',
