@@ -15,6 +15,7 @@ import { HistoryPanelButton } from '@/components/layout/HistoryPanelButton'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { ChangeCountSummary } from '@/components/approvals/plan-diffs/ChangeCountSummary'
 import { BranchDetailActionsComponent } from '@/components/branches/BranchDetailActions'
+import { BranchHeaderMeta } from '@/components/branches/BranchHeaderMeta'
 import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
 import { ComponentType } from '@/components/components/ComponentType'
 import { cn } from '@/utils/classnames'
@@ -115,21 +116,6 @@ const trackGroups = (branch: TBranchOverview): TTrackGroup[] => {
     }
   })
 }
-
-const BranchIdentity = ({ branch }: { branch: TBranchOverview }) => (
-  <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
-    <Link href={`https://github.com/${branch.repo}`} isExternal>
-      {branch.repo}
-    </Link>
-    <Text variant="subtext" family="mono" theme="neutral">
-      {branch.directory}
-    </Text>
-    <Text variant="subtext" theme="neutral" flex>
-      <Icon variant="LightningIcon" />
-      {branch.trigger}
-    </Text>
-  </span>
-)
 
 const RecentRuns = ({ branch }: { branch: TBranchOverview }) => (
   <section className="flex flex-col gap-3">
@@ -982,17 +968,27 @@ export const BranchOverviewPlayground = ({
           variant="page"
           backLink={false}
           title={branch.appName}
-          status={
-            <Badge
-              variant="code"
-              size="sm"
-              className="inline-flex items-center gap-1"
-            >
-              <Icon variant="GitBranchIcon" size={12} />
-              {branch.branchName}
-            </Badge>
+          identity={
+            <BranchHeaderMeta
+              configuration={
+                <Text
+                  as="span"
+                  variant="subtext"
+                  weight="strong"
+                  flex
+                  nowrap
+                  className="gap-1"
+                >
+                  {branch.branchName}
+                  <Icon variant="CaretUpDownIcon" size={12} />
+                </Text>
+              }
+              repo={branch.repo}
+              gitBranch={branch.gitBranch}
+              directory={branch.directory}
+              trigger={branch.trigger}
+            />
           }
-          identity={<BranchIdentity branch={branch} />}
           actions={
             branch.groups.length === 0 ? (
               <Button variant="primary" onClick={() => setView('settings')}>

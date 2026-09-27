@@ -124,6 +124,7 @@ export type TBranchOverview = {
   appName: string
   branchName: string
   repo: string
+  gitBranch: string
   directory: string
   trigger: string
   configVersion: number
@@ -649,8 +650,9 @@ const BASE: Omit<TBranchOverview, 'rollout' | 'recentRuns'> = {
   appName: 'acme-platform',
   branchName: 'main',
   repo: 'acme/platform',
+  gitBranch: 'main',
   directory: '/deploy',
-  trigger: 'Every push to main',
+  trigger: 'Every push',
   configVersion: 14,
   groups: PLAN_GROUPS,
   template: TEMPLATE,

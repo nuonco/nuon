@@ -1,9 +1,6 @@
 import { useMemo } from 'react'
 import { Outlet, useMatch, useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { Icon } from '@/components/common/Icon'
-import { Link } from '@/components/common/Link'
-import { Text } from '@/components/common/Text'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { PageContent } from '@/components/layout/PageContent'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -15,6 +12,7 @@ import { useOrg } from '@/hooks/use-org'
 import { BranchProvider } from '@/providers/branch-provider'
 import { AppBranchSwitcher } from '@/components/branches/AppBranchSwitcher'
 import { BranchDetailActions } from '@/components/branches/BranchDetailActions'
+import { BranchHeaderMeta } from '@/components/branches/BranchHeaderMeta'
 import { BranchPendingApprovals } from '@/components/branches/BranchRunApproval'
 import { getBranchWorkflowRuns } from '@/lib'
 import { latestBranchConfig } from '@/utils/branch-utils'
@@ -39,11 +37,6 @@ const triggerLabel = (config?: TAppBranchConfig) => {
   }
 }
 
-const repoHref = (repo?: string) => {
-  if (!repo) return undefined
-  return repo.startsWith('http') ? repo : `https://github.com/${repo}`
-}
-
 const BranchTemplate = () => {
   const { org } = useOrg()
   const { app } = useApp()
@@ -62,11 +55,6 @@ const BranchTemplate = () => {
   const vcs =
     currentConfig?.connected_github_vcs_config ??
     currentConfig?.public_git_vcs_config
-  const directory =
-    vcs?.directory && vcs.directory !== '.' && vcs.directory !== '/'
-      ? vcs.directory
-      : undefined
-
   const { data: latestRunsResult, isLoading: isLoadingLatestRun } = useQuery({
     queryKey: ['branch-latest-run', orgId, appId, branchId],
     queryFn: () =>
@@ -153,24 +141,14 @@ const BranchTemplate = () => {
         variant="page"
         backLink={false}
         title={app.name}
-        status={<AppBranchSwitcher />}
         identity={
-          <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            {vcs?.repo ? (
-              <Link href={repoHref(vcs.repo)} isExternal>
-                {vcs.repo}
-              </Link>
-            ) : null}
-            {directory ? (
-              <Text variant="subtext" family="mono" theme="neutral">
-                {directory}
-              </Text>
-            ) : null}
-            <Text variant="subtext" theme="neutral" flex>
-              <Icon variant="LightningIcon" />
-              {triggerLabel(currentConfig)}
-            </Text>
-          </span>
+          <BranchHeaderMeta
+            configuration={<AppBranchSwitcher />}
+            repo={vcs?.repo}
+            gitBranch={vcs?.branch}
+            directory={vcs?.directory}
+            trigger={triggerLabel(currentConfig)}
+          />
         }
         actions={
           <BranchDetailActions
