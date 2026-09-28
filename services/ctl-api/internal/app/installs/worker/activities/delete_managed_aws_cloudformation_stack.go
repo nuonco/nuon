@@ -2,10 +2,14 @@ package activities
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
+	cloudformationtypes "github.com/aws/aws-sdk-go-v2/service/cloudformation/types"
+	"github.com/aws/smithy-go"
 
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -15,6 +19,37 @@ type DeleteManagedAWSCloudFormationStackRequest struct {
 	InstallID      string `json:"install_id" validate:"required"`
 	StackVersionID string `json:"stack_version_id" validate:"required"`
 	ConnectionID   string `json:"connection_id" validate:"required"`
+}
+
+type cloudFormationDeleteStackAPI interface {
+	DeleteStack(context.Context, *cloudformation.DeleteStackInput, ...func(*cloudformation.Options)) (*cloudformation.DeleteStackOutput, error)
+	DescribeStackEvents(context.Context, *cloudformation.DescribeStackEventsInput, ...func(*cloudformation.Options)) (*cloudformation.DescribeStackEventsOutput, error)
+}
+
+func deleteManagedStack(ctx context.Context, client cloudFormationDeleteStackAPI, stackName, versionID string) error {
+	token := versionID + "-delete"
+	_, err := client.DeleteStack(ctx, &cloudformation.DeleteStackInput{StackName: aws.String(stackName), ClientRequestToken: aws.String(token)})
+	if err == nil {
+		return nil
+	}
+	var apiErr smithy.APIError
+	if errors.As(err, &apiErr) && apiErr.ErrorCode() == "ValidationError" && strings.Contains(apiErr.ErrorMessage(), "does not exist") {
+		return nil
+	}
+	var tokenAlreadyExists *cloudformationtypes.TokenAlreadyExistsException
+	if !errors.As(err, &tokenAlreadyExists) {
+		return err
+	}
+	events, describeErr := client.DescribeStackEvents(ctx, &cloudformation.DescribeStackEventsInput{StackName: aws.String(stackName)})
+	if describeErr != nil {
+		return fmt.Errorf("reconcile delete stack after duplicate response: %v: %w", describeErr, err)
+	}
+	for _, event := range events.StackEvents {
+		if aws.ToString(event.ClientRequestToken) == token && (event.ResourceStatus == cloudformationtypes.ResourceStatusDeleteInProgress || event.ResourceStatus == cloudformationtypes.ResourceStatusDeleteComplete) {
+			return nil
+		}
+	}
+	return err
 }
 
 // @temporal-gen-v2 activity
@@ -45,7 +80,7 @@ func (a *Activities) DeleteManagedAWSCloudFormationStack(ctx context.Context, re
 	if err != nil {
 		return fmt.Errorf("assume cloud connection role: %w", err)
 	}
-	if _, err := cloudformation.NewFromConfig(awsConfig).DeleteStack(ctx, &cloudformation.DeleteStackInput{StackName: aws.String(version.StackName), ClientRequestToken: aws.String(version.ID)}); err != nil {
+	if err := deleteManagedStack(ctx, cloudformation.NewFromConfig(awsConfig), version.StackName, version.ID); err != nil {
 		return fmt.Errorf("delete cloudformation stack %q: %w", version.StackName, err)
 	}
 	return nil
