@@ -17,6 +17,11 @@ import (
 
 const SignalType signal.SignalType = "await-install-stack-version-run"
 
+const (
+	managedStackDeletionPollInterval    = 30 * time.Second
+	maxManagedStackDeletionPollAttempts = 240
+)
+
 type Signal struct {
 	InstallStackID     string
 	WorkflowStepID     string
@@ -102,6 +107,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		err = activities.AwaitDeleteManagedAWSCloudFormationStack(ctx, &activities.DeleteManagedAWSCloudFormationStackRequest{InstallID: install.ID, StackVersionID: version.ID, ConnectionID: *install.CloudConnectionID})
 		if err != nil {
 			return errors.Wrap(err, "unable to delete managed install stack")
+		}
+		if err := s.pollForManagedStackDeletion(ctx, install.ID, version.ID, *install.CloudConnectionID, version.StackName); err != nil {
+			return errors.Wrap(err, "unable to confirm managed install stack deletion")
 		}
 		return nil
 	}
@@ -196,4 +204,30 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	l.Debug("callback received, stack run processed by stack-run signal")
 
 	return nil
+}
+
+func (s *Signal) pollForManagedStackDeletion(ctx workflow.Context, installID, versionID, connectionID, stackName string) error {
+	l := workflow.GetLogger(ctx)
+	req := &activities.DeleteManagedAWSCloudFormationStackRequest{
+		InstallID:      installID,
+		StackVersionID: versionID,
+		ConnectionID:   connectionID,
+	}
+	for attempt := 0; attempt < maxManagedStackDeletionPollAttempts; attempt++ {
+		status, err := activities.AwaitGetManagedAWSCloudFormationStackStatus(ctx, req)
+		if err != nil {
+			return errors.Wrap(err, "unable to check managed install stack deletion status")
+		}
+		if !status.Found || status.Status == activities.ManagedStackStatusDeleteComplete {
+			return nil
+		}
+		if status.Status == activities.ManagedStackStatusDeleteFailed {
+			return fmt.Errorf("cloudformation stack %q deletion failed: %s", stackName, status.Reason)
+		}
+		l.Info("managed install stack deletion in progress", "attempt", attempt+1, "status", status.Status)
+		if err := workflow.Sleep(ctx, managedStackDeletionPollInterval); err != nil {
+			return err
+		}
+	}
+	return fmt.Errorf("cloudformation stack %q was not deleted after %d polling attempts", stackName, maxManagedStackDeletionPollAttempts)
 }
