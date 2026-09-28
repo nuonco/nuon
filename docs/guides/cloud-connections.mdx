@@ -46,9 +46,9 @@ Verification exchanges a Nuon OIDC token for temporary AWS credentials, checks t
 
 ## Use connections for install stacks
 
-When creating or updating an AWS install, select a **verified AWS connection** with either preset. The install pins that connection. Nuon uses it for CloudFormation stack creation, updates, and deletion. If no connection is selected, the customer-managed stack workflow remains unchanged.
+When creating an AWS install, select a **verified AWS connection** with either preset. The connection binding is immutable after creation: a connection cannot be added, replaced, or removed from an existing install. Nuon uses the pinned connection for CloudFormation stack creation, updates, and deletion. If no connection is selected at creation, the install remains customer-managed.
 
-A connection referenced by an install cannot be deleted; the API returns HTTP 409. Remove the install reference before deleting the connection.
+A connection referenced by an install cannot be deleted; the API returns HTTP 409. Delete the referencing installs before deleting the connection.
 
 ## CLI and MCP
 

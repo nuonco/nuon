@@ -19,9 +19,6 @@ import (
 // swagger:model service.UpdateInstallRequest
 type ServiceUpdateInstallRequest struct {
 
-	// cloud connection id
-	CloudConnectionID string `json:"cloud_connection_id,omitempty"`
-
 	// install config
 	InstallConfig *ServicePatchInstallConfigParams `json:"install_config,omitempty"`
 

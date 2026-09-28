@@ -226,9 +226,9 @@ func (s *service) delete(ctx context.Context, orgID, connectionID string) error 
 			return fmt.Errorf("count install references: %w", err)
 		}
 		if installReferences > 0 {
-			description := fmt.Sprintf("This connection is used by %d installs. Reassign or delete those installs first.", installReferences)
+			description := fmt.Sprintf("This connection is used by %d installs. Delete those installs first.", installReferences)
 			if installReferences == 1 {
-				description = "This connection is used by 1 install. Reassign or delete that install first."
+				description = "This connection is used by 1 install. Delete that install first."
 			}
 			return stderr.ErrConflict{Err: errors.New(description), Description: description}
 		}

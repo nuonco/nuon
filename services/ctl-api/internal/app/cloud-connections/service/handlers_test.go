@@ -150,8 +150,8 @@ func TestDeleteConflict(t *testing.T) {
 		installs int64
 		message  string
 	}{
-		"one install":       {1, "This connection is used by 1 install. Reassign or delete that install first."},
-		"multiple installs": {3, "This connection is used by 3 installs. Reassign or delete those installs first."},
+		"one install":       {1, "This connection is used by 1 install. Delete that install first."},
+		"multiple installs": {3, "This connection is used by 3 installs. Delete those installs first."},
 	} {
 		t.Run(name, func(t *testing.T) {
 			db, err := gorm.Open(postgres.New(postgres.Config{DSN: "host=localhost dbname=unused"}), &gorm.Config{DryRun: true, DisableAutomaticPing: true})

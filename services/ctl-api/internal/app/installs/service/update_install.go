@@ -26,10 +26,9 @@ type PatchInstallConfigParams struct {
 }
 
 type UpdateInstallRequest struct {
-	Name              string                    `json:"name"`
-	CloudConnectionID string                    `json:"cloud_connection_id,omitempty"`
-	Metadata          *helpers.InstallMetadata  `json:"metadata,omitempty"`
-	InstallConfig     *PatchInstallConfigParams `json:"install_config"`
+	Name          string                    `json:"name"`
+	Metadata      *helpers.InstallMetadata  `json:"metadata,omitempty"`
+	InstallConfig *PatchInstallConfigParams `json:"install_config"`
 }
 
 func (c *UpdateInstallRequest) Validate(v *validator.Validate) error {
@@ -101,7 +100,7 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 		ID: installID,
 	}
 
-	res := s.db.WithContext(ctx).Preload("AppRunnerConfig").First(&currentInstall, "id = ?", installID)
+	res := s.db.WithContext(ctx).First(&currentInstall, "id = ?", installID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
 	}
@@ -129,12 +128,6 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 	}
 
 	updateObj := app.Install{Name: req.Name}
-	if req.CloudConnectionID != "" {
-		if _, err := s.helpers.ValidateCloudConnection(ctx, currentInstall.OrgID, req.CloudConnectionID, currentInstall.AppRunnerConfig.Type.CloudPlatform()); err != nil {
-			return nil, err
-		}
-		updateObj.CloudConnectionID = &req.CloudConnectionID
-	}
 	if req.Metadata != nil {
 		updateObj.Metadata = generics.ToHstore(map[string]string{
 			"managed_by": req.Metadata.ManagedBy,
