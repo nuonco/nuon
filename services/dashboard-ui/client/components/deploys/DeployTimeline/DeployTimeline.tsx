@@ -7,6 +7,7 @@ import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
 import { Text } from '@/components/common/Text'
 import type { TDeploy } from '@/types'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 interface IDeployTimeline {
   deploys: TDeploy[]
@@ -31,6 +32,7 @@ export const DeployTimeline = ({
   error,
   variant = 'deploy',
 }: IDeployTimeline) => {
+  const installLink = useInstallLink()
   const isSync = variant === 'sync'
 
   if (isLoading) {
@@ -65,7 +67,7 @@ export const DeployTimeline = ({
             title={
               <span className="flex items-center gap-2">
                 <Link
-                  href={`/${orgId}/installs/${installId}/components/${componentId}/deploys/${deploy.id}`}
+                  href={installLink({ orgId: orgId, installId: installId, suffix: `/components/${componentId}/deploys/${deploy.id}` })}
                   variant="inline"
                 >
                   {componentName}{' '}

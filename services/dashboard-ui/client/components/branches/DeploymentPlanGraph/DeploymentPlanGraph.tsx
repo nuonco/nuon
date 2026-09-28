@@ -19,6 +19,7 @@ import {
 } from '../graph/GroupNodeCard'
 import { layoutSequential, sequentialEdges } from '../graph/layout'
 import { DeploymentPlanGroupPanel } from './DeploymentPlanGroupPanel'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 const MAX_VISIBLE_INSTALLS = 3
 
@@ -42,6 +43,7 @@ interface GroupNodeData {
 }
 
 const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
+  const installLink = useInstallLink()
   const { accent, installs, compact, orgId, panelKey } = data
   const [, setSearchParams] = useSearchParams()
   const maxVisible = compact ? 3 : MAX_VISIBLE_INSTALLS
@@ -102,7 +104,7 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
                 className="shrink-0 text-cool-grey-400 dark:text-cool-grey-500"
               />
               <Link
-                href={`/${orgId}/installs/${inst.id}`}
+                href={installLink({ orgId: orgId, installId: inst.id })}
                 className="nodrag w-auto min-w-0 flex-1 truncate"
                 title={inst.name}
               >

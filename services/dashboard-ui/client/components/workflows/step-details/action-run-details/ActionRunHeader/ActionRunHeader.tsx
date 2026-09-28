@@ -1,6 +1,7 @@
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import type { IActionRunHeader } from '../types'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 interface IActionRunHeaderPresentation extends IActionRunHeader {
   orgId: string
@@ -13,6 +14,7 @@ export const ActionRunHeader = ({
   step,
   orgId,
 }: IActionRunHeaderPresentation) => {
+  const installLink = useInstallLink()
   if (loading) {
     return (
       <div className="flex items-center gap-4">
@@ -39,7 +41,7 @@ export const ActionRunHeader = ({
 
           {step?.owner_id && actionRun?.config?.action_workflow_id ? (
             <Link
-              href={`/${orgId}/installs/${step.owner_id}/actions/${actionRun.config.action_workflow_id}`}
+              href={installLink({ orgId: orgId, installId: step.owner_id, suffix: `/actions/${actionRun.config.action_workflow_id}` })}
             >
               View action
             </Link>
@@ -48,7 +50,7 @@ export const ActionRunHeader = ({
           actionRun?.config?.action_workflow_id &&
           actionRun?.id ? (
             <Link
-              href={`/${orgId}/installs/${step.owner_id}/actions/${actionRun.config.action_workflow_id}/runs/${actionRun.id}`}
+              href={installLink({ orgId: orgId, installId: step.owner_id, suffix: `/actions/${actionRun.config.action_workflow_id}/runs/${actionRun.id}` })}
             >
               View run details
             </Link>

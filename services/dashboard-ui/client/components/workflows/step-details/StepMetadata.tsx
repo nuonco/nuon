@@ -8,8 +8,8 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Link } from '@/components/common/Link'
-import { useOrg } from '@/hooks/use-org'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import type { TWorkflowStep } from '@/types'
 import type { IStepDetails } from './types'
 
@@ -57,8 +57,8 @@ const StepHistoryStatus = ({
 }
 
 export const StepMetadata = ({ step }: IStepDetails) => {
-  const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
 
   return (
     <div className="flex flex-col gap-2">
@@ -123,7 +123,7 @@ export const StepMetadata = ({ step }: IStepDetails) => {
       </Expand>
 
       <Link
-        href={`/${org?.id}/installs/${install?.id}/workflows`}
+        href={installLink({ installId: install?.id, appId: install?.app_id, suffix: `/workflows` })}
       >
         View workflows
       </Link>
