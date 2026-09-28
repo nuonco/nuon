@@ -51,7 +51,7 @@ type CloudConnection struct {
 	Status           CloudConnectionStatus   `gorm:"notnull;default:'pending'" json:"status" temporaljson:"status,omitempty"`
 	StatusMessage    string                  `gorm:"notnull;default:''" json:"status_message,omitempty" temporaljson:"status_message,omitempty"`
 	LastVerifiedAt   *time.Time              `json:"last_verified_at,omitempty" temporaljson:"last_verified_at,omitempty"`
-	Preset           CloudConnectionPreset   `gorm:"notnull" json:"preset" temporaljson:"preset,omitempty"`
+	Preset           CloudConnectionPreset   `gorm:"notnull;default:'stacks'" json:"preset" temporaljson:"preset,omitempty"`
 }
 
 func (c *CloudConnection) BeforeCreate(tx *gorm.DB) error {
