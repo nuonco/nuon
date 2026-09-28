@@ -22,9 +22,10 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPWriteTool(
 		"run_action",
 		"Run action",
-		"WRITE OPERATION: Trigger a configured action on an install. Requires a manual trigger on the action config. "+
+		"WRITE OPERATION: Trigger a configured action on an install. This starts an install workflow of type action_workflow_run. Requires a manual trigger on the action config. "+
 			"Pass install (name or ID) and action_id (action_workflow_id). Optional action_workflow_config_id pins a specific config; otherwise the install-pinned or latest config is used. "+
-			"Call list_available_roles (operation_type=trigger, principal_type=action, principal_id=action_id) before passing role.",
+			"Ask the user before triggering. Call list_available_roles (operation_type=trigger, principal_type=action, principal_id=action_id) before passing role. "+
+			"Returns workflow_id and next_action. Call that watch_workflow action. Each watch returns when a step starts or finishes. After every watch result, the next user-visible message is step_progress, then call watch again with the returned cursor. A row of watch calls with no step_progress between them is wrong.",
 		false,
 		false,
 	), s.mcpRunAction)

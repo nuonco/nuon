@@ -24,26 +24,43 @@ type mcpWorkflowSummary struct {
 	OwnerID           string                   `json:"owner_id"`
 	OwnerName         string                   `json:"owner_name,omitempty"`
 	CreatedAt         string                   `json:"created_at"`
+	ApprovalOption    string                   `json:"approval_option"`
 	CompletedSteps    int                      `json:"completed_steps"`
 	TotalSteps        int                      `json:"total_steps"`
-	PendingApproval   *mcpPendingApprovalInfo  `json:"pending_approval,omitempty"`
+	PendingApprovals  []mcpPendingApprovalInfo `json:"pending_approvals,omitempty"`
+	NextActions       []mcpNextAction          `json:"next_actions,omitempty"`
 	Steps             []mcpWorkflowStepSummary `json:"steps"`
 }
 
+type mcpChangeCounts struct {
+	ChangesState   string `json:"changes_state,omitempty"`
+	ChangesCreate  int    `json:"changes_create"`
+	ChangesUpdate  int    `json:"changes_update"`
+	ChangesDelete  int    `json:"changes_delete"`
+	ChangesReplace int    `json:"changes_replace"`
+	ChangesNoop    int    `json:"changes_noop"`
+}
+
 type mcpPendingApprovalInfo struct {
-	ApprovalID string `json:"approval_id"`
-	StepName   string `json:"step_name"`
-	Type       string `json:"type"`
+	ApprovalID  string          `json:"approval_id"`
+	StepID      string          `json:"step_id,omitempty"`
+	StepName    string          `json:"step_name"`
+	Type        string          `json:"type"`
+	NextActions []mcpNextAction `json:"next_actions,omitempty"`
+	mcpChangeCounts
 }
 
 type mcpWorkflowStepSummary struct {
-	ID             string `json:"id"`
-	Name           string `json:"name"`
-	Status         string `json:"status"`
-	StepTargetType string `json:"step_target_type,omitempty"`
-	StepTargetID   string `json:"step_target_id,omitempty"`
-	HasLogs        bool   `json:"has_logs,omitempty"`
-	ExecutionTime  string `json:"execution_time,omitempty"`
+	ID             string             `json:"id"`
+	Name           string             `json:"name"`
+	Status         string             `json:"status"`
+	StepTargetType string             `json:"step_target_type,omitempty"`
+	StepTargetID   string             `json:"step_target_id,omitempty"`
+	HasLogs        bool               `json:"has_logs,omitempty"`
+	ExecutionTime  string             `json:"execution_time,omitempty"`
+	StackSetup     *mcpStackSetup     `json:"stack_setup,omitempty"`
+	CompositeError *mcpCompositeError `json:"composite_error,omitempty"`
+	NextActions    []mcpNextAction    `json:"next_actions,omitempty"`
 }
 
 func (s *service) mcpGetWorkflow(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetWorkflowInput) (*mcp.CallToolResult, any, error) {
@@ -71,6 +88,12 @@ func (s *service) mcpGetWorkflow(ctx context.Context, _ *mcp.CallToolRequest, in
 		return nil, nil, fmt.Errorf("unable to find workflow %q: %w", in.WorkflowID, err)
 	}
 
+	summary := summarizeMCPWorkflow(workflow)
+	s.attachStackSetups(ctx, orgID, workflow.Steps, summary.Steps)
+	return apiPkg.MCPJSONResult(summary)
+}
+
+func summarizeMCPWorkflow(workflow app.Workflow) mcpWorkflowSummary {
 	summary := mcpWorkflowSummary{
 		ID:                workflow.ID,
 		Type:              string(workflow.Type),
@@ -79,6 +102,7 @@ func (s *service) mcpGetWorkflow(ctx context.Context, _ *mcp.CallToolRequest, in
 		OwnerID:           workflow.OwnerID,
 		OwnerName:         workflow.OwnerName,
 		CreatedAt:         apiPkg.MCPTime(workflow.CreatedAt),
+		ApprovalOption:    string(workflow.ApprovalOption),
 	}
 
 	for _, step := range workflow.Steps {
@@ -99,18 +123,47 @@ func (s *service) mcpGetWorkflow(ctx context.Context, _ *mcp.CallToolRequest, in
 		if step.ExecutionTime > 0 {
 			stepSummary.ExecutionTime = step.ExecutionTime.String()
 		}
+		stepSummary.CompositeError = mcpCompositeErrorFrom(step.Status.CompositeError)
+		if actions := mcpAwaitingRetryActions(step); len(actions) > 0 {
+			stepSummary.NextActions = actions
+			summary.NextActions = append(summary.NextActions, actions...)
+		}
 		summary.Steps = append(summary.Steps, stepSummary)
 
-		if step.Approval != nil && step.Approval.Response == nil {
-			summary.PendingApproval = &mcpPendingApprovalInfo{
-				ApprovalID: step.Approval.ID,
-				StepName:   step.Name,
-				Type:       string(step.Approval.Type),
-			}
+		if info := mcpPendingApprovalFromStep(step); info != nil {
+			info.NextActions = mcpPendingApprovalActions(info.ApprovalID, workflow.ID, mcpWorkflowAllowsApproveAll(workflow))
+			summary.PendingApprovals = append(summary.PendingApprovals, *info)
 		}
 	}
 
-	return apiPkg.MCPJSONResult(summary)
+	return summary
+}
+
+func mcpPendingApprovalFromStep(step app.WorkflowStep) *mcpPendingApprovalInfo {
+	if step.Approval == nil || step.Approval.Response != nil {
+		return nil
+	}
+	return &mcpPendingApprovalInfo{
+		ApprovalID:      step.Approval.ID,
+		StepID:          step.ID,
+		StepName:        step.Name,
+		Type:            string(step.Approval.Type),
+		mcpChangeCounts: mcpChangesFromApproval(step.Approval),
+	}
+}
+
+func mcpChangesFromApproval(approval *app.WorkflowStepApproval) mcpChangeCounts {
+	if approval == nil {
+		return mcpChangeCounts{}
+	}
+	return mcpChangeCounts{
+		ChangesState:   string(approval.ChangesState),
+		ChangesCreate:  approval.ChangesCreate,
+		ChangesUpdate:  approval.ChangesUpdate,
+		ChangesDelete:  approval.ChangesDelete,
+		ChangesReplace: approval.ChangesReplace,
+		ChangesNoop:    approval.ChangesNoop,
+	}
 }
 
 func stepHasLogs(targetType string) bool {

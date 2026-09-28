@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
@@ -21,10 +23,11 @@ type mcpGetWorkflowStepLogsInput struct {
 
 type mcpStepLogResult struct {
 	StepName        string        `json:"step_name"`
-	LogStreamID     string        `json:"log_stream_id"`
+	LogStreamID     string        `json:"log_stream_id,omitempty"`
 	ReturnedRecords int           `json:"returned_records"`
 	HasMore         bool          `json:"has_more"`
 	NextCursor      string        `json:"next_cursor,omitempty"`
+	Message         string        `json:"message,omitempty"`
 	Logs            []mcpLogEntry `json:"logs"`
 }
 
@@ -42,12 +45,23 @@ func (s *service) mcpGetWorkflowStepLogs(ctx context.Context, _ *mcp.CallToolReq
 		return nil, nil, fmt.Errorf("unable to find step %q: %w", in.StepID, err)
 	}
 
-	if step.StepTargetID == "" {
-		return nil, nil, fmt.Errorf("step %q does not have a target", in.StepID)
+	if step.StepTargetID == "" || !stepTargetHasLogs(step.StepTargetType) {
+		return apiPkg.MCPJSONResult(mcpStepLogResult{
+			StepName: step.Name,
+			Message:  "This step has no log stream.",
+			Logs:     []mcpLogEntry{},
+		})
 	}
 
 	logStreamID, err := s.resolveStepLogStream(ctx, orgID, step.StepTargetType, step.StepTargetID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return apiPkg.MCPJSONResult(mcpStepLogResult{
+				StepName: step.Name,
+				Message:  "This step has no log stream yet.",
+				Logs:     []mcpLogEntry{},
+			})
+		}
 		return nil, nil, err
 	}
 
@@ -69,6 +83,17 @@ func (s *service) mcpGetWorkflowStepLogs(ctx context.Context, _ *mcp.CallToolReq
 		NextCursor:      page.NextCursor,
 		Logs:            page.Logs,
 	})
+}
+
+func stepTargetHasLogs(targetType string) bool {
+	switch targetType {
+	case string(app.WorkflowStepTargetTypeInstallDeploys),
+		string(app.WorkflowStepTargetTypeInstallActionWorkflowRuns),
+		string(app.WorkflowStepTargetTypeInstallSandboxRuns):
+		return true
+	default:
+		return false
+	}
 }
 
 func (s *service) resolveStepLogStream(ctx context.Context, orgID, targetType, targetID string) (string, error) {

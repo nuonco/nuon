@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -18,6 +19,44 @@ type Service struct {
 	allowWrites bool
 	endpoint    string
 	name        string
+	progress    progressRelay
+}
+
+// progressRelay forwards upstream progress notifications to the stdio client
+// that started the tool call. Keyed by the progress token on that call.
+type progressRelay struct {
+	mu       sync.Mutex
+	handlers map[string]func(context.Context, *mcp.ProgressNotificationParams)
+}
+
+func (r *progressRelay) listen(token any, fn func(context.Context, *mcp.ProgressNotificationParams)) func() {
+	if token == nil {
+		return func() {}
+	}
+	key := fmt.Sprint(token)
+	r.mu.Lock()
+	if r.handlers == nil {
+		r.handlers = map[string]func(context.Context, *mcp.ProgressNotificationParams){}
+	}
+	r.handlers[key] = fn
+	r.mu.Unlock()
+	return func() {
+		r.mu.Lock()
+		delete(r.handlers, key)
+		r.mu.Unlock()
+	}
+}
+
+func (r *progressRelay) forward(ctx context.Context, req *mcp.ProgressNotificationClientRequest) {
+	if req == nil || req.Params == nil || req.Params.ProgressToken == nil {
+		return
+	}
+	r.mu.Lock()
+	fn := r.handlers[fmt.Sprint(req.Params.ProgressToken)]
+	r.mu.Unlock()
+	if fn != nil {
+		fn(ctx, req.Params)
+	}
 }
 
 type Option func(*Service)
@@ -153,7 +192,9 @@ func (s *Service) connectUpstream(ctx context.Context) (*mcp.ClientSession, erro
 	client := mcp.NewClient(&mcp.Implementation{
 		Name:    "nuon-cli-proxy",
 		Version: version.Version,
-	}, nil)
+	}, &mcp.ClientOptions{
+		ProgressNotificationHandler: s.progress.forward,
+	})
 
 	session, err := client.Connect(ctx, transport, nil)
 	if err != nil {
@@ -191,10 +232,22 @@ func (s *Service) buildProxyServer(ctx context.Context, upstream *mcp.ClientSess
 
 		toolCopy := *tool
 		mcp.AddTool(server, &toolCopy, func(ctx context.Context, req *mcp.CallToolRequest, _ struct{}) (*mcp.CallToolResult, any, error) {
-			result, err := upstream.CallTool(ctx, &mcp.CallToolParams{
+			params := &mcp.CallToolParams{
 				Name:      req.Params.Name,
 				Arguments: req.Params.Arguments,
-			})
+			}
+			if token := req.Params.GetProgressToken(); token != nil {
+				params.SetProgressToken(token)
+				defer s.progress.listen(token, func(ctx context.Context, p *mcp.ProgressNotificationParams) {
+					_ = req.Session.NotifyProgress(ctx, &mcp.ProgressNotificationParams{
+						ProgressToken: token,
+						Message:       p.Message,
+						Progress:      p.Progress,
+						Total:         p.Total,
+					})
+				})()
+			}
+			result, err := upstream.CallTool(ctx, params)
 			if err != nil {
 				return nil, nil, err
 			}

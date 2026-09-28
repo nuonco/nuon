@@ -30,6 +30,9 @@ type mcpStepDetail struct {
 	Skippable         bool                     `json:"skippable"`
 	PendingApproval   *mcpPendingApprovalInfo  `json:"pending_approval,omitempty"`
 	PolicyValidation  *mcpPolicyValidationInfo `json:"policy_validation,omitempty"`
+	StackSetup        *mcpStackSetup           `json:"stack_setup,omitempty"`
+	CompositeError    *mcpCompositeError       `json:"composite_error,omitempty"`
+	NextActions       []mcpNextAction          `json:"next_actions,omitempty"`
 	CreatedAt         string                   `json:"created_at"`
 }
 
@@ -75,18 +78,22 @@ func (s *service) mcpGetWorkflowStep(ctx context.Context, _ *mcp.CallToolRequest
 		detail.ExecutionTime = step.ExecutionTime.String()
 	}
 
-	if step.Approval != nil && step.Approval.Response == nil {
-		detail.PendingApproval = &mcpPendingApprovalInfo{
-			ApprovalID: step.Approval.ID,
-			StepName:   step.Name,
-			Type:       string(step.Approval.Type),
-		}
-	}
+	detail.PendingApproval = mcpPendingApprovalFromStep(step)
 
 	if step.PolicyValidation != nil {
 		detail.PolicyValidation = &mcpPolicyValidationInfo{
 			Status: string(step.PolicyValidation.Status.Status),
 		}
+	}
+
+	if step.Name == app.AwaitInstallStackStepName && step.StepTargetID != "" {
+		detail.StackSetup = s.mcpStackSetup(ctx, orgID, step.StepTargetID)
+	}
+
+	detail.CompositeError = mcpCompositeErrorFrom(step.Status.CompositeError)
+
+	if actions := mcpAwaitingRetryActions(step); len(actions) > 0 {
+		detail.NextActions = actions
 	}
 
 	return apiPkg.MCPJSONResult(detail)

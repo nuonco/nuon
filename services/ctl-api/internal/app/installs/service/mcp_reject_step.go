@@ -5,12 +5,10 @@ import (
 	"fmt"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
-	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 )
 
 type mcpRejectStepInput struct {
@@ -50,24 +48,19 @@ func (s *service) mcpRejectStep(ctx context.Context, _ *mcp.CallToolRequest, in 
 		return nil, nil, fmt.Errorf("unable to create approval response: %w", err)
 	}
 
-	stepID := approval.InstallWorkflowStepID
-	var step app.WorkflowStep
-	if err := s.db.WithContext(ctx).First(&step, "id = ?", stepID).Error; err != nil {
-		return nil, nil, fmt.Errorf("unable to find step: %w", err)
+	if err := s.notifyWorkflowOfApprovalResponse(ctx, approval, &response); err != nil {
+		return nil, nil, err
 	}
 
-	if err := s.flowsClient.ApprovePlan(ctx, &flowclient.ApprovePlanRequest{
-		InstallWorkflowID:  step.OwnerID,
-		StepID:             stepID,
-		ApprovalResponseID: response.ID,
-		ResponseType:       app.WorkflowStepApprovalResponseTypeDeny,
-	}); err != nil {
-		s.l.Warn("failed to dispatch rejection", zap.Error(err))
-	}
-
-	return apiPkg.MCPJSONResult(map[string]string{
+	workflowID := approval.InstallWorkflowStep.InstallWorkflowID
+	out := map[string]any{
 		"status":      "rejected",
 		"approval_id": approval.ID,
 		"response_id": response.ID,
-	})
+		"workflow_id": workflowID,
+	}
+	if next := mcpWatchContinuation(workflowID); next != nil {
+		out["next_action"] = next
+	}
+	return apiPkg.MCPJSONResult(out)
 }
