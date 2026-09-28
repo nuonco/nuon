@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Skeleton',
+  title: 'UI / Skeleton',
 }
 
 import { Skeleton } from './Skeleton'

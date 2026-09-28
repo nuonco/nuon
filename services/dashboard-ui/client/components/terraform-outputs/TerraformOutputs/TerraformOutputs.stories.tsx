@@ -1,5 +1,5 @@
 export default {
-  title: 'Terraform/TerraformOutputs',
+  title: 'Features / Terraform / Outputs',
 }
 
 import { TerraformOutputs } from './TerraformOutputs'

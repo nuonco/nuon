@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/InstallCronOfflineBanner',
+  title: 'Features / Installs / Cron offline banner',
 }
 
 import { InstallCronOfflineBanner } from './InstallCronOfflineBanner'

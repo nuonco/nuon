@@ -1,5 +1,5 @@
 export default {
-  title: 'OIDCTrustPolicies/DeleteOIDCTrustPolicy',
+  title: 'Features / OIDC trust policies / Delete OIDC trust policy',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

@@ -1,7 +1,7 @@
 import { BranchCompare } from './BranchCompare'
 
 export default {
-  title: 'Playground/Lite/BranchCompare',
+  title: 'Playground / Lite / Branch compare',
 }
 
 export const Default = () => (

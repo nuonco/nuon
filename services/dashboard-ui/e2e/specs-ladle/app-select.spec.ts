@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const STORY = "/?story=installs--appselect--default&mode=preview";
+const STORY = "/?story=features--installs--create-install--app-select--default&mode=preview";
 const FORM_STORY =
-  "/?story=installs--installform--create-aws-stack-only&mode=preview";
+  "/?story=features--installs--forms--install-form--create-aws-stack-only&mode=preview";
 
 test.describe("AppSelect readiness", () => {
   test("keeps apps without a runner config disabled", async ({ page }) => {

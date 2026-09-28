@@ -1,7 +1,7 @@
 import { BranchRunSummary } from './BranchRunSummary'
 
 export default {
-  title: 'Branches/BranchRunSummary',
+  title: 'Features / Branches / Branch run summary',
 }
 
 const mockBranchRun = {

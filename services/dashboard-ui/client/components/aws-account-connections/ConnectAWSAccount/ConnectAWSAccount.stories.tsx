@@ -1,4 +1,4 @@
-export default { title: 'AWS account connections/ConnectAWSAccount' }
+export default { title: 'Features / AWS account connections / Connect AWS account' }
 
 import { ModalStory } from '@/components/__stories__/helpers'
 import { ConnectAWSAccountModal } from './ConnectAWSAccount'

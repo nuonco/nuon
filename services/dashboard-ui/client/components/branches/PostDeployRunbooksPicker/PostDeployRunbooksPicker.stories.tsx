@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/PostDeployRunbooksPicker',
+  title: 'Features / Branches / Post deploy runbooks picker',
 }
 
 import { useState } from 'react'

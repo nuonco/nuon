@@ -1,5 +1,5 @@
 export default {
-  title: 'Runbooks/RunbookRunTimeline',
+  title: 'Features / Runbooks / Run timeline',
 }
 
 import { RunbookRunTimeline } from './RunbookRunTimeline'

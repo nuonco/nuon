@@ -1,5 +1,5 @@
 export default {
-  title: 'Install Components/InstallComponentsTable',
+  title: 'Features / Installs / Components / Components table',
 }
 
 import { InstallComponentsTable, type InstallComponentRow } from './InstallComponentsTable'

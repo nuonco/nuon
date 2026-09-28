@@ -1,6 +1,6 @@
 import { CloudRegion } from './CloudRegion'
 
-export default { title: 'Common/CloudRegion' }
+export default { title: 'UI / Cloud region' }
 
 export const AWS = () => <CloudRegion platform="aws" region="us-east-1" />
 

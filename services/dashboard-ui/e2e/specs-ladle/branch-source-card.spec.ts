@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 const CONNECTED_STORY =
-  '/?story=branches--branchsourcecard--connected&mode=preview'
+  '/?story=features--branches--branch-source-card--connected&mode=preview'
 
 test('puts source editing on the source card', async ({ page }) => {
   await page.goto(CONNECTED_STORY, { waitUntil: 'domcontentloaded' })

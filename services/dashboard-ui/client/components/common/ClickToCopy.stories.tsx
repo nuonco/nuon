@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/ClickToCopy',
+  title: 'UI / Click to copy',
 }
 
 import { ClickToCopy, ClickToCopyButton } from './ClickToCopy'

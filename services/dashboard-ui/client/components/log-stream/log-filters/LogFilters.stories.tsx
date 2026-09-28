@@ -1,5 +1,5 @@
 export default {
-  title: 'LogStream/LogFilters',
+  title: 'Features / Logs / Log filters',
 }
 
 import { LogStreamContext } from '@/providers/log-stream-provider'

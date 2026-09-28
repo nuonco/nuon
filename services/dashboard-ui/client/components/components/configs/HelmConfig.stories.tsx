@@ -1,5 +1,5 @@
 export default {
-  title: 'Components/Configs/HelmConfig',
+  title: 'Features / Components / Configs / Helm config',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

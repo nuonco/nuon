@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/CodeBlock',
+  title: 'UI / Code block',
 }
 
 import { CodeBlock } from './CodeBlock'

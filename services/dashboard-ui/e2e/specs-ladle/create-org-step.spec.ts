@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 // CreateOrgStep is an inline onboarding wizard step, not a modal — the form
 // renders directly on the page (no "Open modal" trigger, no dialog).
-const STORY = "/?story=onboarding--v1-steps--createorgstep--default&mode=preview";
+const STORY = "/?story=features--onboarding--v1-steps--create-org-step--default&mode=preview";
 
 test.describe("CreateOrgStep form behavior", () => {
   test.beforeEach(async ({ page }) => {

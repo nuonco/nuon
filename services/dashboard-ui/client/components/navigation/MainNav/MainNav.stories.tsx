@@ -1,5 +1,5 @@
 export default {
-  title: 'Navigation/MainNav',
+  title: 'UI / Navigation / Main nav',
 }
 
 import { MainNav } from './MainNav'

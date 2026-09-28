@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
 
 const WITH_GROUPS =
-  "/?story=branches--deploymentplaneditor--with-groups&mode=preview";
+  "/?story=features--branches--deployment-plan-editor--with-groups&mode=preview";
 const NO_GROUPS =
-  "/?story=branches--deploymentplaneditor--no-groups&mode=preview";
+  "/?story=features--branches--deployment-plan-editor--no-groups&mode=preview";
 const NO_INSTALLS =
-  "/?story=branches--deploymentplaneditor--no-installs&mode=preview";
+  "/?story=features--branches--deployment-plan-editor--no-installs&mode=preview";
 
 const openEditor = async (page, story: string) => {
   await page.goto(story, { waitUntil: "domcontentloaded" });

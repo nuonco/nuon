@@ -1,5 +1,5 @@
 export default {
-  title: 'Install Components/BuildSelect',
+  title: 'Features / Installs / Components / Build select',
 }
 
 import { BuildSelect } from './BuildSelect'

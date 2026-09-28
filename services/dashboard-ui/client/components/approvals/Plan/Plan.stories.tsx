@@ -1,5 +1,5 @@
 export default {
-  title: 'Approvals/Plan',
+  title: 'Features / Approvals / Plan',
 }
 
 import { mockWorkflowStep, mockHelmStep, mockK8sStep } from '@/components/__fixtures__/workflows'

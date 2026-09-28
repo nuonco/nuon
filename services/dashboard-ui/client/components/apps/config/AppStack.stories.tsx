@@ -1,5 +1,5 @@
 export default {
-  title: 'Apps/Config/AppStack',
+  title: 'Features / Apps / Config / Stack',
 }
 
 import { AppStack } from './AppStack'

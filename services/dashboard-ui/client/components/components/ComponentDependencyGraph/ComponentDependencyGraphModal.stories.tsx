@@ -3,7 +3,7 @@ import { ComponentDependencyGraphModal } from './ComponentDependencyGraphContain
 import type { TAppConfig } from '@/types'
 
 export default {
-  title: 'Components/ComponentDependencyGraphModal',
+  title: 'Features / Components / Dependency graph / Dependency graph modal',
 }
 
 const makeConfig = (

@@ -1,4 +1,4 @@
-export default { title: 'Triggers/Trigger events' }
+export default { title: 'Features / Triggers / Events' }
 import { TriggerEvents } from './TriggerEvents'
 const props = {
   eventTypes: [{ event_type: 'push', count: 3 }],

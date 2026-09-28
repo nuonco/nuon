@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/CancelWorkflows',
+  title: 'Features / Workflows / Cancel workflows',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

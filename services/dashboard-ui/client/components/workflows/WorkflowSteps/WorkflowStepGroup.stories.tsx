@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/WorkflowStepGroup',
+  title: 'Features / Workflows / Steps / Step group',
 }
 
 import { WorkflowStepGroup } from './WorkflowStepGroup'

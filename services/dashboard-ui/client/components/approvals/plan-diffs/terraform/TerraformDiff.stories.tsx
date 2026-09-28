@@ -16,7 +16,7 @@ import {
 import { TerraformDiff } from './TerraformDiff'
 
 export default {
-  title: 'Approvals/PlanDiffs/TerraformDiff',
+  title: 'Features / Approvals / Plan diffs / Terraform diff',
 }
 
 export const NoPlan = () => <TerraformDiff plan={undefined} />

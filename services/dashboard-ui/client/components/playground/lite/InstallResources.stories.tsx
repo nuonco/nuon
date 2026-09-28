@@ -1,7 +1,7 @@
 import { InstallResources } from './InstallResources'
 
 export default {
-  title: 'Playground/Lite/InstallResources',
+  title: 'Playground / Lite / Install resources',
 }
 
 export const Default = () => (

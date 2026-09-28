@@ -1,5 +1,5 @@
 export default {
-  title: 'Notebooks/CellTerminal',
+  title: 'Features / Notebooks / Cell logs',
 }
 
 import type { TOTELLog } from '@/types'

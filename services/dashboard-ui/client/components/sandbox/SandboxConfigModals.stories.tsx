@@ -1,5 +1,5 @@
 export default {
-  title: 'Sandbox/SandboxConfigModals',
+  title: 'Features / Sandbox / Config modals',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Webhooks/WebhooksTable',
+  title: 'Features / Webhooks / Webhooks table',
 }
 
 import { WebhooksTable } from './WebhooksTable'

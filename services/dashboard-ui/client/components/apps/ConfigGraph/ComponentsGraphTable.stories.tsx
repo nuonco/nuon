@@ -1,5 +1,5 @@
 export default {
-  title: 'Apps/ComponentsGraphTable',
+  title: 'Features / Apps / Config graph / Components graph table',
 }
 
 import { ComponentsGraphTable } from './ComponentsGraphTable'

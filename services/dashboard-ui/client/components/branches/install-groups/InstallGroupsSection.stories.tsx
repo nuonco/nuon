@@ -1,6 +1,6 @@
 import { InstallGroupsSection } from './InstallGroupsSection'
 
-export default { title: 'Branches/InstallGroups/InstallGroupsSection' }
+export default { title: 'Features / Branches / Install groups section' }
 
 const installsById = {
   'inst-1': {

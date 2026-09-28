@@ -1,5 +1,5 @@
 export default {
-  title: 'Components/Configs/SignatureVerification',
+  title: 'Features / Components / Configs / Signature verification',
 }
 
 import { SignatureVerification } from './SignatureVerification'

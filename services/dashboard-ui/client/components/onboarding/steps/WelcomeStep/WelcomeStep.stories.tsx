@@ -1,5 +1,5 @@
 export default {
-  title: 'Onboarding/V1 Steps/WelcomeStep',
+  title: 'Features / Onboarding / V1 steps / Welcome step',
 }
 
 import { WelcomeStep } from './WelcomeStep'

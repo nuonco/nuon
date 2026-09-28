@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { CodeInput } from './CodeInput'
 
 export default {
-  title: 'Common/Forms/CodeInput',
+  title: 'UI / Forms / Code input',
 }
 
 export const Languages = () => (

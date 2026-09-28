@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/AnimatedHeight',
+  title: 'UI / Animated height',
 }
 
 import { useState } from 'react'

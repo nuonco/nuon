@@ -1,7 +1,7 @@
 import { InstallReadme } from './InstallReadme'
 
 export default {
-  title: 'Playground/Lite/InstallReadme',
+  title: 'Playground / Lite / Install Readme',
 }
 
 export const Default = () => (

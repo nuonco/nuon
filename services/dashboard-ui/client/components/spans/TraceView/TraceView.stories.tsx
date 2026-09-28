@@ -3,7 +3,7 @@ import type { TSpan } from '@/types'
 import { TraceView } from './TraceView'
 
 export default {
-  title: 'Spans/TraceView',
+  title: 'Features / Spans / Trace view',
 }
 
 const mockSpans: TSpan[] = [

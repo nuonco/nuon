@@ -3,7 +3,7 @@ import { ModalStory } from '@/components/__stories__/helpers'
 import { PreviewBranchRunModal } from './PreviewBranchRunModal'
 
 export default {
-  title: 'Branches/PreviewBranchRunModal',
+  title: 'Features / Branches / Preview branch run modal',
 }
 
 const branchOptions = [

@@ -1,5 +1,5 @@
 export default {
-  title: 'Orgs/OrgStatusBar',
+  title: 'Features / Orgs / Status bar',
 }
 
 import type { ReactNode } from 'react'

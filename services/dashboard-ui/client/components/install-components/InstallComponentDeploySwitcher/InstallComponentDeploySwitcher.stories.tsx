@@ -1,3 +1,3 @@
 export default {
-  title: 'Install Components/InstallComponentDeploySwitcher',
+  title: 'Features / Installs / Components / Deploy switcher',
 }

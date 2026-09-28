@@ -1,5 +1,5 @@
 export default {
-  title: 'Terraform/UnlockTerraformWorkspace',
+  title: 'Features / Terraform / Workspace / Unlock Terraform workspace',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

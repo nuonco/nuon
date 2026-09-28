@@ -1,5 +1,5 @@
 export default {
-  title: 'Sandbox/Management/ManagementDropdown',
+  title: 'Features / Sandbox / Management / Management dropdown',
 }
 
 import { ManagementDropdown } from './ManagementDropdown'

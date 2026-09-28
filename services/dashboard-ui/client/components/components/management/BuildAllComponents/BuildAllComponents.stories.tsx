@@ -1,5 +1,5 @@
 export default {
-  title: 'Components/BuildAllComponents',
+  title: 'Features / Components / Management / Build all components',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

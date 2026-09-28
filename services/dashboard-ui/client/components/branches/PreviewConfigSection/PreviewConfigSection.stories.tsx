@@ -5,7 +5,7 @@ import { PreviewConfigEditorModal } from './PreviewConfigEditorModal'
 import { PreviewConfigSection } from './PreviewConfigSection'
 
 export default {
-  title: 'Branches/PreviewConfigSection',
+  title: 'Features / Branches / Preview config section',
 }
 
 const installs = [

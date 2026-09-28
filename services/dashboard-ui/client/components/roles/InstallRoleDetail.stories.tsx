@@ -1,7 +1,7 @@
 import { InstallRoleDetail } from './InstallRoleDetail'
 
 export default {
-  title: 'Roles/InstallRoleDetail',
+  title: 'Features / Roles / Install role detail',
 }
 
 const mockInstallRole = {

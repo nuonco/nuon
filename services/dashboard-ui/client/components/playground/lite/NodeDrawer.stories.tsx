@@ -1,7 +1,7 @@
 import { NodeDrawer } from './NodeDrawer'
 
 export default {
-  title: 'Playground/Lite/NodeDrawer',
+  title: 'Playground / Lite / Node drawer',
 }
 
 export const Default = () => (

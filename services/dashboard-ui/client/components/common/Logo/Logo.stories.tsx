@@ -1,6 +1,6 @@
 import { Logo } from './Logo'
 
-export default { title: 'Common/Logo' }
+export default { title: 'UI / Logo' }
 
 export const System = () => <Logo />
 

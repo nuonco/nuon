@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/EditInputs',
+  title: 'Features / Installs / Management / Edit inputs',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

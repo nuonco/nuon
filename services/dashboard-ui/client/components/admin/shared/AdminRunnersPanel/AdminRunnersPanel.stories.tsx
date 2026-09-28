@@ -1,5 +1,5 @@
 export default {
-  title: 'Admin/AdminRunnersPanel',
+  title: 'Features / Admin / Shared / Runners panel',
 }
 
 import { AdminRunnersPanel } from './AdminRunnersPanel'

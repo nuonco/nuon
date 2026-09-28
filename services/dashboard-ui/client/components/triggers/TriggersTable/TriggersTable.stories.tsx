@@ -1,4 +1,4 @@
-export default { title: 'Triggers/Triggers table' }
+export default { title: 'Features / Triggers / Triggers table' }
 import { TriggerFilters } from '../TriggerFilters/TriggerFilters'
 import { TriggersTable } from './TriggersTable'
 const triggers = [

@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/WorkflowChangesSummary',
+  title: 'Features / Workflows / Changes summary',
 }
 
 import { TerraformDiff } from '@/components/approvals/plan-diffs/terraform/TerraformDiff'

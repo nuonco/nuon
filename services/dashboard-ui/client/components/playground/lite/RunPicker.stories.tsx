@@ -1,7 +1,7 @@
 import { RunPicker } from './RunPicker'
 
 export default {
-  title: 'Playground/Lite/RunPicker',
+  title: 'Playground / Lite / Run picker',
 }
 
 export const Default = () => (
