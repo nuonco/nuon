@@ -5,7 +5,7 @@ import { FormSelect } from '@/components/common/form/FormSelect'
 import { Text } from '@/components/common/Text'
 import { AWS_REGIONS, AZURE_REGIONS } from '@/configs/cloud-regions'
 import { getFlagEmoji } from '@/utils/string-utils'
-import type { TCloudConnection } from '@/types'
+import type { TCloudConnectionSummary } from '@/types'
 import { FieldRow } from './FieldRow'
 import type { InstallFormApi } from './useInstallForm'
 import type { InstallPlatform } from './schema'
@@ -13,7 +13,7 @@ import type { InstallPlatform } from './schema'
 interface IInstallPlatformFields {
   form: InstallFormApi
   platform: InstallPlatform
-  cloudConnections?: TCloudConnection[]
+  cloudConnections?: TCloudConnectionSummary[]
   requireTargetAccount?: boolean
   disabled?: boolean
 }

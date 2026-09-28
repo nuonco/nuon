@@ -1,6 +1,6 @@
 import { ModalStory } from '@/components/__stories__/helpers'
 import { DeleteConnection } from './DeleteConnection'
-export default { title: 'Cloud connections/Delete' }
+export default { title: 'Features / Cloud connections / Delete' }
 export const Confirm = () => (
   <ModalStory>
     <DeleteConnection

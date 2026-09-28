@@ -32,9 +32,6 @@ const (
 
 	// AppCloudConnectionAuthModeOidc captures enum value "oidc"
 	AppCloudConnectionAuthModeOidc AppCloudConnectionAuthMode = "oidc"
-
-	// AppCloudConnectionAuthModeLegacy captures enum value "legacy"
-	AppCloudConnectionAuthModeLegacy AppCloudConnectionAuthMode = "legacy"
 )
 
 // for schema
@@ -42,7 +39,7 @@ var appCloudConnectionAuthModeEnum []any
 
 func init() {
 	var res []AppCloudConnectionAuthMode
-	if err := json.Unmarshal([]byte(`["oidc","legacy"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["oidc"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

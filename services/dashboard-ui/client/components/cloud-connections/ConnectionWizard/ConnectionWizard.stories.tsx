@@ -9,7 +9,7 @@ import {
   verifiedConnection,
   noop,
 } from '../__stories__/fixtures'
-export default { title: 'Cloud connections/Wizard' }
+export default { title: 'Features / Cloud connections / Wizard' }
 export const RunSetup = () => (
   <PageStory>
     <ConnectionWizard step={3} created onStep={noop}>

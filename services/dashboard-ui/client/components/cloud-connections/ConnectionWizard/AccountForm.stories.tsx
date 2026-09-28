@@ -1,7 +1,7 @@
 import { AccountForm } from './AccountForm'
 import { ConnectionWizard } from './ConnectionWizard'
 import { PageStory, noop } from '../__stories__/fixtures'
-export default { title: 'Cloud connections/Wizard/Account' }
+export default { title: 'Features / Cloud connections / Wizard / Account' }
 export const Empty = () => (
   <PageStory>
     <ConnectionWizard step={1} created={false} onStep={noop}>

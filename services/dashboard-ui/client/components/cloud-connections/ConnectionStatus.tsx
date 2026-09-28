@@ -1,13 +1,13 @@
 import { Status } from '@/components/common/Status'
 import { Time } from '@/components/common/Time'
 import { Tooltip } from '@/components/common/Tooltip'
-import type { TCloudConnection } from '@/types'
+import type { TCloudConnectionSummary } from '@/types'
 
 export const ConnectionStatus = ({
   connection,
   isVerifying = false,
 }: {
-  connection?: TCloudConnection
+  connection?: TCloudConnectionSummary
   isVerifying?: boolean
 }) => (
   <Tooltip

@@ -55,7 +55,7 @@ type Client interface {
 
 	// cloud connections
 	CreateCloudConnection(ctx context.Context, req *models.ServiceCreateRequest) (*models.ServiceConnectionResponse, error)
-	ListCloudConnections(ctx context.Context) ([]*models.ServiceConnectionResponse, error)
+	ListCloudConnections(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.ServiceConnectionListResponse, bool, error)
 	GetCloudConnection(ctx context.Context, connectionID string) (*models.ServiceConnectionResponse, error)
 	VerifyCloudConnection(ctx context.Context, connectionID string, req *models.ServiceVerifyRequest) (*models.ServiceConnectionResponse, error)
 	DeleteCloudConnection(ctx context.Context, connectionID string) error

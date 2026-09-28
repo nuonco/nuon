@@ -812,10 +812,8 @@ export type TCloudConnection = {
   platform: 'aws'
   target_id: string
   principal: string
-  tenant_id?: string
-  identity_provider?: string
   default_region?: string
-  auth_mode?: 'oidc' | 'legacy'
+  auth_mode?: 'oidc'
   status: 'pending' | 'verified' | 'error'
   status_message?: string
   last_verified_at?: string
@@ -835,6 +833,8 @@ export type TCloudConnection = {
     preset: 'stacks' | 'custom'
   }
 }
+
+export type TCloudConnectionSummary = Omit<TCloudConnection, 'setup'>
 
 export type TCloudConnectionSetup = TCloudConnection['setup']
 export type TCreateCloudConnectionRequest = Pick<

@@ -1,7 +1,7 @@
 import { AccessForm } from './AccessForm'
 import { ConnectionWizard } from './ConnectionWizard'
 import { PageStory, noop } from '../__stories__/fixtures'
-export default { title: 'Cloud connections/Wizard/Access' }
+export default { title: 'Features / Cloud connections / Wizard / Access' }
 export const Choose = () => (
   <PageStory>
     <ConnectionWizard step={2} created={false} onStep={noop}>

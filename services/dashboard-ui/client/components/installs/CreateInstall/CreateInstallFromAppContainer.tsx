@@ -32,7 +32,12 @@ import {
   getComponents,
   installNameTaken,
 } from '@/lib'
-import type { TApp, TAppBranch, TAppConfig } from '@/types'
+import type {
+  TApp,
+  TAppBranch,
+  TAppConfig,
+  TCloudConnectionSummary,
+} from '@/types'
 import { shouldDefaultStackOnly } from './app-install-readiness'
 import { BranchStep } from './BranchStep'
 import {
@@ -216,8 +221,22 @@ export const CreateInstallFromAppContainer = ({
   const { data: cloudConnections, isLoading: cloudConnectionsLoading } =
     useQuery({
       placeholderData: keepPreviousData,
-      queryKey: ['cloud-connections', org?.id],
-      queryFn: () => getCloudConnections({ orgId: org.id }),
+      queryKey: ['cloud-connections', org?.id, 'all'],
+      queryFn: async () => {
+        const all: TCloudConnectionSummary[] = []
+        let offset = 0
+        for (;;) {
+          const { data, pagination } = await getCloudConnections({
+            orgId: org.id,
+            offset,
+            limit: 100,
+          })
+          const page = data ?? []
+          all.push(...page)
+          if (!pagination?.hasNext || page.length === 0) return all
+          offset += page.length
+        }
+      },
       enabled: !!org?.id && cloudConnectionsEnabled && phase === 'form',
     })
 

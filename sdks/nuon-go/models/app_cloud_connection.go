@@ -37,9 +37,6 @@ type AppCloudConnection struct {
 	// id
 	ID string `json:"id,omitempty"`
 
-	// identity provider
-	IdentityProvider string `json:"identity_provider,omitempty"`
-
 	// last verified at
 	LastVerifiedAt string `json:"last_verified_at,omitempty"`
 
@@ -70,9 +67,6 @@ type AppCloudConnection struct {
 
 	// target id
 	TargetID string `json:"target_id,omitempty"`
-
-	// tenant id
-	TenantID string `json:"tenant_id,omitempty"`
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`

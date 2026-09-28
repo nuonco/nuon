@@ -47,7 +47,7 @@ ListCloudConnectionsOK describes a response with status code 200, with default h
 OK
 */
 type ListCloudConnectionsOK struct {
-	Payload []*models.ServiceConnectionResponse
+	Payload []*models.ServiceConnectionListResponse
 }
 
 // IsSuccess returns true when this list cloud connections o k response has a 2xx status code
@@ -90,7 +90,7 @@ func (o *ListCloudConnectionsOK) String() string {
 	return fmt.Sprintf("[GET /v1/cloud-connections][%d] listCloudConnectionsOK %s", 200, payload)
 }
 
-func (o *ListCloudConnectionsOK) GetPayload() []*models.ServiceConnectionResponse {
+func (o *ListCloudConnectionsOK) GetPayload() []*models.ServiceConnectionListResponse {
 	return o.Payload
 }
 

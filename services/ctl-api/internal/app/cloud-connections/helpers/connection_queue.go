@@ -13,13 +13,14 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cronutil"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 )
 
 const ReverifySchedule = "0 * * * *"
 
 func (h *Helpers) EnsureConnectionQueue(ctx context.Context, connection *app.CloudConnection) (*app.Queue, error) {
 	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID: connection.ID, OwnerType: "cloud_connections", Namespace: "orgs",
+		OwnerID: connection.ID, OwnerType: queuenames.OwnerCloudConnections, Namespace: "orgs",
 		Name: "cloud-connection-" + connection.ID, MaxInFlight: 1, MaxDepth: 5,
 	})
 	if err != nil {
@@ -56,7 +57,7 @@ func (h *Helpers) EnqueueVerification(ctx context.Context, connection *app.Cloud
 		return err
 	}
 	_, err = h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-		QueueID: q.ID, OwnerID: connection.ID, OwnerType: "cloud_connections",
+		QueueID: q.ID, OwnerID: connection.ID, OwnerType: queuenames.OwnerCloudConnections,
 		Signal: &reverify.Signal{CloudConnectionID: connection.ID, OnDemand: true},
 	})
 	return err
@@ -64,7 +65,7 @@ func (h *Helpers) EnqueueVerification(ctx context.Context, connection *app.Cloud
 
 func (h *Helpers) TerminateConnectionQueue(ctx context.Context, connectionID string) error {
 	var queues []app.Queue
-	if err := h.db.WithContext(ctx).Where(app.Queue{OwnerID: connectionID, OwnerType: "cloud_connections"}).Find(&queues).Error; err != nil {
+	if err := h.db.WithContext(ctx).Where(app.Queue{OwnerID: connectionID, OwnerType: queuenames.OwnerCloudConnections}).Find(&queues).Error; err != nil {
 		return err
 	}
 	for _, q := range queues {

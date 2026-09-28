@@ -14,6 +14,7 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 )
 
 // NewListCloudConnectionsParams creates a new ListCloudConnectionsParams object,
@@ -60,6 +61,33 @@ ListCloudConnectionsParams contains all the parameters to send to the API endpoi
 	Typically these are written to a http.Request.
 */
 type ListCloudConnectionsParams struct {
+
+	/* Limit.
+
+	   limit of results to return
+
+	   Default: 10
+	*/
+	Limit *int64
+
+	/* Offset.
+
+	   offset of results to return
+	*/
+	Offset *int64
+
+	/* Page.
+
+	   page number of results to return
+	*/
+	Page *int64
+
+	/* Q.
+
+	   search by name, account, or role ARN
+	*/
+	Q *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -77,7 +105,24 @@ func (o *ListCloudConnectionsParams) WithDefaults() *ListCloudConnectionsParams 
 //
 // All values with no default are reset to their zero value.
 func (o *ListCloudConnectionsParams) SetDefaults() {
-	// no default values defined for this parameter
+	var (
+		limitDefault = int64(10)
+
+		offsetDefault = int64(0)
+
+		pageDefault = int64(0)
+	)
+
+	val := ListCloudConnectionsParams{
+		Limit:  &limitDefault,
+		Offset: &offsetDefault,
+		Page:   &pageDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the list cloud connections params
@@ -113,6 +158,50 @@ func (o *ListCloudConnectionsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithLimit adds the limit to the list cloud connections params
+func (o *ListCloudConnectionsParams) WithLimit(limit *int64) *ListCloudConnectionsParams {
+	o.SetLimit(limit)
+	return o
+}
+
+// SetLimit adds the limit to the list cloud connections params
+func (o *ListCloudConnectionsParams) SetLimit(limit *int64) {
+	o.Limit = limit
+}
+
+// WithOffset adds the offset to the list cloud connections params
+func (o *ListCloudConnectionsParams) WithOffset(offset *int64) *ListCloudConnectionsParams {
+	o.SetOffset(offset)
+	return o
+}
+
+// SetOffset adds the offset to the list cloud connections params
+func (o *ListCloudConnectionsParams) SetOffset(offset *int64) {
+	o.Offset = offset
+}
+
+// WithPage adds the page to the list cloud connections params
+func (o *ListCloudConnectionsParams) WithPage(page *int64) *ListCloudConnectionsParams {
+	o.SetPage(page)
+	return o
+}
+
+// SetPage adds the page to the list cloud connections params
+func (o *ListCloudConnectionsParams) SetPage(page *int64) {
+	o.Page = page
+}
+
+// WithQ adds the q to the list cloud connections params
+func (o *ListCloudConnectionsParams) WithQ(q *string) *ListCloudConnectionsParams {
+	o.SetQ(q)
+	return o
+}
+
+// SetQ adds the q to the list cloud connections params
+func (o *ListCloudConnectionsParams) SetQ(q *string) {
+	o.Q = q
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListCloudConnectionsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -120,6 +209,74 @@ func (o *ListCloudConnectionsParams) WriteToRequest(r runtime.ClientRequest, reg
 		return err
 	}
 	var res []error
+
+	if o.Limit != nil {
+
+		// query param limit
+		var qrLimit int64
+
+		if o.Limit != nil {
+			qrLimit = *o.Limit
+		}
+		qLimit := swag.FormatInt64(qrLimit)
+		if qLimit != "" {
+
+			if err := r.SetQueryParam("limit", qLimit); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Offset != nil {
+
+		// query param offset
+		var qrOffset int64
+
+		if o.Offset != nil {
+			qrOffset = *o.Offset
+		}
+		qOffset := swag.FormatInt64(qrOffset)
+		if qOffset != "" {
+
+			if err := r.SetQueryParam("offset", qOffset); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Page != nil {
+
+		// query param page
+		var qrPage int64
+
+		if o.Page != nil {
+			qrPage = *o.Page
+		}
+		qPage := swag.FormatInt64(qrPage)
+		if qPage != "" {
+
+			if err := r.SetQueryParam("page", qPage); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Q != nil {
+
+		// query param q
+		var qrQ string
+
+		if o.Q != nil {
+			qrQ = *o.Q
+		}
+		qQ := qrQ
+		if qQ != "" {
+
+			if err := r.SetQueryParam("q", qQ); err != nil {
+				return err
+			}
+		}
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

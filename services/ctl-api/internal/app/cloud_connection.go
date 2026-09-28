@@ -20,8 +20,7 @@ const (
 type CloudConnectionAuthMode string
 
 const (
-	CloudConnectionAuthModeOIDC   CloudConnectionAuthMode = "oidc"
-	CloudConnectionAuthModeLegacy CloudConnectionAuthMode = "legacy"
+	CloudConnectionAuthModeOIDC CloudConnectionAuthMode = "oidc"
 )
 
 type CloudConnectionPreset string
@@ -44,8 +43,6 @@ type CloudConnection struct {
 	Platform                CloudPlatform           `gorm:"notnull;uniqueIndex:idx_cloud_connections_org_platform_principal_deleted" json:"platform" temporaljson:"platform,omitempty" swaggertype:"string" enums:"aws"`
 	TargetID                string                  `gorm:"notnull" json:"target_id" temporaljson:"target_id,omitempty"`
 	Principal               string                  `gorm:"notnull;uniqueIndex:idx_cloud_connections_org_platform_principal_deleted" json:"principal" temporaljson:"principal,omitempty"`
-	TenantID                string                  `json:"tenant_id,omitempty" temporaljson:"tenant_id,omitempty"`
-	IdentityProvider        string                  `json:"identity_provider,omitempty" temporaljson:"identity_provider,omitempty"`
 	DefaultRegion           string                  `gorm:"notnull;default:''" json:"default_region,omitempty" temporaljson:"default_region,omitempty"`
 	AuthMode                CloudConnectionAuthMode `gorm:"notnull;default:''" json:"auth_mode,omitempty" temporaljson:"auth_mode,omitempty"`
 	Status                  CloudConnectionStatus   `gorm:"notnull;default:'pending'" json:"status" temporaljson:"status,omitempty"`

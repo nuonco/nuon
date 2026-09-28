@@ -2,8 +2,11 @@ import { api } from '@/lib'
 import type {
   TCloudConnection,
   TCloudConnectionSetup,
+  TCloudConnectionSummary,
   TCreateCloudConnectionRequest,
+  TPaginationParams,
 } from '@/types'
+import { buildQueryParams } from '@/utils/build-query-params'
 
 export const createCloudConnection = ({
   body,
@@ -19,8 +22,20 @@ export const createCloudConnection = ({
     body,
   })
 
-export const getCloudConnections = ({ orgId }: { orgId: string }) =>
-  api<TCloudConnection[]>({ orgId, path: 'cloud-connections' })
+export const getCloudConnections = ({
+  orgId,
+  limit,
+  offset,
+  q,
+}: {
+  orgId: string
+  q?: string
+} & TPaginationParams) =>
+  api<TCloudConnectionSummary[]>({
+    orgId,
+    path: `cloud-connections${buildQueryParams({ limit, offset, q })}`,
+    paginated: true,
+  })
 
 export const getCloudConnectionSetup = ({
   connectionId,

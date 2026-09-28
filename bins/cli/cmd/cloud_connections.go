@@ -15,10 +15,16 @@ func (c *cli) cloudConnectionsCmd() *cobra.Command {
 	}
 	outputs := outputsAnnotation(OutputTable, OutputJSON, OutputAgent)
 
-	command.AddCommand(&cobra.Command{
-		Use: "list", Aliases: []string{"ls"}, Short: "List cloud connections", Annotations: outputs,
-		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error { return c.cloudConnections.List(cmd.Context(), PrintJSON) }),
-	})
+	var offset, limit int
+	list := &cobra.Command{
+		Use: "list", Aliases: []string{"ls"}, Short: "List cloud connections", Args: cobra.NoArgs, Annotations: outputs,
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			return c.cloudConnections.List(cmd.Context(), offset, limit, PrintJSON)
+		}),
+	}
+	list.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	list.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum cloud connections to return")
+	command.AddCommand(list)
 	command.AddCommand(&cobra.Command{
 		Use: "get <connection-id>", Short: "Get a cloud connection", Args: cobra.ExactArgs(1), Annotations: outputs,
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
@@ -28,7 +34,7 @@ func (c *cli) cloudConnectionsCmd() *cobra.Command {
 
 	var name, platform, targetID, principal, defaultRegion, preset string
 	create := &cobra.Command{
-		Use: "create", Short: "Create a cloud connection", Annotations: outputs,
+		Use: "create", Short: "Create a cloud connection", Args: cobra.NoArgs, Annotations: outputs,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			if targetID == "" {
 				return ui.PrintError(fmt.Errorf("--target-id is required"))

@@ -54,7 +54,7 @@ A connection referenced by an install cannot be deleted; the API returns HTTP 40
 
 Use `nuon cloud-connections list|get|create|verify|delete`. Responses report the preset, status, status message, and last verification time.
 
-Nuon re-verifies connection identity and trust daily without probing stack permissions. If a previously verified connection fails, Nuon updates its status and emits `cloud-connection-verification-failed` for notification subscriptions.
+Nuon re-verifies connections hourly through a cron emitter on each connection's queue. Verification runs the same checks as on-demand verification: for `stacks` connections it also makes a read-only CloudFormation `DescribeStacks` probe, which does not prove that every stack operation is permitted. If a previously verified connection fails, Nuon updates its status and emits `cloud-connection-verification-failed` for notification subscriptions.
 
 ## Image authentication is separate
 

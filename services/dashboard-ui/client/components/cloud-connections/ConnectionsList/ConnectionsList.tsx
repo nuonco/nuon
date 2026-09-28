@@ -8,7 +8,8 @@ import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { ListPage } from '@/components/layout/ListPage'
-import type { TAPIError, TCloudConnection } from '@/types'
+import type { TAPIError, TCloudConnectionSummary } from '@/types'
+import type { TPaginationMeta } from '@/lib/api'
 import { ConnectionStatus } from '../ConnectionStatus'
 
 export const ConnectionsList = ({
@@ -16,21 +17,18 @@ export const ConnectionsList = ({
   orgId,
   isLoading = false,
   error,
+  pagination,
 }: {
-  connections: TCloudConnection[]
+  connections: TCloudConnectionSummary[]
   orgId: string
   isLoading?: boolean
   error?: TAPIError | null
+  pagination?: TPaginationMeta & { offset?: number }
 }) => {
   const createHref = `/${orgId}/cloud-connections/create`
   const [params] = useSearchParams()
   const search = (params.get('q') || '').toLowerCase()
-  const filtered = connections.filter((connection) =>
-    [connection.name, connection.target_id, connection.principal].some(
-      (value) => value.toLowerCase().includes(search)
-    )
-  )
-  const columns = useMemo<ColumnDef<TCloudConnection>[]>(
+  const columns = useMemo<ColumnDef<TCloudConnectionSummary>[]>(
     () => [
       {
         accessorKey: 'name',
@@ -95,9 +93,10 @@ export const ConnectionsList = ({
       />
       <Table
         columns={columns}
-        data={filtered}
+        data={connections}
         isLoading={isLoading}
-        enableSearch={connections.length > 0 || isLoading}
+        pagination={pagination}
+        enableSearch={connections.length > 0 || isLoading || !!search}
         searchPlaceholder="Search by name, account, or role ARN..."
         emptyStateProps={
           search

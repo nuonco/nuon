@@ -8,7 +8,7 @@ import {
   verifiedConnection,
   noop,
 } from '../__stories__/fixtures'
-export default { title: 'Cloud connections/Detail' }
+export default { title: 'Features / Cloud connections / Detail' }
 const props = {
   basePath: '/org-mock-001/cloud-connections/cc-example',
   onVerify: noop,

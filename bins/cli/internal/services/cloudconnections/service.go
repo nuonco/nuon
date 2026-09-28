@@ -20,8 +20,8 @@ func New(apiClient nuon.Client, cfg *config.Config) *Service {
 	return &Service{api: apiClient, cfg: cfg}
 }
 
-func (s *Service) List(ctx context.Context, asJSON bool) error {
-	connections, err := s.api.ListCloudConnections(ctx)
+func (s *Service) List(ctx context.Context, offset, limit int, asJSON bool) error {
+	connections, hasMore, err := s.api.ListCloudConnections(ctx, &models.GetPaginatedQuery{Offset: offset, Limit: limit})
 	if err != nil {
 		return ui.PrintError(err)
 	}
@@ -33,7 +33,7 @@ func (s *Service) List(ctx context.Context, asJSON bool) error {
 	for _, connection := range connections {
 		rows = append(rows, []string{connection.ID, connection.Name, string(connection.Platform), connection.TargetID, connection.Principal, string(connection.Status), connection.LastVerifiedAt, string(connection.Preset)})
 	}
-	ui.NewListView().Render(rows)
+	ui.NewListView().RenderPaging(rows, offset, limit, hasMore)
 	return nil
 }
 

@@ -5,7 +5,7 @@ import {
   failedConnection,
   verifiedConnection,
 } from '../__stories__/fixtures'
-export default { title: 'Cloud connections/List' }
+export default { title: 'Features / Cloud connections / List' }
 export const Populated = () => (
   <PageStory>
     <ConnectionsList

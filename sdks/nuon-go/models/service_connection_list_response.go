@@ -17,10 +17,10 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// ServiceConnectionResponse service connection response
+// ServiceConnectionListResponse service connection list response
 //
-// swagger:model service.ConnectionResponse
-type ServiceConnectionResponse struct {
+// swagger:model service.ConnectionListResponse
+type ServiceConnectionListResponse struct {
 
 	// auth mode
 	AuthMode AppCloudConnectionAuthMode `json:"auth_mode,omitempty"`
@@ -59,9 +59,6 @@ type ServiceConnectionResponse struct {
 	// queues
 	Queues []*AppQueue `json:"queues"`
 
-	// setup
-	Setup *ServiceSetupResponse `json:"setup,omitempty"`
-
 	// status
 	Status AppCloudConnectionStatus `json:"status,omitempty"`
 
@@ -84,8 +81,8 @@ type ServiceConnectionResponse struct {
 	VerificationRequestedAt string `json:"verification_requested_at,omitempty"`
 }
 
-// Validate validates this service connection response
-func (m *ServiceConnectionResponse) Validate(formats strfmt.Registry) error {
+// Validate validates this service connection list response
+func (m *ServiceConnectionListResponse) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateAuthMode(formats); err != nil {
@@ -104,10 +101,6 @@ func (m *ServiceConnectionResponse) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateSetup(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateStatus(formats); err != nil {
 		res = append(res, err)
 	}
@@ -122,7 +115,7 @@ func (m *ServiceConnectionResponse) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *ServiceConnectionResponse) validateAuthMode(formats strfmt.Registry) error {
+func (m *ServiceConnectionListResponse) validateAuthMode(formats strfmt.Registry) error {
 	if swag.IsZero(m.AuthMode) { // not required
 		return nil
 	}
@@ -143,7 +136,7 @@ func (m *ServiceConnectionResponse) validateAuthMode(formats strfmt.Registry) er
 	return nil
 }
 
-var serviceConnectionResponseTypePlatformPropEnum []any
+var serviceConnectionListResponseTypePlatformPropEnum []any
 
 func init() {
 	var res []string
@@ -151,25 +144,25 @@ func init() {
 		panic(err)
 	}
 	for _, v := range res {
-		serviceConnectionResponseTypePlatformPropEnum = append(serviceConnectionResponseTypePlatformPropEnum, v)
+		serviceConnectionListResponseTypePlatformPropEnum = append(serviceConnectionListResponseTypePlatformPropEnum, v)
 	}
 }
 
 const (
 
-	// ServiceConnectionResponsePlatformAws captures enum value "aws"
-	ServiceConnectionResponsePlatformAws string = "aws"
+	// ServiceConnectionListResponsePlatformAws captures enum value "aws"
+	ServiceConnectionListResponsePlatformAws string = "aws"
 )
 
 // prop value enum
-func (m *ServiceConnectionResponse) validatePlatformEnum(path, location string, value string) error {
-	if err := validate.EnumCase(path, location, value, serviceConnectionResponseTypePlatformPropEnum, true); err != nil {
+func (m *ServiceConnectionListResponse) validatePlatformEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, serviceConnectionListResponseTypePlatformPropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (m *ServiceConnectionResponse) validatePlatform(formats strfmt.Registry) error {
+func (m *ServiceConnectionListResponse) validatePlatform(formats strfmt.Registry) error {
 	if swag.IsZero(m.Platform) { // not required
 		return nil
 	}
@@ -182,7 +175,7 @@ func (m *ServiceConnectionResponse) validatePlatform(formats strfmt.Registry) er
 	return nil
 }
 
-func (m *ServiceConnectionResponse) validatePreset(formats strfmt.Registry) error {
+func (m *ServiceConnectionListResponse) validatePreset(formats strfmt.Registry) error {
 	if swag.IsZero(m.Preset) { // not required
 		return nil
 	}
@@ -203,7 +196,7 @@ func (m *ServiceConnectionResponse) validatePreset(formats strfmt.Registry) erro
 	return nil
 }
 
-func (m *ServiceConnectionResponse) validateQueues(formats strfmt.Registry) error {
+func (m *ServiceConnectionListResponse) validateQueues(formats strfmt.Registry) error {
 	if swag.IsZero(m.Queues) { // not required
 		return nil
 	}
@@ -233,30 +226,7 @@ func (m *ServiceConnectionResponse) validateQueues(formats strfmt.Registry) erro
 	return nil
 }
 
-func (m *ServiceConnectionResponse) validateSetup(formats strfmt.Registry) error {
-	if swag.IsZero(m.Setup) { // not required
-		return nil
-	}
-
-	if m.Setup != nil {
-		if err := m.Setup.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("setup")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("setup")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *ServiceConnectionResponse) validateStatus(formats strfmt.Registry) error {
+func (m *ServiceConnectionListResponse) validateStatus(formats strfmt.Registry) error {
 	if swag.IsZero(m.Status) { // not required
 		return nil
 	}
@@ -277,7 +247,7 @@ func (m *ServiceConnectionResponse) validateStatus(formats strfmt.Registry) erro
 	return nil
 }
 
-func (m *ServiceConnectionResponse) validateUsedBy(formats strfmt.Registry) error {
+func (m *ServiceConnectionListResponse) validateUsedBy(formats strfmt.Registry) error {
 	if swag.IsZero(m.UsedBy) { // not required
 		return nil
 	}
@@ -300,8 +270,8 @@ func (m *ServiceConnectionResponse) validateUsedBy(formats strfmt.Registry) erro
 	return nil
 }
 
-// ContextValidate validate this service connection response based on the context it is used
-func (m *ServiceConnectionResponse) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this service connection list response based on the context it is used
+func (m *ServiceConnectionListResponse) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateAuthMode(ctx, formats); err != nil {
@@ -313,10 +283,6 @@ func (m *ServiceConnectionResponse) ContextValidate(ctx context.Context, formats
 	}
 
 	if err := m.contextValidateQueues(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateSetup(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -334,7 +300,7 @@ func (m *ServiceConnectionResponse) ContextValidate(ctx context.Context, formats
 	return nil
 }
 
-func (m *ServiceConnectionResponse) contextValidateAuthMode(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceConnectionListResponse) contextValidateAuthMode(ctx context.Context, formats strfmt.Registry) error {
 
 	if swag.IsZero(m.AuthMode) { // not required
 		return nil
@@ -356,7 +322,7 @@ func (m *ServiceConnectionResponse) contextValidateAuthMode(ctx context.Context,
 	return nil
 }
 
-func (m *ServiceConnectionResponse) contextValidatePreset(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceConnectionListResponse) contextValidatePreset(ctx context.Context, formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Preset) { // not required
 		return nil
@@ -378,7 +344,7 @@ func (m *ServiceConnectionResponse) contextValidatePreset(ctx context.Context, f
 	return nil
 }
 
-func (m *ServiceConnectionResponse) contextValidateQueues(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceConnectionListResponse) contextValidateQueues(ctx context.Context, formats strfmt.Registry) error {
 
 	for i := 0; i < len(m.Queues); i++ {
 
@@ -407,32 +373,7 @@ func (m *ServiceConnectionResponse) contextValidateQueues(ctx context.Context, f
 	return nil
 }
 
-func (m *ServiceConnectionResponse) contextValidateSetup(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.Setup != nil {
-
-		if swag.IsZero(m.Setup) { // not required
-			return nil
-		}
-
-		if err := m.Setup.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("setup")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("setup")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *ServiceConnectionResponse) contextValidateStatus(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceConnectionListResponse) contextValidateStatus(ctx context.Context, formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Status) { // not required
 		return nil
@@ -454,7 +395,7 @@ func (m *ServiceConnectionResponse) contextValidateStatus(ctx context.Context, f
 	return nil
 }
 
-func (m *ServiceConnectionResponse) contextValidateUsedBy(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceConnectionListResponse) contextValidateUsedBy(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.UsedBy != nil {
 
@@ -480,7 +421,7 @@ func (m *ServiceConnectionResponse) contextValidateUsedBy(ctx context.Context, f
 }
 
 // MarshalBinary interface implementation
-func (m *ServiceConnectionResponse) MarshalBinary() ([]byte, error) {
+func (m *ServiceConnectionListResponse) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -488,8 +429,8 @@ func (m *ServiceConnectionResponse) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *ServiceConnectionResponse) UnmarshalBinary(b []byte) error {
-	var res ServiceConnectionResponse
+func (m *ServiceConnectionListResponse) UnmarshalBinary(b []byte) error {
+	var res ServiceConnectionListResponse
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

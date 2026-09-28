@@ -15,12 +15,15 @@ func (c *client) CreateCloudConnection(ctx context.Context, req *models.ServiceC
 	return resp.Payload, nil
 }
 
-func (c *client) ListCloudConnections(ctx context.Context) ([]*models.ServiceConnectionResponse, error) {
-	resp, err := c.genClient.Operations.ListCloudConnections(&operations.ListCloudConnectionsParams{Context: ctx}, c.getOrgIDAuthInfo())
+func (c *client) ListCloudConnections(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.ServiceConnectionListResponse, bool, error) {
+	params := &operations.ListCloudConnectionsParams{Context: ctx}
+	params.Offset, params.Limit = applyPaginationQuery(query)
+	hr := newResponseHeaderReader(&operations.ListCloudConnectionsReader{})
+	resp, err := c.genClient.Operations.ListCloudConnections(params, c.getOrgIDAuthInfo(), hr.ClientOption())
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return resp.Payload, nil
+	return resp.Payload, hasNextPage(hr), nil
 }
 
 func (c *client) GetCloudConnection(ctx context.Context, connectionID string) (*models.ServiceConnectionResponse, error) {

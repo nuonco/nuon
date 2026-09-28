@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -72,16 +71,3 @@ func (s *service) RegisterInternalRoutes(*gin.Engine) error       { return nil }
 func (s *service) RegisterRunnerRoutes(*gin.Engine) error         { return nil }
 func (s *service) RegisterAdminDashboardRoutes(*gin.Engine) error { return nil }
 func (s *service) RegisterSlackRoutes(*gin.Engine) error          { return nil }
-
-func (s *service) get(ctx *gin.Context, orgID, id string) (*app.CloudConnection, error) {
-	return s.getContext(ctx, orgID, id)
-}
-
-func (s *service) getContext(ctx context.Context, orgID, id string) (*app.CloudConnection, error) {
-	var connection app.CloudConnection
-	result := s.db.WithContext(ctx).Where(app.CloudConnection{OrgID: orgID, ID: id}).First(&connection)
-	if result.Error != nil {
-		return nil, fmt.Errorf("cloud connection not found: %w", result.Error)
-	}
-	return &connection, nil
-}

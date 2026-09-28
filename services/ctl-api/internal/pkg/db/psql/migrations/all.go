@@ -244,5 +244,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "142-cloud-connections",
 			Fn:   m.Migration142CloudConnections,
 		},
+		{
+			Name: "143-drop-cloud-connection-legacy-columns",
+			Fn:   m.Migration143DropCloudConnectionLegacyColumns,
+		},
 	}
 }

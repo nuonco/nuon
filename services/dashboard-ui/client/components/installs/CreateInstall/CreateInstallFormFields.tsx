@@ -12,7 +12,7 @@ import type {
   TApp,
   TAppInputConfig,
   TAPIError,
-  TCloudConnection,
+  TCloudConnectionSummary,
 } from '@/types'
 
 export interface ICreateFormTriggerState {
@@ -24,7 +24,7 @@ export interface ICreateFormTriggerState {
 interface ICreateInstallFormFields {
   app: TApp
   inputConfig: TAppInputConfig
-  cloudConnections?: TCloudConnection[]
+  cloudConnections?: TCloudConnectionSummary[]
   requireTargetAccount?: boolean
   defaultAutoApprove?: boolean
   defaultStackOnly?: boolean
