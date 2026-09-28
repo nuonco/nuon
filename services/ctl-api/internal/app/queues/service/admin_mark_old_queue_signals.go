@@ -6,20 +6,53 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type AdminMarkOldQueueSignalsRequest struct {
 	// Go duration, e.g. "24h", "72h", "30m".
-	OlderThan    string     `json:"older_than" binding:"required"`
-	Status       app.Status `json:"status" binding:"required"`
+	OlderThan    string     `json:"older_than" validate:"required"`
+	Status       app.Status `json:"status" validate:"required"`
 	ReasonFilter string     `json:"reason_filter"`
 	Reason       string     `json:"reason"`
 	OrgID        string     `json:"org_id"`
+}
+
+func (r *AdminMarkOldQueueSignalsRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(r); err != nil {
+		return validatorPkg.FormatValidationError(err)
+	}
+
+	olderThan, err := time.ParseDuration(r.OlderThan)
+	if err != nil {
+		return stderr.ErrUser{
+			Err:         fmt.Errorf("invalid older_than duration: %w", err),
+			Description: "older_than must be a Go duration like 24h, 72h, or 30m",
+		}
+	}
+	if olderThan <= 0 {
+		return stderr.ErrUser{
+			Err:         fmt.Errorf("older_than must be positive"),
+			Description: "older_than must be greater than zero",
+		}
+	}
+
+	switch r.Status {
+	case app.StatusDisabled, app.StatusQueued:
+	default:
+		return stderr.ErrUser{
+			Err:         fmt.Errorf("unsupported status %q", r.Status),
+			Description: "status must be disabled or queued",
+		}
+	}
+
+	return nil
 }
 
 type AdminMarkOldQueueSignalsResponse struct {
@@ -45,21 +78,12 @@ func (s *service) AdminMarkOldQueueSignals(ctx *gin.Context) {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
-
-	olderThan, err := time.ParseDuration(req.OlderThan)
-	if err != nil {
-		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("invalid older_than duration: %w", err)))
-		return
-	}
-	if olderThan <= 0 {
-		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("older_than must be positive")))
-		return
-	}
-	if req.Status == "" {
-		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("status is required")))
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(err)
 		return
 	}
 
+	olderThan, _ := time.ParseDuration(req.OlderThan)
 	cutoff := time.Now().Add(-olderThan)
 	targetStatus := app.NewCompositeStatus(ctx, req.Status)
 	if req.Reason != "" {
@@ -92,7 +116,8 @@ func (s *service) AdminMarkOldQueueSignals(ctx *gin.Context) {
 		return
 	}
 
-	s.l.Info("marked old queue signals",
+	s.l.Info(
+		"marked old queue signals",
 		zap.String("older-than", req.OlderThan),
 		zap.Time("cutoff", cutoff),
 		zap.String("status", string(req.Status)),
