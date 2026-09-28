@@ -10,6 +10,7 @@ import { isNavLinkActive } from '@/utils/nav-active'
 
 export const SubNavLink = ({
   basePath,
+  count,
   iconVariant,
   matchPaths,
   path,
@@ -31,14 +32,19 @@ export const SubNavLink = ({
       </span>
       <span
         className={cn(
-          'whitespace-nowrap transition-all duration-fastest ease-cubic md:ml-2 w-fit',
+          'flex min-w-0 items-center gap-2 whitespace-nowrap transition-all duration-fastest ease-cubic md:ml-2 w-fit',
           {
             'md:opacity-100 md:w-full': isPageSidebarOpen,
             'md:opacity-0 w-0': !isPageSidebarOpen,
           }
         )}
       >
-        {text}
+        <span className="truncate">{text}</span>
+        {count != null ? (
+          <Text variant="label" theme="neutral" className="ml-auto">
+            {count}
+          </Text>
+        ) : null}
       </span>
     </Link>
   )
