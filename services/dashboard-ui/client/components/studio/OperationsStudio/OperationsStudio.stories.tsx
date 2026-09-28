@@ -1,5 +1,5 @@
 export default {
-  title: 'Studio/OperationsStudio',
+  title: 'Features / Studio / Operations studio',
 }
 
 import type { TRunbook } from '@/lib/ctl-api/apps/runbooks/get-runbooks'

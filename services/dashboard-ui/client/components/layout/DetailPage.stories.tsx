@@ -1,5 +1,5 @@
 export default {
-  title: 'Layout/DetailPage',
+  title: 'UI / Layout / Detail page',
 }
 
 import type { ReactNode } from 'react'

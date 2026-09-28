@@ -1,5 +1,5 @@
 export default {
-  title: 'VCS Connections/GitHubAccountSection',
+  title: 'Features / VCS connections / Connection detail / GitHub account section',
 }
 
 import { GitHubAccountSection } from './GitHubAccountSection'

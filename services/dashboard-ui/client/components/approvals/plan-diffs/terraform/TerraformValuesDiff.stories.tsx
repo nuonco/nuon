@@ -1,5 +1,5 @@
 export default {
-  title: 'Approvals/PlanDiffs/TerraformValuesDiff',
+  title: 'Features / Approvals / Plan diffs / Terraform values diff',
 }
 
 import { TerraformValuesDiff } from './TerraformValuesDiff'

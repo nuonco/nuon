@@ -7,7 +7,7 @@ import { InputsFilterBar } from './InputsFilterBar'
 import { InputsNoResults } from './InputsNoResults'
 
 export default {
-  title: 'Installs/InputsFilter',
+  title: 'Features / Installs / Inputs filter',
 }
 
 export const FilterBar = () => {

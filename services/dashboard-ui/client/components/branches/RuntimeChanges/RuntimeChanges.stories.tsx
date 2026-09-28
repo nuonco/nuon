@@ -1,7 +1,7 @@
 import { RuntimeChanges } from './RuntimeChanges'
 
 export default {
-  title: 'Branches/RuntimeChanges',
+  title: 'Features / Branches / Runtime changes',
 }
 
 const rows = [

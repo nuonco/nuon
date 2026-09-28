@@ -1,7 +1,7 @@
 import { LinkBlock } from './LinkBlock'
 
 export default {
-  title: 'Playground/Lite/LinkBlock',
+  title: 'Playground / Lite / Link block',
 }
 
 export const Default = () => (

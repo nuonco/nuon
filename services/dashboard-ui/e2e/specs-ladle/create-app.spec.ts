@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const STORY = "/?story=apps--createapp--default&mode=preview";
+const STORY = "/?story=features--apps--create-app-modal--default&mode=preview";
 
 test.describe("CreateApp form behavior", () => {
   test.beforeEach(async ({ page }) => {

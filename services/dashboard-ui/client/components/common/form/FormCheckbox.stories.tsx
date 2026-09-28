@@ -1,7 +1,7 @@
 import { useForm } from '@tanstack/react-form'
 import { FormCheckbox } from './FormCheckbox'
 
-export default { title: 'Common/Forms/FormCheckbox' }
+export default { title: 'UI / Forms / Form checkbox' }
 
 const Demo = () => {
   const form = useForm({ defaultValues: { autoApprove: false } })

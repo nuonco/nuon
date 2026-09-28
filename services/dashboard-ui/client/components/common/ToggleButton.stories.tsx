@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/ToggleButton',
+  title: 'UI / Toggle button',
 }
 
 import { useState } from 'react'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/AppSelect',
+  title: 'Features / Installs / Create install / App select',
 }
 
 import { AppSelect } from './AppSelect'

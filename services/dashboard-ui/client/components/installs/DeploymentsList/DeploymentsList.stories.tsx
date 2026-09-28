@@ -121,6 +121,10 @@ const MOCK_DEPLOYMENTS = [
 
 // ─── Stories ─────────────────────────────────────────────────────────────────
 
+export default {
+  title: 'Features / Installs / Deployments list',
+}
+
 export const Default = () => (
   <div className="max-w-3xl mx-auto p-6">
     <DeploymentsListPresenter

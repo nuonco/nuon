@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/WorkflowRunPanel',
+  title: 'Features / Branches / Workflow run panel',
 }
 
 import { SurfacesProvider } from '@/providers/surfaces-provider'

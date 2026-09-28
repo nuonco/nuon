@@ -1,5 +1,5 @@
 export default {
-  title: 'Webhooks/PayloadFieldReference',
+  title: 'Features / Webhooks / Payload field reference',
 }
 
 import { PayloadFieldReference } from './PayloadFieldReference'

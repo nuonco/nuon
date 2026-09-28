@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/InstallDetailPlayground',
+  title: 'Features / Installs / Detail playground',
   fullBleed: true,
 }
 

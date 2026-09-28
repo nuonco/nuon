@@ -1,5 +1,5 @@
 export default {
-  title: 'Notebooks/CreateNotebook',
+  title: 'Features / Notebooks / Create notebook',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

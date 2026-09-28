@@ -1,7 +1,7 @@
 import { BranchRunCommit } from './BranchRunCommit'
 
 export default {
-  title: 'Branches/BranchRunCommit',
+  title: 'Features / Branches / Branch run commit',
 }
 
 export const Success = () => (

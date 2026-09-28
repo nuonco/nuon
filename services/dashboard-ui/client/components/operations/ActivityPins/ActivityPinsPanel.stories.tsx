@@ -1,5 +1,5 @@
 export default {
-  title: 'Operations/ActivityPinsPanel',
+  title: 'Features / Operations / Activity pins / Activity pins panel',
 }
 
 import { PanelStory } from '@/components/__stories__/helpers'

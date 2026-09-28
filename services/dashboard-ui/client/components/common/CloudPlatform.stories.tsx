@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/CloudPlatform',
+  title: 'UI / Cloud platform',
 }
 
 import { CloudPlatform } from './CloudPlatform'

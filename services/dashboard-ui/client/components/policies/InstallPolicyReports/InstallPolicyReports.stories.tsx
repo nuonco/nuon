@@ -1,5 +1,5 @@
 export default {
-  title: 'Policies/InstallPolicyReports',
+  title: 'Features / Policies / Install policy reports',
 }
 
 import { Button } from '@/components/common/Button'

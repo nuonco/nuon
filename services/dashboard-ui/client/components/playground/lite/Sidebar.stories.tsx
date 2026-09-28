@@ -3,7 +3,7 @@ import { ShellContext } from './shell-context'
 import { primaryNav, secondaryNav } from './nav'
 
 export default {
-  title: 'Playground/Lite/Sidebar',
+  title: 'Playground / Lite / Sidebar',
 }
 
 export const Default = () => (

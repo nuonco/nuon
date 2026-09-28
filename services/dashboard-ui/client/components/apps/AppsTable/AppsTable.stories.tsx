@@ -1,5 +1,5 @@
 export default {
-  title: 'Apps/AppsTable',
+  title: 'Features / Apps / Apps table',
 }
 
 import { Button } from '@/components/common/Button'

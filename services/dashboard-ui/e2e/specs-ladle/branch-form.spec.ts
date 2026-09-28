@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test'
 
-const CREATE_STORY = '/?story=branches--branchform--create&mode=preview'
-const EDIT_STORY = '/?story=branches--branchform--edit&mode=preview'
+const CREATE_STORY = '/?story=features--branches--branch-form--create&mode=preview'
+const EDIT_STORY = '/?story=features--branches--branch-form--edit&mode=preview'
 const EDIT_SOURCE_STORY =
-  '/?story=branches--branchform--edit-source&mode=preview'
+  '/?story=features--branches--branch-form--edit-source&mode=preview'
 
 test.describe('BranchForm create behavior', () => {
   test.beforeEach(async ({ page }) => {

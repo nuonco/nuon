@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/SyncedFilter',
+  title: 'UI / Synced filter',
 }
 
 import { SyncedFilter } from './SyncedFilter'

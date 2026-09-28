@@ -2,7 +2,7 @@ import { SurfacesContext } from '@/providers/surfaces-provider'
 import { InstallRolesTable } from './InstallRolesTable'
 
 export default {
-  title: 'Roles/InstallRolesTable',
+  title: 'Features / Roles / Install roles table',
 }
 
 const mockSurfaces = {

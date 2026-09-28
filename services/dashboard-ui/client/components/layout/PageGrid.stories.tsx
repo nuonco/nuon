@@ -1,5 +1,5 @@
 export default {
-  title: 'Layout/PageGrid',
+  title: 'UI / Layout / Page grid',
 }
 
 import { PageGrid } from './PageGrid'

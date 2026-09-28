@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/RunAdhocAction',
+  title: 'Features / Installs / Management / Run adhoc action',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

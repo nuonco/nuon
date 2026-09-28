@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/DeploymentPlanEditor/AddInstallPicker',
+  title: 'Features / Branches / Deployment plan editor / Add install picker',
 }
 
 import { AddInstallPicker } from './AddInstallPicker'

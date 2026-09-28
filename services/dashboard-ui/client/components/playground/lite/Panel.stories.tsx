@@ -2,7 +2,7 @@ import { Panel } from './Panel'
 import { PlaceholderGrid } from './PlaceholderGrid'
 
 export default {
-  title: 'Playground/Lite/Panel',
+  title: 'Playground / Lite / Panel',
 }
 
 export const Default = () => (

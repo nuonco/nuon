@@ -1,5 +1,5 @@
 export default {
-  title: 'Runners/ProcessManagementDropdown',
+  title: 'Features / Runners / Process management dropdown',
 }
 
 import { ProcessManagementDropdown } from './ProcessManagementDropdown'

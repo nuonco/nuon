@@ -2,7 +2,7 @@ import { BranchConfigsTable } from './BranchConfigsTable'
 import type { TAppConfig } from '@/types'
 
 export default {
-  title: 'Branches/BranchConfigsTable',
+  title: 'Features / Branches / Branch configs table',
 }
 
 const day = 86400000

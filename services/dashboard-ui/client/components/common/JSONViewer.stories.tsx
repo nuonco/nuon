@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/JSONViewer',
+  title: 'UI / JSON viewer',
 }
 
 import { JSONViewer } from './JSONViewer'

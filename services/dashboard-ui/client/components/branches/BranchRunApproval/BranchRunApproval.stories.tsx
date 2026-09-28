@@ -2,7 +2,7 @@ import { Button } from '@/components/common/Button'
 import { BranchRunApproval } from './BranchRunApproval'
 
 export default {
-  title: 'Branches/BranchRunApproval',
+  title: 'Features / Branches / Branch run approval',
 }
 
 const mockActions = <Button variant="primary">Approve</Button>

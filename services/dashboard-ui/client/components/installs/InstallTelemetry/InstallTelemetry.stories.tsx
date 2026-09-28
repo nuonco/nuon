@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { InstallTelemetry, type IInstallTelemetry } from './InstallTelemetry'
 
-export default { title: 'Installs/InstallTelemetry' }
+export default { title: 'Features / Installs / Telemetry' }
 
 const Example = (props: Partial<IInstallTelemetry>) => {
   const [enabled, setEnabled] = useState(props.enabled ?? false)

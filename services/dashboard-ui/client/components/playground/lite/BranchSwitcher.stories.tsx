@@ -1,7 +1,7 @@
 import { BranchSwitcher } from './BranchSwitcher'
 
 export default {
-  title: 'Playground/Lite/BranchSwitcher',
+  title: 'Playground / Lite / Branch switcher',
 }
 
 export const Default = () => (

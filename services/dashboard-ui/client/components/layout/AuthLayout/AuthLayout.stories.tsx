@@ -1,5 +1,5 @@
 export default {
-  title: 'Layout/AuthLayout',
+  title: 'UI / Layout / Auth layout',
 }
 
 import { AuthLayout } from './AuthLayout'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Approvals/PlanDiffs/PulumiDiff',
+  title: 'Features / Approvals / Plan diffs / Pulumi diff',
 }
 
 import {

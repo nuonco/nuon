@@ -2,7 +2,7 @@ import { CompositeError } from './CompositeError'
 import type { TCompositeError } from '@/types'
 
 export default {
-  title: 'Common/CompositeError',
+  title: 'UI / Composite error',
 }
 
 const awsPermissionError: TCompositeError = {

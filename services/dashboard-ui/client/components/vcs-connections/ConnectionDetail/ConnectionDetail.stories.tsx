@@ -1,5 +1,5 @@
 export default {
-  title: 'VCS Connections/ConnectionDetail',
+  title: 'Features / VCS connections / Connection detail',
 }
 
 import { ConnectionDetail } from './ConnectionDetail'

@@ -1,7 +1,7 @@
 import { BranchOverview } from './BranchOverview'
 
 export default {
-  title: 'Playground/Lite/BranchOverview',
+  title: 'Playground / Lite / Branch overview',
 }
 
 export const Default = () => (

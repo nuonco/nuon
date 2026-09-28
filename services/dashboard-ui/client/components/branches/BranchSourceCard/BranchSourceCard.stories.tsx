@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/BranchSourceCard',
+  title: 'Features / Branches / Branch source card',
 }
 
 import { BranchSourceCard } from './BranchSourceCard'

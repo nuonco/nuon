@@ -1,7 +1,7 @@
 import { PageHeader } from './PageHeader'
 
 export default {
-  title: 'Playground/Lite/PageHeader',
+  title: 'Playground / Lite / Page header',
 }
 
 export const Default = () => <PageHeader crumbs={[{ label: 'Apps' }]} />

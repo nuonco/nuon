@@ -1,7 +1,7 @@
 import { RunHistory } from './RunHistory'
 
 export default {
-  title: 'Playground/Lite/RunHistory',
+  title: 'Playground / Lite / Run history',
 }
 
 export const Default = () => (
