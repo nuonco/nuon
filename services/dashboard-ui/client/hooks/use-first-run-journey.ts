@@ -25,6 +25,7 @@ export const FIRST_RUN_METADATA_KEYS = [
   'path',
   'cloud',
   'app_id',
+  'app_name',
   'app_branch_id',
   'repo',
   'install_id',
@@ -61,6 +62,10 @@ export const firstIncompleteStep = (journey?: TUserJourney): TFirstRunStep | und
 export const isFirstRunStepComplete = (journey: TUserJourney | undefined, step: TFirstRunStep) =>
   Boolean(journey?.steps?.find((s) => s.name === step)?.complete)
 
+// Runs before onboarding creates the org. ctl-api's journey create saves the
+// whole account, which fails once the account holds a role, so a new sign-up
+// has to get the journey while it still has none. When the create fails anyway
+// (an existing user), the flow still runs; it just is not saved.
 async function ensureFirstRunJourney(): Promise<TAccount> {
   const account = await getAccount()
   if (findFirstRun(account)) return account
@@ -75,7 +80,8 @@ async function ensureFirstRunJourney(): Promise<TAccount> {
   } catch (error) {
     // Another tab created it first.
     if ((error as TAPIError)?.status === 409) return getAccount()
-    throw error
+    console.warn('first_run journey unavailable; onboarding progress will not be saved', error)
+    return account
   }
 }
 
@@ -106,6 +112,8 @@ export async function resetFirstRunJourney(): Promise<void> {
 }
 
 export interface IFirstRunJourney {
+  // False until the account has loaded and the journey exists or could not be made.
+  isReady: boolean
   isLoading: boolean
   error: TAPIError | null
   journey: TUserJourney | undefined
@@ -134,6 +142,7 @@ export function useFirstRunJourney({ enabled = true }: { enabled?: boolean } = {
   const saveStep = useCallback<IFirstRunJourney['saveStep']>(
     async (step, metadata, opts = {}) => {
       const current = findFirstRun(queryClient.getQueryData<TAccount>(FIRST_RUN_QUERY_KEY))
+      if (!current) return
       // PATCH sets `complete` to whatever it is sent (false when omitted), so
       // a metadata-only save has to resend the step's current state.
       const complete = opts.complete ?? isFirstRunStepComplete(current, step)
@@ -149,6 +158,7 @@ export function useFirstRunJourney({ enabled = true }: { enabled?: boolean } = {
   )
 
   const complete = useCallback(async () => {
+    if (!findFirstRun(queryClient.getQueryData<TAccount>(FIRST_RUN_QUERY_KEY))) return
     const updated = await completeUserJourney({ journeyName: FIRST_RUN_JOURNEY })
     queryClient.setQueryData(FIRST_RUN_QUERY_KEY, updated)
   }, [queryClient])
@@ -162,6 +172,7 @@ export function useFirstRunJourney({ enabled = true }: { enabled?: boolean } = {
   )
 
   return {
+    isReady: !!account,
     isLoading,
     error: error ?? null,
     journey,
