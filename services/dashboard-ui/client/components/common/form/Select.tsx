@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom'
 import {
   type SelectHTMLAttributes,
+  type ReactNode,
   forwardRef,
   useState,
   useRef,
@@ -32,7 +33,7 @@ export interface ISelect
   onChange?: (value: string) => void
   options: SelectOption[]
   labelProps?: Omit<ILabel, 'children'> & {
-    labelText: string
+    labelText: ReactNode
     labelTextProps?: Omit<IText, 'children'>
   }
   helperText?: string
@@ -121,7 +122,11 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
         spaceAbove > spaceBelow
       const available = Math.max(
         120,
-        menuPlacement === 'bottom' ? spaceBelow : openUpward ? spaceAbove : spaceBelow
+        menuPlacement === 'bottom'
+          ? spaceBelow
+          : openUpward
+            ? spaceAbove
+            : spaceBelow
       )
       return {
         top: openUpward ? undefined : rect.bottom + 4,

@@ -6,11 +6,14 @@ import { Card } from '@/components/common/Card'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
+import { Link } from '@/components/common/Link'
 import { Loading } from '@/components/common/Loading'
 import { Text } from '@/components/common/Text'
+import { Tooltip } from '@/components/common/Tooltip'
 import { ToggleButton } from '@/components/common/ToggleButton'
 import { Input } from '@/components/common/form/Input'
 import { Select } from '@/components/common/form/Select'
+import { Textarea } from '@/components/common/form/Textarea'
 import { PageSection } from '@/components/layout/PageSection'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { cn } from '@/utils/classnames'
@@ -40,6 +43,8 @@ interface IPresetFlow {
   initialFormat?: TFormat
   verification?: TVerification
   showTrustPolicy?: boolean
+  initialTrustPolicy?: string
+  startTrustEditing?: boolean
 }
 
 const FLOW_STEPS = [
@@ -48,6 +53,25 @@ const FLOW_STEPS = [
   'Run in your cloud',
   'Verify',
 ]
+
+const FieldLabel = ({ label, tip }: { label: string; tip: string }) => (
+  <span className="flex items-center gap-1.5">
+    {label}
+    <Tooltip
+      position="top"
+      tipContent={tip}
+      tipContentClassName="max-w-72 whitespace-normal"
+    >
+      <span
+        aria-label={`${label} information`}
+        className="inline-flex text-cool-grey-500 dark:text-cool-grey-400"
+        tabIndex={0}
+      >
+        <Icon variant="InfoIcon" size={14} />
+      </span>
+    </Tooltip>
+  </span>
+)
 
 const StepRail = ({
   step,
@@ -104,16 +128,32 @@ const CloudAndAccount = () => (
   <div className="flex max-w-2xl flex-col gap-6">
     <SectionHeader
       title="Choose the AWS account"
-      description="This connection gives one Nuon identity access to one AWS account in this org."
+      description="Nuon assumes an IAM role in this account via OIDC. You decide what that role can do."
     />
     <div className="grid gap-4 sm:grid-cols-2">
       <Input
-        labelProps={{ labelText: 'AWS account ID' }}
+        id="preset-flow-account-id"
+        labelProps={{
+          labelText: (
+            <FieldLabel
+              label="AWS account ID"
+              tip="The 12-digit ID of the AWS account you want to give Nuon access to."
+            />
+          ),
+        }}
         value={ACCOUNT_ID}
         readOnly
       />
       <Select
-        labelProps={{ labelText: 'AWS region' }}
+        id="preset-flow-region"
+        labelProps={{
+          labelText: (
+            <FieldLabel
+              label="AWS region"
+              tip="Where Nuon will create install stacks by default; you can override per install."
+            />
+          ),
+        }}
         value={REGION}
         onChange={() => {}}
         options={[
@@ -123,13 +163,100 @@ const CloudAndAccount = () => (
       />
     </div>
     <Input
-      labelProps={{ labelText: 'Connection name' }}
+      id="preset-flow-name"
+      labelProps={{
+        labelText: (
+          <FieldLabel
+            label="Connection name"
+            tip="Shown wherever this connection is picked, e.g. when creating an install."
+          />
+        ),
+      }}
       value="Production stacks"
       onChange={() => {}}
       helperText="Use a name that identifies the account and its purpose."
     />
   </div>
 )
+
+const hasRequiredTrustConditions = (policy: string) => {
+  try {
+    const parsed = JSON.parse(policy)
+    const statements = Array.isArray(parsed.Statement)
+      ? parsed.Statement
+      : [parsed.Statement]
+    return statements.some((statement: any) => {
+      const conditions = statement?.Condition?.StringEquals
+      return (
+        conditions?.['api.nuon.co:aud'] === 'sts.amazonaws.com' &&
+        conditions?.['api.nuon.co:sub'] ===
+          'org:org_01JEXAMPLE:connection:cc_01JEXAMPLE'
+      )
+    })
+  } catch {
+    return false
+  }
+}
+
+const TrustPolicyEditor = ({
+  trustPolicy,
+  setTrustPolicy,
+  initiallyEditing = false,
+}: {
+  trustPolicy: string
+  setTrustPolicy: (policy: string) => void
+  initiallyEditing?: boolean
+}) => {
+  const [isEditing, setIsEditing] = useState(initiallyEditing)
+  const isValidForConnection = hasRequiredTrustConditions(trustPolicy)
+  return (
+    <div className="flex min-w-0 flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <Text weight="strong">Trust policy</Text>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => setIsEditing((current) => !current)}
+        >
+          {isEditing ? 'Finish editing' : 'Edit'}
+        </Button>
+      </div>
+      <Text variant="subtext" theme="neutral">
+        Start with the rendered policy. The audience and subject conditions must
+        stay unchanged for verification to pass.
+      </Text>
+      {isEditing ? (
+        <>
+          <Textarea
+            id="preset-flow-trust-policy"
+            labelProps={{ labelText: 'Editable trust policy' }}
+            value={trustPolicy}
+            onChange={(event) => setTrustPolicy(event.currentTarget.value)}
+            rows={16}
+            className="font-mono text-xs"
+          />
+          {!isValidForConnection && (
+            <Banner theme="warn">
+              Restore the rendered audience and subject conditions before
+              verifying this connection.
+            </Banner>
+          )}
+          <Button
+            className="w-fit"
+            variant="secondary"
+            onClick={() => setTrustPolicy(TRUST_POLICY)}
+          >
+            Reset to rendered
+          </Button>
+        </>
+      ) : (
+        <CodeBlock language="json" showCopy>
+          {trustPolicy}
+        </CodeBlock>
+      )}
+    </div>
+  )
+}
 
 const ActionList = () => (
   <Expand
@@ -173,10 +300,16 @@ const AccessPreset = ({
   access,
   setAccess,
   showTrustPolicy,
+  trustPolicy,
+  setTrustPolicy,
+  startTrustEditing,
 }: {
   access?: TAccess
   setAccess: (access: TAccess) => void
   showTrustPolicy: boolean
+  trustPolicy: string
+  setTrustPolicy: (policy: string) => void
+  startTrustEditing: boolean
 }) => (
   <div className="flex flex-col gap-6">
     <SectionHeader
@@ -240,29 +373,25 @@ const AccessPreset = ({
               Customize access
             </Text>
             <Text>
-              Nuon renders only the trust policy. Attach a permissions policy
-              that matches the stack this connection will manage.
+              Nuon renders the trust policy so this connection can assume the
+              role. You attach whatever permissions policy you want.
             </Text>
           </div>
         </div>
         <Text variant="subtext" theme="neutral">
-          At minimum, the role needs permission to create or update the stack
-          and read its status and outputs. Add delete access if Nuon should tear
-          the stack down.
+          The Stacks preset policy is a good starting point if you want to trim
+          it.
         </Text>
         <Button variant="secondary" onClick={() => setAccess('custom')}>
           {access === 'custom' ? 'Selected' : 'Select Custom'}
         </Button>
         {(access === 'custom' || showTrustPolicy) && (
-          <div className="flex min-w-0 flex-col gap-2 border-t pt-4">
-            <Text weight="strong">Trust policy</Text>
-            <Text variant="subtext" theme="neutral">
-              Keep the audience and subject unchanged so only this Nuon
-              connection can assume the role.
-            </Text>
-            <CodeBlock language="json" showCopy>
-              {TRUST_POLICY}
-            </CodeBlock>
+          <div className="border-t pt-4">
+            <TrustPolicyEditor
+              trustPolicy={trustPolicy}
+              setTrustPolicy={setTrustPolicy}
+              initiallyEditing={startTrustEditing}
+            />
           </div>
         )}
       </Card>
@@ -275,12 +404,14 @@ const RunbookStep = ({
   title,
   description,
   status,
+  action,
   children,
 }: {
   number: number
   title: string
   description: string
   status: 'ready' | 'done' | 'failed'
+  action?: React.ReactNode
   children: React.ReactNode
 }) => (
   <Card className="!gap-0 !p-0 overflow-hidden">
@@ -300,6 +431,7 @@ const RunbookStep = ({
           {description}
         </Text>
       </div>
+      {action}
       <Badge
         theme={
           status === 'failed'
@@ -325,11 +457,23 @@ const RunInCloud = ({
   format,
   setFormat,
   failure,
+  trustPolicy,
+  setTrustPolicy,
+  roleArn,
+  setRoleArn,
+  awsTrustURL,
+  startTrustEditing,
 }: {
   access: TAccess
   format: TFormat
   setFormat: (format: TFormat) => void
   failure?: 'trust' | 'permissions'
+  trustPolicy: string
+  setTrustPolicy: (policy: string) => void
+  roleArn: string
+  setRoleArn: (arn: string) => void
+  awsTrustURL: string
+  startTrustEditing: boolean
 }) => {
   const language =
     format === 'terraform'
@@ -371,8 +515,8 @@ const RunInCloud = ({
             value={format}
             onChange={setFormat}
             options={[
-              { value: 'terraform', label: 'Terraform' },
               { value: 'cli', label: 'AWS CLI' },
+              { value: 'terraform', label: 'Terraform' },
               { value: 'cloudformation', label: 'CloudFormation' },
             ]}
           />
@@ -382,6 +526,17 @@ const RunInCloud = ({
         <Banner theme="info">
           Custom access omits the permissions step. Attach your permissions
           policy to the role in AWS.
+        </Banner>
+      )}
+      {format === 'cloudformation' && (
+        <Banner theme="info">
+          <div className="flex flex-col gap-1">
+            <Text weight="strong">Quick create needs a hosted template</Text>
+            <Text variant="subtext">
+              A one-click AWS quick-create link can replace these copy steps
+              once Nuon hosts this CloudFormation template at a stable URL.
+            </Text>
+          </div>
         </Banner>
       )}
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
@@ -398,6 +553,13 @@ const RunInCloud = ({
               title={setupStep.title}
               description={setupStep.description}
               status={isFailed ? 'failed' : 'ready'}
+              action={
+                setupStep.part === 'role' ? (
+                  <Link href={awsTrustURL} isExternal>
+                    Open in AWS console
+                  </Link>
+                ) : undefined
+              }
             >
               <Text variant="subtext" weight="strong">
                 {format === 'terraform'
@@ -407,17 +569,14 @@ const RunInCloud = ({
                     : 'AWS CLI command'}
               </Text>
               <CodeBlock language={language} showCopy>
-                {setupSnippet(format, setupStep.part)}
+                {setupSnippet(format, setupStep.part, trustPolicy)}
               </CodeBlock>
               {setupStep.part === 'role' && (
-                <div className="flex min-w-0 flex-col gap-2">
-                  <Text variant="subtext" weight="strong">
-                    Trust policy · nuon-trust.json
-                  </Text>
-                  <CodeBlock language="json" showCopy>
-                    {TRUST_POLICY}
-                  </CodeBlock>
-                </div>
+                <TrustPolicyEditor
+                  trustPolicy={trustPolicy}
+                  setTrustPolicy={setTrustPolicy}
+                  initiallyEditing={startTrustEditing}
+                />
               )}
               {setupStep.part === 'permissions' && (
                 <div className="flex min-w-0 flex-col gap-2">
@@ -439,9 +598,17 @@ const RunInCloud = ({
           status="ready"
         >
           <Input
-            labelProps={{ labelText: 'IAM role ARN' }}
-            value={ROLE_ARN}
-            onChange={() => {}}
+            id="preset-flow-role-arn"
+            labelProps={{
+              labelText: (
+                <FieldLabel
+                  label="IAM role ARN"
+                  tip="The ARN of the role you created in step 2."
+                />
+              ),
+            }}
+            value={roleArn}
+            onChange={(event) => setRoleArn(event.currentTarget.value)}
           />
         </RunbookStep>
       </div>
@@ -486,10 +653,12 @@ const Verify = ({
   access,
   verification,
   goToStep,
+  awsTrustURL,
 }: {
   access: TAccess
   verification: TVerification
   goToStep: (step: number) => void
+  awsTrustURL: string
 }) => {
   const isWorking = verification === 'verifying'
   const isVerified = verification === 'verified'
@@ -501,12 +670,15 @@ const Verify = ({
         title="Verify the connection"
         description={
           access === 'custom'
-            ? 'Nuon checks that this connection can assume the role and that a different Nuon connection cannot.'
-            : 'Nuon checks the OIDC identity, rejects a foreign Nuon connection, and runs a read-only CloudFormation probe.'
+            ? 'Nuon checks that the role trusts this connection and rejects other Nuon connections.'
+            : 'Nuon checks the role trust, rejects other Nuon connections, and runs a read-only CloudFormation probe.'
         }
       />
       {isWorking && (
-        <Banner theme="info">
+        <Banner
+          theme="info"
+          className="!text-blue-800 dark:!text-blue-300"
+        >
           <div className="flex flex-col gap-1">
             <Text weight="strong">Verifying connection</Text>
             <Text variant="subtext">
@@ -530,7 +702,7 @@ const Verify = ({
         <Banner theme="error">
           <div className="flex flex-col items-start gap-2">
             <div className="flex flex-col gap-1">
-              <Text weight="strong">OIDC identity check failed</Text>
+              <Text weight="strong">Role trust check failed</Text>
               <Text variant="subtext">
                 AWS rejected this connection's subject. Fix the trust policy in
                 step 2 of the AWS runbook.
@@ -539,6 +711,9 @@ const Verify = ({
             <Button variant="secondary" onClick={() => goToStep(3)}>
               Fix runbook step 2
             </Button>
+            <Link href={awsTrustURL} isExternal>
+              Open in AWS console
+            </Link>
           </div>
         </Banner>
       )}
@@ -576,7 +751,7 @@ const Verify = ({
         <VerificationCheck
           status={isVerified || permissionsFailed ? 'passed' : 'pending'}
         >
-          Reject a foreign Nuon connection
+          Reject another Nuon connection
         </VerificationCheck>
         {access === 'preset' && (
           <VerificationCheck
@@ -599,21 +774,27 @@ const Verify = ({
 export const PresetFlow = ({
   initialStep = 1,
   initialAccess,
-  initialFormat = 'terraform',
+  initialFormat = 'cli',
   verification = 'idle',
   showTrustPolicy = false,
+  initialTrustPolicy = TRUST_POLICY,
+  startTrustEditing = false,
 }: IPresetFlow) => {
   const [step, setStep] = useState(initialStep)
   const [access, setAccess] = useState<TAccess | undefined>(initialAccess)
   const [format, setFormat] = useState<TFormat>(initialFormat)
+  const [trustPolicy, setTrustPolicy] = useState(initialTrustPolicy)
+  const [roleArn, setRoleArn] = useState(ROLE_ARN)
   const selectedAccess = access ?? 'preset'
+  const roleName = roleArn.match(/role\/(.+)$/)?.[1] || 'nuon-cloud-connection'
+  const awsTrustURL = `https://console.aws.amazon.com/iam/home#/roles/details/${encodeURIComponent(roleName)}?section=trust`
 
   return (
     <PageSection className="min-h-screen bg-white dark:bg-dark-grey-900">
       <SectionHeader
         variant="page"
         title="Create cloud connection"
-        description="Grant one Nuon identity controlled access to one cloud account."
+        description="Let Nuon manage resources in your AWS account through a role you control."
         status={<Badge theme="info">AWS · OIDC</Badge>}
       />
       <div className="grid flex-1 gap-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
@@ -625,6 +806,9 @@ export const PresetFlow = ({
               access={access}
               setAccess={setAccess}
               showTrustPolicy={showTrustPolicy}
+              trustPolicy={trustPolicy}
+              setTrustPolicy={setTrustPolicy}
+              startTrustEditing={startTrustEditing}
             />
           )}
           {step === 3 && (
@@ -632,6 +816,12 @@ export const PresetFlow = ({
               access={selectedAccess}
               format={format}
               setFormat={setFormat}
+              trustPolicy={trustPolicy}
+              setTrustPolicy={setTrustPolicy}
+              roleArn={roleArn}
+              setRoleArn={setRoleArn}
+              awsTrustURL={awsTrustURL}
+              startTrustEditing={startTrustEditing}
               failure={
                 verification === 'failed-trust'
                   ? 'trust'
@@ -646,6 +836,7 @@ export const PresetFlow = ({
               access={selectedAccess}
               verification={verification}
               goToStep={setStep}
+              awsTrustURL={awsTrustURL}
             />
           )}
         </main>

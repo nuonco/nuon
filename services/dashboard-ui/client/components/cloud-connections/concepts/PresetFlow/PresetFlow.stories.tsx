@@ -1,6 +1,69 @@
 export default { title: 'Cloud connections/Concepts/Preset flow' }
 
+import type { ReactNode } from 'react'
+import { BreadcrumbContext } from '@/providers/breadcrumb-provider'
+import { NotificationContext } from '@/providers/notification-provider'
+import { SidebarContext } from '@/providers/sidebar-provider'
 import { PresetFlow } from './PresetFlow'
+import { TRUST_POLICY } from './mockData'
+import { CloudConnectionsOverview } from './CloudConnectionsOverview'
+import { CLOUD_CONNECTIONS } from './overviewMockData'
+
+const OverviewProviders = ({ children }: { children: ReactNode }) => (
+  <NotificationContext.Provider
+    value={{
+      emitNotification: async () => false,
+      permission: 'default',
+      requestPermission: async () => 'default',
+      isSupported: false,
+      settings: { permissionRequested: false },
+      hasRequestedPermission: false,
+      muted: false,
+      toggleMute: () => {},
+    }}
+  >
+    <BreadcrumbContext.Provider
+      value={{
+        breadcrumbLinks: [
+          { path: '/org-mock-001', text: 'Example org' },
+          {
+            path: '/org-mock-001/cloud-connections',
+            text: 'Cloud connections',
+          },
+        ],
+        isLoading: false,
+        updateBreadcrumb: () => {},
+      }}
+    >
+      <SidebarContext.Provider
+        value={{
+          isSidebarOpen: true,
+          closeSidebar: () => {},
+          openSidebar: () => {},
+          toggleSidebar: () => {},
+        }}
+      >
+        {children}
+      </SidebarContext.Provider>
+    </BreadcrumbContext.Provider>
+  </NotificationContext.Provider>
+)
+
+export const OverviewPopulated = () => (
+  <OverviewProviders>
+    <CloudConnectionsOverview connections={CLOUD_CONNECTIONS} />
+  </OverviewProviders>
+)
+export const OverviewEmpty = () => (
+  <OverviewProviders>
+    <CloudConnectionsOverview connections={[]} />
+  </OverviewProviders>
+)
+export const OverviewLoading = () => (
+  <OverviewProviders>
+    <CloudConnectionsOverview connections={[]} isLoading />
+  </OverviewProviders>
+)
 
 export const CloudAndAccount = () => <PresetFlow initialStep={1} />
 export const AccessPreset = () => <PresetFlow initialStep={2} />
@@ -9,6 +72,18 @@ export const PresetSelected = () => (
 )
 export const CustomSelected = () => (
   <PresetFlow initialStep={2} initialAccess="custom" showTrustPolicy />
+)
+export const TrustPolicyEditing = () => (
+  <PresetFlow
+    initialStep={2}
+    initialAccess="custom"
+    showTrustPolicy
+    startTrustEditing
+    initialTrustPolicy={TRUST_POLICY.replace(
+      '"sts.amazonaws.com"',
+      '"example.invalid"'
+    )}
+  />
 )
 export const RunInCloudTerraform = () => (
   <PresetFlow
@@ -52,9 +127,13 @@ export const FailedAtPermissions = () => (
 )
 
 CloudAndAccount.meta = { fullBleed: true }
+OverviewPopulated.meta = { fullBleed: true }
+OverviewEmpty.meta = { fullBleed: true }
+OverviewLoading.meta = { fullBleed: true }
 AccessPreset.meta = { fullBleed: true }
 PresetSelected.meta = { fullBleed: true }
 CustomSelected.meta = { fullBleed: true }
+TrustPolicyEditing.meta = { fullBleed: true }
 RunInCloudTerraform.meta = { fullBleed: true }
 RunInCloudAWSCLI.meta = { fullBleed: true }
 RunInCloudCloudFormation.meta = { fullBleed: true }
