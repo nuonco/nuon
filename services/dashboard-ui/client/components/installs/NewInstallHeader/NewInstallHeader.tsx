@@ -50,47 +50,52 @@ export const NewInstallHeader = ({
   return (
     <PageHeader>
       <div className="flex flex-col gap-4 w-full">
-        <div className="flex items-start justify-between gap-4 w-full">
-          <HeadingGroup className="gap-1.5">
-            <div className="flex items-center gap-3 flex-wrap">
-              <Text variant="h3" weight="stronger" level={1}>
-                {install.name}
-              </Text>
-              {region || location ? (
-                <span className="flex items-center gap-1.5">
-                  <CloudPlatform
-                    platform={platform}
-                    colorVariant="color"
-                    displayVariant="icon-only"
-                    iconSize="16"
-                  />
-                  <CloudRegion
+        <div className="flex items-start gap-4 w-full">
+          <div className="flex flex-1 flex-wrap items-center gap-x-6 gap-y-3 min-w-0">
+            <HeadingGroup className="mr-auto gap-1.5">
+              <div className="flex items-center gap-3 flex-wrap">
+                <Text variant="h3" weight="stronger" level={1}>
+                  {install.name}
+                </Text>
+                {region || location ? (
+                  <span className="flex items-center gap-1.5">
+                    <CloudPlatform
+                      platform={platform}
+                      colorVariant="color"
+                      displayVariant="icon-only"
+                      iconSize="16"
+                    />
+                    <CloudRegion
+                      variant="subtext"
+                      theme="neutral"
+                      platform={platform}
+                      region={region}
+                      location={location}
+                    />
+                  </span>
+                ) : null}
+              </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <ID>{install.id}</ID>
+                <Text variant="subtext" theme="neutral">
+                  Created{' '}
+                  <Time
                     variant="subtext"
-                    theme="neutral"
-                    platform={platform}
-                    region={region}
-                    location={location}
+                    time={install?.created_at}
+                    format="relative"
                   />
-                </span>
-              ) : null}
-            </div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <ID>{install.id}</ID>
-              <Text variant="subtext" theme="neutral">
-                Created{' '}
-                <Time
-                  variant="subtext"
-                  time={install?.created_at}
-                  format="relative"
+                </Text>
+                <AdminDashboardLink
+                  path={`/queues?owner_id=${install.id}`}
+                  label="Admin panel"
                 />
-              </Text>
-              <AdminDashboardLink
-                path={`/queues?owner_id=${install.id}`}
-                label="Admin panel"
-              />
-            </div>
-          </HeadingGroup>
-          {settingsAction}
+              </div>
+            </HeadingGroup>
+            {statuses}
+          </div>
+          {settingsAction ? (
+            <div className="shrink-0">{settingsAction}</div>
+          ) : null}
         </div>
 
         {labels.length ? (
@@ -107,79 +112,70 @@ export const NewInstallHeader = ({
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-          <Card className="!p-4 !shadow-none w-full">
-            <div className="flex items-start gap-x-8 gap-y-4 flex-wrap">
-              <LabeledValue label="App">
-                <Link
-                  href={`/${orgId}/apps/${install.app_id}`}
-                  textVariant="subtext"
-                >
-                  {install.app?.name}
-                </Link>
-              </LabeledValue>
+        <Card className="!p-4 !shadow-none w-full">
+          <div className="flex items-start gap-x-8 gap-y-4 flex-wrap [&>*]:shrink-0 [&>*]:whitespace-nowrap">
+            <LabeledValue label="App">
+              <Link
+                href={`/${orgId}/apps/${install.app_id}`}
+                textVariant="subtext"
+              >
+                {install.app?.name}
+              </Link>
+            </LabeledValue>
 
-              <LabeledValue label="App branch">
-                <span className="flex items-center gap-1.5 h-[17px]">
-                  {install.app_branch ? (
-                    <Link
-                      href={`/${orgId}/apps/${install.app_id}/branches/${install.app_branch.id}`}
-                      textVariant="subtext"
-                    >
-                      <Text as="span" variant="subtext" family="mono">
-                        {install.app_branch.name}
-                      </Text>
-                    </Link>
-                  ) : (
-                    <Text as="span" variant="subtext" theme="neutral">
-                      None
+            <LabeledValue label="App branch">
+              <span className="flex items-center gap-1.5 h-[17px]">
+                {install.app_branch ? (
+                  <Link
+                    href={`/${orgId}/apps/${install.app_id}/branches/${install.app_branch.id}`}
+                    textVariant="subtext"
+                  >
+                    <Text as="span" variant="subtext" family="mono">
+                      {install.app_branch.name}
                     </Text>
-                  )}
-                  {branchAction}
-                </span>
-              </LabeledValue>
-
-              <LabeledValue label="Managed by">
-                {isManagedByConfig ? (
-                  <span className="flex items-center gap-1.5">
-                    <Icon
-                      variant="FileCodeIcon"
-                      size={13}
-                      className="text-cool-grey-400"
-                    />
-                    <Link
-                      href={`${installPath}/configuration/config-file`}
-                      textVariant="subtext"
-                    >
-                      Install config
-                    </Link>
-                  </span>
+                  </Link>
                 ) : (
-                  <Text as="span" variant="subtext">
-                    Dashboard
+                  <Text as="span" variant="subtext" theme="neutral">
+                    None
                   </Text>
                 )}
+                {branchAction}
+              </span>
+            </LabeledValue>
+
+            <LabeledValue label="Managed by">
+              {isManagedByConfig ? (
+                <span className="flex items-center gap-1.5">
+                  <Icon
+                    variant="FileCodeIcon"
+                    size={13}
+                    className="text-cool-grey-400"
+                  />
+                  <Link
+                    href={`${installPath}/configuration/config-file`}
+                    textVariant="subtext"
+                  >
+                    Install config
+                  </Link>
+                </span>
+              ) : (
+                <Text as="span" variant="subtext">
+                  Dashboard
+                </Text>
+              )}
+            </LabeledValue>
+
+            {latestCommit || latestCommitLoading ? (
+              <LabeledValue
+                className="!shrink grow basis-64 min-w-0 max-w-full"
+                label={latestCommitLabel}
+                loading={latestCommitLoading}
+              >
+                {latestCommit}
               </LabeledValue>
-
-              {latestCommit || latestCommitLoading ? (
-                <LabeledValue
-                  className="min-w-0 max-w-full"
-                  label={latestCommitLabel}
-                  loading={latestCommitLoading}
-                >
-                  {latestCommit}
-                </LabeledValue>
-              ) : null}
-            </div>
-          </Card>
-
-          <Card
-            className="!p-4 !shadow-none"
-            aria-label="Install status summary"
-          >
-            {statuses}
-          </Card>
-        </div>
+            ) : null}
+          </div>
+        </Card>
       </div>
     </PageHeader>
   )

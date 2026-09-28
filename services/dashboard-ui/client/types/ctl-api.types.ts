@@ -635,6 +635,22 @@ export type TInstallHealthTimelineComponent = {
   observed_seconds?: number
 }
 
+export type TInstallStatusAxis = {
+  status?: string
+  status_human_description?: string
+  created_at_ts?: number
+  metadata?: {
+    counts?: Record<string, number>
+    cluster_access_error?: string
+  }
+}
+
+export type TInstallStatus = {
+  deployments?: TInstallStatusAxis
+  resources?: TInstallStatusAxis
+  health_checks?: TInstallStatusAxis
+}
+
 export type TInstallHealthTimeline = {
   days: number
   uptime_percent: number
