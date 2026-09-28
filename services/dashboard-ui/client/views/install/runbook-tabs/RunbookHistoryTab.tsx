@@ -9,16 +9,14 @@ import { RunbookRunTimeline } from '@/components/runbooks/RunbookRunTimeline'
 import { RunbookStepCard } from '@/components/runbooks/RunbookStepCard'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { Panel } from '@/components/surfaces/Panel'
-import { useInstall } from '@/hooks/use-install'
-import { useOrg } from '@/hooks/use-org'
+import { useInstallPage } from '@/hooks/use-install-path'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { getWorkflowSteps } from '@/lib'
 import type { TInstallRunbookOutletContext } from './types'
 
 export const RunbookHistoryTab = () => {
   const { installRunbook } = useOutletContext<TInstallRunbookOutletContext>()
-  const { org } = useOrg()
-  const { install } = useInstall()
+  const { org, install, href } = useInstallPage()
   const { addPanel } = useSurfaces()
 
   const runbook = installRunbook?.runbook
@@ -26,7 +24,7 @@ export const RunbookHistoryTab = () => {
   const lastRun = runs[0]
   const workflowId =
     lastRun?.install_workflow_id ?? lastRun?.install_workflow?.id
-  const basePath = `/${org?.id}/installs/${install?.id}`
+  const basePath = href()
 
   const { data: workflowSteps, isLoading: isLoadingSteps } = useQuery({
     placeholderData: keepPreviousData,

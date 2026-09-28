@@ -10,6 +10,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import type { TInstallAppConfigVersion } from '@/types'
+import { useInstallLink } from '@/hooks/use-install-path'
 import {
   installVersionSource,
   resolveInstallVersionStatus,
@@ -29,6 +30,7 @@ export const InstallVersionDetails = ({
   appId,
   ...props
 }: IInstallVersionDetails) => {
+  const installLink = useInstallLink()
   const branchRun = version?.app_branch_run
   const commit = branchRun?.vcs_connection_commit
   const metadata = Object.entries(version?.metadata ?? {})
@@ -119,7 +121,7 @@ export const InstallVersionDetails = ({
           </Link>
         ) : null}
         {orgId && installId && version?.workflow_id ? (
-          <Link href={`/${orgId}/installs/${installId}/workflows/${version.workflow_id}`}>
+          <Link href={installLink({ orgId: orgId, installId: installId, suffix: `/workflows/${version.workflow_id}` })}>
             View workflow
           </Link>
         ) : null}

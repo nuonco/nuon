@@ -1,5 +1,17 @@
-import { Outlet, redirect, useMatch, type RouteObject } from 'react-router'
+import {
+  Outlet,
+  type LoaderFunctionArgs,
+  type RouteObject,
+} from 'react-router'
+import { redirect } from 'react-router'
+import { useInstallRouteMatch } from '@/hooks/use-install-path'
 import { useNewInstallIA } from '@/hooks/use-new-install-ia'
+import {
+  installRouteShouldRevalidate,
+  redirectLegacyInstallRoute,
+  redirectNestedInstallRoute,
+  resolveInstallPrefix,
+} from '@/lib/install-routing'
 import { useOrg } from '@/hooks/use-org'
 import { NotFound } from '@/views/NotFound'
 import { InstallLayout } from './InstallLayout'
@@ -84,17 +96,12 @@ import { Notebooks } from './Notebooks'
 import { NotebookDetail } from './NotebookDetail'
 import { InstallConfigs } from './InstallConfigs'
 
-const legacyRedirect =
-  (to: (params: Record<string, string | undefined>) => string) =>
-  ({
-    params,
-    request,
-  }: {
-    params: Record<string, string | undefined>
-    request: Request
-  }) => {
+const redirectTo =
+  (suffix: (params: LoaderFunctionArgs['params']) => string) =>
+  async ({ params, request }: LoaderFunctionArgs) => {
     const { search, hash } = new URL(request.url)
-    return redirect(`${to(params)}${search}${hash}`)
+    const prefix = await resolveInstallPrefix(params)
+    return redirect(`${prefix}${suffix(params)}${search}${hash}`)
   }
 
 const NewInstallIAGate = () => {
@@ -117,7 +124,7 @@ const InstallOverviewRoute = () => {
 
 const InstallResourcesRoute = () => {
   const hasNewInstallIA = useNewInstallIA()
-  const isIndex = !!useMatch('/:orgId/installs/:installId/resources')
+  const isIndex = !!useInstallRouteMatch('/resources')
 
   if (hasNewInstallIA) return <NewInstallResourcesLayout />
   if (isIndex) return <Resources />
@@ -130,20 +137,17 @@ const NewInstallResourcesIndex = () => {
   return <NewInstallStack />
 }
 
-export const installRoutes: RouteObject[] = [
-  {
-    element: <InstallLayout />,
-    children: [
+const installChildren = (): RouteObject[] => [
       {
-        path: ':orgId/installs/:installId',
+        index: true,
         element: <InstallOverviewRoute />,
       },
       {
-        path: ':orgId/installs/:installId/components',
+        path: 'components',
         element: <Components />,
       },
       {
-        path: ':orgId/installs/:installId/resources',
+        path: 'resources',
         element: <InstallResourcesRoute />,
         children: [
           { index: true, element: <NewInstallResourcesIndex /> },
@@ -170,15 +174,15 @@ export const installRoutes: RouteObject[] = [
         element: <NewInstallIAGate />,
         children: [
           {
-            path: ':orgId/installs/:installId/deployments',
+            path: 'deployments',
             element: <Deployments />,
           },
           {
-            path: ':orgId/installs/:installId/health',
+            path: 'health',
             element: <NewInstallHealth />,
           },
           {
-            path: ':orgId/installs/:installId/operations',
+            path: 'operations',
             element: <NewInstallOperationsLayout />,
             children: [
               {
@@ -204,7 +208,7 @@ export const installRoutes: RouteObject[] = [
             ],
           },
           {
-            path: ':orgId/installs/:installId/configuration',
+            path: 'configuration',
             element: <NewInstallConfigurationLayout />,
             children: [
               {
@@ -231,33 +235,32 @@ export const installRoutes: RouteObject[] = [
           },
         ],
       },
-      { path: ':orgId/installs/:installId/actions', element: <Actions /> },
-      { path: ':orgId/installs/:installId/notebooks', element: <Notebooks /> },
+      { path: 'actions', element: <Actions /> },
+      { path: 'notebooks', element: <Notebooks /> },
       {
-        path: ':orgId/installs/:installId/notebooks/:notebookId',
+        path: 'notebooks/:notebookId',
         element: <NotebookDetail />,
       },
-      { path: ':orgId/installs/:installId/roles', element: <Roles /> },
-      { path: ':orgId/installs/:installId/policies', element: <Policies /> },
-      { path: ':orgId/installs/:installId/runner', element: <Runner /> },
-      { path: ':orgId/installs/:installId/inputs', element: <CurrentInputs /> },
-      { path: ':orgId/installs/:installId/state', element: <ViewState /> },
+      { path: 'roles', element: <Roles /> },
+      { path: 'policies', element: <Policies /> },
+      { path: 'runner', element: <Runner /> },
+      { path: 'inputs', element: <CurrentInputs /> },
+      { path: 'state', element: <ViewState /> },
       {
-        path: ':orgId/installs/:installId/runner/jobs/:jobId',
+        path: 'runner/jobs/:jobId',
         element: <RunnerJobDetail />,
       },
       {
-        path: ':orgId/installs/:installId/runner/processes/:processId/logs',
+        path: 'runner/processes/:processId/logs',
         element: <ProcessSystemLogs />,
       },
-      { path: ':orgId/installs/:installId/sandbox', element: <Sandbox /> },
+      { path: 'sandbox', element: <Sandbox /> },
       {
-        path: ':orgId/installs/:installId/sandbox/runs',
-        loader: ({ params }) =>
-          redirect(`/${params.orgId}/installs/${params.installId}/sandbox`),
+        path: 'sandbox/runs',
+        loader: redirectTo(() => '/sandbox'),
       },
       {
-        path: ':orgId/installs/:installId/sandbox/runs/:runId',
+        path: 'sandbox/runs/:runId',
         element: <SandboxRunLayout />,
         children: [
           { index: true, element: <SandboxRunSummaryTab /> },
@@ -270,50 +273,43 @@ export const installRoutes: RouteObject[] = [
         ],
       },
       {
-        path: ':orgId/installs/:installId/history/:workflowId',
+        path: 'history/:workflowId',
         element: <WorkflowDetail />,
       },
       {
-        path: ':orgId/installs/:installId/workflows/:workflowId',
-        loader: legacyRedirect(
-          (params) =>
-            `/${params.orgId}/installs/${params.installId}/history/${params.workflowId}`
+        path: 'workflows/:workflowId',
+        loader: redirectTo(
+          (params) => `/history/${params.workflowId}`
         ),
       },
-      { path: ':orgId/installs/:installId/stacks', element: <Stacks /> },
+      { path: 'stacks', element: <Stacks /> },
       {
-        path: ':orgId/installs/:installId/updates',
+        path: 'updates',
         element: <Updates />,
       },
       {
-        path: ':orgId/installs/:installId/history',
+        path: 'history',
         element: <History />,
       },
       {
-        path: ':orgId/installs/:installId/app-branch-runs',
-        loader: legacyRedirect(
-          (params) => `/${params.orgId}/installs/${params.installId}/updates`
-        ),
+        path: 'app-branch-runs',
+        loader: redirectTo(() => '/updates'),
       },
       {
-        path: ':orgId/installs/:installId/versions',
-        loader: legacyRedirect(
-          (params) => `/${params.orgId}/installs/${params.installId}/updates`
-        ),
+        path: 'versions',
+        loader: redirectTo(() => '/updates'),
       },
       {
-        path: ':orgId/installs/:installId/workflows',
-        loader: legacyRedirect(
-          (params) => `/${params.orgId}/installs/${params.installId}/history`
-        ),
+        path: 'workflows',
+        loader: redirectTo(() => '/history'),
       },
       {
-        path: ':orgId/installs/:installId/configs',
+        path: 'configs',
         element: <InstallConfigs />,
       },
-      { path: ':orgId/installs/:installId/readme', element: <Readme /> },
+      { path: 'readme', element: <Readme /> },
       {
-        path: ':orgId/installs/:installId/components/:componentId',
+        path: 'components/:componentId',
         element: <InstallComponentLayout />,
         children: [
           { index: true, element: <InstallComponentOverviewTab /> },
@@ -323,7 +319,7 @@ export const installRoutes: RouteObject[] = [
         ],
       },
       {
-        path: ':orgId/installs/:installId/components/:componentId/deploys/:deployId',
+        path: 'components/:componentId/deploys/:deployId',
         element: <DeployLayout />,
         children: [
           { index: true, element: <DeploySummaryTab /> },
@@ -339,12 +335,12 @@ export const installRoutes: RouteObject[] = [
         ],
       },
       {
-        path: ':orgId/installs/:installId/actions/:actionId',
+        path: 'actions/:actionId',
         element: <ActionDetail />,
       },
-      { path: ':orgId/installs/:installId/runbooks', element: <Runbooks /> },
+      { path: 'runbooks', element: <Runbooks /> },
       {
-        path: ':orgId/installs/:installId/runbooks/:runbookId',
+        path: 'runbooks/:runbookId',
         element: <RunbookDetailLayout />,
         children: [
           { path: 'readme', element: <RunbookReadmeTab /> },
@@ -353,14 +349,11 @@ export const installRoutes: RouteObject[] = [
         ],
       },
       {
-        path: ':orgId/installs/:installId/actions/:actionId/runs',
-        loader: ({ params }) =>
-          redirect(
-            `/${params.orgId}/installs/${params.installId}/actions/${params.actionId}`
-          ),
+        path: 'actions/:actionId/runs',
+        loader: redirectTo((params) => `/actions/${params.actionId}`),
       },
       {
-        path: ':orgId/installs/:installId/actions/:actionId/runs/:actionRunId',
+        path: 'actions/:actionId/runs/:actionRunId',
         element: <ActionRunLayout />,
         children: [
           { index: true, element: <ActionRunDetail /> },
@@ -368,6 +361,23 @@ export const installRoutes: RouteObject[] = [
           { path: 'trace', element: <ActionRunTracePage /> },
         ],
       },
-    ],
-  },
+]
+
+const installLayoutRoute = (
+  path: string,
+  loader: RouteObject['loader']
+): RouteObject => ({
+  path,
+  loader,
+  shouldRevalidate: installRouteShouldRevalidate,
+  element: <InstallLayout />,
+  children: installChildren(),
+})
+
+export const installRoutes: RouteObject[] = [
+  installLayoutRoute(':orgId/installs/:installId', redirectLegacyInstallRoute),
+  installLayoutRoute(
+    ':orgId/apps/:appId/installs/:installId',
+    redirectNestedInstallRoute
+  ),
 ]
