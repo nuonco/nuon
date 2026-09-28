@@ -501,7 +501,7 @@ const Playground = ({ steps }: { steps: IWizardStepDef[] }) => {
       initialSharedData={{}}
       onComplete={() => setFinished(true)}
     >
-      <OnboardingWizardLayout skipHref={null} />
+      <OnboardingWizardLayout />
     </OnboardingWizardProvider>
   )
 }
@@ -2725,7 +2725,7 @@ const BranchingPlayground = ({
             initialSharedData={{ path: initialPath, cloud: initialCloud, expandOwn: expandOwnApp }}
             onComplete={() => setFinished(true)}
           >
-            <OnboardingWizardLayout skipHref={null} />
+            <OnboardingWizardLayout />
           </OnboardingWizardProvider>
         </ForkContext.Provider>
       ) : (

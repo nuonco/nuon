@@ -40,7 +40,6 @@ const mockConfig: TRuntimeConfig = {
   appUrl: 'http://localhost:4000',
   githubAppName: 'nuon-dev',
   isByoc: false,
-  onboardingV2: false,
 }
 
 const Providers = ({ children, wizard = mockWizard, config = mockConfig }: {
@@ -57,18 +56,18 @@ const Providers = ({ children, wizard = mockWizard, config = mockConfig }: {
 
 export const Default = () => (
   <Providers>
-    <OnboardingWizardLayout skipHref="/org-123/apps" />
+    <OnboardingWizardLayout onSkip={() => {}} />
   </Providers>
 )
 
 export const NoSkip = () => (
   <Providers>
-    <OnboardingWizardLayout skipHref={null} />
+    <OnboardingWizardLayout />
   </Providers>
 )
 
 export const MidProgress = () => (
   <Providers wizard={{ ...mockWizard, currentStepIndex: 1, completedSteps: new Set(['welcome']) }}>
-    <OnboardingWizardLayout skipHref="/org-123/apps" />
+    <OnboardingWizardLayout onSkip={() => {}} />
   </Providers>
 )
