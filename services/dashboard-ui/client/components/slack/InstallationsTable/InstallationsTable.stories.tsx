@@ -1,6 +1,6 @@
 import { InstallationsTable } from './InstallationsTable'
 
-export default { title: 'Slack/InstallationsTable' }
+export default { title: 'Features / Slack / Installations table' }
 
 const mock = [
   {

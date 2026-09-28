@@ -1,5 +1,5 @@
 export default {
-  title: 'Onboarding/V2 Steps/AppProfileStep',
+  title: 'Features / Onboarding / V2 steps / App profile step',
 }
 
 import { AppProfileStepContainer } from './AppProfileStepContainer'

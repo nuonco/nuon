@@ -1,5 +1,5 @@
 export default {
-  title: 'Sandbox/Management/SandboxRunOutputsModal',
+  title: 'Features / Sandbox / Management / Run outputs modal',
 }
 
 import { SandboxRunOutputsButton } from './SandboxRunOutputsModal'

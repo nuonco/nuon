@@ -1,5 +1,5 @@
 export default {
-  title: 'Install Components/TeardownComponent',
+  title: 'Features / Installs / Components / Teardown component',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

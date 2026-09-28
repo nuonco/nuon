@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/GroupStep',
+  title: 'Features / Installs / Create install / Group step',
 }
 
 import { useState } from 'react'

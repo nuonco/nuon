@@ -2,7 +2,7 @@ import { BranchRunComparisonCard } from './BranchRunComparisonCard'
 import type { TBranchRunComparisonRunSummary } from '@/lib/ctl-api/apps/branches/get-branch-run-comparison'
 
 export default {
-  title: 'Branches/BranchRunComparisonCard',
+  title: 'Features / Branches / Branch run comparison card',
 }
 
 const sampleRun: TBranchRunComparisonRunSummary = {

@@ -1,7 +1,7 @@
 import { useForm } from '@tanstack/react-form'
 import { FormInput } from './FormInput'
 
-export default { title: 'Common/Forms/FormInput' }
+export default { title: 'UI / Forms / Form input' }
 
 const Demo = () => {
   const form = useForm({ defaultValues: { name: '' } })

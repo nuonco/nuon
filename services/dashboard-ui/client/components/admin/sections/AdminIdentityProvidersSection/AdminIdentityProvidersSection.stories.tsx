@@ -1,5 +1,5 @@
 export default {
-  title: 'Admin/AdminIdentityProvidersSection',
+  title: 'Features / Admin / Sections / Identity providers section',
 }
 
 import type { TIdentityProvider } from '@/lib'

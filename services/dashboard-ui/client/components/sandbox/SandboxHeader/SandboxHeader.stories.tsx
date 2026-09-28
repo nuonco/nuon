@@ -1,5 +1,5 @@
 export default {
-  title: 'Sandbox/SandboxHeader',
+  title: 'Features / Sandbox / Sandbox header',
 }
 
 import { SandboxRunContext } from '@/providers/sandbox-run-provider'

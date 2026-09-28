@@ -3,7 +3,7 @@ import { BranchConfigDetails } from './BranchConfigDetails'
 import type { TAppConfig } from '@/types'
 
 export default {
-  title: 'Branches/BranchConfigDetails',
+  title: 'Features / Branches / Branch config details',
 }
 
 const mockConfig = {

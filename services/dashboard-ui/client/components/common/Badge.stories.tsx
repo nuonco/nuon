@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Badge',
+  title: 'UI / Badge',
 }
 
 import { Badge } from './Badge'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/MiniDeploymentView',
+  title: 'Features / Branches / Mini deployment view',
 }
 
 import { MiniDeploymentView } from './MiniDeploymentView'

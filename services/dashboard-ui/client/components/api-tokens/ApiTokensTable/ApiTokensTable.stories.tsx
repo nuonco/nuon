@@ -1,5 +1,5 @@
 export default {
-  title: 'ApiTokens/ApiTokensTable',
+  title: 'Features / API tokens / API tokens table',
 }
 
 import type { TStaticToken } from '@/types'

@@ -1,7 +1,7 @@
 import { BranchConfig } from './BranchConfig'
 
 export default {
-  title: 'Playground/Lite/BranchConfig',
+  title: 'Playground / Lite / Branch config',
 }
 
 export const Default = () => (

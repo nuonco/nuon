@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test'
 
 const WITH_BASELINE =
-  '/?story=branches--branchruncomparisonruns--with-baseline&mode=preview'
+  '/?story=features--branches--branch-run-comparison-runs--with-baseline&mode=preview'
 const FIRST_RUN =
-  '/?story=branches--branchruncomparisonruns--first-run-no-baseline&mode=preview'
+  '/?story=features--branches--branch-run-comparison-runs--first-run-no-baseline&mode=preview'
 
 test.describe('BranchRunComparisonRuns behavior', () => {
   test('reads previous run first, then current run', async ({ page }) => {

@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/Filters/WorkflowTypeFilter',
+  title: 'Features / Workflows / Filters / Type filter',
 }
 
 import { WorkflowTypeFilter } from './WorkflowTypeFilter'

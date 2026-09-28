@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/TimelineEvent',
+  title: 'UI / Timeline event',
 }
 
 import { TimelineEvent } from './TimelineEvent'

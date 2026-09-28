@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/HeadingGroup',
+  title: 'UI / Heading group',
 }
 
 import { HeadingGroup } from './HeadingGroup'

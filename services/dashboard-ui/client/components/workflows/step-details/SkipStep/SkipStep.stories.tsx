@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/SkipStep',
+  title: 'Features / Workflows / Step details / Skip step',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

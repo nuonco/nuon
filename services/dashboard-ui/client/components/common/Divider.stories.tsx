@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Divider',
+  title: 'UI / Divider',
 }
 
 import { Divider } from './Divider'

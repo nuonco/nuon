@@ -1,5 +1,5 @@
 export default {
-  title: 'Components/Configs/TerraformConfig',
+  title: 'Features / Components / Configs / Terraform config',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

@@ -1,5 +1,5 @@
 export default {
-  title: 'LogStream/LogFiltersDropdown',
+  title: 'Features / Logs / Log filters / Filters dropdown',
 }
 
 import { useState } from 'react'

@@ -1,5 +1,5 @@
 export default {
-  title: 'ServiceAccounts/ChangeServiceAccountRole',
+  title: 'Features / Service accounts / Change service account role',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/WorkflowStepDetail/CommitStep',
+  title: 'Features / Branches / Workflow step detail / Commit step',
 }
 
 import { CommitStep } from './CommitStep'

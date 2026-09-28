@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/NewInstallHeader',
+  title: 'Features / Installs / New install header',
 }
 
 import { Button } from '@/components/common/Button'

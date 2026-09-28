@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const STORY = "/?story=triggers--revoketriggersecretmodal--default&mode=preview";
+const STORY = "/?story=features--triggers--revoke-trigger-secret-modal--default&mode=preview";
 
 test.describe("RevokeTriggerSecretModal behavior", () => {
   test.beforeEach(async ({ page }) => {

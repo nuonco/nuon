@@ -4,7 +4,7 @@ import { Drawer } from './Drawer'
 import { PlaceholderGrid } from './PlaceholderGrid'
 
 export default {
-  title: 'Playground/Lite/Drawer',
+  title: 'Playground / Lite / Drawer',
 }
 
 export const Default = () => {

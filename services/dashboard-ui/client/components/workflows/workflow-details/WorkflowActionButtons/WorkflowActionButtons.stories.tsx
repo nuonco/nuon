@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/WorkflowActionButtons',
+  title: 'Features / Workflows / Details / Action buttons',
 }
 
 import { AuthContext } from '@/providers/auth-provider'

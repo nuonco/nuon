@@ -475,6 +475,10 @@ const FooterActionsDemo = () => {
 
 
 
+export default {
+  title: 'UI / Surfaces / Modal',
+}
+
 export const BasicUsage = () => (
   <SurfacesProvider>
     <div className="space-y-6">

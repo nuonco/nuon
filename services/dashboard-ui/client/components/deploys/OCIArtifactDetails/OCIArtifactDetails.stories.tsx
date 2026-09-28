@@ -1,5 +1,5 @@
 export default {
-  title: 'Deploys/OCIArtifactDetails',
+  title: 'Features / Deploys / OCI artifact details',
 }
 
 import { OCIArtifactDetails } from './OCIArtifactDetails'

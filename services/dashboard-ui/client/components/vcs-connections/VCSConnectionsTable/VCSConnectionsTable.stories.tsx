@@ -1,5 +1,5 @@
 export default {
-  title: 'VCSConnections/VCSConnectionsTable',
+  title: 'Features / VCS connections / VCS connections table',
 }
 
 import { VCSConnectionsTable, type TVCSConnectionRow } from './VCSConnectionsTable'

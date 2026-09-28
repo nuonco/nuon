@@ -2,7 +2,7 @@ import { AppInstallSyncsTimeline } from './AppInstallSyncsTimeline'
 import type { TAppInstallConfigSync } from '@/types'
 
 export default {
-  title: 'Apps/AppInstallSyncsTimeline',
+  title: 'Features / Apps / Install syncs timeline',
 }
 
 const day = 86400000

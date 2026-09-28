@@ -1,7 +1,7 @@
 import { AppSetup } from './AppSetup'
 
 export default {
-  title: 'Playground/Lite/AppSetup',
+  title: 'Playground / Lite / App setup',
 }
 
 export const Default = () => (

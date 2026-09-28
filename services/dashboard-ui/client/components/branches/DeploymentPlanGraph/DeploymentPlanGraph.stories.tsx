@@ -1,7 +1,7 @@
 import { DeploymentPlanGraph } from './DeploymentPlanGraph'
 
 export default {
-  title: 'Branches/DeploymentPlanGraph',
+  title: 'Features / Branches / Deployment plan graph',
 }
 
 const mockInstalls: Record<string, any> = {

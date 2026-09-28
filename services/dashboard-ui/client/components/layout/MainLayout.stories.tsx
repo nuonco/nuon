@@ -1,5 +1,5 @@
 export default {
-  title: 'Layout/MainLayout',
+  title: 'UI / Layout / Main layout',
 }
 
 import type { ReactNode } from 'react'

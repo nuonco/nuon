@@ -1,5 +1,5 @@
 export default {
-  title: 'ServiceAccounts/CreateServiceAccount',
+  title: 'Features / Service accounts / Create service account',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'
