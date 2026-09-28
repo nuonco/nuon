@@ -13,6 +13,7 @@ import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import type { TDeploy, TWorkflowStep } from '@/types'
 import { DeployApply } from '../DeployApply'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 export interface IDeployStepDetails {
   step?: TWorkflowStep
@@ -29,6 +30,7 @@ export const DeployStepDetails = ({
   error,
   isLoading,
 }: IDeployStepDetails) => {
+  const installLink = useInstallLink()
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-4">
@@ -49,7 +51,7 @@ export const DeployStepDetails = ({
             </Text>
             {deploy?.component_id ? (
               <Link
-                href={`/${orgId}/installs/${step?.owner_id}/components/${deploy.component_id}`}
+                href={installLink({ orgId: orgId, installId: step?.owner_id, suffix: `/components/${deploy.component_id}` })}
               >
                 View component
               </Link>
@@ -57,7 +59,7 @@ export const DeployStepDetails = ({
 
             {deploy?.component_id && deploy?.id ? (
               <Link
-                href={`/${orgId}/installs/${step?.owner_id}/components/${deploy.component_id}/deploys/${deploy.id}`}
+                href={installLink({ orgId: orgId, installId: step?.owner_id, suffix: `/components/${deploy.component_id}/deploys/${deploy.id}` })}
               >
                 View deploy logs
               </Link>

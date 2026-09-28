@@ -7,6 +7,7 @@ import { DeployComponentButton } from '@/components/install-components/managemen
 import { DriftScanComponentButton } from '@/components/install-components/management/DriftScanComponent'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import type { TInstallComponent } from '@/types'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 export const QuickComponentManagementDropdown = ({
   installComponent,
@@ -19,10 +20,11 @@ export const QuickComponentManagementDropdown = ({
   installId: string
   removed?: boolean
 }) => {
+  const installLink = useInstallLink()
   const component = installComponent.component
   if (!component) return null
 
-  const href = `/${orgId}/installs/${installId}/components/${component.id}`
+  const href = installLink({ orgId: orgId, installId: installId, suffix: `/components/${component.id}` })
 
   return (
     <SurfacesProvider>

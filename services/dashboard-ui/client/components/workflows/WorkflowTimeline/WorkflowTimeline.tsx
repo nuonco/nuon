@@ -28,6 +28,7 @@ import {
   isBranchRunWorkflow,
   isServiceAccount,
 } from '@/utils/workflow-utils'
+import { useInstallHref } from '@/hooks/use-install-path'
 import { useWorkflowApprovals } from '@/hooks/use-workflow-approvals'
 import { CancelWorkflowButton } from '../CancelWorkflow'
 
@@ -61,6 +62,7 @@ export const WorkflowTimeline = ({
   getWorkflowHref,
 }: IWorkflowTimeline) => {
   const { approvals } = useWorkflowApprovals()
+  const installHref = useInstallHref()
 
   if (isLoading) return <TimelineSkeleton eventCount={10} />
 
@@ -78,7 +80,12 @@ export const WorkflowTimeline = ({
           : undefined
         const workflowHref = getWorkflowHref
           ? getWorkflowHref(workflow)
-          : `/${orgId}/installs/${installId}/workflows/${workflow.id}`
+          : installHref({
+              orgId,
+              installId: installId ?? install?.id,
+              appId: install?.app_id,
+              suffix: `/workflows/${workflow.id}`,
+            })
         const createdByAccount = workflow?.created_by
         const createdBy = createdByAccount?.email ? (
           isServiceAccount(createdByAccount) ? (

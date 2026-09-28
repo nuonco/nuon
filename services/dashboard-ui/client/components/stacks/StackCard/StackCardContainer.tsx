@@ -1,12 +1,14 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { getInstallStack } from '@/lib'
 import { StackCard } from './StackCard'
 
 export const StackCardContainer = () => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
 
   const { data: stack, isLoading, error } = useQuery({
     placeholderData: keepPreviousData,
@@ -34,7 +36,7 @@ export const StackCardContainer = () => {
   )
   const createdAt = stack?.versions?.[stack.versions.length - 1]?.created_at
 
-  const href = `/${org.id}/installs/${install.id}/stacks`
+  const href = installLink({ installId: install.id, appId: install.app_id, suffix: `/stacks` })
 
   return (
     <StackCard

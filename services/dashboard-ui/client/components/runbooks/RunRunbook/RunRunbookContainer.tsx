@@ -8,6 +8,7 @@ import { RoleSelector } from '@/components/roles/RoleSelector'
 import { type IModal } from '@/components/surfaces/Modal'
 import { Toast } from '@/components/surfaces/Toast'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
@@ -29,6 +30,7 @@ export const RunRunbookModal = ({
   const navigate = useNavigate()
   const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
@@ -56,9 +58,9 @@ export const RunRunbookModal = ({
       queryClient.invalidateQueries({ queryKey: ['install-runbooks'] })
       const workflowId = result?.install_workflow_id
       if (workflowId) {
-        navigate(`/${org!.id}/installs/${install!.id}/workflows/${workflowId}`)
+        navigate(installLink({ installId: install!.id, appId: install!.app_id, suffix: `/workflows/${workflowId}` }))
       } else {
-        navigate(`/${org!.id}/installs/${install!.id}/runbooks/${runbookId}`)
+        navigate(installLink({ installId: install!.id, appId: install!.app_id, suffix: `/runbooks/${runbookId}` }))
       }
     },
   })

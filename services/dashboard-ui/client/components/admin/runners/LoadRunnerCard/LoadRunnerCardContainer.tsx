@@ -3,6 +3,7 @@ import { useOrg } from '@/hooks/use-org'
 import { getRunner } from '@/lib'
 import type { TRunner } from '@/types'
 import { LoadRunnerCard } from './LoadRunnerCard'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 interface LoadRunnerCardContainerProps {
   runnerId: string
@@ -10,6 +11,7 @@ interface LoadRunnerCardContainerProps {
 }
 
 export const LoadRunnerCardContainer = ({ runnerId, installId }: LoadRunnerCardContainerProps) => {
+  const installLink = useInstallLink()
   const { org } = useOrg()
   const orgId = org.id
 
@@ -24,7 +26,7 @@ export const LoadRunnerCardContainer = ({ runnerId, installId }: LoadRunnerCardC
       runner={runner}
       error={queryError ? 'Unable to load runner' : null}
       isLoading={isLoading}
-      href={`/${orgId}/installs/${installId}/runner`}
+      href={installLink({ orgId: orgId, installId: installId, suffix: `/runner` })}
       onAction={() => refetch()}
     />
   )

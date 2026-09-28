@@ -6,6 +6,7 @@ import { Text } from '@/components/common/Text'
 import type { IModal } from '@/components/surfaces/Modal'
 import { Toast } from '@/components/surfaces/Toast'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
@@ -16,6 +17,7 @@ const CreateNotebookModalContainer = ({ onSubmit: _, ...props }: IModal) => {
   const navigate = useNavigate()
   const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
@@ -37,7 +39,7 @@ const CreateNotebookModalContainer = ({ onSubmit: _, ...props }: IModal) => {
         </Toast>
       )
       removeModal(props.modalId)
-      navigate(`/${org?.id}/installs/${install?.id}/notebooks/${nb.id}`)
+      navigate(installLink({ installId: install?.id, appId: install?.app_id, suffix: `/notebooks/${nb.id}` }))
     },
   })
 
