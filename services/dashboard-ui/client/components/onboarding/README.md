@@ -10,7 +10,7 @@ wizard shell in this directory.
 |------|---------|
 | `first-run/IntroScreen.tsx` | Full-screen intro before the stepper. No network calls. |
 | `first-run/StartStep.tsx` | Picks the path. Own app: GitHub, name, test cloud, then app + branch + branch config. Example: Kitchen Sink. |
-| `first-run/ConnectStep.tsx` | Own path only. Agent prompt from `nuon.co/loop.md`, push detection, fine print. |
+| `first-run/ConnectStep.tsx` | Own path only. Agent prompt from `nuon.co/loop.md`, push detection, fine print, Get help. |
 | `first-run/DeployStep.tsx` | Region and auto-approve, waits for an active app config, creates the install. |
 | `first-run/StackStep.tsx` | Polls the install stack: AWS quick-create link, GCP Terraform, Azure `az` commands. |
 | `first-run/ProvisionStep.tsx` | Static preview of what the install builds. Finish opens the deploy workflow. |
@@ -84,6 +84,24 @@ returns 404.
 
 Kitchen Sink's repo root is AWS-only, so the example path uses `kitchen-sink` (directory `.`) for AWS and
 `kitchen-sink-gcp` (directory `gcp`) for GCP.
+
+## Analytics
+
+Every event goes through `trackEvent` and fires with `status: 'ok'` or `'error'` (PostHog is off when the dashboard
+has no `posthog_key`, including local runs). `org_id` is a super property once `OrgProvider` mounts.
+
+| Event | Fired from | Props |
+|-------|------------|-------|
+| `org_create` | View, when onboarding creates the trial org | `orgId`, `source` |
+| `vcs_connection_create` | View, on return from the GitHub App | `connectionId`, `source` |
+| `app_create` | Start, both paths | `appId`, `path`, `cloud`, `err` (`name_taken` on a 409) |
+| `agent_prompt_copy` | Connect, Copy prompt | `appId` |
+| `support_chat_open` | Connect, Get help | `source` |
+| `install_create` | Deploy | `appId`, `installId`, `path`, `cloud`, `source`, `err` (`missing_input_defaults`) |
+| `install_stack_launch` | Stack, launch or get commands | `installId`, `cloud` |
+| `onboarding_complete` | Provision, Go to deploy workflow | `installId`, `path`, `cloud` |
+| `onboarding_skip` | Skip in the header | `step` |
+| `onboarding_reopen` | User menu, Re-open onboarding | none |
 
 ## Wizard API
 

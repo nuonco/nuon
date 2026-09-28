@@ -9,9 +9,11 @@ import { Icon } from '@/components/common/Icon'
 import { Input } from '@/components/common/form/Input'
 import { Text } from '@/components/common/Text'
 import { githubAppInstallUrl } from '@/components/vcs-connections/ConnectGithub'
+import { useAuth } from '@/hooks/use-auth'
 import { useConfig } from '@/hooks/use-config'
 import { useFirstRun } from '@/hooks/use-first-run'
 import { getVCSConnectionRepos, getVCSConnections } from '@/lib'
+import { trackEvent } from '@/lib/posthog-analytics'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 import type { TAPIError, TVCSConnectionRepo } from '@/types'
 import { cn } from '@/utils/classnames'
@@ -422,6 +424,7 @@ export const StartStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepC
   const { orgId, journey, vcsConnectionId: callbackConnectionId, vcsError, choosePath, backToIntro } =
     useFirstRun()
   const { githubAppName } = useConfig()
+  const { user } = useAuth()
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const path = sharedData.path === 'own' ? 'own' : 'example'
@@ -540,10 +543,21 @@ export const StartStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepC
       )
       // Connect may be marked done from an earlier pass on the example path.
       await journey.saveStep('connect', {}, { complete: false })
+      trackEvent({ event: 'app_create', status: 'ok', user, props: { appId, path: 'own', cloud: testCloud } })
       setOwn({ ...base, app_id: appId, app_branch_id: branchId, region: defaultRegion(testCloud) })
       choosePath('own', testCloud)
       onAdvance()
     } catch (err) {
+      trackEvent({
+        event: 'app_create',
+        status: 'error',
+        user,
+        props: {
+          path: 'own',
+          cloud: testCloud,
+          err: err instanceof AppNameTakenError ? 'name_taken' : (err as TAPIError)?.error,
+        },
+      })
       if (err instanceof AppNameTakenError) {
         setAppNameError('An app template with this name exists')
       } else {
@@ -571,9 +585,16 @@ export const StartStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepC
       await journey.saveStep('start', values, { complete: true })
       // The example path has no Connect step, so it is done by definition.
       await journey.saveStep('connect', {}, { complete: true })
+      trackEvent({ event: 'app_create', status: 'ok', user, props: { appId, path: 'example', cloud } })
       setOwn({ ...values, expandOwn: false, region: defaultRegion(cloud) })
       onAdvance()
     } catch (err) {
+      trackEvent({
+        event: 'app_create',
+        status: 'error',
+        user,
+        props: { path: 'example', cloud, err: (err as TAPIError)?.error },
+      })
       setError((err as TAPIError)?.description || 'Unable to set up the example app.')
     } finally {
       setExamplePending(undefined)

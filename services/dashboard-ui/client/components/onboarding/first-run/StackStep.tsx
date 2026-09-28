@@ -11,8 +11,10 @@ import { AwaitAzureDetails } from '@/components/workflows/step-details/stack-det
 import { AwaitGCPDetails } from '@/components/workflows/step-details/stack-details/AwaitGCPDetails'
 import { InstallAppConfigProvider } from '@/providers/install-app-config-provider'
 import { InstallProvider } from '@/providers/install-provider'
+import { useAuth } from '@/hooks/use-auth'
 import { useFirstRun } from '@/hooks/use-first-run'
 import { getInstallStack } from '@/lib'
+import { trackEvent } from '@/lib/posthog-analytics'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 import type { TInstallStack } from '@/types'
 import {
@@ -221,6 +223,7 @@ const readString = (value: unknown) => (typeof value === 'string' ? value : '')
 
 export const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
   const { orgId, journey } = useFirstRun()
+  const { user } = useAuth()
   const cloud: TCloud = isCloud(sharedData.cloud) ? sharedData.cloud : 'aws'
   const installId = readString(sharedData.install_id)
   const region = readString(sharedData.region) || defaultRegion(cloud)
@@ -273,7 +276,10 @@ export const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepCompon
       quickLinkUrl={version?.quick_link_url}
       errorDescription={version?.composite_status?.status_human_description}
       details={details}
-      onLaunch={() => setLaunched(true)}
+      onLaunch={() => {
+        setLaunched(true)
+        trackEvent({ event: 'install_stack_launch', status: 'ok', user, props: { installId, cloud } })
+      }}
       onContinue={advance}
       onBack={onGoBack}
     />

@@ -6,21 +6,34 @@ import {
 } from '@/hooks/use-first-run-journey'
 import { createTrialOrg, getApp, getInstall, getOrgs } from '@/lib'
 import { getOrgSession, setOrgSession } from '@/lib/cookies'
-import type { TAPIError, TOrg, TUserJourney } from '@/types'
+import { trackEvent } from '@/lib/posthog-analytics'
+import type { IUser, TAPIError, TOrg, TUserJourney } from '@/types'
 import { defaultRegion, isCloud, type TCloud, type TPath } from './constants'
 
 const statusOf = (error: unknown) => (error as TAPIError | undefined)?.status
 
 // A new sign-up has no org yet: onboarding creates one before anything renders.
 // Anyone else keeps working in their current org.
-export async function resolveFirstRunOrg(): Promise<TOrg> {
+export async function resolveFirstRunOrg({ user }: { user: IUser | null }): Promise<TOrg> {
   const orgs = await getOrgs({ limit: 50 })
   let org: TOrg | undefined
   if (orgs?.length) {
     const session = getOrgSession()
     org = orgs.find((o) => o.id === session) ?? orgs[0]
   } else {
-    org = await createTrialOrg()
+    try {
+      org = await createTrialOrg()
+    } catch (error) {
+      trackEvent({
+        event: 'org_create',
+        status: 'error',
+        user,
+        props: { source: 'onboarding', err: (error as TAPIError)?.error },
+      })
+      throw error
+    }
+    // The org's super property is not registered until OrgProvider mounts.
+    trackEvent({ event: 'org_create', status: 'ok', user, props: { orgId: org.id, source: 'onboarding' } })
   }
   setOrgSession(org.id as string)
   return org

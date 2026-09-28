@@ -8,7 +8,9 @@ import { CodeBlock } from '@/components/common/CodeBlock'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
+import { useAuth } from '@/hooks/use-auth'
 import { useFirstRun } from '@/hooks/use-first-run'
+import { trackEvent } from '@/lib/posthog-analytics'
 import { openSupportChat } from '@/lib/pylon-chat'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 import { cn } from '@/utils/classnames'
@@ -259,10 +261,6 @@ const Footnotes = ({
         <span aria-hidden>·</span>
         {panel('manual', 'Manual steps')}
         <span aria-hidden>·</span>
-        <button type="button" onClick={() => openSupportChat(CONTACT_MESSAGE)} className={FOOTNOTE_LINK}>
-          Get help
-        </button>
-        <span aria-hidden>·</span>
         <button type="button" onClick={onExampleExit} className={FOOTNOTE_LINK}>
           Use the example app instead
         </button>
@@ -304,7 +302,15 @@ const Footnotes = ({
 }
 
 // The agent path is the card. The prompt is the one thing to act on.
-const AgentSetup = ({ prompt, promptFailed }: { prompt?: string; promptFailed: boolean }) => {
+const AgentSetup = ({
+  prompt,
+  promptFailed,
+  onCopyPrompt,
+}: {
+  prompt?: string
+  promptFailed: boolean
+  onCopyPrompt?: () => void
+}) => {
   const [head, ...rest] = (prompt ?? '').split(' ')
   return (
     <div className="flex flex-col gap-4">
@@ -343,6 +349,7 @@ const AgentSetup = ({ prompt, promptFailed }: { prompt?: string; promptFailed: b
             variant="primary"
             disabled={!prompt}
             disabledReason={promptFailed ? 'Cannot copy the prompt: it did not load' : 'Loading the prompt'}
+            onCopy={onCopyPrompt}
           />
           <Button variant="secondary" size="lg" href={PROMPT_URL} target="_blank" rel="noreferrer">
             See full prompt <Icon variant="ArrowSquareOutIcon" size={14} />
@@ -366,6 +373,8 @@ export interface IConnectStepView {
   onContinueAnyway: () => void
   onKeepWaiting: () => void
   onExampleExit: () => void
+  onGetHelp: () => void
+  onCopyPrompt?: () => void
   onBack?: () => void
 }
 
@@ -382,11 +391,13 @@ export const ConnectStepView = ({
   onContinueAnyway,
   onKeepWaiting,
   onExampleExit,
+  onGetHelp,
+  onCopyPrompt,
   onBack,
 }: IConnectStepView) => (
   <div className="flex flex-col gap-6">
     <Card className="!gap-10 !p-5 !border-0 !shadow-none bg-primary-50 dark:bg-primary-950/40 ring-1 ring-primary-200 dark:ring-primary-800">
-      <AgentSetup prompt={prompt} promptFailed={promptFailed} />
+      <AgentSetup prompt={prompt} promptFailed={promptFailed} onCopyPrompt={onCopyPrompt} />
       <PushListener detected={detected} sha={sha} cloud={cloud} />
     </Card>
     <Footnotes appName={appName} repo={repo} cloud={cloud} onExampleExit={onExampleExit} />
@@ -411,7 +422,17 @@ export const ConnectStepView = ({
         </div>
       </Banner>
     ) : null}
-    <NextButton label="Set up your first install" onClick={onContinue} onBack={onBack} />
+    <NextButton
+      label="Set up your first install"
+      onClick={onContinue}
+      onBack={onBack}
+      size="lg"
+      secondary={
+        <Button variant="secondary" size="lg" onClick={onGetHelp}>
+          <Icon variant="ChatCircleIcon" size={16} /> Get help
+        </Button>
+      }
+    />
   </div>
 )
 
@@ -419,6 +440,7 @@ const readString = (value: unknown) => (typeof value === 'string' ? value : '')
 
 export const ConnectStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
   const { orgId, journey, choosePath } = useFirstRun()
+  const { user } = useAuth()
   const appName = readString(sharedData.app_name)
   const repo = readString(sharedData.repo)
   const appId = readString(sharedData.app_id)
@@ -477,6 +499,13 @@ export const ConnectStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: 
       onContinueAnyway={advance}
       onKeepWaiting={() => setConfirmSkip(false)}
       onExampleExit={exitToExample}
+      onGetHelp={() => {
+        openSupportChat(CONTACT_MESSAGE)
+        trackEvent({ event: 'support_chat_open', status: 'ok', user, props: { source: 'onboarding_connect' } })
+      }}
+      onCopyPrompt={() =>
+        trackEvent({ event: 'agent_prompt_copy', status: 'ok', user, props: { appId } })
+      }
       onBack={onGoBack}
     />
   )

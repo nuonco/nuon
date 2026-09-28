@@ -4,7 +4,9 @@ import { Banner } from '@/components/common/Banner'
 import { Card } from '@/components/common/Card'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { useAuth } from '@/hooks/use-auth'
 import { useFirstRun } from '@/hooks/use-first-run'
+import { trackEvent } from '@/lib/posthog-analytics'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 import type { TAPIError } from '@/types'
 import { cn } from '@/utils/classnames'
@@ -205,6 +207,7 @@ const readString = (value: unknown) => (typeof value === 'string' ? value : '')
 
 export const ProvisionStep = ({ sharedData, onGoBack }: IWizardStepComponentProps) => {
   const { orgId, journey } = useFirstRun()
+  const { user } = useAuth()
   const cloud: TCloud = isCloud(sharedData.cloud) ? sharedData.cloud : 'aws'
   const installId = readString(sharedData.install_id)
   const workflowId = readString(sharedData.workflow_id)
@@ -218,12 +221,24 @@ export const ProvisionStep = ({ sharedData, onGoBack }: IWizardStepComponentProp
     setError(undefined)
     try {
       await journey.complete()
+      trackEvent({
+        event: 'onboarding_complete',
+        status: 'ok',
+        user,
+        props: { installId, path: sharedData.path, cloud },
+      })
       window.location.assign(
         workflowId
           ? `/${orgId}/installs/${installId}/history/${workflowId}`
           : `/${orgId}/installs/${installId}/history`
       )
     } catch (err) {
+      trackEvent({
+        event: 'onboarding_complete',
+        status: 'error',
+        user,
+        props: { installId, err: (err as TAPIError)?.error },
+      })
       setError((err as TAPIError)?.description || 'Unable to finish onboarding.')
       setFinishing(false)
     }

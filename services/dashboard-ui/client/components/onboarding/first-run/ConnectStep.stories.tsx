@@ -24,6 +24,7 @@ const Harness = (overrides: Partial<IConnectStepView>) => {
         onContinueAnyway={() => {}}
         onKeepWaiting={() => setConfirmSkip(false)}
         onExampleExit={() => {}}
+        onGetHelp={() => {}}
         onBack={() => {}}
         {...overrides}
         confirmSkip={confirmSkip}

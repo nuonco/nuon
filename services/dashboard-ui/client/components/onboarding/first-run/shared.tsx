@@ -15,6 +15,8 @@ export const NextButton = ({
   onClick,
   onBack,
   showNext = true,
+  secondary,
+  size = 'md',
 }: {
   label?: string
   disabled?: boolean
@@ -23,25 +25,32 @@ export const NextButton = ({
   onClick?: () => void
   onBack?: () => void
   showNext?: boolean
+  // Rendered beside the primary, e.g. a way to get help.
+  secondary?: ReactNode
+  size?: 'md' | 'lg'
 }) => (
-  <div className={cn('flex gap-3', onBack ? 'justify-between' : 'justify-end')}>
+  <div className={cn('flex flex-wrap gap-3', onBack ? 'justify-between' : 'justify-end')}>
     {onBack ? (
-      <Button variant="secondary" onClick={onBack}>
+      <Button variant="secondary" size={size} onClick={onBack}>
         <Icon variant="CaretLeftIcon" weight="bold" /> Back
       </Button>
     ) : null}
-    {showNext ? (
-      <Button
-        variant="primary"
-        disabled={disabled || loading}
-        onClick={onClick}
-        tooltipProps={disabled && disabledReason ? { tipContent: disabledReason } : undefined}
-      >
-        {loading ? <Icon variant="Loading" size={16} /> : null}
-        {label ?? 'Continue'}
-        {loading ? null : <Icon variant="CaretRightIcon" weight="bold" />}
-      </Button>
-    ) : null}
+    <div className="flex flex-wrap items-center gap-3">
+      {secondary}
+      {showNext ? (
+        <Button
+          variant="primary"
+          size={size}
+          disabled={disabled || loading}
+          onClick={onClick}
+          tooltipProps={disabled && disabledReason ? { tipContent: disabledReason } : undefined}
+        >
+          {loading ? <Icon variant="Loading" size={16} /> : null}
+          {label ?? 'Continue'}
+          {loading ? null : <Icon variant="CaretRightIcon" weight="bold" />}
+        </Button>
+      ) : null}
+    </div>
   </div>
 )
 
@@ -52,6 +61,7 @@ export const CopyTextButton = ({
   variant = 'secondary',
   disabled,
   disabledReason,
+  onCopy,
 }: {
   text: string
   label: string
@@ -59,6 +69,7 @@ export const CopyTextButton = ({
   variant?: 'primary' | 'secondary'
   disabled?: boolean
   disabledReason?: string
+  onCopy?: () => void
 }) => {
   const [copied, setCopied] = useState(false)
 
@@ -78,6 +89,7 @@ export const CopyTextButton = ({
       onClick={() => {
         navigator.clipboard?.writeText(text).catch(() => {})
         setCopied(true)
+        onCopy?.()
       }}
     >
       <Icon variant={copied ? 'CheckIcon' : 'CopyIcon'} size={14} />

@@ -14,10 +14,12 @@ import {
   type TCloud,
   type TPath,
 } from '@/components/onboarding/first-run'
+import { useAuth } from '@/hooks/use-auth'
 import {
   useFirstRunJourney,
   type TFirstRunStep,
 } from '@/hooks/use-first-run-journey'
+import { trackEvent } from '@/lib/posthog-analytics'
 import {
   FirstRunProvider,
   type IFirstRunContext,
@@ -49,10 +51,11 @@ export function Onboarding() {
   // The journey comes first: see ensureFirstRunJourney for why it has to exist
   // before the org does.
   const journey = useFirstRunJourney()
+  const { user } = useAuth()
 
   const orgQuery = useQuery({
     queryKey: ['first-run-org'],
-    queryFn: resolveFirstRunOrg,
+    queryFn: () => resolveFirstRunOrg({ user }),
     enabled: journey.isReady,
     ...ONCE,
   })
@@ -94,12 +97,32 @@ export function Onboarding() {
     async (stepId: string) => {
       try {
         await journey.skip(stepId as TFirstRunStep)
+        trackEvent({ event: 'onboarding_skip', status: 'ok', user, props: { step: stepId } })
+      } catch (err) {
+        trackEvent({
+          event: 'onboarding_skip',
+          status: 'error',
+          user,
+          props: { step: stepId, err: (err as TAPIError)?.error },
+        })
       } finally {
         window.location.assign(`/${orgId}`)
       }
     },
-    [journey, orgId]
+    [journey, orgId, user]
   )
+
+  // The GitHub App callback lands here with the outcome in the URL.
+  useEffect(() => {
+    if (!orgId || (!params.vcsConnectionId && !params.vcsError)) return
+    trackEvent({
+      event: 'vcs_connection_create',
+      status: params.vcsError ? 'error' : 'ok',
+      user,
+      props: { connectionId: params.vcsConnectionId, source: 'onboarding' },
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orgId])
 
   const error = (orgQuery.error ??
     journey.error ??

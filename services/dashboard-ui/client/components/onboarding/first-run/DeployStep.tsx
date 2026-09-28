@@ -7,7 +7,9 @@ import { Icon } from '@/components/common/Icon'
 import { Select } from '@/components/common/form/Select'
 import { Toggle } from '@/components/common/form/Toggle'
 import { Text } from '@/components/common/Text'
+import { useAuth } from '@/hooks/use-auth'
 import { useFirstRun } from '@/hooks/use-first-run'
+import { trackEvent } from '@/lib/posthog-analytics'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 import type { TAPIError } from '@/types'
 import {
@@ -231,6 +233,7 @@ const readString = (value: unknown) => (typeof value === 'string' ? value : '')
 
 export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
   const { orgId, journey } = useFirstRun()
+  const { user } = useAuth()
   const path: TPath = sharedData.path === 'own' ? 'own' : 'example'
   const cloud: TCloud = isCloud(sharedData.cloud) ? sharedData.cloud : 'aws'
   const appName = readString(sharedData.app_name) || KITCHEN_SINK_APP
@@ -278,6 +281,12 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
         const config = await getAppConfigWithInputs({ orgId, appId, appConfigId: activeConfig.id! })
         const { inputs, missing } = defaultInputs(config)
         if (missing.length) {
+          trackEvent({
+            event: 'install_create',
+            status: 'error',
+            user,
+            props: { appId, path, cloud, source: 'onboarding', err: 'missing_input_defaults' },
+          })
           setMissingInputs(missing)
           setPhase('idle')
           return
@@ -297,10 +306,22 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
           install_id: install.id as string,
           workflow_id: (install as { workflow_id?: string }).workflow_id ?? '',
         }
+        trackEvent({
+          event: 'install_create',
+          status: 'ok',
+          user,
+          props: { appId, installId: saved.install_id, path, cloud, source: 'onboarding' },
+        })
         await journey.saveStep('deploy', saved, { complete: true })
         Object.entries(saved).forEach(([key, value]) => setSharedData(key, value))
         onAdvance()
       } catch (err) {
+        trackEvent({
+          event: 'install_create',
+          status: 'error',
+          user,
+          props: { appId, path, cloud, source: 'onboarding', err: (err as TAPIError)?.error },
+        })
         setError((err as TAPIError)?.description || 'Unable to create the install.')
         setPhase('idle')
       } finally {
@@ -308,7 +329,7 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
       }
     }
     run()
-  }, [phase, activeConfig, orgId, appId, appName, branchId, cloud, region, autoApprove, journey, setSharedData, onAdvance])
+  }, [phase, activeConfig, orgId, appId, appName, branchId, cloud, region, autoApprove, journey, setSharedData, onAdvance, path, user])
 
   const onCreate = () => {
     if (installId) {

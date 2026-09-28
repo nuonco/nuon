@@ -4,6 +4,8 @@ import { useNotifications } from '@/hooks/use-notifications'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { resetFirstRunJourney } from '@/hooks/use-first-run-journey'
+import { trackEvent } from '@/lib/posthog-analytics'
+import type { TAPIError } from '@/types'
 import { UserDropdown, type IUserDropdown } from './UserDropdown'
 
 type IUserDropdownContainerProps = Omit<
@@ -39,6 +41,9 @@ export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
   const reopenOnboarding = async () => {
     try {
       await resetFirstRunJourney()
+      trackEvent({ event: 'onboarding_reopen', status: 'ok', user, props: {} })
+    } catch (err) {
+      trackEvent({ event: 'onboarding_reopen', status: 'error', user, props: { err: (err as TAPIError)?.error } })
     } finally {
       window.location.assign('/onboarding?reopen=1')
     }
