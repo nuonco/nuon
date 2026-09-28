@@ -6,6 +6,7 @@ import { getAppInstalls } from '@/lib'
 import type { TInstall, TInstallWorkflowStep } from '@/types'
 import { DeployGroupStep } from './DeployGroupStep'
 import type { IInstallDeployRow } from './InstallDeployRow'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 interface IDeployGroupStepContainer {
   step: TInstallWorkflowStep
@@ -16,6 +17,7 @@ export const DeployGroupStepContainer = ({
   step,
   metadata,
 }: IDeployGroupStepContainer) => {
+  const installLink = useInstallLink()
   const { org } = useOrg()
   const { app } = useApp()
 
@@ -57,11 +59,11 @@ export const DeployGroupStepContainer = ({
     deployStatus: entry.status,
     installHref:
       org?.id && entry.install_id
-        ? `/${org.id}/installs/${entry.install_id}`
+        ? installLink({ orgId: org.id, installId: entry.install_id })
         : undefined,
     workflowHref:
       org?.id && entry.install_id && entry.workflow_id
-        ? `/${org.id}/installs/${entry.install_id}/workflows/${entry.workflow_id}`
+        ? installLink({ orgId: org.id, installId: entry.install_id, suffix: `/workflows/${entry.workflow_id}` })
         : undefined,
   }))
 

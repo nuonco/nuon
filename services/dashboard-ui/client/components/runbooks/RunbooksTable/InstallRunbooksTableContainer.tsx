@@ -2,6 +2,7 @@ import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { SyncedFilterContainer } from '@/components/common/SyncedFilter'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import { useSyncedOnlyFilter } from '@/hooks/use-synced-only-filter'
 import { getInstallRunbooks } from '@/lib'
@@ -20,6 +21,13 @@ export const InstallRunbooksTableContainer = ({
   const [searchParams] = useSearchParams()
   const { org } = useOrg()
   const { install, labelColors } = useInstall()
+  const installLink = useInstallLink()
+  const to = (suffix: string) =>
+    installLink({
+      installId: install?.id,
+      appId: install?.app_id,
+      suffix,
+    })
   const offset = Number(searchParams.get('offset') ?? 0)
   const q = searchParams.get('q') || undefined
   const { syncedOnly } = useSyncedOnlyFilter()
@@ -63,13 +71,16 @@ export const InstallRunbooksTableContainer = ({
     org?.id ?? '',
     install?.id ?? '',
     labelColors,
-    true
+    true,
+    to
   )
   const currentRows = parseInstallRunbooksToTableData(
     result?.data ?? [],
     org?.id ?? '',
     install?.id ?? '',
-    labelColors
+    labelColors,
+    false,
+    to
   )
 
   return (

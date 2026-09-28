@@ -11,6 +11,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type { TDeploy } from '@/types'
 import { cn } from '@/utils/classnames'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 interface IInstallComponentDeploySwitcher
   extends Omit<IDropdown, 'children' | 'id' | 'buttonText'> {
@@ -40,6 +41,7 @@ export const InstallComponentDeploySwitcher = ({
   scrollRef,
   ...props
 }: IInstallComponentDeploySwitcher) => {
+  const installLink = useInstallLink()
   const [searchTerm, setSearchTerm] = useState('')
 
   const filteredDeploys = deploys
@@ -84,7 +86,7 @@ export const InstallComponentDeploySwitcher = ({
                       '!bg-primary-600/5 dark:!bg-primary-600/5':
                         deploy?.id === deployId,
                     })}
-                    href={`/${orgId}/installs/${installId}/components/${componentId}/deploys/${deploy?.id}`}
+                    href={installLink({ orgId: orgId, installId: installId, suffix: `/components/${componentId}/deploys/${deploy?.id}` })}
                     variant="ghost"
                   >
                     <DeploySummary deploy={deploy} isLatest={idx === 0} />

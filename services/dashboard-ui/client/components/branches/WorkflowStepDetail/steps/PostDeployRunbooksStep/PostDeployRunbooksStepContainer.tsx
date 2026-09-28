@@ -6,6 +6,7 @@ import { getAppInstalls } from '@/lib'
 import type { TInstall, TInstallWorkflowStep } from '@/types'
 import { PostDeployRunbooksStep } from './PostDeployRunbooksStep'
 import type { IInstallRunbooksRow } from './InstallRunbooksRow'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 interface IPostDeployRunbooksStepContainer {
   step: TInstallWorkflowStep
@@ -16,6 +17,7 @@ export const PostDeployRunbooksStepContainer = ({
   step,
   metadata,
 }: IPostDeployRunbooksStepContainer) => {
+  const installLink = useInstallLink()
   const { org } = useOrg()
   const { app } = useApp()
 
@@ -46,7 +48,7 @@ export const PostDeployRunbooksStepContainer = ({
       install: installsById[entry.install_id],
       installHref:
         org?.id && entry.install_id
-          ? `/${org.id}/installs/${entry.install_id}`
+          ? installLink({ orgId: org.id, installId: entry.install_id })
           : undefined,
       runbooks: ((entry.runbooks as any[]) || []).map((runbook: any) => ({
         runbookId: runbook.runbook_id,
@@ -54,7 +56,7 @@ export const PostDeployRunbooksStepContainer = ({
         status: runbook.status,
         workflowHref:
           org?.id && entry.install_id && runbook.workflow_id
-            ? `/${org.id}/installs/${entry.install_id}/workflows/${runbook.workflow_id}`
+            ? installLink({ orgId: org.id, installId: entry.install_id, suffix: `/workflows/${runbook.workflow_id}` })
             : undefined,
       })),
     }))

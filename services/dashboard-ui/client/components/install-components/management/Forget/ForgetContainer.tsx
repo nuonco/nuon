@@ -7,6 +7,7 @@ import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useAuth } from '@/hooks/use-auth'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
@@ -40,6 +41,7 @@ export const ForgetComponentModalContainer = ({
   const { removeModal } = useSurfaces()
   const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
   const { addToast } = useToast()
 
   const { mutate: execute, isPending: isLoading, error } = useMutation({
@@ -66,7 +68,7 @@ export const ForgetComponentModalContainer = ({
         </Toast>
       )
       removeModal(props.modalId)
-      navigate(`/${org.id}/installs/${install.id}/components`)
+      navigate(installLink({ installId: install.id, appId: install.app_id, suffix: `/components` }))
     },
     onError: (err: any) => {
       trackEvent({

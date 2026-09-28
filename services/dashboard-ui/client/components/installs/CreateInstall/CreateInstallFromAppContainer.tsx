@@ -46,6 +46,7 @@ import {
   type ICreateFormTriggerState,
 } from './CreateInstallFormFields'
 import { FormSkeleton } from './FormSkeleton'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 export type CreateInstallPhase = 'select-branch' | 'form' | 'pick-group'
 
@@ -94,6 +95,7 @@ export const CreateInstallFromAppContainer = ({
   onStateChange,
   modalId,
 }: ICreateInstallFromAppContainer) => {
+  const installLink = useInstallLink()
   const { org } = useOrg()
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -263,8 +265,18 @@ export const CreateInstallFromAppContainer = ({
       const workflowId = result.data.workflow_id
       navigate(
         workflowId
-          ? `/${org?.id}/installs/${result.data.id}/workflows/${workflowId}${suffix}`
-          : `/${org?.id}/installs/${result.data.id}/workflows${suffix}`
+          ? installLink({
+              orgId: org?.id,
+              appId: app.id,
+              installId: result.data.id,
+              suffix: `/workflows/${workflowId}${suffix}`,
+            })
+          : installLink({
+              orgId: org?.id,
+              appId: app.id,
+              installId: result.data.id,
+              suffix: `/workflows${suffix}`,
+            })
       )
     },
     onError: (err: any) => {

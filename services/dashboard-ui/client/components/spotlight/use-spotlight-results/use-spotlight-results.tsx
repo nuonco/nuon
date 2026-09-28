@@ -30,6 +30,7 @@ import {
 } from '../ComponentCommandModals'
 import { SpotlightRunActionModal } from '../ActionCommandModals'
 import { RestartRunnerModalContainer as RestartRunnerModal } from '../RestartRunnerModal'
+import { useInstallLink } from '@/hooks/use-install-path'
 import {
   type SpotlightResult,
   type ParsedQuery,
@@ -48,6 +49,7 @@ export function useSpotlightResults(
   hasAppBranches = false,
   addModal?: (modal: React.ReactElement) => string
 ) {
+  const installLink = useInstallLink()
   const navigate = useNavigate()
 
   const appSubPages = useMemo(
@@ -417,7 +419,7 @@ export function useSpotlightResults(
             subtitle: install.app?.name,
             tag: 'command',
             icon: 'GearIcon',
-            action: () => navigate(`/${orgId}/installs/${installId}?panel=settings`),
+            action: () => navigate(installLink({ orgId: orgId, installId: installId, suffix: `?panel=settings` })),
           },
           {
             label: `${name} › Sync secrets`,
