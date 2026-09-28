@@ -24,7 +24,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	if installsConfig.VCSConfigID == "" {
-		return fmt.Errorf("no VCS config found for app installs config %s — ensure VCS config is created with the installs config", installsConfig.ID)
+		s.updateStepMetadata(ctx, map[string]any{"description": "no vcs config found"})
+		logger.Info("no vcs config found for app installs config, skipping", "installs_config_id", installsConfig.ID)
+		return nil
 	}
 
 	vcsConnectionID := ""
