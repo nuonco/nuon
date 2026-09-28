@@ -63,9 +63,15 @@ func TestGetDefaultRunnerDeployment_VMSizeDefaultsToPlatformDefault(t *testing.T
 	inp := minimalTemplateInput()
 	inp.Settings.AWSInstanceType = "t3.medium"
 
-	dep := tmpl.getDefaultRunnerDeployment(inp, nil, armScope{})
-	if got := runnerVMSSSKUName(t, dep); got != app.DefaultAzureInstanceType {
-		t.Errorf("expected sku %q, got %q", app.DefaultAzureInstanceType, got)
+	dep, params, err := tmpl.getRunnerLinkedDeployment(inp, nil, armScope{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got := runnerVMSSSKUName(t, dep); got != "[parameters('runnerVmSize')]" {
+		t.Errorf("sku name = %q", got)
+	}
+	if got := params["runnerVmSize"].DefaultValue; got != app.DefaultAzureInstanceType {
+		t.Errorf("runnerVmSize default = %v, want %q", got, app.DefaultAzureInstanceType)
 	}
 }
 
@@ -74,9 +80,12 @@ func TestGetDefaultRunnerDeployment_VMSizeFromRunnerConfig(t *testing.T) {
 	inp := minimalTemplateInput()
 	inp.ConfiguredRunnerInstanceType = "Standard_D4s_v3"
 
-	dep := tmpl.getDefaultRunnerDeployment(inp, nil, armScope{})
-	if got := runnerVMSSSKUName(t, dep); got != "Standard_D4s_v3" {
-		t.Errorf("expected sku Standard_D4s_v3, got %q", got)
+	_, params, err := tmpl.getRunnerLinkedDeployment(inp, nil, armScope{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got := params["runnerVmSize"].DefaultValue; got != "Standard_D4s_v3" {
+		t.Errorf("runnerVmSize default = %v, want Standard_D4s_v3", got)
 	}
 }
 
@@ -92,7 +101,7 @@ func TestGetRunnerLinkedDeployment_CustomTemplateReceivesVMSize(t *testing.T) {
 	}
 	params := dep["properties"].(map[string]any)["parameters"].(map[string]any)
 	got := params["runnerVmSize"].(map[string]any)["value"]
-	if got != "Standard_D4s_v3" {
-		t.Errorf("expected runnerVmSize Standard_D4s_v3, got %v", got)
+	if got != "[parameters('runnerVmSize')]" {
+		t.Errorf("runnerVmSize = %v, want the hoisted parameter", got)
 	}
 }
