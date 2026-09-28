@@ -85,11 +85,12 @@ type AppInstallStackVersion struct {
 	// phone home url
 	PhoneHomeURL string `json:"phone_home_url,omitempty"`
 
-	// QuickLinkBucketKey and QuickLinkUIDefBucketKey held the wrapper template and
-	// createUiDefinition that an earlier Azure quick link pointed at, so that the
-	// portal created a deployment stack rather than a plain deployment. Nothing
-	// writes them now: the quick link addresses the stack template directly on both
-	// platforms. Rows created while the wrapper shipped still carry their keys.
+	// QuickLinkBucketKey held the wrapper template an earlier Azure quick link
+	// pointed at. Nothing writes it now. QuickLinkUIDefBucketKey is the
+	// createUiDefinition uploaded for an Azure subscription-scoped quick link and
+	// appended as createUIDefinitionUri, so the portal pins the install's
+	// subscription and region. Rows created while the wrapper shipped still carry
+	// QuickLinkBucketKey.
 	QuickLinkBucketKey string `json:"quick_link_bucket_key,omitempty"`
 
 	// quick link ui def bucket key

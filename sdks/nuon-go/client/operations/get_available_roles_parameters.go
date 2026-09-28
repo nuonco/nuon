@@ -75,7 +75,7 @@ type GetAvailableRolesParams struct {
 
 	/* PrincipalID.
 
-	   principal ID: component ID or action workflow ID (required for component and action)
+	   component ID (required for component) or action workflow ID (omit for adhoc actions)
 	*/
 	PrincipalID *string
 
@@ -84,6 +84,12 @@ type GetAvailableRolesParams struct {
 	   principal type: component, sandbox, action
 	*/
 	PrincipalType *string
+
+	/* WorkflowType.
+
+	   parent workflow type used to preview the default role
+	*/
+	WorkflowType *string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -182,6 +188,17 @@ func (o *GetAvailableRolesParams) SetPrincipalType(principalType *string) {
 	o.PrincipalType = principalType
 }
 
+// WithWorkflowType adds the workflowType to the get available roles params
+func (o *GetAvailableRolesParams) WithWorkflowType(workflowType *string) *GetAvailableRolesParams {
+	o.SetWorkflowType(workflowType)
+	return o
+}
+
+// SetWorkflowType adds the workflowType to the get available roles params
+func (o *GetAvailableRolesParams) SetWorkflowType(workflowType *string) {
+	o.WorkflowType = workflowType
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetAvailableRolesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -241,6 +258,23 @@ func (o *GetAvailableRolesParams) WriteToRequest(r runtime.ClientRequest, reg st
 		if qPrincipalType != "" {
 
 			if err := r.SetQueryParam("principal_type", qPrincipalType); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.WorkflowType != nil {
+
+		// query param workflow_type
+		var qrWorkflowType string
+
+		if o.WorkflowType != nil {
+			qrWorkflowType = *o.WorkflowType
+		}
+		qWorkflowType := qrWorkflowType
+		if qWorkflowType != "" {
+
+			if err := r.SetQueryParam("workflow_type", qWorkflowType); err != nil {
 				return err
 			}
 		}

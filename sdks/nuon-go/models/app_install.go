@@ -29,6 +29,9 @@ type AppInstall struct {
 	// app branch group
 	AppBranchGroup string `json:"app_branch_group,omitempty"`
 
+	// app branch group assignment source
+	AppBranchGroupAssignmentSource AppInstallAppBranchGroupAssignmentSource `json:"app_branch_group_assignment_source,omitempty"`
+
 	// app branch id
 	AppBranchID string `json:"app_branch_id,omitempty"`
 
@@ -245,6 +248,10 @@ func (m *AppInstall) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateAppBranchGroupAssignmentSource(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateAppConfigRef(formats); err != nil {
 		res = append(res, err)
 	}
@@ -391,6 +398,27 @@ func (m *AppInstall) validateAppBranchConnections(formats strfmt.Registry) error
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *AppInstall) validateAppBranchGroupAssignmentSource(formats strfmt.Registry) error {
+	if swag.IsZero(m.AppBranchGroupAssignmentSource) { // not required
+		return nil
+	}
+
+	if err := m.AppBranchGroupAssignmentSource.Validate(formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("app_branch_group_assignment_source")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("app_branch_group_assignment_source")
+		}
+
+		return err
 	}
 
 	return nil
@@ -992,6 +1020,10 @@ func (m *AppInstall) ContextValidate(ctx context.Context, formats strfmt.Registr
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateAppBranchGroupAssignmentSource(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateAppConfigRef(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -1139,6 +1171,28 @@ func (m *AppInstall) contextValidateAppBranchConnections(ctx context.Context, fo
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *AppInstall) contextValidateAppBranchGroupAssignmentSource(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.AppBranchGroupAssignmentSource) { // not required
+		return nil
+	}
+
+	if err := m.AppBranchGroupAssignmentSource.ContextValidate(ctx, formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("app_branch_group_assignment_source")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("app_branch_group_assignment_source")
+		}
+
+		return err
 	}
 
 	return nil
