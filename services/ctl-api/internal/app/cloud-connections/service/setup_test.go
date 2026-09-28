@@ -45,6 +45,7 @@ func TestAWSSetup(t *testing.T) {
 			if test.preset == app.CloudConnectionPresetStacks {
 				assert.Contains(t, string(policy), "cloudformation:DescribeStacks")
 				assert.Contains(t, string(policy), "cloudformation:ListStacks")
+				assert.Contains(t, string(policy), "ssm:GetParameters")
 			} else {
 				assert.Nil(t, got.PermissionsPolicy)
 			}
