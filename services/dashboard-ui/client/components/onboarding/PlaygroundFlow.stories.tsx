@@ -4,6 +4,7 @@ export default {
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
+import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { CodeBlock } from '@/components/common/CodeBlock'
@@ -810,6 +811,7 @@ const contactUs = () => {
 const DOCS_MCP = 'https://docs.nuon.co/guides/agents/mcp-walkthrough'
 // Placeholder until the marketing site hosts the prompt as its own text file.
 const PROMPT_TXT_URL = 'https://nuon.co/llms.txt'
+const DOCS_APPS = 'https://docs.nuon.co/concepts/apps'
 const DOCS_RUNNERS = 'https://docs.nuon.co/concepts/runners'
 const DOCS_SANDBOXES = 'https://docs.nuon.co/concepts/sandboxes'
 const CLI_SETUP = 'brew install nuonco/tap/nuon\nnuon login'
@@ -1499,6 +1501,9 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
   // The connected account from Set up, and a repo named after the app.
   const repo = `jane-doe/${appName}`
   const detected = pushTick > 0
+  // Continuing before the push is allowed; the first click states the cost instead of advancing.
+  const [confirmSkip, setConfirmSkip] = useState(false)
+  const tryAdvance = () => (detected || confirmSkip ? onAdvance() : setConfirmSkip(true))
 
   // Back to the fork, collapsed, with the example path selected.
   const exitToExample = () => {
@@ -1517,7 +1522,33 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
         <PushListener detected={detected} cloud={cloud} />
       </Card>
       <Footnotes appName={appName} repo={repo} cloud={cloud} onExampleExit={exitToExample} />
-      <NextButton label="Set up your first install" onClick={onAdvance} onBack={onGoBack} />
+      {confirmSkip && !detected ? (
+        <Banner theme="warn">
+          <div className="flex flex-col gap-2">
+            <Text weight="strong">Nuon does not have your app config yet</Text>
+            <Text variant="subtext">
+              If you continue now, you would only deploy Nuon infrastructure that your BYOC install runs on:{' '}
+              <Link href={DOCS_RUNNERS} isExternal textVariant="subtext" className="!inline-flex align-baseline">
+                Nuon Runner
+              </Link>{' '}
+              and{' '}
+              <Link href={DOCS_SANDBOXES} isExternal textVariant="subtext" className="!inline-flex align-baseline">
+                Nuon Sandbox
+              </Link>
+              . This means you&apos;ll do a separate deploy of your app afterward.
+            </Text>
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <Button variant="secondary" size="sm" onClick={onAdvance}>
+                Continue anyway
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setConfirmSkip(false)}>
+                Keep waiting
+              </Button>
+            </div>
+          </div>
+        </Banner>
+      ) : null}
+      <NextButton label="Set up your first install" onClick={tryAdvance} onBack={onGoBack} />
     </div>
   )
 }
@@ -1661,7 +1692,7 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
 
 
       {expanded ? (
-        <NextButton label="Connect your app" onClick={tryContinue} onBack={backToIntro} />
+        <NextButton label="Next" onClick={tryContinue} onBack={backToIntro} />
       ) : (
         <NextButton onBack={backToIntro} showNext={false} />
       )}
@@ -2355,9 +2386,16 @@ const FORK_STEP: IWizardStepDef = {
 
 const TEMPLATE_STEP: IWizardStepDef = {
   id: 'own-template',
-  title: 'Connect your app',
+  title: 'Fill in your app template',
   navLabel: 'Connect',
-  description: "This config is how Nuon installs and upgrades your app in every customer's cloud.",
+  description: (
+    <>
+      <Link href={DOCS_APPS} isExternal textVariant="body" className="!inline-flex align-baseline">
+        App configs
+      </Link>{' '}
+      are how Nuon installs and upgrades your app in every customer&apos;s cloud.
+    </>
+  ),
   component: TemplateStep,
 }
 
