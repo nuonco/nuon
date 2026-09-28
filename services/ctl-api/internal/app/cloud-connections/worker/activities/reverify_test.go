@@ -25,22 +25,33 @@ func (f fakeVerifier) Verify(ctx context.Context, c *app.CloudConnection, opts c
 
 func TestReverify(t *testing.T) {
 	for name, tc := range map[string]struct {
-		status      app.CloudConnectionStatus
-		result      app.CloudConnectionStatus
-		deleted     bool
-		wantUpdates int
-		wantSignals int
+		status            app.CloudConnectionStatus
+		result            app.CloudConnectionStatus
+		deleted           bool
+		onDemand          bool
+		previouslyChecked bool
+		wantRetry         bool
+		wantUpdates       int
+		wantSignals       int
 	}{
-		"verified succeeds": {status: app.CloudConnectionStatusVerified, result: app.CloudConnectionStatusVerified, wantUpdates: 1},
-		"verified fails":    {status: app.CloudConnectionStatusVerified, result: app.CloudConnectionStatusError, wantUpdates: 1, wantSignals: 1},
-		"pending succeeds":  {status: app.CloudConnectionStatusPending, result: app.CloudConnectionStatusVerified, wantUpdates: 1},
-		"pending fails":     {status: app.CloudConnectionStatusPending, result: app.CloudConnectionStatusError},
-		"deleted":           {deleted: true},
+		"verified succeeds":          {status: app.CloudConnectionStatusVerified, result: app.CloudConnectionStatusVerified, wantUpdates: 1},
+		"verified fails":             {status: app.CloudConnectionStatusVerified, result: app.CloudConnectionStatusError, wantUpdates: 1, wantSignals: 1},
+		"pending succeeds":           {status: app.CloudConnectionStatusPending, result: app.CloudConnectionStatusVerified, wantUpdates: 1},
+		"pending fails":              {status: app.CloudConnectionStatusPending, result: app.CloudConnectionStatusError},
+		"pending on demand succeeds": {status: app.CloudConnectionStatusPending, result: app.CloudConnectionStatusVerified, onDemand: true, wantRetry: true, wantUpdates: 1},
+		"pending on demand fails":    {status: app.CloudConnectionStatusPending, result: app.CloudConnectionStatusError, onDemand: true, wantRetry: true, wantUpdates: 1, wantSignals: 1},
+		"verified on demand fails":   {status: app.CloudConnectionStatusVerified, result: app.CloudConnectionStatusError, onDemand: true, previouslyChecked: true, wantUpdates: 1, wantSignals: 1},
+		"previous failure on demand": {status: app.CloudConnectionStatusError, result: app.CloudConnectionStatusError, onDemand: true, previouslyChecked: true, wantUpdates: 1, wantSignals: 1},
+		"deleted":                    {deleted: true},
 	} {
 		t.Run(name, func(t *testing.T) {
 			db, err := gorm.Open(postgres.New(postgres.Config{DSN: "host=localhost dbname=unused"}), &gorm.Config{DryRun: true, DisableAutomaticPing: true, SkipDefaultTransaction: true})
 			require.NoError(t, err)
 			connection := app.CloudConnection{ID: "cc_acme", OrgID: "org_acme", CreatedByID: "acct_acme", Name: "acme", Principal: "arn:aws:iam::123456789012:role/acme", Status: tc.status, Platform: app.CloudPlatformAWS}
+			if tc.previouslyChecked || tc.status == app.CloudConnectionStatusVerified {
+				checked := time.Now().Add(-time.Hour)
+				connection.LastVerifiedAt = &checked
+			}
 			require.NoError(t, db.Callback().Query().After("gorm:query").Register("load", func(tx *gorm.DB) {
 				require.Contains(t, tx.Statement.SQL.String(), `"cloud_connections"."deleted_at"`)
 				if tc.deleted {
@@ -64,7 +75,7 @@ func TestReverify(t *testing.T) {
 			a := &Activities{db: db, l: zap.NewNop(), verifier: fakeVerifier(func(_ context.Context, c *app.CloudConnection, opts cloudconnections.VerifyOptions) (cloudconnections.VerificationResult, error) {
 				calls++
 				require.Equal(t, connection, *c)
-				require.Equal(t, cloudconnections.VerifyOptions{IdentityOnly: true, RetryIAMPropagation: false}, opts)
+				require.Equal(t, cloudconnections.VerifyOptions{IdentityOnly: !tc.onDemand, RetryIAMPropagation: tc.wantRetry}, opts)
 				return cloudconnections.VerificationResult{Status: tc.result, Message: "result from AWS"}, nil
 			}), enqueueOrgSignal: func(ctx context.Context, params orgshelpers.EnqueueOrgSignalParams) error {
 				signals++
@@ -72,7 +83,7 @@ func TestReverify(t *testing.T) {
 				require.Equal(t, "result from AWS", params.Signal.(*verificationfailed.Signal).Message)
 				return nil
 			}}
-			require.NoError(t, a.Reverify(context.Background(), ReverifyRequest{CloudConnectionID: connection.ID}))
+			require.NoError(t, a.Reverify(context.Background(), ReverifyRequest{CloudConnectionID: connection.ID, OnDemand: tc.onDemand}))
 			require.Equal(t, tc.wantUpdates, updates)
 			require.Equal(t, tc.wantSignals, signals)
 			if tc.deleted {

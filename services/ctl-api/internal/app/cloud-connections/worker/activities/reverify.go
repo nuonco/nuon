@@ -18,6 +18,7 @@ import (
 
 type ReverifyRequest struct {
 	CloudConnectionID string `json:"cloud_connection_id" validate:"required"`
+	OnDemand          bool   `json:"on_demand,omitempty"`
 }
 
 // @temporal-gen-v2 activity
@@ -31,11 +32,11 @@ func (a *Activities) Reverify(ctx context.Context, req ReverifyRequest) error {
 		}
 		return err
 	}
-	result, verifyErr := a.verifier.Verify(ctx, &connection, cloudconnections.VerifyOptions{IdentityOnly: true, RetryIAMPropagation: false})
+	result, verifyErr := a.verifier.Verify(ctx, &connection, cloudconnections.VerifyOptions{IdentityOnly: !req.OnDemand, RetryIAMPropagation: req.OnDemand && connection.LastVerifiedAt == nil})
 	if verifyErr != nil {
 		result = cloudconnections.VerificationResult{Status: app.CloudConnectionStatusError, Message: cloudconnections.VerificationErrorMessage(verifyErr)}
 	}
-	if connection.Status == app.CloudConnectionStatusPending && result.Status != app.CloudConnectionStatusVerified {
+	if !req.OnDemand && connection.Status == app.CloudConnectionStatusPending && result.Status != app.CloudConnectionStatusVerified {
 		a.l.Debug("pending cloud connection is not ready", zap.String("connection_id", connection.ID), zap.String("message", result.Message))
 		return nil
 	}
@@ -57,7 +58,7 @@ func (a *Activities) Reverify(ctx context.Context, req ReverifyRequest) error {
 	if res.RowsAffected == 0 {
 		return nil
 	}
-	if connection.Status == app.CloudConnectionStatusVerified && result.Status != app.CloudConnectionStatusVerified {
+	if (req.OnDemand || connection.Status == app.CloudConnectionStatusVerified) && result.Status != app.CloudConnectionStatusVerified {
 		signalCtx := context.WithValue(ctx, keys.AccountIDCtxKey, connection.CreatedByID)
 		return a.enqueueOrgSignal(signalCtx, orgshelpers.EnqueueOrgSignalParams{
 			OrgID: connection.OrgID,

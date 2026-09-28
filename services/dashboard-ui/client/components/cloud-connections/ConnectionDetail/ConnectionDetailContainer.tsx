@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Text } from '@/components/common/Text'
 import { InstallsTable } from '@/components/installs/InstallsTable'
@@ -16,16 +17,41 @@ export const ConnectionDetailContainer = ({
   connectionId,
   tab,
   error,
+  isVerifying,
+  verificationTimedOut,
 }: {
   connection?: TCloudConnection
   orgId: string
   connectionId: string
   tab: TConnectionTab
   error?: TAPIError | null
+  isVerifying: boolean
+  verificationTimedOut: boolean
 }) => {
   const { addModal } = useSurfaces()
   const { addToast } = useToast()
   const verify = useVerifyCloudConnection(orgId, connectionId)
+  const notifiedRequest = useRef<string>()
+  useEffect(() => {
+    const requestedAt = verify.data?.verification_requested_at
+    if (
+      !requestedAt ||
+      notifiedRequest.current === requestedAt ||
+      connection?.verification_requested_at !== requestedAt ||
+      connection.verification_in_progress
+    )
+      return
+    notifiedRequest.current = requestedAt
+    const verified = connection.status === 'verified'
+    addToast(
+      <Toast
+        heading={verified ? 'Connection verified' : 'Verification failed'}
+        theme={verified ? 'success' : 'error'}
+      >
+        <Text>{connection.status_message}</Text>
+      </Toast>
+    )
+  }, [connection, verify.data, addToast])
   const setup = useQuery({
     queryKey: ['cloud-connections', orgId, connectionId, 'setup'],
     queryFn: () => getCloudConnectionSetup({ orgId, connectionId }),
@@ -39,27 +65,10 @@ export const ConnectionDetailContainer = ({
       error={error || verify.error}
       setup={setup.data}
       setupError={setup.error}
-      isVerifying={verify.isPending}
+      isVerifying={verify.isPending || isVerifying}
+      verificationTimedOut={verificationTimedOut}
       onVerify={() =>
         verify.mutate(undefined, {
-          onSuccess: (connection) => {
-            const verified = connection.status === 'verified'
-            addToast(
-              <Toast
-                heading={
-                  verified ? 'Connection verified' : 'Verification failed'
-                }
-                theme={verified ? 'success' : 'error'}
-              >
-                <Text>
-                  {connection.status_message ||
-                    (verified
-                      ? `${connection.name} is ready to use.`
-                      : `${connection.name} could not be verified.`)}
-                </Text>
-              </Toast>
-            )
-          },
           onError: (error) =>
             addToast(
               <Toast heading="Verification failed" theme="error">

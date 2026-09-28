@@ -1054,7 +1054,7 @@ type ClientService interface {
 
 	ValidateToken(params *ValidateTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateTokenOK, error)
 
-	VerifyCloudConnection(params *VerifyCloudConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*VerifyCloudConnectionOK, error)
+	VerifyCloudConnection(params *VerifyCloudConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*VerifyCloudConnectionAccepted, error)
 
 	WriteVCSEvent(params *WriteVCSEventParams, opts ...ClientOption) (*WriteVCSEventOK, error)
 
@@ -22819,7 +22819,7 @@ func (a *Client) ValidateToken(params *ValidateTokenParams, authInfo runtime.Cli
 /*
 VerifyCloudConnection verifies a cloud connection
 */
-func (a *Client) VerifyCloudConnection(params *VerifyCloudConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*VerifyCloudConnectionOK, error) {
+func (a *Client) VerifyCloudConnection(params *VerifyCloudConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*VerifyCloudConnectionAccepted, error) {
 	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewVerifyCloudConnectionParams()
@@ -22846,7 +22846,7 @@ func (a *Client) VerifyCloudConnection(params *VerifyCloudConnectionParams, auth
 	}
 
 	// only one success response has to be checked
-	success, ok := result.(*VerifyCloudConnectionOK)
+	success, ok := result.(*VerifyCloudConnectionAccepted)
 	if ok {
 		return success, nil
 	}

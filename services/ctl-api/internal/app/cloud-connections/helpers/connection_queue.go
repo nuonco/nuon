@@ -50,6 +50,18 @@ func (h *Helpers) EnsureConnectionQueue(ctx context.Context, connection *app.Clo
 	return q, err
 }
 
+func (h *Helpers) EnqueueVerification(ctx context.Context, connection *app.CloudConnection) error {
+	q, err := h.EnsureConnectionQueue(ctx, connection)
+	if err != nil {
+		return err
+	}
+	_, err = h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+		QueueID: q.ID, OwnerID: connection.ID, OwnerType: "cloud_connections",
+		Signal: &reverify.Signal{CloudConnectionID: connection.ID, OnDemand: true},
+	})
+	return err
+}
+
 func (h *Helpers) TerminateConnectionQueue(ctx context.Context, connectionID string) error {
 	var queues []app.Queue
 	if err := h.db.WithContext(ctx).Where(app.Queue{OwnerID: connectionID, OwnerType: "cloud_connections"}).Find(&queues).Error; err != nil {

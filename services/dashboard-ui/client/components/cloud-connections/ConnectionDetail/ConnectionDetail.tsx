@@ -29,6 +29,7 @@ export const ConnectionDetail = ({
   basePath,
   tab,
   isVerifying = false,
+  verificationTimedOut = false,
   onVerify,
   onDelete,
   error,
@@ -40,6 +41,7 @@ export const ConnectionDetail = ({
   basePath: string
   tab: TConnectionTab
   isVerifying?: boolean
+  verificationTimedOut?: boolean
   onVerify: () => void
   onDelete: () => void
   error?: TAPIError | null
@@ -131,6 +133,9 @@ export const ConnectionDetail = ({
     }}
   >
     <FormErrorBanner error={error} fallback="Cloud connection failed to load" />
+    {verificationTimedOut && (
+      <Banner theme="info">Still checking — refresh in a moment</Banner>
+    )}
     {connection && tab === 'overview' && (
       <div className="flex flex-col gap-6">
         <Link href={`${basePath}/setup`}>View setup runbook</Link>
@@ -176,7 +181,7 @@ export const ConnectionDetail = ({
               : connection.status_message || 'Verification has not run yet.'}
           </LabeledValue>
         </div>
-        {connection.status === 'error' && !isVerifying && (
+        {connection.status === 'error' && !isVerifying && !verificationTimedOut && (
           <Banner theme="error">
             <div className="flex flex-col items-start gap-2">
               <Text>{connection.status_message}</Text>

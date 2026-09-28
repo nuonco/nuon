@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS cloud_connections (
     status text NOT NULL DEFAULT 'pending',
     status_message text NOT NULL DEFAULT '',
     last_verified_at timestamptz,
+    verification_requested_at timestamptz,
     preset text NOT NULL CHECK (preset IN ('stacks', 'custom'))
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_cloud_connections_org_platform_principal_deleted

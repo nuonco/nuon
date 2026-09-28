@@ -14,6 +14,7 @@ export const connection: TCloudConnection = {
   created_at: '2026-09-28T07:00:00Z',
   updated_at: '2026-09-28T07:00:00Z',
   status: 'pending',
+  verification_in_progress: false,
   preset: 'stacks',
   used_by: { installs: 0 },
   setup: {

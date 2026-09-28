@@ -819,6 +819,8 @@ export type TCloudConnection = {
   status: 'pending' | 'verified' | 'error'
   status_message?: string
   last_verified_at?: string
+  verification_requested_at?: string
+  verification_in_progress: boolean
   preset: 'stacks' | 'custom'
   used_by: { installs: number }
   setup: {

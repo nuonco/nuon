@@ -114,7 +114,8 @@ export const ConnectionWizardContainer = ({
       {step === 4 && connection.data && (
         <VerifyConnection
           connection={connection.data}
-          isVerifying={verify.isPending}
+          isVerifying={verify.isPending || connection.isVerifying}
+          verificationTimedOut={connection.verificationTimedOut}
           error={verify.error}
           onVerify={() => verify.mutate()}
           setupHref={`${detailHref}/setup`}

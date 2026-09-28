@@ -25,8 +25,8 @@ type VerifyCloudConnectionReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *VerifyCloudConnectionReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (any, error) {
 	switch response.Code() {
-	case 200:
-		result := NewVerifyCloudConnectionOK()
+	case 202:
+		result := NewVerifyCloudConnectionAccepted()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
@@ -36,65 +36,65 @@ func (o *VerifyCloudConnectionReader) ReadResponse(response runtime.ClientRespon
 	}
 }
 
-// NewVerifyCloudConnectionOK creates a VerifyCloudConnectionOK with default headers values
-func NewVerifyCloudConnectionOK() *VerifyCloudConnectionOK {
-	return &VerifyCloudConnectionOK{}
+// NewVerifyCloudConnectionAccepted creates a VerifyCloudConnectionAccepted with default headers values
+func NewVerifyCloudConnectionAccepted() *VerifyCloudConnectionAccepted {
+	return &VerifyCloudConnectionAccepted{}
 }
 
 /*
-VerifyCloudConnectionOK describes a response with status code 200, with default header values.
+VerifyCloudConnectionAccepted describes a response with status code 202, with default header values.
 
-OK
+Accepted
 */
-type VerifyCloudConnectionOK struct {
+type VerifyCloudConnectionAccepted struct {
 	Payload *models.ServiceConnectionResponse
 }
 
-// IsSuccess returns true when this verify cloud connection o k response has a 2xx status code
-func (o *VerifyCloudConnectionOK) IsSuccess() bool {
+// IsSuccess returns true when this verify cloud connection accepted response has a 2xx status code
+func (o *VerifyCloudConnectionAccepted) IsSuccess() bool {
 	return true
 }
 
-// IsRedirect returns true when this verify cloud connection o k response has a 3xx status code
-func (o *VerifyCloudConnectionOK) IsRedirect() bool {
+// IsRedirect returns true when this verify cloud connection accepted response has a 3xx status code
+func (o *VerifyCloudConnectionAccepted) IsRedirect() bool {
 	return false
 }
 
-// IsClientError returns true when this verify cloud connection o k response has a 4xx status code
-func (o *VerifyCloudConnectionOK) IsClientError() bool {
+// IsClientError returns true when this verify cloud connection accepted response has a 4xx status code
+func (o *VerifyCloudConnectionAccepted) IsClientError() bool {
 	return false
 }
 
-// IsServerError returns true when this verify cloud connection o k response has a 5xx status code
-func (o *VerifyCloudConnectionOK) IsServerError() bool {
+// IsServerError returns true when this verify cloud connection accepted response has a 5xx status code
+func (o *VerifyCloudConnectionAccepted) IsServerError() bool {
 	return false
 }
 
-// IsCode returns true when this verify cloud connection o k response a status code equal to that given
-func (o *VerifyCloudConnectionOK) IsCode(code int) bool {
-	return code == 200
+// IsCode returns true when this verify cloud connection accepted response a status code equal to that given
+func (o *VerifyCloudConnectionAccepted) IsCode(code int) bool {
+	return code == 202
 }
 
-// Code gets the status code for the verify cloud connection o k response
-func (o *VerifyCloudConnectionOK) Code() int {
-	return 200
+// Code gets the status code for the verify cloud connection accepted response
+func (o *VerifyCloudConnectionAccepted) Code() int {
+	return 202
 }
 
-func (o *VerifyCloudConnectionOK) Error() string {
+func (o *VerifyCloudConnectionAccepted) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/cloud-connections/{connection_id}/verify][%d] verifyCloudConnectionOK %s", 200, payload)
+	return fmt.Sprintf("[POST /v1/cloud-connections/{connection_id}/verify][%d] verifyCloudConnectionAccepted %s", 202, payload)
 }
 
-func (o *VerifyCloudConnectionOK) String() string {
+func (o *VerifyCloudConnectionAccepted) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/cloud-connections/{connection_id}/verify][%d] verifyCloudConnectionOK %s", 200, payload)
+	return fmt.Sprintf("[POST /v1/cloud-connections/{connection_id}/verify][%d] verifyCloudConnectionAccepted %s", 202, payload)
 }
 
-func (o *VerifyCloudConnectionOK) GetPayload() *models.ServiceConnectionResponse {
+func (o *VerifyCloudConnectionAccepted) GetPayload() *models.ServiceConnectionResponse {
 	return o.Payload
 }
 
-func (o *VerifyCloudConnectionOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+func (o *VerifyCloudConnectionAccepted) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.ServiceConnectionResponse)
 

@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	stderrors "errors"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -58,6 +59,9 @@ type ServiceConnectionResponse struct {
 	// principal
 	Principal string `json:"principal,omitempty"`
 
+	// queues
+	Queues []*AppQueue `json:"queues"`
+
 	// setup
 	Setup *ServiceSetupResponse `json:"setup,omitempty"`
 
@@ -78,6 +82,12 @@ type ServiceConnectionResponse struct {
 
 	// used by
 	UsedBy *ServiceConnectionUsage `json:"used_by,omitempty"`
+
+	// verification in progress
+	VerificationInProgress bool `json:"verification_in_progress,omitempty"`
+
+	// verification requested at
+	VerificationRequestedAt string `json:"verification_requested_at,omitempty"`
 }
 
 // Validate validates this service connection response
@@ -93,6 +103,10 @@ func (m *ServiceConnectionResponse) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validatePreset(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateQueues(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -195,6 +209,36 @@ func (m *ServiceConnectionResponse) validatePreset(formats strfmt.Registry) erro
 	return nil
 }
 
+func (m *ServiceConnectionResponse) validateQueues(formats strfmt.Registry) error {
+	if swag.IsZero(m.Queues) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Queues); i++ {
+		if swag.IsZero(m.Queues[i]) { // not required
+			continue
+		}
+
+		if m.Queues[i] != nil {
+			if err := m.Queues[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("queues" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("queues" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func (m *ServiceConnectionResponse) validateSetup(formats strfmt.Registry) error {
 	if swag.IsZero(m.Setup) { // not required
 		return nil
@@ -274,6 +318,10 @@ func (m *ServiceConnectionResponse) ContextValidate(ctx context.Context, formats
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateQueues(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateSetup(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -331,6 +379,35 @@ func (m *ServiceConnectionResponse) contextValidatePreset(ctx context.Context, f
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *ServiceConnectionResponse) contextValidateQueues(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Queues); i++ {
+
+		if m.Queues[i] != nil {
+
+			if swag.IsZero(m.Queues[i]) { // not required
+				return nil
+			}
+
+			if err := m.Queues[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("queues" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("queues" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil

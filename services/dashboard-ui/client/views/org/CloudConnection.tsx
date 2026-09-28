@@ -39,6 +39,8 @@ export const CloudConnection = ({
         orgId={org?.id}
         connectionId={connectionId!}
         connection={query.data}
+        isVerifying={query.isVerifying}
+        verificationTimedOut={query.verificationTimedOut}
         error={query.error}
         tab={tab}
       />

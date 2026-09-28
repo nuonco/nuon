@@ -32,7 +32,7 @@ export const ConnectionStatus = ({
       <Status
         loading={!connection}
         variant="badge"
-        status={isVerifying ? 'pending' : connection?.status}
+        status={connection?.status}
       />
     </span>
   </Tooltip>

@@ -14,6 +14,7 @@ const SignalType signal.SignalType = "cloud_connection_reverify"
 
 type Signal struct {
 	CloudConnectionID string `json:"cloud_connection_id"`
+	OnDemand          bool   `json:"on_demand,omitempty"`
 }
 
 var _ signal.Signal = (*Signal)(nil)
@@ -29,5 +30,5 @@ func (s *Signal) Validate(workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	return activities.AwaitReverify(ctx, activities.ReverifyRequest{CloudConnectionID: s.CloudConnectionID})
+	return activities.AwaitReverify(ctx, activities.ReverifyRequest{CloudConnectionID: s.CloudConnectionID, OnDemand: s.OnDemand})
 }

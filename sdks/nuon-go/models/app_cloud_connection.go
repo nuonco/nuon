@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	stderrors "errors"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -58,6 +59,9 @@ type AppCloudConnection struct {
 	// principal
 	Principal string `json:"principal,omitempty"`
 
+	// queues
+	Queues []*AppQueue `json:"queues"`
+
 	// status
 	Status AppCloudConnectionStatus `json:"status,omitempty"`
 
@@ -72,6 +76,9 @@ type AppCloudConnection struct {
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
+
+	// verification requested at
+	VerificationRequestedAt string `json:"verification_requested_at,omitempty"`
 }
 
 // Validate validates this app cloud connection
@@ -87,6 +94,10 @@ func (m *AppCloudConnection) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validatePreset(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateQueues(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -181,6 +192,36 @@ func (m *AppCloudConnection) validatePreset(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppCloudConnection) validateQueues(formats strfmt.Registry) error {
+	if swag.IsZero(m.Queues) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Queues); i++ {
+		if swag.IsZero(m.Queues[i]) { // not required
+			continue
+		}
+
+		if m.Queues[i] != nil {
+			if err := m.Queues[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("queues" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("queues" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func (m *AppCloudConnection) validateStatus(formats strfmt.Registry) error {
 	if swag.IsZero(m.Status) { // not required
 		return nil
@@ -211,6 +252,10 @@ func (m *AppCloudConnection) ContextValidate(ctx context.Context, formats strfmt
 	}
 
 	if err := m.contextValidatePreset(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateQueues(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -263,6 +308,35 @@ func (m *AppCloudConnection) contextValidatePreset(ctx context.Context, formats 
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *AppCloudConnection) contextValidateQueues(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Queues); i++ {
+
+		if m.Queues[i] != nil {
+
+			if swag.IsZero(m.Queues[i]) { // not required
+				return nil
+			}
+
+			if err := m.Queues[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("queues" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("queues" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil

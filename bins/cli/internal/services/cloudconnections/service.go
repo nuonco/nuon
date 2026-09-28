@@ -2,6 +2,7 @@ package cloudconnections
 
 import (
 	"context"
+	"time"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
@@ -54,10 +55,34 @@ func (s *Service) Create(ctx context.Context, name, platform, targetID, principa
 	return render(connection, asJSON)
 }
 
-func (s *Service) Verify(ctx context.Context, connectionID string, asJSON bool) error {
+func (s *Service) Verify(ctx context.Context, connectionID string, wait, asJSON bool) error {
 	connection, err := s.api.VerifyCloudConnection(ctx, connectionID, nil)
 	if err != nil {
 		return ui.PrintError(err)
+	}
+	if wait {
+		pollCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+		defer cancel()
+		ticker := time.NewTicker(2 * time.Second)
+		defer ticker.Stop()
+		for connection.VerificationInProgress {
+			select {
+			case <-pollCtx.Done():
+				if ctx.Err() != nil {
+					return ui.PrintError(ctx.Err())
+				}
+				return render(connection, asJSON)
+			case <-ticker.C:
+			}
+			updated, err := s.api.GetCloudConnection(pollCtx, connectionID)
+			if err != nil {
+				if pollCtx.Err() != nil && ctx.Err() == nil {
+					return render(connection, asJSON)
+				}
+				return ui.PrintError(err)
+			}
+			connection = updated
+		}
 	}
 	return render(connection, asJSON)
 }
@@ -79,10 +104,15 @@ func render(connection *models.ServiceConnectionResponse, asJSON bool) error {
 		ui.PrintJSON(connection)
 		return nil
 	}
+	verification := connection.StatusMessage
+	if connection.VerificationInProgress {
+		verification = "Still checking — refresh in a moment"
+	}
 	ui.NewGetView().Render([][]string{
 		{"id", connection.ID}, {"name", connection.Name}, {"cloud", string(connection.Platform)},
 		{"target", connection.TargetID}, {"principal", connection.Principal},
 		{"status", string(connection.Status)}, {"last verified", connection.LastVerifiedAt}, {"preset", string(connection.Preset)},
+		{"verification", verification},
 		{"issuer", connection.Setup.IssuerURL}, {"subject", connection.Setup.Subject},
 	})
 	return nil

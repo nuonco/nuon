@@ -8,12 +8,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -29,8 +27,9 @@ type CreateRequest struct {
 
 type ConnectionResponse struct {
 	app.CloudConnection
-	Setup  SetupResponse   `json:"setup"`
-	UsedBy ConnectionUsage `json:"used_by"`
+	Setup                  SetupResponse   `json:"setup"`
+	UsedBy                 ConnectionUsage `json:"used_by"`
+	VerificationInProgress bool            `json:"verification_in_progress"`
 }
 
 type ConnectionUsage struct {
@@ -48,7 +47,16 @@ func (s *service) response(ctx context.Context, connection *app.CloudConnection)
 	if err != nil {
 		return ConnectionResponse{}, err
 	}
-	return ConnectionResponse{CloudConnection: *connection, Setup: s.setup(connection), UsedBy: usage}, nil
+	response := ConnectionResponse{CloudConnection: *connection, Setup: s.setup(connection), UsedBy: usage, VerificationInProgress: verificationInProgress(connection)}
+	if connection.VerificationRequestedAt != nil {
+		requestedAt := connection.VerificationRequestedAt.UTC()
+		response.VerificationRequestedAt = &requestedAt
+	}
+	return response, nil
+}
+
+func verificationInProgress(connection *app.CloudConnection) bool {
+	return connection.VerificationRequestedAt != nil && (connection.LastVerifiedAt == nil || connection.VerificationRequestedAt.After(*connection.LastVerifiedAt))
 }
 
 func (s *service) usage(ctx context.Context, connectionID string) (ConnectionUsage, error) {
@@ -237,7 +245,7 @@ func (s *service) delete(ctx context.Context, orgID, connectionID string) error 
 // @Security OrgID
 // @Param connection_id path string true "connection ID"
 // @Param req body VerifyRequest false "Input"
-// @Success 200 {object} ConnectionResponse
+// @Success 202 {object} ConnectionResponse
 // @Router /v1/cloud-connections/{connection_id}/verify [post]
 func (s *service) Verify(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
@@ -252,7 +260,7 @@ func (s *service) Verify(ctx *gin.Context) {
 			return
 		}
 	}
-	connection, err := s.verify(ctx, org.ID, ctx.Param("connection_id"), cloudconnections.VerifyOptions{RetryIAMPropagation: true})
+	connection, err := s.verify(ctx, org.ID, ctx.Param("connection_id"))
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -262,33 +270,22 @@ func (s *service) Verify(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	ctx.JSON(http.StatusOK, response)
+	ctx.JSON(http.StatusAccepted, response)
 }
 
-func (s *service) verify(ctx context.Context, orgID, connectionID string, options cloudconnections.VerifyOptions) (*app.CloudConnection, error) {
+func (s *service) verify(ctx context.Context, orgID, connectionID string) (*app.CloudConnection, error) {
 	connection, err := s.getContext(ctx, orgID, connectionID)
 	if err != nil {
 		return nil, err
 	}
-	options.RetryIAMPropagation = options.RetryIAMPropagation && connection.LastVerifiedAt == nil
-	result, err := s.verifier.Verify(ctx, connection, options)
-	if err != nil {
-		s.l.Warn("cloud connection verification failed", zap.String("connection_id", connection.ID), zap.Error(err))
-		result = cloudconnections.VerificationResult{Status: app.CloudConnectionStatusError, Message: cloudconnections.VerificationErrorMessage(err)}
-	}
-	now := time.Now().UTC()
-	update := app.CloudConnection{Status: result.Status, StatusMessage: result.Message, LastVerifiedAt: &now}
-	selected := []string{"status", "status_message", "last_verified_at"}
-	if result.Status == app.CloudConnectionStatusVerified {
-		update.AuthMode = app.CloudConnectionAuthModeOIDC
-		selected = append(selected, "auth_mode")
-	}
-	if err := s.db.WithContext(ctx).Model(&app.CloudConnection{}).Where(app.CloudConnection{OrgID: orgID, ID: connection.ID, Principal: connection.Principal}).Select(selected).Updates(update).Error; err != nil {
-		return nil, fmt.Errorf("save cloud connection verification: %w", err)
-	}
-	connection, err = s.getContext(ctx, orgID, connection.ID)
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	if err := s.enqueueVerification(ctx, connection); err != nil {
 		return nil, err
 	}
-	return connection, err
+	if err := s.db.WithContext(ctx).Model(&app.CloudConnection{}).Where(app.CloudConnection{OrgID: orgID, ID: connection.ID}).
+		Select("verification_requested_at").Updates(app.CloudConnection{VerificationRequestedAt: &now}).Error; err != nil {
+		return nil, fmt.Errorf("save cloud connection verification request: %w", err)
+	}
+	connection.VerificationRequestedAt = &now
+	return connection, nil
 }

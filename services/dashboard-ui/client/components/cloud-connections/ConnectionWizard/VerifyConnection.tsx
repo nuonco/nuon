@@ -12,6 +12,7 @@ import { awsRoleURL, failedRunbookStep } from '../ConnectionPolicies'
 export const VerifyConnection = ({
   connection,
   isVerifying,
+  verificationTimedOut = false,
   error,
   onVerify,
   setupHref,
@@ -19,13 +20,21 @@ export const VerifyConnection = ({
 }: {
   connection: TCloudConnection
   isVerifying: boolean
+  verificationTimedOut?: boolean
   error?: TAPIError | null
   onVerify: () => void
   setupHref: string
   detailHref: string
 }) => {
-  const verified = !isVerifying && !error && connection.status === 'verified'
-  const failed = !isVerifying && (error || connection.status === 'error')
+  const verified =
+    !isVerifying &&
+    !verificationTimedOut &&
+    !error &&
+    connection.status === 'verified'
+  const failed =
+    !isVerifying &&
+    !verificationTimedOut &&
+    (error || connection.status === 'error')
   const message =
     error?.description || error?.error || connection.status_message
   const step = failedRunbookStep({ ...connection, status_message: message })
@@ -41,8 +50,12 @@ export const VerifyConnection = ({
       />
       {isVerifying && (
         <Banner theme="info">
-          Checking the connection. IAM changes can take up to a minute to propagate.
+          Checking the connection. IAM changes can take up to a minute to
+          propagate.
         </Banner>
+      )}
+      {verificationTimedOut && (
+        <Banner theme="info">Still checking — refresh in a moment</Banner>
       )}
       {verified && (
         <Banner theme="success">

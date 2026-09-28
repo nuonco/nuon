@@ -107,6 +107,8 @@ List tools are paginated (default 20, max 100). If `has_more` is true, tell the 
 
 Cloud connection tools: `list_cloud_connections` and `get_cloud_connection` read connection status and setup material. With writes enabled, `create_cloud_connection`, `verify_cloud_connection`, and `delete_cloud_connection` manage AWS or Azure access for install stacks and private image pulls, plus GCP access for private image pulls.
 
+`verify_cloud_connection` enqueues verification. Poll `get_cloud_connection` every two seconds until `verification_in_progress` is false. If it is still checking after two minutes, refresh later rather than treating it as a verification failure.
+
 ## IAM permission checks (local CLI extension)
 
 These checks are not MCP tools. They run on the app directory via the `policies` CLI extension.

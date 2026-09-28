@@ -34,6 +34,14 @@ export const Pending = () => (
 export const Verifying = () => (
   <VerifyConnection {...props} connection={connection} isVerifying />
 )
+export const StillChecking = () => (
+  <VerifyConnection
+    {...props}
+    connection={failedConnection}
+    isVerifying={false}
+    verificationTimedOut
+  />
+)
 export const Verified = () => (
   <VerifyConnection
     {...props}

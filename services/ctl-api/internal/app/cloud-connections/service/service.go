@@ -25,17 +25,16 @@ type Params struct {
 	Cfg           *internal.Config
 	L             *zap.Logger
 	EndpointAudit *apiPkg.EndpointAudit
-	Verifier      cloudconnections.Verifier `optional:"true"`
 	Helpers       *cloudconnectionshelpers.Helpers
 }
 
 type service struct {
 	apiPkg.RouteRegister
-	db       *gorm.DB
-	l        *zap.Logger
-	issuer   *oidcissuer.Issuer
-	verifier cloudconnections.Verifier
-	helpers  *cloudconnectionshelpers.Helpers
+	db                  *gorm.DB
+	l                   *zap.Logger
+	issuer              *oidcissuer.Issuer
+	helpers             *cloudconnectionshelpers.Helpers
+	enqueueVerification func(context.Context, *app.CloudConnection) error
 }
 
 var _ apiPkg.Service = (*service)(nil)
@@ -46,17 +45,13 @@ func New(params Params) (*service, error) {
 	if err != nil {
 		return nil, err
 	}
-	verifier := params.Verifier
-	if verifier == nil {
-		verifier = cloudconnections.NewAWSVerifier(issuer)
-	}
 	return &service{
-		RouteRegister: apiPkg.RouteRegister{EndpointAudit: params.EndpointAudit},
-		db:            params.DB,
-		l:             params.L,
-		issuer:        issuer,
-		verifier:      verifier,
-		helpers:       params.Helpers,
+		RouteRegister:       apiPkg.RouteRegister{EndpointAudit: params.EndpointAudit},
+		db:                  params.DB,
+		l:                   params.L,
+		issuer:              issuer,
+		helpers:             params.Helpers,
+		enqueueVerification: params.Helpers.EnqueueVerification,
 	}, nil
 }
 
@@ -81,7 +76,7 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPReadTool("list_cloud_connections", "List cloud connections", "List cloud connections in the current org."+apiPkg.MCPListToolHint), s.mcpList)
 	mcp.AddTool(server, apiPkg.MCPReadTool("get_cloud_connection", "Get cloud connection", "Get a cloud connection and its setup material by ID."), s.mcpGet)
 	mcp.AddTool(server, apiPkg.MCPWriteTool("create_cloud_connection", "Create cloud connection", "WRITE OPERATION: Create an AWS cloud connection with the stacks or custom preset. For custom, attach your own permissions policy.", false, false), s.mcpCreate)
-	mcp.AddTool(server, apiPkg.MCPWriteTool("verify_cloud_connection", "Verify cloud connection", "WRITE OPERATION: Verify cloud connection identity and the preset's access probe.", false, true), s.mcpVerify)
+	mcp.AddTool(server, apiPkg.MCPWriteTool("verify_cloud_connection", "Verify cloud connection", "WRITE OPERATION: Enqueue cloud connection verification. Poll get_cloud_connection until verification_in_progress is false.", false, false), s.mcpVerify)
 	mcp.AddTool(server, apiPkg.MCPWriteTool("delete_cloud_connection", "Delete cloud connection", "WRITE OPERATION: Delete an unused cloud connection.", true, true), s.mcpDelete)
 }
 

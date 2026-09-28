@@ -49,12 +49,16 @@ func (c *cli) cloudConnectionsCmd() *cobra.Command {
 	_ = create.MarkFlagRequired("preset")
 	command.AddCommand(create)
 
+	var wait, noWait bool
 	verify := &cobra.Command{
 		Use: "verify <connection-id>", Short: "Verify a cloud connection", Args: cobra.ExactArgs(1), Annotations: outputs,
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
-			return c.cloudConnections.Verify(cmd.Context(), args[0], PrintJSON)
+			return c.cloudConnections.Verify(cmd.Context(), args[0], wait && !noWait, PrintJSON)
 		}),
 	}
+	verify.Flags().BoolVar(&wait, "wait", true, "Wait up to two minutes for verification")
+	verify.Flags().BoolVar(&noWait, "no-wait", false, "Enqueue verification without waiting")
+	verify.MarkFlagsMutuallyExclusive("wait", "no-wait")
 	command.AddCommand(verify)
 
 	command.AddCommand(&cobra.Command{

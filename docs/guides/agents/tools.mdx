@@ -29,6 +29,8 @@ For prompts to paste into a client, see [Sample queries](/guides/agents/sample-q
 
 Cloud connection tools manage AWS access for install stacks. Create inputs include the AWS account ID, IAM role ARN, and `stacks` or `custom` preset. The custom preset generates trust configuration only; attach your own permissions policy.
 
+`verify_cloud_connection` enqueues verification. Poll `get_cloud_connection` every two seconds until `verification_in_progress` is false. If it is still checking after two minutes, refresh later rather than treating it as a verification failure.
+
 ## Writes
 
 Mutating tools are prefixed with `WRITE OPERATION:` in their descriptions. The stdio proxy hides them unless you pass `--allow-writes`. The identity still needs [Admin](/concepts/access-control) (`org_admin`), not Read-only.
