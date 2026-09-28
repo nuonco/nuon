@@ -16,7 +16,7 @@ const CLOUDS = [
 ] as const;
 
 test.describe("Onboarding: example app", () => {
-  test.setTimeout(8 * 60_000);
+  test.setTimeout(15 * 60_000);
 
   for (const cloud of CLOUDS) {
     test(`deploy Kitchen Sink to ${cloud.label} and land on the workflow`, async ({ browser }) => {

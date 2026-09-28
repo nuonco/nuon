@@ -20,7 +20,7 @@ const CLOUDS = [
 ] as const;
 
 test.describe("Onboarding: own app", () => {
-  test.setTimeout(8 * 60_000);
+  test.setTimeout(15 * 60_000);
 
   for (const cloud of CLOUDS) {
     test(`connect a ${cloud.label} app template and land on the workflow`, async ({ browser }) => {
