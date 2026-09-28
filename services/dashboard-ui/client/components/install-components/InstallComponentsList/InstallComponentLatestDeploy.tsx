@@ -6,6 +6,7 @@ import {
   type TLatestDeployCardVariant,
 } from '@/components/install-components/LatestDeployCard'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallComponent } from '@/lib'
 
@@ -24,6 +25,7 @@ export const InstallComponentLatestDeploy = ({
 }) => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
 
   const { data: installComponent, isLoading } = useQuery({
     placeholderData: keepPreviousData,
@@ -61,7 +63,7 @@ export const InstallComponentLatestDeploy = ({
           }
           href={
             latestDeploy?.id
-              ? `/${org?.id}/installs/${install?.id}/components/${componentId}/deploys/${latestDeploy.id}`
+              ? installLink({ installId: install?.id, appId: install?.app_id, suffix: `/components/${componentId}/deploys/${latestDeploy.id}` })
               : undefined
           }
         />

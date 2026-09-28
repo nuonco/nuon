@@ -9,6 +9,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocAction'
 import type { IActionRunMetadata } from '../types'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 interface IActionRunMetadataPresentation extends IActionRunMetadata {
   orgId: string
@@ -23,6 +24,7 @@ export const ActionRunMetadata = ({
   orgId,
   rerunButton,
 }: IActionRunMetadataPresentation) => {
+  const installLink = useInstallLink()
   if (loading) {
     return (
       <div className="flex items-start gap-6">
@@ -57,7 +59,7 @@ export const ActionRunMetadata = ({
             {!isAdhocActionRun ? actionRun?.triggered_by_type : null}
             {actionRun?.run_env_vars?.COMPONENT_ID ? (
               <Link
-                href={`/${orgId}/installs/${step?.owner_id}/components/${actionRun?.run_env_vars?.COMPONENT_ID}`}
+                href={installLink({ orgId: orgId, installId: step?.owner_id, suffix: `/components/${actionRun?.run_env_vars?.COMPONENT_ID}` })}
                 variant="inline"
               >
                 {actionRun?.run_env_vars?.COMPONENT_NAME}

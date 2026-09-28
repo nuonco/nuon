@@ -1,7 +1,13 @@
 import type { TBadgeTheme } from '@/components/common/Badge'
 import type { TBannerTheme } from '@/components/common/Banner'
+import { installHref } from '@/lib/install-path'
 import type { TWorkflow, TWorkflowStep, TWorkflowStepApproval } from '@/types'
 import { toSentenceCase } from './string-utils'
+
+type TInstallRouteOptions = {
+  nested?: boolean
+  appId?: string
+}
 
 export type TBadgeCfg = {
   children?: string
@@ -81,7 +87,8 @@ export function isServiceAccount(account?: {
 export function getApprovalHref(
   orgId: string,
   approval: TWorkflowStepApproval,
-  workflow?: TWorkflow
+  workflow?: TWorkflow,
+  options?: TInstallRouteOptions
 ): string | undefined {
   const step = approval?.workflow_step
   const workflowId = step?.install_workflow_id
@@ -91,17 +98,27 @@ export function getApprovalHref(
   }
 
   if (workflow) {
-    return getWorkflowHref(orgId, workflow)
+    return getWorkflowHref(orgId, workflow, options)
   }
 
   if (step?.owner_type === 'app_branches' || !step?.owner_id || !workflowId) {
     return undefined
   }
 
-  return `/${orgId}/installs/${step.owner_id}/history/${workflowId}`
+  return installHref({
+    orgId,
+    installId: step.owner_id,
+    appId: options?.appId,
+    nested: options?.nested,
+    suffix: `/history/${workflowId}`,
+  })
 }
 
-export function getWorkflowHref(orgId: string, workflow: TWorkflow): string {
+export function getWorkflowHref(
+  orgId: string,
+  workflow: TWorkflow,
+  options?: TInstallRouteOptions
+): string {
   if (workflow?.owner_type === 'app_branches') {
     const run = workflow?.app_branch_runs?.[0]
     const appId = run?.app_branch?.app_id
@@ -110,7 +127,13 @@ export function getWorkflowHref(orgId: string, workflow: TWorkflow): string {
       return `/${orgId}/apps/${appId}/branches/${branchId}/runs/${workflow.id}`
     }
   }
-  return `/${orgId}/installs/${workflow?.owner_id}/history/${workflow?.id}`
+  return installHref({
+    orgId,
+    installId: workflow?.owner_id,
+    appId: options?.appId,
+    nested: options?.nested,
+    suffix: `/history/${workflow?.id}`,
+  })
 }
 
 // The retry "lineage" badge — how this attempt relates to its retries. Distinct

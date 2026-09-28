@@ -1,10 +1,4 @@
-import {
-  Outlet,
-  useParams,
-  useMatch,
-  useSearchParams,
-  useLocation,
-} from 'react-router'
+import { Outlet, useParams, useSearchParams, useLocation } from 'react-router'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
@@ -30,9 +24,7 @@ import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { SubNav } from '@/components/navigation/SubNav'
-import { useInstall } from '@/hooks/use-install'
-import { useNewInstallIA } from '@/hooks/use-new-install-ia'
-import { useOrg } from '@/hooks/use-org'
+import { useInstallPage, useInstallRouteMatch } from '@/hooks/use-install-path'
 import type { TNavItem } from '@/types'
 
 import { PageSidebarProvider } from '@/providers/page-sidebar-provider'
@@ -110,12 +102,12 @@ export const NEW_INSTALL_NAV_LINKS: TNavItem[] = [
 const NEW_INSTALL_TAB_SECTIONS = ['resources', 'operations', 'configuration']
 
 const InstallTemplate = () => {
-  const { org } = useOrg()
-  const { install, labelColors, refresh } = useInstall()
+  const { org, install, labelColors, refresh, href, nested: hasNewInstallIA } =
+    useInstallPage()
   const { pathname } = useLocation()
   const hasNotebooks = !!org?.features?.notebooks
   const hasAppBranchesUI = !!org?.features?.['app-branches-ui']
-  const hasNewInstallIA = useNewInstallIA()
+  const installBasePath = href()
   const openSettings = useOpenInstallSettings()
   const [searchParams] = useSearchParams()
   const isSettingsOpen =
@@ -222,13 +214,12 @@ const InstallTemplate = () => {
         },
       ]
 
-  const sectionTabMatch = useMatch('/:orgId/installs/:installId/:section/:tab')
+  const sectionTabMatch = useInstallRouteMatch('/:section/:tab')
   const isNewIASectionTab =
     hasNewInstallIA &&
     NEW_INSTALL_TAB_SECTIONS.includes(sectionTabMatch?.params?.section ?? '')
   const isChildRoute =
-    !!useMatch('/:orgId/installs/:installId/:section/:rest/*') &&
-    !isNewIASectionTab
+    !!useInstallRouteMatch('/:section/:rest/*') && !isNewIASectionTab
 
   if (!install) return null
 
@@ -242,7 +233,7 @@ const InstallTemplate = () => {
         {isChildRoute ? (
           <PageContent className="border-t" variant="row">
             <SubNav
-              basePath={`/${org?.id}/installs/${install?.id}`}
+              basePath={installBasePath}
               links={navLinks}
               storageKey="subnav:install"
             />
@@ -340,7 +331,7 @@ const InstallTemplate = () => {
             )}
             <PageContent className="border-t" variant="row">
               <SubNav
-                basePath={`/${org?.id}/installs/${install?.id}`}
+                basePath={installBasePath}
                 links={navLinks}
                 storageKey="subnav:install"
               />

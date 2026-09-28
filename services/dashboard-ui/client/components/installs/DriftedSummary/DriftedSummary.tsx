@@ -6,6 +6,7 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import type { TDriftedObject } from '@/types/ctl-api.types'
 import { cn } from '@/utils/classnames'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 export interface IDriftedSummary
   extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
@@ -21,6 +22,7 @@ export const DriftedSummary = ({
   className,
   ...props
 }: IDriftedSummary) => {
+  const installLink = useInstallLink()
   if (!driftedObjects.length) return null
 
   return (
@@ -33,7 +35,7 @@ export const DriftedSummary = ({
         width="w-64"
         items={driftedObjects.map((drift) => ({
           id: drift?.target_id ?? '',
-          href: `/${orgId}/installs/${installId}/workflows/${drift?.install_workflow_id}`,
+          href: installLink({ orgId: orgId, installId: installId, suffix: `/workflows/${drift?.install_workflow_id}` }),
           title:
             drift?.target_type === 'install_deploy'
               ? (drift?.component_name ?? 'Component')
@@ -51,7 +53,7 @@ export const DriftedSummary = ({
       >
         <Link
           variant="ghost"
-          href={`/${orgId}/installs/${installId}/workflows?type=drift_run`}
+          href={installLink({ orgId: orgId, installId: installId, suffix: `/workflows?type=drift_run` })}
         >
           <Text
             theme="warn"

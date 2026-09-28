@@ -14,17 +14,19 @@ export function parseInstallRunbooksToTableData(
   orgId: string,
   installId: string,
   labelColors?: Record<string, string>,
-  removed = false
+  removed = false,
+  to?: (suffix: string) => string
 ): TRunbookRow[] {
   return runbooks.map((ir) => {
     const basePath = `/${orgId}/installs/${installId}`
+    const path = (suffix: string) => to?.(suffix) || `${basePath}${suffix}`
     const runbook = ir.runbook
     const runbookId = ir.runbook_id ?? ir.id
-    const href = `${basePath}/runbooks/${runbookId}`
+    const href = path(`/runbooks/${runbookId}`)
     const latestRun = ir.runs?.[0]
     const workflowId =
       latestRun?.install_workflow_id ?? latestRun?.install_workflow?.id
-    const latestRunHref = workflowId ? `${basePath}/workflows/${workflowId}` : null
+    const latestRunHref = workflowId ? path(`/workflows/${workflowId}`) : null
 
     return {
       runbookId,

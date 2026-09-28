@@ -28,6 +28,7 @@ import {
   type TWorkflowStatusOption,
 } from '@/utils/workflow-filters'
 import { DeploymentDetailPanel } from './DeploymentDetailPanel'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 export const DEPLOYMENT_TYPE_LABELS: Record<
   TInstallDeploymentRecordType,
@@ -70,11 +71,12 @@ const DeploymentCard = ({
   installId,
   onViewDetails,
 }: IDeploymentCard) => {
+  const installLink = useInstallLink()
   const branchHref = deployment.app_branch
     ? `/${orgId}/apps/${appId}/branches/${deployment.app_branch.id}`
     : undefined
   const workflowHref = deployment.workflow
-    ? `/${orgId}/installs/${installId}/history/${deployment.workflow.id}`
+    ? installLink({ orgId: orgId, installId: installId, suffix: `/history/${deployment.workflow.id}` })
     : undefined
 
   const affectedResources = [

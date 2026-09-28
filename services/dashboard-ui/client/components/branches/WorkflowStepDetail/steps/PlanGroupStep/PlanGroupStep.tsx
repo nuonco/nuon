@@ -10,6 +10,7 @@ import { type DiffSectionData } from '@/components/approvals/plan-diffs/app-conf
 import { AppConfigDiff } from '@/components/diffs/plan-diff-switch'
 import { STEP_GUTTER, StepBlock, StepRowList } from '../../shared/StepLayout'
 import { cn } from '@/utils/classnames'
+import { useInstallLink } from '@/hooks/use-install-path'
 import {
   getApprovalResponseTheme,
   getApprovalResponseType,
@@ -47,6 +48,7 @@ export const PlanGroupStep = ({
   isInProgress: _isInProgress,
   actions,
 }: IPlanGroupStep) => {
+  const installLink = useInstallLink()
   return (
     <>
       {(hasResponse || showApproveBar) && (
@@ -110,7 +112,7 @@ export const PlanGroupStep = ({
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 min-w-0 flex-1">
               {orgId && inst.installId ? (
                 <Link
-                  href={`/${orgId}/installs/${inst.installId}`}
+                  href={installLink({ orgId: orgId, installId: inst.installId })}
                   textVariant="body"
                   className="font-strong break-words"
                 >

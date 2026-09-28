@@ -21,6 +21,7 @@ export interface INewInstallHeader {
   latestCommit?: ReactNode
   latestCommitLabel?: string
   latestCommitLoading?: boolean
+  installPath?: string
   orgId?: string
   settingsAction?: ReactNode
   statuses?: ReactNode
@@ -33,11 +34,12 @@ export const NewInstallHeader = ({
   latestCommit,
   latestCommitLabel = 'Applied commit',
   latestCommitLoading,
+  installPath: installPathProp,
   orgId,
   settingsAction,
   statuses,
 }: INewInstallHeader) => {
-  const installPath = `/${orgId}/installs/${install.id}`
+  const installPath = installPathProp ?? `/${orgId}/installs/${install.id}`
   const isManagedByConfig =
     install?.metadata?.managed_by === 'nuon/cli/install-config'
   const labels = Object.entries(install.labels ?? {})
