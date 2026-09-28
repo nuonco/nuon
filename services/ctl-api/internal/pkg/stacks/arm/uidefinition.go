@@ -72,12 +72,10 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 			inp.Install.ID,
 		),
 		"subscription": map[string]any{
-			"constraints": map[string]any{"validations": subscriptionValidations},
+			"constraints":       map[string]any{"validations": subscriptionValidations},
+			"resourceProviders": []string{"Microsoft.Compute"},
 		},
-		"location": map[string]any{
-			"allowedValues": []string{location},
-			"toolTip":       "The install's region. It is fixed for the lifetime of the install.",
-		},
+		"location": locationPin(location),
 	}
 
 	// At subscription scope the stack template creates the install resource group
@@ -114,6 +112,12 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 			continue
 		}
 
+		if name == runnerVmSizeParamName {
+			basics = append(basics, runnerVMSizeUIElement(wrapperParams[name]))
+			outputs[name] = "[basics('" + runnerVmSizeParamName + "')]"
+			continue
+		}
+
 		element, output, ok := basicsElement(name, wrapperParams[name], inputLabels[name])
 		if !ok {
 			continue
@@ -141,6 +145,54 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 
 	hash := sha256.Sum256(uiDefBytes)
 	return uiDefBytes, hex.EncodeToString(hash[:]), nil
+}
+
+func runnerVMSizeUIElement(p ARMParameter) map[string]any {
+	allowed := make([]string, 0, len(p.AllowedValues))
+	for _, value := range p.AllowedValues {
+		allowed = append(allowed, fmt.Sprintf("%v", value))
+	}
+
+	recommended := append([]string{}, allowed...)
+	if def, ok := p.DefaultValue.(string); ok && def != "" {
+		rest := make([]string, 0, len(allowed))
+		for _, size := range allowed {
+			if size != def {
+				rest = append(rest, size)
+			}
+		}
+		if len(allowed) == 0 {
+			recommended = []string{def}
+		} else {
+			recommended = append([]string{def}, rest...)
+		}
+	}
+
+	element := map[string]any{
+		"name":             runnerVmSizeParamName,
+		"type":             "Microsoft.Compute.SizeSelector",
+		"label":            "Runner VM Size",
+		"osPlatform":       "Linux",
+		"count":            1,
+		"recommendedSizes": recommended,
+	}
+	if p.Metadata != nil && p.Metadata.Description != "" {
+		element["toolTip"] = p.Metadata.Description
+	}
+	if len(allowed) > 0 {
+		element["constraints"] = map[string]any{"allowedSizes": allowed}
+	}
+	return element
+}
+
+func locationPin(location string) map[string]any {
+	if location == "" {
+		return map[string]any{}
+	}
+	return map[string]any{
+		"allowedValues": []string{location},
+		"toolTip":       "The install's region. It is fixed for the lifetime of the install.",
+	}
 }
 
 // deployedResourceGroupName is the resource group the install's stack actually
