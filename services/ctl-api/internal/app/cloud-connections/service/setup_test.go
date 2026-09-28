@@ -45,7 +45,18 @@ func TestAWSSetup(t *testing.T) {
 			if test.preset == app.CloudConnectionPresetStacks {
 				assert.Contains(t, string(policy), "cloudformation:DescribeStacks")
 				assert.Contains(t, string(policy), "cloudformation:ListStacks")
+				assert.Contains(t, string(policy), "ec2:RunInstances")
 				assert.Contains(t, string(policy), "ssm:GetParameters")
+				for _, action := range []string{
+					"autoscaling:CreateOrUpdateTags", "autoscaling:DeleteTags", "autoscaling:DescribeAutoScalingInstances", "autoscaling:DescribeTags", "autoscaling:ResumeProcesses", "autoscaling:SetDesiredCapacity", "autoscaling:SuspendProcesses", "autoscaling:TerminateInstanceInAutoScalingGroup",
+					"cloudformation:DescribeStackResource",
+					"ec2:CreateLaunchTemplateVersion", "ec2:DeleteTags", "ec2:ReplaceRoute", "ec2:ReplaceRouteTableAssociation", "ec2:UpdateSecurityGroupRuleDescriptionsEgress", "ec2:UpdateSecurityGroupRuleDescriptionsIngress",
+					"iam:CreatePolicyVersion", "iam:DeletePolicyVersion", "iam:DeleteRolePermissionsBoundary", "iam:ListEntitiesForPolicy", "iam:PutRolePermissionsBoundary", "iam:UpdateRole", "iam:UpdateRoleDescription",
+					"lambda:GetFunctionCodeSigningConfig", "lambda:GetFunctionRecursionConfig", "lambda:GetFunctionScalingConfig", "lambda:GetRuntimeManagementConfig", "lambda:InvokeFunction",
+					"logs:DeleteRetentionPolicy", "logs:DescribeIndexPolicies", "logs:DescribeResourcePolicies", "logs:GetDataProtectionPolicy", "logs:ListTagsForResource",
+				} {
+					assert.Contains(t, string(policy), action)
+				}
 			} else {
 				assert.Nil(t, got.PermissionsPolicy)
 			}
