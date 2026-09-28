@@ -1,7 +1,7 @@
 import { useForm } from '@tanstack/react-form'
 import { FormSelect } from './FormSelect'
 
-export default { title: 'Common/Forms/FormSelect' }
+export default { title: 'UI / Forms / Form select' }
 
 const OPTIONS = [
   { value: 'org_read_only', label: 'Read-only' },

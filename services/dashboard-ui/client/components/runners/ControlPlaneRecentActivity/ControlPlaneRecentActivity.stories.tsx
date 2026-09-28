@@ -1,5 +1,5 @@
 export default {
-  title: 'Runners/ControlPlaneRecentActivity',
+  title: 'Features / Runners / Control plane recent activity',
 }
 
 import { ControlPlaneRecentActivity } from './ControlPlaneRecentActivity'

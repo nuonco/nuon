@@ -1,5 +1,5 @@
 export default {
-  title: 'Actions/InstallActionRunLogs',
+  title: 'Features / Actions / Install action run logs',
 }
 
 import type { TActionConfig } from '@/types'

@@ -1,6 +1,6 @@
 import { OperationRolesList } from './OperationRolesList'
 
-export default { title: 'Common/OperationRolesList' }
+export default { title: 'UI / Operation roles list' }
 
 export const WithRoles = () => (
   <OperationRolesList

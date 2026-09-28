@@ -1,5 +1,5 @@
 export default {
-  title: 'InstallHealth/ResetHealthWindow',
+  title: 'Features / Installs / Health / Reset health window',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

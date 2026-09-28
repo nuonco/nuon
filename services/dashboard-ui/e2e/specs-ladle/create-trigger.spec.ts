@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const STORY = "/?story=triggers--create-trigger--default&mode=preview";
+const STORY = "/?story=features--triggers--create-trigger--default&mode=preview";
 
 test.describe("CreateTrigger form behavior", () => {
   test.beforeEach(async ({ page }) => {

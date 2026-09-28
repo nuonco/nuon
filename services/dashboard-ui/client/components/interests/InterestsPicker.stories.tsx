@@ -3,7 +3,7 @@ import { InterestsPicker } from './InterestsPicker'
 import { allEvents } from './defaults'
 import type { Interests } from './types'
 
-export default { title: 'Interests/InterestsPicker' }
+export default { title: 'Features / Interests / Interests picker' }
 
 const Wrapper = ({
   initial,

@@ -1,5 +1,5 @@
 export default {
-  title: 'VCS Connections/ConnectGithub',
+  title: 'Features / VCS connections / Connect GitHub',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

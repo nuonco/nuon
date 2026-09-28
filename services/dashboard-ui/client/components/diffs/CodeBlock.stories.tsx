@@ -1,5 +1,5 @@
 export default {
-  title: 'Diffs/CodeBlock',
+  title: 'Features / Diffs / Code block',
 }
 
 import { Button } from '@/components/common/Button'

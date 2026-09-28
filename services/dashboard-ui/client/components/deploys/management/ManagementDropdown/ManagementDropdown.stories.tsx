@@ -1,5 +1,5 @@
 export default {
-  title: 'Deploys/ManagementDropdown',
+  title: 'Features / Deploys / Management dropdown',
 }
 
 import { ManagementDropdown } from './ManagementDropdown'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/CommitDetails',
+  title: 'UI / Commit details',
 }
 
 import { CommitDetails } from './CommitDetails'

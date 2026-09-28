@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/StepDetails/ActionRunMetadata',
+  title: 'Features / Workflows / Action run details / Action run metadata',
 }
 
 import { ActionRunMetadata } from './ActionRunMetadata'

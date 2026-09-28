@@ -1,5 +1,5 @@
 export default {
-  title: 'Apps/ComponentsGraphRenderer',
+  title: 'Features / Apps / Config graph / Components graph renderer',
 }
 
 import { ComponentsGraphInline } from './ComponentsGraphRenderer'

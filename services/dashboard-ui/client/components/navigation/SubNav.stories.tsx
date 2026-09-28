@@ -1,5 +1,5 @@
 export default {
-  title: 'Navigation/SubNav',
+  title: 'UI / Navigation / Sub nav',
 }
 
 import { PageSidebarContext } from '@/providers/page-sidebar-provider'

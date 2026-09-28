@@ -1,5 +1,5 @@
 export default {
-  title: 'Runbooks/RunRunbook',
+  title: 'Features / Runbooks / Run runbook form',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

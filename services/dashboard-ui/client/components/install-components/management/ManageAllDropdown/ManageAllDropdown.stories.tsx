@@ -1,5 +1,5 @@
 export default {
-  title: 'Install Components/Management/ManageAllDropdown',
+  title: 'Features / Installs / Components / Manage all dropdown',
 }
 
 import { ManageAllDropdown } from './ManageAllDropdown'

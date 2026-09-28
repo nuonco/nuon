@@ -1,5 +1,5 @@
 export default {
-  title: 'Roles/RoleSelector',
+  title: 'Features / Roles / Selector',
 }
 
 import { useState } from 'react'

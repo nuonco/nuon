@@ -13,7 +13,7 @@ import {
 import { KubernetesDiff } from './KubernetesDiff'
 
 export default {
-  title: 'Approvals/PlanDiffs/KubernetesDiff',
+  title: 'Features / Approvals / Plan diffs / Kubernetes diff',
 }
 
 export const Default = () => <KubernetesDiff plan={mockPlan} />

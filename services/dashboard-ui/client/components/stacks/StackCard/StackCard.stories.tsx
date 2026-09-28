@@ -1,5 +1,5 @@
 export default {
-  title: 'Stacks/StackCard',
+  title: 'Features / Stacks / Stack card',
 }
 
 import { StackCard } from './StackCard'

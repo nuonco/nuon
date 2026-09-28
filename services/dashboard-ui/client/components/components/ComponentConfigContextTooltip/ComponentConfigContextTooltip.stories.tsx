@@ -1,5 +1,5 @@
 export default {
-  title: 'Components/ComponentConfigContextTooltip',
+  title: 'Features / Components / Config context tooltip',
 }
 
 import { SurfacesProvider } from '@/providers/surfaces-provider'

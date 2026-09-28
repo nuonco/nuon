@@ -1,5 +1,5 @@
 export default {
-  title: 'Approvals/DenyPlan',
+  title: 'Features / Approvals / Deny plan',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

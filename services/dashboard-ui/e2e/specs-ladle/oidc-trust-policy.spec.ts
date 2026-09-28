@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 const CREATE_STORY =
-  "/?story=oidctrustpolicies--oidctrustpolicyform--create&mode=preview";
+  "/?story=features--oidc-trust-policies--oidc-trust-policy-form--create&mode=preview";
 const EDIT_STORY =
-  "/?story=oidctrustpolicies--oidctrustpolicyform--edit&mode=preview";
+  "/?story=features--oidc-trust-policies--oidc-trust-policy-form--edit&mode=preview";
 
 test.describe("OIDCTrustPolicyForm create behavior", () => {
   test.beforeEach(async ({ page }) => {

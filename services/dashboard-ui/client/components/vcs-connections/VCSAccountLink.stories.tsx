@@ -1,5 +1,5 @@
 export default {
-  title: 'VCS Connections/VCSAccountLink',
+  title: 'Features / VCS connections / VCS account link',
 }
 
 import { VCSAccountLink } from './VCSAccountLink'

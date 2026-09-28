@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/BackLink',
+  title: 'UI / Back link',
 }
 
 import { BackLink } from './BackLink'

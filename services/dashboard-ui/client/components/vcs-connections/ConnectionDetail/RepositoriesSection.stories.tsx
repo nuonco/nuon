@@ -1,5 +1,5 @@
 export default {
-  title: 'VCS Connections/RepositoriesSection',
+  title: 'Features / VCS connections / Connection detail / Repositories section',
 }
 
 import { RepositoriesSection } from './RepositoriesSection'

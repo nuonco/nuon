@@ -1,5 +1,5 @@
 export default {
-  title: 'Deploys/RenderedOutputs',
+  title: 'Features / Deploys / Rendered outputs',
 }
 
 import { RenderedOutputs } from './RenderedOutputs'

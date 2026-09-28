@@ -1,5 +1,5 @@
 export default {
-  title: 'Approvals/PlanDiffs/AppConfigDiff',
+  title: 'Features / Approvals / Plan diffs / App config diff',
 }
 
 import {

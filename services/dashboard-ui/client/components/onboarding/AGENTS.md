@@ -64,7 +64,7 @@ props before using it.
 ## Viewing and checking work
 
 ```bash
-bun run dev:ladle                                             # http://localhost:61000 → Onboarding/Playground
+bun run dev:ladle                                             # http://localhost:61000 → Features / Onboarding / Playground flow
 bunx oxlint -c client/.oxlintrc.json client/components/onboarding/<file>
 ```
 

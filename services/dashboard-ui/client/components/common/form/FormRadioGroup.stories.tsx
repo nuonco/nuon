@@ -1,7 +1,7 @@
 import { useForm } from '@tanstack/react-form'
 import { FormRadioGroup } from './FormRadioGroup'
 
-export default { title: 'Common/Forms/FormRadioGroup' }
+export default { title: 'UI / Forms / Form radio group' }
 
 const OPTIONS = [
   { value: 'all', label: 'Everything in this org' },

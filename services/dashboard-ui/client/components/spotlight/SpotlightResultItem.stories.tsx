@@ -1,5 +1,5 @@
 export default {
-  title: 'Spotlight/SpotlightResultItem',
+  title: 'Features / Spotlight / Result item',
 }
 
 import { SpotlightResultItem } from './SpotlightResultItem'

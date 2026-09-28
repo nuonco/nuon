@@ -1,5 +1,5 @@
 export default {
-  title: 'Approvals/PlanDiffs/DiffLineExpandModal',
+  title: 'Features / Approvals / Plan diffs / Diff line expand modal',
 }
 
 import { DiffLineExpandButton } from './DiffLineExpandModal'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Tabs',
+  title: 'UI / Tabs',
 }
 
 import { useState } from 'react'

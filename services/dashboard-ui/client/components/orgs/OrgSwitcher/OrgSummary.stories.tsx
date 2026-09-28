@@ -1,5 +1,5 @@
 export default {
-  title: 'Orgs/OrgSummary',
+  title: 'Features / Orgs / Org switcher / Org summary',
 }
 
 import { SidebarProvider } from '@/providers/sidebar-provider'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/EnableConfigSync',
+  title: 'Features / Installs / Management / Enable config sync',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

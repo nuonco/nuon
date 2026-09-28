@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Loading',
+  title: 'UI / Loading',
 }
 
 import { Loading } from './Loading'

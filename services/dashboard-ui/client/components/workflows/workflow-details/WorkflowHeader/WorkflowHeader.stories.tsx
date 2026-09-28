@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/WorkflowDetails/WorkflowHeader',
+  title: 'Features / Workflows / Details / Workflow header',
 }
 
 import { WorkflowHeader } from './WorkflowHeader'

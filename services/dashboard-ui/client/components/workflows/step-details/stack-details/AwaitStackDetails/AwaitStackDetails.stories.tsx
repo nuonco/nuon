@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/StepDetails/AwaitStackDetails',
+  title: 'Features / Workflows / Stack details / Await stack details',
 }
 
 import { AwaitStackDetails } from './AwaitStackDetails'

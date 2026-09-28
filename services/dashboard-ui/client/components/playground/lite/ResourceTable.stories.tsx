@@ -1,7 +1,7 @@
 import { ResourceTable, makeRows } from './ResourceTable'
 
 export default {
-  title: 'Playground/Lite/ResourceTable',
+  title: 'Playground / Lite / Resource table',
 }
 
 export const Default = () => (

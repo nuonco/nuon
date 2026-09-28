@@ -3,7 +3,7 @@ import { PolicyReportPanel } from './PolicyReportPanel'
 import type { TPolicyReport } from '@/types'
 
 export default {
-  title: 'Policies/PolicyReportPanel',
+  title: 'Features / Policies / Report panel',
 }
 
 const hour = 3600000

@@ -1,7 +1,7 @@
 import { PolicyChecks } from './PolicyChecks'
 
 export default {
-  title: 'Playground/Lite/PolicyChecks',
+  title: 'Playground / Lite / Policy checks',
 }
 
 export const Default = () => (

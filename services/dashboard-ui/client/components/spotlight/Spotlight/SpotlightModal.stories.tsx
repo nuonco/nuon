@@ -1,5 +1,5 @@
 export default {
-  title: 'Spotlight/SpotlightModal',
+  title: 'Features / Spotlight / Spotlight modal',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

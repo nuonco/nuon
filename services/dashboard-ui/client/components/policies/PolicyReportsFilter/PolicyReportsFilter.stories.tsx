@@ -1,5 +1,5 @@
 export default {
-  title: 'Policies/PolicyReportsFilter',
+  title: 'Features / Policies / Reports filter',
 }
 
 import { PolicyReportsFilter } from './PolicyReportsFilter'

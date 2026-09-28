@@ -1,5 +1,5 @@
 export default {
-  title: 'Admin/AdminOrgFeaturesPanel',
+  title: 'Features / Admin / Shared / Org features panel',
 }
 
 import { AdminOrgFeaturesPanel } from './AdminOrgFeaturesPanel'

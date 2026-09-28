@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/CreateInstall/FormSkeleton',
+  title: 'Features / Installs / Create install / Form skeleton',
 }
 
 import { FormSkeleton } from './FormSkeleton'

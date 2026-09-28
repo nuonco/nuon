@@ -1,7 +1,7 @@
 import { BranchLabels } from './BranchLabels'
 
 export default {
-  title: 'Playground/Lite/BranchLabels',
+  title: 'Playground / Lite / Branch labels',
 }
 
 export const Default = () => (

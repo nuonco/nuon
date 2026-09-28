@@ -1,5 +1,5 @@
 export default {
-  title: 'Runbooks/LatestRunbookRunCard',
+  title: 'Features / Runbooks / Latest runbook run card',
 }
 
 import type { TInstallRunbookRun } from '@/lib/ctl-api/installs/runbooks'

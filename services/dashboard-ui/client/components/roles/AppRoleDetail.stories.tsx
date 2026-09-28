@@ -1,7 +1,7 @@
 import { AppRoleDetail } from './AppRoleDetail'
 
 export default {
-  title: 'Roles/AppRoleDetail',
+  title: 'Features / Roles / App role detail',
 }
 
 const mockRole = {

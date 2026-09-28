@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Markdown',
+  title: 'UI / Markdown',
 }
 
 import type { ReactNode } from 'react'

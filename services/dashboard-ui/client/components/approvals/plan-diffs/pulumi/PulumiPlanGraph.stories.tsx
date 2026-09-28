@@ -1,5 +1,5 @@
 export default {
-  title: 'Approvals/PlanDiffs/PulumiPlanGraph',
+  title: 'Features / Approvals / Plan diffs / Pulumi plan graph',
 }
 
 import { PulumiPlanGraph } from './PulumiPlanGraph'

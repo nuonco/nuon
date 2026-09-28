@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/GenerateStackDetails',
+  title: 'Features / Workflows / Stack details / Generate stack details',
 }
 
 import { GenerateStackDetails } from './GenerateStackDetails'

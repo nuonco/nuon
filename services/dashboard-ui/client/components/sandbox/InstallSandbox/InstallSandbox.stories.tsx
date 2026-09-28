@@ -1,5 +1,5 @@
 export default {
-  title: 'Sandbox/InstallSandbox',
+  title: 'Features / Sandbox / Install sandbox',
 }
 
 import { Banner } from '@/components/common/Banner'
