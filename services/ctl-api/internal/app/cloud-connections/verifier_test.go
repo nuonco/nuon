@@ -1,4 +1,4 @@
-package service
+package cloudconnections
 
 import (
 	"context"
@@ -17,7 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcissuer"
 )
 
@@ -177,7 +176,7 @@ func TestVerificationErrorMessage(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			require.Equal(t, tc.want, cloudconnections.VerificationErrorMessage(tc.err))
+			require.Equal(t, tc.want, VerificationErrorMessage(tc.err))
 		})
 	}
 }

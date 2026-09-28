@@ -12,6 +12,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
+	cloudconnectionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/helpers"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcissuer"
 )
@@ -23,7 +25,8 @@ type Params struct {
 	Cfg           *internal.Config
 	L             *zap.Logger
 	EndpointAudit *apiPkg.EndpointAudit
-	Verifier      Verifier `optional:"true"`
+	Verifier      cloudconnections.Verifier `optional:"true"`
+	Helpers       *cloudconnectionshelpers.Helpers
 }
 
 type service struct {
@@ -31,20 +34,21 @@ type service struct {
 	db       *gorm.DB
 	l        *zap.Logger
 	issuer   *oidcissuer.Issuer
-	verifier Verifier
+	verifier cloudconnections.Verifier
+	helpers  *cloudconnectionshelpers.Helpers
 }
 
 var _ apiPkg.Service = (*service)(nil)
 var _ apiPkg.MCPService = (*service)(nil)
 
 func New(params Params) (*service, error) {
-	issuer, err := issuerFromConfig(params.Cfg)
+	issuer, err := cloudconnections.IssuerFromConfig(params.Cfg)
 	if err != nil {
 		return nil, err
 	}
 	verifier := params.Verifier
 	if verifier == nil {
-		verifier = NewAWSVerifier(issuer)
+		verifier = cloudconnections.NewAWSVerifier(issuer)
 	}
 	return &service{
 		RouteRegister: apiPkg.RouteRegister{EndpointAudit: params.EndpointAudit},
@@ -52,30 +56,8 @@ func New(params Params) (*service, error) {
 		l:             params.L,
 		issuer:        issuer,
 		verifier:      verifier,
+		helpers:       params.Helpers,
 	}, nil
-}
-
-func NewVerifierFromConfig(cfg *internal.Config) (Verifier, error) {
-	issuer, err := issuerFromConfig(cfg)
-	if err != nil {
-		return nil, err
-	}
-	return NewAWSVerifier(issuer), nil
-}
-
-func issuerFromConfig(cfg *internal.Config) (*oidcissuer.Issuer, error) {
-	if cfg == nil || cfg.TelemetryJWKS == "" {
-		return nil, nil
-	}
-	privateKey, keyID, _, err := oidcissuer.ParseJWKS(cfg.TelemetryJWKS)
-	if err != nil {
-		return nil, fmt.Errorf("initialize cloud connection issuer: %w", err)
-	}
-	issuer, err := oidcissuer.New(cfg.PublicAPIURL, privateKey, keyID)
-	if err != nil {
-		return nil, fmt.Errorf("initialize cloud connection issuer: %w", err)
-	}
-	return issuer, nil
 }
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {

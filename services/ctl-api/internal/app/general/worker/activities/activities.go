@@ -13,7 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	cloudconnectionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/helpers"
-	cloudconnectionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/service"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
@@ -28,7 +27,6 @@ type Activities struct {
 	chDB                    *gorm.DB
 	appsHelpers             *appshelpers.Helpers
 	cloudConnectionsHelpers *cloudconnectionshelpers.Helpers
-	cloudConnectionVerifier cloudconnectionsservice.Verifier
 	orgsHelpers             *orgshelpers.Helpers
 	mw                      metrics.Writer
 	logger                  *temporalzap.Logger
@@ -65,17 +63,12 @@ func New(params Params) (*Activities, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to create temporal logger: %w", err)
 	}
-	verifier, err := cloudconnectionsservice.NewVerifierFromConfig(params.Cfg)
-	if err != nil {
-		return nil, err
-	}
 	return &Activities{
 		cfg:                     params.Cfg,
 		db:                      params.DB,
 		chDB:                    params.CHDB,
 		appsHelpers:             params.AppsHelpers,
 		cloudConnectionsHelpers: params.CloudConnectionsHelpers,
-		cloudConnectionVerifier: verifier,
 		orgsHelpers:             params.OrgsHelpers,
 		mw:                      params.MW,
 		logger:                  tlogger,

@@ -21,23 +21,29 @@ import (
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcissuer"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
 
 type Helpers struct {
 	issuer           *oidcissuer.Issuer
 	db               *gorm.DB
 	enqueueOrgSignal func(context.Context, orgshelpers.EnqueueOrgSignalParams) error
+	queueClient      *queueclient.Client
+	emitterClient    *emitterclient.Client
 }
 
 type Params struct {
 	fx.In
-	Cfg         *internal.Config
-	DB          *gorm.DB `name:"psql"`
-	OrgsHelpers *orgshelpers.Helpers
+	Cfg           *internal.Config
+	DB            *gorm.DB `name:"psql"`
+	OrgsHelpers   *orgshelpers.Helpers
+	QueueClient   *queueclient.Client
+	EmitterClient *emitterclient.Client
 }
 
 func New(params Params) (*Helpers, error) {
-	h := &Helpers{db: params.DB, enqueueOrgSignal: params.OrgsHelpers.EnqueueOrgSignal}
+	h := &Helpers{db: params.DB, enqueueOrgSignal: params.OrgsHelpers.EnqueueOrgSignal, queueClient: params.QueueClient, emitterClient: params.EmitterClient}
 	if params.Cfg.TelemetryJWKS == "" {
 		return h, nil
 	}

@@ -1,4 +1,4 @@
-package service
+package cloudconnections
 
 import (
 	"context"
@@ -17,7 +17,6 @@ import (
 	"github.com/aws/smithy-go"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcissuer"
 )
 
@@ -72,7 +71,7 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 		return VerificationResult{}, fmt.Errorf("load AWS config: %w", err)
 	}
 	client := sts.NewFromConfig(base)
-	token, err := v.issuer.Mint(ctx, subject(connection), "sts.amazonaws.com", 10*time.Minute)
+	token, err := v.issuer.Mint(ctx, fmt.Sprintf("org:%s:connection:%s", connection.OrgID, connection.ID), "sts.amazonaws.com", 10*time.Minute)
 	if err != nil {
 		return VerificationResult{}, err
 	}
@@ -80,7 +79,7 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 	if err != nil {
 		var apiErr smithy.APIError
 		if errors.As(err, &apiErr) {
-			return verificationFailure(cloudconnections.AssumeRoleErrorMessage(err)), nil
+			return verificationFailure(AssumeRoleErrorMessage(err)), nil
 		}
 		return VerificationResult{}, err
 	}
@@ -90,7 +89,7 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 	}
 	if _, err := client.AssumeRoleWithWebIdentity(ctx, &sts.AssumeRoleWithWebIdentityInput{RoleArn: &connection.Principal, RoleSessionName: aws.String("nuon-cloud-connection-negative-probe"), WebIdentityToken: &foreignToken, DurationSeconds: aws.Int32(900)}); err == nil {
 		return verificationFailure("The role trust policy accepts a foreign Nuon connection subject."), nil
-	} else if !cloudconnections.IsAccessDenied(err) {
+	} else if !IsAccessDenied(err) {
 		return VerificationResult{}, fmt.Errorf("probe foreign subject: %w", err)
 	}
 	assumed, err := awsConfigWithCredentials(base, output.Credentials)
@@ -106,7 +105,7 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 	}
 	if connection.Preset == app.CloudConnectionPresetStacks && !options.IdentityOnly {
 		if _, err := cloudformation.NewFromConfig(assumed).DescribeStacks(ctx, &cloudformation.DescribeStacksInput{}); err != nil {
-			if cloudconnections.IsAccessDenied(err) {
+			if IsAccessDenied(err) {
 				return verificationFailure("The role lacks CloudFormation read access required to manage install stacks."), nil
 			}
 			return VerificationResult{}, fmt.Errorf("probe CloudFormation access: %w", err)
@@ -146,7 +145,7 @@ func (v *awsVerifier) assumeRole(ctx context.Context, client stsAPI, input *sts.
 			return nil, lastDenied
 		}
 		output, err := client.AssumeRoleWithWebIdentity(retryCtx, input)
-		if !cloudconnections.IsAccessDenied(err) {
+		if !IsAccessDenied(err) {
 			if lastDenied != nil && retryCtx.Err() != nil && ctx.Err() == nil {
 				return nil, lastDenied
 			}

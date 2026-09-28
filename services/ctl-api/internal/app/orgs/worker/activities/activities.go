@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	cloudconnectionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/helpers"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
@@ -19,43 +20,46 @@ import (
 type Params struct {
 	fx.In
 
-	Cfg              *internal.Config
-	DB               *gorm.DB `name:"psql"`
-	RunnersHelpers   *runnershelpers.Helpers
-	Helpers          *helpers.Helpers
-	AppsHelpers      *appshelpers.Helpers
-	ComponentHelpers *componenthelpers.Helpers
-	InstallsHelpers  *installshelpers.Helpers
-	VCSHelpers       *vcshelpers.Helpers
-	Features         *features.Features
-	Salesforce       salesforce.Client
-	AcctClient       *account.Client
+	Cfg                     *internal.Config
+	DB                      *gorm.DB `name:"psql"`
+	RunnersHelpers          *runnershelpers.Helpers
+	Helpers                 *helpers.Helpers
+	AppsHelpers             *appshelpers.Helpers
+	ComponentHelpers        *componenthelpers.Helpers
+	InstallsHelpers         *installshelpers.Helpers
+	VCSHelpers              *vcshelpers.Helpers
+	CloudConnectionsHelpers *cloudconnectionshelpers.Helpers
+	Features                *features.Features
+	Salesforce              salesforce.Client
+	AcctClient              *account.Client
 }
 
 type Activities struct {
-	db               *gorm.DB
-	runnersHelpers   *runnershelpers.Helpers
-	helpers          *helpers.Helpers
-	appsHelpers      *appshelpers.Helpers
-	componentHelpers *componenthelpers.Helpers
-	installsHelpers  *installshelpers.Helpers
-	vcsHelpers       *vcshelpers.Helpers
-	features         *features.Features
-	salesforce       salesforce.Client
-	acctClient       *account.Client
+	db                      *gorm.DB
+	runnersHelpers          *runnershelpers.Helpers
+	helpers                 *helpers.Helpers
+	appsHelpers             *appshelpers.Helpers
+	componentHelpers        *componenthelpers.Helpers
+	installsHelpers         *installshelpers.Helpers
+	vcsHelpers              *vcshelpers.Helpers
+	cloudConnectionsHelpers *cloudconnectionshelpers.Helpers
+	features                *features.Features
+	salesforce              salesforce.Client
+	acctClient              *account.Client
 }
 
 func New(params Params) (*Activities, error) {
 	return &Activities{
-		db:               params.DB,
-		runnersHelpers:   params.RunnersHelpers,
-		helpers:          params.Helpers,
-		appsHelpers:      params.AppsHelpers,
-		componentHelpers: params.ComponentHelpers,
-		installsHelpers:  params.InstallsHelpers,
-		vcsHelpers:       params.VCSHelpers,
-		features:         params.Features,
-		salesforce:       params.Salesforce,
-		acctClient:       params.AcctClient,
+		db:                      params.DB,
+		runnersHelpers:          params.RunnersHelpers,
+		helpers:                 params.Helpers,
+		appsHelpers:             params.AppsHelpers,
+		componentHelpers:        params.ComponentHelpers,
+		installsHelpers:         params.InstallsHelpers,
+		vcsHelpers:              params.VCSHelpers,
+		cloudConnectionsHelpers: params.CloudConnectionsHelpers,
+		features:                params.Features,
+		salesforce:              params.Salesforce,
+		acctClient:              params.AcctClient,
 	}, nil
 }

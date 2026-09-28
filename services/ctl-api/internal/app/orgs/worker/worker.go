@@ -13,6 +13,8 @@ import (
 	pkgworkflows "github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	appsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/signals/reverify"
+	cloudconnectionsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
@@ -29,17 +31,18 @@ type Worker struct {
 type WorkerParams struct {
 	fx.In
 
-	Cfg              *internal.Config
-	TClient          temporalclient.Client
-	SharedWkflows    *workflows.Workflows
-	SharedActivities *workflows.Activities
-	WKflows          *Workflows
-	Acts             *activities.Activities
-	TriggerActs      *appsactivities.Activities `name:"org-trigger-activities"`
-	L                *zap.Logger
-	LC               fx.Lifecycle
-	Interceptors     []interceptor.WorkerInterceptor `group:"interceptors"`
-	QueueClient      *queueclient.Client
+	Cfg                 *internal.Config
+	TClient             temporalclient.Client
+	SharedWkflows       *workflows.Workflows
+	SharedActivities    *workflows.Activities
+	WKflows             *Workflows
+	Acts                *activities.Activities
+	TriggerActs         *appsactivities.Activities `name:"org-trigger-activities"`
+	CloudConnectionActs *cloudconnectionsactivities.Activities
+	L                   *zap.Logger
+	LC                  fx.Lifecycle
+	Interceptors        []interceptor.WorkerInterceptor `group:"interceptors"`
+	QueueClient         *queueclient.Client
 }
 
 func New(params WorkerParams) (*Worker, error) {
@@ -64,6 +67,7 @@ func New(params WorkerParams) (*Worker, error) {
 	})
 
 	wkr.RegisterActivity(params.Acts)
+	wkr.RegisterActivity(params.CloudConnectionActs)
 	wkr.RegisterActivity(params.TriggerActs.RouteTriggerEvent)
 	wkr.RegisterActivity(params.TriggerActs.NotifyEventRunbookWaiter)
 	wkr.RegisterActivity(params.TriggerActs.DispatchTriggerEvent)

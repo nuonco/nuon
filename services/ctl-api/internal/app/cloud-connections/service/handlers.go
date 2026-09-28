@@ -90,6 +90,10 @@ func (s *service) Create(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to create cloud connection: %w", err))
 		return
 	}
+	if _, err := s.helpers.EnsureConnectionQueue(ctx, &connection); err != nil {
+		ctx.Error(err)
+		return
+	}
 	response, err := s.response(ctx, &connection)
 	if err != nil {
 		ctx.Error(err)
@@ -217,6 +221,9 @@ func (s *service) delete(ctx context.Context, orgID, connectionID string) error 
 			description := fmt.Sprintf("Cloud connection cannot be deleted; it is referenced by installs (%d)", installReferences)
 			return stderr.ErrConflict{Err: errors.New(description), Description: description}
 		}
+		if err := s.helpers.TerminateConnectionQueue(ctx, connection.ID); err != nil {
+			return fmt.Errorf("terminate cloud connection queue: %w", err)
+		}
 		return tx.Delete(&connection).Error
 	})
 }
@@ -245,7 +252,7 @@ func (s *service) Verify(ctx *gin.Context) {
 			return
 		}
 	}
-	connection, err := s.verify(ctx, org.ID, ctx.Param("connection_id"), VerifyOptions{RetryIAMPropagation: true})
+	connection, err := s.verify(ctx, org.ID, ctx.Param("connection_id"), cloudconnections.VerifyOptions{RetryIAMPropagation: true})
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -258,7 +265,7 @@ func (s *service) Verify(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
-func (s *service) verify(ctx context.Context, orgID, connectionID string, options VerifyOptions) (*app.CloudConnection, error) {
+func (s *service) verify(ctx context.Context, orgID, connectionID string, options cloudconnections.VerifyOptions) (*app.CloudConnection, error) {
 	connection, err := s.getContext(ctx, orgID, connectionID)
 	if err != nil {
 		return nil, err
@@ -267,7 +274,7 @@ func (s *service) verify(ctx context.Context, orgID, connectionID string, option
 	result, err := s.verifier.Verify(ctx, connection, options)
 	if err != nil {
 		s.l.Warn("cloud connection verification failed", zap.String("connection_id", connection.ID), zap.Error(err))
-		result = verificationFailure(cloudconnections.VerificationErrorMessage(err))
+		result = cloudconnections.VerificationResult{Status: app.CloudConnectionStatusError, Message: cloudconnections.VerificationErrorMessage(err)}
 	}
 	now := time.Now().UTC()
 	update := app.CloudConnection{Status: result.Status, StatusMessage: result.Message, LastVerifiedAt: &now}

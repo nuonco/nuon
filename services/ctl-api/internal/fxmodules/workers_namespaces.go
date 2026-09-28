@@ -11,6 +11,7 @@ import (
 	syncappconfiginstallsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/syncappconfiginstalls"
 	appsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker"
 	appsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
+	cloudconnectionsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/worker/activities"
 	componentsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker"
 	componentsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 	generalworker "github.com/nuonco/nuon/services/ctl-api/internal/app/general/worker"
@@ -41,6 +42,7 @@ var GeneralWorkerModule = fx.Module("worker-general",
 // OrgsWorkerModule provides the orgs namespace worker.
 var OrgsWorkerModule = fx.Module("worker-orgs",
 	fx.Provide(orgsactivities.New),
+	fx.Provide(cloudconnectionsactivities.New),
 	fx.Provide(fx.Annotate(appsactivities.New, fx.ResultTags(`name:"org-trigger-activities"`))),
 	fx.Provide(orgsworker.NewWorkflows),
 	fx.Provide(worker.AsWorker(orgsworker.New)),

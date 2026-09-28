@@ -7,6 +7,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
@@ -97,6 +98,9 @@ func (s *service) mcpCreate(ctx context.Context, _ *mcp.CallToolRequest, in mcpC
 	if err := s.db.WithContext(ctx).Create(&connection).Error; err != nil {
 		return nil, nil, fmt.Errorf("create cloud connection: %w", err)
 	}
+	if _, err := s.helpers.EnsureConnectionQueue(ctx, &connection); err != nil {
+		return nil, nil, err
+	}
 	response, err := s.response(ctx, &connection)
 	if err != nil {
 		return nil, nil, err
@@ -109,7 +113,7 @@ func (s *service) mcpVerify(ctx context.Context, _ *mcp.CallToolRequest, in mcpV
 	if err != nil {
 		return nil, nil, err
 	}
-	connection, err := s.verify(ctx, orgID, in.ConnectionID, VerifyOptions{})
+	connection, err := s.verify(ctx, orgID, in.ConnectionID, cloudconnections.VerifyOptions{RetryIAMPropagation: false})
 	if err != nil {
 		return nil, nil, err
 	}
