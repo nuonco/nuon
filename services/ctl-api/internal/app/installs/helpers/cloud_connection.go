@@ -4,13 +4,15 @@ import (
 	"context"
 	"fmt"
 
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
-func (s *Helpers) ValidateCloudConnection(ctx context.Context, orgID, connectionID string, platform app.CloudPlatform) (*app.CloudConnection, error) {
+func validateCloudConnection(ctx context.Context, db *gorm.DB, orgID, connectionID string, platform app.CloudPlatform) (*app.CloudConnection, error) {
 	var connection app.CloudConnection
-	result := s.db.WithContext(ctx).Where(&app.CloudConnection{ID: connectionID, OrgID: orgID}).First(&connection)
+	result := db.WithContext(ctx).Where(&app.CloudConnection{ID: connectionID, OrgID: orgID}).First(&connection)
 	if result.Error != nil {
 		return nil, stderr.ErrUser{Err: fmt.Errorf("cloud connection not found: %w", result.Error), Description: "Cloud connection was not found for this organization"}
 	}

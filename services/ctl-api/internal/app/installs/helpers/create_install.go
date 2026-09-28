@@ -6,6 +6,7 @@ import (
 	"regexp"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/labels"
@@ -247,7 +248,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 			targetSource = app.CloudPlatformTargetSourceUser
 		}
 		if req.CloudConnectionID != "" {
-			connection, err := s.ValidateCloudConnection(ctx, parentApp.OrgID, req.CloudConnectionID, app.CloudPlatformAWS)
+			connection, err := validateCloudConnection(ctx, s.db, parentApp.OrgID, req.CloudConnectionID, app.CloudPlatformAWS)
 			if err != nil {
 				return nil, err
 			}
@@ -392,22 +393,23 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		appBranchGroupSource = source
 	}
 
-	if pin.BranchID == "" {
-		if err := s.db.WithContext(ctx).Create(&install).Error; err != nil {
-			return nil, fmt.Errorf("unable to create install: %w", err)
-		}
-	} else {
-		if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-			if err := tx.WithContext(ctx).Create(&install).Error; err != nil {
-				return fmt.Errorf("unable to create install: %w", err)
+	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if install.CloudConnectionID != nil {
+			if _, err := validateCloudConnection(ctx, tx.Clauses(clause.Locking{Strength: "UPDATE"}), parentApp.OrgID, *install.CloudConnectionID, app.CloudPlatformAWS); err != nil {
+				return err
 			}
+		}
+		if err := tx.Create(&install).Error; err != nil {
+			return fmt.Errorf("unable to create install: %w", err)
+		}
+		if pin.BranchID != "" {
 			if err := appshelpers.SetInstallAppBranchGroupAssignmentWithDB(ctx, tx, install.ID, pin.BranchID, install.AppBranchGroup, appBranchGroupSource); err != nil {
 				return fmt.Errorf("unable to add install to app branch: %w", err)
 			}
-			return nil
-		}); err != nil {
-			return nil, err
 		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 
 	s.mw.Incr("install.created", metrics.ToTags(map[string]string{
