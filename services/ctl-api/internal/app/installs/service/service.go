@@ -126,6 +126,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.GET("/drifted-objects", s.GetDriftedObjects)
 
 		// live component resource explorer
+		installs.GET("/status", s.GetInstallStatus)
 		installs.GET("/resources", s.GetInstallResources)
 
 		// install-level component health rollup
