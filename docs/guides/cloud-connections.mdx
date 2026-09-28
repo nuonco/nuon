@@ -50,9 +50,9 @@ When creating an AWS install, select a **verified AWS connection** with either p
 
 A connection referenced by an install cannot be deleted; the API returns HTTP 409. Delete the referencing installs before deleting the connection.
 
-## CLI and MCP
+## CLI
 
-Use `nuon cloud-connections list|get|create|verify|delete`. Agent clients can use `list_cloud_connections`, `get_cloud_connection`, `create_cloud_connection`, `verify_cloud_connection`, and `delete_cloud_connection`. Responses report the preset, status, status message, and last verification time.
+Use `nuon cloud-connections list|get|create|verify|delete`. Responses report the preset, status, status message, and last verification time.
 
 Nuon re-verifies connection identity and trust daily without probing stack permissions. If a previously verified connection fails, Nuon updates its status and emits `cloud-connection-verification-failed` for notification subscriptions.
 

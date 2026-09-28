@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -40,7 +39,6 @@ type service struct {
 }
 
 var _ apiPkg.Service = (*service)(nil)
-var _ apiPkg.MCPService = (*service)(nil)
 
 func New(params Params) (*service, error) {
 	issuer, err := cloudconnections.IssuerFromConfig(params.Cfg)
@@ -74,14 +72,6 @@ func (s *service) RegisterInternalRoutes(*gin.Engine) error       { return nil }
 func (s *service) RegisterRunnerRoutes(*gin.Engine) error         { return nil }
 func (s *service) RegisterAdminDashboardRoutes(*gin.Engine) error { return nil }
 func (s *service) RegisterSlackRoutes(*gin.Engine) error          { return nil }
-
-func (s *service) RegisterMCPTools(server *mcp.Server) {
-	mcp.AddTool(server, apiPkg.MCPReadTool("list_cloud_connections", "List cloud connections", "List cloud connections in the current org."+apiPkg.MCPListToolHint), s.mcpList)
-	mcp.AddTool(server, apiPkg.MCPReadTool("get_cloud_connection", "Get cloud connection", "Get a cloud connection and its setup material by ID."), s.mcpGet)
-	mcp.AddTool(server, apiPkg.MCPWriteTool("create_cloud_connection", "Create cloud connection", "WRITE OPERATION: Create an AWS cloud connection with the stacks or custom preset. For custom, attach your own permissions policy.", false, false), s.mcpCreate)
-	mcp.AddTool(server, apiPkg.MCPWriteTool("verify_cloud_connection", "Verify cloud connection", "WRITE OPERATION: Enqueue cloud connection verification. Poll get_cloud_connection until verification_in_progress is false.", false, false), s.mcpVerify)
-	mcp.AddTool(server, apiPkg.MCPWriteTool("delete_cloud_connection", "Delete cloud connection", "WRITE OPERATION: Delete an unused cloud connection.", true, true), s.mcpDelete)
-}
 
 func (s *service) get(ctx *gin.Context, orgID, id string) (*app.CloudConnection, error) {
 	return s.getContext(ctx, orgID, id)
