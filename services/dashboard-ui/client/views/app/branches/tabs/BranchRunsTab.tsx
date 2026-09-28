@@ -66,9 +66,9 @@ const BranchRunsContent = () => {
 
   return (
     <BranchTabPage
-      tab="Runs"
+      tab="Previous runs"
       tabPath="runs"
-      heading="Runs"
+      heading="Previous runs"
       subheading="Every run from this branch, newest first."
     >
       <WorkflowFilters owner="app" />

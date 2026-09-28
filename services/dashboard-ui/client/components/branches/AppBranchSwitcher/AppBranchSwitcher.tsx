@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import { Badge } from '@/components/common/Badge'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
@@ -45,17 +44,19 @@ export const AppBranchSwitcher = ({
       position="below"
       alignment="left"
       hideIcon
-      buttonClassName="!p-0 !h-fit !border-0 !bg-transparent !rounded-full"
+      buttonClassName="!p-0 !h-fit !border-0 !bg-transparent"
       buttonText={
-        <Badge
-          size="sm"
-          theme="brand"
-          className="cursor-pointer transition-colors hover:!border-primary-300 dark:hover:!border-primary-600/60"
+        <Text
+          as="span"
+          variant="subtext"
+          weight="strong"
+          flex
+          nowrap
+          className="cursor-pointer gap-1 hover:text-primary-600 dark:hover:text-primary-400"
         >
-          <Icon variant="GitBranchIcon" size={13} />
           {currentBranch.name}
           <Icon variant="CaretUpDownIcon" size={12} />
-        </Badge>
+        </Text>
       }
     >
       <Menu className="w-64 max-h-[400px] overflow-y-auto">

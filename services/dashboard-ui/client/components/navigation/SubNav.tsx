@@ -57,12 +57,14 @@ interface ISubNav {
   basePath: string
   links: Array<TNavItem>
   storageKey?: string
+  pinLastGroup?: boolean
 }
 
 export const SubNav = ({
   basePath,
   links,
   storageKey = 'subnav-sections',
+  pinLastGroup = false,
 }: ISubNav) => {
   const {
     isPageSidebarOpen,
@@ -110,16 +112,20 @@ export const SubNav = ({
         'md:overflow-visible md:relative md:transition-[width] md:duration-fastest md:ease-cubic md:border-b-0 md:border-r md:flex-none',
         {
           'md:w-[17.5rem]': isPageSidebarOpen,
+          'md:sticky md:top-0 md:h-[calc(100dvh-11rem)] md:max-h-[calc(100dvh-11rem)]':
+            pinLastGroup,
         }
       )}
     >
       <nav
         className={cn(
           'flex shrink-0 gap-8 px-4 py-3 h-16',
-          'md:sticky md:top-0 md:flex-col md:gap-1 md:px-4 md:py-4 md:w-full md:h-auto'
+          'md:sticky md:top-0 md:flex-col md:gap-1 md:px-4 md:py-4 md:w-full',
+          pinLastGroup ? 'md:h-full md:overflow-y-auto' : 'md:h-auto'
         )}
       >
-        {groups.map((group) => {
+        {groups.map((group, index) => {
+          const pinned = pinLastGroup && index === groups.length - 1
           const renderItem = (item: TNavLink | TNavAction) =>
             isAction(item) ? (
               <SubNavButton
@@ -152,7 +158,10 @@ export const SubNav = ({
             !isCollapsible || !isPageSidebarOpen || userOpen || hasActiveItem
 
           return (
-            <div key={group.key} className="contents md:block">
+            <div
+              key={group.key}
+              className={cn('contents md:block', pinned && 'md:mt-auto')}
+            >
               <button
                 type="button"
                 disabled={!isCollapsible}
