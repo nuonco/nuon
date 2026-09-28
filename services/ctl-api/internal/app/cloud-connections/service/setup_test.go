@@ -42,6 +42,12 @@ func TestAWSSetup(t *testing.T) {
 			got := svc.setup(connection)
 			policy, err := json.Marshal(got.PermissionsPolicy)
 			require.NoError(t, err)
+			if test.preset == app.CloudConnectionPresetStacks {
+				assert.Contains(t, string(policy), "cloudformation:DescribeStacks")
+				assert.Contains(t, string(policy), "cloudformation:ListStacks")
+			} else {
+				assert.Nil(t, got.PermissionsPolicy)
+			}
 			material := string(policy) + got.CLI + got.Terraform + got.CloudFormation
 			for _, value := range test.want {
 				assert.Contains(t, material, value)
