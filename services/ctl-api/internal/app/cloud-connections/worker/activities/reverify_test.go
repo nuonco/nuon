@@ -104,7 +104,7 @@ func TestReverify(t *testing.T) {
 				require.NoError(t, err)
 				issuer, err := oidcissuer.New("https://api.example.com", key, "acme")
 				require.NoError(t, err)
-				awsVerifier = cloudconnections.NewAWSVerifier(issuer)
+				awsVerifier = cloudconnections.NewAWSVerifier(issuer, zap.NewNop())
 			}
 			db, err := gorm.Open(postgres.New(postgres.Config{DSN: "host=localhost dbname=unused"}), &gorm.Config{DryRun: true, DisableAutomaticPing: true, SkipDefaultTransaction: true})
 			require.NoError(t, err)

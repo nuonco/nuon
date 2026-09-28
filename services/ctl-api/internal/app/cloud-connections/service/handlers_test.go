@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -48,20 +50,33 @@ func TestVerificationInProgress(t *testing.T) {
 }
 
 func TestVerifyEnqueues(t *testing.T) {
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	recent, boundary, expired := now.Add(-2*time.Minute+time.Microsecond), now.Add(-2*time.Minute), now.Add(-2*time.Minute-time.Microsecond)
 	for name, tc := range map[string]struct {
 		status       app.CloudConnectionStatus
 		enqueueError error
+		requested    *time.Time
+		completed    bool
+		deduplicated bool
 	}{
-		"pending":       {status: app.CloudConnectionStatusPending},
-		"verified":      {status: app.CloudConnectionStatusVerified},
-		"error":         {status: app.CloudConnectionStatusError},
-		"enqueue fails": {status: app.CloudConnectionStatusVerified, enqueueError: errors.New("queue full")},
+		"pending":                  {status: app.CloudConnectionStatusPending},
+		"verified":                 {status: app.CloudConnectionStatusVerified},
+		"error":                    {status: app.CloudConnectionStatusError},
+		"enqueue fails":            {status: app.CloudConnectionStatusVerified, enqueueError: errors.New("queue full")},
+		"pending recent request":   {status: app.CloudConnectionStatusPending, requested: &recent, deduplicated: true},
+		"verified recent request":  {status: app.CloudConnectionStatusVerified, requested: &recent, deduplicated: true},
+		"at two minute boundary":   {status: app.CloudConnectionStatusPending, requested: &boundary},
+		"past two minute boundary": {status: app.CloudConnectionStatusPending, requested: &expired},
+		"recent completed request": {status: app.CloudConnectionStatusVerified, requested: &recent, completed: true},
 	} {
 		t.Run(name, func(t *testing.T) {
 			db, err := gorm.Open(postgres.New(postgres.Config{DSN: "host=localhost dbname=unused"}), &gorm.Config{DryRun: true, DisableAutomaticPing: true, SkipDefaultTransaction: true})
 			require.NoError(t, err)
-			lastVerified := time.Now().UTC().Add(-time.Hour)
-			connection := app.CloudConnection{ID: "cc_acme", OrgID: "org_acme", Status: tc.status, StatusMessage: "previous result"}
+			lastVerified := now.Add(-time.Hour)
+			if tc.completed {
+				lastVerified = now.Add(-time.Second)
+			}
+			connection := app.CloudConnection{ID: "cc_acme", OrgID: "org_acme", Status: tc.status, StatusMessage: "previous result", VerificationRequestedAt: tc.requested}
 			if tc.status != app.CloudConnectionStatusPending {
 				connection.LastVerifiedAt = &lastVerified
 			}
@@ -76,12 +91,12 @@ func TestVerifyEnqueues(t *testing.T) {
 				update := tx.Statement.Dest.(app.CloudConnection)
 				require.Equal(t, []string{"verification_requested_at"}, tx.Statement.Selects)
 				require.NotNil(t, update.VerificationRequestedAt)
-				require.WithinDuration(t, time.Now(), *update.VerificationRequestedAt, time.Second)
+				require.Equal(t, now, *update.VerificationRequestedAt)
 				require.Empty(t, update.Status)
 				require.Empty(t, update.StatusMessage)
 				require.Nil(t, update.LastVerifiedAt)
 			}))
-			svc := &service{db: db, enqueueVerification: func(_ context.Context, c *app.CloudConnection) error {
+			svc := &service{db: db, now: func() time.Time { return now }, enqueueVerification: func(_ context.Context, c *app.CloudConnection) error {
 				enqueues++
 				require.Equal(t, connection, *c)
 				return tc.enqueueError
@@ -92,7 +107,11 @@ func TestVerifyEnqueues(t *testing.T) {
 			ctx.Params = gin.Params{{Key: "connection_id", Value: connection.ID}}
 			cctx.SetOrgGinContext(ctx, &app.Org{ID: connection.OrgID})
 			svc.Verify(ctx)
-			require.Equal(t, 1, enqueues)
+			wantEnqueues := 1
+			if tc.deduplicated {
+				wantEnqueues = 0
+			}
+			require.Equal(t, wantEnqueues, enqueues)
 			if tc.enqueueError != nil {
 				require.ErrorIs(t, ctx.Errors.Last().Err, tc.enqueueError)
 				require.Zero(t, updates)
@@ -100,14 +119,67 @@ func TestVerifyEnqueues(t *testing.T) {
 			}
 			require.Empty(t, ctx.Errors)
 			require.Equal(t, http.StatusAccepted, w.Code)
-			require.Equal(t, 1, updates)
+			require.Equal(t, wantEnqueues, updates)
 			var response ConnectionResponse
 			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
 			require.Equal(t, connection.Status, response.Status)
 			require.Equal(t, connection.StatusMessage, response.StatusMessage)
 			require.Equal(t, connection.LastVerifiedAt, response.LastVerifiedAt)
 			require.NotNil(t, response.VerificationRequestedAt)
+			if tc.deduplicated {
+				require.Equal(t, tc.requested, response.VerificationRequestedAt)
+			} else {
+				require.Equal(t, now, *response.VerificationRequestedAt)
+			}
 			require.True(t, response.VerificationInProgress)
+		})
+	}
+}
+
+type dryRunTransaction struct{ gorm.ConnPool }
+
+func (tx dryRunTransaction) BeginTx(context.Context, *sql.TxOptions) (gorm.ConnPool, error) {
+	return tx, nil
+}
+
+func (dryRunTransaction) Commit() error   { return nil }
+func (dryRunTransaction) Rollback() error { return nil }
+
+func TestDeleteConflict(t *testing.T) {
+	for name, tc := range map[string]struct {
+		installs int64
+		message  string
+	}{
+		"one install":       {1, "This connection is used by 1 install. Reassign or delete that install first."},
+		"multiple installs": {3, "This connection is used by 3 installs. Reassign or delete those installs first."},
+	} {
+		t.Run(name, func(t *testing.T) {
+			db, err := gorm.Open(postgres.New(postgres.Config{DSN: "host=localhost dbname=unused"}), &gorm.Config{DryRun: true, DisableAutomaticPing: true})
+			require.NoError(t, err)
+			db.Statement.ConnPool = dryRunTransaction{db.ConnPool}
+			require.NoError(t, db.Callback().Query().After("gorm:query").Register("load", func(tx *gorm.DB) {
+				switch dest := tx.Statement.Dest.(type) {
+				case *app.CloudConnection:
+					*dest = app.CloudConnection{ID: "cc_acme", OrgID: "org_acme"}
+				case *int64:
+					*dest = tc.installs
+					tx.RowsAffected = 1
+				}
+			}))
+			require.NoError(t, db.Callback().Delete().Before("gorm:delete").Register("no-delete", func(tx *gorm.DB) {
+				t.Error("referenced connection must not be deleted")
+			}))
+			svc := &service{db: db}
+			w := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(w)
+			ctx.Request = httptest.NewRequest(http.MethodDelete, "/v1/cloud-connections/cc_acme", nil)
+			ctx.Params = gin.Params{{Key: "connection_id", Value: "cc_acme"}}
+			cctx.SetOrgGinContext(ctx, &app.Org{ID: "org_acme"})
+			svc.Delete(ctx)
+			require.Len(t, ctx.Errors, 1)
+			var conflict stderr.ErrConflict
+			require.ErrorAs(t, ctx.Errors.Last().Err, &conflict)
+			require.Equal(t, tc.message, conflict.Description)
 		})
 	}
 }

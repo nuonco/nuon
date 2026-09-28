@@ -3,16 +3,18 @@ package cloudconnections
 import (
 	"fmt"
 
+	"go.uber.org/zap"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcissuer"
 )
 
-func NewVerifierFromConfig(cfg *internal.Config) (Verifier, error) {
+func NewVerifierFromConfig(cfg *internal.Config, l *zap.Logger) (Verifier, error) {
 	issuer, err := IssuerFromConfig(cfg)
 	if err != nil {
 		return nil, err
 	}
-	return NewAWSVerifier(issuer), nil
+	return NewAWSVerifier(issuer, l), nil
 }
 
 func IssuerFromConfig(cfg *internal.Config) (*oidcissuer.Issuer, error) {

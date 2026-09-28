@@ -226,7 +226,10 @@ func (s *service) delete(ctx context.Context, orgID, connectionID string) error 
 			return fmt.Errorf("count install references: %w", err)
 		}
 		if installReferences > 0 {
-			description := fmt.Sprintf("Cloud connection cannot be deleted; it is referenced by installs (%d)", installReferences)
+			description := fmt.Sprintf("This connection is used by %d installs. Reassign or delete those installs first.", installReferences)
+			if installReferences == 1 {
+				description = "This connection is used by 1 install. Reassign or delete that install first."
+			}
 			return stderr.ErrConflict{Err: errors.New(description), Description: description}
 		}
 		if err := s.helpers.TerminateConnectionQueue(ctx, connection.ID); err != nil {
@@ -278,7 +281,10 @@ func (s *service) verify(ctx context.Context, orgID, connectionID string) (*app.
 	if err != nil {
 		return nil, err
 	}
-	now := time.Now().UTC().Truncate(time.Microsecond)
+	now := s.now().UTC().Truncate(time.Microsecond)
+	if verificationInProgress(connection) && connection.VerificationRequestedAt.After(now.Add(-2*time.Minute)) {
+		return connection, nil
+	}
 	if err := s.enqueueVerification(ctx, connection); err != nil {
 		return nil, err
 	}

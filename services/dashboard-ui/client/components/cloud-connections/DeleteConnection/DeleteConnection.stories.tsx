@@ -19,7 +19,7 @@ export const Conflict = () => (
       error={{
         error: 'Conflict',
         description:
-          'Cloud connection cannot be deleted; it is referenced by installs (2)',
+          'This connection is used by 2 installs. Reassign or delete those installs first.',
         user_error: true,
         status: 409,
       }}

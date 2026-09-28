@@ -28,7 +28,7 @@ type Activities struct {
 }
 
 func New(params Params) (*Activities, error) {
-	verifier, err := cloudconnections.NewVerifierFromConfig(params.Cfg)
+	verifier, err := cloudconnections.NewVerifierFromConfig(params.Cfg, params.L)
 	if err != nil {
 		return nil, err
 	}

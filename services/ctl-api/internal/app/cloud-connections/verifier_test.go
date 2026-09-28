@@ -15,6 +15,8 @@ import (
 
 	"github.com/aws/smithy-go"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcissuer"
@@ -126,7 +128,8 @@ func TestAWSVerification(t *testing.T) {
 			t.Setenv("AWS_EC2_METADATA_DISABLED", "true")
 			connection := &app.CloudConnection{ID: "cc_acme", OrgID: "org_acme", Platform: app.CloudPlatformAWS, Preset: tc.preset, TargetID: "123456789012", Principal: "arn:aws:iam::123456789012:role/acme", DefaultRegion: "us-east-1"}
 			now, sleeps := time.Now(), 0
-			verifier := NewAWSVerifier(issuer).(*awsVerifier)
+			core, logs := observer.New(zap.DebugLevel)
+			verifier := NewAWSVerifier(issuer, zap.New(core)).(*awsVerifier)
 			verifier.now = func() time.Time { return now }
 			verifier.sleep = func(ctx context.Context, duration time.Duration) error {
 				require.Equal(t, 5*time.Second, duration)
@@ -149,6 +152,42 @@ func TestAWSVerification(t *testing.T) {
 				require.Equal(t, 2, exchanges)
 			}
 			require.Equal(t, tc.wantProbes, probes)
+			if !tc.retry {
+				require.Zero(t, logs.Len())
+				return
+			}
+			failed := tc.assumeError != "" && tc.assumeFailures == 0
+			attempts := 1
+			if tc.assumeFailures > 0 {
+				attempts = tc.assumeFailures + 1
+			} else if tc.assumeError == "AccessDenied" {
+				attempts = 12
+			}
+			entries := logs.All()
+			require.Len(t, entries, attempts+1)
+			for i, entry := range entries[:attempts] {
+				require.Equal(t, zap.DebugLevel, entry.Level)
+				fields := entry.ContextMap()
+				require.Equal(t, "cc_acme", fields["connection_id"])
+				require.EqualValues(t, i+1, fields["attempt"])
+				code, delay := "", time.Duration(0)
+				if failed || i < tc.assumeFailures {
+					code = tc.assumeError
+					if code == "AccessDenied" {
+						delay = 5 * time.Second
+					}
+				}
+				require.Equal(t, code, fields["aws_error_code"])
+				require.Equal(t, delay, fields["sleep"])
+			}
+			final := entries[attempts]
+			require.EqualValues(t, attempts, final.ContextMap()["attempts"])
+			require.Equal(t, time.Duration(tc.wantSleeps)*5*time.Second, final.ContextMap()["elapsed"])
+			if failed {
+				require.Equal(t, zap.WarnLevel, final.Level)
+			} else {
+				require.Equal(t, zap.InfoLevel, final.Level)
+			}
 		})
 	}
 }

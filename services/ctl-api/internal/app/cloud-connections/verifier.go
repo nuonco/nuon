@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	stsTypes "github.com/aws/aws-sdk-go-v2/service/sts/types"
 	"github.com/aws/smithy-go"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcissuer"
@@ -44,12 +45,13 @@ type cloudFormationAPI interface {
 
 type awsVerifier struct {
 	issuer *oidcissuer.Issuer
+	l      *zap.Logger
 	sleep  func(context.Context, time.Duration) error
 	now    func() time.Time
 }
 
-func NewAWSVerifier(issuer *oidcissuer.Issuer) Verifier {
-	return &awsVerifier{issuer: issuer, sleep: sleepWithContext, now: time.Now}
+func NewAWSVerifier(issuer *oidcissuer.Issuer, l *zap.Logger) Verifier {
+	return &awsVerifier{issuer: issuer, l: l, sleep: sleepWithContext, now: time.Now}
 }
 
 func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnection, options VerifyOptions) (VerificationResult, error) {
@@ -74,7 +76,7 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 	if err != nil {
 		return VerificationResult{}, err
 	}
-	output, err := v.assumeRole(ctx, client, &sts.AssumeRoleWithWebIdentityInput{RoleArn: &connection.Principal, RoleSessionName: aws.String("nuon-cloud-connection-verification"), WebIdentityToken: &token, DurationSeconds: aws.Int32(900)}, options.RetryIAMPropagation)
+	output, err := v.assumeRole(ctx, connection.ID, client, &sts.AssumeRoleWithWebIdentityInput{RoleArn: &connection.Principal, RoleSessionName: aws.String("nuon-cloud-connection-verification"), WebIdentityToken: &token, DurationSeconds: aws.Int32(900)}, options.RetryIAMPropagation)
 	if err != nil {
 		var apiErr smithy.APIError
 		if errors.As(err, &apiErr) {
@@ -128,13 +130,24 @@ func sleepWithContext(ctx context.Context, duration time.Duration) error {
 	}
 }
 
-func (v *awsVerifier) assumeRole(ctx context.Context, client stsAPI, input *sts.AssumeRoleWithWebIdentityInput, retry bool) (*sts.AssumeRoleWithWebIdentityOutput, error) {
+func (v *awsVerifier) assumeRole(ctx context.Context, connectionID string, client stsAPI, input *sts.AssumeRoleWithWebIdentityInput, retry bool) (output *sts.AssumeRoleWithWebIdentityOutput, err error) {
 	if !retry {
 		return client.AssumeRoleWithWebIdentity(ctx, input)
 	}
 	retryCtx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
-	deadline := v.now().Add(time.Minute)
+	started := v.now()
+	deadline := started.Add(time.Minute)
+	attempts := 0
+	l := v.l.With(zap.String("connection_id", connectionID))
+	defer func() {
+		fields := []zap.Field{zap.Int("attempts", attempts), zap.Duration("elapsed", v.now().Sub(started))}
+		if err != nil {
+			l.Warn("cloud connection IAM propagation check gave up", append(fields, zap.Error(err))...)
+		} else {
+			l.Info("cloud connection IAM propagation check succeeded", fields...)
+		}
+	}()
 	var lastDenied error
 	for {
 		if err := ctx.Err(); err != nil {
@@ -143,7 +156,18 @@ func (v *awsVerifier) assumeRole(ctx context.Context, client stsAPI, input *sts.
 		if lastDenied != nil && (retryCtx.Err() != nil || !v.now().Before(deadline)) {
 			return nil, lastDenied
 		}
-		output, err := client.AssumeRoleWithWebIdentity(retryCtx, input)
+		output, err = client.AssumeRoleWithWebIdentity(retryCtx, input)
+		attempts++
+		var code string
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			code = apiErr.ErrorCode()
+		}
+		sleep := time.Duration(0)
+		if IsAccessDenied(err) {
+			sleep = min(5*time.Second, max(0, deadline.Sub(v.now())))
+		}
+		l.Debug("cloud connection IAM propagation attempt", zap.Int("attempt", attempts), zap.String("aws_error_code", code), zap.Duration("sleep", sleep))
 		if !IsAccessDenied(err) {
 			if lastDenied != nil && retryCtx.Err() != nil && ctx.Err() == nil {
 				return nil, lastDenied
@@ -151,7 +175,7 @@ func (v *awsVerifier) assumeRole(ctx context.Context, client stsAPI, input *sts.
 			return output, err
 		}
 		lastDenied = err
-		if err := v.sleep(retryCtx, min(5*time.Second, max(0, deadline.Sub(v.now())))); err != nil {
+		if err := v.sleep(retryCtx, sleep); err != nil {
 			if ctx.Err() != nil {
 				return nil, ctx.Err()
 			}

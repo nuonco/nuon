@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -35,6 +36,7 @@ type service struct {
 	issuer              *oidcissuer.Issuer
 	helpers             *cloudconnectionshelpers.Helpers
 	enqueueVerification func(context.Context, *app.CloudConnection) error
+	now                 func() time.Time
 }
 
 var _ apiPkg.Service = (*service)(nil)
@@ -52,6 +54,7 @@ func New(params Params) (*service, error) {
 		issuer:              issuer,
 		helpers:             params.Helpers,
 		enqueueVerification: params.Helpers.EnqueueVerification,
+		now:                 time.Now,
 	}, nil
 }
 
