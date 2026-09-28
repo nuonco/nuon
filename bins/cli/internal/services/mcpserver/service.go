@@ -74,11 +74,15 @@ func EndpointFromAPIURL(apiURL string) (string, error) {
 		return "http://localhost:8088/mcp", nil
 	}
 
-	if host := parsed.Hostname(); !strings.HasPrefix(host, "api.") {
-		return "", fmt.Errorf("unable to derive MCP URL from API URL %q: hostname must start with api.; pass --url", apiURL)
+	// api.<host> is the public API. app.<host> is the dashboard, which proxies
+	// /v1, so login accepts it as api_url (for example https://app.nuon.co).
+	// Replacing that first label maps both onto mcp.<host>.
+	prefix, ok := mcpHostPrefix(parsed.Hostname())
+	if !ok {
+		return "", fmt.Errorf("unable to derive MCP URL from API URL %q: hostname must start with api. or app.; pass --url", apiURL)
 	}
 
-	parsed.Host = strings.Replace(parsed.Host, "api.", "mcp.", 1)
+	parsed.Host = strings.Replace(parsed.Host, prefix, "mcp.", 1)
 	parsed.Path = "/mcp"
 	parsed.RawPath = ""
 	parsed.RawQuery = ""
@@ -100,11 +104,22 @@ func IsLocalAPIURL(apiURL string) bool {
 	}
 }
 
+func mcpHostPrefix(host string) (string, bool) {
+	switch {
+	case strings.HasPrefix(host, "api."):
+		return "api.", true
+	case strings.HasPrefix(host, "app."):
+		return "app.", true
+	default:
+		return "", false
+	}
+}
+
 func NameFromAPIURL(apiURL string) string {
 	switch strings.TrimRight(apiURL, "/") {
-	case "https://api.nuon.co":
+	case "https://api.nuon.co", "https://app.nuon.co":
 		return "nuon"
-	case "https://api.stage.nuon.co":
+	case "https://api.stage.nuon.co", "https://app.stage.nuon.co":
 		return "nuon-stage"
 	default:
 		return "nuon-local"
