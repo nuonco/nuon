@@ -24,7 +24,7 @@ type AdminMarkOldQueueSignalsRequest struct {
 	OrgID        string     `json:"org_id"`
 }
 
-func (r *AdminMarkOldQueueSignalsRequest) Validate(v *validator.Validate) error {
+func (r *AdminMarkOldQueueSignalsRequest) validate(v *validator.Validate) error {
 	if err := v.Struct(r); err != nil {
 		return validatorPkg.FormatValidationError(err)
 	}
@@ -78,7 +78,7 @@ func (s *service) AdminMarkOldQueueSignals(ctx *gin.Context) {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
-	if err := req.Validate(s.v); err != nil {
+	if err := req.validate(s.v); err != nil {
 		ctx.Error(err)
 		return
 	}
