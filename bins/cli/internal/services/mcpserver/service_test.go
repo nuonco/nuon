@@ -137,7 +137,22 @@ func TestEndpointAndNameFromAPIURL(t *testing.T) {
 			name:     "nuon",
 		},
 		{
+			apiURL:   "https://app.nuon.co",
+			endpoint: "https://mcp.nuon.co/mcp",
+			name:     "nuon",
+		},
+		{
+			apiURL:   "https://app.nuon.co/",
+			endpoint: "https://mcp.nuon.co/mcp",
+			name:     "nuon",
+		},
+		{
 			apiURL:   "https://api.stage.nuon.co/",
+			endpoint: "https://mcp.stage.nuon.co/mcp",
+			name:     "nuon-stage",
+		},
+		{
+			apiURL:   "https://app.stage.nuon.co",
 			endpoint: "https://mcp.stage.nuon.co/mcp",
 			name:     "nuon-stage",
 		},
@@ -152,6 +167,11 @@ func TestEndpointAndNameFromAPIURL(t *testing.T) {
 			name:     "nuon-local",
 		},
 		{
+			apiURL:   "https://app.example.com:8443/v1?debug=true",
+			endpoint: "https://mcp.example.com:8443/mcp",
+			name:     "nuon-local",
+		},
+		{
 			apiURL:   "http://localhost:8081",
 			endpoint: "http://localhost:8088/mcp",
 			name:     "nuon-local",
@@ -159,7 +179,7 @@ func TestEndpointAndNameFromAPIURL(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+		t.Run(test.apiURL, func(t *testing.T) {
 			got, err := EndpointFromAPIURL(test.apiURL)
 			require.NoError(t, err)
 			require.Equal(t, test.endpoint, got)

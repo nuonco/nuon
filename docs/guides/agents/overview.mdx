@@ -121,7 +121,7 @@ Use that client's MCP docs for the file path and JSON key. Point it at the `nuon
 
 ### Overriding the MCP URL
 
-The proxy derives its upstream URL from `api_url` in your CLI config when the hostname starts with `api.` (`https://api.nuon.co` → `https://mcp.nuon.co/mcp`). Pass `--url` when the MCP URL does not follow from the API URL, for example a self-hosted or Nuon BYOC control plane, or any deployment where the two hostnames differ. To change the name in the client's MCP list, pass `--name`. Put those flags on the command the client runs, next to `--allow-writes`:
+The proxy derives its upstream URL from `api_url` in your CLI config when the hostname starts with `api.` or `app.` (`https://api.nuon.co` and `https://app.nuon.co` both resolve to `https://mcp.nuon.co/mcp`). Pass `--url` when the MCP URL does not follow from the API URL, for example a self-hosted or Nuon BYOC control plane, or any deployment where the two hostnames differ. To change the name in the client's MCP list, pass `--name`. Put those flags on the command the client runs, next to `--allow-writes`:
 
 ```bash
 nuon agents mcp --allow-writes --url https://mcp.example.nuon.co/mcp --name nuon-example
