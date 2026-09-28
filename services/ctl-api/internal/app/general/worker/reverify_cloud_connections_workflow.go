@@ -14,7 +14,7 @@ func (w *Workflows) ReverifyCloudConnections(ctx workflow.Context) error {
 		return err
 	}
 	if logger, err := log.WorkflowLogger(ctx); err == nil {
-		logger.Info("reverified cloud connections", zap.Int("probed", response.Probed), zap.Int("oidc", response.OIDC), zap.Int("legacy", response.Legacy), zap.Int("failures", response.Failures))
+		logger.Info("reverified cloud connections", zap.Int("probed", response.Probed), zap.Int("oidc", response.OIDC), zap.Int("failures", response.Failures))
 	}
 	return nil
 }

@@ -44,7 +44,7 @@ func New(params Params) (*service, error) {
 	}
 	verifier := params.Verifier
 	if verifier == nil {
-		verifier = NewCloudVerifier(issuer)
+		verifier = NewAWSVerifier(issuer)
 	}
 	return &service{
 		RouteRegister: apiPkg.RouteRegister{EndpointAudit: params.EndpointAudit},
@@ -60,7 +60,7 @@ func NewVerifierFromConfig(cfg *internal.Config) (Verifier, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewCloudVerifier(issuer), nil
+	return NewAWSVerifier(issuer), nil
 }
 
 func issuerFromConfig(cfg *internal.Config) (*oidcissuer.Issuer, error) {
@@ -98,8 +98,8 @@ func (s *service) RegisterSlackRoutes(*gin.Engine) error          { return nil }
 func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPReadTool("list_cloud_connections", "List cloud connections", "List cloud connections in the current org."+apiPkg.MCPListToolHint), s.mcpList)
 	mcp.AddTool(server, apiPkg.MCPReadTool("get_cloud_connection", "Get cloud connection", "Get a cloud connection and its setup material by ID."), s.mcpGet)
-	mcp.AddTool(server, apiPkg.MCPWriteTool("create_cloud_connection", "Create cloud connection", "WRITE OPERATION: Create an AWS, Azure, or GCP cloud connection in the current org.", false, false), s.mcpCreate)
-	mcp.AddTool(server, apiPkg.MCPWriteTool("verify_cloud_connection", "Verify cloud connection", "WRITE OPERATION: Verify a cloud connection and discover its capabilities.", false, true), s.mcpVerify)
+	mcp.AddTool(server, apiPkg.MCPWriteTool("create_cloud_connection", "Create cloud connection", "WRITE OPERATION: Create an AWS cloud connection with the stacks or custom preset. For custom, attach your own permissions policy.", false, false), s.mcpCreate)
+	mcp.AddTool(server, apiPkg.MCPWriteTool("verify_cloud_connection", "Verify cloud connection", "WRITE OPERATION: Verify cloud connection identity and the preset's access probe.", false, true), s.mcpVerify)
 	mcp.AddTool(server, apiPkg.MCPWriteTool("delete_cloud_connection", "Delete cloud connection", "WRITE OPERATION: Delete an unused cloud connection.", true, true), s.mcpDelete)
 }
 

@@ -29,22 +29,16 @@ type mcpConnectionInput struct {
 }
 
 type mcpCreateInput struct {
-	Name             string                          `json:"name" jsonschema:"connection name"`
-	Platform         app.CloudPlatform               `json:"platform,omitempty" jsonschema:"cloud platform: aws, azure, or gcp (defaults to aws)"`
-	TargetID         string                          `json:"target_id" jsonschema:"AWS account ID, Azure subscription ID, or GCP project ID"`
-	Principal        string                          `json:"principal" jsonschema:"AWS IAM role ARN, Entra application client ID, or GCP service account email"`
-	TenantID         string                          `json:"tenant_id,omitempty" jsonschema:"Entra tenant ID for Azure"`
-	IdentityProvider string                          `json:"identity_provider,omitempty" jsonschema:"GCP Workload Identity Provider resource name"`
-	DefaultRegion    string                          `json:"default_region,omitempty" jsonschema:"AWS region, defaults to us-east-1"`
-	Capabilities     []app.CloudConnectionCapability `json:"capabilities" jsonschema:"requested capabilities: stacks, images, or both"`
-	Repositories     []string                        `json:"repositories,omitempty" jsonschema:"ECR or ACR repository names, or GCP location/name values, to scope setup material"`
-	Registry         string                          `json:"registry,omitempty" jsonschema:"Azure Container Registry name or login server"`
+	Name          string                    `json:"name" jsonschema:"connection name"`
+	Platform      app.CloudPlatform         `json:"platform,omitempty" jsonschema:"AWS only (defaults to aws),enum=aws"`
+	TargetID      string                    `json:"target_id" jsonschema:"AWS account ID"`
+	Principal     string                    `json:"principal" jsonschema:"AWS IAM role ARN"`
+	DefaultRegion string                    `json:"default_region,omitempty" jsonschema:"AWS region, defaults to us-east-1"`
+	Preset        app.CloudConnectionPreset `json:"preset" jsonschema:"Access preset. For custom attach your own permissions policy,enum=stacks,enum=custom"`
 }
 
 type mcpVerifyInput struct {
-	ConnectionID string   `json:"connection_id" jsonschema:"cloud connection ID"`
-	Repositories []string `json:"repositories,omitempty" jsonschema:"ECR or ACR repository names, or GCP location/name values, to probe"`
-	Registry     string   `json:"registry,omitempty" jsonschema:"Azure Container Registry name or login server"`
+	ConnectionID string `json:"connection_id" jsonschema:"cloud connection ID"`
 }
 
 func (s *service) mcpList(ctx context.Context, _ *mcp.CallToolRequest, in mcpListInput) (*mcp.CallToolResult, any, error) {
@@ -63,7 +57,7 @@ func (s *service) mcpList(ctx context.Context, _ *mcp.CallToolRequest, in mcpLis
 	connections, hasMore := apiPkg.MCPClipList(connections, limit)
 	responses := make([]ConnectionResponse, 0, len(connections))
 	for i := range connections {
-		response, err := s.response(ctx, &connections[i], SetupOptions{})
+		response, err := s.response(ctx, &connections[i])
 		if err != nil {
 			return nil, nil, err
 		}
@@ -81,7 +75,7 @@ func (s *service) mcpGet(ctx context.Context, _ *mcp.CallToolRequest, in mcpConn
 	if err != nil {
 		return nil, nil, err
 	}
-	response, err := s.response(ctx, connection, SetupOptions{})
+	response, err := s.response(ctx, connection)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -96,14 +90,14 @@ func (s *service) mcpCreate(ctx context.Context, _ *mcp.CallToolRequest, in mcpC
 	if in.Platform == "" {
 		in.Platform = app.CloudPlatformAWS
 	}
-	connection := app.CloudConnection{OrgID: orgID, Name: in.Name, Platform: in.Platform, TargetID: in.TargetID, Principal: in.Principal, TenantID: in.TenantID, IdentityProvider: in.IdentityProvider, DefaultRegion: in.DefaultRegion, RequestedCapabilities: in.Capabilities}
+	connection := app.CloudConnection{OrgID: orgID, Name: in.Name, Platform: in.Platform, TargetID: in.TargetID, Principal: in.Principal, DefaultRegion: in.DefaultRegion, Preset: in.Preset}
 	if err := validateConnection(&connection); err != nil {
 		return nil, nil, err
 	}
 	if err := s.db.WithContext(ctx).Create(&connection).Error; err != nil {
 		return nil, nil, fmt.Errorf("create cloud connection: %w", err)
 	}
-	response, err := s.response(ctx, &connection, SetupOptions{Repositories: in.Repositories, Registry: in.Registry})
+	response, err := s.response(ctx, &connection)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -115,12 +109,11 @@ func (s *service) mcpVerify(ctx context.Context, _ *mcp.CallToolRequest, in mcpV
 	if err != nil {
 		return nil, nil, err
 	}
-	options := VerifyOptions{Repositories: in.Repositories, Registry: in.Registry}
-	connection, err := s.verify(ctx, orgID, in.ConnectionID, options)
+	connection, err := s.verify(ctx, orgID, in.ConnectionID, VerifyOptions{})
 	if err != nil {
 		return nil, nil, err
 	}
-	response, err := s.response(ctx, connection, SetupOptions(options))
+	response, err := s.response(ctx, connection)
 	if err != nil {
 		return nil, nil, err
 	}

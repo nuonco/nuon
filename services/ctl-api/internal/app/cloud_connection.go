@@ -41,7 +41,7 @@ type CloudConnection struct {
 	OrgID            string                  `gorm:"notnull;uniqueIndex:idx_cloud_connections_org_platform_principal_deleted" json:"org_id" temporaljson:"org_id,omitempty"`
 	Org              Org                     `json:"-" temporaljson:"org,omitempty"`
 	Name             string                  `gorm:"notnull" json:"name" temporaljson:"name,omitempty"`
-	Platform         CloudPlatform           `gorm:"notnull;uniqueIndex:idx_cloud_connections_org_platform_principal_deleted" json:"platform" temporaljson:"platform,omitempty"`
+	Platform         CloudPlatform           `gorm:"notnull;uniqueIndex:idx_cloud_connections_org_platform_principal_deleted" json:"platform" temporaljson:"platform,omitempty" swaggertype:"string" enums:"aws"`
 	TargetID         string                  `gorm:"notnull" json:"target_id" temporaljson:"target_id,omitempty"`
 	Principal        string                  `gorm:"notnull;uniqueIndex:idx_cloud_connections_org_platform_principal_deleted" json:"principal" temporaljson:"principal,omitempty"`
 	TenantID         string                  `json:"tenant_id,omitempty" temporaljson:"tenant_id,omitempty"`

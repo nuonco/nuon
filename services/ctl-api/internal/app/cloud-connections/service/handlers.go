@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -18,16 +17,12 @@ import (
 )
 
 type CreateRequest struct {
-	Name             string                          `json:"name"`
-	Platform         app.CloudPlatform               `json:"platform"`
-	TargetID         string                          `json:"target_id"`
-	Principal        string                          `json:"principal"`
-	TenantID         string                          `json:"tenant_id,omitempty"`
-	IdentityProvider string                          `json:"identity_provider,omitempty"`
-	DefaultRegion    string                          `json:"default_region,omitempty"`
-	Capabilities     []app.CloudConnectionCapability `json:"capabilities"`
-	Repositories     []string                        `json:"repositories,omitempty"`
-	Registry         string                          `json:"registry,omitempty"`
+	Name          string                    `json:"name"`
+	Platform      app.CloudPlatform         `json:"platform" swaggertype:"string" enums:"aws"`
+	TargetID      string                    `json:"target_id"`
+	Principal     string                    `json:"principal"`
+	DefaultRegion string                    `json:"default_region,omitempty"`
+	Preset        app.CloudConnectionPreset `json:"preset"`
 }
 
 type ConnectionResponse struct {
@@ -37,25 +32,21 @@ type ConnectionResponse struct {
 }
 
 type ConnectionUsage struct {
-	Installs   int64 `json:"installs"`
-	Components int64 `json:"components"`
+	Installs int64 `json:"installs"`
 }
 
-type VerifyRequest struct {
-	Repositories []string `json:"repositories,omitempty"`
-	Registry     string   `json:"registry,omitempty"`
-}
+type VerifyRequest struct{}
 
 func userError(err error) error {
 	return stderr.ErrUser{Err: err, Description: err.Error()}
 }
 
-func (s *service) response(ctx context.Context, connection *app.CloudConnection, options SetupOptions) (ConnectionResponse, error) {
+func (s *service) response(ctx context.Context, connection *app.CloudConnection) (ConnectionResponse, error) {
 	usage, err := s.usage(ctx, connection.ID)
 	if err != nil {
 		return ConnectionResponse{}, err
 	}
-	return ConnectionResponse{CloudConnection: *connection, Setup: s.setup(connection, options), UsedBy: usage}, nil
+	return ConnectionResponse{CloudConnection: *connection, Setup: s.setup(connection), UsedBy: usage}, nil
 }
 
 func (s *service) usage(ctx context.Context, connectionID string) (ConnectionUsage, error) {
@@ -63,24 +54,12 @@ func (s *service) usage(ctx context.Context, connectionID string) (ConnectionUsa
 	if err := s.db.WithContext(ctx).Model(&app.Install{}).Where(app.Install{CloudConnectionID: &connectionID}).Count(&usage.Installs).Error; err != nil {
 		return usage, fmt.Errorf("count installs using cloud connection: %w", err)
 	}
-	if err := s.db.WithContext(ctx).Model(&app.AWSECRImageConfig{}).Where(app.AWSECRImageConfig{CloudConnectionID: connectionID}).Count(&usage.Components).Error; err != nil {
-		return usage, fmt.Errorf("count components using cloud connection: %w", err)
-	}
-	var azureComponents int64
-	if err := s.db.WithContext(ctx).Model(&app.AzureACRImageConfig{}).Where(app.AzureACRImageConfig{CloudConnectionID: connectionID}).Count(&azureComponents).Error; err != nil {
-		return usage, fmt.Errorf("count Azure components using cloud connection: %w", err)
-	}
-	usage.Components += azureComponents
-	var gcpComponents int64
-	if err := s.db.WithContext(ctx).Model(&app.GCPGARImageConfig{}).Where(app.GCPGARImageConfig{CloudConnectionID: connectionID}).Count(&gcpComponents).Error; err != nil {
-		return usage, fmt.Errorf("count GCP components using cloud connection: %w", err)
-	}
-	usage.Components += gcpComponents
 	return usage, nil
 }
 
 // @ID CreateCloudConnection
 // @Summary create a cloud connection
+// @Description Create an AWS connection using the stacks or custom preset. Custom renders trust only; attach your own permissions policy.
 // @Tags cloud-connections
 // @Accept json
 // @Produce json
@@ -100,7 +79,7 @@ func (s *service) Create(ctx *gin.Context) {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
-	connection := app.CloudConnection{OrgID: org.ID, Name: req.Name, Platform: req.Platform, TargetID: req.TargetID, Principal: req.Principal, TenantID: req.TenantID, IdentityProvider: req.IdentityProvider, DefaultRegion: req.DefaultRegion, RequestedCapabilities: req.Capabilities}
+	connection := app.CloudConnection{OrgID: org.ID, Name: req.Name, Platform: req.Platform, TargetID: req.TargetID, Principal: req.Principal, DefaultRegion: req.DefaultRegion, Preset: req.Preset}
 	if err := validateConnection(&connection); err != nil {
 		ctx.Error(userError(err))
 		return
@@ -109,7 +88,7 @@ func (s *service) Create(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to create cloud connection: %w", err))
 		return
 	}
-	response, err := s.response(ctx, &connection, SetupOptions{Repositories: req.Repositories, Registry: req.Registry})
+	response, err := s.response(ctx, &connection)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -138,7 +117,7 @@ func (s *service) List(ctx *gin.Context) {
 	}
 	responses := make([]ConnectionResponse, 0, len(connections))
 	for i := range connections {
-		response, err := s.response(ctx, &connections[i], SetupOptions{})
+		response, err := s.response(ctx, &connections[i])
 		if err != nil {
 			ctx.Error(err)
 			return
@@ -168,7 +147,7 @@ func (s *service) Get(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	response, err := s.response(ctx, connection, SetupOptions{})
+	response, err := s.response(ctx, connection)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -183,7 +162,6 @@ func (s *service) Get(ctx *gin.Context) {
 // @Security APIKey
 // @Security OrgID
 // @Param connection_id path string true "connection ID"
-// @Param repository query []string false "ECR repository names"
 // @Success 200 {object} SetupResponse
 // @Router /v1/cloud-connections/{connection_id}/setup [get]
 func (s *service) Setup(ctx *gin.Context) {
@@ -197,7 +175,7 @@ func (s *service) Setup(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	ctx.JSON(http.StatusOK, s.setup(connection, SetupOptions{Repositories: ctx.QueryArray("repository"), Registry: ctx.Query("registry")}))
+	ctx.JSON(http.StatusOK, s.setup(connection))
 }
 
 // @ID DeleteCloudConnection
@@ -233,33 +211,8 @@ func (s *service) delete(ctx context.Context, orgID, connectionID string) error 
 		if err := tx.Unscoped().Model(&app.Install{}).Where(app.Install{CloudConnectionID: &connection.ID}).Count(&installReferences).Error; err != nil {
 			return fmt.Errorf("count install references: %w", err)
 		}
-		var awsECRReferences int64
-		if err := tx.Unscoped().Model(&app.AWSECRImageConfig{}).Where(app.AWSECRImageConfig{CloudConnectionID: connection.ID}).Count(&awsECRReferences).Error; err != nil {
-			return fmt.Errorf("count component references: %w", err)
-		}
-		var azureComponentReferences int64
-		if err := tx.Unscoped().Model(&app.AzureACRImageConfig{}).Where(app.AzureACRImageConfig{CloudConnectionID: connection.ID}).Count(&azureComponentReferences).Error; err != nil {
-			return fmt.Errorf("count Azure component references: %w", err)
-		}
-		var gcpComponentReferences int64
-		if err := tx.Unscoped().Model(&app.GCPGARImageConfig{}).Where(app.GCPGARImageConfig{CloudConnectionID: connection.ID}).Count(&gcpComponentReferences).Error; err != nil {
-			return fmt.Errorf("count GCP component references: %w", err)
-		}
-		references := make([]string, 0, 4)
 		if installReferences > 0 {
-			references = append(references, fmt.Sprintf("installs (%d)", installReferences))
-		}
-		if awsECRReferences > 0 {
-			references = append(references, fmt.Sprintf("AWS ECR image configs (%d)", awsECRReferences))
-		}
-		if azureComponentReferences > 0 {
-			references = append(references, fmt.Sprintf("Azure ACR image configs (%d)", azureComponentReferences))
-		}
-		if gcpComponentReferences > 0 {
-			references = append(references, fmt.Sprintf("GCP GAR image configs (%d)", gcpComponentReferences))
-		}
-		if len(references) > 0 {
-			description := "Cloud connection cannot be deleted; it is referenced by " + strings.Join(references, ", ")
+			description := fmt.Sprintf("Cloud connection cannot be deleted; it is referenced by installs (%d)", installReferences)
 			return stderr.ErrConflict{Err: errors.New(description), Description: description}
 		}
 		return tx.Unscoped().Delete(&connection).Error
@@ -274,7 +227,7 @@ func (s *service) delete(ctx context.Context, orgID, connectionID string) error 
 // @Security APIKey
 // @Security OrgID
 // @Param connection_id path string true "connection ID"
-// @Param req body VerifyRequest false "Capability probe options"
+// @Param req body VerifyRequest false "Input"
 // @Success 200 {object} ConnectionResponse
 // @Router /v1/cloud-connections/{connection_id}/verify [post]
 func (s *service) Verify(ctx *gin.Context) {
@@ -290,13 +243,12 @@ func (s *service) Verify(ctx *gin.Context) {
 			return
 		}
 	}
-	options := VerifyOptions{Repositories: req.Repositories, Registry: req.Registry}
-	connection, err := s.verify(ctx, org.ID, ctx.Param("connection_id"), options)
+	connection, err := s.verify(ctx, org.ID, ctx.Param("connection_id"), VerifyOptions{})
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
-	response, err := s.response(ctx, connection, SetupOptions(options))
+	response, err := s.response(ctx, connection)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -314,14 +266,12 @@ func (s *service) verify(ctx context.Context, orgID, connectionID string, option
 		return nil, fmt.Errorf("verify cloud connection: %w", err)
 	}
 	now := time.Now().UTC()
-	update := app.CloudConnection{Status: result.Status, StatusMessage: result.Message, LastVerifiedAt: &now, Capabilities: result.Capabilities, Registries: connection.Registries}
-	selected := []string{"status", "status_message", "last_verified_at", "capabilities", "registries"}
+	update := app.CloudConnection{Status: result.Status, StatusMessage: result.Message, LastVerifiedAt: &now}
+	selected := []string{"status", "status_message", "last_verified_at"}
 	if result.Status == app.CloudConnectionStatusVerified {
 		update.AuthMode = app.CloudConnectionAuthModeOIDC
-		update.Registries = result.Registries
 		selected = append(selected, "auth_mode")
 	}
-	// struct-based update so the jsonb serializers on capabilities/registries apply
 	if err := s.db.WithContext(ctx).Model(&app.CloudConnection{}).Where(app.CloudConnection{OrgID: orgID, ID: connection.ID, Principal: connection.Principal}).Select(selected).Updates(update).Error; err != nil {
 		return nil, fmt.Errorf("save cloud connection verification: %w", err)
 	}

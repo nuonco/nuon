@@ -80,13 +80,6 @@ func shouldCreateManagedAWSCloudFormationStack(createManagedStack bool, install 
 		install.CloudConnectionID != nil
 }
 
-func shouldCreateManagedAzureARMStack(createManagedStack bool, install *app.Install, appCfg *app.AppConfig) bool {
-	return createManagedStack &&
-		!install.SandboxMode.Bool &&
-		appCfg.RunnerConfig.Type == app.AppRunnerTypeAzure &&
-		install.CloudConnectionID != nil
-}
-
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
@@ -105,13 +98,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to get app config")
 	}
-	if s.DeleteManagedStack && install.CloudConnectionID != nil {
-		switch appCfg.RunnerConfig.Type {
-		case app.AppRunnerTypeAWS:
-			err = activities.AwaitDeleteManagedAWSCloudFormationStack(ctx, &activities.DeleteManagedAWSCloudFormationStackRequest{InstallID: install.ID, StackVersionID: version.ID, ConnectionID: *install.CloudConnectionID})
-		case app.AppRunnerTypeAzure:
-			err = activities.AwaitDeleteManagedAzureARMStack(ctx, &activities.DeleteManagedAzureARMStackRequest{InstallID: install.ID, ConnectionID: *install.CloudConnectionID})
-		}
+	if s.DeleteManagedStack && install.CloudConnectionID != nil && appCfg.RunnerConfig.Type == app.AppRunnerTypeAWS {
+		err = activities.AwaitDeleteManagedAWSCloudFormationStack(ctx, &activities.DeleteManagedAWSCloudFormationStackRequest{InstallID: install.ID, StackVersionID: version.ID, ConnectionID: *install.CloudConnectionID})
 		if err != nil {
 			return errors.Wrap(err, "unable to delete managed install stack")
 		}
@@ -149,20 +137,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusProvisioning),
 		})
 	}
-	if shouldCreateManagedAzureARMStack(s.CreateManagedStack, install, appCfg) {
-		if err := activities.AwaitCreateManagedAzureARMStack(ctx, &activities.CreateManagedAzureARMStackRequest{
-			InstallID:      install.ID,
-			StackVersionID: version.ID,
-			ConnectionID:   *install.CloudConnectionID,
-		}); err != nil {
-			return errors.Wrap(err, "unable to create managed ARM deployment")
-		}
-		statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID:     version.ID,
-			Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusProvisioning),
-		})
-	}
-
 	if install.SandboxMode.Bool {
 		l.Info("sandbox mode org")
 		workflow.Sleep(ctx, time.Second*5)

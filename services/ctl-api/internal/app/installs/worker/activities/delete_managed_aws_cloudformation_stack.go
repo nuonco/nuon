@@ -26,8 +26,8 @@ func (a *Activities) DeleteManagedAWSCloudFormationStack(ctx context.Context, re
 	if install.CloudConnectionID == nil || *install.CloudConnectionID != req.ConnectionID || install.CloudConnection == nil {
 		return fmt.Errorf("install does not use cloud connection %s", req.ConnectionID)
 	}
-	if !install.CloudConnection.HasCapability(app.CloudConnectionCapabilityStacks) {
-		return fmt.Errorf("cloud connection %s is not capable of managing install stacks", install.CloudConnection.ID)
+	if install.CloudConnection.Status != app.CloudConnectionStatusVerified || install.CloudConnection.Platform != app.CloudPlatformAWS {
+		return fmt.Errorf("cloud connection %s is not a verified AWS connection", install.CloudConnection.ID)
 	}
 	if install.AWSAccount == nil {
 		return fmt.Errorf("install %s has no AWS account", install.ID)

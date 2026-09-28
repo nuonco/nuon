@@ -75,7 +75,7 @@ func (s *InstallsServiceTestSuite) seedVerifiedCloudConnection(accountID string)
 		DefaultRegion: "us-west-2",
 		Principal:     "arn:aws:iam::" + accountID + ":role/nuon-connection",
 		Status:        app.CloudConnectionStatusVerified,
-		Capabilities:  []app.CloudConnectionCapability{app.CloudConnectionCapabilityStacks},
+		Preset:        app.CloudConnectionPresetStacks,
 	}
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(connection).Error)
 	return connection

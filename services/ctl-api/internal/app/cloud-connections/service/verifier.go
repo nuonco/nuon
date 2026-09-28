@@ -12,7 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
-	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	stsTypes "github.com/aws/aws-sdk-go-v2/service/sts/types"
 	"github.com/aws/smithy-go"
@@ -22,10 +21,12 @@ import (
 )
 
 type VerificationResult struct {
-	Status       app.CloudConnectionStatus
-	Message      string
-	Capabilities []app.CloudConnectionCapability
-	Registries   []string
+	Status  app.CloudConnectionStatus
+	Message string
+}
+
+type VerifyOptions struct {
+	IdentityOnly bool
 }
 
 type Verifier interface {
@@ -35,11 +36,6 @@ type Verifier interface {
 type stsAPI interface {
 	AssumeRoleWithWebIdentity(context.Context, *sts.AssumeRoleWithWebIdentityInput, ...func(*sts.Options)) (*sts.AssumeRoleWithWebIdentityOutput, error)
 	GetCallerIdentity(context.Context, *sts.GetCallerIdentityInput, ...func(*sts.Options)) (*sts.GetCallerIdentityOutput, error)
-}
-
-type ecrAPI interface {
-	GetAuthorizationToken(context.Context, *ecr.GetAuthorizationTokenInput, ...func(*ecr.Options)) (*ecr.GetAuthorizationTokenOutput, error)
-	DescribeRepositories(context.Context, *ecr.DescribeRepositoriesInput, ...func(*ecr.Options)) (*ecr.DescribeRepositoriesOutput, error)
 }
 
 type cloudFormationAPI interface {
@@ -55,6 +51,9 @@ func NewAWSVerifier(issuer *oidcissuer.Issuer) Verifier {
 }
 
 func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnection, options VerifyOptions) (VerificationResult, error) {
+	if connection.Platform != app.CloudPlatformAWS {
+		return VerificationResult{}, fmt.Errorf("only aws cloud connections are supported")
+	}
 	if v.issuer == nil {
 		return VerificationResult{}, fmt.Errorf("cloud connection OIDC issuer is unavailable")
 	}
@@ -96,34 +95,19 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 	if identity.Account == nil || *identity.Account != connection.TargetID || identity.Arn == nil || !matchesRole(*identity.Arn, connection.Principal) {
 		return verificationFailure("The assumed identity does not match the configured target and principal."), nil
 	}
-	capabilities := make([]app.CloudConnectionCapability, 0, len(connection.RequestedCapabilities))
-	for _, capability := range connection.RequestedCapabilities {
-		switch capability {
-		case app.CloudConnectionCapabilityStacks:
-			_, err = cloudformation.NewFromConfig(assumed).DescribeStacks(ctx, &cloudformation.DescribeStacksInput{})
-		case app.CloudConnectionCapabilityImages:
-			ecrClient := ecr.NewFromConfig(assumed)
-			_, err = ecrClient.GetAuthorizationToken(ctx, &ecr.GetAuthorizationTokenInput{})
-			if err == nil && len(options.Repositories) > 0 {
-				_, err = ecrClient.DescribeRepositories(ctx, &ecr.DescribeRepositoriesInput{RepositoryNames: options.Repositories})
+	if connection.Preset == app.CloudConnectionPresetStacks && !options.IdentityOnly {
+		if _, err := cloudformation.NewFromConfig(assumed).DescribeStacks(ctx, &cloudformation.DescribeStacksInput{}); err != nil {
+			if isAccessDenied(err) {
+				return verificationFailure("The role lacks CloudFormation read access required by the stacks preset."), nil
 			}
-		}
-		if err == nil {
-			capabilities = append(capabilities, capability)
-			continue
-		}
-		if !isAccessDenied(err) {
-			return VerificationResult{}, fmt.Errorf("probe %s capability: %w", capability, err)
+			return VerificationResult{}, fmt.Errorf("probe CloudFormation access: %w", err)
 		}
 	}
-	if len(capabilities) == 0 {
-		return VerificationResult{Status: app.CloudConnectionStatusError, Message: "The role lacks all requested capabilities.", Capabilities: capabilities}, nil
-	}
-	return VerificationResult{Status: app.CloudConnectionStatusVerified, Message: "Cloud connection verified.", Capabilities: capabilities}, nil
+	return VerificationResult{Status: app.CloudConnectionStatusVerified, Message: "Cloud connection verified."}, nil
 }
 
 func verificationFailure(message string) VerificationResult {
-	return VerificationResult{Status: app.CloudConnectionStatusError, Message: message, Capabilities: []app.CloudConnectionCapability{}}
+	return VerificationResult{Status: app.CloudConnectionStatusError, Message: message}
 }
 
 func awsConfigWithCredentials(base aws.Config, value *stsTypes.Credentials) (aws.Config, error) {

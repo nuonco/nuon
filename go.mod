@@ -34,7 +34,6 @@ require (
 	cloud.google.com/go/secretmanager v1.16.0
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.21.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.1
-	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v1.2.0
 	github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azsecrets v1.4.0
 	github.com/ClickHouse/clickhouse-go/v2 v2.40.1
 	github.com/DataDog/datadog-go/v5 v5.8.3

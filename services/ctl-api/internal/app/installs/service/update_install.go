@@ -130,7 +130,7 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 
 	updateObj := app.Install{Name: req.Name}
 	if req.CloudConnectionID != "" {
-		if _, err := s.helpers.ValidateCloudConnection(ctx, currentInstall.OrgID, req.CloudConnectionID, currentInstall.AppRunnerConfig.Type.CloudPlatform(), app.CloudConnectionCapabilityStacks); err != nil {
+		if _, err := s.helpers.ValidateCloudConnection(ctx, currentInstall.OrgID, req.CloudConnectionID, currentInstall.AppRunnerConfig.Type.CloudPlatform()); err != nil {
 			return nil, err
 		}
 		updateObj.CloudConnectionID = &req.CloudConnectionID

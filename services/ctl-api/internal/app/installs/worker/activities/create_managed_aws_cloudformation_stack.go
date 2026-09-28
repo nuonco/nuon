@@ -78,7 +78,7 @@ func (a *Activities) CreateManagedAWSCloudFormationStack(ctx context.Context, re
 	if install.CloudConnectionID == nil || *install.CloudConnectionID != req.ConnectionID || install.CloudConnection == nil {
 		return fmt.Errorf("install does not use cloud connection %s", req.ConnectionID)
 	}
-	if install.CloudConnection.Status != app.CloudConnectionStatusVerified || !install.CloudConnection.HasCapability(app.CloudConnectionCapabilityStacks) {
+	if install.CloudConnection.Status != app.CloudConnectionStatusVerified || install.CloudConnection.Platform != app.CloudPlatformAWS {
 		return fmt.Errorf("cloud connection %s is not verified for install stacks", install.CloudConnection.ID)
 	}
 	if install.AWSAccount == nil {
