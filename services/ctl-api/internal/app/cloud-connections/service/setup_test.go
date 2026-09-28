@@ -48,7 +48,7 @@ func TestAWSSetup(t *testing.T) {
 				assert.Contains(t, string(policy), "ec2:RunInstances")
 				assert.Contains(t, string(policy), "ssm:GetParameters")
 				for _, action := range []string{
-					"autoscaling:DescribeLifecycleHooks", "iam:GetAccountSummary", "iam:ListPoliciesGrantingServiceAccess", "lambda:GetAccountSettings", "servicequotas:GetServiceQuota",
+					"autoscaling:DescribeLifecycleHooks", "autoscaling:DescribeNotificationConfigurations", "iam:GetAccountSummary", "iam:ListPoliciesGrantingServiceAccess", "lambda:GetAccountSettings", "servicequotas:GetServiceQuota",
 					"autoscaling:CreateOrUpdateTags", "autoscaling:DeleteTags", "autoscaling:DescribeAutoScalingInstances", "autoscaling:DescribeTags", "autoscaling:ResumeProcesses", "autoscaling:SetDesiredCapacity", "autoscaling:SuspendProcesses", "autoscaling:TerminateInstanceInAutoScalingGroup",
 					"cloudformation:DescribeStackResource",
 					"ec2:CreateLaunchTemplateVersion", "ec2:DeleteTags", "ec2:ReplaceRoute", "ec2:ReplaceRouteTableAssociation", "ec2:UpdateSecurityGroupRuleDescriptionsEgress", "ec2:UpdateSecurityGroupRuleDescriptionsIngress",
