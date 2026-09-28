@@ -35,7 +35,6 @@ func (a *Activities) GetSandboxBuildOCIRegistry(ctx context.Context, req GetSand
 	cfg := &configs.OCIRegistryRepository{
 		Repository: currentApp.Repository.RepositoryURI,
 		Region:     currentApp.Repository.Region,
-		OrgID:      currentApp.OrgID,
 	}
 
 	switch a.cfg.CloudProvider {

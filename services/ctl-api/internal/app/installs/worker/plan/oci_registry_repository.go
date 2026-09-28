@@ -51,7 +51,6 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 
 	cfg := &configs.OCIRegistryRepository{
 		Plugin: "oci",
-		OrgID:  appCfg.OrgID,
 	}
 
 	// NOTE(jm): this is mainly a relic of not having the outputs properly passed from the install sandbox, or a

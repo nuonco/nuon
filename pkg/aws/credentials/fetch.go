@@ -105,21 +105,16 @@ func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 		return aws.Config{}, fmt.Errorf("invalid config, must set either default, static or assume role")
 	}
 
-	var tokenSource func(context.Context) (string, error)
-	if c.AssumeRole.WebIdentityToken != "" {
-		tokenSource = func(context.Context) (string, error) { return c.AssumeRole.WebIdentityToken, nil }
-	}
 	assumer, err := assumerole.New(v, assumerole.WithSettings(assumerole.Settings{
 		RoleARN:             c.AssumeRole.RoleARN,
 		RoleSessionName:     c.AssumeRole.SessionName,
 		RoleSessionDuration: time.Second * time.Duration(c.AssumeRole.SessionDurationSeconds),
 		ExternalID:          c.AssumeRole.ExternalID,
 
-		UseGithubOIDC:          c.AssumeRole.UseGithubOIDC,
-		UseGCPOIDC:             c.AssumeRole.UseGCPOIDC,
-		WebIdentityTokenSource: tokenSource,
-		TwoStepConfig:          c.AssumeRole.TwoStepConfig,
-		Region:                 c.Region,
+		UseGithubOIDC: c.AssumeRole.UseGithubOIDC,
+		UseGCPOIDC:    c.AssumeRole.UseGCPOIDC,
+		TwoStepConfig: c.AssumeRole.TwoStepConfig,
+		Region:        c.Region,
 	}))
 	if err != nil {
 		return aws.Config{}, fmt.Errorf("unable to create role assumer: %w", err)

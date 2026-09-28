@@ -8,6 +8,8 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	assumerole "github.com/nuonco/nuon/pkg/aws/assume-role"
+	"github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
@@ -43,7 +45,7 @@ func (a *Activities) SaveFetchImageMetadataPlan(ctx context.Context, req *SaveFe
 		return fmt.Errorf("build %s does not have external image config", req.BuildID)
 	}
 
-	srcRepo, err := a.getSourceRepository(ctx, extImgCfg, build.ComponentConfigConnection.ComponentID)
+	srcRepo, err := a.getSourceRepository(extImgCfg, build.ComponentConfigConnection.ComponentID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get source repository")
 	}
@@ -73,11 +75,22 @@ func (a *Activities) SaveFetchImageMetadataPlan(ctx context.Context, req *SaveFe
 	return nil
 }
 
-func (a *Activities) getSourceRepository(ctx context.Context, cfg *app.ExternalImageComponentConfig, componentID string) (*configs.OCIRegistryRepository, error) {
+func (a *Activities) getSourceRepository(cfg *app.ExternalImageComponentConfig, componentID string) (*configs.OCIRegistryRepository, error) {
 	if cfg.AWSECRImageConfig != nil {
-		auth, err := a.cloudConnections.ECRCredentials(ctx, cfg.AWSECRImageConfig.CloudConnection, "fetch-image-metadata")
-		if err != nil {
-			return nil, err
+		assumeRole := &credentials.AssumeRoleConfig{
+			RoleARN:                cfg.AWSECRImageConfig.IAMRoleARN,
+			SessionName:            "fetch-image-metadata",
+			SessionDurationSeconds: 30 * 60,
+			UseGCPOIDC:             a.cfg.IsGCP(),
+		}
+
+		// Control-plane jobs run as the ctl-api pod identity, which the
+		// vendor's ECR pull role does not trust — vendors grant the Nuon
+		// management account, so hop through the management role first.
+		if a.cfg.IsAWS() && a.cfg.ManagementIAMRoleARN != "" {
+			assumeRole.TwoStepConfig = &assumerole.TwoStepConfig{
+				IAMRoleARN: a.cfg.ManagementIAMRoleARN,
+			}
 		}
 
 		return &configs.OCIRegistryRepository{
@@ -85,30 +98,23 @@ func (a *Activities) getSourceRepository(ctx context.Context, cfg *app.ExternalI
 			Repository:   cfg.ImageURL,
 			Region:       cfg.AWSECRImageConfig.AWSRegion,
 
-			ECRAuth: auth,
+			ECRAuth: &credentials.Config{
+				Region:     cfg.AWSECRImageConfig.AWSRegion,
+				AssumeRole: assumeRole,
+			},
 		}, nil
 	}
 
 	if cfg.GCPGARImageConfig != nil {
 		garLoginServer := fmt.Sprintf("%s-docker.pkg.dev", cfg.GCPGARImageConfig.GCPRegion)
-		repository := &configs.OCIRegistryRepository{
+		return &configs.OCIRegistryRepository{
 			RegistryType:             configs.OCIRegistryTypeGAR,
 			Repository:               cfg.ImageURL,
 			Region:                   cfg.GCPGARImageConfig.GCPRegion,
 			LoginServer:              garLoginServer,
 			ServiceAccountEmail:      cfg.GCPGARImageConfig.ServiceAccountEmail,
 			WorkloadIdentityProvider: cfg.GCPGARImageConfig.WorkloadIdentityProvider,
-			OrgID:                    cfg.GCPGARImageConfig.OrgID,
-			CloudConnectionID:        cfg.GCPGARImageConfig.CloudConnectionID,
-		}
-		if connection := cfg.GCPGARImageConfig.CloudConnection; connection != nil && connection.AuthMode != app.CloudConnectionAuthModeLegacy {
-			token, err := a.cloudConnections.GCPAccessToken(ctx, connection)
-			if err != nil {
-				return nil, fmt.Errorf("get GCP cloud connection credentials: %w", err)
-			}
-			repository.OCIAuth = &configs.OCIRegistryAuth{Username: "oauth2accesstoken", Password: token.AccessToken}
-		}
-		return repository, nil
+		}, nil
 	}
 
 	if cfg.AzureACRImageConfig != nil {
@@ -121,11 +127,10 @@ func (a *Activities) getSourceRepository(ctx context.Context, cfg *app.ExternalI
 			},
 		}
 
-		if acr := cfg.AzureACRImageConfig; acr.CloudConnectionID != "" || acr.ClientID != "" || acr.TenantID != "" ||
+		if acr := cfg.AzureACRImageConfig; acr.ClientID != "" || acr.TenantID != "" ||
 			acr.ClientSecretName != "" || acr.ClientCertificateName != "" {
 			acrCfg.ACRAppRegistration = &configs.ACRAppRegistration{
 				ComponentID:           componentID,
-				ConnectionID:          acr.CloudConnectionID,
 				TenantID:              acr.TenantID,
 				ClientID:              acr.ClientID,
 				ClientSecretName:      acr.ClientSecretName,

@@ -39,13 +39,13 @@ name   = "ecr"
 type   = "container_image"
 
 [aws_ecr]
-connection = "acme-images"
-image_url  = "123456789012.dkr.ecr.us-west-2.amazonaws.com/acme/api"
-tag        = "latest"
-region     = "us-west-2"
+image_url    = "123927561584.dkr.ecr.us-west-2.amazonaws.com/repo-name"
+tag          = "latest"
+region       = "us-west-2"
+iam_role_arn = "arn:aws:iam::123927561584:role/nuon-container-image-access"
 ```
 
-Create and verify an `images`-capable [cloud connection](/guides/cloud-connections), then reference it by name. The legacy `iam_role_arn` field remains optional for existing configurations.
+To use an AWS ECR image, [follow the access setup directions](#granting-nuon-access-to-pull-images). Both Nuon-hosted (AWS) and self-hosted-on-GCP customers can pull from the same role.
 
 ### Using a Private GCP GAR Image
 
@@ -57,14 +57,22 @@ name   = "gar"
 type   = "container_image"
 
 [gcp_gar]
-connection     = "acme-images"
-image_url      = "us-central1-docker.pkg.dev/acme-production/apps/api"
+image_url      = "us-central1-docker.pkg.dev/my-project/my-repo/my-image"
 tag            = "latest"
 region         = "us-central1"
-gcp_project_id = "acme-production"
+gcp_project_id = "my-project"
+
+# Reader SA that Nuon impersonates to pull. Optional for self-hosted-on-GCP
+# customers if the customer's ctl-api SA already has artifactregistry.reader
+# directly on the repo; required for Nuon-hosted (AWS) customers.
+service_account_email = "nuon-puller@my-project.iam.gserviceaccount.com"
+
+# Required for Nuon-hosted (AWS) customers. Workload Identity Provider that
+# Nuon's AWS ctl-api federates against before impersonating the reader SA.
+workload_identity_provider = "projects/123456789/locations/global/workloadIdentityPools/nuon-aws/providers/aws-prod"
 ```
 
-The legacy `service_account_email` and `workload_identity_provider` fields are optional and must be set together when used. Prefer a [cloud connection](/guides/cloud-connections).
+To use a GAR image, [follow the access setup directions](#gcp-gar-access). Both Nuon-hosted (AWS) and self-hosted-on-GCP customers can pull from the same GAR repository.
 
 ### Using a Private Azure ACR Image
 
@@ -76,18 +84,29 @@ name   = "acr"
 type   = "container_image"
 
 [azure_acr]
-connection   = "acme-images"
-image_url    = "acme.azurecr.io/private-app"
+image_url    = "vendoracr.azurecr.io/private-app"
 tag          = "latest"
-registry_url = "acme.azurecr.io"
+registry_url = "vendoracr.azurecr.io"
+tenant_id    = "00000000-0000-0000-0000-000000000000"
+client_id    = "11111111-1111-1111-1111-111111111111"
+
+# Exactly one of client_secret_name or client_certificate_name. Both take the
+# NAME of an app secret, never the credential itself.
+client_secret_name = "acr_pull_secret"
 ```
 
-Create and verify the connection for this registry as described in [Cloud Connections](/guides/cloud-connections). The legacy `tenant_id`, `client_id`, and either `client_secret_name` or `client_certificate_name` fields remain optional. Secret and certificate fields take an app secret name, never credential material.
+Access to a private ACR repository is granted through a service principal in
+your own tenant, not through credentials in your app config. The service
+principal's secret (or certificate) value is stored as an app secret and
+referenced by name; the value itself never appears in app config or git. To
+set this up, [follow the access setup directions](#azure-acr-access).
 
 <Note>
 ACR has no registry-level password. Authentication always goes through Azure
-AD: Nuon exchanges an Azure AD token for the connection or legacy service
-principal for an ACR refresh token, then uses that to pull the image.
+AD: Nuon exchanges an Azure AD token for the service principal for an ACR
+refresh token, then uses that to pull the image. This is why `azure_acr`
+takes a tenant, client, and secret/certificate rather than a username and
+password.
 </Note>
 
 <Note>

@@ -11,8 +11,7 @@ import (
 )
 
 type AWSECRConfig struct {
-	Connection string `mapstructure:"connection,omitempty" toml:"connection,omitempty"`
-	IAMRoleARN string `mapstructure:"iam_role_arn,omitempty" toml:"iam_role_arn,omitempty"`
+	IAMRoleARN string `mapstructure:"iam_role_arn,omitempty" toml:"iam_role_arn,omitempty" jsonschema:"required"`
 	AWSRegion  string `mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
 	ImageURL   string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
 	Tag        string `mapstructure:"tag,omitempty" toml:"tag,omitempty"`
@@ -35,7 +34,6 @@ type PublicImageConfig struct {
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type GCPGARConfig struct {
-	Connection               string `mapstructure:"connection,omitempty" toml:"connection,omitempty"`
 	GCPProjectID             string `mapstructure:"gcp_project_id,omitempty" toml:"gcp_project_id,omitempty" jsonschema:"required"`
 	GCPRegion                string `mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
 	ImageURL                 string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
@@ -50,7 +48,6 @@ type GCPGARConfig struct {
 }
 
 type AzureACRConfig struct {
-	Connection  string `mapstructure:"connection,omitempty" toml:"connection,omitempty"`
 	ImageURL    string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
 	Tag         string `mapstructure:"tag,omitempty" toml:"tag,omitempty"`
 	RegistryURL string `mapstructure:"registry_url,omitempty" toml:"registry_url,omitempty" jsonschema:"required"`
@@ -81,10 +78,8 @@ type ExternalImageComponentConfig struct {
 
 func (a AWSECRConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
-		Field("connection").Short("cloud connection name for ECR access").
-		Long("Name of an organization cloud connection with the images capability").
-		Field("iam_role_arn").Short("IAM role ARN for ECR access").
-		Long("Legacy-compatible IAM role ARN. A matching cloud connection is used or created automatically").
+		Field("iam_role_arn").Short("IAM role ARN for ECR access").Required().
+		Long("ARN of the IAM role with permissions to pull images from the ECR repository").
 		Example("arn:aws:iam::123456789012:role/ecr-pull-role").
 		Field("region").Short("AWS region for the ECR repository").Required().
 		Long("AWS region where the ECR repository is located").
@@ -163,8 +158,6 @@ func (g GCPGARConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 func (a AzureACRConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
-		Field("connection").Short("cloud connection name for ACR access").
-		Long("Name of an organization Azure cloud connection with the images capability").
 		Field("image_url").Short("ACR image URL").Required().
 		Long("Full URL to the ACR image (without tag). Format: <registry>.azurecr.io/<repository>/<image>").
 		Example("myregistry.azurecr.io/myapp/api").
@@ -202,12 +195,6 @@ func (a AzureACRConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 // case; anything in between would fall back to ambient and surface as an
 // unexplained 401 against a registry the author believes they configured.
 func (a AzureACRConfig) ValidateCredentials() error {
-	if a.Connection != "" {
-		if a.ClientSecretName != "" || a.ClientCertificateName != "" {
-			return fmt.Errorf("azure_acr: connection cannot be combined with client_secret_name or client_certificate_name")
-		}
-		return nil
-	}
 	if a.ClientSecretName != "" && a.ClientCertificateName != "" {
 		return fmt.Errorf("azure_acr: only one of client_secret_name or client_certificate_name may be set")
 	}

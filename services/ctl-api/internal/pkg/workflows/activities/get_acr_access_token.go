@@ -11,7 +11,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/azure/acr"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
-	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -27,11 +26,10 @@ import (
 type GetACRAccessTokenRequest struct {
 	// ComponentID rather than an app ID: it is present on every build plan
 	// without depending on a preload, and the activity has a DB handle anyway.
-	ComponentID  string
-	LoginServer  string
-	TenantID     string
-	ClientID     string
-	ConnectionID string
+	ComponentID string
+	LoginServer string
+	TenantID    string
+	ClientID    string
 
 	ClientSecretName      string
 	ClientCertificateName string
@@ -52,30 +50,6 @@ type ACRAccessToken struct {
 // @max-retries 1
 func (a *Activities) GetACRAccessToken(ctx context.Context, req *GetACRAccessTokenRequest) (*ACRAccessToken, error) {
 	l := temporalzap.GetActivityLogger(ctx)
-	if req.ConnectionID != "" {
-		var connection app.CloudConnection
-		if err := a.db.WithContext(ctx).Where(app.CloudConnection{ID: req.ConnectionID}).First(&connection).Error; err != nil {
-			return nil, fmt.Errorf("get Azure cloud connection: %w", err)
-		}
-		credential, err := a.cloudConnections.AzureCredential(&connection)
-		if err != nil {
-			return nil, err
-		}
-		token, err := acr.GetRepositoryTokenWithCredential(ctx, credential, connection.TenantID, req.LoginServer)
-		if err != nil {
-			return nil, fmt.Errorf("unable to get ACR token for %s using cloud connection %s: %w", req.LoginServer, connection.ID, err)
-		}
-		return &ACRAccessToken{Username: acr.DefaultACRUsername, Password: token}, nil
-	}
-	if req.ClientSecretName != "" || req.ClientCertificateName != "" {
-		orgID := "unknown"
-		var component app.Component
-		if err := a.db.WithContext(ctx).Select("org_id").Where(app.Component{ID: req.ComponentID}).First(&component).Error; err == nil {
-			orgID = component.OrgID
-		}
-		l.Info("using legacy cloud connection authentication", zap.String("org_id", orgID), zap.String("platform", string(app.CloudPlatformAzure)), zap.String("connection_id", "none"))
-		a.mw.Incr("cloud_connections.legacy_auth_use", metrics.ToTags(map[string]string{"org": orgID, "platform": string(app.CloudPlatformAzure), "connection": "none"}))
-	}
 
 	cfg := &azurecredentials.Config{
 		TenantID: req.TenantID,

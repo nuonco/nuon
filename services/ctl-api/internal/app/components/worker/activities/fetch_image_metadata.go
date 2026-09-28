@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/aws/credentials"
 	ecr "github.com/nuonco/nuon/pkg/aws/ecr-authorization"
 	"github.com/nuonco/nuon/pkg/oci/metadata"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
@@ -129,7 +130,6 @@ func (a *Activities) getComponentBuildWithExternalImageConfig(ctx context.Contex
 func (a *Activities) getACRAuth(ctx context.Context, acrCfg *app.AzureACRImageConfig, componentID string) (*metadata.RegistryAuth, error) {
 	tok, err := a.sharedActs.GetACRAccessToken(ctx, &sharedactivities.GetACRAccessTokenRequest{
 		ComponentID:           componentID,
-		ConnectionID:          acrCfg.CloudConnectionID,
 		LoginServer:           acrCfg.RegistryURL,
 		TenantID:              acrCfg.TenantID,
 		ClientID:              acrCfg.ClientID,
@@ -148,18 +148,9 @@ func (a *Activities) getACRAuth(ctx context.Context, acrCfg *app.AzureACRImageCo
 }
 
 func (a *Activities) getGARAuth(ctx context.Context, garCfg *app.GCPGARImageConfig) (*metadata.RegistryAuth, error) {
-	if garCfg.CloudConnection != nil && garCfg.CloudConnection.AuthMode != app.CloudConnectionAuthModeLegacy {
-		token, err := a.cloudConnections.GCPAccessToken(ctx, garCfg.CloudConnection)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get GAR cloud connection access token")
-		}
-		return &metadata.RegistryAuth{ServerAddress: "https://" + garCfg.GCPRegion + "-docker.pkg.dev", Username: "oauth2accesstoken", Password: token.AccessToken}, nil
-	}
 	tok, err := a.sharedActs.GetGARAccessToken(ctx, &sharedactivities.GetGARAccessTokenRequest{
 		ServiceAccountEmail:      garCfg.ServiceAccountEmail,
 		WorkloadIdentityProvider: garCfg.WorkloadIdentityProvider,
-		OrgID:                    garCfg.OrgID,
-		ConnectionID:             garCfg.CloudConnectionID,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get GAR access token")
@@ -176,9 +167,13 @@ func (a *Activities) getGARAuth(ctx context.Context, garCfg *app.GCPGARImageConf
 func (a *Activities) getECRAuth(ctx context.Context, ecrCfg *app.AWSECRImageConfig) (*metadata.RegistryAuth, error) {
 	v := validator.New()
 
-	credsCfg, err := a.cloudConnections.ECRCredentials(ctx, ecrCfg.CloudConnection, "ctl-api-image-metadata-fetch")
-	if err != nil {
-		return nil, err
+	credsCfg := &credentials.Config{
+		Region: ecrCfg.AWSRegion,
+		AssumeRole: &credentials.AssumeRoleConfig{
+			RoleARN:     ecrCfg.IAMRoleARN,
+			SessionName: "ctl-api-image-metadata-fetch",
+			UseGCPOIDC:  a.cfg.IsGCP(),
+		},
 	}
 
 	ecrClient, err := ecr.New(v,

@@ -13,7 +13,7 @@ func (a *assumer) fetchSTSClient(ctx context.Context) (*sts.Client, error) {
 	// OIDC flows (GitHub, GCP) use AssumeRoleWithWebIdentity which doesn't
 	// need base AWS credentials. Create a region-only config without
 	// credential providers so it works on non-AWS environments (e.g. GCP).
-	if a.UseGithubOIDC || a.UseGCPOIDC || a.WebIdentityTokenSource != nil {
+	if a.UseGithubOIDC || a.UseGCPOIDC {
 		baseCfg, err := config.LoadDefaultConfig(ctx,
 			config.WithRegion(a.Region),
 			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider("", "", "")))

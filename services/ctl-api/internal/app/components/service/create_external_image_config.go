@@ -25,7 +25,6 @@ type awsECRImageConfigRequest struct {
 }
 
 type gcpGARImageConfigRequest struct {
-	Connection               string `json:"connection,omitempty"`
 	GCPProjectID             string `json:"gcp_project_id"`
 	GCPRegion                string `json:"gcp_region"`
 	ImageURL                 string `json:"image_url"`
@@ -35,7 +34,6 @@ type gcpGARImageConfigRequest struct {
 }
 
 type azureACRImageConfigRequest struct {
-	Connection  string `json:"connection,omitempty"`
 	RegistryURL string `json:"registry_url"`
 	TenantID    string `json:"tenant_id,omitempty"`
 	ClientID    string `json:"client_id,omitempty"`
@@ -86,7 +84,6 @@ func (c *CreateExternalImageComponentConfigRequest) toConfig() *config.ExternalI
 		}
 	case c.GCPGARImageConfig != nil:
 		obj.GCPGARImageConfig = &config.GCPGARConfig{
-			Connection:               c.GCPGARImageConfig.Connection,
 			GCPProjectID:             c.GCPGARImageConfig.GCPProjectID,
 			GCPRegion:                c.GCPGARImageConfig.GCPRegion,
 			ServiceAccountEmail:      c.GCPGARImageConfig.ServiceAccountEmail,
@@ -97,7 +94,6 @@ func (c *CreateExternalImageComponentConfigRequest) toConfig() *config.ExternalI
 		}
 	case c.AzureACRImageConfig != nil:
 		obj.AzureACRImageConfig = &config.AzureACRConfig{
-			Connection:            c.AzureACRImageConfig.Connection,
 			RegistryURL:           c.AzureACRImageConfig.RegistryURL,
 			TenantID:              c.AzureACRImageConfig.TenantID,
 			ClientID:              c.AzureACRImageConfig.ClientID,
@@ -166,7 +162,6 @@ func (c *CreateExternalImageComponentConfigRequest) Validate(v *validator.Valida
 	}
 	if c.AzureACRImageConfig != nil {
 		acrCfg := config.AzureACRConfig{
-			Connection:            c.AzureACRImageConfig.Connection,
 			TenantID:              c.AzureACRImageConfig.TenantID,
 			ClientID:              c.AzureACRImageConfig.ClientID,
 			ClientSecretName:      c.AzureACRImageConfig.ClientSecretName,
@@ -276,63 +271,6 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 	cfg, err := build.ExternalImageComponentConfig(req.toConfig())
 	if err != nil {
 		return nil, stderr.NewInvalidRequest(err)
-	}
-	if cfg.AWSECRImageConfig != nil {
-		var connections []app.CloudConnection
-		if err := s.db.WithContext(ctx).Where(&app.CloudConnection{OrgID: parentCmp.OrgID}).Find(&connections).Error; err != nil {
-			return nil, fmt.Errorf("unable to list cloud connections: %w", err)
-		}
-		resolution, err := build.ResolveAWSConnection("", req.AWSECRImageConfig.IAMRoleARN, req.ImageURL, req.AWSECRImageConfig.AWSRegion, parentCmp.OrgID, connections)
-		if err != nil {
-			return nil, stderr.NewInvalidRequest(err)
-		}
-		if resolution.Implicit {
-			if err := s.db.WithContext(ctx).Create(resolution.Connection).Error; err != nil {
-				return nil, fmt.Errorf("unable to create implicit cloud connection: %w", err)
-			}
-		}
-		cfg.AWSECRImageConfig.CloudConnectionID = resolution.Connection.ID
-		cfg.AWSECRImageConfig.IAMRoleARN = resolution.Connection.Principal
-	}
-	if cfg.AzureACRImageConfig != nil {
-		var connections []app.CloudConnection
-		if err := s.db.WithContext(ctx).Where(&app.CloudConnection{OrgID: parentCmp.OrgID}).Find(&connections).Error; err != nil {
-			return nil, fmt.Errorf("unable to list cloud connections: %w", err)
-		}
-		resolution, err := build.ResolveAzureConnection(req.AzureACRImageConfig.Connection, req.AzureACRImageConfig.ClientID, req.AzureACRImageConfig.TenantID, req.ImageURL, parentCmp.OrgID, connections)
-		if err != nil {
-			return nil, stderr.NewInvalidRequest(err)
-		}
-		if resolution.Connection != nil {
-			if resolution.Implicit {
-				if err := s.db.WithContext(ctx).Create(resolution.Connection).Error; err != nil {
-					return nil, fmt.Errorf("unable to create implicit cloud connection: %w", err)
-				}
-			}
-			cfg.AzureACRImageConfig.CloudConnectionID = resolution.Connection.ID
-			cfg.AzureACRImageConfig.ClientID = resolution.Connection.Principal
-			cfg.AzureACRImageConfig.TenantID = resolution.Connection.TenantID
-		}
-	}
-	if cfg.GCPGARImageConfig != nil {
-		var connections []app.CloudConnection
-		if err := s.db.WithContext(ctx).Where(&app.CloudConnection{OrgID: parentCmp.OrgID}).Find(&connections).Error; err != nil {
-			return nil, fmt.Errorf("unable to list cloud connections: %w", err)
-		}
-		resolution, err := build.ResolveGCPConnection(req.GCPGARImageConfig.Connection, req.GCPGARImageConfig.ServiceAccountEmail, req.GCPGARImageConfig.WorkloadIdentityProvider, req.GCPGARImageConfig.GCPProjectID, req.ImageURL, parentCmp.OrgID, connections)
-		if err != nil {
-			return nil, stderr.NewInvalidRequest(err)
-		}
-		if resolution.Connection != nil {
-			if resolution.Implicit {
-				if err := s.db.WithContext(ctx).Create(resolution.Connection).Error; err != nil {
-					return nil, fmt.Errorf("unable to create implicit cloud connection: %w", err)
-				}
-			}
-			cfg.GCPGARImageConfig.CloudConnectionID = resolution.Connection.ID
-			cfg.GCPGARImageConfig.ServiceAccountEmail = resolution.Connection.Principal
-			cfg.GCPGARImageConfig.WorkloadIdentityProvider = resolution.Connection.IdentityProvider
-		}
 	}
 
 	componentConfigConnection, err := build.ComponentConnection(req.buildInput(parentCmp.ID, depIDs))

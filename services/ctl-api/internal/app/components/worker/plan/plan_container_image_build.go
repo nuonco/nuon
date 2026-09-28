@@ -9,6 +9,7 @@ import (
 	"github.com/distribution/reference"
 	"github.com/pkg/errors"
 
+	assumerole "github.com/nuonco/nuon/pkg/aws/assume-role"
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
@@ -20,7 +21,6 @@ import (
 
 func (p *Planner) createContainerImageBuildPlan(ctx workflow.Context, bld *app.ComponentBuild) (*plantypes.ContainerImagePullPlan, error) {
 	srcRepo, err := p.getSourceRepository(
-		ctx,
 		bld.ComponentConfigConnection.ExternalImageComponentConfig,
 		bld.ComponentConfigConnection.ComponentID,
 	)
@@ -83,49 +83,53 @@ func (b *Planner) normalizeRepository(repo string) (string, error) {
 	return "", nil
 }
 
-func (b *Planner) getSourceRepository(ctx workflow.Context, cfg *app.ExternalImageComponentConfig, componentID string) (*configs.OCIRegistryRepository, error) {
+func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig, componentID string) (*configs.OCIRegistryRepository, error) {
 	loginServer, err := b.normalizeRepository(cfg.ImageURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to normalize repository")
 	}
 
 	if cfg.AWSECRImageConfig != nil {
-		var auth credentials.Config
-		authResult, err := activities.AwaitGetCloudConnectionCredentials(ctx, &activities.GetCloudConnectionCredentialsRequest{ConnectionID: cfg.AWSECRImageConfig.CloudConnectionID, SessionName: "container-image-build"})
-		if err != nil {
-			return nil, fmt.Errorf("get cloud connection credentials: %w", err)
+		assumeRole := &credentials.AssumeRoleConfig{
+			RoleARN:                cfg.AWSECRImageConfig.IAMRoleARN,
+			SessionName:            "container-image-build",
+			SessionDurationSeconds: 30 * 60,
+			UseGCPOIDC:             b.cloudProvider == "gcp",
 		}
-		auth = *authResult
+
+		// Control-plane builds run as the ctl-api pod identity, which the
+		// vendor's ECR pull role does not trust — vendors grant the Nuon
+		// management account, so hop through the management role first. AWS
+		// is the default cloud provider, so it is represented as anything
+		// other than gcp/azure (including an empty string).
+		if b.cloudProvider != "gcp" && b.cloudProvider != "azure" && b.managementIAMRoleARN != "" {
+			assumeRole.TwoStepConfig = &assumerole.TwoStepConfig{
+				IAMRoleARN: b.managementIAMRoleARN,
+			}
+		}
 
 		return &configs.OCIRegistryRepository{
 			RegistryType: configs.OCIRegistryTypeECR,
 			Repository:   cfg.ImageURL,
 			Region:       cfg.AWSECRImageConfig.AWSRegion,
 
-			ECRAuth: &auth,
+			ECRAuth: &credentials.Config{
+				Region:     cfg.AWSECRImageConfig.AWSRegion,
+				AssumeRole: assumeRole,
+			},
 		}, nil
 	}
 
 	if cfg.GCPGARImageConfig != nil {
 		garLoginServer := fmt.Sprintf("%s-docker.pkg.dev", cfg.GCPGARImageConfig.GCPRegion)
-		repository := &configs.OCIRegistryRepository{
+		return &configs.OCIRegistryRepository{
 			RegistryType:             configs.OCIRegistryTypeGAR,
 			Repository:               cfg.ImageURL,
 			Region:                   cfg.GCPGARImageConfig.GCPRegion,
 			LoginServer:              garLoginServer,
 			ServiceAccountEmail:      cfg.GCPGARImageConfig.ServiceAccountEmail,
 			WorkloadIdentityProvider: cfg.GCPGARImageConfig.WorkloadIdentityProvider,
-			OrgID:                    cfg.GCPGARImageConfig.OrgID,
-			CloudConnectionID:        cfg.GCPGARImageConfig.CloudConnectionID,
-		}
-		if connection := cfg.GCPGARImageConfig.CloudConnection; connection != nil && connection.AuthMode != app.CloudConnectionAuthModeLegacy {
-			auth, err := activities.AwaitGetCloudConnectionGARAuth(ctx, &activities.GetCloudConnectionGARAuthRequest{ConnectionID: connection.ID})
-			if err != nil {
-				return nil, fmt.Errorf("get GCP cloud connection credentials: %w", err)
-			}
-			repository.OCIAuth = auth
-		}
-		return repository, nil
+		}, nil
 	}
 
 	if cfg.AzureACRImageConfig != nil {
@@ -146,11 +150,10 @@ func (b *Planner) getSourceRepository(ctx workflow.Context, cfg *app.ExternalIma
 		// registration is rejected at sync, but attaching it here too means a
 		// config that slipped through fails loudly in the token activity rather
 		// than quietly falling back to an identity that cannot see the registry.
-		if acr := cfg.AzureACRImageConfig; acr.CloudConnectionID != "" || acr.ClientID != "" || acr.TenantID != "" ||
+		if acr := cfg.AzureACRImageConfig; acr.ClientID != "" || acr.TenantID != "" ||
 			acr.ClientSecretName != "" || acr.ClientCertificateName != "" {
 			acrCfg.ACRAppRegistration = &configs.ACRAppRegistration{
 				ComponentID:           componentID,
-				ConnectionID:          acr.CloudConnectionID,
 				TenantID:              acr.TenantID,
 				ClientID:              acr.ClientID,
 				ClientSecretName:      acr.ClientSecretName,
