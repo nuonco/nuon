@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/BranchManagementDropdown',
+  title: 'Features / Branches / Branch management dropdown',
 }
 
 import { Button } from '@/components/common/Button'

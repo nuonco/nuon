@@ -1,5 +1,5 @@
 export default {
-  title: 'Install Components/InstallComponentsList',
+  title: 'Features / Installs / Components / Components list',
 }
 
 import { Button } from '@/components/common/Button'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Sandbox/SandboxCard',
+  title: 'Features / Sandbox / Sandbox card',
 }
 
 import { SandboxCard } from './SandboxCard'

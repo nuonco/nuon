@@ -1,5 +1,5 @@
 export default {
-  title: 'LogStream/LogSeverity',
+  title: 'Features / Logs / Severity',
 }
 
 import { LogSeverity } from './LogSeverity'

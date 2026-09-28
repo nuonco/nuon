@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Editor',
+  title: 'UI / Editor',
 }
 
 import { useState } from 'react'

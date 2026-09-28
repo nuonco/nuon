@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/TriggerBranchRunModal',
+  title: 'Features / Branches / Trigger branch run modal',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

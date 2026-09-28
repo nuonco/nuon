@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const STORY = "/?story=installs--editinputs--with-name-field&mode=preview";
+const STORY = "/?story=features--installs--management--edit-inputs--with-name-field&mode=preview";
 
 test.describe("EditInstall (edit mode) behavior", () => {
   test.beforeEach(async ({ page }) => {

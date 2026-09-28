@@ -1,5 +1,5 @@
 export default {
-  title: 'Layout/LandingLayout',
+  title: 'UI / Layout / Landing layout',
 }
 
 import { LandingLayout } from './LandingLayout'

@@ -55,7 +55,7 @@ export function MyFlow() {
 that make no API calls, so you can click a whole flow end to end.
 
 ```bash
-bun run dev:ladle   # http://localhost:61000 → Onboarding/Playground
+bun run dev:ladle   # http://localhost:61000 → Features / Onboarding / Playground flow
 ```
 
 Stories: `FiveStep`, `ThreeStep`, `ChoiceHeavy`, `Minimal`.

@@ -3,7 +3,7 @@ import { InstallConfigVersionDetails } from './InstallConfigVersionDetails'
 import type { TConfigDiffNode, TInstallConfigVersion } from '@/types'
 
 export default {
-  title: 'InstallConfigs/InstallConfigVersionDetails',
+  title: 'Features / Installs / Configs / Version details',
 }
 
 const mockVersion = {

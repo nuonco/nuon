@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/Forms/ResumeDraftModal',
+  title: 'Features / Installs / Forms / Resume draft modal',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

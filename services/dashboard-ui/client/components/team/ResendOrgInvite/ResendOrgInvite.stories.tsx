@@ -1,5 +1,5 @@
 export default {
-  title: 'Team/ResendOrgInvite',
+  title: 'Features / Team / Resend org invite',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

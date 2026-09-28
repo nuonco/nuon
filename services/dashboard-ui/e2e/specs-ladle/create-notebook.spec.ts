@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const STORY = "/?story=notebooks--createnotebook--default&mode=preview";
+const STORY = "/?story=features--notebooks--create-notebook--default&mode=preview";
 
 test.describe("CreateNotebook form behavior", () => {
   test.beforeEach(async ({ page }) => {

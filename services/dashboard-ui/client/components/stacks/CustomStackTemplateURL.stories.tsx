@@ -1,7 +1,7 @@
 import { CustomStackTemplateURL } from './CustomStackTemplateURL'
 
 export default {
-  title: 'Stacks/CustomStackTemplateURL',
+  title: 'Features / Stacks / Custom stack template URL',
 }
 
 const uploaded = {

@@ -2,7 +2,7 @@ import { ModalStory } from '@/components/__stories__/helpers'
 import { ToggleComponentModal } from './ToggleComponent'
 
 export default {
-  title: 'Install Components/ToggleComponent',
+  title: 'Features / Installs / Components / Toggle component',
 }
 
 const mockComponent = {

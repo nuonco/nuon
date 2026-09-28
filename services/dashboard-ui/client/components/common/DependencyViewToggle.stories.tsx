@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/DependencyViewToggle',
+  title: 'UI / Dependency view toggle',
 }
 
 import { useState } from 'react'

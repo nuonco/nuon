@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 const EDIT_NAME_STORY =
-  '/?story=branches--editbranchnamemodal--edit-name&mode=preview'
+  '/?story=features--branches--edit-branch-name-only-modal--edit-name&mode=preview'
 
 test('edits the branch name without source settings', async ({ page }) => {
   await page.goto(EDIT_NAME_STORY, { waitUntil: 'domcontentloaded' })

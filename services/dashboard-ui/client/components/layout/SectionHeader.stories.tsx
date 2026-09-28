@@ -1,5 +1,5 @@
 export default {
-  title: 'Layout/SectionHeader',
+  title: 'UI / Layout / Section header',
 }
 
 import { Button } from '@/components/common/Button'

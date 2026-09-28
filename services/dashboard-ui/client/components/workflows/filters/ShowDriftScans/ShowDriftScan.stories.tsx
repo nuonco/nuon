@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/Filters/ShowDriftScan',
+  title: 'Features / Workflows / Filters / Show drift scan',
 }
 
 import { ShowDriftScan } from './ShowDriftScan'

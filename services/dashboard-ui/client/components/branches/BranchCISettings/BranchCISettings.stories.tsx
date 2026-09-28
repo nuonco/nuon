@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/BranchCISettings',
+  title: 'Features / Branches / Branch CI settings',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

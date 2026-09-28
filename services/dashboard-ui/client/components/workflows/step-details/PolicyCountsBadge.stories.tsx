@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/PolicyCountsBadge',
+  title: 'Features / Workflows / Step details / Policy counts badge',
 }
 
 import { PolicyCountsBadge } from './PolicyCountsBadge'

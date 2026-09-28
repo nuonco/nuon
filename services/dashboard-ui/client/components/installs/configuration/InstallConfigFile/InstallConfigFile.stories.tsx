@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/Configuration/InstallConfigFile',
+  title: 'Features / Installs / Configuration / Config file',
 }
 
 import { Badge } from '@/components/common/Badge'

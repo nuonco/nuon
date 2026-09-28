@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/AuditHistory',
+  title: 'Features / Installs / Management / Audit history',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

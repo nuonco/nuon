@@ -1,5 +1,5 @@
 export default {
-  title: 'Sandbox/SandboxRunsSkeleton',
+  title: 'Features / Sandbox / Run switcher / Runs skeleton',
 }
 
 import { SandboxRunsSkeleton } from './SandboxRunsSkeleton'

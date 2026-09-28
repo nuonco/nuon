@@ -1,5 +1,5 @@
 export default {
-  title: 'Terraform/TerraformWorkspaceLockBadge',
+  title: 'Features / Terraform / Workspace / Lock badge',
 }
 
 import { DateTime } from 'luxon'

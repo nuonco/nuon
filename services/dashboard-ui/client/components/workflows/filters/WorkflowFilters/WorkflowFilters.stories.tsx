@@ -9,7 +9,7 @@ import type {
 } from '@/utils/workflow-filters'
 
 export default {
-  title: 'Workflows/Filters/WorkflowFilters',
+  title: 'Features / Workflows / Filters / Workflow filters',
 }
 
 const Example = ({ owner }: { owner: TWorkflowOwner }) => {

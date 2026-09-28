@@ -2,7 +2,7 @@ import { AuthContext } from '@/providers/auth-provider'
 import { AdminDashboardLink } from './AdminDashboardLink'
 
 export default {
-  title: 'Admin/AdminDashboardLink',
+  title: 'Features / Admin / Dashboard link',
 }
 
 const adminAuth = {

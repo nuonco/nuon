@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/EnableAutoApprove',
+  title: 'Features / Installs / Management / Enable auto approve',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

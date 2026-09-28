@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Expand',
+  title: 'UI / Expand',
 }
 
 import { Expand } from './Expand'

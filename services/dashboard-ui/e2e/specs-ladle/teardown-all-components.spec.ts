@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const STORY =
-  "/?story=install-components--teardownallcomponents--default&mode=preview";
+  "/?story=features--installs--components--teardown-all-components--default&mode=preview";
 
 test.describe("TeardownAllComponents behavior", () => {
   test.beforeEach(async ({ page }) => {

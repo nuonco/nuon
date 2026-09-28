@@ -1,5 +1,5 @@
 export default {
-  title: 'Apps/Config/AppKubernetesContexts',
+  title: 'Features / Apps / Config / Kubernetes contexts',
 }
 
 import { AppKubernetesContexts } from './AppKubernetesContexts'

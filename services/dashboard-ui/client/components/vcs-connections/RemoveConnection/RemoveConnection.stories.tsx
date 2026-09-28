@@ -1,5 +1,5 @@
 export default {
-  title: 'VCS Connections/RemoveConnection',
+  title: 'Features / VCS connections / Remove connection',
 }
 
 import { useState } from 'react'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Actions/ActionCard',
+  title: 'Features / Actions / Action card',
 }
 
 import { ActionCard } from './ActionCard'

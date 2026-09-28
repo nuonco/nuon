@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const STORY = "/?story=runners--updaterunner--default&mode=preview";
+const STORY = "/?story=features--runners--management--update-runner--default&mode=preview";
 
 test.describe("UpdateRunner form behavior", () => {
   test.beforeEach(async ({ page }) => {

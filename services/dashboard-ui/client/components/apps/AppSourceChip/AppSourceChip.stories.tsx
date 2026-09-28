@@ -1,5 +1,5 @@
 export default {
-  title: 'Apps/AppSourceChip',
+  title: 'Features / Apps / Source chip',
 }
 
 import { AppSourceChip } from './AppSourceChip'

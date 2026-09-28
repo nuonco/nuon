@@ -1,5 +1,5 @@
 export default {
-  title: 'LogStream/AttributesTabs',
+  title: 'Features / Logs / Attributes tabs',
 }
 
 import { AttributesTabs } from './AttributesTabs'

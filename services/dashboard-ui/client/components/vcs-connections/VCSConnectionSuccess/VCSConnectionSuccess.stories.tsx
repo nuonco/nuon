@@ -1,5 +1,5 @@
 export default {
-  title: 'VCS Connections/VCSConnectionSuccess',
+  title: 'Features / VCS connections / Success',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

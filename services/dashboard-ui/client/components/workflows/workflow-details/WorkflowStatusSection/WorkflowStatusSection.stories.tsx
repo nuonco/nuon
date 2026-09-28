@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/WorkflowDetails/WorkflowStatusSection',
+  title: 'Features / Workflows / Details / Status section',
 }
 
 import { WorkflowStatusSection } from './WorkflowStatusSection'

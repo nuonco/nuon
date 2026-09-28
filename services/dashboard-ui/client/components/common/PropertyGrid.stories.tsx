@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/PropertyGrid',
+  title: 'UI / Property grid',
 }
 
 import { PropertyGrid } from './PropertyGrid'
