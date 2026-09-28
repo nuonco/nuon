@@ -202,6 +202,34 @@ bun run test:e2e:headed
 
 Do not run production builds (`build`, `build:js`, `build:css`) unless explicitly asked.
 
+## First-run onboarding locally
+
+`/onboarding` is the first-run flow ([client/components/onboarding/README.md](./client/components/onboarding/README.md)).
+To run it against a local control plane:
+
+1. Set ctl-api's `force_sandbox_mode` config to `true` (nuonctl's local stack does). Orgs the flow creates with
+   `use_sandbox_mode: false` then come back as sandbox orgs, installs run in sandbox mode, and the install stack
+   reports back by itself a few seconds after it is ready.
+2. Sign in as an account with no org, so `/` sends you to `/onboarding` and the flow creates a trial org. Either sign
+   in through the auth service with a Google account that has never used this stack, or seed one:
+   `POST :8082/v1/general/integration-user` returns a new account (its token lasts 10 minutes; mint a longer one with
+   `POST :8082/v1/general/admin-static-token` `{"duration":"2h","email_or_subject":"<email>"}`), then set the token as
+   the `X-Nuon-Auth` cookie on `127.0.0.1`.
+3. Open http://127.0.0.1:4000/onboarding.
+
+Notes:
+
+- An account that already belongs to an org can open `/onboarding`, but its progress is not saved: ctl-api's
+  `POST /v1/account/user-journeys` fails for accounts that hold a role.
+- The own-app path needs a GitHub connection. Connect GitHub leaves for the GitHub App; to skip that locally, create
+  the connection with `POST /v1/vcs/connection-callback` `{"github_install_id","org_id"}` (seed-user returns the
+  local install as `github_install_id`) and open `/onboarding?vcs-connected=<connection-id>`.
+- Name the app template after a repo that connection can see. A repo with a valid app config at its root (for
+  example `nuonco/kitchen-sink` for AWS) syncs an active config on the branch's first run, so Deploy does not wait for
+  a push.
+- The agent prompt is fetched from `https://nuon.co/loop.md`. Until that file is served with CORS headers for the
+  dashboard origin, Copy prompt is disabled and See full prompt still works.
+
 ## Playwright (E2E and agent verification)
 
 Committed smoke tests live under `e2e/` (`playwright.config.ts`, `global-setup.ts`, `flows/` → `specs/`). See
