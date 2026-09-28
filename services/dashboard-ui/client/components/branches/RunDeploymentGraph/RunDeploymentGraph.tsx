@@ -13,6 +13,7 @@ import { GraphCanvas } from '../graph/GraphCanvas'
 import { GroupNodeCard, NODE_WIDTH } from '../graph/GroupNodeCard'
 import { layoutSequential, sequentialEdges } from '../graph/layout'
 import { GroupRunDetailPanel } from './GroupRunDetailPanel'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 const MAX_VISIBLE_INSTALLS = 3
 const MAX_VISIBLE_RUNBOOKS = 2
@@ -50,6 +51,7 @@ interface GroupRunNodeData {
 }
 
 const GroupRunNode = memo(({ data }: NodeProps<Node<GroupRunNodeData>>) => {
+  const installLink = useInstallLink()
   const { accent, installs, runbookNames, labelEntries, orgId, panelKey } = data
   const [, setSearchParams] = useSearchParams()
   const visible = installs.slice(0, MAX_VISIBLE_INSTALLS)
@@ -108,8 +110,8 @@ const GroupRunNode = memo(({ data }: NodeProps<Node<GroupRunNodeData>>) => {
               <Link
                 href={
                   inst.workflowId
-                    ? `/${orgId}/installs/${inst.id}/workflows/${inst.workflowId}`
-                    : `/${orgId}/installs/${inst.id}`
+                    ? installLink({ orgId: orgId, installId: inst.id, suffix: `/workflows/${inst.workflowId}` })
+                    : installLink({ orgId: orgId, installId: inst.id })
                 }
                 className="nodrag w-auto min-w-0 flex-1 truncate"
                 title={inst.name}

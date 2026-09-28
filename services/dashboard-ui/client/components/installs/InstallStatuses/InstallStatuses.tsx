@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useInstallHref } from '@/hooks/use-install-path'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Icon } from '@/components/common/Icon'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
@@ -43,6 +44,12 @@ const LazyComponentsStatus = ({
   children: React.ReactNode
 }) => {
   const [hovered, setHovered] = useState(false)
+  const installHref = useInstallHref()
+  const installRoot = installHref({
+    orgId: install.org_id,
+    installId: install.id,
+    appId: install.app_id,
+  })
 
   const { data } = useQuery({
     placeholderData: keepPreviousData,
@@ -75,7 +82,7 @@ const LazyComponentsStatus = ({
         )}
         componentSummaries={getContextTooltipItemsFromInstallComponents(
           components,
-          `/${install.org_id}/installs/${install.id}/components`,
+          `${installRoot}/components`,
           install?.lifecycle_phase?.phase
         )}
         position={tooltipPosition}
@@ -106,12 +113,6 @@ const STATUS_CONFIGS: TStatusConfig[] = [
     statusDescription: 'sandbox_status_description',
     viewPath: 'sandbox',
   },
-  /* {
-   *   label: "Components",
-   *   status: "composite_component_status",
-   *   statusDescription: "composite_component_status_description",
-   *   viewPath: "components",
-   * }, */
 ]
 
 function getTooltip({
@@ -149,6 +150,12 @@ export const InstallStatuses = ({
   stack,
   ...props
 }: IInstallStatuses) => {
+  const installHref = useInstallHref()
+  const installRoot = installHref({
+    orgId: install?.org_id,
+    installId: install?.id,
+    appId: install?.app_id,
+  })
   const lifecycleStatus = install?.lifecycle_phase?.phase
   const isDeprovisioning = lifecycleStatus === 'deprovisioning'
   const isDeprovisioned = lifecycleStatus === 'deprovisioned'
@@ -176,8 +183,8 @@ export const InstallStatuses = ({
         )
   const sandboxHref =
     sandboxDisplayStatus !== sandboxBaseStatus
-      ? `/${install?.org_id}/installs/${install?.id}/resources?health=${sandboxDisplayStatus}`
-      : `/${install?.org_id}/installs/${install?.id}/sandbox`
+      ? `${installRoot}/resources?health=${sandboxDisplayStatus}`
+      : `${installRoot}/sandbox`
 
   const driftStatus = install?.drifted_objects?.length ? 'warn' : 'active'
   const latestStackVersion = stack?.versions?.[0]
@@ -190,7 +197,7 @@ export const InstallStatuses = ({
       items={
         install?.drifted_objects?.length
           ? install?.drifted_objects?.map((drift) => ({
-              href: `/${install.org_id}/installs/${install.id}/workflows/${drift?.install_workflow_id}`,
+              href: `${installRoot}/workflows/${drift?.install_workflow_id}`,
               id: drift?.target_id,
               title:
                 drift?.target_type === 'install_deploy'
@@ -253,7 +260,7 @@ export const InstallStatuses = ({
       position={tooltipPosition}
       items={[
         {
-          href: `/${install.org_id}/installs/${install.id}/runner`,
+          href: `${installRoot}/runner`,
           id: install?.runner_id,
           title: `${humanize(install?.runner_type)} runner`,
           subtitle: getInstallStatusTitle(
@@ -349,7 +356,7 @@ export const InstallStatuses = ({
       )}
       componentSummaries={getContextTooltipItemsFromInstallComponents(
         install?.install_components as TInstallComponent[],
-        `/${install.org_id}/installs/${install.id}/components`,
+        `${installRoot}/components`,
         install?.lifecycle_phase?.phase
       )}
       position={tooltipPosition}
@@ -370,7 +377,7 @@ export const InstallStatuses = ({
           subtitle:
             install?.composite_health_status_description ??
             humanize(healthStatus),
-          href: `/${install.org_id}/installs/${install.id}/resources?health=${healthStatus}`,
+          href: `${installRoot}/resources?health=${healthStatus}`,
           leftContent: (
             <Status
               status={healthStatus}
@@ -400,7 +407,7 @@ export const InstallStatuses = ({
       position={tooltipPosition}
       items={[
         {
-          href: `/${install.org_id}/installs/${install.id}/stacks`,
+          href: `${installRoot}/stacks`,
           id: latestStackVersion?.id ?? 'stack',
           title: humanize(stackStatus),
           subtitle: latestStackVersion?.created_at ? (
@@ -461,7 +468,7 @@ export const InstallStatuses = ({
             id: 'stack',
             title: 'Stack',
             subtitle: humanize(stackStatus),
-            href: `/${install.org_id}/installs/${install.id}/stacks`,
+            href: `${installRoot}/stacks`,
             leftContent: (
               <Status
                 status={stackStatus}
@@ -477,7 +484,7 @@ export const InstallStatuses = ({
       id: 'runner',
       title: 'Runner',
       subtitle: getInstallStatusTitle('runner_status', install?.runner_status, install?.lifecycle_phase?.phase),
-      href: `/${install.org_id}/installs/${install.id}/runner`,
+      href: `${installRoot}/runner`,
       leftContent: (
         <Status
           status={effectiveStatus(install?.runner_status)}
@@ -509,7 +516,7 @@ export const InstallStatuses = ({
         install?.composite_component_status,
         install?.lifecycle_phase?.phase
       ),
-      href: `/${install.org_id}/installs/${install.id}/components`,
+      href: `${installRoot}/components`,
       leftContent: (
         <Status
           status={effectiveStatus(install?.composite_component_status)}
@@ -527,7 +534,7 @@ export const InstallStatuses = ({
             subtitle:
               install?.composite_health_status_description ??
               humanize(healthStatus),
-            href: `/${install.org_id}/installs/${install.id}/resources?health=${healthStatus}`,
+            href: `${installRoot}/resources?health=${healthStatus}`,
             leftContent: (
               <Status
                 status={healthStatus}
@@ -548,7 +555,7 @@ export const InstallStatuses = ({
               ? 'Drift detected'
               : 'No drift',
             href: install.drifted_objects.length
-              ? `/${install.org_id}/installs/${install.id}/workflows`
+              ? `${installRoot}/workflows`
               : undefined,
             leftContent: (
               <Status

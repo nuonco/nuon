@@ -10,6 +10,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useQueryApprovalPlan } from '@/hooks/use-query-approval-plan'
 import type { TWorkflowStep } from '@/types'
 import { StepButtons } from '../StepButtons'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 interface IInstallDiffEntry {
   component_id?: string
@@ -215,6 +216,7 @@ const DeployInstallCard = ({
   orgId: string
   isFirst: boolean
 }) => {
+  const installLink = useInstallLink()
   return (
     <Expand
       id={`install-${entry?.install_id}`}
@@ -226,7 +228,7 @@ const DeployInstallCard = ({
           trailing={
             entry?.workflow_id ? (
               <Link
-                href={`/${orgId}/installs/${entry.install_id}/workflows/${entry.workflow_id}`}
+                href={installLink({ orgId: orgId, installId: entry.install_id, suffix: `/workflows/${entry.workflow_id}` })}
               >
                 <Text variant="subtext" theme="neutral">
                   View workflow
@@ -248,7 +250,7 @@ const DeployInstallCard = ({
         </div>
         {entry?.workflow_id ? (
           <Link
-            href={`/${orgId}/installs/${entry.install_id}/workflows/${entry.workflow_id}`}
+            href={installLink({ orgId: orgId, installId: entry.install_id, suffix: `/workflows/${entry.workflow_id}` })}
           >
             <Text variant="subtext">Open workflow</Text>
           </Link>

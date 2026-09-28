@@ -1,10 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
+import { useParams } from 'react-router'
 import { ContextTooltip } from '@/components/common/ContextTooltip'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { useBreadcrumb } from '@/hooks/use-breadcrumb'
+import { useInstallNested } from '@/hooks/use-install-path'
+import { withAppInstallBreadcrumbs } from '@/lib/install-path'
+import { InstallContext } from '@/providers/install-provider'
+import { OrgContext } from '@/providers/org-provider'
 import type { TNavLink } from '@/types'
 
 const Separator = () => <Icon variant="CaretRightIcon" className="muted" />
@@ -38,7 +43,7 @@ const BreadcrumbItem = ({
   </Text>
 )
 
-const GAP = 8 // gap-2
+const GAP = 8
 const ELLIPSIS_ITEM_WIDTH = 40
 
 function computeCollapseCount(
@@ -75,7 +80,6 @@ function useCollapsedCount(
   const itemWidthsRef = useRef<number[]>([])
   const prevTotalRef = useRef(totalItems)
 
-  // When breadcrumb items change, clear cached widths and show all for measurement
   if (prevTotalRef.current !== totalItems) {
     prevTotalRef.current = totalItems
     itemWidthsRef.current = []
@@ -88,7 +92,6 @@ function useCollapsedCount(
     if (!nav || !list) return
 
     const ro = new ResizeObserver(() => {
-      // If no cached widths yet, we're in measurement mode (all items visible)
       if (itemWidthsRef.current.length === 0) {
         const items = Array.from(list.children) as HTMLElement[]
         if (items.length === 0) return
@@ -147,8 +150,8 @@ export const BreadcrumbNav = () => {
           <li className="flex items-center gap-2">
             <Separator />
             <ContextTooltip
-              items={collapsedCrumbs.map((crumb) => ({
-                id: crumb.path,
+              items={collapsedCrumbs.map((crumb, idx) => ({
+                id: `${idx}:${crumb.path}`,
                 title: <Text weight="strong">{crumb.text}</Text>,
                 href: crumb.path,
               }))}
@@ -162,7 +165,7 @@ export const BreadcrumbNav = () => {
         )}
 
         {visibleTail.map((crumb, idx) => (
-          <li key={crumb.path} className="flex items-center gap-2">
+          <li key={`${idx}:${crumb.path}`} className="flex items-center gap-2">
             <Separator />
             <BreadcrumbItem
               crumb={crumb}
@@ -178,10 +181,21 @@ export const BreadcrumbNav = () => {
 
 export const Breadcrumbs = ({ breadcrumbs }: { breadcrumbs: TNavLink[] }) => {
   const { updateBreadcrumb } = useBreadcrumb()
-  const key = JSON.stringify(breadcrumbs)
+  const org = useContext(OrgContext)?.org
+  const install = useContext(InstallContext)?.install
+  const nested = useInstallNested()
+  const params = useParams()
+  const routed = withAppInstallBreadcrumbs(breadcrumbs, {
+    nested,
+    orgId: org?.id ?? params.orgId,
+    appId: install?.app_id ?? params.appId,
+    appName: install?.app?.name,
+    installId: install?.id ?? params.installId,
+  })
+  const key = JSON.stringify(routed)
 
   useEffect(() => {
-    updateBreadcrumb(breadcrumbs)
+    updateBreadcrumb(routed)
   }, [key])
 
   return <></>

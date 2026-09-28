@@ -12,6 +12,7 @@ import { RunnerProvider } from '@/providers/runner-provider'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getRunnerSettings, getRunnerProcesses } from '@/lib'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 const InstallRunnerContent = ({
   installId,
@@ -22,6 +23,7 @@ const InstallRunnerContent = ({
   runnerId: string
   variant?: TInstallRunnerVariant
 }) => {
+  const installLink = useInstallLink()
   const { org } = useOrg()
 
   const { data: settings } = useQuery({
@@ -46,7 +48,7 @@ const InstallRunnerContent = ({
   })
 
   const processes = processResult?.data ?? []
-  const runnerBasePath = `/${org?.id}/installs/${installId}/runner`
+  const runnerBasePath = installLink({ orgId: org?.id, installId: installId, suffix: `/runner` })
 
   let processesContent = null
   if (!processesLoading && processes.length === 1) {

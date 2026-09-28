@@ -1,6 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { getInstallComponent } from '@/lib'
 import { ComponentCard } from './ComponentCard'
 
@@ -12,6 +13,7 @@ interface IComponentCardContainer {
 export const ComponentCardContainer = ({ id, name }: IComponentCardContainer) => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
 
   const resolvedComponent = name
     ? install.install_components?.find((ic) => ic.component?.name === name)
@@ -43,7 +45,7 @@ export const ComponentCardContainer = ({ id, name }: IComponentCardContainer) =>
 
   const component = installComponent?.component
   const href = componentId
-    ? `/${org.id}/installs/${install.id}/components/${componentId}`
+    ? installLink({ installId: install.id, appId: install.app_id, suffix: `/components/${componentId}` })
     : undefined
 
   return (

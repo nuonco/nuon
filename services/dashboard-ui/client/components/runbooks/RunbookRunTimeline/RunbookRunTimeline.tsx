@@ -10,12 +10,14 @@ interface IRunbookRunTimeline {
   runbookName: string
   runs: TInstallRunbookRun[]
   basePath: string
+  workflowHref?: (workflowId: string) => string
 }
 
 export const RunbookRunTimeline = ({
   runbookName,
   runs,
   basePath,
+  workflowHref,
 }: IRunbookRunTimeline) => {
   if (runs.length === 0) {
     return (
@@ -50,7 +52,10 @@ export const RunbookRunTimeline = ({
             title={
               workflowId ? (
                 <Link
-                  href={`${basePath}/workflows/${workflowId}`}
+                  href={
+                    workflowHref?.(workflowId) ??
+                    `${basePath}/workflows/${workflowId}`
+                  }
                   variant="inline"
                 >
                   {runbookName} run

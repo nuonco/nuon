@@ -99,13 +99,14 @@ export function parseInstallsToTableData(
   installs: TInstall[],
   orgId: string,
   labelColorsByApp?: Record<string, Record<string, string>>,
-  lazyComponents = false
+  lazyComponents = false,
+  installHref?: (install: TInstall) => string
 ): InstallRow[] {
   return installs.map((install) => ({
     appHref: `/${install.org_id}/apps/${install.app_id}`,
     appName: install?.app?.name,
     name: install.name,
-    nameHref: `/${orgId}/installs/${install.id}`,
+    nameHref: installHref?.(install) ?? `/${orgId}/installs/${install.id}`,
     installId: install.id,
     region: (
       <CloudRegion

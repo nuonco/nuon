@@ -3,13 +3,11 @@ import { Text } from '@/components/common/Text'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { RunSummary } from '@/components/runs/RunSummary'
 import { useDeploy } from '@/hooks/use-deploy'
-import { useInstall } from '@/hooks/use-install'
-import { useOrg } from '@/hooks/use-org'
+import { useInstallPage } from '@/hooks/use-install-path'
 
 export const DeploySummaryTab = () => {
   const { deploy } = useDeploy()
-  const { install } = useInstall()
-  const { org } = useOrg()
+  const { install, href } = useInstallPage()
 
   return (
     <>
@@ -28,9 +26,7 @@ export const DeploySummaryTab = () => {
           endTime: deploy?.updated_at,
         }}
         jobs={deploy?.runner_jobs}
-        jobHref={(job) =>
-          `/${org?.id}/installs/${install?.id}/runner/jobs/${job?.id}`
-        }
+        jobHref={(job) => href(`/runner/jobs/${job?.id}`)}
         triggeredBy={
           deploy?.created_by?.email ? (
             <Text variant="subtext">{deploy.created_by.email}</Text>

@@ -1,6 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { getInstallRunbooks } from '@/lib'
 import { RunRunbookModal } from '@/components/runbooks/RunRunbook'
@@ -17,6 +18,7 @@ export const RunRunbookCardContainer = ({
 }: IRunRunbookCardContainer) => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
   const { addModal } = useSurfaces()
 
   const {
@@ -52,7 +54,7 @@ export const RunRunbookCardContainer = ({
   const steps = runbook?.runbook?.configs?.[0]?.steps ?? []
   const runbookId = runbook?.runbook_id ?? runbook?.id
   const href = runbookId
-    ? `/${org?.id}/installs/${install?.id}/runbooks/${runbookId}`
+    ? installLink({ installId: install?.id, appId: install?.app_id, suffix: `/runbooks/${runbookId}` })
     : undefined
 
   return (
