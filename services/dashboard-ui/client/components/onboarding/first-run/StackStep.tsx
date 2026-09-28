@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
+import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
-import { AwaitAzureDetailsComponent } from '@/components/workflows/step-details/stack-details/AwaitAzureDetails'
-import { AwaitGCPDetailsComponent } from '@/components/workflows/step-details/stack-details/AwaitGCPDetails'
+import { AwaitAzureDetails } from '@/components/workflows/step-details/stack-details/AwaitAzureDetails'
+import { AwaitGCPDetails } from '@/components/workflows/step-details/stack-details/AwaitGCPDetails'
+import { InstallAppConfigProvider } from '@/providers/install-app-config-provider'
+import { InstallProvider } from '@/providers/install-provider'
 import { useFirstRun } from '@/hooks/use-first-run'
 import { getInstallStack } from '@/lib'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
@@ -28,13 +31,14 @@ const STACK_POLL_MS = 3000
 
 // The stack version's lifecycle, as the step shows it. `launched` is local: the
 // user opened the link or copied the commands and the stack has not reported back.
-export type TStackPhase = 'generating' | 'ready' | 'launched' | 'done'
+export type TStackPhase = 'generating' | 'ready' | 'launched' | 'done' | 'error'
 
 export const stackStatus = (stack?: TInstallStack | null) =>
   stack?.versions?.at(0)?.composite_status?.status as string | undefined
 
 export const phaseFromStatus = (status: string | undefined, launched: boolean): TStackPhase => {
   if (status === 'provisioning' || status === 'active') return 'done'
+  if (status === 'error' || status === 'failed') return 'error'
   if (status === 'awaiting-user-run') return launched ? 'launched' : 'ready'
   return 'generating'
 }
@@ -45,6 +49,8 @@ export interface IStackStepView {
   region: string
   phase: TStackPhase
   quickLinkUrl?: string
+  // ctl-api's description of a failed stack version.
+  errorDescription?: string
   details?: React.ReactNode
   onLaunch: () => void
   onContinue: () => void
@@ -57,6 +63,7 @@ export const StackStepView = ({
   region,
   phase,
   quickLinkUrl,
+  errorDescription,
   details,
   onLaunch,
   onContinue,
@@ -68,6 +75,7 @@ export const StackStepView = ({
   const ready = phase === 'ready'
   const launched = phase === 'launched'
   const done = phase === 'done'
+  const failed = phase === 'error'
   const linkLaunch = cloud === 'aws' && !!quickLinkUrl
 
   const status = generating
@@ -76,7 +84,9 @@ export const StackStepView = ({
       ? `${connect.artifactNoun} ready for ${region}. From launch to a healthy runner is about 11 minutes. This page updates on its own.`
       : launched
         ? `${connect.waitingHint} This page updates on its own.`
-        : `${connect.stackLabel} created. Test ${connect.accountNoun} connected.`
+        : failed
+          ? `Nuon could not generate the ${connect.artifactNoun}. The deploy workflow has the details.`
+          : `${connect.stackLabel} created. Test ${connect.accountNoun} connected.`
 
   const launchLabel = generating
     ? connect.generating
@@ -84,7 +94,9 @@ export const StackStepView = ({
       ? connect.launch
       : launched
         ? `Waiting for the ${connect.stackLabel}...`
-        : `${connect.stackLabel} created`
+        : failed
+          ? `${connect.stackLabel} failed`
+          : `${connect.stackLabel} created`
 
   return (
     <div className="flex flex-col gap-6">
@@ -100,8 +112,8 @@ export const StackStepView = ({
             </Text>
           </div>
         </div>
-        <Badge size="sm" theme={ready || done ? 'success' : 'brand'}>
-          {generating ? 'Generating' : ready ? 'Ready' : done ? 'Created' : 'Waiting'}
+        <Badge size="sm" theme={failed ? 'error' : ready || done ? 'success' : 'brand'}>
+          {generating ? 'Generating' : ready ? 'Ready' : done ? 'Created' : failed ? 'Failed' : 'Waiting'}
         </Badge>
       </Card>
 
@@ -137,12 +149,14 @@ export const StackStepView = ({
         </ul>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            {ready || done ? (
+            {failed ? (
+              <Icon variant="WarningCircleIcon" size={16} theme="error" weight="fill" />
+            ) : ready || done ? (
               <Icon variant="CheckCircleIcon" size={16} theme="success" weight="fill" />
             ) : (
               <Icon variant="Loading" size={16} />
             )}
-            <Text variant="subtext" theme={ready || done ? 'success' : 'neutral'}>
+            <Text variant="subtext" theme={failed ? 'error' : ready || done ? 'success' : 'neutral'}>
               {status}
             </Text>
           </div>
@@ -151,6 +165,8 @@ export const StackStepView = ({
           </Link>
         </div>
       </Card>
+
+      {failed && errorDescription ? <Banner theme="error">{errorDescription}</Banner> : null}
 
       {details}
 
@@ -163,7 +179,7 @@ export const StackStepView = ({
           <span />
         )}
         <div className="flex flex-wrap items-center gap-3">
-          {launched ? (
+          {launched || failed ? (
             <Button variant="secondary" size="lg" onClick={onContinue}>
               Continue <Icon variant="CaretRightIcon" weight="bold" />
             </Button>
@@ -237,24 +253,15 @@ export const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepCompon
   }, [phase])
 
   const showDetails = !!stack && (phase === 'launched' || phase === 'ready') && cloud !== 'aws'
+  // The workflow page's stack views, which read the install from context.
   const details = showDetails ? (
-    <Card className="!gap-4">
-      {cloud === 'gcp' ? (
-        <AwaitGCPDetailsComponent
-          stack={stack}
-          orgId={orgId}
-          installId={installId}
-          gcpRegion={region}
-        />
-      ) : (
-        <AwaitAzureDetailsComponent
-          stack={stack}
-          orgId={orgId}
-          installId={installId}
-          azureLocation={region}
-        />
-      )}
-    </Card>
+    <InstallProvider installId={installId}>
+      <InstallAppConfigProvider>
+        <Card className="!gap-4">
+          {cloud === 'gcp' ? <AwaitGCPDetails stack={stack} /> : <AwaitAzureDetails stack={stack} />}
+        </Card>
+      </InstallAppConfigProvider>
+    </InstallProvider>
   ) : null
 
   return (
@@ -264,6 +271,7 @@ export const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepCompon
       region={region}
       phase={phase}
       quickLinkUrl={version?.quick_link_url}
+      errorDescription={version?.composite_status?.status_human_description}
       details={details}
       onLaunch={() => setLaunched(true)}
       onContinue={advance}

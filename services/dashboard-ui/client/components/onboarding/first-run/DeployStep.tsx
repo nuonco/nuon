@@ -15,6 +15,7 @@ import {
   defaultInputs,
   findActiveAppConfig,
   getAppConfigWithInputs,
+  getBranchRuns,
 } from './api'
 import {
   CLOUD_REGIONS,
@@ -136,6 +137,8 @@ export interface IDeployStepView {
   phase: TDeployPhase
   installCreated: boolean
   missingInputs: string[]
+  // Set while waiting when the branch's latest sync failed.
+  syncError?: string
   error?: string
   onCreate: () => void
   onBack?: () => void
@@ -153,6 +156,7 @@ export const DeployStepView = ({
   phase,
   installCreated,
   missingInputs,
+  syncError,
   error,
   onCreate,
   onBack,
@@ -206,6 +210,16 @@ export const DeployStepView = ({
           </div>
         </Banner>
       ) : null}
+      {phase === 'waiting-config' && syncError ? (
+        <Banner theme="warn">
+          <div className="flex flex-col gap-1">
+            <Text weight="strong">The last sync of your app config failed</Text>
+            <Text variant="subtext">
+              {syncError} Push a fix to {TRACKED_GIT_BRANCH}; this page keeps waiting for it.
+            </Text>
+          </div>
+        </Banner>
+      ) : null}
       {error ? <Banner theme="error">{error}</Banner> : null}
 
       <NextButton label={label} onClick={onCreate} onBack={onBack} loading={busy} />
@@ -236,6 +250,18 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
 
   // Install create needs an active app config, which exists only once the
   // branch has synced one from the repo.
+  const { data: runs } = useQuery({
+    queryKey: ['first-run-branch-runs', orgId, appId, branchId],
+    queryFn: () => getBranchRuns({ orgId, appId, branchId }),
+    enabled: phase === 'waiting-config' && !!appId && !!branchId,
+    refetchInterval: CONFIG_POLL_MS,
+  })
+  const latestRun = runs?.[0]
+  const syncError =
+    latestRun?.status?.status === 'error'
+      ? latestRun.status.status_human_description || 'The branch run ended in an error.'
+      : undefined
+
   const { data: activeConfig } = useQuery({
     queryKey: ['first-run-active-config', orgId, appId, branchId],
     queryFn: () => findActiveAppConfig({ orgId, appId, branchId }).then((c) => c ?? null),
@@ -307,6 +333,7 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
       phase={phase}
       installCreated={!!installId}
       missingInputs={missingInputs}
+      syncError={syncError}
       error={error}
       onCreate={onCreate}
       onBack={onGoBack}
