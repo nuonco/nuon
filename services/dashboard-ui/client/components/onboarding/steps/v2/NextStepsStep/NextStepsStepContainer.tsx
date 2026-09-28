@@ -12,6 +12,7 @@ import type { TOnboarding } from '@/types'
 import { completeGetStartedStep } from '@/lib'
 import { useConfetti } from '@/hooks/use-confetti'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 interface INextStep {
   icon: TIconVariant
@@ -172,6 +173,7 @@ function SectionContent({ section }: { section: ISection }) {
 }
 
 export const NextStepsStepContainer = ({ onAdvance, sharedData }: IWizardStepComponentProps) => {
+  const installLink = useInstallLink()
   const onboarding = sharedData.onboarding as TOnboarding | undefined
   const orgId = onboarding?.org_id
   const installId = onboarding?.install_id
@@ -196,7 +198,7 @@ export const NextStepsStepContainer = ({ onAdvance, sharedData }: IWizardStepCom
   const handleContinue = () => {
     if (orgId) completeStep()
     if (orgId && installId) {
-      window.location.href = `/${orgId}/installs/${installId}`
+      window.location.href = installLink({ orgId: orgId, installId: installId })
     } else {
       onAdvance()
     }

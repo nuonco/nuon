@@ -6,6 +6,7 @@ import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { useInstallLink } from '@/hooks/use-install-path'
 import type {
   TInstallWorkflow,
   TAppBranchRun,
@@ -95,6 +96,7 @@ const InstallUpdatesList = ({
   installUpdates: TInstallAppConfigVersion[]
   orgId: string
 }) => {
+  const installLink = useInstallLink()
   if (installUpdates.length === 0) return null
 
   return (
@@ -111,7 +113,7 @@ const InstallUpdatesList = ({
             <div className="flex items-center gap-2 min-w-0">
               <Icon variant="CloudIcon" size={12} className="shrink-0 text-cool-grey-400" />
               {update.install_id ? (
-                <Link href={`/${orgId}/installs/${update.install_id}`} className="truncate">
+                <Link href={installLink({ orgId: orgId, installId: update.install_id })} className="truncate">
                   {update.install_id}
                 </Link>
               ) : (
@@ -122,7 +124,7 @@ const InstallUpdatesList = ({
               <Status status={resolveInstallAppConfigVersionStatus(update)} />
               {update.workflow_id && (
                 <Link
-                  href={`/${orgId}/installs/${update.install_id}/workflows/${update.workflow_id}`}
+                  href={installLink({ orgId: orgId, installId: update.install_id, suffix: `/workflows/${update.workflow_id}` })}
                   className="shrink-0"
                 >
                   View workflow
@@ -159,6 +161,7 @@ const ConfigVersionSummary = ({
   installId: string
   appId: string
 }) => {
+  const installLink = useInstallLink()
   const status = resolveInstallAppConfigVersionStatus(version)
   const branchRun = (version as any).app_branch_run
   const branchRunWorkflowId = branchRun?.workflow_id
@@ -184,7 +187,7 @@ const ConfigVersionSummary = ({
         )}
         {version.workflow_id && (
           <Link
-            href={`/${orgId}/installs/${installId}/workflows/${version.workflow_id}`}
+            href={installLink({ orgId: orgId, installId: installId, suffix: `/workflows/${version.workflow_id}` })}
           >
             Workflow
           </Link>

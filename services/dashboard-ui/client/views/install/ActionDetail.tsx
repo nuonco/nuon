@@ -22,9 +22,8 @@ import { HistoryPanelButton } from '@/components/layout/HistoryPanelButton'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
-import { useInstall } from '@/hooks/use-install'
+import { useInstallPage } from '@/hooks/use-install-path'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
-import { useOrg } from '@/hooks/use-org'
 import { getInstallAction, getInstallState } from '@/lib'
 import type { TActionConfigTriggerType } from '@/types'
 import { sortByIdx } from '@/utils/action-utils'
@@ -32,8 +31,7 @@ import { isActionInAppConfig } from '@/utils/app-config-membership'
 
 export const ActionDetail = () => {
   const { actionId } = useParams()
-  const { org } = useOrg()
-  const { install } = useInstall()
+  const { org, install, href } = useInstallPage()
 
   const { data: action, isLoading } = useQuery({
     placeholderData: keepPreviousData,
@@ -205,7 +203,9 @@ export const ActionDetail = () => {
                                 componentName={trigger?.component?.name}
                                 componentPath={
                                   trigger?.component_id
-                                    ? `/${org?.id}/installs/${install?.id}/components/${trigger.component_id}`
+                                    ? href(
+                                        `/components/${trigger.component_id}`
+                                      )
                                     : undefined
                                 }
                                 cronSchedule={trigger?.cron_schedule}
@@ -227,7 +227,9 @@ export const ActionDetail = () => {
                         componentName={
                           action.runs[0].run_env_vars?.COMPONENT_NAME
                         }
-                        componentPath={`/${org?.id}/installs/${install?.id}/components/${action.runs[0].run_env_vars?.COMPONENT_ID}`}
+                        componentPath={href(
+                          `/components/${action.runs[0].run_env_vars?.COMPONENT_ID}`
+                        )}
                       />
                     </LabeledValue>
                   ) : null}

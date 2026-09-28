@@ -4,13 +4,13 @@ import {
 } from '@/components/install-health/HealthTimeline'
 import { InstallResourcesTable } from '@/components/install-resources/InstallResourcesTable'
 import { useInstall } from '@/hooks/use-install'
-import { useOrg } from '@/hooks/use-org'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { InstallHealth } from './InstallHealth'
 
 export const InstallHealthContainer = () => {
-  const { org } = useOrg()
   const { install } = useInstall()
-  const resourcesPath = `/${org?.id}/installs/${install?.id}/resources`
+  const installLink = useInstallLink()
+  const resourcesPath = installLink({ installId: install?.id, appId: install?.app_id, suffix: `/resources` })
 
   return (
     <InstallHealth

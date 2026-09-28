@@ -7,8 +7,7 @@ import { DetailPage } from '@/components/layout/DetailPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { DeployProvider } from '@/providers/deploy-provider'
 import { useDeploy } from '@/hooks/use-deploy'
-import { useInstall } from '@/hooks/use-install'
-import { useOrg } from '@/hooks/use-org'
+import { useInstallPage } from '@/hooks/use-install-path'
 import { useRespondedApprovals } from '@/hooks/use-responded-approvals'
 import { getComponent, getWorkflow } from '@/lib'
 import type { TComponentType } from '@/types'
@@ -65,10 +64,9 @@ function getTabsForComponentType(
 }
 
 const DeployLayoutInner = () => {
-  const { componentId, deployId, installId } = useParams()
+  const { componentId, deployId } = useParams()
   const { deploy } = useDeploy()
-  const { install } = useInstall()
-  const { org } = useOrg()
+  const { org, install, href } = useInstallPage()
 
   const { data: component } = useQuery({
     placeholderData: keepPreviousData,
@@ -107,7 +105,9 @@ const DeployLayoutInner = () => {
   const pendingApproval =
     step?.approval && !step?.approval?.response && !responded && !isTerminal && stepStatus !== 'auto-skipped'
 
-  const basePath = `/${org?.id}/installs/${installId}/components/${componentId}/deploys/${deployId}`
+  const basePath = href(
+    `/components/${componentId}/deploys/${deployId}`
+  )
   const tabs = getTabsForComponentType(
     component?.type,
     org?.features?.['trace-view']

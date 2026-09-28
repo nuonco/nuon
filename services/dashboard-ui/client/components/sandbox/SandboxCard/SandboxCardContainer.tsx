@@ -1,16 +1,16 @@
-import { useOrg } from '@/hooks/use-org'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { SandboxCard } from './SandboxCard'
 
 export const SandboxCardContainer = () => {
-  const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
 
   if (!install.sandbox) {
     return <SandboxCard error="No sandbox found" />
   }
 
-  const href = `/${org.id}/installs/${install.id}/sandbox`
+  const href = installLink({ installId: install.id, appId: install.app_id, suffix: `/sandbox` })
 
   return (
     <SandboxCard

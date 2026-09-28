@@ -9,6 +9,7 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 
 import type { GroupRunInstall } from './RunDeploymentGraph'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 interface IGroupRunDetailPanel {
   panelKey: string
@@ -28,6 +29,7 @@ const GroupRunDetailContent = memo(
     installs,
     orgId,
   }: Omit<IGroupRunDetailPanel, 'panelKey' | 'groupName'>) => {
+    const installLink = useInstallLink()
     const [query, setQuery] = useState('')
 
     const filteredInstalls = useMemo(() => {
@@ -84,7 +86,7 @@ const GroupRunDetailContent = memo(
 
                 {inst.workflowId && (
                   <Link
-                    href={`/${orgId}/installs/${inst.id}/workflows/${inst.workflowId}`}
+                    href={installLink({ orgId: orgId, installId: inst.id, suffix: `/workflows/${inst.workflowId}` })}
                     className="flex w-fit items-center gap-1"
                   >
                     View workflow
