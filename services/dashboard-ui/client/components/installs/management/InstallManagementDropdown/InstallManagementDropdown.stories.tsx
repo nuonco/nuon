@@ -1,3 +1,3 @@
 export default {
-  title: 'Installs/InstallManagementDropdown',
+  title: 'Features / Installs / Management / Management dropdown',
 }

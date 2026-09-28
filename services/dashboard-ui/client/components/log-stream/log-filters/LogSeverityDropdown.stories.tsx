@@ -1,5 +1,5 @@
 export default {
-  title: 'LogStream/LogSeverityDropdown',
+  title: 'Features / Logs / Log filters / Severity dropdown',
 }
 
 import { useState } from 'react'

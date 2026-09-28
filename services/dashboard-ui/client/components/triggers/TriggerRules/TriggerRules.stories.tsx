@@ -1,4 +1,4 @@
-export default { title: 'Triggers/Trigger rules' }
+export default { title: 'Features / Triggers / Rules' }
 import { TriggerRules } from './TriggerRules'
 const rules = [
   {

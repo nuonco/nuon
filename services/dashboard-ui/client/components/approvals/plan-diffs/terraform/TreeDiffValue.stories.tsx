@@ -1,5 +1,5 @@
 export default {
-  title: 'Approvals/PlanDiffs/TreeDiffValue',
+  title: 'Features / Approvals / Plan diffs / Terraform tree diff value',
 }
 
 import { TreeDiffValue } from './TreeDiffValue'

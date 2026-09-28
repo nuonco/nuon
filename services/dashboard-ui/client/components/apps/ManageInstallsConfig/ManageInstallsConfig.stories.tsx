@@ -2,7 +2,7 @@ import { ModalStory } from '@/components/__stories__/helpers'
 import { ManageInstallsConfigComponent } from './index'
 
 export default {
-  title: 'Apps/ManageInstallsConfig',
+  title: 'Features / Apps / Manage installs config',
 }
 
 const mockRepos = [

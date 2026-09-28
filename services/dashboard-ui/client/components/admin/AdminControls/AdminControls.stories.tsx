@@ -1,5 +1,5 @@
 export default {
-  title: 'Admin/AdminControls',
+  title: 'Features / Admin / Controls',
 }
 
 import { AdminControls } from './AdminControls'

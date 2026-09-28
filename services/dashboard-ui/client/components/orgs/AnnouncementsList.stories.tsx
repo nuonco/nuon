@@ -1,5 +1,5 @@
 export default {
-  title: 'Orgs/AnnouncementsList',
+  title: 'Features / Orgs / Announcements list',
 }
 
 import { AnnouncementsList } from './AnnouncementsList'

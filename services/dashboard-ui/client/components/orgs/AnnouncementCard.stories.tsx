@@ -1,5 +1,5 @@
 export default {
-  title: 'Orgs/AnnouncementCard',
+  title: 'Features / Orgs / Announcement card',
 }
 
 import { AnnouncementCard } from './AnnouncementCard'

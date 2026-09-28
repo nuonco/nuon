@@ -1,5 +1,5 @@
 export default {
-  title: 'InstallHealth/HealthTimeline',
+  title: 'Features / Installs / Health / Health timeline',
 }
 
 import type { ReactNode } from 'react'

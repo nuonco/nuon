@@ -1,5 +1,5 @@
 export default {
-  title: 'Install Components/DeployComponent',
+  title: 'Features / Installs / Components / Deploy component',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

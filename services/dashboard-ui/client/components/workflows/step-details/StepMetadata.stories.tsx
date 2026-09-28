@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/StepMetadata',
+  title: 'Features / Workflows / Step details / Step metadata',
 }
 
 import { StepMetadata } from './StepMetadata'

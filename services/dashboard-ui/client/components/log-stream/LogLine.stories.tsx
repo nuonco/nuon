@@ -1,5 +1,5 @@
 export default {
-  title: 'LogStream/LogLineSkeleton',
+  title: 'Features / Logs / Line',
 }
 
 import { LogLineSkeleton } from './LogLine'

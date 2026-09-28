@@ -1,5 +1,5 @@
 export default {
-  title: 'Webhooks/WebhookForm',
+  title: 'Features / Webhooks / Webhook form',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

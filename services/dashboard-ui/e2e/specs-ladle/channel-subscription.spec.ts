@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 const CREATE_STORY =
-  "/?story=slack--channelsubscriptionform--create&mode=preview";
+  "/?story=features--slack--channel-subscription-form--create&mode=preview";
 const EDIT_STORY =
-  "/?story=slack--channelsubscriptionform--edit-org-wide&mode=preview";
+  "/?story=features--slack--channel-subscription-form--edit-org-wide&mode=preview";
 
 test.describe("ChannelSubscriptionForm create behavior", () => {
   test.beforeEach(async ({ page }) => {

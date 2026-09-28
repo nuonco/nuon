@@ -1,5 +1,5 @@
 export default {
-  title: 'Stacks/StackOutputs',
+  title: 'Features / Stacks / Outputs',
 }
 
 import { StackOutputs } from './StackOutputs'

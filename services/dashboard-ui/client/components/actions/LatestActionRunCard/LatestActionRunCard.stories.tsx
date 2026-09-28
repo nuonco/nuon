@@ -1,5 +1,5 @@
 export default {
-  title: 'Actions/LatestActionRunCard',
+  title: 'Features / Actions / Latest action run card',
 }
 
 import { ActionTriggerType } from '@/components/actions/ActionTriggerType'

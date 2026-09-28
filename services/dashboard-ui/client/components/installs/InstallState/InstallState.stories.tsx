@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/InstallState',
+  title: 'Features / Installs / Install state',
 }
 
 import { InstallState } from './InstallState'

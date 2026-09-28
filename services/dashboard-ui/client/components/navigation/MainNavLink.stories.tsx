@@ -1,5 +1,5 @@
 export default {
-  title: 'Navigation/MainNavLink',
+  title: 'UI / Navigation / Main nav link',
 }
 
 import { MainNavLink } from './MainNavLink'

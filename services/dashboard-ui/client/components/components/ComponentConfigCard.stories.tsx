@@ -1,5 +1,5 @@
 export default {
-  title: 'Components/ComponentConfigCard',
+  title: 'Features / Components / Config card',
 }
 
 import { SurfacesProvider } from '@/providers/surfaces-provider'

@@ -2,7 +2,7 @@ import { Block } from './Block'
 import { labelWidth } from './utils'
 
 export default {
-  title: 'Playground/Lite/Block',
+  title: 'Playground / Lite / Block',
 }
 
 export const Default = () => <Block className="w-[200px] h-[32px]" />

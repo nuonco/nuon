@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/WorkflowMetadata',
+  title: 'Features / Workflows / Details / Workflow metadata',
 }
 
 import { WorkflowMetadata } from './WorkflowMetadata'

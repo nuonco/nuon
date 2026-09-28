@@ -2,7 +2,7 @@ import { useForm } from '@tanstack/react-form'
 import { allEvents } from './defaults'
 import { FormInterestsPicker } from './FormInterestsPicker'
 
-export default { title: 'Interests/FormInterestsPicker' }
+export default { title: 'Features / Interests / Form interests picker' }
 
 const Demo = () => {
   const form = useForm({ defaultValues: { interests: allEvents() } })

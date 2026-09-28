@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 // Change-role opens on the current role, so Save is disabled until a different
 // role is picked.
 const STORY =
-  "/?story=serviceaccounts--changeserviceaccountrole--default&mode=preview";
+  "/?story=features--service-accounts--change-service-account-role--default&mode=preview";
 
 test.describe("ChangeServiceAccountRole form behavior", () => {
   test.beforeEach(async ({ page }) => {

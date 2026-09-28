@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/AppInstallsList',
+  title: 'Features / Installs / App installs list',
 }
 
 import { AppInstallsList } from './AppInstallsList'

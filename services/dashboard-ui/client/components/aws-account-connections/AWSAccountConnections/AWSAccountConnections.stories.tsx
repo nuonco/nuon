@@ -1,4 +1,4 @@
-export default { title: 'AWS account connections/AWSAccountConnections' }
+export default { title: 'Features / AWS account connections / AWS account connections' }
 
 import { AWSAccountConnections } from './AWSAccountConnections'
 

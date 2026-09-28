@@ -1,5 +1,5 @@
 export default {
-  title: 'Install Components/DriftScanComponent',
+  title: 'Features / Installs / Components / Drift scan component',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

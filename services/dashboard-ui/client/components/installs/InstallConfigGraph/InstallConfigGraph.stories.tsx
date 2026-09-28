@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/InstallConfigGraph',
+  title: 'Features / Installs / Config graph',
 }
 
 import { InstallConfigGraph } from './InstallConfigGraph'

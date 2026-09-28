@@ -1,5 +1,5 @@
 export default {
-  title: 'OIDCTrustPolicies/OIDCTrustPoliciesTable',
+  title: 'Features / OIDC trust policies / OIDC trust policies table',
 }
 
 import { OIDCTrustPoliciesTable } from './OIDCTrustPoliciesTable'

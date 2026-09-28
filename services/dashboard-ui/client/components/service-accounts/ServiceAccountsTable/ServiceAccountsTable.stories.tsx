@@ -1,5 +1,5 @@
 export default {
-  title: 'ServiceAccounts/ServiceAccountsTable',
+  title: 'Features / Service accounts / Service accounts table',
 }
 
 import { ServiceAccountsTable } from './ServiceAccountsTable'

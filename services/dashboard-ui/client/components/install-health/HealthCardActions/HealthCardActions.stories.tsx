@@ -1,5 +1,5 @@
 export default {
-  title: 'InstallHealth/HealthCardActions',
+  title: 'Features / Installs / Health / Card actions',
 }
 
 import { OrgContext } from '@/providers/org-provider'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Admin/AdminActionCard',
+  title: 'Features / Admin / Shared / Action card',
 }
 
 import { AdminActionCard } from './AdminActionCard'

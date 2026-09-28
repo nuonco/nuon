@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/BranchOverview',
+  title: 'Features / Branches / Branch overview',
   fullBleed: true,
 }
 

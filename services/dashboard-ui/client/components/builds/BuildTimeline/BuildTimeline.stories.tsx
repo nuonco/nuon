@@ -1,5 +1,5 @@
 export default {
-  title: 'Builds/BuildTimeline',
+  title: 'Features / Builds / Build timeline',
 }
 
 import { BuildTimeline } from './BuildTimeline'

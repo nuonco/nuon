@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Cron',
+  title: 'UI / Cron',
 }
 
 import { Cron } from './Cron'

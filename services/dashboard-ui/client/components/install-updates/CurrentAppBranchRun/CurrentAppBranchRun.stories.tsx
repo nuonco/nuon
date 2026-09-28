@@ -2,7 +2,7 @@ import { CurrentAppBranchRun } from './CurrentAppBranchRun'
 import type { TAppBranchRun } from '@/types'
 
 export default {
-  title: 'InstallUpdates/CurrentAppBranchRun',
+  title: 'Features / Installs / Updates / Current app branch run',
 }
 
 const run = {

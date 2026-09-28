@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/BranchDetailActions',
+  title: 'Features / Branches / Branch detail actions',
 }
 
 import { BranchDetailActions } from './BranchDetailActions'

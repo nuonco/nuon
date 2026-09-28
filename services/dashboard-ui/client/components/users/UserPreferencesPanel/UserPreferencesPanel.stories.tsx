@@ -1,5 +1,5 @@
 export default {
-  title: 'Users/UserPreferencesPanel',
+  title: 'Features / Users / Preferences panel',
 }
 
 import { useState } from 'react'

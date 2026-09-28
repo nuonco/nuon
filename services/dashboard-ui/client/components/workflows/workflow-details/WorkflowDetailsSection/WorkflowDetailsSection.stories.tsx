@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/WorkflowDetails/WorkflowDetailsSection',
+  title: 'Features / Workflows / Details / Details section',
 }
 
 import { SurfacesProvider } from '@/providers/surfaces-provider'

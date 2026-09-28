@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/DeprovisionStack',
+  title: 'Features / Installs / Management / Deprovision stack',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

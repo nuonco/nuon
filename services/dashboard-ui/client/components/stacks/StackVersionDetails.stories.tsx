@@ -1,5 +1,5 @@
 export default {
-  title: 'Stacks/StackVersionDetails',
+  title: 'Features / Stacks / Version details',
 }
 
 import { PanelStory } from '@/components/__stories__/helpers'

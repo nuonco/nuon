@@ -1,5 +1,5 @@
 export default {
-  title: 'Notebooks/NotebookCellCard',
+  title: 'Features / Notebooks / Cell card',
 }
 
 import { useState } from 'react'
