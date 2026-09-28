@@ -83,7 +83,7 @@ export const BranchRunCommit = ({
             as="span"
             variant="subtext"
             theme="neutral"
-            className="shrink-0"
+            className="shrink-0 whitespace-nowrap"
             time={createdAt}
             format="relative"
           />
