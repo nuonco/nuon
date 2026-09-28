@@ -56,7 +56,7 @@ export const RunbookHistoryTab = () => {
       runs={runs}
       runbookName={runbook?.name ?? ''}
       basePath={basePath}
-      workflowHref={(id) => href(`/workflows/${id}`)}
+      workflowHref={(id: string) => href(`/workflows/${id}`)}
     />
   )
 
