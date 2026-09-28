@@ -39,6 +39,8 @@ import { BranchLayout } from './branches/BranchLayout'
 import { BranchOverviewTab } from './branches/tabs/BranchOverviewTab'
 import { BranchRunsTab } from './branches/tabs/BranchRunsTab'
 import { BranchPlanTab } from './branches/tabs/BranchPlanTab'
+import { BranchRolloutTab } from './branches/tabs/BranchRolloutTab'
+import { BranchSettingsTab } from './branches/tabs/BranchSettingsTab'
 import { BranchConfigsTab } from './branches/tabs/BranchConfigsTab'
 import { BranchInputs } from './branches/scoped/BranchInputs'
 import { BranchComponents } from './branches/scoped/BranchComponents'
@@ -149,17 +151,28 @@ export const appRoutes: RouteObject[] = [
       { path: ':orgId/apps/:appId/branches', element: legacy(<Branches />) },
       {
         path: ':orgId/apps/:appId/branches/:branchId',
+        loader: ({ request, params }) => {
+          const panel = new URL(request.url).searchParams.get('panel')
+          if (panel === 'branch-settings') {
+            return redirect(
+              `/${params.orgId}/apps/${params.appId}/branches/${params.branchId}/settings`
+            )
+          }
+          return null
+        },
         element: <BranchLayout />,
         children: [
           { index: true, element: <BranchOverviewTab /> },
           { path: 'runs', element: <BranchRunsTab /> },
           { path: 'runs/:runId', element: <BranchRunDetail /> },
+          { path: 'rollout', element: <BranchRolloutTab /> },
+          { path: 'settings', element: <BranchSettingsTab /> },
           { path: 'plan', element: <BranchPlanTab /> },
           {
             path: 'preview',
             loader: ({ params }) =>
               redirect(
-                `/${params.orgId}/apps/${params.appId}/branches/${params.branchId}?panel=branch-settings`
+                `/${params.orgId}/apps/${params.appId}/branches/${params.branchId}/settings`
               ),
           },
           { path: 'configs', element: <BranchConfigsTab /> },
