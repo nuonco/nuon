@@ -4,14 +4,12 @@ import { LatestDeployCard } from '@/components/install-components/LatestDeployCa
 import { HealthTimeline } from '@/components/install-health/HealthTimeline'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { PageTitle } from '@/components/navigation/PageTitle'
-import { useInstall } from '@/hooks/use-install'
-import { useOrg } from '@/hooks/use-org'
+import { useInstallPage } from '@/hooks/use-install-path'
 import type { TInstallComponentOutletContext } from './types'
 
 export const InstallComponentOverviewTab = () => {
   const { componentId } = useParams()
-  const { org } = useOrg()
-  const { install } = useInstall()
+  const { install, href } = useInstallPage()
   const {
     installComponent,
     isLoading,
@@ -31,7 +29,7 @@ export const InstallComponentOverviewTab = () => {
           isLoading={isLoading}
           href={
             latestDeploy?.id
-              ? `/${org?.id}/installs/${install?.id}/components/${componentId}/deploys/${latestDeploy.id}`
+              ? href(`/components/${componentId}/deploys/${latestDeploy.id}`)
               : undefined
           }
         />

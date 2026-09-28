@@ -10,6 +10,7 @@ import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import { getComponentBuilds, getInstallComponent } from '@/lib'
 import type { TComponentBuild, TDeploy } from '@/types'
@@ -188,6 +189,7 @@ export const InstallImageSummaryContainer = ({
 }) => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
 
   const { data: installComponent, isLoading: syncLoading } = useQuery({
     placeholderData: keepPreviousData,
@@ -233,7 +235,7 @@ export const InstallImageSummaryContainer = ({
       sourceRef={sourceRef}
       syncHref={
         latestDeploy?.id
-          ? `/${org?.id}/installs/${install?.id}/components/${componentId}/deploys/${latestDeploy.id}`
+          ? installLink({ installId: install?.id, appId: install?.app_id, suffix: `/components/${componentId}/deploys/${latestDeploy.id}` })
           : undefined
       }
       syncLoading={syncLoading}

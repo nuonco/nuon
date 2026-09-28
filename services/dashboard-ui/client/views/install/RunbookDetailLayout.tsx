@@ -10,15 +10,13 @@ import { RemovedFromAppConfigBanner } from '@/components/installs/RemovedFromApp
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { DetailPage } from '@/components/layout/DetailPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { useInstall } from '@/hooks/use-install'
-import { useOrg } from '@/hooks/use-org'
+import { useInstallPage } from '@/hooks/use-install-path'
 import { getInstallRunbook, getInstallRunbooks } from '@/lib'
 
 export const RunbookDetailLayout = () => {
   const { runbookId } = useParams()
   const { pathname } = useLocation()
-  const { org } = useOrg()
-  const { install, labelColors } = useInstall()
+  const { org, install, labelColors, href } = useInstallPage()
 
   const { data: installRunbook, isLoading } = useQuery({
     placeholderData: keepPreviousData,
@@ -55,7 +53,7 @@ export const RunbookDetailLayout = () => {
   const steps =
     latestConfig?.steps?.slice().sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)) ??
     []
-  const basePath = `/${org?.id}/installs/${install?.id}/runbooks/${runbookId}`
+  const basePath = href(`/runbooks/${runbookId}`)
 
   const isIndexRoute = pathname === basePath || pathname === `${basePath}/`
 

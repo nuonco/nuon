@@ -7,6 +7,7 @@ import { getAPIVersion } from '@/lib'
 import { APIHealthProvider } from '@/providers/api-health-provider'
 import { BreadcrumbProvider } from '@/providers/breadcrumb-provider'
 import { NotificationProvider } from '@/providers/notification-provider'
+import { InstallRoutingProvider } from '@/hooks/use-install-path'
 import { OrgProvider } from '@/providers/org-provider'
 import { OrgStatusSSEProvider } from '@/providers/org-status-sse-provider'
 import { ActiveWorkflowsProvider } from '@/providers/active-workflows-provider'
@@ -44,38 +45,40 @@ export const OrgLayout = () => {
     <NotificationProvider autoRequestOnLoad={true} autoRequestDelay={3000}>
       <APIHealthProvider shouldPoll>
         <OrgProvider>
-          <BreadcrumbProvider>
-            <SidebarProvider initIsSidebarOpen={getSidebarOpen()}>
-              <ToastProvider>
-                <OrgStatusSSEProvider>
-                  <ActiveWorkflowsProvider>
-                    <WorkflowApprovalsProvider>
-                      <DashboardPreferencesProvider>
-                        <SurfacesProvider>
-                          <SpotlightListener />
-                          <VCSConnectionSuccess />
-                          <MainLayout
-                            versions={{
-                              api: {
-                                git_ref: versions?.api?.git_ref ?? '',
-                                version: versions?.api?.version ?? '',
-                              },
-                              ui: {
-                                version: versions?.ui?.version ?? '',
-                              },
-                            }}
-                          >
-                            <Outlet />
-                            <PreferredOrgStatusBar />
-                          </MainLayout>
-                        </SurfacesProvider>
-                      </DashboardPreferencesProvider>
-                    </WorkflowApprovalsProvider>
-                  </ActiveWorkflowsProvider>
-                </OrgStatusSSEProvider>
-              </ToastProvider>
-            </SidebarProvider>
-          </BreadcrumbProvider>
+          <InstallRoutingProvider>
+            <BreadcrumbProvider>
+              <SidebarProvider initIsSidebarOpen={getSidebarOpen()}>
+                <ToastProvider>
+                  <OrgStatusSSEProvider>
+                    <ActiveWorkflowsProvider>
+                      <WorkflowApprovalsProvider>
+                        <DashboardPreferencesProvider>
+                          <SurfacesProvider>
+                            <SpotlightListener />
+                            <VCSConnectionSuccess />
+                            <MainLayout
+                              versions={{
+                                api: {
+                                  git_ref: versions?.api?.git_ref ?? '',
+                                  version: versions?.api?.version ?? '',
+                                },
+                                ui: {
+                                  version: versions?.ui?.version ?? '',
+                                },
+                              }}
+                            >
+                              <Outlet />
+                              <PreferredOrgStatusBar />
+                            </MainLayout>
+                          </SurfacesProvider>
+                        </DashboardPreferencesProvider>
+                      </WorkflowApprovalsProvider>
+                    </ActiveWorkflowsProvider>
+                  </OrgStatusSSEProvider>
+                </ToastProvider>
+              </SidebarProvider>
+            </BreadcrumbProvider>
+          </InstallRoutingProvider>
         </OrgProvider>
       </APIHealthProvider>
     </NotificationProvider>

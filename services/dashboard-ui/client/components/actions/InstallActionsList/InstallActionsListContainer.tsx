@@ -10,6 +10,7 @@ import { InstallActionManualRunButton } from '@/components/actions/InstallAction
 import { InstallCronOfflineBanner } from '@/components/installs/InstallCronOfflineBanner'
 import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocAction'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallActionsLatestRuns } from '@/lib'
@@ -25,6 +26,7 @@ const LIMIT = 10
 export const InstallActionsListContainer = () => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
   const { appConfig } = useInstallAppConfig()
   const [searchParams] = useSearchParams()
 
@@ -68,11 +70,11 @@ export const InstallActionsListContainer = () => {
     const canRun = !!config?.triggers?.some((trigger) => trigger.type === 'manual')
     const removed = !isActionInAppConfig(appConfig, actionId)
     const href = actionId
-      ? `/${org?.id}/installs/${install?.id}/actions/${actionId}`
+      ? installLink({ installId: install?.id, appId: install?.app_id, suffix: `/actions/${actionId}` })
       : undefined
     const runHref =
       recentRun?.id && actionId
-        ? `/${org?.id}/installs/${install?.id}/actions/${actionId}/runs/${recentRun.id}`
+        ? installLink({ installId: install?.id, appId: install?.app_id, suffix: `/actions/${actionId}/runs/${recentRun.id}` })
         : undefined
 
     return {
@@ -118,7 +120,7 @@ export const InstallActionsListContainer = () => {
                 componentName={recentRun.run_env_vars?.COMPONENT_NAME}
                 componentPath={
                   recentRun.run_env_vars?.COMPONENT_ID
-                    ? `/${org?.id}/installs/${install?.id}/components/${recentRun.run_env_vars.COMPONENT_ID}`
+                    ? installLink({ installId: install?.id, appId: install?.app_id, suffix: `/components/${recentRun.run_env_vars.COMPONENT_ID}` })
                     : undefined
                 }
                 triggerType={

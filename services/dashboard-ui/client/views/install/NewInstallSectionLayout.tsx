@@ -3,8 +3,7 @@ import { PageSection } from '@/components/layout/PageSection'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { TabNav } from '@/components/navigation/TabNav'
-import { useInstall } from '@/hooks/use-install'
-import { useOrg } from '@/hooks/use-org'
+import { useInstallPage } from '@/hooks/use-install-path'
 import type { TNavLink } from '@/types'
 
 export const NEW_INSTALL_RESOURCES_TABS: TNavLink[] = [
@@ -39,9 +38,8 @@ const NewInstallSectionLayout = ({
   tabs: TNavLink[]
   title: string
 }) => {
-  const { org } = useOrg()
-  const { install } = useInstall()
-  const basePath = `/${org?.id}/installs/${install?.id}${path}`
+  const { org, install, href } = useInstallPage()
+  const basePath = href(path)
 
   return (
     <PageSection>

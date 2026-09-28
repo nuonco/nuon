@@ -8,6 +8,7 @@ import type { TSandboxRun } from '@/types'
 import { cn } from '@/utils/classnames'
 import { SandboxRunSummary } from './SandboxRunSummary'
 import { SandboxRunsSkeleton } from './SandboxRunsSkeleton'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 interface ISandboxRunMenu extends Omit<IMenu, 'children'> {
   activeSandboxRunId: string
@@ -30,6 +31,7 @@ export const SandboxRunMenu = ({
   scrollRef,
   limit,
 }: ISandboxRunMenu) => {
+  const installLink = useInstallLink()
   const [searchTerm, setSearchTerm] = useState('')
 
   const filteredSandboxRuns = sandboxRuns
@@ -68,7 +70,7 @@ export const SandboxRunMenu = ({
                     '!bg-primary-600/5 dark:!bg-primary-600/5':
                       sandboxRun?.id === activeSandboxRunId,
                   })}
-                  href={`/${orgId}/installs/${installId}/sandbox/${sandboxRun?.id}`}
+                  href={installLink({ orgId: orgId, installId: installId, suffix: `/sandbox/${sandboxRun?.id}` })}
                   variant="ghost"
                 >
                   <SandboxRunSummary
