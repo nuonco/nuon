@@ -1,5 +1,6 @@
 import { useForm } from '@tanstack/react-form'
 import { z } from 'zod'
+import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { FormRadioGroup } from '@/components/common/form/FormRadioGroup'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
@@ -262,7 +263,16 @@ export const UserPreferencesPanel = ({
           {(field) => (
             <FormRadioGroup
               field={field}
-              label={sectionLabel('Plan diff viewer')}
+              label={
+                <span className="inline-flex items-center gap-2">
+                  <Text as="span" variant="label" theme="neutral">
+                    Plan diff viewer
+                  </Text>
+                  <Badge size="sm" theme="info">
+                    Beta
+                  </Badge>
+                </span>
+              }
               description={sectionDescription(
                 'The new viewer adds search, chunk collapsing and split view. The plan graphs and attribute tree are only in the current viewer.'
               )}

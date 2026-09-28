@@ -111,7 +111,7 @@ describe('Status', () => {
     const disabledIcon = container.querySelector('.status-tint svg')?.innerHTML
 
     expect(overriddenIcon).toBe(disabledIcon)
-    expect(statusStyle).toContain('--status-color: var(--status-neutral)')
+    expect(statusStyle).toContain('--status-color: var(--status-brand)')
   })
 
   test('a loading icon variant is a circular skeleton, not a text band', () => {

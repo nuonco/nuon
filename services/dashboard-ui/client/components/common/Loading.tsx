@@ -2,11 +2,13 @@ import { cn } from '@/utils/classnames'
 
 export const Loading = ({
   className,
+  pulse = true,
   strokeWidth = 'default',
   variant = 'default',
   size,
 }: {
   className?: string
+  pulse?: boolean
   strokeWidth?: 'default' | 'thick'
   variant?: 'default' | 'large'
   size?: number | string
@@ -14,7 +16,7 @@ export const Loading = ({
   const sizeStyle = size ? { width: Number(size), height: Number(size) } : undefined
 
   return (
-    <span className="animate-pulse">
+    <span className={cn(pulse && 'animate-pulse')}>
       <svg
         className={cn(
           'animate-spin',
