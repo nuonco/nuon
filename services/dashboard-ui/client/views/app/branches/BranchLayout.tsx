@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Outlet, useMatch, useParams, useSearchParams } from 'react-router'
+import { Outlet, useMatch, useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { PageContent } from '@/components/layout/PageContent'
@@ -11,29 +11,41 @@ import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import { useOrg } from '@/hooks/use-org'
 import { BranchProvider } from '@/providers/branch-provider'
 import { AppBranchSwitcher } from '@/components/branches/AppBranchSwitcher'
-import { BranchTrackingCard } from '@/components/branches/BranchTrackingCard'
 import { BranchDetailActions } from '@/components/branches/BranchDetailActions'
+import { BranchHeaderMeta } from '@/components/branches/BranchHeaderMeta'
 import { BranchPendingApprovals } from '@/components/branches/BranchRunApproval'
-import {
-  BranchSettingsPanel,
-  useOpenBranchSettings,
-  BRANCH_SETTINGS_PANEL_KEY,
-} from '@/components/branches/BranchSettingsPanel'
 import { getBranchWorkflowRuns } from '@/lib'
 import { latestBranchConfig } from '@/utils/branch-utils'
-import type { TNavItem } from '@/types/dashboard.types'
+import type { TAppBranchConfig, TNavItem } from '@/types'
+
+const triggerLabel = (config?: TAppBranchConfig) => {
+  const mode =
+    !config?.run_config?.mode || config.run_config.mode === 'all'
+      ? 'push'
+      : config.run_config.mode
+
+  switch (mode) {
+    case 'on_tag':
+    case 'on_tag_prefix':
+      return `Tags matching ${config?.run_config?.tag_prefix ?? 'the configured prefix'}`
+    case 'on_github_label':
+      return `Merged pull requests labeled ${config?.run_config?.github_label ?? 'with the configured label'}`
+    case 'manual_only':
+      return 'Manual runs'
+    default:
+      return 'Every push'
+  }
+}
 
 const BranchTemplate = () => {
   const { org } = useOrg()
   const { app } = useApp()
   const { branch } = useBranch()
   const params = useParams()
-  const isDetailRoute =
-    !!useMatch('/:orgId/apps/:appId/branches/:branchId/:section/:detail/*') &&
-    !params.runId
-  const openSettings = useOpenBranchSettings()
-  const [searchParams] = useSearchParams()
-  const isSettingsOpen = searchParams.get('panel') === BRANCH_SETTINGS_PANEL_KEY
+  const detailMatch = useMatch(
+    '/:orgId/apps/:appId/branches/:branchId/:section/:detail/*'
+  )
+  const isDetailRoute = !!detailMatch && !params.runId
   const branchId = params.branchId as string
   const orgId = org.id!
   const appId = app.id!
@@ -43,7 +55,6 @@ const BranchTemplate = () => {
   const vcs =
     currentConfig?.connected_github_vcs_config ??
     currentConfig?.public_git_vcs_config
-
   const { data: latestRunsResult, isLoading: isLoadingLatestRun } = useQuery({
     queryKey: ['branch-latest-run', orgId, appId, branchId],
     queryFn: () =>
@@ -54,32 +65,17 @@ const BranchTemplate = () => {
   })
 
   const latestRun = latestRunsResult?.data?.[0]
-  const latestBranchRun = latestRun?.app_branch_runs?.at(0)
-  const latestCommit = latestBranchRun?.vcs_connection_commit
   const hasDeploymentPlan = (currentConfig?.install_groups?.length ?? 0) > 0
   const showTriggerNudge =
     hasDeploymentPlan && !isLoadingLatestRun && !latestRun
-
   const hasInstallSyncing = !!org?.features?.['app-install-syncing']
 
   const navLinks: TNavItem[] = [
-    {
-      path: `/`,
-      matchPaths: ['/runs'],
-      iconVariant: 'PlayIcon',
-      text: 'Runs',
-    },
-    {
-      type: 'section',
-      label: 'Install management',
-      defaultOpen: false,
-    },
+    { path: `/`, iconVariant: 'GraphIcon', text: 'Overview' },
+    { path: `/rollout`, iconVariant: 'StackIcon', text: 'Rollout' },
+    { path: `/runs`, iconVariant: 'ListIcon', text: 'Previous runs' },
+    { path: `/settings`, iconVariant: 'GearIcon', text: 'Settings' },
     { path: `/installs`, iconVariant: 'CubeIcon', text: 'Installs' },
-    {
-      path: `/plan`,
-      iconVariant: 'TreeStructureIcon',
-      text: 'Deployment plan',
-    },
     ...(hasInstallSyncing
       ? [
           {
@@ -89,15 +85,35 @@ const BranchTemplate = () => {
           },
         ]
       : []),
-    { type: 'section', label: 'App template', defaultOpen: false },
-    { path: `/inputs`, iconVariant: 'ListChecksIcon', text: 'Inputs' },
-    { path: `/components`, iconVariant: 'CardsIcon', text: 'Components' },
+    {
+      type: 'section',
+      label: 'App template',
+      defaultOpen: true,
+      collapsible: false,
+    },
+    {
+      path: `/inputs`,
+      iconVariant: 'ListChecksIcon',
+      text: 'Inputs',
+    },
+    {
+      path: `/components`,
+      iconVariant: 'CardsIcon',
+      text: 'Components',
+      count: currentConfig?.component_ids?.length,
+    },
     {
       path: `/actions`,
       iconVariant: 'TerminalWindowIcon',
       text: 'Actions',
+      count: currentConfig?.action_ids?.length,
     },
-    { path: `/runbooks`, iconVariant: 'BookIcon', text: 'Runbooks' },
+    {
+      path: `/runbooks`,
+      iconVariant: 'BookIcon',
+      text: 'Runbooks',
+      count: currentConfig?.runbook_ids?.length,
+    },
     {
       path: `/sandbox`,
       iconVariant: 'ShippingContainerIcon',
@@ -107,19 +123,10 @@ const BranchTemplate = () => {
     { path: `/roles`, iconVariant: 'FileLockIcon', text: 'Roles' },
     { path: `/labels`, iconVariant: 'TagIcon', text: 'Labels' },
     { path: `/readme`, iconVariant: 'BookOpenIcon', text: 'README' },
-    {
-      type: 'action',
-      key: 'settings',
-      iconVariant: 'GearIcon',
-      text: 'Settings',
-      onClick: openSettings,
-      isActive: isSettingsOpen,
-    },
   ]
 
   return (
     <>
-      {/* Detail routes set their own, more specific breadcrumbs */}
       {!isDetailRoute ? (
         <Breadcrumbs
           breadcrumbs={[
@@ -134,7 +141,15 @@ const BranchTemplate = () => {
         variant="page"
         backLink={false}
         title={app.name}
-        status={<AppBranchSwitcher />}
+        identity={
+          <BranchHeaderMeta
+            configuration={<AppBranchSwitcher />}
+            repo={vcs?.repo}
+            gitBranch={vcs?.branch}
+            directory={vcs?.directory}
+            trigger={triggerLabel(currentConfig)}
+          />
+        }
         actions={
           <BranchDetailActions
             branch={branch}
@@ -144,32 +159,13 @@ const BranchTemplate = () => {
             showTriggerNudge={showTriggerNudge}
           />
         }
-      >
-        <BranchTrackingCard
-          repo={vcs?.repo}
-          branch={vcs?.branch}
-          directory={vcs?.directory}
-          latestRun={
-            latestRun
-              ? {
-                  status: latestBranchRun?.status,
-                  href: `${basePath}/runs/${latestRun.id}`,
-                  message: latestCommit?.message?.split('\n')[0],
-                  author: latestCommit?.author_name,
-                  avatarUrl: latestCommit?.author_avatar_url,
-                  sha: latestCommit?.sha,
-                  createdAt: latestRun.created_at,
-                }
-              : undefined
-          }
-        />
-      </DetailHeader>
-      <BranchSettingsPanel />
+      />
       <PageContent className="border-t" variant="row">
         <SubNav
           basePath={basePath}
           links={navLinks}
           storageKey="subnav:branch"
+          pinLastGroup
         />
         <div className="flex flex-col flex-1 min-w-0">
           {latestRun && params.runId !== latestRun.id ? (
