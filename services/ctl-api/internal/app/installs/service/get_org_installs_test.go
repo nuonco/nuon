@@ -20,6 +20,56 @@ func (s *InstallsServiceTestSuite) TestGetOrgInstallsEmpty() {
 	assert.Empty(s.T(), resp)
 }
 
+func (s *InstallsServiceTestSuite) TestCloudConnectionLiveInstallReferences() {
+	for name, tt := range map[string]struct {
+		liveInstalls int
+		wantStatus   int
+	}{
+		"live and forgotten": {liveInstalls: 1, wantStatus: http.StatusConflict},
+		"only forgotten":     {wantStatus: http.StatusNoContent},
+	} {
+		s.Run(name, func() {
+			connection := &app.CloudConnection{
+				Name: "acme", Platform: app.CloudPlatformAWS, TargetID: "123456789012",
+				Principal: fmt.Sprintf("arn:aws:iam::123456789012:role/acme-%d", tt.liveInstalls), Preset: app.CloudConnectionPresetStacks,
+			}
+			require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(connection).Error)
+			for i := 0; i <= tt.liveInstalls; i++ {
+				install := s.createTestInstall()
+				require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.Install{}).Where(app.Install{ID: install.ID}).Update("cloud_connection_id", connection.ID).Error)
+				if i == 0 {
+					require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Delete(install).Error)
+				}
+			}
+			rr := s.makeRequest(http.MethodGet, "/v1/installs?cloud_connection_id="+connection.ID, nil)
+			require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+			var installs []app.Install
+			require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &installs))
+			require.Len(s.T(), installs, tt.liveInstalls)
+			path := "/v1/cloud-connections/" + connection.ID
+			rr = s.makeRequest(http.MethodGet, path, nil)
+			require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+			var response struct {
+				UsedBy struct{ Installs int } `json:"used_by"`
+			}
+			require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &response))
+			require.Equal(s.T(), tt.liveInstalls, response.UsedBy.Installs)
+			rr = s.makeRequest(http.MethodDelete, path, nil)
+			require.Equal(s.T(), tt.wantStatus, rr.Code, rr.Body.String())
+			var stored app.CloudConnection
+			require.NoError(s.T(), s.deps.DB.Unscoped().First(&stored, "id = ?", connection.ID).Error)
+			if tt.liveInstalls > 0 {
+				require.Contains(s.T(), rr.Body.String(), "it is referenced by installs (1)")
+				require.Zero(s.T(), stored.DeletedAt)
+			} else {
+				require.NotZero(s.T(), stored.DeletedAt)
+				replacement := &app.CloudConnection{Name: stored.Name, Platform: stored.Platform, TargetID: stored.TargetID, Principal: stored.Principal, Preset: stored.Preset}
+				require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(replacement).Error)
+			}
+		})
+	}
+}
+
 func (s *InstallsServiceTestSuite) TestGetOrgInstallsReturnsList() {
 	s.createTestInstall()
 	s.createTestInstall()

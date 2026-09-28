@@ -209,14 +209,14 @@ func (s *service) delete(ctx context.Context, orgID, connectionID string) error 
 			return fmt.Errorf("cloud connection not found: %w", err)
 		}
 		var installReferences int64
-		if err := tx.Unscoped().Model(&app.Install{}).Where(app.Install{CloudConnectionID: &connection.ID}).Count(&installReferences).Error; err != nil {
+		if err := tx.Model(&app.Install{}).Where(app.Install{CloudConnectionID: &connection.ID}).Count(&installReferences).Error; err != nil {
 			return fmt.Errorf("count install references: %w", err)
 		}
 		if installReferences > 0 {
 			description := fmt.Sprintf("Cloud connection cannot be deleted; it is referenced by installs (%d)", installReferences)
 			return stderr.ErrConflict{Err: errors.New(description), Description: description}
 		}
-		return tx.Unscoped().Delete(&connection).Error
+		return tx.Delete(&connection).Error
 	})
 }
 

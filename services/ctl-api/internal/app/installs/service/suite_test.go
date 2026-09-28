@@ -26,6 +26,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	temporal "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	cloudconnectionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/service"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
@@ -129,6 +130,9 @@ func (s *InstallsServiceTestSuite) SetupTest() {
 
 	err := s.installsService.RegisterPublicRoutes(s.router)
 	require.NoError(s.T(), err)
+	connections, err := cloudconnectionsservice.New(cloudconnectionsservice.Params{DB: s.deps.DB, L: s.deps.L})
+	require.NoError(s.T(), err)
+	require.NoError(s.T(), connections.RegisterPublicRoutes(s.router))
 }
 
 func (s *InstallsServiceTestSuite) TearDownTest() {
