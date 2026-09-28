@@ -57,7 +57,7 @@ const INDICATOR_THEME_CLASSES: Record<
       'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-400',
     error: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-400',
     warn: 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-400',
-    info: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400',
+    info: 'bg-blue-300 text-blue-900 dark:bg-blue-950 dark:text-blue-300',
     brand:
       'bg-primary-200 text-primary-800 dark:bg-primary-950 dark:text-primary-400',
   },
@@ -144,7 +144,12 @@ export const Status = ({
       <span className={indicatorClass} style={indicatorStyle}>
         {iconVariant && iconVariant !== 'none' ? (
           <Icon
-            className="status-icon"
+            className={cn(
+              'status-icon',
+              iconVariant === 'Loading' &&
+                '[&_circle]:!opacity-40 [&_path]:!opacity-100'
+            )}
+            pulse={iconVariant === 'Loading' ? false : undefined}
             variant={iconVariant}
             weight="bold"
             size={iconSize}
