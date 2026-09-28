@@ -21,7 +21,7 @@ import { PreviewConfigSection } from '@/components/branches/PreviewConfigSection
 import { latestBranchConfig } from '@/utils/branch-utils'
 import { humanize } from '@/utils/string-utils'
 
-const BranchSettingsCards = () => {
+export const BranchSettingsCards = () => {
   const { app } = useApp()
   const { org } = useOrg()
   const { branch, refresh } = useBranch()
