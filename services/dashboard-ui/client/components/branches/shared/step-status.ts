@@ -47,6 +47,7 @@ export function stepStatusCategory(status?: string): TStepStatusCategory {
 }
 
 export function isActiveStepStatus(status?: string): boolean {
+  if (status === 'queued') return true
   const category = stepStatusCategory(status)
   return category === 'active' || category === 'awaiting'
 }
