@@ -1,22 +1,14 @@
 export default { title: 'Cloud connections/Concepts/Preset flow' }
 
-import { useEffect, useRef, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { BreadcrumbContext } from '@/providers/breadcrumb-provider'
 import { NotificationContext } from '@/providers/notification-provider'
 import { SidebarContext } from '@/providers/sidebar-provider'
-import { SurfacesProvider } from '@/providers/surfaces-provider'
-import { useSurfaces } from '@/hooks/use-surfaces'
 import { PresetFlow } from './PresetFlow'
 import { TRUST_POLICY } from './mockData'
-import {
-  CloudConnectionDetailsPanel,
-  type TVerificationDisplay,
-} from './CloudConnectionDetailsPanel'
+import { CloudConnectionDetailPage } from './CloudConnectionDetailPage'
 import { CloudConnectionsOverview } from './CloudConnectionsOverview'
-import {
-  CLOUD_CONNECTIONS,
-  type TCloudConnectionOverview,
-} from './overviewMockData'
+import { CLOUD_CONNECTIONS } from './overviewMockData'
 
 const OverviewProviders = ({ children }: { children: ReactNode }) => (
   <NotificationContext.Provider
@@ -52,70 +44,66 @@ const OverviewProviders = ({ children }: { children: ReactNode }) => (
           toggleSidebar: () => {},
         }}
       >
-        <SurfacesProvider>{children}</SurfacesProvider>
+        {children}
       </SidebarContext.Provider>
     </BreadcrumbContext.Provider>
   </NotificationContext.Provider>
 )
-
-const OverviewWithOpenDetails = ({
-  connection,
-  verification = 'current',
-  initialSection = 'summary',
-}: {
-  connection: TCloudConnectionOverview
-  verification?: TVerificationDisplay
-  initialSection?: 'summary' | 'policy' | 'verification'
-}) => {
-  const { addPanel } = useSurfaces()
-  const opened = useRef(false)
-  useEffect(() => {
-    if (opened.current) return
-    opened.current = true
-    addPanel(
-      <CloudConnectionDetailsPanel
-        connection={connection}
-        initialVerification={verification}
-        initialSection={initialSection}
-      />
-    )
-  }, [addPanel, connection, initialSection, verification])
-
-  return <CloudConnectionsOverview connections={CLOUD_CONNECTIONS} />
-}
 
 export const OverviewPopulated = () => (
   <OverviewProviders>
     <CloudConnectionsOverview connections={CLOUD_CONNECTIONS} />
   </OverviewProviders>
 )
-export const OverviewDetailsStacks = () => (
+export const DetailOverviewStacks = () => (
   <OverviewProviders>
-    <OverviewWithOpenDetails connection={CLOUD_CONNECTIONS[0]} />
+    <CloudConnectionDetailPage connection={CLOUD_CONNECTIONS[0]} />
   </OverviewProviders>
 )
-export const OverviewDetailsCustom = () => (
+export const DetailOverviewCustom = () => (
   <OverviewProviders>
-    <OverviewWithOpenDetails
-      connection={CLOUD_CONNECTIONS[2]}
-      initialSection="policy"
-    />
+    <CloudConnectionDetailPage connection={CLOUD_CONNECTIONS[2]} />
   </OverviewProviders>
 )
-export const OverviewDetailsError = () => (
+export const DetailInstalls = () => (
   <OverviewProviders>
-    <OverviewWithOpenDetails
-      connection={CLOUD_CONNECTIONS[3]}
-      initialSection="verification"
-    />
-  </OverviewProviders>
-)
-export const OverviewDetailsVerifying = () => (
-  <OverviewProviders>
-    <OverviewWithOpenDetails
+    <CloudConnectionDetailPage
       connection={CLOUD_CONNECTIONS[0]}
-      verification="verifying"
-      initialSection="verification"
+      selectedTab="installs"
+    />
+  </OverviewProviders>
+)
+export const DetailInstallsEmpty = () => (
+  <OverviewProviders>
+    <CloudConnectionDetailPage
+      connection={CLOUD_CONNECTIONS[0]}
+      selectedTab="installs"
+      installsEmpty
+    />
+  </OverviewProviders>
+)
+export const DetailVerificationVerified = () => (
+  <OverviewProviders>
+    <CloudConnectionDetailPage
+      connection={CLOUD_CONNECTIONS[0]}
+      selectedTab="verification"
+    />
+  </OverviewProviders>
+)
+export const DetailVerificationError = () => (
+  <OverviewProviders>
+    <CloudConnectionDetailPage
+      connection={CLOUD_CONNECTIONS[3]}
+      selectedTab="verification"
+    />
+  </OverviewProviders>
+)
+export const DetailVerifying = () => (
+  <OverviewProviders>
+    <CloudConnectionDetailPage
+      connection={CLOUD_CONNECTIONS[0]}
+      selectedTab="verification"
+      initialVerification="verifying"
     />
   </OverviewProviders>
 )
@@ -193,10 +181,13 @@ export const FailedAtPermissions = () => (
 
 CloudAndAccount.meta = { fullBleed: true }
 OverviewPopulated.meta = { fullBleed: true }
-OverviewDetailsStacks.meta = { fullBleed: true }
-OverviewDetailsCustom.meta = { fullBleed: true }
-OverviewDetailsError.meta = { fullBleed: true }
-OverviewDetailsVerifying.meta = { fullBleed: true }
+DetailOverviewStacks.meta = { fullBleed: true }
+DetailOverviewCustom.meta = { fullBleed: true }
+DetailInstalls.meta = { fullBleed: true }
+DetailInstallsEmpty.meta = { fullBleed: true }
+DetailVerificationVerified.meta = { fullBleed: true }
+DetailVerificationError.meta = { fullBleed: true }
+DetailVerifying.meta = { fullBleed: true }
 OverviewEmpty.meta = { fullBleed: true }
 OverviewLoading.meta = { fullBleed: true }
 AccessPreset.meta = { fullBleed: true }

@@ -2,14 +2,11 @@ import { useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Button } from '@/components/common/Button'
 import { ClickToCopy } from '@/components/common/ClickToCopy'
+import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { ListPage } from '@/components/layout/ListPage'
-import { useSurfaces } from '@/hooks/use-surfaces'
-import {
-  CloudConnectionDetailsPanel,
-  ConnectionStatus,
-} from './CloudConnectionDetailsPanel'
+import { ConnectionStatus } from './CloudConnectionDetailPage'
 import { PresetFlow } from './PresetFlow'
 import type { TCloudConnectionOverview } from './overviewMockData'
 
@@ -23,17 +20,6 @@ export const CloudConnectionsOverview = ({
   isLoading = false,
 }: ICloudConnectionsOverview) => {
   const [isCreating, setIsCreating] = useState(false)
-  const { addPanel } = useSurfaces()
-  const openDetails = (
-    connection: TCloudConnectionOverview,
-    initialSection: 'summary' | 'policy' = 'summary'
-  ) =>
-    addPanel(
-      <CloudConnectionDetailsPanel
-        connection={connection}
-        initialSection={initialSection}
-      />
-    )
 
   const columns = useMemo<ColumnDef<TCloudConnectionOverview>[]>(
     () => [
@@ -42,7 +28,11 @@ export const CloudConnectionsOverview = ({
         header: 'Name',
         cell: ({ row }) => (
           <div className="flex min-w-0 max-w-lg flex-col gap-1">
-            <Text weight="strong">{row.original.name}</Text>
+            <Link
+              href={`/org-mock-001/cloud-connections/${row.original.id}`}
+            >
+              <Text weight="strong">{row.original.name}</Text>
+            </Link>
             <ClickToCopy className="max-w-full">
               <Text
                 family="mono"
@@ -76,31 +66,8 @@ export const CloudConnectionsOverview = ({
         header: 'Status',
         cell: ({ row }) => <ConnectionStatus connection={row.original} />,
       },
-      {
-        id: 'actions',
-        header: '',
-        enableSorting: false,
-        cell: ({ row }) => (
-          <div className="flex items-center justify-end gap-1 whitespace-nowrap">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => openDetails(row.original, 'policy')}
-            >
-              View policy
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => openDetails(row.original)}
-            >
-              View details
-            </Button>
-          </div>
-        ),
-      },
     ],
-    [addPanel]
+    []
   )
 
   if (isCreating) return <PresetFlow />
@@ -124,6 +91,9 @@ export const CloudConnectionsOverview = ({
         isLoading={isLoading}
         enableSearch={connections.length > 0 || isLoading}
         searchPlaceholder="Search by name, account, or role ARN..."
+        rowClassName={() =>
+          'transition-colors hover:bg-black/5 dark:hover:bg-white/5'
+        }
         emptyStateProps={{
           emptyTitle: 'No cloud connections yet',
           emptyMessage:
