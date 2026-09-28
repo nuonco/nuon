@@ -54,6 +54,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
+	if installsConfig.VCSConfigID == "" {
+		logger.Info("no vcs config found for app, skipping sync", "installs_config_id", installsConfig.ID)
+		_ = branchactivities.AwaitUpdateAppInstallConfigSyncStatus(ctx, &branchactivities.UpdateAppInstallConfigSyncStatusInput{
+			ID:                syncID,
+			Status:            string(app.StatusSuccess),
+			StatusDescription: "no vcs config found",
+		})
+		s.updateStepStatus(ctx, app.StatusSuccess, "no vcs config found", nil)
+		return nil
+	}
+
 	installsDir := installsConfig.Directory
 	if installsDir == "" {
 		installsDir = "."
