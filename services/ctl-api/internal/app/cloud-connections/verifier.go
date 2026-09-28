@@ -26,7 +26,6 @@ type VerificationResult struct {
 }
 
 type VerifyOptions struct {
-	IdentityOnly        bool
 	RetryIAMPropagation bool
 }
 
@@ -103,7 +102,7 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 	if identity.Account == nil || *identity.Account != connection.TargetID || identity.Arn == nil || !matchesRole(*identity.Arn, connection.Principal) {
 		return verificationFailure("The assumed identity does not match the configured target and principal."), nil
 	}
-	if connection.Preset == app.CloudConnectionPresetStacks && !options.IdentityOnly {
+	if connection.Preset == app.CloudConnectionPresetStacks {
 		if _, err := cloudformation.NewFromConfig(assumed).DescribeStacks(ctx, &cloudformation.DescribeStacksInput{}); err != nil {
 			if IsAccessDenied(err) {
 				return verificationFailure("The role lacks CloudFormation read access required to manage install stacks."), nil

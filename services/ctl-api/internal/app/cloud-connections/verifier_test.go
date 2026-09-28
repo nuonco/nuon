@@ -31,7 +31,6 @@ func TestAWSVerification(t *testing.T) {
 	require.NoError(t, err)
 	for name, tc := range map[string]struct {
 		preset         app.CloudConnectionPreset
-		identityOnly   bool
 		allowForeign   bool
 		denyStacks     bool
 		assumeError    string
@@ -70,8 +69,9 @@ func TestAWSVerification(t *testing.T) {
 		"custom ignores stack permissions": {
 			preset: app.CloudConnectionPresetCustom, denyStacks: true, wantStatus: app.CloudConnectionStatusVerified,
 		},
-		"cron identity only": {
-			preset: app.CloudConnectionPresetStacks, identityOnly: true, denyStacks: true, wantStatus: app.CloudConnectionStatusVerified,
+		"periodic stacks denied": {
+			preset: app.CloudConnectionPresetStacks, denyStacks: true, wantStatus: app.CloudConnectionStatusError, wantProbes: 1,
+			wantMessage: "The role lacks CloudFormation read access required to manage install stacks.",
 		},
 		"foreign subject accepted": {
 			preset: app.CloudConnectionPresetCustom, retry: true, allowForeign: true, wantStatus: app.CloudConnectionStatusError,
@@ -134,7 +134,7 @@ func TestAWSVerification(t *testing.T) {
 				now = now.Add(duration)
 				return nil
 			}
-			result, err := verifier.Verify(context.Background(), connection, VerifyOptions{IdentityOnly: tc.identityOnly, RetryIAMPropagation: tc.retry})
+			result, err := verifier.Verify(context.Background(), connection, VerifyOptions{RetryIAMPropagation: tc.retry})
 			require.NoError(t, err)
 			require.Equal(t, tc.wantSleeps, sleeps)
 			require.Equal(t, tc.wantStatus, result.Status)

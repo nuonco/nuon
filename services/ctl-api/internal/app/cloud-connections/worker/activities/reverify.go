@@ -32,7 +32,7 @@ func (a *Activities) Reverify(ctx context.Context, req ReverifyRequest) error {
 		}
 		return err
 	}
-	result, verifyErr := a.verifier.Verify(ctx, &connection, cloudconnections.VerifyOptions{IdentityOnly: !req.OnDemand, RetryIAMPropagation: req.OnDemand && connection.LastVerifiedAt == nil})
+	result, verifyErr := a.verifier.Verify(ctx, &connection, cloudconnections.VerifyOptions{RetryIAMPropagation: req.OnDemand && connection.LastVerifiedAt == nil})
 	if verifyErr != nil {
 		result = cloudconnections.VerificationResult{Status: app.CloudConnectionStatusError, Message: cloudconnections.VerificationErrorMessage(verifyErr)}
 	}
