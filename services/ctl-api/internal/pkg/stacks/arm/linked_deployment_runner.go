@@ -7,10 +7,21 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
+const runnerVmSizeParamName = "runnerVmSize"
+
+var allowedAzureVMSizes = []string{
+	app.DefaultAzureInstanceType,
+	"Standard_D4s_v5",
+	"Standard_D8s_v5",
+	"Standard_D2s_v3",
+	"Standard_D4s_v3",
+	"Standard_D8s_v3",
+}
+
 func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operationIDs []azureOperationIdentity, scope armScope) (map[string]any, map[string]ARMParameter, error) {
 	templateURL := inp.RunnerNestedStackTemplateURL
 	if templateURL == "" {
-		return t.getDefaultRunnerDeployment(inp, operationIDs, scope), telemetryIngressParameters(), nil
+		return t.getDefaultRunnerDeployment(inp, operationIDs, scope), runnerCustomerParameters(inp), nil
 	}
 
 	vnetDeployment := scope.vnetDeploymentName(inp.Install.ID)
@@ -56,7 +67,6 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		"runnerSubnetId":      fmt.Sprintf("[reference('%s').outputs.runnerSubnetId.value]", vnetDeployment),
 		"customData":          t.buildRunnerCustomData(inp),
 		"commonTags":          "[variables('commonTags')]",
-		"runnerVmSize":        runnerVMSize(inp),
 	}
 
 	if len(userAssigned) > 0 {
@@ -73,11 +83,17 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		// know about, ARM will surface a clear deployment error.
 	}
 
-	var customerParams map[string]ARMParameter
+	customerParams := map[string]ARMParameter{}
+	if declared, ok := armTmpl.Parameters[runnerVmSizeParamName]; ok && (declared.Type == "" || declared.Type == "string") {
+		customerParams[runnerVmSizeParamName] = hoistedRunnerVMSizeParameter(inp, declared.DefaultValue, declared.AllowedValues, metadataDescription(declared.Metadata))
+		deploymentParams[runnerVmSizeParamName] = map[string]any{"value": "[parameters('" + runnerVmSizeParamName + "')]"}
+	}
 	parameter, hasParameter := armTmpl.Parameters["enableTelemetryIngress"]
 	_, hasOutput := armTmpl.Outputs["telemetryEndpoint"]
 	if hasParameter && hasOutput && parameter.Type == "bool" {
-		customerParams = telemetryIngressParameters()
+		for name, p := range telemetryIngressParameters() {
+			customerParams[name] = p
+		}
 		deploymentParams["enableTelemetryIngress"] = map[string]any{"value": "[parameters('enableTelemetryIngress')]"}
 	}
 
@@ -134,8 +150,9 @@ func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operat
 				"runnerSubnetId":         map[string]any{"value": fmt.Sprintf("[reference('%s').outputs.runnerSubnetId.value]", vnetDeployment)},
 				"customData":             map[string]any{"value": customData},
 				"commonTags":             map[string]any{"value": "[variables('commonTags')]"},
+				runnerVmSizeParamName:    map[string]any{"value": "[parameters('" + runnerVmSizeParamName + "')]"},
 			},
-			"template": t.getDefaultRunnerTemplate(operationIDs, runnerVMSize(inp)),
+			"template": t.getDefaultRunnerTemplate(operationIDs),
 		},
 	}
 
@@ -153,7 +170,63 @@ func runnerVMSize(inp *stacks.TemplateInput) string {
 	return app.DefaultAzureInstanceType
 }
 
-func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdentity, vmSize string) map[string]any {
+func metadataDescription(metadata *struct {
+	Description string `json:"description,omitempty"`
+}) string {
+	if metadata == nil {
+		return ""
+	}
+	return metadata.Description
+}
+
+func hoistedRunnerVMSizeParameter(inp *stacks.TemplateInput, declaredDefault any, declaredAllowed []any, description string) ARMParameter {
+	size := runnerVMSize(inp)
+	allowed := declaredAllowed
+	if len(allowed) == 0 {
+		allowed = make([]any, 0, len(allowedAzureVMSizes)+1)
+		for _, s := range allowedAzureVMSizes {
+			allowed = append(allowed, s)
+		}
+	}
+
+	var def any = size
+	if len(declaredAllowed) > 0 && !containsValue(declaredAllowed, size) {
+		if declaredDefault != nil {
+			def = declaredDefault
+		} else {
+			def = declaredAllowed[0]
+		}
+	} else if !containsValue(allowed, size) {
+		allowed = append(allowed, size)
+	}
+
+	if description == "" {
+		description = "VM size for the Nuon runner."
+	}
+	return ARMParameter{
+		Type:          "string",
+		DefaultValue:  def,
+		AllowedValues: allowed,
+		Metadata:      &ARMParameterMetadata{Description: description},
+	}
+}
+
+func containsValue(values []any, want string) bool {
+	for _, value := range values {
+		if fmt.Sprintf("%v", value) == want {
+			return true
+		}
+	}
+	return false
+}
+
+func runnerCustomerParameters(inp *stacks.TemplateInput) map[string]ARMParameter {
+	params := telemetryIngressParameters()
+	params[runnerVmSizeParamName] = hoistedRunnerVMSizeParameter(inp, nil, nil, "")
+	return params
+}
+
+func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdentity) map[string]any {
 	identity := map[string]any{"type": "SystemAssigned"}
 	// The runner deployment is RG-targeted, so its inline template reads the
 	// identities at resource-group scope alongside them.
@@ -174,6 +247,7 @@ func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdenti
 			"runnerSubnetId":         map[string]any{"type": "string"},
 			"customData":             map[string]any{"type": "string"},
 			"commonTags":             map[string]any{"type": "object"},
+			runnerVmSizeParamName:    map[string]any{"type": "string"},
 		},
 		"resources": []any{
 			map[string]any{
@@ -184,7 +258,7 @@ func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdenti
 				"tags":       "[parameters('commonTags')]",
 				"dependsOn":  []string{"[resourceId('Microsoft.Network/loadBalancers', format('{0}-telemetry', parameters('nuonInstallID')))]"},
 				"sku": map[string]any{
-					"name":     vmSize,
+					"name":     "[parameters('" + runnerVmSizeParamName + "')]",
 					"tier":     "Standard",
 					"capacity": 1,
 				},
