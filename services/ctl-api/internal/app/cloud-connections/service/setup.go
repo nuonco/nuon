@@ -45,7 +45,7 @@ func (s *service) setup(connection *app.CloudConnection) SetupResponse {
 			}},
 		}},
 	}
-	policyJSON, _ := json.Marshal(trustPolicy)
+	policyJSON, _ := json.MarshalIndent(trustPolicy, "", "  ")
 	response.IssuerURL = issuerURL
 	response.TrustPolicy = trustPolicy
 	response.Terraform = fmt.Sprintf(`resource "aws_iam_openid_connect_provider" "nuon" {
@@ -59,10 +59,10 @@ resource "aws_iam_role" "nuon_cloud_connection" {
 }
 `, issuerURL, policyJSON)
 	response.CLI = fmt.Sprintf("aws iam create-open-id-connect-provider --url %s --client-id-list sts.amazonaws.com\naws iam create-role --role-name <role-name> --assume-role-policy-document '%s'", issuerURL, policyJSON)
-	response.CloudFormation = fmt.Sprintf("NuonOIDCProvider:\n  Type: AWS::IAM::OIDCProvider\n  Properties:\n    Url: %s\n    ClientIdList:\n      - sts.amazonaws.com\nNuonConnectionRole:\n  Type: AWS::IAM::Role\n  Properties:\n    RoleName: <role-name>\n    AssumeRolePolicyDocument: %s\n", issuerURL, policyJSON)
+	response.CloudFormation = fmt.Sprintf("NuonOIDCProvider:\n  Type: AWS::IAM::OIDCProvider\n  Properties:\n    Url: %s\n    ClientIdList:\n      - sts.amazonaws.com\nNuonConnectionRole:\n  Type: AWS::IAM::Role\n  Properties:\n    RoleName: <role-name>\n    AssumeRolePolicyDocument:\n      %s\n", issuerURL, strings.ReplaceAll(string(policyJSON), "\n", "\n      "))
 	if connection.Preset == app.CloudConnectionPresetStacks {
 		response.PermissionsPolicy = awsPermissionsPolicy()
-		permissionsJSON, _ := json.Marshal(response.PermissionsPolicy)
+		permissionsJSON, _ := json.MarshalIndent(response.PermissionsPolicy, "", "  ")
 		response.Terraform += fmt.Sprintf(`
 resource "aws_iam_role_policy" "nuon_cloud_connection" {
   name   = "nuon-cloud-connection"
@@ -70,7 +70,7 @@ resource "aws_iam_role_policy" "nuon_cloud_connection" {
   policy = jsonencode(%s)
 }`, permissionsJSON)
 		response.CLI += fmt.Sprintf("\naws iam put-role-policy --role-name <role-name> --policy-name nuon-cloud-connection --policy-document '%s'", permissionsJSON)
-		response.CloudFormation += fmt.Sprintf("    Policies:\n      - PolicyName: nuon-cloud-connection\n        PolicyDocument: %s\n", permissionsJSON)
+		response.CloudFormation += fmt.Sprintf("    Policies:\n      - PolicyName: nuon-cloud-connection\n        PolicyDocument:\n          %s\n", strings.ReplaceAll(string(permissionsJSON), "\n", "\n          "))
 	}
 	return response
 }

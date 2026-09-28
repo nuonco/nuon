@@ -54,11 +54,13 @@ export const VerifyConnection = ({
         <Banner theme="error">
           <div className="flex flex-col items-start gap-2">
             <Text weight="strong">
-              {error
+              {error || message?.startsWith('Verification failed:')
                 ? 'Verification failed'
-                : step === 2
-                  ? 'Role trust check failed'
-                  : 'CloudFormation probe failed'}
+                : step === 1
+                  ? 'OIDC identity check failed'
+                  : step === 2
+                    ? 'Role trust check failed'
+                    : 'CloudFormation probe failed'}
             </Text>
             <Text>{message}</Text>
             <Link href={`${setupHref}#runbook-step-${step}`}>

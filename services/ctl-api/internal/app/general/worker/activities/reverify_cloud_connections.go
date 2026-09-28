@@ -39,7 +39,7 @@ func (a *Activities) ReverifyCloudConnections(ctx context.Context, _ ReverifyClo
 		if verifyErr != nil {
 			response.Failures++
 			result.Status = app.CloudConnectionStatusError
-			result.Message = fmt.Sprintf("Cloud connection verification failed: %v", verifyErr)
+			result.Message = service.VerificationErrorMessage(verifyErr)
 			a.l.Warn("cloud connection re-verification failed", zap.String("connection_id", connection.ID), zap.Error(verifyErr))
 		}
 		update := app.CloudConnection{Status: result.Status, StatusMessage: result.Message, LastVerifiedAt: &now}

@@ -10,10 +10,12 @@ export const roleName = (principal: string) =>
 export const awsRoleURL = (principal: string) =>
   `https://console.aws.amazon.com/iam/home#/roles/details/${encodeURIComponent(roleName(principal))}?section=trust`
 export const failedRunbookStep = (connection: TCloudConnection) =>
-  connection.preset === 'stacks' &&
-  /CloudFormation/i.test(connection.status_message || '')
-    ? 3
-    : 2
+  /Create the OIDC provider/i.test(connection.status_message || '')
+    ? 1
+    : connection.preset === 'stacks' &&
+        /CloudFormation/i.test(connection.status_message || '')
+      ? 3
+      : 2
 
 export const ConnectionPolicies = ({
   connection,

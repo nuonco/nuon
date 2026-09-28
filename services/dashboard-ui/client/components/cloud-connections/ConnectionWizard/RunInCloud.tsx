@@ -55,7 +55,7 @@ export const RunInCloud = ({
         </ClickToCopy>
       </LabeledValue>
       <ol className="list-decimal pl-5 space-y-2">
-        <li>
+        <li id="runbook-step-1" className="scroll-mt-6">
           <Text as="div" weight="strong">
             Create the OIDC provider
           </Text>

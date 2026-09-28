@@ -70,6 +70,10 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 	}
 	output, err := client.AssumeRoleWithWebIdentity(ctx, &sts.AssumeRoleWithWebIdentityInput{RoleArn: &connection.Principal, RoleSessionName: aws.String("nuon-cloud-connection-verification"), WebIdentityToken: &token, DurationSeconds: aws.Int32(900)})
 	if err != nil {
+		var invalidToken *stsTypes.InvalidIdentityTokenException
+		if errors.As(err, &invalidToken) {
+			return verificationFailure("AWS could not validate Nuon's identity token. Create the OIDC provider for this issuer first (step 1)."), nil
+		}
 		if isAccessDenied(err) {
 			return verificationFailure("Nuon OIDC identity is not trusted by this role."), nil
 		}
@@ -90,7 +94,7 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 	}
 	identity, err := sts.NewFromConfig(assumed).GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
 	if err != nil {
-		return verificationFailure("The assumed role identity could not be verified."), nil
+		return VerificationResult{}, fmt.Errorf("verify assumed role identity: %w", err)
 	}
 	if identity.Account == nil || *identity.Account != connection.TargetID || identity.Arn == nil || !matchesRole(*identity.Arn, connection.Principal) {
 		return verificationFailure("The assumed identity does not match the configured target and principal."), nil
@@ -98,7 +102,7 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 	if connection.Preset == app.CloudConnectionPresetStacks && !options.IdentityOnly {
 		if _, err := cloudformation.NewFromConfig(assumed).DescribeStacks(ctx, &cloudformation.DescribeStacksInput{}); err != nil {
 			if isAccessDenied(err) {
-				return verificationFailure("The role lacks CloudFormation read access required by the stacks preset."), nil
+				return verificationFailure("The role lacks CloudFormation read access required to manage install stacks."), nil
 			}
 			return VerificationResult{}, fmt.Errorf("probe CloudFormation access: %w", err)
 		}
@@ -108,6 +112,20 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 
 func verificationFailure(message string) VerificationResult {
 	return VerificationResult{Status: app.CloudConnectionStatusError, Message: message}
+}
+
+func VerificationErrorMessage(err error) string {
+	var apiErr smithy.APIError
+	if errors.As(err, &apiErr) {
+		return "Verification failed: " + apiErr.ErrorCode()
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return "Verification failed: request timed out"
+	}
+	if errors.Is(err, context.Canceled) {
+		return "Verification failed: request canceled"
+	}
+	return "Verification failed: unable to complete the AWS verification request"
 }
 
 func awsConfigWithCredentials(base aws.Config, value *stsTypes.Credentials) (aws.Config, error) {

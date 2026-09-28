@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/aws/smithy-go"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -27,22 +28,42 @@ func TestAWSVerification(t *testing.T) {
 	require.NoError(t, err)
 	issuer, err := oidcissuer.New("https://api.example.com", key, "acme")
 	require.NoError(t, err)
-	for _, tc := range []struct {
-		name         string
+	for name, tc := range map[string]struct {
 		preset       app.CloudConnectionPreset
 		identityOnly bool
 		allowForeign bool
 		denyStacks   bool
+		assumeError  string
 		wantStatus   app.CloudConnectionStatus
+		wantMessage  string
 		wantProbes   int
 	}{
-		{"stacks read probe", app.CloudConnectionPresetStacks, false, false, false, app.CloudConnectionStatusVerified, 1},
-		{"stacks denied", app.CloudConnectionPresetStacks, false, false, true, app.CloudConnectionStatusError, 1},
-		{"custom ignores stack permissions", app.CloudConnectionPresetCustom, false, false, true, app.CloudConnectionStatusVerified, 0},
-		{"cron identity only", app.CloudConnectionPresetStacks, true, false, true, app.CloudConnectionStatusVerified, 0},
-		{"foreign subject accepted", app.CloudConnectionPresetCustom, false, true, false, app.CloudConnectionStatusError, 0},
+		"stacks read probe": {
+			preset: app.CloudConnectionPresetStacks, wantStatus: app.CloudConnectionStatusVerified, wantProbes: 1,
+		},
+		"stacks denied": {
+			preset: app.CloudConnectionPresetStacks, denyStacks: true, wantStatus: app.CloudConnectionStatusError, wantProbes: 1,
+			wantMessage: "The role lacks CloudFormation read access required to manage install stacks.",
+		},
+		"invalid identity token": {
+			preset: app.CloudConnectionPresetStacks, assumeError: "InvalidIdentityToken", wantStatus: app.CloudConnectionStatusError,
+			wantMessage: "AWS could not validate Nuon's identity token. Create the OIDC provider for this issuer first (step 1).",
+		},
+		"role not trusted": {
+			preset: app.CloudConnectionPresetStacks, assumeError: "AccessDenied", wantStatus: app.CloudConnectionStatusError,
+			wantMessage: "Nuon OIDC identity is not trusted by this role.",
+		},
+		"custom ignores stack permissions": {
+			preset: app.CloudConnectionPresetCustom, denyStacks: true, wantStatus: app.CloudConnectionStatusVerified,
+		},
+		"cron identity only": {
+			preset: app.CloudConnectionPresetStacks, identityOnly: true, denyStacks: true, wantStatus: app.CloudConnectionStatusVerified,
+		},
+		"foreign subject accepted": {
+			preset: app.CloudConnectionPresetCustom, allowForeign: true, wantStatus: app.CloudConnectionStatusError,
+		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			probes, exchanges := 0, 0
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				_ = r.ParseForm()
@@ -54,6 +75,11 @@ func TestAWSVerification(t *testing.T) {
 				switch r.Form.Get("Action") {
 				case "AssumeRoleWithWebIdentity":
 					exchanges++
+					if tc.assumeError != "" {
+						w.WriteHeader(http.StatusBadRequest)
+						fmt.Fprintf(w, `<ErrorResponse><Error><Code>%s</Code><Message>Raw AWS diagnostic</Message></Error></ErrorResponse>`, tc.assumeError)
+						return
+					}
 					parts := strings.Split(r.Form.Get("WebIdentityToken"), ".")
 					if len(parts) != 3 {
 						t.Error("expected signed OIDC token")
@@ -88,8 +114,43 @@ func TestAWSVerification(t *testing.T) {
 			result, err := NewAWSVerifier(issuer).Verify(context.Background(), connection, VerifyOptions{IdentityOnly: tc.identityOnly})
 			require.NoError(t, err)
 			require.Equal(t, tc.wantStatus, result.Status)
-			require.Equal(t, 2, exchanges)
+			if tc.wantMessage != "" {
+				require.Equal(t, tc.wantMessage, result.Message)
+			}
+			if tc.assumeError != "" {
+				require.Equal(t, 1, exchanges)
+			} else {
+				require.Equal(t, 2, exchanges)
+			}
 			require.Equal(t, tc.wantProbes, probes)
+		})
+	}
+}
+
+func TestVerificationErrorMessage(t *testing.T) {
+	for name, tc := range map[string]struct {
+		err  error
+		want string
+	}{
+		"AWS error": {
+			err:  fmt.Errorf("probe: %w", &smithy.GenericAPIError{Code: "Throttling", Message: "Raw AWS diagnostic"}),
+			want: "Verification failed: Throttling",
+		},
+		"timeout": {
+			err:  fmt.Errorf("probe: %w", context.DeadlineExceeded),
+			want: "Verification failed: request timed out",
+		},
+		"canceled": {
+			err:  context.Canceled,
+			want: "Verification failed: request canceled",
+		},
+		"unexpected error": {
+			err:  fmt.Errorf("a long internal diagnostic"),
+			want: "Verification failed: unable to complete the AWS verification request",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			require.Equal(t, tc.want, VerificationErrorMessage(tc.err))
 		})
 	}
 }

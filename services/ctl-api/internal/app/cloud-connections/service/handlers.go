@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
@@ -263,7 +264,8 @@ func (s *service) verify(ctx context.Context, orgID, connectionID string, option
 	}
 	result, err := s.verifier.Verify(ctx, connection, options)
 	if err != nil {
-		return nil, fmt.Errorf("verify cloud connection: %w", err)
+		s.l.Warn("cloud connection verification failed", zap.String("connection_id", connection.ID), zap.Error(err))
+		result = verificationFailure(VerificationErrorMessage(err))
 	}
 	now := time.Now().UTC()
 	update := app.CloudConnection{Status: result.Status, StatusMessage: result.Message, LastVerifiedAt: &now}
