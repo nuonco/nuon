@@ -1,2 +1,3 @@
-export * from './CloudConnectionsTable'
-export * from './CreateCloudConnection'
+export * from './ConnectionsList'
+export * from './ConnectionDetail'
+export * from './ConnectionWizard'

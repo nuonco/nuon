@@ -25,6 +25,7 @@ const LIMIT = 20
 export const InstallsTableContainer = ({
   appId,
   branchId,
+  cloudConnectionId,
   emptyStateAction,
   emptyTitle,
   emptyMessage,
@@ -33,6 +34,7 @@ export const InstallsTableContainer = ({
 }: {
   appId?: string
   branchId?: string
+  cloudConnectionId?: string
   emptyStateAction?: ReactNode
   emptyTitle?: string
   emptyMessage?: string
@@ -57,6 +59,7 @@ export const InstallsTableContainer = ({
       org.id,
       appId,
       branchId,
+      cloudConnectionId,
       offset,
       q,
       searchParams.get('labels'),
@@ -74,6 +77,7 @@ export const InstallsTableContainer = ({
           })
         : getInstalls({
             orgId: org.id,
+            cloud_connection_id: cloudConnectionId,
             offset,
             limit: LIMIT,
             q,

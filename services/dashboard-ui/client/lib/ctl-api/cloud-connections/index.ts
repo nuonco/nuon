@@ -1,18 +1,15 @@
-import { api } from '@/lib/api'
-import type { TCloudConnection } from '@/types'
+import { api } from '@/lib'
+import type {
+  TCloudConnection,
+  TCloudConnectionSetup,
+  TCreateCloudConnectionRequest,
+} from '@/types'
 
 export const createCloudConnection = ({
   body,
   orgId,
 }: {
-  body: {
-    name: string
-    platform: 'aws'
-    target_id: string
-    principal: string
-    default_region?: string
-    preset: 'stacks' | 'custom'
-  }
+  body: TCreateCloudConnectionRequest
   orgId: string
 }) =>
   api<TCloudConnection>({
@@ -24,6 +21,18 @@ export const createCloudConnection = ({
 
 export const getCloudConnections = ({ orgId }: { orgId: string }) =>
   api<TCloudConnection[]>({ orgId, path: 'cloud-connections' })
+
+export const getCloudConnectionSetup = ({
+  connectionId,
+  orgId,
+}: {
+  connectionId: string
+  orgId: string
+}) =>
+  api<TCloudConnectionSetup>({
+    orgId,
+    path: `cloud-connections/${connectionId}/setup`,
+  })
 
 export const getCloudConnection = ({
   connectionId,
@@ -45,7 +54,7 @@ export const verifyCloudConnection = ({
   orgId: string
 }) =>
   api<TCloudConnection>({
-    abortTimeout: 30000,
+    abortTimeout: 45000,
     method: 'POST',
     orgId,
     path: `cloud-connections/${connectionId}/verify`,

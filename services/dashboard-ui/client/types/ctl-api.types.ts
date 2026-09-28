@@ -834,6 +834,12 @@ export type TCloudConnection = {
   }
 }
 
+export type TCloudConnectionSetup = TCloudConnection['setup']
+export type TCreateCloudConnectionRequest = Pick<
+  TCloudConnection,
+  'name' | 'platform' | 'target_id' | 'principal' | 'preset'
+>
+
 export type TVCSWebhookSubscription = {
   id: string
   created_at: string
