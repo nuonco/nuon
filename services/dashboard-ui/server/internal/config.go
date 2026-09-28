@@ -63,7 +63,6 @@ type Config struct {
 	BYOCName               string `config:"nuon_byoc_name"`
 	BYOCIconText           string `config:"nuon_byoc_icon_text"`
 	BYOCColor              string `config:"nuon_byoc_color"`
-	OnboardingV2           bool   `config:"nuon_onboarding_v2"`
 	DashboardLite          bool   `config:"nuon_dashboard_lite"`
 	StatusBarAutoEnabled   bool   `config:"status_bar_auto_enabled"`
 	InstallsTabAutoEnabled bool   `config:"installs_tab_auto_enabled"`
