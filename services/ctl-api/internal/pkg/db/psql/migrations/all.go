@@ -241,12 +241,8 @@ func (m *Migrations) All() []migrations.Migration {
 			Fn:   m.Migration141BackfillInstallAppBranchGroupAssignmentSource,
 		},
 		{
-			Name: "137-drop-aws-account-connections",
-			Fn:   m.Migration137DropAWSAccountConnections,
-		},
-		{
-			Name: "138-cloud-connection-requested-capabilities",
-			Fn:   m.Migration138CloudConnectionRequestedCapabilities,
+			Name: "142-cloud-connections",
+			Fn:   m.Migration142CloudConnections,
 		},
 	}
 }
