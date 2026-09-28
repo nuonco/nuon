@@ -187,7 +187,7 @@ export function Onboarding() {
     <OnboardingWizard
       steps={steps}
       initialSharedData={initialSharedData}
-      initialStepIndex={initialStepIndex}
+      initialStepIndex={initialStepIndex ?? 0}
       onComplete={() => {
         window.location.href = '/'
       }}

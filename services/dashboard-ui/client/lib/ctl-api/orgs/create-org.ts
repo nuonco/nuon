@@ -1,5 +1,5 @@
 import { api } from '@/lib/api'
-import type { TOrg } from '@/types'
+import type { TAPIError, TOrg } from '@/types'
 
 export type TCreateOrgBody = {
   name: string
@@ -13,3 +13,32 @@ export const createOrg = ({ body }: { body: TCreateOrgBody }) =>
     method: 'POST',
     path: `orgs`,
   })
+
+const TRIAL_ORG_ATTEMPTS = 5
+
+export const fetchRandomName = async (): Promise<string> => {
+  const res = await fetch('/api/random-name', { credentials: 'include' })
+  if (!res.ok) throw new Error(`random-name returned ${res.status}`)
+  const data = (await res.json()) as { name: string }
+  return data.name
+}
+
+// Org names are unique, so a generated name can collide. Each 409 draws a new
+// name; any other error is the caller's to handle.
+export async function createTrialOrg({
+  attempts = TRIAL_ORG_ATTEMPTS,
+}: { attempts?: number } = {}): Promise<TOrg> {
+  let lastError: unknown
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const name = await fetchRandomName()
+    try {
+      return await createOrg({
+        body: { name, use_sandbox_mode: false, tags: ['Trial'] },
+      })
+    } catch (error) {
+      if ((error as TAPIError)?.status !== 409) throw error
+      lastError = error
+    }
+  }
+  throw lastError
+}
