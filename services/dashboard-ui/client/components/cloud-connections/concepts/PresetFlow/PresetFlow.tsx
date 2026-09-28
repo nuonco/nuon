@@ -13,7 +13,6 @@ import { Tooltip } from '@/components/common/Tooltip'
 import { ToggleButton } from '@/components/common/ToggleButton'
 import { Input } from '@/components/common/form/Input'
 import { Select } from '@/components/common/form/Select'
-import { Textarea } from '@/components/common/form/Textarea'
 import { PageSection } from '@/components/layout/PageSection'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { cn } from '@/utils/classnames'
@@ -43,8 +42,6 @@ interface IPresetFlow {
   initialFormat?: TFormat
   verification?: TVerification
   showTrustPolicy?: boolean
-  initialTrustPolicy?: string
-  startTrustEditing?: boolean
 }
 
 const FLOW_STEPS = [
@@ -179,84 +176,24 @@ const CloudAndAccount = () => (
   </div>
 )
 
-const hasRequiredTrustConditions = (policy: string) => {
-  try {
-    const parsed = JSON.parse(policy)
-    const statements = Array.isArray(parsed.Statement)
-      ? parsed.Statement
-      : [parsed.Statement]
-    return statements.some((statement: any) => {
-      const conditions = statement?.Condition?.StringEquals
-      return (
-        conditions?.['api.nuon.co:aud'] === 'sts.amazonaws.com' &&
-        conditions?.['api.nuon.co:sub'] ===
-          'org:org_01JEXAMPLE:connection:cc_01JEXAMPLE'
-      )
-    })
-  } catch {
-    return false
-  }
-}
-
-const TrustPolicyEditor = ({
-  trustPolicy,
-  setTrustPolicy,
-  initiallyEditing = false,
-}: {
-  trustPolicy: string
-  setTrustPolicy: (policy: string) => void
-  initiallyEditing?: boolean
-}) => {
-  const [isEditing, setIsEditing] = useState(initiallyEditing)
-  const isValidForConnection = hasRequiredTrustConditions(trustPolicy)
-  return (
-    <div className="flex min-w-0 flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
-        <Text weight="strong">Trust policy</Text>
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={() => setIsEditing((current) => !current)}
-        >
-          {isEditing ? 'Finish editing' : 'Edit'}
-        </Button>
-      </div>
-      <Text variant="subtext" theme="neutral">
-        Start with the rendered policy. The audience and subject conditions must
-        stay unchanged for verification to pass.
-      </Text>
-      {isEditing ? (
-        <>
-          <Textarea
-            id="preset-flow-trust-policy"
-            labelProps={{ labelText: 'Editable trust policy' }}
-            value={trustPolicy}
-            onChange={(event) => setTrustPolicy(event.currentTarget.value)}
-            rows={16}
-            className="font-mono text-xs"
-          />
-          {!isValidForConnection && (
-            <Banner theme="warn">
-              Restore the rendered audience and subject conditions before
-              verifying this connection.
-            </Banner>
-          )}
-          <Button
-            className="w-fit"
-            variant="secondary"
-            onClick={() => setTrustPolicy(TRUST_POLICY)}
-          >
-            Reset to rendered
-          </Button>
-        </>
-      ) : (
-        <CodeBlock language="json" showCopy>
-          {trustPolicy}
-        </CodeBlock>
-      )}
+const TrustPolicy = ({ awsTrustURL }: { awsTrustURL: string }) => (
+  <div className="flex min-w-0 flex-col gap-3">
+    <div className="flex items-center justify-between gap-3">
+      <Text weight="strong">Trust policy</Text>
+      <Link href={awsTrustURL} isExternal>
+        Open in AWS console
+      </Link>
     </div>
-  )
-}
+    <Text variant="subtext" theme="neutral">
+      Copy this policy as-is. To customize the role beyond it, edit it in the
+      IAM console after creating it — the audience and subject conditions must
+      stay unchanged for verification to pass.
+    </Text>
+    <CodeBlock language="json" showCopy>
+      {TRUST_POLICY}
+    </CodeBlock>
+  </div>
+)
 
 const ActionList = () => (
   <Expand
@@ -300,16 +237,12 @@ const AccessPreset = ({
   access,
   setAccess,
   showTrustPolicy,
-  trustPolicy,
-  setTrustPolicy,
-  startTrustEditing,
+  awsTrustURL,
 }: {
   access?: TAccess
   setAccess: (access: TAccess) => void
   showTrustPolicy: boolean
-  trustPolicy: string
-  setTrustPolicy: (policy: string) => void
-  startTrustEditing: boolean
+  awsTrustURL: string
 }) => (
   <div className="flex flex-col gap-6">
     <SectionHeader
@@ -387,11 +320,7 @@ const AccessPreset = ({
         </Button>
         {(access === 'custom' || showTrustPolicy) && (
           <div className="border-t pt-4">
-            <TrustPolicyEditor
-              trustPolicy={trustPolicy}
-              setTrustPolicy={setTrustPolicy}
-              initiallyEditing={startTrustEditing}
-            />
+            <TrustPolicy awsTrustURL={awsTrustURL} />
           </div>
         )}
       </Card>
@@ -404,14 +333,12 @@ const RunbookStep = ({
   title,
   description,
   status,
-  action,
   children,
 }: {
   number: number
   title: string
   description: string
   status: 'ready' | 'done' | 'failed'
-  action?: React.ReactNode
   children: React.ReactNode
 }) => (
   <Card className="!gap-0 !p-0 overflow-hidden">
@@ -431,7 +358,6 @@ const RunbookStep = ({
           {description}
         </Text>
       </div>
-      {action}
       <Badge
         theme={
           status === 'failed'
@@ -457,23 +383,17 @@ const RunInCloud = ({
   format,
   setFormat,
   failure,
-  trustPolicy,
-  setTrustPolicy,
   roleArn,
   setRoleArn,
   awsTrustURL,
-  startTrustEditing,
 }: {
   access: TAccess
   format: TFormat
   setFormat: (format: TFormat) => void
   failure?: 'trust' | 'permissions'
-  trustPolicy: string
-  setTrustPolicy: (policy: string) => void
   roleArn: string
   setRoleArn: (arn: string) => void
   awsTrustURL: string
-  startTrustEditing: boolean
 }) => {
   const language =
     format === 'terraform'
@@ -553,13 +473,6 @@ const RunInCloud = ({
               title={setupStep.title}
               description={setupStep.description}
               status={isFailed ? 'failed' : 'ready'}
-              action={
-                setupStep.part === 'role' ? (
-                  <Link href={awsTrustURL} isExternal>
-                    Open in AWS console
-                  </Link>
-                ) : undefined
-              }
             >
               <Text variant="subtext" weight="strong">
                 {format === 'terraform'
@@ -569,14 +482,10 @@ const RunInCloud = ({
                     : 'AWS CLI command'}
               </Text>
               <CodeBlock language={language} showCopy>
-                {setupSnippet(format, setupStep.part, trustPolicy)}
+                {setupSnippet(format, setupStep.part)}
               </CodeBlock>
               {setupStep.part === 'role' && (
-                <TrustPolicyEditor
-                  trustPolicy={trustPolicy}
-                  setTrustPolicy={setTrustPolicy}
-                  initiallyEditing={startTrustEditing}
-                />
+                <TrustPolicy awsTrustURL={awsTrustURL} />
               )}
               {setupStep.part === 'permissions' && (
                 <div className="flex min-w-0 flex-col gap-2">
@@ -774,13 +683,10 @@ export const PresetFlow = ({
   initialFormat = 'cli',
   verification = 'idle',
   showTrustPolicy = false,
-  initialTrustPolicy = TRUST_POLICY,
-  startTrustEditing = false,
 }: IPresetFlow) => {
   const [step, setStep] = useState(initialStep)
   const [access, setAccess] = useState<TAccess | undefined>(initialAccess)
   const [format, setFormat] = useState<TFormat>(initialFormat)
-  const [trustPolicy, setTrustPolicy] = useState(initialTrustPolicy)
   const [roleArn, setRoleArn] = useState(ROLE_ARN)
   const selectedAccess = access ?? 'preset'
   const roleName = roleArn.match(/role\/(.+)$/)?.[1] || 'nuon-cloud-connection'
@@ -803,9 +709,7 @@ export const PresetFlow = ({
               access={access}
               setAccess={setAccess}
               showTrustPolicy={showTrustPolicy}
-              trustPolicy={trustPolicy}
-              setTrustPolicy={setTrustPolicy}
-              startTrustEditing={startTrustEditing}
+              awsTrustURL={awsTrustURL}
             />
           )}
           {step === 3 && (
@@ -813,12 +717,9 @@ export const PresetFlow = ({
               access={selectedAccess}
               format={format}
               setFormat={setFormat}
-              trustPolicy={trustPolicy}
-              setTrustPolicy={setTrustPolicy}
               roleArn={roleArn}
               setRoleArn={setRoleArn}
               awsTrustURL={awsTrustURL}
-              startTrustEditing={startTrustEditing}
               failure={
                 verification === 'failed-trust'
                   ? 'trust'

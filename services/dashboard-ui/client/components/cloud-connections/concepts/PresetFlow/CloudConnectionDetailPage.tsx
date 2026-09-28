@@ -167,17 +167,7 @@ const OverviewTab = ({
   connection: TCloudConnectionOverview
 }) => (
   <div className="flex flex-col gap-6">
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-      <LabeledValue label="AWS account">
-        <Text family="mono" variant="subtext">
-          {connection.targetId}
-        </Text>
-      </LabeledValue>
-      <LabeledValue label="Region">
-        <Text family="mono" variant="subtext">
-          {connection.region}
-        </Text>
-      </LabeledValue>
+    <div className="grid grid-cols-2 gap-4">
       <LabeledValue label="Created">
         <Time
           time={connection.createdAt}
@@ -242,13 +232,11 @@ const VerificationTab = ({
   displayStatus,
   isVerifying,
   reverified,
-  onReverify,
 }: {
   connection: TCloudConnectionOverview
   displayStatus: TCloudConnectionOverview['status']
   isVerifying: boolean
   reverified: boolean
-  onReverify: () => void
 }) => {
   const verificationResult = isVerifying
     ? 'Checking the OIDC exchange and account access.'
@@ -258,6 +246,26 @@ const VerificationTab = ({
         : 'OIDC exchange and the read-only CloudFormation probe passed.'
       : connection.statusMessage || 'Verification has not run yet.'
   const failedAtTrust = connection.statusMessage?.includes('AssumeRole')
+  const verificationHistory =
+    connection.status === 'error' && !reverified
+      ? [
+          {
+            time: connection.lastVerifiedAt || '2026-09-28T05:10:00Z',
+            result: 'Error',
+            message: connection.statusMessage || 'Verification failed.',
+          },
+          {
+            time: '2026-09-27T18:42:00Z',
+            result: 'Verified',
+            message: 'OIDC exchange and read-only CloudFormation probe passed.',
+          },
+          {
+            time: '2026-09-26T10:15:00Z',
+            result: 'Verified',
+            message: 'OIDC exchange and read-only CloudFormation probe passed.',
+          },
+        ]
+      : VERIFICATION_HISTORY
 
   return (
     <div className="flex flex-col gap-6">
@@ -294,21 +302,12 @@ const VerificationTab = ({
           </div>
         </Banner>
       )}
-      <Button
-        className="w-fit"
-        variant="secondary"
-        disabled={isVerifying}
-        onClick={onReverify}
-      >
-        {isVerifying && <Loading size={14} />}
-        {isVerifying ? 'Re-verifying' : 'Re-verify'}
-      </Button>
       <div className="flex flex-col gap-3">
         <Text variant="base" weight="strong">
           Verification history
         </Text>
         <PropertyGrid
-          values={VERIFICATION_HISTORY}
+          values={verificationHistory}
           columns={HISTORY_COLUMNS}
           gridTemplate="max-content max-content minmax(0,1fr)"
           align="start"
@@ -450,7 +449,6 @@ export const CloudConnectionDetailPage = ({
           displayStatus={displayStatus}
           isVerifying={isVerifying}
           reverified={reverified}
-          onReverify={reverify}
         />
       )}
     </DetailPage>

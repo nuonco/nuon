@@ -114,13 +114,12 @@ const snippets: Record<
 
 export const setupSnippet = (
   format: TFormat,
-  part: keyof (typeof snippets)[TFormat],
-  trustPolicy = TRUST_POLICY
+  part: keyof (typeof snippets)[TFormat]
 ) => {
   if (part !== 'role') return snippets[format][part]
   if (format === 'cli')
     return `cat > nuon-trust.json <<'POLICY'
-${trustPolicy}
+${TRUST_POLICY}
 POLICY
 
 aws iam create-role \\
@@ -130,12 +129,12 @@ aws iam create-role \\
     return `resource "aws_iam_role" "nuon_connection" {
   name = "nuon-cloud-connection"
   assume_role_policy = <<POLICY
-${trustPolicy}
+${TRUST_POLICY}
 POLICY
 }`
   return `NuonConnectionRole:
   Type: AWS::IAM::Role
   Properties:
     RoleName: nuon-cloud-connection
-    AssumeRolePolicyDocument: ${trustPolicy.replaceAll('\n', '\n      ')}`
+    AssumeRolePolicyDocument: ${TRUST_POLICY.replaceAll('\n', '\n      ')}`
 }

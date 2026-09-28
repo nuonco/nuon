@@ -5,7 +5,6 @@ import { BreadcrumbContext } from '@/providers/breadcrumb-provider'
 import { NotificationContext } from '@/providers/notification-provider'
 import { SidebarContext } from '@/providers/sidebar-provider'
 import { PresetFlow } from './PresetFlow'
-import { TRUST_POLICY } from './mockData'
 import { CloudConnectionDetailPage } from './CloudConnectionDetailPage'
 import { CloudConnectionsOverview } from './CloudConnectionsOverview'
 import { CLOUD_CONNECTIONS } from './overviewMockData'
@@ -126,18 +125,6 @@ export const PresetSelected = () => (
 export const CustomSelected = () => (
   <PresetFlow initialStep={2} initialAccess="custom" showTrustPolicy />
 )
-export const TrustPolicyEditing = () => (
-  <PresetFlow
-    initialStep={2}
-    initialAccess="custom"
-    showTrustPolicy
-    startTrustEditing
-    initialTrustPolicy={TRUST_POLICY.replace(
-      '"sts.amazonaws.com"',
-      '"example.invalid"'
-    )}
-  />
-)
 export const RunInCloudTerraform = () => (
   <PresetFlow
     initialStep={3}
@@ -193,7 +180,6 @@ OverviewLoading.meta = { fullBleed: true }
 AccessPreset.meta = { fullBleed: true }
 PresetSelected.meta = { fullBleed: true }
 CustomSelected.meta = { fullBleed: true }
-TrustPolicyEditing.meta = { fullBleed: true }
 RunInCloudTerraform.meta = { fullBleed: true }
 RunInCloudAWSCLI.meta = { fullBleed: true }
 RunInCloudCloudFormation.meta = { fullBleed: true }
