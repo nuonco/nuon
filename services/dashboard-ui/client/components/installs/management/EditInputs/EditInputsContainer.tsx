@@ -8,6 +8,7 @@ import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { Toast } from '@/components/surfaces/Toast'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
@@ -38,6 +39,7 @@ export const EditInputsFormModalContainer = ({
   const navigate = useNavigate()
   const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
@@ -99,8 +101,8 @@ export const EditInputsFormModalContainer = ({
       const workflowId = result?.data?.workflow_id
       navigate(
         workflowId
-          ? `/${org.id}/installs/${install.id}/workflows/${workflowId}`
-          : `/${org.id}/installs/${install.id}/workflows`
+          ? installLink({ installId: install.id, appId: install.app_id, suffix: `/workflows/${workflowId}` })
+          : installLink({ installId: install.id, appId: install.app_id, suffix: `/workflows` })
       )
     },
   })

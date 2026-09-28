@@ -4,6 +4,7 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { Timeline, type ITimeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
+import { useInstallNested } from '@/hooks/use-install-path'
 import type { TRunnerJob } from '@/types'
 import {
   getJobExecutionStatus,
@@ -31,6 +32,8 @@ export const RunnerRecentActivity = ({
   jobDetailBasePath,
   ...props
 }: IRunnerRecentActivity) => {
+  const nestedInstalls = useInstallNested()
+
   if (isLoading) {
     return (
       <>
@@ -50,7 +53,7 @@ export const RunnerRecentActivity = ({
         param: RECENT_ACTIVITY_SEARCH_PARAM,
       }}
       renderEvent={(job) => {
-        const jobHref = getJobHref(job)
+        const jobHref = getJobHref(job, nestedInstalls)
         const resolvedHref =
           jobHref === '' && jobDetailBasePath
             ? `${jobDetailBasePath}/jobs/${job.id}`

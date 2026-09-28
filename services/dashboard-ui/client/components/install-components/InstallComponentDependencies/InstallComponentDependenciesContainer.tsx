@@ -1,6 +1,7 @@
 import { useLocation } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import { getComponents } from '@/lib'
 import { InstallComponentDependencies } from './InstallComponentDependencies'
@@ -19,6 +20,7 @@ export const InstallComponentDependenciesContainer = ({
   const { pathname } = useLocation()
   const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
 
   const { data: result, isLoading } = useQuery({
     placeholderData: keepPreviousData,
@@ -38,7 +40,7 @@ export const InstallComponentDependenciesContainer = ({
       variant={variant}
       components={result?.data ?? []}
       isLoading={isLoading}
-      basePath={`/${org.id}/installs/${install.id}/components`}
+      basePath={installLink({ installId: install.id, appId: install.app_id, suffix: `/components` })}
       pathname={pathname}
       tooltipTitle={tooltipTitle}
     />

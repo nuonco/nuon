@@ -3,6 +3,7 @@ import { Button } from '@/components/common/Button'
 import { Text } from '@/components/common/Text'
 import type { TDriftedObject } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 const DRIFTED_KIND = {
   install_deploy: 'component',
@@ -16,6 +17,7 @@ interface IDriftedBanner {
 }
 
 export const DriftedBanner = ({ drifted, orgId, installId }: IDriftedBanner) => {
+  const installLink = useInstallLink()
   return (
     <Banner theme="warn">
       <div className="flex items-center gap-8">
@@ -30,7 +32,7 @@ export const DriftedBanner = ({ drifted, orgId, installId }: IDriftedBanner) => 
         </div>
         <Button
           className="ml-auto"
-          href={`/${orgId}/installs/${installId}/workflows/${drifted?.install_workflow_id}`}
+          href={installLink({ orgId: orgId, installId: installId, suffix: `/workflows/${drifted?.install_workflow_id}` })}
           variant="primary"
         >
           View details

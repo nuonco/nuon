@@ -2,14 +2,12 @@ import { useOutletContext } from 'react-router'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { Text } from '@/components/common/Text'
 import { RunbookStep } from '@/components/runbooks/RunbookStep'
-import { useInstall } from '@/hooks/use-install'
-import { useOrg } from '@/hooks/use-org'
+import { useInstallPage } from '@/hooks/use-install-path'
 import type { TInstallRunbookOutletContext } from './types'
 
 export const RunbookStepsTab = () => {
   const { installRunbook } = useOutletContext<TInstallRunbookOutletContext>()
-  const { org } = useOrg()
-  const { install } = useInstall()
+  const { install, href } = useInstallPage()
 
   const latestConfig = installRunbook?.runbook?.configs?.[0]
   const steps =
@@ -34,7 +32,7 @@ export const RunbookStepsTab = () => {
               key={step.id ?? i}
               index={i}
               step={step}
-              actionBasePath={`/${org?.id}/installs/${install?.id}`}
+              actionBasePath={href()}
             />
           ))}
         </div>

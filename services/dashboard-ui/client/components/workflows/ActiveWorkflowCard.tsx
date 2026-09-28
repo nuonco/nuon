@@ -6,6 +6,7 @@ import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
+import { useInstallNested } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import { useWorkflowApprovals } from '@/hooks/use-workflow-approvals'
 import type { TInstall, TWorkflow } from '@/types'
@@ -34,8 +35,12 @@ export const ActiveWorkflowCard = ({
   compact?: boolean
 }) => {
   const { org } = useOrg()
+  const nested = useInstallNested()
   const { approvals } = useWorkflowApprovals()
-  const workflowHref = getWorkflowHref(org.id, workflow)
+  const workflowHref = getWorkflowHref(org.id, workflow, {
+    nested,
+    appId: install?.app_id,
+  })
   const isAppBranchWorkflow = workflow?.owner_type === 'app_branches'
   const ownerName = workflow.metadata?.owner_name
   const pendingWorkflowApprovals = getWorkflowPendingApprovals(

@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import {
   getInstallComponentHealthTimeline,
@@ -37,6 +38,7 @@ export const HealthTimelineContainer = ({
 }) => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
   const isComponentScope = !!installComponentId
 
   const { data: installTimeline, isLoading: isInstallLoading } = useQuery({
@@ -117,7 +119,7 @@ export const HealthTimelineContainer = ({
       groupByKind={groupByKind}
       componentBasePath={
         componentBasePath ??
-        `/${org?.id}/installs/${install?.id}/components`
+        installLink({ installId: install?.id, appId: install?.app_id, suffix: `/components` })
       }
       getComponentHref={getComponentHref}
       transitions={
@@ -128,7 +130,7 @@ export const HealthTimelineContainer = ({
       }
       deployBasePath={
         isComponentScope
-          ? `/${org?.id}/installs/${install?.id}/components/${installComponentId}/deploys`
+          ? installLink({ installId: install?.id, appId: install?.app_id, suffix: `/components/${installComponentId}/deploys` })
           : undefined
       }
       isLoading={isLoading}

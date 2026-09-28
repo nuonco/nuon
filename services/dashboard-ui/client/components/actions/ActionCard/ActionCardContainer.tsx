@@ -1,6 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { getInstallActionsLatestRuns } from '@/lib'
 import type { TActionConfigTriggerType } from '@/types'
@@ -15,6 +16,7 @@ interface IActionCardContainer {
 export const ActionCardContainer = ({ id, name }: IActionCardContainer) => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
   const { addModal } = useSurfaces()
 
   const { data: result, isLoading, error } = useQuery({
@@ -50,7 +52,7 @@ export const ActionCardContainer = ({ id, name }: IActionCardContainer) => {
   const triggers = actionWorkflow?.configs?.[0]?.triggers ?? []
   const canRun = triggers.some((t) => t.type === 'manual')
   const href = action?.action_workflow_id
-    ? `/${org.id}/installs/${install.id}/actions/${action.action_workflow_id}`
+    ? installLink({ installId: install.id, appId: install.app_id, suffix: `/actions/${action.action_workflow_id}` })
     : undefined
 
   return (

@@ -1,6 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import type { TAPIError } from '@/types'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { queryClient } from '@/lib/query-client'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { WorkerPoolContextProvider } from '@pierre/diffs/react'
 import { AuthLayout } from '@/components/layout/AuthLayout'
@@ -32,20 +32,6 @@ const BFFRedirect = () => {
   window.location.href = '/'
   return null
 }
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      refetchOnWindowFocus: 'always',
-      retry: (failureCount, error) => {
-        const status = (error as TAPIError)?.status
-        if (status && status >= 400 && status < 500) return false
-        return failureCount < 3
-      },
-    },
-  },
-})
 
 const router = createBrowserRouter([
   { index: true, element: <BFFRedirect /> },

@@ -20,6 +20,7 @@ import type {
   TTriggerEventRuleEvaluation,
   TTriggerEventWaiterMatch,
 } from '@/types'
+import { useInstallLink } from '@/hooks/use-install-path'
 import {
   decodeRawBody,
   displayEventValue,
@@ -230,13 +231,18 @@ const WaiterMatch = ({
   match: TTriggerEventWaiterMatch
   orgId: string
 }) => {
+  const installLink = useInstallLink()
   const workflowHref =
     match?.install_id && match?.workflow_id
-      ? `/${orgId}/installs/${match.install_id}/workflows/${match.workflow_id}${match?.workflow_step_id ? `?panel=${encodeURIComponent(match.workflow_step_id)}` : ''}`
+      ? installLink({
+          orgId,
+          installId: match.install_id,
+          suffix: `/workflows/${match.workflow_id}${match?.workflow_step_id ? `?panel=${encodeURIComponent(match.workflow_step_id)}` : ''}`,
+        })
       : undefined
   const runbookHref =
     match?.install_id && match?.runbook_id
-      ? `/${orgId}/installs/${match.install_id}/runbooks/${match.runbook_id}`
+      ? installLink({ orgId: orgId, installId: match.install_id, suffix: `/runbooks/${match.runbook_id}` })
       : undefined
   return (
     <Card className="!p-4 !gap-4">
@@ -342,6 +348,7 @@ export const EventDetails = ({
   rawRequest?: TTriggerEventRaw
   retryingDispatchId?: string
 }) => {
+  const installLink = useInstallLink()
   if (!event) {
     return (
       <div className="flex flex-col items-start gap-3">
@@ -586,7 +593,7 @@ export const EventDetails = ({
                 dispatch?.install_id &&
                 dispatch?.workflow_id ? (
                   <Link
-                    href={`/${orgId}/installs/${dispatch.install_id}/workflows/${dispatch.workflow_id}`}
+                    href={installLink({ orgId: orgId, installId: dispatch.install_id, suffix: `/workflows/${dispatch.workflow_id}` })}
                   >
                     {dispatch?.runbook_name || 'Runbook workflow'}
                   </Link>

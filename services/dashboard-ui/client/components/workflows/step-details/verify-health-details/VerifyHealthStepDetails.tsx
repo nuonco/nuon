@@ -8,6 +8,7 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type { TWorkflowStep } from '@/types'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 export type TVerifyHealthCheck = {
   kind?: string
@@ -106,6 +107,7 @@ export const VerifyHealthStepDetails = ({
   orgId,
   componentId,
 }: IVerifyHealthStepDetails) => {
+  const installLink = useInstallLink()
   const checks = latestChecks(step)
   const narrations = narrationHistory(step)
   const finished = !!step?.finished
@@ -118,7 +120,7 @@ export const VerifyHealthStepDetails = ({
             Health checks
           </Text>
           {orgId && componentId ? (
-            <Link href={`/${orgId}/installs/${step?.owner_id}/components/${componentId}`}>
+            <Link href={installLink({ orgId: orgId, installId: step?.owner_id, suffix: `/components/${componentId}` })}>
               View component
             </Link>
           ) : null}

@@ -10,6 +10,7 @@ import {
 } from '@/components/workflows/WorkflowSteps'
 import { WorkflowProvider } from '@/providers/workflow-provider'
 import { useWorkflow } from '@/hooks/use-workflow'
+import { useInstallNested } from '@/hooks/use-install-path'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { humanize } from '@/utils/string-utils'
@@ -29,8 +30,16 @@ const WorkflowDetailContent = () => {
   const { org } = useOrg()
   const { install } = useInstall()
   const { workflow } = useWorkflow()
+  const nested = useInstallNested()
 
   const workflowName = workflow?.name || humanize(workflow?.type) || 'Workflow'
+  const installRoot = `/${org?.id}/installs/${install?.id}`
+  const section = nested
+    ? { path: `${installRoot}/deployments`, text: 'Deployments' }
+    : { path: `${installRoot}/workflows`, text: 'Workflows' }
+  const page = nested
+    ? `${installRoot}/deployments/${workflowId}`
+    : `${installRoot}/workflows/${workflowId}`
 
   return (
     <>
@@ -39,15 +48,9 @@ const WorkflowDetailContent = () => {
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
           { path: `/${org?.id}/installs`, text: 'Installs' },
-          { path: `/${org?.id}/installs/${install?.id}`, text: install?.name },
-          {
-            path: `/${org?.id}/installs/${install?.id}/workflows`,
-            text: 'Workflows',
-          },
-          {
-            path: `/${org?.id}/installs/${install?.id}/workflows/${workflowId}`,
-            text: workflowName,
-          },
+          { path: installRoot, text: install?.name },
+          section,
+          { path: page, text: workflowName },
         ]}
       />
 
