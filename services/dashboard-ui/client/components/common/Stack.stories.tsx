@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Stack',
+  title: 'UI / Stack',
 }
 
 import { Stack } from './Stack'

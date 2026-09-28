@@ -2,7 +2,7 @@ import { TabNav } from './TabNav'
 import { appTabs } from './nav'
 
 export default {
-  title: 'Playground/Lite/TabNav',
+  title: 'Playground / Lite / Tab nav',
 }
 
 export const Default = () => <TabNav tabs={appTabs('app-01', 'br-main')} />

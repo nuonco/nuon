@@ -1,5 +1,5 @@
 export default {
-  title: 'Runners/RunnerJobHeader',
+  title: 'Features / Runners / Job details / Job header',
 }
 
 import { RunnerJobHeader } from './RunnerJobHeader'

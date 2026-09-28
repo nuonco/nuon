@@ -1,5 +1,5 @@
 export default {
-  title: 'Deploys/TerraformRenderedVariables',
+  title: 'Features / Deploys / Terraform rendered variables',
 }
 
 import { TerraformRenderedVariables } from './TerraformRenderedVariables'

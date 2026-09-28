@@ -1,5 +1,5 @@
 export default {
-  title: 'Sandbox/DriftScanSandbox',
+  title: 'Features / Sandbox / Management / Drift scan sandbox',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

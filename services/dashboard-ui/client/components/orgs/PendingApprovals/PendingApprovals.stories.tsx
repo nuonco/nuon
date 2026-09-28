@@ -1,5 +1,5 @@
 export default {
-  title: 'Orgs/PendingApprovals',
+  title: 'Features / Orgs / Pending approvals',
 }
 
 import { PendingApprovals } from './PendingApprovals'

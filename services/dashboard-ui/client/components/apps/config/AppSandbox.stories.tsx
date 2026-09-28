@@ -1,5 +1,5 @@
 export default {
-  title: 'Apps/Config/AppSandbox',
+  title: 'Features / Apps / Config / Sandbox',
 }
 
 import { AppSandbox } from './AppSandbox'

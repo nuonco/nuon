@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/WorkflowDetails',
+  title: 'Features / Workflows / Workflow details',
 }
 
 import type { ReactNode } from 'react'

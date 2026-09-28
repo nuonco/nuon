@@ -2,7 +2,7 @@ import { ModalStory } from '@/components/__stories__/helpers'
 import type { TAPIError } from '@/types'
 import { OrgTelemetryModal } from './OrgTelemetry'
 
-export default { title: 'Orgs/OrgTelemetry' }
+export default { title: 'Features / Orgs / Telemetry' }
 
 const Example = ({
   enabled = false,

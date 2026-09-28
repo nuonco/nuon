@@ -1,5 +1,5 @@
 export default {
-  title: 'Runbooks/RunbookStep',
+  title: 'Features / Runbooks / Runbook step',
 }
 
 import { RunbookStep } from './RunbookStep'

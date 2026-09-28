@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/KeyValueList',
+  title: 'UI / Key value list',
 }
 
 import { Button } from './Button'

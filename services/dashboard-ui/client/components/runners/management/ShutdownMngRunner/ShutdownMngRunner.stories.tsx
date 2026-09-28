@@ -1,5 +1,5 @@
 export default {
-  title: 'Runners/ShutdownMngRunner',
+  title: 'Features / Runners / Management / Shutdown mng runner',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

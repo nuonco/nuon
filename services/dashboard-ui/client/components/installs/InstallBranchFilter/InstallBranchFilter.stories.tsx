@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/InstallBranchFilter',
+  title: 'Features / Installs / Branch filter',
 }
 
 import { InstallBranchFilter } from './InstallBranchFilter'

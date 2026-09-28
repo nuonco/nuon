@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { SearchInput } from './SearchInput'
 
-export default { title: 'Common/SearchInput' }
+export default { title: 'UI / Search input' }
 
 export const Empty = () => {
   const [value, setValue] = useState('')

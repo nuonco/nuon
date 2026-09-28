@@ -2,7 +2,7 @@ import { ModalStory } from '@/components/__stories__/helpers'
 import type { TSlackChannelSubscription } from '@/types'
 import { ChannelSubscriptionFormModal } from './ChannelSubscriptionForm'
 
-export default { title: 'Slack/ChannelSubscriptionForm' }
+export default { title: 'Features / Slack / Channel subscription form' }
 
 const installations = [
   {

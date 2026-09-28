@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const STORY = "/?story=installs--runadhocaction--default&mode=preview";
+const STORY = "/?story=features--installs--management--run-adhoc-action--default&mode=preview";
 const COMMAND_PLACEHOLDER = "echo 'Hello, world!'";
 
 test.describe("RunAdhocAction form behavior", () => {

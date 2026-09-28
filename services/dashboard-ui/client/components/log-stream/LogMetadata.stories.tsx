@@ -1,5 +1,5 @@
 export default {
-  title: 'LogStream/LogMetadata',
+  title: 'Features / Logs / Log metadata',
 }
 
 import { LogMetadata } from './LogMetadata'

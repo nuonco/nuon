@@ -1,5 +1,5 @@
 export default {
-  title: 'Components/ComponentType',
+  title: 'Features / Components / Type',
 }
 
 import { ComponentType } from './ComponentType'

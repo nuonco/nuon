@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/LabeledValue',
+  title: 'UI / Labeled value',
 }
 
 import { LabeledValue } from './LabeledValue'

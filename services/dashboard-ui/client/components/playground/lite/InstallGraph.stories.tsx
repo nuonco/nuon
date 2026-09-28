@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { InstallGraph, type IGraphNode } from './InstallGraph'
 
 export default {
-  title: 'Playground/Lite/InstallGraph',
+  title: 'Playground / Lite / Install graph',
 }
 
 export const Default = () => {

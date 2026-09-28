@@ -1,5 +1,5 @@
 export default {
-  title: 'Terraform/TerraformBackendConfig',
+  title: 'Features / Terraform / Workspace / Backend config',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

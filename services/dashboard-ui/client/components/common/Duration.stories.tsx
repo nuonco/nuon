@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Duration',
+  title: 'UI / Duration',
 }
 
 import { Duration } from './Duration'

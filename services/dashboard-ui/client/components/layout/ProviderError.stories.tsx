@@ -1,5 +1,5 @@
 export default {
-  title: 'Layout/ProviderError',
+  title: 'UI / Layout / Provider error',
 }
 
 import { ProviderError } from './ProviderError'

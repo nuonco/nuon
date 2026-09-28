@@ -1,5 +1,5 @@
 export default {
-  title: 'LogStream/LogPanel',
+  title: 'Features / Logs / Log panel',
 }
 
 import { PanelStory } from '@/components/__stories__/helpers'

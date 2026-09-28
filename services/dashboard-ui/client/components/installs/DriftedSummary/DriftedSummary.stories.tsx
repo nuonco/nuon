@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/DriftedSummary',
+  title: 'Features / Installs / Drifted summary',
 }
 
 import { DriftedSummary } from './DriftedSummary'

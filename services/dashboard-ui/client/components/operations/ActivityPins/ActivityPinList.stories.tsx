@@ -1,5 +1,5 @@
 export default {
-  title: 'Operations/ActivityPinList',
+  title: 'Features / Operations / Activity pins / Activity pin list',
 }
 
 import { SearchInput } from '@/components/common/SearchInput'

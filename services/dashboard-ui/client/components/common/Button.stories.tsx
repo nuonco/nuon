@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Button',
+  title: 'UI / Button',
 }
 
 import { useState } from 'react'

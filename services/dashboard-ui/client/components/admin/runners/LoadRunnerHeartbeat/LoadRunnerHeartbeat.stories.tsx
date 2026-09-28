@@ -1,5 +1,5 @@
 export default {
-  title: 'Admin/LoadRunnerHeartbeat',
+  title: 'Features / Admin / Runners / Load runner heartbeat',
 }
 
 import { LoadRunnerHeartbeat } from './LoadRunnerHeartbeat'

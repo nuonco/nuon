@@ -1,5 +1,5 @@
 export default {
-  title: 'Users/UserDropdown',
+  title: 'Features / Users / User dropdown',
 }
 
 import { UserDropdown } from './UserDropdown'

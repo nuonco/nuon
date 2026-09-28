@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Menu',
+  title: 'UI / Menu',
 }
 
 import { Menu } from './Menu'

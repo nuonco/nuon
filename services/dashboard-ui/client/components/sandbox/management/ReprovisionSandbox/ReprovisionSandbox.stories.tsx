@@ -1,5 +1,5 @@
 export default {
-  title: 'Sandbox/ReprovisionSandbox',
+  title: 'Features / Sandbox / Management / Reprovision sandbox',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

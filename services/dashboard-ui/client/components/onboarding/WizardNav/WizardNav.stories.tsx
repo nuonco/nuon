@@ -1,5 +1,5 @@
 export default {
-  title: 'Onboarding/WizardNav',
+  title: 'Features / Onboarding / Wizard nav',
 }
 
 import { WizardNav } from './WizardNav'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Approvals/PlanDiffs/TerraformSummary',
+  title: 'Features / Approvals / Plan diffs / Terraform summary',
 }
 
 import { TerraformSummary } from './TerraformSummary'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/InstallSettingsPanel',
+  title: 'Features / Installs / Settings panel',
 }
 
 import { useState } from 'react'

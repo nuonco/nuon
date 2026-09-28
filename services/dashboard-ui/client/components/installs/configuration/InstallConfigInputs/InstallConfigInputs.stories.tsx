@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/Configuration/InstallConfigInputs',
+  title: 'Features / Installs / Configuration / Config inputs',
 }
 
 import { Button } from '@/components/common/Button'

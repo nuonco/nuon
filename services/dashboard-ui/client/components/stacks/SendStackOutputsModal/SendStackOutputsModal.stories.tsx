@@ -1,5 +1,5 @@
 export default {
-  title: 'Stacks/SendStackOutputsModal',
+  title: 'Features / Stacks / Send stack outputs modal',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

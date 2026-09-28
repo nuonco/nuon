@@ -1,5 +1,5 @@
 export default {
-  title: 'Apps/CreateApp',
+  title: 'Features / Apps / Create app modal',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

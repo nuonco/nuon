@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/InstallSyncDetail',
+  title: 'Features / Installs / Sync detail',
 }
 
 import type { TAppInstallConfigSync } from '@/types'

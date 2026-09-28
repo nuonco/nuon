@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/StatusWithDescription',
+  title: 'UI / Status with description',
 }
 
 import { StatusWithDescription } from './StatusWithDescription'

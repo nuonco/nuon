@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Banner',
+  title: 'UI / Banner',
 }
 
 import { useState } from 'react'

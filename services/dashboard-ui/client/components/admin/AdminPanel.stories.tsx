@@ -1,5 +1,5 @@
 export default {
-  title: 'Admin/AdminPanel',
+  title: 'Features / Admin / Admin panel',
 }
 
 import { Button } from '@/components/common/Button'

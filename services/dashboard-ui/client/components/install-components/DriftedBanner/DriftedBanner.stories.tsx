@@ -1,5 +1,5 @@
 export default {
-  title: 'Install Components/DriftedBanner',
+  title: 'Features / Installs / Components / Drifted banner',
 }
 
 import { DriftedBanner } from './DriftedBanner'

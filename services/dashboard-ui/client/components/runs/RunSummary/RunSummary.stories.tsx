@@ -1,5 +1,5 @@
 export default {
-  title: 'Runs/RunSummary',
+  title: 'Features / Runs / Run summary',
 }
 
 import { Text } from '@/components/common/Text'

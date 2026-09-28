@@ -1,5 +1,5 @@
 export default {
-  title: 'Sandbox/SandboxRunConfigCard',
+  title: 'Features / Sandbox / Run config card',
 }
 
 import { SandboxRunConfigCard } from './SandboxRunConfigCard'

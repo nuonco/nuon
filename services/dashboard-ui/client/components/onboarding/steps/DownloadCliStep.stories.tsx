@@ -1,5 +1,5 @@
 export default {
-  title: 'Onboarding/V1 Steps/DownloadCliStep',
+  title: 'Features / Onboarding / V1 steps / Download CLI step',
 }
 
 import { OnboardingJourneyContext } from '@/providers/onboarding-journey-provider'

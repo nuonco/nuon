@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/WorkflowStepDetail/BuildStep',
+  title: 'Features / Branches / Workflow step detail / Build step',
 }
 
 import type { ReactNode } from 'react'
