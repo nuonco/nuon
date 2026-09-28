@@ -185,6 +185,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		runners.POST("/shutdown-processes", s.AdminShutdownAllRunnerProcesses)
 		runners.POST("/update-health-check-cron", s.AdminUpdateHealthCheckCron)
 		runners.POST("/migrate-cron-emitters", s.AdminMigrateCronEmitters)
+		runners.POST("/toggle-cron-emitters", s.AdminToggleCronEmitters)
 
 		// sandbox management
 		runners.GET("/sandbox", s.AdminListSandboxRunners)
