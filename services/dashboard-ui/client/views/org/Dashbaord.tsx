@@ -19,6 +19,7 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { ActiveWorkflows } from '@/components/workflows/ActiveWorkflows'
 import { useActiveWorkflows } from '@/hooks/use-active-workflows'
+import { useInstallNested } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import { useWorkflowApprovals } from '@/hooks/use-workflow-approvals'
 import { getOrgStats, getRunnerJobs } from '@/lib'
@@ -72,6 +73,7 @@ export const Dashboard = () => {
   const [searchParams] = useSearchParams()
   const offset = Number(searchParams.get('offset') ?? 0)
   const { org } = useOrg()
+  const nestedInstalls = useInstallNested()
   const { approvals } = useWorkflowApprovals()
   const { activeWorkflows } = useActiveWorkflows()
 
@@ -122,7 +124,7 @@ export const Dashboard = () => {
           )
         : undefined,
     triggeredBy: '',
-    href: getJobHref(job),
+    href: getJobHref(job, nestedInstalls),
   }))
 
   return (

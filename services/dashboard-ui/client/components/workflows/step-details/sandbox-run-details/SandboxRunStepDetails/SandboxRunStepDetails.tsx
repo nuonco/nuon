@@ -13,6 +13,7 @@ import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import type { TWorkflowStep, TSandboxRun } from '@/types'
 import { SandboxRunApply } from '../SandboxRunApply'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 export interface ISandboxRunStepDetails {
   step?: TWorkflowStep
@@ -26,6 +27,7 @@ export const SandboxRunStepDetails = ({
   orgId,
   sandboxRun,
 }: ISandboxRunStepDetails) => {
+  const installLink = useInstallLink()
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-4">
@@ -34,14 +36,14 @@ export const SandboxRunStepDetails = ({
         </Text>
 
         {step?.owner_id ? (
-          <Link href={`/${orgId}/installs/${step.owner_id}/sandbox`}>
+          <Link href={installLink({ orgId: orgId, installId: step.owner_id, suffix: `/sandbox` })}>
             View sandbox
           </Link>
         ) : null}
 
         {step?.owner_id && step?.step_target_id ? (
           <Link
-            href={`/${orgId}/installs/${step.owner_id}/sandbox/runs/${step.step_target_id}`}
+            href={installLink({ orgId: orgId, installId: step.owner_id, suffix: `/sandbox/runs/${step.step_target_id}` })}
           >
             View run logs
           </Link>

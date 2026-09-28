@@ -5,6 +5,7 @@ import { LatestRunbookRunCard } from '@/components/runbooks/LatestRunbookRunCard
 import { RunbookReadmePanel } from '@/components/runbooks/RunbookReadmePanel'
 import { RunRunbookButton } from '@/components/runbooks/RunRunbook'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallRunbooks } from '@/lib'
 import type { TInstallRunbook } from '@/lib/ctl-api/installs/runbooks'
@@ -18,6 +19,7 @@ const LIMIT = 10
 export const InstallRunbooksListContainer = () => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
   const [searchParams] = useSearchParams()
   const offset = Number(searchParams.get('offset') ?? 0)
   const q = searchParams.get('q') || undefined
@@ -42,13 +44,13 @@ export const InstallRunbooksListContainer = () => {
   ): TInstallRunbookListItem => {
     const runbook = installRunbook.runbook
     const runbookId = installRunbook.runbook_id ?? installRunbook.id
-    const href = `/${org?.id}/installs/${install?.id}/runbooks/${runbookId}`
+    const href = installLink({ installId: install?.id, appId: install?.app_id, suffix: `/runbooks/${runbookId}` })
     const readme = runbook?.configs?.[0]?.readme
     const latestRun = installRunbook.runs?.[0]
     const workflowId =
       latestRun?.install_workflow_id ?? latestRun?.install_workflow?.id
     const runHref = workflowId
-      ? `/${org?.id}/installs/${install?.id}/history/${workflowId}`
+      ? installLink({ installId: install?.id, appId: install?.app_id, suffix: `/history/${workflowId}` })
       : undefined
 
     return {

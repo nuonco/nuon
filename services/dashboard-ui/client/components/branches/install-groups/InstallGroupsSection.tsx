@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useInstallHref } from '@/hooks/use-install-path'
 import { Banner } from '@/components/common/Banner'
 import { EmptyState } from '@/components/common/EmptyState'
 import { LabelBadge } from '@/components/common/LabelBadge'
@@ -23,11 +24,21 @@ const InstallListRow = ({
   install?: TInstall
   installId: string
   orgId: string
-}) => (
+}) => {
+  const installHref = useInstallHref()
+
+  return (
   <div className="flex items-center justify-between gap-4 px-3 py-2 rounded-md bg-cool-grey-50 dark:bg-dark-grey-700">
     <div className="min-w-0">
       {install ? (
-        <Link href={`/${orgId}/installs/${install.id}`} className="truncate">
+        <Link
+          href={installHref({
+            orgId,
+            installId: install.id,
+            appId: install.app_id,
+          })}
+          className="truncate"
+        >
           {install.name}
         </Link>
       ) : (
@@ -52,7 +63,8 @@ const InstallListRow = ({
       </div>
     )}
   </div>
-)
+  )
+}
 
 const EmptyGroupHint = ({ children }: { children: string }) => (
   <div className="px-3 py-3 rounded-md border border-dashed text-center">

@@ -17,6 +17,7 @@ import { useOnboardingJourney } from '@/hooks/use-onboarding-journey'
 import { useToast } from '@/hooks/use-toast'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 import { CompletedInstallCard, CreateInstallStepContent } from './CreateInstallStep'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 export const CreateInstallStepContainer = ({
   onAdvance: _onAdvance,
@@ -80,6 +81,7 @@ function CreateInstallStepContentContainer({
 }) {
   const navigate = useNavigate()
   const { addToast } = useToast()
+  const installLink = useInstallLink()
 
   const {
     data: app,
@@ -113,8 +115,8 @@ function CreateInstallStepContentContainer({
         result.data?.install_number === 1 ? '?onboardingComplete=true' : ''
       navigate(
         workflowId
-          ? `/${orgId}/installs/${result.data.id}/workflows/${workflowId}${suffix}`
-          : `/${orgId}/installs/${result.data.id}/workflows${suffix}`
+          ? installLink({ orgId, appId, installId: result.data.id, suffix: `/workflows/${workflowId}${suffix}` })
+          : installLink({ orgId, appId, installId: result.data.id, suffix: `/workflows${suffix}` })
       )
     },
   })

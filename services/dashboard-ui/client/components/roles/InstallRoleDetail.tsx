@@ -24,6 +24,7 @@ import {
 import { humanize } from '@/utils/string-utils'
 import type { TInstallRole } from '@/lib/ctl-api/installs/get-latest-install-roles'
 import type { TNamedIAMPolicy } from '@/lib/ctl-api/installs/get-install-app-permissions-config'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 const USAGE_LIMIT = 10
 const USAGE_OFFSET_PARAM = 'usage_offset'
@@ -58,6 +59,7 @@ export const InstallRoleDetail = ({
   installRole: TInstallRole
   namedPolicies?: TNamedIAMPolicy[]
 }) => {
+  const installLink = useInstallLink()
   const { org } = useOrg()
   const { panels, removePanel } = useSurfaces()
   const navigate = useNavigate()
@@ -145,9 +147,11 @@ export const InstallRoleDetail = ({
           const workflowId = row.original.workflow?.id
           const stepId = row.original.workflow_step_id
           if (!workflowId) return null
-          const href = `/${org?.id}/installs/${installId}/workflows/${workflowId}${
-            stepId ? `?panel=${stepId}` : ''
-          }`
+          const href = installLink({
+            orgId: org?.id,
+            installId,
+            suffix: `/workflows/${workflowId}${stepId ? `?panel=${stepId}` : ''}`,
+          })
           return (
             <Button
               variant="ghost"

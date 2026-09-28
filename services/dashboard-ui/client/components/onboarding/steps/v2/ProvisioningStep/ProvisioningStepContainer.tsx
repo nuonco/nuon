@@ -12,6 +12,7 @@ import { getStatusTheme } from '@/utils/status-utils'
 import { cn } from '@/utils/classnames'
 import type { TOnboarding, TWorkflow, TWorkflowStep } from '@/types'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 function useOnboardingWorkflow(onboarding: TOnboarding | undefined, setSharedData: (key: string, val: unknown) => void) {
   const orgId = onboarding?.org_id
@@ -506,6 +507,7 @@ export const ProvisioningStepContainer = ({
   sharedData,
   setSharedData,
 }: IWizardStepComponentProps) => {
+  const installLink = useInstallLink()
   const onboarding = sharedData.onboarding as TOnboarding | undefined
   const orgId = onboarding?.org_id
   const appId = onboarding?.app_id
@@ -625,7 +627,7 @@ export const ProvisioningStepContainer = ({
                     runnerMeta={row.id === 'runner' ? runnerMeta : undefined}
                     quickLinkUrl={row.id === 'stack' ? quickLinkUrl : undefined}
                     workflowUrl={row.status === 'error' && row.errorStepId && orgId && onboarding?.install_id && workflowId
-                      ? `/${orgId}/installs/${onboarding.install_id}/workflows/${workflowId}?panel=${row.errorStepId}`
+                      ? installLink({ orgId: orgId, installId: onboarding.install_id, suffix: `/workflows/${workflowId}?panel=${row.errorStepId}` })
                       : undefined}
                   />
                 )

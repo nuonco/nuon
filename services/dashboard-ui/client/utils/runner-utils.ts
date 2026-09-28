@@ -1,3 +1,4 @@
+import { installHref } from '@/lib/install-path'
 import type { TRunnerJob } from '@/types'
 
 export type TJobStatus =
@@ -19,7 +20,7 @@ export type TJobGroup =
   | 'operations'
   | 'management'
 
-export function getJobHref(job: TRunnerJob): string {
+export function getJobHref(job: TRunnerJob, nested = false): string {
   const { group, metadata, org_id } = job ?? {}
   switch (group) {
     case 'build':
@@ -28,12 +29,30 @@ export function getJobHref(job: TRunnerJob): string {
       }
       return `/${org_id}/apps/${metadata?.app_id}/components/${metadata?.component_id}/builds/${metadata?.component_build_id}`
     case 'sandbox':
-      return `/${org_id}/installs/${metadata?.install_id}/sandbox/runs/${metadata?.sandbox_run_id}`
+      return installHref({
+        orgId: org_id,
+        installId: metadata?.install_id,
+        appId: metadata?.app_id,
+        nested,
+        suffix: `/sandbox/runs/${metadata?.sandbox_run_id}`,
+      })
     case 'sync':
     case 'deploy':
-      return `/${org_id}/installs/${metadata?.install_id}/components/${metadata?.component_id}/deploys/${metadata?.deploy_id}`
+      return installHref({
+        orgId: org_id,
+        installId: metadata?.install_id,
+        appId: metadata?.app_id,
+        nested,
+        suffix: `/components/${metadata?.component_id}/deploys/${metadata?.deploy_id}`,
+      })
     case 'actions':
-      return `/${org_id}/installs/${metadata?.install_id}/actions/${metadata?.action_workflow_id}/runs/${metadata?.action_workflow_run_id}`
+      return installHref({
+        orgId: org_id,
+        installId: metadata?.install_id,
+        appId: metadata?.app_id,
+        nested,
+        suffix: `/actions/${metadata?.action_workflow_id}/runs/${metadata?.action_workflow_run_id}`,
+      })
     default:
       return ''
   }

@@ -9,6 +9,7 @@ import { RoleSelector } from '@/components/roles/RoleSelector'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { reprovisionInstall } from '@/lib'
@@ -21,6 +22,7 @@ export const ReprovisionModalContainer = ({ ...props }: IReprovision & Omit<IMod
   const { removeModal } = useSurfaces()
   const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
   const [selectedRole, setSelectedRole] = useState<string>('')
@@ -46,9 +48,9 @@ export const ReprovisionModalContainer = ({ ...props }: IReprovision & Omit<IMod
       removeModal(props.modalId)
       const workflowId = result.data.workflow_id
       if (workflowId) {
-        navigate(`/${org.id}/installs/${install.id}/workflows/${workflowId}`)
+        navigate(installLink({ installId: install.id, appId: install.app_id, suffix: `/workflows/${workflowId}` }))
       } else {
-        navigate(`/${org.id}/installs/${install.id}/workflows`)
+        navigate(installLink({ installId: install.id, appId: install.app_id, suffix: `/workflows` }))
       }
     },
     onError: (error) => {

@@ -1,5 +1,6 @@
 import { useSearchParams } from 'react-router'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import { useSSETimelineQuery } from '@/lib/sse/use-sse-timeline-query'
 import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
@@ -22,6 +23,7 @@ export const InstallActionRunTimelineContainer = ({
   shouldPoll = false,
 }: IInstallActionRunTimelineContainer) => {
   const { install } = useInstall()
+  const installLink = useInstallLink()
   const { org } = useOrg()
   const [searchParams] = useSearchParams()
   const offset = Number(searchParams.get('offset') ?? 0)
@@ -51,7 +53,7 @@ export const InstallActionRunTimelineContainer = ({
   })
 
   const runs = action?.runs ?? []
-  const basePath = `/${org.id}/installs/${install.id}`
+  const basePath = installLink({ installId: install.id, appId: install.app_id })
 
   return (
     <InstallActionRunTimeline
