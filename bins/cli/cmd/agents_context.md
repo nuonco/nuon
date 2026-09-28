@@ -83,7 +83,7 @@ Each client has its own config file, JSON key, and (sometimes) an add command. C
 
 ### Overriding the MCP URL
 
-The upstream URL (`{{.MCPURL}}`) is derived from `api_url` in the CLI config, turning `api.<host>` into `mcp.<host>/mcp`. Pass `--url` on the registered command when the MCP URL does not follow from the API URL, for example a self-hosted or Nuon BYOC control plane, or any deployment where the two hostnames differ. Pass `--name` to rename the server in the client's list. A non-default `-C` config goes on the same command.
+The upstream URL (`{{.MCPURL}}`) is derived from `api_url` in the CLI config, turning `api.<host>` or `app.<host>` into `mcp.<host>/mcp`. `https://app.nuon.co` is the Nuon Cloud dashboard, and login accepts it as an API URL, so it resolves to `https://mcp.nuon.co/mcp`. Pass `--url` on the registered command when the MCP URL does not follow from the API URL, for example a self-hosted or Nuon BYOC control plane, or any deployment where the two hostnames differ. Pass `--name` to rename the server in the client's list. A non-default `-C` config goes on the same command.
 
 ## Creating something new (starter checklist)
 
