@@ -89,4 +89,13 @@ test('install detail matches beside the app layout', () => {
   const legacy = matchedPaths('/org-1/installs/inst-1/components/comp-1')
   expect(legacy).toContain(':orgId/installs/:installId')
   expect(legacy).toContain('components/:componentId')
+
+  const deployment = matchedPaths(
+    '/org-1/apps/app-1/installs/inst-1/deployments/wf-1'
+  )
+  expect(deployment).toContain('deployments/:workflowId')
+  expect(deployment).not.toContain('deployments')
+
+  const history = matchedPaths('/org-1/installs/inst-1/history/wf-1')
+  expect(history).toContain('history/:workflowId')
 })

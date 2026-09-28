@@ -12,6 +12,12 @@ export const isNewInstallIAEnabled = (
   features?: { [key: string]: boolean } | null
 ) => !!features?.['app-branches-ui'] && !!features?.['new-install-ia']
 
+const workflowDetailSuffix = (suffix: string) =>
+  suffix.replace(
+    /^\/(?:workflows|history)\/([^/?#]+)(.*)$/,
+    '/deployments/$1$2'
+  )
+
 export const installHref = ({
   orgId,
   appId,
@@ -24,11 +30,12 @@ export const installHref = ({
     nested && appId
       ? `/${orgId}/apps/${appId}/installs/${installId}`
       : `/${orgId}/installs/${installId}`
-  if (!suffix) return base
-  if (suffix.startsWith('/') || suffix.startsWith('?') || suffix.startsWith('#')) {
-    return `${base}${suffix}`
+  const page = nested ? workflowDetailSuffix(suffix) : suffix
+  if (!page) return base
+  if (page.startsWith('/') || page.startsWith('?') || page.startsWith('#')) {
+    return `${base}${page}`
   }
-  return `${base}/${suffix}`
+  return `${base}/${page}`
 }
 
 export const installPathnameSuffix = (pathname: string, installId: string) => {

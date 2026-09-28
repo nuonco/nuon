@@ -10,6 +10,7 @@ import {
   installRouteShouldRevalidate,
   redirectLegacyInstallRoute,
   redirectNestedInstallRoute,
+  redirectWorkflowDetailRoute,
   resolveInstallPrefix,
 } from '@/lib/install-routing'
 import { useOrg } from '@/hooks/use-org'
@@ -178,6 +179,11 @@ const installChildren = (): RouteObject[] => [
             element: <Deployments />,
           },
           {
+            path: 'deployments/:workflowId',
+            loader: redirectWorkflowDetailRoute,
+            element: <WorkflowDetail />,
+          },
+          {
             path: 'health',
             element: <NewInstallHealth />,
           },
@@ -274,13 +280,12 @@ const installChildren = (): RouteObject[] => [
       },
       {
         path: 'history/:workflowId',
+        loader: redirectWorkflowDetailRoute,
         element: <WorkflowDetail />,
       },
       {
         path: 'workflows/:workflowId',
-        loader: redirectTo(
-          (params) => `/history/${params.workflowId}`
-        ),
+        loader: redirectWorkflowDetailRoute,
       },
       { path: 'stacks', element: <Stacks /> },
       {

@@ -70,6 +70,26 @@ export const redirectNestedInstallRoute = async ({
   )
 }
 
+export const redirectWorkflowDetailRoute = async ({
+  params,
+  request,
+}: LoaderFunctionArgs) => {
+  if (!params.orgId || !params.installId || !params.workflowId) return null
+  const nested = await orgHasNewInstallIA(params.orgId)
+  const prefix = await resolveInstallPrefix(params)
+  const url = new URL(request.url)
+  const tail = `${url.search}${url.hash}`
+  const suffix = installPathnameSuffix(url.pathname, params.installId)
+  const onDeployments = suffix.startsWith(`/deployments/${params.workflowId}`)
+  const onHistory = suffix.startsWith(`/history/${params.workflowId}`)
+  if (nested) {
+    if (onDeployments) return null
+    return redirect(`${prefix}/deployments/${params.workflowId}${tail}`)
+  }
+  if (onHistory) return null
+  return redirect(`${prefix}/history/${params.workflowId}${tail}`)
+}
+
 export const installRouteShouldRevalidate: ShouldRevalidateFunction = ({
   currentParams,
   nextParams,

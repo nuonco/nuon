@@ -49,13 +49,14 @@ export const RunbookHistoryTab = () => {
       return aTime.localeCompare(bTime)
     })
 
-  const workflowUrl = `${basePath}/workflows/${workflowId}`
+  const workflowUrl = href(`/workflows/${workflowId}`)
 
   const timeline = (
     <RunbookRunTimeline
       runs={runs}
       runbookName={runbook?.name ?? ''}
       basePath={basePath}
+      workflowHref={(id) => href(`/workflows/${id}`)}
     />
   )
 
