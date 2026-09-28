@@ -141,6 +141,102 @@ export const InsideClippedPanel = () => {
   )
 }
 
+const step = (
+  id: string,
+  name: string,
+  status: string,
+  extra: Record<string, unknown> = {}
+) =>
+  ({
+    id,
+    name,
+    status: { status },
+    group_idx: 0,
+    idx: 0,
+    execution_time:
+      status === 'pending' || status === 'queued' || status === 'not-attempted'
+        ? undefined
+        : 30_000_000_000,
+    ...extra,
+  }) as any
+
+const StateGroup = ({ title, steps }: { title: string; steps: any[] }) => (
+  <div className="flex flex-col gap-2">
+    <div className="text-sm font-medium">{title}</div>
+    <WorkflowStepsPipeline steps={steps} onSelectStep={noop} />
+  </div>
+)
+
+export const SkippedAndPending = () => (
+  <WorkflowStepsPipeline
+    steps={[
+      step('user-skipped', 'User skipped', 'user-skipped'),
+      step('auto-skipped', 'Auto skipped', 'auto-skipped'),
+      step('pending', 'Pending', 'pending'),
+      step('queued', 'Queued', 'queued'),
+      step('in-progress', 'In progress', 'in-progress'),
+    ]}
+    selectedStepId="pending"
+    onSelectStep={noop}
+  />
+)
+
+export const AllStates = () => (
+  <div className="flex flex-col gap-6">
+    <StateGroup
+      title="Finished"
+      steps={[
+        step('success', 'Completed', 'success'),
+        step('approved', 'Approved', 'approved'),
+        step('noop', 'Noop', 'noop'),
+      ]}
+    />
+    <StateGroup
+      title="Running"
+      steps={[
+        step('in-progress', 'In progress', 'in-progress'),
+        step('planning', 'Planning', 'planning'),
+        step('applying', 'Applying', 'applying'),
+        step('building', 'Building', 'building'),
+        step('provisioning', 'Provisioning', 'provisioning'),
+        step('retried', 'Retried', 'retried'),
+      ]}
+    />
+    <StateGroup
+      title="Waiting"
+      steps={[
+        step('pending', 'Pending', 'pending'),
+        step('queued', 'Queued', 'queued'),
+        step('approval-awaiting', 'Awaiting approval', 'approval-awaiting'),
+        step('pending-approval', 'Pending approval', 'pending-approval'),
+      ]}
+    />
+    <StateGroup
+      title="Attention"
+      steps={[
+        step('error', 'Failed', 'error'),
+        step('failed-pending-retry', 'Awaiting retry', 'failed-pending-retry'),
+        step('warning', 'Warning', 'warning'),
+        step('approval-denied', 'Denied', 'approval-denied'),
+        step('cancelled', 'Cancelled', 'cancelled'),
+      ]}
+    />
+    <StateGroup
+      title="Not run"
+      steps={[
+        step('user-skipped', 'User skipped', 'user-skipped'),
+        step('auto-skipped', 'Auto skipped', 'auto-skipped'),
+        step('not-attempted', 'Not attempted', 'not-attempted'),
+        step('discarded', 'Discarded', 'discarded'),
+        step('disabled', 'Disabled', 'disabled'),
+        step('skip-response', 'Skip response', 'approval-awaiting', {
+          approval: { response: { type: 'skip' } },
+        }),
+      ]}
+    />
+  </div>
+)
+
 export const WithError = () => (
   <WorkflowStepsPipeline
     steps={[
