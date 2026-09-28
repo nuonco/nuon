@@ -34,12 +34,10 @@ func TestAssumeRoleFailure(t *testing.T) {
 			wantMessage: "Nuon OIDC identity is not trusted by this role.",
 		},
 		"invalid identity token": {
-			err:         &smithy.GenericAPIError{Code: "InvalidIdentityToken", Message: "raw diagnostic"},
-			wantMessage: "AWS could not validate Nuon's identity token. Create the OIDC provider for this issuer first (step 1).",
+			err: &smithy.GenericAPIError{Code: "InvalidIdentityToken", Message: "raw diagnostic"},
 		},
 		"other AWS error": {
-			err:         &smithy.GenericAPIError{Code: "Throttling", Message: "raw diagnostic"},
-			wantMessage: "Verification failed: Throttling",
+			err: &smithy.GenericAPIError{Code: "Throttling", Message: "raw diagnostic"},
 		},
 		"network error": {err: errors.New("connection reset by peer")},
 		"timeout":       {err: context.DeadlineExceeded},

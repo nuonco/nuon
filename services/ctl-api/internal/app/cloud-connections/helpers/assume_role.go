@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/sts"
-	"github.com/aws/smithy-go"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
@@ -22,8 +21,7 @@ type stsAPI interface {
 
 func (h *Helpers) assumeRole(ctx context.Context, connection *app.CloudConnection, client stsAPI, input *sts.AssumeRoleWithWebIdentityInput) (*sts.AssumeRoleWithWebIdentityOutput, error) {
 	output, err := client.AssumeRoleWithWebIdentity(ctx, input)
-	var apiErr smithy.APIError
-	if !errors.As(err, &apiErr) {
+	if !cloudconnections.IsAccessDenied(err) {
 		return output, err
 	}
 	now := time.Now().UTC()
