@@ -20,6 +20,9 @@ function SkeletonCell() {
   return <Skeleton height="24px" width="100%" />
 }
 
+const columnClassName = (column: { meta?: unknown }) =>
+  (column.meta as { className?: string } | undefined)?.className
+
 export interface ITable<TData extends object> {
   className?: string
   columns: ColumnDef<TData, any>[]
@@ -70,8 +73,11 @@ export function TableBase<TData extends object>({
   const renderSkeletonRows = () =>
     Array.from({ length: pagination?.limit || skeletonRows }).map((_, i) => (
       <tr key={`skeleton-row-${i}`}>
-        {columns.map((_, j) => (
-          <td key={`skeleton-cell-${j}`} className="py-3 px-4 border-t">
+        {columns.map((column, j) => (
+          <td
+            key={`skeleton-cell-${j}`}
+            className={cn('py-3 px-4 border-t', columnClassName(column))}
+          >
             <SkeletonCell />
           </td>
         ))}
@@ -83,7 +89,11 @@ export function TableBase<TData extends object>({
       {enableSearch || filterActions ? (
         <div className="flex flex-row flex-wrap items-center justify-between gap-4">
           {enableSearch ? (
-            <DebouncedSearchInput labelClassName="w-full md:w-fit" className="w-full md:w-fit" placeholder={searchPlaceholder} />
+            <DebouncedSearchInput
+              labelClassName="w-full md:w-fit"
+              className="w-full md:w-fit"
+              placeholder={searchPlaceholder}
+            />
           ) : null}
           {filterActions ? (
             <div
@@ -94,9 +104,7 @@ export function TableBase<TData extends object>({
           ) : null}
         </div>
       ) : null}
-      <div
-        className={`overflow-x-auto rounded-lg border ${className}`}
-      >
+      <div className={`overflow-x-auto rounded-lg border ${className}`}>
         <table className="w-full min-w-[800px] text-sm">
           <thead className="rounded-lg">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -106,6 +114,7 @@ export function TableBase<TData extends object>({
                     key={header.id}
                     className={cn(
                       'py-3 px-4 text-left bg-cool-grey-100 dark:bg-dark-grey-700',
+                      columnClassName(header.column.columnDef),
                       {
                         'cursor-pointer select-none':
                           header.column.getCanSort(),
@@ -156,7 +165,13 @@ export function TableBase<TData extends object>({
               table.getRowModel().rows.map((row) => (
                 <tr key={row.id}>
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="py-3 px-4 border-t">
+                    <td
+                      key={cell.id}
+                      className={cn(
+                        'py-3 px-4 border-t',
+                        columnClassName(cell.column.columnDef)
+                      )}
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
