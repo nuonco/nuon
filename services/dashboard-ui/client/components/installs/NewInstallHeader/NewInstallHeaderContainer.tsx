@@ -6,6 +6,7 @@ import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
 import { useOpenInstallSettings } from '@/components/installs/InstallSettingsPanel'
 import { ChangeAppBranchButton } from '@/components/installs/management/ChangeAppBranch'
 import { useCurrentAppBranchRun } from '@/hooks/use-current-app-branch-run'
+import { useInstallHref } from '@/hooks/use-install-path'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getBranchWorkflowRuns } from '@/lib'
@@ -14,6 +15,7 @@ import { NewInstallHeader } from './NewInstallHeader'
 export const NewInstallHeaderContainer = () => {
   const { org } = useOrg()
   const { install, labelColors, refresh } = useInstall()
+  const installHref = useInstallHref()
   const { run: appliedRun, isLoading: isLoadingRun } = useCurrentAppBranchRun()
   const openSettings = useOpenInstallSettings()
 
@@ -68,6 +70,10 @@ export const NewInstallHeaderContainer = () => {
       }
       latestCommitLabel={appliedRun ? 'Applied commit' : 'Latest branch run'}
       latestCommitLoading={isLoadingRun || isLoadingBranchRuns}
+      installPath={installHref({
+        installId: install.id,
+        appId: install.app_id,
+      })}
       orgId={org?.id}
       branchAction={
         <ChangeAppBranchButton iconOnly install={install} onSuccess={refresh} />

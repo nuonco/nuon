@@ -7,6 +7,7 @@ import type { IModal } from '@/components/surfaces/Modal'
 import { Toast } from '@/components/surfaces/Toast'
 import { useAuth } from '@/hooks/use-auth'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
@@ -46,6 +47,7 @@ export const RecoverHelmReleaseModalContainer = ({
   const { user } = useAuth()
   const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
@@ -83,8 +85,8 @@ export const RecoverHelmReleaseModalContainer = ({
       const workflowId = result.data.workflow_id
       navigate(
         workflowId
-          ? `/${org.id}/installs/${install.id}/workflows/${workflowId}`
-          : `/${org.id}/installs/${install.id}/workflows`
+          ? installLink({ installId: install.id, appId: install.app_id, suffix: `/workflows/${workflowId}` })
+          : installLink({ installId: install.id, appId: install.app_id, suffix: `/workflows` })
       )
     },
     onError: (err) => {

@@ -3,6 +3,7 @@ import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import type { TBannerTheme } from '@/components/common/Banner'
 import type { TInstall } from '@/types'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 export interface IDeprovisionBanner {
   install: TInstall
@@ -35,6 +36,7 @@ export const DeprovisionBanner = ({
   workflowId,
   onDismiss,
 }: IDeprovisionBanner) => {
+  const installLink = useInstallLink()
   const phase = install?.lifecycle_phase?.phase ?? ''
   const config = LIFECYCLE_CONFIG[phase]
   if (!config) return null
@@ -52,7 +54,7 @@ export const DeprovisionBanner = ({
         </div>
         {workflowId && (
           <Link
-            href={`/${orgId}/installs/${install.id}/workflows/${workflowId}`}
+            href={installLink({ orgId: orgId, installId: install.id, suffix: `/workflows/${workflowId}` })}
             className="shrink-0"
           >
             View workflow
