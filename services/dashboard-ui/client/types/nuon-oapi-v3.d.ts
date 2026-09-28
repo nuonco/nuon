@@ -2271,6 +2271,13 @@ export interface paths {
      */
     get: operations["GetInstallStateHistory"];
   };
+  "/v1/installs/{install_id}/status": {
+    /**
+     * install status
+     * @description Returns deployment, resource, and health-check status for an install. Each axis is a composite status with counts in metadata. Deployment state stays on the component lifecycle, so a failed deploy remains failed after the workload is repaired. Resources and health checks are the latest observations.
+     */
+    get: operations["GetInstallStatus"];
+  };
   "/v1/installs/{install_id}/sync-config": {
     /**
      * trigger install config sync for a single install
@@ -5470,11 +5477,12 @@ export interface components {
       phone_home_id?: string;
       phone_home_url?: string;
       /**
-       * @description QuickLinkBucketKey and QuickLinkUIDefBucketKey held the wrapper template and
-       * createUiDefinition that an earlier Azure quick link pointed at, so that the
-       * portal created a deployment stack rather than a plain deployment. Nothing
-       * writes them now: the quick link addresses the stack template directly on both
-       * platforms. Rows created while the wrapper shipped still carry their keys.
+       * @description QuickLinkBucketKey held the wrapper template an earlier Azure quick link
+       * pointed at. Nothing writes it now. QuickLinkUIDefBucketKey is the
+       * createUiDefinition uploaded for an Azure subscription-scoped quick link and
+       * appended as createUIDefinitionUri, so the portal pins the install's
+       * subscription and region. Rows created while the wrapper shipped still carry
+       * QuickLinkBucketKey.
        */
       quick_link_bucket_key?: string;
       quick_link_ui_def_bucket_key?: string;
@@ -9144,6 +9152,11 @@ export interface components {
       run_type?: components["schemas"]["app.StackVersionRunType"];
       status?: components["schemas"]["app.CompositeStatus"];
       version_id?: string;
+    };
+    "service.InstallStatusResponse": {
+      deployments?: components["schemas"]["app.CompositeStatus"];
+      health_checks?: components["schemas"]["app.CompositeStatus"];
+      resources?: components["schemas"]["app.CompositeStatus"];
     };
     "service.InstallTelemetrySettings": {
       enabled?: boolean;
@@ -26740,6 +26753,56 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.InstallState"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * install status
+   * @description Returns deployment, resource, and health-check status for an install. Each axis is a composite status with counts in metadata. Deployment state stays on the component lifecycle, so a failed deploy remains failed after the workload is repaired. Resources and health checks are the latest observations.
+   */
+  GetInstallStatus: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.InstallStatusResponse"];
         };
       };
       /** @description Bad Request */
