@@ -23,7 +23,6 @@ export type TRuntimeConfig = {
   byocName?: string
   byocColor?: string
   byocTextColor?: string
-  onboardingV2?: boolean
   dashboardLite?: boolean
   statusBarAutoEnabled?: boolean
   installsTabAutoEnabled?: boolean

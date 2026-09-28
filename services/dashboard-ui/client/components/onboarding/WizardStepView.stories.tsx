@@ -3,14 +3,15 @@ export default {
 }
 
 import { WizardContext } from '@/providers/onboarding-wizard-provider'
-import { OnboardingJourneyContext } from '@/providers/onboarding-journey-provider'
 import { WizardStepView } from './WizardStepView'
 import { Text } from '@/components/common/Text'
 
 const MockStepComponent = ({ onAdvance }: any) => (
   <div className="flex flex-col gap-4">
     <Text variant="body">This is a mock step component.</Text>
-    <button onClick={onAdvance} className="btn">Next</button>
+    <button onClick={onAdvance} className="btn">
+      Next
+    </button>
   </div>
 )
 
@@ -43,29 +44,18 @@ const mockWizard = {
   onComplete: () => {},
 }
 
-const mockJourney = {
-  isLoading: false,
-  orgId: 'org-1',
-  isStepComplete: () => false,
-  getStepMetadata: () => undefined,
-}
-
 export const FirstStep = () => (
   <WizardContext.Provider value={mockWizard}>
-    <OnboardingJourneyContext.Provider value={mockJourney}>
-      <div className="max-w-xl p-8">
-        <WizardStepView />
-      </div>
-    </OnboardingJourneyContext.Provider>
+    <div className="max-w-xl p-8">
+      <WizardStepView />
+    </div>
   </WizardContext.Provider>
 )
 
 export const SecondStep = () => (
   <WizardContext.Provider value={{ ...mockWizard, currentStepIndex: 1 }}>
-    <OnboardingJourneyContext.Provider value={mockJourney}>
-      <div className="max-w-xl p-8">
-        <WizardStepView />
-      </div>
-    </OnboardingJourneyContext.Provider>
+    <div className="max-w-xl p-8">
+      <WizardStepView />
+    </div>
   </WizardContext.Provider>
 )
