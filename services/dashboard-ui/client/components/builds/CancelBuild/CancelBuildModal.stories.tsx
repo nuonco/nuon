@@ -1,5 +1,5 @@
 export default {
-  title: 'Builds/CancelBuildModal',
+  title: 'Features / Builds / Cancel build modal',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

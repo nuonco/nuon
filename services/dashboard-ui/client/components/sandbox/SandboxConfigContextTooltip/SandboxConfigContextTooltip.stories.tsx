@@ -1,5 +1,5 @@
 export default {
-  title: 'Sandbox/SandboxConfigContextTooltip',
+  title: 'Features / Sandbox / Config context tooltip',
 }
 
 import { SandboxConfigContextTooltip } from './SandboxConfigContextTooltip'

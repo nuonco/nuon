@@ -1,5 +1,5 @@
 export default {
-  title: 'Team/InviteUser',
+  title: 'Features / Team / Invite user',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Sandbox/ManageRunDropdown',
+  title: 'Features / Sandbox / Management / Manage run dropdown',
 }
 
 import { SandboxRunContext } from '@/providers/sandbox-run-provider'

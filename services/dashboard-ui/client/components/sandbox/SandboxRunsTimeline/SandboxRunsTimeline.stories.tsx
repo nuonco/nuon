@@ -1,5 +1,5 @@
 export default {
-  title: 'Sandbox/SandboxRunsTimeline',
+  title: 'Features / Sandbox / Runs timeline',
 }
 
 import { SandboxRunsTimeline } from './SandboxRunsTimeline'

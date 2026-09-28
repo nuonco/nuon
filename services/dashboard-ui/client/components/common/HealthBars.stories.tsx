@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/HealthBars',
+  title: 'UI / Health bars',
 }
 
 import { HealthBars, type IHealthBar } from './HealthBars'

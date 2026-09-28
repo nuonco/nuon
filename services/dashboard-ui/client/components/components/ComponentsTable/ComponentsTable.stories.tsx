@@ -1,5 +1,5 @@
 export default {
-  title: 'Components/ComponentsTable',
+  title: 'Features / Components / Components table',
 }
 
 import { ComponentsTable, type TComponentRow } from './ComponentsTable'

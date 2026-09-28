@@ -1,5 +1,5 @@
 export default {
-  title: 'ServiceAccounts/DeleteServiceAccount',
+  title: 'Features / Service accounts / Delete service account',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

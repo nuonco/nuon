@@ -1,7 +1,7 @@
 import { HomePage } from './HomePage'
 
 export default {
-  title: 'Playground/Lite/HomePage',
+  title: 'Playground / Lite / Home page',
 }
 
 export const Default = () => (

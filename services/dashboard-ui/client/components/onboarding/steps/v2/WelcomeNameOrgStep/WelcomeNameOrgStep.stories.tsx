@@ -1,5 +1,5 @@
 export default {
-  title: 'Onboarding/V2 Steps/WelcomeNameOrgStep',
+  title: 'Features / Onboarding / V2 steps / Welcome name org step',
 }
 
 import type { TOrg } from '@/types'

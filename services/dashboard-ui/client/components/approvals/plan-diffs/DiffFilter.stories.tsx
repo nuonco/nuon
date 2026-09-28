@@ -1,5 +1,5 @@
 export default {
-  title: 'Approvals/PlanDiffs/DiffFilter',
+  title: 'Features / Approvals / Plan diffs / Diff filter',
 }
 
 import { DiffFilter } from './DiffFilter'

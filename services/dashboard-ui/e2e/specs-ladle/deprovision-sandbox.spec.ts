@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const STORY = "/?story=sandbox--deprovisionsandbox--default&mode=preview";
+const STORY = "/?story=features--sandbox--management--deprovision-sandbox--default&mode=preview";
 
 test.describe("DeprovisionSandbox behavior", () => {
   test.beforeEach(async ({ page }) => {

@@ -1,5 +1,5 @@
 export default {
-  title: 'Sandbox/BuildSandbox',
+  title: 'Features / Sandbox / Management / Build sandbox',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

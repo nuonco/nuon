@@ -1,5 +1,5 @@
 export default {
-  title: 'Runners/PruneRunnerTokens',
+  title: 'Features / Runners / Management / Prune runner tokens',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Navigation/TabNav',
+  title: 'UI / Navigation / Tab nav',
 }
 
 import { TabNav } from './TabNav'

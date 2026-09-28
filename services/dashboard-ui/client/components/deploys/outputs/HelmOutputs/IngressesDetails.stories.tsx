@@ -1,5 +1,5 @@
 export default {
-  title: 'Deploys/HelmOutputs/IngressesDetails',
+  title: 'Features / Deploys / Helm outputs / Ingresses details',
 }
 
 import { IngressesDetails } from './IngressesDetails'

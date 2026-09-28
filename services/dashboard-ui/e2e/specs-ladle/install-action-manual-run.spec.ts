@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 // The meaningful contract here: clearing a required config var disables submit
 // and errors on touch; refilling recovers.
 const STORY =
-  "/?story=actions--installactionmanualrun--default&mode=preview";
+  "/?story=features--actions--install-action-manual-run--default&mode=preview";
 
 test.describe("InstallActionManualRun form behavior", () => {
   test.beforeEach(async ({ page }) => {

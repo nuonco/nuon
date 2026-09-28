@@ -1,7 +1,7 @@
 import { PlaceholderGrid } from './PlaceholderGrid'
 
 export default {
-  title: 'Playground/Lite/PlaceholderGrid',
+  title: 'Playground / Lite / Placeholder grid',
 }
 
 export const List = () => <PlaceholderGrid rows={8} />

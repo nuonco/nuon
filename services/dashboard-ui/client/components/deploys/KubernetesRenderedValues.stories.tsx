@@ -1,5 +1,5 @@
 export default {
-  title: 'Deploys/KubernetesRenderedValues',
+  title: 'Features / Deploys / Kubernetes rendered values',
 }
 
 import { KubernetesRenderedValues } from './KubernetesRenderedValues'

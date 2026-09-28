@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Link',
+  title: 'UI / Link',
 }
 
 import { Link } from './Link'

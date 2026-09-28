@@ -1,5 +1,5 @@
 export default {
-  title: 'Actions/InstallActionManualRun',
+  title: 'Features / Actions / Install action manual run',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

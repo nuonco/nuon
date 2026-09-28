@@ -1,7 +1,7 @@
 import { InstallInputs } from './InstallInputs'
 
 export default {
-  title: 'Playground/Lite/InstallInputs',
+  title: 'Playground / Lite / Install inputs',
 }
 
 export const Default = () => (

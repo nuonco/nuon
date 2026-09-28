@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/ReprovisionStack',
+  title: 'Features / Installs / Management / Reprovision stack',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

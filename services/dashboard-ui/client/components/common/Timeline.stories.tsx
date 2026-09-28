@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Timeline',
+  title: 'UI / Timeline',
 }
 
 import { Timeline } from './Timeline'

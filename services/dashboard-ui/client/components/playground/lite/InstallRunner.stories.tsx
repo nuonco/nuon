@@ -1,7 +1,7 @@
 import { InstallRunner } from './InstallRunner'
 
 export default {
-  title: 'Playground/Lite/InstallRunner',
+  title: 'Playground / Lite / Install runner',
 }
 
 export const Default = () => (

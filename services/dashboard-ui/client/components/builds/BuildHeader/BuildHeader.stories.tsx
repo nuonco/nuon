@@ -1,5 +1,5 @@
 export default {
-  title: 'Builds/BuildHeader',
+  title: 'Features / Builds / Build header',
 }
 
 import { BuildHeader } from './BuildHeader'

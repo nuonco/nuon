@@ -1,5 +1,5 @@
 export default {
-  title: 'Approvals/PlanDiffs/InstallGroupDiff',
+  title: 'Features / Approvals / Plan diffs / Install group diff',
 }
 
 import { InstallGroupDiff } from './InstallGroupDiff'

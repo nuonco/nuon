@@ -16,7 +16,7 @@ import {
 import { TerraformDiff } from './TerraformDiff'
 
 export default {
-  title: 'Diffs/TerraformDiff',
+  title: 'Features / Diffs / Terraform diff',
 }
 
 export const NoPlan = () => <TerraformDiff plan={undefined} />

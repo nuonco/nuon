@@ -1,5 +1,5 @@
 export default {
-  title: 'Components/ComponentDependencies',
+  title: 'Features / Components / Dependencies',
 }
 
 import { ComponentDependencies } from './ComponentDependencies'

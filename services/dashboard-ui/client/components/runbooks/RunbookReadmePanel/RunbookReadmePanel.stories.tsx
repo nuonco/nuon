@@ -1,5 +1,5 @@
 export default {
-  title: 'Runbooks/RunbookReadmePanel',
+  title: 'Features / Runbooks / Readme panel',
 }
 
 import { PanelStory } from '@/components/__stories__/helpers'

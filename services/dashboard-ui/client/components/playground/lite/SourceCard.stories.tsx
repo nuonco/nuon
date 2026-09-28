@@ -1,7 +1,7 @@
 import { SourceCard } from './SourceCard'
 
 export default {
-  title: 'Playground/Lite/SourceCard',
+  title: 'Playground / Lite / Source card',
 }
 
 export const Default = () => (

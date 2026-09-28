@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/WorkflowDetails/WorkflowMetrics',
+  title: 'Features / Workflows / Details / Metrics',
 }
 
 import { WorkflowMetrics } from './WorkflowMetrics'

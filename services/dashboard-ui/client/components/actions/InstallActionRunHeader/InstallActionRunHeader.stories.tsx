@@ -1,5 +1,5 @@
 export default {
-  title: 'Actions/InstallActionRunHeader',
+  title: 'Features / Actions / Install action run header',
 }
 
 import { Button } from '@/components/common/Button'

@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
-const STORY = '/?story=diffs--helmdiff--cert-manager-install&mode=preview'
+const STORY = '/?story=features--diffs--helm-diff--cert-manager-install&mode=preview'
 
 const renderedCode = async (viewer: Locator) =>
   (await viewer.locator('code').allTextContents()).join('\n')

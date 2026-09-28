@@ -6,7 +6,7 @@ import { StackOnlyCheckbox } from './StackOnlyCheckbox'
 import { useInstallForm } from './useInstallForm'
 import type { InstallPlatform } from './schema'
 
-export default { title: 'Installs/InstallForm' }
+export default { title: 'Features / Installs / Forms / Install form' }
 
 const inputConfig = {
   id: 'cfg-1',

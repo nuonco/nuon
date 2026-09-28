@@ -3,7 +3,7 @@ import { Input } from './Input'
 import { Text } from '@/components/common/Text'
 
 export default {
-  title: 'Common/Forms/Label',
+  title: 'UI / Forms / Label',
   component: Label,
 }
 

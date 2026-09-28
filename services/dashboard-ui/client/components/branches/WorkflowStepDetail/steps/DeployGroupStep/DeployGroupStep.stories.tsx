@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/WorkflowStepDetail/DeployGroupStep',
+  title: 'Features / Branches / Workflow step detail / Deploy group step',
 }
 
 import type { ComponentProps } from 'react'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Runners/Management/ShutdownRunnerControl',
+  title: 'Features / Runners / Management / Shutdown runner control',
 }
 
 import { ShutdownRunnerControl } from './ShutdownRunnerControl'

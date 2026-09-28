@@ -1,3 +1,3 @@
 export default {
-  title: 'Install Components/InstallComponentHeader',
+  title: 'Features / Installs / Components / Component header',
 }

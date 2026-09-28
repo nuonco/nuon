@@ -1,7 +1,7 @@
 import type { TSlackChannelSubscription, TSlackOrgLink } from '@/types'
 import { ChannelSubscriptionsTable } from './ChannelSubscriptionsTable'
 
-export default { title: 'Slack/ChannelSubscriptionsTable' }
+export default { title: 'Features / Slack / Channel subscriptions table' }
 
 const links: TSlackOrgLink[] = [
   {

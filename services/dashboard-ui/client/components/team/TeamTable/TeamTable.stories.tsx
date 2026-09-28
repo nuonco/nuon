@@ -1,5 +1,5 @@
 export default {
-  title: 'Team/TeamTable',
+  title: 'Features / Team / Team table',
 }
 
 import { TeamTable } from './TeamTable'

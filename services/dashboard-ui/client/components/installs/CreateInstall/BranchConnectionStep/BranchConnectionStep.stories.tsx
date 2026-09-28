@@ -1,7 +1,7 @@
 import { BranchConnectionStep } from './BranchConnectionStep'
 
 export default {
-  title: 'Installs/BranchConnectionStep',
+  title: 'Features / Installs / Create install / Branch connection step',
 }
 
 const mockBranches: any[] = [

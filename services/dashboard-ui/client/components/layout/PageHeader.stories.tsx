@@ -1,5 +1,5 @@
 export default {
-  title: 'Layout/PageHeader',
+  title: 'UI / Layout / Page header',
 }
 
 import { PageHeader } from './PageHeader'

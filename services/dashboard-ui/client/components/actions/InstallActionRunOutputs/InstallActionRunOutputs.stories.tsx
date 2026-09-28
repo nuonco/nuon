@@ -1,5 +1,5 @@
 export default {
-  title: 'Actions/InstallActionRunOutputs',
+  title: 'Features / Actions / Install action run outputs',
 }
 
 import { InstallActionRunOutputs } from './InstallActionRunOutputs'

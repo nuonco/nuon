@@ -1,5 +1,5 @@
 export default {
-  title: 'Sandbox/SandboxRunSummary',
+  title: 'Features / Sandbox / Run switcher / Run summary',
 }
 
 import { SandboxRunSummary } from './SandboxRunSummary'

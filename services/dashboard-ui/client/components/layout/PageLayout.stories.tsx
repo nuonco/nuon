@@ -1,5 +1,5 @@
 export default {
-  title: 'Layout/PageLayout',
+  title: 'UI / Layout / Page layout',
 }
 
 import type { ReactNode } from 'react'

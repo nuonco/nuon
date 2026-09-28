@@ -1,5 +1,5 @@
 export default {
-  title: 'Onboarding/Playground',
+  title: 'Features / Onboarding / Playground flow',
 }
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'

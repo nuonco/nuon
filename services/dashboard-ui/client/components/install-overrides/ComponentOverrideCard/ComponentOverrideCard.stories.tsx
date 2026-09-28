@@ -1,5 +1,5 @@
 export default {
-  title: 'Install Overrides/ComponentOverrideCard',
+  title: 'Features / Installs / Overrides / Component override card',
 }
 
 import { ComponentOverrideCard } from './ComponentOverrideCard'

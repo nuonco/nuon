@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/ID',
+  title: 'UI / ID',
 }
 
 import { ID } from './ID'

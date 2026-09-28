@@ -1,7 +1,7 @@
 import { ComponentDependencyGraph, type GraphNode, type GraphEdge } from './ComponentDependencyGraph'
 
 export default {
-  title: 'Components/ComponentDependencyGraph',
+  title: 'Features / Components / Dependency graph',
 }
 
 const basePath = '/org-1/apps/app-1/components'

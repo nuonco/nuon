@@ -1,5 +1,5 @@
 export default {
-  title: 'Admin/AdminActionGroup',
+  title: 'Features / Admin / Shared / Action group',
 }
 
 import { AdminActionGroup } from './AdminActionGroup'
