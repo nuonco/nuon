@@ -17,9 +17,10 @@ type ARMTemplate struct {
 }
 
 type ARMParameter struct {
-	Type         string                `json:"type"`
-	DefaultValue any                   `json:"defaultValue,omitempty"`
-	Metadata     *ARMParameterMetadata `json:"metadata,omitempty"`
+	Type          string                `json:"type"`
+	DefaultValue  any                   `json:"defaultValue,omitempty"`
+	AllowedValues []any                 `json:"allowedValues,omitempty"`
+	Metadata      *ARMParameterMetadata `json:"metadata,omitempty"`
 }
 
 type ARMParameterMetadata struct {
