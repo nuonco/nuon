@@ -7,8 +7,7 @@ import { DetailPage } from '@/components/layout/DetailPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { SandboxRunProvider } from '@/providers/sandbox-run-provider'
 import { useSandboxRun } from '@/hooks/use-sandbox-run'
-import { useInstall } from '@/hooks/use-install'
-import { useOrg } from '@/hooks/use-org'
+import { useInstallPage } from '@/hooks/use-install-path'
 import { useRespondedApprovals } from '@/hooks/use-responded-approvals'
 import { getWorkflow } from '@/lib'
 import type { TNavLink } from '@/types'
@@ -25,8 +24,7 @@ const sandboxTabs: TNavLink[] = [
 
 const SandboxRunLayoutInner = () => {
   const { runId } = useParams()
-  const { org } = useOrg()
-  const { install } = useInstall()
+  const { org, install, href } = useInstallPage()
   const { sandboxRun } = useSandboxRun()
 
   const { data: workflow } = useQuery({
@@ -58,7 +56,7 @@ const SandboxRunLayoutInner = () => {
   const pendingApproval =
     step?.approval && !step?.approval?.response && !responded && !isTerminal && stepStatus !== 'auto-skipped'
 
-  const basePath = `/${org?.id}/installs/${install?.id}/sandbox/runs/${runId}`
+  const basePath = href(`/sandbox/runs/${runId}`)
   const traceEnabled = !!org?.features?.['trace-view']
   const tabs = sandboxTabs
     .filter((t) => traceEnabled || t.path !== '/trace')

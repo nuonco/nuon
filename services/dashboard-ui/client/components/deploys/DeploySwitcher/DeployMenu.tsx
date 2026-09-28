@@ -8,6 +8,7 @@ import type { TDeploy } from '@/types'
 import { cn } from '@/utils/classnames'
 import { DeploySummary } from './DeploySummary'
 import { DeploysSkeleton } from './DeploysSkeleton'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 interface IDeployMenu extends Omit<IMenu, 'children'> {
   activeDeployId: string
@@ -32,6 +33,7 @@ export const DeployMenu = ({
   scrollRef,
   limit,
 }: IDeployMenu) => {
+  const installLink = useInstallLink()
   const [searchTerm, setSearchTerm] = useState('')
 
   const filteredDeploys = deploys
@@ -70,7 +72,7 @@ export const DeployMenu = ({
                     '!bg-primary-600/5 dark:!bg-primary-600/5':
                       deploy?.id === activeDeployId,
                   })}
-                  href={`/${orgId}/installs/${installId}/components/${componentId}/deploys/${deploy?.id}`}
+                  href={installLink({ orgId: orgId, installId: installId, suffix: `/components/${componentId}/deploys/${deploy?.id}` })}
                   variant="ghost"
                 >
                   <DeploySummary deploy={deploy} isLatest={idx === 0} />

@@ -14,6 +14,7 @@ import {
 } from '@/components/installs/forms/InstallForm'
 import { InstallStatuses } from '@/components/installs/InstallStatuses'
 import type { TApp, TInstall, TAPIError } from '@/types'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 interface ICompletedInstallCard {
   install?: TInstall
@@ -28,6 +29,7 @@ export const CompletedInstallCard = ({
   orgId,
   isLoading,
 }: ICompletedInstallCard) => {
+  const installLink = useInstallLink()
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4">
@@ -51,7 +53,7 @@ export const CompletedInstallCard = ({
 
       <InstallStatuses install={install} />
 
-      <Link href={`/${orgId}/installs/${installId}`}>
+      <Link href={installLink({ orgId: orgId, installId: installId })}>
         View install
       </Link>
     </Card>

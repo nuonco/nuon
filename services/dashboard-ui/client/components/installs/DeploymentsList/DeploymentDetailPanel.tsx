@@ -11,6 +11,7 @@ import { Time } from '@/components/common/Time'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import type { TInstallDeploymentRecord } from '@/types'
 import { humanize } from '@/utils/string-utils'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 const CHANGE_THEME = {
   add: 'success',
@@ -127,11 +128,12 @@ export const DeploymentDetailPanel = ({
   installId,
   ...props
 }: IDeploymentDetailPanel) => {
+  const installLink = useInstallLink()
   const branchHref = deployment.app_branch
     ? `/${orgId}/apps/${appId}/branches/${deployment.app_branch.id}`
     : undefined
   const workflowHref = deployment.workflow
-    ? `/${orgId}/installs/${installId}/history/${deployment.workflow.id}`
+    ? installLink({ orgId: orgId, installId: installId, suffix: `/history/${deployment.workflow.id}` })
     : undefined
 
   return (

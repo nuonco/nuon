@@ -2,14 +2,12 @@ import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { RunSummary } from '@/components/runs/RunSummary'
-import { useInstall } from '@/hooks/use-install'
-import { useOrg } from '@/hooks/use-org'
+import { useInstallPage } from '@/hooks/use-install-path'
 import { useSandboxRun } from '@/hooks/use-sandbox-run'
 
 export const SandboxRunSummaryTab = () => {
   const { sandboxRun } = useSandboxRun()
-  const { install } = useInstall()
-  const { org } = useOrg()
+  const { install, href } = useInstallPage()
 
   return (
     <>
@@ -28,9 +26,7 @@ export const SandboxRunSummaryTab = () => {
           endTime: sandboxRun?.updated_at,
         }}
         jobs={sandboxRun?.runner_jobs}
-        jobHref={(job) =>
-          `/${org?.id}/installs/${install?.id}/runner/jobs/${job?.id}`
-        }
+        jobHref={(job) => href(`/runner/jobs/${job?.id}`)}
         triggeredBy={
           sandboxRun?.created_by?.email ? (
             <Text variant="subtext">{sandboxRun.created_by.email}</Text>
