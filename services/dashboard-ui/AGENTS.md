@@ -155,8 +155,30 @@ Before building UI: check `common/` and domain dirs; read `.stories.tsx` first.
 - Disabled button reasons: `tooltipProps` on `Button`
 - Admin tools: `AdminDashboardLink` / `TemporalLink` from `client/components/admin/`
 - Modals/panels: `Modal` / `Panel` from `surfaces/` — never `*Base`
-- Ladle v5: plain function exports; stories use presentational component + mocks
 - Tab object keys: all-lowercase
+
+## Ladle
+
+Each story's `title` is its sidebar path. Main Ladle (`.ladle/`) ignores `client/lite/**`. Lite keeps its own titles under `.ladle-lite`.
+
+Four roots, in this order:
+
+| Root | Stories |
+| --- | --- |
+| `UI` | Props-only pieces: `common/`, forms, layout, navigation, surfaces |
+| `Features` | Data-bound UI, grouped by resource |
+| `Views` | A routed page, one story per page |
+| `Playground` | `client/components/playground/` only |
+
+Separate words with spaces. Cap the title at four segments: root, domain, optional group, name. Don't repeat a parent segment in the leaf when the remainder is still clear. Plain function exports; presentational component plus mocks.
+
+```tsx
+export default { title: 'UI / Forms / Toggle' }
+export default { title: 'Features / Installs / Components / Deploy switcher' }
+export default { title: 'Views / Installs / Readme' }
+```
+
+Ladle lowercases each segment and capitalizes the first letter, so the sidebar shows "Ui" and "Await aws details". Write the source title with real word breaks and acronyms anyway.
 
 ## Design, copy, toasts, dates
 

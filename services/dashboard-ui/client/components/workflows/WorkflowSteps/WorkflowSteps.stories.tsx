@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/WorkflowSteps',
+  title: 'Features / Workflows / Workflow steps',
 }
 
 import { WorkflowSteps, WorkflowStepsSkeleton } from './WorkflowSteps'

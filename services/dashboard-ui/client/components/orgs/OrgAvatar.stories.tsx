@@ -1,5 +1,5 @@
 export default {
-  title: 'Orgs/OrgAvatar',
+  title: 'Features / Orgs / Avatar',
 }
 
 import { OrgAvatar } from './OrgAvatar'

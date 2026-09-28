@@ -1,7 +1,7 @@
 import { useForm } from '@tanstack/react-form'
 import { FormMatchPicker } from './FormMatchPicker'
 
-export default { title: 'Match/FormMatchPicker' }
+export default { title: 'Features / Match / Form match picker' }
 
 const Demo = () => {
   const form = useForm({ defaultValues: { match: undefined } })

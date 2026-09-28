@@ -1,4 +1,4 @@
-export default { title: 'Triggers/Trigger overview' }
+export default { title: 'Features / Triggers / Trigger overview' }
 import { TriggerOverview } from './TriggerOverview'
 export const Default = () => (
   <TriggerOverview

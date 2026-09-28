@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const STORY = "/?story=builds--cancelbuildmodal--default&mode=preview";
+const STORY = "/?story=features--builds--cancel-build-modal--default&mode=preview";
 
 test.describe("CancelBuildModal behavior", () => {
   test.beforeEach(async ({ page }) => {

@@ -1,5 +1,5 @@
 export default {
-  title: 'Layout/PageHeadingGroup',
+  title: 'UI / Layout / Page heading group',
 }
 
 import { PageHeadingGroup } from './PageHeadingGroup'

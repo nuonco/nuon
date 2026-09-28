@@ -2,7 +2,7 @@ import type { TComponentBuild } from '@/types'
 import { BranchRunBuilds } from './BranchRunBuilds'
 
 export default {
-  title: 'Branches/BranchRunBuilds',
+  title: 'Features / Branches / Branch run builds',
 }
 
 const build = (overrides: Partial<TComponentBuild>): TComponentBuild =>

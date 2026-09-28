@@ -2,7 +2,7 @@ import { AuthContext } from '@/providers/auth-provider'
 import { TemporalLink } from './TemporalLink'
 
 export default {
-  title: 'Admin/TemporalLink',
+  title: 'Features / Admin / Temporal link',
 }
 
 const adminAuth = {

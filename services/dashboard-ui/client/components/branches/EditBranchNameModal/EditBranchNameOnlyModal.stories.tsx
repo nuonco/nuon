@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/EditBranchNameModal',
+  title: 'Features / Branches / Edit branch name only modal',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

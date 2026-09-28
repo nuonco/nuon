@@ -1,5 +1,5 @@
 export default {
-  title: 'Deploys/DeployHeader',
+  title: 'Features / Deploys / Deploy header',
 }
 
 import { DeployHeader } from './DeployHeader'

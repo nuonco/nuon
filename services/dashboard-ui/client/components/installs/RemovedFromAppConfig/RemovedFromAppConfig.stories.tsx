@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/RemovedFromAppConfig',
+  title: 'Features / Installs / Removed from app config',
 }
 
 import {

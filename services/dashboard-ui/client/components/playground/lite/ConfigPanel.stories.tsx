@@ -1,7 +1,7 @@
 import { ConfigPanel } from './ConfigPanel'
 
 export default {
-  title: 'Playground/Lite/ConfigPanel',
+  title: 'Playground / Lite / Config panel',
 }
 
 export const Default = () => (

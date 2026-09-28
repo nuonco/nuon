@@ -1,5 +1,5 @@
 export default {
-  title: 'Install Components/QuickComponentManagementDropdown',
+  title: 'Features / Installs / Components / Quick component management dropdown',
 }
 
 import { QuickComponentManagementDropdown } from './QuickComponentManagementDropdown'

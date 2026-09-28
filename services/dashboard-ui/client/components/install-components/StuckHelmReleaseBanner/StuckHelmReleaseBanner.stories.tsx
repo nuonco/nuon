@@ -1,5 +1,5 @@
 export default {
-  title: 'InstallComponents/StuckHelmReleaseBanner',
+  title: 'Features / Installs / Components / Stuck Helm release banner',
 }
 
 import { SurfacesProvider } from '@/providers/surfaces-provider'

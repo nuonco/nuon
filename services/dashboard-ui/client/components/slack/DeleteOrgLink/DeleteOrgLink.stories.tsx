@@ -1,7 +1,7 @@
 import { ModalStory } from '@/components/__stories__/helpers'
 import { DeleteOrgLinkModal } from './DeleteOrgLink'
 
-export default { title: 'Slack/DeleteOrgLink' }
+export default { title: 'Features / Slack / Delete org link' }
 
 export const Default = () => (
   <ModalStory>

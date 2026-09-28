@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Text',
+  title: 'UI / Text',
 }
 
 import { Text } from './Text'

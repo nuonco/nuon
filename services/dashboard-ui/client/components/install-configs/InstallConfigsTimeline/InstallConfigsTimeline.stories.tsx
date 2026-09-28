@@ -2,7 +2,7 @@ import { InstallConfigsTimeline } from './InstallConfigsTimeline'
 import type { TInstallConfigVersion } from '@/types'
 
 export default {
-  title: 'InstallConfigs/InstallConfigsTimeline',
+  title: 'Features / Installs / Configs / Configs timeline',
 }
 
 const day = 86400000

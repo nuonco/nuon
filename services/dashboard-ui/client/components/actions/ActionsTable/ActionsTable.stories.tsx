@@ -1,5 +1,5 @@
 export default {
-  title: 'Actions/ActionsTable',
+  title: 'Features / Actions / Actions table',
 }
 
 import { LabelBadge } from '@/components/common/LabelBadge'

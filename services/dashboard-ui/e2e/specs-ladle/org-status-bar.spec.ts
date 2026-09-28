@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const STORY = "/?story=orgs--orgstatusbar--full-context&mode=preview";
+const STORY = "/?story=features--orgs--status-bar--full-context&mode=preview";
 const BYOC_STORY =
-  "/?story=orgs--orgstatusbar--full-context-with-byoc-badge&mode=preview";
+  "/?story=features--orgs--status-bar--full-context-with-byoc-badge&mode=preview";
 
 const SINGLE_LINE_MAX_HEIGHT = 34;
 

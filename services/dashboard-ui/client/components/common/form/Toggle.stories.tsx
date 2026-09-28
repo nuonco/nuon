@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Toggle } from './Toggle'
 
 export default {
-  title: 'Common/Form/Toggle',
+  title: 'UI / Forms / Toggle',
 }
 
 export const Default = () => {

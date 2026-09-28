@@ -1,5 +1,5 @@
 export default {
-  title: 'Deploys/DeployMenu',
+  title: 'Features / Deploys / Deploy switcher / Deploy menu',
 }
 
 import { useRef } from 'react'

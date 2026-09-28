@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/TableSkeleton',
+  title: 'UI / Table skeleton',
 }
 
 import { ColumnDef } from '@tanstack/react-table'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/Configuration/InstallAppBranch',
+  title: 'Features / Installs / Configuration / App branch',
 }
 
 import { InstallVersionsTimelineComponent } from '@/components/install-versions/InstallVersionsTimeline'

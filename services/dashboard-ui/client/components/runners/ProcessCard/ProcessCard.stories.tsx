@@ -1,5 +1,5 @@
 export default {
-  title: 'Runners/ProcessCard',
+  title: 'Features / Runners / Process card',
 }
 
 import type { TRunnerHealthCheck } from '@/types'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Runs/RunFailureBanner',
+  title: 'Features / Runs / Failure banner',
 }
 
 import type { TRunnerJob } from '@/types'

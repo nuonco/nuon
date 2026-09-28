@@ -1,7 +1,7 @@
 import { InstallOverview } from './InstallOverview'
 
 export default {
-  title: 'Playground/Lite/InstallOverview',
+  title: 'Playground / Lite / Install overview',
 }
 
 export const Default = () => (

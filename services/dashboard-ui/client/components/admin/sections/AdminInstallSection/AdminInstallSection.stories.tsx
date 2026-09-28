@@ -1,5 +1,5 @@
 export default {
-  title: 'Admin/AdminInstallSection',
+  title: 'Features / Admin / Sections / Install section',
 }
 
 import { AdminInstallSection } from './AdminInstallSection'

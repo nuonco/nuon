@@ -1,5 +1,5 @@
 export default {
-  title: 'Runbooks/RunRunbookCard',
+  title: 'Features / Runbooks / Run runbook card',
 }
 
 import { RunRunbookCard } from './RunRunbookCard'

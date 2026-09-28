@@ -1,5 +1,5 @@
 export default {
-  title: 'Components/ComponentTypeFilter',
+  title: 'Features / Components / Type filter',
 }
 
 import { ComponentTypeFilterDropdown } from './ComponentTypeFilter'

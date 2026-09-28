@@ -1,5 +1,5 @@
 export default {
-  title: 'Webhooks/DeleteWebhook',
+  title: 'Features / Webhooks / Delete webhook',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

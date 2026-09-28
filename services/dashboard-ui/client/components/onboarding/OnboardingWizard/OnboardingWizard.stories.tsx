@@ -1,5 +1,5 @@
 export default {
-  title: 'Onboarding/OnboardingWizard',
+  title: 'Features / Onboarding / Wizard',
 }
 
 import { WizardContext } from '@/providers/onboarding-wizard-provider'

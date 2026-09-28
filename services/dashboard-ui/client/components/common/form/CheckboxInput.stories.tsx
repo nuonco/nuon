@@ -3,7 +3,7 @@ import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 
 export default {
-  title: 'Common/Forms/CheckboxInput',
+  title: 'UI / Forms / Checkbox input',
   component: CheckboxInput,
 }
 

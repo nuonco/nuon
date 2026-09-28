@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Pagination',
+  title: 'UI / Pagination',
 }
 
 import { Pagination } from './Pagination'

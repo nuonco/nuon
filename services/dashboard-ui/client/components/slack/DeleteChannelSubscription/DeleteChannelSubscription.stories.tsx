@@ -1,7 +1,7 @@
 import { ModalStory } from '@/components/__stories__/helpers'
 import { DeleteChannelSubscriptionModal } from './DeleteChannelSubscription'
 
-export default { title: 'Slack/DeleteChannelSubscription' }
+export default { title: 'Features / Slack / Delete channel subscription' }
 
 export const Default = () => (
   <ModalStory>

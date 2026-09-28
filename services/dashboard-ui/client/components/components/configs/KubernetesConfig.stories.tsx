@@ -1,5 +1,5 @@
 export default {
-  title: 'Components/Configs/KubernetesConfig',
+  title: 'Features / Components / Configs / Kubernetes config',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

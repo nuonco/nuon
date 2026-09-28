@@ -1,6 +1,6 @@
 import { Icon, type TIconVariant } from './Icon'
 
-export default { title: 'Common/Icon' }
+export default { title: 'UI / Icon' }
 
 const customVariants: TIconVariant[] = [
   'AWS',
