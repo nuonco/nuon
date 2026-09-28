@@ -248,5 +248,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "143-drop-cloud-connection-legacy-columns",
 			Fn:   m.Migration143DropCloudConnectionLegacyColumns,
 		},
+		{
+			Name: "144-retire-cloud-connection-cron-emitters",
+			Fn:   m.Migration144RetireCloudConnectionCronEmitters,
+		},
 	}
 }

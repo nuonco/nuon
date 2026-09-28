@@ -45,24 +45,26 @@ func TestReverify(t *testing.T) {
 		wantProbes        int
 		message           string
 	}{
-		"periodic stacks permissions denied": {
+		"on demand stacks permissions denied": {
 			status: app.CloudConnectionStatusVerified, result: app.CloudConnectionStatusError,
+			onDemand:  true,
 			awsPreset: app.CloudConnectionPresetStacks, wantProbes: 1, wantUpdates: 1, wantSignals: 1,
 			message: "The role lacks CloudFormation read access required to manage install stacks.",
 		},
-		"periodic custom skips stack permissions": {
+		"on demand custom skips stack permissions": {
 			status: app.CloudConnectionStatusVerified, result: app.CloudConnectionStatusVerified,
+			onDemand:  true,
 			awsPreset: app.CloudConnectionPresetCustom, wantUpdates: 1, message: "Cloud connection verified.",
 		},
-		"verified succeeds":          {status: app.CloudConnectionStatusVerified, result: app.CloudConnectionStatusVerified, wantUpdates: 1},
-		"verified fails":             {status: app.CloudConnectionStatusVerified, result: app.CloudConnectionStatusError, wantUpdates: 1, wantSignals: 1},
-		"pending succeeds":           {status: app.CloudConnectionStatusPending, result: app.CloudConnectionStatusVerified, wantUpdates: 1},
-		"pending fails":              {status: app.CloudConnectionStatusPending, result: app.CloudConnectionStatusError},
-		"pending on demand succeeds": {status: app.CloudConnectionStatusPending, result: app.CloudConnectionStatusVerified, onDemand: true, wantRetry: true, wantUpdates: 1},
-		"pending on demand fails":    {status: app.CloudConnectionStatusPending, result: app.CloudConnectionStatusError, onDemand: true, wantRetry: true, wantUpdates: 1, wantSignals: 1},
-		"verified on demand fails":   {status: app.CloudConnectionStatusVerified, result: app.CloudConnectionStatusError, onDemand: true, previouslyChecked: true, wantUpdates: 1, wantSignals: 1},
-		"previous failure on demand": {status: app.CloudConnectionStatusError, result: app.CloudConnectionStatusError, onDemand: true, previouslyChecked: true, wantUpdates: 1, wantSignals: 1},
-		"deleted":                    {deleted: true},
+		"periodic verified succeeds skipped": {status: app.CloudConnectionStatusVerified, result: app.CloudConnectionStatusVerified},
+		"periodic verified fails skipped":    {status: app.CloudConnectionStatusVerified, result: app.CloudConnectionStatusError},
+		"periodic pending succeeds skipped":  {status: app.CloudConnectionStatusPending, result: app.CloudConnectionStatusVerified},
+		"periodic pending fails skipped":     {status: app.CloudConnectionStatusPending, result: app.CloudConnectionStatusError},
+		"pending on demand succeeds":         {status: app.CloudConnectionStatusPending, result: app.CloudConnectionStatusVerified, onDemand: true, wantRetry: true, wantUpdates: 1},
+		"pending on demand fails":            {status: app.CloudConnectionStatusPending, result: app.CloudConnectionStatusError, onDemand: true, wantRetry: true, wantUpdates: 1, wantSignals: 1},
+		"verified on demand fails":           {status: app.CloudConnectionStatusVerified, result: app.CloudConnectionStatusError, onDemand: true, previouslyChecked: true, wantUpdates: 1, wantSignals: 1},
+		"previous failure on demand":         {status: app.CloudConnectionStatusError, result: app.CloudConnectionStatusError, onDemand: true, previouslyChecked: true, wantUpdates: 1, wantSignals: 1},
+		"deleted":                            {deleted: true, onDemand: true},
 	} {
 		t.Run(name, func(t *testing.T) {
 			message := tc.message
@@ -151,7 +153,7 @@ func TestReverify(t *testing.T) {
 			require.Equal(t, tc.wantUpdates, updates)
 			require.Equal(t, tc.wantSignals, signals)
 			require.Equal(t, tc.wantProbes, probes)
-			if tc.deleted {
+			if tc.deleted || !tc.onDemand {
 				require.Zero(t, calls)
 			} else {
 				require.Equal(t, 1, calls)

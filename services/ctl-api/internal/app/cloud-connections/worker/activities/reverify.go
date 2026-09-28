@@ -24,6 +24,9 @@ type ReverifyRequest struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 2m
 func (a *Activities) Reverify(ctx context.Context, req ReverifyRequest) error {
+	if !req.OnDemand {
+		return nil
+	}
 	var connection app.CloudConnection
 	if err := a.db.WithContext(ctx).Where(app.CloudConnection{ID: req.CloudConnectionID}).First(&connection).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -32,13 +35,9 @@ func (a *Activities) Reverify(ctx context.Context, req ReverifyRequest) error {
 		}
 		return err
 	}
-	result, verifyErr := a.verifier.Verify(ctx, &connection, cloudconnections.VerifyOptions{RetryIAMPropagation: req.OnDemand && connection.LastVerifiedAt == nil})
+	result, verifyErr := a.verifier.Verify(ctx, &connection, cloudconnections.VerifyOptions{RetryIAMPropagation: connection.LastVerifiedAt == nil})
 	if verifyErr != nil {
 		result = cloudconnections.VerificationResult{Status: app.CloudConnectionStatusError, Message: cloudconnections.VerificationErrorMessage(verifyErr)}
-	}
-	if !req.OnDemand && connection.Status == app.CloudConnectionStatusPending && result.Status != app.CloudConnectionStatusVerified {
-		a.l.Debug("pending cloud connection is not ready", zap.String("connection_id", connection.ID), zap.String("message", result.Message))
-		return nil
 	}
 	if verifyErr != nil {
 		a.l.Warn("cloud connection re-verification failed", zap.String("connection_id", connection.ID), zap.Error(verifyErr))
@@ -58,7 +57,7 @@ func (a *Activities) Reverify(ctx context.Context, req ReverifyRequest) error {
 	if res.RowsAffected == 0 {
 		return nil
 	}
-	if (req.OnDemand || connection.Status == app.CloudConnectionStatusVerified) && result.Status != app.CloudConnectionStatusVerified {
+	if result.Status != app.CloudConnectionStatusVerified {
 		signalCtx := context.WithValue(ctx, keys.AccountIDCtxKey, connection.CreatedByID)
 		return a.enqueueOrgSignal(signalCtx, orgshelpers.EnqueueOrgSignalParams{
 			OrgID: connection.OrgID,

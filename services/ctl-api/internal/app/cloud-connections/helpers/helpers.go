@@ -11,7 +11,6 @@ import (
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcissuer"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
-	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
 
 type Helpers struct {
@@ -19,20 +18,18 @@ type Helpers struct {
 	db               *gorm.DB
 	enqueueOrgSignal func(context.Context, orgshelpers.EnqueueOrgSignalParams) error
 	queueClient      *queueclient.Client
-	emitterClient    *emitterclient.Client
 }
 
 type Params struct {
 	fx.In
-	Cfg           *internal.Config
-	DB            *gorm.DB `name:"psql"`
-	OrgsHelpers   *orgshelpers.Helpers
-	QueueClient   *queueclient.Client
-	EmitterClient *emitterclient.Client
+	Cfg         *internal.Config
+	DB          *gorm.DB `name:"psql"`
+	OrgsHelpers *orgshelpers.Helpers
+	QueueClient *queueclient.Client
 }
 
 func New(params Params) (*Helpers, error) {
-	h := &Helpers{db: params.DB, enqueueOrgSignal: params.OrgsHelpers.EnqueueOrgSignal, queueClient: params.QueueClient, emitterClient: params.EmitterClient}
+	h := &Helpers{db: params.DB, enqueueOrgSignal: params.OrgsHelpers.EnqueueOrgSignal, queueClient: params.QueueClient}
 	issuer, err := cloudconnections.IssuerFromConfig(params.Cfg)
 	if err != nil {
 		return nil, err
