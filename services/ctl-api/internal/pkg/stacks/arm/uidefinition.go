@@ -74,10 +74,7 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 		"subscription": map[string]any{
 			"constraints": map[string]any{"validations": subscriptionValidations},
 		},
-		"location": map[string]any{
-			"allowedValues": []string{location},
-			"toolTip":       "The install's region. It is fixed for the lifetime of the install.",
-		},
+		"location": locationPin(location),
 	}
 
 	// At subscription scope the stack template creates the install resource group
@@ -141,6 +138,16 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 
 	hash := sha256.Sum256(uiDefBytes)
 	return uiDefBytes, hex.EncodeToString(hash[:]), nil
+}
+
+func locationPin(location string) map[string]any {
+	if location == "" {
+		return map[string]any{}
+	}
+	return map[string]any{
+		"allowedValues": []string{location},
+		"toolTip":       "The install's region. It is fixed for the lifetime of the install.",
+	}
 }
 
 // deployedResourceGroupName is the resource group the install's stack actually

@@ -40,6 +40,13 @@ func escapeDataString(s string) string {
 	return strings.ReplaceAll(url.QueryEscape(s), "+", "%20")
 }
 
+func azureUIDefBucketKey(templateKey string) string {
+	if !strings.HasSuffix(templateKey, ".json") {
+		return ""
+	}
+	return strings.TrimSuffix(templateKey, ".json") + "-ui.json"
+}
+
 func firstNonEmpty(vals ...string) string {
 	for _, v := range vals {
 		if v != "" {
@@ -70,6 +77,10 @@ func stackTemplateLocations(configuredBaseURL, bucketKey string, req *CreateInst
 		}
 
 		loc.quickLinkURL = azurePortalCustomDeployBaseURL + escapeDataString(loc.templateURL)
+		if uiDefKey := azureUIDefBucketKey(bucketKey); uiDefKey != "" {
+			uiDefURL := fmt.Sprintf("%s/%s", baseURL, uiDefKey)
+			loc.quickLinkURL += "/createUIDefinitionUri/" + escapeDataString(uiDefURL)
+		}
 		return loc
 	}
 
@@ -127,6 +138,9 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 			loc := stackTemplateLocations(a.cfg.AWSCloudFormationStackTemplateBaseURL, obj.AWSBucketKey, req)
 			obj.TemplateURL = loc.templateURL
 			obj.QuickLinkURL = loc.quickLinkURL
+			if req.Platform == string(app.AppRunnerTypeAzure) && req.DeploymentScope == string(app.StackDeploymentScopeSubscription) {
+				obj.QuickLinkUIDefBucketKey = azureUIDefBucketKey(obj.AWSBucketKey)
+			}
 
 			if (req.Platform == "aws" || req.Platform == "azure") && req.HasCustomNestedStacks {
 				obj.CustomStacksAWSBucketKey = fmt.Sprintf("templates/%s/%s-custom.json", req.InstallID, id)
