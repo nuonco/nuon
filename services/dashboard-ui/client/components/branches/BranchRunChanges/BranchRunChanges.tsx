@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import {
   computeSummary,
@@ -39,7 +39,13 @@ export function sectionsFromComparisonConfigDiff(
             ? [{ key: 'change', op: e.op, diff: e.description }]
             : e.source_changed
               ? [{ key: 'source', op: 'change', diff: 'source files changed' }]
-              : [{ key: 'change', op: e.op || 'change', diff: 'Configuration changed' }],
+              : [
+                  {
+                    key: 'change',
+                    op: e.op || 'change',
+                    diff: 'Configuration changed',
+                  },
+                ],
         }))
       : []
 
@@ -69,6 +75,8 @@ interface IBranchRunChanges {
   className?: string
   showRunComparison?: boolean
   repoSlug?: string
+  title?: string
+  headerAction?: ReactNode
 }
 
 export const BranchRunChanges = ({
@@ -78,6 +86,8 @@ export const BranchRunChanges = ({
   className,
   showRunComparison = true,
   repoSlug,
+  title = 'Config Changes',
+  headerAction,
 }: IBranchRunChanges) => {
   const { org } = useOrg()
   const { app } = useApp()
@@ -119,7 +129,8 @@ export const BranchRunChanges = ({
   if (isError) {
     return (
       <AppConfigDiffCard
-        title="Config Changes"
+        title={title}
+        headerAction={headerAction}
         sections={[]}
         summary={null}
         isLoading={false}
@@ -145,7 +156,8 @@ export const BranchRunChanges = ({
       ) : null}
 
       <AppConfigDiffCard
-        title="Config Changes"
+        title={title}
+        headerAction={headerAction}
         sections={sections}
         summary={summary}
         isLoading={isLoading && !data}

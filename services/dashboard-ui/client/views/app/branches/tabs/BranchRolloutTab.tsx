@@ -1,18 +1,15 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
+import { BranchRollout } from '@/components/branches/BranchOverview'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
-import { BranchDetail } from '../BranchDetail'
 
-export const BranchPlanTab = () => {
+export const BranchRolloutTab = () => {
   const hasNewAppIA = useNewAppIA()
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (!hasNewAppIA) return
-    navigate('../settings', { replace: true })
+    if (!hasNewAppIA) navigate('..', { replace: true, relative: 'path' })
   }, [hasNewAppIA, navigate])
 
-  if (hasNewAppIA) return null
-
-  return <BranchDetail />
+  return hasNewAppIA ? <BranchRollout /> : null
 }
