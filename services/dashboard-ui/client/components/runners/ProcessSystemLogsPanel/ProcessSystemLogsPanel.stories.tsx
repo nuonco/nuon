@@ -1,5 +1,5 @@
 export default {
-  title: 'Runners/ProcessSystemLogsPanel',
+  title: 'Features / Runners / Process system logs panel',
 }
 
 import { ProcessSystemLogsPanel } from './ProcessSystemLogsPanel'

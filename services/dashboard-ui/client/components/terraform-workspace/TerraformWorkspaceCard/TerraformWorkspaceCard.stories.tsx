@@ -1,5 +1,5 @@
 export default {
-  title: 'Terraform/TerraformWorkspaceCard',
+  title: 'Features / Terraform / Workspace / Workspace card',
 }
 
 import { DateTime } from 'luxon'

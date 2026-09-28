@@ -1,5 +1,5 @@
 export default {
-  title: 'Components/ComponentsTooltip',
+  title: 'Features / Components / Tooltip',
 }
 
 import { ComponentsTooltip } from './ComponentsTooltip'

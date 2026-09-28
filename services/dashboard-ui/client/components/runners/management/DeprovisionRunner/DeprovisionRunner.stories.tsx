@@ -1,5 +1,5 @@
 export default {
-  title: 'Runners/Management/DeprovisionRunner',
+  title: 'Features / Runners / Management / Deprovision runner',
 }
 
 import { DeprovisionRunnerButton } from './DeprovisionRunner'

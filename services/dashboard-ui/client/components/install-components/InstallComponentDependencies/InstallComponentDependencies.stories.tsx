@@ -1,5 +1,5 @@
 export default {
-  title: 'Install Components/InstallComponentDependencies',
+  title: 'Features / Installs / Components / Dependencies',
 }
 
 import { InstallComponentDependencies } from './InstallComponentDependencies'

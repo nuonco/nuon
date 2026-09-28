@@ -1,5 +1,5 @@
 export default {
-  title: 'Layout/PageContent',
+  title: 'UI / Layout / Page content',
 }
 
 import { PageContent } from './PageContent'

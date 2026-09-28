@@ -1,7 +1,7 @@
 import { BranchVcsBadges } from './BranchVcsBadges'
 
 export default {
-  title: 'Branches/BranchVcsBadges',
+  title: 'Features / Branches / Branch VCS badges',
 }
 
 export const Default = () => (

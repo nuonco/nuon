@@ -2,7 +2,7 @@ import type { TAppBranch } from '@/types'
 import { AppBranchSwitcher } from './AppBranchSwitcher'
 
 export default {
-  title: 'Branches/AppBranchSwitcher',
+  title: 'Features / Branches / App branch switcher',
 }
 
 const mockBranches: TAppBranch[] = [

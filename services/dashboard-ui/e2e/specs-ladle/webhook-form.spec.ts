@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-const CREATE_STORY = "/?story=webhooks--webhookform--create&mode=preview";
-const EDIT_STORY = "/?story=webhooks--webhookform--edit&mode=preview";
+const CREATE_STORY = "/?story=features--webhooks--webhook-form--create&mode=preview";
+const EDIT_STORY = "/?story=features--webhooks--webhook-form--edit&mode=preview";
 
 test.describe("WebhookForm create behavior", () => {
   test.beforeEach(async ({ page }) => {

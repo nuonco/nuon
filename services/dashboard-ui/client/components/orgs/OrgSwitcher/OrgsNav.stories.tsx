@@ -1,5 +1,5 @@
 export default {
-  title: 'Orgs/OrgsNav',
+  title: 'Features / Orgs / Org switcher / Orgs nav',
 }
 
 import { OrgsNav } from './OrgsNav'

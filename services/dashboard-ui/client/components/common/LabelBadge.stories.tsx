@@ -1,7 +1,7 @@
 import { LabelBadge } from './LabelBadge'
 
 export default {
-  title: 'Common/LabelBadge',
+  title: 'UI / Label badge',
 }
 
 export const Default = () => <LabelBadge label="env:production" />

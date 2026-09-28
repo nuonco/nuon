@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const STORY = "/?story=installs--installform--create-modal&mode=preview";
+const STORY = "/?story=features--installs--forms--install-form--create-modal&mode=preview";
 
 test.describe("InstallForm create behavior", () => {
   test.beforeEach(async ({ page }) => {

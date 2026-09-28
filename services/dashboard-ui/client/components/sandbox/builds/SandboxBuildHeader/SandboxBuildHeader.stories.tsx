@@ -1,5 +1,5 @@
 export default {
-  title: 'Sandbox/SandboxBuildHeader',
+  title: 'Features / Sandbox / Builds / Build header',
 }
 
 import type { TApp, TAppSandboxBuild } from '@/types'

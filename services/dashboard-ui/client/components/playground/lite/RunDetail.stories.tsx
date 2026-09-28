@@ -1,7 +1,7 @@
 import { RunLogs, RunOutputs, RunSummary, RunTrace } from './RunDetail'
 
 export default {
-  title: 'Playground/Lite/RunDetail',
+  title: 'Playground / Lite / Run detail',
 }
 
 export const Summary = () => (

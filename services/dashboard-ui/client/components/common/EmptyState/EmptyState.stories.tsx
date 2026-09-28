@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/EmptyState',
+  title: 'UI / Empty state',
 }
 
 import { EmptyState } from './EmptyState'

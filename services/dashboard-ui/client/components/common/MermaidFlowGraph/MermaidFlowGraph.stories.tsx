@@ -1,7 +1,7 @@
 import { MermaidFlowGraph } from './MermaidFlowGraph'
 
 export default {
-  title: 'Common/MermaidFlowGraph',
+  title: 'UI / Mermaid flow graph',
 }
 
 const simpleGraph = `graph TD

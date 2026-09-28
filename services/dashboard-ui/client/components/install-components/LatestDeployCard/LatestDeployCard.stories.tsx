@@ -1,5 +1,5 @@
 export default {
-  title: 'InstallComponents/LatestDeployCard',
+  title: 'Features / Installs / Components / Latest deploy card',
 }
 
 import type { TComponentBuild, TDeploy } from '@/types'

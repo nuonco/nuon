@@ -1,5 +1,5 @@
 export default {
-  title: 'Deploys/RenderedValues',
+  title: 'Features / Deploys / Rendered values',
 }
 
 import { RenderedValues } from './RenderedValues'

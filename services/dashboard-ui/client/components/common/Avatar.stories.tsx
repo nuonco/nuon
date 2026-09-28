@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Avatar',
+  title: 'UI / Avatar',
 }
 
 import { Avatar } from './Avatar'

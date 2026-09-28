@@ -1,5 +1,5 @@
 export default {
-  title: 'Admin/AdminMetadata',
+  title: 'Features / Admin / Shared / Admin metadata',
 }
 
 import { AdminInfoCard, AdminMetadataPanel } from './AdminMetadata'

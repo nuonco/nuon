@@ -1,5 +1,5 @@
 export default {
-  title: 'Actions/ActionStep',
+  title: 'Features / Actions / Action step',
 }
 
 import { ActionStep } from './ActionStep'

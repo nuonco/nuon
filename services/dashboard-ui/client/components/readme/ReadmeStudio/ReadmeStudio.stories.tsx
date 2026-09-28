@@ -1,5 +1,5 @@
 export default {
-  title: 'Readme/ReadmeStudio',
+  title: 'Features / Readme / Studio',
 }
 
 import { ReadmeStudio } from './ReadmeStudio'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Runners/RunnerCard',
+  title: 'Features / Runners / Runner card',
 }
 
 import { RunnerCard } from './RunnerCard'

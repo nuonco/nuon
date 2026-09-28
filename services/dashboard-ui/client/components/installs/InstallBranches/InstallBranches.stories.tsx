@@ -1,7 +1,7 @@
 import { InstallBranches } from './InstallBranches'
 
 export default {
-  title: 'Installs/InstallBranches',
+  title: 'Features / Installs / Branches',
 }
 
 const mockBranches: any[] = [

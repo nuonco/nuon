@@ -2,7 +2,7 @@ import { ModalStory } from '@/components/__stories__/helpers'
 import { EditStackOverridesModal } from './EditStackOverrides'
 
 export default {
-  title: 'Installs/Management/EditStackOverrides',
+  title: 'Features / Installs / Management / Edit stack overrides',
 }
 
 const noop = () => {}

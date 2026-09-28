@@ -1,7 +1,7 @@
 import { useForm } from '@tanstack/react-form'
 import { FormTextarea } from './FormTextarea'
 
-export default { title: 'Common/Forms/FormTextarea' }
+export default { title: 'UI / Forms / Form textarea' }
 
 const Demo = () => {
   const form = useForm({ defaultValues: { notes: '' } })

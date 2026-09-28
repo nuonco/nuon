@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/EditLabels',
+  title: 'Features / Installs / Management / Edit labels',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

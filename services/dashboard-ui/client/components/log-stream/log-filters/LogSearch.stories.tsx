@@ -1,5 +1,5 @@
 export default {
-  title: 'LogStream/LogSearch',
+  title: 'Features / Logs / Log filters / Search',
 }
 
 import { useState } from 'react'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Hash',
+  title: 'UI / Hash',
 }
 
 import { Hash } from './Hash'

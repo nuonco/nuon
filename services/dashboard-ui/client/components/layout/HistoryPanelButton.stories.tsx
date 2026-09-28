@@ -1,5 +1,5 @@
 export default {
-  title: 'Layout/HistoryPanelButton',
+  title: 'UI / Layout / History panel button',
 }
 
 import { Card } from '@/components/common/Card'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Diffs/PulumiDiff',
+  title: 'Features / Diffs / Pulumi diff',
 }
 
 import {

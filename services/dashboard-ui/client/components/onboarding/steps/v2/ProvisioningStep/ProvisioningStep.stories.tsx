@@ -1,5 +1,5 @@
 export default {
-  title: 'Onboarding/V2 Steps/ProvisioningStep',
+  title: 'Features / Onboarding / V2 steps / Provisioning step',
 }
 
 import { ProvisioningStepContainer } from './ProvisioningStepContainer'

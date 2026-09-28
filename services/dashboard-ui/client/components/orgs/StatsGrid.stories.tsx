@@ -1,5 +1,5 @@
 export default {
-  title: 'Orgs/StatsGrid',
+  title: 'Features / Orgs / Stats grid',
 }
 
 import { StatsGrid } from './StatsGrid'

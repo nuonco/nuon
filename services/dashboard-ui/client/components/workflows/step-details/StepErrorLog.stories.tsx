@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/StepErrorLog',
+  title: 'Features / Workflows / Step details / Step error log',
 }
 
 import { StepErrorLog } from './StepErrorLog'

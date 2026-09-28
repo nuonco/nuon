@@ -6,7 +6,7 @@ import type {
   TPolicyAnalyticsTimeseries,
 } from '@/types'
 
-export default { title: 'Policies/PolicyAnalytics' }
+export default { title: 'Features / Policies / Analytics' }
 
 const now = DateTime.now().toUTC()
 

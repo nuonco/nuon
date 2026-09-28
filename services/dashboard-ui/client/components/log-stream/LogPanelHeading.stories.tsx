@@ -1,5 +1,5 @@
 export default {
-  title: 'LogStream/LogPanelHeading',
+  title: 'Features / Logs / Panel heading',
 }
 
 import { LogPanelHeading } from './LogPanelHeading'

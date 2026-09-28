@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 const WITH_LABELS =
-  '/?story=branches--workflowstepdetail--plangroupstep--with-labels&mode=preview'
+  '/?story=features--branches--workflow-step-detail--plan-group-step--with-labels&mode=preview'
 
 test.describe('PlanGroupStep behavior', () => {
   test('links each install name to its install page', async ({ page }) => {

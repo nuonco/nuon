@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { MatchPicker } from './MatchPicker'
 import type { SubscriptionMatch } from './types'
 
-export default { title: 'Match/MatchPicker' }
+export default { title: 'Features / Match / Match picker' }
 
 const Story = ({ initial }: { initial?: SubscriptionMatch }) => {
   const [value, setValue] = useState<SubscriptionMatch | undefined>(initial)

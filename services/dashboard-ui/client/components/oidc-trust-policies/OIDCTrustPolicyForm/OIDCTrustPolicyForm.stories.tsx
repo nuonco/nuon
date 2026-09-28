@@ -1,5 +1,5 @@
 export default {
-  title: 'OIDCTrustPolicies/OIDCTrustPolicyForm',
+  title: 'Features / OIDC trust policies / OIDC trust policy form',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

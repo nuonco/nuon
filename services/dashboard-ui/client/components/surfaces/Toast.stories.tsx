@@ -22,6 +22,10 @@ const ToastTrigger = ({ theme, children, heading, content }) => {
   )
 }
 
+export default {
+  title: 'UI / Surfaces / Toast',
+}
+
 export const BasicUsage = () => (
   <ToastProvider>
     <div className="space-y-6">

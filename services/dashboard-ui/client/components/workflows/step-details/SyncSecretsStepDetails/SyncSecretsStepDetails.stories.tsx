@@ -1,6 +1,6 @@
 import { SyncSecretsStepDetails } from './SyncSecretsStepDetails'
 
-export default { title: 'Workflows/SyncSecretsStepDetails' }
+export default { title: 'Features / Workflows / Step details / Sync secrets step details' }
 
 export const WithLogStream = () => (
   <SyncSecretsStepDetails

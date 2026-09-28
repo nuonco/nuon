@@ -1,5 +1,5 @@
 export default {
-  title: 'Stacks/InstallStackVersions',
+  title: 'Features / Stacks / Install stack versions',
 }
 
 import { Button } from '@/components/common/Button'

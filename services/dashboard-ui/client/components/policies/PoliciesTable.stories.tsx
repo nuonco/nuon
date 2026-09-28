@@ -1,5 +1,5 @@
 export default {
-  title: 'Policies/PoliciesTable',
+  title: 'Features / Policies / Policies table',
 }
 
 import { PoliciesTable } from './PoliciesTable'

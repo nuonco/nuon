@@ -1,7 +1,7 @@
 import { AppSettingsButton } from './AppSettingsButton'
 
 export default {
-  title: 'Playground/Lite/AppSettingsButton',
+  title: 'Playground / Lite / App settings button',
 }
 
 export const Default = () => (

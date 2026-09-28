@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/DeploymentPlanEditor/GroupEditor',
+  title: 'Features / Branches / Deployment plan editor / Group editor',
 }
 
 import { GroupEditor } from './GroupEditor'

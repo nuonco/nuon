@@ -1,5 +1,5 @@
 export default {
-  title: 'Admin/AdminRunnersCard',
+  title: 'Features / Admin / Shared / Runners card',
 }
 
 import { AdminRunnersCard } from './AdminRunnersCard'

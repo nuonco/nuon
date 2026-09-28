@@ -1,5 +1,5 @@
 export default {
-  title: 'Runners/UpdateRunner',
+  title: 'Features / Runners / Management / Update runner',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

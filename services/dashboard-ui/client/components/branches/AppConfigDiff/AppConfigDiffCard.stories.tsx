@@ -2,7 +2,7 @@ import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-conf
 import { AppConfigDiffCard } from './AppConfigDiffCard'
 
 export default {
-  title: 'Branches/AppConfigDiffCard',
+  title: 'Features / Branches / App config diff card',
 }
 
 const componentsSection: DiffSectionData = {

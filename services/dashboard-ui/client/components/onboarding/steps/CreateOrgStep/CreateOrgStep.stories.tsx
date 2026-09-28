@@ -1,5 +1,5 @@
 export default {
-  title: 'Onboarding/V1 Steps/CreateOrgStep',
+  title: 'Features / Onboarding / V1 steps / Create org step',
 }
 
 import { CreateOrgStep, CompletedOrgCard } from './CreateOrgStep'

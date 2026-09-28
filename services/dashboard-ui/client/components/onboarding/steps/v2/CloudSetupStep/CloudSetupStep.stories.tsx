@@ -1,5 +1,5 @@
 export default {
-  title: 'Onboarding/V2 Steps/CloudSetupStep',
+  title: 'Features / Onboarding / V2 steps / Cloud setup step',
 }
 
 import { CloudSetupStepContainer } from './CloudSetupStepContainer'

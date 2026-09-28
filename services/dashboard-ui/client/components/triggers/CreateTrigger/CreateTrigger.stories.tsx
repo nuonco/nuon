@@ -1,4 +1,4 @@
-export default { title: 'Triggers/Create trigger' }
+export default { title: 'Features / Triggers / Create trigger' }
 import { ModalStory } from '@/components/__stories__/helpers'
 import { CreateTriggerModal } from './CreateTrigger'
 export const Default = () => (

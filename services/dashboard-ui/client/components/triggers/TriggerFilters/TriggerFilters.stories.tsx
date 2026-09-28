@@ -1,4 +1,4 @@
-export default { title: 'Triggers/Trigger filters' }
+export default { title: 'Features / Triggers / Trigger filters' }
 
 import { TriggerFilters } from './TriggerFilters'
 

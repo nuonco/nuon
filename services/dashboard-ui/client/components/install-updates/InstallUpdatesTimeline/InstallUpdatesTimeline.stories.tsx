@@ -2,7 +2,7 @@ import { InstallUpdatesTimeline } from './InstallUpdatesTimeline'
 import type { TInstallUpdate } from '@/types'
 
 export default {
-  title: 'InstallUpdates/InstallUpdatesTimeline',
+  title: 'Features / Installs / Updates / Updates timeline',
 }
 
 const day = 86400000

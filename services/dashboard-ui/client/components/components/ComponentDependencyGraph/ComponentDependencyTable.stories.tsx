@@ -1,5 +1,5 @@
 export default {
-  title: 'Components/ComponentDependencyTable',
+  title: 'Features / Components / Dependency graph / Dependency table',
 }
 
 import { ComponentDependencyTable } from './ComponentDependencyTable'

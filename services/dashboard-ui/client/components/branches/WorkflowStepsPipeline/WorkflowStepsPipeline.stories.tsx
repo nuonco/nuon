@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/WorkflowStepsPipeline',
+  title: 'Features / Branches / Workflow steps pipeline',
 }
 
 import { useState } from 'react'

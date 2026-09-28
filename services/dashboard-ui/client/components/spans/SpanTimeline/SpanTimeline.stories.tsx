@@ -3,7 +3,7 @@ import type { TSpan } from '@/types'
 import { SpanTimeline } from './SpanTimeline'
 
 export default {
-  title: 'Spans/SpanTimeline',
+  title: 'Features / Spans / Span timeline',
 }
 
 const mockSpans: TSpan[] = [

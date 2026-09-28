@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/WorkflowStepDetail/ConfigStep',
+  title: 'Features / Branches / Workflow step detail / Config step',
 }
 
 import { ConfigStep } from './ConfigStep'

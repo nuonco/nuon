@@ -1,5 +1,5 @@
 export default {
-  title: 'VCS Connections/VCSConnections',
+  title: 'Features / VCS connections / VCS connections',
 }
 
 import { VCSConnections as VCSConnectionsComponent } from './VCSConnections'

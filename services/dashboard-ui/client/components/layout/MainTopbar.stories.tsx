@@ -1,5 +1,5 @@
 export default {
-  title: 'Layout/MainTopbar',
+  title: 'UI / Layout / Main topbar',
 }
 
 import { SidebarProvider } from '@/providers/sidebar-provider'

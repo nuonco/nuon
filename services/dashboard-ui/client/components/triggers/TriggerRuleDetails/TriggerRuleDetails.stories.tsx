@@ -1,4 +1,4 @@
-export default { title: 'Triggers/Trigger rule details' }
+export default { title: 'Features / Triggers / Rule details' }
 import { TriggerRuleDetails } from './TriggerRuleDetails'
 export const Default = () => (
   <TriggerRuleDetails

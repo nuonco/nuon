@@ -1,5 +1,5 @@
 export default {
-  title: 'Deploys/DeploySwitcher',
+  title: 'Features / Deploys / Deploy switcher',
 }
 
 import { DeploySwitcher } from './DeploySwitcher'
