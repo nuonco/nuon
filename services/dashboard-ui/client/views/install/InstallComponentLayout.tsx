@@ -14,9 +14,8 @@ import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { DetailPage } from '@/components/layout/DetailPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { useInstall } from '@/hooks/use-install'
+import { useInstallPage } from '@/hooks/use-install-path'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
-import { useOrg } from '@/hooks/use-org'
 import { getComponentBuilds, getInstallComponent } from '@/lib'
 import type { TNavLink } from '@/types'
 import { groupComponentOverrideInputs } from '@/utils/install-utils'
@@ -24,8 +23,7 @@ import type { TInstallComponentOutletContext } from './install-component-tabs/ty
 
 export const InstallComponentLayout = () => {
   const { componentId } = useParams()
-  const { org } = useOrg()
-  const { install } = useInstall()
+  const { org, install, href } = useInstallPage()
 
   const { data: installComponent, isLoading } = useQuery({
     placeholderData: keepPreviousData,
@@ -78,7 +76,7 @@ export const InstallComponentLayout = () => {
       .map((c) => c.component_id!)
       .filter(Boolean) ?? []
 
-  const basePath = `/${org?.id}/installs/${install?.id}/components/${componentId}`
+  const basePath = href(`/components/${componentId}`)
   const hasState =
     component?.type === 'terraform_module' || component?.type === 'pulumi'
 

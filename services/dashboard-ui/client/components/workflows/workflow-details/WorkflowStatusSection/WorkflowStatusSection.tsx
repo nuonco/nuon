@@ -12,6 +12,7 @@ import { getStatusTheme } from '@/utils/status-utils'
 import { snakeToWords, humanize } from '@/utils/string-utils'
 import type { TWorkflow } from '@/types'
 import { Link } from '@/components/common/Link'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 interface IWorkflowStatusSection {
   workflow: TWorkflow
@@ -104,9 +105,10 @@ const QueueItem = ({
   orgId?: string
   onCancel?: (workflowId: string) => void
 }) => {
+  const installLink = useInstallLink()
   const workflowLink =
     orgId && installId
-      ? `/${orgId}/installs/${installId}/workflows/${item.workflow_id}`
+      ? installLink({ orgId: orgId, installId: installId, suffix: `/workflows/${item.workflow_id}` })
       : undefined
 
   return (

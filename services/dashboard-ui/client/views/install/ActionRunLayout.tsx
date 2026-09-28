@@ -5,18 +5,16 @@ import { CompositeError } from '@/components/common/CompositeError'
 import { DetailPage } from '@/components/layout/DetailPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { useInstallActionRun } from '@/hooks/use-install-action-run'
-import { useInstall } from '@/hooks/use-install'
-import { useOrg } from '@/hooks/use-org'
+import { useInstallPage } from '@/hooks/use-install-path'
 import { InstallActionRunProvider } from '@/providers/install-action-run-provider'
 import { getWorkflow, getInstallAction } from '@/lib'
 
 const ActionRunLayoutInner = () => {
   const { actionId, actionRunId } = useParams()
-  const { org } = useOrg()
-  const { install } = useInstall()
+  const { org, install, href } = useInstallPage()
   const { installActionRun } = useInstallActionRun()
 
-  const basePath = `/${org?.id}/installs/${install?.id}/actions/${actionId}/runs/${actionRunId}`
+  const basePath = href(`/actions/${actionId}/runs/${actionRunId}`)
   const { data: action } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['action', org?.id, actionId],

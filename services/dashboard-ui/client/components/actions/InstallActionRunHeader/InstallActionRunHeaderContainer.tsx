@@ -4,8 +4,8 @@ import { Icon } from '@/components/common/Icon'
 import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
 import { CancelRunnerJobButton } from '@/components/runners/CancelRunnerJob'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useInstallActionRun } from '@/hooks/use-install-action-run'
-import { useOrg } from '@/hooks/use-org'
 import { useAuth } from '@/hooks/use-auth'
 import type { TInstallAction, TWorkflow } from '@/types'
 import { getWorkflowStep } from '@/utils/workflow-utils'
@@ -24,15 +24,15 @@ export const InstallActionRunHeaderContainer = ({
   actionName,
   workflow,
 }: IInstallActionRunHeaderContainer) => {
-  const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
   const { installActionRun } = useInstallActionRun()
   const { isAdmin } = useAuth()
   const step = getWorkflowStep({
     workflow,
     stepTargetId: installActionRun?.id,
   })
-  const basePath = `/${org?.id}/installs/${install?.id}`
+  const basePath = installLink({ installId: install?.id, appId: install?.app_id })
 
   const hasWorkflow = !!installActionRun?.install_workflow_id
   const runnerJobStatus = installActionRun?.runner_job?.status

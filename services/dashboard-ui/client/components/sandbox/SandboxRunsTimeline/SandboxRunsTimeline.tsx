@@ -5,6 +5,7 @@ import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
 import type { TSandboxRun } from '@/types'
 import { humanize } from '@/utils/string-utils'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 interface ISandboxRunsTimeline {
   runs: TSandboxRun[]
@@ -19,6 +20,7 @@ export const SandboxRunsTimeline = ({
   orgId,
   installId,
 }: ISandboxRunsTimeline) => {
+  const installLink = useInstallLink()
   return (
     <Timeline<TSandboxRun>
       events={runs}
@@ -33,7 +35,7 @@ export const SandboxRunsTimeline = ({
             title={
               <span className="flex items-center gap-2">
                 <Link
-                  href={`/${orgId}/installs/${installId}/sandbox/runs/${run?.id}`}
+                  href={installLink({ orgId: orgId, installId: installId, suffix: `/sandbox/runs/${run?.id}` })}
                   variant="inline"
                 >
                   {humanize(run?.run_type)}

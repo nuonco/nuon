@@ -1,16 +1,16 @@
-import { useOrg } from '@/hooks/use-org'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { RunnerCard } from './RunnerCard'
 
 export const RunnerCardContainer = () => {
-  const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
 
   if (!install.runner_id) {
     return <RunnerCard error="No runner found" />
   }
 
-  const href = `/${org.id}/installs/${install.id}/runner`
+  const href = installLink({ installId: install.id, appId: install.app_id, suffix: `/runner` })
 
   return (
     <RunnerCard

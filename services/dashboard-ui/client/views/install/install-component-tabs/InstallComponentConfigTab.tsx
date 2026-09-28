@@ -7,14 +7,12 @@ import { InstallComponentDependencies } from '@/components/install-components/In
 import { ComponentOverrideCard } from '@/components/install-overrides/ComponentOverrideCard'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { PageTitle } from '@/components/navigation/PageTitle'
-import { useInstall } from '@/hooks/use-install'
-import { useOrg } from '@/hooks/use-org'
+import { useInstallPage } from '@/hooks/use-install-path'
 import type { TInstallComponentOutletContext } from './types'
 
 export const InstallComponentConfigTab = () => {
   const { componentId } = useParams()
-  const { org } = useOrg()
-  const { install } = useInstall()
+  const { install, href } = useInstallPage()
   const {
     appConfig,
     config,
@@ -33,7 +31,9 @@ export const InstallComponentConfigTab = () => {
   const latestCommit = deployCommit
     ? {
         status: latestDeploy?.status_v2?.status,
-        href: `/${org?.id}/installs/${install?.id}/components/${componentId}/deploys/${latestDeploy?.id}`,
+        href: href(
+          `/components/${componentId}/deploys/${latestDeploy?.id}`
+        ),
         message: deployCommit.message?.split('\n')[0],
         author: deployCommit.author_name,
         avatarUrl: deployCommit.author_avatar_url,
@@ -64,7 +64,7 @@ export const InstallComponentConfigTab = () => {
                 componentName={component.name}
                 componentType={component.type}
                 appConfig={appConfig}
-                basePath={`/${org?.id}/installs/${install?.id}/components`}
+                basePath={href('/components')}
                 size="sm"
               />
             ) : null
