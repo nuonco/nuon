@@ -2,7 +2,7 @@ import { RunbookStepCard } from './RunbookStepCard'
 import type { TWorkflowStep } from '@/types'
 
 export default {
-  title: 'Runbooks/RunbookStepCard',
+  title: 'Features / Runbooks / Step card',
 }
 
 const baseStep: TWorkflowStep = {

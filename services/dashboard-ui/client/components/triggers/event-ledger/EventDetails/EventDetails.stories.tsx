@@ -1,4 +1,4 @@
-export default { title: 'Triggers/Event details' }
+export default { title: 'Features / Triggers / Event ledger / Event details' }
 
 import { EventDetails } from './EventDetails'
 

@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/SplitButton',
+  title: 'UI / Split button',
 }
 
 import { Menu } from './Menu'

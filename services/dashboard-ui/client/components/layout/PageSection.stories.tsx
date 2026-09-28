@@ -1,5 +1,5 @@
 export default {
-  title: 'Layout/PageSection',
+  title: 'UI / Layout / Page section',
 }
 
 import { PageSection } from './PageSection'

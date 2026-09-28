@@ -1,5 +1,5 @@
 export default {
-  title: 'Team/InvitedUsers',
+  title: 'Features / Team / Invited users',
 }
 
 import { InvitedUsers } from './InvitedUsers'

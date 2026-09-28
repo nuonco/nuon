@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/BranchStep',
+  title: 'Features / Installs / Create install / Branch step',
 }
 
 import { useState } from 'react'

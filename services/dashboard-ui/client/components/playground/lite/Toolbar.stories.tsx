@@ -1,7 +1,7 @@
 import { Toolbar } from './Toolbar'
 
 export default {
-  title: 'Playground/Lite/Toolbar',
+  title: 'Playground / Lite / Toolbar',
 }
 
 export const Default = () => <Toolbar filters={['Platform']} />

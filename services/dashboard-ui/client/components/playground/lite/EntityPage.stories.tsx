@@ -1,7 +1,7 @@
 import { EntityPage, StatePanel } from './EntityPage'
 
 export default {
-  title: 'Playground/Lite/EntityPage',
+  title: 'Playground / Lite / Entity page',
 }
 
 export const Component = () => (

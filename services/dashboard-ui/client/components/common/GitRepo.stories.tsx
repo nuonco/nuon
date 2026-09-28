@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/GitRepo',
+  title: 'UI / Git repo',
 }
 
 import type { TVCSGit, TVCSGitHub } from '@/types/ctl-api.types'

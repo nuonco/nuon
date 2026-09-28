@@ -1,5 +1,5 @@
 export default {
-  title: 'InstallHealth/RefreshClusterAccess',
+  title: 'Features / Installs / Health / Refresh cluster access',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

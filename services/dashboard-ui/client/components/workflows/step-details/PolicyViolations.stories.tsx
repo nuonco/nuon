@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/PolicyViolations',
+  title: 'Features / Workflows / Step details / Policy violations',
 }
 
 import { Card } from '@/components/common/Card'

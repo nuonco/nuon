@@ -1,7 +1,7 @@
 import { Utilities } from './Utilities'
 
 export default {
-  title: 'Playground/Lite/Utilities',
+  title: 'Playground / Lite / Utilities',
 }
 
 export const Default = () => (

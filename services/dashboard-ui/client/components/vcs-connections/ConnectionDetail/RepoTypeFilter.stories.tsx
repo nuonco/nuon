@@ -1,5 +1,5 @@
 export default {
-  title: 'VCS Connections/RepoTypeFilter',
+  title: 'Features / VCS connections / Connection detail / Repo type filter',
 }
 
 import { useState } from 'react'

@@ -1,7 +1,7 @@
 import { InstallDetails } from './InstallDetails'
 
 export default {
-  title: 'Playground/Lite/InstallDetails',
+  title: 'Playground / Lite / Install details',
 }
 
 export const Default = () => (

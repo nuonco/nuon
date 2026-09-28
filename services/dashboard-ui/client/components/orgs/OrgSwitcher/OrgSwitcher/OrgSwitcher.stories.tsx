@@ -1,5 +1,5 @@
 export default {
-  title: 'Orgs/OrgSwitcher',
+  title: 'Features / Orgs / Org switcher / Org switcher',
 }
 
 import { OrgSwitcher } from './OrgSwitcher'

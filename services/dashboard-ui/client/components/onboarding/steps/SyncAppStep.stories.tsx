@@ -1,5 +1,5 @@
 export default {
-  title: 'Onboarding/V1 Steps/SyncAppStep',
+  title: 'Features / Onboarding / V1 steps / Sync app step',
 }
 
 import { OnboardingJourneyContext } from '@/providers/onboarding-journey-provider'

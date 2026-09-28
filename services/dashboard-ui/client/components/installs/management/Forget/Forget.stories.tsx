@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/Forget',
+  title: 'Features / Installs / Management / Forget',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

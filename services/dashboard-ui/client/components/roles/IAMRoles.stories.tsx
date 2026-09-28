@@ -1,5 +1,5 @@
 export default {
-  title: 'Roles/IAMRoles',
+  title: 'Features / Roles / IAM roles',
 }
 
 import { IAMRoles } from './IAMRoles'

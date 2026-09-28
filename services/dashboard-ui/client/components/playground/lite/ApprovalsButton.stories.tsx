@@ -1,7 +1,7 @@
 import { ApprovalsButton } from './ApprovalsButton'
 
 export default {
-  title: 'Playground/Lite/ApprovalsButton',
+  title: 'Playground / Lite / Approvals button',
 }
 
 export const Default = () => (

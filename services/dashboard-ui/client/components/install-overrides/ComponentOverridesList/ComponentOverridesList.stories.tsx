@@ -1,5 +1,5 @@
 export default {
-  title: 'Install Overrides/ComponentOverridesList',
+  title: 'Features / Installs / Overrides / Component overrides list',
 }
 
 import { ComponentOverridesList } from './ComponentOverridesList'

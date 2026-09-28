@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 const LONG_DESCRIPTION =
-  '/?story=workflows--stepbanner--error-with-long-unbroken-description&mode=preview'
+  '/?story=features--workflows--step-details--step-banner--error-with-long-unbroken-description&mode=preview'
 
 test('a long unbroken error description stays inside the banner', async ({
   page,

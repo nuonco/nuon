@@ -1,5 +1,5 @@
 export default {
-  title: 'Deploys/DeployTimeline',
+  title: 'Features / Deploys / Deploy timeline',
 }
 
 import { DeployTimeline } from './DeployTimeline'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Operations/ActivityPins',
+  title: 'Features / Operations / Activity pins',
 }
 
 import { Button } from '@/components/common/Button'

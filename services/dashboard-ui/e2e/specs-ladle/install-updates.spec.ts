@@ -3,27 +3,27 @@ import { expect, test } from '@playwright/test'
 const story = (id: string) => `/?story=${id}&mode=preview`
 
 const TIMELINE_DEFAULT = story(
-  'installupdates--installupdatestimeline--default'
+  'features--installs--updates--updates-timeline--default'
 )
-const TIMELINE_EMPTY = story('installupdates--installupdatestimeline--empty')
+const TIMELINE_EMPTY = story('features--installs--updates--updates-timeline--empty')
 const TIMELINE_HAS_MORE = story(
-  'installupdates--installupdatestimeline--has-more'
+  'features--installs--updates--updates-timeline--has-more'
 )
 const TIMELINE_IMPACTED = story(
-  'installupdates--installupdatestimeline--impacted-and-failed'
+  'features--installs--updates--updates-timeline--impacted-and-failed'
 )
-const DETAILS_DEFAULT = story('installupdates--installupdatedetails--default')
+const DETAILS_DEFAULT = story('features--installs--updates--update-details--default')
 const DETAILS_IMPACTED = story(
-  'installupdates--installupdatedetails--impacted-but-unchanged'
+  'features--installs--updates--update-details--impacted-but-unchanged'
 )
 const DETAILS_INSTALL_CONFIG = story(
-  'installupdates--installupdatedetails--install-config'
+  'features--installs--updates--update-details--install-config'
 )
-const DETAILS_FAILED = story('installupdates--installupdatedetails--failed')
+const DETAILS_FAILED = story('features--installs--updates--update-details--failed')
 const CURRENT_RUN_APPLIED = story(
-  'installupdates--currentappbranchrun--applied'
+  'features--installs--updates--current-app-branch-run--applied'
 )
-const CURRENT_RUN_EMPTY = story('installupdates--currentappbranchrun--empty')
+const CURRENT_RUN_EMPTY = story('features--installs--updates--current-app-branch-run--empty')
 
 test.describe('InstallUpdatesTimeline', () => {
   test('renders every update discriminant', async ({ page }) => {

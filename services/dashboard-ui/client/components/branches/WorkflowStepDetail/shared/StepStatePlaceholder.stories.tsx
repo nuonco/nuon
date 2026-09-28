@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/WorkflowStepDetail/StepStatePlaceholder',
+  title: 'Features / Branches / Workflow step detail / Step state placeholder',
 }
 
 import { StepStatePlaceholder } from './StepStatePlaceholder'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Approvals/PlanDiffs/HelmDiffSummary',
+  title: 'Features / Approvals / Plan diffs / Helm diff summary',
 }
 
 import { HelmDiffSummary } from './HelmDiffSummary'

@@ -3,7 +3,7 @@ import type { TInstallAppPermissionsConfig } from '@/lib/ctl-api/installs/get-in
 import { ArchitectureDiagram } from './ArchitectureDiagram'
 
 export default {
-  title: 'Installs/ArchitectureDiagram',
+  title: 'Features / Installs / Architecture diagram',
 }
 
 const mockInstall: TInstall = {

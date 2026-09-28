@@ -1,7 +1,7 @@
 import { ApprovalBanner } from './ApprovalBanner'
 import type { TWorkflowStep } from '@/types'
 
-export default { title: 'Approvals/ApprovalBanner' }
+export default { title: 'Features / Approvals / Approval banner' }
 
 const baseTerraformStep: TWorkflowStep = {
   id: 'step-1',

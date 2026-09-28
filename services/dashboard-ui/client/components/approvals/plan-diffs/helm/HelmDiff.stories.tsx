@@ -14,7 +14,7 @@ import {
 import { HelmDiff } from './HelmDiff'
 
 export default {
-  title: 'Approvals/PlanDiffs/HelmDiff',
+  title: 'Features / Approvals / Plan diffs / Helm diff',
 }
 
 export const Default = () => <HelmDiff plan={mixedHelmPlan} />

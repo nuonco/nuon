@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/Filters/ShowPreviewRuns',
+  title: 'Features / Branches / Show preview runs',
 }
 
 import { ShowPreviewRuns } from './ShowPreviewRuns'

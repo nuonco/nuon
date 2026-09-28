@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const STORY = "/?story=common--dropdown--nested-dropdowns&mode=preview";
+const STORY = "/?story=ui--dropdown--nested-dropdowns&mode=preview";
 
 test.beforeEach(async ({ page }) => {
   await page.goto(STORY, { waitUntil: "domcontentloaded" });

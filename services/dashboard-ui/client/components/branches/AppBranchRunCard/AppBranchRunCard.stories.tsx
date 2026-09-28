@@ -1,7 +1,7 @@
 import { AppBranchRunCard } from './AppBranchRunCard'
 
 export default {
-  title: 'Branches/AppBranchRunCard',
+  title: 'Features / Branches / App branch run card',
 }
 
 const run = {

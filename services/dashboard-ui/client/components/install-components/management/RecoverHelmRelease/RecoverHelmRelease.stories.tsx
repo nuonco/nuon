@@ -1,5 +1,5 @@
 export default {
-  title: 'InstallComponents/RecoverHelmRelease',
+  title: 'Features / Installs / Components / Recover Helm release',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

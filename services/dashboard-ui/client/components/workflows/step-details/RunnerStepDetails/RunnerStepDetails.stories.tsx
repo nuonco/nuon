@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/RunnerStepDetails',
+  title: 'Features / Workflows / Step details / Runner step details',
 }
 
 import { RunnerStepDetails } from './RunnerStepDetails'

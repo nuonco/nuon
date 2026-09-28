@@ -3,7 +3,7 @@ import { Icon } from '@/components/common/Icon'
 import { DeploymentPlanSection } from './DeploymentPlanSection'
 
 export default {
-  title: 'Branches/DeploymentPlanSection',
+  title: 'Features / Branches / Deployment plan section',
 }
 
 const installsById: Record<string, any> = {
