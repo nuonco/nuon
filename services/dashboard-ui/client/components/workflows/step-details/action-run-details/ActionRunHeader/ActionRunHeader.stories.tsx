@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/StepDetails/ActionRunHeader',
+  title: 'Features / Workflows / Action run details / Action run header',
 }
 
 import { ActionRunHeader } from './ActionRunHeader'

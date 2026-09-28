@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const BUILDS_STORY =
-  "/?story=branches--branchrunbuilds--many-builds&mode=preview";
-const EXPAND_STORY = "/?story=common--expand--basic-usage&mode=preview";
+  "/?story=features--branches--branch-run-builds--many-builds&mode=preview";
+const EXPAND_STORY = "/?story=ui--expand--basic-usage&mode=preview";
 
 const overflow = (page: Page) =>
   page.evaluate(() => {

@@ -1,5 +1,5 @@
 export default {
-  title: 'Layout/MainSidebarButton',
+  title: 'UI / Layout / Main sidebar button',
 }
 
 import { SidebarProvider } from '@/providers/sidebar-provider'

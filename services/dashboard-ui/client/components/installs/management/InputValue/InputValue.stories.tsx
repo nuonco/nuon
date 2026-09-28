@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/InputValue',
+  title: 'Features / Installs / Management / Input value',
 }
 
 import { InputValue } from './InputValue'

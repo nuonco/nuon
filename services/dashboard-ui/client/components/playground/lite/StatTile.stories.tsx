@@ -1,7 +1,7 @@
 import { StatTile } from './StatTile'
 
 export default {
-  title: 'Playground/Lite/StatTile',
+  title: 'Playground / Lite / Stat tile',
 }
 
 export const Default = () => <StatTile label="Installs" />

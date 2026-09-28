@@ -1,7 +1,7 @@
 import { useForm } from '@tanstack/react-form'
 import { FormToggle } from './FormToggle'
 
-export default { title: 'Common/Forms/FormToggle' }
+export default { title: 'UI / Forms / Form toggle' }
 
 const Demo = () => {
   const form = useForm({ defaultValues: { enabled: false } })

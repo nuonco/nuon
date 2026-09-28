@@ -1,5 +1,5 @@
 export default {
-  title: 'Apps/Config/AppInputs',
+  title: 'Features / Apps / Config / App inputs',
 }
 
 import { AppInputs } from './AppInputs'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/GenerateInstallConfig',
+  title: 'Features / Installs / Management / Generate install config',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

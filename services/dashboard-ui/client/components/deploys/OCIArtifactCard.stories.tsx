@@ -1,5 +1,5 @@
 export default {
-  title: 'Deploys/OCIArtifactCard',
+  title: 'Features / Deploys / OCI artifact card',
 }
 
 import { OCIArtifactCard, OCIArtifactSkeleton } from './OCIArtifactCard'

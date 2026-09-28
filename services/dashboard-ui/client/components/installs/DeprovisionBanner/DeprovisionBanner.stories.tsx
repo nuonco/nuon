@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/DeprovisionBanner',
+  title: 'Features / Installs / Deprovision banner',
 }
 
 import { DeprovisionBanner } from './DeprovisionBanner'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Sandbox/SandboxRunMenu',
+  title: 'Features / Sandbox / Run switcher / Run menu',
 }
 
 import { useRef } from 'react'

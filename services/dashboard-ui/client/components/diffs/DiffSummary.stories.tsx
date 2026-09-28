@@ -1,5 +1,5 @@
 export default {
-  title: 'Diffs/DiffSummary',
+  title: 'Features / Diffs / Diff summary',
 }
 
 import { DiffSummary } from './DiffSummary'

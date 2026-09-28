@@ -1,5 +1,5 @@
 export default {
-  title: 'Orgs/RecentActivities',
+  title: 'Features / Orgs / Recent activities',
 }
 
 import { RecentActivities } from './RecentActivities'

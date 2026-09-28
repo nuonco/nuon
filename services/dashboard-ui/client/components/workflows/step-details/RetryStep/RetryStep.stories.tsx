@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/RetryStep',
+  title: 'Features / Workflows / Step details / Retry step',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

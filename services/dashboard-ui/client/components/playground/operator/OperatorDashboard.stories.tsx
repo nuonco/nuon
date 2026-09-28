@@ -2,7 +2,7 @@ import { OperatorDashboard } from './OperatorDashboard'
 import { operatorInstalls } from './fixtures'
 
 export default {
-  title: 'Playground/Operator/Dashboard',
+  title: 'Playground / Operator / Dashboard',
 }
 
 export const Default = () => <OperatorDashboard />

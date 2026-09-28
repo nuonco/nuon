@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const STORY =
-  "/?story=serviceaccounts--createserviceaccount--default&mode=preview";
+  "/?story=features--service-accounts--create-service-account--default&mode=preview";
 
 test.describe("CreateServiceAccount form behavior", () => {
   test.beforeEach(async ({ page }) => {

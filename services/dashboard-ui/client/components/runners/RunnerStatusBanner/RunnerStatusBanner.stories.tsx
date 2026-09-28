@@ -1,5 +1,5 @@
 export default {
-  title: 'Runners/RunnerStatusBanner',
+  title: 'Features / Runners / Status banner',
 }
 
 import { RunnerStatusBanner } from './RunnerStatusBanner'

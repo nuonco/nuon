@@ -1,5 +1,5 @@
 export default {
-  title: 'VCS Connections/VCSConnectionsStatusIndicator',
+  title: 'Features / VCS connections / Status indicator',
 }
 
 import { Status } from '@/components/common/Status'

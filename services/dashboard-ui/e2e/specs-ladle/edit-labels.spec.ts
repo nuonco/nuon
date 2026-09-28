@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test'
 
-const STORY = '/?story=installs--editlabels--default&mode=preview'
+const STORY = '/?story=features--installs--management--edit-labels--default&mode=preview'
 const MANY_LABELS_STORY =
-  '/?story=installs--editlabels--many-labels&mode=preview'
+  '/?story=features--installs--management--edit-labels--many-labels&mode=preview'
 
 test.describe('EditLabels form behavior', () => {
   test.beforeEach(async ({ page }) => {

@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/VerifyHealthStepDetails',
+  title: 'Features / Workflows / Verify health step details',
 }
 
 import type { TWorkflowStep } from '@/types'

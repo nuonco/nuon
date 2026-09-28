@@ -1,5 +1,5 @@
 export default {
-  title: 'Actions/ActionTriggerType',
+  title: 'Features / Actions / Trigger type',
 }
 
 import { ActionTriggerType } from './ActionTriggerType'

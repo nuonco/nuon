@@ -1,7 +1,7 @@
 import { SettingsConnections } from './SettingsConnections'
 
 export default {
-  title: 'Playground/Lite/SettingsConnections',
+  title: 'Playground / Lite / Settings connections',
 }
 
 export const Default = () => (

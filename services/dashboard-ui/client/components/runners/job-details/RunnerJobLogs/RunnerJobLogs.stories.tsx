@@ -1,5 +1,5 @@
 export default {
-  title: 'Runners/RunnerJobLogs',
+  title: 'Features / Runners / Job details / Job logs',
 }
 
 import { RunnerJobLogs } from './RunnerJobLogs'

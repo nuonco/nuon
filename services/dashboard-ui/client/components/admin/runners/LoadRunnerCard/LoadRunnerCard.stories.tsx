@@ -1,5 +1,5 @@
 export default {
-  title: 'Admin/LoadRunnerCard',
+  title: 'Features / Admin / Runners / Load runner card',
 }
 
 import { LoadRunnerCard } from './LoadRunnerCard'

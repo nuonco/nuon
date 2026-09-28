@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-const STORY = '/?story=common--searchinput--empty&mode=preview'
+const STORY = '/?story=ui--search-input--empty&mode=preview'
 
 test.describe('SearchInput behavior', () => {
   test.beforeEach(async ({ page }) => {

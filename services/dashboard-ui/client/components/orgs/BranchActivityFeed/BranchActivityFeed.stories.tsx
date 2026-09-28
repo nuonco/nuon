@@ -1,5 +1,5 @@
 export default {
-  title: 'Orgs/BranchActivityFeed',
+  title: 'Features / Orgs / Branch activity feed',
 }
 
 import {

@@ -1,5 +1,5 @@
 export default {
-  title: 'Install Components/InstallComponentConfigCard',
+  title: 'Features / Installs / Components / Config card',
 }
 
 import { InstallComponentConfigCard, InstallComponentConfigCardSkeleton } from './InstallComponentConfigCard'

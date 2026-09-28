@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/StepDetails/AwaitGCPDetails',
+  title: 'Features / Workflows / Stack details / Await GCP details',
 }
 
 import { AwaitGCPDetails } from './AwaitGCPDetails'

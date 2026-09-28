@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test'
 
 const MULTIPLE =
-  '/?story=workflows--workflowdetails--multiple-failed-steps&mode=preview'
+  '/?story=features--workflows--workflow-details--multiple-failed-steps&mode=preview'
 const SINGLE =
-  '/?story=workflows--workflowdetails--single-failed-step&mode=preview'
+  '/?story=features--workflows--workflow-details--single-failed-step&mode=preview'
 
 test.describe('Workflow failed step banners', () => {
   test('summarises the error count and toggles the older errors', async ({

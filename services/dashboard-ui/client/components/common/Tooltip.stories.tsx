@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Tooltip',
+  title: 'UI / Tooltip',
 }
 
 import { useEffect, useState } from 'react'

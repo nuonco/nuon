@@ -1,7 +1,7 @@
 import { ActionDetail } from './ActionDetail'
 
 export default {
-  title: 'Playground/Lite/ActionDetail',
+  title: 'Playground / Lite / Action detail',
 }
 
 export const Default = () => (

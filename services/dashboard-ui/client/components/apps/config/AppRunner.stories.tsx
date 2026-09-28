@@ -1,5 +1,5 @@
 export default {
-  title: 'Apps/Config/AppRunner',
+  title: 'Features / Apps / Config / Runner',
 }
 
 import { AppRunner } from './AppRunner'

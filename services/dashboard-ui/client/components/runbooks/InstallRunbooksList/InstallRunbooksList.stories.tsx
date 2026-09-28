@@ -1,5 +1,5 @@
 export default {
-  title: 'Runbooks/InstallRunbooksList',
+  title: 'Features / Runbooks / Install runbooks list',
 }
 
 import { Button } from '@/components/common/Button'

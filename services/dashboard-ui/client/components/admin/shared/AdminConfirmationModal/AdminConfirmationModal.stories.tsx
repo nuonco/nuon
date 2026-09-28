@@ -1,5 +1,5 @@
 export default {
-  title: 'Admin/AdminConfirmationModal',
+  title: 'Features / Admin / Shared / Confirmation modal',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

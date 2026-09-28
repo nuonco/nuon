@@ -1,7 +1,7 @@
 import { LabelColorPicker } from './LabelColorPicker'
 
 export default {
-  title: 'Apps/AppLabels/LabelColorPicker',
+  title: 'Features / Apps / App labels / Label color picker',
 }
 
 const noop = () => {}

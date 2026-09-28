@@ -21,7 +21,7 @@ import { cn } from '@/utils/classnames'
 import { DiffCodeBlock, WrapLinesProvider } from '../wrap-lines-context'
 
 export default {
-  title: 'Approvals/PlanDiffs/AppConfigSourceDiff (exploration)',
+  title: 'Features / Approvals / Plan diffs / App config source diff (exploration)',
 }
 
 type TSourceFile = {

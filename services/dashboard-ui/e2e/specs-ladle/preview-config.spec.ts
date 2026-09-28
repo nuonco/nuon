@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-const STORY = '/?story=branches--previewconfigsection--edit-modal&mode=preview'
+const STORY = '/?story=features--branches--preview-config-section--edit-modal&mode=preview'
 
 test.describe('PreviewConfig form behavior', () => {
   test.beforeEach(async ({ page }) => {

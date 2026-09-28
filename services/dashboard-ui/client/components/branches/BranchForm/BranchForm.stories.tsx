@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/BranchForm',
+  title: 'Features / Branches / Branch form',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/BranchSettingsPanel',
+  title: 'Features / Branches / Branch settings panel',
 }
 
 import { SurfacesProvider } from '@/providers/surfaces-provider'

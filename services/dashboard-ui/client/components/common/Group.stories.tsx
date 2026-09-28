@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Group',
+  title: 'UI / Group',
 }
 
 import { Group } from './Group'

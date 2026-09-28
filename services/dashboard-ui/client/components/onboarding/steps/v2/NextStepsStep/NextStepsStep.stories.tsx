@@ -1,5 +1,5 @@
 export default {
-  title: 'Onboarding/V2 Steps/NextStepsStep',
+  title: 'Features / Onboarding / V2 steps / Next steps step',
 }
 
 import { NextStepsStepContainer } from './NextStepsStepContainer'

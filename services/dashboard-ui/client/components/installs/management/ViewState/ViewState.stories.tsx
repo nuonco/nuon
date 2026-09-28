@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/ViewState',
+  title: 'Features / Installs / Management / View state',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

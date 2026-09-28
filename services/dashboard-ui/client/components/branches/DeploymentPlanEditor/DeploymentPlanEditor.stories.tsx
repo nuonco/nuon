@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/DeploymentPlanEditor',
+  title: 'Features / Branches / Deployment plan editor',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

@@ -1,7 +1,7 @@
 import { InstallActivity } from './InstallActivity'
 
 export default {
-  title: 'Playground/Lite/InstallActivity',
+  title: 'Playground / Lite / Install activity',
 }
 
 export const Default = () => (

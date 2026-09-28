@@ -1,5 +1,5 @@
 export default {
-  title: 'Actions/InstallActionRunTimeline',
+  title: 'Features / Actions / Install action run timeline',
 }
 
 import { InstallActionRunTimeline } from './InstallActionRunTimeline'

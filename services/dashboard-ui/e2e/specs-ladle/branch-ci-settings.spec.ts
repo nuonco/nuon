@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-const EDITOR_STORY = '/?story=branches--branchcisettings--editor&mode=preview'
+const EDITOR_STORY = '/?story=features--branches--branch-ci-settings--editor&mode=preview'
 
 test('edits branch CI trigger settings', async ({ page }) => {
   await page.goto(EDITOR_STORY, { waitUntil: 'domcontentloaded' })

@@ -1,5 +1,5 @@
 export default {
-  title: 'Terraform/TerraformState',
+  title: 'Features / Terraform / Workspace / Terraform state',
 }
 
 import { TerraformState } from './TerraformState'

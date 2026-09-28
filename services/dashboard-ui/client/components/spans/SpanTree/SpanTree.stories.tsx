@@ -3,7 +3,7 @@ import type { TSpan } from '@/types'
 import { collectSpanIds, SpanTree } from './SpanTree'
 
 export default {
-  title: 'Spans/SpanTree',
+  title: 'Features / Spans / Tree',
 }
 
 const mockSpans: TSpan[] = [

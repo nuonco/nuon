@@ -1,5 +1,5 @@
 export default {
-  title: 'Navigation/BreadcrumbNav',
+  title: 'UI / Navigation / Breadcrumb',
 }
 
 import { BreadcrumbContext } from '@/providers/breadcrumb-provider'

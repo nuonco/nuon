@@ -1,5 +1,5 @@
 export default {
-  title: 'Approvals/PlanDiffs/TerraformPlanGraph',
+  title: 'Features / Approvals / Plan diffs / Terraform plan graph',
 }
 
 import { parseTerraformPlan } from '@/utils/terraform-utils'

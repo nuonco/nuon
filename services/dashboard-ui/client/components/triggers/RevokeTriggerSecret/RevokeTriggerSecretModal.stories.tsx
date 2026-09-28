@@ -1,5 +1,5 @@
 export default {
-  title: 'Triggers/RevokeTriggerSecretModal',
+  title: 'Features / Triggers / Revoke trigger secret modal',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

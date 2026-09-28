@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Dropdown',
+  title: 'UI / Dropdown',
 }
 
 import { Button } from './Button'

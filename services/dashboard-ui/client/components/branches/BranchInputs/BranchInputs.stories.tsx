@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/BranchInputs',
+  title: 'Features / Branches / Branch inputs',
 }
 
 import { BranchInputs } from './BranchInputs'

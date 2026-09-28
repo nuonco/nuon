@@ -1,5 +1,5 @@
 export default {
-  title: 'Runners/RunnerProcessesTable',
+  title: 'Features / Runners / Processes table',
 }
 
 import { AuthContext } from '@/providers/auth-provider'
