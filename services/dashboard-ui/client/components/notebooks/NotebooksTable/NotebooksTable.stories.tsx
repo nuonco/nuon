@@ -1,5 +1,5 @@
 export default {
-  title: 'Notebooks/NotebooksTable',
+  title: 'Features / Notebooks / Notebooks table',
 }
 
 import { NotebooksTable, type TNotebookRow } from './NotebooksTable'

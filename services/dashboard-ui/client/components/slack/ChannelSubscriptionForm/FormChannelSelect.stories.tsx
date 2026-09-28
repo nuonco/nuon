@@ -2,7 +2,7 @@ import { useForm } from '@tanstack/react-form'
 import type { TSlackChannel } from '@/types'
 import { FormChannelSelect } from './FormChannelSelect'
 
-export default { title: 'Slack/FormChannelSelect' }
+export default { title: 'Features / Slack / Channel subscription form / Form channel select' }
 
 const channels: TSlackChannel[] = [
   { id: 'C0123', name: 'deploys', is_member: true },

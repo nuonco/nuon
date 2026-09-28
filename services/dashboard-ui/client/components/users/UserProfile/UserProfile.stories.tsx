@@ -1,5 +1,5 @@
 export default {
-  title: 'Users/UserProfile',
+  title: 'Features / Users / Profile',
 }
 
 import { UserProfile } from './UserProfile'

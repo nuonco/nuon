@@ -1,5 +1,5 @@
 export default {
-  title: 'Team/RemoveUser',
+  title: 'Features / Team / Remove user',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

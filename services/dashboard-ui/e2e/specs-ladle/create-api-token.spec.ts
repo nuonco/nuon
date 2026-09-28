@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 // (no backend) and asserts the interaction contract the wrappers guarantee —
 // disabled-submit-until-valid and error-on-touch. New migrated forms get a
 // sibling spec following this shape.
-const STORY = "/?story=apitokens--createapitoken--default&mode=preview";
+const STORY = "/?story=features--api-tokens--create-api-token--default&mode=preview";
 
 test.describe("CreateApiToken form behavior", () => {
   test.beforeEach(async ({ page }) => {

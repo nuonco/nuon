@@ -1,5 +1,5 @@
 export default {
-  title: 'Builds/BuildImageSource',
+  title: 'Features / Builds / Image source',
 }
 
 import type { TBuild } from '@/types'

@@ -3,7 +3,7 @@ import { InstallVersionDetails } from './InstallVersionDetails'
 import type { TInstallAppConfigVersion } from '@/types'
 
 export default {
-  title: 'InstallVersions/InstallVersionDetails',
+  title: 'Features / Installs / Versions / Version details',
 }
 
 const mockVersion = {

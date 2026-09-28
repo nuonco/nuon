@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/ContextTooltip',
+  title: 'UI / Context tooltip',
 }
 
 import { ContextTooltip } from './ContextTooltip'

@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 // enabled. The meaningful behavior here is the custom-stacks array field:
 // Add stack reveals a row, Remove clears it.
 const STORY =
-  "/?story=installs--management--editstackoverrides--empty&mode=preview";
+  "/?story=features--installs--management--edit-stack-overrides--empty&mode=preview";
 
 test.describe("EditStackOverrides form behavior", () => {
   test.beforeEach(async ({ page }) => {

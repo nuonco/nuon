@@ -1,5 +1,5 @@
 export default {
-  title: 'ApiTokens/CreateApiToken',
+  title: 'Features / API tokens / Create API token',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

@@ -2,7 +2,7 @@ import { NavBlock } from './NavBlock'
 import { primaryNav } from './nav'
 
 export default {
-  title: 'Playground/Lite/NavBlock',
+  title: 'Playground / Lite / Nav block',
 }
 
 export const Default = () => (

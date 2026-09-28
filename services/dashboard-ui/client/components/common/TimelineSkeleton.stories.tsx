@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/TimelineSkeleton',
+  title: 'UI / Timeline skeleton',
 }
 
 import { TimelineSkeleton } from './TimelineSkeleton'

@@ -5,7 +5,7 @@ import { Shell } from './Shell'
 import { primaryNav, secondaryNav } from './nav'
 
 export default {
-  title: 'Playground/Lite/Shell',
+  title: 'Playground / Lite / Shell',
 }
 
 export const Default = () => (

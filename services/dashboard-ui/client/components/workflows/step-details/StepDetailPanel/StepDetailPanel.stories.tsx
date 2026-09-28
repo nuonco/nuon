@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/StepDetailPanel',
+  title: 'Features / Workflows / Step details / Step detail panel',
 }
 
 import { StepDetailPanel } from './StepDetailPanel'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Deploys/HelmOutputs/HelmManifest',
+  title: 'Features / Deploys / Helm outputs / Helm manifest',
 }
 
 import { HelmManifest } from './HelmManifest'

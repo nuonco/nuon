@@ -1,7 +1,7 @@
 import { RunDeploymentGraph } from './RunDeploymentGraph'
 
 export default {
-  title: 'Branches/RunDeploymentGraph',
+  title: 'Features / Branches / Run deployment graph',
 }
 
 const installsById: Record<string, any> = {

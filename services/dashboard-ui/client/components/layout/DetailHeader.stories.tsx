@@ -1,5 +1,5 @@
 export default {
-  title: 'Layout/DetailHeader',
+  title: 'UI / Layout / Detail header',
 }
 
 import { Badge } from '@/components/common/Badge'

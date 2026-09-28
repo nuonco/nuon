@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/ChangeAppBranchModal',
+  title: 'Features / Installs / Change app branch modal',
 }
 
 import { useState } from 'react'

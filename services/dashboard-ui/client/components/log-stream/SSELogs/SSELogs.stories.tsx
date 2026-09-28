@@ -1,5 +1,5 @@
 export default {
-  title: 'LogStream/SSELogs',
+  title: 'Features / Logs / SSE logs',
 }
 
 import { useCallback, useEffect, useRef, useState } from 'react'

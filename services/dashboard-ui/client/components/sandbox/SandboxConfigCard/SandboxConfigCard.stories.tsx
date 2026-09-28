@@ -1,5 +1,5 @@
 export default {
-  title: 'Sandbox/SandboxConfigCard',
+  title: 'Features / Sandbox / Config card',
 }
 
 import { SandboxConfigCard } from './SandboxConfigCard'

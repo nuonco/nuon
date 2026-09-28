@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/Configuration/InstallConfigOverrides',
+  title: 'Features / Installs / Configuration / Config overrides',
 }
 
 import { Button } from '@/components/common/Button'

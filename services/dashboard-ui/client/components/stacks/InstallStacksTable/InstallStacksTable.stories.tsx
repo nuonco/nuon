@@ -1,7 +1,7 @@
 import { InstallStacksTable, type TStackVersion } from './InstallStacksTable'
 
 export default {
-  title: 'Stacks/InstallStacksTable',
+  title: 'Features / Stacks / Install stacks table',
 }
 
 const mockVersions = Array.from({ length: 3 }, (_, i) => ({

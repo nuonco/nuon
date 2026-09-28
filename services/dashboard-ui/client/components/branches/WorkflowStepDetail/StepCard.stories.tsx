@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/WorkflowStepDetail/StepCard',
+  title: 'Features / Branches / Workflow step detail / Step card',
 }
 
 import type { ReactNode } from 'react'

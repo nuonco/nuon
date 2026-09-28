@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Code',
+  title: 'UI / Code',
 }
 
 import { Code } from './Code'

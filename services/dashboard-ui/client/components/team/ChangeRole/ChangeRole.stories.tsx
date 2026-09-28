@@ -1,5 +1,5 @@
 export default {
-  title: 'Team/ChangeRole',
+  title: 'Features / Team / Change role',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

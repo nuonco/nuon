@@ -1,5 +1,5 @@
 export default {
-  title: 'Consent/ConsentToast',
+  title: 'Features / Consent / Toast',
 }
 
 import { ToastProvider } from '@/providers/toast-provider'

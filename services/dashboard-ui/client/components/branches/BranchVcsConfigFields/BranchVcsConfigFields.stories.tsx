@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/BranchVcsConfigFields',
+  title: 'Features / Branches / Branch VCS config fields',
 }
 
 import { useState } from 'react'

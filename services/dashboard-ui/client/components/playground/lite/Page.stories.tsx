@@ -3,7 +3,7 @@ import { PlaceholderGrid } from './PlaceholderGrid'
 import { appTabs } from './nav'
 
 export default {
-  title: 'Playground/Lite/Page',
+  title: 'Playground / Lite / Page',
 }
 
 export const ListPage = () => (

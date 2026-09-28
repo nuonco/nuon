@@ -1,5 +1,5 @@
 export default {
-  title: 'Actions/TriggeredByFilter',
+  title: 'Features / Actions / Triggered by filter',
 }
 
 import { TriggeredByFilter } from './TriggeredByFilter'

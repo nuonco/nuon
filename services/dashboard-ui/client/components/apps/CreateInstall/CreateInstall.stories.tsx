@@ -1,5 +1,5 @@
 export default {
-  title: 'Apps/CreateInstall',
+  title: 'Features / Apps / Create install',
 }
 
 import { CreateInstallButton } from './CreateInstall'

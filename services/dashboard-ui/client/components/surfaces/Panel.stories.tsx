@@ -333,6 +333,10 @@ const PanelUsageDemo = () => {
   )
 }
 
+export default {
+  title: 'UI / Surfaces / Panel',
+}
+
 export const BasicUsage = () => (
   <SurfacesProvider>
     <div className="space-y-6">

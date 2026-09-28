@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/StepBanner',
+  title: 'Features / Workflows / Step details / Step banner',
 }
 
 import { StepBanner } from './StepBanner'

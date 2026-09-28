@@ -1,5 +1,5 @@
 export default {
-  title: 'Install Components/ResourceComponentActions',
+  title: 'Features / Installs / Components / Resource component actions',
 }
 
 import type { TComponent } from '@/types'

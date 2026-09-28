@@ -1,5 +1,5 @@
 export default {
-  title: 'Admin/AdminFeatureToggleCard',
+  title: 'Features / Admin / Shared / Feature toggle card',
 }
 
 import { AdminFeatureToggleCard } from './AdminFeatureToggleCard'

@@ -1,5 +1,5 @@
 export default {
-  title: 'Installs/InstallHealth',
+  title: 'Features / Installs / Health',
 }
 
 import { DateTime } from 'luxon'

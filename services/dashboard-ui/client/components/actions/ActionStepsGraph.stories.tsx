@@ -1,5 +1,5 @@
 export default {
-  title: 'Actions/ActionStepGraph',
+  title: 'Features / Actions / Steps graph',
 }
 
 import { ActionStepGraph } from './ActionStepsGraph'

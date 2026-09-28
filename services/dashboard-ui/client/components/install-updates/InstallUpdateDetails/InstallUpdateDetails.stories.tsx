@@ -3,7 +3,7 @@ import { InstallUpdateDetails } from './InstallUpdateDetails'
 import type { TInstallUpdate } from '@/types'
 
 export default {
-  title: 'InstallUpdates/InstallUpdateDetails',
+  title: 'Features / Installs / Updates / Update details',
 }
 
 const mockUpdate: TInstallUpdate = {

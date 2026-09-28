@@ -1,5 +1,5 @@
 export default {
-  title: 'Approvals/PlanDiffs/KubernetesDiffSummary',
+  title: 'Features / Approvals / Plan diffs / Kubernetes diff summary',
 }
 
 import { KubernetesDiffSummary } from './KubernetesDiffSummary'

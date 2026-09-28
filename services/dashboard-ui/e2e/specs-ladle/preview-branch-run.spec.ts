@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 const STORY =
-  '/?story=branches--previewbranchrunmodal--branch-source&mode=preview'
+  '/?story=features--branches--preview-branch-run-modal--branch-source&mode=preview'
 
 test('searches branches when selecting a preview source', async ({ page }) => {
   await page.goto(STORY, { waitUntil: 'domcontentloaded' })

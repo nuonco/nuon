@@ -1,5 +1,5 @@
 export default {
-  title: 'Views/Install/Readme',
+  title: 'Views / Installs / Readme',
 }
 
 import { Expand } from '@/components/common/Expand'

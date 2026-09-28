@@ -1,5 +1,5 @@
 export default {
-  title: 'Approvals/PlanDiffs/OutputChangesList',
+  title: 'Features / Approvals / Plan diffs / Terraform output changes list',
 }
 
 import { OutputChangesList } from './OutputChangesList'

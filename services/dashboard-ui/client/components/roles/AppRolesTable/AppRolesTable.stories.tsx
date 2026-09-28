@@ -2,7 +2,7 @@ import { SurfacesContext } from '@/providers/surfaces-provider'
 import { AppRolesTable } from './AppRolesTable'
 
 export default {
-  title: 'Roles/AppRolesTable',
+  title: 'Features / Roles / App roles table',
 }
 
 const mockSurfaces = {

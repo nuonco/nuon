@@ -2,7 +2,7 @@ import type { THelmRelease, TInstallResource } from '@/types'
 import { KubernetesExplorer } from './KubernetesExplorer'
 
 export default {
-  title: 'Install Resources/KubernetesExplorer',
+  title: 'Features / Installs / Resources / Kubernetes explorer',
 }
 
 const NOW = '2026-08-03T10:00:00Z'

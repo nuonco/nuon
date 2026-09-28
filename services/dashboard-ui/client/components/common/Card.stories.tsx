@@ -1,5 +1,5 @@
 export default {
-  title: 'Common/Card',
+  title: 'UI / Card',
 }
 
 import { Card } from './Card'

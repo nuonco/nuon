@@ -1,7 +1,7 @@
 import type { TAPIError } from '@/types'
 import { FormErrorBanner } from './FormErrorBanner'
 
-export default { title: 'Common/Forms/FormErrorBanner' }
+export default { title: 'UI / Forms / Form error banner' }
 
 const apiError = { error: 'A webhook with this URL already exists.' } as TAPIError
 

@@ -1,5 +1,5 @@
 export default {
-  title: 'Runners/ShutdownInstance',
+  title: 'Features / Runners / Management / Shutdown instance',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'

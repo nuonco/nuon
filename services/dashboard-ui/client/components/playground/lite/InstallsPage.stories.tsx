@@ -1,7 +1,7 @@
 import { InstallsPage } from './InstallsPage'
 
 export default {
-  title: 'Playground/Lite/InstallsPage',
+  title: 'Playground / Lite / Installs page',
 }
 
 export const Default = () => (

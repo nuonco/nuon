@@ -1,5 +1,5 @@
 export default {
-  title: 'Admin/AdminSection',
+  title: 'Features / Admin / Shared / Admin section',
 }
 
 import { AdminSection } from './AdminSection'

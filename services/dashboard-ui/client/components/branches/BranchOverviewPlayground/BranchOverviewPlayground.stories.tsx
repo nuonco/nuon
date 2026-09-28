@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/BranchOverviewPlayground',
+  title: 'Features / Branches / Branch overview playground',
   fullBleed: true,
 }
 

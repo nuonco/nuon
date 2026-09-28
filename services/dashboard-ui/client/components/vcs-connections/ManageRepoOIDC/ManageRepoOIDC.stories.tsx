@@ -5,7 +5,7 @@ import type { TOIDCTrustPolicy } from '@/types'
 import { ManageRepoOIDCModal } from './ManageRepoOIDC'
 
 export default {
-  title: 'VCS Connections/ManageRepoOIDC',
+  title: 'Features / VCS connections / Manage repo OIDC',
 }
 
 const createSlot = (

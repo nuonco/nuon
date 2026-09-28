@@ -1,5 +1,5 @@
 export default {
-  title: 'Layout/ProviderLoading',
+  title: 'UI / Layout / Provider loading',
 }
 
 import { ProviderLoading } from './ProviderLoading'

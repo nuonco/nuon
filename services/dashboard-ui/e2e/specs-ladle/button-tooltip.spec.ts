@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const STORY = "/?story=common--button--tooltips&mode=preview";
+const STORY = "/?story=ui--button--tooltips&mode=preview";
 
 test.beforeEach(async ({ page }) => {
   await page.goto(STORY, { waitUntil: "domcontentloaded" });

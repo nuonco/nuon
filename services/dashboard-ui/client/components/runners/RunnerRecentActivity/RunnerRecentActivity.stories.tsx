@@ -1,5 +1,5 @@
 export default {
-  title: 'Runners/RunnerRecentActivity',
+  title: 'Features / Runners / Recent activity',
 }
 
 import { RunnerRecentActivity } from './RunnerRecentActivity'

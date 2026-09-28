@@ -1,5 +1,5 @@
 export default {
-  title: 'Webhooks/SamplePayload',
+  title: 'Features / Webhooks / Sample payload',
 }
 
 import { SamplePayload } from './SamplePayload'

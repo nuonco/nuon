@@ -1,5 +1,5 @@
 export default {
-  title: 'Runners/InstallRunner',
+  title: 'Features / Runners / Install runner',
 }
 
 import { Banner } from '@/components/common/Banner'

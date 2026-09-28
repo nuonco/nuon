@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/StepDetails/SandboxRunApply',
+  title: 'Features / Workflows / Sandbox run details / Sandbox run apply',
 }
 
 import { SandboxRunApply } from './SandboxRunApply'

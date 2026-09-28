@@ -1,5 +1,5 @@
 export default {
-  title: 'Branches/BranchesTable',
+  title: 'Features / Branches / Branches table',
 }
 
 import { BranchesTable } from './BranchesTable'

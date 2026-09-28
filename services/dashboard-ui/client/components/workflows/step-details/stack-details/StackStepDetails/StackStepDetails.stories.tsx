@@ -1,5 +1,5 @@
 export default {
-  title: 'Workflows/StackStepDetails',
+  title: 'Features / Workflows / Stack details / Stack step details',
 }
 
 import { StackStepDetails } from './StackStepDetails'

@@ -4,7 +4,7 @@ import type { TAppLabelKey } from '@/lib/ctl-api/apps/get-app-labels'
 import { AppLabels } from './AppLabels'
 
 export default {
-  title: 'Apps/AppLabels',
+  title: 'Features / Apps / App labels',
 }
 
 const mockLabels: TAppLabelKey[] = [
