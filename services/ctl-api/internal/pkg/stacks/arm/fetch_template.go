@@ -84,9 +84,10 @@ type armTemplateShape struct {
 	Schema          string `json:"$schema"`
 	LanguageVersion string `json:"languageVersion,omitempty"`
 	Parameters      map[string]struct {
-		Type         string `json:"type"`
-		DefaultValue any    `json:"defaultValue,omitempty"`
-		Metadata     *struct {
+		Type          string `json:"type"`
+		DefaultValue  any    `json:"defaultValue,omitempty"`
+		AllowedValues []any  `json:"allowedValues,omitempty"`
+		Metadata      *struct {
 			Description string `json:"description,omitempty"`
 		} `json:"metadata,omitempty"`
 	} `json:"parameters"`
@@ -148,8 +149,9 @@ func extractARMParameters(tmpl *armTemplateShape, reservedNames []string) (map[s
 		}
 
 		hp := ARMParameter{
-			Type:         param.Type,
-			DefaultValue: param.DefaultValue,
+			Type:          param.Type,
+			DefaultValue:  param.DefaultValue,
+			AllowedValues: param.AllowedValues,
 		}
 		if param.Metadata != nil && param.Metadata.Description != "" {
 			hp.Metadata = &ARMParameterMetadata{
