@@ -10,9 +10,9 @@ const BY_THEME: Array<[string, string[]]> = [
   ['success', ['active', 'healthy', 'finished', 'approved']],
   ['error', ['failed', 'timed-out', 'unhealthy', 'policy-failed']],
   ['warn', ['degraded', 'drifted', 'cancelled', 'expired']],
-  ['info', ['deploying', 'queued', 'provisioning', 'planning']],
-  ['neutral', ['pending', 'not-deployed', 'disabled', 'unknown']],
-  ['brand', ['special']],
+  ['info', ['deploying', 'provisioning', 'planning', 'building']],
+  ['neutral', ['not-deployed', 'disabled', 'unknown', 'noop']],
+  ['brand', ['pending', 'queued', 'special']],
 ]
 
 export const Overview = () => (

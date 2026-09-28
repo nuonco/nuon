@@ -143,7 +143,7 @@ export const WorkflowStepsPipeline = ({
                 aria-current={isSelected ? 'step' : undefined}
                 className={cn(
                   'snap-start scroll-mx-12 !h-auto min-h-24 min-w-40 flex-1 basis-40 !items-start !justify-start !rounded-none !px-4 !py-3',
-                  isSelected && 'bg-cool-grey-100 dark:bg-dark-grey-700'
+                  isSelected && '!bg-cool-grey-300 dark:!bg-dark-grey-700'
                 )}
                 onClick={() => onSelectStep(step)}
               >
