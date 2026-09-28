@@ -27,7 +27,7 @@ For prompts to paste into a client, see [Sample queries](/guides/agents/sample-q
 | Logs | `get_workflow_step_logs`, `get_deploy_logs`, `get_build_logs` | |
 | Runbooks | `list_runbooks`, `get_runbook` | `run_runbook` |
 
-Cloud connection tools manage AWS and Azure access for install stacks and private image pulls, plus GCP access for private image pulls. GCP create inputs include the project ID, service account email, and Workload Identity Provider resource name.
+Cloud connection tools manage AWS access for install stacks. Create inputs include the AWS account ID, IAM role ARN, and `stacks` or `custom` preset. The custom preset generates trust configuration only; attach your own permissions policy.
 
 ## Writes
 
