@@ -17,9 +17,10 @@ type ARMTemplate struct {
 }
 
 type ARMParameter struct {
-	Type         string                `json:"type"`
-	DefaultValue any                   `json:"defaultValue,omitempty"`
-	Metadata     *ARMParameterMetadata `json:"metadata,omitempty"`
+	Type          string                `json:"type"`
+	DefaultValue  any                   `json:"defaultValue,omitempty"`
+	AllowedValues []any                 `json:"allowedValues,omitempty"`
+	Metadata      *ARMParameterMetadata `json:"metadata,omitempty"`
 }
 
 type ARMParameterMetadata struct {
@@ -32,7 +33,7 @@ type ARMOutput struct {
 }
 
 // ReservedParamNames are always provided by Nuon, never exposed to the customer.
-var ReservedParamNames = []string{"nuonInstallID", "nuonOrgID", "nuonAppID", "location", "deployTimestamp"}
+var ReservedParamNames = []string{"nuonInstallID", "nuonOrgID", "nuonAppID", "location", "deployTimestamp", runnerVmSizeParamName}
 
 func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, error) {
 	scope := scopeFor(inp)

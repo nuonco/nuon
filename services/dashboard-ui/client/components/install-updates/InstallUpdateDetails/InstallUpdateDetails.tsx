@@ -9,6 +9,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import { humanize } from '@/utils/string-utils'
+import { useInstallLink } from '@/hooks/use-install-path'
 import type {
   TInstallUpdate,
   TInstallUpdateComponentDiff,
@@ -104,6 +105,7 @@ export const InstallUpdateDetails = ({
   appId,
   ...props
 }: IInstallUpdateDetails) => {
+  const installLink = useInstallLink()
   const version = update.app_config?.version
   const branchRun = version?.app_branch_run
   const commit = branchRun?.vcs_connection_commit
@@ -193,7 +195,7 @@ export const InstallUpdateDetails = ({
         ) : null}
         {orgId && installId && update?.workflow_id ? (
           <Link
-            href={`/${orgId}/installs/${installId}/history/${update.workflow_id}`}
+            href={installLink({ orgId: orgId, installId: installId, suffix: `/history/${update.workflow_id}` })}
           >
             View workflow
           </Link>

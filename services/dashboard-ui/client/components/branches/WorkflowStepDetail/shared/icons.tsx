@@ -1,3 +1,4 @@
+import { Status } from '@/components/common/Status'
 import { stepStatusCategory } from '../../shared/step-status'
 
 export const DetailStatusIcon = ({ status }: { status?: string }) => {
@@ -73,6 +74,9 @@ export const DetailStatusIcon = ({ status }: { status?: string }) => {
         </svg>
       </div>
     )
+  }
+  if (status === 'pending' || status === 'queued') {
+    return <Status status={status} variant="timeline" isWithoutText iconSize={18} />
   }
   return (
     <div

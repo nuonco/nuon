@@ -12,6 +12,7 @@ import { toSentenceCase } from '@/utils/string-utils'
 import { SandboxRunSwitcher } from '../SandboxRunSwitcher'
 import { ManageRunDropdown } from '@/components/sandbox/management/ManageRunDropdown'
 import { SandboxConfigContextTooltip } from '@/components/sandbox/SandboxConfigContextTooltip'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 interface ISandboxHeader {
   workflow: TWorkflow
@@ -28,6 +29,7 @@ export const SandboxHeader = ({
   install,
   orgId,
 }: ISandboxHeader) => {
+  const installLink = useInstallLink()
   const executionRole = sandboxRun?.runner_jobs?.at(0)?.install_role_usage
 
   return (
@@ -82,7 +84,7 @@ export const SandboxHeader = ({
             />
           </LabeledValue>
           <LabeledValue label="Install">
-            <Link href={`/${orgId}/installs/${install?.id}`}>
+            <Link href={installLink({ orgId: orgId, installId: install?.id })}>
               {install?.name}
             </Link>
           </LabeledValue>
@@ -100,7 +102,7 @@ export const SandboxHeader = ({
             <LabeledValue label="Execution role">
               <Text variant="subtext" family="mono" className="text-xs">
                 <Link
-                  href={`/${orgId}/installs/${install?.id}/roles?panel=${executionRole.install_role_id}`}
+                  href={installLink({ orgId: orgId, installId: install?.id, suffix: `/roles?panel=${executionRole.install_role_id}` })}
                   variant="inline"
                 >
                   {executionRole.role_name}
@@ -113,7 +115,7 @@ export const SandboxHeader = ({
     >
       {sandboxRun?.install_workflow_id ? (
         <Button
-          href={`/${orgId}/installs/${install?.id}/workflows/${workflow?.id}?panel=${stepId}`}
+          href={installLink({ orgId: orgId, installId: install?.id, suffix: `/workflows/${workflow?.id}?panel=${stepId}` })}
         >
           View workflow
         </Button>
