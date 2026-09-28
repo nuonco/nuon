@@ -9,6 +9,7 @@ import { SearchInput } from '@/components/common/SearchInput'
 import { Text } from '@/components/common/Text'
 
 import type { PlanGroupInstall } from './DeploymentPlanGraph'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 interface IDeploymentPlanGroupPanel {
   panelKey: string
@@ -26,6 +27,7 @@ const DeploymentPlanGroupContent = memo(
     maxParallel,
     labelEntries,
   }: Omit<IDeploymentPlanGroupPanel, 'panelKey' | 'groupName'>) => {
+    const installLink = useInstallLink()
     const [query, setQuery] = useState('')
 
     const filteredInstalls = useMemo(() => {
@@ -106,7 +108,7 @@ const DeploymentPlanGroupContent = memo(
                   )}
 
                   <Link
-                    href={`/${orgId}/installs/${inst.id}`}
+                    href={installLink({ orgId: orgId, installId: inst.id })}
                     className="flex w-fit items-center gap-1"
                   >
                     View install

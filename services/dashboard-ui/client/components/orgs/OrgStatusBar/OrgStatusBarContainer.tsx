@@ -16,8 +16,10 @@ import {
 import { humanize } from '@/utils/string-utils'
 import { getWorkflowStepTitle } from '@/utils/workflow-utils'
 import { OrgStatusBar } from './OrgStatusBar'
+import { useInstallLink } from '@/hooks/use-install-path'
 
 export const OrgStatusBarContainer = () => {
+  const installLink = useInstallLink()
   const { org } = useOrg()
   const { byocName, byocColor, byocTextColor } = useConfig()
   const { approvals } = useWorkflowApprovals()
@@ -67,7 +69,7 @@ export const OrgStatusBarContainer = () => {
     title: workflow.name || humanize(workflow.type),
     subtitle: workflow.metadata?.owner_name || workflow.status?.status || undefined,
     href: workflow.owner_id
-      ? `/${org.id}/installs/${workflow.owner_id}/workflows/${workflow.id}`
+      ? installLink({ orgId: org.id, installId: workflow.owner_id, suffix: `/workflows/${workflow.id}` })
       : undefined,
     leftContent: (
       <Status
@@ -89,7 +91,7 @@ export const OrgStatusBarContainer = () => {
     const step = approval.workflow_step
     const href =
       step?.owner_id && step?.install_workflow_id
-        ? `/${org.id}/installs/${step.owner_id}/workflows/${step.install_workflow_id}`
+        ? installLink({ orgId: org.id, installId: step.owner_id, suffix: `/workflows/${step.install_workflow_id}` })
         : undefined
     const installName = step?.owner_id ? ownerNames.get(step.owner_id) : undefined
     return {

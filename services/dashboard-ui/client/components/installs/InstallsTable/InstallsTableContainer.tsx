@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
+import { useInstallHref } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import {
   getAppInstalls,
@@ -40,6 +41,7 @@ export const InstallsTableContainer = ({
 } = {}) => {
   const [searchParams] = useSearchParams()
   const { org } = useOrg()
+  const installHref = useInstallHref()
   const offset = Number(searchParams.get('offset') ?? 0)
   const q = searchParams.get('q') || undefined
 
@@ -102,7 +104,17 @@ export const InstallsTableContainer = ({
 
   return (
     <InstallsTable
-      data={parseInstallsToTableData(installs, org.id, labelColorsByApp, scope === 'org')}
+      data={parseInstallsToTableData(
+        installs,
+        org.id,
+        labelColorsByApp,
+        scope === 'org',
+        (install) =>
+          installHref({
+            installId: install.id,
+            appId: install.app_id,
+          })
+      )}
       isLoading={isLoading}
       emptyStateAction={emptyStateAction ?? <CreateInstallButton />}
       emptyTitle={emptyTitle}
