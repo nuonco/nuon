@@ -450,6 +450,7 @@ const THEME_CLASSES: Record<TTheme, string> = {
 interface IconProps extends Omit<PhosphorIconProps, 'ref'> {
   variant: TIconVariant
   theme?: TTheme
+  pulse?: boolean
 }
 
 export const Icon = ({
@@ -457,10 +458,15 @@ export const Icon = ({
   size = 16,
   weight = 'regular',
   theme = 'default',
+  pulse,
   className,
   ...props
 }: IconProps) => {
   const themeClass = cn(THEME_CLASSES[theme], className)
+
+  if (variant === 'Loading') {
+    return <Loading size={size} className={themeClass} pulse={pulse} />
+  }
 
   if (variant in customIcons) {
     const CustomIcon = customIcons[variant as CustomIconVariant]

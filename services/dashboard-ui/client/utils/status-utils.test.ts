@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'bun:test'
-import { getStatusTheme, getStatusIconVariant } from './status-utils'
+import {
+  getStatusTheme,
+  getStatusIconVariant,
+  getWorstStatusTheme,
+} from './status-utils'
 
 describe('status-utils', () => {
   describe('getStatusTheme', () => {
@@ -40,7 +44,6 @@ describe('status-utils', () => {
       expect(getStatusTheme('started')).toBe('info')
       expect(getStatusTheme('in-progress')).toBe('info')
       expect(getStatusTheme('building')).toBe('info')
-      expect(getStatusTheme('queued')).toBe('info')
       expect(getStatusTheme('planning')).toBe('info')
       expect(getStatusTheme('provisioning')).toBe('info')
       expect(getStatusTheme('syncing')).toBe('info')
@@ -54,7 +57,6 @@ describe('status-utils', () => {
     test('should return neutral theme for neutral statuses', () => {
       expect(getStatusTheme('noop')).toBe('neutral')
       expect(getStatusTheme('inactive')).toBe('neutral')
-      expect(getStatusTheme('pending')).toBe('neutral')
       expect(getStatusTheme('unknown')).toBe('neutral')
       expect(getStatusTheme('Not deployed')).toBe('neutral')
       expect(getStatusTheme('No build')).toBe('neutral')
@@ -66,6 +68,8 @@ describe('status-utils', () => {
     test('should return brand theme for brand statuses', () => {
       expect(getStatusTheme('special')).toBe('brand')
       expect(getStatusTheme('brand')).toBe('brand')
+      expect(getStatusTheme('pending')).toBe('brand')
+      expect(getStatusTheme('queued')).toBe('brand')
     })
 
     test('should return neutral theme for unknown statuses', () => {
@@ -102,8 +106,9 @@ describe('status-utils', () => {
       expect(getStatusIconVariant('deploying')).toBe('Loading')
     })
 
-    test('should return ClockCountdown for neutral statuses', () => {
+    test('should return ClockCountdown for waiting statuses', () => {
       expect(getStatusIconVariant('pending')).toBe('ClockCountdownIcon')
+      expect(getStatusIconVariant('queued')).toBe('ClockCountdownIcon')
       expect(getStatusIconVariant('inactive')).toBe('WarningIcon')
       expect(getStatusIconVariant('offline')).toBe('ClockCountdownIcon')
     })
@@ -120,6 +125,18 @@ describe('status-utils', () => {
       expect(getStatusIconVariant('unknown-status')).toBe('ClockCountdownIcon')
       expect(getStatusIconVariant('')).toBe('ClockCountdownIcon')
     })
+  })
+})
+
+describe('getWorstStatusTheme', () => {
+  test('ranks a waiting step behind a failure and ahead of success', () => {
+    expect(getWorstStatusTheme(['pending', 'error']).worstStatus).toBe('error')
+    expect(getWorstStatusTheme(['queued', 'in-progress']).worstStatus).toBe(
+      'in-progress'
+    )
+    expect(getWorstStatusTheme(['pending', 'success']).worstStatus).toBe(
+      'pending'
+    )
   })
 })
 
