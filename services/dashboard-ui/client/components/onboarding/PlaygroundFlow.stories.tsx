@@ -2090,15 +2090,15 @@ const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProp
 }
 
 // --- Step 4 (all paths): how the install gets built ---------------------------
+//
+// A static preview of what the install builds, in order. Live progress lives on
+// the install's workflow page, which the primary opens.
 
 type TStageId = 'runner' | 'sandbox' | 'components'
-type TStageState = 'done' | 'active' | 'next'
 
 interface IBuildStage {
   id: TStageId
   label: string
-  duration: string
-  activeStatus: string
   blurb: string
 }
 
@@ -2119,61 +2119,44 @@ const buildStages = (path: TPath, cloud: TCloud, appName: string): IBuildStage[]
   {
     id: 'runner',
     label: 'Nuon runner',
-    duration: 'about 1 min',
-    activeStatus: 'Starting',
-    blurb: `Runs in ${accountLabel(path, cloud)} and builds everything else, using the roles your stack granted.`,
+    blurb: `Runs in ${accountLabel(path, cloud)} and builds everything else, using the roles your stack granted. About 1 minute.`,
   },
   {
     id: 'sandbox',
     label: 'Nuon sandbox',
-    duration: 'about 15–20 min',
-    activeStatus: 'Creating',
-    blurb: `${SANDBOX_CLUSTER[cloud]}, a container registry, ingress and namespaces. Takes about 15–20 minutes.`,
+    blurb: `${SANDBOX_CLUSTER[cloud]}, a container registry, ingress and namespaces. About 15–20 minutes.`,
   },
   {
     id: 'components',
     label: 'Components',
-    duration: 'a few min',
-    activeStatus: 'Deploying',
     blurb: `${appName}'s Terraform, Helm charts and images, deployed into the sandbox. A few minutes.`,
   },
 ]
-
-const stageState = (index: number, activeIndex: number): TStageState =>
-  index < activeIndex ? 'done' : index === activeIndex ? 'active' : 'next'
 
 // Placeholder in Nuon's install-ID shape; the product passes the real one.
 const EXAMPLE_INSTALL_ID = 'inlk3x9q2m7v4w8p1z6r5t0y2c'
 
 const ProvisionAccountView = ({
   stages,
-  activeIndex,
   cloud,
   region,
 }: {
   stages: IBuildStage[]
-  activeIndex: number
   cloud: TCloud
   region: string
 }) => {
-  const [picked, setPicked] = useState<TStageId | null>(null)
+  const [picked, setPicked] = useState<TStageId>('runner')
   const [hovered, setHovered] = useState<TStageId | null>(null)
-  const running = stages[Math.min(activeIndex, stages.length - 1)].id
-  const focus = hovered ?? picked ?? running
-  const stateOf = (id: TStageId) => stageState(stages.findIndex((stage) => stage.id === id), activeIndex)
+  const focus = hovered ?? picked
   const region_ = (id: TStageId) =>
     focus === id
       ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-950/40'
       : 'ring-1 ring-neutral-200 dark:ring-neutral-700 bg-background'
-  const runner = stateOf('runner')
-  const sandbox = stateOf('sandbox')
-  const components = stateOf('components')
 
   return (
     <div className="flex flex-col gap-5 md:flex-row">
-      <ol className="flex shrink-0 flex-col gap-2 md:w-60" aria-label="Install stages">
+      <ol className="flex shrink-0 flex-col gap-2 md:w-60" aria-label="What the install builds">
         {stages.map((stage, index) => {
-          const state = stageState(index, activeIndex)
           const on = focus === stage.id
           return (
             <li key={stage.id}>
@@ -2196,25 +2179,16 @@ const ProvisionAccountView = ({
                 <span className="flex items-center gap-2.5">
                   <span
                     className={cn(
-                      'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold',
-                      state === 'done'
-                        ? 'bg-green-600 text-white'
-                        : state === 'active'
-                          ? 'bg-primary-50 text-primary-800 ring-2 ring-primary-500 dark:bg-primary-950'
-                          : 'bg-background text-neutral-500 ring-2 ring-neutral-200 dark:ring-neutral-700'
+                      'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ring-2',
+                      on
+                        ? 'bg-primary-50 text-primary-800 ring-primary-500 dark:bg-primary-950 dark:text-primary-200'
+                        : 'bg-background text-neutral-500 ring-neutral-200 dark:ring-neutral-700'
                     )}
                   >
-                    {state === 'done' ? <Icon variant="CheckIcon" size={12} weight="bold" /> : index + 1}
+                    {index + 1}
                   </span>
                   <Text variant="body" weight="strong" className="min-w-0 flex-1">
                     {stage.label}
-                  </Text>
-                  <Text
-                    variant="label"
-                    weight="strong"
-                    theme={state === 'done' ? 'success' : state === 'active' ? 'brand' : 'neutral'}
-                  >
-                    {state === 'done' ? 'Done' : state === 'active' ? stage.activeStatus : 'Up next'}
                   </Text>
                 </span>
                 {on ? (
@@ -2228,7 +2202,7 @@ const ProvisionAccountView = ({
         })}
       </ol>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-3 rounded-xl p-4 ring-2 ring-primary-500 bg-primary-50/40 dark:bg-primary-950/20">
+      <div className="flex min-w-0 flex-1 flex-col gap-3 rounded-xl p-4 ring-1 ring-neutral-200 dark:ring-neutral-700">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Icon variant={CLOUD_ICON[cloud]} size={18} />
@@ -2241,79 +2215,35 @@ const ProvisionAccountView = ({
           </Badge>
         </div>
 
-        <div className={cn('flex items-center gap-3 rounded-lg px-3.5 py-3 transition-colors', region_('runner'))}>
-          {runner === 'done' ? (
-            <Icon variant="CheckCircleIcon" size={22} weight="fill" theme="success" />
-          ) : (
-            <Icon variant="Loading" size={20} />
-          )}
-          <div className="flex min-w-0 flex-col">
-            <Text variant="body" weight="strong">
-              Nuon runner
-            </Text>
-            <Text variant="subtext" theme="neutral">
-              {runner === 'done'
-                ? 'Running. Everything below is built by it, from inside your account.'
-                : 'Starting on the machine your stack created.'}
-            </Text>
-          </div>
+        <div className={cn('flex flex-col rounded-lg px-3.5 py-3 transition-colors', region_('runner'))}>
+          <Text variant="body" weight="strong">
+            Nuon runner
+          </Text>
+          <Text variant="subtext" theme="neutral">
+            Starts on the machine your stack created and builds everything below from inside your account.
+          </Text>
         </div>
 
         <div className={cn('flex flex-col gap-3 rounded-lg p-3.5 transition-colors', region_('sandbox'))}>
-          <div className="flex items-center justify-between gap-3">
-            <Text variant="body" weight="strong">
-              Nuon sandbox
-            </Text>
-            <Text variant="subtext" weight="strong" theme={sandbox === 'done' ? 'success' : sandbox === 'active' ? 'brand' : 'neutral'}>
-              {sandbox === 'done' ? 'Ready' : sandbox === 'active' ? 'Creating · 15–20 min' : 'Up next · 15–20 min'}
-            </Text>
-          </div>
+          <Text variant="body" weight="strong">
+            Nuon sandbox
+          </Text>
           <div className="flex flex-wrap gap-2">
-            {SANDBOX_PARTS.map((part, index) => {
-              const built = sandbox === 'done'
-              const building = sandbox === 'active' && index === 0
-              return (
-                <span
-                  key={part}
-                  className={cn(
-                    'rounded-md px-2 py-1 font-mono text-xs',
-                    built
-                      ? 'ring-1 ring-neutral-300 dark:ring-neutral-600 bg-background'
-                      : building
-                        ? 'ring-1 ring-primary-500 bg-primary-50 dark:bg-primary-950/40'
-                        : 'outline-1 outline-dashed outline-neutral-300 dark:outline-neutral-600 text-neutral-500'
-                  )}
-                >
-                  {part}
-                </span>
-              )
-            })}
+            {SANDBOX_PARTS.map((part) => (
+              <span
+                key={part}
+                className="rounded-md bg-background px-2 py-1 font-mono text-xs ring-1 ring-neutral-300 dark:ring-neutral-600"
+              >
+                {part}
+              </span>
+            ))}
           </div>
-          <div
-            className={cn(
-              'flex items-center justify-between gap-3 rounded-lg px-3.5 py-3 transition-colors',
-              focus === 'components'
-                ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-950/40'
-                : components === 'next'
-                  ? 'outline-1 outline-dashed outline-neutral-300 dark:outline-neutral-600 bg-background'
-                  : 'ring-1 ring-neutral-200 dark:ring-neutral-700 bg-background'
-            )}
-          >
-            <div className="flex min-w-0 flex-col">
-              <Text variant="body" weight="strong">
-                Your components
-              </Text>
-              <Text variant="subtext" theme="neutral">
-                Terraform, Helm charts and images land here once the sandbox is up.
-              </Text>
-            </div>
-            <Text
-              variant="subtext"
-              weight="strong"
-              theme={components === 'done' ? 'success' : components === 'active' ? 'brand' : 'neutral'}
-              className="whitespace-nowrap"
-            >
-              {components === 'done' ? 'Deployed' : components === 'active' ? 'Deploying' : 'Up next'}
+          <div className={cn('flex flex-col rounded-lg px-3.5 py-3 transition-colors', region_('components'))}>
+            <Text variant="body" weight="strong">
+              Your components
+            </Text>
+            <Text variant="subtext" theme="neutral">
+              Terraform, Helm charts and images land here once the sandbox is up.
             </Text>
           </div>
         </div>
@@ -2322,27 +2252,18 @@ const ProvisionAccountView = ({
   )
 }
 
-const STAGE_DWELL_MS = [3000, 6000, 3000]
-
 const ProvisionStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
   const path = readPath(sharedData)
   const cloud = readCloud(sharedData)
   const appName = path === 'own' ? readAppName(sharedData) : 'Kitchen Sink'
   const stages = buildStages(path, cloud, appName)
   const region = (sharedData.region as string | undefined) ?? CLOUD_REGIONS[cloud].options[0]
-  const [activeIndex, setActiveIndex] = useState(0)
   const watchCommand = `nuon installs workflows watch -i ${EXAMPLE_INSTALL_ID}`
-
-  useEffect(() => {
-    if (activeIndex >= stages.length) return
-    const timer = setTimeout(() => setActiveIndex((prev) => prev + 1), STAGE_DWELL_MS[activeIndex] ?? 3000)
-    return () => clearTimeout(timer)
-  }, [activeIndex, stages.length])
 
   return (
     <div className="flex flex-col gap-6">
       <Card className="!gap-5">
-        <ProvisionAccountView stages={stages} activeIndex={activeIndex} cloud={cloud} region={region} />
+        <ProvisionAccountView stages={stages} cloud={cloud} region={region} />
         <div className="flex flex-col gap-3 border-t pt-5">
           <div className="flex flex-col gap-1">
             <Text variant="body" weight="strong">
@@ -2452,12 +2373,14 @@ const PROVISION_STEP: Record<TPath, IWizardStepDef> = {
     id: 'example-provision',
     title: 'Your first BYOC install is deploying',
     navLabel: 'Provision',
+    description: 'What Nuon builds in your test account, in order. To watch it live, go to the deploy workflow.',
     component: ProvisionStep,
   },
   own: {
     id: 'own-provision',
     title: 'Your first BYOC install is deploying',
     navLabel: 'Provision',
+    description: 'What Nuon builds in your test account, in order. To watch it live, go to the deploy workflow.',
     component: ProvisionStep,
   },
 }
