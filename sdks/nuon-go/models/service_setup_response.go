@@ -8,7 +8,6 @@ package models
 import (
 	"context"
 	stderrors "errors"
-	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -23,9 +22,6 @@ type ServiceSetupResponse struct {
 	// audience
 	Audience string `json:"audience,omitempty"`
 
-	// capabilities
-	Capabilities []AppCloudConnectionCapability `json:"capabilities"`
-
 	// cli
 	Cli string `json:"cli,omitempty"`
 
@@ -38,14 +34,8 @@ type ServiceSetupResponse struct {
 	// permissions policy
 	PermissionsPolicy map[string]any `json:"permissions_policy,omitempty"`
 
-	// portal json
-	PortalJSON string `json:"portal_json,omitempty"`
-
-	// registry
-	Registry string `json:"registry,omitempty"`
-
-	// repositories
-	Repositories []string `json:"repositories"`
+	// preset
+	Preset AppCloudConnectionPreset `json:"preset,omitempty"`
 
 	// subject
 	Subject string `json:"subject,omitempty"`
@@ -61,7 +51,7 @@ type ServiceSetupResponse struct {
 func (m *ServiceSetupResponse) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateCapabilities(formats); err != nil {
+	if err := m.validatePreset(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -71,26 +61,22 @@ func (m *ServiceSetupResponse) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *ServiceSetupResponse) validateCapabilities(formats strfmt.Registry) error {
-	if swag.IsZero(m.Capabilities) { // not required
+func (m *ServiceSetupResponse) validatePreset(formats strfmt.Registry) error {
+	if swag.IsZero(m.Preset) { // not required
 		return nil
 	}
 
-	for i := 0; i < len(m.Capabilities); i++ {
-
-		if err := m.Capabilities[i].Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("capabilities" + "." + strconv.Itoa(i))
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("capabilities" + "." + strconv.Itoa(i))
-			}
-
-			return err
+	if err := m.Preset.Validate(formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("preset")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("preset")
 		}
 
+		return err
 	}
 
 	return nil
@@ -100,7 +86,7 @@ func (m *ServiceSetupResponse) validateCapabilities(formats strfmt.Registry) err
 func (m *ServiceSetupResponse) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidateCapabilities(ctx, formats); err != nil {
+	if err := m.contextValidatePreset(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -110,27 +96,23 @@ func (m *ServiceSetupResponse) ContextValidate(ctx context.Context, formats strf
 	return nil
 }
 
-func (m *ServiceSetupResponse) contextValidateCapabilities(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceSetupResponse) contextValidatePreset(ctx context.Context, formats strfmt.Registry) error {
 
-	for i := 0; i < len(m.Capabilities); i++ {
+	if swag.IsZero(m.Preset) { // not required
+		return nil
+	}
 
-		if swag.IsZero(m.Capabilities[i]) { // not required
-			return nil
+	if err := m.Preset.ContextValidate(ctx, formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("preset")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("preset")
 		}
 
-		if err := m.Capabilities[i].ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("capabilities" + "." + strconv.Itoa(i))
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("capabilities" + "." + strconv.Itoa(i))
-			}
-
-			return err
-		}
-
+		return err
 	}
 
 	return nil

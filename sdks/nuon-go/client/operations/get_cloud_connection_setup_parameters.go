@@ -14,7 +14,6 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
-	"github.com/go-openapi/swag"
 )
 
 // NewGetCloudConnectionSetupParams creates a new GetCloudConnectionSetupParams object,
@@ -67,12 +66,6 @@ type GetCloudConnectionSetupParams struct {
 	   connection ID
 	*/
 	ConnectionID string
-
-	/* Repository.
-
-	   ECR repository names
-	*/
-	Repository []string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -138,17 +131,6 @@ func (o *GetCloudConnectionSetupParams) SetConnectionID(connectionID string) {
 	o.ConnectionID = connectionID
 }
 
-// WithRepository adds the repository to the get cloud connection setup params
-func (o *GetCloudConnectionSetupParams) WithRepository(repository []string) *GetCloudConnectionSetupParams {
-	o.SetRepository(repository)
-	return o
-}
-
-// SetRepository adds the repository to the get cloud connection setup params
-func (o *GetCloudConnectionSetupParams) SetRepository(repository []string) {
-	o.Repository = repository
-}
-
 // WriteToRequest writes these params to a swagger request
 func (o *GetCloudConnectionSetupParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -162,36 +144,8 @@ func (o *GetCloudConnectionSetupParams) WriteToRequest(r runtime.ClientRequest, 
 		return err
 	}
 
-	if o.Repository != nil {
-
-		// binding items for repository
-		joinedRepository := o.bindParamRepository(reg)
-
-		// query array param repository
-		if err := r.SetQueryParam("repository", joinedRepository...); err != nil {
-			return err
-		}
-	}
-
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
 	return nil
-}
-
-// bindParamGetCloudConnectionSetup binds the parameter repository
-func (o *GetCloudConnectionSetupParams) bindParamRepository(formats strfmt.Registry) []string {
-	repositoryIR := o.Repository
-
-	var repositoryIC []string
-	for _, repositoryIIR := range repositoryIR { // explode []string
-
-		repositoryIIV := repositoryIIR // string as string
-		repositoryIC = append(repositoryIC, repositoryIIV)
-	}
-
-	// items.CollectionFormat: "csv"
-	repositoryIS := swag.JoinByFormat(repositoryIC, "csv")
-
-	return repositoryIS
 }

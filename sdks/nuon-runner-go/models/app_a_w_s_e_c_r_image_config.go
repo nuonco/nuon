@@ -7,9 +7,7 @@ package models
 
 import (
 	"context"
-	stderrors "errors"
 
-	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -21,12 +19,6 @@ type AppAWSECRImageConfig struct {
 
 	// aws region
 	AwsRegion string `json:"aws_region,omitempty"`
-
-	// cloud connection
-	CloudConnection *AppCloudConnection `json:"cloud_connection,omitempty"`
-
-	// cloud connection id
-	CloudConnectionID string `json:"cloud_connection_id,omitempty"`
 
 	// connection to parent model
 	ComponentConfigID string `json:"component_config_id,omitempty"`
@@ -52,77 +44,11 @@ type AppAWSECRImageConfig struct {
 
 // Validate validates this app a w s e c r image config
 func (m *AppAWSECRImageConfig) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.validateCloudConnection(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
 	return nil
 }
 
-func (m *AppAWSECRImageConfig) validateCloudConnection(formats strfmt.Registry) error {
-	if swag.IsZero(m.CloudConnection) { // not required
-		return nil
-	}
-
-	if m.CloudConnection != nil {
-		if err := m.CloudConnection.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("cloud_connection")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("cloud_connection")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
-// ContextValidate validate this app a w s e c r image config based on the context it is used
+// ContextValidate validates this app a w s e c r image config based on context it is used
 func (m *AppAWSECRImageConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.contextValidateCloudConnection(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *AppAWSECRImageConfig) contextValidateCloudConnection(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.CloudConnection != nil {
-
-		if swag.IsZero(m.CloudConnection) { // not required
-			return nil
-		}
-
-		if err := m.CloudConnection.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("cloud_connection")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("cloud_connection")
-			}
-
-			return err
-		}
-	}
-
 	return nil
 }
 

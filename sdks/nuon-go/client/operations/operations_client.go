@@ -3703,6 +3703,8 @@ func (a *Client) CreateAppTerraformModuleComponentConfig(params *CreateAppTerraf
 
 /*
 CreateCloudConnection creates a cloud connection
+
+Create an AWS connection using the stacks or custom preset. Custom renders trust only; attach your own permissions policy.
 */
 func (a *Client) CreateCloudConnection(params *CreateCloudConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCloudConnectionCreated, error) {
 	// NOTE: parameters are not validated before sending

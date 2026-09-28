@@ -17,9 +17,6 @@ import (
 // swagger:model service.gcpGARImageConfigRequest
 type ServiceGcpGARImageConfigRequest struct {
 
-	// connection
-	Connection string `json:"connection,omitempty"`
-
 	// gcp project id
 	GcpProjectID string `json:"gcp_project_id,omitempty"`
 

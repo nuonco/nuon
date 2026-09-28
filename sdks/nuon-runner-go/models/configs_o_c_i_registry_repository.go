@@ -25,9 +25,6 @@ type ConfigsOCIRegistryRepository struct {
 	// acrauth
 	Acrauth *GithubComNuoncoNuonPkgAzureCredentialsConfig `json:"acrauth,omitempty"`
 
-	// cloud connection ID
-	CloudConnectionID string `json:"cloudConnectionID,omitempty"`
-
 	// ecrauth
 	Ecrauth *GithubComNuoncoNuonPkgAwsCredentialsConfig `json:"ecrauth,omitempty"`
 
@@ -36,9 +33,6 @@ type ConfigsOCIRegistryRepository struct {
 
 	// ociauth
 	Ociauth *ConfigsOCIRegistryAuth `json:"ociauth,omitempty"`
-
-	// org ID
-	OrgID string `json:"orgID,omitempty"`
 
 	// plugin
 	Plugin string `json:"plugin,omitempty"`

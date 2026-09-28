@@ -7,12 +7,13 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 	stderrors "errors"
-	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // ServiceConnectionResponse service connection response
@@ -22,9 +23,6 @@ type ServiceConnectionResponse struct {
 
 	// auth mode
 	AuthMode AppCloudConnectionAuthMode `json:"auth_mode,omitempty"`
-
-	// capabilities
-	Capabilities []AppCloudConnectionCapability `json:"capabilities"`
 
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
@@ -51,16 +49,14 @@ type ServiceConnectionResponse struct {
 	OrgID string `json:"org_id,omitempty"`
 
 	// platform
-	Platform AppCloudPlatform `json:"platform,omitempty"`
+	// Enum: ["aws"]
+	Platform string `json:"platform,omitempty"`
+
+	// preset
+	Preset AppCloudConnectionPreset `json:"preset,omitempty"`
 
 	// principal
 	Principal string `json:"principal,omitempty"`
-
-	// registries
-	Registries []string `json:"registries"`
-
-	// requested capabilities
-	RequestedCapabilities []AppCloudConnectionCapability `json:"requested_capabilities"`
 
 	// setup
 	Setup *ServiceSetupResponse `json:"setup,omitempty"`
@@ -92,15 +88,11 @@ func (m *ServiceConnectionResponse) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateCapabilities(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validatePlatform(formats); err != nil {
 		res = append(res, err)
 	}
 
-	if err := m.validateRequestedCapabilities(formats); err != nil {
+	if err := m.validatePreset(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -143,28 +135,29 @@ func (m *ServiceConnectionResponse) validateAuthMode(formats strfmt.Registry) er
 	return nil
 }
 
-func (m *ServiceConnectionResponse) validateCapabilities(formats strfmt.Registry) error {
-	if swag.IsZero(m.Capabilities) { // not required
-		return nil
+var serviceConnectionResponseTypePlatformPropEnum []any
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["aws"]`), &res); err != nil {
+		panic(err)
 	}
-
-	for i := 0; i < len(m.Capabilities); i++ {
-
-		if err := m.Capabilities[i].Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("capabilities" + "." + strconv.Itoa(i))
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("capabilities" + "." + strconv.Itoa(i))
-			}
-
-			return err
-		}
-
+	for _, v := range res {
+		serviceConnectionResponseTypePlatformPropEnum = append(serviceConnectionResponseTypePlatformPropEnum, v)
 	}
+}
 
+const (
+
+	// ServiceConnectionResponsePlatformAws captures enum value "aws"
+	ServiceConnectionResponsePlatformAws string = "aws"
+)
+
+// prop value enum
+func (m *ServiceConnectionResponse) validatePlatformEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, serviceConnectionResponseTypePlatformPropEnum, true); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -173,42 +166,30 @@ func (m *ServiceConnectionResponse) validatePlatform(formats strfmt.Registry) er
 		return nil
 	}
 
-	if err := m.Platform.Validate(formats); err != nil {
-		ve := new(errors.Validation)
-		if stderrors.As(err, &ve) {
-			return ve.ValidateName("platform")
-		}
-		ce := new(errors.CompositeError)
-		if stderrors.As(err, &ce) {
-			return ce.ValidateName("platform")
-		}
-
+	// value enum
+	if err := m.validatePlatformEnum("platform", "body", m.Platform); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (m *ServiceConnectionResponse) validateRequestedCapabilities(formats strfmt.Registry) error {
-	if swag.IsZero(m.RequestedCapabilities) { // not required
+func (m *ServiceConnectionResponse) validatePreset(formats strfmt.Registry) error {
+	if swag.IsZero(m.Preset) { // not required
 		return nil
 	}
 
-	for i := 0; i < len(m.RequestedCapabilities); i++ {
-
-		if err := m.RequestedCapabilities[i].Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("requested_capabilities" + "." + strconv.Itoa(i))
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("requested_capabilities" + "." + strconv.Itoa(i))
-			}
-
-			return err
+	if err := m.Preset.Validate(formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("preset")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("preset")
 		}
 
+		return err
 	}
 
 	return nil
@@ -289,15 +270,7 @@ func (m *ServiceConnectionResponse) ContextValidate(ctx context.Context, formats
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateCapabilities(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidatePlatform(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateRequestedCapabilities(ctx, formats); err != nil {
+	if err := m.contextValidatePreset(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -341,75 +314,23 @@ func (m *ServiceConnectionResponse) contextValidateAuthMode(ctx context.Context,
 	return nil
 }
 
-func (m *ServiceConnectionResponse) contextValidateCapabilities(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceConnectionResponse) contextValidatePreset(ctx context.Context, formats strfmt.Registry) error {
 
-	for i := 0; i < len(m.Capabilities); i++ {
-
-		if swag.IsZero(m.Capabilities[i]) { // not required
-			return nil
-		}
-
-		if err := m.Capabilities[i].ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("capabilities" + "." + strconv.Itoa(i))
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("capabilities" + "." + strconv.Itoa(i))
-			}
-
-			return err
-		}
-
-	}
-
-	return nil
-}
-
-func (m *ServiceConnectionResponse) contextValidatePlatform(ctx context.Context, formats strfmt.Registry) error {
-
-	if swag.IsZero(m.Platform) { // not required
+	if swag.IsZero(m.Preset) { // not required
 		return nil
 	}
 
-	if err := m.Platform.ContextValidate(ctx, formats); err != nil {
+	if err := m.Preset.ContextValidate(ctx, formats); err != nil {
 		ve := new(errors.Validation)
 		if stderrors.As(err, &ve) {
-			return ve.ValidateName("platform")
+			return ve.ValidateName("preset")
 		}
 		ce := new(errors.CompositeError)
 		if stderrors.As(err, &ce) {
-			return ce.ValidateName("platform")
+			return ce.ValidateName("preset")
 		}
 
 		return err
-	}
-
-	return nil
-}
-
-func (m *ServiceConnectionResponse) contextValidateRequestedCapabilities(ctx context.Context, formats strfmt.Registry) error {
-
-	for i := 0; i < len(m.RequestedCapabilities); i++ {
-
-		if swag.IsZero(m.RequestedCapabilities[i]) { // not required
-			return nil
-		}
-
-		if err := m.RequestedCapabilities[i].ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("requested_capabilities" + "." + strconv.Itoa(i))
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("requested_capabilities" + "." + strconv.Itoa(i))
-			}
-
-			return err
-		}
-
 	}
 
 	return nil

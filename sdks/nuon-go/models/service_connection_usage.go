@@ -17,9 +17,6 @@ import (
 // swagger:model service.ConnectionUsage
 type ServiceConnectionUsage struct {
 
-	// components
-	Components int64 `json:"components,omitempty"`
-
 	// installs
 	Installs int64 `json:"installs,omitempty"`
 }

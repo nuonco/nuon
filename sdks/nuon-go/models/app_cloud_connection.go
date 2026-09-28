@@ -7,12 +7,13 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 	stderrors "errors"
-	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // AppCloudConnection app cloud connection
@@ -22,9 +23,6 @@ type AppCloudConnection struct {
 
 	// auth mode
 	AuthMode AppCloudConnectionAuthMode `json:"auth_mode,omitempty"`
-
-	// capabilities
-	Capabilities []AppCloudConnectionCapability `json:"capabilities"`
 
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
@@ -51,16 +49,14 @@ type AppCloudConnection struct {
 	OrgID string `json:"org_id,omitempty"`
 
 	// platform
-	Platform AppCloudPlatform `json:"platform,omitempty"`
+	// Enum: ["aws"]
+	Platform string `json:"platform,omitempty"`
+
+	// preset
+	Preset AppCloudConnectionPreset `json:"preset,omitempty"`
 
 	// principal
 	Principal string `json:"principal,omitempty"`
-
-	// registries
-	Registries []string `json:"registries"`
-
-	// requested capabilities
-	RequestedCapabilities []AppCloudConnectionCapability `json:"requested_capabilities"`
 
 	// status
 	Status AppCloudConnectionStatus `json:"status,omitempty"`
@@ -86,15 +82,11 @@ func (m *AppCloudConnection) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateCapabilities(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validatePlatform(formats); err != nil {
 		res = append(res, err)
 	}
 
-	if err := m.validateRequestedCapabilities(formats); err != nil {
+	if err := m.validatePreset(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -129,28 +121,29 @@ func (m *AppCloudConnection) validateAuthMode(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *AppCloudConnection) validateCapabilities(formats strfmt.Registry) error {
-	if swag.IsZero(m.Capabilities) { // not required
-		return nil
+var appCloudConnectionTypePlatformPropEnum []any
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["aws"]`), &res); err != nil {
+		panic(err)
 	}
-
-	for i := 0; i < len(m.Capabilities); i++ {
-
-		if err := m.Capabilities[i].Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("capabilities" + "." + strconv.Itoa(i))
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("capabilities" + "." + strconv.Itoa(i))
-			}
-
-			return err
-		}
-
+	for _, v := range res {
+		appCloudConnectionTypePlatformPropEnum = append(appCloudConnectionTypePlatformPropEnum, v)
 	}
+}
 
+const (
+
+	// AppCloudConnectionPlatformAws captures enum value "aws"
+	AppCloudConnectionPlatformAws string = "aws"
+)
+
+// prop value enum
+func (m *AppCloudConnection) validatePlatformEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, appCloudConnectionTypePlatformPropEnum, true); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -159,42 +152,30 @@ func (m *AppCloudConnection) validatePlatform(formats strfmt.Registry) error {
 		return nil
 	}
 
-	if err := m.Platform.Validate(formats); err != nil {
-		ve := new(errors.Validation)
-		if stderrors.As(err, &ve) {
-			return ve.ValidateName("platform")
-		}
-		ce := new(errors.CompositeError)
-		if stderrors.As(err, &ce) {
-			return ce.ValidateName("platform")
-		}
-
+	// value enum
+	if err := m.validatePlatformEnum("platform", "body", m.Platform); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (m *AppCloudConnection) validateRequestedCapabilities(formats strfmt.Registry) error {
-	if swag.IsZero(m.RequestedCapabilities) { // not required
+func (m *AppCloudConnection) validatePreset(formats strfmt.Registry) error {
+	if swag.IsZero(m.Preset) { // not required
 		return nil
 	}
 
-	for i := 0; i < len(m.RequestedCapabilities); i++ {
-
-		if err := m.RequestedCapabilities[i].Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("requested_capabilities" + "." + strconv.Itoa(i))
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("requested_capabilities" + "." + strconv.Itoa(i))
-			}
-
-			return err
+	if err := m.Preset.Validate(formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("preset")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("preset")
 		}
 
+		return err
 	}
 
 	return nil
@@ -229,15 +210,7 @@ func (m *AppCloudConnection) ContextValidate(ctx context.Context, formats strfmt
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateCapabilities(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidatePlatform(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateRequestedCapabilities(ctx, formats); err != nil {
+	if err := m.contextValidatePreset(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -273,75 +246,23 @@ func (m *AppCloudConnection) contextValidateAuthMode(ctx context.Context, format
 	return nil
 }
 
-func (m *AppCloudConnection) contextValidateCapabilities(ctx context.Context, formats strfmt.Registry) error {
+func (m *AppCloudConnection) contextValidatePreset(ctx context.Context, formats strfmt.Registry) error {
 
-	for i := 0; i < len(m.Capabilities); i++ {
-
-		if swag.IsZero(m.Capabilities[i]) { // not required
-			return nil
-		}
-
-		if err := m.Capabilities[i].ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("capabilities" + "." + strconv.Itoa(i))
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("capabilities" + "." + strconv.Itoa(i))
-			}
-
-			return err
-		}
-
-	}
-
-	return nil
-}
-
-func (m *AppCloudConnection) contextValidatePlatform(ctx context.Context, formats strfmt.Registry) error {
-
-	if swag.IsZero(m.Platform) { // not required
+	if swag.IsZero(m.Preset) { // not required
 		return nil
 	}
 
-	if err := m.Platform.ContextValidate(ctx, formats); err != nil {
+	if err := m.Preset.ContextValidate(ctx, formats); err != nil {
 		ve := new(errors.Validation)
 		if stderrors.As(err, &ve) {
-			return ve.ValidateName("platform")
+			return ve.ValidateName("preset")
 		}
 		ce := new(errors.CompositeError)
 		if stderrors.As(err, &ce) {
-			return ce.ValidateName("platform")
+			return ce.ValidateName("preset")
 		}
 
 		return err
-	}
-
-	return nil
-}
-
-func (m *AppCloudConnection) contextValidateRequestedCapabilities(ctx context.Context, formats strfmt.Registry) error {
-
-	for i := 0; i < len(m.RequestedCapabilities); i++ {
-
-		if swag.IsZero(m.RequestedCapabilities[i]) { // not required
-			return nil
-		}
-
-		if err := m.RequestedCapabilities[i].ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("requested_capabilities" + "." + strconv.Itoa(i))
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("requested_capabilities" + "." + strconv.Itoa(i))
-			}
-
-			return err
-		}
-
 	}
 
 	return nil

@@ -71,9 +71,9 @@ type VerifyCloudConnectionParams struct {
 
 	/* Req.
 
-	   Capability probe options
+	   Input
 	*/
-	Req *models.ServiceVerifyRequest
+	Req models.ServiceVerifyRequest
 
 	timeout    time.Duration
 	Context    context.Context
@@ -140,13 +140,13 @@ func (o *VerifyCloudConnectionParams) SetConnectionID(connectionID string) {
 }
 
 // WithReq adds the req to the verify cloud connection params
-func (o *VerifyCloudConnectionParams) WithReq(req *models.ServiceVerifyRequest) *VerifyCloudConnectionParams {
+func (o *VerifyCloudConnectionParams) WithReq(req models.ServiceVerifyRequest) *VerifyCloudConnectionParams {
 	o.SetReq(req)
 	return o
 }
 
 // SetReq adds the req to the verify cloud connection params
-func (o *VerifyCloudConnectionParams) SetReq(req *models.ServiceVerifyRequest) {
+func (o *VerifyCloudConnectionParams) SetReq(req models.ServiceVerifyRequest) {
 	o.Req = req
 }
 
