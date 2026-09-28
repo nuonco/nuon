@@ -49,7 +49,7 @@ interface IPresetFlow {
 
 const FLOW_STEPS = [
   'Cloud and account',
-  'Access preset',
+  'Access',
   'Run in your cloud',
   'Verify',
 ]
@@ -314,7 +314,7 @@ const AccessPreset = ({
   <div className="flex flex-col gap-6">
     <SectionHeader
       title="Choose what Nuon can access"
-      description="Start with a Nuon preset or provide the permissions policy in AWS. The OIDC trust stays limited to this connection."
+      description="Choose managed stack access or provide the permissions policy in AWS. The OIDC trust stays limited to this connection."
     />
     <div
       className={cn(
@@ -335,7 +335,7 @@ const AccessPreset = ({
           <div className="flex min-w-0 flex-1 flex-col gap-2">
             <div className="flex flex-wrap items-center gap-2">
               <Text variant="base" weight="strong">
-                Stacks
+                Manage install stacks
               </Text>
               <Badge theme="info">Recommended</Badge>
             </div>
@@ -379,8 +379,8 @@ const AccessPreset = ({
           </div>
         </div>
         <Text variant="subtext" theme="neutral">
-          The Stacks preset policy is a good starting point if you want to trim
-          it.
+          The Manage install stacks policy is a good starting point if you want
+          to trim it.
         </Text>
         <Button variant="secondary" onClick={() => setAccess('custom')}>
           {access === 'custom' ? 'Selected' : 'Select Custom'}
@@ -675,10 +675,7 @@ const Verify = ({
         }
       />
       {isWorking && (
-        <Banner
-          theme="info"
-          className="!text-blue-800 dark:!text-blue-300"
-        >
+        <Banner theme="info" className="!text-blue-800 dark:!text-blue-300">
           <div className="flex flex-col gap-1">
             <Text weight="strong">Verifying connection</Text>
             <Text variant="subtext">
