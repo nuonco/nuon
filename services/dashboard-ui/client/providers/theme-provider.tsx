@@ -21,7 +21,7 @@ export const THEME_STORAGE_KEY = 'nuon-theme'
 
 /* Kept in sync with the first-paint script in client/index.html, which cannot
    import from here. Changing one without the other causes a theme flash. */
-export const DEFAULT_THEME_PREFERENCE: TThemePreference = 'classic'
+export const DEFAULT_THEME_PREFERENCE: TThemePreference = 'system'
 
 export const THEME_PREFERENCES: readonly TThemePreference[] = [
   'system',
