@@ -7,15 +7,11 @@ export const createCloudConnection = ({
 }: {
   body: {
     name: string
-    platform: 'aws' | 'azure' | 'gcp'
+    platform: 'aws'
     target_id: string
     principal: string
-    tenant_id?: string
-    identity_provider?: string
     default_region?: string
-    capabilities: ('stacks' | 'images')[]
-    repositories?: string[]
-    registry?: string
+    preset: 'stacks' | 'custom'
   }
   orgId: string
 }) =>
@@ -43,13 +39,9 @@ export const getCloudConnection = ({
 
 export const verifyCloudConnection = ({
   connectionId,
-  repositories,
-  registry,
   orgId,
 }: {
   connectionId: string
-  repositories?: string[]
-  registry?: string
   orgId: string
 }) =>
   api<TCloudConnection>({
@@ -57,7 +49,7 @@ export const verifyCloudConnection = ({
     method: 'POST',
     orgId,
     path: `cloud-connections/${connectionId}/verify`,
-    body: { repositories, registry },
+    body: {},
   })
 
 export const deleteCloudConnection = ({

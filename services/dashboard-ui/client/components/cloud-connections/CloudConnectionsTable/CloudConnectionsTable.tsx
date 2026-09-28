@@ -75,18 +75,8 @@ export const CloudConnectionsTable = ({
       },
     },
     {
-      accessorKey: 'requested_capabilities',
-      header: 'Requested / verified',
-      cell: ({ row }) => (
-        <div className="flex flex-col gap-1">
-          <Text variant="subtext">
-            {row.original.requested_capabilities?.join(', ') || 'None'}
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            Verified: {row.original.capabilities?.join(', ') || 'none'}
-          </Text>
-        </div>
-      ),
+      accessorKey: 'preset',
+      header: 'Access preset',
     },
     {
       accessorKey: 'last_verified_at',
@@ -107,8 +97,7 @@ export const CloudConnectionsTable = ({
       header: 'Used by',
       cell: ({ row }) => {
         const installs = row.original.used_by?.installs ?? 0
-        const components = row.original.used_by?.components ?? 0
-        return `${installs} install${installs === 1 ? '' : 's'}, ${components} component${components === 1 ? '' : 's'}`
+        return `${installs} install${installs === 1 ? '' : 's'}`
       },
     },
     {
@@ -116,10 +105,7 @@ export const CloudConnectionsTable = ({
       enableSorting: false,
       cell: ({ row }) => {
         const connection = row.original
-        const inUse =
-          (connection.used_by?.installs ?? 0) +
-            (connection.used_by?.components ?? 0) >
-          0
+        const inUse = (connection.used_by?.installs ?? 0) > 0
         const isPending = pendingActionId === connection.id
         return (
           <div className="flex items-center justify-end gap-1">
@@ -159,8 +145,7 @@ export const CloudConnectionsTable = ({
       searchPlaceholder="Search connections"
       emptyStateProps={{
         emptyTitle: 'No cloud connections yet',
-        emptyMessage:
-          'Create a connection to deploy stacks or pull private images.',
+        emptyMessage: 'Create an AWS connection to deploy install stacks.',
       }}
     />
   )

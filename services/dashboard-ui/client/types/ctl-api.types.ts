@@ -809,7 +809,7 @@ export type TCloudConnection = {
   created_at: string
   updated_at: string
   name: string
-  platform: 'aws' | 'azure' | 'gcp'
+  platform: 'aws'
   target_id: string
   principal: string
   tenant_id?: string
@@ -819,21 +819,18 @@ export type TCloudConnection = {
   status: 'pending' | 'verified' | 'error'
   status_message?: string
   last_verified_at?: string
-  requested_capabilities: ('stacks' | 'images')[]
-  capabilities: ('stacks' | 'images')[]
-  used_by: { installs: number; components: number }
+  preset: 'stacks' | 'custom'
+  used_by: { installs: number }
   setup: {
     issuer_url: string
     subject: string
     audience: string
     trust_policy: Record<string, unknown>
+    permissions_policy?: Record<string, unknown>
     terraform: string
     cli: string
     cloudformation: string
-    portal_json?: string
-    registry?: string
-    capabilities: ('stacks' | 'images')[]
-    repositories?: string[]
+    preset: 'stacks' | 'custom'
   }
 }
 

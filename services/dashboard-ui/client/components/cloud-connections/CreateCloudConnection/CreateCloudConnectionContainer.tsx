@@ -12,49 +12,23 @@ import type { TCloudConnection } from '@/types'
 import { CreateCloudConnectionModal } from './CreateCloudConnection'
 import type { CreateCloudConnectionValues } from './schema'
 
-const repositoriesFrom = (value: string) =>
-  value
-    .split(/[\n,]/)
-    .map((repository) => repository.trim())
-    .filter(Boolean)
-
 const CreateCloudConnectionModalContainer = (props: Record<string, any>) => {
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
   const [connection, setConnection] = useState<TCloudConnection | null>(null)
-  const [repositories, setRepositories] = useState<string[]>([])
-  const [registry, setRegistry] = useState('')
 
   const createMutation = useMutation({
     mutationFn: (values: CreateCloudConnectionValues) => {
-      const capabilities: ('stacks' | 'images')[] =
-        values.platform === 'gcp'
-          ? ['images']
-          : values.capabilitySet === 'both'
-          ? ['stacks', 'images']
-          : [values.capabilitySet]
-      const nextRepositories = repositoriesFrom(values.repositories)
-      setRepositories(nextRepositories)
-      setRegistry(values.registry.trim())
       return createCloudConnection({
         orgId: org.id,
         body: {
           name: values.name.trim(),
-          platform: values.platform,
+          platform: 'aws',
           target_id: values.targetId.trim(),
-          tenant_id:
-            values.platform === 'azure' ? values.tenantId.trim() : undefined,
-          identity_provider:
-            values.platform === 'gcp'
-              ? values.identityProvider.trim()
-              : undefined,
           principal: values.principal.trim(),
-          capabilities,
-          registry:
-            values.platform === 'azure' ? values.registry.trim() : undefined,
-          repositories: nextRepositories,
+          preset: values.preset,
         },
       })
     },
@@ -69,8 +43,6 @@ const CreateCloudConnectionModalContainer = (props: Record<string, any>) => {
       verifyCloudConnection({
         orgId: org.id,
         connectionId: connection!.id,
-        repositories,
-        registry,
       }),
     onSuccess: (verified) => {
       setConnection(verified)

@@ -539,7 +539,8 @@ export const CreateInstallFromAppContainer = ({
               ? (cloudConnections || []).filter(
                   (connection) =>
                     connection.platform === installPlatform &&
-                    connection.capabilities?.includes('stacks')
+                    connection.platform === 'aws' &&
+                    connection.status === 'verified'
                 )
               : undefined
           }
