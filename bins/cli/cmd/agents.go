@@ -102,7 +102,7 @@ which MCP URL resolves from your config.`,
 		}),
 	}
 	cmd.Flags().BoolVar(&allowWrites, "allow-writes", false, "expose mutating tools whose descriptions start with WRITE OPERATION:")
-	cmd.Flags().StringVar(&mcpURL, "url", "", "upstream MCP server URL, for example https://mcp.example.nuon.co/mcp. Derived from api.<hostname> by default; pass this when the MCP URL does not follow from the API URL")
+	cmd.Flags().StringVar(&mcpURL, "url", "", "upstream MCP server URL, for example https://mcp.example.nuon.co/mcp. Derived from api.<hostname> or app.<hostname> by default; pass this when the MCP URL does not follow from the API URL")
 	cmd.Flags().StringVar(&serverName, "name", "", "MCP server name exposed to the client (default nuon, derived from the configured API URL)")
 
 	return cmd
