@@ -54,7 +54,7 @@ export const verifyCloudConnection = ({
   orgId: string
 }) =>
   api<TCloudConnection>({
-    abortTimeout: 45000,
+    abortTimeout: 90000,
     method: 'POST',
     orgId,
     path: `cloud-connections/${connectionId}/verify`,

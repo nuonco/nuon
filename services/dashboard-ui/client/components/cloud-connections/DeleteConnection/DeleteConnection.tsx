@@ -30,7 +30,18 @@ export const DeleteConnection = ({
         Deleting {name} removes this connection from Nuon. It does not delete
         the IAM role or any resources in AWS.
       </Text>
-      <FormErrorBanner error={error} fallback="Connection deletion failed" />
+      <FormErrorBanner
+        error={
+          error
+            ? {
+                ...error,
+                error: 'Cannot delete connection',
+                description: error.description || error.error,
+              }
+            : error
+        }
+        fallback="Cannot delete connection"
+      />
     </div>
   </Modal>
 )

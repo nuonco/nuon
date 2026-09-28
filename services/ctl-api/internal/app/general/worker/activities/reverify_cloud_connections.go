@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/service"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/signals/verificationfailed"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
@@ -34,12 +35,12 @@ func (a *Activities) ReverifyCloudConnections(ctx context.Context, _ ReverifyClo
 		connection := &connections[i]
 		response.Probed++
 		previousStatus := connection.Status
-		result, verifyErr := a.cloudConnectionVerifier.Verify(ctx, connection, service.VerifyOptions{IdentityOnly: true})
+		result, verifyErr := a.cloudConnectionVerifier.Verify(ctx, connection, service.VerifyOptions{IdentityOnly: true, RetryIAMPropagation: false})
 		now := time.Now().UTC()
 		if verifyErr != nil {
 			response.Failures++
 			result.Status = app.CloudConnectionStatusError
-			result.Message = service.VerificationErrorMessage(verifyErr)
+			result.Message = cloudconnections.VerificationErrorMessage(verifyErr)
 			a.l.Warn("cloud connection re-verification failed", zap.String("connection_id", connection.ID), zap.Error(verifyErr))
 		}
 		update := app.CloudConnection{Status: result.Status, StatusMessage: result.Message, LastVerifiedAt: &now}

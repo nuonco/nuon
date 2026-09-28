@@ -13,6 +13,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -244,7 +245,7 @@ func (s *service) Verify(ctx *gin.Context) {
 			return
 		}
 	}
-	connection, err := s.verify(ctx, org.ID, ctx.Param("connection_id"), VerifyOptions{})
+	connection, err := s.verify(ctx, org.ID, ctx.Param("connection_id"), VerifyOptions{RetryIAMPropagation: true})
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -262,10 +263,11 @@ func (s *service) verify(ctx context.Context, orgID, connectionID string, option
 	if err != nil {
 		return nil, err
 	}
+	options.RetryIAMPropagation = options.RetryIAMPropagation && connection.LastVerifiedAt == nil
 	result, err := s.verifier.Verify(ctx, connection, options)
 	if err != nil {
 		s.l.Warn("cloud connection verification failed", zap.String("connection_id", connection.ID), zap.Error(err))
-		result = verificationFailure(VerificationErrorMessage(err))
+		result = verificationFailure(cloudconnections.VerificationErrorMessage(err))
 	}
 	now := time.Now().UTC()
 	update := app.CloudConnection{Status: result.Status, StatusMessage: result.Message, LastVerifiedAt: &now}

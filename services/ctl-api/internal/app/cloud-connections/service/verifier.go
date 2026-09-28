@@ -17,6 +17,7 @@ import (
 	"github.com/aws/smithy-go"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	cloudconnections "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcissuer"
 )
 
@@ -26,7 +27,8 @@ type VerificationResult struct {
 }
 
 type VerifyOptions struct {
-	IdentityOnly bool
+	IdentityOnly        bool
+	RetryIAMPropagation bool
 }
 
 type Verifier interface {
@@ -44,10 +46,12 @@ type cloudFormationAPI interface {
 
 type awsVerifier struct {
 	issuer *oidcissuer.Issuer
+	sleep  func(context.Context, time.Duration) error
+	now    func() time.Time
 }
 
 func NewAWSVerifier(issuer *oidcissuer.Issuer) Verifier {
-	return &awsVerifier{issuer: issuer}
+	return &awsVerifier{issuer: issuer, sleep: sleepWithContext, now: time.Now}
 }
 
 func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnection, options VerifyOptions) (VerificationResult, error) {
@@ -57,9 +61,13 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 	if v.issuer == nil {
 		return VerificationResult{}, fmt.Errorf("cloud connection OIDC issuer is unavailable")
 	}
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	timeout := 30 * time.Second
+	if options.RetryIAMPropagation {
+		timeout = 80 * time.Second
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	base, err := config.LoadDefaultConfig(ctx, config.WithRegion(connection.DefaultRegion))
+	base, err := config.LoadDefaultConfig(ctx, config.WithRegion(connection.DefaultRegion), config.WithRetryMaxAttempts(1))
 	if err != nil {
 		return VerificationResult{}, fmt.Errorf("load AWS config: %w", err)
 	}
@@ -68,14 +76,11 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 	if err != nil {
 		return VerificationResult{}, err
 	}
-	output, err := client.AssumeRoleWithWebIdentity(ctx, &sts.AssumeRoleWithWebIdentityInput{RoleArn: &connection.Principal, RoleSessionName: aws.String("nuon-cloud-connection-verification"), WebIdentityToken: &token, DurationSeconds: aws.Int32(900)})
+	output, err := v.assumeRole(ctx, client, &sts.AssumeRoleWithWebIdentityInput{RoleArn: &connection.Principal, RoleSessionName: aws.String("nuon-cloud-connection-verification"), WebIdentityToken: &token, DurationSeconds: aws.Int32(900)}, options.RetryIAMPropagation)
 	if err != nil {
-		var invalidToken *stsTypes.InvalidIdentityTokenException
-		if errors.As(err, &invalidToken) {
-			return verificationFailure("AWS could not validate Nuon's identity token. Create the OIDC provider for this issuer first (step 1)."), nil
-		}
-		if isAccessDenied(err) {
-			return verificationFailure("Nuon OIDC identity is not trusted by this role."), nil
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			return verificationFailure(cloudconnections.AssumeRoleErrorMessage(err)), nil
 		}
 		return VerificationResult{}, err
 	}
@@ -85,7 +90,7 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 	}
 	if _, err := client.AssumeRoleWithWebIdentity(ctx, &sts.AssumeRoleWithWebIdentityInput{RoleArn: &connection.Principal, RoleSessionName: aws.String("nuon-cloud-connection-negative-probe"), WebIdentityToken: &foreignToken, DurationSeconds: aws.Int32(900)}); err == nil {
 		return verificationFailure("The role trust policy accepts a foreign Nuon connection subject."), nil
-	} else if !isAccessDenied(err) {
+	} else if !cloudconnections.IsAccessDenied(err) {
 		return VerificationResult{}, fmt.Errorf("probe foreign subject: %w", err)
 	}
 	assumed, err := awsConfigWithCredentials(base, output.Credentials)
@@ -101,7 +106,7 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 	}
 	if connection.Preset == app.CloudConnectionPresetStacks && !options.IdentityOnly {
 		if _, err := cloudformation.NewFromConfig(assumed).DescribeStacks(ctx, &cloudformation.DescribeStacksInput{}); err != nil {
-			if isAccessDenied(err) {
+			if cloudconnections.IsAccessDenied(err) {
 				return verificationFailure("The role lacks CloudFormation read access required to manage install stacks."), nil
 			}
 			return VerificationResult{}, fmt.Errorf("probe CloudFormation access: %w", err)
@@ -114,18 +119,47 @@ func verificationFailure(message string) VerificationResult {
 	return VerificationResult{Status: app.CloudConnectionStatusError, Message: message}
 }
 
-func VerificationErrorMessage(err error) string {
-	var apiErr smithy.APIError
-	if errors.As(err, &apiErr) {
-		return "Verification failed: " + apiErr.ErrorCode()
+func sleepWithContext(ctx context.Context, duration time.Duration) error {
+	timer := time.NewTimer(duration)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
 	}
-	if errors.Is(err, context.DeadlineExceeded) {
-		return "Verification failed: request timed out"
+}
+
+func (v *awsVerifier) assumeRole(ctx context.Context, client stsAPI, input *sts.AssumeRoleWithWebIdentityInput, retry bool) (*sts.AssumeRoleWithWebIdentityOutput, error) {
+	if !retry {
+		return client.AssumeRoleWithWebIdentity(ctx, input)
 	}
-	if errors.Is(err, context.Canceled) {
-		return "Verification failed: request canceled"
+	retryCtx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+	deadline := v.now().Add(time.Minute)
+	var lastDenied error
+	for {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		if lastDenied != nil && (retryCtx.Err() != nil || !v.now().Before(deadline)) {
+			return nil, lastDenied
+		}
+		output, err := client.AssumeRoleWithWebIdentity(retryCtx, input)
+		if !cloudconnections.IsAccessDenied(err) {
+			if lastDenied != nil && retryCtx.Err() != nil && ctx.Err() == nil {
+				return nil, lastDenied
+			}
+			return output, err
+		}
+		lastDenied = err
+		if err := v.sleep(retryCtx, min(5*time.Second, max(0, deadline.Sub(v.now())))); err != nil {
+			if ctx.Err() != nil {
+				return nil, ctx.Err()
+			}
+			return nil, lastDenied
+		}
 	}
-	return "Verification failed: unable to complete the AWS verification request"
 }
 
 func awsConfigWithCredentials(base aws.Config, value *stsTypes.Credentials) (aws.Config, error) {
@@ -148,9 +182,4 @@ func matchesRole(actual, requested string) bool {
 	}
 	roleName := requestedARN.Resource[strings.LastIndex(requestedARN.Resource, "/")+1:]
 	return actualARN.Partition == requestedARN.Partition && actualARN.Service == "sts" && actualARN.AccountID == requestedARN.AccountID && strings.HasPrefix(actualARN.Resource, "assumed-role/"+roleName+"/")
-}
-
-func isAccessDenied(err error) bool {
-	var apiErr smithy.APIError
-	return errors.As(err, &apiErr) && (apiErr.ErrorCode() == "AccessDenied" || apiErr.ErrorCode() == "AccessDeniedException")
 }

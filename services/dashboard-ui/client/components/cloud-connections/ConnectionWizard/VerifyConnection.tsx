@@ -41,7 +41,7 @@ export const VerifyConnection = ({
       />
       {isVerifying && (
         <Banner theme="info">
-          Verifying connection. Testing the OIDC exchange and account access.
+          Checking the connection. IAM changes can take up to a minute to propagate.
         </Banner>
       )}
       {verified && (
