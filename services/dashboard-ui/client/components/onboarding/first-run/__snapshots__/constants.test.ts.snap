@@ -1,0 +1,193 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`aws stubs carry its runner type, sandbox repo, and permission key 1`] = `
+{
+  "branch.toml": 
+"name = "default"
+
+[connected_repo]
+repo      = "acme/acme-api"
+directory = "."
+branch    = "main""
+,
+  "components/api.toml": 
+"name       = "api"
+type       = "helm_chart"
+chart_name = "api"
+namespace  = "acme-api"
+
+[public_repo]
+repo      = "acme/acme-api"
+directory = "charts/api"
+branch    = "main""
+,
+  "metadata.toml": 
+"version      = "v1"
+display_name = "acme-api"
+description  = "What acme-api does, in one sentence.""
+,
+  "permissions.toml": 
+"[provision_role]
+name        = "{{.nuon.install.id}}-provision"
+description = "Provision the sandbox and components."
+[[provision_role.policies]]
+managed_policy_name = "AdministratorAccess"
+
+[maintenance_role]
+name        = "{{.nuon.install.id}}-maintenance"
+description = "Operate and update components."
+[[maintenance_role.policies]]
+managed_policy_name = "AdministratorAccess"
+
+[deprovision_role]
+name        = "{{.nuon.install.id}}-deprovision"
+description = "Tear the install down."
+[[deprovision_role.policies]]
+managed_policy_name = "AdministratorAccess""
+,
+  "runner.toml": 
+"# aws, azure, or gcp
+runner_type = "aws""
+,
+  "sandbox.toml": 
+"terraform_version = "1.11.3"
+
+[public_repo]
+repo      = "nuonco/aws-eks-auto-sandbox"
+directory = "."
+branch    = "main""
+,
+}
+`;
+
+exports[`gcp stubs carry its runner type, sandbox repo, and permission key 1`] = `
+{
+  "branch.toml": 
+"name = "default"
+
+[connected_repo]
+repo      = "acme/acme-api"
+directory = "."
+branch    = "main""
+,
+  "components/api.toml": 
+"name       = "api"
+type       = "helm_chart"
+chart_name = "api"
+namespace  = "acme-api"
+
+[public_repo]
+repo      = "acme/acme-api"
+directory = "charts/api"
+branch    = "main""
+,
+  "metadata.toml": 
+"version      = "v1"
+display_name = "acme-api"
+description  = "What acme-api does, in one sentence.""
+,
+  "permissions.toml": 
+"[provision_role]
+name        = "{{.nuon.install.id}}-provision"
+description = "Provision the sandbox and components."
+cloud_platform = "gcp"
+[[provision_role.policies]]
+name                = "owner"
+gcp_predefined_role = "roles/owner"
+
+[maintenance_role]
+name        = "{{.nuon.install.id}}-maintenance"
+description = "Operate and update components."
+cloud_platform = "gcp"
+[[maintenance_role.policies]]
+name                = "owner"
+gcp_predefined_role = "roles/owner"
+
+[deprovision_role]
+name        = "{{.nuon.install.id}}-deprovision"
+description = "Tear the install down."
+cloud_platform = "gcp"
+[[deprovision_role.policies]]
+name                = "owner"
+gcp_predefined_role = "roles/owner""
+,
+  "runner.toml": 
+"# aws, azure, or gcp
+runner_type = "gcp""
+,
+  "sandbox.toml": 
+"terraform_version = "1.11.3"
+
+[public_repo]
+repo      = "nuonco/gcp-gke-sandbox"
+directory = "."
+branch    = "main""
+,
+}
+`;
+
+exports[`azure stubs carry its runner type, sandbox repo, and permission key 1`] = `
+{
+  "branch.toml": 
+"name = "default"
+
+[connected_repo]
+repo      = "acme/acme-api"
+directory = "."
+branch    = "main""
+,
+  "components/api.toml": 
+"name       = "api"
+type       = "helm_chart"
+chart_name = "api"
+namespace  = "acme-api"
+
+[public_repo]
+repo      = "acme/acme-api"
+directory = "charts/api"
+branch    = "main""
+,
+  "metadata.toml": 
+"version      = "v1"
+display_name = "acme-api"
+description  = "What acme-api does, in one sentence.""
+,
+  "permissions.toml": 
+"[provision_role]
+name        = "{{.nuon.install.id}}-provision"
+description = "Provision the sandbox and components."
+cloud_platform = "azure"
+[[provision_role.policies]]
+name                 = "contributor"
+azure_built_in_roles = ["Contributor"]
+
+[maintenance_role]
+name        = "{{.nuon.install.id}}-maintenance"
+description = "Operate and update components."
+cloud_platform = "azure"
+[[maintenance_role.policies]]
+name                 = "contributor"
+azure_built_in_roles = ["Contributor"]
+
+[deprovision_role]
+name        = "{{.nuon.install.id}}-deprovision"
+description = "Tear the install down."
+cloud_platform = "azure"
+[[deprovision_role.policies]]
+name                 = "contributor"
+azure_built_in_roles = ["Contributor"]"
+,
+  "runner.toml": 
+"# aws, azure, or gcp
+runner_type = "azure""
+,
+  "sandbox.toml": 
+"terraform_version = "1.11.3"
+
+[public_repo]
+repo      = "nuonco/azure-aks-sandbox"
+directory = "."
+branch    = "main""
+,
+}
+`;

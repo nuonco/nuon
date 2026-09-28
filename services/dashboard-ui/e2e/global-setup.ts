@@ -89,9 +89,24 @@ function seedApp(token: string, orgId: string, configName: string) {
   }
 }
 
+// Onboarding specs make their own accounts (e2e/onboarding.ts), so all global
+// setup does for them is say up front which ones will skip.
+function logOnboardingEnv() {
+  const missing = [
+    !env.githubInstallId && "E2E_GITHUB_INSTALL_ID",
+    ...(["aws", "gcp", "azure"] as const)
+      .filter((cloud) => !env.onboardingRepo[cloud])
+      .map((cloud) => `E2E_ONBOARDING_REPO_${cloud.toUpperCase()}`),
+  ].filter(Boolean);
+  if (missing.length) {
+    log(`onboarding own-app specs will skip where these are unset: ${missing.join(", ")}`);
+  }
+}
+
 export default async function globalSetup(_config: FullConfig) {
   setupStart = performance.now();
   log("starting global setup");
+  logOnboardingEnv();
 
   log("seeding user account...");
   const seedRes = await fetch(
