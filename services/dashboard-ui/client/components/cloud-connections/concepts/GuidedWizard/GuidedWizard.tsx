@@ -396,7 +396,7 @@ export const GuidedWizard = ({
                 </span>
                 <Text
                   variant="subtext"
-                  weight={step === number ? 'strong' : 'default'}
+                  weight={step === number ? 'strong' : undefined}
                 >
                   {label}
                 </Text>
