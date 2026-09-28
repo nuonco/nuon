@@ -121,6 +121,20 @@ func (s *service) getInstallResources(ctx context.Context, orgID, installID stri
 // declaredProbesByInstallComponent maps each install component to the probe
 // names its CURRENT config declares, from the install's pinned app config.
 func (s *service) declaredProbesByInstallComponent(ctx context.Context, orgID, installID string) (map[string]map[string]bool, error) {
+	return s.declaredNamesByInstallComponent(ctx, orgID, installID, func(ccc app.ComponentConfigConnection) map[string]bool {
+		return probeNameSet(ccc.HealthProbes)
+	})
+}
+
+func (s *service) declaredHealthChecksByInstallComponent(ctx context.Context, orgID, installID string) (map[string]map[string]bool, error) {
+	return s.declaredNamesByInstallComponent(ctx, orgID, installID, declaredCheckNames)
+}
+
+func (s *service) declaredNamesByInstallComponent(
+	ctx context.Context,
+	orgID, installID string,
+	namesOf func(app.ComponentConfigConnection) map[string]bool,
+) (map[string]map[string]bool, error) {
 	var install app.Install
 	if err := s.db.WithContext(ctx).
 		Select("id", "app_config_id").
@@ -140,7 +154,7 @@ func (s *service) declaredProbesByInstallComponent(ctx context.Context, orgID, i
 	}
 	byComponent := map[string]map[string]bool{}
 	for i := range cccs {
-		byComponent[cccs[i].ComponentID] = probeNameSet(cccs[i].HealthProbes)
+		byComponent[cccs[i].ComponentID] = namesOf(cccs[i])
 	}
 
 	var comps []app.InstallComponent
@@ -174,7 +188,7 @@ func (s *service) declaredProbesByInstallComponent(ctx context.Context, orgID, i
 		}
 		for i := range fallback {
 			if _, ok := byComponent[fallback[i].ComponentID]; !ok {
-				byComponent[fallback[i].ComponentID] = probeNameSet(fallback[i].HealthProbes)
+				byComponent[fallback[i].ComponentID] = namesOf(fallback[i])
 			}
 		}
 	}
@@ -188,6 +202,16 @@ func (s *service) declaredProbesByInstallComponent(ctx context.Context, orgID, i
 		}
 	}
 	return out, nil
+}
+
+func declaredCheckNames(ccc app.ComponentConfigConnection) map[string]bool {
+	names := probeNameSet(ccc.HealthProbes)
+	for _, name := range ccc.HealthRequiredChecks {
+		if name != "" {
+			names[name] = true
+		}
+	}
+	return names
 }
 
 func probeNameSet(probes app.ComponentHealthProbes) map[string]bool {
