@@ -3,6 +3,7 @@ import { useConfig } from '@/hooks/use-config'
 import { useNotifications } from '@/hooks/use-notifications'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
+import { resetFirstRunJourney } from '@/hooks/use-first-run-journey'
 import { UserDropdown, type IUserDropdown } from './UserDropdown'
 
 type IUserDropdownContainerProps = Omit<
@@ -23,6 +24,7 @@ type IUserDropdownContainerProps = Omit<
   | 'onAddToast'
   | 'user'
   | 'isUserLoading'
+  | 'onReopenOnboarding'
 >
 
 export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
@@ -33,6 +35,15 @@ export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
   const { addToast } = useToast()
   const { permission, requestPermission, isSupported, muted, toggleMute } =
     useNotifications()
+  // Clears the saved IDs so onboarding opens at an empty Start step.
+  const reopenOnboarding = async () => {
+    try {
+      await resetFirstRunJourney()
+    } finally {
+      window.location.assign('/onboarding?reopen=1')
+    }
+  }
+
   return (
     <UserDropdown
       isByoc={!!isByoc}
@@ -51,6 +62,7 @@ export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
       onAddToast={addToast}
       user={user}
       isUserLoading={isLoading}
+      onReopenOnboarding={reopenOnboarding}
       {...props}
     />
   )

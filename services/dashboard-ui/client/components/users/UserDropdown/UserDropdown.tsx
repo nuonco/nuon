@@ -33,6 +33,7 @@ export interface IUserDropdown
   onAddToast: (toast: React.ReactElement) => void
   user?: { name?: string; email?: string; picture?: string } | null
   isUserLoading: boolean
+  onReopenOnboarding?: () => void
 }
 
 export const UserDropdown = ({
@@ -56,6 +57,7 @@ export const UserDropdown = ({
   onAddToast,
   user,
   isUserLoading,
+  onReopenOnboarding,
   ...props
 }: IUserDropdown) => {
   return (
@@ -83,11 +85,15 @@ export const UserDropdown = ({
         {!hideOrgSettings && (isByoc || isDev) && (
           <OrgTelemetryButton isMenuButton />
         )}
-        {!hideOrgSettings && (
-          <Link href={isByoc ? '/byoc-setup' : '/onboarding'}>
-            {isByoc ? 'Setup guide' : 'Re-open onboarding'}{' '}
-            <Icon variant="SignpostIcon" />
+        {!hideOrgSettings && isByoc && (
+          <Link href="/byoc-setup">
+            Setup guide <Icon variant="SignpostIcon" />
           </Link>
+        )}
+        {!hideOrgSettings && !isByoc && (
+          <Button onClick={onReopenOnboarding} isMenuButton>
+            Re-open onboarding <Icon variant="SignpostIcon" />
+          </Button>
         )}
         {!hideOrgSettings && <hr />}
         {!hideOrgSettings && isAdmin && (

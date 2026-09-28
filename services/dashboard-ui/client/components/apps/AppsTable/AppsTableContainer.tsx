@@ -36,7 +36,7 @@ export const AppsTableContainer = ({
       data={parseAppsToTableData(result?.data ?? [], org.id)}
       isLoading={isLoading}
       emptyStateAction={
-        <Button href={`/onboarding?org_id=${org.id}`}>
+        <Button href="/onboarding">
           <Icon variant="PlusIcon" size={16} />
           Create app
         </Button>
