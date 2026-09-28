@@ -2,6 +2,7 @@ package cloudconnections
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
@@ -65,23 +66,27 @@ func (s *Service) Verify(ctx context.Context, connectionID string, wait, asJSON 
 		defer cancel()
 		ticker := time.NewTicker(2 * time.Second)
 		defer ticker.Stop()
+		timeoutErr := &ui.CLIUserError{Msg: fmt.Sprintf("cloud connection %s verification timed out after 2 minutes", connectionID)}
 		for connection.VerificationInProgress {
 			select {
 			case <-pollCtx.Done():
 				if ctx.Err() != nil {
 					return ui.PrintError(ctx.Err())
 				}
-				return render(connection, asJSON)
+				return ui.PrintError(timeoutErr)
 			case <-ticker.C:
 			}
 			updated, err := s.api.GetCloudConnection(pollCtx, connectionID)
 			if err != nil {
 				if pollCtx.Err() != nil && ctx.Err() == nil {
-					return render(connection, asJSON)
+					return ui.PrintError(timeoutErr)
 				}
 				return ui.PrintError(err)
 			}
 			connection = updated
+		}
+		if connection.Status != models.AppCloudConnectionStatusVerified {
+			return ui.PrintError(&ui.CLIUserError{Msg: fmt.Sprintf("cloud connection %s verification ended with status %s: %s", connectionID, connection.Status, connection.StatusMessage)})
 		}
 	}
 	return render(connection, asJSON)
