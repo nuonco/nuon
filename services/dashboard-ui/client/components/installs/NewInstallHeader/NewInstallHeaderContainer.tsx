@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
-import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
+import { InstallStatusSummary } from '@/components/installs/InstallStatusSummary'
 import { useOpenInstallSettings } from '@/components/installs/InstallSettingsPanel'
 import { ChangeAppBranchButton } from '@/components/installs/management/ChangeAppBranch'
 import { useCurrentAppBranchRun } from '@/hooks/use-current-app-branch-run'
@@ -87,7 +87,7 @@ export const NewInstallHeaderContainer = () => {
           <Icon variant="GearIcon" size={16} />
         </Button>
       }
-      statuses={<InstallStatusesContainer />}
+      statuses={<InstallStatusSummary />}
     />
   )
 }

@@ -5,7 +5,7 @@ export default {
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
-import { InstallStatuses } from '@/components/installs/InstallStatuses'
+import { InstallStatusSummary } from '@/components/installs/InstallStatusSummary/InstallStatusSummary'
 import { NewInstallHeader } from './NewInstallHeader'
 
 const orgId = 'org-1'
@@ -68,7 +68,21 @@ export const Default = () => (
       />
     }
     settingsAction={settingsAction}
-    statuses={<InstallStatuses install={mockInstall} />}
+    statuses={
+      <InstallStatusSummary
+        status={{
+          deployments: {
+            status: 'active',
+            status_human_description: 'All deployed',
+          },
+          resources: { status: 'healthy', status_human_description: 'All healthy' },
+          health_checks: {
+            status: 'healthy',
+            status_human_description: 'All healthy',
+          },
+        }}
+      />
+    }
   />
 )
 
@@ -90,7 +104,21 @@ export const UnappliedBranchRun = () => (
     }
     latestCommitLabel="Latest branch run"
     settingsAction={settingsAction}
-    statuses={<InstallStatuses install={mockInstall} />}
+    statuses={
+      <InstallStatusSummary
+        status={{
+          deployments: {
+            status: 'active',
+            status_human_description: 'All deployed',
+          },
+          resources: { status: 'healthy', status_human_description: 'All healthy' },
+          health_checks: {
+            status: 'healthy',
+            status_human_description: 'All healthy',
+          },
+        }}
+      />
+    }
   />
 )
 
@@ -101,7 +129,21 @@ export const CommitLoading = () => (
     branchAction={branchAction}
     latestCommitLoading
     settingsAction={settingsAction}
-    statuses={<InstallStatuses install={mockInstall} />}
+    statuses={
+      <InstallStatusSummary
+        status={{
+          deployments: {
+            status: 'active',
+            status_human_description: 'All deployed',
+          },
+          resources: { status: 'healthy', status_human_description: 'All healthy' },
+          health_checks: {
+            status: 'healthy',
+            status_human_description: 'All healthy',
+          },
+        }}
+      />
+    }
   />
 )
 
@@ -111,7 +153,21 @@ export const ManagedByDashboard = () => (
     orgId={orgId}
     branchAction={branchAction}
     settingsAction={settingsAction}
-    statuses={<InstallStatuses install={mockInstall} />}
+    statuses={
+      <InstallStatusSummary
+        status={{
+          deployments: {
+            status: 'active',
+            status_human_description: 'All deployed',
+          },
+          resources: { status: 'healthy', status_human_description: 'All healthy' },
+          health_checks: {
+            status: 'healthy',
+            status_human_description: 'All healthy',
+          },
+        }}
+      />
+    }
   />
 )
 
@@ -137,7 +193,21 @@ export const WithDriftAndNoLabels = () => {
       orgId={orgId}
       branchAction={branchAction}
       settingsAction={settingsAction}
-      statuses={<InstallStatuses install={install} />}
+      statuses={
+        <InstallStatusSummary
+          status={{
+            deployments: {
+              status: 'error',
+              status_human_description: '1 deployment failed',
+            },
+            resources: { status: 'healthy', status_human_description: 'All healthy' },
+            health_checks: {
+              status: 'degraded',
+              status_human_description: 'Degraded',
+            },
+          }}
+        />
+      }
     />
   )
 }

@@ -10,6 +10,7 @@ import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { InstallStatuses } from '@/components/installs/InstallStatuses'
+import { InstallStatusAxisCell } from '@/components/installs/InstallStatusSummary'
 import { QuickManagementDropdown } from '@/components/installs/management/QuickManagementDropdown'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { installAppBranchGroup } from '@/components/branches/active-app-branch-connection'
@@ -213,6 +214,14 @@ const columns: ColumnDef<InstallRow>[] = [
     cell: (info) => info.getValue() as ReactNode,
   },
   {
+    id: 'statusAxes',
+    enableSorting: false,
+    header: 'Statuses',
+    cell: (info) => (
+      <InstallStatusAxisCell installId={info.row.original.installId} />
+    ),
+  },
+  {
     accessorKey: 'platform',
     header: 'Platform',
     cell: (info) => (
@@ -277,6 +286,7 @@ interface IInstallsTable {
   filterActions?: ReactNode
   pagination: { hasNext?: boolean; offset: number; limit: number }
   scope?: TInstallsTableScope
+  statusAxes?: boolean
 }
 
 export const InstallsTable = ({
@@ -288,11 +298,35 @@ export const InstallsTable = ({
   filterActions,
   pagination,
   scope = 'org',
+  statusAxes = false,
 }: IInstallsTable) => {
-  const hidden = HIDDEN_COLUMNS[scope]
-  const scopedColumns = columns.filter(
-    (c) => !hidden.includes((c as { accessorKey?: string }).accessorKey ?? '')
-  )
+  const hidden = [
+    ...HIDDEN_COLUMNS[scope],
+    ...(statusAxes ? ['statuses', 'platform'] : ['statusAxes']),
+  ]
+  const scopedColumns = columns
+    .filter(
+      (c) =>
+        !hidden.includes((c as { accessorKey?: string }).accessorKey ?? '') &&
+        !hidden.includes(c.id ?? '')
+    )
+    .map((column) => {
+      if (!statusAxes) return column
+      const key = (column as { accessorKey?: string }).accessorKey ?? column.id
+      if (key === 'region') {
+        return {
+          ...column,
+          meta: { className: 'hidden @min-[80rem]:table-cell' },
+        }
+      }
+      if (key === 'updatedAt' || key === 'activity') {
+        return {
+          ...column,
+          meta: { className: 'hidden @min-[64rem]:table-cell' },
+        }
+      }
+      return column
+    })
 
   return (
     <Table<InstallRow>
@@ -306,6 +340,7 @@ export const InstallsTable = ({
       }}
       filterActions={filterActions}
       pagination={pagination}
+      className={statusAxes ? '@container' : ''}
       searchPlaceholder={
         scope === 'org'
           ? 'Search by name, branch or ID...'
