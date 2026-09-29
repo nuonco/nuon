@@ -286,6 +286,9 @@ export const StartStepView = ({
 
   useEffect(() => {
     const message = appNameError || repoError || undefined
+    // A valid name never gets field meta from mount validation, and the name
+    // input is unmounted until the own-app path is expanded.
+    if (!message && !form.getFieldMeta('appName')) return
     form.setFieldMeta('appName', (prev) => ({
       ...prev,
       isTouched: message ? true : prev.isTouched,

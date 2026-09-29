@@ -59,6 +59,11 @@ test('a valid name and cloud submit those values', async () => {
   })
 })
 
+test('a valid name on the path picker does not crash', () => {
+  start({ expanded: false, appName: 'kitchen-sink', cloud: 'aws' })
+  expect(screen.getByRole('heading', { name: 'Create your first app template' })).toBeInTheDocument()
+})
+
 test('a taken name is shown on the name field', async () => {
   start({
     appName: 'acme-api',
