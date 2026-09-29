@@ -6,7 +6,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-func (s *Service) ReprovisionStack(ctx context.Context, installID string, asJSON bool) error {
+func (s *Service) ReprovisionStack(ctx context.Context, installID string, role string, asJSON bool) error {
 	installID, err := s.selectInstallID(ctx, installID)
 	if err != nil {
 		return ui.PrintError(err)
@@ -16,7 +16,7 @@ func (s *Service) ReprovisionStack(ctx context.Context, installID string, asJSON
 		ui.PrintLn("install id: " + installID)
 	}
 
-	resp, err := s.api.ReprovisionInstallStack(ctx, installID)
+	resp, err := s.api.ReprovisionInstallStack(ctx, installID, role)
 	if err != nil {
 		return ui.PrintJSONError(err)
 	}
