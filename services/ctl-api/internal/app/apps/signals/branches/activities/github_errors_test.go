@@ -28,7 +28,6 @@ func TestNonRetryableGitHubError(t *testing.T) {
 		wantErrorType string
 	}{
 		{
-			// GitHub answers an unknown ref on the commits endpoint with 422.
 			name:          "422 no commit found for ref",
 			err:           ghErrorResponse(http.StatusUnprocessableEntity, "No commit found for SHA: nope"),
 			wantNonRetry:  true,
@@ -72,8 +71,6 @@ func TestNonRetryableGitHubError(t *testing.T) {
 			wantNonRetry: false,
 		},
 		{
-			// fetchLatestCommit reaches the API through helpers that wrap in
-			// stderr.ErrUser and fmt.Errorf.
 			name:          "4xx found through wrapping",
 			err:           stderr.ErrUser{Err: fmt.Errorf("unable to get latest commit: %w", ghErrorResponse(http.StatusUnprocessableEntity, "No commit found"))},
 			wantNonRetry:  true,
@@ -98,10 +95,6 @@ func TestNonRetryableGitHubError(t *testing.T) {
 	}
 }
 
-// Temporal's DefaultFailureConverter type-switches on the concrete error rather
-// than using errors.As, so wrapping a non-retryable error makes the top-level
-// failure retryable again. This guards the unwrapped return in
-// FetchInstallSyncCommit.
 func TestWrappingDefeatsNonRetryable(t *testing.T) {
 	nonRetryable := nonRetryableGitHubError(ghErrorResponse(http.StatusUnprocessableEntity, "No commit found"))
 	require.NotNil(t, nonRetryable)
@@ -117,9 +110,6 @@ func TestWrappingDefeatsNonRetryable(t *testing.T) {
 	)
 }
 
-// assertConcreteApplicationError mirrors the SDK's type switch: a match only
-// happens when the error itself is an *ApplicationError, not when one is
-// somewhere down the unwrap chain.
 func assertConcreteApplicationError(err error, target **temporal.ApplicationError) bool {
 	appErr, ok := err.(*temporal.ApplicationError)
 	if ok {

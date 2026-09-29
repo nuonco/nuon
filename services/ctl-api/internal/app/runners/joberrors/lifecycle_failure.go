@@ -53,9 +53,6 @@ func (*LifecycleFailureError) Type() compositeerrors.Type {
 	return LifecycleFailureErrorType
 }
 
-// Hints marks a disabled runner as terminal: nothing about the failure can
-// change until the customer re-applies their stack, so neither auto-retries nor
-// a manual retry can succeed.
 func (e *LifecycleFailureError) Hints() compositeerrors.Hints {
 	if e.Reason == LifecycleFailureReasonRunnerDisabled {
 		return compositeerrors.NewHints().WithTerminal()

@@ -15,28 +15,23 @@ import (
 	testseedconfig "github.com/nuonco/nuon/services/ctl-api/tests/testseed/config"
 )
 
-// TestService contains the dependencies injected by FX for testing.
 type TestService struct {
 	DB   *gorm.DB `name:"psql"`
 	L    *zap.Logger
 	Seed *testseed.Seeder
 }
 
-// SyncerTestSuite is the main test suite for the config syncer.
-// It embeds BaseDBTestSuite to get database lifecycle management.
 type SyncerTestSuite struct {
 	tests.BaseDBTestSuite
 
 	app     *fxtest.App
 	service TestService
 
-	// Test fixtures set up in SetupTest
 	testAccount *app.Account
 	testOrg     *app.Org
 	testApp     *app.App
 }
 
-// TestSyncerSuite is the entry point for running the syncer test suite.
 func TestSyncerSuite(t *testing.T) {
 	if os.Getenv("INTEGRATION") != "true" {
 		t.Skip("INTEGRATION is not set, skipping")
@@ -46,8 +41,6 @@ func TestSyncerSuite(t *testing.T) {
 	suite.Run(t, new(SyncerTestSuite))
 }
 
-// SetupSuite runs once before all tests in the suite.
-// It creates the FX app with all dependencies and starts it.
 func (s *SyncerTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 
@@ -55,18 +48,12 @@ func (s *SyncerTestSuite) SetupSuite() {
 
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
-
-	// Set the DB for BaseDBTestSuite to enable auto-truncation
-	// s.SetDB(s.service.DB) // TODO: Uncomment when service is populated
 }
 
-// TearDownSuite runs once after all tests in the suite.
 func (s *SyncerTestSuite) TearDownSuite() {
 	s.app.RequireStop()
 }
 
-// SetupTest runs before each test method.
-// It truncates tables and creates fresh test fixtures.
 func (s *SyncerTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 
@@ -77,20 +64,10 @@ func (s *SyncerTestSuite) SetupTest() {
 	// s.testApp = s.service.Seed.EnsureApp(ctx, s.T())
 }
 
-// TearDownTest runs after each test method.
 func (s *SyncerTestSuite) TearDownTest() {
-	// BaseDBTestSuite handles cleanup
 }
 
-// TestSmokeTest is a basic smoke test to verify the test infrastructure works.
 func (s *SyncerTestSuite) TestSmokeTest() {
-	// This test just verifies that:
-	// 1. The test suite can be instantiated
-	// 2. FX app starts successfully
-	// 3. Database is accessible
-	// 4. Faker providers are registered
-
-	// Verify faker provider registration
 	cfg := testseedconfig.BuildMinimalAppConfig()
 	s.NotNil(cfg, "BuildMinimalAppConfig should return a config")
 	s.Equal("1", cfg.Version, "Version should be set")
@@ -98,8 +75,6 @@ func (s *SyncerTestSuite) TestSmokeTest() {
 	s.NotNil(cfg.Runner, "Runner should be set")
 }
 
-// TestMinimalSync tests syncing a minimal valid config.
-// This is the first real sync test to verify the basic flow works.
 func (s *SyncerTestSuite) TestMinimalSync() {
 	s.T().Skip("TODO: Implement after testseed integration")
 

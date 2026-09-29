@@ -10,17 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 )
 
-// OtelTracesConsumer reads OTLP spans off Kafka and batch-writes them to
-// ClickHouse. When it doesn't run — not selected, or Kafka disabled — New returns
-// nil and producers keep writing to ClickHouse inline.
-//
-// Decodes into app.OtelTraceIngestion, the same struct the inline write path
-// uses, so the row this inserts is the row that path would have inserted.
-// Records arrive already carrying ID, CreatedByID, CreatedAt and UpdatedAt:
-// OtelTraceIngestion's BeforeCreate hook resolves the first two from the GORM
-// statement context and GORM autofills the timestamps at insert time, neither of
-// which means anything here. See the producers in runners/service and
-// controlplanejob.
 type OtelTracesConsumer struct {
 	*pkgconsumer.Sink
 }

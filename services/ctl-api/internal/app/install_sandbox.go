@@ -18,7 +18,6 @@ const (
 	InstallSandboxStatusDeleted      InstallSandboxStatus = "deleted"
 	InstallSandboxStatusDeleteFailed InstallSandboxStatus = "delete_failed"
 
-	// Synced from sandbow runs
 	InstallSandboxStatusActive         InstallSandboxStatus = "active"
 	InstallSandboxStatusError          InstallSandboxStatus = "error"
 	InstallSandboxStatusQueued         InstallSandboxStatus = "queued"

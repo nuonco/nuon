@@ -1,5 +1,3 @@
-// How a published stack module authenticates its config read. Cloud-agnostic: the
-// credential authorizes the Nuon API call, not the cloud provider.
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
@@ -7,8 +5,6 @@ import { Code } from '@/components/common/Code'
 import { Text } from '@/components/common/Text'
 import { CreateOIDCTrustPolicyButton } from '@/components/oidc-trust-policies'
 
-// OIDC auth is hidden until the experience is polished and fully tested; flip
-// this to restore the Static token / OIDC toggle.
 export const OIDC_AUTH_ENABLED = false
 
 export const StaticTokenAuthPane = ({
@@ -43,8 +39,6 @@ export const StaticTokenAuthPane = ({
           <ClickToCopyButton textToCopy={authCmd} />
         </span>
         <Code variant="preformated">{authCmd}</Code>
-        {/* Nothing to offer until the service account resolves; the guidance above
-              already explains why it might not. */}
         {isLoading || isError || !canCreate ? null : (
           <span className="flex justify-between items-center gap-4">
             <Text variant="subtext" theme="neutral">
@@ -62,13 +56,9 @@ export const StaticTokenAuthPane = ({
   )
 }
 
-// The alternative to handing a customer a token at all: Actions mints an ID token per
-// run and the control plane trades it for a short-lived Nuon token.
 export const OIDCAuthPane = ({
   installId,
   policyNames,
-  // The runner API, not the public one: the SDK requests its ID token with the URL it
-  // talks to, and the audience is compared literally.
   audience,
 }: {
   installId?: string
@@ -93,9 +83,6 @@ env:
             A trust policy tells Nuon which repository and branch may exchange
             an OIDC token for access to this org.
           </Text>
-          {/* Without an audience the policy would be created with a blank one and
-              reject every token, so this offers nothing rather than something
-              broken. */}
           {audience ? (
             <CreateOIDCTrustPolicyButton
               variant="secondary"

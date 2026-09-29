@@ -74,7 +74,6 @@ func (s *AdminLockWorkspaceTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// CRITICAL: TestAcc needed because handler creates lock records with created_by_id
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -94,7 +93,6 @@ func (s *AdminLockWorkspaceTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create terraform workspace
 	s.testWS = &app.TerraformWorkspace{
 		ID:        domains.NewTerraformWorkspaceID(),
 		OrgID:     s.testOrg.ID,
@@ -140,7 +138,6 @@ func (s *AdminLockWorkspaceTestSuite) TestAdminLockWorkspace() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(workspaceID string) {
-				// Verify lock was created in DB with fake data
 				var lock app.TerraformWorkspaceLock
 				err := s.service.DB.Where("workspace_id = ?", workspaceID).First(&lock).Error
 				require.NoError(s.T(), err)
@@ -151,15 +148,12 @@ func (s *AdminLockWorkspaceTestSuite) TestAdminLockWorkspace() {
 		{
 			name: "lock workspace by owner_id",
 			setupFunc: func() (string, interface{}) {
-				// Clean up any existing locks for this workspace from previous subtests
 				s.service.DB.Unscoped().Where("workspace_id = ?", s.testWS.ID).Delete(&app.TerraformWorkspaceLock{})
 
-				// Use owner_id instead of workspace_id
 				return s.testOrg.ID, AdminLockWorkspace{}
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(ownerID string) {
-				// Verify lock was created using workspace found by owner_id
 				var lock app.TerraformWorkspaceLock
 				err := s.service.DB.Where("workspace_id = ?", s.testWS.ID).First(&lock).Error
 				require.NoError(s.T(), err)
@@ -203,7 +197,6 @@ func (s *AdminLockWorkspaceTestSuite) TestAdminLockWorkspace() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(workspaceID string) {
-				// Admin routes have no org scoping - can lock any workspace
 				var lock app.TerraformWorkspaceLock
 				err := s.service.DB.Where("workspace_id = ?", workspaceID).First(&lock).Error
 				require.NoError(s.T(), err)

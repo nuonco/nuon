@@ -6,7 +6,6 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// FormatValidationError formats validation errors with custom messages for specific tags
 func FormatValidationError(err error) error {
 	if err == nil {
 		return nil

@@ -39,7 +39,6 @@
   animation: fade-toast var(--speed-fast) var(--ease) forwards;
 }
 
-/* toast component */
 .toast {
   transition-property: opacity, transform, bottom;
   transition-duration: var(--speed);

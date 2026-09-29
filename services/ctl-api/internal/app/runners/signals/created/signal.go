@@ -26,7 +26,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("runner_id is required")
 	}
 
-	// Validate runner exists in database
 	_, err := activities.AwaitGet(ctx, activities.GetRequest{RunnerID: s.RunnerID})
 	if err != nil {
 		return errors.Wrap(err, "runner not found")
@@ -36,7 +35,5 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// The created signal has no business logic in the original implementation.
-	// Health check workflow will be triggered via queue emitter in a later phase.
 	return nil
 }

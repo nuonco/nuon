@@ -26,8 +26,6 @@ func (m *Migrations) Migration116InstallAppConfigVersionMetadataBackfill(ctx con
 		AppConfigID string
 		CreatedByID string
 	}
-	// installs.created_by_id is not null with an FK to accounts, so it is always a usable
-	// id for the version row
 	if err := db.WithContext(ctx).Raw(`
 		SELECT i.id, i.org_id, i.app_config_id, i.created_by_id
 		FROM installs i
@@ -54,7 +52,6 @@ func (m *Migrations) Migration116InstallAppConfigVersionMetadataBackfill(ctx con
 			Status:         app.CompositeStatus{Status: app.StatusSuccess},
 			Metadata:       map[string]string{"source": "backfill"},
 		}
-		// backfilled rows have no previous config, and '' fails the app_configs FK
 		if err := db.WithContext(ctx).Omit("OldAppConfigID").Create(&version).Error; err != nil {
 			return fmt.Errorf("unable to backfill install %s: %w", inst.ID, err)
 		}

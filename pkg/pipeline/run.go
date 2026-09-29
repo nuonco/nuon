@@ -5,7 +5,6 @@ import (
 	"fmt"
 )
 
-// Run runs a pipeline from end to end
 func (p *Pipeline) Run(ctx context.Context) error {
 	p.v.SetTagName("validate_steps")
 	if err := p.v.Struct(p); err != nil {

@@ -9,8 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// RemoveAccountOrgRoleByType drops one role binding, unlike RemoveAccountOrgRoles,
-// which clears every binding in an org.
 func (h *Client) RemoveAccountOrgRoleByType(ctx context.Context, roleType app.RoleType, orgID, accountID string) error {
 	var roleIDs []string
 	if res := h.db.WithContext(ctx).

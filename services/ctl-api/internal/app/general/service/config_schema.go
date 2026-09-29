@@ -79,8 +79,6 @@ func (s *service) GetConfigSchemaByType(ctx *gin.Context) {
 	s.respondWithConfigSchema(ctx, typ, false)
 }
 
-// respondWithConfigSchema writes the schema for typ, stamping its $id with the
-// exact fetch URL so tools that key by $id resolve each type distinctly.
 func (s *service) respondWithConfigSchema(ctx *gin.Context, typ string, deprecatedSource bool) {
 	schm, err := schema.LookupSchemaType(typ)
 	if err != nil {
@@ -105,8 +103,6 @@ func (s *service) respondWithConfigSchema(ctx *gin.Context, typ string, deprecat
 	ctx.JSON(http.StatusOK, schm)
 }
 
-// schemaFetchURL reconstructs the absolute URL used to fetch this schema, for
-// use as its $id.
 func schemaFetchURL(ctx *gin.Context) string {
 	scheme := "https"
 	if proto := ctx.GetHeader("X-Forwarded-Proto"); proto != "" {

@@ -26,7 +26,6 @@ type Params struct {
 }
 
 func New(params Params) converter.DataConverter {
-	// NOTE(jm): make this an FX dependency
 	dc := pkgdataconverter.NewJSONConverter()
 
 	cdc := converter.NewCompositeDataConverter(
@@ -37,8 +36,8 @@ func New(params Params) converter.DataConverter {
 	)
 
 	return workflow.DataConverterWithoutDeadlockDetection(converter.NewCodecDataConverter(cdc,
-		params.Blob,         // S3 blob codec (encode when toggle=blob, always decode)
-		params.LargePayload, // Legacy DB (encode when toggle=db, always decode)
-		params.Gzip,         // Compression
+		params.Blob,
+		params.LargePayload,
+		params.Gzip,
 	))
 }

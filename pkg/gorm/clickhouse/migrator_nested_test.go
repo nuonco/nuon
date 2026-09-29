@@ -74,14 +74,12 @@ func TestAutoMigrateNested(t *testing.T) {
 		}
 	}
 
-	// try auto migrating the model again. this second call to AutoMigrate should be a NoOp.
 	if err := DB.Table("logs").AutoMigrate(&Log{}); err != nil {
 		t.Fatalf("no error should happen when auto migrate, but got %v", err)
 	}
 
 	time.Sleep(50 * time.Millisecond)
 
-	// Test Addition
 	type LogNestedUpdate1 struct {
 		ID        uint64 `gorm:"primaryKey"`
 		CreatedAt time.Time
@@ -90,8 +88,6 @@ func TestAutoMigrateNested(t *testing.T) {
 		TraceID   string
 		Events    chTypes.Nested `gorm:"type:Nested(key LowCardinality(String), value LowCardinality(String), valence LowCardinality(String));"`
 	}
-	// try auto migrating the model again. this second call to AutoMigrate should be a NoOp.
-	// NOTE(fd): dev: automigrate again: expecting an error w/ events but we need to see/find that col name
 	if err := DB.Table("logs").AutoMigrate(&LogNestedUpdate1{}); err != nil {
 		t.Fatalf("no error should happen when auto migrate, but got %v", err)
 	}
@@ -101,7 +97,6 @@ func TestAutoMigrateNested(t *testing.T) {
 
 	time.Sleep(50 * time.Millisecond)
 
-	// Test Deletion
 	type LogNestedUpdate2 struct {
 		ID        uint64 `gorm:"primaryKey"`
 		CreatedAt time.Time
@@ -110,8 +105,6 @@ func TestAutoMigrateNested(t *testing.T) {
 		TraceID   string
 		Events    chTypes.Nested `gorm:"type:Nested(key LowCardinality(String), valence LowCardinality(String));"`
 	}
-	// try auto migrating the model again. this second call to AutoMigrate should be a NoOp.
-	// NOTE(fd): dev: automigrate again: expecting an error w/ events but we need to see/find that col name
 	if err := DB.Table("logs").AutoMigrate(&LogNestedUpdate2{}); err != nil {
 		t.Fatalf("no error should happen when auto migrate, but got %v", err)
 	}
@@ -121,7 +114,6 @@ func TestAutoMigrateNested(t *testing.T) {
 
 	time.Sleep(50 * time.Millisecond)
 
-	// Test Modification
 	type LogNestedUpdate3 struct {
 		ID        uint64 `gorm:"primaryKey"`
 		CreatedAt time.Time
@@ -130,8 +122,6 @@ func TestAutoMigrateNested(t *testing.T) {
 		TraceID   string
 		Events    chTypes.Nested `gorm:"type:Nested(key LowCardinality(String), valence DateTime64(9));"`
 	}
-	// try auto migrating the model again. this second call to AutoMigrate should be a NoOp.
-	// NOTE(fd): dev: automigrate again: expecting an error w/ events but we need to see/find that col name
 	if err := DB.Table("logs").AutoMigrate(&LogNestedUpdate3{}); err != nil {
 		t.Fatalf("no error should happen when auto migrate, but got %v", err)
 	}
@@ -141,7 +131,6 @@ func TestAutoMigrateNested(t *testing.T) {
 
 	time.Sleep(50 * time.Millisecond)
 
-	// Test Modification: Complex Nested Type
 	type LogNestedUpdate4 struct {
 		ID        uint64 `gorm:"primaryKey"`
 		CreatedAt time.Time
@@ -150,8 +139,6 @@ func TestAutoMigrateNested(t *testing.T) {
 		TraceID   string
 		Events    chTypes.Nested `gorm:"type:Nested(key LowCardinality(String), valence DateTime64(9), attributes Map(LowCardinality(String), String));"`
 	}
-	// try auto migrating the model again. this second call to AutoMigrate should be a NoOp.
-	// NOTE(fd): dev: automigrate again: expecting an error w/ events but we need to see/find that col name
 	if err := DB.Table("logs").AutoMigrate(&LogNestedUpdate4{}); err != nil {
 		t.Fatalf("no error should happen when auto migrate, but got %v", err)
 	}
@@ -161,7 +148,6 @@ func TestAutoMigrateNested(t *testing.T) {
 
 	time.Sleep(50 * time.Millisecond)
 
-	// Test Modification: Complex Nested Type to a more Complex Nested Time
 	type LogNestedUpdate5 struct {
 		ID        uint64 `gorm:"primaryKey"`
 		CreatedAt time.Time
@@ -170,8 +156,6 @@ func TestAutoMigrateNested(t *testing.T) {
 		TraceID   string
 		Events    chTypes.Nested `gorm:"type:Nested(key LowCardinality(String), valence DateTime64(9), attributes Map(LowCardinality(String), DateTime64(9)));"`
 	}
-	// try auto migrating the model again. this second call to AutoMigrate should be a NoOp.
-	// NOTE(fd): dev: automigrate again: expecting an error w/ events but we need to see/find that col name
 	if err := DB.Table("logs").AutoMigrate(&LogNestedUpdate5{}); err != nil {
 		t.Fatalf("no error should happen when auto migrate, but got %v", err)
 	}
@@ -179,7 +163,6 @@ func TestAutoMigrateNested(t *testing.T) {
 		t.Fatalf("logs's `events`.`valence` column should exists after auto migrate")
 	}
 
-	// Test Modification: Column Deletion
 	type LogNestedUpdate6 struct {
 		ID        uint64 `gorm:"primaryKey"`
 		CreatedAt time.Time
@@ -193,7 +176,6 @@ func TestAutoMigrateNested(t *testing.T) {
 		t.Fatalf("no error should happen when auto migrate, but got %v", err)
 	}
 
-	// ensure old fields still exist: no destructive actions in automigration
 	if !DB.Migrator().HasColumn("logs", "events.key") {
 		t.Fatalf("logs's `events`.`key` column should still exist after auto migrate")
 	}
@@ -204,7 +186,6 @@ func TestAutoMigrateNested(t *testing.T) {
 		t.Fatalf("logs's `events`.`attributes` column should still exist after auto migrate")
 	}
 
-	// ensure new fields do exist
 	if !DB.Migrator().HasColumn("logs", "links.time") {
 		t.Fatalf("logs's `links`.`time` column should exists after auto migrate")
 	}

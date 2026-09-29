@@ -75,7 +75,6 @@ export const AppBranchDetail = () => {
         </div>
       </div>
 
-      {/* Queues */}
       <div className="table-card rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Queues</h2>
         <div className="mt-2 overflow-x-auto">
@@ -111,7 +110,6 @@ export const AppBranchDetail = () => {
         </div>
       </div>
 
-      {/* Runs */}
       <div className="table-card rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Runs</h2>
         <div className="mt-2 overflow-x-auto">
@@ -161,7 +159,6 @@ export const AppBranchDetail = () => {
         <Pagination page={runsData?.page ?? runsPage} totalPages={runsTotalPages} onPageChange={setRunsPage} />
       </div>
 
-      {/* Workflows */}
       <div className="table-card rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Workflows</h2>
         <div className="mt-2 overflow-x-auto">

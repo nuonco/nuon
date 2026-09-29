@@ -331,7 +331,6 @@ func (m model) viewContent() string {
 	)
 }
 
-// App runs the app selector and returns the selected app ID
 func App(
 	ctx context.Context,
 	cfg *config.Config,

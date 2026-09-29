@@ -7,7 +7,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// InstallsTable returns the installs table data for an org as JSON
 func (s *service) InstallsTable(c *gin.Context) {
 	ctx := c.Request.Context()
 	orgID := c.Param("id")

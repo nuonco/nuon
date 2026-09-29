@@ -12,33 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-// QuickLinkUIDefinition renders the createUiDefinition that accompanies the quick
-// link's wrapper template.
-//
-// Without it the portal renders its stock Basics step, where subscription,
-// resource group, and location are free choices that carry nothing over between
-// visits. That is fine for a first deploy and wrong for every one after it: the
-// wrapper always names the stack <install-id>-stack, but a stack is identified by
-// scope *and* name, so a customer who picks a different resource group on a
-// reprovision creates a second, independent stack rather than updating the
-// install's. Nothing errors — the install simply stops converging, and the
-// duplicate keeps its own deny assignments.
-//
-// The UI definition closes that by constraining the step to the values the
-// install already committed to:
-//
-//   - resourceGroup rejects any name but the install's, with allowExisting
-//     because by definition it already holds resources on every deploy after the
-//     first.
-//   - location is pinned to the install's region. Deploying elsewhere would strand
-//     resources in a region the platform does not track.
-//   - subscription requires deploymentStacks/write, so a missing permission shows
-//     up in the form rather than as a mid-deploy authorization failure.
-//
-// Parameters carrying defaults are left out of outputs, so the wrapper's defaults
-// apply. Parameters without one — customer secrets, which render as securestring
-// — get a field on the Basics step, since there is nowhere else for their value
-// to come from.
 func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, string, error) {
 	wrapperParams, err := t.quickLinkWrapperParameters(inp)
 	if err != nil {
@@ -48,7 +21,7 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 	scope := scopeFor(inp)
 	location := inp.Install.AzureAccount.Location
 
-	// A deployment stack is identified by scope AND name, so pinning the name is
+	// why: A deployment stack is identified by scope AND name, so pinning the name is
 	// only half of it: deploying into a different subscription produces a second,
 	// independent stack rather than updating the install's. The subscription is
 	// captured when the install is created, but it is only mandatory for orgs with
@@ -78,14 +51,7 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 		"location": locationPin(location),
 	}
 
-	// At subscription scope the stack template creates the install resource group
-	// itself, so the portal shows no resource group picker to constrain.
 	if !scope.subscription {
-		// The customer names the group on the first deploy — any name is fine, and
-		// the group is theirs to choose. Every deploy after that has to land in the
-		// same one, or it creates a second stack rather than updating this install.
-		// Which case we are in is told by whether the stack has phoned home its
-		// resource group yet.
 		resourceGroup := map[string]any{"allowExisting": true}
 		if rgName := deployedResourceGroupName(inp); rgName != "" {
 			resourceGroup["constraints"] = map[string]any{
@@ -195,10 +161,6 @@ func locationPin(location string) map[string]any {
 	}
 }
 
-// deployedResourceGroupName is the resource group the install's stack actually
-// landed in, as reported by the phone-home script. Empty until the first deploy
-// completes, which is exactly the window in which the customer is still free to
-// name the group whatever they like.
 func deployedResourceGroupName(inp *stacks.TemplateInput) string {
 	if inp.InstallState == nil || inp.InstallState.InstallStack == nil {
 		return ""
@@ -216,7 +178,7 @@ func sortedParamNames(params map[string]ARMParameter) []string {
 	return names
 }
 
-// basicsElement renders one wrapper parameter as a field on the Basics step,
+// why: basicsElement renders one wrapper parameter as a field on the Basics step,
 // returning the element, the outputs expression that feeds its value back to the
 // wrapper, and whether the parameter is renderable at all.
 //
@@ -291,8 +253,6 @@ func basicsElement(name string, p ARMParameter, label string) (map[string]any, s
 		if p.DefaultValue != nil {
 			element["defaultValue"] = fmt.Sprintf("%v", p.DefaultValue)
 		}
-		// The portal hands back every TextBox value as a string, and ARM will not
-		// coerce one into an int parameter.
 		return element, fmt.Sprintf("[int(basics('%s'))]", name), true
 	case "string":
 		element["type"] = "Microsoft.Common.TextBox"
@@ -308,11 +268,6 @@ func basicsElement(name string, p ARMParameter, label string) (map[string]any, s
 	return element, fmt.Sprintf("[basics('%s')]", name), true
 }
 
-// humanizeParamName turns a camelCase parameter name into the spaced, title-cased
-// label the portal generates itself when no UI definition is supplied —
-// "addressSpace" becomes "Address Space". Supplying a UI definition takes that
-// formatting over, so without this every field would be labelled with its raw
-// parameter name.
 func humanizeParamName(name string) string {
 	if name == "" {
 		return ""

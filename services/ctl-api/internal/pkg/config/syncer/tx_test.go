@@ -32,7 +32,6 @@ func (s *SyncFieldsTestSuite) TestBranchesNotSyncedByDefault() {
 	s.Zero(count, "app config sync must not create branches by default")
 }
 
-// A helper that bypasses the sync transaction fails the foreign key instead of seeing the new rows.
 func (s *SyncFieldsTestSuite) TestNewBranchGetsAConfigWithBranchSync() {
 	ctx, testApp, _ := s.syncEmpty()
 	s.syncInto(ctx, testApp.ID, branchedAppConfig(), WithBranchSync())

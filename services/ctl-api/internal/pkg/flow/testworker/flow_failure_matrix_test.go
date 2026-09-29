@@ -39,7 +39,6 @@ func (e *FlowTestSuite) setupLifecycleTest(ctx context.Context, ownerID, ownerTy
 	return &flw, stepQueue.ID
 }
 
-// Validate only auto-resolves queue names for real owner types, so set all of them explicitly.
 func (e *FlowTestSuite) enqueueLifecycleFlow(ctx context.Context, queueID string, flw *app.Workflow, ownerID, ownerType string) {
 	resp, err := e.service.QueueClient.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
 		QueueID: queueID,
@@ -73,7 +72,6 @@ func (e *FlowTestSuite) seedDeployTarget(ctx context.Context, status app.Install
 		Status:             status,
 		StatusDescription:  string(status),
 	}
-	// The fake FK targets don't exist; replica role skips constraint triggers.
 	tx := e.service.DB.WithContext(ctx).Begin()
 	require.NoError(e.T(), tx.Error)
 	require.NoError(e.T(), tx.Exec("SET LOCAL session_replication_role = replica").Error)
@@ -89,7 +87,6 @@ func (e *FlowTestSuite) getDeploy(ctx context.Context, id string) *app.InstallDe
 	return &deploy
 }
 
-// statusMatrix asserts a step's combined lifecycle state; zero-valued fields are skipped.
 type statusMatrix struct {
 	Step     app.Status
 	Workflow app.Status
@@ -139,7 +136,6 @@ func failingTargetedStep(name string, sig signaldb.SignalData, deploy *app.Insta
 	return step
 }
 
-// Generated workflows materialize all steps up front; later steps stay pending while the first runs.
 func (e *FlowTestSuite) TestGeneratedStepsStartPending() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -232,7 +228,6 @@ func (e *FlowTestSuite) TestGenerateStepsFailureDrains() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// Exhausted failure stops the workflow; only the runner ever writes success/failure target statuses.
 func (e *FlowTestSuite) TestFailStopTargetUntouched() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -267,7 +262,6 @@ func (e *FlowTestSuite) TestFailStopTargetUntouched() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// Auto-budget exhaustion parks the step; workflow failed-pending-retry, target untouched.
 func (e *FlowTestSuite) TestFailParkTargetUntouched() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -290,7 +284,6 @@ func (e *FlowTestSuite) TestFailParkTargetUntouched() {
 	})
 }
 
-// One parallel failure keeps the sibling's success and still fails the workflow.
 func (e *FlowTestSuite) TestFailParallelPartial() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -337,7 +330,6 @@ func (e *FlowTestSuite) TestFailParallelPartial() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// Manual retry creates exactly one clone; original keeps discarded+retried; workflow completes.
 func (e *FlowTestSuite) TestFailManualRetryOnce() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -379,7 +371,6 @@ func (e *FlowTestSuite) TestFailManualRetryOnce() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// While a retry clone executes, the workflow reports in-progress, not failed-pending-retry.
 func (e *FlowTestSuite) TestFailManualRetryRunsAsInProgress() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -407,7 +398,6 @@ func (e *FlowTestSuite) TestFailManualRetryRunsAsInProgress() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// Skipping a parked step marks it user-skipped and the workflow resumes running.
 func (e *FlowTestSuite) TestFailSkipThenContinue() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -453,7 +443,6 @@ func (e *FlowTestSuite) TestFailSkipThenContinue() {
 	e.waitForStepStatus(ctx, blockingID, app.StatusCancelled)
 }
 
-// Cancelling a parked step cancels step+target; main writes no terminal workflow status (see TestPinCancelStepTerminatesWorkflow).
 func (e *FlowTestSuite) TestFailCancelWhileParked() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -495,7 +484,6 @@ func (e *FlowTestSuite) TestFailCancelWhileParked() {
 	}, 5*time.Second, pollInterval, "cancelled workflow must not run further steps")
 }
 
-// SkipOnFailure exhaustion marks the step failed (skipped_on_failure) and the workflow continues.
 func (e *FlowTestSuite) TestSkipOnFailureContinuesWorkflow() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -533,7 +521,6 @@ func (e *FlowTestSuite) TestSkipOnFailureContinuesWorkflow() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// The approve path never writes the deploy target; success statuses are the runner's job.
 func (e *FlowTestSuite) TestApproveTargetUntouchedOnSuccess() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())

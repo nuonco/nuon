@@ -38,7 +38,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Try process-based shutdown first
 	process, err := activities.AwaitGetCurrentRunnerProcess(ctx, activities.GetCurrentRunnerProcessRequest{
 		RunnerID:    s.RunnerID,
 		ProcessType: string(app.RunnerProcessTypeMng),
@@ -54,7 +53,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// Fallback: create legacy mng shutdown job for runners without process tracking
 	runnerJob, err := s.createMngJob(ctx, s.RunnerID, app.RunnerJobTypeMngShutDown, map[string]string{
 		"shutdown_type": "graceful",
 	})

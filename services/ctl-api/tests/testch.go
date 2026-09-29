@@ -22,8 +22,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
-// CHConfig holds the ClickHouse connection fields.
-// Uses the same config tags as internal.Config so it picks up the registered defaults.
 type CHConfig struct {
 	Host     string `config:"clickhouse_db_host"`
 	Port     string `config:"clickhouse_db_port"`
@@ -37,7 +35,6 @@ type CHConfig struct {
 	DialTimeout  time.Duration `config:"clickhouse_db_dial_timeout"`
 }
 
-// LoadCHConfig loads the ClickHouse config from environment variables.
 func LoadCHConfig() (CHConfig, error) {
 	var cfg CHConfig
 	if err := config.LoadInto(nil, &cfg); err != nil {
@@ -49,12 +46,7 @@ func LoadCHConfig() (CHConfig, error) {
 	return cfg, nil
 }
 
-// CreateAndMigrateCHDatabase drops and recreates the ClickHouse test database, then runs migrations.
-// Called by the testsetup binary before tests run.
-// CH migration state is tracked in PostgreSQL, so psqlCfg must be the config of the
-// Postgres database paired with this ClickHouse database — it is the migration ledger.
 func CreateAndMigrateCHDatabase(chCfg CHConfig, psqlCfg DBConfig) error {
-	// Connect to the default database to create our test database
 	defaultOpts := &clickhousecore.Options{
 		Addr: []string{fmt.Sprintf("%s:%s", chCfg.Host, chCfg.Port)},
 		Auth: clickhousecore.Auth{
@@ -86,14 +78,12 @@ func CreateAndMigrateCHDatabase(chCfg CHConfig, psqlCfg DBConfig) error {
 	}
 	defer sqlDB.Close()
 
-	// Drop and recreate database
 	defaultDB.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s ON CLUSTER simple", chCfg.Name))
 
 	if err := defaultDB.Exec(fmt.Sprintf("CREATE DATABASE %s ON CLUSTER simple", chCfg.Name)).Error; err != nil {
 		return fmt.Errorf("failed to create clickhouse test database: %w", err)
 	}
 
-	// Run migrations
 	if err := MigrateTestCHDatabase(chCfg, psqlCfg); err != nil {
 		return fmt.Errorf("failed to migrate clickhouse test database: %w", err)
 	}
@@ -101,11 +91,7 @@ func CreateAndMigrateCHDatabase(chCfg CHConfig, psqlCfg DBConfig) error {
 	return nil
 }
 
-// MigrateTestCHDatabase connects to the ClickHouse test database and runs migrations.
-// CH migration state is tracked in PostgreSQL, so we need both connections.
-// psqlCfg must be the Postgres database paired with this ClickHouse database.
 func MigrateTestCHDatabase(chCfg CHConfig, psqlCfg DBConfig) error {
-	// Connect to ClickHouse target database
 	chOpts := &clickhousecore.Options{
 		Addr: []string{fmt.Sprintf("%s:%s", chCfg.Host, chCfg.Port)},
 		Auth: clickhousecore.Auth{
@@ -142,7 +128,6 @@ func MigrateTestCHDatabase(chCfg CHConfig, psqlCfg DBConfig) error {
 	}
 	defer chSqlDB.Close()
 
-	// Connect to PostgreSQL for migration tracking
 	psqlDSN := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		psqlCfg.DBHost, psqlCfg.DBPort, psqlCfg.DBUser, psqlCfg.DBPassword, psqlCfg.DBName, psqlCfg.DBSSLMode)
 

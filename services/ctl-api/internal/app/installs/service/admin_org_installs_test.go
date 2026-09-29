@@ -74,7 +74,6 @@ func (s *AdminOrgInstallsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -145,7 +144,6 @@ func (s *AdminOrgInstallsTestSuite) TestAdminGetOrgInstalls() {
 				ctx := context.Background()
 				ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
 				ctx = cctx.SetAccountIDContext(ctx, s.testAcc.ID)
-				// Create 2 more installs for the same org
 				for i := 0; i < 2; i++ {
 					install := s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 					s.T().Cleanup(func() {
@@ -165,7 +163,6 @@ func (s *AdminOrgInstallsTestSuite) TestAdminGetOrgInstalls() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create org without installs
 				org2 := &app.Org{
 					ID:          domains.NewOrgID(),
 					Name:        "org-no-installs",
@@ -194,7 +191,6 @@ func (s *AdminOrgInstallsTestSuite) TestAdminGetOrgInstalls() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create another org with installs using seeder helpers
 				ctx, org2 := s.service.Seeder.EnsureOrg(ctx, s.T())
 				app2 := s.service.Seeder.CreateApp(ctx, s.T())
 				s.service.Seeder.CreateAppConfig(ctx, s.T(), app2.ID)
@@ -210,7 +206,6 @@ func (s *AdminOrgInstallsTestSuite) TestAdminGetOrgInstalls() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(installs []*app.Install, orgID string) {
-				// Should only return installs for testOrg, not org2
 				for _, install := range installs {
 					assert.Equal(s.T(), orgID, install.OrgID, "should only return installs for requested org")
 				}

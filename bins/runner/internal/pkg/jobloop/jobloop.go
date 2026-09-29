@@ -26,7 +26,6 @@ type JobLoop interface {
 	Start() error
 	Stop() error
 	LifecycleHook() fx.Hook
-	// healthcheck
 	GetHealthcheck() (Healthcheck, string)
 	SetLatestHealthcheckAt() error
 	TimeSinceLastHealthcheck() time.Duration
@@ -62,29 +61,17 @@ type jobLoop struct {
 	drainer   *drain.Drainer
 	jobDoneCh chan struct{}
 
-	// coalescers maps execution_id -> per-execution status writer. The
-	// jobLoop type is shared by every concurrent job (parallel-runner-
-	// jobs feature flag) so an execution-keyed map is required to keep
-	// writers isolated.
 	coalescersMu sync.Mutex
 	coalescers   map[string]*statusCoalescer
 
-	// idleFn is optional maintenance work that must not overlap a job. The
-	// worker is a single goroutine, so calling it from the no-work branch is
-	// what guarantees nothing this loop owns is in flight.
 	idleFn   func(context.Context)
 	lastIdle time.Time
 
-	// for healthcheck
 	healthcheck Healthcheck
 }
 
-// Option configures a job loop beyond its handlers and group.
 type Option func(*jobLoop)
 
-// WithIdleHook registers work to run when a poll finds no jobs, rate-limited to
-// idleHookInterval. The image-actions loop uses it to collect cached action
-// images only while it isn't running one.
 func WithIdleHook(fn func(context.Context)) Option {
 	return func(j *jobLoop) {
 		j.idleFn = fn

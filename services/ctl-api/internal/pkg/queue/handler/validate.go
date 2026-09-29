@@ -24,7 +24,7 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 	l, _ := log.WorkflowLogger(ctx)
 	h.validating = true
 
-	// Apply the terminal status only after the completion callback has been
+	// why: Apply the terminal status only after the completion callback has been
 	// sent. Setting h.finished earlier lets run() complete the workflow and
 	// abandon the in-flight callback activity, which drops the callback the
 	// dispatcher is waiting on and wedges the queue.
@@ -49,8 +49,6 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 	}()
 
 	if h.canceled {
-		// cancelHandler already persisted StatusCancelled — do not stamp
-		// in-progress over it
 		finStatus, finDesc = app.StatusCancelled, "signal was canceled"
 		return nil, errors.New("signal was canceled")
 	}
@@ -75,7 +73,6 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 	}
 	l, _ = log.WorkflowLogger(ctx)
 
-	// mark the signal as in-progress in the DB
 	if !h.skipValidateStamps() {
 		_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID: h.queueSignalID,
@@ -88,7 +85,6 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 
 	event := h.buildSignalPhaseEvent(signal.SignalPhaseValidate)
 
-	// run before-phase hooks (fail-open)
 	decision := h.runBeforePhase(ctx, event)
 	if !decision.Allow {
 		blockedErr := &signal.SignalErrValidate{Err: errors.New("blocked by lifecycle hook: " + decision.Reason)}
@@ -108,11 +104,9 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 	err = h.runSignalValidate(ctx)
 	dur := workflow.Now(ctx).Sub(start)
 
-	// run after-phase hooks (best-effort)
 	h.runAfterPhaseSafe(ctx, event, outcomeFromError(err, dur))
 
 	if err != nil {
-		// If the signal panicked, write error status here (outside the panic boundary).
 		var panicErr *signal.SignalErrPanic
 		if errors.As(err, &panicErr) {
 			_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
@@ -144,7 +138,6 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 			validateErr)
 	}
 
-	// record validate completion timestamp
 	skipCancelledStamp := h.canceled &&
 		workflow.GetVersion(ctx, handlerCancelledStatusVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
 	if !h.skipValidateStamps() && !skipCancelledStamp {
@@ -160,18 +153,11 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 	return nil, nil
 }
 
-// skipValidateStamps reports whether the validate-phase abandonment stamps
-// should be skipped for this handler's signal. Signals that implement
-// SignalWithInlineValidate (idempotent, activity-free Validate) opt out: the
-// stamps can never detect a real mid-validate abandonment for them and only add
-// status-write round-trips to the dispatch hot path. Error-path status writes
-// are unaffected — only the two success-path metadata stamps are skipped.
 func (h *handler) skipValidateStamps() bool {
 	iv, ok := h.sig.(signal.SignalWithInlineValidate)
 	return ok && iv.InlineValidate()
 }
 
-// runSignalValidate calls the user-provided signal Validate in a panic-safe boundary.
 func (h *handler) runSignalValidate(ctx workflow.Context) (retErr error) {
 	defer func() {
 		if r := recover(); r != nil {

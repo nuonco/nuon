@@ -18,7 +18,7 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-// A process reporting in is itself the heartbeat, so writing "waiting for the
+// why: A process reporting in is itself the heartbeat, so writing "waiting for the
 // runner to report in" first would record a state that was never true.
 func TestProcessInitGoesStraightToActive(t *testing.T) {
 	var suite testsuite.WorkflowTestSuite

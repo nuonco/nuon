@@ -97,7 +97,6 @@ func (s *GetRunnerLatestHeartBeatTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -109,7 +108,6 @@ func (s *GetRunnerLatestHeartBeatTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group settings
 	s.testRunnerGrpS = &app.RunnerGroupSettings{
 		ID:            domains.NewRunnerGroupSettingsID(),
 		OrgID:         s.testOrg.ID,
@@ -118,7 +116,6 @@ func (s *GetRunnerLatestHeartBeatTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrpS).Error
 	require.NoError(s.T(), err)
 
-	// Create runner in Postgres
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -182,7 +179,6 @@ func (s *GetRunnerLatestHeartBeatTestSuite) TestGetRunnerLatestHeartBeat() {
 				err := s.service.DB.WithContext(ctx).Create(runner).Error
 				require.NoError(s.T(), err)
 
-				// Create multiple heartbeats with different timestamps
 				baseTime := time.Now().Add(-10 * time.Minute)
 				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeMng, baseTime, time.Minute*5, "1.0.0")
 				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeMng, baseTime.Add(2*time.Minute), time.Minute*7, "1.0.1")
@@ -219,7 +215,6 @@ func (s *GetRunnerLatestHeartBeatTestSuite) TestGetRunnerLatestHeartBeat() {
 				err := s.service.DB.WithContext(ctx).Create(runner).Error
 				require.NoError(s.T(), err)
 
-				// Create heartbeats from different processes
 				baseTime := time.Now().Add(-10 * time.Minute)
 				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeMng, baseTime, time.Minute*5, "1.0.0")
 				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeInstall, baseTime.Add(2*time.Minute), time.Minute*7, "1.1.0")
@@ -245,7 +240,6 @@ func (s *GetRunnerLatestHeartBeatTestSuite) TestGetRunnerLatestHeartBeat() {
 			},
 			expectedCode: http.StatusNotFound,
 			validateFunc: func(heartBeat *app.RunnerHeartBeat) {
-				// Error response
 			},
 		},
 		{
@@ -254,7 +248,6 @@ func (s *GetRunnerLatestHeartBeatTestSuite) TestGetRunnerLatestHeartBeat() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -267,7 +260,6 @@ func (s *GetRunnerLatestHeartBeatTestSuite) TestGetRunnerLatestHeartBeat() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner group for org2
 				runnerGrp2 := &app.RunnerGroup{
 					ID:        domains.NewRunnerGroupID(),
 					OrgID:     org2.ID,
@@ -279,7 +271,6 @@ func (s *GetRunnerLatestHeartBeatTestSuite) TestGetRunnerLatestHeartBeat() {
 				err = s.service.DB.WithContext(ctx).Create(runnerGrp2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner in org2
 				runner2 := &app.Runner{
 					ID:            domains.NewRunnerID(),
 					OrgID:         org2.ID,
@@ -301,7 +292,6 @@ func (s *GetRunnerLatestHeartBeatTestSuite) TestGetRunnerLatestHeartBeat() {
 			},
 			expectedCode: http.StatusNotFound,
 			validateFunc: func(heartBeat *app.RunnerHeartBeat) {
-				// Error response
 			},
 		},
 		{
@@ -329,7 +319,6 @@ func (s *GetRunnerLatestHeartBeatTestSuite) TestGetRunnerLatestHeartBeat() {
 			},
 			expectedCode: http.StatusNotFound,
 			validateFunc: func(heartBeat *app.RunnerHeartBeat) {
-				// Error response
 			},
 		},
 		{
@@ -349,7 +338,6 @@ func (s *GetRunnerLatestHeartBeatTestSuite) TestGetRunnerLatestHeartBeat() {
 				err := s.service.DB.WithContext(ctx).Create(runner).Error
 				require.NoError(s.T(), err)
 
-				// Create heartbeat with known AliveTime
 				createdAt := time.Now()
 				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeMng, createdAt, time.Minute*15, "1.0.0")
 
@@ -362,7 +350,6 @@ func (s *GetRunnerLatestHeartBeatTestSuite) TestGetRunnerLatestHeartBeat() {
 			expectedCode: http.StatusOK,
 			validateFunc: func(heartBeat *app.RunnerHeartBeat) {
 				assert.NotNil(s.T(), heartBeat)
-				// StartedAt should be CreatedAt - AliveTime
 				expectedStartedAt := heartBeat.CreatedAt.Add(-1 * heartBeat.AliveTime)
 				assert.WithinDuration(s.T(), expectedStartedAt, heartBeat.StartedAt, time.Second,
 					"StartedAt should be calculated as CreatedAt - AliveTime")

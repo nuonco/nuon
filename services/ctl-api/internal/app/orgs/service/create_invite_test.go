@@ -31,7 +31,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// CreateOrgInviteTestService holds all fx-injected dependencies for create org invite tests.
 type CreateOrgInviteTestService struct {
 	fx.In
 
@@ -45,7 +44,6 @@ type CreateOrgInviteTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// CreateOrgInviteTestSuite is the testify suite for create org invite endpoint.
 type CreateOrgInviteTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -76,7 +74,6 @@ func (s *CreateOrgInviteTestSuite) SetupSuite() {
 
 			CustomValidator: true,
 		}),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),
 	)
@@ -84,7 +81,6 @@ func (s *CreateOrgInviteTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -92,9 +88,6 @@ func (s *CreateOrgInviteTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
-
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -264,13 +257,11 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 		{
 			name: "invalid JSON handling",
 			setupFunc: func() interface{} {
-				// Return nil to signal we'll send raw invalid JSON
 				return nil
 			},
 			expectedStatus: http.StatusBadRequest,
 			validateResponse: func(rr *httptest.ResponseRecorder) {
 				body := rr.Body.String()
-				// BindJSON returns JSON parsing errors with "invalid character" message
 				assert.Contains(s.T(), body, "invalid")
 			},
 			validateSignal: false,
@@ -330,15 +321,10 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Reset mock before test
-
-			// Setup test data
 			reqBody := tc.setupFunc()
 
-			// Make request
 			var rr *httptest.ResponseRecorder
 			if tc.name == "invalid JSON handling" {
-				// Send invalid JSON for that specific test
 				req, err := http.NewRequest(http.MethodPost, "/v1/orgs/current/invites", bytes.NewBufferString("{invalid json}"))
 				require.NoError(s.T(), err)
 				req.Header.Set("Content-Type", "application/json")
@@ -353,12 +339,10 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Validate response
 			if tc.validateResponse != nil {
 				tc.validateResponse(rr)
 			}
 
-			// Validate signal was sent (or not sent)
 			if tc.validateSignal {
 				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
@@ -371,7 +355,6 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 				assert.Len(s.T(), signals, 0, "no signal should be sent for failed validation")
 			}
 
-			// Validate database state for successful creations
 			if tc.validateDB != nil && rr.Code == http.StatusCreated {
 				var invite app.OrgInvite
 				err := json.Unmarshal(rr.Body.Bytes(), &invite)
@@ -379,7 +362,6 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 
 				tc.validateDB(&invite)
 
-				// Cleanup
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.OrgInvite{}, "id = ?", invite.ID)
 				})
@@ -389,7 +371,6 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 }
 
 func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite_SetsCorrectDefaults() {
-	// This test specifically validates default values
 	testEmail := fmt.Sprintf("defaults-%s@test.nuon.co", domains.NewAccountID()[:8])
 	req := CreateOrgInviteRequest{
 		Email: testEmail,
@@ -402,7 +383,6 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite_SetsCorrectDefaults() {
 	err := json.Unmarshal(rr.Body.Bytes(), &invite)
 	require.NoError(s.T(), err)
 
-	// Verify all default values
 	assert.Equal(s.T(), app.OrgInviteStatusPending, invite.Status, "status should default to pending")
 	assert.Equal(s.T(), app.RoleTypeOrgAdmin, invite.RoleType, "role_type should default to org_admin")
 	assert.Equal(s.T(), s.testOrg.ID, invite.OrgID, "org_id should be set from context")
@@ -411,14 +391,12 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite_SetsCorrectDefaults() {
 	assert.NotZero(s.T(), invite.CreatedAt, "created_at should be set")
 	assert.NotZero(s.T(), invite.UpdatedAt, "updated_at should be set")
 
-	// Cleanup
 	s.T().Cleanup(func() {
 		s.service.DB.Unscoped().Delete(&app.OrgInvite{}, "id = ?", invite.ID)
 	})
 }
 
 func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite_UniqueConstraint() {
-	// Create first invite
 	testEmail := fmt.Sprintf("unique-%s@test.nuon.co", domains.NewAccountID()[:8])
 	req := CreateOrgInviteRequest{
 		Email: testEmail,
@@ -435,18 +413,14 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite_UniqueConstraint() {
 		s.service.DB.Unscoped().Delete(&app.OrgInvite{}, "id = ?", invite1.ID)
 	})
 
-	// Try to create second invite with same email in same org
 	rr2 := s.makeRequest(http.MethodPost, "/v1/orgs/current/invites", req)
 
-	// Should fail due to unique constraint (org_id, email, deleted_at)
-	// Stderr middleware automatically returns 409 Conflict for duplicate keys
 	assert.Equal(s.T(), http.StatusConflict, rr2.Code)
 	body := rr2.Body.String()
 	assert.Contains(s.T(), body, "duplicate key")
 }
 
 func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite_DifferentOrgsCanInviteSameEmail() {
-	// Create second account and org
 	acc2ID := domains.NewAccountID()
 	acc2 := &app.Account{
 		ID:          acc2ID,
@@ -477,7 +451,6 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite_DifferentOrgsCanInviteSam
 		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org2.ID)
 	})
 
-	// Create invite in first org
 	testEmail := fmt.Sprintf("shared-%s@test.nuon.co", domains.NewAccountID()[:8])
 	req := CreateOrgInviteRequest{
 		Email: testEmail,
@@ -492,7 +465,6 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite_DifferentOrgsCanInviteSam
 		s.service.DB.Unscoped().Delete(&app.OrgInvite{}, "id = ?", invite1.ID)
 	})
 
-	// Create invite in second org with same email (should succeed)
 	router2 := tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,

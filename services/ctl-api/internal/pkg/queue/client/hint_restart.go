@@ -37,7 +37,6 @@ func (c *Client) HintRestart(ctx context.Context, queueIDs []string) error {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
 func (c *Client) HintRestartByOrg(ctx context.Context, orgID string) error {
-	// Set restart_requested on all runners in the org.
 	if res := c.db.WithContext(ctx).
 		Model(&app.Runner{}).
 		Where(app.Runner{OrgID: orgID}).

@@ -105,7 +105,6 @@ func (s *service) RetryWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	// this feels like code smell since its not explicit
 	switch req.Operation {
 	case RetryOperationRetryStep:
 		if !step.Retryable {

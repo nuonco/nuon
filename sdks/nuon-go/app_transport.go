@@ -7,7 +7,6 @@ import (
 	"net/http"
 )
 
-// appTransport is a transport that injects our authentication token and org id into the api request
 type appTransport struct {
 	authToken     string
 	orgID         string
@@ -31,7 +30,6 @@ func (t *appTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return resp, err
 	}
 
-	// Handle gzip decompression if needed
 	if resp.Header.Get("Content-Encoding") == "gzip" {
 		gzipReader, err := gzip.NewReader(resp.Body)
 		if err != nil {
@@ -39,13 +37,11 @@ func (t *appTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 			return nil, err
 		}
 
-		// Replace the response body with decompressed reader
 		resp.Body = &gzipReadCloser{
 			reader: gzipReader,
 			closer: resp.Body,
 		}
 
-		// Remove Content-Encoding header since we've decompressed
 		resp.Header.Del("Content-Encoding")
 		resp.Header.Del("Content-Length")
 		resp.ContentLength = -1
@@ -55,7 +51,6 @@ func (t *appTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return resp, nil
 }
 
-// gzipReadCloser wraps a gzip reader and ensures both the gzip reader and original body are closed
 type gzipReadCloser struct {
 	reader io.Reader
 	closer io.Closer

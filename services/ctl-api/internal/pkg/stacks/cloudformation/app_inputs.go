@@ -8,11 +8,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-// getInstallInputParameters returns CloudFormation parameters for inputs with source "install_stack"
 func (t *Templates) getInstallInputParameters(appInputs []app.AppInput, inputGroup string) map[string]cloudformation.Parameter {
 	params := make(map[string]cloudformation.Parameter)
 
-	// Get app input config to find install_stack sourced inputs
 	for _, input := range appInputs {
 		if input.Source != app.AppInputSourceCustomer {
 			continue
@@ -92,13 +90,12 @@ func (t *Templates) getInstallInputGroupParamLable(inp *stacks.TemplateInput) ma
 	return installGroupInputParamLables
 }
 
-// getCloudFormationTypeForInput converts app input type to CloudFormation parameter type
 func getCloudFormationTypeForInput(inputType app.AppInputType) string {
 	switch inputType {
 	case app.AppInputTypeNumber:
 		return "Number"
 	case app.AppInputTypeBool:
-		return "String" // CloudFormation doesn't have boolean parameters
+		return "String"
 	case app.AppInputTypeList:
 		return "CommaDelimitedList"
 	case app.AppInputTypeJSON, app.AppInputTypeString:

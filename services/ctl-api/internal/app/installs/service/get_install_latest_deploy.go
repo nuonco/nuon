@@ -39,7 +39,6 @@ func (s *service) GetInstallLatestDeploy(ctx *gin.Context) {
 
 	installID := ctx.Param("install_id")
 
-	// Validate install belongs to org
 	_, err = s.findInstall(ctx, org.ID, installID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to find install %s: %w", installID, err))

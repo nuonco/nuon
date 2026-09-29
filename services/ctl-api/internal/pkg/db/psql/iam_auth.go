@@ -8,7 +8,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/rds/auth"
 )
 
-// FetchIamTokenPassword fetches an iam token which can be used as a password using the default aws credentials provider
 func FetchIamTokenPassword(ctx context.Context, cfg database) (string, error) {
 	awsCfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {

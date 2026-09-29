@@ -10,8 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
 
-// Org returns the selected org ID from context. Empty org means the caller must
-// select_org or pass X-Nuon-Org-ID. Use for non-Gin callers (MCP tool handlers).
 func Org(ctx context.Context) (string, error) {
 	orgID := keys.OrgIDFromContext(ctx)
 	if orgID == "" {
@@ -20,7 +18,6 @@ func Org(ctx context.Context) (string, error) {
 	return orgID, nil
 }
 
-// Read requires a selected org and PermissionRead on that org object.
 func Read(ctx context.Context) (string, error) {
 	orgID, err := Org(ctx)
 	if err != nil {
@@ -32,8 +29,6 @@ func Read(ctx context.Context) (string, error) {
 	return orgID, nil
 }
 
-// Write requires a non-read-only token role, a selected org, and PermissionCreate
-// on that org object.
 func Write(ctx context.Context) (string, error) {
 	if keys.TokenRoleFromContext(ctx) == string(app.RoleTypeOrgReadOnly) {
 		return "", fmt.Errorf("this access token is read-only (org_read_only scope) and cannot perform write operations; re-authorize with the org_support or org_admin scope")

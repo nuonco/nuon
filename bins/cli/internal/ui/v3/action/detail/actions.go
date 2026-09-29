@@ -13,8 +13,6 @@ func (m Model) openInBrowser() {
 		return
 	}
 
-	// Construct dashboard URL
-	// Pattern: https://app.nuon.co/installs/{install_id}/actions/{action_workflow_id}
 	dashboardURL := fmt.Sprintf("%s/%s/installs/%s/actions/%s",
 		"https://app.nuon.co", // TODO: make this configurable
 		m.cfg.OrgID,

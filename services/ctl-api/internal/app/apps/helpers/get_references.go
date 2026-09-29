@@ -5,7 +5,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// NOTE(jm): this is a function, because it is used directly within a workflow.
 func GetComponentReferences(cfg *app.AppConfig, comp string) []refs.Ref {
 	rfs := make([]refs.Ref, 0)
 	for _, cc := range cfg.ComponentConfigConnections {

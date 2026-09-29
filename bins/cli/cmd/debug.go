@@ -4,8 +4,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// debugCmd holds no-op commands for separating fixed CLI overhead from API
-// latency when profiling. Registered only when NUON_DEBUG=true.
 func (c *cli) debugCmd() *cobra.Command {
 	debug := &cobra.Command{
 		Use:    "debug",
@@ -13,7 +11,6 @@ func (c *cli) debugCmd() *cobra.Command {
 		Hidden: true,
 	}
 
-	// No PersistentPreRunE: process start and command-tree construction only.
 	debug.AddCommand(&cobra.Command{
 		Use:         "noop",
 		Short:       "Do nothing, skipping all initialization",
@@ -21,7 +18,6 @@ func (c *cli) debugCmd() *cobra.Command {
 		Run:         func(*cobra.Command, []string) {},
 	})
 
-	// Adds config and API client init, but no auth.
 	debug.AddCommand(&cobra.Command{
 		Use:               "noop-init",
 		Short:             "Do nothing, after init but without auth",
@@ -30,7 +26,6 @@ func (c *cli) debugCmd() *cobra.Command {
 		Run:               func(*cobra.Command, []string) {},
 	})
 
-	// Adds initUser, which is one API round trip.
 	debug.AddCommand(&cobra.Command{
 		Use:               "noop-auth",
 		Short:             "Do nothing, after init with auth",

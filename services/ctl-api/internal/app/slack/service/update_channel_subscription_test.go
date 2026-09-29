@@ -7,10 +7,6 @@ import (
 	"github.com/nuonco/nuon/pkg/labels"
 )
 
-// TestUpdateChannelSubscriptionRequestUnmarshal verifies the sentinel
-// detection that lets the handler distinguish "leave match unchanged"
-// (omit the key) from "make this org-wide" (explicit JSON null) — without
-// it, the handler couldn't ever clear a per-resource scope back to org-wide.
 func TestUpdateChannelSubscriptionRequestUnmarshal(t *testing.T) {
 	cases := []struct {
 		name         string
@@ -54,10 +50,6 @@ func TestUpdateChannelSubscriptionRequestUnmarshal(t *testing.T) {
 	}
 }
 
-// TestUpdateChannelSubscriptionRequestRoundTrip covers the typical
-// dashboard payload — the SubscriptionMatch shape decodes cleanly into
-// the typed struct so handler code can read sub.Match.Installs.IDs
-// without re-decoding raw JSON.
 func TestUpdateChannelSubscriptionRequestRoundTrip(t *testing.T) {
 	body := `{"match":{"installs":{"ids":["i_a","i_b"]}},"interests":{"all_events":true}}`
 	var req UpdateChannelSubscriptionRequest
@@ -83,7 +75,5 @@ func TestUpdateChannelSubscriptionRequestRoundTrip(t *testing.T) {
 	if req.Interests == nil || !req.Interests.AllEvents {
 		t.Errorf("expected interests.AllEvents=true, got %+v", req.Interests)
 	}
-	// Touch labels package so import isn't unused if the build trims it
-	// during test compilation in oddly tagged builds.
 	_ = labels.SubscriptionMatch{}
 }

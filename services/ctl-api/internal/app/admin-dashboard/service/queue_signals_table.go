@@ -24,7 +24,6 @@ func (s *service) QueueSignalsTable(c *gin.Context) {
 		Model(&app.QueueSignal{}).
 		Where("queue_id = ?", queueID)
 
-	// Apply time window filter.
 	if interval, ok := allowedSinceValues[since]; ok {
 		query = query.Where("created_at >= NOW() - INTERVAL '" + interval + "'")
 	}

@@ -20,8 +20,6 @@ func githubActionsAvailable() bool {
 	return os.Getenv(ghaRequestURLEnvVar) != "" && os.Getenv(ghaRequestTokenEnvVar) != ""
 }
 
-// fetchGitHubActionsToken requests an OIDC ID token from the GitHub Actions
-// runtime. Requires the workflow to grant `permissions: id-token: write`.
 func fetchGitHubActionsToken(ctx context.Context, audience string) (string, error) {
 	requestURL := os.Getenv(ghaRequestURLEnvVar)
 	requestToken := os.Getenv(ghaRequestTokenEnvVar)

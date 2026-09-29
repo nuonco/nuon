@@ -22,8 +22,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 )
 
-// ensureAction creates an action workflow if it doesn't exist, using the shared helpers
-// for full initialization (install action workflows).
 func (s *syncer) ensureAction(ctx context.Context, action *config.ActionConfig) error {
 	_, err := s.getAction(ctx, action.Name)
 	if err == nil {
@@ -53,7 +51,6 @@ func (s *syncer) ensureAction(ctx context.Context, action *config.ActionConfig) 
 	return nil
 }
 
-// syncAction updates an action workflow and creates its config.
 func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) error {
 	actionWorkflow, err := s.getAction(ctx, action.Name)
 	if err != nil {
@@ -63,7 +60,6 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 		}
 	}
 
-	// Sync labels
 	labelRes := s.db.WithContext(ctx).
 		Model(&actionWorkflow).
 		Select("labels").
@@ -75,8 +71,7 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 		}
 	}
 
-	// Parse timeout
-	timeout := 5 * time.Minute // default
+	timeout := 5 * time.Minute
 	if action.Timeout != "" {
 		parsedTimeout, err := time.ParseDuration(action.Timeout)
 		if err != nil {
@@ -89,7 +84,6 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 		timeout = parsedTimeout
 	}
 
-	// Get app for VCS config
 	var parentApp app.App
 	res := s.db.WithContext(ctx).
 		Preload("Org").
@@ -102,7 +96,6 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 		}
 	}
 
-	// Build triggers
 	triggers := make([]app.ActionWorkflowTriggerConfig, 0, len(action.Triggers))
 	for _, trigger := range action.Triggers {
 		if err := validation.ValidateCronSchedule(trigger.CronSchedule); err != nil {
@@ -113,7 +106,6 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 			}
 		}
 
-		// Resolve component name to ID for lifecycle triggers
 		var componentID generics.NullString
 		if trigger.ComponentName != "" {
 			resolved := false
@@ -125,7 +117,6 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 				}
 			}
 			if !resolved {
-				// Component not yet synced — look it up from DB
 				var comp app.Component
 				if err := s.db.WithContext(ctx).
 					Where("app_id = ? AND name = ? AND deleted_at = 0", s.appID, trigger.ComponentName).
@@ -134,7 +125,6 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 				} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 					return sync.SyncInternalErr{Description: fmt.Sprintf("unable to resolve trigger component %q", trigger.ComponentName), Err: err}
 				}
-				// If not found, leave null — the component may not exist
 			}
 		}
 
@@ -148,7 +138,6 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 		})
 	}
 
-	// Build steps
 	vcsHelper := s.vcsHelpers
 	steps := make([]app.ActionWorkflowStepConfig, 0, len(action.Steps))
 
@@ -179,19 +168,16 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 			}
 		}
 
-		// Convert references
 		references := make([]string, 0)
 		for _, ref := range step.References {
 			references = append(references, ref.String())
 		}
 
-		// Convert env vars map to pgtype.Hstore
 		envVars := pgtype.Hstore{}
 		for k, v := range step.EnvVarMap {
 			envVars[k] = &v
 		}
 
-		// Steps are loaded ORDER BY idx, so an unset Idx runs them arbitrarily.
 		steps = append(steps, app.ActionWorkflowStepConfig{
 			AppID:                    s.appID,
 			AppConfigID:              s.appConfigID,
@@ -206,7 +192,6 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 		})
 	}
 
-	// Convert action references
 	actionReferences := make([]string, 0)
 	for _, ref := range action.References {
 		actionReferences = append(actionReferences, ref.String())
@@ -238,12 +223,10 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 	built.Steps = steps
 	awc := *built
 
-	// Check if config already exists (idempotent for retries)
 	var existing app.ActionWorkflowConfig
 	if err := s.db.WithContext(ctx).
 		Where("app_config_id = ? AND action_workflow_id = ? AND deleted_at = 0", s.appConfigID, actionWorkflow.ID).
 		First(&existing).Error; err == nil {
-		// Already exists from a previous attempt — use the existing record
 		awc = existing
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return sync.SyncInternalErr{Description: fmt.Sprintf("unable to look up action workflow config for %s", action.Name), Err: err}
@@ -257,7 +240,6 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 		}
 	}
 
-	// Add to state
 	s.state.Actions = append(s.state.Actions, sync.ActionState{
 		Name: action.Name,
 		ID:   actionWorkflow.ID,
@@ -266,7 +248,6 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 	return nil
 }
 
-// getAction finds an action workflow by name.
 func (s *syncer) getAction(ctx context.Context, name string) (*app.ActionWorkflow, error) {
 	var aw app.ActionWorkflow
 	res := s.db.WithContext(ctx).

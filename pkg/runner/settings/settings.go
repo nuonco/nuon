@@ -16,22 +16,15 @@ import (
 )
 
 type Settings struct {
-	// configuration for job polling and management
 	HeartBeatTimeout time.Duration `validate:"required"`
 
-	// control jobs
-	JobLoopMinPollPeriod time.Duration `validate:"required"`
-	SandboxMode          bool
-	// LongPollJobs mirrors the org's `runner-job-long-poll` feature flag,
-	// surfaced through the runner-settings response. When true the
-	// jobloop calls the `/jobs/tail` long-poll endpoint instead of the
-	// legacy 5s idle-poll loop.
+	JobLoopMinPollPeriod              time.Duration `validate:"required"`
+	SandboxMode                       bool
 	LongPollJobs                      bool
 	TelemetryRelayEndpoint            string
 	VendorTelemetryEnabled            bool
 	VendorTelemetryResourceAttributes map[string]string
 
-	// visibility settings
 	EnableLogging bool
 	LoggingLevel  slog.Level `validate:"required"`
 	OtelSchemaURL string
@@ -39,18 +32,13 @@ type Settings struct {
 	EnableSentry  bool
 	Groups        []string `validate:"required"`
 
-	// Metadata is added to sentry, metrics and loggers
 	Metadata map[string]string
 
-	// otel configuration - not really being used yet, but will be coming from the API to enable fetching things
-	// like cloudwatch metrics and more.
 	OTELConfiguration string `validate:"required"`
 
-	// container
 	ContainerImageTag string
 	ContainerImageURL string
 
-	// platform
 	Platform string
 
 	apiClient nuonrunner.Client
@@ -72,7 +60,7 @@ func New(params Params) (*Settings, error) {
 		Cfg:       params.Cfg,
 	}
 
-	// NOTE(jm): in order to allow the settings type to be used to configure _other_ dependencies, we must
+	// why: in order to allow the settings type to be used to configure _other_ dependencies, we must
 	// initialize them here, instead of using a lifecycle hook. If this is initialized in a lifecycle hook, we can
 	// not use the settings in any other dependency initializer (ie: New function), because the settings will not be
 	// loaded yet.

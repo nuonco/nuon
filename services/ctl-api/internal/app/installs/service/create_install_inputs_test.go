@@ -29,7 +29,6 @@ func (s *InstallsServiceTestSuite) TestCreateInstallInputsSuccess() {
 	assert.NotEmpty(s.T(), inputs.ID)
 	assert.Equal(s.T(), install.ID, inputs.InstallID)
 
-	// Verify record persisted in DB.
 	var dbInputs app.InstallInputs
 	require.NoError(s.T(), s.deps.DB.Where("id = ?", inputs.ID).First(&dbInputs).Error)
 	assert.Equal(s.T(), install.ID, dbInputs.InstallID)

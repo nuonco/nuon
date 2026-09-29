@@ -24,12 +24,6 @@ import (
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// processPlan runs all plan-related checks for an approval step.
-//
-// The pipeline has three phases:
-//  1. Pre-approval checks (ApprovalCreateCheck) — can short-circuit before user sees the approval
-//  2. Await user approval response
-//  3. Post-approval checks (ApprovalResponseCheck) — can override the response (e.g. stale plan auto-retry)
 func (s *Signal) processPlan(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) error {
 	l, _ := log.WorkflowLogger(ctx)
 
@@ -49,7 +43,6 @@ func (s *Signal) processPlan(ctx workflow.Context, step *app.WorkflowStep, flw *
 	sig := stepSignal(step)
 	checkCtx := &directive.CheckContext{}
 
-	// Phase 1: Pre-approval checks
 	createChecks := s.approvalCreateChecks(ctx, sig, checkCtx)
 	for _, check := range createChecks {
 		if s.canceled {
@@ -87,11 +80,8 @@ func (s *Signal) processPlan(ctx workflow.Context, step *app.WorkflowStep, flw *
 		}
 	}
 
-	// Phase 2: Await user approval response
 	resp, err := s.awaitApprovalResponse(ctx, step, flw)
 	if goerrors.Is(err, errApprovalExpired) || goerrors.Is(err, errApprovalParked) {
-		// Status and directive are already written; return nil so the group
-		// acts on the directive instead of retrying the step.
 		return nil
 	}
 	if err != nil {
@@ -104,13 +94,9 @@ func (s *Signal) processPlan(ctx workflow.Context, step *app.WorkflowStep, flw *
 	return s.processApprovalResponse(ctx, step, flw, resp)
 }
 
-// processApprovalResponse runs the post-approval checks and then the response
-// handler. It is the resume point for a resident step re-dispatched after
-// parking in awaiting-approval.
 func (s *Signal) processApprovalResponse(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, resp *app.WorkflowStepApprovalResponse) error {
 	l, _ := log.WorkflowLogger(ctx)
 
-	// Phase 3: Post-approval checks (can override the response)
 	responseChecks := s.approvalResponseChecks(ctx)
 	for _, check := range responseChecks {
 		if !check.ShouldRun(step, flw, resp) {
@@ -131,16 +117,12 @@ func (s *Signal) processApprovalResponse(ctx workflow.Context, step *app.Workflo
 		}
 	}
 
-	// Phase 4: Normal response handling
 	return s.dispatchApprovalResponse(ctx, step, flw, resp)
 }
 
-// approvalCreateChecks returns the ordered list of pre-approval checks.
 func (s *Signal) approvalCreateChecks(ctx workflow.Context, sig qsignal.Signal, checkCtx *directive.CheckContext) []directive.ApprovalCreateCheck {
-	// Load org feature flags needed by checks. Best-effort: default false on error.
 	orgAutoSkipNoop, _ := activities.AwaitCheckOrgFeatureByFeature(ctx, string(app.OrgFeatureAutoSkipNoop))
 	return []directive.ApprovalCreateCheck{
-		// Empty install groups have nothing to approve; skip before the approval wait.
 		emptygroup.New(sig, setResultDirective),
 		noop.New(sig, checkCtx, orgAutoSkipNoop, setResultDirective),
 		planonly.New(s.OwnerID, checkCtx),
@@ -149,9 +131,7 @@ func (s *Signal) approvalCreateChecks(ctx workflow.Context, sig qsignal.Signal, 
 	}
 }
 
-// approvalResponseChecks returns the ordered list of post-approval checks.
 func (s *Signal) approvalResponseChecks(ctx workflow.Context) []directive.ApprovalResponseCheck {
-	// Load configurable stale plan threshold. Best-effort: empty string = use default.
 	thresholdStr, _ := activities.AwaitGetStalePlanThreshold(ctx, activities.GetStalePlanThresholdRequest{})
 	var threshold time.Duration
 	if thresholdStr != "" {
@@ -163,7 +143,6 @@ func (s *Signal) approvalResponseChecks(ctx workflow.Context) []directive.Approv
 	}
 }
 
-// applyCheckResult writes the directive and reason metadata from a check result.
 func (s *Signal) applyCheckResult(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, result directive.CheckResult) error {
 	meta := result.Reason.Metadata()
 	meta[string(directive.MetadataKey)] = string(result.Directive)

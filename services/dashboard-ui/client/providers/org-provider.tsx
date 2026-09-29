@@ -32,8 +32,6 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
     }
   }, [orgId])
 
-  // If the org doesn't exist (404/403), clear the stale session cookie
-  // and redirect to / so the BFF can resolve a valid org via GetOrgs.
   useEffect(() => {
     if (!error) return
     const status = (error as TAPIError)?.status

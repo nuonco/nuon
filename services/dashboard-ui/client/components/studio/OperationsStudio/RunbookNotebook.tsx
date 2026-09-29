@@ -77,7 +77,6 @@ function loadDraft(appId?: string): TDraft {
       const draft = localStorage.getItem(draftKey(appId))
       if (draft) return JSON.parse(draft) as TDraft
     } catch {
-      /* fall through to seed */
     }
   }
   return { name: '', description: '', cells: seedCells() }

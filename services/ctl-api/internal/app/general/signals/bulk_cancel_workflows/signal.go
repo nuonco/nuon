@@ -33,7 +33,6 @@ func (s *Signal) Validate(_ workflow.Context) error {
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l, _ := log.WorkflowLogger(ctx)
 
-	// unpinned, the child inherits this queue's task queue, where it is not registered
 	childCtx := workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
 		TaskQueue: pkgworkflows.APITaskQueue,
 	})

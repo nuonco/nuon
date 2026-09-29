@@ -1,6 +1,3 @@
-// Package ignorechanges decides whether an app branch run's changed files are
-// all covered by the branch's ignore_changes_regex, and stops the run's
-// workflow when they are.
 package ignorechanges
 
 import (
@@ -8,17 +5,13 @@ import (
 	"regexp"
 )
 
-// Decision is the outcome of evaluating a changed file set against a pattern.
 type Decision struct {
 	Ignored bool
 
-	// Reason is user-facing: it lands on the run's error message, the stopped
-	// step's description and the commit status, so it says which pattern
-	// matched and how many files it covered.
 	Reason string
 }
 
-// Evaluate reports whether every changed path matches pattern.
+// why: Evaluate reports whether every changed path matches pattern.
 //
 // The pattern is unanchored, matching Go's regexp semantics, so `docs/` covers
 // any path containing that substring; callers wanting a prefix write `^docs/`.

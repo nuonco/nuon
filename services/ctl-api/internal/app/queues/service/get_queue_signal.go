@@ -32,7 +32,6 @@ func (s *service) GetQueueSignal(ctx *gin.Context) {
 		return
 	}
 
-	// Verify queue exists and user has access
 	var queue app.Queue
 	res := s.db.WithContext(ctx).
 		Where("id = ?", queueID).
@@ -44,7 +43,6 @@ func (s *service) GetQueueSignal(ctx *gin.Context) {
 		return
 	}
 
-	// Get the signal
 	var signal app.QueueSignal
 	res = s.db.WithContext(ctx).
 		Preload("CreatedBy").

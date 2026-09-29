@@ -13,11 +13,8 @@ type PermissionsInput struct {
 
 	Permissions *config.PermissionsConfig
 
-	// Also written onto the permissions config so the rows are reachable from
-	// both owners, matching the CLI sync path.
 	BreakGlassRoles []*config.AppAWSIAMRole
 
-	// StackType is the app stack.toml type. Named policies are CloudFormation-only.
 	StackType string
 }
 

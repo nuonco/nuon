@@ -7,8 +7,6 @@ import (
 )
 
 func TestVerify_RequiresIssuerAndAudience(t *testing.T) {
-	// An empty issuer or audience would make the validator accept anything the caller
-	// forgot to constrain, so they are refused rather than defaulted.
 	for _, tc := range []struct {
 		name string
 		req  Request
@@ -27,8 +25,6 @@ func TestVerify_RequiresIssuerAndAudience(t *testing.T) {
 }
 
 func TestProvider_RejectsNonHTTPSIssuer(t *testing.T) {
-	// A non-https issuer would let a caller point key discovery at plaintext, or at
-	// something that is not a URL at all.
 	v := NewVerifier()
 
 	for _, issuer := range []string{
@@ -69,8 +65,6 @@ func TestProvider_CachesPerIssuer(t *testing.T) {
 	}
 }
 
-// Issuers come from stored state today, but an unbounded cache keyed on anything derived
-// from a request is a memory leak waiting to happen.
 func TestProvider_CacheIsBounded(t *testing.T) {
 	v := NewVerifier()
 
@@ -89,14 +83,12 @@ func TestProvider_CacheIsBounded(t *testing.T) {
 			len(v.inserted), len(v.providers))
 	}
 
-	// The oldest entries are the ones evicted.
 	if _, ok := v.providers["https://sts.windows.net/tenant-0/"]; ok {
 		t.Error("expected the oldest issuer to have been evicted")
 	}
 }
 
 func TestUnverifiedClaims(t *testing.T) {
-	// {"tid":"abc","oid":"def"} base64url encoded, with throwaway header and signature.
 	token := "eyJhbGciOiJSUzI1NiJ9.eyJ0aWQiOiJhYmMiLCJvaWQiOiJkZWYifQ.sig"
 
 	claims, err := UnverifiedClaims(token)
@@ -136,7 +128,6 @@ func TestStringClaim(t *testing.T) {
 	if got, ok := StringClaim(claims, "str"); !ok || got != "value" {
 		t.Errorf("got %q, %v", got, ok)
 	}
-	// A non-string, empty, or absent claim is treated as absent rather than coerced.
 	for _, name := range []string{"num", "empty", "null", "missing"} {
 		if _, ok := StringClaim(claims, name); ok {
 			t.Errorf("expected claim %q to read as absent", name)

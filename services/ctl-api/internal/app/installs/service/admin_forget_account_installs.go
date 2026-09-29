@@ -89,7 +89,6 @@ func (s *service) getAccountInstalls(ctx context.Context, accountID string) ([]a
 		return nil, fmt.Errorf("unable to get installs: %w", res.Error)
 	}
 
-	// NOTE(jm): unfortunately, it's non trivial to use LIKE %foo% queries in gorm, so we just filter locally.
 	var accountInstalls []app.Install
 	for _, install := range installs {
 		if install.App.Org.SandboxMode {

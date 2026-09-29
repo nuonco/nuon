@@ -16,7 +16,6 @@ import (
 
 const bulkCancelMaxWorkflows = 5000
 
-// BulkCancelWorkflowsRequest takes explicit IDs or a filter; IDs win when both are set.
 type BulkCancelWorkflowsRequest struct {
 	WorkflowIDs []string `json:"workflow_ids"`
 
@@ -103,7 +102,6 @@ func (s *service) resolveBulkCancelWorkflowIDs(c *gin.Context, req BulkCancelWor
 		return req.WorkflowIDs, nil
 	}
 
-	// cancelling by filter is a blind write, so restrict it to statuses the cancel path acts on
 	if !generics.SliceContains(app.Status(req.Status), bulkCancelableStatuses()) {
 		return nil, fmt.Errorf("cancelling by filter requires a cancelable status (one of %v)", bulkCancelableStatuses())
 	}
@@ -142,7 +140,6 @@ type statusOption struct {
 	Label string     `json:"label"`
 }
 
-// bulkCancelableStatusOptions are the only statuses a filter-driven bulk cancel may target.
 var bulkCancelableStatusOptions = []statusOption{
 	{Value: app.StatusFailedPendingRetry, Label: "Awaiting retry"},
 	{Value: app.StatusInProgress, Label: "In progress"},
@@ -158,7 +155,6 @@ func bulkCancelableStatuses() []app.Status {
 	return statuses
 }
 
-// WorkflowFilterOptions keeps the admin dropdowns from drifting as types are added.
 func (s *service) WorkflowFilterOptions(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"types":               app.AllWorkflowTypes(),

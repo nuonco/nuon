@@ -2,9 +2,6 @@ package batch
 
 import "context"
 
-// BatchFetch is a generic function to handle pagination with offset/limit pattern.
-// It takes a callback function that will be called with each page's limit,
-// and returns both the items for that page and a boolean indicating if there are more items.
 func BatchFetch[T any](
 	ctx context.Context,
 	pageSize int,

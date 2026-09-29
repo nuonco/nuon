@@ -15,10 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestCreateAppComponentBuildSuccess() {
 	s.Run("create build with git_ref", func() {
 		cmp := s.getSeededComponent(app.ComponentTypeHelmChart)
@@ -43,7 +39,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppComponentBuildSuccess() {
 		require.NotNil(s.T(), response.GitRef)
 		assert.Equal(s.T(), "main", *response.GitRef)
 
-		// Verify persisted to DB
 		var dbBuild app.ComponentBuild
 		err = s.deps.DB.WithContext(s.ctx).First(&dbBuild, "id = ?", response.ID).Error
 		require.NoError(s.T(), err)
@@ -104,10 +99,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppComponentBuildRejectsDockerBui
 	assert.Empty(s.T(), tests.GetQueueSignals(s.T(), s.deps.DB))
 }
 
-// ---------------------------------------------------------------------------
-// Validation error cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestCreateAppComponentBuildValidationErrors() {
 	cmp := s.getSeededComponent(app.ComponentTypeHelmChart)
 	path := fmt.Sprintf("/v1/apps/%s/components/%s/builds", s.testApp.ID, cmp.ID)
@@ -148,10 +139,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppComponentBuildValidationErrors
 	}
 }
 
-// ---------------------------------------------------------------------------
-// Not found cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestCreateAppComponentBuildNotFound() {
 	s.Run("nonexistent component id", func() {
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/builds", s.testApp.ID, "cmp_nonexistent00000000000")
@@ -165,10 +152,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppComponentBuildNotFound() {
 		require.Equal(s.T(), http.StatusNotFound, rr.Code)
 	})
 }
-
-// ---------------------------------------------------------------------------
-// Signals
-// ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestCreateAppComponentBuildSignals() {
 	s.Run("sends OperationBuild signal", func() {

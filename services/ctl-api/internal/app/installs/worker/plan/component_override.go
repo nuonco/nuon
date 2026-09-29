@@ -7,11 +7,6 @@ import (
 	"github.com/nuonco/nuon/pkg/types/state"
 )
 
-// installComponentOverride looks up a per-component install-level override value
-// from the install inputs (stored under a reserved synthetic input name) and
-// renders it against the install state so it can reference {{.nuon.*}}.
-//
-// It returns "" when no override is set, which callers treat as an exact no-op.
 func (p *Planner) installComponentOverride(
 	st *state.State,
 	stateData map[string]any,

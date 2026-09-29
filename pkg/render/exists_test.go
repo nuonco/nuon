@@ -7,12 +7,10 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// ExistsTestSuite is the testify suite for exists tests
 type ExistsTestSuite struct {
 	suite.Suite
 }
 
-// TestExistsSuite runs the test suite
 func TestExistsSuite(t *testing.T) {
 	suite.Run(t, new(ExistsTestSuite))
 }

@@ -22,8 +22,6 @@ func MergeRunbookInputDefaults(rbConfig *app.RunbookConfig, inputs map[string]*s
 	return merged
 }
 
-// ValidateRunbookInputs verifies the supplied inputs against the runbook config's
-// declared inputs: no unknown names, and every required input has a non-empty value.
 func (s *Helpers) ValidateRunbookInputs(rbConfig *app.RunbookConfig, inputs map[string]*string) error {
 	if rbConfig == nil || len(rbConfig.Inputs) == 0 {
 		if len(inputs) > 0 {

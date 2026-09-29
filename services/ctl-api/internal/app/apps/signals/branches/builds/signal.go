@@ -16,7 +16,6 @@ type Signal struct {
 	AppBranchID string `json:"app_branch_id" validate:"required"`
 	RunID       string `json:"run_id" validate:"required"`
 
-	// FlowID and StepID are injected by the flow engine via SignalWithStepContext.
 	FlowID string `json:"flow_id,omitempty"`
 	StepID string `json:"step_id,omitempty"`
 }
@@ -35,7 +34,6 @@ func (s *Signal) Type() signal.SignalType {
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
-	// Use playground validator for struct tag validation
 	v := validator.New()
 	if err := v.Struct(s); err != nil {
 		return errors.Wrap(err, "validation failed")

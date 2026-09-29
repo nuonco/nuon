@@ -32,7 +32,6 @@ func (s *InstallsServiceTestSuite) TestCreateApprovalResponseSuccess() {
 	assert.Equal(s.T(), string(app.WorkflowStepApprovalResponseTypeApprove), result.Type)
 	assert.Equal(s.T(), "lgtm", result.Note)
 
-	// Verify response persisted in DB and linked to the approval.
 	var dbResponse app.WorkflowStepApprovalResponse
 	require.NoError(s.T(), s.deps.DB.Where("id = ?", result.ID).First(&dbResponse).Error)
 	assert.Equal(s.T(), approval.ID, dbResponse.InstallWorkflowStepApprovalID)
@@ -45,7 +44,6 @@ func (s *InstallsServiceTestSuite) TestCreateApprovalResponseAlreadyExists() {
 	step := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID)
 	approval := s.deps.Seeder.CreateWorkflowStepApproval(s.ctx, s.T(), step.ID, app.TerraformPlanApprovalType, "plan output")
 
-	// Create a response inline so the approval already has one.
 	existingResponse := &app.WorkflowStepApprovalResponse{
 		InstallWorkflowStepApprovalID: approval.ID,
 		Type:                          app.WorkflowStepApprovalResponseTypeApprove,
@@ -60,7 +58,6 @@ func (s *InstallsServiceTestSuite) TestCreateApprovalResponseAlreadyExists() {
 
 	path := fmt.Sprintf("/v1/workflows/%s/steps/%s/approvals/%s/response", workflow.ID, step.ID, approval.ID)
 	rr := s.makeRequest(http.MethodPost, path, body)
-	// Handler returns ErrUser when approval already has a response.
 	assert.Equal(s.T(), http.StatusBadRequest, rr.Code)
 }
 

@@ -62,8 +62,6 @@ type cli struct {
 	currentUserErr  error
 }
 
-// Cached per process: the response carries every role the account holds, and
-// several call sites need it.
 func (c *cli) getCurrentUser(ctx context.Context) (*models.AppAccount, error) {
 	c.currentUserOnce.Do(func() {
 		c.currentUser, c.currentUserErr = c.apiClient.GetCurrentUser(ctx)
@@ -72,7 +70,6 @@ func (c *cli) getCurrentUser(ctx context.Context) (*models.AppAccount, error) {
 }
 
 func NewCLI() (*cli, error) {
-	// Construct a validator for the API client and the UI logger.
 	v := validator.New()
 	c := &cli{
 		v:   v,
@@ -85,17 +82,11 @@ func NewCLI() (*cli, error) {
 func (c *cli) persistentPreRunE(cmd *cobra.Command, args []string) error {
 	err := c.doPersistentPreRunE(cmd, args)
 	if err != nil {
-		// In none of the cases where this pre-run hook fails is it appropriate to print usage. But,
-		// setting SilenceUsage unconditionally would cause Cobra to not print usage at some times when
-		// it is appropriate.
 		cmd.SilenceUsage = true
 	}
 	return err
 }
 
-// resolveOutput determines the output format from flags and env, then enables
-// json/agent modes accordingly. Precedence: --output, --json, NUON_OUTPUT,
-// NUON_AGENT, default (table).
 func (c *cli) resolveOutput(cmd *cobra.Command) error {
 	out := "table"
 	switch {
@@ -146,7 +137,7 @@ func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 		c.cfg.Interactive = false
 	}
 
-	// The auth token must be resolved before the fx graph is built: services
+	// why: The auth token must be resolved before the fx graph is built: services
 	// capture the API client at construction, so a client built with an empty
 	// token cannot be swapped out afterwards.
 	skipAuth := hasSkipAuthAnnotation(cmd)
@@ -175,7 +166,7 @@ func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// tryAmbientOIDCExchange exchanges an ambient OIDC token (CI) for a Nuon API
+// why: tryAmbientOIDCExchange exchanges an ambient OIDC token (CI) for a Nuon API
 // token when no api_token is configured. The exchanged token is kept
 // in-memory only: each CLI invocation exchanges fresh, so expiry never needs
 // handling. Missing ambient credentials are not an error — the caller falls
@@ -190,8 +181,6 @@ func (c *cli) tryAmbientOIDCExchange(ctx context.Context) error {
 		return errors.Wrapf(err, "unable to get OIDC token from %s", source)
 	}
 
-	// The exchange runs before the fx graph exists, so it needs its own
-	// (tokenless) client: the exchange endpoint is unauthenticated.
 	exchangeClient, err := newAPIClient(c.v, c.cfg)
 	if err != nil {
 		return errors.Wrap(err, "unable to initialize api client for OIDC exchange")

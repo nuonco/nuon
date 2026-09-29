@@ -31,15 +31,10 @@ const (
 	maxPollPeriod = 10 * time.Second
 )
 
-// Existing process_job histories did not schedule lifecycle-error activities
-// or stop retrying on cancellation. The version guard keeps their replay
-// deterministic during rollout.
 func lifecycleCompositeErrorsEnabled(ctx workflow.Context) bool {
 	return workflow.GetVersion(ctx, lifecycleCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
 }
 
-// pollPeriod backs off 1s→10s (1,2,4,8,10,...) so fast jobs are detected quickly
-// while long jobs stay cheap on workflow history.
 func pollPeriod(attempt int) time.Duration {
 	if attempt < 0 || attempt > 4 {
 		return maxPollPeriod
@@ -51,13 +46,6 @@ func pollPeriod(attempt int) time.Duration {
 	return d
 }
 
-// sleepOrSignal waits up to d, returning early if a completion signal arrives
-// on ch. The timer is load-bearing: it guarantees the poll loop still wakes to
-// enforce timeouts even when no signal is ever sent (e.g. the runner crashed
-// and went silent, which it can do since it makes no outbound calls). The
-// signal merely shortcuts the common case so the workflow reacts to pickup /
-// completion immediately instead of on the next poll tick. Callers re-check
-// the DB after every wake, so a stray or duplicate signal is harmless.
 func sleepOrSignal(ctx workflow.Context, ch workflow.ReceiveChannel, d time.Duration) {
 	sel := workflow.NewSelector(ctx)
 	if ch != nil {
@@ -71,7 +59,7 @@ func sleepOrSignal(ctx workflow.Context, ch workflow.ReceiveChannel, d time.Dura
 	sel.Select(ctx)
 }
 
-// PickupSignalName / TerminalSignalName are the distinct wake-signal names for
+// why: PickupSignalName / TerminalSignalName are the distinct wake-signal names for
 // the two poll edges of a process_job workflow. They MUST be distinct: a fast
 // adhoc job reaches terminal while the pickup loop is still selecting, so a
 // shared name lets the pickup loop consume the terminal signal and forces the
@@ -106,12 +94,6 @@ func (s *Signal) WithParams(params *signal.Params) {
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
-	// Cheap field checks only. The runner-exists / active-process / job-exists
-	// checks that used to live here are redundant: Execute performs the exact
-	// same three activity fetches (Get → HasActiveRunnerProcess → GetJob) and
-	// the same NotAttempted status updates on failure. Duplicating them here
-	// added ~3 serial Temporal round-trips to the front edge of every job, so
-	// we defer the real validation to Execute.
 	if s.RunnerID == "" {
 		return errors.New("runner_id is required")
 	}
@@ -121,9 +103,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	return nil
 }
 
-// InlineValidate marks process_job's Validate as inline and activity-free
-// (the runner/active-process/job checks moved to Execute), so the handler can
-// skip the validate-phase abandonment stamps on the dispatch hot path.
 func (s *Signal) InlineValidate() bool {
 	return true
 }
@@ -146,14 +125,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	runner := execData.Runner
 	runnerJob := execData.Job
 
-	// Check if runner has any active process
 	if !execData.HasActiveProcess {
 		if runnerJob.Status == app.RunnerJobStatusCancelled && lifecycleCompositeErrorsEnabled(ctx) {
 			l.Info("job was already cancelled, not attempting")
 			return nil
 		}
-		// A disabled runner has no processes by design, so report that rather
-		// than the generic unhealthy-runner reason.
 		reason := joberrors.LifecycleFailureReasonNoActiveRunner
 		description := "no active runner process available"
 		if runner != nil && runner.Status == app.RunnerStatusDisabled {
@@ -207,7 +183,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// Persist only the final retryable lifecycle failure so a later attempt
+	// why: Persist only the final retryable lifecycle failure so a later attempt
 	// cannot leave an obsolete reason on the job.
 	var lastLifecycleFailureReason joberrors.LifecycleFailureReason
 	for i := 0; i < runnerJob.MaxExecutions; i++ {
@@ -235,12 +211,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			return nil
 		}
 	}
-
-	// All execution attempts are exhausted. If the final attempt ended in a
-	// retryable-but-non-terminal state (e.g. the execution was cancelled by a
-	// runner restart with no retries remaining), no terminal job status was
-	// written. Leaving the job non-terminal makes downstream workflows read it
-	// as success, so mark it failed.
 	finalStatus, err := activities.AwaitGetJobStatusByID(ctx, s.JobID)
 	if err != nil {
 		return err
@@ -302,10 +272,6 @@ func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bo
 	var runnerStatus app.RunnerStatus
 
 	if job.Group != app.RunnerJobGroupOperations {
-		// Check the runner's health before sleeping. The common case is that the
-		// runner is already active when the job is enqueued, so checking first
-		// lets us proceed with zero wait instead of always burning a full
-		// pollPeriod on a bare workflow.Sleep before the first status check.
 		for attempt := 0; ; attempt++ {
 			runnerStatus, err = activities.AwaitGetRunnerStatusByID(ctx, job.RunnerID)
 			if err != nil {
@@ -317,7 +283,7 @@ func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bo
 			}
 			etags["runner_status"] = string(runnerStatus)
 
-			// A disabled runner will never become active on its own, so fail
+			// why: A disabled runner will never become active on its own, so fail
 			// now instead of burning the available timeout waiting for it.
 			if runnerStatus == app.RunnerStatusDisabled {
 				l.Warn("runner is disabled, not waiting for it to become active")
@@ -371,15 +337,10 @@ func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bo
 				return true, false, joberrors.LifecycleFailureReasonRunnerUnhealthy, nil
 			}
 
-			// Runner not yet healthy — wait out a poll tick before re-checking.
 			workflow.Sleep(ctx, pollPeriod(attempt))
 		}
 	}
 
-	// poll until the job is picked up, and an execution exists. The
-	// CreateRunnerJobExecution handler signals this channel the moment the
-	// runner reserves the job, so we usually wake on the first tick instead
-	// of sleeping out a full pollPeriod.
 	pickupCh := workflow.GetSignalChannel(ctx, PickupSignalName(job.ID))
 	for attempt := 0; !jobExecutionFound; attempt++ {
 		sleepOrSignal(ctx, pickupCh, pollPeriod(attempt))
@@ -445,9 +406,6 @@ func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bo
 	return true, true, "", nil
 }
 
-// executionFailureDescription returns the runner-reported error from the
-// execution's StatusV2.StatusHumanDescription when present, falling back to a
-// generic label (e.g. "failed") when the runner didn't report one.
 func executionFailureDescription(ctx workflow.Context, jobExecutionID, fallback string) string {
 	execution, err := activities.AwaitGetJobExecution(ctx, activities.GetJobExecutionRequest{
 		JobExecutionID: jobExecutionID,
@@ -493,10 +451,6 @@ func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (
 		return false, "", fmt.Errorf("error fetching latest job execution: %w", err)
 	}
 
-	// poll the job execution, until it's completed. The UpdateRunnerJobExecution
-	// handler signals this channel when the runner reports a terminal status, so
-	// finalize (stamping finished_at) happens on the request we already receive
-	// instead of waiting out the next poll tick.
 	completeCh := workflow.GetSignalChannel(ctx, TerminalSignalName(job.ID))
 	executionTimeout := jobExecution.CreatedAt.Add(job.ExecutionTimeout)
 	for attempt := 0; ; attempt++ {
@@ -504,8 +458,6 @@ func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (
 
 		now := workflow.Now(ctx)
 
-		// when the overall timeout is hit, we mark both the runner job and execution as timed out
-		// this is not retryable.
 		if now.After(job.CreatedAt.Add(job.OverallTimeout)) {
 			l.Error("overall timeout reached")
 			s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "overall timeout")
@@ -526,8 +478,6 @@ func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (
 			return false, joberrors.LifecycleFailureReasonOverallTimeout, nil
 		}
 
-		// when the execution timeout is hit, we mark both the runner job and execution as timed out
-		// this is retryable
 		if now.After(executionTimeout) {
 			l.Error("execution timeout reached")
 			s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "execution timeout")
@@ -548,15 +498,10 @@ func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (
 			return true, joberrors.LifecycleFailureReasonExecutionTimeout, nil
 		}
 
-		// if the runner was started after this execution was created, we mark the execution as in error
-		// this is retryable
 		hb, err := activities.AwaitGetMostRecentHeartBeatRequestByRunnerID(ctx, job.RunnerID)
 		if err != nil {
 			return false, "", err
 		}
-		// No beat in the lookback window means the runner is unhealthy, not that the
-		// read failed. Erroring surfaced an opaque SIGNAL_FAILED and burned the step's
-		// auto-retries without recording a reason.
 		if hb == nil {
 			l.Error("no heart beats found for runner during job")
 			s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, "no runner heart beats found during job")
@@ -576,7 +521,6 @@ func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (
 			return true, joberrors.LifecycleFailureReasonRunnerUnhealthy, nil
 		}
 
-		// if the runner is restarted, we want to add a buffer before canceling any jobs in flight
 		maxAliveTime := jobExecution.CreatedAt.Add(time.Minute)
 		if hb.StartedAt.After(maxAliveTime) {
 			l.Error(
@@ -612,7 +556,6 @@ func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (
 			return true, "", nil
 		}
 
-		// if the runner has no active process, the job execution is marked as failed.
 		processResp, err := activities.AwaitHasActiveRunnerProcess(ctx, activities.HasActiveRunnerProcessRequest{
 			RunnerID: job.RunnerID,
 		})

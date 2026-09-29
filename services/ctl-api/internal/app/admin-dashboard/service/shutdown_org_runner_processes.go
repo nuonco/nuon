@@ -10,15 +10,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// ShutdownOrgRunnerProcesses creates a shutdown record for the most recent
-// runner process per runner + process_type combination for the given org.
-// The runner's shutdown poller will pick up the record and execute the shutdown.
 func (s *service) ShutdownOrgRunnerProcesses(c *gin.Context) {
 	orgID := c.Param("id")
 	ctx := c.Request.Context()
 	ctx = cctx.SetOrgIDContext(ctx, orgID)
 
-	// Get all active/offline runner processes for the org, most recent first.
 	var processes []app.RunnerProcess
 	if res := s.db.WithContext(ctx).
 		Where("org_id = ?", orgID).
@@ -30,7 +26,6 @@ func (s *service) ShutdownOrgRunnerProcesses(c *gin.Context) {
 		return
 	}
 
-	// Keep only the most recent process per runner+type.
 	type key struct {
 		RunnerID string
 		Type     app.RunnerProcessType
@@ -46,10 +41,6 @@ func (s *service) ShutdownOrgRunnerProcesses(c *gin.Context) {
 		}
 	}
 
-	// Resolve a real account ID for the created_by_id FK. The admin dashboard
-	// middleware sets "admin-dashboard" which isn't a real account. Fall back
-	// to the process's own created_by_id so we have a valid FK reference,
-	// and set it on the context so BeforeCreate hooks pick it up.
 	createdByID, _ := cctx.AccountIDFromContext(ctx)
 	if createdByID == "" || createdByID == "admin-dashboard" {
 		if len(latest) > 0 {

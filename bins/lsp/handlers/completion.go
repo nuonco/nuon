@@ -17,7 +17,6 @@ func TextDocumentCompletion(ctx *glsp.Context, params *protocol.CompletionParams
 	pos := params.Position
 	log.Infof("📝 Completion requested at %s:%d:%d", uri, pos.Line, pos.Character)
 
-	// Get the document text
 	openDocumentsMutex.RLock()
 	text, ok := openDocuments[uri]
 	openDocumentsMutex.RUnlock()
@@ -53,17 +52,14 @@ func TextDocumentCompletion(ctx *glsp.Context, params *protocol.CompletionParams
 		}
 	}
 
-	// Parse TOML using hybrid parser
 	cursorPos := tomlparser.Position{Line: int(pos.Line), Character: int(pos.Character)}
 	doc := tomlparser.ParseTomlWithCursor(text, cursorPos)
 	log.Debugf("✅ TOML parsed, %d tables, %d keys found", len(doc.Tables), len(doc.Keys))
 
-	// Get context at cursor position
 	tomlCtx := doc.ContextAt(cursorPos)
 	log.Infof("📍 Context detected - Table: '%s', CurrentKey: '%s', KeyPath: %v",
 		tomlCtx.CurrentTable, tomlCtx.KeyOnLine, tomlCtx.KeyPath)
 
-	// Detect schema type from document
 	schemaType := models.DetectSchemaTypeForDocument(text, string(uri))
 	if schemaType == "" {
 		log.Warningf("⚠️  No schema type detected, returning no completions")
@@ -71,7 +67,6 @@ func TextDocumentCompletion(ctx *glsp.Context, params *protocol.CompletionParams
 	}
 	log.Debugf("✅ Detected schema type: %s", schemaType)
 
-	// Get schema for detected type
 	schema, err := models.LookupSchema(schemaType)
 	if err != nil {
 		log.Errorf("❌ Schema lookup error: %v", err)
@@ -82,14 +77,11 @@ func TextDocumentCompletion(ctx *glsp.Context, params *protocol.CompletionParams
 		return nil, nil
 	}
 
-	// Build hierarchical property map from schema
 	hierarchicalMap, _ := mappers.BuildPropertyMap(schema)
 	log.Debugf("✅ Built hierarchical property map with %d table levels", len(hierarchicalMap))
 
-	// Build completions
 	var items []protocol.CompletionItem
 
-	// Determine if cursor is on a key or value
 	lines := strings.Split(text, "\n")
 	currentLine := ""
 	if int(pos.Line) < len(lines) {
@@ -100,7 +92,6 @@ func TextDocumentCompletion(ctx *glsp.Context, params *protocol.CompletionParams
 
 	if !isValue {
 		log.Infof("🔑 Building KEY completions for table '%s'", tomlCtx.CurrentTable)
-		// Key context → suggest properties from current table level
 		propertiesAtLevel, ok := hierarchicalMap[tomlCtx.CurrentTable]
 		if !ok || len(propertiesAtLevel) == 0 {
 			log.Warningf("⚠️  No properties found for table '%s'", tomlCtx.CurrentTable)
@@ -129,8 +120,6 @@ func TextDocumentCompletion(ctx *glsp.Context, params *protocol.CompletionParams
 		}
 	} else if tomlCtx.KeyOnLine != "" {
 		log.Infof("💡 Building VALUE completions for key '%s' in table '%s'", tomlCtx.KeyOnLine, tomlCtx.CurrentTable)
-		// Value context → suggest enum/examples/defaults for that key
-		// Look up the property in the current table level
 		propertiesAtLevel, ok := hierarchicalMap[tomlCtx.CurrentTable]
 		if !ok {
 			log.Warningf("⚠️  Table '%s' not found in schema", tomlCtx.CurrentTable)
@@ -138,7 +127,6 @@ func TextDocumentCompletion(ctx *glsp.Context, params *protocol.CompletionParams
 			prop, ok := propertiesAtLevel[tomlCtx.KeyOnLine]
 			if ok && prop != nil {
 				log.Debugf("✅ Found property schema for '%s' (type: %s)", tomlCtx.KeyOnLine, prop.Type)
-				// Handle boolean type suggestions
 				if prop.Type == "boolean" {
 					items = append(items,
 						protocol.CompletionItem{Label: "true"},
@@ -146,7 +134,6 @@ func TextDocumentCompletion(ctx *glsp.Context, params *protocol.CompletionParams
 					)
 					log.Infof("✅ Generated 2 boolean value completions")
 				} else if len(prop.Enum) > 0 {
-					// Handle enum values
 					isStringType := prop.Type == "string"
 					for _, enumVal := range prop.Enum {
 						value := fmt.Sprintf("%v", enumVal)
@@ -160,7 +147,6 @@ func TextDocumentCompletion(ctx *glsp.Context, params *protocol.CompletionParams
 					}
 					log.Infof("✅ Generated %d enum value completions", len(prop.Enum))
 				} else if len(prop.Examples) > 0 {
-					// Handle examples for other types
 					isStringType := prop.Type == "string"
 					for _, exampleVal := range prop.Examples {
 						value := fmt.Sprintf("%v", exampleVal)
@@ -189,7 +175,6 @@ func TextDocumentCompletion(ctx *glsp.Context, params *protocol.CompletionParams
 	}, nil
 }
 
-// small helper to get pointer of string
 func ptr(s string) *string { return &s }
 
 func buildSchemaTypeCompletions(prefix string, line uint32, replaceStart uint32, replaceEnd uint32) *protocol.CompletionList {

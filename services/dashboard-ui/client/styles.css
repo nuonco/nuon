@@ -424,10 +424,6 @@
   --gray-950: oklch(13% 0.028 261.692);
 }
 
-/* High contrast collapses each hue to a single AAA-on-blue value: the page is
-   always blue here, so a light-mode utility with no dark: counterpart still
-   lands on a readable pairing. Only -950 stays a dark fill, which is what the
-   status badge/banner surfaces use. */
 :root[data-theme='high-contrast'] {
   --hc-blue: #0000aa;
   --hc-blue-deep: #000088;
@@ -549,9 +545,6 @@
   --blue-900: #00ffff;
   --blue-950: var(--hc-blue-deep);
 
-  /* Four hues, not two: JSON only uses plain, keyword, punctuation,
-     string-expression and constant, so collapsing them all to yellow made a
-     document unreadable. Every value below clears AAA on --hc-blue-deep. */
   --code-bg: var(--hc-blue-deep);
   --code-inline-bg: rgba(255, 255, 255, 0.16);
   --syntax-plain: #ffffff;
@@ -769,7 +762,6 @@
   --bg-gradient: var(--bg-gradient-light);
   --landing-graphic: url('../../public/login-graphics/landing-graphic-light.svg');
 
-  /* Shiki reads --code-bg by name via the theme registered in client/lib/syntax. */
   --code-bg: var(--bg-code);
   --code-inline-bg: light-dark(
     rgba(29, 29, 29, 0.08),
@@ -911,7 +903,7 @@ body {
   font-variant-ligatures: no-contextual !important;
 }
 
-/* The renderer's shadow host forces color-scheme: dark, which would resolve
+/* why: The renderer's shadow host forces color-scheme: dark, which would resolve
    every light-dark() token we inherit into it to its dark branch. Outer rules
    beat :host rules, so this hands the page's scheme back. It reads the scheme
    from a variable because Lightning CSS minifies `color-scheme: inherit` to
@@ -920,8 +912,6 @@ diffs-container {
   color-scheme: var(--app-color-scheme);
 }
 
-/* Keyed off which logo renders, not the resolved mode: the landing footer
-   forces variant="dark" on a dark background even in light mode. */
 :root:not([data-theme='classic']) .logo-glyph-light {
   fill: var(--cool-grey-950);
 }

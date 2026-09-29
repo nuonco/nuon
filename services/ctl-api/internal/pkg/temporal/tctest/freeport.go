@@ -27,9 +27,6 @@ import (
 	"net"
 )
 
-// Modified from Temporalite which itself modified from
-// https://github.com/phayes/freeport/blob/95f893ade6f232a5f1511d61735d89b1ae2df543/freeport.go
-
 func newPortProvider() *portProvider {
 	return &portProvider{}
 }
@@ -38,8 +35,6 @@ type portProvider struct {
 	listeners []*net.TCPListener
 }
 
-// GetFreePort asks the kernel for a free open port that is ready to use.
-// Returns the interface's IP and the free port.
 func (p *portProvider) GetFreePort() (string, int, error) {
 	addr, err := net.ResolveTCPAddr("tcp", "127.0.0.1:0")
 	if err != nil {

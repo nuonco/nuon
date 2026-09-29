@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/pkg/terraform/variables"
 )
 
-// Package vars exposes an archive that loads a terraform archive from an vars artifact
 var _ variables.Variables = (*auth)(nil)
 
 type auth struct {

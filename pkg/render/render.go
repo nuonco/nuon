@@ -11,8 +11,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// RenderWithWarnings walks through the template variable by variable and will return well formed errors for any
-// partial that was "unrenderable".
 func RenderWithWarnings(inputVal string, data map[string]interface{}) (string, []error, error) {
 	if inputVal == "" {
 		return "", nil, nil

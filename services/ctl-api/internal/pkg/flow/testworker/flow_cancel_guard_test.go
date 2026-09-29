@@ -11,8 +11,6 @@ import (
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
-// Cancelled workflows are terminal: each guard fires an action at one and asserts nothing revives it.
-
 func (e *FlowTestSuite) setupCancelledParkedFlow(ctx context.Context) (*app.Workflow, string) {
 	ownerID, ownerType := newTestOwner()
 	steps := []app.WorkflowStep{

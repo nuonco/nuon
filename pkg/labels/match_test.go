@@ -118,8 +118,6 @@ func TestSubscriptionMatch_Matches(t *testing.T) {
 }
 
 func TestTargetMatch_matches_EmptyIDShortCircuits(t *testing.T) {
-	// Even the permissive empty TargetMatch{} must reject id == "" — otherwise a
-	// component-only event would falsely satisfy an installs filter.
 	tm := &TargetMatch{}
 	if tm.matches("", Labels{"env": "prod"}) {
 		t.Errorf("empty TargetMatch should not match empty id")

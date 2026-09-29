@@ -32,7 +32,7 @@ func TestCloudPlatformMetadataRoundTrips(t *testing.T) {
 	}
 }
 
-// The driver may hand back either []byte or string depending on the connection;
+// why: The driver may hand back either []byte or string depending on the connection;
 // ComponentHealthContext.Scan silently no-ops on string, which we must not repeat.
 func TestCloudPlatformMetadataScanAcceptsStringAndBytes(t *testing.T) {
 	const raw = `{"target_account_id":"123456789012"}`
@@ -94,7 +94,7 @@ func TestPhoneHomeAuthRoundTrips(t *testing.T) {
 	}
 }
 
-// The whole reason PhoneHomeAuth is its own column: it must persist to jsonb but never
+// why: The whole reason PhoneHomeAuth is its own column: it must persist to jsonb but never
 // reach the wire. A nested json:"-" field would have failed both. Only the Status()
 // projection is serialized, under the phone_home_auth name.
 func TestPhoneHomeAuthPersistsButIsNotSerialized(t *testing.T) {
@@ -163,7 +163,6 @@ func TestPhoneHomeAuthPersistsButIsNotSerialized(t *testing.T) {
 		t.Errorf("cloud_platform_metadata did not serialize: %#v", decoded)
 	}
 
-	// ...and it still persists to the column.
 	value, err := install.PhoneHomeAuth.Value()
 	if err != nil {
 		t.Fatalf("PhoneHomeAuth.Value: %v", err)
@@ -195,7 +194,6 @@ func TestPhoneHomeAuthStatusOmittedWhenUnprovisioned(t *testing.T) {
 		t.Error("phone_home_auth must be absent until credentials are provisioned")
 	}
 
-	// A rejection recorded before provisioning leaves CreatedAt zero.
 	rejected := time.Now().UTC()
 	body, err = json.Marshal((&PhoneHomeAuth{LastRejectedAt: &rejected}).Status())
 	if err != nil {

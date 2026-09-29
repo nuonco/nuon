@@ -89,7 +89,6 @@ func (a *PermissionsConfig) Validate() error {
 		return errors.New("permissions config is required")
 	}
 
-	// validate duplicate role with same name
 	roleNames := make(map[string]bool)
 	for _, role := range a.Roles {
 		if _, ok := roleNames[role.Name]; ok {
@@ -127,8 +126,6 @@ func (a *PermissionsConfig) allRoles() []*AppAWSIAMRole {
 	roles = append(roles, a.ProvisionRole, a.MaintenanceRole, a.DeprovisionRole)
 	roles = append(roles, a.CustomRoles...)
 	if len(a.Roles) > 0 {
-		// Directory parse copies into the typed fields; Roles still holds the
-		// same pointers. Deduplicate by identity so we don't double-check.
 		seen := make(map[*AppAWSIAMRole]struct{}, len(roles))
 		for _, role := range roles {
 			if role != nil {

@@ -9,14 +9,6 @@ import (
 
 const bicepFileExtension = ".bicep"
 
-// ValidateAzureCustomNestedStacks rejects azure-bicep custom nested stacks whose
-// template is Bicep source instead of the compiled ARM JSON that ARM's
-// templateLink can actually fetch. Called from the CLI validation path and from
-// the server-side config builder, so a config that bypasses the CLI — a direct
-// API sync or a VCS branch run — is rejected the same way.
-//
-// Contents is the template body resolved from template_url; it is empty on call
-// paths that have not fetched it yet, and the check is skipped there.
 func ValidateAzureCustomNestedStacks(stackType string, stacks []CustomNestedStack) error {
 	if stackType != "azure-bicep" {
 		return nil

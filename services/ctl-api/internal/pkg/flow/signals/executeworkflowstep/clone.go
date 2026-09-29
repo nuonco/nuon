@@ -14,10 +14,6 @@ import (
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// cloneWorkflowStep creates a clone of the step for retry.
-// If the step's signal implements SignalWithCloneSteps, multiple steps are created
-// (e.g. a plan step followed by an apply step). Otherwise a single clone is created.
-// The clone gets Idx+1 so it sorts immediately after the original step.
 func (s *Signal) cloneWorkflowStep(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) error {
 	newRetryIndex := step.RetryIndex + 1
 
@@ -31,7 +27,6 @@ func (s *Signal) cloneWorkflowStep(ctx workflow.Context, step *app.WorkflowStep,
 		return fmt.Errorf("step %s has exceeded maximum retry count of %d", step.ID, maxRetries)
 	}
 
-	// If the signal implements Clone(), use it for retry step creation.
 	if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
 		if cl, ok := step.QueueSignal.Signal.(signal.SignalWithClone); ok {
 			return s.createCloneSteps(ctx, step, flw, cl, newRetryIndex)
@@ -72,7 +67,6 @@ func (s *Signal) cloneWorkflowStep(ctx workflow.Context, step *app.WorkflowStep,
 	return err
 }
 
-// createCloneSteps builds steps from a SignalWithClone implementation.
 func (s *Signal) createCloneSteps(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, cl signal.SignalWithClone, retryIndex int) error {
 	defs, err := cl.Clone(ctx, removeRetryFromStepName(step.Name))
 	if err != nil {

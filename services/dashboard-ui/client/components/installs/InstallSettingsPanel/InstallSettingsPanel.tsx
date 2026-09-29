@@ -29,7 +29,6 @@ export const InstallSettingsPanel = () => {
       return
     }
     if (openIdRef.current) return
-    // Defer so this runs after the pathname-change panel clear in SurfacesProvider
     const timer = setTimeout(() => {
       openIdRef.current = addPanel(
         <Panel

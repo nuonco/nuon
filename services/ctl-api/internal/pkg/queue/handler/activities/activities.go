@@ -36,10 +36,6 @@ func New(params Params) *Activities {
 	}
 }
 
-// handlerStartOperation builds a WithStartWorkflowOperation for a handler workflow.
-// This ensures the handler workflow is running when we send an update to it.
-// If the handler was terminated, this will start a new one; if it's already running,
-// it will use the existing one.
 func (a *Activities) handlerStartOperation(workflowID string, queueID string, queueSignalID string, taskQueue string) tclient.WithStartWorkflowOperation {
 	req := handler.HandlerRequest{
 		QueueID:       queueID,

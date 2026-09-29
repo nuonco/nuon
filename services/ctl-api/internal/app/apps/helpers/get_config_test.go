@@ -53,8 +53,6 @@ func (s *GetLatestActiveAppConfigTestSuite) TearDownSuite() {
 	s.app.RequireStop()
 }
 
-// seedAppConfig persists a config with an explicit ID, created_at and status so the
-// test controls the ordering dimensions independently.
 func (s *GetLatestActiveAppConfigTestSuite) seedAppConfig(ctx context.Context, id, appID string, createdAt time.Time, status app.AppConfigStatus) *app.AppConfig {
 	cfg := &app.AppConfig{
 		ID:         id,
@@ -68,8 +66,6 @@ func (s *GetLatestActiveAppConfigTestSuite) seedAppConfig(ctx context.Context, i
 	return cfg
 }
 
-// Ensure we return only the newest active config, not simply the smallest, or the newest.
-// This is to guard against regressions in the ordering of app config version.
 func (s *GetLatestActiveAppConfigTestSuite) TestReturnsNewestActiveConfigNotSmallestID() {
 	ctx := context.Background()
 	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
@@ -80,7 +76,6 @@ func (s *GetLatestActiveAppConfigTestSuite) TestReturnsNewestActiveConfigNotSmal
 
 	oldest := s.seedAppConfig(ctx, "app00000000000000000000000", testApp.ID, now.Add(-2*time.Hour), app.AppConfigStatusActive)
 	newest := s.seedAppConfig(ctx, "appzzzzzzzzzzzzzzzzzzzzzz0", testApp.ID, now.Add(-1*time.Hour), app.AppConfigStatusActive)
-	// A newer non-active config must never win: the status filter still applies.
 	s.seedAppConfig(ctx, "appzzzzzzzzzzzzzzzzzzzzzz1", testApp.ID, now, app.AppConfigStatusError)
 
 	got, err := s.deps.Helpers.GetLatestActiveAppConfig(ctx, testApp.ID)

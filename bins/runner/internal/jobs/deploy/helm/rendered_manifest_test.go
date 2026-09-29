@@ -7,9 +7,6 @@ import (
 	release "helm.sh/helm/v4/pkg/release/v1"
 )
 
-// A drift check renders the chart with PlanOnly, so the kinds are knowable
-// without applying — that is what lets a component pick up its custom resource
-// kinds without being redeployed.
 func TestRenderedManifestUsesPlanOutput(t *testing.T) {
 	const applied = "kind: NodePool\n"
 	const planned = "kind: EC2NodeClass\n"

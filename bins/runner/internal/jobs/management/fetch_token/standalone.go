@@ -23,10 +23,6 @@ type FetchTokenResult struct {
 	TokenPath  string `json:"token_path,omitempty"`
 }
 
-// FetchToken authenticates using cloud instance credentials and returns the token without writing to disk.
-// It detects the cloud provider from the CLOUD_PROVIDER env var, falling back to auto-detection.
-// For AWS, authMethod selects the authentication strategy: "" / "iid" (default) for Instance
-// Identity Document (requires runnerID), or "sts" for presigned STS requests.
 func FetchToken(ctx context.Context, apiClient nuonrunner.Client, authMethod, runnerID string) (*FetchTokenResult, error) {
 	provider := detectCloudProvider(ctx)
 	switch provider {
@@ -44,7 +40,6 @@ func FetchToken(ctx context.Context, apiClient nuonrunner.Client, authMethod, ru
 	}
 }
 
-// FetchTokenAzure authenticates with Azure managed identity and returns the token without writing to disk.
 func FetchTokenAzure(ctx context.Context, apiClient nuonrunner.Client, runnerID string) (*FetchTokenResult, error) {
 	f := &pkgazure.Fetcher{RunnerID: runnerID}
 	result, err := f.FetchToken(ctx, apiClient)
@@ -59,7 +54,6 @@ func FetchTokenAzure(ctx context.Context, apiClient nuonrunner.Client, runnerID 
 	}, nil
 }
 
-// FetchAndStoreToken authenticates using cloud instance credentials and writes the token to disk.
 func FetchAndStoreToken(ctx context.Context, apiClient nuonrunner.Client, authMethod, runnerID string) (*FetchTokenResult, error) {
 	result, err := FetchToken(ctx, apiClient, authMethod, runnerID)
 	if err != nil {
@@ -69,7 +63,6 @@ func FetchAndStoreToken(ctx context.Context, apiClient nuonrunner.Client, authMe
 	return storeToken(result)
 }
 
-// FetchAndStoreTokenAzure authenticates with Azure managed identity and writes the token to disk.
 func FetchAndStoreTokenAzure(ctx context.Context, apiClient nuonrunner.Client, runnerID string) (*FetchTokenResult, error) {
 	result, err := FetchTokenAzure(ctx, apiClient, runnerID)
 	if err != nil {
@@ -85,7 +78,7 @@ func storeToken(result *FetchTokenResult) (*FetchTokenResult, error) {
 	}
 
 	result.TokenPath = token.Filename
-	result.Token = "" // don't leak the token in the result when stored to disk
+	result.Token = "" // why: don't leak the token in the result when stored to disk
 	return result, nil
 }
 
@@ -98,7 +91,6 @@ func detectCloudProvider(ctx context.Context) string {
 		return "gcp"
 	}
 
-	// default to AWS for backward compatibility
 	return "aws"
 }
 
@@ -167,14 +159,11 @@ func fetchTokenGCP(ctx context.Context, apiClient nuonrunner.Client) (*FetchToke
 		apiURL = "https://runner.nuon.co"
 	}
 
-	// Step 1: Get identity token (JWT) - proves who we are (project, SA, instance)
 	identityToken, err := pkggcp.GetIdentityToken(ctx, apiURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get GCP identity token: %w", err)
 	}
 
-	// Step 2: Build metadata request - lets server independently read our instance
-	// metadata (including nuon_runner_id). Mirrors the AWS presigned DescribeTags pattern.
 	metadataReq, err := pkggcp.BuildMetadataRequest(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build GCP metadata request: %w", err)

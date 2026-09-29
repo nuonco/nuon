@@ -22,26 +22,19 @@ import (
 )
 
 type cli struct {
-	// extraProviders are appended to the install-mode providers. Used by
-	// run-local (dev) to also register the image-actions loop in-process so
-	// image-backed actions can be exercised without a separate mng process.
 	extraProviders []fx.Option
 }
 
 func (c *cli) commonProviders() []fx.Option {
-	// providers for both runner modes: mng and (org |install)
 	return []fx.Option{
 		fx.Provide(runnerconfig.NewConfig),
 		fx.Provide(validator.New),
-		// logging and error handling
 		fx.Provide(slog.AsSystemProvider(slog.NewSystemProvider)),
 		fx.Provide(log.AsSystemLogger(log.NewSystem)),
 		fx.Provide(log.AsDevLogger(log.NewDev)),
 		fx.WithLogger(log.NewFXLog),
 		fx.Provide(errs.NewRecorder),
-		// auth: fetch token via IMDS (or use existing token from env)
 		fx.Provide(auth.New),
-		// api client and settings (depend on auth token)
 		fx.Provide(api.New),
 		fx.Provide(settings.New),
 		fx.Provide(heartbeater.New),
@@ -49,8 +42,6 @@ func (c *cli) commonProviders() []fx.Option {
 		fx.Provide(process.NewShutdownPoller),
 		fx.Provide(drain.New),
 		fx.Provide(metrics.New),
-		// shared cluster access + terraform state captured by deploy handlers for
-		// the component-health engine
 		fx.Provide(componenthealth.NewClusterProvider),
 		fx.Provide(componenthealth.NewTerraformProvider),
 		fx.Provide(componenthealth.NewManifestKindsProvider),
@@ -58,7 +49,6 @@ func (c *cli) commonProviders() []fx.Option {
 }
 
 func (c *cli) providers() []fx.Option {
-	// providers for (org |install) mode
 	return append(
 		c.commonProviders(),
 		[]fx.Option{
@@ -66,8 +56,6 @@ func (c *cli) providers() []fx.Option {
 			fx.Provide(ociresolve.New),
 			fx.Provide(registry.New),
 
-			// NOTE(jm): we plan to deprecate the default loggers, so each logger is forced to be depended on via
-			// name.
 			fx.Provide(log.NewSystem),
 		}...,
 	)

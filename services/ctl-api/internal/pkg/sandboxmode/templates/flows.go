@@ -2,7 +2,6 @@ package templates
 
 func flowTemplates() []FlowTemplate {
 	return []FlowTemplate{
-		// Terraform flows
 		{
 			Key:         "terraform-noop",
 			Name:        "Terraform noop",
@@ -34,7 +33,6 @@ func flowTemplates() []FlowTemplate {
 			},
 		},
 
-		// Helm flows
 		{
 			Key:         "helm-noop",
 			Name:        "Helm noop",
@@ -53,7 +51,6 @@ func flowTemplates() []FlowTemplate {
 			},
 		},
 
-		// Kubernetes flows
 		{
 			Key:         "kube-noop",
 			Name:        "Kubernetes noop",
@@ -72,7 +69,6 @@ func flowTemplates() []FlowTemplate {
 			},
 		},
 
-		// Pulumi flows
 		{
 			Key:         "pulumi-noop",
 			Name:        "Pulumi noop",
@@ -91,7 +87,6 @@ func flowTemplates() []FlowTemplate {
 			},
 		},
 
-		// Resource-specific terraform flows
 		{
 			Key:         "terraform-rds",
 			Name:        "Terraform RDS Postgres",
@@ -153,7 +148,6 @@ func flowTemplates() []FlowTemplate {
 			},
 		},
 
-		// Cross-type flows
 		{
 			Key:         "full-success-fast",
 			Name:        "All success (fast)",

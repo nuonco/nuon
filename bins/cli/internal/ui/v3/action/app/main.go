@@ -29,7 +29,6 @@ const (
 
 type model struct {
 	log *common.Logger
-	// common/base
 	ctx context.Context
 	cfg *config.Config
 	api nuon.Client
@@ -39,7 +38,6 @@ type model struct {
 	installID        string
 	actionWorkflowID string
 
-	// track window dimensions
 	width  int
 	height int
 
@@ -87,39 +85,27 @@ func (m *model) setView(view ActionView) {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-	// var cmds []tea.Cmd
 
-	// these cases are the only cases this app handles
-	// for all other cases , we just pass the msg to the active view
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		// Track window dimensions in parent
 		m.width = msg.Width
 		m.height = msg.Height
 
 	case tea.KeyPressMsg:
 		switch {
 		case key.Matches(msg, m.keys.Quit, m.keys.Esc):
-			if m.view == Run { // if we are in a run
-				if m.runView.ExpandedStepIndex() == -1 { // if there are no expanded/selected  steps
+			if m.view == Run {
+				if m.runView.ExpandedStepIndex() == -1 {
 					m.log.Info("switching to detail view")
-					// m.detailView = detail.New(
-					// 	m.ctx,
-					// 	m.cfg,
-					// 	m.api,
-					// 	m.installID,
-					// 	m.actionWorkflowID,
-					// )
 					m.setView(Detail)
-					// Send resize message to new detail view so it has correct dimensions
 					resizeCmd := func() tea.Msg {
 						return tea.WindowSizeMsg{Width: m.width, Height: m.height}
 					}
 					return m, tea.Batch(m.detailView.Init(), resizeCmd)
-				} else { // if a step IS expanded
+				} else {
 					m.runView, cmd = m.runView.Update(msg)
 				}
-			} else { // if we are in the detail view, go ahead and quit
+			} else {
 				return m, tea.Quit
 			}
 		}
@@ -128,7 +114,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.log.Info("switching to run view", zap.String("run_id", msg.RunID))
 		m.runView = run.New(m.ctx, m.cfg, m.api, m.installID, m.actionWorkflowID, msg.RunID)
 		m.setView(Run)
-		// Send resize message to new run view so it has correct dimensions
 		resizeCmd := func() tea.Msg {
 			return tea.WindowSizeMsg{Width: m.width, Height: m.height}
 		}

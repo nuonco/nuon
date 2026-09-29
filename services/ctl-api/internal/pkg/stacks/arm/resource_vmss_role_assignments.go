@@ -1,18 +1,5 @@
 package arm
 
-// runnerGrantContext is how a runner grant addresses the VMSS system identity and
-// what it waits on.
-//
-// At resource-group scope the grants sit in the root beside the runner deployment
-// and read its output directly. Inside runnerGrantsDeployment they cannot: inner
-// expression evaluation hides the root, so the principal arrives as a parameter
-// and the wrapper holds the dependency on the runner.
-//
-// Everything else in these assignments — the guid() names and the Key Vault
-// scope — is left alone on purpose. Inside the wrapper resourceGroup() resolves to
-// the install group again, so those expressions are already correct, and rewriting
-// a name would change the assignment GUID and fail redeploys with
-// RoleAssignmentExists.
 type runnerGrantContext struct {
 	principalID string
 	dependsOn   []string
@@ -28,8 +15,6 @@ func runnerGrantContextFor(scope armScope) runnerGrantContext {
 	}
 }
 
-// apply sets the principal and, only when there is one, the dependency. An empty
-// dependsOn key would be noise inside the wrapper.
 func (c runnerGrantContext) apply(assignment map[string]any) map[string]any {
 	assignment["properties"].(map[string]any)["principalId"] = c.principalID
 	if len(c.dependsOn) > 0 {
@@ -39,7 +24,7 @@ func (c runnerGrantContext) apply(assignment map[string]any) map[string]any {
 }
 
 func (t *Templates) getKeyVaultRoleAssignment(ctx runnerGrantContext) map[string]any {
-	// Resource-group scope deliberately: this assignment is either in the root at
+	// why: Resource-group scope deliberately: this assignment is either in the root at
 	// resource-group scope or inside runnerGrantsDeployment, and the name embeds this
 	// in a guid() that must not change.
 	kvName := armScope{}.keyVaultNameInner()
@@ -88,10 +73,6 @@ func (t *Templates) getVMSSRoleAssignments(ctx runnerGrantContext) []any {
 	}
 }
 
-// getACRRoleAssignments grants the runner's system identity pull/push on the
-// install's registry at resource-group scope. Image sync runs as the ambient
-// identity (see pkg/azure/acr), so this stays on the system identity even when
-// per-operation identities hold all other deploy grants.
 func (t *Templates) getACRRoleAssignments(ctx runnerGrantContext) []any {
 	vmssRef := "resourceId('Microsoft.Compute/virtualMachineScaleSets', format('{0}-vmss', parameters('nuonInstallID')))"
 

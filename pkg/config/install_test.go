@@ -407,16 +407,13 @@ func TestInstallRoundTrip(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Marshal to TOML
 			marshaled, err := toml.Marshal(tc.install)
 			assert.Nil(t, err)
 
-			// Unmarshal back
 			var result Install
 			err = toml.Unmarshal(marshaled, &result)
 			assert.Nil(t, err)
 
-			// Verify all fields match
 			assert.Equal(t, tc.install.Name, result.Name)
 			assert.Equal(t, tc.install.ApprovalOption, result.ApprovalOption)
 
@@ -427,8 +424,6 @@ func TestInstallRoundTrip(t *testing.T) {
 
 			assert.Equal(t, len(tc.install.InputGroups), len(result.InputGroups))
 			for i, expectedGroup := range tc.install.InputGroups {
-				// Group field is preserved through comments but may not round-trip
-				// through standard TOML marshal/unmarshal without custom handling
 				assert.Equal(t, expectedGroup.Inputs, result.InputGroups[i].Inputs,
 					"InputGroup[%d].Inputs mismatch", i)
 			}
@@ -565,29 +560,22 @@ enabled = "true"
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Create a temporary directory for test files
 			tempDir := t.TempDir()
 			installPath := filepath.Join(tempDir, "install.toml")
 
-			// Write the raw TOML content to a file
 			err := os.WriteFile(installPath, []byte(tc.rawTOML), 0o644)
 			require.NoError(t, err, "failed to write install file")
-
-			// Read the file back
 			fileContent, err := os.ReadFile(installPath)
 			require.NoError(t, err, "failed to read install file")
 
-			// Parse the file content using TOML unmarshal
 			var parsedInstall Install
 			err = toml.Unmarshal(fileContent, &parsedInstall)
 			require.NoError(t, err, "failed to parse install file")
 
-			// Verify the parsed install matches expectations
 			assert.Equal(t, tc.expectedInstall.Name, parsedInstall.Name, "install name mismatch")
 			assert.Equal(t, tc.expectedInstall.ApprovalOption, parsedInstall.ApprovalOption,
 				"approval option mismatch")
 
-			// Check AWS account
 			if tc.expectedInstall.AWSAccount != nil {
 				require.NotNil(t, parsedInstall.AWSAccount, "AWS account should not be nil")
 				assert.Equal(t, tc.expectedInstall.AWSAccount.Region, parsedInstall.AWSAccount.Region,
@@ -596,7 +584,6 @@ enabled = "true"
 				assert.Nil(t, parsedInstall.AWSAccount, "AWS account should be nil")
 			}
 
-			// Check input groups
 			require.Equal(t, len(tc.expectedInstall.InputGroups), len(parsedInstall.InputGroups),
 				"input group count mismatch")
 			for i, expectedGroup := range tc.expectedInstall.InputGroups {
@@ -604,11 +591,9 @@ enabled = "true"
 					"InputGroup[%d].Inputs mismatch", i)
 			}
 
-			// Run Parse() to ensure it doesn't error
 			err = parsedInstall.Parse()
 			assert.NoError(t, err, "Parse() should not error")
 
-			// Verify the file content matches what we wrote
 			assert.Equal(t, tc.rawTOML, string(fileContent), "file content should match raw TOML")
 		})
 	}
@@ -687,7 +672,7 @@ func TestInstallValidate_ComponentOverrideSyntax(t *testing.T) {
 func TestInstallComponentOverrides_EmptyNotFlattened(t *testing.T) {
 	install := Install{
 		Components: map[string]ComponentOverride{
-			"vpc": {}, // both fields empty
+			"vpc": {},
 		},
 	}
 	flat := install.FlattenedInputs()
@@ -706,7 +691,6 @@ func TestInstallDiff_OverrideRemovalDetected(t *testing.T) {
 		},
 	}
 
-	// Local config drops the vpc override entirely but keeps redis.
 	local := &Install{
 		AWSAccount: &AWSAccount{},
 		Components: map[string]ComponentOverride{
@@ -730,8 +714,6 @@ func TestInstallDiff_OverrideRemovalIgnoresNormalInputs(t *testing.T) {
 		},
 	}
 
-	// Local omits the normal "domain" input; this must NOT be treated as a
-	// removal (normal inputs are additive).
 	local := &Install{
 		AWSAccount:  &AWSAccount{},
 		InputGroups: []InputGroup{},
@@ -743,9 +725,6 @@ func TestInstallDiff_OverrideRemovalIgnoresNormalInputs(t *testing.T) {
 	assert.Equal(t, 0, d.Summary().Removed, "omitting a normal input must not be a removal")
 }
 
-// A config that declares a target account must not diff against an upstream that
-// reports the same one. If GenerateCLIInstallConfig ever stops emitting these
-// fields, `nuon apps sync` reports drift on every run and this test fails.
 func TestInstallDiff_TargetIdentifiersDoNotDrift(t *testing.T) {
 	for _, tt := range []struct {
 		name  string
@@ -782,8 +761,6 @@ func TestInstallDiff_TargetIdentifierChangeIsDetected(t *testing.T) {
 	assert.True(t, d.Summary().HasChanged, "a changed account id must be visible in the diff")
 }
 
-// The AWS branch used to dereference upstreamInstall.AWSAccount without a nil check,
-// unlike its GCP and Azure siblings.
 func TestInstallDiff_NilUpstreamAWSAccountDoesNotPanic(t *testing.T) {
 	local := &Install{AWSAccount: &AWSAccount{Region: "us-west-2", AccountID: "123456789012"}}
 	upstream := &Install{Name: "no-aws-account-block"}

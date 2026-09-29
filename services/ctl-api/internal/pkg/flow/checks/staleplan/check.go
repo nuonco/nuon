@@ -13,12 +13,7 @@ import (
 
 const DefaultThreshold = 72 * time.Hour
 
-// Check implements directive.ApprovalResponseCheck for stale plan detection.
-// It auto-retries when an approval response arrives after the threshold
-// duration since the plan was created, preventing stale plans from being applied.
 type Check struct {
-	// Threshold is the max age before a plan is considered stale.
-	// Defaults to DefaultThreshold (72h) when zero.
 	Threshold time.Duration
 
 	SetResultDirective func(ctx workflow.Context, stepID string, d directive.Step) error

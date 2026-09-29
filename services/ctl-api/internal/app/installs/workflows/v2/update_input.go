@@ -43,10 +43,6 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	}
 	steps = append(steps, step)
 
-	// Record the values and stop. Nothing is deployed against them — not the
-	// components that reference them, not the sandbox, not the update-inputs
-	// lifecycle actions — so an input can be set while the install still lacks
-	// the resources those steps would need.
 	if flw.IsInputsOnly() {
 		return sg.Result(steps), nil
 	}
@@ -89,7 +85,6 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		})
 	}
 
-	// Get all components that reference the changed inputs
 	var componentIDs []string
 	for _, comp := range getComponentsForChangedInputs(appConfig, &changedRefs, changedInputs) {
 		componentIDs = append(componentIDs, comp.ID)
@@ -108,26 +103,18 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	}
 	componentIDs = generics.UniqueSlice(componentIDs)
 
-	// Reconcile toggleable-component enable/disable transitions carried by the
-	// synthetic enabled inputs. Enabling a currently-inactive component fires
-	// its enable lifecycle around the deploy; disabling a currently-active one
-	// tears it down with its disable lifecycle; disabling something that is not
-	// deployed is a no-op skip.
 	enableComps, disableComps, skipComps, err := classifyEnabledTransitions(ctx, dg, appConfig, changedInputs)
 	if err != nil {
 		return nil, err
 	}
-	// Components transitioning to effectively-enabled must be deployed even if
+	// why: Components transitioning to effectively-enabled must be deployed even if
 	// they were not otherwise pulled in by the changed-input/dependent scan
 	// (e.g. a dependent re-enabled only because its dependency came back).
 	componentIDs = append(componentIDs, enableComps...)
 	componentIDs = generics.UniqueSlice(componentIDs)
-	// Components being torn down or skipped must not be deployed.
 	componentIDs = removeComponentIDs(componentIDs, disableComps, skipComps)
-	// Deploy dependencies before the components that depend on them.
 	componentIDs = dg.topoSort(componentIDs)
 
-	// Check if sandbox config references contain any of the changed inputs
 	sandboxNeedsReprovision, err := checkSandboxNeedsReprovision(ctx, appConfig, &changedRefs)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to check if sandbox needs reprovision")
@@ -139,7 +126,6 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	}
 	steps = append(steps, preEnableSteps...)
 
-	// If sandbox needs reprovision, add sandbox reprovision steps before component deploys
 	if sandboxNeedsReprovision {
 		sandboxSteps, err := getSandboxReprovisionSteps(ctx, dg, install, false)
 		if err != nil {
@@ -175,7 +161,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	return sg.Result(steps), nil
 }
 
-// classifyEnabledTransitions inspects the changed synthetic enabled inputs and
+// why: classifyEnabledTransitions inspects the changed synthetic enabled inputs and
 // reconciles the effective-enabled state of every directly-toggled component
 // into the transitions to act on. We act only on the components whose own
 // synthetic enabled input changed; dependents are deliberately NOT cascaded.
@@ -223,9 +209,6 @@ func classifyEnabledTransitions(ctx workflow.Context, dg *genCtx, appConfig *app
 		return nil, nil, nil, nil
 	}
 
-	// Only the directly-toggled components transition; dependents staying
-	// enabled while a dependency is disabled is an inconsistent desired state
-	// that installvalidate rejects before we ever get here.
 	affected := toggledIDs
 	installComps, err := activities.AwaitGetInstallComponentsBatch(ctx, activities.GetInstallComponentsBatchRequest{
 		InstallID:    dg.installID,
@@ -258,9 +241,6 @@ func classifyEnabledTransitions(ctx workflow.Context, dg *genCtx, appConfig *app
 	return enable, disable, skip, nil
 }
 
-// componentEnableLifecycleSteps emits the per-component enable lifecycle action
-// steps for the given components and trigger. Enable hooks never run on a
-// plan-only workflow.
 func componentEnableLifecycleSteps(ctx workflow.Context, dg *genCtx, compIDs []string, trigger app.ActionWorkflowTriggerType) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 	if dg.flw.PlanOnly {
@@ -280,9 +260,6 @@ func componentEnableLifecycleSteps(ctx workflow.Context, dg *genCtx, compIDs []s
 	return steps, nil
 }
 
-// componentDisableSteps emits teardown steps (wrapped in disable lifecycle
-// hooks) for each disabled-and-deployed component, plus a discoverable no-op
-// skip step for each disabled-but-undeployed component.
 func componentDisableSteps(ctx workflow.Context, dg *genCtx, disableComps, skipComps []string) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 
@@ -292,9 +269,6 @@ func componentDisableSteps(ctx workflow.Context, dg *genCtx, disableComps, skipC
 			continue
 		}
 
-		// Disable hooks never run on a plan-only workflow, mirroring the enable
-		// side; the teardown itself is still emitted plan-only so the plan shows
-		// the destroy.
 		if !dg.flw.PlanOnly {
 			preDisable, err := getComponentLifecycleActionsSteps(ctx, dg, &comp, app.ActionWorkflowTriggerTypePreDisableComponent)
 			if err != nil {
@@ -337,8 +311,6 @@ func componentDisableSteps(ctx workflow.Context, dg *genCtx, disableComps, skipC
 	return steps, nil
 }
 
-// removeComponentIDs returns ids with every member of the removal sets dropped,
-// preserving order.
 func removeComponentIDs(ids []string, removeSets ...[]string) []string {
 	remove := make(map[string]struct{})
 	for _, set := range removeSets {
@@ -361,10 +333,6 @@ func removeComponentIDs(ids []string, removeSets ...[]string) []string {
 func getComponentsForChangedInputs(appConfig *app.AppConfig, changedRefs *[]refs.Ref, changedInputs []string) []app.Component {
 	components := make([]app.Component, 0)
 
-	// Per-component install-level overrides (Helm values / Terraform vars) are
-	// carried as reserved synthetic inputs that target a single component by name
-	// rather than via config refs. Decode the targeted component names so editing
-	// an override redeploys exactly that component (no ref injection required).
 	overrideTargets := make(map[string]struct{})
 	for _, name := range changedInputs {
 		if _, comp, ok := config.ParseComponentOverrideInputName(name); ok {
@@ -388,9 +356,7 @@ func getComponentsForChangedInputs(appConfig *app.AppConfig, changedRefs *[]refs
 	return components
 }
 
-// checkSandboxNeedsReprovision checks if the sandbox configuration references any of the changed inputs
 func checkSandboxNeedsReprovision(ctx workflow.Context, appCfg *app.AppConfig, changedRefs *[]refs.Ref) (bool, error) {
-	// Check if any of the sandbox's references match the changed inputs
 	for _, sandboxRef := range appCfg.SandboxConfig.Refs {
 		for _, changedRef := range *changedRefs {
 			if sandboxRef.Name == changedRef.Name && sandboxRef.Type == changedRef.Type {

@@ -13,7 +13,6 @@ const SignalType signal.SignalType = "general-slack-auto-link"
 
 var _ signal.Signal = (*Signal)(nil)
 
-// Signal has no per-invocation params — the activity reads cfg.SlackAutoLink*.
 type Signal struct{}
 
 func (s *Signal) Type() signal.SignalType { return SignalType }

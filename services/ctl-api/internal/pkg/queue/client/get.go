@@ -33,11 +33,6 @@ func (c *Client) getQueue(ctx context.Context, id string) (*app.Queue, error) {
 	return &q, nil
 }
 
-// ResolveQueueByOwner picks an owner's queue without a name: its declared
-// default, or its single queue for owner types that only ever have one. It is
-// deliberately not an activity — callers name their queue. The one caller is
-// EnqueueSignalToOwner, which still sees requests with no QueueName from
-// workflows that were already in flight when this rolled out.
 func (c *Client) ResolveQueueByOwner(ctx context.Context, ownerID, ownerType string) (*app.Queue, error) {
 	if _, ok := queuenames.Default(ownerType); ok {
 		return c.GetDefaultQueueByOwner(ctx, ownerID, ownerType)

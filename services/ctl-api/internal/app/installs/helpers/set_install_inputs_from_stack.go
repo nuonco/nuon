@@ -16,18 +16,11 @@ import (
 	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
-// SetInstallInputsFromStack persists the input values a stack reported as the
-// install's current inputs. Only customer-source inputs may be set.
-//
-// Appends a row rather than mutating, and only when values differ. On a change it
-// creates an input-update workflow the caller must enqueue.
 func (h *Helpers) SetInstallInputsFromStack(ctx context.Context, install *app.Install, submitted map[string]string) (*app.InstallInputs, *app.Workflow, error) {
 	if len(submitted) == 0 {
 		return nil, nil, nil
 	}
 
-	// Pinned to the install's app config, matching the inputs POST/PATCH paths: the
-	// app's newest input config may belong to a config this install is not on.
 	inputCfg, err := h.GetPinnedAppInputConfig(ctx, install.AppID, install.AppConfigID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to get pinned app input config: %w", err)
@@ -62,13 +55,11 @@ func (h *Helpers) SetInstallInputsFromStack(ctx context.Context, install *app.In
 
 	var inputs *app.InstallInputs
 	var changed *ChangedInputsResult
-	// read-modify-append, so serialized against the other inputs writers
 	if err := h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := LockInstallInputs(ctx, tx, install.ID); err != nil {
 			return err
 		}
 
-		// newest row for the install: the one readers resolve as current
 		var latest app.InstallInputs
 		if res := tx.WithContext(ctx).
 			Where(app.InstallInputs{InstallID: install.ID}).
@@ -105,8 +96,6 @@ func (h *Helpers) SetInstallInputsFromStack(ctx context.Context, install *app.In
 		if err := tx.WithContext(ctx).Create(inputs).Error; err != nil {
 			return fmt.Errorf("unable to create install inputs: %w", err)
 		}
-		// stale_at alone is inert: the partial has to be named or state serves the
-		// old inputs
 		return h.MarkInstallStatePartialsStale(ctx, tx, install.ID, pkgstate.PartialInputs)
 	}); err != nil {
 		return nil, nil, err
@@ -115,7 +104,6 @@ func (h *Helpers) SetInstallInputsFromStack(ctx context.Context, install *app.In
 		return nil, nil, nil
 	}
 
-	// Same shape as the stack-outputs input path: deploy dependents, full update.
 	workflow, err := h.CreateAndStartInputUpdateWorkflow(
 		ctx,
 		install.ID,
@@ -128,9 +116,6 @@ func (h *Helpers) SetInstallInputsFromStack(ctx context.Context, install *app.In
 		app.WorkflowTypeInputUpdate,
 	)
 	if err != nil {
-		// A stack reports inputs while provisioning, before the runner it is
-		// creating exists. The values are already persisted; there are no
-		// dependents to deploy on a first provision.
 		if errors.Is(err, ErrNoActiveRunner) {
 			return inputs, nil, nil
 		}

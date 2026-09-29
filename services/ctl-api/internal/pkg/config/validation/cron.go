@@ -9,13 +9,9 @@ import (
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
-// ValidateCronSchedule validates a cron expression string.
-// Returns an error if the cron expression is invalid or fires more frequently
-// than validatorPkg.MinCronInterval.
-// Duplicates logic from services/ctl-api/internal/pkg/validator/cron_schedule.go
 func ValidateCronSchedule(cronExpr string) error {
 	if cronExpr == "" {
-		return nil // Empty is allowed (optional field)
+		return nil
 	}
 
 	sched, err := cron.ParseStandard(cronExpr)

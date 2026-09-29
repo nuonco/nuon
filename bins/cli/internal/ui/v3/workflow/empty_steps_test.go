@@ -40,9 +40,6 @@ func TestEmptyStepsViewReportsStatus(t *testing.T) {
 	}
 }
 
-// TestPopulateStepDetailViewNoLongerSpinsWhenFetched guards the reported bug:
-// once a workflow has been fetched, a zero-step workflow must render a terminal
-// message rather than "Loading ..." forever.
 func TestPopulateStepDetailViewNoLongerSpinsWhenFetched(t *testing.T) {
 	m := &model{
 		stepDetail: viewport.New(viewport.WithWidth(100), viewport.WithHeight(20)),
@@ -56,7 +53,6 @@ func TestPopulateStepDetailViewNoLongerSpinsWhenFetched(t *testing.T) {
 		t.Fatal("fetched zero-step workflow must not render the loading placeholder")
 	}
 
-	// no workflow yet: loading is still the correct state
 	loadingModel := &model{
 		stepDetail: viewport.New(viewport.WithWidth(100), viewport.WithHeight(20)),
 	}

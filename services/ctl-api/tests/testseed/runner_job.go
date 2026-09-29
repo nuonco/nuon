@@ -11,8 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// CreateRunnerJob persists a RunnerJob with the given polymorphic owner.
-// Creates a LogStream, RunnerGroup, and Runner inline to satisfy FK constraints.
 func (s *Seeder) CreateRunnerJob(ctx context.Context, t *testing.T, ownerID, ownerType string) *app.RunnerJob {
 	orgID, _ := cctx.OrgIDFromContext(ctx)
 

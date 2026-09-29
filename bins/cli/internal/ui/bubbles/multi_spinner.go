@@ -15,7 +15,6 @@ import (
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
-// SpinnerState represents the state of an individual spinner
 type SpinnerState struct {
 	id        string
 	message   string
@@ -25,35 +24,28 @@ type SpinnerState struct {
 	finalMsg  string
 }
 
-// MultiSpinnerModel manages multiple concurrent spinners
 type MultiSpinnerModel struct {
 	spinners map[string]*SpinnerState
-	order    []string // Maintain display order
+	order    []string
 	quitting bool
 	width    int
 }
 
-// SpinnerUpdateMsg is used to update spinner messages
 type SpinnerUpdateMsg struct {
 	ID      string
 	Message string
 }
 
-// SpinnerCompleteMsg is used to mark spinners as completed
 type SpinnerCompleteMsg struct {
 	ID       string
 	Success  bool
 	FinalMsg string
 }
 
-// FinalRenderMsg is used to trigger a final render before quitting
 type FinalRenderMsg struct{}
 
-// RenderCompleteMsg is used to tell bubbletea that the final render is complete
-// TODO(ja): lol wtf
 type RenderCompleteMsg struct{}
 
-// NewMultiSpinner creates a new multi-spinner model
 func NewMultiSpinner() MultiSpinnerModel {
 	return MultiSpinnerModel{
 		spinners: make(map[string]*SpinnerState),
@@ -62,10 +54,9 @@ func NewMultiSpinner() MultiSpinnerModel {
 	}
 }
 
-// AddSpinner adds a new spinner to the collection
 func (m *MultiSpinnerModel) AddSpinner(id, message string) {
 	if _, exists := m.spinners[id]; exists {
-		return // Don't add duplicates
+		return
 	}
 
 	s := spinner.New()
@@ -82,7 +73,6 @@ func (m *MultiSpinnerModel) AddSpinner(id, message string) {
 	m.order = append(m.order, id)
 }
 
-// Init initializes all spinners
 func (m MultiSpinnerModel) Init() tea.Cmd {
 	if len(m.spinners) == 0 {
 		return nil
@@ -98,7 +88,6 @@ func (m MultiSpinnerModel) Init() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-// Update handles messages for all spinners
 func (m MultiSpinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
@@ -127,7 +116,6 @@ func (m MultiSpinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case FinalRenderMsg:
-		// Trigger one final render, then quit
 		return m, func() tea.Msg { return RenderCompleteMsg{} }
 
 	case RenderCompleteMsg:
@@ -157,7 +145,6 @@ func (m MultiSpinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 }
 
-// View renders all spinners
 func (m MultiSpinnerModel) View() tea.View {
 	if len(m.spinners) == 0 {
 		return tea.NewView("")
@@ -170,13 +157,11 @@ func (m MultiSpinnerModel) View() tea.View {
 		line := m.renderSpinnerLine(state)
 		lines = append(lines, line)
 	}
-	// empty new line for proper message rendering
 	lines = append(lines, "")
 
 	return tea.NewView(strings.Join(lines, "\n"))
 }
 
-// renderSpinnerLine renders a single spinner line
 func (m MultiSpinnerModel) renderSpinnerLine(state *SpinnerState) string {
 	if state.completed {
 		var icon string
@@ -198,11 +183,9 @@ func (m MultiSpinnerModel) renderSpinnerLine(state *SpinnerState) string {
 		return style.Render(fmt.Sprintf("%s %s", icon, message))
 	}
 
-	// Active spinner
 	spinnerView := state.spinner.View()
 	message := state.message
 
-	// Truncate message if too long
 	maxWidth := m.width - len(spinnerView) - 3
 	if maxWidth > 0 && len(message) > maxWidth {
 		message = message[:maxWidth-3] + "..."
@@ -211,7 +194,6 @@ func (m MultiSpinnerModel) renderSpinnerLine(state *SpinnerState) string {
 	return fmt.Sprintf("%s %s", spinnerView, message)
 }
 
-// AllCompleted checks if all spinners are completed
 func (m MultiSpinnerModel) AllCompleted() bool {
 	for _, state := range m.spinners {
 		if !state.completed {
@@ -221,7 +203,6 @@ func (m MultiSpinnerModel) AllCompleted() bool {
 	return true
 }
 
-// HasErrors checks if any spinners completed with errors
 func (m MultiSpinnerModel) HasErrors() bool {
 	for _, state := range m.spinners {
 		if state.completed && !state.success {
@@ -231,7 +212,6 @@ func (m MultiSpinnerModel) HasErrors() bool {
 	return false
 }
 
-// MultiSpinnerView provides a high-level interface for managing multiple spinners
 type MultiSpinnerView struct {
 	model       MultiSpinnerModel
 	program     *tea.Program
@@ -240,7 +220,6 @@ type MultiSpinnerView struct {
 	interactive bool
 }
 
-// NewMultiSpinnerView creates a new multi-spinner view
 func NewMultiSpinnerView(interactive bool) *MultiSpinnerView {
 	return &MultiSpinnerView{
 		model:       NewMultiSpinner(),
@@ -249,14 +228,11 @@ func NewMultiSpinnerView(interactive bool) *MultiSpinnerView {
 	}
 }
 
-// Start begins the multi-spinner display
 func (v *MultiSpinnerView) Start() {
-	// Only start if we haven't already started
 	if v.started {
 		return
 	}
 
-	// Don't start if there are no spinners to display
 	if len(v.model.spinners) == 0 {
 		return
 	}
@@ -269,19 +245,15 @@ func (v *MultiSpinnerView) Start() {
 
 	v.program = teaprogram.NewProgram(v.model)
 
-	// Run in background
 	go func() {
 		defer close(v.done)
 		if _, err := v.program.Run(); err != nil {
-			// Handle error if needed
 		}
 	}()
 
-	// Give the program time to initialize
 	time.Sleep(100 * time.Millisecond)
 }
 
-// AddSpinner adds a new spinner
 func (v *MultiSpinnerView) AddSpinner(id, message string) {
 	v.model.AddSpinner(id, message)
 
@@ -290,13 +262,11 @@ func (v *MultiSpinnerView) AddSpinner(id, message string) {
 		return
 	}
 
-	// If program is running, send update message
 	if v.program != nil {
 		v.program.Send(SpinnerUpdateMsg{ID: id, Message: message})
 	}
 }
 
-// UpdateSpinner updates a spinner's message
 func (v *MultiSpinnerView) UpdateSpinner(id, message string) {
 	if !v.interactive {
 		return
@@ -312,7 +282,6 @@ func (v *MultiSpinnerView) UpdateSpinner(id, message string) {
 	})
 }
 
-// CompleteSpinner marks a spinner as completed
 func (v *MultiSpinnerView) CompleteSpinner(id string, success bool, finalMsg string) {
 	if !v.interactive {
 		icon := "✓"
@@ -340,7 +309,6 @@ func (v *MultiSpinnerView) CompleteSpinner(id string, success bool, finalMsg str
 	})
 }
 
-// Stop stops the multi-spinner display
 func (v *MultiSpinnerView) Stop() {
 	if !v.interactive {
 		v.started = false
@@ -353,12 +321,9 @@ func (v *MultiSpinnerView) Stop() {
 
 	v.program.Quit()
 
-	// Wait for completion with timeout
 	select {
 	case <-v.done:
-		// Clean shutdown
 	case <-time.After(2 * time.Second):
-		// Force quit if it takes too long
 		v.program.Kill()
 	}
 
@@ -366,7 +331,6 @@ func (v *MultiSpinnerView) Stop() {
 	v.started = false
 }
 
-// Wait waits for all spinners to complete
 func (v *MultiSpinnerView) Wait() {
 	if !v.interactive {
 		return
@@ -374,12 +338,10 @@ func (v *MultiSpinnerView) Wait() {
 	<-v.done
 }
 
-// AllCompleted checks if all spinners are completed
 func (v *MultiSpinnerView) AllCompleted() bool {
 	return v.model.AllCompleted()
 }
 
-// HasErrors checks if any spinners completed with errors
 func (v *MultiSpinnerView) HasErrors() bool {
 	return v.model.HasErrors()
 }

@@ -60,13 +60,11 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		// we extract the token from query params if it was not provided in the header
 		qtoken := ctx.Query("token")
 		if token == "" && qtoken != "" {
 			token = qtoken
 		}
 
-		// fall back to the X-Nuon-Auth cookie (sent by browser SPA via credentials: 'include')
 		if token == "" {
 			if cookieToken, cookieErr := ctx.Cookie("X-Nuon-Auth"); cookieErr == nil {
 				token = cookieToken
@@ -83,7 +81,6 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		// fetchAccountToken returns (nil, nil) when the token is not found in the DB.
 		acctToken, err := m.fetchAccountToken(ctx, token)
 		if err != nil {
 			ctx.Error(err)
@@ -112,7 +109,6 @@ func (m *middleware) Handler() gin.HandlerFunc {
 	}
 }
 
-// detectCLIUsage checks if the request is from CLI and updates the journey step
 func (m *middleware) detectCLIUsage(ctx *gin.Context, acct *app.Account) {
 	userAgent := ctx.Request.UserAgent()
 	if !useragent.IsCLI(userAgent) {
@@ -143,8 +139,6 @@ func New(params Params) *middleware {
 	}
 }
 
-// extractAttributionFromCookie reads marketing attribution data from the nuon_attribution cookie
-// set by customer-dashboard during the auth flow. Returns nil if no attribution is present.
 func (m *middleware) extractAttributionFromCookie(ctx *gin.Context) map[string]interface{} {
 	cookie, err := ctx.Cookie("nuon_attribution")
 	if err != nil || cookie == "" {

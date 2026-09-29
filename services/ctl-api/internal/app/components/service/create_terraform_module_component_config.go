@@ -102,7 +102,6 @@ func (c *CreateTerraformModuleComponentConfigRequest) Validate(v *validator.Vali
 		return err
 	}
 
-	// Validate timeouts if provided
 	if c.BuildTimeout != "" {
 		if err := validation.ValidateBuildTimeout(c.BuildTimeout); err != nil {
 			return err
@@ -170,7 +169,6 @@ func (s *service) CreateAppTerraformModuleComponentConfig(ctx *gin.Context) {
 		return
 	}
 
-	// reuse the same logic as non-app scoped endpoint
 	s.CreateTerraformModuleComponentConfig(ctx)
 }
 
@@ -242,7 +240,6 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 		return nil, errors.Wrap(err, "unable to get component ids")
 	}
 
-	// build component config
 	connectedGithubVCSConfig, err := req.connectedGithubVCSConfig(ctx, parentCmp, s.vcsHelpers)
 	if err != nil {
 		return nil, fmt.Errorf("invalid connected github config: %w", err)

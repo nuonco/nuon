@@ -4,7 +4,6 @@ import (
 	"github.com/nuonco/nuon/pkg/kube"
 )
 
-// RunnerHelm is used to configure the runner to deploy the runner helm chart, which is bundled within it.
 type RunnerHelm struct {
 	Plugin string `hcl:"plugin,label"`
 

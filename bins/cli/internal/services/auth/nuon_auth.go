@@ -20,7 +20,6 @@ const (
 	nuonAuthPollInterval     = 5 * time.Second
 )
 
-// NuonAuthTokenResponse represents the response from the device token endpoint
 type NuonAuthTokenResponse struct {
 	AccessToken      string `json:"access_token,omitempty"`
 	TokenType        string `json:"token_type,omitempty"`
@@ -29,7 +28,6 @@ type NuonAuthTokenResponse struct {
 	ErrorDescription string `json:"error_description,omitempty"`
 }
 
-// generateDeviceCode creates a device code in format XXXX-XXXX where X is [A-Z0-9]
 func generateDeviceCode() (string, error) {
 	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	b := make([]byte, 8)
@@ -37,16 +35,13 @@ func generateDeviceCode() (string, error) {
 		return "", fmt.Errorf("failed to generate device code: %w", err)
 	}
 
-	// Convert random bytes to characters from our allowed set
 	for i := range b {
 		b[i] = chars[int(b[i])%len(chars)]
 	}
 
-	// Format as XXXX-XXXX
 	return fmt.Sprintf("%s-%s", string(b[:4]), string(b[4:])), nil
 }
 
-// buildAuthURL constructs the auth service URL based on the root domain
 func buildAuthURL(rootDomain string) string {
 	if rootDomain == "localhost" {
 		return "http://localhost:8084"
@@ -54,28 +49,22 @@ func buildAuthURL(rootDomain string) string {
 	return fmt.Sprintf("https://auth.%s", rootDomain)
 }
 
-// loginWithNuonAuth performs the Nuon Auth device code flow
 func (a *Service) loginWithNuonAuth(ctx context.Context, cfg *models.ServiceCLIConfig) (*LoginResult, error) {
-	// Generate device code locally
 	deviceCode, err := generateDeviceCode()
 	if err != nil {
 		return nil, err
 	}
 
-	// Build URLs based on root domain
 	authBaseURL := buildAuthURL(cfg.RootDomain)
 	verificationURL := fmt.Sprintf("%s/device/code?code=%s", authBaseURL, deviceCode)
 	tokenURL := fmt.Sprintf("%s/device/token?code=%s", authBaseURL, deviceCode)
 
-	// Display instructions
 	fmt.Println("\nLogging in to Nuon")
 	fmt.Printf("Opening your browser to authorize the CLI.\n")
 	fmt.Printf("If the browser does not open, visit this URL:\n\n%s\n\n", verificationURL)
 
-	// Open browser
 	browser.OpenURL(verificationURL)
 
-	// Poll for token with timeout
 	deadline := time.Now().Add(nuonAuthDeviceCodeExpiry)
 
 	for time.Now().Before(deadline) {
@@ -90,9 +79,8 @@ func (a *Service) loginWithNuonAuth(ctx context.Context, cfg *models.ServiceCLIC
 			return nil, err
 		}
 
-		// Check for success
 		if resp.AccessToken != "" {
-			fmt.Println() // newline after dots
+			fmt.Println()
 			displayName := resp.Email
 			if displayName == "" {
 				displayName = "user"
@@ -103,7 +91,6 @@ func (a *Service) loginWithNuonAuth(ctx context.Context, cfg *models.ServiceCLIC
 			}, nil
 		}
 
-		// Check error type
 		switch resp.Error {
 		case "authorization_pending":
 			fmt.Print(".")
@@ -132,7 +119,6 @@ func (a *Service) loginWithNuonAuth(ctx context.Context, cfg *models.ServiceCLIC
 	return nil, fmt.Errorf("device code expired - please try again")
 }
 
-// pollNuonDeviceToken makes a single request to the token endpoint
 func (a *Service) pollNuonDeviceToken(tokenURL string) (*NuonAuthTokenResponse, error) {
 	req, err := http.NewRequest(http.MethodGet, tokenURL, nil)
 	if err != nil {
@@ -141,7 +127,6 @@ func (a *Service) pollNuonDeviceToken(tokenURL string) (*NuonAuthTokenResponse, 
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		// Network errors during polling are not fatal - could be temporary
 		if strings.Contains(err.Error(), "connection refused") {
 			return &NuonAuthTokenResponse{
 				Error:            "authorization_pending",

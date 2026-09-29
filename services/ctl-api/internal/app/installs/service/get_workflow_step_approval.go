@@ -102,8 +102,6 @@ func (s *service) GetInstallWorkflowStepApproval(ctx *gin.Context) {
 
 func (s *service) getWorkflowStepApproval(ctx *gin.Context, orgID, stepID, approvalID string) (*app.WorkflowStepApproval, error) {
 	var approval app.WorkflowStepApproval
-	// No Omit("contents") here: GetWorkflowStepApprovalContents reads
-	// approval.Contents through this getter.
 	res := s.db.WithContext(ctx).
 		Where(app.WorkflowStepApproval{
 			ID:                    approvalID,

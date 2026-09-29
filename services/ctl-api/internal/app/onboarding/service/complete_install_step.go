@@ -80,12 +80,10 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 		return
 	}
 
-	// Store install mode preference
 	if req.InstallMode != "" {
 		onboarding.InstallMode = req.InstallMode
 	}
 
-	// Validate onboarding has required references
 	if onboarding.AppID == nil || *onboarding.AppID == "" {
 		ctx.Error(fmt.Errorf("onboarding has no app_id set; cannot create install"))
 		return
@@ -95,7 +93,6 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 		return
 	}
 
-	// Idempotency: if install already created, advance step and return
 	if onboarding.InstallID != nil && *onboarding.InstallID != "" {
 		onboarding.CurrentStep = app.OnboardingStepDeploy
 		onboarding.StepStatus = app.OnboardingStepStatusActive
@@ -108,7 +105,6 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 		return
 	}
 
-	// Auto-populate cloud account if not provided, using the app's cloud platform
 	if req.AWSAccount == nil && req.AzureAccount == nil {
 		cloudPlatform := s.resolveCloudPlatform(ctx, *onboarding.AppID, onboarding.CloudProvider)
 		switch cloudPlatform {
@@ -123,7 +119,6 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 		}
 	}
 
-	// Determine sandbox mode
 	var org app.Org
 	if err := s.db.WithContext(ctx).First(&org, "id = ?", *onboarding.OrgID).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to get org: %w", err))
@@ -131,7 +126,6 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 	}
 	sandboxMode := s.cfg.ForceOnboardingSandboxMode || org.SandboxMode || onboarding.InstallMode == app.OnboardingInstallModeSandbox
 
-	// Append a shortcode to make the install name unique
 	shortcode, err := gonanoid.Generate("0123456789abcdefghijklmnopqrstuvwxyz", 6)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to generate shortcode: %w", err))
@@ -139,7 +133,6 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 	}
 	installName := fmt.Sprintf("%s-%s", req.Name, shortcode)
 
-	// Build install params
 	installParams := &helpers.CreateInstallParams{
 		Name:        installName,
 		Inputs:      req.Inputs,
@@ -160,14 +153,12 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 		}
 	}
 
-	// Create install synchronously
 	install, err := s.installsHelpers.CreateInstall(ctx, *onboarding.AppID, installParams)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install: %w", err))
 		return
 	}
 
-	// Create provision workflow
 	workflow, err := s.installsHelpers.CreateWorkflow(ctx,
 		install.ID,
 		app.WorkflowTypeProvision,
@@ -179,7 +170,6 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 		return
 	}
 
-	// Send signals to v2 queues
 	signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
 	if err != nil {
 		ctx.Error(err)
@@ -206,7 +196,6 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 		return
 	}
-	// reconcile cron/drift emitters from app config triggers
 	if err := s.enqueueInstallSignal(ctx, signalsQueueID, &appconfigupdated.Signal{
 		InstallID: install.ID,
 	}, "", ""); err != nil {
@@ -214,7 +203,6 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 		return
 	}
 
-	// Update onboarding with install/workflow references and advance step
 	onboarding.InstallID = &install.ID
 	onboarding.WorkflowID = &workflow.ID
 	onboarding.CurrentStep = app.OnboardingStepDeploy
@@ -227,7 +215,6 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 		return
 	}
 
-	// Update user journey (non-blocking)
 	if err := s.accountsHelpers.UpdateUserJourneyStepForFirstInstallCreate(ctx, account.ID, install.ID); err != nil {
 		s.l.Warn("failed to update user journey for first install create", zap.Error(err))
 	}
@@ -235,10 +222,7 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, onboarding)
 }
 
-// resolveCloudPlatform determines the cloud platform for the app, first checking
-// the onboarding's CloudProvider, then falling back to the app's runner config.
 func (s *service) resolveCloudPlatform(ctx context.Context, appID string, cloudProvider *string) app.CloudPlatform {
-	// Strategy 1: Use the onboarding's CloudProvider if available
 	if cloudProvider != nil && *cloudProvider != "" {
 		switch *cloudProvider {
 		case "aws":
@@ -250,7 +234,6 @@ func (s *service) resolveCloudPlatform(ctx context.Context, appID string, cloudP
 		}
 	}
 
-	// Strategy 2: Load from app's runner config
 	var runnerConfig app.AppRunnerConfig
 	res := s.db.WithContext(ctx).
 		Where("app_id = ?", appID).
@@ -260,6 +243,5 @@ func (s *service) resolveCloudPlatform(ctx context.Context, appID string, cloudP
 		return app.CloudPlatformUnknown
 	}
 
-	// AfterQuery hook on AppRunnerConfig sets CloudPlatform automatically
 	return runnerConfig.CloudPlatform
 }

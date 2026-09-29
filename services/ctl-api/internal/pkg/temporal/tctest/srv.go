@@ -29,13 +29,10 @@ func NewEnv(ctx context.Context) (*DevTestEnv, error) {
 	}
 
 	clientOpts.Logger = slog.New(slog.DiscardHandler)
-	// clientOpts.Logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-	// 	Level: slog.LevelWarn,
-	// }))
 
 	srv, err := testsuite.StartDevServer(ctx, testsuite.DevServerOptions{
 		ClientOptions: clientOpts,
-		LogLevel:      "error", // server can add spurious noise to tests
+		LogLevel:      "error",
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to set up dev server")

@@ -11,10 +11,6 @@ import (
 	"github.com/nuonco/nuon/pkg/types/outputs"
 )
 
-// TestExecSyncSecretV2_Expansion verifies the v2 path fans a single source out across every target × namespace,
-// writing one output per destination keyed uniquely so destinations sharing a name (across namespaces, or same
-// namespace/name with different keys) do not overwrite one another. exists=false keeps the Kubernetes upsert out of
-// the test (no cluster needed); only the expansion + output keying is exercised.
 func TestExecSyncSecretV2_Expansion(t *testing.T) {
 	h := &handler{state: &handlerState{outputs: make(outputs.SyncSecretsOutput)}}
 
@@ -30,7 +26,6 @@ func TestExecSyncSecretV2_Expansion(t *testing.T) {
 	err := h.execSyncSecretV2(context.Background(), secr, "", nil, false)
 	require.NoError(t, err)
 
-	// 2 namespaces on target 1 + 1 namespace on target 2 = 3 unique destinations.
 	require.Len(t, h.state.outputs, 3)
 
 	cloudpremAPI, ok := h.state.outputs["datadog-api-key/cloudprem/datadog/api-key"]
@@ -45,13 +40,10 @@ func TestExecSyncSecretV2_Expansion(t *testing.T) {
 	_, ok = h.state.outputs["datadog-api-key/datadog/datadog/api-key"]
 	assert.True(t, ok)
 
-	// same namespace/name as the api-key destination but a different key — must be its own entry, not a clobber.
 	_, ok = h.state.outputs["datadog-api-key/datadog/datadog/app-key"]
 	assert.True(t, ok)
 }
 
-// TestExecSyncSecretV1_SingleOutput verifies the legacy single-destination path records exactly one output keyed by
-// the v1 destination.
 func TestExecSyncSecretV1_SingleOutput(t *testing.T) {
 	h := &handler{state: &handlerState{outputs: make(outputs.SyncSecretsOutput)}}
 

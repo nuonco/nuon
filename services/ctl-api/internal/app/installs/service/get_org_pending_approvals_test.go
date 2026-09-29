@@ -132,8 +132,6 @@ func (s *InstallsServiceTestSuite) TestGetOrgPendingApprovalsOmitsContents() {
 	step := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID, testseed.WithStepStatus(app.NewCompositeStatus(s.ctx, app.AwaitingApproval)))
 	approval := s.deps.Seeder.CreateWorkflowStepApproval(s.ctx, s.T(), step.ID, app.TerraformPlanApprovalType, "terraform plan output")
 
-	// Contents is json:"-", so the omit can only be asserted against the
-	// query result directly.
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	approvals, err := s.installsService.getOrgPendingApprovals(c, s.testOrg.ID)
 	require.NoError(s.T(), err)

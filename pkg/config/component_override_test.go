@@ -72,9 +72,9 @@ func TestSyntheticComponentOverrideInputs(t *testing.T) {
 	components := ComponentList{
 		{Name: "vpc", Type: TerraformModuleComponentType},
 		{Name: "clickhouse", Type: HelmChartComponentType},
-		{Name: "api", Type: DockerBuildComponentType},             // ignored
-		{Name: "manifest", Type: KubernetesManifestComponentType}, // ignored
-		nil, // ignored
+		{Name: "api", Type: DockerBuildComponentType},
+		{Name: "manifest", Type: KubernetesManifestComponentType},
+		nil,
 	}
 
 	got := SyntheticComponentOverrideInputs(components)
@@ -92,8 +92,6 @@ func TestSyntheticComponentOverrideInputs(t *testing.T) {
 		t.Errorf("got[1] = %+v, want clickhouse/helm_values", got[1])
 	}
 
-	// Indices must be distinct and non-zero so server-side `required` index
-	// validation passes and ordering is stable.
 	if got[0].Index == got[1].Index {
 		t.Errorf("indices collided: %d", got[0].Index)
 	}

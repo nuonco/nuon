@@ -15,10 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestCreateAppExternalImageConfigSuccess() {
 	s.Run("creates config with image_url and tag", func() {
 		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeExternalImage)
@@ -73,10 +69,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppExternalImageConfigWithAWSECR(
 	})
 }
 
-// ---------------------------------------------------------------------------
-// Validation error cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestCreateAppExternalImageConfigValidationErrors() {
 	comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeExternalImage)
 	path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/external-image", s.testApp.ID, comp.ID)
@@ -123,10 +115,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppExternalImageConfigValidationE
 	}
 }
 
-// ---------------------------------------------------------------------------
-// Signals
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestCreateAppExternalImageConfigSignals() {
 	s.Run("sends OperationConfigCreated and OperationUpdateComponentType signals", func() {
 
@@ -151,10 +139,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppExternalImageConfigSignals() {
 		assert.Equal(s.T(), app.ComponentTypeExternalImage, sig1.ComponentType)
 	})
 }
-
-// ---------------------------------------------------------------------------
-// Not found cases
-// ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestCreateAppExternalImageConfigNotFound() {
 	s.Run("nonexistent component id", func() {

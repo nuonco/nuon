@@ -57,22 +57,17 @@ func (s *service) CompleteOrganizationStep(ctx *gin.Context) {
 		return
 	}
 
-	// Switching an existing org is allowed before any resources have been
-	// provisioned in this onboarding session (i.e. no app/install yet), even
-	// if the current step has advanced past "organization".
 	canReAttachExistingOrg := req.OrgID != "" && onboarding.AppID == nil && onboarding.InstallID == nil
 	if onboarding.CurrentStep != app.OnboardingStepOrganization && !canReAttachExistingOrg {
 		ctx.Error(fmt.Errorf("expected step %s but current step is %s", app.OnboardingStepOrganization, onboarding.CurrentStep))
 		return
 	}
 
-	// Attach existing org (synchronous path)
 	if req.OrgID != "" {
 		s.attachExistingOrg(ctx, account, onboarding, req.OrgID)
 		return
 	}
 
-	// Create new org (async path) — name is required
 	if req.Name == "" {
 		ctx.Error(stderr.ErrUser{
 			Err:         fmt.Errorf("name is required when org_id is not provided"),
@@ -81,7 +76,6 @@ func (s *service) CompleteOrganizationStep(ctx *gin.Context) {
 		return
 	}
 
-	// Validate org name is unique (including soft-deleted orgs, which share the unique index)
 	var count int64
 	if err := s.db.WithContext(ctx).Model(&app.Org{}).Unscoped().Where("name = ?", req.Name).Count(&count).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to check org name uniqueness: %w", err))
@@ -98,10 +92,7 @@ func (s *service) CompleteOrganizationStep(ctx *gin.Context) {
 	s.createNewOrg(ctx, account, onboarding, req.Name)
 }
 
-// attachExistingOrg verifies the org exists and the user has access, then
-// attaches it to the onboarding and advances to the next step synchronously.
 func (s *service) attachExistingOrg(ctx *gin.Context, account *app.Account, onboarding *app.Onboarding, orgID string) {
-	// Verify user has access to the org
 	if !slices.Contains(account.OrgIDs, orgID) {
 		ctx.Error(stderr.ErrUser{
 			Err:         fmt.Errorf("account does not have access to org %s", orgID),
@@ -110,7 +101,6 @@ func (s *service) attachExistingOrg(ctx *gin.Context, account *app.Account, onbo
 		return
 	}
 
-	// Verify org exists and is active
 	var org app.Org
 	if err := s.db.WithContext(ctx).Where("id = ? AND status = ?", orgID, app.OrgStatusActive).First(&org).Error; err != nil {
 		ctx.Error(stderr.ErrUser{
@@ -120,9 +110,6 @@ func (s *service) attachExistingOrg(ctx *gin.Context, account *app.Account, onbo
 		return
 	}
 
-	// Update onboarding with org reference. Only advance the step if we
-	// haven't already moved past the organization step (e.g. when the user
-	// is switching orgs from a later step before any resources exist).
 	onboarding.OrgID = &orgID
 	if onboarding.CurrentStep == app.OnboardingStepOrganization {
 		onboarding.CurrentStep = app.OnboardingStepYourStack
@@ -138,9 +125,6 @@ func (s *service) attachExistingOrg(ctx *gin.Context, account *app.Account, onbo
 	ctx.JSON(http.StatusOK, onboarding)
 }
 
-// createNewOrg enqueues an async signal to create a sandbox org and attach it.
-// The step stays at "organization" with "processing" status until the signal
-// creates the org and advances to "your_stack".
 func (s *service) createNewOrg(ctx *gin.Context, account *app.Account, onboarding *app.Onboarding, orgName string) {
 	onboarding.StepStatus = app.OnboardingStepStatusInProgress
 	onboarding.SetCompositeStatus(ctx, app.StatusInProgress)
@@ -150,7 +134,6 @@ func (s *service) createNewOrg(ctx *gin.Context, account *app.Account, onboardin
 		return
 	}
 
-	// Get queue and enqueue signal
 	queue, err := s.queueClient.GetDefaultQueueByOwner(ctx, onboarding.ID, plugins.TableName(s.db, app.Onboarding{}))
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get onboarding queue: %w", err))

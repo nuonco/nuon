@@ -48,9 +48,6 @@ const ImpactReasonsRow = ({
   )
 }
 
-// ComputeInstallConfigDiff promotes graph-impacted components into `changed` even when
-// their own config is byte-identical. Calling that "Changed" misreads as an edit, so
-// matching checksums with no build change are labeled "Impacted" instead.
 const operationLabel = (
   component: TInstallUpdateComponentDiff,
   operation: 'added' | 'changed' | 'removed'

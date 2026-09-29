@@ -30,7 +30,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// AdminSetInternalSlackWebhookURLTestService holds all fx-injected dependencies for the test.
 type AdminSetInternalSlackWebhookURLTestService struct {
 	fx.In
 
@@ -44,7 +43,6 @@ type AdminSetInternalSlackWebhookURLTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// AdminSetInternalSlackWebhookURLTestSuite is the testify suite for admin set internal slack webhook url endpoint.
 type AdminSetInternalSlackWebhookURLTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -71,7 +69,6 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),
 	)
@@ -79,7 +76,6 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -87,7 +83,6 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -124,7 +119,6 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) createTestOrgWithNotification
 	err := s.service.DB.WithContext(ctx).Create(org).Error
 	require.NoError(s.T(), err)
 
-	// Update OrgID on NotificationsConfig (mimics what CreateOrg does)
 	s.service.DB.Model(&org.NotificationsConfig).
 		Where(&app.NotificationsConfig{OwnerID: org.ID}).
 		Updates(app.NotificationsConfig{OrgID: org.ID})
@@ -174,7 +168,6 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(org *app.Org, newURL string) {
-				// Verify database state was updated
 				var notifConfig app.NotificationsConfig
 				err := s.service.DB.Where("owner_id = ?", org.ID).First(&notifConfig).Error
 				require.NoError(s.T(), err)
@@ -191,7 +184,6 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(org *app.Org, newURL string) {
-				// Verify old URL is replaced
 				var notifConfig app.NotificationsConfig
 				err := s.service.DB.Where("owner_id = ?", org.ID).First(&notifConfig).Error
 				require.NoError(s.T(), err)
@@ -209,7 +201,6 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 			},
 			expectedStatus: http.StatusBadRequest,
 			validateFunc: func(org *app.Org, newURL string) {
-				// URL should remain unchanged since validation failed
 				var notifConfig app.NotificationsConfig
 				err := s.service.DB.Where("owner_id = ?", org.ID).First(&notifConfig).Error
 				require.NoError(s.T(), err)
@@ -221,10 +212,9 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 			setupFunc: func() *app.Org {
 				return s.createTestOrgWithNotificationsConfig("test-org-no-field", "https://hooks.slack.com/unchanged")
 			},
-			requestBody:    map[string]interface{}{}, // Missing "name" field
+			requestBody:    map[string]interface{}{},
 			expectedStatus: http.StatusBadRequest,
 			validateFunc: func(org *app.Org, newURL string) {
-				// Verify URL was not changed
 				var notifConfig app.NotificationsConfig
 				err := s.service.DB.Where("owner_id = ?", org.ID).First(&notifConfig).Error
 				require.NoError(s.T(), err)
@@ -234,18 +224,17 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 		{
 			name: "fails with invalid JSON",
 			setupFunc: func() *app.Org {
-				return s.testOrg // Use default test org
+				return s.testOrg
 			},
-			requestBody:    "invalid json string", // Will be marshaled incorrectly
+			requestBody:    "invalid json string",
 			expectedStatus: http.StatusBadRequest,
-			validateFunc:   nil, // No validation needed
+			validateFunc:   nil,
 		},
 		{
 			name: "fails when org not found",
 			setupFunc: func() *app.Org {
-				// Return a non-existent org
 				return &app.Org{
-					ID:          domains.NewOrgID(), // This org doesn't exist in the database
+					ID:          domains.NewOrgID(),
 					Name:        "non-existent-org",
 					SandboxMode: true,
 				}
@@ -254,7 +243,7 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 				Name: "https://hooks.slack.com/new",
 			},
 			expectedStatus: http.StatusNotFound,
-			validateFunc:   nil, // No validation needed
+			validateFunc:   nil,
 		},
 		{
 			name: "successfully handles URL with special characters",
@@ -266,7 +255,6 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(org *app.Org, newURL string) {
-				// Verify complex URL is stored correctly
 				var notifConfig app.NotificationsConfig
 				err := s.service.DB.Where("owner_id = ?", org.ID).First(&notifConfig).Error
 				require.NoError(s.T(), err)
@@ -277,16 +265,13 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test data
 			org := tc.setupFunc()
 
-			// Extract URL from request body for validation
 			var newURL string
 			if req, ok := tc.requestBody.(SetSlackWebhookURLRequest); ok {
 				newURL = req.Name
 			}
 
-			// Make request
 			path := fmt.Sprintf("/v1/orgs/%s/admin-internal-slack-webhook-url", org.ID)
 			rr := s.makeRequest(http.MethodPost, path, tc.requestBody)
 
@@ -295,7 +280,6 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Run validation if provided
 			if tc.validateFunc != nil {
 				tc.validateFunc(org, newURL)
 			}
@@ -304,22 +288,18 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 }
 
 func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebhookURLConcurrentUpdates() {
-	// Test that concurrent updates to the same org's webhook URL are handled correctly
 	s.Run("handles concurrent updates", func() {
 		org := s.createTestOrgWithNotificationsConfig("test-org-concurrent", "https://hooks.slack.com/initial")
 
-		// First update
 		path := fmt.Sprintf("/v1/orgs/%s/admin-internal-slack-webhook-url", org.ID)
 		req1 := SetSlackWebhookURLRequest{Name: "https://hooks.slack.com/first"}
 		rr1 := s.makeRequest(http.MethodPost, path, req1)
 		require.Equal(s.T(), http.StatusOK, rr1.Code)
 
-		// Second update (should overwrite first)
 		req2 := SetSlackWebhookURLRequest{Name: "https://hooks.slack.com/second"}
 		rr2 := s.makeRequest(http.MethodPost, path, req2)
 		require.Equal(s.T(), http.StatusOK, rr2.Code)
 
-		// Verify final state is the second update
 		var notifConfig app.NotificationsConfig
 		err := s.service.DB.Where("owner_id = ?", org.ID).First(&notifConfig).Error
 		require.NoError(s.T(), err)
@@ -328,26 +308,19 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 }
 
 func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebhookURLDatabaseStateVerification() {
-	// Test comprehensive database state verification
 	s.Run("verifies complete database state changes", func() {
 		org := s.createTestOrgWithNotificationsConfig("test-org-db-state", "https://hooks.slack.com/before")
 
-		// Store original config ID for verification
 		var originalConfig app.NotificationsConfig
 		err := s.service.DB.Where("owner_id = ?", org.ID).First(&originalConfig).Error
 		require.NoError(s.T(), err)
 
-		// Update the webhook URL
 		newURL := "https://hooks.slack.com/after"
 		path := fmt.Sprintf("/v1/orgs/%s/admin-internal-slack-webhook-url", org.ID)
 		req := SetSlackWebhookURLRequest{Name: newURL}
 		rr := s.makeRequest(http.MethodPost, path, req)
 		require.Equal(s.T(), http.StatusOK, rr.Code)
 
-		// Verify:
-		// 1. Same notifications config record (ID unchanged)
-		// 2. Webhook URL updated
-		// 3. UpdatedAt timestamp changed
 		var updatedConfig app.NotificationsConfig
 		err = s.service.DB.Where("owner_id = ?", org.ID).First(&updatedConfig).Error
 		require.NoError(s.T(), err)
@@ -356,7 +329,6 @@ func (s *AdminSetInternalSlackWebhookURLTestSuite) TestAdminSetInternalSlackWebh
 		assert.Equal(s.T(), newURL, updatedConfig.InternalSlackWebhookURL, "webhook URL should be updated")
 		assert.True(s.T(), updatedConfig.UpdatedAt.After(originalConfig.UpdatedAt), "updated_at should be newer")
 
-		// Verify no new notification config records were created
 		var configCount int64
 		err = s.service.DB.Model(&app.NotificationsConfig{}).Where("owner_id = ?", org.ID).Count(&configCount).Error
 		require.NoError(s.T(), err)

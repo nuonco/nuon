@@ -29,7 +29,6 @@ func (s *GeneralInternalTestSuite) TestAdminDeleteAccount() {
 			},
 			expectedStatus: http.StatusCreated,
 			validateFunc: func(acct *app.Account) {
-				// Verify account is deleted
 				var count int64
 				err := s.service.DB.Model(&app.Account{}).Where("id = ?", acct.ID).Count(&count).Error
 				require.NoError(s.T(), err)
@@ -49,7 +48,6 @@ func (s *GeneralInternalTestSuite) TestAdminDeleteAccount() {
 			},
 			expectedStatus: http.StatusCreated,
 			validateFunc: func(acct *app.Account) {
-				// Verify account is deleted
 				var count int64
 				err := s.service.DB.Model(&app.Account{}).Where("id = ?", acct.ID).Count(&count).Error
 				require.NoError(s.T(), err)
@@ -69,7 +67,6 @@ func (s *GeneralInternalTestSuite) TestAdminDeleteAccount() {
 			},
 			expectedStatus: http.StatusCreated,
 			validateFunc: func(acct *app.Account) {
-				// Verify account is deleted
 				var count int64
 				err := s.service.DB.Model(&app.Account{}).Where("id = ?", acct.ID).Count(&count).Error
 				require.NoError(s.T(), err)
@@ -90,10 +87,8 @@ func (s *GeneralInternalTestSuite) TestAdminDeleteAccount() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test data
 			acct := tc.setupFunc()
 
-			// Make request
 			req := tc.requestFunc(acct)
 			rr := s.makeRequest(http.MethodPost, "/v1/general/admin-delete-account", req)
 
@@ -102,7 +97,6 @@ func (s *GeneralInternalTestSuite) TestAdminDeleteAccount() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Validate result
 			if tc.validateFunc != nil && acct != nil {
 				tc.validateFunc(acct)
 			}

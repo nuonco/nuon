@@ -24,7 +24,6 @@ func (s *StatusUpdateErr) Unwrap() error {
 	return s.origErr
 }
 
-// When you are updating a status, you often are setting an
 func WrapStatusErr(origErr, statusErr error) error {
 	return &StatusUpdateErr{
 		origErr:   origErr,

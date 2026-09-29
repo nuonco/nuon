@@ -12,11 +12,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
-// Configurable vars for emitter CAN checks.
 var (
 	emitterCANHistoryMax    = 1500
 	emitterCANCheckInterval = 5 * time.Minute
-	emitterCANStartJitter   = 60 // seconds of initial jitter
+	emitterCANStartJitter   = 60
 )
 
 const CheckCANUpdateName string = "check-can"
@@ -31,7 +30,6 @@ type CheckCANResponse struct {
 	Restarting    bool   `json:"restarting"`
 }
 
-// checkCANHandler runs the CAN checks on demand via a Temporal update handler.
 func (e *emitterWorkflow) checkCANHandler(ctx workflow.Context, req *CheckCANRequest) (*CheckCANResponse, error) {
 	l, _ := log.WorkflowLogger(ctx)
 	restarting, resp := e.runCANCheck(ctx, l)
@@ -41,8 +39,6 @@ func (e *emitterWorkflow) checkCANHandler(ctx workflow.Context, req *CheckCANReq
 	return resp, nil
 }
 
-// runCANCheck performs the CAN checks and returns whether a restart should be
-// triggered along with diagnostic info.
 func (e *emitterWorkflow) runCANCheck(ctx workflow.Context, l *zap.Logger) (bool, *CheckCANResponse) {
 	info := workflow.GetInfo(ctx)
 	historyLen := info.GetCurrentHistoryLength()
@@ -63,7 +59,6 @@ func (e *emitterWorkflow) runCANCheck(ctx workflow.Context, l *zap.Logger) (bool
 		HistoryMax:    emitterCANHistoryMax,
 	}
 
-	// Check 1: history length exceeds threshold.
 	if historyLen > emitterCANHistoryMax {
 		if l != nil {
 			l.Info("emitter history length exceeded threshold, triggering continue-as-new",
@@ -75,12 +70,10 @@ func (e *emitterWorkflow) runCANCheck(ctx workflow.Context, l *zap.Logger) (bool
 		return true, resp
 	}
 
-	// Check 2: emitter still exists.
 	if _, err := e.ensureEmitterActive(ctx); err != nil {
 		if l != nil {
 			l.Warn("CAN check: error checking emitter", zap.Error(err))
 		}
-		// Restart on error to avoid getting stuck.
 		resp.Restarting = true
 		return true, resp
 	}
@@ -88,7 +81,6 @@ func (e *emitterWorkflow) runCANCheck(ctx workflow.Context, l *zap.Logger) (bool
 		return false, resp
 	}
 
-	// Check 3: parent queue still exists.
 	if err := e.ensureQueueActive(ctx); err != nil {
 		if l != nil {
 			l.Warn("CAN check: error checking queue", zap.Error(err))
@@ -107,14 +99,12 @@ func (e *emitterWorkflow) startCANListener(ctx workflow.Context) {
 	workflow.Go(ctx, func(gCtx workflow.Context) {
 		l, _ := log.WorkflowLogger(gCtx)
 
-		// Stagger startup to avoid thundering herd.
 		jitter := time.Duration(rand.Intn(emitterCANStartJitter)) * time.Second
 		if err := workflow.Sleep(gCtx, jitter); err != nil {
 			return
 		}
 
 		for {
-			// Add up to 50% jitter to the check interval.
 			jitterMax := int(emitterCANCheckInterval.Seconds() / 2)
 			if jitterMax < 1 {
 				jitterMax = 1

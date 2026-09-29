@@ -28,8 +28,6 @@ func (a *Activities) EnqueueOrgQueueMigrations(ctx context.Context, req EnqueueO
 		return nil, fmt.Errorf("unable to get default orgs: %w", res.Error)
 	}
 
-	// Keyed on the release tag so a retried promotion reuses the same signal
-	// instead of stacking one migration per attempt.
 	idempotencyKey := ""
 	if req.Tag != "" {
 		idempotencyKey = fmt.Sprintf("promotion-%s-org-queue-migration", req.Tag)

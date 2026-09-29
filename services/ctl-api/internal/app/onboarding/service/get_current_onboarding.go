@@ -37,7 +37,6 @@ func (s *service) GetCurrentOnboarding(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, onboarding)
 }
 
-// getActiveOnboarding loads the current active onboarding for an account.
 func (s *service) getActiveOnboarding(ctx *gin.Context, accountID string) (*app.Onboarding, error) {
 	var onboarding app.Onboarding
 	res := s.db.WithContext(ctx).

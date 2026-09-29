@@ -11,8 +11,6 @@ import (
 )
 
 func TestBearsVerdict(t *testing.T) {
-	// Terraform enumeration is inventory, not assessment — counting it would
-	// drag every terraform component to unknown.
 	assert.False(t, bearsVerdict("aws"))
 	assert.False(t, bearsVerdict("gcp"))
 	assert.False(t, bearsVerdict("azure"))
@@ -28,7 +26,6 @@ func TestApplyCustomChecks(t *testing.T) {
 	degraded := app.InstallComponentHealthStatusDegraded
 	unhealthy := app.InstallComponentHealthStatusUnhealthy
 
-	// Runner reports, newest first, as recentComponentHealthReports produces.
 	runnerReports := func(healths ...app.InstallComponentHealthStatus) []componentHealthReport {
 		out := make([]componentHealthReport, 0, len(healths))
 		for i, h := range healths {
@@ -56,8 +53,6 @@ func TestApplyCustomChecks(t *testing.T) {
 		})
 
 		require.Len(t, reports, 3)
-		// Every report is at or after the check, so all three see it — which is
-		// what lets the existing 3-bad debounce apply to custom checks.
 		for i := range reports {
 			assert.Equal(t, unhealthy, reports[i].Health, "report %d", i)
 			assert.Equal(t, "CustomCheck", reports[i].RootKind)
@@ -67,7 +62,6 @@ func TestApplyCustomChecks(t *testing.T) {
 	})
 
 	t.Run("a check reported after an older report does not backdate onto it", func(t *testing.T) {
-		// Check landed 1 minute ago; the report from 2 minutes ago predates it.
 		reports := applyCustomChecks(runnerReports(healthy, healthy, healthy), []customCheckObservation{
 			{Name: "queue-depth", Health: unhealthy, ObservedAt: now.Add(-time.Minute)},
 		})

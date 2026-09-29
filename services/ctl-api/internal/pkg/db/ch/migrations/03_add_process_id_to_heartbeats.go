@@ -12,8 +12,6 @@ import (
 var AddProcessIDToHeartBeats string
 
 func (m *Migrations) Migration003AddProcessIDToHeartBeats(ctx context.Context, db *gorm.DB) error {
-	// ClickHouse does not support multi-statement queries in a single exec.
-	// Split on semicolons and execute each statement individually.
 	for _, stmt := range strings.Split(AddProcessIDToHeartBeats, ";") {
 		stmt = stripSQLComments(stmt)
 		if stmt == "" {

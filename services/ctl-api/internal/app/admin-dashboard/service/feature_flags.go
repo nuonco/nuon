@@ -14,24 +14,16 @@ import (
 )
 
 type featureFlagRow struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	// Default is the value a new org gets from the code default, before the
-	// deployment's forced_enabled_features override.
-	Default          bool `json:"default"`
-	Forced           bool `json:"forced"`
-	EffectiveDefault bool `json:"effective_default"`
-	// EnabledCount counts orgs resolved against the default, so orgs predating
-	// the flag are counted as whatever the default says. A forced flag counts
-	// every org, since the stored value is ignored at read time.
-	EnabledCount int `json:"enabled_count"`
-	// UnsetCount is how many orgs have no stored value and fall back to the default.
-	UnsetCount int `json:"unset_count"`
-	// DriftCount is how many orgs store a value that disagrees with the default.
-	DriftCount int `json:"drift_count"`
+	Name             string `json:"name"`
+	Description      string `json:"description"`
+	Default          bool   `json:"default"`
+	Forced           bool   `json:"forced"`
+	EffectiveDefault bool   `json:"effective_default"`
+	EnabledCount     int    `json:"enabled_count"`
+	UnsetCount       int    `json:"unset_count"`
+	DriftCount       int    `json:"drift_count"`
 }
 
-// FeatureFlags returns every active org feature flag with its rollout across orgs.
 func (s *service) FeatureFlags(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -60,8 +52,6 @@ func (s *service) getFeatureFlags(ctx context.Context) ([]featureFlagRow, int64,
 		FalseCount int
 	}
 	var counts []countRow
-	// jsonb_typeof guards against a scalar `null` features value, which would
-	// make jsonb_each_text raise rather than yield zero rows.
 	if err := s.readDB().WithContext(ctx).Raw(
 		`SELECT f.key AS name,
 		        COUNT(*) FILTER (WHERE f.value = 'true') AS true_count,
@@ -82,7 +72,6 @@ func (s *service) getFeatureFlags(ctx context.Context) ([]featureFlagRow, int64,
 	forcedFeatures := app.ForcedFeatures()
 	features := app.GetFeaturesWithDescriptions()
 
-	// GetFeatures() is chronological, oldest first, so reverse for newest-first display.
 	rows := make([]featureFlagRow, 0, len(features))
 	for i := len(features) - 1; i >= 0; i-- {
 		f := features[i]
@@ -120,11 +109,6 @@ func (s *service) getFeatureFlags(ctx context.Context) ([]featureFlagRow, int64,
 	return rows, totalOrgs, nil
 }
 
-// featureResolutionJSON returns the active flag names as a JSON array, the
-// forced flags as a JSON object of name to "true", and the code defaults as a
-// JSON object of name to "true"/"false", all shaped for use as jsonb query
-// parameters. Resolving forced before the stored value mirrors the read-time
-// override in Features.OrgHasFeature.
 func (s *service) featureResolutionJSON() (string, string, string) {
 	features := app.GetFeatures()
 	forcedFeatures := app.ForcedFeatures()
@@ -148,8 +132,6 @@ func (s *service) featureResolutionJSON() (string, string, string) {
 	return string(namesJSON), string(forcedJSON), string(valuesJSON)
 }
 
-// effectiveFeatureDefault is the value an org with no stored entry for the flag
-// resolves to: the code default, or forced on by forced_enabled_features.
 func (s *service) effectiveFeatureDefault(name string) bool {
 	if app.ForcedFeatures()[name] {
 		return true

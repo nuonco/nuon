@@ -57,7 +57,6 @@ type KustomizeConfig struct {
 	LoadRestrictor string `json:"load_restrictor,omitempty"`
 }
 
-// Scan implements the database/sql.Scanner interface
 func (c *KustomizeConfig) Scan(v interface{}) (err error) {
 	switch v := v.(type) {
 	case nil:
@@ -70,17 +69,14 @@ func (c *KustomizeConfig) Scan(v interface{}) (err error) {
 	return
 }
 
-// Value implements the driver.Valuer interface
 func (c *KustomizeConfig) Value() (driver.Value, error) {
 	return json.Marshal(c)
 }
 
-// GormDataType returns the GORM data type for this field
 func (KustomizeConfig) GormDataType() string {
 	return "jsonb"
 }
 
-// SourceType returns the source type based on which fields are populated
 func (k *KubernetesManifestComponentConfig) SourceType() string {
 	if k.Kustomize != nil && k.Kustomize.Path != "" {
 		return "kustomize"

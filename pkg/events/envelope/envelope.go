@@ -1,6 +1,3 @@
-// Package envelope normalizes inbound trigger event payloads. A Decoder
-// understands one wire format (raw JSON, CloudEvents, Pub/Sub push, SNS,
-// Azure Event Grid, Slack Events API) and produces a provider-agnostic Event.
 package envelope
 
 import (
@@ -14,8 +11,6 @@ import (
 	"github.com/nuonco/nuon/pkg/eventfilter"
 )
 
-// Event is a normalized inbound event, independent of the wire format it
-// arrived in.
 type Event struct {
 	ID          string
 	DedupeID    string
@@ -26,22 +21,15 @@ type Event struct {
 	ContentType string
 }
 
-// Decoder decodes one wire format into a normalized Event. A nil Event with a
-// nil error means the request was valid but carries no event to persist (for
-// example an SNS subscription confirmation).
 type Decoder interface {
 	Decode(headers http.Header, body []byte) (*Event, error)
 }
 
-// FieldSelector extracts an event field from a request header or a JSONPath
-// expression evaluated against the event payload.
 type FieldSelector struct {
 	Header  string `json:"header,omitempty"`
 	Payload string `json:"payload,omitempty"`
 }
 
-// ValidateSelector rejects selectors that set both sources or use an invalid
-// payload path.
 func ValidateSelector(selector FieldSelector) error {
 	if selector.Header != "" && selector.Payload != "" {
 		return errors.New("exactly one of header or payload may be set")
@@ -54,9 +42,6 @@ func ValidateSelector(selector FieldSelector) error {
 	return nil
 }
 
-// ApplySelectors overrides the event ID and type from the configured
-// selectors. Header selectors only apply when the header is present; payload
-// selectors must match exactly one nonempty string.
 func ApplySelectors(event *Event, headers http.Header, typeFrom, idFrom FieldSelector) error {
 	if idFrom.Header != "" {
 		if value := headers.Get(idFrom.Header); value != "" {
@@ -90,7 +75,6 @@ func ApplySelectors(event *Event, headers http.Header, typeFrom, idFrom FieldSel
 	return nil
 }
 
-// DecodeJSON decodes a JSON document preserving number precision.
 func DecodeJSON(body []byte) (any, error) {
 	decoder := json.NewDecoder(bytes.NewReader(body))
 	decoder.UseNumber()

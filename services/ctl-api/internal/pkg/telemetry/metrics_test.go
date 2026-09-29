@@ -223,7 +223,6 @@ func TestSlowMetricExporterDoesNotBlockHTTPRequests(t *testing.T) {
 	unavailable.Store(false)
 	recoverReceiver()
 	require.NoError(t, provider.(*sdkmetric.MeterProvider).ForceFlush(context.Background()))
-	// Canceling ForceFlush stops waiting, not the reader's in-flight export.
 	body := <-requests
 	for len(requests) > 0 {
 		body = <-requests

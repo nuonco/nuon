@@ -11,9 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// SetAccountOrgRole replaces an account's role(s) in an org with a single role
-// of the given type. Unlike RemoveAccountOrgRoles it does not touch the
-// account's OrgInvite records, so it is safe for in-place role changes.
 func (h *Client) SetAccountOrgRole(ctx context.Context, orgID, accountID string, roleType app.RoleType) error {
 	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var role app.Role

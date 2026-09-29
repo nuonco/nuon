@@ -37,7 +37,6 @@ func (c *client) GetProcess(ctx context.Context, processID string) (*models.AppR
 	return resp.Payload, nil
 }
 
-// GetProcessShutdowns fetches shutdowns for a process via the unauthenticated endpoint.
 func (c *client) GetProcessShutdowns(ctx context.Context, processID string) ([]*models.AppRunnerProcessShutdown, error) {
 	url := fmt.Sprintf("%s/v1/runners/%s/processes/%s/shutdowns", c.APIURL, c.RunnerID, processID)
 
@@ -83,10 +82,6 @@ func (c *client) UpdateProcess(ctx context.Context, processID string, req *model
 	return resp.Payload, nil
 }
 
-// ReportTerminating sends a best-effort beacon that the process's host VM is
-// shutting down. It is bodyless; the control plane attributes the cause from
-// its own records. Callers should give ctx a short deadline since this races
-// VM/network teardown.
 func (c *client) ReportTerminating(ctx context.Context, processID string) error {
 	url := fmt.Sprintf("%s/v1/runners/%s/processes/%s/terminating", c.APIURL, c.RunnerID, processID)
 

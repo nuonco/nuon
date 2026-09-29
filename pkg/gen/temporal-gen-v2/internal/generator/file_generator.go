@@ -19,14 +19,11 @@ import (
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/file"
 )
 
-// Param is defined in activity_generator.go
-
-// GeneratorOptions contains configuration for the code generator
 type GeneratorOptions struct {
 	ProcessImports bool
 }
 
-// Unannotated activities give up fast (~7s at Temporal's default backoff) so
+// why: Unannotated activities give up fast (~7s at Temporal's default backoff) so
 // failures surface instead of hiding behind silent retries; activities that
 // genuinely need a longer budget must say so via @retry-policy-max-attempts.
 const defaultMaxRetries = 3
@@ -74,13 +71,11 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 			var byFieldType string
 			if fn.Annotation.ActivityOpts.ByField != "" {
 				if fn.Annotation.ActivityOpts.GenerateWrapper {
-					// Look in params for the field
 					fieldName := fn.Annotation.ActivityOpts.ByField
 					found := false
 					for _, p := range params {
 						if p.ExportedName == fieldName || p.Name == fieldName {
 							byFieldType = p.Type
-							// Update ByField to use the exported name for the struct field assignment
 							fn.Annotation.ActivityOpts.ByField = p.ExportedName
 							found = true
 							break
@@ -90,7 +85,6 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 						return fmt.Errorf("field %s not found in generated wrapper parameters", fieldName)
 					}
 				} else if f.Package.Pkg.TypesInfo != nil {
-					// Only attempt to extract field type if we have type information
 					obj := f.Package.Pkg.TypesInfo.Defs[fn.Decl.Name]
 					if sig, ok := obj.Type().(*types.Signature); ok {
 						sigParams := sig.Params()
@@ -118,7 +112,6 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 						}
 					}
 				} else {
-					// AST-only mode: extract field type from the struct definition
 					byFieldType, err = getFieldTypeFromAST(f.Package, inputType, fn.Annotation.ActivityOpts.ByField)
 					if err != nil {
 						return fmt.Errorf("failed to extract field %s from %s using AST: %w", fn.Annotation.ActivityOpts.ByField, inputType, err)
@@ -156,7 +149,6 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 				body.WriteString("\n")
 			}
 
-			// Track namespaced activities for registration generation
 			if fn.Annotation.ActivityOpts.Namespace != "" {
 				hasNamespacedActivity = true
 				namespacedActivities = append(namespacedActivities, data)
@@ -232,7 +224,6 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 	}
 
 	var out bytes.Buffer
-	// Header
 	out.WriteString("//  THIS FILE IS GENERATED. DO NOT EDIT.\n")
 	out.WriteString(fmt.Sprintf("//  %s\n\n", config.Watermark))
 	out.WriteString(fmt.Sprintf("package %s\n\n", f.Package.Pkg.Name))
@@ -264,7 +255,6 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 	}
 	out.WriteString(")\n\n")
 
-	// If we have a client, generate the client struct and options
 	if hasClient {
 		clientCode, err := GenerateClient(ClientData{
 			ClientName: clientName,
@@ -278,7 +268,6 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 
 	out.Write(body.Bytes())
 
-	// Generate registration helpers for namespaced activities
 	if hasNamespacedActivity {
 		for _, actData := range namespacedActivities {
 			regCode, err := GenerateActivityRegistration(actData)
@@ -290,40 +279,33 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 		}
 	}
 
-	// Write to file
 	ext := filepath.Ext(f.Path)
 	base := strings.TrimSuffix(f.Path, ext)
 	outPath := base + "_gen.go"
 
-	// Conditionally process imports if flag is enabled
 	var finalBytes []byte
 	if opts.ProcessImports {
-		// Parse original to get imports before processing
 		fset := token.NewFileSet()
 		original, err := parser.ParseFile(fset, outPath, out.Bytes(), parser.ParseComments)
 		if err != nil {
 			return fmt.Errorf("error parsing generated file: %w", err)
 		}
 
-		// Process imports
 		formatted, err := imports.Process(outPath, out.Bytes(), nil)
 		if err != nil {
 			return fmt.Errorf("goimports processing failed for %s: %w", outPath, err)
 		}
 
-		// Parse result to check for added imports
 		processed, err := parser.ParseFile(fset, outPath, formatted, parser.ParseComments)
 		if err != nil {
 			return fmt.Errorf("error parsing formatted file: %w", err)
 		}
 
-		// Build map of original imports
 		originalImports := make(map[string]bool)
 		for _, imp := range original.Imports {
 			originalImports[imp.Path.Value] = true
 		}
 
-		// Check for added imports
 		var addedImports []string
 		for _, imp := range processed.Imports {
 			if !originalImports[imp.Path.Value] {
@@ -331,8 +313,6 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 			}
 		}
 
-		// Allow goimports to add imports for domain types (e.g., app, signal)
-		// that are referenced in generated code but not in the hardcoded import list.
 		_ = addedImports
 
 		finalBytes = formatted
@@ -347,20 +327,13 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 	return nil
 }
 
-// Package needs to be imported from internal/dir but types.Package is used here
-// We need to pass the types.Package directly or wrapper
-// Actually f.Package is *dir.Package which contains Pkg *packages.Package.
-// packages.Package contains Types *types.Package.
-
 func getSignature(pkg *packages.Package, decl *ast.FuncDecl) (inputType string, outputType string, params []Param, receiver string, err error) {
-	// If TypesInfo is nil, fall back to AST-only parsing
 	if pkg.TypesInfo == nil || pkg.TypesInfo.Defs == nil {
 		return getSignatureFromAST(decl)
 	}
 
 	obj := pkg.TypesInfo.Defs[decl.Name]
 	if obj == nil {
-		// Fall back to AST if type info not available
 		return getSignatureFromAST(decl)
 	}
 	sig, ok := obj.Type().(*types.Signature)
@@ -375,17 +348,13 @@ func getSignature(pkg *packages.Package, decl *ast.FuncDecl) (inputType string, 
 		return p.Name()
 	}
 
-	// Receiver
 	if recv := sig.Recv(); recv != nil {
 		receiver = types.TypeString(recv.Type(), qualifier)
 	}
 
-	// Inputs
 	sigParams := sig.Params()
 	start := 0
-	// Skip context (first arg)
 	if sigParams.Len() > 0 {
-		// Check if first arg is context.Context or workflow.Context
 		firstParamType := sigParams.At(0).Type().String()
 		if strings.Contains(firstParamType, "context.Context") || strings.Contains(firstParamType, "workflow.Context") {
 			start = 1
@@ -407,14 +376,11 @@ func getSignature(pkg *packages.Package, decl *ast.FuncDecl) (inputType string, 
 		inputType = params[0].Type
 	}
 
-	// Outputs
 	results := sig.Results()
 	if results.Len() > 0 {
-		// Assume last is error.
 		if results.Len() == 2 {
 			outputType = types.TypeString(results.At(0).Type(), qualifier)
 		} else if results.Len() == 1 {
-			// Just error
 			outputType = ""
 		}
 	}
@@ -440,18 +406,15 @@ func toPascal(s string) string {
 }
 
 func getFieldType(t types.Type, fieldName string) (types.Type, error) {
-	// Dereference pointer if needed
 	if ptr, ok := t.(*types.Pointer); ok {
 		t = ptr.Elem()
 	}
 
-	// Check if it's a named type
 	named, ok := t.(*types.Named)
 	if !ok {
 		return nil, fmt.Errorf("type %s is not a named type", t)
 	}
 
-	// Check if underlying is a struct
 	st, ok := named.Underlying().(*types.Struct)
 	if !ok {
 		return nil, fmt.Errorf("type %s is not a struct", t)
@@ -467,17 +430,13 @@ func getFieldType(t types.Type, fieldName string) (types.Type, error) {
 	return nil, fmt.Errorf("field %s not found in %s", fieldName, t)
 }
 
-// getSignatureFromAST extracts function signature from AST when type information is unavailable
 func getSignatureFromAST(decl *ast.FuncDecl) (inputType string, outputType string, params []Param, receiver string, err error) {
-	// Extract receiver
 	if decl.Recv != nil && len(decl.Recv.List) > 0 {
 		receiver = exprToString(decl.Recv.List[0].Type)
 	}
 
-	// Extract parameters
 	if decl.Type.Params != nil {
 		start := 0
-		// Skip context parameter
 		if len(decl.Type.Params.List) > 0 {
 			firstParam := decl.Type.Params.List[0]
 			firstType := exprToString(firstParam.Type)
@@ -489,8 +448,6 @@ func getSignatureFromAST(decl *ast.FuncDecl) (inputType string, outputType strin
 		for i := start; i < len(decl.Type.Params.List); i++ {
 			field := decl.Type.Params.List[i]
 
-			// Skip variadic parameters (e.g., opts ...*workflow.ActivityOptions)
-			// These are always optional and handled separately in templates
 			if _, isEllipsis := field.Type.(*ast.Ellipsis); isEllipsis {
 				continue
 			}
@@ -511,19 +468,15 @@ func getSignatureFromAST(decl *ast.FuncDecl) (inputType string, outputType strin
 		inputType = params[0].Type
 	}
 
-	// Extract return type
 	if decl.Type.Results != nil && len(decl.Type.Results.List) > 0 {
-		// If 2 returns, first is result type, second is error
 		if len(decl.Type.Results.List) == 2 {
 			outputType = exprToString(decl.Type.Results.List[0].Type)
 		}
-		// If 1 return, it's just error
 	}
 
 	return inputType, outputType, params, receiver, nil
 }
 
-// exprToString converts an AST expression to a string representation
 func exprToString(expr ast.Expr) string {
 	switch t := expr.(type) {
 	case *ast.Ident:
@@ -538,17 +491,14 @@ func exprToString(expr ast.Expr) string {
 		}
 		return "[" + exprToString(t.Len) + "]" + exprToString(t.Elt)
 	case *ast.Ellipsis:
-		// Variadic parameter like ...string
 		return "[]" + exprToString(t.Elt)
 	case *ast.MapType:
 		return "map[" + exprToString(t.Key) + "]" + exprToString(t.Value)
 	case *ast.InterfaceType:
 		return "interface{}"
 	case *ast.IndexExpr:
-		// Generic type like Foo[T]
 		return exprToString(t.X) + "[" + exprToString(t.Index) + "]"
 	case *ast.IndexListExpr:
-		// Generic with multiple params like Foo[T, U]
 		result := exprToString(t.X) + "["
 		for i, index := range t.Indices {
 			if i > 0 {
@@ -563,12 +513,9 @@ func exprToString(expr ast.Expr) string {
 	}
 }
 
-// getFieldTypeFromAST extracts a field's type from a struct definition using AST
 func getFieldTypeFromAST(pkg *dir.Package, structName string, fieldName string) (string, error) {
-	// Remove pointer prefix if present
 	structName = strings.TrimPrefix(structName, "*")
 
-	// Search through all files in the package for the struct definition
 	for _, file := range pkg.Pkg.Syntax {
 		for _, decl := range file.Decls {
 			genDecl, ok := decl.(*ast.GenDecl)
@@ -587,7 +534,6 @@ func getFieldTypeFromAST(pkg *dir.Package, structName string, fieldName string) 
 					continue
 				}
 
-				// Found the struct, now find the field
 				for _, field := range structType.Fields.List {
 					for _, name := range field.Names {
 						if name.Name == fieldName {

@@ -16,9 +16,9 @@ import (
 
 type Signal struct {
 	ComponentID    string `json:"component_id" validate:"required"`
-	AppConfigID    string `json:"app_config_id"`     // optional; if set, use branch VCS commit when component shares same VCS config
-	BuildID        string `json:"build_id"`          // optional; if set, skip build creation and trigger pre-created build
-	AppBranchRunID string `json:"app_branch_run_id"` // optional; links build to branch run for querying
+	AppConfigID    string `json:"app_config_id"`
+	BuildID        string `json:"build_id"`
+	AppBranchRunID string `json:"app_branch_run_id"`
 }
 
 var (
@@ -45,7 +45,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 func (s *Signal) Execute(ctx workflow.Context) error {
 	buildID := s.BuildID
 
-	// Adopt the syncer's pre-created queued build instead of duplicating it.
 	if buildID == "" && s.AppConfigID != "" {
 		adopted, err := activities.AwaitAdoptQueuedComponentBuild(ctx, activities.AdoptQueuedComponentBuildRequest{
 			ComponentID:    s.ComponentID,
@@ -58,7 +57,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		buildID = adopted.BuildID
 	}
 
-	// If no pre-created build, create the build record.
 	if buildID == "" {
 		cmp, err := activities.AwaitGetComponentByComponentID(ctx, s.ComponentID)
 		if err != nil {
@@ -72,8 +70,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			AppConfigID:    s.AppConfigID,
 		}
 
-		// If AppConfigID is provided, try to use the branch's VCS commit when the
-		// component shares the same VCS config as the triggering branch run.
 		if s.AppConfigID != "" {
 			run, err := activities.AwaitGetAppBranchRunByAppConfigIDByAppConfigID(ctx, s.AppConfigID)
 			if err == nil && run.VCSConnectionCommit != nil {
@@ -95,8 +91,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		buildID = build.ID
 	}
 
-	// Enqueue the build signal to the component's queue. The caller awaits this
-	// queuebuild signal; the build signal runs independently on the component queue.
 	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   s.ComponentID,
 		OwnerType: "components",
@@ -115,8 +109,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return nil
 }
 
-// resolveComponentVCSConfigID returns the VCS config ID from the component's latest config,
-// used to compare against the branch run's VCS commit owner.
 func resolveComponentVCSConfigID(cmp *app.Component) string {
 	if cmp.LatestConfig == nil {
 		return ""

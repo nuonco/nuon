@@ -9,8 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// fetchState gives orphan detection a baseline. Missing or unparseable state
-// leaves it empty rather than failing the sync.
 func (s *syncer) fetchState(ctx context.Context) {
 	var prev app.AppConfig
 	res := s.db.WithContext(ctx).
@@ -32,7 +30,6 @@ func (s *syncer) fetchState(ctx context.Context) {
 	s.prevState = &prevState
 }
 
-// persistState writes state the CLI sync reads back on its next run.
 func (s *syncer) persistState(ctx context.Context) error {
 	if orphans := s.orphanedResult(); orphans != nil {
 		if s.state.Result == nil {

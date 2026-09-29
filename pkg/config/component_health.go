@@ -13,22 +13,14 @@ const (
 	HealthProbeTypeExec = "exec"
 )
 
-// ComponentHealthConfig configures live health checking for component types the
-// health engine can observe (helm_chart and kubernetes_manifest).
 type ComponentHealthConfig struct {
 	Enabled             *bool                        `mapstructure:"enabled,omitempty" toml:"enabled,omitempty" nuonhash:"omitempty"`
 	StabilizationWindow string                       `mapstructure:"stabilization_window,omitempty" toml:"stabilization_window,omitempty" features:"template" nuonhash:"omitempty"`
 	BlockDeploy         *bool                        `mapstructure:"block_deploy,omitempty" toml:"block_deploy,omitempty" nuonhash:"omitempty"`
 	Probes              []ComponentHealthProbeConfig `mapstructure:"probes,omitempty" toml:"probes,omitempty" nuonhash:"omitempty"`
-	// RequiredChecks are pushed check names a deploy waits for. Unlike probes the
-	// runner cannot produce these, so the gate holds until something external
-	// reports them healthy — the point being that a deploy can depend on a fact
-	// only the vendor's own system knows.
-	RequiredChecks []string `mapstructure:"required_checks,omitempty" toml:"required_checks,omitempty" nuonhash:"omitempty"`
+	RequiredChecks      []string                     `mapstructure:"required_checks,omitempty" toml:"required_checks,omitempty" nuonhash:"omitempty"`
 }
 
-// ComponentHealthProbeConfig is one synthetic health check the runner executes
-// for the component on every health report cycle.
 type ComponentHealthProbeConfig struct {
 	Type    string   `mapstructure:"type,omitempty" toml:"type,omitempty" nuonhash:"omitempty"`
 	Name    string   `mapstructure:"name,omitempty" toml:"name,omitempty" nuonhash:"omitempty"`
@@ -75,8 +67,6 @@ func (p ComponentHealthProbeConfig) JSONSchemaExtend(schema *jsonschema.Schema) 
 		Example([]string{"/usr/local/bin/check-api", "--timeout", "2s"})
 }
 
-// Validate checks the probes declared on the health block. Anything it rejects
-// would otherwise reach the runner as a probe it cannot execute.
 func (c *ComponentHealthConfig) Validate() error {
 	if c == nil {
 		return nil

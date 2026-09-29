@@ -114,7 +114,6 @@ func (s *InvalidateRunnerServiceAccountTokenTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunner).Error
 	require.NoError(s.T(), err)
 
-	// Create service account for runner (handler expects this)
 	serviceAcct := &app.Account{
 		ID:          domains.NewAccountID(),
 		Email:       account.ServiceAccountEmail(s.testRunner.ID),

@@ -16,7 +16,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// ensureAppQueue gives the test app the queue the sync signal is enqueued onto.
 func (s *AppConfigsTestSuite) ensureAppQueue() *app.Queue {
 	q := &app.Queue{
 		OrgID:       &s.testOrg.ID,
@@ -68,8 +67,6 @@ func (s *AppConfigsTestSuite) TestSyncAppConfigEnqueuesSyncSignal() {
 	assert.Equal(s.T(), appConfig.ID, sig.AppConfigID)
 }
 
-// A config created without an intermediate config has nothing to apply, so the
-// request must be rejected rather than enqueueing a sync that cannot succeed.
 func (s *AppConfigsTestSuite) TestSyncAppConfigRejectsConfigWithoutIntermediateConfig() {
 	s.ensureAppQueue()
 
@@ -86,7 +83,6 @@ func (s *AppConfigsTestSuite) TestSyncAppConfigRejectsConfigWithoutIntermediateC
 	assert.Empty(s.T(), tests.GetQueueSignals(s.T(), s.service.DB), "no sync signal should be enqueued")
 }
 
-// Two concurrent syncs of the same config would race on the same records.
 func (s *AppConfigsTestSuite) TestSyncAppConfigRejectsConfigAlreadySyncing() {
 	s.skipBlobTestsInCI()
 	s.ensureAppQueue()
@@ -104,7 +100,6 @@ func (s *AppConfigsTestSuite) TestSyncAppConfigRejectsConfigAlreadySyncing() {
 	assert.Empty(s.T(), tests.GetQueueSignals(s.T(), s.service.DB), "no sync signal should be enqueued")
 }
 
-// A config belonging to another app must not be syncable through this app.
 func (s *AppConfigsTestSuite) TestSyncAppConfigRejectsConfigFromAnotherApp() {
 	s.skipBlobTestsInCI()
 	s.ensureAppQueue()

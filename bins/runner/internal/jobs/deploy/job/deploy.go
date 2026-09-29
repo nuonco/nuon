@@ -11,7 +11,6 @@ import (
 func (p *handler) deploy(
 	ctx context.Context,
 ) error {
-	// init logger
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return err
@@ -22,14 +21,12 @@ func (p *handler) deploy(
 		return err
 	}
 
-	// start k8s job
 	l.Info("starting job")
 	job, err := p.startJob(ctx, clientset)
 	if err != nil {
 		return err
 	}
 
-	// monitor job
 	l.Info("polling job")
 	err = p.pollJob(ctx, clientset, job)
 	if err != nil {

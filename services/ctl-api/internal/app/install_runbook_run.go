@@ -138,10 +138,6 @@ func (r *InstallRunbookRun) AfterQuery(tx *gorm.DB) error {
 		return nil
 	}
 
-	// Nothing writes StatusV2 on a runbook run — unlike action runs, there is no
-	// signal that owns the run's lifecycle, so the stored column is stuck at the
-	// value TriggerRunbookRun wrote at creation. The run's workflow is the real
-	// source of truth for its progress, so derive from it when it's loaded.
 	if r.InstallWorkflow != nil && r.InstallWorkflow.Status.Status != "" {
 		r.Status = runbookRunStatusFromWorkflow(r.InstallWorkflow.Status.Status)
 		r.StatusDescription = r.InstallWorkflow.Status.StatusHumanDescription

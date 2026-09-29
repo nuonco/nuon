@@ -9,13 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Emitter IDs with pinned fnv32a values so a hash-algorithm change fails loudly:
-//
-//	qemtest1: 891724809 (%5=4, %15=9, %30=9, %60=9)
-//	qemtest2: 841391952 (%15=12)
-//	qemtest5: 958835285 (%5=0)
-//	qemtest6: 908502428 (%3=2)
-//	qemtest7: 925280047 (%15=7)
 func TestApplyCronJitter(t *testing.T) {
 	tests := []struct {
 		name      string

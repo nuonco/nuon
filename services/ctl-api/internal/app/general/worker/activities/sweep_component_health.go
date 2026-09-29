@@ -16,25 +16,15 @@ import (
 )
 
 const (
-	// componentHealthStaleAfter mirrors the evaluator's threshold: below it an
-	// install is simply between reports, not quiet.
 	componentHealthStaleAfter = 5 * time.Minute
 
-	// componentHealthSweepBand bounds how far back the sweep looks. An install
-	// quiet for longer than this is already unknown and re-evaluating it would
-	// change nothing, so the sweep is a moving window over installs that went
-	// quiet recently rather than an ever-growing tail of dead ones.
 	componentHealthSweepBand = 6 * time.Hour
 
-	// componentHealthSweepLimit caps one run so a fleet-wide outage drains over
-	// several minutes instead of stampeding.
 	componentHealthSweepLimit = 200
 
 	componentHealthEvaluateSignalType = "component-health-evaluate"
 )
 
-// componentHealthSweepWindow bounds which installs a sweep considers: quiet
-// long enough to count as stale, but not so long that they are already unknown.
 func componentHealthSweepWindow(now time.Time) (quietBefore, ignoreBefore time.Time) {
 	return now.Add(-componentHealthStaleAfter), now.Add(-componentHealthSweepBand)
 }
@@ -76,16 +66,12 @@ func (a *Activities) SweepStaleComponentHealth(ctx context.Context, _ SweepStale
 	resp.Stale = len(installs)
 	resp.Capped = len(installs) == componentHealthSweepLimit
 	if resp.Capped {
-		// A silent cap reads exactly like "nothing was stale".
 		a.l.Warn("component health sweep hit its per-run limit",
 			zap.Int("limit", componentHealthSweepLimit))
 	}
 
 	ownerType := plugins.TableName(a.db, app.Install{})
 	for _, install := range installs {
-		// queue_signals.created_by_id is NOT NULL and filled from context. An
-		// activity has no account, so attribute the signal to whoever created
-		// the install, the way the emitter backfill migration does.
 		installCtx := context.WithValue(ctx, keys.AccountIDCtxKey, install.CreatedByID)
 		if a.enqueueHealthEvaluate(installCtx, install.ID, ownerType) {
 			resp.Enqueued++
@@ -95,8 +81,6 @@ func (a *Activities) SweepStaleComponentHealth(ctx context.Context, _ SweepStale
 	return resp, nil
 }
 
-// enqueueHealthEvaluate asks one install's health queue to re-evaluate. Deduped
-// per queue, so a still-pending evaluation absorbs this one.
 func (a *Activities) enqueueHealthEvaluate(ctx context.Context, installID, ownerType string) bool {
 	var q app.Queue
 	if err := a.db.WithContext(ctx).
@@ -112,7 +96,7 @@ func (a *Activities) enqueueHealthEvaluate(ctx context.Context, installID, owner
 		return false
 	}
 
-	// Same minute-bucketing as the ingest path: a finished signal is not
+	// why: Same minute-bucketing as the ingest path: a finished signal is not
 	// soft-deleted until nightly cleanup, so a constant key would enqueue once
 	// and then silently stop.
 	dedupeKey := fmt.Sprintf("%s-%d", componentHealthEvaluateSignalType, time.Now().Truncate(time.Minute).Unix())

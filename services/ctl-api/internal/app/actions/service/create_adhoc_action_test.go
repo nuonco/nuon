@@ -392,7 +392,6 @@ func (s *CreateAdHocActionTestSuite) TestCreateAdHocActionNotFound() {
 					Command: "echo test",
 				}
 			},
-			// Handler wraps not-found in stderr.ErrUser which returns 400
 			expectedCode: http.StatusBadRequest,
 		},
 	}
@@ -447,7 +446,7 @@ func (s *CreateAdHocActionTestSuite) TestCreateAdHocActionCrossOrgIsolation() {
 	path := fmt.Sprintf("/v1/installs/%s/actions/adhoc-run", install2.ID)
 	rr := s.makeRequest(http.MethodPost, path, req)
 
-	// BUG: getInstall does not scope by org, so cross-org access succeeds.
+	// why: getInstall does not scope by org, so cross-org access succeeds.
 	// This should return 404 but currently returns 201.
 	// TODO: Fix getInstall to scope by org_id from context.
 	if rr.Code != http.StatusCreated {

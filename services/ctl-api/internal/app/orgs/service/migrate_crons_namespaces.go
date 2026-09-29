@@ -42,7 +42,6 @@ func (s *service) MigrateCronsNamespaces(ctx *gin.Context) {
 		return
 	}
 
-	// Flip the feature flag so subsequent EnsureQueues calls target the correct namespace.
 	if err := s.features.Enable(ctx, org.ID, map[string]bool{
 		string(app.OrgFeatureCronNamespaceIsolation): req.Enabled,
 	}); err != nil {
@@ -51,8 +50,6 @@ func (s *service) MigrateCronsNamespaces(ctx *gin.Context) {
 		return
 	}
 
-	// Re-ensure all of the org's queues; EnsureInstallQueues/EnsureRunnerQueues
-	// now migrate cron queues to the namespace dictated by the feature flag.
 	if err := s.helpers.EnqueueOrgSignal(ctx, orgshelpers.EnqueueOrgSignalParams{
 		OrgID:  org.ID,
 		Signal: &queuemigration.Signal{OrgID: org.ID, ReconcileCronEmitters: true},

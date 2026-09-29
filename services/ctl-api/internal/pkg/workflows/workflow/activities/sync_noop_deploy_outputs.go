@@ -36,7 +36,6 @@ func (a *Activities) SyncNoopDeployOutputs(ctx context.Context, req *SyncNoopDep
 		return nil
 	}
 
-	// Get the latest plan job (uses the view, so outputs are available).
 	var planJob app.RunnerJob
 	err = a.db.WithContext(ctx).
 		Where("owner_id = ? AND operation = ?", step.StepTargetID, app.RunnerJobOperationTypeCreateApplyPlan).
@@ -55,11 +54,8 @@ func (a *Activities) SyncNoopDeployOutputs(ctx context.Context, req *SyncNoopDep
 		return nil
 	}
 
-	// the blob upload in RunnerJobExecutionOutputs' BeforeCreate hook requires org_id on the context
 	ctx = cctx.SetOrgIDContext(ctx, planJob.OrgID)
 
-	// Create a finished apply job with the plan's outputs so the deploy
-	// has outputs in the same structure the rest of the system expects.
 	applyJob := &app.RunnerJob{
 		CreatedByID:       planJob.CreatedByID,
 		RunnerID:          planJob.RunnerID,

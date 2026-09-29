@@ -68,7 +68,6 @@ func (p *Planner) createTerraformDeployPlan(
 		return nil, errors.Wrap(err, "unable to get component build")
 	}
 
-	// render cross-platform values
 	cfg := compBuild.ComponentConfigConnection.TerraformModuleComponentConfig
 	if err := render.RenderStruct(cfg, stateData); err != nil {
 		l.Error("error rendering terraform config",
@@ -98,9 +97,6 @@ func (p *Planner) createTerraformDeployPlan(
 		return nil, deployerrors.NewDeployPlanRenderFailed(err, "unable to render environment variables")
 	}
 
-	// Install-level Terraform vars override, carried via a reserved synthetic
-	// input. Appended as the final var-file so it wins over the vendor's vars map
-	// and var_files (last -var-file wins). Empty is a no-op.
 	varsFiles := []string(cfg.VariablesFiles)
 	tfVarsOverride, err := p.installComponentOverride(
 		state, stateData,
@@ -128,7 +124,6 @@ func (p *Planner) createTerraformDeployPlan(
 		l.Warn("unable to resolve kubernetes context, this usually means this was not a kubernetes application")
 	}
 
-	// construct plan from rendered values
 	return &plantypes.TerraformDeployPlan{
 		Vars:      vars,
 		EnvVars:   envVars,

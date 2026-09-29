@@ -16,13 +16,8 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-// executeWorkflowSignalType is executeflow.SignalType. Kept here so this
-// notifier does not import the flow conductor.
 const executeWorkflowSignalType qsignal.SignalType = "execute-workflow"
 
-// Notifier dispatches outside workflow code so existing in-flight workflows
-// can use the new behavior without a Temporal version gate. Notification
-// failures must never fail the status update that triggered them.
 type Notifier struct {
 	db          *gorm.DB
 	queueClient *queueclient.Client
@@ -84,10 +79,6 @@ func (n *Notifier) FlowStatusUpdated(ctx context.Context, req statusactivities.U
 	retryIndex := intFromMetadata(step.Status.Metadata, "retry_index")
 	maxRetries := intFromMetadata(step.Status.Metadata, "max_retries")
 
-	// The flow handler withholds completion callbacks while the workflow is
-	// parked, so a parent waiting on this install (an app-branch deploy group)
-	// would stay in progress. Deliver the failure now. A later retry that
-	// succeeds does not revive that parent.
 	n.notifyParentCallbacks(ctx, l, wf.ID, errMessage)
 
 	if n.alreadyNotified(ctx, stepID, retryIndex) {
@@ -126,7 +117,7 @@ func (n *Notifier) FlowStatusUpdated(ctx context.Context, req statusactivities.U
 	l.Info("awaiting-retry notification enqueued", zap.Int("retry_index", retryIndex))
 }
 
-// notifyParentCallbacks signals completion callbacks registered on the
+// why: notifyParentCallbacks signals completion callbacks registered on the
 // workflow's in-progress execute-workflow queue signal. Failures are logged:
 // this must not fail the status update that triggered it.
 func (n *Notifier) notifyParentCallbacks(ctx context.Context, l *zap.Logger, workflowID, errMessage string) {
@@ -184,8 +175,6 @@ func completionCallbackRefs(qs app.QueueSignal) callback.Refs {
 	return append(refs, qs.Callback)
 }
 
-// alreadyNotified guards against a Temporal activity retry enqueueing the
-// same step retry twice.
 func (n *Notifier) alreadyNotified(ctx context.Context, stepID string, retryIndex int) bool {
 	var last app.QueueSignal
 	err := n.db.WithContext(ctx).

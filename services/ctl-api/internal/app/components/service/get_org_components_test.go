@@ -25,7 +25,7 @@ func (s *ComponentsServiceTestSuite) TestGetOrgComponentsSuccess() {
 		},
 		{
 			name:          "filters by component_ids",
-			queryParams:   "", // set dynamically below
+			queryParams:   "",
 			expectedCount: 2,
 			validateFunc: func(comps []*models.AppComponent) {
 				s.Assert().Equal(2, len(comps), "should return exactly 2 filtered components")

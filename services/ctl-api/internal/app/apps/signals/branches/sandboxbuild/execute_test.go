@@ -23,8 +23,6 @@ import (
 func TestExecuteAddsSandboxBuildIDToStepMetadata(t *testing.T) {
 	var suite testsuite.WorkflowTestSuite
 	env := suite.NewTestWorkflowEnvironment()
-	// the detector is wall-clock based, so a loaded CI host trips it on a
-	// workflow that is not actually blocked
 	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 	sig := &Signal{
 		AppBranchID: "branch-1",

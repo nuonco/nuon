@@ -19,7 +19,6 @@ type Downloader interface {
 	FindKeys(context.Context, string, string) ([]string, error)
 }
 
-// s3Downloader implements the downloader interface and exposes the abilty to get and list prefixes
 type s3Downloader struct {
 	v *validator.Validate `validate:"required"`
 

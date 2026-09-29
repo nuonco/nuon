@@ -23,15 +23,11 @@ import (
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 )
 
-// uploader is the interface for uploading data into output runs directory
 type Uploader interface {
-	// uploadFile writes the data in the file into the output s3 blob and returns SHA256 checksum
 	UploadFile(context.Context, string, string) (string, error)
 
-	// uploadBlob writes the data in the byte slice into the output s3 blob
 	UploadBlob(context.Context, []byte, string) error
 
-	// uploadStream writes the data from the reader into the output s3 blob and returns SHA256 checksum
 	UploadStream(context.Context, io.Reader, string) (string, error)
 }
 
@@ -52,42 +48,36 @@ func NewS3Uploader(v *validator.Validate, opts ...uploaderOptions) (*s3Uploader,
 
 type uploaderOptions func(*s3Uploader)
 
-// WithCredentials sets the credentials
 func WithCredentials(creds *credentials.Config) uploaderOptions {
 	return func(obj *s3Uploader) {
 		obj.creds = creds
 	}
 }
 
-// WithAssumeRoleARN sets the ARN of the role to assume
 func WithAssumeRoleARN(s string) uploaderOptions {
 	return func(obj *s3Uploader) {
 		obj.assumeRoleARN = s
 	}
 }
 
-// WithAssumeSessionName sets the session name of the assume
 func WithAssumeSessionName(s string) uploaderOptions {
 	return func(obj *s3Uploader) {
 		obj.assumeRoleSessionName = s
 	}
 }
 
-// WithPrefix sets the session name of the assume
 func WithPrefix(s string) uploaderOptions {
 	return func(obj *s3Uploader) {
 		obj.prefix = s
 	}
 }
 
-// WithBucketName sets the bucket name
 func WithBucketName(s string) uploaderOptions {
 	return func(obj *s3Uploader) {
 		obj.Bucket = s
 	}
 }
 
-// WithUploader reuses a caller-owned uploader and its underlying S3 client.
 func WithUploader(uploader s3UploaderClient) uploaderOptions {
 	return func(obj *s3Uploader) {
 		obj.uploader = uploader
@@ -100,7 +90,6 @@ type s3Uploader struct {
 	prefix string
 	Bucket string `validate:"required"`
 
-	// assumeRoleARN is an optional role which will be assumed if passed in
 	assumeRoleARN         string
 	assumeRoleSessionName string
 	creds                 *credentials.Config
@@ -149,7 +138,6 @@ func (s *s3Uploader) UploadFile(ctx context.Context, srcFp, outputName string) (
 	}
 	defer f.Close()
 
-	// Calculate SHA256 checksum as we read the file
 	hash := sha256.New()
 	teeReader := io.TeeReader(f, hash)
 
@@ -157,7 +145,6 @@ func (s *s3Uploader) UploadFile(ctx context.Context, srcFp, outputName string) (
 		return "", err
 	}
 
-	// Return checksum in sha256: format
 	checksum := fmt.Sprintf("sha256:%x", hash.Sum(nil))
 	return checksum, nil
 }
@@ -178,7 +165,6 @@ func (s *s3Uploader) UploadStream(ctx context.Context, reader io.Reader, outputN
 		return "", err
 	}
 
-	// Calculate SHA256 checksum as we read the stream
 	hash := sha256.New()
 	teeReader := io.TeeReader(reader, hash)
 
@@ -186,7 +172,6 @@ func (s *s3Uploader) UploadStream(ctx context.Context, reader io.Reader, outputN
 		return "", err
 	}
 
-	// Return checksum in sha256: format
 	checksum := fmt.Sprintf("sha256:%x", hash.Sum(nil))
 	return checksum, nil
 }

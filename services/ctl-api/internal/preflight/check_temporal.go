@@ -22,8 +22,6 @@ var temporalCheck = Check{
 		}
 	},
 
-	// Dials and calls CheckHealth rather than opening a TCP socket: a listening
-	// port proves nothing about whether the frontend service is actually serving.
 	Probe: func(ctx context.Context, cfg *internal.Config) (string, error) {
 		client, err := temporalclient.New(validator.New(),
 			temporalclient.WithAddr(cfg.TemporalHost),

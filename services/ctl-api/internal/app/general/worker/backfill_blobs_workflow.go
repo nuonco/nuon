@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	blobBackfillBatchSize = 1000
-	// caps batches per child and buckets per parent run so workflow history stays bounded.
+	blobBackfillBatchSize  = 1000
 	blobBackfillMaxBatches = 5000
 	blobBucketsPerRun      = 100
 )
@@ -30,9 +29,6 @@ var defaultBlobBackfillTables = []string{
 	"terraform_workspace_state_jsons",
 }
 
-// BackfillBlobs enumerates the day-buckets with un-mirrored rows and drains them
-// one (table, day) child at a time, continue-as-newing to keep history bounded.
-// Running sequentially keeps the per-activity S3 rate limiter acting globally.
 func (w *Workflows) BackfillBlobs(ctx workflow.Context, req blobbackfill.RangeRequest) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -130,7 +126,6 @@ func (w *Workflows) runBackfillDay(ctx workflow.Context, bucket blobbackfill.Day
 	return result, nil
 }
 
-// BackfillBlobsDay drains every un-mirrored row created within its day.
 func (w *Workflows) BackfillBlobsDay(ctx workflow.Context, req blobbackfill.DayRequest) (blobbackfill.DayResult, error) {
 	var result blobbackfill.DayResult
 	for i := 0; i < blobBackfillMaxBatches; i++ {

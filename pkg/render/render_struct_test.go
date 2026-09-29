@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// Test fixture structs
 type simpleStruct struct {
 	ID         string `features:"template"`
 	Name       string `features:"template"`
@@ -79,17 +78,14 @@ type unexportedFieldStruct struct {
 	private string `features:"template"`
 }
 
-// RenderStructTestSuite is the testify suite for render_struct tests
 type RenderStructTestSuite struct {
 	suite.Suite
 }
 
-// TestRenderStructSuite runs the test suite
 func TestRenderStructSuite(t *testing.T) {
 	suite.Run(t, new(RenderStructTestSuite))
 }
 
-// Test data sets
 func getStandardData() map[string]any {
 	return map[string]any{
 		"nuon": map[string]any{

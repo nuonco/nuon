@@ -1,4 +1,4 @@
-// Flat (resource, category) shape used by the redesigned picker UI. Maps onto
+// why: Flat (resource, category) shape used by the redesigned picker UI. Maps onto
 // the wire-format ResourceCfg fields below — kept here so both InterestsPicker
 // (summary text + count) and InterestsModal (checklist) share one source of
 // truth for what counts as a "selected event" and how to set/clear it.

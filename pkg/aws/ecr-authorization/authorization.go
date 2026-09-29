@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 )
 
-//
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=authorization_mock_test.go -source=authorization.go -package=ecr
 type Authorization struct {
@@ -38,7 +37,6 @@ type awsECRClient interface {
 	GetAuthorizationToken(context.Context, *ecr.GetAuthorizationTokenInput, ...func(*ecr.Options)) (*ecr.GetAuthorizationTokenOutput, error)
 }
 
-// getAuthorizationData: returns authentication data for connecting to an ECR repo
 func (e *ecrAuthorizer) getAuthorizationData(ctx context.Context, client awsECRClient) (*ecr_types.AuthorizationData, error) {
 	params := &ecr.GetAuthorizationTokenInput{}
 

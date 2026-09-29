@@ -7,8 +7,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// Assumed, we'll get key-value pairs as arguments.
-// Code below prevents a panic, if wrong arguments set received.
 func convertToZapAny(args ...interface{}) []zapcore.Field {
 	fields := []zapcore.Field{}
 	for i := len(args); i > 0; i -= 2 {

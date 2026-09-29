@@ -121,7 +121,7 @@ func (a *Activities) getComponentBuildWithExternalImageConfig(ctx context.Contex
 	return &bld, nil
 }
 
-// getACRAuth goes through the shared activity rather than calling the token
+// why: getACRAuth goes through the shared activity rather than calling the token
 // exchange directly, because that is what resolves the app registration's
 // secret out of the AppSecret it is named after. Building a credential from
 // the stored columns alone would authenticate as whatever ambient identity the

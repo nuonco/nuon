@@ -13,15 +13,12 @@ type QueueComponentBuildRequest struct {
 	OrgID       string `validate:"required"`
 	CreatedByID string `validate:"required"`
 
-	// GitRef overrides useLatest when set. Used to pin a build to the branch's specific commit.
-	GitRef *string
-	// VCSConnectionCommitID is a pre-resolved commit to attach to the build record.
+	GitRef                *string
 	VCSConnectionCommitID *string
 }
 
 // @temporal-gen-v2 activity
 func (a *Activities) QueueComponentBuild(ctx context.Context, req QueueComponentBuildRequest) (*app.ComponentBuild, error) {
-	// set the orgID on the context, for all writes
 	ctx = cctx.SetOrgIDContext(ctx, req.OrgID)
 	ctx = cctx.SetAccountIDContext(ctx, req.CreatedByID)
 
@@ -31,7 +28,6 @@ func (a *Activities) QueueComponentBuild(ctx context.Context, req QueueComponent
 		return nil, fmt.Errorf("create component build: %w", err)
 	}
 
-	// If a pre-resolved commit ID was provided and the build doesn't already have one, attach it.
 	if req.VCSConnectionCommitID != nil && build.VCSConnectionCommitID == nil {
 		if res := a.db.WithContext(ctx).Model(build).Update("vcs_connection_commit_id", *req.VCSConnectionCommitID); res.Error != nil {
 			return nil, fmt.Errorf("update build commit: %w", res.Error)

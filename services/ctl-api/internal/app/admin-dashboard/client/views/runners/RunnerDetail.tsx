@@ -95,7 +95,6 @@ export const RunnerDetail = () => {
         </div>
       </div>
 
-      {/* Process Info */}
       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Process</h2>
         {process ? (
@@ -118,7 +117,6 @@ export const RunnerDetail = () => {
         )}
       </div>
 
-      {/* Configs */}
       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Configs</h2>
@@ -183,7 +181,6 @@ export const RunnerDetail = () => {
           </table>
         </div>
 
-        {/* Upsert Form */}
         <div className="mt-4 rounded-md border border-gray-200 dark:border-gray-800 p-3">
           <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Add/Update Config</h3>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:flex-wrap">

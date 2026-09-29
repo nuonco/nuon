@@ -23,7 +23,6 @@ type PrepPolicyEvaluationRequest struct {
 	StepTargetType string `validate:"required"`
 }
 
-// PolicyViolation is an alias to app.PolicyViolation for use in activity requests/responses.
 type PolicyViolation = app.PolicyViolation
 
 type PolicyToEvaluate struct {
@@ -31,8 +30,8 @@ type PolicyToEvaluate struct {
 	PolicyName    string `json:"policy_name" temporaljson:"policy_name,omitempty"`
 	Contents      string `json:"contents" temporaljson:"contents,omitempty"`
 	InputJSON     []byte `json:"input_json" temporaljson:"input_json,omitempty"`
-	InputIndex    int    `json:"input_index" temporaljson:"input_index,omitempty"`       // Index of the input document
-	InputIdentity string `json:"input_identity" temporaljson:"input_identity,omitempty"` // Human-readable input reference
+	InputIndex    int    `json:"input_index" temporaljson:"input_index,omitempty"`
+	InputIdentity string `json:"input_identity" temporaljson:"input_identity,omitempty"`
 }
 
 type PrepPolicyEvaluationResult struct {
@@ -47,7 +46,6 @@ type PrepPolicyEvaluationResult struct {
 	PolicyIDs        []string           `json:"policy_ids" temporaljson:"policy_ids,omitempty"`
 	InputCount       int                `json:"input_count" temporaljson:"input_count,omitempty"`
 
-	// Human-readable names for display in reports
 	OrgName       string `json:"org_name" temporaljson:"org_name,omitempty"`
 	AppName       string `json:"app_name" temporaljson:"app_name,omitempty"`
 	InstallName   string `json:"install_name" temporaljson:"install_name,omitempty"`
@@ -166,7 +164,6 @@ func newNoPoliciesPrepResult(policyContext *policyContext) *PrepPolicyEvaluation
 	}
 }
 
-// policyContext is an alias for the shared PolicyEvaluationContext type.
 type policyContext = policyhelpers.PolicyEvaluationContext
 
 func (a *Activities) resolvePolicyContext(ctx context.Context, stepTargetID, stepTargetType string) (*policyContext, error) {
@@ -390,8 +387,6 @@ func (a *Activities) prepareHelmPolicyInputs(planContentsJSON []byte) ([][]byte,
 	return a.yamlToAdmissionReviewInputs(planContents.TemplateOutput, planOpToAdmissionOperation(planContents.Op))
 }
 
-// planOpToAdmissionOperation maps a helm/kubernetes plan op to the admission
-// CREATE/UPDATE/DELETE vocabulary. Unknown ops return "" (omitted from input).
 func planOpToAdmissionOperation(op string) string {
 	switch op {
 	case "uninstall", "delete":

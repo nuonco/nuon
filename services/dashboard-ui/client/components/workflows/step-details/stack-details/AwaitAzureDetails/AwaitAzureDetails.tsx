@@ -25,15 +25,10 @@ interface IAwaitAzureDetails extends IStackDetails {
   azureSubscriptionId?: string
   secrets?: TAppSecretConfig[]
   inputs?: TAppInput[]
-  // Presence only, never the value: sensitive inputs come back redacted, and the
-  // value is not needed to know the template already carries a default for one.
   setInputNames?: Set<string>
   deploymentScope?: TStackDeploymentScope
 }
 
-// Mirrors azureInputParamName in ctl-api's ARM renderer, which owns the mapping. The
-// template declares only the names it derives, so one built any other way is rejected
-// at deploy time as an undeclared parameter.
 const azureInputParamName = (name: string) =>
   'input' +
   (name.match(/[A-Za-z0-9]+/g) ?? [])
@@ -98,7 +93,7 @@ export const AwaitAzureDetails = ({
     )
   }
 
-  // The portal link wraps template_url, but it is never rebuilt from it here:
+  // why: The portal link wraps template_url, but it is never rebuilt from it here:
   // the renderer owns the encoding, and a version generated before the link
   // existed has none to show.
   //
@@ -113,8 +108,6 @@ export const AwaitAzureDetails = ({
   const customerInputs = (inputs ?? []).filter(
     (input) => !!input.name && input.source === 'customer'
   )
-  // An input the template already carries a default for needs no --parameters entry,
-  // and passing one would replace the install's current value with a placeholder.
   const unsetInputs = customerInputs.filter(
     (input) => !input.default && !setInputNames?.has(input.name!)
   )
@@ -466,7 +459,6 @@ export const AwaitAzureDetails = ({
 
   return (
     <Tabs
-      // The published module is the recommended path, so it opens first.
       initActiveTab="tfmodule"
       tabLabels={{ tfmodule: 'TF Module', arm: 'ARM Template' }}
       tabs={{
@@ -489,13 +481,6 @@ interface IAzureTFModuleTab {
   azureSubscriptionId?: string
 }
 
-// The Azure half of the TF Module tab: which providers to require, and the
-// module source. Auth, inputs, secrets and the step layout are shared.
-//
-// The subscription goes in the azurerm provider block only — the module reads
-// the install's location from the control plane, and compares the provider's
-// subscription against it. purge_soft_delete_on_destroy is what lets a
-// destroyed install's Key Vault name be reused immediately.
 const AzureTFModuleTab = ({
   orgId,
   installId,

@@ -594,9 +594,6 @@ describe('workflow-utils', () => {
       ).toBe(true)
     })
 
-    // A workflow that emits the same step name twice in one group produces two
-    // unstarted siblings; rendering them as attempts showed "1 previous
-    // attempt" on a step that had never run.
     test('does not treat unstarted duplicates as attempts', () => {
       expect(isRetryChain([step('a', 'pending'), step('b', 'pending')])).toBe(
         false

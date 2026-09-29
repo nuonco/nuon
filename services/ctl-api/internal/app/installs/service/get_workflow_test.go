@@ -54,8 +54,6 @@ func (s *InstallsServiceTestSuite) TestGetWorkflowOmitsGroupStepsAndApprovalCont
 	assert.Equal(s.T(), group.ID, wf.StepGroups[0].ID)
 	assert.Empty(s.T(), wf.StepGroups[0].Steps)
 
-	// Contents is json:"-", so the omit can only be asserted against the
-	// query result directly.
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	loaded, err := s.installsService.getWorkflow(c, s.testOrg.ID, workflow.ID)
 	require.NoError(s.T(), err)

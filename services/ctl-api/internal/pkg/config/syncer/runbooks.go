@@ -16,8 +16,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// ensureRunbook creates a runbook if it doesn't exist, using the shared helpers
-// for full initialization (install runbooks).
 func (s *syncer) ensureRunbook(ctx context.Context, runbook *config.RunbookConfig) error {
 	existing, err := s.getRunbook(ctx, runbook.Name)
 	if err == nil {
@@ -35,7 +33,7 @@ func (s *syncer) ensureRunbook(ctx context.Context, runbook *config.RunbookConfi
 			}
 		}
 
-		// ReconcileInstallRunbooks owns install runbooks; backfilling the app-wide cross
+		// why: ReconcileInstallRunbooks owns install runbooks; backfilling the app-wide cross
 		// product here created rows for installs whose config never declared the runbook.
 		return nil
 	}
@@ -66,7 +64,6 @@ func (s *syncer) ensureRunbook(ctx context.Context, runbook *config.RunbookConfi
 	return nil
 }
 
-// syncRunbook creates a runbook config for the current app config.
 func (s *syncer) syncRunbook(ctx context.Context, runbook *config.RunbookConfig) error {
 	rbk, err := s.getRunbook(ctx, runbook.Name)
 	if err != nil {
@@ -127,7 +124,6 @@ func (s *syncer) syncRunbook(ctx context.Context, runbook *config.RunbookConfig)
 			stepCfg.Filters = append(stepCfg.Filters, app.TriggerFilter{From: filter.From, Path: filter.Path, Op: app.TriggerFilterType(filter.Op), Value: filter.Value})
 		}
 
-		// Resolve action_name to ActionWorkflowID
 		if step.ActionName != "" {
 			var aw app.ActionWorkflow
 			if err := s.db.WithContext(ctx).
@@ -193,7 +189,6 @@ func (s *syncer) syncRunbook(ctx context.Context, runbook *config.RunbookConfig)
 	return nil
 }
 
-// getRunbook finds a runbook by name.
 func (s *syncer) getRunbook(ctx context.Context, name string) (*app.Runbook, error) {
 	var rbk app.Runbook
 	res := s.db.WithContext(ctx).

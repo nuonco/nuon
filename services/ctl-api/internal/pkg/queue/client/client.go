@@ -50,7 +50,6 @@ func New(params Params) *Client {
 	}
 }
 
-// queueMemo returns the standard memo map for a queue workflow.
 func queueMemo(q *app.Queue) map[string]any {
 	m := map[string]any{
 		"type":          "queue",
@@ -68,8 +67,6 @@ func queueMemo(q *app.Queue) map[string]any {
 	return m
 }
 
-// queueStartOperation builds a WithStartWorkflowOperation for a queue workflow.
-// This is used by update-with-start calls to ensure the queue workflow is running.
 func (c *Client) queueStartOperation(q *app.Queue) tclient.WithStartWorkflowOperation {
 	wkflowReq := queue.QueueWorkflowRequest{
 		QueueID: q.ID,

@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Scan implements the database/sql.Scanner interface.
 func (c *State) Scan(v interface{}) (err error) {
 	switch v := v.(type) {
 	case nil:
@@ -20,7 +19,6 @@ func (c *State) Scan(v interface{}) (err error) {
 	return
 }
 
-// Value implements the driver.Valuer interface.
 func (c *State) Value() (driver.Value, error) {
 	return json.Marshal(c)
 }

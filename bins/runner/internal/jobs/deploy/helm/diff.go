@@ -16,7 +16,6 @@ import (
 )
 
 const (
-	// NOTE(jm): this can also be template or simple
 	defaultOutputFormat string = "diff"
 )
 
@@ -45,7 +44,6 @@ func (h *handler) diffReport(currentSpec, targetSpec map[string]*manifest.Mappin
 
 	report, err := diff.ManifestReport(currentSpec, targetSpec, &opts)
 	if err != nil {
-		// l.Error("unable to get diff ", err)
 		return nil, errors.Wrap(err, "unable to calculate diff")
 	}
 
@@ -60,7 +58,6 @@ func (h *handler) diff(currentSpec, targetSpec map[string]*manifest.MappingResul
 		ShowSecrets:   false,
 	}
 
-	// Use the buffer to capture the diff output
 	var buffer bytes.Buffer
 	changesExist := diff.Manifests(currentSpec, targetSpec, opts, &buffer)
 
@@ -71,8 +68,6 @@ func (h *handler) diff(currentSpec, targetSpec map[string]*manifest.MappingResul
 	return buffer.Bytes(), nil
 }
 
-// getDiff compares old and new manifest bytes and returns the diff as a string.
-// release and taregt are old and new manifest bytes.
 func (h *handler) getDiff(l *zap.Logger, kubeCfg *rest.Config, release, target *release.Release, namespace string) ([]byte, *diff.Report, error) {
 	actionConfig, err := helm.ActionConfigV3(l, kubeCfg, namespace)
 	if err != nil {
@@ -103,9 +98,6 @@ func (h *handler) getDiff(l *zap.Logger, kubeCfg *rest.Config, release, target *
 		newSpec = manifest.Parse(string(targetResources), target.Namespace, false)
 	}
 
-	// helm-diff redacts Secret contents in place, so each pass gets its own
-	// copy — a second pass over redacted maps fails to re-parse them and
-	// replaces every Secret with "Error parsing new secret: illegal base64".
 	diff, err := h.diff(cloneSpecs(currentSpecs), cloneSpecs(newSpec))
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to generate diff")

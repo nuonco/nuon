@@ -9,13 +9,11 @@ func TextDocumentDidSave(ctx *glsp.Context, params *protocol.DidSaveTextDocument
 	uri := params.TextDocument.URI
 	log.Infof("💾 Document saved: %s", uri)
 
-	// Get current document text
 	openDocumentsMutex.RLock()
 	text, ok := openDocuments[uri]
 	openDocumentsMutex.RUnlock()
 	if !ok {
 		log.Warningf("⚠️  Document not found in cache for didSave: %s (may have been closed)", uri)
-		// If we have text in params, use it
 		if params.Text != nil {
 			text = *params.Text
 		} else {
@@ -24,7 +22,6 @@ func TextDocumentDidSave(ctx *glsp.Context, params *protocol.DidSaveTextDocument
 		}
 	}
 
-	// Update the in-memory document if we have new text
 	if params.Text != nil {
 		text = *params.Text
 		openDocumentsMutex.Lock()
@@ -33,7 +30,6 @@ func TextDocumentDidSave(ctx *glsp.Context, params *protocol.DidSaveTextDocument
 		log.Debugf("✅ Updated document from save notification, new length: %d chars", len(text))
 	}
 
-	// Trigger diagnostics on save
 	PublishDiagnostics(ctx, uri, text)
 
 	return nil

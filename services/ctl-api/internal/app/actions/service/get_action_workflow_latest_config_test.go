@@ -32,7 +32,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// GetAppActionLatestConfigTestService holds all fx-injected dependencies for get latest action config tests.
 type GetAppActionLatestConfigTestService struct {
 	fx.In
 
@@ -48,7 +47,6 @@ type GetAppActionLatestConfigTestService struct {
 	Seeder         *testseed.Seeder
 }
 
-// GetAppActionLatestConfigTestSuite is the testify suite for GetAppActionLatestConfig endpoint.
 type GetAppActionLatestConfigTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -138,7 +136,7 @@ func (s *GetAppActionLatestConfigTestSuite) makeRequest(method, path string, bod
 func (s *GetAppActionLatestConfigTestSuite) TestGetLatestConfigSuccess() {
 	testCases := []struct {
 		name         string
-		setupFunc    func() string // Returns actionID
+		setupFunc    func() string
 		expectedCode int
 		validateFunc func(*app.ActionWorkflowConfig)
 	}{
@@ -163,21 +161,18 @@ func (s *GetAppActionLatestConfigTestSuite) TestGetLatestConfigSuccess() {
 				appConfig2 := s.createAppConfig(s.testApp.ID)
 				appConfig3 := s.createAppConfig(s.testApp.ID)
 
-				// Create configs with explicit ordering
 				config1 := s.createActionConfig(action.ID, appConfig1.ID)
 				time.Sleep(10 * time.Millisecond)
 				config2 := s.createActionConfig(action.ID, appConfig2.ID)
 				time.Sleep(10 * time.Millisecond)
 				config3 := s.createActionConfig(action.ID, appConfig3.ID)
 
-				// Store latest config ID for validation
 				s.T().Logf("Created configs in order: %s, %s, %s (latest)", config1.ID, config2.ID, config3.ID)
 
 				return action.ID
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(config *app.ActionWorkflowConfig) {
-				// Verify this is actually the latest by checking timestamp
 				var allConfigs []*app.ActionWorkflowConfig
 				s.service.DB.Order("created_at DESC").Find(&allConfigs)
 				if len(allConfigs) > 0 {
@@ -268,12 +263,10 @@ func (s *GetAppActionLatestConfigTestSuite) TestGetLatestConfigNotFound() {
 }
 
 func (s *GetAppActionLatestConfigTestSuite) TestGetLatestConfigCrossOrgIsolation() {
-	// Create action in org1 with configs
 	action1 := s.createActionWorkflow(s.testApp.ID, "org1-action")
 	appConfig1 := s.createAppConfig(s.testApp.ID)
 	config1 := s.createActionConfig(action1.ID, appConfig1.ID)
 
-	// Create second org with action and configs
 	ctx2 := context.Background()
 	ctx2, acc2 := s.service.Seeder.EnsureAccount(ctx2, s.T())
 	ctx2, org2 := s.service.Seeder.EnsureOrg(ctx2, s.T())
@@ -298,7 +291,6 @@ func (s *GetAppActionLatestConfigTestSuite) TestGetLatestConfigCrossOrgIsolation
 	res = s.service.DB.WithContext(ctx2).Create(action2)
 	require.NoError(s.T(), res.Error)
 
-	// Try to get action1's latest config - should work
 	path := fmt.Sprintf("/v1/apps/%s/actions/%s/latest-config", s.testApp.ID, action1.ID)
 	rr := s.makeRequest(http.MethodGet, path, nil)
 
@@ -308,12 +300,9 @@ func (s *GetAppActionLatestConfigTestSuite) TestGetLatestConfigCrossOrgIsolation
 	err := json.Unmarshal(rr.Body.Bytes(), &config)
 	require.NoError(s.T(), err)
 
-	// Should return org1's config
 	assert.Equal(s.T(), config1.ID, config.ID)
 	assert.Equal(s.T(), s.testOrg.ID, config.OrgID)
 }
-
-// Helper methods
 
 func (s *GetAppActionLatestConfigTestSuite) createActionWorkflow(appID, name string) *app.ActionWorkflow {
 	action := &app.ActionWorkflow{
@@ -360,7 +349,6 @@ func (s *GetAppActionLatestConfigTestSuite) createActionConfig(actionID, appConf
 }
 
 func (s *GetAppActionLatestConfigTestSuite) createActionTrigger(configID string, triggerType app.ActionWorkflowTriggerType) *app.ActionWorkflowTriggerConfig {
-	// Get the parent config to extract AppConfigID
 	var config app.ActionWorkflowConfig
 	res := s.service.DB.First(&config, "id = ?", configID)
 	require.NoError(s.T(), res.Error)
@@ -381,7 +369,6 @@ func (s *GetAppActionLatestConfigTestSuite) createActionTrigger(configID string,
 }
 
 func (s *GetAppActionLatestConfigTestSuite) createActionStep(configID, name string, idx int) *app.ActionWorkflowStepConfig {
-	// Get the parent config to extract AppConfigID
 	var config app.ActionWorkflowConfig
 	res := s.service.DB.First(&config, "id = ?", configID)
 	require.NoError(s.T(), res.Error)

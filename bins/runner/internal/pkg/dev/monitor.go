@@ -32,7 +32,6 @@ func (d *devver) monitorRunners() error {
 				return retry.AsNonRetryable(fmt.Errorf("new runner has been created, restarting"))
 			}
 
-			// make sure runner has a service account
 			_, err = d.apiClient.GetRunnerServiceAccount(ctx, runners[0].ID)
 			if err != nil {
 				fmt.Println("runner service account does not exist yet, polling until it does")

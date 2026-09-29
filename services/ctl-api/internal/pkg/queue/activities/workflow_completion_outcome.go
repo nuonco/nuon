@@ -16,19 +16,11 @@ func (workflowStatusRow) TableName() string {
 	return (&app.Workflow{}).TableName()
 }
 
-// WorkflowCompletionOutcome carries the workflow row's domain outcome. Resident
-// flows complete their queue signal independently of the workflow row, so
-// completion side effects (parent callbacks, lifecycle notifications) must be
-// gated on this rather than on the queue signal's transport status.
 type WorkflowCompletionOutcome struct {
 	Status                 app.Status `json:"status"`
 	StatusHumanDescription string     `json:"status_human_description,omitempty"`
 }
 
-// HumanDescription returns the workflow row's human description, falling back
-// to a generic per-status phrase when the writer left it empty. Several status
-// writers set only Status; without the fallback a parent callback or user
-// notification would carry an empty error message.
 func (o *WorkflowCompletionOutcome) HumanDescription() string {
 	if o.StatusHumanDescription != "" {
 		return o.StatusHumanDescription

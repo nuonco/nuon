@@ -15,7 +15,6 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 )
 
-// IntermediateAppConfig is a custom JSONB type that stores a config.AppConfig in PostgreSQL.
 type IntermediateAppConfig struct {
 	config.AppConfig
 }

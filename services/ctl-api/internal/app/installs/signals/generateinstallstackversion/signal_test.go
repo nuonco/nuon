@@ -31,8 +31,6 @@ func (s *SignalTestSuite) TestExecute() {
 	s.T().Skip("not yet implemented")
 }
 
-// TestSetStackVersionCompositeRenderError_Enabled verifies that when composite
-// errors are enabled the helper fires the recording activity with the right fields.
 func (s *SignalTestSuite) TestSetStackVersionCompositeRenderError_Enabled() {
 	env := s.NewTestWorkflowEnvironment()
 	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
@@ -59,8 +57,6 @@ func (s *SignalTestSuite) TestSetStackVersionCompositeRenderError_Enabled() {
 	env.AssertExpectations(s.T())
 }
 
-// TestSetStackVersionCompositeRenderError_Disabled verifies that when composite
-// errors are disabled the helper skips the recording activity entirely.
 func (s *SignalTestSuite) TestSetStackVersionCompositeRenderError_Disabled() {
 	env := s.NewTestWorkflowEnvironment()
 	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
@@ -74,9 +70,6 @@ func (s *SignalTestSuite) TestSetStackVersionCompositeRenderError_Disabled() {
 	env.AssertExpectations(s.T())
 }
 
-// TestSetStackVersionCompositeRenderError_ActivityError verifies that when the
-// recording activity returns an error the helper swallows it (logged as warn)
-// so it doesn't shadow the original render failure.
 func (s *SignalTestSuite) TestSetStackVersionCompositeRenderError_ActivityError() {
 	env := s.NewTestWorkflowEnvironment()
 	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})

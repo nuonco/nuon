@@ -9,19 +9,11 @@ import (
 	yaml "gopkg.in/yaml.v3"
 )
 
-// Dedicated structured input types. Unlike the scalar types (string, number,
-// bool, list, json), these carry a whole document whose syntax we can validate
-// early — before an install deploy — so malformed YAML/HCL is rejected at
-// config-parse and input-update time rather than failing mid-deploy.
 const (
 	InputTypeYAML = "yaml"
 	InputTypeHCL  = "hcl"
 )
 
-// ValidateInputValueSyntax checks that value is syntactically valid for the
-// given input type. Empty values are always valid: an unset or cleared override
-// is an exact deploy-time no-op. Scalar/simple types are not syntax-checked here
-// and return nil.
 func ValidateInputValueSyntax(inputType, value string) error {
 	if strings.TrimSpace(value) == "" {
 		return nil
@@ -48,8 +40,6 @@ func ValidateInputValueSyntax(inputType, value string) error {
 		if diags.HasErrors() {
 			return fmt.Errorf("invalid HCL: %s", diags.Error())
 		}
-		// tfvars are a flat set of attribute assignments; reject blocks and
-		// other non-tfvars HCL so a bad value is caught here, not at deploy.
 		if _, diags := file.Body.JustAttributes(); diags.HasErrors() {
 			return fmt.Errorf("invalid tfvars: %s", diags.Error())
 		}

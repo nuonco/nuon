@@ -10,7 +10,7 @@ import (
 )
 
 func (a *Templates) getRunnerSecurityGroup(inp *stacks.TemplateInput, t tagBuilder) *ec2.SecurityGroup {
-	// NOTE: this tag is REQUIRED. the sandboxes use it to identify the runner group which
+	// why: this tag is REQUIRED. the sandboxes use it to identify the runner group which
 	// needs to be added to the eks node sg additional rules. this is a VIP tag. w/out it the
 	// runner won't be allowed to apply heml/kubectl to the cluster.
 	tags := []tags.Tag{

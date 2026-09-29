@@ -35,8 +35,6 @@ export const AwaitAzureDetailsContainer = ({
     enabled: !!org?.id && !!install?.id,
   })
 
-  // Names only. Sensitive inputs come back redacted, and knowing which inputs are
-  // already set is enough to tell which the deploy command has to supply.
   const setInputNames = useMemo(
     () =>
       new Set(
@@ -47,7 +45,7 @@ export const AwaitAzureDetailsContainer = ({
     [currentInputs?.values]
   )
 
-  // The install's current app config is only the scope of this stack version if
+  // why: The install's current app config is only the scope of this stack version if
   // the version was rendered from it. A step viewed after the install repinned
   // to a newer config would otherwise be judged against a scope its template
   // never had.

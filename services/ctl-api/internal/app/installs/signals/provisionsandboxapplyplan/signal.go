@@ -122,7 +122,6 @@ var _ signal.SignalWithStepContext = (*Signal)(nil)
 var _ signal.SignalWithCloneSteps = (*Signal)(nil)
 
 func (s *Signal) Clone(_ workflow.Context, originalStepName string) ([]signal.CloneStepDef, error) {
-	// Clones keep FlowID/lifecycle; the retry path doesn't re-inject it.
 	lifecycle := signal.LifecycleBase{
 		LifecycleWorkflowID:   s.LifecycleWorkflowID,
 		LifecycleWorkflowType: s.LifecycleWorkflowType,
@@ -254,7 +253,6 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStreamID)
 	}()
 
-	// create the job
 	runnerJob, err := activities.AwaitCreateSandboxJob(ctx, &activities.CreateSandboxJobRequest{
 		InstallID: install.ID,
 		RunnerID:  install.RunnerID,
@@ -298,7 +296,6 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 		}
 	}
 
-	// Add Plan contents from the result to the plan
 	if len(planJob.Execution.Result.Contents) > 0 {
 		l.Info("using the legacy contents from the runner job execution result")
 		planResponse.Plan.ApplyPlanContents = planJob.Execution.Result.Contents
@@ -350,7 +347,6 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 		return fmt.Errorf("unable to record install role usage: %w", err)
 	}
 
-	// queue job
 	l.Info("queued job and waiting on it to be picked up by runner")
 	status, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		JobID:    runnerJob.ID,

@@ -48,7 +48,6 @@ func (s *service) GetAppBranchLatestConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 	appBranchID := ctx.Param("app_branch_id")
 
-	// Verify branch exists and belongs to this org/app
 	var branch app.AppBranch
 	res := s.db.WithContext(ctx).
 		Where(app.AppBranch{
@@ -61,7 +60,6 @@ func (s *service) GetAppBranchLatestConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Get latest config
 	var config app.AppBranchConfig
 	res = s.db.WithContext(ctx).
 		Preload("ConnectedGithubVCSConfig").

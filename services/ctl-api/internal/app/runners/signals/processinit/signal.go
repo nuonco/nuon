@@ -51,7 +51,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
-	// Get process and verify it's in pending state
 	process, err := activities.AwaitGetRunnerProcessByProcessID(ctx, s.ProcessID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get runner process")
@@ -79,13 +78,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	// Only transition pending processes to active
 	if processStatus != app.RunnerProcessStatus(app.StatusPending) {
 		l.Info("process not pending, skipping", "process_id", s.ProcessID, "status", string(processStatus))
 		return nil
 	}
 
-	// Transition process from pending to active
 	if _, err := activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
 		ProcessID:         s.ProcessID,
 		Status:            app.RunnerProcessStatusActive,
@@ -126,8 +123,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	l.Info("process initialized", "runner_id", s.RunnerID, "process_id", s.ProcessID)
 
-	// Clean up stale process queues (best-effort).
-	// Find processes older than the 2 most recent for this runner+type and terminate their queues.
 	staleProcesses, err := activities.AwaitGetStaleRunnerProcesses(ctx, activities.GetStaleRunnerProcessesRequest{
 		RunnerID:    s.RunnerID,
 		ProcessType: string(process.Type),

@@ -23,7 +23,6 @@ func (r *run) ApplyPlan(ctx context.Context) error {
 }
 
 func (r *run) getApplyPlanPipeline() (*pipeline.Pipeline, error) {
-	// initialize steps to load the workspace
 	pipe, err := pipeline.New(r.v,
 		pipeline.WithLogger(r.Log),
 	)

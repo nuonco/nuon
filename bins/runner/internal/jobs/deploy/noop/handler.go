@@ -20,7 +20,6 @@ import (
 type InputConfig configs.App[configs.Build[configs.NoopBuild, configs.NoopRegistry], configs.NoopDeploy]
 
 type handlerState struct {
-	// state for an individual run, that can not be reused
 	cfg       *InputConfig
 	workspace workspace.Workspace
 }

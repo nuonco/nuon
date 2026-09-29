@@ -8,9 +8,6 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// buildDependencyGraph builds a directed dependency graph from a set of packages.
-// graph[dep] = []dependents means dep must be processed before each dependent.
-// inDegree[pkg] = number of target-set dependencies pkg has.
 func buildDependencyGraph(pkgs []*packages.Package, targetPkgs map[string]bool) (graph map[string][]string, inDegree map[string]int) {
 	graph = make(map[string][]string)
 	inDegree = make(map[string]int)
@@ -31,8 +28,6 @@ func buildDependencyGraph(pkgs []*packages.Package, targetPkgs map[string]bool) 
 	return graph, inDegree
 }
 
-// GetDependencyOrder returns the package paths in topological order (dependencies first).
-// It only includes packages within the specified directory pattern.
 func GetDependencyOrder(ctx context.Context, dir string) ([]string, error) {
 	cfg := &packages.Config{
 		Context: ctx,
@@ -90,9 +85,6 @@ func GetDependencyOrder(ctx context.Context, dir string) ([]string, error) {
 	return result, nil
 }
 
-// GetDependencyLevels returns packages grouped by processing level.
-// All packages within the same level have no dependencies on each other
-// and can be processed concurrently. Levels must be processed in order.
 func GetDependencyLevels(ctx context.Context, dir string) ([][]string, error) {
 	cfg := &packages.Config{
 		Context: ctx,
@@ -114,7 +106,6 @@ func GetDependencyLevels(ctx context.Context, dir string) ([][]string, error) {
 
 	graph, inDegree := buildDependencyGraph(pkgs, targetPkgs)
 
-	// Collect initial zero-degree nodes as level 0
 	var currentLevel []string
 	for id, degree := range inDegree {
 		if degree == 0 {
@@ -127,7 +118,6 @@ func GetDependencyLevels(ctx context.Context, dir string) ([][]string, error) {
 	processedCount := 0
 
 	for len(currentLevel) > 0 {
-		// Resolve IDs to PkgPaths for this level
 		var levelPaths []string
 		for _, id := range currentLevel {
 			if p, ok := pkgMap[id]; ok {
@@ -137,7 +127,6 @@ func GetDependencyLevels(ctx context.Context, dir string) ([][]string, error) {
 		levels = append(levels, levelPaths)
 		processedCount += len(currentLevel)
 
-		// Compute next level by processing all nodes in the current level
 		var nextLevel []string
 		for _, id := range currentLevel {
 			for _, dependent := range graph[id] {

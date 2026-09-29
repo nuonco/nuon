@@ -17,7 +17,6 @@ func (s *InstallsServiceTestSuite) TestRemoveInstallLabelsSuccess() {
 	s.Run("removes specified keys", func() {
 		install := s.createTestInstall()
 
-		// Set initial labels
 		install.Labels = labels.Labels{"env": "prod", "team": "platform", "region": "us-west-2"}
 		err := s.deps.DB.WithContext(s.ctx).Model(&install).Select("labels").Updates(&install).Error
 		require.NoError(s.T(), err)
@@ -41,7 +40,6 @@ func (s *InstallsServiceTestSuite) TestRemoveInstallLabelsSuccess() {
 		_, hasTeam := response.Labels["team"]
 		assert.False(s.T(), hasTeam)
 
-		// Verify in DB
 		var dbInstall app.Install
 		err = s.deps.DB.WithContext(s.ctx).First(&dbInstall, "id = ?", install.ID).Error
 		require.NoError(s.T(), err)

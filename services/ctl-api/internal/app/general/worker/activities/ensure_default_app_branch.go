@@ -47,10 +47,6 @@ func (a *Activities) EnsureDefaultAppBranch(ctx context.Context, req EnsureDefau
 		return nil, fmt.Errorf("unable to get app %s: %w", req.AppID, err)
 	}
 
-	// The branch, its config and its install group all have NOT NULL org_id and
-	// created_by_id filled from context. An activity has no account, so attribute
-	// the rows to whoever created the app, the way the phone-home backfill
-	// attributes to the org's creator.
 	ctx = cctx.SetOrgIDContext(ctx, ap.OrgID)
 	ctx = cctx.SetAccountIDContext(ctx, ap.CreatedByID)
 

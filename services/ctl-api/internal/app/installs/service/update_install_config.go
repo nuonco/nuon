@@ -86,7 +86,7 @@ func (s *service) updateInstallConfig(ctx *gin.Context, installID, configID stri
 	}
 	filter := app.InstallConfig{ID: configID, InstallID: installID, OrgID: orgID}
 
-	// Build an explicit update map so GORM doesn't try to reflect into
+	// why: Build an explicit update map so GORM doesn't try to reflect into
 	// complex nested types (CustomNestedStack contains map fields that
 	// cause a panic in GORM's struct-based Updates).
 	updates := map[string]interface{}{}
@@ -103,9 +103,6 @@ func (s *service) updateInstallConfig(ctx *gin.Context, installID, configID stri
 		updates["runner_nested_template_url"] = *req.RunnerNestedTemplateURL
 	}
 	if req.CustomNestedStacks != nil {
-		// Pre-serialize to JSON so the raw map-based update stores a valid
-		// JSON array. Without this, GORM bypasses the serializer:json tag
-		// and the pgx driver may produce a bare object instead of an array.
 		b, err := json.Marshal(req.CustomNestedStacks)
 		if err != nil {
 			return nil, fmt.Errorf("unable to marshal custom_nested_stacks: %w", err)

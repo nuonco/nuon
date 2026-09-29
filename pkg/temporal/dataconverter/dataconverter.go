@@ -12,7 +12,6 @@ const (
 	defaultTemporalJSONTag string = "temporaljson"
 )
 
-// temporalJSONConverter converts to/from JSON.
 type temporalJSONConverter struct {
 	json jsoniter.API
 }
@@ -26,7 +25,6 @@ func (*temporalJSONConverter) newPayload(data []byte, c converter.PayloadConvert
 	}
 }
 
-// ToPayload converts single value to payload.
 func (c *temporalJSONConverter) ToPayload(value interface{}) (*commonpb.Payload, error) {
 	data, err := c.json.Marshal(value)
 	if err != nil {
@@ -47,7 +45,6 @@ func (c *temporalJSONConverter) ToPayloads(values ...interface{}) (*commonpb.Pay
 	return &commonpb.Payloads{Payloads: payloads}, nil
 }
 
-// FromPayload converts single value from payload.
 func (c *temporalJSONConverter) FromPayload(payload *commonpb.Payload, valuePtr interface{}) error {
 	err := c.json.Unmarshal(payload.GetData(), valuePtr)
 	if err != nil {
@@ -66,7 +63,6 @@ func (c *temporalJSONConverter) FromPayloads(payloads *commonpb.Payloads, valueP
 	return nil
 }
 
-// ToString converts payload object into human readable string.
 func (c *temporalJSONConverter) ToString(payload *commonpb.Payload) string {
 	return string(payload.GetData())
 }
@@ -79,7 +75,6 @@ func (c *temporalJSONConverter) ToStrings(input *commonpb.Payloads) []string {
 	return strings
 }
 
-// Encoding returns MetadataEncodingJSON.
 func (c *temporalJSONConverter) Encoding() string {
 	return fmt.Sprintf("json/%s", defaultTemporalJSONTag)
 }

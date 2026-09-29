@@ -35,17 +35,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/heartbeater"
 )
 
-// sharedServices are services needed by public, runner, and internal APIs.
-// These do NOT include authservice which has strict config requirements.
 var sharedServices = fx.Options(
-	// Shared library providers needed by domain services.
 	SlackLibsModule,
-	// Infrastructure services (no swagger routes).
 	fx.Provide(api.AsService(docs.New)),
 	fx.Provide(api.AsService(health.New)),
 	fx.Provide(api.AsService(httpbin.New)),
 	fx.Provide(api.AsService(admindashboardservice.New)),
-	// Domain services with swagger-annotated routes.
 	fx.Provide(api.AsService(accountsservice.New)),
 	fx.Provide(api.AsService(actionsservice.New)),
 	fx.Provide(api.AsService(awsaccountconnectionsservice.New)),
@@ -60,7 +55,6 @@ var sharedServices = fx.Options(
 	fx.Provide(api.AsService(orgsservice.New)),
 	fx.Provide(api.AsService(policyreportsservice.New)),
 	fx.Provide(api.AsService(queuesservice.New)),
-	// fx.Provide(api.AsService(releasesservice.New)), // removed - releases being deprecated
 	fx.Provide(api.AsService(runbooksservice.New)),
 	fx.Provide(api.AsService(runnerauthservice.New)),
 	fx.Provide(heartbeater.New),
@@ -75,46 +69,33 @@ var sharedServices = fx.Options(
 	fx.Provide(onboardingservice.NewCatalog),
 )
 
-// PublicServicesModule provides services for the public API (excludes authservice).
 var PublicServicesModule = fx.Module("public-services", sharedServices)
 
-// RunnerServicesModule provides services for the runner API (excludes authservice).
 var RunnerServicesModule = fx.Module("runner-services", sharedServices)
 
-// InternalServicesModule provides services for the internal API (excludes authservice).
 var InternalServicesModule = fx.Module("internal-services", sharedServices)
 
-// AuthServicesModule provides services for the auth API (includes authservice).
 var AuthServicesModule = fx.Module("auth-services",
 	sharedServices,
 	fx.Provide(api.AsService(authservice.New)),
 )
 
-// AdminDashboardServicesModule provides services for the admin dashboard API.
 var AdminDashboardServicesModule = fx.Module("admin-dashboard-services",
 	sharedServices,
 	fx.Provide(psql.AsPSQLReplica(psql.NewReplica)),
 )
 
-// SlackServicesModule provides services for the dedicated Slack API.
 var SlackServicesModule = fx.Module("slack-services", sharedServices)
 
-// MCPServicesModule provides services for the MCP server (excludes authservice).
-// The MCP server validates bearer tokens itself and no service registers MCP
-// tools through authservice, so pulling it in would only impose authservice's
-// config requirements (NUON_AUTH_CLIENT_SECRET et al) on the mcp deployment.
 var MCPServicesModule = fx.Module("mcp-services", sharedServices)
 
 var NuonctlMCPServicesModule = fx.Module("nuonctl-mcp-services",
 	fx.Provide(api.AsNuonctlMCPService(nuonctlmcpservice.New)),
 )
 
-// AllServicesModule provides all services including authservice (for dev mode).
 var AllServicesModule = fx.Module("all-services",
 	sharedServices,
 	fx.Provide(api.AsService(authservice.New)),
 )
 
-// ServicesModule is deprecated, use API-specific modules instead.
-// Kept for backwards compatibility.
 var ServicesModule = AllServicesModule

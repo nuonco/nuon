@@ -90,7 +90,6 @@ func (s *service) getComponentBuild(ctx context.Context, cmpID, bldID string) (*
 
 	var bld app.ComponentBuild
 
-	// query the build in a way where it will _only_ be returned if it belongs to the component id in question
 	res := s.db.WithContext(ctx).
 		Preload("CreatedBy").
 		Preload("VCSConnectionCommit").

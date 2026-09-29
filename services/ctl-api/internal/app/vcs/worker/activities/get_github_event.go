@@ -15,8 +15,7 @@ type GetGithubEventRequest struct {
 
 type GetGithubEventResponse struct {
 	GithubEvent *app.GithubEvent `json:"github_event"`
-	// Payload is the parsed webhook payload loaded from blob storage.
-	Payload map[string]any `json:"payload"`
+	Payload     map[string]any   `json:"payload"`
 }
 
 // @temporal-gen-v2 activity
@@ -29,7 +28,6 @@ func (a *Activities) GetGithubEvent(ctx context.Context, req GetGithubEventReque
 		return nil, fmt.Errorf("unable to get github event: %w", err)
 	}
 
-	// Parse the blob payload into a map for use in workflows.
 	var payload map[string]any
 	if event.Payload != nil && event.Payload.IsSet() {
 		payloadStr, err := event.Payload.Get(dbCtx)

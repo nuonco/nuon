@@ -71,7 +71,6 @@ func (s *CreateTerraformWorkspaceTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes (V2 endpoint needs org context)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -132,7 +131,6 @@ func (s *CreateTerraformWorkspaceTestSuite) TestCreateTerraformWorkspace() {
 				assert.Equal(s.T(), s.testAcc.ID, ws.CreatedByID)
 				assert.Equal(s.T(), "app", ws.OwnerType)
 
-				// Verify in database
 				var dbWS app.TerraformWorkspace
 				err := s.service.DB.Where("id = ?", ws.ID).First(&dbWS).Error
 				require.NoError(s.T(), err)

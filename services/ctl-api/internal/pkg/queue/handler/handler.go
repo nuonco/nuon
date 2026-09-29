@@ -14,7 +14,6 @@ import (
 
 func StartHandler(ctx workflow.Context, workflowID string, req HandlerRequest) {
 	_ = (&Workflows{}).Handler
-	// use this ^ for to go-to-definition jumping in your editor
 
 	cwo := workflow.ChildWorkflowOptions{
 		TaskQueue:             workflow.GetInfo(ctx).TaskQueueName,
@@ -71,39 +70,24 @@ type handler struct {
 	finished  bool
 	canceled  bool
 
-	// autoRewarmDeclined is set when a terminal re-warm saw only read-only
-	// updates: run() must return without any yielding work (callbacks, cache
-	// sleep) so no window remains where a mutating update could be accepted
-	// and persisted but never executed.
 	autoRewarmDeclined bool
-	// autoRewarmStarted guards the resident terminal-success re-warm path so the
-	// internal validate→execute is launched at most once per Handler run.
-	autoRewarmStarted bool
+	autoRewarmStarted  bool
 
-	// in-flight phase flags; manager defers continue-as-new while either is set.
-	validating bool
-	executing  bool
-
-	// finishedStatus and finishedErr capture the terminal outcome so the
-	// finishedHandler can return it to AwaitSignal callers without a DB round-trip.
+	validating     bool
+	executing      bool
 	finishedStatus app.Status
 	finishedErr    string
 
-	// cancelable context for execution
 	executingCtx    workflow.Context
 	executingCancel workflow.CancelFunc
 
-	// Callbacks loaded from the QueueSignal DB record during initializeState.
-	// When set, the handler sends Temporal signals to all parent workflows on completion.
 	callbacks callback.Refs
 
-	// state that is loaded during run, but not passed between continue-as-news
 	queueSignal     *app.QueueSignal
 	sig             signal.Signal
 	signalLogStream *app.LogStream
 }
 
-// setFinished marks the handler as finished with a terminal status and optional error description.
 func (h *handler) setFinished(status app.Status, errDesc string) {
 	h.finished = true
 	h.finishedStatus = status

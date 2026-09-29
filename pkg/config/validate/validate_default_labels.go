@@ -9,9 +9,6 @@ import (
 	"github.com/nuonco/nuon/pkg/render"
 )
 
-// ValidateDefaultLabels enforces the same label rules as install labels, and
-// rejects per-install label keys that collide with a default — the app-level
-// block is the only place a default key may be set.
 func ValidateDefaultLabels(a *config.AppConfig) error {
 	for key, val := range a.DefaultLabels {
 		if strings.Contains(key, "{{") {

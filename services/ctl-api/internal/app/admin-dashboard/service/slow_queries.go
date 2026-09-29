@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// AggregatedQuery groups all executions of the same SQL statement.
 type AggregatedQuery struct {
 	SQL             string  `json:"sql" gorm:"column:sql"`
 	Table           string  `json:"table" gorm:"column:agg_table"`
@@ -50,7 +49,6 @@ func (s *service) Queries(c *gin.Context) {
 	sortBy := c.DefaultQuery("sort", "max_ms")
 	minDurationMS := c.Query("min_duration_ms")
 
-	// Aggregate by SQL string.
 	groups := make(map[string]*AggregatedQuery)
 	var order []string
 
@@ -120,7 +118,6 @@ func (s *service) Queries(c *gin.Context) {
 		}
 	}
 
-	// Compute averages.
 	result := make([]AggregatedQuery, 0, len(groups))
 	for _, sql := range order {
 		agg := groups[sql]
@@ -128,7 +125,6 @@ func (s *service) Queries(c *gin.Context) {
 		result = append(result, *agg)
 	}
 
-	// Filter by min duration (applied to max).
 	if minDurationMS != "" {
 		if minMS, err := strconv.ParseFloat(minDurationMS, 64); err == nil {
 			filtered := result[:0]
@@ -141,7 +137,6 @@ func (s *service) Queries(c *gin.Context) {
 		}
 	}
 
-	// Sort.
 	switch sortBy {
 	case "max_ms":
 		sort.Slice(result, func(i, j int) bool { return result[i].MaxMS > result[j].MaxMS })

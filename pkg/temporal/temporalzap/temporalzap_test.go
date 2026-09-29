@@ -44,7 +44,7 @@ var tests = map[string]struct {
 		vals: []interface{}{
 			"test_num", float64(1),
 			"test_string", "string",
-			"test_struct", map[string]interface{}{}, // bc json
+			"test_struct", map[string]interface{}{},
 		},
 	},
 	"field betwixt vals": {
@@ -64,8 +64,6 @@ var tests = map[string]struct {
 		},
 		errExpected: errors.New("odd number of keyvals pairs"),
 	},
-	// This probably actually represents an error, but it's a pain to check for and probably vanishingly difficult to do by accident,
-	// so just gonna let it pass
 	"even vals surround field": {
 		msg: "something",
 		vals: []interface{}{

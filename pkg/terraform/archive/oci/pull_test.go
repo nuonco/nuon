@@ -36,7 +36,6 @@ func Test_oci_pull(t *testing.T) {
 				assert.Equal(t, defaultArtifactType, desc.ArtifactType)
 				assert.NotEmpty(t, desc.Digest)
 
-				// make sure all files exist in the local file path
 				for _, file := range artifacts["basic"] {
 					expectedFp := filepath.Join(obj.tmpDir, file.Name)
 					_, err := os.Stat(expectedFp)

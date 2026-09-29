@@ -15,8 +15,6 @@ func (h *handler) uninstall(ctx context.Context, l *zap.Logger, actionCfg *actio
 	releaseName := h.state.plan.HelmDeployPlan.Name
 
 	l.Info("fetching previous release")
-	// Error before nil: a store failure read as "not installed" would report a
-	// successful teardown while the release and its resources stayed in place.
 	prevRel, err := helm.GetRelease(actionCfg, releaseName)
 	if err != nil {
 		return fmt.Errorf("unable to read release %s before uninstalling it: %w", releaseName, err)
@@ -29,11 +27,8 @@ func (h *handler) uninstall(ctx context.Context, l *zap.Logger, actionCfg *actio
 
 	l.Info("uninstalling release", zap.String("release", prevRel.Name))
 	client := action.NewUninstall(actionCfg)
-	// NOTE(fd): determine what the right wait strategy should be here
 	client.WaitStrategy = kube.StatusWatcherStrategy
 	client.Timeout = h.state.timeout
-	// The release can go away between the read above and the purge below, either
-	// from a concurrent teardown or from a store that 404s the record it served.
 	client.IgnoreNotFound = true
 
 	if _, err := client.Run(prevRel.Name); err != nil {

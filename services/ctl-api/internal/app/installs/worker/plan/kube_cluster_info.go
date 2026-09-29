@@ -15,21 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
-// resolveKubernetesContext returns the *kube.ClusterInfo a component should
-// use during deploy planning.
-//
-// If the component declares a kubernetes_context, the cluster fields are
-// templated from the named context's source peer component
-// (`{{.nuon.components.<peer>.outputs.cluster.*}}`). The cloud-auth selection
-// (AWS / Azure / GCP) still keys off install-level stack outputs, since a
-// peer cluster lives inside the same install and is therefore on the same
-// cloud as the sandbox.
-//
-// If the component does not declare a context, the resolver falls back to
-// today's implicit sandbox-default behavior: when the sandbox emits cluster
-// outputs the cluster fields are templated from the sandbox; when it
-// doesn't (Lambda / ECS sandboxes, etc.) we return nil and the component
-// runs without ClusterInfo.
 func (p *Planner) resolveKubernetesContext(
 	ctx workflow.Context,
 	componentConfig *app.ComponentConfigConnection,
@@ -45,10 +30,6 @@ func (p *Planner) resolveKubernetesContext(
 	return p.resolveKubernetesContextByName(ctx, contextName, appCfg, stack, state, cloudAuth)
 }
 
-// resolveKubernetesContextByName resolves a named kubernetes_context (or the
-// sandbox default when name is empty) to a templated *kube.ClusterInfo. It is
-// the shared core used by both component deploy planning and action workflow
-// run planning; see resolveKubernetesContext for the full semantics.
 func (p *Planner) resolveKubernetesContextByName(
 	ctx workflow.Context,
 	contextName string,
@@ -94,7 +75,6 @@ func (p *Planner) resolveKubernetesContextByName(
 	}
 
 	if obj == nil {
-		// no recognized cloud; nothing to wire up
 		return nil, nil
 	}
 
@@ -115,11 +95,6 @@ func (p *Planner) resolveKubernetesContextByName(
 	return obj, nil
 }
 
-// lookupKubernetesContextSource finds the named kubernetes_context on the
-// AppConfig and returns the name of its source peer component. Errors when
-// the named context is missing — config-time validation should have caught
-// this in pkg/config/AppConfig.resolveKubernetesContexts, so a miss here
-// indicates a stale config or out-of-band mutation.
 func lookupKubernetesContextSource(appCfg *app.AppConfig, name string) (string, error) {
 	if appCfg == nil {
 		return "", errors.Errorf("kubernetes_context %q referenced but app config is nil", name)
@@ -135,9 +110,6 @@ func lookupKubernetesContextSource(appCfg *app.AppConfig, name string) (string, 
 	return "", errors.Errorf("kubernetes_context %q is not defined on this app config", name)
 }
 
-// sandboxEmitsClusterOutputs reports whether the sandbox's outputs include a
-// `cluster` key — the signal we use to decide whether the sandbox can act as
-// the implicit default context.
 func sandboxEmitsClusterOutputs(stateData map[string]any) bool {
 	sandbox, ok := stateData["sandbox"].(map[string]any)
 	if !ok {
@@ -151,12 +123,6 @@ func sandboxEmitsClusterOutputs(stateData map[string]any) bool {
 	return ok && cluster != nil
 }
 
-// clusterInfoFromCloud builds a templated ClusterInfo for the install's cloud,
-// where clusterPath is the dotted path (without surrounding `{{ }}`) at which
-// the `cluster` output object lives in the rendered state — e.g.
-// `.nuon.sandbox.outputs.cluster` or `.nuon.components.foo.outputs.cluster`.
-//
-// Returns nil if the install's stack outputs don't match a recognized cloud.
 func clusterInfoFromCloud(stack *app.InstallStack, cloudAuth *CloudAuth, clusterPath string) *kube.ClusterInfo {
 	switch {
 	case stack.InstallStackOutputs.AWSStackOutputs != nil:
@@ -184,7 +150,7 @@ func clusterInfoFromCloud(stack *app.InstallStack, cloudAuth *CloudAuth, cluster
 	return nil
 }
 
-// assertCloudAuth mirrors today's checks that the cloudAuth side has the
+// why: assertCloudAuth mirrors today's checks that the cloudAuth side has the
 // credentials matching the install's cloud. (GCP intentionally skipped to
 // preserve prior behavior — the original code only required AWS/Azure auth.)
 func assertCloudAuth(stack *app.InstallStack, cloudAuth *CloudAuth) error {

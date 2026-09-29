@@ -24,7 +24,6 @@ func (s *InstallsServiceTestSuite) TestForgetInstallSuccess() {
 	require.Len(s.T(), captured, 1)
 	assert.Equal(s.T(), "forgotten", string(captured[0].Type))
 
-	// Verify the install is gone
 	getPath := fmt.Sprintf("/v1/installs/%s", install.ID)
 	getRR := s.makeRequest(http.MethodGet, getPath, nil)
 	require.Equal(s.T(), http.StatusNotFound, getRR.Code)

@@ -120,7 +120,6 @@ func (i *InstallSandboxRun) Indexes(db *gorm.DB) []migrations.Index {
 			},
 			Option: "WHERE status = 'drifted'",
 		},
-		// Without this the install_audit_logs_view arm seq scans the whole table.
 		{
 			Name: indexes.Name(db, &InstallSandboxRun{}, "install_created_at"),
 			Columns: []string{
@@ -165,10 +164,6 @@ func (i *InstallSandboxRun) AfterQuery(tx *gorm.DB) error {
 	i.WorkflowID = i.InstallWorkflowID
 	i.Workflow = i.InstallWorkflow
 
-	// NOTE(fd): this logic presents the possibility we may operate on "stale" outputs internally if a sandbox is planned
-	// but not applied. this is mostly fine since the outputs are simply refreshed. however, this may be problematic IFF
-	// an output type has changed AND the apply doesn't run AND a downstream method/workflow/activity depends on changes in
-	// the outputs.
 	outputs := make(map[string]any, 0)
 	for j := len(i.RunnerJobs) - 1; j >= 0; j-- {
 		rj := i.RunnerJobs[j]

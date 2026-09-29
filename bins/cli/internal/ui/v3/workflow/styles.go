@@ -12,7 +12,6 @@ var (
 	appStyleFocus = styles.PaneFocus
 )
 
-// Domain-specific styles for workflow policy violations.
 var policySectionStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(styles.BorderInactiveColor)

@@ -1,8 +1,6 @@
 package api
 
 type EndpointAudit struct {
-	// map to hold deprecated endpoints
-	// format: method_name_path (e.g., GET_public_/v1/old-endpoint)
 	Routes map[string]struct{}
 }
 

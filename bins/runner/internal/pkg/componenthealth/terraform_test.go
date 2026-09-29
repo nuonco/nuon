@@ -69,7 +69,6 @@ func TestTerraformResourceRows(t *testing.T) {
 						ProviderName:    "registry.terraform.io/hashicorp/aws",
 						AttributeValues: map[string]any{"id": "ami-123"},
 					},
-					// no mode recorded: the address is the only marker
 					{
 						Address:         "data.aws_caller_identity.current",
 						Type:            "aws_caller_identity",
@@ -277,7 +276,6 @@ func TestTerraformProvider(t *testing.T) {
 		require.Len(t, p.Resources("cmp-1"), 1)
 		assert.Equal(t, []string{"cmp-1"}, p.ComponentIDs())
 
-		// a destroy apply leaves an empty state and clears the rows
 		p.Set("cmp-1", &tfjson.State{Values: &tfjson.StateValues{RootModule: &tfjson.StateModule{}}})
 		assert.Empty(t, p.Resources("cmp-1"))
 	})

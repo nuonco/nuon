@@ -1,9 +1,8 @@
 package syncer
 
-// Option configures optional syncer behaviour.
 type Option func(*syncer)
 
-// WithComponentBuildDispatch makes the syncer schedule component builds itself,
+// why: WithComponentBuildDispatch makes the syncer schedule component builds itself,
 // the way the per-type Create*ComponentConfig handlers do: unchanged components
 // reuse their existing config connection, changed components get config-created
 // signals enqueued, and the scheduled set is reported through
@@ -18,10 +17,6 @@ func WithComponentBuildDispatch() Option {
 	}
 }
 
-// WithBranchSync makes the syncer create and update app branches from the
-// branch definitions in the app config. It is off by default: branches are
-// owned by `nuon branches sync`, and this option only exists as a rollback to
-// the previous behaviour.
 func WithBranchSync() Option {
 	return func(s *syncer) {
 		s.syncBranches = true

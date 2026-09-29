@@ -44,9 +44,6 @@ func armCustomStackInput(t *testing.T, serverURL string, parameters map[string]s
 	return inp
 }
 
-// ARM had no coverage for explicit parameter values. Both forms are exercised: a
-// pre-rendered literal (the current path) and the legacy install-input reference
-// (the fallback for callers that read config without rendering it).
 func TestGetCustomLinkedDeployments_ExplicitParameters(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(mockARMCustomTemplateJSON))

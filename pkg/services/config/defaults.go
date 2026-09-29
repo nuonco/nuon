@@ -1,23 +1,17 @@
 package config
 
-// Env is an environment string
 type Env string
 
 const (
-	// Production is the production environment
-	Production Env = "production"
-	// Development is a development environment not local
+	Production  Env = "production"
 	Development Env = "development"
-	// Stage is a staging environment
-	Stage Env = "stage"
+	Stage       Env = "stage"
 
 	defaultPort          = 9102
 	defaultSampleRate    = 1.0
 	defaultMaxBatchCount = 256
 )
 
-// UnmarshalConfig unmarshals a config value string to the associated interface
-// type
 func (e *Env) UnmarshalConfig(value string) {
 	switch value {
 	case "development", "dev":
@@ -35,12 +29,8 @@ func (e *Env) String() string {
 	return string(*e)
 }
 
-// Version is set by ldflags, do not set / use this directly
-// use the value exposed from the Base config
 var Version string = "unknown"
 
-// init registers the defaults
-//
 //nolint:gochecknoinits
 func init() {
 	RegisterDefault("system_port", defaultPort)
@@ -50,7 +40,6 @@ func init() {
 	RegisterDefault("version", Version)
 }
 
-// Base is the base configuration for all services
 type Base struct {
 	Env                          Env     `config:"env"`
 	LogLevel                     string  `config:"log_level"`

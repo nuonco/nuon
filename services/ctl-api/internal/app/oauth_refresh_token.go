@@ -9,8 +9,6 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 )
 
-// OAuthRefreshToken backs the OAuth 2.0 refresh-token grant (RFC 6749 §6). Refresh
-// tokens are rotated on use: the old row is marked consumed and a new one issued.
 type OAuthRefreshToken struct {
 	ID        string                `gorm:"primarykey" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedAt time.Time             `json:"created_at,omitzero" temporaljson:"created_at,omitzero,omitempty"`

@@ -70,7 +70,7 @@ func TestDetectChanges(t *testing.T) {
 				"nested":    map[string]interface{}{"a": "1", "b": "changed", "c": "added"},
 			},
 			wantChanges: true,
-			wantEntries: 5, // modified, removed, added, 2 nested changes
+			wantEntries: 5,
 		},
 		{
 			name: "with ignored fields",
@@ -92,7 +92,7 @@ func TestDetectChanges(t *testing.T) {
 			},
 			ignoreFields: []string{"status", "metadata.creationTimestamp"},
 			wantChanges:  true,
-			wantEntries:  1, // Only important field should be detected as changed
+			wantEntries:  1,
 		},
 		{
 			name: "kubernetes configmap example",
@@ -140,12 +140,12 @@ func TestDetectChanges(t *testing.T) {
 			modified: map[string]interface{}{
 				"items": []interface{}{
 					"item1",
-					"item3", // changed
-					"item4", // added
+					"item3",
+					"item4",
 				},
 			},
 			wantChanges: true,
-			wantEntries: 2, // Array changes should be detected
+			wantEntries: 2,
 		},
 		{
 			name: "nested array object changes",
@@ -164,7 +164,7 @@ func TestDetectChanges(t *testing.T) {
 					"containers": []interface{}{
 						map[string]interface{}{
 							"name":  "container1",
-							"image": "image:v2", // changed
+							"image": "image:v2",
 						},
 					},
 				},
@@ -219,11 +219,11 @@ func TestDetectChanges(t *testing.T) {
 					"name": "nginx",
 					"labels": map[string]interface{}{
 						"app":         "nginx",
-						"environment": "production", // added
+						"environment": "production",
 					},
 				},
 				"spec": map[string]interface{}{
-					"replicas": float64(5), // changed
+					"replicas": float64(5),
 					"selector": map[string]interface{}{
 						"matchLabels": map[string]interface{}{
 							"app": "nginx",
@@ -233,14 +233,14 @@ func TestDetectChanges(t *testing.T) {
 						"metadata": map[string]interface{}{
 							"labels": map[string]interface{}{
 								"app":         "nginx",
-								"environment": "production", // added
+								"environment": "production",
 							},
 						},
 						"spec": map[string]interface{}{
 							"containers": []interface{}{
 								map[string]interface{}{
 									"name":  "nginx",
-									"image": "nginx:1.15.0", // changed
+									"image": "nginx:1.15.0",
 									"ports": []interface{}{
 										map[string]interface{}{
 											"containerPort": float64(80),
@@ -260,7 +260,7 @@ func TestDetectChanges(t *testing.T) {
 				"status",
 			},
 			wantChanges: true,
-			wantEntries: 4, // Complex changes should be detected
+			wantEntries: 4,
 		},
 	}
 
@@ -275,12 +275,10 @@ func TestDetectChanges(t *testing.T) {
 				return
 			}
 
-			// Check if expected number of entries is correct
 			if tt.wantEntries > 0 {
 				assert.Len(t, entries, tt.wantEntries, "incorrect number of entries")
 			}
 
-			// Check entry types if specified
 			if len(tt.wantTypes) > 0 {
 				for i, wantType := range tt.wantTypes {
 					if i < len(entries) {

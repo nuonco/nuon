@@ -12,11 +12,6 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-// Helm has this silly interface for k8s clients. It's painful to use in-cluster.
-// This is lightly modified from https://github.com/hashicorp/waypoint/blob/main/builtin/k8s/helm/rest.go
-
-// RestClientGetter is a RESTClientGetter interface implementation for the
-// Helm Go packages.
 type RestClientGetter struct {
 	Namespace  string
 	RestConfig *rest.Config
@@ -25,17 +20,14 @@ type RestClientGetter struct {
 
 var _ genericclioptions.RESTClientGetter = (*RestClientGetter)(nil)
 
-// ToRESTConfig implemented interface method
 func (k *RestClientGetter) ToRESTConfig() (*rest.Config, error) {
 	return k.RestConfig, nil
 }
 
-// ToDiscoveryClient implemented interface method
 func (k *RestClientGetter) ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error) {
 	return memcached.NewMemCacheClient(k.Clientset.Discovery()), nil
 }
 
-// ToRESTMapper implemented interface method
 func (k *RestClientGetter) ToRESTMapper() (meta.RESTMapper, error) {
 	discoveryClient, err := k.ToDiscoveryClient()
 	if err != nil {
@@ -48,9 +40,7 @@ func (k *RestClientGetter) ToRESTMapper() (meta.RESTMapper, error) {
 	return expander, nil
 }
 
-// ToRawKubeConfigLoader implemented interface method
 func (k *RestClientGetter) ToRawKubeConfigLoader() clientcmd.ClientConfig {
-	// Build our config and client
 	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 		clientcmd.NewDefaultClientConfigLoadingRules(),
 		&clientcmd.ConfigOverrides{

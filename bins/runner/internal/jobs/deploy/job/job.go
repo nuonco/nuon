@@ -11,7 +11,6 @@ import (
 )
 
 func (p *handler) startJob(ctx context.Context, clientset *kubernetes.Clientset) (*batchv1.Job, error) {
-	// create the job config
 	jobSpec := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      p.Cfg.JobName,
@@ -36,7 +35,6 @@ func (p *handler) startJob(ctx context.Context, clientset *kubernetes.Clientset)
 		},
 	}
 
-	// start the job
 	jobsClient := clientset.BatchV1().Jobs(p.Cfg.Namespace)
 	return jobsClient.Create(ctx, jobSpec, metav1.CreateOptions{})
 }

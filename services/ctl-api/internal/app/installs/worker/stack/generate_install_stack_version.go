@@ -40,13 +40,12 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 		return errors.Wrap(err, "unable to get install")
 	}
 
-	// need to fetch app config
 	cfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get app config")
 	}
 
-	// If we are not using one of the new independent runner types, stop here.
+	// why: If we are not using one of the new independent runner types, stop here.
 	// To support backwards compatibility, we do not return an error, but we cannot create a stack.
 	if !generics.SliceContains(cfg.RunnerConfig.Type, []app.AppRunnerType{
 		app.AppRunnerTypeAWS,
@@ -66,7 +65,6 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 		return errors.Wrap(err, "unable to get install state")
 	}
 
-	// generate fields
 	stateData, err := installState.WorkflowSafeAsMap(ctx)
 	if err != nil {
 		return errors.Wrap(err, "unable to generate install map data")
@@ -82,15 +80,12 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 		return errors.Wrap(err, "unable to render secrets config")
 	}
 
-	// Apply per-install stack template overrides before rendering so
-	// template variables in override URLs get expanded.
 	app.ApplyInstallStackOverrides(install, &cfg.StackConfig)
 
 	if stackErr := render.RenderStruct(&cfg.StackConfig, stateData); stackErr != nil {
 		return errors.Wrap(stackErr, "unable to render stack config")
 	}
 
-	// update cf stack param name post rendering variables
 	for i := range cfg.SecretsConfig.Secrets {
 		secret := &cfg.SecretsConfig.Secrets[i]
 		secret.UpdateCloudformationStackInfo()
@@ -105,8 +100,6 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 		unrenderedCustomStackParams[s.Name] = maps.Clone(s.Parameters)
 	}
 
-	// Custom nested stack parameters are rendered separately so they do not go
-	// through html/template. The stack renderers below receive literal values.
 	if err := config.RenderCustomNestedStackParameters(cfg.StackConfig.CustomNestedStacks, stateData); err != nil {
 		return errors.Wrap(err, "unable to render custom nested stack parameters")
 	}
@@ -116,14 +109,12 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 		return errors.Wrap(err, "unable to get runner")
 	}
 
-	// instance type comes from the latest synced runner config so reprovision picks up changes
 	instanceType := cfg.RunnerConfig.InstanceType
 	if instanceType == "" {
 		instanceType = app.DefaultInstanceTypeForPlatform(cfg.RunnerConfig.CloudPlatform)
 	}
 	runner.RunnerGroup.Settings.AWSInstanceType = instanceType
 
-	// need to generate a token
 	region := ""
 	switch {
 	case install.AWSAccount != nil:
@@ -156,13 +147,10 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 		return errors.Wrap(err, "unable to update stack version")
 	}
 
-	// Above the cloud split: the GCP path returns below, and every cloud's stack
-	// needs this account before its directions are rendered.
 	if _, err := activities.AwaitEnsureInstallStackServiceAccountByInstallStackID(ctx, stack.ID); err != nil {
 		return errors.Wrap(err, "unable to ensure install stack service account")
 	}
 
-	// GCP uses a static Terraform module with tfvars.
 	if cfg.RunnerConfig.Type == app.AppRunnerTypeGCP {
 		initScriptURL := DefaultGCPRunnerInitScript
 		if cfg.RunnerConfig.InitScriptURL != "" {
@@ -180,7 +168,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 			RunnerEnvVars:              stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, w.cfg.RunnerContainerImageTag),
 		}
 
-		// Legacy init.sh needs a pre-provisioned bootstrap token.
+		// why: Legacy init.sh needs a pre-provisioned bootstrap token.
 		// init-mng-v2.sh fetches its own token via GCP identity (POST /v1/runner-auth/gcp).
 		if isLegacyGCPInitScript(initScriptURL) {
 			bootstrapToken, err := activities.AwaitCreateRunnerTokenRequestByRunnerID(ctx, install.RunnerID)
@@ -210,13 +198,12 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 		return nil
 	}
 
-	// AWS and Azure flow: full template generation + S3 upload.
 	token, err := activities.AwaitCreateRunnerTokenRequestByRunnerID(ctx, install.RunnerID)
 	if err != nil {
 		return errors.Wrap(err, "unable to create runner token")
 	}
 
-	// Must precede the render: the template carries the secret's location, so the
+	// why: Must precede the render: the template carries the secret's location, so the
 	// secret and its cross-account grant have to exist before the customer can apply
 	// the stack. No-ops unless phone-home auth is active for this install.
 	phoneHome, err := activities.AwaitEnsureInstallPhoneHomeSecretByInstallID(ctx, install.ID)
@@ -270,10 +257,6 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 		tmplByts = renderedTemplate.RAWJson
 		checksum = renderedTemplate.Checksum
 
-		// Render the Terraform tfvars envelope alongside the CloudFormation
-		// template so the dashboard can offer both during the await step.
-		// Log (but don't fail) if the TF module can't render the app config
-		// (e.g., custom nested stacks); the CFN path remains usable.
 		inp.CloudFormationStackVersion = stackVersion
 		supportIAMRoleARN := ""
 		if w.cfg.RunnerEnableSupport {

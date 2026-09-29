@@ -195,8 +195,6 @@ func TestRunbookConfig_Parse(t *testing.T) {
 
 		err := rc.parse()
 		require.NoError(t, err)
-		// Dependencies should be extracted from template references
-		// (depends on refs.Parse implementation)
 	})
 }
 

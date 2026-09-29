@@ -25,7 +25,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// GeneralRunnerTestDeps holds all fx-injected dependencies for general runner routes tests.
 type GeneralRunnerTestDeps struct {
 	fx.In
 
@@ -38,7 +37,6 @@ type GeneralRunnerTestDeps struct {
 	GeneralService *service
 }
 
-// GeneralRunnerTestSuite is the testify suite for general runner routes.
 type GeneralRunnerTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -72,7 +70,6 @@ func (s *GeneralRunnerTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -80,7 +77,6 @@ func (s *GeneralRunnerTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -102,8 +98,6 @@ func (s *GeneralRunnerTestSuite) setupTestData() {
 	s.ctx, s.testOrg = s.service.Seeder.EnsureOrg(s.ctx, s.T())
 }
 
-// makeRequest creates an HTTP request and executes it through the test router.
-// Returns the response recorder for assertions.
 func (s *GeneralRunnerTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
 	var reqBody io.Reader
 	if body != nil {

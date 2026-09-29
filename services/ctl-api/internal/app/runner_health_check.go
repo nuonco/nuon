@@ -26,11 +26,7 @@ type RunnerHealthCheck struct {
 	RunnerJob    RunnerJob    `json:"runner_job,omitzero" gorm:"polymorphic:Owner;" temporaljson:"runner_job,omitzero,omitempty"`
 	RunnerStatus RunnerStatus `json:"status,omitzero" gorm:"codec:ZSTD(1)" temporaljson:"runner_status,omitzero,omitempty"`
 
-	// loaded from view
-
 	MinuteBucket time.Time `json:"minute_bucket,omitzero" gorm:"->;-:migration;type:DateTime64(9);codec:Delta(8),ZSTD(1)" temporaljson:"minute_bucket,omitzero,omitempty"`
-
-	// after queries
 
 	RunnerStatusCode int `json:"status_code" gorm:"-" temporaljson:"runner_status_code,omitzero,omitempty"`
 

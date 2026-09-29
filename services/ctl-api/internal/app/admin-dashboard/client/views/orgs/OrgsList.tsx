@@ -39,8 +39,6 @@ export const OrgsList = () => {
     setPage(1)
   }
 
-  // Arriving from the feature flags page means the flag is what you care about,
-  // so keep that context when drilling into an org.
   const orgDetailPath = (orgID: string) =>
     feature
       ? `/orgs/${orgID}?tab=features&flag=${encodeURIComponent(feature)}`

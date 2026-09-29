@@ -38,14 +38,12 @@ func (m middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		// Check if body is already nil/empty
 		if ctx.Request.Body == nil || ctx.Request.ContentLength == 0 {
 			m.l.Warn("Request body is nil")
 			ctx.Next()
 			return
 		}
 
-		// Read the request body
 		bodyBytes, err := io.ReadAll(ctx.Request.Body)
 		if err != nil {
 			m.l.Error("failed to read request body", zap.Error(err))
@@ -53,7 +51,6 @@ func (m middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		// Restore the request body for downstream handlers
 		ctx.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
 		var jsonData map[string]interface{}
@@ -73,7 +70,6 @@ func (m middleware) Handler() gin.HandlerFunc {
 	}
 }
 
-// extractPropertiesRecursively extracts all property keys from nested JSON objects
 func (m middleware) extractPropertiesRecursively(data map[string]interface{}, prefix string) []string {
 	var properties []string
 

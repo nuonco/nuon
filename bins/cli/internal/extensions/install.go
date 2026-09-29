@@ -18,29 +18,23 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-// defaultOrg is used when resolving shorthand extension names (e.g. "deploy-checker").
 const defaultOrg = "nuonco"
 
-// githubRelease represents a GitHub release from the releases API.
 type githubRelease struct {
 	TagName string        `json:"tag_name"`
 	Assets  []githubAsset `json:"assets"`
 }
 
-// githubAsset represents a release asset.
 type githubAsset struct {
 	Name               string `json:"name"`
 	BrowserDownloadURL string `json:"browser_download_url"`
 }
 
-// isLocalPath returns true if the input looks like a filesystem path.
 func isLocalPath(input string) bool {
 	input = strings.TrimSpace(input)
 	return strings.HasPrefix(input, ".") || strings.HasPrefix(input, "/") || strings.HasPrefix(input, "~")
 }
 
-// cloneRepo clones a GitHub repository into the given directory.
-// If ref is non-empty, it checks out that branch, tag, or commit.
 func cloneRepo(repo, destDir, ref string) error {
 	url := fmt.Sprintf("https://github.com/%s.git", repo)
 
@@ -51,12 +45,10 @@ func cloneRepo(repo, destDir, ref string) error {
 		return cmd.Run()
 	}
 
-	// Try --branch first (works for branches and tags with shallow clone)
 	cmd := exec.Command("git", "clone", "--depth", "1", "--branch", ref, url, destDir)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		// --branch failed (likely a commit SHA), do a full clone + checkout
 		os.RemoveAll(destDir)
 		cmd = exec.Command("git", "clone", url, destDir)
 		cmd.Stdout = os.Stdout
@@ -74,19 +66,14 @@ func cloneRepo(repo, destDir, ref string) error {
 	return nil
 }
 
-// detectExtType detects the extension type from the contents of a directory.
-// It checks for pyproject.toml (python), then nuon-ext-<name> script, then falls back to binary.
 func detectExtType(dir, name string) (ExtType, string) {
-	// Check for python project
 	if _, err := os.Stat(filepath.Join(dir, "pyproject.toml")); err == nil {
 		entrypoint := "nuon-ext-" + name
-		// If there's no script entrypoint, it's a pure python project
 		if _, err := os.Stat(filepath.Join(dir, entrypoint)); err != nil {
 			return ExtTypePython, entrypoint
 		}
 	}
 
-	// Check for script entrypoint at repo root
 	entrypoint := extensionBinaryName(name)
 	if _, err := os.Stat(filepath.Join(dir, entrypoint)); err == nil {
 		return ExtTypeScript, entrypoint
@@ -95,30 +82,24 @@ func detectExtType(dir, name string) (ExtType, string) {
 	return ExtTypeBinary, ""
 }
 
-// findReleaseAsset looks for a matching platform binary in a release's assets.
-// It checks for bare binaries first, then .tar.gz and .zip archives.
-// Returns the download URL and asset name, or empty strings if not found.
 func findReleaseAsset(release *githubRelease, name string) (downloadURL, assetName string) {
 	baseName := fmt.Sprintf("nuon-ext-%s-%s-%s", name, runtime.GOOS, runtime.GOARCH)
 	if runtime.GOOS == "windows" {
 		baseName += ".exe"
 	}
 
-	// Try exact match first (bare binary)
 	for _, asset := range release.Assets {
 		if asset.Name == baseName {
 			return asset.BrowserDownloadURL, asset.Name
 		}
 	}
 
-	// Try .tar.gz archive
 	for _, asset := range release.Assets {
 		if asset.Name == baseName+".tar.gz" {
 			return asset.BrowserDownloadURL, asset.Name
 		}
 	}
 
-	// Try .zip archive
 	for _, asset := range release.Assets {
 		if asset.Name == baseName+".zip" {
 			return asset.BrowserDownloadURL, asset.Name
@@ -128,7 +109,6 @@ func findReleaseAsset(release *githubRelease, name string) (downloadURL, assetNa
 	return "", baseName
 }
 
-// Install installs an extension from a GitHub repository or a local directory.
 func (m *Manager) Install(repo string) (*InstalledExtension, error) {
 	if isLocalPath(repo) {
 		ui.PrintDebug(fmt.Sprintf("detected local path: %s", repo))
@@ -143,13 +123,11 @@ func (m *Manager) Install(repo string) (*InstalledExtension, error) {
 	}
 	ui.PrintDebug(fmt.Sprintf("resolved repo=%s name=%s ref=%s", repo, name, ref))
 
-	// Check if already installed
 	extDir := filepath.Join(m.dir, "nuon-ext-"+name)
 	if _, err := os.Stat(extDir); err == nil {
 		return nil, fmt.Errorf("extension %q is already installed (use `nuon ext upgrade %s` to update)", name, name)
 	}
 
-	// Fetch and validate manifest (at the pinned ref if provided)
 	ui.PrintDebug(fmt.Sprintf("fetching nuon-ext.toml from %s (ref=%s)", repo, ref))
 	manifest, err := FetchManifest(repo, ref)
 	if err != nil {
@@ -165,8 +143,6 @@ func (m *Manager) Install(repo string) (*InstalledExtension, error) {
 		return nil, err
 	}
 
-	// When a ref is pinned, try release-based install for that tag first,
-	// then fall back to clone (for interpreted extensions or commit SHAs).
 	if ref != "" {
 		ui.PrintDebug(fmt.Sprintf("ref pinned to %s, trying release first", ref))
 		release, err := getReleaseByTag(repo, ref)
@@ -183,7 +159,6 @@ func (m *Manager) Install(repo string) (*InstalledExtension, error) {
 		return m.installByClone(repo, name, ref, extDir, manifest)
 	}
 
-	// Auto-detect: try latest release with platform assets first, fall back to clone
 	ui.PrintDebug(fmt.Sprintf("fetching latest release for %s", repo))
 	release, err := getLatestRelease(repo)
 	if err == nil && len(release.Assets) > 0 {
@@ -200,17 +175,14 @@ func (m *Manager) Install(repo string) (*InstalledExtension, error) {
 	return m.installByClone(repo, name, "", extDir, manifest)
 }
 
-// installByRelease installs a binary extension by downloading a release asset.
 func (m *Manager) installByRelease(repo, name, extDir string, manifest *ExtensionManifest, release *githubRelease, downloadURL string) (*InstalledExtension, error) {
 	binaryName := extensionBinaryName(name)
 
-	// Create extension directory
 	ui.PrintDebug(fmt.Sprintf("creating extension directory: %s", extDir))
 	if err := os.MkdirAll(extDir, 0o755); err != nil {
 		return nil, fmt.Errorf("unable to create extension directory: %w", err)
 	}
 
-	// Download and install binary (handling archives if needed)
 	ui.PrintDebug(fmt.Sprintf("downloading binary from %s", downloadURL))
 	binaryPath := filepath.Join(extDir, binaryName)
 	if err := downloadAndExtractBinary(downloadURL, binaryPath, binaryName); err != nil {
@@ -218,13 +190,11 @@ func (m *Manager) installByRelease(repo, name, extDir string, manifest *Extensio
 		return nil, fmt.Errorf("unable to download extension binary: %w", err)
 	}
 
-	// Write cached nuon-ext.toml
 	tomlData, err := fetchRawManifest(repo, "")
 	if err == nil {
 		os.WriteFile(filepath.Join(extDir, "nuon-ext.toml"), tomlData, 0o644)
 	}
 
-	// Write manifest.json
 	now := time.Now().UTC().Format(time.RFC3339)
 	installed := &InstalledExtension{
 		Name:            name,
@@ -253,9 +223,6 @@ func (m *Manager) installByRelease(repo, name, extDir string, manifest *Extensio
 	return installed, nil
 }
 
-// installByClone installs a script or python extension by cloning the repo.
-// The type is auto-detected from the repo contents after cloning.
-// If ref is non-empty, the clone checks out that specific branch, tag, or commit.
 func (m *Manager) installByClone(repo, name, ref, extDir string, manifest *ExtensionManifest) (*InstalledExtension, error) {
 	ui.PrintDebug(fmt.Sprintf("cloning %s (ref=%s) into %s", repo, ref, extDir))
 	if err := cloneRepo(repo, extDir, ref); err != nil {
@@ -274,7 +241,6 @@ func (m *Manager) installByClone(repo, name, ref, extDir string, manifest *Exten
 		}
 	}
 
-	// Determine version: use pinned ref, or latest release tag, or "latest"
 	ver := "latest"
 	if ref != "" {
 		ver = ref
@@ -315,13 +281,9 @@ func (m *Manager) installByClone(repo, name, ref, extDir string, manifest *Exten
 	return installed, nil
 }
 
-// normalizeRepo parses and validates the repo input.
-// Accepts: "deploy-checker", "nuon-ext-deploy-checker", "nuonco/nuon-ext-deploy-checker", "myorg/nuon-ext-foo"
-// An optional @ref suffix pins to a specific branch, tag, or commit (e.g. "nuonco/nuon-ext-demo@main").
 func normalizeRepo(input string) (repo, name, ref string, err error) {
 	input = strings.TrimSpace(input)
 
-	// Parse @ref suffix before any other processing
 	if idx := strings.LastIndex(input, "@"); idx > 0 {
 		ref = input[idx+1:]
 		input = input[:idx]
@@ -331,7 +293,6 @@ func normalizeRepo(input string) (repo, name, ref string, err error) {
 	}
 
 	if strings.Contains(input, "/") {
-		// Full repo format: org/repo
 		parts := strings.SplitN(input, "/", 2)
 		repoName := parts[1]
 
@@ -343,13 +304,11 @@ func normalizeRepo(input string) (repo, name, ref string, err error) {
 		return input, name, ref, nil
 	}
 
-	// Shorthand: either "nuon-ext-deploy-checker" or "deploy-checker"
 	name = strings.TrimPrefix(input, "nuon-ext-")
 	repo = defaultOrg + "/nuon-ext-" + name
 	return repo, name, ref, nil
 }
 
-// getReleaseByTag fetches a specific release by tag name from a GitHub repository.
 func getReleaseByTag(repo, tag string) (*githubRelease, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/tags/%s", repo, tag)
 
@@ -386,7 +345,6 @@ func getReleaseByTag(repo, tag string) (*githubRelease, error) {
 	return &release, nil
 }
 
-// getLatestRelease fetches the latest release from a GitHub repository.
 func getLatestRelease(repo string) (*githubRelease, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", repo)
 
@@ -423,7 +381,6 @@ func getLatestRelease(repo string) (*githubRelease, error) {
 	return &release, nil
 }
 
-// downloadFile downloads a URL to a local file path.
 func downloadFile(url, destPath string) error {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -451,21 +408,17 @@ func downloadFile(url, destPath string) error {
 	return err
 }
 
-// downloadAndExtractBinary downloads a release asset and extracts the binary if it's an archive.
-// Supports bare binaries, .tar.gz archives, and .zip archives.
 func downloadAndExtractBinary(url, binaryPath, binaryName string) error {
 	if strings.HasSuffix(url, ".tar.gz") {
 		return downloadAndExtractTarGz(url, binaryPath, binaryName)
 	}
 
-	// Bare binary download
 	if err := downloadFile(url, binaryPath); err != nil {
 		return err
 	}
 	return os.Chmod(binaryPath, 0o755)
 }
 
-// downloadAndExtractTarGz downloads a .tar.gz archive and extracts the named binary from it.
 func downloadAndExtractTarGz(url, binaryPath, binaryName string) error {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -499,7 +452,6 @@ func downloadAndExtractTarGz(url, binaryPath, binaryName string) error {
 			return fmt.Errorf("unable to read archive: %w", err)
 		}
 
-		// Match the binary by base name (archives may have paths like ./nuon-ext-api)
 		if filepath.Base(hdr.Name) == binaryName && hdr.Typeflag == tar.TypeReg {
 			out, err := os.Create(binaryPath)
 			if err != nil {
@@ -517,7 +469,6 @@ func downloadAndExtractTarGz(url, binaryPath, binaryName string) error {
 	return fmt.Errorf("binary %s not found in archive", binaryName)
 }
 
-// fetchRawManifest fetches the raw nuon-ext.toml content from a GitHub repo.
 func fetchRawManifest(repo, ref string) ([]byte, error) {
 	url := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/nuon-ext.toml", repo, "HEAD")
 	if ref != "" {
@@ -543,7 +494,6 @@ func fetchRawManifest(repo, ref string) ([]byte, error) {
 	return io.ReadAll(resp.Body)
 }
 
-// writeManifestJSON writes the InstalledExtension to manifest.json in the extension directory.
 func writeManifestJSON(extDir string, ext *InstalledExtension) error {
 	data, err := json.MarshalIndent(ext, "", "  ")
 	if err != nil {
@@ -552,7 +502,6 @@ func writeManifestJSON(extDir string, ext *InstalledExtension) error {
 	return os.WriteFile(filepath.Join(extDir, "manifest.json"), data, 0o644)
 }
 
-// extensionBinaryName returns the binary name for an extension.
 func extensionBinaryName(name string) string {
 	binName := "nuon-ext-" + name
 	if runtime.GOOS == "windows" {
@@ -561,19 +510,11 @@ func extensionBinaryName(name string) string {
 	return binName
 }
 
-// InstallLocal installs an extension from a local directory or a local binary file.
-//
-// When given a directory, it must contain a nuon-ext.toml and a pre-built binary
-// named nuon-ext-<name>. The directory is symlinked so rebuilds take effect immediately.
-//
-// When given a binary file path (e.g. ~/bin/nuon-ext-linter), the binary is copied
-// into the extensions directory. The binary name must use the nuon-ext-<name> convention.
 func (m *Manager) InstallLocal(path string) (*InstalledExtension, error) {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve path: %w", err)
 	}
-	// Expand ~ if filepath.Abs didn't resolve it (shouldn't happen from CLI, but be safe)
 	if strings.HasPrefix(path, "~") {
 		home, _ := os.UserHomeDir()
 		if home != "" {
@@ -587,12 +528,10 @@ func (m *Manager) InstallLocal(path string) (*InstalledExtension, error) {
 		return nil, fmt.Errorf("path does not exist: %w", err)
 	}
 
-	// If it's a file (not a directory), use the binary install path
 	if !info.IsDir() {
 		return m.installLocalBinary(absPath, info)
 	}
 
-	// Read and validate nuon-ext.toml from the local directory
 	tomlPath := filepath.Join(absPath, "nuon-ext.toml")
 	ui.PrintDebug(fmt.Sprintf("reading manifest from %s", tomlPath))
 	tomlData, err := os.ReadFile(tomlPath)
@@ -615,7 +554,6 @@ func (m *Manager) InstallLocal(path string) (*InstalledExtension, error) {
 	name := manifest.Extension.Name
 	ui.PrintDebug(fmt.Sprintf("manifest: name=%s description=%s", name, manifest.Extension.Description))
 
-	// Verify the directory name matches the convention
 	dirName := filepath.Base(absPath)
 	expectedDir := "nuon-ext-" + name
 	if dirName != expectedDir {
@@ -626,17 +564,14 @@ func (m *Manager) InstallLocal(path string) (*InstalledExtension, error) {
 		return nil, err
 	}
 
-	// Check if already installed
 	extDir := filepath.Join(m.dir, "nuon-ext-"+name)
 	if _, err := os.Stat(extDir); err == nil {
 		return nil, fmt.Errorf("extension %q is already installed (use `nuon ext remove %s` first)", name, name)
 	}
 
-	// Auto-detect extension type from directory contents
 	extType, entrypoint := detectExtType(absPath, name)
 	ui.PrintDebug(fmt.Sprintf("detected type=%s entrypoint=%s", extType, entrypoint))
 
-	// For binary type, verify the compiled binary exists
 	binaryName := ""
 	if extType == ExtTypeBinary {
 		binaryName = extensionBinaryName(name)
@@ -647,13 +582,11 @@ func (m *Manager) InstallLocal(path string) (*InstalledExtension, error) {
 		}
 	}
 
-	// Symlink the entire source directory so all files (scripts/, etc.) are available
 	ui.PrintDebug(fmt.Sprintf("symlinking %s -> %s", extDir, absPath))
 	if err := os.Symlink(absPath, extDir); err != nil {
 		return nil, fmt.Errorf("unable to symlink extension directory: %w", err)
 	}
 
-	// Write manifest.json into the source directory (via the symlink)
 	now := time.Now().UTC().Format(time.RFC3339)
 	installed := &InstalledExtension{
 		Name:            name,
@@ -675,7 +608,7 @@ func (m *Manager) InstallLocal(path string) (*InstalledExtension, error) {
 	}
 
 	if err := writeManifestJSON(extDir, installed); err != nil {
-		os.Remove(extDir) // remove symlink, not source
+		os.Remove(extDir)
 		return nil, fmt.Errorf("unable to write manifest: %w", err)
 	}
 
@@ -683,13 +616,9 @@ func (m *Manager) InstallLocal(path string) (*InstalledExtension, error) {
 	return installed, nil
 }
 
-// installLocalBinary installs an extension from a single binary file.
-// The binary name must follow the nuon-ext-<name> convention (e.g. nuon-ext-linter).
-// The binary is copied into the extensions directory.
 func (m *Manager) installLocalBinary(absPath string, info os.FileInfo) (*InstalledExtension, error) {
 	baseName := filepath.Base(absPath)
 
-	// Strip .exe suffix for name extraction on Windows
 	cleanName := strings.TrimSuffix(baseName, ".exe")
 
 	if !strings.HasPrefix(cleanName, "nuon-ext-") {
@@ -699,24 +628,20 @@ func (m *Manager) installLocalBinary(absPath string, info os.FileInfo) (*Install
 	name := strings.TrimPrefix(cleanName, "nuon-ext-")
 	ui.PrintDebug(fmt.Sprintf("detected extension name %q from binary %s", name, baseName))
 
-	// Check if executable
 	if info.Mode()&0111 == 0 {
 		return nil, fmt.Errorf("binary %s is not executable", absPath)
 	}
 
-	// Check if already installed
 	extDir := filepath.Join(m.dir, "nuon-ext-"+name)
 	if _, err := os.Stat(extDir); err == nil {
 		return nil, fmt.Errorf("extension %q is already installed (use `nuon ext remove %s` first)", name, name)
 	}
 
-	// Create extension directory
 	ui.PrintDebug(fmt.Sprintf("creating extension directory: %s", extDir))
 	if err := os.MkdirAll(extDir, 0o755); err != nil {
 		return nil, fmt.Errorf("unable to create extension directory: %w", err)
 	}
 
-	// Copy the binary into the extension directory
 	binaryName := extensionBinaryName(name)
 	destPath := filepath.Join(extDir, binaryName)
 	ui.PrintDebug(fmt.Sprintf("copying binary %s -> %s", absPath, destPath))
@@ -746,7 +671,6 @@ func (m *Manager) installLocalBinary(absPath string, info os.FileInfo) (*Install
 		return nil, fmt.Errorf("unable to make binary executable: %w", err)
 	}
 
-	// Try to read nuon-ext.toml from the same directory as the binary (optional)
 	description := fmt.Sprintf("Extension: %s", name)
 	var requiresToken, requiresOrg, requiresApp, requiresInstall bool
 
@@ -764,7 +688,6 @@ func (m *Manager) installLocalBinary(absPath string, info os.FileInfo) (*Install
 		}
 	}
 
-	// Write manifest.json
 	now := time.Now().UTC().Format(time.RFC3339)
 	installed := &InstalledExtension{
 		Name:            name,

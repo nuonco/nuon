@@ -153,7 +153,7 @@ export function Onboarding() {
     const load = async () => {
       try {
         let ob = await createOnboarding()
-        // Auto-attach the org passed in via `?org_id=` whenever it differs
+        // why: Auto-attach the org passed in via `?org_id=` whenever it differs
         // from whatever is currently associated with the onboarding session.
         // The backend rejects switching after resources have been created,
         // in which case we just fall through and let the user see the wizard
@@ -164,7 +164,6 @@ export function Onboarding() {
               body: { org_id: requestedOrgId },
             })
           } catch {
-            // Fall through; the wizard will render existing state.
           }
         }
         if (!cancelled) setInitialSharedData({ onboarding: ob })

@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	// this means that any job more than 6 hours old will be disgarded when showing the queue depth
 	discardJobDuration time.Duration = time.Hour * 6
 )
 

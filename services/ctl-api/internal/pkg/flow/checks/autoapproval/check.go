@@ -13,13 +13,9 @@ import (
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// Check implements directive.ApprovalCreateCheck for auto-approval.
-// Skipped in plan-only mode so planonly.Check owns the approval semantics.
 type Check struct {
-	// StepSignalFn returns the inner signal from a step for interface assertions.
 	StepSignalFn func(step *app.WorkflowStep) signal.Signal
 
-	// SetResultDirective writes the directive to the step's ResultDirective column.
 	SetResultDirective func(ctx workflow.Context, stepID string, d directive.Step) error
 }
 

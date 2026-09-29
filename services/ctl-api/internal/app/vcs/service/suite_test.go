@@ -26,7 +26,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// VCSServiceTestDeps holds all fx-injected dependencies for VCS service tests.
 type VCSServiceTestDeps struct {
 	fx.In
 
@@ -37,7 +36,6 @@ type VCSServiceTestDeps struct {
 	Seeder *testseed.Seeder
 }
 
-// VCSServiceTestSuite is the shared testify suite for all VCS service endpoint tests.
 type VCSServiceTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -64,7 +62,6 @@ func (s *VCSServiceTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	// Create gomock controller and mock GitHub client
 	s.ctrl = gomock.NewController(s.T())
 	s.mockGH = vcshelpers.NewMockGithubClient(s.ctrl)
 
@@ -82,7 +79,6 @@ func (s *VCSServiceTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -90,7 +86,6 @@ func (s *VCSServiceTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Default mock expectations (overridden in individual tests as needed)
 	s.mockGH.EXPECT().GetInstallationAccount(gomock.Any(), gomock.Any()).Return(&github.User{
 		Login: github.String("test-org"),
 		ID:    github.Int64(12345),
@@ -123,7 +118,6 @@ func (s *VCSServiceTestSuite) SetupTest() {
 		},
 	}, nil).AnyTimes()
 
-	// Create the VCS service manually with the mock
 	svc := &service{
 		l:        s.service.L,
 		db:       s.service.DB,
@@ -156,7 +150,6 @@ func (s *VCSServiceTestSuite) setupTestData() {
 	s.ctx, s.testOrg = s.service.Seeder.EnsureOrg(s.ctx, s.T())
 }
 
-// createTestVCSConnection creates a test VCS connection for the test org.
 func (s *VCSServiceTestSuite) createTestVCSConnection() *app.VCSConnection {
 	conn := &app.VCSConnection{
 		OrgID:             s.testOrg.ID,
@@ -169,8 +162,6 @@ func (s *VCSServiceTestSuite) createTestVCSConnection() *app.VCSConnection {
 	return conn
 }
 
-// makeRequest sends an HTTP request through the test router and returns the recorder.
-// Pass nil for body on requests that have no body (GET, no-body POST).
 func (s *VCSServiceTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
 	var reqBody *bytes.Buffer
 	if body != nil {

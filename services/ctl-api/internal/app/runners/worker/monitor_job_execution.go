@@ -16,9 +16,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
-// executionFailureDescription returns the runner-reported error from the
-// execution's StatusV2.StatusHumanDescription when present, falling back to a
-// generic label (e.g. "failed") when the runner didn't report one.
 func executionFailureDescription(ctx workflow.Context, jobExecutionID, fallback string) string {
 	execution, err := activities.AwaitGetJobExecution(ctx, activities.GetJobExecutionRequest{
 		JobExecutionID: jobExecutionID,
@@ -64,15 +61,12 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 		return false, fmt.Errorf("error fetching latest job execution: %w", err)
 	}
 
-	// poll the job execution, until it's completed
 	executionTimeout := jobExecution.CreatedAt.Add(job.ExecutionTimeout)
 	for {
 		workflow.Sleep(ctx, defaultJobPollPeriod)
 
 		now := workflow.Now(ctx)
 
-		// when the overall timeout is hit, we mark both the runner job and execution as timed out
-		// this is not retryable.
 		if now.After(job.CreatedAt.Add(job.OverallTimeout)) {
 			l.Error("overall timeout reached")
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "overall timeout")
@@ -93,8 +87,6 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 			return false, nil
 		}
 
-		// when the execution timeout is hit, we mark both the runner job and execution as timed out
-		// this is retryable
 		if now.After(executionTimeout) {
 			l.Error("execution timeout reached")
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "execution timeout")
@@ -115,15 +107,10 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 			return true, nil
 		}
 
-		// if the runner was started after this execution was created, we mark the execution as in error
-		// this is retryable
 		hb, err := activities.AwaitGetMostRecentHeartBeatRequestByRunnerID(ctx, job.RunnerID)
 		if err != nil {
 			return false, err
 		}
-		// No beat in the lookback window means the runner is unhealthy, not that the
-		// read failed. Erroring surfaced an opaque SIGNAL_FAILED and burned the step's
-		// auto-retries without recording a reason.
 		if hb == nil {
 			l.Error("no heart beats found for runner during job")
 			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, "no runner heart beats found during job")
@@ -143,7 +130,6 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 			return true, nil
 		}
 
-		// if the runner is restarted, we want to add a buffer before canceling any jobs in flight
 		maxAliveTime := jobExecution.CreatedAt.Add(time.Minute)
 		if hb.StartedAt.After(maxAliveTime) {
 			l.Error(
@@ -176,7 +162,6 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 			return true, nil
 		}
 
-		// if the runner has no active process, the job execution is marked as failed.
 		processResp, err := activities.AwaitHasActiveRunnerProcess(ctx, activities.HasActiveRunnerProcessRequest{
 			RunnerID: job.RunnerID,
 		})
@@ -199,13 +184,11 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 			return true, nil
 		}
 
-		// check the runner to make sure it did not become unhealthy from the time it picked up the execution,
-		// to the current time
 		executionStatus, err := activities.AwaitGetJobExecutionStatus(ctx, activities.GetJobExecutionStatusRequest{
 			JobExecutionID: jobExecution.ID,
 		})
 		if err != nil {
-			// This loop already re-polls every defaultJobPollPeriod, so a transient
+			// why: This loop already re-polls every defaultJobPollPeriod, so a transient
 			// failure of a single status check (e.g. an activity timeout under
 			// worker load) shouldn't kill an otherwise-healthy job. Log and retry
 			// on the next tick instead of failing the job immediately.
@@ -213,7 +196,6 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 			continue
 		}
 
-		// handle the job execution status
 		switch executionStatus {
 		case app.RunnerJobExecutionStatusFinished:
 			l.Info("job execution successfully finished")

@@ -210,7 +210,6 @@ func (s *GetInstallActionWorkflowRecentRunsTestSuite) TestGetInstallActionRecent
 			queryParams:  "",
 			expectedCode: http.StatusOK,
 			validateFunc: func(iaw *app.InstallActionWorkflow) {
-				// Handler returns 200 with null on error
 				require.Empty(s.T(), iaw.ID)
 			},
 		},
@@ -223,7 +222,6 @@ func (s *GetInstallActionWorkflowRecentRunsTestSuite) TestGetInstallActionRecent
 			queryParams:  "",
 			expectedCode: http.StatusOK,
 			validateFunc: func(iaw *app.InstallActionWorkflow) {
-				// Handler returns 200 with null on error
 				require.Empty(s.T(), iaw.ID)
 			},
 		},

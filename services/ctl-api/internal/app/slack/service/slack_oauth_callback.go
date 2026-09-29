@@ -18,7 +18,7 @@ import (
 	slackclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/client"
 )
 
-// oauthErrorPage is the HTML shown to the user in their browser when the OAuth
+// why: oauthErrorPage is the HTML shown to the user in their browser when the OAuth
 // callback fails. Slack opens the redirect in a browser tab so we render a
 // human-readable page rather than a JSON error envelope.
 //
@@ -70,7 +70,7 @@ code{background:#f3f3f3;padding:2px 6px;border-radius:3px;font-size:13px}
 //	@Failure				500	"HTML error page"
 //	@Router					/slack/oauth/callback [GET]
 func (s *service) SlackOAuthCallback(ctx *gin.Context) {
-	// Check server-side config before consuming the (single-use) state JWT
+	// why: Check server-side config before consuming the (single-use) state JWT
 	// or the OAuth code. Otherwise a misconfigured server would burn the
 	// user's install attempt and force a full retry from the dashboard.
 	if s.cfg.SlackClientID == "" || s.cfg.SlackClientSecret == "" {
@@ -105,8 +105,6 @@ func (s *service) SlackOAuthCallback(ctx *gin.Context) {
 		return
 	}
 
-	// Reject Enterprise Grid org-wide installs. Phase 4 invariant: team_id
-	// uniquely identifies a workspace; org-wide installs break that.
 	if resp.IsEnterpriseInstall {
 		s.l.Warn("slack oauth: rejecting enterprise-grid install",
 			zap.String("team_id", resp.Team.ID))
@@ -128,7 +126,7 @@ func (s *service) SlackOAuthCallback(ctx *gin.Context) {
 	ctx.Redirect(http.StatusFound, s.postInstallRedirectURL(claims.OrgID))
 }
 
-// persistSlackInstall upserts the SlackInstallation row keyed by team_id
+// why: persistSlackInstall upserts the SlackInstallation row keyed by team_id
 // (re-install path clears DeletedAt) and upserts the verified SlackOrgLink for
 // (team_id, orgID). Both writes happen inside a single transaction so a
 // partial failure can't leave a fresh installation row without an org link.
@@ -139,10 +137,6 @@ func (s *service) persistSlackInstall(
 	accountID, orgID string,
 	resp *slackclient.OAuthV2AccessResponse,
 ) error {
-	// The OAuth callback is hit by Slack, not by an authenticated dashboard
-	// user, so there is no middleware-resolved account in context. We
-	// resolve the account ourselves from the state JWT claim and stamp it
-	// on the context so the BeforeCreate hooks can pick it up.
 	var acct app.Account
 	if err := s.db.WithContext(ctx).
 		Where(app.Account{ID: accountID}).
@@ -157,9 +151,6 @@ func (s *service) persistSlackInstall(
 	}
 
 	return s.db.WithContext(ctxWithAcct).Transaction(func(tx *gorm.DB) error {
-		// Upsert SlackInstallation by team_id. Use Unscoped to find a soft-deleted
-		// prior installation (the unique index is on (team_id, deleted_at) so a
-		// previously uninstalled record may exist with deleted_at != 0).
 		var existing app.SlackInstallation
 		res := tx.
 			Unscoped().
@@ -185,8 +176,6 @@ func (s *service) persistSlackInstall(
 		case res.Error != nil:
 			return fmt.Errorf("lookup existing installation: %w", res.Error)
 		default:
-			// Re-install path: clear soft-delete tombstone, refresh tokens /
-			// scope / metadata, and reset Status to active.
 			existing.TeamName = resp.Team.Name
 			existing.EnterpriseID = enterpriseID
 			existing.BotUserID = resp.BotUserID
@@ -202,9 +191,6 @@ func (s *service) persistSlackInstall(
 			}
 		}
 
-		// Upsert verified SlackOrgLink for (team_id, orgID). Same Unscoped
-		// pattern — a previously revoked / soft-deleted link should be reused
-		// rather than a duplicate row created.
 		var existingLink app.SlackOrgLink
 		linkRes := tx.
 			Unscoped().
@@ -236,15 +222,9 @@ func (s *service) persistSlackInstall(
 	})
 }
 
-// postInstallRedirectURL returns the dashboard URL the user is redirected to
-// after a successful install. We deep-link to the org's Slack integration page
-// (/<orgID>/slack) and append ?slack=installed so the page can show a success
-// toast. If orgID is empty we fall back to the dashboard root.
 func (s *service) postInstallRedirectURL(orgID string) string {
 	base := strings.TrimRight(s.cfg.AppURL, "/")
 	if base == "" {
-		// AppURL is required at config validation time, but be defensive:
-		// fall back to "/" rather than minting a broken redirect.
 		base = "/"
 	}
 	q := url.Values{}
@@ -255,7 +235,6 @@ func (s *service) postInstallRedirectURL(orgID string) string {
 	return base + "/" + orgID + "/slack?" + q.Encode()
 }
 
-// renderOAuthError writes an HTML error page back to the user's browser.
 func (s *service) renderOAuthError(ctx *gin.Context, status int, msg string) {
 	ctx.Status(status)
 	ctx.Header("Content-Type", "text/html; charset=utf-8")

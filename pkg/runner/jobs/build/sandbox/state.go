@@ -15,7 +15,6 @@ type handlerState struct {
 	workspace workspace.Workspace
 	arch      ociarchive.Archive
 
-	// regCfg is optional — if nil the build validates source but skips OCI push.
 	regCfg    *configs.OCIRegistryRepository
 	resultTag string
 

@@ -28,33 +28,18 @@ const (
 	componentBuildStatusActive                     = "active"
 )
 
-// SyncOptions controls how the target app is resolved when syncing a directory.
 type SyncOptions struct {
-	// AppFlag is the resolved value of the --app-id flag (ID or name) or picked from context.
-	AppFlag string
-	// Force, when true, suppresses the directory-mismatch confirmation prompt
-	// and syncs to AppFlag regardless of the working directory name.
-	Force bool
-	// Create indicates the app should be created if it does not exist.
-	Create bool
-	// Branch optionally targets a specific app branch for this sync.
-	Branch string
-	// AppBranch triggers interactive branch selection when true.
-	AppBranch bool
-	// Preview creates a plan-only run (no apply). Only used with Branch or AppBranch.
-	Preview bool
-	// AutoApprove skips the branch run's approval gate before each install group
-	// deploys. Without it the gate follows the targeted installs' approval option.
+	AppFlag     string
+	Force       bool
+	Create      bool
+	Branch      string
+	AppBranch   bool
+	Preview     bool
 	AutoApprove bool
-	// PrintJSON emits a machine-readable result on success (--output json/agent).
-	PrintJSON bool
-	// NoWait skips waiting for scheduled component builds to complete; the
-	// exit code then reflects the sync only.
-	NoWait bool
+	PrintJSON   bool
+	NoWait      bool
 }
 
-// syncResult is the machine-readable summary emitted via ui.PrintJSON when
-// SyncOptions.PrintJSON is set, so --output agent gets a success envelope.
 type syncResult struct {
 	AppID    string            `json:"app_id"`
 	Dir      string            `json:"dir"`
@@ -63,16 +48,12 @@ type syncResult struct {
 	Builds   *syncBuildsResult `json:"builds,omitempty"`
 }
 
-// syncBuildsResult summarizes the component builds the sync scheduled.
 type syncBuildsResult struct {
 	Scheduled  int            `json:"scheduled"`
 	Waited     bool           `json:"waited"`
 	Components []BuildOutcome `json:"components,omitempty"`
 }
 
-// buildsFailedExitCode signals that the config synced but the scheduled
-// component builds failed, were policy-blocked, or timed out. Exit 1 remains
-// "sync failed" and exit 2 is the read-only guardrail.
 const buildsFailedExitCode = 3
 
 func (s *Service) DeprecatedSyncDir(ctx context.Context, dir string, version string, opts SyncOptions) error {
@@ -247,42 +228,26 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 	return nil
 }
 
-// resolveSyncAppID determines which app the sync should target.
-//
-// Algorithm:
-//  1. AppFlag empty (no selection, no explicit --app-id): derive from the
-//     working directory name (legacy default).
-//  2. AppFlag set (auto-bound from selected app OR explicit --app-id):
-//     resolve it and check that the directory name resolves to the same app.
-//     - On match: proceed.
-//     - On mismatch + --force: warn and proceed.
-//     - On mismatch + interactive: prompt for confirmation.
-//     - On mismatch + non-interactive: error, suggest --force.
 func (s *Service) resolveSyncAppID(ctx context.Context, dir string, opts SyncOptions) (string, error) {
-	// (1) No app-id context at all → legacy dir-name behavior.
 	if opts.AppFlag == "" {
 		appID, _, err := s.resolveFromDirName(ctx, dir, opts.Create)
 		return appID, err
 	}
 
-	// (2) App-id is set; resolve it to a concrete app ID.
 	targetAppID, err := s.resolveOrCreateApp(ctx, opts.AppFlag, opts.Create)
 	if err != nil {
 		return "", err
 	}
 
-	// Compare against the directory-derived app.
 	appName, err := parse.AppNameFromDirName(dir)
 	if err != nil {
 		return "", errs.WithUserFacing(err, "error parsing app name from directory")
 	}
 	dirAppID, dirErr := lookup.AppID(ctx, s.api, appName)
 	if dirErr == nil && dirAppID == targetAppID {
-		return targetAppID, nil // match
+		return targetAppID, nil
 	}
 
-	// Mismatch path. Fetch the target app's name so messages are friendly
-	// even when AppFlag is an opaque ID (e.g. auto-bound from ~/.nuon).
 	targetLabel := opts.AppFlag
 	if app, err := s.api.GetApp(ctx, targetAppID); err == nil && app != nil && app.Name != "" {
 		targetLabel = app.Name
@@ -328,8 +293,6 @@ func (s *Service) resolveFromDirName(ctx context.Context, dir string, create boo
 	return appID, appName, nil
 }
 
-// resolveOrCreateApp looks up an app by ID or name. If not found and create is
-// true, it creates the app using nameOrID as the name and returns the new ID.
 func (s *Service) resolveOrCreateApp(ctx context.Context, nameOrID string, create bool) (string, error) {
 	appID, err := lookup.AppID(ctx, s.api, nameOrID)
 	if err == nil {
@@ -365,7 +328,6 @@ func (s *Service) notifyOrphanedComponents(cmps map[string]string) {
 	ui.PrintLn(msg)
 }
 
-// resolveAppBranchID resolves a branch name or ID to a branch ID.
 func (s *Service) resolveAppBranchID(ctx context.Context, appID, branchNameOrID string) (string, error) {
 	branches, err := nuon.GetAllAppBranches(ctx, s.api, appID)
 	if err != nil {

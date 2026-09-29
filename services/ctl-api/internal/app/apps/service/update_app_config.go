@@ -78,7 +78,6 @@ func (s *service) UpdateAppConfigV2(ctx *gin.Context) {
 		return
 	}
 
-	// Update journey step when config becomes active (app sync complete)
 	if req.Status == app.AppConfigStatusActive {
 		if acct, err := cctx.AccountFromGinContext(ctx); err == nil {
 			if err := s.accountsHelpers.UpdateUserJourneyStepForFirstAppSync(ctx, acct.ID, cfg.AppID); err != nil {
@@ -90,8 +89,6 @@ func (s *service) UpdateAppConfigV2(ctx *gin.Context) {
 			}
 		}
 
-		// Trigger app branch run if config was synced targeting a branch,
-		// otherwise sync non-branch-managed installs to the new config.
 		if cfg.AppBranchID.Valid && cfg.AppBranchID.String != "" {
 			s.triggerAppBranchRunForConfig(ctx, cfg)
 		} else {
@@ -144,7 +141,6 @@ func (s *service) UpdateAppConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Update journey step when config becomes active (app sync complete)
 	if req.Status == app.AppConfigStatusActive {
 		if acct, err := cctx.AccountFromGinContext(ctx); err == nil {
 			if err := s.accountsHelpers.UpdateUserJourneyStepForFirstAppSync(ctx, acct.ID, cfg.AppID); err != nil {
@@ -233,8 +229,6 @@ func (s *service) syncTriggersForAppConfig(ctx context.Context, db *gorm.DB, app
 	return triggers.Sync(ctx, db, &cfg, appConfig.OrgID, appConfig.AppID, appConfig.ID)
 }
 
-// triggerAppBranchRunForConfig triggers an app branch run if the config
-// has an AppBranchID set (i.e., it was synced targeting a branch).
 func (s *service) triggerAppBranchRunForConfig(ctx context.Context, cfg *app.AppConfig) {
 	if !cfg.AppBranchID.Valid || cfg.AppBranchID.String == "" {
 		return
@@ -242,7 +236,6 @@ func (s *service) triggerAppBranchRunForConfig(ctx context.Context, cfg *app.App
 
 	branchID := cfg.AppBranchID.String
 
-	// Load the branch with its queue and latest config
 	var branch app.AppBranch
 	if err := s.db.WithContext(ctx).
 		Preload("Queue", app.DefaultQueueScope).

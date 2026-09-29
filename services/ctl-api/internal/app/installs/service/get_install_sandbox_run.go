@@ -98,8 +98,6 @@ func (s *service) getInstallSandboxRun(ctx *gin.Context, runID string) (*app.Ins
 				zap.String("sandbox_run_id", installSandboxRun.ID),
 				zap.Error(err))
 		} else {
-			// Keep orchestration-owned errors, but derive runner-owned mirrors from
-			// the latest job so retries can replace or clear stale values.
 			runnerErrorMirrored := installSandboxRun.CompositeError != nil &&
 				(installSandboxRun.CompositeError.SourceType == "install_sandbox_runs" || installSandboxRun.CompositeError.SourceType == "runner_jobs")
 			if compositeError != nil || runnerErrorMirrored {

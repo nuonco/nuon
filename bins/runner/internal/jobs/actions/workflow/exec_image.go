@@ -24,13 +24,8 @@ import (
 
 const containerWorkspaceMount = "/nuon/work"
 
-// actionCPUShares is half docker's default weight of 1024, so an action can use
-// idle CPU but loses to the install container when the VM is saturated.
 const actionCPUShares = 512
 
-// execCommandInContainer runs an image-backed action step inside its container.
-// The workspace is bind-mounted so the supervisor writes outputs to a file the
-// runner reads back on the host after the container exits.
 func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg *models.AppActionWorkflowStepConfig, src *plantypes.GitSource, envVars map[string]string) error {
 	if h.launcher == nil {
 		return errors.New("image-backed action received by a runner without a container launcher")
@@ -51,7 +46,6 @@ func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg
 		return errors.Wrap(err, "unable to get container env")
 	}
 
-	// same env layering as the host path, minus any inherited host environment.
 	env := map[string]string{"COLUMNS": "500"}
 	env = generics.MergeMap(env, h.state.plan.BuiltinEnvVars)
 	env = generics.MergeMap(env, builtInEnv)
@@ -86,10 +80,6 @@ func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg
 			"nuon.install_id": h.state.plan.InstallID,
 			"nuon.run_id":     h.state.run.ID,
 		},
-		// No hard CPU quota: an action should be able to use otherwise idle VM
-		// CPU. mng and the install container get relative priority through
-		// CPUShares instead, so they win under contention without capping
-		// actions to a single core.
 		Memory:    "2g",
 		CPUShares: actionCPUShares,
 		PidsLimit: 512,
@@ -133,9 +123,6 @@ func (h *handler) containerCommand(ctx context.Context, l *zap.Logger, cfg *mode
 	return command, "", nil
 }
 
-// prepareActionImage pulls the action's image once for the whole job and leases
-// it against host image collection. Every step then reuses that one pull, and
-// the image survives between steps instead of being re-pulled per step.
 func (h *handler) prepareActionImage(ctx context.Context, l *zap.Logger, leaseID string) error {
 	if h.launcher == nil {
 		return errors.New("image-backed action received by a runner without a container launcher")
@@ -158,13 +145,10 @@ func (h *handler) prepareActionImage(ctx context.Context, l *zap.Logger, leaseID
 		PullUsername: username,
 		PullPassword: password,
 		LeaseID:      leaseID,
-		// pull progress: INFO, untagged (not the action's command output)
-		PullLog: zapwriter.New(l, zapcore.InfoLevel, ""),
+		PullLog:      zapwriter.New(l, zapcore.InfoLevel, ""),
 	})
 }
 
-// releaseActionImage drops the job's lease. The image stays in the host cache so
-// the next run of the same action skips the pull.
 func (h *handler) releaseActionImage(leaseID string) {
 	if h.launcher == nil {
 		return
@@ -172,7 +156,7 @@ func (h *handler) releaseActionImage(leaseID string) {
 	h.launcher.Release(leaseID)
 }
 
-// actionImageRef resolves the image ref the launcher runs. It is always the
+// why: actionImageRef resolves the image ref the launcher runs. It is always the
 // digest-pinned ref that ctl-api resolved, so a step can only ever run the
 // exact manifest Nuon resolved. There is deliberately no mutable-tag fallback:
 // without a digest we fail rather than run whatever the tag happens to point at
@@ -187,11 +171,6 @@ func (h *handler) actionImageRef() (string, error) {
 	return plan.ImageDigestRef, nil
 }
 
-// actionImagePullAuth resolves registry credentials for the pull. It goes
-// through the registry package rather than reading OCIAuth off the plan: a
-// mirrored image lands in the org registry, which uses static credentials, but
-// a component-backed image is pulled straight from the install's own ECR, ACR,
-// or GAR, which mint a token per pull.
 func (h *handler) actionImagePullAuth(ctx context.Context) (username, password string, err error) {
 	plan := h.state.plan
 
@@ -210,10 +189,6 @@ func (h *handler) actionImagePullAuth(ctx context.Context) (username, password s
 	return accessInfo.Auth.Username, accessInfo.Auth.Password, nil
 }
 
-// randContainerSuffix returns a short random suffix so concurrent executions of
-// the same run+step get distinct container names. Without it, two overlapping
-// attempts share a deterministic name and each attempt's docker rm -f would
-// kill the other's live container.
 func randContainerSuffix() string {
 	b := make([]byte, 4)
 	if _, err := rand.Read(b); err != nil {

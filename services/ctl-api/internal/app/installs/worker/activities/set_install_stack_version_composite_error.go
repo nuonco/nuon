@@ -15,10 +15,8 @@ import (
 
 type SetInstallStackVersionCompositeErrorRequest struct {
 	StackVersionID string `validate:"required"`
-	// Platform is the cloud target ("aws", "azure", "gcp") for the error message.
-	Platform string
-	// Detail is the sanitised renderer error message.
-	Detail string
+	Platform       string
+	Detail         string
 }
 
 // SetInstallStackVersionCompositeError freezes a StackTemplateRenderError onto
@@ -47,7 +45,6 @@ func (a *Activities) SetInstallStackVersionCompositeError(ctx context.Context, r
 
 	update := app.InstallStackVersion{CompositeError: data}
 	columns := []string{"composite_error"}
-	// A row left "generating" still wins "latest version" lookups.
 	if req.Detail != "" {
 		update.Status = app.NewCompositeStatus(ctx, app.StatusError)
 		update.Status.StatusHumanDescription = req.Detail

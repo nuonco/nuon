@@ -41,8 +41,6 @@ func (s *service) AdminForgetOrg(ctx *gin.Context) {
 		return
 	}
 
-	// Soft delete roles (and their join-table entries) so the Account AfterQuery
-	// hook no longer tries to dereference the now-deleted org.
 	if err := s.db.WithContext(ctx).Where("org_id = ?", org.ID).Delete(&app.Role{}).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to forget org roles: %w", err))
 		return

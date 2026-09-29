@@ -26,9 +26,9 @@ type Config struct {
 	DontSupportColumnPrecision   bool
 	DontSupportEmptyDefaultValue bool
 	SkipInitializeWithVersion    bool
-	DefaultGranularity           int    // 1 granule = 8192 rows
-	DefaultCompression           string // default compression algorithm. LZ4 is lossless
-	DefaultIndexType             string // index stores extremes of the expression
+	DefaultGranularity           int
+	DefaultCompression           string
+	DefaultIndexType             string
 	DefaultTableEngineOpts       string
 }
 
@@ -51,7 +51,6 @@ func (dialector Dialector) Name() string {
 }
 
 func (dialector *Dialector) Initialize(db *gorm.DB) (err error) {
-	// register callbacks
 	ctx := context.Background()
 	callbacks.RegisterDefaultCallbacks(db, &callbacks.Config{
 		DeleteClauses: []string{"DELETE", "WHERE"},
@@ -59,12 +58,10 @@ func (dialector *Dialector) Initialize(db *gorm.DB) (err error) {
 	db.Callback().Create().Replace("gorm:create", dialector.Create)
 	db.Callback().Update().Replace("gorm:update", dialector.Update)
 
-	// assign option fields to default values
 	if dialector.DriverName == "" {
 		dialector.DriverName = "clickhouse"
 	}
 
-	// default settings
 	if dialector.DefaultGranularity == 0 {
 		dialector.DefaultGranularity = 3
 	}

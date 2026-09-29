@@ -37,7 +37,6 @@ func (s *appSandboxesSuite) TearDownTest() {
 }
 
 func (s *appSandboxesSuite) SetupTest() {
-	// create an org
 	org := s.createOrg()
 	s.orgID = org.ID
 
@@ -70,7 +69,6 @@ func (s *appSandboxesSuite) TestCreateAppSandboxConfig() {
 		require.NoError(t, err)
 		require.NotNil(t, cfg)
 
-		// grab latest and ensure it is correctly configured
 		latestCfg, err := s.apiClient.GetAppSandboxLatestConfig(s.ctx, s.appID)
 		require.NoError(t, err)
 		require.NotNil(t, latestCfg)
@@ -95,7 +93,6 @@ func (s *appSandboxesSuite) TestCreateAppSandboxConfig() {
 		require.NoError(t, err)
 		require.NotNil(t, cfg)
 
-		// grab latest and ensure it is correctly configured
 		latestCfg, err := s.apiClient.GetAppSandboxLatestConfig(s.ctx, s.appID)
 		require.NoError(t, err)
 		require.NotNil(t, latestCfg)

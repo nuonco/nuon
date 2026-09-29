@@ -27,30 +27,22 @@ func HelmUpgradeWithLogStreaming(
 		zap.String("label.selector", labelSelector),
 	)
 
-	// make k8s client
 	k8sClient, err := kubernetes.NewForConfig(kubeCfg)
 	if err != nil {
 		return nil, err
 	}
 
-	// create log streamer context
 	streamCtx, cancelStreaming := context.WithCancel(ctx)
 	defer cancelStreaming()
 	streamer := NewLogStreamer(k8sClient, l)
 
-	// the bulk of the work is here
 	go streamLogs(streamCtx, cancelStreaming, streamer, k8sClient, labelSelector, annotationSelectorKey, annotationSelectorValue, l)
 
-	// execute the upgrade
 	rel, err := client.RunWithContext(ctx, releaseName, chart, values)
 	if err != nil {
-		// NOTE(fd): i suspect if there is an error, the log streams may already be closed, but we're not taking any chances
 		streamer.StopAllStreams()
 		return nil, err
 	}
-
-	// NOTE(fd): we dont' have to worry about the tail end of the logs since we just care that helm said we're good to go.
-	// if we did though, we would sleep here for a few second to let the remaining logs drain - e.g. short lived initContainer
 
 	return rel, nil
 }

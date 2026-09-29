@@ -74,14 +74,12 @@ func (w *Workflows) waitForApprovalResponse(ctx workflow.Context, workflowID, st
 				return pkgErrors.New("Approval does not exist yet")
 			}
 
-			// get latest workflow to ensure we have the latest state since approval options can change
 			latestFlw, err := activities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, workflowID)
 			if err != nil {
 				return errors.Join(pkgErrors.Wrap(err, "unable to get latest flow"), poll.NonRetryableError)
 			}
 
 			if latestFlw.ApprovalOption == app.InstallApprovalOptionApproveAll {
-				// Check if response already exists (handles Continue-As-New and retry scenarios)
 				if stp.Approval.Response != nil {
 					return nil
 				}
@@ -127,7 +125,6 @@ func (w *Workflows) waitForApprovalResponse(ctx workflow.Context, workflowID, st
 		return nil, pkgErrors.Wrap(err, "unable to get approval step")
 	}
 
-	// should never happen due to polling above, but for sanity.
 	if step.Approval.Response == nil {
 		return nil, pkgErrors.New("approval response is still nil after polling")
 	}

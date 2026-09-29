@@ -27,14 +27,9 @@ const (
 	pollTimeout  = 120 * time.Second
 	pollInterval = 150 * time.Millisecond
 
-	// testResidentIdleTimeout keeps parked hosts draining quickly while still
-	// letting a retry issued right after parking land on the warm host.
 	testResidentIdleTimeout = 5 * time.Second
 )
 
-// testQueueCache is per-case (each FlowTestSuite value is one case), so no
-// locking is needed and unrelated cases never wait on each other's readiness
-// polling.
 func (e *FlowTestSuite) createTestQueue(ctx context.Context, ownerID, ownerType, queueName string) *app.Queue {
 	return e.createTestQueueWithLimits(ctx, ownerID, ownerType, queueName, 20, 500)
 }
@@ -56,8 +51,6 @@ func (e *FlowTestSuite) createTestQueueWithLimits(ctx context.Context, ownerID, 
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), q)
 
-	// QueueReady may fail transiently while the queue workflow registers its
-	// query handlers. Retry until it succeeds or the timeout expires.
 	require.Eventually(e.T(), func() bool {
 		return e.service.QueueClient.QueueReady(ctx, q.ID) == nil
 	}, pollTimeout, pollInterval, "queue %s did not become ready", q.ID)
@@ -66,7 +59,6 @@ func (e *FlowTestSuite) createTestQueueWithLimits(ctx context.Context, ownerID, 
 	return q
 }
 
-// createTestWorkflow creates a workflow with a generate-steps signal.
 func (e *FlowTestSuite) createTestWorkflow(ctx context.Context, ownerID, ownerType string, wfType app.WorkflowType, genSignal signal.Signal) *app.Workflow {
 	flw := app.Workflow{
 		OwnerID:   ownerID,
@@ -82,9 +74,6 @@ func (e *FlowTestSuite) createTestWorkflow(ctx context.Context, ownerID, ownerTy
 	return &flw
 }
 
-// createTestSteps creates workflow steps for the given workflow. Steps without
-// a WorkflowStepGroupID get a group created per GroupIdx, since the schema
-// requires every step to belong to a group.
 func (e *FlowTestSuite) createTestSteps(ctx context.Context, flw *app.Workflow, steps []app.WorkflowStep) {
 	groups := make(map[int]string)
 	for i := range steps {
@@ -115,7 +104,6 @@ func (e *FlowTestSuite) createTestSteps(ctx context.Context, flw *app.Workflow, 
 	require.Nil(e.T(), res.Error)
 }
 
-// getWorkflow re-fetches a workflow from DB.
 func (e *FlowTestSuite) getWorkflow(ctx context.Context, id string) *app.Workflow {
 	var flw app.Workflow
 	res := e.service.DB.WithContext(ctx).Preload("Steps").First(&flw, "id = ?", id)
@@ -123,7 +111,6 @@ func (e *FlowTestSuite) getWorkflow(ctx context.Context, id string) *app.Workflo
 	return &flw
 }
 
-// workflowStatus reads only the workflow row (no Preload) for polling loops.
 func (e *FlowTestSuite) workflowStatus(ctx context.Context, id string) (app.Status, bool) {
 	var flw app.Workflow
 	if err := e.service.DB.WithContext(ctx).First(&flw, "id = ?", id).Error; err != nil {
@@ -132,7 +119,6 @@ func (e *FlowTestSuite) workflowStatus(ctx context.Context, id string) (app.Stat
 	return flw.Status.Status, true
 }
 
-// stepsByWorkflow is the error-returning read for use inside poll callbacks.
 func (e *FlowTestSuite) stepsByWorkflow(ctx context.Context, workflowID string) ([]app.WorkflowStep, error) {
 	var steps []app.WorkflowStep
 	err := e.service.DB.WithContext(ctx).
@@ -142,7 +128,6 @@ func (e *FlowTestSuite) stepsByWorkflow(ctx context.Context, workflowID string) 
 	return steps, err
 }
 
-// getStep re-fetches a workflow step from DB.
 func (e *FlowTestSuite) getStep(ctx context.Context, id string) *app.WorkflowStep {
 	var step app.WorkflowStep
 	res := e.service.DB.WithContext(ctx).First(&step, "id = ?", id)
@@ -157,16 +142,12 @@ func (e *FlowTestSuite) getStepGroup(ctx context.Context, id string) *app.Workfl
 	return &group
 }
 
-// getStepsByWorkflow fetches all steps for a workflow ordered by Idx.
 func (e *FlowTestSuite) getStepsByWorkflow(ctx context.Context, workflowID string) []app.WorkflowStep {
 	steps, err := e.tryStepsByWorkflow(ctx, workflowID)
 	require.Nil(e.T(), err)
 	return steps
 }
 
-// tryStepsByWorkflow is the error-tolerant form of getStepsByWorkflow for
-// polling conditions: a failed query (e.g. context canceled during cleanup)
-// must not fail the test from a goroutine that outlived it.
 func (e *FlowTestSuite) tryStepsByWorkflow(ctx context.Context, workflowID string) ([]app.WorkflowStep, error) {
 	var steps []app.WorkflowStep
 	err := e.service.DB.WithContext(ctx).
@@ -176,10 +157,6 @@ func (e *FlowTestSuite) tryStepsByWorkflow(ctx context.Context, workflowID strin
 	return steps, err
 }
 
-// fakeString generates faker strings. GetFakeObj is race-safe for plain
-// strings: go-faker draws from the global math/rand functions, which are
-// internally locked. Struct fakes with "unique" tags are NOT safe; keep
-// fake data string-only if concurrent.
 func fakeString() string {
 	return generics.GetFakeObj[string]()
 }
@@ -188,12 +165,6 @@ func newTestOwner() (string, string) {
 	return fakeString(), "test_installs"
 }
 
-// testGenerators is the single generator table behind every test owner type.
-// generateworkflowsteps.RegisterGenerators replaces the whole factory for an
-// owner type, so parallel cases each calling it would clobber one another and
-// fail with "no step generator for workflow type". Cases add their workflow
-// type here instead; registerTestGeneratorOwnerTypes wires the owner types
-// once before any case starts.
 var testGenerators = struct {
 	sync.Mutex
 	byOwner map[string]map[app.WorkflowType]flow.WorkflowStepGenerator
@@ -228,11 +199,6 @@ func registerTestGenerator(ownerType string, workflowType app.WorkflowType, gen 
 	}
 	gens[workflowType] = gen
 }
-
-// The waitFor* helpers poll with pure-bool conditions: testify runs
-// Eventually callbacks on a separate goroutine, so a require.* FailNow inside
-// a callback fires on the wrong goroutine (and can outlive the timeout).
-// Transient read errors are treated as "not yet" and retried until timeout.
 
 func (e *FlowTestSuite) getLatestQueueSignal(ctx context.Context, ownerID, ownerType string, signalType signal.SignalType) *app.QueueSignal {
 	var queueSignal app.QueueSignal
@@ -276,8 +242,6 @@ func (e *FlowTestSuite) getWorkflowRuns(ctx context.Context, workflowID string) 
 	return runs
 }
 
-// waitForWorkflowStatus polls until the workflow reaches the expected status.
-// Status-only read: no Preload — the poller hits this every 150ms per case.
 func (e *FlowTestSuite) waitForWorkflowStatus(ctx context.Context, workflowID string, expected app.Status) {
 	require.Eventually(e.T(), func() bool {
 		status, ok := e.workflowStatus(ctx, workflowID)
@@ -285,8 +249,6 @@ func (e *FlowTestSuite) waitForWorkflowStatus(ctx context.Context, workflowID st
 	}, pollTimeout, pollInterval, "workflow %s did not reach status %s", workflowID, expected)
 }
 
-// waitForWorkflowParked polls until the workflow is failed-pending-retry with
-// the awaiting_retry metadata flag — the parked, manually-recoverable state.
 func (e *FlowTestSuite) waitForWorkflowParked(ctx context.Context, workflowID string) {
 	require.Eventually(e.T(), func() bool {
 		flw := e.getWorkflow(ctx, workflowID)
@@ -295,7 +257,6 @@ func (e *FlowTestSuite) waitForWorkflowParked(ctx context.Context, workflowID st
 	}, pollTimeout, pollInterval, "workflow %s did not park awaiting retry", workflowID)
 }
 
-// waitForStepStatus polls until the step reaches the expected status.
 func (e *FlowTestSuite) waitForStepStatus(ctx context.Context, stepID string, expected app.Status) {
 	require.Eventually(e.T(), func() bool {
 		step := &app.WorkflowStep{}
@@ -306,8 +267,6 @@ func (e *FlowTestSuite) waitForStepStatus(ctx context.Context, stepID string, ex
 	}, pollTimeout, pollInterval, "step %s did not reach status %s", stepID, expected)
 }
 
-// waitForStepInProgress waits until a step with the given name is in-progress
-// and returns its ID.
 func (e *FlowTestSuite) waitForStepInProgress(ctx context.Context, workflowID, stepName string) string {
 	var found atomic.Pointer[string]
 	require.Eventually(e.T(), func() bool {
@@ -331,7 +290,6 @@ func (e *FlowTestSuite) waitForStepInProgress(ctx context.Context, workflowID, s
 	return ""
 }
 
-// waitForWorkflowTerminal polls until the workflow reaches any terminal status.
 func (e *FlowTestSuite) waitForWorkflowTerminal(ctx context.Context, workflowID string) {
 	require.Eventually(e.T(), func() bool {
 		status, ok := e.workflowStatus(ctx, workflowID)
@@ -364,12 +322,8 @@ func (e *FlowTestSuite) cancelWorkflow(ctx context.Context, workflowID string) {
 	e.waitForWorkflowStatus(ctx, workflowID, app.StatusCancelled)
 }
 
-// ceilingWait bounds asserts that depend on the MaxWaitCeiling override (5s
-// in SetupSuite) firing, with margin for scheduling.
 const ceilingWait = 45 * time.Second
 
-// flowTemporalRefs collects the Temporal workflow refs of every queue signal
-// owned by the flow, its groups, or its steps (including retry clones).
 func (e *FlowTestSuite) flowTemporalRefs(ctx context.Context, workflowID string) ([]signaldb.WorkflowRef, error) {
 	ownerIDs := []string{workflowID}
 	var groups []app.WorkflowStepGroup
@@ -405,8 +359,6 @@ func (e *FlowTestSuite) flowTemporalRefs(ctx context.Context, workflowID string)
 	return refs, nil
 }
 
-// assertTemporalDrained waits until every Temporal workflow backing the flow's
-// queue signals is closed — a stopped flow must not hold handlers open.
 func (e *FlowTestSuite) assertTemporalDrained(ctx context.Context, workflowID string) {
 	require.Eventually(e.T(), func() bool {
 		refs, err := e.flowTemporalRefs(ctx, workflowID)
@@ -430,7 +382,6 @@ func (e *FlowTestSuite) assertTemporalDrained(ctx context.Context, workflowID st
 	}, ceilingWait, pollInterval, "temporal workflows for flow %s did not drain", workflowID)
 }
 
-// isTerminal returns true if the status is a terminal status for a step.
 func isTerminal(status app.Status) bool {
 	switch status {
 	case app.StatusSuccess, app.StatusError, app.StatusCancelled,

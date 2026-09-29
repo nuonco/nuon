@@ -11,7 +11,6 @@ import (
 )
 
 func (d *json) Unpack(ctx context.Context, cb archive.Callback) error {
-	// prettify the json, to make debugging easier
 	var obj map[string]interface{}
 	if err := jsn.Unmarshal(d.Byts, &obj); err != nil {
 		return fmt.Errorf("invalid json: %w", err)

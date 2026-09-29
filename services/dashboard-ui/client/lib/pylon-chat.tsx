@@ -8,7 +8,6 @@ export const InitPylonChat = ({ PYLON_APP_ID }: { PYLON_APP_ID: string }) => {
   useEffect(() => {
     if (!PYLON_APP_ID || isLoading || !user?.email) return
 
-    // Set identity before the widget script initializes
     window.pylon = {
       chat_settings: {
         app_id: PYLON_APP_ID,
@@ -21,7 +20,6 @@ export const InitPylonChat = ({ PYLON_APP_ID }: { PYLON_APP_ID: string }) => {
     if (scriptLoadedRef.current) return
     scriptLoadedRef.current = true
 
-    // Pylon command queue (from official docs)
     ;(function () {
       const e = window
       const t = document

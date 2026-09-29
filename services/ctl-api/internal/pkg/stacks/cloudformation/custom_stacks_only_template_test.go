@@ -188,7 +188,6 @@ func TestGetAWSCustomStacksOnlyTemplate_NoQuicklinkResources(t *testing.T) {
 	} {
 		assert.NotContains(t, tmpl.Resources, forbidden)
 	}
-	// no IAM roles, no secrets, no telemetry resources of any kind
 	assert.Len(t, tmpl.Resources, 1)
 	assert.Contains(t, tmpl.Resources, "K8SNamespaces")
 }
@@ -248,15 +247,12 @@ func TestGetAWSCustomStacksOnlyTemplate_ContractParamValues(t *testing.T) {
 	assert.Equal(t, cloudformation.Ref("PublicSubnets"), stack.Parameters["PublicSubnets"])
 	assert.Equal(t, cloudformation.Ref("PrivateSubnets"), stack.Parameters["PrivateSubnets"])
 
-	// contract params should not additionally be exposed as top-level custom-stack
-	// parameters (they're already declared as the frozen contract params)
 	assert.NotContains(t, result.params, "VPC")
 	assert.NotContains(t, result.params, "CIDRBlock")
 	assert.NotContains(t, result.params, "RunnerSubnet")
 	assert.NotContains(t, result.params, "PublicSubnets")
 	assert.NotContains(t, result.params, "PrivateSubnets")
 
-	// ExtraSetting has a template default, so it's still exposed for override
 	assert.Contains(t, result.params, "ExtraSetting")
 }
 
@@ -338,8 +334,6 @@ func TestGetAWSCustomStacksOnlyTemplate_Outputs(t *testing.T) {
 	require.Contains(t, tmpl.Outputs, "K8SNamespacesNamespaceName")
 	assert.Equal(t, cloudformation.GetAtt("K8SNamespaces", "Outputs.NamespaceName"), tmpl.Outputs["K8SNamespacesNamespaceName"].Value)
 
-	// round-trip: given the known stack names and the flat output map a deployed
-	// stack would return, reconstruct the custom_nested_stacks phone-home shape.
 	flat := map[string]string{
 		"ProducerBucketArn":          "arn:aws:s3:::example-bucket",
 		"K8SNamespacesNamespaceName": "app-namespace",
@@ -368,13 +362,6 @@ func TestGetAWSCustomStacksOnlyTemplate_AmbiguousOutputNameIsHardError(t *testin
 		{Name: "abreplica", TemplateURL: server.URL + "/abreplica.yaml", Index: 1},
 	})
 
-	// Confirm by hand, against the real longest-prefix-match algorithm, that this
-	// genuinely misattributes: stack "a" declares output "breplicaArn", flattening
-	// to "AbreplicaArn". Stack "abreplica" declares no outputs of its own, but its
-	// logical ID "Abreplica" (9 chars) is also a prefix of "AbreplicaArn" and is
-	// longer than "A" (1 char), so SplitCustomStacksOnlyOutputs's longest-first
-	// search matches "abreplica" instead of "a", handing "abreplica" a phantom
-	// output key "Arn" instead of the real value landing on "a"/"breplicaArn".
 	require.Equal(t, "A", sanitizeLogicalID("a"))
 	require.Equal(t, "Abreplica", sanitizeLogicalID("abreplica"))
 	split := SplitCustomStacksOnlyOutputs(
@@ -535,10 +522,6 @@ func TestGetAWSCustomStacksOnlyTemplate_ComplexExpressionParameterIsBaked(t *tes
 			},
 		},
 	})
-	// RootDomain's unrendered form is a conditional template, not a whole-value
-	// install-input reference, so ParseInstallInputReference must reject it and
-	// the already-rendered literal in stack.Parameters must be baked verbatim,
-	// exactly as before this feature existed.
 	inp.UnrenderedCustomStackParameters = map[string]map[string]string{
 		"k8s-namespaces": {
 			"Namespaces": "app-namespace",
@@ -577,12 +560,6 @@ func TestGetAWSCustomStacksOnlyTemplate_HoistedParameterNameCollisionIsHardError
 		},
 		{Name: "abreplica", TemplateURL: server.URL + "/abreplica.yaml", Index: 1},
 	})
-	// Stack "a" hoists parameter "breplicaArn" to top-level name "AbreplicaArn"
-	// (sanitizeLogicalID("a") + "breplicaArn"). Stack "abreplica" declares no
-	// parameters of its own, but its logical ID "Abreplica" is a longer prefix
-	// match against "AbreplicaArn" than "a"'s own logical ID "A" -- the same
-	// ambiguity class TestGetAWSCustomStacksOnlyTemplate_AmbiguousOutputNameIsHardError
-	// exercises for outputs.
 	inp.UnrenderedCustomStackParameters = map[string]map[string]string{
 		"a": {"breplicaArn": "{{.nuon.install.inputs.some_arn}}"},
 	}
@@ -612,12 +589,6 @@ func TestGetCustomNestedStacks_QuicklinkPathUnaffectedByHoistableParameter(t *te
 		},
 	}
 
-	// Same config, same unrendered install-input reference on Namespaces, as
-	// TestGetAWSCustomStacksOnlyTemplate_SimpleInstallInputParameterIsHoisted --
-	// the only difference below is CustomStacksOnly: false. The hoist branch
-	// must be gated on that flag alone, so the quicklink path (CustomStacksOnly:
-	// false) has to bake the literal exactly as it did before this feature
-	// existed, with zero new top-level parameters.
 	inp := newCustomStacksOnlyInput([]config.CustomNestedStack{stackCfg})
 	inp.UnrenderedCustomStackParameters = map[string]map[string]string{
 		"k8s-namespaces": {"Namespaces": "{{.nuon.install.inputs.namespaces}}"},
@@ -688,10 +659,7 @@ func TestGetAWSCustomStacksOnlyTemplate_ExplicitConfigWinsOverInstallInputNameMa
 			Name:        "k8s-namespaces",
 			TemplateURL: server.URL + "/stack.yaml",
 			Index:       0,
-			// Explicit config binds InstallRootDomain to a literal, even though
-			// its name also matches a customer-sourced install input's
-			// CloudFormationStackParamName -- explicit config must win.
-			Parameters: map[string]string{"InstallRootDomain": "acme-corp.example.com"},
+			Parameters:  map[string]string{"InstallRootDomain": "acme-corp.example.com"},
 		},
 	})
 	inp.AppCfg.InputConfig.AppInputGroups = []app.AppInputGroup{rootDomainInstallInputGroup()}

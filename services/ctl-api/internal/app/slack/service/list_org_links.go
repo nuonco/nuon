@@ -41,9 +41,6 @@ func (s *service) ListOrgLinks(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, links)
 }
 
-// listOrgLinks returns the verified SlackOrgLink rows for orgID. Filtered to
-// verified status so the dashboard never offers a revoked link as a routing
-// target.
 func (s *service) listOrgLinks(ctx context.Context, orgID string) ([]app.SlackOrgLink, error) {
 	var links []app.SlackOrgLink
 	res := s.db.WithContext(ctx).

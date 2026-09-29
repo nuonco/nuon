@@ -11,16 +11,6 @@ import (
 )
 
 func (m *Model) setHeaderContent() {
-	/*
-		renders two rows
-		1. title + status indicator + browser link
-		2. run ID
-
-		unless it's loading, in which case we render a single row
-
-		NOTE: this method just sets the content and should be called whenever the data changes.
-		      to USE this view use m.header.View
-	*/
 	if m.run == nil {
 		content := fmt.Sprintf("%s loading", m.spinner.View())
 		m.header.SetContent(content)
@@ -28,11 +18,6 @@ func (m *Model) setHeaderContent() {
 	}
 
 	content := ""
-
-	// top header row
-	// [[⚪️title [status]] ... [[B] Browser]]
-	// 1. title and status from run
-	// 2. Browser link prompt
 
 	title := "Action Workflow Run"
 	if m.run.InstallActionWorkflow != nil && m.run.InstallActionWorkflow.ActionWorkflow != nil {
@@ -61,8 +46,6 @@ func (m *Model) setHeaderContent() {
 	right := lipgloss.JoinHorizontal(lipgloss.Left, prompt)
 	spacer := strings.Repeat(" ", max(m.width-2-lipgloss.Width(left)-lipgloss.Width(right), 0))
 
-	// top row has two sections:
-	// [ title ] ... [ status ] with spacing between
 	topRow := lipgloss.NewStyle().Width(m.width).Render(
 		lipgloss.JoinHorizontal(
 			lipgloss.Center,
@@ -72,7 +55,6 @@ func (m *Model) setHeaderContent() {
 		),
 	)
 
-	// bottom row - run ID
 	details := ""
 	if m.run.ID != "" {
 		details = styles.TextSubtle.Width(m.width).Render(m.run.ID)

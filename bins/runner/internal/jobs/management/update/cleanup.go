@@ -17,9 +17,6 @@ func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExec
 		return err
 	}
 
-	// The approach to updating the runner depends on the environment in which
-	// it is running.
-
 	// TODO(sdboyer) this should become a big switch that picks the known supervisor version we want.
 	// But until we have a strategy other than use-latest, just shut down.
 

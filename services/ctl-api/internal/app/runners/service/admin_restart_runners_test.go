@@ -96,7 +96,6 @@ func (s *AdminRestartRunnersTestSuite) setupTestData() {
 
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
-	// Handler filters by OrgTypeDefault, so update from default OrgTypeSandbox
 	err := s.service.DB.WithContext(ctx).Model(s.testOrg).Updates(map[string]interface{}{
 		"org_type":     app.OrgTypeDefault,
 		"sandbox_mode": false,
@@ -191,7 +190,6 @@ func (s *AdminRestartRunnersTestSuite) TestAdminRestartRunners() {
 			requestBody:  AdminRestartRunnersRequest{},
 			expectedCode: http.StatusOK,
 			validateFunc: func(runnerIDs []string) {
-				// Handler correctly finds runners for non-sandbox orgs and sends restart signals
 				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.Len(s.T(), signals, 2, "should send restart signal for each runner")
 			},

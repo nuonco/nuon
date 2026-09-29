@@ -43,23 +43,18 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 }
 
 func (s *Signal) executeCreateOrg(ctx workflow.Context, logger interface{ Info(string, ...interface{}) }) error {
-	// Fetch onboarding
 	onboarding, err := activities.AwaitGetOnboardingByOnboardingID(ctx, s.OnboardingID)
 	if err != nil {
 		return fmt.Errorf("unable to get onboarding: %w", err)
 	}
 
-	// Set account context so the cctx propagator passes it to all activities.
-	// Required for GORM BeforeCreate hooks that populate CreatedByID.
 	ctx = cctx.SetAccountIDWorkflowContext(ctx, onboarding.AccountID)
 
-	// Idempotency: skip if org already created
 	if onboarding.OrgID != nil && *onboarding.OrgID != "" {
 		logger.Info("org already created, skipping", "org_id", *onboarding.OrgID)
 		return nil
 	}
 
-	// Create org with sandbox mode
 	org, err := activities.AwaitCreateOnboardingOrg(ctx, activities.CreateOnboardingOrgRequest{
 		AccountID: onboarding.AccountID,
 		OrgName:   s.OrgName,
@@ -70,12 +65,10 @@ func (s *Signal) executeCreateOrg(ctx workflow.Context, logger interface{ Info(s
 
 	logger.Info("created onboarding org", "org_id", org.ID)
 
-	// Poll org status until provisioned or errored
 	if err := s.pollOrgStatus(ctx, org.ID); err != nil {
 		return fmt.Errorf("org provisioning failed: %w", err)
 	}
 
-	// Update onboarding with org reference and advance step
 	nextStep := string(app.OnboardingStepYourStack)
 	stepStatus := string(app.OnboardingStepStatusActive)
 	_, err = activities.AwaitUpdateOnboarding(ctx, activities.UpdateOnboardingRequest{

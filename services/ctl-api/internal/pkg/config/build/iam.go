@@ -1,7 +1,3 @@
-// Package build converts parsed app config into ctl-api database models. Both
-// the HTTP handlers and the branch-sync DB syncer call it, so the two sync paths
-// cannot drift. Builders are pure; the caller resolves anything needing a
-// database.
 package build
 
 import (
@@ -141,7 +137,7 @@ func ValidateNamedIAMPolicies(in PermissionsInput, roles []app.AppAWSIAMRoleConf
 	return nil
 }
 
-// ValidatePolicyMutualExclusivity rejects two grant mechanisms for one cloud:
+// why: ValidatePolicyMutualExclusivity rejects two grant mechanisms for one cloud:
 // the renderers would silently pick one and under-permission the role.
 func ValidatePolicyMutualExclusivity(roleName string, policies []config.AppAWSIAMPolicy) error {
 	for _, p := range policies {
@@ -158,7 +154,7 @@ func ValidatePolicyMutualExclusivity(roleName string, policies []config.AppAWSIA
 	return nil
 }
 
-// ValidateAzureBuiltInRoles rejects a built-in role that cannot be resolved to a
+// why: ValidateAzureBuiltInRoles rejects a built-in role that cannot be resolved to a
 // definition GUID. ARM assignments reference a definition by GUID with no name
 // lookup, and the renderer forwards an unresolvable value verbatim -- so a typo,
 // or a real role absent from the name map, passes sync and generation and instead
@@ -179,7 +175,7 @@ func ValidateAzureBuiltInRoles(roleName string, policies []config.AppAWSIAMPolic
 	return nil
 }
 
-// ValidateInlinePolicyContents rejects malformed inline policies at sync; the
+// why: ValidateInlinePolicyContents rejects malformed inline policies at sync; the
 // AWS Terraform path would otherwise render them empty and under-permission the
 // runner at apply time.
 func ValidateInlinePolicyContents(roles []app.AppAWSIAMRoleConfig) error {
@@ -209,7 +205,7 @@ func validateIAMPolicyDocument(label string, contents []byte, requireContents bo
 	if err := json.Unmarshal(contents, &doc); err != nil {
 		return fmt.Errorf("%s: contents must be a JSON IAM policy document: %w", label, err)
 	}
-	// An empty Statement list is allowed: Azure configs use it as a
+	// why: An empty Statement list is allowed: Azure configs use it as a
 	// placeholder because the real grants come from RBAC.
 	for i, stmt := range doc.Statement {
 		if _, ok := stmt["Effect"]; !ok {

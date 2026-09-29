@@ -19,7 +19,7 @@ func (s *Seeder) EnsureCronEmitter(ctx context.Context, t *testing.T, queueID st
 		Name:           generics.GetFakeObj[string](),
 		Description:    "test cron emitter",
 		Mode:           app.QueueEmitterModeCron,
-		CronSchedule:   "* * * * *", // Every minute
+		CronSchedule:   "* * * * *",
 		SignalType:     sig.Type(),
 		SignalTemplate: sig,
 	})

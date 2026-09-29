@@ -61,7 +61,7 @@ func TestMatches(t *testing.T) {
 	}
 	unknownType := signal.SignalPhaseEvent{
 		SignalType:   signalTypeExecuteWorkflow,
-		WorkflowType: "app_branches_manual_update", // not in the v1 taxonomy
+		WorkflowType: "app_branches_manual_update",
 		Phase:        signal.SignalPhaseExecute,
 	}
 	runbookRunSuccess := signal.SignalPhaseEvent{
@@ -80,10 +80,6 @@ func TestMatches(t *testing.T) {
 		Phase:        signal.SignalPhaseExecute,
 		StepID:       "iws_step_1",
 	}
-	// Step events inside drift workflows. Without DB enrichment, these
-	// classify via stepResolutionFromParent; with DB enrichment the
-	// classification may differ — but suppression keys off the parent
-	// WorkflowType so both paths are covered.
 	driftRunStepSuccess := signal.SignalPhaseEvent{
 		SignalType:   signalTypeExecuteWorkflowStep,
 		WorkflowType: "drift_run",
@@ -251,9 +247,6 @@ func TestMatches(t *testing.T) {
 			want: false,
 		},
 		{
-			// Drift workflow lifecycle events are unconditionally suppressed
-			// — listing "drift" in Ops is a no-op, drift surfaces only via
-			// the drift-detected event class gated by DriftDetected.
 			name:    "drift_run lifecycle suppressed even when components.Ops contains drift",
 			event:   driftRunSuccess,
 			outcome: successOutcome,
@@ -322,12 +315,6 @@ func TestMatches(t *testing.T) {
 			want:    false,
 		},
 		{
-			// Regression: steps inside a drift workflow used to leak through
-			// because they classify as their own resource (e.g. a
-			// "runner healthy" step → (runners, reprovision)). Suppression
-			// keys off the parent WorkflowType so the entire lifecycle tree
-			// is dropped — only the dedicated drift-detected event reaches
-			// subscribers.
 			name:    "drift_run step lifecycle suppressed under AllEvents",
 			event:   driftRunStepSuccess,
 			outcome: successOutcome,
@@ -505,9 +492,6 @@ func TestMatches(t *testing.T) {
 			want: false,
 		},
 		{
-			// Ops only narrows lifecycle sub-ops. Approval events are gated
-			// independently by ApprovalRequests / ApprovalResponses, so a
-			// lifecycle-only Ops filter must not silence them.
 			name:    "Approval ignores lifecycle Ops filter on the resource",
 			event:   approvalRequest,
 			outcome: nil,
@@ -517,9 +501,6 @@ func TestMatches(t *testing.T) {
 			want: true,
 		},
 		{
-			// Canonical post-suppression shape: just DriftDetected=true with
-			// no "drift" in Ops. Drift no longer participates in the SubOps
-			// vocabulary — it surfaces exclusively through this event class.
 			name: "drift-detected (drift_run) matches components when DriftDetected=true (no drift Op)",
 			event: signal.SignalPhaseEvent{
 				SignalType:   signalTypeDriftDetected,
@@ -533,8 +514,6 @@ func TestMatches(t *testing.T) {
 			want: true,
 		},
 		{
-			// Legacy backward-compat: stored configs that still list "drift"
-			// in Ops are accepted by the matcher (validate rejects new ones).
 			name: "drift-detected (drift_run) matches components.drift legacy Ops shape",
 			event: signal.SignalPhaseEvent{
 				SignalType:   signalTypeDriftDetected,
@@ -561,9 +540,6 @@ func TestMatches(t *testing.T) {
 			want: false,
 		},
 		{
-			// Ops only narrows lifecycle sub-ops. Drift-detected events are
-			// gated independently by DriftDetected, so a lifecycle-only Ops
-			// filter must not silence them.
 			name: "drift-detected (drift_run) ignores lifecycle Ops filter",
 			event: signal.SignalPhaseEvent{
 				SignalType:   signalTypeDriftDetected,
@@ -604,9 +580,6 @@ func TestMatches(t *testing.T) {
 			want: true,
 		},
 		{
-			// OutcomeNone mutes all lifecycle events for the resource —
-			// even terminal successes that would pass under OutcomeAll /
-			// OutcomeCompletion.
 			name:    "Outcome=none drops lifecycle events",
 			event:   provisionSuccess,
 			outcome: successOutcome,
@@ -616,8 +589,6 @@ func TestMatches(t *testing.T) {
 			want: false,
 		},
 		{
-			// Lifecycle Ops filter must not silence approval events. Event
-			// is for components.deploy; cfg.Ops lists "teardown" only.
 			name:  "Approval request matches when lifecycle Ops list a different sub-op",
 			event: approvalRequest,
 			in: Interests{Resources: map[ResourceKind]ResourceCfg{
@@ -626,9 +597,6 @@ func TestMatches(t *testing.T) {
 			want: true,
 		},
 		{
-			// Lifecycle Ops filter must not silence drift-detected events.
-			// The drift_run drift-detected event classifies as
-			// components.drift; cfg.Ops lists "deploy" only.
 			name: "Drift-detected matches when lifecycle Ops list a different sub-op",
 			event: signal.SignalPhaseEvent{
 				SignalType:   signalTypeDriftDetected,
@@ -642,8 +610,6 @@ func TestMatches(t *testing.T) {
 			want: true,
 		},
 		{
-			// Drift-only configuration: OutcomeNone mutes lifecycle, but
-			// DriftDetected=true keeps the dedicated drift event flowing.
 			name: "Drift-only cfg: drift-detected event for components matches",
 			event: signal.SignalPhaseEvent{
 				SignalType:   signalTypeDriftDetected,
@@ -678,8 +644,6 @@ func TestMatches(t *testing.T) {
 			want: false,
 		},
 		{
-			// The awaiting-retry carrier's own outcome is success — the
-			// matcher must still treat it as a failure event.
 			name:    "Awaiting-retry matches OutcomeFailures despite carrier success",
 			event:   awaitingRetryStep,
 			outcome: successOutcome,
@@ -998,9 +962,6 @@ func TestClassifySlugs(t *testing.T) {
 				Phase:        signal.SignalPhaseExecute,
 				StepID:       "iws_x",
 			},
-			// The carrier signal itself succeeds; classification must still
-			// project a failure. No outcome:completion — the step isn't
-			// terminal yet.
 			outcome: &signal.SignalPhaseOutcome{Status: signal.SignalStatusSuccess},
 			want: []string{
 				"resource:components",
@@ -1141,7 +1102,6 @@ func TestInterestsRoundTripJSON(t *testing.T) {
 		t.Fatalf("Value type = %T, want []byte", v)
 	}
 
-	// Sanity check: JSON should NOT include all_events when false.
 	var asMap map[string]any
 	if err := json.Unmarshal(raw, &asMap); err != nil {
 		t.Fatalf("unmarshal: %v", err)

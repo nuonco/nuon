@@ -3,13 +3,10 @@ package workspace
 import "path/filepath"
 
 type Source struct {
-	// the user provided directory
 	Path string
 
-	// the root of the workspace
 	Root string
 
-	// whether this is a git source
 	IsGit bool
 }
 

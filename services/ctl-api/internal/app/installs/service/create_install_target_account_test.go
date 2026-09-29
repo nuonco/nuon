@@ -16,10 +16,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/types"
 )
 
-// TestUpdateInstallHasNoTargetAccountField pins the immutability invariant: the
-// target cloud account is write-once, and it stays that way by there being no field
-// on the update request to carry it. Runs without a database on purpose — this is
-// the assertion most likely to be broken by someone innocently adding a field.
 func TestUpdateInstallHasNoTargetAccountField(t *testing.T) {
 	forbidden := []string{"account_id", "aws_account", "azure_account", "gcp_account",
 		"subscription_id", "project_id", "cloud_platform_metadata"}
@@ -46,9 +42,6 @@ func TestUpdateInstallHasNoTargetAccountField(t *testing.T) {
 	walk(reflect.TypeOf(UpdateInstallRequest{}), "")
 }
 
-// setOrgFeatures turns the given feature flags on for the suite's test org. The
-// features client reads the org row per request, so this has to hit the database
-// rather than just mutating s.testOrg.
 func (s *InstallsServiceTestSuite) setOrgFeatures(features ...app.OrgFeature) {
 	var org app.Org
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).First(&org, "id = ?", s.testOrg.ID).Error)
@@ -66,8 +59,6 @@ func (s *InstallsServiceTestSuite) setOrgFeatures(features ...app.OrgFeature) {
 		Updates(map[string]any{"features": org.Features}).Error)
 }
 
-// seedVerifiedAWSAccountConnection creates a connection in a state CreateInstall
-// will accept, so the target account can be derived from it.
 func (s *InstallsServiceTestSuite) seedVerifiedAWSAccountConnection(accountID string) *app.AWSAccountConnection {
 	connection := &app.AWSAccountConnection{
 		OrgID:              s.testOrg.ID,
@@ -94,8 +85,6 @@ func (s *InstallsServiceTestSuite) createInstallWithAWSAccount(
 	return s.makeRequest(http.MethodPost, "/v1/installs", body)
 }
 
-// With the flag off the field stays advisory: absent is fine, and a malformed value
-// is deliberately not rejected so organizations that never opted in see no change.
 func (s *InstallsServiceTestSuite) TestCreateInstallTargetAccountOptionalWhenFlagOff() {
 	s.expectQueueCreation()
 
@@ -135,7 +124,6 @@ func (s *InstallsServiceTestSuite) TestCreateInstallTargetAccountPersistedWhenFl
 	assert.Equal(s.T(), "123456789012", install.CloudPlatformMetadata.TargetAccountID)
 	assert.Equal(s.T(), app.CloudPlatformTargetSourceUser, install.CloudPlatformMetadata.TargetSource)
 
-	// Round-trip through the database so AfterQuery runs and derives the coalesced field.
 	var reloaded app.Install
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).First(&reloaded, "id = ?", install.ID).Error)
 	assert.Equal(s.T(), "123456789012", reloaded.CloudPlatformMetadata.TargetAccountID)
@@ -193,7 +181,6 @@ func (s *InstallsServiceTestSuite) TestCreateInstallTargetAccountDerivedFromConn
 	assert.Equal(s.T(), app.CloudPlatformTargetSourceConnection, install.CloudPlatformMetadata.TargetSource)
 }
 
-// An explicit account ID may agree with the connection but never contradict it.
 func (s *InstallsServiceTestSuite) TestCreateInstallTargetAccountConflictsWithConnection() {
 	s.setOrgFeatures(app.OrgFeaturePhoneHomeAuth, app.OrgFeatureAWSAccountConnections)
 
@@ -228,8 +215,6 @@ func (s *InstallsServiceTestSuite) TestCreateInstallTargetAccountAgreesWithConne
 	assert.Equal(s.T(), app.CloudPlatformTargetSourceConnection, install.CloudPlatformMetadata.TargetSource)
 }
 
-// GCP and Azure gain the same requirement. The suite's app is AWS-typed, so these
-// drive the other branches through their own app fixtures.
 func (s *InstallsServiceTestSuite) TestCreateInstallTargetProjectAndSubscriptionRequiredWhenFlagOn() {
 	s.setOrgFeatures(app.OrgFeaturePhoneHomeAuth)
 

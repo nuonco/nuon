@@ -106,7 +106,7 @@ func NewAPI(p APIParams) (*API, error) {
 		return nil, fmt.Errorf("unable to register services: %w", err)
 	}
 
-	// SPA routes MUST be registered last — they use NoRoute as a catch-all
+	// why: SPA routes MUST be registered last — they use NoRoute as a catch-all
 	// fallback for client-side routing.
 	if err := api.spa.RegisterRoutes(api.handler); err != nil {
 		return nil, fmt.Errorf("unable to register SPA routes: %w", err)

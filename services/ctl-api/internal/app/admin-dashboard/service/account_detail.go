@@ -17,7 +17,6 @@ import (
 const accountInstallsPerPage = 8
 const accountAuditLogsPerPage = 8
 
-// AuditLogEntry represents a single audit log entry for account or install activity.
 type AuditLogEntry struct {
 	EntityType  string    `json:"entity_type"`
 	EntityID    string    `json:"entity_id"`
@@ -35,7 +34,6 @@ func (s *service) AccountDetail(c *gin.Context) {
 	accountID := c.Param("id")
 	page := getPageFromQuery(c)
 
-	// Parse date range (default to last 30 days)
 	endDate := time.Now()
 	startDate := endDate.AddDate(0, 0, -30)
 
@@ -47,7 +45,6 @@ func (s *service) AccountDetail(c *gin.Context) {
 
 	if endDateStr := c.Query("end_date"); endDateStr != "" {
 		if parsed, err := time.Parse("2006-01-02", endDateStr); err == nil {
-			// Set to end of day (23:59:59) to include all entries from that day
 			endDate = time.Date(parsed.Year(), parsed.Month(), parsed.Day(), 23, 59, 59, 999999999, parsed.Location())
 		}
 	}
@@ -64,7 +61,6 @@ func (s *service) AccountDetail(c *gin.Context) {
 		return
 	}
 
-	// Get apps created by this account with config count
 	type AppWithConfigCount struct {
 		app.App
 		ConfigCount int `gorm:"column:config_count"`
@@ -81,7 +77,6 @@ func (s *service) AccountDetail(c *gin.Context) {
 		Limit(100).
 		Find(&appsWithCount)
 
-	// Convert to []*app.App
 	apps := make([]*app.App, len(appsWithCount))
 	for i := range appsWithCount {
 		appsWithCount[i].App.ConfigCount = appsWithCount[i].ConfigCount
@@ -94,7 +89,6 @@ func (s *service) AccountDetail(c *gin.Context) {
 		return
 	}
 
-	// Get installs created by this account with pagination
 	installs, installsTotalPages, err := s.getInstallsForAccount(ctx, accountID, page)
 	if err != nil {
 		s.l.Error("failed to get installs for account", zap.Error(err), zap.String("account_id", accountID))
@@ -102,10 +96,8 @@ func (s *service) AccountDetail(c *gin.Context) {
 		return
 	}
 
-	// Parse entity type filters (comma-separated or multiple params)
 	var entityTypes []string
 	if typeFilter := c.Query("entity_types"); typeFilter != "" {
-		// Split comma-separated values
 		for _, t := range strings.Split(typeFilter, ",") {
 			if trimmed := strings.TrimSpace(t); trimmed != "" {
 				entityTypes = append(entityTypes, trimmed)
@@ -113,7 +105,6 @@ func (s *service) AccountDetail(c *gin.Context) {
 		}
 	}
 
-	// Fetch audit logs
 	auditLogs, auditLogsTotalPages, err := s.getAuditLogsForAccount(
 		ctx, accountID, startDate, endDate, page, entityTypes,
 	)
@@ -145,21 +136,17 @@ func (s *service) getInstallsForAccount(ctx context.Context, accountID string, p
 		Unscoped().
 		Where("created_by_id = ?", accountID)
 
-	// Get total count for pagination
 	if err := query.Count(&totalCount).Error; err != nil {
 		return nil, 0, fmt.Errorf("unable to count installs: %w", err)
 	}
 
-	// Calculate total pages
 	totalPages := int(math.Ceil(float64(totalCount) / float64(accountInstallsPerPage)))
 	if totalPages == 0 {
 		totalPages = 1
 	}
 
-	// Calculate offset
 	offset := (page - 1) * accountInstallsPerPage
 
-	// Get paginated results
 	res := query.
 		Preload("Org").
 		Preload("App").
@@ -187,13 +174,11 @@ func (s *service) getAuditLogsForAccount(
 ) ([]*AuditLogEntry, int, error) {
 	var entries []*AuditLogEntry
 
-	// Build list of queries based on selected entity types (or all if none selected)
 	allTypes := []string{"app", "workflow", "runner_job", "org", "app_sync"}
 	if len(entityTypes) == 0 {
 		entityTypes = allTypes
 	}
 
-	// Build individual queries for each entity type
 	var queries []string
 	var queryParams []interface{}
 
@@ -296,7 +281,6 @@ func (s *service) getAuditLogsForAccount(
 		return []*AuditLogEntry{}, 1, nil
 	}
 
-	// Join all queries with UNION ALL
 	query := ""
 	for i, q := range queries {
 		if i > 0 {
@@ -306,7 +290,6 @@ func (s *service) getAuditLogsForAccount(
 	}
 	query += " ORDER BY created_at DESC"
 
-	// Get total count with separate query
 	countQuery := `SELECT COUNT(*) FROM (` + query + `) as audit_entries`
 
 	var totalCount int64
@@ -316,7 +299,6 @@ func (s *service) getAuditLogsForAccount(
 		return nil, 0, fmt.Errorf("unable to count audit logs: %w", err)
 	}
 
-	// Calculate pagination
 	totalPages := int(math.Ceil(float64(totalCount) / float64(accountAuditLogsPerPage)))
 	if totalPages == 0 {
 		totalPages = 1
@@ -324,7 +306,6 @@ func (s *service) getAuditLogsForAccount(
 
 	offset := (page - 1) * accountAuditLogsPerPage
 
-	// Execute paginated query
 	queryParams = append(queryParams, accountAuditLogsPerPage, offset)
 	err = s.readDB().WithContext(ctx).Raw(query+` LIMIT ? OFFSET ?`, queryParams...).Scan(&entries).Error
 

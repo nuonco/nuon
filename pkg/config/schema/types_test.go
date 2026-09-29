@@ -7,16 +7,12 @@ import (
 	"github.com/invopop/jsonschema"
 )
 
-// TestAllSchemasHaveJSONSchemaExtend ensures all schema functions validate successfully.
-// This test protects against regressions where new struct fields are added without
-// implementing JSONSchemaExtend on nested types.
 func TestAllSchemasHaveJSONSchemaExtend(t *testing.T) {
 	tests := make([]struct {
 		name string
 		fn   func() (*string, error)
 	}, 0, len(SchemaMapping))
 
-	// Convert SchemaMapping to test cases
 	for schemaType, schemaFn := range SchemaMapping {
 		schemaType := schemaType
 		schemaFn := schemaFn
@@ -46,9 +42,6 @@ func TestAllSchemasHaveJSONSchemaExtend(t *testing.T) {
 	}
 }
 
-// TestPermissionVsPermissionsSchemas guards the singular/collection split: the
-// permissions/ directory form is a single AppAWSIAMRole per file ("permission"),
-// while permissions.toml is the PermissionsConfig collection ("permissions").
 func TestPermissionVsPermissionsSchemas(t *testing.T) {
 	single, err := LookupSchemaType("permission")
 	if err != nil || single == nil {
@@ -108,8 +101,6 @@ func TestLookupSchemaTypeNormalizesUnderscores(t *testing.T) {
 	}
 }
 
-// TestValidateJSONSchemaExtendOnMissingImplementation verifies that the validator
-// correctly detects when a struct doesn't implement JSONSchemaExtend.
 func TestValidateJSONSchemaExtendDetectsMissing(t *testing.T) {
 	type MissingJSONSchemaExtend struct {
 		Field string
@@ -125,21 +116,16 @@ func TestValidateJSONSchemaExtendDetectsMissing(t *testing.T) {
 	}
 }
 
-// TestValidateJSONSchemaExtendSucceedsWithValidStruct verifies that the validator
-// passes for properly implemented structs.
 func TestValidateJSONSchemaExtendSucceedsWithValidStruct(t *testing.T) {
-	// Use an existing config struct that has JSONSchemaExtend implemented
 	err := ValidateJSONSchemaExtend(TestValidatorStruct{})
 	if err != nil {
 		t.Fatalf("unexpected validation error: %v", err)
 	}
 }
 
-// TestValidatorStruct is a test struct with JSONSchemaExtend for validator testing
 type TestValidatorStruct struct {
 	Field string
 }
 
 func (t TestValidatorStruct) JSONSchemaExtend(schema *jsonschema.Schema) {
-	// No-op implementation for testing
 }

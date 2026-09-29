@@ -76,7 +76,6 @@ func (s *AdminRestartInstallTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -198,7 +197,6 @@ func (s *AdminRestartInstallTestSuite) TestRestartInstall() {
 				tc.validateFunc(installID)
 			}
 
-			// Verify signal presence matches expectation
 			allSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 			if tc.expectedSignal {
 				assert.GreaterOrEqual(s.T(), len(allSignals), 1, "expected signal to be sent")

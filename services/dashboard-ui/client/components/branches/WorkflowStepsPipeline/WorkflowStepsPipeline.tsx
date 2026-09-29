@@ -86,8 +86,6 @@ export const WorkflowStepsPipeline = ({
     const card = selectedCardRef.current
     if (!viewport || !card) return
 
-    // Only ever move this strip's scrollLeft: native scrollIntoView also scrolls
-    // overflow-hidden ancestors (the surrounding panel), shifting the whole page.
     const viewportBox = viewport.getBoundingClientRect()
     const cardBox = card.getBoundingClientRect()
     const delta =

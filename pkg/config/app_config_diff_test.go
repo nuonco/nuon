@@ -29,7 +29,6 @@ func (s *AppConfigDiffSuite) TestRemovingPreviewClearsInstallTarget() {
 	s.Contains(got.FormatChanged(""), "install_name: 'example' -> ''")
 }
 
-// baseConfig returns a minimal valid AppConfig for use in tests.
 func baseConfig() *AppConfig {
 	return &AppConfig{
 		Version:     "1",
@@ -48,8 +47,6 @@ func baseConfig() *AppConfig {
 		},
 	}
 }
-
-// --- Test: Identical configs ---
 
 func (s *AppConfigDiffSuite) TestIdenticalConfigs() {
 	a := baseConfig()
@@ -78,8 +75,6 @@ func (s *AppConfigDiffSuite) TestTriggerOnlyChanges() {
 	s.Equal(diff.OpAdd, triggers.Diff.Op)
 }
 
-// --- Test: Metadata changes ---
-
 func (s *AppConfigDiffSuite) TestMetadataChanges() {
 	old := baseConfig()
 	new := baseConfig()
@@ -91,19 +86,15 @@ func (s *AppConfigDiffSuite) TestMetadataChanges() {
 	summary := d.Summary()
 	s.True(summary.HasChanged)
 
-	// Find version diff
 	found := findChild(d, "version")
 	s.Require().NotNil(found)
 	s.Equal(diff.OpChange, found.Diff.Op)
 	s.Contains(found.Diff.Diff, "'1' -> '2'")
 
-	// Find description diff
 	found = findChild(d, "description")
 	s.Require().NotNil(found)
 	s.Equal(diff.OpChange, found.Diff.Op)
 }
-
-// --- Test: Sandbox changes ---
 
 func (s *AppConfigDiffSuite) TestSandboxChanges() {
 	old := baseConfig()
@@ -134,8 +125,6 @@ func (s *AppConfigDiffSuite) TestSandboxChanges() {
 	s.Equal(diff.OpChange, branch.Diff.Op)
 }
 
-// --- Test: Runner changes ---
-
 func (s *AppConfigDiffSuite) TestRunnerChanges() {
 	old := baseConfig()
 	new := baseConfig()
@@ -159,8 +148,6 @@ func (s *AppConfigDiffSuite) TestRunnerChanges() {
 	s.Require().NotNil(ev)
 }
 
-// --- Test: Component addition ---
-
 func (s *AppConfigDiffSuite) TestComponentAddition() {
 	old := baseConfig()
 	new := baseConfig()
@@ -180,14 +167,11 @@ func (s *AppConfigDiffSuite) TestComponentAddition() {
 
 	db := findChild(comps, "component.database")
 	s.Require().NotNil(db)
-	// Added component now shows full details as children
 	s.Require().NotNil(db.Children)
 	typeChild := findChild(db, "type")
 	s.Require().NotNil(typeChild)
 	s.Equal(diff.OpAdd, typeChild.Diff.Op)
 }
-
-// --- Test: Component removal ---
 
 func (s *AppConfigDiffSuite) TestComponentRemoval() {
 	old := baseConfig()
@@ -208,14 +192,11 @@ func (s *AppConfigDiffSuite) TestComponentRemoval() {
 
 	legacy := findChild(comps, "component.legacy")
 	s.Require().NotNil(legacy)
-	// Removed component shows full details as children
 	s.Require().NotNil(legacy.Children)
 	typeChild := findChild(legacy, "type")
 	s.Require().NotNil(typeChild)
 	s.Equal(diff.OpRemove, typeChild.Diff.Op)
 }
-
-// --- Test: Component field changes ---
 
 func (s *AppConfigDiffSuite) TestComponentChanges() {
 	old := baseConfig()
@@ -262,8 +243,6 @@ func (s *AppConfigDiffSuite) TestComponentChanges() {
 	envVars := findChild(infra, "env_vars")
 	s.Require().NotNil(envVars)
 }
-
-// --- Test: Helm chart diff ---
 
 func (s *AppConfigDiffSuite) TestHelmChartDiff() {
 	old := baseConfig()
@@ -313,8 +292,6 @@ func (s *AppConfigDiffSuite) TestHelmChartDiff() {
 	s.Equal(diff.OpAdd, logLevel.Diff.Op)
 }
 
-// --- Test: ungrouped section TOML content diff ---
-
 func (s *AppConfigDiffSuite) TestRunnerSectionTOMLDiff() {
 	old := baseConfig()
 	new := baseConfig()
@@ -327,7 +304,6 @@ func (s *AppConfigDiffSuite) TestRunnerSectionTOMLDiff() {
 	s.Equal(diff.OpChange, runner.Diff.Op)
 	s.Contains(runner.Diff.Before, "aws")
 	s.Contains(runner.Diff.After, "gpu")
-	// field children are retained for change counting
 	s.Require().NotNil(findChild(runner, "runner_type"))
 }
 
@@ -373,8 +349,6 @@ func (s *AppConfigDiffSuite) TestActionInlineScriptContentDiff() {
 	s.Contains(script.Diff.Before, "echo v1")
 	s.Contains(script.Diff.After, "echo v2")
 }
-
-// --- Test: Helm values file content diff ---
 
 func (s *AppConfigDiffSuite) TestHelmValuesFilesContentDiff() {
 	old := baseConfig()
@@ -434,8 +408,6 @@ func (s *AppConfigDiffSuite) TestHelmValuesFilesContentDiff() {
 	s.Equal("", removed.Diff.After)
 }
 
-// --- Test: Terraform variables file content diff ---
-
 func (s *AppConfigDiffSuite) TestTerraformVariablesFilesContentDiff() {
 	old := baseConfig()
 	old.Components = ComponentList{
@@ -479,8 +451,6 @@ func (s *AppConfigDiffSuite) TestTerraformVariablesFilesContentDiff() {
 	s.Equal("region = \"us-west-2\"\n", changed.Diff.After)
 }
 
-// --- Test: Kubernetes manifest content diff ---
-
 func (s *AppConfigDiffSuite) TestKubernetesManifestContentDiff() {
 	old := baseConfig()
 	old.Components = ComponentList{
@@ -517,8 +487,6 @@ func (s *AppConfigDiffSuite) TestKubernetesManifestContentDiff() {
 	s.Equal("kind: Service\nspec:\n  replicas: 1\n", manifest.Diff.Before)
 	s.Equal("kind: Service\nspec:\n  replicas: 3\n", manifest.Diff.After)
 }
-
-// --- Test: Terraform module diff ---
 
 func (s *AppConfigDiffSuite) TestTerraformModuleDiff() {
 	old := baseConfig()
@@ -558,8 +526,6 @@ func (s *AppConfigDiffSuite) TestTerraformModuleDiff() {
 	s.Equal(diff.OpNoop, tfVer.Diff.Op)
 }
 
-// --- Test: Docker build diff ---
-
 func (s *AppConfigDiffSuite) TestDockerBuildDiff() {
 	old := baseConfig()
 	old.Components = ComponentList{
@@ -595,8 +561,6 @@ func (s *AppConfigDiffSuite) TestDockerBuildDiff() {
 	ev := findChild(api, "env_vars")
 	s.Require().NotNil(ev)
 }
-
-// --- Test: External image diff ---
 
 func (s *AppConfigDiffSuite) TestExternalImageDiff() {
 	old := baseConfig()
@@ -640,8 +604,6 @@ func (s *AppConfigDiffSuite) TestExternalImageDiff() {
 	s.Contains(tag.Diff.Diff, "'1.24' -> '1.25'")
 }
 
-// --- Test: Kubernetes manifest diff ---
-
 func (s *AppConfigDiffSuite) TestKubernetesManifestDiff() {
 	old := baseConfig()
 	old.Components = ComponentList{
@@ -677,8 +639,6 @@ func (s *AppConfigDiffSuite) TestKubernetesManifestDiff() {
 	ns := findChild(deploy, "namespace")
 	s.Equal(diff.OpChange, ns.Diff.Op)
 }
-
-// --- Test: Job diff ---
 
 func (s *AppConfigDiffSuite) TestJobDiff() {
 	old := baseConfig()
@@ -719,8 +679,6 @@ func (s *AppConfigDiffSuite) TestJobDiff() {
 	s.Equal(diff.OpAdd, args.Diff.Op)
 }
 
-// --- Test: Pulumi diff ---
-
 func (s *AppConfigDiffSuite) TestPulumiDiff() {
 	old := baseConfig()
 	old.Components = ComponentList{
@@ -758,8 +716,6 @@ func (s *AppConfigDiffSuite) TestPulumiDiff() {
 	s.Equal(diff.OpChange, region.Diff.Op)
 }
 
-// --- Test: Input changes ---
-
 func (s *AppConfigDiffSuite) TestInputChanges() {
 	old := baseConfig()
 	old.Inputs = &AppInputConfig{
@@ -787,11 +743,9 @@ func (s *AppConfigDiffSuite) TestInputChanges() {
 	inputs := findChild(d, "inputs")
 	s.Require().NotNil(inputs)
 
-	// Group changed
 	dbGroup := findChild(inputs, "group.database")
 	s.Require().NotNil(dbGroup)
 
-	// Group added — now expanded with children
 	cacheGroup := findChild(inputs, "group.cache")
 	s.Require().NotNil(cacheGroup)
 	s.Require().NotNil(cacheGroup.Children)
@@ -799,13 +753,11 @@ func (s *AppConfigDiffSuite) TestInputChanges() {
 	s.Require().NotNil(cacheDesc)
 	s.Equal(diff.OpAdd, cacheDesc.Diff.Op)
 
-	// Input changed
 	dbHost := findChild(inputs, "input.db_host")
 	s.Require().NotNil(dbHost)
 	dn := findChild(dbHost, "display_name")
 	s.Equal(diff.OpChange, dn.Diff.Op)
 
-	// Input removed — now expanded with children
 	dbPort := findChild(inputs, "input.db_port")
 	s.Require().NotNil(dbPort)
 	s.Require().NotNil(dbPort.Children)
@@ -813,7 +765,6 @@ func (s *AppConfigDiffSuite) TestInputChanges() {
 	s.Require().NotNil(dbPortDN)
 	s.Equal(diff.OpRemove, dbPortDN.Diff.Op)
 
-	// Input added — now expanded with children
 	redis := findChild(inputs, "input.redis_url")
 	s.Require().NotNil(redis)
 	s.Require().NotNil(redis.Children)
@@ -821,8 +772,6 @@ func (s *AppConfigDiffSuite) TestInputChanges() {
 	s.Require().NotNil(redisDN)
 	s.Equal(diff.OpAdd, redisDN.Diff.Op)
 }
-
-// --- Test: Install changes ---
 
 func (s *AppConfigDiffSuite) TestInstallDiff() {
 	old := baseConfig()
@@ -845,11 +794,11 @@ func (s *AppConfigDiffSuite) TestInstallDiff() {
 		{
 			Name: "prod",
 			AWSAccount: &AWSAccount{
-				Region: "eu-west-1", // changed
+				Region: "eu-west-1",
 			},
 		},
 		{
-			Name: "dev", // added
+			Name: "dev",
 			AWSAccount: &AWSAccount{
 				Region: "us-east-1",
 			},
@@ -860,23 +809,18 @@ func (s *AppConfigDiffSuite) TestInstallDiff() {
 	installs := findChild(d, "installs")
 	s.Require().NotNil(installs)
 
-	// Prod changed (delegated to Install.Diff)
 	prod := findChild(installs, "prod")
 	s.Require().NotNil(prod)
 	summary := prod.Summary()
 	s.True(summary.HasChanged)
 
-	// Staging removed — uses Install.Diff to show details
 	staging := findChild(installs, "staging")
 	s.Require().NotNil(staging)
 	s.Require().NotNil(staging.Children)
 
-	// Dev added
 	dev := findChild(installs, "dev")
 	s.Require().NotNil(dev)
 }
-
-// --- Test: Permission changes ---
 
 func (s *AppConfigDiffSuite) TestPermissionChanges() {
 	old := baseConfig()
@@ -908,14 +852,11 @@ func (s *AppConfigDiffSuite) TestPermissionChanges() {
 
 	customOps := findChild(perms, "custom_role.custom-ops")
 	s.Require().NotNil(customOps)
-	// Added role now expanded with children
 	s.Require().NotNil(customOps.Children)
 	customDesc := findChild(customOps, "description")
 	s.Require().NotNil(customDesc)
 	s.Equal(diff.OpAdd, customDesc.Diff.Op)
 }
-
-// --- Test: Secret changes ---
 
 func (s *AppConfigDiffSuite) TestSecretChanges() {
 	old := baseConfig()
@@ -946,7 +887,6 @@ func (s *AppConfigDiffSuite) TestSecretChanges() {
 
 	dbPass := findChild(secrets, "secret.db_pass")
 	s.Require().NotNil(dbPass)
-	// Removed secret now expanded with children
 	s.Require().NotNil(dbPass.Children)
 	dbPassDesc := findChild(dbPass, "description")
 	s.Require().NotNil(dbPassDesc)
@@ -954,14 +894,11 @@ func (s *AppConfigDiffSuite) TestSecretChanges() {
 
 	newSecret := findChild(secrets, "secret.new_secret")
 	s.Require().NotNil(newSecret)
-	// Added secret now expanded with children
 	s.Require().NotNil(newSecret.Children)
 	newSecretDesc := findChild(newSecret, "description")
 	s.Require().NotNil(newSecretDesc)
 	s.Equal(diff.OpAdd, newSecretDesc.Diff.Op)
 }
-
-// --- Test: Policy changes ---
 
 func (s *AppConfigDiffSuite) TestPolicyChanges() {
 	old := baseConfig()
@@ -990,8 +927,6 @@ func (s *AppConfigDiffSuite) TestPolicyChanges() {
 	contents := findChild(bt, "contents")
 	s.Equal(diff.OpChange, contents.Diff.Op)
 }
-
-// --- Test: Action changes ---
 
 func (s *AppConfigDiffSuite) TestActionChanges() {
 	old := baseConfig()
@@ -1039,7 +974,6 @@ func (s *AppConfigDiffSuite) TestActionChanges() {
 
 	notify := findChild(hc, "step.notify")
 	s.Require().NotNil(notify)
-	// Added step now expanded with children
 	s.Require().NotNil(notify.Children)
 	notifyCmd := findChild(notify, "command")
 	s.Require().NotNil(notifyCmd)
@@ -1051,24 +985,18 @@ func (s *AppConfigDiffSuite) TestActionChanges() {
 	s.Equal(diff.OpChange, trigType.Diff.Op)
 }
 
-// --- Test: Nil handling ---
-
 func (s *AppConfigDiffSuite) TestNilHandling() {
-	// Diff against nil old
 	a := baseConfig()
 	d := a.Diff(nil)
 	s.Require().NotNil(d)
 	summary := d.Summary()
 	s.True(summary.HasChanged)
 
-	// Config with nil sub-configs
 	minimal := &AppConfig{Version: "1"}
 	d = minimal.Diff(&AppConfig{Version: "1"})
 	s.Require().NotNil(d)
 	s.False(d.Summary().HasChanged)
 }
-
-// --- Test: Combined changes ---
 
 func (s *AppConfigDiffSuite) TestCombinedChanges() {
 	old := baseConfig()
@@ -1097,8 +1025,6 @@ func (s *AppConfigDiffSuite) TestCombinedChanges() {
 	s.Greater(summary.Added, 0)
 }
 
-// --- Test: String output ---
-
 func (s *AppConfigDiffSuite) TestDiffStringOutput() {
 	old := baseConfig()
 	new := baseConfig()
@@ -1110,15 +1036,12 @@ func (s *AppConfigDiffSuite) TestDiffStringOutput() {
 	s.Contains(output, "version:")
 	s.Contains(output, "'1' -> '2'")
 
-	// FormatChanged omits unchanged sections and adds prefix markers
 	changed := d.FormatChanged("")
 	s.Contains(changed, "version:")
 	s.Contains(changed, "'1' -> '2'")
 	s.Contains(changed, "~ ")
 	s.NotContains(changed, "(unchanged)")
 }
-
-// --- Test: Break glass ---
 
 func (s *AppConfigDiffSuite) TestBreakGlassChanges() {
 	old := baseConfig()
@@ -1143,8 +1066,6 @@ func (s *AppConfigDiffSuite) TestBreakGlassChanges() {
 	desc := findChild(role, "description")
 	s.Equal(diff.OpChange, desc.Diff.Op)
 }
-
-// --- Test: Stack changes ---
 
 func (s *AppConfigDiffSuite) TestStackChanges() {
 	old := baseConfig()
@@ -1182,9 +1103,6 @@ func (s *AppConfigDiffSuite) TestStackChanges() {
 	s.Equal(diff.OpAdd, eks.Diff.Op)
 }
 
-// --- Helpers ---
-
-// findChild searches for a child with the given key in a diff tree (one level deep).
 func findChild(d *diff.Diff, key string) *diff.Diff {
 	if d == nil {
 		return nil

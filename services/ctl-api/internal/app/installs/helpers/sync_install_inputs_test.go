@@ -9,9 +9,6 @@ import (
 	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
-// A config sync declares only the inputs it knows about. Replacing the snapshot with
-// just those drops everything set out of band — a dashboard update, or customer stack
-// outputs — and leaving the row unpinned hides it from the config migration.
 func (s *StackOutputInputsTestSuite) TestConfigSyncMergesAndPinsInputs() {
 	ctx := context.Background()
 	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())

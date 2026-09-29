@@ -83,7 +83,6 @@ func (s *RunnerOtelWriteTracesTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -104,7 +103,6 @@ func (s *RunnerOtelWriteTracesTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -116,7 +114,6 @@ func (s *RunnerOtelWriteTracesTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -127,7 +124,6 @@ func (s *RunnerOtelWriteTracesTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunner).Error
 	require.NoError(s.T(), err)
 
-	// Create log stream (needed as FK for runner job)
 	s.testLogStream = &app.LogStream{
 		ID:      domains.NewLogStreamID(),
 		OrgID:   s.testOrg.ID,
@@ -137,7 +133,6 @@ func (s *RunnerOtelWriteTracesTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testLogStream).Error
 	require.NoError(s.T(), err)
 
-	// Create runner job
 	s.testRunnerJob = &app.RunnerJob{
 		ID:                domains.NewRunnerJobID(),
 		OrgID:             s.testOrg.ID,
@@ -157,7 +152,6 @@ func (s *RunnerOtelWriteTracesTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerJob).Error
 	require.NoError(s.T(), err)
 
-	// Create runner job execution
 	s.testRunnerExec = &app.RunnerJobExecution{
 		OrgID:       s.testOrg.ID,
 		RunnerJobID: s.testRunnerJob.ID,
@@ -185,20 +179,16 @@ func (s *RunnerOtelWriteTracesTestSuite) createTestTraceRequest(runnerID string,
 	for i := 0; i < traceCount; i++ {
 		rs := resourceSpans.AppendEmpty()
 
-		// Set resource attributes
 		resourceAttrs := rs.Resource().Attributes()
 		resourceAttrs.PutStr("service.name", fmt.Sprintf("test-service-%d", i))
 		resourceAttrs.PutStr("runner_group.id", s.testRunnerGrp.ID)
 
-		// Add scope spans
 		scopeSpan := rs.ScopeSpans().AppendEmpty()
 		scopeSpan.Scope().SetName("test-scope")
 		scopeSpan.Scope().SetVersion("1.0.0")
 
-		// Add span
 		span := scopeSpan.Spans().AppendEmpty()
 
-		// Generate trace and span IDs
 		traceID := pcommon.TraceID([16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, byte(i)})
 		spanID := pcommon.SpanID([8]byte{1, 2, 3, 4, 5, 6, 7, byte(i)})
 
@@ -207,24 +197,20 @@ func (s *RunnerOtelWriteTracesTestSuite) createTestTraceRequest(runnerID string,
 		span.SetName(fmt.Sprintf("test-span-%d", i))
 		span.SetKind(ptrace.SpanKindServer)
 
-		// Set timestamps
 		startTime := time.Now().Add(-time.Duration(i+1) * time.Second)
 		endTime := startTime.Add(100 * time.Millisecond)
 		span.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 		span.SetEndTimestamp(pcommon.NewTimestampFromTime(endTime))
 
-		// Set span attributes with runner context
 		spanAttrs := span.Attributes()
 		spanAttrs.PutStr("runner_job.id", s.testRunnerJob.ID)
 		spanAttrs.PutStr("runner_job_execution.id", s.testRunnerExec.ID)
 		spanAttrs.PutStr("runner_job_execution_step.name", "test-step")
 		spanAttrs.PutStr("test.key", fmt.Sprintf("test-value-%d", i))
 
-		// Set status
 		span.Status().SetCode(ptrace.StatusCodeOk)
 		span.Status().SetMessage("success")
 
-		// Add event
 		event := span.Events().AppendEmpty()
 		event.SetName(fmt.Sprintf("test-event-%d", i))
 		event.SetTimestamp(pcommon.NewTimestampFromTime(startTime.Add(50 * time.Millisecond)))
@@ -234,13 +220,11 @@ func (s *RunnerOtelWriteTracesTestSuite) createTestTraceRequest(runnerID string,
 	return req
 }
 
-// truncateTraces clears the otel_traces table between subtests.
 func (s *RunnerOtelWriteTracesTestSuite) truncateTraces() {
 	err := s.service.CHDB.Exec("TRUNCATE TABLE IF EXISTS otel_traces ON CLUSTER simple").Error
 	require.NoError(s.T(), err)
 }
 
-// countTraces returns the number of traces for a given runner ID.
 func (s *RunnerOtelWriteTracesTestSuite) countTraces(runnerID string) int64 {
 	var count int64
 	err := s.service.CHDB.
@@ -251,7 +235,6 @@ func (s *RunnerOtelWriteTracesTestSuite) countTraces(runnerID string) int64 {
 	return count
 }
 
-// traceRow holds scalar fields from otel_traces, avoiding complex CH types that GORM can't scan.
 type traceRow struct {
 	RunnerID               string `gorm:"column:runner_id"`
 	RunnerGroupID          string `gorm:"column:runner_group_id"`
@@ -267,7 +250,6 @@ type traceRow struct {
 	ScopeVersion           string `gorm:"column:scope_version"`
 }
 
-// queryTraceRows returns scalar trace fields for a runner, using raw SQL to avoid GORM scanning issues.
 func (s *RunnerOtelWriteTracesTestSuite) queryTraceRows(runnerID string) []traceRow {
 	var rows []traceRow
 	err := s.service.CHDB.Raw(
@@ -368,7 +350,6 @@ func (s *RunnerOtelWriteTracesTestSuite) TestRunnerOtelWriteTraces() {
 				spanAttrs.PutStr("runner_job_execution.id", s.testRunnerExec.ID)
 				spanAttrs.PutStr("runner_job_execution_step.name", "test-step")
 
-				// Add links
 				link1 := span.Links().AppendEmpty()
 				link1.SetTraceID(pcommon.TraceID([16]byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}))
 				link1.SetSpanID(pcommon.SpanID([8]byte{2, 2, 2, 2, 2, 2, 2, 2}))
@@ -387,13 +368,11 @@ func (s *RunnerOtelWriteTracesTestSuite) TestRunnerOtelWriteTraces() {
 			expectedCode:   http.StatusOK,
 			expectedTraces: 1,
 			validateFunc: func(runnerID string) {
-				// Verify the trace was written with correct scalar fields
 				rows := s.queryTraceRows(runnerID)
 				require.Len(s.T(), rows, 1)
 				assert.Equal(s.T(), "span-with-links", rows[0].SpanName)
 				assert.Equal(s.T(), "Client", rows[0].SpanKind)
 
-				// Verify links via raw SQL count
 				var linkCount struct {
 					Cnt uint64 `gorm:"column:cnt"`
 				}
@@ -427,8 +406,6 @@ func (s *RunnerOtelWriteTracesTestSuite) TestRunnerOtelWriteTraces() {
 			setupFunc: func() (string, []byte) {
 				return s.testRunner.ID, []byte(`{"not":"a valid otlp request"}`)
 			},
-			// UnmarshalJSON succeeds on valid JSON with unrecognized fields, producing zero traces.
-			// The handler writes nothing and returns 200.
 			expectedCode:   http.StatusOK,
 			expectedTraces: 0,
 			validateFunc: func(runnerID string) {
@@ -442,7 +419,6 @@ func (s *RunnerOtelWriteTracesTestSuite) TestRunnerOtelWriteTraces() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second runner
 				runner2 := &app.Runner{
 					ID:            domains.NewRunnerID(),
 					OrgID:         s.testOrg.ID,
@@ -457,7 +433,6 @@ func (s *RunnerOtelWriteTracesTestSuite) TestRunnerOtelWriteTraces() {
 					s.service.DB.Unscoped().Delete(runner2)
 				})
 
-				// Write traces for runner2
 				req2 := s.createTestTraceRequest(runner2.ID, 3)
 				jsonData2, err := req2.MarshalJSON()
 				require.NoError(s.T(), err)
@@ -466,7 +441,6 @@ func (s *RunnerOtelWriteTracesTestSuite) TestRunnerOtelWriteTraces() {
 				rr2 := s.makeRequest("POST", path2, jsonData2)
 				require.Equal(s.T(), http.StatusOK, rr2.Code)
 
-				// Now write traces for original runner
 				req := s.createTestTraceRequest(s.testRunner.ID, 2)
 				jsonData, err := req.MarshalJSON()
 				require.NoError(s.T(), err)
@@ -486,7 +460,6 @@ func (s *RunnerOtelWriteTracesTestSuite) TestRunnerOtelWriteTraces() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Truncate CH traces between subtests to prevent data accumulation
 			s.truncateTraces()
 
 			runnerID, jsonData := tc.setupFunc()

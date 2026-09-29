@@ -13,7 +13,7 @@ const (
 	dbReadRetryBaseDelay = 100 * time.Millisecond
 )
 
-// retryDBRead runs a read-only DB operation with bounded retries so a
+// why: retryDBRead runs a read-only DB operation with bounded retries so a
 // transient query failure doesn't drop a notification. It must only wrap
 // operations that happen strictly before any external delivery (Slack post,
 // webhook send) — rerunning anything past that point would duplicate sends.

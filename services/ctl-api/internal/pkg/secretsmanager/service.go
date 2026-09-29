@@ -1,10 +1,3 @@
-// Package secretsmanager manages the phone-home secret in the management account's
-// AWS Secrets Manager.
-//
-// The secret always lives in AWS regardless of which cloud the control plane runs
-// on, because the reader is the customer's phone-home Lambda and Secrets Manager is
-// the only store it can reach. Which credentials get us there is decided once, by
-// internal.Config.ManagementSecretsCreds.
 package secretsmanager
 
 import (
@@ -22,12 +15,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
-// ErrUnsupportedCloud is returned when this control plane has no path to the
-// management account's Secrets Manager. Callers treat it as "skip", not "fail".
 var ErrUnsupportedCloud = errors.New("control plane cannot reach management secrets manager")
 
-// IsPermanentInputError reports whether AWS rejected the request content, so a
-// retry can only fail the same way.
 func IsPermanentInputError(err error) bool {
 	var malformed *types.MalformedPolicyDocumentException
 	var invalidParam *types.InvalidParameterException
@@ -38,26 +27,14 @@ func IsPermanentInputError(err error) bool {
 		errors.As(err, &invalidReq)
 }
 
-// Service manages secrets in the management account.
 type Service interface {
-	// EnsureSecret creates the secret or updates its value, and returns the full
-	// ARN. The ARN is not derivable from the name — AWS appends a random 6-char
-	// suffix and cross-account reads reject a bare name — so callers must persist
-	// what this returns.
 	EnsureSecret(ctx context.Context, input EnsureSecretInput) (*EnsureSecretOutput, error)
 
-	// PutResourcePolicy replaces the secret's resource policy. Full replacement,
-	// not a merge.
 	PutResourcePolicy(ctx context.Context, secretID, policy string) error
 
-	// DeleteSecret removes the secret without a recovery window. The default 7-30
-	// day window would make re-provisioning the same install ID fail with
-	// InvalidRequestException.
 	DeleteSecret(ctx context.Context, secretID string) error
 }
 
-// api is the subset of the Secrets Manager SDK this package uses, so tests can
-// substitute a fake.
 type api interface {
 	DescribeSecret(context.Context, *awssm.DescribeSecretInput, ...func(*awssm.Options)) (*awssm.DescribeSecretOutput, error)
 	GetSecretValue(context.Context, *awssm.GetSecretValueInput, ...func(*awssm.Options)) (*awssm.GetSecretValueOutput, error)
@@ -74,31 +51,20 @@ type EnsureSecretInput struct {
 	Name        string
 	Value       string
 	Description string
-	// KMSKeyARN encrypts the secret. When empty the AWS-managed key is used, which
-	// cannot be read cross-account — acceptable only before the shared CMK exists.
-	KMSKeyARN string
-	// Tags are applied on create and reconciled on every later call, because
-	// CreateSecret is the only call that accepts them — secrets provisioned before a
-	// tag was added would otherwise never get it. Only added and updated, never
-	// removed: something outside this reconciler may have tagged the secret for cost
-	// allocation or policy and deleting those would be a surprise.
-	Tags map[string]string
+	KMSKeyARN   string
+	Tags        map[string]string
 }
 
 type EnsureSecretOutput struct {
 	ARN    string
 	Region string
-	// Wrote reports whether a new secret version was actually written. False means
-	// the stored value already matched, which is the common case across repeated
-	// stack generations.
-	Wrote bool
+	Wrote  bool
 }
 
 type service struct {
 	cfg *internal.Config
 	l   *zap.Logger
 
-	// newAPI is overridden in tests.
 	newAPI func(ctx context.Context) (api, error)
 }
 
@@ -115,9 +81,6 @@ func (s *service) newAWSAPI(ctx context.Context) (api, error) {
 		return nil, ErrUnsupportedCloud
 	}
 
-	// Assumed-role credentials expire, so they are fetched per call rather than
-	// held for process lifetime; CacheID makes repeated calls in one reconcile
-	// reuse the same session.
 	credsCfg.CacheID = "phone-home-secrets"
 
 	awsCfg, err := credentials.Fetch(ctx, credsCfg)
@@ -148,7 +111,7 @@ func (s *service) EnsureSecret(ctx context.Context, input EnsureSecretInput) (*E
 			KmsKeyId:     stringOrNil(input.KMSKeyARN),
 			Tags:         awsTags(input.Tags),
 		})
-		// Lost a race with a concurrent provision; fall through to the update path.
+		// why: Lost a race with a concurrent provision; fall through to the update path.
 		if cerr != nil && isAlreadyExists(cerr) {
 			described, err = client.DescribeSecret(ctx, &awssm.DescribeSecretInput{
 				SecretId: aws.String(input.Name),
@@ -172,7 +135,7 @@ func (s *service) EnsureSecret(ctx context.Context, input EnsureSecretInput) (*E
 	}
 
 	arn := aws.ToString(described.ARN)
-	// A pending deletion must be undone before any update, otherwise Secrets Manager
+	// why: A pending deletion must be undone before any update, otherwise Secrets Manager
 	// rejects KMS, tag, and value changes with InvalidRequestException.
 	if described.DeletedDate != nil {
 		if _, rerr := client.RestoreSecret(ctx, &awssm.RestoreSecretInput{
@@ -209,9 +172,6 @@ func (s *service) reconcileKMSKey(ctx context.Context, client api, secretID, cur
 	return nil
 }
 
-// putExisting writes the value only when it differs from what is stored. Without
-// this guard every stack generation across all four provisioning workflows would
-// mint a new Secrets Manager version.
 func (s *service) putExisting(
 	ctx context.Context, client api, input EnsureSecretInput, secretID string, out *EnsureSecretOutput,
 ) (*EnsureSecretOutput, error) {
@@ -284,8 +244,6 @@ func awsTags(tags map[string]string) []types.Tag {
 		return nil
 	}
 
-	// Sorted so the request is deterministic and two identical reconciles produce
-	// identical calls, which matters for the fake in tests.
 	keys := make([]string, 0, len(tags))
 	for k := range tags {
 		keys = append(keys, k)
@@ -300,7 +258,7 @@ func awsTags(tags map[string]string) []types.Tag {
 	return out
 }
 
-// reconcileTags adds or corrects the tags this reconciler owns on an existing secret.
+// why: reconcileTags adds or corrects the tags this reconciler owns on an existing secret.
 //
 // Needed because CreateSecret is the only Secrets Manager call that takes tags, so a
 // secret provisioned before a tag existed would never acquire it. Skips the call
@@ -353,8 +311,6 @@ func isAlreadyExists(err error) bool {
 	return errors.As(err, &exists)
 }
 
-// isNoValue covers a secret that exists with no current version, which
-// GetSecretValue reports as an InvalidRequestException rather than a not-found.
 func isNoValue(err error) bool {
 	var invalid *types.InvalidRequestException
 

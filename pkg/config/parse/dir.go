@@ -6,10 +6,6 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 )
 
-// NOTE(jm): this is only required as a temporary migration path, while the old config syncing exists.
-//
-// This will be removed and we will pass the `config.AppConfig` into the directory parser once we have time to remove
-// the old version.
 type ConfigDir struct {
 	Branch         *config.AppBranchConfig   `name:"branch"`
 	Branches       []*config.AppBranchConfig `name:"branches"`

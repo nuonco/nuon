@@ -40,7 +40,6 @@ func (a *wfInterceptor) ExecuteWorkflow(
 	}
 	status := "ok"
 
-	// NOTE(jm): we emit from a defer, so we can catch any type of panic and still emit metrics.
 	defer func() {
 		rec := recover()
 		tags["status"] = status

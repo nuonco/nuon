@@ -18,10 +18,6 @@ const (
 	reportTimeout  = 45 * time.Second
 )
 
-// ownerGVRs are fetched one object at a time while walking a warning pod up to
-// its controller. ReplicaSets are deliberately not in watchedGVRs: a Deployment
-// keeps ~10 old revisions, so listing them dominated every cycle (949 of 960
-// scaled to zero on one dev cluster) to resolve the handful of live ones.
 var ownerGVRs = map[string]schema.GroupVersionResource{
 	"ReplicaSet":              {Group: "apps", Version: "v1", Resource: "replicasets"},
 	"Deployment":              {Group: "apps", Version: "v1", Resource: "deployments"},
@@ -31,8 +27,6 @@ var ownerGVRs = map[string]schema.GroupVersionResource{
 	"HorizontalPodAutoscaler": {Group: "autoscaling", Version: "v2", Resource: "horizontalpodautoscalers"},
 }
 
-// watchedGVRs are the workload kinds the engine reports on. All are stable
-// across supported Kubernetes versions.
 var watchedGVRs = []schema.GroupVersionResource{
 	{Group: "apps", Version: "v1", Resource: "deployments"},
 	{Group: "apps", Version: "v1", Resource: "statefulsets"},
@@ -56,8 +50,6 @@ type Params struct {
 	ManifestKinds *ManifestKindsProvider
 }
 
-// Engine periodically reports the health of the resources the install's
-// components and sandbox manage. It is stateless: no informers, no in-process cache.
 type Engine struct {
 	l             *zap.Logger
 	apiClient     nuonrunner.Client
@@ -103,16 +95,11 @@ func New(params Params) (*Engine, error) {
 }
 
 func (e *Engine) run(ctx context.Context) {
-	// Only install-process runners manage install component workloads.
 	if e.process != "install" {
 		return
 	}
 
-	// Rehydrate cluster access + sandbox releases persisted by earlier deploys,
-	// so a fresh process can report without waiting for a new deploy.
 	e.cluster.Load(ctx)
-	// Kinds discovered by earlier deploys are persisted with the cluster context,
-	// so a restart keeps watching them.
 	if e.manifestKinds != nil {
 		e.manifestKinds.Load()
 	}
@@ -126,13 +113,8 @@ func (e *Engine) run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			// Cluster access can be derived server-side after this process
-			// started. Re-check only while blind, so a watching engine pays
-			// nothing for it.
 			if e.cluster.Get() == nil {
 				e.cluster.Load(ctx)
-				// Kinds discovered by earlier deploys are persisted with the cluster context,
-				// so a restart keeps watching them.
 				if e.manifestKinds != nil {
 					e.manifestKinds.Load()
 				}

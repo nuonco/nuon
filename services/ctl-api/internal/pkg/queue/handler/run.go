@@ -23,37 +23,24 @@ import (
 )
 
 const (
-	handlerCANHistoryMax = 10000
-	// overhead keeps terminateThreshold above historyMax so CAN always fires before the hard kill (matches queue.canDefaultTerminateOverhead).
+	handlerCANHistoryMax        = 10000
 	handlerCANTerminateOverhead = 5000
 
 	handlerTerminateThreshold = handlerCANHistoryMax + handlerCANTerminateOverhead
 
-	// terminalDrainGrace holds a terminal re-entered run open long enough for
-	// its triggering update-with-start to be admitted and served before the
-	// run closes.
 	terminalDrainGrace = 3 * time.Second
 )
 
 var DrainTimeout = callback.QuickTimeout
 
-// handlerCancelledStatusVersion gates the cancelled-status handling on
-// terminal-drain runs and the validate stamp; in-flight histories scheduled
-// neither the callbacks nor the skip.
 const handlerCancelledStatusVersion = "queue-handler-cancelled-status-v1"
 
-// rewarmEligible reports whether a terminal queue signal may re-enter Execute
-// on a fresh Handler run. Only resident signals qualify, and only from success
-// or error: a stale queue run can overwrite a completed resident signal with
-// error, and that must not strand the workflow. Cancelled stays terminal.
 func (h *handler) rewarmEligible(qs *app.QueueSignal) bool {
 	r, ok := h.sig.(signal.AutoExecuteOnTerminalStart)
 	return ok && r.AutoExecuteOnTerminalStart() &&
 		generics.SliceContains(qs.Status.Status, []app.Status{app.StatusSuccess, app.StatusError})
 }
 
-// isTerminalQueueStatus reports whether the queue signal's DB status means the
-// signal has finished processing and no handler run should execute it again.
 func isTerminalQueueStatus(s app.Status) bool {
 	switch s {
 	case app.StatusSuccess, app.StatusError, app.StatusCancelled:
@@ -69,7 +56,7 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 		return false, err
 	}
 
-	// Check that the signal still exists before doing any work.
+	// why: Check that the signal still exists before doing any work.
 	// If it was deleted, terminate the workflow without continue-as-new.
 	// We pass the fetched signal into initializeState to avoid a redundant DB fetch.
 	//
@@ -103,7 +90,7 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	l.Debug("handler is ready")
 	h.ready = true
 
-	// Terminal update-only run: update-with-start against an already-finished
+	// why: Terminal update-only run: update-with-start against an already-finished
 	// signal starts this run only to serve its triggering update (retry/approve
 	// forwarded to a handler that already completed). Execute must not re-run,
 	// the original run already sent the completion callbacks, and the run must
@@ -121,7 +108,7 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 					h.sendCompletionCallbacks(ctx)
 				}
 			}
-			// The triggering update is not always admitted into this first
+			// why: The triggering update is not always admitted into this first
 			// task — closing immediately races it and the update fails with
 			// "unknown update" against a fresh run. Hold the run open briefly
 			// so the update can land and be served, then drain. Bounded,
@@ -132,19 +119,10 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 		}
 	}
 
-	// Start the lifecycle manager to periodically check that the queue signal
-	// still exists and hasn't expired. Sets mgr.Stopped when the entity is
-	// gone or expired, which unblocks the Await below.
-	//
-	// The alive checker combines both existence and expiry checks in a single
-	// DB query to avoid redundant round-trips.
 	var mgrOpts []workflowmanager.Option
-	// Handler signals have explicit callbacks for completion, so the alive
-	// checker only needs to detect deletion/expiry. A longer interval reduces
-	// local activity overhead for long-running signals.
 	mgrOpts = append(mgrOpts, workflowmanager.WithCheckInterval(1*time.Hour))
 
-	// don't continue-as-new mid-phase: it orphans the in-flight update and the
+	// why: don't continue-as-new mid-phase: it orphans the in-flight update and the
 	// successor run fails the signal while the work is still alive.
 	mgrOpts = append(mgrOpts, workflowmanager.WithDeferRestart(func() bool {
 		return h.validating || h.executing
@@ -189,9 +167,8 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 				l.Warn("queue signal deleted, terminating orphaned handler")
 				return false, nil
 			}
-			return true, nil // transient error, keep going
+			return true, nil
 		}
-		// Check expiry in the same call to avoid a second DB query.
 		if qs.ExpiresAt != nil && workflow.Now(gCtx).After(*qs.ExpiresAt) {
 			l.Warn("queue signal expired, stopping handler")
 			return false, nil
@@ -208,7 +185,7 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	mgr := workflowmanager.New(mgrOpts...)
 	mgr.Start(ctx)
 
-	// Re-warm a resident host whose QueueSignal is terminal. A later
+	// why: Re-warm a resident host whose QueueSignal is terminal. A later
 	// update-with-start (append-step / retry-step) starts this fresh Handler run,
 	// but the queue dispatcher never re-drives terminal signals, so the conductor
 	// loop would never restart. Self-drive validate→execute once so the parked-loop
@@ -218,15 +195,12 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 		h.startAutoRewarm(ctx)
 	}
 
-	// execute the handler and handle a restart or stop
 	if err := workflow.Await(ctx, func() bool {
 		return generics.AnyTrue(mgr.Stopped, mgr.Restarted, mgr.Terminated, h.finished)
 	}); err != nil {
 		return false, err
 	}
 
-	// Terminated = emergency exit. Write error status, send callbacks, exit
-	// immediately with no drain wait.
 	if mgr.Terminated {
 		h.setFinished(app.StatusError, "handler terminated due to excessive workflow history")
 		h.sendCompletionCallbacks(ctx)
@@ -237,12 +211,11 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 		return false, nil
 	}
 	if mgr.Stopped {
-		// Entity was deleted or expired. Send callbacks so waiting callers unblock.
 		h.sendCompletionCallbacks(ctx)
 		return true, nil
 	}
 
-	// A terminal signal re-warmed by read-only updates only: it already sent
+	// why: A terminal signal re-warmed by read-only updates only: it already sent
 	// its completion callbacks when it originally finished. Return without any
 	// yielding work — callback sends or cache sleeps would leave update
 	// handlers registered while yielded, so a racing mutating update could be
@@ -253,13 +226,8 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 		return true, nil
 	}
 
-	// Signal completed — send completion callbacks to unblock queue and parent.
-	// Always call sendCompletionCallbacks (it reloads from DB) so that callbacks
-	// added dynamically by EnsureSignal after init are picked up.
 	h.sendCompletionCallbacks(ctx)
 
-	// Once execution has completed, keep the workflow alive for a cache period
-	// so that subsequent signals can reuse it via update-with-start.
 	cacheDur := signal.DefaultSleepAfter
 	if sa, ok := h.sig.(signal.SleepAfter); ok {
 		cacheDur = sa.SleepAfter()
@@ -269,9 +237,6 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 		_ = workflow.Sleep(ctx, cacheDur)
 	}
 
-	// Drain update handlers still running (e.g. a cancel that landed during
-	// the cache window) so the workflow doesn't close mid-propagation and drop
-	// the status writes the cancel semantics depend on.
 	_, _ = workflow.AwaitWithTimeout(ctx, DrainTimeout, func() bool { return workflow.AllHandlersFinished(ctx) })
 
 	return true, nil

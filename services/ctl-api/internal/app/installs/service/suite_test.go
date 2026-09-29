@@ -32,7 +32,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// mockWorkflowRun implements tclient.WorkflowRun for mock return values.
 type mockWorkflowRun struct{}
 
 func (m *mockWorkflowRun) GetID() string    { return "mock-workflow-id" }
@@ -44,7 +43,6 @@ func (m *mockWorkflowRun) GetWithOptions(ctx context.Context, valuePtr interface
 	return nil
 }
 
-// InstallsTestDeps holds all fx-injected dependencies for installs service tests.
 type InstallsTestDeps struct {
 	fx.In
 
@@ -56,7 +54,6 @@ type InstallsTestDeps struct {
 	Seeder *testseed.Seeder
 }
 
-// InstallsServiceTestSuite is the shared testify suite for all installs service endpoint tests.
 type InstallsServiceTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -86,7 +83,6 @@ func (s *InstallsServiceTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	// Create mock clients for testing
 	s.ctrl = gomock.NewController(s.T())
 	s.mockTC = temporal.NewMockClient(s.ctrl)
 
@@ -98,8 +94,6 @@ func (s *InstallsServiceTestSuite) SetupSuite() {
 			},
 			CustomValidator: true,
 		}),
-		// Service under test. flowclient is provided here rather than in
-		// testfx — see the note in tests/testfx.go about import cycles.
 		fx.Provide(flowclient.New),
 		fx.Provide(New),
 		fx.Populate(&s.deps, &s.installsService),
@@ -108,18 +102,14 @@ func (s *InstallsServiceTestSuite) SetupSuite() {
 	s.fxApp = fxtest.New(s.T(), options...)
 	s.fxApp.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.deps.DB)
 }
 
 func (s *InstallsServiceTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 
-	// Reset mock before each test
-
 	s.setupTestData()
 
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.deps.L,
 		DB:      s.deps.DB,
@@ -139,15 +129,13 @@ func (s *InstallsServiceTestSuite) TearDownSuite() {
 	s.fxApp.RequireStop()
 }
 
-// expectQueueCreation sets up the mock expectation for queue creation via temporal.
-// Call this before any operation that creates an install via the API.
 func (s *InstallsServiceTestSuite) expectQueueCreation() {
 	s.mockTC.EXPECT().ExecuteWorkflowInNamespace(
-		gomock.Any(), // ctx
-		gomock.Any(), // namespace
-		gomock.Any(), // options
-		gomock.Any(), // workflow
-		gomock.Any(), // args
+		gomock.Any(),
+		gomock.Any(),
+		gomock.Any(),
+		gomock.Any(),
+		gomock.Any(),
 	).Return(&mockWorkflowRun{}, nil).AnyTimes()
 }
 
@@ -204,8 +192,6 @@ func (s *InstallsServiceTestSuite) createTestInstallWithActiveRunner() *app.Inst
 	return install
 }
 
-// makeRequest sends an HTTP request through the test router and returns the recorder.
-// Pass nil for body on requests that have no body (GET, no-body POST).
 func (s *InstallsServiceTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
 	var reqBody *bytes.Buffer
 	if body != nil {
@@ -225,7 +211,6 @@ func (s *InstallsServiceTestSuite) makeRequest(method, path string, body interfa
 	return rr
 }
 
-// makeRawRequest sends a raw string body through the test router, bypassing json.Marshal.
 func (s *InstallsServiceTestSuite) makeRawRequest(method, path string, rawBody string) *httptest.ResponseRecorder {
 	req, err := http.NewRequest(method, path, bytes.NewBufferString(rawBody))
 	require.NoError(s.T(), err)
@@ -281,7 +266,6 @@ func (s *InstallsServiceTestSuite) getSeededComponent(componentType app.Componen
 	return nil
 }
 
-// Pins an install into one of the states install.go's AfterQuery resolves from.
 type cloudPlatformTestCase struct {
 	name                  string
 	setup                 func() *app.Install
@@ -289,7 +273,6 @@ type cloudPlatformTestCase struct {
 	expectedRunnerType    app.AppRunnerType
 }
 
-// testseed's CreateAppRunnerConfig always creates an "aws" one.
 func (s *InstallsServiceTestSuite) createAppRunnerConfig(appConfigID string, runnerType app.AppRunnerType) *app.AppRunnerConfig {
 	runner := &app.AppRunnerConfig{
 		AppID:       s.testApp.ID,
@@ -300,7 +283,6 @@ func (s *InstallsServiceTestSuite) createAppRunnerConfig(appConfigID string, run
 	return runner
 }
 
-// Mirrors the bulk install rewrite in internal/pkg/config/syncer/runner/sync.go.
 func (s *InstallsServiceTestSuite) pinInstallConfig(installID, appConfigID, appRunnerConfigID string) {
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
 		Model(&app.Install{}).
@@ -311,7 +293,6 @@ func (s *InstallsServiceTestSuite) pinInstallConfig(installID, appConfigID, appR
 		}).Error)
 }
 
-// The three fixture states shared by every install-read endpoint.
 func (s *InstallsServiceTestSuite) cloudPlatformResolutionTestCases() []cloudPlatformTestCase {
 	return []cloudPlatformTestCase{
 		{
@@ -320,7 +301,6 @@ func (s *InstallsServiceTestSuite) cloudPlatformResolutionTestCases() []cloudPla
 				azureCfg := s.deps.Seeder.CreateBareAppConfig(s.ctx, s.T(), s.testApp.ID)
 				s.createAppRunnerConfig(azureCfg.ID, app.AppRunnerTypeAzure)
 
-				// What a later sync creates, then repoints every install at.
 				staleCfg := s.deps.Seeder.CreateBareAppConfig(s.ctx, s.T(), s.testApp.ID)
 				awsRunner := s.createAppRunnerConfig(staleCfg.ID, app.AppRunnerTypeAWS)
 
@@ -349,7 +329,6 @@ func (s *InstallsServiceTestSuite) cloudPlatformResolutionTestCases() []cloudPla
 			setup: func() *app.Install {
 				noRunnerCfg := s.deps.Seeder.CreateBareAppConfig(s.ctx, s.T(), s.testApp.ID)
 
-				// Soft-deleted satisfies the FK but Preload excludes it.
 				danglingRunner := s.createAppRunnerConfig(s.testAppConfig.ID, app.AppRunnerTypeAWS)
 				require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Delete(danglingRunner).Error)
 

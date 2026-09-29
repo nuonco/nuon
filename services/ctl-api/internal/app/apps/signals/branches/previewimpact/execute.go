@@ -198,9 +198,6 @@ func (s *Signal) updatePRComment(ctx workflow.Context, l log.Logger, run *app.Ap
 		RunID: s.RunID,
 	})
 
-	// Derive phases from DB and override Install to Valid: the impact was computed
-	// successfully, but the previewimpact step status in the DB is still in-progress
-	// at this point (the framework marks it Success after Execute returns).
 	phases := commentContextPhases(commentContext)
 	phases.Install = activities.PRCommentPhaseValid
 

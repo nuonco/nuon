@@ -1,16 +1,3 @@
-// Package tags declares the tag vocabulary for temporal-gen-v2: the set of
-// tag names an activity may carry, and the default activity options each name
-// implies.
-//
-// Tags are single names set on an activity with `@tag <name>`. A config is
-// either loaded from a temporal-gen.yaml or built in Go and handed to
-// temporalgen.Options.Tags. Tags apply to activities only.
-//
-// A tag's attributes are lowered back into synthetic annotation comment lines
-// (see AnnotationLines) and fed through the normal annotation parser. That way
-// there is exactly one code path turning "@start-to-close-timeout 30s" into a
-// field assignment, and tag defaults get last-write-wins precedence for free by
-// being emitted ahead of a function's own annotations.
 package tags
 
 import (
@@ -26,16 +13,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// SupportedVersion is the only value accepted for the top-level `version` key.
 const SupportedVersion = 1
 
-// FileNames are the config file names searched for, in order, at each level of
-// the upward walk performed by Discover.
 var FileNames = []string{"temporal-gen.yaml", "temporal-gen.yml"}
 
 var nameRe = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]*$`)
 
-// Config is a parsed temporal-gen.yaml, or a vocabulary declared in Go.
 type Config struct {
 	Version  int               `yaml:"version"`
 	Defaults *Attrs            `yaml:"defaults"`
@@ -44,9 +27,6 @@ type Config struct {
 	path string
 }
 
-// Duration is a time.Duration written as a Go duration string ("30s", "1h").
-// Keeping the raw text means the emitted annotation line reads exactly as
-// authored, and an empty value means "unset".
 type Duration string
 
 // Attrs is the allowlist of activity annotations settable from a tag.
@@ -68,8 +48,6 @@ type Attrs struct {
 	RetryPolicyMaxAttempts *int     `yaml:"retry-policy-max-attempts"`
 }
 
-// Path returns the file this config was loaded from, or "" when it was built
-// in code.
 func (c *Config) Path() string {
 	if c == nil {
 		return ""
@@ -77,7 +55,6 @@ func (c *Config) Path() string {
 	return c.path
 }
 
-// source describes where a config came from, for error messages.
 func (c *Config) source() string {
 	if c == nil || c.path == "" {
 		return "code"
@@ -85,7 +62,7 @@ func (c *Config) source() string {
 	return c.path
 }
 
-// Load reads and parses a config file. Unknown keys are a hard error so that a
+// why: Load reads and parses a config file. Unknown keys are a hard error so that a
 // misspelled attribute fails loudly instead of silently doing nothing.
 func Load(path string) (*Config, error) {
 	f, err := os.Open(path)
@@ -109,9 +86,6 @@ func Load(path string) (*Config, error) {
 	return &cfg, nil
 }
 
-// Discover walks up from dir looking for a config file, stopping after the
-// directory containing go.mod (the module root). It returns (nil, nil) when no
-// config exists, which is the normal case for packages that do not use tags.
 func Discover(dir string) (*Config, error) {
 	abs, err := filepath.Abs(dir)
 	if err != nil {
@@ -126,8 +100,6 @@ func Discover(dir string) (*Config, error) {
 			}
 		}
 
-		// Check the module root only after checking this directory, so a
-		// config sitting next to go.mod is still found.
 		if st, err := os.Stat(filepath.Join(abs, "go.mod")); err == nil && !st.IsDir() {
 			return nil, nil
 		}
@@ -140,7 +112,7 @@ func Discover(dir string) (*Config, error) {
 	}
 }
 
-// Validate checks structural invariants that YAML decoding cannot express. A
+// why: Validate checks structural invariants that YAML decoding cannot express. A
 // config built in code may omit `version`; a file must declare it, so that a
 // future format change has something to key off.
 func (c *Config) Validate() error {
@@ -185,7 +157,6 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-// Names returns the declared tags in sorted order.
 func (c *Config) Names() []string {
 	if c == nil {
 		return nil
@@ -198,11 +169,6 @@ func (c *Config) Names() []string {
 	return names
 }
 
-// AnnotationLines lowers the defaults block plus each tag into activity
-// annotation comment lines.
-//
-// Lines are emitted defaults-first, then tags in the order the caller listed
-// them (source order), so a later @tag overrides an earlier one.
 func (c *Config) AnnotationLines(names []string) ([]string, error) {
 	if c == nil {
 		if len(names) > 0 {

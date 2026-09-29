@@ -23,24 +23,20 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 			ID: appConfigID,
 		}).
 		Scopes(
-			// permissions
 			PreloadAppSecretsConfig,
 			PreloadAppBreakGlassConfig,
 			PreloadAppConfigPermissionsConfig,
 			PreloadAppConfigPolicyConfig,
 			PreloadAppOperationRoleConfig,
 
-			// basics
 			PreloadAppConfigRunnerConfig,
 			PreloadAppConfigSandboxConfig,
 			PreloadAppConfigInputConfig,
 			PreloadAppConfigStackConfig,
 			PreloadAppConfigKubernetesContextsConfig,
 
-			// components
 			PreloadAppConfigComponentConfigConnections,
 
-			// actions
 			PreloadAppActionWorkflowConfigs,
 		).
 		First(&appCfg)
@@ -81,7 +77,6 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 
 	if len(missingComponentIds) > 0 {
 		missingComponents := []app.ComponentConfigConnection{}
-		// a newer row's dependency ids can name components absent from this version
 		var boundedCfgIDs []string
 		res = h.db.WithContext(ctx).Raw(fmt.Sprintf(`
 			SELECT DISTINCT ON (component_id) id
@@ -96,34 +91,19 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 		}
 
 		res = h.db.WithContext(ctx).
-			// preload the component this belongs too
 			Preload("Component").
-
-			// preload all terraform configs
 			Preload("TerraformModuleComponentConfig").
 			Preload("TerraformModuleComponentConfig.PublicGitVCSConfig").
 			Preload("TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
-
-			// preload all helm configs
 			Preload("HelmComponentConfig").
 			Preload("HelmComponentConfig.PublicGitVCSConfig").
 			Preload("HelmComponentConfig.ConnectedGithubVCSConfig").
-
-			// preload all docker configs
 			Preload("DockerBuildComponentConfig").
 			Preload("DockerBuildComponentConfig.PublicGitVCSConfig").
 			Preload("DockerBuildComponentConfig.ConnectedGithubVCSConfig").
-
-			// preload all external image configs
 			Preload("ExternalImageComponentConfig").
-
-			// preload all job configs
 			Preload("JobComponentConfig").
-
-			// preload all kubernetes config
 			Preload("KubernetesManifestComponentConfig").
-
-			// preload all pulumi configs
 			Preload("PulumiComponentConfig").
 			Preload("PulumiComponentConfig.PublicGitVCSConfig").
 			Preload("PulumiComponentConfig.ConnectedGithubVCSConfig").
@@ -155,17 +135,14 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 }
 
 func (h *Helpers) CliVerisionAllowed(ctx context.Context, version string) (bool, error) {
-	// If no minimum version is set, all versions are allowed
 	if h.cfg.MinCLIVersion == "" {
 		return true, nil
 	}
 
-	// Allow development versions
 	if version == "development" {
 		return true, nil
 	}
 
-	// Allow commit SHAs (some releases are shorthand commit SHAs)
 	if commitSHARegex.MatchString(version) {
 		return true, nil
 	}

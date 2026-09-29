@@ -29,7 +29,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
 )
 
-// RunDeps carries everything the syncer needs to run against the database.
 type RunDeps struct {
 	DB               *gorm.DB
 	AppsHelpers      *appshelpers.Helpers
@@ -47,10 +46,8 @@ type RunRequest struct {
 	AppID       string
 	AppConfigID string
 
-	// DispatchBuilds: see components.SyncComponentParams.DispatchBuilds.
 	DispatchBuilds bool
 
-	// SyncBranches opts in to writing app branches from the config; see WithBranchSync.
 	SyncBranches bool
 
 	// Deprecated: branches are not synced unless SyncBranches is set. When both
@@ -65,19 +62,13 @@ type RunResult struct {
 	RunbookIDs          []string
 	ComponentsScheduled []configsync.ComponentState
 
-	// Caller must provision these queues after Run returns; the sync is transactional.
 	ComponentsCreated []string
 
-	// Caller must provision these queues after Run returns; the sync is transactional.
 	AppBranchesCreated []string
 
 	AppBranchConfigsUpdated []configsync.AppBranchConfigState
 }
 
-// Run syncs an app config from its stored intermediate config, driving the
-// status through syncing to active or error. The single path from intermediate
-// config to database records — the branch run and POST /configs/:id/sync both
-// go through it.
 func Run(ctx context.Context, deps RunDeps, req RunRequest) (res *RunResult, retErr error) {
 	started := time.Now()
 	stage := "load"
@@ -189,8 +180,6 @@ func Run(ctx context.Context, deps RunDeps, req RunRequest) (res *RunResult, ret
 	return &result, nil
 }
 
-// Queue creation starts Temporal workflows, so the sync transaction defers it to
-// here. It lives in Run rather than in each caller so no caller can skip it.
 func provisionDeferredQueues(ctx context.Context, deps RunDeps, result *RunResult) error {
 	queueClient := deps.ComponentHelpers.QueueClient()
 
@@ -243,7 +232,6 @@ func setStatus(ctx context.Context, db *gorm.DB, appConfig *app.AppConfig, statu
 	})
 }
 
-// markSyncFailed records the failure on the config and returns err unchanged.
 func markSyncFailed(ctx context.Context, db *gorm.DB, appConfig *app.AppConfig, err error) error {
 	setStatus(ctx, db, appConfig, app.AppConfigStatusError, fmt.Sprintf("sync failed: %s", signal.HumanError(err)))
 	return err

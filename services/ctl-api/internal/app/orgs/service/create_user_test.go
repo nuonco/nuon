@@ -30,7 +30,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// CreateUserTestService holds all fx-injected dependencies for create user tests.
 type CreateUserTestService struct {
 	fx.In
 
@@ -45,7 +44,6 @@ type CreateUserTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// CreateUserTestSuite is the testify suite for CreateUser endpoint.
 type CreateUserTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -72,7 +70,6 @@ func (s *CreateUserTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),
 	)
@@ -80,7 +77,6 @@ func (s *CreateUserTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -88,7 +84,6 @@ func (s *CreateUserTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -109,7 +104,6 @@ func (s *CreateUserTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	ctx, s.testOrg = s.service.Seeder.EnsureOrg(ctx, s.T())
 
-	// Create org roles (required for role assignment)
 	err := s.service.AuthzClient.CreateOrgRoles(ctx, s.testOrg.ID)
 	require.NoError(s.T(), err)
 }
@@ -145,7 +139,6 @@ func (s *CreateUserTestSuite) TestCreateUser() {
 		{
 			name: "successfully adds authenticated user to org",
 			setupFunc: func() *app.Account {
-				// Create a new account that's not yet in the org
 				accID := domains.NewAccountID()
 				acc := &app.Account{
 					ID:          accID,
@@ -165,7 +158,6 @@ func (s *CreateUserTestSuite) TestCreateUser() {
 			expectedStatus:   http.StatusCreated,
 			expectedRoleType: app.RoleTypeOrgAdmin,
 			validateFunc: func(acc *app.Account) {
-				// Verify AccountRole was created
 				var accountRole app.AccountRole
 				err := s.service.DB.
 					Where("account_id = ? AND org_id = ?", acc.ID, s.testOrg.ID).
@@ -173,11 +165,9 @@ func (s *CreateUserTestSuite) TestCreateUser() {
 					First(&accountRole).Error
 				require.NoError(s.T(), err)
 
-				// Verify role type is org_admin
 				assert.Equal(s.T(), app.RoleTypeOrgAdmin, accountRole.Role.RoleType)
 				assert.Equal(s.T(), s.testOrg.ID, accountRole.OrgID.String)
 
-				// Verify role belongs to correct org
 				assert.Equal(s.T(), s.testOrg.ID, accountRole.Role.OrgID.String)
 			},
 		},
@@ -203,7 +193,6 @@ func (s *CreateUserTestSuite) TestCreateUser() {
 			expectedStatus:   http.StatusCreated,
 			expectedRoleType: app.RoleTypeOrgAdmin,
 			validateFunc: func(expectedAcc *app.Account) {
-				// Response validation happens in the main test loop
 			},
 		},
 		{
@@ -228,7 +217,6 @@ func (s *CreateUserTestSuite) TestCreateUser() {
 			expectedStatus:   http.StatusCreated,
 			expectedRoleType: app.RoleTypeOrgAdmin,
 			validateFunc: func(acc *app.Account) {
-				// Verify role assignment still works
 				var accountRole app.AccountRole
 				err := s.service.DB.
 					Where("account_id = ? AND org_id = ?", acc.ID, s.testOrg.ID).
@@ -240,10 +228,8 @@ func (s *CreateUserTestSuite) TestCreateUser() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test-specific account
 			testAccount := tc.setupFunc()
 
-			// Create router with test-specific account context
 			router := tests.NewTestRouter(tests.RouterOptions{
 				L:       s.service.L,
 				DB:      s.service.DB,
@@ -253,7 +239,6 @@ func (s *CreateUserTestSuite) TestCreateUser() {
 			err := s.orgsService.RegisterPublicRoutes(router)
 			require.NoError(s.T(), err)
 
-			// Make request using the test-specific router
 			var reqBody *bytes.Buffer
 			if tc.requestBody != nil {
 				jsonBytes, err := json.Marshal(tc.requestBody)
@@ -273,7 +258,6 @@ func (s *CreateUserTestSuite) TestCreateUser() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Parse response - should return the authenticated account
 			var response app.Account
 			err = json.Unmarshal(rr.Body.Bytes(), &response)
 			if err != nil {
@@ -281,12 +265,10 @@ func (s *CreateUserTestSuite) TestCreateUser() {
 			}
 			require.NoError(s.T(), err)
 
-			// Verify response contains authenticated account data
 			assert.Equal(s.T(), testAccount.ID, response.ID)
 			assert.Equal(s.T(), testAccount.Email, response.Email)
 			assert.Equal(s.T(), testAccount.Subject, response.Subject)
 
-			// Run additional validations
 			if tc.validateFunc != nil {
 				tc.validateFunc(testAccount)
 			}
@@ -295,7 +277,6 @@ func (s *CreateUserTestSuite) TestCreateUser() {
 }
 
 func (s *CreateUserTestSuite) TestCreateUserInvalidJSON() {
-	// Test with malformed JSON
 	req, err := http.NewRequest(http.MethodPost, "/v1/orgs/current/user", bytes.NewBufferString("{invalid json"))
 	require.NoError(s.T(), err)
 	req.Header.Set("Content-Type", "application/json")
@@ -303,7 +284,6 @@ func (s *CreateUserTestSuite) TestCreateUserInvalidJSON() {
 	rr := httptest.NewRecorder()
 	s.router.ServeHTTP(rr, req)
 
-	// Should return 400 Bad Request
 	if rr.Code != http.StatusBadRequest {
 		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
 	}

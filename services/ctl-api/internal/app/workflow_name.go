@@ -6,12 +6,6 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 )
 
-// computeWorkflowName renders the human-readable workflow title shown in the
-// dashboard, CLI, and search index. It is the single source of truth — the
-// install_workflows.name column is populated by Workflow.BeforeSave so the
-// stored value stays in sync with this logic.
-// ComputeName lets backfills recompute the title without a full Save, which
-// would try to upsert every association on the struct.
 func (w *Workflow) ComputeName() string {
 	return computeWorkflowName(w)
 }
@@ -81,9 +75,6 @@ func appBranchRunName(w *Workflow) string {
 	return base
 }
 
-// workflowNameSuffix builds the trailing "(...)" segments appended to the
-// base title — workflow-name-suffix metadata for all types, plus the
-// action/runbook name where applicable.
 func workflowNameSuffix(w *Workflow) string {
 	var b strings.Builder
 
@@ -95,7 +86,6 @@ func workflowNameSuffix(w *Workflow) string {
 
 	switch w.Type {
 	case WorkflowTypeActionWorkflowRun:
-		// Skip if the adhoc branch already appended the action name.
 		if metaValue(w, "adhoc_action") == "" {
 			if v := metaValue(w, "install_action_workflow_name"); v != "" {
 				b.WriteString(" (")

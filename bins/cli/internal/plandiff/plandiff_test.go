@@ -305,9 +305,6 @@ func TestGetPlanType(t *testing.T) {
 }
 
 func TestFormatPlanCastErrors(t *testing.T) {
-	// These tests verify that FormatPlan properly handles the internal type casts
-	// by testing with real plan detection scenarios
-
 	t.Run("terraform plan cast", func(t *testing.T) {
 		jsonStr := `{"resource_changes": [{"address": "test", "type": "test", "name": "test", "change": {"actions": ["create"]}}]}`
 		_, err := FormatPlan(jsonStr)
@@ -334,8 +331,6 @@ func TestFormatPlanCastErrors(t *testing.T) {
 }
 
 func TestHasChangesCastErrors(t *testing.T) {
-	// These tests verify that HasChanges properly handles the internal type casts
-
 	t.Run("terraform plan cast", func(t *testing.T) {
 		jsonStr := `{"resource_changes": [{"address": "test", "type": "test", "name": "test", "change": {"actions": ["create"]}}]}`
 		_, err := HasChanges(jsonStr)

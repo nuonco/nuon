@@ -33,14 +33,11 @@ type EnqueueSignalRequest struct {
 	EmitterID *string
 	DedupeKey *string
 
-	// IdempotencyKey deduplicates repeated requests for the same signal type and queue.
 	IdempotencyKey string `validate:"omitempty,max=255"`
 
-	// Callback describes where the handler should send a Temporal signal on completion.
 	// Deprecated: use Callbacks for new code.
 	Callback callback.Ref
 
-	// Callbacks supports multiple completion targets.
 	Callbacks callback.Refs
 }
 
@@ -83,8 +80,6 @@ func (c *Client) enqueueSignal(ctx context.Context, db *gorm.DB, req *EnqueueSig
 		return nil, nil, err
 	}
 
-	// Create the QueueSignal record in the DB directly so we can return the
-	// signal ID without waiting for the queue workflow to process it.
 	suffix := make([]byte, 3)
 	_, _ = rand.Read(suffix)
 
@@ -96,7 +91,6 @@ func (c *Client) enqueueSignal(ctx context.Context, db *gorm.DB, req *EnqueueSig
 		status.Metadata["timeout_ns"] = t.Timeout().Nanoseconds()
 	}
 
-	// Merge single Callback into Callbacks for backward compat.
 	callbacks := req.Callbacks
 	if req.Callback.IsSet() {
 		found := false

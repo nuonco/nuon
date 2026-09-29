@@ -15,17 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// GetACRAccessTokenRequest names the credential rather than carrying it.
-//
-// ClientSecretName and ClientCertificateName are AppSecret names, resolved
-// against the DB inside the activity. Activity inputs are recorded in Temporal
-// history, so passing the vendor's long-lived secret here would persist it;
-// passing a name persists nothing. The minted refresh token does land in
-// history as the activity result, but it expires in 60 minutes — the same
-// exposure GAR tokens already have.
 type GetACRAccessTokenRequest struct {
-	// ComponentID rather than an app ID: it is present on every build plan
-	// without depending on a preload, and the activity has a DB handle anyway.
 	ComponentID string
 	LoginServer string
 	TenantID    string
@@ -73,15 +63,6 @@ func (a *Activities) GetACRAccessToken(ctx context.Context, req *GetACRAccessTok
 			return nil, err
 		}
 
-		// Certificates are stored base64-encoded (AppSecretConfigFmtBase64), but
-		// accept a bare PEM too rather than failing on a reasonable mistake.
-		//
-		// Whitespace is stripped before decoding because base64 is routinely
-		// line-wrapped and DecodeString rejects embedded newlines; without this
-		// a wrapped certificate falls through to the raw branch and fails with
-		// a misleading "not a PEM" error. A bare PEM cannot decode as base64
-		// (its "-----" delimiters are outside the alphabet), so the fallback
-		// stays unambiguous.
 		pem := decodeCertificate(raw)
 		if !strings.Contains(string(pem), "-----BEGIN") {
 			return nil, errors.New(
@@ -92,7 +73,7 @@ func (a *Activities) GetACRAccessToken(ctx context.Context, req *GetACRAccessTok
 		cfg.ClientCertificatePEM = pem
 	}
 
-	// No app registration means the registry is expected to be reachable by
+	// why: No app registration means the registry is expected to be reachable by
 	// whatever ambient identity this process has — the same-tenant case that
 	// worked before any of this existed. Partial config is a different thing
 	// and worth rejecting, because silently falling back would surface as an
@@ -125,9 +106,6 @@ func (a *Activities) GetACRAccessToken(ctx context.Context, req *GetACRAccessTok
 	}, nil
 }
 
-// appSecretValue resolves an AppSecret by name within the component's app. A
-// missing secret is a config error the vendor can act on, so it is reported as
-// such rather than surfacing later as an opaque registry 401.
 func (a *Activities) appSecretValue(ctx context.Context, componentID, name string) (string, error) {
 	var component app.Component
 	if err := a.db.WithContext(ctx).Where(app.Component{
@@ -141,7 +119,7 @@ func (a *Activities) appSecretValue(ctx context.Context, componentID, name strin
 		AppID: component.AppID,
 		Name:  name,
 	}).First(&secret).Error; err != nil {
-		// The name is not echoed back. The overwhelmingly likely cause of a
+		// why: The name is not echoed back. The overwhelmingly likely cause of a
 		// miss is that someone put the credential itself in the config field
 		// instead of the name of an app secret, and repeating it here would
 		// copy it into logs and workflow history — the exact thing the
@@ -177,7 +155,7 @@ func stripWhitespace(s string) string {
 	}, s)
 }
 
-// decodeCertificate returns the PEM bytes for a stored certificate, accepting a
+// why: decodeCertificate returns the PEM bytes for a stored certificate, accepting a
 // bare PEM or any of the base64 flavours a vendor might reasonably produce.
 //
 // Whitespace is stripped first because base64 is routinely line-wrapped and the

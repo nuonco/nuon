@@ -32,7 +32,6 @@ type PruneTokensResponse struct {
 func (s *service) PruneTokens(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
-	// Verify runner belongs to caller's org
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)

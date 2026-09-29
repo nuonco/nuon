@@ -7,7 +7,6 @@ import (
 )
 
 func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	// A recovery never fetches a chart, so there is no archive to clean up.
 	if h.state == nil || h.state.arch == nil {
 		return nil
 	}

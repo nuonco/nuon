@@ -16,7 +16,6 @@ type FlushOrphanedJobsRequest struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) FlushOrphanedJobs(ctx context.Context, req FlushOrphanedJobsRequest) error {
-	// dual-write V2 status
 	compositeStatus := app.NewCompositeStatus(ctx, app.Status(app.RunnerJobStatusCancelled))
 
 	res := a.db.WithContext(ctx).

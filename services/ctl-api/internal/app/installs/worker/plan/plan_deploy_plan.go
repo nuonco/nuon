@@ -59,11 +59,6 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		return nil, nil, errors.Wrap(err, "unable to get install state")
 	}
 
-	// this is here just to reduce duplicated return values from all component types, we're caling same function within
-	// every component to build cloud auth, its non expensive and deterministic so we can be sure that in both calls
-	// we get same information.
-	// unless, we change response models like appcfg, installdeploy, build, stack etc somewhere in middle, which should
-	// not happen ideally.
 	roleSelection, _, err := p.getRoleForDeploy(ctx, l, appCfg, installDeploy, build, stack, installState)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get role for deploy")
@@ -74,7 +69,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		return nil, nil, errors.Wrap(err, "unable to get install registry repository config")
 	}
 
-	// Address the install-registry artifact by its content (manifest
+	// why: Address the install-registry artifact by its content (manifest
 	// digest) rather than the synthetic install-deploy ID. The sync plan
 	// copies image-type builds into the install registry under their
 	// ResolvedTag; using the digest as SrcTag here is correct because
@@ -187,7 +182,7 @@ func (p *Planner) getRoleForDeploy(
 	return operationroles.GetRoleForDeploy(l, appCfg, installDeploy, &compBuild.ComponentConfigConnection, stack, installState, flw)
 }
 
-// installWorkflowForRoleDefault returns the parent install workflow used to
+// why: installWorkflowForRoleDefault returns the parent install workflow used to
 // derive a step's lowest-precedence default role, or nil when workflow-type
 // defaulting should not apply. It returns nil when the legacy opt-out is set
 // (USE_LEGACY_MAINTENANCE_ROLE_DEFAULT) or the workflow can't be resolved, so the
@@ -226,7 +221,7 @@ func (p *Planner) installWorkflowForRoleDefault(
 	return flw
 }
 
-// getAuthForDeploy builds cloud auth from an already-resolved role selection.
+// why: getAuthForDeploy builds cloud auth from an already-resolved role selection.
 // The role is selected once per deploy/sync plan and threaded through so the
 // auth embedded in the runner plan can never diverge from the recorded role
 // selection, and the role-default activities only run once per plan.

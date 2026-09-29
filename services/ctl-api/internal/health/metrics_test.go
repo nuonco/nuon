@@ -59,7 +59,6 @@ func TestHealthMetricsFreshness(t *testing.T) {
 		lastSuccess[dep.AsString()] = p.Value
 	}
 	require.Equal(t, map[string]float64{"postgresql": 110, "clickhouse": 113, "temporal": 117}, lastSuccess)
-	// An earlier request can publish after a later one without making state regress.
 	m.record(ctx, [dependencyCount]dependencyCheck{
 		{started: time.Unix(111, 0), finished: time.Unix(114, 0)},
 		{started: time.Unix(114, 0), finished: time.Unix(115, 0)},

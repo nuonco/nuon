@@ -72,7 +72,6 @@ type installStackIntermediate struct {
 	BreakGlassRoles       map[string]string `json:"break_glass_roles" mapstructure:"break_glass_roles" toml:"break_glass_roles"`
 }
 
-// intermediate represents the intermediate data available to users to interpolate
 type intermediate struct {
 	Org          orgIntermediate                  `json:"org"`
 	App          appIntermediate                  `json:"app"`

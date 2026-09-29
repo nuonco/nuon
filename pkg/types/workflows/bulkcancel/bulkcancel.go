@@ -1,5 +1,3 @@
-// Package bulkcancel carries the input and progress types for the admin bulk
-// workflow cancellation run.
 package bulkcancel
 
 const (
@@ -8,7 +6,6 @@ const (
 	ProgressQueryType = "progress"
 )
 
-// Request carries its counters across continue-as-new; callers set only Pending and Reason.
 type Request struct {
 	Pending []string `json:"pending"`
 	Reason  string   `json:"reason"`

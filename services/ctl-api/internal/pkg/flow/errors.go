@@ -6,8 +6,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
-// ContinueAsNewErr signals that the workflow should continue-as-new from
-// the given group/step index.
 type ContinueAsNewErr struct {
 	StartFromStepIdx int
 }
@@ -22,7 +20,6 @@ func NewContinueAsNewErr(startsFromStepIdx int) *ContinueAsNewErr {
 	}
 }
 
-// ApprovalPauseErr indicates that execution stopped because a step is awaiting approval.
 type ApprovalPauseErr struct {
 	StepID string
 }
@@ -41,10 +38,6 @@ func (e *AwaitRetryPauseErr) Error() string {
 	return "workflow paused awaiting retry"
 }
 
-// FlowStoppedErr is returned when a workflow is stopped due to a denial or
-// skip-dependents response. Unlike ErrNotApproved, this carries context about
-// why the flow stopped and signals to the execute-flow signal that it should
-// not enter the retry-wait loop.
 type FlowStoppedErr struct {
 	StepID                 string
 	Reason                 string

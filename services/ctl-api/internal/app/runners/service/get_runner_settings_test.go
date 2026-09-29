@@ -78,7 +78,6 @@ func (s *GetRunnerSettingsTestSuite) SetupTest() {
 	s.setupTestData()
 	s.service.RunnersService.telemetryRelayEndpoint = "https://telemetry.example.com"
 
-	// Create router with runner service routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -96,7 +95,6 @@ func (s *GetRunnerSettingsTestSuite) TearDownSuite() {
 func (s *GetRunnerSettingsTestSuite) setupTestData() {
 	ctx := context.Background()
 
-	// Create test account with unique ID-based email to avoid conflicts
 	accID := domains.NewAccountID()
 	testAcc := &app.Account{
 		ID:          accID,
@@ -108,7 +106,6 @@ func (s *GetRunnerSettingsTestSuite) setupTestData() {
 	require.NoError(s.T(), err)
 	s.testAcc = testAcc
 
-	// Create test org
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 	testOrgID := domains.NewOrgID()
 	testOrg := &app.Org{
@@ -123,7 +120,6 @@ func (s *GetRunnerSettingsTestSuite) setupTestData() {
 	require.NoError(s.T(), err)
 	s.testOrg = testOrg
 
-	// Create runner group
 	testRunnerGrp := &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     testOrg.ID,
@@ -136,7 +132,6 @@ func (s *GetRunnerSettingsTestSuite) setupTestData() {
 	require.NoError(s.T(), err)
 	s.testRunnerGrp = testRunnerGrp
 
-	// Create runner group settings
 	testSettings := &app.RunnerGroupSettings{
 		ID:                       domains.NewRunnerGroupSettingsID(),
 		OrgID:                    testOrg.ID,
@@ -158,7 +153,6 @@ func (s *GetRunnerSettingsTestSuite) setupTestData() {
 	require.NoError(s.T(), err)
 	s.testSettings = testSettings
 
-	// Create runner
 	testRunner := &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         testOrg.ID,
@@ -226,7 +220,6 @@ func (s *GetRunnerSettingsTestSuite) TestGetRunnerSettings() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create a second org to avoid unique index conflict on owner_id
 				noSettingsOrgID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          noSettingsOrgID,
@@ -239,7 +232,6 @@ func (s *GetRunnerSettingsTestSuite) TestGetRunnerSettings() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner group without settings
 				runnerGrp := &app.RunnerGroup{
 					ID:        domains.NewRunnerGroupID(),
 					OrgID:     org2.ID,
@@ -272,7 +264,6 @@ func (s *GetRunnerSettingsTestSuite) TestGetRunnerSettings() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(settings *app.RunnerGroupSettings) {
-				// Settings should be empty/zero since none were created
 				assert.Empty(s.T(), settings.ContainerImageURL)
 				assert.Empty(s.T(), settings.ContainerImageTag)
 			},
@@ -290,7 +281,6 @@ func (s *GetRunnerSettingsTestSuite) TestGetRunnerSettings() {
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
 			if tc.expectedNotFound {
-				// Verify error response for not found cases
 				assert.Contains(s.T(), rr.Body.String(), "error")
 			} else if tc.validateFunc != nil {
 				var settings app.RunnerGroupSettings
@@ -428,7 +418,6 @@ func (s *GetRunnerSettingsTestSuite) TestGetRunnerSettingsMultipleRunners() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-	// Create a second org to avoid unique index conflict on (deleted_at, owner_id)
 	multiRunnerOrgID := domains.NewOrgID()
 	org2 := &app.Org{
 		ID:          multiRunnerOrgID,
@@ -441,7 +430,6 @@ func (s *GetRunnerSettingsTestSuite) TestGetRunnerSettingsMultipleRunners() {
 	err := s.service.DB.WithContext(ctx).Create(org2).Error
 	require.NoError(s.T(), err)
 
-	// Create second runner group with different settings under the second org
 	runnerGrp2 := &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     org2.ID,
@@ -461,7 +449,7 @@ func (s *GetRunnerSettingsTestSuite) TestGetRunnerSettingsMultipleRunners() {
 		ContainerImageTag:      "v2.5.0",
 		RunnerAPIURL:           "https://api.different.com",
 		SandboxMode:            false,
-		AWSMaxInstanceLifetime: 86400, // 1 day. Deprecated: no longer used by ASG
+		AWSMaxInstanceLifetime: 86400,
 		AWSInstanceType:        "t3.large",
 	}
 	err = s.service.DB.WithContext(ctx).Create(settings2).Error
@@ -478,7 +466,6 @@ func (s *GetRunnerSettingsTestSuite) TestGetRunnerSettingsMultipleRunners() {
 	err = s.service.DB.WithContext(ctx).Create(runner2).Error
 	require.NoError(s.T(), err)
 
-	// Test first runner settings
 	rr1 := s.makeRequest("GET", "/v1/runners/"+s.testRunner.ID+"/settings")
 	require.Equal(s.T(), http.StatusOK, rr1.Code)
 
@@ -488,7 +475,6 @@ func (s *GetRunnerSettingsTestSuite) TestGetRunnerSettingsMultipleRunners() {
 	assert.Equal(s.T(), s.testSettings.ID, settings1Result.ID)
 	assert.Equal(s.T(), s.testSettings.ContainerImageTag, settings1Result.ContainerImageTag)
 
-	// Test second runner settings
 	rr2 := s.makeRequest("GET", "/v1/runners/"+runner2.ID+"/settings")
 	require.Equal(s.T(), http.StatusOK, rr2.Code)
 
@@ -500,7 +486,6 @@ func (s *GetRunnerSettingsTestSuite) TestGetRunnerSettingsMultipleRunners() {
 	assert.Equal(s.T(), settings2.AWSMaxInstanceLifetime, settings2Result.AWSMaxInstanceLifetime) // Deprecated: no longer used by ASG
 	assert.Equal(s.T(), settings2.AWSInstanceType, settings2Result.AWSInstanceType)
 
-	// Verify settings are different
 	assert.NotEqual(s.T(), settings1Result.ID, settings2Result.ID)
 	assert.NotEqual(s.T(), settings1Result.ContainerImageTag, settings2Result.ContainerImageTag)
 }

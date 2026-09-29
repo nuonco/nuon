@@ -1,8 +1,3 @@
-// Integration tests: run with INTEGRATION=true against the migrated test database.
-//
-// External test package on purpose: the shared tests package imports
-// internal/pkg/account, so an in-package test would be an import cycle. Everything is
-// therefore exercised through the exported DeleteServiceAccount.
 package account_test
 
 import (
@@ -60,13 +55,10 @@ func (s *DeleteServiceAccountTestSuite) TearDownSuite() {
 	s.fxApp.RequireStop()
 }
 
-// seedRoleBinding attaches the account to a real role — account_roles has a
-// foreign key to roles.
 func (s *DeleteServiceAccountTestSuite) seedRoleBinding(ctx context.Context, acct *app.Account) {
 	t := s.T()
 	t.Helper()
 
-	// Role.BeforeCreate fills CreatedByID from the account ID in the context.
 	creatorCtx, _ := s.deps.Seeder.EnsureAccount(ctx, t)
 	role := &app.Role{RoleType: app.RoleTypeOrgAdmin}
 	require.NoError(t, s.deps.DB.WithContext(creatorCtx).Create(role).Error)
@@ -75,7 +67,6 @@ func (s *DeleteServiceAccountTestSuite) seedRoleBinding(ctx context.Context, acc
 	require.NoError(t, s.deps.DB.WithContext(creatorCtx).Create(binding).Error)
 }
 
-// seedStackRole gives the account the install-scoped role a real stack account holds.
 func (s *DeleteServiceAccountTestSuite) seedStackRole(ctx context.Context, orgID string, acct *app.Account) *app.Role {
 	t := s.T()
 	t.Helper()
@@ -94,7 +85,6 @@ func (s *DeleteServiceAccountTestSuite) seedStackRole(ctx context.Context, orgID
 	return role
 }
 
-// A soft delete would keep the unique policy-per-role index occupied.
 func (s *DeleteServiceAccountTestSuite) TestDeleteReapsStackRoles() {
 	t := s.T()
 	ctx := context.Background()
@@ -105,7 +95,6 @@ func (s *DeleteServiceAccountTestSuite) TestDeleteReapsStackRoles() {
 	acct := s.deps.Seeder.CreateServiceAccount(ctx, t, stackID)
 	role := s.seedStackRole(ctx, org.ID, acct)
 
-	// A managed org role bound to the same account must survive the reap.
 	s.seedRoleBinding(ctx, acct)
 
 	otherAcct := s.deps.Seeder.CreateServiceAccount(ctx, t, generics.GetFakeObj[string]())
@@ -128,8 +117,6 @@ func (s *DeleteServiceAccountTestSuite) TestDeleteReapsStackRoles() {
 	assert.EqualValues(t, 1, roles, "another account's stack role must survive")
 }
 
-// The account is tied to its stack only by naming convention, so a leftover
-// binding or token is what this guards against.
 func (s *DeleteServiceAccountTestSuite) TestDeleteRemovesCredentialRecords() {
 	t := s.T()
 	ctx := context.Background()
@@ -141,7 +128,6 @@ func (s *DeleteServiceAccountTestSuite) TestDeleteRemovesCredentialRecords() {
 	s.seedRoleBinding(ctx, acct)
 	s.deps.Seeder.CreateToken(ctx, t, acct, future)
 
-	// A second account proves the deletes are scoped rather than table-wide.
 	otherStackID := generics.GetFakeObj[string]()
 	otherAcct := s.deps.Seeder.CreateServiceAccount(ctx, t, otherStackID)
 	s.seedRoleBinding(ctx, otherAcct)
@@ -149,13 +135,11 @@ func (s *DeleteServiceAccountTestSuite) TestDeleteRemovesCredentialRecords() {
 
 	require.NoError(t, s.deps.Client.DeleteServiceAccount(ctx, stackID))
 
-	// Hard-deleted: OnDelete:CASCADE is a constraint a soft delete never fires.
 	var roleRows int64
 	require.NoError(t, s.deps.DB.Unscoped().Model(&app.AccountRole{}).
 		Where("account_id = ?", acct.ID).Count(&roleRows).Error)
 	assert.Zero(t, roleRows, "role bindings must be hard-deleted, not soft-deleted")
 
-	// Soft-deleting these is enough: FindAccount cannot see a soft-deleted row.
 	var tokens []app.Token
 	require.NoError(t, s.deps.DB.Where("account_id = ?", acct.ID).Find(&tokens).Error)
 	assert.Empty(t, tokens, "tokens must be invisible to a normal query")
@@ -174,7 +158,6 @@ func (s *DeleteServiceAccountTestSuite) TestDeleteRemovesCredentialRecords() {
 	assert.Len(t, otherTokens, 1, "another account's tokens must survive")
 }
 
-// Delete workflows retry, and a stack with no account must not block teardown.
 func (s *DeleteServiceAccountTestSuite) TestDeleteIsIdempotent() {
 	t := s.T()
 	ctx := context.Background()
@@ -190,13 +173,10 @@ func (s *DeleteServiceAccountTestSuite) TestDeleteIsIdempotent() {
 		"a second delete must be a no-op, not an error")
 }
 
-// FindAccount matches on email, subject, or ID, so a caller passing something
-// unexpected could otherwise reach a real user.
 func (s *DeleteServiceAccountTestSuite) TestDeleteRejectsNonServiceAccount() {
 	t := s.T()
 	ctx := context.Background()
 
-	// A human account squatting on the service-account email convention.
 	stackID := generics.GetFakeObj[string]()
 	human := testseed.BuildAccount()
 	human.Email = account.ServiceAccountEmail(stackID)

@@ -13,7 +13,6 @@ import (
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
-// seedApproval creates the approval row waitForApprovalResponse re-reads from DB; must exist before responding.
 func (e *FlowTestSuite) seedApproval(ctx context.Context, step *app.WorkflowStep) *app.WorkflowStepApproval {
 	approval := app.WorkflowStepApproval{
 		InstallWorkflowStepID: step.ID,
@@ -26,7 +25,6 @@ func (e *FlowTestSuite) seedApproval(ctx context.Context, step *app.WorkflowStep
 	return &approval
 }
 
-// respondApproval mimics the API layer: retry-plan dispatches via RetryStep, everything else via ApprovePlan.
 func (e *FlowTestSuite) respondApproval(ctx context.Context, flw *app.Workflow, step *app.WorkflowStep, approvalID string, typ app.WorkflowStepResponseType) *app.WorkflowStepApprovalResponse {
 	resp := app.WorkflowStepApprovalResponse{
 		InstallWorkflowStepApprovalID: approvalID,
@@ -71,7 +69,6 @@ func approvalStep(name string, groupIdx int, inner signaldb.SignalData) app.Work
 	}
 }
 
-// An approval step parks step and workflow in approval-awaiting; later steps stay pending.
 func (e *FlowTestSuite) TestApprovalAwaitingStatuses() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -101,7 +98,6 @@ func (e *FlowTestSuite) TestApprovalAwaitingStatuses() {
 	}
 }
 
-// Approving completes the step and the workflow runs to completion.
 func (e *FlowTestSuite) TestApprovalApproveContinues() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -136,9 +132,6 @@ func (e *FlowTestSuite) TestApprovalApproveContinues() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// A parked approval holds no Temporal workflow open: step, group, and (after
-// the idle timeout) the flow host all close. Approving re-warms the host cold
-// and the workflow runs to completion.
 func (e *FlowTestSuite) TestApprovalParkDrainsThenApproveResumes() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -174,7 +167,6 @@ func (e *FlowTestSuite) TestApprovalParkDrainsThenApproveResumes() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// After approval the workflow reports in-progress while the next step runs.
 func (e *FlowTestSuite) TestApprovalApproveMarksWorkflowRunning() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -207,7 +199,6 @@ func (e *FlowTestSuite) TestApprovalApproveMarksWorkflowRunning() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// Deny stops everything: siblings discarded, later groups not-attempted, target approval-denied, queue signal errors.
 func (e *FlowTestSuite) TestApprovalDenyStopsWorkflow() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -261,7 +252,6 @@ func (e *FlowTestSuite) TestApprovalDenyStopsWorkflow() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// Deny-skip-current denies the step, skips same-group siblings, and the workflow continues.
 func (e *FlowTestSuite) TestApprovalDenySkipCurrent() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -311,7 +301,6 @@ func (e *FlowTestSuite) TestApprovalDenySkipCurrent() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// Deny-skip-current on a SkipGroup signal skips the whole group; later groups still run.
 func (e *FlowTestSuite) TestApprovalDenySkipGroup() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -355,7 +344,6 @@ func (e *FlowTestSuite) TestApprovalDenySkipGroup() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// Deny-skip-current-and-dependents skips the step then stops the workflow.
 func (e *FlowTestSuite) TestApprovalDenySkipDependents() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -397,7 +385,6 @@ func (e *FlowTestSuite) TestApprovalDenySkipDependents() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// Retry-plan supersedes the parked step with exactly one clone that re-parks at approval.
 func (e *FlowTestSuite) TestApprovalRetryPlan() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -449,7 +436,6 @@ func (e *FlowTestSuite) TestApprovalRetryPlan() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// Cancel-step during approval cancels step+target; main writes no terminal workflow status (see TestPinCancelStepTerminatesWorkflow).
 func (e *FlowTestSuite) TestCancelStepDuringApproval() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -495,7 +481,6 @@ func (e *FlowTestSuite) TestCancelStepDuringApproval() {
 	}, 5*time.Second, pollInterval, "cancelled workflow must not run further steps")
 }
 
-// Cancel-workflow during approval marks the workflow cancelled with finished_at set.
 func (e *FlowTestSuite) TestCancelWorkflowDuringApproval() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())

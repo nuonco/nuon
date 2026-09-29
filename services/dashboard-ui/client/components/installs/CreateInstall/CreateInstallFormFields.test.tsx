@@ -63,8 +63,6 @@ test('surfaces a duplicate name and blocks submit', async () => {
 })
 
 test('the name is rechecked on submit, not just while typing', async () => {
-  // The name is available while typing and taken by the time submit runs, which
-  // is only caught if submit revalidates rather than trusting the change check.
   const taken = new Set<string>()
   const submitted: unknown[] = []
   const states = renderForm(

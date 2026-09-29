@@ -20,8 +20,6 @@ const (
 	bulkCancelMaxFailedIDs = 50
 )
 
-// BulkCancelWorkflows cancels workflows one at a time, counting failures rather
-// than aborting so one bad row does not strand the rest of the backlog.
 func (w *Workflows) BulkCancelWorkflows(ctx workflow.Context, req bulkcancel.Request) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {

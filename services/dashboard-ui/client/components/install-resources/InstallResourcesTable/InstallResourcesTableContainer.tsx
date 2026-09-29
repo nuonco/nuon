@@ -24,10 +24,6 @@ export const InstallResourcesTableContainer = ({
   const { org } = useOrg()
   const { install } = useInstall()
 
-  // The URL is the source of truth for filters, both ways: deep links (like a
-  // degraded-health message linking to ?health=degraded) apply even when this
-  // page is already mounted, and picking a filter updates the URL so it's
-  // shareable and survives back/forward.
   const [searchParams, setSearchParams] = useSearchParams()
   const kind = searchParams.get('kind') ?? ''
   const namespace = searchParams.get('namespace') ?? ''
@@ -90,8 +86,6 @@ export const InstallResourcesTableContainer = ({
     return map
   }, [componentsResult])
 
-  // Structured twin of the "(downstream of X)" description suffix — present
-  // only while both the component and its dependency are bad.
   const downstreamOf = useMemo(() => {
     const map: Record<string, string> = {}
     componentsResult?.data?.forEach((component) => {
@@ -123,8 +117,6 @@ export const InstallResourcesTableContainer = ({
     [allResources]
   )
 
-  // The chips are facet counts for the health axis, so they stay stable while
-  // you toggle between them — only the other axes narrow them.
   const scopedResources = useMemo(
     () =>
       allResources.filter((r) => {

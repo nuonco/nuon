@@ -7,14 +7,6 @@ import (
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
-// TestRetryGroupClonesEntireGroup verifies that when a step has
-// SignalWithRetryGroup and auto-retry triggers, the entire group is cloned
-// (not just the single step).
-//
-// Setup: Group 1 has a plan (succeeds) and an apply (always fails, RetryGroup=true).
-// The apply signal implements CloneSteps to return both plan + apply on retry.
-// Expected: Group 1 is cloned with a new GroupRetryIdx. The cloned apply
-// fails again, exhausting retries, and the workflow errors.
 func (e *FlowTestSuite) TestRetryGroupClonesEntireGroup() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -39,14 +31,11 @@ func (e *FlowTestSuite) TestRetryGroupClonesEntireGroup() {
 	e.enqueueFlow(ctx, queueID, flw, ownerID, ownerType)
 	e.phase("enqueue")
 
-	// PlanApplyFailSignal has MaxRetries=2 and always fails.
-	// The group will be cloned, then max retries exhausted → workflow errors.
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
 	e.phase("db-success")
 
 	steps := e.getStepsByWorkflow(ctx, flw.ID)
 
-	// Count distinct GroupRetryIdx values for group 1
 	groupRetryIdxs := make(map[int]bool)
 	for _, step := range steps {
 		if step.GroupIdx == 1 {
@@ -54,12 +43,9 @@ func (e *FlowTestSuite) TestRetryGroupClonesEntireGroup() {
 		}
 	}
 
-	// Should have at least 2 group retry generations (original + clones)
 	require.GreaterOrEqual(e.T(), len(groupRetryIdxs), 2,
 		"expected multiple group retry generations, got %d: %v", len(groupRetryIdxs), groupRetryIdxs)
 
-	// Successful steps retain their result; failed attempts are discarded as
-	// newer group generations replace them.
 	for _, step := range steps {
 		if step.GroupIdx == 1 && step.GroupRetryIdx == 0 {
 			if step.Name == "g1-plan" {
@@ -71,7 +57,6 @@ func (e *FlowTestSuite) TestRetryGroupClonesEntireGroup() {
 		}
 	}
 
-	// Group 2 should NOT have been reached (group 1 keeps failing)
 	for _, step := range steps {
 		if step.GroupIdx == 2 {
 			require.NotEqual(e.T(), app.StatusSuccess, step.Status.Status,
@@ -84,18 +69,13 @@ func (e *FlowTestSuite) TestRetryGroupClonesEntireGroup() {
 	e.phase("drain")
 }
 
-// TestRetryGroupRetryOfRetryDiscardsAllPreviousGroups verifies that when a
-// group retry is itself retried (retry-of-retry), all previous group objects
-// for the same GroupIdx are marked as discarded. Without the fix, only the
-// first group object would be discarded, leaving the intermediate retry's
-// group non-discarded and causing incorrect dispatch.
 func (e *FlowTestSuite) TestRetryGroupRetryOfRetryDiscardsAllPreviousGroups() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 	ownerID, ownerType := newTestOwner()
 
 	planSignal := &SuccessSignal{}
-	applySignal := &PlanApplyFailSignal{} // MaxRetries=2, always fails, requests group retry
+	applySignal := &PlanApplyFailSignal{}
 	triggerSignal := &SuccessSignal{}
 
 	flw, queueID := e.setupFlowTest(ctx, ownerID, ownerType, []app.WorkflowStep{
@@ -112,13 +92,10 @@ func (e *FlowTestSuite) TestRetryGroupRetryOfRetryDiscardsAllPreviousGroups() {
 
 	e.enqueueFlow(ctx, queueID, flw, ownerID, ownerType)
 
-	// Apply always fails → group retries until max retries exhausted → workflow errors.
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
 
 	steps := e.getStepsByWorkflow(ctx, flw.ID)
 
-	// Count distinct GroupRetryIdx values for group 1 — need at least 3
-	// generations (original + retry1 + retry2) to exercise retry-of-retry.
 	groupRetryIdxs := make(map[int]bool)
 	for _, step := range steps {
 		if step.GroupIdx == 1 {
@@ -129,9 +106,6 @@ func (e *FlowTestSuite) TestRetryGroupRetryOfRetryDiscardsAllPreviousGroups() {
 		"expected at least 3 group retry generations (original + 2 retries), got %d: %v",
 		len(groupRetryIdxs), groupRetryIdxs)
 
-	// Verify that only ONE non-discarded WorkflowStepGroup exists for GroupIdx=1.
-	// This is the critical assertion: without the fix, intermediate retry groups
-	// would remain non-discarded.
 	var allGroups []app.WorkflowStepGroup
 	res := e.service.DB.WithContext(ctx).
 		Where("workflow_id = ? AND group_idx = ?", flw.ID, 1).
@@ -144,12 +118,9 @@ func (e *FlowTestSuite) TestRetryGroupRetryOfRetryDiscardsAllPreviousGroups() {
 			nonDiscardedCount++
 		}
 	}
-	// After all retries exhaust, the last group may be in error/discarded state.
-	// The important thing is we don't have >1 non-discarded group.
 	require.LessOrEqual(e.T(), nonDiscardedCount, 1,
 		"expected at most 1 non-discarded group for GroupIdx=1, got %d", nonDiscardedCount)
 
-	// Verify the trigger step was cloned in each retry generation.
 	triggerCount := 0
 	for _, step := range steps {
 		if step.GroupIdx == 1 && step.Name == "g1-trigger" {

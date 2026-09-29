@@ -8,10 +8,6 @@ import (
 	"testing"
 )
 
-// TestUploadPulumiState_SurvivesCancelledContext proves the fix: a job context
-// that is already cancelled (mid-deploy cancel) must NOT prevent state from
-// being persisted. Before the fix the upload used the cancelled context and the
-// POST failed, so created resources were lost and the retry recreated them.
 func TestUploadPulumiState_SurvivesCancelledContext(t *testing.T) {
 	var gotBody []byte
 	var gotAuth string
@@ -22,7 +18,6 @@ func TestUploadPulumiState_SurvivesCancelledContext(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	// Simulate the job being cancelled before we try to persist state.
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 

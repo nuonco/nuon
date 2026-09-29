@@ -23,7 +23,6 @@ type handler struct {
 	cfg         *runnerconfig.Config
 	ociCopy     ocicopy.Copier
 
-	// state is populated per-job and must not be shared across jobs.
 	state *handlerState
 }
 

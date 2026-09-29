@@ -11,11 +11,6 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 )
 
-// componentNestedConfigKeys are the Component properties that hold nested
-// per-type config blocks. Per-type component files are decoded flattened (see
-// config.DecodeComponent): the typed config's fields live at the top level of
-// the file, so the nested keys — and Component's oneOf over them — do not
-// apply to a single-type file schema.
 var componentNestedConfigKeys = map[string]struct{}{
 	"helm_chart":          {},
 	"terraform_module":    {},
@@ -26,7 +21,7 @@ var componentNestedConfigKeys = map[string]struct{}{
 	"pulumi":              {},
 }
 
-// flattenedComponentSchema builds the schema for a single-type component file
+// why: flattenedComponentSchema builds the schema for a single-type component file
 // by merging Component's common fields and the typed config's fields into one
 // object schema. The previous allOf composition was unsatisfiable under strict
 // JSON Schema semantics: each branch set additionalProperties: false, and
@@ -64,8 +59,6 @@ func flattenedComponentSchema(typedConfig any, componentTypes ...config.Componen
 	}
 
 	merged := &jsonschema.Schema{
-		// Carry the typed config's reflected root $id onto the merged schema.
-		// Schema-aware editors can key their schema cache by ID.
 		ID:                   typedRoot.ID,
 		Version:              compRoot.Version,
 		Type:                 "object",
@@ -124,7 +117,7 @@ func flattenedComponentSchema(typedConfig any, componentTypes ...config.Componen
 	return merged, nil
 }
 
-// checkUnhandledConstraints errors when a reflected root definition carries
+// why: checkUnhandledConstraints errors when a reflected root definition carries
 // validation keywords the flattening does not merge. Without this, a future
 // JSONSchemaExtend hook setting e.g. if/then or dependentRequired would be
 // silently dropped from the published schema, loosening it with no failure.
@@ -154,10 +147,6 @@ func checkUnhandledConstraints(def *jsonschema.Schema, name string) error {
 	return nil
 }
 
-// checkComponentBranches verifies Component's root oneOf/anyOf is exactly the
-// "one nested config block is required" constraint before it is dropped. If
-// Component ever grows an unrelated root-level branch, flattening must be
-// taught about it instead of discarding it.
 func checkComponentBranches(comp *jsonschema.Schema) error {
 	for _, branch := range append(append([]*jsonschema.Schema{}, comp.OneOf...), comp.AnyOf...) {
 		if len(branch.Required) != 1 {
@@ -200,9 +189,6 @@ func mergeRequired(lists ...[]string) []string {
 
 var defRefPattern = regexp.MustCompile(`#/\$defs/([^"]+)`)
 
-// pruneUnreachableDefinitions drops $defs entries that are not transitively
-// referenced from the schema root, e.g. the per-type config definitions left
-// over after the nested component properties are removed.
 func pruneUnreachableDefinitions(schm *jsonschema.Schema) {
 	root := *schm
 	root.Definitions = nil

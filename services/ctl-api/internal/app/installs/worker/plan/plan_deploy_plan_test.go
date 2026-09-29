@@ -17,7 +17,7 @@ func TestGetRoleForDeploy(t *testing.T) {
 	tests := []struct {
 		name               string
 		installDeployType  app.InstallDeployType
-		installDeployRole  string // runtime role
+		installDeployRole  string
 		componentRoles     map[app.OperationType]string
 		matrixRules        []*app.AppOperationRoleRule
 		expectedOperation  app.OperationType
@@ -26,7 +26,6 @@ func TestGetRoleForDeploy(t *testing.T) {
 		expectedError      string
 		description        string
 	}{
-		// No operation rules anywhere, runs as always, no change in operation
 		{
 			name:               "no_rules_deploy_apply",
 			installDeployType:  app.InstallDeployTypeApply,
@@ -48,7 +47,6 @@ func TestGetRoleForDeploy(t *testing.T) {
 			description:        "Deploy with no rules should use default maintenance role",
 		},
 
-		// Component has operation rules
 		{
 			name:              "component_role_deploy",
 			installDeployType: app.InstallDeployTypeApply,
@@ -89,7 +87,6 @@ func TestGetRoleForDeploy(t *testing.T) {
 			description:        "Deploy should fall back to default when component only has provision role",
 		},
 
-		// app config has matrix rules, no component rules
 		{
 			name:              "matrix_rule_matches_component_deploy",
 			installDeployType: app.InstallDeployTypeApply,
@@ -147,7 +144,7 @@ func TestGetRoleForDeploy(t *testing.T) {
 			installDeployRole: "",
 			matrixRules: []*app.AppOperationRoleRule{
 				{
-					Operation:     app.OperationTeardown, // Different operation
+					Operation:     app.OperationTeardown,
 					PrincipalType: "component",
 					PrincipalName: "*",
 					Role:          "MatrixTeardownRole",
@@ -158,8 +155,6 @@ func TestGetRoleForDeploy(t *testing.T) {
 			expectedRoleName:   "MaintenanceRole",
 			description:        "Deploy should use default when matrix rule is for different operation",
 		},
-
-		// appconfig matrix rules AND component roles
 
 		{
 			name:              "component_role_overrides_matrix",
@@ -201,8 +196,6 @@ func TestGetRoleForDeploy(t *testing.T) {
 			expectedRoleName:   "ComponentTeardownRole",
 			description:        "Component teardown role should override matrix rule",
 		},
-
-		// Case 5: Runtime role (highest precedence)
 
 		{
 			name:              "runtime_role_overrides_all_deploy",
@@ -255,9 +248,6 @@ func TestGetRoleForDeploy(t *testing.T) {
 			description:        "Runtime role should work even when no other rules exist",
 		},
 
-		// ============================================
-		// Case 6: Multiple matrix rules (priority order)
-		// ============================================
 		{
 			name:              "matrix_specific_over_wildcard",
 			installDeployType: app.InstallDeployTypeApply,
@@ -287,7 +277,7 @@ func TestGetRoleForDeploy(t *testing.T) {
 			installDeployType: app.InstallDeployTypeApply,
 			installDeployRole: "",
 			componentRoles: map[app.OperationType]string{
-				app.OperationDeploy: "MissingComponentRole", // This role won't be in stack outputs
+				app.OperationDeploy: "MissingComponentRole",
 			},
 			matrixRules:        nil,
 			expectedOperation:  app.OperationDeploy,
@@ -305,7 +295,7 @@ func TestGetRoleForDeploy(t *testing.T) {
 					Operation:     app.OperationDeploy,
 					PrincipalType: "component",
 					PrincipalName: "test-component",
-					Role:          "MissingMatrixRole", // This role won't be in stack outputs
+					Role:          "MissingMatrixRole",
 				},
 			},
 			expectedOperation:  app.OperationDeploy,
@@ -316,7 +306,7 @@ func TestGetRoleForDeploy(t *testing.T) {
 		{
 			name:              "runtime_role_missing_returns_error",
 			installDeployType: app.InstallDeployTypeApply,
-			installDeployRole: "MissingRuntimeRole", // This role won't be in stack outputs
+			installDeployRole: "MissingRuntimeRole",
 			componentRoles:    map[app.OperationType]string{},
 			matrixRules:       nil,
 			expectedError:     `unable to use requested role "MissingRuntimeRole"`,
@@ -332,7 +322,7 @@ func TestGetRoleForDeploy(t *testing.T) {
 					Operation:     app.OperationTeardown,
 					PrincipalType: "component",
 					PrincipalName: "test-component",
-					Role:          "MissingTeardownRole", // This role won't be in stack outputs
+					Role:          "MissingTeardownRole",
 				},
 			},
 			expectedOperation:  app.OperationTeardown,

@@ -30,7 +30,6 @@ func (c *TerraformLock) Scan(v interface{}) (err error) {
 	return
 }
 
-// Value implements the driver.Valuer interface.
 func (c *TerraformLock) Value() (driver.Value, error) {
 	return json.Marshal(c)
 }

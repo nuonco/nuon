@@ -57,7 +57,6 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 		return nil, errors.Wrap(err, "unable to get runbook step selections")
 	}
 
-	// filter out disabled steps to not add them to final workflow
 	disabledSteps := make(map[string]struct{})
 	for _, sel := range stepSelections {
 		if !sel.Enabled {
@@ -86,8 +85,6 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 		enabledInputs = install.CurrentInstallInputs.Values
 	}
 
-	// pin the build lookup to the config this run was generated against, not
-	// whatever the install points at by the time the step executes
 	rbAppCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get app config")
@@ -98,7 +95,6 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 		cccIDByComp[ccc.ComponentID] = ccc.ID
 	}
 
-	// Generate steps for each runbook step
 	for _, stepCfg := range runbookSteps {
 		stepWorkflow := runbookStepWorkflow(flw, &stepCfg)
 		switch stepCfg.Type {
@@ -152,7 +148,6 @@ func runbookStepWorkflow(flw *app.Workflow, stepCfg *app.RunbookStepConfig) *app
 }
 
 func runbookDeploySteps(ctx workflow.Context, installID string, stepCfg *app.RunbookStepConfig, sg *stepGroup, flw *app.Workflow, enabledInputs map[string]*string, cccIDByComp map[string]string) ([]*app.WorkflowStep, error) {
-	// Find the primary component by name
 	component, err := activities.AwaitGetComponentByName(ctx, activities.GetComponentByNameRequest{
 		InstallID:     installID,
 		ComponentName: stepCfg.ComponentName,
@@ -164,8 +159,6 @@ func runbookDeploySteps(ctx workflow.Context, installID string, stepCfg *app.Run
 	result := make([]*app.WorkflowStep, 0)
 
 	if stepCfg.DeployDependents {
-		// Forward graph walk from the target component returns the component itself
-		// plus its transitive dependents (downstream subgraph), in dependency order.
 		componentIDs, err := activities.AwaitGetAppComponentGraph(ctx, activities.GetAppComponentGraphRequest{
 			InstallID:   installID,
 			ComponentID: component.ID,
@@ -214,9 +207,6 @@ func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, 
 	name := fmt.Sprintf("%s/%s", stepName, component.Name)
 	result := make([]*app.WorkflowStep, 0)
 
-	// Install inputs are the source of truth for toggleable components: a
-	// component disabled on this install is skipped rather than deployed, even
-	// when a runbook step names it explicitly.
 	var latestConfig *app.ComponentConfigConnection
 	if len(component.ComponentConfigs) > 0 {
 		latestConfig = &component.ComponentConfigs[0]
@@ -298,8 +288,6 @@ func runbookTearDownSteps(ctx workflow.Context, installID string, stepCfg *app.R
 	result := make([]*app.WorkflowStep, 0)
 
 	if stepCfg.TearDownDependents {
-		// Reverse forward graph walk: target + transitive dependents, with dependents listed first
-		// so children tear down before parents.
 		componentIDs, err := activities.AwaitGetAppComponentGraph(ctx, activities.GetAppComponentGraphRequest{
 			InstallID:   installID,
 			ComponentID: component.ID,
@@ -349,7 +337,6 @@ func runbookTearDownSingleComponent(ctx workflow.Context, installID, componentID
 	name := fmt.Sprintf("%s/%s", stepName, component.Name)
 	result := make([]*app.WorkflowStep, 0)
 
-	// Image components have no infra to destroy; emit a placeholder skip step for visibility.
 	if component.Type.IsImage() {
 		sg.nextGroupNamed(fmt.Sprintf("tear down: %s (skipped)", name))
 		skipStep, err := sg.installSignalStep(ctx, installID, fmt.Sprintf("skipped image tear down %s", name), pgtype.Hstore{
@@ -422,7 +409,6 @@ func runbookActionStep(ctx workflow.Context, installID string, stepCfg *app.Runb
 		return sg.installSignalStep(ctx, installID, fmt.Sprintf("action: %s", stepCfg.Name), pgtype.Hstore{}, sig, false)
 	}
 
-	// Inline ad-hoc action: create the run record first, then reference by ID
 	adHocRun, err := activities.AwaitCreateAdHocActionRunForRunbook(ctx, activities.CreateAdHocActionRunForRunbookRequest{
 		InstallID:         installID,
 		InstallWorkflowID: flw.ID,
@@ -503,8 +489,6 @@ func runbookSandboxLifecycleSteps(ctx workflow.Context, installID string, stepCf
 	}
 	result = append(result, applyStep)
 
-	// Optionally redeploy all components after a sandbox (re)provision, mirroring the standalone workflows.
-	// Deprovision never deploys; SkipComponentDeploys lets the runbook author opt out.
 	if stepCfg.SkipComponentDeploys || stepCfg.Type == app.RunbookStepTypeSandboxDeprovision {
 		return result, nil
 	}

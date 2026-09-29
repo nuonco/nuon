@@ -76,7 +76,6 @@ func (s *InstallerSDKConfigTestSuite) SetupTest() {
 		Where("app_input_config_id = ?", s.inputCfg.ID).First(s.group).Error)
 }
 
-// customerInput adds a customer-source app input to the install's pinned config.
 func (s *InstallerSDKConfigTestSuite) customerInput(name, def string, sensitive bool) {
 	in := &app.AppInput{
 		AppInputConfigID: s.inputCfg.ID,
@@ -91,8 +90,6 @@ func (s *InstallerSDKConfigTestSuite) customerInput(name, def string, sensitive 
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(in).Error)
 }
 
-// seedInstallWithRunner gives the install the runner group, runner, and runner API
-// URL BuildInstallerSDKConfig requires before it will render anything.
 func (s *InstallerSDKConfigTestSuite) seedInstallWithRunner() *app.Install {
 	t := s.T()
 	install := s.deps.Seed.CreateInstall(s.ctx, t, s.testApp)
@@ -107,8 +104,7 @@ func (s *InstallerSDKConfigTestSuite) seedInstallWithRunner() *app.Install {
 	require.NoError(t, s.deps.DB.WithContext(s.ctx).Create(&app.RunnerGroupSettings{
 		RunnerGroupID: group.ID,
 		RunnerAPIURL:  "https://runner.example.com",
-		// the settings BeforeCreate hook tags the group id onto Metadata in place
-		Metadata: pgtype.Hstore{},
+		Metadata:      pgtype.Hstore{},
 	}).Error)
 	require.NoError(t, s.deps.DB.WithContext(s.ctx).Create(&app.Runner{
 		RunnerGroupID:     group.ID,
@@ -136,8 +132,6 @@ func (s *InstallerSDKConfigTestSuite) setCustomNestedStacks(stacks []config.Cust
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Save(&stackConfig).Error)
 }
 
-// The config read is authenticated, so it serves the install's real current input
-// values — the names-only contract belonged to the unauthenticated tfvars flow.
 func (s *InstallerSDKConfigTestSuite) TestServesCurrentInputValues() {
 	t := s.T()
 
@@ -152,11 +146,9 @@ func (s *InstallerSDKConfigTestSuite) TestServesCurrentInputValues() {
 	cfg := s.build(install.ID)
 	assert.Equal(t, "set.example.com", cfg.InstallInputs["domain"])
 	assert.Equal(t, "", cfg.InstallInputs["bucket"])
-	// Vendor-source inputs stay out: install_inputs is the customer's surface.
 	assert.NotContains(t, cfg.InstallInputs, "region")
 }
 
-// With no value stored, the app input's default is what the stack should apply.
 func (s *InstallerSDKConfigTestSuite) TestFallsBackToAppInputDefault() {
 	t := s.T()
 
@@ -169,8 +161,6 @@ func (s *InstallerSDKConfigTestSuite) TestFallsBackToAppInputDefault() {
 	assert.Equal(t, "", cfg.InstallInputs["bucket"])
 }
 
-// install_inputs is a plain map, so sensitivity has to travel beside it — without
-// this list the provider cannot know which values to mark sensitive.
 func (s *InstallerSDKConfigTestSuite) TestReportsSensitiveInputNames() {
 	t := s.T()
 
@@ -182,8 +172,6 @@ func (s *InstallerSDKConfigTestSuite) TestReportsSensitiveInputNames() {
 	assert.Equal(t, []string{"api_key"}, cfg.SensitiveInputs)
 }
 
-// cluster_name resolves from the install's current inputs, which only works if the
-// install's inputs are actually loaded.
 func (s *InstallerSDKConfigTestSuite) TestClusterNameFromCurrentInputs() {
 	t := s.T()
 

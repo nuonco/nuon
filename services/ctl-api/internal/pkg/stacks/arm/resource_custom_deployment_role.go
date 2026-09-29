@@ -2,20 +2,6 @@ package arm
 
 import "fmt"
 
-// getCustomDeploymentRoleAssignment creates a subscription-level nested
-// deployment that defines a custom role with */register/action and assigns it
-// to the managed identity created inside a custom linked deployment.
-//
-// The identity's principalId is read from an output resolved by
-// resolvePrincipalIDOutput, which the generator requires the template to expose.
-//
-// Both the deployment and the role it defines are subscription-level regardless of
-// the root's scope — roleDefinitions always are, and this deployment names the
-// subscription explicitly. Their names are therefore namespaced by install ID at
-// both scopes, unlike the nested deployments elsewhere in this package. Without it
-// two installs of one app in a subscription share a role definition, so
-// deprovisioning either one strips the other's permission, and the deployment
-// records collide outright across regions with InvalidDeploymentLocation.
 func (t *Templates) getCustomDeploymentRoleAssignment(id customDeploymentIdentity, installID string, scope armScope) map[string]any {
 	roleKey := customStackRoleKey(installID, id.SanitizedName)
 	deploymentName := customStackRoleDeploymentName(installID, id.SanitizedName)

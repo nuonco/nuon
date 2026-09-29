@@ -26,14 +26,6 @@ func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
 
-// LifecycleContext exposes runner identity to the queue dispatcher so that
-// lifecycle hooks (webhook, Slack) and the interests classifier can fan this
-// event out as `op:runners.inactive` to subscribers. The signal continues to
-// do its real work in Execute (terminating the per-process queue); the
-// lifecycle context only opts it into the notification pipeline.
-//
-// OrgID is filled in by the queue handler from the queue signal record, so we
-// only need to populate Operation + OwnerID/OwnerType here.
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{
 		Operation: "runner-inactive",
@@ -65,7 +57,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 	l.Info("on_inactive signal received", "runner_id", s.RunnerID, "process_id", s.ProcessID, "reason", s.Reason)
 
-	// Terminate the process queue: stops all emitters and the queue workflow.
 	if err := activities.AwaitTerminateProcessQueue(ctx, activities.TerminateProcessQueueRequest{
 		RunnerID:  s.RunnerID,
 		ProcessID: s.ProcessID,

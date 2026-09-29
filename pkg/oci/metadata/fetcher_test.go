@@ -49,8 +49,6 @@ func TestDecodeInTotoStatement(t *testing.T) {
 	}
 }
 
-// Guards the 12h-ECR-token replay: a shared cache pins the first token per host, and a
-// nil client falls back to the same global cache for anonymous pulls.
 func TestNewAuthClientDoesNotShareGlobalCache(t *testing.T) {
 	authed := newAuthClient("registry.example.com", &RegistryAuth{Username: "AWS", Password: "first"})
 	second := newAuthClient("registry.example.com", &RegistryAuth{Username: "AWS", Password: "second"})
@@ -72,9 +70,6 @@ func TestNewAuthClientDoesNotShareGlobalCache(t *testing.T) {
 	}
 }
 
-// ECR advertises Basic auth, and oras-go caches Basic per host under a constant key,
-// consulting the cache before Credential. A shared cache therefore replays the first
-// token for a host even after the caller supplies a fresh one.
 func TestNewAuthClientSendsRotatedCredential(t *testing.T) {
 	want := "tokenA"
 	var sent []string
@@ -106,7 +101,7 @@ func TestNewAuthClientSendsRotatedCredential(t *testing.T) {
 
 	require.NoError(t, probe("tokenA"))
 
-	want = "tokenB" // as when ECR re-mints the 12h token
+	want = "tokenB"
 	require.NoError(t, probe("tokenB"), "must send the rotated credential, not a cached one")
 	require.Equal(t, []string{"tokenA", "tokenB"}, sent)
 }

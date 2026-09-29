@@ -18,8 +18,6 @@ import (
 
 const testKeyID = "test-key"
 
-// fakeIDP is a minimal OIDC issuer: it serves an OIDC discovery document and
-// a JWKS for a generated RSA key, and signs tokens with that key.
 type fakeIDP struct {
 	server *httptest.Server
 	key    *rsa.PrivateKey
@@ -67,8 +65,6 @@ func (idp *fakeIDP) issuer() string {
 	return idp.server.URL
 }
 
-// signToken signs claims with the IdP key, defaulting iss/aud/exp/iat when
-// not provided.
 func (idp *fakeIDP) signToken(t *testing.T, claims jwt.MapClaims) string {
 	t.Helper()
 

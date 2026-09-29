@@ -237,7 +237,6 @@ func (s *GetInstallActionWorkflowRunTestSuite) TestGetInstallActionRun() {
 			name: "returns 404 for run not in org scope",
 			setupFunc: func() (string, string) {
 				install := s.createInstall(s.testApp.ID)
-				// Use non-existent run ID to simulate org scope isolation
 				return install.ID, domains.NewInstallActionWorkflowRunID()
 			},
 			expectedCode: http.StatusNotFound,

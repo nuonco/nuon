@@ -4,7 +4,6 @@ import (
 	"github.com/invopop/jsonschema"
 )
 
-// PulumiComponentConfig is the configuration for a Pulumi component.
 type PulumiComponentConfig struct {
 	Runtime       string `mapstructure:"runtime" toml:"runtime" jsonschema:"required"`
 	PulumiVersion string `mapstructure:"pulumi_version,omitempty" toml:"pulumi_version,omitempty"`

@@ -16,7 +16,6 @@ import (
 func init() {
 	config.RegisterDefault("http_address", "0.0.0.0")
 
-	// ports
 	config.RegisterDefault("http_port", "8081")
 	config.RegisterDefault("internal_http_port", "8082")
 	config.RegisterDefault("runner_http_port", "8083")
@@ -25,82 +24,49 @@ func init() {
 	config.RegisterDefault("slack_http_port", "8089")
 	config.RegisterDefault("mcp_http_port", "8088")
 	config.RegisterDefault("nuonctl_mcp_http_port", "8091")
-	// Slack secrets: dev-only insecure defaults so the slack-libs FX module
-	// (statejwt.New) and signing.Middleware construction don't fail boot
-	// when no SLACK_* env is set. Prod overrides via env. Same pattern as
-	// nuon_auth_session_key. Other slack_* keys (client_id, client_secret,
-	// oauth_redirect_url) are only consumed inside handlers, so an unset
-	// value there fails the OAuth request — not boot.
 	config.RegisterDefault("slack_signing_secret", "insecure-slack-signing-secret-for-dev-only")
 	config.RegisterDefault("slack_state_jwt_secret", "insecure-slack-state-jwt-secret-for-dev-only")
 	config.RegisterDefault("worker_healthcheck_port", "8086")
 	config.RegisterDefault("worker_healthcheck_enabled", true)
 
-	// defaults for psql database
 	config.RegisterDefault("db_region", "us-west-2")
 	config.RegisterDefault("db_port", 5432)
 	config.RegisterDefault("db_user", "ctl_api")
 	config.RegisterDefault("db_name", "ctl_api")
 	config.RegisterDefault("db_max_connections", 12)
 
-	// defaults for clickhouse database
 	config.RegisterDefault("clickhouse_db_read_timeout", "10s")
 	config.RegisterDefault("clickhouse_db_write_timeout", "10s")
 	config.RegisterDefault("clickhouse_db_dial_timeout", "1s")
 
-	// defaults for kafka
 	config.RegisterDefault("kafka_enabled", false)
 	config.RegisterDefault("kafka_brokers", "localhost:9092")
 	config.RegisterDefault("kafka_security_protocol", "PLAINTEXT")
 	config.RegisterDefault("kafka_produce_timeout", "5s")
-	// kafka_client_id is deliberately not defaulted: it is derived per-process
+	// why: kafka_client_id is deliberately not defaulted: it is derived per-process
 	// from service_name/service_type/service_deployment unless set explicitly.
 	// Group names must keep the ctl-api prefix — the KafkaUser ACL grants group
 	// access by prefix, so a name outside it fails authorization at join, which
 	// presents as a hang rather than an error because the client retries.
 	config.RegisterDefault("kafka_consumer_group_prefix", "ctl-api-consumer")
-	// consumer flush cadence: each fetch (and so each ClickHouse insert) waits
-	// until min_bytes accumulate or max_wait elapses, whichever comes first.
-	// min_bytes is the target batch/part size; max_wait caps latency and, at low
-	// volume, bounds the insert rate to ~1 per partition per interval.
 	config.RegisterDefault("kafka_consumer_fetch_max_wait", "5s")
 	config.RegisterDefault("kafka_consumer_fetch_min_bytes", 256*1024)
-	// Ceilings on a single fetch, capping how much a consumer can buffer before
-	// decode. Left unset, franz-go allows 50MiB per broker with unbounded fetch
-	// concurrency. See pkg/kafka/consumer.go for the arithmetic; overridden
-	// per-deployment for the higher-volume consumers.
 	config.RegisterDefault("kafka_consumer_fetch_max_bytes", 8*1024*1024)
 	config.RegisterDefault("kafka_consumer_fetch_max_partition_bytes", 2*1024*1024)
 	config.RegisterDefault("kafka_consumer_max_concurrent_fetches", 2)
-	// A handler call is bounded by clickhouse_db_write_timeout (10s) for the
-	// main insert, plus — only when decode() hit a bad record — up to
-	// kafka_produce_timeout (5s) trying the dead-letter topic before its own
-	// clickhouse_db_write_timeout-bounded fallback. Worst realistic case is
-	// ~25s (5s + 10s + 10s); 60s leaves a healthy margin above that without
-	// being so loose it stops meaning anything. Real p95 CREATE latency
-	// against these tables is well under 1s (see
-	// plans/08-kafka-phase5-consumer-hardening.md), so tripping this at all
-	// means a genuine stuck handler, not ordinary backend slowness.
 	config.RegisterDefault("kafka_consumer_liveness_timeout", "60s")
-	// Not 8086 (worker_healthcheck_port) — that server is always on locally
-	// too, and consumer + worker run side by side under `nuonctl dev`.
 	config.RegisterDefault("consumer_healthcheck_port", "8090")
 
-	// defaults for app
 	config.RegisterDefault("github_app_key_secret_name", "ctl-api-github-app-key")
 	config.RegisterDefault("sandbox_artifacts_base_url", "https://nuon-artifacts.s3.us-west-2.amazonaws.com/sandbox")
 
-	// debug options
 	config.RegisterDefault("debug_enable_query_collector", false)
 	config.RegisterDefault("query_collector_disabled_tables", "")
 
-	// defaults for sandbox mode
 	config.RegisterDefault("sandbox_mode_sleep", "5s")
-	// if sandbox_enable_runners is set to true, all jobs require that you process them via a runner, which means
-	// running an org runner during seeding and then install runners, etc.
 	config.RegisterDefault("sandbox_mode_enable_runners", false)
 
-	// runner defaults; per-cloud overrides avoid cross-cloud egress against AWS ECR's pull quota.
+	// why: runner defaults; per-cloud overrides avoid cross-cloud egress against AWS ECR's pull quota.
 	config.RegisterDefault("runner_container_image_url", "public.ecr.aws/p7e3r5y0/runner")
 	config.RegisterDefault("runner_container_image_url_gcp", "us-west1-docker.pkg.dev/nuon-public/runner/runner")
 	config.RegisterDefault("runner_container_image_url_azure", "")
@@ -111,7 +77,6 @@ func init() {
 	config.RegisterDefault("telemetry_jwt_issuer", "")
 	config.RegisterDefault("telemetry_relay_endpoint", "")
 
-	// max request sizes to prevent too large of requests
 	config.RegisterDefault("max_request_size", 1024*50)
 	config.RegisterDefault("max_request_duration", time.Second*30)
 
@@ -147,22 +112,14 @@ func init() {
 
 	config.RegisterDefault("action_crons_enabled", false)
 
-	// queue handler grace period: how long a finished handler stays alive before auto-terminating
-	// short for local dev; prod overrides via config
 	config.RegisterDefault("queue_handler_grace_period", "1m")
 
-	// queue idle timeout: how long a queue workflow stays alive with no activity before terminating
-	// short for local dev; prod overrides via config
 	config.RegisterDefault("queue_idle_timeout", "10m")
 
-	// queue continue-as-new hint period: how often the CAN listener checks for restart hints
 	config.RegisterDefault("queue_continue_as_new_hint_period", "1m")
 
-	// queue drain timeout: how long to wait for in-flight signals to complete before restarting/stopping
 	config.RegisterDefault("queue_drain_timeout", "5m")
 
-	// runner process uptime thresholds: how long before auto-shutdown
-	// defaults are short for local dev; prod overrides via config
 	config.RegisterDefault("process_install_uptime_threshold", "8h")
 	config.RegisterDefault("process_mng_uptime_threshold", "168h")
 	config.RegisterDefault("process_build_uptime_threshold", "8h")
@@ -171,7 +128,6 @@ func init() {
 	config.RegisterDefault("general_purge_stale_data_duration_ago", "168h")
 	config.RegisterDefault("queue_signal_cleanup_enabled", true)
 
-	// Slack auto-link: empty TeamID or empty OrgLabelKey disables the feature.
 	config.RegisterDefault("slack_auto_link_team_id", "")
 	config.RegisterDefault("slack_auto_link_channel_id", "")
 	config.RegisterDefault("slack_auto_link_org_label_key", "")
@@ -181,35 +137,27 @@ func init() {
 
 	config.RegisterDefault("posthog_host", "https://us.i.posthog.com")
 
-	// Nuon Auth Service Configs
 	config.RegisterDefault("nuon_auth_session_key", "insecure-session-key-for-dev-giqi8x82Ti2+qTQ5ofpazomHkQPSnMY")
 	config.RegisterDefault("nuon_auth_allow_all_users", false)
 	config.RegisterDefault("nuon_auth_session_ttl", 24*60)
 	config.RegisterDefault("nuon_auth_token_ttl", 24*60)
-	config.RegisterDefault("nuon_auth_allowed_domains", []string{}) // defaults to an empty list so the empty string doesn't raise errors
+	config.RegisterDefault("nuon_auth_allowed_domains", []string{})
 
-	// OAuth 2.0 authorization server (used by MCP clients)
-	config.RegisterDefault("oauth_dcr_enabled", true)           // allow dynamic client registration (RFC 7591)
-	config.RegisterDefault("oauth_access_token_ttl", 60)        // minutes
-	config.RegisterDefault("oauth_refresh_token_ttl", 30*24*60) // minutes (30 days)
+	config.RegisterDefault("oauth_dcr_enabled", true)
+	config.RegisterDefault("oauth_access_token_ttl", 60)
+	config.RegisterDefault("oauth_refresh_token_ttl", 30*24*60)
 
-	// Blob storage configuration
 	config.RegisterDefault("blob_storage_bucket", "nuon-dev")
 	config.RegisterDefault("blob_storage_region", "us-west-2")
 
-	// Flow check thresholds
-	config.RegisterDefault("stale_plan_threshold", "72h") // override with STALE_PLAN_THRESHOLD env var
+	config.RegisterDefault("stale_plan_threshold", "72h")
 
-	// Opt out of workflow-type defaults for component and action roles across all
-	// orgs with USE_LEGACY_MAINTENANCE_ROLE_DEFAULT=true. Overrides and sandbox
-	// operation defaults are unaffected.
 	config.RegisterDefault("use_legacy_maintenance_role_default", false)
 }
 
 type Config struct {
 	worker.Config `config:",squash"`
 
-	// configs for starting and introspecting service
 	GitRef                   string   `config:"git_ref" validate:"required"`
 	Version                  string   `config:"version" validate:"required"`
 	MetricsTags              []string `config:"metrics_tags"`
@@ -221,7 +169,7 @@ type Config struct {
 	ServiceType       string `config:"service_type" validate:"required"`
 	ServiceDeployment string `config:"service_deployment"`
 
-	RootDomain string `config:"root_domain"` // for all services
+	RootDomain string `config:"root_domain"`
 
 	HTTPPort               string `config:"http_port" validate:"required"`
 	InternalHTTPPort       string `config:"internal_http_port" validate:"required"`
@@ -238,7 +186,6 @@ type Config struct {
 
 	GracefulShutdownTimeout time.Duration `config:"graceful_shutdown_timeout" validate:"required"`
 
-	// psql connection parameters
 	DBName                       string `config:"db_name" validate:"required"`
 	DBHost                       string `config:"db_host" validate:"required"`
 	DBReplicaHost                string `config:"db_replica_host"`
@@ -258,7 +205,6 @@ type Config struct {
 	QueryCollectorDisabledTables string `config:"query_collector_disabled_tables"`
 	DBMaxConnections             int32  `config:"db_max_connections"`
 
-	// clickhouse connection parameters
 	ClickhouseDBName         string        `config:"clickhouse_db_name" validate:"required"`
 	ClickhouseDBHost         string        `config:"clickhouse_db_host" validate:"required"`
 	ClickhouseDBUser         string        `config:"clickhouse_db_user" validate:"required"`
@@ -269,36 +215,23 @@ type Config struct {
 	ClickhouseDBWriteTimeout time.Duration `config:"clickhouse_db_write_timeout" validate:"required"`
 	ClickhouseDBDialTimeout  time.Duration `config:"clickhouse_db_dial_timeout" validate:"required"`
 
-	// kafka configuration. Two security protocols: PLAINTEXT locally, and SSL
-	// with the client certificate Strimzi issues our KafkaUser in deployed
-	// environments. KafkaEnabled gates whether producers use Kafka vs writing
-	// straight to ClickHouse.
-	KafkaEnabled          bool   `config:"kafka_enabled"`
-	KafkaBrokers          string `config:"kafka_brokers"`
-	KafkaSecurityProtocol string `config:"kafka_security_protocol"`
-	KafkaTLSCAPath        string `config:"kafka_tls_ca_path"`
-	KafkaTLSCertPath      string `config:"kafka_tls_cert_path"`
-	KafkaTLSKeyPath       string `config:"kafka_tls_key_path"`
-	KafkaClientID         string `config:"kafka_client_id"`
-	// Bounds a synchronous produce, used by the log write paths. franz-go retries
-	// a buffered record effectively forever, so this is what keeps a broker outage
-	// from blocking a runner's log write rather than falling back to ClickHouse.
-	KafkaProduceTimeout time.Duration `config:"kafka_produce_timeout"`
-	// Each consumer derives its own group as <prefix>-<name>, so one consumer
-	// restarting doesn't rebalance the others.
+	KafkaEnabled                        bool          `config:"kafka_enabled"`
+	KafkaBrokers                        string        `config:"kafka_brokers"`
+	KafkaSecurityProtocol               string        `config:"kafka_security_protocol"`
+	KafkaTLSCAPath                      string        `config:"kafka_tls_ca_path"`
+	KafkaTLSCertPath                    string        `config:"kafka_tls_cert_path"`
+	KafkaTLSKeyPath                     string        `config:"kafka_tls_key_path"`
+	KafkaClientID                       string        `config:"kafka_client_id"`
+	KafkaProduceTimeout                 time.Duration `config:"kafka_produce_timeout"`
 	KafkaConsumerGroupPrefix            string        `config:"kafka_consumer_group_prefix"`
 	KafkaConsumerFetchMaxWait           time.Duration `config:"kafka_consumer_fetch_max_wait"`
 	KafkaConsumerFetchMinBytes          int32         `config:"kafka_consumer_fetch_min_bytes"`
 	KafkaConsumerFetchMaxBytes          int32         `config:"kafka_consumer_fetch_max_bytes"`
 	KafkaConsumerFetchMaxPartitionBytes int32         `config:"kafka_consumer_fetch_max_partition_bytes"`
 	KafkaConsumerMaxConcurrentFetches   int           `config:"kafka_consumer_max_concurrent_fetches"`
-	// Liveness threshold for a stuck handler call — see the healthcheck server
-	// in internal/health/consumer.go. Deliberately separate from any consumer's
-	// own fetch tuning: it's a backstop against a hang, not a knob to tune.
-	KafkaConsumerLivenessTimeout time.Duration `config:"kafka_consumer_liveness_timeout"`
-	ConsumerHealthcheckPort      string        `config:"consumer_healthcheck_port"`
+	KafkaConsumerLivenessTimeout        time.Duration `config:"kafka_consumer_liveness_timeout"`
+	ConsumerHealthcheckPort             string        `config:"consumer_healthcheck_port"`
 
-	// temporal configuration
 	TemporalHost                          string        `config:"temporal_host"  validate:"required"`
 	TemporalStickyWorkflowCacheSize       int           `config:"temporal_sticky_workflow_cache_size"`
 	TemporalDataConverterLargePayloadSize int           `config:"temporal_dataconverter_large_payload_size"`
@@ -313,15 +246,12 @@ type Config struct {
 	TemporalStickyScheduleToStartTimeout  time.Duration `config:"temporal_sticky_schedule_to_start_timeout"`
 	TemporalDeadlockDetectionTimeout      time.Duration `config:"temporal_deadlock_detection_timeout"`
 
-	// github configuration
 	GithubAppID            string `config:"github_app_id" validate:"required"`
 	GithubAppKey           string `config:"github_app_key" validate:"required"`
 	GithubAppKeySecretName string `config:"github_app_key_secret_name" validate:"required"`
 
-	// base urls for filling in various fields on objects
 	SandboxArtifactsBaseURL string `config:"sandbox_artifacts_base_url" validate:"required"`
 
-	// middleware configuration
 	Middlewares               []string `config:"middlewares"`
 	InternalMiddlewares       []string `config:"internal_middlewares"`
 	RunnerMiddlewares         []string `config:"runner_middlewares"`
@@ -329,75 +259,59 @@ type Config struct {
 	AdminDashboardMiddlewares []string `config:"admin_dashboard_middlewares"`
 	SlackMiddlewares          []string `config:"slack_middlewares"`
 
-	// Slack app configuration (Phase 0–4 of slackbot integration).
-	// Tokens are stored plaintext in DB; these env-var-driven values back
-	// OAuth + signed-webhook verification at the listener layer.
 	SlackClientID         string `config:"slack_client_id"`
 	SlackClientSecret     string `config:"slack_client_secret"`
 	SlackSigningSecret    string `config:"slack_signing_secret"`
 	SlackStateJWTSecret   string `config:"slack_state_jwt_secret"`
 	SlackOAuthRedirectURL string `config:"slack_oauth_redirect_url"`
 
-	// Nuon Auth Config
 	NuonAuthSessionKey     string   `config:"nuon_auth_session_key"`
 	NuonAuthSessionTTL     int      `config:"nuon_auth_session_ttl"`
 	NuonAuthTokenTTL       int      `config:"nuon_auth_token_ttl"`
-	NuonAuthAllowedDomains []string `config:"nuon_auth_allowed_domains"` // domains from which emails can register
-	NuonAuthAllowAllUsers  bool     `config:"nuon_auth_allow_all_users"` // if true, any user with an allowedDomain can sign in
+	NuonAuthAllowedDomains []string `config:"nuon_auth_allowed_domains"`
+	NuonAuthAllowAllUsers  bool     `config:"nuon_auth_allow_all_users"`
 
-	// OIDC workload identity federation
-	OIDCFederationEnabled              bool `config:"oidc_federation_enabled"`                // enables the /v1/oidc token exchange and trust policy endpoints (default off)
-	OIDCFederationAllowInsecureIssuers bool `config:"oidc_federation_allow_insecure_issuers"` // allow http:// issuer URLs in trust policies (local dev only)
+	OIDCFederationEnabled              bool `config:"oidc_federation_enabled"`
+	OIDCFederationAllowInsecureIssuers bool `config:"oidc_federation_allow_insecure_issuers"`
 
-	// OAuth 2.0 authorization server (MCP clients)
 	OAuthDCREnabled      bool `config:"oauth_dcr_enabled"`
-	OAuthAccessTokenTTL  int  `config:"oauth_access_token_ttl"`  // minutes
-	OAuthRefreshTokenTTL int  `config:"oauth_refresh_token_ttl"` // minutes
+	OAuthAccessTokenTTL  int  `config:"oauth_access_token_ttl"`
+	OAuthRefreshTokenTTL int  `config:"oauth_refresh_token_ttl"`
 
-	// Nuon Auth: Default Provider ConfigS
-	NuonAuthProviderType string `config:"nuon_auth_provider_type"` // NOTE: becomes required after auth is in GA
+	NuonAuthProviderType string `config:"nuon_auth_provider_type"`
 	NuonAuthClientID     string `config:"nuon_auth_client_id"`
 	NuonAuthClientSecret string `config:"nuon_auth_client_secret"`
 	NuonAuthIssuerURL    string `config:"nuon_auth_issuer_url"`
 	NuonAuthRedirectURL  string `config:"nuon_auth_redirect_url"`
-	NuonAuthProviderName string `config:"nuon_auth_provider_name"` // label shown on the sign-in page
+	NuonAuthProviderName string `config:"nuon_auth_provider_name"`
 	NuonBrandedLogin     bool   `config:"nuon_branded_login"`
 
 	PostHogKey  string `config:"posthog_key"`
 	PostHogHost string `config:"posthog_host"`
 
-	// links
 	AppURL        string `config:"app_url" validate:"required"`
 	RunnerAPIURL  string `config:"runner_api_url" validate:"required"`
 	PublicAPIURL  string `config:"public_api_url" validate:"required"`
 	AdminAPIURL   string `config:"admin_api_url" validate:"required"`
 	TemporalUIURL string `config:"temporal_ui_url" validate:"required"`
 
-	// flags for controlling the background workers
 	ForceSandboxMode           bool          `config:"force_sandbox_mode"`
 	ForceOnboardingSandboxMode bool          `config:"force_onboarding_sandbox_mode"`
 	SandboxModeSleep           time.Duration `config:"sandbox_mode_sleep" validate:"required"`
 	SandboxModeEnableRunners   bool          `config:"sandbox_mode_enable_runners"`
 
-	// ForcedEnabledFeatures lists flags this deployment pins on for every org: they
-	// resolve enabled regardless of the stored per-org value and cannot be toggled off.
 	ForcedEnabledFeatures string `config:"forced_enabled_features"`
 
-	// flags for controlling creation of integration users
 	IntegrationGithubInstallID string `config:"integration_github_install_id" validate:"required"`
 
-	// notifications configuration
 	LoopsAPIKey string `config:"loops_api_key" validate:"required"`
 	// Deprecated: legacy Slack webhook send path is gone; field is read only to populate unused NotificationsConfig rows pending a follow-up cleanup.
 	InternalSlackWebhookURL string `config:"internal_slack_webhook_url"`
 	DisableNotifications    bool   `config:"disable_notifications"`
 
-	// webhook configuration
 	WebhookURLs    []string      `config:"webhook_urls"`
 	WebhookTimeout time.Duration `config:"webhook_timeout"`
 
-	// Audit export requires its own endpoint; the generic OTLP endpoint does not
-	// enable it. An empty endpoint leaves the audit emitter disabled.
 	AuditOTLPEndpoint string `config:"audit_otlp_endpoint"`
 	AuditOTLPToken    string `config:"audit_otlp_token"`
 
@@ -405,17 +319,14 @@ type Config struct {
 	TelemetryJWTIssuer     string `config:"telemetry_jwt_issuer"`
 	TelemetryRelayEndpoint string `config:"telemetry_relay_endpoint"`
 
-	// configuration for runners
 	RunnerContainerImageURL      string `config:"runner_container_image_url" validate:"required"`
 	RunnerContainerImageURLGCP   string `config:"runner_container_image_url_gcp"`
 	RunnerContainerImageURLAzure string `config:"runner_container_image_url_azure"`
 	RunnerContainerImageTag      string `config:"runner_container_image_tag" validate:"required"`
 	UseLocalRunners              bool   `config:"use_local_runners"`
 
-	// AWS IID auth
 	AWSIIDCertsDir string `config:"aws_iid_certs_dir"`
 
-	// cloudformation phone home
 	AWSCloudFormationStackTemplateBucketRegion string `config:"aws_cloudformation_stack_template_bucket_region"`
 	AWSCloudFormationStackTemplateBucket       string `config:"aws_cloudformation_stack_template_bucket"`
 	AWSCloudFormationStackTemplateBaseURL      string `config:"aws_cloudformation_stack_template_base_url"`
@@ -423,47 +334,20 @@ type Config struct {
 	RunnerEnableSupport                        bool   `config:"runner_enable_support"`
 	RunnerDefaultSupportIAMRole                string `config:"runner_default_support_iam_role_arn"`
 
-	// configuration for managing cloud infra for orgs, apps and installs
 	ManagementAccountID string `config:"management_account_id" validate:"required"`
 
-	// ManagementRegion is where management-account resources live. Distinct from
-	// AppRegion: it is baked into customer-deployed artifacts (the phone-home
-	// Lambda's NUON_PHONE_HOME_SECRET_REGION), so it must be stated explicitly
-	// rather than inherited from the pod's AWS_REGION.
 	ManagementRegion string `config:"management_region"`
 
-	// AWS management (not required for GCP)
 	ManagementIAMRoleARN     string `config:"management_iam_role_arn"`
 	ManagementECRRegistryID  string `config:"management_ecr_registry_id"`
 	ManagementECRRegistryARN string `config:"management_ecr_registry_arn"`
 
-	// phone home auth (see plans/phone-home-auth-shared-secret.md)
-	//
-	// The phone-home secret always lives in AWS Secrets Manager in a Nuon-owned AWS
-	// account, whichever cloud this control plane runs on, because the reader is the
-	// customer's phone-home Lambda and Secrets Manager is the only store it can
-	// reach. CloudProvider only selects the credential chain — see
-	// ManagementSecretsCreds.
-	//
-	// AWSPhoneHomeCMKARN is the shared CMK encrypting the secret. It is required for
-	// cross-account reads: the AWS-managed aws/secretsmanager key policy cannot be
-	// edited and is scoped to kms:CallerAccount, so a customer principal fails
-	// kms:Decrypt no matter how permissive the secret's resource policy is.
-	AWSPhoneHomeCMKARN string `config:"aws_phone_home_cmk_arn"`
-	// AWSPhoneHomeSecretsRoleARN is the role in the Nuon AWS account that owns the
-	// secret. Set it on GCP-hosted control planes, where ManagementIAMRoleARN is
-	// legitimately empty; on AWS it defaults to ManagementIAMRoleARN.
+	AWSPhoneHomeCMKARN         string `config:"aws_phone_home_cmk_arn"`
 	AWSPhoneHomeSecretsRoleARN string `config:"aws_phone_home_secrets_role_arn"`
-	// PhoneHomeScriptURL overrides the phone-home Lambda source for every app in this
-	// environment, below a per-app AppRunnerConfig.PhoneHomeScriptURL and above the
-	// pinned default. Exists so a dev or staging control plane can exercise an
-	// unreleased script without moving the default that production shares.
-	PhoneHomeScriptURL string `config:"phone_home_script_url"`
+	PhoneHomeScriptURL         string `config:"phone_home_script_url"`
 
-	// GCP management (not required for AWS)
 	ManagementGARRepositoryURL string `config:"management_gar_repository_url"`
 
-	// Azure management (not required for AWS/GCP)
 	ManagementACRRegistryURL      string `config:"management_acr_registry_url"`
 	ManagementAzureTenantID       string `config:"management_azure_tenant_id"`
 	ManagementAzureClientID       string `config:"management_azure_client_id"`
@@ -471,114 +355,79 @@ type Config struct {
 	ManagementAzureResourceGroup  string `config:"management_azure_resource_group"`
 	ManagementAzureOIDCIssuerURL  string `config:"management_azure_oidc_issuer_url"`
 
-	// configuration for apps
 	AppRegion string `config:"app_region" validate:"required"`
 
-	// configuration for managing the public dns zone
-	DNSManagementIAMRoleARN string `config:"dns_management_iam_role_arn"` // AWS-only
+	DNSManagementIAMRoleARN string `config:"dns_management_iam_role_arn"`
 	DNSZoneID               string `config:"dns_zone_id" validate:"required"`
 	DNSRootDomain           string `config:"dns_root_domain" validate:"required"`
 
-	// analytics configuration
 	SegmentWriteKey  string `config:"segment_write_key" validate:"required"`
 	DisableAnalytics bool   `config:"disable_analytics"`
 
 	MaxRequestSize     int64         `config:"max_request_size" validate:"required"`
 	MaxRequestDuration time.Duration `config:"max_request_duration" validate:"required"`
 
-	// Force debug mode for everything
 	ForceDebugMode              bool `config:"force_debug_mode"`
 	LogRequestBody              bool `config:"log_request_body"`
 	EnableHttpBinDebugEndpoints bool `config:"enable_httpbin_debug_endpoints"`
 	EnableEndpointAuditing      bool `config:"enable_endpoint_auditing"`
 	EvaluationJourneyEnabled    bool `config:"evaluation_journey_enabled"`
 
-	// chaos configuration
 	ChaosRate   int           `config:"chaos_rate"`
 	ChaosErrors []string      `config:"chaos_errors"`
 	ChaosRoutes []string      `config:"chaos_routes"`
 	ChaosSleep  time.Duration `config:"chaos_sleep"`
 
-	// Runner process uptime thresholds
 	ProcessInstallUptimeThreshold time.Duration `config:"process_install_uptime_threshold"`
 	ProcessMngUptimeThreshold     time.Duration `config:"process_mng_uptime_threshold"`
 
-	// Queue handler grace period
 	QueueHandlerGracePeriod time.Duration `config:"queue_handler_grace_period"`
 
-	// Queue idle timeout: how long before an idle queue workflow terminates
 	QueueIdleTimeout time.Duration `config:"queue_idle_timeout"`
 
-	// Queue continue-as-new hint period: how often the CAN listener checks for restart hints
 	QueueContinueAsNewHintPeriod time.Duration `config:"queue_continue_as_new_hint_period"`
 
-	// Queue continue-as-new history max: trigger CAN when workflow history exceeds this length
 	QueueContinueAsNewHistoryMax int `config:"queue_continue_as_new_history_max"`
 
-	// Queue drain timeout: how long to wait for in-flight signals before restarting/stopping
 	QueueDrainTimeout time.Duration `config:"queue_drain_timeout"`
 
-	// Action crons
 	ActionCronsEnabled bool `config:"action_crons_enabled"`
 
 	MinCLIVersion string `config:"min_cli_version"`
 
-	// below this the CLI syncs app configs client-side, which never sends action or
-	// runbook ids, so those are silently dropped from installs
 	ServerSideSyncMinCLIVersion string `config:"server_side_sync_min_cli_version"`
 
 	GeneralPurgeStaleDataCron        string        `config:"general_purge_stale_data_cron"`
 	GeneralPurgeStaleDataDurationAgo time.Duration `config:"general_purge_stale_data_duration_ago" validate:"required"`
 
-	// When enabled (default), the daily cron hard-deletes process_healthcheck and healthcheck queue signals older than 7 days.
 	QueueSignalCleanupEnabled bool `config:"queue_signal_cleanup_enabled"`
 
-	// BlobBackfillRatePerSecond caps how many S3 PUTs/sec the blob backfill activity issues. Defaults to 500 when unset.
 	BlobBackfillRatePerSecond int `config:"blob_backfill_rate_per_second"`
 
-	// BlobReadEnabled gates reading large fields from the S3 blob. When false
-	// (default) reads fall back to the legacy column. Currently gates composite
-	// plan reads.
 	BlobReadEnabled bool `config:"blob_read_enabled"`
 
-	// Slack auto-link reconciler. TeamID + OrgLabelKey must both be set;
-	// ChannelID is optional and seeds a default org-wide subscription per link.
 	SlackAutoLinkTeamID        string `config:"slack_auto_link_team_id"`
 	SlackAutoLinkChannelID     string `config:"slack_auto_link_channel_id"`
 	SlackAutoLinkOrgLabelKey   string `config:"slack_auto_link_org_label_key"`
 	SlackAutoLinkOrgLabelValue string `config:"slack_auto_link_org_label_value"`
 
-	// InternalEmailDomains: creator emails matching these skip the default
-	// slack-auto-link label seeding in CreateOrg.
 	InternalEmailDomains []string `config:"internal_email_domains"`
 
-	// SFTrialEndpoint posts a Salesforce trial-signup record when a user creates
-	// their first org. Empty disables the integration (e.g. BYOC/self-hosted).
 	SFTrialEndpoint string `config:"sf_trial_access_endpoint"`
 
-	// Blob storage configuration. Provider selects the backend: "s3" (default,
-	// AWS-hosted installs) or "gcs" (self-hosted control-plane installs on GCP,
-	// where BlobStorageBucket is a native GCS bucket rather than S3).
 	BlobStorageBucket   string `config:"blob_storage_bucket" validate:"required"`
 	BlobStorageRegion   string `config:"blob_storage_region" validate:"required"`
 	BlobStorageProvider string `config:"blob_storage_provider" validate:"required,oneof=s3 gcs"`
 
-	// Enqueuer worker pool size — how many signals can be enqueued in parallel.
 	EnqueuerMaxWorkers int `config:"enqueuer_max_workers"`
 
-	// Heartbeater configuration — batched ClickHouse writes for runner heartbeats.
 	HeartbeaterFlushInterval time.Duration `config:"heartbeater_flush_interval"`
 	HeartbeaterBatchSize     int           `config:"heartbeater_batch_size"`
 
-	// DisableEmitterSignals when true causes all emitter-originated signals to be
-	// skipped (not emitted and not processed).
 	DisableEmitterSignals bool `config:"disable_emitter_signals"`
 
-	// Flow check thresholds
 	StalePlanThreshold string `config:"stale_plan_threshold"`
 
-	// UseLegacyMaintenanceRoleDefault keeps component and action defaults on
-	// maintenance instead of deriving them from the parent workflow type.
 	UseLegacyMaintenanceRoleDefault bool `config:"use_legacy_maintenance_role_default"`
 }
 
@@ -612,7 +461,7 @@ func (c *Config) CFTemplateUploadCreds() *credentials.Config {
 	}
 }
 
-// ManagementSecretsCreds returns credentials for the Nuon AWS account holding the
+// why: ManagementSecretsCreds returns credentials for the Nuon AWS account holding the
 // phone-home secret, or nil when this control plane has no path to it.
 //
 // The secret is always in AWS; only the chain differs. An AWS-hosted control plane

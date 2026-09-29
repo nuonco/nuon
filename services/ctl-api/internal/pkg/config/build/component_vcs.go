@@ -2,7 +2,6 @@ package build
 
 import "github.com/nuonco/nuon/pkg/config"
 
-// ComponentRepos returns the git sources from whichever type config is set.
 func ComponentRepos(comp *config.Component) (*config.ConnectedRepoConfig, *config.PublicRepoConfig) {
 	switch {
 	case comp.DockerBuild != nil:
@@ -20,7 +19,6 @@ func ComponentRepos(comp *config.Component) (*config.ConnectedRepoConfig, *confi
 	}
 }
 
-// NeedsTerraformVersion means the caller must resolve the latest release.
 func NeedsTerraformVersion(comp *config.Component) bool {
 	return comp.TerraformModule != nil && comp.TerraformModule.TerraformVersion == ""
 }

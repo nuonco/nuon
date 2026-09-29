@@ -24,7 +24,6 @@ func (a *Activities) CreateActionWorkflowRunRunnerJob(ctx context.Context, req *
 		return nil, errors.Wrap(err, "unable to get action workflow run")
 	}
 
-	// adhoc runs have no ActionWorkflowConfig; their timeout lives on the run
 	cfg := run.ActionWorkflowConfig
 	if cfg.Timeout == 0 {
 		cfg.Timeout = run.Timeout
@@ -34,8 +33,6 @@ func (a *Activities) CreateActionWorkflowRunRunnerJob(ctx context.Context, req *
 	}
 	ctx = cctx.SetFlowInstallIDContext(ctx, run.InstallID)
 
-	// image-backed actions are launched by the mng process on VM runners, which
-	// polls the dedicated image-actions group.
 	group := app.RunnerJobGroupActions
 	if cfg.Image != "" {
 		group = app.RunnerJobGroupImageActions

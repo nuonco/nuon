@@ -22,9 +22,7 @@ const processQueuePrefix = "runner-process-"
 type Signal struct {
 	RunnerID    string `json:"runner_id"`
 	ProcessType string `json:"process_type"`
-	// ProcessID pins the shutdown to the process whose uptime emitter fired.
-	// Templates created before it existed leave it empty.
-	ProcessID string `json:"process_id"`
+	ProcessID   string `json:"process_id"`
 }
 
 var _ signal.Signal = (*Signal)(nil)
@@ -56,7 +54,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 	if processID == "" {
-		// A stale emitter must never shut down whichever process happens to be current.
+		// why: A stale emitter must never shut down whichever process happens to be current.
 		l.Warn("trigger_shutdown without a process id, skipping", "runner_id", s.RunnerID)
 		return nil
 	}
@@ -89,8 +87,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return nil
 }
 
-// processIDFromQueue recovers the target for legacy templates: the emitter
-// always lives on that process's own runner-process-<id> queue.
 func (s *Signal) processIDFromQueue(ctx workflow.Context) (string, error) {
 	queueID := cctx.QueueIDFromContext(ctx)
 	if queueID == "" {

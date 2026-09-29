@@ -38,8 +38,6 @@ export const TraceView = ({
   const [scope, setScope] = useState<TTraceScopeVariant>('user')
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
 
-  // Resizable left/right split (lg+ only). Width of the left (span tree) pane,
-  // expressed as a percentage of the container and clamped to a usable range.
   const splitRef = useRef<HTMLDivElement>(null)
   const [leftWidthPct, setLeftWidthPct] = useState(30)
 
@@ -85,7 +83,6 @@ export const TraceView = ({
     }
   }, [])
 
-  // Clean up window listeners if we unmount mid-drag.
   useEffect(() => () => stopResizing(), [stopResizing])
 
   const visibleSpans = useMemo(

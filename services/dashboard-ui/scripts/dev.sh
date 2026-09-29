@@ -4,10 +4,6 @@ set -e
 DEV_PGID=$(ps -o pgid= -p $$ | tr -d ' ')
 PGID_FILE="/tmp/nuon-dashboard-dev.pgid"
 
-# A previous session's bun build/css --watch hold no port, so a port-based
-# cleanup misses them and they pile up across restarts. Every child stays in
-# dev.sh's process group, so kill the previous session's whole group, then
-# sweep any strays whose marker was lost (e.g. clean-dist wiped an old dist/).
 if [ -f "$PGID_FILE" ]; then
     OLD_PGID=$(cat "$PGID_FILE" 2>/dev/null || true)
     if [ -n "$OLD_PGID" ] && [ "$OLD_PGID" != "$DEV_PGID" ]; then
@@ -26,7 +22,7 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-# Build from this script's own checkout, not $NUON_ROOT/nuon: running dev from a
+# why: Build from this script's own checkout, not $NUON_ROOT/nuon: running dev from a
 # worktree otherwise compiled the server from the wrong source. NUON_DIR overrides.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
@@ -37,7 +33,6 @@ go build -C "${NUON_DIR:-$REPO_DIR}" -o /tmp/dashboard-server ./services/dashboa
 rm -f dist/.port
 /tmp/dashboard-server serve &
 
-# Wait for the Go server to write its port file
 for i in $(seq 1 50); do
     [ -f dist/.port ] && break
     sleep 0.1

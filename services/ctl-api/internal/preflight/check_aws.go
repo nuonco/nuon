@@ -15,8 +15,6 @@ var awsCheck = Check{
 	Name:        "aws",
 	Description: "management account role assumption",
 
-	// The management ARNs are validated per-cloud in internal.NewConfig, so on a
-	// GCP or Azure control plane they are legitimately empty.
 	Skip: func(cfg *internal.Config) (string, bool) {
 		if !cfg.IsAWS() {
 			return "cloud_provider=" + cfg.CloudProvider, true
@@ -53,8 +51,6 @@ var awsCheck = Check{
 			return "", fmt.Errorf("sts:GetCallerIdentity failed: %w", err)
 		}
 
-		// A valid role in the wrong account is the misconfiguration that a bare
-		// GetCallerIdentity would report as healthy.
 		account := aws.ToString(identity.Account)
 		if account != cfg.ManagementAccountID {
 			return "", fmt.Errorf("assumed role is in account %s, expected management_account_id=%s",

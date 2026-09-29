@@ -19,14 +19,12 @@ const (
 	defaultJobPollBackoff time.Duration = time.Second * 1
 	starvedJobPollBackoff time.Duration = time.Second * 5
 
-	// Tail (long-poll) tuning. The ctl-api endpoint caps server-side
+	// why: Tail (long-poll) tuning. The ctl-api endpoint caps server-side
 	// hold at 25s and the runner request gets a small grace on top so
 	// the server's empty 200 reaches us before the client cancels.
 	tailJobPollWait    time.Duration = 25 * time.Second
 	tailJobPollTimeout time.Duration = tailJobPollWait + 5*time.Second
 
-	// idleHookInterval bounds how often a loop's idle hook runs, since an empty
-	// poll comes around every few seconds.
 	idleHookInterval time.Duration = 10 * time.Minute
 )
 
@@ -128,8 +126,6 @@ func (j *jobLoop) worker() error {
 	}
 }
 
-// runIdleHook runs the loop's optional idle work between jobs. Polls come every
-// few seconds, so it is rate-limited to idleHookInterval.
 func (j *jobLoop) runIdleHook() {
 	if j.idleFn == nil || time.Since(j.lastIdle) < idleHookInterval {
 		return
@@ -139,10 +135,6 @@ func (j *jobLoop) runIdleHook() {
 	j.idleFn(j.pollCtx)
 }
 
-// fetchAvailableJobs branches between the long-poll tail endpoint and the
-// legacy poll based on the runtime feature flag. The tail path uses a
-// longer per-request timeout because the server intentionally holds it
-// open. The legacy path keeps the original 5s ceiling.
 func (j *jobLoop) fetchAvailableJobs(useTail bool) ([]*models.AppRunnerJob, error) {
 	if useTail {
 		tctx, cancel := context.WithTimeoutCause(j.pollCtx, tailJobPollTimeout, errors.Wrapf(context.DeadlineExceeded, "tail poll for jobs in group %s timed out", j.jobGroup))

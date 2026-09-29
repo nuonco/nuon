@@ -14,11 +14,9 @@ import (
 )
 
 const (
-	// defaultInstallAuditLogsLimit is the default limit for install audit logs.
 	defaultInstallAuditLogsLimit = 10_000
 )
 
-// GetInstallAuditLogs gets the audit logs for an install from the DB.
 func (h *Helpers) GetInstallAuditLogs(ctx context.Context, installID string, startTS, endTS time.Time) ([]app.InstallAuditLog, error) {
 	var auditLogs []app.InstallAuditLog
 	res := h.db.WithContext(ctx).
@@ -32,7 +30,6 @@ func (h *Helpers) GetInstallAuditLogs(ctx context.Context, installID string, sta
 
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-			// No rows found, return an empty slice
 			return auditLogs, nil
 		}
 		return nil, fmt.Errorf("unable to get install audit logs: %w", res.Error)

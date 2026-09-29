@@ -85,8 +85,6 @@ func (s *service) getComponentLatestBuild(ctx *gin.Context, cmpID string) (*app.
 
 	cmp := app.Component{}
 
-	// query all builds that belong to the component id, starting at the component to ensure the component exists
-	// via the double join.
 	res := s.db.WithContext(ctx).
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Scopes(scopes.WithOverrideTable(app.LatestComponentConfigConnectionsViewName))
@@ -105,7 +103,6 @@ func (s *service) getComponentLatestBuild(ctx *gin.Context, cmpID string) (*app.
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
 	}
 
-	// pull out the first (and only) component build
 	for _, cfg := range cmp.ComponentConfigs {
 		for _, bld := range cfg.ComponentBuilds {
 			return &bld, nil

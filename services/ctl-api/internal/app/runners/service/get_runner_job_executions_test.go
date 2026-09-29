@@ -75,7 +75,6 @@ func (s *GetRunnerJobExecutionsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -94,7 +93,6 @@ func (s *GetRunnerJobExecutionsTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create log stream
 	s.testLogStream = &app.LogStream{
 		ID:      domains.NewLogStreamID(),
 		OrgID:   s.testOrg.ID,
@@ -104,7 +102,6 @@ func (s *GetRunnerJobExecutionsTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testLogStream).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -116,7 +113,6 @@ func (s *GetRunnerJobExecutionsTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -172,7 +168,6 @@ func (s *GetRunnerJobExecutionsTestSuite) TestGetRunnerJobExecutions() {
 				err := s.service.DB.WithContext(ctx).Create(job).Error
 				require.NoError(s.T(), err)
 
-				// Create executions
 				exec1 := &app.RunnerJobExecution{
 					ID:          domains.NewRunnerID(),
 					OrgID:       s.testOrg.ID,
@@ -202,7 +197,6 @@ func (s *GetRunnerJobExecutionsTestSuite) TestGetRunnerJobExecutions() {
 			expectedCount: 2,
 			validateFunc: func(executions []app.RunnerJobExecution) {
 				assert.Len(s.T(), executions, 2)
-				// Executions should be ordered by created_at DESC
 				assert.Contains(s.T(), []app.RunnerJobExecutionStatus{
 					app.RunnerJobExecutionStatusFinished,
 					app.RunnerJobExecutionStatusInProgress,
@@ -277,7 +271,6 @@ func (s *GetRunnerJobExecutionsTestSuite) TestGetRunnerJobExecutions() {
 				err := s.service.DB.WithContext(ctx).Create(job).Error
 				require.NoError(s.T(), err)
 
-				// Create 5 executions
 				for i := 0; i < 5; i++ {
 					exec := &app.RunnerJobExecution{
 						ID:          domains.NewRunnerID(),
@@ -300,8 +293,6 @@ func (s *GetRunnerJobExecutionsTestSuite) TestGetRunnerJobExecutions() {
 			expectedCode:  http.StatusOK,
 			expectedCount: 4,
 			validateFunc: func(executions []app.RunnerJobExecution) {
-				// Current behavior: HandlePaginatedResponse returns limit+1 items
-				// because it preloads all executions then truncates by removing last element
 				assert.Len(s.T(), executions, 4, "returns limit+1 due to handler implementation")
 			},
 		},
@@ -359,7 +350,6 @@ func (s *GetRunnerJobExecutionsTestSuite) TestGetRunnerJobExecutions() {
 			expectedCount: 5,
 			validateFunc: func(executions []app.RunnerJobExecution) {
 				assert.Len(s.T(), executions, 5)
-				// Verify all different statuses exist
 				statusMap := make(map[app.RunnerJobExecutionStatus]bool)
 				for _, exec := range executions {
 					statusMap[exec.Status] = true

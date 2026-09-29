@@ -118,7 +118,6 @@ func (s *service) emitProcessStart(ctx *gin.Context, runnerID string, process *a
 }
 
 func (s *service) createRunnerProcess(ctx context.Context, runnerID string, req CreateRunnerProcessRequest) (*app.RunnerProcess, error) {
-	// create a log stream for this process
 	logStream := app.LogStream{
 		OwnerType: "runner_processes",
 		Open:      true,

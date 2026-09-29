@@ -13,7 +13,6 @@ import (
 func NewTestingConfigStructure(name string) *ConfigStructure {
 	cs := NewConfigStructure(name)
 
-	// Add root-level config files using helper methods
 	cs.UpdateInputs(&config.AppInputConfig{
 		Groups: []config.AppInputGroup{
 			{
@@ -81,7 +80,6 @@ func NewTestingConfigStructure(name string) *ConfigStructure {
 	cs.UpdateBreakGlass(&config.BreakGlass{})
 	cs.UpdatePolicies(&config.PoliciesConfig{})
 
-	// Add components using helper method
 	cs.AddComponent(ConfigFileDefinition{
 		Name: "example_helm_chart.toml",
 		Schemas: []ConfigFileSchema{
@@ -149,7 +147,6 @@ func NewTestingConfigStructure(name string) *ConfigStructure {
 		},
 	})
 
-	// Add permissions using helper method
 	cs.AddPermission(ConfigFileDefinition{
 		Name: "provision.toml",
 		Schemas: []ConfigFileSchema{
@@ -183,7 +180,6 @@ func NewTestingConfigStructure(name string) *ConfigStructure {
 		},
 	})
 
-	// Add actions using helper method
 	cs.AddActions(ConfigFileDefinition{
 		Name: "example_action.toml",
 		Schemas: []ConfigFileSchema{
@@ -193,7 +189,6 @@ func NewTestingConfigStructure(name string) *ConfigStructure {
 		},
 	})
 
-	// Add installs directly to ConfigDirectories (no helper method exists for this)
 	cs.AddDirectoryFile("installs", ConfigFileDefinition{
 		Name: "example_install.toml",
 		Schemas: []ConfigFileSchema{
@@ -206,17 +201,14 @@ func NewTestingConfigStructure(name string) *ConfigStructure {
 	return &cs
 }
 
-// generates a  new config directory
 func TestGenerate(t *testing.T) {
 	defer func() {
-		// cleanup
 		err := os.RemoveAll("./test-app-init")
 		if err != nil {
 			t.Errorf("Failed to clean generated config %v", err)
 		}
 	}()
 
-	// Basic generation
 	generator := NewConfigGen(
 		true,
 		true,
@@ -229,26 +221,21 @@ func TestGenerate(t *testing.T) {
 	assert.NoError(t, err, "generator existed with error")
 }
 
-// this is a ai generated tests, not to be trusted, only used for dev purposed
 func TestGenerateWithInstanceValues(t *testing.T) {
-	// This test verifies that instance values are being used in the generated TOML
 	generator := NewConfigGen(true, true, false, true, false, "")
 
 	defer func() {
-		// cleanup
 		err := os.RemoveAll("./test-config-init")
 		if err != nil {
 			t.Errorf("Failed to clean generated config %v", err)
 		}
 	}()
 
-	// Generate the config files
 	err := generator.Gen("./test-config-init/", NewTestingConfigStructure("test-config-init"))
 	if err != nil {
 		t.Fatalf("Generate() returned error: %v", err)
 	}
 
-	// Test sandbox.toml - Check that instance values from seed configs are used
 	sandboxContent, err := os.ReadFile("./test-config-init/sandbox.toml")
 	if err != nil {
 		t.Fatalf("Failed to read generated sandbox.toml: %v", err)
@@ -256,12 +243,10 @@ func TestGenerateWithInstanceValues(t *testing.T) {
 
 	sandboxStr := string(sandboxContent)
 
-	// Verify terraform_version from instance
 	if !strings.Contains(sandboxStr, `terraform_version = "1.11.3"`) {
 		t.Errorf("Generated sandbox.toml does not contain instance value for terraform_version")
 	}
 
-	// Verify public_repo values from instance (should be uncommented since they have values)
 	if !strings.Contains(sandboxStr, `repo = "nuonco/aws-eks-sandbox"`) {
 		t.Errorf("Generated sandbox.toml does not contain instance value for public_repo.repo")
 	}
@@ -274,7 +259,6 @@ func TestGenerateWithInstanceValues(t *testing.T) {
 		t.Errorf("Generated sandbox.toml does not contain instance value for public_repo.branch")
 	}
 
-	// Test installer.toml - Check that instance values are used
 	installerContent, err := os.ReadFile("./test-config-init/installer.toml")
 	if err != nil {
 		t.Fatalf("Failed to read generated installer.toml: %v", err)
@@ -282,7 +266,6 @@ func TestGenerateWithInstanceValues(t *testing.T) {
 
 	installerStr := string(installerContent)
 
-	// Verify installer name from instance
 	if !strings.Contains(installerStr, `name = "installer"`) {
 		t.Errorf("Generated installer.toml does not contain instance value for name")
 	}

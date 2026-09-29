@@ -76,7 +76,6 @@ func (s *AdminGetJobTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with internal routes (no org context for admin routes)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -95,7 +94,6 @@ func (s *AdminGetJobTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create log stream for runner jobs
 	s.testLogStream = &app.LogStream{
 		ID:      domains.NewLogStreamID(),
 		OrgID:   s.testOrg.ID,
@@ -105,7 +103,6 @@ func (s *AdminGetJobTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testLogStream).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -117,7 +114,6 @@ func (s *AdminGetJobTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -265,7 +261,6 @@ func (s *AdminGetJobTestSuite) TestAdminGetRunnerJob() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(job *app.RunnerJob) {
-				// Verify last execution is preloaded
 				assert.NotEmpty(s.T(), job.Executions)
 				assert.Len(s.T(), job.Executions, 1)
 				assert.Equal(s.T(), app.RunnerJobExecutionStatusInProgress, job.Executions[0].Status)

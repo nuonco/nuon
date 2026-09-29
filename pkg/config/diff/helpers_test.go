@@ -69,13 +69,13 @@ func (s *HelpersSuite) TestMapDiff_Mixed() {
 	new := map[string]string{"a": "1", "b": "changed", "d": "4"}
 	result := MapDiff("env_vars", old, new)
 	s.Require().NotNil(result)
-	s.Len(result.Children, 4) // a, b, c, d
+	s.Len(result.Children, 4)
 	summary := result.Summary()
 	s.True(summary.HasChanged)
-	s.Equal(1, summary.Unchanged) // a
-	s.Equal(1, summary.Changed)   // b
-	s.Equal(1, summary.Removed)   // c
-	s.Equal(1, summary.Added)     // d
+	s.Equal(1, summary.Unchanged)
+	s.Equal(1, summary.Changed)
+	s.Equal(1, summary.Removed)
+	s.Equal(1, summary.Added)
 }
 
 func (s *HelpersSuite) TestMapDiff_SortedKeys() {

@@ -15,10 +15,8 @@ import (
 type ActionWorkflowStatus string
 
 const (
-	ActionWorkflowStatusActive ActionWorkflowStatus = "active"
-	// error state
-	ActionWorkflowStatusError ActionWorkflowStatus = "error"
-	// queued for deletion
+	ActionWorkflowStatusActive       ActionWorkflowStatus = "active"
+	ActionWorkflowStatusError        ActionWorkflowStatus = "error"
 	ActionWorkflowStatusDeleteQueued ActionWorkflowStatus = "delete_queued"
 )
 

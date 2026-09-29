@@ -11,10 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *AccountsServiceTestSuite) TestResetUserJourneySuccess() {
 	testCases := []struct {
 		name      string
@@ -72,7 +68,6 @@ func (s *AccountsServiceTestSuite) TestResetUserJourneySuccess() {
 				assert.False(s.T(), step.Complete, "step %q should be incomplete after reset", step.Name)
 			}
 
-			// Verify persisted to database
 			var dbAccount app.Account
 			err = s.service.DB.WithContext(s.ctx).First(&dbAccount, "id = ?", s.testAcc.ID).Error
 			require.NoError(s.T(), err)
@@ -84,10 +79,6 @@ func (s *AccountsServiceTestSuite) TestResetUserJourneySuccess() {
 		})
 	}
 }
-
-// ---------------------------------------------------------------------------
-// Reset preserves step metadata
-// ---------------------------------------------------------------------------
 
 func (s *AccountsServiceTestSuite) TestResetJourneyPreservesStepMetadata() {
 	journey := testseed.BuildCompletedUserJourney()
@@ -111,17 +102,12 @@ func (s *AccountsServiceTestSuite) TestResetJourneyPreservesStepMetadata() {
 
 	require.Len(s.T(), response.UserJourneys, 1)
 
-	// Steps should be incomplete but metadata preserved
 	for _, step := range response.UserJourneys[0].Steps {
 		assert.False(s.T(), step.Complete, "step %q should be incomplete", step.Name)
 	}
 	assert.Equal(s.T(), "org_12345", response.UserJourneys[0].Steps[0].Metadata["org_id"])
 	assert.Equal(s.T(), "app_99999", response.UserJourneys[0].Steps[1].Metadata["app_id"])
 }
-
-// ---------------------------------------------------------------------------
-// Reset does not affect other journeys
-// ---------------------------------------------------------------------------
 
 func (s *AccountsServiceTestSuite) TestResetJourneyDoesNotAffectOtherJourneys() {
 	onboarding := testseed.BuildCompletedUserJourney()
@@ -136,7 +122,6 @@ func (s *AccountsServiceTestSuite) TestResetJourneyDoesNotAffectOtherJourneys() 
 	err := s.service.DB.WithContext(s.ctx).Save(s.testAcc).Error
 	require.NoError(s.T(), err)
 
-	// Reset only the onboarding journey
 	rr := s.makeRequest(http.MethodPost, "/v1/account/user-journeys/onboarding/reset", nil)
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
@@ -146,20 +131,14 @@ func (s *AccountsServiceTestSuite) TestResetJourneyDoesNotAffectOtherJourneys() 
 
 	require.Len(s.T(), response.UserJourneys, 2)
 
-	// Onboarding steps should all be reset
 	for _, step := range response.UserJourneys[0].Steps {
 		assert.False(s.T(), step.Complete, "onboarding step %q should be incomplete after reset", step.Name)
 	}
 
-	// Advanced steps should remain complete
 	for _, step := range response.UserJourneys[1].Steps {
 		assert.True(s.T(), step.Complete, "advanced step %q should remain complete", step.Name)
 	}
 }
-
-// ---------------------------------------------------------------------------
-// Not found cases
-// ---------------------------------------------------------------------------
 
 func (s *AccountsServiceTestSuite) TestResetJourneyNotFound() {
 	testCases := []struct {

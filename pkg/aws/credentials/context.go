@@ -7,12 +7,10 @@ import (
 	aws "github.com/aws/aws-sdk-go-v2/aws"
 )
 
-// ContextKey is used to manage the credentials in the context
 type ContextKey struct {
 	ID string
 }
 
-// EnsureContext adds credentials into the context if they do not exist
 func EnsureContext(ctx context.Context, cfg *Config) (context.Context, error) {
 	if cfg.CacheID == "" {
 		return nil, fmt.Errorf("no cache id set")
@@ -26,7 +24,6 @@ func EnsureContext(ctx context.Context, cfg *Config) (context.Context, error) {
 	return context.WithValue(ctx, ContextKey{cfg.CacheID}, awsCfg), nil
 }
 
-// FromContext fetches credentials from the context
 func FromContext(ctx context.Context, cfg *Config) (aws.Config, error) {
 	if cfg.CacheID == "" {
 		return aws.Config{}, fmt.Errorf("no cache id set")

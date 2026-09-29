@@ -1,4 +1,4 @@
-# Slack app manifest for the Nuon Slack integration.
+# why: Slack app manifest for the Nuon Slack integration.
 #
 # Usage:
 #   1. Replace `<your-public-host>` below with the host that fronts ctl-api's
@@ -66,30 +66,11 @@ settings:
   token_rotation_enabled: false
   is_mcp_enabled: false
 
-  # Interactivity: subscribe / unsubscribe modals, Remove buttons inside
-  # the unsubscribe modal, and the install picker's external_select all
-  # POST to /slack/interactions. The endpoint is signing-middleware
-  # verified (X-Slack-Signature). message_menu_options_url shares the
-  # same endpoint — Slack uses payload.type to dispatch.
   interactivity:
     is_enabled: true
     request_url: https://<your-public-host>/slack/interactions
     message_menu_options_url: https://<your-public-host>/slack/interactions
 
-  # Bot events that drive cleanup paths. We deliberately avoid
-  # `conversations.connect:*` scopes — for our use case (bot invited to
-  # Slack Connect channels by the customer or vendor) the standard
-  # chat:write + channels:read + groups:read scopes are sufficient.
-  #
-  # Wired in services/ctl-api/internal/app/slack/service/slack_events.go:
-  #   - app_uninstalled / tokens_revoked → flip installation Status,
-  #     revoke org_links, soft-delete subs, drop thread anchors.
-  #   - channel_rename → update SlackChannelSubscription.ChannelName for
-  #     affected rows so audit logs / pickers stay readable.
-  #   - channel_archive / channel_left → soft-delete subs targeting that
-  #     channel (we cannot post into archived / left channels).
-  #   - member_joined_channel → when the joining member is our bot, post a
-  #     one-time welcome message (once per membership; re-add re-welcomes).
   event_subscriptions:
     request_url: https://<your-public-host>/slack/events
     bot_events:

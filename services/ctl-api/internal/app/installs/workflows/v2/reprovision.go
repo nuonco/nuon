@@ -57,7 +57,7 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		return nil, err
 	}
 
-	sg.nextGroup() // reprovision sandbox plan + apply
+	sg.nextGroup()
 
 	step, err := sg.installSignalStep(ctx, installID, "reprovision sandbox plan", pgtype.Hstore{}, &reprovisionsandboxplan.Signal{
 		InstallSandboxID: sandbox.ID,
@@ -85,7 +85,7 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		}
 		steps = append(steps, lifecycleSteps...)
 
-		sg.nextGroup() // sync secrets
+		sg.nextGroup()
 		step, err = sg.installSignalStep(ctx, installID, "sync secrets", pgtype.Hstore{}, &syncsecrets.Signal{
 			InstallID: installID,
 		}, flw.PlanOnly, WithSkippable(false))
@@ -100,7 +100,7 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		}
 		steps = append(steps, lifecycleSteps...)
 
-		sg.nextGroup() // reprovision sandbox dns
+		sg.nextGroup()
 		step, err = sg.installSignalStep(ctx, installID, "reprovision sandbox dns if enabled", pgtype.Hstore{}, &provisiondns.Signal{
 			InstallID: installID,
 		}, flw.PlanOnly)

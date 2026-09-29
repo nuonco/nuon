@@ -19,8 +19,6 @@ func readFixture(t *testing.T, name string) string {
 	return string(b)
 }
 
-// parse runs the permission parser directly against raw text, the way the
-// registry would once its signal gate passes.
 func parse(raw string) compositeerrors.CompositeError {
 	return parsePermission(&errparse.ParseContext{Raw: raw})
 }
@@ -76,8 +74,6 @@ func TestParse_AccessDeniedException_PassRole(t *testing.T) {
 }
 
 func TestParse_NoErrorCodePrefix(t *testing.T) {
-	// Some SDK clients emit the "is not authorized to perform" sentence with no
-	// AccessDenied/Exception code prefix.
 	raw := "User: arn:aws:sts::123:assumed-role/foo/bar is not authorized to perform: iam:PassRole on resource: arn:aws:iam::123:role/baz"
 	ce := parse(raw)
 	if ce == nil {
@@ -109,12 +105,6 @@ func TestParse_UnauthorizedOperation(t *testing.T) {
 	}
 }
 
-// TestParse_S3AccessDenied_PermissionsBoundary uses the real error_output the
-// runner captured from a broken-provision deploy: plain log-capture lines (no
-// terraform box-drawing), a quoted resource ARN, and the "explicit deny in a
-// permissions boundary" phrasing. It guards the quote-stripping in
-// cleanResource, since a quoted ARN would otherwise produce a malformed IAM
-// policy statement in the "How to fix" section.
 func TestParse_S3AccessDenied_PermissionsBoundary(t *testing.T) {
 	ce := parse(readFixture(t, "s3_access_denied_permissions_boundary.txt"))
 	if ce == nil {
@@ -133,7 +123,6 @@ func TestParse_S3AccessDenied_PermissionsBoundary(t *testing.T) {
 	if strings.ContainsAny(e.Resource, `"'`) {
 		t.Errorf("resource %q still carries quotes", e.Resource)
 	}
-	// The generated policy statement must embed the clean ARN, not a quoted one.
 	policy := ""
 	for _, s := range e.Sections() {
 		if s.Heading == "IAM policy statement" {
@@ -213,9 +202,6 @@ func TestSections_MinimalOmitsOptionalSections(t *testing.T) {
 	}
 }
 
-// TestRegistry_GatesAndDispatches exercises the registry path end to end: the
-// signal gate must let a matching AWS error through and reject unrelated text,
-// and an unknown tool/provider must fail open so the parser still runs.
 func TestRegistry_GatesAndDispatches(t *testing.T) {
 	raw := readFixture(t, "terraform_apply_access_denied.txt")
 

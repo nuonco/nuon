@@ -52,8 +52,6 @@ func TestBindAzureIdentity(t *testing.T) {
 			wantReason: phoneHomeAuthOK,
 		},
 		{
-			// Azure does not preserve casing in xms_mirid, and GUIDs are
-			// case-insensitive, so a casing difference is not a mismatch.
 			name: "casing differences are not mismatches",
 			identity: func(i *workloadjwt.AzureManagedIdentity) {
 				i.SubscriptionID = "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE"
@@ -63,8 +61,6 @@ func TestBindAzureIdentity(t *testing.T) {
 			wantReason: phoneHomeAuthOK,
 		},
 		{
-			// An attacker with their own Azure tenant can mint a validly signed token;
-			// this is the check that stops it being usable here.
 			name: "a token from another subscription is rejected",
 			identity: func(i *workloadjwt.AzureManagedIdentity) {
 				i.SubscriptionID = "ffffffff-bbbb-cccc-dddd-eeeeeeeeeeee"
@@ -72,7 +68,6 @@ func TestBindAzureIdentity(t *testing.T) {
 			wantReason: phoneHomeRejectAccountMismatch,
 		},
 		{
-			// Two installs in one subscription must not be able to post for each other.
 			name: "a neighbouring install's identity is rejected",
 			identity: func(i *workloadjwt.AzureManagedIdentity) {
 				i.Name = "inst999-phone-home"
@@ -80,8 +75,6 @@ func TestBindAzureIdentity(t *testing.T) {
 			wantReason: phoneHomeRejectIdentityMismatch,
 		},
 		{
-			// Fail closed: an unnamed version must never match a token whose identity
-			// name happens to be empty.
 			name:       "a version with no rendered identity cannot be satisfied",
 			version:    func(v *app.InstallStackVersion) { v.PhoneHomeIdentityName = "" },
 			identity:   func(i *workloadjwt.AzureManagedIdentity) { i.Name = "" },
@@ -95,8 +88,6 @@ func TestBindAzureIdentity(t *testing.T) {
 			wantReason: phoneHomeRejectTenantMismatch,
 		},
 		{
-			// Nothing to bind against: rendering an identity without a target
-			// subscription would mean enforcing against nothing.
 			name:       "an install with no target subscription is rejected",
 			install:    func(i *app.Install) { i.CloudPlatformMetadata.TargetSubscriptionID = "" },
 			wantReason: phoneHomeRejectAccountMismatch,
@@ -116,7 +107,6 @@ func TestBindAzureIdentity(t *testing.T) {
 			wantReason: phoneHomeAuthOK,
 		},
 		{
-			// Before the first verified call there is no pin, so it must not reject.
 			name:       "an unpinned install is accepted",
 			install:    func(i *app.Install) { i.CloudPlatformMetadata.ObservedPhoneHomePrincipalID = "" },
 			wantReason: phoneHomeAuthOK,
@@ -143,7 +133,6 @@ func TestBindAzureIdentity(t *testing.T) {
 			}
 			assert.Error(t, err)
 
-			// Every rejection reaches the caller as the same opaque 401.
 			var authErr errPhoneHomeAuth
 			assert.ErrorAs(t, err, &authErr)
 			assert.Equal(t, tc.wantReason, authErr.reason)
@@ -151,8 +140,6 @@ func TestBindAzureIdentity(t *testing.T) {
 	}
 }
 
-// The subscription check is what makes a validly signed token from any other Azure tenant
-// useless, so it must not be reachable only when a tenant is already pinned.
 func TestBindAzureIdentity_SubscriptionCheckedWithoutAPinnedTenant(t *testing.T) {
 	identity := boundVerifiedIdentity()
 	identity.SubscriptionID = "ffffffff-bbbb-cccc-dddd-eeeeeeeeeeee"

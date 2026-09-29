@@ -12,8 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// GithubClient defines the GitHub API operations used by the VCS service.
-// The *Helpers struct implements this interface. Tests can provide a fake.
 type GithubClient interface {
 	GetInstallationAccount(ctx context.Context, installID string) (*github.User, error)
 	GetInstallation(ctx context.Context, installID string) (*github.Installation, error)

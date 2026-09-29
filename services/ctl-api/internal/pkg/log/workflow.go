@@ -14,8 +14,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// WorkflowLogger returns a (*zap.Logger) that logs to both the log stream (if it is set in the context) and the
-// underlying temporal logger.
 func WorkflowLogger(ctx workflow.Context, attrs ...map[string]string) (*zap.Logger, error) {
 	wfl := temporalzap.GetWorkflowLogger(ctx)
 

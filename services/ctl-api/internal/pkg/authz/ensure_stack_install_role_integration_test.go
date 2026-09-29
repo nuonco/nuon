@@ -1,7 +1,3 @@
-// Integration tests: run with INTEGRATION=true against the migrated test database.
-//
-// External test package on purpose: the shared tests package reaches
-// internal/pkg/authz, so an in-package test would be an import cycle.
 package authz_test
 
 import (
@@ -75,7 +71,6 @@ func (s *EnsureStackInstallRoleTestSuite) rolesFor(accountID string) []app.Role 
 	return roles
 }
 
-// Runs on every provision, so a second call must converge rather than pile up roles.
 func (s *EnsureStackInstallRoleTestSuite) TestEnsureIsConvergent() {
 	t := s.T()
 	ctx := context.Background()
@@ -84,7 +79,6 @@ func (s *EnsureStackInstallRoleTestSuite) TestEnsureIsConvergent() {
 	acct := s.deps.Seeder.CreateServiceAccount(ctx, t, generics.GetFakeObj[string]())
 	installID := generics.GetFakeObj[string]()
 
-	// No account in context: Role.CreatedByID is notnull.
 	require.NoError(t, s.deps.Client.EnsureStackInstallRole(ctx, org.ID, installID, acct.ID))
 
 	roles := s.rolesFor(acct.ID)
@@ -102,7 +96,6 @@ func (s *EnsureStackInstallRoleTestSuite) TestEnsureIsConvergent() {
 	assert.Len(t, s.rolesFor(acct.ID), 1, "a second call must not create a second role")
 }
 
-// Roles predating the phone-home route hold `read`, which cannot report.
 func (s *EnsureStackInstallRoleTestSuite) TestEnsureUpgradesReadToAll() {
 	t := s.T()
 	ctx := context.Background()
@@ -113,7 +106,6 @@ func (s *EnsureStackInstallRoleTestSuite) TestEnsureUpgradesReadToAll() {
 
 	require.NoError(t, s.deps.Client.EnsureStackInstallRole(ctx, org.ID, installID, acct.ID))
 
-	// Rewind to the old grant in place, the way an existing row looks.
 	roles := s.rolesFor(acct.ID)
 	require.Len(t, roles, 1)
 	require.NoError(t, s.deps.DB.

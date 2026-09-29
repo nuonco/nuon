@@ -32,7 +32,6 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		return err
 	}
 
-	// Create the runner job early so it appears in the dashboard even if policy evaluation fails
 	runnerJob, err := activities.AwaitCreateBuildJob(ctx, &activities.CreateBuildJobRequest{
 		BuildID:     buildID,
 		Op:          app.RunnerJobOperationTypeBuild,
@@ -98,7 +97,6 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		return fmt.Errorf("unable to save runner job plan: %w", err)
 	}
 
-	// wait for the job
 	w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusBuilding, "building")
 	err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: runnerJob.ID}, &workflow.ChildWorkflowOptions{
 		WorkflowID: fmt.Sprintf("control-plane-%s-execute-job-%s", comp.ID, runnerJob.ID),

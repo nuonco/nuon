@@ -19,13 +19,10 @@ const (
 type handlerState struct {
 	workspace workspace.Workspace
 
-	// ociArch is set when the plan uses OCI source instead of git.
-	// The unpacked archive directory is used as the source path.
 	ociArch ociarchive.Archive
 
 	timeout time.Duration
 
-	// fields set by the plugin execution
 	jobExecutionID string
 	jobID          string
 	tfWorkspace    terraformworkspace.Workspace

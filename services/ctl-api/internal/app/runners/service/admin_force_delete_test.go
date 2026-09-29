@@ -79,7 +79,6 @@ func (s *AdminForceDeleteTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -98,7 +97,6 @@ func (s *AdminForceDeleteTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -110,7 +108,6 @@ func (s *AdminForceDeleteTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -161,7 +158,7 @@ func (s *AdminForceDeleteTestSuite) TestAdminForceDeleteRunner() {
 				require.Len(s.T(), capturedSignals, 1)
 				assert.Equal(s.T(), runnerID, capturedSignals[0].OwnerID)
 
-				_ = capturedSignals[0] // type check
+				_ = capturedSignals[0]
 
 				assert.NotEmpty(s.T(), string(capturedSignals[0].Type))
 			},
@@ -248,7 +245,6 @@ func (s *AdminForceDeleteTestSuite) TestAdminForceDeleteRunner() {
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
-				// Admin routes have no org scoping - can delete any runner
 				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1)
 				assert.Equal(s.T(), runnerID, signals[0].OwnerID)
@@ -283,7 +279,6 @@ func (s *AdminForceDeleteTestSuite) TestAdminForceDeleteRunner() {
 				tc.validateFunc(runnerID)
 			}
 
-			// Verify signal presence matches expectation
 			allSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 			if tc.expectedSignal {
 				assert.GreaterOrEqual(s.T(), len(allSignals), 1, "expected signal to be sent")

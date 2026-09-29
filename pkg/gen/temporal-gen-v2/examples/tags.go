@@ -1,9 +1,5 @@
 package examples
 
-// Demonstrates @tag name, which pulls default options from temporal-gen.yaml
-// in this directory. Tags apply to activities only.
-// See AGENTS.md for the precedence rules.
-
 import "context"
 
 // UntaggedActivity carries no tags, so it still picks up the `defaults` block

@@ -21,7 +21,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	l.Info("ensuring image config file", zap.String("job_type", "update-version"), zap.String("expected_version", h.state.expectedVersion))
 	monitor.EnsureImageConfigFile(ctx, l, h.settings)
-	// NOTE(fd): this is run as the root user
 	l.Info("restarting", zap.String("systemctlservice.name", monitor.RunnerServiceName), zap.String("job_type", "update-version"), zap.String("expected_version", h.state.expectedVersion))
 	systemctl.Restart(ctx, monitor.RunnerServiceName, systemctl.Options{})
 

@@ -22,10 +22,6 @@ import {
 
 type Mode = 'all' | 'specific'
 
-// Resources map is the source of truth for the "Choose specific events" branch.
-// We keep it on local state regardless of the current Mode so toggling
-// 'All events' → 'Choose specific events' → 'All events' doesn't blow away
-// whatever the user has already ticked.
 type ResourcesMap = NonNullable<Interests['resources']>
 
 const initialMode = (value: Interests): Mode =>
@@ -33,15 +29,6 @@ const initialMode = (value: Interests): Mode =>
 
 const initialResources = (value: Interests): ResourcesMap => value.resources ?? {}
 
-// Popup form for editing the Interests config. Opened from InterestsPicker via
-// useSurfaces; commits the draft back through onSave only on Save. The Cancel
-// button (provided by Modal) discards the draft and the parent form keeps the
-// previous value.
-//
-// The flat checklist deliberately drops the per-resource outcome filter
-// (succeeded vs failed vs started) and sub-op narrowing from the picker UI.
-// Both are still expressible on the wire — power users can craft them by API
-// — but they make the picker overwhelming for the 99% case.
 export const InterestsModal = ({
   value,
   onSave,

@@ -17,19 +17,16 @@ const (
 )
 
 type handlerState struct {
-	// set during the fetch/validate phase
 	plan    *plantypes.DeployPlan
 	appCfg  *models.AppAppConfig
 	helmCfg *models.AppHelmComponentConfig
 
-	// cloud auth information
 	auth *pkgplantypes.PlanAuth
 
 	srcCfg  *configs.OCIRegistryRepository
 	srcTag  string
 	timeout time.Duration
 
-	// fields set by the plugin execution
 	arch           ociarchive.Archive
 	chartPath      string
 	jobExecutionID string

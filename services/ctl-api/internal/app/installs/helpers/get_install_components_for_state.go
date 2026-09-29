@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
-// getInstallComponents reads components deployed to an install from the DB.
 func (h *Helpers) getInstallComponentsState(ctx context.Context, installID string) ([]app.InstallComponent, error) {
 	install := &app.Install{}
 	res := h.db.WithContext(ctx).

@@ -1,7 +1,5 @@
 package templates
 
-// stateTemplates returns all terraform state JSON templates.
-// These match the format of `terraform show -json` output (format_version "1.0").
 func stateTemplates() []Template {
 	return []Template{
 		{

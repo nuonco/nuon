@@ -34,7 +34,6 @@ func (s *ComponentsServiceTestSuite) TestAddComponentLabelsSuccess() {
 		assert.Equal(s.T(), "prod", response.Labels["env"])
 		assert.Equal(s.T(), "frontend", response.Labels["tier"])
 
-		// Verify in DB
 		var dbComp app.Component
 		err = s.deps.DB.WithContext(s.ctx).First(&dbComp, "id = ?", componentID).Error
 		require.NoError(s.T(), err)
@@ -45,7 +44,6 @@ func (s *ComponentsServiceTestSuite) TestAddComponentLabelsSuccess() {
 	s.Run("merges labels with existing labels", func() {
 		componentID := s.testAppConfig.ComponentConfigConnections[1].ComponentID
 
-		// Set initial labels
 		err := s.deps.DB.WithContext(s.ctx).
 			Model(&app.Component{}).
 			Where("id = ?", componentID).

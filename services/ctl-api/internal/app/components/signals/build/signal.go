@@ -65,7 +65,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get component: %w", err)
 	}
 
-	// Ensure org is provisioned before building.
 	if err := queueclient.EnsureQueueSignal(ctx, comp.OrgID, "orgs", orgprovision.SignalType, orgreprovision.SignalType); err != nil {
 		s.updateBuildStatus(ctx, s.BuildID, app.ComponentBuildStatusError, "org provision not ready")
 		return fmt.Errorf("org provision not ready: %w", err)
@@ -78,9 +77,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	// A component is activated asynchronously by its `created` signal. During a
-	// sync burst the build can be enqueued before that signal commits the active
-	// status, so wait for activation before the worker validates the status.
 	if err := queueclient.EnsureQueueSignal(ctx, comp.ID, "components", createdsignal.SignalType); err != nil {
 		s.updateBuildStatus(ctx, s.BuildID, app.ComponentBuildStatusError, "component activation not ready")
 		return fmt.Errorf("component activation not ready: %w", err)
@@ -93,7 +89,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	})
 }
 
-// updateBuildStatus updates the build status
 func (s *Signal) updateBuildStatus(ctx workflow.Context, bldID string, status app.ComponentBuildStatus, statusDescription string) {
 	l := workflow.GetLogger(ctx)
 	err := activities.AwaitUpdateBuildStatus(ctx, activities.UpdateBuildStatus{

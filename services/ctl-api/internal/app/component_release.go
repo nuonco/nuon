@@ -14,10 +14,8 @@ import (
 type ComponentReleaseStrategy string
 
 const (
-	// Parallel means that all steps start at the same time
 	ComponentReleaseStrategyParallel ComponentReleaseStrategy = "parallel"
 
-	// Sync with delay splits the installs into steps (based on count/step), and then just waits the period of time
 	ComponentReleaseStrategySyncWithDelay ComponentReleaseStrategy = "sync_with_delay"
 )
 

@@ -72,8 +72,6 @@ func (s *service) mcpRunAction(ctx context.Context, _ *mcp.CallToolRequest, in m
 	})
 }
 
-// validateRunEnvVarKeys rejects keys the runner cannot export as environment
-// variables once RUNENV_ is prepended.
 func validateRunEnvVarKeys(envVars map[string]string) error {
 	for k := range envVars {
 		if k == "" {

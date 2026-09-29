@@ -25,10 +25,6 @@ func inputStateCfg() *app.AppConfig {
 
 func strPtr(s string) *string { return &s }
 
-// ValuesRedacted carries every declared input, unset ones included as "". Keying
-// the default fallback off presence alone resolved those to "" and dropped the
-// default, so a declared bool reached terraform as "" and failed plan with
-// "a bool is required".
 func TestToInputStateAppliesDefaultForEmptyValue(t *testing.T) {
 	inputs := &app.InstallInputs{
 		ValuesRedacted: pgtype.Hstore{
@@ -43,7 +39,6 @@ func TestToInputStateAppliesDefaultForEmptyValue(t *testing.T) {
 
 	assert.Equal(t, "false", is.Inputs["cluster_endpoint_public_access"])
 	assert.Equal(t, "1.36", is.Inputs["cluster_version"])
-	// No default declared, so an unset input stays empty rather than inventing one.
 	assert.Equal(t, "", is.Inputs["root_domain"])
 }
 
@@ -61,8 +56,6 @@ func TestToInputStateAppliesDefaultForMissingKey(t *testing.T) {
 	assert.Equal(t, "1.40", is.Inputs["cluster_version"], "an explicit value must win over the default")
 }
 
-// An install that sets no inputs at all still needs its declared defaults; the
-// previous empty-map short circuit returned nil and dropped every one of them.
 func TestToInputStateAppliesDefaultsWithNoValues(t *testing.T) {
 	is := helpers.ToInputState(&app.InstallInputs{}, inputStateCfg(), false)
 	require.NotNil(t, is)

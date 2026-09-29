@@ -16,12 +16,10 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// OutputsOptions filters what `Outputs` returns. At most one of StackOnly,
-// SandboxOnly, or ComponentID may be set — Cobra enforces this at the flag layer.
 type OutputsOptions struct {
 	StackOnly   bool
 	SandboxOnly bool
-	ComponentID string // id or name; empty means no component filter
+	ComponentID string
 }
 
 type installOutputs struct {
@@ -117,7 +115,6 @@ func (s *Service) Outputs(ctx context.Context, installID string, opts OutputsOpt
 			ic := ic
 			name := componentDisplayName(ic)
 
-			// Skip if filtering and this isn't the target.
 			if opts.ComponentID != "" &&
 				!strings.EqualFold(name, opts.ComponentID) &&
 				!strings.EqualFold(ic.ComponentID, opts.ComponentID) {
@@ -153,7 +150,6 @@ func (s *Service) Outputs(ctx context.Context, installID string, opts OutputsOpt
 		case opts.SandboxOnly:
 			ui.PrintJSON(out.Sandbox)
 		case opts.ComponentID != "":
-			// Return the bare component map for the single match (if any).
 			for _, v := range out.Components {
 				ui.PrintJSON(v)
 				return nil
@@ -242,9 +238,6 @@ func availableComponents(components []*models.AppInstallComponent) {
 	ui.Printf("\nAvailable components: %s\n", strings.Join(names, ", "))
 }
 
-// latestSandboxOutputs returns the outputs map from the most relevant sandbox
-// run: the first active/succeeded run with outputs, otherwise the most recent
-// run's outputs if any. Returns nil if no run has outputs.
 func latestSandboxOutputs(runs []*models.AppInstallSandboxRun) map[string]any {
 	for _, run := range runs {
 		if (run.Status == "active" || run.Status == "succeeded") && run.Outputs != nil {
@@ -310,9 +303,6 @@ func flattenStackOutputs(o *models.AppInstallStackOutputs) map[string]any {
 	return flat
 }
 
-// getTerraformOutputs fetches the latest terraform state for a workspace and
-// extracts the output values. It tries the state-json endpoint first (already
-// in `terraform show -json` shape) and falls back to the raw state.
 func (s *Service) getTerraformOutputs(ctx context.Context, workspaceID string) (map[string]any, error) {
 	raw, err := s.api.GetTerraformWorkspaceLatestStateJSON(ctx, workspaceID)
 	if err == nil && len(raw) > 0 {
@@ -350,8 +340,6 @@ func int64SliceToBytes(s []int64) []byte {
 	return b
 }
 
-// parseTerraformShowOutputs parses `terraform show -json` format:
-// {values: {outputs: {name: {value, type}}}}.
 func parseTerraformShowOutputs(raw []byte) map[string]any {
 	var tfShow struct {
 		Values struct {
@@ -371,8 +359,6 @@ func parseTerraformShowOutputs(raw []byte) map[string]any {
 	return result
 }
 
-// parseRawTerraformStateOutputs parses raw terraform state:
-// {outputs: {name: {value, type}}}.
 func parseRawTerraformStateOutputs(raw []byte) (map[string]any, error) {
 	var tfState struct {
 		Outputs map[string]struct {
@@ -410,7 +396,6 @@ func printOutputsTable(view *ui.ListView, m map[string]any) {
 	view.Render(data)
 }
 
-// flattenMap recursively flattens a nested map into dot-notation keys.
 func flattenMap(prefix string, m map[string]any, out map[string]string) {
 	for k, v := range m {
 		key := k

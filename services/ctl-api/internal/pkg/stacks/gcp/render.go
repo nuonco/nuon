@@ -17,14 +17,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-// GCPPolicyTemplateInput holds one policy rendered as its own custom role,
-// mirroring how AWS attaches each policy separately instead of merging.
 type GCPPolicyTemplateInput struct {
 	Name        string
 	Permissions string
 }
 
-// GCPRoleTemplateInput holds the per-role data rendered into the template.
 type GCPRoleTemplateInput struct {
 	Name            string
 	Policies        []GCPPolicyTemplateInput
@@ -32,34 +29,23 @@ type GCPRoleTemplateInput struct {
 	PredefinedRoles []string
 }
 
-// GCPSecretTemplateInput holds a non-auto-gen secret definition for the template.
 type GCPSecretTemplateInput struct {
 	Name        string
 	Description string
 	Required    bool
 	Default     string
-	// Value is what the secret's `value` renders to in tfvars. For the normal
-	// tfvars it's the secret's Default; for the Spacelift blueprint it's a
-	// `${{ inputs.secret_<name> }}` CEL reference.
-	Value string
+	Value       string
 }
 
-// GCPInstallInputTemplateInput holds a customer install input for the template.
-// Value is the input's Default in the normal tfvars and a
-// `${{ inputs.input_<name> }}` CEL reference in the Spacelift blueprint.
 type GCPInstallInputTemplateInput struct {
 	Name    string
 	Default string
 	Value   string
 }
 
-// GCPTemplateInput extends TemplateInput with pre-marshaled GCP IAM permission lists.
 type GCPTemplateInput struct {
 	*stacks.TemplateInput
 
-	// GCPProjectID / GCPRegion render as literals in the normal tfvars and as
-	// `${{ inputs.gcp_project_id }}` / `${{ inputs.gcp_region }}` CEL references
-	// in the Spacelift blueprint. Empty omits the line.
 	GCPProjectID string
 	GCPRegion    string
 
@@ -84,8 +70,6 @@ type GCPTemplateInput struct {
 	Secrets             []GCPSecretTemplateInput
 }
 
-// GCPCustomStackTemplateInput renders one curated custom stack into the
-// custom_stacks tfvars map.
 type GCPCustomStackTemplateInput struct {
 	Name       string
 	Module     string
@@ -141,10 +125,6 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 		}
 	}
 
-	// Curated custom stacks: parameters resolve from the install's actual
-	// input values (matching the CFN/ARM paths), falling back to the app
-	// input's default — covering vendor-side inputs that never appear in the
-	// customer tfvars.
 	inputDefaults := map[string]string{}
 	if inputs.AppCfg != nil {
 		for _, input := range inputs.AppCfg.InputConfig.AppInputs {
@@ -162,10 +142,6 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 		}
 		params := map[string]string{}
 		for paramName, templateValue := range stack.Parameters {
-			// Already rendered -- see config.RenderCustomNestedStackParameters,
-			// called when the install stack version is generated. The
-			// install-input reference form is still resolved here as a fallback
-			// for callers that read the config without rendering it first.
 			resolved := templateValue
 			if inputName, err := config.ParseInstallInputReference(templateValue); err == nil {
 				resolved = inputDefaults[inputName]
@@ -229,9 +205,6 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 		return nil, "", err
 	}
 
-	// The blueprint surfaces customer install inputs and secrets as blueprint
-	// inputs, so render a variant of the tfvars where those values are
-	// `${{ inputs.<id> }}` CEL references instead of literals.
 	blueprintTfvarsInput := *gcpInputs
 	blueprintTfvarsInput.GCPProjectID = "${{ inputs.gcp_project_id }}"
 	blueprintTfvarsInput.GCPRegion = "${{ inputs.gcp_region }}"
@@ -270,8 +243,6 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 		return nil, "", err
 	}
 
-	// Wrap tfvars in a JSON envelope so it can be stored in the jsonb column.
-	// The raw tfvars text is HCL, not valid JSON.
 	envelope := map[string]string{
 		"inputs_tfvars":            inputsBuf.String(),
 		"provider_tfvars":          providerBuf.String(),
@@ -290,14 +261,12 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 	return res, checksum, nil
 }
 
-// GCPStandardRoleTemplateInput holds one standard operation role's grants.
 type GCPStandardRoleTemplateInput struct {
 	Policies        []GCPPolicyTemplateInput
 	PredefinedRole  string
 	PredefinedRoles []string
 }
 
-// extractGCPStandardPolicies reads GCP IAM policies for the standard roles (provision, maintenance, deprovision).
 func extractGCPStandardPolicies(appCfg *app.AppConfig) (provision, maintenance, deprovision GCPStandardRoleTemplateInput) {
 	if appCfg == nil {
 		return
@@ -328,8 +297,6 @@ func extractGCPStandardPolicies(appCfg *app.AppConfig) (provision, maintenance, 
 	return
 }
 
-// extractGCPRolesFromList converts a slice of role configs into template-ready inputs,
-// filtering to GCP roles only.
 func extractGCPRolesFromList(roles []app.AppAWSIAMRoleConfig) []GCPRoleTemplateInput {
 	var result []GCPRoleTemplateInput
 	for _, role := range roles {
@@ -354,8 +321,6 @@ func extractGCPRolesFromList(roles []app.AppAWSIAMRoleConfig) []GCPRoleTemplateI
 	return result
 }
 
-// extractRolePolicies keeps each policy separate so the stack creates one
-// custom role per policy, matching the AWS one-policy-one-attachment shape.
 func extractRolePolicies(role app.AppAWSIAMRoleConfig) []GCPPolicyTemplateInput {
 	var policies []GCPPolicyTemplateInput
 	for i, policy := range role.Policies {

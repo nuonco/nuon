@@ -42,12 +42,6 @@ func (s *service) ReportRunnerProcessTerminating(ctx *gin.Context) {
 	ctx.JSON(http.StatusAccepted, process)
 }
 
-// reportRunnerProcessTerminating records a best-effort "my host VM is shutting
-// down" beacon sent by the runner when it observes an OS shutdown. The runner
-// only knows the VM is going away; attribution lives here: if Nuon issued the
-// shutdown there is an open RunnerProcessShutdown row, otherwise the
-// termination was initiated externally (e.g. the customer stopped/terminated
-// the VM from their cloud portal).
 func (s *service) reportRunnerProcessTerminating(ctx context.Context, runnerID, processID string) (*app.RunnerProcess, error) {
 	var process app.RunnerProcess
 	if res := s.db.WithContext(ctx).
@@ -63,11 +57,6 @@ func (s *service) reportRunnerProcessTerminating(ctx context.Context, runnerID, 
 
 	newComposite := app.NewCompositeStatus(ctx, app.Status(app.RunnerProcessStatusShuttingDown))
 	newComposite.StatusHumanDescription = fmt.Sprintf("vm terminating (%s)", reason)
-	// Carry prior metadata forward and stamp the attribution. Subsequent
-	// status transitions (UpdateRunnerProcessStatus) copy Metadata forward, so
-	// termination_reason rides onto the live status through the eventual
-	// offline/inactive transition — letting RunnerProcess.AfterQuery surface a
-	// durable indicator without scanning history.
 	for k, v := range process.CompositeStatus.Metadata {
 		newComposite.Metadata[k] = v
 	}
@@ -102,9 +91,6 @@ func (s *service) reportRunnerProcessTerminating(ctx context.Context, runnerID, 
 	return &updated, nil
 }
 
-// hasOpenProcessShutdown reports whether Nuon has an in-flight shutdown for the
-// process (requested or in-progress). A match means the termination was
-// Nuon-initiated rather than external.
 func (s *service) hasOpenProcessShutdown(ctx context.Context, processID string) bool {
 	var shutdowns []app.RunnerProcessShutdown
 	if res := s.db.WithContext(ctx).

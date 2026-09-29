@@ -100,8 +100,6 @@ func (s *Service) CreateBranch(ctx context.Context, appID, name string, asJSON b
 	return nil
 }
 
-// TriggerBranchRunOptions carries the optional inputs for a branch run. Preview
-// and pull request inputs live on `branches preview` instead.
 type TriggerBranchRunOptions struct {
 	Force  bool
 	NoWait bool

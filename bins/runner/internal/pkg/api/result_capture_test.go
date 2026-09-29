@@ -13,8 +13,6 @@ import (
 	"github.com/nuonco/nuon/pkg/runner/errcapture"
 )
 
-// fakeClient embeds the interface (nil) and records the request passed to
-// CreateJobExecutionResult; only that method is exercised in these tests.
 type fakeClient struct {
 	nuonrunner.Client
 	got *models.ServiceCreateRunnerJobExecutionResultRequest
@@ -25,8 +23,6 @@ func (f *fakeClient) CreateJobExecutionResult(ctx context.Context, jobID, jobExe
 	return &models.AppRunnerJobExecutionResult{}, nil
 }
 
-// ctxWithCapture returns a context carrying a Capture populated with output by
-// logging through the real capture core (append is unexported).
 func ctxWithCapture(output string) context.Context {
 	c := errcapture.New()
 	if output != "" {
@@ -56,7 +52,7 @@ func TestResultCapture_InjectsOnFailure(t *testing.T) {
 	}
 }
 
-// TestResultCapture_MultiLineTerraformDiagnostic mirrors the real failure that
+// why: TestResultCapture_MultiLineTerraformDiagnostic mirrors the real failure that
 // motivated this feature: terraform logs each AWS AccessDenied line separately
 // at error level (via zaphclog), while the wrapped Go error is only a thin
 // "exit status 1". The capture core must join the lines back into an

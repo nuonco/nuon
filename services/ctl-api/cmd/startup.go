@@ -28,7 +28,6 @@ func (c *cli) registerStartup() error {
 	return nil
 }
 
-// index builds on big tables can need more than this, hence the override
 const defaultMigrationsTimeout = time.Minute * 5
 
 func migrationsTimeout() time.Duration {
@@ -51,8 +50,6 @@ func migrationsTimeout() time.Duration {
 func (c *cli) runStartup(cmd *cobra.Command, _ []string) {
 	start := time.Now()
 
-	// the logger has to come from fx: zap.L() here would be captured before the providers
-	// replace the globals, so every line written through it goes to a nop logger
 	providers := []fx.Option{
 		fx.Provide(psqlmigrations.New),
 		fx.Provide(chmigrations.New),
@@ -79,9 +76,6 @@ func (c *cli) runStartup(cmd *cobra.Command, _ []string) {
 	providers = append(providers, c.providers()...)
 	fx.New(providers...).Run()
 
-	// NOTE(fd): in prod and stage, we want the job container to persist for at least 60s to ensure
-	// the datadog agent picks up on its existence. We don't want this job to take longer than necessary
-	// though so we calculate it's runtime so we only sleep for as long as necessary to reach the 60s threshold.
 	if os.Getenv("ENV") == "prod" || os.Getenv("ENV") == "stage" {
 		minRunLen := time.Duration(time.Second * 60)
 		runTime := time.Since(start)

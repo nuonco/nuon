@@ -8,9 +8,6 @@ import (
 	"regexp"
 )
 
-// SchemaVersion is the current version of the frozen CompositeErrorData
-// payload. It is stamped onto every record by New() so renderers and future
-// migrations can reason about payloads written by older code.
 const SchemaVersion = 1
 
 const redactedValue = "[REDACTED]"
@@ -25,35 +22,27 @@ type diagnosticSecretRedactor struct {
 
 var diagnosticSecretRedactors = []diagnosticSecretRedactor{
 	{
-		// Credentials embedded in URL userinfo, such as
-		// https://user:password@host or postgres://user:password@host.
 		pattern:     regexp.MustCompile(`(?i)(\b(?:https?|ssh|git|postgres(?:ql)?|mysql|redis|mongodb(?:\+srv)?|mssql|sqlserver|amqps?)://)[^/@\s]+@`),
 		replacement: "${1}" + redactedValue + "@",
 	},
 	{
-		// HTTP authorization and cookie header values. Line-anchored so a wrapped
-		// "unable to get authorization: ..." keeps its cause chain.
 		pattern:     regexp.MustCompile(`(?im)^([ \t]*(?:authorization|proxy-authorization|cookie|set-cookie)[ \t]*:[ \t]*)[^\r\n]*`),
 		replacement: "${1}" + redactedValue,
 	},
 	{
-		// Quoted JSON-style credential fields, such as "api_token":"...".
 		pattern:     regexp.MustCompile(`(?i)(["']` + diagnosticCredentialName + `["']\s*:\s*["'])[^"'\r\n]*`),
 		replacement: "${1}" + redactedValue,
 	},
 	{
-		// Quoted HCL, shell, or environment assignments, such as password = "...".
 		pattern:     regexp.MustCompile(`(?i)(\b` + diagnosticCredentialName + `\s*=\s*["'])[^"'\r\n]*`),
 		replacement: "${1}" + redactedValue,
 	},
 	{
-		// Unquoted URL query and environment assignments, such as token=<value>.
 		pattern:     regexp.MustCompile(`(?i)(\b` + diagnosticCredentialName + `\s*=\s*)[^&\s"'<>]+`),
 		replacement: "${1}" + redactedValue,
 	},
 }
 
-// Credential fields encountered after typed composite-error data is decoded.
 var sensitiveJSONKey = regexp.MustCompile(`(?i)^` + diagnosticCredentialName + `$`)
 
 // CompositeErrorData is the JSONB GORM column attached to owner rows. It
@@ -88,13 +77,8 @@ type CompositeErrorData struct {
 	Hints Hints `json:"hints,omitempty"`
 }
 
-// Option customizes a CompositeErrorData at construction. Options apply
-// record-site context (e.g. provenance) that the typed error doesn't know.
 type Option func(*CompositeErrorData)
 
-// WithSource records where the error originated. sourceType is the row kind
-// (polymorphic table name, e.g. "runner_job_execution_results"); sourceID is
-// that row's id.
 func WithSource(sourceType, sourceID string) Option {
 	return func(d *CompositeErrorData) {
 		d.SourceType = sourceType
@@ -102,7 +86,7 @@ func WithSource(sourceType, sourceID string) Option {
 	}
 }
 
-// New constructs a CompositeErrorData from a typed CompositeError. The
+// why: New constructs a CompositeErrorData from a typed CompositeError. The
 // implementation's data, headline message, sections, and (optionally) hints
 // are captured at this point and frozen on the resulting record. Sections and
 // Hints are copied so a shared source (e.g. a package-level default hints bag)
@@ -138,8 +122,6 @@ func New(e CompositeError, opts ...Option) (*CompositeErrorData, error) {
 	return &redacted, nil
 }
 
-// cloneSections returns a copy of s, or nil when empty. Section fields are all
-// value types, so a slice copy fully detaches the result from the source.
 func cloneSections(s []Section) []Section {
 	if len(s) == 0 {
 		return nil
@@ -168,7 +150,7 @@ func (c CompositeErrorData) redacted() (CompositeErrorData, error) {
 	return c, nil
 }
 
-// RedactDiagnosticSecrets removes credentials in common URL, header, and
+// why: RedactDiagnosticSecrets removes credentials in common URL, header, and
 // structured-assignment forms. It is intentionally not a general-purpose
 // detector for arbitrary secrets embedded in otherwise unlabeled prose.
 func RedactDiagnosticSecrets(value string) string {
@@ -226,7 +208,6 @@ func redactJSONValue(value any) (any, bool) {
 	return value, false
 }
 
-// Scan implements database/sql.Scanner.
 func (c *CompositeErrorData) Scan(value any) error {
 	if value == nil {
 		*c = CompositeErrorData{}
@@ -250,7 +231,6 @@ func (c *CompositeErrorData) Scan(value any) error {
 	return json.Unmarshal(bytes, c)
 }
 
-// Value implements driver.Valuer.
 func (c *CompositeErrorData) Value() (driver.Value, error) {
 	if c == nil || c.Type == "" {
 		return nil, nil
@@ -258,5 +238,4 @@ func (c *CompositeErrorData) Value() (driver.Value, error) {
 	return json.Marshal(c)
 }
 
-// GormDataType tells GORM to use a jsonb column.
 func (CompositeErrorData) GormDataType() string { return "jsonb" }

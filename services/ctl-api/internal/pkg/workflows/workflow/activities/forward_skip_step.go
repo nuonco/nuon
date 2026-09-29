@@ -10,12 +10,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
-// ForwardSkipStepRequest is the input for forwarding a skip to a step handler workflow.
 type ForwardSkipStepRequest struct {
 	StepID string `json:"step_id" validate:"required"`
 }
 
-// ForwardSkipStepResponse is the output from forwarding a skip.
 type ForwardSkipStepResponse struct {
 	StepID string `json:"step_id"`
 }

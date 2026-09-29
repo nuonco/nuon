@@ -38,8 +38,6 @@ func testInput() *stacks.TemplateInput {
 	}
 }
 
-// extractTfvars unwraps the JSON envelope into the raw HCL inputs tfvars string
-// (standard vars, permissions, roles, install_inputs).
 func extractTfvars(t *testing.T, out []byte) string {
 	t.Helper()
 	var envelope map[string]string
@@ -47,8 +45,6 @@ func extractTfvars(t *testing.T, out []byte) string {
 	return envelope["inputs_tfvars"]
 }
 
-// extractSecretsTfvars unwraps the JSON envelope into the raw HCL secrets tfvars
-// string (auto_generate_secrets, secrets).
 func extractSecretsTfvars(t *testing.T, out []byte) string {
 	t.Helper()
 	var envelope map[string]string
@@ -56,8 +52,6 @@ func extractSecretsTfvars(t *testing.T, out []byte) string {
 	return envelope["secrets_tfvars"]
 }
 
-// findVarValue finds the right-hand side of `<key> = ...` in the HCL tfvars.
-// Returns the trimmed value (possibly a quoted JSON string).
 func findVarValue(t *testing.T, tfvars, key string) string {
 	t.Helper()
 	for _, line := range strings.Split(tfvars, "\n") {
@@ -75,8 +69,6 @@ func findVarValue(t *testing.T, tfvars, key string) string {
 	return ""
 }
 
-// unquoteHCLJSONString takes an HCL string literal that wraps a JSON document
-// (the form mergedInlinePolicyDocument emits) and returns the inner JSON.
 func unquoteHCLJSONString(t *testing.T, s string) string {
 	t.Helper()
 	var inner string
@@ -210,10 +202,8 @@ func TestRenderInlinePolicyOnlyRole(t *testing.T) {
 
 	tfvars := extractTfvars(t, out)
 
-	// Managed-arns slot stays empty.
 	assert.Equal(t, "[]", findVarValue(t, tfvars, "provision_managed_policy_arns"))
 
-	// Inline document round-trips with full fidelity.
 	doc := unquoteHCLJSONString(t, findVarValue(t, tfvars, "provision_inline_policy_document"))
 	var parsed struct {
 		Version   string
@@ -285,8 +275,6 @@ func TestRenderInlinePolicyMergesAcrossPolicies(t *testing.T) {
 }
 
 func TestRenderInlinePolicyActionAsStringOrSlice(t *testing.T) {
-	// Both forms are valid IAM policy JSON. Renderer must round-trip both
-	// without mangling — Action stays whatever shape AWS gave us.
 	inp := testInput()
 	inp.AppCfg.PermissionsConfig.Roles = []app.AppAWSIAMRoleConfig{
 		{
@@ -346,10 +334,8 @@ func TestRenderBreakGlassInlinePolicy(t *testing.T) {
 
 	tfvars := extractTfvars(t, out)
 	assert.Contains(t, tfvars, `"emergency"`)
-	// inline_policy_document is an HCL-quoted JSON string; look at the unwrapped doc.
 	doc := unquoteHCLJSONString(t, findVarValue(t, tfvars, "inline_policy_document"))
 	assert.Contains(t, doc, `"iam:*"`)
-	// Break-glass roles default to disabled.
 	assert.Contains(t, tfvars, "enabled                = false")
 }
 
@@ -397,8 +383,6 @@ func TestRenderChecksumDiffersWithInlinePolicy(t *testing.T) {
 	assert.NotEqual(t, base, withInline, "inline policy should affect the checksum")
 }
 
-// Valid config on CloudFormation, where each file is its own AWS::IAM::Policy;
-// only the merged Terraform document has to disambiguate.
 func TestRenderInlinePolicyDedupesRepeatedSids(t *testing.T) {
 	inp := testInput()
 	inp.AppCfg.PermissionsConfig.Roles = []app.AppAWSIAMRoleConfig{

@@ -12,7 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 )
 
-// Temporal registers activities by method name, so a name used by two of the
+// why: Temporal registers activities by method name, so a name used by two of the
 // activity sets on this worker panics the whole worker at startup — every signal
 // on every apps queue then stops processing.
 func TestActivityNamesAreUniqueAcrossWorker(t *testing.T) {

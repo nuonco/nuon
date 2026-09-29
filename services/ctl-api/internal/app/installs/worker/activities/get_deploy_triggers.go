@@ -26,7 +26,6 @@ func (a *Activities) GetInstallActionWorkflowsByTriggerType(ctx context.Context,
 		return workflows, nil
 	}
 
-	// maps: id to index and id to string
 	indices := map[string]int{}
 	wkflows := make(map[string]*app.InstallActionWorkflow, 0)
 	for _, workflow := range workflows {
@@ -50,18 +49,16 @@ func (a *Activities) GetInstallActionWorkflowsByTriggerType(ctx context.Context,
 		}
 	}
 
-	// get the workflow IDs
 	workflowIDs := make([]string, 0)
 	for wkflowID := range indices {
 		workflowIDs = append(workflowIDs, wkflowID)
 	}
 
-	// sort the workflowIDs by the value in the orders map
 	sort.SliceStable(workflowIDs, func(i, j int) bool {
 		return indices[workflowIDs[i]] < indices[workflowIDs[j]]
 	})
 
-	orderedWorkflows := make([]*app.InstallActionWorkflow, len(workflowIDs)) // final list
+	orderedWorkflows := make([]*app.InstallActionWorkflow, len(workflowIDs))
 	for i, wkflowID := range workflowIDs {
 		wkflow, ok := wkflows[wkflowID]
 		if ok {

@@ -7,7 +7,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// internal methods
 func (c *client) GetApp(ctx context.Context, appID string) (*models.AppApp, error) {
 	resp, err := c.genClient.Operations.GetApp(&operations.GetAppParams{
 		Context: ctx,

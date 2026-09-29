@@ -70,8 +70,6 @@ func (h *WorkflowTimelineHandler) StreamWorkflowTimeline(c *gin.Context) {
 			})
 			if err != nil {
 				if !isNotFoundErr(err) {
-					// Partial result: active-workflows still emits before the
-					// fetch-error event.
 					return sseFetchResult{Events: events}, err
 				}
 				history, hasMore = nil, false

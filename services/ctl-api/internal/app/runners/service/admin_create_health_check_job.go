@@ -37,7 +37,6 @@ func (s *service) AdminCreateHealthCheck(ctx *gin.Context) {
 		return
 	}
 
-	// NOTE(fd): don't do this - this is a short term approach to get a steel thread in place
 	_, err := s.adminCreateAvailableJob(ctx, runnerID, app.RunnerJobTypeHealthCheck)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create health-check job: %w", err))
@@ -48,8 +47,6 @@ func (s *service) AdminCreateHealthCheck(ctx *gin.Context) {
 }
 
 func (s *service) adminCreateAvailableJob(ctx context.Context, runnerID string, typ app.RunnerJobType) (*app.RunnerJob, error) {
-	// identical to adminCreateJob but w/ staus ste to available
-	// NOTE(fd): copied instead of extended since this is the only place we're using this atm
 	runner, err := s.getRunner(ctx, runnerID)
 	if err != nil {
 		return nil, err

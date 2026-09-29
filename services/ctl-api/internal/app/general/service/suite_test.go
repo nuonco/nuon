@@ -24,7 +24,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// GeneralPublicTestDeps holds all fx-injected dependencies for general service public route tests.
 type GeneralPublicTestDeps struct {
 	fx.In
 
@@ -37,7 +36,6 @@ type GeneralPublicTestDeps struct {
 	GeneralService *service
 }
 
-// GeneralPublicTestSuite is the testify suite for general service public endpoint tests.
 type GeneralPublicTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -71,7 +69,6 @@ func (s *GeneralPublicTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -100,8 +97,6 @@ func (s *GeneralPublicTestSuite) setupTestData() {
 	s.ctx, s.testOrg = s.service.Seeder.EnsureOrg(s.ctx, s.T())
 }
 
-// makeRequest sends an HTTP request through the test router and returns the recorder.
-// Pass nil for body on requests that have no body (GET, no-body POST).
 func (s *GeneralPublicTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
 	var reqBody *bytes.Buffer
 	if body != nil {

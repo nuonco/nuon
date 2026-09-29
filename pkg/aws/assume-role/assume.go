@@ -18,8 +18,6 @@ type stsRoleAssumer interface {
 	AssumeRoleWithWebIdentity(context.Context, *sts.AssumeRoleWithWebIdentityInput, ...func(*sts.Options)) (*sts.AssumeRoleWithWebIdentityOutput, error)
 }
 
-// LoadConfigWithAssumedRole loads an AWS config using the default credential provider chain
-// to assume the provided role with the provided session name
 func (a *assumer) LoadConfigWithAssumedRole(ctx context.Context) (aws.Config, error) {
 	stsClient, err := a.fetchSTSClient(ctx)
 	if err != nil {

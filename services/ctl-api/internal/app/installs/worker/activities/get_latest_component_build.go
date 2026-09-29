@@ -22,6 +22,5 @@ func (a *Activities) GetLatestComponentBuild(ctx context.Context, req GetLatestC
 		return nil, fmt.Errorf("no builds found for component ID %s", req.ID)
 	}
 
-	// We only asked for one ID, so we should only have one build
 	return &builds[0], nil
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// for statuses
 var (
 	Pending        = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
 	NotAttempted   = TextDim
@@ -15,21 +14,15 @@ var (
 	TerminalBad    = lipgloss.NewStyle().Foreground(WarningColor)
 )
 
-// StatusStyleMap colors AppStatus values consistently with the dashboard
-// buckets in services/dashboard-ui/client/utils/status-utils.ts. Anything
-// missing falls through to TextDim via GetStatusStyle.
 var StatusStyleMap = map[models.AppStatus]lipgloss.Style{
-	// success bucket
 	models.AppStatusSuccess:                             TextSuccess,
 	models.AppStatusApproved:                            Approved,
 	models.AppStatusActive:                              TextSuccess,
 	models.AppStatusNoDashDrift:                         TextSuccess,
 	models.AppStatus(models.AppOperationStatusFinished): TextSuccess,
 
-	// error bucket
 	models.AppStatusError: TextError,
 
-	// warn bucket
 	models.AppStatusWarning:              TerminalBad,
 	models.AppStatusApprovalDashAwaiting: TerminalBad,
 	models.AppStatusApprovalDashDenied:   ApprovalDenied,
@@ -40,11 +33,9 @@ var StatusStyleMap = map[models.AppStatus]lipgloss.Style{
 	models.AppStatusDrifted:              TerminalBad,
 	models.AppStatusExpired:              TerminalBad,
 
-	// pending / neutral bucket
 	models.AppStatusPending: Pending,
 	models.AppStatusNoop:    Pending,
 
-	// in-progress bucket
 	models.AppStatusInDashProgress:          TextInfo,
 	models.AppStatusPlanning:                TextInfo,
 	models.AppStatusApplying:                TextInfo,
@@ -57,11 +48,9 @@ var StatusStyleMap = map[models.AppStatus]lipgloss.Style{
 	models.AppStatusAwaitingDashUserDashRun: TextInfo,
 	models.AppStatusDeleting:                TextInfo,
 
-	// skipped bucket
 	models.AppStatusAutoDashSkipped: TextInfo,
 	models.AppStatusUserDashSkipped: TextInfo,
 
-	// inert / brand bucket
 	models.AppStatusNotDashAttempted: TextDefault,
 	models.AppStatusDiscarded:        TextDim,
 }
@@ -74,7 +63,6 @@ func GetStatusStyle(status models.AppStatus) lipgloss.Style {
 	return TextDim
 }
 
-// GetRunStatusIcon returns a unicode icon for an action run status string.
 func GetRunStatusIcon(status string) string {
 	switch status {
 	case "success", "finished":
@@ -88,7 +76,6 @@ func GetRunStatusIcon(status string) string {
 	}
 }
 
-// GetRunStatusStyle returns a lipgloss style for an action run status string.
 func GetRunStatusStyle(status string) lipgloss.Style {
 	switch status {
 	case "success", "finished":

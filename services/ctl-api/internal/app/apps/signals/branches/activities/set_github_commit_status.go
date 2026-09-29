@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/links"
 )
 
-// GitHub rejects a commit status whose context exceeds 255 characters.
 const maxCommitStatusContextLen = 255
 
 type SetGithubCommitStatusInput struct {
@@ -20,28 +19,17 @@ type SetGithubCommitStatusInput struct {
 	State       string `json:"state" validate:"required"`
 	Description string `json:"description"`
 
-	// AppBranchID identifies the branch whose org/app/branch names form the
-	// status context and whose dashboard link becomes the status target URL.
 	AppBranchID string `json:"app_branch_id"`
 	RunID       string `json:"run_id"`
 
-	// Preview suffixes the derived context so preview runs get their own check
-	// rather than overwriting the branch's regular one.
 	Preview     bool                        `json:"preview,omitempty"`
 	PreviewMode app.AppBranchRunPreviewMode `json:"preview_mode,omitempty"`
 
-	// Context overrides the derived nuon/{org}/{app}/{branch} context. Left
-	// empty by callers that want the branch-derived one.
 	Context string `json:"context,omitempty"`
 
-	// TargetURL overrides the derived run link.
 	TargetURL string `json:"target_url,omitempty"`
 }
 
-// CommitStatusContext is the check name GitHub displays. Scoping it to the
-// org, app and branch keeps two branches of the same app from overwriting each
-// other's status on a shared commit, and the preview suffix keeps a preview
-// from overwriting the branch's regular status.
 func CommitStatusContext(orgName, appName, branchName string, preview bool, previewMode app.AppBranchRunPreviewMode) string {
 	parts := make([]string, 0, 4)
 	parts = append(parts, "nuon")

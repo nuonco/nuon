@@ -28,7 +28,6 @@ func TestTerraformHelmReleases(t *testing.T) {
 		terraformHelmReleases(tfStateWithReleases("temporal", "datadog")))
 	assert.Empty(t, terraformHelmReleases(nil))
 
-	// A data source is a read, not something the module owns.
 	assert.Empty(t, terraformHelmReleases(&tfjson.State{Values: &tfjson.StateValues{
 		RootModule: &tfjson.StateModule{Resources: []*tfjson.StateResource{{
 			Type: "helm_release", Mode: tfjson.DataResourceMode,
@@ -48,8 +47,6 @@ func TestComponentForRelease(t *testing.T) {
 	_, ok = p.ComponentForRelease("")
 	assert.False(t, ok)
 
-	// Re-applying without a release must stop attributing it, or a chart removed
-	// from the module keeps reporting against the component forever.
 	p.Set("cmp-a", tfStateWithReleases())
 	_, ok = p.ComponentForRelease("temporal")
 	assert.False(t, ok)
@@ -98,15 +95,11 @@ func TestComponentForObject(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, "cmp-ch", id)
 
-	// Removed from the module: attribution must not linger.
 	p.Set("cmp-ch", tfStateWithReleases())
 	_, ok = p.ComponentForObject(key)
 	assert.False(t, ok)
 }
 
-// Terraform kinds must persist from the deploy alone. They used to depend on the
-// health engine having booted first and wiring a sink, so a deploy that landed
-// earlier — or a runner whose engine never runs — dropped them silently.
 func TestTerraformPersistsKindsWithoutEngineBoot(t *testing.T) {
 	store := &ClusterProvider{l: zap.NewNop(), sandboxReleases: map[string]struct{}{}}
 	kinds := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: store})
@@ -125,8 +118,6 @@ func TestTerraformPersistsKindsWithoutEngineBoot(t *testing.T) {
 	}, store.ComponentKinds())
 	assert.Len(t, kinds.DiscoveredGVKs(), 1)
 
-	// Ownership must outlive the process too, or the object is listed each cycle
-	// and then dropped as unowned.
 	restarted := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: store})
 	restarted.Load()
 	owner, ok := restarted.ComponentForObject(resourceKey("Certificate", "whoami", "c"))

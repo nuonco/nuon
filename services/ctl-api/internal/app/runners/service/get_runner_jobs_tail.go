@@ -15,13 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
-// Long-poll tuning for job pickup. Pickup is event-driven: a Postgres trigger
-// (migration 112) fires NOTIFY on the queued→available transition, which the
-// pod-level RunnerJobNotifyListener fans out to parked handlers via the wake
-// registry, so the common case returns in ~ms. jobTailBackstopInterval is the
-// sparse safety poll that bounds worst-case latency when a notify is dropped
-// (listener reconnect, pod restart, RDS failover) — it is NOT the primary
-// mechanism, so it's deliberately slow (and cheaper than the old 1s loop).
 const (
 	jobTailMaxWait             = 25 * time.Second
 	jobTailBackstopInterval    = 5 * time.Second
@@ -94,9 +87,6 @@ func (s *service) TailRunnerJobs(ctx *gin.Context) {
 	deadline := startedAt.Add(wait)
 	firstIter := true
 	errorBackoff := jobTailErrorMinBackoff
-	// Subscribe BEFORE the first probe so a NOTIFY that fires between our probe
-	// and entering the select isn't missed — the buffered wake channel holds it
-	// and the next select drains it immediately.
 	wakeCh, unsubscribe := s.runnerJobWake.Subscribe(runnerID)
 	defer unsubscribe()
 
@@ -170,9 +160,6 @@ func (s *service) TailRunnerJobs(ctx *gin.Context) {
 			return
 		}
 
-		// Wait for whichever comes first: a NOTIFY wake (re-probe in ~ms), the
-		// sparse backstop tick, or the client/deadline going away. No exponential
-		// backoff — the notify carries the hot path.
 		sleep := jobTailBackstopInterval + jitter(jobTailBackstopInterval)
 		if sleep > remaining {
 			sleep = remaining
@@ -194,9 +181,6 @@ func (s *service) emitJobTailExit(result string) {
 	s.tailMetrics.session(result)
 }
 
-// tailJobProbe runs a single bounded Postgres query for the next available
-// job. Semaphore protects the DB pool from a burst of long-pollers all
-// firing probes at the same instant.
 func (s *service) tailJobProbe(parent context.Context, runnerID string, grp app.RunnerJobGroup) (*app.RunnerJob, error) {
 	select {
 	case jobTailProbeSem <- struct{}{}:

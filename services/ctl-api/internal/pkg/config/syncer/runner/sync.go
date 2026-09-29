@@ -12,8 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 )
 
-// Sync creates the app runner configuration via the shared builder in
-// internal/pkg/config/build, which the CreateAppRunnerConfig handler also uses.
 func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appConfigID string, state *sync.State) error {
 	appRunnerConfig := build.RunnerConfig(build.RunnerInputFromConfig(*cfg.Runner, appID, appConfigID))
 
@@ -24,7 +22,6 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 		}
 	}
 
-	// Point every install in the app at the new runner config.
 	res := db.WithContext(ctx).Model(&app.Install{}).
 		Where("app_id = ?", appID).
 		Update("app_runner_config_id", appRunnerConfig.ID)

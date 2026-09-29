@@ -86,8 +86,6 @@ func TestExecute_PinnedProcessAlreadyStopped_NoShutdown(t *testing.T) {
 	env.AssertNotCalled(t, "GetCurrentRunnerProcess", mock.Anything, mock.Anything)
 }
 
-// Legacy template: no process_id, but the emitter sits on the dead process's queue.
-// The fresh current process must survive.
 func TestExecute_LegacyTemplateResolvesFromQueue_DoesNotKillCurrent(t *testing.T) {
 	env := runSignal(t, &Signal{RunnerID: runnerID, ProcessType: "install"}, func(env *testsuite.TestWorkflowEnvironment) {
 		env.OnActivity("GetQueue", mock.Anything, queueID).

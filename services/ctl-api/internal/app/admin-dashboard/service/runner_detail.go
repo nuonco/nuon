@@ -31,7 +31,6 @@ func (s *service) RunnerDetail(c *gin.Context) {
 		Configs: make(map[string]*app.SandboxModeJobConfig),
 	}
 
-	// Resolve install
 	if runner.RunnerGroup.OwnerType == "installs" {
 		var install app.Install
 		if res := s.readDB().WithContext(ctx).
@@ -43,7 +42,6 @@ func (s *service) RunnerDetail(c *gin.Context) {
 		}
 	}
 
-	// Get latest process for online status
 	var process app.RunnerProcess
 	if res := s.readDB().WithContext(ctx).
 		Where("runner_id = ?", runnerID).
@@ -53,7 +51,6 @@ func (s *service) RunnerDetail(c *gin.Context) {
 		view.ProcessOnline = process.ProcessStatus() == app.RunnerProcessStatusActive
 	}
 
-	// Load sandbox configs keyed by job type
 	var configs []app.SandboxModeJobConfig
 	if res := s.readDB().WithContext(ctx).
 		Where("job_type != ''").

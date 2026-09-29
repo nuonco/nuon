@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// CreateComponentBuild persists a ComponentBuild linked to the given ComponentConfigConnection.
 func (s *Seeder) CreateComponentBuild(ctx context.Context, t *testing.T, configConnectionID string) *app.ComponentBuild {
 	bld := &app.ComponentBuild{
 		ComponentConfigConnectionID: configConnectionID,

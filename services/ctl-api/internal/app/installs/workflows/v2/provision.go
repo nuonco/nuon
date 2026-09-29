@@ -45,7 +45,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	}
 	steps = append(steps, step)
 
-	sg.nextGroupEager() // provision service account
+	sg.nextGroupEager()
 
 	step, err = sg.installSignalStep(ctx, installID, "provision runner service account", pgtype.Hstore{}, &provisionrunner.Signal{
 		InstallID: installID,
@@ -55,14 +55,13 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	}
 	steps = append(steps, step)
 
-	// Resolve stack ID for install stack signals
 	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, installID)
 	if err != nil {
 		return nil, err
 	}
 	stackID := stack.ID
 
-	sg.nextGroupEager() // install stack
+	sg.nextGroupEager()
 
 	step, err = sg.installSignalStep(ctx, installID, "generate install stack", pgtype.Hstore{}, &generateinstallstackversion.Signal{
 		InstallStackID: stackID,
@@ -90,9 +89,6 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	}
 	steps = append(steps, step)
 
-	// Stop with the stack and runner up so inputs that are only knowable once the
-	// runner exists can be set before the sandbox reads them. Provisioning the
-	// sandbox and components is a separate, explicit step afterwards.
 	if flw.IsStackOnly() {
 		return sg.Result(steps), nil
 	}
@@ -117,14 +113,13 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	}
 	steps = append(steps, lifecycleSteps...)
 
-	// Resolve sandbox ID for sandbox signals
 	sandbox, err := activities.AwaitGetInstallSandboxByInstallID(ctx, installID)
 	if err != nil {
 		return nil, err
 	}
 	sandboxID := sandbox.ID
 
-	sg.nextGroup() // provision sandbox plan + apply
+	sg.nextGroup()
 	step, err = sg.installSignalStep(ctx, installID, "provision sandbox plan", pgtype.Hstore{}, &provisionsandboxplan.Signal{
 		InstallSandboxID: sandboxID,
 		InstallID:        installID,
@@ -135,7 +130,6 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	}
 	steps = append(steps, step)
 
-	// Only proceed with remaining steps if not in plan-only mode
 	if !flw.PlanOnly {
 		step, err = sg.installSignalStep(ctx, installID, "provision sandbox apply plan", pgtype.Hstore{}, &provisionsandboxapplyplan.Signal{
 			InstallSandboxID: sandboxID,
@@ -158,7 +152,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 		}
 		steps = append(steps, lifecycleSteps...)
 
-		sg.nextGroup() // sync secrets
+		sg.nextGroup()
 		step, err = sg.installSignalStep(ctx, installID, "sync secrets", pgtype.Hstore{}, &syncsecrets.Signal{
 			InstallID: installID,
 		}, flw.PlanOnly, WithSkippable(false))
@@ -173,7 +167,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 		}
 		steps = append(steps, lifecycleSteps...)
 
-		sg.nextGroup() // provision sandbox dns
+		sg.nextGroup()
 		step, err = sg.installSignalStep(ctx, installID, "provision sandbox dns if enabled", pgtype.Hstore{}, &provisiondns.Signal{
 			InstallID: installID,
 		}, flw.PlanOnly)

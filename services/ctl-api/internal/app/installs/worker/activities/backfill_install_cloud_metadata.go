@@ -15,9 +15,7 @@ type BackfillInstallCloudMetadataRequest struct {
 }
 
 type BackfillInstallCloudMetadataResponse struct {
-	Updated bool `json:"updated"`
-	// Identifier is what was written, for the caller's logs. Empty when nothing
-	// changed.
+	Updated    bool   `json:"updated"`
 	Identifier string `json:"identifier,omitempty"`
 	SkipReason string `json:"skip_reason,omitempty"`
 }

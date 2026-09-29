@@ -82,9 +82,7 @@ func (s *service) CreateApp(ctx *gin.Context) {
 		return
 	}
 
-	// Update user journey for first app creation
 	if err := s.accountsHelpers.UpdateUserJourneyStepForFirstAppCreate(ctx, user.ID, app.ID); err != nil {
-		// Log error but don't fail app creation
 		s.l.Warn("failed to update user journey for first app creation",
 			zap.String("account_id", user.ID),
 			zap.String("app_id", app.ID),

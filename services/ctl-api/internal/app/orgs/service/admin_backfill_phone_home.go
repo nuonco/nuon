@@ -51,12 +51,6 @@ func (s *service) AdminBackfillOrgPhoneHome(ctx *gin.Context) {
 		return
 	}
 
-	// QueueSignal.CreatedByID is NOT NULL and its BeforeCreate hook reads the account
-	// from context, which the admin middleware only populates when X-Nuon-Admin-Email
-	// is present. Without it the insert fails on the constraint, so fall back to the
-	// org's creator rather than making a header the difference between working and a
-	// 500. Same fallback the phone-home handler uses when it enqueues outside a user
-	// request.
 	var signalCtx context.Context = ctx
 	if _, err := cctx.AccountIDFromContext(ctx); err != nil {
 		signalCtx = cctx.SetAccountIDContext(signalCtx, org.CreatedByID)

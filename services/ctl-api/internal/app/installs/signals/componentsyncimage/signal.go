@@ -23,17 +23,10 @@ import (
 const SignalType signal.SignalType = "component-sync-image"
 
 type Signal struct {
-	InstallComponentID string
-	DeployID           string
-	ComponentID        string
-	// BuildID is the ComponentBuild to sync. When DeployID is empty and
-	// BuildID is set, the signal creates an InstallDeploy pinned to this
-	// build instead of falling back to "latest build for component" at
-	// signal-run time. The workflow generator resolves this at step-gen
-	// so the build identity is captured up front.
-	BuildID string
-	// ComponentConfigConnectionID pins looking up build for specific ccc
-	// for that app config id, in case build id is not provided.
+	InstallComponentID          string
+	DeployID                    string
+	ComponentID                 string
+	BuildID                     string
 	ComponentConfigConnectionID string
 	WorkflowStepID              string
 	FlowID                      string
@@ -78,7 +71,6 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
-	// Validate install component exists
 	_, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
 	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
@@ -86,8 +78,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	return nil
 }
 
-// not every caller pins the connection on the signal, so fall back to the one
-// this install's app config resolves to rather than failing the step
 func (s *Signal) configConnectionID(ctx workflow.Context, install *app.Install) (string, error) {
 	if s.ComponentConfigConnectionID != "" {
 		return s.ComponentConfigConnectionID, nil

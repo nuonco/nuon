@@ -14,10 +14,6 @@ import (
 	internal "github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
-// TestFieldNamesExistInConfig is the guard that replaces the `preflight:"..."`
-// struct tag this package used to rely on. The tag kept check membership next
-// to the field, but silently survived a rename and vanished entirely in a bad
-// merge. Here a stale or misspelled key fails the build instead.
 func TestFieldNamesExistInConfig(t *testing.T) {
 	known := configKeys(reflect.TypeOf(internal.Config{}))
 	require.NotEmpty(t, known, "no config keys discovered — reflection walk is broken")
@@ -32,8 +28,6 @@ func TestFieldNamesExistInConfig(t *testing.T) {
 	}
 }
 
-// configKeys collects every `config:"..."` key on the struct, following
-// embedded structs so squashed config (worker.Config) is included.
 func configKeys(t reflect.Type) map[string]bool {
 	keys := map[string]bool{}
 
@@ -98,7 +92,6 @@ func TestSkipPredicates(t *testing.T) {
 			reason: "cloud_provider=azure",
 		},
 		{
-			// IsAWS treats an unset provider as AWS, matching NewConfig.
 			name:  "aws runs when provider is unset",
 			check: "aws",
 			cfg:   &internal.Config{},
@@ -158,8 +151,6 @@ func TestSkipPredicates(t *testing.T) {
 	}
 }
 
-// Requirements that vary with other config are the thing struct tags could not
-// express, so they get explicit coverage.
 func TestConditionalRequirements(t *testing.T) {
 	required := func(fields []Field, name string) bool {
 		for _, f := range fields {
@@ -186,9 +177,6 @@ func TestConditionalRequirements(t *testing.T) {
 	assert.True(t, required(ssl, "kafka_tls_cert_path"))
 }
 
-// Google and GitHub carry fixed OAuth endpoints, so nuon_auth_issuer_url being
-// empty is correct for them rather than a missing-config failure. Mirrors
-// getDefaultIdentityProvider in app/auth/service/identity_providers.go.
 func TestNuonAuthIssuerRequiredOnlyForOIDC(t *testing.T) {
 	check, ok := Lookup("nuon-auth")
 	require.True(t, ok)
@@ -210,8 +198,6 @@ func TestNuonAuthIssuerRequiredOnlyForOIDC(t *testing.T) {
 	assert.True(t, issuerRequired(""), "an unset type falls back to the generic OIDC requirement")
 }
 
-// A provider that cannot be confirmed over the network warns rather than fails,
-// so an otherwise healthy google deployment still exits 0.
 func TestNuonAuthGoogleWarnsWithoutIssuer(t *testing.T) {
 	check, ok := Lookup("nuon-auth")
 	require.True(t, ok)
@@ -249,9 +235,6 @@ func TestNuonAuthRejectsUnknownProviderType(t *testing.T) {
 	assert.Contains(t, result.Detail, "invalid nuon_auth_provider_type")
 }
 
-// Production overrides the registered slack defaults, so a value still equal to
-// one there means signature verification is forgeable. Elsewhere the default is
-// the intended value.
 func TestSlackDevDefaultsFailOnlyInProduction(t *testing.T) {
 	check, ok := Lookup("slack")
 	require.True(t, ok)
@@ -280,7 +263,6 @@ func TestSlackDevDefaultsFailOnlyInProduction(t *testing.T) {
 	}
 }
 
-// Slack is an optional integration: an absent app must never fail a run.
 func TestSlackSkipsWhenUnconfigured(t *testing.T) {
 	check, ok := Lookup("slack")
 	require.True(t, ok)
@@ -317,7 +299,6 @@ func TestResolveUnknownCheck(t *testing.T) {
 	assert.Equal(t, []string{"nope"}, unknown)
 }
 
-// resolve follows registry order so the table does not reshuffle between runs.
 func TestResolvePreservesRegistryOrder(t *testing.T) {
 	checks, _ := resolve([]string{"slack", "rds", "temporal"})
 
@@ -328,8 +309,6 @@ func TestResolvePreservesRegistryOrder(t *testing.T) {
 	assert.Equal(t, []string{"rds", "temporal", "slack"}, names)
 }
 
-// A missing required field short-circuits before the probe, so an unset host
-// reports the config key rather than a connection-refused error.
 func TestRunSkipsProbeWhenRequiredConfigIsMissing(t *testing.T) {
 	probed := false
 	check := Check{

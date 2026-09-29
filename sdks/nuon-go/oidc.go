@@ -7,10 +7,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// ExchangeOIDCToken exchanges an OIDC ID token (e.g. from GitHub Actions) for
-// a short-lived Nuon API token. This call is unauthenticated: trust is
-// established by verifying the presented token against the org's OIDC trust
-// policies.
 func (c *client) ExchangeOIDCToken(ctx context.Context, req *models.ServiceExchangeOIDCTokenRequest) (*models.ServiceExchangeOIDCTokenResponse, error) {
 	resp, err := c.genClient.Operations.ExchangeOIDCToken(&operations.ExchangeOIDCTokenParams{
 		Context: ctx,

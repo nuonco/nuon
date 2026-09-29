@@ -49,25 +49,12 @@ func GetRepo(ctx context.Context, cfg *configs.OCIRegistryRepository) (*remote.R
 		return nil, err
 	}
 
-	// Normalize Docker Hub references (e.g., "nginx" -> "docker.io/library/nginx")
 	repoRef := dockerhub.NormalizeReference(accessInfo.RepositoryURI())
 	repo, err := remote.NewRepository(repoRef)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get repository: %w", err)
 	}
 
-	// Always give every repository its own isolated auth client and cache.
-	// Leaving repo.Client nil makes oras-go fall back to the process-global
-	// auth.DefaultClient/auth.DefaultCache, which is shared across every job in
-	// a long-lived worker process. That lets a token cached for a host by one
-	// job leak into another job's request to the same host — e.g. an
-	// authenticated pull caching a credential under "public.ecr.aws" (the
-	// runner image and vendor public images share that host), which is then
-	// attached to a later anonymous public pull and rejected with a 400
-	// "Your Authorization Token is invalid". A per-repo cache keeps each pull
-	// isolated. Credentials are attached only when we actually have them; for
-	// anonymous pulls the nil Credential drives oras-go's anonymous bearer
-	// token flow with a clean cache.
 	authClient := &auth.Client{
 		Client: retry.DefaultClient,
 		Cache:  auth.NewCache(),

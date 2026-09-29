@@ -17,23 +17,14 @@ import (
 	gcpstacks "github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/gcp"
 )
 
-// defaultGCPRunnerInitScript is the runner bootstrap script the GCP module
-// fetches when the app's RunnerConfig doesn't pin one.
 const defaultGCPRunnerInitScript = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/gcp/init.sh"
 
-// BuildInstallerSDKConfig renders an install's stack configuration: runner details,
-// role permissions, roles, input values, and secrets. Serves the read-only config
-// endpoint the Terraform provider reads.
 func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string) (*app.InstallerSDKConfig, error) {
 	var install app.Install
 	if res := h.db.WithContext(ctx).
 		Preload("AWSAccount").
-		// Install.AfterQuery does not load cloud accounts, so without this the gcp
-		// branch below always sees a nil GCPAccount and serves an empty target.
 		Preload("GCPAccount").
 		Preload("AzureAccount").
-		// Newest row only: AfterQuery promotes it to CurrentInstallInputs, which the
-		// input values and cluster_name below both read.
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
 			return db.Order(views.TableOrViewName(db, &app.InstallInputs{}, ".created_at DESC")).Limit(1)
 		}).
@@ -44,8 +35,6 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		return nil, fmt.Errorf("load install: %w", res.Error)
 	}
 
-	// Per-runner-group setting wins; global config is only a safety net for
-	// older installs that pre-date the per-group field being populated.
 	runnerAPIURL := install.RunnerGroup.Settings.RunnerAPIURL
 	if runnerAPIURL == "" {
 		runnerAPIURL = h.cfg.RunnerAPIURL
@@ -57,8 +46,6 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		return nil, fmt.Errorf("install %s: runner_api_url empty (set RunnerGroupSettings.RunnerAPIURL for the install's runner group)", installID)
 	}
 
-	// GetFullAppConfig preloads PermissionsConfig, BreakGlassConfig,
-	// InputConfig, SecretsConfig — same data the TF renderer walks.
 	appCfg, err := h.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, true)
 	if err != nil {
 		return nil, fmt.Errorf("load full app config: %w", err)
@@ -67,10 +54,6 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		return nil, fmt.Errorf("install %s: app config not found", installID)
 	}
 
-	// Render `{{ .nuon.install.id }}` and friends in role names + policy
-	// contents before passing to the SDK. Without this, IAM rejects policy docs
-	// containing literal template syntax with "policy failed legacy parsing",
-	// and role names get created with literal `{{` characters.
 	installState, err := h.GetInstallState(ctx, installID, false, false)
 	if err != nil {
 		return nil, fmt.Errorf("get install state for template render: %w", err)
@@ -91,8 +74,6 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 
 	app.ApplyInstallStackOverrides(&install, &appCfg.StackConfig)
 
-	// Real values, not names: the read is authenticated. Current value per
-	// customer-source input, falling back to the app input's default.
 	var currentInputs map[string]*string
 	if install.CurrentInstallInputs != nil {
 		currentInputs = install.CurrentInstallInputs.Values
@@ -120,8 +101,6 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		if in.Required {
 			requiredInputs = append(requiredInputs, in.Name)
 		}
-		// install_inputs has no per-key metadata, so sensitivity travels as a
-		// sibling name list, like required_inputs.
 		if in.Sensitive {
 			sensitiveInputs = append(sensitiveInputs, in.Name)
 		}
@@ -132,7 +111,7 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		return nil, fmt.Errorf("build custom nested stacks: %w", err)
 	}
 
-	// Auto-generated secrets are the stack's to mint, the rest the customer's to
+	// why: Auto-generated secrets are the stack's to mint, the rest the customer's to
 	// supply. Vendor-owned values live on AppSecret, which this never reads.
 	var autoGen []string
 	var secrets map[string]app.InstallerSDKSecret
@@ -166,8 +145,6 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 	}
 
 	var latestVersion app.InstallStackVersion
-	// No "latest version" FK exists — InstallStackVersion.InstallStackID
-	// only points the other way — so created_at ordering resolves "latest".
 	res := h.db.WithContext(ctx).
 		Where(app.InstallStackVersion{InstallID: install.ID}).
 		Where("status->>'status' IN ?", app.InstallStackVersionTemplateReadyStatuses).
@@ -178,15 +155,12 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 	case res.Error == nil:
 		cfg.StackVersionID = latestVersion.ID
 	case errors.Is(res.Error, gorm.ErrRecordNotFound):
-		// no stack version yet — leave empty
 	default:
 		return nil, fmt.Errorf("load latest install stack version: %w", res.Error)
 	}
 
 	if (appCfg.RunnerConfig.Type == app.AppRunnerTypeAWS || appCfg.RunnerConfig.Type == app.AppRunnerTypeAzure) && len(customStacks) > 0 && latestVersion.ID != "" {
 		cfg.CustomStacksTemplateURL = latestVersion.CustomStacksTemplateURL
-		// Never re-derive this: it runs on every terraform plan and must not
-		// fetch or parse templates.
 		for i := range cfg.CustomStacks {
 			cfg.CustomStacks[i].Outputs = latestVersion.CustomStacksOutputMap[cfg.CustomStacks[i].Name]
 			cfg.CustomStacks[i].InputParameters = customerInputParameters(
@@ -196,9 +170,6 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		}
 	}
 
-	// Runner machine/instance type from the app runner config, falling back to
-	// the platform default — mirrors generate_install_stack_version's classic
-	// tfvars path so both flows resolve the same type.
 	instanceType := appCfg.RunnerConfig.InstanceType
 	if instanceType == "" {
 		instanceType = app.DefaultInstanceTypeForPlatform(appCfg.RunnerConfig.CloudPlatform)
@@ -224,17 +195,11 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 			return nil, fmt.Errorf("extract custom roles: %w", err)
 		}
 
-		// Trust principal for operation roles. Empty config = empty list = SDK
-		// falls back to account root, same as the TF module's
-		// `control_plane_assume` default.
 		var supportARNs []string
 		if h.cfg.RunnerDefaultSupportIAMRole != "" {
 			supportARNs = []string{h.cfg.RunnerDefaultSupportIAMRole}
 		}
 
-		// Cluster name: the install input "cluster_name" if set, else the
-		// install ID. This becomes the kubernetes.io/cluster/<name> subnet tag
-		// the EKS sandbox terraform expects.
 		clusterName := install.ID
 		if install.CurrentInstallInputs != nil {
 			if v, ok := install.CurrentInstallInputs.Values["cluster_name"]; ok && v != nil && *v != "" {
@@ -260,15 +225,11 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 			DeprovisionManagedPolicyARNs:    deprovMPAs,
 			DeprovisionInlinePolicyDocument: deprovDoc,
 
-			// break-glass: enabled=false (created but disabled, matching TF's
-			// `count` gate). custom: enabled=true.
 			BreakGlassRoles: rolesToSDKConfigMap(breakGlass, false),
 			CustomRoles:     rolesToSDKConfigMap(customRoles, true),
 		}
 
 	case app.AppRunnerTypeGCP:
-		// GCP provisions via the Terraform module, which authenticates the
-		// runner with a real API token (no IID-based auth like AWS).
 		token, err := h.runnersHelpers.CreateToken(ctx, install.RunnerID)
 		if err != nil {
 			return nil, fmt.Errorf("create runner token: %w", err)
@@ -282,8 +243,6 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		breakGlass := gcpstacks.ExtractGCPRolesRaw(appCfg.BreakGlassConfig.Roles)
 		customRoles := gcpstacks.ExtractGCPRolesRaw(appCfg.PermissionsConfig.CustomRoles)
 
-		// Absent until the first provision's phone home records a target, so this
-		// is served empty rather than treated as an error the way AWS does.
 		var gcpProjectID, gcpRegion string
 		if install.GCPAccount != nil {
 			gcpProjectID = install.GCPAccount.ProjectID
@@ -319,9 +278,6 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		}
 
 	case app.AppRunnerTypeAzure:
-		// The Azure runner authenticates to Nuon as its own managed identity, so
-		// unlike GCP no token is minted here. It does need the container image to
-		// run, which its cloud-init records as the mng monitor's initial config.
 		if install.AzureAccount == nil || install.AzureAccount.Location == "" {
 			return nil, fmt.Errorf("install %s has no Azure location; azure SDK provisioner requires it", installID)
 		}
@@ -376,8 +332,6 @@ func rolesToSDKConfigMap(rs []awsstacks.AWSRoleRaw, enabled bool) map[string]app
 	return out
 }
 
-// buildInstallerSDKCustomStacks renders custom nested stack parameter values
-// and sorts by Index.
 func buildInstallerSDKCustomStacks(stacks []config.CustomNestedStack, stateData map[string]any, customerInputNames map[string]struct{}) ([]app.InstallerSDKCustomStack, error) {
 	if len(stacks) == 0 {
 		return nil, nil

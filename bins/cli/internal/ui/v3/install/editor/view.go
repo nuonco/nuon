@@ -74,7 +74,6 @@ func (m model) viewContent() string {
 	finalView.WriteString(m.viewport.View())
 	finalView.WriteString("\n")
 
-	// Status message
 	if m.status.Message != "" {
 		statusStyle := lipgloss.NewStyle()
 		switch m.status.Level {
@@ -92,7 +91,6 @@ func (m model) viewContent() string {
 		finalView.WriteString(statusStyle.Render(m.status.Message))
 	}
 
-	// Help
 	helpView := m.help.View(m.keys)
 	finalView.WriteString("\n")
 	finalView.WriteString(lipgloss.NewStyle().Foreground(styles.SubtleColor).Render(helpView))
@@ -103,11 +101,8 @@ func (m model) viewContent() string {
 		Render(finalView.String())
 }
 
-// updateViewportContent builds the form content and sets it in the viewport.
 func (m *model) updateViewportContent() {
 	width := min(m.width, maxWidth) - 4
-
-	// fieldLines tracks the ending line (exclusive) for each focusIndex.
 	fieldLines := map[int]int{}
 	lineCount := 0
 
@@ -118,14 +113,12 @@ func (m *model) updateViewportContent() {
 
 	sections := []string{}
 
-	// Title
 	title := titleStyle.Render("Edit Inputs")
 	if m.install != nil {
 		title = titleStyle.Render(fmt.Sprintf("Edit Inputs for %s", m.install.Name))
 	}
 	sections = appendSection(sections, title)
 
-	// Input fields (focusIndex 0..N-1), grouped.
 	ghStyle := groupHeaderStyle(width)
 	giStyle := groupInputsStyle(width)
 	lastGroupID := ""
@@ -176,7 +169,6 @@ func (m *model) updateViewportContent() {
 		fieldLines[i] = lineCount
 	}
 
-	// Deploy dependents toggle (focusIndex == len(inputs))
 	sections = appendSection(sections, "\n")
 	toggleLabel := labelStyle.Render("Deploy dependents")
 	sections = appendSection(sections, toggleLabel)
@@ -199,7 +191,6 @@ func (m *model) updateViewportContent() {
 	m.fieldEndLines = fieldLines
 }
 
-// ensureFocusVisible scrolls the viewport so the focused field is visible.
 func (m *model) ensureFocusVisible() {
 	endLine, ok := m.fieldEndLines[m.focusIndex]
 	if !ok {

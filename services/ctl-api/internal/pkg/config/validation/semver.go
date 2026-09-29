@@ -10,7 +10,6 @@ import (
 
 const MinTerraformVersion = "1.8.0"
 
-// ValidateTerraformVersion validates a Terraform version string against min/max constraints.
 func ValidateTerraformVersion(version string, minVersion string, maxVersion string) error {
 	if version == "" {
 		return stderr.ErrUser{
@@ -19,7 +18,6 @@ func ValidateTerraformVersion(version string, minVersion string, maxVersion stri
 		}
 	}
 
-	// Parse version constraints
 	minConstraint := fmt.Sprintf(">= %s", minVersion)
 	maxConstraint := fmt.Sprintf("<= %s", maxVersion)
 	constraint, err := semver.NewConstraint(fmt.Sprintf("%s, %s", minConstraint, maxConstraint))
@@ -30,7 +28,6 @@ func ValidateTerraformVersion(version string, minVersion string, maxVersion stri
 		}
 	}
 
-	// Parse provided version
 	ver, err := semver.NewVersion(version)
 	if err != nil {
 		return stderr.ErrUser{
@@ -39,7 +36,6 @@ func ValidateTerraformVersion(version string, minVersion string, maxVersion stri
 		}
 	}
 
-	// Check if version satisfies constraints
 	if !constraint.Check(ver) {
 		return stderr.ErrUser{
 			Err:         fmt.Errorf("terraform version out of range: %s", version),
@@ -50,8 +46,6 @@ func ValidateTerraformVersion(version string, minVersion string, maxVersion stri
 	return nil
 }
 
-// ValidateTerraformMinVersion validates a Terraform version string against only the minimum constraint.
-// Used by the DB syncer which does not have access to tfClient.GetLatestVersion() for the upper bound.
 func ValidateTerraformMinVersion(version string) error {
 	if version == "" {
 		return stderr.ErrUser{

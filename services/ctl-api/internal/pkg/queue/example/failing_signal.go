@@ -18,7 +18,6 @@ func init() {
 	})
 }
 
-// FailingSignal is a test signal whose Execute always returns an error.
 type FailingSignal struct {
 	Reason string `json:"reason"`
 }

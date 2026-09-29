@@ -24,7 +24,7 @@ type Selector struct {
 	NotMatchLabels Labels `json:"not_match_labels,omitempty"`
 }
 
-// Matches returns true iff every entry in MatchLabels is satisfied by set
+// why: Matches returns true iff every entry in MatchLabels is satisfied by set
 // AND no entry in NotMatchLabels is satisfied by set. Empty MatchLabels and
 // empty NotMatchLabels both mean "no constraint of that polarity"; callers
 // should not construct such a Selector (Validate rejects it) but the matcher
@@ -48,11 +48,9 @@ func (s *Selector) Matches(set Labels) bool {
 	for k, v := range s.NotMatchLabels {
 		got, ok := set[k]
 		if !ok {
-			// key absent → exclusion not triggered for this entry
 			continue
 		}
 		if v == "*" {
-			// key-existence exclusion: present → reject
 			return false
 		}
 		if got == v {
@@ -62,11 +60,6 @@ func (s *Selector) Matches(set Labels) bool {
 	return true
 }
 
-// Validate enforces the invariant that a *non-nil* Selector carries at least
-// one constraint (positive or negative). The "match everything" case is
-// expressed by a nil pointer at the call site (TargetMatch.Selector == nil),
-// not by empty maps — this keeps the dispatch / preview / canonical-key code
-// paths from having to special-case an ambiguous shape.
 func (s *Selector) Validate() error {
 	if s == nil {
 		return errors.New("selector is nil")
@@ -87,9 +80,6 @@ func (s *Selector) Validate() error {
 	return nil
 }
 
-// Canonical returns a deterministic JSON encoding (keys sorted) so the value
-// can participate in the SlackChannelSubscription unique index without being
-// at the mercy of Go map iteration order.
 func (s *Selector) Canonical() string {
 	if s == nil {
 		return ""

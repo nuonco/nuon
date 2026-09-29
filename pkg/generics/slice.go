@@ -70,8 +70,6 @@ func MergeSlice[T comparable](a, b []T) []T {
 	return vals
 }
 
-// SliceToGroups turns a slice into a set of groups, with the group size. If the group size is less than 1, we set it to
-// one.
 func SliceToGroups[T any](vals []T, grpSize int) [][]T {
 	if grpSize < 1 {
 		grpSize = len(vals)
@@ -108,7 +106,6 @@ func SliceAfterValue[T comparable](vals []T, val T) []T {
 	return after
 }
 
-// UniqueSlice takes a slice and returns a deduplicated slice of elements
 func UniqueSlice[T comparable](items []T) []T {
 	uniqueItems := make(map[T]struct{})
 	for _, item := range items {

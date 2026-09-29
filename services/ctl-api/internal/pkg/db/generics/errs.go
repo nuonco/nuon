@@ -38,7 +38,7 @@ func IsGormErrRecordNotFound(err error) bool {
 		return true
 	}
 
-	// NOTE: if this was returned via a temporal activity, we want to check the string, as well.
+	// why: if this was returned via a temporal activity, we want to check the string, as well.
 	if strings.Contains(err.Error(), "not found") {
 		return true
 	}

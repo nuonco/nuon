@@ -34,7 +34,6 @@ func (w *Workflows) All() []any {
 	return append(wkflows, w.ListWorkflowFns()...)
 }
 
-// ListWorkflowFns returns the list of workflow functions for registration
 func (w *Workflows) ListWorkflowFns() []any {
 	return []any{}
 }

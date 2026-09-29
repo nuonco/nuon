@@ -47,8 +47,6 @@ func TestRetainDeployedComponentResourcesKeepsSandboxWhenNoComponents(t *testing
 	assert.Len(t, kept, 1, "sandbox resources are not governed by component deploy state")
 }
 
-// A redeploy must not blank the component's rows for the duration of the
-// deploy; a teardown must hide them.
 func TestEverDeployedForResourceVisibility(t *testing.T) {
 	t.Parallel()
 
@@ -88,9 +86,6 @@ func TestInstallComponentStatusHasDeployed(t *testing.T) {
 	}
 }
 
-// Observations outlive config: a probe deleted from the component's config
-// keeps its last ClickHouse row for days. Those rows must be labelled so a
-// deleted probe's final reading cannot pass for a live check.
 func TestMarkRemovedProbes(t *testing.T) {
 	t.Parallel()
 

@@ -135,8 +135,6 @@ type Install struct {
 	// would exclude it from the jsonb value too, not just the API response.
 	PhoneHomeAuth *PhoneHomeAuth `json:"-" gorm:"type:jsonb" temporaljson:"-"`
 
-	// generated view current view
-
 	InstallNumber            int                  `json:"install_number,omitzero" gorm:"->;-:migration" temporaljson:"install_number,omitzero,omitempty"`
 	SandboxStatus            InstallSandboxStatus `json:"sandbox_status,omitzero" gorm:"->;-:migration" swaggertype:"string" temporaljson:"sandbox_status,omitzero,omitempty"`
 	SandboxStatusDescription string               `json:"sandbox_status_description,omitzero" gorm:"-" swaggertype:"string" temporaljson:"sandbox_status_description,omitzero,omitempty"`
@@ -146,8 +144,6 @@ type Install struct {
 	Workflows []Workflow `json:"workflows,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"workflows,omitzero,omitempty"`
 
 	Queues []Queue `json:"queues,omitzero" gorm:"polymorphic:Owner;" temporaljson:"queues,omitzero,omitempty"`
-
-	// after queries
 
 	CurrentInstallInputs                *InstallInputs         `json:"-" gorm:"-" temporaljson:"current_install_inputs,omitzero,omitempty"`
 	CompositeComponentStatus            InstallComponentStatus `json:"composite_component_status,omitzero" gorm:"-" swaggertype:"string" temporaljson:"composite_component_status,omitzero,omitempty"`
@@ -241,8 +237,6 @@ func (i *Install) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// We want to report the status of the sandbox, the runner, and the components,
-// and then roll that up into a high-level status for the install overall.
 func (i *Install) AfterQuery(tx *gorm.DB) error {
 	i.Links = links.InstallLinks(tx.Statement.Context, i.ID)
 
@@ -277,7 +271,6 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 		i.AppBranchGroupAssignmentSource = activeConnection.AppBranchGroupAssignmentSource
 	}
 
-	// get the runner status
 	i.RunnerStatus = RunnerStatusDeprovisioned
 	if len(i.RunnerGroup.Runners) > 0 {
 		i.RunnerStatus = i.RunnerGroup.Runners[0].Status
@@ -289,13 +282,11 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 		i.CurrentInstallInputs = &i.InstallInputs[0]
 	}
 
-	// get the composite status of all the components
 	i.CompositeComponentStatus = compositeComponentStatus(i.ComponentStatuses)
 	i.CompositeComponentStatusDescription = compositeComponentStatusDescription(i.ComponentStatuses)
 
 	i.CompositeHealthStatus, i.CompositeHealthStatusDescription = compositeComponentHealthStatus(i.ComponentHealthStatuses)
 
-	// If sandbox mode not explicitly set on the install, inherit from org.
 	if !i.SandboxMode.Valid {
 		org := i.Org
 		if org.Name == "" {
@@ -305,8 +296,6 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 		i.SandboxMode.Bool = org.SandboxMode
 	}
 
-	// app_runner_config_id is rewritten for every install in the app on every sync, so
-	// prefer the install's own pinned app config like the provisioning workflows do.
 	runnerType := i.AppRunnerConfig.Type
 	if i.AppConfig.RunnerConfig.ID != "" {
 		runnerType = i.AppConfig.RunnerConfig.Type
@@ -323,9 +312,6 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 	return nil
 }
 
-// setExpectedCloudIdentifiers prefers the target identifier supplied at install
-// creation over the one a phone home reported, falling back to the latter so
-// installs predating the target field still resolve.
 func (i *Install) setExpectedCloudIdentifiers() {
 	cpm := i.CloudPlatformMetadata
 	i.ExpectedAccountID = firstNonEmpty(cpm.TargetAccountID, cpm.ObservedAccountID)
@@ -342,68 +328,50 @@ func firstNonEmpty(vals ...string) string {
 	return ""
 }
 
-// compositeComponentStatus coalesces a single status from the statuses of the app's components.
-// This is based on the components defined in the app config, not the components present in the install.
-// Components may be present in an install's history that have been removed from the app.
 func compositeComponentStatus(componentStatuses pgtype.Hstore) InstallComponentStatus {
-	// if there are no components, then there are no operations to wait for
 	if len(componentStatuses) == 0 {
 		return InstallComponentStatusPending
 	}
 
-	// check status of each component
 	activecount := 0
 	for _, status := range componentStatuses {
 		switch InstallComponentStatus(*status) {
 		case InstallComponentStatusActive:
 			activecount++
 		case InstallComponentStatusError:
-			// if any components have failed, composite status should be "error"
-			// we can stop immediately
 			return InstallComponentStatusError
 		}
 	}
 
-	// if all components are active, composite status should be "active"
 	if activecount == len(componentStatuses) {
 		return InstallComponentStatusActive
 	}
 
-	// if any components have not yet succeeded or failed, composite status should be "pending"
 	return InstallComponentStatusPending
 }
 
 func compositeComponentStatusDescription(componentStatuses pgtype.Hstore) string {
-	// if there are no components, then there are no operations to wait for
 	if len(componentStatuses) == 0 {
 		return "No active components"
 	}
 
-	// check status of each component
 	activecount := 0
 	for _, status := range componentStatuses {
 		switch InstallComponentStatus(*status) {
 		case InstallComponentStatusActive:
 			activecount++
 		case InstallComponentStatusError:
-			// if any components have failed we can stop immediately
 			return "A component is in an error state"
 		}
 	}
 
-	// if all components are active
 	if activecount == len(componentStatuses) {
 		return "All components have been deployed"
 	}
 
-	// if any components have not yet succeeded or failed
 	return "Waiting on components"
 }
 
-// compositeComponentHealthStatus rolls the per-component health axis up to a
-// single install-level verdict. Unset and not-applicable components carry no
-// health signal and are excluded; an install with no evaluated components has
-// no composite health (empty), so orgs without the feature surface nothing.
 func compositeComponentHealthStatus(componentHealthStatuses pgtype.Hstore) (InstallComponentHealthStatus, string) {
 	statuses := make([]InstallComponentHealthStatus, 0, len(componentHealthStatuses))
 	for _, status := range componentHealthStatuses {
@@ -415,10 +383,6 @@ func compositeComponentHealthStatus(componentHealthStatuses pgtype.Hstore) (Inst
 	return CompositeComponentHealthStatus(statuses)
 }
 
-// CompositeComponentHealthStatus rolls per-component health verdicts up to a
-// single install-level verdict and description. Exported so the component
-// health evaluator can compute the before/after rollup without a round trip
-// through the install view.
 func CompositeComponentHealthStatus(statuses []InstallComponentHealthStatus) (InstallComponentHealthStatus, string) {
 	counts := map[InstallComponentHealthStatus]int{}
 	total := 0
@@ -454,22 +418,12 @@ func CompositeComponentHealthStatus(statuses []InstallComponentHealthStatus) (In
 	}
 }
 
-// ComponentHealthContext persists what the runner's component-health engine
-// needs to rehydrate cluster access after a restart: a marshaled
-// kube.ClusterInfo, and the helm release names the install's sandbox manages
-// (base infra like external-dns, cert-manager). A deploy writes it, and
-// ctl-api can also derive the cluster half from install outputs.
 type ComponentHealthContext struct {
 	ClusterInfoJSON     string   `json:"cluster_info_json"`
 	SandboxHelmReleases []string `json:"sandbox_helm_releases"`
-	// ComponentKinds are the resource kinds each component deploys, encoded as
-	// "componentID|group/version/Kind". Only a deploy knows them, so without
-	// persisting them a runner restart silently narrows health back to the core
-	// workload kinds until every component is redeployed.
-	ComponentKinds []string `json:"component_kinds"`
+	ComponentKinds      []string `json:"component_kinds"`
 }
 
-// Scan implements the database/sql.Scanner interface.
 func (c *ComponentHealthContext) Scan(v interface{}) (err error) {
 	switch v := v.(type) {
 	case nil:
@@ -482,7 +436,6 @@ func (c *ComponentHealthContext) Scan(v interface{}) (err error) {
 	return
 }
 
-// Value implements the driver.Valuer interface.
 func (c *ComponentHealthContext) Value() (driver.Value, error) {
 	return json.Marshal(c)
 }
@@ -491,54 +444,34 @@ func (ComponentHealthContext) GormDataType() string {
 	return "jsonb"
 }
 
-// Where a CloudPlatformMetadata target identifier came from. A backfilled target
-// is derived from an unauthenticated phone home, so it pins whatever account last
-// phoned home rather than an independently attested one — a weaker control than a
-// user- or connection-supplied target.
 const (
 	CloudPlatformTargetSourceUser       = "user"
 	CloudPlatformTargetSourceConnection = "connection"
 	CloudPlatformTargetSourceBackfill   = "backfill"
 )
 
-// CloudPlatformMetadata records which cloud account an install is expected to run
-// in. Target values are supplied at install creation (or derived from an AWS
-// account connection); observed values are what the install's stack reported when
-// it phoned home. Once phone-home requests are signature-verified this becomes the
-// trusted copy, with InstallStackOutputs remaining the untrusted vendor-facing echo.
 type CloudPlatformMetadata struct {
-	// AWS
 	TargetAccountID   string `json:"target_account_id,omitempty"`
 	ObservedAccountID string `json:"observed_account_id,omitempty"`
 
-	// GCP
 	TargetProjectID   string `json:"target_project_id,omitempty"`
 	ObservedProjectID string `json:"observed_project_id,omitempty"`
 
-	// Azure
 	TargetSubscriptionID   string `json:"target_subscription_id,omitempty"`
 	ObservedSubscriptionID string `json:"observed_subscription_id,omitempty"`
 
-	// Tenant is not collected at install creation, so the first verified phone home
-	// pins it and later ones are checked against the pin. Until then a subscription
-	// match carries the binding on its own: a subscription belongs to exactly one
-	// tenant, and xms_mirid naming it is signed by that tenant.
 	TargetTenantID   string `json:"target_tenant_id,omitempty"`
 	ObservedTenantID string `json:"observed_tenant_id,omitempty"`
 
-	// Pinned the same way, so a leaked token cannot be presented by a second identity
-	// that happens to satisfy the subscription and name checks.
 	ObservedPhoneHomePrincipalID string `json:"observed_phone_home_principal_id,omitempty"`
 
 	TargetSource string `json:"target_source,omitempty"`
 }
 
-// HasTarget reports whether any cloud's target identifier has been set.
 func (c CloudPlatformMetadata) HasTarget() bool {
 	return c.TargetAccountID != "" || c.TargetProjectID != "" || c.TargetSubscriptionID != ""
 }
 
-// Scan implements the database/sql.Scanner interface.
 func (c *CloudPlatformMetadata) Scan(value interface{}) error {
 	if value == nil {
 		return nil
@@ -560,7 +493,6 @@ func (c *CloudPlatformMetadata) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, c)
 }
 
-// Value implements the driver.Valuer interface.
 func (c CloudPlatformMetadata) Value() (driver.Value, error) {
 	return json.Marshal(c)
 }
@@ -569,20 +501,8 @@ func (CloudPlatformMetadata) GormDataType() string {
 	return "jsonb"
 }
 
-// PhoneHomeAuth records where this install's phone-home credentials were published
-// and when a phone home was last verified or rejected. It holds no credential
-// material: the credentials themselves are ordinary tokens rows, keyed per stack
-// version by InstallStackVersion.PhoneHomeTokenID. Never serialized — the secret's
-// location stays control-plane side.
 type PhoneHomeAuth struct {
-	// SecretARN is not derivable. AWS appends a random 6-char suffix to the name,
-	// and cross-account GetSecretValue rejects a bare name, so the full ARN is read
-	// back after the secret is created and persisted here for the renderer.
-	SecretARN string `json:"secret_arn,omitempty"`
-	// SecretRegion pins where the secret actually lives. It is the management region
-	// today, so it looks redundant — but if that region ever changes, already
-	// provisioned installs keep their secret where it is and their deployed Lambdas
-	// keep reading the old region.
+	SecretARN    string    `json:"secret_arn,omitempty"`
 	SecretRegion string    `json:"secret_region,omitempty"`
 	KMSKeyARN    string    `json:"kms_key_arn,omitempty"`
 	CreatedAt    time.Time `json:"created_at"`
@@ -615,7 +535,6 @@ func (p *PhoneHomeAuth) Status() *PhoneHomeAuthStatus {
 	}
 }
 
-// Scan implements the database/sql.Scanner interface.
 func (p *PhoneHomeAuth) Scan(value interface{}) error {
 	if value == nil {
 		return nil
@@ -637,7 +556,6 @@ func (p *PhoneHomeAuth) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, p)
 }
 
-// Value implements the driver.Valuer interface.
 func (p PhoneHomeAuth) Value() (driver.Value, error) {
 	return json.Marshal(p)
 }

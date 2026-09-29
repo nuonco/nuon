@@ -64,10 +64,6 @@ const CreateChannelSubscriptionModalContainer = (
     [channelsQuery.data]
   )
 
-  // While the user is searching, eagerly fetch ALL remaining pages so the
-  // client-side filter can see every channel in the workspace. Slack's
-  // conversations.list has no server-side name filter, so the only way to
-  // guarantee complete results is to exhaust pagination.
   useEffect(() => {
     if (!channelSearch.trim()) return
     if (!channelsQuery.hasNextPage) return

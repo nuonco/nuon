@@ -27,8 +27,6 @@ func clampHealthTimelineDays(days int) int {
 	}
 }
 
-// healthWindow returns the [from, to) window for a days-sized timeline
-// ending now, with `from` at UTC midnight so buckets align to calendar dates.
 func healthWindow(now time.Time, days int) (from, to time.Time) {
 	now = now.UTC()
 	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
@@ -41,9 +39,6 @@ type healthSpan struct {
 	Health string
 }
 
-// healthSpans materializes the verdict in effect at every instant across
-// [from, to) from a sparse list of transition edges. initialHealth seeds the
-// window so it doesn't read as unknown before the first transition inside it.
 func healthSpans(transitions []app.InstallComponentHealthTransition, from, to time.Time, initialHealth string) []healthSpan {
 	if !to.After(from) {
 		return nil
@@ -81,9 +76,6 @@ func healthSpans(transitions []app.InstallComponentHealthTransition, from, to ti
 	return spans
 }
 
-// dailySeverity ranks verdicts for picking the worst one in a window:
-// unhealthy > degraded > unknown > progressing > healthy. Not-applicable and
-// unset map to unknown's rank here.
 func dailySeverity(health string) int {
 	switch health {
 	case string(app.InstallComponentHealthStatusUnhealthy):
@@ -111,8 +103,6 @@ func normalizeHealthLabel(health string) string {
 	}
 }
 
-// healthTotals accumulates span seconds by verdict. Not-applicable spans
-// fold into UnknownSeconds since both mean "no signal" for uptime purposes.
 type healthTotals struct {
 	HealthySeconds     int64
 	ProgressingSeconds int64
@@ -125,9 +115,6 @@ func (t healthTotals) observedSeconds() int64 {
 	return t.HealthySeconds + t.ProgressingSeconds + t.DegradedSeconds + t.UnhealthySeconds
 }
 
-// uptimePercent is the fraction of observed time (excluding unknown) that
-// wasn't degraded/unhealthy. Zero observed time reports 0 rather than
-// dividing by zero — pair with observedSeconds to tell "no data" from "0% up".
 func (t healthTotals) uptimePercent() float64 {
 	observed := t.observedSeconds()
 	if observed == 0 {
@@ -173,9 +160,6 @@ type dailyHealthBucket struct {
 	ObservedSeconds  int64  `json:"observed_seconds"`
 }
 
-// foldDailyHealth buckets spans into exactly `days` calendar-day rows from
-// `from`, splitting spans that cross a day boundary. A day's health is the
-// worst verdict seen; a day with no data at all (vs. an unknown verdict) is left "".
 func foldDailyHealth(spans []healthSpan, from time.Time, days int) []dailyHealthBucket {
 	buckets := make([]dailyHealthBucket, days)
 	totals := make([]healthTotals, days)
@@ -189,7 +173,6 @@ func foldDailyHealth(spans []healthSpan, from time.Time, days int) []dailyHealth
 	}
 
 	for _, span := range spans {
-		// Not-applicable/unset spans carry no signal and must not outvote a healthy day.
 		if !spanBearsSignal(span.Health) {
 			continue
 		}
@@ -235,8 +218,6 @@ func foldDailyHealth(spans []healthSpan, from time.Time, days int) []dailyHealth
 	return buckets
 }
 
-// worstDailyAcrossComponents rolls per-component daily buckets into one row
-// per day: whichever component had the worst verdict that day. No-data days stay "".
 func worstDailyAcrossComponents(perComponent [][]dailyHealthBucket, from time.Time, days int) []dailyHealthBucket {
 	out := make([]dailyHealthBucket, days)
 	for i := 0; i < days; i++ {

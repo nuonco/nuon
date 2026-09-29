@@ -28,14 +28,12 @@ func TestPlanInstallGroupSuite(t *testing.T) {
 
 func (s *PlanInstallGroupTestSuite) SetupTest() {
 	s.env = s.NewTestWorkflowEnvironment()
-	// Give the deadlock detector generous headroom so loaded CI runners don't
+	// why: Give the deadlock detector generous headroom so loaded CI runners don't
 	// false-positive on the 1s default while the workflow goroutine runs.
 	s.env.SetWorkerOptions(worker.Options{
 		DeadlockDetectionTimeout: time.Minute,
 	})
 
-	// Register activities with string-based names so the test env can match them
-	// when called via method references with primitive (non-struct) arguments.
 	a := &activities.Activities{}
 	s.env.RegisterActivityWithOptions(a.GetInstallGroupByID, activity.RegisterOptions{Name: "GetInstallGroupByID"})
 	s.env.RegisterActivityWithOptions(a.GetInstall, activity.RegisterOptions{Name: "GetInstall"})
@@ -97,7 +95,6 @@ func (s *PlanInstallGroupTestSuite) TestAutoApproveOnPoliciesPassingDefaultsOff(
 	s.False(result)
 }
 
-// Synthetic preview groups have no install group row to read the setting from.
 func (s *PlanInstallGroupTestSuite) TestAutoApproveOnPoliciesPassingFalseForSyntheticPreview() {
 	sig := &Signal{
 		PreviewInstallID:   "install-1",

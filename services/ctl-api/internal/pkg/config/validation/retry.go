@@ -8,7 +8,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
-// ValidateMaxAutoRetries validates a max auto retries value.
 func ValidateMaxAutoRetries(maxAutoRetries int) error {
 	if maxAutoRetries < 0 {
 		return stderr.ErrUser{

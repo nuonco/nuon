@@ -18,16 +18,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/viewsql"
 )
 
-// Default runner machine/instance types per cloud platform.
 const (
-	DefaultAWSInstanceType = "t3.medium"
-	DefaultGCPInstanceType = "e2-medium"
-	// Dsv5 is Microsoft's named replacement for the Dsv3 the install stack used to hardcode; v6
-	// needs NVMe/MANA-capable images and has patchier regional capacity.
+	DefaultAWSInstanceType   = "t3.medium"
+	DefaultGCPInstanceType   = "e2-medium"
 	DefaultAzureInstanceType = "Standard_D2s_v5"
 )
 
-// DefaultInstanceTypeForPlatform returns the default runner machine/instance type for a cloud platform.
 func DefaultInstanceTypeForPlatform(platform CloudPlatform) string {
 	switch platform {
 	case CloudPlatformGCP:
@@ -113,8 +109,6 @@ type RunnerGroupSettings struct {
 	AWSAuthMethod              RunnerAWSAuthMethod `json:"aws_auth_method" temporaljson:"aws_auth_method,omitzero,omitempty" gorm:"not null;default:sts;" swaggertype:"string" enums:"iid,sts"`
 	LocalAWSIAMRoleARN         string              `json:"local_aws_iam_role_arn,omitzero" temporaljson:"local_awsiam_role_arn,omitzero,omitempty"`
 
-	// azure runner specifics
-
 	// RunnerBinaryURL overrides the URL used to download the runner binary onto the
 	// host for mng mode. When empty, defaults to the S3 artifacts URL.
 	RunnerBinaryURL string `json:"runner_binary_url,omitzero" gorm:"default null" temporaljson:"runner_binary_url,omitzero,omitempty"`
@@ -147,12 +141,12 @@ func (i *RunnerGroupSettings) Views(db *gorm.DB) []migrations.View {
 		{
 			Name:          views.CustomViewName(db, &RunnerGroupSettings{}, "settings_v1"),
 			SQL:           viewsql.RunnerSettingsV1,
-			AlwaysReapply: true, // necessary for this view to be recreated
+			AlwaysReapply: true,
 		},
 		{
 			Name:          views.CustomViewName(db, &RunnerGroupSettings{}, "wide_v1"),
 			SQL:           viewsql.RunnerWideV1,
-			AlwaysReapply: true, // necessary for this view to be recreated
+			AlwaysReapply: true,
 		},
 	}
 }
@@ -160,7 +154,7 @@ func (i *RunnerGroupSettings) Views(db *gorm.DB) []migrations.View {
 func (r *RunnerGroupSettings) BeforeCreate(tx *gorm.DB) error {
 	if r.ID == "" {
 		r.ID = domains.NewRunnerGroupSettingsID()
-		// Assigning into a nil map panics, and a settings row built literally has one.
+		// why: Assigning into a nil map panics, and a settings row built literally has one.
 		if r.Metadata == nil {
 			r.Metadata = map[string]*string{}
 		}
@@ -197,7 +191,6 @@ func (r *RunnerGroupSettings) AfterQuery(tx *gorm.DB) error {
 	return nil
 }
 
-// MaxInFlightForGroup returns the configured max-in-flight for a job group, defaulting to 1.
 func (r *RunnerGroupSettings) MaxInFlightForGroup(group RunnerJobGroup) int {
 	if r.JobGroupParallelism == nil {
 		return 1

@@ -66,18 +66,10 @@ func (a CustomNestedStack) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("RootDomain = \"{{ if .nuon.install.inputs.root_domain }}{{ .nuon.install.inputs.root_domain }}{{ else }}{{ .nuon.install.id }}.example.com{{ end }}\"")
 }
 
-// GCPCustomStackModuleMarker separates the repo address from the curated
-// module name in a gcp-terraform custom stack template_url. Any repo works —
-// forks carry their own modules — as long as the install stack the customer
-// applies comes from the same repo; the rendered tfvars only carry the name.
 const GCPCustomStackModuleMarker = "//gcp/modules/"
 
-// GCPCustomStackModulePrefix is the canonical upstream form, used in examples
-// and error messages.
 const GCPCustomStackModulePrefix = "github.com/nuonco/install-stacks" + GCPCustomStackModuleMarker
 
-// GCPModuleName returns the curated module name a gcp-terraform custom stack
-// references, or "" when the template_url is not a gcp modules path.
 func (c CustomNestedStack) GCPModuleName() string {
 	idx := strings.LastIndex(c.TemplateURL, GCPCustomStackModuleMarker)
 	if idx <= 0 {
@@ -90,8 +82,6 @@ func (c CustomNestedStack) GCPModuleName() string {
 	return name
 }
 
-// ValidateGCPCustomNestedStacks validates requirements that are known before
-// Terraform runs in the customer's project.
 func ValidateGCPCustomNestedStacks(stackType string, stacks []CustomNestedStack) error {
 	if stackType != "gcp-terraform" {
 		return nil
@@ -112,19 +102,14 @@ func ValidateGCPCustomNestedStacks(stackType string, stacks []CustomNestedStack)
 	return nil
 }
 
-// Deployment scopes for the generated Azure install stack root template.
+// why: Deployment scopes for the generated Azure install stack root template.
 //
 // The empty string is equivalent to StackDeploymentScopeResourceGroup and is
 // deliberately never normalized on write: configs stored before this field
 // existed would otherwise show a spurious diff on the next sync.
 const (
-	// StackDeploymentScopeResourceGroup confines every resource to the install's
-	// own resource group. This is the default and the only behaviour before the
-	// field existed.
 	StackDeploymentScopeResourceGroup = "resource_group"
-	// StackDeploymentScopeSubscription deploys the root template at subscription
-	// scope, which is what lets nested stacks create their own resource groups.
-	StackDeploymentScopeSubscription = "subscription"
+	StackDeploymentScopeSubscription  = "subscription"
 )
 
 type StackConfig struct {
@@ -168,9 +153,6 @@ func (a StackConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Nullable()
 }
 
-// ValidateDeploymentScope checks a stack's deployment_scope against its type.
-// Shared by StackConfig.parse (the TOML path) and build.StackConfig (the API and
-// syncer paths) so every entry point rejects the same input.
 func ValidateDeploymentScope(scope, stackType string) error {
 	switch scope {
 	case "", StackDeploymentScopeResourceGroup:
@@ -229,13 +211,6 @@ func ValidateHTTPSURL(templateURL string, fieldName string) error {
 
 var installInputTemplatePattern = regexp.MustCompile(`^\{\{\s*\.nuon\.install\.inputs\.([a-zA-Z0-9_]+)\s*\}\}$`)
 
-// ParseInstallInputReference matches the single-install-input reference form,
-// {{.nuon.install.inputs.<input_name>}}, and returns the input name.
-//
-// Custom nested stack parameters are no longer limited to this form -- they are
-// rendered as full templates before the stack renderers see them (see
-// ValidateStackParameterTemplate). The stack renderers keep this as a fallback for
-// call paths that read config without rendering it first.
 func ParseInstallInputReference(value string) (string, error) {
 	matches := installInputTemplatePattern.FindStringSubmatch(value)
 	if matches == nil {
@@ -244,7 +219,7 @@ func ParseInstallInputReference(value string) (string, error) {
 	return matches[1], nil
 }
 
-// RenderCustomNestedStackParameters renders each stack's parameter values in place.
+// why: RenderCustomNestedStackParameters renders each stack's parameter values in place.
 //
 // Parameters are rendered here rather than through the features:"template" tag on
 // the field because RenderStruct routes tagged fields through html/template, which
@@ -259,7 +234,7 @@ func RenderCustomNestedStackParameters(stacks []CustomNestedStack, data map[stri
 	return nil
 }
 
-// Custom nested stack parameters are rendered when the install stack is generated,
+// why: Custom nested stack parameters are rendered when the install stack is generated,
 // which happens before the customer applies the stack. References to anything that
 // only exists after that point cannot resolve, and because the renderer runs with
 // missingkey=error they do not render empty -- they fail the generate-install-stack
@@ -271,7 +246,7 @@ var disallowedStackParameterRefTypes = []refs.RefType{
 	refs.RefTypeInstallStack,
 }
 
-// Legacy spellings of the same late-bound state. refs.ParseFieldRefs' patterns only
+// why: Legacy spellings of the same late-bound state. refs.ParseFieldRefs' patterns only
 // cover the flattened paths, so these are matched literally.
 var disallowedStackParameterPaths = []string{
 	"nuon.install.sandbox.",
@@ -281,9 +256,6 @@ var disallowedStackParameterPaths = []string{
 
 const availableStackParameterRefs = ".nuon.install.inputs.*, .nuon.inputs.inputs.*, .nuon.install.id, .nuon.app.*, .nuon.org.*"
 
-// ValidateStackParameterTemplate validates a custom nested stack parameter value: it
-// must be a parseable template that only references state which is populated when the
-// install stack is generated.
 func ValidateStackParameterTemplate(value string) error {
 	if value == "" {
 		return fmt.Errorf("must not be empty")

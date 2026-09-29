@@ -1,9 +1,3 @@
-/*
-
-An alt-screen TUI for viewing a specific action run.
-
-*/
-
 package run
 
 import (
@@ -35,47 +29,37 @@ const (
 )
 
 type Model struct {
-	// internal
 	log *common.Logger
-	// common/base
 	ctx context.Context
 	cfg *config.Config
 	api nuon.Client
 
-	// top level information
 	installID        string
 	actionWorkflowID string
 	runID            string
 
-	// sizing
 	width         int
 	height        int
-	stepsWidth    int // 2/3 of available width
+	stepsWidth    int
 	stepsHeight   int
-	sidebarWidth  int // 1/3 of available width
+	sidebarWidth  int
 	sidebarHeight int
 
-	// data
 	run *models.AppInstallActionWorkflowRun
 
-	// loading states
 	loading bool
 	error   error
 
-	// focus state
-	focusedComponent string // "steps" or "sidebar"
+	focusedComponent string
 
-	// ui components
 	spinner   spinner.Model
 	header    viewport.Model
-	stepsView steps.Model // component: steplist with logs + selection & expansion
+	stepsView steps.Model
 	sidebar   viewport.Model
 	footer    viewport.Model
 
-	// for the footer
 	status common.StatusBarRequest
 
-	// other
 	help     help.Model
 	keys     keyMap
 	quitting bool
@@ -136,7 +120,7 @@ func initialModel(
 
 		loading: true,
 
-		focusedComponent: "steps", // Start with steps focused
+		focusedComponent: "steps",
 
 		help: help.New(),
 		keys: keys,
@@ -157,7 +141,6 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m *Model) setLogMessage(message string, level string) {
-	// for use from within m.Update
 	m.status.Message = message
 	m.status.Level = level
 }
@@ -168,12 +151,8 @@ func (m *Model) setQuitting() {
 }
 
 func (m *Model) reflow() {
-	// apply sizing to children
-	// vertical margin height is the height of the header + the height of the footer
 	vMarginHeight := lipgloss.Height(m.header.View()) + lipgloss.Height(m.footer.View()) + 6
 
-	// steps take full width minus padding
-	// the steps should be 2/3
 	m.stepsWidth = int((m.width/3)*2) - 4
 	m.stepsHeight = m.height - vMarginHeight
 	m.stepsView.SetSize(m.stepsWidth, m.stepsHeight)
@@ -181,7 +160,6 @@ func (m *Model) reflow() {
 	m.sidebar.SetWidth((m.width - m.stepsWidth) - 4)
 	m.sidebar.SetHeight(m.height - vMarginHeight)
 
-	// horizontal margin is just 2 because of the padding of 1
 	hMargin := 2
 	m.header.SetWidth(m.width - hMargin)
 	m.footer.SetWidth(m.width - hMargin)
@@ -201,7 +179,6 @@ func (m *Model) handleResize(msg tea.WindowSizeMsg) {
 	m.width = msg.Width
 	m.height = msg.Height
 	m.reflow()
-	// Update viewport content after resize
 	m.log.Info("handled resize event", zap.Int("m.width", m.width), zap.Int("m.height", m.height))
 }
 
@@ -218,7 +195,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 
-	// handle tick: data refresh
 	case common.TickMsg:
 		return m, tea.Batch(
 			m.fetchInstallActionWorkflowRunCmd,
@@ -228,12 +204,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case installActionWorkflowRunFetchedMsg:
 		m.handleInstallActionWorkflowRunFetched(msg)
 
-	// handle re-size
 	case tea.WindowSizeMsg:
 		m.handleResize(msg)
 		return m, tea.Batch(cmds...)
 
-	// handle keystrokes
 	case tea.KeyPressMsg:
 		switch {
 		case key.Matches(msg, m.keys.Quit):
@@ -247,24 +221,20 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.Browser):
 			m.openInBrowser()
 		case key.Matches(msg, m.keys.Tab):
-			// Toggle focus between steps and sidebar
 			if m.focusedComponent == "steps" {
 				m.focusedComponent = "sidebar"
 			} else {
 				m.focusedComponent = "steps"
 			}
-			m.setContent() // Update styles based on new focus
+			m.setContent()
 		default:
-			// Route input based on focused component
 			if m.focusedComponent == "sidebar" {
-				// Handle sidebar scrolling with arrow keys
 				switch msg.String() {
 				case "up", "k", "down", "j":
 					m.sidebar, cmd = m.sidebar.Update(msg)
 					cmds = append(cmds, cmd)
 				}
 			} else {
-				// Default: pass to stepsView
 				m.stepsView, cmd = m.stepsView.Update(msg)
 				cmds = append(cmds, cmd)
 			}
@@ -303,13 +273,12 @@ func (m Model) View() string {
 		return content
 	}
 
-	// this is the actual bulk of the work
 	sections := []string{}
 	sections = append(sections, appStyle.Render(m.header.View()))
 
 	content := ""
-	if m.run == nil { // initial load hasn't taken place
-		if m.error != nil { // likely a 404 but worth refining later
+	if m.run == nil {
+		if m.error != nil {
 			content = common.FullPageDialog(common.FullPageDialogRequest{
 				Width:   m.width,
 				Height:  m.stepsHeight,
@@ -321,7 +290,6 @@ func (m Model) View() string {
 			content = common.FullPageDialog(common.FullPageDialogRequest{Width: m.width, Height: m.stepsHeight, Padding: 1, Content: "  Loading  ", Level: "info"})
 		}
 	} else {
-		// Apply focus styles based on which component is focused
 		var stepsContent, sidebarContent string
 		if m.focusedComponent == "steps" {
 			stepsContent = appStyleFocus.Render(m.stepsView.View())

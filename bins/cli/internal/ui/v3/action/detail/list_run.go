@@ -7,8 +7,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// our list run is the item we pass to the list
-// it just holds a run and we implement the list item interface
 type listRun struct {
 	run  *models.AppInstallActionWorkflowRun
 	name string
@@ -25,17 +23,14 @@ func (i listRun) Description() string {
 	run := i.run
 	description := ""
 
-	// trigger type
 	if run.TriggerType != "" {
 		description += fmt.Sprintf("trigger: %s  ", run.TriggerType)
 	}
 
-	// created by
 	if run.CreatedBy != nil && run.CreatedBy.Email != "" {
 		description += fmt.Sprintf("\nrun by: %s  ", run.CreatedBy.Email)
 	}
 
-	// humanized time
 	if run.CreatedAt != "" {
 		description += run.CreatedAt
 	}
@@ -55,7 +50,6 @@ func (i listRun) FilterValue() string {
 	return filterStr
 }
 
-// the niecities
 func (i listRun) Run() *models.AppInstallActionWorkflowRun {
 	return i.run
 }

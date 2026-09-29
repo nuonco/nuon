@@ -61,8 +61,6 @@ func (s *service) SkipWorkflowStep(ctx *gin.Context) {
 		return
 	}
 
-	// App branch runs live in the same workflow table and use the same
-	// execute-workflow skip path. Other owners still have no skip handler.
 	if workflow.OwnerType != "installs" && workflow.OwnerType != "app_branches" {
 		ctx.Error(stderr.ErrUser{
 			Err: fmt.Errorf("workflow %s skip not supported for owner type", workflow.ID),

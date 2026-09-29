@@ -48,19 +48,16 @@ func (m *patcherPlugin) enablePatcher(tx *gorm.DB) {
 	tx.Select(filteredProperties)
 }
 
-// filterProperties removes exclusions from the properties slice
 func filterProperties(properties []string, exclusions []string) []string {
 	if len(exclusions) == 0 {
 		return properties
 	}
 
-	// Create a map for fast lookup of exclusions
 	excludeMap := make(map[string]bool, len(exclusions))
 	for _, exclusion := range exclusions {
 		excludeMap[exclusion] = true
 	}
 
-	// Filter properties
 	var filtered []string
 	for _, prop := range properties {
 		if !excludeMap[prop] {

@@ -46,7 +46,6 @@ func TestNextComponentHealthVerdict(t *testing.T) {
 		{"not-applicable flips immediately once observed", notApplicable, healthReports(now, progressing), progressing},
 		{"unknown adopts a good report immediately", unknown, healthReports(now, healthy), healthy},
 
-		// A component fresh from a deploy has no baseline.
 		{"bootstrap does not claim bad on one report", notApplicable, healthReports(now, degraded), notApplicable},
 		{"bootstrap does not claim bad on two reports", notApplicable, healthReports(now, degraded, degraded), notApplicable},
 		{"bootstrap claims bad once earned", notApplicable, healthReports(now, degraded, degraded, degraded), degraded},
@@ -77,9 +76,6 @@ func TestNextComponentHealthVerdict(t *testing.T) {
 	}
 }
 
-// Pins the gap a live install exposed: an ingress with no class never gets a
-// load balancer address, so it reports progressing forever — and because
-// progressing never alerts, 15 hours passed with nobody told.
 func TestEscalateStuckProgressing(t *testing.T) {
 	now := time.Now()
 	progressingSince := func(d time.Duration) *app.InstallComponent {

@@ -21,7 +21,6 @@ func (s *Helpers) ValidateInstallInputs(ctx context.Context, appInputCfg *app.Ap
 		return nil
 	}
 
-	// verify all of the inputs are defined in the app input config
 	appInputNames := map[string]struct{}{}
 	inputTypes := map[string]app.AppInputType{}
 	for _, input := range appInputCfg.AppInputs {
@@ -37,8 +36,6 @@ func (s *Helpers) ValidateInstallInputs(ctx context.Context, appInputCfg *app.Ap
 			}
 		}
 
-		// structured inputs (yaml/hcl) must parse cleanly so a malformed
-		// override is rejected here rather than failing mid-deploy.
 		if val != nil {
 			if err := config.ValidateInputValueSyntax(string(inputTypes[name]), *val); err != nil {
 				return stderr.ErrUser{
@@ -49,7 +46,6 @@ func (s *Helpers) ValidateInstallInputs(ctx context.Context, appInputCfg *app.Ap
 		}
 	}
 
-	// verify all of the inputs are set on the current sandbox config
 	for _, inp := range appInputCfg.AppInputs {
 		if !inp.Required ||
 			inp.Source == app.AppInputSourceCustomer {

@@ -11,28 +11,19 @@ import (
 )
 
 type AWSECRConfig struct {
-	IAMRoleARN string `mapstructure:"iam_role_arn,omitempty" toml:"iam_role_arn,omitempty" jsonschema:"required"`
-	AWSRegion  string `mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
-	ImageURL   string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
-	Tag        string `mapstructure:"tag,omitempty" toml:"tag,omitempty"`
-	// UpdatePolicy is an optional Masterminds-compatible semver constraint
-	// (e.g. "~1.25.0", "^2"). When set, the runner picks the highest
-	// matching tag from the registry at build time. Either tag or
-	// update_policy must be set.
+	IAMRoleARN   string `mapstructure:"iam_role_arn,omitempty" toml:"iam_role_arn,omitempty" jsonschema:"required"`
+	AWSRegion    string `mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
+	ImageURL     string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
+	Tag          string `mapstructure:"tag,omitempty" toml:"tag,omitempty"`
 	UpdatePolicy string `mapstructure:"update_policy,omitempty" toml:"update_policy,omitempty"`
 }
 
 type PublicImageConfig struct {
-	ImageURL string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required" `
-	Tag      string `mapstructure:"tag,omitempty" toml:"tag,omitempty"`
-	// UpdatePolicy is an optional Masterminds-compatible semver constraint
-	// (e.g. "~1.25.0", "^2"). When set, the runner picks the highest
-	// matching tag from the registry at build time. Either tag or
-	// update_policy must be set.
+	ImageURL     string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required" `
+	Tag          string `mapstructure:"tag,omitempty" toml:"tag,omitempty"`
 	UpdatePolicy string `mapstructure:"update_policy,omitempty" toml:"update_policy,omitempty"`
 }
 
-// NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type GCPGARConfig struct {
 	GCPProjectID             string `mapstructure:"gcp_project_id,omitempty" toml:"gcp_project_id,omitempty" jsonschema:"required"`
 	GCPRegion                string `mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
@@ -40,29 +31,18 @@ type GCPGARConfig struct {
 	Tag                      string `mapstructure:"tag,omitempty" toml:"tag,omitempty"`
 	ServiceAccountEmail      string `mapstructure:"service_account_email,omitempty" toml:"service_account_email,omitempty"`
 	WorkloadIdentityProvider string `mapstructure:"workload_identity_provider,omitempty" toml:"workload_identity_provider,omitempty"`
-	// UpdatePolicy is an optional Masterminds-compatible semver constraint
-	// (e.g. "~1.25.0", "^2"). When set, the runner picks the highest
-	// matching tag from the registry at build time. Either tag or
-	// update_policy must be set.
-	UpdatePolicy string `mapstructure:"update_policy,omitempty" toml:"update_policy,omitempty"`
+	UpdatePolicy             string `mapstructure:"update_policy,omitempty" toml:"update_policy,omitempty"`
 }
 
 type AzureACRConfig struct {
-	ImageURL    string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
-	Tag         string `mapstructure:"tag,omitempty" toml:"tag,omitempty"`
-	RegistryURL string `mapstructure:"registry_url,omitempty" toml:"registry_url,omitempty" jsonschema:"required"`
-	TenantID    string `mapstructure:"tenant_id,omitempty" toml:"tenant_id,omitempty"`
-	ClientID    string `mapstructure:"client_id,omitempty" toml:"client_id,omitempty"`
-	// These name an AppSecret holding the credential; the "_name" suffix is
-	// load-bearing, because a field called client_secret invites pasting the
-	// secret itself into a file that gets committed.
+	ImageURL              string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
+	Tag                   string `mapstructure:"tag,omitempty" toml:"tag,omitempty"`
+	RegistryURL           string `mapstructure:"registry_url,omitempty" toml:"registry_url,omitempty" jsonschema:"required"`
+	TenantID              string `mapstructure:"tenant_id,omitempty" toml:"tenant_id,omitempty"`
+	ClientID              string `mapstructure:"client_id,omitempty" toml:"client_id,omitempty"`
 	ClientSecretName      string `mapstructure:"client_secret_name,omitempty" toml:"client_secret_name,omitempty"`
 	ClientCertificateName string `mapstructure:"client_certificate_name,omitempty" toml:"client_certificate_name,omitempty"`
-	// UpdatePolicy is an optional Masterminds-compatible semver constraint
-	// (e.g. "~1.25.0", "^2"). When set, the runner picks the highest
-	// matching tag from the registry at build time. Either tag or
-	// update_policy must be set.
-	UpdatePolicy string `mapstructure:"update_policy,omitempty" toml:"update_policy,omitempty"`
+	UpdatePolicy          string `mapstructure:"update_policy,omitempty" toml:"update_policy,omitempty"`
 }
 
 type ExternalImageComponentConfig struct {
@@ -190,10 +170,6 @@ func (a AzureACRConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("azure-acr-client-cert")
 }
 
-// ValidateCredentials rejects a half-specified app registration. All four
-// fields absent means ambient credentials, which is the supported same-tenant
-// case; anything in between would fall back to ambient and surface as an
-// unexplained 401 against a registry the author believes they configured.
 func (a AzureACRConfig) ValidateCredentials() error {
 	if a.ClientSecretName != "" && a.ClientCertificateName != "" {
 		return fmt.Errorf("azure_acr: only one of client_secret_name or client_certificate_name may be set")
@@ -253,10 +229,6 @@ func (t *ExternalImageComponentConfig) Validate() error {
 		return err
 	}
 
-	// Every image source must declare either a literal tag or an
-	// `update_policy` semver constraint (or both); update_policy syntax is
-	// validated up-front so users get a clear error before the API ever
-	// rejects the sync.
 	type imageSource struct {
 		name         string
 		tag          string

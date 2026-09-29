@@ -24,7 +24,7 @@ func (p *Plugin) Initialize(db *gorm.DB) error {
 	if err := db.Callback().Raw().Before("*").Register("routing:decide", p.decide); err != nil {
 		return err
 	}
-	// Row covers db.Raw(...).Scan(...) and db.Row()/Rows(), which run through
+	// why: Row covers db.Raw(...).Scan(...) and db.Row()/Rows(), which run through
 	// gorm's Row processor rather than Query/Raw. Without this, raw read
 	// queries never get a routing decision and always fall back to primary.
 	if err := db.Callback().Row().Before("*").Register("routing:decide", p.decide); err != nil {

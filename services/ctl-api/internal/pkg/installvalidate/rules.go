@@ -5,10 +5,6 @@ import (
 	"sort"
 )
 
-// CodeDisabledDependency marks an invalid dependency edge: an enabled component
-// that depends on a disabled one. Both toggle rules below describe this same
-// structural edge from opposite ends, so they share this code and dedup to a
-// single diagnostic per edge during a full sync.
 const CodeDisabledDependency = "disabled_dependency"
 
 func disabledDependencyDiagnostic(c *Context, dependentID, dependencyID string) Diagnostic {
@@ -23,11 +19,6 @@ func disabledDependencyDiagnostic(c *Context, dependentID, dependencyID string) 
 	}
 }
 
-// EnableRequiresDependenciesEnabledRule enforces that a component may only be
-// enabled when every component it depends on is also enabled — the "a child
-// cannot be enabled while a parent is disabled" scenario. On an enable
-// operation it scopes to the toggled component; on a full sync it evaluates
-// every component.
 type EnableRequiresDependenciesEnabledRule struct{}
 
 func (EnableRequiresDependenciesEnabledRule) Name() string {
@@ -62,11 +53,6 @@ func (EnableRequiresDependenciesEnabledRule) Check(c *Context) Diagnostics {
 	return ds
 }
 
-// DisableRequiresDependentsDisabledRule enforces that a component may only be
-// disabled when no component that depends on it is still enabled — the "a
-// parent cannot be disabled while a child is enabled" scenario. On a disable
-// operation it scopes to the toggled component; on a full sync it evaluates
-// every component.
 type DisableRequiresDependentsDisabledRule struct{}
 
 func (DisableRequiresDependentsDisabledRule) Name() string {

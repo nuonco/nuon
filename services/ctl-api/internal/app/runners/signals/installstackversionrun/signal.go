@@ -35,7 +35,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("install_stack_version_run_id is required")
 	}
 
-	// Validate runner exists in database
 	_, err := activities.AwaitGetByRunnerID(ctx, s.RunnerID)
 	if err != nil {
 		return errors.Wrap(err, "runner not found")
@@ -45,13 +44,11 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Get runner to check status
 	runner, err := activities.AwaitGetByRunnerID(ctx, s.RunnerID)
 	if err != nil {
 		return err
 	}
 
-	// Offline/error are included so a re-applied stack gets a fresh heartbeat window.
 	if !generics.SliceContains(runner.Status, []app.RunnerStatus{
 		app.RunnerStatusAwaitingInstallStackRun,
 		app.RunnerStatusPending,
@@ -61,7 +58,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// A stack applied with runner_enabled = false provisions no runner, so it
+	// why: A stack applied with runner_enabled = false provisions no runner, so it
 	// will never report health. Checking the run's outputs here rather than the
 	// runner's status is deliberate: this signal races
 	// update-install-stack-outputs off the same stack run, so the disabled

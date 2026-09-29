@@ -8,7 +8,6 @@ import (
 	"github.com/nuonco/nuon/pkg/pipeline"
 )
 
-// execInitFn is a function that just does an init, and does not return output
 type execInitFn func(context.Context) error
 
 func MapInit(fn execInitFn) pipeline.ExecFn {

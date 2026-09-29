@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon'
 
-// Mirrors componentHealthStaleAfter in the health evaluator: past this, an
+// why: Mirrors componentHealthStaleAfter in the health evaluator: past this, an
 // observation no longer counts toward a component's verdict, so the UI must not
 // present it as current.
 export const HEALTH_OBSERVATION_STALE_AFTER_SECONDS = 5 * 60

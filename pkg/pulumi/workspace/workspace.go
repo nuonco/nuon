@@ -23,7 +23,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// StateBackend configures the state backend for Pulumi.
 type StateBackend struct {
 	APIEndpoint string
 	WorkspaceID string
@@ -31,7 +30,6 @@ type StateBackend struct {
 	JobID       string
 }
 
-// Options configures a Pulumi workspace.
 type Options struct {
 	WorkDir      string
 	StackName    string
@@ -42,8 +40,6 @@ type Options struct {
 	Logger       *zap.Logger
 }
 
-// ResourceChange represents a single resource change in a preview, structured
-// to mirror terraform's resource_changes for UI parity.
 type ResourceChange struct {
 	URN          string                          `json:"urn"`
 	Type         string                          `json:"type"`
@@ -56,8 +52,6 @@ type ResourceChange struct {
 	Provider     string                          `json:"provider,omitempty"`
 }
 
-// PreviewResult contains the output of a pulumi preview with structured
-// resource changes comparable to terraform's plan JSON.
 type PreviewResult struct {
 	StdOut          string           `json:"stdout"`
 	StdErr          string           `json:"stderr"`
@@ -66,29 +60,20 @@ type PreviewResult struct {
 	Diagnostics     []string         `json:"diagnostics,omitempty"`
 }
 
-// UpResult contains the output of a pulumi up.
 type UpResult struct {
 	StdOut  string         `json:"stdout"`
 	StdErr  string         `json:"stderr"`
 	Outputs map[string]any `json:"outputs"`
 }
 
-// PreviewOpts are optional knobs for Preview.
 type PreviewOpts struct {
-	// PlanOutPath, if set, makes Pulumi save an update plan to this path so
-	// a subsequent Up can replay it deterministically.
 	PlanOutPath string
 }
 
-// UpOpts are optional knobs for Up.
 type UpOpts struct {
-	// PlanInPath, if set, makes Pulumi apply this previously-saved update
-	// plan instead of computing a new diff. Up will fail if reality has
-	// drifted from what the plan expected.
 	PlanInPath string
 }
 
-// Workspace wraps the Pulumi Automation API for programmatic Pulumi operations.
 type Workspace struct {
 	stack   auto.Stack
 	workDir string
@@ -96,7 +81,6 @@ type Workspace struct {
 	logger  *zap.Logger
 }
 
-// New creates a new Pulumi workspace with a local file backend for state.
 func New(ctx context.Context, opts *Options) (*Workspace, error) {
 	stateDir := filepath.Join(opts.WorkDir, ".pulumi-state")
 	if err := os.MkdirAll(stateDir, 0755); err != nil {
@@ -111,11 +95,8 @@ func New(ctx context.Context, opts *Options) (*Workspace, error) {
 	hash := sha256.Sum256([]byte("nuon-pulumi:" + opts.StackName))
 	envVars["PULUMI_CONFIG_PASSPHRASE"] = hex.EncodeToString(hash[:])
 	envVars["PULUMI_SKIP_UPDATE_CHECK"] = "true"
-	// Required by the Pulumi CLI to accept --save-plan / --plan in this version.
+	// why: Required by the Pulumi CLI to accept --save-plan / --plan in this version.
 	envVars["PULUMI_EXPERIMENTAL"] = "true"
-	// Fixed shared path so every job reuses the compiled pulumi-gcp SDK. Deriving
-	// from WorkDir broke this for component deploys (their WorkDir is a per-job
-	// temp dir), forcing a full recompile on every preview and apply.
 	goBuildCache := filepath.Join(os.TempDir(), "nuon-pulumi-go-cache")
 	if err := os.MkdirAll(goBuildCache, 0755); err != nil {
 		return nil, fmt.Errorf("unable to create go build cache dir: %w", err)
@@ -168,8 +149,6 @@ func New(ctx context.Context, opts *Options) (*Workspace, error) {
 	}, nil
 }
 
-// progressHeartbeat is how often in-flight resources re-log a "still <op>"
-// line so long-running creates (e.g. a GKE cluster) show liveness.
 const progressHeartbeat = 10 * time.Second
 
 type inflightResource struct {
@@ -179,10 +158,6 @@ type inflightResource struct {
 	started time.Time
 }
 
-// logProgressEvents drains engine events, logging a line per user resource as
-// it starts and finishes, plus a periodic "still <op>" heartbeat for resources
-// that are still in flight — so plan/apply progress stays visible in the job
-// log stream even during long single-resource waits.
 func (w *Workspace) logProgressEvents(eventCh <-chan events.EngineEvent, done chan<- struct{}, collect func(events.EngineEvent)) {
 	defer close(done)
 
@@ -239,7 +214,6 @@ func skipResourceLog(typ, op string) bool {
 	if typ == "pulumi:pulumi:Stack" || strings.HasPrefix(typ, "pulumi:providers:") {
 		return true
 	}
-	// "same" means no change — don't spam the log with unchanged resources.
 	return op == "same"
 }
 
@@ -285,13 +259,10 @@ func opPast(op string) string {
 	}
 }
 
-// StateDir returns the path to the local state backend directory.
 func (w *Workspace) StateDir() string {
 	return filepath.Join(w.workDir, ".pulumi-state")
 }
 
-// extractResourceName extracts the resource name from a Pulumi URN.
-// URN format: urn:pulumi:stack::project::type::name
 func extractResourceName(urn string) string {
 	parts := strings.Split(urn, "::")
 	if len(parts) > 0 {
@@ -300,15 +271,10 @@ func extractResourceName(urn string) string {
 	return urn
 }
 
-// Preview runs `pulumi preview` with event streaming to capture structured
-// per-resource changes, producing output comparable to terraform plan JSON.
-// When opts.PlanOutPath is set, a Pulumi update plan is also written to that
-// path; pass it back via UpOpts.PlanInPath on a subsequent Up to skip the
-// implicit re-preview and guard against drift between plan and apply.
 func (w *Workspace) Preview(ctx context.Context, opts *PreviewOpts) (*PreviewResult, error) {
 	eventCh := make(chan events.EngineEvent, 100)
 
-	// Drain events concurrently to prevent deadlock — Preview() writes
+	// why: Drain events concurrently to prevent deadlock — Preview() writes
 	// to the channel and blocks if the buffer fills before we read.
 	var resourceChanges []ResourceChange
 	var diagnostics []string
@@ -359,15 +325,12 @@ func (w *Workspace) Preview(ctx context.Context, opts *PreviewOpts) (*PreviewRes
 	}
 	result, err := w.stack.Preview(ctx, previewOpts...)
 
-	// Wait for all events to be processed
 	<-done
 
 	if err != nil {
 		return nil, fmt.Errorf("pulumi preview failed: %w", err)
 	}
 
-	// Build change summary from our filtered resource changes (excludes
-	// Stack and provider resources) instead of Pulumi's raw summary.
 	changeSummary := make(map[string]int)
 	for _, rc := range resourceChanges {
 		changeSummary[rc.Action]++
@@ -382,9 +345,6 @@ func (w *Workspace) Preview(ctx context.Context, opts *PreviewOpts) (*PreviewRes
 	}, nil
 }
 
-// Up runs `pulumi up` and returns the result. When opts.PlanInPath is set,
-// Pulumi applies that previously-saved update plan instead of computing a
-// fresh diff — faster, and refuses to apply if reality has drifted.
 func (w *Workspace) Up(ctx context.Context, opts *UpOpts) (*UpResult, error) {
 	eventCh := make(chan events.EngineEvent, 100)
 	done := make(chan struct{})
@@ -397,8 +357,6 @@ func (w *Workspace) Up(ctx context.Context, opts *UpOpts) (*UpResult, error) {
 	if opts != nil && opts.PlanInPath != "" {
 		upOpts = append(upOpts, optup.Plan(opts.PlanInPath))
 	} else {
-		// No saved plan: refresh against reality first so already-existing or
-		// drifted resources are adopted/reconciled instead of recreated.
 		upOpts = append(upOpts, optup.Refresh())
 	}
 	result, err := w.stack.Up(ctx, upOpts...)
@@ -419,8 +377,6 @@ func (w *Workspace) Up(ctx context.Context, opts *UpOpts) (*UpResult, error) {
 	}, nil
 }
 
-// DestroyPreview generates a synthetic preview of what destroy would do
-// by inspecting the current stack state.
 func (w *Workspace) DestroyPreview(ctx context.Context) (*PreviewResult, error) {
 	stateJSON, err := w.ExportState(ctx)
 	if err != nil {
@@ -472,7 +428,6 @@ func (w *Workspace) DestroyPreview(ctx context.Context) (*PreviewResult, error) 
 	}, nil
 }
 
-// Destroy runs `pulumi destroy`.
 func (w *Workspace) Destroy(ctx context.Context) error {
 	eventCh := make(chan events.EngineEvent, 100)
 	done := make(chan struct{})
@@ -486,7 +441,6 @@ func (w *Workspace) Destroy(ctx context.Context) error {
 	return nil
 }
 
-// ExportState exports the current stack state as JSON bytes.
 func (w *Workspace) ExportState(ctx context.Context) ([]byte, error) {
 	deployment, err := w.stack.Export(ctx)
 	if err != nil {
@@ -495,7 +449,6 @@ func (w *Workspace) ExportState(ctx context.Context) ([]byte, error) {
 	return deployment.Deployment, nil
 }
 
-// ImportState imports stack state from JSON bytes.
 func (w *Workspace) ImportState(ctx context.Context, stateJSON []byte) error {
 	deployment := apitype.UntypedDeployment{
 		Version:    3,
@@ -507,10 +460,6 @@ func (w *Workspace) ImportState(ctx context.Context, stateJSON []byte) error {
 	return nil
 }
 
-// EncryptionSalt returns the stack's per-stack encryption salt. Pulumi
-// generates this lazily the first time it encrypts a value with the
-// passphrase secrets manager, and persists it in the stack config file.
-// Returns "" if no salt has been generated yet.
 func (w *Workspace) EncryptionSalt(ctx context.Context) (string, error) {
 	settings, err := w.stack.Workspace().StackSettings(ctx, w.opts.StackName)
 	if err != nil {
@@ -522,9 +471,6 @@ func (w *Workspace) EncryptionSalt(ctx context.Context) (string, error) {
 	return settings.EncryptionSalt, nil
 }
 
-// SetEncryptionSalt writes salt onto the stack's config file so that secret
-// values encrypted under that salt elsewhere (e.g. an update plan saved by a
-// previous job) can be decrypted here. No-op when salt is empty.
 func (w *Workspace) SetEncryptionSalt(ctx context.Context, salt string) error {
 	if salt == "" {
 		return nil
@@ -546,7 +492,6 @@ func (w *Workspace) SetEncryptionSalt(ctx context.Context, salt string) error {
 	return nil
 }
 
-// Outputs returns the current stack outputs.
 func (w *Workspace) Outputs(ctx context.Context) (map[string]any, error) {
 	outs, err := w.stack.Outputs(ctx)
 	if err != nil {

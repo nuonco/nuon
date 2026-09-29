@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
-// getInstallSandboxRuns reads an install's sandbox runs from the DB.
 func (h *Helpers) getInstallSandboxRuns(ctx context.Context, installID string) ([]app.InstallSandboxRun, error) {
 	var installSandboxRuns []app.InstallSandboxRun
 	res := h.db.WithContext(ctx).

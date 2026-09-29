@@ -8,10 +8,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// branchNameResolver translates between the names a branch config file uses and
-// the IDs the API speaks. Both directions are needed: names go out on create
-// requests, and IDs coming back have to be rendered as names again so an
-// unchanged config compares equal to what is already deployed.
 type branchNameResolver struct {
 	api   nuon.Client
 	appID string
@@ -79,8 +75,6 @@ func (r *branchNameResolver) installID(ctx context.Context, name string) (string
 	return id, nil
 }
 
-// installName returns the install's name, or an empty string when the ID no
-// longer resolves (a deleted install), so callers can fall back to the raw ID.
 func (r *branchNameResolver) installName(ctx context.Context, id string) (string, error) {
 	if err := r.loadInstalls(ctx); err != nil {
 		return "", err
@@ -101,8 +95,6 @@ func (r *branchNameResolver) runbookID(ctx context.Context, name string) (string
 	return runbook.ID, nil
 }
 
-// runbookName maps a runbook ID back to its name, falling back to the ID when
-// the runbook has since been deleted.
 func (r *branchNameResolver) runbookName(ctx context.Context, id string) string {
 	if name, ok := r.runbookIDToName[id]; ok {
 		return name

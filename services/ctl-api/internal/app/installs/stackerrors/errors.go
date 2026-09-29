@@ -1,7 +1,3 @@
-// Package stackerrors holds the typed CompositeError implementations produced
-// during install-stack-version generation and sandbox plan rendering. These
-// errors surface config mistakes that won't resolve by retrying, so they carry
-// WithTerminal hints that prevent the conductor from burning auto-retries.
 package stackerrors
 
 import (
@@ -13,20 +9,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
-// StackTemplateRenderErrorType is the discriminator for a stack version that
-// could not be rendered due to a template or config problem.
 const StackTemplateRenderErrorType compositeerrors.Type = "stack.template_render_failed"
 
-// StackTemplateRenderError is persisted on an InstallStackVersion row when the
-// template rendering step (CloudFormation, ARM, or GCP tfvars) fails. It
-// signals that the failure is caused by the app config, not transient
-// infrastructure, and that retrying without a config change is pointless.
 type StackTemplateRenderError struct {
-	// Platform identifies the cloud target ("aws", "azure", "gcp").
 	Platform string `json:"platform,omitempty"`
-	// Detail is the sanitised error message from the renderer (untrusted; rendered
-	// as a code block).
-	Detail string `json:"detail,omitempty"`
+	Detail   string `json:"detail,omitempty"`
 }
 
 var _ compositeerrors.CompositeError = (*StackTemplateRenderError)(nil)
@@ -60,17 +47,9 @@ func (e *StackTemplateRenderError) Hints() compositeerrors.Hints {
 	return compositeerrors.NewHints().WithTerminal()
 }
 
-// SandboxPlanRenderErrorType is the discriminator for a sandbox run whose plan
-// failed to render before any infrastructure was touched.
 const SandboxPlanRenderErrorType compositeerrors.Type = "sandbox.plan_render_failed"
 
-// SandboxPlanRenderError is persisted on an InstallSandboxRun row when the
-// plan-creation step fails in a way that indicates a config or template
-// problem (i.e. before or during the runner job, not as a result of live
-// infrastructure). It carries a terminal hint so the conductor does not
-// auto-retry a failure that requires a config change to fix.
 type SandboxPlanRenderError struct {
-	// Detail is the sanitised error message (untrusted; rendered as a code block).
 	Detail string `json:"detail,omitempty"`
 }
 
@@ -102,9 +81,6 @@ func (e *SandboxPlanRenderError) Hints() compositeerrors.Hints {
 	return compositeerrors.NewHints().WithTerminal()
 }
 
-// PlanRenderFailedTemporalType is the Temporal ApplicationError type returned
-// by CreateSandboxRunPlan when template rendering fails. Signals use it to
-// distinguish terminal config mistakes from retryable plan-prep errors.
 const PlanRenderFailedTemporalType = "plan_render_failed"
 
 func IsPlanRenderFailed(err error) bool {

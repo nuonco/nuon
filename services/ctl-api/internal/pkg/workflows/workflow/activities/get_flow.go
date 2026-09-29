@@ -25,10 +25,6 @@ func (a *Activities) PkgWorkflowsFlowGetFlow(ctx context.Context, req GetFlowReq
 		Preload("Steps", func(db *gorm.DB) *gorm.DB {
 			return db.Order("group_idx, group_retry_idx, idx, created_at asc")
 		}).
-		// Preload Org with a column-restricted SELECT so the lifecycle
-		// hook can stamp org_name onto webhook payloads without an extra
-		// query at emit time. We deliberately fetch only id + name to
-		// avoid pulling the rest of the (wide) orgs row.
 		Preload("Org", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, name")
 		}).
@@ -39,10 +35,6 @@ func (a *Activities) PkgWorkflowsFlowGetFlow(ctx context.Context, req GetFlowReq
 		return nil, errors.Wrap(res.Error, "unable to get install workflow")
 	}
 
-	// Resolve the polymorphic owner's display name with one cheap PK lookup.
-	// This runs once per Validate(), not per event, and lets the lifecycle
-	// hook stamp owner_name onto webhook payloads without a per-event query.
-	// Best-effort: errors leave OwnerName empty.
 	if wf.OwnerID != "" {
 		var ownerTable string
 		switch wf.OwnerType {

@@ -56,9 +56,6 @@ func (a *Activities) GetOrgECRAccessInfo(ctx context.Context, orgID string) (*Or
 	}, nil
 }
 
-// getOrgGARAccessInfo returns credentials for Google Artifact Registry using
-// the pod's Workload Identity. GAR accepts an OAuth2 access token as password
-// with "oauth2accesstoken" as the username.
 func (a *Activities) getOrgGARAccessInfo(ctx context.Context) (*OrgECRAccessInfo, error) {
 	ts, err := google.DefaultTokenSource(ctx, "https://www.googleapis.com/auth/cloud-platform")
 	if err != nil {
@@ -70,7 +67,6 @@ func (a *Activities) getOrgGARAccessInfo(ctx context.Context) (*OrgECRAccessInfo
 		return nil, fmt.Errorf("unable to get GCP access token for GAR: %w", err)
 	}
 
-	// Extract the hostname from the repository URL (e.g. "us-central1-docker.pkg.dev/...")
 	repoURL := a.cfg.ManagementGARRepositoryURL
 	host := repoURL
 	if idx := strings.Index(repoURL, "/"); idx != -1 {
@@ -85,8 +81,6 @@ func (a *Activities) getOrgGARAccessInfo(ctx context.Context) (*OrgECRAccessInfo
 	}, nil
 }
 
-// getOrgACRAccessInfo returns credentials for Azure Container Registry.
-// It exchanges the pod's Azure credentials for an ACR refresh token.
 func (a *Activities) getOrgACRAccessInfo(ctx context.Context) (*OrgECRAccessInfo, error) {
 	acrService := a.cfg.ManagementACRRegistryURL
 

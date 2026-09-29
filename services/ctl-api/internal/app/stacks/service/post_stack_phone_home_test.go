@@ -1,4 +1,3 @@
-// Integration tests: run with INTEGRATION=true against the migrated test database.
 package service
 
 import (
@@ -98,8 +97,6 @@ func (s *StackPhoneHomeTestSuite) SetupTest() {
 		TestAcc: s.testAcc,
 	})
 
-	// The handler alone: the runner engine's middleware chain is what puts org
-	// and account in context in production.
 	s.router.POST("/v1/stacks/:install_id/phone-home", s.svc.PostStackPhoneHome)
 }
 
@@ -116,7 +113,6 @@ func (s *StackPhoneHomeTestSuite) post(installID string, body any) *httptest.Res
 	return rr
 }
 
-// seedInstall returns an install in the given org with an install stack.
 func (s *StackPhoneHomeTestSuite) seedInstall(orgID string) *app.Install {
 	install := s.deps.Seeder.CreateInstall(s.ctx, s.T(), s.testApp)
 	if orgID != install.OrgID {
@@ -127,7 +123,6 @@ func (s *StackPhoneHomeTestSuite) seedInstall(orgID string) *app.Install {
 	return install
 }
 
-// seedQueue creates the install-signals queue the enqueue looks up by owner+name.
 func (s *StackPhoneHomeTestSuite) seedQueue(installID string) {
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&app.Queue{
 		OwnerID:   installID,
@@ -142,7 +137,6 @@ func (s *StackPhoneHomeTestSuite) TestAppliesReportToLatestStackVersion() {
 	install := s.seedInstall(s.testOrg.ID)
 	s.seedQueue(install.ID)
 
-	// Two versions: the report belongs to the newest, the one being applied.
 	older := s.deps.Seeder.CreateInstallStackVersion(s.ctx, t, install.ID, install.InstallStack.ID, s.appCfg.ID)
 	latest := s.deps.Seeder.CreateInstallStackVersion(s.ctx, t, install.ID, install.InstallStack.ID, s.appCfg.ID)
 
@@ -173,8 +167,6 @@ func (s *StackPhoneHomeTestSuite) TestAppliesReportToLatestStackVersion() {
 	assert.NotEmpty(t, tests.GetQueueSignals(t, s.deps.DB), "the report must signal the install")
 }
 
-// The org scope is what keeps one org's stack credential from reporting into another
-// org's install, so the miss must look identical to a nonexistent install.
 func (s *StackPhoneHomeTestSuite) TestInstallInAnotherOrgIsNotFound() {
 	t := s.T()
 
@@ -193,8 +185,6 @@ func (s *StackPhoneHomeTestSuite) TestInstallInAnotherOrgIsNotFound() {
 	assert.Equal(t, http.StatusNotFound, rr.Code)
 }
 
-// The config read tolerates a missing version — the module fetches config before the
-// version exists. A report cannot: there is nothing to record it against.
 func (s *StackPhoneHomeTestSuite) TestNoStackVersionIsNotFound() {
 	t := s.T()
 
@@ -206,8 +196,6 @@ func (s *StackPhoneHomeTestSuite) TestNoStackVersionIsNotFound() {
 	assert.Equal(t, http.StatusNotFound, rr.Code, "body: %s", rr.Body.String())
 }
 
-// Delete is accepted and dropped, matching the legacy route: a deprovisioned stack
-// must stay deletable, and the report carries nothing worth recording.
 func (s *StackPhoneHomeTestSuite) TestDeleteIsAcceptedWithoutRecording() {
 	t := s.T()
 
@@ -239,8 +227,6 @@ func (s *StackPhoneHomeTestSuite) TestRejectsBadRequestType() {
 		s.post(install.ID, map[string]any{}).Code)
 }
 
-// customerInput adds a customer-source app input to the install's pinned input
-// config. The seeder's stock input is vendor-source, which the stack may not set.
 func (s *StackPhoneHomeTestSuite) customerInput(name string) *app.AppInput {
 	t := s.T()
 
@@ -273,8 +259,6 @@ func (s *StackPhoneHomeTestSuite) installInputRows(installID string) []app.Insta
 	return rows
 }
 
-// The customer's tfvars is a way to set input values: the stack reports what it
-// resolved, and the merge preserves the values it did not report.
 func (s *StackPhoneHomeTestSuite) TestInputsCreateNewCurrentRowWithMergedValues() {
 	t := s.T()
 
@@ -308,7 +292,6 @@ func (s *StackPhoneHomeTestSuite) TestInputsCreateNewCurrentRowWithMergedValues(
 	require.NotNil(t, current.Values["bucket"])
 	assert.Equal(t, "keep-me", *current.Values["bucket"], "unreported inputs carry over")
 
-	// inputs is a report of inputs, not a stack output — it must not land on the run.
 	var runs []app.InstallStackVersionRun
 	require.NoError(t, s.deps.DB.
 		Where("install_stack_version_id = ?", version.ID).Find(&runs).Error)
@@ -317,7 +300,6 @@ func (s *StackPhoneHomeTestSuite) TestInputsCreateNewCurrentRowWithMergedValues(
 	require.NotNil(t, runs[0].Data["runner_role"])
 }
 
-// An install that has never had inputs set gets its first row from the report.
 func (s *StackPhoneHomeTestSuite) TestInputsCreateFirstRowWhenNoneExist() {
 	t := s.T()
 
@@ -338,7 +320,6 @@ func (s *StackPhoneHomeTestSuite) TestInputsCreateFirstRowWhenNoneExist() {
 	assert.Equal(t, "example.com", *rows[0].Values["domain"])
 }
 
-// A re-apply reporting the values the install already has must not churn a revision.
 func (s *StackPhoneHomeTestSuite) TestInputsUnchangedWritesNoRow() {
 	t := s.T()
 
@@ -363,7 +344,6 @@ func (s *StackPhoneHomeTestSuite) TestInputsUnchangedWritesNoRow() {
 	assert.Len(t, s.installInputRows(install.ID), 1)
 }
 
-// A report without inputs is the common case and must leave the inputs untouched.
 func (s *StackPhoneHomeTestSuite) TestWithoutInputsWritesNoRow() {
 	t := s.T()
 
@@ -379,8 +359,6 @@ func (s *StackPhoneHomeTestSuite) TestWithoutInputsWritesNoRow() {
 	assert.Empty(t, s.installInputRows(install.ID))
 }
 
-// Only customer-source inputs are the stack's to set. An undeclared name, or a
-// vendor-source one, is named back so the module author can fix their tfvars.
 func (s *StackPhoneHomeTestSuite) TestUnknownInputIsBadRequest() {
 	t := s.T()
 
@@ -397,7 +375,6 @@ func (s *StackPhoneHomeTestSuite) TestUnknownInputIsBadRequest() {
 	assert.Contains(t, rr.Body.String(), "nope")
 	assert.Empty(t, s.installInputRows(install.ID), "a rejected report must persist nothing")
 
-	// "region" is the seeder's vendor-source input: declared, but not the stack's.
 	rr = s.post(install.ID, map[string]any{
 		"request_type": installshelpers.PhoneHomeRequestTypeCreate,
 		"inputs":       map[string]any{"region": "us-west-2"},

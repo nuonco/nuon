@@ -14,8 +14,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/syncerr"
 )
 
-// Sync creates the app sandbox configuration via the shared builder in
-// internal/pkg/config/build, which the CreateAppSandboxConfig handler also uses.
 func Sync(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, cfg *config.AppConfig, appID, appConfigID string, state *sync.State) error {
 	if cfg.Sandbox == nil {
 		return sync.SyncErr{

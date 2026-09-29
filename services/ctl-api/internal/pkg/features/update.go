@@ -50,7 +50,6 @@ func (s *Features) updateOrgFeatures(ctx context.Context, orgID string, updateFe
 			updateFeatures[feature] = allValue
 		}
 	} else {
-		// add features from org.Features not in features
 		for feature, enabled := range org.Features {
 			if _, ok := updateFeatures[feature]; !ok {
 				updateFeatures[feature] = enabled
@@ -58,7 +57,6 @@ func (s *Features) updateOrgFeatures(ctx context.Context, orgID string, updateFe
 		}
 	}
 
-	// Remove the "all" key from updateFeatures if it exists
 	delete(updateFeatures, "all")
 
 	for name := range app.ForcedFeatures() {

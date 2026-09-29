@@ -63,7 +63,6 @@ func (m *Migrator) applyMigration(ctx context.Context, _ any, idx Migration) err
 	return nil
 }
 
-// an in_progress migration older than this is assumed dead and gets reclaimed
 const abandonedMigrationTimeout = time.Hour
 
 func (a *Migrator) isMigrationApplied(ctx context.Context, name string) (bool, error) {
@@ -78,12 +77,10 @@ func (a *Migrator) isMigrationApplied(ctx context.Context, name string) (bool, e
 		return false, res.Error
 	}
 
-	// only applied counts. an error row used to read as applied and never retried.
+	// why: only applied counts. an error row used to read as applied and never retried.
 	return migration.Status == MigrationStatusApplied, nil
 }
 
-// claimMigration marks a migration in progress and reports whether we won the claim.
-// errored and abandoned rows get reclaimed so they retry.
 func (a *Migrator) claimMigration(ctx context.Context, name string) (bool, error) {
 	now := time.Now()
 
@@ -104,14 +101,12 @@ func (a *Migrator) claimMigration(ctx context.Context, name string) (bool, error
 		return true, nil
 	}
 
-	// nothing to reclaim, first attempt
 	migration := MigrationModel{
 		Name:   name,
 		Status: MigrationStatusInProgress,
 	}
 	if err := a.migrationDB.WithContext(ctx).Create(&migration).Error; err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			// another run got there first
 			return false, nil
 		}
 
@@ -121,7 +116,6 @@ func (a *Migrator) claimMigration(ctx context.Context, name string) (bool, error
 	return true, nil
 }
 
-// maxMigrationErrLen keeps a runaway error string from bloating the row
 const maxMigrationErrLen = 2000
 
 func (a *Migrator) updateMigrationStatus(ctx context.Context, name string, status MigrationStatus, cause error) error {
@@ -194,7 +188,7 @@ func (a *Migrator) execMigration(ctx context.Context, migration Migration) error
 	}()
 
 	if migration.AlwaysRun {
-		// Note(jm): this is so we can re-run migrations, but not on every single deploy (to prevent killing the
+		// why: this is so we can re-run migrations, but not on every single deploy (to prevent killing the
 		// database in a case where we are flapping)
 		ts := time.Now().Round(time.Hour * 1)
 		if a.cfg.Env == config.Development {
@@ -241,8 +235,6 @@ func (a *Migrator) execMigration(ctx context.Context, migration Migration) error
 			return fail(err, "unable_to_get_sql_sql_fn")
 		}
 
-		// this used to return the nil err from SQLFn above, reporting a failed migration
-		// as a success
 		if res := a.db.WithContext(ctx).Exec(sql); res.Error != nil {
 			return fail(res.Error, "unable_to_exec_sql_fn_sql")
 		}

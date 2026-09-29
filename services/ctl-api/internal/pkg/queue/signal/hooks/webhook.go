@@ -32,11 +32,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// Public webhook primitives. Consumers reason about three things: the workflow
-// lifecycle, the workflow step lifecycle, and the approval handshake on a
-// step. Operation taxonomy (component-deploy, sandbox-provision, etc.),
-// multi-phase concepts (plan/apply), and inner signal type names are
-// deliberately NOT exposed.
 const (
 	cloudEventTypeWorkflow                  = "com.nuon.workflow.lifecycle.v1"
 	cloudEventTypeWorkflowStep              = "com.nuon.workflow_step.lifecycle.v1"
@@ -48,15 +43,12 @@ const (
 	cloudEventTypeAppConfigSynced           = "com.nuon.app.config_synced.v1"
 	cloudEventTypeUpdateAppConfig           = "com.nuon.install.app_config_updated.v1"
 	cloudEventTypeRunnerUnhealthy           = "com.nuon.runner.unhealthy.v1"
-	// Component health emits one CloudEvent type per level; `transition`
-	// distinguishes going bad from recovering, the way the approval event uses
-	// requested / approved / rejected.
-	cloudEventTypeComponentHealth   = "com.nuon.component.health.v1"
-	cloudEventTypeInstallHealth     = "com.nuon.install.health.v1"
-	cloudEventTypeInstallSync       = "com.nuon.app.install_sync.v1"
-	cloudEventTypeInstallConfigSync = "com.nuon.install.config_sync.v1"
-	cloudEventTypeLabelAdded        = "com.nuon.install.label_added.v1"
-	cloudEventTypeAppBranchChanged  = "com.nuon.install.app_branch_changed.v1"
+	cloudEventTypeComponentHealth           = "com.nuon.component.health.v1"
+	cloudEventTypeInstallHealth             = "com.nuon.install.health.v1"
+	cloudEventTypeInstallSync               = "com.nuon.app.install_sync.v1"
+	cloudEventTypeInstallConfigSync         = "com.nuon.install.config_sync.v1"
+	cloudEventTypeLabelAdded                = "com.nuon.install.label_added.v1"
+	cloudEventTypeAppBranchChanged          = "com.nuon.install.app_branch_changed.v1"
 
 	kindWorkflow             = "workflow"
 	kindWorkflowStep         = "workflow_step"
@@ -75,7 +67,6 @@ const (
 	kindAppBranchChanged     = "app_branch_changed"
 )
 
-// Status values surfaced to webhook consumers in the *.lifecycle events.
 const (
 	statusStarted   = "started"
 	statusSucceeded = "succeeded"
@@ -83,10 +74,6 @@ const (
 	statusCanceled  = "cancelled"
 )
 
-// Transition values surfaced in `data.transition`. Workflow / step events
-// emit started / succeeded / failed / cancelled. Approval events emit a
-// distinct vocabulary — requested when the approval row is created and
-// approved / rejected when a response lands.
 const (
 	transitionStarted   = "started"
 	transitionSucceeded = "succeeded"
@@ -98,45 +85,18 @@ const (
 	transitionRejected  = "rejected"
 	transitionUnhealthy = "unhealthy"
 
-	// transitionAwaitingRetry is emitted on workflow_step.awaiting_retry.v1
-	// events when a step has failed and parked waiting for a manual retry,
-	// skip, or cancel. Non-terminal: the step's lifecycle event fires later
-	// once the workflow unblocks.
 	transitionAwaitingRetry = "awaiting_retry"
 
-	// Health transitions. The precise verdict (degraded / unhealthy /
-	// healthy) travels in data.metadata.health; the transition says which
-	// direction the debounced crossing went. The bad direction reuses
-	// transitionUnhealthy above, shared with the runner-unhealthy event.
 	transitionRecovered = "recovered"
 )
 
-// signalTypeExecuteWorkflow matches the SignalType produced by
-// services/ctl-api/internal/pkg/flow/signals/executeflow. Duplicated as a string
-// constant to avoid importing the flow package and producing an import cycle.
-//
-// signalTypeWorkflowStepApprovalRequest / signalTypeWorkflowStepApprovalResponse
-// mirror the SignalTypes defined in
-// services/ctl-api/internal/app/installs/signals/workflowstepapproval{request,response}.
-// Duplicated as string constants for the same reason — to avoid pulling the
-// installs/signals tree into the queue/signal/hooks package.
 const (
 	signalTypeExecuteWorkflow              signal.SignalType = "execute-workflow"
 	signalTypeExecuteWorkflowStep          signal.SignalType = "execute-workflow-step"
 	signalTypeWorkflowStepApprovalRequest  signal.SignalType = "workflow-step-approval-request"
 	signalTypeWorkflowStepApprovalResponse signal.SignalType = "workflow-step-approval-response"
-	// signalTypeDriftDetected mirrors driftdetected.SignalType — the
-	// notification-only signal dispatched from the plan-only check inside a
-	// drift_run / drift_run_reprovision_sandbox workflow when the plan
-	// observed actual changes. Its lifecycle events are how subscribers who
-	// opted into per-resource `drift_detected: true` get notified.
-	signalTypeDriftDetected signal.SignalType = "drift-detected"
-	// signalTypeWorkflowStepAwaitingRetry mirrors workflowstepawaitingretry.
-	// SignalType — the notification-only signal enqueued when a workflow
-	// step fails and parks awaiting manual retry. Its successful after-phase
-	// is projected as a workflow_step.awaiting_retry.v1 event with a failed
-	// outcome sourced from the step's own error.
-	signalTypeWorkflowStepAwaitingRetry signal.SignalType = "workflow-step-awaiting-retry"
+	signalTypeDriftDetected                signal.SignalType = "drift-detected"
+	signalTypeWorkflowStepAwaitingRetry    signal.SignalType = "workflow-step-awaiting-retry"
 
 	signalTypeStackRun        signal.SignalType = "stack-run"
 	signalTypeRoleChange      signal.SignalType = "role-change"
@@ -145,11 +105,6 @@ const (
 	signalTypeUpdateAppConfig signal.SignalType = "update-app-config"
 	signalTypeRunnerUnhealthy signal.SignalType = "runner-unhealthy"
 
-	// Component health carriers, mirroring the componenthealthnotify
-	// SignalTypes. Emitted by the component-health evaluator on a debounced
-	// verdict crossing, outside any workflow — so unlike every signal above
-	// they carry no WorkflowID and must be handled before buildEventData's
-	// workflow-id guard.
 	signalTypeComponentUnhealthy signal.SignalType = "component-unhealthy"
 	signalTypeComponentRecovered signal.SignalType = "component-recovered"
 	signalTypeInstallDegraded    signal.SignalType = "install-degraded"
@@ -160,12 +115,8 @@ const (
 	signalTypeAppBranchChanged  signal.SignalType = "app-branch-changed"
 )
 
-// approvalPlanExcerptMaxBytes caps the size of the plan excerpt embedded in
-// approval webhook payloads. Slack message limits and consumer log budgets
-// make truncation safer than shipping multi-MB plans inline.
 const approvalPlanExcerptMaxBytes = 8 * 1024
 
-// orgNameCacheTTL bounds how long a renamed org keeps showing its old name.
 const orgNameCacheTTL = 10 * time.Minute
 
 type Params struct {
@@ -189,12 +140,8 @@ type WebhookSignalLifecycleHook struct {
 	deliveryMetrics *deliveryMetrics
 	blobReadEnabled bool
 
-	// workflowCreatorCache holds workflowCreatorRow values keyed by workflow
-	// id. The underlying row is write-once, so entries never expire.
 	workflowCreatorCache sync.Map
 
-	// orgNameCache holds orgNameCacheEntry values keyed by org id. Entries
-	// expire after orgNameCacheTTL.
 	orgNameCache sync.Map
 }
 
@@ -245,17 +192,11 @@ func NewWebhookSignalLifecycleHook(params Params) *WebhookSignalLifecycleHook {
 	}
 }
 
-// metricNamespace returns the Temporal namespace tag value for metrics emitted
-// from inside an activity. Returns "" when called outside an activity context.
 func (h *WebhookSignalLifecycleHook) metricNamespace(ctx context.Context) string {
 	info := activity.GetInfo(ctx)
 	return info.WorkflowNamespace
 }
 
-// emitPublishLatency records how long a successful webhook delivery took for
-// this phase. Only called when at least one webhook actually fired; lookup-
-// only paths and "no targets" exits do not emit so the percentile reflects
-// real delivery cost.
 func (h *WebhookSignalLifecycleHook) emitPublishLatency(ctx context.Context, phasePrefix string, startTS time.Time) {
 	if h.mw == nil {
 		return
@@ -267,8 +208,6 @@ func (h *WebhookSignalLifecycleHook) emitPublishLatency(ctx context.Context, pha
 	)
 }
 
-// emitError increments the webhook error counter for this phase. One increment
-// per failed delivery so the count reflects per-attempt failures.
 func (h *WebhookSignalLifecycleHook) emitError(ctx context.Context, phasePrefix string) {
 	if h.mw == nil {
 		return
@@ -283,12 +222,6 @@ func (h *WebhookSignalLifecycleHook) Name() string {
 	return "workflow_lifecycle_webhook"
 }
 
-// Supports limits this hook to the public lifecycle primitives:
-// execute-workflow (workflow lifecycle), execute-workflow-step (step
-// lifecycle), and the approval handshake signals (request / response) which
-// are projected as workflow_step.approval.v1 events. Inner-signal events
-// (plan/apply, component-deploy, etc.) are deliberately ignored — consumers
-// should reason in terms of workflow + step + approval.
 func (h *WebhookSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) bool {
 	if len(h.webhookURLs) == 0 && h.db == nil {
 		return false
@@ -321,16 +254,10 @@ func (h *WebhookSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) boo
 }
 
 func (h *WebhookSignalLifecycleHook) BeforePhase(ctx context.Context, event signal.SignalPhaseEvent) (signal.BeforePhaseDecision, error) {
-	// Only emit *.started events for the execute phase.
 	if event.Phase != signal.SignalPhaseExecute {
 		return signal.AllowPhaseDecision(), nil
 	}
 
-	// Approval signals don't have a "started" semantic: a request has either
-	// happened (requested) or it hasn't, and a response is intrinsically
-	// terminal (approved / rejected). Drift-detected is a single-shot
-	// notification (its Execute is a no-op) — a "started" emission would
-	// just produce a duplicate event before the real one. Skip both.
 	if suppressesStartedEvent(event.SignalType) {
 		return signal.AllowPhaseDecision(), nil
 	}
@@ -341,8 +268,6 @@ func (h *WebhookSignalLifecycleHook) BeforePhase(ctx context.Context, event sign
 	return signal.AllowPhaseDecision(), nil
 }
 
-// isApprovalSignalType returns true for the approval handshake signals
-// (request / response) which feed the workflow_step.approval.v1 cloud event.
 func isApprovalSignalType(t signal.SignalType) bool {
 	return t == signalTypeWorkflowStepApprovalRequest ||
 		t == signalTypeWorkflowStepApprovalResponse
@@ -359,15 +284,13 @@ func isNotificationOnlySignalType(t signal.SignalType) bool {
 	return false
 }
 
-// isComponentHealthSignalType reports whether the signal is one of the
-// component-health notification carriers.
 func isComponentHealthSignalType(t signal.SignalType) bool {
 	return t == signalTypeComponentUnhealthy ||
 		t == signalTypeComponentRecovered ||
 		t == signalTypeInstallDegraded
 }
 
-// suppressesStartedEvent reports whether a signal type's synthetic "started"
+// why: suppressesStartedEvent reports whether a signal type's synthetic "started"
 // (before-phase) emission should be skipped. Awaiting-retry is listed here
 // but deliberately NOT in isNotificationOnlySignalType: that predicate also
 // routes Slack messages to standalone (flat) posts, while awaiting-retry
@@ -379,9 +302,6 @@ func suppressesStartedEvent(t signal.SignalType) bool {
 }
 
 func (h *WebhookSignalLifecycleHook) AfterPhase(ctx context.Context, event signal.SignalPhaseEvent, outcome signal.SignalPhaseOutcome) error {
-	// Validation phases never produce a public event for these primitives —
-	// validation failures of the workflow / step wrappers surface as a failed
-	// execute outcome immediately afterward.
 	if event.Phase == signal.SignalPhaseValidate {
 		return nil
 	}
@@ -414,11 +334,8 @@ func (workflowStatusRow) TableName() string {
 	return (&app.Workflow{}).TableName()
 }
 
-// workflowStatusLookup loads a workflow row's composite status by id.
 type workflowStatusLookup func(ctx context.Context, workflowID string) (app.CompositeStatus, error)
 
-// workflowStatusFromDB returns a lookup backed by the workflows table, or nil
-// when no DB is configured so resolveFlowCompletionOutcome is a no-op.
 func workflowStatusFromDB(db *gorm.DB) workflowStatusLookup {
 	if db == nil {
 		return nil
@@ -435,7 +352,7 @@ func workflowStatusFromDB(db *gorm.DB) workflowStatusLookup {
 	}
 }
 
-// resolveFlowCompletionOutcome reconciles an execute-workflow completion
+// why: resolveFlowCompletionOutcome reconciles an execute-workflow completion
 // event against the workflow row's domain outcome. Resident flows complete
 // their queue signal independently of the workflow row, so the transport
 // status can read "success" while the workflow is actually parked
@@ -481,7 +398,6 @@ func resolveFlowCompletionOutcome(ctx context.Context, lookup workflowStatusLook
 	return false, nil
 }
 
-// CloudEvents v1.0 envelope.
 type cloudEvent struct {
 	SpecVersion     string `json:"specversion"`
 	ID              string `json:"id"`
@@ -495,18 +411,11 @@ type cloudEvent struct {
 	NuonKind       string `json:"nuonkind,omitempty"`
 	NuonTransition string `json:"nuontransition,omitempty"`
 
-	// Interests carries the slug list produced by interests.Classify for
-	// this event (resource:..., op:..., outcome:..., event:...). Consumers
-	// can route by prefix without re-implementing the classifier. Empty
-	// slice is omitted via omitempty.
 	Interests []string `json:"interests,omitempty"`
 
 	Data lifecycleEventData `json:"data"`
 }
 
-// lifecycleEventData is the public webhook payload. It exposes the workflow
-// (always) and optionally the step + approval blocks alongside the transition,
-// outcome, and dashboard links.
 type lifecycleEventData struct {
 	Kind       string `json:"kind"`
 	Transition string `json:"transition"`
@@ -523,24 +432,14 @@ type lifecycleEventData struct {
 }
 
 type workflowRef struct {
-	ID        string `json:"id"`
-	Type      string `json:"type,omitempty"`
-	OwnerID   string `json:"owner_id,omitempty"`
-	OwnerType string `json:"owner_type,omitempty"`
-	// OwnerName is the human-readable name of the workflow owner (e.g. the
-	// install name when OwnerType == "installs"). Populated opportunistically
-	// when the data is available from existing enrichment JOINs without an
-	// extra round-trip; may be empty in other cases.
-	OwnerName string `json:"owner_name,omitempty"`
-	// CreatedByEmail labels who started the workflow. Falls back to the
-	// raw account id for accounts without an email; empty when the
-	// workflow has no creator.
-	CreatedByEmail string `json:"created_by_email,omitempty"`
-	// CreatedAt is the workflow's start time. Zero when unknown.
-	CreatedAt time.Time `json:"created_at,omitempty"`
-	// RunbookName labels the runbook this workflow is executing. Populated
-	// only for runbook_run workflows; sourced from install_workflows.metadata.
-	RunbookName string `json:"runbook_name,omitempty"`
+	ID             string    `json:"id"`
+	Type           string    `json:"type,omitempty"`
+	OwnerID        string    `json:"owner_id,omitempty"`
+	OwnerType      string    `json:"owner_type,omitempty"`
+	OwnerName      string    `json:"owner_name,omitempty"`
+	CreatedByEmail string    `json:"created_by_email,omitempty"`
+	CreatedAt      time.Time `json:"created_at,omitempty"`
+	RunbookName    string    `json:"runbook_name,omitempty"`
 }
 
 type workflowStepRef struct {
@@ -559,8 +458,6 @@ type parentRef struct {
 	WorkflowID string `json:"workflow_id,omitempty"`
 	StepID     string `json:"step_id,omitempty"`
 	Kind       string `json:"kind,omitempty"`
-	// ActionName is the human-readable name of the action workflow when the
-	// parent step targets an install_action_workflow_run. Empty otherwise.
 	ActionName string `json:"action_name,omitempty"`
 }
 
@@ -570,9 +467,6 @@ type lifecycleOutcome struct {
 	DurationMs int64  `json:"duration_ms,omitempty"`
 }
 
-// approvalRef is the public projection of an install workflow step approval.
-// The plan is truncated to approvalPlanExcerptMaxBytes; consumers that need
-// the full plan should follow the Approval link in contextLinks.
 type approvalRef struct {
 	ID          string `json:"id"`
 	Type        string `json:"type,omitempty"`
@@ -590,11 +484,6 @@ type contextLinks struct {
 	RespondAPI string `json:"respond_api,omitempty"`
 }
 
-// webhookTarget is a single dispatch target. ConfigOnly is true for entries
-// derived from the static h.webhookURLs config list — those have no
-// per-target Interests or Match storage and are treated as AllEvents=true /
-// org-wide (they receive every supported event in the org). ConfigOnly=false
-// targets carry the Interests + Match values loaded from the app.Webhook row.
 type webhookTarget struct {
 	URL        string
 	Secret     string
@@ -604,9 +493,6 @@ type webhookTarget struct {
 }
 
 func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) error {
-	// outcome is nil when invoked from BeforePhase, non-nil from AfterPhase.
-	// Used as the metric-name prefix so before/after timings are split into
-	// separate timeseries (see signal_lifecycle.{before,after}_phase.webhook.*).
 	phasePrefix := "before_phase"
 	if outcome != nil {
 		phasePrefix = "after_phase"
@@ -625,18 +511,6 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 		zap.String("signal_type", string(event.SignalType)),
 	)
 
-	// Resolve dispatch targets BEFORE the expensive buildEventData
-	// enrichment. listOrgWebhookTargets is a single SELECT on the
-	// webhooks table filtered by org_id; the enrichment chain
-	// (enrichStep + lookupDeployTargetMeta + lookupParent + approval
-	// lookups) issues several JOIN queries and is wasted work when no
-	// subscribers exist for this org. Most orgs have no webhooks
-	// configured, so this short-circuit removes the dominant DB cost
-	// from the activity's hot path.
-	//
-	// Static config webhooks have no per-target Interests storage; treat
-	// them as AllEvents=true so the per-target Matches() filter below
-	// passes them through unchanged.
 	targets := make([]webhookTarget, 0, len(h.webhookURLs))
 	for _, webhookURL := range h.webhookURLs {
 		targets = append(targets, webhookTarget{
@@ -693,19 +567,12 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 	case kindAppBranchChanged:
 		ceType = cloudEventTypeAppBranchChanged
 	}
-	// Awaiting-retry shares kind=workflow_step with the normal step
-	// lifecycle but gets its own CloudEvent type so consumers can route the
-	// "action required" case without parsing the transition.
 	if event.SignalType == signalTypeWorkflowStepAwaitingRetry {
 		ceType = cloudEventTypeWorkflowStepAwaitingRetry
 	}
 
 	subject := buildSubject(event, data)
 
-	// Slug list mirrors the per-target Matches() decision so consumers can
-	// route by prefix (resource:installs, op:components.deploy,
-	// outcome:failures, event:lifecycle.failed, etc.) without
-	// re-implementing the classifier.
 	slugs := interests.Classify(event, outcome, h.db)
 
 	ce := cloudEvent{
@@ -734,39 +601,22 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 		zap.Int("webhook_count", len(targets)),
 	)
 
-	// Resolve the entity ids referenced by this event (install / component /
-	// action). Drives the per-target Match.Matches predicate below. Any of
-	// these may be empty for org-only events; nil-Match targets (org-wide)
-	// always fire regardless.
 	matchTargets := EventTargetsFromEvent(ctx, h.db, event, data)
 
-	// labelLoader memoises label lookups for this publish() call. Multiple
-	// targets in the same org that hit the same install / component / action
-	// only pay the SELECT cost once. Local to the call (events fan out
-	// across many publish() invocations for unrelated workflows).
 	labelLoader := newLabelLoader(h.db)
 
 	var sendErrs []error
 	for _, target := range targets {
-		// Per-target Match filter. ConfigOnly targets bypass the
-		// predicate (always org-wide). nil Match means org-wide and the
-		// matcher returns true unconditionally.
 		if !target.ConfigOnly && target.Match != nil {
 			if err := labelLoader.load(ctx, &matchTargets); err != nil {
 				logger.Warn("failed to load event labels for match",
 					zap.Error(err))
-				// Fail open: a label lookup failure shouldn't drop
-				// the dispatch. Selector matches will simply miss
-				// when the label set is empty.
 			}
 			if !target.Match.Matches(matchTargets) {
 				continue
 			}
 		}
 
-		// Per-target interests filter. ConfigOnly targets bypass the
-		// matcher (treated as AllEvents=true) since the static config
-		// list has no Interests storage.
 		if !target.ConfigOnly && !interests.Matches(event, outcome, h.db, target.Interests) {
 			continue
 		}
@@ -790,14 +640,6 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 	return nil
 }
 
-// buildEventData translates an internal SignalPhaseEvent into the public
-// workflow / workflow_step / workflow_step_approval payload. Returns ok=false
-// when there is nothing to emit (e.g. missing identifiers).
-// buildEventData projects a signal phase event into the public payload shape,
-// then backfills the org display name for every builder path. The name is only
-// stamped on the event by signals that originate inside a workflow; carrier
-// signals (component health, runner unhealthy) have none, and a notification
-// that identifies the org by a truncated id reads as an internal log line.
 func (h *WebhookSignalLifecycleHook) buildEventData(ctx context.Context, event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (lifecycleEventData, bool) {
 	data, ok := h.buildEventDataForSignal(ctx, event, outcome)
 	if !ok {
@@ -839,10 +681,6 @@ func (h *WebhookSignalLifecycleHook) buildEventDataForSignal(ctx context.Context
 		return h.buildApprovalEventData(ctx, event, outcome)
 	}
 
-	// The awaiting-retry carrier only produces a public event from its
-	// successful after-phase: the before-phase is suppressed (see
-	// suppressesStartedEvent) and a failed/cancelled carrier means the
-	// notification itself broke — not something subscribers should see.
 	if event.SignalType == signalTypeWorkflowStepAwaitingRetry &&
 		(outcome == nil || outcome.Status != signal.SignalStatusSuccess) {
 		return lifecycleEventData{}, false
@@ -863,10 +701,7 @@ func (h *WebhookSignalLifecycleHook) buildEventDataForSignal(ctx context.Context
 		Kind:       kind,
 		Transition: transition,
 		OrgID:      event.OrgID,
-		// OrgName / Workflow.OwnerName are stamped onto the event by the
-		// originating signal at Validate() time (see executeflow.Signal.
-		// LifecycleContext) and propagated here without a DB lookup.
-		OrgName: event.OrgName,
+		OrgName:    event.OrgName,
 		Workflow: workflowRef{
 			ID:        event.WorkflowID,
 			Type:      event.WorkflowType,
@@ -885,11 +720,6 @@ func (h *WebhookSignalLifecycleHook) buildEventDataForSignal(ctx context.Context
 		data.Outcome = h.buildOutcome(event, outcome)
 	}
 
-	// The awaiting-retry carrier signal itself always succeeds (its Execute
-	// is a no-op) — the outcome subscribers care about is the parked step's
-	// real failure, carried in the signal's lifecycle metadata. Project it
-	// as a failed outcome and pass the metadata (retry_index, max_retries,
-	// awaiting_retry / manual_action_required flags) through verbatim.
 	if event.SignalType == signalTypeWorkflowStepAwaitingRetry {
 		data.Metadata = event.Metadata
 		if data.Outcome != nil {
@@ -900,17 +730,8 @@ func (h *WebhookSignalLifecycleHook) buildEventDataForSignal(ctx context.Context
 		}
 	}
 
-	// Enrich the step on workflow_step.lifecycle events AND on the
-	// drift-detected signal — the latter has Kind=workflow but its StepID
-	// points at the plan-only step that observed the drift, and the renderer
-	// (Slack flat drift message + webhook subscribers) needs ComponentName /
-	// SandboxID and the matching Component / Sandbox dashboard links to
-	// render a useful "drift detected on X" payload.
 	if event.StepID != "" && (kind == kindWorkflowStep || event.SignalType == signalTypeDriftDetected) {
 		stepRef, installName, emit := h.enrichStep(ctx, event.StepID)
-		// Drop the entire step.lifecycle event for hidden / internal steps
-		// (e.g. "generate install state"). Webhook consumers should only see
-		// user-facing steps; system bookkeeping steps are filtered here.
 		if !emit {
 			return lifecycleEventData{}, false
 		}
@@ -918,10 +739,6 @@ func (h *WebhookSignalLifecycleHook) buildEventDataForSignal(ctx context.Context
 			return lifecycleEventData{}, false
 		}
 		data.Step = stepRef
-		// Fallback: if the step JOIN surfaced an install name and the event
-		// itself didn't carry one (older signals enqueued before owner_name
-		// stamping shipped), use it. New workflow runs will already have
-		// data.Workflow.OwnerName populated from the event.
 		if installName != "" && data.Workflow.OwnerType == "installs" && data.Workflow.OwnerName == "" {
 			data.Workflow.OwnerName = installName
 		}
@@ -1057,15 +874,6 @@ func (h *WebhookSignalLifecycleHook) buildUpdateAppConfigEventData(_ context.Con
 	return data, true
 }
 
-// buildComponentHealthEventData projects a component-health carrier into the
-// public payload. There is no workflow or step behind these events — the
-// component and install identity plus the render fields (health,
-// previous_health, message, failing resource) arrive on the signal's lifecycle
-// context and pass straight through as metadata.
-//
-// Only the carrier's successful after-phase produces an event: a failed
-// carrier means the notification plumbing broke, which is not a health
-// transition subscribers should see.
 func (h *WebhookSignalLifecycleHook) buildComponentHealthEventData(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (lifecycleEventData, bool) {
 	if outcome == nil || outcome.Status != signal.SignalStatusSuccess {
 		return lifecycleEventData{}, false
@@ -1097,9 +905,6 @@ func (h *WebhookSignalLifecycleHook) buildComponentHealthEventData(event signal.
 		Metadata: event.Metadata,
 	}
 
-	// buildContextLinks derives the component deep link from a step's
-	// ComponentID. These events have no step, so pass a link-only stand-in —
-	// data.Step stays nil so the payload doesn't claim a step that never ran.
 	var linkStep *workflowStepRef
 	if event.ComponentID != nil && *event.ComponentID != "" {
 		linkStep = &workflowStepRef{ComponentID: *event.ComponentID}
@@ -1109,8 +914,6 @@ func (h *WebhookSignalLifecycleHook) buildComponentHealthEventData(event signal.
 	return data, true
 }
 
-// isBadHealthMetadata reports whether the carrier's health metadata describes
-// a problem state, used to label the install-level transition direction.
 func isBadHealthMetadata(metadata map[string]any) bool {
 	health, _ := metadata["health"].(string)
 	return health == "degraded" || health == "unhealthy"
@@ -1158,18 +961,10 @@ func (h *WebhookSignalLifecycleHook) buildOutcome(event signal.SignalPhaseEvent,
 	return out
 }
 
-// buildApprovalEventData projects an approval-request / approval-response
-// signal event into a workflow_step.approval.v1 payload. We only emit on a
-// successful execute outcome — failures of the wrapper signal itself aren't
-// part of the public approval vocabulary, and consumers care about the
-// approval state transition, not the bookkeeping signal's lifecycle.
 func (h *WebhookSignalLifecycleHook) buildApprovalEventData(ctx context.Context, event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (lifecycleEventData, bool) {
 	if event.StepID == "" || h.db == nil {
 		return lifecycleEventData{}, false
 	}
-	// Approval events are only emitted after the underlying signal's execute
-	// phase has succeeded. We deliberately drop validation, before-phase, and
-	// failure events for these signals.
 	if event.Phase != signal.SignalPhaseExecute || outcome == nil ||
 		outcome.Status != signal.SignalStatusSuccess {
 		return lifecycleEventData{}, false
@@ -1194,9 +989,6 @@ func (h *WebhookSignalLifecycleHook) buildApprovalEventData(ctx context.Context,
 		}
 		transition = mapApprovalResponseTransition(responseRow.Type)
 		if transition == "" {
-			// Retry / unknown response types don't surface as approval
-			// transitions — retry is handled by the step-group, not the
-			// approval vocabulary.
 			return lifecycleEventData{}, false
 		}
 		respondedBy = responseRow.RespondedBy
@@ -1246,14 +1038,6 @@ func (h *WebhookSignalLifecycleHook) buildApprovalEventData(ctx context.Context,
 	data.Parent = h.lookupParent(ctx, event.WorkflowID)
 	data.Links = h.buildContextLinks(event, data.Step)
 	if data.Links != nil {
-		// The dashboard SPA does not currently serve a per-step or
-		// per-approval route — step detail renders inline on the workflow
-		// page (see services/dashboard-ui/client/views/install/routes.tsx).
-		// Point links.approval at the workflow page so consumers land on a
-		// real, working URL where the approval is visible. When the
-		// dashboard adds a real /steps/:stepId/approvals/:approvalId route
-		// this can grow back into a true deep link without a wire-format
-		// change.
 		data.Links.Approval = data.Links.Workflow
 		data.Links.RespondAPI = h.respondAPIURL(event.WorkflowID, event.StepID, approval.ID)
 	}
@@ -1261,11 +1045,6 @@ func (h *WebhookSignalLifecycleHook) buildApprovalEventData(ctx context.Context,
 	return data, true
 }
 
-// mapApprovalResponseTransition translates a WorkflowStepResponseType into
-// the public approval transition vocabulary. Retry is intentionally excluded
-// — the create-approval-response handler routes retry through RetryStep
-// (see services/ctl-api/internal/app/installs/service/create_workflow_step_approval_response.go),
-// so the approval-response signal never carries a retry response type.
 func mapApprovalResponseTransition(t app.WorkflowStepResponseType) string {
 	switch t {
 	case app.WorkflowStepApprovalResponseTypeApprove,
@@ -1280,11 +1059,6 @@ func mapApprovalResponseTransition(t app.WorkflowStepResponseType) string {
 	}
 }
 
-// truncateApprovalPlan trims a plan blob to approvalPlanExcerptMaxBytes,
-// appending an explicit "(truncated)" marker when truncation occurred so the
-// receiving consumer can render the right indicator.
-// approvalContents reads the approval plan, honoring the blob-read flag, and
-// logs when the read is served from the S3 blob.
 func (h *WebhookSignalLifecycleHook) approvalContents(ctx context.Context, approval *app.WorkflowStepApproval) string {
 	contents, fromBlob := approval.GetContents(ctx, h.blobReadEnabled)
 	if fromBlob {
@@ -1306,9 +1080,6 @@ func truncateApprovalPlan(plan string) string {
 	return plan[:approvalPlanExcerptMaxBytes] + "\n... (truncated)"
 }
 
-// lookupStepApproval finds the (single) un-deleted approval row attached to a
-// workflow step. Returns ok=false when no approval exists or the lookup
-// fails.
 func (h *WebhookSignalLifecycleHook) lookupStepApproval(ctx context.Context, stepID string) (*app.WorkflowStepApproval, bool) {
 	if h.db == nil || stepID == "" {
 		return nil, false
@@ -1326,16 +1097,11 @@ func (h *WebhookSignalLifecycleHook) lookupStepApproval(ctx context.Context, ste
 	return &approval, true
 }
 
-// approvalResponseRow carries the response type plus the responder's display
-// label resolved by joining accounts to the response row.
 type approvalResponseRow struct {
 	Type        app.WorkflowStepResponseType
 	RespondedBy string
 }
 
-// lookupApprovalResponse fetches the response attached to an approval and the
-// human-readable identity of the responder. Best-effort: returns found=false
-// when the response can't be located.
 func (h *WebhookSignalLifecycleHook) lookupApprovalResponse(ctx context.Context, approvalID string) (approvalResponseRow, bool) {
 	if h.db == nil || approvalID == "" {
 		return approvalResponseRow{}, false
@@ -1367,8 +1133,6 @@ func (h *WebhookSignalLifecycleHook) lookupApprovalResponse(ctx context.Context,
 	}, true
 }
 
-// lookupOrgName returns the org's display name. Empty when the row is
-// missing or the lookup fails.
 func (h *WebhookSignalLifecycleHook) lookupOrgName(ctx context.Context, orgID string) string {
 	if h.db == nil || orgID == "" {
 		return ""
@@ -1404,9 +1168,6 @@ type workflowCreatorRow struct {
 	RunbookName    string
 }
 
-// lookupWorkflowCreator returns who started the workflow and when. Email
-// when the account has one, raw account id otherwise. Zero value when the
-// row is missing or the lookup fails.
 func (h *WebhookSignalLifecycleHook) lookupWorkflowCreator(ctx context.Context, workflowID string) workflowCreatorRow {
 	if h.db == nil || workflowID == "" {
 		return workflowCreatorRow{}
@@ -1433,14 +1194,6 @@ func (h *WebhookSignalLifecycleHook) lookupWorkflowCreator(ctx context.Context, 
 	return row
 }
 
-// respondAPIURL builds the ctl-api endpoint a consumer would POST to in order
-// to create an approval response. Returns "" when PublicAPIURL is
-// unconfigured.
-//
-// NOTE: today this is wire-format only. Slackbot doesn't yet have an outbound
-// HTTP client to ctl-api or an authenticated identity to act on a user's
-// behalf, so the URL is provided so future Approve/Reject buttons can wire
-// directly without a payload-shape change.
 func (h *WebhookSignalLifecycleHook) respondAPIURL(workflowID, stepID, approvalID string) string {
 	if h.publicAPIURL == "" || workflowID == "" || stepID == "" || approvalID == "" {
 		return ""
@@ -1457,19 +1210,6 @@ func (h *WebhookSignalLifecycleHook) respondAPIURL(workflowID, stepID, approvalI
 	return link
 }
 
-// enrichStep loads the workflow step by id and projects the user-facing step
-// fields. This is server-side and runs in an activity context, so DB access
-// is safe and replay-deterministic.
-//
-// Returns the step ref plus the resolved install name (when the step's target
-// allows it to be discovered cheaply via the same JOIN). The install name is
-// returned out-of-band so the caller can place it on workflow.owner_name.
-//
-// The third return value (emit) is false when the step is internal /
-// system-only (ExecutionType == "hidden", e.g. "generate install state") and
-// the entire step.lifecycle event should be suppressed. On DB errors we
-// fail open (emit=true) so transient infra issues don't silently drop user
-// events.
 func (h *WebhookSignalLifecycleHook) enrichStep(ctx context.Context, stepID string) (*workflowStepRef, string, bool) {
 	ref := &workflowStepRef{ID: stepID}
 	if h.db == nil {
@@ -1496,7 +1236,7 @@ func (h *WebhookSignalLifecycleHook) enrichStep(ctx context.Context, stepID stri
 	ref.TargetID = step.StepTargetID
 	ref.ExecutionType = string(step.ExecutionType)
 
-	// Both singular and plural target type strings exist in the codebase
+	// why: Both singular and plural target type strings exist in the codebase
 	// (WorkflowStepTargetTypeInstallDeploy / *Deploys, etc.) but the actual
 	// install_workflow_steps.step_target_type column is consistently the
 	// plural form ("install_deploys", "install_sandbox_runs"). Match both
@@ -1519,16 +1259,12 @@ func (h *WebhookSignalLifecycleHook) enrichStep(ctx context.Context, stepID stri
 	return ref, installName, true
 }
 
-// deployTargetMeta carries the install/component identity & names resolved for
-// an install_deploys step target via a single JOIN.
 type deployTargetMeta struct {
 	ComponentID   string
 	ComponentName string
 	InstallName   string
 }
 
-// lookupDeployTargetMeta resolves component id/name and install name for an
-// install deploy target. Best-effort: returns a zero struct on any DB error.
 func (h *WebhookSignalLifecycleHook) lookupDeployTargetMeta(ctx context.Context, deployID string) deployTargetMeta {
 	if h.db == nil || deployID == "" {
 		return deployTargetMeta{}
@@ -1557,15 +1293,11 @@ func (h *WebhookSignalLifecycleHook) lookupDeployTargetMeta(ctx context.Context,
 	}
 }
 
-// sandboxRunTargetMeta carries the sandbox id & install name resolved for an
-// install_sandbox_runs step target.
 type sandboxRunTargetMeta struct {
 	SandboxID   string
 	InstallName string
 }
 
-// lookupSandboxRunTargetMeta resolves sandbox id and install name for an
-// install sandbox run target.
 func (h *WebhookSignalLifecycleHook) lookupSandboxRunTargetMeta(ctx context.Context, sandboxRunID string) sandboxRunTargetMeta {
 	if h.db == nil || sandboxRunID == "" {
 		return sandboxRunTargetMeta{}
@@ -1589,22 +1321,11 @@ func (h *WebhookSignalLifecycleHook) lookupSandboxRunTargetMeta(ctx context.Cont
 	}
 }
 
-// lookupParent resolves a parent {workflow_id, step_id, kind} block when this
-// workflow is nested inside another workflow's step (e.g. an action workflow
-// run launched from a deploy step). Returns nil when no parent is detected.
 func (h *WebhookSignalLifecycleHook) lookupParent(ctx context.Context, workflowID string) *parentRef {
 	if h.db == nil || workflowID == "" {
 		return nil
 	}
 
-	// Action workflow runs link back to their parent workflow via
-	// install_action_workflow_runs.install_workflow_id. The parent step is the
-	// step in that parent workflow whose target points at the run.
-	//
-	// We also LEFT JOIN through install_action_workflows → action_workflows to
-	// pick up the human-readable action name. The joins are LEFT because the
-	// run's install_action_workflow_id is nullable (manual triggers may not
-	// reference a stored action workflow).
 	var row struct {
 		ParentWorkflowID string
 		ParentStepID     string
@@ -1642,12 +1363,6 @@ func (h *WebhookSignalLifecycleHook) lookupParent(ctx context.Context, workflowI
 	}
 }
 
-// mapTransition derives the public transition string from the phase + outcome.
-// Workflow / step events emit:
-//   - started   on BeforePhase(execute)
-//   - succeeded on AfterPhase(execute) success
-//   - failed    on AfterPhase(execute) error
-//   - cancelled on AfterPhase(cancel)
 func mapTransition(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) string {
 	if outcome == nil {
 		return transitionStarted
@@ -1665,8 +1380,6 @@ func mapTransition(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOut
 	}
 }
 
-// mapStatus converts the internal SignalStatus into the user-facing status
-// string used in webhook payloads.
 func mapStatus(s signal.SignalStatus) string {
 	switch s {
 	case signal.SignalStatusSuccess:
@@ -1680,9 +1393,6 @@ func mapStatus(s signal.SignalStatus) string {
 	}
 }
 
-// buildSubject returns a stable identifier used as the CloudEvent `subject`.
-// Composed from org id, kind, workflow id, and (when applicable) step id so
-// consumers can correlate started/finished pairs without parsing payloads.
 func buildSubject(event signal.SignalPhaseEvent, data lifecycleEventData) string {
 	parts := []string{}
 	if event.OrgID != "" {
@@ -1765,7 +1475,7 @@ func (h *WebhookSignalLifecycleHook) listOrgWebhookTargets(ctx context.Context, 
 			continue
 		}
 
-		// Treat an unconfigured (zero-value) Interests as "all events".
+		// why: Treat an unconfigured (zero-value) Interests as "all events".
 		// Webhooks predate the interests filter, so any row whose JSONB
 		// column is NULL/empty must keep receiving everything by default.
 		// New rows get AllEvents() at create time in the service layer.
@@ -1785,10 +1495,6 @@ func (h *WebhookSignalLifecycleHook) listOrgWebhookTargets(ctx context.Context, 
 	return targets, nil
 }
 
-// dedupeWebhookTargets collapses duplicate dispatch targets. Two targets are
-// considered duplicates when (URL, Secret, Match.Canonical()) match — same
-// URL with a different scope is intentionally a distinct target so a single
-// URL can subscribe to two different scoped views in the same delivery.
 func dedupeWebhookTargets(targets []webhookTarget) []webhookTarget {
 	uniqueTargets := make([]webhookTarget, 0, len(targets))
 	seen := make(map[string]struct{}, len(targets))
@@ -1810,8 +1516,6 @@ func dedupeWebhookTargets(targets []webhookTarget) []webhookTarget {
 	return uniqueTargets
 }
 
-// buildContextLinks builds dashboard URLs for the entities referenced in the
-// event. Returns nil when AppURL is unconfigured or no link could be produced.
 func (h *WebhookSignalLifecycleHook) buildContextLinks(event signal.SignalPhaseEvent, step *workflowStepRef) *contextLinks {
 	if h.appURL == "" || event.OrgID == "" {
 		return nil
@@ -1821,8 +1525,6 @@ func (h *WebhookSignalLifecycleHook) buildContextLinks(event signal.SignalPhaseE
 		Org: h.dashboardURL(event.OrgID),
 	}
 
-	// Owners of install workflows are installs; resolve install id from the
-	// owner block when applicable.
 	var installID string
 	if event.OwnerType == "installs" && event.OwnerID != "" {
 		installID = event.OwnerID
@@ -1851,8 +1553,6 @@ func (h *WebhookSignalLifecycleHook) buildContextLinks(event signal.SignalPhaseE
 	return links
 }
 
-// dashboardURL joins the configured AppURL with the given path pieces. Returns
-// an empty string if AppURL is unset or the join fails.
 func (h *WebhookSignalLifecycleHook) dashboardURL(pieces ...string) string {
 	if h.appURL == "" {
 		return ""

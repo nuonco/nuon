@@ -7,11 +7,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/auth/providers"
 )
 
-// verifyProviderReachable runs OIDC discovery against the configured issuer.
-//
-// Env-configured providers are validated at boot; a provider stored in the database never was, so
-// a typo in the issuer surfaced as a 500 on someone's first login rather than an error for the
-// admin who typed it. Google and GitHub have fixed endpoints, so there is nothing to reach.
 func (s *service) verifyProviderReachable(ip *app.IdentityProvider) error {
 	if ip.ProviderType != app.ProviderTypeOIDC {
 		return nil

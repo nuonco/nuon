@@ -5,7 +5,6 @@ import (
 	"net/http"
 )
 
-// appTransport is a transport that injects our authentication token and org id into the api request
 type appTransport struct {
 	authToken     string
 	orgID         string

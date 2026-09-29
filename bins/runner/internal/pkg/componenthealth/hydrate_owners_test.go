@@ -24,8 +24,6 @@ func fakeDyn(objs ...runtime.Object) *dynamicfake.FakeDynamicClient {
 	return dynamicfake.NewSimpleDynamicClientWithCustomListKinds(scheme, gvrToKind, objs...)
 }
 
-// ReplicaSets are not listed, so without hydration the walk stops at the
-// unlisted ReplicaSet and the rollout reads as benign progressing for 10m.
 func TestHydrateFailedPodOwnersReachesDeployment(t *testing.T) {
 	e := &Engine{l: zap.NewNop()}
 
@@ -33,7 +31,6 @@ func TestHydrateFailedPodOwnersReachesDeployment(t *testing.T) {
 	rs := controller("ReplicaSet", "api-1", "prod", "Deployment", "api")
 	dep := controller("Deployment", "api", "prod", "", "")
 
-	// Only the pod is listed; the owners exist in-cluster but must be fetched.
 	byKey := objIndex(p)
 
 	e.hydrateFailedPodOwners(context.Background(), fakeDyn(rs, dep), failedPods(byKey), byKey)

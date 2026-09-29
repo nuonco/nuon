@@ -22,7 +22,6 @@ const RESPONSE_STATUS: Record<string, string> = {
   retry: 'retried',
 }
 
-/** Prefer approval response over a stale approval-awaiting step status. */
 export function getStepDisplayStatus(step: TInstallWorkflowStep): string {
   const responseType = step.approval?.response?.type
   if (responseType && RESPONSE_STATUS[responseType]) {

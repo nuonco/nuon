@@ -7,7 +7,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// DecodeInstallInputs decodes inputs for an install.
 func DecodeInstallInputs(fromType reflect.Type, toType reflect.Type, from interface{}) (interface{}, error) {
 	if fromType != reflect.TypeOf([]interface{}{}) {
 		return from, nil

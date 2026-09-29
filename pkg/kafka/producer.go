@@ -14,19 +14,6 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 )
 
-// Producer wraps a franz-go client. A disabled producer is a no-op, letting
-// callers keep a legacy fallback path so downstream writes never depend on
-// Kafka being present.
-//
-// Two produce modes, chosen by what the caller's current write does:
-//
-//   - Produce / ProduceEnvelope are fire-and-forget. Correct where the existing
-//     path is already lossy — heartbeats buffer in memory and flush on a 5s
-//     ticker, so a crash already drops a few seconds of them and nothing cares.
-//   - ProduceEnvelopesSync waits for the acks. Correct where the existing path is
-//     synchronously durable, as the OTLP log write is: it blocks on a ClickHouse
-//     insert before returning 201, so producing fire-and-forget instead would
-//     hand the caller a success for records that live only in a process buffer.
 type Producer struct {
 	l              *zap.Logger
 	mw             metrics.Writer
@@ -36,10 +23,8 @@ type Producer struct {
 	produceTimeout time.Duration
 }
 
-// defaultProduceTimeout bounds a sync produce when config leaves it unset.
 const defaultProduceTimeout = 5 * time.Second
 
-// Message is one record for a batch produce.
 type Message struct {
 	Key     string
 	Payload any
@@ -55,7 +40,6 @@ func NewProducer(cfg Config, l *zap.Logger, mw metrics.Writer) (*Producer, error
 		kotel.TracerPropagator(propagation.TraceContext{}),
 	)
 	opts = append(opts,
-		// idempotent producer is on by default with acks=all
 		kgo.RequiredAcks(kgo.AllISRAcks()),
 		kgo.ProducerBatchCompression(kgo.Lz4Compression()),
 		kgo.ProducerBatchMaxBytes(maxMessageBytes),
@@ -108,10 +92,6 @@ func (p *Producer) Close() {
 	}
 }
 
-// writeMetrics records both the timing and the volume for one produce outcome.
-// Timing gives status/reason percentiles; message_count exists as its own Count
-// rather than relying on Timing's derived .count so volume tracking doesn't
-// silently change meaning if the per-message sampling choice below ever changes.
 func (p *Producer) writeMetrics(start time.Time, topic, status, reason string) {
 	tags := []string{"topic:" + topic, "status:" + status}
 	if reason != "" {
@@ -121,9 +101,6 @@ func (p *Producer) writeMetrics(start time.Time, topic, status, reason string) {
 	p.mw.Count("kafka.producer.message_count", 1, tags)
 }
 
-// Produce sends a single pre-marshaled message. Fire-and-forget: the async
-// callback records metrics and logs on failure, so callers never block on the
-// broker.
 func (p *Producer) Produce(ctx context.Context, topic, key string, value []byte) {
 	start := time.Now()
 	if !p.enabled {
@@ -142,8 +119,6 @@ func (p *Producer) Produce(ctx context.Context, topic, key string, value []byte)
 	})
 }
 
-// ProduceEnvelope wraps payload in the versioned envelope and produces it.
-// Fire-and-forget; see ProduceEnvelopesSync when the caller needs the ack.
 func (p *Producer) ProduceEnvelope(ctx context.Context, topic, key, typ string, payload any) error {
 	value, err := Wrap(p.source, typ, payload)
 	if err != nil {
@@ -153,7 +128,7 @@ func (p *Producer) ProduceEnvelope(ctx context.Context, topic, key, typ string, 
 	return nil
 }
 
-// ProduceEnvelopesSync wraps each message and produces the batch, blocking until
+// why: ProduceEnvelopesSync wraps each message and produces the batch, blocking until
 // every record is acked. Acks are already RequiredAcks(AllISRAcks) with
 // idempotence on, so an ack here means the record is on every in-sync replica.
 //
@@ -185,7 +160,7 @@ func (p *Producer) ProduceEnvelopesSync(ctx context.Context, topic, typ string, 
 	}
 
 	recs := make([]*kgo.Record, 0, len(msgs))
-	// ProduceSync appends results in promise-completion order, not input order, so
+	// why: ProduceSync appends results in promise-completion order, not input order, so
 	// results cannot be matched to messages positionally. Map by record pointer
 	// instead — ProduceResult.Record is documented as always non-nil. Getting this
 	// wrong would attribute a failure to the wrong message and have the caller
@@ -223,7 +198,7 @@ func (p *Producer) ProduceEnvelopesSync(ctx context.Context, topic, typ string, 
 	for _, res := range results {
 		i, ok := msgIdx[res.Record]
 		if !ok {
-			// Cannot happen with records we just built, but silently discarding an
+			// why: Cannot happen with records we just built, but silently discarding an
 			// unmatched result would mean silently dropping a log record.
 			p.l.Error("kafka sync produce returned an unrecognized record",
 				zap.String("topic", topic),
@@ -246,10 +221,6 @@ func (p *Producer) ProduceEnvelopesSync(ctx context.Context, topic, typ string, 
 		p.writeMetrics(batchStart, topic, "ok", "")
 	}
 
-	// ProduceSync waits on a promise per record, so every record should be
-	// accounted for. Treat anything unaccounted as failed rather than assuming it
-	// landed: the whole point of the sync path is that an unacked record goes down
-	// the caller's fallback instead of being lost.
 	for rec, i := range msgIdx {
 		if acked[rec] {
 			continue

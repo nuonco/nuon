@@ -268,7 +268,6 @@ func (w *workspace) ApplyPlan(ctx context.Context, log hclog.Logger) ([]byte, er
 	return byts, nil
 }
 
-// below this, -var-file with a saved plan is a hard error; at or above it, ephemeral vars need it
 var savedPlanVarFileMinVersion = goversion.Must(goversion.NewVersion("1.10.0"))
 
 func (w *workspace) acceptsVarFilesWithSavedPlan(ctx context.Context, client Terraform) (bool, error) {
@@ -316,7 +315,6 @@ func (w *workspace) applyPlan(ctx context.Context, client Terraform, log hclog.L
 	return out.Bytes()
 }
 
-// NOTE: creates a plan for tf destroy
 func (w *workspace) ApplyDestroyPlan(ctx context.Context, log hclog.Logger) ([]byte, error) {
 	if err := w.Hooks.PreApply(ctx, log); err != nil {
 		return nil, fmt.Errorf("error executing pre-apply hook: %w", err)

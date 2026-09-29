@@ -21,7 +21,6 @@ func (m *Model) handleInstallActionWorkflowFetched(msg installActionWorkflowFetc
 	m.installActionWorkflow = installActionWorkflow
 	m.workflowLoading = false
 
-	// Populate the runs list
 	runsList := []list.Item{}
 	if installActionWorkflow.Runs != nil {
 		for _, run := range installActionWorkflow.Runs {
@@ -45,7 +44,6 @@ func (m *Model) handleLatestConfigFetched(msg latestConfigFetchedMsg) {
 	m.configLoading = false
 	m.populateActionConfigView(true)
 
-	// Enable Execute key if config has manual trigger
 	m.updateExecuteKeyState()
 }
 

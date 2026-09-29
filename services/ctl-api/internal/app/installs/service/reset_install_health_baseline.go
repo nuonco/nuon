@@ -12,9 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// healthBaselineMetadataKey stores the install's health-window baseline
-// (RFC3339) in install metadata. Timeline/uptime reads clamp their window
-// start to it, so bring-up churn stops counting without rewriting history.
 const healthBaselineMetadataKey = "health_baseline_at"
 
 type ResetInstallHealthBaselineResponse struct {
@@ -77,7 +74,6 @@ func (s *service) setHealthBaseline(ctx context.Context, orgID, installID string
 	return nil
 }
 
-// healthBaseline returns the install's baseline, zero when never reset.
 func (s *service) healthBaseline(ctx context.Context, orgID, installID string) (time.Time, error) {
 	var install app.Install
 	if err := s.db.WithContext(ctx).
@@ -97,8 +93,6 @@ func (s *service) healthBaseline(ctx context.Context, orgID, installID string) (
 	return at, nil
 }
 
-// clampToBaseline moves the window start forward to the baseline when one is
-// set inside the window.
 func clampToBaseline(from, baseline time.Time) time.Time {
 	if !baseline.IsZero() && baseline.After(from) {
 		return baseline

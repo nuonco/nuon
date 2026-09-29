@@ -17,7 +17,7 @@ const (
 )
 
 func (c *database) poolCfg() (*pgxpool.Config, error) {
-	// Omit password= from the DSN when using IAM auth (PasswordFn set) — an empty
+	// why: Omit password= from the DSN when using IAM auth (PasswordFn set) — an empty
 	// password= value followed immediately by dbname= can confuse pgconn's keyword-value
 	// parser, causing the database field to be silently dropped. The password is injected
 	// per-connection via beforeConnect instead.
@@ -44,19 +44,15 @@ func (c *database) poolCfg() (*pgxpool.Config, error) {
 		return nil, err
 	}
 
-	// configure the pool timeouts and size
 	connCfg.MaxConns = c.MaxConnections
 	connCfg.MaxConnIdleTime = maxConnIdleTime
 	connCfg.MaxConnLifetime = maxConnLifetime
 
-	// configure the pool to use our password function to get the RDS password
 	connCfg.BeforeConnect = c.beforeConnect
 
 	return connCfg, nil
 }
 
-// beforeConnect is used to create connections using a password function, such as using AWS RDS to get a one off
-// password
 func (d *database) beforeConnect(ctx context.Context, connCfg *pgx.ConnConfig) error {
 	if d.PasswordFn == nil {
 		return nil
@@ -103,7 +99,6 @@ func (d *database) recordPoolMetrics() {
 	d.MetricsWriter.Gauge("gorm_pool.conns", float64(stat.IdleConns()), []string{"conn_type:idle", roleTag})
 	d.MetricsWriter.Gauge("gorm_pool.conns", float64(stat.MaxConns()), []string{"conn_type:max", roleTag})
 
-	// empty = waited for a conn; canceled = caller ctx expired while waiting (pool too small)
 	d.MetricsWriter.Gauge("gorm_pool.acquire", float64(stat.AcquireCount()), []string{"acquire_type:total", roleTag})
 	d.MetricsWriter.Gauge("gorm_pool.acquire", float64(stat.EmptyAcquireCount()), []string{"acquire_type:empty", roleTag})
 	d.MetricsWriter.Gauge("gorm_pool.acquire", float64(stat.CanceledAcquireCount()), []string{"acquire_type:canceled", roleTag})

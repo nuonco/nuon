@@ -7,8 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// oauthIssuer returns the base URL the auth service is served at, used as the
-// OAuth 2.0 issuer identifier and to build absolute endpoint URLs.
 func (s *service) oauthIssuer() string {
 	if s.cfg.RootDomain == "localhost" {
 		return "http://localhost:8084"
@@ -16,15 +14,10 @@ func (s *service) oauthIssuer() string {
 	return fmt.Sprintf("https://%s", s.domain)
 }
 
-// oauthScopesSupported lists the scopes clients may request. They map to the
-// org role granted to the issued token.
 func oauthScopesSupported() []string {
 	return []string{"org_read_only", "org_admin"}
 }
 
-// OAuthAuthorizationServerMetadata handles GET /.well-known/oauth-authorization-server
-// (RFC 8414). It lets MCP clients discover the authorization/token/registration
-// endpoints and supported capabilities with no manual configuration.
 func (s *service) OAuthAuthorizationServerMetadata(c *gin.Context) {
 	issuer := s.oauthIssuer()
 

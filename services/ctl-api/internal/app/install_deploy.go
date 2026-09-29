@@ -47,9 +47,7 @@ const (
 	InstallDeployStatusNoDrift         InstallDeployStatus = "no-drift"
 	InstallDeployApprovalDenied        InstallDeployStatus = "approval-denied"
 	InstallDeployStatusRetried         InstallDeployStatus = "retried"
-	// Applied, then refused by the health gate. Unlike error the plan IS live, so
-	// "what is running" counts it and "did it succeed" does not.
-	InstallDeployStatusHealthFailed InstallDeployStatus = "health-failed"
+	InstallDeployStatusHealthFailed    InstallDeployStatus = "health-failed"
 )
 
 type InstallDeploy struct {
@@ -174,7 +172,6 @@ func (c *InstallDeploy) AfterQuery(tx *gorm.DB) error {
 
 	outputs := make(map[string]any, 0)
 	for _, rj := range c.RunnerJobs {
-		// NOTE: omit the create-apply-plan jobs from the outputs
 		if rj.Operation != RunnerJobOperationTypeCreateApplyPlan {
 			outputs = generics.MergeMaps(outputs, rj.ParsedOutputs)
 		}
@@ -193,7 +190,6 @@ func (c *InstallDeploy) IsTornDown() bool {
 	return (generics.SliceContains(c.Status, []InstallDeployStatus{InstallDeployStatusActive, InstallDeployStatusInactive})) && c.Type == InstallDeployTypeTeardown
 }
 
-// AppliedDeployStatuses are the statuses whose plan is live on the cluster.
 func AppliedDeployStatuses() []InstallDeployStatus {
 	return []InstallDeployStatus{InstallDeployStatusActive, InstallDeployStatusHealthFailed}
 }

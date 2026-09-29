@@ -24,9 +24,6 @@ func FetchAccessInfo(ctx context.Context, cfg *configs.OCIRegistryRepository) (*
 		return nil, err
 	}
 
-	// Use pre-generated static credentials if provided (e.g. when running on
-	// AWS where GCP ADC is not available — the ctl-api generates a GAR token
-	// and passes it in the plan).
 	if cfg.OCIAuth != nil && cfg.OCIAuth.Password != "" {
 		l.Info("using pre-generated GAR access token")
 		return &registry.AccessInfo{

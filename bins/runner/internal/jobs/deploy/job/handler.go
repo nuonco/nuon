@@ -22,7 +22,6 @@ const (
 type handler struct {
 	v *validator.Validate
 
-	// internal fields
 	Cfg configs.JobDeploy `validate:"required"`
 }
 

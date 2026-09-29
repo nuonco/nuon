@@ -108,13 +108,11 @@ func SetInstallAppBranchGroupAssignmentWithDB(ctx context.Context, db *gorm.DB, 
 	return nil
 }
 
-// BranchInstalls returns the installs the branch owns, which is the only
-// population any of its install groups can resolve to.
 func (h *Helpers) BranchInstalls(ctx context.Context, branchID string) ([]app.Install, error) {
 	return BranchInstallsWithDB(ctx, h.db, branchID)
 }
 
-// Callers inside a transaction must use this so they see their own writes.
+// why: Callers inside a transaction must use this so they see their own writes.
 func BranchInstallsWithDB(ctx context.Context, db *gorm.DB, branchID string) ([]app.Install, error) {
 	var installs []app.Install
 	installIDCol := views.TableOrViewName(db, &app.Install{}, ".id")
@@ -276,7 +274,7 @@ func (h *Helpers) ValidateBranchInstallsSingleGroup(ctx context.Context, branchI
 	return ValidateBranchInstallsSingleGroupWithDB(ctx, h.db, branchID, groups)
 }
 
-// Callers inside a transaction must use this so they see their own writes.
+// why: Callers inside a transaction must use this so they see their own writes.
 func ValidateBranchInstallsSingleGroupWithDB(ctx context.Context, db *gorm.DB, branchID string, groups []app.AppBranchInstallGroup) error {
 	installs, err := BranchInstallsWithDB(ctx, db, branchID)
 	if err != nil {

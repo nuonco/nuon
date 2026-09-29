@@ -38,8 +38,6 @@ func TestRunnerGrants_WrappedIntoInstallRG(t *testing.T) {
 		t.Errorf("wrapper resourceGroup = %v", got)
 	}
 
-	// The grants read the runner's identity and live in the install group, so the
-	// wrapper has to wait on both.
 	deps := wrapper["dependsOn"].([]string)
 	if !slices.Contains(deps, "runnerDeployment") {
 		t.Errorf("wrapper does not wait for the runner: %v", deps)
@@ -56,16 +54,11 @@ func TestRunnerGrants_WrappedIntoInstallRG(t *testing.T) {
 		}
 	}
 
-	// No assignment may be left loose in the root: a subscription-scoped root cannot
-	// declare a resource-group-scoped role assignment.
 	if got := assignmentNames(resources); len(got) != 0 {
 		t.Errorf("role assignments still in the root: %v", got)
 	}
 }
 
-// Inner expression evaluation hides the root, so reference('runnerDeployment')
-// cannot be used inside the wrapper — the principal must arrive as a parameter and
-// the per-assignment dependency must be gone, since the wrapper carries it.
 func TestRunnerGrants_InnerAssignmentsReadPrincipalFromParameter(t *testing.T) {
 	resources := runnerGrantsAt(t, armScope{subscription: true}, false)
 	wrapper := resources[0].(map[string]any)
@@ -88,9 +81,6 @@ func TestRunnerGrants_InnerAssignmentsReadPrincipalFromParameter(t *testing.T) {
 	}
 }
 
-// Wrapping must not rename an assignment: Azure dedupes by principal+role+scope and
-// a changed name fails redeploy with RoleAssignmentExists. Inside the wrapper
-// resourceGroup() resolves to the install group again, so the guid() inputs match.
 func TestRunnerGrants_AssignmentNamesUnchangedByWrapping(t *testing.T) {
 	for _, useOperationIdentities := range []bool{false, true} {
 		rgNames := assignmentNames(runnerGrantsAt(t, armScope{}, useOperationIdentities))
@@ -112,8 +102,6 @@ func TestRunnerGrants_AssignmentNamesUnchangedByWrapping(t *testing.T) {
 	}
 }
 
-// The custom role deployment targets the subscription, so it cannot go inside the
-// wrapper — and it is only emitted on the legacy system-identity path.
 func TestRunnerGrants_CustomRoleDeploymentStaysInRoot(t *testing.T) {
 	legacy := runnerGrantsAt(t, armScope{subscription: true}, false)
 	if got := countResourceType(legacy[1:], "Microsoft.Resources/deployments"); got != 1 {

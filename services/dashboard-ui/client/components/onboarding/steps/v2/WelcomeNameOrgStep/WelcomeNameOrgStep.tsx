@@ -201,15 +201,8 @@ export const WelcomeNameOrgStep = ({
   })()
   const hasExistingOrgs = mergedOrgs.length > 0
 
-  // The user can explicitly switch to the create-new-org form via the
-  // "+ Create a new organization" button. We default to `false` so that while
-  // existing orgs are loading we don't render the create form, then jump back
-  // to the list as soon as the data arrives.
   const [userClickedCreate, setUserClickedCreate] = useState(false)
 
-  // If we've finished loading and the user truly has no orgs (and none is
-  // attached to the onboarding session), there's nothing to pick from -- jump
-  // straight into the create form so the wizard doesn't dead-end.
   const noOrgsAvailable = !isExistingOrgsLoading && !hasExistingOrgs
   const showCreateView = userClickedCreate || noOrgsAvailable
 

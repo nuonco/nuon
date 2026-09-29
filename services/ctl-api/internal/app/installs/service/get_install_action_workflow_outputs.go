@@ -49,7 +49,6 @@ func (s *service) GetInstallActionWorkflowOutputs(ctx *gin.Context) {
 }
 
 func (s *service) getInstallActionWorkflowOutputs(ctx context.Context, orgID, installID, actionID string) (map[string]interface{}, error) {
-	// find the InstallActionWorkflow by ID or name, scoped to org
 	var iaw app.InstallActionWorkflow
 	res := s.db.WithContext(ctx).
 		Joins("JOIN action_workflows ON action_workflows.id = install_action_workflows.action_workflow_id").
@@ -60,7 +59,6 @@ func (s *service) getInstallActionWorkflowOutputs(ctx context.Context, orgID, in
 		return nil, errors.Wrap(res.Error, "unable to find install action workflow")
 	}
 
-	// find the latest run and its runner job
 	var run app.InstallActionWorkflowRun
 	res = s.db.WithContext(ctx).
 		Preload("RunnerJob", app.PreloadActionExecutionRunnerJob).

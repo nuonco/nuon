@@ -49,7 +49,6 @@ func (s *service) GetAppInstalls(ctx *gin.Context) {
 	appBranchID := ctx.Query("app_branch_id")
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 
-	// Validate app belongs to org before fetching installs
 	currentApp, err := s.findAppByNameOrID(ctx, org.ID, appID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app %s: %w", appID, err))

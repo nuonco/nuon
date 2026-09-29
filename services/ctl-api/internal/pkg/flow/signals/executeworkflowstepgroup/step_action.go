@@ -4,9 +4,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 )
 
-// stepAction is the group-level action resolved from a completed step's
-// directive. It is the single decision point for whether the group may
-// dispatch another step.
 type stepAction int
 
 const (
@@ -19,7 +16,7 @@ const (
 	actionAwaitRetry
 )
 
-// resolveStepAction maps a completed step's directive to the group's next
+// why: resolveStepAction maps a completed step's directive to the group's next
 // action. Unknown or empty directives fail closed to actionStopGroup: only an
 // explicit success or retry directive may lead to another step dispatch, so a
 // step whose domain outcome cannot be read never lets the group carry on.
@@ -53,8 +50,6 @@ func resolveStepAction(d directive.Step, residentFlow, manualRetry bool) stepAct
 		if residentFlow {
 			return actionAwaitRetry
 		}
-		// Legacy inputs wait out await-retry inside the step's Execute();
-		// by the time it surfaces here the step was retried or skipped.
 		return actionAdvance
 
 	default:

@@ -79,17 +79,8 @@ type service struct {
 	queueClient            *queueclient.Client
 	telemetryTokenIssuer   *telemetryTokenIssuer
 	telemetryRelayEndpoint string
-	// logStreamCache hits in front of getLogStream on the OTLP ingest
-	// hot path. The fields the writer reads (OwnerType, ParentLogStreamID)
-	// are effectively immutable for the life of the stream, so a 5min TTL
-	// trades a 5min staleness window for one fewer Postgres round-trip
-	// per OTLP batch.
-	logStreamCache *expirable.LRU[string, *app.LogStream]
+	logStreamCache         *expirable.LRU[string, *app.LogStream]
 
-	// ensuredHealthQueues memoizes which installs this process has reconciled
-	// queues for from the component-health ingest path, so installs that
-	// predate the health evaluator's queue get it lazily instead of requiring
-	// an admin queue migration.
 	ensuredHealthQueues sync.Map
 }
 
@@ -116,14 +107,12 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 
 	api.GET("/v1/runners/:runner_id/card-details", s.GetRunnerCardDetails)
 
-	// runner process endpoints
 	api.GET("/v1/runners/:runner_id/processes", s.ListRunnerProcesses)
 	api.GET("/v1/runners/:runner_id/processes/current", s.GetCurrentRunnerProcesses)
 	api.GET("/v1/runners/:runner_id/processes/:process_id", s.GetRunnerProcessPublic)
 	api.GET("/v1/runners/:runner_id/processes/:process_id/heart-beats/latest", s.GetProcessLatestHeartBeat)
 	api.POST("/v1/runners/:runner_id/processes/:process_id/shutdown", s.ShutdownRunnerProcess)
 
-	// trigger specific jobs
 	api.POST("/v1/runners/:runner_id/graceful-shutdown", s.GracefulShutDown)
 	api.POST("/v1/runners/:runner_id/force-shutdown", s.ForceShutDown)
 	api.POST("/v1/runners/:runner_id/mng/shutdown-vm", s.MngVMShutDown)
@@ -132,7 +121,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/runners/:runner_id/mng/restart", s.MngRestart)
 	api.POST("/v1/runners/:runner_id/prune-tokens", s.PruneTokens)
 
-	// settings
 	api.GET("/v1/runners/:runner_id/settings", s.GetRunnerSettingsPublic)
 	api.PATCH("/v1/runners/:runner_id/settings", s.UpdateRunnerSettings)
 
@@ -176,7 +164,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
-	// runners
 	runners := api.Group("/v1/runners")
 	{
 		runners.GET("", s.AdminGetAllRunners)
@@ -187,16 +174,13 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		runners.POST("/migrate-cron-emitters", s.AdminMigrateCronEmitters)
 		runners.POST("/toggle-cron-emitters", s.AdminToggleCronEmitters)
 
-		// sandbox management
 		runners.GET("/sandbox", s.AdminListSandboxRunners)
 		runners.GET("/sandbox/templates", s.AdminGetSandboxTemplates)
 
-		// runner-specific operations
 		runner := runners.Group("/:runner_id")
 		{
 			runner.GET("", s.AdminGetRunner)
 
-			// runner settings
 			runner.GET("/settings", s.AdminGetRunnerSettings)
 			runner.PATCH("/settings", s.AdminUpdateRunnerSettings)
 
@@ -205,29 +189,24 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			runner.POST("/restart", s.RestartRunner)
 			runner.POST("/offline-check", s.AdminOfflineCheck)
 
-			// service account management
 			runner.POST("/service-account-token", s.AdminCreateRunnerServiceAccountToken)
 			runner.POST("/invalidate-service-account-token", s.AdminInvalidateRunnerServiceAccountToken)
 			runner.POST("/extend-service-account-token", s.AdminExtendRunnerServiceAccountToken)
 			runner.GET("/service-account", s.AdminGetRunnerServiceAccount)
 
-			// job management
 			runner.POST("/flush-orphaned-jobs", s.AdminFlushOrphanedJobs)
 			runner.GET("/jobs/queue", s.AdminGetRunnerJobsQueue)
 
-			// runner processes
 			runner.GET("/processes", s.AdminListRunnerProcesses)
 			runner.GET("/processes/:process_id", s.AdminGetRunnerProcess)
 			runner.POST("/processes/:process_id/shutdown", s.AdminShutdownRunnerProcess)
 
-			// trigger specific jobs
 			runner.POST("/graceful-shutdown", s.AdminGracefulShutDown)
 			runner.POST("/force-shutdown", s.AdminForceShutDown)
 			runner.POST("/mng/shutdown-vm", s.AdminMngVMShutDown)
 			runner.POST("/noop-job", s.AdminCreateNoopJob)
 			runner.POST("/health-check-job", s.AdminCreateHealthCheck)
 
-			// sandbox config management
 			runner.GET("/sandbox-configs", s.AdminGetSandboxConfigs)
 			runner.PUT("/sandbox-configs", s.AdminUpsertSandboxConfig)
 			runner.DELETE("/sandbox-configs/:config_id", s.AdminDeleteSandboxConfig)
@@ -236,7 +215,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		}
 	}
 
-	// sandbox mode management
 	sandboxMode := api.Group("/v1/sandbox-mode")
 	{
 		signals := sandboxMode.Group("/signals")
@@ -253,39 +231,33 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		runnerJobs.POST("/disable-all", s.AdminDisableAllSandboxConfigs)
 	}
 
-	// org-wide runner settings
 	orgs := api.Group("/v1/orgs/:org_id")
 	{
 		orgs.PATCH("/runner-settings", s.AdminUpdateOrgRunnerSettings)
 	}
 
-	// runner groups
 	runnerGroups := api.Group("/v1/runner-groups/:runner_group_id")
 	{
 		runnerGroups.GET("", s.AdminGetRunnerGroup)
 	}
 
-	// runner job management
 	runnerJobs := api.Group("/v1/runner-jobs/:runner_job_id")
 	{
 		runnerJobs.POST("/cancel", s.AdminCancelRunnerJob)
 		runnerJobs.GET("", s.AdminGetRunnerJob)
 	}
 
-	// otel admin endpoints
 	logStreams := api.Group("/v1/log-streams/:log_stream_id")
 	{
 		logStreams.GET("/logs", s.AdminGetLogStreamLogs)
 		logStreams.GET("", s.AdminGetLogStream)
 	}
 
-	// install runners
 	installs := api.Group("/v1/installs/:install_id")
 	{
 		installs.POST("/runners/shutdown-job", s.AdminCreateInstallRunnerqShutDownJob)
 	}
 
-	// terraform workspace management
 	workspaces := api.Group("/v1/terraform-workspaces/:workspace_id")
 	{
 		workspaces.POST("/lock", s.AdminLockWorkspace)
@@ -318,11 +290,9 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	runners.GET("/jobs/:job_id", s.GetRunnerJobV2)
 	runners.PATCH("/jobs/:job_id", s.UpdateRunnerJobV2)
 
-	// sandbox configs
 	runners.GET("/sandbox-configs", s.GetRunnerSandboxConfigs)
 	runners.GET("/sandbox-config", s.GetRunnerSandboxConfig)
 
-	// runner process lifecycle
 	runners.POST("/processes", s.CreateRunnerProcess)
 	runners.GET("/processes/:process_id", s.GetRunnerProcess)
 	runners.PATCH("/processes/:process_id", s.UpdateRunnerProcess)
@@ -344,18 +314,15 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	executions.POST("/:runner_job_execution_id/result", s.CreateRunnerJobExecutionResult)
 	executions.POST("/:runner_job_execution_id/outputs", s.CreateRunnerJobExecutionOutputs)
 
-	// Terraform backend
 	tfBackend := api.Group("/v1/terraform-backend")
 	tfBackend.GET("", s.GetTerraformCurrentStateData)
 	tfBackend.POST("", s.UpdateTerraformState)
 	tfBackend.DELETE("", s.DeleteTerraformState)
 
-	// pulumi state
 	pulumiState := api.Group("/v1/runners/pulumi-state")
 	pulumiState.GET("/:workspace_id", s.GetPulumiState)
 	pulumiState.POST("/:workspace_id", s.UpdatePulumiState)
 
-	// terraform workspaces
 	tfWorkspaces := api.Group("/v1/terraform-workspaces")
 	tfWorkspaces.GET("", s.GetTerraformWorkpaces)
 	tfWorkspaces.POST("", s.CreateTerraformWorkspace)
@@ -363,11 +330,9 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	tfWorkspaces.DELETE("/:workspace_id", s.DeleteTerraformWorkpace)
 	tfWorkspaces.POST("/:workspace_id/lock", s.LockTerraformWorkspace)
 	tfWorkspaces.POST("/:workspace_id/unlock", s.UnlockTerraformWorkspace)
-	// terraform state json
 	tfWorkspaces.POST("/:workspace_id/state-json", s.UpdateTerraformWorkspaceStateJSON)
 	tfWorkspaces.DELETE("/:workspace_id/states", s.DeleteTerraformWorkspaceStateJSON)
 
-	// helm release api
 	helmReleasePath := "/v1/helm-releases/:helm_chart_id/releases/"
 	api.GET(helmReleasePath+":namespace", s.GetHelmReleases)
 	api.GET(helmReleasePath+":namespace/:key", s.GetHelmRelease)
@@ -379,7 +344,6 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	// TODO(jm): these will be moved to the otel namespace
 	api.POST("/v1/log-streams/:log_stream_id/logs", s.LogStreamWriteLogs)
 
-	// installs
 	installs := api.Group("/v1/installs")
 	installs.GET("/:install_id/:component_id/last-active-plan", s.GetInstallComponenetLastActivePlan)
 

@@ -10,7 +10,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-// warnIfCLIOutdated warns when this CLI predates the control plane's floor for
+// why: warnIfCLIOutdated warns when this CLI predates the control plane's floor for
 // server-side app config sync. Below that floor the CLI syncs app configs itself and
 // never sends action or runbook ids, so new ones never reach installs and the sync still
 // reports success. Never fatal — an unreachable or older control plane means no warning.

@@ -21,7 +21,6 @@ func (c *cli) secretsCmd() *cobra.Command {
 		GroupID:           AdditionalGroup.ID,
 	}
 
-	// list command
 	listCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
@@ -37,7 +36,6 @@ func (c *cli) secretsCmd() *cobra.Command {
 	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "The number of secrets to list")
 	secretsCmd.AddCommand(listCmd)
 
-	// delete command
 	confirmDelete := false
 	deleteCmd := &cobra.Command{
 		Use:   "delete",
@@ -57,7 +55,6 @@ func (c *cli) secretsCmd() *cobra.Command {
 	deleteCmd.MarkFlagRequired("confirm")
 	secretsCmd.AddCommand(deleteCmd)
 
-	// create command
 	var (
 		name  string
 		value string

@@ -43,7 +43,6 @@ func (s *service) ListQueues(ctx *gin.Context) {
 		return
 	}
 
-	// Set defaults
 	if req.Limit == 0 {
 		req.Limit = 50
 	}

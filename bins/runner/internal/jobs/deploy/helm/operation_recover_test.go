@@ -14,8 +14,6 @@ import (
 
 const testReleaseName = "recover-me"
 
-// recoverHandler builds a handler wired to an in-memory release store and a fake
-// cluster, so the decision table can be exercised without a real cluster.
 func recoverHandler(t *testing.T, revisions ...*release.Release) (*handler, *action.Configuration) {
 	t.Helper()
 
@@ -35,8 +33,6 @@ func testRevision(version int, status release.Status) *release.Release {
 	}
 }
 
-// The invariant that makes this safe to expose as a button: a healthy release is
-// never touched, no matter how many times the action is run.
 func TestRecoverRelease_LeavesHealthyReleaseAlone(t *testing.T) {
 	for _, status := range []release.Status{
 		release.StatusDeployed,
@@ -90,8 +86,6 @@ func TestRecoverRelease_RollsBackToLastGoodRevision(t *testing.T) {
 	assert.Contains(t, res.Summary(testReleaseName), "revision 2")
 }
 
-// The most common stuck state: a first install that never rolled out. There is no
-// revision behind it, so rollback cannot help and the release has to go.
 func TestRecoverRelease_UninstallsWhenNoRevisionEverRolledOut(t *testing.T) {
 	h, cfg := recoverHandler(t, testRevision(1, release.StatusPendingInstall))
 
@@ -107,8 +101,6 @@ func TestRecoverRelease_UninstallsWhenNoRevisionEverRolledOut(t *testing.T) {
 	}
 }
 
-// A failed revision is not a safe rollback target, so a release stuck above only
-// failed revisions is removed rather than returned to a broken state.
 func TestRecoverRelease_FailedRevisionsAreNotRollbackTargets(t *testing.T) {
 	h, cfg := recoverHandler(t,
 		testRevision(1, release.StatusFailed),
@@ -136,9 +128,6 @@ func TestRecoverRelease_IsIdempotent(t *testing.T) {
 		"a second run must not roll the recovered release back again")
 }
 
-// A recovery never fetches the chart archive, so anything Exec touches before it
-// branches to the recovery must tolerate a nil archive. Reading the base path off
-// it directly panicked on every recovery.
 func TestBasePath_ToleratesMissingArchive(t *testing.T) {
 	h, _ := recoverHandler(t)
 	assert.Empty(t, h.basePath(), "a recovery has no unpacked chart")
@@ -149,7 +138,7 @@ func TestIsRecovery(t *testing.T) {
 	h, _ := recoverHandler(t)
 	assert.True(t, h.isRecovery())
 
-	// The field must be a plain bool: as a struct it becomes a $ref, and a
+	// why: The field must be a plain bool: as a struct it becomes a $ref, and a
 	// documented $ref field is generated as an inline struct VALUE that decodes
 	// non-nil on every deploy, skipping the chart for all of them.
 	h.state.plan.HelmDeployPlan.RecoverRelease = false

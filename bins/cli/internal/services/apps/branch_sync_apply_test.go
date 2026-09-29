@@ -19,8 +19,6 @@ func testResolver(nameToID map[string]string) *branchNameResolver {
 	return r
 }
 
-// The API rejects a preview config carrying both install_id and install_name,
-// so a named install has to go out as an ID alone.
 func TestPreviewConfigRequestInstallNameSendsIDOnly(t *testing.T) {
 	resolver := testResolver(map[string]string{"byoc-aws": "inl-1"})
 

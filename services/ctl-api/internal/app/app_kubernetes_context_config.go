@@ -61,9 +61,6 @@ func (a *AppKubernetesContextConfig) Indexes(db *gorm.DB) []migrations.Index {
 			},
 		},
 		{
-			// Each AppConfig version can have at most one context per name.
-			// Scoped to live rows (deleted_at = 0) so soft-deleted history
-			// doesn't conflict.
 			Name: indexes.Name(db, &AppKubernetesContextConfig{}, "app_config_id_name"),
 			Columns: []string{
 				"app_config_id",

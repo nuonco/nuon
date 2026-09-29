@@ -19,7 +19,6 @@ type testExecFns interface {
 	InitLog(context.Context, hclog.Logger) error
 	BytesLog(context.Context, hclog.Logger) ([]byte, error)
 
-	// terraform functions
 	TerraformOutput(context.Context, hclog.Logger) (map[string]tfexec.OutputMeta, error)
 	TerraformState(context.Context, hclog.Logger) (*tfjson.State, error)
 	TerraformPlan(context.Context, hclog.Logger) (*tfjson.Plan, error)

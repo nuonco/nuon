@@ -12,8 +12,6 @@ type Client interface {
 	GetLatestVersion() (string, error)
 }
 
-// This client ONLY fetches the latest version from github releases
-// It doesn't actually execute terraform commands
 type TerraformClient struct {
 	cache      Cache
 	httpClient *http.Client
@@ -30,11 +28,9 @@ func New() Client {
 	return &client
 }
 
-// PinnedLatestVersion is a temporary hard-coded stand-in for the latest Terraform release.
 const PinnedLatestVersion = "1.15.7"
 
 func (client *TerraformClient) GetLatestVersion() (string, error) {
-	// Temporarily bypass the GitHub API call to avoid 403s
 	return PinnedLatestVersion, nil
 }
 

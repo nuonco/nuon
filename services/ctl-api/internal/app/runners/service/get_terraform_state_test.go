@@ -73,7 +73,6 @@ func (s *GetTerraformStateTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes (terraform backend needs org context)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -94,7 +93,6 @@ func (s *GetTerraformStateTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create terraform workspace
 	s.testWS = &app.TerraformWorkspace{
 		ID:        domains.NewTerraformWorkspaceID(),
 		OrgID:     s.testOrg.ID,
@@ -105,7 +103,6 @@ func (s *GetTerraformStateTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testWS).Error
 	require.NoError(s.T(), err)
 
-	// Create terraform state
 	stateContents := []byte(`{"version": 4, "terraform_version": "1.0.0"}`)
 	s.testState = &app.TerraformWorkspaceState{
 		ID:                   domains.NewTerraformWorkspaceStateID(),
@@ -157,7 +154,6 @@ func (s *GetTerraformStateTestSuite) TestGetTerraformState() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -170,7 +166,6 @@ func (s *GetTerraformStateTestSuite) TestGetTerraformState() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create workspace in org2
 				ws2 := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     org2.ID,
@@ -195,7 +190,6 @@ func (s *GetTerraformStateTestSuite) TestGetTerraformState() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create workspace without state - use unique owner
 				ownerID := domains.NewAppID()
 				ws := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
@@ -220,7 +214,6 @@ func (s *GetTerraformStateTestSuite) TestGetTerraformState() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Use unique owner ID
 				ownerID := domains.NewInstallID()
 				ws := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
@@ -231,7 +224,6 @@ func (s *GetTerraformStateTestSuite) TestGetTerraformState() {
 				err := s.service.DB.WithContext(ctx).Create(ws).Error
 				require.NoError(s.T(), err)
 
-				// Create state with empty contents
 				state := &app.TerraformWorkspaceState{
 					ID:                   domains.NewTerraformWorkspaceStateID(),
 					OrgID:                s.testOrg.ID,

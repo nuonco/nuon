@@ -13,8 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-// getAWSCustomStacksOnlyTemplate renders a CloudFormation template containing
-// only the vendor's custom_nested_stacks.
 func (t *Templates) getAWSCustomStacksOnlyTemplate(inp *stacks.TemplateInput) (*cloudformation.Template, error) {
 	tmpl := cloudformation.NewTemplate()
 
@@ -90,7 +88,7 @@ func (t *Templates) getAWSCustomStacksOnlyTemplate(inp *stacks.TemplateInput) (*
 		}
 	}
 
-	// This is not used by Cloudformation. It's here to support mapping nested
+	// why: This is not used by Cloudformation. It's here to support mapping nested
 	// stack inputs to app inputs in the parent stack.
 	// Callers must strip it before treating tmpl as the deployable artifact.
 	if len(customResult.inputParameters) > 0 {
@@ -100,13 +98,10 @@ func (t *Templates) getAWSCustomStacksOnlyTemplate(inp *stacks.TemplateInput) (*
 	return tmpl, nil
 }
 
-// customStacksInputParametersMetadataKey namespaces the nested input key above
+// why: customStacksInputParametersMetadataKey namespaces the nested input key above
 // so it can never collide with a real CloudFormation metadata section.
 const customStacksInputParametersMetadataKey = "Nuon::CustomStacksInputParameters"
 
-// ExtractAndStripCustomStacksInputParameters pulls the hoisted-parameter
-// mapping getAWSCustomStacksOnlyTemplate attaches to Template.Metadata and
-// removes it so it never reaches the deployed JSON.
 func ExtractAndStripCustomStacksInputParameters(tmpl *cloudformation.Template) map[string]map[string]string {
 	v, ok := tmpl.Metadata[customStacksInputParametersMetadataKey]
 	if !ok {
@@ -117,9 +112,6 @@ func ExtractAndStripCustomStacksInputParameters(tmpl *cloudformation.Template) m
 	return m
 }
 
-// customStacksOnlyOutputs emits one top-level CFN output per custom-stack
-// output, keyed by the stack's sanitized logical ID directly concatenated
-// with the declared output key.
 func customStacksOnlyOutputs(result *customNestedStackResult) (map[string]cloudformation.Output, error) {
 	outputs := map[string]cloudformation.Output{}
 	for logicalID, info := range result.stackOutputs {
@@ -136,15 +128,11 @@ func customStacksOnlyOutputs(result *customNestedStackResult) (map[string]cloudf
 	return outputs, nil
 }
 
-// customStacksOnlyOutputPair identifies a single declared custom-stack output by
-// its original (unsanitized) stack name and its template-declared output key.
 type customStacksOnlyOutputPair struct {
 	stackName string
 	outputKey string
 }
 
-// verifyCustomStacksOnlyOutputsUnambiguous catches stack name collisions
-// between both custom stacks, and custom stack outputs.
 func verifyCustomStacksOnlyOutputsUnambiguous(result *customNestedStackResult, allStackNames []string) error {
 	flatOutputs := make(map[string]string, len(result.stackOutputs))
 	want := make(map[string]customStacksOnlyOutputPair, len(result.stackOutputs))
@@ -179,7 +167,7 @@ func verifyCustomStacksOnlyOutputsUnambiguous(result *customNestedStackResult, a
 	return nil
 }
 
-// splitFlatNamesByLogicalID reconstructs { "<stack_name>": { "<suffix>": value } }
+// why: splitFlatNamesByLogicalID reconstructs { "<stack_name>": { "<suffix>": value } }
 // from a flat name -> value map, matching each flat name against the longest
 // known logical-ID prefix first (so "Foo" never wins over "FooBar").
 func splitFlatNamesByLogicalID(flatNames map[string]string, stackNames []string) map[string]map[string]string {
@@ -212,9 +200,6 @@ func splitFlatNamesByLogicalID(flatNames map[string]string, stackNames []string)
 	return result
 }
 
-// SplitCustomStacksOnlyOutputs reconstructs
-// { "<stack_name>": { "outputs": { "<key>": value } } } from the flat output
-// map a deployed custom-stacks-only stack returns.
 func SplitCustomStacksOnlyOutputs(flatOutputs map[string]string, stackNames []string) map[string]map[string]map[string]string {
 	split := splitFlatNamesByLogicalID(flatOutputs, stackNames)
 	result := make(map[string]map[string]map[string]string, len(split))
@@ -224,17 +209,11 @@ func SplitCustomStacksOnlyOutputs(flatOutputs map[string]string, stackNames []st
 	return result
 }
 
-// customStacksOnlyInputParameterPair identifies a single hoisted parameter by
-// its original (unsanitized) stack name and its CFN parameter name on that
-// stack's nested template.
 type customStacksOnlyInputParameterPair struct {
 	stackName string
 	paramName string
 }
 
-// verifyCustomStacksOnlyInputParametersUnambiguous is the input-parameter
-// analog of verifyCustomStacksOnlyOutputsUnambiguous, guarding the same
-// concatenation scheme against the same prefix-collision hazard.
 func verifyCustomStacksOnlyInputParametersUnambiguous(result *customNestedStackResult, allStackNames []string) error {
 	flatParams := make(map[string]string)
 	want := make(map[string]customStacksOnlyInputParameterPair)

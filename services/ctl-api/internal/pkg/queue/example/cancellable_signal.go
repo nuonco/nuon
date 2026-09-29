@@ -10,8 +10,6 @@ import (
 const (
 	CancellableSignalType signal.SignalType = "cancellable-signal"
 
-	// CancelCallbackMarker is set by the Cancel callback and can be read via
-	// the CancelCallbackInvoked query to verify the callback ran.
 	CancelCallbackMarker = "cancel-callback-invoked"
 )
 
@@ -21,8 +19,6 @@ func init() {
 	})
 }
 
-// CancellableSignal blocks in Execute until cancelled and tracks whether
-// its Cancel callback was invoked.
 type CancellableSignal struct {
 	cancelCallbackInvoked bool
 }
@@ -35,7 +31,6 @@ func (c *CancellableSignal) Validate(ctx workflow.Context) error {
 }
 
 func (c *CancellableSignal) Execute(ctx workflow.Context) error {
-	// Block until context is canceled
 	return workflow.Await(ctx, func() bool {
 		return ctx.Err() != nil
 	})

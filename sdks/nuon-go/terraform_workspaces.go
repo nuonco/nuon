@@ -41,8 +41,6 @@ func (c *client) GetTerraformWorkspaceStates(ctx context.Context, workspaceID st
 	return resp.GetPayload(), nil
 }
 
-// GetTerraformWorkspaceLatestState fetches the latest state with contents by first
-// listing states (which omits Contents) then fetching by ID (which includes Contents).
 func (c *client) GetTerraformWorkspaceLatestState(ctx context.Context, workspaceID string) (*models.AppTerraformWorkspaceState, error) {
 	states, err := c.GetTerraformWorkspaceStates(ctx, workspaceID)
 	if err != nil {
@@ -66,10 +64,6 @@ func (c *client) GetTerraformWorkspaceLatestState(ctx context.Context, workspace
 	return resp.GetPayload(), nil
 }
 
-// GetTerraformWorkspaceLatestStateJSON fetches the latest state-json (terraform show -json format)
-// by listing state-json records then fetching by ID. The by-ID endpoint returns the raw
-// terraform show -json output directly, so we return it as json.RawMessage rather than re-marshaling
-// the generated client's typed payload — callers consume it as raw JSON.
 func (c *client) GetTerraformWorkspaceLatestStateJSON(ctx context.Context, workspaceID string) (json.RawMessage, error) {
 	states, err := c.GetTerraformWorkspaceStatesJSON(ctx, workspaceID)
 	if err != nil {

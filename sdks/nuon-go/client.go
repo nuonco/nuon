@@ -20,40 +20,33 @@ import (
 type Client interface {
 	SetOrgID(orgID string)
 
-	//  get / create org
 	GetOrgs(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppOrg, bool, error)
 	CreateOrg(ctx context.Context, req *models.ServiceCreateOrgRequest) (*models.AppOrg, error)
 
-	//  current org
 	GetOrg(ctx context.Context) (*models.AppOrg, error)
 	UpdateOrg(ctx context.Context, req *models.ServiceUpdateOrgRequest) (*models.AppOrg, error)
 	DeleteOrg(ctx context.Context) (bool, error)
 
-	// org invites and users
 	CreateOrgInvite(ctx context.Context, req *models.ServiceCreateOrgInviteRequest) (*models.AppOrgInvite, error)
 	UpdateOrgAccountRole(ctx context.Context, accountID string, req *models.ServiceUpdateOrgAccountRoleRequest) (*models.AppAccount, error)
 	GetOrgInvites(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppOrgInvite, bool, error)
 	GetOrgMembers(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppOrgMember, bool, error)
 
-	// org webhooks
 	GetCurrentOrgWebhooks(ctx context.Context) ([]*models.ServiceCurrentOrgWebhookResponse, error)
 	CreateCurrentOrgWebhook(ctx context.Context, req *models.ServiceCreateCurrentOrgWebhookRequest) (*models.ServiceCurrentOrgWebhookResponse, error)
 	UpdateCurrentOrgWebhook(ctx context.Context, webhookID string, req *models.ServiceUpdateCurrentOrgWebhookRequest) (*models.ServiceCurrentOrgWebhookResponse, error)
 	DeleteCurrentOrgWebhook(ctx context.Context, webhookID string) error
 
-	// slack channel subscriptions
 	ListSlackOrgLinks(ctx context.Context) ([]*models.AppSlackOrgLink, error)
 	ListSlackChannelSubscriptions(ctx context.Context) ([]*models.AppSlackChannelSubscription, error)
 	CreateSlackChannelSubscription(ctx context.Context, req *models.ServiceCreateChannelSubscriptionRequest) (*models.AppSlackChannelSubscription, error)
 	UpdateSlackChannelSubscription(ctx context.Context, subID string, req *models.ServiceUpdateChannelSubscriptionRequest) (*models.AppSlackChannelSubscription, error)
 	DeleteSlackChannelSubscription(ctx context.Context, subID string) error
 
-	// static api tokens
 	CreateStaticToken(ctx context.Context, req *models.ServiceCreateStaticTokenRequest) (*models.GithubComNuoncoNuonServicesCtlAPIInternalAppAccountsServiceStaticTokenResponse, error)
 	ListStaticTokens(ctx context.Context) ([]*models.AppToken, error)
 	DeleteStaticToken(ctx context.Context, tokenID string) error
 
-	// roles and service accounts
 	ListRoles(ctx context.Context) ([]*models.AppRole, error)
 	ListServiceAccounts(ctx context.Context, includeRunners, includeStacks bool, query *models.GetPaginatedQuery) ([]*models.AppAccount, bool, error)
 	CreateServiceAccount(ctx context.Context, req *models.ServiceCreateServiceAccountRequest) (*models.AppAccount, error)
@@ -62,14 +55,12 @@ type Client interface {
 	DeleteServiceAccount(ctx context.Context, accountID string) error
 	CreateServiceAccountToken(ctx context.Context, accountID string, req *models.ServiceCreateServiceAccountTokenRequest) (*models.ServiceCreateServiceAccountTokenResponse, error)
 
-	// app methods
 	GetApp(ctx context.Context, appID string) (*models.AppApp, error)
 	GetApps(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppApp, bool, error)
 	CreateApp(ctx context.Context, req *models.ServiceCreateAppRequest) (*models.AppApp, error)
 	UpdateApp(ctx context.Context, appID string, req *models.ServiceUpdateAppRequest) (*models.AppApp, error)
 	DeleteApp(ctx context.Context, appID string) (bool, error)
 
-	// app branch methods
 	GetOrgBranches(ctx context.Context) ([]*models.AppAppBranch, error)
 	GetAppBranches(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppBranch, bool, error)
 	GetAppBranch(ctx context.Context, appID, appBranchID string) (*models.AppAppBranch, error)
@@ -87,18 +78,15 @@ type Client interface {
 	GetAppBranchRunBuilds(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppComponentBuild, error)
 	GetAppBranchRunInstallGroups(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppInstallAppConfigVersion, error)
 
-	// app sandbox config methods
 	CreateAppSandboxConfig(ctx context.Context, appID string, req *models.ServiceCreateAppSandboxConfigRequest) (*models.AppAppSandboxConfig, error)
 	GetAppSandboxLatestConfig(ctx context.Context, appID string) (*models.AppAppSandboxConfig, error)
 	GetAppSandboxConfigs(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppSandboxConfig, bool, error)
 	GetAppSandboxBuilds(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppSandboxBuild, bool, error)
 
-	// app runner config methods
 	CreateAppRunnerConfig(ctx context.Context, appID string, req *models.ServiceCreateAppRunnerConfigRequest) (*models.AppAppRunnerConfig, error)
 	GetAppRunnerLatestConfig(ctx context.Context, appID string) (*models.AppAppRunnerConfig, error)
 	GetAppRunnerConfigs(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppRunnerConfig, bool, error)
 
-	// app config methods
 	GetAppConfigTemplate(ctx context.Context, appID string, typ models.ServiceAppConfigTemplateType) (*models.ServiceAppConfigTemplate, error)
 	CreateAppConfig(ctx context.Context, appID string, req *models.ServiceCreateAppConfigRequest) (*models.AppAppConfig, error)
 	SyncAppConfig(ctx context.Context, appID, appConfigID string) (*models.AppAppConfig, error)
@@ -109,7 +97,6 @@ type Client interface {
 	UpdateAppConfig(ctx context.Context, appID, appConfigID string, req *models.ServiceUpdateAppConfigRequest) (*models.AppAppConfig, error)
 	BuildAppConfig(ctx context.Context, appID, configID string) (*models.AppWorkflow, error)
 
-	// app installs config methods
 	CreateAppInstallsConfig(ctx context.Context, appID string, req *models.ServiceCreateAppInstallsConfigRequest) (*models.AppAppInstallsConfig, error)
 
 	ListTriggerEvents(ctx context.Context, limit int, trigger string) ([]*models.TriggerEventSummary, error)
@@ -134,61 +121,49 @@ type Client interface {
 	RotateTriggerIngressURL(ctx context.Context, id string) (*models.TriggerCredentialResponse, error)
 	DeleteTrigger(ctx context.Context, id string, force bool) error
 
-	// app input config methods
 	CreateAppInputConfig(ctx context.Context, appID string, req *models.ServiceCreateAppInputConfigRequest) (*models.AppAppInputConfig, error)
 	GetAppInputLatestConfig(ctx context.Context, appID string) (*models.AppAppInputConfig, error)
 	GetAppInputConfig(ctx context.Context, appID, appInputConfigID string) (*models.AppAppInputConfig, error)
 	GetAppInputConfigs(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppInputConfig, bool, error)
 
-	// app secrets config methods
 	CreateAppSecretsConfig(ctx context.Context, appID string, req *models.ServiceCreateAppSecretsConfigRequest) (*models.AppAppSecretsConfig, error)
 	GetLatestAppSecretsConfig(ctx context.Context, appID string) (*models.AppAppSecretsConfig, error)
 	GetAppSecretsConfig(ctx context.Context, appID, appSecretConfigID string) (*models.AppAppSecretsConfig, error)
 
-	// app kubernetes contexts config methods
 	CreateAppKubernetesContextsConfig(ctx context.Context, appID string, req *models.ServiceCreateAppKubernetesContextsConfigRequest) (*models.AppAppKubernetesContextsConfig, error)
 
-	// app permissions config methods
 	CreateAppPermissionsConfig(ctx context.Context, appID string, req *models.ServiceCreateAppPermissionsConfigRequest) (*models.AppAppPermissionsConfig, error)
 	GetLatestAppPermissionsConfig(ctx context.Context, appID string) (*models.AppAppPermissionsConfig, error)
 	GetAppPermissionsConfig(ctx context.Context, appID, appSecretConfigID string) (*models.AppAppPermissionsConfig, error)
 
-	// app operation roles
 	CreateAppOperationRoleConfig(ctx context.Context, appID string, req *models.ServiceCreateAppOperationRoleConfigRequest) (*models.AppAppOperationRoleConfig, error)
 
-	// app cloudformation stack config methods
 	CreateAppStackConfig(ctx context.Context, appID string, req *models.ServiceCreateAppStackConfigRequest) (*models.AppAppStackConfig, error)
 	GetAppStackConfig(ctx context.Context, appID, appStackConfigID string) (*models.AppAppStackConfig, error)
 
-	// app permissions config methods
 	CreateAppBreakGlassConfig(ctx context.Context, appID string, req *models.ServiceCreateAppBreakGlassConfigRequest) (*models.AppAppBreakGlassConfig, error)
 	GetLatestAppBreakGlassConfig(ctx context.Context, appID string) (*models.AppAppBreakGlassConfig, error)
 	GetAppBreakGlassConfig(ctx context.Context, appID, appSecretConfigID string) (*models.AppAppBreakGlassConfig, error)
 
-	// app policies config methods
 	CreateAppPoliciesConfig(ctx context.Context, appID string, req *models.ServiceCreateAppPoliciesConfigRequest) (*models.AppAppPoliciesConfig, error)
 	GetLatestAppPoliciesConfig(ctx context.Context, appID string) (*models.AppAppPoliciesConfig, error)
 	GetAppPoliciesConfig(ctx context.Context, appID, appSecretConfigID string) (*models.AppAppPoliciesConfig, error)
 	GetAppPoliciesConfigs(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppPoliciesConfig, bool, error)
 
-	// policy reports
 	GetPolicyReports(ctx context.Context, query *PolicyReportsQuery) ([]*models.AppPolicyReport, error)
 	GetPolicyReport(ctx context.Context, reportID string) (*models.AppPolicyReport, error)
 	ExportPolicyReport(ctx context.Context, reportID, format string) ([]byte, string, error)
 
-	// app secret methods
 	CreateAppSecret(ctx context.Context, appID string, req *models.ServiceCreateAppSecretRequest) (*models.AppAppSecret, error)
 	GetAppSecrets(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppSecret, bool, error)
 	DeleteAppSecret(ctx context.Context, appID, secretID string) (bool, error)
 
-	// general methods
 	GetAuthMe(ctx context.Context) (*models.ServiceAuthMeResponse, error)
 	ValidateToken(ctx context.Context) error
 	GetCLIConfig(ctx context.Context) (*models.ServiceCLIConfig, error)
 	GetCurrentUser(ctx context.Context) (*models.AppAccount, error)
 	GetCloudPlatformRegions(ctx context.Context, cloudPlatform string) ([]*models.AppCloudPlatformRegion, error)
 
-	// oidc workload identity federation
 	ExchangeOIDCToken(ctx context.Context, req *models.ServiceExchangeOIDCTokenRequest) (*models.ServiceExchangeOIDCTokenResponse, error)
 	CreateOIDCTrustPolicy(ctx context.Context, req *models.ServiceCreateOIDCTrustPolicyRequest) (*models.AppOIDCTrustPolicy, error)
 	ListOIDCTrustPolicies(ctx context.Context) ([]*models.AppOIDCTrustPolicy, error)
@@ -196,14 +171,12 @@ type Client interface {
 	UpdateOIDCTrustPolicy(ctx context.Context, policyID string, req *models.ServiceUpdateOIDCTrustPolicyRequest) (*models.AppOIDCTrustPolicy, error)
 	DeleteOIDCTrustPolicy(ctx context.Context, policyID string) error
 
-	// vcs connections
 	CreateVCSConnection(ctx context.Context, req *models.ServiceCreateConnectionRequest) (*models.AppVCSConnection, error)
 	CreateVCSConnectionCallback(ctx context.Context, req *models.ServiceCreateConnectionCallbackRequest) (*models.AppVCSConnection, error)
 	GetVCSConnections(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppVCSConnection, bool, error)
 	GetVCSConnection(ctx context.Context, connID string) (*models.AppVCSConnection, error)
 	DeleteVCSConnection(ctx context.Context, connID string) error
 
-	// installs
 	CreateInstall(ctx context.Context, appID string, req *models.ServiceCreateInstallRequest) (*models.AppInstall, error)
 	GetAppInstalls(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppInstall, bool, error)
 	GetAllInstalls(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppInstall, bool, error)
@@ -220,20 +193,16 @@ type Client interface {
 	AddInstallLabels(ctx context.Context, installID string, labels map[string]string) (*models.AppInstall, error)
 	RemoveInstallLabels(ctx context.Context, installID string, keys []string) (*models.AppInstall, error)
 
-	// install config
 	CreateInstallConfig(ctx context.Context, installID string, req *models.ServiceCreateInstallConfigRequest) (*models.AppInstallConfig, error)
 	UpdateInstallConfig(ctx context.Context, installID, configID string, req *models.ServiceUpdateInstallConfigRequest) (*models.AppInstallConfig, error)
 
-	// install cli config
 	GenerateCLIInstallConfig(ctx context.Context, installID string) ([]byte, error)
 
-	// install deploys
 	GetInstallDeploys(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppInstallDeploy, bool, error)
 	CreateInstallDeploy(ctx context.Context, installID string, req *models.ServiceCreateInstallDeployRequest) (*models.AppInstallDeploy, error)
 	GetInstallDeploy(ctx context.Context, installID, deployID string) (*models.AppInstallDeploy, error)
 	GetInstallLatestDeploy(ctx context.Context, installID string) (*models.AppInstallDeploy, error)
 
-	// install components
 	GetInstallsHealth(ctx context.Context, appID, labels string) (*models.ServiceInstallsHealthResponse, error)
 	GetInstallComponents(ctx context.Context, installID string, query *models.GetPaginatedQuery, opts ...GetInstallComponentsOpts) ([]*models.AppInstallComponent, bool, error)
 	ToggleInstallComponent(ctx context.Context, installID, componentID string, req *models.ServiceToggleInstallComponentRequest) (*models.AppWorkflowResponse, error)
@@ -247,20 +216,17 @@ type Client interface {
 	GetInstallComponentLatestDeploy(ctx context.Context, installID, componentID string) (*models.AppInstallDeploy, error)
 	GetInstallComponentOutputs(ctx context.Context, installID, componentID string) (any, error)
 
-	// install sandbox
 	DeprovisionInstallSandbox(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
 	ReprovisionInstallSandbox(ctx context.Context, installID string, skipComponents ...bool) (*models.AppWorkflowResponse, error)
 	GetInstallSandboxRuns(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppInstallSandboxRun, bool, error)
 	GetInstallSandboxRun(ctx context.Context, installID, runID string) (*models.AppInstallSandboxRun, error)
 
-	// install inputs
 	GetInstallInputs(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppInstallInputs, bool, error)
 	GetInstallCurrentInputs(ctx context.Context, installID string) (*models.AppInstallInputs, error)
 	CreateInstallInputs(ctx context.Context, installID string, req *models.ServiceCreateInstallInputsRequest) (*models.AppInstallInputs, error)
 	UpdateInstallInputs(ctx context.Context, installID string, req *models.ServiceUpdateInstallInputsRequest) (*models.AppInstallInputs, error)
 	GetInstallDeployments(ctx context.Context, installID string, query *GetInstallDeploymentsQuery) (*models.ServiceGetInstallDeploymentsResponse, error)
 
-	// workflows
 	GetWorkflows(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppWorkflow, bool, error)
 	GetInstallWorkflows(ctx context.Context, installID string, query *GetInstallWorkflowsQuery) ([]*models.AppWorkflow, bool, error)
 	GetWorkflow(ctx context.Context, workflowID string) (*models.AppWorkflow, error)
@@ -272,47 +238,38 @@ type Client interface {
 	GetWorkflowStepApprovalContents(ctx context.Context, workflowID string, workflowStepID string, workflowApprovalID string) (interface{}, error)
 	RetryWorkflowStep(ctx context.Context, workflowID, stepID string, req *models.ServiceRetryWorkflowStepRequest) error
 
-	// org-level workflow queries
 	GetOrgWorkflows(ctx context.Context, query *GetOrgWorkflowsQuery) ([]*models.AppWorkflow, error)
 	GetOrgPendingApprovals(ctx context.Context) ([]*models.AppWorkflowStepApproval, error)
 
-	// install runner
 	GetInstallRunnerGroup(ctx context.Context, installID string) (*models.AppRunnerGroup, error)
 
-	// runner management
 	RunnerMngRestart(ctx context.Context, runnerID string) error
 	RunnerMngShutDown(ctx context.Context, runnerID string) error
 	RunnerMngVMShutDown(ctx context.Context, runnerID string) error
 
-	// runner queries
 	GetRunnerCardDetails(ctx context.Context, runnerID string) (*models.ServiceRunnerCardDetailsResponse, error)
 	GetRunnerJobs(ctx context.Context, runnerID string, groups string, limit int64) ([]*models.AppRunnerJob, error)
 	ListRunnerProcesses(ctx context.Context, runnerID string, status string, limit int64) ([]*models.AppRunnerProcess, error)
 	GetLatestRunnerHeartBeats(ctx context.Context, runnerID string) (models.ServiceLatestRunnerHeartBeats, error)
 	GetRunnerRecentHealthChecks(ctx context.Context, runnerID string, processID string) ([]*models.AppRunnerHealthCheck, error)
 
-	// runner job plan
 	// Deprecated: use GetRunnerJobCompositePlan.
 	GetRunnerJobPlan(ctx context.Context, runnerJobID string) (string, error)
 	GetRunnerJobCompositePlan(ctx context.Context, runnerJobID string) (*models.PlantypesCompositePlan, error)
 
-	// install stacks
 	GetInstallStack(ctx context.Context, installID string) (*models.AppInstallStack, error)
 	GetInstallStackByID(ctx context.Context, stackID string) (*models.AppInstallStack, error)
 
-	// log stream/logs
 	GetLogStream(ctx context.Context, logStreamID string) (*models.AppLogStream, error)
 	LogStreamReadLogs(ctx context.Context, logStreamId string, offset string, order string, filters *LogStreamLogFilters) ([]*models.AppOtelLogRecord, error)
 	LogStreamReadLogsWithNextOffset(ctx context.Context, logStreamId string, offset string, order string, filters *LogStreamLogFilters) ([]*models.AppOtelLogRecord, string, error)
 	LogStreamTailLogs(ctx context.Context, logStreamID string, since string, wait string, filters *LogStreamLogFilters) (*models.ServiceLogStreamTailLogsResponse, error)
 
-	// terraform workspaces
 	GetTerraformWorkspaceStatesJSON(ctx context.Context, workspaceID string) ([]*models.AppTerraformWorkspaceStateJSON, error)
 	GetTerraformWorkspaceStates(ctx context.Context, workspaceID string) ([]*models.AppTerraformWorkspaceState, error)
 	GetTerraformWorkspaceLatestState(ctx context.Context, workspaceID string) (*models.AppTerraformWorkspaceState, error)
 	GetTerraformWorkspaceLatestStateJSON(ctx context.Context, workspaceID string) (json.RawMessage, error)
 
-	// components
 	GetAllComponents(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppComponent, bool, error)
 	GetAppComponents(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppComponent, bool, error)
 	GetAppComponent(ctx context.Context, appID, componentNameOrID string) (*models.AppComponent, error)
@@ -322,7 +279,6 @@ type Client interface {
 	UpdateComponent(ctx context.Context, componentID string, req *models.ServiceUpdateComponentRequest) (*models.AppComponent, error)
 	DeleteComponent(ctx context.Context, componentID string) (bool, error)
 
-	// component configs
 	CreateTerraformModuleComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateTerraformModuleComponentConfigRequest) (*models.AppTerraformModuleComponentConfig, error)
 	CreatePulumiComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreatePulumiComponentConfigRequest) (*models.AppPulumiComponentConfig, error)
 	CreateHelmComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateHelmComponentConfigRequest) (*models.AppHelmComponentConfig, error)
@@ -333,14 +289,12 @@ type Client interface {
 	GetComponentLatestConfig(ctx context.Context, componentID string) (*models.AppComponentConfigConnection, error)
 	CreateKubernetesComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateKubernetesManifestComponentConfigRequest) (*models.AppKubernetesManifestComponentConfig, error)
 
-	// builds
 	CreateComponentBuild(ctx context.Context, componentID string, req *models.ServiceCreateComponentBuildRequest) (*models.AppComponentBuild, error)
 	GetComponentBuilds(ctx context.Context, componentID, appID string, query *models.GetPaginatedQuery) ([]*models.AppComponentBuild, bool, error)
 	GetComponentLatestBuild(ctx context.Context, componentID string) (*models.AppComponentBuild, error)
 	GetComponentBuild(ctx context.Context, componentID, buildID string) (*models.AppComponentBuild, error)
 	GetBuild(ctx context.Context, buildID string) (*models.AppComponentBuild, error)
 
-	// actions
 	GetActionWorkflows(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppActionWorkflow, bool, error)
 	GetActionWorkflow(ctx context.Context, actionWorkflowID string) (*models.AppActionWorkflow, error)
 	GetAppActionWorkflow(ctx context.Context, appID, actionWorkflowID string) (*models.AppActionWorkflow, error)
@@ -358,13 +312,11 @@ type Client interface {
 	GetInstallActionWorkflowOutputs(ctx context.Context, installID, actionID string) (any, error)
 	GetActionWorkflowLatestConfig(ctx context.Context, actionWorkflowID string) (*models.AppActionWorkflowConfig, error)
 
-	// runbooks - app level
 	GetAppRunbook(ctx context.Context, appID, nameOrID string) (*models.AppRunbook, error)
 	CreateRunbook(ctx context.Context, appID string, req *models.ServiceCreateRunbookRequest) (*models.AppRunbook, error)
 	UpdateRunbook(ctx context.Context, runbookID string, req *models.ServiceUpdateRunbookRequest) (*models.AppRunbook, error)
 	CreateRunbookConfig(ctx context.Context, runbookID string, req *models.ServiceCreateRunbookConfigRequest) (*models.AppRunbookConfig, error)
 
-	// runbooks - install level
 	GetInstallRunbooks(ctx context.Context, installID string) ([]*models.AppInstallRunbook, error)
 	GetInstallRunbook(ctx context.Context, installID, runbookID string) (*models.AppInstallRunbook, error)
 	CreateInstallRunbookRun(ctx context.Context, installID, runbookID string) (*models.AppInstallRunbookRun, error)
@@ -430,7 +382,6 @@ func New(opts ...clientOption) (*client, error) {
 	return c, nil
 }
 
-// WithAuthToken specifies the auth token to use
 func WithAuthToken(token string) clientOption {
 	return func(c *client) error {
 		c.APIToken = token
@@ -438,7 +389,6 @@ func WithAuthToken(token string) clientOption {
 	}
 }
 
-// WithURL specifies the url to use
 func WithURL(url string) clientOption {
 	return func(c *client) error {
 		c.APIURL = url
@@ -446,7 +396,6 @@ func WithURL(url string) clientOption {
 	}
 }
 
-// WithOrgID specifies the org id to use
 func WithOrgID(orgID string) clientOption {
 	return func(c *client) error {
 		c.OrgID = orgID
@@ -454,7 +403,6 @@ func WithOrgID(orgID string) clientOption {
 	}
 }
 
-// WithHTTPTransport specifies a base http transport to use for api requests
 func WithHTTPTransport(transport http.RoundTripper) clientOption {
 	return func(c *client) error {
 		c.httpTransport = transport
@@ -462,7 +410,6 @@ func WithHTTPTransport(transport http.RoundTripper) clientOption {
 	}
 }
 
-// WithValidator specifies a validator to use
 func WithValidator(v *validator.Validate) clientOption {
 	return func(c *client) error {
 		c.v = v

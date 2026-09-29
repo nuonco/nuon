@@ -16,11 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-// getRunnerASGNestedStack returns a nested stack template for runner ASG resources.
-// It fetches the runner template to discover its parameters, conditionally including
-// RunnerApiToken only if the template defines it.
 func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuilder) (*nestedcloudformation.Stack, bool, error) {
-	// fetch the runner template to inspect its declared parameters
 	tmpl, err := a.fetchTemplate(inp.AppCfg.StackConfig.RunnerNestedTemplateURL)
 	if err != nil {
 		return nil, false, fmt.Errorf("runner ASG nested stack: %w", err)
@@ -53,10 +49,9 @@ func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuil
 		"RunnerApiUrl":        a.runnerAPIURL(inp),
 		"InstanceType":        cloudformation.Ref("RunnerInstanceType"),
 		"RootVolumeSize":      cloudformation.Ref("RunnerRootVolumeSize"),
-		"RunnerInitScriptUrl": inp.RunnerInitScriptURL, // NOTE(fd): this is user- (provided/configurable)
+		"RunnerInitScriptUrl": inp.RunnerInitScriptURL,
 	}
 
-	// conditionally include RunnerApiToken if the nested template defines it as a parameter
 	if _, ok := tmpl.Parameters["RunnerApiToken"]; ok {
 		params["RunnerApiToken"] = inp.APIToken
 		stackTags = append(stackTags, tags.Tag{
@@ -65,7 +60,6 @@ func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuil
 		})
 	}
 
-	// conditionally include RunnerEnvVars if the nested template defines it as a parameter
 	if _, ok := tmpl.Parameters["RunnerEnvVars"]; ok {
 		params["RunnerEnvVars"] = inp.RunnerEnvVars
 	}
@@ -99,14 +93,6 @@ const (
 	maxRunnerRootVolumeSize     = 100.0
 )
 
-// getRunnerParameters returns the user-overridable top-level parameters for
-// the runner. These are exposed at the parent stack so customers can override
-// the defaults when creating/updating the stack; the nested runner ASG stack
-// references them via Ref().
-//
-// Defaults come from the nested runner template when it declares the matching
-// parameter, so a customer template that ships its own sizing is not silently
-// overridden by the platform defaults.
 func (a *Templates) getRunnerParameters(inp *stacks.TemplateInput) map[string]cloudformation.Parameter {
 	tmplParams := a.runnerTemplateParameters(inp)
 
@@ -116,10 +102,6 @@ func (a *Templates) getRunnerParameters(inp *stacks.TemplateInput) map[string]cl
 	}
 }
 
-// runnerTemplateParameters returns the parameters declared by the runner nested
-// template. It yields nil when the template cannot be fetched or parsed so the
-// platform defaults apply; getRunnerASGNestedStack surfaces the fetch error for
-// every stack that actually deploys the runner ASG.
 func (a *Templates) runnerTemplateParameters(inp *stacks.TemplateInput) map[string]cfnParameterShape {
 	if inp.AppCfg == nil || inp.AppCfg.StackConfig.RunnerNestedTemplateURL == "" {
 		return nil
@@ -133,7 +115,7 @@ func (a *Templates) runnerTemplateParameters(inp *stacks.TemplateInput) map[stri
 	return tmpl.Parameters
 }
 
-// The app's own runner config wins, then the nested template's declared default, then the
+// why: The app's own runner config wins, then the nested template's declared default, then the
 // platform default. Settings.AWSInstanceType is deliberately not consulted: the stack
 // generators resolve the platform default into it, so it is never empty and would mask the
 // template's default entirely.
@@ -146,7 +128,7 @@ func (a *Templates) runnerInstanceTypeParameter(inp *stacks.TemplateInput, tmplP
 		instanceType = app.DefaultAWSInstanceType
 	}
 
-	// Always allow the configured instance type so a custom value from
+	// why: Always allow the configured instance type so a custom value from
 	// runner.toml is never rejected by the AllowedValues constraint.
 	allowedInstanceTypes := []interface{}{
 		"t3.medium",
@@ -181,7 +163,7 @@ func (a *Templates) runnerRootVolumeSizeParameter(tmplParam cfnParameterShape) c
 	if tmplParam.MaxValue != nil {
 		maxSize = *tmplParam.MaxValue
 	}
-	// the default has to satisfy the bounds, otherwise CloudFormation rejects the
+	// why: the default has to satisfy the bounds, otherwise CloudFormation rejects the
 	// parent template outright.
 	minSize = math.Min(minSize, size)
 	maxSize = math.Max(maxSize, size)

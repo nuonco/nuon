@@ -57,7 +57,6 @@ func (s *service) GetAppConfigV2(ctx *gin.Context) {
 			ctx.Error(err)
 			return
 		}
-		// Validate org ownership
 		if appConfig.OrgID != org.ID {
 			ctx.Error(fmt.Errorf("app config not found: %w", gorm.ErrRecordNotFound))
 			return
@@ -126,7 +125,6 @@ func (s *service) GetAppConfig(ctx *gin.Context) {
 			ctx.Error(err)
 			return
 		}
-		// Validate org ownership
 		if appConfig.OrgID != org.ID {
 			ctx.Error(fmt.Errorf("app config not found: %w", gorm.ErrRecordNotFound))
 			return

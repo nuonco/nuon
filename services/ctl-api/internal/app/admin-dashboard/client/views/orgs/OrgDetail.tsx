@@ -47,7 +47,6 @@ export const OrgDetail = () => {
     refetchInterval: 20000,
   })
 
-  // --- Overview mutations ---
   const addLabelMutation = useMutation({
     mutationFn: (labels: Record<string, string>) => addOrgLabels(id!, labels),
     onSuccess: () => {
@@ -96,14 +95,12 @@ export const OrgDetail = () => {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
       <nav className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
         <Link to="/orgs" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">Orgs</Link>
         <span>/</span>
         <span className="text-gray-900 dark:text-gray-100 font-medium">{org.name}</span>
       </nav>
 
-      {/* Header */}
       <div>
         <div className="flex items-center gap-3">
           <h1 className="page-heading">{org.name}</h1>
@@ -133,7 +130,6 @@ export const OrgDetail = () => {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="border-b border-gray-200 dark:border-gray-800">
         <nav className="flex gap-4">
           {(['overview', 'features', 'queues', 'cleanup'] as Tab[]).map((tab) => (
@@ -152,7 +148,6 @@ export const OrgDetail = () => {
         </nav>
       </div>
 
-      {/* Tab Content */}
       {activeTab === 'overview' && (
         <OverviewTab
           org={org}
@@ -185,7 +180,6 @@ export const OrgDetail = () => {
   )
 }
 
-// ---------- Features Tab ----------
 function FeaturesTab({
   storedFeatures,
   highlightFlag,
@@ -272,7 +266,6 @@ function FeaturesTab({
   )
 }
 
-// ---------- Overview Tab ----------
 function OverviewTab({
   org, orgLabels, installs, installsPage, setInstallsPage, installs_total_pages,
   recent_app, graph_dot,
@@ -282,7 +275,6 @@ function OverviewTab({
 }: any) {
   return (
     <>
-      {/* Labels */}
       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Labels</h2>
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -362,7 +354,6 @@ function OverviewTab({
         </div>
       </div>
 
-      {/* Most Recent App */}
       {recent_app && (
         <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Most Recent App</h2>
@@ -376,7 +367,6 @@ function OverviewTab({
         </div>
       )}
 
-      {/* Component Graph */}
       {graph_dot && (
         <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Component dependency graph</h2>
@@ -386,7 +376,6 @@ function OverviewTab({
         </div>
       )}
 
-      {/* Actions */}
       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Actions</h2>
         <div className="mt-2 flex gap-3">
@@ -397,7 +386,6 @@ function OverviewTab({
         </div>
       </div>
 
-      {/* Installs */}
       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Installs</h2>
         <div className="mt-2 table-card">
@@ -464,7 +452,6 @@ function OverviewTab({
   )
 }
 
-// ---------- Queues Tab ----------
 function QueuesTab({ orgId }: { orgId: string }) {
   const queryClient = useQueryClient()
 
@@ -513,7 +500,6 @@ function QueuesTab({ orgId }: { orgId: string }) {
 
   return (
     <div className="space-y-6">
-      {/* Queue Actions */}
       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Queue Actions</h2>
         <div className="mt-2 flex flex-wrap gap-3">
@@ -523,7 +509,6 @@ function QueuesTab({ orgId }: { orgId: string }) {
         </div>
       </div>
 
-      {/* Queue Signal Stats */}
       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
           Queue Signal Stats
@@ -538,7 +523,6 @@ function QueuesTab({ orgId }: { orgId: string }) {
         )}
       </div>
 
-      {/* Queue Signals List */}
       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
@@ -613,7 +597,6 @@ function QueuesTab({ orgId }: { orgId: string }) {
   )
 }
 
-// ---------- Cleanup Tab ----------
 function CleanupTab({ orgId, installs }: { orgId: string; installs: any[] }) {
   const queryClient = useQueryClient()
 
@@ -642,7 +625,6 @@ function CleanupTab({ orgId, installs }: { orgId: string; installs: any[] }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org', orgId] }),
   })
 
-  // Workflows
   const workflowsQuery = useQuery({
     queryKey: ['org-workflows', orgId],
     queryFn: () => getOrgWorkflows(orgId),
@@ -654,7 +636,6 @@ function CleanupTab({ orgId, installs }: { orgId: string; installs: any[] }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org-workflows', orgId] }),
   })
 
-  // Per-install mutations
   const forgetInstallMutation = useMutation({
     mutationFn: (installId: string) => forgetInstall(installId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org', orgId] }),
@@ -669,7 +650,6 @@ function CleanupTab({ orgId, installs }: { orgId: string; installs: any[] }) {
 
   return (
     <div className="space-y-6">
-      {/* Cleanup Actions */}
       <div className="rounded-lg border border-red-200 dark:border-red-900 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Cleanup Actions</h2>
         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Destructive operations for org cleanup. Use with care.</p>
@@ -692,7 +672,6 @@ function CleanupTab({ orgId, installs }: { orgId: string; installs: any[] }) {
         </div>
       </div>
 
-      {/* Installs with per-install actions */}
       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Installs</h2>
         <div className="mt-2 table-card">
@@ -759,7 +738,6 @@ function CleanupTab({ orgId, installs }: { orgId: string; installs: any[] }) {
         </div>
       </div>
 
-      {/* Org Workflows */}
       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
@@ -816,9 +794,7 @@ function CleanupTab({ orgId, installs }: { orgId: string; installs: any[] }) {
   )
 }
 
-// ---------- Queue Signal Stats ----------
 function QueueSignalStatsTable({ stats }: { stats: { type: string; status: string; count: number }[] }) {
-  // Pivot: rows = signal types, columns = statuses
   const statuses = [...new Set(stats.map((s) => s.status))].sort()
   const typeMap = new Map<string, Map<string, number>>()
   const typeTotals = new Map<string, number>()
@@ -829,7 +805,6 @@ function QueueSignalStatsTable({ stats }: { stats: { type: string; status: strin
     typeTotals.set(row.type, (typeTotals.get(row.type) || 0) + row.count)
   }
 
-  // Sort types by total count descending
   const types = [...typeMap.keys()].sort((a, b) => (typeTotals.get(b) || 0) - (typeTotals.get(a) || 0))
 
   return (
@@ -875,7 +850,6 @@ function QueueSignalStatsTable({ stats }: { stats: { type: string; status: strin
   )
 }
 
-// ---------- Shared Components ----------
 function SignalActionButton({ mutation, label, pendingLabel, color = 'red' }: {
   mutation: any
   label: string

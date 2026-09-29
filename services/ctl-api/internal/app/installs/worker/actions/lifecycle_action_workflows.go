@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
-// Run all workflow actions defined for a lifecycle hook
 type LifecycleActionWorkflowsRequest struct {
 	InstallID string `validate:"required" json:"install_id"`
 

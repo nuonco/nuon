@@ -13,7 +13,6 @@ export const VerifyHealthStepDetailsContainer = ({
   const installId = step?.owner_id
   const installComponentId = step?.step_target_id
 
-  // Component routes are keyed by component_id, not install_component_id.
   const { data: installComponent } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['install-component', org?.id, installId, installComponentId],

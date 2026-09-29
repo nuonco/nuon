@@ -79,10 +79,6 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		return errors.Wrap(err, "unable to create temporal metrics writer")
 	}
 
-	// tags is the running set of dimensions emitted on every metric in this
-	// signal. Mutate it as runner / install / process facts resolve; the
-	// deferred latency emit captures the final state. Owner labels are added
-	// with collision guards so standard tags always win.
 	tags := map[string]string{
 		"runner_id":    s.RunnerID,
 		"process_type": "unknown",
@@ -131,7 +127,6 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	}
 	tags["process_type"] = string(process.Type)
 
-	// Only run health checks for active or offline processes; noop for any other status
 	switch process.ProcessStatus() {
 	case app.RunnerProcessStatusActive, app.RunnerProcessStatusOffline:
 	default:
@@ -161,22 +156,12 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		return s.handleOffline(ctx, l, process)
 	}
 
-	// Heartbeat is fresh — ensure process is active, record a green health
-	// check, then run the version-mismatch check.
 	if err := s.handleActive(ctx, l, process); err != nil {
 		return err
 	}
 	return s.checkVersionMismatch(ctx, l, runner, process, heartbeat, tags)
 }
 
-// handleShutdownRequested checks for the shutdown_requested metadata flag
-// (set by a promotion) and creates a graceful shutdown record if present.
-// The runner's shutdown poller will pick it up. Health checks are enqueued
-// per-process by the org sweep cron, so shutdowns are staggered naturally.
-//
-// Returns handled=true when a shutdown was triggered; the caller should
-// stop processing. Failure to clear the flag is logged but not propagated
-// because the next tick will retry.
 func (s *Signal) handleShutdownRequested(ctx workflow.Context, l *zap.Logger, process *app.RunnerProcess) (bool, error) {
 	val, ok := process.CompositeStatus.Metadata["shutdown_requested"]
 	if !ok || val == nil {
@@ -212,11 +197,6 @@ func (s *Signal) handleShutdownRequested(ctx workflow.Context, l *zap.Logger, pr
 	return true, nil
 }
 
-// handleInactive runs the Tier 1 transition when no heartbeat has arrived
-// for inactiveTimeout: marks the process inactive, emits stop metrics,
-// enqueues the on_inactive signal, and stops the per-process queue (which
-// terminates the cron emitter). Sub-errors after the status update are
-// logged but not propagated.
 func (s *Signal) handleInactive(ctx workflow.Context, tmw tmetrics.Writer, l *zap.Logger, tags map[string]string, process *app.RunnerProcess) error {
 	l.Warn("process inactive - no heartbeat for 5 minutes, stopping queue",
 		zap.String("runner_id", s.RunnerID),
@@ -266,10 +246,6 @@ func (s *Signal) handleInactive(ctx workflow.Context, tmw tmetrics.Writer, l *za
 	return nil
 }
 
-// handleOffline runs the Tier 2 transition when no heartbeat has arrived
-// for offlineTimeout: marks the process offline (if not already) and
-// records a red health check. Failure to record the health check is
-// logged but not propagated — the next tick will retry.
 func (s *Signal) handleOffline(ctx workflow.Context, l *zap.Logger, process *app.RunnerProcess) error {
 	if process.ProcessStatus() != app.RunnerProcessStatusOffline {
 		l.Warn("process offline - no heartbeat for 1 minute",
@@ -300,9 +276,6 @@ func (s *Signal) handleOffline(ctx workflow.Context, l *zap.Logger, process *app
 	return nil
 }
 
-// handleActive runs the happy-path transition when the heartbeat is
-// fresh: flips a previously-offline process back to active and records a
-// green health check.
 func (s *Signal) handleActive(ctx workflow.Context, l *zap.Logger, process *app.RunnerProcess) error {
 	if process.ProcessStatus() == app.RunnerProcessStatusOffline {
 		l.Info("process back online",
@@ -329,10 +302,6 @@ func (s *Signal) handleActive(ctx workflow.Context, l *zap.Logger, process *app.
 	return nil
 }
 
-// checkVersionMismatch compares the configured runner version to the
-// heartbeat-reported version, emits a Datadog event when 'latest' is in
-// use, and writes the corresponding version_warning into process metadata
-// (empty string when versions agree).
 func (s *Signal) checkVersionMismatch(ctx workflow.Context, l *zap.Logger, runner *app.Runner, process *app.RunnerProcess, heartbeat *app.RunnerHeartBeat, tags map[string]string) error {
 	if heartbeat == nil || heartbeat.Version == "" {
 		return nil
@@ -374,9 +343,8 @@ func (s *Signal) checkVersionMismatch(ctx workflow.Context, l *zap.Logger, runne
 	var versionWarning string
 	switch {
 	case configuredVersion == "" || configuredVersion == heartbeat.Version:
-		// No warning needed.
 	case configuredVersion == "cloud":
-		// "cloud" means "track the API version" — this is expected for
+		// why: "cloud" means "track the API version" — this is expected for
 		// Nuon-managed cloud runners, so no mismatch warning.
 	case isAliasTag:
 		versionWarning = fmt.Sprintf(

@@ -58,8 +58,6 @@ func TestInstallMatchesGroup(t *testing.T) {
 	}
 }
 
-// An install two groups target would be planned and deployed twice in the same
-// branch run, in an order nothing defines.
 func TestValidateInstallSingleGroup(t *testing.T) {
 	t.Parallel()
 

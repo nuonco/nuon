@@ -8,9 +8,6 @@ import { buildSpanForest, formatDurationNs, type TSpanNode } from '@/utils/span-
 
 export interface ISpanTree {
   spans: TSpan[]
-  // When the parent applied a span filter (e.g. the "User actions" toggle in
-  // TraceView), this is the count of spans dropped from `spans`. Surfaced in
-  // the header so users can tell something is being hidden.
   hiddenCount?: number
   selectedSpanId?: string
   onSelectSpan: (spanId: string) => void
@@ -109,9 +106,6 @@ const SpanTreeNode = ({
   const isSelected = selectedSpanId === span.span_id
   const status = statusFor(node)
 
-  // Per-row toggle for the inline attribute panel. Local state because the
-  // panel is purely a UI affordance — no need to lift to the parent or
-  // mirror onto the URL like span selection does.
   const [showAttrs, setShowAttrs] = useState(false)
   const attrEntries = useMemo(
     () => (span.attributes ? Object.entries(span.attributes).sort() : []),

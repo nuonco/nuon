@@ -3,7 +3,6 @@
 
 FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.25 AS build-base
 
-# Set GOPROXY environment variable
 ARG GOPROXY=https://proxy.golang.org,direct
 
 ENV GOCACHE=/go/pkg/build-cache \
@@ -28,57 +27,44 @@ RUN curl -sSL -o /tmp/s5cmd.tar.gz https://github.com/peak/s5cmd/releases/downlo
     tar -xz -C /usr/local/bin -f /tmp/s5cmd.tar.gz s5cmd && \
     rm /tmp/s5cmd.tar.gz
 
-# Get golangci-lint from the official image
 FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/golangci/golangci-lint:v2.5.0 AS golangci
 
-# Back to main build
 FROM build-base AS deps
 
-# Copy golangci-lint binary from the golangci image
 COPY --from=golangci /usr/bin/golangci-lint /usr/bin/golangci-lint
 
 WORKDIR /src
 
-# Copy core dependency manifests.
 COPY --link tools.go go.mod go.sum ./
 
-# Copy in-tree SDK go.mod files (required for go.mod replace directives during dependency resolution).
 COPY --link sdks/nuon-go/go.mod sdks/nuon-go/go.sum ./sdks/nuon-go/
 COPY --link sdks/nuon-runner-go/go.mod sdks/nuon-runner-go/go.sum ./sdks/nuon-runner-go/
 
-# Download all dependencies into the module cache.
 RUN go mod download
 
-# Optional package-level validation stages (kept out of final image dependency chain).
 FROM deps AS pkg-base
 COPY --link sdks ./sdks/
 COPY --link pkg ./pkg/
 RUN cd pkg && go generate ./...
 
-# Test target for pkg directory
 FROM pkg-base AS pkg-test
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobase-build \
     cd pkg && go test -v ./...
 
-# Lint target for pkg directory
 FROM pkg-base AS pkg-lint
 COPY .golangci.yml .
 RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-pkg \
     --mount=type=cache,target=/go/pkg/build-cache,id=gobase-build \
     cd pkg && golangci-lint run -c ../.golangci.yml -v
 
-# Final build image that can be referenced
 FROM build-base AS final
 
 COPY --from=deps /usr/bin/golangci-lint /usr/bin/golangci-lint
 COPY --from=deps /src/tools.go /src/go.mod /src/go.sum /src/
-# Copy in-tree SDK go.mod/go.sum (required for go.mod replace directives)
 COPY --from=deps /src/sdks/nuon-go/go.mod /src/sdks/nuon-go/go.sum /src/sdks/nuon-go/
 COPY --from=deps /src/sdks/nuon-runner-go/go.mod /src/sdks/nuon-runner-go/go.sum /src/sdks/nuon-runner-go/
 
-# Bake downloaded modules into the image.
 COPY --from=deps /go/pkg/mod /go/pkg/mod
 
 WORKDIR /src
-# Set default CMD
 CMD ["bash"]

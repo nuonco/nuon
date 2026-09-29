@@ -26,8 +26,6 @@ func (t *logStreamTransport) RoundTrip(req *http.Request) (*http.Response, error
 		return nil, fmt.Errorf("decode log stream export: %w", err)
 	}
 
-	// The Logs SDK merges environment attributes even with an explicit resource.
-	// Replace the wire resource without mutating the SDK's shared resource.
 	resources := payload.Logs().ResourceLogs()
 	for i := 0; i < resources.Len(); i++ {
 		r := resources.At(i)

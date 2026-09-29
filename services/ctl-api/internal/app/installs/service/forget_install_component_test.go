@@ -20,18 +20,11 @@ func (s *InstallsServiceTestSuite) TestForgetInstallComponentStillInConfig() {
 	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
 }
 
-// TestForgetInstallComponentStillInConfigUnchangedAcrossVersion covers the case where a
-// component is still in the install's app config but its ComponentConfigConnection is pinned to
-// an earlier app config version (its config was unchanged across the version bump). The guard
-// must consult AppConfig.ComponentIDs — the authoritative per-version list — rather than the
-// version-pinned ComponentConfigConnections, otherwise the forget is wrongly allowed.
 func (s *InstallsServiceTestSuite) TestForgetInstallComponentStillInConfigUnchangedAcrossVersion() {
 	install := s.createTestInstall()
 	helmComp := s.getSeededComponent(app.ComponentTypeHelmChart)
 	s.deps.Seeder.CreateInstallComponent(s.ctx, s.T(), install.ID, helmComp.ID)
 
-	// New config version that still lists the component but has no ComponentConfigConnections of
-	// its own; the component's CCC stays pinned to the original version.
 	newCfg := s.deps.Seeder.CreateBareAppConfig(s.ctx, s.T(), s.testApp.ID)
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(newCfg).
 		Update("component_ids", pq.StringArray{helmComp.ID}).Error)
@@ -44,11 +37,6 @@ func (s *InstallsServiceTestSuite) TestForgetInstallComponentStillInConfigUnchan
 	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
 }
 
-// TestForgetInstallComponentAfterAppComponentDeleted covers forgetting an install component whose
-// app component no longer resolves. AppConfig.ComponentIDs is an immutable snapshot that still
-// lists the component, so the guard must intersect with components that still exist — otherwise the
-// orphaned install component could never be forgotten. A soft delete leaves the install component
-// intact (a hard delete would cascade it away, leaving nothing to forget).
 func (s *InstallsServiceTestSuite) TestForgetInstallComponentAfterAppComponentDeleted() {
 	install := s.createTestInstall()
 	helmComp := s.getSeededComponent(app.ComponentTypeHelmChart)

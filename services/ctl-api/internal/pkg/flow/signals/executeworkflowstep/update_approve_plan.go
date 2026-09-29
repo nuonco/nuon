@@ -2,7 +2,6 @@ package executeworkflowstep
 
 import "go.temporal.io/sdk/workflow"
 
-// ApprovePlanRequest is the input for the "approve-plan" update handler.
 type ApprovePlanRequest struct {
 	ApprovalResponseID string `json:"approval_response_id"`
 	ResponseType       string `json:"response_type"`

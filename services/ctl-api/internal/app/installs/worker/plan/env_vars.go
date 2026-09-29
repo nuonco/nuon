@@ -45,7 +45,7 @@ func (p *Planner) getOverrideEnvVars(ctx workflow.Context, run *app.InstallActio
 		return nil, errors.Wrap(err, "unable to get state")
 	}
 
-	// Convert hstore (map[string]*string) to map[string]string before rendering,
+	// why: Convert hstore (map[string]*string) to map[string]string before rendering,
 	// because RenderMap doesn't handle *string pointer values in hstore maps.
 	envVars := generics.ToStringMap(run.RunEnvVars)
 

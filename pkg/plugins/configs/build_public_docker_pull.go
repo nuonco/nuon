@@ -1,6 +1,5 @@
 package configs
 
-// PublicDockerPullBuild is used to pull a public docker image
 type PublicDockerPullBuild struct {
 	Plugin string `hcl:"plugin,label"`
 

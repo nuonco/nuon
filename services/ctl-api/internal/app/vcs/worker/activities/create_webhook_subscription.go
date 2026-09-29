@@ -23,7 +23,6 @@ type CreateWebhookSubscriptionResponse struct {
 	AlreadyExisted bool   `json:"already_existed"`
 }
 
-// generateWebhookSecret creates a cryptographically random hex string for HMAC signature verification.
 func generateWebhookSecret() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
@@ -34,14 +33,11 @@ func generateWebhookSecret() (string, error) {
 
 // @temporal-gen-v2 activity
 func (a *Activities) CreateWebhookSubscription(ctx context.Context, req CreateWebhookSubscriptionRequest) (*CreateWebhookSubscriptionResponse, error) {
-	// Load the VCS connection to get github_install_id and org context.
 	var vcsConn app.VCSConnection
 	if err := a.db.WithContext(ctx).First(&vcsConn, "id = ?", req.VCSConnectionID).Error; err != nil {
 		return nil, fmt.Errorf("unable to get vcs connection: %w", err)
 	}
 
-	// Check if a webhook subscription already exists for this GitHub installation.
-	// This deduplicates across orgs — only one webhook per GitHub org/installation.
 	var existing app.VCSWebhookSubscription
 	err := a.db.WithContext(ctx).
 		Where("github_install_id = ?", vcsConn.GithubInstallID).
@@ -57,14 +53,11 @@ func (a *Activities) CreateWebhookSubscription(ctx context.Context, req CreateWe
 		return nil, fmt.Errorf("unable to check existing webhook subscription: %w", err)
 	}
 
-	// Generate a webhook secret for HMAC signature verification.
 	secret, err := generateWebhookSecret()
 	if err != nil {
 		return nil, fmt.Errorf("unable to generate webhook secret: %w", err)
 	}
 
-	// Create the subscription record first to get the ID for the webhook URL.
-	// The webhook URL uses the subscription ID (opaque, unguessable) instead of the raw github_install_id.
 	sub := app.VCSWebhookSubscription{
 		OrgID:           vcsConn.OrgID,
 		VCSConnectionID: req.VCSConnectionID,
@@ -84,7 +77,6 @@ func (a *Activities) CreateWebhookSubscription(ctx context.Context, req CreateWe
 		return nil, fmt.Errorf("unable to create webhook subscription: %w", err)
 	}
 
-	// If conflict (another connection beat us), fetch the existing one.
 	if sub.ID == "" {
 		if err := a.db.WithContext(ctx).
 			Where("github_install_id = ?", vcsConn.GithubInstallID).
@@ -98,18 +90,14 @@ func (a *Activities) CreateWebhookSubscription(ctx context.Context, req CreateWe
 		}, nil
 	}
 
-	// Build webhook URL using the subscription ID (opaque identifier).
 	webhookURL := fmt.Sprintf("%s/v1/vcs/webhooks/%s/events", a.cfg.PublicAPIURL, sub.ID)
 
-	// Create the GitHub org webhook with the secret for signature verification.
 	hookID, err := a.ghClient.CreateOrgWebhook(ctx, &vcsConn, webhookURL, secret)
 	if err != nil {
-		// Clean up the subscription record on failure.
 		a.db.WithContext(ctx).Delete(&sub)
 		return nil, fmt.Errorf("unable to create github org webhook: %w", err)
 	}
 
-	// Update the subscription with the webhook URL and GitHub hook ID.
 	sub.WebhookURL = webhookURL
 	sub.GithubHookID = hookID
 	sub.Status = &app.CompositeStatus{

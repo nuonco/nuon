@@ -12,10 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// ResolvePublicRepoGithubClient returns a GitHub client for a public repo.
-// When the org has a VCSConnection matching the repo owner, it uses an
-// installation token. Otherwise it falls back to an unauthenticated client
-// and logs a warning.
 func (h *Helpers) ResolvePublicRepoGithubClient(ctx context.Context, l *zap.Logger, orgID, repoOwner string) (*github.Client, bool, error) {
 	conn, found, err := h.findOrgVCSConnectionForOwner(ctx, orgID, repoOwner)
 	if err != nil {
@@ -40,9 +36,6 @@ func (h *Helpers) ResolvePublicRepoGithubClient(ctx context.Context, l *zap.Logg
 	return client, true, nil
 }
 
-// ResolvePublicRepoCloneToken returns an installation token for cloning a public
-// repo when the org has a matching VCSConnection. Returns ("", false, nil) when
-// falling back to unauthenticated clone (with a warning).
 func (h *Helpers) ResolvePublicRepoCloneToken(ctx context.Context, l *zap.Logger, orgID, repoOwner, repoName string) (token string, authenticated bool, err error) {
 	conn, found, err := h.findOrgVCSConnectionForOwner(ctx, orgID, repoOwner)
 	if err != nil {
@@ -55,7 +48,6 @@ func (h *Helpers) ResolvePublicRepoCloneToken(ctx context.Context, l *zap.Logger
 
 	token, err = h.CreateInstallationToken(ctx, conn, repoName)
 	if err != nil {
-		// Installation may not list this public repo; try a full install token.
 		fullToken, fullErr := h.createFullInstallationToken(ctx, conn)
 		if fullErr != nil {
 			if l != nil {

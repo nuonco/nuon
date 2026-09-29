@@ -22,7 +22,6 @@ func (c *cli) configCmd() *cobra.Command {
 		GroupID:           CoreGroup.ID,
 	}
 
-	// Add org subcommand
 	orgCmd := &cobra.Command{
 		Use:         "org",
 		Short:       "Select your current org",
@@ -36,7 +35,6 @@ func (c *cli) configCmd() *cobra.Command {
 	orgCmd.Flags().StringVar(&id, "org", "", "The ID of the org you want to use")
 	configCmd.AddCommand(orgCmd)
 
-	// Add app subcommand
 	appCmd := &cobra.Command{
 		Use:         "app",
 		Short:       "Select your current app",
@@ -50,7 +48,6 @@ func (c *cli) configCmd() *cobra.Command {
 	appCmd.Flags().StringVar(&appID, "app", "", "The ID of the app you want to use")
 	configCmd.AddCommand(appCmd)
 
-	// Add install subcommand
 	installCmd := &cobra.Command{
 		Use:         "install",
 		Short:       "Select your current install",
@@ -65,7 +62,6 @@ func (c *cli) configCmd() *cobra.Command {
 	installCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter installs by")
 	configCmd.AddCommand(installCmd)
 
-	// Add clear subcommand
 	clearCmd := &cobra.Command{
 		Use:   "clear",
 		Short: "Clear configuration except token",
@@ -79,25 +75,19 @@ func (c *cli) configCmd() *cobra.Command {
 	return configCmd
 }
 
-// clearConfig clears all configuration settings except the API token
 func (c *cli) clearConfig(ctx context.Context) error {
-	// Get current API token to preserve it
 	apiToken := c.cfg.GetString("api_token")
 
-	// Clear the configuration
 	c.cfg.Set("org_id", "")
 	c.cfg.Set("app_id", "")
 	c.cfg.Set("install_id", "")
 
-	// Restore the API token
 	c.cfg.Set("api_token", apiToken)
 
-	// Write the updated config to file
 	if err := c.cfg.WriteConfig(); err != nil {
 		return err
 	}
 
-	// Print success message
 	cmd := &cobra.Command{}
 	cmd.Printf("✅ Configuration cleared.\n")
 

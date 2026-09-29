@@ -19,9 +19,9 @@ func TestGetRoleForAction(t *testing.T) {
 	tests := []struct {
 		name               string
 		actionName         string
-		actionConfigRole   string // Entity-level role from ActionWorkflowConfig
-		breakGlassRoleARN  string // Simple string - converted to NullString when building test data
-		runtimeRole        string // Runtime role from run.Role
+		actionConfigRole   string
+		breakGlassRoleARN  string
+		runtimeRole        string
 		matrixRules        []*app.AppOperationRoleRule
 		useAzure           bool
 		expectedOperation  app.OperationType
@@ -30,7 +30,6 @@ func TestGetRoleForAction(t *testing.T) {
 		expectedError      string
 		description        string
 	}{
-		// No operation rules
 		{
 			name:               "no_rules_aws",
 			actionName:         "deploy-action",
@@ -58,7 +57,6 @@ func TestGetRoleForAction(t *testing.T) {
 			description:        "Action with no rules on Azure should use default maintenance identity",
 		},
 
-		// Entity-level role (ActionWorkflowConfig.Role)
 		{
 			name:               "entity_role_overrides_default",
 			actionName:         "maintenance-action",
@@ -73,7 +71,6 @@ func TestGetRoleForAction(t *testing.T) {
 			description:        "Entity role should override default maintenance role",
 		},
 
-		// Matrix rules for actions
 		{
 			name:              "matrix_rule_specific_action",
 			actionName:        "deploy-action",
@@ -140,7 +137,6 @@ func TestGetRoleForAction(t *testing.T) {
 			expectedRoleName:   "SpecificActionRole",
 			description:        "Specific matrix rule should take precedence over wildcard",
 		},
-		// Both entity and matrix rules
 		{
 			name:              "entity_role_overrides_matrix",
 			actionName:        "deploy-action",
@@ -162,7 +158,6 @@ func TestGetRoleForAction(t *testing.T) {
 			description:        "Entity role should take precedence over matrix rule (entity > matrix)",
 		},
 
-		// Break glass role
 		{
 			name:               "break_glass_overrides_entity",
 			actionName:         "emergency-action",
@@ -217,7 +212,6 @@ func TestGetRoleForAction(t *testing.T) {
 			description:        "Break glass should override both entity and matrix when all present",
 		},
 
-		// Runtime role (highest precedence)
 		{
 			name:              "runtime_role_overrides_all",
 			actionName:        "deploy-action",
@@ -280,7 +274,7 @@ func TestGetRoleForAction(t *testing.T) {
 		{
 			name:               "entity_role_missing_fallback_to_default",
 			actionName:         "deploy-action",
-			actionConfigRole:   "MissingEntityRole", // Not in stack outputs
+			actionConfigRole:   "MissingEntityRole",
 			breakGlassRoleARN:  "",
 			runtimeRole:        "",
 			matrixRules:        nil,
@@ -301,7 +295,7 @@ func TestGetRoleForAction(t *testing.T) {
 					Operation:     app.OperationTrigger,
 					PrincipalType: "action",
 					PrincipalName: "deploy-action",
-					Role:          "MissingMatrixRole", // Not in stack outputs
+					Role:          "MissingMatrixRole",
 				},
 			},
 			useAzure:           false,
@@ -315,7 +309,7 @@ func TestGetRoleForAction(t *testing.T) {
 			actionName:        "deploy-action",
 			actionConfigRole:  "",
 			breakGlassRoleARN: "",
-			runtimeRole:       "MissingRuntimeRole", // Not in stack outputs
+			runtimeRole:       "MissingRuntimeRole",
 			matrixRules:       nil,
 			useAzure:          false,
 			expectedError:     `unable to use requested role "MissingRuntimeRole"`,
@@ -325,7 +319,7 @@ func TestGetRoleForAction(t *testing.T) {
 			name:               "break_glass_role_missing_fallback_to_default",
 			actionName:         "emergency-action",
 			actionConfigRole:   "",
-			breakGlassRoleARN:  "MissingBreakGlassRole", // Not in stack outputs
+			breakGlassRoleARN:  "MissingBreakGlassRole",
 			runtimeRole:        "",
 			matrixRules:        nil,
 			useAzure:           false,
@@ -462,8 +456,6 @@ func TestGetRoleForAction(t *testing.T) {
 			assert.Equal(t, tt.expectedRoleName, roleSelection.RoleName, "Role name mismatch: %s", tt.description)
 			assert.NotEmpty(t, roleSelection.RoleARN, "Role ARN should be populated: %s", tt.description)
 
-			// Both AWS and Azure now resolve a concrete identifier (IAM role ARN /
-			// managed identity client ID) that embeds the role name.
 			assert.Contains(t, roleSelection.RoleARN, tt.expectedRoleName, "Role identifier should contain role name: %s", tt.description)
 
 			t.Logf("%s: Got role=%s (source=%s, operation=%s)",

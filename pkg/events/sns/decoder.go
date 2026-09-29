@@ -9,8 +9,6 @@ import (
 	"github.com/nuonco/nuon/pkg/events/envelope"
 )
 
-// Decoder decodes an SNS Notification into a normalized event. Confirmations
-// yield a nil event: they are valid requests with nothing to persist.
 type Decoder struct{}
 
 func (Decoder) Decode(_ http.Header, body []byte) (*envelope.Event, error) {

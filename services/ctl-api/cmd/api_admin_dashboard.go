@@ -7,7 +7,6 @@ import (
 	"github.com/nuonco/nuon/pkg/profiles"
 	"github.com/nuonco/nuon/services/ctl-api/internal/fxmodules"
 
-	// Import all signal packages so their init() registrations populate the signal catalog.
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/catalog/allsignals"
 )
 

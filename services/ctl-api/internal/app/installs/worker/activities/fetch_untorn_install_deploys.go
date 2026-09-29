@@ -18,7 +18,6 @@ type FetchUntornInstallDeploysRequest struct {
 func (a *Activities) FetchUntornInstallDeploys(ctx context.Context, req FetchUntornInstallDeploysRequest) ([]*app.InstallDeploy, error) {
 	install := app.Install{}
 
-	// can still optimize here with a preload of latest deploy
 	res := a.db.WithContext(ctx).
 		Preload("InstallComponents").
 		First(&install, "id = ?", req.InstallID)

@@ -117,7 +117,6 @@ func SandboxConfig(in SandboxInput) (*app.AppSandboxConfig, error) {
 	return obj, nil
 }
 
-// ResolveSandboxType defaults to terraform and enforces per-type required fields.
 func ResolveSandboxType(sandboxType, terraformVersion, runtime string) (string, error) {
 	if sandboxType == "" {
 		sandboxType = config.AppSandboxTypeTerraform
@@ -142,7 +141,6 @@ func ResolveSandboxType(sandboxType, terraformVersion, runtime string) (string, 
 	return sandboxType, nil
 }
 
-// ValidateOperationRoles fails a typo at sync rather than never matching a role.
 func ValidateOperationRoles(roles []config.EntityOperationRole) error {
 	for _, role := range roles {
 		if !slices.Contains(app.ValidOperations, app.OperationType(role.Operation)) {

@@ -50,7 +50,6 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 		return nil, errors.Wrap(err, "unable to get component build")
 	}
 
-	// parse out various config fields
 	cfg := compBuild.ComponentConfigConnection.KubernetesManifestComponentConfig
 	if err := render.RenderStruct(cfg, stateData); err != nil {
 		l.Error("error rendering kubernetes manifest config",
@@ -60,7 +59,6 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 		return nil, deployerrors.NewDeployPlanRenderFailed(err, "unable to render config")
 	}
 
-	// Render namespace with install state - namespace supports template variables like {{.nuon.install.id}}
 	namespace := cfg.Namespace
 	renderedNamespace, err := render.RenderV2(namespace, stateData)
 	if err != nil {
@@ -79,8 +77,6 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 		return nil, deployerrors.NewDeployPlanRenderFailed(err, "unable to render manifest")
 	}
 
-	// Build OCI artifact reference from the install deploy's synced artifact
-	// The manifest content is pulled from this artifact at runtime by the runner
 	ociArtifact := installDeploy.OCIArtifact
 	if ociArtifact.Repository == "" {
 		return nil, errors.New("OCI artifact not found on install deploy - sync job may not have completed")
@@ -106,11 +102,6 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 		return nil, errors.Wrap(err, "unable to resolve kubernetes context")
 	}
 
-	// Ship the install state to the runner only when the manifest will be
-	// loaded from the OCI artifact (kustomize path — inline manifests are
-	// already pre-rendered above and the runner short-circuits the OCI pull
-	// when plan.Manifest is non-empty). This lets the runner interpolate
-	// {{.nuon.*}} placeholders that survived kustomize unchanged.
 	var planState *statepkg.State
 	if renderedManifest == "" {
 		planState = state

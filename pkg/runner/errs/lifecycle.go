@@ -20,9 +20,6 @@ func (r *Recorder) Start() error {
 		//"app":    "runner",
 		//},
 	})
-	// It's expected that there are places the nuon binary will be executed where it is
-	// not possible to connect to sentry. So we just make a note of whether sentry is active
-	// for later reference.
 	r.sentryEnabled = err == nil
 
 	return nil
@@ -37,12 +34,10 @@ func (r *Recorder) Stop() error {
 
 func (r *Recorder) LifecycleHook() fx.Hook {
 	return fx.Hook{
-		// start the background loop to update the settings
 		OnStart: func(context.Context) error {
 			return r.Start()
 		},
 
-		// stop the loop and wait for the background goroutine to return
 		OnStop: func(context.Context) error {
 			return r.Stop()
 		},

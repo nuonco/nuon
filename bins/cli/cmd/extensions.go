@@ -17,9 +17,6 @@ func extensionsDir() string {
 	return filepath.Join(home, ".config", "nuon", "extensions")
 }
 
-// reservedCommandNames are top-level CLI command names (and aliases) that extensions
-// must not shadow. An extension can still be installed, but the user is warned
-// that `nuon <name>` will invoke the built-in command, not the extension.
 var reservedCommandNames = map[string]bool{
 	"auth":       true,
 	"config":     true,
@@ -319,7 +316,6 @@ func (c *cli) extExecCmd() *cobra.Command {
 	}
 }
 
-// extensionEnv builds the environment variables to pass to extensions.
 func (c *cli) extensionEnv() map[string]string {
 	env := map[string]string{
 		"NUON_CONFIG_FILE": ConfigFile,
@@ -356,7 +352,6 @@ func (c *cli) extensionEnv() map[string]string {
 	return env
 }
 
-// extensionProxyCmd creates a top-level cobra command that proxies to an installed extension.
 func (c *cli) extensionProxyCmd(ext extensions.InstalledExtension) *cobra.Command {
 	return &cobra.Command{
 		Use:                ext.Name,
@@ -366,9 +361,6 @@ func (c *cli) extensionProxyCmd(ext extensions.InstalledExtension) *cobra.Comman
 		DisableFlagParsing: true,
 		Annotations:        skipAuthAnnotation(),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			// With DisableFlagParsing, Cobra skips all flag parsing
-			// including the root's persistent flags (e.g. -C ~/.stage).
-			// Manually parse them so the config is loaded correctly.
 			if preArgs := argsBeforeCommand(ext.Name); len(preArgs) > 0 {
 				cmd.Root().PersistentFlags().Parse(preArgs)
 			}
@@ -376,18 +368,12 @@ func (c *cli) extensionProxyCmd(ext extensions.InstalledExtension) *cobra.Comman
 		},
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			mgr := extensions.New(extensionsDir())
-			// When DisableFlagParsing is true, Cobra passes all unparsed
-			// args including parent persistent flags (e.g. -C ~/.stage)
-			// that precede the extension name. Extract only the args that
-			// appear after the extension command name in os.Args.
 			extArgs := argsAfterCommand(ext.Name)
 			return mgr.Exec(ext.Name, extArgs, c.extensionEnv())
 		}),
 	}
 }
 
-// argsBeforeCommand returns the slice of os.Args[1:] that precedes the first
-// occurrence of the given command name (i.e. parent flags like "-C ~/.stage").
 func argsBeforeCommand(name string) []string {
 	for i, arg := range os.Args[1:] {
 		if arg == name {
@@ -397,9 +383,6 @@ func argsBeforeCommand(name string) []string {
 	return nil
 }
 
-// argsAfterCommand returns the slice of os.Args that follows the first
-// occurrence of the given command name. This ensures that parent flags
-// preceding the command (e.g. "-C ~/.stage") are not forwarded.
 func argsAfterCommand(name string) []string {
 	for i, arg := range os.Args {
 		if arg == name {

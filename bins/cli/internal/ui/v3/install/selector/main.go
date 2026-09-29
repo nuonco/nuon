@@ -127,7 +127,7 @@ func initialModel(ctx context.Context, cfg *config.Config, api nuon.Client, limi
 
 	totalWidth := 0
 	for _, col := range columns {
-		totalWidth += col.Width + 2 // +2 for cell padding
+		totalWidth += col.Width + 2
 	}
 
 	t := table.New(
@@ -183,7 +183,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.table.SetWidth(msg.Width)
-		m.table.SetHeight(msg.Height - 6) // leave room for pagination + help
+		m.table.SetHeight(msg.Height - 6)
 		m.help.SetWidth(msg.Width)
 		return m, nil
 
@@ -196,7 +196,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.installs = msg.installs
 		m.hasMore = msg.hasMore
 
-		// Convert installs to table rows
 		rows := []table.Row{}
 		for _, install := range m.installs {
 			name := install.Name
@@ -341,7 +340,6 @@ func (m model) viewContent() string {
 	)
 }
 
-// InstallSelectorApp runs the install selector and returns the selected install ID
 func App(
 	ctx context.Context,
 	cfg *config.Config,

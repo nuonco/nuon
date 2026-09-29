@@ -13,13 +13,11 @@ import (
 // @start-to-close-timeout 5m
 // @as-wrapper
 func (a *Activities) createOnboardingOrg(ctx context.Context, accountID, orgName string) (*app.Org, error) {
-	// Load account for CreateOrg (needs account for RBAC setup)
 	var account app.Account
 	if err := a.db.WithContext(ctx).First(&account, "id = ?", accountID).Error; err != nil {
 		return nil, fmt.Errorf("unable to get account: %w", err)
 	}
 
-	// Set account context for BeforeCreate hooks (CreatedByID)
 	ctx = cctx.SetAccountContext(ctx, &account)
 
 	org, err := a.orgsHelpers.CreateOrg(ctx, &account, &orgshelpers.CreateOrgParams{

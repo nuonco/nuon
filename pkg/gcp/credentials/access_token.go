@@ -7,8 +7,6 @@ import (
 	"google.golang.org/api/impersonate"
 )
 
-// ImpersonatedAccessToken mints an OAuth2 access token for targetSA using the
-// caller's own credentials as the source.
 func ImpersonatedAccessToken(ctx context.Context, targetSA string) (string, error) {
 	ts, err := impersonate.CredentialsTokenSource(ctx, impersonate.CredentialsConfig{
 		TargetPrincipal: targetSA,

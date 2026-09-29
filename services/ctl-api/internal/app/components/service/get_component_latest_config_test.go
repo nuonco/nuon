@@ -11,10 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestGetAppComponentLatestConfigSuccess() {
 	s.Run("returns latest config for seeded component", func() {
 		cmp := s.getSeededComponent(app.ComponentTypeHelmChart)
@@ -36,13 +32,8 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentLatestConfigSuccess() {
 	})
 }
 
-// ---------------------------------------------------------------------------
-// Not found cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestGetAppComponentLatestConfigNotFound() {
 	s.Run("no configs for fresh component", func() {
-		// Create a fresh component with no config connections
 		freshComp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeDockerBuild)
 
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/latest", s.testApp.ID, freshComp.ID)
@@ -59,7 +50,6 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentLatestConfigWrongApp() {
 	s.Run("correct component but wrong app id", func() {
 		cmp := s.getSeededComponent(app.ComponentTypeHelmChart)
 
-		// Use a different app ID in the URL
 		otherApp := s.deps.Seeder.CreateApp(s.ctx, s.T())
 
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/latest", otherApp.ID, cmp.ID)

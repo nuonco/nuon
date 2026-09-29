@@ -12,8 +12,6 @@ import (
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 )
 
-// DEPRECATED: This endpoint is deprecated and will be removed in a future release.
-
 // @ID						DeleteInstall
 // @Summary				delete an install
 // @Description.markdown	delete_install.md

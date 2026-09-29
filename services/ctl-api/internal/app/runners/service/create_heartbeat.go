@@ -144,14 +144,12 @@ func (s *service) createRunnerHeartBeat(ctx context.Context, runnerID string, re
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
-	// if we do not receive a value, set a default
 	if req.Process != "" {
 		runnerHeartBeat.Process = req.Process
 	} else {
 		runnerHeartBeat.Process = app.RunnerProcessTypeUnknown
 	}
 
-	// Compute StartedAt so the returned object is complete.
 	runnerHeartBeat.StartedAt = now.Add(-1 * req.AliveTime)
 
 	if s.kafka.Enabled() {
@@ -171,7 +169,6 @@ func (s *service) heartbeatGetRunner(ctx context.Context, runnerID string) (*app
 		return cached, nil
 	}
 
-	// NOTE(fd): same as getRunner w/out the RunnerGroup.Settings preload. this is hit often enough we care to optimize.
 	runner := app.Runner{}
 	res := s.db.WithContext(ctx).
 		Preload("Org").

@@ -13,7 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// TestGetAppPoliciesConfigs tests the GetAppPoliciesConfigs endpoint.
 func (s *AppConfigTypesTestSuite) TestGetAppPoliciesConfigs() {
 	s.Run("returns empty array when no configs exist", func() {
 		rr := s.makeRequest(http.MethodGet, "/v1/apps/"+s.testApp.ID+"/policies-configs", nil)

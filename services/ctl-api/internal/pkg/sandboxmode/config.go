@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 )
 
-// fetchConfig loads the sandbox config once and caches it.
 func (s *Signal) fetchConfig(ctx workflow.Context) *app.SandboxModeSignalConfig {
 	cfg, err := activities.AwaitGetSandboxSignalConfigBySignalType(ctx, string(s.Signal.Type()))
 	if err != nil {

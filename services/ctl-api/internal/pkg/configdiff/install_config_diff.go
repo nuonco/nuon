@@ -1,5 +1,3 @@
-// Package configdiff computes the difference between two app config versions
-// as it applies to a single install.
 package configdiff
 
 import (
@@ -39,9 +37,6 @@ func preload(db *gorm.DB) *gorm.DB {
 		Preload("StackConfig")
 }
 
-// ComputeInstallConfigDiff diffs oldAppConfigID against newAppConfigID. An empty
-// oldAppConfigID means the install has never been pinned to a config, so
-// everything counts as added.
 func ComputeInstallConfigDiff(ctx context.Context, db *gorm.DB, oldAppConfigID, newAppConfigID string) (*app.InstallConfigDiff, error) {
 	var newAppCfg app.AppConfig
 	if err := preload(db.WithContext(ctx)).First(&newAppCfg, "id = ?", newAppConfigID).Error; err != nil {
@@ -114,8 +109,6 @@ func ComputeInstallConfigDiff(ctx context.Context, db *gorm.DB, oldAppConfigID, 
 				diff.Added = append(diff.Added, entry)
 			}
 
-			// Every sync writes fresh sandbox and stack config rows, so their IDs
-			// always differ between versions — only a content change is a real change.
 			if oldAppCfg.SandboxConfig.ID != newAppCfg.SandboxConfig.ID &&
 				!sandboxConfigEqual(oldAppCfg.SandboxConfig, newAppCfg.SandboxConfig) {
 				diff.SandboxChanged = true
@@ -129,8 +122,6 @@ func ComputeInstallConfigDiff(ctx context.Context, db *gorm.DB, oldAppConfigID, 
 					diff.StackImpactReasons = append([]pkgdiff.ImpactReason(nil), stack.ImpactReasons...)
 				}
 			} else {
-				// Historical configs without intermediate blobs retain the
-				// database projection fallback.
 				diff.StackImpacts = stackImpactChanges(&oldAppCfg, &newAppCfg)
 			}
 			if len(diff.StackImpacts) > 0 {
@@ -308,12 +299,6 @@ func latestActiveSandboxBuildID(ctx context.Context, db *gorm.DB, appConfigID st
 	return build.ID, nil
 }
 
-// sandboxContent is everything about a sandbox config that decides what gets
-// deployed. Orchestration knobs (max_auto_retries, skip_noops,
-// auto_approve_on_policies_passing) are deliberately excluded: changing a retry
-// count should not force a reprovision. Anything that selects or renders the
-// sandbox belongs here — omitting a field means a real change is read as a
-// no-op and never reaches installs.
 type sandboxContent struct {
 	Source         sandboxSource `json:"source"`
 	Variables      any           `json:"variables"`
@@ -330,9 +315,6 @@ type sandboxContent struct {
 	AWSRegionType  string        `json:"aws_region_type"`
 }
 
-// sandboxSource identifies which code the sandbox runs. A ref, directory or
-// repo bump changes the deployed infrastructure while leaving every other
-// field identical.
 type sandboxSource struct {
 	Kind       string `json:"kind"`
 	Repo       string `json:"repo"`

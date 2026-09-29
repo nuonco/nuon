@@ -16,8 +16,6 @@ import (
 	slackclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/client"
 )
 
-// defaultChannelsPageLimit is the default Slack page size when the caller
-// doesn't specify one. Slack accepts up to 1000 but recommends ≤ 200.
 const defaultChannelsPageLimit = 100
 
 // ListChannelsResponse mirrors the subset of conversations.list surfaced to
@@ -92,7 +90,7 @@ func (s *service) ListChannels(ctx *gin.Context) {
 	})
 }
 
-// getInstallationForOrg loads a SlackInstallation by ID and verifies it is
+// why: getInstallationForOrg loads a SlackInstallation by ID and verifies it is
 // reachable from the calling org via a verified SlackOrgLink. ABAC at the DB
 // query level — no row returned means either the install doesn't exist or
 // the org isn't authorized to see it. We don't distinguish the two so we

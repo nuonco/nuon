@@ -12,12 +12,6 @@ import (
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
-// RemoveOldRunnerProcesses enqueues a signal on the org's signals queue to
-// terminate per-process queues (stopping their healthcheck cron emitters) and
-// hard-delete all but the most recent runner process per (runner_id, type) for
-// the given org. The work runs durably in Temporal so the request returns
-// immediately; per-process termination is a retryable activity that survives
-// transient Temporal/DB failures.
 func (s *service) RemoveOldRunnerProcesses(c *gin.Context) {
 	orgID := c.Param("id")
 	ctx := c.Request.Context()

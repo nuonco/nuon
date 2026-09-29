@@ -7,9 +7,6 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 )
 
-// Component Fakers
-
-// BuildTerraformComponent returns a fake terraform module component with the given name.
 func BuildTerraformComponent(name string) *config.Component {
 	return &config.Component{
 		Type: config.TerraformModuleComponentType,
@@ -27,7 +24,6 @@ func BuildTerraformComponent(name string) *config.Component {
 	}
 }
 
-// BuildHelmComponent returns a fake helm chart component with the given name.
 func BuildHelmComponent(name string) *config.Component {
 	return &config.Component{
 		Type: config.HelmChartComponentType,
@@ -45,7 +41,6 @@ func BuildHelmComponent(name string) *config.Component {
 	}
 }
 
-// BuildDockerBuildComponent returns a fake docker build component with the given name.
 func BuildDockerBuildComponent(name string) *config.Component {
 	return &config.Component{
 		Type: config.DockerBuildComponentType,
@@ -62,7 +57,6 @@ func BuildDockerBuildComponent(name string) *config.Component {
 	}
 }
 
-// BuildKubernetesManifestComponent returns a fake kubernetes manifest component with the given name.
 func BuildKubernetesManifestComponent(name string) *config.Component {
 	return &config.Component{
 		Type: config.KubernetesManifestComponentType,
@@ -77,7 +71,6 @@ func BuildKubernetesManifestComponent(name string) *config.Component {
 	}
 }
 
-// BuildJobComponent returns a fake job component with the given name.
 func BuildJobComponent(name string) *config.Component {
 	return &config.Component{
 		Type: config.JobComponentType,
@@ -92,7 +85,6 @@ func BuildJobComponent(name string) *config.Component {
 	}
 }
 
-// BuildExternalImageComponent returns a fake external image component with the given name.
 func BuildExternalImageComponent(name string) *config.Component {
 	return &config.Component{
 		Type: config.ExternalImageComponentType,
@@ -105,8 +97,6 @@ func BuildExternalImageComponent(name string) *config.Component {
 		},
 	}
 }
-
-// Component faker providers for struct tags
 
 func fakeTerraformComponent(v reflect.Value) (interface{}, error) {
 	return BuildTerraformComponent(generics.GetFakeObj[string]()), nil

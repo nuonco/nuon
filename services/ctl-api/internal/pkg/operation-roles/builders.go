@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// GetRoleForDeploy selects the role for a component deploy or teardown operation.
 func GetRoleForDeploy(
 	l *zap.Logger,
 	appCfg *app.AppConfig,
@@ -75,7 +74,6 @@ func GetRoleForDeploy(
 	return roleSelection, operation, nil
 }
 
-// GetRoleForSandbox selects the role for a sandbox provision/reprovision/deprovision operation.
 func GetRoleForSandbox(
 	l *zap.Logger,
 	appCfg *app.AppConfig,
@@ -147,7 +145,6 @@ func GetRoleForSandbox(
 	return roleSelection, operation, nil
 }
 
-// GetRoleForAction selects the role for an action workflow trigger operation.
 func GetRoleForAction(
 	l *zap.Logger,
 	appCfg *app.AppConfig,

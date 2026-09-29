@@ -11,29 +11,25 @@ import (
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
-// ConfirmModel represents a yes/no confirmation dialog
 type ConfirmModel struct {
 	prompt   string
 	result   bool
 	selected bool
 	quitting bool
-	choice   int // 0 = Yes, 1 = No
+	choice   int
 }
 
-// NewConfirmModel creates a new confirmation model
 func NewConfirmModel(prompt string) ConfirmModel {
 	return ConfirmModel{
 		prompt: prompt,
-		choice: 0, // Default to Yes
+		choice: 0,
 	}
 }
 
-// Init initializes the confirmation model
 func (m ConfirmModel) Init() tea.Cmd {
 	return nil
 }
 
-// Update handles messages for the confirmation model
 func (m ConfirmModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
@@ -53,7 +49,7 @@ func (m ConfirmModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		case "enter", "space":
-			m.result = m.choice == 0 // Yes = true, No = false
+			m.result = m.choice == 0
 			m.selected = true
 			m.quitting = true
 			return m, tea.Quit
@@ -76,7 +72,6 @@ func (m ConfirmModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// View renders the confirmation dialog
 func (m ConfirmModel) View() tea.View {
 	if m.quitting {
 		if m.selected {
@@ -89,13 +84,11 @@ func (m ConfirmModel) View() tea.View {
 		return tea.NewView("")
 	}
 
-	// Render the prompt
 	promptStyle := lipgloss.NewStyle().
 		Foreground(styles.ErrorColor).
 		Bold(true).
 		Margin(1, 0)
 
-	// Render the options
 	yesStyle := BlurredStyle
 	noStyle := BlurredStyle
 
@@ -131,19 +124,14 @@ func (m ConfirmModel) View() tea.View {
 	return tea.NewView(BorderStyle.Render(content))
 }
 
-// Result returns the confirmation result
 func (m ConfirmModel) Result() bool {
 	return m.result
 }
 
-// Selected returns whether a choice was made
 func (m ConfirmModel) Selected() bool {
 	return m.selected
 }
 
-// High-level confirmation functions
-
-// Confirm shows a yes/no confirmation dialog
 func Confirm(prompt string, interactive bool) (bool, error) {
 	if !interactive {
 		return false, fmt.Errorf("interactive terminal required for confirmation; use --yes flag to auto-approve")
@@ -165,7 +153,6 @@ func Confirm(prompt string, interactive bool) (bool, error) {
 	return confirmModel.Result(), nil
 }
 
-// PromptWithAutoApprove prompts for confirmation unless auto-approved or non-interactive
 func PromptWithAutoApprove(autoApprove, interactive bool, msg string, vars ...interface{}) error {
 	if autoApprove || !interactive {
 		return nil
@@ -184,7 +171,6 @@ func PromptWithAutoApprove(autoApprove, interactive bool, msg string, vars ...in
 	return nil
 }
 
-// ConfirmWithDefault shows a confirmation with a default choice
 func ConfirmWithDefault(prompt string, defaultYes, interactive bool) (bool, error) {
 	if !interactive {
 		return false, fmt.Errorf("interactive terminal required for confirmation; use --yes flag to auto-approve")
@@ -192,7 +178,7 @@ func ConfirmWithDefault(prompt string, defaultYes, interactive bool) (bool, erro
 
 	model := NewConfirmModel(prompt)
 	if !defaultYes {
-		model.choice = 1 // Default to No
+		model.choice = 1
 	}
 
 	program := teaprogram.NewProgram(model)
@@ -203,13 +189,12 @@ func ConfirmWithDefault(prompt string, defaultYes, interactive bool) (bool, erro
 
 	confirmModel := finalModel.(ConfirmModel)
 	if !confirmModel.Selected() {
-		return defaultYes, nil // Return default if cancelled
+		return defaultYes, nil
 	}
 
 	return confirmModel.Result(), nil
 }
 
-// EvaluationConfirm shows a confirmation with evaluation journey styling
 func EvaluationConfirm(prompt string, interactive bool) (bool, error) {
 	evaluationPrompt := fmt.Sprintf("🚀 %s\n\n💡 This is part of your Nuon evaluation experience.", prompt)
 	return Confirm(evaluationPrompt, interactive)

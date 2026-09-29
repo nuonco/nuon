@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// This returns all app components for a point in time
 func (h *Helpers) GetAppComponentsAtConfigVersion(ctx context.Context, appID string, appCfgVersion int, componentIDs []string) ([]app.Component, error) {
 	var components []app.Component
 

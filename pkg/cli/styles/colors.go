@@ -10,8 +10,6 @@ import (
 var hasDarkBG = lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
 var lightDark = lipgloss.LightDark(hasDarkBG)
 
-// Official Colors
-// resolved at init time via lightDark
 var (
 	PrimaryColor        = lightDark(lipgloss.Color("#8040BF"), lipgloss.Color("#D6B0FC"))
 	SecondaryColor      = lightDark(lipgloss.Color("#527FE8"), lipgloss.Color("#99B7FF"))
@@ -26,7 +24,6 @@ var (
 	BorderInactiveColor = lightDark(lipgloss.Color("#C3C3C3"), lipgloss.Color("#4F4F4F"))
 	PrimaryBGColor      = lightDark(lipgloss.Color("#F8F6F6"), lipgloss.Color("#1B242C"))
 
-	// Text
 	TextPrimary   = lipgloss.NewStyle().Foreground(PrimaryColor)
 	TextSecondary = lipgloss.NewStyle().Foreground(SecondaryColor)
 	TextAccent    = lipgloss.NewStyle().Foreground(AccentColor)
@@ -38,9 +35,7 @@ var (
 	TextInfo      = lipgloss.NewStyle().Foreground(InfoColor)
 )
 
-// holdovers we don't know how to get rid of yet
 var (
-	// we do want to keep thise and need to integrate them
 	Dim   color.Color = lipgloss.Color("#d149b7")
 	Ghost color.Color = lightDark(lipgloss.Color("#93"), lipgloss.Color("#17"))
 )

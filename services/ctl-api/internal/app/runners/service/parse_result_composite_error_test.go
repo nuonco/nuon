@@ -15,8 +15,6 @@ import (
 
 func ptr(s string) *string { return &s }
 
-// fakeMetricsWriter records Incr calls; all other Writer methods are no-ops via
-// the embedded (nil) interface, which is never called in these tests.
 type fakeMetricsWriter struct {
 	metrics.Writer
 	incrs []incrCall

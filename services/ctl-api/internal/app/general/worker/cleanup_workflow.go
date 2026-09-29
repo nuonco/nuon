@@ -11,11 +11,9 @@ import (
 )
 
 const (
-	cleanupQueueSignalBatchSize = 5000
-	// cap batches per execution so workflow history stays bounded; we Continue-As-New to keep draining.
+	cleanupQueueSignalBatchSize              = 5000
 	cleanupQueueSignalMaxBatchesPerExecution = 500
-	// cap rows per cron trigger (across Continue-As-New executions); a larger backlog drains over subsequent daily runs.
-	cleanupQueueSignalMaxRowsPerRun = 10000000
+	cleanupQueueSignalMaxRowsPerRun          = 10000000
 )
 
 type CleanupQueueSignalsRequest struct {

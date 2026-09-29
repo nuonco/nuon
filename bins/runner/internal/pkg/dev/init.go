@@ -14,7 +14,6 @@ import (
 func (d *devver) Init(ctx context.Context) error {
 	shouldMonitor := true
 
-	// NOTE(jm): we are removing `RUNNER_ID`
 	if os.Getenv("RUNNER_ID") != "" {
 		fmt.Println("disabling monitoring and restarting for new runners")
 		shouldMonitor = false

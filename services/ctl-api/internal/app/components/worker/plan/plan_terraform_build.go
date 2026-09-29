@@ -17,10 +17,6 @@ func (p *Planner) createTerraformBuildPlan(ctx workflow.Context, bld *app.Compon
 		},
 	}
 
-	// Gate build-time provider vendoring on the org feature flag so we can
-	// roll it out gradually. The install runner does not consult any flag
-	// — it autodetects the presence of the mirror in the OCI artifact —
-	// so flipping this on/off only affects build behaviour.
 	mirrorEnabled, err := componentsactivities.AwaitOrgHasFeature(ctx, componentsactivities.OrgHasFeatureRequest{
 		OrgID:   bld.OrgID,
 		Feature: string(app.OrgFeatureTerraformProviderMirror),
@@ -31,10 +27,6 @@ func (p *Planner) createTerraformBuildPlan(ctx workflow.Context, bld *app.Compon
 	if mirrorEnabled {
 		plan.VendorProviders = true
 
-		// Plumb the configured terraform version through to the build
-		// runner so it can install the matching CLI to vendor providers
-		// via `terraform providers mirror`. Empty values cause the build
-		// runner to fall back to its default version.
 		if cfg := bld.ComponentConfigConnection.TerraformModuleComponentConfig; cfg != nil {
 			plan.TerraformVersion = cfg.Version
 		}

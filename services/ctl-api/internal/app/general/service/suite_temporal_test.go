@@ -30,7 +30,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// GeneralTemporalTestDeps holds all fx-injected dependencies for general temporal tests.
 type GeneralTemporalTestDeps struct {
 	fx.In
 
@@ -47,7 +46,6 @@ type GeneralTemporalTestDeps struct {
 	Seeder            *testseed.Seeder
 }
 
-// GeneralTemporalTestSuite is the test suite for temporal-dependent general service endpoints.
 type GeneralTemporalTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -74,7 +72,6 @@ func (s *GeneralTemporalTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	// Create gomock controller and mock temporal client
 	s.ctrl = gomock.NewController(s.T())
 	s.mockTC = temporal.NewMockClient(s.ctrl)
 
@@ -92,7 +89,6 @@ func (s *GeneralTemporalTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.deps.DB)
 }
 
@@ -100,7 +96,6 @@ func (s *GeneralTemporalTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Manually create the service with the mock temporal client
 	svc := &service{
 		l:              s.deps.L,
 		v:              s.deps.V,
@@ -141,8 +136,6 @@ func (s *GeneralTemporalTestSuite) setupTestData() {
 	s.ctx, s.testOrg = s.deps.Seeder.EnsureOrg(s.ctx, s.T())
 }
 
-// makeRequest sends an HTTP request through the test router and returns the recorder.
-// Pass nil for body on requests that have no body (GET, no-body POST).
 func (s *GeneralTemporalTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
 	var reqBody *bytes.Buffer
 	if body != nil {
@@ -162,7 +155,6 @@ func (s *GeneralTemporalTestSuite) makeRequest(method, path string, body interfa
 	return rr
 }
 
-// parseResponse unmarshals the response body into the provided interface.
 func parseResponse(rr *httptest.ResponseRecorder, v interface{}) error {
 	return json.Unmarshal(rr.Body.Bytes(), v)
 }

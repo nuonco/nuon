@@ -8,7 +8,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// loadAccountWithJourneys loads account with appropriate preloads based on need
 func (h *Helpers) loadAccountWithJourneys(ctx context.Context, accountID string, needsRoles bool) (*app.Account, error) {
 	var account app.Account
 	query := h.db.WithContext(ctx)
@@ -24,7 +23,6 @@ func (h *Helpers) loadAccountWithJourneys(ctx context.Context, accountID string,
 	return &account, nil
 }
 
-// StepUpdate defines what can be updated in a journey step
 type StepUpdate struct {
 	Complete         bool
 	CompletedAt      *time.Time
@@ -33,23 +31,19 @@ type StepUpdate struct {
 	Metadata         map[string]interface{}
 }
 
-// updateJourneyStepIfIncomplete finds and updates a journey step only if it's incomplete
 func (h *Helpers) updateJourneyStepIfIncomplete(account *app.Account, journeyName, stepName string, update StepUpdate) bool {
 	for i, journey := range account.UserJourneys {
 		if journey.Name == journeyName {
 			for j, step := range journey.Steps {
 				if step.Name == stepName && !step.Complete {
-					// Update completion status
 					account.UserJourneys[i].Steps[j].Complete = update.Complete
 
-					// Update completion tracking fields
 					if update.Complete {
 						account.UserJourneys[i].Steps[j].CompletedAt = update.CompletedAt
 						account.UserJourneys[i].Steps[j].CompletionMethod = update.CompletionMethod
 						account.UserJourneys[i].Steps[j].CompletionSource = update.CompletionSource
 					}
 
-					// Update metadata (merge with existing)
 					if update.Metadata != nil {
 						if account.UserJourneys[i].Steps[j].Metadata == nil {
 							account.UserJourneys[i].Steps[j].Metadata = make(map[string]interface{})
@@ -68,7 +62,6 @@ func (h *Helpers) updateJourneyStepIfIncomplete(account *app.Account, journeyNam
 	return false
 }
 
-// saveAccountJourneys saves only the user_journeys field to database
 func (h *Helpers) saveAccountJourneys(ctx context.Context, account *app.Account) error {
 	if err := h.db.WithContext(ctx).Select("user_journeys").Save(account).Error; err != nil {
 		return fmt.Errorf("unable to update user journey: %w", err)
@@ -76,7 +69,6 @@ func (h *Helpers) saveAccountJourneys(ctx context.Context, account *app.Account)
 	return nil
 }
 
-// UpdateJourneyStepParams provides flexible parameters for journey step updates
 type UpdateJourneyStepParams struct {
 	AccountID        string
 	JourneyName      string
@@ -88,20 +80,16 @@ type UpdateJourneyStepParams struct {
 	NeedsRoleData    bool
 }
 
-// updateUserJourneyStepIfIncomplete is the consolidated method that handles all journey step updates
 func (h *Helpers) updateUserJourneyStepIfIncomplete(ctx context.Context, params UpdateJourneyStepParams) error {
-	// 1. Load account (with roles only if needed)
 	account, err := h.loadAccountWithJourneys(ctx, params.AccountID, params.NeedsRoleData)
 	if err != nil {
 		return err
 	}
 
-	// 2. First-org specific validation
 	if params.StepName == "org_created" && len(account.OrgIDs) > 1 {
-		return nil // Not first org, skip update
+		return nil
 	}
 
-	// 3. Prepare update with completion tracking
 	now := time.Now().UTC()
 	update := StepUpdate{
 		Complete:         params.Complete,
@@ -113,16 +101,14 @@ func (h *Helpers) updateUserJourneyStepIfIncomplete(ctx context.Context, params 
 
 	updated := h.updateJourneyStepIfIncomplete(account, params.JourneyName, params.StepName, update)
 	if !updated {
-		return nil // No changes needed (step already complete or step doesn't exist in this journey version)
+		return nil
 	}
 
-	// 4. Save changes
 	return h.saveAccountJourneys(ctx, account)
 }
 
-// buildNavigationMetadata creates metadata for navigation purposes
 func buildNavigationMetadata(appID, installID, orgID *string) map[string]interface{} {
-	metadata := make(map[string]interface{}) // Never return nil
+	metadata := make(map[string]interface{})
 
 	if appID != nil && *appID != "" {
 		metadata["app_id"] = *appID
@@ -137,7 +123,6 @@ func buildNavigationMetadata(appID, installID, orgID *string) map[string]interfa
 	return metadata
 }
 
-// UpdateUserJourneyStepForFirstOrg updates the org_created step when user creates their first org
 func (h *Helpers) UpdateUserJourneyStepForFirstOrg(ctx context.Context, accountID, orgID string) error {
 	return h.updateUserJourneyStepIfIncomplete(ctx, UpdateJourneyStepParams{
 		AccountID:        accountID,
@@ -151,7 +136,6 @@ func (h *Helpers) UpdateUserJourneyStepForFirstOrg(ctx context.Context, accountI
 	})
 }
 
-// UpdateUserJourneyStepForFirstAppCreate updates the app_created step when user creates their first app
 func (h *Helpers) UpdateUserJourneyStepForFirstAppCreate(ctx context.Context, accountID, appID string) error {
 	return h.updateUserJourneyStepIfIncomplete(ctx, UpdateJourneyStepParams{
 		AccountID:        accountID,
@@ -159,13 +143,12 @@ func (h *Helpers) UpdateUserJourneyStepForFirstAppCreate(ctx context.Context, ac
 		StepName:         "app_created",
 		Complete:         true,
 		CompletionMethod: "auto",
-		CompletionSource: "api", // Triggered by app creation API
+		CompletionSource: "api",
 		Metadata:         buildNavigationMetadata(&appID, nil, nil),
 		NeedsRoleData:    false,
 	})
 }
 
-// UpdateUserJourneyStepForFirstInstallCreate updates the install_created step when user creates their first install
 func (h *Helpers) UpdateUserJourneyStepForFirstInstallCreate(ctx context.Context, accountID, installID string) error {
 	return h.updateUserJourneyStepIfIncomplete(ctx, UpdateJourneyStepParams{
 		AccountID:        accountID,
@@ -173,27 +156,25 @@ func (h *Helpers) UpdateUserJourneyStepForFirstInstallCreate(ctx context.Context
 		StepName:         "install_created",
 		Complete:         true,
 		CompletionMethod: "auto",
-		CompletionSource: "dashboard", // Usually created via dashboard
+		CompletionSource: "dashboard",
 		Metadata:         buildNavigationMetadata(nil, &installID, nil),
 		NeedsRoleData:    false,
 	})
 }
 
-// UpdateUserJourneyStep provides a general method for updating any user journey step
 func (h *Helpers) UpdateUserJourneyStep(ctx context.Context, accountID, journeyName, stepName string, complete bool) error {
 	return h.updateUserJourneyStepIfIncomplete(ctx, UpdateJourneyStepParams{
 		AccountID:        accountID,
 		JourneyName:      journeyName,
 		StepName:         stepName,
 		Complete:         complete,
-		CompletionMethod: "manual", // Generic method assumes manual completion
-		CompletionSource: "api",    // Coming through API
+		CompletionMethod: "manual",
+		CompletionSource: "api",
 		Metadata:         make(map[string]interface{}),
 		NeedsRoleData:    false,
 	})
 }
 
-// UpdateUserJourneyStepForCLIInstalled updates the cli_installed step when CLI usage is detected
 func (h *Helpers) UpdateUserJourneyStepForCLIInstalled(ctx context.Context, accountID string) error {
 	return h.updateUserJourneyStepIfIncomplete(ctx, UpdateJourneyStepParams{
 		AccountID:        accountID,
@@ -201,13 +182,12 @@ func (h *Helpers) UpdateUserJourneyStepForCLIInstalled(ctx context.Context, acco
 		StepName:         "cli_installed",
 		Complete:         true,
 		CompletionMethod: "auto",
-		CompletionSource: "cli", // Detected via CLI User-Agent
+		CompletionSource: "cli",
 		Metadata:         make(map[string]interface{}),
 		NeedsRoleData:    false,
 	})
 }
 
-// UpdateUserJourneyStepForFirstAppSync updates the app_synced step when app config becomes active
 func (h *Helpers) UpdateUserJourneyStepForFirstAppSync(ctx context.Context, accountID, appID string) error {
 	return h.updateUserJourneyStepIfIncomplete(ctx, UpdateJourneyStepParams{
 		AccountID:        accountID,
@@ -215,7 +195,7 @@ func (h *Helpers) UpdateUserJourneyStepForFirstAppSync(ctx context.Context, acco
 		StepName:         "app_synced",
 		Complete:         true,
 		CompletionMethod: "auto",
-		CompletionSource: "cli", // Triggered when app config becomes active via sync
+		CompletionSource: "cli",
 		Metadata:         buildNavigationMetadata(&appID, nil, nil),
 		NeedsRoleData:    false,
 	})

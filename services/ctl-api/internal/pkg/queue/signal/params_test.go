@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
-// testSignalWithParams implements both Signal and SignalWithParams
 type testSignalWithParams struct {
 	params *Params
 }
@@ -20,7 +19,6 @@ func (s *testSignalWithParams) Validate(workflow.Context) error { return nil }
 func (s *testSignalWithParams) Execute(workflow.Context) error  { return nil }
 func (s *testSignalWithParams) WithParams(p *Params)            { s.params = p }
 
-// testSignalWithoutParams implements only Signal (no SignalWithParams)
 type testSignalWithoutParams struct{}
 
 func (s *testSignalWithoutParams) Type() SignalType                { return "test-without-params" }
@@ -50,7 +48,6 @@ func (s *ParamsTestSuite) TestApplyParams_WithoutSignalWithParams_NoPanic() {
 	sig := &testSignalWithoutParams{}
 	params := &Params{Cfg: &internal.Config{}}
 
-	// Should not panic
 	assert.NotPanics(s.T(), func() {
 		ApplyParams(sig, params)
 	})

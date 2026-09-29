@@ -18,7 +18,6 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput, customSta
 	namedPolicyArns := make(map[string]interface{})
 
 	for _, role := range inp.AppCfg.BreakGlassConfig.Roles {
-		// cloudformation has parameter called role.CloudFormationStackParamName
 		breakGlassRoleArns[role.Name] = cloudformation.If(
 			role.CloudFormationStackParamName,
 			generics.FromPtrStr(cloudformation.GetAttPtr(role.CloudFormationStackName, "Arn")),
@@ -38,16 +37,14 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput, customSta
 		namedPolicyArns[policy.Name] = cloudformation.Ref(namedPolicyLogicalID(policy))
 	}
 
-	// add app input parameters from install_stack sourced inputs
 	installInputValues := make(map[string]interface{})
 	for _, input := range inp.AppCfg.InputConfig.AppInputs {
 		if input.Source == "customer" {
-			// Use the original input name as the key in nested object
 			installInputValues[input.Name] = cloudformation.RefPtr(input.CloudFormationStackParamName)
 		}
 	}
 
-	// Build conditional role ARN references so that disabling a role
+	// why: Build conditional role ARN references so that disabling a role
 	// (e.g. EnableRunnerProvision=false) doesn't create an unresolvable
 	// Fn::GetAtt on a resource that doesn't exist.
 	roleArnByType := make(map[string]any)
@@ -63,7 +60,6 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput, customSta
 		"ServiceToken": cloudformation.GetAttPtr("RunnerPhoneHome", "Arn"),
 		"url":          inp.CloudFormationStackVersion.PhoneHomeURL,
 
-		// fields for the phone-home endpoint
 		"phone_home_type":          "aws",
 		"maintenance_iam_role_arn": roleArnByType[string(app.AWSIAMRoleTypeRunnerMaintenance)],
 		"provision_iam_role_arn":   roleArnByType[string(app.AWSIAMRoleTypeRunnerProvision)],
@@ -74,19 +70,15 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput, customSta
 		"custom_role_arns":      customRoleArns,
 		"named_policy_arns":     namedPolicyArns,
 
-		// from the nested VPC Cloudformation Template (we want its outputs)
 		"vpc_id":          cloudformation.GetAtt("VPC", "Outputs.VPC"),
 		"runner_subnet":   cloudformation.GetAtt("VPC", "Outputs.RunnerSubnet"),
 		"public_subnets":  cloudformation.GetAtt("VPC", "Outputs.PublicSubnets"),
 		"private_subnets": cloudformation.GetAtt("VPC", "Outputs.PrivateSubnets"),
 
-		// account and region details
 		"account_id": cloudformation.RefPtr("AWS::AccountId"),
 		"region":     cloudformation.RefPtr("AWS::Region"),
 	}
 
-	// runner_iam_role_arn references the ASG nested stack output, only available
-	// when not using local runners
 	if !a.cfg.UseLocalRunners {
 		lambdaprops["runner_iam_role_arn"] = cloudformation.GetAttPtr("RunnerAutoScalingGroup", "Outputs.RunnerInstanceRole")
 	}
@@ -104,7 +96,6 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput, customSta
 		)
 	}
 
-	// Always include custom_nested_stacks in the payload (empty map when none configured)
 	customNestedStacksPayload := map[string]any{}
 	if customStacks != nil {
 		for logicalID, info := range customStacks.stackOutputs {
@@ -129,11 +120,9 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput, customSta
 	return resource
 }
 
-// lambdaInlineCodeLimit is AWS's hard cap on Code.ZipFile, the inline source the
-// phone-home Lambda uses.
 const lambdaInlineCodeLimit = 4096
 
-// validatePhoneHomeScript fails the render rather than letting an empty or oversized
+// why: validatePhoneHomeScript fails the render rather than letting an empty or oversized
 // script fail at CreateStack inside the customer's account, where the error is far
 // harder to attribute. The escape hatch when the script legitimately outgrows this
 // is an S3-hosted zip (Code.S3Bucket/S3Key) in the existing template bucket.
@@ -155,7 +144,7 @@ func validatePhoneHomeScript(script string) error {
 	return nil
 }
 
-// Both of these were CloudFormation defaults (3s, 128MB) until the phone-home script
+// why: Both of these were CloudFormation defaults (3s, 128MB) until the phone-home script
 // started fetching a token, and both defaults were wrong for it.
 //
 // The timeout has to clear the script's own retry ladder — MAX_RETRIES=5 with
@@ -176,7 +165,6 @@ const (
 )
 
 func (a *Templates) getRunnerPhoneHomeLambda(inp *stacks.TemplateInput, t tagBuilder) *lambda.Function {
-	// This is going to be moved into a cloudformation stack template and split out, with parameters for the body
 	fn := &lambda.Function{
 		Handler:     ptr("index.lambda_handler"),
 		Runtime:     ptr("python3.12"),
@@ -190,7 +178,7 @@ func (a *Templates) getRunnerPhoneHomeLambda(inp *stacks.TemplateInput, t tagBui
 		Role: cloudformation.GetAtt("RunnerPhoneHomeRole", "Arn"),
 	}
 
-	// Environment variables rather than resource properties, deliberately.
+	// why: Environment variables rather than resource properties, deliberately.
 	// phonehome.py does `props = data.pop("ResourceProperties")` and POSTs every
 	// prop, so anything added to getRunnerPhoneHomeProps is echoed back into the
 	// phone-home body and lands in InstallStackVersionRun.Data. Env vars are read
@@ -198,15 +186,9 @@ func (a *Templates) getRunnerPhoneHomeLambda(inp *stacks.TemplateInput, t tagBui
 	if inp.PhoneHomeSecretARN != "" {
 		fn.Environment = &lambda.Function_Environment{
 			Variables: map[string]string{
-				"NUON_PHONE_HOME_SECRET_ARN": inp.PhoneHomeSecretARN,
-				// The region of the *secret* — Nuon's management region, not the
-				// install's. The Lambda has no VPC config, so a cross-region
-				// Secrets Manager call is fine.
+				"NUON_PHONE_HOME_SECRET_ARN":    inp.PhoneHomeSecretARN,
 				"NUON_PHONE_HOME_SECRET_REGION": inp.PhoneHomeSecretRegion,
-				// Which entry to read out of the token map. Scoped to the stack
-				// version this template belongs to, so it can never go stale: a
-				// template never needs a phone_home_id other than its own.
-				"NUON_PHONE_HOME_ID": inp.CloudFormationStackVersion.PhoneHomeID,
+				"NUON_PHONE_HOME_ID":            inp.CloudFormationStackVersion.PhoneHomeID,
 			},
 		}
 	}
@@ -217,9 +199,6 @@ func (a *Templates) getRunnerPhoneHomeLambda(inp *stacks.TemplateInput, t tagBui
 func (a *Templates) getRunnerPhoneHomeLambdaRole(inp *stacks.TemplateInput, t tagBuilder) *iam.Role {
 	role := a.basePhoneHomeLambdaRole(inp, t)
 
-	// The identity half of the cross-account read. The secret's resource policy in
-	// Nuon's management account names this role as a principal; this narrows what the
-	// role itself may do. Both sides are required — either alone denies.
 	if inp.PhoneHomeSecretARN != "" {
 		statements := []map[string]any{
 			{
@@ -229,7 +208,7 @@ func (a *Templates) getRunnerPhoneHomeLambdaRole(inp *stacks.TemplateInput, t ta
 			},
 		}
 
-		// Scoped to the CMK that encrypted the secret. Without kms:Decrypt the read
+		// why: Scoped to the CMK that encrypted the secret. Without kms:Decrypt the read
 		// fails no matter how permissive the resource policy is, because the
 		// AWS-managed secretsmanager key cannot be shared cross-account.
 		if arn := a.cfg.AWSPhoneHomeCMKARN; arn != "" {
@@ -254,10 +233,6 @@ func (a *Templates) getRunnerPhoneHomeLambdaRole(inp *stacks.TemplateInput, t ta
 
 func (a *Templates) basePhoneHomeLambdaRole(inp *stacks.TemplateInput, t tagBuilder) *iam.Role {
 	return &iam.Role{
-		// Named so a cross-account grant can reference this principal before the
-		// customer's stack has created it. Setting RoleName makes the role a
-		// replacement on the next stack update for installs whose role currently has
-		// a CloudFormation-generated name.
 		RoleName: ptr(stacks.PhoneHomeRoleName(inp.Install.ID)),
 		Tags:     t.apply(nil, "phone-home-lambda"),
 		AssumeRolePolicyDocument: map[string]any{

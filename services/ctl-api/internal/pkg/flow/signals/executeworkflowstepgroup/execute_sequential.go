@@ -8,12 +8,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 )
 
-// executeSequential dispatches steps one at a time. After each step completes,
-// the step's directive determines what happens next. Cloning for retry happens
-// here — the single authoritative place for clone decisions.
 func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 	for {
-		// Check if cancellation was requested before dispatching the next
+		// why: Check if cancellation was requested before dispatching the next
 		// step. This closes the race window where the cancel signal is
 		// still propagating through the queue infrastructure but the
 		// in-memory flag or the DB metadata already reflect it.
@@ -43,8 +40,6 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 			continue
 
 		case actionRetryStep:
-			// Clone the step for individual retry. The next iteration
-			// picks up the pending clone.
 			if err := CloneStepForRetry(ctx, step.ID, s.WorkflowID); err != nil {
 				l.Warn("unable to clone step for retry", zap.String("step_id", step.ID), zap.Error(err))
 				return err

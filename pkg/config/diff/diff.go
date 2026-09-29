@@ -35,9 +35,6 @@ type Diff struct {
 	ImpactReasons []ImpactReason `json:"impact_reasons,omitempty"`
 }
 
-// String returns the full diff tree with +/-/~ prefixes indicating
-// added, removed, changed, and unchanged fields.
-// Empty unchanged fields (both old and new are "") are suppressed.
 func (d *Diff) String(indent string) string {
 	if d == nil {
 		return ""
@@ -60,8 +57,6 @@ func (d *Diff) String(indent string) string {
 	return diff
 }
 
-// FormatChanged returns only the parts of the diff tree that have changes
-// (added, removed, or changed). Unchanged fields and sections are omitted entirely.
 func (d *Diff) FormatChanged(indent string) string {
 	if d == nil {
 		return ""
@@ -130,7 +125,6 @@ func (d *Diff) Summary() DiffSummary {
 	return d.summary(true)
 }
 
-// DirectSummary ignores dependency impacts and reports only value changes.
 func (d *Diff) DirectSummary() DiffSummary {
 	return d.summary(false)
 }
@@ -216,8 +210,6 @@ func NewDiff(opts ...DiffOption) *Diff {
 	return &dt
 }
 
-// ApplyImpacts annotates resource nodes in the tree with propagated graph
-// impacts. It leaves their direct Diff operations unchanged.
 func (d *Diff) ApplyImpacts(impacts map[NodeID][]ImpactReason) {
 	if d == nil {
 		return

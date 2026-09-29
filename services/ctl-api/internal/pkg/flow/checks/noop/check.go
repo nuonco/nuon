@@ -13,16 +13,12 @@ import (
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// Check implements directive.ApprovalCreateCheck for noop plan detection.
 type Check struct {
 	sig      signal.Signal
 	checkCtx *directive.CheckContext
 
-	// OrgAutoSkipNoop is true when the org has the auto-skip-noop feature flag enabled.
-	// Passed in by the caller to avoid import cycles with install activities.
 	OrgAutoSkipNoop bool
 
-	// SetResultDirective writes the directive to the step's ResultDirective column.
 	SetResultDirective func(ctx workflow.Context, stepID string, d directive.Step) error
 }
 
@@ -40,8 +36,6 @@ func (c *Check) ShouldRun(step *app.WorkflowStep, flw *app.Workflow) bool {
 	return !groupHadFailedAttempt(step, flw)
 }
 
-// groupHadFailedAttempt checks if there was any failure in the group in that case
-// we dont need to run noop check.
 func groupHadFailedAttempt(step *app.WorkflowStep, flw *app.Workflow) bool {
 	for _, s := range flw.Steps {
 		if s.ID == step.ID || s.GroupIdx != step.GroupIdx {
@@ -77,8 +71,6 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 		return directive.Pass(), nil
 	}
 
-	// Determine whether noop plans should be auto-skipped. Only skip when
-	// explicitly enabled at the org level OR the component level.
 	shouldSkip := c.OrgAutoSkipNoop
 	if !shouldSkip {
 		if sn, ok := c.sig.(signal.SignalWithSkipNoops); ok {
@@ -90,8 +82,6 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 		l.Debug("noop plan detected but skip_noops not enabled, proceeding to approval",
 			zap.String("step_id", step.ID))
 
-		// Decorate the step with a noop label so the approval UI can display it,
-		// then pass through to let the approval pipeline handle it normally.
 		_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
 			Status: app.CompositeStatus{

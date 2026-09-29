@@ -29,7 +29,6 @@ type WorkflowStepLogsOptions struct {
 func (s *Service) WorkflowStepLogs(ctx context.Context, installID, workflowID, stepID string, asJSON bool, opts WorkflowStepLogsOptions) error {
 	view := ui.NewListView()
 
-	// If stepID is not provided, use the last processed step (not the one awaiting action)
 	if stepID == "" {
 		var err error
 		stepID, err = s.getLastProcessedStepID(ctx, workflowID)
@@ -123,7 +122,6 @@ func (s *Service) WorkflowStepLogs(ctx context.Context, installID, workflowID, s
 }
 
 func (s *Service) streamStepLogs(ctx context.Context, logStreamID string, opts WorkflowStepLogsOptions) error {
-	// Build severity and service filter sets for O(1) lookup
 	severitySet := make(map[string]bool, len(opts.Severity))
 	for _, sev := range opts.Severity {
 		severitySet[strings.ToLower(sev)] = true
@@ -133,7 +131,6 @@ func (s *Service) streamStepLogs(ctx context.Context, logStreamID string, opts W
 		serviceSet[strings.ToLower(svc)] = true
 	}
 
-	// For sort support, we need to collect all records first then sort
 	needsSort := opts.SortOrder == "asc" || opts.SortOrder == "desc"
 	shouldCollect := needsSort && !opts.Follow
 

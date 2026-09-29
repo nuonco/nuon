@@ -8,9 +8,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/auth/providers"
 )
 
-// The three provider types the auth service accepts. Kept in step with
-// getDefaultIdentityProvider in internal/app/auth/service/identity_providers.go,
-// which is what actually refuses to start on an unknown type.
 const (
 	providerTypeOIDC   = "oidc"
 	providerTypeGoogle = "google"
@@ -21,9 +18,6 @@ var nuonAuthCheck = Check{
 	Name:        "nuon-auth",
 	Description: "nuon auth identity provider",
 
-	// nuon_auth_provider_type is documented as becoming required once auth is
-	// GA; until then an entirely unset block means the feature is off, not
-	// misconfigured.
 	Skip: func(cfg *internal.Config) (string, bool) {
 		if cfg.NuonAuthIssuerURL == "" && cfg.NuonAuthProviderType == "" {
 			return "nuon auth not configured", true
@@ -35,9 +29,6 @@ var nuonAuthCheck = Check{
 	Fields: func(cfg *internal.Config) []Field {
 		return []Field{
 			{Name: "nuon_auth_provider_type", Value: cfg.NuonAuthProviderType, Required: true},
-			// Google and GitHub have fixed OAuth endpoints baked into their
-			// providers, so only a generic OIDC provider needs an issuer to
-			// discover from.
 			{
 				Name:     "nuon_auth_issuer_url",
 				Value:    cfg.NuonAuthIssuerURL,
@@ -78,8 +69,6 @@ var nuonAuthCheck = Check{
 				summary("client_id", cfg.NuonAuthClientID))
 
 		case providerTypeOIDC:
-			// Configure runs discovery against the issuer, so this is the one
-			// provider type preflight can genuinely confirm.
 			provider := providers.NewOpenIDProvider()
 			if err := provider.Configure(providerCfg); err != nil {
 				return "", fmt.Errorf("OIDC discovery failed: %w", err)
@@ -99,9 +88,6 @@ var nuonAuthCheck = Check{
 	},
 }
 
-// needsIssuerURL reports whether the provider type discovers its endpoints.
-// An unset type is treated as OIDC so a half-configured generic provider still
-// reports the missing issuer rather than an opaque type error.
 func needsIssuerURL(providerType string) bool {
 	switch providerType {
 	case providerTypeGoogle, providerTypeGitHub:

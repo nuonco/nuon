@@ -35,9 +35,6 @@ func (a *Activities) FetchInstallSyncCommit(ctx context.Context, input *FetchIns
 		VcsConfigID: input.VCSConfigID,
 		SHA:         ref,
 	}
-	// Returned unwrapped: Temporal's failure converter type-switches on the
-	// concrete error, so wrapping a non-retryable ApplicationError makes the
-	// top-level failure retryable again.
 	commit, err := a.FetchCommitBySHA(ctx, fetchInput)
 	if err != nil {
 		return nil, err

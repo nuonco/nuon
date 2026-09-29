@@ -74,7 +74,6 @@ func (s *AdminGetRunnerGroupTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with internal routes (no org context for admin routes)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -93,7 +92,6 @@ func (s *AdminGetRunnerGroupTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create runner group (requires account context for created_by_id)
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -105,7 +103,6 @@ func (s *AdminGetRunnerGroupTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group settings (requires account context for created_by_id)
 	s.testRunnerGrpSettings = &app.RunnerGroupSettings{
 		ID:                domains.NewRunnerGroupSettingsID(),
 		OrgID:             s.testOrg.ID,
@@ -118,7 +115,6 @@ func (s *AdminGetRunnerGroupTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrpSettings).Error
 	require.NoError(s.T(), err)
 
-	// Create runner (requires account context for created_by_id)
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -160,15 +156,12 @@ func (s *AdminGetRunnerGroupTestSuite) TestAdminGetRunnerGroup() {
 				assert.Equal(s.T(), app.RunnerGroupTypeOrg, rg.Type)
 				assert.Equal(s.T(), app.AppRunnerTypeAWSEKS, rg.Platform)
 
-				// Verify CreatedByID is set (CreatedBy preload may be zero-value)
 				assert.Equal(s.T(), s.testAcc.ID, rg.CreatedByID)
 
-				// Verify Settings is preloaded
 				assert.NotNil(s.T(), rg.Settings)
 				assert.Equal(s.T(), s.testRunnerGrpSettings.ID, rg.Settings.ID)
 				assert.Equal(s.T(), "test.ecr.aws/runner", rg.Settings.ContainerImageURL)
 
-				// Verify Runners is preloaded
 				assert.NotEmpty(s.T(), rg.Runners)
 				assert.Len(s.T(), rg.Runners, 1)
 				assert.Equal(s.T(), s.testRunner.ID, rg.Runners[0].ID)
@@ -188,7 +181,6 @@ func (s *AdminGetRunnerGroupTestSuite) TestAdminGetRunnerGroup() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create additional runner in same group
 				runner2 := &app.Runner{
 					ID:            domains.NewRunnerID(),
 					OrgID:         s.testOrg.ID,
@@ -208,7 +200,6 @@ func (s *AdminGetRunnerGroupTestSuite) TestAdminGetRunnerGroup() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(rg *app.RunnerGroup) {
-				// Should have 2 runners now
 				assert.Len(s.T(), rg.Runners, 2)
 			},
 		},

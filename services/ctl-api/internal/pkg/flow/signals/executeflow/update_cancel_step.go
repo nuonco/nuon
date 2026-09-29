@@ -13,19 +13,14 @@ import (
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// CancelStepRequest is the input for the "cancel-step" update handler.
 type CancelStepRequest struct {
 	StepID string `json:"step_id"`
 }
 
-// CancelStepResponse is the response from the "cancel-step" update handler.
 type CancelStepResponse struct {
 	WorkflowID string `json:"workflow_id"`
 }
 
-// cancelStepHandler sets cancelRequested immediately and propagates the
-// cancellation to a live group. Resident flows also persist the equivalent
-// cancellation directly so the same update works after descendants unwind.
 func (s *Signal) cancelStepHandler(ctx workflow.Context, req CancelStepRequest) (*CancelStepResponse, error) {
 	defer s.beginUpdate()()
 
@@ -166,7 +161,7 @@ func (s *Signal) cancelResidentStep(ctx workflow.Context, step *app.WorkflowStep
 	return nil
 }
 
-// finalizeCancellation writes the terminal cancelled status on the workflow
+// why: finalizeCancellation writes the terminal cancelled status on the workflow
 // row. Resident flows call this from the cancel update handlers for immediate
 // UX feedback; every cancel exit in the main execute loop re-asserts it after
 // the run unwinds so a concurrent success write cannot be the final state.

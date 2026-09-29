@@ -134,8 +134,6 @@ export const CreateInstallFromAppContainer = ({
   })
   const hasBranches = !branchesError && (branchList?.data ?? []).length > 0
 
-  // Opening from a branch page preselects that branch and skips the picker.
-  // Applied once so Back still returns to the picker.
   useEffect(() => {
     if (initialBranchApplied || branchesLoading) return
     const match = (branchList?.data ?? []).find(
@@ -148,7 +146,6 @@ export const CreateInstallFromAppContainer = ({
     setInitialBranchApplied(true)
   }, [initialBranchApplied, branchesLoading, branchList, initialBranchId])
 
-  // Derive phase
   const phase: CreateInstallPhase = (() => {
     if (!initialBranchApplied) return 'select-branch'
     if (hasBranches && !branchDecisionMade) return 'select-branch'
@@ -356,7 +353,7 @@ export const CreateInstallFromAppContainer = ({
           ? `An install named "${trimmed}" already exists`
           : undefined
       } catch (err) {
-        // A failed lookup shouldn't block creation; the API still enforces
+        // why: A failed lookup shouldn't block creation; the API still enforces
         // uniqueness. Log it so it can't masquerade as an available name.
         console.warn('Unable to check install name availability:', err)
         return undefined
@@ -403,9 +400,7 @@ export const CreateInstallFromAppContainer = ({
       return
     }
 
-    // form phase
     if (selectedBranch) {
-      // form submit → advance to pick-group, don't call API yet
       onStateChange({
         canSubmit: formReady ? fields.canSubmit : false,
         submit: fields.submit,
@@ -512,7 +507,6 @@ export const CreateInstallFromAppContainer = ({
     )
   }
 
-  // form phase
   return (
     <div className="flex flex-col gap-6">
       {backButton}
@@ -552,7 +546,6 @@ export const CreateInstallFromAppContainer = ({
           onSubmit={
             selectedBranch
               ? (values) => {
-                  // Don't call API yet — advance to group picker
                   setPendingFormValues(values)
                 }
               : (values) =>

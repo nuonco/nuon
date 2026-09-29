@@ -101,7 +101,6 @@ func (c *Client) ExtendToken(ctx context.Context, subjectOrEmail string, dur tim
 		return pkgerrors.Wrap(res.Error, "unable to extend token")
 	}
 
-	// update the token expiry
 	var updatedToken app.Token
 	res = c.db.WithContext(ctx).
 		Model(&updatedToken).

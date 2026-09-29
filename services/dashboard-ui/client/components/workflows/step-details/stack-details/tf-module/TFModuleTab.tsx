@@ -1,9 +1,3 @@
-// Directions for a published nuonco/stack/<cloud> module, which reads its whole
-// config from the API. Distinct from each cloud's TerraformTab, which clones
-// install-stacks and is driven by generated tfvars.
-//
-// Only main.tf differs per cloud — which providers to require and which module to
-// source — so callers pass that in as buildMainTf.
 import { useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Card } from '@/components/common/Card'
@@ -30,8 +24,6 @@ import {
   buildSecretVariablesBlock,
 } from './snippet'
 
-// The pieces buildMainTf interpolates. Each block is either empty or already
-// carries its own leading newlines, so they concatenate with no separator logic.
 export interface IMainTfParts {
   installId: string
   providerBlock: string
@@ -54,7 +46,6 @@ export const TFModuleTab = ({
   const queryClient = useQueryClient()
   const { addModal } = useSurfaces()
   const [authMethod, setAuthMethod] = useState<'token' | 'oidc'>('token')
-  // Only fetched once the OIDC pane is opened; most customers never need this list.
   const { data: trustPolicies } = useOIDCTrustPolicies({
     enabled: OIDC_AUTH_ENABLED && authMethod === 'oidc',
   })
@@ -68,7 +59,6 @@ export const TFModuleTab = ({
     enabled: true,
   })
 
-  // A day, not the modal's usual year: this credential is pasted in by hand.
   const openCreateToken = () =>
     addModal(
       <CreateServiceAccountTokenModalContainer
@@ -84,15 +74,11 @@ export const TFModuleTab = ({
       />
     )
 
-  // Derived from the timestamp rather than has_live_token, so the label stays honest
-  // if only one of the two arrives.
   const liveUntil =
     serviceAccount?.has_live_token && serviceAccount.expires_at
       ? new Date(serviceAccount.expires_at).toLocaleString()
       : null
 
-  // While the app config is still resolving, the snippet renders without the inputs
-  // and secrets blocks rather than blocking the rest of the directions.
   const { appConfig } = useInstallAppConfig()
 
   const customerInputs = useMemo(() => {
@@ -109,8 +95,6 @@ export const TFModuleTab = ({
     })
   }, [appConfig?.input?.inputs, appConfig?.input?.input_groups])
 
-  // Secrets carry no vendor/customer flag: everything not auto-generated is the
-  // customer's to provide.
   const customerSecrets = useMemo(
     () =>
       (appConfig?.secrets?.secrets ?? []).filter(
@@ -137,8 +121,6 @@ export const TFModuleTab = ({
   )
 
   const config = useConfig()
-  // The provider defaults to the production runner API, so a local, stage, or BYOC
-  // control plane has to name itself here, and the service account carries it.
   const runnerApiUrl =
     config.runnerApiUrl || serviceAccount?.runner_api_url || ''
   const providerBlock = runnerApiUrl
@@ -153,7 +135,6 @@ export const TFModuleTab = ({
     secretVariablesBlock,
   })
 
-  // Always a placeholder: the token value is shown once, in the create modal.
   const authCmd = `export NUON_API_TOKEN='<api-token>'`
   const applyCmd = `terraform init && terraform apply`
 

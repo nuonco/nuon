@@ -57,7 +57,6 @@ func (s *service) GetAppRunnerConfigs(ctx *gin.Context) {
 func (s *service) findAppRunnerConfigs(ctx *gin.Context, orgID, appID string) ([]app.AppRunnerConfig, error) {
 	app := app.App{}
 	res := s.db.WithContext(ctx).
-		// runner config
 		Preload("AppRunnerConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.
 				Scopes(scopes.WithOffsetPagination).

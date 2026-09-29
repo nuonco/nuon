@@ -110,9 +110,6 @@ export const HasMore = () => (
   />
 )
 
-// `frontend` is impacted only through the graph — its own config did not change, so it
-// has matching checksums and no build change. Checks the timeline status badge for a
-// failed app config version at the same time.
 export const ImpactedAndFailed = () => (
   <InstallUpdatesTimeline
     updates={[

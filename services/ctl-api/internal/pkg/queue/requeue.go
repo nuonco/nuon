@@ -15,7 +15,6 @@ func (w *queue) requeueSignals(ctx workflow.Context) error {
 		return err
 	}
 
-	// fetching jobs from the queue in the DB
 	l.Info("fetching previous signals from database and requeueing them")
 	queueSignals, err := activities.AwaitGetQueueSignalsByQueueID(ctx, w.queueID)
 	if err != nil {

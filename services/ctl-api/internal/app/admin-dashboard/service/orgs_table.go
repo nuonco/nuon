@@ -7,7 +7,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// OrgsTable returns just the orgs table data as JSON
 func (s *service) OrgsTable(c *gin.Context) {
 	ctx := c.Request.Context()
 	search := c.Query("search")

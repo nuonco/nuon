@@ -29,7 +29,6 @@ func (s *Signal) Validate(_ workflow.Context) error {
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l, _ := log.WorkflowLogger(ctx)
 
-	// Mark all active runner processes for shutdown in a single query.
 	processResp, err := generalactivities.AwaitMarkActiveProcessesForShutdown(ctx, generalactivities.MarkActiveProcessesForShutdownRequest{})
 	if err != nil {
 		return fmt.Errorf("unable to mark processes for shutdown: %w", err)
@@ -38,8 +37,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		l.Info("marked processes for shutdown", zap.Int64("rows_affected", processResp.RowsAffected))
 	}
 
-	// Request continue-as-new on all queues so they restart with the new
-	// code version.
 	queueResp, err := queueclient.AwaitRequestCANAll(ctx, &queueclient.RequestCANAllRequest{})
 	if err != nil {
 		return fmt.Errorf("unable to request CAN on all queues: %w", err)
@@ -58,8 +55,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		l.Info("enqueued org queue migrations", zap.Int("orgs_enqueued", migrationResp.OrgsEnqueued))
 	}
 
-	// Idempotent + additive — chained off promote so new label-tagged
-	// orgs land without a separate POST.
 	autoLinkResp, err := generalactivities.AwaitEnsureSlackAutoLinks(ctx, generalactivities.EnsureSlackAutoLinksRequest{})
 	if err != nil {
 		return fmt.Errorf("ensure slack auto links: %w", err)
@@ -72,8 +67,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		)
 	}
 
-	// Start (or replace) the enqueuer sweep and metrics cron workflows
-	// as top-level Temporal cron workflows via the client.
 	cronResp, err := generalactivities.AwaitEnsureCronWorkflows(ctx, generalactivities.EnsureCronWorkflowsRequest{})
 	if err != nil {
 		return fmt.Errorf("ensure cron workflows: %w", err)

@@ -44,7 +44,7 @@ func (s *service) GetStackConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Org scope is defense in depth; not-found so this cannot probe other orgs.
+	// why: Org scope is defense in depth; not-found so this cannot probe other orgs.
 	var install app.Install
 	if res := s.db.WithContext(ctx).
 		Where(app.Install{ID: installID, OrgID: orgID}).
@@ -57,8 +57,6 @@ func (s *service) GetStackConfig(ctx *gin.Context) {
 		return
 	}
 
-	// BuildInstallerSDKConfig reads org and account from the context, and gin does not
-	// carry them into ctx.Request.Context().
 	acct, err := cctx.AccountFromGinContext(ctx)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to resolve account from request: %w", err))
@@ -73,7 +71,6 @@ func (s *service) GetStackConfig(ctx *gin.Context) {
 		return
 	}
 
-	// The authenticated report route. CloudFormation and ARM keep the capability URL.
 	cfg.PhoneHomeURL = fmt.Sprintf("%s/v1/stacks/%s/phone-home",
 		strings.TrimSuffix(cfg.RunnerAPIURL, "/"), install.ID)
 

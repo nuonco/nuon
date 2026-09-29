@@ -19,15 +19,9 @@ type RenderARMStackTemplateResponse struct {
 	CustomStacksOutputMap          map[string]map[string]string `temporaljson:"custom_stacks_output_map"`
 	CustomStacksInputParametersMap map[string]map[string]string `temporaljson:"custom_stacks_input_parameters_map"`
 
-	// QuickLinkWrapperJSON is the template behind the Azure portal quick link, and
-	// is empty unless the stack version carries a QuickLinkBucketKey. It is a
-	// separate artifact because the portal can only create a plain deployment —
-	// see arm.QuickLinkWrapper.
 	QuickLinkWrapperJSON     []byte `temporaljson:"quick_link_wrapper_json"`
 	QuickLinkWrapperChecksum string `temporaljson:"quick_link_wrapper_checksum"`
 
-	// QuickLinkUIDefJSON is the createUiDefinition the Azure quick link appends as
-	// createUIDefinitionUri. It pins Basics to the install's subscription and region.
 	QuickLinkUIDefJSON     []byte `temporaljson:"quick_link_ui_def_json"`
 	QuickLinkUIDefChecksum string `temporaljson:"quick_link_ui_def_checksum"`
 }

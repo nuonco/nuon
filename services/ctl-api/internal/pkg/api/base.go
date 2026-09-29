@@ -29,9 +29,8 @@ type API struct {
 	name                  string
 	configuredMiddlewares []string
 	endpointAudit         *EndpointAudit
-	// created after initializing
-	srv     *http.Server
-	handler *gin.Engine
+	srv                   *http.Server
+	handler               *gin.Engine
 
 	db *gorm.DB
 }
@@ -65,13 +64,12 @@ func (a *API) middlewareDebugWrapper(name string, fn gin.HandlerFunc) gin.Handle
 const panickerMiddlewareName = "panicker"
 
 func (a *API) registerMiddlewares() error {
-	// register middlewares
 	middlewaresLookup := make(map[string]gin.HandlerFunc, 0)
 	for _, middleware := range a.middlewares {
 		middlewaresLookup[middleware.Name()] = middleware.Handler()
 	}
 
-	// gin.CustomRecovery only recovers what runs after it, and gin.New() installs no
+	// why: gin.CustomRecovery only recovers what runs after it, and gin.New() installs no
 	// recovery of its own, so a panic in an earlier middleware kills the connection
 	// and the caller sees a proxy 503 with no body instead of an error response.
 	ordered := make([]string, 0, len(a.configuredMiddlewares))
@@ -97,7 +95,6 @@ func (a *API) registerMiddlewares() error {
 }
 
 func (a *API) registerServices() error {
-	// register services
 	for _, svc := range a.services {
 		method, ok := map[string]func(*gin.Engine) error{
 			"runner":          svc.RegisterRunnerRoutes,

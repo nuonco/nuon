@@ -8,7 +8,6 @@ import (
 	"github.com/nuonco/nuon/pkg/pipeline"
 )
 
-// execInitLogFn is a function that just does an init, and does not return output
 type execInitLogFn func(context.Context, hclog.Logger) error
 
 func MapInitLog(fn execInitLogFn) pipeline.ExecFn {

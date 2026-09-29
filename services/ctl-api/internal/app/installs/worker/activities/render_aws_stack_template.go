@@ -28,7 +28,7 @@ func (a *Activities) RenderAWSStackTemplate(ctx context.Context, req *RenderAWSS
 		return res, errors.Wrap(err, "unable to create cloudformation template")
 	}
 
-	// Must run before tmpl.JSON(): strips the side-channel metadata key so it
+	// why: Must run before tmpl.JSON(): strips the side-channel metadata key so it
 	// never reaches the deployed template.
 	inputParametersMap := cloudformation.ExtractAndStripCustomStacksInputParameters(tmpl)
 

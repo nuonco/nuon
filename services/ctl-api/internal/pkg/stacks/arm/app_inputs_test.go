@@ -53,20 +53,14 @@ func TestCustomerInputs_RootParameters(t *testing.T) {
 	}
 
 	for _, tc := range []struct {
-		param    string
-		wantType string
-		// wantDefault nil asserts the parameter carries no defaultValue at all,
-		// which is what makes ARM refuse the deploy without a value.
+		param       string
+		wantType    string
 		wantDefault any
 		wantDesc    string
 	}{
 		{param: "inputDbName", wantType: "string", wantDefault: "postgres", wantDesc: "The database to connect to."},
-		// A number input is still a string parameter: ARM's int would reject the
-		// fractional values an app input of type number may hold.
 		{param: "inputReplicaCount", wantType: "string", wantDefault: "3"},
 		{param: "inputApiKey", wantType: "string", wantDefault: nil},
-		// Optional with no declared default: an empty default keeps the deploy
-		// possible without a value.
 		{param: "inputLogLevel", wantType: "string", wantDefault: ""},
 	} {
 		p, present := armTmpl.Parameters[tc.param]
@@ -95,17 +89,12 @@ func TestCustomerInputs_RootParameters(t *testing.T) {
 	}
 	assertNoNestedBrackets(t, tmplBytes)
 
-	// omitempty on an interface field only drops a nil, so an empty default has to
-	// survive the marshal — dropping it would make an optional input mandatory.
 	if !strings.Contains(string(tmplBytes), `"inputLogLevel": {`) ||
 		!strings.Contains(string(tmplBytes), `"defaultValue": ""`) {
 		t.Errorf("optional input lost its empty defaultValue:\n%s", tmplBytes)
 	}
 }
 
-// The phone home reports every parameter back as the install's inputs, so a
-// parameter defaulting to the vendor's default would revert a value the customer
-// set through the dashboard on the next reprovision.
 func TestCustomerInputs_CurrentInstallValueWins(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 
@@ -117,9 +106,7 @@ func TestCustomerInputs_CurrentInstallValueWins(t *testing.T) {
 	inp := customerInputsTemplateInput(declared, blanked)
 	inp.Install.CurrentInstallInputs = &app.InstallInputs{
 		Values: pgtype.Hstore{
-			"db_name": generics.ToPtr("orders"),
-			// Materialized but blank counts as unset, matching how the install's
-			// input state resolves one back to the declared default.
+			"db_name":   generics.ToPtr("orders"),
 			"log_level": generics.ToPtr(""),
 		},
 	}
@@ -146,8 +133,6 @@ func TestCustomerInputs_PhoneHomePayload(t *testing.T) {
 
 	props := res["properties"].(map[string]any)
 	script := props["scriptContent"].(string)
-	// Unquoted: the env var already holds a JSON object, so quoting it would send a
-	// string where the endpoint decodes a map.
 	if !strings.Contains(script, `"install_inputs": $INSTALL_INPUTS_JSON`) {
 		t.Errorf("payload missing install_inputs:\n%s", script)
 	}
@@ -158,7 +143,6 @@ func TestCustomerInputs_PhoneHomePayload(t *testing.T) {
 			got = env["value"].(string)
 		}
 	}
-	// Sorted by input name, so the render is stable across reprovisions.
 	want := "[string(createObject('api_key', parameters('inputApiKey'), 'db_name', parameters('inputDbName')))]"
 	if got != want {
 		t.Errorf("install_inputs env value = %q, want %q", got, want)
@@ -171,8 +155,6 @@ func TestCustomerInputs_PhoneHomePayload(t *testing.T) {
 	assertNoNestedBrackets(t, resBytes)
 }
 
-// An app that declares no customer inputs must not gain the field: the goldens
-// assert the rest of the payload, and an empty env var would splice invalid JSON.
 func TestCustomerInputs_PhoneHomePayloadOmittedWhenNone(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 	res := phoneHomeScript(t, tmpl, minimalTemplateInput(), nil)
@@ -183,8 +165,6 @@ func TestCustomerInputs_PhoneHomePayloadOmittedWhenNone(t *testing.T) {
 	}
 }
 
-// ARM escapes a single quote by doubling it. Unescaped, an input name carrying one
-// would truncate the createObject argument list into a template that fails preflight.
 func TestCustomerInputs_PhoneHomeQuotesInputNames(t *testing.T) {
 	got := installInputsObjectExpr([]azureInput{{name: "it's_fine", paramName: "inputItSFine"}})
 	want := "[string(createObject('it''s_fine', parameters('inputItSFine')))]"
@@ -208,10 +188,6 @@ func TestCustomerInputs_ParameterCollisions(t *testing.T) {
 		}
 	})
 
-	// The realistic shadowing case is a parameter hoisted off a custom VNet or nested
-	// stack template that happens to be named like a derived input one. A silent
-	// overwrite there would deploy and then report the wrong value home, so the
-	// adder is exercised against an already-populated parameter map directly.
 	t.Run("input shadowing a parameter another source owns", func(t *testing.T) {
 		existing := &ARMTemplate{
 			Parameters: map[string]ARMParameter{
@@ -229,8 +205,6 @@ func TestCustomerInputs_ParameterCollisions(t *testing.T) {
 	})
 }
 
-// The prefix is what keeps a vendor-chosen input name off the Nuon-managed
-// parameters, so it has to hold for the names most likely to collide.
 func TestCustomerInputs_ReservedNamesAreUnreachable(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 
@@ -284,12 +258,9 @@ func TestCustomerInputs_QuickLinkBasics(t *testing.T) {
 		wantDefault  any
 		wantToolTip  string
 	}{
-		// The vendor's display name, so the portal reads the same as the dashboard.
 		{param: "inputDbName", wantLabel: "Database", wantRequired: true, wantDefault: "postgres", wantToolTip: "The database to connect to."},
 		{param: "inputReplicaCount", wantLabel: "Replica Count", wantRequired: true, wantDefault: "3"},
 		{param: "inputApiKey", wantLabel: "Api Key", wantRequired: true, wantDefault: nil},
-		// Blank is a legitimate answer here, so requiring it would leave the form
-		// unsubmittable.
 		{param: "inputLogLevel", wantLabel: "Log Level", wantRequired: false, wantDefault: ""},
 	} {
 		el, present := byName[tc.param]
@@ -318,9 +289,6 @@ func TestCustomerInputs_QuickLinkBasics(t *testing.T) {
 	}
 }
 
-// The portal builds its form from the wrapper, so a parameter the wrapper does not
-// re-declare and pass through is a field the customer fills in and the stack never
-// sees.
 func TestCustomerInputs_QuickLinkWrapperPassthrough(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 

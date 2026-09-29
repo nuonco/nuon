@@ -86,15 +86,11 @@ func (a AzureAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type InputGroup struct {
-	// mapstructure is able to decode map into Inputgroup because the type of InputGroup.Inputs matches that of what
-	// expected by mapstructure.
 	Inputs map[string]string `mapstructure:"inputs" toml:"inputs"`
-	// this property should only be used for writing comment for input group, and should not be used anywhere else.
-	Group string `mapstructure:"group" toml:"group"`
+	Group  string            `mapstructure:"group" toml:"group"`
 }
 
 func (ig InputGroup) JSONSchemaExtend(schema *jsonschema.Schema) {
-	// Make schema treat InputGroup as a map (additionalProperties pattern)
 	schema.Type = "object"
 	schema.AdditionalProperties = &jsonschema.Schema{
 		Type: "string",
@@ -108,7 +104,6 @@ func (ig InputGroup) MarshalTOML() ([]byte, error) {
 }
 
 func (ig InputGroup) MarshalJSON() ([]byte, error) {
-	// Marshal as flat map to match the JSONSchemaExtend definition
 	if ig.Inputs == nil {
 		return []byte("{}"), nil
 	}
@@ -116,7 +111,6 @@ func (ig InputGroup) MarshalJSON() ([]byte, error) {
 }
 
 func (ig *InputGroup) UnmarshalTOML(data []byte) error {
-	// First unmarshal the TOML data into a map
 	var m map[string]string
 	if err := toml.Unmarshal(data, &m); err != nil {
 		return fmt.Errorf("failed to unmarshal TOML data: %w", err)
@@ -133,8 +127,6 @@ func (ig InputGroup) TOMLComment() string {
 	return fmt.Sprintf("input.group: %s", ig.Group)
 }
 
-// InstallStackOverrides holds per-install overrides for the app-level stack
-// template configuration. Nil fields mean "use the app default".
 type InstallStackOverrides struct {
 	VPCNestedTemplateURL    string              `mapstructure:"vpc_nested_template_url,omitempty" toml:"vpc_nested_template_url,omitempty"`
 	RunnerNestedTemplateURL string              `mapstructure:"runner_nested_template_url,omitempty" toml:"runner_nested_template_url,omitempty"`
@@ -154,12 +146,10 @@ func (a InstallStackOverrides) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Nullable()
 }
 
-// HasOverrides returns true when any override field is set.
 func (s *InstallStackOverrides) HasOverrides() bool {
 	return s != nil && (s.VPCNestedTemplateURL != "" || s.RunnerNestedTemplateURL != "" || len(s.CustomNestedStacks) > 0)
 }
 
-// Install is a flattened configuration type that allows us to define installs for an app.
 type Install struct {
 	Name           string                `mapstructure:"name" toml:"name" comment:"install" jsonschema:"required"`
 	AppBranch      string                `mapstructure:"app_branch,omitempty" toml:"app_branch,omitempty"`
@@ -174,15 +164,8 @@ type Install struct {
 
 	StackOverrides *InstallStackOverrides `mapstructure:"stack_overrides,omitempty" toml:"stack_overrides,omitempty"`
 
-	// ComponentToggles controls which toggleable components are enabled or disabled
-	// for this install, keyed by component name. true = enabled, false = disabled.
-	// Absent keys fall through to the component's default_enabled setting.
 	ComponentToggles map[string]bool `mapstructure:"component_toggles,omitempty" toml:"component_toggles,omitempty"`
 
-	// Components holds per-component install-level overrides, keyed by component
-	// name. Each override deep-merges over the component's app-config values and
-	// wins. It is carried through the install input system under a reserved
-	// synthetic input name (see component_override.go).
 	Components map[string]ComponentOverride `mapstructure:"components,omitempty" toml:"components,omitempty"`
 }
 
@@ -196,15 +179,9 @@ func (t InstallTelemetry) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Enable or disable telemetry for this install. Omit to preserve the current setting; new installs inherit the organization default.")
 }
 
-// ComponentOverride is a per-component install-level override. Exactly one field
-// is meaningful per component, matching the component's type (Helm vs Terraform).
 type ComponentOverride struct {
-	// HelmValues is a raw YAML values override for a Helm component, merged as the
-	// highest-precedence values layer at deploy time.
 	HelmValues string `mapstructure:"helm_values,omitempty" toml:"helm_values,omitempty"`
-	// TFVars is a raw .tfvars (HCL or JSON) override for a Terraform component,
-	// appended as the final, highest-precedence -var-file at deploy time.
-	TFVars string `mapstructure:"tf_vars,omitempty" toml:"tf_vars,omitempty"`
+	TFVars     string `mapstructure:"tf_vars,omitempty" toml:"tf_vars,omitempty"`
 }
 
 func (c ComponentOverride) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -271,7 +248,7 @@ func (i *Install) Validate() error {
 		}
 	}
 
-	// Keys are lookup identifiers on every matching surface, so they can never
+	// why: Keys are lookup identifiers on every matching surface, so they can never
 	// be templated; templated values must parse now, not fail at render time.
 	for key, val := range i.Labels {
 		if strings.Contains(key, "{{") {
@@ -291,8 +268,6 @@ func (i *Install) Validate() error {
 		}
 	}
 
-	// Catch malformed override documents at config-parse time, before any API
-	// call or deploy, so a YAML/HCL typo surfaces immediately.
 	for compName, override := range i.Components {
 		if err := ValidateInputValueSyntax(InputTypeYAML, override.HelmValues); err != nil {
 			return ErrConfig{
@@ -318,9 +293,6 @@ func (i *Install) FlattenedInputs() map[string]string {
 			flattened[key] = val
 		}
 	}
-	// Per-component overrides are carried through the input system under reserved
-	// synthetic input names so they reuse install-input storage, redaction,
-	// diffing, and the input-update redeploy flow.
 	for compName, override := range i.Components {
 		if override.HelmValues != "" {
 			flattened[HelmValuesOverrideInputName(compName)] = override.HelmValues
@@ -329,9 +301,6 @@ func (i *Install) FlattenedInputs() map[string]string {
 			flattened[TFVarsOverrideInputName(compName)] = override.TFVars
 		}
 	}
-	// Component enable/disable toggles are likewise carried through a reserved
-	// synthetic enabled input per component, so [component_toggles] flows through
-	// the same install-input update + reconcile path as everything else.
 	for compName, enabled := range i.ComponentToggles {
 		flattened[EnabledOverrideInputName(compName)] = strconv.FormatBool(enabled)
 	}
@@ -409,7 +378,6 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 			))
 		}
 
-		// Diff custom nested stacks by name.
 		upstreamByName := make(map[string]CustomNestedStack, len(upstream.CustomNestedStacks))
 		for _, s := range upstream.CustomNestedStacks {
 			upstreamByName[s.Name] = s
@@ -519,11 +487,10 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 	upstreamInputs := upstreamInstall.FlattenedInputs()
 
 	for key, val := range installInputs {
-		// upstreamInputs[key] is "" when absent, e.g. for new installs.
 		inputDiffs = append(inputDiffs, inputDiffNode(key, upstreamInputs[key], val))
 	}
 
-	// Detect cleared component overrides: present upstream but no longer set
+	// why: Detect cleared component overrides: present upstream but no longer set
 	// locally. Normal inputs are additive (omitting one does not clear it), so
 	// this removal pass is scoped to reserved synthetic override keys, which
 	// revert their component to app-config values when set back to empty.

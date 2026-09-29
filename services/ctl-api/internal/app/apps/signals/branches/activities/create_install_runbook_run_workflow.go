@@ -18,9 +18,6 @@ type CreateInstallRunbookRunWorkflowInput struct {
 	Inputs          map[string]string `json:"inputs,omitempty"`
 	Callback        callback.Ref      `json:"callback,omitempty"`
 
-	// IdempotencyKey must be deterministic for a given (branch run, install,
-	// runbook position). Without it a Temporal retry of this activity after the
-	// underlying transaction has committed starts the runbook a second time.
 	IdempotencyKey string `json:"idempotency_key"`
 }
 
@@ -28,9 +25,6 @@ type CreateInstallRunbookRunWorkflowOutput struct {
 	WorkflowID          string `json:"workflow_id"`
 	InstallRunbookRunID string `json:"install_runbook_run_id"`
 
-	// TerminalStatus is set when the run had already finished, so no completion
-	// signal is coming and the caller must not wait on the callback. It is not
-	// necessarily success.
 	TerminalStatus string `json:"terminal_status,omitempty"`
 }
 
@@ -56,8 +50,6 @@ func (a *Activities) CreateInstallRunbookRunWorkflow(ctx context.Context, input 
 		return nil, fmt.Errorf("unable to get install runbook: %w", err)
 	}
 
-	// Activities carry no request auth context, so set the created-by/org the
-	// InstallRunbookRun BeforeCreate hooks read.
 	ctx = cctx.SetAccountIDContext(ctx, input.TriggeredByID)
 	ctx = cctx.SetOrgIDContext(ctx, install.OrgID)
 

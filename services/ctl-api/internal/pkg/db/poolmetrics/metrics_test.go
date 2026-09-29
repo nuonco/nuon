@@ -129,7 +129,7 @@ func TestPoolOTLPExport(t *testing.T) {
 	for iteration, count := range []int64{10, 10, 13} {
 		if iteration == 2 {
 			cancelAcquires(t, pools[0], 3)
-			time.Sleep(1100 * time.Millisecond) // otelpgx caches snapshots for one second.
+			time.Sleep(1100 * time.Millisecond)
 		}
 		require.NoError(t, provider.(*sdkmetric.MeterProvider).ForceFlush(context.Background()))
 		var body []byte

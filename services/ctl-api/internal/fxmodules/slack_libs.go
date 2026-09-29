@@ -9,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/statejwt"
 )
 
-// SlackLibsModule provides the shared Slack helper libraries (Web API client
+// why: SlackLibsModule provides the shared Slack helper libraries (Web API client
 // and OAuth state JWT encoder) used by the slack service package as well as
 // the Slack-listener handlers in Phase 4.
 //

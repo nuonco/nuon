@@ -48,7 +48,6 @@ func (s *service) GetCurrentRunnerProcesses(ctx *gin.Context) {
 func (s *service) getCurrentRunnerProcesses(ctx context.Context, runnerID, orgID string) ([]app.RunnerProcess, error) {
 	var processes []app.RunnerProcess
 
-	// get the most recent active process per type using a subquery
 	res := s.db.WithContext(ctx).
 		Where("runner_id = ? AND org_id = ? AND composite_status->>'status' = ?", runnerID, orgID, string(app.RunnerProcessStatusActive)).
 		Preload("Shutdowns").
@@ -58,7 +57,6 @@ func (s *service) getCurrentRunnerProcesses(ctx context.Context, runnerID, orgID
 		return nil, fmt.Errorf("unable to get current runner processes: %w", res.Error)
 	}
 
-	// deduplicate: keep only the most recent per type
 	seen := make(map[app.RunnerProcessType]bool)
 	var result []app.RunnerProcess
 	for _, p := range processes {

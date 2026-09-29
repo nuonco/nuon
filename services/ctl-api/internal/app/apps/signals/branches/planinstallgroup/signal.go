@@ -37,8 +37,6 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 	s.FlowID = flowID
 }
 
-// IsEmptyInstallGroup reports whether this group resolves to zero installs;
-// empty groups are auto-skipped (see checks/emptygroup).
 func (s *Signal) IsEmptyInstallGroup(ctx workflow.Context) (bool, error) {
 	installIDs, _, err := s.resolveInstallIDs(ctx)
 	if err != nil {
@@ -47,9 +45,6 @@ func (s *Signal) IsEmptyInstallGroup(ctx workflow.Context) (bool, error) {
 	return len(installIDs) == 0, nil
 }
 
-// AutoApproveOnPoliciesPassing reports whether the group opted into approving
-// its own plan. Synthetic preview groups have no install group row to configure,
-// so they always require a response.
 func (s *Signal) AutoApproveOnPoliciesPassing(ctx workflow.Context) bool {
 	if s.InstallGroupID == "" {
 		return false

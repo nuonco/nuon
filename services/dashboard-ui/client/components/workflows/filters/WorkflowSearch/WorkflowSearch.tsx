@@ -12,8 +12,6 @@ export const WorkflowSearch = () => {
   const [value, setValue] = useState(urlValue)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Keep local input in sync when the URL param changes externally (e.g.
-  // navigating to the page with a pre-set search).
   useEffect(() => {
     setValue(urlValue)
   }, [urlValue])

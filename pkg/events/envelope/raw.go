@@ -8,8 +8,6 @@ import (
 	"net/http"
 )
 
-// Raw decodes an unwrapped JSON event. The event ID defaults to the body
-// digest so retried deliveries dedupe; selectors may override it.
 type Raw struct{}
 
 func (Raw) Decode(headers http.Header, body []byte) (*Event, error) {

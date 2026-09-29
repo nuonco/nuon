@@ -1,5 +1,3 @@
-// Core entity types matching Go app.* models
-
 export type TOrg = {
   id: string
   name: string
@@ -345,8 +343,6 @@ export type TAuditLogEntry = {
   description: string | null
 }
 
-// Temporal-specific types
-
 export type TWorkflowInfo = {
   status: string
   activities: TActivityInfo[]
@@ -456,8 +452,6 @@ export type TRunnerDetailView = {
   process_online: boolean
   configs: Record<string, TSandboxModeJobConfig>
 }
-
-// API response types
 
 export type TOrgsResponse = {
   orgs: TOrg[]

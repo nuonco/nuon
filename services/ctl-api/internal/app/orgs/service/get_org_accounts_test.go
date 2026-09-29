@@ -31,7 +31,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// GetOrgAccountsTestService holds all fx-injected dependencies for get org accounts tests.
 type GetOrgAccountsTestService struct {
 	fx.In
 
@@ -46,7 +45,6 @@ type GetOrgAccountsTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// GetOrgAccountsTestSuite is the testify suite for GET /v1/orgs/current/accounts endpoint.
 type GetOrgAccountsTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -73,7 +71,6 @@ func (s *GetOrgAccountsTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),
 	)
@@ -81,7 +78,6 @@ func (s *GetOrgAccountsTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -89,7 +85,6 @@ func (s *GetOrgAccountsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -120,27 +115,20 @@ func (s *GetOrgAccountsTestSuite) makeRequest(method, path string) *httptest.Res
 	return rr
 }
 
-// cleanupOrgRoles removes roles, policies, and account_roles for testOrg only.
-// Scoped to testOrg to avoid FK violations from broad deletes.
-// Account cleanup is handled by per-account s.T().Cleanup() functions.
 func (s *GetOrgAccountsTestSuite) cleanupOrgRoles() {
-	// 1. Delete account_roles for this org's roles only
 	err := s.service.DB.Exec(
 		"DELETE FROM account_roles WHERE role_id IN (SELECT id FROM roles WHERE org_id = ?)",
 		s.testOrg.ID,
 	).Error
 	require.NoError(s.T(), err)
 
-	// 2. Delete policies for testOrg
 	err = s.service.DB.Unscoped().Where("org_id = ?", s.testOrg.ID).Delete(&app.Policy{}).Error
 	require.NoError(s.T(), err)
 
-	// 3. Delete roles for testOrg
 	err = s.service.DB.Unscoped().Where("org_id = ?", s.testOrg.ID).Delete(&app.Role{}).Error
 	require.NoError(s.T(), err)
 }
 
-// cleanupAccount registers cleanup to delete an account and its account_roles.
 func (s *GetOrgAccountsTestSuite) cleanupAccount(acc *app.Account) {
 	s.T().Cleanup(func() {
 		s.service.DB.Exec("DELETE FROM account_roles WHERE account_id = ?", acc.ID)
@@ -151,10 +139,10 @@ func (s *GetOrgAccountsTestSuite) cleanupAccount(acc *app.Account) {
 func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 	testCases := []struct {
 		name          string
-		setupFunc     func() []string // Returns account IDs that should be returned
+		setupFunc     func() []string
 		queryParams   string
 		expectedCount int
-		validateFunc  func([]app.Account) // Additional validations
+		validateFunc  func([]app.Account)
 	}{
 		{
 			name: "returns empty array when no accounts have org admin role",
@@ -162,11 +150,9 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create org roles (OrgAdmin role must exist even if no accounts assigned)
 				err := s.service.AuthzClient.CreateOrgRoles(ctx, s.testOrg.ID)
 				require.NoError(s.T(), err)
 
-				// Org exists and role exists, but no accounts have been assigned admin role yet
 				return []string{}
 			},
 			queryParams:   "",
@@ -178,16 +164,13 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create org roles (this creates OrgAdmin, Installer, Runner roles)
 				err := s.service.AuthzClient.CreateOrgRoles(ctx, s.testOrg.ID)
 				require.NoError(s.T(), err)
 
-				// Get the OrgAdmin role
 				var adminRole app.Role
 				err = s.service.DB.Where("org_id = ? AND role_type = ?", s.testOrg.ID, app.RoleTypeOrgAdmin).First(&adminRole).Error
 				require.NoError(s.T(), err)
 
-				// Create two accounts and assign them as org admins
 				acc1ID := domains.NewAccountID()
 				acc1 := &app.Account{
 					ID:          acc1ID,
@@ -210,7 +193,6 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				require.NoError(s.T(), err)
 				s.cleanupAccount(acc2)
 
-				// Assign accounts to org admin role
 				accountRole1 := &app.AccountRole{
 					AccountID: acc1.ID,
 					RoleID:    adminRole.ID,
@@ -241,11 +223,9 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create org roles
 				err := s.service.AuthzClient.CreateOrgRoles(ctx, s.testOrg.ID)
 				require.NoError(s.T(), err)
 
-				// Get the OrgAdmin role
 				var adminRole app.Role
 				err = s.service.DB.Where("org_id = ? AND role_type = ?", s.testOrg.ID, app.RoleTypeOrgAdmin).First(&adminRole).Error
 				require.NoError(s.T(), err)
@@ -263,7 +243,6 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 					require.NoError(s.T(), err)
 					s.cleanupAccount(acc)
 
-					// Assign to org admin role
 					accountRole := &app.AccountRole{
 						AccountID: acc.ID,
 						RoleID:    adminRole.ID,
@@ -274,28 +253,23 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 					accountIDs = append(accountIDs, acc.ID)
 				}
 
-				// Don't return accountIDs since handler has no ORDER BY
-				// We can only verify the count, not which specific accounts are returned
 				return []string{}
 			},
 			queryParams:   "?limit=5",
 			expectedCount: 5,
-			validateFunc:  nil, // Handler has no ORDER BY, so we can only verify count
+			validateFunc:  nil,
 		},
 		{
 			name: "respects pagination - offset parameter",
 			setupFunc: func() []string {
-				// Clean up roles from previous subtests
 				s.cleanupOrgRoles()
 
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create org roles
 				err := s.service.AuthzClient.CreateOrgRoles(ctx, s.testOrg.ID)
 				require.NoError(s.T(), err)
 
-				// Get the OrgAdmin role
 				var adminRole app.Role
 				err = s.service.DB.Where("org_id = ? AND role_type = ?", s.testOrg.ID, app.RoleTypeOrgAdmin).First(&adminRole).Error
 				require.NoError(s.T(), err)
@@ -313,7 +287,6 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 					require.NoError(s.T(), err)
 					s.cleanupAccount(acc)
 
-					// Assign to org admin role
 					accountRole := &app.AccountRole{
 						AccountID: acc.ID,
 						RoleID:    adminRole.ID,
@@ -324,33 +297,27 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 					accountIDs = append(accountIDs, acc.ID)
 				}
 
-				// Don't return accountIDs since handler has no ORDER BY
-				// We can only verify the count, not which specific accounts are returned
 				return []string{}
 			},
 			queryParams:   "?offset=2",
 			expectedCount: 3,
-			validateFunc:  nil, // Handler has no ORDER BY, so we can only verify count
+			validateFunc:  nil,
 		},
 		{
 			name: "filters nuon.co emails for non-nuon users",
 			setupFunc: func() []string {
-				// Clean up roles from previous subtests
 				s.cleanupOrgRoles()
 
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create org roles
 				err := s.service.AuthzClient.CreateOrgRoles(ctx, s.testOrg.ID)
 				require.NoError(s.T(), err)
 
-				// Get the OrgAdmin role
 				var adminRole app.Role
 				err = s.service.DB.Where("org_id = ? AND role_type = ?", s.testOrg.ID, app.RoleTypeOrgAdmin).First(&adminRole).Error
 				require.NoError(s.T(), err)
 
-				// Create a non-nuon requesting user account for this test
 				nonNuonAccID := domains.NewAccountID()
 				nonNuonAcc := &app.Account{
 					ID:          nonNuonAccID,
@@ -362,7 +329,6 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				require.NoError(s.T(), err)
 				s.cleanupAccount(nonNuonAcc)
 
-				// Recreate router with non-nuon account context
 				testRouter := tests.NewTestRouter(tests.RouterOptions{
 					L:       s.service.L,
 					DB:      s.service.DB,
@@ -373,7 +339,6 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				require.NoError(s.T(), err)
 				s.router = testRouter
 
-				// Create regular user account (non-nuon email)
 				acc1ID := domains.NewAccountID()
 				acc1 := &app.Account{
 					ID:          acc1ID,
@@ -385,7 +350,6 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				require.NoError(s.T(), err)
 				s.cleanupAccount(acc1)
 
-				// Create Nuon employee account
 				acc2 := &app.Account{
 					ID:          domains.NewAccountID(),
 					Email:       "employee@nuon.co",
@@ -396,7 +360,6 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				require.NoError(s.T(), err)
 				s.cleanupAccount(acc2)
 
-				// Assign both to org admin role
 				accountRole1 := &app.AccountRole{
 					AccountID: acc1.ID,
 					RoleID:    adminRole.ID,
@@ -411,15 +374,12 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				err = s.service.DB.Create(accountRole2).Error
 				require.NoError(s.T(), err)
 
-				// For non-nuon.co user, nuon.co email should be filtered
-				// So we should only see acc1
 				return []string{acc1.ID}
 			},
 			queryParams:   "",
 			expectedCount: 1,
 			validateFunc: func(accounts []app.Account) {
 				assert.Len(s.T(), accounts, 1)
-				// Verify nuon.co account is NOT in the response
 				for _, acc := range accounts {
 					assert.NotContains(s.T(), acc.Email, "@nuon.co")
 				}
@@ -428,13 +388,10 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 		{
 			name: "shows all accounts including nuon.co for nuon.co users",
 			setupFunc: func() []string {
-				// Clean up roles from previous subtests
 				s.cleanupOrgRoles()
 
 				ctx := context.Background()
 
-				// CRITICAL: Create new nuon.co account instead of modifying s.testAcc
-				// Modifying s.testAcc causes database constraint violations in later tests
 				nuonAdminAccID := domains.NewAccountID()
 				nuonAdminAcc := &app.Account{
 					ID:          nuonAdminAccID,
@@ -448,16 +405,13 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 
 				ctx = cctx.SetAccountContext(ctx, nuonAdminAcc)
 
-				// Create org roles with nuon.co account context
 				err = s.service.AuthzClient.CreateOrgRoles(ctx, s.testOrg.ID)
 				require.NoError(s.T(), err)
 
-				// Get the OrgAdmin role
 				var adminRole app.Role
 				err = s.service.DB.Where("org_id = ? AND role_type = ?", s.testOrg.ID, app.RoleTypeOrgAdmin).First(&adminRole).Error
 				require.NoError(s.T(), err)
 
-				// Create regular user account
 				acc1ID := domains.NewAccountID()
 				acc1 := &app.Account{
 					ID:          acc1ID,
@@ -469,7 +423,6 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				require.NoError(s.T(), err)
 				s.cleanupAccount(acc1)
 
-				// Create another Nuon employee account
 				acc2ID := domains.NewAccountID()
 				acc2 := &app.Account{
 					ID:          acc2ID,
@@ -481,7 +434,6 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				require.NoError(s.T(), err)
 				s.cleanupAccount(acc2)
 
-				// Assign both to org admin role
 				accountRole1 := &app.AccountRole{
 					AccountID: acc1.ID,
 					RoleID:    adminRole.ID,
@@ -496,7 +448,6 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				err = s.service.DB.Create(accountRole2).Error
 				require.NoError(s.T(), err)
 
-				// Recreate router with nuon.co account context
 				testRouter := tests.NewTestRouter(tests.RouterOptions{
 					L:       s.service.L,
 					DB:      s.service.DB,
@@ -507,14 +458,12 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				require.NoError(s.T(), err)
 				s.router = testRouter
 
-				// For nuon.co user, all accounts should be visible
 				return []string{acc1.ID, acc2.ID}
 			},
 			queryParams:   "",
 			expectedCount: 2,
 			validateFunc: func(accounts []app.Account) {
 				assert.Len(s.T(), accounts, 2)
-				// Both regular and nuon.co accounts should be visible
 				hasNuonEmail := false
 				for _, acc := range accounts {
 					if strings.HasSuffix(acc.Email, "@nuon.co") {
@@ -527,13 +476,11 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 		{
 			name: "only returns accounts for current org",
 			setupFunc: func() []string {
-				// Clean up roles from previous subtests
 				s.cleanupOrgRoles()
 
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -546,21 +493,18 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 				s.T().Cleanup(func() {
-					// Clean up org2's roles/policies/account_roles before deleting org
 					s.service.DB.Exec("DELETE FROM account_roles WHERE role_id IN (SELECT id FROM roles WHERE org_id = ?)", org2.ID)
 					s.service.DB.Unscoped().Where("org_id = ?", org2.ID).Delete(&app.Policy{})
 					s.service.DB.Unscoped().Where("org_id = ?", org2.ID).Delete(&app.Role{})
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org2.ID)
 				})
 
-				// Create org roles for both orgs
 				err = s.service.AuthzClient.CreateOrgRoles(ctx, s.testOrg.ID)
 				require.NoError(s.T(), err)
 
 				err = s.service.AuthzClient.CreateOrgRoles(ctx, org2.ID)
 				require.NoError(s.T(), err)
 
-				// Get admin roles for both orgs
 				var adminRole1 app.Role
 				err = s.service.DB.Where("org_id = ? AND role_type = ?", s.testOrg.ID, app.RoleTypeOrgAdmin).First(&adminRole1).Error
 				require.NoError(s.T(), err)
@@ -569,7 +513,6 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				err = s.service.DB.Where("org_id = ? AND role_type = ?", org2.ID, app.RoleTypeOrgAdmin).First(&adminRole2).Error
 				require.NoError(s.T(), err)
 
-				// Create account for current org
 				acc1ID := domains.NewAccountID()
 				acc1 := &app.Account{
 					ID:          acc1ID,
@@ -581,7 +524,6 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				require.NoError(s.T(), err)
 				s.cleanupAccount(acc1)
 
-				// Create account for other org
 				acc2ID := domains.NewAccountID()
 				acc2 := &app.Account{
 					ID:          acc2ID,
@@ -593,7 +535,6 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				require.NoError(s.T(), err)
 				s.cleanupAccount(acc2)
 
-				// Assign to respective org admin roles
 				accountRole1 := &app.AccountRole{
 					AccountID: acc1.ID,
 					RoleID:    adminRole1.ID,
@@ -608,7 +549,6 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				err = s.service.DB.Create(accountRole2).Error
 				require.NoError(s.T(), err)
 
-				// Should only see acc1 for current org
 				return []string{acc1.ID}
 			},
 			queryParams:   "",
@@ -621,10 +561,8 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test data (setupFunc may reassign s.router for tests that need different context)
 			expectedAccountIDs := tc.setupFunc()
 
-			// Make request using s.router (may have been reassigned by setupFunc)
 			req, err := http.NewRequest(http.MethodGet, "/v1/orgs/current/accounts"+tc.queryParams, nil)
 			require.NoError(s.T(), err)
 
@@ -636,7 +574,6 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 			}
 			require.Equal(s.T(), http.StatusOK, rr.Code)
 
-			// Parse response
 			var response []app.Account
 			err = json.Unmarshal(rr.Body.Bytes(), &response)
 			if err != nil {
@@ -645,10 +582,8 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 			require.NoError(s.T(), err)
 			require.NotNil(s.T(), response)
 
-			// Validate expected count
 			require.Len(s.T(), response, tc.expectedCount)
 
-			// Verify returned accounts match expected IDs (if any)
 			if tc.expectedCount > 0 && len(expectedAccountIDs) > 0 {
 				responseIDs := make([]string, len(response))
 				for i, acc := range response {
@@ -659,7 +594,6 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				}
 			}
 
-			// Run additional validations if provided
 			if tc.validateFunc != nil && len(response) > 0 {
 				tc.validateFunc(response)
 			}

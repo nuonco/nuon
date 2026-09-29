@@ -16,16 +16,6 @@ func (m model) logMessageView() string {
 
 // TODO: Log Message should be its own component tbh
 func (m model) footerView() string {
-	/*
-
-		renders two rows
-		1. log message
-		2. help footer
-
-		If the log message is empty, that row is omitted.
-
-	*/
-	// we have to handle this base case since the element widths are zero on init
 	if m.footer.Width() == 0 {
 		content := "\n" + m.help.View(m.keys)
 		m.footer.SetContent(content)
@@ -45,7 +35,6 @@ func (m model) footerView() string {
 	}
 	sections = append(sections, styles.HelpStyle.Render(m.help.View(m.keys)))
 
-	// set contents
 	m.footer.SetContent(lipgloss.JoinVertical(
 		lipgloss.Top,
 		sections...,

@@ -29,16 +29,13 @@ type TSourceFile = {
   op: TAppConfigDiffOperation
   before?: string
   after?: string
-  /** Backend signal: text changed but the parsed config is identical. */
   formatOnly?: boolean
 }
 
 type TSourceArchiveDiff = {
   baselineVersion: string
   headVersion: string
-  /** False when the baseline AppConfig predates source capture (no archive). */
   baselineCaptured: boolean
-  /** Head archive Members index: "kind:logicalName" -> relative path. */
   members: Record<string, string>
   files: TSourceFile[]
   unchangedPaths: string[]
@@ -400,10 +397,6 @@ const mockComputedSections: TAppConfigDiffSection[] = [
 
 const mockComputedSummary = { added: 2, removed: 1, changed: 2 }
 
-// ---------------------------------------------------------------------------
-// Local helpers (mock-quality). In production these belong in lib/diffs.
-// ---------------------------------------------------------------------------
-
 const SECTION_KIND: Record<string, string> = {
   components: 'component',
   actions: 'action',
@@ -580,10 +573,6 @@ const MonoPath = ({
   )
 }
 
-// ---------------------------------------------------------------------------
-// Parsed summary strip — the semantic diff, demoted to orientation + cross-links.
-// ---------------------------------------------------------------------------
-
 type TSummaryChip = {
   name: string
   op: TAppConfigDiffOperation
@@ -732,11 +721,6 @@ const ParsedSummary = ({
     </dl>
   </Expand>
 )
-
-// ---------------------------------------------------------------------------
-// Changed-files tree — status letter lane, folder dots, muted unchanged rows
-// behind a toggle.
-// ---------------------------------------------------------------------------
 
 type TTreeFolder = { dir: string; files: TSourceFile[]; unchanged: string[] }
 
@@ -924,12 +908,6 @@ const FileTree = ({
   )
 }
 
-// ---------------------------------------------------------------------------
-// Stacked per-file diff with a sticky header. Body is the house CodeBlock
-// diff rendering (diffLines + CodeBlock isDiff), the same one AppConfigDiff
-// uses for embedded files.
-// ---------------------------------------------------------------------------
-
 const FileDiffPanel = ({
   file,
   members,
@@ -1079,10 +1057,6 @@ const FileDiffPanel = ({
     </section>
   )
 }
-
-// ---------------------------------------------------------------------------
-// Card shell
-// ---------------------------------------------------------------------------
 
 const VersionRange = ({ from, to }: { from: string; to: string }) => (
   <span className="flex items-center gap-1">
@@ -1275,10 +1249,6 @@ const AppConfigSourceDiff = (
 const Frame = ({ children }: { children: ReactNode }) => (
   <div className="mx-auto max-w-6xl p-8">{children}</div>
 )
-
-// ---------------------------------------------------------------------------
-// Stories
-// ---------------------------------------------------------------------------
 
 export const Overview = () => (
   <Frame>

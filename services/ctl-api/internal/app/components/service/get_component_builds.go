@@ -129,8 +129,6 @@ func (s *service) getAppBuilds(ctx *gin.Context, appID string, limit int) ([]app
 
 	blds := []app.ComponentBuild{}
 
-	// query all builds that belong to the component id, starting at the component to ensure the component exists
-	// via the double join.
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("ComponentConfigConnection").
@@ -166,8 +164,6 @@ func (s *service) getComponentBuilds(ctx *gin.Context, cmpID string) ([]app.Comp
 
 	cmp := app.Component{}
 
-	// query all builds that belong to the component id, starting at the component to ensure the component exists
-	// via the double join.
 	res := s.db.WithContext(ctx).
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order(views.TableOrViewName(s.db, &app.ComponentConfigConnection{}, ".created_at DESC"))

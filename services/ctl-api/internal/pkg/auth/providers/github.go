@@ -20,15 +20,13 @@ const (
 	GitHubUserTeamURL  = "https://api.github.com/orgs/:org_id/teams/:team_slug/memberships/:username"
 )
 
-// GitHubProvider implements the Provider interface for GitHub OAuth.
 type GitHubProvider struct {
 	BaseProvider
-	teamWhitelist []string // org or org/team format
+	teamWhitelist []string
 	userOrgURL    string
 	userTeamURL   string
 }
 
-// GitHubUserInfo represents user information from GitHub's API.
 type GitHubUserInfo struct {
 	ID        int    `json:"id"`
 	Login     string `json:"login"`
@@ -43,21 +41,18 @@ type GitHubUserInfo struct {
 	Bio       string `json:"bio"`
 }
 
-// GitHubTeamMembershipState represents the team membership response from GitHub.
 type GitHubTeamMembershipState struct {
-	State string `json:"state"` // "active" or "pending"
-	Role  string `json:"role"`  // "member" or "maintainer"
+	State string `json:"state"`
+	Role  string `json:"role"`
 }
 
-// GitHubProviderConfig extends ProviderConfig with GitHub-specific options.
 type GitHubProviderConfig struct {
 	*ProviderConfig
-	TeamWhitelist []string // List of org or org/team to check membership
-	UserOrgURL    string   // URL template for checking org membership
-	UserTeamURL   string   // URL template for checking team membership
+	TeamWhitelist []string
+	UserOrgURL    string
+	UserTeamURL   string
 }
 
-// NewGitHubProvider creates a new GitHub OAuth provider instance.
 func NewGitHubProvider() *GitHubProvider {
 	return &GitHubProvider{
 		BaseProvider: BaseProvider{
@@ -68,7 +63,6 @@ func NewGitHubProvider() *GitHubProvider {
 	}
 }
 
-// Configure initializes the GitHub provider with the given configuration.
 func (p *GitHubProvider) Configure(cfg *ProviderConfig) error {
 	if cfg.Logger != nil {
 		p.log = cfg.Logger
@@ -76,7 +70,6 @@ func (p *GitHubProvider) Configure(cfg *ProviderConfig) error {
 		p.log = zap.NewNop()
 	}
 
-	// Validate required configuration
 	if cfg.ClientID == "" {
 		return fmt.Errorf("github: client_id is required")
 	}
@@ -84,7 +77,6 @@ func (p *GitHubProvider) Configure(cfg *ProviderConfig) error {
 		return fmt.Errorf("github: client_secret is required")
 	}
 
-	// Set GitHub-specific defaults
 	if cfg.AuthURL == "" {
 		cfg.AuthURL = github.Endpoint.AuthURL
 	}
@@ -95,7 +87,6 @@ func (p *GitHubProvider) Configure(cfg *ProviderConfig) error {
 		cfg.UserInfoURL = GitHubUserInfoURL
 	}
 
-	// Set default scopes if not provided
 	if len(cfg.Scopes) == 0 {
 		cfg.Scopes = []string{
 			"user:email",
@@ -113,7 +104,6 @@ func (p *GitHubProvider) Configure(cfg *ProviderConfig) error {
 	return nil
 }
 
-// ConfigureWithTeams initializes the GitHub provider with team/org membership checking.
 func (p *GitHubProvider) ConfigureWithTeams(cfg *GitHubProviderConfig) error {
 	if err := p.Configure(cfg.ProviderConfig); err != nil {
 		return err
@@ -127,7 +117,6 @@ func (p *GitHubProvider) ConfigureWithTeams(cfg *GitHubProviderConfig) error {
 		p.userTeamURL = cfg.UserTeamURL
 	}
 
-	// Add org scope if checking teams
 	if len(p.teamWhitelist) > 0 && !slices.Contains(p.oauth2Cfg.Scopes, "read:org") {
 		p.oauth2Cfg.Scopes = append(p.oauth2Cfg.Scopes, "read:org")
 	}
@@ -135,14 +124,12 @@ func (p *GitHubProvider) ConfigureWithTeams(cfg *GitHubProviderConfig) error {
 	return nil
 }
 
-// GetUserInfo exchanges the authorization code for tokens and retrieves user information.
 func (p *GitHubProvider) GetUserInfo(ctx context.Context, r *http.Request, opts ...oauth2.AuthCodeOption) (*UserInfo, *ProviderTokens, error) {
 	code := r.URL.Query().Get("code")
 	if code == "" {
 		return nil, nil, fmt.Errorf("github: authorization code not found in request")
 	}
 
-	// Exchange the code for tokens
 	client, _, ptokens, err := p.ExchangeCode(ctx, code, opts...)
 	if err != nil {
 		return nil, nil, fmt.Errorf("github: %w", err)
@@ -151,7 +138,6 @@ func (p *GitHubProvider) GetUserInfo(ctx context.Context, r *http.Request, opts 
 	p.log.Debug("token exchange successful",
 		zap.Int("access_token_len", len(ptokens.AccessToken)))
 
-	// Fetch user info from GitHub's API
 	data, err := p.FetchUserInfo(ctx, client)
 	if err != nil {
 		return nil, ptokens, fmt.Errorf("github: %w", err)
@@ -159,30 +145,26 @@ func (p *GitHubProvider) GetUserInfo(ctx context.Context, r *http.Request, opts 
 
 	p.log.Debug("userinfo response", zap.String("body", string(data)))
 
-	// Parse GitHub-specific response
 	var ghUser GitHubUserInfo
 	if err := json.Unmarshal(data, &ghUser); err != nil {
 		return nil, ptokens, fmt.Errorf("github: failed to parse userinfo: %w", err)
 	}
 
-	// Convert to standard UserInfo
 	user := &UserInfo{
 		Subject:        fmt.Sprintf("%d", ghUser.ID),
 		Email:          ghUser.Email,
-		EmailVerified:  ghUser.Email != "", // GitHub doesn't explicitly tell us, assume verified if present
+		EmailVerified:  ghUser.Email != "",
 		Name:           ghUser.Name,
 		Username:       ghUser.Login,
 		Picture:        ghUser.AvatarURL,
 		ProviderUserID: fmt.Sprintf("%d", ghUser.ID),
 	}
 
-	// Store raw claims
 	var raw map[string]any
 	if err := json.Unmarshal(data, &raw); err == nil {
 		user.RawClaims = raw
 	}
 
-	// Check team/org memberships if configured
 	if len(p.teamWhitelist) > 0 {
 		memberships, err := p.checkTeamMemberships(ctx, client, user.Username)
 		if err != nil {
@@ -195,7 +177,6 @@ func (p *GitHubProvider) GetUserInfo(ctx context.Context, r *http.Request, opts 
 	return user, ptokens, nil
 }
 
-// checkTeamMemberships verifies the user's membership in configured orgs/teams.
 func (p *GitHubProvider) checkTeamMemberships(ctx context.Context, client *http.Client, username string) ([]string, error) {
 	var memberships []string
 
@@ -231,7 +212,6 @@ func (p *GitHubProvider) checkTeamMemberships(ctx context.Context, client *http.
 	return memberships, nil
 }
 
-// parseOrgAndTeam splits "org" or "org/team" format.
 func (p *GitHubProvider) parseOrgAndTeam(orgAndTeam string) (string, string) {
 	parts := strings.Split(orgAndTeam, "/")
 	switch len(parts) {
@@ -244,7 +224,6 @@ func (p *GitHubProvider) parseOrgAndTeam(orgAndTeam string) (string, string) {
 	}
 }
 
-// checkOrgMembership checks if the user is a member of the organization.
 func (p *GitHubProvider) checkOrgMembership(ctx context.Context, client *http.Client, username, org string) (bool, error) {
 	url := strings.NewReplacer(":org_id", org, ":username", username).Replace(p.userOrgURL)
 
@@ -259,7 +238,6 @@ func (p *GitHubProvider) checkOrgMembership(ctx context.Context, client *http.Cl
 	}
 	defer resp.Body.Close()
 
-	// Handle redirect for public membership check
 	if resp.StatusCode == http.StatusFound {
 		location := resp.Header.Get("Location")
 		if location != "" {
@@ -285,7 +263,6 @@ func (p *GitHubProvider) checkOrgMembership(ctx context.Context, client *http.Cl
 	}
 }
 
-// checkTeamMembership checks if the user is a member of the team.
 func (p *GitHubProvider) checkTeamMembership(ctx context.Context, client *http.Client, username, org, team string) (bool, error) {
 	url := strings.NewReplacer(":org_id", org, ":team_slug", team, ":username", username).Replace(p.userTeamURL)
 
@@ -314,7 +291,6 @@ func (p *GitHubProvider) checkTeamMembership(ctx context.Context, client *http.C
 	}
 }
 
-// AuthCodeURL returns the URL to redirect the user to for authentication.
 func (p *GitHubProvider) AuthCodeURL(state string, opts ...oauth2.AuthCodeOption) string {
 	return p.oauth2Cfg.AuthCodeURL(state, opts...)
 }

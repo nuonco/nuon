@@ -6,13 +6,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// Migration108InstallWorkflowsNameHookManaged converts install_workflows.name
-// from a STORED generated column (previous, never-shipped migration) to a
-// plain TEXT column populated by Workflow.BeforeSave / computeWorkflowName.
-//
-// The backfill below is the last time this title expression appears in SQL.
-// Going forward the source of truth is computeWorkflowName (Go); new rows
-// get their name from the hook on INSERT/UPDATE.
 func (m *Migrations) Migration108InstallWorkflowsNameHookManaged(ctx context.Context, db *gorm.DB) error {
 	return db.WithContext(ctx).Exec(`
 		ALTER TABLE install_workflows DROP COLUMN IF EXISTS name;

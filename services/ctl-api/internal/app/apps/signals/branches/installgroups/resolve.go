@@ -1,5 +1,3 @@
-// Package installgroups resolves an install group to the installs it currently
-// targets, either from its pinned install IDs or by evaluating its label selector.
 package installgroups
 
 import (

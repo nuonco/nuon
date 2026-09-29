@@ -4,7 +4,6 @@ import (
 	"reflect"
 )
 
-// DecodeSource is a global decoder supporting all sources
 func DecodeSource(fromType reflect.Type, toType reflect.Type, from interface{}) (interface{}, error) {
 	return from, nil
 	if fromType != reflect.TypeOf(map[string]interface{}{}) {

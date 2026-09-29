@@ -35,7 +35,6 @@ func (a *Activities) GetImageMetadataFromJobResult(ctx context.Context, req *Get
 
 	l.Info("getting image metadata from job result")
 
-	// Get the job with its executions and results
 	var job app.RunnerJob
 	res := a.db.WithContext(ctx).
 		Preload("Executions", func(db *gorm.DB) *gorm.DB {
@@ -58,7 +57,6 @@ func (a *Activities) GetImageMetadataFromJobResult(ctx context.Context, req *Get
 
 	result := execution.Result
 
-	// Decompress the gzipped contents
 	if len(result.ContentsGzip) == 0 {
 		return nil, fmt.Errorf("job execution result has no compressed contents")
 	}

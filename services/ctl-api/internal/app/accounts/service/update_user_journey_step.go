@@ -49,7 +49,6 @@ func (s *service) UpdateUserJourneyStep(ctx *gin.Context) {
 	journeyName := ctx.Param("journey_name")
 	stepName := ctx.Param("step_name")
 
-	// Delegate business logic to private method
 	updatedAccount, err := s.updateUserJourneyStep(ctx, account.ID, journeyName, stepName, req.Complete, req.Metadata)
 	if err != nil {
 		ctx.Error(err)
@@ -65,7 +64,6 @@ func (s *service) updateUserJourneyStep(ctx *gin.Context, accountID, journeyName
 		return nil, err
 	}
 
-	// Find and update the specific journey step
 	found := false
 	for i, journey := range account.UserJourneys {
 		if journey.Name == journeyName {
@@ -73,7 +71,6 @@ func (s *service) updateUserJourneyStep(ctx *gin.Context, accountID, journeyName
 				if step.Name == stepName {
 					account.UserJourneys[i].Steps[j].Complete = complete
 
-					// Merge metadata if provided
 					if metadata != nil {
 						if account.UserJourneys[i].Steps[j].Metadata == nil {
 							account.UserJourneys[i].Steps[j].Metadata = make(map[string]interface{})
@@ -98,7 +95,6 @@ func (s *service) updateUserJourneyStep(ctx *gin.Context, accountID, journeyName
 		}
 	}
 
-	// Save to database
 	if err := s.db.WithContext(ctx).Select("user_journeys").Save(account).Error; err != nil {
 		return nil, fmt.Errorf("unable to update user journey step: %w", err)
 	}

@@ -17,14 +17,12 @@ var (
 	errTokenExpired  = errors.New("token expired")
 )
 
-// TokenInfo represents the validated token information.
 type TokenInfo struct {
 	AccountID string
 	Email     string
 	Username  string
 }
 
-// createToken creates a new auth token for the account and stores it in the database.
 func (s *service) createToken(account *app.Account) (string, error) {
 	now := time.Now()
 	tokenValue := domains.NewUserTokenID()
@@ -46,7 +44,6 @@ func (s *service) createToken(account *app.Account) (string, error) {
 	return tokenValue, nil
 }
 
-// validateToken looks up a token in the database and returns the associated account info.
 func (s *service) validateToken(tokenValue string) (*TokenInfo, error) {
 	if tokenValue == "" {
 		return nil, errTokenNotFound
@@ -64,12 +61,10 @@ func (s *service) validateToken(tokenValue string) (*TokenInfo, error) {
 		return nil, fmt.Errorf("failed to lookup token: %w", err)
 	}
 
-	// Check expiry
 	if time.Now().After(token.ExpiresAt) {
 		return nil, errTokenExpired
 	}
 
-	// Look up the account
 	var account app.Account
 	err = s.db.
 		Where("id = ?", token.AccountID).
@@ -85,7 +80,7 @@ func (s *service) validateToken(tokenValue string) (*TokenInfo, error) {
 	return &TokenInfo{
 		AccountID: account.ID,
 		Email:     account.Email,
-		Username:  account.Email, // Account doesn't have a separate username field
+		Username:  account.Email,
 	}, nil
 }
 
@@ -96,7 +91,6 @@ func (s *service) findToken(c *gin.Context) string {
 	return ""
 }
 
-// deleteToken soft deletes a token from the database.
 func (s *service) deleteToken(tokenValue string) error {
 	if tokenValue == "" {
 		return nil

@@ -7,9 +7,6 @@ import { Text } from '@/components/common/Text'
 import type { TAppConfig } from '@/types'
 import { objectToKeyValueArray } from '@/utils/data-utils'
 
-// Mirrors DefaultAWSPhoneHomeScript in
-// services/ctl-api/internal/app/installs/worker/activities/get_phonehome_script.go —
-// the API only returns phone_home_script_url when an app-level override is set.
 const DEFAULT_AWS_PHONE_HOME_SCRIPT_URL =
   'https://raw.githubusercontent.com/nuonco/runner/refs/tags/aws-v0.1.4/scripts/aws/phonehome.py'
 

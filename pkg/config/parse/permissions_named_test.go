@@ -76,8 +76,6 @@ contents = """{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":"l
 	require.Equal(t, "permissions/provision.toml", result.Source.Members["permission:provision"])
 }
 
-// A role may omit [[policies]] when it attaches a named policy instead, but a
-// role with neither grants nothing and is rejected.
 func TestParseDirRoleGrantSources(t *testing.T) {
 	const deprovisionNamedOnly = `type                 = "deprovision"
 name                 = "{{.nuon.install.id}}-deprovision"

@@ -7,17 +7,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// AWSRoleRaw is the un-rendered per-role payload the stack SDK consumes: an
-// operation/break-glass/custom role's merged inline policy and managed policy
-// ARNs, without the CloudFormation-specific wrapping.
 type AWSRoleRaw struct {
 	Name                 string
 	InlinePolicyDocument string
 	ManagedPolicyARNs    []string
 }
 
-// ExtractAWSStandardPermissionsRaw returns the managed policy ARNs for the
-// standard provision/maintenance/deprovision operation roles.
 func ExtractAWSStandardPermissionsRaw(appCfg *app.AppConfig) (provision, maintenance, deprovision []string) {
 	if appCfg == nil {
 		return nil, nil, nil
@@ -42,8 +37,6 @@ func ExtractAWSStandardPermissionsRaw(appCfg *app.AppConfig) (provision, mainten
 	return provision, maintenance, deprovision
 }
 
-// ExtractAWSStandardInlinePoliciesRaw returns the merged inline policy document
-// for each standard operation role.
 func ExtractAWSStandardInlinePoliciesRaw(appCfg *app.AppConfig) (provision, maintenance, deprovision string, err error) {
 	if appCfg == nil {
 		return "", "", "", nil
@@ -71,8 +64,6 @@ func ExtractAWSStandardInlinePoliciesRaw(appCfg *app.AppConfig) (provision, main
 	return provision, maintenance, deprovision, nil
 }
 
-// ExtractAWSRolesFromListRaw returns the raw payload for a list of break-glass
-// or custom AWS roles, skipping non-AWS and empty roles.
 func ExtractAWSRolesFromListRaw(roles []app.AppAWSIAMRoleConfig) ([]AWSRoleRaw, error) {
 	var result []AWSRoleRaw
 	for _, role := range roles {
@@ -96,8 +87,6 @@ func ExtractAWSRolesFromListRaw(roles []app.AppAWSIAMRoleConfig) ([]AWSRoleRaw, 
 	return result, nil
 }
 
-// mergedInlinePolicyDocumentRaw merges a role's inline policy statements into a
-// single IAM policy document, excluding managed-policy references.
 func mergedInlinePolicyDocumentRaw(role app.AppAWSIAMRoleConfig) (string, error) {
 	var statements []json.RawMessage
 	var sources []string

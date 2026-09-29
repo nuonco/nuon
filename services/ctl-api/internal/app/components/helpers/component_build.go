@@ -18,14 +18,10 @@ func (s *Helpers) CreateComponentBuildWithID(ctx context.Context, buildID, cmpID
 	return s.createComponentBuild(ctx, s.db, buildID, cmpID, "", useLatest, gitRef)
 }
 
-// CreateComponentBuildForConfigConnection creates a build attached to a specific
-// CCC (e.g. a branch run's app-config CCC) instead of the global LatestConfig.
 func (s *Helpers) CreateComponentBuildForConfigConnection(ctx context.Context, cmpID, componentConfigConnectionID string, gitRef *string) (*app.ComponentBuild, error) {
 	return s.createComponentBuild(ctx, s.db, "", cmpID, componentConfigConnectionID, false, gitRef)
 }
 
-// CreateComponentBuildInTx creates the build through the caller's transaction.
-// When componentConfigConnectionID is set, the build is attached to that CCC.
 func (s *Helpers) CreateComponentBuildInTx(ctx context.Context, tx *gorm.DB, cmpID, componentConfigConnectionID string, useLatest bool, gitRef *string) (*app.ComponentBuild, error) {
 	return s.createComponentBuild(ctx, tx, "", cmpID, componentConfigConnectionID, useLatest, gitRef)
 }

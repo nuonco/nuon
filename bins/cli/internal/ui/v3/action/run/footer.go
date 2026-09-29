@@ -5,7 +5,6 @@ import (
 
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
 
-	// "github.com/nuonco/nuon/pkg/cli/styles"
 	"go.uber.org/zap"
 )
 
@@ -17,17 +16,8 @@ func (m Model) logMessageView() string {
 }
 
 func (m *Model) setFooterContent() {
-	/*
-		renders two rows
-		1. log message
-		2. help footer
-
-		If the log message is empty, that row is omitted.
-	*/
 	m.log.Info("setting footer content")
 
-	// we have to handle this base case since the element widths are zero on init and we use the footer width
-	// to determine some content widthS
 	if m.footer.Width() == 0 {
 		content := "\n" + m.help.View(m.keys)
 		m.footer.SetContent(content)
@@ -43,8 +33,6 @@ func (m *Model) setFooterContent() {
 		return
 	}
 
-	// happy path
-	// set help width
 	m.help.SetWidth(m.footer.Width())
 
 	sections := []string{}
@@ -54,14 +42,11 @@ func (m *Model) setFooterContent() {
 	}
 	sections = append(sections, m.help.View(m.keys))
 
-	// set contents
-
 	content := lipgloss.JoinVertical(
 		lipgloss.Top,
 		sections...,
 	)
 
-	// set the content and adjust the footer height
 	m.footer.SetContent(content)
 	m.footer.SetHeight(lipgloss.Height(content))
 

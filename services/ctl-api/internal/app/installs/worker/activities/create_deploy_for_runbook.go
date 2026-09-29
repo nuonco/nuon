@@ -25,7 +25,7 @@ func (a *Activities) CreateDeployForRunbook(ctx context.Context, req CreateDeplo
 		return nil, fmt.Errorf("unable to find install component: %w", res.Error)
 	}
 
-	// Get latest build for this component. ComponentBuild.ComponentID is
+	// why: Get latest build for this component. ComponentBuild.ComponentID is
 	// gorm:"-" (derived in AfterQuery), so it cannot be used as a query
 	// predicate; join through component_config_connections to filter on the
 	// real component_id column.

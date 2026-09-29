@@ -77,7 +77,6 @@ func (m model) viewContent() string {
 	finalView.WriteString(m.viewport.View())
 	finalView.WriteString("\n")
 
-	// Status message
 	if m.status.Message != "" {
 		statusStyle := lipgloss.NewStyle()
 		switch m.status.Level {
@@ -95,7 +94,6 @@ func (m model) viewContent() string {
 		finalView.WriteString(statusStyle.Render(m.status.Message))
 	}
 
-	// Help
 	helpView := m.help.View(m.keys)
 	finalView.WriteString("\n")
 	finalView.WriteString(lipgloss.NewStyle().Foreground(styles.SubtleColor).Render(helpView))
@@ -106,8 +104,6 @@ func (m model) viewContent() string {
 		Render(finalView.String())
 }
 
-// updateViewportContent builds the form content and sets it in the viewport.
-// This should be called whenever the form content changes (not in View()).
 func (m *model) updateViewportContent() {
 	if m.step == stepGroup {
 		m.updateGroupViewportContent()
@@ -115,12 +111,9 @@ func (m *model) updateViewportContent() {
 	}
 
 	width := min(m.width, maxWidth) - 4
-
-	// fieldLines tracks the ending line (exclusive) for each focusIndex.
 	fieldLines := map[int]int{}
 	lineCount := 0
 
-	// appendSection adds a rendered section and returns how many lines it added.
 	appendSection := func(sections []string, s string) []string {
 		lineCount += strings.Count(s, "\n") + 1
 		return append(sections, s)
@@ -128,14 +121,12 @@ func (m *model) updateViewportContent() {
 
 	sections := []string{}
 
-	// Title
 	title := titleStyle.Render("Create Install")
 	if m.app != nil {
 		title = titleStyle.Render(fmt.Sprintf("Create Install for %s", m.app.Name))
 	}
 	sections = appendSection(sections, title)
 
-	// Name field (focusIndex 0)
 	if len(m.inputMappings) > 0 {
 		mapping := m.inputMappings[0]
 		label := labelStyle.Render(mapping.displayName)
@@ -162,8 +153,6 @@ func (m *model) updateViewportContent() {
 		fieldLines[0] = lineCount
 	}
 
-	// Region field (focusIndex 1), only shown for AWS installs — GCP and Azure
-	// installs have their region determined automatically after provisioning.
 	regionOffset := m.regionOffset()
 	if m.needsRegion() {
 		sections = appendSection(sections, labelStyle.Render("AWS Region"))
@@ -181,7 +170,6 @@ func (m *model) updateViewportContent() {
 		sections = appendSection(sections, "\n")
 	}
 
-	// Dynamic input fields, grouped
 	ghStyle := groupHeaderStyle(width)
 	giStyle := groupInputsStyle(width)
 	lastGroupID := ""
@@ -245,8 +233,6 @@ func (m *model) updateViewportContent() {
 	m.fieldEndLines = fieldLines
 }
 
-// updateGroupViewportContent renders the install group picker shown after the
-// form. The final row skips group assignment.
 func (m *model) updateGroupViewportContent() {
 	sections := []string{
 		titleStyle.Render("Select an install group"),
@@ -282,9 +268,6 @@ func (m *model) updateGroupViewportContent() {
 	m.fieldEndLines = map[int]int{}
 }
 
-// ensureFocusVisible scrolls the viewport so the focused field is visible.
-// If the field's bottom is below the viewport, it scrolls down so the field
-// ends at the bottom. If the field's top is above the viewport, it scrolls up.
 func (m *model) ensureFocusVisible() {
 	endLine, ok := m.fieldEndLines[m.focusIndex]
 	if !ok {
@@ -294,13 +277,11 @@ func (m *model) ensureFocusVisible() {
 	vpHeight := m.viewport.Height()
 	yOffset := m.viewport.YOffset()
 
-	// If the field ends below the visible area, scroll so it's at the bottom.
 	if endLine > yOffset+vpHeight {
 		m.viewport.SetYOffset(endLine - vpHeight)
 		return
 	}
 
-	// Find the start line: it's the end of the previous field (or 0).
 	startLine := 0
 	if m.focusIndex > 0 {
 		if prev, ok := m.fieldEndLines[m.focusIndex-1]; ok {
@@ -308,7 +289,6 @@ func (m *model) ensureFocusVisible() {
 		}
 	}
 
-	// If the field starts above the visible area, scroll so it's at the top.
 	if startLine < yOffset {
 		m.viewport.SetYOffset(startLine)
 	}

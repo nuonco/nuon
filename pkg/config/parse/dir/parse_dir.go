@@ -9,12 +9,10 @@ import (
 	"github.com/spf13/afero"
 )
 
-// sourceFileSetter is implemented by config types that can track their source file path.
 type sourceFileSetter interface {
 	SetSourceFile(path string)
 }
 
-// nameFromSourceFileSetter is implemented by config types that can derive their name from the source file.
 type nameFromSourceFileSetter interface {
 	SetNameFromSourceFile()
 }
@@ -60,22 +58,19 @@ func (p *parser) parseDir(path string, typ reflect.Type) (any, error) {
 			continue
 		}
 
-		// Only append non-nil objects
 		if !reflect.ValueOf(obj).IsNil() {
 			objValue := reflect.ValueOf(obj).Elem()
 
-			// Skip nil pointer values (e.g., *config.Component that is nil)
 			if objValue.Kind() == reflect.Ptr && objValue.IsNil() {
 				continue
 			}
 
-			// Set the source file if the object implements sourceFileSetter
+			// why: Set the source file if the object implements sourceFileSetter
 			// Note: obj is *T (e.g., *AppPolicy), so we use obj directly for interface checks
 			if setter, ok := obj.(sourceFileSetter); ok {
 				setter.SetSourceFile(f)
 			}
 
-			// Derive name from source file if the object implements nameFromSourceFileSetter
 			if setter, ok := obj.(nameFromSourceFileSetter); ok {
 				setter.SetNameFromSourceFile()
 			}
@@ -87,9 +82,6 @@ func (p *parser) parseDir(path string, typ reflect.Type) (any, error) {
 	return objs.Interface(), nil
 }
 
-// skipPermissionsPoliciesAsRoles keeps named IAM policy files from being parsed
-// as AppAWSIAMRole. permissions/policies/ is a reserved subdirectory; listDir
-// would otherwise recurse into it while walking permissions/.
 func skipPermissionsPoliciesAsRoles(dirPath, filePath string) bool {
 	if dirPath != "permissions" {
 		return false

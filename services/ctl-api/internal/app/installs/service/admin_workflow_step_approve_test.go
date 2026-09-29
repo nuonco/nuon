@@ -74,7 +74,6 @@ func (s *AdminWorkflowStepApproveTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Admin routes need account context for created_by_id on workflow-related records
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -128,7 +127,6 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 			setupFunc: func() AdminWorkflowStepApproveRequest {
 				ctx := s.ctx
 
-				// Create workflow
 				workflow := &app.Workflow{
 					ID:        domains.NewWorkflowID(),
 					OrgID:     s.testOrg.ID,
@@ -141,7 +139,6 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 				err := s.service.DB.WithContext(ctx).Create(workflow).Error
 				require.NoError(s.T(), err)
 
-				// Create workflow step
 				step := &app.WorkflowStep{
 					ID:                domains.NewWorkflowStepID(),
 					OrgID:             s.testOrg.ID,
@@ -152,7 +149,6 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 				err = s.service.DB.WithContext(ctx).Create(step).Error
 				require.NoError(s.T(), err)
 
-				// Create approval
 				approval := &app.WorkflowStepApproval{
 					OrgID:                 s.testOrg.ID,
 					InstallWorkflowStepID: step.ID,
@@ -184,7 +180,6 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 			setupFunc: func() AdminWorkflowStepApproveRequest {
 				ctx := s.ctx
 
-				// Create workflow
 				workflow := &app.Workflow{
 					ID:        domains.NewWorkflowID(),
 					OrgID:     s.testOrg.ID,
@@ -197,7 +192,6 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 				err := s.service.DB.WithContext(ctx).Create(workflow).Error
 				require.NoError(s.T(), err)
 
-				// Create workflow step
 				step := &app.WorkflowStep{
 					ID:                domains.NewWorkflowStepID(),
 					OrgID:             s.testOrg.ID,
@@ -208,7 +202,6 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 				err = s.service.DB.WithContext(ctx).Create(step).Error
 				require.NoError(s.T(), err)
 
-				// Create approval
 				approval := &app.WorkflowStepApproval{
 					OrgID:                 s.testOrg.ID,
 					InstallWorkflowStepID: step.ID,
@@ -217,7 +210,6 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 				err = s.service.DB.WithContext(ctx).Create(approval).Error
 				require.NoError(s.T(), err)
 
-				// Create existing response
 				response := &app.WorkflowStepApprovalResponse{
 					ID:                            domains.NewWorkflowStepApprovalResponseID(),
 					OrgID:                         s.testOrg.ID,
@@ -247,7 +239,6 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 			setupFunc: func() AdminWorkflowStepApproveRequest {
 				ctx := s.ctx
 
-				// Create workflow
 				workflow := &app.Workflow{
 					ID:        domains.NewWorkflowID(),
 					OrgID:     s.testOrg.ID,
@@ -260,7 +251,6 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 				err := s.service.DB.WithContext(ctx).Create(workflow).Error
 				require.NoError(s.T(), err)
 
-				// Create workflow step without approval
 				step := &app.WorkflowStep{
 					ID:                domains.NewWorkflowStepID(),
 					OrgID:             s.testOrg.ID,

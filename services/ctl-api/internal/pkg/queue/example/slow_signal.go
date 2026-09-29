@@ -17,7 +17,6 @@ func init() {
 	})
 }
 
-// SlowSignal is a test signal that blocks in Execute until the context is canceled.
 type SlowSignal struct{}
 
 var _ signal.Signal = (*SlowSignal)(nil)
@@ -27,7 +26,6 @@ func (s *SlowSignal) Validate(ctx workflow.Context) error {
 }
 
 func (s *SlowSignal) Execute(ctx workflow.Context) error {
-	// Block until context is canceled
 	return workflow.Await(ctx, func() bool {
 		return ctx.Err() != nil
 	})

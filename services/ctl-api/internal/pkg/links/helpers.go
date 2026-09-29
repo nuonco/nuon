@@ -26,8 +26,6 @@ func isEmployeeFromContext(ctx context.Context) bool {
 	return isEmployee.(bool)
 }
 
-// orgIDFromContext returns the org id from the context. Notably, this depends on the `middlewares/org` to set
-// this, but we do not use that code to prevent a cycle import
 func orgIDFromContext(ctx context.Context) string {
 	val := ctx.Value(keys.OrgIDCtxKey)
 	valStr, ok := val.(string)

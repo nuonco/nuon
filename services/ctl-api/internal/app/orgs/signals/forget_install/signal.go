@@ -21,7 +21,6 @@ var _ signal.Signal = (*Signal)(nil)
 
 func (s *Signal) Type() signal.SignalType { return SignalType }
 
-// no install lookup: the row is already soft-deleted by the forget handler
 func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.OrgID == "" {
 		return fmt.Errorf("org_id is required")

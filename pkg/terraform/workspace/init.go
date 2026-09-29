@@ -5,7 +5,6 @@ import (
 	"fmt"
 )
 
-// InitRoot: initializes workspace should be called before any other load functions
 func (w *workspace) InitRoot(ctx context.Context) error {
 	if w.root != "" {
 		return nil

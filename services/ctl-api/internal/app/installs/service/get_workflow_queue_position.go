@@ -55,7 +55,6 @@ func (s *service) GetWorkflowQueuePosition(ctx *gin.Context) {
 
 	workflowID := ctx.Param("workflow_id")
 
-	// Find the queue signal for this workflow.
 	var qs app.QueueSignal
 	res := s.db.WithContext(ctx).
 		Where(app.QueueSignal{
@@ -65,7 +64,6 @@ func (s *service) GetWorkflowQueuePosition(ctx *gin.Context) {
 		Order("created_at DESC").
 		First(&qs)
 	if res.Error != nil {
-		// Also check action workflows owner type.
 		res = s.db.WithContext(ctx).
 			Where(app.QueueSignal{
 				OwnerID:   workflowID,
@@ -79,10 +77,6 @@ func (s *service) GetWorkflowQueuePosition(ctx *gin.Context) {
 		}
 	}
 
-	// A signal still occupies the queue until its own status reaches a terminal
-	// state. Workflow status is not a reliable proxy — a signal can be parked
-	// (StatusPending, e.g. signal type not yet registered) or not-yet-enqueued
-	// while its workflow is still non-terminal, and vice versa.
 	terminalStatuses := []string{
 		string(app.StatusSuccess),
 		string(app.StatusError),
@@ -97,17 +91,14 @@ func (s *service) GetWorkflowQueuePosition(ctx *gin.Context) {
 			Where("status->>'status' NOT IN ?", terminalStatuses)
 	}
 
-	// Total workflows still waiting in this queue (includes this one).
 	var queueDepth int64
 	inQueue(s.db.WithContext(ctx).Model(&app.QueueSignal{})).Count(&queueDepth)
 
-	// Workflows ahead of this one — those enqueued before it that are still in the queue.
 	var aheadCount int64
 	inQueue(s.db.WithContext(ctx).Model(&app.QueueSignal{})).
 		Where("created_at < ? AND id != ?", qs.CreatedAt, qs.ID).
 		Count(&aheadCount)
 
-	// Fetch the signals immediately ahead for display, front to back.
 	var signalsAhead []app.QueueSignal
 	inQueue(s.db.WithContext(ctx)).
 		Where("created_at < ? AND id != ?", qs.CreatedAt, qs.ID).
@@ -115,7 +106,6 @@ func (s *service) GetWorkflowQueuePosition(ctx *gin.Context) {
 		Limit(20).
 		Find(&signalsAhead)
 
-	// Batch-load the workflows for the signals ahead to enrich the display items.
 	ownerIDs := make([]string, 0, len(signalsAhead))
 	for _, sig := range signalsAhead {
 		ownerIDs = append(ownerIDs, sig.OwnerID)
@@ -139,8 +129,6 @@ func (s *service) GetWorkflowQueuePosition(ctx *gin.Context) {
 			Status:     sig.Status.Status,
 			CreatedAt:  sig.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		}
-		// Action workflows live in a different table and won't resolve here; they
-		// still count toward position but display without an enriched type.
 		if wf, ok := workflowsByID[sig.OwnerID]; ok {
 			item.WorkflowType = wf.Type
 			item.Status = wf.Status.Status
@@ -150,7 +138,7 @@ func (s *service) GetWorkflowQueuePosition(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, WorkflowQueuePositionResponse{
-		Position:     int(aheadCount) + 1, // 1-based: this workflow is after the ones ahead
+		Position:     int(aheadCount) + 1,
 		QueueDepth:   int(queueDepth),
 		SignalsAhead: items,
 	})

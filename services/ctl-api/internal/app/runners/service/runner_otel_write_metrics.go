@@ -34,14 +34,11 @@ import (
 func (s *service) OtelWriteMetrics(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
-	// read data into bytes
 	jsonData, err := io.ReadAll(ctx.Request.Body)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
-	// unmarshal bytes into ExportRequest
-	// NOTE(fd): this is essentially our validation step. we do not use this object directly otherwise.
 	expreq := pmetricotlp.NewExportRequest()
 	if err := expreq.UnmarshalJSON(jsonData); err != nil {
 		ctx.Error(fmt.Errorf("unable to marshal request: %w", err))
@@ -61,10 +58,8 @@ func (s *service) OtelWriteMetrics(ctx *gin.Context) {
 
 func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *pmetricotlp.ExportRequest) []error {
 
-	// a list of errors to be returned
 	errors := []error{}
 
-	// list of metric objects to be created
 	sumMetrics := []app.OtelMetricSumIngestion{}
 	gaugeMetrics := []app.OtelMetricGaugeIngestion{}
 	histogramMetrics := []app.OtelMetricHistogramIngestion{}
@@ -80,14 +75,12 @@ func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *
 
 		resourceSchemaUrl := metrics.SchemaUrl()
 
-		// NOTE(fd): this is a well established convention.
 		var serviceName string
 		snVal, ok := resAttr.Get("service.name")
 		if ok {
 			serviceName = snVal.AsString()
 		}
 
-		// NOTE(fd): this is a nuon convention.
 		var runnerJobExecutionId string
 		runnerJobExecutionVal, ok := resAttr.Get("runner_job_execution.id")
 		if ok {

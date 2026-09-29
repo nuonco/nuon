@@ -60,8 +60,6 @@ type KustomizeConfigRequest struct {
 }
 
 func (c *CreateKubernetesManifestComponentConfigRequest) Validate(v *validator.Validate) error {
-	// Normalize: treat kustomize with empty path as nil
-	// This handles the case where go-swagger client sends {"kustomize": {"path": null}}
 	if c.Kustomize != nil && c.Kustomize.Path == "" {
 		c.Kustomize = nil
 	}
@@ -141,7 +139,6 @@ func (s *service) CreateAppKubernetesManifestComponentConfig(ctx *gin.Context) {
 		return
 	}
 
-	// reuse the same logic as non-app scoped endpoint
 	s.CreateKubernetesManifestComponentConfig(ctx)
 }
 
@@ -204,7 +201,6 @@ func (s *service) createKubernetesManifestComponentConfig(
 		return nil, errors.Wrap(err, "unable to get component ids")
 	}
 
-	// Build VCS configs for kustomize sources
 	connectedGithubVCSConfig, err := req.connectedGithubVCSConfig(ctx, parentCmp, s.vcsHelpers)
 	if err != nil {
 		return nil, fmt.Errorf("invalid connected github vcs config: %w", err)

@@ -75,7 +75,6 @@ func TestEngineCollectTerraform(t *testing.T) {
 		{installComponentID: "ic-2", componentID: "cmp-2", componentType: componentTypeTerraformModule},
 	})
 	e.terraform.Set("cmp-1", state)
-	// a component that has since been removed from the install
 	e.terraform.Set("cmp-removed", state)
 
 	grouped := map[string][]*models.ServiceComponentHealthResource{}

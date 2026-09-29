@@ -34,8 +34,6 @@ func (m *Client) createAccount(ctx context.Context, email, subject string, accou
 	return &acct, nil
 }
 
-// DefaultEvaluationJourney returns the evaluation journey for self-signup users
-// This is the 6-step journey: account_created, org_created, cli_installed, app_created, app_synced, install_created
 func DefaultEvaluationJourney(completionSource string) app.UserJourneys {
 	return app.UserJourneys{
 		{
@@ -101,18 +99,13 @@ func DefaultEvaluationJourney(completionSource string) app.UserJourneys {
 	}
 }
 
-// NoUserJourneys returns an empty journey slice for invited/support users
 func NoUserJourneys() app.UserJourneys {
 	return app.UserJourneys{}
 }
 
-// DefaultEvaluationJourneyWithAttribution returns the evaluation journey with attribution data
-// stored in the account_created step's metadata. This enables tracking marketing source
-// for ROI analysis.
 func DefaultEvaluationJourneyWithAttribution(attribution map[string]interface{}, completionSource string) app.UserJourneys {
 	journey := DefaultEvaluationJourney(completionSource)
 
-	// Store attribution in the first step (account_created) metadata
 	if len(attribution) > 0 && len(journey) > 0 && len(journey[0].Steps) > 0 {
 		for i, step := range journey[0].Steps {
 			if step.Name == "account_created" {

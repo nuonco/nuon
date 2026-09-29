@@ -14,15 +14,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-/*
-
-A package for streaming logs from pods managed by resources in a helm release.
-
-Supports Deployments and Statefulsets.
-Does not support initContainers or standalone Pods.
-
-*/
-
 type LogStreamer struct {
 	clientset *kubernetes.Clientset
 	wg        sync.WaitGroup
@@ -39,7 +30,6 @@ func NewLogStreamer(clientset *kubernetes.Clientset, l *zap.Logger) *LogStreamer
 	}
 }
 
-// getPodState derives a state string for a pod from its container statuses.
 func getPodState(pod *corev1.Pod) string {
 	for _, cs := range pod.Status.ContainerStatuses {
 		if cs.State.Waiting != nil {
@@ -61,7 +51,6 @@ func getPodState(pod *corev1.Pod) string {
 	return "Running"
 }
 
-// podStateSummary builds a summary string and a map of state → pod names.
 func podStateSummary(pods []*corev1.Pod) (string, map[string][]string) {
 	byState := map[string][]string{}
 	for _, pod := range pods {
@@ -78,9 +67,7 @@ func podStateSummary(pods []*corev1.Pod) (string, map[string][]string) {
 	return summary, byState
 }
 
-// this is the entrypoint
 func (ls *LogStreamer) StreamPodLogs(ctx context.Context, pods []*corev1.Pod) error {
-	// Build pod state summary and filter to only streamable pods
 	summary, counts := podStateSummary(pods)
 
 	var ready []*corev1.Pod
@@ -90,12 +77,10 @@ func (ls *LogStreamer) StreamPodLogs(ctx context.Context, pods []*corev1.Pod) er
 		}
 	}
 
-	// Log summary if there are any non-ready pods
 	if len(ready) < len(pods) {
 		ls.l.Info(summary, zap.Any("pod_states", counts))
 	}
 
-	// Only stream logs for ready pods
 	for _, pod := range ready {
 		for _, con := range pod.Spec.Containers {
 			if err := ls.streamPodContainerLog(ctx, pod, con.Name); err != nil {
@@ -106,14 +91,9 @@ func (ls *LogStreamer) StreamPodLogs(ctx context.Context, pods []*corev1.Pod) er
 	return nil
 }
 
-// this actually does the work
 func (ls *LogStreamer) streamPodContainerLog(ctx context.Context, pod *corev1.Pod, containerName string) error {
-	// NOTE(fd): we use the "{pod.Namespace}.{pod.Name}.{containerName}" as the identifier
 	podIdentifier := fmt.Sprintf("%s.%s.%s", pod.Namespace, pod.Name, containerName)
 
-	// Emit pod metadata once at startup with full labels/annotations. Per-line
-	// records below keep only the lightweight identifying fields to avoid
-	// duplicating large attribute maps on every log entry.
 	ls.l.Info(
 		fmt.Sprintf("starting log stream for pod %s", podIdentifier),
 		zap.String("pod.metadata.name", pod.GetName()),
@@ -138,7 +118,6 @@ func (ls *LogStreamer) streamPodContainerLog(ctx context.Context, pod *corev1.Po
 			delete(ls.streams, podIdentifier)
 			ls.mu.Unlock()
 		}()
-		// the namespace is generic at the top level but we fetch the pods by its namespace
 		req := ls.clientset.CoreV1().Pods(pod.Namespace).GetLogs(
 			pod.Name,
 			&corev1.PodLogOptions{Container: containerName, Follow: true})
@@ -150,16 +129,11 @@ func (ls *LogStreamer) streamPodContainerLog(ctx context.Context, pod *corev1.Po
 		}
 		defer logStream.Close()
 
-		// NOTE(fd): ruthlessly stolen from:
-		// > https://github.com/nuonco/nuon/blob/main/bins/runner/internal/jobs/deploy/job/monitor.go#L67-L79
 		reader := bufio.NewReader(logStream)
 		for {
 			line, err := reader.ReadString('\n')
-			// NOTE(jm): in the case of an EOF, we want to write any bytes that were copied into the buffer, to
-			// ensure we do not leak any logs
 			if err != nil {
 				if errors.Is(err, io.EOF) && podCtx.Err() == nil {
-					// we are done
 					ls.l.Warn(
 						fmt.Sprintf("Error reading k8s log stream for pod %s: %v", podIdentifier, err),
 						zap.String("pod.metadata.name", pod.GetName()),
@@ -174,8 +148,6 @@ func (ls *LogStreamer) streamPodContainerLog(ctx context.Context, pod *corev1.Po
 			case <-podCtx.Done():
 				return
 			default:
-				// write the log to the logger; lightweight identifying fields only —
-				// full labels/annotations were emitted once at stream startup above.
 				ls.l.Info(line,
 					zap.String("pod.metadata.name", pod.GetName()),
 					zap.String("pod.metadata.namespace", pod.GetNamespace()),

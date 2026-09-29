@@ -47,9 +47,6 @@ func (s *InstallsServiceTestSuite) seedRolesOnNewerConfig(installID string) *app
 	return newerCfg
 }
 
-// Live install roles follow the app's newest permissions config while the install
-// stays pinned to the config it was created against, so the lookup must not be
-// scoped to install.app_config_id.
 func (s *InstallsServiceTestSuite) TestGetLatestInstallRolesForInstallPinnedToOlderConfig() {
 	install := s.createTestInstall()
 	newerCfg := s.seedRolesOnNewerConfig(install.ID)

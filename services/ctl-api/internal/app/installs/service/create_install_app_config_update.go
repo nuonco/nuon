@@ -52,14 +52,12 @@ func (s *service) CreateInstallAppConfigUpdate(ctx *gin.Context) {
 		return
 	}
 
-	// Verify the app config exists
 	var appConfig app.AppConfig
 	if err := s.db.WithContext(ctx).First(&appConfig, "id = ?", req.AppConfigID).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to find app config: %w", err))
 		return
 	}
 
-	// Create the install workflow
 	metadata := map[string]string{
 		"new_app_config_id": req.AppConfigID,
 	}
@@ -76,7 +74,6 @@ func (s *service) CreateInstallAppConfigUpdate(ctx *gin.Context) {
 		return
 	}
 
-	// Create the InstallAppConfigVersion tracking record
 	update := app.InstallAppConfigVersion{
 		InstallID:      installID,
 		OldAppConfigID: install.AppConfigID,
@@ -89,7 +86,6 @@ func (s *service) CreateInstallAppConfigUpdate(ctx *gin.Context) {
 		return
 	}
 
-	// Enqueue the workflow on the install's queue
 	queueID, err := s.getInstallWorkflowsQueueID(ctx, installID)
 	if err != nil {
 		ctx.Error(err)

@@ -67,10 +67,6 @@ func (a *AppStackConfig) Indexes(db *gorm.DB) []migrations.Index {
 	}
 }
 
-// HasAzureCustomization returns true when the vendor has configured a
-// stack.toml with type "azure-bicep", opting in to the programmatic ARM
-// template builder. Without a stack config we fall back to the embedded
-// monolithic Bicep template for backwards compatibility.
 func (sc *AppStackConfig) HasAzureCustomization() bool {
 	return sc.Type == StackTypeAzure ||
 		sc.VPCNestedTemplateURL != "" ||

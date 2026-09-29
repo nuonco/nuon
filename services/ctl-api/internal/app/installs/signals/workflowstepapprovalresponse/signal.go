@@ -9,12 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// SignalType is the queue signal type for forwarding a workflow-step approval
-// response to the running install workflow.
-//
-// This Nuon Signal wraps the Temporal "approve-step" update so the approval
-// becomes a first-class operation: it's persisted in queue_signals, retried by
-// the queue, surfaced in the dashboard, and emits webhook lifecycle events.
 const SignalType signal.SignalType = "workflow-step-approval-response"
 
 type Signal struct {
@@ -45,11 +39,6 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	if s.InstallID == "" {
 		installID = nil
 	}
-	// Expose workflow + step identity so lifecycle hooks (e.g. webhook) can
-	// emit workflow_step.approval.v1 events without needing to dig into the
-	// approval-specific signal payload. OwnerID/OwnerType point at the
-	// install (the queue's owner), matching the convention used by
-	// execute-workflow / execute-workflow-step lifecycle events.
 	return signal.SignalLifecycleContext{
 		InstallID:  installID,
 		Operation:  "workflow-step-approval-response",

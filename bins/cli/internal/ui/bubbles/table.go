@@ -15,7 +15,6 @@ import (
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
-// TableModel represents a data table component
 type TableModel struct {
 	table       table.Model
 	quitting    bool
@@ -23,17 +22,14 @@ type TableModel struct {
 	altScreen   bool
 }
 
-// NewTableModel creates a new table model
 func NewTableModel(data [][]string) TableModel {
 	if len(data) == 0 {
 		return TableModel{}
 	}
 
-	// First row is headers
 	headers := data[0]
 	rows := data[1:]
 
-	// Create columns from headers
 	columns := make([]table.Column, len(headers))
 	for i, header := range headers {
 		columns[i] = table.Column{
@@ -42,27 +38,23 @@ func NewTableModel(data [][]string) TableModel {
 		}
 	}
 
-	// Create table rows
 	tableRows := make([]table.Row, len(rows))
 	for i, row := range rows {
-		// Ensure row has same length as headers
 		tableRow := make(table.Row, len(headers))
 		for j, cell := range row {
 			if j < len(headers) {
 				tableRow[j] = cell
 			}
 		}
-		// Fill empty cells if row is shorter than headers
 		for j := len(row); j < len(headers); j++ {
 			tableRow[j] = ""
 		}
 		tableRows[i] = tableRow
 	}
 
-	// Calculate total table width from columns
 	totalWidth := 0
 	for _, col := range columns {
-		totalWidth += col.Width + 2 // +2 for cell padding
+		totalWidth += col.Width + 2
 	}
 
 	t := table.New(
@@ -70,10 +62,9 @@ func NewTableModel(data [][]string) TableModel {
 		table.WithRows(tableRows),
 		table.WithFocused(false),
 		table.WithWidth(totalWidth),
-		table.WithHeight(len(tableRows)+1), // Set height to match number of rows + header
+		table.WithHeight(len(tableRows)+1),
 	)
 
-	// Style the table
 	s := table.DefaultStyles()
 	s.Header = s.Header.
 		BorderStyle(lipgloss.NormalBorder()).
@@ -95,7 +86,6 @@ func NewTableModel(data [][]string) TableModel {
 	}
 }
 
-// NewInteractiveTableModel creates a new interactive table model
 func NewInteractiveTableModel(data [][]string) TableModel {
 	model := NewTableModel(data)
 	model.interactive = true
@@ -103,13 +93,11 @@ func NewInteractiveTableModel(data [][]string) TableModel {
 	return model
 }
 
-// calculateColumnWidth determines appropriate column width
 func calculateColumnWidth(data [][]string, columnIndex int) int {
-	maxWidth := 10 // minimum width
+	maxWidth := 10
 
 	for _, row := range data {
 		if columnIndex < len(row) {
-			// Use lipgloss.Width so ANSI color codes don't inflate the width.
 			cellWidth := lipgloss.Width(row[columnIndex])
 			if cellWidth > maxWidth {
 				maxWidth = cellWidth
@@ -117,7 +105,6 @@ func calculateColumnWidth(data [][]string, columnIndex int) int {
 		}
 	}
 
-	// Cap maximum width
 	if maxWidth > 40 {
 		maxWidth = 40
 	}
@@ -125,17 +112,14 @@ func calculateColumnWidth(data [][]string, columnIndex int) int {
 	return maxWidth
 }
 
-// Init initializes the table model
 func (m TableModel) Init() tea.Cmd {
 	return nil
 }
 
-// Update handles messages for the table model
 func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.table.SetWidth(msg.Width - 4) // Account for padding
-		// Only set height to full screen for interactive mode
+		m.table.SetWidth(msg.Width - 4)
 		if m.interactive {
 			m.table.SetHeight(msg.Height - 4)
 		}
@@ -154,7 +138,6 @@ func (m TableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-// View renders the table
 func (m TableModel) View() tea.View {
 	if m.quitting {
 		return tea.NewView("")
@@ -167,15 +150,12 @@ func (m TableModel) View() tea.View {
 	return v
 }
 
-// TableView provides a high-level interface for rendering tables
 type TableView struct{}
 
-// NewTableView creates a new table view
 func NewTableView() *TableView {
 	return &TableView{}
 }
 
-// Render displays a table with the given data
 func (v *TableView) Render(data [][]string) {
 	if len(data) == 0 {
 		noItemsStyle := lipgloss.NewStyle().
@@ -190,20 +170,14 @@ func (v *TableView) Render(data [][]string) {
 	fmt.Println(table.viewString())
 }
 
-// viewString returns the string content for non-TUI rendering
 func (m TableModel) viewString() string {
 	return BaseStyle.Render(m.table.View())
 }
 
-// RenderPaging displays a table with pagination information.
 func (v *TableView) RenderPaging(data [][]string, offset, limit int, hasMore bool) {
 	v.RenderPagingWithContext(data, offset, limit, hasMore, "", "")
 }
 
-// RenderPagingWithContext displays a table with pagination information and an
-// optional right-aligned context hint (e.g. "app: app123"). When both pieces
-// fit on one terminal line they are printed on a single row; otherwise only the
-// pagination info is shown.
 func (v *TableView) RenderPagingWithContext(data [][]string, offset, limit int, hasMore bool, contextLabel, contextValue string) {
 	v.Render(data)
 
@@ -234,7 +208,6 @@ func (v *TableView) RenderPagingWithContext(data [][]string, offset, limit int, 
 	fmt.Println(footerStyle.Render(textStyle.Render(pagingInfo)))
 }
 
-// RenderTotal renders a table with a total-count footer, for when all results are shown.
 func (v *TableView) RenderTotal(data [][]string, total int) {
 	v.Render(data)
 
@@ -247,8 +220,6 @@ func (v *TableView) RenderTotal(data [][]string, total int) {
 	fmt.Println(footerStyle.Render(textStyle.Render(fmt.Sprintf("%d total", total))))
 }
 
-// RenderInteractive displays an interactive table that users can navigate.
-// When interactive is false, it falls back to rendering a static table.
 func (v *TableView) RenderInteractive(data [][]string, interactive bool) error {
 	if len(data) == 0 {
 		noItemsStyle := lipgloss.NewStyle().
@@ -272,19 +243,16 @@ func (v *TableView) RenderInteractive(data [][]string, interactive bool) error {
 	return err
 }
 
-// Print displays a simple message
 func (v *TableView) Print(msg string) {
 	fmt.Println(BaseStyle.Render(msg))
 }
 
-// RenderKeyValue renders key-value pairs in a table format
 func (v *TableView) RenderKeyValue(pairs map[string]string) {
 	if len(pairs) == 0 {
 		v.Print("No data available")
 		return
 	}
 
-	// Convert to table data
 	data := [][]string{{"Key", "Value"}}
 	for key, value := range pairs {
 		data = append(data, []string{key, value})
@@ -293,7 +261,6 @@ func (v *TableView) RenderKeyValue(pairs map[string]string) {
 	v.Render(data)
 }
 
-// RenderMarkdown renders a simple markdown-like table
 func RenderMarkdownTable(headers []string, rows [][]string) string {
 	if len(headers) == 0 {
 		return ""
@@ -301,7 +268,6 @@ func RenderMarkdownTable(headers []string, rows [][]string) string {
 
 	var result strings.Builder
 
-	// Calculate column widths
 	widths := make([]int, len(headers))
 	for i, header := range headers {
 		widths[i] = len(header)
@@ -315,21 +281,18 @@ func RenderMarkdownTable(headers []string, rows [][]string) string {
 		}
 	}
 
-	// Header
 	result.WriteString("|")
 	for i, header := range headers {
 		result.WriteString(fmt.Sprintf(" %-*s |", widths[i], header))
 	}
 	result.WriteString("\n")
 
-	// Separator
 	result.WriteString("|")
 	for _, width := range widths {
 		result.WriteString(strings.Repeat("-", width+2) + "|")
 	}
 	result.WriteString("\n")
 
-	// Data rows
 	for _, row := range rows {
 		result.WriteString("|")
 		for i := 0; i < len(headers); i++ {

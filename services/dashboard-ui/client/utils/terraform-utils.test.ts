@@ -199,7 +199,7 @@ describe('terraform-utils', () => {
 
       expect(result.language).toBe('json')
       expect(result.showLineNumbers).toBe(true)
-      expect(result.displayValue).toContain('  ') // Should be formatted with indentation
+      expect(result.displayValue).toContain('  ')
     })
 
     test('should detect YAML', () => {
@@ -482,7 +482,6 @@ describe('terraform-utils', () => {
             },
           },
         ],
-        // No output_changes property
       }
 
       const result = parseTerraformPlan(mockPlan)

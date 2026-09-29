@@ -22,13 +22,6 @@ type ApprovePlanRequest struct {
 
 type ApprovePlanResponse struct{}
 
-// approveStepArgs mirrors executeflow.ApproveStepRequest. It is duplicated here
-// (rather than imported) to avoid an import cycle:
-//
-//	installs/worker/activities -> flow/signals/executeflow -> installs/signals/...
-//	  -> installs/worker/activities
-//
-// The wire format must stay in sync with executeflow.ApproveStepRequest.
 type approveStepArgs struct {
 	StepID             string `json:"step_id"`
 	ApprovalResponseID string `json:"approval_response_id"`
@@ -54,7 +47,6 @@ func (a *Activities) ApprovePlan(ctx context.Context, req *ApprovePlanRequest) (
 		Order("created_at DESC").
 		First(&qs)
 	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-		// Older enqueue paths left owner_id empty; the payload still names the workflow.
 		res = a.db.WithContext(ctx).
 			Where(app.QueueSignal{Type: signal.SignalType("execute-workflow")}).
 			Where("signal->'data'->>'workflow_id' = ?", req.InstallWorkflowID).
@@ -80,8 +72,6 @@ func (a *Activities) ApprovePlan(ctx context.Context, req *ApprovePlanRequest) (
 		return nil, fmt.Errorf("unable to send approve-step update: %w", err)
 	}
 
-	// Drain the response (we don't use it, but Get blocks until the update is
-	// applied, surfacing any in-workflow validation errors).
 	var resp struct{}
 	if err := handle.Get(ctx, &resp); err != nil {
 		return nil, fmt.Errorf("approve-step update failed: %w", err)

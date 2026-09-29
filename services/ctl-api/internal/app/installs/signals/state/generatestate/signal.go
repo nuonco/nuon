@@ -13,8 +13,6 @@ import (
 
 const SignalType signal.SignalType = "generate-full-state"
 
-// This signal force generates all state parts and calls the state-regenerate signal with
-// forceAll: true and targets: all-partials
 type Signal struct {
 	InstallID string
 }

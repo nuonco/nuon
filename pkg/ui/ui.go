@@ -48,7 +48,6 @@ func Line(ctx context.Context, msg string, args ...any) {
 	log.Step(msg, args...)
 }
 
-// Step records a step that happened, with a "check"
 func Step(ctx context.Context, msg string, args ...any) {
 	log, err := FromContext(ctx)
 	if err != nil {

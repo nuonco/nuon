@@ -73,10 +73,6 @@ func New(params WorkerParams) (*Worker, error) {
 		DeadlockDetectionTimeout:               params.Cfg.TemporalDeadlockDetectionTimeout,
 	})
 
-	// Sandbox builds run their ExecuteControlPlaneJob as a child workflow in the
-	// apps namespace, which pins the RunJob activity to the control-plane build
-	// task queue in this namespace. Run a worker for that queue here so those
-	// activities get picked up instead of hanging.
 	cpWkr := controlplanejob.NewWorker(client, controlplanejob.WorkerConfig{
 		MaxConcurrentActivityExecutionSize: params.Cfg.TemporalCPBuildMaxConcurrentActivities,
 		MaxConcurrentActivityTaskPollers:   params.Cfg.TemporalMaxConcurrentActivityTaskPollers,
@@ -84,7 +80,6 @@ func New(params WorkerParams) (*Worker, error) {
 		WorkflowPanicPolicy:                panicPolicy,
 	}, params.SharedActs.AllActivities()...)
 
-	// register activities
 	wkr.RegisterActivity(params.Acts)
 	wkr.RegisterActivity(params.BranchActs)
 	wkr.RegisterActivity(params.SyncInstallConfigActs)
@@ -93,7 +88,6 @@ func New(params WorkerParams) (*Worker, error) {
 		wkr.RegisterActivity(acts)
 	}
 
-	// register workflows
 	for _, wkflow := range params.Wkflows.All() {
 		wkr.RegisterWorkflow(wkflow)
 	}
@@ -101,7 +95,6 @@ func New(params WorkerParams) (*Worker, error) {
 		wkr.RegisterWorkflow(wkflow)
 	}
 
-	// register nested packages
 	wkr.RegisterActivity(ecrrepository.NewActivities(&ecrrepository.ActivitiesParams{
 		Cfg: params.Cfg,
 	}))

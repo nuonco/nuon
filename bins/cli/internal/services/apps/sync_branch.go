@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	// buildsStepName must match the step the branch run workflow generator
+	// why: buildsStepName must match the step the branch run workflow generator
 	// creates for builds
 	// (services/ctl-api/internal/app/apps/workflows/app_branch_run.go). The sync
 	// returns once that step finishes; the install group steps that follow keep
@@ -28,7 +28,7 @@ const (
 	defaultInstallGroupName   = "default"
 )
 
-// resolveDefaultBranchID returns the app's default branch when the org has
+// why: resolveDefaultBranchID returns the app's default branch when the org has
 // default-app-branches enabled, creating it if this is the first sync, or "" to leave
 // the sync on the standalone path.
 //
@@ -54,7 +54,7 @@ func (s *Service) resolveDefaultBranchID(ctx context.Context, appID string, feat
 		Name: ptr(defaultAppBranchName),
 	})
 	if err != nil {
-		// A concurrent sync may have won the race; the branch name is unique per app.
+		// why: A concurrent sync may have won the race; the branch name is unique per app.
 		branchID, lookupErr := s.findBranchIDByName(ctx, appID, defaultAppBranchName)
 		if lookupErr == nil && branchID != "" {
 			return branchID, nil
@@ -91,9 +91,6 @@ func (s *Service) findBranchIDByName(ctx context.Context, appID, name string) (s
 
 func ptr[T any](v T) *T { return &v }
 
-// syncViaBranchRun hands an already-uploaded config to a branch run, which syncs
-// it, builds the changed components, and rolls it out to the branch's install
-// groups. Only the sync and build phases are waited on.
 func (s *Service) syncViaBranchRun(ctx context.Context, appID, branchID, dir string, appConfig *models.AppAppConfig, opts SyncOptions) (*syncResult, error) {
 	run, err := s.api.TriggerAppBranchRun(ctx, appID, branchID, &models.ServiceTriggerAppBranchRunRequest{
 		AppConfigID:   appConfig.ID,
@@ -135,9 +132,6 @@ func (s *Service) syncViaBranchRun(ctx context.Context, appID, branchID, dir str
 	return result, nil
 }
 
-// branchRunSyncErr keeps the exit codes the standalone sync path documents:
-// a failure once the config is synced and the run is building components is a
-// build failure (exit 3), anything earlier is a sync failure (exit 1).
 func branchRunSyncErr(err error, result *syncResult) error {
 	if result == nil || result.Builds == nil {
 		return err
@@ -150,9 +144,6 @@ func branchRunSyncErr(err error, result *syncResult) error {
 	}
 }
 
-// waitForBranchRunBuilds blocks until the run's builds step finishes. The
-// returned bool reports whether the step was reached at all, so a run that fails
-// earlier does not report an empty build list as "nothing to build".
 func (s *Service) waitForBranchRunBuilds(ctx context.Context, appID, branchID, runID, workflowID string, printJSON bool) ([]BuildOutcome, bool, error) {
 	spinner := bubbles.NewSpinnerView(printJSON, s.cfg.Interactive)
 	spinner.Start("building components")
@@ -202,8 +193,6 @@ func (s *Service) waitForBranchRunBuilds(ctx context.Context, appID, branchID, r
 	}
 }
 
-// checkRunFailed reports a branch run that reached a terminal non-success state,
-// so a wait on one of its steps stops instead of running out its own timeout.
 func (s *Service) checkRunFailed(ctx context.Context, workflowID string) error {
 	wf, err := s.api.GetWorkflow(ctx, workflowID)
 	if err != nil || wf.Status == nil {

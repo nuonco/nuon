@@ -63,14 +63,12 @@ type service struct {
 var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
-	// global routes
 	orgs := ge.Group("/v1/orgs")
 	{
 		orgs.POST("", s.CreateOrg)
 		orgs.GET("", s.GetCurrentUserOrgs)
 		orgs.GET("/features", s.GetOrgFeatures)
 
-		// update your current org
 		current := orgs.Group("/current")
 		{
 			current.GET("", s.GetOrg)
@@ -80,12 +78,10 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			current.POST("/user", s.CreateUser)
 			current.POST("/remove-user", s.RemoveUser)
 
-			// accounts
 			current.GET("/accounts", s.GetOrgAccounts)
 			current.GET("/members", s.GetOrgMembers)
 			current.PATCH("/accounts/:account_id/role", s.UpdateOrgAccountRole)
 
-			// invites
 			invites := current.Group("/invites")
 			{
 				invites.GET("", s.GetOrgInvites)
@@ -96,11 +92,9 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 
 			current.GET("/stats", s.GetOrgStats)
 
-			// features
 			current.GET("/features", s.GetCurrentOrgFeatures)
-			current.PATCH("/features", s.UpdateOrgFeatures) // requires user-managed-features flag
+			current.PATCH("/features", s.UpdateOrgFeatures)
 
-			// webhooks
 			current.GET("/webhooks", s.GetCurrentOrgWebhooks)
 			current.POST("/webhooks", s.CreateCurrentOrgWebhook)
 			current.PATCH("/webhooks/:webhook_id", s.UpdateCurrentOrgWebhook)
@@ -114,7 +108,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	orgs := api.Group("/v1/orgs")
 	{
-		// global org operations
 		orgs.GET("", s.GetAllOrgs)
 		orgs.GET("/details", s.AdminListOrgsDetails)
 		orgs.GET("/admin-get", s.AdminGetOrg)
@@ -122,12 +115,10 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		orgs.POST("/admin-delete-integrations", s.AdminDeleteIntegrationOrgs)
 		orgs.POST("/admin-restart-all", s.RestartAllOrgs)
 
-		// org features (all orgs)
 		orgs.GET("/admin-features", s.AdminGetOrgFeatures)
 		orgs.PATCH("/admin-features", s.AdminUpdateOrgsFeatures)
 		orgs.PATCH("/admin-toggle-feature", s.AdminToggleOrgsFeature)
 
-		// org-specific admin routes
 		org := orgs.Group("/:org_id")
 		{
 			org.POST("/admin-add-user", s.CreateOrgUser)

@@ -51,10 +51,8 @@ type NuonctlParams struct {
 	Services    []api.MCPService `group:"nuonctl_mcp_services"`
 }
 
-// orgSelectionTTL bounds how long an idle org selection is retained.
 const orgSelectionTTL = 30 * time.Minute
 
-// orgSelection is the active org chosen for a token via select_org.
 type orgSelection struct {
 	orgID    string
 	lastSeen time.Time
@@ -189,10 +187,6 @@ func newServer(
 	return s
 }
 
-// newMCPHandler builds the streamable-HTTP handler. The server is stateless: it
-// neither reads nor sets Mcp-Session-Id, and each request gets a temporary
-// session. Everything a request needs is carried by its bearer token, so any
-// replica can serve any request.
 func (s *Server) newMCPHandler() http.Handler {
 	return mcp.NewStreamableHTTPHandler(
 		s.getServerForRequest,
@@ -209,8 +203,6 @@ func (s *Server) healthHandler(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) getServerForRequest(r *http.Request) *mcp.Server {
-	// The middleware has already authenticated the request and injected the
-	// account + selected org into the context.
 	accountID := keys.CreatedByIDFromContext(r.Context())
 	if accountID == "" {
 		return nil
@@ -234,7 +226,7 @@ func (s *Server) getServerForRequest(r *http.Request) *mcp.Server {
 	return server
 }
 
-// resolveOrg determines the active org for a request: a previously selected org
+// why: resolveOrg determines the active org for a request: a previously selected org
 // for this token wins; otherwise fall back to a valid X-Nuon-Org-ID header, or
 // auto-select the account's only org. The resolved default is remembered so it
 // sticks across requests. Returns "" when the account has multiple orgs and none
@@ -266,7 +258,6 @@ func (s *Server) resolveOrg(acct *app.Account, tokenID, headerOrg string) string
 	return orgID
 }
 
-// setOrgSelection records the active org for a token.
 func (s *Server) setOrgSelection(tokenID, orgID string) {
 	if tokenID == "" {
 		return
@@ -276,8 +267,6 @@ func (s *Server) setOrgSelection(tokenID, orgID string) {
 	s.mu.Unlock()
 }
 
-// touchOrgSelection refreshes a selection's last-seen time so tokens in active
-// use aren't evicted by the janitor.
 func (s *Server) touchOrgSelection(tokenID string) {
 	if tokenID == "" {
 		return
@@ -289,8 +278,6 @@ func (s *Server) touchOrgSelection(tokenID string) {
 	s.mu.Unlock()
 }
 
-// runSelectionJanitor periodically evicts idle selections so the map stays
-// bounded.
 func (s *Server) runSelectionJanitor() {
 	ticker := time.NewTicker(orgSelectionTTL / 3)
 	defer ticker.Stop()
@@ -328,9 +315,6 @@ func (s *Server) authContextMiddleware(next http.Handler) http.Handler {
 		ctx = cctx.SetLoggerFields(ctx, []zap.Field{zap.Bool("mcp", true)})
 		l := cctx.GetLogger(ctx, s.l)
 
-		// Every request must carry a valid access token. A token failure returns
-		// 401 + WWW-Authenticate so the client can discover the authorization
-		// server and start the OAuth flow.
 		acct, tok, err := s.authenticateToken(r)
 		if err != nil {
 			l.Warn("MCP auth failed", zap.Error(err))
@@ -349,7 +333,6 @@ func (s *Server) authContextMiddleware(next http.Handler) http.Handler {
 		ctx = cctx.SetAccountContext(ctx, acct)
 		ctx = context.WithValue(ctx, keys.OrgIDCtxKey, orgID)
 		ctx = keys.WithTokenRole(ctx, tok.Role)
-		// Let the select_org tool change the active org for this token.
 		ctx = keys.WithOrgSelector(ctx, func(newOrgID string) {
 			s.setOrgSelection(tok.ID, newOrgID)
 		})

@@ -58,7 +58,6 @@ export const Empty = () => (
   />
 )
 
-// the env provider has no database row to patch, so its toggle stays disabled
 export const OnlyEnvProvider = () => (
   <AdminIdentityProvidersSection
     identityProviders={[envProvider]}

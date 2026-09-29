@@ -44,7 +44,7 @@ func sseToken(c *gin.Context) (string, bool) {
 	return token, true
 }
 
-// sseAuth extracts the auth cookie and builds a nuon client scoped to the
+// why: sseAuth extracts the auth cookie and builds a nuon client scoped to the
 // route's org. On failure it writes the JSON error response and returns
 // ok=false. Must be called before runSSEStream, which flushes SSE headers.
 func sseAuth(c *gin.Context, cfg *internal.Config, l *zap.Logger) (nuon.Client, string, bool) {
@@ -67,7 +67,6 @@ func sseAuth(c *gin.Context, cfg *internal.Config, l *zap.Logger) (nuon.Client, 
 }
 
 type sseEvent struct {
-	// Name is the SSE event name; empty means an unnamed bare "data:" event.
 	Name string
 	Data []byte
 }
@@ -81,39 +80,23 @@ func marshalEvent(name string, v any) (sseEvent, error) {
 }
 
 type sseFetchResult struct {
-	// Events are emitted in order when their per-name hash changes. The
-	// first event is the primary resource: finished detection keys off its
-	// hash changing. Omitting an event name on a tick leaves its previous
-	// hash intact, so a failed secondary fetch is skipped silently.
 	Events   []sseEvent
 	Finished bool
 }
 
-// errSSESilentRetry wraps fetch errors that should retry without emitting a
-// fetch-error event to the client.
 var errSSESilentRetry = errors.New("sse: silent retry")
 
 type sseStreamConfig struct {
-	Fetch        func(ctx context.Context) (sseFetchResult, error)
-	ClientErrMsg string
-	// PollInterval defaults to sseWatchPollInterval.
-	PollInterval time.Duration
-	// FinishedPollInterval defaults to sseFinishedPollInterval.
+	Fetch                func(ctx context.Context) (sseFetchResult, error)
+	ClientErrMsg         string
+	PollInterval         time.Duration
 	FinishedPollInterval time.Duration
-	// ErrorRetryDelay defaults to sseErrorRetryDelay.
-	ErrorRetryDelay time.Duration
-	// FinishedGracePeriod of zero means the stream never self-closes.
-	FinishedGracePeriod time.Duration
-	// MaxLifetime defaults to sseMaxStreamLifetime. The stream emits an
-	// expired event and closes once exceeded; the client decides whether to
-	// reconnect based on recent user activity.
-	MaxLifetime time.Duration
-	Log         *zap.Logger
+	ErrorRetryDelay      time.Duration
+	FinishedGracePeriod  time.Duration
+	MaxLifetime          time.Duration
+	Log                  *zap.Logger
 }
 
-// runSSEStream writes SSE headers and runs the poll loop: fetch, emit events
-// whose hash changed, handle finished state and the grace-period close, send
-// keepalives, and honor context cancellation at every wait.
 func runSSEStream(c *gin.Context, cfg sseStreamConfig) {
 	if cfg.PollInterval == 0 {
 		cfg.PollInterval = sseWatchPollInterval
@@ -163,8 +146,6 @@ func runSSEStream(c *gin.Context, cfg sseStreamConfig) {
 
 		res, fetchErr := cfg.Fetch(ctx)
 
-		// Emit partial results even when the fetch errored, so a failed
-		// secondary fetch doesn't drop updates from the ones that succeeded.
 		primaryChanged := false
 		for i, ev := range res.Events {
 			hash := sha256.Sum256(ev.Data)

@@ -15,7 +15,6 @@ import (
 func (a *Activities) getLatestCommitFromVCS(ctx context.Context, vcsConfigID string) (string, error) {
 	vcsHelpers := a.helpers.VCSHelpers()
 
-	// Try ConnectedGithubVCSConfig first
 	var connectedCfg app.ConnectedGithubVCSConfig
 	res := a.db.WithContext(ctx).
 		Preload("VCSConnection").
@@ -29,7 +28,6 @@ func (a *Activities) getLatestCommitFromVCS(ctx context.Context, vcsConfigID str
 		return *commit.SHA, nil
 	}
 
-	// Try PublicGitVCSConfig
 	var publicCfg app.PublicGitVCSConfig
 	res = a.db.WithContext(ctx).First(&publicCfg, "id = ?", vcsConfigID)
 	if res.Error == nil {

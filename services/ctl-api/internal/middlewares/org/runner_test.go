@@ -13,9 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// An account carrying org ids but no loaded orgs used to index past the end of
-// Orgs. The panic escaped the recovery middleware, which is registered after this
-// one, so the caller got a proxy 503 with no body rather than an error.
 func TestRunnerMiddlewareOrgsShorterThanOrgIDs(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

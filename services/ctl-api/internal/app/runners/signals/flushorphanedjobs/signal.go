@@ -14,7 +14,6 @@ import (
 const (
 	SignalType signal.SignalType = "flush_orphaned_jobs"
 
-	// any job over 12 hours old that is _still_ queued will be automatically flushed
 	orphanedJobsThreshold time.Duration = time.Hour * 12
 )
 
@@ -33,7 +32,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("runner_id is required")
 	}
 
-	// Validate runner exists in database
 	_, err := activities.AwaitGetByRunnerID(ctx, s.RunnerID)
 	if err != nil {
 		return errors.Wrap(err, "runner not found")
@@ -43,11 +41,9 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Calculate threshold time (12 hours ago from workflow time)
 	ts := workflow.Now(ctx)
 	threshold := ts.Add(-orphanedJobsThreshold)
 
-	// Flush orphaned jobs older than threshold
 	if err := activities.AwaitFlushOrphanedJobs(ctx, activities.FlushOrphanedJobsRequest{
 		RunnerID:  s.RunnerID,
 		Threshold: threshold,

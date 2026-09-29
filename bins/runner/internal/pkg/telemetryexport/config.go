@@ -219,7 +219,6 @@ func vendorCollectorConfig(endpoint string, attributes map[string]string) ([]byt
 	}
 	pipeline := map[string]any{"receivers": []string{"otlp"}, "processors": []string{"memory_limiter"}, "exporters": []string{"otlp_http/vendor"}}
 	processors := map[string]any{"memory_limiter": map[string]any{"check_interval": "1s", "limit_mib": 128, "spike_limit_mib": 32}}
-	// Older APIs omit the snapshot; preserve their existing passthrough behavior.
 	if len(attributes) > 0 {
 		keys := make([]string, 0, len(attributes))
 		for key := range attributes {
@@ -228,7 +227,6 @@ func vendorCollectorConfig(endpoint string, attributes map[string]string) ([]byt
 		sort.Strings(keys)
 		actions := []map[string]any{{"action": "delete", "pattern": `^nuon\.install\.labels\.`}}
 		for _, key := range keys {
-			// Confmap expands environment references even in quoted YAML strings.
 			actions = append(actions, map[string]any{
 				"action": "upsert",
 				"key":    strings.ReplaceAll(key, "$", "$$"),

@@ -7,12 +7,10 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// RenderMapTestSuite is the testify suite for render_map tests
 type RenderMapTestSuite struct {
 	suite.Suite
 }
 
-// TestRenderMapSuite runs the test suite
 func TestRenderMapSuite(t *testing.T) {
 	suite.Run(t, new(RenderMapTestSuite))
 }

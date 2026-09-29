@@ -10,7 +10,6 @@ import (
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 
-	// errs "github.com/pkg/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
@@ -19,17 +18,12 @@ import (
 	"github.com/nuonco/nuon/pkg/zapwriter"
 )
 
-// regex to match full git commit hash
-// regex to match full git commit hash
 var commitHashRegex = regexp.MustCompile(`\b[0-9a-f]{5,40}\b`)
 
-// IsCommitHash checks if a string matches the pattern of a git commit hash
-// (5-40 hexadecimal characters).
 func IsCommitHash(s string) bool {
 	return commitHashRegex.MatchString(s)
 }
 
-// NOTE(jm): this is only for backward compatibility with the existing Waypoint plan functionality.
 func (w *workspace) isGit() bool {
 	if w.Src == nil {
 		return false
@@ -75,10 +69,8 @@ func (w *workspace) clone(ctx context.Context) (retErr error) {
 		}
 	}
 
-	// hoist this var, like a savage
 	coOpts := &git.CheckoutOptions{}
 
-	// first, if it looks like a 40 char regex, attempt to check out as a reference w/ the hash
 	if IsCommitHash(w.Src.Ref) {
 		hash := plumbing.NewHash(w.Src.Ref)
 		l.Info("checking out as reference",
@@ -103,7 +95,6 @@ func (w *workspace) clone(ctx context.Context) (retErr error) {
 		}
 	}
 
-	// fetch remote origin
 	l.Debug("fetching remote origin",
 		zap.String("url", w.Src.URL),
 		zap.String("ref", w.Src.Ref),
@@ -133,15 +124,9 @@ func (w *workspace) clone(ctx context.Context) (retErr error) {
 				zap.String("ref_spec_str", refSpecStr),
 				zap.String("error", err.Error()),
 			)
-			// return CloneErr{
-			// 	Url: w.Src.URL,
-			// 	Ref: w.Src.Ref,
-			// 	Err: errs.Wrap(err, "error fetching origin"),
-			// }
 		}
 	}
 
-	// second, attempt to check out as a branch
 	branchRefName := plumbing.NewBranchReferenceName(w.Src.Ref)
 	branch := plumbing.ReferenceName(branchRefName)
 	l.Info("checking out branch",
@@ -167,7 +152,6 @@ func (w *workspace) clone(ctx context.Context) (retErr error) {
 		)
 	}
 
-	// third, attempt to check out as a tag
 	tagRefName := plumbing.NewTagReferenceName(w.Src.Ref)
 	l.Info("checking out as a tag",
 		zap.String("url", w.Src.URL),

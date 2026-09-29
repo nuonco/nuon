@@ -8,8 +8,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// flagger represents anything that can return a pointer to a pflag FlagSet
-// typically, this would be a *cobra.Command
 type flagger interface {
 	Flags() *pflag.FlagSet
 }
@@ -41,7 +39,6 @@ func configureLogger(cfg *Base) (*zap.Logger, error) {
 		var lvl zapcore.Level
 		lvl, err = zapcore.ParseLevel(cfg.LogLevel)
 		if err == nil {
-			// only set the level if it was set correctly on the config
 			zCfg.Level.SetLevel(lvl)
 		}
 

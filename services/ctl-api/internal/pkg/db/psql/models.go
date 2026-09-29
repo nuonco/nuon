@@ -5,12 +5,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
-// declare all models in the correct order they should be migrated.
 func AllModels() []any {
 	return []any{
 		&app.EndpointAudit{},
 
-		// management, auth and user management
 		&app.Role{},
 		&app.Account{},
 		&app.AccountRole{},
@@ -26,33 +24,28 @@ func AllModels() []any {
 
 		&app.NotificationsConfig{},
 
-		// org basics
 		&app.Org{},
 		&app.Webhook{},
 		&app.OrgInvite{},
 		&app.AWSAccountConnection{},
 
-		// slack
 		&app.SlackInstallation{},
 		&app.SlackOrgLink{},
 		&app.SlackChannelSubscription{},
 		&app.SlackThreadAnchor{},
 
-		// installers
 		&app.Installer{},
 		&app.InstallerApp{},
 		&app.InstallRoles{},
 		&app.InstallRoleUsage{},
 		&app.InstallerMetadata{},
 
-		// vcs basics
 		&app.VCSConnection{},
 		&app.VCSConnectionCommit{},
 		&app.VCSWebhookSubscription{},
 		&app.GithubEvent{},
 		&app.VCSConnectionEvent{},
 
-		// apps
 		&app.App{},
 		&app.AppRepository{},
 		&app.AppConfig{},
@@ -98,7 +91,6 @@ func AllModels() []any {
 		&app.AppKubernetesContextsConfig{},
 		&app.AppKubernetesContextConfig{},
 
-		// installs
 		&app.AWSAccount{},
 		&app.AzureAccount{},
 		&app.GCPAccount{},
@@ -113,13 +105,11 @@ func AllModels() []any {
 		&app.InstallAppBranchConnection{},
 		&app.InstallAuditLog{},
 
-		// install stacks
 		&app.InstallStack{},
 		&app.InstallStackOutputs{},
 		&app.InstallStackVersion{},
 		&app.InstallStackVersionRun{},
 
-		// component configuration
 		&app.Component{},
 		&app.ComponentDependency{},
 		&app.ComponentConfigConnection{},
@@ -136,19 +126,15 @@ func AllModels() []any {
 		&app.GCPGARImageConfig{},
 		&app.AzureACRImageConfig{},
 
-		// component management
 		&app.ComponentBuild{},
 		&app.ComponentRelease{},
 		&app.ComponentReleaseStep{},
 
-		// install management
 		&app.InstallDeploy{},
 		&app.InstallComponent{},
 
-		// log streams
 		&app.LogStream{},
 
-		// runner jobs and groups
 		&app.RunnerGroup{},
 		&app.RunnerOperation{},
 		&app.RunnerGroupSettings{},
@@ -169,11 +155,9 @@ func AllModels() []any {
 		&app.SandboxModeJobConfig{},
 		&app.SandboxModeSignalConfig{},
 
-		// queues
 		&app.Queue{},
 		&app.QueueSignal{},
 
-		// actions
 		&app.ActionWorkflow{},
 		&app.ActionWorkflowConfig{},
 		&app.ActionWorkflowStepConfig{},
@@ -183,12 +167,10 @@ func AllModels() []any {
 		&app.InstallActionWorkflowManualTrigger{},
 		&app.InstallActionWorkflowRunStep{},
 
-		// notebooks
 		&app.Notebook{},
 		&app.NotebookCell{},
 		&app.NotebookCellRun{},
 
-		// runbooks
 		&app.Runbook{},
 		&app.RunbookConfig{},
 		&app.RunbookStepConfig{},
@@ -196,7 +178,6 @@ func AllModels() []any {
 		&app.InstallRunbook{},
 		&app.InstallRunbookRun{},
 
-		// install workflows
 		&app.Workflow{},
 		&app.WorkflowStepGroup{},
 		&app.WorkflowStep{},
@@ -206,24 +187,19 @@ func AllModels() []any {
 		&app.WorkflowRun{},
 		&app.PolicyReport{},
 
-		// internal
 		&migrations.MigrationModel{},
 
-		// drifts
 		&app.DriftedObject{},
 
-		// app label keys (query-only view)
 		&app.AppLabelKey{},
 
-		// waitlist
 		&app.Waitlist{},
-		// NOTE(jm): this is a special table used in both ch and postgres
+		// why: this is a special table used in both ch and postgres
 		&app.PSQLTableSize{},
 
 		&app.TemporalPayload{},
 		&app.TemporalBlob{},
 
-		// onboarding
 		&app.Onboarding{},
 	}
 }

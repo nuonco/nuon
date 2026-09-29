@@ -20,7 +20,7 @@ func (a *Activities) PkgWorkflowsFlowGetFlowStepGroups(ctx context.Context, work
 		return nil, errors.Wrap(res.Error, "unable to get step groups")
 	}
 
-	// Filter out discarded groups so retried groups don't shadow their
+	// why: Filter out discarded groups so retried groups don't shadow their
 	// replacements when the flow re-dispatches after a retry-group clone.
 	groups := make([]app.WorkflowStepGroup, 0, len(allGroups))
 	for _, g := range allGroups {

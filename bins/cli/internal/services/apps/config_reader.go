@@ -21,26 +21,19 @@ const (
 	DefaultTempDirectory  = "/tmp/"
 )
 
-// ConfigReaderParams holds parameters for reading remote app configs
 type ConfigReaderParams struct {
-	// RepoURL url to configs repo, default nuonco/example-app-config
 	RepoURL string
-	// Branch, default branch main
-	Branch string
-	// Folder is app config folder
-	Folder string
-	// TempDir is location of temp directory used to clone repo
+	Branch  string
+	Folder  string
 	TempDir string
 }
 
-// ConfigReader handles cloning and reading app configs from remote repositories
 type ConfigReader struct {
 	params    ConfigReaderParams
 	clonePath string
 }
 
 func NewConfigReader(params ConfigReaderParams) (*ConfigReader, error) {
-	// defaults
 	if params.RepoURL == "" {
 		params.RepoURL = ExampleAppConfigsRepo
 	}
@@ -51,7 +44,6 @@ func NewConfigReader(params ConfigReaderParams) (*ConfigReader, error) {
 		params.TempDir = DefaultTempDirectory
 	}
 
-	// validation
 	if params.Folder == "" {
 		return nil, errors.New("folder parameter is required")
 	}
@@ -283,32 +275,27 @@ func ConvertToConfigStructure(appConfig *config.AppConfig, targetPath string) (*
 	return structure, nil
 }
 
-// ReadAndConvertConfig is a convenience function that clones, reads, and converts the config in one call
 func ReadAndConvertConfig(ctx context.Context, params ConfigReaderParams, targetPath string) (*generator.ConfigStructure, error) {
 	reader, err := NewConfigReader(params)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create config reader")
 	}
 
-	// cleanup happens
 	defer func() {
 		if err := reader.Cleanup(); err != nil {
 			fmt.Println(errors.Wrap(err, "Warning: failed to cleanup temporary directory: %v\n"))
 		}
 	}()
 
-	// clone
 	if err := reader.Clone(ctx); err != nil {
 		return nil, errors.Wrap(err, "failed to clone repository")
 	}
 
-	// parse config
 	appConfig, err := reader.ReadConfig(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read config")
 	}
 
-	// convert to config structure
 	configStructure, err := ConvertToConfigStructure(appConfig, targetPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert to config structure")

@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Both columns were declared NOT NULL with no default and later removed from the
+// why: Both columns were declared NOT NULL with no default and later removed from the
 // AppBranch model. AutoMigrate never drops columns, so long-lived databases still
 // reject every insert into app_branches.
 func (m *Migrations) Migration124DropStaleAppBranchColumns(ctx context.Context, db *gorm.DB) error {

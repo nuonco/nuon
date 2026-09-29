@@ -10,8 +10,6 @@ import (
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
-// mcpClientJSON renders a client config block. Keys differ by client
-// (mcpServers, amp.mcpServers, and others); pass the key the client uses.
 func mcpClientJSON(key, indent string) string {
 	block := `{
   "` + key + `": {
@@ -30,9 +28,6 @@ func mcpClientJSON(key, indent string) string {
 	return strings.Join(lines, "\n")
 }
 
-// agentsStatus is the live CLI state woven into the setup guide. It is nil
-// when the guide backs static help text, which is built before flags have
-// selected a config file.
 type agentsStatus struct {
 	APIURL    string
 	SignedIn  bool
@@ -55,9 +50,6 @@ func (c *cli) agentsStatus() *agentsStatus {
 	return st
 }
 
-// agentsSetupGuide is the single source for agent setup instructions: it backs
-// both "nuon agents help" and the "nuon agents" help text, so the two never
-// disagree about a client's config file or a flag.
 func agentsSetupGuide(st *agentsStatus) string {
 	var b strings.Builder
 	p := func(lines ...string) {
@@ -203,7 +195,6 @@ MCP URL. For the document to hand your agent, use "nuon agents context".`,
 		PersistentPreRunE: c.persistentPreRunE,
 		Annotations:       annotations(skipAuthAnnotation(), outputsAnnotation(OutputTable)),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			// cobra's cmd.Print* writes to stderr; this guide is the output.
 			fmt.Fprintln(cmd.OutOrStdout(), agentsSetupGuide(c.agentsStatus()))
 			return nil
 		}),

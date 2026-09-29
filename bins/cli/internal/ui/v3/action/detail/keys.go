@@ -10,24 +10,19 @@ type keyMap struct {
 	Help key.Binding
 	Quit key.Binding
 
-	// hybrid key
 	Esc key.Binding
 
 	Enter key.Binding
 
-	// nav controls (we override or handle directly)
-	Up   key.Binding
-	Down key.Binding
-	// nav for steps detail viewport
+	Up       key.Binding
+	Down     key.Binding
 	PageDown key.Binding
 	PageUp   key.Binding
 
-	// shift focus
 	Left  key.Binding
 	Right key.Binding
 	Tab   key.Binding
 
-	// actions
 	Copy    key.Binding
 	Slash   key.Binding
 	Browser key.Binding
@@ -48,10 +43,8 @@ func (k keyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.Help, k.Tab, k.Quit, k.Esc, k.Browser}
 }
 
-// updateNavigationKeys updates the Up/Down key bindings based on view mode
 func (k *keyMap) updateNavigationKeys(viewMode ViewMode) {
 	if viewMode == ExecuteView {
-		// Execute mode: Only arrow keys for scrolling
 		k.Up = key.NewBinding(
 			key.WithKeys("up"),
 			key.WithHelp("↑", "scroll up"),
@@ -61,7 +54,6 @@ func (k *keyMap) updateNavigationKeys(viewMode ViewMode) {
 			key.WithHelp("↓", "scroll down"),
 		)
 	} else {
-		// Runs mode: Both arrow keys and j/k for navigation
 		k.Up = key.NewBinding(
 			key.WithKeys("up", "k"),
 			key.WithHelp("↑/k", "up"),
@@ -137,6 +129,6 @@ var keys = keyMap{
 	Execute: key.NewBinding(
 		key.WithKeys("E"),
 		key.WithHelp("E", "Execute"),
-		key.WithDisabled(), // disabled by default. only enabled IFF the action has a manual trigger.
+		key.WithDisabled(),
 	),
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// Waiving the org feature flags must waive those and nothing else. Every case runs with a
+// why: Waiving the org feature flags must waive those and nothing else. Every case runs with a
 // nil features client on purpose: consulting it would panic, so these also prove the
 // bypass never reaches for it.
 func TestAzurePhoneHomeSkipReasonIgnoringFeatureGate(t *testing.T) {
@@ -24,8 +24,6 @@ func TestAzurePhoneHomeSkipReasonIgnoringFeatureGate(t *testing.T) {
 		want    string
 	}{
 		{
-			// Without it the verifier would have nothing to bind the token's
-			// subscription against, so rendering an identity would enforce nothing.
 			name:    "an install with no target subscription is skipped",
 			install: &app.Install{ID: "inst", AzureAccount: &app.AzureAccount{}},
 			want:    phoneHomeSkipNoSubscription,
@@ -41,8 +39,6 @@ func TestAzurePhoneHomeSkipReasonIgnoringFeatureGate(t *testing.T) {
 			want: phoneHomeSkipSandboxMode,
 		},
 		{
-			// An install created before AdminForceSandboxMode flipped the org keeps an
-			// explicit false that Install.AfterQuery will not override.
 			name: "an install in a sandboxed org is skipped even when its own flag is false",
 			install: &app.Install{
 				ID:                    "inst",
@@ -73,13 +69,10 @@ func TestAzurePhoneHomeSkipReasonIgnoringFeatureGate(t *testing.T) {
 	}
 }
 
-// Skip reasons are metric tags and the backfill's progress output, so drift is silent.
 func TestAzurePhoneHomeSkipReasonsAreStable(t *testing.T) {
 	assert.Equal(t, "install has no target subscription id", phoneHomeSkipNoSubscription)
 }
 
-// Azure is gated by the same org flag as AWS, so enabling phone-home auth for an org
-// covers every cloud its installs run on.
 func TestAzureUsesTheSharedPhoneHomeAuthFlag(t *testing.T) {
 	assert.Equal(t, app.OrgFeature("phone-home-auth"), app.OrgFeaturePhoneHomeAuth)
 }

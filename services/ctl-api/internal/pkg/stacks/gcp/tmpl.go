@@ -89,11 +89,6 @@ install_inputs = {
 }
 `
 
-// providerInputsTmpl is the slimmed-down tfvars for the Terraform-provider
-// flow: the install-stacks module reads runner details, permissions and roles
-// from the API via the stack_config data source, so only the API base URL, the
-// phone-home ID, the customer GCP project/region, and the install-input names
-// need to be supplied here.
 const providerInputsTmpl = `api_url       = "{{.Settings.RunnerAPIURL}}"
 phone_home_id = "{{.CloudFormationStackVersion.PhoneHomeID}}"
 

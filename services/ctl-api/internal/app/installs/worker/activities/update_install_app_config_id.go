@@ -22,8 +22,6 @@ func (a *Activities) UpdateInstallAppConfigID(ctx context.Context, input *Update
 		Where(app.Install{ID: input.InstallID}).
 		Updates(map[string]interface{}{
 			"app_config_id": input.NewAppConfigID,
-			// jsonb_build_object is variadic "any", so the parameter needs an
-			// explicit cast for postgres to infer a type at parse time.
 			"app_config_ref": gorm.Expr(
 				"COALESCE(NULLIF(app_config_ref, 'null'::jsonb), '{}'::jsonb) || jsonb_build_object('expected_config_id', ?::text)",
 				input.NewAppConfigID,

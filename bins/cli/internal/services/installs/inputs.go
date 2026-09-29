@@ -15,15 +15,12 @@ import (
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
-// inputDef describes a single declared app input, with its default value.
 type inputDef struct {
 	name      string
 	def       string
 	sensitive bool
 }
 
-// loadInputDefs fetches the install's app input config and returns the
-// declared inputs (name + default) along with the resolved install ID.
 func (s *Service) loadInputDefs(ctx context.Context, installID string) (string, []inputDef, error) {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
@@ -54,8 +51,6 @@ func (s *Service) loadInputDefs(ctx context.Context, installID string) (string, 
 	return installID, defs, nil
 }
 
-// GetInputs prints the install's current inputs alongside their declared
-// defaults.
 func (s *Service) GetInputs(ctx context.Context, installID string, asJSON bool) error {
 	installID, defs, err := s.loadInputDefs(ctx, installID)
 	if err != nil {
@@ -91,9 +86,6 @@ func (s *Service) GetInputs(ctx context.Context, installID string, asJSON bool) 
 	return nil
 }
 
-// SetInputs patches install inputs from a list of key=value pairs. It fetches
-// the current inputs first so it can show which values changed, and validates
-// that each key refers to a declared input.
 func (s *Service) SetInputs(ctx context.Context, installID string, args []string, deployDependents bool, inputsOnly bool, asJSON bool) error {
 	updates, err := parseInputArgs(args)
 	if err != nil {
@@ -128,7 +120,7 @@ func (s *Service) SetInputs(ctx context.Context, installID string, args []string
 	prevValues := currentValues(current)
 	prevRedacted := redactedValues(current)
 
-	// The update endpoint accepts a partial set of inputs and merges them with
+	// why: The update endpoint accepts a partial set of inputs and merges them with
 	// the install's existing values server-side, so we only send the subset the
 	// caller is changing. This also avoids re-sending install_stack sourced inputs,
 	// which the API rejects.
@@ -186,7 +178,6 @@ func (s *Service) SetInputs(ctx context.Context, installID string, args []string
 		}
 		changedStr := "no"
 		if changed[k] {
-			// Highlight changes: red for the old value, green for the new.
 			displayPrev = styles.TextError.Render(displayPrev)
 			displayNew = styles.TextSuccess.Render(displayNew)
 			changedStr = styles.TextSuccess.Render("yes")
@@ -197,7 +188,6 @@ func (s *Service) SetInputs(ctx context.Context, installID string, args []string
 	return nil
 }
 
-// EditInputs launches an interactive TUI for editing an install's inputs.
 func (s *Service) EditInputs(ctx context.Context, installID string, deployDependents bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
@@ -206,8 +196,6 @@ func (s *Service) EditInputs(ctx context.Context, installID string, deployDepend
 	return editor.EditInputsApp(ctx, s.cfg, s.api, installID, deployDependents)
 }
 
-// currentValues returns the non-redacted values map from a current-inputs
-// response, falling back to an empty map.
 func currentValues(in *models.AppInstallInputs) map[string]string {
 	if in == nil || in.Values == nil {
 		return map[string]string{}
@@ -215,7 +203,6 @@ func currentValues(in *models.AppInstallInputs) map[string]string {
 	return in.Values
 }
 
-// redactedValues returns the redacted values map, falling back to an empty map.
 func redactedValues(in *models.AppInstallInputs) map[string]string {
 	if in == nil || in.RedactedValues == nil {
 		return map[string]string{}
@@ -223,8 +210,6 @@ func redactedValues(in *models.AppInstallInputs) map[string]string {
 	return in.RedactedValues
 }
 
-// parseInputArgs parses a list of key=value pairs into a map. It errors on
-// malformed entries.
 func parseInputArgs(args []string) (map[string]string, error) {
 	if len(args) == 0 {
 		return nil, fmt.Errorf("no inputs provided; expected key=value pairs")

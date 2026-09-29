@@ -14,18 +14,8 @@ import (
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
-// SignalType is the queue signal type for creating a WorkflowStepApproval row.
-//
-// This Nuon Signal wraps the row-creation that previously happened directly
-// via the CreateStepApproval activity inside running workflows. Wrapping it
-// turns approval creation into a first-class operation: it's persisted in
-// queue_signals, visible in the dashboard, retried by the queue, and emits
-// webhook lifecycle events. Together with the workflow-step-approval-response
-// signal it gives both sides of the approval handshake a uniform shape.
 const SignalType signal.SignalType = "workflow-step-approval-request"
 
-// installWorkflowStepsOwnerType matches the polymorphic type used by
-// QueueSignal records that originate from a workflow step.
 const installWorkflowStepsOwnerType = "install_workflow_steps"
 
 type Signal struct {
@@ -33,23 +23,13 @@ type Signal struct {
 	InstallWorkflowID string `json:"install_workflow_id"`
 	WorkflowStepID    string `json:"workflow_step_id"`
 
-	// OwnerID / OwnerType are the polymorphic owner stored on the resulting
-	// WorkflowStepApproval row. They reference the entity the approval is
-	// "for" (e.g. an install_deploys, install_sandbox_runs, or
-	// install_workflows row).
 	OwnerID   string `json:"owner_id"`
 	OwnerType string `json:"owner_type"`
 
-	// RunnerJobID, when set, links the approval back to the runner job that
-	// produced its plan. May be empty for approvals that don't have an
-	// underlying runner job (e.g. workflow-level approve-all).
 	RunnerJobID string `json:"runner_job_id,omitempty"`
 
 	ApprovalType app.WorkflowStepApprovalType `json:"approval_type"`
 
-	// Plan is the rendered plan contents stored on the approval row. When
-	// empty, CreateStepApproval falls back to fetching it from the runner
-	// job results.
 	Plan string `json:"plan,omitempty"`
 }
 
@@ -72,11 +52,6 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	if s.InstallID == "" {
 		installID = nil
 	}
-	// Expose workflow + step identity so lifecycle hooks (e.g. webhook) can
-	// emit workflow_step.approval.v1 events without needing to dig into the
-	// approval-specific signal payload. OwnerID/OwnerType point at the
-	// install (the queue's owner), matching the convention used by
-	// execute-workflow / execute-workflow-step lifecycle events.
 	return signal.SignalLifecycleContext{
 		InstallID:  installID,
 		Operation:  "workflow-step-approval-request",
@@ -124,17 +99,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return nil
 }
 
-// Dispatch enqueues a workflow-step-approval-request signal onto the
-// install-approvals queue and waits for it to reach a terminal phase. Calling
-// this from inside a running workflow replaces the direct
-// activities.AwaitCreateStepApproval call so approval row creation flows
-// through the same queue/lifecycle/webhook plumbing as the approval response.
-//
-// The caller is responsible for populating InstallID, InstallWorkflowID,
-// WorkflowStepID, OwnerID, OwnerType, and Type on sig before calling. The
-// signal is enqueued onto the install-approvals queue with the workflow step
-// as its owner so it shows up in the same place in the dashboard as other
-// step-scoped signals.
 func Dispatch(ctx workflow.Context, sig *Signal) error {
 	cb := callback.New(ctx, sig.WorkflowStepID)
 	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{

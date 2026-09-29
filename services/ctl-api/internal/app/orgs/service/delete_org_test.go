@@ -28,7 +28,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// DeleteOrgTestService holds all fx-injected dependencies for delete org tests.
 type DeleteOrgTestService struct {
 	fx.In
 
@@ -42,7 +41,6 @@ type DeleteOrgTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// DeleteOrgTestSuite is the testify suite for delete org endpoint.
 type DeleteOrgTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -73,7 +71,6 @@ func (s *DeleteOrgTestSuite) SetupSuite() {
 
 			CustomValidator: true,
 		}),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),
 	)
@@ -81,7 +78,6 @@ func (s *DeleteOrgTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -89,9 +85,6 @@ func (s *DeleteOrgTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
-
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -176,7 +169,6 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
-				// No cleanup needed - hard delete removes it
 
 				return org
 			},
@@ -189,10 +181,8 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test data
 			org := tc.setupFunc()
 
-			// Update router context to use the test org
 			s.router = tests.NewTestRouter(tests.RouterOptions{
 				L:       s.service.L,
 				DB:      s.service.DB,
@@ -202,9 +192,6 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 			err := s.orgsService.RegisterPublicRoutes(s.router)
 			require.NoError(s.T(), err)
 
-			// Reset mock before test
-
-			// Make request
 			rr := s.makeRequest(http.MethodDelete, "/v1/orgs/current")
 
 			if rr.Code != tc.expectedStatus {
@@ -212,7 +199,6 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Validate signal was sent (or not sent)
 			if tc.validateSignal {
 				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
@@ -220,8 +206,7 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 				signal := signals[0]
 				assert.Equal(s.T(), org.ID, signal.OwnerID, "signal should be sent to correct org ID")
 
-				// Type assert to get the actual signal
-				_ = signal // type check
+				_ = signal
 
 				assert.Equal(s.T(), orgdelete.SignalType, signal.Type, "signal type should be OperationDelete")
 				assert.False(s.T(), false, "ForceDelete should be false")
@@ -230,7 +215,6 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 				assert.Len(s.T(), signals, 0, "no signal should be sent for integration org")
 			}
 
-			// For hard delete, verify org is actually deleted from database
 			if tc.shouldHardDelete {
 				var count int64
 				err := s.service.DB.Unscoped().Model(&app.Org{}).Where("id = ?", org.ID).Count(&count).Error

@@ -169,10 +169,6 @@ func (s *service) listRunnersDetails(ctx *gin.Context, statuses []string) ([]*Ad
 	return items, nil
 }
 
-// latestProcessUptime returns the uptime of the most recently started process
-// in the list, or 0 if none are available. Processes are passed in
-// created_at-desc order, but each process's own Uptime is populated by GORM's
-// AfterQuery hook.
 func latestProcessUptime(processes []app.RunnerProcess) time.Duration {
 	for i := range processes {
 		if processes[i].Uptime > 0 {

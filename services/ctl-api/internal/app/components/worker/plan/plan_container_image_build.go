@@ -37,10 +37,6 @@ func (p *Planner) createContainerImageBuildPlan(ctx workflow.Context, bld *app.C
 		RepoCfg: srcRepo,
 	}
 
-	// Look up the most recent prior Active build's SourceDigest so the runner
-	// can detect a no-op (upstream digest unchanged) and skip the artifact
-	// push. Failure here is non-fatal — without the hint the runner just runs
-	// a normal copy.
 	prior, err := activities.AwaitGetPreviousActiveBuildSourceDigest(ctx, activities.GetPreviousActiveBuildSourceDigestRequest{
 		ComponentID:    bld.ComponentConfigConnection.ComponentID,
 		ExcludeBuildID: bld.ID,
@@ -72,14 +68,9 @@ func (b *Planner) normalizeRepository(repo string) (string, error) {
 
 	host := reference.Domain(named)
 	if host == "docker.io" {
-		// The normalized name parse above will turn short names like "foo/bar"
-		// into "docker.io/foo/bar". We return "docker.io" and let oras-go
-		// handle the mapping to "registry-1.docker.io" internally.
-		// Using "index.docker.io" breaks the anonymous bearer token flow.
 		return "docker.io", nil
 	}
 
-	// by default, if a reference is fully resolved, we just use the repository name
 	return "", nil
 }
 
@@ -97,11 +88,6 @@ func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig, com
 			UseGCPOIDC:             b.cloudProvider == "gcp",
 		}
 
-		// Control-plane builds run as the ctl-api pod identity, which the
-		// vendor's ECR pull role does not trust — vendors grant the Nuon
-		// management account, so hop through the management role first. AWS
-		// is the default cloud provider, so it is represented as anything
-		// other than gcp/azure (including an empty string).
 		if b.cloudProvider != "gcp" && b.cloudProvider != "azure" && b.managementIAMRoleARN != "" {
 			assumeRole.TwoStepConfig = &assumerole.TwoStepConfig{
 				IAMRoleARN: b.managementIAMRoleARN,
@@ -142,7 +128,7 @@ func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig, com
 			},
 		}
 
-		// Naming an app registration is what makes a registry in someone else's
+		// why: Naming an app registration is what makes a registry in someone else's
 		// tenant reachable; without one the ambient identity is all there is,
 		// which only works when the registry shares our tenant.
 		//

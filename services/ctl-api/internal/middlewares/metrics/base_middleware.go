@@ -30,7 +30,6 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 		status := "ok"
 		path := c.FullPath()
 
-		// https://docs.datadoghq.com/getting_started/tagging/ dashes are not permitted in tags
 		endpoint := strings.ReplaceAll(path, "-", "_")
 
 		rawUrlWithParams := c.Request.RequestURI

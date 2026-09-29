@@ -29,7 +29,6 @@ func (s *service) SignalCatalog(c *gin.Context) {
 		return string(infos[i].Type) < string(infos[j].Type)
 	})
 
-	// Filter by search query.
 	if search != "" {
 		lower := strings.ToLower(search)
 		var filtered []catalog.SignalTypeInfo
@@ -43,7 +42,6 @@ func (s *service) SignalCatalog(c *gin.Context) {
 		infos = filtered
 	}
 
-	// Group by namespace.
 	grouped := make(map[string][]catalog.SignalTypeInfo)
 	var namespaces []string
 	for _, info := range infos {
@@ -68,7 +66,6 @@ func (s *service) SignalCatalogDetail(c *gin.Context) {
 	}()
 
 	signalType := c.Param("signal_type")
-	// URL-decode since signal types contain dashes but might be encoded.
 	decoded, err := url.PathUnescape(signalType)
 	if err == nil {
 		signalType = decoded
@@ -80,7 +77,6 @@ func (s *service) SignalCatalogDetail(c *gin.Context) {
 		return
 	}
 
-	// Fetch recent signals of this type from the database.
 	var recentSignals []app.QueueSignal
 	res := s.readDB().WithContext(c.Request.Context()).
 		Model(&app.QueueSignal{}).

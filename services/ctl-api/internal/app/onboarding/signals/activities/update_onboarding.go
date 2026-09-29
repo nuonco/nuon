@@ -62,7 +62,6 @@ func (a *Activities) updateOnboarding(ctx context.Context, req *UpdateOnboarding
 	if req.StepError != nil {
 		onboarding.StepError = req.StepError
 	}
-	// Clear step error when status is not error
 	if req.StepStatus != nil && app.OnboardingStepStatus(*req.StepStatus) != app.OnboardingStepStatusError {
 		onboarding.StepError = nil
 	}

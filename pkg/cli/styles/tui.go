@@ -4,7 +4,6 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-// Pane border styles — the universal split-pane frame used by every alt-screen TUI.
 var (
 	Pane = lipgloss.NewStyle().
 		BorderStyle(lipgloss.NormalBorder()).
@@ -19,7 +18,6 @@ var (
 			BorderForeground(BorderActiveColor)
 )
 
-// Step status border styles (normal and selected variants).
 var (
 	StepPending = lipgloss.NewStyle().
 			BorderStyle(lipgloss.NormalBorder()).
@@ -62,7 +60,6 @@ var (
 				BorderForeground(lipgloss.Color("8"))
 )
 
-// GetStepStyle returns the border style for a workflow/action step by status string.
 func GetStepStyle(status string, selected bool) lipgloss.Style {
 	if selected {
 		switch status {
@@ -93,7 +90,6 @@ func GetStepStyle(status string, selected bool) lipgloss.Style {
 	}
 }
 
-// GetStepStatusIcon returns a unicode icon for a workflow/action step status.
 func GetStepStatusIcon(status string) string {
 	switch status {
 	case "running", "in_progress":

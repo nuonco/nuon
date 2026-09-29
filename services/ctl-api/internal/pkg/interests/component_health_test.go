@@ -15,8 +15,6 @@ func healthEvent(signalType signal.SignalType) signal.SignalPhaseEvent {
 	}
 }
 
-// Health carriers are emitted outside any workflow, so they must classify with
-// no WorkflowType, no StepID, and no DB — the paths every other signal relies on.
 func TestClassifyComponentHealthSlugs(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -47,8 +45,6 @@ func TestClassifyComponentHealthSlugs(t *testing.T) {
 	}
 }
 
-// A single component_health flag has to deliver both directions, and must not
-// be satisfied by any neighbouring flag on the same resource.
 func TestMatchesComponentHealth(t *testing.T) {
 	componentsCfg := func(cfg ResourceCfg) Interests {
 		return Interests{Resources: map[ResourceKind]ResourceCfg{ResourceComponents: cfg}}
@@ -68,11 +64,9 @@ func TestMatchesComponentHealth(t *testing.T) {
 		{"unhealthy muted when flag unset", signalTypeComponentUnhealthy, componentsCfg(ResourceCfg{}), false},
 		{"recovered muted when flag unset", signalTypeComponentRecovered, componentsCfg(ResourceCfg{}), false},
 
-		// Independent of outcome and ops, exactly like drift-detected.
 		{"outcome none does not mute health", signalTypeComponentUnhealthy, componentsCfg(ResourceCfg{ComponentHealth: true, Outcome: OutcomeNone}), true},
 		{"unrelated ops filter does not mute health", signalTypeComponentUnhealthy, componentsCfg(ResourceCfg{ComponentHealth: true, Ops: []string{"deploy"}}), true},
 
-		// Neighbouring flags must not stand in for it.
 		{"drift flag does not deliver health", signalTypeComponentUnhealthy, componentsCfg(ResourceCfg{DriftDetected: true}), false},
 		{"health flag does not deliver drift-only subscribers extra events", signalTypeComponentRecovered, componentsCfg(ResourceCfg{DriftDetected: true}), false},
 

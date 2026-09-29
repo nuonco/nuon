@@ -11,15 +11,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestGetAppComponentSuccess() {
-	// Use a pre-seeded component from the full app config (helm component at index 0)
 	seededComponentID := s.testAppConfig.ComponentConfigConnections[0].ComponentID
 
-	// Look up the component name for the by-name test
 	var seededComp app.Component
 	err := s.deps.DB.WithContext(s.ctx).First(&seededComp, "id = ?", seededComponentID).Error
 	require.NoError(s.T(), err)
@@ -85,14 +79,10 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentSuccess() {
 	}
 }
 
-// ---------------------------------------------------------------------------
-// Not found cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestGetAppComponentNotFound() {
 	testCases := []struct {
 		name      string
-		setupFunc func() (string, string) // Returns appID, componentIDOrName
+		setupFunc func() (string, string)
 	}{
 		{
 			name: "nonexistent id",
@@ -103,13 +93,10 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentNotFound() {
 		{
 			name: "id from different app",
 			setupFunc: func() (string, string) {
-				// Create a second app for this org
 				app2 := s.deps.Seeder.CreateApp(s.ctx, s.T())
 
-				// Create a component on the second app
 				comp2 := s.deps.Seeder.CreateComponent(s.ctx, s.T(), app2.ID, app.ComponentTypeTerraformModule)
 
-				// Try to get it using the first app's URL
 				return s.testApp.ID, comp2.ID
 			},
 		},

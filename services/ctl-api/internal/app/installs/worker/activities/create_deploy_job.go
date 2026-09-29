@@ -16,7 +16,7 @@ type CreateDeployJobRequest struct {
 	Type            app.RunnerJobType          `validate:"required"`
 	LogStreamID     string                     `validate:"required"`
 	Metadata        map[string]string          `validate:"required"`
-	TimeoutDuration *time.Duration             // Optional custom timeout
+	TimeoutDuration *time.Duration
 }
 
 // @temporal-gen-v2 activity
@@ -29,7 +29,6 @@ func (a *Activities) CreateDeployJob(ctx context.Context, req *CreateDeployJobRe
 	ctx = cctx.SetAccountIDContext(ctx, deploy.CreatedByID)
 	ctx = cctx.SetOrgIDContext(ctx, deploy.OrgID)
 
-	// RunnerJob.BeforeCreate reads these from ctx into job metadata for telemetry.
 	if deploy.InstallWorkflowID != nil && *deploy.InstallWorkflowID != "" {
 		ctx = cctx.SetFlowWorkflowIDContext(ctx, *deploy.InstallWorkflowID)
 	}

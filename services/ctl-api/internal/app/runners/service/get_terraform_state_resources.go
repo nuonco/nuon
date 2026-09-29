@@ -66,7 +66,6 @@ func (s *service) GetTerraformWorkspaceStateResources(ctx *gin.Context) {
 		return
 	}
 
-	// Validate workspace belongs to org
 	if _, err := s.getWorkspace(ctx, workspaceID); err != nil {
 		ctx.Error(fmt.Errorf("unable to get workspace: %w", err))
 		return

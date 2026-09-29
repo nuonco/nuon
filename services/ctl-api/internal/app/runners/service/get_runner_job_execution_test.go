@@ -75,7 +75,6 @@ func (s *GetRunnerJobExecutionTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes (no TestOrg/TestAcc needed)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -94,7 +93,6 @@ func (s *GetRunnerJobExecutionTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create log stream
 	s.testLogStream = &app.LogStream{
 		ID:      domains.NewLogStreamID(),
 		OrgID:   s.testOrg.ID,
@@ -104,7 +102,6 @@ func (s *GetRunnerJobExecutionTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testLogStream).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -116,7 +113,6 @@ func (s *GetRunnerJobExecutionTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -189,8 +185,6 @@ func (s *GetRunnerJobExecutionTestSuite) TestGetRunnerJobExecution() {
 			expectedCode: http.StatusOK,
 			validateFunc: func(exec *app.RunnerJobExecution) {
 				assert.Equal(s.T(), app.RunnerJobExecutionStatusInProgress, exec.Status)
-				// Note: RunnerJob has json:"-" tag, so it's not serialized in HTTP response
-				// The Preload in the handler is for internal use, not returned to client
 			},
 		},
 		{
@@ -250,7 +244,6 @@ func (s *GetRunnerJobExecutionTestSuite) TestGetRunnerJobExecution() {
 				err := s.service.DB.WithContext(ctx).Create(job).Error
 				require.NoError(s.T(), err)
 
-				// Create first execution
 				exec1 := &app.RunnerJobExecution{
 					ID:          domains.NewRunnerID(),
 					OrgID:       s.testOrg.ID,
@@ -260,7 +253,6 @@ func (s *GetRunnerJobExecutionTestSuite) TestGetRunnerJobExecution() {
 				err = s.service.DB.WithContext(ctx).Create(exec1).Error
 				require.NoError(s.T(), err)
 
-				// Create second execution (target)
 				exec2 := &app.RunnerJobExecution{
 					ID:          domains.NewRunnerID(),
 					OrgID:       s.testOrg.ID,
@@ -289,7 +281,6 @@ func (s *GetRunnerJobExecutionTestSuite) TestGetRunnerJobExecution() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create first job
 				job1 := &app.RunnerJob{
 					ID:                domains.NewRunnerJobID(),
 					OrgID:             s.testOrg.ID,
@@ -308,7 +299,6 @@ func (s *GetRunnerJobExecutionTestSuite) TestGetRunnerJobExecution() {
 				err := s.service.DB.WithContext(ctx).Create(job1).Error
 				require.NoError(s.T(), err)
 
-				// Create second job
 				job2 := &app.RunnerJob{
 					ID:                domains.NewRunnerJobID(),
 					OrgID:             s.testOrg.ID,
@@ -327,7 +317,6 @@ func (s *GetRunnerJobExecutionTestSuite) TestGetRunnerJobExecution() {
 				err = s.service.DB.WithContext(ctx).Create(job2).Error
 				require.NoError(s.T(), err)
 
-				// Create execution for job2
 				exec := &app.RunnerJobExecution{
 					ID:          domains.NewRunnerID(),
 					OrgID:       s.testOrg.ID,
@@ -343,14 +332,11 @@ func (s *GetRunnerJobExecutionTestSuite) TestGetRunnerJobExecution() {
 					s.service.DB.Unscoped().Delete(job1)
 				})
 
-				// Return job1.ID but exec.ID - query should ignore job1.ID and find exec by ID only
 				return job1.ID, exec.ID
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(exec *app.RunnerJobExecution) {
 				assert.Equal(s.T(), app.RunnerJobExecutionStatusFinished, exec.Status)
-				// The execution should be for job2, not job1, proving runner_job_id is ignored
-				// (can't verify RunnerJobID directly since we'd need to query DB again)
 			},
 		},
 	}

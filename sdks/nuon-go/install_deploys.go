@@ -7,7 +7,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// install deploys
 func (c *client) GetInstallDeploys(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppInstallDeploy, bool, error) {
 	params := &operations.GetInstallDeploysParams{
 		InstallID: installID,

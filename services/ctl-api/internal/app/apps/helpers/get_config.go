@@ -10,8 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
-// GetLatestActiveAppConfig returns the app's newest active config with component config connections
-// preloaded.
 func (h *Helpers) GetLatestActiveAppConfig(ctx context.Context, appID string) (*app.AppConfig, error) {
 	var appConfig app.AppConfig
 
@@ -29,7 +27,6 @@ func (h *Helpers) GetLatestActiveAppConfig(ctx context.Context, appID string) (*
 	return &appConfig, nil
 }
 
-// GetLatestActiveAppConfigBare returns the app's newest active config without preloading children.
 func (h *Helpers) GetLatestActiveAppConfigBare(ctx context.Context, appID string) (*app.AppConfig, error) {
 	var appConfig app.AppConfig
 

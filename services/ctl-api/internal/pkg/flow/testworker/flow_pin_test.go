@@ -11,9 +11,6 @@ import (
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
-// TestPin* tests pin DESIRED behavior main lacks and are EXPECTED TO FAIL; exclude with -skip 'TestSuite/TestPin'.
-
-// pinTimeout keeps intentionally-failing waits cheap.
 const pinTimeout = 15 * time.Second
 
 func (e *FlowTestSuite) pinWaitWorkflowStatus(ctx context.Context, workflowID string, expected app.Status) {
@@ -33,7 +30,6 @@ func (e *FlowTestSuite) pinWaitStepStatus(ctx context.Context, stepID string, ex
 	}, pinTimeout, pollInterval, "step %s did not reach status %s", stepID, expected)
 }
 
-// PIN: deny currently yields generic error "workflow stopped"; desired is a distinct plan-rejected terminal status.
 func (e *FlowTestSuite) TestPinDenyMarksWorkflowRejected() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -53,7 +49,6 @@ func (e *FlowTestSuite) TestPinDenyMarksWorkflowRejected() {
 		"a rejected workflow must be finished")
 }
 
-// PIN: a parked workflow shows failed-pending-retry; desired is errored whenever a step failed and nothing is progressing.
 func (e *FlowTestSuite) TestPinParkedWorkflowShowsErrored() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -75,7 +70,6 @@ func (e *FlowTestSuite) TestPinParkedWorkflowShowsErrored() {
 	e.pinWaitWorkflowStatus(ctx, flw.ID, app.StatusError)
 }
 
-// PIN: cancel-step writes no terminal workflow status on main, wedging the flow at failed-pending-retry forever; desired is cancelled+finished.
 func (e *FlowTestSuite) TestPinCancelStepTerminatesWorkflow() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -106,12 +100,10 @@ func (e *FlowTestSuite) TestPinCancelStepTerminatesWorkflow() {
 		"a workflow whose only live step was cancelled must be finished")
 }
 
-// PIN: policy evaluation failures are only logged and the step parks as if policies passed; desired is a failed step.
 func (e *FlowTestSuite) TestPinPolicyEvaluationFailureFailsStep() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 	ownerID, ownerType := newTestOwner()
-	// Dangling component/build refs make policy-context resolution fail.
 	deploy := e.seedDeployTarget(ctx, app.InstallDeployStatusActive)
 
 	steps := []app.WorkflowStep{

@@ -25,8 +25,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
-// DBConfig holds just the database connection fields we need.
-// Uses the same config tags as internal.Config so it picks up the registered defaults.
 type DBConfig struct {
 	DBHost     string `config:"db_host"`
 	DBPort     string `config:"db_port"`
@@ -36,15 +34,12 @@ type DBConfig struct {
 	DBName     string `config:"db_name"`
 }
 
-// SkipIfNotIntegration skips the test if INTEGRATION != "true".
-// Call this at the start of TestXxxSuite functions.
 func SkipIfNotIntegration(t *testing.T) {
 	if os.Getenv("INTEGRATION") != "true" {
 		t.Skip("INTEGRATION is not set, skipping")
 	}
 }
 
-// LoadDBConfig loads the database config from environment variables.
 func LoadDBConfig() (DBConfig, error) {
 	var cfg DBConfig
 	if err := config.LoadInto(nil, &cfg); err != nil {
@@ -56,10 +51,7 @@ func LoadDBConfig() (DBConfig, error) {
 	return cfg, nil
 }
 
-// ResetDatabase terminates connections, drops, and recreates the test database
-// without running migrations.
 func ResetDatabase(cfg DBConfig) error {
-	// Connect to the default 'postgres' database to create test database
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=postgres sslmode=%s",
 		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBSSLMode)
 
@@ -76,11 +68,9 @@ func ResetDatabase(cfg DBConfig) error {
 	}
 	defer sqlDB.Close()
 
-	// Terminate existing connections and drop the database
 	db.Exec(fmt.Sprintf("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '%s'", cfg.DBName))
 	db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s", cfg.DBName))
 
-	// Create fresh database
 	if err := db.Exec(fmt.Sprintf("CREATE DATABASE %s", cfg.DBName)).Error; err != nil {
 		return fmt.Errorf("failed to create test database: %w", err)
 	}
@@ -88,14 +78,11 @@ func ResetDatabase(cfg DBConfig) error {
 	return nil
 }
 
-// CreateAndMigrateDatabase drops and recreates the test database, then runs migrations.
-// Called by the testsetup binary before tests run.
 func CreateAndMigrateDatabase(cfg DBConfig) error {
 	if err := ResetDatabase(cfg); err != nil {
 		return err
 	}
 
-	// Run migrations
 	if err := MigrateTestDatabase(cfg); err != nil {
 		return fmt.Errorf("failed to migrate test database: %w", err)
 	}
@@ -103,14 +90,10 @@ func CreateAndMigrateDatabase(cfg DBConfig) error {
 	return nil
 }
 
-// SchemaSnapshotDir names the directory NUONTEST_PG_SCHEMA_DIR uses to pass
-// pre-migrated pg_dump snapshots between CI runs.
 func SchemaSnapshotDir() string {
 	return os.Getenv("NUONTEST_PG_SCHEMA_DIR")
 }
 
-// SchemaSnapshotPath returns the snapshot file for the database and whether it
-// exists.
 func SchemaSnapshotPath(cfg DBConfig) (string, bool) {
 	dir := SchemaSnapshotDir()
 	if dir == "" {
@@ -123,8 +106,6 @@ func SchemaSnapshotPath(cfg DBConfig) (string, bool) {
 	return path, true
 }
 
-// RestoreDatabase recreates the test database from a pg_dump snapshot, skipping
-// migrations.
 func RestoreDatabase(cfg DBConfig, snapshotPath string) error {
 	if err := ResetDatabase(cfg); err != nil {
 		return err
@@ -147,7 +128,7 @@ func RestoreDatabase(cfg DBConfig, snapshotPath string) error {
 	return nil
 }
 
-// DumpSchema writes a pg_dump of the migrated database into dir. The CI lane
+// why: DumpSchema writes a pg_dump of the migrated database into dir. The CI lane
 // snapshots the freshly migrated schema so later runs restore it instead of
 // replaying migrations; written atomically so a concurrent cache save never
 // sees a partial file.
@@ -184,8 +165,6 @@ func DumpSchema(cfg DBConfig, dir string) error {
 	return nil
 }
 
-// pgDumpContainer names the compose service holding the postgres server; the
-// pg_dump/psql binaries live in the container, not necessarily on the host.
 func pgDumpContainer() string {
 	if c := os.Getenv("NUONTEST_PG_CONTAINER"); c != "" {
 		return c
@@ -193,7 +172,6 @@ func pgDumpContainer() string {
 	return "postgres"
 }
 
-// MigrateTestDatabase connects to the test database and runs all migrations.
 func MigrateTestDatabase(cfg DBConfig) error {
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBSSLMode)
@@ -211,7 +189,6 @@ func MigrateTestDatabase(cfg DBConfig) error {
 	}
 	defer sqlDB.Close()
 
-	// Enable required extensions
 	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS hstore").Error; err != nil {
 		return fmt.Errorf("failed to create hstore extension: %w", err)
 	}
@@ -223,60 +200,30 @@ func MigrateTestDatabase(cfg DBConfig) error {
 	return nil
 }
 
-// BaseDBTestSuite provides the base test suite for database-backed tests.
-// Embed this in your test suites. The database must already exist and be migrated
-// (via the testsetup binary) before tests run.
-//
-// Tests rely on unique names for data isolation — no truncation is needed.
-//
-// Example:
-//
-//	type MyTestSuite struct {
-//	    tests.BaseDBTestSuite
-//	    // your fields
-//	}
-//
-//	func TestMySuite(t *testing.T) {
-//	    tests.SkipIfNotIntegration(t)
-//	    suite.Run(t, new(MyTestSuite))
-//	}
-//
-//	func (s *MyTestSuite) SetupSuite() {
-//	    s.BaseDBTestSuite.SetupSuite()
-//	    // create your fx app and get DB
-//	    s.SetDB(db)
-//	    s.SetCHDB(chDB) // optional
-//	}
 type BaseDBTestSuite struct {
 	suite.Suite
 	db   *gorm.DB
 	chDB *gorm.DB
 }
 
-// SetupSuite is a no-op. The database is created by the testsetup binary before tests run.
 func (s *BaseDBTestSuite) SetupSuite() {}
 
-// SetDB stores the PostgreSQL database connection.
 func (s *BaseDBTestSuite) SetDB(db *gorm.DB) {
 	s.db = db
 }
 
-// DB returns the PostgreSQL database connection.
 func (s *BaseDBTestSuite) DB() *gorm.DB {
 	return s.db
 }
 
-// SetCHDB stores the ClickHouse database connection.
 func (s *BaseDBTestSuite) SetCHDB(db *gorm.DB) {
 	s.chDB = db
 }
 
-// CHDB returns the ClickHouse database connection.
 func (s *BaseDBTestSuite) CHDB() *gorm.DB {
 	return s.chDB
 }
 
-// SetupTest is a no-op. Tests use unique names for data isolation.
 func (s *BaseDBTestSuite) SetupTest() {}
 
 func runMigrator(ctx context.Context, db *gorm.DB) error {
@@ -309,10 +256,10 @@ func runMigrator(ctx context.Context, db *gorm.DB) error {
 	models := psql.AllModels()
 	acctClient := account.New(account.Params{
 		Cfg:             testConfig,
-		AnalyticsClient: nil, // Not needed for test migrations
+		AnalyticsClient: nil,
 		DB:              db,
 		V:               v,
-		AuthzClient:     nil, // Not needed for test migrations
+		AuthzClient:     nil,
 	})
 
 	psqlMigs := psqlmigrations.New(psqlmigrations.Params{
@@ -333,7 +280,6 @@ func runMigrator(ctx context.Context, db *gorm.DB) error {
 		TableOpts:    map[string]string{},
 	})
 
-	// Execute migrations
 	if err := migrator.Exec(ctx); err != nil {
 		return fmt.Errorf("failed to execute migrations: %w", err)
 	}

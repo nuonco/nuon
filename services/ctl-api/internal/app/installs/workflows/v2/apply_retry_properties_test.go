@@ -21,20 +21,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// These properties pin the retry contract for apply signals: a retried apply
-// must always be preceded by a fresh, approval-gated plan of the paired type
-// targeting the same entity. Both retry entry points depend on this contract:
-//
-//   - executeworkflowstep/process_errors.go (auto-retry) and
-//     executeworkflowstep/update_create_step_retry.go (manual retry) write a
-//     retry-group directive when the signal's RetryGroup() is true, cloning
-//     the whole plan+apply group.
-//   - executeworkflowstep/clone.go (single-step clone fallback) expands the
-//     apply via Clone() into [plan, apply].
-//
-// If either property breaks, an apply can re-run against a stale or
-// unapproved plan.
-
 const applyPlanTypeSuffix = "-apply-plan"
 
 type planApplyIdentity struct {
@@ -140,10 +126,6 @@ func planApplyIdentityOf(sig signal.Signal) (planApplyIdentity, bool) {
 	return planApplyIdentity{}, false
 }
 
-// TestApplySignalPairTableIsComplete guards the pair table itself: any
-// registered signal whose type ends in "-apply-plan" must be covered by
-// applyPlanPairs, so a future apply signal cannot silently skip these
-// properties.
 func TestApplySignalPairTableIsComplete(t *testing.T) {
 	covered := make(map[signal.SignalType]bool, len(applyPlanPairs))
 	for _, p := range applyPlanPairs {
@@ -159,9 +141,6 @@ func TestApplySignalPairTableIsComplete(t *testing.T) {
 	}
 }
 
-// TestApplySignalsAlwaysRetryAsGroup asserts every apply signal opts into
-// group retry, so both auto-retry and manual retry re-run the plan alongside
-// the apply.
 func TestApplySignalsAlwaysRetryAsGroup(t *testing.T) {
 	for _, pair := range applyPlanPairs {
 		sig := pair.make(planApplyIdentity{InstallID: "inst", TargetID: "target", ComponentID: "comp"}, "flow", false)
@@ -176,10 +155,6 @@ func TestApplySignalsAlwaysRetryAsGroup(t *testing.T) {
 	}
 }
 
-// TestApplyRetryAlwaysReplansProperty asserts the single-step clone fallback:
-// for any apply signal with any target identity, Clone() must produce an
-// approval-gated plan of the paired type before the apply, both preserving
-// the original target identity.
 func TestApplyRetryAlwaysReplansProperty(t *testing.T) {
 	t.Run("clone_emits_plan_before_apply", func(t *testing.T) {
 		hegel.Test(t, func(ht *hegel.T) {

@@ -5,11 +5,6 @@ import (
 	"testing"
 )
 
-// TestBuildSuggestionOptions covers the option-shape contract the Slack
-// external_select block_suggestion response requires: a JSON object with
-// an "options" array, each entry a {text:{type,text}, value} pair.
-// Bare entity names (no "Name (id)" wrapping) and the 75-byte
-// truncatePlainText cap are part of the contract too.
 func TestBuildSuggestionOptions(t *testing.T) {
 	t.Run("empty input still returns an options key", func(t *testing.T) {
 		out := buildSuggestionOptions(nil)
@@ -40,7 +35,6 @@ func TestBuildSuggestionOptions(t *testing.T) {
 			t.Fatalf("expected type=plain_text, got %v", txt["type"])
 		}
 		if txt["text"] != "frontend" {
-			// Bare name only — must NOT include the id (e.g. "frontend (cmpid1)").
 			t.Fatalf("expected bare name 'frontend', got %v", txt["text"])
 		}
 	})
@@ -51,19 +45,12 @@ func TestBuildSuggestionOptions(t *testing.T) {
 		opts := out["options"].([]any)
 		txt := opts[0].(map[string]any)["text"].(map[string]any)
 		got := txt["text"].(string)
-		// truncatePlainText caps to <= 75 bytes (uses an ellipsis at the
-		// boundary). The post-condition the picker depends on is that
-		// Slack never rejects the option for being over the limit.
 		if len(got) > 75 {
 			t.Fatalf("expected truncated label <=75 bytes, got %d", len(got))
 		}
 	})
 }
 
-// TestSubscribeEntitiesActionIDsAreDistinct guards against an accidental
-// dedupe of the action_id constants. The block_suggestion dispatcher
-// switches on these strings and any collision would silently route
-// requests to the wrong handler.
 func TestSubscribeEntitiesActionIDsAreDistinct(t *testing.T) {
 	if subscribeEntitiesActionIDComponents == subscribeEntitiesActionIDActions {
 		t.Fatal("components and actions action_ids must differ")

@@ -64,8 +64,6 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 	if len(component.ComponentConfigs) > 0 {
 		latestConfig := &component.ComponentConfigs[0]
 		if latestConfig.IsToggleable() {
-			// Enabled-state is the synthetic enabled install input; fall back to
-			// the component's default_enabled when no value is set.
 			enabled := latestConfig.GetDefaultEnabled()
 			if ii, err := s.getLatestInstallInputs(ctx, installID); err == nil && ii != nil {
 				if v, ok := ii.Values[config.EnabledOverrideInputName(component.Name)]; ok && v != nil {

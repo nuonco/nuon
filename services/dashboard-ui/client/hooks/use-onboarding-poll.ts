@@ -14,8 +14,6 @@ export function useOnboardingPoll({
   onResolvedRef.current = onResolved
   const enabledAtRef = useRef(0)
 
-  // Record when each poll session starts so we can ignore stale cached
-  // data left over from a previous step's poll (same query key).
   useEffect(() => {
     if (enabled) {
       enabledAtRef.current = Date.now()

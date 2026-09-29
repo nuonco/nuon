@@ -38,16 +38,14 @@ type service struct {
 var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
-	// Webhook event receiver (public, no auth required).
+	// why: Webhook event receiver (public, no auth required).
 	// Registered outside /v1/vcs to avoid route conflict with the legacy /:vcs_connection_id wildcard.
 	api.POST("/v1/vcs/webhooks/:subscription_id/events", s.WriteWebhookEvent)
 
-	// vcs connections
 	vcs := api.Group("/v1/vcs")
 	{
 		vcs.POST("/connection-callback", s.CreateConnectionCallback)
 
-		// Legacy webhook event receiver (per-connection)
 		vcs.POST("/:vcs_connection_id/events", s.WriteEvent)
 
 		connections := vcs.Group("/connections")

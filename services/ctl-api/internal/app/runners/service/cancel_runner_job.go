@@ -41,7 +41,6 @@ func (s *service) CancelRunnerJob(ctx *gin.Context) {
 	}
 	runnerJobID := ctx.Param("runner_job_id")
 
-	// Verify job belongs to org before cancelling
 	_, err = s.getOrgRunnerJob(ctx, runnerJobID, org.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to cancel runner job: %w", err))

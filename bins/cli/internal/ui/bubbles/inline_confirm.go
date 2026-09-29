@@ -11,8 +11,6 @@ import (
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
-// InlineConfirmModel is a compact single-line yes/no prompt
-// that renders as: ? Prompt (Y/n)
 type InlineConfirmModel struct {
 	prompt     string
 	defaultYes bool
@@ -21,7 +19,6 @@ type InlineConfirmModel struct {
 	quitting   bool
 }
 
-// NewInlineConfirmModel creates a new inline confirmation model
 func NewInlineConfirmModel(prompt string, defaultYes bool) InlineConfirmModel {
 	return InlineConfirmModel{
 		prompt:     prompt,
@@ -96,7 +93,6 @@ func (m InlineConfirmModel) View() tea.View {
 func (m InlineConfirmModel) Result() bool   { return m.result }
 func (m InlineConfirmModel) Selected() bool { return m.selected }
 
-// InlineConfirm shows a compact single-line yes/no prompt: ? Prompt (Y/n)
 func InlineConfirm(prompt string, defaultYes, interactive bool) (bool, error) {
 	if !interactive {
 		return false, fmt.Errorf("interactive terminal required for confirmation; use --yes flag to auto-approve")

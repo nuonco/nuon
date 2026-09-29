@@ -26,7 +26,6 @@ func (e ErrAuthorization) Unwrap() error {
 	return e.Err
 }
 
-// A user error is a standard user error that denotes something about the user input was not valid
 type ErrUser struct {
 	Err         error
 	Description string
@@ -41,7 +40,6 @@ func (u ErrUser) Unwrap() error {
 	return u.Err
 }
 
-// A not ready error
 type ErrNotReady struct {
 	Err         error
 	Description string

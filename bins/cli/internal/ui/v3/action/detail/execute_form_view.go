@@ -10,7 +10,6 @@ import (
 )
 
 func (m Model) renderExecuteForm() string {
-	// Return the viewport view which handles scrolling and height constraints
 	return m.formViewport.View()
 }
 
@@ -48,7 +47,6 @@ func (m Model) renderExecuteFormContent() string {
 		BorderForeground(styles.BorderInactiveColor).
 		Padding(0, 1)
 
-	// Title
 	actionName := ""
 	if m.installActionWorkflow != nil && m.installActionWorkflow.ActionWorkflow != nil {
 		actionName = m.installActionWorkflow.ActionWorkflow.Name
@@ -65,7 +63,6 @@ func (m Model) renderExecuteFormContent() string {
 		sections = append(sections, descStyle.Render("Environment variables:"))
 		sections = append(sections, "")
 
-		// Render each input field
 		for i, mapping := range m.formMappings {
 			label := labelStyle.Render(mapping.name)
 			sections = append(sections, label)
@@ -85,14 +82,12 @@ func (m Model) renderExecuteFormContent() string {
 		}
 	}
 
-	// Help text
 	sections = append(sections, "")
 	helpStyle := styles.TextDim.Italic(true)
 	sections = append(sections, helpStyle.Render("Tab/Shift+Tab: navigate | Enter: execute | Esc: cancel"))
 
 	content := lipgloss.JoinVertical(lipgloss.Top, sections...)
 
-	// Apply minimal padding
 	contentStyle := lipgloss.NewStyle().Padding(1, 2)
 
 	return contentStyle.Render(content)

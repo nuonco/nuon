@@ -17,7 +17,7 @@ import (
 const (
 	runnerJobNotifyChannel = "runner_job_available_v1"
 
-	// listenerSessionMaxAge tears down and reopens the listener connection well
+	// why: listenerSessionMaxAge tears down and reopens the listener connection well
 	// inside the pool's 5m MaxConnLifetime and the ~15m IAM token window, so the
 	// listener never runs on an aged or stale-auth connection. Reopening re-runs
 	// the IAM token fetch in psql.NewPrimaryListenerConn.
@@ -32,11 +32,6 @@ type runnerJobNotifyPayload struct {
 	Group    string `json:"group"`
 }
 
-// RunnerJobNotifyListener holds one primary-DB LISTEN connection per pod and
-// fans NOTIFY events out to parked TailRunnerJobs handlers via the wake
-// registry. It is intentionally best-effort: the long-poll handler keeps a poll
-// backstop, so a dropped notify (reconnect, pod restart, RDS failover) only
-// costs latency, never correctness.
 type RunnerJobNotifyListener struct {
 	cfg      *internal.Config
 	l        *zap.Logger
@@ -58,9 +53,6 @@ type RunnerJobNotifyListenerParams struct {
 	MeterProvider metric.MeterProvider `optional:"true"`
 }
 
-// StartRunnerJobNotifyListener constructs the listener and binds its lifecycle
-// to fx. Wired via fx.Invoke so the listener starts eagerly without anything
-// having to depend on it.
 func StartRunnerJobNotifyListener(p RunnerJobNotifyListenerParams, lc fx.Lifecycle) *RunnerJobNotifyListener {
 	rl := &RunnerJobNotifyListener{
 		cfg:      p.Cfg,
@@ -104,8 +96,6 @@ func (rl *RunnerJobNotifyListener) run(ctx context.Context) {
 		}
 
 		if clean {
-			// Scheduled session rotation (age-out), not a fault: reset backoff
-			// and reconnect promptly.
 			backoff = listenerMinReconnect
 		} else {
 			rl.l.Warn("notify listener disconnected, reconnecting", zap.Error(err))
@@ -128,10 +118,6 @@ func (rl *RunnerJobNotifyListener) run(ctx context.Context) {
 	}
 }
 
-// listenOnce opens a connection, LISTENs, and pumps notifications until the
-// session ages out or the connection drops. It returns clean=true when the exit
-// was our own scheduled age-out (parent ctx still live), so the caller can treat
-// it as a routine rotation rather than an error.
 func (rl *RunnerJobNotifyListener) listenOnce(parent context.Context) (clean bool, err error) {
 	ctx, cancel := context.WithTimeout(parent, listenerSessionMaxAge+jitter(30*time.Second))
 	defer cancel()
@@ -155,8 +141,6 @@ func (rl *RunnerJobNotifyListener) listenOnce(parent context.Context) (clean boo
 	for {
 		n, err := conn.WaitForNotification(ctx)
 		if err != nil {
-			// Our own session-age deadline elapsed while the service is still
-			// running → routine rotation, not a fault.
 			if parent.Err() == nil && ctx.Err() != nil {
 				return true, nil
 			}

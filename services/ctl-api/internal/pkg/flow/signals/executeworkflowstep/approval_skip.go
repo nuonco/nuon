@@ -9,10 +9,6 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-// handleSkipResponse processes a "skip current" response.
-// If the signal implements SignalWithSkipGroup and returns true, the entire
-// remaining group is skipped (DirectiveSkipGroup). Otherwise only the current
-// step is skipped and execution continues to the next step (DirectiveContinue).
 func (s *Signal) handleSkipResponse(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow) error {
 	l.Debug("handling approval response type: skip current and continue",
 		zap.String("step_id", step.ID),
@@ -30,7 +26,6 @@ func (s *Signal) handleSkipResponse(ctx workflow.Context, l *zap.Logger, step *a
 		l.Error("failed to deny plan and update step status", zap.Error(err))
 	}
 
-	// Workflow resumes from approval-awaiting.
 	_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: flw.ID,
 		Status: app.CompositeStatus{
@@ -57,7 +52,6 @@ func (s *Signal) handleSkipResponse(ctx workflow.Context, l *zap.Logger, step *a
 	})
 }
 
-// handleSkipDependentsResponse processes a "skip current and dependents" response.
 func (s *Signal) handleSkipDependentsResponse(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow) error {
 	l.Debug("handling approval response type: skip current and dependents",
 		zap.String("step_id", step.ID),

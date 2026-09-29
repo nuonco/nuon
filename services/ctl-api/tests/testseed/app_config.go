@@ -13,7 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// BuildAppConfig creates an app.AppConfig with fake defaults for the given app.
 func BuildAppConfig(appID string) *app.AppConfig {
 	acct := BuildAccount()
 	return &app.AppConfig{
@@ -25,9 +24,6 @@ func BuildAppConfig(appID string) *app.AppConfig {
 	}
 }
 
-// CreateBareAppConfig persists a minimal AppConfig shell for the given app to the database.
-// OrgID and CreatedByID are populated by the BeforeCreate hook from context.
-// Use CreateAppConfig for a fully-populated config.
 func (s *Seeder) CreateBareAppConfig(ctx context.Context, t *testing.T, appID string) *app.AppConfig {
 	cfg := &app.AppConfig{
 		AppID:      appID,
@@ -40,7 +36,6 @@ func (s *Seeder) CreateBareAppConfig(ctx context.Context, t *testing.T, appID st
 	return cfg
 }
 
-// CreateAppSandboxConfig persists an AppSandboxConfig with a nested PublicGitVCSConfig.
 func (s *Seeder) CreateAppSandboxConfig(ctx context.Context, t *testing.T, appID, appConfigID string) *app.AppSandboxConfig {
 	sandbox := &app.AppSandboxConfig{
 		AppID:            appID,
@@ -56,7 +51,6 @@ func (s *Seeder) CreateAppSandboxConfig(ctx context.Context, t *testing.T, appID
 	return sandbox
 }
 
-// CreateAppRunnerConfig persists an AppRunnerConfig with type aws.
 func (s *Seeder) CreateAppRunnerConfig(ctx context.Context, t *testing.T, appID, appConfigID string) *app.AppRunnerConfig {
 	runner := &app.AppRunnerConfig{
 		AppID:       appID,
@@ -67,8 +61,6 @@ func (s *Seeder) CreateAppRunnerConfig(ctx context.Context, t *testing.T, appID,
 	return runner
 }
 
-// CreateAppInputConfig persists an AppInputConfig with one AppInputGroup and one AppInput.
-// Three sequential creates are required due to the FK chain: AppInputConfig -> AppInputGroup -> AppInput.
 func (s *Seeder) CreateAppInputConfig(ctx context.Context, t *testing.T, appID, appConfigID string) *app.AppInputConfig {
 	inputCfg := &app.AppInputConfig{
 		AppID:       appID,
@@ -99,7 +91,6 @@ func (s *Seeder) CreateAppInputConfig(ctx context.Context, t *testing.T, appID, 
 	return inputCfg
 }
 
-// CreateAppSecretsConfig persists an empty AppSecretsConfig.
 func (s *Seeder) CreateAppSecretsConfig(ctx context.Context, t *testing.T, appID, appConfigID string) *app.AppSecretsConfig {
 	cfg := &app.AppSecretsConfig{
 		AppID:       appID,
@@ -109,7 +100,6 @@ func (s *Seeder) CreateAppSecretsConfig(ctx context.Context, t *testing.T, appID
 	return cfg
 }
 
-// CreateAppPermissionsConfig persists an empty AppPermissionsConfig.
 func (s *Seeder) CreateAppPermissionsConfig(ctx context.Context, t *testing.T, appID, appConfigID string) *app.AppPermissionsConfig {
 	cfg := &app.AppPermissionsConfig{
 		AppID:       appID,
@@ -119,7 +109,6 @@ func (s *Seeder) CreateAppPermissionsConfig(ctx context.Context, t *testing.T, a
 	return cfg
 }
 
-// CreateAppPoliciesConfig persists an empty AppPoliciesConfig.
 func (s *Seeder) CreateAppPoliciesConfig(ctx context.Context, t *testing.T, appID, appConfigID string) *app.AppPoliciesConfig {
 	cfg := &app.AppPoliciesConfig{
 		AppID:       appID,
@@ -129,7 +118,6 @@ func (s *Seeder) CreateAppPoliciesConfig(ctx context.Context, t *testing.T, appI
 	return cfg
 }
 
-// CreateAppBreakGlassConfig persists an empty AppBreakGlassConfig.
 func (s *Seeder) CreateAppBreakGlassConfig(ctx context.Context, t *testing.T, appID, appConfigID string) *app.AppBreakGlassConfig {
 	cfg := &app.AppBreakGlassConfig{
 		AppID:       appID,
@@ -139,7 +127,6 @@ func (s *Seeder) CreateAppBreakGlassConfig(ctx context.Context, t *testing.T, ap
 	return cfg
 }
 
-// CreateAppStackConfig persists an AppStackConfig of type aws-cloudformation.
 func (s *Seeder) CreateAppStackConfig(ctx context.Context, t *testing.T, appID, appConfigID string) *app.AppStackConfig {
 	cfg := &app.AppStackConfig{
 		AppID:       appID,
@@ -152,7 +139,6 @@ func (s *Seeder) CreateAppStackConfig(ctx context.Context, t *testing.T, appID, 
 	return cfg
 }
 
-// CreateHelmComponentConfigConnection persists a ComponentConfigConnection with a HelmComponentConfig.
 func (s *Seeder) CreateHelmComponentConfigConnection(ctx context.Context, t *testing.T, componentID, appConfigID string) *app.ComponentConfigConnection {
 	ccc := &app.ComponentConfigConnection{
 		ComponentID: componentID,
@@ -175,7 +161,6 @@ func (s *Seeder) CreateHelmComponentConfigConnection(ctx context.Context, t *tes
 	return ccc
 }
 
-// CreateTerraformComponentConfigConnection persists a ComponentConfigConnection with a TerraformModuleComponentConfig.
 func (s *Seeder) CreateTerraformComponentConfigConnection(ctx context.Context, t *testing.T, componentID, appConfigID string) *app.ComponentConfigConnection {
 	ccc := &app.ComponentConfigConnection{
 		ComponentID: componentID,
@@ -193,7 +178,6 @@ func (s *Seeder) CreateTerraformComponentConfigConnection(ctx context.Context, t
 	return ccc
 }
 
-// CreateDockerBuildComponentConfigConnection persists a ComponentConfigConnection with a DockerBuildComponentConfig.
 func (s *Seeder) CreateDockerBuildComponentConfigConnection(ctx context.Context, t *testing.T, componentID, appConfigID string) *app.ComponentConfigConnection {
 	ccc := &app.ComponentConfigConnection{
 		ComponentID: componentID,
@@ -211,7 +195,6 @@ func (s *Seeder) CreateDockerBuildComponentConfigConnection(ctx context.Context,
 	return ccc
 }
 
-// CreateKubernetesManifestComponentConfigConnection persists a ComponentConfigConnection with a KubernetesManifestComponentConfig.
 func (s *Seeder) CreateKubernetesManifestComponentConfigConnection(ctx context.Context, t *testing.T, componentID, appConfigID string) *app.ComponentConfigConnection {
 	ccc := &app.ComponentConfigConnection{
 		ComponentID: componentID,
@@ -225,7 +208,6 @@ func (s *Seeder) CreateKubernetesManifestComponentConfigConnection(ctx context.C
 	return ccc
 }
 
-// CreateExternalImageComponentConfigConnection persists a ComponentConfigConnection with an ExternalImageComponentConfig.
 func (s *Seeder) CreateExternalImageComponentConfigConnection(ctx context.Context, t *testing.T, componentID, appConfigID string) *app.ComponentConfigConnection {
 	ccc := &app.ComponentConfigConnection{
 		ComponentID: componentID,
@@ -239,7 +221,6 @@ func (s *Seeder) CreateExternalImageComponentConfigConnection(ctx context.Contex
 	return ccc
 }
 
-// CreateJobComponentConfigConnection persists a ComponentConfigConnection with a JobComponentConfig.
 func (s *Seeder) CreateJobComponentConfigConnection(ctx context.Context, t *testing.T, componentID, appConfigID string) *app.ComponentConfigConnection {
 	ccc := &app.ComponentConfigConnection{
 		ComponentID: componentID,
@@ -254,7 +235,6 @@ func (s *Seeder) CreateJobComponentConfigConnection(ctx context.Context, t *test
 	return ccc
 }
 
-// CreateActionWorkflow persists an ActionWorkflow definition scoped to the given app.
 func (s *Seeder) CreateActionWorkflow(ctx context.Context, t *testing.T, appID string) *app.ActionWorkflow {
 	wf := &app.ActionWorkflow{
 		AppID:  appID,
@@ -265,8 +245,6 @@ func (s *Seeder) CreateActionWorkflow(ctx context.Context, t *testing.T, appID s
 	return wf
 }
 
-// CreateActionWorkflowConfig persists an ActionWorkflowConfig with one manual trigger and one step.
-// Three sequential creates are required: ActionWorkflowConfig -> ActionWorkflowTriggerConfig -> ActionWorkflowStepConfig.
 func (s *Seeder) CreateActionWorkflowConfig(ctx context.Context, t *testing.T, appID, appConfigID, actionWorkflowID string) *app.ActionWorkflowConfig {
 	awc := &app.ActionWorkflowConfig{
 		AppID:            appID,
@@ -300,25 +278,19 @@ func (s *Seeder) CreateActionWorkflowConfig(ctx context.Context, t *testing.T, a
 	return awc
 }
 
-// CreateAppConfig creates a fully-populated AppConfig mirroring what a real CLI sync produces:
-// all required configs, all optional configs, one component of each type, and one action workflow.
 func (s *Seeder) CreateAppConfig(ctx context.Context, t *testing.T, appID string) *app.AppConfig {
-	// Parent shell
 	cfg := s.CreateBareAppConfig(ctx, t, appID)
 
-	// Required configs
 	s.CreateAppSandboxConfig(ctx, t, appID, cfg.ID)
 	s.CreateAppRunnerConfig(ctx, t, appID, cfg.ID)
 	s.CreateAppInputConfig(ctx, t, appID, cfg.ID)
 
-	// Optional configs
 	s.CreateAppSecretsConfig(ctx, t, appID, cfg.ID)
 	s.CreateAppPermissionsConfig(ctx, t, appID, cfg.ID)
 	s.CreateAppPoliciesConfig(ctx, t, appID, cfg.ID)
 	s.CreateAppBreakGlassConfig(ctx, t, appID, cfg.ID)
 	s.CreateAppStackConfig(ctx, t, appID, cfg.ID)
 
-	// One component of each type
 	helmComp := s.CreateComponent(ctx, t, appID, app.ComponentTypeHelmChart)
 	tfComp := s.CreateComponent(ctx, t, appID, app.ComponentTypeTerraformModule)
 	dockerComp := s.CreateComponent(ctx, t, appID, app.ComponentTypeDockerBuild)
@@ -333,11 +305,9 @@ func (s *Seeder) CreateAppConfig(ctx context.Context, t *testing.T, appID string
 	extImageCCC := s.CreateExternalImageComponentConfigConnection(ctx, t, extImageComp.ID, cfg.ID)
 	jobCCC := s.CreateJobComponentConfigConnection(ctx, t, jobComp.ID, cfg.ID)
 
-	// One action workflow
 	wf := s.CreateActionWorkflow(ctx, t, appID)
 	s.CreateActionWorkflowConfig(ctx, t, appID, cfg.ID, wf.ID)
 
-	// Finalize: set status active and populate ComponentIDs (mirrors real sync finish)
 	componentIDs := pq.StringArray{
 		helmComp.ID, tfComp.ID, dockerComp.ID,
 		k8sComp.ID, extImageComp.ID, jobComp.ID,
@@ -352,7 +322,6 @@ func (s *Seeder) CreateAppConfig(ctx context.Context, t *testing.T, appID string
 		"component_ids": componentIDs,
 	}).Error)
 
-	// Do this at the end or GORM makes a bunch of duplicates for some reason.
 	cfg.ComponentConfigConnections = []app.ComponentConfigConnection{
 		*helmCCC, *tfCCC, *dockerCCC, *k8sCCC, *extImageCCC, *jobCCC,
 	}

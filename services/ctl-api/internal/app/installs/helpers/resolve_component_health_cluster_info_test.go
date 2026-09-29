@@ -55,8 +55,6 @@ func TestComponentHealthClusterInfo(t *testing.T) {
 	})
 }
 
-// The templated fields are worthless if they don't resolve against real state,
-// so assert the round trip rather than the template strings.
 func TestComponentHealthClusterInfoRenders(t *testing.T) {
 	ci := componentHealthClusterInfo(&app.InstallStackOutputs{
 		AWSStackOutputs: &app.AWSStackOutputs{Region: "us-west-2"},

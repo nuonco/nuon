@@ -93,8 +93,6 @@ func (s *service) getInstallsForHealthSummary(ctx context.Context, orgID, appID 
 	return installs, nil
 }
 
-// summarizeInstallsHealth rolls installs (with AfterQuery-computed
-// CompositeHealthStatus) into fleet counts; kept pure so it's unit-testable without a DB.
 func summarizeInstallsHealth(installs []app.Install) *InstallsHealthResponse {
 	resp := &InstallsHealthResponse{
 		Installs: make([]InstallHealthSummary, 0, len(installs)),
@@ -114,8 +112,6 @@ func summarizeInstallsHealth(installs []app.Install) *InstallsHealthResponse {
 		case app.InstallComponentHealthStatusUnset, app.InstallComponentHealthStatusNotApplicable:
 			resp.Unset++
 		default:
-			// Progressing, Unknown, and any future non-terminal verdict roll up
-			// here: not a pass, but distinct from "no data at all".
 			resp.Unknown++
 		}
 
@@ -136,8 +132,6 @@ func summarizeInstallsHealth(installs []app.Install) *InstallsHealthResponse {
 	return resp
 }
 
-// countBadHealthComponents reads the install's denormalized per-component
-// health hstore, avoiding a separate query per install in the fleet summary.
 func countBadHealthComponents(statuses pgtype.Hstore) (unhealthy, degraded int) {
 	for _, v := range statuses {
 		if v == nil {

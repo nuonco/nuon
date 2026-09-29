@@ -9,9 +9,6 @@ import (
 	"time"
 )
 
-// CloudEvents decodes a structured-mode CloudEvents 1.0 envelope. The
-// envelope's own ID becomes the dedupe ID even when selectors override the
-// event ID.
 type CloudEvents struct{}
 
 type cloudEvent struct {

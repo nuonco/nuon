@@ -23,7 +23,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 )
 
-// TESTWORKER_NAMESPACE isolates concurrent suite runs: task queues are namespace-scoped, so runs sharing one steal each other's tasks.
 var defaultNamespace = func() string {
 	if ns := os.Getenv("TESTWORKER_NAMESPACE"); ns != "" {
 		return ns
@@ -63,12 +62,10 @@ func New(params WorkerParams) (*Worker, error) {
 		DisableRegistrationAliasing:        true,
 	})
 
-	// Register all shared activities (queue, handler, status, flow, lifecycle, client, etc.)
 	for _, acts := range params.SharedActs.AllActivities() {
 		wkr.RegisterActivity(acts)
 	}
 
-	// Register workflows
 	for _, wkflow := range params.QueueWkflows.All() {
 		wkr.RegisterWorkflow(wkflow)
 	}

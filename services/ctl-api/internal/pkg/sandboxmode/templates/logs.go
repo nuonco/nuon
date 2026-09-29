@@ -276,7 +276,6 @@ func logTemplates() []Template {
 				"Deployment complete!",
 			}, "\n"),
 		},
-		// Resource-specific terraform log templates
 		{
 			Key:         "terraform-apply-rds",
 			Description: "Terraform apply output creating RDS Postgres instance with supporting resources",
@@ -453,7 +452,6 @@ func logTemplates() []Template {
 				`encryption_algorithm  = "aws:kms"`,
 			}, "\n"),
 		},
-		// Noop log variants
 		{
 			Key:         "terraform-noop-logs",
 			Description: "Terraform apply output with no changes",

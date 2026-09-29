@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// getInstallComponents reads components deployed to an install from the DB.
 func (h *Helpers) GetInstallComponents(ctx context.Context, installID string) ([]app.InstallComponent, error) {
 	install := &app.Install{}
 	res := h.db.WithContext(ctx).
@@ -19,7 +18,6 @@ func (h *Helpers) GetInstallComponents(ctx context.Context, installID string) ([
 		Preload("InstallComponents.InstallDeploys", func(db *gorm.DB) *gorm.DB {
 			return db.
 				Where("status IN ?", app.AppliedDeployStatuses())
-			// Scopes(scopes.WithOverrideTable("install_deploys_latest_view_v1"))
 		}).
 		Preload("InstallComponents.Component").
 		Preload("InstallComponents.TerraformWorkspace").

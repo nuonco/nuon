@@ -23,12 +23,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	srcCfg := h.state.cfg.RepoCfg
 	dstCfg := h.state.regCfg
 
-	// imageref owns the rules that turn the planner-provided image+tag into
-	// the pull ref and the recorded source identity, so they can never
-	// disagree. When the user set an `update_policy` semver constraint, pick
-	// the concrete tag by listing tags from the source registry and
-	// semver-selecting the highest match; otherwise the pull ref comes
-	// straight from the spec.
 	spec := imageref.Spec{
 		Image:        h.state.cfg.Image,
 		Tag:          h.state.cfg.Tag,
@@ -52,13 +46,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 	srcTag := spec.PullRef(selected)
 
-	// Resolve the upstream source ref to its manifest descriptor BEFORE
-	// pulling/pushing any blobs. The descriptor's digest is the canonical
-	// content address we use to:
-	//   - decide whether this build is a no-op (digest matches the previous
-	//     build's recorded SourceDigest)
-	//   - record source identity on the ComponentBuild row for downstream
-	//     drift detection and dependency-aware deploys.
 	l.Info(fmt.Sprintf("resolving image source %s:%s", h.state.cfg.Image, srcTag))
 	desc, err := h.ociResolve.Resolve(ctx, srcCfg, srcTag)
 	if err != nil {
@@ -76,7 +63,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 	noOp := h.state.cfg.PreviousSourceDigest != "" && h.state.cfg.PreviousSourceDigest == resolvedDigest
 
-	// Each build gets its own result tag (the build id), so the copy must run
+	// why: Each build gets its own result tag (the build id), so the copy must run
 	// even when the content is unchanged (noOp): it writes the manifest under
 	// this build's tag so the deploy can resolve it. oras skips blobs already
 	// present in the destination, so an unchanged image is a cheap manifest-only

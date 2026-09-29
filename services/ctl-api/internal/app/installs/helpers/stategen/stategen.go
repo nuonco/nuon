@@ -20,8 +20,6 @@ type Request struct {
 	TriggeredByType string
 }
 
-// HintOrGenerate hints the state manager via state-partial-generate on the
-// install's state-manager queue and awaits the regeneration callback.
 func HintOrGenerate(ctx workflow.Context, req Request) error {
 	cb := callback.New(ctx, req.InstallID)
 	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{

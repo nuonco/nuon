@@ -31,7 +31,7 @@ func (s *VCSServiceTestSuite) TestCreateConnection_Success() {
 }
 
 func (s *VCSServiceTestSuite) TestCreateConnection_InvalidRequest() {
-	req := map[string]interface{}{} // Empty request missing required github_install_id
+	req := map[string]interface{}{}
 
 	rr := s.makeRequest(http.MethodPost, "/v1/vcs/connections", req)
 

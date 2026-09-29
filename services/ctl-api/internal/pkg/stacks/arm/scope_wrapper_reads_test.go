@@ -12,14 +12,6 @@ import (
 
 var referenceResourceIDRegexp = regexp.MustCompile(`reference\(resourceId\(`)
 
-// ARM resolves a reference() to a resource the current template does not declare
-// during preflight, before any nested deployment has run, and dependsOn does not
-// defer it. So at subscription scope the root may not reference() anything that
-// wrapInInstallRG relocated — the value has to come back as a nested output.
-//
-// The failure mode is badly misleading: the deployment reports ResourceGroupNotFound
-// for a resource group that the same deployment lists as Created, because the read
-// raced its creation.
 func TestSubscriptionScope_RootDoesNotReferenceWrappedResources(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 
@@ -36,7 +28,6 @@ func TestSubscriptionScope_RootDoesNotReferenceWrappedResources(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Types the wrappers own. A root reference() to one of these is the bug.
 	wrapped := map[string]bool{}
 	for _, lvl := range inlineTemplates(root, "") {
 		for _, r := range asSlice(lvl.body["resources"]) {
@@ -69,8 +60,6 @@ func TestSubscriptionScope_RootDoesNotReferenceWrappedResources(t *testing.T) {
 	}
 }
 
-// rootExpressions returns the strings belonging to the root template, skipping the
-// bodies of nested inline templates.
 func rootExpressions(node any, path string) map[string]string {
 	out := map[string]string{}
 	switch v := node.(type) {

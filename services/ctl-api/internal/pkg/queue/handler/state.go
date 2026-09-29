@@ -13,7 +13,6 @@ import (
 )
 
 func (h *handler) initializeState(ctx workflow.Context, queueSignal *app.QueueSignal) error {
-	// If the signal has an expiry time and we're past it, terminate without processing.
 	if queueSignal.ExpiresAt != nil && workflow.Now(ctx).After(*queueSignal.ExpiresAt) {
 		_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID:     h.queueSignalID,
@@ -27,11 +26,7 @@ func (h *handler) initializeState(ctx workflow.Context, queueSignal *app.QueueSi
 		return nil
 	}
 
-	// Detect abandoned previous runs by checking for started-but-not-finished timestamps.
-	// If a previous handler crashed mid-validate or mid-execute, the started_at timestamp
-	// will exist but the finished_at timestamp will not.
 	if meta := queueSignal.Status.Metadata; meta != nil {
-		// If init previously failed, the signal is already in a terminal error state.
 		if _, initFailed := meta["init_failed_at"]; initFailed {
 			h.setFinished(app.StatusError, "previous init failed; signal already in terminal state")
 			return nil
@@ -70,7 +65,7 @@ func (h *handler) initializeState(ctx workflow.Context, queueSignal *app.QueueSi
 		}
 	}
 
-	// The Signal field has temporaljson:"-" so it's stripped during activity
+	// why: The Signal field has temporaljson:"-" so it's stripped during activity
 	// serialization. We must fetch it via a separate local activity that
 	// deserializes from DB using the catalog.
 	sig, err := activities.LocalAwaitGetQueueSignalSignalByQueueSignalID(ctx, h.queueSignalID)
@@ -89,9 +84,7 @@ func (h *handler) initializeState(ctx workflow.Context, queueSignal *app.QueueSi
 
 	h.queueSignal = queueSignal
 
-	// Load callbacks from the DB record (set at enqueue time or added later by EnsureSignal).
 	h.callbacks = queueSignal.Callbacks
-	// Backward compat: merge the legacy single Callback if not already in Callbacks.
 	if queueSignal.Callback.IsSet() {
 		found := false
 		for _, cb := range h.callbacks {

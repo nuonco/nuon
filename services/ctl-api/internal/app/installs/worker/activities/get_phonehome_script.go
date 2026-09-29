@@ -13,7 +13,7 @@ import (
 const (
 	ghApiTimeout = 5 * time.Second
 
-	// DefaultAWSPhoneHomeScript is pinned to a tag rather than refs/heads/main on
+	// why: DefaultAWSPhoneHomeScript is pinned to a tag rather than refs/heads/main on
 	// purpose. Under a branch ref, any commit to that file in nuonco/runner would ship
 	// itself to every org on their next stack regeneration — including orgs with
 	// phone-home auth off, who have no reason to take the change. Bumping this is a
@@ -22,8 +22,6 @@ const (
 )
 
 type GetPhoneHomeScriptRequest struct {
-	// URL is the app's AppRunnerConfig.PhoneHomeScriptURL. Empty falls back to the
-	// environment override and then to DefaultAWSPhoneHomeScript.
 	URL string `json:"url,omitempty"`
 }
 
@@ -61,7 +59,7 @@ func (a *Activities) GetPhoneHomeScriptRaw(ctx context.Context, req *GetPhoneHom
 	}
 	defer resp.Body.Close()
 
-	// A typo'd override otherwise renders GitHub's 404 page into the template as the
+	// why: A typo'd override otherwise renders GitHub's 404 page into the template as the
 	// Lambda's source, which fails at CreateStack in the customer's account instead of
 	// here.
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {

@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Several identity providers can now share a provider_type, so provider_type stops being an
+// why: Several identity providers can now share a provider_type, so provider_type stops being an
 // identifier and identity_provider_id becomes one.
 //
 // The old idx_provider_type was declared with a malformed gorm tag and landed as

@@ -19,8 +19,6 @@ type CreateQueueSignalRequest struct {
 	QueueID string        `json:"queue_id" validate:"required"`
 	Signal  signal.Signal `json:"signal" validate:"required"`
 
-	// OwnerID and OwnerType are optional — when set they populate the polymorphic
-	// owner association on the created QueueSignal so no separate UPDATE is needed.
 	OwnerID   string     `json:"owner_id,omitempty"`
 	OwnerType string     `json:"owner_type,omitempty"`
 	ExpiresAt *time.Time `json:"expires_at,omitempty"`

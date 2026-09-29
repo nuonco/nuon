@@ -16,8 +16,6 @@ import (
 	inlinebuild "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/inlinebuild"
 )
 
-// AppConfigBuild builds the workflow steps for an app config build.
-// This workflow creates a single parallel step group with one build signal per component.
 func AppConfigBuild(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	appConfigID := generics.FromPtrStr(flw.Metadata["app_config_id"])
 	if appConfigID == "" {
@@ -33,7 +31,6 @@ func AppConfigBuild(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSteps
 		return &app.GenerateStepsResult{}, nil
 	}
 
-	// Look up component queue IDs for step routing.
 	componentQueues := make(map[string]*componenthelpers.ComponentQueueIDs, len(appConfig.ComponentIDs))
 	for _, componentID := range appConfig.ComponentIDs {
 		queues, err := activities.AwaitGetComponentQueueIDsByComponentID(ctx, componentID)
@@ -43,7 +40,6 @@ func AppConfigBuild(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSteps
 		componentQueues[componentID] = queues
 	}
 
-	// Look up component names by ID (sequential, 1-by-1).
 	componentNames := make(map[string]string, len(appConfig.ComponentIDs))
 	for _, componentID := range appConfig.ComponentIDs {
 		cmp, err := activities.AwaitGetComponentByIDByComponentID(ctx, componentID)

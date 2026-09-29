@@ -19,9 +19,6 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return err
 	}
 
-	// Tag this handler's logger with semantic-convention attributes so every
-	// emitted record (including from helpers further down the call tree) carries
-	// them automatically.
 	l = l.With(
 		zap.String("service.name", "runner.sandbox.sync_secrets"),
 		zap.String("nuon.tool", "sync_secrets"),

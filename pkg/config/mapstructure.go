@@ -6,7 +6,6 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-// newJSON returns a json marshaler that is configured to use our `mapstructure` tag, so we can avoid duplicate tagging
 func newJSON() jsoniter.API {
 	return jsoniter.Config{
 		EscapeHTML:             true,
@@ -16,15 +15,13 @@ func newJSON() jsoniter.API {
 	}.Froze()
 }
 
-// nestWithName returns a mapstructure that nests the object, by the key. This is useful for terraform resources that
-// need a name field in them
 func nestWithName(name string, obj map[string]interface{}) map[string]interface{} {
 	return map[string]interface{}{
 		name: obj,
 	}
 }
 
-// toMapStructure: this allows us to convert any type into a mapstructure, so we can easily work back and forth with
+// why: toMapStructure: this allows us to convert any type into a mapstructure, so we can easily work back and forth with
 // what will ultimately become terraform json.
 //
 // we go from struct -> json -> mapstructure, because mitchellh/mapstructure doesn't have good support for going from

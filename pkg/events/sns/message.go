@@ -1,6 +1,3 @@
-// Package sns parses and verifies AWS SNS HTTP(S) deliveries: message
-// envelope validation, signing certificate retrieval, RSA signature
-// verification, and subscription URL validation.
 package sns
 
 import (
@@ -20,8 +17,6 @@ var (
 	certPattern   = regexp.MustCompile(`^SimpleNotificationService-[[:xdigit:]]+\.pem$`)
 )
 
-// Message is an SNS delivery: a Notification, SubscriptionConfirmation, or
-// UnsubscribeConfirmation.
 type Message struct {
 	Type             string `json:"Type"`
 	MessageID        string `json:"MessageId"`
@@ -36,8 +31,6 @@ type Message struct {
 	SubscribeURL     string `json:"SubscribeURL,omitempty"`
 }
 
-// ParseMessage decodes and validates an SNS message body, including its
-// SigningCertURL and, for confirmations, its SubscribeURL.
 func ParseMessage(body []byte) (*Message, error) {
 	var msg Message
 	decoder := json.NewDecoder(bytes.NewReader(body))
@@ -141,8 +134,6 @@ func hostForTopicARN(topicARN string) (string, error) {
 	return "sns." + parts[3] + "." + suffix, nil
 }
 
-// ValidateSubscribeURL rejects a SubscribeURL unless it is a trusted SNS
-// endpoint whose ConfirmSubscription query matches the signed message.
 func ValidateSubscribeURL(rawURL, topicARN, token string) error {
 	u, err := url.Parse(rawURL)
 	if err != nil {

@@ -40,7 +40,6 @@ func executeSignal(t *testing.T, env *testsuite.TestWorkflowEnvironment) error {
 func TestExecuteFansOutEveryDispatchAndWaiter(t *testing.T) {
 	var suite testsuite.WorkflowTestSuite
 	env := suite.NewTestWorkflowEnvironment()
-	// loaded CI runners starve the workflow goroutine past the 1s default
 	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 
 	env.OnActivity((*activities.Activities).RouteTriggerEvent, mock.Anything, mock.Anything, mock.Anything).
@@ -57,7 +56,6 @@ func TestExecuteFansOutEveryDispatchAndWaiter(t *testing.T) {
 func TestExecuteFailedDispatchEnqueueDoesNotBlockSiblingsOrWaiters(t *testing.T) {
 	var suite testsuite.WorkflowTestSuite
 	env := suite.NewTestWorkflowEnvironment()
-	// loaded CI runners starve the workflow goroutine past the 1s default
 	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 
 	env.OnActivity((*activities.Activities).RouteTriggerEvent, mock.Anything, mock.Anything, mock.Anything).
@@ -76,12 +74,8 @@ func TestExecuteFailedDispatchEnqueueDoesNotBlockSiblingsOrWaiters(t *testing.T)
 func TestExecuteFailedWaiterDoesNotBlockSiblingWaitersOrDispatches(t *testing.T) {
 	var suite testsuite.WorkflowTestSuite
 	env := suite.NewTestWorkflowEnvironment()
-	// loaded CI runners starve the workflow goroutine past the 1s default
 	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 
-	// Register with a string name so the test env decodes the request payload
-	// into (ctx, request) args; method-expression mocks treat the receiver as
-	// arg 0 and leave the request zero-valued, breaking MatchedBy.
 	env.RegisterActivityWithOptions((&activities.Activities{}).NotifyEventRunbookWaiter,
 		activity.RegisterOptions{Name: "NotifyEventRunbookWaiter"})
 

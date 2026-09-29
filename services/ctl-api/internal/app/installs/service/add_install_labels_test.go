@@ -34,7 +34,6 @@ func (s *InstallsServiceTestSuite) TestAddInstallLabelsSuccess() {
 		assert.Equal(s.T(), "prod", response.Labels["env"])
 		assert.Equal(s.T(), "platform", response.Labels["team"])
 
-		// Verify in DB
 		var dbInstall app.Install
 		err = s.deps.DB.WithContext(s.ctx).First(&dbInstall, "id = ?", install.ID).Error
 		require.NoError(s.T(), err)
@@ -45,7 +44,6 @@ func (s *InstallsServiceTestSuite) TestAddInstallLabelsSuccess() {
 	s.Run("merges labels with existing labels", func() {
 		install := s.createTestInstall()
 
-		// Set initial labels
 		install.Labels = labels.Labels{"env": "staging"}
 		err := s.deps.DB.WithContext(s.ctx).Model(&install).Select("labels").Updates(&install).Error
 		require.NoError(s.T(), err)
@@ -68,7 +66,6 @@ func (s *InstallsServiceTestSuite) TestAddInstallLabelsSuccess() {
 	s.Run("overwrites existing key", func() {
 		install := s.createTestInstall()
 
-		// Set initial labels
 		install.Labels = labels.Labels{"env": "staging"}
 		err := s.deps.DB.WithContext(s.ctx).Model(&install).Select("labels").Updates(&install).Error
 		require.NoError(s.T(), err)

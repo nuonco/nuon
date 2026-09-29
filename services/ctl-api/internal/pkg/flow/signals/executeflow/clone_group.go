@@ -14,10 +14,6 @@ import (
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// cloneGroupForRetry clones all steps in the given group. It marks existing
-// steps as Discarded and creates new clones with an incremented GroupRetryIdx.
-// When step groups exist, a new WorkflowStepGroup is created and the old one
-// is marked as discarded.
 func (s *Signal) cloneGroupForRetry(ctx workflow.Context, groupIdx int) error {
 	allSteps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
 		FlowID: s.WorkflowID,
@@ -47,9 +43,6 @@ func (s *Signal) cloneGroupForRetry(ctx workflow.Context, groupIdx int) error {
 		}
 	}
 
-	// If steps have a WorkflowStepGroupID, create a new group and mark ALL old ones as discarded.
-	// On retry-of-retry, steps from multiple group generations coexist for the same GroupIdx.
-	// We must discard every previous group object, not just one.
 	var newGroupID string
 	groupIDs := make(map[string]bool)
 	for _, step := range groupSteps {
@@ -59,7 +52,6 @@ func (s *Signal) cloneGroupForRetry(ctx workflow.Context, groupIdx int) error {
 	}
 
 	if len(groupIDs) > 0 {
-		// Mark all old groups as discarded (idempotent — already-discarded is harmless).
 		for gid := range groupIDs {
 			_ = statusactivities.AwaitPkgStatusUpdateFlowStepGroupStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: gid,
@@ -72,7 +64,6 @@ func (s *Signal) cloneGroupForRetry(ctx workflow.Context, groupIdx int) error {
 			})
 		}
 
-		// Create a new group for the retry.
 		newGroupID = domains.NewWorkflowStepGroupID()
 		if _, err := workflowactivities.AwaitPkgWorkflowsFlowCreateFlowStepGroups(ctx, workflowactivities.CreateFlowStepGroupsRequest{
 			Groups: []workflowactivities.CreateFlowStepGroup{
@@ -89,8 +80,6 @@ func (s *Signal) cloneGroupForRetry(ctx workflow.Context, groupIdx int) error {
 		}
 	}
 
-	// Mark all existing steps as retried. Keep the existing status so
-	// errors still show correctly in the dashboard.
 	for _, step := range groupSteps {
 		if step.Status.Status == app.StatusDiscarded {
 			continue
@@ -100,7 +89,7 @@ func (s *Signal) cloneGroupForRetry(ctx workflow.Context, groupIdx int) error {
 		})
 	}
 
-	// Clone from the latest group retry generation (not always gen 0).
+	// why: Clone from the latest group retry generation (not always gen 0).
 	// On retry-of-retry the latest generation's signals carry the most
 	// current state. Within a generation, skip individual retries
 	// (RetryIndex > 0) to avoid duplicates.
@@ -113,16 +102,13 @@ func (s *Signal) cloneGroupForRetry(ctx workflow.Context, groupIdx int) error {
 		primarySteps = append(primarySteps, step)
 	}
 
-	// Enforce group retry limit, matching the guard in retryGroup().
 	groupMaxRetries := executeworkflowstepgroup.GroupMaxRetriesForSteps(primarySteps)
 	if newGroupRetryIdx > groupMaxRetries {
 		return fmt.Errorf("group retry %d exceeds max retries %d", newGroupRetryIdx, groupMaxRetries)
 	}
 
-	// Clone each primary step
 	cloneSteps := make([]workflowactivities.CreateFlowStep, 0, len(primarySteps))
 	for i, step := range primarySteps {
-		// If the signal implements Clone(), use it to produce a clean copy.
 		var qs *signaldb.SignalData
 		if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
 			if cl, ok := step.QueueSignal.Signal.(signal.SignalWithClone); ok {
@@ -131,10 +117,6 @@ func (s *Signal) cloneGroupForRetry(ctx workflow.Context, groupIdx int) error {
 					return fmt.Errorf("unable to clone signal for retry on step %s: %w", step.Name, cloneErr)
 				}
 				if len(defs) > 0 {
-					// Use the last def: for group retry each step already exists
-					// separately, so we want the self-copy (last), not multi-step
-					// expansion. Plan Clone() returns [plan] → last=plan. Apply
-					// Clone() returns [plan, apply] → last=apply.
 					qs = &signaldb.SignalData{Signal: defs[len(defs)-1].Signal}
 				}
 			} else {

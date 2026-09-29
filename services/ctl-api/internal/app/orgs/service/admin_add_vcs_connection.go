@@ -67,7 +67,7 @@ func (s *service) createOrgConnection(ctx context.Context, orgID, githubInstallI
 		return nil, fmt.Errorf("unable to create vcs_connection: %w", err)
 	}
 
-	// NOTE(jm): when this is a duplicate, the returned ID is not actually valid, as it is set by the create hook in
+	// why: when this is a duplicate, the returned ID is not actually valid, as it is set by the create hook in
 	// GORM, but then the conflict happens after.
 	return &vcsConn, nil
 }

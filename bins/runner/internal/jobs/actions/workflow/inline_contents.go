@@ -58,10 +58,6 @@ func (h *handler) writeStepScript(cfg *models.AppActionWorkflowStepConfig, conte
 	return fp, nil
 }
 
-// prepareContainerStep resolves the script, working directory, and extra args
-// for an image-backed step. Repo-backed steps clone into the workspace (already
-// bind-mounted); a ./script from that clone is executed in the clone root, the
-// same as host actions.
 func (h *handler) prepareContainerStep(ctx context.Context, l *zap.Logger, cfg *models.AppActionWorkflowStepConfig, src *plantypes.GitSource) (scriptHostPath, workdirHostPath string, scriptArgs []string, err error) {
 	workdirHostPath = h.state.workspace.Root()
 	if src != nil && src.URL != "" {

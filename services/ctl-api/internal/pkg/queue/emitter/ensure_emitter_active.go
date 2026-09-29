@@ -32,8 +32,6 @@ func (e *emitterWorkflow) ensureEmitterActive(ctx workflow.Context) (*app.QueueE
 		return nil, nil
 	}
 
-	// Set the queue ID from the database record. This is the source of truth
-	// and fixes a race where the workflow request's QueueID might be empty.
 	e.queueID = emitter.QueueID
 
 	return emitter, nil

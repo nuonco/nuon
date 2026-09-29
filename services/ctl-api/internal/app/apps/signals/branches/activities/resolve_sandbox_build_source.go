@@ -38,10 +38,8 @@ func (a *Activities) GetSandboxBuildConfig(ctx context.Context, input *GetSandbo
 
 type ResolveSandboxBuildSourceInput struct {
 	AppConfigID string `json:"app_config_id" validate:"required"`
-	// Empty for a directly triggered build, which has no run to pin to and
-	// resolves the sandbox repo's own ref instead.
-	RunID   string `json:"run_id,omitempty"`
-	BuildID string `json:"build_id" validate:"required"`
+	RunID       string `json:"run_id,omitempty"`
+	BuildID     string `json:"build_id" validate:"required"`
 }
 
 type ResolveSandboxBuildSourceOutput struct {

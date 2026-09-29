@@ -5,7 +5,6 @@ import (
 
 	"charm.land/bubbles/v2/table"
 	"charm.land/lipgloss/v2"
-	// "github.com/nuonco/nuon/pkg/cli/styles"
 )
 
 var readOnlyTableStyles = table.Styles{
@@ -80,15 +79,13 @@ func (m model) getResourceAttributesTable() table.Model {
 }
 
 func (m model) getLogBody(body string) string {
-	// returns a body within a box of the right size.
-	width := m.sidebarWidth - 4 // minus whitespace
+	width := m.sidebarWidth - 4
 	height := int(math.Ceil(float64(len(body)) / float64(width)))
 	return logText.Width(width).Height(height).Render(body)
 }
 
 func (m model) getDetailContent() string {
 	sections := []string{}
-	// body
 	sections = append(sections,
 		lipgloss.NewStyle().Width(m.sidebarWidth).Padding(1).Render(
 			lipgloss.JoinHorizontal(
@@ -98,7 +95,6 @@ func (m model) getDetailContent() string {
 			),
 		),
 	)
-	// resource attributes table
 	sections = append(sections,
 		lipgloss.NewStyle().Width(m.sidebarWidth-2).Padding(1).Render(
 			lipgloss.JoinVertical(
@@ -109,7 +105,6 @@ func (m model) getDetailContent() string {
 		),
 	)
 
-	// log attributes table
 	sections = append(sections,
 		lipgloss.NewStyle().Width(m.sidebarWidth-2).Padding(1).Render(
 			lipgloss.JoinVertical(

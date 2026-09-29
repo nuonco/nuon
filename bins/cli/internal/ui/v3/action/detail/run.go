@@ -48,10 +48,8 @@ func ActionWorkflowApp(
 		os.Exit(1)
 	}
 
-	// initialize the model
 	app := initialModel(ctx, cfg, api, install_id, action_workflow_id)
 	m := model{m: app}
-	// initialize the program
 	p := teaprogram.NewProgram(m)
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Something has gone terribly wrong: %v", err)

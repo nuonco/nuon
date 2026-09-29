@@ -18,13 +18,11 @@ type FieldFeatures struct {
 func ParseFieldFeatures(field reflect.StructField) (*FieldFeatures, error) {
 	var feats FieldFeatures
 
-	// Assuming features are stored in a "features" tag
 	features := field.Tag.Get("features")
 	if features == "" {
 		return &feats, nil
 	}
 
-	// Split features by comma and check for "gettable"
 	optMap := generics.SliceToMapDefault[string, bool](strings.Split(features, ","), true)
 
 	if err := mapstructure.Decode(optMap, &feats); err != nil {

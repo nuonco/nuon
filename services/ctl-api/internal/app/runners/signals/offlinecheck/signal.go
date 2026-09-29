@@ -19,7 +19,6 @@ import (
 const (
 	SignalType signal.SignalType = "offline_check"
 
-	// Runners are considered offline if they haven't had a successful health check in 24 hours
 	offlineDuration time.Duration = time.Hour * 24
 )
 
@@ -38,7 +37,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("runner_id is required")
 	}
 
-	// Validate runner exists in database
 	_, err := activities.AwaitGetByRunnerID(ctx, s.RunnerID)
 	if err != nil {
 		return errors.Wrap(err, "runner not found")
@@ -48,13 +46,11 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Get runner details
 	runner, err := activities.AwaitGetByRunnerID(ctx, s.RunnerID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get runner")
 	}
 
-	// Skip checking offline status for runners in these states
 	isNoop := generics.SliceContains(runner.Status, []app.RunnerStatus{
 		app.RunnerStatusProvisioning,
 		app.RunnerStatusDeprovisioning,
@@ -67,18 +63,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// Calculate minimum timestamp for health check (24 hours ago)
 	minTS := workflow.Now(ctx).Add(-offlineDuration)
 	isOffline := false
 
-	// Check for most recent successful health check
 	healthCheck, err := activities.AwaitGetHealthCheck(ctx, &activities.GetHealthCheckRequest{
 		ID:     s.RunnerID,
 		Status: app.RunnerStatusActive,
 	})
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) || strings.Contains(err.Error(), "not found") {
-			// No successful health check found - check if runner has been around long enough
 			if minTS.After(runner.CreatedAt) {
 				isOffline = true
 			}
@@ -86,13 +79,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			return errors.Wrap(err, "unable to get health checks")
 		}
 	} else {
-		// Health check exists - check if it's too old
 		if minTS.After(healthCheck.CreatedAt) {
 			isOffline = true
 		}
 	}
 
-	// Mark runner as offline if necessary
 	if isOffline {
 		if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 			RunnerID:          s.RunnerID,

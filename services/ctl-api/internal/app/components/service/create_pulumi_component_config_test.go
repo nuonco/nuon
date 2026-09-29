@@ -15,10 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestCreateAppPulumiConfigSuccess() {
 	s.Run("creates config with public git VCS", func() {
 		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypePulumi)
@@ -53,10 +49,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppPulumiConfigSuccess() {
 		assert.Equal(s.T(), "nodejs", response.Runtime)
 	})
 }
-
-// ---------------------------------------------------------------------------
-// Validation error cases
-// ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestCreateAppPulumiConfigValidationErrors() {
 	comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypePulumi)
@@ -154,10 +146,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppPulumiConfigValidationErrors()
 		})
 	}
 }
-
-// ---------------------------------------------------------------------------
-// Signals
-// ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestCreateAppPulumiConfigSignals() {
 	s.Run("sends OperationConfigCreated and OperationUpdateComponentType signals", func() {

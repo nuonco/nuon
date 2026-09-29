@@ -11,8 +11,6 @@ import (
 	"helm.sh/helm/v4/pkg/cli"
 )
 
-// resolveChartName returns the proper repository and name values that
-// the ChartPathOptions need. This is copied from Terraform.
 func ResolveChartName(repository, name string) (string, string, error) {
 	_, err := url.ParseRequestURI(repository)
 	if err == nil {
@@ -56,13 +54,11 @@ func ChartPathOptions(repository, chart, version string) (*action.ChartPathOptio
 		return nil, "", err
 	}
 
-	// Determine our version string
 	if version == "" {
 		version = ">0.0.0-0"
 	}
 	version = strings.TrimSpace(version)
 
-	// Initialize our chart options
 	return &action.ChartPathOptions{
 		RepoURL: repositoryURL,
 		Version: version,

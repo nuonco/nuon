@@ -17,7 +17,6 @@ func (t *Templates) Template(inputs *stacks.TemplateInput) (*cloudformation.Temp
 		return nil, "", errors.Wrap(err, "unable to create aws template")
 	}
 
-	// Marshal the template to JSON
 	jsonBytes, err := json.Marshal(tmpl)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "unable to marshal template to JSON")

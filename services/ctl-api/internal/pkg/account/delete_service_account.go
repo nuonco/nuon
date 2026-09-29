@@ -10,8 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 )
 
-// DeleteServiceAccount removes an account's role bindings, stack roles, tokens, and
-// the row itself. A missing account is success — delete workflows retry.
 func (c *Client) DeleteServiceAccount(ctx context.Context, svcAcctID string) error {
 	email := ServiceAccountEmail(svcAcctID)
 
@@ -23,14 +21,11 @@ func (c *Client) DeleteServiceAccount(ctx context.Context, svcAcctID string) err
 		return errors.Wrap(err, "unable to look up service account")
 	}
 
-	// FindAccount matches email, subject, or ID, so an unexpected argument could reach a
-	// real user.
 	if acct.AccountType != app.AccountTypeService {
 		return errors.Errorf("account %s is not a service account", acct.ID)
 	}
 
 	return c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Before deleteAccountRecords: the bindings are how the roles are found.
 		if err := authz.DeleteStackInstallRoles(tx, acct.ID); err != nil {
 			return err
 		}
@@ -39,7 +34,7 @@ func (c *Client) DeleteServiceAccount(ctx context.Context, svcAcctID string) err
 	})
 }
 
-// Role bindings are hard-deleted: the many2many's OnDelete:CASCADE never fires on a
+// why: Role bindings are hard-deleted: the many2many's OnDelete:CASCADE never fires on a
 // soft delete. Soft-deleting tokens and the account is enough to break auth, since
 // FindAccount cannot see soft-deleted rows.
 func deleteAccountRecords(tx *gorm.DB, accountID string) error {
@@ -62,7 +57,7 @@ func deleteAccountRecords(tx *gorm.DB, accountID string) error {
 	return nil
 }
 
-// DeleteInstallStackServiceAccounts removes the stack accounts for an install's
+// why: DeleteInstallStackServiceAccounts removes the stack accounts for an install's
 // stacks. Must run before the install row is deleted: the account is tied to the
 // stack by naming convention, not a foreign key, so nothing cascades to it and the
 // IDs are unrecoverable afterwards.

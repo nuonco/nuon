@@ -21,8 +21,6 @@ func (s *Service) ListRoles(ctx context.Context, asJSON bool) error {
 		return view.Error(err)
 	}
 
-	// Only list roles that can be assigned somewhere; held-only roles
-	// (deprecated or machine-only) carry no assignment contexts.
 	roles := make([]*models.AppRole, 0, len(allRoles))
 	for _, r := range allRoles {
 		if len(r.AppliesTo) > 0 {

@@ -9,8 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// GetConfigGraph builds a directed acyclic graph of component dependencies and returns both the graph
-// and a sorted list of components in deployment order (dependencies first)
 func (h *Helpers) GetConfigGraph(ctx context.Context, cfg *app.AppConfig) (graph.Graph[string, *app.Component], error) {
 	g := graph.New(componentHash,
 		graph.Directed(),
@@ -18,7 +16,6 @@ func (h *Helpers) GetConfigGraph(ctx context.Context, cfg *app.AppConfig) (graph
 		graph.Rooted(),
 		graph.Acyclic())
 
-	// add all components to the config here
 	visitedComps := make(map[string]struct{}, 0)
 
 	for _, ccc := range cfg.ComponentConfigConnections {
@@ -62,11 +59,9 @@ func (h *Helpers) GetConfigGraph(ctx context.Context, cfg *app.AppConfig) (graph
 		missingComps = append(missingComps, comp.ComponentConfigs[0])
 	}
 
-	// add all dependencies
 	allCfgs := append(cfg.ComponentConfigConnections, missingComps...)
 	for _, ccc := range allCfgs {
 		for _, dep := range ccc.ComponentDependencyIDs {
-			// a dependency can name a component that is not part of this config version
 			if _, err := g.Vertex(dep); err != nil {
 				continue
 			}

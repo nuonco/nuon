@@ -86,7 +86,6 @@ func (s *service) GetInstallAppPermissionsConfig(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, resp)
 }
 
-// renderRole renders the template fields (Name, DisplayName, Description) on a role config using the install state.
 func renderRole(role app.AppAWSIAMRoleConfig, stateMap map[string]any) (app.AppAWSIAMRoleConfig, error) {
 	rendered, err := render.RenderV2(role.Name, stateMap)
 	if err != nil {
@@ -115,7 +114,6 @@ func (s *service) buildInstallAppPermissionsConfig(appCfg *app.AppConfig, instal
 		CustomRoles:     []InstallPermissionsRoleStatus{},
 	}
 
-	// Resolve the StackOutput interface from whichever cloud provider is present.
 	var stackOutput app.StackOutput
 	if installStack != nil {
 		outputs := installStack.InstallStackOutputs
@@ -134,7 +132,6 @@ func (s *service) buildInstallAppPermissionsConfig(appCfg *app.AppConfig, instal
 		return nil, fmt.Errorf("unable to get install state map: %w", err)
 	}
 
-	// If no stack outputs exist yet, return roles with rendered names but Enabled: false.
 	if stackOutput == nil {
 		provisionRole, err := renderRole(appCfg.PermissionsConfig.ProvisionRole, stateMap)
 		if err != nil {
@@ -183,7 +180,6 @@ func (s *service) buildInstallAppPermissionsConfig(appCfg *app.AppConfig, instal
 		return resp, nil
 	}
 
-	// Provision role
 	{
 		role, err := renderRole(appCfg.PermissionsConfig.ProvisionRole, stateMap)
 		if err != nil {
@@ -197,7 +193,6 @@ func (s *service) buildInstallAppPermissionsConfig(appCfg *app.AppConfig, instal
 		}
 	}
 
-	// Deprovision role
 	{
 		role, err := renderRole(appCfg.PermissionsConfig.DeprovisionRole, stateMap)
 		if err != nil {
@@ -211,7 +206,6 @@ func (s *service) buildInstallAppPermissionsConfig(appCfg *app.AppConfig, instal
 		}
 	}
 
-	// Maintenance role
 	{
 		role, err := renderRole(appCfg.PermissionsConfig.MaintenanceRole, stateMap)
 		if err != nil {
@@ -225,7 +219,6 @@ func (s *service) buildInstallAppPermissionsConfig(appCfg *app.AppConfig, instal
 		}
 	}
 
-	// Break glass roles (array, keyed by rendered name in stack outputs)
 	for _, role := range appCfg.BreakGlassConfig.Roles {
 		rendered, err := renderRole(role, stateMap)
 		if err != nil {
@@ -239,7 +232,6 @@ func (s *service) buildInstallAppPermissionsConfig(appCfg *app.AppConfig, instal
 		})
 	}
 
-	// Custom roles (array, keyed by rendered name in stack outputs)
 	for _, role := range appCfg.PermissionsConfig.CustomRoles {
 		rendered, err := renderRole(role, stateMap)
 		if err != nil {

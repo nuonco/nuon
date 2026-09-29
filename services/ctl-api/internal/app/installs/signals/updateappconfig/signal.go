@@ -14,7 +14,7 @@ import (
 
 const SignalType signal.SignalType = "update-app-config"
 
-// branchRunStatusRemovedVersion gates the removal of the branch-run
+// why: branchRunStatusRemovedVersion gates the removal of the branch-run
 // config-version status update; in-flight histories scheduled that activity
 // and must keep replaying it.
 // todo(sk): clean this after terminating old workflows

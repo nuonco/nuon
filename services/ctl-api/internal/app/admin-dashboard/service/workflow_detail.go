@@ -33,14 +33,12 @@ func (s *service) WorkflowDetail(c *gin.Context) {
 		return
 	}
 
-	// Build enriched step details
 	stepDetails := make([]views.StepDetailData, len(wf.Steps))
 	for i, step := range wf.Steps {
 		stepDetails[i] = views.StepDetailData{
 			Step: &wf.Steps[i],
 		}
 
-		// Format queue signal if present
 		if step.QueueSignal != nil {
 			data, err := json.MarshalIndent(step.QueueSignal, "", "  ")
 			if err == nil {
@@ -48,7 +46,6 @@ func (s *service) WorkflowDetail(c *gin.Context) {
 			}
 		}
 
-		// Load the actual QueueSignal record for this step (for linking)
 		var stepSignal app.QueueSignal
 		if err := s.readDB().WithContext(ctx).
 			Where(app.QueueSignal{OwnerID: step.ID, OwnerType: (&app.WorkflowStep{}).TableName()}).
@@ -57,13 +54,11 @@ func (s *service) WorkflowDetail(c *gin.Context) {
 			stepDetails[i].StepSignalQueueID = stepSignal.QueueID
 		}
 
-		// Load step target
 		if step.StepTargetID != "" {
 			stepDetails[i].StepTarget = s.loadStepTarget(c, step.StepTargetID, step.StepTargetType)
 		}
 	}
 
-	// Load step groups for the workflow (with their queue signals)
 	var stepGroups []app.WorkflowStepGroup
 	s.readDB().WithContext(ctx).
 		Preload("QueueSignal").
@@ -71,10 +66,8 @@ func (s *service) WorkflowDetail(c *gin.Context) {
 		Order("group_idx ASC").
 		Find(&stepGroups)
 
-	// Organize steps into groups
 	groupDetails := s.buildGroupDetails(stepGroups, stepDetails, wf.Steps)
 
-	// Load the generate-steps queue signal if the workflow has one
 	var generateStepsSignal *app.QueueSignal
 	if wf.GenerateStepsSignal != nil {
 		var qs app.QueueSignal
@@ -89,7 +82,6 @@ func (s *service) WorkflowDetail(c *gin.Context) {
 		}
 	}
 
-	// Load the execute-workflow signal for this workflow (the signal that triggers execution)
 	var workflowSignal *app.QueueSignal
 	var ws app.QueueSignal
 	if err := s.readDB().WithContext(ctx).
@@ -139,15 +131,11 @@ func (s *service) loadStepTarget(c *gin.Context, targetID, targetType string) *v
 			}
 		}
 	default:
-		// For other types, just show the ID
 	}
 
 	return target
 }
 
-// buildGroupDetails organizes step details into groups. When step group records
-// exist, steps are matched by WorkflowStepGroupID. Otherwise, synthetic groups
-// are created from step GroupIdx values for backward compatibility.
 func (s *service) buildGroupDetails(stepGroups []app.WorkflowStepGroup, stepDetails []views.StepDetailData, steps []app.WorkflowStep) []views.GroupDetailData {
 	if len(stepGroups) > 0 {
 		return s.buildGroupDetailsFromRecords(stepGroups, stepDetails)
@@ -156,7 +144,6 @@ func (s *service) buildGroupDetails(stepGroups []app.WorkflowStepGroup, stepDeta
 }
 
 func (s *service) buildGroupDetailsFromRecords(stepGroups []app.WorkflowStepGroup, stepDetails []views.StepDetailData) []views.GroupDetailData {
-	// Index step details by step group ID
 	groupSteps := make(map[string][]views.StepDetailData)
 	var ungrouped []views.StepDetailData
 
@@ -177,7 +164,6 @@ func (s *service) buildGroupDetailsFromRecords(stepGroups []app.WorkflowStepGrou
 		})
 	}
 
-	// Append any ungrouped steps as a synthetic group
 	if len(ungrouped) > 0 {
 		result = append(result, views.GroupDetailData{
 			Group: &app.WorkflowStepGroup{Name: "Ungrouped"},
@@ -189,7 +175,6 @@ func (s *service) buildGroupDetailsFromRecords(stepGroups []app.WorkflowStepGrou
 }
 
 func (s *service) buildSyntheticGroupDetails(stepDetails []views.StepDetailData, steps []app.WorkflowStep) []views.GroupDetailData {
-	// Collect unique group indices in order
 	type groupInfo struct {
 		idx      int
 		parallel bool
@@ -204,7 +189,6 @@ func (s *service) buildSyntheticGroupDetails(stepDetails []views.StepDetailData,
 		}
 	}
 
-	// Build step detail map by group index
 	groupStepDetails := make(map[int][]views.StepDetailData)
 	for _, sd := range stepDetails {
 		groupStepDetails[sd.Step.GroupIdx] = append(groupStepDetails[sd.Step.GroupIdx], sd)

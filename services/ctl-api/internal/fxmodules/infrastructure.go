@@ -56,17 +56,13 @@ type queryWriterParams struct {
 	L         *zap.Logger
 }
 
-// InfrastructureModule provides all core infrastructure dependencies
-// including config, logging, databases, temporal, and other shared services.
 var InfrastructureModule = fx.Module("infrastructure",
-	// Config and logging foundation
 	fx.Provide(internal.NewConfig),
 	fx.WithLogger(pkglog.NewFXLog),
 	fx.Provide(log.New),
 	fx.Provide(dblog.New),
 	fx.Provide(audit.New),
 
-	// Query collector (enabled by debug_enable_query_collector config)
 	fx.Provide(func(cfg *internal.Config) *querycollector.Collector {
 		if cfg.DebugEnableQueryCollector {
 			return querycollector.NewCollector(5000)
@@ -74,14 +70,11 @@ var InfrastructureModule = fx.Module("infrastructure",
 		return nil
 	}),
 
-	// Database connections
 	fx.Provide(psql.AsPSQL(psql.New)),
 	fx.Provide(ch.AsCH(ch.New)),
 
-	// Kafka producer
 	fx.Provide(kafka.New),
 
-	// Query collector ClickHouse writer (optional, writes captured queries to CH)
 	fx.Invoke(func(lc fx.Lifecycle, p queryWriterParams) {
 		if p.Collector == nil {
 			return
@@ -116,10 +109,8 @@ var InfrastructureModule = fx.Module("infrastructure",
 		})
 	}),
 
-	// Blob storage service
 	fx.Provide(blobstore.NewInstrumentedService),
 
-	// File cache for blob codec
 	fx.Provide(func(cfg *internal.Config, l *zap.Logger) *filecache.FileCache {
 		cache, err := filecache.New(filecache.Options{
 			Dir:      cfg.TemporalBlobCacheDir,
@@ -133,7 +124,6 @@ var InfrastructureModule = fx.Module("infrastructure",
 		return cache
 	}),
 
-	// Temporal data converters and client
 	fx.Provide(gzip.AsGzip(gzip.New)),
 	fx.Provide(largepayload.AsLargePayload(largepayload.New)),
 	fx.Provide(blob.AsBlob(blob.New)),
@@ -141,7 +131,6 @@ var InfrastructureModule = fx.Module("infrastructure",
 	fx.Provide(dataconverter.New),
 	fx.Provide(temporal.New),
 
-	// Core services
 	fx.Provide(loops.New),
 	fx.Provide(salesforce.New),
 	fx.Provide(github.New),

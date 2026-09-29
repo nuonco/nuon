@@ -9,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
 
-// Attr tags records the gateway collector forwards to the customer's backend.
+// why: Attr tags records the gateway collector forwards to the customer's backend.
 // Collector filters compare the log record attribute against the string
 // "true", so the value must not be emitted as a bool.
 const (
@@ -19,8 +19,6 @@ const (
 	OutcomeAttr = "nuon.audit.outcome"
 )
 
-// EventType mirrors the type column of the install_audit_logs view so streamed
-// audit records stay consistent with the ones customers download today.
 type EventType string
 
 const (
@@ -58,9 +56,6 @@ func NewEmitter(l *zap.Logger) *Emitter {
 	return &Emitter{l: l}
 }
 
-// Emit writes one audit record. The actor and org come from the same context
-// that BeforeCreate uses to populate created_by_id, so an audit record can
-// never disagree with the row it describes about who caused it.
 func (e *Emitter) Emit(ctx context.Context, ev Event) {
 	if e == nil || e.l == nil {
 		return

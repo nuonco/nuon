@@ -8,7 +8,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// components
 func (c *client) GetAllComponents(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppComponent, bool, error) {
 	params := &operations.GetOrgComponentsParams{
 		Context: ctx,
@@ -105,7 +104,6 @@ func (c *client) DeleteComponent(ctx context.Context, componentID string) (bool,
 	return true, nil
 }
 
-// component configs
 func (c *client) CreateTerraformModuleComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateTerraformModuleComponentConfigRequest) (*models.AppTerraformModuleComponentConfig, error) {
 	resp, err := c.genClient.Operations.CreateTerraformModuleComponentConfig(&operations.CreateTerraformModuleComponentConfigParams{
 		ComponentID: componentID,

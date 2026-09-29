@@ -29,7 +29,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("runner_id is required")
 	}
 
-	// Validate runner exists in database
 	_, err := activities.AwaitGetByRunnerID(ctx, s.RunnerID)
 	if err != nil {
 		return errors.Wrap(err, "runner not found")
@@ -39,13 +38,11 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Check runner status
 	status, err := activities.AwaitGetRunnerStatusByID(ctx, s.RunnerID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get runner status")
 	}
 
-	// Skip shutdown for runners in these states
 	if generics.SliceContains(status, []app.RunnerStatus{
 		app.RunnerStatusDeprovisioned,
 		app.RunnerStatusDeprovisioning,
@@ -56,7 +53,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// Try process-based shutdown first
 	process, err := activities.AwaitGetCurrentRunnerProcess(ctx, activities.GetCurrentRunnerProcessRequest{
 		RunnerID:    s.RunnerID,
 		ProcessType: string(app.RunnerProcessTypeInstall),
@@ -72,7 +68,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// Fallback: create legacy shutdown job for runners without process tracking
 	runnerJob, err := s.createRunnerShutdownJob(ctx, s.RunnerID, map[string]string{
 		"shutdown_type": "graceful",
 	})
@@ -84,7 +79,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return nil
 }
 
-// createRunnerShutdownJob creates a shutdown job for the runner
 func (s *Signal) createRunnerShutdownJob(ctx workflow.Context, runnerID string, metadata map[string]string) (*app.RunnerJob, error) {
 	runner, err := activities.AwaitGetByRunnerID(ctx, runnerID)
 	if err != nil {
@@ -94,14 +88,12 @@ func (s *Signal) createRunnerShutdownJob(ctx workflow.Context, runnerID string, 
 	ctx = cctx.SetOrgIDWorkflowContext(ctx, runner.OrgID)
 	ctx = cctx.SetAccountIDWorkflowContext(ctx, runner.CreatedByID)
 
-	// Create log stream for shutdown operation
 	logStream, err := activities.AwaitCreateLogStreamByOperationID(ctx, runner.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create log stream for shutdown")
 	}
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
 
-	// Create shutdown job
 	runnerJob, err := activities.AwaitCreateShutdownJob(ctx, &activities.CreateShutdownJobRequest{
 		RunnerID:    runner.ID,
 		OwnerID:     runner.ID,

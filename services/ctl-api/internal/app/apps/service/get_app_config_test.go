@@ -15,7 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// TestGetAppConfigV2Success tests GET /v1/apps/:app_id/configs/:config_id with existing config.
 func (s *AppConfigsTestSuite) TestGetAppConfigV2Success() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)

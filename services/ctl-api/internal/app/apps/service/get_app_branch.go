@@ -72,7 +72,6 @@ func (s *service) getAppBranch(ctx context.Context, orgID, appID, appBranchID st
 		Preload("Queue", app.DefaultQueueScope)
 
 	if latestConfig {
-		// Only preload the latest config with its relationships
 		query = query.Preload("Configs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_branch_configs_view_v1.created_at DESC").Limit(1)
 		}).

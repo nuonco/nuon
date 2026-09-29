@@ -23,17 +23,10 @@ const maxDownloadLogs = 50000
 const (
 	streamingThreshold = 40
 	streamingDelay     = 200 * time.Millisecond
-	// pollInterval is the legacy 1s-poll cadence, used for DESC sessions.
-	pollInterval    = 1 * time.Second
-	errorRetryDelay = 5 * time.Second
-	// streamStatusCheck bounds how long we'll sit on an open long-poll
-	// before re-asking the server whether the stream has closed.
-	streamStatusCheck = 10 * time.Second
+	pollInterval       = 1 * time.Second
+	errorRetryDelay    = 5 * time.Second
+	streamStatusCheck  = 10 * time.Second
 
-	// tailInitialWait is the first long-poll probe's wait override. The
-	// server default is ~30s; we want the very first probe to return
-	// quickly so a completed-and-empty stream emits "complete" before
-	// the user perceives a stall on page load.
 	tailInitialWait = "1s"
 )
 
@@ -52,7 +45,7 @@ func (h *LogStreamsHandler) RegisterRoutes(e *gin.Engine) error {
 	return nil
 }
 
-// parseLogFiltersFromQuery maps the browser's filter query params onto the
+// why: parseLogFiltersFromQuery maps the browser's filter query params onto the
 // SDK filter struct sent to ctl-api. It's an allowlist — `since`, `wait` and
 // `order` are parsed separately and never flow through here. Malformed
 // numeric params are skipped; ctl-api re-validates everything.
@@ -110,9 +103,6 @@ func parseLogFiltersFromQuery(c *gin.Context) *nuon.LogStreamLogFilters {
 	return f
 }
 
-// ctl-api rejects some filter inputs deterministically (400/401/403/404);
-// retrying those with identical params can never succeed, so the session
-// ends instead of looping on errorRetryDelay.
 type statusCoder interface{ Code() int }
 
 func isTerminalAPIError(err error) bool {
@@ -240,7 +230,7 @@ func (h *LogStreamsHandler) StreamLogs(c *gin.Context) {
 		},
 	}
 
-	// Tail endpoint only supports ASC; DESC stays on the legacy path.
+	// why: Tail endpoint only supports ASC; DESC stays on the legacy path.
 	if order == "asc" {
 		sess.runTail(ctx)
 		return
@@ -248,11 +238,11 @@ func (h *LogStreamsHandler) StreamLogs(c *gin.Context) {
 	sess.runLegacy(ctx, "")
 }
 
-// runTail drives the long-poll tail endpoint. Transient errors retry on
+// why: runTail drives the long-poll tail endpoint. Transient errors retry on
 // the tail path rather than swapping to the legacy poller mid-session —
 // the org opted into the new path, keep them on it.
 func (s *streamSession) runTail(ctx context.Context) {
-	since := "" // empty cursor: server starts at the oldest row and drains via has_more.
+	since := ""
 	wait := tailInitialWait
 
 	for {
@@ -280,8 +270,6 @@ func (s *streamSession) runTail(ctx context.Context) {
 			continue
 		}
 
-		// After the first probe, drop the short initial-wait override so
-		// idle steady-state is bounded by the server's 30s wait cap.
 		wait = ""
 
 		logs := resp.Logs
@@ -297,11 +285,8 @@ func (s *streamSession) runTail(ctx context.Context) {
 			if s.isCatchingUp {
 				s.sendEvent(logs)
 			} else if !s.isOpen {
-				// Closed stream: no typewriter pacing, just dump.
 				s.sendEvent(logs)
 			} else {
-				// Live stream: pace one log at a time so output streams
-				// in rather than landing in 100-line jumps.
 				for _, log := range logs {
 					select {
 					case <-ctx.Done():
@@ -326,11 +311,6 @@ func (s *streamSession) runTail(ctx context.Context) {
 			return
 		}
 
-		// Re-check the stream's open state — without this we'd sit on
-		// the long-poll forever after a job finishes and stops emitting.
-		// When we discover the stream just closed, drop the next probe's
-		// wait window so we drain and emit "complete" promptly rather
-		// than blocking another full 30s on the server's default wait.
 		if s.isOpen && time.Since(s.lastStatusCheck) >= streamStatusCheck {
 			s.lastStatusCheck = time.Now()
 			ls, err := s.client.GetLogStream(ctx, s.logStreamID)
@@ -464,8 +444,6 @@ func (h *LogStreamsHandler) DownloadLogs(c *gin.Context) {
 	jobOutputOnly := c.Query("job_output") == "true"
 	filters := parseLogFiltersFromQuery(c)
 	if jobOutputOnly {
-		// job_output means user-visible job output only, so it overrides any
-		// caller-supplied scope rather than adding to it.
 		if filters == nil {
 			filters = &nuon.LogStreamLogFilters{}
 		}

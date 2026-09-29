@@ -27,7 +27,6 @@ func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bo
 	if appID != "" {
 		resolvedAppID, lookupErr := lookup.AppID(ctx, s.api, appID)
 		if lookupErr != nil {
-			// app lookup failed, fall back to listing all installs
 			installs, _, err = s.listInstalls(ctx, 0, 50)
 		} else {
 			app, appErr := s.api.GetApp(ctx, resolvedAppID)
@@ -55,7 +54,6 @@ func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bo
 		return nil
 	}
 
-	// Convert installs to selector options
 	installOptions := make([]bubbles.InstallOption, len(installs))
 	for i, install := range installs {
 		installOptions[i] = bubbles.InstallOption{
@@ -64,7 +62,6 @@ func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bo
 		}
 	}
 
-	// Show install selector
 	selectedInstallID, err := bubbles.SelectInstall(installOptions, s.cfg.Interactive)
 	if err != nil {
 		return view.Error(err)
@@ -74,7 +71,6 @@ func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bo
 		return view.Error(err)
 	}
 
-	// Find selected install for display
 	var selectedInstall *models.AppInstall
 	for _, install := range installs {
 		if install.ID == selectedInstallID {
@@ -88,7 +84,6 @@ func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bo
 	}
 
 	s.printInstallSetMsg(selectedInstall.Name, selectedInstall.ID)
-	// if the app is not set, go ahead and set it as well
 	selectedAppID := selectedInstall.AppID
 	if s.cfg.AppID != selectedAppID {
 		err := s.setAppID(ctx, selectedAppID)

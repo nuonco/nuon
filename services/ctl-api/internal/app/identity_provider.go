@@ -23,25 +23,17 @@ const (
 	ProviderTypeGitHub ProviderType = "github"
 )
 
-// Well-known identity provider row IDs used by tests and seeders.
 const (
 	IdentityProviderIDGoogle = "idp-google"
 	IdentityProviderIDGitHub = "idp-github"
 )
 
-// envIdentityProviderIDPrefix namespaces the synthetic ID of the provider configured through
-// environment variables, which has no identity_providers row. The type is part of the ID so that
-// identities created under a previous env provider stay distinguishable from the current one.
 const envIdentityProviderIDPrefix = "default-"
 
-// EnvIdentityProviderID is the identity_provider_id recorded against accounts that signed in
-// through the env-configured provider.
 func EnvIdentityProviderID(providerType ProviderType) string {
 	return envIdentityProviderIDPrefix + string(providerType)
 }
 
-// IsEnvIdentityProviderID reports whether an identity provider ID refers to the env-configured
-// provider rather than a database row.
 func IsEnvIdentityProviderID(id string) bool {
 	return strings.HasPrefix(id, envIdentityProviderIDPrefix)
 }
@@ -96,7 +88,6 @@ func (a *IdentityProvider) Indexes(db *gorm.DB) []migrations.Index {
 	}
 }
 
-// ValidateConfig validates the Config field based on ProviderType.
 func (ip *IdentityProvider) ValidateConfig() error {
 	if len(ip.Config) == 0 {
 		return fmt.Errorf("config is required")
@@ -129,7 +120,6 @@ func (ip *IdentityProvider) ValidateConfig() error {
 	}
 }
 
-// GetClientID returns the client_id from the provider config, regardless of type.
 func (ip *IdentityProvider) GetClientID() (string, error) {
 	if len(ip.Config) == 0 {
 		return "", nil
@@ -142,7 +132,6 @@ func (ip *IdentityProvider) GetClientID() (string, error) {
 	return cfg.ClientID, nil
 }
 
-// GetOpenIDConfig unmarshals the Config as OpenIDConfig.
 func (ip *IdentityProvider) GetOpenIDConfig() (*providers.OpenIDConfig, error) {
 	var cfg providers.OpenIDConfig
 	if err := json.Unmarshal(ip.Config, &cfg); err != nil {
@@ -151,7 +140,6 @@ func (ip *IdentityProvider) GetOpenIDConfig() (*providers.OpenIDConfig, error) {
 	return &cfg, nil
 }
 
-// SetOpenIDConfig marshals and sets the Config from OpenIDConfig.
 func (ip *IdentityProvider) SetOpenIDConfig(cfg *providers.OpenIDConfig) error {
 	data, err := json.Marshal(cfg)
 	if err != nil {
@@ -162,7 +150,6 @@ func (ip *IdentityProvider) SetOpenIDConfig(cfg *providers.OpenIDConfig) error {
 	return nil
 }
 
-// GetGoogleConfig unmarshals the Config as GoogleConfig.
 func (ip *IdentityProvider) GetGoogleConfig() (*providers.GoogleConfig, error) {
 	var cfg providers.GoogleConfig
 	if err := json.Unmarshal(ip.Config, &cfg); err != nil {
@@ -171,7 +158,6 @@ func (ip *IdentityProvider) GetGoogleConfig() (*providers.GoogleConfig, error) {
 	return &cfg, nil
 }
 
-// SetGoogleConfig marshals and sets the Config from GoogleConfig.
 func (ip *IdentityProvider) SetGoogleConfig(cfg *providers.GoogleConfig) error {
 	data, err := json.Marshal(cfg)
 	if err != nil {
@@ -182,7 +168,6 @@ func (ip *IdentityProvider) SetGoogleConfig(cfg *providers.GoogleConfig) error {
 	return nil
 }
 
-// GetGitHubConfig unmarshals the Config as GitHubConfig.
 func (ip *IdentityProvider) GetGitHubConfig() (*providers.GitHubConfig, error) {
 	var cfg providers.GitHubConfig
 	if err := json.Unmarshal(ip.Config, &cfg); err != nil {
@@ -191,7 +176,6 @@ func (ip *IdentityProvider) GetGitHubConfig() (*providers.GitHubConfig, error) {
 	return &cfg, nil
 }
 
-// SetGitHubConfig marshals and sets the Config from GitHubConfig.
 func (ip *IdentityProvider) SetGitHubConfig(cfg *providers.GitHubConfig) error {
 	data, err := json.Marshal(cfg)
 	if err != nil {

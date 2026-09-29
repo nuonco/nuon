@@ -22,7 +22,6 @@ func ConfigureDefaultUpgrade(client *action.Upgrade) *action.Upgrade {
 	client.ReuseValues = false
 	client.SkipCRDs = false
 	client.SubNotes = true
-	// wait
 	client.WaitForJobs = false
 	client.WaitStrategy = kube.StatusWatcherStrategy
 	return client

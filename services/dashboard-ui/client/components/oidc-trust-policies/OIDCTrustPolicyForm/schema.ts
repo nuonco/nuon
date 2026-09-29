@@ -19,7 +19,7 @@ export type GithubRepoSubjectIds = {
   repoId: number
 }
 
-// GitHub can issue either a legacy `repo:{owner}/{repo}:ref:...` sub claim or
+// why: GitHub can issue either a legacy `repo:{owner}/{repo}:ref:...` sub claim or
 // an immutable one with numeric IDs appended (`{owner}@{ownerId}`). The
 // `{,@id}` alternation matches either form without weakening the ID check.
 export const githubSubClaim = (

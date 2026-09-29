@@ -161,7 +161,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	var ociSource *plantypes.OCISource
 	switch {
 	case install.SandboxMode.Bool:
-		// A sandbox-mode org never provisions a real app repository — the record
+		// why: A sandbox-mode org never provisions a real app repository — the record
 		// is faked — so its registry and region cannot mint credentials, and the
 		// run does not pull the artifact anyway.
 		l.Info("install is in sandbox mode, using git source")
@@ -171,8 +171,6 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		l.Info("using OCI source from caller")
 		ociSource = req.OCISource
 	default:
-		// Only a missing build falls back to git, which resolves branch HEAD rather
-		// than the commit the artifact was built from.
 		l.Info("checking for active sandbox build OCI artifact")
 		sandboxBuild, sbErr := activities.AwaitGetLatestActiveSandboxBuildByAppConfigID(ctx, appCfg.ID)
 		if sbErr != nil {
@@ -202,9 +200,6 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		}
 	}
 
-	// The install runner does not share the control plane's cloud, so a GAR
-	// artifact has to travel with its own credentials rather than relying on
-	// the runner finding GCP application default credentials.
 	if ociSource != nil {
 		if err := sharedactivities.EnsureGARAuth(ctx, ociSource.Registry); err != nil {
 			return nil, nil, errors.Wrap(err, "unable to get GAR access token for sandbox artifact")
@@ -309,7 +304,7 @@ func (p *Planner) getPolicies(cfg *app.AppPoliciesConfig) (map[string]string, er
 			continue
 		}
 
-		// The key is consumed as a Terraform `for_each` map key by the sandbox
+		// why: The key is consumed as a Terraform `for_each` map key by the sandbox
 		// module via fileset(). Deriving it from the manifest's kind/name keeps
 		// the TF resource address bound to actual K8s object identity, so
 		// reordering or inserting policies never reshuffles existing keys.
@@ -365,7 +360,6 @@ func (p *Planner) getSandboxRunTerraformVars(appCfg *app.AppConfig, rootDomain s
 			"provision_iam_role_arn":   "{{.nuon.install_stack.outputs.provision_iam_role_arn}}",
 			"deprovision_iam_role_arn": "{{.nuon.install_stack.outputs.deprovision_iam_role_arn}}",
 			"maintenance_iam_role_arn": "{{.nuon.install_stack.outputs.maintenance_iam_role_arn}}",
-			// install.nuon.co/id is what everything else tags with; NUON_INSTALL_ID is the old key
 			"tags": map[string]string{
 				"install.nuon.co/id": "{{.nuon.install.id}}",
 				"NUON_INSTALL_ID":    "{{.nuon.install.id}}",

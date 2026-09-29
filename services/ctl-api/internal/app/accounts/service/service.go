@@ -35,7 +35,6 @@ func New(params Params) *service {
 	}
 }
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
-	// accounts
 	account := api.Group("/v1/account")
 	{
 		account.GET("", s.GetCurrentAccount)
@@ -44,7 +43,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		account.GET("/static-tokens", s.ListStaticTokens)
 		account.DELETE("/static-tokens/:token_id", s.DeleteStaticToken)
 
-		// user journeys
 		userJourneys := account.Group("/user-journeys")
 		{
 			userJourneys.GET("", s.GetUserJourneys)
@@ -55,10 +53,8 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		}
 	}
 
-	// roles
 	api.GET("/v1/roles", s.ListRoles)
 
-	// service accounts
 	serviceAccounts := api.Group("/v1/service-accounts")
 	{
 		serviceAccounts.GET("", s.ListServiceAccounts)
@@ -69,7 +65,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		serviceAccounts.POST("/:account_id/tokens", s.CreateServiceAccountToken)
 	}
 
-	// auth/me - registered here instead of authservice so it's available in PublicServicesModule
 	auth := api.Group("/v1/auth")
 	{
 		auth.GET("/me", s.GetAuthMe)
@@ -80,12 +75,10 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
-	// No internal routes for accounts service at this time
 	return nil
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
-	// No runner routes for accounts service at this time
 	return nil
 }
 

@@ -30,7 +30,6 @@ type DebugModeRequest struct {
 func (s *service) AdminDebugModeOrg(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 
-	// Validate org_id is not empty
 	if orgID == "" {
 		ctx.Error(stderr.ErrNotFound{
 			Err:         fmt.Errorf("not found"),

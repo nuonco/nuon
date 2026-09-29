@@ -27,7 +27,6 @@ func (s *service) TemporalCodecDecode(ctx *gin.Context) {
 		return
 	}
 
-	// Apply all codecs in sequence
 	for _, codec := range s.codecs {
 		var err error
 		out, err := codec.Decode(payloadspb.Payloads)

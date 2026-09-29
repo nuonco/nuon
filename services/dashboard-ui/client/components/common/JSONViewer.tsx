@@ -115,9 +115,6 @@ export const JSONViewer = ({
     return () => clearTimeout(timer)
   }, [data, colorScheme])
 
-  // The underlying web component copies string values via JSON.stringify, which
-  // wraps them in quotes. Intercept the click on per-row copy icons inside the
-  // shadow DOM and write the raw string (without the surrounding quotes).
   useEffect(() => {
     if (!containerRef.current) return
 

@@ -9,8 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// validateAWSAccountConnection returns the validated connection so callers can read
-// the account it names without loading the row a second time.
 func (s *Helpers) validateAWSAccountConnection(ctx context.Context, connectionID string) (*app.AWSAccountConnection, error) {
 	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureAWSAccountConnections)
 	if err != nil {

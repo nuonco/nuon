@@ -44,9 +44,6 @@ const (
 	RunnerJobStatusUnknown RunnerJobStatus = "unknown"
 )
 
-// IsTerminal reports whether the status is a final state that the job will not
-// transition out of. A job left in a non-terminal status when its execution
-// loop ends has been dropped and must not be read as success downstream.
 func (s RunnerJobStatus) IsTerminal() bool {
 	switch s {
 	case RunnerJobStatusFinished,
@@ -157,7 +154,6 @@ const (
 func (r RunnerJobType) Group() RunnerJobGroup {
 	switch r {
 
-	// builds
 	case RunnerJobTypeDockerBuild,
 		RunnerJobTypeContainerImageBuild,
 		RunnerJobTypeNOOPBuild,
@@ -168,13 +164,11 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 		RunnerJobTypePulumiBuild:
 		return RunnerJobGroupBuild
 
-		// syncing
 	case RunnerJobTypeOCISync,
 		RunnerJobTypeNOOPSync,
 		RunnerJobTypeFetchImageMetadata:
 		return RunnerJobGroupSync
 
-		// deploys
 	case RunnerJobTypeHelmChartDeploy,
 		RunnerJobTypeTerraformDeploy,
 		RunnerJobTypeJobDeploy,
@@ -183,26 +177,21 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 		RunnerJobTypePulumiDeploy:
 		return RunnerJobGroupDeploy
 
-		// runners
 	case RunnerJobTypeRunnerHelm, RunnerJobTypeRunnerTerraform:
 		return RunnerJobGroupRunner
 
-		// sandboxes
 	case RunnerJobTypeSandboxTerraform,
 		RunnerJobTypeSandboxTerraformPlan,
 		RunnerJobTypeSandboxPulumi,
 		RunnerJobTypeSandboxSyncSecrets:
 		return RunnerJobGroupSandbox
 
-		// health checks
 	case RunnerJobTypeHealthCheck:
 		return RunnerJobGroupHealthChecks
 
-		// operations
 	case RunnerJobTypeNOOP, RunnerJobTypeShutDown, RunnerJobTypeUpdateVersion:
 		return RunnerJobGroupOperations
 
-		// management
 	case RunnerJobTypeMngVMShutDown, RunnerJobTypeMngShutDown, RunnerJobTypeMngRunnerUpdateVersion, RunnerJobTypeMngRunnerRestart, RunnerJobTypeMngFetchToken:
 		return RunnerJobGroupManagement
 
@@ -292,13 +281,9 @@ type RunnerJob struct {
 
 	Metadata pgtype.Hstore `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
 
-	// read only fields from view
-
 	ExecutionCount            int    `json:"execution_count,omitzero" gorm:"->;-:migration" temporaljson:"execution_count,omitzero,omitempty"`
 	FinalRunnerJobExecutionID string `json:"final_runner_job_execution_id,omitzero" gorm:"->;-:migration" temporaljson:"final_runner_job_execution_id,omitzero,omitempty"`
 	Outputs                   []byte `json:"outputs_json,omitzero" gorm:"->;-:migration;type:jsonb" swaggertype:"primitive,string" temporaljson:"outputs,omitzero,omitempty"`
-
-	// read only fields from gorm AfterQuery
 
 	ExecutionTime time.Duration          `json:"execution_time,omitzero" gorm:"-" swaggertype:"primitive,integer" temporaljson:"execution_time,omitzero,omitempty"`
 	Execution     *RunnerJobExecution    `json:"-" gorm:"-" temporaljson:"execution,omitzero,omitempty"`
@@ -398,7 +383,6 @@ func (r *RunnerJob) BeforeCreate(tx *gorm.DB) error {
 	set("flow_workflow_id", flowWorkflowIDFromContext(tx.Statement.Context))
 	set("flow_install_id", flowInstallIDFromContext(tx.Statement.Context))
 
-	// the overall timeout can be derived by combining the various lower level timeouts.
 	if r.OverallTimeout == 0 {
 		r.OverallTimeout = r.QueueTimeout + time.Duration(r.MaxExecutions)*(r.AvailableTimeout+r.ExecutionTimeout)
 	}

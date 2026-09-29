@@ -34,8 +34,6 @@ const (
 const (
 	latestConfigsViewV2 = "latest_configs_view_v2"
 
-	// LatestComponentConfigConnectionsViewName is the latest-config-per-component view, for callers that
-	// override the query table directly rather than going through the views plugin.
 	LatestComponentConfigConnectionsViewName = "component_config_connections_" + latestConfigsViewV2
 )
 
@@ -118,7 +116,6 @@ type ComponentHealthProbe struct {
 
 type ComponentHealthProbes []ComponentHealthProbe
 
-// Scan implements the database/sql.Scanner interface.
 func (p *ComponentHealthProbes) Scan(v interface{}) error {
 	switch v := v.(type) {
 	case nil:
@@ -136,7 +133,6 @@ func (p *ComponentHealthProbes) Scan(v interface{}) error {
 	return nil
 }
 
-// Value implements the driver.Valuer interface.
 func (p ComponentHealthProbes) Value() (driver.Value, error) {
 	if p == nil {
 		return nil, nil
@@ -148,10 +144,8 @@ func (ComponentHealthProbes) GormDataType() string {
 	return "jsonb"
 }
 
-// ComponentHealthRequiredChecks are pushed check names a deploy gate waits for.
 type ComponentHealthRequiredChecks []string
 
-// Scan implements the database/sql.Scanner interface.
 func (c *ComponentHealthRequiredChecks) Scan(v interface{}) error {
 	switch v := v.(type) {
 	case nil:
@@ -169,7 +163,6 @@ func (c *ComponentHealthRequiredChecks) Scan(v interface{}) error {
 	return nil
 }
 
-// Value implements the driver.Valuer interface.
 func (c ComponentHealthRequiredChecks) Value() (driver.Value, error) {
 	if c == nil {
 		return nil, nil
@@ -282,7 +275,6 @@ func (c *ComponentConfigConnection) AfterQuery(tx *gorm.DB) error {
 		c.Type = ComponentTypePulumi
 	}
 
-	// set the vcs connection type, by parsing the subfields on the relationship
 	if c.TerraformModuleComponentConfig != nil {
 		c.ConnectedGithubVCSConfig = c.TerraformModuleComponentConfig.ConnectedGithubVCSConfig
 		c.PublicGitVCSConfig = c.TerraformModuleComponentConfig.PublicGitVCSConfig
@@ -300,7 +292,6 @@ func (c *ComponentConfigConnection) AfterQuery(tx *gorm.DB) error {
 		c.PublicGitVCSConfig = c.PulumiComponentConfig.PublicGitVCSConfig
 	}
 
-	// set the vcs connection type correctly
 	if c.ConnectedGithubVCSConfig != nil {
 		c.VCSConnectionType = VCSConnectionTypeConnectedRepo
 	} else if c.PublicGitVCSConfig != nil {
@@ -308,8 +299,6 @@ func (c *ComponentConfigConnection) AfterQuery(tx *gorm.DB) error {
 	} else {
 		c.VCSConnectionType = VCSConnectionTypeNone
 	}
-
-	// set the type
 
 	if c.Component.Name != "" {
 		c.ComponentName = c.Component.Name
@@ -354,21 +343,21 @@ func (c *ComponentConfigConnection) GetMaxAutoRetries() int {
 	if c.MaxAutoRetries != nil {
 		return *c.MaxAutoRetries
 	}
-	return 0 // default to disabled
+	return 0
 }
 
 func (c *ComponentConfigConnection) GetSkipNoops() bool {
 	if c.SkipNoops != nil {
 		return *c.SkipNoops
 	}
-	return false // default to not skipping noops — opt-in
+	return false
 }
 
 func (c *ComponentConfigConnection) GetAutoApproveOnPoliciesPassing() bool {
 	if c.AutoApproveOnPoliciesPassing != nil {
 		return *c.AutoApproveOnPoliciesPassing
 	}
-	return false // default to not auto-approving — opt-in
+	return false
 }
 
 func (c *ComponentConfigConnection) HealthCheckEnabled() bool {
@@ -408,11 +397,6 @@ func (c *ComponentConfigConnection) GetDefaultEnabled() bool {
 	return false
 }
 
-// ComponentEnabledFromInputs resolves whether a toggleable component is enabled
-// from a set of install input values. The synthetic enabled input
-// (config.EnabledOverrideInputName) is the source of truth; when unset it falls
-// back to the component's default_enabled. Non-toggleable components are always
-// enabled.
 func ComponentEnabledFromInputs(enabledInputs map[string]*string, ccc *ComponentConfigConnection) bool {
 	if ccc == nil || !ccc.IsToggleable() {
 		return true

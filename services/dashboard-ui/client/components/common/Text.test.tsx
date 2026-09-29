@@ -284,7 +284,7 @@ describe('Text component', () => {
       'text-2xl',
       'font-stronger',
       'text-primary-600',
-      'tracking-[-0.2px]', // Special mono heading tracking
+      'tracking-[-0.2px]',
       'extra-class'
     )
     expect(element).toHaveAttribute('aria-level', '2')

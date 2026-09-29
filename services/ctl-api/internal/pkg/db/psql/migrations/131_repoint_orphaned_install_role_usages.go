@@ -7,11 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// Migration131RepointOrphanedInstallRoleUsages moves usage rows off install_roles
-// that MigrateInstallRoles used to soft-delete and recreate on every app config
-// sync, onto the live row for the same install and role name. The last-used
-// lookup only reads live rows, so without this it stays empty for every role
-// used before the recreate stopped.
 func (m *Migrations) Migration131RepointOrphanedInstallRoleUsages(ctx context.Context, db *gorm.DB) error {
 	res := db.WithContext(ctx).Exec(`
 		UPDATE install_role_usages AS u

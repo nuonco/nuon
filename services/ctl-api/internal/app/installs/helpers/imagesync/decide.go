@@ -33,7 +33,7 @@ type InstallDeploys struct {
 	InstallID string
 }
 
-// Failed/cancelled syncs must not count as current: the deploy row is written
+// why: Failed/cancelled syncs must not count as current: the deploy row is written
 // before the job runs, so treating them as landed would skip retries forever.
 func (d InstallDeploys) DeployedBuild(ctx workflow.Context, componentID string) (string, string, error) {
 	installComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
@@ -44,22 +44,12 @@ func (d InstallDeploys) DeployedBuild(ctx workflow.Context, componentID string) 
 		return "", "", errors.Wrapf(err, "unable to get install component for image dep %s", componentID)
 	}
 	if installComp == nil {
-		// No install component record yet for this dep — there is no
-		// runner-side state to sync against. The normal install
-		// bootstrapping flow is responsible for creating it; skip
-		// silently here.
 		return "", "", nil
 	}
 	if len(installComp.InstallDeploys) == 0 {
 		return installComp.ID, "", nil
 	}
 
-	// AwaitGetInstallComponent preloads the most recent InstallDeploy
-	// (any type, ORDER BY created_at DESC LIMIT 1). For image
-	// components every install_deploy is a sync-image, so the most
-	// recent deploy is the currently-synced build. When the deployed
-	// build matches the app-config-version-pinned latest Active
-	// build, no sync is needed.
 	latest := installComp.InstallDeploys[0]
 	if syncFailed(latest.Status) {
 		return installComp.ID, "", nil

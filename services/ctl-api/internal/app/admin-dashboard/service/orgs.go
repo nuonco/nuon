@@ -47,8 +47,6 @@ func (s *service) Orgs(c *gin.Context) {
 	})
 }
 
-// orgFeatureOptions lists the active flags newest-first, matching the feature
-// flags page ordering.
 func orgFeatureOptions() []app.OrgFeatureInfo {
 	features := app.GetFeaturesWithDescriptions()
 	opts := make([]app.OrgFeatureInfo, 0, len(features))
@@ -95,14 +93,12 @@ func (s *service) getOrgs(ctx context.Context, search, label, feature, featureSt
 		}
 
 		if app.ForcedFeatures()[feature] {
-			// A forced flag reads as enabled for every org, so "disabled" can
+			// why: A forced flag reads as enabled for every org, so "disabled" can
 			// never match.
 			if want == "false" {
 				query = query.Where("1 = 0")
 			}
 		} else {
-			// Orgs predating a flag have no stored value, so fall back to the
-			// default the same way a new org would resolve it.
 			fallback := "false"
 			if s.effectiveFeatureDefault(feature) {
 				fallback = "true"

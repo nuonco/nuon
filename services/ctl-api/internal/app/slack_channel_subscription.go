@@ -91,11 +91,6 @@ func (a *SlackChannelSubscription) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// BeforeSave keeps MatchCanonical in lockstep with Match. Match.Canonical()
-// returns "" for nil/zero receiver — the desired default for org-wide rows
-// (which all collapse to the same deterministic index key per
-// (team, channel, link)). Runs on both inserts and updates so an edited
-// Match recomputes correctly.
 func (a *SlackChannelSubscription) BeforeSave(tx *gorm.DB) error {
 	a.MatchCanonical = a.Match.Canonical()
 	return nil

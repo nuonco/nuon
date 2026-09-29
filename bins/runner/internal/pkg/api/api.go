@@ -34,7 +34,6 @@ func New(params Params) (nuonrunner.Client, error) {
 		retry.WithCBHook(func(ctx context.Context, attempt int) error {
 			l, err := pkgctx.Logger(ctx)
 			if err != nil {
-				// if not logger is found in the context, log with the default built in logger
 				params.L.Warn("retrying request to runner-api", zap.Int("attempt", attempt))
 				return nil
 			}
@@ -58,6 +57,5 @@ func New(params Params) (nuonrunner.Client, error) {
 		return nil, fmt.Errorf("unable to initialize runner: %w", err)
 	}
 
-	// Decorate so failed results carry the execution's captured error output.
 	return &resultCaptureClient{Client: api}, nil
 }

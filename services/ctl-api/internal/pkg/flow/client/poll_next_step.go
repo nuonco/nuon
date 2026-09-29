@@ -7,22 +7,16 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 )
 
-// PollNextStepRequest identifies the workflow to poll.
 type PollNextStepRequest struct {
 	InstallWorkflowID string
 }
 
-// PollNextStepResponse contains the current in-flight step, or empty fields
-// when all steps are terminal (workflow complete).
 type PollNextStepResponse struct {
 	StepID  string `json:"step_id"`
 	StepIdx int    `json:"step_idx"`
 	Status  string `json:"status"`
 }
 
-// PollNextStep sends a "poll-next-step" update to the execute-flow handler
-// workflow. It returns the first non-terminal step, or an empty response when
-// the workflow is complete.
 func (c *Client) PollNextStep(ctx context.Context, req *PollNextStepRequest) (*PollNextStepResponse, error) {
 	qs, err := c.findQueueSignalByOwner(ctx, req.InstallWorkflowID, "install_workflows", executeflow.SignalType)
 	if err != nil {

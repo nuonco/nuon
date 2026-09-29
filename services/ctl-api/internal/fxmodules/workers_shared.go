@@ -26,7 +26,6 @@ import (
 	workflowsflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow"
 	flowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 
-	// Register signal types in catalog (blank imports trigger init())
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/run"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/create_app"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/create_install"
@@ -34,31 +33,24 @@ import (
 
 	onboardingactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/activities"
 
-	// Register install queue signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state/statepartialgenerate"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 
-	// Register notebook queue signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/notebooks/signals/start"
 
-	// Register workflow step generators
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/allgenerators"
 
-	// Register VCS queue signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/healthcheck"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/webhook_subscription"
 )
 
-// WorkerInterceptorsModule provides interceptors for temporal workers.
 var WorkerInterceptorsModule = fx.Module("worker-interceptors",
 	fx.Provide(interceptors.AsInterceptor(cctxinterceptor.New)),
 	fx.Provide(interceptors.AsInterceptor(metricsinterceptor.New)),
 	fx.Provide(interceptors.AsInterceptor(validateinterceptor.New)),
 )
 
-// SharedWorkflowsModule provides shared workflow activities and workflows
-// used across multiple worker namespaces.
 var SharedWorkflowsModule = fx.Module("shared-workflows",
 	fx.Provide(signal.AsSignalLifecycleHook(signalhooks.NewWebhookSignalLifecycleHook)),
 	fx.Provide(signal.AsSignalLifecycleHook(signalhooks.NewSlackSignalLifecycleHook)),
@@ -76,7 +68,6 @@ var SharedWorkflowsModule = fx.Module("shared-workflows",
 	fx.Provide(activities.New),
 	fx.Provide(onboardingactivities.New),
 
-	// workflows
 	fx.Provide(job.New),
 	fx.Provide(controlplanejob.NewWorkflows),
 	fx.Provide(workflowsflow.New),

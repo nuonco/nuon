@@ -78,7 +78,6 @@ func (s *AdminDeleteTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with internal routes (no org context for admin routes)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -97,7 +96,6 @@ func (s *AdminDeleteTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -109,7 +107,6 @@ func (s *AdminDeleteTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -228,14 +225,12 @@ func (s *AdminDeleteTestSuite) TestAdminDeleteRunner() {
 			}
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
-			// Verify signal was sent (or not sent)
 			if tc.shouldSendSignal {
 				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), capturedSignals, 1)
 				assert.Equal(s.T(), runnerID, capturedSignals[0].OwnerID)
 
-				// Type assert to verify signal type
-				_ = capturedSignals[0] // using .Type directly
+				_ = capturedSignals[0]
 
 				assert.NotEmpty(s.T(), string(capturedSignals[0].Type))
 			} else {

@@ -14,7 +14,6 @@ func (s *service) AccountAuditLogsTable(c *gin.Context) {
 	accountID := c.Param("id")
 	page := getPageFromQuery(c)
 
-	// Parse date range
 	endDate := time.Now()
 	startDate := endDate.AddDate(0, 0, -30)
 
@@ -26,12 +25,10 @@ func (s *service) AccountAuditLogsTable(c *gin.Context) {
 
 	if endDateStr := c.Query("end_date"); endDateStr != "" {
 		if parsed, err := time.Parse("2006-01-02", endDateStr); err == nil {
-			// Set to end of day (23:59:59) to include all entries from that day
 			endDate = time.Date(parsed.Year(), parsed.Month(), parsed.Day(), 23, 59, 59, 999999999, parsed.Location())
 		}
 	}
 
-	// Parse entity type filters
 	var entityTypes []string
 	if typeFilter := c.Query("entity_types"); typeFilter != "" {
 		for _, t := range strings.Split(typeFilter, ",") {

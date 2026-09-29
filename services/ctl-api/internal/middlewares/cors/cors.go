@@ -33,7 +33,6 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			"X-Nuon-Admin-Email",
 			"Origin",
 
-			// for temporal codec server
 			"X-Namespace",
 			"Referer",
 			"Sec-Ch-Ua",

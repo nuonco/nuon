@@ -16,15 +16,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-// phoneHomeTokenTimeout is deliberately far longer than the 90-day runner token
+// why: phoneHomeTokenTimeout is deliberately far longer than the 90-day runner token
 // expiry. A deployed stack can be updated years after it was applied — a console
 // parameter change, drift remediation, a customer CFN pipeline — and each of those
 // re-invokes the phone-home Lambda. A shorter expiry would silently strand it. The
 // expiry remains a real backstop, and the middleware checks it unconditionally.
 const phoneHomeTokenTimeout = time.Hour * 24 * 365 * 10
 
-// Skip reasons, returned rather than logged-and-forgotten so a caller (and the
-// backfill's progress query) can tell why an install was passed over.
 const (
 	phoneHomeSkipFeatureDisabled = "org feature phone-home-auth is disabled"
 	phoneHomeSkipNotAWS          = "install is not an AWS install"
@@ -38,16 +36,6 @@ const (
 type EnsureInstallPhoneHomeSecretRequest struct {
 	InstallID string `json:"install_id" validate:"required"`
 
-	// IgnoreOrgFeatureGate provisions even though the org has not enabled
-	// phone-home-auth yet, so an operator can pre-provision an org and then flip the
-	// flag rather than the other way round. Set only by the operator-initiated
-	// backfill; the flag remains the opt-in everywhere else.
-	//
-	// It waives the feature check and nothing else: an install still has to be on
-	// AWS, must not be a sandbox, still has to carry a target account, and the
-	// control plane still has to reach Secrets Manager. Note the target account is
-	// itself only required at creation once the flag is on, so for an org that has
-	// never had it the backfill mostly trades one skip reason for another.
 	IgnoreOrgFeatureGate bool `json:"ignore_org_feature_gate,omitempty"`
 }
 
@@ -62,8 +50,6 @@ type EnsureInstallPhoneHomeSecretResponse struct {
 	TokensRevoked int  `json:"tokens_revoked"`
 	SecretWritten bool `json:"secret_written"`
 
-	// Set on Azure instead of a secret: the stack presents a managed identity, so there
-	// is no credential to publish, only a name for the template and the verifier to agree on.
 	IdentityName string `json:"identity_name,omitempty"`
 }
 
@@ -151,10 +137,8 @@ func (a *Activities) EnsureInstallPhoneHomeSecret(
 		return nil, err
 	}
 
-	// Re-applied every run rather than only on create, so a changed target account
-	// or a policy lost to a concurrent write self-heals.
 	if err := a.secretsSvc.PutResourcePolicy(ctx, secret.ARN, policy); err != nil {
-		// An invalid target account never becomes valid, and the default policy would
+		// why: An invalid target account never becomes valid, and the default policy would
 		// retry forever, stranding the provisioning step.
 		if secretsmanager.IsPermanentInputError(err) {
 			return nil, temporal.NewNonRetryableApplicationError(
@@ -184,7 +168,7 @@ func (a *Activities) EnsureInstallPhoneHomeSecret(
 	return resp, nil
 }
 
-// phoneHomeSecretSkipReason returns a non-empty reason when this install must be
+// why: phoneHomeSecretSkipReason returns a non-empty reason when this install must be
 // passed over. Every one of these is a clean no-op rather than an error: the feature
 // is opt-in per org, and a miss must never fail a provision.
 //
@@ -197,9 +181,6 @@ func (a *Activities) EnsureInstallPhoneHomeSecret(
 func (a *Activities) phoneHomeSecretSkipReason(
 	ctx context.Context, install *app.Install, ignoreFeatureGate bool,
 ) (string, error) {
-	// Checked first so an unflagged org produces no log noise on every stack
-	// generation. Waived only for the operator-initiated backfill, which exists to
-	// provision an org ahead of enabling the flag.
 	if !ignoreFeatureGate {
 		enabled, err := a.features.OrgHasFeature(ctx, install.OrgID, app.OrgFeaturePhoneHomeAuth)
 		if err != nil {
@@ -210,8 +191,6 @@ func (a *Activities) phoneHomeSecretSkipReason(
 		}
 	}
 
-	// Sandbox installs reach no real infrastructure. The org is checked too because
-	// AdminForceSandboxMode flips the org without updating installs.sandbox_mode.
 	if install.SandboxMode.Bool || install.Org.SandboxMode {
 		return phoneHomeSkipSandboxMode, nil
 	}
@@ -220,9 +199,6 @@ func (a *Activities) phoneHomeSecretSkipReason(
 		return phoneHomeSkipNotAWS, nil
 	}
 
-	// The resource policy names this account, so there is nothing to grant without
-	// it. Creation requires it when the flag is on, so this only trips on installs
-	// predating the flag.
 	if install.CloudPlatformMetadata.TargetAccountID == "" {
 		a.l.Info("skipping phone home secret: no target account",
 			zap.String("install_id", install.ID), zap.String("org_id", install.OrgID))
@@ -231,8 +207,6 @@ func (a *Activities) phoneHomeSecretSkipReason(
 	}
 
 	if a.cfg.ManagementSecretsCreds() == nil {
-		// An unsupported control-plane cloud silently disabling a security control
-		// is exactly the outcome to avoid, so this one is a warning.
 		a.l.Warn("skipping phone home secret: no path to management secrets manager",
 			zap.String("install_id", install.ID),
 			zap.String("cloud_provider", a.cfg.CloudProvider),
@@ -244,13 +218,6 @@ func (a *Activities) phoneHomeSecretSkipReason(
 	return "", nil
 }
 
-// reconcileStackVersionPhoneHomeTokens drives each stack version to its desired
-// token state and returns the phone_home_id -> token map the secret should hold.
-//
-//	eligible + no token            -> mint
-//	eligible + live token          -> keep
-//	eligible + missing/expired row -> re-mint (self-heals a partial failure)
-//	ineligible                     -> delete the row, drop the entry
 func (a *Activities) reconcileStackVersionPhoneHomeTokens(
 	ctx context.Context, install *app.Install, resp *EnsureInstallPhoneHomeSecretResponse,
 ) (map[string]string, error) {
@@ -268,7 +235,6 @@ func (a *Activities) reconcileStackVersionPhoneHomeTokens(
 	for i := range install.InstallStack.InstallStackVersions {
 		version := &install.InstallStack.InstallStackVersions[i]
 
-		// A version with no phone_home_id has nothing to key the map on.
 		if version.PhoneHomeID == "" {
 			continue
 		}
@@ -301,9 +267,6 @@ func (a *Activities) reconcileStackVersionPhoneHomeTokens(
 	return tokens, nil
 }
 
-// livePhoneHomeTokens resolves the currently valid token rows for these versions,
-// keyed by token ID. A soft-deleted row is excluded by the default scope and an
-// expired one is filtered out here, so both present as "missing" and get re-minted.
 func (a *Activities) livePhoneHomeTokens(
 	ctx context.Context, versions []app.InstallStackVersion,
 ) (map[string]string, error) {
@@ -334,12 +297,6 @@ func (a *Activities) livePhoneHomeTokens(
 	return live, nil
 }
 
-// mintPhoneHomeToken issues a token to the stack version's own service account.
-//
-// That account already exists for versions created since service-account management
-// landed, carries no org roles, and is 1:1 with the credential's lifetime — so the
-// token authenticates as this specific stack version and authorizes nothing else.
-// Older versions predate it, hence the find-or-create.
 func (a *Activities) mintPhoneHomeToken(ctx context.Context, version *app.InstallStackVersion) (string, error) {
 	if _, err := a.acctClient.EnsureServiceAccount(ctx, version.ID, ""); err != nil {
 		return "", fmt.Errorf("unable to ensure stack version service account: %w", err)
@@ -360,9 +317,6 @@ func (a *Activities) mintPhoneHomeToken(ctx context.Context, version *app.Instal
 	return token.Token, nil
 }
 
-// revokePhoneHomeToken deletes the token row and clears the pointer. Ordering is not
-// load-bearing: a token row without a map entry is unreachable, and a map entry
-// without a token row is inert, so either interleaving is recoverable by re-running.
 func (a *Activities) revokePhoneHomeToken(ctx context.Context, version *app.InstallStackVersion) error {
 	if res := a.db.WithContext(ctx).
 		Where(app.Token{ID: version.PhoneHomeTokenID}).
@@ -380,9 +334,6 @@ func (a *Activities) revokePhoneHomeToken(ctx context.Context, version *app.Inst
 	return nil
 }
 
-// persistInstallPhoneHomeAuth records where the secret landed so the renderer can
-// plumb it without another AWS call. Written only on change, and the verification
-// timestamps are preserved.
 func (a *Activities) persistInstallPhoneHomeAuth(
 	ctx context.Context, install *app.Install, secret *secretsmanager.EnsureSecretOutput,
 ) error {

@@ -18,7 +18,6 @@ func MapTerraformPlan(fn execPlanFn) pipeline.ExecFn {
 	return fn.exec
 }
 
-// execPlanFn is a function that returns a terraform plan as a response
 type execPlanFn func(context.Context, hclog.Logger) (*tfjson.Plan, error)
 
 func (p execPlanFn) exec(ctx context.Context, log hclog.Logger) ([]byte, error) {
@@ -50,7 +49,6 @@ func MapTerraformOutput(fn execOutputFn) pipeline.ExecFn {
 	return fn.exec
 }
 
-// execOutputFn is a function that returns terraform outputs as a response
 type execOutputFn func(context.Context, hclog.Logger) (map[string]tfexec.OutputMeta, error)
 
 func (p execOutputFn) exec(ctx context.Context, l hclog.Logger) ([]uint8, error) {
@@ -89,7 +87,6 @@ func MapTerraformState(fn execStateFn) pipeline.ExecFn {
 	return fn.exec
 }
 
-// execStateFn is a function that returns terraform state as response
 type execStateFn func(context.Context, hclog.Logger) (*tfjson.State, error)
 
 func (p execStateFn) exec(ctx context.Context, l hclog.Logger) ([]uint8, error) {
@@ -110,7 +107,6 @@ func MapTerraformValidate(fn execValidateFn) pipeline.ExecFn {
 	return fn.exec
 }
 
-// execValidateFn is a function that returns terraform validation as the response
 type execValidateFn func(context.Context, hclog.Logger) (*tfjson.ValidateOutput, error)
 
 func (p execValidateFn) exec(ctx context.Context, l hclog.Logger) ([]uint8, error) {

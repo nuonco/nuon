@@ -4,8 +4,6 @@ import (
 	"time"
 )
 
-// InstallComponentHealthTransition is a ClickHouse row recorded whenever a
-// component's debounced health verdict changes; powers timeline/uptime math.
 type InstallComponentHealthTransition struct {
 	OrgID              string `gorm:"column:org_id;type:LowCardinality(String)" json:"org_id"`
 	InstallID          string `gorm:"column:install_id"                         json:"install_id"`

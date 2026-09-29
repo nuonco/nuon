@@ -27,8 +27,6 @@ const (
 
 const defaultPollDuration = time.Second * 10
 
-// ErrSyncAborted means an interrupted confirm dialog should stop the whole
-// batch, unlike an explicit "No" which only skips the current install.
 var ErrSyncAborted = errors.New("sync aborted by user")
 
 type appInstallSyncer struct {
@@ -94,8 +92,6 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		return nil, err
 	}
 
-	// Use defaults for any missing inputs. Customer-owned inputs are excluded: they
-	// are set by the customer during onboarding, not by the vendor's install config.
 	installCfg.InputGroups = append([]config.InputGroup{
 		{
 			Inputs: inputDefaults(appInputCfg.Inputs),
@@ -127,7 +123,6 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 	s.printInstallDiff(diff)
 
 	if dryRun {
-		// Print diff and exit without making any changes if dry run is enabled.
 		return nil, nil
 	}
 
@@ -283,7 +278,6 @@ func (s *appInstallSyncer) syncExistingInstall(
 	s.printInstallDiff(diff)
 
 	if dryRun {
-		// Print diff and exit without making any changes if dry run is enabled.
 		return nil, nil
 	}
 
@@ -368,7 +362,7 @@ func (s *appInstallSyncer) syncExistingInstall(
 		}
 	}
 
-	// Clearing a component override means reverting that component to its
+	// why: Clearing a component override means reverting that component to its
 	// app-config values. The inputs API merges, so an omitted key is left
 	// untouched; to actually clear it we must send the reserved synthetic key
 	// with an empty value. Re-add override keys that exist on the install but
@@ -385,7 +379,7 @@ func (s *appInstallSyncer) syncExistingInstall(
 		}
 	}
 
-	// Only send the inputs explicitly defined in the install config file. The API
+	// why: Only send the inputs explicitly defined in the install config file. The API
 	// merges them with the install's existing values server-side, so we don't
 	// re-send the full set — in particular install_stack sourced inputs, which the
 	// API rejects. definedInputs was computed above from the config file.
@@ -397,8 +391,6 @@ func (s *appInstallSyncer) syncExistingInstall(
 		}
 	}
 
-	// If any defined input has diverged from the install's current value, update
-	// the install inputs.
 	if hasInputChanged {
 		installInputs, err := s.api.UpdateInstallInputs(ctx, appInstall.ID, &models.ServiceUpdateInstallInputsRequest{
 			Inputs: definedInputs,
@@ -604,9 +596,6 @@ func customNestedStacksEqual(local []config.CustomNestedStack, remote []*models.
 	return true
 }
 
-// installDiffToString converts the install diff to a string with color coding
-// for added, removed, and changed lines. This is similar to diff.Diff.String but with
-// CLI specific logic to add colors for better user experience.
 func installDiffToString(d *diff.Diff, indent string) string {
 	if d == nil {
 		return ""
@@ -632,7 +621,7 @@ func installDiffToString(d *diff.Diff, indent string) string {
 	return diff
 }
 
-// installDiffKey maps a raw diff key to its user-facing form. Per-component
+// why: installDiffKey maps a raw diff key to its user-facing form. Per-component
 // override inputs are stored under reserved synthetic names
 // (nuon_component_override_v1_<kind>_<hex>); decode those back to the
 // components.<name>.<kind> form the user wrote in the install config so the diff
@@ -644,7 +633,7 @@ func installDiffKey(key string) string {
 	return key
 }
 
-// inputDefaults returns the values the install config does not have to spell out
+// why: inputDefaults returns the values the install config does not have to spell out
 // because the app declares a default for them. Sensitive inputs are excluded
 // because their values never round-trip through the config file, and
 // customer-owned (source=customer) inputs because they belong to the install
@@ -662,23 +651,13 @@ func inputDefaults(appInputs []*models.AppAppInput) map[string]string {
 	return defaults
 }
 
-// resolveRequiredInputs checks an install config's inputs against the app's
-// declared inputs, returning the values to add to the update so the merged set
-// stays valid plus any user-facing errors.
-//
-// A required input that declares a default does not need to appear in the
-// install config. If the install has no value for it yet, its default is filled
-// in — the inputs API validates the full merged set, so leaving it absent would
-// fail server-side. An input already set on the install is left alone rather
-// than reverted to the default, matching the merge semantics every other
-// omitted input gets.
 func resolveRequiredInputs(appInputs []*models.AppAppInput, defined, current map[string]string) (map[string]string, []error) {
 	fill := make(map[string]string)
 	var errs []error
 	for _, ic := range appInputs {
 		_, isDefined := defined[ic.Name]
 
-		// user_configurable (source=customer) inputs are owned by the customer/install
+		// why: user_configurable (source=customer) inputs are owned by the customer/install
 		// stack, not the install config, so they cannot be set via sync.
 		if ic.Source == string(models.AppAppInputSourceCustomer) {
 			if isDefined {

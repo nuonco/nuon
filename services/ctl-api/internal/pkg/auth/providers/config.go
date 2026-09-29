@@ -2,7 +2,6 @@ package providers
 
 import "errors"
 
-// Config validation errors
 var (
 	ErrMissingClientID     = errors.New("client_id is required")
 	ErrMissingClientSecret = errors.New("client_secret is required")
@@ -10,7 +9,6 @@ var (
 	ErrMissingRedirectURL  = errors.New("redirect_url is required")
 )
 
-// BaseConfig holds common OAuth configuration fields shared by all providers.
 type BaseConfig struct {
 	ClientID     string   `json:"client_id"`
 	ClientSecret string   `json:"client_secret"`
@@ -18,7 +16,6 @@ type BaseConfig struct {
 	Scopes       []string `json:"scopes,omitempty"`
 }
 
-// Validate checks that required base fields are present.
 func (c *BaseConfig) Validate() error {
 	if c.ClientID == "" {
 		return ErrMissingClientID
@@ -48,12 +45,10 @@ type OpenIDConfig struct {
 	ClaimsToExtract []string `json:"claims_to_extract,omitempty"`
 }
 
-// Validate checks that required OpenID fields are present.
 func (c *OpenIDConfig) Validate() error {
 	if err := c.BaseConfig.Validate(); err != nil {
 		return err
 	}
-	// Either issuer_url or explicit URLs must be provided
 	if c.IssuerURL == "" && (c.AuthURL == "" || c.TokenURL == "") {
 		return ErrMissingIssuerURL
 	}
@@ -68,7 +63,6 @@ type GoogleConfig struct {
 	HostedDomain string `json:"hosted_domain,omitempty"`
 }
 
-// Validate checks that required Google fields are present.
 func (c *GoogleConfig) Validate() error {
 	return c.BaseConfig.Validate()
 }
@@ -87,7 +81,6 @@ type GitHubConfig struct {
 	EnterpriseURL string `json:"enterprise_url,omitempty"`
 }
 
-// Validate checks that required GitHub fields are present.
 func (c *GitHubConfig) Validate() error {
 	return c.BaseConfig.Validate()
 }

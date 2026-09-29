@@ -29,7 +29,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// GetAppActionTestService holds all fx-injected dependencies for get app action tests.
 type GetAppActionTestService struct {
 	fx.In
 
@@ -45,7 +44,6 @@ type GetAppActionTestService struct {
 	Seeder         *testseed.Seeder
 }
 
-// GetAppActionTestSuite is the testify suite for GetAppAction endpoint.
 type GetAppActionTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -77,7 +75,6 @@ func (s *GetAppActionTestSuite) SetupSuite() {
 
 			CustomValidator: true,
 		}),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -85,7 +82,6 @@ func (s *GetAppActionTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -93,9 +89,6 @@ func (s *GetAppActionTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
-
-	// Create test router with standard middlewares using helper
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -141,7 +134,7 @@ func (s *GetAppActionTestSuite) TestGetAppActionSuccess() {
 	testCases := []struct {
 		name         string
 		setupFunc    func() string
-		lookupBy     string // "id" or "name"
+		lookupBy     string
 		expectedCode int
 		validateFunc func(*app.ActionWorkflow)
 	}{
@@ -231,7 +224,6 @@ func (s *GetAppActionTestSuite) TestGetAppActionSuccess() {
 }
 
 func (s *GetAppActionTestSuite) TestGetAppActionDifferentOrg() {
-	// Create action in different org
 	ctx2 := context.Background()
 	ctx2, _ = s.service.Seeder.EnsureAccount(ctx2, s.T())
 	ctx2, org2 := s.service.Seeder.EnsureOrg(ctx2, s.T())
@@ -250,7 +242,6 @@ func (s *GetAppActionTestSuite) TestGetAppActionDifferentOrg() {
 		s.service.DB.Unscoped().Delete(&app.ActionWorkflow{}, "id = ?", otherAction.ID)
 	})
 
-	// Try to get action from different org
 	rr := s.makeRequest(http.MethodGet, "/v1/apps/"+s.testApp.ID+"/actions/"+otherAction.ID, nil)
 
 	if rr.Code != http.StatusNotFound {

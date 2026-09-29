@@ -10,13 +10,10 @@ import (
 
 const SignalType signal.SignalType = "app-config-sync"
 
-// Signal applies the intermediate config stored on an app config. Backs
-// POST /v1/apps/:app_id/configs/:config_id/sync (the CLI sync path).
 type Signal struct {
 	AppID       string `json:"app_id" validate:"required"`
 	AppConfigID string `json:"app_config_id" validate:"required"`
 
-	// AccountID advances the requesting account's onboarding journey.
 	AccountID string `json:"account_id,omitempty"`
 }
 
@@ -69,8 +66,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	// install rollout + journey step, previously side effects of the CLI's
-	// final PATCH-to-active
 	if err := AwaitFinalizeAppConfigSync(ctx, FinalizeAppConfigSyncRequest{
 		Req: &FinalizeAppConfigSyncInput{
 			AppID:       s.AppID,

@@ -14,15 +14,13 @@ import (
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
-// SelectorItem represents an item in the selector list
 type SelectorItem struct {
 	title        string
 	description  string
 	value        string
-	isEvaluation bool // Special marking for evaluation journey items
+	isEvaluation bool
 }
 
-// Implement list.Item interface
 func (i SelectorItem) FilterValue() string { return i.title }
 func (i SelectorItem) Title() string       { return i.title }
 func (i SelectorItem) Description() string { return i.description }
@@ -39,7 +37,6 @@ type searchResultMsg struct {
 	err   error
 }
 
-// SelectorModel represents the list selection component
 type SelectorModel struct {
 	items          []SelectorItem
 	filteredItems  []SelectorItem
@@ -55,11 +52,10 @@ type SelectorModel struct {
 	height         int
 	searchQuery    string
 	searchMode     bool
-	maxVisibleRows int // Maximum number of rows to display at once, 0 = auto-calculate
-	viewportOffset int // Scroll offset for visible items
+	maxVisibleRows int
+	viewportOffset int
 }
 
-// NewSelectorModel creates a new selector model
 func NewSelectorModel(title string, items []SelectorItem) SelectorModel {
 	return SelectorModel{
 		items:          items,
@@ -67,27 +63,24 @@ func NewSelectorModel(title string, items []SelectorItem) SelectorModel {
 		originalItems:  items,
 		cursor:         0,
 		width:          60,
-		height:         24, // Default terminal height
+		height:         24,
 		searchQuery:    "",
 		searchMode:     false,
-		maxVisibleRows: 0, // Auto-calculate based on terminal height
+		maxVisibleRows: 0,
 		viewportOffset: 0,
 	}
 }
 
-// NewSelectorModelWithMaxRows creates a new selector model with a specific max visible rows
 func NewSelectorModelWithMaxRows(title string, items []SelectorItem, maxVisibleRows int) SelectorModel {
 	model := NewSelectorModel(title, items)
 	model.maxVisibleRows = maxVisibleRows
 	return model
 }
 
-// Init initializes the selector model
 func (m SelectorModel) Init() tea.Cmd {
 	return nil
 }
 
-// filterItems filters items based on the search query using fuzzy matching
 func (m *SelectorModel) filterItems() {
 	if m.searchQuery == "" {
 		m.filteredItems = m.items
@@ -115,7 +108,6 @@ func (m *SelectorModel) filterItems() {
 	m.adjustViewport()
 }
 
-// adjustViewport ensures the cursor is visible within the viewport
 func (m *SelectorModel) adjustViewport() {
 	visibleRows := m.getVisibleRows()
 	if visibleRows <= 0 || len(m.filteredItems) <= visibleRows {
@@ -134,7 +126,6 @@ func (m *SelectorModel) adjustViewport() {
 	}
 }
 
-// getVisibleRows calculates the number of rows that can be displayed
 func (m *SelectorModel) getVisibleRows() int {
 	if m.maxVisibleRows > 0 {
 		return m.maxVisibleRows
@@ -153,7 +144,6 @@ func searchDebounceCmd(query string) tea.Cmd {
 	})
 }
 
-// Update handles messages for the selector model
 func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -299,7 +289,6 @@ func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// View renders the selector
 func (m SelectorModel) View() tea.View {
 	if m.quitting {
 		if m.selected {
@@ -427,13 +416,9 @@ func (m SelectorModel) View() tea.View {
 	return tea.NewView(BorderStyle.Render(b.String()))
 }
 
-// Choice returns the selected choice value
 func (m SelectorModel) Choice() string { return m.choice }
 
-// Selected returns whether a choice was made
 func (m SelectorModel) Selected() bool { return m.selected }
-
-// High-level selector functions
 
 func SelectFromOptions(title string, options []string, interactive bool) (string, error) {
 	items := make([]SelectorItem, len(options))

@@ -59,7 +59,7 @@ func (m *runnerMiddleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		// Orgs is filled alongside OrgIDs, so a short one means the account was
+		// why: Orgs is filled alongside OrgIDs, so a short one means the account was
 		// loaded without its roles' orgs; indexing it would panic.
 		if len(acct.Orgs) < 1 {
 			ctx.Error(stderr.ErrAuthorization{

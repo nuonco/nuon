@@ -18,11 +18,6 @@ export const LogViewerContext = createContext<LogViewerContextValue | undefined>
 
 interface LogViewerProviderProps {
   children: ReactNode
-  // Optional span list. When provided, useLogFilters expands ?span_id=X to
-  // include all descendant spans, so clicking a parent step span in the
-  // trace tab shows logs from every nested op span. Surfaces without a
-  // trace tab (most non-trace pages) leave this undefined and span_id
-  // continues to behave as an exact match.
   spans?: TSpan[]
 }
 

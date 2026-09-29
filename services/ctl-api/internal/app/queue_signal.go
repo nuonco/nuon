@@ -173,7 +173,7 @@ func (r *QueueSignal) BeforeCreate(tx *gorm.DB) error {
 	if r.ID == "" {
 		r.ID = domains.NewQueueSignalID()
 
-		// NOTE: we set the ID here, to avoid having to update the object after creation, while still having a
+		// why: we set the ID here, to avoid having to update the object after creation, while still having a
 		// 1:1 mapping between id and workflow-id (with the template, of course).
 		r.Workflow.ID = fmt.Sprintf(r.Workflow.IDTemplate, r.ID)
 	}

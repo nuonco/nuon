@@ -30,7 +30,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// UpdateOrgTestService holds all fx-injected dependencies for update org tests.
 type UpdateOrgTestService struct {
 	fx.In
 
@@ -44,7 +43,6 @@ type UpdateOrgTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// UpdateOrgTestSuite is the testify suite for update org endpoint.
 type UpdateOrgTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -71,7 +69,6 @@ func (s *UpdateOrgTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),
 	)
@@ -79,7 +76,6 @@ func (s *UpdateOrgTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -87,7 +83,6 @@ func (s *UpdateOrgTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -129,7 +124,6 @@ func (s *UpdateOrgTestSuite) makeRequest(method, path string, body interface{}) 
 }
 
 func (s *UpdateOrgTestSuite) TestUpdateOrg() {
-	// Generate unique names for each test case to avoid cross-run collisions
 	updatedName := fmt.Sprintf("updated-name-%s", domains.NewOrgID()[:8])
 	originalName := fmt.Sprintf("original-name-%s", domains.NewOrgID()[:8])
 	updatedCurrentOrg := fmt.Sprintf("updated-current-org-%s", domains.NewOrgID()[:8])
@@ -170,7 +164,6 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(org *app.Org) {
-				// Verify database state
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
@@ -187,7 +180,6 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 			},
 			expectedStatus: http.StatusBadRequest,
 			validateFunc: func(org *app.Org) {
-				// Verify org was NOT updated in database
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", s.testOrg.ID).Error
 				require.NoError(s.T(), err)
@@ -199,12 +191,9 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 			setupFunc: func() *app.Org {
 				return s.testOrg
 			},
-			requestBody: map[string]interface{}{
-				// name field intentionally omitted
-			},
+			requestBody:    map[string]interface{}{},
 			expectedStatus: http.StatusBadRequest,
 			validateFunc: func(org *app.Org) {
-				// Verify org was NOT updated in database
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", s.testOrg.ID).Error
 				require.NoError(s.T(), err)
@@ -217,7 +206,6 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create a second org
 				otherOrgID := domains.NewOrgID()
 				otherOrg := &app.Org{
 					ID:          otherOrgID,
@@ -240,13 +228,11 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(org *app.Org) {
-				// Verify current org was updated
 				var currentOrg app.Org
 				err := s.service.DB.First(&currentOrg, "id = ?", s.testOrg.ID).Error
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), updatedCurrentOrg, currentOrg.Name)
 
-				// Verify other org was NOT updated (still has its original name)
 				var otherOrg app.Org
 				err = s.service.DB.Where("name LIKE ?", "other-org-%").First(&otherOrg).Error
 				require.NoError(s.T(), err)
@@ -263,7 +249,6 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(org *app.Org) {
-				// Verify database state (special characters preserved)
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
@@ -280,7 +265,6 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(org *app.Org) {
-				// Verify database state (unicode characters preserved)
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
@@ -291,10 +275,8 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test data
 			org := tc.setupFunc()
 
-			// Always recreate router with correct org context for this test case
 			s.router = tests.NewTestRouter(tests.RouterOptions{
 				L:       s.service.L,
 				DB:      s.service.DB,
@@ -304,7 +286,6 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 			err := s.orgsService.RegisterPublicRoutes(s.router)
 			require.NoError(s.T(), err)
 
-			// Make request
 			rr := s.makeRequest(http.MethodPatch, "/v1/orgs/current", tc.requestBody)
 
 			if rr.Code != tc.expectedStatus {
@@ -312,7 +293,6 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Parse response for successful updates
 			if tc.expectedStatus == http.StatusOK {
 				var response app.Org
 				err := json.Unmarshal(rr.Body.Bytes(), &response)
@@ -321,12 +301,10 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 				}
 				require.NoError(s.T(), err)
 
-				// Run validation function
 				if tc.validateFunc != nil {
 					tc.validateFunc(&response)
 				}
 			} else if tc.validateFunc != nil {
-				// Run validation for non-success cases (verify no changes)
 				tc.validateFunc(nil)
 			}
 		})
@@ -334,7 +312,6 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 }
 
 func (s *UpdateOrgTestSuite) TestUpdateOrgInvalidJSON() {
-	// Test with malformed JSON
 	reqBody := bytes.NewBufferString(`{"name": "test", invalid json}`)
 
 	req, err := http.NewRequest(http.MethodPatch, "/v1/orgs/current", reqBody)
@@ -349,7 +326,6 @@ func (s *UpdateOrgTestSuite) TestUpdateOrgInvalidJSON() {
 	}
 	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
 
-	// Verify org was NOT updated in database
 	var dbOrg app.Org
 	err = s.service.DB.First(&dbOrg, "id = ?", s.testOrg.ID).Error
 	require.NoError(s.T(), err)
@@ -357,14 +333,12 @@ func (s *UpdateOrgTestSuite) TestUpdateOrgInvalidJSON() {
 }
 
 func (s *UpdateOrgTestSuite) TestUpdateOrgNonExistentOrg() {
-	// Create a non-existent org ID for context
 	nonExistentOrg := &app.Org{
 		ID:          domains.NewOrgID(),
 		Name:        "non-existent",
 		SandboxMode: true,
 	}
 
-	// Create router with non-existent org context
 	router := tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -374,7 +348,6 @@ func (s *UpdateOrgTestSuite) TestUpdateOrgNonExistentOrg() {
 	err := s.orgsService.RegisterPublicRoutes(router)
 	require.NoError(s.T(), err)
 
-	// Try to update non-existent org
 	reqBody := UpdateOrgRequest{
 		Name: "updated-name",
 	}
@@ -440,7 +413,6 @@ func (s *UpdateOrgTestSuite) TestUpdateOrgWhitespaceHandling() {
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), tc.expectedName, response.Name)
 
-				// Verify database state
 				var dbOrg app.Org
 				err = s.service.DB.First(&dbOrg, "id = ?", s.testOrg.ID).Error
 				require.NoError(s.T(), err)

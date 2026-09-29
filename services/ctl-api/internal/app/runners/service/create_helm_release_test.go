@@ -72,7 +72,6 @@ func (s *CreateHelmReleaseTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -110,13 +109,6 @@ func (s *CreateHelmReleaseTestSuite) makeRequest(method, path string, body inter
 }
 
 func (s *CreateHelmReleaseTestSuite) TestCreateHelmReleaseRequiresAccountContext() {
-	// This test documents a known limitation: CreateHelmRelease requires
-	// CreatedByID but runner routes don't have account context.
-	// The endpoint will fail with a database constraint error when the release is created.
-	//
-	// Note: The handler binds and encodes the helm.Release successfully,
-	// but the DB insert fails due to missing CreatedByID from context.
-
 	s.T().Log("CreateHelmRelease has a CreatedByID NOT NULL constraint")
 	s.T().Log("Runner routes don't have account context, so CreatedByID will be empty")
 	s.T().Log("The handler will bind JSON and encode the release successfully")
@@ -126,9 +118,6 @@ func (s *CreateHelmReleaseTestSuite) TestCreateHelmReleaseRequiresAccountContext
 	namespace := "default"
 	key := "sh.helm.release.v1.test-release.v1"
 
-	// Create a minimal helm release request
-	// The actual helm.Release type is complex with nested proto structures,
-	// so we just test the handler's parameter validation and document the limitation
 	requestBody := map[string]interface{}{
 		"name":      "test-release",
 		"version":   1,
@@ -142,7 +131,6 @@ func (s *CreateHelmReleaseTestSuite) TestCreateHelmReleaseRequiresAccountContext
 
 	s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
 
-	// Expect 500 due to CreatedByID constraint or encoding issues with incomplete helm.Release
 	assert.Equal(s.T(), http.StatusInternalServerError, rr.Code)
 }
 
@@ -211,7 +199,6 @@ func (s *CreateHelmReleaseTestSuite) TestCreateHelmReleaseValidation() {
 }
 
 func (s *CreateHelmReleaseTestSuite) TestCreateHelmReleaseComplexity() {
-	// Document the complexity of creating valid helm releases for testing
 	s.T().Log("Creating valid helm.Release test data is complex because:")
 	s.T().Log("1. helm.Release requires nested proto structures (chart.Chart, rspb.Info, rspb.Hook)")
 	s.T().Log("2. helm.EncodeRelease does protobuf encoding + gzip + base64")
@@ -223,9 +210,6 @@ func (s *CreateHelmReleaseTestSuite) TestCreateHelmReleaseComplexity() {
 }
 
 func (s *CreateHelmReleaseTestSuite) TestCreateHelmReleaseWithAccountContext() {
-	// Even with account context set, creating a valid helm.Release for testing is complex
-	// because it requires proper proto structures. This test documents the approach.
-
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
@@ -249,6 +233,5 @@ func (s *CreateHelmReleaseTestSuite) TestCreateHelmReleaseWithAccountContext() {
 
 	rr := s.makeRequest("POST", "/v1/helm-releases/"+helmChartID+"/releases/"+namespace+"/"+key, requestBody)
 
-	// Will likely fail due to incomplete helm.Release structure for encoding
 	s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
 }

@@ -12,7 +12,6 @@ import (
 )
 
 func TestResolveRoleARN(t *testing.T) {
-	// Create a basic install state for tests
 	installState := &state.State{
 		Install: &state.InstallState{
 			Name: "test-install",
@@ -267,7 +266,7 @@ func TestResolveRoleARN(t *testing.T) {
 					ProvisionIAMRoleARN:   "arn:aws:iam::123456789012:role/provision-role",
 					MaintenanceIAMRoleARN: "arn:aws:iam::123456789012:role/maintenance-role",
 					DeprovisionIAMRoleARN: "arn:aws:iam::123456789012:role/deprovision-role",
-					CustomRoleARNs:        make(map[string]string), // missing in stack outpout
+					CustomRoleARNs:        make(map[string]string),
 					BreakGlassRoleARNs:    make(map[string]string),
 				},
 			},
@@ -304,7 +303,6 @@ func TestResolveRoleARN(t *testing.T) {
 }
 
 func TestSelectRole(t *testing.T) {
-	// Create a basic install state for tests
 	baseInstallState := &state.State{
 		Install: &state.InstallState{
 			Name: "test-install",
@@ -637,7 +635,6 @@ func TestSelectRole(t *testing.T) {
 			},
 			expectError: false,
 		},
-		// Azure Support Tests
 		{
 			name: "azure resolves maintenance identity client id",
 			ctx: &SelectionContext{
@@ -871,7 +868,6 @@ func TestSelectRole(t *testing.T) {
 			},
 			expectError: false,
 		},
-		// Combined Scenarios
 		{
 			name: "azure resolves provision identity client id",
 			ctx: &SelectionContext{
@@ -992,7 +988,6 @@ func TestSelectRole(t *testing.T) {
 }
 
 func TestSelectRoleWithTemplateRendering(t *testing.T) {
-	// Create install state with realistic values for template rendering
 	installState := &state.State{
 		Install: &state.InstallState{
 			ID:   "ins_abc123xyz",
@@ -1004,7 +999,6 @@ func TestSelectRoleWithTemplateRendering(t *testing.T) {
 		},
 	}
 
-	// AppConfig with templated role names (realistic production scenario)
 	templatedAppConfig := &app.AppConfig{
 		PermissionsConfig: app.AppPermissionsConfig{
 			ProvisionRole: app.AppAWSIAMRoleConfig{
@@ -1028,7 +1022,6 @@ func TestSelectRoleWithTemplateRendering(t *testing.T) {
 		},
 	}
 
-	// Stack outputs with rendered role ARNs matching the templates above
 	templatedStackOutputs := &app.InstallStackOutputs{
 		AWSStackOutputs: &app.AWSStackOutputs{
 			ProvisionIAMRoleARN:   "arn:aws:iam::123456789012:role/ins_abc123xyz-provision",
@@ -1367,7 +1360,7 @@ func TestFindMatrixRole(t *testing.T) {
 				{Operation: app.OperationDeploy, PrincipalType: principal.TypeComponent, PrincipalName: "production", Role: "ProdRole"},
 			},
 			principalType: principal.TypeComponent,
-			principalName: "{{.nuon.install.name}}", // renders to "production"
+			principalName: "{{.nuon.install.name}}",
 			operation:     app.OperationDeploy,
 			installState:  installState,
 			expectedRole:  "ProdRole",
@@ -1379,7 +1372,7 @@ func TestFindMatrixRole(t *testing.T) {
 				{Operation: app.OperationDeploy, PrincipalType: principal.TypeComponent, PrincipalName: "staging", Role: "StagingRole"},
 			},
 			principalType: principal.TypeComponent,
-			principalName: "{{.nuon.install.name}}", // renders to "production"
+			principalName: "{{.nuon.install.name}}",
 			operation:     app.OperationDeploy,
 			installState:  installState,
 			expectedFound: false,
@@ -1390,7 +1383,7 @@ func TestFindMatrixRole(t *testing.T) {
 				{Operation: app.OperationDeploy, PrincipalType: principal.TypeComponent, PrincipalName: "{{.nuon.install.name}}", Role: "ProdRole"},
 			},
 			principalType: principal.TypeComponent,
-			principalName: "production", // matches rendered "{{.nuon.install.name}}"
+			principalName: "production",
 			operation:     app.OperationDeploy,
 			installState:  installState,
 			expectedRole:  "ProdRole",
@@ -1413,7 +1406,7 @@ func TestFindMatrixRole(t *testing.T) {
 				{Operation: app.OperationDeploy, PrincipalType: principal.TypeComponent, PrincipalName: "{{.nuon.install.name}}", Role: "ProdRole"},
 			},
 			principalType: principal.TypeComponent,
-			principalName: "{{.nuon.install.name}}", // both render to "production"
+			principalName: "{{.nuon.install.name}}",
 			operation:     app.OperationDeploy,
 			installState:  installState,
 			expectedRole:  "ProdRole",
@@ -1425,7 +1418,7 @@ func TestFindMatrixRole(t *testing.T) {
 				{Operation: app.OperationDeploy, PrincipalType: principal.TypeComponent, PrincipalName: "{{.nuon.install.name}}", Role: "ProdRole"},
 			},
 			principalType: principal.TypeComponent,
-			principalName: "{{.nuon.org.name}}", // renders to "acme-corp", rule renders to "production"
+			principalName: "{{.nuon.org.name}}",
 			operation:     app.OperationDeploy,
 			installState:  installState,
 			expectedFound: false,
@@ -1460,7 +1453,7 @@ func TestFindMatrixRole(t *testing.T) {
 				{Operation: app.OperationDeploy, PrincipalType: principal.TypeComponent, PrincipalName: "production", Role: "ProdRole"},
 			},
 			principalType: principal.TypeComponent,
-			principalName: "{{.nuon.install.name}}", // not rendered, stays as literal
+			principalName: "{{.nuon.install.name}}",
 			operation:     app.OperationDeploy,
 			installState:  nil,
 			expectedFound: false,
@@ -1489,7 +1482,6 @@ func TestFindMatrixRole(t *testing.T) {
 			expectedFound: false,
 		},
 
-		// Multiple rules — specific before wildcard, first match wins
 		{
 			name: "specific rule matched before wildcard",
 			rules: []*app.AppOperationRoleRule{

@@ -9,7 +9,6 @@ import (
 	execmappers "github.com/nuonco/nuon/pkg/pipeline/mappers/exec"
 )
 
-// create a plan for destroy
 func (r *run) DestroyPlan(ctx context.Context) error {
 	pipe, err := r.getDestroyPlanPipeline()
 	if err != nil {
@@ -24,7 +23,6 @@ func (r *run) DestroyPlan(ctx context.Context) error {
 }
 
 func (r *run) getDestroyPlanPipeline() (*pipeline.Pipeline, error) {
-	// initialize steps to load the workspace
 	pipe, err := pipeline.New(r.v,
 		pipeline.WithLogger(r.Log),
 	)

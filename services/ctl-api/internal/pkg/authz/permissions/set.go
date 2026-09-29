@@ -15,10 +15,6 @@ func (p Set) Add(set map[string]*string) error {
 			return err
 		}
 
-		// Merging is additive across an account's roles, so keep the stronger
-		// grant when the same object appears in multiple policies. Without this,
-		// a read-only policy could clobber an "all" grant from another role
-		// depending on iteration order.
 		if existing, ok := p[k]; ok && existing == PermissionAll {
 			continue
 		}

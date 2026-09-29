@@ -70,8 +70,6 @@ func TestSweepStale(t *testing.T) {
 }
 
 func TestFilesystemType(t *testing.T) {
-	// /proc/mounts only exists on linux; elsewhere an unknown type is reported
-	// so callers treat it as fine rather than warning spuriously.
 	if _, err := os.Stat("/proc/mounts"); err != nil {
 		if got := FilesystemType("/tmp"); got != "" {
 			t.Fatalf("expected an unknown filesystem without /proc/mounts, got %q", got)
@@ -84,10 +82,6 @@ func TestFilesystemType(t *testing.T) {
 	}
 }
 
-// uncreatableDir returns a path that MkdirAll cannot create as any uid: a
-// regular file sits where a parent directory would have to be, so it fails with
-// ENOTDIR. Permission bits would not do, since tests run as root in CI and root
-// bypasses the directory permission check.
 func uncreatableDir(t *testing.T) string {
 	t.Helper()
 

@@ -84,9 +84,6 @@ func (a *Activities) getSourceRepository(cfg *app.ExternalImageComponentConfig, 
 			UseGCPOIDC:             a.cfg.IsGCP(),
 		}
 
-		// Control-plane jobs run as the ctl-api pod identity, which the
-		// vendor's ECR pull role does not trust — vendors grant the Nuon
-		// management account, so hop through the management role first.
 		if a.cfg.IsAWS() && a.cfg.ManagementIAMRoleARN != "" {
 			assumeRole.TwoStepConfig = &assumerole.TwoStepConfig{
 				IAMRoleARN: a.cfg.ManagementIAMRoleARN,

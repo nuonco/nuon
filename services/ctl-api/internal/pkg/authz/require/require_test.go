@@ -21,7 +21,6 @@ const (
 	otherInstallID = "install_two"
 )
 
-// run drives the middleware as the engine does: account and org already resolved.
 func run(t *testing.T, mw gin.HandlerFunc, method string, perms permissions.Set, orgID, installID string) *gin.Context {
 	t.Helper()
 
@@ -45,7 +44,6 @@ func readStack(t *testing.T, perms permissions.Set, orgID, installID string) *gi
 		http.MethodGet, perms, orgID, installID)
 }
 
-// A 403 would confirm the resource exists in another org.
 func assertNotFound(t *testing.T, ctx *gin.Context, description string) {
 	t.Helper()
 
@@ -56,8 +54,6 @@ func assertNotFound(t *testing.T, ctx *gin.Context, description string) {
 	require.ErrorAs(t, ctx.Errors[0].Err, &nfErr)
 	assert.Equal(t, description, nfErr.Description)
 
-	// The stderr handler serializes Err into the body, so it must carry nothing
-	// beyond the description.
 	assert.Equal(t, description, nfErr.Error(),
 		"client-visible error must not leak the denial reason")
 }
@@ -85,14 +81,11 @@ func TestRoute(t *testing.T) {
 		assertAllowed(t, readStack(t, scopedStack(t, orgID, installID, permissions.PermissionRead), orgID, installID))
 	})
 
-	// One stack's token cannot read another install's config, even in the same org.
 	t.Run("scoped grant cannot reach another resource in the org", func(t *testing.T) {
 		ctx := readStack(t, scopedStack(t, orgID, otherInstallID, permissions.PermissionRead), orgID, installID)
 		assertNotFound(t, ctx, "install not found")
 	})
 
-	// Intentional: the permission set falls back to the parent key, so org-wide
-	// tokens keep working.
 	t.Run("org-wide grant passes via parent fallback", func(t *testing.T) {
 		set := permissions.Set(permissions.NewSet())
 		require.NoError(t, set.Add(map[string]*string{orgID: permissions.PermissionAll.ToStrPtr()}))
@@ -104,7 +97,6 @@ func TestRoute(t *testing.T) {
 		assertNotFound(t, readStack(t, permissions.Set(permissions.NewSet()), orgID, installID), "install not found")
 	})
 
-	// A grant for the same install ID under a different org must not carry over.
 	t.Run("scoped grant in another org", func(t *testing.T) {
 		assertNotFound(t, readStack(t, scopedStack(t, "org_two", installID, permissions.PermissionRead), orgID, installID), "install not found")
 	})
@@ -140,7 +132,6 @@ func TestRoute(t *testing.T) {
 	})
 }
 
-// The declared verb is checked, not the one FromRequest infers from the method.
 func TestRouteEnforcesDeclaredVerb(t *testing.T) {
 	update := Route(permissions.KindStack, permissions.PermissionUpdate, "install_id")
 
@@ -149,13 +140,11 @@ func TestRouteEnforcesDeclaredVerb(t *testing.T) {
 		assertAllowed(t, run(t, update, http.MethodPost, set, orgID, installID))
 	})
 
-	// The method's inferred verb must not stand in for the declared one.
 	t.Run("declared update denied on a create-only grant", func(t *testing.T) {
 		set := scopedStack(t, orgID, installID, permissions.PermissionCreate)
 		assertNotFound(t, run(t, update, http.MethodPost, set, orgID, installID), "install not found")
 	})
 
-	// And a read-declared route is not widened by a mutating method.
 	t.Run("declared read passes on a read-only grant despite a POST", func(t *testing.T) {
 		set := scopedStack(t, orgID, installID, permissions.PermissionRead)
 		ctx := run(t, Route(permissions.KindStack, permissions.PermissionRead, "install_id"),

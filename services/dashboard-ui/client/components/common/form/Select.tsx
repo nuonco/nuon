@@ -112,7 +112,7 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
       if (!buttonRef.current) return null
       const rect = buttonRef.current.getBoundingClientRect()
       const margin = 8
-      const desiredMax = 288 // matches max-h-72
+      const desiredMax = 288
       const spaceBelow = window.innerHeight - rect.bottom - margin
       const spaceAbove = rect.top - margin
       const openUpward =

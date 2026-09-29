@@ -15,7 +15,6 @@ type addInstallLabelRequest struct {
 	Value string `json:"value"`
 }
 
-// AddInstallLabel handles adding a key:value label to an install.
 func (s *service) AddInstallLabel(c *gin.Context) {
 	ctx := c.Request.Context()
 	installID := c.Param("id")
@@ -58,7 +57,6 @@ func (s *service) AddInstallLabel(c *gin.Context) {
 	})
 }
 
-// RemoveInstallLabel handles removing a label key from an install.
 func (s *service) RemoveInstallLabel(c *gin.Context) {
 	ctx := c.Request.Context()
 	installID := c.Param("id")

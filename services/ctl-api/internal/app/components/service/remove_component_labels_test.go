@@ -17,7 +17,6 @@ func (s *ComponentsServiceTestSuite) TestRemoveComponentLabelsSuccess() {
 	s.Run("removes specified keys", func() {
 		componentID := s.testAppConfig.ComponentConfigConnections[3].ComponentID
 
-		// Set initial labels
 		err := s.deps.DB.WithContext(s.ctx).
 			Model(&app.Component{}).
 			Where("id = ?", componentID).
@@ -43,7 +42,6 @@ func (s *ComponentsServiceTestSuite) TestRemoveComponentLabelsSuccess() {
 		_, hasTeam := response.Labels["team"]
 		assert.False(s.T(), hasTeam)
 
-		// Verify in DB
 		var dbComp app.Component
 		err = s.deps.DB.WithContext(s.ctx).First(&dbComp, "id = ?", componentID).Error
 		require.NoError(s.T(), err)

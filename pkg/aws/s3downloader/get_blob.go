@@ -12,8 +12,6 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 )
 
-// GetBlob assumes a role and returns the actual blob from s3
-//
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=get_blob_mock_test.go -source=get_blob.go -package=s3downloader
 func (s *s3Downloader) GetBlob(ctx context.Context, key string) ([]byte, error) {

@@ -7,11 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// The latch exists so a wedged rollout that Argo reports as benign
-// "progressing" keeps its degraded verdict until something genuinely reports
-// healthy. It must not do that to an unknown report: unknown means the runner
-// could not assess the resource this cycle, and replacing it with a remembered
-// verdict republishes a stale diagnosis under a fresh timestamp.
 func TestLatchHealth(t *testing.T) {
 	t.Parallel()
 
@@ -47,10 +42,6 @@ func TestLatchHealth(t *testing.T) {
 	})
 }
 
-// A constant dedupe key would be absorbed by the previous, already-finished
-// signal (completed signals stay undeleted until nightly cleanup), so health
-// would evaluate once and then freeze. Bucketing by minute collapses concurrent
-// reports without ever blocking the next minute.
 func TestComponentHealthEvaluateDedupeKey(t *testing.T) {
 	t.Parallel()
 

@@ -41,7 +41,6 @@ func (s *service) BuildAppConfig(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 	configID := ctx.Param("config_id")
 
-	// Verify app exists and belongs to this org
 	var a app.App
 	res := s.db.WithContext(ctx).
 		Where(app.App{OrgID: org.ID}).
@@ -51,7 +50,6 @@ func (s *service) BuildAppConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Verify config exists and belongs to this app
 	var config app.AppConfig
 	res = s.db.WithContext(ctx).
 		Where(app.AppConfig{AppID: appID, OrgID: org.ID}).
@@ -61,13 +59,11 @@ func (s *service) BuildAppConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Ensure the app has a queue for signal routing
 	if err := s.helpers.EnsureAppQueue(ctx, appID); err != nil {
 		ctx.Error(fmt.Errorf("unable to ensure app queue: %w", err))
 		return
 	}
 
-	// Create the workflow (includes GenerateStepsSignal for shared flow infra)
 	wf, err := s.helpers.CreateAppWorkflow(
 		ctx,
 		appID,
@@ -82,14 +78,12 @@ func (s *service) BuildAppConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Find the app-workflows queue by name
 	queue, err := s.queueClient.GetQueueByOwnerAndName(ctx, appID, plugins.TableName(s.db, app.App{}), appshelpers.AppWorkflowsQueueName)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to find app-workflows queue: %w", err))
 		return
 	}
 
-	// Enqueue the shared execute-workflow signal to start the flow
 	_, err = s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 		QueueID: queue.ID,
 		Signal:  executeflow.NewSignal(wf.ID),

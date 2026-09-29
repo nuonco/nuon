@@ -57,7 +57,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// temporalanalytics.Writer is not available in the signal context.
 	// Original code: w.analytics.Track(ctx, events.OrgCreated, map[string]any{"org_id": org.ID, "org_type": org.OrgType})
 
-	// Add support users to trial orgs
 	if hasTag(org.Tags, "Trial") {
 		if _, err := activities.AwaitAddSupportUsersByOrgID(ctx, s.OrgID); err != nil {
 			l := workflow.GetLogger(ctx)

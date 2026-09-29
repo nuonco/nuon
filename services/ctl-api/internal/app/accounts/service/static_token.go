@@ -268,8 +268,6 @@ func (s *service) isOrgAdmin(acct *app.Account, orgID string) bool {
 	return false
 }
 
-// dedicatedTokenSubjectPrefix marks an account that exists only to hold one static
-// token, so deleting the token deletes the account.
 func dedicatedTokenSubjectPrefix(orgID string) string {
 	return fmt.Sprintf("%s-token-", orgID)
 }
@@ -304,12 +302,12 @@ func (s *service) deleteTokenServiceAccount(ctx context.Context, orgID, accountI
 		return fmt.Errorf("unable to look up token account: %w", res.Error)
 	}
 
-	// never remove roles from or delete a personal token's real user account
+	// why: never remove roles from or delete a personal token's real user account
 	if acct.AccountType != app.AccountTypeService {
 		return nil
 	}
 
-	// Only accounts created to hold this one token: revoking a stack's or runner's token
+	// why: Only accounts created to hold this one token: revoking a stack's or runner's token
 	// must not take the identity with it.
 	if !strings.HasPrefix(acct.Subject, dedicatedTokenSubjectPrefix(orgID)) {
 		return nil

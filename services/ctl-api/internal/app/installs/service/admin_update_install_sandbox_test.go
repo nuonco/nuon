@@ -73,7 +73,6 @@ func (s *UpdateInstallSandboxTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -95,7 +94,6 @@ func (s *UpdateInstallSandboxTestSuite) setupTestData() {
 	appConfig := s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
 	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 
-	// Create sandbox config
 	s.testSandboxConfig = &app.AppSandboxConfig{
 		AppID:       s.testApp.ID,
 		AppConfigID: appConfig.ID,
@@ -155,7 +153,6 @@ func (s *UpdateInstallSandboxTestSuite) TestAdminUpdateSandbox() {
 		{
 			name: "install without sandbox config returns error",
 			setupFunc: func() string {
-				// Create a second app + install via seeder, then remove the sandbox config
 				ctx := context.Background()
 				ctx, _ = s.service.Seeder.EnsureAccount(ctx, s.T())
 				ctx, _ = s.service.Seeder.EnsureOrg(ctx, s.T())
@@ -163,7 +160,6 @@ func (s *UpdateInstallSandboxTestSuite) TestAdminUpdateSandbox() {
 				s.service.Seeder.CreateAppConfig(ctx, s.T(), app2.ID)
 				install2 := s.service.Seeder.CreateInstall(ctx, s.T(), app2)
 
-				// Clear the install's sandbox config FK, then delete sandbox configs
 				err := s.service.DB.Model(&app.Install{}).Where("id = ?", install2.ID).
 					Update("app_sandbox_config_id", nil).Error
 				require.NoError(s.T(), err)

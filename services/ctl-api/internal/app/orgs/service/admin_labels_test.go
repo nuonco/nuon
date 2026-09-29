@@ -30,11 +30,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// ---------------------------------------------------------------------------
-// Admin Add Org Labels
-// ---------------------------------------------------------------------------
-
-// AdminAddOrgLabelsTestService holds all fx-injected dependencies.
 type AdminAddOrgLabelsTestService struct {
 	fx.In
 
@@ -48,7 +43,6 @@ type AdminAddOrgLabelsTestService struct {
 	OrgsService     *service
 }
 
-// AdminAddOrgLabelsTestSuite is the testify suite for the AdminAddOrgLabels endpoint.
 type AdminAddOrgLabelsTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -193,7 +187,6 @@ func (s *AdminAddOrgLabelsTestSuite) TestAdminAddOrgLabels() {
 		assert.Equal(s.T(), "prod", response.Labels["env"])
 		assert.Equal(s.T(), "enterprise", response.Labels["tier"])
 
-		// Verify in DB
 		var dbOrg app.Org
 		err = s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 		require.NoError(s.T(), err)
@@ -257,11 +250,6 @@ func (s *AdminAddOrgLabelsTestSuite) TestAdminAddOrgLabels() {
 	})
 }
 
-// ---------------------------------------------------------------------------
-// Admin Remove Org Labels
-// ---------------------------------------------------------------------------
-
-// AdminRemoveOrgLabelsTestService holds all fx-injected dependencies.
 type AdminRemoveOrgLabelsTestService struct {
 	fx.In
 
@@ -275,7 +263,6 @@ type AdminRemoveOrgLabelsTestService struct {
 	OrgsService     *service
 }
 
-// AdminRemoveOrgLabelsTestSuite is the testify suite for the AdminRemoveOrgLabels endpoint.
 type AdminRemoveOrgLabelsTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -422,7 +409,6 @@ func (s *AdminRemoveOrgLabelsTestSuite) TestAdminRemoveOrgLabels() {
 		_, hasTeam := response.Labels["team"]
 		assert.False(s.T(), hasTeam)
 
-		// Verify in DB
 		var dbOrg app.Org
 		err = s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 		require.NoError(s.T(), err)

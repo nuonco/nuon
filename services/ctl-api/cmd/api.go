@@ -26,7 +26,6 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 	profilerOptions := profiles.LoadOptionsFromEnv()
 	providers = append(providers, profiles.Module(profilerOptions))
 
-	// Add API-specific modules - all APIs (includes auth service) + both MCP listeners
 	providers = append(providers,
 		fxmodules.MiddlewaresModule,
 		fxmodules.AllServicesModule,

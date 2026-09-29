@@ -8,7 +8,6 @@ import (
 	"github.com/nuonco/nuon/pkg/pipeline"
 )
 
-// execBytesLogFn is a function that just does an init, and returns bytes output
 type execBytesLogFn func(context.Context, hclog.Logger) ([]byte, error)
 
 func MapBytesLog(fn execBytesLogFn) pipeline.ExecFn {

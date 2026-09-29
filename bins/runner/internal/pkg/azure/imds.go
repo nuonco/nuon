@@ -20,7 +20,6 @@ type imdsTokenResponse struct {
 	TokenType   string `json:"token_type"`
 }
 
-// GetIMDSToken fetches a managed identity access token from the Azure IMDS endpoint.
 func GetIMDSToken(ctx context.Context) (string, error) {
 	reqURL := fmt.Sprintf("%s?api-version=2018-02-01&resource=https://management.azure.com/", imdsTokenURL)
 

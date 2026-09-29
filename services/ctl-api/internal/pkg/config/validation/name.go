@@ -14,8 +14,6 @@ var (
 	dnsRFC1123Regex       = regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`)
 )
 
-// ValidateDNSSubdomain validates a DNS RFC 1123 subdomain, the form Kubernetes
-// object names take.
 func ValidateDNSSubdomain(name string) error {
 	if len(name) > 253 {
 		return stderr.ErrUser{
@@ -32,12 +30,9 @@ func ValidateDNSSubdomain(name string) error {
 	return nil
 }
 
-// ValidateInterpolatedName validates a name that allows interpolation syntax.
-// Allows: lowercase letters, numbers, underscores, dots, and curly braces
-// Duplicates logic from services/ctl-api/internal/pkg/validator/interpolated_name.go
 func ValidateInterpolatedName(name string) error {
 	if name == "" {
-		return nil // Empty is allowed for optional fields
+		return nil
 	}
 
 	if !interpolatedNameRegex.MatchString(name) {
@@ -50,9 +45,6 @@ func ValidateInterpolatedName(name string) error {
 	return nil
 }
 
-// ValidateEntityName validates a standard entity name.
-// Allows: lowercase letters, numbers, underscores, and hyphens
-// Duplicates logic from services/ctl-api/internal/pkg/validator/entity_name.go
 func ValidateEntityName(name string) error {
 	if name == "" {
 		return stderr.ErrUser{
@@ -71,8 +63,6 @@ func ValidateEntityName(name string) error {
 	return nil
 }
 
-// ValidateDNSName validates a DNS RFC 1035 label (used for Helm chart names, K8s resources, etc).
-// Must be 1-63 characters, start with a letter, and contain only lowercase letters, numbers, and hyphens.
 func ValidateDNSName(name string, minLen, maxLen int) error {
 	if name == "" {
 		return stderr.ErrUser{

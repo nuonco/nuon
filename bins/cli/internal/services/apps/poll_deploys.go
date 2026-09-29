@@ -75,7 +75,6 @@ func (s *Service) pollDeploys(ctx context.Context, install *models.AppInstall, d
 			}
 		}
 
-		// Remove completed deploys from tracking
 		for _, depID := range completedDeploys {
 			delete(depByID, depID)
 		}

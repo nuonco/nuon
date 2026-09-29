@@ -27,7 +27,6 @@ func (c *client) GetActionWorkflows(ctx context.Context, appID string, query *mo
 	return resp.Payload, hasNextPage(hr), nil
 }
 
-// deprecated
 func (c *client) GetActionWorkflow(ctx context.Context, actionWorkflowID string) (*models.AppActionWorkflow, error) {
 	resp, err := c.genClient.Operations.GetActionWorkflow(&operations.GetActionWorkflowParams{
 		ActionWorkflowID: actionWorkflowID,

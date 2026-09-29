@@ -23,11 +23,6 @@ const TIMESERIES_LEGEND = [
   { color: CHART_SERIES_PASS, label: 'Passed' },
 ]
 
-/**
- * Compute the largest stacked-bar total across every breakdown so all three
- * BreakdownCharts share a single X-axis scale and bars are visually
- * comparable from one chart to the next.
- */
 function computeSharedXMax(
   ...breakdowns: (TPolicyAnalyticsBreakdown | undefined)[]
 ): number {

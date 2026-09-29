@@ -1,7 +1,5 @@
 package processhealthcheck
 
-// Copy of runners/worker/activities/healthcheck_cases_test.go.
-
 import (
 	"testing"
 	"time"
@@ -23,9 +21,6 @@ import (
 
 var corpusNow = time.Date(2026, time.August, 6, 12, 0, 0, 0, time.UTC)
 
-// processHealthAction mirrors the decision enum in
-// runners/worker/activities/healthcheck_decisions.go so the copied tables stay
-// verbatim.
 type processHealthAction int
 
 const (
@@ -287,9 +282,6 @@ func TestOldProcessHealthcheckCorpus(t *testing.T) {
 					want.transitionDesc = "heartbeat received"
 				}
 				want.greenRow = true
-				// Old-only divergence: legacy path writes version_warning
-				// unconditionally every tick; the batch port writes it only on
-				// change (matching versions here → empty warning value).
 				want.versionWrite = stringPtr("")
 			}
 			require.Equal(t, want, got)
@@ -314,7 +306,6 @@ func TestOldProcessVersionWarningCorpus(t *testing.T) {
 
 			require.True(t, got.greenRow)
 			if tc.reported == "" {
-				// Old code skips checkVersionMismatch entirely on empty version.
 				require.Nil(t, got.versionWrite)
 				return
 			}

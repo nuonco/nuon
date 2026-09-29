@@ -56,8 +56,6 @@ func TestHintsAccessors(t *testing.T) {
 	})
 }
 
-// hintedError is a minimal CompositeError that advertises hints, used to verify
-// New() captures them.
 type hintedError struct{ hints Hints }
 
 func (hintedError) Error() string      { return "boom" }
@@ -68,7 +66,6 @@ func (hintedError) Sections() []Section {
 }
 func (e hintedError) Hints() Hints { return e.hints }
 
-// plainError is a CompositeError without hints.
 type plainError struct{}
 
 func (plainError) Error() string       { return "plain" }

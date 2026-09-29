@@ -9,10 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// GetFakeSandboxStackData builds a fake stack output map for sandbox mode orgs,
-// using real keys from the app config with random fake values.
-// stateMap is used to render templated role names (e.g. "{{.install.name}}-admin").
-// NOTE: this is a standalone function because it is used directly within workflows.
 func GetFakeSandboxStackData(appCfg *app.AppConfig, region string, stateMap map[string]interface{}) map[string]any {
 	installInputs := make(map[string]string)
 	for _, input := range appCfg.InputConfig.AppInputs {
@@ -59,7 +55,7 @@ func GetFakeSandboxStackData(appCfg *app.AppConfig, region string, stateMap map[
 			"secret_names":                 map[string]string{},
 		}
 
-	default: // AWS and everything else
+	default:
 		breakGlassRoleARNs := make(map[string]string)
 		for _, role := range appCfg.BreakGlassConfig.Roles {
 			name := renderName(role.Name, stateMap)
@@ -103,7 +99,6 @@ func GetFakeSandboxStackData(appCfg *app.AppConfig, region string, stateMap map[
 	return generics.MergeMap(refs.GetFakeRefs(stackRefs), data)
 }
 
-// renderName renders a templated name using state, falling back to the raw name on error.
 func renderName(name string, stateMap map[string]interface{}) string {
 	if stateMap == nil {
 		return name

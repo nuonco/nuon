@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/pkg/terraform/archive"
 )
 
-// Package dir exposes an archive from a tarball, stored on dir.
 var _ archive.Archive = (*dir)(nil)
 
 type dir struct {
@@ -43,7 +42,6 @@ func New(v *validator.Validate, opts ...dirOption) (*dir, error) {
 	return s, nil
 }
 
-// WithPath name sets the dir path
 func WithPath(path string) dirOption {
 	return func(d *dir) error {
 		path, err := filepath.Abs(path)
@@ -57,7 +55,6 @@ func WithPath(path string) dirOption {
 	}
 }
 
-// WithIgnoreTerraformLockFile ignores the .terraform.lock.hcl
 func WithIgnoreTerraformLockFile() dirOption {
 	return func(d *dir) error {
 		d.IgnoreTerraformLockFile = true
@@ -65,7 +62,6 @@ func WithIgnoreTerraformLockFile() dirOption {
 	}
 }
 
-// WithIgnoreDotTerraformDir ignores the .terraform directory
 func WithIgnoreDotTerraformDir() dirOption {
 	return func(d *dir) error {
 		d.IgnoreDotTerraformDir = true
@@ -73,7 +69,6 @@ func WithIgnoreDotTerraformDir() dirOption {
 	}
 }
 
-// WithIgnoreStateFile ignores the .terraform.tfstate file
 func WithIgnoreTerraformStateFile() dirOption {
 	return func(d *dir) error {
 		d.IgnoreTerraformStateFile = true
@@ -81,7 +76,6 @@ func WithIgnoreTerraformStateFile() dirOption {
 	}
 }
 
-// WithAddBackendFile
 func WithAddBackendFile(typ string) dirOption {
 	return func(d *dir) error {
 		d.AddBackendFile = true

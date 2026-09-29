@@ -84,7 +84,6 @@ func (r *RunnerJobExecutionResult) GetContentsDisplayDecompressedBytes() ([]byte
 	if len(r.ContentsDisplayGzip) == 0 {
 		return []byte{}, nil
 	}
-	// take the []byte and uncompress it
 	cdBuffer := bytes.NewReader(r.ContentsDisplayGzip)
 	reader, err := gzip.NewReader(cdBuffer)
 	if err != nil {
@@ -103,8 +102,7 @@ func (r *RunnerJobExecutionResult) GetContentsB64String() (string, error) {
 	if len(r.ContentsGzip) == 0 {
 		return "", nil
 	}
-	// base64 encode
-	planB64 := base64.StdEncoding.EncodeToString(r.ContentsGzip) // NOTE(fd): internally we can use StdEncoding
+	planB64 := base64.StdEncoding.EncodeToString(r.ContentsGzip)
 	return planB64, nil
 }
 
@@ -112,8 +110,6 @@ func (r *RunnerJobExecutionResult) GetContentsDecompressedBytes() ([]byte, error
 	if len(r.ContentsGzip) == 0 {
 		return []byte{}, nil
 	}
-	// ContentsGzip is stored as raw gzip bytes (already base64-decoded on write).
-	// Use plans.DecompressPlan only when you still have the base64-encoded string.
 	cdBuffer := bytes.NewReader(r.ContentsGzip)
 	reader, err := gzip.NewReader(cdBuffer)
 	if err != nil {

@@ -3,8 +3,6 @@ import { installNameTaken } from './install-name-taken'
 
 type Page = { names: string[]; hasNext?: boolean }
 
-// Only fetch is stubbed, so getAppInstalls, buildQueryParams and the paginated
-// header handling in api() all run for real.
 const pages: Page[] = []
 const requests: URL[] = []
 
@@ -17,7 +15,7 @@ const pageResponse = ({ names, hasNext = false }: Page) =>
     },
   })
 
-// fetch is swapped by hand rather than with spyOn, because mock.restore() in
+// why: fetch is swapped by hand rather than with spyOn, because mock.restore() in
 // other test files also tears down global spies installed here.
 const realFetch = globalThis.fetch
 const stubFetch = (handler: () => Response) => {

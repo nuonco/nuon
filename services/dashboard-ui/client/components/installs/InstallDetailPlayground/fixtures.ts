@@ -359,8 +359,6 @@ const HEALTH_BRANCH_MOVED = healthFromDaily(
   ]
 )
 
-// ─── Shared resource fixtures ─────────────────────────────────────────────────
-
 const COMMON_RESOURCES = {
   roles: [
     {
@@ -555,8 +553,6 @@ const COMMON_RUNNER = {
   ],
 }
 
-// ─── Readme fixture ───────────────────────────────────────────────────────────
-
 const COMMON_README = `# acme-prod
 
 This install runs Acme in the customer's AWS account \`111122223333\` in
@@ -589,8 +585,6 @@ role \`acme-prod-admin\` and note the reason in the incident channel.
 > Updates are applied automatically when the tracked app branch changes. If a
 > component is lagging, open the Activity tab and inspect the latest deploy.
 `
-
-// ─── Configuration fixtures ───────────────────────────────────────────────────
 
 const CONFIG_FILE_CONTENTS = `[install]
 name = "acme-prod"
@@ -980,8 +974,6 @@ const BRANCH_MOVED_CONFIGURATION: TPlaygroundConfiguration = {
   ],
 }
 
-// ─── Branch tracking fixtures ─────────────────────────────────────────────────
-
 const BRANCH_TRACKING_CURRENT: TBranchTracking = {
   targetBranch: 'main',
   branchId: 'br-acme-main',
@@ -1031,8 +1023,6 @@ const BRANCH_TRACKING_MOVED: TBranchTracking = {
   },
   status: 'updating',
 }
-
-// ─── Deployment change prototypes ─────────────────────────────────────────────
 
 const COMMON_DEPLOYMENTS: TDeploymentRecord[] = [
   {
@@ -1498,9 +1488,6 @@ const COMMON_DEPLOYMENTS: TDeploymentRecord[] = [
   },
 ]
 
-// ─── Shared activity events ───────────────────────────────────────────────────
-
-// Newest first. One record per workflow — no duplicates.
 const COMMON_ACTIVITY: TActivityEvent[] = [
   {
     id: 'ev-deploy-5',
@@ -1572,8 +1559,6 @@ const COMMON_ACTIVITY: TActivityEvent[] = [
   },
 ]
 
-// ─── Config lag — current ─────────────────────────────────────────────────────
-
 const CONFIG_LAG_CURRENT = {
   stack: {
     name: 'stack',
@@ -1628,8 +1613,6 @@ const CONFIG_LAG_CURRENT = {
     },
   ],
 }
-
-// ─── Scenario 1: Everything in sync ──────────────────────────────────────────
 
 export const configCurrentFixture: TPlaygroundInstall = {
   id: 'inst-01hzacmeprod',
@@ -1693,8 +1676,6 @@ export const configCurrentFixture: TPlaygroundInstall = {
   health: HEALTH_CURRENT,
   readme: COMMON_README,
 }
-
-// ─── Scenario 2: Branch target moved to feat/multi-region ────────────────────
 
 export const branchMovedFixture: TPlaygroundInstall = {
   ...configCurrentFixture,
@@ -1794,8 +1775,6 @@ export const branchMovedFixture: TPlaygroundInstall = {
     ...COMMON_ACTIVITY,
   ],
 }
-
-// ─── Scenario 3: Branch current, api/worker components mid-deploy ─────────────
 
 export const resourceLagFixture: TPlaygroundInstall = {
   ...configCurrentFixture,
@@ -1952,8 +1931,6 @@ export const resourceLagFixture: TPlaygroundInstall = {
     ],
   },
 }
-
-// ─── Scenario 4: Config current, infra drift on sandbox + cache ───────────────
 
 export const infraDriftFixture: TPlaygroundInstall = {
   ...configCurrentFixture,

@@ -54,14 +54,12 @@ func New(params Params) *service {
 }
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
-	// New list and get endpoints
 	queues := api.Group("/v1/queues")
 	{
 		queues.GET("", s.ListQueues)
 		queues.GET("/:queue_id", s.GetQueue)
 	}
 
-	// Existing queue detail endpoints
 	queueDetail := api.Group("/v1/queues/:queue_id")
 	{
 		queueDetail.GET("/status", s.GetQueueStatus)
@@ -96,7 +94,6 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	return nil
 }
 
-// getQueue retrieves a queue by ID from the database
 func (s *service) getQueue(ctx *gin.Context, queueID string) (*app.Queue, error) {
 	var queue app.Queue
 	res := s.db.WithContext(ctx).

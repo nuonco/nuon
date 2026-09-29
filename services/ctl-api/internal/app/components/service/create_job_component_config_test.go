@@ -14,10 +14,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestCreateAppJobConfigSuccess() {
 	s.Run("creates config with image_url and tag", func() {
 		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeJob)
@@ -73,10 +69,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppJobConfigWithOptionalFields() 
 	})
 }
 
-// ---------------------------------------------------------------------------
-// Validation error cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestCreateAppJobConfigValidationErrors() {
 	comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeJob)
 	path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/job", s.testApp.ID, comp.ID)
@@ -112,10 +104,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppJobConfigValidationErrors() {
 		})
 	}
 }
-
-// ---------------------------------------------------------------------------
-// Signals
-// ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestCreateAppJobConfigSignals() {
 	s.Run("sends OperationConfigCreated and OperationUpdateComponentType signals", func() {

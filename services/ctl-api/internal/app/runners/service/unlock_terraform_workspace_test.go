@@ -74,7 +74,6 @@ func (s *UnlockTerraformWorkspaceTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes (needs org context)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -95,7 +94,6 @@ func (s *UnlockTerraformWorkspaceTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create terraform workspace
 	s.testWS = &app.TerraformWorkspace{
 		ID:        domains.NewTerraformWorkspaceID(),
 		OrgID:     s.testOrg.ID,
@@ -140,7 +138,6 @@ func (s *UnlockTerraformWorkspaceTestSuite) TestUnlockTerraformWorkspace() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create workspace with lock
 				ws := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     s.testOrg.ID,
@@ -150,7 +147,6 @@ func (s *UnlockTerraformWorkspaceTestSuite) TestUnlockTerraformWorkspace() {
 				err := s.service.DB.WithContext(ctx).Create(ws).Error
 				require.NoError(s.T(), err)
 
-				// Create lock
 				lock := &app.TerraformWorkspaceLock{
 					ID:          domains.NewTerraformWorkspaceLockID(),
 					WorkspaceID: ws.ID,
@@ -174,7 +170,6 @@ func (s *UnlockTerraformWorkspaceTestSuite) TestUnlockTerraformWorkspace() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(workspaceID string) {
-				// Verify lock was removed from DB
 				var lock app.TerraformWorkspaceLock
 				err := s.service.DB.Where("workspace_id = ?", workspaceID).First(&lock).Error
 				assert.Error(s.T(), err)
@@ -208,7 +203,6 @@ func (s *UnlockTerraformWorkspaceTestSuite) TestUnlockTerraformWorkspace() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -221,7 +215,6 @@ func (s *UnlockTerraformWorkspaceTestSuite) TestUnlockTerraformWorkspace() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create workspace in org2
 				ws2 := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     org2.ID,

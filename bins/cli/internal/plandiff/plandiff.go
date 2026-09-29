@@ -2,9 +2,6 @@ package plandiff
 
 import "fmt"
 
-// FormatPlan detects the plan type and returns a formatted string for terminal output.
-// It automatically detects whether the JSON is a Terraform, Helm, or Kubernetes plan
-// and uses the appropriate parser and formatter.
 func FormatPlan(jsonStr string) (string, error) {
 	planType, rawPlan, err := DetectPlanType(jsonStr)
 	if err != nil {
@@ -41,8 +38,6 @@ func FormatPlan(jsonStr string) (string, error) {
 	}
 }
 
-// HasChanges detects the plan type and returns true if the plan has any meaningful changes.
-// This can be used to determine if approval is needed or if the plan is a no-op.
 func HasChanges(jsonStr string) (bool, error) {
 	planType, rawPlan, err := DetectPlanType(jsonStr)
 	if err != nil {
@@ -79,8 +74,6 @@ func HasChanges(jsonStr string) (bool, error) {
 	}
 }
 
-// GetPlanType returns the detected plan type for a JSON string.
-// This is useful when you need to know the type before formatting.
 func GetPlanType(jsonStr string) (PlanType, error) {
 	planType, _, err := DetectPlanType(jsonStr)
 	return planType, err

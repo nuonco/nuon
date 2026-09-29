@@ -1,4 +1,3 @@
-// operationroles implements various rules around what role to use for a particular operation
 package operationroles
 
 import (
@@ -14,58 +13,41 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// SelectionContext contains all information needed for role selection
 type SelectionContext struct {
 	Operation app.OperationType
 
-	// "component", "sandbox", "action"
 	PrincipalType principal.Type
-	// Component/action name (empty for sandbox)
 	PrincipalName string
 
-	// Configuration sources (in precedence order)
-	// --role flag from CLI/UI (highest precedence)
-	RuntimeRole string
-	// Component/sandbox/action config
-	EntityRoles EntityOperationRoleMap
-	// App-level rules from DB
-	MatrixRules []*app.AppOperationRoleRule
-	// DefaultRole is the role selected if none of the rules associate with the principal and operation
-	DefaultRole string
-	// Break Glass role
+	RuntimeRole    string
+	EntityRoles    EntityOperationRoleMap
+	MatrixRules    []*app.AppOperationRoleRule
+	DefaultRole    string
 	BreakGlassRole string
 
 	StackOutputs *app.InstallStackOutputs
 
 	AppConfig *app.AppConfig
 
-	// Install state for rendering role names with templating
 	InstallState *state.State
 }
 
-// RoleSelectionSource represents where a role selection came from
 type RoleSelectionSource string
 
 const (
-	// selected at runtime
-	RoleSelectionSourceRuntime RoleSelectionSource = "runtime"
-	// defined in entity definition, in component, action or sandbox
-	RoleSelectionSourceEntity RoleSelectionSource = "entity"
-	// defined in app config rules
-	RoleSelectionSourceMatrix RoleSelectionSource = "matrix"
-	// existing behavior
-	RoleSelectionSourceDefault RoleSelectionSource = "default"
-	// break glass
+	RoleSelectionSourceRuntime    RoleSelectionSource = "runtime"
+	RoleSelectionSourceEntity     RoleSelectionSource = "entity"
+	RoleSelectionSourceMatrix     RoleSelectionSource = "matrix"
+	RoleSelectionSourceDefault    RoleSelectionSource = "default"
 	RoleSelectionSourceBreakGlass RoleSelectionSource = "breakglass"
 )
 
 type RoleSelection struct {
-	RoleName           string `temporaljson:"role_name"`
-	UnrenderedRoleName string `temporaljson:"unrendered_role_name"`
-	// RoleArn is arn/id/unique identifier for the role depending on cloud provider
-	RoleARN string                           `temporaljson:"role_arn"`
-	Source  RoleSelectionSource              `temporaljson:"source"`
-	Trace   []app.InstallRoleSelectionRecord `temporaljson:"trace"`
+	RoleName           string                           `temporaljson:"role_name"`
+	UnrenderedRoleName string                           `temporaljson:"unrendered_role_name"`
+	RoleARN            string                           `temporaljson:"role_arn"`
+	Source             RoleSelectionSource              `temporaljson:"source"`
+	Trace              []app.InstallRoleSelectionRecord `temporaljson:"trace"`
 }
 
 type SelectionError struct {
@@ -76,12 +58,6 @@ type SelectionError struct {
 func (e *SelectionError) Error() string { return e.Err.Error() }
 func (e *SelectionError) Unwrap() error { return e.Err }
 
-// SelectRole determines which role to use based on precedence rules
-// Precedence (highest to lowest):
-// 1. Runtime override (CLI --role flag or UI selection)
-// 2. Entity-level config (component/sandbox/action specific)
-// 3. Matrix rules (app-level operation_roles config)
-// 4. Default roles (provision/maintenance/deprovision)
 func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 	if ctx == nil {
 		return nil, fmt.Errorf("selection context is required")
@@ -154,7 +130,6 @@ func SelectDefaultRole(ctx *SelectionContext) (*RoleSelection, error) {
 }
 
 func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
-	// Add nil check for StackOutputs before dereferencing
 	if ctx.StackOutputs == nil {
 		return nil, fmt.Errorf("stack outputs are required")
 	}
@@ -165,13 +140,11 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 		return nil, &SelectionError{Trace: trace, Err: fmt.Errorf("no default role configured for %s", ctx.Operation)}
 	}
 
-	// Render default role name with install state (fixes template rendering in sandbox and default paths)
 	renderedDefaultRole, err := renderRoleName(ctx.DefaultRole, ctx.InstallState)
 	if err != nil {
 		return nil, &SelectionError{Trace: trace, Err: fmt.Errorf("unable to render default role name: %w", err)}
 	}
 
-	// 1. Runtime override (highest precedence)
 	runtimeAvailable := ctx.RuntimeRole != ""
 	if runtimeAvailable {
 		renderedRuntimeRole, err := renderRoleName(ctx.RuntimeRole, ctx.InstallState)
@@ -197,7 +170,6 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 		Available:  false,
 	})
 
-	// 2. Break glass situation, we should respect break glass role definition
 	breakGlassAvailable := ctx.BreakGlassRole != ""
 	if breakGlassAvailable {
 		renderedBreakGlassRole, err := renderRoleName(ctx.BreakGlassRole, ctx.InstallState)
@@ -223,7 +195,6 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 		Available:  false,
 	})
 
-	// 3. Entity-level config
 	entityRoleName := findEntityRole(ctx.EntityRoles, ctx.Operation)
 	entityAvailable := entityRoleName != ""
 	if entityAvailable {
@@ -250,7 +221,6 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 		Available:  false,
 	})
 
-	// 4. Matrix rules
 	matrixRoleName, matrixFound, err := findMatrixRole(
 		ctx.MatrixRules,
 		ctx.PrincipalType,
@@ -322,7 +292,6 @@ func findMatrixRole(
 		return "", false, fmt.Errorf("unable to render principal name %q: %w", principalName, err)
 	}
 
-	// Find matching rule
 	for _, rule := range rules {
 		if rule.Operation != operation {
 			continue
@@ -354,7 +323,6 @@ func findMatrixRole(
 	return "", false, nil
 }
 
-// renderRoleName renders a role name template using install state
 func renderRoleName(roleName string, installState *state.State) (string, error) {
 	if installState == nil || roleName == "" {
 		return roleName, nil
@@ -373,8 +341,6 @@ func renderRoleName(roleName string, installState *state.State) (string, error) 
 	return rendered, nil
 }
 
-// ResolveRoleARN looks up the ARN for a given role name from stack outputs.
-// Currently mostly does heavy lifting for AWS since Azure is not yet supported.
 func resolveRoleARN(
 	renderedRoleName string,
 	appCfg *app.AppConfig,
@@ -409,7 +375,6 @@ func resolveRoleARN(
 	return roleARN, nil
 }
 
-// getRoleMap returns a map of renderRoleName role name to role arn
 func getRoleMap(appCfg *app.AppConfig, stackOutputs app.StackOutput, installState *state.State) (map[string]string, error) {
 	if appCfg == nil {
 		return nil, fmt.Errorf("app config is required")

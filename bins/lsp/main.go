@@ -21,7 +21,6 @@ var version string = "0.0.1"
 var handler protocol.Handler
 
 func main() {
-	// Parse command line flags
 	port := flag.Int("port", 0, "TCP port to listen on (0 = stdio mode for production)")
 	healthPort := flag.Int("health-port", 0, "HTTP port for health checks (0 = disabled)")
 	flag.Parse()
@@ -43,18 +42,15 @@ func main() {
 
 	server := server.NewServer(&handler, lsName, true)
 
-	// Start health check server if requested
 	if *healthPort > 0 {
 		go startHealthCheckServer(*healthPort)
 	}
 
 	if *port > 0 {
-		// TCP mode for local development
 		address := fmt.Sprintf("127.0.0.1:%d", *port)
 		commonlog.NewInfoMessage(0, "Starting LSP server in TCP mode on %s", address)
 		server.RunTCP(address)
 	} else {
-		// Stdio mode for production (used by VS Code extension)
 		server.RunStdio()
 	}
 }
@@ -75,7 +71,6 @@ func startHealthCheckServer(port int) {
 func initialize(context *glsp.Context, params *protocol.InitializeParams) (any, error) {
 	commonlog.NewInfoMessage(0, "Initializing server...")
 
-	// Store workspace folders for scanning
 	if params.WorkspaceFolders != nil && len(params.WorkspaceFolders) > 0 {
 		handlers.SetWorkspaceFolders(params.WorkspaceFolders)
 		commonlog.NewInfoMessage(0, fmt.Sprintf("Found %d workspace folder(s)", len(params.WorkspaceFolders)))

@@ -43,7 +43,6 @@ func (s *service) GetAppComponentLatestConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Validate component belongs to the requesting org AND the specified app
 	if comp.OrgID != org.ID || comp.AppID != appID {
 		ctx.Error(fmt.Errorf("component not found: %w", gorm.ErrRecordNotFound))
 		return
@@ -89,7 +88,6 @@ func (s *service) GetComponentLatestConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Validate component belongs to the requesting org
 	if comp.OrgID != org.ID {
 		ctx.Error(fmt.Errorf("component not found: %w", gorm.ErrRecordNotFound))
 		return

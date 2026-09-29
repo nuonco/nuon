@@ -8,7 +8,6 @@ import (
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 )
 
-//
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock..go -source=ecr.go -package=ecr
 type Client interface {
@@ -17,7 +16,6 @@ type Client interface {
 
 var _ Client = (*ecrAuthorizer)(nil)
 
-// ecrAuthorizer is a type that lets you get a token from ECR
 type ecrAuthorizer struct {
 	v *validator.Validate `validate:"required"`
 
@@ -46,28 +44,18 @@ func New(v *validator.Validate, opts ...Option) (*ecrAuthorizer, error) {
 	return auth, nil
 }
 
-// WithRegistryID is used to set the registry id
 func WithRegistryID(registryID string) Option {
 	return func(ecr *ecrAuthorizer) error {
-		// ecr.RegistryID = registryID
 		return nil
 	}
 }
 
-// WithImageURL is used to determine the regsitry id
 func WithImageURL(url string) Option {
 	return func(ecr *ecrAuthorizer) error {
-		//registryID, err := parseImageURL(url)
-		//if err != nil {
-		//return err
-		//}
-
-		// ecr.RegistryID = registryID
 		return nil
 	}
 }
 
-// WithUseDefault is used to fetch the default registry
 func WithUseDefault(useDefault bool) Option {
 	return func(ecr *ecrAuthorizer) error {
 		ecr.UseDefault = useDefault
@@ -75,7 +63,6 @@ func WithUseDefault(useDefault bool) Option {
 	}
 }
 
-// WithCredentials is used to set the credentials that will be used by this
 func WithCredentials(creds *credentials.Config) Option {
 	return func(ecr *ecrAuthorizer) error {
 		ecr.Credentials = creds
@@ -83,7 +70,6 @@ func WithCredentials(creds *credentials.Config) Option {
 	}
 }
 
-// WithRepository is used to set the registry id by parsing the repository url
 func WithRepository(repository string) Option {
 	return func(ecr *ecrAuthorizer) error {
 		return nil

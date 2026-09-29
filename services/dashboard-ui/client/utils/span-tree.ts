@@ -114,20 +114,6 @@ export const traceEnd = (spans: TSpan[]): number => {
   }, Number.NEGATIVE_INFINITY)
 }
 
-// Runner-internal spans are the scaffolding the runner emits around every
-// job: the per-step `step.<name>` spans (fetching, planning, applying, …)
-// and any other span whose nuon.tool == "runner" that isn't itself a job
-// root. End users almost always want to see the high-level job span plus
-// the tool operations underneath it (terraform.plan, helm.install,
-// git.clone, …) — not the intermediate runner machinery.
-//
-// `filterRunnerInternal` drops those scaffolding spans and re-parents
-// their children to the nearest visible ancestor so the tree still
-// reads top-to-bottom: job.deploy → terraform.plan instead of
-// job.deploy → step.planning → terraform.plan.
-//
-// Job spans (nuon.tool == "runner" with nuon.job.type set) are kept —
-// they're the user-recognized unit of work and anchor the timeline.
 const isRunnerInternal = (span: TSpan): boolean => {
   const attrs = span.attributes
   if (!attrs) return false

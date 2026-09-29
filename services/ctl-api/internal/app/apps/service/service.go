@@ -61,7 +61,6 @@ var _ api.Service = (*service)(nil)
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	ge.GET("/v1/branches", s.GetOrgBranches)
 
-	// manage apps
 	apps := ge.Group("/v1/apps")
 	{
 		apps.POST("", s.CreateApp)
@@ -71,18 +70,16 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		apps.DELETE("/:app_id", s.DeleteApp)
 	}
 
-	// app-specific routes
 	app := ge.Group("/v1/apps/:app_id")
 	{
-		// app configs
 		app.GET("/template-config", s.GetAppConfigTemplate)
-		appConfig := app.Group("/config") // deprecated singular route
+		appConfig := app.Group("/config")
 		{
-			s.POST(appConfig, "", s.CreateAppConfig, api.APIContextTypePublic, true)                                        // deprecated singular route
-			s.GET(appConfig, "/:app_config_id", s.GetAppConfig, api.APIContextTypePublic, true)                             // deprecated singular route
-			s.PATCH(appConfig, "/:app_config_id", s.UpdateAppConfig, api.APIContextTypePublic, true)                        // deprecated singular route
-			s.POST(appConfig, "/:app_config_id/update-installs", s.UpdateAppConfigInstalls, api.APIContextTypePublic, true) // deprecated singular route
-			s.GET(appConfig, "/:app_config_id/graph", s.GetAppConfigGraph, api.APIContextTypePublic, true)                  // deprecated singular route
+			s.POST(appConfig, "", s.CreateAppConfig, api.APIContextTypePublic, true)
+			s.GET(appConfig, "/:app_config_id", s.GetAppConfig, api.APIContextTypePublic, true)
+			s.PATCH(appConfig, "/:app_config_id", s.UpdateAppConfig, api.APIContextTypePublic, true)
+			s.POST(appConfig, "/:app_config_id/update-installs", s.UpdateAppConfigInstalls, api.APIContextTypePublic, true)
+			s.GET(appConfig, "/:app_config_id/graph", s.GetAppConfigGraph, api.APIContextTypePublic, true)
 		}
 
 		appConfigs := app.Group("/configs")
@@ -98,7 +95,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			appConfigs.GET("/:config_id/diff", s.GetAppConfigDiff)
 		}
 
-		// app sandbox builds
 		sandboxBuilds := app.Group("/sandbox/builds")
 		{
 			sandboxBuilds.GET("", s.GetAppSandboxBuilds)
@@ -106,10 +102,9 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			sandboxBuilds.GET("/:build_id", s.GetAppSandboxBuild)
 		}
 
-		// app sandbox management
 		sandboxConfig := app.Group("/sandbox-config")
 		{
-			s.POST(sandboxConfig, "", s.CreateAppSandboxConfigV2, api.APIContextTypePublic, true) // deprecated singular route
+			s.POST(sandboxConfig, "", s.CreateAppSandboxConfigV2, api.APIContextTypePublic, true)
 		}
 
 		sandboxConfigs := app.Group("/sandbox-configs")
@@ -120,27 +115,23 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 
 		app.GET("/labels", s.GetAppLabels)
 
-		// app secrets configs management
 		secretsConfigs := app.Group("/secrets-configs")
 		{
 			secretsConfigs.POST("", s.CreateAppSecretsConfig)
 			secretsConfigs.GET("/:config_id", s.GetAppSecretsConfig)
 		}
 
-		// app kubernetes contexts management
 		kubernetesContextsConfigs := app.Group("/kubernetes-contexts-configs")
 		{
 			kubernetesContextsConfigs.POST("", s.CreateAppKubernetesContextsConfig)
 		}
 
-		// app stack configs
 		stackConfigs := app.Group("/stack-configs")
 		{
 			stackConfigs.POST("", s.CreateAppStackConfig)
 			stackConfigs.GET("/:config_id", s.GetAppSecretsConfig)
 		}
 
-		// app policies management
 		policiesConfigs := app.Group("/policies-configs")
 		{
 			policiesConfigs.GET("", s.GetAppPoliciesConfigs)
@@ -148,17 +139,14 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			policiesConfigs.GET("/:config_id", s.GetAppPoliciesConfig)
 		}
 
-		// individual policy config lookup
 		app.GET("/policy-config/:policy_config_id", s.GetAppPolicyConfig)
 
-		// app break glass
 		breakGlassConfigs := app.Group("/break-glass-configs")
 		{
 			breakGlassConfigs.POST("", s.CreateAppBreakGlasssConfig)
 			breakGlassConfigs.GET("/:config_id", s.GetAppBreakGlassConfig)
 		}
 
-		// app permissions
 		permissionsConfigs := app.Group("/permissions-configs")
 		{
 			permissionsConfigs.POST("", s.CreateAppPermissionsConfig)
@@ -171,14 +159,12 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			operationRoleConfigs.GET("/:operation_role_config_id", s.GetAppOperationRoleConfigs)
 		}
 
-		// app runner management
 		runnerConfigs := app.Group("/runner-configs")
 		{
 			runnerConfigs.POST("", s.CreateAppRunnerConfig)
 			runnerConfigs.GET("", s.GetAppRunnerConfigs)
 		}
 
-		// app input management
 		app.POST("/input-config", s.CreateAppInputsConfig)
 		inputConfigs := app.Group("/input-configs")
 		{
@@ -186,12 +172,11 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			inputConfigs.GET("/:input_config_id", s.GetAppInputConfig)
 		}
 
-		// app secrets management
-		s.POST(app, "/secret", s.CreateAppSecretV2, api.APIContextTypePublic, true) // deprecated singular route
+		s.POST(app, "/secret", s.CreateAppSecretV2, api.APIContextTypePublic, true)
 		app.POST("/secrets", s.CreateAppSecretV2)
 		secret := app.Group("/secret")
 		{
-			s.DELETE(secret, "/:secret_id", s.DeleteAppSecret, api.APIContextTypePublic, true) // deprecated singular route
+			s.DELETE(secret, "/:secret_id", s.DeleteAppSecret, api.APIContextTypePublic, true)
 		}
 
 		secrets := app.Group("/secrets")
@@ -201,7 +186,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 
 		}
 
-		// app branches
 		branches := app.Group("/branches")
 		{
 			branches.POST("", s.CreateAppBranch)
@@ -256,13 +240,11 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 }
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
-	// apps
 	apps := api.Group("/v1/apps")
 	{
 		apps.GET("", s.GetAllApps)
 		apps.GET("/details", s.AdminListAppsDetails)
 
-		// app admin routes
 		app := apps.Group("/:app_id")
 		{
 			app.POST("/admin-reprovision", s.AdminReprovisionApp)
@@ -271,7 +253,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		}
 	}
 
-	// app branches
 	appBranches := api.Group("/v1/app-branches")
 	{
 		appBranches.POST("/:app_branch_id/admin-trigger-run", s.AdminTriggerAppBranchRun)

@@ -36,7 +36,6 @@ type ComputeAndStoreAppBranchRunComparisonOutput struct {
 	ConfigDiffStored bool   `json:"config_diff_stored"`
 }
 
-// ConfigDiffWithSourceOutput is FullDiff enriched with source_changed flags.
 type ConfigDiffWithSourceOutput struct {
 	ConfigFile             string                        `json:"config_file"`
 	Additions              int                           `json:"additions"`

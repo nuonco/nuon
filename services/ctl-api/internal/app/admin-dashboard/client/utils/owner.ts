@@ -1,7 +1,3 @@
-// Polymorphic owner_type / owner_id pairs show up on queues, signals,
-// workflows and log streams. Both maps resolve an owner to the admin page that
-// renders it; the ID prefix map covers rows whose owner_type is empty.
-
 const OWNER_TYPE_PATHS: Record<string, string> = {
   installs: 'installs',
   app_branches: 'app-branches',

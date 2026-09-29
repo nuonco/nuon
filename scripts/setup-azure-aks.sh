@@ -1,38 +1,7 @@
 #!/bin/bash
-#
-# Set up an Azure AKS cluster for local ctl-api development.
-#
-# This script creates (or reuses) an AKS cluster with the features required
-# by ctl-api's org-runner provisioning flow:
-#   - OIDC Issuer + Workload Identity (for runner pod auth)
-#   - Azure RBAC enabled
-#   - kubelogin support for local kubectl / ctl-api access
-#
-# It outputs the environment variables ctl-api needs to connect to the cluster
-# (OrgRunnerK8s* fields from config.go).
-#
-# Prerequisites:
-#   - Azure CLI (`az`) installed and logged in
-#   - kubelogin installed (brew install Azure/kubelogin/kubelogin)
-#   - A resource group (can be the same one used by setup-azure-acr.sh)
-#
-# Usage:
-#   ./scripts/setup-azure-aks.sh                           # interactive prompts
-#   ./scripts/setup-azure-aks.sh --rg mygroup              # specify resource group
-#   ./scripts/setup-azure-aks.sh --rg mygroup --name myaks --location eastus
-#
-# After running, source the generated env file:
-#   source /tmp/nuon-azure-aks.env
-#
-# Combine with ACR setup:
-#   source /tmp/nuon-azure-acr.env
-#   source /tmp/nuon-azure-aks.env
-#   go run services/ctl-api/main.go api
-#
 
 set -euo pipefail
 
-# ── parse args ────────────────────────────────────────────────────────
 RESOURCE_GROUP=""
 CLUSTER_NAME=""
 LOCATION=""
@@ -54,7 +23,6 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# ── check prerequisites ──────────────────────────────────────────────
 if ! command -v az &>/dev/null; then
   echo "❌ Azure CLI (az) is not installed. Install it first:"
   echo "   brew install azure-cli"
@@ -82,7 +50,6 @@ echo "Subscription:  ${SUBSCRIPTION_ID}"
 echo "Tenant:        ${TENANT_ID}"
 echo ""
 
-# ── resolve resource group ───────────────────────────────────────────
 if [ -z "$RESOURCE_GROUP" ]; then
   echo "Available resource groups:"
   az group list --query "[].name" -o tsv | head -20
@@ -104,9 +71,7 @@ fi
 
 echo "Resource group: ${RESOURCE_GROUP} (${LOCATION})"
 
-# ── resolve cluster name ─────────────────────────────────────────────
 if [ -z "$CLUSTER_NAME" ]; then
-  # Check for existing AKS cluster in the resource group
   EXISTING_CLUSTER=$(az aks list --resource-group "$RESOURCE_GROUP" \
     --query "[0].name" -o tsv 2>/dev/null || true)
 
@@ -125,11 +90,9 @@ if [ -z "$CLUSTER_NAME" ]; then
   fi
 fi
 
-# ── create or reuse AKS cluster ─────────────────────────────────────
 if az aks show --name "$CLUSTER_NAME" --resource-group "$RESOURCE_GROUP" &>/dev/null; then
   echo "==> Using existing AKS cluster: ${CLUSTER_NAME}"
 
-  # Check if required features are already enabled
   CLUSTER_FEATURES=$(az aks show --name "$CLUSTER_NAME" --resource-group "$RESOURCE_GROUP" \
     --query "{oidc:oidcIssuerProfile.enabled, wi:securityProfile.workloadIdentity.enabled, nap:nodeProvisioningProfile.mode}" -o json)
   HAS_OIDC=$(echo "$CLUSTER_FEATURES" | jq -r '.oidc // false')
@@ -173,7 +136,6 @@ else
   echo "   AKS cluster created."
 fi
 
-# ── get cluster details ──────────────────────────────────────────────
 echo "==> Fetching cluster details..."
 
 CLUSTER_INFO=$(az aks show --name "$CLUSTER_NAME" --resource-group "$RESOURCE_GROUP" -o json)
@@ -183,7 +145,6 @@ API_SERVER=$(echo "$CLUSTER_INFO" | jq -r '.fqdn')
 API_ENDPOINT="https://${API_SERVER}:443"
 OIDC_ISSUER_URL=$(echo "$CLUSTER_INFO" | jq -r '.oidcIssuerProfile.issuerUrl')
 
-# Get the CA data from cluster credentials via temp kubeconfig
 TEMP_KUBECONFIG=$(mktemp)
 trap "rm -f $TEMP_KUBECONFIG" EXIT
 az aks get-credentials \
@@ -203,7 +164,6 @@ echo "Cluster name:  ${CLUSTER_NAME}"
 echo "API endpoint:  ${API_ENDPOINT}"
 echo "CA data:       ${CA_DATA:0:40}..."
 
-# ── assign current user AKS RBAC Cluster Admin ───────────────────────
 echo ""
 echo "==> Ensuring current user has AKS RBAC Cluster Admin role..."
 
@@ -221,7 +181,6 @@ else
   echo "   'Azure Kubernetes Service RBAC Cluster Admin' manually."
 fi
 
-# ── merge kubeconfig for kubectl access ──────────────────────────────
 echo ""
 echo "==> Merging cluster credentials into ~/.kube/config..."
 az aks get-credentials \
@@ -230,11 +189,9 @@ az aks get-credentials \
   --overwrite-existing \
   -o none
 
-# Convert kubeconfig to use kubelogin
 kubelogin convert-kubeconfig -l azurecli 2>/dev/null || true
 echo "   Done. You can now use kubectl against this cluster."
 
-# ── attach ACR if one exists in the same resource group ──────────────
 EXISTING_ACR=$(az acr list --resource-group "$RESOURCE_GROUP" \
   --query "[0].name" -o tsv 2>/dev/null || true)
 if [ -n "$EXISTING_ACR" ] && [ "$EXISTING_ACR" != "null" ]; then
@@ -247,7 +204,6 @@ if [ -n "$EXISTING_ACR" ] && [ "$EXISTING_ACR" != "null" ]; then
     -o none 2>/dev/null || echo "   (already attached or insufficient permissions)"
 fi
 
-# ── write env file ───────────────────────────────────────────────────
 ENV_FILE="/tmp/nuon-azure-aks.env"
 
 cat > "$ENV_FILE" << EOF

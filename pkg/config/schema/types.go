@@ -12,7 +12,6 @@ import (
 )
 
 var SchemaMapping = map[string]func() (*jsonschema.Schema, error){
-	// please maintain a lexographical order here
 	"action":              ActionConfigSchema,
 	"branch":              AppBranchConfigSchema,
 	"break-glass":         BreakGlassConfigSchema,
@@ -45,8 +44,6 @@ var SchemaMapping = map[string]func() (*jsonschema.Schema, error){
 	"terraform":           TerraformModuleConfigSchema,
 }
 
-// normalizeSchemaType maps underscore-style names used in TOML component
-// types (e.g. docker_build, container_image) onto the hyphenated schema keys.
 func normalizeSchemaType(typ string) string {
 	return strings.ReplaceAll(typ, "_", "-")
 }
@@ -65,7 +62,6 @@ func LookupSchemaType(typ string) (*jsonschema.Schema, error) {
 	return schema, nil
 }
 
-// GetSchemaTypes returns all valid schema type names
 func GetSchemaTypes() []string {
 	types := make([]string, 0, len(SchemaMapping))
 	for k := range SchemaMapping {
@@ -74,13 +70,10 @@ func GetSchemaTypes() []string {
 	return types
 }
 
-// IsValidSchemaType checks if a schema type is valid
 func IsValidSchemaType(typ string) bool {
 	_, ok := SchemaMapping[normalizeSchemaType(typ)]
 	return ok
 }
-
-// Schema functions in lexicographical order
 
 func ActionConfigSchema() (*jsonschema.Schema, error) {
 	if err := ValidateJSONSchemaExtend(config.ActionConfig{}); err != nil {
@@ -307,9 +300,6 @@ func MetadataConfigSchema() (*jsonschema.Schema, error) {
 	return r.Reflect(config.MetadataConfig{}), nil
 }
 
-// PermissionSchema is the schema for a single IAM role file, as used by the
-// permissions/ and break_glass/ directory forms (each file is one
-// AppAWSIAMRole).
 func PermissionSchema() (*jsonschema.Schema, error) {
 	if err := ValidateJSONSchemaExtend(config.AppAWSIAMRole{}); err != nil {
 		return nil, errors.Wrap(err, "AppAWSIAMRole validation failed")
@@ -453,35 +443,27 @@ func StackConfigSchema() (*jsonschema.Schema, error) {
 	return r.Reflect(config.StackConfig{}), nil
 }
 
-// ValidateJSONSchemaExtend checks that a struct and all its nested struct fields
-// implement JSONSchemaExtend before being passed to reflection.
-// This ensures proper schema generation with custom extensions.
 func ValidateJSONSchemaExtend(structVal interface{}) error {
 	return validateStructHasJSONSchemaExtend(reflect.TypeOf(structVal), "")
 }
 
 func validateStructHasJSONSchemaExtend(t reflect.Type, fieldPath string) error {
-	// Dereference pointers
 	for t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
 
-	// Handle slices and arrays
 	if t.Kind() == reflect.Slice || t.Kind() == reflect.Array {
 		return validateStructHasJSONSchemaExtend(t.Elem(), fieldPath)
 	}
 
-	// Skip validation for jsonschema.Schema type (built-in exception)
 	if t == reflect.TypeOf(jsonschema.Schema{}) {
 		return nil
 	}
 
-	// Only validate struct types
 	if t.Kind() != reflect.Struct {
 		return nil
 	}
 
-	// Check if this struct implements JSONSchemaExtend
 	method, ok := t.MethodByName("JSONSchemaExtend")
 	if !ok || method.Type.NumIn() != 2 || method.Type.In(1).String() != "*jsonschema.Schema" {
 		fullPath := fieldPath
@@ -491,36 +473,29 @@ func validateStructHasJSONSchemaExtend(t reflect.Type, fieldPath string) error {
 		return fmt.Errorf("struct %s does not implement JSONSchemaExtend(*jsonschema.Schema)", fullPath)
 	}
 
-	// Validate nested struct fields
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 
-		// Skip unexported fields
 		if !field.IsExported() {
 			continue
 		}
 
-		// Skip fields with jsonschema:"-" tag
 		if field.Tag.Get("jsonschema") == "-" {
 			continue
 		}
 
 		fieldType := field.Type
-		// Dereference pointers for field type checking
 		for fieldType.Kind() == reflect.Ptr {
 			fieldType = fieldType.Elem()
 		}
 
-		// Check slices/arrays
 		if fieldType.Kind() == reflect.Slice || fieldType.Kind() == reflect.Array {
 			fieldType = fieldType.Elem()
-			// Dereference again if pointer element
 			for fieldType.Kind() == reflect.Ptr {
 				fieldType = fieldType.Elem()
 			}
 		}
 
-		// If it's a struct, validate it recursively
 		if fieldType.Kind() == reflect.Struct {
 			nestedPath := fieldPath
 			if nestedPath != "" {

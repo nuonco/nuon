@@ -11,13 +11,6 @@ import (
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// cloneStepForRetry fetches the step and workflow from DB, then creates a clone
-// within the same group. The step should already be marked as discarded before
-// this is called.
-//
-// If the step's signal implements SignalWithClone, Clone() is called to produce
-// one or more replacement steps (e.g., a plan signal returns a clean copy, an
-// apply signal returns plan + apply). Otherwise the signal is copied verbatim.
 func CloneStepForRetry(ctx workflow.Context, stepID string, workflowID string) error {
 	step, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, stepID)
 	if err != nil {
@@ -41,7 +34,6 @@ func CloneStepForRetry(ctx workflow.Context, stepID string, workflowID string) e
 		return fmt.Errorf("step %s has exceeded maximum retry count of %d", stepID, maxRetries)
 	}
 
-	// If the signal implements Clone(), use it to produce replacement steps.
 	if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
 		if cl, ok := step.QueueSignal.Signal.(signal.SignalWithClone); ok {
 			defs, cloneErr := cl.Clone(ctx, step.Name)
@@ -55,7 +47,6 @@ func CloneStepForRetry(ctx workflow.Context, stepID string, workflowID string) e
 		}
 	}
 
-	// Default: copy signal verbatim as a single step.
 	_, err = activities.AwaitPkgWorkflowsFlowCreateFlowSteps(ctx, activities.CreateFlowStepsRequest{
 		Steps: []activities.CreateFlowStep{
 			{
@@ -90,7 +81,7 @@ func CloneStepForRetry(ctx workflow.Context, stepID string, workflowID string) e
 	return markStepRetried(ctx, step.ID)
 }
 
-// markStepRetried flags the superseded generation so isWorkflowComplete skips
+// why: markStepRetried flags the superseded generation so isWorkflowComplete skips
 // it while the row keeps its final status for display. Only mark after the
 // clone exists — a failed clone must keep blocking completion.
 func markStepRetried(ctx workflow.Context, stepID string) error {
@@ -102,7 +93,6 @@ func markStepRetried(ctx workflow.Context, stepID string) error {
 	return nil
 }
 
-// createCloneStepsFromDefs builds workflow steps from Clone()-returned defs.
 func createCloneStepsFromDefs(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, defs []signal.CloneStepDef, retryIndex int) error {
 	steps := make([]activities.CreateFlowStep, 0, len(defs))
 	for i, def := range defs {

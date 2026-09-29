@@ -31,11 +31,6 @@ const (
 
 var _ gorm.Plugin = (*metricsWriterPlugin)(nil)
 
-// This is a plugin that emits well-formed metrics to datadog based on queries/operations performed by gorm.
-//
-// It is semi-inspired by https://github.com/go-gorm/prometheus/blob/master/prometheus.go which takes this a step
-// further by pulling in database metrics and emitting them via prometheus, however prometheus is lower level than what
-// we have here.
 func NewMetricsPlugin(mw metrics.Writer, dbType string, L *zapgorm2.Logger) *metricsWriterPlugin {
 	return &metricsWriterPlugin{
 		metricsWriter: mw,
@@ -116,9 +111,6 @@ func (m *metricsWriterPlugin) beforeAll(tx *gorm.DB, operationType OperationType
 	metrics.DBQueryCount += 1
 }
 
-// beforeStatement/afterStatement bracket the core SQL statement (the SELECT/INSERT/UPDATE/DELETE itself), excluding
-// the preload and save/delete-association phases. This isolates the single contained psql request so afterAll can
-// report gorm_statement_latency per statement rather than cumulating association/preload round-trips.
 func (m *metricsWriterPlugin) beforeStatement(tx *gorm.DB) {
 	tx.Statement.Context = context.WithValue(tx.Statement.Context, statementStartKey, time.Now())
 }
@@ -149,7 +141,6 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType)
 	dur := time.Since(startTS)
 	withinTargetLatency := time.Since(startTS) < targetLatency
 
-	// statement latency isolates the root query (no preloads); falls back to dur for ops with no preload phase.
 	stmtDur := dur
 	if v := ctx.Value(statementDurationKey); v != nil {
 		stmtDur = v.(time.Duration)
@@ -165,7 +156,7 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType)
 		tags = append(tags, "pool:"+string(routing.DecisionFromContext(ctx)))
 	}
 
-	// A MetricContext is seeded by the HTTP middleware and the Temporal activity
+	// why: A MetricContext is seeded by the HTTP middleware and the Temporal activity
 	// interceptor, so anything driven by neither — the Kafka consumers, which
 	// write ClickHouse from a poll loop — has none. Fall back to an empty one and
 	// emit with the request-scoped tags blank: returning here instead meant every
@@ -222,7 +213,6 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType)
 		return
 	}
 
-	// statement-level slow query: the root SQL itself exceeded target, excluding preloads.
 	if stmtDur >= statementTargetLatency {
 		stmtEventText := fmt.Sprintf("Slow gorm statement identified for table %s and endpoint %s (latency: %dms)\n\nPrepared SQL: %s\nVars: %v\n",
 			tableName,
@@ -263,7 +253,6 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType)
 		Tags:  tags,
 	})
 
-	// Log slow queries
 	m.l.Error(ctx, "Slow query identified",
 		"table", tableName,
 		"request_uri", metricCtx.RequestURI,

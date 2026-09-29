@@ -18,10 +18,6 @@ import (
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// residentIdleTimeout bounds how long a Resident workflow parks waiting for the
-// next step (e.g. an appended step) after running 0->end. On idle the execute
-// loop returns cleanly so the queue signal completes and history stays finite;
-// the workflow re-warms lazily on the next dispatch.
 const residentIdleTimeout = 15 * time.Minute
 
 type residentScheduleState string
@@ -38,15 +34,9 @@ type residentScheduleDecision struct {
 	Position int
 }
 
-// executeFlow runs the workflow conductor with run-based execution.
-// Each execution segment (initial, retry, skip, resume) is tracked as a WorkflowRun.
-// The flow pauses at approval points and errors, waiting for update handlers to resume.
 func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
-	// Mark the conductor as started so a retry-step update that lands during a
-	// re-warm (before the loop reaches its parked state) is still cloned+queued.
 	s.executeStarted = true
 
-	// Initialize temporal metrics writer if the underlying metrics writer was injected.
 	if s.mw != nil && s.v != nil {
 		tmw, err := tmetrics.New(s.v, tmetrics.WithMetricsWriter(s.mw))
 		if err == nil {
@@ -54,7 +44,6 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 		}
 	}
 
-	// Emit workflow completion metrics on exit.
 	flowStart := workflow.Now(ctx)
 	defer func() {
 		if s.tmw == nil {
@@ -69,17 +58,13 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 		s.tmw.Timing(ctx, "workflow.latency", workflow.Now(ctx).Sub(flowStart), append(wfTags, "status", status)...)
 	}()
 
-	// Create and execute the initial run. Resident hosts may rewarm with
-	// historical (terminal) steps from earlier steps; start the initial run at
-	// the first pending group so completed groups are never replayed. If none
-	// are pending the run is a no-op and the loop parks for the next append.
 	initialRunType := app.WorkflowRunTypeInitial
 	initialStartIdx := 0
 	initialStepID := ""
 	initialScheduleState := residentScheduleRunnable
 	if s.Resident {
 		if s.resumeRequested {
-			// A retry-step update raced ahead of the conductor during re-warm:
+			// why: A retry-step update raced ahead of the conductor during re-warm:
 			// honor its resume so the retry runs instead of being dropped.
 			initialRunType = s.resumeRunType
 			initialStartIdx = s.resumeStartIdx
@@ -117,7 +102,7 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 			runErr = nil
 		}
 
-		// Only a resume requested while parked below is valid; drop stale ones.
+		// why: Only a resume requested while parked below is valid; drop stale ones.
 		// The exception is a run that unwound for await-retry: a retry-step
 		// update that landed while the group was still live (e.g. retry-plan
 		// on a parked approval) already cloned the step and is what caused
@@ -135,9 +120,6 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 							return err
 						}
 					}
-					// Re-assert cancellation after the run unwinds: a cancel that
-					// lands while executeRun is finishing can be overwritten by
-					// its final success status write.
 					s.writeFlowCancelled(ctx)
 				}
 				return nil
@@ -153,9 +135,6 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 					return nil
 				}
 			} else if !s.Resident {
-				// Paused at approval - update run status and wait for resume.
-				// Resident hosts skip this: a non-complete state just means a
-				// freshly appended step is pending, which parkResident runs next.
 				s.updateRunStatus(ctx, run.ID, app.AwaitingApproval)
 			}
 		} else {
@@ -172,7 +151,6 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 				return nil
 			}
 
-			// FlowStoppedErr is a terminal state — not retryable
 			if stoppedErr, ok := runErr.(*flow.FlowStoppedErr); ok {
 				s.updateRunStatus(ctx, run.ID, app.StatusError)
 				metadata := map[string]any{
@@ -201,17 +179,12 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 						Metadata:               metadata,
 					},
 				})
-				// A stop is terminal: the host exits now so the Temporal
-				// workflow closes and the queue signal errors like the flow.
-				// It only stays up when a step is already pending (e.g. a
-				// clone from a retry that raced the stop).
 				if exit, err := s.residentShouldExit(ctx); err != nil {
 					return err
 				} else if exit {
 					return runErr
 				}
 			} else {
-				// Actual execution error
 				s.updateRunStatus(ctx, run.ID, app.StatusError)
 
 				if !s.checkRetryable(ctx) {
@@ -221,7 +194,6 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 						return runErr
 					}
 				} else {
-					// Mark workflow as failed, awaiting retry
 					_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 						ID: s.WorkflowID,
 						Status: app.CompositeStatus{
@@ -237,10 +209,6 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 			}
 		}
 
-		// Wait for the next thing to run, cancel, or idle out. Resident hosts
-		// park until a pending group appears (re-scanning on every wake so a
-		// step appended mid-run is never missed); other workflows wait for an
-		// explicit resume/cancel.
 		if s.Resident {
 			parked, perr := s.parkResident(ctx)
 			if perr != nil {
@@ -255,10 +223,8 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 				return runErr
 			}
 			if !parked {
-				// Idle timeout with nothing pending — exit cleanly.
 				return nil
 			}
-			// parkResident set resumeStartIdx to the first pending group.
 			resumeRunType := s.resumeRunType
 			if resumeRunType == "" {
 				resumeRunType = app.WorkflowRunTypeResume
@@ -288,7 +254,6 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 			return runErr
 		}
 
-		// Create a new run for the resume.
 		s.resumeRequested = false
 		run, err = s.createRun(ctx, s.resumeRunType, s.resumeStepID, s.resumeStartIdx)
 		if err != nil {
@@ -297,10 +262,6 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 	}
 }
 
-// residentShouldExit reports whether a host may return after a terminal run:
-// legacy hosts always do; a resident host does once no update is in flight,
-// none seeded a resume, and no group is pending. A later retry re-warms the
-// host through update-with-start.
 func (s *Signal) residentShouldExit(ctx workflow.Context) (bool, error) {
 	if !s.Resident {
 		return true, nil
@@ -313,16 +274,12 @@ func (s *Signal) residentShouldExit(ctx workflow.Context) (bool, error) {
 	}
 	groups, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroups(ctx, s.WorkflowID)
 	if err != nil || len(groups) == 0 {
-		// Nothing was generated, so nothing can be retried or skipped;
-		// parking would only re-run the same failure.
 		return true, nil
 	}
 	_, pending := s.firstPendingGroupPosition(ctx)
 	return !pending, nil
 }
 
-// executeRun executes a single workflow run, directly managing step generation
-// and execution without going through the WorkflowConductor.
 func (s *Signal) executeRun(ctx workflow.Context, run *app.WorkflowRun) error {
 	cfg := s.stepConfig()
 	startIdx := run.StartFromIdx
@@ -333,15 +290,11 @@ func (s *Signal) executeRun(ctx workflow.Context, run *app.WorkflowRun) error {
 			return nil
 		}
 
-		// Handle ContinueAsNew (batch size limit)
 		if cerr, ok := err.(*flow.ContinueAsNewErr); ok && cerr != nil {
 			startIdx = cerr.StartFromStepIdx
 			continue
 		}
 
-		// ApprovalPauseErr means we stopped at an approval or pause. Legacy
-		// hosts enter the wait loop; resident hosts surface it so the run is
-		// recorded as awaiting-approval before parking.
 		if _, ok := err.(*flow.ApprovalPauseErr); ok {
 			if s.Resident {
 				return err
@@ -349,21 +302,15 @@ func (s *Signal) executeRun(ctx workflow.Context, run *app.WorkflowRun) error {
 			return nil
 		}
 
-		// FlowStoppedErr means the workflow was stopped (denied/skipped) — not a retryable error
 		if _, ok := err.(*flow.FlowStoppedErr); ok {
 			return err
 		}
 
-		// Actual failure
-		_ = cfg // suppress unused warning in case of early return refactors
+		_ = cfg
 		return err
 	}
 }
 
-// handle manages the full lifecycle of a flow execution: generate steps, then
-// dispatch groups sequentially. Each group is dispatched as an execute-workflow-step-group
-// signal. After each group, the flow checks the workflow's ResultDirective and the
-// pause state.
 func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -375,15 +322,11 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 		return errors.Wrap(err, "unable to get workflow object")
 	}
 
-	// Build metric tags from the workflow for lifecycle metrics.
 	wfTags := []string{"workflow_type", s.WorkflowType, "org_id", s.OrgID}
 
 	if flw.Status.Status == app.StatusCancelled {
 		return errors.New("workflow already cancelled")
 	}
-	// Restore cancel flag from persisted metadata. The in-memory
-	// cancelRequested flag is lost across ContinueAsNew boundaries, but
-	// cancel_requested_at in the DB survives.
 	if flw.Status.Metadata != nil {
 		if _, ok := flw.Status.Metadata["cancel_requested_at"]; ok {
 			s.cancelRequested = true
@@ -412,7 +355,6 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			return err
 		}
 
-		// Emit workflow lifecycle metrics on first execution.
 		if s.tmw != nil {
 			s.tmw.Incr(ctx, "workflow.started", wfTags...)
 			s.tmw.Timing(ctx, "workflow.start_latency", workflow.Now(ctx).Sub(flw.CreatedAt), wfTags...)
@@ -421,22 +363,13 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 
 	cfg := s.stepConfig()
 
-	// eagerQueueSignalID tracks whether we used eager step group generation.
-	// If non-empty, we must call CompleteStepGeneration before executing
-	// groups beyond the eager set.
 	var eagerQueueSignalID string
 	var eagerGroupCount int
 
-	// completeDone, completedFlw, and completeErr are used to run
-	// CompleteStepGeneration in a background goroutine so remaining step
-	// groups are persisted to the DB while eager groups execute.
 	var completeDone workflow.Channel
 	var completedFlw *app.Workflow
 	var completeErr error
 
-	// Generate steps if the workflow doesn't already have them.
-	// Steps may be pre-created (e.g. by tests or by a previous run that was
-	// ContinueAsNew'd) — in that case, skip generation.
 	if len(flw.Steps) == 0 {
 		l.Debug("generating steps for workflow")
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
@@ -467,8 +400,6 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			return missingStepsErr
 		}
 
-		// Use eager step groups: fetch and persist the eager groups so we can
-		// begin executing them while the remaining groups may still be generating.
 		earlyResult, err := flow.GenerateEagerStepGroups(ctx, cfg, flw)
 		if err != nil {
 			_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
@@ -502,9 +433,6 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			return err
 		}
 
-		// Start completing step generation in the background so remaining
-		// groups are persisted to the DB (and visible in the UI) while
-		// the eager groups execute.
 		if eagerQueueSignalID != "" {
 			completeDone = workflow.NewChannel(ctx)
 			workflow.Go(ctx, func(gCtx workflow.Context) {
@@ -516,16 +444,12 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 		l.Debug("steps already exist, skipping generation", zap.Int("step_count", len(flw.Steps)))
 	}
 
-	// Load step groups for the workflow.
-	// If groups exist (new path), iterate over them. Otherwise fall back to
-	// collecting group indices from steps (backward compat for in-flight workflows).
 	stepGroups, _ := workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroups(ctx, s.WorkflowID)
 
 	var groups []app.WorkflowStepGroup
 	if len(stepGroups) > 0 {
 		groups = stepGroups
 	} else {
-		// Backward compat: build synthetic group objects from step GroupIdx values.
 		groupIdxs := collectGroupIndices(flw.Steps)
 		for _, gIdx := range groupIdxs {
 			groups = append(groups, app.WorkflowStepGroup{
@@ -535,12 +459,8 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 		}
 	}
 
-	// Execute groups
 	l.Debug("executing groups for workflow", zap.Int("group_count", len(groups)))
 
-	// Resident hosts replay nothing: precompute which groups still have a
-	// non-terminal step so already-finished groups (earlier appended steps) are
-	// skipped even on a cold rewarm that starts at group 0.
 	var residentPending map[int]bool
 	if s.Resident {
 		residentPending = make(map[int]bool)
@@ -591,7 +511,7 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 				l.Error("unable to update finished at", zap.Error(err))
 			}
 
-			// If cancellation was requested, preserve the cancelled status
+			// why: If cancellation was requested, preserve the cancelled status
 			// that the cancel handler already set — don't overwrite it with error.
 			if s.cancelRequested {
 				_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
@@ -630,13 +550,11 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 				s.markRemainingStepsNotAttempted(ctx, l)
 				return nil
 			}
-			// Check if pause was requested
 			if s.pauseRequested {
 				return &flow.ApprovalPauseErr{StepID: "paused"}
 			}
 
 		case flowdirective.GroupStop:
-			// Derive the reason before the sweeps overwrite step statuses.
 			stepName, reason := "", ""
 			var stepCE *compositeerrors.CompositeErrorData
 			if workflow.GetVersion(ctx, groupStopReasonVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
@@ -665,9 +583,7 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			}
 
 		case flowdirective.GroupRetryGroup:
-			// Clone the group and re-dispatch the same group position.
 			if err := s.cloneGroupForRetry(ctx, group.GroupIdx); err != nil {
-				// Retry limit exceeded: treat as a stop directive.
 				s.markRemainingGroupStepsDiscarded(ctx, l, groups, gi)
 				s.markRemainingStepsNotAttempted(ctx, l)
 				if finErr := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, s.WorkflowID); finErr != nil {
@@ -677,7 +593,6 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 				stoppedErr.RetriesExhausted = true
 				return stoppedErr
 			}
-			// Re-fetch groups
 			stepGroups, _ = workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroups(ctx, s.WorkflowID)
 			if len(stepGroups) > 0 {
 				groups = stepGroups
@@ -695,19 +610,17 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 					})
 				}
 			}
-			gi-- // Retry the same group position
+			gi--
 			continue
 
 		case flowdirective.GroupSkipGroup:
 			continue
 		}
 
-		// After the last eager group finishes, wait for the background
-		// CompleteStepGeneration goroutine and reload groups.
 		if gi+1 == eagerGroupCount && completeDone != nil {
 			l.Debug("waiting for parallel step generation to complete", zap.Int("eager_group_count", eagerGroupCount))
 			completeDone.Receive(ctx, nil)
-			completeDone = nil // only complete once
+			completeDone = nil
 
 			if completeErr != nil {
 				return errors.Wrap(completeErr, "unable to complete step generation")
@@ -727,9 +640,6 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 				eagerExecuted[groups[i].GroupIdx] = true
 			}
 
-			// Check for cancellation before overwriting status. The cancel
-			// handler may have set StatusCancelled while we were waiting for
-			// step generation to complete.
 			if s.cancelRequested {
 				s.markRemainingGroupStepsDiscarded(ctx, l, groups, gi)
 				s.markRemainingStepsNotAttempted(ctx, l)
@@ -747,7 +657,6 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 				},
 			})
 
-			// Reload groups from DB now that all are persisted.
 			stepGroups, _ = workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroups(ctx, s.WorkflowID)
 			if len(stepGroups) > 0 {
 				groups = stepGroups
@@ -762,7 +671,6 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 				}
 			}
 
-			// Eager groups can sit mid-list in group_idx order; rewind so groups ordered before them are not skipped.
 			next := len(groups)
 			for i := range groups {
 				if !eagerExecuted[groups[i].GroupIdx] {
@@ -773,19 +681,17 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			gi = next - 1
 		}
 
-		// ContinueAsNew every 5 groups to bound workflow history
 		if (gi+1-startFromGroupIdx) > 0 && (gi+1-startFromGroupIdx)%5 == 0 {
 			return &flow.ContinueAsNewErr{StartFromStepIdx: gi + 1}
 		}
 	}
 
-	// Resident hosts skip groups they consider non-pending; guard against a
+	// why: Resident hosts skip groups they consider non-pending; guard against a
 	// scan that left a step non-terminal before stamping the flow finished.
 	if s.Resident && !s.isWorkflowComplete(ctx) {
 		return errors.Errorf("workflow %s is not complete after executing all groups", s.WorkflowID)
 	}
 
-	// All groups done
 	if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, s.WorkflowID); err != nil {
 		l.Error("unable to update finished at", zap.Error(err))
 	}
@@ -803,7 +709,6 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 	return nil
 }
 
-// isGroupParallel returns true if any step in the group has GroupParallel=true.
 func isGroupParallel(steps []app.WorkflowStep, groupIdx int) bool {
 	for _, step := range steps {
 		if step.GroupIdx == groupIdx && step.GroupParallel {
@@ -813,7 +718,6 @@ func isGroupParallel(steps []app.WorkflowStep, groupIdx int) bool {
 	return false
 }
 
-// collectGroupIndices extracts sorted unique GroupIdx values from steps.
 func collectGroupIndices(steps []app.WorkflowStep) []int {
 	seen := make(map[int]bool)
 	var groups []int
@@ -823,12 +727,9 @@ func collectGroupIndices(steps []app.WorkflowStep) []int {
 			groups = append(groups, step.GroupIdx)
 		}
 	}
-	// Steps are already ordered by Idx, so groups come out in order
 	return groups
 }
 
-// findGroupPositionForStep returns the position (index into groupIdxs) of the
-// group that contains the given step. Returns 0 if the step is not found.
 func (s *Signal) findGroupPositionForStep(ctx workflow.Context, stepID string) int {
 	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
 		FlowID: s.WorkflowID,
@@ -837,7 +738,6 @@ func (s *Signal) findGroupPositionForStep(ctx workflow.Context, stepID string) i
 		return 0
 	}
 
-	// Find the step's GroupIdx
 	stepGroupIdx := -1
 	for _, step := range steps {
 		if step.ID == stepID {
@@ -849,7 +749,6 @@ func (s *Signal) findGroupPositionForStep(ctx workflow.Context, stepID string) i
 		return 0
 	}
 
-	// Find the position of that GroupIdx in the ordered group list
 	groupIdxs := collectGroupIndices(steps)
 	for i, gIdx := range groupIdxs {
 		if gIdx == stepGroupIdx {
@@ -859,11 +758,6 @@ func (s *Signal) findGroupPositionForStep(ctx workflow.Context, stepID string) i
 	return 0
 }
 
-// markResumeRequested arms the parked Execute loop to resume the run at the
-// group containing stepID. Call it last in an update handler: the paused loop
-// acts on the flag the instant it flips, and reads the fields written just
-// above it. The DB lookups in a handler pause it long enough for Execute to
-// run, so setting the flag first means resuming from a stale resumeStartIdx.
 func (s *Signal) markResumeRequested(ctx workflow.Context, runType app.WorkflowRunType, stepID string) {
 	s.resumeRunType = runType
 	s.resumeStepID = stepID
@@ -871,13 +765,6 @@ func (s *Signal) markResumeRequested(ctx workflow.Context, runType app.WorkflowR
 	s.resumeRequested = true
 }
 
-// firstPendingGroupPosition returns the position (index into the ordered group
-// slice) of the first group that still has a non-terminal step, and whether one
-// exists. Resident hosts use it to (a) start a rewarmed run at the first
-// unfinished group instead of replaying completed history, and (b) decide
-// whether to run or park after each step. Terminal-but-failed groups (e.g. a
-// appended step that errored) are skipped, so one failed step never wedges the
-// host.
 func (s *Signal) residentScheduleDecision(ctx workflow.Context) residentScheduleDecision {
 	groups, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroups(ctx, s.WorkflowID)
 	if err != nil || len(groups) == 0 {
@@ -905,15 +792,10 @@ func (s *Signal) residentScheduleDecision(ctx workflow.Context) residentSchedule
 		}
 	}
 	for pos, g := range groups {
-		// A group that failed without a directive (no stop sweep ran) leaves
-		// downstream groups pending; they must wait for a retry or skip of the
-		// errored step rather than run past it.
 		if g.Status.Status == app.StatusFailedPendingRetry ||
 			(g.Status.Status == app.StatusError && unresolved[g.GroupIdx]) {
 			return residentScheduleDecision{State: residentScheduleBlocked}
 		}
-		// A parked approval holds its group until a response is persisted;
-		// the group then re-dispatches the step to apply it.
 		if unanswered[g.GroupIdx] {
 			return residentScheduleDecision{State: residentScheduleAwaitingApproval}
 		}
@@ -936,21 +818,11 @@ func residentInitialGroupPosition(decision residentScheduleDecision) (int, bool)
 	return 0, false
 }
 
-// parkResident blocks a resident host until there is a pending group to run
-// (e.g. an appended appended step), cancellation is requested, or the idle
-// timeout elapses. It returns (true, nil) when a pending group was found
-// (resumeStartIdx is set to its position), (false, nil) on idle timeout or
-// cancel, and a non-nil error only on context failure. It re-scans on every
-// wake so appends that arrived while a run was still executing — i.e. before
-// the loop parked — are never missed.
 func (s *Signal) parkResident(ctx workflow.Context) (bool, error) {
 	for {
 		if s.cancelRequested {
 			return false, nil
 		}
-		// A retry/skip update in flight has already superseded the failed
-		// step but may not have written its clone yet; scanning inside that
-		// window would see no failure and run the downstream groups.
 		if err := s.awaitResidentUpdates(ctx); err != nil {
 			return false, err
 		}
@@ -975,12 +847,6 @@ func (s *Signal) parkResident(ctx workflow.Context) (bool, error) {
 			return false, err
 		}
 		if !woke {
-			// The idle timer fired. Before closing, make sure no append-step or
-			// retry-step update handler is still running and that no step became
-			// pending. Those handlers persist their step rows before they set
-			// their wake flags, so closing on the timer alone could drop a step
-			// that is still being written. If an update is in flight or a step
-			// is pending, loop back to re-scan and run it.
 			if s.updatesInFlight > 0 {
 				continue
 			}
@@ -988,16 +854,11 @@ func (s *Signal) parkResident(ctx workflow.Context) (bool, error) {
 				s.resumeStartIdx = pos
 				return true, nil
 			}
-			// firstPendingGroupPosition yields on activities; re-check the wake
-			// flags in case an update handler started during that window.
 			if s.updatesInFlight > 0 || s.resumeRequested || s.appendRequested {
 				continue
 			}
-			// Nothing pending: return cleanly so the queue signal completes and
-			// history stays bounded. The host re-warms on the next dispatch.
 			return false, nil
 		}
-		// Woke — loop back to re-scan for a pending group.
 	}
 }
 
@@ -1012,10 +873,6 @@ func (s *Signal) awaitResidentUpdates(ctx workflow.Context) error {
 	return workflow.Await(ctx, func() bool { return s.updatesInFlight == 0 })
 }
 
-// markRemainingGroupStepsDiscarded marks all remaining groups and their
-// non-terminal steps as discarded. This is called when a group returns a
-// "stop" directive (e.g. plan denied) so that future groups and their steps
-// reflect that they were discarded due to an earlier stop.
 func (s *Signal) markRemainingGroupStepsDiscarded(ctx workflow.Context, l *zap.Logger, groups []app.WorkflowStepGroup, currentGroupPosition int) {
 	if currentGroupPosition+1 >= len(groups) {
 		return
@@ -1029,12 +886,10 @@ func (s *Signal) markRemainingGroupStepsDiscarded(ctx workflow.Context, l *zap.L
 		return
 	}
 
-	// Build set of group indices that come after the current group.
 	futureGroupIdxs := make(map[int]bool)
 	for i := currentGroupPosition + 1; i < len(groups); i++ {
 		futureGroupIdxs[groups[i].GroupIdx] = true
 
-		// Mark the group object itself as discarded.
 		if groups[i].ID != "" {
 			if err := statusactivities.AwaitPkgStatusUpdateFlowStepGroupStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: groups[i].ID,
@@ -1073,9 +928,6 @@ func (s *Signal) markRemainingGroupStepsDiscarded(ctx workflow.Context, l *zap.L
 	}
 }
 
-// markRemainingStepsNotAttempted marks all non-terminal steps in the workflow
-// as not-attempted. Called when the workflow is stopped (e.g. retries exhausted)
-// so the dashboard clearly shows which steps were never reached.
 func (s *Signal) markRemainingStepsNotAttempted(ctx workflow.Context, l *zap.Logger) {
 	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
 		FlowID: s.WorkflowID,
@@ -1103,7 +955,6 @@ func (s *Signal) markRemainingStepsNotAttempted(ctx workflow.Context, l *zap.Log
 	}
 }
 
-// isStepTerminal returns true if the step status is a terminal state.
 func isStepTerminal(status app.Status) bool {
 	switch status {
 	case app.StatusSuccess, app.StatusAutoSkipped, app.StatusUserSkipped,
@@ -1117,7 +968,6 @@ func isStepTerminal(status app.Status) bool {
 	return false
 }
 
-// stepConfig returns the StepConfig for this signal.
 func (s *Signal) stepConfig() flow.StepConfig {
 	return flow.StepConfig{
 		GroupQueueName:         s.StepGroupQueueName,
@@ -1130,7 +980,6 @@ func (s *Signal) stepConfig() flow.StepConfig {
 	}
 }
 
-// createRun creates a WorkflowRun record to track this execution segment.
 func (s *Signal) createRun(ctx workflow.Context, runType app.WorkflowRunType, triggerStepID string, startFromIdx int) (*app.WorkflowRun, error) {
 	return workflowactivities.AwaitPkgWorkflowsFlowCreateWorkflowRun(ctx, workflowactivities.CreateWorkflowRunRequest{
 		WorkflowID:    s.WorkflowID,
@@ -1140,7 +989,6 @@ func (s *Signal) createRun(ctx workflow.Context, runType app.WorkflowRunType, tr
 	})
 }
 
-// updateRunStatus updates the status of a workflow run.
 func (s *Signal) updateRunStatus(ctx workflow.Context, runID string, status app.Status) {
 	workflowactivities.AwaitPkgWorkflowsFlowUpdateWorkflowRunStatus(ctx, workflowactivities.UpdateWorkflowRunStatusRequest{
 		RunID: runID,
@@ -1150,7 +998,6 @@ func (s *Signal) updateRunStatus(ctx workflow.Context, runID string, status app.
 	})
 }
 
-// isWorkflowComplete checks if all steps in the workflow have terminal statuses.
 func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, s.WorkflowID)
 	if err != nil {
@@ -1159,9 +1006,6 @@ func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 	terminalErrorComplete := workflow.GetVersion(ctx, workflowCompleteTerminalErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
 
 	for _, step := range steps {
-		// Superseded steps keep their original status (e.g. error) for
-		// dashboard display, but a clone has taken their place — they must
-		// not block workflow completion.
 		if step.Retried {
 			continue
 		}
@@ -1175,11 +1019,6 @@ func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 			if !terminalErrorComplete {
 				return false
 			}
-			// Treat a settled failure (terminal directive) as complete so
-			// failures do not leak forever-open workflows: the group already
-			// acted on it, so nothing will resume this run. A parked error
-			// (await-retry, await-approval, or a legacy empty directive)
-			// still waits on a user decision and is not complete.
 			if flowdirective.Step(step.ResultDirective).IsTerminal() {
 				continue
 			}
@@ -1192,7 +1031,6 @@ func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 	return true
 }
 
-// writeFlowCancelled update's workflow's status to cancelled
 func (s *Signal) writeFlowCancelled(ctx workflow.Context) {
 	if workflow.GetVersion(ctx, flowCancelStatusVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
 		return
@@ -1222,9 +1060,6 @@ func (s *Signal) checkRetryable(ctx workflow.Context) bool {
 	return resp.Retryable
 }
 
-// groupStopReason returns the name and status text of the step that caused
-// the group to stop. The step that writes the StepStop directive owns the
-// user-facing phrasing; this is only a lookup.
 func (s *Signal) groupStopReason(ctx workflow.Context, group *app.WorkflowStepGroup) (string, string, *compositeerrors.CompositeErrorData) {
 	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
 		FlowID: s.WorkflowID,
@@ -1249,8 +1084,6 @@ func stepStopReason(step *app.WorkflowStep) string {
 	return step.Status.StatusHumanDescription
 }
 
-// checkGroupRetriesExhausted checks if any step in the group has retries_exhausted
-// metadata, indicating the stop was caused by retry exhaustion.
 func (s *Signal) checkGroupRetriesExhausted(ctx workflow.Context, group *app.WorkflowStepGroup) bool {
 	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
 		FlowID: s.WorkflowID,
@@ -1270,29 +1103,26 @@ func (s *Signal) checkGroupRetriesExhausted(ctx workflow.Context, group *app.Wor
 	return false
 }
 
-// runnerDisabledCheckVersion gates the pre-group runner check so in-flight
+// why: runnerDisabledCheckVersion gates the pre-group runner check so in-flight
 // histories, which never scheduled the activity, still replay deterministically.
 const runnerDisabledCheckVersion = "execute-flow-runner-disabled-check-v1"
 
-// stackChangedRunnerGateVersion gates the stack-change deferral on that check.
+// why: stackChangedRunnerGateVersion gates the stack-change deferral on that check.
 // Histories that already recorded the activity must keep sending the same input.
 const stackChangedRunnerGateVersion = "execute-flow-stack-changed-runner-gate-v1"
 
-// flowCancelStatusVersion gates the cancelled-status writes added on the
+// why: flowCancelStatusVersion gates the cancelled-status writes added on the
 // cancel-return paths; in-flight histories never scheduled those activities.
 const flowCancelStatusVersion = "execute-flow-cancel-status-v1"
 
-// groupStopReasonVersion gates the GetFlowSteps lookup that derives the stop
+// why: groupStopReasonVersion gates the GetFlowSteps lookup that derives the stop
 // reason; in-flight histories never scheduled it before the sweeps.
 const groupStopReasonVersion = "execute-flow-group-stop-reason-v1"
 
-// workflowCompleteTerminalErrorVersion gates terminal errored steps counting as
+// why: workflowCompleteTerminalErrorVersion gates terminal errored steps counting as
 // complete because in-flight histories previously parked after every error.
 const workflowCompleteTerminalErrorVersion = "execute-flow-terminal-error-complete-v1"
 
-// stopIfRunnerDisabled halts a workflow whose install runner was disabled after
-// it started. Creation already rejects these, so without this the workflow would
-// fail one runner-dependent group at a time and report each as its own error.
 func (s *Signal) stopIfRunnerDisabled(
 	ctx workflow.Context,
 	l *zap.Logger,
@@ -1314,7 +1144,6 @@ func (s *Signal) stopIfRunnerDisabled(
 	}
 	disabled, err := workflowactivities.AwaitCheckFlowRunnerDisabled(ctx, req)
 	if err != nil {
-		// A failed check must not take down a workflow that would otherwise run.
 		l.Warn("unable to check whether the install runner is disabled", zap.Error(err))
 		return false, nil
 	}

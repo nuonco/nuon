@@ -14,13 +14,6 @@ import (
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
-// ReprovisionStack recreates the install stack — and with it the runner — without
-// touching the sandbox or redeploying components. Whatever is already running on
-// the sandbox is left alone.
-//
-// No pre/post reprovision lifecycle actions run around the stack itself: actions
-// execute on the runner, and the runner is torn down and recreated mid-workflow, so a
-// pre-hook would run against the old runner and a post-hook against the new one.
 func ReprovisionStack(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	sg := newStepGroup(flw)
@@ -38,15 +31,11 @@ func ReprovisionStack(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSte
 	return sg.Result(stackSteps), nil
 }
 
-// getStackReprovisionSteps emits the steps that recreate an install's stack: a new
-// runner service account, a new stack version and the wait for its run, a state
-// regeneration, and the wait for the new runner to report healthy. Shared by the
-// stack-only reprovision and the full install reprovision.
 func getStackReprovisionSteps(ctx workflow.Context, sg *stepGroup, install *app.Install, planOnly bool) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 	installID := install.ID
 
-	sg.nextGroupEager() // reprovision service account
+	sg.nextGroupEager()
 	step, err := sg.installSignalStep(ctx, installID, "reprovision runner service account", pgtype.Hstore{}, &reprovisionrunner.Signal{
 		InstallID: installID,
 	}, planOnly)
@@ -61,7 +50,7 @@ func getStackReprovisionSteps(ctx workflow.Context, sg *stepGroup, install *app.
 	}
 	steps = append(steps, versionSteps...)
 
-	sg.nextGroupEager() // generate install state (after stack is ready)
+	sg.nextGroupEager()
 	stateSignal := &statepartialgenerate.Signal{
 		InstallID:       installID,
 		Targets:         statemanager.TargetsForHint(statemanager.HintInstallCreated, ""),

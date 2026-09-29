@@ -99,7 +99,6 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 		"lifecycle_phase": lp,
 	})
 
-	// Send signals via queues
 	signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
 	if err != nil {
 		ctx.Error(err)
@@ -126,7 +125,6 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 		return
 	}
-	// reconcile cron/drift emitters from app config triggers
 	if err := s.enqueueInstallSignal(ctx, signalsQueueID, &appconfigupdated.Signal{
 		InstallID: install.ID,
 	}, "", ""); err != nil {
@@ -134,7 +132,6 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 		return
 	}
 
-	// Update user journey step for first install creation
 	user, err := cctx.AccountFromGinContext(ctx)
 	if err == nil {
 		if err := s.accountsHelpers.UpdateUserJourneyStepForFirstInstallCreate(ctx, user.ID, install.ID); err != nil {
@@ -228,7 +225,6 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		"lifecycle_phase": lp2,
 	})
 
-	// Send signals via queues
 	signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
 	if err != nil {
 		ctx.Error(err)
@@ -255,7 +251,6 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 		return
 	}
-	// reconcile cron/drift emitters from app config triggers
 	if err := s.enqueueInstallSignal(ctx, signalsQueueID, &appconfigupdated.Signal{
 		InstallID: install.ID,
 	}, "", ""); err != nil {
@@ -263,7 +258,6 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		return
 	}
 
-	// Update user journey step for first install creation
 	user, err := cctx.AccountFromGinContext(ctx)
 	if err == nil {
 		if err := s.accountsHelpers.UpdateUserJourneyStepForFirstInstallCreate(ctx, user.ID, install.ID); err != nil {

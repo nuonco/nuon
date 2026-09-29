@@ -27,8 +27,6 @@ type Params struct {
 	QueryCollector *querycollector.Collector
 }
 
-// database represents the set of configuration options for creating a database connection. If UseIAM is set, we will
-// automatically create a database token using the AWS RDS api.
 type database struct {
 	User     string `validate:"required"`
 	Password string `validate:"required"`
@@ -88,7 +86,6 @@ func New(params Params, lc fx.Lifecycle, pm poolmetrics.Params) (*gorm.DB, error
 		return nil, fmt.Errorf("unable to access database connection pool: %w", err)
 	}
 
-	// register plugins
 	if err := database.registerPlugins(db); err != nil {
 		return nil, fmt.Errorf("unable to register plugins: %w", err)
 	}

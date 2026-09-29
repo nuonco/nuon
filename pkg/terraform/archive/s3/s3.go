@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/pkg/terraform/archive"
 )
 
-// Package s3 exposes an archive from a tarball, stored on s3.
 var _ archive.Archive = (*s3)(nil)
 
 type s3 struct {
@@ -40,7 +39,6 @@ func New(v *validator.Validate, opts ...s3Option) (*s3, error) {
 	return s, nil
 }
 
-// WithBucket name sets the s3 bucket
 func WithBucketName(bucketName string) s3Option {
 	return func(s *s3) error {
 		s.BucketName = bucketName
@@ -48,7 +46,6 @@ func WithBucketName(bucketName string) s3Option {
 	}
 }
 
-// WithBucketKey sets the bucket key
 func WithBucketKey(bucketKey string) s3Option {
 	return func(s *s3) error {
 		s.Key = bucketKey
@@ -56,7 +53,6 @@ func WithBucketKey(bucketKey string) s3Option {
 	}
 }
 
-// WithCredentials sets the credentials config
 func WithCredentials(cfg *credentials.Config) s3Option {
 	return func(s *s3) error {
 		s.Credentials = cfg

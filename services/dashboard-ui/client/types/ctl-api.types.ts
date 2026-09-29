@@ -122,7 +122,6 @@ export type TCreateAppBranchRequest =
 export type TVCSBranch = { name: string }
 
 export type TApp = components['schemas']['app.App'] & {
-  // labels from the app config's default_labels, applied to every install
   default_labels?: Record<string, string>
 }
 export type TAppConfig = components['schemas']['app.AppConfig']
@@ -159,7 +158,6 @@ export type TAppSandboxBuild = {
   runner_job?: TRunnerJob
   vcs_connection_commit?: TVCSCommit
 }
-// Policy types - manually defined as API schema may not be deployed yet
 export type TAppPolicyType =
   | 'kubernetes_cluster'
   | 'terraform_module'
@@ -474,8 +472,6 @@ export type TBuild = TComponentBuild & {
 
 export type TOrg = components['schemas']['app.Org']
 export type TOrgInvite = components['schemas']['app.OrgInvite']
-// Hand-written mirror of app.OrgFeatureInfo: the generated schema lags until
-// the next SDK regen, and the dashboard reads `deprecated` before then.
 export type TOrgFeatureInfo = {
   name: string
   description: string
@@ -489,11 +485,6 @@ export type TOrgStats = {
   install_count: number
 }
 
-// `interests` and `match` are both stamped `swaggertype:"object"` on the
-// Go side, so the auto-generated SDK shape is a generic object. Re-cast
-// each to its hand-written mirror at the API boundary so dashboard code
-// can read webhook.match.installs?.ids without casting through any. See
-// client/components/match/types.ts for SubscriptionMatch.
 export type TWebhook = Omit<
   components['schemas']['service.CurrentOrgWebhookResponse'],
   'interests' | 'match'
@@ -521,11 +512,6 @@ export type TSlackInstallationStatus =
 export type TSlackOrgLink = components['schemas']['app.SlackOrgLink']
 export type TSlackOrgLinkStatus =
   components['schemas']['app.SlackOrgLinkStatus']
-// `interests` and `match` are both stamped `swaggertype:"object"` on the
-// Go side, so the generated SDK shape is a generic object. Re-cast each
-// to its hand-written mirror at the API boundary so dashboard code can
-// read sub.match.installs?.ids without casting through any. See
-// client/components/match/types.ts for SubscriptionMatch.
 export type TSlackChannelSubscription = Omit<
   components['schemas']['app.SlackChannelSubscription'],
   'interests' | 'match'
@@ -538,11 +524,6 @@ export type TSlackInstallURLResponse =
 export type TSlackChannel = components['schemas']['client.Conversation']
 export type TSlackChannelsResponse =
   components['schemas']['service.ListChannelsResponse']
-// `interests` and `match` are both stamped `swaggertype:"object"` on the
-// Go side, so the generated SDK shape is a generic object. Re-cast both at
-// the API boundary so callers get type-checked payloads. SubscriptionMatch
-// is the TypeScript mirror of pkg/labels.SubscriptionMatch — see
-// client/components/match/types.ts.
 export type TCreateSlackChannelSubscriptionBody = Omit<
   components['schemas']['service.CreateChannelSubscriptionRequest'],
   'interests' | 'match'
@@ -551,16 +532,11 @@ export type TCreateSlackChannelSubscriptionBody = Omit<
   match?: TSubscriptionMatch
 }
 
-// Re-export SubscriptionMatch under a `T`-prefixed alias so dashboard
-// types stay in one place. The picker / helpers import the raw type from
-// '@/components/match/types' directly to avoid a re-import dance.
 export type TSubscriptionMatch =
   import('@/components/match/types').SubscriptionMatch
 
 export type TInstallSandbox = components['schemas']['app.InstallSandbox']
 
-// Mirrors app.PhoneHomeAuthStatus in ctl-api. Every field is optional: the API omits
-// a timestamp that has not happened yet.
 export type TPhoneHomeAuthStatus = {
   provisioned_at?: string
   last_verified_at?: string
@@ -574,10 +550,7 @@ export type TInstall = Omit<
   app?: components['schemas']['app.App']
   created_by?: components['schemas']['app.Account']
   gcp_account?: { project_id?: string; region?: string }
-  // label values written with the {{ .nuon.* }} interpolation syntax, keyed by
-  // label key; `labels` holds their rendered values
   label_templates?: Record<string, string>
-  // labels inherited from the app config's default_labels; read-only per install
   app_default_labels?: Record<string, string>
   lifecycle_phase?: {
     phase?: string
@@ -611,12 +584,10 @@ export type TInstallAuditLog = components['schemas']['app.InstallAuditLog']
 export type TDriftedObject = components['schemas']['app.DriftedObject']
 export type TInstallResource =
   components['schemas']['app.InstallComponentResourceState'] & {
-    // read-time annotation, ships ahead of codegen
     removed_from_config?: boolean
   }
 export type THelmRelease = components['schemas']['app.HelmRelease']
 
-// component health timelines - manually defined, ctl-api endpoints ship ahead of codegen
 export type THealthTimelineDay = {
   date: string
   health: string
@@ -888,8 +859,6 @@ export type TRunnerProcessShutdown =
 
 export type TLogStream = components['schemas']['app.LogStream']
 
-// otel spans (Phase 4 spans endpoint — defined manually until ctl-api ships
-// the schema; the wire shape mirrors the runner -> ctl-api ingestion record).
 export type TSpan = {
   span_id: string
   parent_span_id?: string
@@ -905,7 +874,6 @@ export type TSpan = {
   service_name?: string
 }
 
-// old action workflows types
 export type TActionWorkflow = components['schemas']['app.ActionWorkflow']
 export type TActionConfig = components['schemas']['app.ActionWorkflowConfig']
 export type TActionConfigStep =
@@ -919,7 +887,6 @@ export type TInstallActionWorkflowRun =
 export type TInstallActionWorkflow =
   components['schemas']['app.InstallActionWorkflow']
 
-// new action types
 export type TAction = components['schemas']['app.ActionWorkflow']
 export type TInstallActionRun =
   components['schemas']['app.InstallActionWorkflowRun']
@@ -1104,7 +1071,6 @@ export type TInstallConfigSync = {
   }
 }
 
-// install config diff tree (from pkg/config/diff)
 export type TConfigDiffKey = {
   op: 'add' | 'remove' | 'change' | 'noop' | ''
   diff: string
@@ -1255,7 +1221,6 @@ export type TInstallCreationApproval = {
   approved_by_id?: string
 }
 
-// Install updates — hand types (endpoint not yet in generated spec)
 export type TInstallUpdateImpactReason = {
   from: string
   edge: string
@@ -1320,8 +1285,6 @@ export type TInstallUpdatesResponse = {
   limit: number
   has_more: boolean
 }
-
-// ─── Install deployments ──────────────────────────────────────────────────────
 
 export type TInstallDeploymentRecordType =
   | 'provision'

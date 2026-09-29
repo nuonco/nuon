@@ -12,7 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-// RecoverHelmRelease unsticks a Helm release helm left mid-operation. It runs no
+// why: RecoverHelmRelease unsticks a Helm release helm left mid-operation. It runs no
 // plan and no approval: it applies no chart and changes no desired state, and the
 // recovery itself refuses to act unless the release really is pending.
 //
@@ -59,7 +59,7 @@ func RecoverHelmRelease(ctx workflow.Context, flw *app.Workflow) (*app.GenerateS
 		return nil, errors.Wrap(err, "unable to get install component")
 	}
 
-	sg.nextGroup() // recover
+	sg.nextGroup()
 	recoverStep, err := sg.installSignalStep(ctx, installID, "recover helm release "+comp.Name, componentStepMetadata(comp.Name),
 		&componenthelmrecover.Signal{
 			InstallID:          installID,

@@ -77,10 +77,6 @@ export const Provider: GlobalProvider = ({ children, storyMeta }) => {
                   <SurfacesProvider>
                    <ThemeProvider>
                     <DashboardPreferencesProvider>
-                    {/* The app themes via prefers-color-scheme, but Ladle's canvas
-                        follows its own toggle — paint the canvas with the app's
-                        background/foreground vars so stories stay readable when
-                        the OS is in dark mode. */}
                     {isFullBleed && <style>{fullBleedStyles}</style>}
                     <div
                       className={

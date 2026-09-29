@@ -10,7 +10,6 @@ export function useBranch(): { branch: TAppBranch; refresh: () => void } {
   return ctx
 }
 
-// For views shared between branch-scoped and app-scoped routes
 export function useOptionalBranch() {
   return useContext(BranchContext)
 }

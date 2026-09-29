@@ -29,7 +29,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// UpdateAppActionDeprecatedTestService holds all fx-injected dependencies for update app action tests.
 type UpdateAppActionDeprecatedTestService struct {
 	fx.In
 
@@ -45,7 +44,6 @@ type UpdateAppActionDeprecatedTestService struct {
 	Seeder         *testseed.Seeder
 }
 
-// UpdateAppActionDeprecatedTestSuite is the testify suite for UpdateAppAction endpoint.
 type UpdateAppActionDeprecatedTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -77,7 +75,6 @@ func (s *UpdateAppActionDeprecatedTestSuite) SetupSuite() {
 
 			CustomValidator: true,
 		}),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -85,7 +82,6 @@ func (s *UpdateAppActionDeprecatedTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -93,9 +89,6 @@ func (s *UpdateAppActionDeprecatedTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
-
-	// Create test router with standard middlewares using helper
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -221,7 +214,6 @@ func (s *UpdateAppActionDeprecatedTestSuite) TestUpdateAppActionSuccess() {
 				tc.validateFunc(&response)
 			}
 
-			// Verify action was updated in database
 			var dbAction app.ActionWorkflow
 			err = s.service.DB.First(&dbAction, "id = ?", actionID).Error
 			require.NoError(s.T(), err)
@@ -245,7 +237,6 @@ func (s *UpdateAppActionDeprecatedTestSuite) TestUpdateAppActionNonExistent() {
 }
 
 func (s *UpdateAppActionDeprecatedTestSuite) TestUpdateAppActionInvalidRequest() {
-	// Create action first
 	action := &app.ActionWorkflow{
 		ID:     domains.NewActionWorkflowID(),
 		AppID:  s.testApp.ID,
@@ -299,7 +290,6 @@ func (s *UpdateAppActionDeprecatedTestSuite) TestUpdateAppActionInvalidRequest()
 }
 
 func (s *UpdateAppActionDeprecatedTestSuite) TestUpdateAppActionDifferentOrg() {
-	// Create action in different org
 	ctx2 := context.Background()
 	ctx2, _ = s.service.Seeder.EnsureAccount(ctx2, s.T())
 	ctx2, org2 := s.service.Seeder.EnsureOrg(ctx2, s.T())
@@ -322,7 +312,6 @@ func (s *UpdateAppActionDeprecatedTestSuite) TestUpdateAppActionDifferentOrg() {
 		Name: "updated-name",
 	}
 
-	// Try to update action from different org
 	rr := s.makeRequest(http.MethodPatch, "/v1/apps/"+s.testApp.ID+"/actions/"+otherAction.ID, req)
 
 	if rr.Code != http.StatusNotFound {

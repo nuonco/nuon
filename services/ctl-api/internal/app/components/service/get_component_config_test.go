@@ -11,10 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestGetAppComponentConfigSuccess() {
 	s.Run("returns config by id", func() {
 		cmp := s.getSeededComponent(app.ComponentTypeHelmChart)
@@ -37,10 +33,6 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentConfigSuccess() {
 	})
 }
 
-// ---------------------------------------------------------------------------
-// Not found cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestGetAppComponentConfigNotFound() {
 	s.Run("nonexistent config id", func() {
 		cmp := s.getSeededComponent(app.ComponentTypeHelmChart)
@@ -61,7 +53,6 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentConfigWrongComponent() {
 		tfCmp := s.getSeededComponent(app.ComponentTypeTerraformModule)
 		tfCCC := s.getSeededConfigConnection(tfCmp.ID)
 
-		// Use the Terraform config ID but with the Helm component ID in the URL
 		path := fmt.Sprintf("/v1/apps/%s/components/%s/configs/%s", s.testApp.ID, helmCmp.ID, tfCCC.ID)
 		rr := s.makeRequest(http.MethodGet, path, nil)
 

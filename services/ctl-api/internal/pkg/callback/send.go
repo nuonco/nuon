@@ -7,8 +7,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// sendSignalRequest mirrors handler/activities.SendSignalRequest to avoid
-// an import cycle. The activity is registered as "SendSignal".
 type sendSignalRequest struct {
 	Callback sendCallbackInfo `json:"callback"`
 	Payload  any              `json:"payload"`
@@ -20,9 +18,6 @@ type sendCallbackInfo struct {
 	Namespace  string `json:"callback_namespace"`
 }
 
-// Send signals the target workflow described by ref with the given result.
-// Best-effort: if the target workflow has already terminated, the error is
-// logged but not propagated.
 func Send(ctx workflow.Context, l *zap.Logger, ref Ref, result Result) {
 	if !ref.IsSet() {
 		return

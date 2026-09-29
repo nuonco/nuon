@@ -17,10 +17,8 @@ export interface IPropertyGrid<T = Record<string, any>>
   values: T[]
   columns?: IPropertyGridColumn<T>[]
   emptyStateProps?: IEmptyState
-  gridTemplate?: string // Custom grid-template-columns CSS value
+  gridTemplate?: string
   align?: 'start' | 'center'
-  // Wraps each row's cells in a display:contents element carrying these
-  // attributes (e.g. data-* tags) without affecting the grid layout
   rowProps?: (
     item: T,
     rowIndex: number
@@ -53,14 +51,13 @@ export const PropertyGrid = <T extends Record<string, any>>({
 
   const gridColumns = detectedColumns.length
 
-  // Use custom gridTemplate or create smart defaults
   const gridColsClass =
     gridTemplate ||
     (gridColumns === 1
       ? '1fr'
       : gridColumns === 2
-        ? 'max-content 1fr' // Two columns: first fits content, second expands (good for key-value pairs)
-        : `repeat(${gridColumns}, minmax(120px, 1fr))`) // Multiple columns: all flexible with 120px minimum
+        ? 'max-content 1fr'
+        : `repeat(${gridColumns}, minmax(120px, 1fr))`)
 
   if (!values?.length) {
     return <EmptyState {...emptyStateProps} />
@@ -157,13 +154,12 @@ export const PropertyGridSkeleton = ({
   count?: number
   columns?: number
 }) => {
-  // Use same flexible grid logic as main component
   const gridColsClass =
     columns === 1
       ? '1fr'
       : columns === 2
-        ? 'max-content 1fr' // Two columns: first fits content, second expands
-        : `repeat(${columns}, minmax(120px, 1fr))` // Multiple columns: all flexible with 120px minimum
+        ? 'max-content 1fr'
+        : `repeat(${columns}, minmax(120px, 1fr))`
 
   return (
     <div

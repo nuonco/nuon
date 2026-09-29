@@ -79,24 +79,19 @@ type service struct {
 var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
-	// get all installs across orgs
 	ge.GET("/v1/installs", s.GetOrgInstalls)
 	ge.GET("/v1/installs/label-keys", s.GetInstallLabelKeys)
 	ge.GET("/v1/installs/health", s.GetInstallsHealth)
 	ge.POST("/v1/installs", s.CreateInstallV2)
 
-	// get / create installs for an app
 	apps := ge.Group("/v1/apps/:app_id")
 	{
 		apps.GET("/installs", s.GetAppInstalls)
-		// apps.POST("/installs", s.CreateInstall)
-		s.POST(apps, "/installs", s.CreateInstall, api.APIContextTypePublic, true) // Deprecated
+		s.POST(apps, "/installs", s.CreateInstall, api.APIContextTypePublic, true)
 	}
 
-	// deprecated sandbox run route
-	s.GET(ge, "/v1/installs/sandbox-runs/:run_id", s.GetInstallSandboxRun, api.APIContextTypePublic, true) // Deprecated
+	s.GET(ge, "/v1/installs/sandbox-runs/:run_id", s.GetInstallSandboxRun, api.APIContextTypePublic, true)
 
-	// individual installs
 	installs := ge.Group("/v1/installs/:install_id")
 	{
 		installs.GET("", s.GetInstall)
@@ -109,39 +104,31 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.POST("/reprovision-stack", s.ReprovisionInstallStack)
 		installs.POST("/deprovision", s.DeprovisionInstall)
 		installs.POST("/forget", s.ForgetInstall)
-		s.POST(installs, "/retry-workflow", s.RetryWorkflow, api.APIContextTypePublic, true) // Deprecated
+		s.POST(installs, "/retry-workflow", s.RetryWorkflow, api.APIContextTypePublic, true)
 
-		// install deploys
-		s.GET(installs, "/deploys", s.GetInstallDeploys, api.APIContextTypePublic, true)             // Deprecated
-		s.POST(installs, "/deploys", s.CreateInstallDeploy, api.APIContextTypePublic, true)          // Deprecated
-		s.GET(installs, "/deploys/latest", s.GetInstallLatestDeploy, api.APIContextTypePublic, true) // Deprecated
-		s.GET(installs, "/deploys/:deploy_id", s.GetInstallDeploy, api.APIContextTypePublic, true)   // Deprecated
+		s.GET(installs, "/deploys", s.GetInstallDeploys, api.APIContextTypePublic, true)
+		s.POST(installs, "/deploys", s.CreateInstallDeploy, api.APIContextTypePublic, true)
+		s.GET(installs, "/deploys/latest", s.GetInstallLatestDeploy, api.APIContextTypePublic, true)
+		s.GET(installs, "/deploys/:deploy_id", s.GetInstallDeploy, api.APIContextTypePublic, true)
 		installs.GET("/components/deploys", s.GetInstallComponentsDeploys)
 		installs.GET("/components/:component_id/deploys/:deploy_id", s.GetInstallComponentDeploy)
 
-		// install readme
 		installs.GET("/readme", s.GetInstallReadme)
 
-		// install drifts
 		installs.GET("/drifted-objects", s.GetDriftedObjects)
 
-		// live component resource explorer
 		installs.GET("/status", s.GetInstallStatus)
 		installs.GET("/resources", s.GetInstallResources)
 
-		// install-level component health rollup
 		installs.GET("/health/timeline", s.GetInstallHealthTimeline)
 		installs.POST("/health/baseline", s.ResetInstallHealthBaseline)
 		installs.POST("/health/cluster-access", s.RefreshInstallHealthClusterAccess)
 
-		// install state
 		installs.GET("/state", s.GetInstallState)
 		installs.GET("/state-history", s.GetInstallStateHistory)
 
-		// install dns delegation check
 		installs.GET("/dns/check", s.CheckInstallDNSDelegation)
 
-		// install sandbox
 		installs.POST("/reprovision-sandbox", s.ReprovisionInstallSandbox)
 		installs.POST("/deprovision-sandbox", s.DeprovisionInstallSandbox)
 
@@ -151,7 +138,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			sandboxRuns.GET("/:run_id", s.GetInstallSandboxRunV2)
 		}
 
-		// install inputs
 		inputs := installs.Group("/inputs")
 		{
 			inputs.GET("", s.GetInstallInputs)
@@ -160,7 +146,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			inputs.PATCH("", s.UpdateInstallInputs)
 		}
 
-		// install components
 		components := installs.Group("/components")
 		{
 			components.GET("", s.GetInstallComponents)
@@ -179,7 +164,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 				component.POST("/deploys", s.CreateInstallComponentDeploy)
 				component.POST("/recover-helm-release", s.RecoverInstallComponentHelmRelease)
 
-				// component health: gin can't mix wildcard names at the same path
+				// why: component health: gin can't mix wildcard names at the same path
 				// depth, so these reuse the ":component_id" node above, but the
 				// value they expect is the install_component's own ID (matching
 				// the ClickHouse rows), not the catalog component ID the sibling
@@ -191,7 +176,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			}
 		}
 
-		// install action workflows
 		actions := installs.Group("/actions")
 		{
 			action := actions.Group("/:action_id")
@@ -203,38 +187,29 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.POST("/sync-secrets", s.SyncSecrets)
 		installs.POST("/sync-config", s.SyncInstallConfig)
 
-		// install events
 		events := installs.Group("/events")
 		{
 			events.GET("", s.GetInstallEvents)
 			events.GET("/:event_id", s.GetInstallEvent)
 		}
 
-		// workflows for install
 		installs.GET("/workflows", s.GetWorkflows)
 
-		// install runner group
 		installs.GET("/runner-group", s.GetInstallRunnerGroup)
 		installs.GET("/telemetry", s.GetInstallTelemetrySettings)
 
-		// phone home
 		installs.POST("/phone-home/:phone_home_id", s.InstallPhoneHome)
 
-		// runner bootstrap token
 		installs.POST("/runner-bootstrap-token", s.CreateRunnerBootstrapToken)
 
-		// install stacks
 		installs.GET("/stack", s.GetInstallStackByInstallID)
 		installs.GET("/stack-runs", s.GetInstallStackRuns)
 		installs.GET("/generate-terraform-installer-config", s.GenerateTerraformInstallerConfig)
 
-		// available roles
 		installs.GET("/available-roles", s.GetAvailableRoles)
 
-		// app permissions config with provisioning status
 		installs.GET("/app-permissions-config", s.GetInstallAppPermissionsConfig)
 
-		// install roles
 		roles := installs.Group("/roles")
 		{
 			roles.GET("", s.GetInstallRoles)
@@ -243,14 +218,12 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			roles.PATCH("/:role_id", s.UpdateInstallRole)
 		}
 
-		// install config
 		configs := installs.Group("/configs")
 		{
 			configs.POST("", s.CreateInstallConfig)
 			configs.PATCH("/:config_id", s.UpdateInstallConfig)
 		}
 
-		// install app config versions
 		installs.GET("/app-config-versions", s.GetInstallAppConfigVersions)
 		installs.GET("/app-config-versions/:version_id/diff", s.GetInstallAppConfigVersionDiff)
 		installs.GET("/deployments", s.GetInstallDeployments)
@@ -260,22 +233,18 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.GET("/config-syncs", s.GetInstallConfigSyncs)
 		installs.POST("/app-config-updates", s.CreateInstallAppConfigUpdate)
 
-		// install audit logs
 		installs.GET("/audit_logs", s.GetInstallAuditLogs)
 
-		// install cli config
 		installs.GET("/generate-cli-install-config", s.GenerateCLIInstallConfig)
 	}
 
-	// stack lookup by stack_id
 	ge.GET("/v1/installs/stacks/:stack_id", s.GetInstallStackByStackID)
 
-	// org-level workflow queries (must be registered before /:workflow_id group)
+	// why: org-level workflow queries (must be registered before /:workflow_id group)
 	ge.GET("/v1/workflows/pending-approvals", s.GetOrgPendingApprovals)
 	ge.GET("/v1/workflows", s.GetOrgWorkflows)
 	ge.POST("/v1/workflows/cancel", s.CancelWorkflows)
 
-	// workflows (standalone)
 	workflows := ge.Group("/v1/workflows/:workflow_id")
 	{
 		workflows.GET("", s.GetWorkflow)
@@ -307,8 +276,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		}
 	}
 
-	// deprecated install-workflows
-
 	s.GET(ge, "/v1/install-workflows/:install_workflow_id", s.GetInstallWorkflow, api.APIContextTypePublic, true)
 	s.PATCH(ge, "/v1/install-workflows/:install_workflow_id", s.UpdateInstallWorkflow, api.APIContextTypePublic, true)
 	s.GET(ge, "/v1/install-workflows/:install_workflow_id/steps", s.GetInstallWorkflowSteps, api.APIContextTypePublic, true)
@@ -320,14 +287,12 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 }
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
-	// installs
 	installs := api.Group("/v1/installs")
 	{
 		installs.GET("", s.GetAllInstalls)
 		installs.GET("/details", s.AdminListInstallsDetails)
 		installs.POST("/admin-forget-account-installs", s.ForgetAccountInstalls)
 
-		// install-specific admin routes
 		install := installs.Group("/:install_id")
 		{
 			install.POST("/admin-restart", s.RestartInstall)
@@ -339,21 +304,18 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			install.POST("/admin-reconcile-entities", s.AdminReconcileInstallEntities)
 			install.POST("/admin-generate-state", s.AdminInstallGenerateInstallState)
 
-			// NOTE(JM): the following endpoints should be removed after workflows/independent runners are rolled out
 			install.POST("/admin-reprovision", s.ReprovisionInstall)
 			install.POST("/admin-forget", s.AdminForgetInstall)
 			install.POST("/admin-update-sandbox", s.AdminUpdateSandbox)
 		}
 	}
 
-	// orgs
 	orgs := api.Group("/v1/orgs/:org_id")
 	{
 		orgs.POST("/admin-forget-installs", s.ForgetOrgInstalls)
 		orgs.GET("/admin-get-installs", s.AdminGetOrgInstalls)
 	}
 
-	// install stack version runs
 	installStackVersionRuns := api.Group("/v1/install-stack-version-runs")
 	{
 		installStackVersionRun := installStackVersionRuns.Group("/:install_stack_version_run_id")
@@ -362,16 +324,12 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		}
 	}
 
-	// temp for hackathon
 	api.POST("/v1/admin-install-workflow-step-approve", s.AdminInstallWorkflowStepApprove)
 
 	return nil
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
-	// phone home reported by the install stack over the runner API. The
-	// per-stack-version phone_home_id in the URL path is the secret; the route
-	// is already in the public whitelist, so no runner token is required.
 	api.POST("/v1/installs/:install_id/phone-home/:phone_home_id", s.InstallPhoneHome)
 	return nil
 }

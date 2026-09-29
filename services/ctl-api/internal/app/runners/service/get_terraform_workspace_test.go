@@ -73,7 +73,6 @@ func (s *GetTerraformWorkspaceTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes (needs org context)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -94,7 +93,6 @@ func (s *GetTerraformWorkspaceTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create terraform workspace
 	s.testWS = &app.TerraformWorkspace{
 		ID:        domains.NewTerraformWorkspaceID(),
 		OrgID:     s.testOrg.ID,
@@ -150,7 +148,6 @@ func (s *GetTerraformWorkspaceTestSuite) TestGetTerraformWorkspace() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -163,7 +160,6 @@ func (s *GetTerraformWorkspaceTestSuite) TestGetTerraformWorkspace() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create workspace in org2
 				ws2 := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     org2.ID,
@@ -189,7 +185,6 @@ func (s *GetTerraformWorkspaceTestSuite) TestGetTerraformWorkspace() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create additional workspaces
 				ws2 := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     s.testOrg.ID,

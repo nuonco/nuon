@@ -9,10 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
-// CreateActionImageSyncJob creates an oci-sync job that mirrors an
-// image-backed action's app-authored image into the install registry before
-// the action runs. It is owned by the action run so it is cancelled/cleaned up
-// alongside it.
 func (h *Helpers) CreateActionImageSyncJob(ctx context.Context,
 	runnerID string,
 	runID string,

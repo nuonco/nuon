@@ -35,10 +35,6 @@ const scrollWithin = (
   }
 }
 
-// Native Element.scrollIntoView() scrolls every scroll-container ancestor —
-// including overflow:hidden wrappers, which are programmatically scrollable but
-// have no scrollbar. In the nested layout that leaves the header shifted out of
-// view until a reflow. This scrolls only genuine (auto/scroll) ancestors.
 export const scrollElementIntoView = (
   el: HTMLElement | null,
   { block = 'nearest', behavior = 'smooth' }: IScrollIntoView = {}

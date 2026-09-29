@@ -32,8 +32,6 @@ func TestPartitionStaleSignals(t *testing.T) {
 			live:    []string{"a"},
 			stale:   map[string][]string{},
 		},
-		// The wedge: a dead handler never enforces its own expiry, so without this the
-		// emitter is blocked forever and the cron silently stops.
 		{
 			name:    "expired signal releases the emitter",
 			signals: []*app.QueueSignal{{ID: "a", CreatedAt: now.Add(-time.Hour), ExpiresAt: ptr(now.Add(-time.Minute))}},

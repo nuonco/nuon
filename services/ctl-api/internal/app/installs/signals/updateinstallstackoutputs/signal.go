@@ -42,7 +42,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return fmt.Errorf("install stack id is required")
 	}
 
-	// Validate install stack exists
 	_, err := activities.AwaitGetInstallForStackByStackID(ctx, s.InstallStackID)
 	if err != nil {
 		return fmt.Errorf("unable to get install for stack: %w", err)
@@ -127,7 +126,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrapf(err, "unable to parse %s install outputs", appCfg.RunnerConfig.Type)
 	}
 
-	// update outputs if needed
 	if err := activities.AwaitUpdateInstallStackOutputs(ctx, activities.UpdateInstallStackOutputs{
 		InstallStackID:           version.InstallStackID,
 		InstallStackVersionRunID: run.ID,
@@ -136,7 +134,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to update install stack outputs")
 	}
 
-	// update install roles provisioned state from stack outputs
 	if err := activities.AwaitUpdateInstallRolesFromStackOutputs(ctx, activities.UpdateInstallRolesFromStackOutputs{
 		InstallID: install.ID,
 	}); err != nil {
@@ -151,7 +148,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to reconcile runner enabled status")
 	}
 
-	// update the runner settings group
 	runnerIAMRoleARN := ""
 	if installStackOutputs.AWSStackOutputs != nil {
 		runnerIAMRoleARN = installStackOutputs.AWSStackOutputs.RunnerIAMRoleARN
@@ -164,7 +160,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to update runner group settings")
 	}
 
-	// update gcp account from stack outputs
 	if installStackOutputs.GCPStackOutputs != nil && installStackOutputs.GCPStackOutputs.Region != "" {
 		if err := activities.AwaitUpdateGCPAccountRegion(ctx, &activities.UpdateGCPAccountRegion{
 			InstallID: install.ID,
@@ -175,8 +170,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	// NOTE(jm): this is probably not the _best_ place to do this validation, but for now it works
-	// make sure the region matches the outputs
 	err = validateRegion(*install, installStackOutputs)
 	if err != nil {
 		return errors.Wrap(err, "unable to validate region")
@@ -212,11 +205,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 }
 
 func validateRegion(install app.Install, outputs app.InstallStackOutputs) error {
-	// Region is recorded on the install only when the user committed to one
-	// at install creation. AWS/Azure both allow creating an install with no
-	// region, in which case the user picks one at apply time and the stack
-	// outputs are the source of truth. Only enforce a match when the install
-	// already carries a region.
 	switch {
 	case install.AWSAccount != nil:
 		if install.AWSAccount.Region != "" && install.AWSAccount.Region != outputs.AWSStackOutputs.Region {

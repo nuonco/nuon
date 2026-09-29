@@ -15,8 +15,6 @@ type HealthProbeRequest struct {
 	Interval string   `json:"interval,omitempty"`
 }
 
-// toConfigHealthProbes maps wire probes onto the parsed-config representation the
-// shared builders validate and persist.
 func toConfigHealthProbes(probes []HealthProbeRequest) []config.ComponentHealthProbeConfig {
 	if len(probes) == 0 {
 		return nil

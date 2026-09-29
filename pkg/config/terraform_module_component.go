@@ -16,7 +16,6 @@ func (t TerraformVariablesFile) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("./variables/production.tfvars")
 }
 
-// NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type TerraformModuleComponentConfig struct {
 	TerraformVersion string `mapstructure:"terraform_version" toml:"terraform_version" jsonschema:"required"`
 
@@ -36,7 +35,6 @@ type TerraformModuleComponentConfig struct {
 	SkipNoops                    *bool `mapstructure:"skip_noops,omitempty" toml:"skip_noops,omitempty" nuonhash:"omitempty"`
 	AutoApproveOnPoliciesPassing *bool `mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty" nuonhash:"omitempty"`
 
-	// deprecated
 	Variables []TerraformVariable   `mapstructure:"var,omitempty" toml:"var,omitempty"`
 	EnvVars   []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var,omitempty"`
 }

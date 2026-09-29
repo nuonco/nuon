@@ -15,14 +15,12 @@ import (
 	"github.com/nuonco/nuon/pkg/runner/jobs"
 )
 
-// handler is the handler implementation
 type handler struct {
 	v           *validator.Validate
 	apiClient   nuonrunner.Client
 	errRecorder *errs.Recorder
 	cfg         *runnerconfig.Config
 
-	// created on initialization of the plugin struct
 	state *handlerState
 }
 

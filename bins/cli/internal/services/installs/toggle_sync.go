@@ -26,7 +26,6 @@ func (s *Service) ToggleSync(ctx context.Context, installID string, enable, disa
 	if appInstall.Metadata["managed_by"] == ManagedByNuonCLIConfig {
 		managedBy = ManagedByNuonDashboard
 	}
-	// Explicitly set managed_by based if overriding flags are set.
 	if enable {
 		managedBy = ManagedByNuonCLIConfig
 	} else if disable {

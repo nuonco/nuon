@@ -26,7 +26,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// GetOrgFeaturesTestService holds all fx-injected dependencies for GetOrgFeatures endpoint tests.
 type GetOrgFeaturesTestService struct {
 	fx.In
 
@@ -41,7 +40,6 @@ type GetOrgFeaturesTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// GetOrgFeaturesTestSuite is the testify suite for GetOrgFeatures endpoint.
 type GetOrgFeaturesTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -66,7 +64,6 @@ func (s *GetOrgFeaturesTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -75,7 +72,6 @@ func (s *GetOrgFeaturesTestSuite) SetupSuite() {
 
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -83,8 +79,6 @@ func (s *GetOrgFeaturesTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares
-	// Note: No TestOrg needed - GetOrgFeatures is a global endpoint
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -117,7 +111,7 @@ func (s *GetOrgFeaturesTestSuite) TestGetOrgFeatures() {
 	testCases := []struct {
 		name             string
 		validateFunc     func([]app.OrgFeatureInfo)
-		expectedMinCount int // Minimum number of features we expect
+		expectedMinCount int
 	}{
 		{
 			name:             "returns non-empty feature list",
@@ -139,12 +133,11 @@ func (s *GetOrgFeaturesTestSuite) TestGetOrgFeatures() {
 		},
 		{
 			name:             "returns all defined features",
-			expectedMinCount: 16, // Based on GetFeatures() returning 16 features
+			expectedMinCount: 16,
 			validateFunc: func(features []app.OrgFeatureInfo) {
 				expectedFeatures := app.GetFeatures()
 				assert.Len(s.T(), features, len(expectedFeatures), "should return all defined features")
 
-				// Verify all expected features are present
 				featureNames := make(map[string]bool)
 				for _, feature := range features {
 					featureNames[feature.Name] = true
@@ -174,7 +167,6 @@ func (s *GetOrgFeaturesTestSuite) TestGetOrgFeatures() {
 			name:             "returns consistent results across multiple calls",
 			expectedMinCount: 1,
 			validateFunc: func(features []app.OrgFeatureInfo) {
-				// Make a second request
 				rr2 := s.makeRequest(http.MethodGet, "/v1/orgs/features")
 				require.Equal(s.T(), http.StatusOK, rr2.Code)
 
@@ -182,7 +174,6 @@ func (s *GetOrgFeaturesTestSuite) TestGetOrgFeatures() {
 				err := json.Unmarshal(rr2.Body.Bytes(), &features2)
 				require.NoError(s.T(), err)
 
-				// Results should be identical
 				assert.Equal(s.T(), len(features), len(features2), "feature count should be consistent")
 				assert.Equal(s.T(), features, features2, "feature lists should be identical")
 			},
@@ -191,16 +182,13 @@ func (s *GetOrgFeaturesTestSuite) TestGetOrgFeatures() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Make request
 			rr := s.makeRequest(http.MethodGet, "/v1/orgs/features")
 
-			// Log response for debugging
 			if rr.Code != http.StatusOK {
 				s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
 			}
 			require.Equal(s.T(), http.StatusOK, rr.Code)
 
-			// Parse response
 			var features []app.OrgFeatureInfo
 			err := json.Unmarshal(rr.Body.Bytes(), &features)
 			if err != nil {
@@ -209,11 +197,9 @@ func (s *GetOrgFeaturesTestSuite) TestGetOrgFeatures() {
 			require.NoError(s.T(), err)
 			require.NotNil(s.T(), features)
 
-			// Validate minimum count
 			assert.GreaterOrEqual(s.T(), len(features), tc.expectedMinCount,
 				"should have at least %d features", tc.expectedMinCount)
 
-			// Run additional validations if provided
 			if tc.validateFunc != nil {
 				tc.validateFunc(features)
 			}
@@ -223,12 +209,10 @@ func (s *GetOrgFeaturesTestSuite) TestGetOrgFeatures() {
 
 func (s *GetOrgFeaturesTestSuite) TestGetOrgFeaturesNoOrgContextRequired() {
 	s.Run("succeeds without org context", func() {
-		// Create router without TestOrg to verify endpoint works without org context
 		routerNoOrg := tests.NewTestRouter(tests.RouterOptions{
 			L:       s.service.L,
 			DB:      s.service.DB,
 			TestAcc: s.testAcc,
-			// Explicitly no TestOrg
 		})
 
 		err := s.service.OrgsService.RegisterPublicRoutes(routerNoOrg)
@@ -257,19 +241,16 @@ func (s *GetOrgFeaturesTestSuite) TestGetOrgFeaturesResponseStructure() {
 		rr := s.makeRequest(http.MethodGet, "/v1/orgs/features")
 		require.Equal(s.T(), http.StatusOK, rr.Code)
 
-		// Verify response is valid JSON array
 		var rawArray []json.RawMessage
 		err := json.Unmarshal(rr.Body.Bytes(), &rawArray)
 		require.NoError(s.T(), err)
 		assert.NotEmpty(s.T(), rawArray, "response should be non-empty array")
 
-		// Verify each element has required fields
 		for i, raw := range rawArray {
 			var feature map[string]interface{}
 			err := json.Unmarshal(raw, &feature)
 			require.NoError(s.T(), err, "feature %d should be valid JSON object", i)
 
-			// Verify required fields exist
 			name, hasName := feature["name"]
 			assert.True(s.T(), hasName, "feature %d should have 'name' field", i)
 			assert.IsType(s.T(), "", name, "name should be string")
@@ -290,13 +271,11 @@ func (s *GetOrgFeaturesTestSuite) TestGetOrgFeaturesKnownFeatureFlags() {
 		err := json.Unmarshal(rr.Body.Bytes(), &features)
 		require.NoError(s.T(), err)
 
-		// Build map for easy lookup
 		featureMap := make(map[string]string)
 		for _, feature := range features {
 			featureMap[feature.Name] = feature.Description
 		}
 
-		// Verify some known feature flags are present
 		knownFeatures := []string{
 			"app-branches",
 			"user-managed-features",

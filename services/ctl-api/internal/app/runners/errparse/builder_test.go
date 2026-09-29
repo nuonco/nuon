@@ -40,7 +40,7 @@ func TestNewParser_ProviderGate(t *testing.T) {
 		want     bool
 	}{
 		{ProviderAWS, true},
-		{ProviderUnknown, true}, // fails open
+		{ProviderUnknown, true},
 		{ProviderAzure, false},
 		{ProviderGCP, false},
 	}
@@ -53,7 +53,6 @@ func TestNewParser_ProviderGate(t *testing.T) {
 }
 
 func TestNewParser_ProviderGateNotResolvedWithoutCall(t *testing.T) {
-	// A parser with no provider gate must never trigger provider resolution.
 	resolved := false
 	p := NewParser(LayerTool, nilParse, WithSignals("boom"))
 	ctx := &ParseContext{ResolveProvider: func() Provider { resolved = true; return ProviderAWS }}

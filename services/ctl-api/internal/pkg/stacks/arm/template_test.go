@@ -11,9 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-// nestedBracketRe matches ARM expressions that contain nested square brackets,
-// e.g. "[guid(..., [take(...)], ...)]". A well-formed ARM expression has exactly
-// one outermost pair of square brackets; any inner '[' is a syntax error.
 var nestedBracketRe = regexp.MustCompile(`\[[^\]]*\[`)
 
 func TestGetAzureTemplate_NoNestedBrackets(t *testing.T) {
@@ -55,10 +52,6 @@ func TestGetAzureTemplate_WithSecrets(t *testing.T) {
 	assertNoNestedBrackets(t, tmplBytes)
 }
 
-// TestDefaultVNet_NonPruningSubnetSemantics guards the fix for
-// InUseSubnetCannotBeDeleted on reprovision: subnets are declared as standalone
-// child resources and omitted from the VNet's own properties, which only
-// preserves existing subnets on a VNet PUT when the API version is >= 2023-09-01.
 func TestDefaultVNet_NonPruningSubnetSemantics(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 

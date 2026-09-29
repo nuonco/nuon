@@ -17,7 +17,6 @@ const (
 	PRCommentStatusSkipped PRCommentStatus = "skipped"
 )
 
-// PRCommentPhaseStatus represents the status of one phase check row in the PR comment.
 type PRCommentPhaseStatus string
 
 const (
@@ -28,16 +27,12 @@ const (
 	PRCommentPhaseInvalid     PRCommentPhaseStatus = "invalid"
 )
 
-// PRCommentPhases carries the per-phase check statuses rendered in the GitHub PR comment.
-// A zero-value Install means the install row is omitted (e.g. build-only mode).
 type PRCommentPhases struct {
 	Config  PRCommentPhaseStatus
 	Builds  PRCommentPhaseStatus
 	Install PRCommentPhaseStatus
 }
 
-// InstallImpact is what a preview run would change on a single install if the
-// config were applied. Nothing is applied to produce it.
 type InstallImpact struct {
 	InstallID      string
 	InstallName    string
@@ -78,17 +73,9 @@ type PRCommentParams struct {
 	PreviewInstallName string
 	PreviewInstallURL  string
 	ErrorMessage       string
-	// Phases holds per-phase check rows for the GitHub PR comment.  A nil pointer
-	// means the Checks section is omitted entirely (e.g. for legacy/skipped runs).
-	Phases *PRCommentPhases
-	// InstallApplied conditions the "Applied to" block: the section is only
-	// rendered when the install step actually succeeded, not just when builds
-	// finished with an apply-mode run.
-	InstallApplied bool
-	// UpdatedAt renders the "Last updated at" line. Workflows leave it zero;
-	// the comment activity stamps it at write time so the value reflects when
-	// GitHub actually received the edit.
-	UpdatedAt time.Time
+	Phases             *PRCommentPhases
+	InstallApplied     bool
+	UpdatedAt          time.Time
 }
 
 const lastUpdatedPrefix = "**Last updated at:** "
@@ -97,9 +84,6 @@ func lastUpdatedLine(t time.Time) string {
 	return lastUpdatedPrefix + t.UTC().Format("2006-01-02 15:04:05 MST")
 }
 
-// BuildPRCommentBody renders the preview comment. Every run status shares the
-// same section skeleton so an edited comment keeps its shape as a run
-// progresses; sections appear when their data does, not per status.
 func BuildPRCommentBody(p *PRCommentParams) string {
 	var b strings.Builder
 
@@ -190,8 +174,6 @@ func BuildPRCommentBody(p *PRCommentParams) string {
 	return b.String()
 }
 
-// statusNote is the single progress sentence under the checks table. It tracks
-// what the run is doing, while the surrounding sections stay fixed.
 func statusNote(p *PRCommentParams) string {
 	switch {
 	case p.Status == PRCommentStatusSkipped:
@@ -207,9 +189,6 @@ func statusNote(p *PRCommentParams) string {
 	}
 }
 
-// writePhaseChecksSection renders the Checks table into the comment body.
-// Config is always shown; Builds is always shown; Install is omitted when
-// PRCommentPhases.Install is empty.
 func writePhaseChecksSection(b *strings.Builder, phases *PRCommentPhases, includeInstall bool) {
 	if phases == nil {
 		return
@@ -233,10 +212,6 @@ func writePhaseChecksSection(b *strings.Builder, phases *PRCommentPhases, includ
 	b.WriteString("\n")
 }
 
-// FinalizeFailedPhases converts any still-pending phase rows to Invalid.
-// Call this when the run has terminated with failure/cancellation so that
-// the PR comment does not show "Validating/Building/Configuring" for phases
-// that never completed.
 func FinalizeFailedPhases(phases *PRCommentPhases) {
 	if phases == nil {
 		return
@@ -361,9 +336,6 @@ func writeBuildsSection(b *strings.Builder, changes []ComponentBuildChange) {
 	b.WriteString("\n</details>\n\n")
 }
 
-// writeDiffSection mirrors the dashboard overview's config diff card: a single
-// collapsed disclosure whose summary carries the aggregate counts, expanding to
-// operation-prefixed entity rows grouped by section.
 func writeDiffSection(b *strings.Builder, diff *ComputeAppConfigDiffOutput) {
 	var added, changed, removed int
 	for _, s := range diff.Sections {
@@ -402,7 +374,7 @@ func writeDiffSection(b *strings.Builder, diff *ComputeAppConfigDiffOutput) {
 	b.WriteString("</details>\n\n")
 }
 
-// Counts are wrapped in literal <code> rather than backticks because GitHub
+// why: Counts are wrapped in literal <code> rather than backticks because GitHub
 // does not render markdown inside a <summary>.
 func diffCountSummary(added, changed, removed int) string {
 	parts := make([]string, 0, 3)

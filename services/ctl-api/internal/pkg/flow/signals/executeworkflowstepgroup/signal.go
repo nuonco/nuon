@@ -21,7 +21,6 @@ import (
 
 const SignalType signal.SignalType = "execute-workflow-step-group"
 
-// Directive aliases for backward compatibility.
 const (
 	DirectiveContinue      = directive.StepContinue
 	DirectiveStop          = directive.StepStop
@@ -32,10 +31,6 @@ const (
 	DirectiveAwaitRetry    = directive.StepAwaitRetry
 )
 
-// Signal encapsulates the lifecycle of executing all steps within a single
-// workflow step group (GroupIdx). It orchestrates sequential or parallel step
-// dispatch and communicates the group outcome back to the flow signal via the
-// workflow's ResultDirective field.
 type Signal struct {
 	WorkflowID      string `json:"workflow_id"`
 	StepGroupID     string `json:"step_group_id"`
@@ -46,43 +41,23 @@ type Signal struct {
 	TargetQueueName string `json:"target_queue_name"`
 	Parallel        bool   `json:"parallel"`
 
-	// WorkflowType identifies the kind of workflow that owns this group. Set
-	// at dispatch time from the in-scope *app.Workflow and forwarded to each
-	// child execute-workflow-step signal so the workflow_step lifecycle
-	// hook can suppress events for envelope workflows like drift_run /
-	// drift_run_reprovision_sandbox without a DB lookup.
 	WorkflowType string `json:"workflow_type,omitempty"`
 
-	// OrgID / OrgName / OwnerName are pass-through fields stamped by the
-	// parent execute-workflow signal. They are forwarded to the step signal
-	// at dispatch time so workflow_step lifecycle webhook payloads carry
-	// human-readable names without a per-event DB lookup.
 	OrgID     string `json:"org_id,omitempty"`
 	OrgName   string `json:"org_name,omitempty"`
 	OwnerName string `json:"owner_name,omitempty"`
+	finished  bool
 
-	// finished is set when Execute() completes (success or error). The
-	// group-finished update handler blocks until this is true, then returns
-	// the group's final directive.
-	finished bool
-
-	// cancelRequested is set by the cancel-group update handler.
 	cancelRequested bool
 
-	// DerivedTimeout is set at dispatch time from the group's TimeoutSeconds.
-	// When non-zero, Timeout() returns this instead of the hardcoded fallback.
 	DerivedTimeout time.Duration `json:"derived_timeout,omitempty"`
 
 	ResidentFlow bool `json:"resident_flow,omitempty"`
 
-	// stepSignalIDs tracks in-flight step signal IDs for cancellation propagation.
 	stepSignalIDs []string
 
-	// stepDispatchSeq scopes each step dispatch's completion signal per attempt.
 	stepDispatchSeq int
 
-	// lastDirective tracks the last directive written to the workflow.
-	// Used by Execute() to determine the correct group status after execution.
 	lastDirective string
 
 	mw metrics.Writer
@@ -157,12 +132,9 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.OwnerType == "" {
 		return errors.New("owner_type is required")
 	}
-	// QueueName and TargetQueueName are optional when all steps in the group
-	// specify their own SignalQueueOwnerID for per-step routing.
 	return nil
 }
 
-// RegisterUpdateHandlers registers group-level update handlers.
 func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 	if err := workflow.SetUpdateHandlerWithOptions(ctx, "cancel-group",
 		s.cancelGroupHandler, workflow.UpdateHandlerOptions{}); err != nil {
@@ -196,11 +168,7 @@ func (s *Signal) cancelGroupHandler(ctx workflow.Context) error {
 	return nil
 }
 
-// Cancel propagates cancellation to all in-flight step signals.
 func (s *Signal) Cancel(ctx workflow.Context) error {
-	// Stop the execute loop from dispatching further steps: the loop checks
-	// this flag before each step and on wake, and an external cancel (via the
-	// queue handler's cancel update) doesn't go through cancelGroupHandler.
 	s.cancelRequested = true
 
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
@@ -218,7 +186,6 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 		}
 	}
 
-	// Mark all incomplete steps in this group as cancelled
 	steps, err := s.getGroupSteps(cancelCtx)
 	if err != nil {
 		return err
@@ -236,7 +203,6 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 		})
 	}
 
-	// Mark the group itself as cancelled
 	s.updateGroupStatus(cancelCtx, app.CompositeStatus{
 		Status:                 app.StatusCancelled,
 		StatusHumanDescription: "group cancelled",
@@ -245,9 +211,6 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 	return nil
 }
 
-// getGroupSteps fetches all steps for this group from the database.
-// When StepGroupID is set, steps are filtered by WorkflowStepGroupID;
-// otherwise falls back to GroupIdx filtering for backward compatibility.
 func (s *Signal) getGroupSteps(ctx workflow.Context) ([]app.WorkflowStep, error) {
 	allSteps, err := activities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, activities.GetFlowStepsRequest{
 		FlowID: s.WorkflowID,
@@ -271,9 +234,6 @@ func (s *Signal) getGroupSteps(ctx workflow.Context) ([]app.WorkflowStep, error)
 	return groupSteps, nil
 }
 
-// writeStepGroupDirective writes the group's result directive to the step group's
-// own ResultDirective field when a StepGroupID is set. Falls back to writing to
-// the workflow's ResultDirective for backward compatibility with synthetic groups.
 func (s *Signal) writeStepGroupDirective(ctx workflow.Context, d directive.Group) error {
 	s.lastDirective = string(d)
 	if s.StepGroupID != "" {
@@ -285,8 +245,6 @@ func (s *Signal) writeStepGroupDirective(ctx workflow.Context, d directive.Group
 	return s.writeWorkflowDirective(ctx, string(d))
 }
 
-// writeWorkflowDirective writes the group's result directive to the workflow's
-// ResultDirective field so the flow signal can read it.
 func (s *Signal) writeWorkflowDirective(ctx workflow.Context, d string) error {
 	return activities.AwaitPkgWorkflowsFlowUpdateFlowResultDirective(ctx, activities.UpdateFlowResultDirectiveRequest{
 		FlowID:    s.WorkflowID,
@@ -294,9 +252,6 @@ func (s *Signal) writeWorkflowDirective(ctx workflow.Context, d string) error {
 	})
 }
 
-// isWorkflowCancelled checks the workflow's persisted status for cancellation.
-// This is a durable check that works even if the in-memory cancelRequested flag
-// hasn't been set (e.g., cancel propagation is still in flight).
 func (s *Signal) isWorkflowCancelled(ctx workflow.Context) bool {
 	flw, err := activities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, s.WorkflowID)
 	if err != nil {

@@ -72,7 +72,6 @@ func (s *Service) Get(ctx context.Context, appID, compID, buildID string, asJSON
 		{"commit created by", commitCreatedBy},
 		{"commit message", commitMessage},
 
-		// Image-source identity fields. Empty for non-image builds.
 		{"source ref", build.SourceRef},
 		{"source image", build.SourceImage},
 		{"resolved tag", build.ResolvedTag},

@@ -91,11 +91,6 @@ function UnmonitoredRegion({
   )
 }
 
-// Severity shading, statuspage-style: the bar encodes how much of the day was
-// bad (unhealthy + degraded over observed time), not just the worst moment —
-// a 2-minute blip and a 20-hour outage should not be the same red. Unknown
-// time is blindness, not downtime, so it never darkens a bar; an all-unknown
-// day stays neutral.
 function dayBarClass(day: THealthTimelineDay): string {
   const observed = day?.observed_seconds ?? 0
   if (observed <= 0) return BAR_NEUTRAL_CLASS
@@ -121,8 +116,6 @@ function formatHealth(health?: string): string {
   return humanize(health || 'unknown')
 }
 
-// A component nobody observed has 0% uptime arithmetically, which reads as
-// total downtime. Absence of data is not downtime, so it gets a dash.
 function formatUptime(uptimePercent?: number, observedSeconds?: number): string {
   if (!observedSeconds) return '—'
   return typeof uptimePercent === 'number' ? `${uptimePercent.toFixed(2)}%` : '—'
@@ -348,8 +341,6 @@ function ComponentHealthGroup({
         <Expand
           id={`health-timeline-unassessed-${groupKey}`}
           isIconBeforeHeading
-          // Most installs have no probed components at all; collapsing the
-          // only list there is would leave the card looking broken.
           isOpen={assessed.length === 0}
           headerClassName="!px-0 !justify-start"
           heading={

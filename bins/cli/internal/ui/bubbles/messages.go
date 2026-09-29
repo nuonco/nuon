@@ -2,7 +2,6 @@ package bubbles
 
 import "charm.land/lipgloss/v2"
 
-// ColoredText returns text styled with the given hex color.
 func ColoredText(text, color string) string {
 	return lipgloss.NewStyle().Foreground(lipgloss.Color(color)).Render(text)
 }

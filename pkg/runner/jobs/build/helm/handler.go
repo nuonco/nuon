@@ -23,10 +23,6 @@ type handler struct {
 	cfg         *runnerconfig.Config
 	ociCopy     ocicopy.Copier
 
-	// state is reused between function calls, but can _not_ be reused with different jobs.
-	//
-	// the job loop ensures that no handler ever has more than one job at a time, but this guarantee should be made
-	// stronger in the future.
 	state *handlerState
 }
 

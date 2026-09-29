@@ -19,19 +19,13 @@ const (
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_writer.go -source=metrics.go -package=metrics
 type Writer interface {
-	// dogstatsd metrics
 	Incr(name string, tags []string)
 	Decr(name string, tags []string)
 	Timing(name string, value time.Duration, tags []string)
 	Gauge(name string, value float64, tags []string)
 	Count(name string, value int64, tags []string)
-	// Distribution sends a single value into a Datadog distribution
-	// metric. Use this for non-duration sample distributions (e.g. row
-	// counts, queue depths) where you want percentile rollups aggregated
-	// across hosts. For latencies prefer Timing.
 	Distribution(name string, value float64, tags []string)
 
-	// datadog specific
 	Event(e *statsd.Event)
 
 	Flush()
@@ -45,7 +39,6 @@ type writer struct {
 	Tags    []string
 	Log     *zap.Logger `validate:"required"`
 
-	// internal
 	clientonce sync.Once
 	client     dogstatsdClient
 	clienterr  error
@@ -53,7 +46,6 @@ type writer struct {
 
 var _ Writer = (*writer)(nil)
 
-// New returns a default writer, which emits metrics to statsd by default
 func New(v *validator.Validate, opts ...writerOption) (*writer, error) {
 	l, err := zap.NewDevelopment()
 	if err != nil {

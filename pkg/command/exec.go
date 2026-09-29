@@ -55,10 +55,7 @@ func (c *command) buildCommand(ctx context.Context) (*exec.Cmd, func(), error) {
 		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 		cmd.Cancel = func() error {
 			pgid := -cmd.Process.Pid
-			// Send SIGTERM first so children can clean up
 			_ = syscall.Kill(pgid, syscall.SIGTERM)
-
-			// Give processes time to exit gracefully, then force kill
 			done := make(chan struct{})
 			go func() {
 				cmd.Process.Wait()
@@ -78,8 +75,6 @@ func (c *command) buildCommand(ctx context.Context) (*exec.Cmd, func(), error) {
 		envVars = append(envVars, k+"="+v)
 	}
 
-	// create the correct stdout/stderr handlers
-	// TODO(jm): pull this into it's own function
 	stdout := c.Stdout
 	stderr := c.Stderr
 	opts := make([]lineprefix.Option, 0)
@@ -113,15 +108,11 @@ func (c *command) buildCommand(ctx context.Context) (*exec.Cmd, func(), error) {
 		stdout = io.Discard
 	}
 
-	// cleanup function to close any file handles
 	cleanup := func() {}
 
-	// if file output path is set, we also write to that.
 	if c.FileOutputPath != "" {
-		// Rotate existing log file before creating a new one
 		if _, err := os.Stat(c.FileOutputPath); err == nil {
 			rotatedPath := c.FileOutputPath + "." + time.Now().Format("2006-01-02T15-04-05")
-			// Best-effort rename; if it fails, we'll just truncate
 			os.Rename(c.FileOutputPath, rotatedPath)
 		}
 
@@ -138,7 +129,6 @@ func (c *command) buildCommand(ctx context.Context) (*exec.Cmd, func(), error) {
 		stderr = io.MultiWriter(stderr, fpWriter)
 	}
 
-	// build the command
 	cmd.Env = envVars
 	cmd.Stdin = c.Stdin
 	cmd.Stderr = stderr

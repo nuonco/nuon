@@ -41,12 +41,10 @@ func (h *handler) getHelmReleaseStore(ctx context.Context, kubeCfg *rest.Config)
 	var store *storage.Storage
 	switch h.state.plan.HelmDeployPlan.StorageDriver {
 	case "configmap", "configmaps":
-		// corev1.ConfigMapInterface
 		configmaps := k8sClient.CoreV1().ConfigMaps(h.state.plan.HelmDeployPlan.Namespace)
 		d := driver.NewConfigMaps(configmaps)
 		store = storage.Init(d)
 	case "secrets":
-		// corev1.SecretsInterface
 		secrets := k8sClient.CoreV1().Secrets(h.state.plan.HelmDeployPlan.Namespace)
 		d := driver.NewSecrets(secrets)
 		store = storage.Init(d)

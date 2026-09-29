@@ -34,17 +34,13 @@ func (s *Settings) fetch(ctx context.Context) error {
 	s.LoggingLevel = level
 	s.Groups = settings.Groups
 
-	// container
 	s.ContainerImageTag = settings.ContainerImageTag
 	s.ContainerImageURL = settings.ContainerImageURL
 
-	// NOTE: we add a few additional fields into the metadata so they appear on all tags, but can not be set by the
-	// API.
 	s.Metadata["runner.id"] = s.Cfg.RunnerID
 	s.Metadata["runner.version"] = version.Version
 	s.OtelSchemaURL = s.Cfg.RunnerAPIURL
 
-	// Platform resolution: prefer explicit config, then env var, then infer from settings.
 	switch {
 	case s.Cfg.RunnerPlatform != "":
 		s.Platform = s.Cfg.RunnerPlatform

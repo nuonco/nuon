@@ -11,7 +11,6 @@ import (
 )
 
 func (s *VCSServiceTestSuite) TestDeleteConnection_Success() {
-	// Create a test connection
 	conn := s.createTestVCSConnection()
 
 	rr := s.makeRequest(http.MethodDelete, fmt.Sprintf("/v1/vcs/connections/%s", conn.ID), nil)
@@ -21,7 +20,6 @@ func (s *VCSServiceTestSuite) TestDeleteConnection_Success() {
 	}
 	require.Equal(s.T(), http.StatusNoContent, rr.Code)
 
-	// Verify connection is deleted from database
 	var deletedConn app.VCSConnection
 	err := s.service.DB.Where("id = ?", conn.ID).First(&deletedConn).Error
 	require.Error(s.T(), err)

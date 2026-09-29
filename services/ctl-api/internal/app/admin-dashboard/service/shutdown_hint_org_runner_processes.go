@@ -10,10 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
-// ShutdownHintOrgRunnerProcesses sends a shutdown hint (via the full shutdown
-// helper) for the most recent runner process per runner + process_type
-// combination for the given org. This enqueues the process_shutdown signal
-// and writes a red health check in addition to creating the shutdown record.
 func (s *service) ShutdownHintOrgRunnerProcesses(c *gin.Context) {
 	orgID := c.Param("id")
 	ctx := c.Request.Context()

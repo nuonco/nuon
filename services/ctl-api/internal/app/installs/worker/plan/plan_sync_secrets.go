@@ -57,7 +57,7 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 
 	secrets := make([]plantypes.KubernetesSecretSync, 0)
 	for _, cfg := range appCfg.SecretsConfig.Secrets {
-		// v2 targets imply sync is enabled even when the legacy kubernetes_sync flag is unset/false.
+		// why: v2 targets imply sync is enabled even when the legacy kubernetes_sync flag is unset/false.
 		if !cfg.KubernetesSync && len(cfg.KubernetesSyncTargets) == 0 {
 			continue
 		}
@@ -78,7 +78,6 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 		return &plantypes.SyncSecretsPlan{}, nil
 	}
 
-	// Build cloud auth based on the cloud provider
 	var cloudAuth *CloudAuth
 	switch {
 	case stack.InstallStackOutputs.AWSStackOutputs != nil:
@@ -121,8 +120,6 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 		return nil, errors.New("secret sync not supported on current cloud provider")
 	}
 
-	// Secret sync isn't bound to a specific component, so we always fall
-	// through to the sandbox-default context.
 	clusterInfo, err := p.resolveKubernetesContext(ctx, nil, appCfg, stack, state, cloudAuth)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to resolve kubernetes context")
@@ -194,8 +191,6 @@ func (p *Planner) getKubernetesSecret(stack app.InstallStackOutputs, cfg app.App
 	return sync, true, nil
 }
 
-// kubernetesSyncTargets maps the model's v2 sync targets onto the plan type the runner consumes. Returns nil when no
-// targets are configured so the runner falls back to the v1 single-destination path.
 func kubernetesSyncTargets(targets []app.AppSecretKubernetesSyncTarget) []plantypes.KubernetesSecretSyncTarget {
 	if len(targets) == 0 {
 		return nil

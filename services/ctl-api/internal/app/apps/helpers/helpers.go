@@ -52,27 +52,19 @@ func New(params Params) *Helpers {
 	}
 }
 
-// VCSHelpers returns the VCS helpers for git source resolution and token creation.
 func (h *Helpers) VCSHelpers() *vcshelpers.Helpers {
 	return h.vcsHelpers
 }
 
-// QueueClient returns the queue client for enqueueing app-owned signals.
 func (h *Helpers) QueueClient() *queueclient.Client {
 	return h.queueClient
 }
 
-// UploadCustomNestedStackTemplates uploads the config's custom nested stack
-// templates and persists the resulting hashes and ready status. This runs inline
-// with the config write so a stack generated from the config always finds its
-// templates already in S3.
 func (h *Helpers) UploadCustomNestedStackTemplates(ctx context.Context, db *gorm.DB, stackConfig *app.AppStackConfig) error {
 	if len(stackConfig.CustomNestedStacks) == 0 {
 		return nil
 	}
 
-	// Deployments without a template bucket configured leave the stacks pending
-	// rather than failing the config sync outright.
 	if h.cfg.AWSCloudFormationStackTemplateBucket == "" {
 		return nil
 	}

@@ -39,9 +39,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	backend := plan.PulumiBackend
 	workDir := h.state.srcWorkspace.Root()
 
-	// Tag this handler's logger with semantic-convention attributes so every
-	// emitted record (including from helpers further down the call tree) carries
-	// them automatically.
 	pulumiWorkspaceID := ""
 	pulumiStack := ""
 	if backend != nil {
@@ -162,7 +159,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		}
 
 	case models.AppRunnerJobOperationTypeApplyDashPlan:
-		// Persist state on every exit (success, error, or panic) so partially
+		// why: Persist state on every exit (success, error, or panic) so partially
 		// created resources are never lost — the retry then reconciles instead
 		// of recreating.
 		defer func() {
@@ -377,7 +374,7 @@ func (h *handler) downloadState(ctx context.Context, l *zap.Logger, ws *pulumiwo
 }
 
 func (h *handler) updatePulumiState(ctx context.Context, ws *pulumiworkspace.Workspace) error {
-	// Detach from job cancellation so a mid-deploy cancel still exports + persists
+	// why: Detach from job cancellation so a mid-deploy cancel still exports + persists
 	// state; otherwise created resources are dropped and the retry recreates them.
 	ctx = context.WithoutCancel(ctx)
 

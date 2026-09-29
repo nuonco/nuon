@@ -8,7 +8,6 @@ import (
 	"github.com/nuonco/nuon/pkg/render/features"
 )
 
-// want to write a type that can walk an object recursively and any field that has a struct
 func RenderStruct(obj any, data map[string]any) error {
 	return walkFields(obj, data)
 }
@@ -16,7 +15,6 @@ func RenderStruct(obj any, data map[string]any) error {
 func walkFields(obj any, data map[string]any) error {
 	val := reflect.ValueOf(obj)
 
-	// If it's a pointer, get the underlying value
 	if val.Kind() == reflect.Ptr {
 		val = val.Elem()
 	}
@@ -39,14 +37,11 @@ func walkFields(obj any, data map[string]any) error {
 			return errors.Wrap(err, "unable to check if feature is enabled")
 		}
 
-		// if the record is nested, recurse
 		switch field.Kind() {
 		case reflect.Ptr:
-			// If it's a nil pointer, skip it
 			if field.IsNil() {
 				continue
 			}
-			// Only recurse into pointer-to-struct/map; skip primitive pointers (*bool, *int, *string, etc.)
 			elem := field.Elem()
 			switch elem.Kind() {
 			case reflect.Struct, reflect.Map:
@@ -63,7 +58,6 @@ func walkFields(obj any, data map[string]any) error {
 				}
 				elem.SetString(val)
 			default:
-				// *bool, *int, etc. — nothing to render
 				continue
 			}
 		case reflect.Struct:
@@ -71,7 +65,6 @@ func walkFields(obj any, data map[string]any) error {
 				return err
 			}
 		case reflect.Map:
-			// For maps, iterate through all values
 			if !field.CanSet() {
 				return errors.New("map field is not settable")
 			}
@@ -79,7 +72,6 @@ func walkFields(obj any, data map[string]any) error {
 				continue
 			}
 
-			// Pass a pointer to the map if it's not already a pointer
 			if field.Kind() == reflect.Map {
 				if err := RenderMap(field.Addr().Interface(), data); err != nil {
 					return errors.Wrap(err, "unable to render map")
@@ -90,7 +82,6 @@ func walkFields(obj any, data map[string]any) error {
 				}
 			}
 		case reflect.Slice:
-			// Handle slices of structs
 			elemKind := field.Type().Elem().Kind()
 
 			if elemKind == reflect.Struct {
@@ -101,7 +92,6 @@ func walkFields(obj any, data map[string]any) error {
 					}
 				}
 			} else if elemKind == reflect.Ptr && field.Type().Elem().Elem().Kind() == reflect.Struct {
-				// Handle slice of pointers to structs
 				for i := 0; i < field.Len(); i++ {
 					elem := field.Index(i)
 					if elem.IsNil() {
@@ -176,7 +166,7 @@ func walkFields(obj any, data map[string]any) error {
 	return nil
 }
 
-// Config fields walked by RenderStruct/RenderMap end up in infrastructure APIs --
+// why: Config fields walked by RenderStruct/RenderMap end up in infrastructure APIs --
 // helm values files, kubernetes manifests, terraform variables, env vars, nested
 // stack parameters -- never in a browser. They therefore render through
 // RenderTextV2: html/template escaping silently corrupts values, e.g. a PEM

@@ -14,7 +14,6 @@ const SignalType signal.SignalType = "onboarding-create-app"
 type Signal struct {
 	OnboardingID string `json:"onboarding_id" validate:"required"`
 
-	// Example app fields (populated when AppType=example)
 	ExampleRepo      string `json:"example_repo,omitempty"`
 	ExampleDirectory string `json:"example_directory,omitempty"`
 	ExampleBranch    string `json:"example_branch,omitempty"`

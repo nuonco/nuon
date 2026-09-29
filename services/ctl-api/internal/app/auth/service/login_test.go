@@ -79,7 +79,6 @@ func (s *LoginTestSuite) SetupTest() {
 		TestAcc: s.testAcc,
 	})
 
-	// Register auth routes (includes HTML template loading)
 	err := s.service.AuthService.RegisterAuthRoutes(s.router)
 	require.NoError(s.T(), err)
 }
@@ -91,7 +90,6 @@ func (s *LoginTestSuite) TearDownSuite() {
 func (s *LoginTestSuite) setupTestData() {
 	ctx := context.Background()
 
-	// Create test account
 	accID := domains.NewAccountID()
 	testAcc := &app.Account{
 		ID:          accID,
@@ -103,7 +101,6 @@ func (s *LoginTestSuite) setupTestData() {
 	require.NoError(s.T(), err)
 	s.testAcc = testAcc
 
-	// Create test org with account context
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 	orgID := domains.NewOrgID()
 	testOrg := &app.Org{
@@ -117,9 +114,6 @@ func (s *LoginTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
 	require.NoError(s.T(), err)
 	s.testOrg = testOrg
-
-	// Note: Identity provider comes from environment config (default provider)
-	// No need to create test identity provider in DB
 }
 
 func (s *LoginTestSuite) makeRequest(method, path string) *httptest.ResponseRecorder {
@@ -163,13 +157,11 @@ func (s *LoginTestSuite) TestLogin() {
 		{
 			name:         "valid provider type initiates OAuth flow",
 			queryParams:  "?provider=" + provider,
-			expectedCode: http.StatusFound, // 302 redirect
+			expectedCode: http.StatusFound,
 			validateFunc: func(rr *httptest.ResponseRecorder) {
-				// Should redirect to OAuth provider
 				location := rr.Header().Get("Location")
 				assert.NotEmpty(s.T(), location, "should have Location header")
 
-				// Should set session cookie
 				cookies := rr.Result().Cookies()
 				var foundSession bool
 				for _, cookie := range cookies {
@@ -191,7 +183,6 @@ func (s *LoginTestSuite) TestLogin() {
 				location := rr.Header().Get("Location")
 				assert.NotEmpty(s.T(), location)
 
-				// Session cookie should contain requested URL
 				cookies := rr.Result().Cookies()
 				var foundSession bool
 				for _, cookie := range cookies {
@@ -206,7 +197,7 @@ func (s *LoginTestSuite) TestLogin() {
 		{
 			name:         "invalid URL encoding is silently dropped by Go HTTP parser",
 			queryParams:  "?provider=" + provider + "&url=%ZZ%invalid",
-			expectedCode: http.StatusFound, // Go drops malformed query params, so url="" and handler proceeds
+			expectedCode: http.StatusFound,
 			validateFunc: func(rr *httptest.ResponseRecorder) {
 				location := rr.Header().Get("Location")
 				assert.NotEmpty(s.T(), location, "should redirect to OAuth provider")
@@ -242,8 +233,6 @@ func (s *LoginTestSuite) TestLogin() {
 	}
 }
 
-// The env provider is addressable by its synthetic ID, and DB providers by their row ID, so that a
-// deployment with two providers of the same type can send a user to a specific one.
 func (s *LoginTestSuite) TestLoginByProviderID() {
 	envProviderID := app.EnvIdentityProviderID(app.ProviderType(s.configuredProvider()))
 
@@ -255,7 +244,6 @@ func (s *LoginTestSuite) TestLoginByProviderID() {
 	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
 }
 
-// Two OIDC providers can coexist, and each is reachable by its own ID.
 func (s *LoginTestSuite) TestLoginWithASecondProviderOfTheSameType() {
 	secondary := &app.IdentityProvider{
 		ID:           domains.NewIdentityProviderID(),
@@ -274,13 +262,10 @@ func (s *LoginTestSuite) TestLoginWithASecondProviderOfTheSameType() {
 	secondary.ProviderType = app.ProviderTypeOIDC
 	secondary.Name = "Secondary SSO"
 	require.NoError(s.T(), s.service.DB.Create(secondary).Error)
-	// other suites in this package assert on the provider list, so don't leak an enabled provider
 	defer func() {
 		require.NoError(s.T(), s.service.DB.Unscoped().Delete(secondary).Error)
 	}()
 
-	// the redirect itself needs live OIDC discovery against the issuer, which the dev-stack run
-	// covers; here the point is that both providers coexist and are separately addressable
 	rr := s.makeRequest("GET", "/")
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 	assert.Contains(s.T(), rr.Body.String(), "Secondary SSO",
@@ -289,11 +274,9 @@ func (s *LoginTestSuite) TestLoginWithASecondProviderOfTheSameType() {
 }
 
 func (s *LoginTestSuite) TestLoginClearsExistingCookie() {
-	// First, set an auth cookie
 	req, err := http.NewRequest("GET", "/login?provider="+s.configuredProvider(), nil)
 	require.NoError(s.T(), err)
 
-	// Add existing auth cookie
 	req.AddCookie(&http.Cookie{
 		Name:  NuonAuthCookieName,
 		Value: "existing-token-value",
@@ -304,17 +287,14 @@ func (s *LoginTestSuite) TestLoginClearsExistingCookie() {
 
 	require.Equal(s.T(), http.StatusFound, rr.Code)
 
-	// Verify cookie was cleared (MaxAge = -1 indicates deletion)
 	cookies := rr.Result().Cookies()
 	var foundAuthCookie bool
 	for _, cookie := range cookies {
 		if cookie.Name == NuonAuthCookieName {
 			foundAuthCookie = true
-			// Cookie should be cleared with MaxAge = -1
 			assert.Equal(s.T(), -1, cookie.MaxAge, "auth cookie should be cleared")
 			break
 		}
 	}
-	// Cookie clearing might not always set a new cookie, so this assertion is flexible
 	s.T().Logf("Auth cookie found in response: %v", foundAuthCookie)
 }

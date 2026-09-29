@@ -26,7 +26,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// AdminGetOrgFeaturesTestService holds all fx-injected dependencies.
 type AdminGetOrgFeaturesTestService struct {
 	fx.In
 
@@ -41,7 +40,6 @@ type AdminGetOrgFeaturesTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// AdminGetOrgFeaturesTestSuite is the testify suite for AdminGetOrgFeatures endpoint.
 type AdminGetOrgFeaturesTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -66,7 +64,6 @@ func (s *AdminGetOrgFeaturesTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -75,7 +72,6 @@ func (s *AdminGetOrgFeaturesTestSuite) SetupSuite() {
 
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -83,7 +79,6 @@ func (s *AdminGetOrgFeaturesTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,

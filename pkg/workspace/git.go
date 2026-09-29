@@ -17,8 +17,6 @@ import (
 
 var commitHashRegex = regexp.MustCompile(`\b[0-9a-f]{5,40}\b`)
 
-// IsCommitHash checks if a string matches the pattern of a git commit hash
-// (5-40 hexadecimal characters).
 func IsCommitHash(s string) bool {
 	return commitHashRegex.MatchString(s)
 }
@@ -54,7 +52,6 @@ func (w *Workspace) clone(ctx context.Context) error {
 
 	coOpts := &git.CheckoutOptions{}
 
-	// first, if it looks like a commit hash, attempt to check out as a reference
 	if IsCommitHash(w.src.Ref) {
 		hash := plumbing.NewHash(w.src.Ref)
 		w.l.Info("checking out as reference",
@@ -78,7 +75,6 @@ func (w *Workspace) clone(ctx context.Context) error {
 		)
 	}
 
-	// fetch remote origin
 	w.l.Debug("fetching remote origin",
 		zap.String("url", w.src.URL),
 		zap.String("ref", w.src.Ref),
@@ -111,7 +107,6 @@ func (w *Workspace) clone(ctx context.Context) error {
 		}
 	}
 
-	// second, attempt to check out as a branch
 	branchRefName := plumbing.NewBranchReferenceName(w.src.Ref)
 	branch := plumbing.ReferenceName(branchRefName)
 	w.l.Info("checking out branch",
@@ -136,7 +131,6 @@ func (w *Workspace) clone(ctx context.Context) error {
 		zap.String("error", err.Error()),
 	)
 
-	// third, attempt to check out as a tag
 	tagRefName := plumbing.NewTagReferenceName(w.src.Ref)
 	w.l.Info("checking out as a tag",
 		zap.String("url", w.src.URL),

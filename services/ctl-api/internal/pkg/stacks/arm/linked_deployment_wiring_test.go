@@ -367,10 +367,6 @@ func TestGetCustomLinkedDeployments_PrincipalIDOutput(t *testing.T) {
 	})
 }
 
-// Every nested deployment name that ends up at subscription scope has to be
-// namespaced by install: a subscription deployment record is keyed by name alone
-// and its location is immutable, so a shared name means two installs of one app
-// either overwrite each other's record or fail outright across regions.
 func TestCustomStackNames_NamespacedAtSubscriptionScope(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 
@@ -382,7 +378,6 @@ func TestCustomStackNames_NamespacedAtSubscriptionScope(t *testing.T) {
 		require.Len(t, resources, 1)
 
 		assert.Equal(t, "Database", resources[0].(map[string]any)["name"])
-		// The customer's name still keys the phone-home payload either way.
 		assert.Equal(t, "database", outs[0].StackName)
 	})
 
@@ -398,8 +393,6 @@ func TestCustomStackNames_NamespacedAtSubscriptionScope(t *testing.T) {
 		assert.Equal(t, "database", outs[0].StackName)
 	})
 
-	// The role is subscription-level at both scopes, so unlike the deployments above
-	// it cannot fall back to a bare name when the root is a resource group.
 	for _, tc := range []struct {
 		name  string
 		scope armScope
@@ -433,9 +426,6 @@ func TestCustomStackNames_NamespacedAtSubscriptionScope(t *testing.T) {
 	}
 }
 
-// Namespacing spends 27 of ARM's 64 characters before the customer's own name, so
-// the length has to be checked where it is derived. Left un-caught it surfaces at
-// deploy time as a validation error against a resource the customer never wrote.
 func TestCustomStackNames_LengthGuard(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 
@@ -450,8 +440,6 @@ func TestCustomStackNames_LengthGuard(t *testing.T) {
 	})
 
 	t.Run("identity role name over the limit is rejected even at resource group scope", func(t *testing.T) {
-		// Short enough that the stack's own deployment name fits at both scopes; only
-		// the role deployment, which is namespaced regardless, runs over.
 		name := strings.Repeat("b", 30)
 		inp := armWiringInput(t, wiringStack{
 			name:            name,

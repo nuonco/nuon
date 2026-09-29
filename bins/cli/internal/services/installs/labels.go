@@ -12,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-// LabelsList prints the labels on an install.
 func (s *Service) LabelsList(ctx context.Context, installIDOrName string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installIDOrName)
 	if err != nil {
@@ -33,8 +32,6 @@ func (s *Service) LabelsList(ctx context.Context, installIDOrName string, asJSON
 	return nil
 }
 
-// LabelsSet adds or overwrites labels on an install. Args are kubectl-style
-// "key=value" pairs.
 func (s *Service) LabelsSet(ctx context.Context, installIDOrName string, args []string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installIDOrName)
 	if err != nil {
@@ -71,7 +68,6 @@ func (s *Service) LabelsSet(ctx context.Context, installIDOrName string, args []
 	return nil
 }
 
-// LabelsUnset removes labels from an install by key.
 func (s *Service) LabelsUnset(ctx context.Context, installIDOrName string, args []string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installIDOrName)
 	if err != nil {
@@ -105,7 +101,6 @@ func (s *Service) LabelsUnset(ctx context.Context, installIDOrName string, args 
 	return nil
 }
 
-// renderLabels prints an install's labels as a styled KEY/VALUE table.
 func renderLabels(id string, lbls map[string]string) {
 	if len(lbls) == 0 {
 		fmt.Printf("%s %s\n", styles.TextBold.Render(id), styles.TextSubtle.Render("(no labels)"))

@@ -61,7 +61,6 @@ type CloneInstallsRepoOutput struct {
 // @start-to-close-timeout 5m
 // @local
 func (a *Activities) CloneInstallsRepo(ctx context.Context, input *CloneInstallsRepoInput) (*CloneInstallsRepoOutput, error) {
-	// TEMP: copy from local mono repo for faster iteration
 	srcDir := "/Users/jonmorehouse/nuon/mono"
 	return &CloneInstallsRepoOutput{
 		SourceDir: srcDir,

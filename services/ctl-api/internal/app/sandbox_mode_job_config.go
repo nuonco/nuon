@@ -23,18 +23,15 @@ type SandboxModeJobConfig struct {
 	Operation string `json:"operation,omitempty" gorm:"default:''"`
 	Enabled   bool   `json:"enabled" gorm:"default:true"`
 
-	// Timing
 	Duration      time.Duration `json:"duration,omitzero" swaggertype:"primitive,integer"`
 	SleepDuration time.Duration `json:"sleep_duration,omitempty" swaggertype:"primitive,integer"`
 
-	// Failure modes (simple toggles)
 	ShouldError     bool `json:"should_error"`
 	Panic           bool `json:"panic"`
 	TriggerShutdown bool `json:"trigger_shutdown"`
 
 	ErrorMessage string `json:"error_message,omitempty" gorm:"default:''"`
 
-	// Template references (keys into the templates package)
 	LogTemplate         string `json:"log_template,omitempty"`
 	PlanTemplate        string `json:"plan_template,omitempty"`
 	PlanDisplayTemplate string `json:"plan_display_template,omitempty"`

@@ -15,9 +15,8 @@ type Signal struct {
 	AppBranchID       string `json:"app_branch_id" validate:"required"`
 	AppBranchConfigID string `json:"app_branch_config_id" validate:"required"`
 
-	// PR metadata — populated for pull_request events, empty for push events
 	PlanOnly            bool     `json:"plan_only,omitempty"`
-	EventType           string   `json:"event_type,omitempty"` // "push" or "pull_request"
+	EventType           string   `json:"event_type,omitempty"`
 	PRNumber            *int     `json:"pr_number,omitempty"`
 	HeadSHA             string   `json:"head_sha,omitempty"`
 	HeadRef             string   `json:"head_ref,omitempty"`
@@ -42,7 +41,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.Wrap(err, "validation failed")
 	}
 
-	// Verify app branch exists
 	_, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
 	if err != nil {
 		return errors.Wrap(err, "app branch not found")

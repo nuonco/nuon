@@ -16,13 +16,11 @@ const gitRefNotFoundCompositeErrorVersion = "app-branch-fetch-commit-git-ref-not
 func (s *Signal) Execute(ctx workflow.Context) error {
 	logger := workflow.GetLogger(ctx)
 
-	// Get the app branch
 	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
 	if err != nil {
 		return fmt.Errorf("unable to get app branch: %w", err)
 	}
 
-	// Check if branch has configs
 	if len(branch.Configs) == 0 {
 		logger.Info("no configs found for app branch", "app_branch_id", branch.ID)
 		return nil
@@ -30,7 +28,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	cfg := branch.Configs[0]
 
-	// Determine the VCS config ID to use
 	var vcsConfigID string
 	switch {
 	case cfg.ConnectedGithubVCSConfig != nil:
@@ -76,7 +73,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to fetch commit: %w", err)
 	}
 
-	// Create the commit record in the database
 	vcsCommit, err = activities.AwaitCreateCommitByVcsCommit(ctx, vcsCommit)
 	if err != nil {
 		return fmt.Errorf("unable to create commit: %w", err)
@@ -88,7 +84,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"author", vcsCommit.AuthorName,
 		"vcs_commit_id", vcsCommit.ID)
 
-	// Update the app branch run with the VCS commit ID
 	err = activities.AwaitUpdateAppBranchRunVCSCommit(ctx, activities.UpdateAppBranchRunVCSCommitRequest{
 		RunID:       s.RunID,
 		VcsCommitID: vcsCommit.ID,
@@ -97,7 +92,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to update run with VCS commit: %w", err)
 	}
 
-	// Update step metadata with commit details for the UI
 	if s.StepID != "" {
 		meta := map[string]any{
 			"commit_sha":     vcsCommit.SHA,
@@ -118,13 +112,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			vcsConfigID = cfg.PublicGitVCSConfig.ID
 		}
 
-		// Get the run's base branch info
 		run, runErr := activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID)
 		if runErr == nil && run.BaseBranch != "" {
 			meta["base_branch"] = run.BaseBranch
 		}
 
-		// Best-effort: fetch PR info for the branch
 		if vcsConfigID != "" {
 			branchName := ""
 			if b, ok := meta["branch"].(string); ok {
@@ -144,7 +136,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				}
 			}
 
-			// Best-effort: fetch diff stats
 			baseBranch := ""
 			if b, ok := meta["base_branch"].(string); ok {
 				baseBranch = b

@@ -16,17 +16,12 @@ type FetchChangedFilePathsInput struct {
 	PRNumber    *int   `json:"pr_number,omitempty"`
 	BaseSHA     string `json:"base_sha,omitempty"`
 
-	// BaseBranch compares the commit against a branch tip, which is what a
-	// pull request run wants. Empty asks for the commit's own diff, which is
-	// what a push run wants.
 	BaseBranch string `json:"base_branch,omitempty"`
 }
 
 type ChangedFilePaths struct {
 	Paths []string `json:"paths"`
 
-	// Truncated reports that the diff exceeded maxChangedFilePaths, so Paths is
-	// only a prefix and no caller may conclude the whole diff is ignorable.
 	Truncated bool `json:"truncated,omitempty"`
 }
 

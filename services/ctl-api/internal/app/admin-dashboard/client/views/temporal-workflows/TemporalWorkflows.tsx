@@ -37,7 +37,6 @@ export const TemporalWorkflows = () => {
     <div className="space-y-6">
       <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Temporal Workflows</h1>
 
-      {/* Search form */}
       <form onSubmit={handleSubmit} className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -75,7 +74,6 @@ export const TemporalWorkflows = () => {
       {submitted && isLoading && <LoadingSpinner />}
       {submitted && error && <ErrorMessage message={(error as Error).message || 'Failed to load workflow'} />}
 
-      {/* Workflow header */}
       {submitted && wfInfo && (
         <>
           <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
@@ -94,7 +92,6 @@ export const TemporalWorkflows = () => {
               </div>
             </div>
 
-            {/* Execution stats */}
             <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-800 flex flex-wrap gap-6 text-xs">
               <div>
                 <p className="text-gray-500 dark:text-gray-400 uppercase">Status</p>
@@ -129,7 +126,6 @@ export const TemporalWorkflows = () => {
             </div>
           </div>
 
-          {/* Temporal workflow stats card */}
           {temporalUIUrl && data?.namespace && data?.workflow_id && (
             <TemporalWorkflowCard
               temporalUIUrl={temporalUIUrl}
@@ -138,7 +134,6 @@ export const TemporalWorkflows = () => {
             />
           )}
 
-          {/* Failures section */}
           {(wfInfo.status === 'Failed' || wfInfo.status === 'Timed Out') && (
             <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 p-4">
               <h2 className="text-sm font-semibold text-red-800 dark:text-red-200 mb-2">Failures</h2>
@@ -165,7 +160,6 @@ export const TemporalWorkflows = () => {
             </div>
           )}
 
-          {/* Activities */}
           {wfInfo.activities?.length > 0 && (
             <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
               <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Activities ({wfInfo.activities.length})</h2>
@@ -192,7 +186,6 @@ export const TemporalWorkflows = () => {
             </div>
           )}
 
-          {/* Orphan activities (main workflow body) */}
           {wfInfo.orphan_activities?.length > 0 && (
             <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
               <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Orphan Activities ({wfInfo.orphan_activities.length})</h2>
@@ -220,7 +213,6 @@ export const TemporalWorkflows = () => {
             </div>
           )}
 
-          {/* Update executions */}
           {wfInfo.update_executions?.length > 0 && (
             <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
               <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Update Executions ({wfInfo.update_executions.length})</h2>
@@ -232,7 +224,6 @@ export const TemporalWorkflows = () => {
             </div>
           )}
 
-          {/* Child workflows */}
           {wfInfo.child_workflows?.length > 0 && (
             <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
               <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Child Workflows ({wfInfo.child_workflows.length})</h2>
@@ -270,7 +261,6 @@ export const TemporalWorkflows = () => {
             </div>
           )}
 
-          {/* Awaited signals */}
           {wfInfo.awaited_signals?.length > 0 && (
             <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
               <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Awaited Signals ({wfInfo.awaited_signals.length})</h2>
@@ -305,7 +295,6 @@ export const TemporalWorkflows = () => {
             </div>
           )}
 
-          {/* Update handlers */}
           {wfInfo.update_handlers?.length > 0 && (
             <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
               <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Update Handlers</h2>

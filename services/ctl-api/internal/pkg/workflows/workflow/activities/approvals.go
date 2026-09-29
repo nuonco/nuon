@@ -27,7 +27,6 @@ func (a *Activities) CreateApprovalResponse(ctx context.Context, req CreateStepA
 	}
 
 	if approval.Response != nil {
-		// An approval response already exists for this approval, return it without creating a new one.
 		return approval.Response, nil
 	}
 

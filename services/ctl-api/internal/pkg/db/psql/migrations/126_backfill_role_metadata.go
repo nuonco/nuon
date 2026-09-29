@@ -10,9 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 )
 
-// Migration126BackfillRoleMetadata reconciles every org's managed roles with
-// standardOrgRoles, backfilling the new title/description/contexts/managed
-// metadata columns that GET /v1/roles and the role pickers read.
 func (m *Migrations) Migration126BackfillRoleMetadata(ctx context.Context, db *gorm.DB) error {
 	const batchSize = 20
 	var offset int

@@ -10,14 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 )
 
-// OtelLogsConsumer reads OTLP log records off Kafka and batch-writes them to
-// ClickHouse. When it doesn't run — not selected, or Kafka disabled — New returns
-// nil and producers keep writing to ClickHouse inline.
-//
-// Records arrive already fully populated, including ID, OrgID and CreatedByID:
-// app.OtelLogRecord's BeforeCreate hook resolves those from the request context,
-// which does not exist here, and org_id leads the destination table's ORDER BY.
-// See the producers in runners/service and controlplanejob.
 type OtelLogsConsumer struct {
 	*pkgconsumer.Sink
 }

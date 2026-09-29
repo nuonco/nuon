@@ -36,7 +36,7 @@ type ExchangeOIDCTokenResponse struct {
 	Role          string    `json:"role,omitempty"`
 }
 
-// genericExchangeError is returned for every auth-path failure so responses
+// why: genericExchangeError is returned for every auth-path failure so responses
 // don't reveal whether an org, policy, or issuer is configured.
 func genericExchangeError() stderr.ErrAuthentication {
 	return stderr.ErrAuthentication{
@@ -45,9 +45,6 @@ func genericExchangeError() stderr.ErrAuthentication {
 	}
 }
 
-// parseUnverifiedIssuer extracts the iss claim from a JWT without signature
-// verification. It is only used to select among stored trust policies; the
-// issuer used for verification and JWKS fetching always comes from the policy.
 func parseUnverifiedIssuer(tokenStr string) (string, error) {
 	parts := strings.Split(tokenStr, ".")
 	if len(parts) != 3 {
@@ -72,8 +69,6 @@ func parseUnverifiedIssuer(tokenStr string) (string, error) {
 	return claims.Issuer, nil
 }
 
-// parseTokenClaims decodes the payload of an already-verified JWT into a
-// generic claim map for condition matching.
 func parseTokenClaims(tokenStr string) (map[string]any, error) {
 	parts := strings.Split(tokenStr, ".")
 	if len(parts) != 3 {
@@ -93,8 +88,6 @@ func parseTokenClaims(tokenStr string) (map[string]any, error) {
 	return claims, nil
 }
 
-// verifyOIDCToken verifies the token's signature, issuer, audience, and time
-// claims against a policy's stored configuration.
 func (s *service) verifyOIDCToken(ctx context.Context, tokenStr, issuer, audience string) error {
 	provider, err := s.jwks.getProvider(issuer)
 	if err != nil {
@@ -237,9 +230,6 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 			zap.String("org_id", req.OrgID),
 			zap.String("issuer", issuer),
 		}
-		// When at least one policy verified the token, claims are populated;
-		// logging the sub and claim keys lets operators see why no policy's
-		// conditions matched without weakening the generic client-facing 401.
 		if claims != nil {
 			sub, _ := claims["sub"].(string)
 			keys := make([]string, 0, len(claims))

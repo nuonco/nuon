@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
-// getInstallInputs gets the inputs and their current values for an install from the DB.
 func (h *Helpers) getInstallInputs(ctx context.Context, installID string) ([]app.InstallInputs, error) {
 	var install app.Install
 	res := h.db.WithContext(ctx).

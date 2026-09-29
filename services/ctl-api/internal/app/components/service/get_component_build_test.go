@@ -12,10 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestGetAppComponentBuildSuccess() {
 	s.Run("returns build by id", func() {
 		cmp := s.getSeededComponent(app.ComponentTypeHelmChart)
@@ -69,10 +65,6 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentBuildIncludesLatestCompo
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &response))
 	assert.Equal(s.T(), expected, response.CompositeError)
 }
-
-// ---------------------------------------------------------------------------
-// Not found cases
-// ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestGetAppComponentBuildNotFound() {
 	s.Run("nonexistent build id", func() {

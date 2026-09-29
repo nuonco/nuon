@@ -7,8 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// pemPublicKey is the shape that first exposed the escaping bug: a PEM body is
-// standard base64, so it contains "+" roughly as often as any other character.
 const pemPublicKey = `-----BEGIN PUBLIC KEY-----
 MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAtC28SUqEM2D1AUBKuZyG
 kSht4TZkX6EdxMjPVO6X/ElGDeKxxBkMWEEGOOARWrcaeK13K3+mzLtIEWiX5QOQ
@@ -16,8 +14,6 @@ SFTHTcRsDUoH1fuEodZmFGUCAwEAAQ==
 -----END PUBLIC KEY-----
 `
 
-// helmComponentConfig mirrors the shape of app.HelmComponentConfig: the values
-// files are carried as a []string of file contents tagged for templating.
 type helmComponentConfig struct {
 	ChartName   string            `features:"template"`
 	ValuesFiles []string          `features:"template"`
@@ -36,9 +32,6 @@ func escapingData() map[string]interface{} {
 	}
 }
 
-// A helm values file carrying a PEM through an input must survive byte for byte.
-// Through html/template the "+" became "&#43;" and the sandbox failed to parse
-// the key.
 func TestRenderStruct_HelmValuesFileKeepsPEMIntact(t *testing.T) {
 	cfg := &helmComponentConfig{
 		ChartName: "sandbox-cluster",

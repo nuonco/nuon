@@ -94,8 +94,6 @@ func TestInstallRegistryLoginServer(t *testing.T) {
 			want:      "",
 		},
 		{
-			// A sandbox with no registry output is valid: the install can still
-			// run actions that pull public images.
 			name: "missing registry output yields no login server",
 			stack: &app.InstallStack{InstallStackOutputs: app.InstallStackOutputs{
 				AWSStackOutputs: &app.AWSStackOutputs{Region: "us-west-2"},
@@ -131,7 +129,6 @@ func TestGetInstallRegistryPullConfig(t *testing.T) {
 		assert.Equal(t, configs.OCIRegistryTypeECR, cfg.RegistryType)
 		assert.Equal(t, "us-west-2", cfg.Region)
 		assert.Equal(t, awsAuth, cfg.ECRAuth)
-		// ECR trims the server address off the repository, so it has to carry it.
 		assert.Equal(t, "123456789012.dkr.ecr.us-west-2.amazonaws.com/org/app/tools", cfg.Repository)
 	})
 

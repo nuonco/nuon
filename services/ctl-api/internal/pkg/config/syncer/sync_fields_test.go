@@ -30,7 +30,6 @@ import (
 	testseedconfig "github.com/nuonco/nuon/services/ctl-api/tests/testseed/config"
 )
 
-// syncDeps mirrors the arguments NewDBSyncer takes.
 type syncDeps struct {
 	fx.In
 
@@ -45,17 +44,12 @@ type syncDeps struct {
 	TFClient         terraform.Client
 }
 
-// SyncFieldsTestSuite runs the syncer against a real database and asserts the
-// config fields it is expected to persist. Both the CLI path and app branch sync
-// go through this syncer, so a field covered here is covered for both.
 type SyncFieldsTestSuite struct {
 	tests.BaseDBTestSuite
 
 	app  *fxtest.App
 	deps syncDeps
 
-	// scheduled holds the components the most recent sync reported as needing a
-	// build. Only populated by syncs that own build scheduling.
 	scheduled []pkgsync.ComponentState
 }
 
@@ -104,15 +98,11 @@ func (s *SyncFieldsTestSuite) TearDownSuite() {
 	s.app.RequireStop()
 }
 
-// sync seeds an org/app/app-config, runs the branch-sync path over cfg, and
-// returns the app config it synced into.
 func (s *SyncFieldsTestSuite) sync(cfg *config.AppConfig) (context.Context, *app.App, *app.AppConfig) {
 	ctx, testApp, _ := s.syncEmpty()
 	return ctx, testApp, s.syncInto(ctx, testApp.ID, cfg)
 }
 
-// syncEmpty seeds an org and app without syncing anything, for tests that sync
-// more than once against the same app.
 func (s *SyncFieldsTestSuite) syncEmpty() (context.Context, *app.App, *app.AppConfig) {
 	ctx := context.Background()
 	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
@@ -121,9 +111,6 @@ func (s *SyncFieldsTestSuite) syncEmpty() (context.Context, *app.App, *app.AppCo
 	return ctx, s.deps.Seed.CreateApp(ctx, s.T()), nil
 }
 
-// syncInto runs the branch-sync path — build dispatch off — into a fresh app
-// config on an existing app.
-// The transaction mirrors Run, so a helper that bypasses it fails here too.
 func (s *SyncFieldsTestSuite) syncInto(ctx context.Context, appID string, cfg *config.AppConfig, opts ...Option) *app.AppConfig {
 	appCfg := s.deps.Seed.CreateBareAppConfig(ctx, s.T(), appID)
 
@@ -194,8 +181,6 @@ func (s *SyncFieldsTestSuite) TestBreakGlassConfigRowIsCreated() {
 
 	_, _, appCfg := s.sync(cfg)
 
-	// Every consumer reads AppConfig.BreakGlassConfig.Roles, so the row must
-	// exist and carry the roles.
 	var bg app.AppBreakGlassConfig
 	s.Require().NoError(s.deps.DB.
 		Preload("Roles").
@@ -218,7 +203,6 @@ func (s *SyncFieldsTestSuite) TestSandboxPersistsPulumiAndOperationRoles() {
 		{Operation: config.OperationType(app.OperationReprovision), RoleName: "maintenance"},
 	}
 
-	// The pulumi sandbox is feature gated; enable it for this org.
 	ctx := context.Background()
 	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
 	ctx, org := s.deps.Seed.EnsureOrg(ctx, s.T())
@@ -338,7 +322,6 @@ func (s *SyncFieldsTestSuite) TestActionStepsAreOrderedAndKeepRole() {
 	s.True(awc.EnableKubeConfig.Valid)
 	s.False(awc.EnableKubeConfig.Bool, "enable_kube_config=false must be honoured")
 
-	// Steps load ordered by idx, so unset idx values would scramble execution.
 	s.Require().Len(awc.Steps, 3)
 	s.Equal([]string{"first", "second", "third"},
 		[]string{awc.Steps[0].Name, awc.Steps[1].Name, awc.Steps[2].Name},

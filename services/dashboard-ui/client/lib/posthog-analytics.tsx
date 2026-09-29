@@ -21,9 +21,6 @@ const adaptProps = (props: Record<string, unknown>) =>
     Object.entries(props).map(([key, value]) => [snakeCase(key), value])
   )
 
-// Repeated reloads of one page within a short window signal a user waiting
-// on progress the page is not showing. The streak counter lives in
-// sessionStorage because a reload tears down all JS state.
 const RELOAD_WINDOW_MS = 2 * 60 * 1000
 const RELOAD_STREAK_KEY = 'nuon_reload_streak'
 
@@ -46,12 +43,9 @@ const writeReloadStreak = (streak: ReloadStreak | null) => {
       sessionStorage.removeItem(RELOAD_STREAK_KEY)
     }
   } catch {
-    // storage unavailable; streaks just won't span reloads
   }
 }
 
-// True only for the first pageview of this document lifetime; a reload
-// re-runs the bundle, so the flag resets exactly when it should.
 let documentPageviewSeen = false
 
 const isDocumentReload = () => {
@@ -61,13 +55,9 @@ const isDocumentReload = () => {
   return nav?.type === 'reload'
 }
 
-// Pogo-sticking: A -> B -> A within seconds, a failed expectation on B.
 const POGO_WINDOW_MS = 10_000
 const navTrail: { path: string; at: number }[] = []
 
-// Stale-tab return: back after 5+ minutes away, and bailing out again
-// within 30s — the user did not trust what they saw. The marker lives in
-// sessionStorage so a bounce-by-reload (fresh bundle) still counts.
 const STALE_AFTER_MS = 5 * 60_000
 const STALE_BOUNCE_WINDOW_MS = 30_000
 const STALE_RETURN_KEY = 'nuon_stale_return'
@@ -91,7 +81,6 @@ const writeStaleReturn = (stale: StaleReturn | null) => {
       sessionStorage.removeItem(STALE_RETURN_KEY)
     }
   } catch {
-    // storage unavailable; bounce-by-reload just won't be counted
   }
 }
 
@@ -141,8 +130,6 @@ export const InitPostHog = ({ apiKey }: { apiKey: string }) => {
     documentPageviewSeen = true
     const now = Date.now()
 
-    // Stale-tab bounce, via reload (handled in the firstPageview branch
-    // below) or via navigating away right after coming back.
     const stale = readStaleReturn()
     if (stale) {
       writeStaleReturn(null)
@@ -227,8 +214,6 @@ export const PostHogOrgProperties = () => {
   useEffect(() => {
     if (!initialized || !org?.id) return
     posthog.register({ org_id: org.id })
-    // Org feature flags as group properties: every event the org sends
-    // becomes sliceable by flag state, no per-event wiring needed.
     posthog.group('organization', org.id, {
       name: org.name,
       ...Object.fromEntries(

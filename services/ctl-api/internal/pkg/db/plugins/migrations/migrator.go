@@ -32,17 +32,14 @@ func NewOpts() *Opts {
 }
 
 type Params struct {
-	// Models
 	Models     []any
 	Migrations []Migration
 
-	// Migrations DB is what is expected to have the migrations type registered
 	MigrationsDB *gorm.DB
 
 	TableOpts map[string]string
 	Opts      *Opts
 
-	// DB can be any gorm compatible db
 	DB     *gorm.DB
 	DBType string
 

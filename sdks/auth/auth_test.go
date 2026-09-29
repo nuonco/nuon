@@ -9,8 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// clearAmbientCredentials removes every source Resolve consults, so a precedence
-// assertion is not quietly satisfied by the developer's shell or by CI's own Actions.
 func clearAmbientCredentials(t *testing.T) {
 	t.Helper()
 
@@ -28,7 +26,6 @@ func clearAmbientCredentials(t *testing.T) {
 	}
 }
 
-// stubExchanger records what Resolve handed it and returns a fixed result.
 type stubExchanger struct {
 	token  string
 	err    error
@@ -65,8 +62,6 @@ func TestResolvePrecedence(t *testing.T) {
 		assert.Equal(t, "from-env", got)
 	})
 
-	// Whitespace comes from quoting accidents and CI secret interpolation, and an
-	// untrimmed token fails as an opaque 401.
 	t.Run("a whitespace-only token is treated as absent", func(t *testing.T) {
 		clearAmbientCredentials(t)
 		t.Setenv("NUON_API_TOKEN", "   ")
@@ -76,8 +71,6 @@ func TestResolvePrecedence(t *testing.T) {
 		assert.Contains(t, err.Error(), "no credentials")
 	})
 
-	// The failure a customer is most likely to hit, so the message has to name every
-	// way out rather than just saying "unauthorized".
 	t.Run("no credentials at all is an actionable error", func(t *testing.T) {
 		clearAmbientCredentials(t)
 
@@ -89,7 +82,6 @@ func TestResolvePrecedence(t *testing.T) {
 }
 
 func TestResolveOIDCPath(t *testing.T) {
-	// Reported before the token is fetched, so the cause is named rather than generic.
 	t.Run("an ambient OIDC token without an org id explains itself", func(t *testing.T) {
 		clearAmbientCredentials(t)
 		t.Setenv("NUON_OIDC_TOKEN", "a-jwt")
@@ -123,7 +115,6 @@ func TestResolveOIDCPath(t *testing.T) {
 		assert.Equal(t, "org-explicit", ex.gotOrg)
 	})
 
-	// Names the source so the caller can tell an Actions problem from a file problem.
 	t.Run("an exchange failure reports where the token came from", func(t *testing.T) {
 		clearAmbientCredentials(t)
 		t.Setenv("NUON_OIDC_TOKEN", "a-jwt")
@@ -136,7 +127,6 @@ func TestResolveOIDCPath(t *testing.T) {
 		assert.Contains(t, err.Error(), "boom")
 	})
 
-	// A client that only supports static tokens should say so rather than panic.
 	t.Run("a nil exchanger with an ambient token is a clear error", func(t *testing.T) {
 		clearAmbientCredentials(t)
 		t.Setenv("NUON_OIDC_TOKEN", "a-jwt")

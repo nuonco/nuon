@@ -19,7 +19,6 @@ type SignalContext struct {
 	LogStreamID       string                     `json:"log_stream_id,omitempty"`
 }
 
-// Scan implements database/sql.Scanner for reading JSONB from PostgreSQL.
 func (sc *SignalContext) Scan(v interface{}) error {
 	switch v := v.(type) {
 	case nil:
@@ -30,12 +29,10 @@ func (sc *SignalContext) Scan(v interface{}) error {
 	return nil
 }
 
-// Value implements driver.Valuer for writing JSONB to PostgreSQL.
 func (sc SignalContext) Value() (driver.Value, error) {
 	return json.Marshal(sc)
 }
 
-// GormDataType tells GORM to use the jsonb PostgreSQL type.
 func (SignalContext) GormDataType() string {
 	return "jsonb"
 }

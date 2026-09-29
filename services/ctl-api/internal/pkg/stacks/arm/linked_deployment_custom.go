@@ -22,22 +22,12 @@ func sanitizeDeploymentName(name string) string {
 	return armLogicalIDRegexp.ReplaceAllString(camel, "")
 }
 
-// customDeploymentIdentity holds info about a managed identity declared in a
-// custom nested stack so the parent template can create the subscription-level
-// role assignment that the identity needs.
 type customDeploymentIdentity struct {
-	DeploymentName string
-	// SanitizedName is the stack's own name without the install namespace
-	// DeploymentName may carry. Role naming keys off this, so that it can be
-	// namespaced identically at both scopes — see getCustomDeploymentRoleAssignment.
-	SanitizedName string
-	// output holding the identity's principalId, resolved from the template
+	DeploymentName    string
+	SanitizedName     string
 	PrincipalIDOutput string
 }
 
-// resolvePrincipalIDOutput finds the output carrying a managed identity's
-// principalId. An exact "identityPrincipalId" wins; otherwise any output with
-// that suffix matches, so a template may prefix it to keep outputs unique.
 func resolvePrincipalIDOutput(outputKeys []string) (string, bool) {
 	const want = "identityprincipalid"
 
@@ -55,8 +45,6 @@ func resolvePrincipalIDOutput(outputKeys []string) (string, bool) {
 	return "", false
 }
 
-// customDeploymentOutputs records custom stack metadata consumed after the
-// linked deployment is built.
 type customDeploymentOutputs struct {
 	StackName            string
 	DeploymentName       string
@@ -70,14 +58,12 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 		return nil, nil, nil, nil, nil
 	}
 
-	// Sort by index
 	sorted := make([]config.CustomNestedStack, len(stacks))
 	copy(sorted, stacks)
 	sort.SliceStable(sorted, func(i, j int) bool {
 		return sorted[i].Index < sorted[j].Index
 	})
 
-	// Check for duplicate indices
 	seenIndices := map[int]string{}
 	for _, stack := range sorted {
 		if prev, exists := seenIndices[stack.Index]; exists {
@@ -121,8 +107,6 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 		if deploymentName == "" {
 			return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): name produces invalid deployment name", i, stack.Name)
 		}
-		// Caught here rather than at deploy time, where ARM reports an over-long
-		// name as a validation failure on a resource the customer never wrote.
 		if over := len(deploymentName) - maxARMDeploymentNameLen; over > 0 {
 			return nil, nil, nil, nil, fmt.Errorf(
 				"custom_nested_stacks[%d] (%s): deployment name %q is %d characters, %d over ARM's limit of %d; shorten the stack name by %d characters",
@@ -130,7 +114,6 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			)
 		}
 
-		// Resolve template URL (use uploaded S3 URL if contents were uploaded)
 		templateURL := stack.TemplateURL
 		if stack.TemplateSourceURL != "" {
 			templateURL = stack.TemplateSourceURL
@@ -144,7 +127,6 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			)
 		}
 
-		// Fetch template, validate structure, and extract parameters
 		armTmpl, err := fetchARMTemplate(templateURL)
 		if err != nil {
 			return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): %w", i, stack.Name, err)
@@ -168,22 +150,15 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			ParameterDefinitions: maps.Clone(defaultParams),
 		})
 
-		// Track custom nested stacks that declare managed identities so the
-		// parent template can create subscription-level role assignments.
 		if armTmpl.hasManagedIdentity() {
 			principalIDOutput, ok := resolvePrincipalIDOutput(outputKeys)
 			if !ok {
-				// Caught here rather than at deploy time, where ARM reports it
-				// as a missing output on a Nuon-generated resource.
 				return nil, nil, nil, nil, fmt.Errorf(
 					"custom_nested_stacks[%d] (%s): declares a managed identity but no output named %q (found: %v); add one so the subscription-level role assignment can read its principalId",
 					i, stack.Name, "identityPrincipalId", outputKeys,
 				)
 			}
 
-			// The identity's role deployment carries a longer name than the stack's
-			// own, and is install-namespaced at both scopes, so it can exceed the
-			// limit even where deploymentName does not.
 			roleDeployment := customStackRoleDeploymentName(inp.Install.ID, sanitizedName)
 			if over := len(roleDeployment) - maxARMDeploymentNameLen; over > 0 {
 				return nil, nil, nil, nil, fmt.Errorf(
@@ -199,18 +174,13 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			})
 		}
 
-		// Build deployment parameters
 		deploymentParams := map[string]any{}
 
-		// Inject Nuon-reserved params if template declares them
 		nuonParams := map[string]string{
 			"nuonInstallID": inp.Install.ID,
 			"nuonOrgID":     inp.Runner.OrgID,
 			"nuonAppID":     inp.Install.AppID,
-			// Evaluated in the root, so it has to follow the root's declaration of the
-			// region — a parameter at resource-group scope, a variable at subscription
-			// scope where it is hidden from the portal's deployment form.
-			"location": scope.rootLocationRef(),
+			"location":      scope.rootLocationRef(),
 		}
 		for paramName := range params {
 			if val, ok := nuonParams[paramName]; ok {
@@ -218,11 +188,6 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			}
 		}
 
-		// Explicit parameter values. These arrive already rendered -- see
-		// config.RenderCustomNestedStackParameters, called when the install stack
-		// version is generated -- so they are used verbatim. The install-input
-		// reference form is still resolved here as a fallback for callers that read
-		// the config without rendering it first.
 		for cfnParamName, templateValue := range stack.Parameters {
 			resolved := templateValue
 			if inputName, err := config.ParseInstallInputReference(templateValue); err == nil {
@@ -238,7 +203,6 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			delete(defaultParams, cfnParamName)
 		}
 
-		// Wire VNet and earlier custom stack outputs to matching parameter names
 		for paramName := range params {
 			if _, alreadySet := deploymentParams[paramName]; alreadySet {
 				continue
@@ -267,19 +231,16 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			allParamNames[paramName] = stack.Name
 		}
 
-		// Remaining params are hoisted into parent
 		for paramName := range defaultParams {
 			if _, alreadySet := deploymentParams[paramName]; !alreadySet {
 				deploymentParams[paramName] = map[string]any{"value": fmt.Sprintf("[parameters('%s')]", paramName)}
 			}
 		}
 
-		// Merge hoisted params
 		for k, v := range defaultParams {
 			hoistedParams[k] = v
 		}
 
-		// Sequential: output wiring needs every earlier stack to be a transitive dependency
 		var dependsOn []string
 		if prevDeploymentName != "" {
 			dependsOn = append(dependsOn, prevDeploymentName)
@@ -314,9 +275,7 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 
 		resources = append(resources, deployment)
 
-		// Registered after the deployment so a stack cannot wire to its own outputs
 		for _, key := range outputKeys {
-			// a custom output must not shadow a Nuon-injected param for later stacks
 			if slices.Contains(ReservedParamNames, key) {
 				continue
 			}

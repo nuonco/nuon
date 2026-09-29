@@ -1,7 +1,5 @@
 package preflight
 
-// registry is an ordered slice rather than a map so the results table and
-// --list output keep a stable order between runs.
 var registry = []Check{
 	rdsCheck,
 	clickhouseCheck,

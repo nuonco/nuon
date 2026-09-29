@@ -32,8 +32,6 @@ func (u *CLIUserError) Error() string {
 	return u.Msg
 }
 
-// PrintError renders an error in the active output mode: agent -> envelope,
-// json -> JSON error object, table -> human-styled text.
 func PrintError(err error) error {
 	if agentEnabled() {
 		return emitAgentError(err)
@@ -49,7 +47,6 @@ func printHumanError(err error) error {
 		fmt.Println(bubbles.ErrorStyle.Render(fmt.Sprintf("DEBUG: %v", err)))
 	}
 
-	// Construct a stack trace if this error doesn't already have one
 	if !errs.HasNuonStackTrace(err) {
 		err = withstack.WithStackDepth(err, 1)
 	}
@@ -71,7 +68,6 @@ func printHumanError(err error) error {
 		return err
 	}
 
-	// Handle any other API errors with a user-friendly message
 	if apiErrMsg, ok := nuon.ToAPIError(err); ok {
 		fmt.Println(bubbles.ErrorStyle.Render(apiErrMsg))
 		return err
@@ -86,7 +82,6 @@ func printHumanError(err error) error {
 	var cfgErr config.ErrConfig
 	if errors.As(err, &cfgErr) {
 		if cfgErr.Warning {
-			// Warnings carry their (possibly multi-line) human message in Description; render it as-is.
 			wmsg := cfgErr.Description
 			if wmsg == "" {
 				wmsg = cfgErr.Error()
@@ -112,7 +107,6 @@ func printHumanError(err error) error {
 		return syncAPIErr
 	}
 
-	// Filter out ugly technical error messages that shouldn't be shown to users
 	errMsg := err.Error()
 	if containsTechnicalError(errMsg) {
 		fmt.Println(bubbles.ErrorStyle.Render(defaultUnknownErrorMessage))
@@ -123,8 +117,6 @@ func printHumanError(err error) error {
 	return err
 }
 
-// containsTechnicalError checks if an error message contains technical details
-// that shouldn't be shown to end users
 func containsTechnicalError(msg string) bool {
 	technicalPatterns := []string{
 		"is not supported by the TextConsumer",
@@ -144,18 +136,16 @@ func PrintRaw(msg string) {
 	fmt.Fprint(agentmode.HumanWriter(), msg)
 }
 
-// Printf writes formatted human output to the mode-aware writer (stderr in agent
+// why: Printf writes formatted human output to the mode-aware writer (stderr in agent
 // mode, stdout otherwise), so it never pollutes the agent stdout envelope.
 func Printf(format string, a ...any) {
 	fmt.Fprintf(agentmode.HumanWriter(), format, a...)
 }
 
-// Println mirrors fmt.Println but routes to the mode-aware writer.
 func Println(a ...any) {
 	fmt.Fprintln(agentmode.HumanWriter(), a...)
 }
 
-// Print mirrors fmt.Print but routes to the mode-aware writer.
 func Print(a ...any) {
 	fmt.Fprint(agentmode.HumanWriter(), a...)
 }

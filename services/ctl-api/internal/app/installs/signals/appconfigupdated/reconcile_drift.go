@@ -24,10 +24,8 @@ func (s *Signal) reconcileDriftEmitters(
 	queue *app.Queue,
 	existing []app.QueueEmitter,
 ) error {
-	// Stop and delete all existing drift emitters
 	stopAndDeleteEmitters(ctx, l, existing)
 
-	// Fetch install components
 	installComponents, err := activities.AwaitGetInstallComponentsByInstallID(ctx, s.InstallID)
 	if err != nil {
 		return fmt.Errorf("unable to get install components: %w", err)
@@ -38,7 +36,6 @@ func (s *Signal) reconcileDriftEmitters(
 		icByComponentID[ic.ComponentID] = ic
 	}
 
-	// Create emitters for each component with a drift schedule
 	for _, ccc := range appCfg.ComponentConfigConnections {
 		if ccc.DriftSchedule == "" {
 			continue

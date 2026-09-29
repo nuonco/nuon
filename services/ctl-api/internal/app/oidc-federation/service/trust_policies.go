@@ -389,9 +389,6 @@ func (s *service) getTrustPolicy(ctx *gin.Context, orgID, policyID string) (*app
 	return &policy, nil
 }
 
-// requireFederationEnabled gates the trust policy CRUD surface behind the
-// deployment-level config flag. The exchange endpoint checks the flag
-// separately and returns its uniform generic 401 instead.
 func (s *service) requireFederationEnabled() error {
 	if s.cfg.OIDCFederationEnabled {
 		return nil

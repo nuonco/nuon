@@ -15,17 +15,11 @@ import (
 const (
 	runnerSignalsQueueName = queuenames.RunnerSignalsQueueName
 
-	// RunnerHealthcheckCronsQueueName hosts the per-runner healthcheck cron
-	// emitter for orgs without the org-healthcheck-sweeps feature. Sweep-enabled
-	// orgs neither create it nor keep it (the migration terminates it).
 	RunnerHealthcheckCronsQueueName = queuenames.RunnerHealthcheckCronsQueueName
 
 	RunnerHealthcheckEmitterName = "runner-healthcheck"
 )
 
-// EnsureRunnerSignalsQueue creates the runner-signals queue if it doesn't
-// exist. For orgs without org-healthcheck-sweeps it also ensures the legacy
-// per-runner healthcheck cron queue + emitter. Safe to call multiple times.
 func (h *Helpers) EnsureRunnerSignalsQueue(ctx context.Context, runnerID string) error {
 	var runner app.Runner
 	if res := h.db.WithContext(ctx).Where(app.Runner{ID: runnerID}).First(&runner); res.Error != nil {
@@ -59,8 +53,6 @@ func (h *Helpers) EnsureRunnerSignalsQueue(ctx context.Context, runnerID string)
 	return h.EnsureRunnerHealthcheckEmitter(ctx, &runner)
 }
 
-// EnsureRunnerHealthcheckEmitter creates the legacy per-runner healthcheck cron
-// queue + emitter (pre-org-healthcheck-sweeps behavior). Idempotent.
 func (h *Helpers) EnsureRunnerHealthcheckEmitter(ctx context.Context, runner *app.Runner) error {
 	healthcheckNamespace := "runners"
 	isolated, err := h.featuresClient.OrgCronNamespaceIsolationEnabled(ctx, runner.OrgID)
@@ -110,8 +102,6 @@ func (h *Helpers) EnsureRunnerHealthcheckEmitter(ctx context.Context, runner *ap
 	return nil
 }
 
-// EnsureRunnerJobGroupQueues creates one queue per job group for the runner.
-// Safe to call multiple times — queueClient.Create is idempotent.
 func (h *Helpers) EnsureRunnerJobGroupQueues(ctx context.Context, runner *app.Runner, settings *app.RunnerGroupSettings) error {
 	for _, spec := range queuenames.RunnerJobGroupSpecs() {
 		group := app.RunnerJobGroup(spec.Name)

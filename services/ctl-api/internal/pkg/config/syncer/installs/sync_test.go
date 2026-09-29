@@ -11,9 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// existingToConfig feeds both the drift diff and the immutability check, so a missing
-// identifier here does not fail loudly — it presents as an install that is forever out
-// of sync with a config no update can satisfy.
 func TestExistingToConfigEchoesTargetIdentifiers(t *testing.T) {
 	t.Run("aws reads the target account from cloud platform metadata", func(t *testing.T) {
 		cfg := existingToConfig(&app.Install{
@@ -47,8 +44,6 @@ func TestExistingToConfigEchoesTargetIdentifiers(t *testing.T) {
 		assert.Equal(t, "target-sub", cfg.AzureAccount.SubscriptionID)
 	})
 
-	// Installs predating CloudPlatformMetadata have an empty target, and Azure/GCP
-	// carry the identifier on the account record instead.
 	t.Run("falls back to the account record when no target is set", func(t *testing.T) {
 		cfg := existingToConfig(&app.Install{
 			GCPAccount:   &app.GCPAccount{ProjectID: "legacy-proj"},
@@ -62,9 +57,6 @@ func TestExistingToConfigEchoesTargetIdentifiers(t *testing.T) {
 	})
 }
 
-// The round trip is what actually matters: a config declaring the same account the
-// install already targets must report no drift, and a changed one must be refused
-// rather than silently dropped.
 func TestExistingToConfigRoundTripsWithoutDrift(t *testing.T) {
 	existing := &app.Install{
 		Name:                  "inst",
@@ -93,9 +85,6 @@ func TestExistingToConfigRoundTripsWithoutDrift(t *testing.T) {
 	assert.Contains(t, err.Error(), "immutable")
 }
 
-// Template-managed keys must echo the template text back to the diff: a config that
-// declares a dynamic label otherwise diffs against its rendered value and shows
-// drift on every sync.
 func TestExistingToConfigEchoesLabelTemplates(t *testing.T) {
 	t.Run("templates overlay rendered values", func(t *testing.T) {
 		cfg := existingToConfig(&app.Install{
@@ -139,8 +128,6 @@ func TestExistingToConfigEchoesLabelTemplates(t *testing.T) {
 		assert.Equal(t, map[string]string{"env": "staging"}, cfg.Labels)
 	})
 
-	// App-default keys never appear in install configs, so echoing them shows
-	// permanent "removed" drift on every sync.
 	t.Run("app-default keys are stripped from the upstream echo", func(t *testing.T) {
 		install := &app.Install{
 			Name: "inst",

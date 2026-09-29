@@ -36,8 +36,6 @@ func NewGraph() *Graph {
 	return &Graph{dependents: make(map[NodeID][]Edge)}
 }
 
-// AddDependency records that dependent consumes dependency. Changes propagate
-// in the reverse direction, from dependency to dependent.
 func (g *Graph) AddDependency(dependent, dependency NodeID, reason EdgeReason) {
 	if g == nil || dependent == "" || dependency == "" || dependent == dependency {
 		return
@@ -56,8 +54,6 @@ func (g *Graph) AddDependency(dependent, dependency NodeID, reason EdgeReason) {
 	})
 }
 
-// Propagate returns every transitively impacted node and the immediate graph
-// edge that caused each impact. Directly changed roots are not marked impacted.
 func (g *Graph) Propagate(changed ...NodeID) map[NodeID][]ImpactReason {
 	if g == nil {
 		return nil

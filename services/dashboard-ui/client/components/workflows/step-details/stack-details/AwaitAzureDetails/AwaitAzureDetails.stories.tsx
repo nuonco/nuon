@@ -122,8 +122,6 @@ export const WithCustomerInputs = () => (
   </div>
 )
 
-// api_key already has a value, so the deploy command must not offer to replace it
-// with a placeholder.
 export const WithCustomerInputsAlreadySet = () => (
   <div className="max-w-2xl p-4">
     <AwaitAzureDetails

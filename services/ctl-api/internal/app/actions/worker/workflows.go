@@ -38,7 +38,6 @@ func (w *Workflows) All() []interface{} {
 	return wkflows
 }
 
-// ListWorkflowFns returns the list of workflow functions for registration
 func (w *Workflows) ListWorkflowFns() []any {
 	return []any{}
 }

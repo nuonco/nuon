@@ -440,16 +440,6 @@ Example (GitHub Actions, main branch of acme/app only):
 	return trustPoliciesCmd
 }
 
-// subscriptionJSONHelp documents the shape accepted by --subscription-json
-// and --subscription-file. The unified payload combines the events filter
-// (interests) and the optional scope predicate (match) into a single
-// committable artifact. Mirrors:
-//   - services/ctl-api/internal/pkg/interests/types.go (SubOps map + Outcome constants)
-//   - pkg/labels/match.go (SubscriptionMatch / TargetMatch / Selector)
-//   - the "Filtering events with interests" + "Scoping deliveries" sections
-//     of docs/guides/webhooks.mdx
-//
-// Update all four in lockstep.
 const subscriptionJSONHelp = `SUBSCRIPTION JSON SHAPE
 
   Top-level keys (both optional):

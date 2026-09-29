@@ -27,10 +27,6 @@ export const AwaitStackDetails = ({
   loading,
   ...props
 }: IAwaitStackDetails) => {
-  // Strictly this step's own stack version. Every version phones home
-  // separately, so borrowing another one — the newest, or the stack-level
-  // outputs record, which is overwritten by whichever version ran last — shows
-  // a different stack's values under this step.
   const version = useMemo(
     () =>
       step?.step_target_id
@@ -39,8 +35,6 @@ export const AwaitStackDetails = ({
     [stack?.versions, step?.step_target_id]
   )
 
-  // The stack endpoint only returns the most recent versions, so a step old
-  // enough to have fallen off the end has no version to read.
   const versionMissing = !!step?.step_target_id && !version && !loading
 
   const latestRun = version?.runs?.at(0)

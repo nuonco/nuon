@@ -23,9 +23,6 @@ const (
 	defaultConfigSyncLimit = time.Minute * 15
 )
 
-// createConfig uploads the parsed config in intermediate form. Nothing is
-// converted to database records until something syncs it, either
-// POST /configs/:id/sync or a branch run's sync app config step.
 func (s *Service) createConfig(ctx context.Context, appID, version string, cfg *config.AppConfig, branchID string, planOnly bool) (*models.AppAppConfig, error) {
 	intermediateJSON, err := json.Marshal(cfg)
 	if err != nil {
@@ -46,7 +43,7 @@ func (s *Service) createConfig(ctx context.Context, appID, version string, cfg *
 	return appConfig, nil
 }
 
-// syncConfig asks the API to apply an already-uploaded app config and waits for
+// why: syncConfig asks the API to apply an already-uploaded app config and waits for
 // the result. All conversion to database records is server-side
 // (internal/pkg/config/syncer). This is the standalone path: it dispatches
 // component builds itself, which is why a branch run must not use it.
@@ -63,14 +60,10 @@ func (s *Service) syncConfig(ctx context.Context, appID string, appConfig *model
 	return parseSyncState(synced.State), nil
 }
 
-// waitForConfigSync polls until the sync reaches a terminal state.
 func (s *Service) waitForConfigSync(ctx context.Context, appID, appConfigID string, printJSON bool) (*models.AppAppConfig, error) {
 	return s.waitForRunConfigSync(ctx, appID, appConfigID, "", printJSON)
 }
 
-// waitForRunConfigSync polls until the sync reaches a terminal state. When
-// workflowID is set the sync is a step of that workflow, so a workflow that dies
-// before reaching the step is reported instead of waiting out the full timeout.
 func (s *Service) waitForRunConfigSync(ctx context.Context, appID, appConfigID, workflowID string, printJSON bool) (*models.AppAppConfig, error) {
 	spinner := bubbles.NewSpinnerView(printJSON, s.cfg.Interactive)
 	spinner.Start("syncing config")
@@ -127,8 +120,6 @@ func syncFailureMessage(appConfig *models.AppAppConfig) string {
 	return fmt.Sprintf("app config %s failed to sync", appConfig.ID)
 }
 
-// parseSyncState reads the persisted sync state; missing or unreadable state
-// only costs orphan and scheduled-build reporting.
 func parseSyncState(stateJSON string) *sync.State {
 	if stateJSON == "" {
 		return &sync.State{}

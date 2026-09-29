@@ -8,9 +8,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
-// NOTE(jm): this could probably be implemented with some type of parsing the ID to figure out what model is represented
-// by it, but if we do that and something _does not_ work, then it's going to be damn near impossible to debug, so we
-// keep the verbose approach here, until something more elegant comes along.
 type GetStatusRequest struct {
 	ID string `json:"id" validate:"required"`
 }

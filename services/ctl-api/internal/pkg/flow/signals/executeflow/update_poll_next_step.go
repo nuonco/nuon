@@ -7,7 +7,6 @@ import (
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// PollNextStepResponse is the response from the "poll-next-step" update handler.
 type PollNextStepResponse struct {
 	StepID  string     `json:"step_id"`
 	StepIdx int        `json:"step_idx"`
@@ -24,7 +23,6 @@ func (s *Signal) pollNextStepHandler(ctx workflow.Context) (*PollNextStepRespons
 		return nil, err
 	}
 
-	// Find the current in-flight step (first non-terminal step)
 	for _, step := range steps {
 		switch step.Status.Status {
 		case app.StatusSuccess, app.StatusDiscarded, app.StatusUserSkipped, app.StatusAutoSkipped:
@@ -38,6 +36,5 @@ func (s *Signal) pollNextStepHandler(ctx workflow.Context) (*PollNextStepRespons
 		}
 	}
 
-	// All steps are terminal - workflow is done
 	return &PollNextStepResponse{}, nil
 }

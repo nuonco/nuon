@@ -12,7 +12,6 @@ func TestCronSchedule_MinInterval(t *testing.T) {
 		expr    string
 		wantErr bool
 	}{
-		// pass
 		{"empty", "", false},
 		{"every 5 min", "*/5 * * * *", false},
 		{"hourly on 0", "0 * * * *", false},
@@ -30,7 +29,6 @@ func TestCronSchedule_MinInterval(t *testing.T) {
 		{"once a year (leap day)", "0 0 29 2 *", false},
 		{"once a year (new year)", "0 0 1 1 *", false},
 
-		// fail: too frequent
 		{"every minute", "* * * * *", true},
 		{"every 1 min explicit", "*/1 * * * *", true},
 		{"every 2 min", "*/2 * * * *", true},
@@ -46,7 +44,6 @@ func TestCronSchedule_MinInterval(t *testing.T) {
 		{"two fires close, crossing hour", "55,59 * * * *", true},
 		{"frequent only during business hours", "*/3 9-17 * * *", true},
 
-		// fail: invalid syntax
 		{"invalid", "not a cron", true},
 		{"too few fields", "* * *", true},
 	}

@@ -29,11 +29,9 @@ const (
 	ArtifactTypeSBOM      = "application/vnd.oci.artifact.sbom.v1+json"
 	ArtifactTypeSignature = "application/vnd.dev.cosign.artifact.sig.v1+json"
 
-	// OCI image index media types
 	MediaTypeImageIndex     = "application/vnd.oci.image.index.v1+json"
 	MediaTypeDockerManifest = "application/vnd.docker.distribution.manifest.list.v2+json"
 
-	// Attestation-related annotations and media types
 	AnnotationReferenceType   = "vnd.docker.reference.type"
 	AnnotationReferenceDigest = "vnd.docker.reference.digest"
 	AnnotationPredicateType   = "in-toto.io/predicate-type"
@@ -41,14 +39,12 @@ const (
 
 	MediaTypeInToto = "application/vnd.in-toto+json"
 
-	// Cosign tag-based storage media types
 	MediaTypeCosignSignature   = "application/vnd.dev.cosign.simplesigning.v1+json"
 	MediaTypeDSSEEnvelope      = "application/vnd.dsse.envelope.v1+json"
 	MediaTypeOCIImageManifest  = "application/vnd.oci.image.manifest.v1+json"
 	MediaTypeDockerImageConfig = "application/vnd.oci.image.config.v1+json"
 )
 
-// ErrNotIndex is returned when the descriptor is not an image index.
 var ErrNotIndex = errors.New("not an image index")
 
 type RegistryAuth struct {
@@ -57,7 +53,6 @@ type RegistryAuth struct {
 	Password      string
 }
 
-// FetchGuardrails defines limits for fetching attestation content.
 type FetchGuardrails struct {
 	MaxBlobBytes         int64
 	MaxTotalBytes        int64
@@ -65,11 +60,10 @@ type FetchGuardrails struct {
 	MaxLayersPerManifest int
 }
 
-// DefaultGuardrails returns sensible default limits for attestation fetching.
 func DefaultGuardrails() FetchGuardrails {
 	return FetchGuardrails{
-		MaxBlobBytes:         10 * 1024 * 1024, // 10MB per blob
-		MaxTotalBytes:        10 * 1024 * 1024, // 10MB total
+		MaxBlobBytes:         10 * 1024 * 1024,
+		MaxTotalBytes:        10 * 1024 * 1024,
 		MaxAttestations:      10,
 		MaxLayersPerManifest: 5,
 	}
@@ -81,21 +75,15 @@ type FetchOptions struct {
 	Auth   *RegistryAuth
 	Digest string
 
-	// Layer fetch controls
 	IncludeIndex                bool
 	IncludeAttestationManifests bool
 	IncludeAttestationLayers    bool
 
-	// Platform filter (e.g., "linux/amd64")
 	Platform string
 
-	// Guardrails for limiting fetch sizes
 	Guardrails *FetchGuardrails
 }
 
-// Always isolate: a nil repo.Client falls back to the process-global auth.DefaultClient
-// and its host-keyed auth.DefaultCache, which replays a dead token (ECR TTL 12h) and can
-// attach one fetch's credential to another's anonymous pull of the same host.
 func newAuthClient(serverAddr string, regAuth *RegistryAuth) *auth.Client {
 	client := &auth.Client{
 		Client: retry.DefaultClient,
@@ -154,7 +142,6 @@ func FetchImageMetadata(ctx context.Context, opts *FetchOptions) (*ImageMetadata
 		SBOM:   nil,
 	}
 
-	// Fetch Layer 1: Image Index if requested
 	if opts.IncludeIndex || opts.IncludeAttestationManifests {
 		index, err := fetchImageIndex(ctx, repo, desc)
 		if err != nil {
@@ -164,7 +151,6 @@ func FetchImageMetadata(ctx context.Context, opts *FetchOptions) (*ImageMetadata
 		} else {
 			result.Index = index
 
-			// Fetch Layer 2: Attestation Manifests if requested
 			if opts.IncludeAttestationManifests && index != nil {
 				attestationManifests, err := fetchAttestationManifests(ctx, repo, index, opts, guardrails)
 				if err != nil {
@@ -175,7 +161,6 @@ func FetchImageMetadata(ctx context.Context, opts *FetchOptions) (*ImageMetadata
 		}
 	}
 
-	// Continue with referrers-based metadata (signatures, SBOMs, etc.)
 	referrers, err := fetchReferrers(ctx, repo, desc)
 	if err != nil {
 		if !errors.Is(err, errdef.ErrNotFound) {
@@ -203,7 +188,7 @@ func FetchImageMetadata(ctx context.Context, opts *FetchOptions) (*ImageMetadata
 		}
 	}
 
-	// Fallback: Try Cosign tag-based discovery if no signatures/attestations found via referrers
+	// why: Fallback: Try Cosign tag-based discovery if no signatures/attestations found via referrers
 	// This handles registries like GHCR that don't support the OCI 1.1 Referrers API
 	if !result.Signed && len(result.Attestations) == 0 {
 		cosignResult, err := fetchCosignTagBasedArtifacts(ctx, repo, desc, guardrails)
@@ -221,7 +206,6 @@ func FetchImageMetadata(ctx context.Context, opts *FetchOptions) (*ImageMetadata
 		}
 	}
 
-	// Auto-detect SBOM from attestation layers if not found via referrers
 	if result.SBOM == nil {
 		if sbom := detectSBOMFromAttestationManifests(result.AttestationManifests); sbom != nil {
 			result.SBOM = sbom
@@ -231,9 +215,7 @@ func FetchImageMetadata(ctx context.Context, opts *FetchOptions) (*ImageMetadata
 	return result, nil
 }
 
-// fetchImageIndex fetches and parses the image index (manifest list).
 func fetchImageIndex(ctx context.Context, repo *remote.Repository, desc v1.Descriptor) (*ImageIndex, error) {
-	// Check if this is an index media type
 	if !isIndexMediaType(desc.MediaType) {
 		return nil, fmt.Errorf("%w: media type is %s", ErrNotIndex, desc.MediaType)
 	}
@@ -277,7 +259,6 @@ func fetchImageIndex(ctx context.Context, repo *remote.Repository, desc v1.Descr
 			}
 		}
 
-		// Check if this is an attestation manifest
 		if refType, ok := m.Annotations[AnnotationReferenceType]; ok && refType == ReferenceTypeAttestation {
 			entry.IsAttestation = true
 		}
@@ -292,7 +273,6 @@ func isIndexMediaType(mediaType string) bool {
 	return mediaType == MediaTypeImageIndex || mediaType == MediaTypeDockerManifest
 }
 
-// fetchAttestationManifests fetches attestation manifests from the index.
 func fetchAttestationManifests(
 	ctx context.Context,
 	repo *remote.Repository,
@@ -315,7 +295,6 @@ func fetchAttestationManifests(
 			break
 		}
 
-		// Apply platform filter if specified
 		if platformFilter != nil && entry.Platform != nil {
 			if !matchesPlatform(entry.Platform, platformFilter) {
 				continue
@@ -372,7 +351,6 @@ func matchesPlatform(actual, filter *Platform) bool {
 	return true
 }
 
-// fetchAttestationManifest fetches a single attestation manifest and optionally its layers.
 func fetchAttestationManifest(
 	ctx context.Context,
 	repo *remote.Repository,
@@ -413,12 +391,10 @@ func fetchAttestationManifest(
 		RawJSON:     rawJSON,
 	}
 
-	// Extract reference digest from annotations
 	if refDigest, ok := entry.Annotations[AnnotationReferenceDigest]; ok {
 		manifest.RefDigest = refDigest
 	}
 
-	// Fetch Layer 3: Attestation Layers if requested
 	if opts.IncludeAttestationLayers {
 		layers, layerBytes, err := fetchAttestationLayers(ctx, repo, ociManifest.Layers, guardrails, currentTotalBytes+bytesRead)
 		if err != nil {
@@ -427,7 +403,6 @@ func fetchAttestationManifest(
 		manifest.Layers = layers
 		bytesRead += layerBytes
 	} else {
-		// Just extract layer metadata without fetching content
 		for _, l := range ociManifest.Layers {
 			if len(manifest.Layers) >= guardrails.MaxLayersPerManifest {
 				break
@@ -447,7 +422,6 @@ func fetchAttestationManifest(
 	return manifest, bytesRead, nil
 }
 
-// fetchAttestationLayers fetches and decodes attestation layer blobs in parallel.
 func fetchAttestationLayers(
 	ctx context.Context,
 	repo *remote.Repository,
@@ -523,7 +497,6 @@ func fetchAttestationLayers(
 	return results, totalBytesRead, nil
 }
 
-// fetchAttestationLayer fetches a single attestation layer and decodes its content.
 func fetchAttestationLayer(
 	ctx context.Context,
 	repo *remote.Repository,
@@ -540,7 +513,6 @@ func fetchAttestationLayer(
 		layer.PredicateType = predicateType
 	}
 
-	// Check if blob is too large
 	if desc.Size > guardrails.MaxBlobBytes {
 		layer.Truncated = true
 		return layer, 0, nil
@@ -580,7 +552,6 @@ func decodeInTotoStatement(data []byte) (*InTotoStatement, error) {
 	return decodeDSSEEnvelope(data)
 }
 
-// decodeDSSEEnvelope decodes a DSSE envelope and extracts the in-toto statement.
 func decodeDSSEEnvelope(data []byte) (*InTotoStatement, error) {
 	var envelope DSSEEnvelope
 	if err := json.Unmarshal(data, &envelope); err != nil {
@@ -591,13 +562,10 @@ func decodeDSSEEnvelope(data []byte) (*InTotoStatement, error) {
 		return nil, fmt.Errorf("invalid DSSE envelope: missing payload")
 	}
 
-	// Decode base64 payload
 	payloadBytes, err := base64.StdEncoding.DecodeString(envelope.Payload)
 	if err != nil {
-		// Try URL-safe base64
 		payloadBytes, err = base64.URLEncoding.DecodeString(envelope.Payload)
 		if err != nil {
-			// Try raw/unpadded base64
 			payloadBytes, err = base64.RawStdEncoding.DecodeString(envelope.Payload)
 			if err != nil {
 				return nil, fmt.Errorf("unable to decode payload: %w", err)
@@ -671,9 +639,6 @@ func detectSBOMFormat(artifactType, mediaType string) string {
 	return "unknown"
 }
 
-// detectSBOMFromAttestationManifests scans attestation layers for SBOM predicate types.
-// This handles images like nginx:latest that store SBOMs as attestation manifest layers
-// rather than as OCI referrers.
 func detectSBOMFromAttestationManifests(manifests []AttestationManifest) *SBOM {
 	for _, manifest := range manifests {
 		for _, layer := range manifest.Layers {
@@ -688,7 +653,6 @@ func detectSBOMFromAttestationManifests(manifests []AttestationManifest) *SBOM {
 	return nil
 }
 
-// detectSBOMPredicateType checks if a predicate type indicates an SBOM.
 func detectSBOMPredicateType(predicateType string) string {
 	switch {
 	case strings.Contains(predicateType, "spdx.dev"):
@@ -700,7 +664,6 @@ func detectSBOMPredicateType(predicateType string) string {
 	}
 }
 
-// CosignTagResult holds the results of Cosign tag-based artifact discovery.
 type CosignTagResult struct {
 	Signed       bool
 	Signatures   []Signature
@@ -708,9 +671,6 @@ type CosignTagResult struct {
 	SBOM         *SBOM
 }
 
-// fetchCosignTagBasedArtifacts attempts to discover signatures and attestations
-// using Cosign's tag-based storage format (sha256-<digest>.sig and sha256-<digest>.att).
-// This is a fallback for registries that don't support the OCI 1.1 Referrers API.
 func fetchCosignTagBasedArtifacts(
 	ctx context.Context,
 	repo *remote.Repository,
@@ -719,11 +679,9 @@ func fetchCosignTagBasedArtifacts(
 ) (*CosignTagResult, error) {
 	result := &CosignTagResult{}
 
-	// Convert digest to Cosign tag format: sha256:abc123... -> sha256-abc123...
 	digestStr := desc.Digest.String()
 	cosignTagBase := strings.Replace(digestStr, ":", "-", 1)
 
-	// Try to fetch signature tag (.sig)
 	sigTag := cosignTagBase + ".sig"
 	hasSig, err := fetchCosignSignatureTag(ctx, repo, sigTag)
 	if err != nil && (ctx.Err() != nil) {
@@ -736,7 +694,6 @@ func fetchCosignTagBasedArtifacts(
 		})
 	}
 
-	// Try to fetch attestation tag (.att)
 	attTag := cosignTagBase + ".att"
 	attestations, sbom, err := fetchCosignAttestationTag(ctx, repo, attTag, guardrails)
 	if err != nil && (ctx.Err() != nil) {
@@ -750,14 +707,12 @@ func fetchCosignTagBasedArtifacts(
 	return result, nil
 }
 
-// fetchCosignSignatureTag checks if a Cosign signature tag exists and contains valid signature layers.
 func fetchCosignSignatureTag(ctx context.Context, repo *remote.Repository, tag string) (bool, error) {
 	desc, err := repo.Resolve(ctx, tag)
 	if err != nil {
 		return false, err
 	}
 
-	// Fetch the manifest to verify it contains signature layers
 	rc, err := repo.Fetch(ctx, desc)
 	if err != nil {
 		return false, err
@@ -774,7 +729,6 @@ func fetchCosignSignatureTag(ctx context.Context, repo *remote.Repository, tag s
 		return false, err
 	}
 
-	// Check if any layer has a Cosign signature media type
 	for _, layer := range manifest.Layers {
 		if layer.MediaType == MediaTypeCosignSignature {
 			return true, nil
@@ -784,7 +738,6 @@ func fetchCosignSignatureTag(ctx context.Context, repo *remote.Repository, tag s
 	return false, nil
 }
 
-// fetchCosignAttestationTag fetches a Cosign attestation tag and extracts attestation types.
 func fetchCosignAttestationTag(
 	ctx context.Context,
 	repo *remote.Repository,
@@ -796,7 +749,6 @@ func fetchCosignAttestationTag(
 		return nil, nil, err
 	}
 
-	// Fetch the manifest
 	rc, err := repo.Fetch(ctx, desc)
 	if err != nil {
 		return nil, nil, err
@@ -816,19 +768,15 @@ func fetchCosignAttestationTag(
 	var attestations []Attestation
 	var sbom *SBOM
 
-	// Process attestation layers
 	for i, layer := range manifest.Layers {
 		if i >= guardrails.MaxLayersPerManifest {
 			break
 		}
 
-		// Check for DSSE envelope media type
 		if layer.MediaType != MediaTypeDSSEEnvelope && layer.MediaType != MediaTypeInToto {
 			continue
 		}
 
-		// Extract predicate type from annotations if available
-		// Cosign uses "predicateType" directly, while OCI standard uses "in-toto.io/predicate-type"
 		predicateType := ""
 		if pt, ok := layer.Annotations["predicateType"]; ok {
 			predicateType = pt
@@ -836,19 +784,16 @@ func fetchCosignAttestationTag(
 			predicateType = pt
 		}
 
-		// If no annotation, try to fetch and decode the layer to get predicate type
 		if predicateType == "" && layer.Size <= guardrails.MaxBlobBytes {
 			if decoded, err := fetchAndDecodeDSSELayer(ctx, repo, layer, guardrails); err == nil && decoded != nil {
 				predicateType = decoded.PredicateType
 			}
 		}
 
-		// Add attestation
 		attestations = append(attestations, Attestation{
 			Type: predicateType,
 		})
 
-		// Check if this is an SBOM
 		if format := detectSBOMPredicateType(predicateType); format != "" && sbom == nil {
 			sbom = &SBOM{
 				Present: true,
@@ -860,7 +805,6 @@ func fetchCosignAttestationTag(
 	return attestations, sbom, nil
 }
 
-// fetchAndDecodeDSSELayer fetches a layer and decodes it as a DSSE envelope.
 func fetchAndDecodeDSSELayer(
 	ctx context.Context,
 	repo *remote.Repository,

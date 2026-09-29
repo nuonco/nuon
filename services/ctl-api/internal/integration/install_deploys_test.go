@@ -45,17 +45,14 @@ func (s *installDeploysIntegrationTestSuite) SetupTest() {
 	app := s.createApp()
 	s.appID = app.ID
 
-	// create a component
 	comp := s.createComponent(s.appID)
 	s.compID = comp.ID
 
-	// create a component config
 	req := generics.GetFakeObj[*models.ServiceCreateExternalImageComponentConfigRequest]()
 	cfg, err := s.apiClient.CreateExternalImageComponentConfig(s.ctx, s.compID, req)
 	require.Nil(s.T(), err)
 	require.NotNil(s.T(), cfg)
 
-	// create a build of this component
 	buildReq := &models.ServiceCreateComponentBuildRequest{
 		GitRef: "HEAD",
 	}
@@ -63,7 +60,6 @@ func (s *installDeploysIntegrationTestSuite) SetupTest() {
 	require.NoError(s.T(), err)
 	s.buildID = build.ID
 
-	// create install
 	install := s.createInstall(s.appID)
 	s.installID = install.ID
 }
@@ -190,7 +186,6 @@ func (s *installDeploysIntegrationTestSuite) TestGetInstallLatestDeploy() {
 	})
 
 	s.T().Run("errors when no deploy exists", func(t *testing.T) {
-		// create install
 		install := s.createInstall(s.appID)
 
 		deploy, err := s.apiClient.GetInstallLatestDeploy(s.ctx, install.ID)

@@ -13,7 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
-// Placeholder identity for a sandboxed sync with no pullable source image.
 const (
 	fakeSyncRepository = "registry.example.com/nuon/app-service"
 	fakeSyncTag        = "v1.2.3"
@@ -72,19 +71,12 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 		return nil, errors.Wrap(err, "unable to get install registry repository")
 	}
 
-	// For image-type builds with source-identity recorded, copy the
-	// artifact by digest and tag the install-registry copy with the
-	// resolved tag instead of an internal ID. Fall back to installRegistryTag
-	// for non-image components and image builds without source identity.
 	srcTag := deploy.ComponentBuildID
 	dstTag := installRegistryTag(deploy)
 	if compBuild.SourceDigest != "" {
-		// oras.Copy resolves both tags and digest references, so passing
-		// the manifest digest as the source ref pulls the exact same
-		// content the runner originally resolved during build.
 		srcTag = compBuild.SourceDigest
 
-		// Push the install-registry copy under a tag the customer can
+		// why: Push the install-registry copy under a tag the customer can
 		// recognise. Prefer the tag the runner resolved (e.g. "1.25.5"),
 		// and fall back to the build ID when the user pinned by digest
 		// and there is no resolved tag. The digest is the canonical
@@ -95,7 +87,7 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 		if dstTag == "" {
 			dstTag = compBuild.ID
 		} else if dstCfg.RegistryType == configs.OCIRegistryTypeECR {
-			// ECR keeps one shared repo (repos must be pre-created), so
+			// why: ECR keeps one shared repo (repos must be pre-created), so
 			// prefix the tag to keep resolved versions from colliding
 			// across components.
 			dstTag = imageNameSegment(deploy.ComponentName) + "-" + dstTag
@@ -120,7 +112,7 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 	return pln, nil
 }
 
-// sandboxSyncOutputs decides what a sandboxed image sync reports as the artifact
+// why: sandboxSyncOutputs decides what a sandboxed image sync reports as the artifact
 // it synced. A component sourcing a public image reports that image at its real
 // tag, so the install's outputs name the artifact the component actually points
 // at rather than a fabricated registry. Anything Nuon builds, and any source
@@ -134,7 +126,7 @@ func sandboxSyncOutputs(build *app.ComponentBuild) map[string]any {
 		return plantypes.FakeOCISyncOutputs(fakeSyncRepository, fakeSyncTag)
 	}
 
-	// A config carrying only an update_policy has no tag until a real build
+	// why: A config carrying only an update_policy has no tag until a real build
 	// resolves one against the source registry, which a sandbox never does.
 	tag := generics.FirstNonEmptyString(build.ResolvedTag, cfg.Tag)
 	if tag == "" {

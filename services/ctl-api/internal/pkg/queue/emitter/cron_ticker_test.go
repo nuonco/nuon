@@ -126,9 +126,6 @@ func TestCronTickerRepairsEmptyContextFromEmitter(t *testing.T) {
 	require.Equal(t, "orgacme", gotOrg)
 }
 
-// The parent only notices a disable on its next alive check, up to ten minutes
-// later. Without this the ticker keeps emitting for an install whose runner is
-// gone, which is the whole thing the disable exists to stop.
 func TestCronTickerTerminatesWhenEmitterIsDisabled(t *testing.T) {
 	var suite testsuite.WorkflowTestSuite
 	env := suite.NewTestWorkflowEnvironment()

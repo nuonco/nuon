@@ -15,8 +15,6 @@ type stderrResponse interface {
 	GetPayload() *models.StderrErrResponse
 }
 
-// httpAPIError is a simple error type for hand-written SDK methods that
-// satisfies the stderrResponse interface so IsNotFound/IsForbidden/etc work.
 type httpAPIError struct {
 	statusCode int
 	body       string
@@ -58,7 +56,6 @@ func newHTTPAPIError(statusCode int, body string) error {
 	}
 }
 
-// ToUserError returns the error as a user error if possible
 func ToUserError(inputErr error) (*models.StderrErrResponse, bool) {
 	var (
 		stderr stderrResponse
@@ -129,9 +126,6 @@ func IsServerError(err error) bool {
 	return stderr.IsServerError()
 }
 
-// ToAPIError extracts a user-friendly error message from any API error response.
-// Unlike ToUserError, this returns a message for all API errors, not just user errors.
-// Returns the description if available, otherwise the error field, otherwise empty string and false.
 func ToAPIError(inputErr error) (string, bool) {
 	var (
 		stderr stderrResponse

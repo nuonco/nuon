@@ -28,7 +28,6 @@ export const TemporalWorkerDetail = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="page-heading">{info.namespace}</h1>
         <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
@@ -48,7 +47,6 @@ export const TemporalWorkerDetail = () => {
         )}
       </div>
 
-      {/* Workflow Pollers */}
       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Workflow pollers ({wfPollerCount})</h2>
         <div className="mt-2 table-card">
@@ -76,7 +74,6 @@ export const TemporalWorkerDetail = () => {
         </div>
       </div>
 
-      {/* Activity Pollers */}
       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Activity pollers ({actPollerCount})</h2>
         <div className="mt-2 table-card">
@@ -104,7 +101,6 @@ export const TemporalWorkerDetail = () => {
         </div>
       </div>
 
-      {/* Queue Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {info.workflow_stats && (
           <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">

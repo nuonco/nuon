@@ -28,7 +28,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("runner_id is required")
 	}
 
-	// Validate runner exists in database (check with Unscoped to find soft-deleted runners too)
 	_, err := activities.AwaitGetByRunnerID(ctx, s.RunnerID)
 	if err != nil {
 		return errors.Wrap(err, "runner not found")
@@ -38,7 +37,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Force delete the runner (hard delete using Unscoped - permanently removes from database)
 	if err := activities.AwaitForceDelete(ctx, activities.ForceDeleteRequest{
 		RunnerID: s.RunnerID,
 	}); err != nil {

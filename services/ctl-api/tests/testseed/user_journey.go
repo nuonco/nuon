@@ -6,8 +6,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// BuildUserJourney creates an app.UserJourney with the default onboarding steps,
-// all marked incomplete. Override fields directly when you need custom values.
 func BuildUserJourney() app.UserJourney {
 	return app.UserJourney{
 		Name:  "onboarding",
@@ -20,8 +18,6 @@ func BuildUserJourney() app.UserJourney {
 	}
 }
 
-// BuildCompletedUserJourney creates an app.UserJourney with the default onboarding steps,
-// all marked complete. Override fields directly when you need custom values.
 func BuildCompletedUserJourney() app.UserJourney {
 	now := time.Now()
 	return app.UserJourney{

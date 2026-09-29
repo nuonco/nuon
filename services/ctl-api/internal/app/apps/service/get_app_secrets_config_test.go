@@ -12,12 +12,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// TestGetAppSecretsConfig tests the GetAppSecretsConfig endpoint.
 func (s *AppConfigTypesTestSuite) TestGetAppSecretsConfig() {
 	s.Run("returns not found when no config exists", func() {
 		rr := s.makeRequest(http.MethodGet, "/v1/apps/"+s.testApp.ID+"/secrets-configs/nonexistent-id", nil)
 
-		// The handler calls First() which returns record not found
 		assert.Equal(s.T(), http.StatusNotFound, rr.Code)
 	})
 

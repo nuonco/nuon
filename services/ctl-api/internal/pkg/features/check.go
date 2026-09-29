@@ -28,14 +28,10 @@ func (f *Features) OrgHasFeature(ctx context.Context, orgID string, feature app.
 	return val, nil
 }
 
-// OrgCronNamespaceIsolationEnabled reports whether the org routes its runner
-// healthcheck + install cron queues into the dedicated cron Temporal namespaces.
 func (f *Features) OrgCronNamespaceIsolationEnabled(ctx context.Context, orgID string) (bool, error) {
 	return f.OrgHasFeature(ctx, orgID, app.OrgFeatureCronNamespaceIsolation)
 }
 
-// OrgHealthcheckSweepsEnabled reports whether the org uses per-org batch
-// healthcheck sweeps instead of per-runner/per-process cron emitters.
 func (f *Features) OrgHealthcheckSweepsEnabled(ctx context.Context, orgID string) (bool, error) {
 	return f.OrgHasFeature(ctx, orgID, app.OrgFeatureOrgHealthcheckSweeps)
 }
@@ -64,7 +60,6 @@ func (f *Features) FeatureEnabled(ctx context.Context, feature app.OrgFeature) (
 	return val, nil
 }
 
-// AllFeaturesEnabled returns true only if every provided feature is enabled for the org in context.
 func (f *Features) AllFeaturesEnabled(ctx context.Context, features ...app.OrgFeature) (bool, error) {
 	for _, feature := range features {
 		enabled, err := f.FeatureEnabled(ctx, feature)

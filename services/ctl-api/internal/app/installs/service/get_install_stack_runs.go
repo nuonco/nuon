@@ -44,8 +44,6 @@ func (s *service) getInstallLatestStackRunsByStackID(ctx context.Context, instal
 
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
-
-		// join component-releases to component-builds to component-config-connections to components
 		Joins("JOIN install_stack_versions ON install_stack_versions.id=install_stack_version_runs.install_stack_version_id").
 		Joins("JOIN install_stacks ON install_stacks.id=install_stack_versions.install_stack_id").
 		Where("install_stacks.install_id = ?", installID).

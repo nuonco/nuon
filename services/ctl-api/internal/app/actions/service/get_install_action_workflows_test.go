@@ -121,8 +121,6 @@ func (s *GetInstallActionWorkflowsTestSuite) makeRequest(method, path string, bo
 	return rr
 }
 
-// createInstall creates a full app config and then an install with app_config_id set.
-// This is required so the currentAppConfigActionFilter in the handler has a config ID to match against.
 func (s *GetInstallActionWorkflowsTestSuite) createInstall(appID string) (*app.Install, *app.AppConfig) {
 	appCfg := s.service.Seeder.CreateAppConfig(s.ctx, s.T(), appID)
 	install := s.service.Seeder.CreateInstall(s.ctx, s.T(), s.testApp)
@@ -143,7 +141,6 @@ func (s *GetInstallActionWorkflowsTestSuite) createActionWorkflow(appID, name st
 	return action
 }
 
-// createActionWorkflowConfig ties an action to an app config, making it visible to the filter.
 func (s *GetInstallActionWorkflowsTestSuite) createActionWorkflowConfig(appConfigID, actionID string) *app.ActionWorkflowConfig {
 	return s.service.Seeder.CreateActionWorkflowConfig(s.ctx, s.T(), s.testApp.ID, appConfigID, actionID)
 }
@@ -221,13 +218,10 @@ func (s *GetInstallActionWorkflowsTestSuite) TestGetInstallActions() {
 			setupFunc: func() string {
 				install, currentAppCfg := s.createInstall(s.testApp.ID)
 
-				// Action visible in current app config.
 				visibleAction := s.createActionWorkflow(s.testApp.ID, "current-action")
 				s.createActionWorkflowConfig(currentAppCfg.ID, visibleAction.ID)
 				s.createInstallActionWorkflow(install.ID, visibleAction.ID)
 
-				// Action that was removed in a later sync: its ActionWorkflowConfig
-				// points to a different (older) app config, not the install's current one.
 				olderAppCfg := s.service.Seeder.CreateBareAppConfig(s.ctx, s.T(), s.testApp.ID)
 				hiddenAction := s.createActionWorkflow(s.testApp.ID, "old-action")
 				s.createActionWorkflowConfig(olderAppCfg.ID, hiddenAction.ID)

@@ -15,9 +15,6 @@ import (
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
-// BuildInstall creates an app.Install with fake defaults for the given app.
-// The returned install is in-memory only and does not set config FK fields
-// (those require DB queries — use CreateInstall for a fully-populated install).
 func BuildInstall(a *app.App) *app.Install {
 	acct := BuildAccount()
 
@@ -34,11 +31,6 @@ func BuildInstall(a *app.App) *app.Install {
 	}
 }
 
-// CreateInstall builds and persists an install to the database for the given app.
-// Requires that CreateAppConfig has already been called for the app — it queries for
-// the latest AppSandboxConfig, AppRunnerConfig, and AppConfig to set FK fields.
-// Creates associated AWSAccount, InstallSandbox, and InstallStack inline.
-// Uses org/account from context if available.
 func (s *Seeder) CreateInstall(ctx context.Context, t *testing.T, a *app.App) *app.Install {
 	i := BuildInstall(a)
 	if orgID, err := cctx.OrgIDFromContext(ctx); err == nil {
@@ -49,7 +41,6 @@ func (s *Seeder) CreateInstall(ctx context.Context, t *testing.T, a *app.App) *a
 		i.CreatedByID = accountID
 	}
 
-	// Load latest configs from the app (created by CreateAppConfig).
 	var sandboxCfg app.AppSandboxConfig
 	require.NoError(t, s.db.WithContext(ctx).
 		Where("app_id = ?", a.ID).Order("created_at DESC").First(&sandboxCfg).Error,
@@ -66,7 +57,6 @@ func (s *Seeder) CreateInstall(ctx context.Context, t *testing.T, a *app.App) *a
 		Where("app_id = ?", a.ID).Order("created_at DESC").First(&appCfg).Error)
 	i.AppConfigID = appCfg.ID
 
-	// Create associated objects inline (mirrors helpers.CreateInstall).
 	i.InstallSandbox = app.InstallSandbox{
 		Status: app.InstallSandboxStatusQueued,
 		TerraformWorkspace: app.TerraformWorkspace{
@@ -84,8 +74,6 @@ func (s *Seeder) CreateInstall(ctx context.Context, t *testing.T, a *app.App) *a
 	return i
 }
 
-// CreateInstallComponent persists an InstallComponent linking an install to a component.
-// OrgID and CreatedByID are populated by the BeforeCreate hook from context.
 func (s *Seeder) CreateInstallComponent(ctx context.Context, t *testing.T, installID, componentID string) *app.InstallComponent {
 	ic := &app.InstallComponent{
 		InstallID:   installID,
@@ -97,7 +85,6 @@ func (s *Seeder) CreateInstallComponent(ctx context.Context, t *testing.T, insta
 	return ic
 }
 
-// CreateInstallDeploy persists an InstallDeploy linked to an InstallComponent and ComponentBuild.
 func (s *Seeder) CreateInstallDeploy(ctx context.Context, t *testing.T, installComponentID, componentBuildID string) *app.InstallDeploy {
 	deploy := &app.InstallDeploy{
 		InstallComponentID: installComponentID,
@@ -111,7 +98,6 @@ func (s *Seeder) CreateInstallDeploy(ctx context.Context, t *testing.T, installC
 	return deploy
 }
 
-// CreateInstallInputs persists an InstallInputs record for the given install.
 func (s *Seeder) CreateInstallInputs(ctx context.Context, t *testing.T, installID, appInputConfigID string, values map[string]*string) *app.InstallInputs {
 	hstore := pgtype.Hstore{}
 	for k, v := range values {
@@ -127,7 +113,6 @@ func (s *Seeder) CreateInstallInputs(ctx context.Context, t *testing.T, installI
 	return inputs
 }
 
-// CreateInstallStackVersion persists an InstallStackVersion with a generated PhoneHomeID.
 func (s *Seeder) CreateInstallStackVersion(ctx context.Context, t *testing.T, installID, installStackID, appConfigID string) *app.InstallStackVersion {
 	sv := &app.InstallStackVersion{
 		InstallID:      installID,

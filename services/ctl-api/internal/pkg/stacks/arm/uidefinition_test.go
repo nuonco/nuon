@@ -40,7 +40,6 @@ func TestQuickLinkUIDefinition_Envelope(t *testing.T) {
 	if got := out["handler"]; got != "Microsoft.Azure.CreateUIDef" {
 		t.Errorf("unexpected handler: %v", got)
 	}
-	// The version has to match the version embedded in $schema.
 	if got := out["version"]; got != "0.1.2-preview" {
 		t.Errorf("unexpected version: %v", got)
 	}
@@ -65,8 +64,6 @@ func resourceGroupConfig(t *testing.T, params map[string]any) map[string]any {
 	return rg
 }
 
-// On the first deploy the customer names the group. Constraining it here would
-// reject a perfectly valid choice before the install has any group at all.
 func TestQuickLinkUIDefinition_ResourceGroupUnconstrainedBeforeFirstDeploy(t *testing.T) {
 	_, params := renderUIDef(t, minimalTemplateInput())
 	rg := resourceGroupConfig(t, params)
@@ -74,15 +71,11 @@ func TestQuickLinkUIDefinition_ResourceGroupUnconstrainedBeforeFirstDeploy(t *te
 	if _, present := rg["constraints"]; present {
 		t.Errorf("resource group is constrained before the stack has phoned home: %v", rg["constraints"])
 	}
-	// The portal otherwise demands a new or empty group, which stops a customer
-	// deploying into a group they already keep resources in.
 	if rg["allowExisting"] != true {
 		t.Errorf("resourceGroup.allowExisting = %v, want true", rg["allowExisting"])
 	}
 }
 
-// Once the stack has reported where it landed, every later deploy has to go to
-// the same group or it creates a second stack instead of updating this install.
 func TestQuickLinkUIDefinition_PinsResourceGroupAfterFirstDeploy(t *testing.T) {
 	inp := minimalTemplateInput()
 	inp.InstallState = &state.State{
@@ -98,7 +91,6 @@ func TestQuickLinkUIDefinition_PinsResourceGroupAfterFirstDeploy(t *testing.T) {
 	if len(validations) == 0 {
 		t.Fatal("resourceGroup has no validations")
 	}
-	// Pinned to the group the customer actually used, NOT to <install-id>-rg.
 	wantExpr := "[equals(resourceGroup().name, 'customer-chosen-rg')]"
 	if got := validations[0].(map[string]any)["isValid"]; got != wantExpr {
 		t.Errorf("isValid = %v, want %v", got, wantExpr)
@@ -108,8 +100,6 @@ func TestQuickLinkUIDefinition_PinsResourceGroupAfterFirstDeploy(t *testing.T) {
 	}
 }
 
-// At subscription scope the stack template creates the resource group itself, so
-// there is no picker to constrain and a validation would reject every deploy.
 func TestQuickLinkUIDefinition_NoResourceGroupConstraintAtSubscriptionScope(t *testing.T) {
 	inp := minimalTemplateInput()
 	inp.DeploymentScope = app.StackDeploymentScopeSubscription
@@ -157,8 +147,6 @@ func TestQuickLinkUIDefinition_RequiresStackWritePermission(t *testing.T) {
 	}
 }
 
-// Scope is subscription + resource group. Pinning only the group still lets a
-// deploy into another subscription create a second stack.
 func TestQuickLinkUIDefinition_PinsSubscriptionWhenKnown(t *testing.T) {
 	inp := minimalTemplateInput()
 	inp.Install.AzureAccount.SubscriptionID = "00000000-1111-2222-3333-444444444444"
@@ -177,8 +165,6 @@ func TestQuickLinkUIDefinition_PinsSubscriptionWhenKnown(t *testing.T) {
 	}
 }
 
-// The subscription is only mandatory for orgs with phone-home auth on. Emitting
-// an equality check against an empty string would reject every subscription.
 func TestQuickLinkUIDefinition_NoSubscriptionPinWhenUnknown(t *testing.T) {
 	inp := minimalTemplateInput()
 	inp.Install.AzureAccount.SubscriptionID = ""
@@ -192,11 +178,6 @@ func TestQuickLinkUIDefinition_NoSubscriptionPinWhenUnknown(t *testing.T) {
 	}
 }
 
-// Every parameter the wrapper declares needs a field, whether or not it carries a
-// default — a defaulted parameter omitted here is one the customer can never
-// change, and an app whose parameters all have defaults gets a Basics step with
-// nothing on it but subscription and region. Secrets must not render as plain text
-// boxes.
 func TestQuickLinkUIDefinition_PromptsForEveryParameter(t *testing.T) {
 	inp := minimalTemplateInput()
 	inp.DeploymentScope = app.StackDeploymentScopeSubscription
@@ -221,9 +202,6 @@ func TestQuickLinkUIDefinition_PromptsForEveryParameter(t *testing.T) {
 	}
 
 	for name, p := range wrapperParams {
-		// location comes from the Basics step's own region picker, and
-		// deployTimestamp defaults to [utcNow()], which only ARM can evaluate —
-		// as a field it would show the customer the literal expression.
 		if name == "location" || name == "deployTimestamp" {
 			if _, present := byName[name]; present {
 				t.Errorf("Nuon-managed parameter %q is exposed as a field", name)
@@ -244,10 +222,6 @@ func TestQuickLinkUIDefinition_PromptsForEveryParameter(t *testing.T) {
 	}
 }
 
-// The regression that prompted this: a custom VNet template hoists its CIDR
-// parameters into the root, all with defaults. Filtering defaulted parameters out
-// left the portal form empty while deploying the stack template directly showed
-// every one of them.
 func TestQuickLinkUIDefinition_PrefillsHoistedParametersWithTheirDefaults(t *testing.T) {
 	inp := vnetInputWithTemplate(t, app.StackDeploymentScopeSubscription, hoistFixture)
 
@@ -277,12 +251,9 @@ func TestQuickLinkUIDefinition_PrefillsHoistedParametersWithTheirDefaults(t *tes
 	if got := params["outputs"].(map[string]any)["addressSpace"]; got != "[basics('addressSpace')]" {
 		t.Errorf("addressSpace output = %v", got)
 	}
-	// The portal spaces and title-cases parameter names itself when no UI
-	// definition is supplied; supplying one takes that over.
 	if got := addressSpace["label"]; got != "Address Space" {
 		t.Errorf("addressSpace.label = %v, want %q", got, "Address Space")
 	}
-	// Clearing a prefilled field must not submit an empty string over the default.
 	if got := addressSpace["constraints"].(map[string]any)["required"]; got != true {
 		t.Errorf("addressSpace.constraints.required = %v, want true", got)
 	}
@@ -451,8 +422,6 @@ func TestHumanizeParamName(t *testing.T) {
 	}
 }
 
-// Outputs may only name parameters the wrapper actually declares; the portal
-// rejects a deployment whose outputs reference an unknown parameter.
 func TestQuickLinkUIDefinition_OutputsMatchWrapperParameters(t *testing.T) {
 	inp := minimalTemplateInput()
 

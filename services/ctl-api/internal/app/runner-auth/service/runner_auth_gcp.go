@@ -29,7 +29,6 @@ const (
 )
 
 var (
-	// Only allow requests to the GCP Compute API for reading instances.
 	gcpComputeURLPattern = regexp.MustCompile(`^https://compute\.googleapis\.com/compute/v1/projects/[a-z][a-z0-9-]*/zones/[a-z0-9-]+/instances/[a-zA-Z0-9][a-zA-Z0-9._-]*$`)
 
 	allowedGCPHeaders = map[string]struct{}{
@@ -93,10 +92,6 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 
 	reqCtx := ctx.Request.Context()
 
-	// Step 1: Verify identity token (JWT) — proves project, SA, instance ID.
-	// Resolve the expected audience: if the token carries a custom (white-label)
-	// audience that is registered as a runner group URL, use that; otherwise
-	// fall back to the global runner API URL.
 	audience := s.resolveGCPTokenAudience(reqCtx, req.IdentityToken)
 	payload, err := idtoken.Validate(reqCtx, req.IdentityToken, audience)
 	if err != nil {
@@ -120,8 +115,6 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 		return
 	}
 
-	// Step 2: Execute metadata request — independently reads instance metadata (runner ID)
-	// Mirrors the AWS presigned DescribeTags pattern.
 	instanceData, err := s.executeGCPMetadataRequest(reqCtx, req.MetadataRequest, claims)
 	if err != nil {
 		s.l.Warn("runner auth gcp: metadata request failed", zap.Error(err))
@@ -133,7 +126,6 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 		return
 	}
 
-	// Step 3: Cross-validate instance ID from JWT matches Compute API response
 	apiInstanceID := instanceData.ID
 	if apiInstanceID != claims.instanceID {
 		s.l.Warn("runner auth gcp: instance ID mismatch",
@@ -147,7 +139,6 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 		return
 	}
 
-	// Step 4: Extract runner ID from instance metadata (independently verified)
 	runnerID := extractRunnerIDFromMetadata(instanceData)
 	if runnerID == "" {
 		s.l.Warn("runner auth gcp: missing runner ID in instance metadata",
@@ -282,7 +273,6 @@ func extractGCPClaims(payload *idtoken.Payload) (*gcpClaims, error) {
 	}, nil
 }
 
-// gcpInstanceResponse is a subset of the Compute API instances.get response.
 type gcpInstanceResponse struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
@@ -326,7 +316,6 @@ func (s *service) executeGCPMetadataRequest(ctx context.Context, metadataReq *gc
 		return nil, fmt.Errorf("metadata request validation failed: %w", err)
 	}
 
-	// Verify the URL targets the same project/zone/instance from the JWT claims
 	expectedPrefix := fmt.Sprintf("https://compute.googleapis.com/compute/v1/projects/%s/zones/%s/instances/", claims.projectID, claims.zone)
 	u, _ := url.Parse(metadataReq.URL)
 	fullURL := u.Scheme + "://" + u.Host + u.Path
@@ -375,10 +364,6 @@ func extractRunnerIDFromMetadata(instance *gcpInstanceResponse) string {
 	return ""
 }
 
-// resolveGCPTokenAudience extracts the audience from the (unverified) JWT payload
-// and checks if it is a registered custom runner URL. If so, that URL is returned
-// as the expected audience so white-labeled deployments can authenticate without
-// exposing Nuon's URL. Falls back to cfg.RunnerAPIURL for standard deployments.
 func (s *service) resolveGCPTokenAudience(ctx context.Context, token string) string {
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {

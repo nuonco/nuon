@@ -6,9 +6,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// DispatchEnqueueBeforeQueuedVersion gates enqueueing the execute-workflow-step
-// signal before marking the step queued. Histories written before this recorded
-// queued-then-enqueue, so flipping the order without a version is nondeterministic.
 const DispatchEnqueueBeforeQueuedVersion = "dispatch-enqueue-before-queued-v1"
 
 func EnqueueBeforeQueued(ctx workflow.Context) bool {

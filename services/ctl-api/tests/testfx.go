@@ -72,61 +72,37 @@ type testEnqueuerParams struct {
 	MW      pkgmetrics.Writer
 }
 
-// TestMocks holds optional mock/fake clients that tests can supply to CtlApiFXOptionsWithMocks.
-// Tests create their own mock instances and pass them in; FX registers them as the interface types.
 type TestMocks struct {
 	MockTC temporalclient.Client
 	MockGH vcshelpers.GithubClient
 	MockTF terraform.Client
 }
 
-// TestOpts configures the FX options for integration tests.
 type TestOpts struct {
-	// T is required for creating default gomock-based mock clients.
-	T testing.TB
-	// Mocks to inject. Nil fields use default mocks.
-	Mocks *TestMocks
-	// CustomValidator uses the custom entity_name validator when true,
-	// standard validator when false.
+	T               testing.TB
+	Mocks           *TestMocks
 	CustomValidator bool
 }
 
-// CtlApiFXOptions returns the common FX options used across all ctl-api integration tests.
-// For tests that need mocks, use CtlApiFXOptionsWithMocks instead.
 func CtlApiFXOptions(t testing.TB) []fx.Option {
 	return CtlApiFXOptionsWithMocks(TestOpts{T: t, CustomValidator: true})
 }
 
-// CtlApiFXOptionsWithValidator returns common test options with the standard validator.
-//
 // Deprecated: Use CtlApiFXOptionsWithMocks(tests.TestOpts{}) instead.
 func CtlApiFXOptionsWithValidator(t testing.TB) []fx.Option {
 	return CtlApiFXOptionsWithMocks(TestOpts{T: t, CustomValidator: false})
 }
 
-// CtlApiFXOptionsWithMocks returns FX options for integration tests with configurable
-// mock clients and validator choice.
-//
-// Usage:
-//
-//	opts := tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
-//	    CustomValidator: true,
-//	})
-//	app := fxtest.New(t, append(opts, fx.Provide(MyService), fx.Populate(&svc))...)
 func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 	options := []fx.Option{
-		// Suppress verbose Fx PROVIDE/INVOKE logs in tests
 		fx.WithLogger(NopFxLogger),
 
-		// Configuration
 		fx.Provide(internal.NewConfig),
 		fx.Provide(telemetry.NewConfig),
 
-		// Logging
 		fx.Provide(log.New),
 		fx.Provide(dblog.New),
 
-		// External services
 		fx.Provide(loops.New),
 		fx.Provide(salesforce.New),
 		fx.Provide(func() *github.Client { return github.NewClient(nil) }),
@@ -134,21 +110,17 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 		fx.Provide(propagator.New),
 		fx.Provide(features.New),
 
-		// Blob storage service
 		fx.Provide(blobstore.NewService),
 
-		// Slack helpers (needed transitively by orgshelpers)
 		fx.Provide(func() *slackclient.Client { return slackclient.New() }),
 		fx.Provide(autolink.New),
 
-		// Temporal dependencies
 		fx.Provide(gzip.AsGzip(gzip.New)),
 		fx.Provide(largepayload.AsLargePayload(largepayload.New)),
 		fx.Provide(blob.AsBlob(blob.New)),
 		fx.Provide(signaldb.NewPayloadConverter),
 		fx.Provide(dataconverter.New),
 
-		// Databases
 		fx.Provide(func(cfg *internal.Config) *querycollector.Collector {
 			if cfg.DebugEnableQueryCollector {
 				return querycollector.NewCollector(5000)
@@ -158,12 +130,11 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 		fx.Provide(psql.AsPSQL(psql.New)),
 		fx.Provide(ch.AsCH(ch.New)),
 
-		// Clients and dependencies for account client
 		fx.Provide(authz.New),
 		fx.Provide(analytics.New),
 		fx.Provide(account.New),
 
-		// Queue client (uses mock temporal client). The enqueuer gets a no-op
+		// why: Queue client (uses mock temporal client). The enqueuer gets a no-op
 		// lifecycle so its background workers and sweep workflow never start.
 		// NOTE: flowclient is intentionally NOT provided here — it imports
 		// executeflow, whose import tree reaches back into packages (e.g.
@@ -181,10 +152,8 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 		}),
 		fx.Provide(queueclient.New),
 
-		// Queue emitter client (uses mock temporal client)
 		fx.Provide(emitterclient.New),
 
-		// Helpers (order matters due to dependencies)
 		fx.Provide(accountshelpers.New),
 		fx.Provide(vcshelpers.New),
 		fx.Provide(actionshelpers.New),
@@ -195,25 +164,20 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 		fx.Provide(installshelpers.New),
 		fx.Provide(orgshelpers.New),
 
-		// Endpoint audit
 		fx.Provide(api.NewEndpointAudit),
 		fx.Provide(audit.New),
 
-		// Test fixtures
 		fx.Provide(testseed.New),
 
-		// Invokers
 		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
 	}
 
-	// Validator choice
 	if opts.CustomValidator {
 		options = append(options, fx.Provide(validatorpkg.New))
 	} else {
 		options = append(options, fx.Provide(validator.New))
 	}
 
-	// Mock/fake client overrides
 	if opts.Mocks != nil && opts.Mocks.MockTC != nil {
 		options = append(options, fx.Supply(fx.Annotate(opts.Mocks.MockTC, fx.As(new(temporalclient.Client)))))
 	} else if opts.T != nil {

@@ -72,7 +72,6 @@ func (t *HelmRelease) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-// BeforeSave (not BeforeCreate) so the body blob uploads on helm upgrades too, which use Updates.
 func (t *HelmRelease) BeforeSave(tx *gorm.DB) error {
 	return t.Body.BeforeCreate(tx)
 }

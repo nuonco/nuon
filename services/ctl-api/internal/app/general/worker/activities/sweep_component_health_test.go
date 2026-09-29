@@ -7,9 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// The sweep only marks installs unknown; recovery arrives by push. So the
-// window has to exclude two things: installs merely between reports, and dead
-// installs already marked unknown, which would otherwise be re-swept forever.
 func TestComponentHealthSweepWindow(t *testing.T) {
 	t.Parallel()
 

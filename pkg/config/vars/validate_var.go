@@ -16,18 +16,15 @@ func (v *varsValidator) validateVar(inputVar string, tmplData map[string]interfa
 	matches := re.FindAllStringSubmatch(inputVar, -1)
 
 	for _, matchP := range matches {
-		// get the current match, minus go strings, for the current depth
 		match := matchP[0]
 		match = strings.ReplaceAll(match, "{{", "")
 		match = strings.ReplaceAll(match, "}}", "")
 		match = strings.Replace(match, ".", "", 1)
 
-		// this could only happen if a user added `{{}}`
 		if match == "" {
 			return nil
 		}
 
-		// split the input value into strings and validate one layer of depth at a time
 		newPieces := make([]string, 0)
 		matchPieces := strings.Split(match, ".")
 		if len(matchPieces) < 1 {
@@ -67,8 +64,6 @@ func (v *varsValidator) validateVar(inputVar string, tmplData map[string]interfa
 }
 
 func (v *varsValidator) validateVarV2(inputVar string, tmplData map[string]interface{}) error {
-	// vars are namespaced with the install so need to remove it since we template against a install state.
-	// we may want to change this later if we plan to expose first level vars
 	inputVar = strings.ReplaceAll(inputVar, ".install.", ".")
 	_, err := render.RenderV2(inputVar, tmplData)
 	if err != nil {

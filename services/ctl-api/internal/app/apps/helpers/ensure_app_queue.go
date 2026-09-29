@@ -19,9 +19,6 @@ const (
 	AppInstallSyncsQueueName       = queuenames.AppInstallSyncsQueueName
 )
 
-// ensureAppQueueByName creates the named app queue at its registered capacity.
-// Safe to call multiple times — queueClient.Create is idempotent and reconciles
-// capacity drift against the registry.
 func (h *Helpers) ensureAppQueueByName(ctx context.Context, appID, name string, skipRestartHint bool) (*app.Queue, error) {
 	spec, ok := queuenames.SpecByName(queuenames.OwnerApps, name)
 	if !ok {
@@ -46,8 +43,6 @@ func (h *Helpers) EnsureAppTriggerQueue(ctx context.Context, appID string) (*app
 	return h.ensureAppQueueByName(ctx, appID, queuenames.AppTriggersQueueName, true)
 }
 
-// EnsureAppQueue creates all Temporal queue workflows needed for an app to
-// execute workflows through the shared flow infrastructure.
 func (h *Helpers) EnsureAppQueue(ctx context.Context, appID string) error {
 	specs, ok := queuenames.Specs(queuenames.OwnerApps)
 	if !ok {

@@ -9,8 +9,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
-// auditMetadataAttrs maps runner job metadata keys, which ctl-api populates at
-// job creation and vary by job group, onto the attribute names we emit.
 var auditMetadataAttrs = map[string]string{
 	"install_id":             "install.id",
 	"flow_install_id":        "flow_install.id",
@@ -28,7 +26,7 @@ var auditMetadataAttrs = map[string]string{
 	"sandbox_run_type":       "sandbox_run.type",
 }
 
-// auditPairs is the single source of truth for the audit envelope. Both the
+// why: auditPairs is the single source of truth for the audit envelope. Both the
 // zap field and OTEL attribute forms are derived from it so log records and
 // spans never drift apart.
 func auditPairs(job *models.AppRunnerJob) [][2]string {
@@ -72,9 +70,6 @@ func AuditFields(job *models.AppRunnerJob) []zap.Field {
 	return fields
 }
 
-// AuditMetadata builds the ctx-threaded job metadata that op.Start stamps onto
-// every descendant span. It carries only the dimensions worth querying spans
-// by; the full envelope rides on the job logger instead.
 func AuditMetadata(job *models.AppRunnerJob, executionID, stepName string) pkgctx.JobMetadata {
 	meta := pkgctx.JobMetadata{
 		RunnerJobExecutionID: executionID,

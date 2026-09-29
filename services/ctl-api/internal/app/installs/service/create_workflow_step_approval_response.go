@@ -113,17 +113,13 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 		return
 	}
 
-	// create the response
 	wfsaResponse, err := s.createWorkflowStepApprovalResponse(ctx, approval.ID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create workflow step approval response: %w", err))
 		return
 	}
 
-	// Reactively unblock the step via the appropriate update.
 	if req.ResponseType == app.WorkflowStepApprovalResponseTypeRetryPlan {
-		// Retry is handled by the step-group (which clones and re-dispatches),
-		// not by the approval flow inside the step signal.
 		if _, err := s.flowsClient.RetryStep(ctx, &flowclient.RetryStepRequest{
 			InstallWorkflowID: workflowID,
 			StepID:            stepID,
@@ -152,10 +148,6 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, response)
 }
 
-// dispatchApprovalResponseSignal forwards an approval response to the running workflow.
-// For install-owned workflows, it enqueues a workflow-step-approval-response Nuon Signal
-// for lifecycle webhooks and retries. For app-branch workflows, it calls flowsClient.ApprovePlan
-// directly since the ApprovePlan activity is only registered on the installs worker.
 func (s *service) dispatchApprovalResponseSignal(
 	ctx *gin.Context,
 	workflowID, stepID, approvalID, approvalResponseID string,

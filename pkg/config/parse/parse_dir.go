@@ -81,7 +81,6 @@ func parseDir(ctx context.Context, parseCfg ParseConfig, source *sourceCapture) 
 	fs := afero.NewOsFs()
 	cfgFS := afero.NewBasePathFs(fs, fp)
 
-	// parse the directory
 	var obj ConfigDir
 	if err := dir.Parse(ctx, cfgFS, &obj, &dir.ParseOptions{
 		Root: fp,
@@ -108,8 +107,6 @@ func parseDir(ctx context.Context, parseCfg ParseConfig, source *sourceCapture) 
 		}
 	}
 
-	// NOTE(jm): this will go away once we deprecate the legacy config, and we can just have a pipeline of
-	// `config.AppConfig` parsers.
 	appCfg, err := obj.toAppConfig(parseCfg.SkipBranches)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to convert to app config")
@@ -121,16 +118,12 @@ func parseDir(ctx context.Context, parseCfg ParseConfig, source *sourceCapture) 
 		}
 	}
 
-	// Derive policy names from Contents paths BEFORE get.Parse() replaces Contents with actual file content.
-	// This allows policies defined in policies.toml with Contents like "./block-mutable-tags.rego" to derive
-	// their name as "block-mutable-tags" before the path is replaced with the file content.
 	if appCfg.Policies != nil {
 		for i := range appCfg.Policies.Policies {
 			appCfg.Policies.Policies[i].SetNameFromContents()
 		}
 	}
 
-	// Copy TemplateURL to Contents for go-getter to fetch template content.
 	if appCfg.Stack != nil {
 		for i := range appCfg.Stack.CustomNestedStacks {
 			appCfg.Stack.CustomNestedStacks[i].Contents = appCfg.Stack.CustomNestedStacks[i].TemplateURL
@@ -142,7 +135,6 @@ func parseDir(ctx context.Context, parseCfg ParseConfig, source *sourceCapture) 
 		fieldTimeout = parseCfg.FieldTimeout
 	}
 
-	// parse all get functions
 	if err := get.Parse(ctx, appCfg, &get.Options{
 		FieldTimeout: fieldTimeout,
 		RootDir:      fp,
@@ -281,13 +273,11 @@ func namedIAMPolicyMemberName(path string) string {
 }
 
 func hasTomlFiles(fs afero.Fs) (bool, error) {
-	// Read directory contents
 	files, err := afero.ReadDir(fs, ".")
 	if err != nil {
 		return false, err
 	}
 
-	// Check each file for .toml extension
 	for _, file := range files {
 		if !file.IsDir() && strings.HasSuffix(strings.ToLower(file.Name()), ".toml") {
 			return true, nil
@@ -300,40 +290,33 @@ func hasTomlFiles(fs afero.Fs) (bool, error) {
 // Deprecated: we not hash the intermediatery strucst for component configs
 func checksumTOMLFilesByName(cfgFS afero.Fs) (map[string]string, error) {
 	checksums := make(map[string]string)
-
-	// Read the components directory
 	files, err := afero.ReadDir(cfgFS, "components")
 	if err != nil {
 		return nil, fmt.Errorf("failed to read components directory: %w", err)
 	}
 
 	for _, file := range files {
-		// Skip directories and non-TOML files
 		if file.IsDir() || !strings.HasSuffix(strings.ToLower(file.Name()), ".toml") {
 			continue
 		}
 
 		filePath := filepath.Join("components", file.Name())
 
-		// Read file content
 		content, err := afero.ReadFile(cfgFS, filePath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read %s: %w", filePath, err)
 		}
 
-		// Parse TOML to get the name
 		var config config.Component
 		if err := toml.Unmarshal(content, &config); err != nil {
 			return nil, fmt.Errorf("failed to parse TOML in %s: %w", filePath, err)
 		}
 
-		// Skip files without a name field
 		if config.Name == "" {
 			fmt.Printf("Warning: %s has no 'name' field, skipping\n", filePath)
 			continue
 		}
 
-		// Calculate SHA256 checksum
 		hash := sha256.Sum256(content)
 		checksums[config.Name] = fmt.Sprintf("%x", hash)
 	}

@@ -44,8 +44,6 @@ func TestGetAWSTemplate_RunnerResources(t *testing.T) {
 		}
 	}
 
-	// The sandbox terraform looks the runner security group up by tag to grant it
-	// cluster access, so it has to exist even when no runner instance does.
 	t.Run("runner security group is created with local runners", func(t *testing.T) {
 		tpl := &Templates{cfg: &internal.Config{UseLocalRunners: true}}
 

@@ -84,7 +84,6 @@ export const EditInstallModal = ({
           }
           clearDraft()
         } catch {
-          // error surfaced via submitError → FormErrorBanner
         }
       },
     })

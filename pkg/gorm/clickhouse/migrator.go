@@ -29,7 +29,6 @@ var regFullDataType = regexp.MustCompile(`\D*(\d+)\D?`)
 
 var regColumnDefinition = regexp.MustCompile(`\s*(\w+)\s+[a-zA-Z0-9_]+(?:\((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*\))?\s*`)
 
-// Errors enumeration
 var (
 	ErrRenameColumnUnsupported = errors.New("renaming column is not supported in your clickhouse version < 20.4")
 	ErrRenameIndexUnsupported  = errors.New("renaming index is not supported")
@@ -46,22 +45,18 @@ type Migrator struct {
 	Dialector
 }
 
-// Database
-
 func (m Migrator) CurrentDatabase() (name string) {
 	m.DB.Raw("SELECT currentDatabase()").Row().Scan(&name)
 	return
 }
 
 func (m Migrator) FullDataTypeOf(field *schema.Field) (expr clause.Expr) {
-	// Infer the ClickHouse datatype from schema.Field information
 	expr.SQL = m.Migrator.DataTypeOf(field)
 
-	// NOTE:
+	// why: ClickHouse does not support NULL or UNIQUE keywords, so those field flags are not emitted.
 	// NULL and UNIQUE keyword is not supported in clickhouse.
 	// Hence, skipping checks for field.Unique and field.NotNull
 
-	// Build DEFAULT clause after DataTypeOf() expression optionally
 	if field.HasDefaultValue && (field.DefaultValueInterface != nil || field.DefaultValue != "") {
 		if field.DefaultValueInterface != nil {
 			defaultStmt := &gorm.Statement{Vars: []interface{}{field.DefaultValueInterface}}
@@ -72,20 +67,17 @@ func (m Migrator) FullDataTypeOf(field *schema.Field) (expr clause.Expr) {
 		}
 	}
 
-	// Build COMMENT clause optionally after DEFAULT
 	if comment, ok := field.TagSettings["COMMENT"]; ok {
 		expr.SQL += " COMMENT " + m.Explain("?", comment)
 	}
 
-	// Build TTl clause optionally after COMMENT
 	if ttl, ok := field.TagSettings["TTL"]; ok && ttl != "" {
 		expr.SQL += " TTL " + ttl
 	}
 
-	// Build CODEC compression algorithm optionally
+	// why: Build CODEC compression algorithm optionally
 	// NOTE: the codec algo name is case sensitive!
 	if codecstr, ok := field.TagSettings["CODEC"]; ok && codecstr != "" {
-		// parse codec one by one in the codec option
 		codecSlice := strings.Split(codecstr, ",")
 		codecArgsSQL := m.DefaultCompression
 		if len(codecSlice) > 0 {
@@ -98,8 +90,6 @@ func (m Migrator) FullDataTypeOf(field *schema.Field) (expr clause.Expr) {
 	return expr
 }
 
-// Tables
-
 func (m Migrator) CreateTable(models ...interface{}) error {
 	for _, model := range m.ReorderModels(models, false) {
 		tx := m.DB.Session(new(gorm.Session))
@@ -109,7 +99,6 @@ func (m Migrator) CreateTable(models ...interface{}) error {
 				args           = []interface{}{clause.Table{Name: stmt.Table}}
 			)
 
-			// Step 1. Build column datatype SQL string
 			columnSlice := make([]string, 0, len(stmt.Schema.DBNames))
 			for _, dbName := range stmt.Schema.DBNames {
 				field := stmt.Schema.FieldsByDBName[dbName]
@@ -125,7 +114,6 @@ func (m Migrator) CreateTable(models ...interface{}) error {
 			}
 			columnStr := strings.Join(columnSlice, ",")
 
-			// Step 2. Build constraint check SQL string if any constraint
 			constrSlice := make([]string, 0, len(columnSlice))
 			for _, check := range stmt.Schema.ParseCheckConstraints() {
 				constrSlice = append(constrSlice, "CONSTRAINT ? CHECK ?")
@@ -139,7 +127,7 @@ func (m Migrator) CreateTable(models ...interface{}) error {
 				constrStr = ", " + constrStr
 			}
 
-			// Step 3. Build index SQL string
+			// why: Step 3. Build index SQL string
 			// NOTE: clickhouse does not support for index class.
 			indexSlice := make([]string, 0, 10)
 			for _, index := range stmt.Schema.ParseIndexes() {
@@ -155,20 +143,14 @@ func (m Migrator) CreateTable(models ...interface{}) error {
 				// as MergeTree(...) parameters. But somehow it complained.
 				// Note that primary key doesn't ensure uniqueness
 
-				// Get indexing type `gorm:"index,type:minmax"`
-				// Choice: minmax | set(n) | ngrambf_v1(n, size, hash, seed) | bloomfilter()
 				indexType := m.DefaultIndexType
 				if index.Type != "" {
 					indexType = index.Type
 				}
 
-				// Get expression for index options
-				// Syntax: (`colname1`, ...)
 				buildIndexOptions := tx.Migrator().(migrator.BuildIndexOptionsInterface)
 				indexOptions := buildIndexOptions.BuildIndexOptions(index.Fields, stmt)
 
-				// Stringify index builder
-				// TODO (iqdf): support granularity
 				str := fmt.Sprintf("INDEX ? ? TYPE %s GRANULARITY %d", indexType, m.getIndexGranularityOption(index.Fields))
 				indexSlice = append(indexSlice, str)
 				args = append(args, clause.Expr{SQL: index.Name}, indexOptions)
@@ -178,7 +160,6 @@ func (m Migrator) CreateTable(models ...interface{}) error {
 				indexStr = ", " + indexStr
 			}
 
-			// Step 4. Finally assemble CREATE TABLE ... SQL string
 			engineOpts := m.DefaultTableEngineOpts
 			if tableOption, ok := m.DB.Get("gorm:table_options"); ok {
 				engineOpts = fmt.Sprint(tableOption)
@@ -215,12 +196,9 @@ func (m Migrator) HasTable(value interface{}) bool {
 }
 
 func (m Migrator) GetTables() (tableList []string, err error) {
-	// table_type Enum8('BASE TABLE' = 1, 'VIEW' = 2, 'FOREIGN TABLE' = 3, 'LOCAL TEMPORARY' = 4, 'SYSTEM VIEW' = 5)
 	err = m.DB.Raw("SELECT TABLE_NAME FROM information_schema.tables where table_schema=? and table_type =1", m.CurrentDatabase()).Scan(&tableList).Error
 	return
 }
-
-// Columns
 
 func (m Migrator) AddColumn(value interface{}, field string) error {
 	return m.RunWithValue(value, func(stmt *gorm.Statement) error {
@@ -285,7 +263,7 @@ func (m Migrator) AlterColumn(value interface{}, field string) error {
 	})
 }
 
-// NOTE: Only supported after ClickHouse 20.4 and above.
+// why: Only supported after ClickHouse 20.4 and above.
 // See: https://github.com/ClickHouse/ClickHouse/issues/146
 func (m Migrator) RenameColumn(value interface{}, oldName, newName string) error {
 	return m.RunWithValue(value, func(stmt *gorm.Statement) error {
@@ -339,7 +317,6 @@ func (m Migrator) HasColumn(value interface{}, field string) bool {
 	return count > 0
 }
 
-// AutoMigrate auto migrate values
 func (m Migrator) AutoMigrate(values ...interface{}) error {
 	for _, value := range m.ReorderModels(values, true) {
 		queryTx, execTx := m.GetQueryAndExecTx()
@@ -363,7 +340,6 @@ func (m Migrator) AutoMigrate(values ...interface{}) error {
 					parseCheckConstraints = stmt.Schema.ParseCheckConstraints()
 				)
 
-				// find nested fields keep a list
 				nestedFieldColSearchTerms := []string{}
 				nestedFieldDBNames := []string{}
 				nestedFields := []*schema.Field{}
@@ -380,10 +356,8 @@ func (m Migrator) AutoMigrate(values ...interface{}) error {
 					log.Printf("[Migrator.AutoMigrate] NestedField Facts:%+v", nestedFieldColSearchTerms)
 				}
 
-				// grab db names
 				dbNamesOriginal := stmt.Schema.DBNames
 
-				// remove the declared dbName if the dbName is a prefix for a column generated from a nested field
 				dbNamesFiltered := []string{}
 				for _, dbName := range dbNamesOriginal {
 					if !contains(nestedFieldDBNames, dbName) {
@@ -391,7 +365,6 @@ func (m Migrator) AutoMigrate(values ...interface{}) error {
 					}
 				}
 
-				// handle regular fields
 				for _, dbName := range dbNamesFiltered {
 					var foundColumn gorm.ColumnType
 					field := stmt.Schema.FieldsByDBName[dbName]
@@ -407,48 +380,37 @@ func (m Migrator) AutoMigrate(values ...interface{}) error {
 					}
 
 					if foundColumn == nil {
-						// not found, add column
 						if err = execTx.Migrator().AddColumn(value, dbName); err != nil {
 							return err
 						}
 					} else {
-						// found, smartly migrate
 						if err = execTx.Migrator().MigrateColumn(value, field, foundColumn); err != nil {
 							return err
 						}
 					}
 				}
 
-				// handle nested fields
 				for _, nestedField := range nestedFields {
-					// collect all of the child fields of the nested field definition and pass them to the nested column migrator
 					dbName := nestedField.DBName
 					childColumns := []gorm.ColumnType{}
-					// childFieldMap := map[string]*schema.Field{}
 
-					// grab the schema fields related to the nested field definition
-					// 1. if the field is dot-delimited, as a column generated from a nested column definition would be,
-					// 2. and the first part of the dot-delimited column name matches the name of the nested field in the schema
 					for _, colType := range columnTypes {
 						fieldDBName := colType.Name()
 						if !strings.Contains(fieldDBName, ".") {
-							// do nothing
 						} else {
 							parts := strings.Split(fieldDBName, ".")
 							if parts[0] == dbName {
 								childColumns = append(childColumns, colType)
-								// childFieldMap[parts[1]] = field
 							}
 						}
 					}
 
-					if len(childColumns) == 0 { // nested column not found, add column normally
+					if len(childColumns) == 0 {
 						if err = execTx.Migrator().AddColumn(value, dbName); err != nil {
 							return err
 						}
-					} else { // if any columns exist, intelligently migrate
-						field := stmt.Schema.FieldsByDBName[dbName] // we need the field object itself so we can parse the DataType
-						// NOTE(fd): is this a code smell? is this legal? is there a better way than casting to a concrete type?
+					} else {
+						field := stmt.Schema.FieldsByDBName[dbName]
 						err = execTx.Migrator().(Migrator).MigrateNestedColumn(value, field, childColumns)
 						if err != nil {
 							return err
@@ -497,13 +459,11 @@ func (m Migrator) AutoMigrate(values ...interface{}) error {
 	return nil
 }
 
-// MigrateColumn migrate column
 func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnType gorm.ColumnType) error {
 	if field.IgnoreMigration {
 		return nil
 	}
 
-	// found, smart migrate
 	fullDataType := strings.TrimSpace(strings.ToLower(m.DB.Migrator().FullDataTypeOf(field).SQL))
 	realDataType := strings.ToLower(columnType.DatabaseTypeName())
 
@@ -513,9 +473,7 @@ func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnTy
 	)
 
 	if !field.PrimaryKey {
-		// check type
 		if !strings.HasPrefix(fullDataType, realDataType) {
-			// check type aliases
 			aliases := m.DB.Migrator().GetTypeAliases(realDataType)
 			for _, alias := range aliases {
 				if strings.HasPrefix(fullDataType, alias) {
@@ -532,14 +490,11 @@ func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnTy
 	}
 
 	if !isSameType {
-		// check size
 		if length, ok := columnType.Length(); length != int64(field.Size) {
 			if length > 0 && field.Size > 0 {
 				log.Printf("[Migrator.MigrateColumn] [%s] column field.size has changed - %d == %d\n", field.DBName, length, field.Size)
 				alterColumn = true
 			} else {
-				// has size in data type and not equal
-				// Since the following code is frequently called in the for loop, reg optimization is needed here
 				matches2 := regFullDataType.FindAllStringSubmatch(fullDataType, -1)
 				if !field.PrimaryKey &&
 					(len(matches2) == 1 && matches2[0][1] != fmt.Sprint(length) && ok) {
@@ -549,7 +504,6 @@ func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnTy
 			}
 		}
 
-		// check precision
 		if precision, _, ok := columnType.DecimalSize(); ok && int64(field.Precision) != precision {
 			if regexp.MustCompile(fmt.Sprintf("[^0-9]%d[^0-9]", field.Precision)).MatchString(m.Migrator.DataTypeOf(field)) {
 				log.Printf("[Migrator.MigrateColumn] [%s] column precision has changed\n", field.DBName)
@@ -558,31 +512,26 @@ func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnTy
 		}
 	}
 
-	// check nullable
 	if nullable, ok := columnType.Nullable(); ok && nullable == field.NotNull {
-		// not primary key & database is nullable
 		if !field.PrimaryKey && nullable {
 			log.Printf("[Migrator.MigrateColumn] [%s] column should be made nullable\n", field.DBName)
 			alterColumn = true
 		}
 	}
 
-	// check default value
 	if !field.PrimaryKey {
-		// NOTE(fd): clickhouse NOT NULL is the default. A column needs to explicitly set NULL or wrap the col def in Nullable.o
+		// why: clickhouse NOT NULL is the default. A column needs to explicitly set NULL or wrap the col def in Nullable.o
 		// to accept a NULL. as a result, all of the columns have a default value.
 		// as such, in this case, if the dv="", we will do nothing. now, this is an issue. if we explicitly wanted to disallow empty strings,
 		// we'd need to handle them w/ a nullable field. but this is fine for our use-case.
 		currentDefaultNotNull := field.HasDefaultValue && (field.DefaultValueInterface != nil || !strings.EqualFold(field.DefaultValue, "NULL"))
 		dv, dvNotNull := columnType.DefaultValue()
 		if dvNotNull && !currentDefaultNotNull {
-			// default value -> null
 			log.Printf("[Migrator.MigrateColumn] [%s] dv=%t: default value has changed (\"%s\" -> null) - currentDefaultNotNull=%t dvNotNull=%t\n", field.DBName, field.HasDefaultValue, dv, currentDefaultNotNull, dvNotNull)
-			// explicit override: we do nothing in this case because we do not want to support this mutation
+			// why: explicit override: we do nothing in this case because we do not want to support this mutation
 			log.Printf("[Migrator.MigrateColumn] [%s] politely refusing to alter this column", field.DBName)
 			alterColumn = false
 		} else if !dvNotNull && currentDefaultNotNull {
-			// null -> default value
 			log.Printf("[Migrator.MigrateColumn] [%s] dv=%t: default value has changed (null -> \"%s\") - currentDefaultNotNull=%t dvNotNull=%t\n", field.DBName, field.HasDefaultValue, dv, currentDefaultNotNull, dvNotNull)
 			alterColumn = true
 		} else if currentDefaultNotNull || dvNotNull {
@@ -601,9 +550,7 @@ func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnTy
 		}
 	}
 
-	// check comment
 	if comment, ok := columnType.Comment(); ok && comment != field.Comment {
-		// not primary key
 		if !field.PrimaryKey {
 			log.Printf("[Migrator.MigrateColumn] [%s] comment has changed\n", field.DBName)
 			alterColumn = true
@@ -624,10 +571,7 @@ func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnTy
 	return nil
 }
 
-// START: Migrate Nested Columns
-
 func filterWhitespace(array []string) []string {
-	// remove empty strings from an array of strings
 	returnValue := []string{}
 	for _, el := range array {
 		trimmed := strings.TrimSpace(el)
@@ -646,35 +590,19 @@ func cleanWhiteSpace(s string) string {
 }
 
 func (m Migrator) parseNestedField(definition string) (map[string]string, error) {
-	// Take a Nested field and return a map of internal field to definitions:
-	// For example:
-	//   > Nested(key LowCardinality(String), value LowCardinality(String))
-	// would return a map of its child colum and its definition:
-	//   >   key: LowCardinality(String)
-	//   > value: LowCardinality(String)
-	// We must ensure we can handle cases w/ more complex definitions:
-	//   > Nested(key LowCardinality(String), value Map(LowCardinality(String), String))
-	// would return a map like this:
-	//   >   key: LowCardinality(String)
-	//   > value: Map(LowCardinality(String), String)
 	childFields := map[string]string{}
-
-	// remove leading "Nested(" and trailing ")"
 	fieldsStr := strings.Replace(strings.TrimSpace(definition), "Nested(", "", 1)
 	fieldsStr = fieldsStr[:len(fieldsStr)-1]
 
-	// remove all excess whitespace
 	cleaned := cleanWhiteSpace(fieldsStr)
 
-	// find column definitions w/ a regex
 	matches := []string{}
 	for _, match := range regColumnDefinition.FindAllString(cleaned, -1) {
 		cleanMatch := cleanWhiteSpace(match)
-		// log.Printf("match: %+v\n", cleanMatch)
 		matches = append(matches, cleanMatch)
 	}
 
-	// we use a regex because comma's are not enough
+	// why: we use a regex because comma's are not enough
 	// we want to map on "key Definition()"
 	for _, field := range matches {
 		parts := filterWhitespace(strings.Split(field, " "))
@@ -685,28 +613,16 @@ func (m Migrator) parseNestedField(definition string) (map[string]string, error)
 	return childFields, nil
 }
 
-// MigrateNestedColumn migrate column
 func (m Migrator) MigrateNestedColumn(value interface{}, field *schema.Field, childColumns []gorm.ColumnType) error {
-	// We have a new method here because the field name alone is not enough to generate a migration
-	// Grab the field and get a map of the desired state of the derived columns:
-	//   >   key: LowCardinality(String)
-	//   > value: LowCardinality(String)
-	// Grab the existing columns and generate a map of the current state:
-	//   >   key: Array(LowCardinality(String))
-	//   > value: Array(LowCardinality(String))
-	// Compare by key and compare each key.
-	// if a migration is required, compose and apply the SQL.
-
-	// NOTE(fd): The ALTER query for elements in a nested data structure has limitations.
+	// why: The ALTER query for elements in a nested data structure has limitations.
 	//   > docs: https://clickhouse.com/docs/en/sql-reference/data-types/nested-data-structures/nested
 	//   > docs: https://clickhouse.com/docs/en/sql-reference/statements/alter/column#limitations
 
-	// NOTE(fd): this is a "dumb"/simple strategy. a change in the order of any of the Nested field content triggers a migration.
+	// why: this is a "dumb"/simple strategy. a change in the order of any of the Nested field content triggers a migration.
 	// TODO(fd): ensure we are cleaning up whitespace carefully so we do not run unnecessary migrations due to mere whitespace.
 
-	allKeys := map[string]struct{}{} // pseudoset of all keys seen in desired state and current state.
+	allKeys := map[string]struct{}{}
 
-	// 1. parse the content of the field
 	childFieldDefinitionMap, err := m.parseNestedField(string(field.DataType))
 	if err != nil {
 		return err
@@ -718,7 +634,6 @@ func (m Migrator) MigrateNestedColumn(value interface{}, field *schema.Field, ch
 		log.Printf("[Migrator.MigrateNestedColumn]  > definition:\"%s\"", definition)
 	}
 
-	// 2. get the current state of the child fields
 	childFieldCurrentStateMap := map[string]string{}
 	log.Printf("[Migrator.MigrateNestedColumn] Table State")
 	for _, col := range childColumns {
@@ -730,17 +645,15 @@ func (m Migrator) MigrateNestedColumn(value interface{}, field *schema.Field, ch
 		log.Printf("[Migrator.MigrateNestedColumn]  > definition:\"%s\"", definition)
 	}
 
-	// 3. compare the parsed contents of the field to the actual state of the child fields
 	additions := map[string]string{}
 	deletions := []string{}
 	modifications := map[string]string{}
 
 	for key := range allKeys {
-		// 1. ensure key is present in both
 		desired, defOk := childFieldDefinitionMap[key]
 		current, curOk := childFieldCurrentStateMap[key]
 
-		if defOk && !curOk { // addition requires
+		if defOk && !curOk {
 			additions[key] = desired
 			break
 		} else if !defOk && curOk {
@@ -757,7 +670,6 @@ func (m Migrator) MigrateNestedColumn(value interface{}, field *schema.Field, ch
 		return nil
 	}
 
-	// 4. apply changes
 	if len(additions) > 0 {
 		for key, value := range additions {
 			column := strings.ToLower(fmt.Sprintf("%s.%s", field.Name, key))
@@ -765,7 +677,6 @@ func (m Migrator) MigrateNestedColumn(value interface{}, field *schema.Field, ch
 			log.Printf("[Migrator.MigrateNestedColumn] Addition required")
 			log.Printf("[Migrator.MigrateNestedColumn]  >     column:\"%s\" <= \"%s\"", column, key)
 			log.Printf("[Migrator.MigrateNestedColumn]  > definition:\"%s\"", definition)
-			// addition sql
 			emptyStruct := struct{}{}
 			err := m.RunWithValue(emptyStruct, func(stmt *gorm.Statement) error {
 				clusterOpts := ""
@@ -790,7 +701,6 @@ func (m Migrator) MigrateNestedColumn(value interface{}, field *schema.Field, ch
 			column := fmt.Sprintf("%s.%s", strings.ToLower(field.Name), key)
 			log.Printf("[Migrator.MigrateNestedColumn] Deletion required")
 			log.Printf("[Migrator.MigrateNestedColumn]  > column:\"%s\"", column)
-			// deletion sql
 			emptyStruct := struct{}{}
 			err := m.RunWithValue(emptyStruct, func(stmt *gorm.Statement) error {
 				clusterOpts := ""
@@ -810,8 +720,6 @@ func (m Migrator) MigrateNestedColumn(value interface{}, field *schema.Field, ch
 		}
 	}
 
-	// NOTE(fd): not all modifications are supported but we do NOT perform any checks
-	//  > docs: https://clickhouse.com/docs/en/sql-reference/statements/alter/column#limitations
 	if len(modifications) > 0 {
 		for key, value := range modifications {
 			column := strings.ToLower(fmt.Sprintf("%s.%s", field.Name, key))
@@ -819,7 +727,6 @@ func (m Migrator) MigrateNestedColumn(value interface{}, field *schema.Field, ch
 			log.Printf("[Migrator.MigrateNestedColumn] Modification required")
 			log.Printf("[Migrator.MigrateNestedColumn]  > column:\"%s\" <= \"%s\"", column, key)
 			log.Printf("[Migrator.MigrateNestedColumn]  > definition:\"%s\"", definition)
-			// modification sql
 			emptyStruct := struct{}{}
 			err := m.RunWithValue(emptyStruct, func(stmt *gorm.Statement) error {
 				clusterOpts := ""
@@ -844,9 +751,6 @@ func (m Migrator) MigrateNestedColumn(value interface{}, field *schema.Field, ch
 	return nil
 }
 
-// End: Migrate Nested Columns
-
-// ColumnTypes return columnTypes []gorm.ColumnType and execErr error
 func (m Migrator) ColumnTypes(value interface{}) ([]gorm.ColumnType, error) {
 	columnTypes := make([]gorm.ColumnType, 0)
 	execErr := m.RunWithValue(value, func(stmt *gorm.Statement) (err error) {
@@ -940,8 +844,6 @@ func (m Migrator) ColumnTypes(value interface{}) ([]gorm.ColumnType, error) {
 	return columnTypes, execErr
 }
 
-// Indexes
-
 func (m Migrator) BuildIndexOptions(opts []schema.IndexOption, stmt *gorm.Statement) (results []interface{}) {
 	for _, indexOpt := range opts {
 		str := stmt.Quote(indexOpt.DBName)
@@ -963,17 +865,15 @@ func (m Migrator) CreateIndex(value interface{}, name string) error {
 				opts,
 			}
 
-			// Get indexing type `gorm:"index,type:minmax"`
-			// Choice: minmax | set(n) | ngrambf_v1(n, size, hash, seed) | bloomfilter()
 			indexType := m.DefaultIndexType
 			if index.Type != "" {
 				indexType = index.Type
 			}
 
-			// NOTE: concept of UNIQUE | FULLTEXT | SPATIAL index
+			// why: concept of UNIQUE | FULLTEXT | SPATIAL index
 			// is NOT supported in clickhouse
-			createIndexSQL := "ALTER TABLE ? ADD INDEX ? ? TYPE %s GRANULARITY %d"                             // TODO(iqdf): how to inject Granularity
-			createIndexSQL = fmt.Sprintf(createIndexSQL, indexType, m.getIndexGranularityOption(index.Fields)) // Granularity: 1 (default)
+			createIndexSQL := "ALTER TABLE ? ADD INDEX ? ? TYPE %s GRANULARITY %d" // TODO(iqdf): how to inject Granularity
+			createIndexSQL = fmt.Sprintf(createIndexSQL, indexType, m.getIndexGranularityOption(index.Fields))
 			return m.DB.Exec(createIndexSQL, values...).Error
 		}
 		return ErrCreateIndexFailed
@@ -1018,9 +918,6 @@ func (m Migrator) HasIndex(value interface{}, name string) bool {
 
 		indexNames := m.extractIndexNamesFromCreateStmt(createStmt)
 
-		// fmt.Printf("==== DEBUG ==== m.Mirror.HasIndex(%v, %v) count = %v, stmt: [\n%v\n]\nnames: %v\n",
-		// 	stmt.Table, name, count, createStmt, indexNames)
-
 		for _, indexName := range indexNames {
 			if indexName == name {
 				count = 1
@@ -1033,26 +930,15 @@ func (m Migrator) HasIndex(value interface{}, name string) bool {
 	return count > 0
 }
 
-// Helper
-
-// Index
-
 func (m Migrator) getIndexGranularityOption(opts []schema.IndexOption) int {
 	for _, indexOpt := range opts {
 		if settingStr, ok := indexOpt.TagSettings["INDEX"]; ok {
-			// e.g. settingStr: "a,expression:u64*i32,type:minmax,granularity:3"
 			for _, str := range strings.Split(settingStr, ",") {
-				// e.g. str: "granularity:3"
 				keyVal := strings.Split(str, ":")
 				if len(keyVal) > 1 && strings.ToLower(keyVal[0]) == "granularity" {
 					if len(keyVal) < 2 {
-						// continue search for other setting which
-						// may contain granularity:<num>
 						continue
 					}
-					// try to convert <num> into an integer > 0
-					// if check fails, continue search for other
-					// settings which may contain granularity:<num>
 					num, err := strconv.Atoi(keyVal[1])
 					if err != nil || num < 0 {
 						continue
@@ -1065,31 +951,10 @@ func (m Migrator) getIndexGranularityOption(opts []schema.IndexOption) int {
 	return m.DefaultGranularity
 }
 
-/*
-sample input:
-
-CREATE TABLE my_database.my_foo_bar
-(
-
-	`id` UInt64,
-	`created_at` DateTime64(3),
-	`updated_at` DateTime64(3),
-	`deleted_at` DateTime64(3),
-	`foo` String,
-	`bar` String,
-	INDEX idx_my_foo_bar_deleted_at deleted_at TYPE minmax GRANULARITY 3,
-	INDEX my_fb_foo_bar (foo, bar) TYPE minmax GRANULARITY 3
-
-)
-ENGINE = MergeTree
-PARTITION BY toYYYYMM(created_at)
-ORDER BY (foo, bar)
-SETTINGS index_granularity = 8192
-*/
 func (m Migrator) extractIndexNamesFromCreateStmt(createStmt string) []string {
 	var names []string
 	scanner := bufio.NewScanner(strings.NewReader(createStmt))
-	state := 0 // 0: before create body, 1: in create body, 2: after create body
+	state := 0
 	for scanner.Scan() && state < 2 {
 		line := scanner.Text()
 		switch state {

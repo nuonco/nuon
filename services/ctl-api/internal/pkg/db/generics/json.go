@@ -17,12 +17,10 @@ func ToJSON(val string) []byte {
 	return contents
 }
 
-// JSONBQuerier helps build JSONB queries
 type JSONBQuerier struct {
 	*gorm.DB
 }
 
-// NewJSONBQuery creates a new JSONB query helper
 func NewJSONBQuery(db *gorm.DB) *JSONBQuerier {
 	return &JSONBQuerier{db}
 }
@@ -34,7 +32,6 @@ type JSONBQuery struct {
 	Value    any
 }
 
-// WhereJSON adds a WHERE condition for JSONB field
 func (jq *JSONBQuerier) WhereJSON(queryArgs JSONBQuery) *gorm.DB {
 	var query string
 	switch queryArgs.Operator {
@@ -59,19 +56,13 @@ func (jq *JSONBQuerier) WhereJSON(queryArgs JSONBQuery) *gorm.DB {
 	return jq.Where(query, queryArgs.Value)
 }
 
-// WhereJSONPath queries nested JSON paths
 func (jq *JSONBQuerier) WhereJSONPath(field string, path []string, operator string, value interface{}) *gorm.DB {
 	pathStr := "{" + join(path, ",") + "}"
 	query := fmt.Sprintf("%s#>>? %s ?", field, operator)
 	return jq.Where(query, pathStr, value)
 }
 
-// MergeJSONBMetadata reads a JSONB column's "metadata" key, merges the provided
-// key-value pairs, and writes the column back. Nil values remove their keys. The
-// model must be a pointer to a GORM model (e.g. &app.QueueSignal{}).
 func MergeJSONBMetadata(db *gorm.DB, model any, id string, field string, metadata map[string]any) error {
-	// Build a jsonb_set chain that merges each key into the metadata sub-object.
-	// First ensure the metadata key exists as an object, then set each key.
 	expr := fmt.Sprintf(
 		"jsonb_set(COALESCE(%s::jsonb, '{}'::jsonb), '{metadata}', COALESCE(%s::jsonb -> 'metadata', '{}'::jsonb))",
 		field, field,
@@ -103,29 +94,12 @@ func MergeJSONBMetadata(db *gorm.DB, model any, id string, field string, metadat
 	return nil
 }
 
-// WhereJSONBStatusIn returns a GORM scope that filters rows where the "status"
-// key inside a JSONB column matches one of the provided values.
-//
-// Example:
-//
-//	db.Model(&app.RunnerProcess{}).
-//	    Scopes(generics.WhereJSONBStatusIn("composite_status", "active", "offline")).
-//	    Find(&results)
 func WhereJSONBStatusIn(field string, statuses ...string) func(*gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where(fmt.Sprintf("%s::jsonb ->> 'status' IN ?", field), statuses)
 	}
 }
 
-// SetJSONBMetadataKey returns a GORM scope that atomically sets a single key
-// inside the metadata sub-object of a JSONB column via jsonb_set. Executes the
-// update as part of the scope — chain .Where() calls before .Scopes().
-//
-// Example:
-//
-//	db.Model(&app.RunnerProcess{}).
-//	    Where("composite_status::jsonb ->> 'status' = ?", "active").
-//	    Scopes(generics.SetJSONBMetadataKey("composite_status", "shutdown_requested", true))
 func SetJSONBMetadataKey(field, key string, value any) func(*gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		valJSON, err := json.Marshal(value)
@@ -138,7 +112,6 @@ func SetJSONBMetadataKey(field, key string, value any) func(*gorm.DB) *gorm.DB {
 	}
 }
 
-// Helper function to join strings
 func join(strs []string, sep string) string {
 	result := ""
 	for i, s := range strs {

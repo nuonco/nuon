@@ -52,7 +52,6 @@ func (s *Service) Delete(ctx context.Context, appID string, asJSON bool) error {
 		return view.Fail(err)
 	}
 
-	// unset appID if it is the currentAppID
 	currentAppID := s.getAppID()
 	if appID == currentAppID {
 		if err := s.unsetAppID(ctx); err != nil {

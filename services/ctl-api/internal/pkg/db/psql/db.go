@@ -21,8 +21,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/routing"
 )
 
-// database represents the set of configuration options for creating a database connection. If UseIAM is set, we will
-// automatically create a database token using the AWS RDS api.
 type database struct {
 	User    string `validate:"required"`
 	Host    string `validate:"required"`
@@ -30,14 +28,11 @@ type database struct {
 	Port    string `validate:"required"`
 	SSLMode string `validate:"required"`
 
-	// required for IAM auth
 	PasswordFn func(context.Context, database) (string, error)
 	Region     string `validate:"required"`
 
-	// required for local auth
 	Password string
 
-	// pool configuration
 	MaxConnections int32
 	Role           string
 
@@ -195,7 +190,7 @@ func New(v *validator.Validate,
 	return db, nil
 }
 
-// NewReplica errors if DBReplicaHost is empty so callers can't silently
+// why: NewReplica errors if DBReplicaHost is empty so callers can't silently
 // fall back to the primary.
 func NewReplica(v *validator.Validate,
 	l zapgorm2.Logger,

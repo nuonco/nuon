@@ -33,9 +33,6 @@ const (
 	skipGroupLabel  = "Skip install group (the install will be orphaned until its labels match)"
 )
 
-// TargetAccount is the cloud account an install is pinned to. Only the field matching the
-// app's cloud platform is used, and the API requires it once the org has phone-home auth
-// enabled.
 type TargetAccount struct {
 	AWSAccountID        string
 	AzureSubscriptionID string
@@ -102,7 +99,6 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, target
 			return nil
 		}
 		ui.PrintLn(fmt.Sprintf("fetching workflow for new install: %s", installID))
-		// get the first workflow for this install and open it
 		workflows, _, err := s.api.GetWorkflows(ctx, installID, &models.GetPaginatedQuery{Limit: 1, Offset: 0})
 		if err != nil {
 			return ui.PrintError(errors.Wrap(err, "failed to get initial workflow for this new install"))
@@ -116,7 +112,6 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, target
 		return nil
 	}
 
-	// Outside the creator TUI the group picker is a standalone prompt.
 	if branch.groupLabels == nil && len(branch.groups) > 0 && !asJSON && s.cfg.Interactive {
 		groupLabels, err := promptInstallGroup(branch.groups, s.cfg.Interactive)
 		if err != nil {
@@ -127,7 +122,6 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, target
 		}
 	}
 
-	// we collect these and pass them down so we can pre-fill specific fields
 	inputsMap, err := parseInstallInputs(inputs)
 	if err != nil {
 		return ui.PrintError(err)
@@ -231,8 +225,6 @@ func parseInstallInputs(inputs []string) (map[string]string, error) {
 	return inputsMap, nil
 }
 
-// inputsWithDefaults merges app input defaults with any explicitly provided values.
-// Explicit values win; defaults fill in anything not provided.
 func (s *Service) inputsWithDefaults(ctx context.Context, appID, appBranchID string, provided map[string]string) (map[string]string, error) {
 	inputCfg, err := installcreate.ResolveInputConfig(ctx, s.api, appID, appBranchID)
 	if err != nil || inputCfg == nil {
@@ -258,9 +250,6 @@ func (s *Service) inputsWithDefaults(ctx context.Context, appID, appBranchID str
 	return merged, nil
 }
 
-// createInstallBranch is the outcome of branch selection. groupLabels is only set
-// when the group was already decided (an explicit --install-group-id); otherwise
-// groups holds the choices to offer later, after the install form.
 type createInstallBranch struct {
 	branchID    string
 	groups      []*models.AppAppBranchInstallGroup
@@ -350,8 +339,6 @@ func (s *Service) resolveCreateInstallBranch(ctx context.Context, appID, appBran
 	return nil, fmt.Errorf("install group %q is not a selectable label-based group on app branch %q", installGroupID, selectedBranch.Name)
 }
 
-// promptInstallGroup asks which group a new install should join. A nil result
-// means the install is left orphaned until its labels match a group.
 func promptInstallGroup(eligible []*models.AppAppBranchInstallGroup, interactive bool) (map[string]string, error) {
 	items := make([]bubbles.SelectorItem, 0, len(eligible))
 	for _, group := range eligible {

@@ -1,9 +1,3 @@
-/*
-
-An alt-screen TUI for creating installs with dynamic form generation based on app inputs.
-
-*/
-
 package creator
 
 import (
@@ -36,8 +30,6 @@ const (
 	minRequiredHeight int = 16
 )
 
-// createStep is which screen the creator is showing. Group selection follows the
-// form so the group's labels can be merged into the create request.
 type createStep int
 
 const (
@@ -46,12 +38,10 @@ const (
 )
 
 type model struct {
-	// common/base
 	ctx context.Context
 	cfg *config.Config
 	api nuon.Client
 
-	// top level information
 	appID        string
 	name         string
 	presetRegion string
@@ -61,12 +51,10 @@ type model struct {
 	width  int
 	height int
 
-	// data
 	inputConfig   *models.AppAppInputConfig
 	app           *models.AppApp
 	cloudPlatform models.AppCloudPlatform
 
-	// form state
 	inputs              []textinput.Model
 	focusIndex          int
 	regionIndex         int
@@ -76,21 +64,16 @@ type model struct {
 	nameChecking        bool
 	nameValidationErr   error
 
-	// group selection, shown after the form when the branch has selectable groups
 	step       createStep
 	groups     []*models.AppAppBranchInstallGroup
 	groupIndex int
 
-	// ui components
-	viewport viewport.Model
-	spinner  spinner.Model
-	help     help.Model
-	status   common.StatusBarRequest
-
-	// field position tracking for scroll-into-view
+	viewport      viewport.Model
+	spinner       spinner.Model
+	help          help.Model
+	status        common.StatusBarRequest
 	fieldEndLines map[int]int
 
-	// state
 	loading    bool
 	submitting bool
 	error      error
@@ -227,7 +210,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyPressMsg:
-		// Global keys
 		switch {
 		case key.Matches(msg, m.keys.Quit):
 			m.quitting = true
@@ -250,7 +232,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.updateGroupStep(msg)
 		}
 
-		// Form navigation
 		switch {
 		case key.Matches(msg, m.keys.Enter):
 			if !m.submitting {
@@ -293,7 +274,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		default:
 			if m.needsRegion() && m.focusIndex == 1 {
-				// Region field
 				if msg.String() == "left" || msg.String() == "h" {
 					m.regionIndex--
 					if m.regionIndex < 0 {
@@ -308,7 +288,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.updateViewportContent()
 				}
 			} else {
-				// Text input field
 				if inputIdx := m.focusIndexToInputIndex(m.focusIndex); inputIdx >= 0 {
 					previousValue := m.inputs[inputIdx].Value()
 					m.inputs[inputIdx], cmd = m.inputs[inputIdx].Update(msg)
@@ -334,8 +313,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-// updateGroupStep handles keys on the group selection screen. The last row is the
-// skip option, which leaves the install without group labels.
 func (m model) updateGroupStep(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, m.keys.Up):

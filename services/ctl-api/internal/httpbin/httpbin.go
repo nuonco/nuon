@@ -57,10 +57,9 @@ func (s *Service) Proxy(c *gin.Context) {
 		panic("HTTPBIN force panic")
 	case "/httpbin/oom":
 		s.l.Info("Generating out-of-memory error...")
-		// Generate up to 10GiB of data in 100MiB chunks
 		var data [][]byte
 		for i := range 100 {
-			chunk := make([]byte, 100*1024*1024) // 100MiB
+			chunk := make([]byte, 100*1024*1024)
 			for j := 0; j < len(chunk); j += 4096 {
 				chunk[j] = byte(i % 256)
 			}
@@ -80,7 +79,6 @@ type Params struct {
 }
 
 func New(params Params) (*Service, error) {
-	// Create a new httpbin instance with default options
 	h := httpbin.New(
 		httpbin.WithPrefix("/httpbin"),
 	)

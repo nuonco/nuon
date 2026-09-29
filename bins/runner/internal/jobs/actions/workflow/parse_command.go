@@ -15,7 +15,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
-// parse command returns a command that could be either a local script, or an inline command.
 func (h *handler) parseCommand(ctx context.Context, l *zap.Logger, cfg *models.AppActionWorkflowStepConfig, src *plantypes.GitSource) (string, []string, error) {
 	if cfg.Command == "" && cfg.InlineContents == "" {
 		l.Error("no command or inline_contents defined in action step config")
@@ -30,7 +29,6 @@ func (h *handler) parseCommand(ctx context.Context, l *zap.Logger, cfg *models.A
 
 	scriptPath := filepath.Join(dirName, src.Path, pieces[0])
 
-	// in the "easy" case, the script is local and we can expect that.
 	if strings.HasPrefix(pieces[0], "./") {
 		l.Info(fmt.Sprintf("looking for script %s inside of step repo", cfg.Command))
 		if !h.state.workspace.IsFile(scriptPath) {
@@ -53,8 +51,6 @@ func (h *handler) parseCommand(ctx context.Context, l *zap.Logger, cfg *models.A
 		return h.state.workspace.AbsPath(scriptPath), pieces[1:], nil
 	}
 
-	// in the "ambiguous" case, the script could either point to something in the repo, or an outside script in the
-	// container.
 	if h.state.workspace.IsExecutable(scriptPath) {
 		l.Info("local path found in step repo, using that")
 		return h.state.workspace.AbsPath(scriptPath), pieces[1:], nil
@@ -62,7 +58,7 @@ func (h *handler) parseCommand(ctx context.Context, l *zap.Logger, cfg *models.A
 
 	l.Info(fmt.Sprintf("%s not found in local repo, executing as regular command", pieces[0]))
 
-	// NOTE(jm): you can not look this up in the path here, because a vendor could easily control the image and add
+	// why: you can not look this up in the path here, because a vendor could easily control the image and add
 	// something else to the env. (IE: by overriding HOME)
 	// Execute through a shell so that environment variable expansion, pipes, and other
 	// shell features work as expected.

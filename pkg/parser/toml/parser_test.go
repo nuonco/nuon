@@ -30,7 +30,6 @@ func TestParseToml_IncompleteTable(t *testing.T) {
 
 	doc := ParseToml(input)
 
-	// Should not panic or error
 	if doc == nil {
 		t.Error("Expected non-nil document for incomplete table")
 	}
@@ -51,7 +50,6 @@ dir
 		t.Error("Expected non-nil document")
 	}
 
-	// Should detect the partial key
 	if len(doc.Keys) == 0 {
 		t.Error("Expected loose parser to detect partial key")
 	}
@@ -72,7 +70,6 @@ directory =
 		t.Error("Expected non-nil document")
 	}
 
-	// Should not panic
 	if len(doc.Keys) == 0 {
 		t.Error("Expected to detect key with dangling assignment")
 	}
@@ -85,7 +82,6 @@ directory = "broken
 `
 	doc := ParseToml(input)
 
-	// Should fallback to loose parsing without error
 	if doc == nil {
 		t.Error("Expected non-nil document for broken string")
 	}
@@ -102,7 +98,6 @@ key = "value"
 		t.Error("Expected nested table")
 	}
 
-	// Find the nested table (it should be the last one or named 'parent.child')
 	var found bool
 	for _, table := range doc.Tables {
 		if table.Name == "parent.child" {
@@ -243,7 +238,6 @@ content
 		t.Fatal("Expected non-nil document")
 	}
 
-	// Should only have one key ("text"), not keys from inside the multiline string
 	if len(doc.Keys) != 1 {
 		t.Errorf("Expected 1 key, got %d: %v", len(doc.Keys), keysToNames(doc.Keys))
 	}
@@ -269,7 +263,6 @@ kubectl create -n whoami secret generic whoami
 		t.Fatal("Expected non-nil document")
 	}
 
-	// Should only detect "name" and "inline_contents", not "password", "setNuon", "kubectl" etc.
 	keyNames := keysToNames(doc.Keys)
 	for _, k := range keyNames {
 		if k == "password" || k == "setNuon" || k == "kubectl" {
@@ -293,7 +286,6 @@ other_key = "value"
 		t.Fatal("Expected non-nil document")
 	}
 
-	// Both keys should be detected since the multiline string is closed on the same line
 	if len(doc.Keys) != 2 {
 		t.Errorf("Expected 2 keys, got %d: %v", len(doc.Keys), keysToNames(doc.Keys))
 	}
@@ -314,7 +306,6 @@ real_key = "value"
 		t.Fatal("Expected non-nil document")
 	}
 
-	// Should have "text" and "real_key", not "password" or "other" from inside '''
 	keyNames := keysToNames(doc.Keys)
 	for _, k := range keyNames {
 		if k == "password" || k == "other" {
@@ -341,17 +332,14 @@ key = "value"
 `
 	doc := ParseToml(validInput)
 
-	// Should always use loose parsing for position information
 	if doc == nil {
 		t.Error("Expected non-nil document")
 	}
 
-	// Verify it has proper position information
 	if len(doc.Tables) == 0 {
 		t.Error("Expected tables to be detected")
 	}
 
-	// Check that positions are preserved (not all zeros)
 	hasNonZeroPosition := false
 	for _, table := range doc.Tables {
 		if table.Range.Start.Line > 0 {

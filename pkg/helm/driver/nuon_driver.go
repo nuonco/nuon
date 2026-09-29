@@ -17,11 +17,9 @@ import (
 var _ driver.Driver = (*Nuon)(nil)
 
 const (
-	// NuonDriverName is the string name of this driver.
 	NuonDriverName = "nuon"
 )
 
-// Nuon is the Nuon storage driver implementation.
 type Nuon struct {
 	client    *http.Client
 	serverURL string
@@ -29,8 +27,7 @@ type Nuon struct {
 	headers   map[string]string
 }
 
-// NewNuonDriver initializes a new Nuon driver.
-func NewNuonDriver(serverURL, apiKey string) (*Nuon, error) { // Accept headers as a parameter
+func NewNuonDriver(serverURL, apiKey string) (*Nuon, error) {
 	if _, err := url.Parse(serverURL); err != nil {
 		return nil, fmt.Errorf("invalid server URL: %w", err)
 	}
@@ -47,17 +44,14 @@ func NewNuonDriver(serverURL, apiKey string) (*Nuon, error) { // Accept headers 
 	}, nil
 }
 
-// SetNamespace sets a specific namespace in which releases will be accessed.
 func (h *Nuon) SetNamespace(ns string) {
 	h.namespace = ns
 }
 
-// Name returns the name of the driver.
 func (h *Nuon) Name() string {
 	return NuonDriverName
 }
 
-// Get returns the release named by key or returns ErrReleaseNotFound.
 func (h *Nuon) Get(key string) (*rspb.Release, error) {
 	endpoint := fmt.Sprintf("%s/releases/%s/%s", h.serverURL, h.namespace, url.PathEscape(key))
 
@@ -91,7 +85,6 @@ func (h *Nuon) Get(key string) (*rspb.Release, error) {
 	return &release, nil
 }
 
-// List returns the list of all releases such that filter(release) == true
 func (h *Nuon) List(filter func(*rspb.Release) bool) ([]*rspb.Release, error) {
 	endpoint := fmt.Sprintf("%s/releases/%s", h.serverURL, h.namespace)
 
@@ -128,7 +121,6 @@ func (h *Nuon) List(filter func(*rspb.Release) bool) ([]*rspb.Release, error) {
 	return filtered, nil
 }
 
-// Query returns the set of releases that match the provided set of labels
 func (h *Nuon) Query(keyvals map[string]string) ([]*rspb.Release, error) {
 	params := url.Values{}
 	for k, v := range keyvals {
@@ -167,9 +159,8 @@ func (h *Nuon) Query(keyvals map[string]string) ([]*rspb.Release, error) {
 	return releases, nil
 }
 
-// Create creates a new release or returns ErrReleaseExists.
 func (h *Nuon) Create(key string, rls *rspb.Release) error {
-	// For backwards compatibility, we protect against an unset namespace
+	// why: For backwards compatibility, we protect against an unset namespace
 	namespace := rls.Namespace
 	if namespace == "" {
 		namespace = "default"
@@ -210,9 +201,8 @@ func (h *Nuon) Create(key string, rls *rspb.Release) error {
 	return nil
 }
 
-// Update updates a release or returns ErrReleaseNotFound.
 func (h *Nuon) Update(key string, rls *rspb.Release) error {
-	// For backwards compatibility, we protect against an unset namespace
+	// why: For backwards compatibility, we protect against an unset namespace
 	namespace := rls.Namespace
 	if namespace == "" {
 		namespace = "default"
@@ -253,7 +243,6 @@ func (h *Nuon) Update(key string, rls *rspb.Release) error {
 	return nil
 }
 
-// Delete deletes a release or returns ErrReleaseNotFound.
 func (h *Nuon) Delete(key string) (*rspb.Release, error) {
 	release, err := h.Get(key)
 	if err != nil {

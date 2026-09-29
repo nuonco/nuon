@@ -20,7 +20,6 @@ import (
 	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
-// GetInstallState reads the current state of the install from the DB, and returns it in a structure that can be used for variable interpolation.
 func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacted bool, skipVersionCheck bool) (result *state.State, err error) {
 	started := time.Now()
 	defer func() { h.stateMetrics.Record(ctx, "get", started, err) }()
@@ -44,8 +43,6 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 			es.StaleAt = &latestState.StaleAt.Time
 		}
 
-		// Labels are mutable and not persisted in the state snapshot,
-		// so always hydrate them fresh from the database.
 		if err := h.hydrateLabels(ctx, installID, es); err != nil {
 			return nil, errors.Wrap(err, "unable to hydrate labels")
 		}
@@ -70,7 +67,6 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 
 	p := pool.New().WithErrors()
 
-	// collect all data up front e
 	p.Go(func() error {
 		var err error
 		install, err = h.getStateInstall(ctx, installID)
@@ -150,7 +146,6 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 		return nil, errors.Wrap(err, "unable to get data for state")
 	}
 
-	// build the state with all the resources here
 	is.ID = install.ID
 	is.Name = install.Name
 	is.Inputs = h.ToInputState(install.CurrentInstallInputs, appCfg, redacted)
@@ -185,8 +180,6 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 	is.InstallStack = h.ToInstallStackState(stack)
 	is.Secrets = secrets
 	is.Labels = map[string]string(install.Labels)
-	// NOTE(JM): this is purely for historical and legacy reasons, and will be removed once we migrate all users to
-	// the flattened structure
 	is.Install = &state.InstallState{
 		Populated: true,
 		ID:        install.ID,
@@ -292,8 +285,6 @@ func (h *Helpers) ToActionWorkflowState(act app.InstallActionWorkflow) *state.Ac
 	return ToActionWorkflowState(act)
 }
 
-// hydrateLabels fetches install labels and populates the Labels field on the
-// state. Called on both the cached and fresh paths so labels are always current.
 func (h *Helpers) hydrateLabels(ctx context.Context, installID string, is *state.State) error {
 	var install app.Install
 	if err := h.db.WithContext(ctx).Select("id", "labels").First(&install, "id = ?", installID).Error; err != nil {
@@ -317,8 +308,6 @@ func (h *Helpers) getLatestInstallStateRow(ctx context.Context, installID string
 	return &is, nil
 }
 
-// regenerateStalePartials regenerates only the partials listed in row.StalePartials, merges them into
-// the cached state, persists the result in place (clearing the stale markers), and returns it.
 func (h *Helpers) regenerateStalePartials(ctx context.Context, row *app.InstallState, redacted, skipVersionCheck bool) (*state.State, error) {
 	is, fromBlob := row.GetState(ctx, h.cfg.BlobReadEnabled)
 	if fromBlob {
@@ -357,7 +346,6 @@ func (h *Helpers) regenerateStalePartials(ctx context.Context, row *app.InstallS
 	return is, nil
 }
 
-// regenerateStalePartial refreshes a single partial into state, reusing the same data fetch path as state gen signal.
 func (h *Helpers) regenerateStalePartial(ctx context.Context, install *app.Install, partial pkgstate.PartialName, is *state.State, redacted, skipVersionCheck bool) error {
 	switch partial {
 	case pkgstate.PartialOrg:
@@ -464,11 +452,6 @@ func ToInputState(inputs *app.InstallInputs, cfg *app.AppConfig, redacted bool) 
 	}
 	is := state.NewInputsState()
 	for _, inp := range cfg.InputConfig.AppInputs {
-		// Fall back to the default when the input is unset, which covers both a
-		// missing key and a key materialized as "". ValuesRedacted carries every
-		// declared input, unset ones included, so keying off presence alone
-		// resolves those to "" and drops the default — a declared bool then
-		// reaches terraform as "" and fails plan with "a bool is required".
 		val, ok := inputValues[inp.Name]
 		if !ok || pkggenerics.FromPtrStr(val) == "" {
 			val = &inp.Default

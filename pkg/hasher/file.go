@@ -9,8 +9,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// HashFiles computes a SHA256 hash of multiple files combined
-// Returns the first 12 characters of the hex hash
 func HashFiles(filePaths ...string) (string, error) {
 	hash := sha256.New()
 
@@ -31,6 +29,5 @@ func HashFiles(filePaths ...string) (string, error) {
 		}
 	}
 
-	// Return first 12 characters of hex hash
 	return fmt.Sprintf("%x", hash.Sum(nil))[:12], nil
 }

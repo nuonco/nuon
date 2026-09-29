@@ -64,8 +64,6 @@ type WorkflowStepApproval struct {
 	ChangesReplace int             `json:"changes_replace" gorm:"default:0" temporaljson:"changes_replace,omitzero,omitempty"`
 	ChangesNoop    int             `json:"changes_noop" gorm:"default:0" temporaljson:"changes_noop,omitzero,omitempty"`
 
-	// the response object must be created by the user in the UI or CLI
-
 	Response *WorkflowStepApprovalResponse `gorm:"foreignKey:InstallWorkflowStepApprovalID" json:"response,omitzero" temporaljson:"response,omitzero,omitempty" swaggertype:"object,string"`
 
 	// afterquery
@@ -113,10 +111,6 @@ func (c *WorkflowStepApproval) AfterQuery(tx *gorm.DB) error {
 	return nil
 }
 
-// GetContents returns the approval contents. When blobRead is enabled it prefers
-// the S3 blob, falling back to the legacy column when the blob is unset or
-// unreadable. When disabled it always reads the legacy column. The second return
-// reports whether the contents came from the blob.
 func (c *WorkflowStepApproval) GetContents(ctx context.Context, blobRead bool) (string, bool) {
 	if blobRead {
 		if raw, err := c.ContentsBlob.Get(ctx); err == nil && raw != "" {

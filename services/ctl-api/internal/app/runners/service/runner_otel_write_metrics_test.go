@@ -81,7 +81,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -102,7 +101,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -114,7 +112,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group settings
 	s.testRunnerGrpS = &app.RunnerGroupSettings{
 		ID:            domains.NewRunnerGroupSettingsID(),
 		OrgID:         s.testOrg.ID,
@@ -123,7 +120,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrpS).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -156,21 +152,17 @@ func (s *RunnerOtelWriteMetricsTestSuite) makeRequest(method, path string, body 
 	return rr
 }
 
-// buildSumMetricRequest creates a valid OTEL metrics export request with Sum metric type
 func (s *RunnerOtelWriteMetricsTestSuite) buildSumMetricRequest(runnerID, metricName string, value float64) []byte {
 	metrics := pmetric.NewMetrics()
 	rm := metrics.ResourceMetrics().AppendEmpty()
 
-	// Set resource attributes
 	rm.Resource().Attributes().PutStr("service.name", "test-service")
 	rm.Resource().Attributes().PutStr("runner_group.id", s.testRunnerGrp.ID)
 
-	// Set scope
 	sm := rm.ScopeMetrics().AppendEmpty()
 	sm.Scope().SetName("test-scope")
 	sm.Scope().SetVersion("1.0.0")
 
-	// Create sum metric
 	metric := sm.Metrics().AppendEmpty()
 	metric.SetName(metricName)
 	metric.SetDescription("Test metric description")
@@ -180,7 +172,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) buildSumMetricRequest(runnerID, metric
 	sum.SetIsMonotonic(true)
 	sum.SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 
-	// Add data point
 	dp := sum.DataPoints().AppendEmpty()
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
 	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(time.Now().Add(-1 * time.Minute)))
@@ -189,7 +180,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) buildSumMetricRequest(runnerID, metric
 	dp.Attributes().PutStr("runner_job_execution.id", "test-exec-id")
 	dp.Attributes().PutStr("runner_job_execution_step.name", "test-step")
 
-	// Convert to export request
 	expreq := pmetricotlp.NewExportRequestFromMetrics(metrics)
 	jsonData, err := expreq.MarshalJSON()
 	require.NoError(s.T(), err)
@@ -197,20 +187,16 @@ func (s *RunnerOtelWriteMetricsTestSuite) buildSumMetricRequest(runnerID, metric
 	return jsonData
 }
 
-// buildGaugeMetricRequest creates a valid OTEL metrics export request with Gauge metric type
 func (s *RunnerOtelWriteMetricsTestSuite) buildGaugeMetricRequest(runnerID, metricName string, value float64) []byte {
 	metrics := pmetric.NewMetrics()
 	rm := metrics.ResourceMetrics().AppendEmpty()
 
-	// Set resource attributes
 	rm.Resource().Attributes().PutStr("service.name", "test-service")
 	rm.Resource().Attributes().PutStr("runner_group.id", s.testRunnerGrp.ID)
 
-	// Set scope
 	sm := rm.ScopeMetrics().AppendEmpty()
 	sm.Scope().SetName("test-scope")
 
-	// Create gauge metric
 	metric := sm.Metrics().AppendEmpty()
 	metric.SetName(metricName)
 	metric.SetDescription("Test gauge metric")
@@ -218,7 +204,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) buildGaugeMetricRequest(runnerID, metr
 
 	gauge := metric.SetEmptyGauge()
 
-	// Add data point
 	dp := gauge.DataPoints().AppendEmpty()
 	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
 	dp.SetStartTimestamp(pcommon.NewTimestampFromTime(time.Now().Add(-1 * time.Minute)))
@@ -233,7 +218,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) buildGaugeMetricRequest(runnerID, metr
 	return jsonData
 }
 
-// buildHistogramMetricRequest creates a valid OTEL metrics export request with Histogram metric type
 func (s *RunnerOtelWriteMetricsTestSuite) buildHistogramMetricRequest(runnerID, metricName string) []byte {
 	metrics := pmetric.NewMetrics()
 	rm := metrics.ResourceMetrics().AppendEmpty()
@@ -290,7 +274,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) TestRunnerOtelWriteMetrics() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 				ctx = cctx.SetOrgContext(ctx, s.testOrg)
 
-				// Use count query to avoid ClickHouse array scan issues with GORM
 				var count int64
 				err := s.service.CHDB.WithContext(ctx).
 					Model(&app.OtelMetricSumIngestion{}).
@@ -300,7 +283,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) TestRunnerOtelWriteMetrics() {
 				require.NoError(s.T(), err)
 				require.Equal(s.T(), int64(1), count)
 
-				// Verify specific fields using raw SQL to avoid scanning complex ClickHouse types
 				var result struct {
 					RunnerID      string  `gorm:"column:runner_id"`
 					RunnerGroupID string  `gorm:"column:runner_group_id"`
@@ -333,7 +315,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) TestRunnerOtelWriteMetrics() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 				ctx = cctx.SetOrgContext(ctx, s.testOrg)
 
-				// Use count query to avoid ClickHouse array scan issues with GORM
 				var count int64
 				err := s.service.CHDB.WithContext(ctx).
 					Model(&app.OtelMetricGaugeIngestion{}).
@@ -343,7 +324,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) TestRunnerOtelWriteMetrics() {
 				require.NoError(s.T(), err)
 				require.Equal(s.T(), int64(1), count)
 
-				// Verify specific fields using raw SQL to avoid scanning complex ClickHouse types
 				var result struct {
 					RunnerID   string  `gorm:"column:runner_id"`
 					MetricName string  `gorm:"column:metric_name"`
@@ -370,7 +350,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) TestRunnerOtelWriteMetrics() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 				ctx = cctx.SetOrgContext(ctx, s.testOrg)
 
-				// Use count query to avoid ClickHouse array scan issues with GORM
 				var count int64
 				err := s.service.CHDB.WithContext(ctx).
 					Model(&app.OtelMetricHistogramIngestion{}).
@@ -380,7 +359,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) TestRunnerOtelWriteMetrics() {
 				require.NoError(s.T(), err)
 				require.Equal(s.T(), int64(1), count)
 
-				// Verify specific fields using raw SQL to avoid scanning complex ClickHouse types
 				var result struct {
 					RunnerID   string  `gorm:"column:runner_id"`
 					MetricName string  `gorm:"column:metric_name"`
@@ -408,7 +386,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) TestRunnerOtelWriteMetrics() {
 			},
 			expectedCode: http.StatusInternalServerError,
 			validateFunc: func(runnerID string) {
-				// No validation needed - just checking error response
 			},
 		},
 		{
@@ -418,7 +395,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) TestRunnerOtelWriteMetrics() {
 			},
 			expectedCode: http.StatusInternalServerError,
 			validateFunc: func(runnerID string) {
-				// No validation needed
 			},
 		},
 		{
@@ -428,14 +404,11 @@ func (s *RunnerOtelWriteMetricsTestSuite) TestRunnerOtelWriteMetrics() {
 			},
 			expectedCode: http.StatusCreated,
 			validateFunc: func(runnerID string) {
-				// The handler accepts valid JSON and treats unrecognized fields as empty metrics data.
-				// No metrics are written, but the request succeeds with 201.
 			},
 		},
 		{
 			name: "runner ID from path parameter is used",
 			setupFunc: func() (string, []byte) {
-				// Create second runner
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
@@ -463,7 +436,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) TestRunnerOtelWriteMetrics() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 				ctx = cctx.SetOrgContext(ctx, s.testOrg)
 
-				// Use count query to avoid ClickHouse array scan issues with GORM
 				var count int64
 				err := s.service.CHDB.WithContext(ctx).
 					Model(&app.OtelMetricSumIngestion{}).
@@ -473,7 +445,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) TestRunnerOtelWriteMetrics() {
 				require.NoError(s.T(), err)
 				require.Equal(s.T(), int64(1), count)
 
-				// Verify the runner_id using raw SQL
 				var result struct {
 					RunnerID string `gorm:"column:runner_id"`
 				}
@@ -487,7 +458,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) TestRunnerOtelWriteMetrics() {
 		{
 			name: "multiple metrics in single request",
 			setupFunc: func() (string, []byte) {
-				// Build request with multiple metrics
 				metrics := pmetric.NewMetrics()
 				rm := metrics.ResourceMetrics().AppendEmpty()
 				rm.Resource().Attributes().PutStr("service.name", "test-service")
@@ -496,7 +466,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) TestRunnerOtelWriteMetrics() {
 				sm := rm.ScopeMetrics().AppendEmpty()
 				sm.Scope().SetName("test-scope")
 
-				// First metric - sum
 				metric1 := sm.Metrics().AppendEmpty()
 				metric1.SetName("test.multi.counter1")
 				sum1 := metric1.SetEmptySum()
@@ -507,7 +476,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) TestRunnerOtelWriteMetrics() {
 				dp1.Attributes().PutStr("runner_job.id", "job1")
 				dp1.Attributes().PutStr("runner_job_execution.id", "exec1")
 
-				// Second metric - gauge
 				metric2 := sm.Metrics().AppendEmpty()
 				metric2.SetName("test.multi.gauge1")
 				gauge2 := metric2.SetEmptyGauge()
@@ -529,7 +497,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) TestRunnerOtelWriteMetrics() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 				ctx = cctx.SetOrgContext(ctx, s.testOrg)
 
-				// Use count queries to avoid ClickHouse array scan issues with GORM
 				var sumCount int64
 				err := s.service.CHDB.WithContext(ctx).
 					Model(&app.OtelMetricSumIngestion{}).
@@ -572,7 +539,6 @@ func (s *RunnerOtelWriteMetricsTestSuite) TestRunnerOtelWriteMetrics() {
 					tc.validateFunc(runnerID)
 				}
 			} else {
-				// Error cases should have error in response
 				assert.Contains(s.T(), rr.Body.String(), "error")
 			}
 		})

@@ -16,8 +16,6 @@ import (
 
 const SignalType signal.SignalType = "component-health-evaluate"
 
-// Signal evaluates an install's component health verdicts from the runner's
-// observations; the heavy lifting runs in one activity to keep handler history small.
 type Signal struct {
 	InstallID string `json:"install_id"`
 }
@@ -61,14 +59,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return s.notify(ctx, resp)
 }
 
-// notify enqueues one carrier signal per crossing onto the install-signals queue,
-// so notifications don't queue behind the next evaluation. A failed enqueue is
-// logged, not propagated — the verdict is already committed.
 func (s *Signal) notify(ctx workflow.Context, resp *activities.EvaluateComponentHealthResponse) error {
 	l := workflow.GetLogger(ctx)
 
-	// A crossing driven by a suppressed component has no carrier, so it still
-	// needs the standalone alert.
 	carrier := installCarrierIndex(resp)
 
 	for i, n := range resp.Notifications {
@@ -137,8 +130,6 @@ func (s *Signal) enqueue(ctx workflow.Context, sig signal.Signal) error {
 	return err
 }
 
-// installCarrierIndex returns -1 when no component notification can carry the
-// install crossing.
 func installCarrierIndex(resp *activities.EvaluateComponentHealthResponse) int {
 	in := resp.InstallNotification
 	if in == nil {

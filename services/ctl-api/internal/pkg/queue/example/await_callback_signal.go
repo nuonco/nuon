@@ -20,11 +20,6 @@ func init() {
 	})
 }
 
-// AwaitCallbackSignal blocks in Execute until it receives a completion
-// callback registered under AwaitID, mirroring how flow steps await child
-// signals. It carries on (returns nil) only when the callback reports a
-// non-terminal-failure status; a cancelled child must surface as an error so
-// the parent never continues.
 type AwaitCallbackSignal struct {
 	AwaitID string `json:"await_id"`
 }

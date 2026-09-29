@@ -12,7 +12,6 @@ import (
 )
 
 func (s *VCSServiceTestSuite) TestCheckConnectionStatus_Success() {
-	// Create a test connection
 	conn := s.createTestVCSConnection()
 
 	rr := s.makeRequest(http.MethodGet, fmt.Sprintf("/v1/vcs/connections/%s/check-status", conn.ID), nil)

@@ -9,9 +9,6 @@ import (
 	"github.com/invopop/jsonschema"
 )
 
-// extractPropertyName extracts the last component from a dotted path.
-// For item extractors scoped to array elements, this removes the parent context.
-// Examples: "role.policies.name" -> "name", "policies" -> "policies"
 func extractPropertyName(path string) string {
 	if !strings.Contains(path, ".") {
 		return path
@@ -20,9 +17,6 @@ func extractPropertyName(path string) string {
 	return path[lastDotIndex+1:]
 }
 
-// encodePhase controls which top-level properties a pass emits. TOML requires
-// all scalar key/values to precede any [table]/[[table]] headers, so multi-schema
-// files are encoded in two passes: lines first, then blocks.
 type encodePhase int
 
 const (
@@ -31,8 +25,6 @@ const (
 	phaseBlocks
 )
 
-// rendersBlock reports whether a property is emitted as a TOML table/array-of-
-// tables header (which must come after all scalar key/values).
 func rendersBlock(s *jsonschema.Schema) bool {
 	switch s.Type {
 	case "object":
@@ -48,20 +40,6 @@ func rendersBlock(s *jsonschema.Schema) bool {
 	}
 }
 
-// recursivelyEncode traverses a JSON schema and generates TOML configuration content.
-// It handles nested objects, arrays, and primitive fields while respecting optional/required field rules.
-//
-// Parameters:
-//   - schema: The JSON schema to process
-//   - output: String builder to write the generated TOML content to
-//   - prefix: Current property path prefix for nested objects
-//   - parentOptional: Whether the parent object is optional (unused in current implementation)
-//   - writeComments: Whether to include property comments in the output
-//   - skipNonRequired: Whether to skip non-required fields in the output
-//   - extractor: Instance value extractor for retrieving actual values from struct instances
-//   - phase: Which output pass (lines vs blocks) to emit; phaseAll emits everything
-//
-// Returns an error if the schema is invalid or if there are issues during encoding.
 func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, output *strings.Builder, prefix string, parentOptional bool, writeComments bool, skipNonRequired bool, extractor *InstanceValueExtractor, phase encodePhase, instanceOnly bool) error {
 	if schema == nil || schema.Properties == nil {
 		return fmt.Errorf("schema or properties is nil")
@@ -74,10 +52,6 @@ func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, output *strings
 		requiredFields[fieldName] = true
 	}
 
-	// A schema.OneOf whose branches list mutually-exclusive sibling properties
-	// (e.g. connected_repo vs public_repo) means exactly one branch may be
-	// present. Emit the chosen branch actively and the alternatives commented
-	// out, so the output validates while still documenting the options.
 	oneOfMembers, oneOfChosen := selectOneOfBranch(schema, extractor, prefix)
 
 	for pair := schema.Properties.Oldest(); pair != nil; pair = pair.Next() {
@@ -100,28 +74,21 @@ func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, output *strings
 			fullPath = prefix + "." + propertyName
 		}
 
-		// For value extraction, try fullPath first, then fall back to just propertyName
-		// This handles cases where extractor is scoped to an array item but fullPath includes parent context
 		hasInstanceValue := false
 		if extractor != nil {
 			hasInstanceValue = extractor.HasValue(fullPath)
 			if !hasInstanceValue && strings.Contains(fullPath, ".") {
-				// Try with just property name for item extractors
 				simpleName := extractPropertyName(fullPath)
 				hasInstanceValue = extractor.HasValue(simpleName)
 			}
 		}
 
-		// When rendering a concrete instance record (array item), emit only the
-		// fields the instance actually set — no empty placeholders or commented
-		// oneOf alternatives.
 		if instanceOnly && !hasInstanceValue {
 			continue
 		}
 
 		isOptional := skipNonRequired && (!isRequired || parentOptional) && !hasInstanceValue
 
-		// Non-chosen oneOf branches are always rendered, but commented out.
 		if isOneOfAlternative {
 			isOptional = true
 		} else if skipNonRequired && !isRequired && !hasInstanceValue {
@@ -132,8 +99,6 @@ func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, output *strings
 			continue
 		}
 
-		// Split output into lines-first / blocks-last passes so scalar fields
-		// from every schema precede any table headers.
 		if phase != phaseAll {
 			block := rendersBlock(propertySchema)
 			if (phase == phaseLines) == block {
@@ -145,7 +110,7 @@ func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, output *strings
 			g.writePropertyComments(propertySchema, output)
 		}
 
-		// A typeless property backed by a oneOf (commonly array|null) must be
+		// why: A typeless property backed by a oneOf (commonly array|null) must be
 		// rendered as its real type, not as an empty string.
 		propertyType := propertySchema.Type
 		if propertyType == "" && oneOfIsArray(propertySchema) {
@@ -159,17 +124,14 @@ func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, output *strings
 			continue
 		}
 
-		// Handle different types
 		switch propertyType {
 		case "array":
-			// array contents
 			err := g.encodeTOMLArray(fullPath, propertySchema, output, isOptional, writeComments, extractor, fullPath, instanceOnly)
 			if err != nil {
 				return err
 			}
 			output.WriteString("\n")
 		case "object":
-			// nested objects
 			err := g.encodeTOMLObject(fullPath, propertySchema, output, isOptional, writeComments, extractor, fullPath, instanceOnly)
 			if err != nil {
 				return err
@@ -182,17 +144,10 @@ func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, output *strings
 			}
 
 		}
-
-		// output.WriteString("\n")
 	}
 	return nil
 }
 
-// selectOneOfBranch inspects an object schema's OneOf branches (each of which
-// lists the sibling properties required for that alternative) and returns the
-// set of all properties participating in any branch, plus the set belonging to
-// the single branch that should be emitted actively. The chosen branch is the
-// first whose properties have an instance value, otherwise the first branch.
 func selectOneOfBranch(schema *jsonschema.Schema, extractor *InstanceValueExtractor, prefix string) (members, chosen map[string]bool) {
 	members = map[string]bool{}
 	chosen = map[string]bool{}
@@ -229,8 +184,6 @@ func selectOneOfBranch(schema *jsonschema.Schema, extractor *InstanceValueExtrac
 	return members, chosen
 }
 
-// oneOfIsArray reports whether a typeless property's oneOf includes an array
-// alternative (e.g. a nullable slice rendered as array|null).
 func oneOfIsArray(schema *jsonschema.Schema) bool {
 	for _, branch := range schema.OneOf {
 		if branch.Type == "array" {
@@ -241,14 +194,12 @@ func oneOfIsArray(schema *jsonschema.Schema) bool {
 }
 
 func (g *ConfigGen) writePropertyComments(schema *jsonschema.Schema, output *strings.Builder) {
-	// short description
 	if schema.Title != "" {
 		output.WriteString("# ")
 		output.WriteString(schema.Title)
 		output.WriteString("\n")
 	}
 
-	// long description
 	if schema.Description != "" {
 		for line := range strings.SplitSeq(schema.Description, "\n") {
 			output.WriteString("# ")
@@ -257,7 +208,6 @@ func (g *ConfigGen) writePropertyComments(schema *jsonschema.Schema, output *str
 		}
 	}
 
-	// examples
 	if len(schema.Examples) > 0 {
 		output.WriteString("# Examples: ")
 		for i, example := range schema.Examples {
@@ -265,7 +215,6 @@ func (g *ConfigGen) writePropertyComments(schema *jsonschema.Schema, output *str
 				output.WriteString(", ")
 			}
 			exampleStr := fmt.Sprintf("%v", example)
-			// Handle multiline examples by writing them on new commented lines
 			if strings.Contains(exampleStr, "\n") {
 				output.WriteString("\n")
 				for _, line := range strings.Split(exampleStr, "\n") {
@@ -284,7 +233,6 @@ func (g *ConfigGen) writePropertyComments(schema *jsonschema.Schema, output *str
 func (g *ConfigGen) writePrimitiveField(fieldName string, schema *jsonschema.Schema, output *strings.Builder, isOptional bool, extractor *InstanceValueExtractor, propertyPath string) {
 	fieldLine := g.generateFieldLine(fieldName, schema, extractor, propertyPath)
 
-	// If optional, comment it out
 	if isOptional {
 		output.WriteString("# ")
 	}
@@ -297,7 +245,6 @@ func (g *ConfigGen) writePrimitiveField(fieldName string, schema *jsonschema.Sch
 func (g *ConfigGen) encodeTOMLObject(tableName string, schema *jsonschema.Schema, output *strings.Builder, isOptional bool, writeComments bool, extractor *InstanceValueExtractor, propertyPath string, instanceOnly bool) error {
 	if schema.Properties == nil || schema.Properties.Len() == 0 {
 		if extractor != nil {
-			// Try with full path first, then fall back to just the property name
 			mapValue, exists := extractor.GetMapValue(propertyPath)
 			if !exists && strings.Contains(propertyPath, ".") {
 				simpleName := extractPropertyName(propertyPath)
@@ -336,13 +283,10 @@ func (g *ConfigGen) encodeTOMLObject(tableName string, schema *jsonschema.Schema
 
 	fmt.Fprintf(output, "%s[%s]\n", commentPrefix, tableName)
 
-	// For nested objects, try to create a scoped extractor
 	nestedExtractor := extractor
 	if extractor != nil {
-		// Try to extract the nested object value
 		nestedValue, exists := extractor.GetFieldValue(propertyPath)
 		if !exists && strings.Contains(propertyPath, ".") {
-			// Fallback: try with just the property name
 			simpleName := extractPropertyName(propertyPath)
 			nestedValue, exists = extractor.GetFieldValue(simpleName)
 		}
@@ -372,11 +316,8 @@ func (g *ConfigGen) encodeTOMLArray(arrayName string, schema *jsonschema.Schema,
 		commentPrefix = "# "
 	}
 
-	// Try to get array values from instance
 	if extractor != nil {
-		// Try with full path first
 		arrayValue, itemType, exists := extractor.GetArrayValue(propertyPath)
-		// If fullPath doesn't work, try with just the property name (for item extractors)
 		if !exists && strings.Contains(propertyPath, ".") {
 			simpleName := extractPropertyName(propertyPath)
 			arrayValue, itemType, exists = extractor.GetArrayValue(simpleName)
@@ -388,30 +329,24 @@ func (g *ConfigGen) encodeTOMLArray(arrayName string, schema *jsonschema.Schema,
 
 	switch itemSchema.Type {
 	case "object":
-		// TOML array of objects syntax: [[table_name]]
 		fmt.Fprintf(output, "%s[[%s]]\n", commentPrefix, arrayName)
 
 		if itemSchema.Properties != nil && itemSchema.Properties.Len() > 0 {
 			return g.recursivelyEncode(itemSchema, output, arrayName, isOptional, writeComments, false, extractor, phaseAll, instanceOnly)
 		}
 	case "array":
-		// Nested array (e.g., role containing policies array)
-		// Check if items are objects (array of arrays of objects)
 		if itemSchema.Items != nil && itemSchema.Items.Type == "object" {
-			// This is an array of arrays of objects - write the table syntax and recurse
 			fmt.Fprintf(output, "%s[[%s]]\n", commentPrefix, arrayName)
 			if itemSchema.Items.Properties != nil && itemSchema.Items.Properties.Len() > 0 {
 				return g.recursivelyEncode(itemSchema.Items, output, arrayName, isOptional, writeComments, false, extractor, phaseAll, instanceOnly)
 			}
 		} else {
-			// Simple nested array of primitives - write as empty array
 			if isOptional {
 				output.WriteString("# ")
 			}
 			fmt.Fprintf(output, "%s = []\n", arrayName)
 		}
 	default:
-		// For primitive arrays, output empty array instead of array with default value
 		if isOptional {
 			output.WriteString("# ")
 		}
@@ -424,14 +359,11 @@ func (g *ConfigGen) encodeTOMLArray(arrayName string, schema *jsonschema.Schema,
 func (g *ConfigGen) generateFieldLine(fieldName string, schema *jsonschema.Schema, extractor *InstanceValueExtractor, propertyPath string) string {
 	var defaultValue string
 
-	// try to get value from instance
 	if extractor != nil {
-		// Try with full path first
 		if instanceValue, exists := extractor.GetFieldValue(propertyPath); exists {
 			defaultValue = formatTOMLValue(instanceValue, schema.Type)
 			return fmt.Sprintf("%s = %s", fieldName, defaultValue)
 		}
-		// If fullPath doesn't work, try with just the property name (for item extractors)
 		if strings.Contains(propertyPath, ".") {
 			simpleName := extractPropertyName(propertyPath)
 			if instanceValue, exists := extractor.GetFieldValue(simpleName); exists {
@@ -441,18 +373,15 @@ func (g *ConfigGen) generateFieldLine(fieldName string, schema *jsonschema.Schem
 		}
 	}
 
-	// if not present in instance, use schema default if EnableDefaults is true
 	if g.EnableDefaults && schema.Default != nil {
 		defaultValue = formatTOMLValue(schema.Default, schema.Type)
 		return fmt.Sprintf("%s = %s", fieldName, defaultValue)
 	}
 
-	// if default not present in schema, fall back to type-based defaults
 	defaultValue = generateDefaultByType(schema.Type)
 	return fmt.Sprintf("%s = %s", fieldName, defaultValue)
 }
 
-// formatTOMLValue formats a value for TOML based on its type
 func formatTOMLValue(value any, schemaType string) string {
 	if value == nil {
 		return generateDefaultByType(schemaType)
@@ -474,12 +403,10 @@ func formatTOMLValue(value any, schemaType string) string {
 	case float32, float64:
 		return fmt.Sprintf("%f", v)
 	default:
-		// For complex types, convert to string representation
 		return fmt.Sprintf(`"%v"`, v)
 	}
 }
 
-// generateDefaultByType returns a placeholder default value based on JSON schema type
 func generateDefaultByType(schemaType string) string {
 	switch schemaType {
 	case "string":
@@ -497,7 +424,6 @@ func generateDefaultByType(schemaType string) string {
 	}
 }
 
-// formatInstanceArray formats an array value from an instance for TOML output
 func (g *ConfigGen) formatInstanceArray(arrayName string, arrayValue reflect.Value, itemType string, itemSchema *jsonschema.Schema, output *strings.Builder, isOptional bool, writeComments bool, extractor *InstanceValueExtractor, propertyPath string) error {
 	commentPrefix := ""
 	if isOptional {
@@ -505,7 +431,6 @@ func (g *ConfigGen) formatInstanceArray(arrayName string, arrayValue reflect.Val
 	}
 
 	if itemType == "object" {
-		// print array headers using toml table
 		for i := 0; i < arrayValue.Len(); i++ {
 			fmt.Fprintf(output, "%s[[%s]]\n", commentPrefix, arrayName)
 
@@ -519,7 +444,6 @@ func (g *ConfigGen) formatInstanceArray(arrayName string, arrayValue reflect.Val
 			if item.IsValid() && !item.IsZero() {
 				itemExtractor := NewInstanceValueExtractor(item.Interface())
 				if itemSchema.Properties != nil && itemSchema.Properties.Len() > 0 {
-					// use skipNonRequired=false to ensure all fields from instance are included
 					err := g.recursivelyEncode(itemSchema, output, arrayName, isOptional, false, false, itemExtractor, phaseAll, true)
 					if err != nil {
 						return err
@@ -537,12 +461,10 @@ func (g *ConfigGen) formatInstanceArray(arrayName string, arrayValue reflect.Val
 				item = item.Elem()
 			}
 
-			// Skip zero/empty values in arrays
 			if !item.IsValid() || item.IsZero() {
 				continue
 			}
 
-			// Additional check: skip empty strings explicitly
 			if item.Kind() == reflect.String && item.String() == "" {
 				continue
 			}
@@ -551,11 +473,9 @@ func (g *ConfigGen) formatInstanceArray(arrayName string, arrayValue reflect.Val
 			items = append(items, formatted)
 		}
 
-		// Only output the array if it has non-empty items
 		if len(items) > 0 {
 			fmt.Fprintf(output, "%s%s = [%s]\n", commentPrefix, arrayName, strings.Join(items, ", "))
 		} else {
-			// Output empty array or skip based on whether field is required
 			fmt.Fprintf(output, "%s%s = []\n", commentPrefix, arrayName)
 		}
 	}

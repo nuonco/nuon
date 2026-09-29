@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/pkg/terraform/backend"
 )
 
-// BucketConfig configures where the state is pushed too
 type BucketConfig struct {
 	Name   string `mapstructure:"bucket" validate:"required"`
 	Key    string `mapstructure:"key" validate:"required"`

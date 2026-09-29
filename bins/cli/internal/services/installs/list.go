@@ -110,8 +110,6 @@ func (s *Service) listAppInstalls(ctx context.Context, appID string, offset, lim
 	return cmps, hasMore, nil
 }
 
-// filterInstallsByLabels keeps only installs whose labels contain every
-// key=value pair in filter (AND semantics).
 func filterInstallsByLabels(installs []*models.AppInstall, filter map[string]string) []*models.AppInstall {
 	out := make([]*models.AppInstall, 0, len(installs))
 	for _, i := range installs {

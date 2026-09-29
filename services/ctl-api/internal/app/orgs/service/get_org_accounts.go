@@ -55,8 +55,6 @@ func (s *service) getOrgAccounts(ctx *gin.Context, orgID string) ([]app.Account,
 
 	accounts := []app.Account{}
 
-	// Drive from the org's membership (indexed account_roles.org_id) rather than
-	// scanning the accounts table via an IN-subquery + LIMIT.
 	tx := s.db.WithContext(ctx).
 		Model(&app.Account{}).
 		Joins("JOIN account_roles ON account_roles.account_id = accounts.id AND account_roles.org_id = ? AND account_roles.deleted_at = 0", orgID).

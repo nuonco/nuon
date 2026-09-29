@@ -24,7 +24,6 @@ func (m *middleware) fetchAccountToken(ctx context.Context, token string) (*app.
 		}).
 		First(&userToken)
 
-	// no error found
 	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -33,7 +32,6 @@ func (m *middleware) fetchAccountToken(ctx context.Context, token string) (*app.
 		return nil, fmt.Errorf("error occurred querying account tokens: %w", res.Error)
 	}
 
-	// make sure this is not an expired token
 	if time.Now().After(userToken.ExpiresAt) {
 		return nil, stderr.ErrAuthentication{
 			Err:         fmt.Errorf("token is expired"),
@@ -68,7 +66,6 @@ func (m *middleware) saveAccountToken(ctx context.Context, token string, claims 
 			return nil, fmt.Errorf("unable to get account: %w", err)
 		}
 
-		// Determine appropriate user journey based on signup type
 		var pendingInvite app.OrgInvite
 		inviteErr := m.db.WithContext(ctx).Where(&app.OrgInvite{
 			Email:  customClaims.Email,
@@ -77,19 +74,15 @@ func (m *middleware) saveAccountToken(ctx context.Context, token string, claims 
 
 		var userJourneys app.UserJourneys
 		if inviteErr == nil {
-			// Found pending invite - create account without journey tracking
 			userJourneys = account.NoUserJourneys()
 		} else {
-			// No pending invite - self-signup user, check deployment configuration
 			if m.cfg.EvaluationJourneyEnabled {
-				// Multi-tenant deployment: Enable evaluation journey with attribution
 				if len(attribution) > 0 {
 					userJourneys = account.DefaultEvaluationJourneyWithAttribution(attribution, completionSource)
 				} else {
 					userJourneys = account.DefaultEvaluationJourney(completionSource)
 				}
 			} else {
-				// BYOC deployment: Skip evaluation journey for clean first-run experience
 				userJourneys = account.NoUserJourneys()
 			}
 		}

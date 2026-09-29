@@ -14,7 +14,6 @@ type ProfilerOptions struct {
 	Port    int
 }
 
-// DefaultProfilerOptions provides default settings for the profiler
 func DefaultProfilerOptions() ProfilerOptions {
 	return ProfilerOptions{
 		Enabled: true,
@@ -22,7 +21,6 @@ func DefaultProfilerOptions() ProfilerOptions {
 	}
 }
 
-// NewProfilerServer creates an HTTP server for profiling
 func NewProfilerServer(options ProfilerOptions) *http.Server {
 	if !options.Enabled {
 		return nil
@@ -34,7 +32,6 @@ func NewProfilerServer(options ProfilerOptions) *http.Server {
 	}
 }
 
-// RegisterProfiler registers the profiler with fx lifecycle
 func RegisterProfiler(lc fx.Lifecycle, options ProfilerOptions) {
 	if !options.Enabled {
 		return

@@ -80,7 +80,6 @@ func (s *AdminUpdateSettingsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -99,7 +98,6 @@ func (s *AdminUpdateSettingsTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -111,7 +109,6 @@ func (s *AdminUpdateSettingsTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group settings
 	s.testRunnerGrpSett = &app.RunnerGroupSettings{
 		ID:                domains.NewRunnerGroupSettingsID(),
 		OrgID:             s.testOrg.ID,
@@ -124,7 +121,6 @@ func (s *AdminUpdateSettingsTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrpSett).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -181,7 +177,6 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), "updated.ecr.aws/runner", settings.ContainerImageURL)
 				assert.Equal(s.T(), "https://updated-api.test.com", settings.RunnerAPIURL)
-				// Original tag should be preserved
 				assert.Equal(s.T(), "v1.0.0", settings.ContainerImageTag)
 			},
 		},
@@ -201,12 +196,11 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), "v2.0.0", settings.ContainerImageTag)
 
-				// Verify restart signal sent
 				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), capturedSignals, 1)
 				assert.Equal(s.T(), runnerID, capturedSignals[0].OwnerID)
 
-				_ = capturedSignals[0] // type check
+				_ = capturedSignals[0]
 
 				assert.NotEmpty(s.T(), string(capturedSignals[0].Type))
 			},
@@ -217,7 +211,7 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 				return s.testRunner.ID
 			},
 			requestBody: map[string]interface{}{
-				"aws_max_instance_lifetime": 86400, // 1 day (min value)
+				"aws_max_instance_lifetime": 86400,
 			},
 			expectedCode:   http.StatusOK,
 			expectedSignal: false,
@@ -234,7 +228,7 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 				return s.testRunner.ID
 			},
 			requestBody: map[string]interface{}{
-				"aws_max_instance_lifetime": 1000, // Below min
+				"aws_max_instance_lifetime": 1000,
 			},
 			expectedCode:   http.StatusBadRequest,
 			expectedSignal: false,
@@ -245,7 +239,7 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 				return s.testRunner.ID
 			},
 			requestBody: map[string]interface{}{
-				"aws_max_instance_lifetime": 999999999, // Above max
+				"aws_max_instance_lifetime": 999999999,
 			},
 			expectedCode:   http.StatusBadRequest,
 			expectedSignal: false,
@@ -349,7 +343,6 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 				tc.validateFunc(runnerID)
 			}
 
-			// Verify signal presence matches expectation
 			if tc.expectedSignal {
 				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.Len(s.T(), capturedSignals, 1, "expected signal to be sent")

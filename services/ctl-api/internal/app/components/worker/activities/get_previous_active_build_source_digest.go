@@ -10,18 +10,11 @@ import (
 )
 
 type GetPreviousActiveBuildSourceDigestRequest struct {
-	// ComponentID is the component whose history we search.
-	ComponentID string `validate:"required"`
-	// ExcludeBuildID is the current build (which may itself already exist in
-	// the DB at planning time). It is excluded from the lookup so we always
-	// find a strictly prior build.
+	ComponentID    string `validate:"required"`
 	ExcludeBuildID string `validate:"required"`
 }
 
 type GetPreviousActiveBuildSourceDigestResponse struct {
-	// SourceDigest is the source manifest digest of the most recent prior
-	// Active ComponentBuild for the component. Empty when no prior active
-	// build exists, or when the prior build has no SourceDigest recorded.
 	SourceDigest string
 }
 

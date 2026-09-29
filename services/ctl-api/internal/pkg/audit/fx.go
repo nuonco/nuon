@@ -22,7 +22,7 @@ type Params struct {
 	LC  fx.Lifecycle
 }
 
-// New builds the audit emitter. Its logger is deliberately standalone rather
+// why: New builds the audit emitter. Its logger is deliberately standalone rather
 // than teed into the system logger: audit records must not reach stderr, so
 // ctl-api's normal log output stays byte-for-byte unchanged and the Datadog
 // monitors reading it are unaffected.

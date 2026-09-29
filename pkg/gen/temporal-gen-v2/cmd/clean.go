@@ -31,7 +31,6 @@ func runCleanCmd(cmd *cobra.Command, args []string) error {
 func runClean(dir string, dryRun bool, recursive bool) error {
 	fmt.Printf("Cleaning generated files in %s (recursive=%v)...\n", dir, recursive)
 
-	// If not recursive, we just ReadDir
 	if !recursive {
 		entries, err := os.ReadDir(dir)
 		if err != nil {
@@ -51,7 +50,6 @@ func runClean(dir string, dryRun bool, recursive bool) error {
 		return nil
 	}
 
-	// Recursive
 	return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err

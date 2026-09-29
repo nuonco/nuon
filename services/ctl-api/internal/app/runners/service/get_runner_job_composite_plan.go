@@ -67,8 +67,6 @@ func (s *service) getRunnerJobCompositePlan(ctx context.Context, runnerJobID str
 		return cp, nil
 	}
 
-	// if empty derive from plan json
-
 	var runnerJob app.RunnerJob
 	res = s.db.WithContext(ctx).
 		Where(app.RunnerJob{
@@ -101,8 +99,6 @@ func (s *service) getOrgRunnerJobCompositePlan(ctx context.Context, runnerJobID 
 	if !cp.IsEmpty() {
 		return cp, nil
 	}
-
-	// if empty derive from plan json
 
 	var runnerJob app.RunnerJob
 	res = s.db.WithContext(ctx).

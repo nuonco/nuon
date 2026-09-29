@@ -7,10 +7,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// AvailableRoles returns every role name an install can assume, mapped to its
-// cloud identifier, with templated names rendered against install state. Roles
-// the stack did not emit are dropped, since a name with no identifier cannot be
-// assumed.
 func AvailableRoles(
 	appCfg *app.AppConfig,
 	installStackOutputs *app.InstallStackOutputs,
@@ -46,14 +42,10 @@ func AvailableRoles(
 	return roles, nil
 }
 
-// RenderRoleName renders a role name template against install state, matching
-// how role selection renders a runtime override before looking it up.
 func RenderRoleName(roleName string, installState *state.State) (string, error) {
 	return renderRoleName(roleName, installState)
 }
 
-// MaintenanceRoleName returns the install's rendered maintenance role name, the
-// default identity for day-2 operations.
 func MaintenanceRoleName(appCfg *app.AppConfig, installState *state.State) (string, error) {
 	if appCfg == nil {
 		return "", fmt.Errorf("app config is required")

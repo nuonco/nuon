@@ -13,9 +13,6 @@ import (
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 )
 
-// Token holds the runner API token fetched during initialization.
-// It is provided as an fx dependency so that downstream providers (e.g. api.New)
-// can depend on it and be guaranteed the token is available.
 type Token struct {
 	Value string
 }
@@ -28,7 +25,6 @@ type Params struct {
 }
 
 func New(params Params) (*Token, error) {
-	// If the token is already set (e.g. local dev via env var), use it directly.
 	if params.Cfg.RunnerAPIToken != "" {
 		params.L.Info("using runner API token from config/env")
 		return &Token{Value: params.Cfg.RunnerAPIToken}, nil
@@ -58,7 +54,6 @@ func New(params Params) (*Token, error) {
 		return nil, fmt.Errorf("unable to fetch runner token via IMDS: %w", err)
 	}
 
-	// Backfill config so existing code that reads cfg.RunnerAPIToken continues to work.
 	params.Cfg.RunnerAPIToken = result.Token
 
 	params.L.Info("successfully fetched runner API token",

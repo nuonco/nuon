@@ -69,8 +69,6 @@ func (e *InstanceValueExtractor) HasValue(propertyPath string) bool {
 	return exists
 }
 
-// HasField checks if a field exists in the instance, regardless of whether it's zero/empty.
-// This is useful when processing instance data where we want to include all fields.
 func (e *InstanceValueExtractor) HasField(propertyPath string) bool {
 	if e != nil && !e.reflectValue.IsValid() {
 		return false

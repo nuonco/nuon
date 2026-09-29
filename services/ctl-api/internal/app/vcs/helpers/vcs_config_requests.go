@@ -27,13 +27,11 @@ type ConnectedGithubVCSConfigRequest struct {
 	GitRef string `validate:"required_without=Branch"`
 }
 
-// VCSConfigRequest is an embeddable type for endpoints that accept VCS configuration
 type VCSConfigRequest struct {
 	PublicGitVCSConfig       *PublicGitVCSConfigRequest       `json:"public_git_vcs_config"`
 	ConnectedGithubVCSConfig *ConnectedGithubVCSConfigRequest `json:"connected_github_vcs_config"`
 }
 
-// Validate ensures that only one VCS config type is provided
 func (b VCSConfigRequest) Validate() error {
 	if b.PublicGitVCSConfig != nil && b.ConnectedGithubVCSConfig != nil {
 		return stderr.ErrUser{
@@ -42,11 +40,9 @@ func (b VCSConfigRequest) Validate() error {
 		}
 	}
 
-	// VCS config is now optional - can be nil for both
 	return nil
 }
 
-// BuildConnectedGithubVCSConfig creates a ConnectedGithubVCSConfig from the request
 func (h *Helpers) BuildConnectedGithubVCSConfig(
 	ctx context.Context,
 	req *ConnectedGithubVCSConfigRequest,
@@ -77,7 +73,6 @@ func (h *Helpers) BuildConnectedGithubVCSConfig(
 	}, nil
 }
 
-// BuildPublicGitVCSConfig creates a PublicGitVCSConfig from the request
 func (h *Helpers) BuildPublicGitVCSConfig(
 	ctx context.Context,
 	req *PublicGitVCSConfigRequest,

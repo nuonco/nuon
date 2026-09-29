@@ -84,10 +84,6 @@ func (s *service) CreateAppKubernetesContextsConfig(ctx *gin.Context) {
 }
 
 func (s *service) createAppKubernetesContextsConfig(ctx context.Context, appID string, req *CreateAppKubernetesContextsConfigRequest) (*app.AppKubernetesContextsConfig, error) {
-	// Resolve component names -> IDs in a single query so each child row has
-	// a stable FK back to the source component. The name is also persisted
-	// (SourceComponentName) so the binding remains intelligible across
-	// AppConfig versions if the underlying component is renamed.
 	componentIDByName := map[string]string{}
 	if len(req.Contexts) > 0 {
 		names := make([]string, 0, len(req.Contexts))

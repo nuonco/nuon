@@ -10,9 +10,6 @@ import (
 	"github.com/nuonco/nuon/pkg/config/diff"
 )
 
-// Diff compares the receiver (new config) against old (previous config) and
-// returns a hierarchical diff tree. The structure mirrors terraform plan output:
-// each section shows added, removed, changed, or unchanged fields.
 func (a *AppConfig) Diff(old *AppConfig) *diff.Diff {
 	if old == nil {
 		old = &AppConfig{}
@@ -20,7 +17,6 @@ func (a *AppConfig) Diff(old *AppConfig) *diff.Diff {
 
 	var children []*diff.Diff
 
-	// Metadata
 	children = append(children,
 		diff.NewDiff(diff.WithKey("version"), diff.WithStringDiff(old.Version, a.Version)),
 		diff.NewDiff(diff.WithKey("description"), diff.WithStringDiff(old.Description, a.Description)),
@@ -88,8 +84,6 @@ func (a *AppConfig) Diff(old *AppConfig) *diff.Diff {
 	return result
 }
 
-// --- Branch ---
-
 func diffBranch(old, new *AppBranchConfig) *diff.Diff {
 	if old == nil && new == nil {
 		return nil
@@ -97,9 +91,6 @@ func diffBranch(old, new *AppBranchConfig) *diff.Diff {
 	return branchDiff("branch", old, new)
 }
 
-// Diff compares the receiver (desired config) against old (the config currently
-// applied to the branch) and returns a hierarchical diff tree covering every
-// field an app branch config can express.
 func (c *AppBranchConfig) Diff(old *AppBranchConfig) *diff.Diff {
 	return branchDiff("branch", old, c)
 }
@@ -127,8 +118,6 @@ func branchDiff(key string, old, new *AppBranchConfig) *diff.Diff {
 		children = append(children, d)
 	}
 	children = append(children,
-		// post_deploy_runbooks runs in the order listed, so compare the sequence
-		// rather than the set.
 		diff.NewDiff(diff.WithKey("post_deploy_runbooks"), diff.WithStringDiff(
 			strings.Join(old.PostDeployRunbooks, ", "),
 			strings.Join(new.PostDeployRunbooks, ", "),
@@ -232,8 +221,6 @@ func diffBranchRun(old, new *AppBranchRunConfig) *diff.Diff {
 	))
 }
 
-// --- Sandbox ---
-
 func toTOMLString(v any) string {
 	b, err := ToTOML(v)
 	if err != nil {
@@ -242,9 +229,6 @@ func toTOMLString(v any) string {
 	return string(b)
 }
 
-// sectionTOML serializes a section sub-config to TOML, treating a zero-valued
-// (absent) sub-config as empty. Without this, a newly added section would read
-// as a change from its empty-default TOML (e.g. "input = []") rather than an add.
 func sectionTOML(v any) string {
 	s := toTOMLString(v)
 	rv := reflect.ValueOf(v)
@@ -256,10 +240,6 @@ func sectionTOML(v any) string {
 	return s
 }
 
-// sectionDiff builds a section node from its field children and, when the
-// section's TOML serialization changed, also attaches a before/after content
-// diff so the dashboard can render the whole section as a TOML line diff. The
-// field children are retained for change counting.
 func sectionDiff(key string, old, new any, children []*diff.Diff) *diff.Diff {
 	opts := []diff.DiffOption{diff.WithKey(key), diff.WithChildren(children...)}
 	if oldTOML, newTOML := sectionTOML(old), sectionTOML(new); oldTOML != newTOML {
@@ -297,8 +277,6 @@ func diffSandbox(old, new *AppSandboxConfig) *diff.Diff {
 	return result
 }
 
-// --- Runner ---
-
 func diffRunner(old, new *AppRunnerConfig) *diff.Diff {
 	if old == nil && new == nil {
 		return nil
@@ -325,8 +303,6 @@ func diffRunner(old, new *AppRunnerConfig) *diff.Diff {
 	return result
 }
 
-// --- Stack ---
-
 func diffStack(old, new *StackConfig) *diff.Diff {
 	if old == nil && new == nil {
 		return nil
@@ -347,7 +323,6 @@ func diffStack(old, new *StackConfig) *diff.Diff {
 		diff.NewDiff(diff.WithKey("deployment_scope"), diff.WithStringDiff(old.DeploymentScope, new.DeploymentScope)),
 	}
 
-	// Custom nested stacks matched by name
 	children = append(children, diffCustomNestedStacks(old.CustomNestedStacks, new.CustomNestedStacks)...)
 
 	result := sectionDiff("stack", old, new, children)
@@ -390,8 +365,6 @@ func diffCustomNestedStacks(old, new []CustomNestedStack) []*diff.Diff {
 	return diffs
 }
 
-// --- Inputs ---
-
 func diffInputs(old, new *AppInputConfig) *diff.Diff {
 	if old == nil && new == nil {
 		return nil
@@ -405,10 +378,8 @@ func diffInputs(old, new *AppInputConfig) *diff.Diff {
 
 	var children []*diff.Diff
 
-	// Groups matched by name
 	children = append(children, diffInputGroups(old.Groups, new.Groups)...)
 
-	// Inputs matched by name
 	children = append(children, diffAppInputs(old.Inputs, new.Inputs)...)
 
 	return sectionDiff("inputs", old, new, children)
@@ -495,8 +466,6 @@ func diffAppInputs(old, new []AppInput) []*diff.Diff {
 	return diffs
 }
 
-// --- Permissions ---
-
 func diffPermissions(old, new *PermissionsConfig) *diff.Diff {
 	if old == nil && new == nil {
 		return nil
@@ -510,7 +479,6 @@ func diffPermissions(old, new *PermissionsConfig) *diff.Diff {
 
 	var children []*diff.Diff
 
-	// Diff the standard roles
 	if d := diffIAMRole("provision_role", old.ProvisionRole, new.ProvisionRole); d != nil {
 		children = append(children, d)
 	}
@@ -521,7 +489,6 @@ func diffPermissions(old, new *PermissionsConfig) *diff.Diff {
 		children = append(children, d)
 	}
 
-	// Custom roles matched by name
 	children = append(children, diffIAMRoles("custom_role", old.CustomRoles, new.CustomRoles)...)
 	children = append(children, diffNamedIAMPolicies(old.NamedPolicies, new.NamedPolicies)...)
 
@@ -625,8 +592,6 @@ func diffNamedIAMPolicy(old, new NamedIAMPolicy) *diff.Diff {
 	return result
 }
 
-// --- Policies ---
-
 func diffPolicies(old, new *PoliciesConfig) *diff.Diff {
 	if old == nil && new == nil {
 		return nil
@@ -675,8 +640,6 @@ func diffPolicies(old, new *PoliciesConfig) *diff.Diff {
 
 	return diff.NewDiff(diff.WithKey("policies"), diff.WithChildren(children...))
 }
-
-// --- Secrets ---
 
 func diffSecrets(old, new *SecretsConfig) *diff.Diff {
 	if old == nil && new == nil {
@@ -736,8 +699,6 @@ func diffSecrets(old, new *SecretsConfig) *diff.Diff {
 	return sectionDiff("secrets", old, new, children)
 }
 
-// --- BreakGlass ---
-
 func diffBreakGlass(old, new *BreakGlass) *diff.Diff {
 	if old == nil && new == nil {
 		return nil
@@ -752,8 +713,6 @@ func diffBreakGlass(old, new *BreakGlass) *diff.Diff {
 	children := diffIAMRoles("role", old.Roles, new.Roles)
 	return diff.NewDiff(diff.WithKey("break_glass"), diff.WithChildren(children...))
 }
-
-// --- OperationRoles ---
 
 func diffOperationRoles(old, new *OperationRolesConfig) *diff.Diff {
 	if old == nil && new == nil {
@@ -770,7 +729,6 @@ func diffOperationRoles(old, new *OperationRolesConfig) *diff.Diff {
 		diff.NewDiff(diff.WithKey("type"), diff.WithStringDiff(string(old.Type), string(new.Type))),
 	}
 
-	// Rules matched by composite key (principal + operation)
 	type ruleKey struct {
 		principal string
 		operation OperationType
@@ -811,8 +769,6 @@ func diffOperationRoles(old, new *OperationRolesConfig) *diff.Diff {
 	)
 }
 
-// --- Components ---
-
 func diffComponents(old, new ComponentList) *diff.Diff {
 	if len(old) == 0 && len(new) == 0 {
 		return nil
@@ -826,7 +782,6 @@ func diffComponents(old, new ComponentList) *diff.Diff {
 	var children []*diff.Diff
 	seen := make(map[string]bool)
 
-	// Sort new components for deterministic output
 	sorted := make([]*Component, len(new))
 	copy(sorted, new)
 	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Name < sorted[j].Name })
@@ -836,19 +791,16 @@ func diffComponents(old, new ComponentList) *diff.Diff {
 		if oc, ok := oldByName[c.Name]; ok {
 			children = append(children, diffComponent(oc, c))
 		} else {
-			// Added component — diff against empty to show all fields
 			children = append(children, diffComponent(&Component{}, c))
 		}
 	}
 
-	// Sort old components for deterministic removed order
 	sortedOld := make([]*Component, len(old))
 	copy(sortedOld, old)
 	sort.Slice(sortedOld, func(i, j int) bool { return sortedOld[i].Name < sortedOld[j].Name })
 
 	for _, c := range sortedOld {
 		if !seen[c.Name] {
-			// Removed component — diff against empty to show all fields
 			children = append(children, diffComponent(c, &Component{Name: c.Name}))
 		}
 	}
@@ -869,7 +821,6 @@ func diffComponent(old, new *Component) *diff.Diff {
 		children = append(children, d)
 	}
 
-	// Type-specific diffs
 	children = append(children, diffHelmChart(old.HelmChart, new.HelmChart)...)
 	children = append(children, diffTerraformModule(old.TerraformModule, new.TerraformModule)...)
 	children = append(children, diffDockerBuild(old.DockerBuild, new.DockerBuild)...)
@@ -882,8 +833,6 @@ func diffComponent(old, new *Component) *diff.Diff {
 	result.ResourceID = ComponentResourceID(new.Name)
 	return result
 }
-
-// --- Component type-specific diffs ---
 
 func diffHelmChart(old, new *HelmChartComponentConfig) []*diff.Diff {
 	if old == nil && new == nil {
@@ -1076,11 +1025,8 @@ func diffExternalImage(old, new *ExternalImageComponentConfig) []*diff.Diff {
 		diff.NewDiff(diff.WithKey("deploy_timeout"), diff.WithStringDiff(old.DeployTimeout, new.DeployTimeout)),
 	)
 
-	// AWS ECR
 	diffs = append(diffs, diffAWSECR(old.AWSECRImageConfig, new.AWSECRImageConfig)...)
-	// GCP GAR
 	diffs = append(diffs, diffGCPGAR(old.GCPGARImageConfig, new.GCPGARImageConfig)...)
-	// Public image
 	diffs = append(diffs, diffPublicImage(old.PublicImageConfig, new.PublicImageConfig)...)
 
 	return diffs
@@ -1165,7 +1111,6 @@ func diffKubernetesManifest(old, new *KubernetesManifestComponentConfig) []*diff
 		diff.NewDiff(diff.WithKey("deploy_timeout"), diff.WithStringDiff(old.DeployTimeout, new.DeployTimeout)),
 	)
 
-	// Kustomize
 	diffs = append(diffs, diffKustomize(old.Kustomize, new.Kustomize)...)
 	diffs = append(diffs, diffPublicRepo("public_repo", old.PublicRepo, new.PublicRepo)...)
 	diffs = append(diffs, diffConnectedRepo("connected_repo", old.ConnectedRepo, new.ConnectedRepo)...)
@@ -1254,8 +1199,6 @@ func diffPulumi(old, new *PulumiComponentConfig) []*diff.Diff {
 	return diffs
 }
 
-// --- Installs ---
-
 func diffInstalls(old, new []*Install) *diff.Diff {
 	if len(old) == 0 && len(new) == 0 {
 		return nil
@@ -1286,7 +1229,6 @@ func diffInstalls(old, new []*Install) *diff.Diff {
 
 	for _, i := range old {
 		if !seen[i.Name] {
-			// Removed install — diff showing all fields being removed
 			empty := &Install{Name: i.Name}
 			d, _ := empty.Diff(i)
 			if d != nil {
@@ -1297,8 +1239,6 @@ func diffInstalls(old, new []*Install) *diff.Diff {
 
 	return diff.NewDiff(diff.WithKey("installs"), diff.WithChildren(children...))
 }
-
-// --- Installs Config ---
 
 func diffInstallsConfig(old, new *InstallsConfig) *diff.Diff {
 	if old == nil && new == nil {
@@ -1317,8 +1257,6 @@ func diffInstallsConfig(old, new *InstallsConfig) *diff.Diff {
 
 	return sectionDiff("installs_config", old, new, children)
 }
-
-// --- Actions ---
 
 func diffActions(old, new []*ActionConfig) *diff.Diff {
 	if len(old) == 0 && len(new) == 0 {
@@ -1364,10 +1302,8 @@ func diffAction(old, new *ActionConfig) *diff.Diff {
 		children = append(children, d)
 	}
 
-	// Steps matched by name
 	children = append(children, diffActionSteps(old.Steps, new.Steps)...)
 
-	// Triggers matched by index
 	children = append(children, diffActionTriggers(old.Triggers, new.Triggers)...)
 
 	result := sectionDiff("action."+new.Name, old, new, children)
@@ -1443,8 +1379,6 @@ func diffActionTriggers(old, new []*ActionTriggerConfig) []*diff.Diff {
 
 	return diffs
 }
-
-// --- Runbooks ---
 
 func diffRunbooks(old, new []*RunbookConfig) *diff.Diff {
 	if len(old) == 0 && len(new) == 0 {
@@ -1531,8 +1465,6 @@ func diffRunbookSteps(old, new []*RunbookStepConfig) []*diff.Diff {
 
 	return diffs
 }
-
-// --- Shared repo helpers ---
 
 func diffPublicRepo(key string, old, new *PublicRepoConfig) []*diff.Diff {
 	if old == nil && new == nil {

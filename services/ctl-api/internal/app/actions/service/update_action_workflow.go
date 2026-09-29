@@ -148,7 +148,6 @@ func (s *service) updateActionWorkflow(ctx context.Context, orgID, awID string, 
 		Labeled: labels.Labeled{Labels: labels.Labels(req.Labels)},
 	}
 
-	// up[date where org_id = orgID and id = awID]
 	res := s.db.WithContext(ctx).
 		Where("org_id = ? AND id = ?", orgID, awID).
 		Select("name", "labels").

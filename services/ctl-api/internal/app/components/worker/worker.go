@@ -71,13 +71,11 @@ func New(params WorkerParams) (*Worker, error) {
 		WorkflowPanicPolicy:                panicPolicy,
 	}, params.SharedActs.AllActivities()...)
 
-	// register activities
 	wkr.RegisterActivity(params.Acts)
 	for _, acts := range params.SharedActs.AllActivities() {
 		wkr.RegisterActivity(acts)
 	}
 
-	// register workflows
 	for _, wkflow := range params.Wkflows.All() {
 		wkr.RegisterWorkflow(wkflow)
 	}

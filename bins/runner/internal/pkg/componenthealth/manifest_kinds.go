@@ -11,32 +11,14 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// ManifestKindsProvider records the kinds each chart component rendered, handed over by
-// the deploy job.
-//
-// Discovery cannot run the other way round: to find a release's objects the
-// engine must already know which kinds to list, and the rendered manifest lives
-// in the release Secret, which health's identity is deliberately denied. The
-// deploy already holds the manifest, so it is the one place that knows.
-//
-// Fed by both helm and kubernetes_manifest deploys. Reading it at deploy time
-// also makes it independent of helm's storage driver (secret, configmap, or
-// nuon's own).
 type ManifestKindsProvider struct {
 	l       *zap.Logger
 	cluster *ClusterProvider
 
-	mu     sync.RWMutex
-	gvks   map[string][]schema.GroupVersionKind
-	loaded bool
-	// objects maps a resourceKey to the component that applied it. Terraform
-	// objects carry neither nuon labels nor helm annotations, so this is the only
-	// record of who owns them — and it has to outlive the process.
-	objects map[string]string
-	// releases maps a helm release name to the terraform component that installed
-	// it. Same reasoning as objects: a chart installed by terraform matches no
-	// chart component and carries no nuon labels, so losing this makes every one
-	// of its workloads unowned and the component reads not-applicable forever.
+	mu       sync.RWMutex
+	gvks     map[string][]schema.GroupVersionKind
+	loaded   bool
+	objects  map[string]string
 	releases map[string]string
 }
 
@@ -57,8 +39,6 @@ func NewManifestKindsProvider(params ManifestKindsProviderParams) *ManifestKinds
 	}
 }
 
-// SetKinds records kinds a caller already resolved (terraform state), plus the
-// object keys and helm releases that component owns.
 func (p *ManifestKindsProvider) SetKinds(componentID string, gvks []schema.GroupVersionKind, objectKeys, releases []string) {
 	if componentID == "" {
 		return
@@ -90,8 +70,6 @@ func (p *ManifestKindsProvider) SetKinds(componentID string, gvks []schema.Group
 	p.persist()
 }
 
-// ComponentForRelease returns the component whose terraform installed a helm
-// release, keyed by release name.
 func (p *ManifestKindsProvider) ComponentForRelease(release string) (string, bool) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -99,8 +77,6 @@ func (p *ManifestKindsProvider) ComponentForRelease(release string) (string, boo
 	return componentID, ok
 }
 
-// ComponentForObject returns the component that applied an object, keyed as
-// resourceKey(kind, namespace, name).
 func (p *ManifestKindsProvider) ComponentForObject(key string) (string, bool) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -108,7 +84,6 @@ func (p *ManifestKindsProvider) ComponentForObject(key string) (string, bool) {
 	return componentID, ok
 }
 
-// Load rehydrates kinds persisted by earlier deploys of this install.
 func (p *ManifestKindsProvider) Load() {
 	if p.cluster == nil {
 		return
@@ -162,24 +137,15 @@ func (p *ManifestKindsProvider) Load() {
 	}
 }
 
-// objectEntryPrefix marks a persisted entry as object ownership rather than a
-// kind, so both share one stored list.
 const objectEntryPrefix = "obj:"
 
-// releaseEntryPrefix marks a persisted entry as helm-release ownership.
 const releaseEntryPrefix = "rel:"
 
-// persist mirrors every recorded kind so a restart does not lose them. Encoded
-// flat as "componentID|group/version/Kind" to keep the stored shape a plain
-// string list.
 func (p *ManifestKindsProvider) persist() {
 	if p.cluster == nil {
 		return
 	}
 
-	// A deploy can land before the engine has rehydrated. Persisting the
-	// in-memory map alone would then drop every other component's kinds, so
-	// load first — the stored list is the union across components.
 	p.mu.RLock()
 	loaded := p.loaded
 	p.mu.RUnlock()
@@ -222,8 +188,6 @@ func decodeComponentKind(entry string) (string, schema.GroupVersionKind, bool) {
 	return componentID, gv.WithKind(rest[idx+1:]), true
 }
 
-// Set replaces the kinds recorded for a component from a freshly rendered
-// release manifest. An empty manifest clears them.
 func (p *ManifestKindsProvider) Set(componentID, manifest string) {
 	if componentID == "" {
 		return
@@ -241,7 +205,6 @@ func (p *ManifestKindsProvider) Set(componentID, manifest string) {
 	p.persist()
 }
 
-// DiscoveredGVKs returns every kind the recorded releases rendered.
 func (p *ManifestKindsProvider) DiscoveredGVKs() []schema.GroupVersionKind {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -260,9 +223,6 @@ func (p *ManifestKindsProvider) DiscoveredGVKs() []schema.GroupVersionKind {
 	return out
 }
 
-// gvksFromManifest reads apiVersion/kind out of each document. Unparseable or
-// incomplete documents are skipped: a missed kind costs coverage, a wrong one
-// costs a failing list call every cycle.
 func gvksFromManifest(manifest string) []schema.GroupVersionKind {
 	var out []schema.GroupVersionKind
 	seen := map[schema.GroupVersionKind]struct{}{}

@@ -70,7 +70,6 @@ func (a *Activities) UpdateRunStatus(ctx context.Context, req UpdateRunStatusReq
 		return fmt.Errorf("unable to update install sandbox run with sandbox ID: %w", res.Error)
 	}
 
-	// Only update status if SkipStatusSync is false
 	if !req.SkipStatusSync {
 		installSandbox = app.InstallSandbox{
 			ID: installSandbox.ID,

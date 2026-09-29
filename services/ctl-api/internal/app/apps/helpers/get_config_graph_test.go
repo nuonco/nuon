@@ -67,7 +67,6 @@ func (s *GetConfigGraphTestSuite) setDependencies(ctx context.Context, cccID str
 		Update("component_dependency_ids", pq.StringArray(depIDs)).Error)
 }
 
-// an unchanged component must resolve to its config as of this version, not its newest one
 func (s *GetConfigGraphTestSuite) TestGraphIgnoresDependenciesAddedAfterConfigVersion() {
 	ctx := context.Background()
 	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
@@ -83,7 +82,6 @@ func (s *GetConfigGraphTestSuite) TestGraphIgnoresDependenciesAddedAfterConfigVe
 	s.deps.Seed.CreateTerraformComponentConfigConnection(ctx, s.T(), compA.ID, cfgV1.ID)
 	s.deps.Seed.CreateTerraformComponentConfigConnection(ctx, s.T(), compB.ID, cfgV1.ID)
 
-	// only A changed here, so B carries no row for this version
 	cfgV2 := s.deps.Seed.CreateBareAppConfig(ctx, s.T(), testApp.ID)
 	s.setComponentIDs(ctx, cfgV2.ID, compA.ID, compB.ID)
 	s.deps.Seed.CreateTerraformComponentConfigConnection(ctx, s.T(), compA.ID, cfgV2.ID)
@@ -108,7 +106,6 @@ func (s *GetConfigGraphTestSuite) TestGraphIgnoresDependenciesAddedAfterConfigVe
 	s.ElementsMatch([]string{compA.ID, compB.ID}, order)
 }
 
-// one unresolvable dependency must not take down the whole graph
 func (s *GetConfigGraphTestSuite) TestGraphSkipsDependencyMissingFromConfig() {
 	ctx := context.Background()
 	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())

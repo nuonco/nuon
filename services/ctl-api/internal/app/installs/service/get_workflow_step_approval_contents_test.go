@@ -26,7 +26,6 @@ func (s *InstallsServiceTestSuite) TestGetWorkflowStepApprovalContentsSuccess() 
 	require.Equal(s.T(), http.StatusOK, rr.Code, "body: %s", rr.Body.String())
 	assert.Equal(s.T(), "gzip", rr.Header().Get("Content-Encoding"))
 
-	// Decompress and verify contents match.
 	reader, err := gzip.NewReader(bytes.NewReader(rr.Body.Bytes()))
 	require.NoError(s.T(), err)
 	defer reader.Close()

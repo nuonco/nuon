@@ -22,7 +22,6 @@ type workerInterceptor struct {
 	interceptor.InterceptorBase
 }
 
-// InterceptActivity intercepts activity execution to inject context values
 func (w *workerInterceptor) InterceptActivity(
 	ctx context.Context,
 	next interceptor.ActivityInboundInterceptor,

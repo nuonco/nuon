@@ -35,7 +35,6 @@ func (s *service) CreateAppSandboxBuild(ctx *gin.Context) {
 		return
 	}
 
-	// Get the latest app config
 	var latestConfig app.AppConfig
 	if res := s.db.WithContext(ctx).
 		Where("app_id = ?", currentApp.ID).
@@ -45,14 +44,12 @@ func (s *service) CreateAppSandboxBuild(ctx *gin.Context) {
 		return
 	}
 
-	// Get the latest sandbox config
 	if len(currentApp.AppSandboxConfigs) == 0 {
 		ctx.Error(fmt.Errorf("no sandbox config found for app %s", appID))
 		return
 	}
 	latestSandboxConfig := currentApp.AppSandboxConfigs[0]
 
-	// Create the build record immediately so the caller gets an ID back
 	build := app.AppSandboxBuild{
 		AppID:              currentApp.ID,
 		AppConfigID:        latestConfig.ID,
@@ -66,14 +63,12 @@ func (s *service) CreateAppSandboxBuild(ctx *gin.Context) {
 		return
 	}
 
-	// Get the app's sandbox queue
 	q, err := s.queueClient.GetDefaultQueueByOwner(ctx, currentApp.ID, "apps")
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get sandbox queue for app %s: %w", appID, err))
 		return
 	}
 
-	// Enqueue the signal with the pre-created build ID
 	_, err = s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 		QueueID: q.ID,
 		Signal: &sandboxbuildsignal.Signal{

@@ -73,24 +73,16 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 }
 
 func (s *Signal) OnRetry(ctx workflow.Context) error {
-	// For adhoc runs, mark the existing run as retried.
 	if s.AdhocActionRunID != "" {
 		s.updateActionRunStatus(ctx, s.AdhocActionRunID, app.InstallActionRunStatusRetried, "retrying")
 	}
-	// Regular runs create the run during Execute — the old run was already
-	// marked as error and a new run will be created on the retry clone.
 	return nil
 }
 
-// AutoRetry enables the retry path in handleStepError so that failed action
-// steps land at StepAwaitRetry instead of StepStop.
 func (s *Signal) AutoRetry() bool { return true }
 
-// MaxRetries is the total retry budget (auto + manual).
 func (s *Signal) MaxRetries() int { return 3 }
 
-// MaxAutoRetries returns 0 so auto-retries are immediately exhausted and the
-// step goes straight to "awaiting retry or skip" for user action.
 func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return 0 }
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
@@ -124,7 +116,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return fmt.Errorf("install action workflow id is required")
 	}
 
-	// Validate install action workflow exists
 	_, err := activities.AwaitGetInstallActionWorkflowByID(ctx, s.InstallActionWorkflowID)
 	if err != nil {
 		return fmt.Errorf("unable to get install action workflow: %w", err)
@@ -197,7 +188,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 			StepID:         s.WorkflowStepID,
 			StepTargetID:   actionWorkflowRun.ID,
-			StepTargetType: "install_action_workflow_runs", // plugins.TableName would require db instance
+			StepTargetType: "install_action_workflow_runs",
 		}); err != nil {
 			return errors.Wrap(err, "unable to update install action workflow")
 		}
@@ -325,9 +316,6 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		return errors.Wrap(err, "unable to create plan")
 	}
 
-	// image-backed actions: verify the org and runner can host the container
-	// before dispatching. A plan that already carries a digest resolved the
-	// image inside the install's own registry, so there is nothing to mirror.
 	if planResponse.Plan.SourceImage != "" {
 		if err := s.checkImageActionSupported(ctx, run); err != nil {
 			s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, err.Error())
@@ -342,7 +330,6 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		}
 	}
 
-	// execute job
 	l.Info("creating runner job to execute action")
 	runnerJob, err := activities.AwaitCreateActionWorkflowRunRunnerJob(ctx, &activities.CreateActionWorkflowRunRunnerJob{
 		ActionWorkflowRunID: actionWorkflowRunID,
@@ -364,7 +351,6 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 	}
 	s.runnerJobID = runnerJob.ID
 
-	// save runner job plan
 	planJSON, err := json.Marshal(planResponse.Plan)
 	if err != nil {
 		if preparationCompositeErrorsEnabled {
@@ -400,7 +386,6 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 
 	planJSON = nil
 
-	// now queue and execute the job
 	l.Info("executing runner job")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		RunnerID: run.Install.RunnerID,
@@ -415,7 +400,6 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 
 	s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusFinished, "finished")
 
-	// this is empty for adhoc actions, for adhoc actions we dont need to generate states post completion
 	if s.InstallActionWorkflowID != "" {
 		if err := stategen.HintOrGenerate(ctx, stategen.Request{
 			InstallID:       installID,
@@ -440,9 +424,6 @@ func (s *Signal) recordPreparationCompositeError(ctx workflow.Context, runID str
 	}
 }
 
-// checkImageActionSupported gates image-backed actions on the install's
-// runner platform. It runs for every image-backed action, including ones
-// that skip mirroring, so neither path can bypass the gate.
 func (s *Signal) checkImageActionSupported(ctx workflow.Context, run *app.InstallActionWorkflowRun) error {
 	platform := run.Install.RunnerGroup.Platform
 	if !supportedImageActionPlatform(platform) {
@@ -452,9 +433,6 @@ func (s *Signal) checkImageActionSupported(ctx workflow.Context, run *app.Instal
 	return nil
 }
 
-// mirrorActionImage mirrors an image-backed action's app-authored image into
-// the install registry via an oci-sync job. It pins the plan to the mirrored
-// digest; any error here prevents the action job from being dispatched at all.
 func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionWorkflowRun, logStreamID string, awPlan *plantypes.ActionWorkflowRunPlan) error {
 	l := workflow.GetLogger(ctx)
 
@@ -486,10 +464,6 @@ func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionW
 		Dst:    awPlan.ImageRegistry,
 		DstTag: awPlan.ImageTag,
 	}
-	// A sandboxed sync job reports whatever the plan carries, so it has to carry
-	// a digest-pinned ref: resolveMirroredDigestRef fails closed on a missing or
-	// unpinned one, which would make every image-backed action fail in sandbox
-	// mode rather than exercise the path.
 	if awPlan.SandboxMode != nil {
 		syncPlan.SandboxMode = &plantypes.SandboxMode{
 			Enabled: true,
@@ -521,7 +495,7 @@ func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionW
 		return errors.Wrap(err, "image sync job failed")
 	}
 
-	// Bind execution to the exact manifest just mirrored: read the resolved
+	// why: Bind execution to the exact manifest just mirrored: read the resolved
 	// digest-pinned ref from the sync job outputs so the runner pulls by digest
 	// rather than the mutable tag. This fails closed. If the digest can't be
 	// resolved and validated we don't dispatch the action job at all, otherwise
@@ -533,7 +507,6 @@ func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionW
 	awPlan.ImageDigestRef = digestRef
 
 	if workflow.GetVersion(ctx, actionImageDepSyncVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-		// One attempt: retried runs that re-mirror hit a unique owner key.
 		if _, err := activities.AwaitCreateOCIArtifact(ctx, activities.CreateOCIArtifactRequest{
 			OwnerID:   run.ID,
 			OwnerType: "install_action_workflow_runs",
@@ -551,9 +524,6 @@ func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionW
 	return nil
 }
 
-// resolveMirroredDigestRef reads the digest-pinned image ref the oci-sync job
-// recorded and verifies it actually carries a digest, so execution can only
-// ever run the manifest that was just mirrored.
 func resolveMirroredDigestRef(ctx workflow.Context, syncJobID string) (string, state.OCIArtifactOutputs, error) {
 	var out state.OCIArtifactOutputs
 
@@ -585,9 +555,6 @@ func resolveMirroredDigestRef(ctx workflow.Context, syncJobID string) (string, s
 	return out.Ref, out, nil
 }
 
-// supportedImageActionPlatform gates image-backed actions to VM runners with a
-// host Docker launcher. GCP containers receive the same metadata identity and
-// service-account impersonation hints as host-based GCP actions.
 func supportedImageActionPlatform(p app.AppRunnerType) bool {
 	switch p {
 	case app.AppRunnerTypeAWS, app.AppRunnerTypeAzure, app.AppRunnerTypeGCP, app.AppRunnerTypeLocal:
@@ -597,16 +564,13 @@ func supportedImageActionPlatform(p app.AppRunnerType) bool {
 	}
 }
 
-// parseActionImageSource splits an app-authored image ref (e.g.
-// ghcr.io/acme/tools:v1) into the source registry descriptor and tag the
-// oci-sync copier pulls from.
 func parseActionImageSource(sourceImage string) (*configs.OCIRegistryRepository, string, error) {
 	named, err := reference.ParseDockerRef(sourceImage)
 	if err != nil {
 		return nil, "", fmt.Errorf("invalid image reference %q: %w", sourceImage, err)
 	}
 
-	// Prefer a pinned digest over a tag so a digest-pinned ref actually mirrors
+	// why: Prefer a pinned digest over a tag so a digest-pinned ref actually mirrors
 	// and runs the pinned content instead of silently resolving to "latest" (or
 	// discarding the digest on a tag+digest ref). oras resolves the source ref
 	// by digest or tag, so passing the digest here is valid.

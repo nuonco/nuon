@@ -9,25 +9,19 @@ import (
 )
 
 type GetGateHealthReportsRequest struct {
-	// InstallID is required for more than filtering: it is the first column of
-	// the table's sort key, so omitting it makes every poll full-scan.
 	InstallID          string    `validate:"required"`
 	InstallComponentID string    `validate:"required"`
 	Since              time.Time `validate:"required"`
 }
 
-// GateHealthReport is one collapsed runner report (worst resource at that
-// timestamp), read raw by the gate so it can conclude exactly when the window ends.
 type GateHealthReport struct {
-	ObservedAtTS int64  `json:"observed_at_ts" temporaljson:"observed_at_ts"`
-	Health       string `json:"health" temporaljson:"health"`
-	RootKind     string `json:"root_kind,omitempty" temporaljson:"root_kind,omitempty"`
-	RootName     string `json:"root_name,omitempty" temporaljson:"root_name,omitempty"`
-	Message      string `json:"message,omitempty" temporaljson:"message,omitempty"`
-	Resources    int    `json:"resources" temporaljson:"resources"`
-	// ClusterEvidence marks a report that actually saw the component's cluster
-	// resources, as opposed to probes and pushed checks alone.
-	ClusterEvidence bool `json:"cluster_evidence" temporaljson:"cluster_evidence"`
+	ObservedAtTS    int64  `json:"observed_at_ts" temporaljson:"observed_at_ts"`
+	Health          string `json:"health" temporaljson:"health"`
+	RootKind        string `json:"root_kind,omitempty" temporaljson:"root_kind,omitempty"`
+	RootName        string `json:"root_name,omitempty" temporaljson:"root_name,omitempty"`
+	Message         string `json:"message,omitempty" temporaljson:"message,omitempty"`
+	Resources       int    `json:"resources" temporaljson:"resources"`
+	ClusterEvidence bool   `json:"cluster_evidence" temporaljson:"cluster_evidence"`
 }
 
 // GetGateHealthReports returns the component's collapsed health reports

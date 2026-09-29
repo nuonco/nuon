@@ -89,7 +89,6 @@ export const QueueSignalDetail = () => {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
       <div className="flex gap-2 text-xs text-gray-500 dark:text-gray-400">
         <Link to="/queues" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">Queues</Link>
         <span>&rarr;</span>
@@ -98,7 +97,6 @@ export const QueueSignalDetail = () => {
         <span>Signal</span>
       </div>
 
-      {/* Header */}
       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <div className="flex flex-wrap items-center gap-2 mb-2">
           <h1 className="text-lg font-semibold">Signal</h1>

@@ -7,11 +7,8 @@ const (
 	MCPMaxListLimit     = 100
 )
 
-// MCPListToolHint is appended to paginated list-tool descriptions so agents
-// surface leftover rows instead of paging until the full set is in context.
 const MCPListToolHint = " Paginated: default 20 items (max 100). If has_more is true, more rows exist; pass offset=next_offset for the next page. Do not keep paging until the list is complete unless the user asked for everything."
 
-// MCPListPage clamps a list tool's limit/offset. A zero limit uses MCPDefaultListLimit.
 func MCPListPage(limit, offset int) (int, int, error) {
 	if limit == 0 {
 		limit = MCPDefaultListLimit
@@ -25,7 +22,6 @@ func MCPListPage(limit, offset int) (int, int, error) {
 	return limit, offset, nil
 }
 
-// MCPClipList trims a Limit(limit+1) query down to the page and reports overflow.
 func MCPClipList[T any](rows []T, limit int) ([]T, bool) {
 	if len(rows) > limit {
 		return rows[:limit], true
@@ -33,7 +29,6 @@ func MCPClipList[T any](rows []T, limit int) ([]T, bool) {
 	return rows, false
 }
 
-// MCPNextOffset is 0 when the page is complete so callers can omit it from JSON.
 func MCPNextOffset(offset, limit int, hasMore bool) int {
 	if !hasMore {
 		return 0

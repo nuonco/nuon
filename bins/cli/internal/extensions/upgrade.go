@@ -8,10 +8,6 @@ import (
 	"time"
 )
 
-// Upgrade upgrades a specific installed extension to the latest version.
-// If force is true, a compiled binary is re-downloaded even when the tag matches.
-// Clone-based extensions (python/script, or releases with no platform asset) are
-// always refreshed by re-cloning, matching an unpinned install.
 func (m *Manager) Upgrade(name string, force bool) error {
 	ext, err := m.Get(name)
 	if err != nil {
@@ -118,7 +114,6 @@ func (m *Manager) upgradeByClone(ext *InstalledExtension, extDir string, release
 	return nil
 }
 
-// UpgradeAll upgrades all installed extensions and returns results.
 func (m *Manager) UpgradeAll() ([]UpgradeResult, error) {
 	exts, err := m.List()
 	if err != nil {
@@ -138,7 +133,6 @@ func (m *Manager) UpgradeAll() ([]UpgradeResult, error) {
 			result.Error = err
 			result.NewVersion = oldVersion
 		} else {
-			// Re-read to get the new version
 			updated, _ := m.Get(ext.Name)
 			if updated != nil {
 				result.NewVersion = updated.Version

@@ -28,8 +28,6 @@ func TestTagBuilderApply_EntityTags(t *testing.T) {
 	assert.Equal(t, "inl123-vpc", applied["Name"])
 }
 
-// A blank id would silently fail any iam:ResourceTag condition matching on it, so an
-// absent org/app emits no tag at all.
 func TestTagBuilderApply_OmitsBlankEntityTags(t *testing.T) {
 	tb := tagBuilder{installID: "inl123"}
 

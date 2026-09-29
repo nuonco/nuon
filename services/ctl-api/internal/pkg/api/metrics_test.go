@@ -137,7 +137,6 @@ func TestFXShutdownDrainsAPIBeforeMetricExport(t *testing.T) {
 			testServer = httptest.NewUnstartedServer(a.srv.Handler)
 			a.srv = testServer.Config
 			hooks := a.lifecycleHooks(nil)
-			// httptest supplies a reserved ephemeral listener; use the real API stop hook.
 			hooks.OnStart = func(context.Context) error { testServer.Start(); return nil }
 			lc.Append(hooks)
 		}),

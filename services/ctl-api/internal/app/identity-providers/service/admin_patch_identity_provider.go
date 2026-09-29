@@ -66,7 +66,6 @@ func (s *service) AdminPatchIdentityProvider(ctx *gin.Context) {
 		return
 	}
 
-	// Load existing provider
 	var ip app.IdentityProvider
 	result := s.db.WithContext(ctx).Where("id = ?", identityProviderID).First(&ip)
 	if result.Error != nil {
@@ -74,7 +73,6 @@ func (s *service) AdminPatchIdentityProvider(ctx *gin.Context) {
 		return
 	}
 
-	// Update enabled if provided
 	if req.Enabled != nil {
 		ip.Enabled = *req.Enabled
 	}
@@ -87,7 +85,6 @@ func (s *service) AdminPatchIdentityProvider(ctx *gin.Context) {
 		ip.AllowAllUsers = req.AllowAllUsers
 	}
 
-	// Update config if provided (based on existing provider type)
 	var configErr error
 	switch ip.ProviderType {
 	case app.ProviderTypeOIDC:
@@ -108,7 +105,6 @@ func (s *service) AdminPatchIdentityProvider(ctx *gin.Context) {
 		return
 	}
 
-	// Validate the config if it was updated
 	if req.OpenIDConfig != nil || req.GoogleConfig != nil || req.GitHubConfig != nil {
 		if err := ip.ValidateConfig(); err != nil {
 			ctx.Error(fmt.Errorf("invalid provider config: %w", err))
@@ -123,7 +119,6 @@ func (s *service) AdminPatchIdentityProvider(ctx *gin.Context) {
 		}
 	}
 
-	// Save the updated provider
 	if err := s.db.WithContext(ctx).Save(&ip).Error; err != nil {
 		s.l.Error("failed to update identity provider",
 			zap.String("id", identityProviderID),

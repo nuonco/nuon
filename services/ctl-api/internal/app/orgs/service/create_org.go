@@ -83,8 +83,6 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 	}
 	cctx.SetOrgGinContext(ctx, newOrg)
 
-	// Always use v2 queue signals for org creation — the org was just created
-	// so feature flags won't be set yet.
 	signalsQueueID, err := s.getOrgSignalsQueueID(ctx, newOrg.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
@@ -103,9 +101,7 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 		return
 	}
 
-	// Update user journey for first org creation
 	if err := s.accountsHelpers.UpdateUserJourneyStepForFirstOrg(ctx, acct.ID, newOrg.ID); err != nil {
-		// Log error but don't fail org creation
 		s.l.Warn("failed to update user journey for first org",
 			zap.String("account_id", acct.ID),
 			zap.String("org_id", newOrg.ID),

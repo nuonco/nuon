@@ -17,12 +17,10 @@ func (h *Client) AcceptInvite(ctx context.Context, invite *app.OrgInvite, acct *
 		roleType = app.RoleTypeOrgAdmin
 	}
 
-	// add the role to the user
 	if err := h.AddAccountOrgRole(ctx, roleType, invite.OrgID, acct.ID); err != nil {
 		return fmt.Errorf("unable to add account role: %w", err)
 	}
 
-	// update invite object
 	res := h.db.WithContext(ctx).
 		Model(&app.OrgInvite{ID: invite.ID}).
 		Updates(app.OrgInvite{Status: app.OrgInviteStatusAccepted})
@@ -33,7 +31,6 @@ func (h *Client) AcceptInvite(ctx context.Context, invite *app.OrgInvite, acct *
 		return fmt.Errorf("invite not found %w", gorm.ErrRecordNotFound)
 	}
 
-	// send a notification to the correct org event flow that it was accepted
 	cctx.SetOrgContext(ctx, &invite.Org)
 
 	h.analyticsClient.Track(ctx, events.InviteAccepted, map[string]interface{}{
@@ -43,6 +40,5 @@ func (h *Client) AcceptInvite(ctx context.Context, invite *app.OrgInvite, acct *
 		"role_type": invite.RoleType,
 	})
 
-	// return nil
 	return nil
 }

@@ -74,7 +74,6 @@ func (s *LockTerraformWorkspaceTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes (needs org context)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -95,7 +94,6 @@ func (s *LockTerraformWorkspaceTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create terraform workspace
 	s.testWS = &app.TerraformWorkspace{
 		ID:        domains.NewTerraformWorkspaceID(),
 		OrgID:     s.testOrg.ID,
@@ -150,7 +148,6 @@ func (s *LockTerraformWorkspaceTestSuite) TestLockTerraformWorkspace() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(workspaceID string) {
-				// Verify lock was created in DB
 				var lock app.TerraformWorkspaceLock
 				err := s.service.DB.Where("workspace_id = ?", workspaceID).First(&lock).Error
 				require.NoError(s.T(), err)
@@ -205,7 +202,6 @@ func (s *LockTerraformWorkspaceTestSuite) TestLockTerraformWorkspace() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -218,7 +214,6 @@ func (s *LockTerraformWorkspaceTestSuite) TestLockTerraformWorkspace() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create workspace in org2
 				ws2 := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     org2.ID,

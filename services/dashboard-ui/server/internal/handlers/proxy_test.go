@@ -11,10 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
 )
 
-// The kafka UI proxy relies on kafbat serving under SERVER_SERVLET_CONTEXT_PATH,
-// so the request path must reach it unchanged — any prefix rewriting here would
-// 404 every asset. Accept-Encoding has to survive for the same reason the body is
-// left alone, and the session cookie must not be forwarded to the upstream.
 func TestPassthroughProxy(t *testing.T) {
 	const upstream = "kafka-ui.kafka.svc.cluster.local:8080"
 

@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Migration127BackfillOrgEmailNotifications enables email notifications on org
+// why: Migration127BackfillOrgEmailNotifications enables email notifications on org
 // notifications configs that were created between AccountTypeAuth landing
 // (2026-01-10, #128) and create_org widening its check to accept it
 // (2026-06-03, #1573). Orgs created by an `auth` account in that window got

@@ -20,38 +20,32 @@ type Client interface {
 
 	GetNamespaceClient(namespace string) (tclient.Client, error)
 
-	// ExecuteWorkflowInNamespace is a wrapper that will execute a workflow in a different namespace
 	ExecuteWorkflowInNamespace(ctx context.Context,
 		namespace string,
 		options tclient.StartWorkflowOptions,
 		workflow interface{},
 		args ...interface{}) (tclient.WorkflowRun, error)
 
-	// GetWorkflowInNamespace is a wrapper that will get a workflow in a different namespace
 	GetWorkflowInNamespace(ctx context.Context,
 		namespace string,
 		workflowID string,
 		runID string) (tclient.WorkflowRun, error)
 
-	// DescribeWorkflowExecutionInNamespace is a wrapper that will get a workflow in a different namespace
 	DescribeWorkflowExecutionInNamespace(ctx context.Context,
 		namespace string,
 		workflowID string,
 		runID string) (*workflowservice.DescribeWorkflowExecutionResponse, error)
 
-	// DescribeWorkflowExecutionInNamespace is a wrapper that will get a workflow in a different namespace
 	GetWorkflowStatusInNamespace(ctx context.Context,
 		namespace string,
 		workflowID string,
 		runID string) (enumspb.WorkflowExecutionStatus, error)
 
-	// CancelWorkflowInNamespace is a wrapper that will get a workflow in a different namespace
 	CancelWorkflowInNamespace(ctx context.Context,
 		namespace string,
 		workflowID string,
 		runID string) error
 
-	// SignalWorkflowInNamespace is a wrapper that will signal a workflow in a different namespace
 	SignalWorkflowInNamespace(ctx context.Context,
 		namespace string,
 		workflowID string,
@@ -59,8 +53,6 @@ type Client interface {
 		signalName string,
 		signalArg interface{}) error
 
-	// SignalWithStartWorkflowInNamespace is a wrapper that will signal and start a workflow in a different
-	// namespace
 	SignalWithStartWorkflowInNamespace(ctx context.Context,
 		namespace string,
 		workflowID string,
@@ -108,7 +100,6 @@ func (t *temporal) getOpts() tclient.Options {
 	return opts
 }
 
-// getClient returns a temporal client from memory, or creates a new one and caches it
 func (t *temporal) getClient() (tclient.Client, error) {
 	t.clientOnce.Do(func() {
 		opts := t.getOpts()

@@ -362,8 +362,6 @@ func TestStackConfigDeploymentScope(t *testing.T) {
 			scope:     config.StackDeploymentScopeResourceGroup,
 			want:      app.StackDeploymentScopeResourceGroup,
 		},
-		// Empty must stay empty: normalizing it would make every config stored
-		// before this field existed diff on its next sync.
 		"unset stays unset": {
 			stackType: string(app.StackTypeAzure),
 			scope:     "",
@@ -706,8 +704,6 @@ func TestActionWorkflowConfigKeepsDependencyIDs(t *testing.T) {
 	assert.Equal(t, []string{"cmp1", "cmp2"}, []string(awc.ComponentDependencyIDs))
 }
 
-// Azure roles use an empty Statement list as a placeholder because the real
-// grants come from RBAC; rejecting it broke real configs on the branch path.
 func TestInlinePolicyAllowsEmptyStatementList(t *testing.T) {
 	bg := role("break-glass")
 	bg.Policies = []config.AppAWSIAMPolicy{
@@ -733,10 +729,6 @@ func TestInlinePolicyStillRejectsMalformed(t *testing.T) {
 	assert.Contains(t, err.Error(), "Effect")
 }
 
-// The checksum drives the sync's "did this component change" decision, so it
-// must move for a change anywhere in the resolved component and stay put when
-// nothing moved. Hashing only the component's own file would miss vars folded in
-// from elsewhere.
 func TestComponentChecksumTracksResolvedComponent(t *testing.T) {
 	comp := func() *config.Component {
 		return &config.Component{
@@ -762,8 +754,6 @@ func TestComponentChecksumTracksResolvedComponent(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEqual(t, base, changedSum, "a resolved value change must move the checksum")
 
-	// The per-file Checksum field is excluded: it is an input to hashing, not
-	// part of the component's meaning.
 	withFileChecksum := comp()
 	withFileChecksum.Checksum = "some-file-hash"
 	fileSum, err := ComponentChecksum(withFileChecksum)
@@ -771,9 +761,6 @@ func TestComponentChecksumTracksResolvedComponent(t *testing.T) {
 	assert.Equal(t, base, fileSum, "the per-file checksum must not affect the hash")
 }
 
-// The request types this builder replaced were name-keyed maps, so a config
-// declaring the same input or group twice deduped silently and synced fine.
-// Emitting both rows instead fails the insert on the unique index.
 func TestInputsFromConfigDedupesByName(t *testing.T) {
 	cfg := &config.AppConfig{
 		Inputs: &config.AppInputConfig{

@@ -179,8 +179,6 @@ func runnerHealthCases() []runnerHealthCase {
 		},
 	}
 
-	// A disabled runner has no processes at all, which must not arm offline_ts
-	// or raise an unhealthy alert the way a genuinely silent runner does.
 	cases = append(cases, runnerHealthCase{
 		name:      "disabled install runner with no processes is skipped",
 		groupType: app.RunnerGroupTypeInstall,

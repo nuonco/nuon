@@ -10,7 +10,6 @@ import (
 
 func (j *jobLoop) getJobSteps(ctx context.Context, handler jobs.JobHandler) ([]*executeJobStep, error) {
 	return []*executeJobStep{
-		// validate step
 		{
 			name:        "resetting",
 			fn:          j.executeResetJobStep,
@@ -18,7 +17,6 @@ func (j *jobLoop) getJobSteps(ctx context.Context, handler jobs.JobHandler) ([]*
 			handler:     handler,
 			startStatus: models.AppRunnerJobExecutionStatusInitializing,
 		},
-		// validate step
 		{
 			name:        "fetching",
 			fn:          j.executeFetchJobStep,
@@ -26,7 +24,6 @@ func (j *jobLoop) getJobSteps(ctx context.Context, handler jobs.JobHandler) ([]*
 			handler:     handler,
 			startStatus: models.AppRunnerJobExecutionStatusInitializing,
 		},
-		// validate step
 		{
 			name:        "validate",
 			fn:          j.executeValidateJobStep,
@@ -34,7 +31,6 @@ func (j *jobLoop) getJobSteps(ctx context.Context, handler jobs.JobHandler) ([]*
 			handler:     handler,
 			startStatus: models.AppRunnerJobExecutionStatusInitializing,
 		},
-		// initialize step
 		{
 			name:        "initialize",
 			fn:          j.executeInitializeJobStep,
@@ -42,7 +38,6 @@ func (j *jobLoop) getJobSteps(ctx context.Context, handler jobs.JobHandler) ([]*
 			handler:     handler,
 			startStatus: models.AppRunnerJobExecutionStatusInitializing,
 		},
-		// execute step
 		{
 			name:        "execute",
 			fn:          j.executeExecuteJobStep,
@@ -50,7 +45,6 @@ func (j *jobLoop) getJobSteps(ctx context.Context, handler jobs.JobHandler) ([]*
 			handler:     handler,
 			startStatus: models.AppRunnerJobExecutionStatusInDashProgress,
 		},
-		// outputs
 		{
 			name:        "outputs",
 			fn:          j.executeOutputsJobStep,
@@ -58,7 +52,6 @@ func (j *jobLoop) getJobSteps(ctx context.Context, handler jobs.JobHandler) ([]*
 			handler:     handler,
 			startStatus: models.AppRunnerJobExecutionStatusInDashProgress,
 		},
-		// update clean up
 		{
 			name:        "cleanup",
 			fn:          j.executeCleanupJobStep,

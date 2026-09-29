@@ -18,12 +18,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
-// currentAppConfigComponentSubquery matches install components whose component is
-// present in the install's current app config. Membership is decided by the
-// denormalized app_configs.component_ids array (the authoritative set written on
-// every sync), not by component_config_connection rows — those are only pinned to
-// the app config that changed a component's checksum, so a no-op sync would falsely
-// exclude lineage-reused components.
 const currentAppConfigComponentSubquery = `
 	SELECT 1 FROM installs i
 	JOIN app_configs ac ON ac.id = i.app_config_id
@@ -31,9 +25,6 @@ const currentAppConfigComponentSubquery = `
 		AND install_components.component_id = ANY(ac.component_ids)
 `
 
-// appConfigComponentFilter keeps only components present in the install's current app
-// config (synced) when syncedOnly is true, or only components no longer in the current
-// app config when syncedOnly is false.
 func appConfigComponentFilter(syncedOnly bool) string {
 	if syncedOnly {
 		return "EXISTS (" + currentAppConfigComponentSubquery + ")"
@@ -125,16 +116,13 @@ func (s *service) getInstallComponents(ctx *gin.Context, installID, q string, ty
 			return nil, fmt.Errorf("unable to get drifted objects: %w", res.Error)
 		}
 
-		// Create a map of install component ID to drifted object
 		driftedObjectByComponentID := make(map[string]app.DriftedObject)
 		for _, obj := range allDriftedObjects {
 			if obj.InstallComponentID != nil {
-				// Just keep the last one if there are multiple
 				driftedObjectByComponentID[*obj.InstallComponentID] = obj
 			}
 		}
 
-		// Set the single drifted object for each component
 		for i := range paginatedComponents {
 			if obj, ok := driftedObjectByComponentID[paginatedComponents[i].ID]; ok {
 				paginatedComponents[i].DriftedObject = obj
@@ -158,10 +146,6 @@ func (s *service) getInstallComponents(ctx *gin.Context, installID, q string, ty
 	return paginatedComponents, nil
 }
 
-// populateComponentEnabled resolves and sets the Enabled field on each
-// toggleable install component from the install's current input values
-// (falling back to the component's default_enabled). Non-toggleable components
-// are left untouched (Enabled stays nil).
 func (s *service) populateComponentEnabled(ctx context.Context, installID string, comps []*app.InstallComponent) error {
 	if len(comps) == 0 {
 		return nil
@@ -191,10 +175,6 @@ func (s *service) populateComponentEnabled(ctx context.Context, installID string
 		cccByComp[cccs[i].ComponentID] = &cccs[i]
 	}
 
-	// Connections are only re-created when a component's checksum changes, so an
-	// app config produced by a no-op sync has no connection rows of its own and
-	// instead reuses connections pinned to an earlier config in its lineage. Mirror
-	// GetFullAppConfig and resolve any missing components via the latest-configs view.
 	var missingComponentIDs []string
 	for _, comp := range comps {
 		if _, ok := cccByComp[comp.ComponentID]; !ok {
@@ -237,9 +217,6 @@ func (s *service) populateComponentEnabled(ctx context.Context, installID string
 		if ccc == nil || !ccc.IsToggleable() {
 			continue
 		}
-		// Report effective-enabled (own toggle AND every dependency enabled) so
-		// the displayed flag matches the deploy/teardown decision: a component
-		// whose dependency is disabled is torn down and must read as disabled.
 		enabled := resolver.EffectiveEnabled(comp.ComponentID)
 		comp.Enabled = &enabled
 	}

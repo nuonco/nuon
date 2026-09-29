@@ -24,7 +24,6 @@ func getStatefulSetHealth(obj *unstructured.Unstructured) (*HealthStatus, error)
 }
 
 func getAppsv1StatefulSetHealth(sts *appsv1.StatefulSet) (*HealthStatus, error) {
-	// Borrowed at kubernetes/kubectl/rollout_status.go https://github.com/kubernetes/kubernetes/blob/5232ad4a00ec93942d0b2c6359ee6cd1201b46bc/pkg/kubectl/rollout_status.go#L131
 	if sts.Status.ObservedGeneration == 0 || sts.Generation > sts.Status.ObservedGeneration {
 		return &HealthStatus{
 			Status:  HealthStatusProgressing,

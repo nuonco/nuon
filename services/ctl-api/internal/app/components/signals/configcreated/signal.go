@@ -39,7 +39,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get component: %w", err)
 	}
 
-	// Ensure org is provisioned before creating a build.
 	if err := queueclient.EnsureQueueSignal(ctx, cmp.OrgID, "orgs", orgprovision.SignalType, orgreprovision.SignalType); err != nil {
 		return fmt.Errorf("org provision not ready: %w", err)
 	}
@@ -52,8 +51,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to queue component build: %w", err)
 	}
 
-	// Enqueue the build signal to the component's queue. Fire and forget —
-	// the build signal runs independently on the component queue.
 	_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   s.ComponentID,
 		OwnerType: "components",

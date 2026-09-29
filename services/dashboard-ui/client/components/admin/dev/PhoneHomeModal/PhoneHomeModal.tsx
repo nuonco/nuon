@@ -44,7 +44,6 @@ export const PhoneHomeModal = ({
       const parsed = JSON.parse(displayValue)
       onSendPhoneHome(parsed)
     } catch {
-      // invalid JSON, don't submit
     }
   }
 

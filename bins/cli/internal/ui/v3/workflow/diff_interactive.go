@@ -352,7 +352,6 @@ func (m *model) handleDetailContentKey(msg tea.KeyPressMsg) bool {
 		return false
 	}
 
-	// Navigate diff sections / builds / install groups with up/down/enter/esc
 	isBranchNavStep := m.selectedStep.Name == "fetch app config" ||
 		m.selectedStep.Name == "building components and sandbox" ||
 		strings.HasPrefix(m.selectedStep.Name, "deploy install group:")

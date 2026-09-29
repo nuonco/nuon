@@ -1,9 +1,5 @@
 import { expect, test } from "@playwright/test";
 
-// Behavior-test template for TanStack Form + Zod forms: drives the Ladle story
-// (no backend) and asserts the interaction contract the wrappers guarantee —
-// disabled-submit-until-valid and error-on-touch. New migrated forms get a
-// sibling spec following this shape.
 const STORY = "/?story=features--api-tokens--create-api-token--default&mode=preview";
 
 test.describe("CreateApiToken form behavior", () => {
@@ -28,7 +24,6 @@ test.describe("CreateApiToken form behavior", () => {
     const dialog = page.getByRole("dialog");
     const name = dialog.getByLabel("Name");
 
-    // Error is not shown on open (untouched), even though the field is invalid.
     await expect(dialog.getByText("Name is required")).toBeHidden();
 
     await name.click();

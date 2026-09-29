@@ -61,7 +61,7 @@ func TestValidatePolicyEngine(t *testing.T) {
 	}{
 		"kyverno":        {config.AppPolicyEngineKyverno, false},
 		"opa":            {config.AppPolicyEngineOPA, false},
-		"empty_allowed":  {"", false}, // empty is allowed for backwards compatibility
+		"empty_allowed":  {"", false},
 		"invalid_engine": {config.AppPolicyEngine("invalid_engine"), true},
 	}
 
@@ -79,18 +79,15 @@ func TestValidatePolicyTypeEngineCompatibility(t *testing.T) {
 		engine     config.AppPolicyEngine
 		expected   bool
 	}{
-		// kubernetes_cluster only supports kyverno
-		"kubernetes_cluster_kyverno":   {config.AppPolicyTypeKubernetesCluster, config.AppPolicyEngineKyverno, false},
-		"kubernetes_cluster_opa_error": {config.AppPolicyTypeKubernetesCluster, config.AppPolicyEngineOPA, true},
-		// component-based types only support OPA
+		"kubernetes_cluster_kyverno":        {config.AppPolicyTypeKubernetesCluster, config.AppPolicyEngineKyverno, false},
+		"kubernetes_cluster_opa_error":      {config.AppPolicyTypeKubernetesCluster, config.AppPolicyEngineOPA, true},
 		"terraform_module_kyverno_error":    {config.AppPolicyTypeTerraformModule, config.AppPolicyEngineKyverno, true},
 		"terraform_module_opa":              {config.AppPolicyTypeTerraformModule, config.AppPolicyEngineOPA, false},
 		"helm_chart_kyverno_error":          {config.AppPolicyTypeHelmChart, config.AppPolicyEngineKyverno, true},
 		"helm_chart_opa":                    {config.AppPolicyTypeHelmChart, config.AppPolicyEngineOPA, false},
 		"kubernetes_manifest_kyverno_error": {config.AppPolicyTypeKubernetesManifest, config.AppPolicyEngineKyverno, true},
 		"kubernetes_manifest_opa":           {config.AppPolicyTypeKubernetesManifest, config.AppPolicyEngineOPA, false},
-		// empty engine skips check
-		"kubernetes_cluster_empty_engine": {config.AppPolicyTypeKubernetesCluster, "", false},
+		"kubernetes_cluster_empty_engine":   {config.AppPolicyTypeKubernetesCluster, "", false},
 	}
 
 	for name, test := range tests {
@@ -107,20 +104,17 @@ func TestValidatePolicyComponents(t *testing.T) {
 		components []string
 		expected   bool
 	}{
-		// component-scoped types must declare components - empty silently disables them
-		"terraform_empty_error":     {config.AppPolicyTypeTerraformModule, []string{}, true},
-		"terraform_nil_error":       {config.AppPolicyTypeTerraformModule, nil, true},
-		"helm_empty_error":          {config.AppPolicyTypeHelmChart, []string{}, true},
-		"container_image_empty_err": {config.AppPolicyTypeContainerImage, []string{}, true},
-		// non component-scoped types ignore components and may be empty
+		"terraform_empty_error":       {config.AppPolicyTypeTerraformModule, []string{}, true},
+		"terraform_nil_error":         {config.AppPolicyTypeTerraformModule, nil, true},
+		"helm_empty_error":            {config.AppPolicyTypeHelmChart, []string{}, true},
+		"container_image_empty_err":   {config.AppPolicyTypeContainerImage, []string{}, true},
 		"sandbox_empty_ok":            {config.AppPolicyTypeSandbox, []string{}, false},
 		"kubernetes_cluster_empty_ok": {config.AppPolicyTypeKubernetesCluster, []string{}, false},
-		// populated lists validate the same regardless of type
-		"single_component":     {config.AppPolicyTypeTerraformModule, []string{"rds_cluster"}, false},
-		"multiple_components":  {config.AppPolicyTypeTerraformModule, []string{"rds_cluster", "vpc"}, false},
-		"wildcard_only":        {config.AppPolicyTypeTerraformModule, []string{"*"}, false},
-		"wildcard_with_others": {config.AppPolicyTypeTerraformModule, []string{"*", "rds_cluster"}, true},
-		"empty_component_name": {config.AppPolicyTypeTerraformModule, []string{"rds_cluster", ""}, true},
+		"single_component":            {config.AppPolicyTypeTerraformModule, []string{"rds_cluster"}, false},
+		"multiple_components":         {config.AppPolicyTypeTerraformModule, []string{"rds_cluster", "vpc"}, false},
+		"wildcard_only":               {config.AppPolicyTypeTerraformModule, []string{"*"}, false},
+		"wildcard_with_others":        {config.AppPolicyTypeTerraformModule, []string{"*", "rds_cluster"}, true},
+		"empty_component_name":        {config.AppPolicyTypeTerraformModule, []string{"rds_cluster", ""}, true},
 	}
 
 	for name, test := range tests {

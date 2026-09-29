@@ -105,10 +105,6 @@ func TestOrgRoleType(t *testing.T) {
 	}
 }
 
-// The guard on deleteTokenServiceAccount. Static tokens created with their own
-// dedicated service account take it with them when revoked; tokens issued against
-// an account that outlives them — an install stack's, a runner's — must not. Getting
-// this wrong deletes a live identity out from under running infrastructure.
 func TestDedicatedTokenSubjectPrefix(t *testing.T) {
 	const orgID = "org_abc"
 	prefix := dedicatedTokenSubjectPrefix(orgID)

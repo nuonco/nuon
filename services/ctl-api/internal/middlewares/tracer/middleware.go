@@ -48,7 +48,6 @@ func (m middleware) Handler() gin.HandlerFunc {
 
 		cctx.SetTraceIDGinContext(ctx, traceID)
 
-		// set trace id header for all responses
 		ctx.Writer.Header().Set(traceIDHeaderKey, traceID)
 
 		route := ctx.FullPath()
@@ -56,7 +55,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 			route = "unmatched"
 		}
 
-		// Downstream instrumentation (e.g. the gorm tracing plugin) parents to this span
+		// why: Downstream instrumentation (e.g. the gorm tracing plugin) parents to this span
 		// through the request context; gin's own Value does not expose it because
 		// engine.ContextWithFallback is off.
 		spanCtx, span := tracer.Start(ctx.Request.Context(),

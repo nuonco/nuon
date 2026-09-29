@@ -7,7 +7,6 @@ import { OrgContext } from '@/providers/org-provider'
 import type { TOrg } from '@/types'
 import { RefreshClusterAccessModal } from './RefreshClusterAccess'
 
-// The modal renders the RoleSelector container, which reads org.id on render.
 const mockOrg = {
   org: { id: 'orgstory', name: 'Story org' } as TOrg,
   refresh: () => {},

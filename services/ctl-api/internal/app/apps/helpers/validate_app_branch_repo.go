@@ -11,11 +11,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
-// FetchAppBranchesWithConfigs retrieves all app branches for an app with their configs preloaded
 func (h *Helpers) FetchAppBranchesWithConfigs(ctx context.Context, appID string) ([]app.AppBranch, error) {
 	var branches []app.AppBranch
 
-	// Load all branches for the app with their configs
 	err := h.db.WithContext(ctx).
 		Where("app_id = ?", appID).
 		Preload("Configs", func(db *gorm.DB) *gorm.DB {
@@ -32,15 +30,10 @@ func (h *Helpers) FetchAppBranchesWithConfigs(ctx context.Context, appID string)
 	return branches, nil
 }
 
-// ValidateSameRepo validates that all app branches use the same repository as the provided request
-// Accepts the VCS config request (before creation) to validate early
-// If both publicRepoReq and connectedRepoReq are nil, returns early with no validation
-// Branches with no VCS config (both nil) are ignored during validation
 func (h *Helpers) ValidateSameRepo(
 	branches []app.AppBranch,
 	vcsConfigReq *vcshelpers.VCSConfigRequest,
 ) error {
-	// If no new repo is being added, skip validation
 	if vcsConfigReq == nil {
 		return nil
 	}
@@ -52,7 +45,6 @@ func (h *Helpers) ValidateSameRepo(
 		return nil
 	}
 
-	// Determine the new repo being added
 	var newRepo string
 	if publicRepoReq != nil {
 		newRepo = publicRepoReq.Repo
@@ -60,17 +52,13 @@ func (h *Helpers) ValidateSameRepo(
 		newRepo = connectedRepoReq.Repo
 	}
 
-	// Check each branch's latest config
 	for _, branch := range branches {
-		// Skip branches without configs
 		if len(branch.Configs) == 0 {
 			continue
 		}
 
-		// Get the latest config (first one due to ORDER BY created_at DESC)
 		latestConfig := branch.Configs[0]
 
-		// Extract repo from the branch's latest config
 		var branchRepo string
 
 		if latestConfig.PublicGitVCSConfig != nil {
@@ -78,11 +66,9 @@ func (h *Helpers) ValidateSameRepo(
 		} else if latestConfig.ConnectedGithubVCSConfig != nil {
 			branchRepo = latestConfig.ConnectedGithubVCSConfig.Repo
 		} else {
-			// Branch has no VCS config, ignore it
 			continue
 		}
 
-		// Compare repos
 		if branchRepo != newRepo {
 			return stderr.ErrUser{
 				Err: fmt.Errorf("repository mismatch across app branches"),

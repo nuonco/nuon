@@ -9,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// SecretID resolves a secret ID or name to the secret's ID. The API has no
+// why: SecretID resolves a secret ID or name to the secret's ID. The API has no
 // single-get endpoint for secrets and its delete is idempotent, so without
 // this resolution a delete by name (or any bad ID) reports success while
 // deleting nothing.

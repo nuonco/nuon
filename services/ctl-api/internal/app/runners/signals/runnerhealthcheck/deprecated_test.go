@@ -1,7 +1,5 @@
 package runnerhealthcheck
 
-// Copy of runners/worker/activities/healthcheck_cases_test.go.
-
 import (
 	"fmt"
 	"testing"
@@ -214,8 +212,6 @@ func runnerHealthCases() []runnerHealthCase {
 	return cases
 }
 
-// recordedRunnerEffects is what the old signal's activity calls are translated
-// into; comparable to runnerHealthWant minus the metric-only fields.
 type recordedRunnerEffects struct {
 	setMissingMng  *bool
 	armOfflineTS   bool

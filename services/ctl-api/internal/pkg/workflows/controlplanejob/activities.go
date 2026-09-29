@@ -694,8 +694,6 @@ func hstoreToMap(h pgtype.Hstore) map[string]string {
 	return out
 }
 
-// redactedStringMapToHstore preserves the raw activity request for parsing and
-// returns a sanitized copy for the execution result row.
 func redactedStringMapToHstore(in map[string]string) pgtype.Hstore {
 	out := pgtype.Hstore{}
 	for key, val := range in {

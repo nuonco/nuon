@@ -49,8 +49,6 @@ type ActionWorkflowConfig struct {
 	ComponentDependencyIDs pq.StringArray `json:"component_dependency_ids" temporaljson:"component_dependency_ids" swaggertype:"array,string" gorm:"type:text[]"`
 	References             pq.StringArray `json:"references" temporaljson:"references" swaggertype:"array,string" gorm:"type:text[]"`
 
-	// after query fields
-
 	Refs              []refs.Ref                    `gorm:"-"`
 	CronTrigger       *ActionWorkflowTriggerConfig  `json:"-" temporaljson:"cron_trigger,omitzero,omitempty"`
 	LifecycleTriggers []ActionWorkflowTriggerConfig `json:"-" temporaljson:"lifecycle_triggers,omitzero,omitempty"`

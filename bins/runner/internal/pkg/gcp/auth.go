@@ -9,9 +9,6 @@ import (
 	gcptypes "github.com/nuonco/nuon/pkg/types/gcp"
 )
 
-// BuildMetadataRequest constructs a Compute API request that the server can execute
-// to independently read the instance metadata (including nuon_runner_id).
-// This mirrors the AWS presigned DescribeTags pattern.
 func BuildMetadataRequest(ctx context.Context) (*gcptypes.MetadataRequest, error) {
 	project, err := GetProjectID(ctx)
 	if err != nil {

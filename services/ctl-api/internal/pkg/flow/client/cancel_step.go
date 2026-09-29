@@ -7,20 +7,15 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 )
 
-// CancelStepRequest is the input for cancelling a workflow step.
 type CancelStepRequest struct {
 	InstallWorkflowID string
 	StepID            string
 }
 
-// CancelStepResponse is the response from the cancel-step update.
 type CancelStepResponse struct {
 	WorkflowID string `json:"workflow_id"`
 }
 
-// CancelStep sends a "cancel-step" update to the execute-flow handler workflow
-// for the given install workflow. The handler workflow forwards the cancellation
-// to the step's handler workflow.
 func (c *Client) CancelStep(ctx context.Context, req *CancelStepRequest) (*CancelStepResponse, error) {
 	qs, err := c.findQueueSignalByOwner(ctx, req.InstallWorkflowID, "install_workflows", executeflow.SignalType)
 	if err != nil {

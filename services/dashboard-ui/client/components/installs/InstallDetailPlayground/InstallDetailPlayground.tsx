@@ -51,8 +51,6 @@ import type {
   TDeploymentRecordType,
 } from './types'
 
-// ─── Top-level navigation ────────────────────────────────────────────────────
-
 export type TTopTab =
   | 'overview'
   | 'resources'
@@ -70,8 +68,6 @@ const TOP_TAB_LABELS: Record<TTopTab, string> = {
   configuration: 'Configuration',
 }
 
-// ─── Deployments filter state ─────────────────────────────────────────────────
-
 export type TDeploymentFilter = {
   search: string
   status: string
@@ -87,8 +83,6 @@ export const DEFAULT_DEPLOYMENT_FILTER: TDeploymentFilter = {
   component: 'all',
   date: 'all',
 }
-
-// ─── Header ──────────────────────────────────────────────────────────────────
 
 interface IInstallPlaygroundHeader {
   install: TPlaygroundInstall
@@ -288,7 +282,6 @@ const InstallPlaygroundHeader = ({
 
     <ConfigurationSummaryRow install={install} onNavigate={onNavigate} />
 
-    {/* Status sits on the labels row so it starts below the identity stack. */}
     <div className="flex items-start justify-between gap-6 flex-wrap">
       <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
         {Object.entries(install.labels).map(([k, v]) => (
@@ -302,8 +295,6 @@ const InstallPlaygroundHeader = ({
     </div>
   </header>
 )
-
-// ─── Header status card ───────────────────────────────────────────────────────
 
 interface IInstallStatusCard {
   install: TPlaygroundInstall
@@ -352,7 +343,6 @@ export const getInstallStatusEntries = (
         ? `${runningUpdates.length} in progress`
         : 'All deployed'
 
-  // Resources: non-image components (images excluded per spec)
   const errorComponents = resources.components.filter(
     (c) => c.status === 'error' || c.status === 'warn'
   )
@@ -372,7 +362,6 @@ export const getInstallStatusEntries = (
         ? `${pendingComponents.length} pending`
         : 'All deployed'
 
-  // Health checks reflect component health, separate from deploy state.
   const healthStatus = install.health.current_health || 'unknown'
   const healthLabel =
     healthStatus === 'active' || healthStatus === 'healthy'
@@ -446,8 +435,6 @@ export const InstallStatusCard = ({
     ))}
   </Card>
 )
-
-// ─── Install branch tracking card ─────────────────────────────────────────────
 
 const TRACKING_STATUS_MAP: Record<
   TBranchTrackingStatus,
@@ -615,8 +602,6 @@ export const InstallBranchTrackingCard = ({
     </Card>
   )
 }
-
-// ─── Overview tab ─────────────────────────────────────────────────────────────
 
 const LagRow = ({ item }: { item: TLagItem }) => (
   <div className="flex items-center justify-between gap-3 py-1.5 min-w-0">
@@ -796,8 +781,6 @@ export const OverviewTab = ({ install }: { install: TPlaygroundInstall }) => (
     )}
   </div>
 )
-
-// ─── Deployments tab ──────────────────────────────────────────────────────────
 
 const DATE_FILTER_LABELS: Record<string, string> = {
   '24h': 'Last 24 hours',
@@ -1019,7 +1002,6 @@ export const DeploymentsTab = ({
 
   return (
     <div className="flex flex-col min-h-0">
-      {/* Filter bar */}
       <div className="flex items-center flex-wrap gap-2 px-4 py-3 border-b bg-cool-grey-50 dark:bg-dark-grey-800 shrink-0">
         <SearchInput
           aria-label="Search deployments"
@@ -1163,8 +1145,6 @@ export const DeploymentsTab = ({
     </div>
   )
 }
-
-// ─── Resources sub-tabs ───────────────────────────────────────────────────────
 
 export const StackTab = ({ versions }: { versions: TStackVersion[] }) => (
   <div className="flex flex-col gap-2 p-4">
@@ -1535,8 +1515,6 @@ export const ResourcesTabPanel = ({
   )
 }
 
-// ─── Runbooks (Operations subtab) ─────────────────────────────────────────────
-
 export const RunbookDetail = ({ runbook }: { runbook: TRunbookEntry }) => (
   <div className="flex flex-col gap-4 p-4">
     <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -1579,8 +1557,6 @@ export const RunbookDetail = ({ runbook }: { runbook: TRunbookEntry }) => (
     </Card>
   </div>
 )
-
-// ─── Operations tab (Actions + Runbooks) ──────────────────────────────────────
 
 export const ActionDetail = ({ action }: { action: TActionEntry }) => (
   <div className="flex flex-col gap-4 p-4">
@@ -1809,8 +1785,6 @@ export const OperationsTab = ({
     />
   )
 }
-
-// ─── Configuration sub-tabs ───────────────────────────────────────────────────
 
 type TNuonStateValue = {
   template: string
@@ -2232,8 +2206,6 @@ export const ConfigurationTabPanel = ({
   )
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
-
 export interface IInstallDetailPlayground {
   install: TPlaygroundInstall
   className?: string
@@ -2247,7 +2219,6 @@ export const InstallDetailPlayground = ({
   const [deploymentFilter, setDeploymentFilter] = useState<TDeploymentFilter>(
     DEFAULT_DEPLOYMENT_FILTER
   )
-  // Incrementing keys remount contextual navigation so header cards can select a section.
   const [resourcesNav, setResourcesNav] = useState<{
     tab?: string
     componentId?: string
@@ -2296,7 +2267,6 @@ export const InstallDetailPlayground = ({
         onNavigate={handleStripNavigate}
       />
 
-      {/* Top tab bar */}
       <div
         role="tablist"
         aria-label="Install sections"
@@ -2319,7 +2289,6 @@ export const InstallDetailPlayground = ({
         ))}
       </div>
 
-      {/* Tab panels */}
       <div className="flex-1 min-h-0 overflow-y-auto">
         {TOP_TABS.map((key) => (
           <div

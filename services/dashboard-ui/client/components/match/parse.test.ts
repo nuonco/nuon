@@ -139,8 +139,6 @@ describe('describeMatch', () => {
   })
 
   test('empty selector maps fall through to Any (matches nothing summary)', () => {
-    // describeMatch treats empty selectors as no labels; falls through
-    // to ids → empty → Any. The server rejects this shape on submit.
     expect(
       describeMatch({
         installs: { selector: { match_labels: {}, not_match_labels: {} } },

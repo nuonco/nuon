@@ -37,6 +37,22 @@ jobs:
       - name: Run ast-grep scan
         run: sg scan services/ pkg/ --filter no-fmt-println
 
+  comments:
+    name: comments
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Check for narrative comments
+        run: go run ./scripts/check-comments
+
   update_status:
     name: update status
     if: github.event_name == 'pull_request' && always()

@@ -29,8 +29,6 @@ const (
 	totalSteps = 6
 )
 
-// Handler is a universal sandbox job handler that replaces the real handler
-// when sandbox mode is active. It implements the jobs.JobHandler interface.
 type Handler struct {
 	sandboxCfg *Config
 	apiClient  nuonrunner.Client
@@ -71,7 +69,6 @@ func (h *Handler) JobStatus() models.AppRunnerJobStatus {
 	return h.job.Status
 }
 
-// Reset implements jobs.StatefulJobHandler.
 func (h *Handler) Reset(ctx context.Context) error {
 	return h.execStepForStep(ctx, "resetting")
 }
@@ -89,10 +86,6 @@ func (h *Handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 }
 
 func (h *Handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	// Tag this handler's logger with the same semantic-convention attributes
-	// the real per-tool deploy/sandbox handlers emit, so logs from sandbox-mode
-	// orgs are filterable in the dashboard by nuon.tool / service.name even
-	// though they're produced by the universal stub handler.
 	if l, err := pkgctx.Logger(ctx); err == nil {
 		tool, svc := toolAndServiceForJobType(job.Type)
 		l = l.With(
@@ -102,12 +95,6 @@ func (h *Handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 			zap.String("nuon.job.type", string(job.Type)),
 			zap.String("nuon.job.operation", string(job.Operation)),
 		)
-		// SetLoggerWithSpan re-stamps ContextField(ctx) so the step span
-		// (current span on ctx, opened in executeJob) is picked up by every
-		// emit through the contextual logger inside execSandboxStep /
-		// execStepForStep. Plain SetLogger would inherit the parent ctx field
-		// — which already points at the step ctx — but we re-attach to make
-		// the intent explicit and stay symmetric with op.Start.
 		ctx = pkgctx.SetLoggerWithSpan(ctx, l)
 	}
 
@@ -117,12 +104,6 @@ func (h *Handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	return h.execSandboxStep(ctx, job)
 }
 
-// toolAndServiceForJobType maps a runner job.Type to the (nuon.tool,
-// service.name) pair the dashboard log filters key off. Tool labels match the
-// real deploy-mode handlers (terraform/helm/kubernetes_manifest/job/pulumi/
-// sync_secrets/action) so a single filter value covers both real and
-// sandbox-mode logs; service.name is namespaced under runner.sandbox.* so
-// users can still distinguish them when needed.
 func toolAndServiceForJobType(jobType models.AppRunnerJobType) (string, string) {
 	switch jobType {
 	case models.AppRunnerJobTypeTerraformDashDeploy,
@@ -167,7 +148,6 @@ func (h *Handler) GracefulShutdown(ctx context.Context, job *models.AppRunnerJob
 }
 
 func (h *Handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
-	// Check for per-step failure at "outputs" step
 	if err := h.execStepForStep(ctx, "outputs"); err != nil {
 		return nil, err
 	}
@@ -177,7 +157,6 @@ func (h *Handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
 		return nil, cockerrors.Wrap(err, "unable to get sandbox outputs")
 	}
 
-	// Write plan contents / execution results as side effects
 	if err := h.writeSandboxResults(ctx); err != nil {
 		return nil, err
 	}
@@ -185,8 +164,6 @@ func (h *Handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
 	return outputs, nil
 }
 
-// execStepForStep checks if the config has FailAtStep set and it matches the current step.
-// If nothing special, just logs the step.
 func (h *Handler) execStepForStep(ctx context.Context, stepName string) error {
 	l, _ := pkgctx.Logger(ctx)
 
@@ -220,7 +197,6 @@ func (h *Handler) execStepForStep(ctx context.Context, stepName string) error {
 	return nil
 }
 
-// execSandboxStep runs the main sandbox execution simulation with duration and log lines.
 func (h *Handler) execSandboxStep(ctx context.Context, job *models.AppRunnerJob) error {
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
@@ -277,12 +253,6 @@ func (h *Handler) execSandboxStep(ctx context.Context, job *models.AppRunnerJob)
 		zap.String("duration_human", duration.String()),
 	)
 
-	// Open one op.Tool span per simulated tool operation so sandbox-mode
-	// jobs render in the dashboard span tree with the same shape as a real
-	// deploy job. The simulatedOps table mirrors the op names wrapped by
-	// real handlers in Phase 3 (terraform.plan, helm.upgrade, etc.); jobs
-	// not in the table fall back to a single <tool>.exec span so we never
-	// regress prior behavior.
 	tool, _ := toolAndServiceForJobType(job.Type)
 	ops := simulatedOps(job.Type, job.Operation)
 	if len(ops) == 0 {
@@ -318,15 +288,6 @@ func (h *Handler) execSandboxStep(ctx context.Context, job *models.AppRunnerJob)
 	return nil
 }
 
-// runSimOp opens an op.Tool span for one simulated tool operation, sleeps
-// for `dur` while emitting log lines on a ticker, and closes the span. If
-// the parent ctx is cancelled the span is closed with an error so the
-// dashboard tree colors it red.
-//
-// Custom log lines from sandbox config (cfg.LogLines) are consumed across op
-// spans via *customLogIdx so the existing "use custom logs until exhausted,
-// then fall back to canned output" semantics are preserved across the new
-// multi-span layout.
 func (h *Handler) runSimOp(
 	ctx context.Context,
 	parentLog *zap.Logger,
@@ -370,14 +331,12 @@ func (h *Handler) runSimOp(
 	}
 }
 
-// execActionSandboxStep handles sandbox mode for actions-workflow job types.
 func (h *Handler) execActionSandboxStep(ctx context.Context, job *models.AppRunnerJob) error {
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return err
 	}
 
-	// Check sandbox config failure modes before executing
 	cfg := h.sandboxCfg
 	if cfg != nil {
 		if cfg.ErrorMessage != "" {
@@ -464,7 +423,6 @@ func (h *Handler) execActionSandboxStep(ctx context.Context, job *models.AppRunn
 	return nil
 }
 
-// sandboxOutputs returns the outputs map for a sandbox job.
 func (h *Handler) sandboxOutputs(ctx context.Context) (map[string]interface{}, error) {
 	if h.sandboxCfg != nil && len(h.sandboxCfg.Outputs) > 0 {
 		return h.sandboxCfg.Outputs, nil
@@ -482,7 +440,6 @@ func (h *Handler) sandboxOutputs(ctx context.Context) (map[string]interface{}, e
 	return plan.SandboxMode.Outputs, nil
 }
 
-// writeSandboxResults writes plan contents and execution results for sandbox jobs.
 func (h *Handler) writeSandboxResults(ctx context.Context) error {
 	if h.sandboxCfg != nil && h.sandboxCfg.PlanContents != "" {
 		req := &models.ServiceCreateRunnerJobExecutionResultRequest{
@@ -498,7 +455,6 @@ func (h *Handler) writeSandboxResults(ctx context.Context) error {
 		return nil
 	}
 
-	// Fall back to plan-based sandbox mode outputs
 	plan, err := h.getSandboxModePlan(ctx)
 	if err != nil {
 		return cockerrors.Wrap(err, "unable to get sandbox mode plan")

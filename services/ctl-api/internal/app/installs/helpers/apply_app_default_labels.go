@@ -10,9 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// ApplyAppDefaultLabels reconciles the install's labels against the app's
-// current default labels, using the install's snapshot to clean up defaults
-// that were removed from the app config.
 func (h *Helpers) ApplyAppDefaultLabels(ctx context.Context, installID string) error {
 	var install app.Install
 	if err := h.db.WithContext(ctx).

@@ -16,13 +16,11 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: [
-      // React ecosystem
       "react",
       "react-dom",
       "react/jsx-runtime",
       "react-dom/client",
       
-      // UI libraries
       "@phosphor-icons/react",
       "react-icons",
       "react-icons/bs",
@@ -36,17 +34,14 @@ export default defineConfig({
       "react-icons/tb",
       "react-icons/vsc",
       
-      // Table library
       "@tanstack/react-table",
       
-      // Utility libraries
       "classnames",
       "luxon",
       "uuid",
       "yaml",
       "showdown",
       
-      // Syntax highlighting
       "react-syntax-highlighter",
       "react-syntax-highlighter/dist/esm/styles/prism",
       "react-syntax-highlighter/dist/esm/languages/prism/javascript",

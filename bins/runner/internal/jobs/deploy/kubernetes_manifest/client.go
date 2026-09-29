@@ -22,7 +22,7 @@ type kubernetesClient struct {
 
 func (k *kubernetesClient) resourcesforGroupVersion(gv string) (*metav1.APIResourceList, error) {
 	if len(gv) != 0 && gv[0] == '/' {
-		gv = gv[1:] // remove leading slash if present
+		gv = gv[1:]
 	}
 	return k.discoveryClient.ServerResourcesForGroupVersion(gv)
 }

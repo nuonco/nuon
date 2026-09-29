@@ -23,9 +23,6 @@ var githubCheck = Check{
 		}
 	},
 
-	// Offline: building the client parses and validates the PEM key, which is
-	// the failure this catches. A live API call would need an installation
-	// token, which is per-repo rather than config.
 	Probe: func(_ context.Context, cfg *internal.Config) (string, error) {
 		if _, err := ctlgithub.New(validator.New(), cfg); err != nil {
 			return "", fmt.Errorf("invalid github app credentials: %w", err)

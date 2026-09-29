@@ -11,7 +11,6 @@ const (
 	gitSuffix string = ".git"
 )
 
-// https://powertoolsdev:token@github.com/nuonco/nuon.git
 func Dir(src *plantypes.GitSource) string {
 	if src == nil {
 		return "."

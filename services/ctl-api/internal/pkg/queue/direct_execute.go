@@ -45,12 +45,10 @@ func (q *queue) directExecuteHandler(ctx workflow.Context, req DirectExecuteRequ
 		return nil, errors.Wrap(err, "unable to get queue signal")
 	}
 
-	// check that the signal belongs to this queue
 	if queueSignal.QueueID != q.queueID {
 		return nil, errors.New("queue signal does not belong to this queue")
 	}
 
-	// if already in a terminal state, nothing to do
 	if generics.SliceContains(queueSignal.Status.Status, []app.Status{app.StatusSuccess, app.StatusError, app.StatusCancelled}) {
 		return &DirectExecuteResponse{QueueSignalID: req.QueueSignalID}, nil
 	}
@@ -60,7 +58,6 @@ func (q *queue) directExecuteHandler(ctx workflow.Context, req DirectExecuteRequ
 		ID:         queueSignal.ID,
 	}
 
-	// process immediately, bypassing the channel
 	signalErr := q.processQueueSignal(ctx, l, queueSignal, queueRef)
 	if signalErr != nil {
 		if statusErr := statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{

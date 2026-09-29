@@ -84,8 +84,6 @@ function SignalLink({ queueId, signalId, label, className }: { queueId?: string;
   )
 }
 
-// -- Step detail row --
-
 function StepRow({ stepData }: { stepData: any }) {
   const [expanded, setExpanded] = useState(false)
   const step = stepData.step
@@ -124,7 +122,6 @@ function StepRow({ stepData }: { stepData: any }) {
         <tr className="bg-gray-50/50 dark:bg-gray-900/50">
           <td colSpan={9} className="px-6 py-4">
             <div className="space-y-4 text-xs">
-              {/* IDs row */}
               <div className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
                 <div><span className="text-gray-400 dark:text-gray-500">ID</span><br/><span className="font-mono text-gray-700 dark:text-gray-300">{step?.id}</span></div>
                 <div><span className="text-gray-400 dark:text-gray-500">Group</span><br/>g{step?.group_idx} r{step?.group_retry_idx}</div>
@@ -132,7 +129,6 @@ function StepRow({ stepData }: { stepData: any }) {
                 <div><span className="text-gray-400 dark:text-gray-500">Target ID</span><br/><span className="font-mono">{truncateId(step?.step_target_id) || '-'}</span></div>
               </div>
 
-              {/* Flags */}
               <div className="flex flex-wrap gap-1.5">
                 {step?.retryable && <Badge>retryable</Badge>}
                 {step?.skippable && <Badge>skippable</Badge>}
@@ -141,14 +137,12 @@ function StepRow({ stepData }: { stepData: any }) {
                 <DirectiveBadge directive={step?.result_directive} />
               </div>
 
-              {/* Times */}
               <div className="grid grid-cols-2 gap-x-6 gap-y-1 sm:grid-cols-3">
                 <div><span className="text-gray-400 dark:text-gray-500">Started</span> <span className="font-mono ml-1">{formatTime(step?.started_at)}</span></div>
                 <div><span className="text-gray-400 dark:text-gray-500">Finished</span> <span className="font-mono ml-1">{formatTime(step?.finished_at)}</span></div>
                 <div><span className="text-gray-400 dark:text-gray-500">Duration</span> <span className="font-mono ml-1">{formatDur(step?.execution_time)}</span></div>
               </div>
 
-              {/* Step target */}
               {stepData.step_target && (
                 <div className="rounded-md border border-gray-200 dark:border-gray-700 p-3">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">Step target</p>
@@ -167,7 +161,6 @@ function StepRow({ stepData }: { stepData: any }) {
                 </div>
               )}
 
-              {/* Approval */}
               {step?.approval && (
                 <div className="rounded-md border border-purple-200 dark:border-purple-800 p-3">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-purple-400 dark:text-purple-500 mb-2">Approval</p>
@@ -183,7 +176,6 @@ function StepRow({ stepData }: { stepData: any }) {
                 </div>
               )}
 
-              {/* Status metadata */}
               {step?.status?.metadata && Object.keys(step.status.metadata).length > 0 && (
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">Status metadata</p>
@@ -195,7 +187,6 @@ function StepRow({ stepData }: { stepData: any }) {
                 </div>
               )}
 
-              {/* Status history */}
               {step?.status && (
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">Status history</p>
@@ -203,7 +194,6 @@ function StepRow({ stepData }: { stepData: any }) {
                 </div>
               )}
 
-              {/* Metadata */}
               {step?.metadata && Object.keys(step.metadata).length > 0 && (
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">Metadata</p>
@@ -215,7 +205,6 @@ function StepRow({ stepData }: { stepData: any }) {
                 </div>
               )}
 
-              {/* Queue signal JSON */}
               {stepData.queue_signal_json && (
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">Queue signal data</p>
@@ -229,8 +218,6 @@ function StepRow({ stepData }: { stepData: any }) {
     </>
   )
 }
-
-// -- Step Group section --
 
 function StepGroupSection({ group, defaultExpanded }: { group: any; defaultExpanded: boolean }) {
   const [expanded, setExpanded] = useState(defaultExpanded)
@@ -247,7 +234,6 @@ function StepGroupSection({ group, defaultExpanded }: { group: any; defaultExpan
 
   return (
     <div className={`rounded-lg border ${hasErrors ? 'border-red-300 dark:border-red-800' : 'border-gray-200 dark:border-gray-800'}`}>
-      {/* Group header */}
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
@@ -276,7 +262,6 @@ function StepGroupSection({ group, defaultExpanded }: { group: any; defaultExpan
         </div>
       </button>
 
-      {/* Status description + metadata */}
       {expanded && (statusDesc || (g?.status?.metadata && Object.keys(g.status.metadata).length > 0)) && (
         <div className="px-4 pb-2 -mt-1 space-y-1.5">
           {statusDesc && <p className="text-xs text-gray-500 dark:text-gray-400 italic">{statusDesc}</p>}
@@ -290,7 +275,6 @@ function StepGroupSection({ group, defaultExpanded }: { group: any; defaultExpan
         </div>
       )}
 
-      {/* Steps table */}
       {expanded && steps.length > 0 && (
         <div className="border-t border-gray-200 dark:border-gray-800 overflow-x-auto">
           <table className="min-w-full">
@@ -322,8 +306,6 @@ function StepGroupSection({ group, defaultExpanded }: { group: any; defaultExpan
   )
 }
 
-// -- Main page --
-
 export const WorkflowDetail = () => {
   const { workflowId } = useParams<{ workflowId: string }>()
 
@@ -344,7 +326,6 @@ export const WorkflowDetail = () => {
   const wfStatus = getStatus(wf?.status)
   const wfStatusDesc = getStatusDescription(wf?.status)
 
-  // Auto-expand groups that are in-progress or have errors
   const shouldExpand = (g: any) => {
     const s = getStatus(g?.group?.status)
     if (s === 'in-progress' || s === 'error' || s === 'failed') return true
@@ -357,7 +338,6 @@ export const WorkflowDetail = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <div className="flex items-start justify-between">
           <div>
@@ -400,7 +380,6 @@ export const WorkflowDetail = () => {
         </div>
       </div>
 
-      {/* Timeline */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <TimelineCard label="Created" value={formatTime(wf?.created_at)} />
         <TimelineCard label="Started" value={formatTime(wf?.started_at)} />
@@ -408,7 +387,6 @@ export const WorkflowDetail = () => {
         <TimelineCard label="Duration" value={formatDur(wf?.execution_time)} />
       </div>
 
-      {/* Generate steps signal */}
       {genSignal && (
         <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">Generate steps signal</p>
@@ -420,7 +398,6 @@ export const WorkflowDetail = () => {
         </div>
       )}
 
-      {/* Workflow status history */}
       {wf?.status && (
         <details className="rounded-lg border border-gray-200 dark:border-gray-800">
           <summary className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
@@ -432,7 +409,6 @@ export const WorkflowDetail = () => {
         </details>
       )}
 
-      {/* Step Groups */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Step groups <span className="text-gray-400 dark:text-gray-500 font-normal">({groups.length})</span></h2>

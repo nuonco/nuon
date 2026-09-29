@@ -1,8 +1,3 @@
-// Package health serves a minimal /livez endpoint from the mng process.
-//
-// Azure VMSS automatic instance repair needs an application-level health
-// signal. The VMSS Application Health extension probes this endpoint; while the
-// mng process is up it returns 200 and the instance is Healthy.
 package health
 
 import (
@@ -44,8 +39,6 @@ func New(params Params) (*Server, error) {
 	mux.HandleFunc("/livez", s.handleLivez)
 
 	s.srv = &http.Server{
-		// Bind to loopback only: the Azure VMSS Application Health extension
-		// runs inside the vm and probes 127.0.0.1
 		Addr:              fmt.Sprintf("127.0.0.1:%d", params.Cfg.HealthPort),
 		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
@@ -83,9 +76,6 @@ func (s *Server) handleLivez(w http.ResponseWriter, _ *http.Request) {
 	_, _ = w.Write([]byte("ok"))
 }
 
-// SetUnhealthy flips the /livez probe to fail (503) so the Azure VMSS
-// Application Health extension marks the instance Unhealthy and automatic
-// instance repair replaces it.
 func (s *Server) SetUnhealthy() {
 	s.unhealthy.Store(true)
 	s.l.Info("health probe set to unhealthy")

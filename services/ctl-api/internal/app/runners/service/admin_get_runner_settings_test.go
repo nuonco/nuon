@@ -74,7 +74,6 @@ func (s *AdminGetRunnerSettingsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with internal routes (no org context for admin routes)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -93,7 +92,6 @@ func (s *AdminGetRunnerSettingsTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -105,7 +103,6 @@ func (s *AdminGetRunnerSettingsTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group settings
 	s.testRunnerGrpSettings = &app.RunnerGroupSettings{
 		ID:                domains.NewRunnerGroupSettingsID(),
 		OrgID:             s.testOrg.ID,
@@ -118,7 +115,6 @@ func (s *AdminGetRunnerSettingsTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrpSettings).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -177,7 +173,6 @@ func (s *AdminGetRunnerSettingsTestSuite) TestAdminGetRunnerSettings() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create runner group with different settings
 				runnerGrp2 := &app.RunnerGroup{
 					ID:        domains.NewRunnerGroupID(),
 					OrgID:     s.testOrg.ID,

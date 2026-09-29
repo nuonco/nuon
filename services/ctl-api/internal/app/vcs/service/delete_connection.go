@@ -58,7 +58,7 @@ func (s *service) DeleteConnection(ctx *gin.Context) {
 
 	if deleteGithubApp {
 		if err := s.ghClient.DeleteInstallation(ctx, vcsConn.GithubInstallID); err != nil {
-			// If we can't delete the Github App installation, we should still
+			// why: If we can't delete the Github App installation, we should still
 			// try to delete the connection from our DB.
 			s.l.Info(err.Error())
 		}

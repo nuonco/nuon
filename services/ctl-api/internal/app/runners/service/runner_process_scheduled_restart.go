@@ -7,9 +7,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 )
 
-// processUptimeThreshold returns the configured uptime TTL restart threshold
-// for a process type; ok is false for types without a scheduled restart
-// (build, org).
 func (s *service) processUptimeThreshold(processType app.RunnerProcessType) (time.Duration, bool) {
 	switch processType {
 	case app.RunnerProcessTypeInstall:
@@ -27,9 +24,6 @@ func (s *service) processUptimeThreshold(processType app.RunnerProcessType) (tim
 	}
 }
 
-// scheduledRestartAt computes a process's scheduled restart time from its
-// start time and the configured uptime threshold. It returns nil for process
-// types without a scheduled restart.
 func (s *service) scheduledRestartAt(p *app.RunnerProcess) *time.Time {
 	if p == nil || p.StartedAt == nil {
 		return nil
@@ -42,8 +36,6 @@ func (s *service) scheduledRestartAt(p *app.RunnerProcess) *time.Time {
 	return &t
 }
 
-// attachScheduledRestarts populates NextScheduledRestartAt on install and mng
-// processes.
 func (s *service) attachScheduledRestarts(processes []*app.RunnerProcess) {
 	for _, p := range processes {
 		if t := s.scheduledRestartAt(p); t != nil {

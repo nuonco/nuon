@@ -14,14 +14,10 @@ import (
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// CancelWorkflowResponse is the response from the "cancel-workflow" update handler.
 type CancelWorkflowResponse struct {
 	WorkflowID string `json:"workflow_id"`
 }
 
-// cancelWorkflowHandler cancels the entire workflow. It actively cancels the
-// currently running group signal (which cascades to steps and calls Cancel()
-// callbacks), then marks the workflow as cancelled.
 func (s *Signal) cancelWorkflowHandler(ctx workflow.Context) (*CancelWorkflowResponse, error) {
 	defer s.beginUpdate()()
 
@@ -68,10 +64,6 @@ func (s *Signal) cancelWorkflowHandler(ctx workflow.Context) (*CancelWorkflowRes
 			return nil, err
 		}
 	} else {
-		// Persist cancel_requested_at in metadata so downstream signals (groups,
-		// steps) can detect cancellation even if the in-memory flag hasn't
-		// propagated yet. This survives ContinueAsNew and is the durable
-		// source of truth for cancellation.
 		_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: s.WorkflowID,
 			Status: app.CompositeStatus{
@@ -84,8 +76,6 @@ func (s *Signal) cancelWorkflowHandler(ctx workflow.Context) (*CancelWorkflowRes
 		})
 	}
 
-	// Cancel the active group signal. This triggers the group's Cancel()
-	// method which propagates to step signals and their inner signals.
 	if s.activeGroupQueueSignalID != "" {
 		client.AwaitCancelSignal(ctx, s.activeGroupQueueSignalID)
 	}

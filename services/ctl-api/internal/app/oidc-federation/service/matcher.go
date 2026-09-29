@@ -9,8 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// reservedClaims are validated by the JWT verifier itself and may not be used
-// as claim conditions.
 var reservedClaims = map[string]struct{}{
 	"iss": {},
 	"aud": {},
@@ -19,7 +17,7 @@ var reservedClaims = map[string]struct{}{
 	"iat": {},
 }
 
-// validateClaimConditions enforces the create/update-time rules for a
+// why: validateClaimConditions enforces the create/update-time rules for a
 // policy's claim conditions: at least one condition, `sub` must be present so
 // a policy can never match arbitrary tokens from an issuer, no reserved
 // claims, and bounded non-empty patterns that compile.
@@ -53,9 +51,6 @@ func validateClaimConditions(conditions map[string]string) error {
 	return nil
 }
 
-// matchClaims reports whether every condition matches the corresponding token
-// claim. Conditions only match string-typed claims; a missing or non-string
-// claim fails the policy.
 func matchClaims(conditions map[string]string, claims map[string]any) bool {
 	if len(conditions) == 0 {
 		return false
@@ -80,7 +75,7 @@ func matchClaims(conditions map[string]string, claims map[string]any) bool {
 	return true
 }
 
-// matchPattern matches a value against a pattern: exact comparison unless the
+// why: matchPattern matches a value against a pattern: exact comparison unless the
 // pattern contains glob metacharacters, in which case it is compiled with `:`
 // as a separator so wildcards cannot cross `:` segments (the delimiter in
 // GitHub Actions `sub` claims like `repo:org/repo:ref:refs/heads/main`).

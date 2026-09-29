@@ -94,7 +94,6 @@ export function useResourceSSE({
         const errorData = JSON.parse(event.data)
         onErrorRef.current?.(errorData?.error ?? 'Connection issue')
       } catch {
-        // non-JSON error event
       }
     })
 
@@ -103,13 +102,10 @@ export function useResourceSSE({
       eventSourceRef.current = null
       setConnected(false)
 
-      // The server closes finished resources for good after a grace period;
+      // why: The server closes finished resources for good after a grace period;
       // fallback polling takes over instead of reconnecting forever.
       if (finishedRef.current) return
 
-      // The server expires streams after a max lifetime. If the user hasn't
-      // interacted recently, suspend until their next interaction instead of
-      // reconnecting — an unattended visible tab shouldn't poll at full rate.
       if (expiredRef.current && !isRecentlyActive(RECENT_ACTIVITY_WINDOW_MS)) {
         setSuspended(true)
         resumeCleanupRef.current = onNextActivity(() => {
@@ -142,9 +138,6 @@ export function useResourceSSE({
     return () => disconnect()
   }, [enabled, url, connect, disconnect])
 
-  // Hidden tabs disconnect so the BFF stops polling ctl-api for them. On
-  // return, the focus refetch covers the gap and the fresh stream sends a
-  // full snapshot on its first tick.
   useEffect(() => {
     const onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {

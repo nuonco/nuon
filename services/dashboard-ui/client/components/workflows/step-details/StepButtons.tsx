@@ -18,7 +18,6 @@ export const StepButtons = ({
 }: {
   buttonSize?: TButtonSize
   isApproveAll?: boolean
-  // Only the latest attempt of a retried step should expose retry/skip controls.
   showRetry?: boolean
   step: TWorkflowStep
 }) => {

@@ -28,7 +28,6 @@ func (h *handler) writePolicies(ctx context.Context) error {
 	}
 	policyPath := filepath.Join("/tmp", dirName)
 
-	// Remove the policy directory if it exits.
 	if err := os.RemoveAll(policyPath); err != nil {
 		return errors.Wrap(err, "unable to remove policy directory")
 	}

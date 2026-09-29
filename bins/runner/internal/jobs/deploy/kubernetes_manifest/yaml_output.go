@@ -7,8 +7,6 @@ import (
 	k8syaml "sigs.k8s.io/yaml"
 )
 
-// ResourcesToMultiDocYAML converts a slice of unstructured Kubernetes objects
-// to a multi-document YAML string separated by "---".
 func ResourcesToMultiDocYAML(objects []*unstructured.Unstructured) (string, error) {
 	if len(objects) == 0 {
 		return "", nil
@@ -31,8 +29,6 @@ func ResourcesToMultiDocYAML(objects []*unstructured.Unstructured) (string, erro
 	return strings.Join(docs, "---\n"), nil
 }
 
-// kubernetesResourcesToMultiDocYAML converts kubernetesResource slice to multi-doc YAML.
-// This is a convenience wrapper around ResourcesToMultiDocYAML.
 func kubernetesResourcesToMultiDocYAML(resources []*kubernetesResource) (string, error) {
 	objects := make([]*unstructured.Unstructured, 0, len(resources))
 	for _, r := range resources {

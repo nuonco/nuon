@@ -1,8 +1,3 @@
-// Microsoft's official "Deploy to Azure" button artwork, vendored from
-// https://aka.ms/deploytoazurebutton rather than hot-linked, so rendering the
-// dashboard makes no request to raw.githubusercontent.com. Kept pixel-identical
-// to the asset the ARM template docs publish, which is why it is a fixed 167x34
-// and does not follow the app's theme.
 export const DeployToAzureBadge = ({ className }: { className?: string }) => (
   <svg
       width="167" height="34" viewBox="0 0 167 34" fill="none" xmlns="http://www.w3.org/2000/svg"

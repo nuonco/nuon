@@ -41,7 +41,7 @@ type AppInputInput struct {
 	Source      app.AppInputSource
 }
 
-// InputsFromConfig also materializes the reserved per-component override
+// why: InputsFromConfig also materializes the reserved per-component override
 // inputs: they must exist as app inputs for the install-input system to accept
 // the values the install config carries under [components.<name>].
 func InputsFromConfig(cfg *config.AppConfig) ([]InputGroupInput, []AppInputInput) {
@@ -116,7 +116,7 @@ func InputsFromConfig(cfg *config.AppConfig) ([]InputGroupInput, []AppInputInput
 func groupName(g InputGroupInput) string { return g.Name }
 func inputName(i AppInputInput) string   { return i.Name }
 
-// dedupeByName keeps the last declaration of each name. A config may declare the
+// why: dedupeByName keeps the last declaration of each name. A config may declare the
 // same input or group twice; the request types this replaced were name-keyed
 // maps, so those configs sync today and must keep syncing.
 func dedupeByName[T any](items []T, name func(T) string) []T {
@@ -151,8 +151,6 @@ func ComponentOverrideInputCopy(syn config.SyntheticOverrideInput) (description,
 	}
 }
 
-// InputConfig builds the config and its groups; inputs attach separately since
-// they need the group IDs assigned on insert.
 func InputConfig(groups []InputGroupInput, appID, appConfigID, orgID string) *app.AppInputConfig {
 	objs := make([]app.AppInputGroup, 0, len(groups))
 	for _, group := range groups {
@@ -172,7 +170,6 @@ func InputConfig(groups []InputGroupInput, appID, appConfigID, orgID string) *ap
 	}
 }
 
-// AppInputs resolves each input's group name to the ID assigned on insert.
 func AppInputs(inputs []AppInputInput, cfg *app.AppInputConfig) ([]app.AppInput, error) {
 	groupIDByName := make(map[string]string, len(cfg.AppInputGroups))
 	for _, group := range cfg.AppInputGroups {

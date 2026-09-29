@@ -23,10 +23,6 @@ func hstore(kv map[string]string) pgtype.Hstore {
 	return h
 }
 
-// Every app config sync writes fresh sandbox and stack config rows, so the IDs
-// always differ between two versions. Only a content change is a real change —
-// comparing IDs reported a sandbox reprovision and a stack regeneration on
-// every branch run.
 func TestSandboxConfigEqualIgnoresID(t *testing.T) {
 	a := app.AppSandboxConfig{
 		Type:             "terraform",
@@ -72,9 +68,6 @@ func TestSandboxConfigEqualDetectsContentChange(t *testing.T) {
 	}
 }
 
-// A sandbox source bump leaves every scalar field identical but changes the
-// infrastructure that gets deployed. Missing it means the new sandbox never
-// reaches installs, because no reprovision step is emitted.
 func TestSandboxConfigEqualDetectsSourceChange(t *testing.T) {
 	base := func() app.AppSandboxConfig {
 		return app.AppSandboxConfig{
@@ -128,8 +121,6 @@ func TestSandboxConfigEqualDetectsSourceChange(t *testing.T) {
 	})
 }
 
-// Retry and approval knobs are orchestration, not infrastructure — changing one
-// must not trigger a full sandbox reprovision.
 func TestSandboxConfigEqualIgnoresOrchestrationKnobs(t *testing.T) {
 	a := app.AppSandboxConfig{Type: "terraform", TerraformVersion: "1.5.7"}
 

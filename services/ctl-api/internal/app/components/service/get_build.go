@@ -51,7 +51,6 @@ func (s *service) GetBuild(ctx *gin.Context) {
 func (s *service) getBuild(ctx context.Context, orgID, bldID string) (*app.ComponentBuild, error) {
 	var bld app.ComponentBuild
 
-	// query the build in a way where it will _only_ be returned if it belongs to the component id in question
 	res := s.db.WithContext(ctx).
 		Preload("VCSConnectionCommit").
 		Preload("RunnerJob").

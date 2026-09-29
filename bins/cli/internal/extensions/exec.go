@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-// Exec runs an installed extension with the given arguments and environment variables.
 func (m *Manager) Exec(name string, args []string, env map[string]string) error {
 	ext, err := m.Get(name)
 	if err != nil {
@@ -19,7 +18,6 @@ func (m *Manager) Exec(name string, args []string, env map[string]string) error 
 		return fmt.Errorf("extension %q is not installed", name)
 	}
 
-	// Check auth/context requirements and warn (not hard fail)
 	if ext.RequiresToken && env["NUON_API_TOKEN"] == "" {
 		ui.PrintWarning(fmt.Sprintf("extension %q requires an API token but none is configured", name))
 	}
@@ -62,7 +60,7 @@ func (m *Manager) Exec(name string, args []string, env map[string]string) error 
 		cmd = exec.Command(scriptPath, args...)
 		cmd.Dir = extDir
 
-	default: // ExtTypeBinary
+	default:
 		binaryPath := filepath.Join(extDir, ext.Binary)
 		ui.PrintDebug(fmt.Sprintf("running binary: %s", binaryPath))
 		if _, err := os.Stat(binaryPath); err != nil {
@@ -75,19 +73,16 @@ func (m *Manager) Exec(name string, args []string, env map[string]string) error 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	// Set environment: inherit current env + add extension env vars
 	cmd.Env = os.Environ()
 	for k, v := range env {
 		cmd.Env = append(cmd.Env, k+"="+v)
 	}
 
-	// Add extension-specific env vars
 	cmd.Env = append(cmd.Env,
 		"NUON_EXT_NAME="+name,
 		"NUON_EXT_DIR="+extDir,
 	)
 
-	// Run the extension
 	if err := cmd.Run(); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			os.Exit(exitErr.ExitCode())

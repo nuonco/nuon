@@ -19,7 +19,7 @@ func (s *GeneralInternalTestSuite) TestAdminCreateStaticToken() {
 			name: "creates static token for existing account by email",
 			requestBody: StaticTokenRequest{
 				EmailOrSubject: s.testAcc.Email,
-				Duration:       "8760h", // 1 year
+				Duration:       "8760h",
 			},
 			expectedStatus: http.StatusCreated,
 			validateFunc: func(resp StaticTokenResponse) {
@@ -55,7 +55,6 @@ func (s *GeneralInternalTestSuite) TestAdminCreateStaticToken() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Make request
 			rr := s.makeRequest(http.MethodPost, "/v1/general/admin-static-token", tc.requestBody)
 
 			if rr.Code != tc.expectedStatus {
@@ -64,12 +63,10 @@ func (s *GeneralInternalTestSuite) TestAdminCreateStaticToken() {
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
 			if tc.expectedStatus == http.StatusCreated {
-				// Unmarshal response
 				var resp StaticTokenResponse
 				err := json.Unmarshal(rr.Body.Bytes(), &resp)
 				require.NoError(s.T(), err)
 
-				// Validate response
 				if tc.validateFunc != nil {
 					tc.validateFunc(resp)
 				}

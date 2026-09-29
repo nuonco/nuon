@@ -86,8 +86,6 @@ export const Overview = () => {
           )}
         </div>
       ) : (
-        // An `original` README still needs live install data to template
-        // against, so an empty render means "not ready yet", not "none exists".
         <Banner theme="info">
           The readme will render after the install is active and live.
         </Banner>

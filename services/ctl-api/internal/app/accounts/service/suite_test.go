@@ -25,7 +25,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// AccountsServiceTestDeps holds all fx-injected dependencies for accounts service tests.
 type AccountsServiceTestDeps struct {
 	fx.In
 
@@ -39,7 +38,6 @@ type AccountsServiceTestDeps struct {
 	Seeder          *testseed.Seeder
 }
 
-// AccountsServiceTestSuite is the shared testify suite for all accounts service endpoint tests.
 type AccountsServiceTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -73,7 +71,6 @@ func (s *AccountsServiceTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -102,8 +99,6 @@ func (s *AccountsServiceTestSuite) setupTestData() {
 	s.ctx, s.testOrg = s.service.Seeder.EnsureOrg(s.ctx, s.T())
 }
 
-// makeRequest sends an HTTP request through the test router and returns the recorder.
-// Pass nil for body on requests that have no body (GET, no-body POST).
 func (s *AccountsServiceTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
 	var reqBody *bytes.Buffer
 	if body != nil {
@@ -123,8 +118,6 @@ func (s *AccountsServiceTestSuite) makeRequest(method, path string, body interfa
 	return rr
 }
 
-// makeRawRequest sends a raw string body through the test router, bypassing json.Marshal.
-// Useful for testing malformed JSON.
 func (s *AccountsServiceTestSuite) makeRawRequest(method, path string, rawBody string) *httptest.ResponseRecorder {
 	req, err := http.NewRequest(method, path, bytes.NewBufferString(rawBody))
 	require.NoError(s.T(), err)

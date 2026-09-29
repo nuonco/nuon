@@ -103,7 +103,6 @@ func (s *service) QueueSignalsGlobalTable(c *gin.Context) {
 	})
 }
 
-// QueueSignalTypeOptions returns the signal type options filtered by namespace.
 func (s *service) QueueSignalTypeOptions(c *gin.Context) {
 	ctx := c.Request.Context()
 	namespace := c.Query("namespace")
@@ -131,7 +130,6 @@ func (s *service) getQueueSignals(ctx context.Context, search, ownerID, orgID, s
 
 	query := s.readDB().WithContext(ctx).Model(&app.QueueSignal{})
 
-	// Apply time window filter to avoid scanning millions of rows.
 	if interval, ok := allowedSinceValues[since]; ok {
 		query = query.Where("created_at >= NOW() - INTERVAL '" + interval + "'")
 	}

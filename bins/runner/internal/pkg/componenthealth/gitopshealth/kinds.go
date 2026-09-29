@@ -1,5 +1,3 @@
-// Package gitopshealth is vendored from
-// github.com/argoproj/gitops-engine@v0.7.3/pkg/health (Apache-2.0).
 package gitopshealth
 
 const (

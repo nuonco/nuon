@@ -11,19 +11,14 @@ import (
 )
 
 const (
-	// ComponentWorkflowStepsQueueName is the named queue on each component
-	// where execute-workflow-step signals run for component builds.
 	ComponentWorkflowStepsQueueName = queuenames.ComponentWorkflowStepsQueueName
 )
 
-// ComponentQueueIDs holds the queue IDs for a component.
 type ComponentQueueIDs struct {
 	DefaultQueueID       string `json:"default_queue_id"`
 	WorkflowStepsQueueID string `json:"workflow_steps_queue_id"`
 }
 
-// EnsureComponentQueues creates all Temporal queue workflows for a component
-// and returns the queue IDs. Safe to call multiple times — Create is idempotent.
 func (h *Helpers) EnsureComponentQueues(ctx context.Context, componentID string) (*ComponentQueueIDs, error) {
 	ownerType := plugins.TableName(h.db, app.Component{})
 	specs, ok := queuenames.Specs(queuenames.OwnerComponents)
@@ -54,7 +49,6 @@ func (h *Helpers) EnsureComponentQueues(ctx context.Context, componentID string)
 	return ids, nil
 }
 
-// GetComponentQueueIDs looks up existing queue IDs for a component.
 func (h *Helpers) GetComponentQueueIDs(ctx context.Context, componentID string) (*ComponentQueueIDs, error) {
 	ownerType := plugins.TableName(h.db, app.Component{})
 

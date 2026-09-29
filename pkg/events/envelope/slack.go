@@ -10,11 +10,8 @@ import (
 	"time"
 )
 
-// SlackEventType for URL verification handshake requests.
 const SlackURLVerificationType = "url_verification"
 
-// SlackEvents decodes a Slack Events API envelope: either a url_verification
-// handshake or an event_callback wrapping the inner event.
 type SlackEvents struct{}
 
 type slackEventEnvelope struct {
@@ -50,8 +47,6 @@ func (SlackEvents) Decode(_ http.Header, body []byte) (*Event, error) {
 	return &Event{ID: envelope.EventID, Type: inner.Type, OccurredAt: &occurredAt, Payload: json.RawMessage(body), ContentType: "application/json"}, nil
 }
 
-// SlackChallenge extracts the url_verification challenge from a decoded Slack
-// event. It returns "" for regular event callbacks.
 func SlackChallenge(event *Event) (string, error) {
 	if event == nil || event.Type != SlackURLVerificationType {
 		return "", nil

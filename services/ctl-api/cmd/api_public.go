@@ -25,7 +25,6 @@ func (c *cli) runPublicAPI(cmd *cobra.Command, _ []string) {
 	profilerOptions := profiles.LoadOptionsFromEnv()
 	providers = append(providers, profiles.Module(profilerOptions))
 
-	// Add API-specific modules - only public API (excludes auth service)
 	providers = append(providers,
 		fxmodules.MiddlewaresModule,
 		fxmodules.PublicServicesModule,

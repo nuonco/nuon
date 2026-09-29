@@ -14,9 +14,6 @@ import (
 	"github.com/nuonco/nuon/pkg/config/diff"
 )
 
-// inputDiffNode builds a diff node for a single install input. Component
-// overrides render as a structured per-key YAML/HCL diff; everything else (and
-// any override that fails to parse) renders as a plain string diff.
 func inputDiffNode(key, current, val string) *diff.Diff {
 	if kind, _, isOverride := ParseComponentOverrideInputName(key); isOverride {
 		var (
@@ -37,13 +34,6 @@ func inputDiffNode(key, current, val string) *diff.Diff {
 	return diff.NewDiff(diff.WithKey(key), diff.WithStringDiff(current, val))
 }
 
-// structuredHelmValuesDiff builds a nested diff tree for a Helm values override
-// input by parsing both the old and new YAML and diffing it key-by-key, so the
-// CLI renders a per-key YAML diff instead of one opaque multi-line blob.
-//
-// It returns (nil, false) when either side is not a YAML mapping (e.g. a parse
-// error or a top-level scalar/list), so the caller can fall back to a plain
-// whole-string diff.
 func structuredHelmValuesDiff(key, oldYAML, newYAML string) (*diff.Diff, bool) {
 	oldMap, ok := parseYAMLMapping(oldYAML)
 	if !ok {
@@ -60,14 +50,6 @@ func structuredHelmValuesDiff(key, oldYAML, newYAML string) (*diff.Diff, bool) {
 	), true
 }
 
-// structuredTFVarsDiff builds a nested diff tree for a Terraform vars override
-// input by parsing both the old and new tfvars (HCL or JSON) and diffing it
-// key-by-key, so the CLI renders a per-variable diff instead of one opaque
-// multi-line blob.
-//
-// It returns (nil, false) when either side cannot be parsed as a flat set of
-// tfvars assignments (e.g. a syntax error or an expression that references
-// variables/functions), so the caller can fall back to a whole-string diff.
 func structuredTFVarsDiff(key, oldVars, newVars string) (*diff.Diff, bool) {
 	oldMap, ok := parseTFVarsMapping(oldVars)
 	if !ok {
@@ -84,9 +66,6 @@ func structuredTFVarsDiff(key, oldVars, newVars string) (*diff.Diff, bool) {
 	), true
 }
 
-// parseYAMLMapping decodes s into a string-keyed map. An empty document decodes
-// to an empty map (so a newly-set override shows every key as an addition). ok
-// is false when s is not a YAML mapping.
 func parseYAMLMapping(s string) (map[string]interface{}, bool) {
 	if strings.TrimSpace(s) == "" {
 		return map[string]interface{}{}, true
@@ -107,10 +86,6 @@ func parseYAMLMapping(s string) (map[string]interface{}, bool) {
 	return m, true
 }
 
-// parseTFVarsMapping decodes a tfvars override (HCL or JSON) into a string-keyed
-// map of its top-level variable assignments. An empty document decodes to an
-// empty map. ok is false when the content cannot be parsed as a flat set of
-// literal assignments.
 func parseTFVarsMapping(s string) (map[string]interface{}, bool) {
 	if strings.TrimSpace(s) == "" {
 		return map[string]interface{}{}, true
@@ -137,9 +112,6 @@ func parseTFVarsMapping(s string) (map[string]interface{}, bool) {
 
 	out := make(map[string]interface{}, len(attrs))
 	for name, attr := range attrs {
-		// tfvars are literal assignments, so evaluate with no variables or
-		// functions in scope. Anything that needs them is not a valid tfvars
-		// file and falls back to a string diff.
 		val, vdiags := attr.Expr.Value(nil)
 		if vdiags.HasErrors() {
 			return nil, false
@@ -149,8 +121,6 @@ func parseTFVarsMapping(s string) (map[string]interface{}, bool) {
 	return out, true
 }
 
-// ctyToInterface converts a cty value (from tfvars parsing) into the same
-// Go-native shape that YAML decoding produces, so both feed mappingDiff.
 func ctyToInterface(v cty.Value) interface{} {
 	if v.IsNull() || !v.IsKnown() {
 		return nil
@@ -163,9 +133,6 @@ func ctyToInterface(v cty.Value) interface{} {
 	case t == cty.Bool:
 		return v.True()
 	case t == cty.Number:
-		// Preserve the exact numeric text. cty numbers are arbitrary precision,
-		// so converting through int64/float64 could overflow or round and make
-		// distinct values diff as equal.
 		return json.Number(v.AsBigFloat().Text('f', -1))
 	case t.IsObjectType() || t.IsMapType():
 		out := map[string]interface{}{}
@@ -186,9 +153,6 @@ func ctyToInterface(v cty.Value) interface{} {
 	}
 }
 
-// mappingDiff diffs two decoded mappings into a sorted list of diff nodes.
-// Nested mappings recurse into child branches; everything else is compared as a
-// scalar leaf.
 func mappingDiff(oldMap, newMap map[string]interface{}) []*diff.Diff {
 	keys := sortedUnionKeys(oldMap, newMap)
 	children := make([]*diff.Diff, 0, len(keys))
@@ -200,9 +164,6 @@ func mappingDiff(oldMap, newMap map[string]interface{}) []*diff.Diff {
 		oldChild, oldIsMap := oldVal.(map[string]interface{})
 		newChild, newIsMap := newVal.(map[string]interface{})
 
-		// Recurse when both present sides are mappings (treating an absent side
-		// as an empty mapping). A type change between scalar and mapping falls
-		// through to a scalar leaf diff.
 		recurse := (oldIsMap || !oldOK) && (newIsMap || !newOK) && (oldIsMap || newIsMap)
 		if recurse {
 			if oldChild == nil {
@@ -212,8 +173,6 @@ func mappingDiff(oldMap, newMap map[string]interface{}) []*diff.Diff {
 				newChild = map[string]interface{}{}
 			}
 			childDiffs := mappingDiff(oldChild, newChild)
-			// An empty mapping appearing or disappearing has no children to
-			// diff, so emit a scalar leaf to record the add/remove.
 			if len(childDiffs) == 0 && oldOK != newOK {
 				children = append(children, diff.NewDiff(
 					diff.WithKey(k),
@@ -254,8 +213,6 @@ func sortedUnionKeys(a, b map[string]interface{}) []string {
 	return keys
 }
 
-// scalarToString renders a leaf YAML value for display. Lists and (type-changed)
-// mappings are rendered as compact JSON so they stay on a single diff line.
 func scalarToString(v interface{}, present bool) string {
 	if !present {
 		return ""

@@ -9,12 +9,6 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 )
 
-// ToTags is a flexible tag creator, which can accept a map (for default tags), and either partial tags or full tags.
-//
-// For instance, both the following string parameter sets are equivalent:
-// ToTags(defaultTags, "status", "ok", "step:step-2")
-// ToTags(defaultTags, "status", "ok", "step", "step-2")
-// ToTags(defaultTags, "status:ok", "step:step-2")
 func ToTags(inputs map[string]string, addtlTags ...string) []string {
 	tags := make([]string, 0)
 	for k, v := range inputs {
@@ -39,7 +33,6 @@ func ToTags(inputs map[string]string, addtlTags ...string) []string {
 		tags = append(tags, strings.Join(kv, ":"))
 	}
 
-	// sort tags for consistency
 	sort.Strings(tags)
 
 	return tags
@@ -69,7 +62,6 @@ func AddTagsMap(tags []string, vals map[string]string) []string {
 	return tags
 }
 
-// common conversions to make tagging even easier
 func ToBoolTag(name string, val bool) string {
 	return fmt.Sprintf("%s:%s", name, strconv.FormatBool(val))
 }

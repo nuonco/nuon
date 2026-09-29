@@ -141,7 +141,7 @@ Plan: 1 to add, 0 to change, 0 to destroy
         `,
         helm_content_diff: [
           {
-            kind: 'Deployment', // Different kind
+            kind: 'Deployment',
             name: 'myapp-release',
             namespace: 'default',
             before: null,
@@ -159,7 +159,7 @@ Plan: 1 to add, 0 to change, 0 to destroy
         resource: 'ConfigMap',
         resourceType: 'v1',
         action: 'added',
-        before: null, // No matching diff found
+        before: null,
         after: null,
         diff: 'Diff not available from planner',
       })
@@ -259,12 +259,12 @@ Plan: 2 to add, 2 to change, 2 to destroy
       const result = parseHelmPlan(mockPlan)
 
       expect(result.changes).toHaveLength(6)
-      expect(result.changes[0].action).toBe('destroyed') // removed → destroyed
-      expect(result.changes[1].action).toBe('changed')   // changed → changed
-      expect(result.changes[2].action).toBe('added')     // added → added
-      expect(result.changes[3].action).toBe('added')     // created → added
-      expect(result.changes[4].action).toBe('changed')   // modified → changed
-      expect(result.changes[5].action).toBe('destroyed') // destroyed → destroyed
+      expect(result.changes[0].action).toBe('destroyed')
+      expect(result.changes[1].action).toBe('changed')
+      expect(result.changes[2].action).toBe('added')
+      expect(result.changes[3].action).toBe('added')
+      expect(result.changes[4].action).toBe('changed')
+      expect(result.changes[5].action).toBe('destroyed')
     })
 
     test('should handle malformed lines gracefully', () => {

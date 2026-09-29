@@ -14,7 +14,6 @@ func TFOutputMetaToStructPB(tfom map[string]tfexec.OutputMeta) (*structpb.Struct
 		msi[key] = outMeta.Value
 	}
 	if true {
-		// round trip to json bytes to deal with RawMessage if necessary
 		byts, err := json.Marshal(msi)
 		if err != nil {
 			return nil, fmt.Errorf("unable to convert to json: %w", err)

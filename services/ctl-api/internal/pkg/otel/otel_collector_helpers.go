@@ -10,7 +10,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
-// src: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/clickhouseexporter/exporter_logs.go#L132-L139
 func AttributesToMap(attributes pcommon.Map) map[string]string {
 	m := make(map[string]string, attributes.Len())
 	attributes.Range(func(k string, v pcommon.Value) bool {
@@ -20,7 +19,6 @@ func AttributesToMap(attributes pcommon.Map) map[string]string {
 	return m
 }
 
-// src: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/clickhouseexporter/exporter_traces.go#L130
 func ConvertEvents(events ptrace.SpanEventSlice) ([]time.Time, []string, []map[string]string) {
 	var (
 		times []time.Time
@@ -36,7 +34,6 @@ func ConvertEvents(events ptrace.SpanEventSlice) ([]time.Time, []string, []map[s
 	return times, names, attrs
 }
 
-// src: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/clickhouseexporter/exporter_traces.go#L145
 func ConvertLinks(links ptrace.SpanLinkSlice) ([]string, []string, []string, []map[string]string) {
 	var (
 		traceIDs []string
@@ -54,7 +51,6 @@ func ConvertLinks(links ptrace.SpanLinkSlice) ([]string, []string, []string, []m
 	return traceIDs, spanIDs, states, attrs
 }
 
-// src: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/clickhouseexporter/internal/metrics_model.go#L105C1-L124C2
 func ConvertExemplars(exemplars pmetric.ExemplarSlice) (clickhouse.ArraySet, clickhouse.ArraySet, clickhouse.ArraySet, clickhouse.ArraySet, clickhouse.ArraySet) {
 	var (
 		attrs    clickhouse.ArraySet
@@ -76,7 +72,6 @@ func ConvertExemplars(exemplars pmetric.ExemplarSlice) (clickhouse.ArraySet, cli
 	return attrs, times, values, traceIDs, spanIDs
 }
 
-// src: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/clickhouseexporter/internal/metrics_model.go#L171
 func ConvertSliceToArraySet[T any](slice []T) clickhouse.ArraySet {
 	var set clickhouse.ArraySet
 	for _, item := range slice {
@@ -85,7 +80,6 @@ func ConvertSliceToArraySet[T any](slice []T) clickhouse.ArraySet {
 	return set
 }
 
-// src: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/clickhouseexporter/internal/metrics_model.go#L179
 func ConvertValueAtQuantile(valueAtQuantile pmetric.SummaryDataPointValueAtQuantileSlice) (clickhouse.ArraySet, clickhouse.ArraySet) {
 	var (
 		quantiles clickhouse.ArraySet
@@ -99,9 +93,6 @@ func ConvertValueAtQuantile(valueAtQuantile pmetric.SummaryDataPointValueAtQuant
 	return quantiles, values
 }
 
-// SpanKindStr returns a string representation of the SpanKind as it's defined in the proto.
-// The function provides old behavior of ptrace.SpanKind.String() to support graceful adoption of
-// https://github.com/open-telemetry/opentelemetry-collector/pull/6250.
 func SpanKindStr(sk ptrace.SpanKind) string {
 	switch sk {
 	case ptrace.SpanKindUnspecified:
@@ -120,9 +111,6 @@ func SpanKindStr(sk ptrace.SpanKind) string {
 	return ""
 }
 
-// StatusCodeStr returns a string representation of the StatusCode as it's defined in the proto.
-// The function provides old behavior of ptrace.StatusCode.String() to support graceful adoption of
-// https://github.com/open-telemetry/opentelemetry-collector/pull/6250.
 func StatusCodeStr(sk ptrace.StatusCode) string {
 	switch sk {
 	case ptrace.StatusCodeUnset:

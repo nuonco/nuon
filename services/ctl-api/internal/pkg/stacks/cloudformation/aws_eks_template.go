@@ -25,33 +25,21 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 		additional: generics.ToStringMap(inp.Settings.AWSTags),
 	}
 
-	// build nested resources
 	stack, vpcParams, vpcOutputs, err := t.getVPCNestedStack(inp, tb)
 	if err != nil {
 		return nil, err
 	}
 	tmpl.Resources["VPC"] = stack
-	// vpcParams := t.getVPCNestedStackParams(inp)
 	maps.Copy(tmpl.Parameters, vpcParams)
 
-	// Top-level Runner parameters: exposed on the parent stack so customers can
-	// override the defaults; the runner ASG nested stack references these.
 	runnerParams := t.getRunnerParameters(inp)
 	maps.Copy(tmpl.Parameters, runnerParams)
 	paramlabels := map[string]any{}
 
-	// Always created: sandboxes look the runner security group up by tag to grant
-	// it access to the cluster, so omitting it fails their plan even when nothing
-	// is attached to it.
 	tmpl.Resources["RunnerSecurityGroup"] = t.getRunnerSecurityGroup(inp, tb)
 
-	// When using local runners (dev mode), skip the ASG and runner-EC2-specific
-	// resources to save ~5-6 minutes during stack creation.
-	// PhoneHome resources are always created as the provision workflow depends on
-	// the phone home callback to proceed.
 	telemetryEndpoint := ""
 	if !t.cfg.UseLocalRunners {
-		// NOTE(fd): this uses the configurable nested runner asg cf stack
 		runnerASG, supportsTelemetryIngress, err := t.getRunnerASGNestedStack(inp, tb)
 		if err != nil {
 			return nil, err
@@ -75,14 +63,12 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 				cloudformation.GetAtt("RunnerAutoScalingGroup", "Outputs.TelemetryEndpoint"), "")
 		}
 
-		// CloudWatch: logs
 		tmpl.Resources["RunnerCloudWatchLogGroup"] = t.getRunnerCloudWatchLogGroup(inp, tb)
 		tmpl.Resources["RunnerCloudWatchLogStream"] = t.getRunnerCloudWatchLogStream(inp, tb)
 		tmpl.Resources["RunnerCloudWatchLogPolicy"] = t.getRunnerCloudWatchLogPolicy(inp, tb)
 		maps.Copy(tmpl.Resources, t.getTelemetryExportResources(inp, tb))
 	}
 
-	// build roles (before custom nested stacks so they can depend on them)
 	roles := t.getRolesResources(inp, tb)
 	maps.Copy(tmpl.Resources, roles)
 	roleParams := t.getRolesParameters(inp)
@@ -92,7 +78,6 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	roleParamLabels := t.getRolesParamLabels(inp)
 	maps.Copy(paramlabels, roleParamLabels)
 
-	// custom nested stacks
 	existingResourceKeys := map[string]bool{}
 	for k := range tmpl.Resources {
 		existingResourceKeys[k] = true
@@ -106,7 +91,6 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	}
 	maps.Copy(tmpl.Parameters, customResult.params)
 
-	// Phone home Lambda + props — AFTER custom stacks so we have their output metadata
 	if err := validatePhoneHomeScript(inp.PhonehomeScript); err != nil {
 		return nil, err
 	}
@@ -120,8 +104,6 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	tmpl.Resources["RunnerPhoneHome"] = t.getRunnerPhoneHomeLambda(inp, tb)
 	tmpl.Resources["RunnerPhoneHomeRole"] = t.getRunnerPhoneHomeLambdaRole(inp, tb)
 
-	// NOTE(fd): if there are no secrets in the config, the section is not rendered.
-	// build secrets
 	if len(inp.AppCfg.SecretsConfig.Secrets) > 0 {
 		secrets := t.getSecretsResources(inp, tb)
 		maps.Copy(tmpl.Resources, secrets)
@@ -133,7 +115,6 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 		maps.Copy(paramlabels, secretParamLabels)
 	}
 
-	// build app input parameters for install_stack sourced inputs
 	installGroupParameters := t.getInstallInputGroupParameters(inp)
 	for _, installGroupParameter := range installGroupParameters {
 		maps.Copy(tmpl.Parameters, installGroupParameter)
@@ -143,7 +124,6 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 		maps.Copy(paramlabels, installGroupParameLables)
 	}
 
-	// parameter groups
 	var pgs []map[string]any
 	paramGroups := []map[string]any{
 		{
@@ -175,7 +155,6 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	})
 	pgs = append(pgs, paramGroups...)
 
-	// add app input parameter group if there are any install_stack sourced inputs
 	for groupName, installGroupParameters := range installGroupParameters {
 		pgs = append(pgs, map[string]any{
 			"Label": map[string]any{
@@ -185,7 +164,6 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 		})
 	}
 
-	// add custom nested stack parameter groups
 	pgs = append(pgs, customResult.paramGroups...)
 
 	tmpl.Metadata["AWS::CloudFormation::Interface"] = map[string]any{

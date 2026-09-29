@@ -47,7 +47,7 @@ func (s *service) GetInstallRunbook(ctx *gin.Context) {
 	var installRunbook app.InstallRunbook
 	res := s.db.WithContext(ctx).
 		Preload("Runbook").
-		// Pinned config, not the app's newest: runs execute the pinned one, so any
+		// why: Pinned config, not the app's newest: runs execute the pinned one, so any
 		// other version hands callers step IDs it will reject. Legacy installs have no
 		// pinned config and still resolve to the newest at run time.
 		Preload("Runbook.Configs", func(tx *gorm.DB) *gorm.DB {
@@ -75,8 +75,6 @@ func (s *service) GetInstallRunbook(ctx *gin.Context) {
 		return
 	}
 
-	// Render runbook config readmes with install state, matching the install
-	// readme endpoint pattern (get_install_readme.go).
 	if installRunbook.Runbook.Configs != nil {
 		installState, err := s.installHelpers.GetInstallState(ctx, installID, true, true)
 		if err == nil {

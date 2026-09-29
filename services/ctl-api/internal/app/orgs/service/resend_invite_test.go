@@ -30,7 +30,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// ResendOrgInviteTestService holds all fx-injected dependencies for resend org invite tests.
 type ResendOrgInviteTestService struct {
 	fx.In
 
@@ -43,7 +42,6 @@ type ResendOrgInviteTestService struct {
 	AccountsHelpers *accountshelpers.Helpers
 }
 
-// ResendOrgInviteTestSuite is the testify suite for resend org invite endpoint.
 type ResendOrgInviteTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -74,7 +72,6 @@ func (s *ResendOrgInviteTestSuite) SetupSuite() {
 
 			CustomValidator: true,
 		}),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),
 	)
@@ -82,7 +79,6 @@ func (s *ResendOrgInviteTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -90,9 +86,6 @@ func (s *ResendOrgInviteTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
-
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -109,7 +102,6 @@ func (s *ResendOrgInviteTestSuite) TearDownSuite() {
 }
 
 func (s *ResendOrgInviteTestSuite) setupTestData() {
-	// Create test account
 	accID := domains.NewAccountID()
 	testAcc := &app.Account{
 		ID:          accID,
@@ -121,7 +113,6 @@ func (s *ResendOrgInviteTestSuite) setupTestData() {
 	require.NoError(s.T(), err)
 	s.testAcc = testAcc
 
-	// Create test org with account context (required by BeforeCreate hook)
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 	orgID := domains.NewOrgID()
@@ -160,7 +151,7 @@ func (s *ResendOrgInviteTestSuite) makeRequest(method, path string, body interfa
 func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 	testCases := []struct {
 		name             string
-		setupFunc        func() string // Returns invite ID to use in request
+		setupFunc        func() string
 		expectedStatus   int
 		validateResponse func(*httptest.ResponseRecorder)
 		validateSignal   bool
@@ -168,7 +159,6 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 		{
 			name: "successfully resends pending invite",
 			setupFunc: func() string {
-				// Create a pending invite
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 				testEmail := fmt.Sprintf("resend-success-%s@test.nuon.co", domains.NewAccountID()[:8])
@@ -181,7 +171,6 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 				err := s.service.DB.WithContext(ctx).Create(invite).Error
 				require.NoError(s.T(), err)
 
-				// Cleanup
 				inviteID := invite.ID
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.OrgInvite{}, "id = ?", inviteID)
@@ -205,7 +194,6 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 		{
 			name: "returns error for non-existent invite ID",
 			setupFunc: func() string {
-				// Return a fake invite ID that doesn't exist
 				return domains.NewOrgID()
 			},
 			expectedStatus: http.StatusNotFound,
@@ -218,7 +206,6 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 		{
 			name: "returns 400 for already accepted invite",
 			setupFunc: func() string {
-				// Create an accepted invite
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 				testEmail := fmt.Sprintf("already-accepted-%s@test.nuon.co", domains.NewAccountID()[:8])
@@ -231,7 +218,6 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 				err := s.service.DB.WithContext(ctx).Create(invite).Error
 				require.NoError(s.T(), err)
 
-				// Cleanup
 				inviteID := invite.ID
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.OrgInvite{}, "id = ?", inviteID)
@@ -249,7 +235,6 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 		{
 			name: "returns error for invite belonging to different org",
 			setupFunc: func() string {
-				// Create second org
 				acc2ID := domains.NewAccountID()
 				acc2 := &app.Account{
 					ID:          acc2ID,
@@ -280,7 +265,6 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org2.ID)
 				})
 
-				// Create invite in different org
 				testEmail := fmt.Sprintf("different-org-%s@test.nuon.co", domains.NewAccountID()[:8])
 				invite := &app.OrgInvite{
 					Email:    testEmail,
@@ -291,7 +275,6 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 				err = s.service.DB.WithContext(ctx).Create(invite).Error
 				require.NoError(s.T(), err)
 
-				// Cleanup
 				inviteID := invite.ID
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.OrgInvite{}, "id = ?", inviteID)
@@ -302,7 +285,6 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 			expectedStatus: http.StatusNotFound,
 			validateResponse: func(rr *httptest.ResponseRecorder) {
 				body := rr.Body.String()
-				// Should not find the invite because it belongs to different org
 				assert.Contains(s.T(), body, "record not found")
 			},
 			validateSignal: false,
@@ -310,7 +292,6 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 		{
 			name: "returns 400 for empty invite_id",
 			setupFunc: func() string {
-				// Return empty string to test empty param handling
 				return ""
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -324,12 +305,8 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Reset mock before test
-
-			// Setup test data
 			inviteID := tc.setupFunc()
 
-			// Make request
 			path := fmt.Sprintf("/v1/orgs/current/invites/%s/resend", inviteID)
 			rr := s.makeRequest(http.MethodPost, path, nil)
 
@@ -338,12 +315,10 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Validate response
 			if tc.validateResponse != nil {
 				tc.validateResponse(rr)
 			}
 
-			// Validate signal was sent (or not sent)
 			if tc.validateSignal {
 				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
@@ -360,7 +335,6 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 }
 
 func (s *ResendOrgInviteTestSuite) TestResendOrgInvite_DoesNotModifyInviteInDatabase() {
-	// Create a pending invite
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 	testEmail := fmt.Sprintf("no-modify-%s@test.nuon.co", domains.NewAccountID()[:8])
@@ -376,15 +350,12 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite_DoesNotModifyInviteInData
 		s.service.DB.Unscoped().Delete(&app.OrgInvite{}, "id = ?", invite.ID)
 	})
 
-	// Store original timestamp
 	originalUpdatedAt := invite.UpdatedAt
 
-	// Resend the invite
 	path := fmt.Sprintf("/v1/orgs/current/invites/%s/resend", invite.ID)
 	rr := s.makeRequest(http.MethodPost, path, nil)
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	// Verify database record was not modified
 	var dbInvite app.OrgInvite
 	err = s.service.DB.Where("id = ?", invite.ID).First(&dbInvite).Error
 	require.NoError(s.T(), err)
@@ -392,12 +363,10 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite_DoesNotModifyInviteInData
 	assert.Equal(s.T(), testEmail, dbInvite.Email)
 	assert.Equal(s.T(), app.OrgInviteStatusPending, dbInvite.Status)
 	assert.Equal(s.T(), s.testOrg.ID, dbInvite.OrgID)
-	// UpdatedAt should not change since we only read the record
 	assert.Equal(s.T(), originalUpdatedAt.Unix(), dbInvite.UpdatedAt.Unix())
 }
 
 func (s *ResendOrgInviteTestSuite) TestResendOrgInvite_CanResendMultipleTimes() {
-	// Create a pending invite
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 	testEmail := fmt.Sprintf("multi-resend-%s@test.nuon.co", domains.NewAccountID()[:8])
@@ -415,25 +384,21 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite_CanResendMultipleTimes() 
 
 	path := fmt.Sprintf("/v1/orgs/current/invites/%s/resend", invite.ID)
 
-	// Resend first time
 	rr1 := s.makeRequest(http.MethodPost, path, nil)
 	require.Equal(s.T(), http.StatusOK, rr1.Code)
 	signals1 := tests.GetQueueSignals(s.T(), s.service.DB)
 	require.GreaterOrEqual(s.T(), len(signals1), 1, "first resend should send signal")
 
-	// Resend second time
 	rr2 := s.makeRequest(http.MethodPost, path, nil)
 	require.Equal(s.T(), http.StatusOK, rr2.Code)
 	signals2 := tests.GetQueueSignals(s.T(), s.service.DB)
 	require.Greater(s.T(), len(signals2), len(signals1), "second resend should send signal")
 
-	// Resend third time
 	rr3 := s.makeRequest(http.MethodPost, path, nil)
 	require.Equal(s.T(), http.StatusOK, rr3.Code)
 	signals3 := tests.GetQueueSignals(s.T(), s.service.DB)
 	require.Greater(s.T(), len(signals3), len(signals2), "third resend should send signal")
 
-	// Verify all responses return the same invite
 	var invite1, invite2, invite3 app.OrgInvite
 	err = json.Unmarshal(rr1.Body.Bytes(), &invite1)
 	require.NoError(s.T(), err)

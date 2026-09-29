@@ -6,7 +6,6 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// optionalJSONValidator checks if a string is valid JSON when non-empty
 func optionalJSONValidator(fl validator.FieldLevel) bool {
 	value := fl.Field().String()
 

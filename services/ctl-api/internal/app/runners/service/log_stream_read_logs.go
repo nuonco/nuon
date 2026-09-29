@@ -22,50 +22,24 @@ const (
 	PageSize             int    = 100
 	nestedAttributeRegex string = `^(?:[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*)$`
 
-	// maxAttrFilters caps the total number of generic attribute filters
-	// (attr / resource_attr / scope_attr combined) accepted on a single
-	// request. Each filter adds two predicates (mapContains + bracket
-	// access) — bounding the count keeps query plans sane.
 	maxAttrFilters int = 16
 )
 
 var attrKeyRe = regexp.MustCompile(nestedAttributeRegex)
 
-// kvFilter represents a single map-attribute predicate (key=value).
 type kvFilter struct {
 	key string
 	val string
 }
 
-// metricReadFreshnessLagMs — temporary rollout metric to compare the
-// flag-off legacy poll path against `log_tail.hot_probe_ms` on the
-// flag-on path. For every response with rows, we emit `time.Since(newest
-// row timestamp)` — i.e. how stale the freshest row we just returned to
-// the user is. On the `mode:poll` slice (BFF 1s-tick live tail) p50
-// can't drop below ~500ms by construction because of the polling floor;
-// `log_tail.hot_probe_ms` p50 sits in the 300–500ms range with no such
-// floor. That gap is the rollout argument expressed in milliseconds.
-// Delete once log-tail-long-poll has rolled out broadly enough that we
-// no longer need the comparison.
 const metricReadFreshnessLagMs = "log_read.freshness_lag_ms"
 
-// readMode classifies a legacy read so the comparison against the tail
-// endpoint isn't muddied by search/download/backfill traffic. Only
-// `mode:poll` is apples-to-apples with the tail endpoint's role.
-//
-// liveTailFreshnessCeiling guards against contamination: a cursor==0
-// first-page load of an old or finished stream legitimately returns rows
-// that are hours old (the newest row *on the first page* is ancient), and
-// those samples would otherwise dominate the poll-slice median and bury
-// the real live-tail floor we're comparing against. We only count a sample
-// when its lag is small enough to plausibly be a live tail; genuine
-// live-tail polls sit well under this, finished-job opens sit well over.
 const liveTailFreshnessCeiling = 5 * time.Minute
 
 const (
-	readModePoll     = "poll"     // empty cursor, no filters, ASC — the BFF live-tail loop
-	readModeBackfill = "backfill" // non-empty cursor, no filters — paging through history
-	readModeFiltered = "filtered" // any filter set, or order=desc — search / ad-hoc
+	readModePoll     = "poll"
+	readModeBackfill = "backfill"
+	readModeFiltered = "filtered"
 )
 
 func classifyReadMode(cursor int64, order string, f logFilters) string {
@@ -115,28 +89,10 @@ func hasAnyFilter(f logFilters) bool {
 		!f.endTime.IsZero()
 }
 
-// logFilters holds optional filter values parsed from query parameters.
-//
-// The endpoint exposes the full OTEL log data model:
-//
-//   - Top-level CH columns (Timestamp, SeverityText/Number, ServiceName,
-//     ScopeName/Version, ResourceSchemaURL, ScopeSchemaURL, Trace/SpanID,
-//     Body) — filtered with direct SQL.
-//   - Internal scoping columns (RunnerID, RunnerJobID, RunnerGroupID,
-//     RunnerJobExecutionID, RunnerJobExecutionStep) — most live on the
-//     primary key/order key, so they prune efficiently.
-//   - Map columns (LogAttributes, ResourceAttributes, ScopeAttributes) —
-//     use mapContains() AND bracket equality so the bloom_filter skip
-//     indexes on mapKeys/mapValues (migration 06) can be leveraged.
-//   - Typed shortcuts for common LogAttributes (nuon.tool, helm.*, tf.*,
-//     k8s.*) for ergonomics — these are sugar over the generic attr= path.
 type logFilters struct {
-	// Time range — push-down on Timestamp prunes by the toDate(timestamp)
-	// PARTITION BY clause (see otel_log_record.go GetTableOptions()).
 	startTime time.Time
 	endTime   time.Time
 
-	// Top-level OTEL columns
 	serviceNames       []string
 	scopeNames         []string
 	scopeVersions      []string
@@ -150,14 +106,12 @@ type logFilters struct {
 	traceFlags         int
 	traceFlagsSet      bool
 
-	// Internal scoping (primary-key / order-key columns where applicable)
 	runnerID               string
 	runnerJobID            string
 	runnerGroupID          string
 	runnerJobExecutionID   string
 	runnerJobExecutionStep string
 
-	// Typed log_attributes shortcuts
 	tools           []string
 	helmReleaseName string
 	helmChartName   string
@@ -171,12 +125,10 @@ type logFilters struct {
 	k8sName         string
 	k8sOperation    string
 
-	// Generic attribute filters (escape hatch for the long tail)
 	logAttrs      []kvFilter
 	resourceAttrs []kvFilter
 	scopeAttrs    []kvFilter
 
-	// Body substring (case-insensitive)
 	bodyContains string
 }
 
@@ -214,7 +166,6 @@ func parseLogFilters(ctx *gin.Context) (logFilters, error) {
 		bodyContains: firstNonEmpty(ctx.Query("q"), ctx.Query("body_contains")),
 	}
 
-	// Time range — RFC3339.
 	if v := ctx.Query("start_time"); v != "" {
 		t, err := time.Parse(time.RFC3339, v)
 		if err != nil {
@@ -233,7 +184,6 @@ func parseLogFilters(ctx *gin.Context) (logFilters, error) {
 		return f, errors.New("end_time must be >= start_time")
 	}
 
-	// Severity number range (OTEL: TRACE=1..FATAL=24, stored as UInt8).
 	if v := ctx.Query("severity_number_min"); v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil || n < 0 || n > 255 {
@@ -249,7 +199,6 @@ func parseLogFilters(ctx *gin.Context) (logFilters, error) {
 		f.severityNumberMax = n
 	}
 
-	// Trace flags (UInt8).
 	if v := ctx.Query("trace_flags"); v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil || n < 0 || n > 255 {
@@ -259,7 +208,6 @@ func parseLogFilters(ctx *gin.Context) (logFilters, error) {
 		f.traceFlagsSet = true
 	}
 
-	// Generic key:value attribute filters — repeatable across three columns.
 	var err error
 	if f.logAttrs, err = parseKVFilters(ctx.QueryArray("attr")); err != nil {
 		return f, fmt.Errorf("invalid attr: %w", err)
@@ -277,9 +225,6 @@ func parseLogFilters(ctx *gin.Context) (logFilters, error) {
 	return f, nil
 }
 
-// parseKVFilters parses repeatable key:value query params. The key is
-// validated against nestedAttributeRegex; the value is taken verbatim
-// (anything after the first ':'). Empty entries are skipped.
 func parseKVFilters(raws []string) ([]kvFilter, error) {
 	out := make([]kvFilter, 0, len(raws))
 	for _, raw := range raws {
@@ -309,7 +254,6 @@ func firstNonEmpty(vals ...string) string {
 }
 
 func applyLogFilters(db *gorm.DB, f logFilters) *gorm.DB {
-	// Time range — partition pruning on toDate(timestamp_time).
 	if !f.startTime.IsZero() {
 		db = db.Where("timestamp >= ?", f.startTime)
 	}
@@ -317,7 +261,6 @@ func applyLogFilters(db *gorm.DB, f logFilters) *gorm.DB {
 		db = db.Where("timestamp <= ?", f.endTime)
 	}
 
-	// Top-level columns.
 	if len(f.serviceNames) > 0 {
 		db = db.Where("service_name IN ?", f.serviceNames)
 	}
@@ -343,10 +286,6 @@ func applyLogFilters(db *gorm.DB, f logFilters) *gorm.DB {
 		db = db.Where("scope_schema_url IN ?", f.scopeSchemaURLs)
 	}
 
-	// trace_id / span_id are dedicated CH columns populated by the otelzap
-	// bridge from the runner's per-op span context (see bins/runner/internal/pkg/op).
-	// trace_id has a bloom_filter skip index (see otel_log_record.go); span_id
-	// does not — query latency is acceptable today, revisit if it isn't.
 	if f.traceID != "" {
 		db = db.Where("trace_id = ?", f.traceID)
 	}
@@ -357,8 +296,6 @@ func applyLogFilters(db *gorm.DB, f logFilters) *gorm.DB {
 		db = db.Where("trace_flags = ?", f.traceFlags)
 	}
 
-	// Internal scoping. runner_job_id is part of the ORDER BY tuple — passing
-	// it lets ClickHouse skip whole granules. Step pages already know this ID.
 	if f.runnerID != "" {
 		db = db.Where("runner_id = ?", f.runnerID)
 	}
@@ -375,10 +312,6 @@ func applyLogFilters(db *gorm.DB, f logFilters) *gorm.DB {
 		db = db.Where("runner_job_execution_step = ?", f.runnerJobExecutionStep)
 	}
 
-	// Typed log_attributes shortcuts. mapContains() exercises the
-	// mapKeys bloom_filter; the bracket equality exercises the mapValues
-	// bloom_filter (see migration 06). AND'ing both lets ClickHouse prune
-	// granules from either side.
 	addAttrEq := func(d *gorm.DB, key, val string) *gorm.DB {
 		if val == "" {
 			return d
@@ -405,7 +338,6 @@ func applyLogFilters(db *gorm.DB, f logFilters) *gorm.DB {
 	db = addAttrEq(db, "k8s.name", f.k8sName)
 	db = addAttrEq(db, "k8s.operation", f.k8sOperation)
 
-	// Generic key:value filters across the three OTEL attribute maps.
 	db = applyMapKVs(db, "log_attributes", f.logAttrs)
 	db = applyMapKVs(db, "resource_attributes", f.resourceAttrs)
 	db = applyMapKVs(db, "scope_attributes", f.scopeAttrs)
@@ -416,8 +348,6 @@ func applyLogFilters(db *gorm.DB, f logFilters) *gorm.DB {
 	return db
 }
 
-// escapeILIKE neutralizes ILIKE wildcards (%, _, \) so the body search is a
-// literal substring match, matching its documented behavior.
 func escapeILIKE(s string) string {
 	s = strings.ReplaceAll(s, `\`, `\\`)
 	s = strings.ReplaceAll(s, `%`, `\%`)
@@ -425,9 +355,6 @@ func escapeILIKE(s string) string {
 	return s
 }
 
-// applyMapKVs is the generic counterpart to addAttrEq: it pushes one
-// (mapContains AND bracket =) pair per filter on the named Map column.
-// `col` is restricted to the three OTEL attribute columns by the caller.
 func applyMapKVs(db *gorm.DB, col string, kvs []kvFilter) *gorm.DB {
 	if len(kvs) == 0 {
 		return db
@@ -494,7 +421,6 @@ func applyMapKVs(db *gorm.DB, col string, kvs []kvFilter) *gorm.DB {
 func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 	logStreamID := ctx.Param("log_stream_id")
 
-	// Read logs from chDB
 	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to read org id from context"))
@@ -507,14 +433,12 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 		return
 	}
 
-	// Parse order parameter
 	order := ctx.DefaultQuery("order", "asc")
 	if order != "asc" && order != "desc" {
 		ctx.Error(stderr.NewInvalidRequest(errors.New("invalid order query parameter, must be 'asc' or 'desc'")))
 		return
 	}
 
-	// Parse cursor
 	var cursor int64
 	cursorStr := ctx.GetHeader("X-Nuon-API-Offset")
 	if cursorStr != "" {
@@ -538,9 +462,6 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 		return
 	}
 
-	// Emit freshness lag of the newest returned row. ASC orders newest
-	// last, DESC orders newest first; either way it's the timestamp the
-	// user perceives as "most recent visible log" right now.
 	if len(logs) > 0 {
 		newest := logs[len(logs)-1]
 		if order == "desc" {
@@ -552,7 +473,6 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 		}
 	}
 
-	// Set headers
 	for key, value := range headers {
 		ctx.Header(key, value)
 	}
@@ -566,8 +486,6 @@ func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgI
 
 	headers := map[string]string{"Range-Units": "items"}
 
-	// Get total count first (filters applied so the count reflects what the
-	// caller will actually see for the same query string).
 	var totalCount int64
 	countQ := s.chDB.WithContext(ctx).
 		Model(&app.OtelLogRecord{}).
@@ -579,7 +497,6 @@ func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgI
 	}
 	headers["count"] = strconv.FormatInt(totalCount, 10)
 
-	// Handle empty results
 	if totalCount == 0 {
 		headers["X-Nuon-API-Next"] = ""
 		return []app.OtelLogRecord{}, headers, nil
@@ -588,7 +505,6 @@ func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgI
 	var otelLogRecords []app.OtelLogRecord
 
 	if order == "asc" {
-		// ASC: Forward pagination - get records newer than cursor
 		res := s.chDB.WithContext(ctx).
 			Where("org_id = ?", orgID).
 			Where("log_stream_id = ?", logStreamID)
@@ -605,7 +521,6 @@ func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgI
 			return nil, headers, errors.Wrap(res.Error, "unable to retrieve logs")
 		}
 
-		// Determine next cursor
 		if len(otelLogRecords) < PageSize {
 			headers["X-Nuon-API-Next"] = ""
 		} else {
@@ -614,15 +529,13 @@ func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgI
 		}
 
 	} else {
-		// DESC: Reverse pagination using ASC query + offset calculation
+		// why: DESC: Reverse pagination using ASC query + offset calculation
 		// We use ASC ordering because ClickHouse is optimized for forward scans on time-series data
 		var recordCount int64
 
 		if cursor == 0 {
-			// First page - use total count
 			recordCount = totalCount
 		} else {
-			// Subsequent pages - count records strictly before cursor (exclusive)
 			countQ := s.chDB.WithContext(ctx).
 				Model(&app.OtelLogRecord{}).
 				Where("org_id = ?", orgID).
@@ -634,19 +547,16 @@ func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgI
 			}
 		}
 
-		// No more records
 		if recordCount == 0 {
 			headers["X-Nuon-API-Next"] = ""
 			return []app.OtelLogRecord{}, headers, nil
 		}
 
-		// Calculate offset to get the last PageSize records from the available set
 		offset := recordCount - int64(PageSize)
 		if offset < 0 {
 			offset = 0
 		}
 
-		// Query with ASC order, applying cursor filter and offset
 		res := s.chDB.WithContext(ctx).
 			Where("org_id = ?", orgID).
 			Where("log_stream_id = ?", logStreamID)
@@ -664,17 +574,13 @@ func (s *service) getLogStreamLogs(ctx context.Context, logStreamID string, orgI
 			return nil, headers, errors.Wrap(res.Error, "unable to retrieve logs")
 		}
 
-		// Reverse the results in memory to get DESC order
 		for i, j := 0, len(otelLogRecords)-1; i < j; i, j = i+1, j-1 {
 			otelLogRecords[i], otelLogRecords[j] = otelLogRecords[j], otelLogRecords[i]
 		}
 
-		// Determine next cursor
-		// If offset was 0, we've retrieved all remaining records
 		if offset == 0 {
 			headers["X-Nuon-API-Next"] = ""
 		} else {
-			// Last element after reversal is the oldest timestamp in this batch
 			last := otelLogRecords[len(otelLogRecords)-1]
 			headers["X-Nuon-API-Next"] = fmt.Sprintf("%d", last.Timestamp.UnixNano())
 		}

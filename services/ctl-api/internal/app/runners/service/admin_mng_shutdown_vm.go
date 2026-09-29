@@ -31,7 +31,6 @@ func (s *service) AdminMngVMShutDown(ctx *gin.Context) {
 		return
 	}
 
-	// Create a fresh log stream for this shutdown job
 	ls := app.LogStream{
 		OwnerType: "runner_operations",
 		OwnerID:   runner.ID,

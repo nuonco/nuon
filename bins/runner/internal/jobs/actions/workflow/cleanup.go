@@ -18,8 +18,6 @@ func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExec
 
 	l.Info("cleaning up", zap.String("job_type", "actionsworkflow"))
 
-	// Drops the job's image lease so collection can reclaim the image later. The
-	// image itself is left on the host for the next run.
 	h.releaseActionImage(jobExecution.ID)
 
 	if h.state.workspace != nil {

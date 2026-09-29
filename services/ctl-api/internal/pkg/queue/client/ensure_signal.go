@@ -18,12 +18,10 @@ type EnsureSignalRequest struct {
 	OwnerType   string              `json:"owner_type" validate:"required"`
 	SignalTypes []signal.SignalType `json:"signal_types" validate:"required,min=1"`
 
-	// Callback to register on the signal if it is still in flight.
 	Callback callback.Ref `json:"callback"`
 }
 
 type EnsureSignalResponse struct {
-	// AlreadyComplete is true if the signal has already finished successfully.
 	AlreadyComplete bool   `json:"already_complete"`
 	QueueSignalID   string `json:"queue_signal_id"`
 }
@@ -36,7 +34,6 @@ type EnsureSignalResponse struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
 func (c *Client) EnsureSignal(ctx context.Context, req *EnsureSignalRequest) (*EnsureSignalResponse, error) {
-	// Find the latest signal across all requested types for this owner.
 	var qs app.QueueSignal
 	res := c.db.WithContext(ctx).
 		Where("owner_id = ? AND owner_type = ? AND type IN ?",
@@ -47,12 +44,10 @@ func (c *Client) EnsureSignal(ctx context.Context, req *EnsureSignalRequest) (*E
 		return nil, dbgenerics.TemporalGormError(res.Error, "no signal found for owner+types")
 	}
 
-	// Already succeeded — nothing to wait for.
 	if qs.Status.Status == app.StatusSuccess {
 		return &EnsureSignalResponse{AlreadyComplete: true, QueueSignalID: qs.ID}, nil
 	}
 
-	// Still in flight — atomically append the callback.
 	if qs.Status.Status == app.StatusQueued || qs.Status.Status == app.StatusInProgress {
 		if req.Callback.IsSet() {
 			cbJSON, err := json.Marshal([]callback.Ref{req.Callback})
@@ -67,7 +62,7 @@ func (c *Client) EnsureSignal(ctx context.Context, req *EnsureSignalRequest) (*E
 			}
 		}
 
-		// Re-check status after append to handle the race where the signal
+		// why: Re-check status after append to handle the race where the signal
 		// completed between our initial read and the callback append.
 		var recheck app.QueueSignal
 		if err := c.db.WithContext(ctx).First(&recheck, "id = ?", qs.ID).Error; err == nil {
@@ -79,7 +74,6 @@ func (c *Client) EnsureSignal(ctx context.Context, req *EnsureSignalRequest) (*E
 		return &EnsureSignalResponse{AlreadyComplete: false, QueueSignalID: qs.ID}, nil
 	}
 
-	// Terminal non-success (error, cancelled, etc.)
 	return nil, fmt.Errorf("signal %s is in terminal non-success state: %s - %s",
 		qs.ID, qs.Status.Status, qs.Status.StatusHumanDescription)
 }

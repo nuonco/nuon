@@ -12,7 +12,7 @@ import (
 
 type UpdateFlowStepGroupResultDirectiveRequest struct {
 	StepGroupID string `validate:"required"`
-	Directive   string // empty string is valid (used to clear the directive)
+	Directive   string
 }
 
 // @temporal-gen-v2 activity
@@ -22,7 +22,7 @@ func (a *Activities) PkgWorkflowsFlowUpdateFlowStepGroupResultDirective(ctx cont
 		Model(&group).
 		Clauses(clause.Returning{}).
 		Where(app.WorkflowStepGroup{ID: req.StepGroupID}).
-		// Must use map, not struct — GORM's struct-based Updates() skips zero-value
+		// why: Must use map, not struct — GORM's struct-based Updates() skips zero-value
 		// fields, so Updates(app.WorkflowStepGroup{ResultDirective: ""}) would be a no-op
 		// when clearing the directive.
 		Updates(map[string]any{"result_directive": req.Directive})

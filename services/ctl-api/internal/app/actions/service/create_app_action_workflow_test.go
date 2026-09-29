@@ -28,7 +28,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// CreateAppActionDeprecatedTestService holds all fx-injected dependencies for create app action tests.
 type CreateAppActionDeprecatedTestService struct {
 	fx.In
 
@@ -44,7 +43,6 @@ type CreateAppActionDeprecatedTestService struct {
 	Seeder         *testseed.Seeder
 }
 
-// CreateAppActionDeprecatedTestSuite is the testify suite for CreateAppAction endpoint.
 type CreateAppActionDeprecatedTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -76,7 +74,6 @@ func (s *CreateAppActionDeprecatedTestSuite) SetupSuite() {
 
 			CustomValidator: true,
 		}),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -84,7 +81,6 @@ func (s *CreateAppActionDeprecatedTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -92,9 +88,6 @@ func (s *CreateAppActionDeprecatedTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
-
-	// Create test router with standard middlewares using helper
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -167,8 +160,6 @@ func (s *CreateAppActionDeprecatedTestSuite) TestCreateAppActionSuccess() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Reset mock before each subtest
-
 			req := CreateAppActionRequest{
 				Name: tc.actionName,
 			}
@@ -187,7 +178,6 @@ func (s *CreateAppActionDeprecatedTestSuite) TestCreateAppActionSuccess() {
 				tc.validateFunc(&response)
 			}
 
-			// Verify action was created in database
 			var dbAction app.ActionWorkflow
 			err = s.service.DB.First(&dbAction, "id = ?", response.ID).Error
 			require.NoError(s.T(), err)
@@ -195,7 +185,6 @@ func (s *CreateAppActionDeprecatedTestSuite) TestCreateAppActionSuccess() {
 			assert.Equal(s.T(), s.testOrg.ID, dbAction.OrgID)
 			assert.Equal(s.T(), s.testApp.ID, dbAction.AppID)
 
-			// Verify signal was sent
 			queueSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 			require.Len(s.T(), queueSignals, 1)
 			assert.Equal(s.T(), response.ID, queueSignals[0].OwnerID)
@@ -255,7 +244,6 @@ func (s *CreateAppActionDeprecatedTestSuite) TestCreateAppActionInvalidRequest()
 }
 
 func (s *CreateAppActionDeprecatedTestSuite) TestCreateAppActionDifferentOrg() {
-	// Create app in different org
 	ctx2 := context.Background()
 	ctx2, _ = s.service.Seeder.EnsureAccount(ctx2, s.T())
 	ctx2, _ = s.service.Seeder.EnsureOrg(ctx2, s.T())
@@ -265,11 +253,6 @@ func (s *CreateAppActionDeprecatedTestSuite) TestCreateAppActionDifferentOrg() {
 		Name: "test-action",
 	}
 
-	// Note: Current handler behavior has a security issue - findApp uses Or("id = ?", appID)
-	// without org_id check, so it finds apps from other orgs. However, createActionWorkflow
-	// uses the org context from the request, creating a mismatched action.
-	// This test documents current behavior. The action is created with the requesting org's ID
-	// even though the app belongs to a different org.
 	rr := s.makeRequest(http.MethodPost, "/v1/apps/"+otherApp.ID+"/actions", req)
 
 	if rr.Code != http.StatusCreated {
@@ -281,10 +264,8 @@ func (s *CreateAppActionDeprecatedTestSuite) TestCreateAppActionDifferentOrg() {
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(s.T(), err)
 
-	// Verify action was created with mismatched org/app relationship
-	// (this is the current buggy behavior)
-	assert.Equal(s.T(), s.testOrg.ID, response.OrgID) // Uses requesting org
-	assert.Equal(s.T(), otherApp.ID, response.AppID)  // But references app from other org
+	assert.Equal(s.T(), s.testOrg.ID, response.OrgID)
+	assert.Equal(s.T(), otherApp.ID, response.AppID)
 
 	s.T().Cleanup(func() {
 		s.service.DB.Unscoped().Delete(&app.ActionWorkflow{}, "id = ?", response.ID)

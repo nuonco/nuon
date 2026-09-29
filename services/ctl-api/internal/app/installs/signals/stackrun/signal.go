@@ -88,7 +88,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	runType := s.determineRunType(ctx, version, install)
 
-	// Phase 1: Parse and Store
 	beforeRoles := snapshotRoles(ctx, install.ID, l)
 	beforeInputs := snapshotInputs(ctx, version.InstallStackID)
 
@@ -128,7 +127,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	// Phase 2: Signal and Complete
 	if runType == app.StackVersionRunTypeWorkflow {
 		s.handleProvisionComplete(ctx, install, version, l)
 		s.propagateToNewerVersion(ctx, install, version, l)

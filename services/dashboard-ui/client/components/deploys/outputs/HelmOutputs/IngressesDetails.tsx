@@ -84,7 +84,6 @@ const IngressHeading = ({ name, ingress }) => {
       )
     }
   } catch (e) {
-    // Ignore parsing errors
   }
 
   const isPublic = scheme === 'internet-facing'
@@ -134,7 +133,6 @@ const IngressDetails = ({ ingress }) => {
       )
     }
   } catch (e) {
-    // Ignore parsing errors
   }
 
   const isPublic = scheme === 'internet-facing'

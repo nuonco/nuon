@@ -80,8 +80,6 @@ func TestJudgeWindow(t *testing.T) {
 	})
 }
 
-// Regression: a retry re-applies with no fresh observations mid-flight, and
-// that must read as "wait", never a pass.
 func TestGateIsNotBypassedByItsOwnRetry(t *testing.T) {
 	t.Parallel()
 
@@ -117,8 +115,6 @@ func TestWindowNarration(t *testing.T) {
 	assert.Equal(t, "component is unhealthy: ExecProbe gate-test-always-fails: exit code 1", got)
 }
 
-// Pins a real gap: on first deploy the runner picks up probes one report
-// cycle late, so a window that closes there must not pass on checks that never ran.
 func TestMissingProbes(t *testing.T) {
 	t.Parallel()
 
@@ -160,8 +156,6 @@ func TestMissingProbes(t *testing.T) {
 	})
 }
 
-// Removed is recomputed each poll, so it covers both directions: deleting a
-// probe labels its rows, and re-adding it clears the label next poll.
 func TestMarkRemovedCheckRows(t *testing.T) {
 	t.Parallel()
 
@@ -186,8 +180,6 @@ func TestMarkRemovedCheckRows(t *testing.T) {
 	assert.False(t, readded[1].Removed, "re-adding the probe clears the label immediately")
 }
 
-// A passing probe only proves an endpoint answered, not that the rollout
-// succeeded — without cluster evidence the gate must not close on probes alone.
 func TestJudgeWindowRequiresClusterEvidence(t *testing.T) {
 	t.Parallel()
 

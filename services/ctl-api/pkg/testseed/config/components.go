@@ -7,9 +7,6 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 )
 
-// Component Fakers
-
-// GetTerraformComponent returns a fake terraform module component with the given name.
 func GetTerraformComponent(name string) *config.Component {
 	return &config.Component{
 		Type: config.TerraformModuleComponentType,
@@ -27,7 +24,6 @@ func GetTerraformComponent(name string) *config.Component {
 	}
 }
 
-// GetHelmComponent returns a fake helm chart component with the given name.
 func GetHelmComponent(name string) *config.Component {
 	return &config.Component{
 		Type: config.HelmChartComponentType,
@@ -45,7 +41,6 @@ func GetHelmComponent(name string) *config.Component {
 	}
 }
 
-// GetDockerBuildComponent returns a fake docker build component with the given name.
 func GetDockerBuildComponent(name string) *config.Component {
 	return &config.Component{
 		Type: config.DockerBuildComponentType,
@@ -62,7 +57,6 @@ func GetDockerBuildComponent(name string) *config.Component {
 	}
 }
 
-// GetKubernetesManifestComponent returns a fake kubernetes manifest component with the given name.
 func GetKubernetesManifestComponent(name string) *config.Component {
 	return &config.Component{
 		Type: config.KubernetesManifestComponentType,
@@ -77,7 +71,6 @@ func GetKubernetesManifestComponent(name string) *config.Component {
 	}
 }
 
-// GetJobComponent returns a fake job component with the given name.
 func GetJobComponent(name string) *config.Component {
 	return &config.Component{
 		Type: config.JobComponentType,
@@ -92,7 +85,6 @@ func GetJobComponent(name string) *config.Component {
 	}
 }
 
-// GetExternalImageComponent returns a fake external image component with the given name.
 func GetExternalImageComponent(name string) *config.Component {
 	return &config.Component{
 		Type: config.ExternalImageComponentType,
@@ -105,8 +97,6 @@ func GetExternalImageComponent(name string) *config.Component {
 		},
 	}
 }
-
-// Component faker providers for struct tags
 
 func fakeTerraformComponent(v reflect.Value) (interface{}, error) {
 	return GetTerraformComponent(generics.GetFakeObj[string]()), nil

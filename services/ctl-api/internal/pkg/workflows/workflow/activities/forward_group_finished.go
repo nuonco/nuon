@@ -12,15 +12,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
-// ForwardGroupFinishedRequest is the input for forwarding a group-finished
-// update to a group handler workflow.
 type ForwardGroupFinishedRequest struct {
 	StepGroupID string `json:"step_group_id" validate:"required"`
 }
 
-// GroupFinishedResponse is the typed response from the group-finished update
-// handler. It contains the group's final directive so callers don't need to
-// re-fetch the workflow's ResultDirective from the database.
 type GroupFinishedResponse struct {
 	Directive string `json:"directive"`
 }

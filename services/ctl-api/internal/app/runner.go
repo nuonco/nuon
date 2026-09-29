@@ -38,10 +38,8 @@ const (
 
 const RunnerOfflineTSMetadataKey = "offline_ts"
 
-// Boot window after a stack apply before a missing process counts as offline.
 const RunnerAwaitingHeartbeatGrace = 30 * time.Minute
 
-// HealthcheckPending is true while a missing process is expected (stack not applied yet, or still booting).
 func (r *Runner) HealthcheckPending(now time.Time) bool {
 	switch r.Status {
 	case RunnerStatusAwaitingInstallStackRun:
@@ -62,7 +60,6 @@ func (r RunnerStatus) String() string {
 func (r RunnerStatus) Code() int {
 	switch r {
 
-	// 2xx are for unknown
 	case RunnerStatusPending:
 		return 200
 	case RunnerStatusProvisioning:
@@ -74,17 +71,14 @@ func (r RunnerStatus) Code() int {
 	case RunnerStatusAwaitingHeartbeat:
 		return 204
 
-		// 3xx statuses are for tear downs
 	case RunnerStatusDeprovisioning:
 		return 301
 	case RunnerStatusDeprovisioned:
 		return 300
 
-		// 4xx
 	case RunnerStatusError:
 		return 400
 
-		// 0 is active
 	case RunnerStatusActive:
 		return 0
 	case RunnerStatusUnknown:
@@ -133,8 +127,6 @@ type Runner struct {
 	Queues []Queue `json:"queues,omitzero" gorm:"polymorphic:Owner;polymorphicValue:runners" temporaljson:"queues,omitzero,omitempty"`
 }
 
-// GetQueueForGroup returns the queue for the given job group from the runner's preloaded Queues slice.
-// Returns nil if no queue exists for the group (e.g. feature flag was off at runner creation time).
 func (r *Runner) GetQueueForGroup(group RunnerJobGroup) *Queue {
 	for i := range r.Queues {
 		if r.Queues[i].Name == string(group) {
@@ -178,9 +170,6 @@ func (r *Runner) BeforeCreate(tx *gorm.DB) error {
 const missingMngProcessWarning = "The management process is not running. Remote restart, upgrade, and shutdown are unavailable until it recovers."
 
 func (r *Runner) AfterQuery(tx *gorm.DB) error {
-	// A disabled runner has no processes at all, so the missing-management
-	// warning is expected rather than actionable. The UI surfaces the disabled
-	// state itself.
 	if r.Status == RunnerStatusDisabled {
 		return nil
 	}

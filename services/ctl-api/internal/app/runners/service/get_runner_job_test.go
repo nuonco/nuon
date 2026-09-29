@@ -78,7 +78,6 @@ func (s *GetRunnerJobPublicTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -99,7 +98,6 @@ func (s *GetRunnerJobPublicTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create log stream for runner jobs
 	s.testLogStream = &app.LogStream{
 		ID:      domains.NewLogStreamID(),
 		OrgID:   s.testOrg.ID,
@@ -109,7 +107,6 @@ func (s *GetRunnerJobPublicTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testLogStream).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -121,7 +118,6 @@ func (s *GetRunnerJobPublicTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -175,7 +171,6 @@ func (s *GetRunnerJobPublicTestSuite) TestGetRunnerJobPublic() {
 				err := s.service.DB.WithContext(ctx).Create(job).Error
 				require.NoError(s.T(), err)
 
-				// Create execution for the job
 				exec := &app.RunnerJobExecution{
 					ID:          domains.NewRunnerID(),
 					OrgID:       s.testOrg.ID,
@@ -199,7 +194,6 @@ func (s *GetRunnerJobPublicTestSuite) TestGetRunnerJobPublic() {
 				assert.Equal(s.T(), app.RunnerJobStatusAvailable, job.Status)
 				assert.Equal(s.T(), app.RunnerJobGroupBuild, job.Group)
 				assert.Equal(s.T(), app.RunnerJobTypeDockerBuild, job.Type)
-				// Should preload latest execution
 				assert.Len(s.T(), job.Executions, 1)
 			},
 		},
@@ -275,7 +269,6 @@ func (s *GetRunnerJobPublicTestSuite) TestGetRunnerJobPublic() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -288,7 +281,6 @@ func (s *GetRunnerJobPublicTestSuite) TestGetRunnerJobPublic() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner group for org2
 				runnerGrp2 := &app.RunnerGroup{
 					ID:        domains.NewRunnerGroupID(),
 					OrgID:     org2.ID,
@@ -300,7 +292,6 @@ func (s *GetRunnerJobPublicTestSuite) TestGetRunnerJobPublic() {
 				err = s.service.DB.WithContext(ctx).Create(runnerGrp2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner in org2
 				runner2 := &app.Runner{
 					ID:            domains.NewRunnerID(),
 					OrgID:         org2.ID,
@@ -312,7 +303,6 @@ func (s *GetRunnerJobPublicTestSuite) TestGetRunnerJobPublic() {
 				err = s.service.DB.WithContext(ctx).Create(runner2).Error
 				require.NoError(s.T(), err)
 
-				// Create log stream for org2
 				logStream2 := &app.LogStream{
 					ID:      domains.NewLogStreamID(),
 					OrgID:   org2.ID,
@@ -322,7 +312,6 @@ func (s *GetRunnerJobPublicTestSuite) TestGetRunnerJobPublic() {
 				err = s.service.DB.WithContext(ctx).Create(logStream2).Error
 				require.NoError(s.T(), err)
 
-				// Create job in org2
 				job := &app.RunnerJob{
 					ID:                domains.NewRunnerJobID(),
 					OrgID:             org2.ID,
@@ -378,7 +367,6 @@ func (s *GetRunnerJobPublicTestSuite) TestGetRunnerJobPublic() {
 				err := s.service.DB.WithContext(ctx).Create(job).Error
 				require.NoError(s.T(), err)
 
-				// Create older execution
 				exec1 := &app.RunnerJobExecution{
 					ID:          domains.NewRunnerID(),
 					OrgID:       s.testOrg.ID,
@@ -388,7 +376,6 @@ func (s *GetRunnerJobPublicTestSuite) TestGetRunnerJobPublic() {
 				err = s.service.DB.WithContext(ctx).Create(exec1).Error
 				require.NoError(s.T(), err)
 
-				// Create newer execution (should be the one returned)
 				exec2 := &app.RunnerJobExecution{
 					ID:          domains.NewRunnerID(),
 					OrgID:       s.testOrg.ID,

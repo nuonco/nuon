@@ -34,7 +34,6 @@ func TestExtractGCPStandardRolesRawPolicies(t *testing.T) {
 		t.Fatalf("provision policies = %#v, want %#v", prov.Policies, want)
 	}
 
-	// The flat permissions list stays populated alongside the per-policy map.
 	wantPerms := []string{"compute.networks.create", "dns.changes.create", "dns.managedZones.get"}
 	if !reflect.DeepEqual(prov.Permissions, wantPerms) {
 		t.Fatalf("provision permissions = %#v, want %#v", prov.Permissions, wantPerms)

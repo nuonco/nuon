@@ -45,7 +45,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		commitSHA = run.VCSConnectionCommit.SHA
 	}
 
-	// Create log stream for this run
 	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
 		AppBranchRunID: s.RunID,
 	})
@@ -159,8 +158,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"config_version", intermediateConfig.Version,
 		"num_components", len(intermediateConfig.Components))
 
-	// Override branches for all entities (components, sandbox, actions) when
-	// their repo matches the branch config's repo.
 	branchRepo := ""
 	branchName := ""
 	if cfg := branch.Configs[0].ConnectedGithubVCSConfig; cfg != nil {
@@ -191,8 +188,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	isPreview := run.IsPreview()
 
-	// For preview runs, diff intermediate configs before creating the DB AppConfig.
-	// If nothing changed, short-circuit and skip the rest of the workflow.
 	var previewDiff *activities.ComputeAppConfigDiffOutput
 	var previewBaselineConfigID string
 	if isPreview {
@@ -258,7 +253,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	// The baseline lookup for PR comments excludes configs labelled as previews,
+	// why: The baseline lookup for PR comments excludes configs labelled as previews,
 	// so the label has to track preview-ness rather than how the run was
 	// triggered — otherwise a plan-only run's config becomes the baseline that
 	// the next preview diffs against.
@@ -317,9 +312,6 @@ type finalizeParams struct {
 	previewBaselineConfigID string
 }
 
-// syncAndFinalize turns an app config into database records and reports the
-// result onto the step. Shared by the VCS path, which has just created the
-// config from a cloned repo, and the pre-compiled path, which was handed one.
 func (s *Signal) syncAndFinalize(ctx workflow.Context, p finalizeParams) error {
 	l := workflow.GetLogger(ctx)
 	run, branch := p.run, p.branch
@@ -340,7 +332,6 @@ func (s *Signal) syncAndFinalize(ctx workflow.Context, p finalizeParams) error {
 		"component_count", len(syncResp.ComponentIDs),
 		"action_count", len(syncResp.ActionIDs))
 
-	// Update AppBranchConfig with component and action IDs
 	if err := activities.AwaitUpdateAppBranchConfigIDs(ctx, activities.UpdateAppBranchConfigIDsRequest{
 		Req: &activities.UpdateAppBranchConfigIDsInput{
 			AppBranchConfigID: branch.Configs[0].ID,
@@ -410,8 +401,6 @@ func (s *Signal) syncAndFinalize(ctx workflow.Context, p finalizeParams) error {
 				RunID: s.RunID,
 			})
 			phases := commentContextPhases(commentContext)
-			// Config just succeeded (even though the step status in DB hasn't been
-			// updated yet), so we override the derived phase explicitly.
 			phases.Config = activities.PRCommentPhaseValid
 			commentBody := activities.BuildPRCommentBody(&activities.PRCommentParams{
 				OrgName:     branch.Org.Name,
@@ -445,8 +434,6 @@ func previewRunURL(commentContext *activities.GetPreviewCommentContextOutput) st
 	return commentContext.RunURL
 }
 
-// commentContextPhases returns a copy of the phases from commentContext, or an
-// empty PRCommentPhases if the context is nil or has no phases.
 func commentContextPhases(commentContext *activities.GetPreviewCommentContextOutput) *activities.PRCommentPhases {
 	if commentContext == nil || commentContext.Phases == nil {
 		return &activities.PRCommentPhases{}
@@ -455,9 +442,6 @@ func commentContextPhases(commentContext *activities.GetPreviewCommentContextOut
 	return &cp
 }
 
-// writePreviewComment writes a PR comment with the given phase overrides.  It is
-// called from error paths where the individual signal has definitive phase state
-// that the DB may not yet reflect.
 func (s *Signal) writePreviewComment(
 	ctx workflow.Context,
 	l log.Logger,

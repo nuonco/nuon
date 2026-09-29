@@ -20,7 +20,7 @@ export const TransitionDiv = forwardRef<HTMLDivElement, ITransitionDiv>(
         const timeout = setTimeout(() => {
           setIsMounted(false)
           onExited?.()
-        }, 155) // Duration should match CSS animation duration
+        }, 155)
 
         return () => clearTimeout(timeout)
       }

@@ -11,11 +11,6 @@ import (
 	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
-// ValidateInstallRole rejects a runtime role override the install cannot assume.
-// Role selection only resolves a name to an ARN once a workflow plans, so
-// without this an unknown role is accepted, a workflow is created, and the
-// caller learns about the typo from a failed step. Callers that pass an empty
-// role fall through to the configured default and are never rejected here.
 func (h *Helpers) ValidateInstallRole(ctx context.Context, installID, role string) error {
 	if role == "" {
 		return nil
@@ -52,7 +47,6 @@ func (h *Helpers) ValidateInstallRole(ctx context.Context, installID, role strin
 		return fmt.Errorf("unable to list available roles: %w", err)
 	}
 
-	// Role names may be templated, and available roles come back rendered.
 	rendered, err := operationroles.RenderRoleName(role, installState)
 	if err != nil {
 		return fmt.Errorf("unable to render role name %q: %w", role, err)

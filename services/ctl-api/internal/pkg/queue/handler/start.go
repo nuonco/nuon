@@ -12,16 +12,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// UpdateWithStartOptions configures the update sent to a handler workflow.
 type UpdateWithStartOptions struct {
 	UpdateName   string
 	WaitForStage tclient.WorkflowUpdateStage
 	Args         []any
 }
 
-// UpdateWithStart sends a Temporal update-with-start to the handler workflow
-// for the given QueueSignal. Returns the WorkflowUpdateHandle for callers
-// to retrieve results via handle.Get().
 func UpdateWithStart(
 	ctx context.Context,
 	tc temporalclient.Client,

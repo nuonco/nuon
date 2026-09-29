@@ -13,11 +13,8 @@ import (
 
 func (c *cli) agentsCmd() *cobra.Command {
 	agentsCmd := &cobra.Command{
-		Use:   "agents",
-		Short: "Agent-facing helpers for driving Nuon with LLMs",
-		// Same guide as "nuon agents help", which adds the live sign-in, org,
-		// and resolved MCP URL. Whichever a user reaches for, they get all of
-		// the setup, not a pointer to the other one.
+		Use:         "agents",
+		Short:       "Agent-facing helpers for driving Nuon with LLMs",
 		Long:        agentsSetupGuide(nil),
 		GroupID:     AdditionalGroup.ID,
 		Annotations: annotations(skipAuthAnnotation(), outputsAnnotation(OutputTable)),

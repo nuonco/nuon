@@ -43,9 +43,6 @@ type stackTemplateField struct {
 	value string
 }
 
-// ValidateTemplateRefs checks that component and action template references
-// resolve to declared names, and that stack/sandbox templates only use refs
-// available in those render contexts. All findings are returned as one error.
 func ValidateTemplateRefs(a *config.AppConfig) error {
 	if a == nil {
 		return nil

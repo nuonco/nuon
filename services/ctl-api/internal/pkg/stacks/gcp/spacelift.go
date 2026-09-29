@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// blueprintFuncs are template helpers for rendering Spacelift blueprint YAML.
+// why: blueprintFuncs are template helpers for rendering Spacelift blueprint YAML.
 // yamlStr emits a double-quoted YAML scalar so free-text values (input names,
 // descriptions) that contain YAML-significant characters such as ": " don't get
 // misparsed as nested mappings.
@@ -17,15 +17,8 @@ var blueprintFuncs = template.FuncMap{
 	"yamlStr": strconv.Quote,
 }
 
-// defaultSpaceliftTerraformVersion is the Terraform version pinned on generated
-// Spacelift stacks/blueprints. Satisfies the install-stacks//gcp module's
-// versions.tf constraint (>= 1.5) and stays within the versions Spacelift's
-// TERRAFORM_FOSS workflow tool exposes.
 const defaultSpaceliftTerraformVersion = "1.5.7"
 
-// blueprintInstallInputID / blueprintSecretID map a Nuon install-input or
-// secret name to the blueprint input id it's exposed as. The prefixes keep the
-// two namespaces from colliding when an input and a secret share a name.
 func blueprintInstallInputID(name string) string { return "input_" + name }
 func blueprintSecretID(name string) string       { return "secret_" + name }
 
@@ -49,7 +42,6 @@ func renderSpaceliftAdminTF(installID string) (string, error) {
 	return buf.String(), nil
 }
 
-// spaceliftBlueprintData is the caller-facing input for the blueprint renderer.
 type spaceliftBlueprintData struct {
 	InstallID     string
 	InputsTfvars  string
@@ -116,9 +108,6 @@ func renderSpaceliftBlueprint(data spaceliftBlueprintData) (string, error) {
 	return strings.TrimLeft(buf.String(), "\n"), nil
 }
 
-// indentLines prefixes every non-empty line of s with n spaces, for embedding
-// tfvars as a YAML block scalar. The trailing newline is dropped so the block
-// doesn't emit a trailing whitespace-only line.
 func indentLines(s string, n int) string {
 	pad := strings.Repeat(" ", n)
 	lines := strings.Split(strings.TrimRight(s, "\n"), "\n")

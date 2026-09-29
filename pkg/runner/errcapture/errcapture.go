@@ -1,18 +1,3 @@
-// Package errcapture captures a runner job execution's error-level log output
-// so it can be attached to the failed execution result as rich diagnostics.
-//
-// Why this exists: tools like terraform emit their real error detail (e.g. an
-// AWS "AccessDenied ... is not authorized to perform: s3:CreateBucket") into
-// the log stream via structured @level:"error" records, while the Go error the
-// runner wraps up is often just "exit status 1". ctl-api parses the failed
-// result's error text into a structured composite error, so it needs the rich
-// text, not the thin wrapper.
-//
-// A Capture is a zapcore.Core teed into the per-execution job logger. It
-// records error-level entries into a bounded in-memory buffer. The runner's API
-// client decorator reads the buffer and attaches it to the result under
-// MetadataKey when a job reports failure — one universal chokepoint, no
-// per-handler wiring.
 package errcapture
 
 import (
@@ -24,19 +9,13 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// MetadataKey is the error-metadata key the captured output is attached under.
+// why: MetadataKey is the error-metadata key the captured output is attached under.
 // It must match the key ctl-api prefers when parsing a failed result
 // (services/ctl-api/.../create_runner_job_execution_result.go: errMetaKeyOutput).
 const MetadataKey = "error_output"
 
-// defaultMaxBytes bounds the captured output so a pathological log can't grow
-// unbounded in memory or bloat the result payload. The buffer keeps the head
-// (the first errors, usually the root cause) and drops the rest once full.
 const defaultMaxBytes = 64 * 1024
 
-// Capture accumulates error-level log lines for one job execution. It is safe
-// for concurrent use: the job logger it feeds is shared across the execution's
-// goroutines (steps, monitor).
 type Capture struct {
 	mu   sync.Mutex
 	buf  []string
@@ -45,19 +24,14 @@ type Capture struct {
 	full bool
 }
 
-// New returns an empty Capture with the default size bound.
 func New() *Capture {
 	return &Capture{max: defaultMaxBytes}
 }
 
-// Core returns the zapcore.Core to tee into the job logger. It only accepts
-// error-level and above entries.
 func (c *Capture) Core() zapcore.Core {
 	return &captureCore{LevelEnabler: zapcore.ErrorLevel, cap: c}
 }
 
-// String returns the captured lines joined by newlines. Safe to call on a nil
-// Capture (returns "").
 func (c *Capture) String() string {
 	if c == nil {
 		return ""
@@ -67,7 +41,7 @@ func (c *Capture) String() string {
 	return strings.Join(c.buf, "\n")
 }
 
-// append records a line, respecting the size bound. When a line would overflow
+// why: append records a line, respecting the size bound. When a line would overflow
 // the bound, a UTF-8-safe prefix that fits is kept rather than dropping the
 // line whole — otherwise a single oversized diagnostic (the root cause) could
 // be lost entirely, leaving nothing for ctl-api to parse. After an overflow no
@@ -82,7 +56,7 @@ func (c *Capture) append(line string) {
 		return
 	}
 	if c.size+len(line)+1 > c.max {
-		budget := c.max - c.size - 1 // reserve one byte for the join newline
+		budget := c.max - c.size - 1
 		if prefix := safeUTF8Prefix(line, budget); prefix != "" {
 			c.buf = append(c.buf, prefix)
 			c.size += len(prefix) + 1
@@ -94,8 +68,6 @@ func (c *Capture) append(line string) {
 	c.size += len(line) + 1
 }
 
-// safeUTF8Prefix returns the longest prefix of s that is at most maxBytes long
-// and does not split a multi-byte rune. Returns "" when maxBytes <= 0.
 func safeUTF8Prefix(s string, maxBytes int) string {
 	if maxBytes <= 0 {
 		return ""
@@ -112,26 +84,19 @@ func safeUTF8Prefix(s string, maxBytes int) string {
 
 type ctxKey struct{}
 
-// NewContext returns ctx carrying cap so downstream code (the API client
-// decorator) can read the captured output.
 func NewContext(ctx context.Context, cap *Capture) context.Context {
 	return context.WithValue(ctx, ctxKey{}, cap)
 }
 
-// FromContext returns the Capture on ctx, or nil when none is set.
 func FromContext(ctx context.Context) *Capture {
 	cap, _ := ctx.Value(ctxKey{}).(*Capture)
 	return cap
 }
 
-// Output is a nil-safe shortcut for FromContext(ctx).String().
 func Output(ctx context.Context) string {
 	return FromContext(ctx).String()
 }
 
-// captureCore is a zapcore.Core that appends error-level entries to a Capture.
-// It carries accumulated With() fields so it can surface the value of a zap
-// "error" field (e.g. zap.Error(err)) alongside the entry message.
 type captureCore struct {
 	zapcore.LevelEnabler
 	cap    *Capture
@@ -168,8 +133,6 @@ func (c *captureCore) Write(ent zapcore.Entry, fs []zapcore.Field) error {
 
 func (c *captureCore) Sync() error { return nil }
 
-// errorField returns the rendered value of a zap "error" field, preferring
-// entry-level fields over accumulated With() fields. Returns "" when absent.
 func errorField(groups ...[]zapcore.Field) string {
 	for _, g := range groups {
 		for _, f := range g {
@@ -187,25 +150,14 @@ func errorField(groups ...[]zapcore.Field) string {
 	return ""
 }
 
-// diagnosticKey is the field terraform's JSON log stream carries its structured
-// diagnostic under. pkg/zaphclog decodes each @level:"error" record and logs the
-// remaining keys as zap.Any fields, so the object arrives here as a map.
 const diagnosticKey = "diagnostic"
 
-// diagnostic is the subset of a terraform diagnostic worth capturing. The entry
-// message only carries the summary ("Error: creating S3 Bucket (x): ..."), while
-// the actual cause — the provider's response, the missing permission — lives in
-// detail, and the resource it happened on lives in address. Both are dropped if
-// we only capture the message.
 type diagnostic struct {
 	summary string
 	detail  string
 	address string
 }
 
-// diagnosticField returns the terraform diagnostic carried on a log entry,
-// preferring entry-level fields over accumulated With() fields. The zero value
-// is returned when the entry carries no diagnostic.
 func diagnosticField(groups ...[]zapcore.Field) diagnostic {
 	for _, g := range groups {
 		for _, f := range g {
@@ -231,10 +183,6 @@ func diagnosticString(m map[string]interface{}, key string) string {
 	return strings.TrimSpace(s)
 }
 
-// render folds the diagnostic into the captured line. The summary is used as the
-// headline when the entry message is empty or doesn't already carry it, prefixed
-// so ctl-api's terraform parser still recognises it as a diagnostic. Address and
-// detail are appended as their own lines.
 func (d diagnostic) render(msg string) string {
 	lines := make([]string, 0, 3)
 	if msg != "" {

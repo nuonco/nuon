@@ -61,8 +61,6 @@ func TestParse_PendingOperation(t *testing.T) {
 	}
 }
 
-// The helm SDK wording carries no status, so the parser still has to fire and
-// degrade the headline gracefully rather than claim a status it did not see.
 func TestParse_PendingOperationFromSDKWording(t *testing.T) {
 	ce := parsePendingRaw(readFixture(t, "pending_operation_sdk.txt"))
 	e, ok := ce.(*PendingOperationError)
@@ -77,9 +75,6 @@ func TestParse_PendingOperationFromSDKWording(t *testing.T) {
 	}
 }
 
-// "cannot reuse a name that is still in use" is ambiguous: helm emits it for a
-// pending release AND for a collision with a release Nuon does not own. Recovery
-// is wrong advice for the latter, so it must stay on helm.name_in_use.
 func TestParse_ReuseNameIsNotClassifiedAsPending(t *testing.T) {
 	raw := readFixture(t, "reuse_name.txt")
 	if ce := parsePendingRaw(raw); ce != nil {
@@ -91,7 +86,6 @@ func TestParse_ReuseNameIsNotClassifiedAsPending(t *testing.T) {
 	}
 }
 
-// Guard that the split does not swallow an unrelated helm failure.
 func TestParse_OrdinaryHelmErrorIsNotPending(t *testing.T) {
 	if ce := parsePendingRaw(readFixture(t, "immutable_field.txt")); ce != nil {
 		t.Fatalf("pending parser must defer on an ordinary helm failure, got %T", ce)

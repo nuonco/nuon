@@ -14,7 +14,6 @@ type Params struct {
 	L *zap.Logger `name:"system"`
 }
 
-// NOTE(jm): this will be deprecated once rolled out to each job
 func SystemHclog(params Params) hclog.Logger {
 	return zaphclog.Wrap(params.L)
 }

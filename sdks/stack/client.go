@@ -28,13 +28,8 @@ const (
 
 //go:generate ./generate.sh
 
-// Client calls the runner API's stacks namespace. The transport and wire types
-// are generated from the ctl-api swagger spec; this interface is the stable
-// surface embedders and stack-cli consume.
 type Client interface {
-	// FetchConfig reads the install's rendered stack config.
 	FetchConfig(ctx context.Context) (*models.AppInstallerSDKConfig, error)
-	// PhoneHome reports stack outputs to the endpoint the config named.
 	PhoneHome(ctx context.Context, phoneHomeURL string, payload map[string]any) error
 }
 
@@ -47,8 +42,6 @@ type client struct {
 
 var _ Client = (*client)(nil)
 
-// newDefaultTransport builds an *http.Transport that does not share state with
-// http.DefaultTransport, which other code in-process mutates globally.
 func newDefaultTransport() *http.Transport {
 	return &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
@@ -66,9 +59,6 @@ func newDefaultTransport() *http.Transport {
 	}
 }
 
-// newOps builds a generated operations client rooted at rawURL. Callers pass the
-// runner API base for reads and the server-supplied phone-home host for reports,
-// so a report always lands where the config said it should.
 func newOps(rawURL string, hc *http.Client) (operations.ClientService, error) {
 	u, err := url.Parse(strings.TrimSuffix(rawURL, "/"))
 	if err != nil {
@@ -87,7 +77,6 @@ func newOps(rawURL string, hc *http.Client) (operations.ClientService, error) {
 		schemes = []string{"https"}
 	}
 
-	// Honour a path prefix: the runner api is served under one in some environments.
 	basePath := u.Path
 	if basePath == "" {
 		basePath = genclient.DefaultBasePath
@@ -143,12 +132,8 @@ func (c *client) FetchConfig(ctx context.Context) (*models.AppInstallerSDKConfig
 	return cfg, nil
 }
 
-// errNoConfig is terminal: a 200 with no config block will not change on retry.
 var errNoConfig = errors.New("runner api returned no config block")
 
-// retry makes up to maxAttempts attempts with capped exponential backoff.
-// Transport errors and 5xx are retried; 4xx is returned immediately, since a
-// rejected credential is rejected identically every time.
 func retry(ctx context.Context, fn func() error) error {
 	var lastErr error
 	delay := initialDelay
@@ -178,15 +163,11 @@ func retry(ctx context.Context, fn func() error) error {
 	return fmt.Errorf("gave up after %d attempts: %w", maxAttempts, lastErr)
 }
 
-// isRetryable reports whether err is worth another attempt. Generated response
-// errors carry their status code; transport errors carry none and are retried.
 func isRetryable(err error) bool {
 	if errors.Is(err, errNoConfig) {
 		return false
 	}
 
-	// Generated response types expose Code(); the runtime's own error carries it
-	// as a field.
 	var coded interface{ Code() int }
 	if errors.As(err, &coded) {
 		return !isClientError(coded.Code())

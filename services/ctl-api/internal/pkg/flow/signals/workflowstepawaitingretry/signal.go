@@ -7,7 +7,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// SignalType identifies a workflow step parked awaiting manual retry.
 const SignalType signal.SignalType = "workflow-step-awaiting-retry"
 
 type Signal struct {

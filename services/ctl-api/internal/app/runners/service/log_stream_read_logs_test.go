@@ -75,7 +75,6 @@ func (s *LogStreamReadLogsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -96,7 +95,6 @@ func (s *LogStreamReadLogsTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create log stream in Postgres
 	s.testLogStream = &app.LogStream{
 		ID:      domains.NewLogStreamID(),
 		OrgID:   s.testOrg.ID,
@@ -155,7 +153,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 		{
 			name: "empty log stream returns empty array",
 			setupFunc: func() string {
-				// Use existing test log stream with no logs
 				return s.testLogStream.ID
 			},
 			expectedCode:  http.StatusOK,
@@ -172,7 +169,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create new log stream
 				logStream := &app.LogStream{
 					ID:      domains.NewLogStreamID(),
 					OrgID:   s.testOrg.ID,
@@ -182,7 +178,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 				err := s.service.DB.WithContext(ctx).Create(logStream).Error
 				require.NoError(s.T(), err)
 
-				// Create 5 log records
 				s.createOtelLogRecords(logStream.ID, 5, time.Now().Add(-5*time.Minute))
 
 				s.T().Cleanup(func() {
@@ -197,7 +192,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 				assert.Equal(s.T(), "5", headers.Get("count"))
 				assert.Equal(s.T(), "", headers.Get("X-Nuon-API-Next"))
 				assert.Len(s.T(), logs, 5)
-				// Verify ascending order (default)
 				for i := 0; i < len(logs)-1; i++ {
 					assert.True(s.T(), logs[i].Timestamp.Before(logs[i+1].Timestamp) || logs[i].Timestamp.Equal(logs[i+1].Timestamp))
 				}
@@ -209,7 +203,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create two log streams
 				logStream1 := &app.LogStream{
 					ID:      domains.NewLogStreamID(),
 					OrgID:   s.testOrg.ID,
@@ -228,7 +221,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 				err = s.service.DB.WithContext(ctx).Create(logStream2).Error
 				require.NoError(s.T(), err)
 
-				// Create logs in both streams
 				s.createOtelLogRecords(logStream1.ID, 3, time.Now().Add(-3*time.Minute))
 				s.createOtelLogRecords(logStream2.ID, 2, time.Now().Add(-2*time.Minute))
 
@@ -237,7 +229,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 					s.service.DB.Unscoped().Delete(logStream2)
 				})
 
-				// Request logs for logStream1, should only get 3
 				return logStream1.ID
 			},
 			expectedCode:  http.StatusOK,
@@ -254,7 +245,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 			},
 			expectedCode: http.StatusNotFound,
 			validateFunc: func(logs []app.OtelLogRecord, headers http.Header) {
-				// Error response, no logs
 			},
 		},
 		{
@@ -263,7 +253,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -276,7 +265,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create log stream in org2
 				logStream2 := &app.LogStream{
 					ID:      domains.NewLogStreamID(),
 					OrgID:   org2.ID,
@@ -295,7 +283,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 			},
 			expectedCode: http.StatusNotFound,
 			validateFunc: func(logs []app.OtelLogRecord, headers http.Header) {
-				// Error response
 			},
 		},
 		{
@@ -313,7 +300,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 				err := s.service.DB.WithContext(ctx).Create(logStream).Error
 				require.NoError(s.T(), err)
 
-				// Create logs with specific timestamps
 				s.createOtelLogRecords(logStream.ID, 10, time.Now().Add(-10*time.Minute))
 
 				s.T().Cleanup(func() {
@@ -327,7 +313,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 			expectedCount: 10,
 			validateFunc: func(logs []app.OtelLogRecord, headers http.Header) {
 				assert.Len(s.T(), logs, 10)
-				// Verify ascending order
 				for i := 0; i < len(logs)-1; i++ {
 					assert.True(s.T(), logs[i].Timestamp.Before(logs[i+1].Timestamp) || logs[i].Timestamp.Equal(logs[i+1].Timestamp),
 						"Logs should be in ascending order")
@@ -349,7 +334,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 				err := s.service.DB.WithContext(ctx).Create(logStream).Error
 				require.NoError(s.T(), err)
 
-				// Create logs with specific timestamps
 				s.createOtelLogRecords(logStream.ID, 10, time.Now().Add(-10*time.Minute))
 
 				s.T().Cleanup(func() {
@@ -363,7 +347,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 			expectedCount: 10,
 			validateFunc: func(logs []app.OtelLogRecord, headers http.Header) {
 				assert.Len(s.T(), logs, 10)
-				// Verify descending order
 				for i := 0; i < len(logs)-1; i++ {
 					assert.True(s.T(), logs[i].Timestamp.After(logs[i+1].Timestamp) || logs[i].Timestamp.Equal(logs[i+1].Timestamp),
 						"Logs should be in descending order")
@@ -378,7 +361,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 			queryParams:  "?order=invalid",
 			expectedCode: http.StatusBadRequest,
 			validateFunc: func(logs []app.OtelLogRecord, headers http.Header) {
-				// Error response
 			},
 		},
 		{
@@ -391,7 +373,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 			},
 			expectedCode: http.StatusBadRequest,
 			validateFunc: func(logs []app.OtelLogRecord, headers http.Header) {
-				// Error response
 			},
 		},
 		{
@@ -409,7 +390,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 				err := s.service.DB.WithContext(ctx).Create(logStream).Error
 				require.NoError(s.T(), err)
 
-				// Create 150 log records (more than page size of 100)
 				s.createOtelLogRecords(logStream.ID, 150, time.Now().Add(-150*time.Minute))
 
 				s.T().Cleanup(func() {
@@ -441,7 +421,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 				err := s.service.DB.WithContext(ctx).Create(logStream).Error
 				require.NoError(s.T(), err)
 
-				// Create 150 log records
 				s.createOtelLogRecords(logStream.ID, 150, time.Now().Add(-150*time.Minute))
 
 				s.T().Cleanup(func() {
@@ -451,12 +430,8 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 				return logStream.ID
 			},
 			expectedCode: http.StatusOK,
-			headers:      map[string]string{
-				// This would be the cursor from the first request
-				// For testing, we'll get the first page and extract the cursor
-			},
+			headers:      map[string]string{},
 			validateFunc: func(logs []app.OtelLogRecord, headers http.Header) {
-				// Should get remaining 50 logs
 				assert.Equal(s.T(), "150", headers.Get("count"))
 			},
 		},
@@ -475,7 +450,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 				err := s.service.DB.WithContext(ctx).Create(logStream).Error
 				require.NoError(s.T(), err)
 
-				// Create 150 log records
 				s.createOtelLogRecords(logStream.ID, 150, time.Now().Add(-150*time.Minute))
 
 				s.T().Cleanup(func() {
@@ -491,7 +465,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 				assert.Equal(s.T(), "150", headers.Get("count"))
 				assert.Len(s.T(), logs, 100)
 				assert.NotEmpty(s.T(), headers.Get("X-Nuon-API-Next"))
-				// Verify descending order
 				for i := 0; i < len(logs)-1; i++ {
 					assert.True(s.T(), logs[i].Timestamp.After(logs[i+1].Timestamp) || logs[i].Timestamp.Equal(logs[i+1].Timestamp))
 				}
@@ -523,7 +496,6 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 					tc.validateFunc(logs, rr.Header())
 				}
 			} else {
-				// Error cases should have error in response
 				assert.Contains(s.T(), rr.Body.String(), "error")
 			}
 		})

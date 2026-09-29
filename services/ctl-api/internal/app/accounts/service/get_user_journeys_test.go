@@ -11,10 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// ---------------------------------------------------------------------------
-// Success: no journeys on account
-// ---------------------------------------------------------------------------
-
 func (s *AccountsServiceTestSuite) TestGetUserJourneysEmpty() {
 	rr := s.makeRequest(http.MethodGet, "/v1/account/user-journeys", nil)
 
@@ -29,10 +25,6 @@ func (s *AccountsServiceTestSuite) TestGetUserJourneysEmpty() {
 
 	assert.Empty(s.T(), response)
 }
-
-// ---------------------------------------------------------------------------
-// Success: single journey with partial completion
-// ---------------------------------------------------------------------------
 
 func (s *AccountsServiceTestSuite) TestGetUserJourneysSingleJourney() {
 	journey := testseed.BuildUserJourney()
@@ -57,15 +49,10 @@ func (s *AccountsServiceTestSuite) TestGetUserJourneysSingleJourney() {
 	assert.Equal(s.T(), "Getting Started", response[0].Title)
 	require.Len(s.T(), response[0].Steps, 3)
 
-	// First step should be complete, rest incomplete
 	assert.True(s.T(), response[0].Steps[0].Complete)
 	assert.False(s.T(), response[0].Steps[1].Complete)
 	assert.False(s.T(), response[0].Steps[2].Complete)
 }
-
-// ---------------------------------------------------------------------------
-// Success: multiple journeys
-// ---------------------------------------------------------------------------
 
 func (s *AccountsServiceTestSuite) TestGetUserJourneysMultipleJourneys() {
 	onboarding := testseed.BuildCompletedUserJourney()
@@ -93,23 +80,17 @@ func (s *AccountsServiceTestSuite) TestGetUserJourneysMultipleJourneys() {
 
 	require.Len(s.T(), response, 2)
 
-	// First journey: onboarding, fully complete
 	assert.Equal(s.T(), "onboarding", response[0].Name)
 	for _, step := range response[0].Steps {
 		assert.True(s.T(), step.Complete, "onboarding step %q should be complete", step.Name)
 	}
 
-	// Second journey: advanced-setup, all incomplete
 	assert.Equal(s.T(), "advanced-setup", response[1].Name)
 	assert.Len(s.T(), response[1].Steps, 2)
 	for _, step := range response[1].Steps {
 		assert.False(s.T(), step.Complete, "advanced step %q should be incomplete", step.Name)
 	}
 }
-
-// ---------------------------------------------------------------------------
-// Journeys include step metadata
-// ---------------------------------------------------------------------------
 
 func (s *AccountsServiceTestSuite) TestGetUserJourneysIncludesMetadata() {
 	journey := testseed.BuildUserJourney()

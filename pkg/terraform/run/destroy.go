@@ -23,7 +23,6 @@ func (r *run) Destroy(ctx context.Context) error {
 }
 
 func (r *run) getDestroyPipeline() (*pipeline.Pipeline, error) {
-	// initialize steps to load the workspace
 	pipe, err := pipeline.New(r.v,
 		pipeline.WithLogger(r.Log),
 	)

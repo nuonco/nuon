@@ -205,7 +205,6 @@ export default async function globalSetup(_config: FullConfig) {
 
     seedApp(api_token, orgId, env.appConfig);
 
-    // Create 2 installs for tests that need pre-existing installs (e.g. label filtering)
     log("listing apps to find seeded app...");
     const appsRes = await apiFetch(api_token, "/v1/apps", {
       headers: { "X-Nuon-Org-ID": orgId },

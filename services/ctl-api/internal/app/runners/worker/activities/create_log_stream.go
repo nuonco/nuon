@@ -33,7 +33,6 @@ func (a *Activities) CreateLogStream(ctx context.Context, req CreateLogStreamReq
 		return nil, errors.Wrap(res.Error, "unable to create log stream")
 	}
 
-	// create a service account to write to the log stream for up to 1 hour.
 	svcAcct, err := a.acctClient.CreateServiceAccount(ctx, ls.ID, "")
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create service account")
@@ -44,7 +43,6 @@ func (a *Activities) CreateLogStream(ctx context.Context, req CreateLogStreamReq
 		return nil, errors.Wrap(err, "unable to create token")
 	}
 
-	// this token is only available on the temporal response, and is not persisted to the log stream object
 	ls.WriteToken = token.Token
 	ls.RunnerAPIURL = a.cfg.RunnerAPIURL
 	return &ls, nil

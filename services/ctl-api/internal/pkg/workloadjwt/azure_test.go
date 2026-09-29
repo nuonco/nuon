@@ -21,8 +21,6 @@ func uamiMIRID(sub, name string) string {
 }
 
 func TestAzureIssuer_RejectsNonGUIDTenant(t *testing.T) {
-	// A tenant is interpolated into the issuer URL, so anything but a GUID is refused
-	// before it can reshape the URL.
 	for _, tenant := range []string{
 		"",
 		"not-a-guid",
@@ -41,7 +39,6 @@ func TestAzureIssuer_BuildsV1Issuer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// IMDS mints v1 tokens, so the issuer must be sts.windows.net, not the v2 form.
 	if want := "https://sts.windows.net/" + testTenantID + "/"; got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
@@ -64,9 +61,6 @@ func TestParseAzureManagedIdentity_UserAssigned(t *testing.T) {
 }
 
 func TestParseAzureManagedIdentity_RejectsSystemAssigned(t *testing.T) {
-	// The runner's VMSS identity is system-assigned: xms_mirid names the compute
-	// resource, and its trailing segment is a VM name rather than an identity name.
-	// Accepting it would let a runner token pass as a phone-home identity.
 	systemAssigned := "/subscriptions/" + testSubID +
 		"/resourcegroups/rg-1/providers/Microsoft.Compute/virtualMachineScaleSets/inst123-vmss"
 
@@ -103,7 +97,6 @@ func TestParseAzureManagedIdentity_RequiresClaims(t *testing.T) {
 		}
 	}
 
-	// A non-string claim is treated as absent rather than coerced.
 	claims := azureClaims(mirID)
 	claims["tid"] = 12345
 	if _, err := ParseAzureManagedIdentity(claims); err == nil {
@@ -121,7 +114,6 @@ func TestParseAzureManagedIdentity_RejectsNonGUIDTenant(t *testing.T) {
 }
 
 func TestParseAzureManagedIdentity_CaseInsensitiveResourceSegments(t *testing.T) {
-	// Azure does not preserve casing consistently in xms_mirid.
 	mirID := "/SUBSCRIPTIONS/" + testSubID +
 		"/RESOURCEGROUPS/rg-1/PROVIDERS/microsoft.managedidentity/USERASSIGNEDIDENTITIES/inst123-phone-home"
 
@@ -135,16 +127,11 @@ func TestParseAzureManagedIdentity_CaseInsensitiveResourceSegments(t *testing.T)
 }
 
 func TestAzurePhoneHomeIdentityName(t *testing.T) {
-	// Both the ARM renderer and the verifier derive the name from this, so it is the
-	// single point of agreement between them.
 	if got := AzurePhoneHomeIdentityName("inst123"); got != "inst123-phone-home" {
 		t.Errorf("got %q", got)
 	}
 }
 
-// Graph would be the lower-value audience, but Microsoft signs Graph access tokens with a
-// key outside the tenant JWKS, so we cannot verify them. Separation from runner auth rests
-// on the identity-name bind instead.
 func TestAzureManagementAudience_IsVerifiable(t *testing.T) {
 	if AzureManagementAudience != "https://management.azure.com/" {
 		t.Errorf("expected the ARM audience, got %q", AzureManagementAudience)

@@ -9,8 +9,6 @@ import (
 	qcctx "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/cctx"
 )
 
-// FromContext reads the common context values and returns a SignalContext
-// suitable for persisting alongside a QueueSignal record.
 func FromContext(ctx cctx.ValueContext) qcctx.SignalContext {
 	sc := qcctx.SignalContext{}
 
@@ -26,8 +24,6 @@ func FromContext(ctx cctx.ValueContext) qcctx.SignalContext {
 	return sc
 }
 
-// Apply restores the captured context values onto a context.Context so that
-// downstream consumers (e.g. Temporal propagators) see the original values.
 func Apply(ctx context.Context, sc qcctx.SignalContext) context.Context {
 	ctx = cctx.ClearLogStreamContext(ctx)
 	if sc.AccountID != "" {
@@ -43,10 +39,6 @@ func Apply(ctx context.Context, sc qcctx.SignalContext) context.Context {
 	return ctx
 }
 
-// ApplyWorkflow is the workflow.Context analog of Apply. It restores the
-// captured per-signal context values onto a workflow.Context so that the
-// signal's Execute (and any activities it schedules via the Temporal
-// propagator) see the enqueuer's identity rather than the queue workflow's.
 func ApplyWorkflow(ctx workflow.Context, sc qcctx.SignalContext) workflow.Context {
 	ctx = cctx.ClearLogStreamWorkflowContext(ctx)
 	if sc.AccountID != "" {

@@ -6,7 +6,7 @@ import (
 	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
 )
 
-// When we are building and pushing images locally, we have to do things _slightly_ different, to ensure we interoperate
+// why: When we are building and pushing images locally, we have to do things _slightly_ different, to ensure we interoperate
 // with the docker vm correctly.
 //
 // When using `nctl run-local`, we need to tag and push the image as `localhost`, because the docker
@@ -17,7 +17,6 @@ import (
 //
 // For running builds inside kaniko, we can simply use localhost:5001 for everything.
 
-// GetLocalhostAlias returns the localhost alias for the installed container runtime.
 func GetLocalhostAlias() string {
 	if ok := IsDocker(); ok {
 		return "host.nuon.dev"
@@ -25,22 +24,18 @@ func GetLocalhostAlias() string {
 	return "localhost"
 }
 
-// Return a tag that can be used to build+push from the run-local environment
 func GetLocalTag(cfg *runnerconfig.Config, version string) string {
 	return fmt.Sprintf("localhost:%d/runner:%s", cfg.RegistryPort, version)
 }
 
-// Return a tag that can be used inside kaniko
 func GetKanikoTag(cfg *runnerconfig.Config, version string) string {
 	return fmt.Sprintf("localhost:%d/runner:%s", cfg.RegistryPort, version)
 }
 
-// Return the tag we _always_ use for copying
 func GetCopyTag(cfg *runnerconfig.Config, version string) string {
 	return fmt.Sprintf("localhost:%d/runner:%s", cfg.RegistryPort, version)
 }
 
-// Return the repo we _always_ use for copying
 func GetCopyRepo(cfg *runnerconfig.Config) string {
 	return fmt.Sprintf("localhost:%d/runner", cfg.RegistryPort)
 }

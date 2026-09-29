@@ -30,9 +30,6 @@ type Config struct {
 	ClientCertificatePEM []byte `cty:"-" hcl:"-" mapstructure:"-" json:"-" temporaljson:"-"`
 }
 
-// HasAppRegistrationCredentials reports whether this config carries material
-// for a specific app registration, as opposed to relying on whatever ambient
-// identity the process happens to have.
 func (c Config) HasAppRegistrationCredentials() bool {
 	if c.ClientID == "" || c.TenantID == "" {
 		return false

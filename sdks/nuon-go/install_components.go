@@ -15,7 +15,6 @@ type getinstallcomponentsquery struct {
 	Limit  int
 }
 
-// install components
 type GetInstallComponentsOpts struct {
 	Synced *bool
 }

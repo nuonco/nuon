@@ -10,8 +10,6 @@ import (
 	testseedconfig "github.com/nuonco/nuon/services/ctl-api/tests/testseed/config"
 )
 
-// syncWithBuildDispatch runs a sync over cfg into a fresh app config on an
-// existing app, the way the CLI path does.
 func (s *SyncFieldsTestSuite) syncWithBuildDispatch(ctx context.Context, appID string, cfg *config.AppConfig) *app.AppConfig {
 	appCfg := s.deps.Seed.CreateBareAppConfig(ctx, s.T(), appID)
 
@@ -41,8 +39,6 @@ func (s *SyncFieldsTestSuite) syncWithBuildDispatch(ctx context.Context, appID s
 	return appCfg
 }
 
-// markBuilt gives the component's latest config connection a non-failed build,
-// which is what makes it reusable on the next sync.
 func (s *SyncFieldsTestSuite) markBuilt(ctx context.Context, componentID string) {
 	var ccc app.ComponentConfigConnection
 	s.Require().NoError(s.deps.DB.WithContext(ctx).
@@ -66,8 +62,6 @@ func (s *SyncFieldsTestSuite) componentConfigCount(ctx context.Context, componen
 	return count
 }
 
-// terraformComponent pins a concrete terraform version — "latest" is only
-// resolvable by reaching the real terraform registry.
 func terraformComponent(name string) *config.Component {
 	cmp := testseedconfig.BuildTerraformComponent(name)
 	cmp.TerraformModule.TerraformVersion = "1.9.0"
@@ -82,8 +76,6 @@ func (s *SyncFieldsTestSuite) componentID(ctx context.Context, appID, name strin
 	return cmp.ID
 }
 
-// A component whose checksum has not moved must not get a new config connection
-// or a build. Without this the CLI would rebuild every component on every sync.
 func (s *SyncFieldsTestSuite) TestBuildDispatchReusesUnchangedComponent() {
 	cfg := testseedconfig.BuildMinimalAppConfig()
 	cmp := terraformComponent("unchanged-component")
@@ -104,8 +96,6 @@ func (s *SyncFieldsTestSuite) TestBuildDispatchReusesUnchangedComponent() {
 		"unchanged component must reuse its existing config connection")
 }
 
-// A checksum change must produce a fresh config connection and a scheduled
-// build, even though the previous config connection has a healthy build.
 func (s *SyncFieldsTestSuite) TestBuildDispatchSchedulesChangedComponent() {
 	cfg := testseedconfig.BuildMinimalAppConfig()
 	cmp := terraformComponent("changed-component")
@@ -126,8 +116,6 @@ func (s *SyncFieldsTestSuite) TestBuildDispatchSchedulesChangedComponent() {
 		"changed component must get a fresh config connection")
 }
 
-// A component whose last build failed must be rebuilt even when its checksum is
-// unchanged, otherwise a transient build failure is unrecoverable by re-syncing.
 func (s *SyncFieldsTestSuite) TestBuildDispatchRetriesFailedBuild() {
 	cfg := testseedconfig.BuildMinimalAppConfig()
 	cmp := terraformComponent("failed-component")
@@ -155,8 +143,6 @@ func (s *SyncFieldsTestSuite) TestBuildDispatchRetriesFailedBuild() {
 	s.Equal(int64(2), s.componentConfigCount(ctx, cmpID))
 }
 
-// Branch sync leaves build dispatch off and must keep its always-fresh config
-// connection behaviour, which strict config-connection pinning relies on.
 func (s *SyncFieldsTestSuite) TestWithoutBuildDispatchAlwaysCreatesFreshConfig() {
 	cfg := testseedconfig.BuildMinimalAppConfig()
 	cmp := terraformComponent("branch-component")
@@ -174,9 +160,6 @@ func (s *SyncFieldsTestSuite) TestWithoutBuildDispatchAlwaysCreatesFreshConfig()
 		"branch sync must create a config connection per sync")
 }
 
-// Branch sync pre-creates exactly one queued build per fresh CCC for image
-// components, which the branch run's builds step adopts and executes via
-// queuebuild — never a duplicate.
 func (s *SyncFieldsTestSuite) TestWithoutBuildDispatchPrecreatesOneImageBuild() {
 	cfg := testseedconfig.BuildMinimalAppConfig()
 	cmp := testseedconfig.BuildExternalImageComponent("plain-image")
@@ -202,8 +185,6 @@ func (s *SyncFieldsTestSuite) TestWithoutBuildDispatchPrecreatesOneImageBuild() 
 	s.Equal(builds[0].ID, ccc.LatestBuildID.String)
 }
 
-// An unchanged non-image component whose previous build is Active must pin the
-// fresh CCC to that build on branch sync (DispatchBuilds=false).
 func (s *SyncFieldsTestSuite) TestWithoutBuildDispatchReusesActiveTerraformBuild() {
 	cfg := testseedconfig.BuildMinimalAppConfig()
 	cmp := terraformComponent("stable-terraform")
@@ -238,8 +219,6 @@ func (s *SyncFieldsTestSuite) TestWithoutBuildDispatchReusesActiveTerraformBuild
 		"fresh CCC must be pinned to the previous Active build")
 }
 
-// Creating a build for a specific app-config CCC must attach and pin there even
-// when a newer CCC exists as LatestConfig (concurrent branch-run race).
 func (s *SyncFieldsTestSuite) TestCreateBuildPinsRequestedAppConfigCCC() {
 	cfg := testseedconfig.BuildMinimalAppConfig()
 	cmp := terraformComponent("race-terraform")
@@ -268,8 +247,6 @@ func (s *SyncFieldsTestSuite) TestCreateBuildPinsRequestedAppConfigCCC() {
 	s.Equal(bld.ID, olderCCC.LatestBuildID.String)
 }
 
-// An unchanged image component whose previous build is Active must not get a
-// new build on re-sync — the fresh CCC is pinned to the previous Active build.
 func (s *SyncFieldsTestSuite) TestWithoutBuildDispatchReusesActiveImageBuild() {
 	cfg := testseedconfig.BuildMinimalAppConfig()
 	cmp := testseedconfig.BuildExternalImageComponent("stable-image")
@@ -309,8 +286,6 @@ func (s *SyncFieldsTestSuite) TestWithoutBuildDispatchReusesActiveImageBuild() {
 		"fresh CCC must be pinned to the previous Active build")
 }
 
-// An update_policy image resolves tags at build time, so it must pre-create a
-// fresh build every branch sync even when the config is unchanged.
 func (s *SyncFieldsTestSuite) TestWithoutBuildDispatchAlwaysBuildsUpdatePolicyImage() {
 	cfg := testseedconfig.BuildMinimalAppConfig()
 	cmp := testseedconfig.BuildExternalImageComponent("tracked-branch-image")
@@ -334,9 +309,6 @@ func (s *SyncFieldsTestSuite) TestWithoutBuildDispatchAlwaysBuildsUpdatePolicyIm
 	s.GreaterOrEqual(count, int64(2), "update_policy image must pre-create a build per sync")
 }
 
-// An external image with an update_policy resolves its tag against the registry
-// at build time, so an unchanged config does not mean an unchanged artifact. It
-// must rebuild every sync or installs silently stop picking up new tags.
 func (s *SyncFieldsTestSuite) TestBuildDispatchAlwaysRebuildsUpdatePolicyImage() {
 	cfg := testseedconfig.BuildMinimalAppConfig()
 	cmp := testseedconfig.BuildExternalImageComponent("tracked-image")

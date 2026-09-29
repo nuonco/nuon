@@ -35,7 +35,7 @@ func (w *workspace) planDestroy(ctx context.Context, client Terraform, log hclog
 	opts := []tfexec.PlanOption{
 		tfexec.Refresh(true),
 		tfexec.Destroy(true),
-		tfexec.Out(tfplanFilePath), // NOTE: this should probably be configured w/ a WithPlanOut
+		tfexec.Out(tfplanFilePath),
 	}
 	for _, fp := range w.varsPaths {
 		opts = append(opts, tfexec.VarFile(fp))

@@ -30,7 +30,7 @@ func TestStackTemplateLocations_AzureSubscriptionScope(t *testing.T) {
 		t.Errorf("quickLinkURL = %q, want %q", loc.quickLinkURL, want)
 	}
 
-	// Pinned to the literal rather than the constant. Expressing this test only in
+	// why: Pinned to the literal rather than the constant. Expressing this test only in
 	// terms of azurePortalCustomDeployBaseURL is what let the undocumented
 	// Microsoft_Azure_CreateUIDef/CustomDeploymentBlade route ship: that blade
 	// accepts the identical shape and silently renders nothing, so nothing failed
@@ -39,7 +39,7 @@ func TestStackTemplateLocations_AzureSubscriptionScope(t *testing.T) {
 		t.Errorf("quick link does not use the documented Deploy-to-Azure route: %q", loc.quickLinkURL)
 	}
 
-	// The template URL sits in a path segment, so its separators must be escaped.
+	// why: The template URL sits in a path segment, so its separators must be escaped.
 	// An unescaped one silently truncates the segment and the deployment fails to
 	// load.
 	segment := strings.TrimPrefix(loc.quickLinkURL, azurePortalCustomDeployBaseURL)
@@ -49,9 +49,6 @@ func TestStackTemplateLocations_AzureSubscriptionScope(t *testing.T) {
 	}
 }
 
-// The portal cannot deploy a resource-group-scoped root template: it has no way
-// to create the group first. Rather than hand the customer a link that fails,
-// emit none — the dashboard hides the button when the URL is empty.
 func TestStackTemplateLocations_AzureResourceGroupScopeHasNoQuickLink(t *testing.T) {
 	for _, scope := range []string{"", string(app.StackDeploymentScopeResourceGroup)} {
 		loc := stackTemplateLocations(testBaseURL, testBucketKey, &CreateInstallStackVersionRequest{
@@ -69,8 +66,6 @@ func TestStackTemplateLocations_AzureResourceGroupScopeHasNoQuickLink(t *testing
 	}
 }
 
-// Azure documents portal deep-link encoding as [uri]::EscapeDataString, which
-// escapes ':' — url.PathEscape does not, and url.QueryEscape turns ' ' into '+'.
 func TestEscapeDataString(t *testing.T) {
 	got := escapeDataString("https://templates.example.com/a b/c.json")
 	want := "https%3A%2F%2Ftemplates.example.com%2Fa%20b%2Fc.json"
@@ -79,8 +74,6 @@ func TestEscapeDataString(t *testing.T) {
 	}
 }
 
-// Azure ignores Region for the quick link: the portal blade prompts for
-// subscription, resource group, and location itself.
 func TestStackTemplateLocations_AzureIgnoresRegion(t *testing.T) {
 	withRegion := stackTemplateLocations(testBaseURL, testBucketKey, &CreateInstallStackVersionRequest{
 		Platform:        string(app.AppRunnerTypeAzure),
@@ -135,8 +128,6 @@ func TestStackTemplateLocations_TrimsBaseURLSlash(t *testing.T) {
 	if got, want := loc.templateURL, testBaseURL+"/"+testBucketKey; got != want {
 		t.Errorf("templateURL = %q, want %q", got, want)
 	}
-	// The doubled separator survives escaping as %2F%2F, so it would reach the
-	// portal rather than being collapsed by an HTTP client.
 	if strings.Contains(loc.quickLinkURL, escapeDataString("//"+testBucketKey)) {
 		t.Errorf("quick link has a doubled separator: %q", loc.quickLinkURL)
 	}

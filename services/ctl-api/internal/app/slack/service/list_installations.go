@@ -41,9 +41,6 @@ func (s *service) ListInstallations(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installs)
 }
 
-// listOrgInstallations returns the active SlackInstallations whose TeamID is
-// referenced by a verified SlackOrgLink belonging to orgID. We do the join in
-// SQL to avoid an N+1 round-trip per link.
 func (s *service) listOrgInstallations(ctx context.Context, orgID string) ([]app.SlackInstallation, error) {
 	var installs []app.SlackInstallation
 

@@ -25,8 +25,6 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-// planCompositeErrorVersion gates composite-error recording for plan render
-// failures. New histories write the error; replaying old histories skip it.
 const planCompositeErrorVersion = "reprovision-sandbox-plan-composite-error-v1"
 
 const SignalType signal.SignalType = "reprovision-sandbox-plan"
@@ -94,7 +92,7 @@ func (s *Signal) OnRetry(ctx workflow.Context) error {
 		InstallID:         s.InstallID,
 	})
 	if err != nil {
-		return nil // best-effort: run may not exist yet
+		return nil
 	}
 	s.updateRunStatusWithoutStatusSync(ctx, run.ID, app.SandboxRunStatusRetried, "retrying")
 	return nil

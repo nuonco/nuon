@@ -11,7 +11,7 @@ import (
 type CreateAppBranchRunRequest struct {
 	AppBranchID       string  `json:"app_branch_id" validate:"required"`
 	AppBranchConfigID string  `json:"app_branch_config_id" validate:"required"`
-	WorkflowID        *string `json:"workflow_id,omitempty"` // Optional - can be set later
+	WorkflowID        *string `json:"workflow_id,omitempty"`
 	Force             bool    `json:"force"`
 }
 
@@ -22,19 +22,16 @@ func (a *Activities) CreateAppBranchRun(ctx context.Context, req *CreateAppBranc
 		return nil, errors.Wrap(err, "invalid request")
 	}
 
-	// Verify the app branch exists
 	var branch app.AppBranch
 	if err := a.db.WithContext(ctx).First(&branch, "id = ?", req.AppBranchID).Error; err != nil {
 		return nil, errors.Wrap(err, "app branch not found")
 	}
 
-	// Verify the config exists
 	var config app.AppBranchConfig
 	if err := a.db.WithContext(ctx).First(&config, "id = ?", req.AppBranchConfigID).Error; err != nil {
 		return nil, errors.Wrap(err, "app branch config not found")
 	}
 
-	// Verify the workflow exists if provided
 	if req.WorkflowID != nil {
 		var workflow app.Workflow
 		if err := a.db.WithContext(ctx).First(&workflow, "id = ?", *req.WorkflowID).Error; err != nil {
@@ -42,7 +39,6 @@ func (a *Activities) CreateAppBranchRun(ctx context.Context, req *CreateAppBranc
 		}
 	}
 
-	// Create the run
 	run := app.AppBranchRun{
 		AppBranchID:       req.AppBranchID,
 		AppBranchConfigID: req.AppBranchConfigID,

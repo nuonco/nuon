@@ -10,32 +10,22 @@ import (
 )
 
 const (
-	healthHealthy     = "healthy"
-	healthProgressing = "progressing"
-	healthDegraded    = "degraded"
-	healthUnhealthy   = "unhealthy"
-	healthUnknown     = "unknown"
-	// healthNotApplicable is for a resource we successfully read but which
-	// exposes no health signal at all. Distinct from unknown, which means we
-	// could not tell — claiming unknown here would report a permanent absence of
-	// information for something that simply has none to give.
+	healthHealthy       = "healthy"
+	healthProgressing   = "progressing"
+	healthDegraded      = "degraded"
+	healthUnhealthy     = "unhealthy"
+	healthUnknown       = "unknown"
 	healthNotApplicable = "not-applicable"
 
-	// maxDetailsBytes bounds the per-resource status blob the runner sends.
 	maxDetailsBytes = 8 * 1024
 )
 
-// assessResource derives the generic health verdict for a live object using
-// Argo's gitops-engine assessment, preserving the native status string.
 func assessResource(obj *unstructured.Unstructured) (health, message, nativeStatus string) {
 	hs, err := gitopshealth.GetResourceHealth(obj, nil)
 	if err != nil {
 		return healthUnknown, "", ""
 	}
 	if hs == nil {
-		// The library knows ~10 kinds and returns nil for the rest. Rather than
-		// call every CRD unknown forever, try the convention most controllers
-		// follow, then admit the resource has no signal.
 		return assessByConditions(obj)
 	}
 
@@ -58,7 +48,7 @@ func assessResource(obj *unstructured.Unstructured) (health, message, nativeStat
 	return health, msg, string(hs.Status)
 }
 
-// initContainerFailure scans init containers, which the upstream pod check
+// why: initContainerFailure scans init containers, which the upstream pod check
 // skips: it reads containerStatuses only, so an init container stuck on
 // ImagePullBackOff left the pod merely Pending with the reason sitting in status.
 func initContainerFailure(obj *unstructured.Unstructured) (reason, message string, found bool) {
@@ -88,7 +78,7 @@ func initContainerFailure(obj *unstructured.Unstructured) (reason, message strin
 	return "", "", false
 }
 
-// conditionFailure reads every condition, because each upstream per-kind check
+// why: conditionFailure reads every condition, because each upstream per-kind check
 // reads only a slice of status: the HPA check returns on the first condition
 // matched, the Deployment check never looks at ReplicaFailure.
 func conditionFailure(obj *unstructured.Unstructured) (reason, message string, found bool) {
@@ -107,7 +97,6 @@ func conditionFailure(obj *unstructured.Unstructured) (reason, message string, f
 		if !failureReason(condReason) || staleCondition(cond, gen) {
 			continue
 		}
-		// A reason left behind on a now-True ready condition is already over.
 		condType, _ := cond["type"].(string)
 		condStatus, _ := cond["status"].(string)
 		if condStatus == "True" && isReadyConditionType(condType) {
@@ -123,7 +112,7 @@ func conditionFailure(obj *unstructured.Unstructured) (reason, message string, f
 	return "", "", false
 }
 
-// Polarity cannot come from status: ReplicaFailure=True and ScalingActive=False
+// why: Polarity cannot come from status: ReplicaFailure=True and ScalingActive=False
 // both mean broken, so the reason is the only consistent signal.
 func failureReason(reason string) bool {
 	switch {
@@ -142,10 +131,6 @@ func failureReason(reason string) bool {
 	return false
 }
 
-// explainVerdict fills in a message the library leaves blank. A verdict with no
-// message is the least actionable thing health can show — an Ingress waiting on
-// a load balancer address reported "progressing" and nothing else for 15 hours,
-// while the reason sat in the status it had already read.
 func explainVerdict(obj *unstructured.Unstructured, status gitopshealth.HealthStatusCode) string {
 	if obj.GetKind() == "Pod" && status != gitopshealth.HealthStatusHealthy {
 		return podFailureReason(obj)
@@ -172,9 +157,6 @@ func hasLoadBalancerAddress(obj *unstructured.Unstructured) bool {
 	return err == nil && found && len(addrs) > 0
 }
 
-// staleCondition applies the freshness rule the API conventions define for
-// metav1.Condition: a condition set against an older generation is out of date
-// with respect to the current spec, whatever the object-level field says.
 func staleCondition(cond map[string]any, gen int64) bool {
 	if gen == 0 {
 		return false
@@ -186,7 +168,6 @@ func staleCondition(cond map[string]any, gen int64) bool {
 	return observed < gen
 }
 
-// Conditions decoded from JSON arrive as int64 or float64 depending on the path.
 func nestedNumber(m map[string]any, key string) (int64, bool) {
 	switch v := m[key].(type) {
 	case int64:
@@ -197,7 +178,7 @@ func nestedNumber(m map[string]any, key string) (int64, bool) {
 	return 0, false
 }
 
-// staleGeneration means the conditions describe an older spec. Only claimed when
+// why: staleGeneration means the conditions describe an older spec. Only claimed when
 // the controller has written a generation, so kinds that never set it are exempt.
 func staleGeneration(obj *unstructured.Unstructured) bool {
 	gen := obj.GetGeneration()
@@ -211,8 +192,6 @@ func staleGeneration(obj *unstructured.Unstructured) bool {
 	return observed < gen
 }
 
-// readyConditionTypes are the condition types controllers conventionally use to
-// mean "this object is serving". Ordered by preference.
 var readyConditionTypes = []string{"Ready", "Available", "Established", "Synced"}
 
 func isReadyConditionType(t string) bool {
@@ -224,10 +203,6 @@ func isReadyConditionType(t string) bool {
 	return false
 }
 
-// assessByConditions reads the status.conditions convention. A True ready-style
-// condition is healthy, False is degraded with its message, Unknown is
-// progressing. An object with no such condition is not-applicable: we read it
-// successfully and it has nothing to say about its own health.
 func assessByConditions(obj *unstructured.Unstructured) (health, message, nativeStatus string) {
 	if staleGeneration(obj) {
 		return healthProgressing, "waiting for the controller to observe the current spec", ""
@@ -291,9 +266,6 @@ func mapHealth(code gitopshealth.HealthStatusCode) string {
 	}
 }
 
-// resourceDetails returns a bounded JSON summary for the detail view. Spec is
-// included because status alone is uninformative for e.g. a ClusterIP Service,
-// and diagnosis outranks it since the evaluator copies it onto transitions.
 func resourceDetails(obj *unstructured.Unstructured, diagnosis map[string]any) string {
 	details := map[string]any{}
 	if len(diagnosis) > 0 {
@@ -320,7 +292,6 @@ func resourceDetails(obj *unstructured.Unstructured, diagnosis map[string]any) s
 		return string(b)
 	}
 
-	// spec pushed it over the cap — fall back to status (plus diagnosis) only.
 	fallback := map[string]any{}
 	if len(diagnosis) > 0 {
 		fallback["diagnosis"] = diagnosis
@@ -334,7 +305,6 @@ func resourceDetails(obj *unstructured.Unstructured, diagnosis map[string]any) s
 		}
 	}
 
-	// Still too large: keep the diagnosis, drop the raw status.
 	if len(diagnosis) > 0 {
 		if b, err := json.Marshal(map[string]any{"diagnosis": diagnosis}); err == nil && len(b) <= maxDetailsBytes {
 			return string(b)

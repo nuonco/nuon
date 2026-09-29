@@ -5,7 +5,7 @@ GlobalRegistrator.register();
 
 import "@testing-library/jest-dom";
 
-// posthog-js runs DOM access as an import side-effect (it async-loads its
+// why: posthog-js runs DOM access as an import side-effect (it async-loads its
 // toolbar/surveys chunks and reads window.location.hash), which throws an
 // unhandled rejection under the test DOM. Stub it so the real module never loads.
 const posthogStub = new Proxy(

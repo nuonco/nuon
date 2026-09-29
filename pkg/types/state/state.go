@@ -75,7 +75,6 @@ func (i State) WorkflowSafeAsMap(ctx workflow.Context) (map[string]interface{}, 
 		return nil, errors.New(resp.ErrMsg)
 	}
 
-	// unmarshal bytes
 	encodedResp = workflow.SideEffect(ctx, func(ctx workflow.Context) any {
 		var obj map[string]any
 		if err := json.Unmarshal(resp.Bytes, &obj); err != nil {

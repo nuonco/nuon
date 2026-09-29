@@ -1,27 +1,7 @@
 #!/bin/bash
-#
-# Set up an Azure Container Registry (ACR) for local ctl-api development.
-#
-# This script creates (or reuses) an ACR in a given resource group, then
-# prints the environment variables needed to run ctl-api with
-# CLOUD_PROVIDER=azure so that builds push to ACR instead of AWS ECR.
-#
-# Prerequisites:
-#   - Azure CLI (`az`) installed and logged in
-#   - A resource group to create the ACR in
-#
-# Usage:
-#   ./scripts/setup-azure-acr.sh                     # interactive prompts
-#   ./scripts/setup-azure-acr.sh --rg mygroup        # specify resource group
-#   ./scripts/setup-azure-acr.sh --rg mygroup --name myacr --location eastus
-#
-# After running, source the generated env file:
-#   source /tmp/nuon-azure-acr.env
-#
 
 set -euo pipefail
 
-# ── parse args ────────────────────────────────────────────────────────
 RESOURCE_GROUP=""
 ACR_NAME=""
 LOCATION=""
@@ -39,7 +19,6 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# ── check prerequisites ──────────────────────────────────────────────
 if ! command -v az &>/dev/null; then
   echo "❌ Azure CLI (az) is not installed. Install it first:"
   echo "   brew install azure-cli"
@@ -61,7 +40,6 @@ echo "Subscription:  ${SUBSCRIPTION_ID}"
 echo "Tenant:        ${TENANT_ID}"
 echo ""
 
-# ── resolve resource group ───────────────────────────────────────────
 if [ -z "$RESOURCE_GROUP" ]; then
   echo "Available resource groups:"
   az group list --query "[].name" -o tsv | head -20
@@ -83,9 +61,7 @@ fi
 
 echo "Resource group: ${RESOURCE_GROUP} (${LOCATION})"
 
-# ── resolve ACR name ─────────────────────────────────────────────────
 if [ -z "$ACR_NAME" ]; then
-  # Check for existing ACR in the resource group
   EXISTING_ACR=$(az acr list --resource-group "$RESOURCE_GROUP" \
     --query "[0].name" -o tsv 2>/dev/null || true)
 
@@ -104,7 +80,6 @@ if [ -z "$ACR_NAME" ]; then
   fi
 fi
 
-# ── create or reuse ACR ──────────────────────────────────────────────
 if az acr show --name "$ACR_NAME" --resource-group "$RESOURCE_GROUP" &>/dev/null; then
   echo "==> Using existing ACR: ${ACR_NAME}"
 else
@@ -119,21 +94,14 @@ else
   echo "   ACR created."
 fi
 
-# ── get ACR details ──────────────────────────────────────────────────
 ACR_LOGIN_SERVER=$(az acr show --name "$ACR_NAME" --resource-group "$RESOURCE_GROUP" \
   --query "loginServer" -o tsv)
 
 echo ""
 echo "ACR login server: ${ACR_LOGIN_SERVER}"
 
-# ── get current user's client ID (for managed identity / local dev) ──
-# When running locally, Azure SDK uses your az cli credentials.
-# The "client ID" for local dev is your az cli app registration.
-# For ctl-api, ManagementAzureClientID is used for runner IAM provisioning.
-# Locally you can set it to your SP or leave empty if not provisioning runners.
 CLIENT_ID=$(echo "$ACCOUNT_INFO" | jq -r '.user.name // empty')
 
-# ── write env file ───────────────────────────────────────────────────
 ENV_FILE="/tmp/nuon-azure-acr.env"
 
 cat > "$ENV_FILE" << EOF

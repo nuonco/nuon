@@ -40,13 +40,12 @@ func (s *service) UpdateTerraformState(ctx *gin.Context) {
 		return
 	}
 
-	// Validate workspace belongs to org
 	if _, err := s.getWorkspace(ctx, workspaceID); err != nil {
 		ctx.Error(fmt.Errorf("unable to get workspace: %w", err))
 		return
 	}
 
-	// keeping jobID optional to remain backwards compatible for old runners
+	// why: keeping jobID optional to remain backwards compatible for old runners
 	jobID := ctx.Query("job_id")
 	var sJobID *string
 	if jobID != "" {
@@ -71,7 +70,6 @@ func (s *service) UpdateTerraformState(ctx *gin.Context) {
 		}
 	}
 
-	// Get the raw body first
 	contents, err := ctx.GetRawData()
 	if err != nil {
 		s.l.Error("unable to read request body", zap.Error(err))

@@ -71,7 +71,6 @@ func TestQuickLinkWrapper_StackResourceShape(t *testing.T) {
 		t.Errorf("unexpected templateLink uri: %v", got)
 	}
 
-	// The two protections a plain ARM deployment would lose.
 	deny, ok := props["denySettings"].(map[string]any)
 	if !ok {
 		t.Fatalf("stack missing denySettings: %v", props)
@@ -91,9 +90,6 @@ func TestQuickLinkWrapper_StackResourceShape(t *testing.T) {
 	}
 }
 
-// A location on a resource-group-scoped deploymentStacks resource fails the
-// deploy with InvalidTemplateDeployment, and `az deployment group validate`
-// does not catch it — so the guard has to live here.
 func TestQuickLinkWrapper_NoLocationAtResourceGroupScope(t *testing.T) {
 	wrapper := renderWrapper(t, minimalTemplateInput())
 	stack, _ := wrapperStackResource(t, wrapper)
@@ -121,9 +117,6 @@ func TestQuickLinkWrapper_LocationAtSubscriptionScope(t *testing.T) {
 	}
 }
 
-// The portal builds its deployment form from the wrapper, so every parameter
-// the stack template declares has to be re-declared and passed through —
-// otherwise parameters without defaults (customer secrets) have no source.
 func TestQuickLinkWrapper_ParametersArePassedThrough(t *testing.T) {
 	inp := minimalTemplateInput()
 	inp.DeploymentScope = app.StackDeploymentScopeSubscription
@@ -168,8 +161,6 @@ func TestQuickLinkWrapper_ParametersArePassedThrough(t *testing.T) {
 	}
 }
 
-// deployTimestamp defaults to [utcNow()], which ARM only accepts in a top-level
-// template's parameter defaults. It stays a wrapper parameter for that reason.
 func TestQuickLinkWrapper_DeployTimestampStaysAParameter(t *testing.T) {
 	wrapper := renderWrapper(t, minimalTemplateInput())
 
@@ -186,11 +177,6 @@ func TestQuickLinkWrapper_DeployTimestampStaysAParameter(t *testing.T) {
 	}
 }
 
-// Reprovision mints a new stack version, and therefore a new wrapper at a new
-// URL. Deploying it must UPDATE the install's stack rather than create a second
-// one, which holds only while the stack name derives from the install and not
-// from the version. Anything that makes the name version-specific silently turns
-// every reprovision into a parallel stack.
 func TestQuickLinkWrapper_StackNameIsStableAcrossVersions(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 
@@ -218,8 +204,6 @@ func TestQuickLinkWrapper_StackNameIsStableAcrossVersions(t *testing.T) {
 	}
 }
 
-// The portal and the documented `az stack group create` command have to address
-// the same stack, or a customer who switches between them ends up with two.
 func TestQuickLinkWrapper_StackNameMatchesCLIConvention(t *testing.T) {
 	inp := minimalTemplateInput()
 	wrapper := renderWrapper(t, inp)

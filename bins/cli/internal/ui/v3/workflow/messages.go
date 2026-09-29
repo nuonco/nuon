@@ -16,7 +16,6 @@ type workflowFetchedMsg struct {
 }
 
 func (m model) fetchWorkflowCmd() tea.Msg {
-	// This runs in a goroutine automatically
 	workflow, err := m.api.GetWorkflow(m.ctx, m.workflowID)
 	if err != nil {
 		return workflowFetchedMsg{workflow: workflow, err: err}
@@ -50,7 +49,6 @@ func (m model) fetchStackCmd() tea.Msg {
 	if m.installID == "" {
 		return stackFetchedMsg{}
 	}
-	// This runs in a goroutine automatically
 	stack, err := m.api.GetInstallStack(m.ctx, m.installID)
 	return stackFetchedMsg{stack: stack, err: err}
 }
@@ -60,17 +58,13 @@ type createWorkflowStepApprovalResponseMsg struct {
 	err                          error
 }
 
-// makeApproveStepCmd creates a command that captures the necessary values upfront
-// so the UI can update immediately while the API call runs async
 func (m model) makeApproveStepCmd() tea.Cmd {
-	// Guard against nil selectedStep or Approval
 	if m.selectedStep == nil || m.selectedStep.Approval == nil {
 		return func() tea.Msg {
 			return createWorkflowStepApprovalResponseMsg{err: fmt.Errorf("no step selected for approval")}
 		}
 	}
 
-	// Capture values needed for the API call
 	api := m.api
 	ctx := m.ctx
 	workflowID := m.workflowID
@@ -92,7 +86,6 @@ type cancelWorkflowMsg struct {
 }
 
 func (m model) cancelWorkflowCmd() tea.Msg {
-	// This runs in a goroutine automatically
 	_, err := m.api.CancelWorkflow(m.ctx, m.workflowID)
 
 	m.setLogMessage(fmt.Sprintf("[%s] workflow cancelled", m.workflowID), "error")
@@ -106,7 +99,6 @@ type approveAllMsg struct {
 }
 
 func (m model) approveAllCmd() tea.Msg {
-	// This runs in a goroutine automatically
 	approved := 0
 	for _, step := range m.workflow.Steps {
 		if step.Approval == nil || step.Approval.Response != nil {
@@ -136,7 +128,7 @@ type retryAllMsg struct {
 }
 
 func (m model) retryAllCmd() tea.Msg {
-	// Find the last step (highest Idx) that is in error and retryable.
+	// why: Find the last step (highest Idx) that is in error and retryable.
 	// Using last (not first) avoids retrying from a step where later steps already succeeded.
 	var target *models.AppWorkflowStep
 	for _, step := range m.workflow.Steps {

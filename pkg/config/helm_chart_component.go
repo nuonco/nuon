@@ -30,7 +30,6 @@ func (h HelmValuesFile) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("contents").Short("Contents of the values file.").Example("./values/whoami.yaml").OneOfRequired("contents")
 }
 
-// NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type HelmChartComponentConfig struct {
 	ChartName string `mapstructure:"chart_name,omitempty" toml:"chart_name,omitempty" jsonschema:"required"`
 
@@ -58,7 +57,6 @@ type HelmChartComponentConfig struct {
 	SkipNoops                    *bool `mapstructure:"skip_noops,omitempty" toml:"skip_noops,omitempty" nuonhash:"omitempty"`
 	AutoApproveOnPoliciesPassing *bool `mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty" nuonhash:"omitempty"`
 
-	// deprecated
 	Values []HelmValue `mapstructure:"value,omitempty" toml:"value,omitempty"`
 }
 
@@ -152,7 +150,6 @@ func (h *HelmChartComponentConfig) parse(rootDir string) error {
 	}
 
 	for idx, valuesFile := range h.ValuesFiles {
-		// Prefer Path over Source (Source is deprecated)
 		sourceToUse := valuesFile.Path
 		if sourceToUse == "" {
 			sourceToUse = valuesFile.Source

@@ -38,8 +38,6 @@ END $$;`
 
 func (m *Migrations) GetAccountsWithEmptyEmails(ctx context.Context, db *gorm.DB) ([]app.Account, error) {
 	var accounts []app.Account
-	// unscoped: the NOT NULL and CHECK below apply to soft deleted rows too, so those have
-	// to be cleaned up as well or the ALTER fails
 	res := db.WithContext(ctx).
 		Unscoped().
 		Where("email IS NULL OR email = ''").
@@ -68,7 +66,6 @@ func (m *Migrations) DeleteAccountsAndSetUUIDAsEmail(ctx context.Context, db *go
 			return res.Error
 		}
 
-		// soft delete the account
 		res = db.WithContext(ctx).
 			Delete(&app.Account{
 				ID: account.ID,

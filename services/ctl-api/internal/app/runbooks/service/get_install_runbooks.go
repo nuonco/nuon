@@ -21,9 +21,6 @@ const currentAppConfigRunbookSubquery = `
 		AND rc.deleted_at = 0
 `
 
-// appConfigRunbookFilter keeps only runbooks present in the install's current app config
-// (synced) when syncedOnly is true, or only runbooks no longer in the current app config
-// when syncedOnly is false.
 func appConfigRunbookFilter(syncedOnly bool) string {
 	if syncedOnly {
 		return "EXISTS (" + currentAppConfigRunbookSubquery + ")"
@@ -71,10 +68,6 @@ func (s *service) GetInstallRunbooks(ctx *gin.Context) {
 		Scopes(scopes.WithOffsetPagination).
 		Joins("JOIN runbooks ON runbooks.id = install_runbooks.runbook_id AND runbooks.deleted_at = 0").
 		Preload("Runbook").
-		// Pinned config, not the app's newest: runs execute the pinned one, so any
-		// other version hands callers step IDs it will reject. Unique on
-		// (runbook_id, app_config_id), so this yields at most one per runbook without a
-		// LIMIT, which would cap the whole preload rather than each row.
 		Preload("Runbook.Configs", func(tx *gorm.DB) *gorm.DB {
 			if install.AppConfigID == "" {
 				return tx.Scopes(scopes.WithOverrideTable("runbook_configs_latest_view_v1"))

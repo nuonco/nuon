@@ -1,6 +1,3 @@
-/*
-  below
-*/
 .dropdown-content.below.enter {
   animation: enter-below var(--duration-fastest) var(--ease-cubic);
 }
@@ -31,9 +28,6 @@
   }
 }
 
-/*
-  above
-*/
 .dropdown-content.above.enter {
   animation: enter-above var(--duration-fastest) var(--ease-cubic);
 }
@@ -64,13 +58,6 @@
   }
 }
 
-/*
-  beside
-*/
-
-/*
-  beside left
-*/
 .dropdown-content.beside.left.enter {
   animation: enter-beside-left var(--duration-fastest) var(--ease-cubic);
 }
@@ -101,9 +88,6 @@
   }
 }
 
-/*
-  beside right
-*/
 .dropdown-content.beside.right.enter {
   animation: enter-beside-right var(--duration-fastest) var(--ease-cubic);
 }
@@ -134,9 +118,6 @@
   }
 }
 
-/*
-  overlay
-*/
 .dropdown-content.overlay.enter {
   animation: enter-overlay var(--duration-fastest) var(--ease-cubic);
 }

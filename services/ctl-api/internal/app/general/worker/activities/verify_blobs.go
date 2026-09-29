@@ -19,10 +19,8 @@ const maxVerifyMismatchSamples = 100
 type VerifyBlobsRequest struct {
 	Table     string `json:"table"`
 	BatchSize int    `json:"batch_size"`
-	// Day scopes the batch to a single UTC calendar day ("2006-01-02"); empty means the whole table.
-	Day string `json:"day"`
-	// Cursor is the last id from the previous batch; rows are walked in ascending id order.
-	Cursor string `json:"cursor"`
+	Day       string `json:"day"`
+	Cursor    string `json:"cursor"`
 }
 
 type BlobMismatch struct {
@@ -116,9 +114,6 @@ func (a *Activities) VerifyBlobs(ctx context.Context, req VerifyBlobsRequest) (*
 	return resp, nil
 }
 
-// verifyBlobRow returns an empty reason when the row's blob matches both its
-// recorded checksum and its origin column; otherwise it returns a description of
-// the first mismatch found.
 func (a *Activities) verifyBlobRow(ctx context.Context, jsonSemantic bool, row blobVerifyRow) (string, error) {
 	var metadata blobstore.BlobMetadata
 	if err := json.Unmarshal([]byte(row.BlobMeta), &metadata); err != nil {

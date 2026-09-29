@@ -7,7 +7,6 @@ import (
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// IsRetryableResponse is the response from the "is-retryable" update handler.
 type IsRetryableResponse struct {
 	Retryable      bool   `json:"retryable"`
 	Skippable      bool   `json:"skippable"`
@@ -33,7 +32,6 @@ func (s *Signal) isRetryableHandler(ctx workflow.Context) (*IsRetryableResponse,
 		StepID:     step.ID,
 	}
 
-	// Read capabilities from the inner signal's interfaces.
 	sig := stepSignal(step)
 	if sig != nil {
 		if ar, ok := sig.(signal.SignalWithAutoRetry); ok {
@@ -51,9 +49,6 @@ func (s *Signal) isRetryableHandler(ctx workflow.Context) (*IsRetryableResponse,
 		}
 	}
 
-	// For retry-group signals, the retry budget is tracked via GroupRetryIdx
-	// rather than RetryIndex. Return the correct index so the UI displays
-	// the right retry count.
 	if resp.RetryGroup {
 		resp.RetryIndex = step.GroupRetryIdx
 	}

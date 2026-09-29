@@ -52,14 +52,12 @@ func (s *service) GetAppConfigDiff(ctx *gin.Context) {
 	configID := ctx.Param("config_id")
 	oldConfigID := ctx.Query("old_config_id")
 
-	// Load the new config's intermediate representation
 	newCfg, err := s.loadIntermediateConfig(ctx, org.ID, appID, configID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to load new config: %w", err))
 		return
 	}
 
-	// Load the old config (nil if not specified — diff will show everything as added)
 	var oldCfg *config.AppConfig
 	if oldConfigID != "" {
 		oldCfg, err = s.loadIntermediateConfig(ctx, org.ID, appID, oldConfigID)
@@ -69,7 +67,6 @@ func (s *service) GetAppConfigDiff(ctx *gin.Context) {
 		}
 	}
 
-	// Compute diff
 	d := newCfg.Diff(oldCfg)
 	summary := d.Summary()
 
@@ -82,8 +79,6 @@ func (s *service) GetAppConfigDiff(ctx *gin.Context) {
 	})
 }
 
-// loadIntermediateConfig fetches an app config from the DB and deserializes
-// its intermediate config blob into the config.AppConfig struct.
 func (s *service) loadIntermediateConfig(ctx *gin.Context, orgID, appID, configID string) (*config.AppConfig, error) {
 	var appCfg app.AppConfig
 	res := s.db.WithContext(ctx).

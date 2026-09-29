@@ -43,10 +43,8 @@ func GenerateWorkflow(data WorkflowData) ([]byte, error) {
 		return nil, fmt.Errorf("failed to execute template: %w", err)
 	}
 
-	// Format the generated code
 	formatted, err := format.Source(buf.Bytes())
 	if err != nil {
-		// Return unformatted code for debugging
 		return buf.Bytes(), fmt.Errorf("failed to format source: %w", err)
 	}
 

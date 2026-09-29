@@ -18,8 +18,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
 )
 
-// EnsureComponent creates a component if it doesn't exist, using the shared helpers
-// for full initialization (queue creation, dependencies, install components).
 func EnsureComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.Helpers, comp *config.Component, appID string, state *sync.State) error {
 	_, err := getComponent(ctx, db, comp.Name, appID)
 	if err == nil {
@@ -59,8 +57,6 @@ func EnsureComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers
 	return nil
 }
 
-// SyncComponentParams carries the dependencies and target of a single
-// component sync.
 type SyncComponentParams struct {
 	DB          *gorm.DB
 	Helpers     *componenthelpers.Helpers
@@ -71,16 +67,9 @@ type SyncComponentParams struct {
 	AppConfigID string
 	State       *sync.State
 
-	// DispatchBuilds reuses unchanged config connections and records changed
-	// components in State.Result.ComponentsScheduled for the caller to enqueue
-	// build signals for (the signal packages would import-cycle from here).
-	// Leave off when a later step schedules builds (branch run's builds step).
 	DispatchBuilds bool
 }
 
-// SyncComponent updates a component and creates its configuration via the shared
-// builders in internal/pkg/config/build, which the per-type
-// Create*ComponentConfig handlers also use.
 func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 	db, helpers, vcsHelper, tfClient := params.DB, params.Helpers, params.VCSHelper, params.TFClient
 	comp, appID, appConfigID, state := params.Component, params.AppID, params.AppConfigID, params.State
@@ -198,10 +187,6 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 			Checksum: comp.Checksum,
 		})
 	} else {
-		// Branch sync always creates a fresh CCC. Pin a reusable Active build
-		// when checksum is unchanged so CheckBuildNeeded can skip. External
-		// images still pre-create a queued build when nothing is reusable so
-		// the builds step can adopt it.
 		found, reusableBuildID, err := reusableActiveBuildID(ctx, db, apiComp.ID, ccc)
 		if err != nil {
 			return err
@@ -237,9 +222,6 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 	return nil
 }
 
-// reusableActiveBuildID returns a prior config connection's Active build ID when
-// the incoming checksum is unchanged. Walks same-checksum CCCs newest-first so
-// a concurrent branch sync with a different checksum does not block reuse.
 func reusableActiveBuildID(ctx context.Context, db *gorm.DB, cmpID string, incoming *app.ComponentConfigConnection) (bool, string, error) {
 	if incoming.Checksum == "" || build.RequiresFreshBuild(incoming) {
 		return false, "", nil
@@ -281,8 +263,6 @@ func reusableActiveBuildID(ctx context.Context, db *gorm.DB, cmpID string, incom
 			continue
 		}
 
-		// Prior CCC may have an Active build row without latest_build_id pinned
-		// (broken pin from concurrent create). Recover by looking up the build.
 		var bld app.ComponentBuild
 		res = db.WithContext(ctx).
 			Select("id").
@@ -307,10 +287,6 @@ func reusableActiveBuildID(ctx context.Context, db *gorm.DB, cmpID string, incom
 	return false, "", nil
 }
 
-// reusableConfigID returns the latest config connection's ID when it matches
-// the incoming checksum and has a non-failed build, "" when a fresh connection
-// is needed. Reusing (not skip-building a fresh one) keeps the invariant that
-// every config connection has a build behind it, which CCC pinning depends on.
 func reusableConfigID(ctx context.Context, db *gorm.DB, cmpID string, incoming *app.ComponentConfigConnection) (string, error) {
 	checksum := incoming.Checksum
 	if checksum == "" || build.RequiresFreshBuild(incoming) {
@@ -413,7 +389,7 @@ func resolveVCS(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers,
 	return vcs, nil
 }
 
-// EnsureComponentDependencies resolves and sets dependencies for a component.
+// why: EnsureComponentDependencies resolves and sets dependencies for a component.
 // This must be called after all components have been created (via EnsureComponent)
 // so that dependency names can be resolved to IDs.
 func EnsureComponentDependencies(ctx context.Context, db *gorm.DB, helpers *componenthelpers.Helpers, comp *config.Component, appID string) error {
@@ -451,7 +427,6 @@ func EnsureComponentDependencies(ctx context.Context, db *gorm.DB, helpers *comp
 	return nil
 }
 
-// getComponent finds a component by name.
 func getComponent(ctx context.Context, db *gorm.DB, name string, appID string) (*app.Component, error) {
 	var comp app.Component
 	res := db.WithContext(ctx).

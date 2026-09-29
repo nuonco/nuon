@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	// defaultRate is used to control the sampling rate, by default we send everything.
 	defaultRate float64 = 1.0
 )
 

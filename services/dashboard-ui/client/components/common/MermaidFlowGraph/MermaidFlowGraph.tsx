@@ -305,7 +305,6 @@ function buildLayout(
   const nodeMap = new Map(parsedNodes.map((n) => [n.id, n]))
   const allNodeIds = new Set(parsedNodes.map((n) => n.id))
 
-  // Build parent→children mapping (direct children only, excluding nested subgraph children)
   const directChildNodes = new Map<string, string[]>()
   const childSubgraphs = new Map<string, string[]>()
   const sgIds = new Set(subgraphs.map((s) => s.id))
@@ -358,7 +357,6 @@ function buildLayout(
     return result
   }
 
-  // Recursively layout subgraphs from leaves up
   type SgLayout = { positions: Map<string, { x: number; y: number }>; width: number; height: number }
   const sgLayouts = new Map<string, SgLayout>()
 
@@ -386,8 +384,6 @@ function buildLayout(
       desc.forEach((id) => { if (allNodeIds.has(id)) allDescendantNodes.add(id) })
     }
 
-    // Edges internal to this subgraph (both endpoints are descendants)
-    // Map descendant nodes to their direct parent item in this layout
     const nodeToItem = new Map<string, string>()
     for (const nid of childNodeIds) nodeToItem.set(nid, nid)
     for (const csId of childSgIds) {
@@ -502,7 +498,6 @@ function buildLayout(
 
   const nodes: Node[] = []
 
-  // Subgraph boxes (render inner-most first for z-ordering)
   const allSgsReversed = [...subgraphs].reverse()
   for (const sg of allSgsReversed) {
     const sgPos = positions.get(sg.id)

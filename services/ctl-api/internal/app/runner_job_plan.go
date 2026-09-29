@@ -68,11 +68,6 @@ func (r *RunnerJobPlan) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// GetCompositePlan returns the composite plan. When blobRead is enabled it reads
-// from the S3 blob, falling back to the legacy jsonb column when the blob is
-// unset or unreadable (rows not yet backfilled). When disabled it always reads
-// the legacy column. The second return reports whether the plan came from the
-// blob.
 func (r *RunnerJobPlan) GetCompositePlan(ctx context.Context, blobRead bool) (*plantypes.CompositePlan, bool) {
 	if blobRead {
 		if raw, err := r.CompositePlanBlob.Get(ctx); err == nil && raw != "" {

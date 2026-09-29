@@ -90,7 +90,6 @@ func (e *EnqueueTestSuite) SetupSuite() {
 		e.T(),
 		fx.Provide(internal.NewConfig),
 
-		// various dependencies
 		fx.Provide(telemetry.NewConfig),
 		fx.Provide(log.New),
 		fx.Provide(dblog.New),
@@ -134,25 +133,21 @@ func (e *EnqueueTestSuite) SetupSuite() {
 		fx.Provide(analytics.NewTemporal),
 		fx.Provide(cloudformation.NewTemplates),
 
-		// shared activities and workflows
 		fx.Provide(statusactivities.New),
 		fx.Provide(job.New),
 		fx.Provide(signaldb.NewPayloadConverter),
 		fx.Provide(signal.NewSignalLifecycleActivities),
 
-		// test dependencies
 		fx.Provide(seed.New),
 		fx.Provide(enqueuer.New),
 		fx.Provide(client.New),
 
-		// start the test worker for testing the queue package
 		fx.Provide(activities.New),
 		fx.Provide(queue.NewWorkflows),
 		fx.Provide(handler.NewWorkflows),
 		fx.Provide(handleractivities.New),
 		fx.Provide(worker.AsWorker(New)),
 
-		// invokers
 		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
 		fx.Invoke(worker.WithWorkers(func([]worker.Worker) {
 		})),

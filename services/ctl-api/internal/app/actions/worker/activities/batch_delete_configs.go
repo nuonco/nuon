@@ -20,7 +20,6 @@ func (a *Activities) BatchDeleteActionWorkflow(ctx context.Context, req BatchDel
 	hasMore := false
 	configs := []app.ActionWorkflowConfig{}
 
-	// use select to only load the necessary fields
 	resp := a.db.WithContext(ctx).
 		Select("id, action_workflow_id, created_at").
 		Limit(req.Limit+1).
@@ -37,7 +36,6 @@ func (a *Activities) BatchDeleteActionWorkflow(ctx context.Context, req BatchDel
 	hasMore = len(configs) > req.Limit
 
 	if len(configs) > 0 {
-		// configs minus one is the limit, so we can delete all but the last one
 		configsToDelete := configs[:req.Limit]
 
 		for _, config := range configsToDelete {

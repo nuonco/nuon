@@ -72,7 +72,6 @@ func (s *GetTerraformWorkspacesTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes (needs org context)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -165,7 +164,6 @@ func (s *GetTerraformWorkspacesTestSuite) TestGetTerraformWorkspaces() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create workspace in test org
 				ws1 := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     s.testOrg.ID,
@@ -175,7 +173,6 @@ func (s *GetTerraformWorkspacesTestSuite) TestGetTerraformWorkspaces() {
 				err := s.service.DB.WithContext(ctx).Create(ws1).Error
 				require.NoError(s.T(), err)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -188,7 +185,6 @@ func (s *GetTerraformWorkspacesTestSuite) TestGetTerraformWorkspaces() {
 				err = s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create workspace in org2
 				ws2 := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     org2.ID,
@@ -209,7 +205,6 @@ func (s *GetTerraformWorkspacesTestSuite) TestGetTerraformWorkspaces() {
 			expectedCount: 1,
 			expectedCode:  http.StatusOK,
 			validateFunc: func(workspaces []app.TerraformWorkspace) {
-				// Should only see workspace from test org
 				assert.Equal(s.T(), 1, len(workspaces))
 				assert.Equal(s.T(), s.testOrg.ID, workspaces[0].OrgID)
 			},

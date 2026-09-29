@@ -9,9 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
-// permissionDeniedError phrases a 403 in terms of the access level the
-// request needs rather than the raw permission key, so the message reads
-// sensibly from any action that triggered the check.
 func permissionDeniedError(acct *app.Account, orgID string, perm permissions.Permission, scope string) stderr.ErrAuthorization {
 	level := "write"
 	if perm == permissions.PermissionRead {
@@ -35,10 +32,6 @@ func permissionDeniedError(acct *app.Account, orgID string, perm permissions.Per
 	}
 }
 
-// scopeOverrides replaces path-derived labels that would read poorly. Keys
-// are the first meaningful path segment after /v1/ (skipping "current" and
-// route params), or the first two segments for umbrella groups whose second
-// segment names the real resource.
 var scopeOverrides = map[string]string{
 	"account/static-token":  "API tokens in this organization",
 	"account/static-tokens": "API tokens in this organization",
@@ -54,9 +47,6 @@ var scopeOverrides = map[string]string{
 	"vcs":                   "VCS connections in this organization",
 }
 
-// scopeFromPath derives the denied-error scope from the route, naming the
-// resource the request operates on: /v1/service-accounts/:id becomes
-// "service accounts in this organization".
 func scopeFromPath(fullPath string) string {
 	path, ok := strings.CutPrefix(fullPath, "/v1/")
 	if !ok || path == "" {

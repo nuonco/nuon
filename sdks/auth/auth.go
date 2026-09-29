@@ -1,5 +1,3 @@
-// Package auth resolves the credential a Nuon SDK presents: an explicit token, then
-// NUON_API_TOKEN, then an ambient OIDC token exchanged for a short-lived one.
 package auth
 
 import (
@@ -11,33 +9,22 @@ import (
 	"github.com/nuonco/nuon/sdks/auth/oidctoken"
 )
 
-// APITokenEnvVar authenticates non-interactively, without a config file.
 const APITokenEnvVar = "NUON_API_TOKEN"
 
-// OrgIDEnvVar names the org whose trust policies the OIDC exchange evaluates.
 const OrgIDEnvVar = "NUON_ORG_ID"
 
-// Exchanger trades an OIDC ID token for a short-lived Nuon API token over the
-// SDK's own transport. Called only with a non-empty orgID and jwt.
 type Exchanger interface {
 	ExchangeOIDCToken(ctx context.Context, orgID, jwt string) (string, error)
 }
 
-// Options are the inputs to Resolve; the environment supplies what is unset.
 type Options struct {
-	// APIToken wins over every other source.
 	APIToken string
 
-	// OrgID is required on the OIDC path only. Falls back to NUON_ORG_ID.
 	OrgID string
 
-	// Audience for an ambient OIDC token. Compared literally against the trust policy,
-	// so there is no default.
 	Audience string
 }
 
-// Resolve produces the bearer token for a request. ex is consulted only on the
-// OIDC path, so nil is valid for a caller that supports static tokens alone.
 func Resolve(ctx context.Context, opts Options, ex Exchanger) (string, error) {
 	if t := strings.TrimSpace(opts.APIToken); t != "" {
 		return t, nil
@@ -63,7 +50,6 @@ func Resolve(ctx context.Context, opts Options, ex Exchanger) (string, error) {
 		orgID = strings.TrimSpace(os.Getenv(OrgIDEnvVar))
 	}
 	if orgID == "" {
-		// Checked before fetching a token: the exchange cannot succeed without an org.
 		return "", fmt.Errorf("an OIDC token is available but no org id is set: set an org id or %s", OrgIDEnvVar)
 	}
 

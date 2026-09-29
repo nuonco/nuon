@@ -54,7 +54,7 @@ export const AnnouncementCard = ({
     setTimeout(() => {
       if (wrapperRef.current) {
         wrapperRef.current.style.height = `${wrapperRef.current.offsetHeight}px`
-        wrapperRef.current.offsetHeight // force reflow
+        wrapperRef.current.offsetHeight
         wrapperRef.current.style.height = '0px'
       }
       setPhase('collapsing')

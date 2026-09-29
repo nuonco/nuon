@@ -77,7 +77,6 @@ func (s *AdminForgetOrgInstallsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -134,7 +133,6 @@ func (s *AdminForgetOrgInstallsTestSuite) TestForgetOrgInstalls() {
 				ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
 				ctx = cctx.SetAccountIDContext(ctx, s.testAcc.ID)
 
-				// Create 3 installs for the test org
 				var installIDs []string
 				for i := 0; i < 3; i++ {
 					install := s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
@@ -151,7 +149,6 @@ func (s *AdminForgetOrgInstallsTestSuite) TestForgetOrgInstalls() {
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(orgID string) {
-				// Verify signals were sent
 				sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.GreaterOrEqual(s.T(), len(sigs), 3, "expected at least 3 signals for 3 installs")
 
@@ -181,7 +178,6 @@ func (s *AdminForgetOrgInstallsTestSuite) TestForgetOrgInstalls() {
 		{
 			name: "org with no installs returns success",
 			setupFunc: func() string {
-				// Previous test cases already forgot all installs for testOrg
 				return s.testOrg.ID
 			},
 			requestBody:    AdminForgetOrgInstallsRequest{},
@@ -193,9 +189,8 @@ func (s *AdminForgetOrgInstallsTestSuite) TestForgetOrgInstalls() {
 			setupFunc: func() string {
 				return "org000000000000000000000000"
 			},
-			requestBody:  AdminForgetOrgInstallsRequest{},
-			expectedCode: http.StatusOK,
-			// No installs means no signals, but not an error
+			requestBody:    AdminForgetOrgInstallsRequest{},
+			expectedCode:   http.StatusOK,
 			expectedSignal: false,
 		},
 	}
@@ -218,7 +213,6 @@ func (s *AdminForgetOrgInstallsTestSuite) TestForgetOrgInstalls() {
 				tc.validateFunc(orgID)
 			}
 
-			// Verify signal presence matches expectation
 			capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 			if tc.expectedSignal {
 				assert.GreaterOrEqual(s.T(), len(capturedSignals), 1, "expected at least one signal to be sent")

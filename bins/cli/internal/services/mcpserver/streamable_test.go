@@ -10,8 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// statelessUpstream stands in for ctl-api's MCP endpoint, which runs in
-// stateless mode: no Mcp-Session-Id, no server-initiated stream.
 func statelessUpstream(t *testing.T) *mcp.ClientSession {
 	t.Helper()
 
@@ -47,10 +45,6 @@ func statelessUpstream(t *testing.T) *mcp.ClientSession {
 	return session
 }
 
-// TestProxyOverStatelessUpstream exercises the full production chain: the stdio
-// proxy discovers and forwards tools over a stateless HTTP upstream. The
-// existing proxy tests use in-memory transports, which would not catch a
-// streamable-HTTP or statelessness regression.
 func TestProxyOverStatelessUpstream(t *testing.T) {
 	upstream := statelessUpstream(t)
 	ctx := context.Background()
@@ -73,8 +67,6 @@ func TestProxyOverStatelessUpstream(t *testing.T) {
 	require.True(t, ok)
 	require.JSONEq(t, `{"user":"test@nuon.co"}`, text.Text)
 
-	// Repeated calls must keep working: every request is independently
-	// authenticated and served, with no session to expire.
 	for range 3 {
 		_, err := readOnly.CallTool(ctx, &mcp.CallToolParams{Name: "whoami"})
 		require.NoError(t, err)

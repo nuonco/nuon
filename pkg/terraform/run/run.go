@@ -19,8 +19,6 @@ type OutputSettings struct {
 	InstancePrefix string              `validate:"required_unless=Ignore true"`
 }
 
-// Run accepts a workspace, and executes the provided command in it, uploading outputs to the correct place, afterwards.
-//
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=run_mock.go -source=run.go -package=run
 type Run interface {
@@ -34,9 +32,6 @@ type Run interface {
 
 var _ Run = (*run)(nil)
 
-// PrePlanHook runs after `terraform init` and before `terraform plan`. Use it
-// to mutate state (e.g. `terraform state mv`) in a controlled way before the
-// planner evaluates `for_each` keys.
 type PrePlanHook func(ctx context.Context, log hclog.Logger, w workspace.Workspace) error
 
 type run struct {
@@ -94,7 +89,7 @@ func WithLogger(l hclog.Logger) runOption {
 	}
 }
 
-// WithPrePlanHook registers a callback that runs after init and before plan.
+// why: WithPrePlanHook registers a callback that runs after init and before plan.
 // Intended for deterministic state migrations (e.g. `terraform state mv`) that
 // must happen before the planner evaluates `for_each` keys.
 func WithPrePlanHook(h PrePlanHook) runOption {

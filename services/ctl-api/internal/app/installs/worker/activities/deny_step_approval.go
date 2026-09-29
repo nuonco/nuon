@@ -10,12 +10,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// DenyStepApprovalRequest is the input for denying a step's approval and forwarding the denial.
 type DenyStepApprovalRequest struct {
 	StepID string `json:"step_id" validate:"required"`
 }
 
-// DenyStepApprovalResponse is the output from denying a step's approval.
 type DenyStepApprovalResponse struct {
 	StepID string `json:"step_id"`
 }
@@ -23,7 +21,6 @@ type DenyStepApprovalResponse struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 30s
 func (a *Activities) DenyStepApproval(ctx context.Context, req DenyStepApprovalRequest) (*DenyStepApprovalResponse, error) {
-	// Find the step's approval
 	var approval app.WorkflowStepApproval
 	res := a.db.WithContext(ctx).
 		Where("install_workflow_step_id = ?", req.StepID).
@@ -34,7 +31,6 @@ func (a *Activities) DenyStepApproval(ctx context.Context, req DenyStepApprovalR
 		return nil, fmt.Errorf("unable to find approval for step %s: %w", req.StepID, res.Error)
 	}
 
-	// Only create a denial if there's no existing response
 	if approval.Response == nil {
 		response := app.WorkflowStepApprovalResponse{
 			InstallWorkflowStepApprovalID: approval.ID,
@@ -45,8 +41,6 @@ func (a *Activities) DenyStepApproval(ctx context.Context, req DenyStepApprovalR
 			return nil, fmt.Errorf("unable to create denial response for step %s: %w", req.StepID, res.Error)
 		}
 
-		// Forward the denial to the step handler workflow (not the inner signal).
-		// Both use the same OwnerID/OwnerType, so filter by signal type.
 		var qs app.QueueSignal
 		res := a.db.WithContext(ctx).
 			Where(app.QueueSignal{

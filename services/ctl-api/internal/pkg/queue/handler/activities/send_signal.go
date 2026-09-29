@@ -11,9 +11,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// CallbackInfo describes where to send a Temporal signal when an operation
-// completes. Used to replace activity-based blocking waits with zero-cost
-// workflow signal channel receives.
 type CallbackInfo struct {
 	WorkflowID string `json:"callback_workflow_id"`
 	SignalName string `json:"callback_signal_name"`
@@ -35,7 +32,7 @@ func (a *Activities) SendSignal(ctx context.Context, req SendSignalRequest) erro
 		ctx,
 		req.Callback.Namespace,
 		req.Callback.WorkflowID,
-		"", // empty RunID = latest run
+		"",
 		req.Callback.SignalName,
 		req.Payload,
 	)

@@ -60,10 +60,10 @@ const (
 type classifiedLine struct {
 	kind    lineKind
 	raw     string
-	key     string // only for lineKeyValue
-	value   string // only for lineKeyValue
-	name    string // only for table/array-table headers
-	section int    // which section this line belongs to
+	key     string
+	value   string
+	name    string
+	section int
 }
 
 func FormatToml(text string) string {
@@ -113,7 +113,6 @@ func classifyLines(rawLines []string) []classifiedLine {
 
 		if m := fmtKeyValueRegex.FindStringSubmatch(raw); m != nil {
 			cl := classifiedLine{kind: lineKeyValue, raw: raw, key: m[1], value: m[2]}
-			// Check if value opens a multiline string
 			valTrimmed := strings.TrimSpace(m[2])
 			for _, delim := range []string{`"""`, `'''`} {
 				if strings.HasPrefix(valTrimmed, delim) {
@@ -146,7 +145,6 @@ func assignSections(lines []classifiedLine) []classifiedLine {
 }
 
 func alignSections(lines []classifiedLine) []classifiedLine {
-	// Find max key length per section
 	maxKey := make(map[int]int)
 	for _, l := range lines {
 		if l.kind == lineKeyValue {
@@ -168,12 +166,11 @@ func alignSections(lines []classifiedLine) []classifiedLine {
 
 func buildOutput(lines []classifiedLine) string {
 	var out []string
-	prevKind := lineBlank // treat start-of-file as blank so we don't add a leading blank line
+	prevKind := lineBlank
 
 	for i, l := range lines {
 		switch l.kind {
 		case lineBlank:
-			// Collapse consecutive blanks to one; skip if previous was also blank
 			if prevKind != lineBlank {
 				out = append(out, "")
 			}
@@ -181,7 +178,6 @@ func buildOutput(lines []classifiedLine) string {
 			continue
 
 		case lineTableHeader:
-			// Blank line before header (unless at start of output)
 			if len(out) > 0 && prevKind != lineBlank {
 				out = append(out, "")
 			}
@@ -200,7 +196,6 @@ func buildOutput(lines []classifiedLine) string {
 			out = append(out, strings.TrimRight(l.raw, " \t"))
 
 		case lineMultilineContent:
-			// Preserve exactly as-is
 			out = append(out, l.raw)
 
 		case lineOther:
@@ -211,7 +206,6 @@ func buildOutput(lines []classifiedLine) string {
 		prevKind = l.kind
 	}
 
-	// Ensure final newline
 	result := strings.Join(out, "\n")
 	if !strings.HasSuffix(result, "\n") {
 		result += "\n"

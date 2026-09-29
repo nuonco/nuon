@@ -41,4 +41,4 @@ There are also step-by-step skills in `.claude/commands/dashboard-ui/` for commo
 - **No code in `src/`** — that is the deprecated Next.js app. All work goes in `client/`.
 - **No new dependencies** without checking `package.json` first — always use existing project libraries.
 - **Do NOT run build commands** (`build`, `build:js`, `build:css`) — a dev process handles builds automatically.
-- **No unnecessary comments** — let clear naming document the code.
+- **Zero comments** — no JSX section labels, no JSDoc, no narration. Only tool directives and rare `// why:` constraints; enforced by `go run ./scripts/check-comments`.

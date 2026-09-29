@@ -78,8 +78,6 @@ func (s *MigrateInstallInputsTestSuite) TearDownSuite() {
 	s.app.RequireStop()
 }
 
-// seedAppConfigWithInputs creates a further app config carrying an input config
-// whose single input is named "region" (what the seeder builds).
 func (s *MigrateInstallInputsTestSuite) seedAppConfigWithInputs(ctx context.Context, appID string) *app.AppConfig {
 	cfg := s.deps.Seed.CreateBareAppConfig(ctx, s.T(), appID)
 	s.deps.Seed.CreateAppInputConfig(ctx, s.T(), appID, cfg.ID)
@@ -97,8 +95,6 @@ func (s *MigrateInstallInputsTestSuite) latestInstallInputs(ctx context.Context,
 
 func ptrTo[T any](v T) *T { return &v }
 
-// The migration must carry values onto the new config. Dropping them leaves
-// templates like {{.nuon.inputs.inputs.region}} resolving to nil at plan time.
 func (s *MigrateInstallInputsTestSuite) TestMigratesValuesTiedToOutgoingConfig() {
 	ctx := context.Background()
 	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
@@ -123,7 +119,7 @@ func (s *MigrateInstallInputsTestSuite) TestMigratesValuesTiedToOutgoingConfig()
 	s.Equal("us-west-2", *got.Values["region"])
 }
 
-// Regression for #857: the lookup uses Find, which reports "no rows" through
+// why: Regression for #857: the lookup uses Find, which reports "no rows" through
 // RowsAffected rather than gorm.ErrRecordNotFound. An install whose inputs are
 // tied to some other config version took the miss path and had its values
 // silently replaced with an empty set, which then persisted through every later
@@ -137,7 +133,6 @@ func (s *MigrateInstallInputsTestSuite) TestMigratesValuesNotTiedToOutgoingConfi
 	oldCfg := s.deps.Seed.CreateAppConfig(ctx, s.T(), testApp.ID)
 	install := s.deps.Seed.CreateInstall(ctx, s.T(), testApp)
 
-	// Values live against an unrelated input config, so the primary lookup misses.
 	strayCfg := s.seedAppConfigWithInputs(ctx, testApp.ID)
 	var strayInputCfg app.AppInputConfig
 	s.Require().NoError(s.deps.DB.WithContext(ctx).
@@ -154,7 +149,6 @@ func (s *MigrateInstallInputsTestSuite) TestMigratesValuesNotTiedToOutgoingConfi
 	s.Equal("eu-central-1", *got.Values["region"])
 }
 
-// Inputs dropped from the new config must not be carried forward.
 func (s *MigrateInstallInputsTestSuite) TestDropsValuesRemovedFromNewConfig() {
 	ctx := context.Background()
 	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
@@ -181,10 +175,6 @@ func (s *MigrateInstallInputsTestSuite) TestDropsValuesRemovedFromNewConfig() {
 	s.NotContains(got.Values, "gone")
 }
 
-// The install's inputs must pin to the input config of the app config the
-// install itself is pinned to. Pinning to the app's newest input config instead
-// lets the two diverge as soon as a newer app config exists, which is what makes
-// the migration lookup miss.
 func (s *MigrateInstallInputsTestSuite) TestCreateInstallPinsInputsToItsOwnAppConfig() {
 	ctx := context.Background()
 	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
@@ -193,10 +183,7 @@ func (s *MigrateInstallInputsTestSuite) TestCreateInstallPinsInputsToItsOwnAppCo
 	testApp := s.deps.Seed.CreateApp(ctx, s.T())
 	activeCfg := s.deps.Seed.CreateAppConfig(ctx, s.T(), testApp.ID)
 
-	// A newer, non-active config with its own input config: the app's "latest"
-	// input config now belongs to a config no install is pinned to.
 	newerCfg := s.deps.Seed.CreateBareAppConfig(ctx, s.T(), testApp.ID)
-	// The active filter reads status_v2, so both columns have to move.
 	pending := app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusPending))
 	s.Require().NoError(s.deps.DB.WithContext(ctx).Model(&app.AppConfig{}).
 		Where("id = ?", newerCfg.ID).
@@ -226,8 +213,6 @@ func (s *MigrateInstallInputsTestSuite) TestCreateInstallPinsInputsToItsOwnAppCo
 	s.Equal(activeCfg.ID, install.AppConfigID)
 }
 
-// Aug 4 incident: a read keyed on the outgoing config cannot see an update already
-// pinned to the incoming one, so it copied a stale snapshot forward.
 func (s *MigrateInstallInputsTestSuite) TestMigrationDoesNotRevertUpdateOnNewConfig() {
 	ctx := context.Background()
 	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
@@ -286,7 +271,6 @@ func (s *MigrateInstallInputsTestSuite) TestMigrationBeforeUpdateStillCarriesVal
 	s.Equal("eu-west-1", *got.Values["region"])
 }
 
-// Without the lock the migration's append discards an update that landed after its read.
 func (s *MigrateInstallInputsTestSuite) TestConcurrentUpdateIsNotLost() {
 	ctx := context.Background()
 	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())

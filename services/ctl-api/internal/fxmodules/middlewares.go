@@ -27,7 +27,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/tracer"
 )
 
-// MiddlewaresModule provides all HTTP middlewares used by the API services.
 var MiddlewaresModule = fx.Module("middlewares",
 	fx.Provide(middlewares.AsMiddleware(stderr.New)),
 	fx.Provide(middlewares.AsMiddleware(global.New)),

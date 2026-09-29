@@ -1,10 +1,7 @@
 package templates
 
-// planTemplates returns all plan templates. Plan contents are machine-readable
-// JSON that the noop checkers in pkg/plans/types/approval_plan/ can parse.
 func planTemplates() []Template {
 	return []Template{
-		// Terraform plans
 		{
 			Key:         "terraform-apply",
 			Description: "Terraform plan with resource changes (create S3 bucket and IAM role)",
@@ -130,7 +127,6 @@ func planTemplates() []Template {
   "output_changes": {}
 }`,
 		},
-		// Terraform resource-specific plans
 		{
 			Key:         "terraform-apply-rds",
 			Description: "Terraform plan creating RDS Postgres instance with subnet group, parameter group, and security group",
@@ -586,7 +582,6 @@ func planTemplates() []Template {
   }
 }`,
 		},
-		// Helm plans
 		{
 			Key:         "helm-install",
 			Description: "Helm plan for new chart install with resource diffs",
@@ -696,7 +691,6 @@ func planTemplates() []Template {
   ]
 }`,
 		},
-		// Kubernetes manifest plans
 		{
 			Key:         "kube-manifest-apply",
 			Description: "Kubernetes manifest plan with new resources",
@@ -865,7 +859,6 @@ func planTemplates() []Template {
   ]
 }`,
 		},
-		// Pulumi plans
 		{
 			Key:         "pulumi-up",
 			Description: "Pulumi plan creating resources",

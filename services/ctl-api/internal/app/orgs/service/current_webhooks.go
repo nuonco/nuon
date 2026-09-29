@@ -207,11 +207,7 @@ func (s *service) updateCurrentOrgWebhook(ctx context.Context, orgID, webhookID 
 	}
 
 	updates := map[string]any{
-		"interests": req.Interests,
-		// Match is replaced wholesale — passing nil resets to org-wide.
-		// match_canonical is computed inline (rather than relying on
-		// BeforeSave, which doesn't fire reliably for map-based Updates)
-		// so the unique index always sees the canonical projection.
+		"interests":       req.Interests,
 		"match":           req.Match,
 		"match_canonical": req.Match.Canonical(),
 	}
@@ -231,8 +227,6 @@ func (s *service) updateCurrentOrgWebhook(ctx context.Context, orgID, webhookID 
 		return nil, fmt.Errorf("unable to update webhook: %w", err)
 	}
 
-	// Reflect the new values on the returned struct so the response body
-	// surfaces the updated scope without an extra SELECT.
 	webhook.Interests = req.Interests
 	webhook.Match = req.Match
 	webhook.MatchCanonical = req.Match.Canonical()
@@ -243,8 +237,6 @@ func (s *service) updateCurrentOrgWebhook(ctx context.Context, orgID, webhookID 
 	return &webhook, nil
 }
 
-// isUniqueViolation sniffs a GORM error for the Postgres 23505 unique
-// constraint code. Used to convert duplicate-Match upserts into 409s.
 func isUniqueViolation(err error) bool {
 	if err == nil {
 		return false
@@ -307,9 +299,6 @@ func (s *service) createCurrentOrgWebhook(ctx context.Context, orgID string, acc
 
 	normalizedWebhookSecret := strings.TrimSpace(req.WebhookSecret)
 
-	// Conflict check now keys on (org_id, webhook_url, match_canonical) to
-	// match the unique index introduced by migration 102: the same URL can
-	// be registered multiple times in the same org with different scopes.
 	matchCanonical := req.Match.Canonical()
 	var existing app.Webhook
 	err = s.db.WithContext(ctx).
@@ -326,9 +315,6 @@ func (s *service) createCurrentOrgWebhook(ctx context.Context, orgID string, acc
 		return nil, fmt.Errorf("unable to verify existing webhooks: %w", err)
 	}
 
-	// Default new webhooks to AllEvents=true so they receive every supported
-	// event until the caller explicitly opts into a per-resource config.
-	// Mirrors the slack channel subscription create handler.
 	subInterests := req.Interests
 	if subInterests.IsZero() {
 		subInterests = interests.AllEvents()
@@ -406,11 +392,6 @@ func normalizeWebhookURL(rawWebhookURL string) (string, error) {
 }
 
 func toCurrentOrgWebhookResponse(webhook app.Webhook) CurrentOrgWebhookResponse {
-	// Surface the effective interests config: rows persisted before the
-	// interests filter shipped store NULL/zero JSONB but are delivered as
-	// AllEvents=true (see hooks/webhook.go listOrgWebhookTargets). Returning
-	// the same shape here keeps the CLI/dashboard/SDK in sync with what's
-	// actually delivered.
 	effectiveInterests := webhook.Interests
 	if effectiveInterests.IsZero() {
 		effectiveInterests = interests.AllEvents()

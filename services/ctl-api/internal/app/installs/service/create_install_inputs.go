@@ -29,8 +29,6 @@ func (c *CreateInstallInputsRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// DEPRECATED we should use the new UpdateInstallInputs
-
 // @ID						CreateInstallInputs
 // @Summary				create install inputs
 // @Description.markdown	create_install_inputs.md
@@ -68,8 +66,6 @@ func (s *service) CreateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
-	// Pin to the install's app config, matching the inputs PATCH path. The app's
-	// newest input config may belong to a config this install is not on.
 	pinnedAppInputConfig, err := s.helpers.GetPinnedAppInputConfig(ctx, install.AppID, install.AppConfigID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get pinned app input config: %w", err))
@@ -116,7 +112,7 @@ func (s *service) createInstallInputs(ctx context.Context, install *app.Install,
 		Values:           pgtype.Hstore(inputs),
 	}
 
-	// under the lock so a migration cannot append a stale copy after this row
+	// why: under the lock so a migration cannot append a stale copy after this row
 	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := helpers.LockInstallInputs(ctx, tx, install.ID); err != nil {
 			return err
@@ -124,7 +120,6 @@ func (s *service) createInstallInputs(ctx context.Context, install *app.Install,
 		if err := tx.WithContext(ctx).Create(&obj).Error; err != nil {
 			return err
 		}
-		// stale_at alone is inert: the partial has to be named or state serves the old inputs
 		return s.helpers.MarkInstallStatePartialsStale(ctx, tx, install.ID, pkgstate.PartialInputs)
 	}); err != nil {
 		return nil, fmt.Errorf("unable to create install inputs: %w", err)

@@ -76,7 +76,6 @@ func (s *GetRunnerRecentHealthChecksTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -97,7 +96,6 @@ func (s *GetRunnerRecentHealthChecksTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -109,7 +107,6 @@ func (s *GetRunnerRecentHealthChecksTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -142,17 +139,13 @@ func (s *GetRunnerRecentHealthChecksTestSuite) createHealthChecks(runnerID strin
 			ID:           domains.NewRunnerHealthCheckID(),
 			RunnerID:     runnerID,
 			RunnerStatus: status,
-			// Space health checks by 1 minute so each falls in a different minute bucket.
-			// The runner_health_checks_view_v1 deduplicates to 1 row per (runner_id, minute_bucket),
-			// so checks within the same minute would be collapsed into a single row.
-			CreatedAt: baseTimestamp.Add(time.Duration(i) * time.Minute),
+			CreatedAt:    baseTimestamp.Add(time.Duration(i) * time.Minute),
 		}
 		err := s.service.CHDB.WithContext(ctx).Create(healthCheck).Error
 		require.NoError(s.T(), err)
 		healthCheckIDs[i] = healthCheck.ID
 	}
 
-	// Allow ClickHouse time to flush and make the inserted rows visible to subsequent queries.
 	time.Sleep(500 * time.Millisecond)
 
 	return healthCheckIDs
@@ -170,7 +163,6 @@ func (s *GetRunnerRecentHealthChecksTestSuite) TestGetRunnerRecentHealthChecks()
 		{
 			name: "empty health checks returns empty array",
 			setupFunc: func() string {
-				// Use existing test runner with no health checks
 				return s.testRunner.ID
 			},
 			expectedCode:  http.StatusOK,
@@ -182,7 +174,6 @@ func (s *GetRunnerRecentHealthChecksTestSuite) TestGetRunnerRecentHealthChecks()
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create new runner
 				runner := &app.Runner{
 					ID:            domains.NewRunnerID(),
 					OrgID:         s.testOrg.ID,
@@ -194,7 +185,6 @@ func (s *GetRunnerRecentHealthChecksTestSuite) TestGetRunnerRecentHealthChecks()
 				err := s.service.DB.WithContext(ctx).Create(runner).Error
 				require.NoError(s.T(), err)
 
-				// Create 5 health check records within 1 hour window
 				s.createHealthChecks(runner.ID, 5, time.Now().Add(-30*time.Minute), app.RunnerStatusActive)
 
 				s.T().Cleanup(func() {
@@ -207,11 +197,9 @@ func (s *GetRunnerRecentHealthChecksTestSuite) TestGetRunnerRecentHealthChecks()
 			expectedCount: 5,
 			validateFunc: func(healthChecks []*app.RunnerHealthCheck) {
 				assert.Len(s.T(), healthChecks, 5)
-				// Verify ascending order (default)
 				for i := 0; i < len(healthChecks)-1; i++ {
 					assert.True(s.T(), healthChecks[i].CreatedAt.Before(healthChecks[i+1].CreatedAt) || healthChecks[i].CreatedAt.Equal(healthChecks[i+1].CreatedAt))
 				}
-				// Verify all have Active status
 				for _, hc := range healthChecks {
 					assert.Equal(s.T(), app.RunnerStatusActive, hc.RunnerStatus)
 					assert.Equal(s.T(), 0, hc.RunnerStatusCode)
@@ -224,7 +212,6 @@ func (s *GetRunnerRecentHealthChecksTestSuite) TestGetRunnerRecentHealthChecks()
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create two runners
 				runner1 := &app.Runner{
 					ID:            domains.NewRunnerID(),
 					OrgID:         s.testOrg.ID,
@@ -247,7 +234,6 @@ func (s *GetRunnerRecentHealthChecksTestSuite) TestGetRunnerRecentHealthChecks()
 				err = s.service.DB.WithContext(ctx).Create(runner2).Error
 				require.NoError(s.T(), err)
 
-				// Create health checks in both runners
 				s.createHealthChecks(runner1.ID, 3, time.Now().Add(-30*time.Minute), app.RunnerStatusActive)
 				s.createHealthChecks(runner2.ID, 2, time.Now().Add(-20*time.Minute), app.RunnerStatusActive)
 
@@ -256,7 +242,6 @@ func (s *GetRunnerRecentHealthChecksTestSuite) TestGetRunnerRecentHealthChecks()
 					s.service.DB.Unscoped().Delete(runner2)
 				})
 
-				// Request health checks for runner1, should only get 3
 				return runner1.ID
 			},
 			expectedCode:  http.StatusOK,
@@ -278,7 +263,6 @@ func (s *GetRunnerRecentHealthChecksTestSuite) TestGetRunnerRecentHealthChecks()
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -291,7 +275,6 @@ func (s *GetRunnerRecentHealthChecksTestSuite) TestGetRunnerRecentHealthChecks()
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner group in org2
 				runnerGrp2 := &app.RunnerGroup{
 					ID:        domains.NewRunnerGroupID(),
 					OrgID:     org2.ID,
@@ -303,7 +286,6 @@ func (s *GetRunnerRecentHealthChecksTestSuite) TestGetRunnerRecentHealthChecks()
 				err = s.service.DB.WithContext(ctx).Create(runnerGrp2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner in org2
 				runner2 := &app.Runner{
 					ID:            domains.NewRunnerID(),
 					OrgID:         org2.ID,
@@ -342,10 +324,7 @@ func (s *GetRunnerRecentHealthChecksTestSuite) TestGetRunnerRecentHealthChecks()
 				err := s.service.DB.WithContext(ctx).Create(runner).Error
 				require.NoError(s.T(), err)
 
-				// Create health checks at different times
-				// 3 checks within 10 minutes
 				s.createHealthChecks(runner.ID, 3, time.Now().Add(-5*time.Minute), app.RunnerStatusActive)
-				// 2 checks beyond 30 minutes (should be filtered out with window=10m)
 				s.createHealthChecks(runner.ID, 2, time.Now().Add(-2*time.Hour), app.RunnerStatusActive)
 
 				s.T().Cleanup(func() {
@@ -359,7 +338,6 @@ func (s *GetRunnerRecentHealthChecksTestSuite) TestGetRunnerRecentHealthChecks()
 			expectedCount: 3,
 			validateFunc: func(healthChecks []*app.RunnerHealthCheck) {
 				assert.Len(s.T(), healthChecks, 3)
-				// All health checks should be within 10 minutes
 				for _, hc := range healthChecks {
 					assert.True(s.T(), time.Since(hc.CreatedAt) <= 10*time.Minute)
 				}
@@ -382,10 +360,7 @@ func (s *GetRunnerRecentHealthChecksTestSuite) TestGetRunnerRecentHealthChecks()
 				err := s.service.DB.WithContext(ctx).Create(runner).Error
 				require.NoError(s.T(), err)
 
-				// Create health checks at different times
-				// 3 checks within 30 minutes
 				s.createHealthChecks(runner.ID, 3, time.Now().Add(-30*time.Minute), app.RunnerStatusActive)
-				// 2 checks beyond 2 hours (should be filtered out with default 1h window)
 				s.createHealthChecks(runner.ID, 2, time.Now().Add(-3*time.Hour), app.RunnerStatusActive)
 
 				s.T().Cleanup(func() {
@@ -425,7 +400,6 @@ func (s *GetRunnerRecentHealthChecksTestSuite) TestGetRunnerRecentHealthChecks()
 				err := s.service.DB.WithContext(ctx).Create(runner).Error
 				require.NoError(s.T(), err)
 
-				// Create health checks with different statuses
 				s.createHealthChecks(runner.ID, 2, time.Now().Add(-30*time.Minute), app.RunnerStatusActive)
 				s.createHealthChecks(runner.ID, 2, time.Now().Add(-20*time.Minute), app.RunnerStatusError)
 				s.createHealthChecks(runner.ID, 1, time.Now().Add(-10*time.Minute), app.RunnerStatusOffline)
@@ -440,7 +414,6 @@ func (s *GetRunnerRecentHealthChecksTestSuite) TestGetRunnerRecentHealthChecks()
 			expectedCount: 5,
 			validateFunc: func(healthChecks []*app.RunnerHealthCheck) {
 				assert.Len(s.T(), healthChecks, 5)
-				// Verify we got different statuses
 				statusCounts := make(map[app.RunnerStatus]int)
 				for _, hc := range healthChecks {
 					statusCounts[hc.RunnerStatus]++
@@ -476,7 +449,6 @@ func (s *GetRunnerRecentHealthChecksTestSuite) TestGetRunnerRecentHealthChecks()
 					tc.validateFunc(healthChecks)
 				}
 			} else {
-				// Error cases should have error in response
 				assert.Contains(s.T(), rr.Body.String(), "error")
 			}
 		})

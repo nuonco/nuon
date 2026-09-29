@@ -32,7 +32,7 @@ func (s *VCSServiceTestSuite) TestCreateConnectionCallback_Success() {
 }
 
 func (s *VCSServiceTestSuite) TestCreateConnectionCallback_MissingFields() {
-	req := map[string]interface{}{} // Empty request missing required fields
+	req := map[string]interface{}{}
 
 	rr := s.makeRequest(http.MethodPost, "/v1/vcs/connection-callback", req)
 

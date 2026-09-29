@@ -19,7 +19,6 @@ func (a *Templates) getRunnerCloudWatchLogGroup(inp *stacks.TemplateInput, t tag
 }
 
 func (a *Templates) getRunnerCloudWatchLogStream(inp *stacks.TemplateInput, t tagBuilder) *logs.LogStream {
-	// create a default cloudwatch logs stream
 	return &logs.LogStream{
 		LogGroupName:  cloudformation.Ref("RunnerCloudWatchLogGroup"),
 		LogStreamName: ptr(fmt.Sprintf("runner-%s", inp.Runner.ID)),
@@ -27,9 +26,6 @@ func (a *Templates) getRunnerCloudWatchLogStream(inp *stacks.TemplateInput, t ta
 }
 
 func (a *Templates) getRunnerCloudWatchLogPolicy(inp *stacks.TemplateInput, t tagBuilder) *iam.Policy {
-	// a policy foro the runner instance role so it can write logs to the log group defined below
-	// src: https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/iam-identity-based-access-control-cwl.html#w292aac43c15c15c25c13
-
 	return &iam.Policy{
 		PolicyName: fmt.Sprintf("nuon-install-%s-cw-logs-access", inp.Install.ID),
 		Roles: []string{

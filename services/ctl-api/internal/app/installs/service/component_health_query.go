@@ -12,9 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
-// findInstallComponent resolves :component_id to the install-component that
-// health rows are keyed by. Accepts a catalog component ID first, falling
-// back to the install-component's own ID, so either identifier works.
 func (s *service) findInstallComponent(ctx context.Context, orgID, installID, componentID string) (*app.InstallComponent, error) {
 	var ic app.InstallComponent
 	err := s.db.WithContext(ctx).
@@ -61,9 +58,6 @@ func (s *service) listHealthTransitions(ctx context.Context, orgID, installID, i
 	return transitions, nil
 }
 
-// healthAtWindowStart returns the verdict in effect at `from` — the ToHealth
-// of the latest transition before the window. Without it, a window starting
-// after the component's last transition would read as unknown for days.
 func (s *service) healthAtWindowStart(ctx context.Context, orgID, installID, installComponentID string, from time.Time) (string, error) {
 	var seed app.InstallComponentHealthTransition
 	err := s.chDB.WithContext(ctx).
@@ -85,9 +79,6 @@ func (s *service) healthAtWindowStart(ctx context.Context, orgID, installID, ins
 	return seed.ToHealth, nil
 }
 
-// findLatestBadTransition returns the most recent transition into degraded
-// or unhealthy, whether or not it has since recovered. Returns (nil, nil)
-// when there's no such transition.
 func (s *service) findLatestBadTransition(ctx context.Context, orgID, installID, installComponentID string) (*app.InstallComponentHealthTransition, error) {
 	rows := make([]app.InstallComponentHealthTransition, 0, 1)
 	if err := s.chDB.WithContext(ctx).
@@ -129,12 +120,6 @@ func (s *service) nonHealthyResources(ctx context.Context, orgID, installID, ins
 	return resources, nil
 }
 
-// firstHealthObservedAt is when this install first produced a health verdict.
-//
-// Before that the feature was not running, so counting those days as "no data"
-// drags a freshly-enabled install to an empty 90-day window and 0% uptime until
-// someone manually resets the baseline. Returns zero when nothing was ever
-// recorded, which reads as "no history yet" rather than "90 days of nothing".
 func (s *service) firstHealthObservedAt(ctx context.Context, orgID, installID string) (time.Time, error) {
 	rows := make([]app.InstallComponentHealthTransition, 0, 1)
 	if err := s.chDB.WithContext(ctx).

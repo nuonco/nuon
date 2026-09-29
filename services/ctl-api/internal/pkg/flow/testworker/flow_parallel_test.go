@@ -7,8 +7,6 @@ import (
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
-// TestParallelGroupExecution verifies that steps within a parallel group
-// all execute and complete.
 func (e *FlowTestSuite) TestParallelGroupExecution() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -34,27 +32,22 @@ func (e *FlowTestSuite) TestParallelGroupExecution() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// TestMixedParallelAndSequentialGroups verifies a workflow with both a
-// sequential group and a parallel group executes correctly.
 func (e *FlowTestSuite) TestMixedParallelAndSequentialGroups() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 	ownerID, ownerType := newTestOwner()
 
 	flw, queueID := e.setupFlowTest(ctx, ownerID, ownerType, []app.WorkflowStep{
-		// Group 1: sequential (plan + apply pattern)
 		{Name: "g1-plan", Idx: 100, GroupIdx: 1, ExecutionType: app.WorkflowStepExecutionTypeSystem,
 			QueueSignal: &signaldb.SignalData{Signal: &SuccessSignal{}}},
 		{Name: "g1-apply", Idx: 200, GroupIdx: 1, ExecutionType: app.WorkflowStepExecutionTypeSystem,
 			QueueSignal: &signaldb.SignalData{Signal: &SuccessSignal{}}},
-		// Group 2: parallel (deploy 3 components concurrently)
 		{Name: "g2-deploy-a", Idx: 300, GroupIdx: 2, GroupParallel: true, ExecutionType: app.WorkflowStepExecutionTypeSystem,
 			QueueSignal: &signaldb.SignalData{Signal: &SuccessSignal{}}},
 		{Name: "g2-deploy-b", Idx: 400, GroupIdx: 2, GroupParallel: true, ExecutionType: app.WorkflowStepExecutionTypeSystem,
 			QueueSignal: &signaldb.SignalData{Signal: &SuccessSignal{}}},
 		{Name: "g2-deploy-c", Idx: 500, GroupIdx: 2, GroupParallel: true, ExecutionType: app.WorkflowStepExecutionTypeSystem,
 			QueueSignal: &signaldb.SignalData{Signal: &SuccessSignal{}}},
-		// Group 3: sequential (finalize)
 		{Name: "g3-finalize", Idx: 600, GroupIdx: 3, ExecutionType: app.WorkflowStepExecutionTypeSystem,
 			QueueSignal: &signaldb.SignalData{Signal: &SuccessSignal{}}},
 	})

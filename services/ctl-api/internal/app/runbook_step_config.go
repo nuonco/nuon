@@ -25,8 +25,6 @@ const (
 	RunbookStepTypeSandboxDeprovision RunbookStepType = "sandbox_deprovision"
 	RunbookStepTypeWaitForEvent       RunbookStepType = "wait_for_event"
 
-	// RunbookStepTypeDeployLegacy is the prior name for component_deploy. Accepted
-	// as input and canonicalized to component_deploy at ingress.
 	RunbookStepTypeDeployLegacy RunbookStepType = "deploy"
 )
 

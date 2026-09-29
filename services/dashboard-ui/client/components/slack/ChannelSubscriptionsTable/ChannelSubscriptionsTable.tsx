@@ -49,7 +49,7 @@ const teamLabel = (
   links: TSlackOrgLink[]
 ): string => {
   if (!sub.team_id) return '—'
-  const _ = links // included so callers passing links can later swap to a name lookup
+  const _ = links
   return sub.team_id
 }
 
@@ -70,9 +70,6 @@ export const ChannelSubscriptionsTable = ({
         cell: (props) => {
           const name = props.getValue<string | undefined>()
           const id = props.row.original.channel_id
-          // Scope subtitle mirrors the Slack subscribe modal's
-          // describeMatch vocabulary so the dashboard and slash-command
-          // surfaces describe the same row identically.
           const scope = describeMatch(props.row.original.match)
           return (
             <div className="flex flex-col gap-1">
@@ -146,7 +143,7 @@ export const ChannelSubscriptionsTable = ({
   )
 }
 
-// Compact summary of an Interests config for the table cell. Mirrors the
+// why: Compact summary of an Interests config for the table cell. Mirrors the
 // picker semantics AND the backend matcher (interests.Matches):
 //   - all_events=true                   → "All events"
 //   - empty / missing / no resources    → "No events" (matcher returns false

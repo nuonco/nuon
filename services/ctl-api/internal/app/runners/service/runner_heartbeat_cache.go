@@ -14,8 +14,6 @@ const (
 	runnerHeartbeatCacheTTL         = 1 * time.Hour
 )
 
-// RunnerHeartbeatCache holds the lookups used to enrich heartbeat metric tags.
-// Renames (org, install) take up to the TTL to propagate.
 type RunnerHeartbeatCache struct {
 	Runners  *expirable.LRU[string, *app.Runner]
 	Installs *expirable.LRU[string, *app.Install]

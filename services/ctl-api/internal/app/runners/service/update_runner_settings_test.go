@@ -78,7 +78,6 @@ func (s *UpdateRunnerSettingsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes (UpdateRunnerSettings is in RegisterPublicRoutes)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -96,7 +95,6 @@ func (s *UpdateRunnerSettingsTestSuite) TearDownSuite() {
 func (s *UpdateRunnerSettingsTestSuite) setupTestData() {
 	ctx := context.Background()
 
-	// Create test account with unique ID-based email to avoid conflicts
 	accID := domains.NewAccountID()
 	testAcc := &app.Account{
 		ID:          accID,
@@ -108,7 +106,6 @@ func (s *UpdateRunnerSettingsTestSuite) setupTestData() {
 	require.NoError(s.T(), err)
 	s.testAcc = testAcc
 
-	// Create test org
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 	testOrgID := domains.NewOrgID()
 	testOrg := &app.Org{
@@ -123,7 +120,6 @@ func (s *UpdateRunnerSettingsTestSuite) setupTestData() {
 	require.NoError(s.T(), err)
 	s.testOrg = testOrg
 
-	// Create runner group
 	testRunnerGrp := &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     testOrg.ID,
@@ -136,7 +132,6 @@ func (s *UpdateRunnerSettingsTestSuite) setupTestData() {
 	require.NoError(s.T(), err)
 	s.testRunnerGrp = testRunnerGrp
 
-	// Create runner group settings
 	testSettings := &app.RunnerGroupSettings{
 		ID:                       domains.NewRunnerGroupSettingsID(),
 		OrgID:                    testOrg.ID,
@@ -157,7 +152,6 @@ func (s *UpdateRunnerSettingsTestSuite) setupTestData() {
 	require.NoError(s.T(), err)
 	s.testSettings = testSettings
 
-	// Create runner
 	testRunner := &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         testOrg.ID,
@@ -212,10 +206,8 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 			expectedCode: http.StatusOK,
 			expectSignal: true,
 			validateFunc: func(settings *app.RunnerGroupSettings) {
-				// Verify response
 				assert.Equal(s.T(), s.testSettings.RunnerGroupID, settings.RunnerGroupID)
 
-				// Verify database state
 				var dbSettings app.RunnerGroupSettings
 				err := s.service.DB.First(&dbSettings, "runner_group_id = ?", s.testRunnerGrp.ID).Error
 				require.NoError(s.T(), err)
@@ -258,7 +250,7 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 		{
 			name: "update with AWS max instance lifetime (deprecated)",
 			setupFunc: func() (string, UpdateRunnerSettingsRequest) {
-				maxLifetime := 86400 // 1 day
+				maxLifetime := 86400
 				return s.testRunner.ID, UpdateRunnerSettingsRequest{
 					AWSMaxInstanceLifetime: &maxLifetime, // Deprecated: no longer used by ASG
 				}
@@ -289,7 +281,6 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create a second org to avoid unique index conflict
 				org2 := &app.Org{
 					ID:          domains.NewOrgID(),
 					Name:        "no-settings-org",
@@ -340,7 +331,7 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 		{
 			name: "invalid AWS max instance lifetime - too low (deprecated)",
 			setupFunc: func() (string, UpdateRunnerSettingsRequest) {
-				maxLifetime := 60 // Less than minimum (86400)
+				maxLifetime := 60
 				return s.testRunner.ID, UpdateRunnerSettingsRequest{
 					AWSMaxInstanceLifetime: &maxLifetime, // Deprecated: no longer used by ASG
 				}
@@ -352,7 +343,7 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 		{
 			name: "invalid AWS max instance lifetime - too high (deprecated)",
 			setupFunc: func() (string, UpdateRunnerSettingsRequest) {
-				maxLifetime := 40000000 // More than maximum (31536000)
+				maxLifetime := 40000000
 				return s.testRunner.ID, UpdateRunnerSettingsRequest{
 					AWSMaxInstanceLifetime: &maxLifetime, // Deprecated: no longer used by ASG
 				}
@@ -367,7 +358,6 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -380,7 +370,6 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner group for org2
 				runnerGrp2 := &app.RunnerGroup{
 					ID:        domains.NewRunnerGroupID(),
 					OrgID:     org2.ID,
@@ -392,7 +381,6 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 				err = s.service.DB.WithContext(ctx).Create(runnerGrp2).Error
 				require.NoError(s.T(), err)
 
-				// Create settings for org2
 				settings2 := &app.RunnerGroupSettings{
 					ID:                domains.NewRunnerGroupSettingsID(),
 					OrgID:             org2.ID,
@@ -405,7 +393,6 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 				err = s.service.DB.WithContext(ctx).Create(settings2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner in org2
 				runner2 := &app.Runner{
 					ID:            domains.NewRunnerID(),
 					OrgID:         org2.ID,
@@ -456,7 +443,6 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 				tc.validateFunc(&settings)
 			}
 
-			// Verify signal expectations
 			signals := tests.GetQueueSignals(s.T(), s.service.DB)
 			if tc.expectSignal {
 				assert.NotEmpty(s.T(), signals, "expected signal to be sent")
@@ -468,7 +454,6 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 }
 
 func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettingsFullUpdate() {
-	// Verify that sending all fields in a single request updates them all correctly
 	req := UpdateRunnerSettingsRequest{
 		ContainerImageURL:     "full-update-url",
 		ContainerImageTag:     "v3.0.0",
@@ -479,7 +464,6 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettingsFullUpdate() {
 	rr := s.makeRequest("PATCH", "/v1/runners/"+s.testRunner.ID+"/settings", req)
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	// Verify all fields were updated in the database
 	var settings app.RunnerGroupSettings
 	err := s.service.DB.First(&settings, "runner_group_id = ?", s.testRunnerGrp.ID).Error
 	require.NoError(s.T(), err)

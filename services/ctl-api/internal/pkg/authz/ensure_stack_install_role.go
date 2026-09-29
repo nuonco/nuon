@@ -14,7 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// stackInstallRole is the role an install stack's account holds: every stack
+// why: stackInstallRole is the role an install stack's account holds: every stack
 // operation on its own install and nothing else. The grant is `all` because the key
 // is already scoped to one install's stack namespace.
 func stackInstallRole(orgID, installID string) *app.Role {
@@ -36,11 +36,7 @@ func stackInstallRole(orgID, installID string) *app.Role {
 	}
 }
 
-// EnsureStackInstallRole converges a stack account's install-scoped role: one role,
-// one policy, on this install's stack object. Looked up through the account's own
-// binding, since the account is already per-install.
 func (h *Client) EnsureStackInstallRole(ctx context.Context, orgID, installID, accountID string) error {
-	// No account in context from a temporal activity, so the account is its own creator.
 	ctx = cctx.SetAccountIDContext(ctx, accountID)
 
 	var existing []app.Role
@@ -63,7 +59,6 @@ func (h *Client) EnsureStackInstallRole(ctx context.Context, orgID, installID, a
 		if !ok {
 			continue
 		}
-		// Roles from before the grant widened still hold the old verb; this converges them.
 		if verb == nil || *verb != wantVerb {
 			if res := h.db.WithContext(ctx).
 				Model(&app.Policy{}).
@@ -97,11 +92,6 @@ func (h *Client) EnsureStackInstallRole(ctx context.Context, orgID, installID, a
 	})
 }
 
-// DeleteStackInstallRoles hard-deletes the stack roles bound to an account, and
-// their policies. They are per-account garbage once the account is gone, and a
-// soft delete would keep the unique policy-per-role index occupied.
-//
-// tx is expected to be a transaction.
 func DeleteStackInstallRoles(tx *gorm.DB, accountID string) error {
 	var roleIDs []string
 	if res := tx.Unscoped().
@@ -118,7 +108,6 @@ func DeleteStackInstallRoles(tx *gorm.DB, accountID string) error {
 		return nil
 	}
 
-	// Bindings first: account_roles has a foreign key to roles.
 	if res := tx.Unscoped().
 		Where("role_id IN ?", roleIDs).
 		Delete(&app.AccountRole{}); res.Error != nil {

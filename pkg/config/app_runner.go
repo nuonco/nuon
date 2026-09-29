@@ -20,19 +20,14 @@ type AppRunnerConfig struct {
 
 	InitScriptURL string `mapstructure:"init_script_url" toml:"init_script_url"`
 
-	// PhoneHomeScriptURL overrides the phone-home Lambda source for this app.
 	PhoneHomeScriptURL string `mapstructure:"phone_home_script_url,omitempty" toml:"phone_home_script_url,omitempty"`
 
-	// InstanceType sets the cloud machine/instance type for the install runner host.
 	InstanceType string `mapstructure:"instance_type,omitempty" toml:"instance_type,omitempty"`
 
-	// RunnerAPIURL overrides the Nuon runner API endpoint for installs using this config.
 	RunnerAPIURL string `mapstructure:"runner_api_url,omitempty" toml:"runner_api_url,omitempty"`
 
-	// PublicAPIURL overrides the Nuon public API endpoint used for phone-home callbacks.
 	PublicAPIURL string `mapstructure:"public_api_url,omitempty" toml:"public_api_url,omitempty"`
 
-	// Deprecated
 	EnvVars []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var"`
 }
 

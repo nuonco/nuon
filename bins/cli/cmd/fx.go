@@ -20,11 +20,6 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/services/version"
 )
 
-// populateDeps wires the CLI's dependencies through fx and populates them onto
-// c. Unlike a daemon (see bins/runner), the CLI has no long-running lifecycle:
-// the graph is built once per invocation from the pre-run hook — after cobra
-// has parsed flags and the auth token has been resolved — and is never
-// started.
 func (c *cli) populateDeps() error {
 	app := fx.New(
 		fx.NopLogger,

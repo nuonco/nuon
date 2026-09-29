@@ -27,7 +27,7 @@ func (s *InstallsServiceTestSuite) TestDeprovisionInstallSuccess() {
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &response))
 	captured := tests.GetQueueSignalsByOwner(s.T(), s.deps.DB, response.WorkflowID)
 	require.Len(s.T(), captured, 1)
-	_ = captured[0] // signal type check via .Type
+	_ = captured[0]
 
 	assert.Equal(s.T(), executeflow.SignalType, captured[0].Type)
 }

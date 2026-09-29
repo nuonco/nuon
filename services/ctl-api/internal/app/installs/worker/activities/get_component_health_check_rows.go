@@ -10,20 +10,15 @@ import (
 )
 
 const (
-	// componentHealthCheckRowsWindow bounds how old an observation can be and
-	// still describe the component's current checks.
 	componentHealthCheckRowsWindow = 10 * time.Minute
 	maxComponentHealthCheckRows    = 30
 )
 
 type GetComponentHealthCheckRowsRequest struct {
-	// InstallID leads the table's sort key; without it this scans every row.
 	InstallID          string `validate:"required"`
 	InstallComponentID string `validate:"required"`
 }
 
-// ComponentHealthCheckRow is one check/resource in the verified-deploy gate's
-// live snapshot: just enough to show what is being watched and what it says.
 type ComponentHealthCheckRow struct {
 	Kind         string `json:"kind" temporaljson:"kind"`
 	Name         string `json:"name" temporaljson:"name"`
@@ -31,8 +26,6 @@ type ComponentHealthCheckRow struct {
 	Message      string `json:"message,omitempty" temporaljson:"message,omitempty"`
 	ObservedAtTS int64  `json:"observed_at_ts,omitempty" temporaljson:"observed_at_ts,omitempty"`
 
-	// Removed is set by the gate when a probe row's name is no longer in the
-	// component's declared config — the observation is shown but labelled.
 	Removed bool `json:"removed,omitempty" temporaljson:"removed,omitempty"`
 }
 

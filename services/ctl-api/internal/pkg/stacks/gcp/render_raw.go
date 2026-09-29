@@ -6,8 +6,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// GCPRoleRaw is the un-rendered per-role payload the stack SDK consumes for
-// break-glass and custom GCP roles.
 type GCPRoleRaw struct {
 	Name            string
 	Permissions     []string
@@ -16,7 +14,6 @@ type GCPRoleRaw struct {
 	PredefinedRoles []string
 }
 
-// GCPOpRoleRaw is the un-rendered payload for a standard operation role.
 type GCPOpRoleRaw struct {
 	Permissions     []string
 	Policies        map[string][]string
@@ -24,8 +21,6 @@ type GCPOpRoleRaw struct {
 	PredefinedRoles []string
 }
 
-// extractRolePermissions flattens all policy permissions for a role into a
-// single list for the raw stack SDK payload.
 func extractRolePermissions(role app.AppAWSIAMRoleConfig) []string {
 	var perms []string
 	for _, policy := range role.Policies {
@@ -34,9 +29,6 @@ func extractRolePermissions(role app.AppAWSIAMRoleConfig) []string {
 	return perms
 }
 
-// extractRolePolicyMap returns policy name → permissions (one custom role per
-// policy), mirroring extractRolePolicies. Empty policies are skipped; unnamed
-// ones fall back to "policy-<index>".
 func extractRolePolicyMap(role app.AppAWSIAMRoleConfig) map[string][]string {
 	policies := map[string][]string{}
 	for i, policy := range role.Policies {
@@ -55,8 +47,6 @@ func extractRolePolicyMap(role app.AppAWSIAMRoleConfig) map[string][]string {
 	return policies
 }
 
-// ExtractGCPStandardRolesRaw returns the permissions/predefined-role for the
-// standard provision/maintenance/deprovision operation roles.
 func ExtractGCPStandardRolesRaw(appCfg *app.AppConfig) (provision, maintenance, deprovision GCPOpRoleRaw) {
 	if appCfg == nil {
 		return
@@ -88,8 +78,6 @@ func ExtractGCPStandardRolesRaw(appCfg *app.AppConfig) (provision, maintenance, 
 	return
 }
 
-// ExtractGCPRolesRaw returns the raw payload for a list of break-glass or
-// custom GCP roles, skipping non-GCP and empty roles.
 func ExtractGCPRolesRaw(roles []app.AppAWSIAMRoleConfig) []GCPRoleRaw {
 	var out []GCPRoleRaw
 	for _, role := range roles {
@@ -112,8 +100,6 @@ func ExtractGCPRolesRaw(roles []app.AppAWSIAMRoleConfig) []GCPRoleRaw {
 	return out
 }
 
-// extractPredefinedRoles returns every predefined role across a role's
-// policies, deduplicated, in config order.
 func extractPredefinedRoles(role app.AppAWSIAMRoleConfig) []string {
 	var roles []string
 	seen := map[string]bool{}
@@ -127,9 +113,6 @@ func extractPredefinedRoles(role app.AppAWSIAMRoleConfig) []string {
 	return roles
 }
 
-// legacyPredefinedRole is the single role older stack modules bind. It stays
-// the last one so existing installs keep the binding they already have and
-// only gain the others.
 func legacyPredefinedRole(roles []string) string {
 	if len(roles) == 0 {
 		return ""

@@ -14,7 +14,6 @@ func (s *Helpers) GetWorkspaceLock(ctx context.Context, workspaceID string) (*ap
 	res := s.db.WithContext(ctx).
 		First(tfs, "workspace_id = ?", workspaceID)
 	if res.Error != nil {
-		// if no lock is found, return nil as the lock does not exist
 		if res.Error == gorm.ErrRecordNotFound {
 			return nil, nil
 		}

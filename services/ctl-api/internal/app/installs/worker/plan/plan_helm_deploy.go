@@ -55,7 +55,6 @@ func (p *Planner) createHelmDeployPlan(
 		return nil, errors.Wrap(err, "unable to get component build")
 	}
 
-	// parse out various config fields
 	cfg := compBuild.ComponentConfigConnection.HelmComponentConfig
 	if err := render.RenderStruct(cfg, stateData); err != nil {
 		l.Error("error rendering helm config",
@@ -110,8 +109,6 @@ func (p *Planner) createHelmDeployPlan(
 		})
 	}
 
-	// Install-level Helm values override, carried via a reserved synthetic input.
-	// Rendered like app values so it can reference {{.nuon.*}}. Empty is a no-op.
 	valuesOverride, err := p.installComponentOverride(
 		state, stateData,
 		config.HelmValuesOverrideInputName(installDeploy.ComponentName),

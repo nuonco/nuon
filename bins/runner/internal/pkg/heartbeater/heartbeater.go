@@ -37,7 +37,6 @@ type HeartBeater struct {
 	processRegistrar *process.Registrar
 	shutdowner       fx.Shutdowner
 
-	// internal state
 	ctx      context.Context
 	cancelFn func()
 	wg       *conc.WaitGroup

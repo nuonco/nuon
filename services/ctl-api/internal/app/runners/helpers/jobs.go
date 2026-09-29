@@ -22,25 +22,21 @@ const (
 
 func (s *Helpers) getDefaultExecutionTimeout(typ app.RunnerJobType) time.Duration {
 	timeouts := map[app.RunnerJobType]time.Duration{
-		// build timeouts
 		app.RunnerJobTypeDockerBuild:          time.Minute * 60,
 		app.RunnerJobTypeContainerImageBuild:  time.Minute * 15,
 		app.RunnerJobTypeHelmChartBuild:       time.Minute * 5,
 		app.RunnerJobTypeTerraformModuleBuild: time.Minute * 15,
 		app.RunnerJobTypePulumiBuild:          time.Minute * 5,
 
-		// sync timeouts
 		app.RunnerJobTypeOCISync:            time.Minute * 15,
 		app.RunnerJobTypeFetchImageMetadata: time.Minute * 5,
 
-		// deploy timeouts
 		app.RunnerJobTypeTerraformDeploy:          time.Minute * 60,
 		app.RunnerJobTypeHelmChartDeploy:          time.Minute * 30,
 		app.RunnerJobTypeKubrenetesManifestDeploy: time.Minute * 15,
 		app.RunnerJobTypePulumiDeploy:             time.Minute * 60,
 		app.RunnerJobTypeJobDeploy:                time.Minute * 15,
 
-		// sandbox timeouts
 		app.RunnerJobTypeSandboxTerraform: time.Minute * 60,
 		app.RunnerJobTypeSandboxPulumi:    time.Minute * 60,
 		app.RunnerJobTypeRunnerTerraform:  time.Minute * 15,
@@ -64,7 +60,6 @@ func (s *Helpers) getJob(ctx context.Context, jobID string) (*app.RunnerJob, err
 	return &runnerJob, nil
 }
 
-// CreateJobExecutionResultIfAbsent atomically preserves the first result written for an execution.
 func CreateJobExecutionResultIfAbsent(ctx context.Context, db *gorm.DB, result *app.RunnerJobExecutionResult) (*app.RunnerJobExecutionResult, bool, error) {
 	res := db.WithContext(ctx).
 		Clauses(clause.OnConflict{
@@ -96,7 +91,6 @@ const (
 	jobExecutionResultAuditTimeout = time.Second
 )
 
-// AuditJobExecutionResult records result presence without affecting the status transition being audited.
 func AuditJobExecutionResult(ctx context.Context, db *gorm.DB, mw metrics.Writer, executionID string, status app.RunnerJobExecutionStatus, source string) {
 	if status.IsRunning() || status == app.RunnerJobExecutionStatusFinished {
 		return

@@ -30,7 +30,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// OrgFeaturesTestService holds all fx-injected dependencies for org features endpoint tests.
 type OrgFeaturesTestService struct {
 	fx.In
 
@@ -45,7 +44,6 @@ type OrgFeaturesTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// OrgFeaturesTestSuite is the testify suite for org features endpoints.
 type OrgFeaturesTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -71,7 +69,6 @@ func (s *OrgFeaturesTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -80,7 +77,6 @@ func (s *OrgFeaturesTestSuite) SetupSuite() {
 
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -88,7 +84,6 @@ func (s *OrgFeaturesTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -108,7 +103,6 @@ func (s *OrgFeaturesTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 
-	// Create test org with account context (required by BeforeCreate hook)
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 	orgID := domains.NewOrgID()
@@ -120,7 +114,7 @@ func (s *OrgFeaturesTestSuite) setupTestData() {
 			InternalSlackWebhookURL: "https://hooks.slack.com/test",
 		},
 		Features: map[string]bool{
-			string(app.OrgFeatureUserManagedFeatures): false, // Disabled by default
+			string(app.OrgFeatureUserManagedFeatures): false,
 		},
 	}
 	err := s.service.DB.WithContext(ctx).Create(testOrg).Error
@@ -150,7 +144,6 @@ func (s *OrgFeaturesTestSuite) makeRequest(method, path string, body interface{}
 	return rr
 }
 
-// TestGetOrgFeatures tests GET /v1/orgs/features (static feature list)
 func (s *OrgFeaturesTestSuite) TestGetOrgFeatures() {
 	testCases := []struct {
 		name         string
@@ -159,16 +152,13 @@ func (s *OrgFeaturesTestSuite) TestGetOrgFeatures() {
 		{
 			name: "returns all available features",
 			validateFunc: func(features []app.OrgFeatureInfo) {
-				// Verify we get all active features
 				require.Len(s.T(), features, len(app.GetFeatures()))
 
-				// Verify structure - each feature has name and description
 				for _, feature := range features {
 					assert.NotEmpty(s.T(), feature.Name)
 					assert.NotEmpty(s.T(), feature.Description)
 				}
 
-				// Verify specific well-known features are present
 				featureNames := make(map[string]bool)
 				for _, feature := range features {
 					featureNames[feature.Name] = true
@@ -183,7 +173,6 @@ func (s *OrgFeaturesTestSuite) TestGetOrgFeatures() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Make request (no org context required - static endpoint)
 			rr := s.makeRequest(http.MethodGet, "/v1/orgs/features", nil)
 
 			if rr.Code != http.StatusOK {
@@ -191,7 +180,6 @@ func (s *OrgFeaturesTestSuite) TestGetOrgFeatures() {
 			}
 			require.Equal(s.T(), http.StatusOK, rr.Code)
 
-			// Parse response
 			var response []app.OrgFeatureInfo
 			err := json.Unmarshal(rr.Body.Bytes(), &response)
 			if err != nil {
@@ -200,7 +188,6 @@ func (s *OrgFeaturesTestSuite) TestGetOrgFeatures() {
 			require.NoError(s.T(), err)
 			require.NotNil(s.T(), response)
 
-			// Run validations
 			if tc.validateFunc != nil {
 				tc.validateFunc(response)
 			}
@@ -208,7 +195,6 @@ func (s *OrgFeaturesTestSuite) TestGetOrgFeatures() {
 	}
 }
 
-// TestGetCurrentOrgFeatures tests GET /v1/orgs/current/features
 func (s *OrgFeaturesTestSuite) TestGetCurrentOrgFeatures() {
 	testCases := []struct {
 		name         string
@@ -219,20 +205,16 @@ func (s *OrgFeaturesTestSuite) TestGetCurrentOrgFeatures() {
 		{
 			name: "returns org features map",
 			setupFunc: func() *app.Org {
-				// Return default test org
 				return s.testOrg
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(features map[string]bool) {
-				// Verify structure - should be map[string]bool
 				require.NotNil(s.T(), features)
 
-				// Verify user-managed-features flag exists and is false
 				managed, ok := features[string(app.OrgFeatureUserManagedFeatures)]
 				require.True(s.T(), ok)
 				assert.False(s.T(), managed)
 
-				// Verify all active features are present with default values
 				for _, feature := range app.GetFeatures() {
 					_, ok := features[string(feature)]
 					assert.True(s.T(), ok, "feature %s should be present", feature)
@@ -245,7 +227,6 @@ func (s *OrgFeaturesTestSuite) TestGetCurrentOrgFeatures() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create org with nil features
 				org := &app.Org{
 					ID:          domains.NewOrgID(),
 					Name:        "features-test-org-empty",
@@ -261,7 +242,6 @@ func (s *OrgFeaturesTestSuite) TestGetCurrentOrgFeatures() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
 
-				// Update router with new org context
 				s.router = tests.NewTestRouter(tests.RouterOptions{
 					L:       s.service.L,
 					DB:      s.service.DB,
@@ -275,7 +255,6 @@ func (s *OrgFeaturesTestSuite) TestGetCurrentOrgFeatures() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(features map[string]bool) {
-				// AfterQuery hook initializes empty features map
 				require.NotNil(s.T(), features)
 			},
 		},
@@ -285,7 +264,6 @@ func (s *OrgFeaturesTestSuite) TestGetCurrentOrgFeatures() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create org with custom features
 				org := &app.Org{
 					ID:          domains.NewOrgID(),
 					Name:        "features-test-org-custom",
@@ -305,7 +283,6 @@ func (s *OrgFeaturesTestSuite) TestGetCurrentOrgFeatures() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
 
-				// Update router with new org context
 				s.router = tests.NewTestRouter(tests.RouterOptions{
 					L:       s.service.L,
 					DB:      s.service.DB,
@@ -319,7 +296,6 @@ func (s *OrgFeaturesTestSuite) TestGetCurrentOrgFeatures() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(features map[string]bool) {
-				// Verify custom values are preserved
 				assert.True(s.T(), features[string(app.OrgFeatureUserManagedFeatures)])
 				assert.True(s.T(), features[string(app.OrgFeatureTraceView)])
 				assert.False(s.T(), features[string(app.OrgFeatureAppBranches)])
@@ -329,11 +305,9 @@ func (s *OrgFeaturesTestSuite) TestGetCurrentOrgFeatures() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test org
 			org := tc.setupFunc()
 			require.NotNil(s.T(), org)
 
-			// Make request
 			rr := s.makeRequest(http.MethodGet, "/v1/orgs/current/features", nil)
 
 			if rr.Code != tc.expectedCode {
@@ -341,7 +315,6 @@ func (s *OrgFeaturesTestSuite) TestGetCurrentOrgFeatures() {
 			}
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
-			// Parse response
 			var response map[string]bool
 			err := json.Unmarshal(rr.Body.Bytes(), &response)
 			if err != nil {
@@ -349,7 +322,6 @@ func (s *OrgFeaturesTestSuite) TestGetCurrentOrgFeatures() {
 			}
 			require.NoError(s.T(), err)
 
-			// Run validations
 			if tc.validateFunc != nil {
 				tc.validateFunc(response)
 			}
@@ -357,7 +329,6 @@ func (s *OrgFeaturesTestSuite) TestGetCurrentOrgFeatures() {
 	}
 }
 
-// TestUpdateOrgFeatures tests PATCH /v1/orgs/current/features
 func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 	testCases := []struct {
 		name          string
@@ -365,8 +336,8 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 		requestBody   interface{}
 		expectedCode  int
 		validateFunc  func(*app.Org)
-		checkDBFunc   func(*app.Org) // Check database state after update
-		errorContains string         // Expected error message substring
+		checkDBFunc   func(*app.Org)
+		errorContains string
 	}{
 		{
 			name: "successfully updates user-manageable features",
@@ -374,7 +345,6 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create org with user-managed-features enabled
 				org := &app.Org{
 					ID:          domains.NewOrgID(),
 					Name:        "features-test-org-update-1",
@@ -383,7 +353,7 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
 					Features: map[string]bool{
-						string(app.OrgFeatureUserManagedFeatures): true, // ENABLED
+						string(app.OrgFeatureUserManagedFeatures): true,
 						string(app.OrgFeatureTraceView):           false,
 						string(app.OrgFeatureAppBranches):         true,
 					},
@@ -394,7 +364,6 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
 
-				// Update router with new org context
 				s.router = tests.NewTestRouter(tests.RouterOptions{
 					L:       s.service.L,
 					DB:      s.service.DB,
@@ -408,25 +377,21 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			},
 			requestBody: UpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureTraceView):   true,  // Toggle to true
-					string(app.OrgFeatureAppBranches): false, // Toggle to false
+					string(app.OrgFeatureTraceView):   true,
+					string(app.OrgFeatureAppBranches): false,
 				},
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
-				// Verify response is updated org
 				assert.NotNil(s.T(), org)
 				assert.Equal(s.T(), "features-test-org-update-1", org.Name)
 
-				// Verify features were updated
 				assert.True(s.T(), org.Features[string(app.OrgFeatureTraceView)])
 				assert.False(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
 
-				// Verify user-managed-features flag preserved
 				assert.True(s.T(), org.Features[string(app.OrgFeatureUserManagedFeatures)])
 			},
 			checkDBFunc: func(org *app.Org) {
-				// Verify database was actually updated
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
@@ -441,7 +406,6 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create org WITHOUT user-managed-features enabled
 				org := &app.Org{
 					ID:          domains.NewOrgID(),
 					Name:        "features-test-org-update-2",
@@ -450,7 +414,7 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
 					Features: map[string]bool{
-						string(app.OrgFeatureUserManagedFeatures): false, // DISABLED
+						string(app.OrgFeatureUserManagedFeatures): false,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -459,7 +423,6 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
 
-				// Update router with new org context
 				s.router = tests.NewTestRouter(tests.RouterOptions{
 					L:       s.service.L,
 					DB:      s.service.DB,
@@ -485,7 +448,6 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create org with flag enabled
 				org := &app.Org{
 					ID:          domains.NewOrgID(),
 					Name:        "features-test-org-update-3",
@@ -503,7 +465,6 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
 
-				// Update router with new org context
 				s.router = tests.NewTestRouter(tests.RouterOptions{
 					L:       s.service.L,
 					DB:      s.service.DB,
@@ -517,7 +478,7 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			},
 			requestBody: UpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureUserManagedFeatures): false, // Try to disable itself
+					string(app.OrgFeatureUserManagedFeatures): false,
 				},
 			},
 			expectedCode:  http.StatusBadRequest,
@@ -529,7 +490,6 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create org with flag enabled
 				org := &app.Org{
 					ID:          domains.NewOrgID(),
 					Name:        "features-test-org-update-4",
@@ -547,7 +507,6 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
 
-				// Update router with new org context
 				s.router = tests.NewTestRouter(tests.RouterOptions{
 					L:       s.service.L,
 					DB:      s.service.DB,
@@ -561,7 +520,6 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			},
 			requestBody: UpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					// This is the only admin-only feature (excluded by GetUserManageableFeatures)
 					string(app.OrgFeatureUserManagedFeatures): true,
 				},
 			},
@@ -574,7 +532,6 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create org with flag enabled for test to reach parsing logic
 				org := &app.Org{
 					ID:          domains.NewOrgID(),
 					Name:        "features-test-org-invalid-body",
@@ -592,7 +549,6 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
 
-				// Update router with new org context
 				s.router = tests.NewTestRouter(tests.RouterOptions{
 					L:       s.service.L,
 					DB:      s.service.DB,
@@ -614,7 +570,6 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create org with flag enabled
 				org := &app.Org{
 					ID:          domains.NewOrgID(),
 					Name:        "features-test-org-update-5",
@@ -635,7 +590,6 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
 
-				// Update router with new org context
 				s.router = tests.NewTestRouter(tests.RouterOptions{
 					L:       s.service.L,
 					DB:      s.service.DB,
@@ -656,7 +610,6 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
-				// Verify all three features were updated
 				assert.True(s.T(), org.Features[string(app.OrgFeatureTraceView)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureSupportRole)])
@@ -666,11 +619,9 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test org
 			org := tc.setupFunc()
 			require.NotNil(s.T(), org)
 
-			// Make request
 			rr := s.makeRequest(http.MethodPatch, "/v1/orgs/current/features", tc.requestBody)
 
 			if rr.Code != tc.expectedCode {
@@ -678,9 +629,7 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			}
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
-			// For success cases
 			if tc.expectedCode == http.StatusOK {
-				// Parse response
 				var response app.Org
 				err := json.Unmarshal(rr.Body.Bytes(), &response)
 				if err != nil {
@@ -688,18 +637,15 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 				}
 				require.NoError(s.T(), err)
 
-				// Run validations
 				if tc.validateFunc != nil {
 					tc.validateFunc(&response)
 				}
 
-				// Check database state
 				if tc.checkDBFunc != nil {
 					tc.checkDBFunc(&response)
 				}
 			}
 
-			// For error cases
 			if tc.errorContains != "" {
 				body := rr.Body.String()
 				assert.Contains(s.T(), body, tc.errorContains,

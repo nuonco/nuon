@@ -15,8 +15,6 @@ func WorkflowTelemetryFromContext(ctx ValueContext) WorkflowTelemetry {
 	return telemetry
 }
 
-// SetWorkflowTelemetryContext merges telemetry into whatever the context already
-// carries, so a caller that only knows some fields cannot blank out the rest.
 func SetWorkflowTelemetryContext(ctx context.Context, telemetry WorkflowTelemetry) context.Context {
 	merged := WorkflowTelemetryFromContext(ctx).Merge(telemetry)
 	return context.WithValue(ctx, keys.WorkflowTelemetryCtxKey, merged)

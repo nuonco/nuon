@@ -7,7 +7,6 @@ import (
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// IsRetryableResponse is the response from the "is-retryable" update handler.
 type IsRetryableResponse struct {
 	Retryable bool   `json:"retryable"`
 	StepID    string `json:"step_id"`
@@ -23,7 +22,6 @@ func (s *Signal) isRetryableHandler(ctx workflow.Context) (*IsRetryableResponse,
 		return nil, err
 	}
 
-	// Find the latest errored step
 	for i := len(steps) - 1; i >= 0; i-- {
 		step := steps[i]
 		if step.Status.Status == app.StatusError {

@@ -75,8 +75,6 @@ func (s *service) getInstallComponentHealthChecks(ctx context.Context, orgID, in
 	return s.withDeclaredChecks(ctx, orgID, installID, ic, checks)
 }
 
-// withDeclaredChecks lists declared checks that have never reported as unknown.
-// Without it a required check is invisible until a deploy fails on it.
 func (s *service) withDeclaredChecks(
 	ctx context.Context,
 	orgID, installID string,
@@ -85,7 +83,6 @@ func (s *service) withDeclaredChecks(
 ) ([]app.InstallComponentResourceState, error) {
 	ccc, err := s.currentComponentConfig(ctx, installID, ic.ComponentID)
 	if err != nil {
-		// Config is context for the list, never a reason to fail the read.
 		s.l.Warn("unable to load component config for declared health checks",
 			zap.String("install_id", installID), zap.Error(err))
 		return observed, nil
@@ -150,10 +147,6 @@ func (s *service) currentComponentConfig(ctx context.Context, installID, compone
 		}
 	}
 
-	// An app config version only carries ccc rows for components CHANGED in that
-	// sync, so the pin alone misses unchanged components — the same fallback the
-	// deploy gate and probe handout use. Without it a component's declared checks
-	// vanish from this list instead of reporting as not-yet-reported.
 	if err := s.db.WithContext(ctx).
 		Scopes(
 			scopes.WithDisableViews,

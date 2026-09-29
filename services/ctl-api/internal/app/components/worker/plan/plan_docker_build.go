@@ -10,7 +10,7 @@ import (
 )
 
 func (p *Planner) createDockerBuildPlan(ctx workflow.Context, bld *app.ComponentBuild) (*plantypes.DockerBuildPlan, error) {
-	// docker_build runs kaniko in-process inside the build runner pod,
+	// why: docker_build runs kaniko in-process inside the build runner pod,
 	// which mutates the runner container's rootfs to perform the user's
 	// docker build. After kaniko runs, /usr/bin/git (and other runner
 	// tooling) is gone. The terraform-provider-mirror feature relies on

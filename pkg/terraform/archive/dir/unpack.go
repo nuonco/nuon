@@ -14,13 +14,7 @@ import (
 )
 
 const (
-	dotTerraformPrefix string = ".terraform/"
-	// terraformModulesPrefix is the subtree under .terraform/ that holds
-	// vendored remote modules. We let it pass through the
-	// IgnoreDotTerraformDir filter so build runners can ship modules
-	// inside the OCI artifact (via `terraform get`) and install runners
-	// pick them up at unpack time, avoiding a network fetch during
-	// `terraform init`.
+	dotTerraformPrefix     string = ".terraform/"
 	terraformModulesPrefix string = ".terraform/modules/"
 	terraformLockFile      string = ".terraform.lock.hcl"
 	terraformStateFile     string = "terraform.tfstate"

@@ -61,7 +61,6 @@ func (s *service) GetInstallComponenetLastActivePlan(ctx *gin.Context) {
 		return
 	}
 
-	// index access should not fail since we already have checked for len 0 and 1
 	ctx.JSON(http.StatusOK, &GetInstallComponenetLastActivePlanResponse{
 		ComponentDeployRunnerPlan: generics.ToPtr(runnerJob.Execution.Result.Contents),
 	})
@@ -74,7 +73,7 @@ func (s *service) getInstallComponent(ctx context.Context, installID, componentI
 			return db.
 				Where("status IN ?", app.AppliedDeployStatuses()).
 				Order("install_deploys.created_at DESC").
-				Limit(2) // we only need the latest two deploys to get the previous config
+				Limit(2)
 		}).
 		Where(&app.InstallComponent{
 			InstallID:   installID,

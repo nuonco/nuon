@@ -74,8 +74,6 @@ func (r *LatestRunnerHeartBeat) AfterQuery(tx *gorm.DB) error {
 	return nil
 }
 
-// The FINAL view over the replicated target. mv_v3's target is node-local, so it
-// only held beats ingested by whichever replica answered the read (#2246).
 func (*LatestRunnerHeartBeat) TableName() string {
 	return "latest_runner_heart_beats_view_v1"
 }

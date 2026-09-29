@@ -27,12 +27,10 @@ func (s *GeneralPublicTestSuite) TestCreateWaitlist() {
 		err := json.Unmarshal(rr.Body.Bytes(), &waitlist)
 		require.NoError(s.T(), err)
 
-		// Verify response has expected fields
 		assert.Equal(s.T(), "test-waitlist-org", waitlist.OrgName)
 		assert.Equal(s.T(), s.testAcc.ID, waitlist.CreatedByID)
 		assert.NotEmpty(s.T(), waitlist.ID)
 
-		// Verify database state
 		var dbWaitlist app.Waitlist
 		err = s.service.DB.Where("id = ?", waitlist.ID).First(&dbWaitlist).Error
 		require.NoError(s.T(), err)
@@ -68,7 +66,6 @@ func (s *GeneralPublicTestSuite) TestCreateWaitlist() {
 					s.T().Logf("Expected error but got success. Status: %d, Body: %s", rr.Code, rr.Body.String())
 				}
 
-				// Should return an error status (400)
 				require.Equal(s.T(), http.StatusBadRequest, rr.Code, tc.description)
 			})
 		}

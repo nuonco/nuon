@@ -12,18 +12,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/auth/providers"
 )
 
-// Login handles the /login endpoint.
-// It initiates the OAuth flow by:
-// 1. Clearing any existing auth cookie
-// 2. Looking up the requested identity provider
-// 3. Generating a state nonce for CSRF protection
-// 4. Storing the requested URL, provider ID, and state in the session
-// 5. Redirecting to the OAuth provider's authorization URL
 func (s *service) Login(c *gin.Context) {
-	// Clear any existing auth cookie
 	s.clearCookie(c)
 
-	// Get the provider from query params (required)
 	providerRef := c.Query("provider")
 	if providerRef == "" {
 		s.l.Warn("login attempt without provider")
@@ -41,7 +32,6 @@ func (s *service) Login(c *gin.Context) {
 		return
 	}
 
-	// Create the OAuth provider from the identity provider
 	provider, err := s.createProviderFromIdentityProvider(identityProvider)
 	if err != nil {
 		s.l.Error("failed to create provider",
@@ -52,14 +42,12 @@ func (s *service) Login(c *gin.Context) {
 		return
 	}
 
-	// Check for existing session to get fail count
 	var failCount int
 	if existingSession, err := s.getSession(c); err == nil {
 		s.l.Debug("increasing failCount", zap.String("service", "auth"), zap.Int("failCount", failCount))
 		failCount = existingSession.FailCount
 	}
 
-	// Generate a state nonce for CSRF protection
 	state, err := generateStateNonce()
 	if err != nil {
 		s.l.Error("failed to generate state nonce", zap.String("service", "auth"), zap.Error(err))
@@ -67,11 +55,8 @@ func (s *service) Login(c *gin.Context) {
 		return
 	}
 
-	// Get and validate the requested URL from query params
-	// URL may be encoded, so decode it first before validation
 	requestedURL := c.Query("url")
 	if requestedURL != "" {
-		// Decode URL-encoded value (handles double-encoding edge cases)
 		decodedURL, err := url.QueryUnescape(requestedURL)
 		if err != nil {
 			s.l.Warn("failed to decode requested URL",
@@ -83,7 +68,6 @@ func (s *service) Login(c *gin.Context) {
 		}
 		requestedURL = decodedURL
 
-		// Validate the decoded URL (must have http:// or https:// prefix)
 		validURL, err := s.validateRequestedURL(requestedURL)
 		if err != nil {
 			s.l.Warn("invalid requested URL",
@@ -96,10 +80,8 @@ func (s *service) Login(c *gin.Context) {
 		requestedURL = validURL
 	}
 
-	// Increment fail count
 	failCount++
 
-	// Check for too many failed attempts before saving session
 	if failCount > failCountLimit {
 		errorMsg := c.Query("error")
 		s.l.Warn("too many redirect attempts",
@@ -111,7 +93,6 @@ func (s *service) Login(c *gin.Context) {
 		return
 	}
 
-	// Create and save the session with provider ID
 	sessionData := &SessionData{
 		State:        state,
 		ProviderID:   identityProvider.ID,
@@ -132,7 +113,6 @@ func (s *service) Login(c *gin.Context) {
 		zap.String("requestedURL", requestedURL),
 		zap.Int("failCount", failCount))
 
-	// Build the OAuth authorization URL
 	authURL, err := s.buildOAuthURL(provider, state)
 	if err != nil {
 		s.l.Error("failed to build OAuth URL",
@@ -147,13 +127,11 @@ func (s *service) Login(c *gin.Context) {
 		zap.String("service", "auth"),
 		zap.String("authURL", authURL))
 
-	// Redirect to the OAuth provider
 	s.redirect302(c, authURL)
 }
 
-// buildOAuthURL constructs the OAuth authorization URL with the given state.
 func (s *service) buildOAuthURL(provider providers.Provider, state string) (string, error) {
-	// Get the OAuth2 config from the provider via GetOAuth2Config()
+	// why: Get the OAuth2 config from the provider via GetOAuth2Config()
 	// This avoids signature mismatch issues with variadic AuthCodeURL methods
 	if bp, ok := provider.(interface {
 		GetOAuth2Config() *oauth2.Config

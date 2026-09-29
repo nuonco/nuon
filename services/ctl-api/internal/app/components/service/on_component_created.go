@@ -11,7 +11,6 @@ import (
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
-// onComponentCreated handles the component creation signal dispatch.
 func (s *service) onComponentCreated(ctx *gin.Context, cmpID string) error {
 	q, err := s.queueClient.GetDefaultQueueByOwner(ctx, cmpID, "components")
 	if err != nil {

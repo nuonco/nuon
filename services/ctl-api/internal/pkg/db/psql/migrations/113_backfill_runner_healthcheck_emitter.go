@@ -17,12 +17,8 @@ func (m *Migrations) Migration113BackfillRunnerHealthcheckEmitter(ctx context.Co
 		return fmt.Errorf("unable to list runners: %w", res.Error)
 	}
 
-	// one bad runner shouldn't leave every remaining runner without a healthcheck
 	var failed int
 	for _, runner := range runners {
-		// the queue and emitter are created through BeforeCreate hooks that read the acting
-		// account off the context, which a migration has none of. the runner's own
-		// created_by_id is not null with an FK to accounts, so it is always a usable id.
 		runnerCtx := context.WithValue(ctx, keys.AccountIDCtxKey, runner.CreatedByID)
 
 		if err := m.runnersHelpers.EnsureRunnerSignalsQueue(runnerCtx, runner.ID); err != nil {

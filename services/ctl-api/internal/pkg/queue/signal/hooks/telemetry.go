@@ -13,9 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// duplicated as a string constant to avoid importing the installs/signals tree
-// (which would introduce an import cycle), mirroring how webhook.go declares its
-// signal types.
 const (
 	signalTypeGenerateWorkflowSteps    signal.SignalType = "generate-workflow-steps"
 	signalTypeExecuteWorkflowStepGroup signal.SignalType = "execute-workflow-step-group"
@@ -38,9 +35,6 @@ type TelemetryParams struct {
 	L *zap.Logger `optional:"true"`
 }
 
-// TelemetrySignalLifecycleHook emits one structured log line per flow lifecycle
-// transition, reading only fields the originating signal already propagated (no
-// database access).
 type TelemetrySignalLifecycleHook struct {
 	l *zap.Logger
 }
@@ -130,9 +124,6 @@ func (h *TelemetrySignalLifecycleHook) AfterPhase(ctx context.Context, event sig
 
 	switch kind {
 	case telemetryKindWorkflow:
-		// Terminal error comes from the status-update activity: a workflow can
-		// fail while its execute signal is still parked, so the outcome here is
-		// not a reliable error source.
 		if !errored {
 			h.emit(ctx, "workflow.completed", event, &outcome)
 		}

@@ -38,9 +38,6 @@ func (s *SignalTestSuite) TestExecute() {
 	s.T().Skip("not yet implemented")
 }
 
-// TestExecutePlanFailureRecordsCompositeError verifies that when the sandbox
-// plan child workflow fails, a SandboxPlanRenderError is written to the
-// sandbox run row and a non-retryable error is returned to the caller.
 func (s *SignalTestSuite) TestExecutePlanFailureRecordsCompositeError() {
 	env := s.NewTestWorkflowEnvironment()
 	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})

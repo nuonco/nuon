@@ -26,17 +26,8 @@ import (
 )
 
 const (
-	// defaultMirrorTerraformVersion is the version of the terraform CLI
-	// the build runner falls back to installing when the build plan does
-	// not specify one. Kept aligned with the default in the
-	// TerraformModuleComponentConfig model so most components hit the
-	// same install. Stored without a leading "v" to match the
-	// un-prefixed format of TerraformModuleComponentConfig.Version.
 	defaultMirrorTerraformVersion = "1.7.5"
 
-	// terraformInstallTimeout bounds the terraform CLI download. It replaces
-	// hc-install's 30s default, which is not enough for a ~30MB archive when
-	// several component builds download concurrently.
 	terraformInstallTimeout = 10 * time.Minute
 )
 
@@ -45,24 +36,6 @@ type MirrorConfig struct {
 	MirrorPlatforms  []string
 }
 
-// resolveMirrorPlatforms returns the `<os>_<arch>` platform set the build
-// runner should vendor providers for. By default it returns the runner's
-// own platform — an org's runners are homogeneous in practice (one node
-// pool / instance family), so the install runner that consumes the artifact
-// runs on the same arch as the build runner that produced it. Vendoring
-// just one platform keeps the artifact small (~50–150MB per provider, not
-// multiples) and works transparently for both production (linux_amd64 /
-// linux_arm64) and local dev (darwin_arm64 on a mac running `nctl
-// run-local`).
-//
-// The env var TERRAFORM_MIRROR_PLATFORMS overrides the default for the
-// rare case where the build runner needs to ship more platforms than its
-// own (heterogeneous orgs, cross-arch testing). Plumbed via
-// internal.Config.TerraformMirrorPlatforms.
-//
-// Heterogeneous orgs that hit the default fall through to
-// DetectFilesystemMirror's platform-mismatch branch on the install side —
-// graceful warn + direct registry resolution.
 func resolveMirrorPlatforms(configured []string) []string {
 	if len(configured) > 0 {
 		return configured
@@ -70,7 +43,7 @@ func resolveMirrorPlatforms(configured []string) []string {
 	return []string{runtime.GOOS + "_" + runtime.GOARCH}
 }
 
-// scrubbedTFEnvVars are environment variables we strip from the build
+// why: scrubbedTFEnvVars are environment variables we strip from the build
 // runner's environment before invoking the terraform CLI. They can otherwise
 // silently redirect provider/module resolution to a host-side config or
 // cache the build runner doesn't manage.
@@ -79,7 +52,7 @@ var scrubbedTFEnvVars = []string{
 	"TF_PLUGIN_CACHE_DIR",
 }
 
-// generateProviderMirror installs a terraform CLI at the version requested
+// why: generateProviderMirror installs a terraform CLI at the version requested
 // by the build plan and produces an offline, install-runner-ready bundle in
 // the source tree. The full sequence is:
 //
@@ -156,18 +129,12 @@ func GenerateProviderMirror(ctx context.Context, srcDir string, cfg MirrorConfig
 		return fmt.Errorf("unable to construct tfexec client: %w", err)
 	}
 
-	// Vendor remote modules first. `terraform providers mirror` resolves
-	// provider requirements transitively through the module graph, so the
-	// modules need to be on disk before we mirror providers.
 	if err := op.Run(ctx, "terraform", "vendor_modules", func(ctx context.Context) error {
 		return vendorModules(ctx, l, tf)
 	}); err != nil {
 		return fmt.Errorf("unable to vendor terraform modules: %w", err)
 	}
 
-	// Update the lockfile to carry hashes for every platform we mirror.
-	// Done before `providers mirror` so the mirror downloads honor the
-	// versions the lockfile pins.
 	if err := op.Run(ctx, "terraform", "lock_providers", func(ctx context.Context) error {
 		return lockProviders(ctx, l, tf, srcDir, platforms)
 	}); err != nil {
@@ -199,11 +166,6 @@ func GenerateProviderMirror(ctx context.Context, srcDir string, cfg MirrorConfig
 		return err
 	}
 
-	// Now that the provider mirror is in place, also vendor the terraform
-	// CLI binary itself so install runners can run fully airgapped (no
-	// fetch from releases.hashicorp.com for `terraform_<ver>_<plat>.zip`
-	// either). Reuses the host-platform binary we already installed above
-	// to avoid a redundant download in the modal single-platform case.
 	if err := op.Run(ctx, "terraform", "vendor_cli", func(ctx context.Context) error {
 		return vendorTerraformBinary(ctx, l, execPath, srcDir, tfVersion, platforms)
 	}); err != nil {
@@ -213,30 +175,6 @@ func GenerateProviderMirror(ctx context.Context, srcDir string, cfg MirrorConfig
 	return nil
 }
 
-// vendorTerraformBinary copies the terraform CLI binary itself into
-// `<srcDir>/<workspace.DefaultBundledBinaryDir>/<host>/terraform` and
-// writes a sibling `VERSION` sidecar recording tfVersion. The artifact
-// packer picks the tree up alongside everything else (mirror, modules,
-// lockfile).
-//
-// We only vendor the host platform's binary, even when `platforms`
-// includes others for the provider mirror. Reasons:
-//
-//  1. hc-install's ExactVersion does not expose OS/Arch overrides, so
-//     cross-platform binary vendoring would require a manual HTTP fetch
-//     against releases.hashicorp.com — not free, and not justified by the
-//     modal use case (homogeneous orgs).
-//  2. The install side is graceful about platform-mismatch artifacts:
-//     workspace.DetectBundledBinary returns "" when the host platform's
-//     binary is absent and the runner falls through to its existing
-//     remotebinary path. So a heterogeneous setup that vendors providers
-//     across platforms still works — just without the binary airgap on
-//     non-build platforms.
-//
-// If we ever need cross-platform binary vendoring, the natural extension
-// is a manual fetch from
-// `https://releases.hashicorp.com/terraform/<ver>/terraform_<ver>_<os>_<arch>.zip`,
-// gated by a TERRAFORM_BINARY_PLATFORMS env var.
 func vendorTerraformBinary(
 	ctx context.Context,
 	l *zap.Logger,
@@ -257,10 +195,6 @@ func vendorTerraformBinary(
 		}
 	}
 	if len(skipped) > 0 {
-		// Surface the limitation in the build log so heterogeneous-org
-		// operators understand why install runners on non-build
-		// platforms still hit releases.hashicorp.com for the CLI even
-		// though their providers are vendored.
 		l.Info("skipping CLI binary vendoring for non-host platforms (provider mirror still covers them)",
 			zap.String("host_platform", hostPlatform),
 			zap.Strings("skipped_platforms", skipped),
@@ -280,10 +214,6 @@ func vendorTerraformBinary(
 		zap.String("dst", dst),
 	)
 
-	// VERSION sidecar: install side uses this to detect terraform_version
-	// drift between the build that produced this artifact and the install
-	// plan that's about to consume it. Single line — keep it trivial to
-	// read & compare.
 	versionPath := filepath.Join(binDir, workspace.BundledBinaryVersionFile)
 	if err := os.WriteFile(versionPath, []byte(tfVersion+"\n"), 0o644); err != nil {
 		return fmt.Errorf("unable to write bundled binary VERSION sidecar: %w", err)
@@ -292,12 +222,9 @@ func vendorTerraformBinary(
 	return nil
 }
 
-// bundledBinaryName mirrors the unexported constant of the same name in
-// pkg/terraform/workspace. Duplicated here to avoid exporting an
-// otherwise-internal filename.
 const bundledBinaryName = "terraform"
 
-// copyExecutable copies src to dst byte-for-byte and chmods dst 0755 so
+// why: copyExecutable copies src to dst byte-for-byte and chmods dst 0755 so
 // the install runner sees an executable bit (preserved by OCI packing).
 // We intentionally chmod after copy rather than mirroring src's mode:
 // hc-install already produces 0755, but if a future src ever doesn't,
@@ -321,23 +248,8 @@ func copyExecutable(src, dst string) error {
 	return os.Chmod(dst, 0o755)
 }
 
-// terraformLockFile is the conventional name of the dependency lockfile
-// terraform writes alongside a configuration. We read it before/after
-// `terraform providers lock` so we can log clear "your lockfile changed"
-// signals into the build log.
 const terraformLockFile = ".terraform.lock.hcl"
 
-// lockProviders runs `terraform providers lock -platform=...` against
-// srcDir to ensure `.terraform.lock.hcl` carries hashes for every platform
-// the install runner might run on. The command is platform-additive: it
-// keeps existing platform entries and any version pins already recorded.
-//
-// We snapshot the lockfile bytes before and after so the build log clearly
-// surfaces (a) whether the developer had committed a lockfile, and (b)
-// whether running lock changed the on-disk file. This is the primary
-// signal a developer has that the build runner is touching their lockfile
-// on their behalf — the install side will silently consume whatever we
-// produce here.
 func lockProviders(ctx context.Context, l *zap.Logger, tf *tfexec.Terraform, srcDir string, platforms []string) error {
 	lockPath := filepath.Join(srcDir, terraformLockFile)
 
@@ -371,8 +283,6 @@ func lockProviders(ctx context.Context, l *zap.Logger, tf *tfexec.Terraform, src
 
 	post, err := os.ReadFile(lockPath)
 	if err != nil {
-		// `providers lock` ran cleanly but no lockfile? Treat as a hard
-		// error — the install runner relies on its presence.
 		return fmt.Errorf("expected lockfile at %s after providers lock: %w", lockPath, err)
 	}
 
@@ -384,13 +294,6 @@ func lockProviders(ctx context.Context, l *zap.Logger, tf *tfexec.Terraform, src
 	case bytes.Equal(pre, post):
 		l.Info("lockfile already covered all build platforms; no changes")
 	default:
-		// Drift case: this is the modal happy path for the feature
-		// (developer ran `terraform init` on macOS, lockfile gained the
-		// linux hashes we need for install runners). We log at Info —
-		// not Warn — because Warn'ing on the designed-for case would
-		// make every successful first build look like an anomaly. The
-		// "tip: commit the updated file" message gives the developer
-		// what they need to lock things down further if they want to.
 		l.Info("lockfile updated by terraform providers lock with cross-platform hashes; "+
 			"tip: commit the updated lockfile for fully reproducible builds",
 			zap.Int("pre_size_bytes", len(pre)),
@@ -401,7 +304,7 @@ func lockProviders(ctx context.Context, l *zap.Logger, tf *tfexec.Terraform, src
 	return nil
 }
 
-// vendorModules runs `terraform get` against srcDir so any remote modules
+// why: vendorModules runs `terraform get` against srcDir so any remote modules
 // referenced by `module {}` blocks are downloaded into
 // `<srcDir>/.terraform/modules/`. The packer picks the tree up alongside
 // the source files. The install runner then unpacks it next to the source
@@ -432,13 +335,6 @@ func vendorModules(ctx context.Context, l *zap.Logger, tf *tfexec.Terraform) err
 	return nil
 }
 
-// newBuildTerraform constructs a *tfexec.Terraform pointing at srcDir
-// with a scrubbed environment, suitable for the build-time vendoring
-// commands (`get`, `providers lock`, `providers mirror`).
-//
-// stdout/stderr are intentionally left unset — each runTF call attaches
-// fresh capture buffers so its log entry only contains output from the
-// command it ran, not output from a sibling command on the same client.
 func newBuildTerraform(execPath, srcDir string) (*tfexec.Terraform, error) {
 	tf, err := tfexec.NewTerraform(srcDir, execPath)
 	if err != nil {
@@ -450,23 +346,6 @@ func newBuildTerraform(execPath, srcDir string) (*tfexec.Terraform, error) {
 	return tf, nil
 }
 
-// runTF runs a single terraform command via tfexec while capturing its
-// stdout and stderr into in-memory buffers, then emits exactly one zap
-// entry summarising the command:
-//
-//   - Info on success ("terraform <name> completed")
-//   - Warn on failure ("terraform <name> failed", with the wrapped error)
-//
-// Captured output is attached as `stdout` / `stderr` zap fields after a
-// one-shot ANSI escape strip, so terraform's colored diagnostic boxes
-// (`╷ │ ╵`) read as plain text in the log. Empty streams are omitted.
-//
-// Trade-off vs. the prior per-line zapWriter: no real-time progress
-// during the command (the operator sees output once it returns). For
-// the three short build-time commands this is acceptable, and it lets
-// us drop the line buffer + envelope state machine entirely — terraform
-// can change anything inside the box without breaking us, because we no
-// longer parse the box.
 func runTF(l *zap.Logger, name string, fn func(stdout, stderr io.Writer) error) error {
 	var stdout, stderr bytes.Buffer
 	err := fn(&stdout, &stderr)
@@ -488,20 +367,12 @@ func runTF(l *zap.Logger, name string, fn func(stdout, stderr io.Writer) error) 
 	return nil
 }
 
-// ansiEscapeRe matches CSI SGR sequences ("\x1b[…m"), which terraform
-// uses to color its diagnostic envelope and severity labels. Stripped
-// once at the end of each command so log search is grep-friendly.
 var ansiEscapeRe = regexp.MustCompile(`\x1b\[[0-9;]*m`)
 
 func stripANSI(s string) string {
 	return ansiEscapeRe.ReplaceAllString(s, "")
 }
 
-// scrubbedEnvMap returns env (in os.Environ "K=V" form) as a map with
-// any TF CLI variables that could redirect provider/module resolution
-// stripped out. We want the build runner's terraform invocations to use
-// only the in-workspace .terraformrc (when any) we control — never a
-// host-side override. Map form is required by tfexec.SetEnv.
 func scrubbedEnvMap(env []string) map[string]string {
 	out := make(map[string]string, len(env))
 	for _, kv := range env {
@@ -524,12 +395,6 @@ func scrubbedEnvMap(env []string) map[string]string {
 	return out
 }
 
-// installTerraform installs a fixed-version terraform CLI into a temp
-// directory and returns its exec path. The returned cleanup func removes
-// the install directory.
-//
-// The install dir is prefixed with `tf-build-` to keep it separate from
-// workspace directories (which are prefixed with `workspace-`).
 func installTerraform(ctx context.Context, l *zap.Logger, ver string) (string, func(), error) {
 	tfVersion, err := version.NewVersion(ver)
 	if err != nil {
@@ -547,7 +412,7 @@ func installTerraform(ctx context.Context, l *zap.Logger, ver string) (string, f
 		}
 	}
 
-	// hc-install defaults to a 30s budget covering index+signature+checksum
+	// why: hc-install defaults to a 30s budget covering index+signature+checksum
 	// fetches and the ~30MB archive download. Concurrent component builds
 	// share the runner's bandwidth and blow through that easily, and the
 	// timeout surfaces as a misleading "chmod .../terraform: no such file or

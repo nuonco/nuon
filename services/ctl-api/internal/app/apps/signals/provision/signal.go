@@ -41,7 +41,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("app_id is required")
 	}
 
-	// Validate app exists
 	_, err := activities.AwaitGetByAppID(ctx, s.AppID)
 	if err != nil {
 		return errors.Wrap(err, "app not found")
@@ -53,7 +52,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
-	// Ensure org is healthy before provisioning
 	currentApp, err := activities.AwaitGetByAppID(ctx, s.AppID)
 	if err != nil {
 		if updateErr := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
@@ -96,7 +94,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// 	return errors.Errorf("org is unhealthy: %s", orgStatus)
 	// }
 
-	// Update status to provisioning
 	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		AppID:             s.AppID,
 		Status:            app.AppStatusProvisioning,
@@ -144,7 +141,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	// Create app repository record
 	if _, err := activities.AwaitCreateAppRepository(ctx, &activities.CreateAppRepositoryRequest{
 		AppID:          s.AppID,
 		CreateResponse: repoResp,
@@ -152,7 +148,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to create app repository")
 	}
 
-	// Update status to active
 	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		AppID:             s.AppID,
 		Status:            app.AppStatusActive,

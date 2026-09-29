@@ -1,11 +1,5 @@
 package cronutil
 
-/**
-This is a temporary package made for adding jitter to cron schedules, ideally we wanna move to use temporal cron
-schedule api which has built in jitter support. This is currently a bit hacky to parse cron schedule but works for most
-of the things we have in the system.
-**/
-
 import (
 	"fmt"
 	"hash/fnv"
@@ -17,13 +11,11 @@ import (
 	"github.com/robfig/cron"
 )
 
-// MaxJitterWindow requests the widest spread ApplyCronJitter can express;
-// the effective jitter is still capped at each schedule's firing interval.
 const MaxJitterWindow = time.Hour
 
 const minIntervalProbeFires = 200
 
-// ApplyCronJitter deterministically shifts the minute field of a standard
+// why: ApplyCronJitter deterministically shifts the minute field of a standard
 // 5-field cron expression by hash(emitterID) minutes. Mirrors Temporal
 // schedule jitter semantics: window is a maximum — the effective jitter is
 // capped at the schedule's shortest firing interval and at one hour. Never
@@ -73,8 +65,6 @@ func ApplyCronJitter(emitterID, schedule string, window time.Duration) string {
 	return jittered
 }
 
-// MinScheduleInterval returns the smallest gap between two consecutive fires
-// of the given schedule, sampled over the next minIntervalProbeFires fires.
 func MinScheduleInterval(sched cron.Schedule) time.Duration {
 	now := time.Now().UTC()
 	prev := sched.Next(now)

@@ -22,8 +22,6 @@ func row(kind, name, health string, observedAt time.Time) app.InstallComponentRe
 	}
 }
 
-// Pins a live failure: an unrunnable probe won the worst-of fold and reported
-// unknown while 7 other resources were healthy and observations kept arriving.
 func TestCollapseUnknownResourceDoesNotMaskHealthyOnes(t *testing.T) {
 	t.Parallel()
 
@@ -51,7 +49,6 @@ func TestCollapseUnknownLosesRegardlessOfRowOrder(t *testing.T) {
 
 	at := time.Date(2026, 7, 29, 14, 44, 0, 0, time.UTC)
 
-	// The unknown row seeded the report in the live case because it sorted first.
 	for _, tc := range []struct {
 		name string
 		rows []app.InstallComponentResourceState
@@ -141,8 +138,6 @@ func TestCollapseSkipsIdentityOnlyProviders(t *testing.T) {
 	assert.Equal(t, 1, rep.Resources, "identity-only cloud rows bear no verdict and are not counted")
 }
 
-// unknown has distinct causes (runner silence vs. nothing assessable) that
-// must not share one message — conflating them sends the reader to the wrong place.
 func TestComponentHealthDescriptionDistinguishesUnknownCauses(t *testing.T) {
 	t.Parallel()
 
@@ -180,8 +175,6 @@ func TestComponentHealthDescriptionDistinguishesUnknownCauses(t *testing.T) {
 	})
 }
 
-// A healthy verdict must not describe an unassessable resource as healthy —
-// live case: 5 healthy + 1 unrunnable probe reported "all 6 resources healthy".
 func TestComponentHealthDescriptionSeparatesUncheckedFromHealthy(t *testing.T) {
 	t.Parallel()
 
@@ -222,8 +215,6 @@ func TestComponentHealthDescriptionSeparatesUncheckedFromHealthy(t *testing.T) {
 	})
 }
 
-// Labelling itself is covered by TestMarkDownstreamLabelling; this covers its
-// two consequences: the alert drops but the verdict still reports truthfully.
 func TestDownstreamSuppressesAlertButKeepsVerdict(t *testing.T) {
 	t.Parallel()
 
@@ -274,8 +265,6 @@ func TestDownstreamSuppressesAlertButKeepsVerdict(t *testing.T) {
 	})
 }
 
-// Pins live churn: redeploys flapped Healthy → Not applicable → Progressing
-// → Healthy because deploy status left "deployed" while the old workload kept serving.
 func TestComponentVerdictDuringRedeploy(t *testing.T) {
 	t.Parallel()
 
@@ -353,8 +342,6 @@ func TestComponentVerdictDuringRedeploy(t *testing.T) {
 	})
 }
 
-// Pins a live failure: a runner lost cluster access, so k8s observations
-// stopped while an exec probe kept passing — healthy for 12min despite ImagePullBackOff.
 func TestClusterBlindComponentGoesUnknown(t *testing.T) {
 	t.Parallel()
 
@@ -434,8 +421,6 @@ func TestClusterBlindComponentGoesUnknown(t *testing.T) {
 	})
 }
 
-// Cluster evidence must go stale on the same clock the resource rows do, or the
-// table shows every row stale while the verdict still says healthy.
 func TestClusterEvidenceMustBeFresh(t *testing.T) {
 	t.Parallel()
 
@@ -465,8 +450,6 @@ func TestClusterEvidenceMustBeFresh(t *testing.T) {
 		"cluster evidence the resource table would mark stale must not certify")
 }
 
-// A pushed check reports on its own cadence; before TTLs it kept voting its
-// last verdict until aging out of the read window, then silently vanished.
 func TestCustomCheckStaleAfter(t *testing.T) {
 	t.Parallel()
 
@@ -508,8 +491,6 @@ func TestCustomCheckStaleAfter(t *testing.T) {
 	})
 }
 
-// unknown from a custom check means nobody could assess it, not a severity —
-// it must not outrank resources that did report, same rule as the cluster fold.
 func TestUnknownCustomCheckDoesNotMaskHealthy(t *testing.T) {
 	t.Parallel()
 
@@ -550,10 +531,6 @@ func TestUnknownCustomCheckDoesNotMaskHealthy(t *testing.T) {
 	})
 }
 
-// A pushed check declaring a 30m window must survive past the global 5m
-// staleness cutoff. Before this, a check-only component (a terraform module
-// with a nightly audit) read unknown between pushes — the exact case the TTL
-// was added for. Helm components hid it, because runner reports kept them fresh.
 func TestCustomCheckTTLSurvivesGlobalStaleness(t *testing.T) {
 	t.Parallel()
 

@@ -11,10 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestGetAppComponentDependenciesSuccess() {
 	s.Run("returns empty array for component with no dependencies", func() {
 		cmp := s.getSeededComponent(app.ComponentTypeHelmChart)
@@ -34,10 +30,6 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentDependenciesSuccess() {
 		assert.Len(s.T(), response, 0)
 	})
 }
-
-// ---------------------------------------------------------------------------
-// Not found cases
-// ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestGetAppComponentDependenciesNotFound() {
 	s.Run("nonexistent component id", func() {

@@ -21,14 +21,8 @@ type handler struct {
 	apiClient nuonrunner.Client
 	settings  *settings.Settings
 
-	// launcher is only set for the image-actions handler registered by the mng
-	// process; it is nil for the in-process actions handler.
 	launcher launcher.Launcher
 
-	// state is reused between function calls, but can _not_ be reused with different jobs.
-	//
-	// the job loop ensures that no handler ever has more than one job at a time, but this guarantee should be made
-	// stronger in the future.
 	state *handlerState
 }
 
@@ -56,7 +50,7 @@ func (h *handler) GracefulShutdown(ctx context.Context, job *models.AppRunnerJob
 	return nil
 }
 
-// workspaceRoot returns the directory the job's workspace is created under. A
+// why: workspaceRoot returns the directory the job's workspace is created under. A
 // launcher is only wired for the image-actions handler, which mng runs natively
 // on the VM host, so that path gets the root volume instead of the host's
 // RAM-backed /tmp. The in-process handler keeps the default, which resolves

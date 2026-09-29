@@ -12,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/pkg/runner/settings"
 )
 
-// the system logger is used to log all things that should not be sent to our API via OTEL
 type SystemParams struct {
 	fx.In
 

@@ -32,9 +32,6 @@ type ExampleApp struct {
 	Directory     string   `json:"directory"`
 }
 
-// Catalog serves the example-apps list, lazily fetching from the public
-// onboarding-apps.json on first request and caching for exampleAppsCacheTTL.
-// Falls back to fallbackExampleApps if the remote fetch has never succeeded.
 type Catalog struct {
 	mu        sync.Mutex
 	apps      []ExampleApp
@@ -56,8 +53,6 @@ func NewCatalog(params CatalogParams) *Catalog {
 	}
 }
 
-// Get returns the catalog, refreshing from the remote source if the cache
-// is stale or empty. Concurrent callers serialize on the internal mutex.
 func (c *Catalog) Get(ctx context.Context) []ExampleApp {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -105,9 +100,6 @@ func (c *Catalog) fetch(ctx context.Context) ([]ExampleApp, error) {
 	return apps, nil
 }
 
-// fallbackExampleApps is a minimal compiled-in catalog used when the remote
-// fetch has never succeeded. The authoritative catalog lives at
-// https://nuonco.github.io/example-app-configs/onboarding-apps.json.
 var fallbackExampleApps = []ExampleApp{
 	{Slug: "httpbin", DisplayName: "HTTPBin", Description: "HTTPBin app on AWS EC2 using our minimal AWS Sandbox", Category: "architecture", Difficulty: "simple", Tags: []string{"ec2", "docker", "debugging"}, CloudProvider: "aws", Directory: "httpbin"},
 	{Slug: "eks-simple", DisplayName: "EKS Simple", Description: "A simple Whoami HTTP service on AWS EKS", Category: "architecture", Difficulty: "simple", Tags: []string{"eks", "kubernetes", "alb", "certificate"}, CloudProvider: "aws", Directory: "eks-simple"},

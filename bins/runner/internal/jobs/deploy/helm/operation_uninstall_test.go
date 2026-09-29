@@ -21,9 +21,6 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 )
 
-// helmHandler builds a handler backed by an in-memory release store and a fake
-// cluster. wrap replaces the store's driver, which is how a backend that
-// misbehaves partway through an uninstall is reproduced.
 func helmHandler(t *testing.T, wrap func(driver.Driver) driver.Driver, revisions ...*release.Release) (*handler, *action.Configuration) {
 	t.Helper()
 
@@ -58,8 +55,6 @@ func helmHandler(t *testing.T, wrap func(driver.Driver) driver.Driver, revisions
 	return h, actionCfg
 }
 
-// The release vanished between the read and the purge, so the record is gone and
-// the purge 404s. This is the case that has to read as a completed uninstall.
 type vanishedOnPurgeDriver struct {
 	driver.Driver
 }
@@ -72,8 +67,6 @@ func (d *vanishedOnPurgeDriver) Delete(key string) (*release.Release, error) {
 	return nil, driver.ErrReleaseNotFound
 }
 
-// The purge reports not-found while leaving the record in place, so the release is
-// still there afterwards and the uninstall cannot be called done.
 type phantomNotFoundDriver struct {
 	driver.Driver
 }
@@ -90,8 +83,6 @@ func (d *purgeFailureDriver) Delete(_ string) (*release.Release, error) {
 	return nil, errors.New("etcdserver: request timed out")
 }
 
-// The release is served once and then gone, which is what a teardown racing
-// another one sees: the read finds it, the uninstall no longer does.
 type vanishesAfterFirstReadDriver struct {
 	driver.Driver
 
@@ -127,8 +118,6 @@ func TestUninstall_NoPreviousRelease(t *testing.T) {
 	require.NoError(t, h.uninstall(context.Background(), zap.NewNop(), cfg))
 }
 
-// A store that cannot be read must not be mistaken for a release that was never
-// installed: that reports a successful teardown while the resources stay up.
 func TestUninstall_ReadFailurePropagates(t *testing.T) {
 	h, cfg := helmHandler(t, func(d driver.Driver) driver.Driver {
 		return &readFailureDriver{Driver: d}
@@ -162,8 +151,6 @@ func TestUninstall_PurgeNotFoundIsTreatedAsUninstalled(t *testing.T) {
 	assert.Equal(t, testReleaseName, warnings[0].ContextMap()["release"])
 }
 
-// The same not-found error, but the release is still there, so it is a failure
-// rather than something to swallow.
 func TestUninstall_NotFoundWithReleaseStillStoredFails(t *testing.T) {
 	h, cfg := helmHandler(t, func(d driver.Driver) driver.Driver {
 		return &phantomNotFoundDriver{Driver: d}

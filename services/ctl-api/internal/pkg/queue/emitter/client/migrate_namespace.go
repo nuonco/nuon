@@ -15,11 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/taskqueue"
 )
 
-// MigrateQueueEmitters moves every emitter of a queue to newNamespace. Each
-// old-namespace emitter workflow is terminated (cross-namespace, so
-// TERMINATE_IF_RUNNING on the restart is not enough), its DB row repointed, and
-// the workflow restarted in the new namespace. Emitters already in newNamespace
-// are skipped, so this is a no-op when nothing changed.
 func (c *Client) MigrateQueueEmitters(ctx context.Context, queueID string, newNamespace string) error {
 	var emitters []app.QueueEmitter
 	if res := c.db.WithContext(ctx).Where(app.QueueEmitter{QueueID: queueID}).Find(&emitters); res.Error != nil {

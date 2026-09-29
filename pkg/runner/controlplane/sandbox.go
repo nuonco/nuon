@@ -11,13 +11,6 @@ import (
 	"github.com/nuonco/nuon/pkg/runner/jobs"
 )
 
-// isSandboxableBuildHandler reports whether a control-plane job handler
-// publishes an artifact to the plan's destination registry. Sandbox-mode orgs
-// never provision real registry infrastructure, so plan.Dst carries fake
-// values and any real push/auth against it fails. noop-build and
-// fetch-image-metadata are excluded: the former never pushes to Dst, and the
-// latter's consumer expects a compressed metadata result rather than generic
-// sandbox outputs.
 func isSandboxableBuildHandler(handler jobs.JobHandler) bool {
 	switch handler.Name() {
 	case "container-image-build",

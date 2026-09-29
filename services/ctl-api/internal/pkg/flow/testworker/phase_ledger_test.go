@@ -5,12 +5,8 @@ import (
 	"time"
 )
 
-// NUON_FLOW_PHASE_LEDGER=1 enables per-test phase timing, emitted via t.Logf
-// so it lands in verbose test output next to each test's wall time.
 var phaseLedgerEnabled = os.Getenv("NUON_FLOW_PHASE_LEDGER") == "1"
 
-// Phase marks live on the FlowTestSuite value, which is one per running case —
-// cases execute concurrently, so nothing here may be package-global.
 func (e *FlowTestSuite) phase(name string) {
 	if !phaseLedgerEnabled {
 		return

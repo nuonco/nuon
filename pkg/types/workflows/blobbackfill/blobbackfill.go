@@ -8,8 +8,6 @@ const (
 	ProgressQueryType = "progress"
 )
 
-// RangeRequest is the parent orchestrator input. Callers populate only Tables;
-// the parent fills in the rest and carries it across continue-as-new.
 type RangeRequest struct {
 	Tables      []string         `json:"tables"`
 	Initialized bool             `json:"initialized"`
@@ -19,7 +17,6 @@ type RangeRequest struct {
 	DaysDone    int              `json:"days_done"`
 }
 
-// DayBucket is one unit of work: one table on one UTC calendar day.
 type DayBucket struct {
 	Table string `json:"table"`
 	Day   string `json:"day"`

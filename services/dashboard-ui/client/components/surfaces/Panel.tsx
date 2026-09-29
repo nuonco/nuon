@@ -193,7 +193,6 @@ export const Panel = ({ triggerButton, ...props }: IPanel) => {
       props.panelKey === panelParam &&
       !props.isVisible
     ) {
-      // Defer so this runs after the pathname-change panel clear in SurfacesProvider
       const timer = setTimeout(() => handleAddPanel(), 0)
       return () => clearTimeout(timer)
     }

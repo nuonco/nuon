@@ -31,8 +31,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// TriggerAppBranchRunTestService holds all fx-injected dependencies for
-// TriggerAppBranchRun endpoint tests.
 type TriggerAppBranchRunTestService struct {
 	fx.In
 
@@ -49,11 +47,6 @@ type TriggerAppBranchRunTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// TriggerAppBranchRunTestSuite is the testify suite for the TriggerAppBranchRun endpoint.
-//
-// Only the request-validation rejections are covered here: a full happy-path
-// run enqueues Temporal signals via the queue/workflow machinery, which is out
-// of scope for this suite.
 type TriggerAppBranchRunTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -93,7 +86,6 @@ func (s *TriggerAppBranchRunTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -101,7 +93,6 @@ func (s *TriggerAppBranchRunTestSuite) SetupSuite() {
 	s.fxApp = fxtest.New(s.T(), options...)
 	s.fxApp.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -170,10 +161,6 @@ func (s *TriggerAppBranchRunTestSuite) makeRawRequest(method, path, rawBody stri
 	return rr
 }
 
-// TestTriggerAppBranchRunRejectsInvalidSyncAppConfig covers the two new
-// cross-field rejections on TriggerAppBranchRunRequest.Validate. Neither case
-// reaches the branch/config lookups or the helper that enqueues the run, so
-// no Temporal/queue mocking is required.
 func (s *TriggerAppBranchRunTestSuite) TestTriggerAppBranchRunRejectsInvalidSyncAppConfig() {
 	testCases := []struct {
 		name          string

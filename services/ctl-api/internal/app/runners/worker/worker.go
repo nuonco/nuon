@@ -16,9 +16,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 
-	// Blank imports to register v2 queue signal types in the catalog.
-	// The queue handler workflow (registered via SharedWorkflows) deserializes signals by type;
-	// importing these packages runs their init() which calls catalog.Register().
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/oninactive"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processhealthcheck"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processinit"
@@ -33,7 +30,6 @@ type Worker struct {
 	worker.Worker
 }
 
-// HealthcheckCronWorker polls the isolated runner-healthcheck-crons task queue.
 type HealthcheckCronWorker struct {
 	worker.Worker
 }
@@ -93,13 +89,11 @@ func buildWorker(params WorkerParams, namespace string, taskQueue string, logNam
 		DeadlockDetectionTimeout:               params.Cfg.TemporalDeadlockDetectionTimeout,
 	})
 
-	// register activities
 	wkr.RegisterActivity(params.Acts)
 	for _, acts := range params.SharedActivities.AllActivities() {
 		wkr.RegisterActivity(acts)
 	}
 
-	// register workflows
 	for _, wkflow := range params.Wkflows.All() {
 		wkr.RegisterWorkflow(wkflow)
 	}

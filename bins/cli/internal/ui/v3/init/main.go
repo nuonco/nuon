@@ -16,7 +16,6 @@ func NewConfigInit() *ConfigInit {
 	return &ConfigInit{}
 }
 
-// handle error in all functions
 func (c *ConfigInit) RunInitMenu(params *apps.InitParams) (*apps.InitParams, error) {
 	var configType string
 	var prebuiltTemplate string
@@ -26,7 +25,6 @@ func (c *ConfigInit) RunInitMenu(params *apps.InitParams) (*apps.InitParams, err
 	var componentTypes []string
 	var enableActionsAddition bool
 
-	// Initial question: custom or prebuilt
 	initialForm := huh.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
@@ -45,7 +43,6 @@ func (c *ConfigInit) RunInitMenu(params *apps.InitParams) (*apps.InitParams, err
 		log.Fatal(err)
 	}
 
-	// If prebuilt, show template options
 	if configType == "prebuilt" {
 		templateForm := huh.NewForm(
 			huh.NewGroup(
@@ -73,7 +70,6 @@ func (c *ConfigInit) RunInitMenu(params *apps.InitParams) (*apps.InitParams, err
 		return params, nil
 	}
 
-	// If custom, show all configuration options
 	customForm := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
@@ -180,7 +176,6 @@ func (c *ConfigInit) RunComponentsMenu(params *apps.SampleComponentParams) error
 	var componentTypes []string
 	var enableComponentAddition bool
 
-	// Initial question: custom or prebuilt
 	initialForm := huh.NewForm(
 		huh.NewGroup(
 			huh.NewConfirm().
@@ -199,7 +194,6 @@ func (c *ConfigInit) RunComponentsMenu(params *apps.SampleComponentParams) error
 		return nil
 	}
 
-	// If custom, show all configuration options
 	componentForm := huh.NewForm(
 		huh.NewGroup(
 			huh.NewMultiSelect[string]().
@@ -226,10 +220,8 @@ func (c *ConfigInit) RunComponentsMenu(params *apps.SampleComponentParams) error
 }
 
 func (c *ConfigInit) RunActionsMenu(params *apps.SampleActionsParams) error {
-	// var actions []string
 	var enableActionsAdditions bool
 
-	// Initial question: custom or prebuilt
 	initialForm := huh.NewForm(
 		huh.NewGroup(
 			huh.NewConfirm().
@@ -248,18 +240,7 @@ func (c *ConfigInit) RunActionsMenu(params *apps.SampleActionsParams) error {
 		return nil
 	}
 
-	// If custom, show all configuration options
-	componentForm := huh.NewForm(
-	// huh.NewGroup(
-	// 	huh.NewMultiSelect[string]().
-	// 		Title("Actions").
-	// 		Description("Select actions to include in app config").
-	// 		Options(
-	// 			huh.NewOption("Test action", "test"),
-	// 		).
-	// 		Value(&actions),
-	// ),
-	)
+	componentForm := huh.NewForm()
 
 	err = componentForm.Run()
 	if err != nil {

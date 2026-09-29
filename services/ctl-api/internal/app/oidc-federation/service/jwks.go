@@ -11,9 +11,6 @@ import (
 
 const jwksCacheDuration = 5 * time.Minute
 
-// jwksProviderCache caches JWKS providers per issuer to avoid repeated OIDC
-// discovery. Issuer URLs always come from stored trust policies, never from
-// presented tokens.
 type jwksProviderCache struct {
 	mu        sync.RWMutex
 	providers map[string]*jwks.CachingProvider

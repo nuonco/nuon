@@ -129,7 +129,6 @@ func (s *service) updateAppConfigInstalls(ctx context.Context, appID, appConfigI
 		}
 	}
 
-	// install ID -> old app_config_id
 	installConfigMap := make(map[string]string)
 	for _, install := range affectedInstalls {
 		installConfigMap[install.ID] = install.AppConfigID
@@ -142,7 +141,6 @@ func (s *service) updateAppConfigInstalls(ctx context.Context, appID, appConfigI
 		}
 	}()
 
-	// migrate install inputs BEFORE updating app_config_id
 	if err := s.installsHelpers.MigrateInstallInputsToNewConfig(ctx, tx, installConfigMap, appConfigID); err != nil {
 		tx.Rollback()
 		return stderr.ErrSystem{
@@ -151,7 +149,6 @@ func (s *service) updateAppConfigInstalls(ctx context.Context, appID, appConfigI
 		}
 	}
 
-	// update install app_config_id
 	res := tx.Model(&app.Install{}).
 		Where(app.Install{AppID: appID})
 
@@ -167,7 +164,6 @@ func (s *service) updateAppConfigInstalls(ctx context.Context, appID, appConfigI
 		}
 	}
 
-	// Commit transaction
 	if err := tx.Commit().Error; err != nil {
 		return stderr.ErrSystem{
 			Err:         fmt.Errorf("unable to commit transaction: %w", err),
@@ -175,7 +171,6 @@ func (s *service) updateAppConfigInstalls(ctx context.Context, appID, appConfigI
 		}
 	}
 
-	// Enqueue reconcile-emitters signal for each affected install
 	for _, install := range affectedInstalls {
 		var queue app.Queue
 		if res := s.db.WithContext(ctx).

@@ -78,7 +78,6 @@ func (s *AdminUpdateInstallRunnerTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -100,7 +99,6 @@ func (s *AdminUpdateInstallRunnerTestSuite) setupTestData() {
 	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
 	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 
-	// Create runner group linked to install via polymorphic association
 	s.testRunnerGrp = &app.RunnerGroup{
 		OrgID:     s.testOrg.ID,
 		OwnerID:   s.testInstall.ID,
@@ -111,7 +109,6 @@ func (s *AdminUpdateInstallRunnerTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group settings
 	s.testRunnerGrpSettings = &app.RunnerGroupSettings{
 		RunnerGroupID:     s.testRunnerGrp.ID,
 		ContainerImageTag: "v1.0.0",
@@ -159,13 +156,11 @@ func (s *AdminUpdateInstallRunnerTestSuite) TestAdminUpdateInstallRunner() {
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(installID string) {
-				// Verify settings were updated
 				var settings app.RunnerGroupSettings
 				err := s.service.DB.Where("runner_group_id = ?", s.testRunnerGrp.ID).First(&settings).Error
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), "v2.0.0", settings.ContainerImageTag)
 
-				// Verify signal was sent
 				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), capturedSignals, 1)
 				assert.Equal(s.T(), reprovisionrunner.SignalType, capturedSignals[0].Type)
@@ -229,7 +224,6 @@ func (s *AdminUpdateInstallRunnerTestSuite) TestAdminUpdateInstallRunner() {
 				tc.validateFunc(installID)
 			}
 
-			// Verify signal presence matches expectation
 			allSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 			if tc.expectedSignal {
 				assert.GreaterOrEqual(s.T(), len(allSignals), 1, "expected signal to be sent")

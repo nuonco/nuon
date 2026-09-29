@@ -10,9 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// these are not table tests. There are only 2 cases and I
-// cannot follow the code with another layer of anonymous types
-// and complex code flow
 func TestDeleteBlobs(t *testing.T) {
 	ctx := context.Background()
 	input := &s3.DeleteObjectsInput{}

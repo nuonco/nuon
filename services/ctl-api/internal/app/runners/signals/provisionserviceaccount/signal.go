@@ -30,7 +30,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("runner_id is required")
 	}
 
-	// Validate runner exists in database
 	_, err := activities.AwaitGetByRunnerID(ctx, s.RunnerID)
 	if err != nil {
 		return errors.Wrap(err, "runner not found")
@@ -40,7 +39,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Update runner status to provisioning
 	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		RunnerID:          s.RunnerID,
 		Status:            app.RunnerStatusProvisioning,
@@ -54,7 +52,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		StatusDescription: "provisioning runner resources",
 	})
 
-	// Get runner details
 	runner, err := activities.AwaitGet(ctx, activities.GetRequest{
 		RunnerID: s.RunnerID,
 	})
@@ -74,7 +71,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get runner: %w", err)
 	}
 
-	// Create operation record for provision service account
 	op, err := activities.AwaitCreateOperationRequest(ctx, activities.CreateOperationRequest{
 		RunnerID:      runner.ID,
 		OperationType: app.RunnerOperationTypeProvisionServiceAccount,
@@ -95,12 +91,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to create operation")
 	}
 
-	// Create service account for runner
 	_, err = activities.AwaitCreateAccount(ctx, activities.CreateAccountRequest{
 		RunnerID: s.RunnerID,
 	})
 	if err != nil {
-		// Update both runner status and operation status on failure
 		if updateErr := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 			RunnerID:          s.RunnerID,
 			Status:            app.RunnerStatusError,
@@ -127,7 +121,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to create account")
 	}
 
-	// Mark operation as finished
 	if err := activities.AwaitUpdateOperation(ctx, activities.UpdateOperationRequest{
 		OperationID: op.ID,
 		Status:      app.RunnerOperationStatusFinished,
@@ -140,7 +133,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		StatusDescription: "operation finished",
 	})
 
-	// Update runner status to awaiting install stack run
 	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		RunnerID:          runner.ID,
 		Status:            app.RunnerStatusAwaitingInstallStackRun,

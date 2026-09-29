@@ -31,7 +31,7 @@ func NewOTELProvider(logStream *app.LogStream) (*log.LoggerProvider, error) {
 	}
 
 	rsrc := getResource(logStream.ID, generics.ToStringMap(logStream.Attrs))
-	// Explicit timeouts and limits mirror the OTel Logs SDK/exporter v0.18.0
+	// why: Explicit timeouts and limits mirror the OTel Logs SDK/exporter v0.18.0
 	// defaults so OTEL environment overrides cannot change product log delivery.
 	client := &http.Client{
 		Transport: &logStreamTransport{next: http.DefaultTransport, resource: rsrc},

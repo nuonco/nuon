@@ -37,9 +37,6 @@ func New(v *validator.Validate, l *zap.Logger, cfg *internal.Config) (metrics.Wr
 		return nil, fmt.Errorf("unable to create new metrics writer: %w", err)
 	}
 
-	// Local-dev affordances mirroring the metric debug log lines: dump spans to a JSON-lines
-	// file and/or a local OTLP viewer (e.g. otel-desktop-viewer, Jaeger) so traces can be
-	// inspected without a Datadog agent.
 	var localExporters []sdktrace.TracerProviderOption
 	if traceFile := os.Getenv("OTEL_LOCAL_TRACE_FILE"); traceFile != "" {
 		f, err := os.OpenFile(traceFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
@@ -74,7 +71,7 @@ func New(v *validator.Validate, l *zap.Logger, cfg *internal.Config) (metrics.Wr
 	}
 
 	if !cfg.DisableMetrics {
-		// The ddotel bridge starts the Datadog tracer internally and exposes it behind the
+		// why: The ddotel bridge starts the Datadog tracer internally and exposes it behind the
 		// vendor-neutral OTel API, so instrumentation (e.g. the gorm tracing plugin) can later be
 		// pointed at an OTLP backend by swapping the provider without re-instrumenting.
 		// The node-level agent listens on hostPort 8126 for APM (apm.portEnabled), so the

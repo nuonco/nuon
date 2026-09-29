@@ -68,8 +68,6 @@ func (s *service) CreateRunnerJobExecution(ctx *gin.Context) {
 		return
 	}
 
-	// Wake the process_job workflow so its pickup poll detects the new
-	// execution immediately instead of on its next tick.
 	s.wakeProcessJobWorkflow(ctx, runnerJobID, processjob.PickupSignalName(runnerJobID))
 
 	ctx.JSON(http.StatusCreated, execution)

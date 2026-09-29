@@ -52,28 +52,23 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	general := api.Group("/v1/general")
 	{
-		// manage canaries
 		s.POST(general, "/provision-canary", s.ProvisionCanary, apiPkg.APIContextTypeInternal, true)
 		s.POST(general, "/deprovision-canary", s.DeprovisionCanary, apiPkg.APIContextTypeInternal, true)
 		s.POST(general, "/start-canary-cron", s.StartCanaryCron, apiPkg.APIContextTypeInternal, true)
 		s.POST(general, "/stop-canary-cron", s.StopCanaryCron, apiPkg.APIContextTypeInternal, true)
 		s.POST(general, "/canary-user", s.CreateCanaryUser, apiPkg.APIContextTypeInternal, true)
 
-		// manage infra tests
 		infraTests := general.Group("/infra-tests")
 		{
 			infraTests.POST("", s.InfraTests)
 			infraTests.POST("/deprovision", s.InfraTestsDeprovision)
 		}
 
-		// create users for testing/seeding
 		general.POST("/integration-user", s.CreateIntegrationUser)
 		general.POST("/seed-user", s.CreateSeedUser)
 
-		// migrations
 		general.GET("/migrations", s.GetMigrations)
 
-		// admin operations
 		general.POST("/admin-static-token", s.AdminCreateStaticToken)
 		general.POST("/admin-delete-account", s.AdminDeleteAccount)
 		general.POST("/promotion", s.AdminPromotion)
@@ -86,7 +81,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		general.POST("/backfill-default-app-branches", s.AdminBackfillDefaultAppBranches)
 		general.GET("/backfill-default-app-branches", s.GetBackfillDefaultAppBranchesStatus)
 
-		// temporal codec
 		general.POST("/temporal-codec/decode", s.TemporalCodecDecode)
 	}
 

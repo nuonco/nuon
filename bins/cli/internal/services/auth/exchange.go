@@ -7,9 +7,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// ExchangeOIDCToken exchanges an OIDC ID token for a short-lived Nuon API
-// token using the org's OIDC trust policies. It uses a tokenless API client
-// since the exchange endpoint is unauthenticated.
 func (a *Service) ExchangeOIDCToken(ctx context.Context, oidcToken, orgID string) (*models.ServiceExchangeOIDCTokenResponse, error) {
 	if orgID == "" {
 		orgID = a.cfg.OrgID

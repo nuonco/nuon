@@ -10,38 +10,18 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// EventTargetsFromEvent resolves the entity ids referenced by a lifecycle
-// event into the labels.EventTargets shape consumed by SubscriptionMatch.
-// Each id is best-effort and may be empty — Match.matches treats an empty id
-// as "no entity of this kind on the event" so a component-only event never
-// falsely satisfies an installs filter.
-//
-// Install resolution mirrors the legacy installIDFromEvent path verbatim
-// (event.OwnerType, data.Workflow.OwnerType, then step-derived lookups for
-// install_deploys / install_sandbox_runs / install_sandboxes). Component
-// and action resolution layer alongside without disturbing it.
-//
-// This is the package-level implementation shared by the slack and webhook
-// signal hooks. Both callers pass their own *gorm.DB; nil db is tolerated
-// (lookup steps simply return empty ids, owner-type-derived ids still flow
-// through).
 func EventTargetsFromEvent(ctx context.Context, db *gorm.DB, event signal.SignalPhaseEvent, data lifecycleEventData) labels.EventTargets {
 	t := labels.EventTargets{}
 
-	// Install id ----------------------------------------------------------
 	switch {
 	case event.OwnerType == "installs" && event.OwnerID != "":
 		t.InstallID = event.OwnerID
 	case data.Workflow.OwnerType == "installs" && data.Workflow.OwnerID != "":
 		t.InstallID = data.Workflow.OwnerID
 	case event.InstallID != nil && *event.InstallID != "":
-		// Signals emitted outside a workflow (e.g. the component-health
-		// notifications) carry their identity on the lifecycle context
-		// instead of via an owner or a step target.
 		t.InstallID = *event.InstallID
 	}
 
-	// Component id --------------------------------------------------------
 	switch {
 	case event.OwnerType == "components" && event.OwnerID != "":
 		t.ComponentID = event.OwnerID
@@ -51,7 +31,6 @@ func EventTargetsFromEvent(ctx context.Context, db *gorm.DB, event signal.Signal
 		t.ComponentID = *event.ComponentID
 	}
 
-	// Action id (action_workflows) ----------------------------------------
 	switch {
 	case event.OwnerType == "action_workflows" && event.OwnerID != "":
 		t.ActionID = event.OwnerID
@@ -59,7 +38,6 @@ func EventTargetsFromEvent(ctx context.Context, db *gorm.DB, event signal.Signal
 		t.ActionID = data.Workflow.OwnerID
 	}
 
-	// App branch id -------------------------------------------------------
 	switch {
 	case event.OwnerType == "app_branches" && event.OwnerID != "":
 		t.AppBranchID = event.OwnerID
@@ -67,12 +45,7 @@ func EventTargetsFromEvent(ctx context.Context, db *gorm.DB, event signal.Signal
 		t.AppBranchID = data.Workflow.OwnerID
 	}
 
-	// Step-derived enrichment. The enrichment in webhook.go has already
-	// surfaced ComponentID and SandboxID on data.Step where applicable; we
-	// fan out from those plus the step's TargetType to derive install and
-	// action ids.
 	if data.Step != nil {
-		// Step-surfaced component id wins if not already populated.
 		if t.ComponentID == "" && data.Step.ComponentID != "" {
 			t.ComponentID = data.Step.ComponentID
 		}
@@ -107,8 +80,6 @@ func EventTargetsFromEvent(ctx context.Context, db *gorm.DB, event signal.Signal
 			}
 		}
 
-		// Sandbox-derived install. The sandbox is owned by exactly one
-		// install.
 		if t.InstallID == "" && data.Step.SandboxID != "" {
 			if id := lookupInstallIDFromSandbox(ctx, db, data.Step.SandboxID); id != "" {
 				t.InstallID = id
@@ -119,9 +90,6 @@ func EventTargetsFromEvent(ctx context.Context, db *gorm.DB, event signal.Signal
 	return t
 }
 
-// lookupInstallIDFromDeploy resolves the install id behind an install_deploys
-// row by walking through install_components.install_id. Best-effort: returns
-// "" on any DB error or when the row is missing.
 func lookupInstallIDFromDeploy(ctx context.Context, db *gorm.DB, deployID string) string {
 	if db == nil || deployID == "" {
 		return ""
@@ -140,8 +108,6 @@ func lookupInstallIDFromDeploy(ctx context.Context, db *gorm.DB, deployID string
 	return row.InstallID
 }
 
-// lookupInstallIDFromSandboxRun resolves the install id behind an
-// install_sandbox_runs row directly via its install_id column.
 func lookupInstallIDFromSandboxRun(ctx context.Context, db *gorm.DB, sandboxRunID string) string {
 	if db == nil || sandboxRunID == "" {
 		return ""
@@ -159,8 +125,6 @@ func lookupInstallIDFromSandboxRun(ctx context.Context, db *gorm.DB, sandboxRunI
 	return row.InstallID
 }
 
-// lookupInstallIDFromSandbox resolves the install id behind an
-// install_sandboxes row directly via its install_id column.
 func lookupInstallIDFromSandbox(ctx context.Context, db *gorm.DB, sandboxID string) string {
 	if db == nil || sandboxID == "" {
 		return ""
@@ -178,11 +142,6 @@ func lookupInstallIDFromSandbox(ctx context.Context, db *gorm.DB, sandboxID stri
 	return row.InstallID
 }
 
-// lookupInstallIDFromStackVersion resolves the install id behind an
-// install_stack_versions row directly via its install_id column. The
-// await-install-stack-version-run step uses this target type, so install-scoped
-// Match (specific installs / label selectors) needs this to fire for the
-// (stacks, version_active) event.
 func lookupInstallIDFromStackVersion(ctx context.Context, db *gorm.DB, stackVersionID string) string {
 	if db == nil || stackVersionID == "" {
 		return ""
@@ -200,11 +159,6 @@ func lookupInstallIDFromStackVersion(ctx context.Context, db *gorm.DB, stackVers
 	return row.InstallID
 }
 
-// lookupActionIDFromInstallActionWorkflowRun resolves the action_workflow_id
-// behind an install_action_workflow_runs row by walking through
-// install_action_workflows.action_workflow_id. Best-effort: returns "" on
-// any DB error or when the row is unlinked (manual triggers may leave
-// install_action_workflow_id null).
 func lookupActionIDFromInstallActionWorkflowRun(ctx context.Context, db *gorm.DB, runID string) string {
 	if db == nil || runID == "" {
 		return ""

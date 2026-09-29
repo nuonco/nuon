@@ -145,7 +145,6 @@ func (s *service) getBlobBackfillStatus(ctx context.Context) (*BackfillBlobsStat
 
 	encoded, err := s.temporalClient.QueryWorkflowInNamespace(ctx, blobBackfillNamespace, blobbackfill.WorkflowID, "", blobbackfill.ProgressQueryType)
 	if err != nil {
-		// progress query is best-effort: a completed run on a closed workflow may not answer queries.
 		return resp, nil
 	}
 

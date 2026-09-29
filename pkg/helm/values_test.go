@@ -17,7 +17,7 @@ resources:
     cpu: "1"
 `
 	set := []plantypes.HelmValue{
-		{Name: "image.tag", Value: "v2"}, // --set normally wins over files
+		{Name: "image.tag", Value: "v2"},
 		{Name: "replicaCount", Value: "3"},
 	}
 	override := `
@@ -31,7 +31,6 @@ image:
 		t.Fatalf("ChartValues error: %v", err)
 	}
 
-	// override beats both the values file and the --set value
 	if got := out["replicaCount"]; got != float64(5) && got != int64(5) && got != 5 {
 		t.Errorf("replicaCount = %v (%T), want 5", got, got)
 	}
@@ -43,7 +42,6 @@ image:
 	if image["tag"] != "v3-override" {
 		t.Errorf("image.tag = %v, want v3-override (override should beat --set)", image["tag"])
 	}
-	// untouched keys from the values file survive the deep merge
 	if image["repository"] != "app" {
 		t.Errorf("image.repository = %v, want app (sparse merge should preserve)", image["repository"])
 	}

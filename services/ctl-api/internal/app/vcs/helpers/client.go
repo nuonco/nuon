@@ -43,7 +43,6 @@ func (H *Helpers) GetVCSConnectionClient(ctx context.Context, vcsConn *app.VCSCo
 		return nil, fmt.Errorf("unable to get installation token: %w", err)
 	}
 
-	// get a client with the github install token
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: *resp.Token},
 	)
@@ -54,13 +53,11 @@ func (H *Helpers) GetVCSConnectionClient(ctx context.Context, vcsConn *app.VCSCo
 }
 
 func (H *Helpers) GetJWTVCSConnectionClient() (*github.Client, error) {
-	// Parse app id
 	appId, err := strconv.ParseInt(H.cfg.GithubAppID, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse github app ID: %w", err)
 	}
 
-	// Create client
 	t, err := ghinstallation.NewAppsTransport(http.DefaultTransport, appId, []byte(H.cfg.GithubAppKey))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create github apps transport: %w", err)

@@ -1,7 +1,3 @@
-// Package azureroles resolves Azure built-in role names to their definition
-// GUIDs. ARM role assignments reference a definition by GUID and have no name
-// lookup, so anything an app config expresses as a name has to be translated
-// before it reaches a template.
 package azureroles
 
 import (
@@ -9,8 +5,6 @@ import (
 	"sort"
 )
 
-// builtInRoleGUIDs maps built-in role names to their definition GUIDs. These are
-// stable, well-known values assigned by Azure.
 var builtInRoleGUIDs = map[string]string{
 	"Owner":                     "8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
 	"Contributor":               "b24988ac-6180-42a0-ab88-20f7382dd24c",
@@ -33,9 +27,6 @@ var builtInRoleGUIDs = map[string]string{
 
 var guidRegexp = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
-// GUID resolves a role name to its definition GUID. A value that is already a
-// GUID is returned unchanged, so a config can name any role -- including one
-// absent from the map above -- by passing its GUID directly.
 func GUID(nameOrGUID string) string {
 	if guid, ok := builtInRoleGUIDs[nameOrGUID]; ok {
 		return guid
@@ -43,7 +34,7 @@ func GUID(nameOrGUID string) string {
 	return nameOrGUID
 }
 
-// Resolvable reports whether GUID will produce something ARM can accept: either
+// why: Resolvable reports whether GUID will produce something ARM can accept: either
 // a mapped name or a literal GUID. Anything else -- a typo, or a real role name
 // missing from the map -- would otherwise be forwarded to ARM verbatim and fail
 // the customer's stack deployment with InvalidRoleDefinitionId.
@@ -54,7 +45,6 @@ func Resolvable(nameOrGUID string) bool {
 	return guidRegexp.MatchString(nameOrGUID)
 }
 
-// KnownNames returns the mapped role names, sorted, for error messages.
 func KnownNames() []string {
 	names := make([]string, 0, len(builtInRoleGUIDs))
 	for name := range builtInRoleGUIDs {

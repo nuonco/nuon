@@ -9,8 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// newOsParser builds a parser rooted at dir on the real filesystem. These tests
-// need real symlinks, which MemMapFs does not support.
 func newOsParser(t *testing.T, dir string) *parser {
 	t.Helper()
 
@@ -23,8 +21,6 @@ func newOsParser(t *testing.T, dir string) *parser {
 func TestListDir_FollowsSymlinkedDir(t *testing.T) {
 	root := t.TempDir()
 
-	// shared/components/images/bauleiter.toml, symlinked into the app dir as
-	// app/components/images -- the layout that broke `nuon apps sync`.
 	shared := filepath.Join(root, "shared", "components", "images")
 	require.NoError(t, os.MkdirAll(shared, 0o755))
 	require.NoError(t, os.WriteFile(filepath.Join(shared, "bauleiter.toml"), []byte("name = \"img_bauleiter\"\n"), 0o644))
@@ -76,7 +72,6 @@ func TestListDir_SkipsDanglingSymlink(t *testing.T) {
 func TestListDir_StopsOnSymlinkLoop(t *testing.T) {
 	root := t.TempDir()
 
-	// components/loop points back at components, so a naive walk never ends.
 	components := filepath.Join(root, "components")
 	require.NoError(t, os.MkdirAll(components, 0o755))
 	require.NoError(t, os.WriteFile(filepath.Join(components, "real.toml"), []byte("name = \"real\"\n"), 0o644))

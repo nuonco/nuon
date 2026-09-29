@@ -1,17 +1,14 @@
 package sync
 
 const (
-	// DefaultStateVersion is the current version of the state format
 	DefaultStateVersion string = "v1"
 )
 
-// ActionState represents an action in the sync state
 type ActionState struct {
 	Name string `json:"name"`
 	ID   string `json:"id"`
 }
 
-// RunbookState represents a runbook in the sync state
 type RunbookState struct {
 	Name string `json:"name"`
 	ID   string `json:"id"`
@@ -22,9 +19,6 @@ type AppBranchConfigState struct {
 	AppBranchConfigID string `json:"app_branch_config_id"`
 }
 
-// State represents the synchronized state of an app config.
-// This is stored as JSON in the app_configs.state column to track
-// what was synced in each config version.
 type State struct {
 	Version string `json:"version"`
 
@@ -41,20 +35,15 @@ type State struct {
 	Result *Result `json:"result,omitempty"`
 }
 
-// Result carries sync outcomes persisted in the state so a client polling the
-// app config can report scheduled builds and orphaned resources.
 type Result struct {
 	ComponentsScheduled []ComponentState `json:"components_scheduled,omitempty"`
 
-	// Queue provisioning is deferred to the caller so no Temporal workflow starts pre-commit.
 	ComponentsCreated []string `json:"components_created,omitempty"`
 
-	// Queue provisioning is deferred to the caller so no Temporal workflow starts pre-commit.
 	AppBranchesCreated []string `json:"app_branches_created,omitempty"`
 
 	AppBranchConfigsUpdated []AppBranchConfigState `json:"app_branch_configs_updated,omitempty"`
 
-	// Orphaned* map name to ID for resources dropped since the previous config.
 	OrphanedComponents map[string]string `json:"orphaned_components,omitempty"`
 	OrphanedActions    map[string]string `json:"orphaned_actions,omitempty"`
 	OrphanedRunbooks   map[string]string `json:"orphaned_runbooks,omitempty"`

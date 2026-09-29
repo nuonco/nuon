@@ -2,7 +2,6 @@ package querycollector
 
 import "time"
 
-// CHQueryRecord is the GORM model for the ClickHouse `queries` table.
 type CHQueryRecord struct {
 	Table        string    `gorm:"column:table"`
 	Operation    string    `gorm:"column:operation"`

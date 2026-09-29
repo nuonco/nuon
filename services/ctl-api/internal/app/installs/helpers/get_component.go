@@ -13,48 +13,31 @@ import (
 func (s *Helpers) GetComponent(ctx context.Context, cmpID string) (*app.Component, error) {
 	cmp := app.Component{}
 	res := s.db.WithContext(ctx).
-		// preload org
 		Preload("Org").
 		Preload("Org.RunnerGroup").
 		Preload("Org.RunnerGroup.Runners").
-
-		// preload configs (latest only via view to bound memory + match other callers)
 		Preload("Dependencies").
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Scopes(scopes.WithOverrideTable(app.LatestComponentConfigConnectionsViewName))
 		}).
-
-		// preload all terraform configs
 		Preload("ComponentConfigs.TerraformModuleComponentConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
-
-		// preload all helm configs
 		Preload("ComponentConfigs.HelmComponentConfig").
 		Preload("ComponentConfigs.HelmComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.HelmComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ComponentConfigs.HelmComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
-
-		// preload all docker configs
 		Preload("ComponentConfigs.DockerBuildComponentConfig").
 		Preload("ComponentConfigs.DockerBuildComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.DockerBuildComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ComponentConfigs.DockerBuildComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
-
-		// preload all external image configs
 		Preload("ComponentConfigs.ExternalImageComponentConfig").
 		Preload("ComponentConfigs.ExternalImageComponentConfig.AWSECRImageConfig").
 		Preload("ComponentConfigs.ExternalImageComponentConfig.GCPGARImageConfig").
 		Preload("ComponentConfigs.ExternalImageComponentConfig.AzureACRImageConfig").
-
-		// preload all job configs
 		Preload("ComponentConfigs.JobComponentConfig").
-
-		// preload all kubernetes configs
 		Preload("ComponentConfigs.KubernetesManifestComponentConfig").
-
-		// preload all pulumi configs
 		Preload("ComponentConfigs.PulumiComponentConfig").
 		Preload("ComponentConfigs.PulumiComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.PulumiComponentConfig.ConnectedGithubVCSConfig").

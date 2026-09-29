@@ -18,8 +18,6 @@ func ValidHooks() []string {
 	}
 }
 
-// Hooks expose an interface that enables post/pre commands to be executed in a terraform workspace
-//
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=hooks_mock.go -source=hooks.go -package=hooks
 type Hooks interface {

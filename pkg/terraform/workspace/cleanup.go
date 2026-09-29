@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// cleanup cleans up the root directory and all contents
 func (w *workspace) Cleanup(ctx context.Context) error {
 	if w.DisableCleanup {
 		return nil

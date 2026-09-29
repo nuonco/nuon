@@ -36,7 +36,6 @@ func (h *Helpers) getDeployOrderFromGraph(ctx context.Context, grph graph.Graph[
 		return aType < bType
 	}
 
-	// Perform topological sort
 	order, err := graph.StableTopologicalSort(grph, diff)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to perform topological sort")

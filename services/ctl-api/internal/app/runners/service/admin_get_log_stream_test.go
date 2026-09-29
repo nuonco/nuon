@@ -72,7 +72,6 @@ func (s *AdminGetLogStreamTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with internal routes (no org context for admin routes)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -91,7 +90,6 @@ func (s *AdminGetLogStreamTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create log stream
 	s.testLogStream = &app.LogStream{
 		ID:        domains.NewLogStreamID(),
 		OrgID:     s.testOrg.ID,

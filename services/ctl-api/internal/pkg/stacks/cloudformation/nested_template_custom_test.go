@@ -179,8 +179,6 @@ func TestGetCustomNestedStacks_MissingName(t *testing.T) {
 
 func TestGetCustomNestedStacks_MissingTemplateSource(t *testing.T) {
 	tpl := &Templates{cfg: &internal.Config{}}
-	// No pre-hosted remote template_url and no uploaded contents (ContentsHash),
-	// so the stack is not ready to be generated.
 	inp := newTestInput("http://localhost", []config.CustomNestedStack{
 		{Name: "my_stack", TemplateURL: "", Index: 0},
 	})
@@ -257,7 +255,6 @@ func TestGetCustomNestedStacks_IndexDeterminesOrder(t *testing.T) {
 	defer server.Close()
 
 	tpl := &Templates{cfg: &internal.Config{}}
-	// provide stacks in reverse index order — index 10 first, index 5 second
 	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "eks_access", TemplateURL: server.URL + "/template2.yaml", Index: 10},
 		{Name: "k8s_namespaces", TemplateURL: server.URL + "/template1.yaml", Index: 5},
@@ -267,9 +264,7 @@ func TestGetCustomNestedStacks_IndexDeterminesOrder(t *testing.T) {
 	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
 	require.NoError(t, err)
 
-	// k8s_namespaces (index 5) should be first → depends on VPC/Runner
 	assert.Equal(t, []string{"VPC", "RunnerAutoScalingGroup"}, result.resources["K8SNamespaces"].AWSCloudFormationDependsOn)
-	// eks_access (index 10) should be second → depends on K8SNamespaces
 	assert.Equal(t, []string{"K8SNamespaces"}, result.resources["EksAccess"].AWSCloudFormationDependsOn)
 }
 
@@ -747,9 +742,6 @@ Resources:
 	assert.NotContains(t, result.params, "NuonInstallID")
 	assert.Contains(t, result.params, "CustomParam")
 
-	// Role resources are conditional, so they must NOT appear in DependsOn
-	// (otherwise CloudFormation fails with "Unresolved resource dependencies"
-	// when the role condition is false).
 	assert.NotContains(t, stack.AWSCloudFormationDependsOn, "RunnerProvision")
 }
 
@@ -848,7 +840,6 @@ Resources:
 	_, hasDeprov := stack.Parameters["EnableRunnerDeprovision"]
 	assert.False(t, hasDeprov, "deprovision param should not be injected when template doesn't declare it")
 
-	// Conditional role resources must NOT be in DependsOn.
 	assert.NotContains(t, stack.AWSCloudFormationDependsOn, "RunnerProvision")
 	assert.NotContains(t, stack.AWSCloudFormationDependsOn, "RunnerDeprovision")
 }
@@ -1124,7 +1115,6 @@ func TestGetCustomNestedStacks_StackOutputsAndLastLogicalID(t *testing.T) {
 	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
 	require.NoError(t, err)
 
-	// stackOutputs should contain entries for stacks that have outputs
 	require.Contains(t, result.stackOutputs, "StackA")
 	assert.Equal(t, "stack_a", result.stackOutputs["StackA"].Name)
 	assert.ElementsMatch(t, []string{"SharedSubnetID", "StackAOnlyOutput"}, result.stackOutputs["StackA"].OutputKeys)
@@ -1133,7 +1123,6 @@ func TestGetCustomNestedStacks_StackOutputsAndLastLogicalID(t *testing.T) {
 	assert.Equal(t, "stack_c", result.stackOutputs["StackC"].Name)
 	assert.ElementsMatch(t, []string{"FinalOutput"}, result.stackOutputs["StackC"].OutputKeys)
 
-	// lastLogicalID should be the last stack processed
 	assert.Equal(t, "StackC", result.lastLogicalID)
 }
 
@@ -1149,7 +1138,6 @@ func TestGetCustomNestedStacks_EmptyStackOutputs(t *testing.T) {
 }
 
 func TestGetCustomNestedStacks_NoOutputsTemplate(t *testing.T) {
-	// mockAdditionalTemplateYAML has no Outputs section
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(mockAdditionalTemplateYAML))
 	}))
@@ -1199,10 +1187,8 @@ func TestGetRunnerPhoneHomeProps_DependsOnCustomStacks(t *testing.T) {
 
 		resource := tpl.getRunnerPhoneHomeProps(inp, customResult)
 
-		// DependsOn should reference the last custom stack
 		assert.Equal(t, []string{"EksAccess"}, resource.AWSCloudFormationDependsOn)
 
-		// custom_nested_stacks payload should exist
 		payload, ok := resource.Properties["custom_nested_stacks"]
 		require.True(t, ok, "custom_nested_stacks property should exist")
 
@@ -1210,7 +1196,6 @@ func TestGetRunnerPhoneHomeProps_DependsOnCustomStacks(t *testing.T) {
 		assert.Contains(t, payloadMap, "k8s_namespaces")
 		assert.Contains(t, payloadMap, "eks_access")
 
-		// Verify Fn::GetAtt references
 		nsOutputs := payloadMap["k8s_namespaces"].(map[string]any)["outputs"].(map[string]any)
 		assert.Equal(t, cfn.GetAtt("K8SNamespaces", "Outputs.NamespaceArn"), nsOutputs["NamespaceArn"])
 		assert.Equal(t, cfn.GetAtt("K8SNamespaces", "Outputs.ServiceAccountArn"), nsOutputs["ServiceAccountArn"])
@@ -1226,10 +1211,8 @@ func TestGetRunnerPhoneHomeProps_DependsOnCustomStacks(t *testing.T) {
 
 		resource := tpl.getRunnerPhoneHomeProps(inp, customResult)
 
-		// No DependsOn when no custom stacks
 		assert.Empty(t, resource.AWSCloudFormationDependsOn)
 
-		// custom_nested_stacks should be present but empty
 		payload, ok := resource.Properties["custom_nested_stacks"]
 		require.True(t, ok, "custom_nested_stacks property should always exist")
 		assert.Empty(t, payload, "custom_nested_stacks should be an empty map when no custom stacks")
@@ -1240,7 +1223,6 @@ func TestGetRunnerPhoneHomeProps_DependsOnCustomStacks(t *testing.T) {
 
 		assert.Empty(t, resource.AWSCloudFormationDependsOn)
 
-		// custom_nested_stacks should be present but empty
 		payload, ok := resource.Properties["custom_nested_stacks"]
 		require.True(t, ok, "custom_nested_stacks property should always exist")
 		assert.Empty(t, payload, "custom_nested_stacks should be an empty map when nil custom stacks")
@@ -1265,9 +1247,6 @@ func TestSanitizeLogicalID(t *testing.T) {
 	}
 }
 
-// installStateData builds the render context the way the install state does, mirroring
-// helpers.MapLegacyFields: .nuon.install.id and .nuon.install.inputs.* are the legacy
-// projections of the flattened state.
 func installStateData(t *testing.T, installID string, inputs map[string]string) map[string]any {
 	t.Helper()
 
@@ -1282,9 +1261,6 @@ func installStateData(t *testing.T, installID string, inputs map[string]string) 
 	return data
 }
 
-// The full chain a vendor sees: a templated parameter is rendered from install state
-// when the stack version is generated, then lands in the nested stack properties as a
-// literal. Both branches of the conditional are exercised.
 func TestGetCustomNestedStacks_ParameterRenderedFromInstallState(t *testing.T) {
 	const rootDomainParam = `{{ if .nuon.install.inputs.root_domain }}{{ .nuon.install.inputs.root_domain }}{{ else }}sandbox-{{ .nuon.install.id | substr 0 15 }}.example.com{{ end }}`
 
@@ -1332,8 +1308,6 @@ func TestGetCustomNestedStacks_ParameterRenderedFromInstallState(t *testing.T) {
 	}
 }
 
-// A value with no template actions is used verbatim, including characters that
-// html/template would have escaped.
 func TestGetCustomNestedStacks_LiteralParameterPassesThrough(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(mockAdditionalTemplateNamespacesOnlyYAML))

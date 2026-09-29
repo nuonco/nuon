@@ -63,7 +63,6 @@ func (s *service) AdminConfigGraph(ctx *gin.Context) {
 		return
 	}
 
-	// Create a buffer to store the DOT graph
 	var buf bytes.Buffer
 	if err := draw.DOT(graph, &buf, draw.GraphAttribute("name", "name")); err != nil {
 		ctx.Error(err)

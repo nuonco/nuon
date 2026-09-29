@@ -5,17 +5,6 @@ import (
 	"unicode"
 )
 
-// headerTitle returns a short, sentence-case human phrase describing what
-// the workflow / step is doing, used as the bolded header of the parent
-// post and inline in flat / child renders.
-//
-// Step-level events prefer the step's own display name (sentence-cased)
-// when it carries information beyond the component name — this lets
-// readers see "Provision runner service account" rather than the generic
-// target-type fallback "Updating runner". Workflow-level events are
-// routed by Workflow.Type. Approval events render as the underlying
-// step's title — the approval is rendered through the transition /
-// approval block, not the title.
 func headerTitle(e Event) string {
 	if (e.Kind == KindWorkflowStep || e.Kind == KindWorkflowStepApproval) && e.Step != nil {
 		name := strings.TrimSpace(e.Step.Name)
@@ -50,10 +39,6 @@ func headerTitle(e Event) string {
 	return "Event"
 }
 
-// sentenceCase upper-cases the first rune of s and leaves the rest
-// unchanged. Step names from the DB are typically lower-case ("provision
-// runner service account"), so a one-rune flip is enough to make them
-// read as a sentence header.
 func sentenceCase(s string) string {
 	if s == "" {
 		return s
@@ -63,8 +48,6 @@ func sentenceCase(s string) string {
 	return string(r)
 }
 
-// titleFromWorkflowType maps the public workflow.type vocabulary to a
-// short sentence-case phrase.
 func titleFromWorkflowType(wfType string) string {
 	switch wfType {
 	case WorkflowTypeProvision:
@@ -111,8 +94,6 @@ func titleFromWorkflowType(wfType string) string {
 	return ""
 }
 
-// stepTitleFromTargetType maps the step.target_type vocabulary to a
-// sentence-case phrase.
 func stepTitleFromTargetType(targetType string) string {
 	switch targetType {
 	case TargetTypeInstallDeploys:
@@ -128,8 +109,6 @@ func stepTitleFromTargetType(targetType string) string {
 	return ""
 }
 
-// transitionPhrase returns a sentence-case verb phrase for a given
-// transition.
 func transitionPhrase(transition string) string {
 	switch strings.TrimSpace(transition) {
 	case TransitionStarted:

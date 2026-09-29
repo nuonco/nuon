@@ -38,7 +38,7 @@ type ClusterInfo struct {
 	// KubeConfig will override the kube config, and be parsed instead of generating a new one
 	KubeConfig string `json:"kube_config" faker:"-" hcl:"kube_config"`
 
-	// If either an AWS auth or Azure auth is passed in, we will automatically use it to resolve credentials and set
+	// why: If either an AWS auth or Azure auth is passed in, we will automatically use it to resolve credentials and set
 	// them in the environment.
 	//
 	// NOTE: keep this comment detached from the field below (blank line above the
@@ -71,7 +71,6 @@ func (c *ClusterInfo) WithGCPAuth(auth *gcpcredentials.Config) {
 	c.GCPAuth = auth
 }
 
-// client-go defaults to 5 QPS / 10 burst, which throttles helm and discovery fan-out.
 const (
 	restConfigQPS   = 50
 	restConfigBurst = 100
@@ -161,20 +160,6 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 		// 	return nil, fmt.Errorf("unable to get azure credential: %w", err)
 		// }
 
-		// // use the credentials to get an Entra ID token
-		// entraToken, err := cred.GetToken(ctx, policy.TokenRequestOptions{
-		// 	Scopes: []string{"https://management.azure.com/.default"}},
-		// )
-		// if err != nil {
-		// 	return nil, fmt.Errorf("unable to get entra ID token: %w", err)
-		// }
-
-		// cfg.BearerToken = entraToken.Token
-		// cfg.ExecProvider = nil
-
-		// Use kubelogin to authenticate.
-		// On Azure VMs the runner has ARM_USE_MSI=true and uses managed identity.
-		// Locally (dev mode) we use az login credentials via azurecli mode.
 		loginMode := "azurecli"
 		if os.Getenv("ARM_USE_MSI") == "true" {
 			loginMode = "msi"
@@ -188,7 +173,6 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 			"--tenant-id",
 			cInfo.AzureAuth.ServicePrincipal.SubscriptionTenantID,
 		}
-		// Authenticate as the operation identity, not the runner's system identity.
 		if loginMode == "msi" && cInfo.AzureAuth.ManagedIdentityClientID != "" {
 			args = append(args, "--client-id", cInfo.AzureAuth.ManagedIdentityClientID)
 		}
@@ -203,7 +187,7 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 	if cInfo.GCPAuth != nil {
 		var ts oauth2.TokenSource
 		if cInfo.GCPAuth.ImpersonateServiceAccount != "" {
-			// K8s auth must run as the operation role SA, not the runner SA — the runner SA
+			// why: K8s auth must run as the operation role SA, not the runner SA — the runner SA
 			// holds no container permissions.
 			// userinfo.email is required for GKE to map the token to the SA's
 			// IAM identity; without it the apiserver sees an unmappable numeric
@@ -229,7 +213,7 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 			return &oauth2.Transport{Source: ts, Base: rt}
 		}
 
-		// Use gke-gcloud-auth-plugin if available (install runners in customer clusters),
+		// why: Use gke-gcloud-auth-plugin if available (install runners in customer clusters),
 		// otherwise rely on oauth2 WrapTransport via Workload Identity (org runners in our cluster).
 		// The exec provider is what gets serialized into kubeconfigs for action workflows, so it
 		// carries the impersonation target via gcloud's env var.

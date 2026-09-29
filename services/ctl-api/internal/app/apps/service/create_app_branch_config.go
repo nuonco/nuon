@@ -67,7 +67,6 @@ func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 		}
 	}
 
-	// Validate install groups have unique orders
 	orders := make(map[int]bool)
 	names := make(map[string]bool)
 	selectors := make(map[string]string)
@@ -182,7 +181,6 @@ func installGroupsFromRequest(reqGroups []InstallGroupRequest) []app.AppBranchIn
 // @Success				201	{object}	app.AppBranchConfig
 // @Router					/v1/apps/{app_id}/branches/{app_branch_id}/configs [post]
 func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
-	// Feature flag checks
 	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureAppBranches)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to check feature: %w", err))
@@ -212,7 +210,6 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Verify branch exists and belongs to this org/app
 	var branch app.AppBranch
 	res := s.db.WithContext(ctx).
 		Where(app.AppBranch{
@@ -225,7 +222,6 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Validate that all app branches use the same repository BEFORE creating VCS configs
 	branches, err := s.helpers.FetchAppBranchesWithConfigs(ctx, appID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to fetch app branches: %w", err))
@@ -237,14 +233,12 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Load app with org and VCS connections for lookup
 	parentApp, err := s.getAppWithOrg(ctx, appID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app: %w", err))
 		return
 	}
 
-	// Build VCS configs (after validation passes)
 	connectedGithubVCSConfig, err := s.vcsHelpers.BuildConnectedGithubVCSConfig(ctx, req.ConnectedGithubVCSConfig, parentApp.Org)
 	if err != nil {
 		ctx.Error(stderr.ErrUser{

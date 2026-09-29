@@ -20,7 +20,6 @@ type CreateInstallConfigParams struct {
 	CustomNestedStacks      []config.CustomNestedStack `json:"custom_nested_stacks,omitempty"`
 }
 
-// ValidateStackOverrides validates per-install stack template override fields.
 func ValidateStackOverrides(vpcURL, runnerURL *string, stacks []config.CustomNestedStack) error {
 	if vpcURL != nil && *vpcURL != "" {
 		if err := config.ValidateTemplateURL(*vpcURL, "vpc_nested_template_url"); err != nil {

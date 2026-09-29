@@ -86,7 +86,6 @@ test('tool facets survive a server-side tool filter', () => {
 })
 
 test('tool facets survive cleared logs on filter reconnect', () => {
-  // Pick tool=helm: reconnect clears logs, then only helm rows arrive.
   const { rerender } = renderHook(
     [toolLog('1', 'helm'), toolLog('2', 'terraform')],
     '?tool=helm',
@@ -94,12 +93,10 @@ test('tool facets survive cleared logs on filter reconnect', () => {
   )
   expect(latest?.availableTools.has('terraform')).toBe(true)
 
-  // Provider's connect effect calls setLogs([]) — facets must not reset.
   rerender([])
   expect(latest?.availableTools.has('helm')).toBe(true)
   expect(latest?.availableTools.has('terraform')).toBe(true)
 
-  // Refilled with only the selected tool's rows.
   rerender([toolLog('3', 'helm')])
   expect(latest?.availableTools.has('helm')).toBe(true)
   expect(latest?.availableTools.has('terraform')).toBe(true)
@@ -111,12 +108,9 @@ test('tool facets reset when the stream changes', () => {
   const { rerender } = renderHook(logs, '?tool=oci', 'ls1')
   expect(latest?.availableTools.has('helm')).toBe(true)
 
-  // The first render after a stream change may still carry the old
-  // stream's logs; they must not leak into the new stream's facets.
   rerender([toolLog('2', 'oci')], 'ls2')
   expect(latest?.availableTools.size).toBe(0)
 
-  // Accumulation resumes from the new stream's own rows.
   rerender([toolLog('3', 'oci')], 'ls2')
   expect(latest?.availableTools.has('oci')).toBe(true)
   expect(latest?.availableTools.has('helm')).toBe(false)
@@ -127,12 +121,8 @@ test('stream change records the new id even when logs are empty', () => {
   const { rerender } = renderHook([toolLog('1', 'helm')], '', 'ls1')
   expect(latest?.availableTools.has('helm')).toBe(true)
 
-  // Stale render: id change and old-stream logs land together.
   rerender([toolLog('2', 'helm')], 'ls2')
-  // Provider clears logs before the new stream's first batch.
   rerender([], 'ls2')
-  // Closed stream delivered in a single batch: its tools must survive —
-  // the reset must not fire again on this real data.
   rerender([toolLog('3', 'oci')], 'ls2')
   expect(latest?.availableTools.size).toBe(1)
   expect(latest?.availableTools.has('oci')).toBe(true)

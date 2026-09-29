@@ -8,16 +8,6 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 )
 
-// SlackThreadAnchor records the (team, channel, workflow) → parent message ts
-// mapping that the Slack lifecycle hook uses to thread per-event replies
-// under a single "workflow" parent post.
-//
-// The unique index on (team_id, channel_id, workflow_id) is the canonical
-// concurrency guard: when two worker replicas race to post the parent,
-// whichever loses the INSERT (RowsAffected==0) re-SELECTs and adopts the
-// winner's ts. We deliberately do NOT use soft delete — anchors are
-// short-lived and the workspace-uninstall recovery path hard-deletes them
-// alongside revoking the org-link / dropping subscriptions.
 type SlackThreadAnchor struct {
 	ID        string    `gorm:"primarykey" json:"id,omitzero"`
 	CreatedAt time.Time `json:"created_at,omitzero"`

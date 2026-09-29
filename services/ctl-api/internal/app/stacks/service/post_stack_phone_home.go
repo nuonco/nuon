@@ -19,12 +19,8 @@ import (
 // a `request_type` naming the lifecycle event. Same shape as the legacy route's body.
 type StackPhoneHomeRequest = installshelpers.StackPhoneHomeRequest
 
-// stackPhoneHomeInputsKey carries the input values the stack resolved. A report of
-// inputs, not a stack output, so it is stripped from the payload.
 const stackPhoneHomeInputsKey = "inputs"
 
-// extractStackPhoneHomeInputs pulls the optional `inputs` object off the body and
-// removes it. Absent is fine; a malformed one is a user error.
 func extractStackPhoneHomeInputs(req StackPhoneHomeRequest) (map[string]string, error) {
 	raw, ok := req[stackPhoneHomeInputsKey]
 	if !ok {
@@ -100,7 +96,7 @@ func (s *service) PostStackPhoneHome(ctx *gin.Context) {
 		return
 	}
 
-	// Same org-scoped lookup as GetStackConfig: not-found rather than forbidden, so
+	// why: Same org-scoped lookup as GetStackConfig: not-found rather than forbidden, so
 	// this cannot probe install IDs in other orgs.
 	var install app.Install
 	if res := s.db.WithContext(ctx).
@@ -114,15 +110,13 @@ func (s *service) PostStackPhoneHome(ctx *gin.Context) {
 		return
 	}
 
-	// Accepted and dropped, like the legacy route, so a deprovisioned stack stays
+	// why: Accepted and dropped, like the legacy route, so a deprovisioned stack stays
 	// deletable.
 	if requestType == installshelpers.PhoneHomeRequestTypeDelete {
 		ctx.JSON(http.StatusCreated, app.EmptyResponse{})
 		return
 	}
 
-	// Latest version, the one being applied. A report has nowhere to land without
-	// one, so unlike the config read this is a not-found.
 	var version app.InstallStackVersion
 	if res := s.db.WithContext(ctx).
 		Where(app.InstallStackVersion{InstallID: install.ID}).
@@ -136,7 +130,7 @@ func (s *service) PostStackPhoneHome(ctx *gin.Context) {
 		return
 	}
 
-	// Before the run: a rejected report must not leave a run claiming values never
+	// why: Before the run: a rejected report must not leave a run claiming values never
 	// persisted. The create hooks need org and account, which the request context drops.
 	acct, err := cctx.AccountFromGinContext(ctx)
 	if err != nil {
@@ -170,7 +164,6 @@ func (s *service) PostStackPhoneHome(ctx *gin.Context) {
 		return
 	}
 
-	// The workflow was created above; this makes it run.
 	if inputWorkflow != nil {
 		if err := s.installsHelpers.EnqueueInstallWorkflow(reqCtx, install.ID, inputWorkflow.ID); err != nil {
 			ctx.Error(fmt.Errorf("enqueue input update workflow signal: %w", err))

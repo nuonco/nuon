@@ -7,17 +7,11 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-// SkipStepRequest is the input for the step-level "skip-step" update handler.
 type SkipStepRequest struct{}
 
-// SkipStepResponse is the response from the step-level "skip-step" update handler.
 type SkipStepResponse struct{}
 
-// skipStepHandler marks the step as user-skipped and writes a continue directive.
-// This unblocks handleStepError's Await without going through Cancel, which
-// would overwrite the skip status and directive.
 func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*SkipStepResponse, error) {
-	// Mark step as user-skipped.
 	_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: s.StepID,
 		Status: app.CompositeStatus{
@@ -29,10 +23,8 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 		},
 	})
 
-	// Write continue directive so the group proceeds.
 	_ = setResultDirective(ctx, s.StepID, DirectiveContinue)
 
-	// Unblock handleStepError's Await.
 	s.skipped = true
 
 	return &SkipStepResponse{}, nil

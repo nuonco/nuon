@@ -10,8 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-// A required check is one the runner cannot produce, so the gate has to hold
-// until something external pushes it — that is the whole point of declaring it.
 func TestRequiredCheckBlocksUntilPushed(t *testing.T) {
 	gateStart := time.Now().Add(-2 * time.Minute)
 	declared := []string{"migrations-applied", "public-endpoint"}
@@ -44,8 +42,6 @@ func TestRequiredCheckBlocksUntilPushed(t *testing.T) {
 	})
 }
 
-// The snapshot must show what the gate is waiting on. Showing only resource
-// verdicts made a blocked gate read as fully healthy.
 func TestWithAwaitedChecksShowsUnknown(t *testing.T) {
 	gateStart := time.Now().Add(-2 * time.Minute)
 	declared := []string{"migrations-applied"}
@@ -61,8 +57,6 @@ func TestWithAwaitedChecksShowsUnknown(t *testing.T) {
 		assert.Equal(t, "unknown", out[1].Health)
 	})
 
-	// The window judges this deploy, so a resource verdict from before the apply
-	// is not evidence about it — the same rule as for pushed checks.
 	t.Run("a resource row from before the gate is unknown too", func(t *testing.T) {
 		rows := []activities.ComponentHealthCheckRow{
 			{Kind: "Certificate", Name: "cert", Health: "healthy", ObservedAtTS: gateStart.Add(-time.Hour).Unix()},
@@ -96,23 +90,18 @@ func TestWithAwaitedChecksShowsUnknown(t *testing.T) {
 	})
 }
 
-// The countdown must not defeat the dedupe: two polls that differ only by the
-// clock are the same state and should post one timeline entry, not one per tick.
 func TestStripRemainingCollapsesCountdown(t *testing.T) {
 	a := "healthy so far — 39s of the 1m0s window left — healthy (Certificate cert)"
 	b := "healthy so far — 13s of the 1m0s window left — healthy (Certificate cert)"
 	assert.Equal(t, stripRemaining(a), stripRemaining(b))
 
-	// A real state change still reads as different.
 	c := "waiting for the first health report since the apply — 50s of the window left"
 	assert.NotEqual(t, stripRemaining(a), stripRemaining(c))
 
-	// And a changed verdict is a different state even at the same remaining time.
 	d := "healthy so far — 39s of the 1m0s window left — degraded (Certificate cert)"
 	assert.NotEqual(t, stripRemaining(a), stripRemaining(d))
 }
 
-// The timeline should read as a record of what moved, not one line per poll.
 func TestCheckTransitions(t *testing.T) {
 	prev := map[string]string{}
 	rows := func(h ...string) []activities.ComponentHealthCheckRow {
@@ -121,16 +110,12 @@ func TestCheckTransitions(t *testing.T) {
 			{Name: "migrations-applied", Health: h[1]},
 		}
 	}
-
-	// Everything starts unknown, so the first poll says nothing.
 	first := rows("unknown", "unknown")
 	assert.Empty(t, checkTransitions(prev, first))
 	rememberCheckHealth(prev, first)
 
-	// A quiet poll stays quiet.
 	assert.Empty(t, checkTransitions(prev, rows("unknown", "unknown")))
 
-	// Only what moved is reported, and it names both ends.
 	moved := rows("healthy", "unknown")
 	assert.Equal(t, "cert unknown → healthy", checkTransitions(prev, moved))
 	rememberCheckHealth(prev, moved)
@@ -140,7 +125,6 @@ func TestCheckTransitions(t *testing.T) {
 		checkTransitions(prev, both))
 }
 
-// A pass line naming one resource reads as though that was all it looked at.
 func TestDescribeChecksSummarisesTheSet(t *testing.T) {
 	checks := []activities.ComponentHealthCheckRow{
 		{Kind: "Certificate", Name: "cert", Health: "healthy"},
@@ -152,9 +136,6 @@ func TestDescribeChecksSummarisesTheSet(t *testing.T) {
 	assert.Equal(t, "no checks reported", describeChecks(nil))
 }
 
-// The bug this pins: missingProbes only tests presence, so a required check that
-// reported failing satisfied the gate and the deploy passed with an unhealthy
-// check on screen. Reporting is not passing.
 func TestFailedChecksFailTheWindow(t *testing.T) {
 	gateStart := time.Now().Add(-2 * time.Minute)
 	declared := []string{"migrations-applied", "smoke-tests"}
@@ -165,8 +146,6 @@ func TestFailedChecksFailTheWindow(t *testing.T) {
 		{Kind: "CustomCheck", Name: "smoke-tests", Health: "unhealthy", ObservedAtTS: inWindow},
 	}
 
-	// Both reported, so nothing is "missing" — which is exactly why presence
-	// alone was not enough.
 	assert.Empty(t, missingProbes(declared, rows, gateStart))
 	assert.Equal(t,
 		[]string{"migrations-applied is degraded", "smoke-tests is unhealthy"},

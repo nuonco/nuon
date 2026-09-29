@@ -23,9 +23,6 @@ func KubernetesContextInputsFromConfig(contexts *config.KubernetesContextsConfig
 	return out
 }
 
-// KubernetesContextsConfig resolves each context's source component name against
-// componentIDByName, which the caller looks up. The name is persisted alongside
-// the ID so the binding stays intelligible if the component is renamed.
 func KubernetesContextsConfig(contexts []KubernetesContextInput, componentIDByName map[string]string, appID, appConfigID string) (*app.AppKubernetesContextsConfig, error) {
 	children := make([]app.AppKubernetesContextConfig, 0, len(contexts))
 	for _, c := range contexts {

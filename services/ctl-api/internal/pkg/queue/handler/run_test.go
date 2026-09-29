@@ -34,10 +34,6 @@ func init() {
 	catalog.Register(drainTestSignalType, func() signal.Signal { return &drainTestSignal{} })
 }
 
-// A signal cancelled via the DB fallback before its handler workflow existed
-// starts exactly one run, which enters the terminal-drain path. That run must
-// notify the parents (no earlier run could have) and answer the dispatcher's
-// validate with cancelled instead of stamping in-progress over it.
 func TestRunCancelledBeforeStartNotifiesParentsAndRejectsValidate(t *testing.T) {
 	var suite testsuite.WorkflowTestSuite
 	env := suite.NewTestWorkflowEnvironment()

@@ -1,5 +1,3 @@
-// Package aws renders the install-stacks/aws Terraform module's tfvars file
-// for an AWS install.
 package aws
 
 import (
@@ -17,7 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-// AWSRoleTemplateInput holds the per-role data rendered into the template.
 type AWSRoleTemplateInput struct {
 	Name                 string
 	Permissions          string
@@ -25,7 +22,6 @@ type AWSRoleTemplateInput struct {
 	ManagedPolicyArns    string
 }
 
-// AWSSecretTemplateInput holds a non-auto-gen secret definition for the template.
 type AWSSecretTemplateInput struct {
 	Name        string
 	Description string
@@ -33,7 +29,6 @@ type AWSSecretTemplateInput struct {
 	Default     string
 }
 
-// AWSTemplateInput extends TemplateInput with pre-marshaled AWS IAM data.
 type AWSTemplateInput struct {
 	*stacks.TemplateInput
 
@@ -59,16 +54,6 @@ type AWSTemplateInput struct {
 	Secrets             []AWSSecretTemplateInput
 }
 
-// Render emits a JSON-wrapped tfvars envelope for the install-stacks/aws module.
-//
-// `supportIAMRoleARN` is the Nuon control-plane IAM role ARN that the
-// operation roles (provision/maintenance/deprovision/break-glass/custom) must
-// trust. Sourced from the ctl-api `runner_default_support_iam_role_arn`
-// config — same value the CFN role-builder uses
-//
-// Custom nested stacks (CloudFormation customer extensions) are intentionally
-// not translated. Vendors who extend their CFN stack with custom resources are
-// expected to fork install-stacks and make equivalent Terraform changes there.
 func Render(inputs *stacks.TemplateInput, supportIAMRoleARN string) ([]byte, string, error) {
 	inputsT, err := template.New("aws-stack-inputs").Parse(inputsTmpl)
 	if err != nil {
@@ -123,8 +108,6 @@ func Render(inputs *stacks.TemplateInput, supportIAMRoleARN string) ([]byte, str
 		}
 	}
 
-	// Trust principals for the operation roles: the Nuon control-plane support
-	// IAM role (when configured), serialized as a JSON list literal for HCL.
 	trustPrincipals := []string{}
 	if supportIAMRoleARN != "" {
 		trustPrincipals = append(trustPrincipals, supportIAMRoleARN)
@@ -180,9 +163,6 @@ func Render(inputs *stacks.TemplateInput, supportIAMRoleARN string) ([]byte, str
 	return res, hex.EncodeToString(hash[:]), nil
 }
 
-// extractAWSStandardPermissions reads AWS IAM managed-policy attachments for
-// the standard runner roles. Inline policy contents are handled separately by
-// extractAWSStandardInlinePolicies.
 func extractAWSStandardPermissions(appCfg *app.AppConfig) (provision, maintenance, deprovision, provMPAs, maintMPAs, deprovMPAs string) {
 	provision = "[]"
 	maintenance = "[]"
@@ -221,11 +201,6 @@ func extractAWSStandardPermissions(appCfg *app.AppConfig) (provision, maintenanc
 	return
 }
 
-// extractAWSStandardInlinePolicies merges every inline policy document
-// (`policy.Contents`) attached to each standard runner role into a single IAM
-// policy document per role and returns it as an HCL string literal ready for
-// the template (or `""` if no inline policy applies). Mirrors the CFN renderer
-// which embeds `Contents` verbatim as `PolicyDocument`.
 func extractAWSStandardInlinePolicies(appCfg *app.AppConfig) (provision, maintenance, deprovision string, err error) {
 	if appCfg == nil {
 		return "", "", "", nil
@@ -255,9 +230,6 @@ func extractAWSStandardInlinePolicies(appCfg *app.AppConfig) (provision, mainten
 	return provision, maintenance, deprovision, nil
 }
 
-// extractAWSRolesFromList converts a slice of role configs into template-ready
-// inputs, filtering to AWS roles only. Roles with neither managed-policy
-// attachments nor inline policy contents are skipped.
 func extractAWSRolesFromList(roles []app.AppAWSIAMRoleConfig) ([]AWSRoleTemplateInput, error) {
 	var result []AWSRoleTemplateInput
 	for _, role := range roles {
@@ -301,17 +273,6 @@ func managedPolicyArnsForRole(role app.AppAWSIAMRoleConfig) []string {
 	return out
 }
 
-// mergedInlinePolicyDocument merges the Statement arrays from every inline
-// policy attached to a role into a single IAM policy document. Returns the
-// document JSON-marshaled and HCL-quoted (i.e. ready to interpolate into
-// tfvars), or `""` if the role has no inline policy contents.
-//
-// Each policy.Contents is expected to be a full IAM policy JSON document of
-// the form `{"Version": "...", "Statement": [...]}`. Non-Contents policies
-// (i.e. ManagedPolicyName-only entries) are skipped.
-// Only this path merges a role's policy files into one document (CloudFormation
-// emits one AWS::IAM::Policy per file), so two files may share a Sid and IAM then
-// rejects the merged result.
 func dedupeStatementIDs(sources []string, statements []json.RawMessage) ([]json.RawMessage, error) {
 	seen := map[string]bool{}
 	out := make([]json.RawMessage, len(statements))
@@ -353,7 +314,6 @@ func dedupeStatementIDs(sources []string, statements []json.RawMessage) ([]json.
 	return out, nil
 }
 
-// IAM only allows alphanumerics in a Sid.
 func sidSuffix(policyName string) string {
 	var b strings.Builder
 	upperNext := true
@@ -382,7 +342,6 @@ func mergedInlinePolicyDocument(role app.AppAWSIAMRoleConfig) (string, error) {
 			continue
 		}
 		if policy.ManagedPolicyName != "" {
-			// Mutually exclusive with Contents per existing config validation.
 			continue
 		}
 		var doc struct {

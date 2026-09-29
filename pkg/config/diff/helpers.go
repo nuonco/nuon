@@ -6,8 +6,6 @@ import (
 	"strings"
 )
 
-// MapDiff diffs two map[string]string values, returning a parent node with
-// per-key children. Returns nil if both maps are empty/nil.
 func MapDiff(key string, old, new map[string]string) *Diff {
 	if len(old) == 0 && len(new) == 0 {
 		return nil
@@ -41,10 +39,6 @@ func MapDiff(key string, old, new map[string]string) *Diff {
 	)
 }
 
-// WithContentDiff creates a DiffOption for file-like content. It derives the op
-// from presence (add when old is empty, remove when new is empty, change otherwise),
-// stores a short label in Diff for text renderers, and carries the raw before/after
-// contents so consumers can render a line-by-line diff.
 func WithContentDiff(old, new string) DiffOption {
 	return func(dt *Diff) {
 		op := OpChange
@@ -69,13 +63,10 @@ func WithContentDiff(old, new string) DiffOption {
 	}
 }
 
-// WithBoolDiff creates a DiffOption that compares two bool values.
 func WithBoolDiff(old, new bool) DiffOption {
 	return WithStringDiff(fmt.Sprintf("%t", old), fmt.Sprintf("%t", new))
 }
 
-// WithOptionalStringDiff creates a DiffOption that compares two *string values,
-// treating nil as empty string.
 func WithOptionalStringDiff(old, new *string) DiffOption {
 	oldStr := ""
 	if old != nil {
@@ -88,8 +79,6 @@ func WithOptionalStringDiff(old, new *string) DiffOption {
 	return WithStringDiff(oldStr, newStr)
 }
 
-// WithOptionalBoolDiff creates a DiffOption that compares two *bool values,
-// treating nil as false.
 func WithOptionalBoolDiff(old, new *bool) DiffOption {
 	oldVal := false
 	if old != nil {
@@ -102,8 +91,6 @@ func WithOptionalBoolDiff(old, new *bool) DiffOption {
 	return WithBoolDiff(oldVal, newVal)
 }
 
-// WithStringSliceDiff creates a DiffOption that compares two string slices
-// by sorting and joining them.
 func WithStringSliceDiff(old, new []string) DiffOption {
 	oldSorted := make([]string, len(old))
 	copy(oldSorted, old)

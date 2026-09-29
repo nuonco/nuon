@@ -12,7 +12,6 @@ import (
 	execmappers "github.com/nuonco/nuon/pkg/pipeline/mappers/exec"
 )
 
-// plan will initialize the workspace and then execute functions in it
 func (r *run) Plan(ctx context.Context) error {
 	pipe, err := r.getPlanPipeline()
 	if err != nil {
@@ -119,18 +118,6 @@ func (r *run) getPlanPipeline() (*pipeline.Pipeline, error) {
 		ExecFn:     execmappers.MapTerraformPlan(r.Workspace.ShowPlan),
 		CallbackFn: planCb,
 	})
-
-	// NOTE: ensure this doesn't break expectations downstream
-	// TODO: remove this - these have no real outputs
-	// outputCb, err := r.localFileCallback("output.json")
-	// if err != nil {
-	// 	return nil, fmt.Errorf("unable to create output callback: %w", err)
-	// }
-	// pipe.AddStep(&pipeline.Step{
-	// 	Name:       "get output",
-	// 	ExecFn:     execmappers.MapTerraformOutput(r.Workspace.Output),
-	// 	CallbackFn: outputCb,
-	// })
 
 	return pipe, nil
 }

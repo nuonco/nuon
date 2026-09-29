@@ -21,7 +21,6 @@ func WriteConfig(ctx context.Context, cfg *kube.ClusterInfo, fp string) error {
 		return errors.Wrap(err, "unable to get kube config")
 	}
 
-	// Convert rest.Config to clientcmdapi.Config
 	apiConfig := &clientcmdapi.Config{
 		Kind:           "Config",
 		APIVersion:     "v1",

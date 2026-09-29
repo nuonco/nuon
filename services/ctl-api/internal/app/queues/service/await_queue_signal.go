@@ -55,7 +55,6 @@ func (s *service) AwaitQueueSignal(ctx *gin.Context) {
 		}
 	}
 
-	// Verify queue exists and user has access
 	var queue app.Queue
 	if res := s.db.WithContext(ctx).
 		Where("id = ?", queueID).
@@ -65,7 +64,6 @@ func (s *service) AwaitQueueSignal(ctx *gin.Context) {
 		return
 	}
 
-	// Verify signal exists and belongs to queue
 	var signal app.QueueSignal
 	if res := s.db.WithContext(ctx).
 		Where("id = ?", signalID).
@@ -89,7 +87,6 @@ func (s *service) AwaitQueueSignal(ctx *gin.Context) {
 		return
 	}
 
-	// Fetch the final signal state
 	if res := s.db.WithContext(ctx).
 		Where("id = ?", signalID).
 		Where("queue_id = ?", queueID).

@@ -10,12 +10,6 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 )
 
-// FlowStatusNotifier is an optional hook invoked after a flow status update
-// is persisted. Implemented outside this package (see
-// pkg/flow/signals/workflowstepawaitingretry) because the queue client can't
-// be imported here without an import cycle (queue/handler imports this
-// package). Implementations must be best-effort: they may not fail the
-// status update, so the method returns nothing.
 type FlowStatusNotifier interface {
 	FlowStatusUpdated(ctx context.Context, req UpdateStatusRequest)
 }

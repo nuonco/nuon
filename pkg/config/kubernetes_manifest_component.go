@@ -7,17 +7,13 @@ import (
 )
 
 type KubernetesManifestComponentConfig struct {
-	// Inline manifest (mutually exclusive with Kustomize)
 	Manifest string `mapstructure:"manifest,omitempty" toml:"manifest,omitempty"  features:"get,template"`
 
-	// Kustomize configuration (mutually exclusive with Manifest)
 	Kustomize *KustomizeConfig `mapstructure:"kustomize,omitempty" toml:"kustomize"`
 
-	// VCS configuration for kustomize sources (similar to Helm chart)
 	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty"`
 	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"`
 
-	// Namespace supports template variables (e.g., {{.nuon.install.id}})
 	Namespace     string  `mapstructure:"namespace,omitempty" toml:"namespace,omitempty" jsonschema:"required"`
 	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
 
@@ -31,18 +27,13 @@ type KubernetesManifestComponentConfig struct {
 	AutoApproveOnPoliciesPassing *bool `mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty" nuonhash:"omitempty"`
 }
 
-// KustomizeConfig configures kustomize build options
 type KustomizeConfig struct {
-	// Path to kustomization directory (relative to source root)
 	Path string `mapstructure:"path" jsonschema:"required" toml:"path"`
 
-	// Additional patch files to apply after kustomize build
 	Patches []string `mapstructure:"patches,omitempty" toml:"patches,omitempty"`
 
-	// Enable Helm chart inflation during kustomize build
 	EnableHelm bool `mapstructure:"enable_helm,omitempty" toml:"enable_helm,omitempty"`
 
-	// Load restrictor: none, rootOnly (default: rootOnly)
 	LoadRestrictor string `mapstructure:"load_restrictor,omitempty" toml:"load_restrictor,omitempty"`
 }
 
@@ -108,7 +99,6 @@ func (k KubernetesManifestComponentConfig) JSONSchemaExtend(schema *jsonschema.S
 }
 
 func (t *KubernetesManifestComponentConfig) Validate() error {
-	// Exactly one of manifest or kustomize must be set
 	hasManifest := t.Manifest != ""
 	hasKustomize := t.Kustomize != nil
 
@@ -119,23 +109,19 @@ func (t *KubernetesManifestComponentConfig) Validate() error {
 		return errors.New("only one of 'manifest' or 'kustomize' can be specified")
 	}
 
-	// Validate kustomize config
 	if t.Kustomize != nil {
 		if t.Kustomize.Path == "" {
 			return errors.New("kustomize.path is required")
 		}
-		// Kustomize requires a VCS source
 		if t.PublicRepo == nil && t.ConnectedRepo == nil {
 			return errors.New("kustomize requires either 'public_repo' or 'connected_repo' to be specified")
 		}
 	}
 
-	// VCS config should only be set with kustomize
 	if !hasKustomize && (t.PublicRepo != nil || t.ConnectedRepo != nil) {
 		return errors.New("'public_repo' and 'connected_repo' are only valid with kustomize, not inline manifests")
 	}
 
-	// Only one VCS source can be specified
 	if t.PublicRepo != nil && t.ConnectedRepo != nil {
 		return errors.New("only one of 'public_repo' or 'connected_repo' can be specified")
 	}

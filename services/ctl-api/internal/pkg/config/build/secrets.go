@@ -26,7 +26,6 @@ type SecretInput struct {
 	KubernetesSyncTargets     []config.KubernetesSyncTarget
 }
 
-// SecretInputsFromConfig enables sync from the legacy flag or any v2 target.
 func SecretInputsFromConfig(secrets *config.SecretsConfig) []SecretInput {
 	if secrets == nil {
 		return nil
@@ -147,7 +146,6 @@ func validateSecretName(name string) error {
 	return validation.ValidateEntityName(name)
 }
 
-// validateDNSSubdomain skips templated values, resolvable only after rendering.
 func validateDNSSubdomain(secretName, field, value string) error {
 	if strings.Contains(value, "{{") {
 		return nil

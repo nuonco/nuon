@@ -9,8 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// replay walks reports oldest-first the way the evaluator sees them, newest at
-// index 0, and returns the verdict after each tick.
 func replay(start app.InstallComponentHealthStatus, now time.Time, oldestFirst []app.InstallComponentHealthStatus) []app.InstallComponentHealthStatus {
 	verdict := start
 	out := make([]app.InstallComponentHealthStatus, 0, len(oldestFirst))
@@ -28,10 +26,6 @@ func replay(start app.InstallComponentHealthStatus, now time.Time, oldestFirst [
 	return out
 }
 
-// The incident: a deploy at 18:40:12 produced one degraded report at 18:41:23
-// from an HPA waiting on metrics, and the component stayed degraded until
-// 18:58:24 — 15m of event window plus two reports, for a fault that was over in
-// about a minute. One transient report must now cost nothing.
 func TestOneTransientReportDoesNotDegrade(t *testing.T) {
 	now := time.Now()
 	degraded := app.InstallComponentHealthStatusDegraded
@@ -48,8 +42,6 @@ func TestOneTransientReportDoesNotDegrade(t *testing.T) {
 	assert.Equal(t, healthy, got[len(got)-1])
 }
 
-// A fault that persists is still reported, and recovery costs two reports
-// rather than the fifteen minutes the event window used to add.
 func TestSustainedFaultDegradesThenRecoversPromptly(t *testing.T) {
 	now := time.Now()
 	degraded := app.InstallComponentHealthStatusDegraded

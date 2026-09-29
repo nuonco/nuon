@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-// PubSubPush decodes a Google Pub/Sub push delivery envelope.
 type PubSubPush struct{}
 
 type pubSubPushEnvelope struct {

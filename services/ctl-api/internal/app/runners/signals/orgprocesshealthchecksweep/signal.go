@@ -12,11 +12,8 @@ import (
 
 const SignalType signal.SignalType = "org_process_healthcheck_sweep"
 
-// maxSweepPages bounds one sweep run; at the default page size that covers 25k
-// processes per org.
 const maxSweepPages = 50
 
-// Signal checks all active/offline runner processes in an org in paginated batches.
 type Signal struct {
 	OrgID string `json:"org_id"`
 }
@@ -28,7 +25,6 @@ var (
 
 func (s *Signal) Type() signal.SignalType { return SignalType }
 
-// MaxInFlightAge matches the sweep cron interval.
 func (s *Signal) MaxInFlightAge() time.Duration { return 5 * time.Minute }
 
 func (s *Signal) Validate(ctx workflow.Context) error {

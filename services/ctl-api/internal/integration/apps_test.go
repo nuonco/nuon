@@ -34,7 +34,6 @@ func (s *appsTestSuite) TearDownTest() {
 }
 
 func (s *appsTestSuite) SetupTest() {
-	// create an org
 	orgReq := s.fakeOrgRequest()
 
 	org, err := s.apiClient.CreateOrg(s.ctx, orgReq)
@@ -110,7 +109,6 @@ func (s *appsTestSuite) TestCreateApp() {
 }
 
 func (s *appsTestSuite) TestGetApp() {
-	// Create an app for testing
 	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
 	appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
 	app, err := s.apiClient.CreateApp(s.ctx, appReq)
@@ -175,7 +173,6 @@ func (s *appsTestSuite) TestUpdateApp() {
 		require.Equal(t, updatedApp.Name, updateAppReq.Name)
 		require.Equal(t, updatedApp.Description, updateAppReq.Description)
 
-		// fetch the app
 		fetched, err := s.apiClient.GetApp(s.ctx, app.ID)
 		require.Nil(t, err)
 		require.NotNil(t, fetched)
@@ -208,11 +205,6 @@ func (s *appsTestSuite) TestDeleteApp() {
 		deleted, err := s.apiClient.DeleteApp(s.ctx, app.ID)
 		require.Nil(t, err)
 		require.True(t, deleted)
-
-		// make sure the app was actually deleted
-		// fetched, err := s.apiClient.GetApp(s.ctx, app.ID)
-		// require.NotNil(t, err)
-		// require.Nil(t, fetched)
 	})
 
 	s.T().Run("errors on empty id", func(t *testing.T) {

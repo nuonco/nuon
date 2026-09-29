@@ -30,7 +30,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// AdminAddTagsTestService holds all fx-injected dependencies for admin add tags tests.
 type AdminAddTagsTestService struct {
 	fx.In
 
@@ -44,7 +43,6 @@ type AdminAddTagsTestService struct {
 	OrgsService     *service
 }
 
-// AdminAddTagsTestSuite is the testify suite for the AdminAddTags endpoint.
 type AdminAddTagsTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -70,7 +68,6 @@ func (s *AdminAddTagsTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -78,7 +75,6 @@ func (s *AdminAddTagsTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -86,7 +82,6 @@ func (s *AdminAddTagsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares (no org context for admin endpoints)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -102,7 +97,6 @@ func (s *AdminAddTagsTestSuite) TearDownSuite() {
 }
 
 func (s *AdminAddTagsTestSuite) setupTestData() {
-	// Create test account
 	testAccID := domains.NewAccountID()
 	testAcc := &app.Account{
 		ID:          testAccID,
@@ -114,7 +108,6 @@ func (s *AdminAddTagsTestSuite) setupTestData() {
 	require.NoError(s.T(), err)
 	s.testAcc = testAcc
 
-	// Create test org with account context (required for BeforeCreate hook)
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 
@@ -231,7 +224,7 @@ func (s *AdminAddTagsTestSuite) TestAdminAddTags() {
 			validateFunc: func(org *app.Org) {
 				require.NotNil(s.T(), org)
 				assert.ElementsMatch(s.T(), []string{"enterprise", "beta"}, org.Tags)
-				assert.Len(s.T(), org.Tags, 2) // No duplicates
+				assert.Len(s.T(), org.Tags, 2)
 			},
 			checkDBFunc: func(org *app.Org) {
 				var dbOrg app.Org
@@ -302,9 +295,8 @@ func (s *AdminAddTagsTestSuite) TestAdminAddTags() {
 		{
 			name: "fails when org not found",
 			setupFunc: func() *app.Org {
-				// Return org with ID that doesn't exist
 				return &app.Org{
-					ID:          domains.NewOrgID(), // Non-existent org ID
+					ID:          domains.NewOrgID(),
 					Name:        "nonexistent",
 					SandboxMode: true,
 				}
@@ -319,11 +311,9 @@ func (s *AdminAddTagsTestSuite) TestAdminAddTags() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test org
 			org := tc.setupFunc()
 			require.NotNil(s.T(), org)
 
-			// Make request with org_id path parameter
 			path := "/v1/orgs/" + org.ID + "/admin-add-tags"
 			rr := s.makeRequest(http.MethodPost, path, tc.requestBody)
 
@@ -332,9 +322,7 @@ func (s *AdminAddTagsTestSuite) TestAdminAddTags() {
 			}
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
-			// For success cases
 			if tc.expectedCode == http.StatusOK {
-				// Parse response
 				var response app.Org
 				err := json.Unmarshal(rr.Body.Bytes(), &response)
 				if err != nil {
@@ -342,18 +330,15 @@ func (s *AdminAddTagsTestSuite) TestAdminAddTags() {
 				}
 				require.NoError(s.T(), err)
 
-				// Run validations
 				if tc.validateFunc != nil {
 					tc.validateFunc(&response)
 				}
 
-				// Check database state
 				if tc.checkDBFunc != nil {
 					tc.checkDBFunc(&response)
 				}
 			}
 
-			// For error cases
 			if tc.errorContains != "" {
 				body := rr.Body.String()
 				assert.Contains(s.T(), body, tc.errorContains,
@@ -363,7 +348,6 @@ func (s *AdminAddTagsTestSuite) TestAdminAddTags() {
 	}
 }
 
-// AdminRemoveTagsTestService holds all fx-injected dependencies for admin remove tags tests.
 type AdminRemoveTagsTestService struct {
 	fx.In
 
@@ -377,7 +361,6 @@ type AdminRemoveTagsTestService struct {
 	OrgsService     *service
 }
 
-// AdminRemoveTagsTestSuite is the testify suite for the AdminRemoveTags endpoint.
 type AdminRemoveTagsTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -403,7 +386,6 @@ func (s *AdminRemoveTagsTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -411,7 +393,6 @@ func (s *AdminRemoveTagsTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -419,7 +400,6 @@ func (s *AdminRemoveTagsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares (no org context for admin endpoints)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -435,7 +415,6 @@ func (s *AdminRemoveTagsTestSuite) TearDownSuite() {
 }
 
 func (s *AdminRemoveTagsTestSuite) setupTestData() {
-	// Create test account
 	testAccID := domains.NewAccountID()
 	testAcc := &app.Account{
 		ID:          testAccID,
@@ -447,7 +426,6 @@ func (s *AdminRemoveTagsTestSuite) setupTestData() {
 	require.NoError(s.T(), err)
 	s.testAcc = testAcc
 
-	// Create test org with account context (required for BeforeCreate hook)
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 
@@ -634,9 +612,8 @@ func (s *AdminRemoveTagsTestSuite) TestAdminRemoveTags() {
 		{
 			name: "fails when org not found",
 			setupFunc: func() *app.Org {
-				// Return org with ID that doesn't exist
 				return &app.Org{
-					ID:          domains.NewOrgID(), // Non-existent org ID
+					ID:          domains.NewOrgID(),
 					Name:        "nonexistent",
 					SandboxMode: true,
 				}
@@ -651,11 +628,9 @@ func (s *AdminRemoveTagsTestSuite) TestAdminRemoveTags() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test org
 			org := tc.setupFunc()
 			require.NotNil(s.T(), org)
 
-			// Make request with org_id path parameter
 			path := "/v1/orgs/" + org.ID + "/admin-remove-tags"
 			rr := s.makeRequest(http.MethodPost, path, tc.requestBody)
 
@@ -664,9 +639,7 @@ func (s *AdminRemoveTagsTestSuite) TestAdminRemoveTags() {
 			}
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
-			// For success cases
 			if tc.expectedCode == http.StatusOK {
-				// Parse response
 				var response app.Org
 				err := json.Unmarshal(rr.Body.Bytes(), &response)
 				if err != nil {
@@ -674,18 +647,15 @@ func (s *AdminRemoveTagsTestSuite) TestAdminRemoveTags() {
 				}
 				require.NoError(s.T(), err)
 
-				// Run validations
 				if tc.validateFunc != nil {
 					tc.validateFunc(&response)
 				}
 
-				// Check database state
 				if tc.checkDBFunc != nil {
 					tc.checkDBFunc(&response)
 				}
 			}
 
-			// For error cases
 			if tc.errorContains != "" {
 				body := rr.Body.String()
 				assert.Contains(s.T(), body, tc.errorContains,

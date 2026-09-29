@@ -93,7 +93,7 @@ func AllWorkflowTypes() []WorkflowType {
 	}
 }
 
-// RequiresLiveInstallRunner reports whether creation must reject the workflow
+// why: RequiresLiveInstallRunner reports whether creation must reject the workflow
 // while the install runner is offline. App branch config updates are exempt:
 // their "runner healthy" step checks the runner once the workflow runs, so an
 // offline runner fails that step instead of the whole install group.
@@ -121,7 +121,7 @@ func (i WorkflowType) RequiresLiveInstallRunner() bool {
 	}
 }
 
-// RequiresInstallRunner reports whether this workflow type dispatches jobs to
+// why: RequiresInstallRunner reports whether this workflow type dispatches jobs to
 // the install runner and therefore cannot make progress while that runner is
 // disabled. Callers must scope it to install-owned workflows: app-owned types
 // never reach it, and some of them (app config builds) use the org build
@@ -148,7 +148,7 @@ const (
 	WorkflowMetadataKeyStackChanged       = "stack_changed"
 )
 
-// AwaitInstallStackStepName is the install workflow step that waits for a stack
+// why: AwaitInstallStackStepName is the install workflow step that waits for a stack
 // version run. A stack-changing app branch update defers the runner gate until
 // this step has finished, because that apply is what brings the runner back.
 const (
@@ -156,22 +156,14 @@ const (
 	RunnerHealthyStepName     = "runner healthy"
 )
 
-// IsStackOnly reports whether this workflow was asked to stop once the install
-// stack and runner are up, leaving the sandbox and components unprovisioned so
-// inputs can be set first.
 func (w *Workflow) IsStackOnly() bool {
 	return generics.FromPtrStr(w.Metadata[WorkflowMetadataKeyStackOnly]) == "true"
 }
 
-// IsInputsOnly reports whether this workflow should record input values without
-// deploying anything against them.
 func (w *Workflow) IsInputsOnly() bool {
 	return generics.FromPtrStr(w.Metadata[WorkflowMetadataKeyInputsOnly]) == "true"
 }
 
-// IsStackChanged reports whether this app-branch config update includes a stack
-// change. That apply can restore a runner that is offline or disabled, so the
-// runner gates defer until AwaitInstallStackStepName finishes.
 func (w *Workflow) IsStackChanged() bool {
 	return w.Type == WorkflowTypeAppBranchConfigUpdate &&
 		generics.FromPtrStr(w.Metadata[WorkflowMetadataKeyStackChanged]) == "true"
@@ -314,19 +306,12 @@ func (i WorkflowType) Description() string {
 	return "unknown"
 }
 
-// DEPRECATED: this is no longer used, but kept for historical data integrity
 type StepErrorBehavior string
 
 const (
-	// abort on error
 	StepErrorBehaviorAbort StepErrorBehavior = "abort"
-
-	// continue on error
-	// DEPRECATED: this is no longer used, but kept for historical data integrity
-	// StepErrorBehaviorContinue StepErrorBehavior = "continue"
 )
 
-// GenerateStepsResult holds the output of a workflow step generator.
 type GenerateStepsResult struct {
 	Steps  []*WorkflowStep      `json:"steps"`
 	Groups []*WorkflowStepGroup `json:"groups"`
@@ -408,7 +393,6 @@ type Workflow struct {
 }
 
 func (i *Workflow) TableName() string {
-	// Workflows used to be called InstallWorkflows
 	return "install_workflows"
 }
 
@@ -423,7 +407,7 @@ func (i *Workflow) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// BeforeSave keeps install_workflows.name in sync with computeWorkflowName.
+// why: BeforeSave keeps install_workflows.name in sync with computeWorkflowName.
 // Callers that mutate type, metadata, or finished_at must pass a fully
 // populated struct (load-then-Save) so this hook can see the post-update
 // state. Partial Updates(map / struct-with-only-finished_at) and raw SQL
@@ -472,7 +456,6 @@ func (i *Workflow) Indexes(db *gorm.DB) []migrations.Index {
 			},
 		},
 		{
-			// admin fleet-wide sweeps for workflows stuck in a given status
 			Name: "idx_install_workflows_status_created_at",
 			Columns: []string{
 				"(status->>'status')",

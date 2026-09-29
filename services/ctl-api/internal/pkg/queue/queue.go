@@ -32,7 +32,6 @@ type QueueRef struct {
 	ID         string
 }
 
-// QueueState is the data that is passed between continue-as-news
 type QueueState struct {
 	QueueRefs        []QueueRef
 	Paused           bool
@@ -44,7 +43,7 @@ type QueueState struct {
 // @id-template queue-{{.QueueID}}
 // @memo type queue
 func (w *Workflows) Queue(ctx workflow.Context, req QueueWorkflowRequest) error {
-	// Queues outlive individual signals and must not inherit their log streams,
+	// why: Queues outlive individual signals and must not inherit their log streams,
 	// including incomplete streams persisted in the context of a retrying queue.
 	ctx = cctx.ClearLogStreamWorkflowContext(ctx)
 
@@ -78,8 +77,6 @@ func (w *Workflows) Queue(ctx workflow.Context, req QueueWorkflowRequest) error 
 	if !finished {
 		req.State = q.state
 		req.State.LastActivityTime = q.lastActivityTime
-		// Clear the log stream from context before continue-as-new so the next
-		// run doesn't inherit a stale log stream from a previously executed signal.
 		ctx = cctx.SetLogStreamWorkflowContext(ctx, nil)
 		return workflow.NewContinueAsNewError(ctx, w.Queue, req)
 	}
@@ -103,27 +100,16 @@ type queue struct {
 	maxDepth    int
 	maxInFlight int
 
-	// sem limits the number of concurrently processing signals to maxInFlight.
 	sem workflow.Semaphore
 
-	// idleTimeout is how long the queue can be idle before terminating.
-	// Loaded from the queue's DB record, falling back to config default.
 	idleTimeout time.Duration
 
-	// lastActivityTime tracks when any worker last received a signal or when the queue started.
-	// Used to detect idle queues that should terminate to free resources.
 	lastActivityTime time.Time
 
-	// activeWorkers tracks the number of workers currently processing a signal.
-	// Used to prevent continue-as-new while workers are mid-processing.
 	activeWorkers int
 
-	// inFlightSignals tracks signals currently in the dispatcher channel or being
-	// processed. Used to prevent double-dispatch when requeueSignals and enqueueHandler
-	// both try to dispatch the same signal.
 	inFlightSignals map[string]bool
 
-	// state is used to store state that will continue between continue-as-news
 	state *QueueState
 	ch    workflow.Channel
 }

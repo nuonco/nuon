@@ -5,7 +5,6 @@ import (
 	"math"
 )
 
-// Handles simple humanization of durations in the orders of seconds to hours
 func HumanizeNSDuration(nanoseconds int64) string {
 	if nanoseconds == 0 {
 		return "0s"

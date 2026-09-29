@@ -56,7 +56,6 @@ const subs: TSlackChannelSubscription[] = [
     interests: {},
     created_at: '2026-04-20T15:00:00Z',
   },
-  // Per-install scope — describeMatch renders "2 installs".
   {
     id: 'slc-004',
     channel_id: 'C4444444444',
@@ -68,7 +67,6 @@ const subs: TSlackChannelSubscription[] = [
     match: { installs: { ids: ['inst_a', 'inst_b'] } },
     created_at: '2026-04-15T15:00:00Z',
   },
-  // Components by labels — describeMatch renders "Components: env=prod".
   {
     id: 'slc-005',
     channel_id: 'C3333333333',
@@ -82,7 +80,6 @@ const subs: TSlackChannelSubscription[] = [
     },
     created_at: '2026-04-10T15:00:00Z',
   },
-  // Empty TargetMatch{} — describeMatch renders "Any actions".
   {
     id: 'slc-006',
     channel_id: 'C2222222222',

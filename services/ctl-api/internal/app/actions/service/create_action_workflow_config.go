@@ -132,7 +132,6 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 		}
 	}
 
-	// verify crons
 	cronCount := 0
 	for _, trigger := range c.Triggers {
 		if trigger.Type == app.ActionWorkflowTriggerTypeCron {
@@ -146,7 +145,6 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 		}
 	}
 
-	// verify component is set for component dependency
 	for _, trigger := range c.Triggers {
 		if !generics.SliceContains(app.ActionWorkflowTriggerType(trigger.Type), app.AllActionWorkflowTriggerTypes) {
 			return stderr.ErrUser{
@@ -174,9 +172,7 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 		}
 	}
 
-	// validate execution methods: inline_contents is mutually exclusive, command can be used with VCS, only one VCS allowed
 	for _, step := range c.Steps {
-		// Check if multiple VCS configs are set
 		vcsConfigCount := 0
 		if step.PublicGitVCSConfig != nil {
 			vcsConfigCount++
@@ -192,7 +188,6 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 			}
 		}
 
-		// If inline_contents is set, it must be the only execution method
 		if step.InlineContents != "" {
 			if step.Command != "" || step.PublicGitVCSConfig != nil || step.ConnectedGithubVCSConfig != nil {
 				return stderr.ErrUser{
@@ -201,7 +196,6 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 				}
 			}
 		} else {
-			// If inline_contents is not set, at least one of command or VCS must be set
 			if step.Command == "" && step.PublicGitVCSConfig == nil && step.ConnectedGithubVCSConfig == nil {
 				return stderr.ErrUser{
 					Err:         errors.New("one of inline_contents, command, or VCS config must be set"),

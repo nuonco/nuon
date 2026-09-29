@@ -32,7 +32,6 @@ func (s *GeneralInternalTestSuite) TestCreateSeedUser() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Make request
 			rr := s.makeRequest(http.MethodPost, "/v1/general/seed-user", map[string]interface{}{})
 
 			if rr.Code != tc.expectedStatus {
@@ -40,12 +39,10 @@ func (s *GeneralInternalTestSuite) TestCreateSeedUser() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Unmarshal response
 			var resp CreateSeedUserResponse
 			err := json.Unmarshal(rr.Body.Bytes(), &resp)
 			require.NoError(s.T(), err)
 
-			// Validate response
 			if tc.validateFunc != nil {
 				tc.validateFunc(resp)
 			}

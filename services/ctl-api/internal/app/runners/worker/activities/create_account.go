@@ -24,8 +24,6 @@ func (a *Activities) CreateAccount(ctx context.Context, req CreateAccountRequest
 
 	acct, err := a.acctClient.FindAccount(ctx, account.ServiceAccountEmail(req.RunnerID))
 	if err == nil {
-		// NOTE(jm): each runner needs to be reprovisioned to properly create their roles, and then this should
-		// be removed.
 		a.authzClient.AddAccountOrgRole(ctx, app.RoleTypeRunner, orgID, acct.ID)
 		return acct, nil
 	}

@@ -32,7 +32,6 @@ func (s *Service) WorkflowsSelect(ctx context.Context, installID, workflowID str
 		return nil
 	}
 
-	// Convert workflows to selector options
 	options := make([]bubbles.WorkflowOption, len(workflows))
 	for i, wf := range workflows {
 		status := ""
@@ -47,7 +46,6 @@ func (s *Service) WorkflowsSelect(ctx context.Context, installID, workflowID str
 		}
 	}
 
-	// Show workflow selector
 	selectedWorkflowID, err := bubbles.SelectWorkflow(options, s.cfg.Interactive)
 	if err != nil {
 		return view.Error(err)
@@ -57,7 +55,6 @@ func (s *Service) WorkflowsSelect(ctx context.Context, installID, workflowID str
 		return view.Error(err)
 	}
 
-	// Find selected workflow for display
 	var selectedWorkflow *models.AppWorkflow
 	for _, wf := range workflows {
 		if wf.ID == selectedWorkflowID {

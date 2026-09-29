@@ -1,8 +1,5 @@
 import { expect, test } from "@playwright/test";
 
-// This form prefills from the action's config env vars, so it opens valid.
-// The meaningful contract here: clearing a required config var disables submit
-// and errors on touch; refilling recovers.
 const STORY =
   "/?story=features--actions--install-action-manual-run--default&mode=preview";
 

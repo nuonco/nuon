@@ -18,8 +18,6 @@ import (
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 )
 
-// jobExecutionStatusDescriptionMaxLen caps the error description sent to the API
-// so a long stack trace doesn't bloat the stored status history.
 const jobExecutionStatusDescriptionMaxLen = 2048
 
 const (
@@ -27,11 +25,6 @@ const (
 	jobExecutionTerminalStatusWriteTimeout = 30 * time.Second
 )
 
-// writeJobExecutionStatus is the synchronous, retry-wrapped API call.
-// It's the writer the coalescer's background goroutine drives and also
-// the call terminal updates fall through to directly. Intermediate
-// (non-terminal) callers go through the coalescer instead — see
-// `statusCoalescer` in status_coalescer.go.
 func (j *jobLoop) writeJobExecutionStatus(ctx context.Context, jobID, jobExecutionID string, status models.AppRunnerJobExecutionStatus, description string) error {
 	if len(description) > jobExecutionStatusDescriptionMaxLen {
 		description = description[:jobExecutionStatusDescriptionMaxLen] + "…(truncated)"
@@ -54,12 +47,6 @@ func (j *jobLoop) writeJobExecutionStatus(ctx context.Context, jobID, jobExecuti
 	return nil
 }
 
-// updateJobExecutionStatus and updateJobExecutionStatusWithDescription
-// are the legacy synchronous entry points. They route through the
-// per-execution coalescer when one is attached so the runner doesn't
-// block on intermediate transition pings, and fall back to a direct
-// synchronous write when there isn't one (e.g. early failure before
-// `executeJob` started the coalescer).
 func (j *jobLoop) updateJobExecutionStatus(ctx context.Context, jobID, jobExecutionID string, status models.AppRunnerJobExecutionStatus) error {
 	return j.updateJobExecutionStatusWithDescription(ctx, jobID, jobExecutionID, status, "")
 }
@@ -82,10 +69,6 @@ func (j *jobLoop) updateJobExecutionStatusWithDescription(ctx context.Context, j
 	return j.writeJobExecutionStatus(ctx, jobID, jobExecutionID, status, description)
 }
 
-// coalescerFor returns the coalescer attached to the current execution,
-// or nil if none has been registered yet. The map is keyed by execution
-// id so concurrent jobs (parallel-runner-jobs feature) don't share a
-// writer.
 func (j *jobLoop) coalescerFor(executionID string) *statusCoalescer {
 	j.coalescersMu.Lock()
 	defer j.coalescersMu.Unlock()
@@ -139,14 +122,6 @@ func (j *jobLoop) writeFallbackJobExecutionResult(ctx context.Context, job *mode
 }
 
 func (j *jobLoop) execJobStep(ctx context.Context, l *zap.Logger, logProvider *log.LoggerProvider, step *executeJobStep, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	// Attach pkgctx.ContextField(ctx) to BOTH the local `l` and the
-	// ctx-stored logger so the otelzap bridge can extract the per-step span
-	// (opened in executeJob) on every emit. The local `l` is used directly by
-	// l.Info("step was completed successfully", …) below — without this the
-	// caller's plain logger has no ctx field and those step-scope logs land
-	// in otel_log_records with an empty span_id, which breaks the dashboard's
-	// span→logs cross-link. SetLoggerWithSpan only mutates the copy stored
-	// in ctx, so we have to re-wrap `l` here too.
 	l = l.With(zap.String("runner_job_execution_step.name", step.name), pkgctx.ContextField(ctx))
 	ctx = pkgctx.SetLogger(ctx, l)
 
@@ -173,7 +148,6 @@ func (j *jobLoop) execJobStep(ctx context.Context, l *zap.Logger, logProvider *l
 		err = step.fn(ctx, step.handler, job, jobExecution)
 	})
 
-	// when a job handler panics, we update the job to a failed status, and propagate the error
 	recovered := pc.Recovered()
 	if recovered != nil {
 		status := models.AppRunnerJobExecutionStatusFailed
@@ -224,7 +198,6 @@ func (j *jobLoop) execJobStep(ctx context.Context, l *zap.Logger, logProvider *l
 		j.errRecorder.Record("write fallback job execution result", resultErr)
 	}
 
-	// handle the error by cleaning up the execution using the handler.
 	status := j.errToStatus(err)
 	description := fmt.Sprintf("%s: %s", step.name, err.Error())
 	if updateErr := j.updateJobExecutionStatusWithDescription(ctx, job.ID, jobExecution.ID, status, description); updateErr != nil {

@@ -19,12 +19,10 @@ type UpdateLocalTable struct {
 	Suffix string
 }
 
-// ModifyStatement modify operation mode
 func (t UpdateLocalTable) ModifyStatement(stmt *gorm.Statement) {
 	stmt.Settings.Store(updateLocalTableName, t)
 }
 
-// Build implements clause.Expression interface
 func (t UpdateLocalTable) Build(clause.Builder) {
 }
 

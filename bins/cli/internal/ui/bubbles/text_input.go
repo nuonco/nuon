@@ -13,8 +13,6 @@ import (
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
-// TextInputModel is a compact inline text input prompt
-// that renders as: ? Prompt [? for help]
 type TextInputModel struct {
 	input    textinput.Model
 	prompt   string
@@ -25,7 +23,6 @@ type TextInputModel struct {
 	err      string
 }
 
-// NewTextInputModel creates a new inline text input model
 func NewTextInputModel(prompt, placeholder, help string, required bool) TextInputModel {
 	ti := textinput.New()
 	ti.Placeholder = placeholder
@@ -55,7 +52,6 @@ func (m TextInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		case "?":
-			// If input is empty, toggle help instead of typing "?"
 			if m.input.Value() == "" && m.help != "" {
 				m.showHelp = !m.showHelp
 				return m, nil
@@ -96,13 +92,11 @@ func (m TextInputModel) View() tea.View {
 
 	var b strings.Builder
 
-	// Show help text above the prompt when toggled
 	if m.showHelp && m.help != "" {
 		helpStyle := lipgloss.NewStyle().Foreground(styles.PrimaryColor)
 		b.WriteString(fmt.Sprintf("%s %s\n", questionMark, helpStyle.Render(m.help)))
 	}
 
-	// Main prompt line: ? Prompt <input> [? for help]
 	helpHint := ""
 	if m.help != "" && !m.showHelp {
 		helpHint = lipgloss.NewStyle().Foreground(styles.SubtleColor).Render(" [? for help]")
@@ -118,12 +112,10 @@ func (m TextInputModel) View() tea.View {
 	return tea.NewView(b.String())
 }
 
-// Value returns the entered text
 func (m TextInputModel) Value() string {
 	return strings.TrimSpace(m.input.Value())
 }
 
-// PromptText shows an inline text input prompt and returns the entered value.
 func PromptText(prompt, placeholder, help string, required, interactive bool) (string, error) {
 	if !interactive {
 		return "", fmt.Errorf("interactive terminal required for text input")

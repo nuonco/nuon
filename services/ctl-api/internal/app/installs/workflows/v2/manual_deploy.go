@@ -63,13 +63,11 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 
 	dg := newGenCtx(sg, flw, installID, appCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
 
-	// first, provision the deploy with before and after triggers
 	comp, err := activities.AwaitGetComponentByComponentID(ctx, installDeploy.ComponentID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component")
 	}
 
-	// Resolve install component ID for v2 signals
 	installComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
 		InstallID:   installID,
 		ComponentID: comp.ID,
@@ -78,7 +76,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		return nil, errors.Wrap(err, "unable to get install component")
 	}
 
-	// When the primary is a non-image component, walk its image deps and
+	// why: When the primary is a non-image component, walk its image deps and
 	// prepend sync steps for any whose latest Active build differs from
 	// what's currently deployed. The deploy_components path does this
 	// inside getComponentDeploySteps; the manual_deploy path emits the
@@ -113,9 +111,8 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		steps = append(steps, preDeploySteps...)
 	}
 
-	// sync image
 	if comp.Type.IsImage() {
-		sg.nextGroup() // component sync
+		sg.nextGroup()
 		deployStep, err := sg.installSignalStep(ctx, installID, "sync "+comp.Name, componentStepMetadata(comp.Name), &componentsyncimage.Signal{
 			InstallComponentID: installComp.ID,
 			DeployID:           generics.FromPtrStr(installDeployID),
@@ -130,13 +127,9 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 
 		steps = append(steps, deployStep)
 
-		// Record that this image component's sync is already emitted so the
-		// subsequent dependents pass (getComponentDeploySteps below) won't
-		// emit a duplicate "sync X (dep)" step when a dependent lists this
-		// image as a dep.
 		dg.addedImageDepSyncs[comp.ID] = struct{}{}
 	} else {
-		sg.nextGroup() // component sync + plan + apply
+		sg.nextGroup()
 		planStep, err := sg.installSignalStep(ctx, installID, "sync and plan "+comp.Name, componentStepMetadata(comp.Name), &componentdeploysyncandplan.Signal{
 			InstallComponentID: installComp.ID,
 			InstallID:          installID,
@@ -185,7 +178,6 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		steps = append(steps, postDeploySteps...)
 	}
 
-	// now queue up any deploy that _depend_ on the input
 	componentIDs, err := activities.AwaitGetAppComponentGraph(ctx, activities.GetAppComponentGraphRequest{
 		InstallID:   install.ID,
 		ComponentID: comp.ID,

@@ -23,16 +23,10 @@ func (c *copier) CopyFromStore(ctx context.Context, store oras.ReadOnlyTarget, s
 		return nil, err
 	}
 
-	// spans holds the op.EndFunc per layer digest so PostCopy can finalize
-	// the child span PreCopy opened. Per-layer pushes run concurrently via
-	// oras's worker pool, so a sync.Map is required.
 	spans := new(sync.Map)
 
 	opts := oras.DefaultCopyOptions
 	opts.PreCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
-		// Open a child of the surrounding oci.copy_from_store span so per-
-		// layer push duration is visible in build traces (mirrors the
-		// oci.pull_layer instrumentation in archive.Unpack).
 		_, end := op.Start(ctx, "oci", "push_layer",
 			attribute.String("oci.digest", string(desc.Digest)),
 			attribute.String("oci.media_type", desc.MediaType),
@@ -49,9 +43,6 @@ func (c *copier) CopyFromStore(ctx context.Context, store oras.ReadOnlyTarget, s
 	}
 
 	res, err := oras.Copy(ctx, store, srcTag, dstRepo, dstTag, opts)
-	// Finalize any layer spans whose PostCopy never fired (failure path
-	// or layers cancelled mid-flight). Done before the error return so
-	// no spans leak.
 	spans.Range(func(_, v any) bool {
 		v.(op.EndFunc)(err)
 		return true

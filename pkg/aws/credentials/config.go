@@ -58,15 +58,6 @@ func (c Config) String() string {
 	return ""
 }
 
-//func (c Config) MarshalJSON() ([]byte, error) {
-//var output map[string]interface{}
-//if err := mapstructure.Decode(c, &output); err != nil {
-//return nil, fmt.Errorf("unable to decode to stringmap: %w", err)
-//}
-
-//return json.Marshal(output)
-//}
-
 func (c *Config) Validate(v *validator.Validate) error {
 	if c.UseDefault {
 		return nil

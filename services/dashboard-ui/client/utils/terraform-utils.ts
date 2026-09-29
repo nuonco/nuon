@@ -326,7 +326,6 @@ export function generateDiffLines(
     ]
   }
 
-  // Type mismatch
   return [
     ...renderFullValue(before, '-', indent, key),
     ...renderFullValue(after, '+', indent, key),
@@ -429,7 +428,6 @@ export function detectValueFormat(value: string): {
 } {
   const cleanValue = cleanString(value)
 
-  // Check for Terraform escaped YAML FIRST - before any other checks
   const terraformEscapedCheck = isTerraformEscapedYaml(cleanValue)
 
   let isJSON = false

@@ -302,7 +302,6 @@ func (c *cli) appsCmd() *cobra.Command {
 
 	appsCmd.AddCommand(createCmd)
 
-	// nuon apps delete
 	var confirmDelete bool
 	deleteCmd := &cobra.Command{
 		Use:               "delete",
@@ -320,7 +319,6 @@ func (c *cli) appsCmd() *cobra.Command {
 
 	appsCmd.AddCommand(deleteCmd)
 
-	// nuon app generate/init commandasss
 	appsCmd.AddCommand(c.initCmd())
 
 	var rename bool
@@ -341,7 +339,6 @@ func (c *cli) appsCmd() *cobra.Command {
 
 	appsCmd.AddCommand(renameCmd)
 
-	// variables subcommand (replacing secrets)
 	variablesCmd := c.variablesCmd()
 	appsCmd.AddCommand(variablesCmd)
 
@@ -364,7 +361,6 @@ func (c *cli) variablesCmd() *cobra.Command {
 		PersistentPreRunE: c.persistentPreRunE,
 	}
 
-	// list command
 	listCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
@@ -380,7 +376,6 @@ func (c *cli) variablesCmd() *cobra.Command {
 	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "The number of variables to list")
 	variablesCmd.AddCommand(listCmd)
 
-	// delete command
 	confirmDelete := false
 	deleteCmd := &cobra.Command{
 		Use:   "delete",
@@ -400,7 +395,6 @@ func (c *cli) variablesCmd() *cobra.Command {
 	deleteCmd.MarkFlagRequired("confirm")
 	variablesCmd.AddCommand(deleteCmd)
 
-	// create command
 	var (
 		name  string
 		value string

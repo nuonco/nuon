@@ -53,7 +53,6 @@ export const AccountDetail = () => {
 
   const { account, apps = [], installs: accountInstalls = [] } = data
 
-  // Derive unique orgs from roles
   const orgsMap = new Map<string, { org_id: string; org_name: string; role_type: string; created_at: string }>()
   for (const role of account.roles || []) {
     if (role.org_id && !orgsMap.has(role.org_id)) {
@@ -69,14 +68,12 @@ export const AccountDetail = () => {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
         <Link to="/accounts" className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200">Accounts</Link>
         <span>/</span>
         <span className="text-gray-900 dark:text-gray-100">{account.email}</span>
       </nav>
 
-      {/* Page Heading */}
       <div className="page-heading">
         <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{account.email}</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-mono">{account.id}</p>
@@ -92,7 +89,6 @@ export const AccountDetail = () => {
         </div>
       </div>
 
-      {/* User Journey */}
       {Array.isArray(account.user_journeys) && account.user_journeys.length > 0 && (
         <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">User Journey</h2>
@@ -157,7 +153,6 @@ export const AccountDetail = () => {
         </div>
       )}
 
-      {/* Organizations */}
       <div className="table-card p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Organizations</h2>
         <div className="mt-2 overflow-x-auto">
@@ -193,7 +188,6 @@ export const AccountDetail = () => {
         </div>
       </div>
 
-      {/* Roles */}
       <div className="table-card p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Roles</h2>
         <div className="mt-2 overflow-x-auto">
@@ -229,7 +223,6 @@ export const AccountDetail = () => {
         </div>
       </div>
 
-      {/* Apps */}
       <div className="table-card p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Apps</h2>
         <div className="mt-2 overflow-x-auto">
@@ -275,7 +268,6 @@ export const AccountDetail = () => {
         </div>
       </div>
 
-      {/* Installs */}
       <div className="table-card p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Installs</h2>
         <div className="mt-2 overflow-x-auto">
@@ -350,7 +342,6 @@ export const AccountDetail = () => {
         )}
       </div>
 
-      {/* Audit Logs */}
       <div className="table-card p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Audit Logs</h2>
         <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">

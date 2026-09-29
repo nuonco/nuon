@@ -25,8 +25,6 @@ func ValidateActionWorkflowTriggers(cfg *config.AppConfig) error {
 				return errs.NewUserFacing("Validation error: %s trigger does not have component_name set", trigger.Type)
 			}
 
-			// since the component deploy trigger is being used, make sure this references a valid
-			// component.
 			if _, ok := componentNames[trigger.ComponentName]; !ok {
 				return errs.NewUserFacing(
 					"Validation error: %s trigger references an invalid component (%s)",

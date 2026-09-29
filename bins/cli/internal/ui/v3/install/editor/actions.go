@@ -13,7 +13,6 @@ func (m *model) openInBrowser() {
 		return
 	}
 
-	// Pattern: https://app.nuon.co/{org_id}/installs/{install_id}
 	dashboardURL := fmt.Sprintf("%s/%s/installs/%s",
 		cfg.DashboardURL,
 		m.cfg.OrgID,

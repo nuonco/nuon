@@ -26,7 +26,6 @@ type OtelMetricSummary struct {
 	UpdatedAt time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	// internal attributes
 	OrgID                  string `json:"org_id,omitzero" temporaljson:"org_id,omitzero,omitempty"`
 	RunnerID               string `json:"runner_id,omitzero" temporaljson:"runner_id,omitzero,omitempty"`
 	RunnerJobID            string `json:"runner_job_id,omitzero" temporaljson:"runner_job_id,omitzero,omitempty"`
@@ -34,7 +33,6 @@ type OtelMetricSummary struct {
 	RunnerJobExecutionID   string `json:"runner_job_execution_id,omitzero" temporaljson:"runner_job_execution_id,omitzero,omitempty"`
 	RunnerJobExecutionStep string `json:"runner_job_execution_step,omitzero" temporaljson:"runner_job_execution_step,omitzero,omitempty"`
 
-	// OTEL log message attributes
 	ResourceSchemaURL  string            `json:"resource_schema_url,omitzero" gorm:"type:LowCardinality(String);codec:ZSTD(1)" temporaljson:"resource_schema_url,omitzero,omitempty"`
 	ResourceAttributes map[string]string `json:"resource_attributes,omitzero" gorm:"type:Map(LowCardinality(String),String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1" temporaljson:"resource_attributes,omitzero,omitempty"`
 
@@ -97,7 +95,6 @@ func (m *OtelMetricSummary) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// DO NOT MIGRATE: this is for ingestion only
 type OtelMetricSummaryIngestion struct {
 	ID          string `gorm:"primary_key" json:"id" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -106,7 +103,6 @@ type OtelMetricSummaryIngestion struct {
 	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	// internal attributes
 	OrgID                  string `json:"org_id" temporaljson:"org_id,omitzero,omitempty"`
 	RunnerID               string `json:"runner_id" temporaljson:"runner_id,omitzero,omitempty"`
 	RunnerJobID            string `json:"runner_job_id" temporaljson:"runner_job_id,omitzero,omitempty"`
@@ -114,7 +110,6 @@ type OtelMetricSummaryIngestion struct {
 	RunnerJobExecutionID   string `json:"runner_job_execution_id" temporaljson:"runner_job_execution_id,omitzero,omitempty"`
 	RunnerJobExecutionStep string `json:"runner_job_execution_step" temporaljson:"runner_job_execution_step,omitzero,omitempty"`
 
-	// OTEL attributes
 	ResourceAttributes map[string]string `json:"resource_attributes" gorm:"type:Map(LowCardinality(String),String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1" temporaljson:"resource_attributes,omitzero,omitempty"`
 	ResourceSchemaURL  string            `json:"resource_schema_url" gorm:"type:LowCardinality(String);codec:ZSTD(1)" temporaljson:"resource_schema_url,omitzero,omitempty"`
 
@@ -138,8 +133,6 @@ type OtelMetricSummaryIngestion struct {
 	Count uint64  `json:"count" gorm:"type:UInt32;codec:ZSTD(1)" temporaljson:"count,omitzero,omitempty"`
 	Sum   float64 `json:"sum" gorm:"type:Float64;codec:ZSTD(1)" temporaljson:"sum,omitzero,omitempty"`
 	Flags uint32  `json:"flags" gorm:"type:UInt32;codec:ZSTD(1)" temporaljson:"flags,omitzero,omitempty"`
-
-	// ValueAtQuantiles map[float64]float64 `json:"value_at_quantiles" temporaljson:"value_at_quantiles" gorm:"type:Nested(Quantile Float64,Value Float64);codec:ZSTD(1)"`
 
 	ValueAtQuantilesQuantile clickhouse.ArraySet `json:"-" gorm:"type:Array(Quantile Float64);column:value_at_quantiles.quantile" temporaljson:"value_at_quantiles_quantile,omitzero,omitempty"`
 	ValueAtQuantilesValue    clickhouse.ArraySet `json:"-" gorm:"type:Array(Value Float64);column:value_at_quantiles.value" temporaljson:"value_at_quantiles_value,omitzero,omitempty"`

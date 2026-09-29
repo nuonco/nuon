@@ -38,7 +38,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	l.Info("exec", zap.String("job_type", "shutdown"))
 
-	// NOTE(jm): we can not _safely_ stop the fx loop in this step, because the job execution in jobloop.JobLoop
+	// why: we can not _safely_ stop the fx loop in this step, because the job execution in jobloop.JobLoop
 	// will attempt to "cleanup" after this. This means that immediately once this returns, it will set the status
 	// of the job execution to cleaning-up, and will expect the cleanup step finishes before updating the job with
 	// the real status. This creates a race condition, as we want the shut down to be the very last step of the job,

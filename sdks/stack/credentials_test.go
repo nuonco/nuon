@@ -10,8 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// clearAmbientCredentials removes every source the resolver consults, so a precedence
-// assertion is not quietly satisfied by the developer's shell or by CI's own Actions.
 func clearAmbientCredentials(t *testing.T) {
 	t.Helper()
 
@@ -47,8 +45,6 @@ func TestResolveTokenPrecedence(t *testing.T) {
 		assert.Equal(t, "from-env", got)
 	})
 
-	// The failure a customer is most likely to hit, so the message has to name every
-	// way out rather than just saying "unauthorized".
 	t.Run("no credentials at all is an actionable error", func(t *testing.T) {
 		clearAmbientCredentials(t)
 
@@ -58,7 +54,6 @@ func TestResolveTokenPrecedence(t *testing.T) {
 		assert.Contains(t, err.Error(), "id-token: write")
 	})
 
-	// Reported before the token is fetched, so the cause is named rather than generic.
 	t.Run("an ambient OIDC token without an org id explains itself", func(t *testing.T) {
 		clearAmbientCredentials(t)
 		t.Setenv("NUON_OIDC_TOKEN", "a-jwt")
@@ -91,8 +86,6 @@ func TestResolveTokenExchangesOIDC(t *testing.T) {
 	assert.Equal(t, "org-1", gotBody.OrgID)
 }
 
-// The control plane returns a uniform failure for every auth-path rejection, so this
-// has to be caught on the response body rather than the status code.
 func TestResolveTokenRejectsUnauthenticatedExchange(t *testing.T) {
 	clearAmbientCredentials(t)
 	t.Setenv("NUON_OIDC_TOKEN", "a-jwt")
@@ -107,7 +100,6 @@ func TestResolveTokenRejectsUnauthenticatedExchange(t *testing.T) {
 	assert.Contains(t, err.Error(), "trust policies")
 }
 
-// The audience must match the trust policy's, so NUON_OIDC_AUDIENCE has to win.
 func TestGitHubActionsAudienceFromEnv(t *testing.T) {
 	clearAmbientCredentials(t)
 

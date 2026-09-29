@@ -10,7 +10,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// BaseProvider provides common functionality for OAuth providers.
 type BaseProvider struct {
 	name        string
 	oauth2Cfg   *oauth2.Config
@@ -19,12 +18,10 @@ type BaseProvider struct {
 	log         *zap.Logger
 }
 
-// Name returns the provider name.
 func (b *BaseProvider) Name() string {
 	return b.name
 }
 
-// SetupOAuth2Config initializes the OAuth2 configuration.
 func (b *BaseProvider) SetupOAuth2Config(cfg *ProviderConfig) {
 	b.oauth2Cfg = &oauth2.Config{
 		ClientID:     cfg.ClientID,
@@ -45,12 +42,10 @@ func (b *BaseProvider) SetupOAuth2Config(cfg *ProviderConfig) {
 	}
 }
 
-// GetOAuth2Config returns the OAuth2 configuration for generating auth URLs.
 func (b *BaseProvider) GetOAuth2Config() *oauth2.Config {
 	return b.oauth2Cfg
 }
 
-// ExchangeCode exchanges the authorization code for tokens and returns an HTTP client.
 func (b *BaseProvider) ExchangeCode(ctx context.Context, code string, opts ...oauth2.AuthCodeOption) (*http.Client, *oauth2.Token, *ProviderTokens, error) {
 	token, err := b.oauth2Cfg.Exchange(ctx, code, opts...)
 	if err != nil {
@@ -67,7 +62,6 @@ func (b *BaseProvider) ExchangeCode(ctx context.Context, code string, opts ...oa
 		ptokens.Expiry = token.Expiry.Unix()
 	}
 
-	// Extract ID token if present (OIDC providers)
 	if idToken := token.Extra("id_token"); idToken != nil {
 		if idTokenStr, ok := idToken.(string); ok {
 			ptokens.IDToken = idTokenStr
@@ -78,7 +72,6 @@ func (b *BaseProvider) ExchangeCode(ctx context.Context, code string, opts ...oa
 	return client, token, ptokens, nil
 }
 
-// FetchUserInfo fetches user information from the provider's userinfo endpoint.
 func (b *BaseProvider) FetchUserInfo(ctx context.Context, client *http.Client) ([]byte, error) {
 	if b.userInfoURL == "" {
 		return nil, fmt.Errorf("userinfo URL not configured")
@@ -112,7 +105,6 @@ func (b *BaseProvider) FetchUserInfo(ctx context.Context, client *http.Client) (
 	return body, nil
 }
 
-// MapClaims extracts configured claims from the raw response.
 func (b *BaseProvider) MapClaims(data []byte, customClaims *CustomClaims) error {
 	var raw map[string]any
 	if err := json.Unmarshal(data, &raw); err != nil {
@@ -123,13 +115,11 @@ func (b *BaseProvider) MapClaims(data []byte, customClaims *CustomClaims) error 
 		customClaims.Claims = make(map[string]any)
 	}
 
-	// If no specific claims configured, keep all
 	if len(b.claims) == 0 {
 		customClaims.Claims = raw
 		return nil
 	}
 
-	// Filter to only configured claims
 	for _, claim := range b.claims {
 		if val, ok := raw[claim]; ok {
 			customClaims.Claims[claim] = val
@@ -139,14 +129,12 @@ func (b *BaseProvider) MapClaims(data []byte, customClaims *CustomClaims) error 
 	return nil
 }
 
-// ParseUserInfo unmarshals the userinfo response into a UserInfo struct.
 func (b *BaseProvider) ParseUserInfo(data []byte) (*UserInfo, error) {
 	var user UserInfo
 	if err := json.Unmarshal(data, &user); err != nil {
 		return nil, fmt.Errorf("failed to parse userinfo: %w", err)
 	}
 
-	// Store raw claims for potential custom processing
 	var raw map[string]any
 	if err := json.Unmarshal(data, &raw); err == nil {
 		user.RawClaims = raw
@@ -156,7 +144,6 @@ func (b *BaseProvider) ParseUserInfo(data []byte) (*UserInfo, error) {
 	return &user, nil
 }
 
-// Logger returns the configured logger.
 func (b *BaseProvider) Logger() *zap.Logger {
 	return b.log
 }

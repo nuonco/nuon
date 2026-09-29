@@ -12,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/pkg/config/sync"
 )
 
-// BuildOutcome describes the terminal state of one scheduled component build.
 type BuildOutcome struct {
 	ComponentID   string `json:"component_id"`
 	ComponentName string `json:"component_name"`
@@ -27,9 +26,6 @@ const (
 	buildOutcomeUnknown      = "unknown"
 )
 
-// pollComponentBuilds waits for the scheduled component builds to reach a
-// terminal state and returns one outcome per component (in input order). The
-// returned error is non-nil when any build did not complete successfully.
 func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.ComponentState) ([]BuildOutcome, error) {
 	if len(comps) == 0 {
 		return nil, nil
@@ -46,15 +42,13 @@ func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.Componen
 
 	multiSpinner := bubbles.NewMultiSpinnerView(s.cfg.Interactive)
 
-	// Add all spinners first
 	for _, cmp := range comps {
 		multiSpinner.AddSpinner(cmp.ID, fmt.Sprintf("building component %s %s", cmp.ID, cmp.Name))
 	}
 
-	// Then start the display
 	multiSpinner.Start()
 
-	// NOTE: on updates, components are already active and new component_builds records wait to be created.
+	// why: on updates, components are already active and new component_builds records wait to be created.
 	// So we need to wait for the new component_builds to be created before we start to poll.
 	time.Sleep(time.Second * 5)
 
@@ -83,7 +77,6 @@ poll:
 					completedComponents = append(completedComponents, cmp)
 					continue
 				}
-				// in case we didn't wait long enough for an initial build record, ignore and loop again
 				if nuon.IsNotFound(err) {
 					continue
 				}
@@ -117,7 +110,6 @@ poll:
 			}
 		}
 
-		// Remove completed components from tracking
 		for _, cmp := range completedComponents {
 			delete(cmpByID, cmp.ID)
 		}
@@ -143,8 +135,6 @@ poll:
 	return outcomes, buildOutcomesErr(outcomes)
 }
 
-// buildOutcomesErr summarizes non-successful outcomes into a single error, or
-// nil when every build completed.
 func buildOutcomesErr(outcomes []BuildOutcome) error {
 	failures := make([]string, 0)
 	for _, o := range outcomes {

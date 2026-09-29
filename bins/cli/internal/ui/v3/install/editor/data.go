@@ -49,7 +49,6 @@ func fetchConfigCmd(m model) tea.Cmd {
 	}
 }
 
-// displayName returns a non-empty label for an input mapping.
 func (im inputMapping) label() string {
 	if im.displayName != "" {
 		return im.displayName
@@ -74,8 +73,6 @@ func (m *model) createFormInputs() {
 
 		curVal := current[input.Name]
 		if input.Sensitive {
-			// Mask sensitive values; pre-fill with the stored value so leaving
-			// the field untouched preserves it on submit.
 			ti.EchoMode = textinput.EchoPassword
 			ti.EchoCharacter = '•'
 			ti.Placeholder = "leave unchanged"
@@ -112,7 +109,6 @@ func (m *model) createFormInputs() {
 		m.inputMappings = append(m.inputMappings, mapping)
 	}
 
-	// Build fields from grouped inputs, falling back to ungrouped inputs.
 	if m.inputConfig != nil && len(m.inputConfig.InputGroups) > 0 {
 		for _, group := range m.inputConfig.InputGroups {
 			for _, input := range group.AppInputs {
@@ -125,7 +121,6 @@ func (m *model) createFormInputs() {
 		}
 	}
 
-	// Focus the first input.
 	if len(m.inputs) > 0 {
 		m.inputs[0].Focus()
 		m.focusIndex = 0
@@ -134,13 +129,10 @@ func (m *model) createFormInputs() {
 	m.updateViewportContent()
 }
 
-// toggleIndex is the focusIndex of the "deploy dependents" toggle: it lives
-// after all the text inputs.
 func (m *model) toggleIndex() int {
 	return len(m.inputs)
 }
 
-// totalFields is the number of focusable fields (text inputs + toggle).
 func (m *model) totalFields() int {
 	return len(m.inputs) + 1
 }
@@ -179,8 +171,6 @@ func (m *model) prevInput() {
 	m.updateViewportContent()
 }
 
-// insertAtCursor inserts content into the text input at index idx at its
-// current cursor position, then advances the cursor past the inserted text.
 func (m *model) insertAtCursor(idx int, content string) {
 	if idx < 0 || idx >= len(m.inputs) {
 		return
@@ -218,8 +208,6 @@ func (m *model) submitForm() tea.Cmd {
 			return inputsUpdatedMsg{err: err}
 		}
 
-		// The update endpoint expects the full set of inputs, so start from the
-		// existing values and merge in the form fields.
 		merged := make(map[string]string)
 		if m.currentInputs != nil && m.currentInputs.Values != nil {
 			for k, v := range m.currentInputs.Values {

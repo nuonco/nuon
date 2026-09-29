@@ -6,12 +6,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
-	// "k8s.io/utils/diff"
 	"sigs.k8s.io/yaml"
 )
 
 const (
-	// NOTE(jm): this can also be template or simple
 	defaultOutputFormat string = "diff"
 )
 
@@ -46,8 +44,6 @@ func (h *handler) resourceDiff(prev, curr []*kubernetesResource) ([]kubernetesRe
 	return apply, delete
 }
 
-// objDiff compares two unstructured objects and returns a diff string.
-// not being utilized at the moment, but can be used for debugging purposes
 func (h *handler) objDiff(prev, curr unstructured.Unstructured) (string, error) {
 	prev = h.removeManagedFields(&prev)
 	curr = h.removeManagedFields(&curr)

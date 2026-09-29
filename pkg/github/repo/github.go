@@ -10,8 +10,6 @@ import (
 	"github.com/nuonco/nuon/pkg/kube"
 )
 
-// k8s secrets are actually a mapping, and this is the default key we use to store the actual value
-//
 //nolint:gosec
 const appKeySecretKeyKey string = "github_app_key"
 
@@ -22,7 +20,6 @@ type CloneTokenGetter interface {
 	ClonePath(context.Context) (string, error)
 }
 
-// gh is a type that lets you get a clone token for a repo
 type gh struct {
 	v *validator.Validate `validate:"required"`
 
@@ -56,7 +53,6 @@ func New(v *validator.Validate, opts ...Option) (*gh, error) {
 	return g, nil
 }
 
-// WithInstallID is used to set the registry id
 func WithInstallID(installID string) Option {
 	return func(g *gh) error {
 		ghInstallID, err := strconv.ParseInt(installID, 10, 64)
@@ -68,7 +64,6 @@ func WithInstallID(installID string) Option {
 	}
 }
 
-// WithAppKeyID is used to set the iam role arn to auth with
 func WithAppKeyID(appKeyID string) Option {
 	return func(g *gh) error {
 		g.AppKeyID = appKeyID
@@ -76,7 +71,6 @@ func WithAppKeyID(appKeyID string) Option {
 	}
 }
 
-// WithAppKeySecretName is used to set the secret name
 func WithAppKeySecretName(secretName string) Option {
 	return func(g *gh) error {
 		g.AppKeySecretName = secretName
@@ -84,7 +78,6 @@ func WithAppKeySecretName(secretName string) Option {
 	}
 }
 
-// WithAppKeySecretNamesapce is used to set the k8s secret namespace
 func WithAppKeySecretNamespace(ns string) Option {
 	return func(g *gh) error {
 		g.AppKeySecretNamespace = ns
@@ -92,7 +85,6 @@ func WithAppKeySecretNamespace(ns string) Option {
 	}
 }
 
-// WithAppKeySecretNamesapce is used to set the k8s secret namespace
 func WithAppKeyClusterInfo(info *kube.ClusterInfo) Option {
 	return func(g *gh) error {
 		g.AppKeyClusterInfo = info
@@ -100,7 +92,6 @@ func WithAppKeyClusterInfo(info *kube.ClusterInfo) Option {
 	}
 }
 
-// WithRepo is used to set the repo with the org/repo format
 func WithRepo(repo string) Option {
 	return func(g *gh) error {
 		owner, name, err := ParseRepo(repo)

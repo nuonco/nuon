@@ -34,9 +34,6 @@ const (
 	RoleTypeStack RoleType = "stack"
 )
 
-// Role contexts name the assignment surfaces a role may be offered on. A role
-// with no contexts still exists (and is displayed where held) but no picker or
-// create endpoint offers it.
 const (
 	RoleContextTeam           = "team"
 	RoleContextServiceAccount = "service_account"
@@ -71,8 +68,6 @@ type Role struct {
 	Policies []Policy `json:"policies,omitzero" temporaljson:"policies,omitzero,omitempty"`
 }
 
-// AllowsContext reports whether the role may be offered on the given
-// assignment surface.
 func (a *Role) AllowsContext(roleContext string) bool {
 	for _, c := range a.Contexts {
 		if c == roleContext {

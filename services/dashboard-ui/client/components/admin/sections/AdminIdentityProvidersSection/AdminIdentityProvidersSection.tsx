@@ -4,7 +4,6 @@ import { Toggle } from '@/components/common/form/Toggle'
 import type { TIdentityProvider } from '@/lib'
 import { AdminSection } from '../../shared/AdminSection'
 
-// mirrors providerDisplayName on the sign-in page, so an unnamed provider reads the same in both
 const PROVIDER_TYPE_LABELS: Record<string, string> = {
   google: 'Google',
   github: 'GitHub',
@@ -65,8 +64,6 @@ export const AdminIdentityProvidersSection = ({
 
           <Toggle
             checked={identityProvider.enabled}
-            // the env provider has no database row to patch, so it can only be turned off by
-            // removing its config from the environment
             disabled={
               identityProvider.source === 'env' ||
               pendingId === identityProvider.id

@@ -20,7 +20,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// Response Writer that caches the response body
 type CachedResponseWriter struct {
 	gin.ResponseWriter
 	Body *bytes.Buffer
@@ -50,25 +49,20 @@ func (m *middleware) Name() string {
 
 func (m *middleware) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Capture the request body
 		var requestBody string
 		if c.Request.Body != nil {
 			b, _ := io.ReadAll(c.Request.Body)
 			requestBody = string(b)
-			c.Request.Body = io.NopCloser(bytes.NewReader(b)) // Restore the body for the actual handler to use
+			c.Request.Body = io.NopCloser(bytes.NewReader(b))
 		}
 
-		// Capture the response body
 		writer := NewCachedResponseWriter(c.Writer)
 		c.Writer = writer
 
-		// Log server errors
 		defer func() {
 			m.LogErrors(c, requestBody, writer.Body.String())
 		}()
 
-		// Panic recovery (called last, executes first)
-		// Execute this first because it writes the response after recovering
 		defer func() {
 			m.RecoverFromPanic(c)
 		}()
@@ -81,7 +75,6 @@ func (m *middleware) Handler() gin.HandlerFunc {
 
 		err := c.Errors[0]
 
-		// Check if this is a binding error
 		if err.Type == gin.ErrorTypeBind {
 			m.l.Error("response already set, this usually means the endpoint is using ctx.BindJSON instead of ctx.ShouldBindJSON")
 			c.JSON(http.StatusBadRequest, ErrResponse{
@@ -92,7 +85,6 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		// define common error handlers here
 		var uErr ErrUser
 		if errors.As(err, &uErr) {
 			c.JSON(http.StatusBadRequest, ErrResponse{
@@ -135,12 +127,6 @@ func (m *middleware) Handler() gin.HandlerFunc {
 
 		var nrErr ErrNotReady
 		if errors.As(err, &nrErr) {
-			// NOTE(jm): there really is not a good status code for "not ready".
-			//
-			// our options are:
-			// 503 which implies a service issue.
-			// 404 which implies not found
-			// 3xx
 			c.JSON(http.StatusConflict, ErrResponse{
 				Error:       err.Error(),
 				UserError:   true,
@@ -169,7 +155,6 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		// gorm not found errors are usually user errors
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, ErrResponse{
 				Error:       err.Error(),
@@ -210,7 +195,6 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			}
 		}
 
-		// validation errors for any request inputs
 		var vErr validator.ValidationErrors
 		if errors.As(err, &vErr) {
 			c.JSON(http.StatusBadRequest, ErrResponse{
@@ -221,7 +205,6 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		// bad or unparseable request
 		var ivReqErr ErrInvalidRequest
 		if errors.As(err, &ivReqErr) {
 			c.JSON(http.StatusBadRequest, ErrResponse{
@@ -251,13 +234,11 @@ func (m *middleware) Handler() gin.HandlerFunc {
 
 func (m *middleware) RecoverFromPanic(c *gin.Context) {
 	if r := recover(); r != nil {
-		// Log the panic
 		m.l.Error("panic recovered",
 			zap.Any("panic", r),
 			zap.Stack("stack"),
 		)
 
-		// Return a system error response
 		c.JSON(http.StatusInternalServerError, ErrResponse{
 			Error:       "internal server error",
 			UserError:   false,
@@ -267,7 +248,6 @@ func (m *middleware) RecoverFromPanic(c *gin.Context) {
 	}
 }
 
-// helper func to add headers to zap fields
 func headerToZapField(header string) zap.Field {
 	parts := strings.SplitN(header, ": ", 2)
 	if len(parts) != 2 {
@@ -276,7 +256,6 @@ func headerToZapField(header string) zap.Field {
 	key := parts[0]
 	value := parts[1]
 
-	// Mask sensitive headers
 	sensitiveHeaders := map[string]struct{}{
 		"Authorization": {},
 		"Cookie":        {},
@@ -292,7 +271,6 @@ func headerToZapField(header string) zap.Field {
 
 func (m *middleware) LogErrors(c *gin.Context, requestBody, responseBody string) {
 	cl := cctx.GetLogger(c, m.l)
-	// Log errors for status >= 500
 	if c.Writer.Status() >= 500 {
 		fields := []zap.Field{
 			zap.String("method", c.Request.Method),

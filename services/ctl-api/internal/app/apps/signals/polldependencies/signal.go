@@ -34,7 +34,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("app_id is required")
 	}
 
-	// Validate app exists
 	_, err := activities.AwaitGetByAppID(ctx, s.AppID)
 	if err != nil {
 		return errors.Wrap(err, "app not found")
@@ -44,7 +43,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Poll until org is active or in error state
 	for {
 		currentApp, err := activities.AwaitGetByAppID(ctx, s.AppID)
 		if err != nil {
@@ -53,7 +51,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				Status:            app.AppStatusError,
 				StatusDescription: "unable to get app from database",
 			}); updateErr != nil {
-				// Log error but continue
 				workflow.GetLogger(ctx).Error("failed to update app status", updateErr)
 			}
 			statusactivities.AwaitUpdateAppStatusV2(ctx, statusactivities.UpdateAppStatusV2Request{
@@ -64,12 +61,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			return errors.Wrap(err, "unable to get app from database")
 		}
 
-		// If org is active, we're done
 		if currentApp.Org.Status == "active" {
 			return nil
 		}
 
-		// If org is in error, propagate error status to app
 		if currentApp.Org.Status == "error" {
 			// TODO(sdboyer) remove transitive error status propagation
 			if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
@@ -86,7 +81,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			})
 		}
 
-		// Sleep and poll again
 		workflow.Sleep(ctx, defaultPollTimeout)
 	}
 }

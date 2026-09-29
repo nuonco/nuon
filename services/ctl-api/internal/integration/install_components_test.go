@@ -47,17 +47,14 @@ func (s *installComponentsTestSuite) SetupTest() {
 	app := s.createApp()
 	s.appID = app.ID
 
-	// create a component
 	comp := s.createComponent(s.appID)
 	s.compID = comp.ID
 
-	// create a component config
 	req := generics.GetFakeObj[*models.ServiceCreateExternalImageComponentConfigRequest]()
 	cfg, err := s.apiClient.CreateExternalImageComponentConfig(s.ctx, s.compID, req)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), cfg)
 
-	// create a build of this component
 	buildReq := &models.ServiceCreateComponentBuildRequest{
 		GitRef: "HEAD",
 	}
@@ -65,7 +62,6 @@ func (s *installComponentsTestSuite) SetupTest() {
 	require.NoError(s.T(), err)
 	s.buildID = build.ID
 
-	// create install
 	install := s.createInstall(s.appID)
 	s.installID = install.ID
 }

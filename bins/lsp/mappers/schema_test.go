@@ -32,7 +32,6 @@ func TestBuildPropertyMap_BranchModeEnums(t *testing.T) {
 }
 
 func TestBuildPropertyMap(t *testing.T) {
-	// Use the real helm schema from the project
 	helmSchema, err := schema.LookupSchemaType("helm")
 	if err != nil {
 		t.Fatalf("failed to load helm schema: %v", err)
@@ -41,15 +40,12 @@ func TestBuildPropertyMap(t *testing.T) {
 		t.Fatal("helm schema is nil")
 	}
 
-	// Build the hierarchical property map
 	hierarchicalMap, _ := BuildPropertyMap(helmSchema)
 
-	// Verify the map is not empty
 	if len(hierarchicalMap) == 0 {
 		t.Error("hierarchical map should not be empty for helm schema")
 	}
 
-	// Test root-level properties (table path "")
 	t.Run("root level properties", func(t *testing.T) {
 		rootProps, ok := hierarchicalMap[""]
 		if !ok {
@@ -74,7 +70,6 @@ func TestBuildPropertyMap(t *testing.T) {
 		}
 	})
 
-	// Test nested properties are in their correct table paths (resolved from $ref)
 	t.Run("public_repo nested properties", func(t *testing.T) {
 		publicRepoProps, ok := hierarchicalMap["public_repo"]
 		if !ok {
@@ -123,7 +118,6 @@ func TestBuildPropertyMap(t *testing.T) {
 		}
 	})
 
-	// Verify specific property details
 	t.Run("chart_name property", func(t *testing.T) {
 		rootProps, ok := hierarchicalMap[""]
 		if !ok {

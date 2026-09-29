@@ -7,8 +7,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// LogStreamLogFilters mirrors the filter query parameters shared by the log
-// read and tail endpoints. Zero-value fields are ignored.
 type LogStreamLogFilters struct {
 	StartTime              string
 	EndTime                string
@@ -169,12 +167,6 @@ func (c *client) LogStreamReadLogs(ctx context.Context, logStreamId string, offs
 	return resp.Payload, nil
 }
 
-// LogStreamTailLogs hits the long-poll tail endpoint. `since` is a composite
-// cursor (`<unix_nano>:<id>`, empty for "from oldest"); `wait` is an optional
-// Go duration string, capped server-side at 30s when omitted.
-//
-// The endpoint only supports ASC ordering — callers paginate history
-// through the read endpoint instead.
 func (c *client) LogStreamTailLogs(ctx context.Context, logStreamID string, since string, wait string, filters *LogStreamLogFilters) (*models.ServiceLogStreamTailLogsResponse, error) {
 	params := &operations.LogStreamTailLogsParams{
 		LogStreamID: logStreamID,

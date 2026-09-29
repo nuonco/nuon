@@ -61,7 +61,6 @@ export const WorkflowIndex = () => {
   const startIndex = useCallback(async () => {
     if (!namespace || indexing) return
 
-    // Reset state.
     setWorkflows([])
     setSummary(null)
     setIndexing(true)
@@ -100,7 +99,7 @@ export const WorkflowIndex = () => {
             } else {
               newEntries.push(parsed)
             }
-          } catch { /* skip bad lines */ }
+          } catch
         }
 
         if (newEntries.length > 0) {
@@ -121,7 +120,6 @@ export const WorkflowIndex = () => {
     abortRef.current?.abort()
   }, [])
 
-  // Sort and filter.
   const workflowTypes = [...new Set(workflows.map(w => w.workflow_type))].sort()
   const filtered = filterType ? workflows.filter(w => w.workflow_type === filterType) : workflows
   const sorted = [...filtered].sort((a, b) => {
@@ -143,7 +141,6 @@ export const WorkflowIndex = () => {
     <div className="space-y-4">
       <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Workflow Index</h1>
 
-      {/* Controls */}
       <div className="flex flex-wrap items-center gap-3">
         <select
           value={namespace}
@@ -186,7 +183,6 @@ export const WorkflowIndex = () => {
         )}
       </div>
 
-      {/* Filters */}
       {workflows.length > 0 && (
         <div className="flex items-center gap-3">
           <select
@@ -205,7 +201,6 @@ export const WorkflowIndex = () => {
         </div>
       )}
 
-      {/* Table */}
       {sorted.length > 0 && (
         <div className="table-card">
           <table>

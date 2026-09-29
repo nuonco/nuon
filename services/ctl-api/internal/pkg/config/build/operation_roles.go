@@ -37,8 +37,6 @@ func OperationRoleConfig(appID, appConfigID string) *app.AppOperationRoleConfig 
 	}
 }
 
-// OperationRoleRules validates and builds the rules for an already-persisted
-// operation role config.
 func OperationRoleRules(rules []OperationRoleRuleInput, configID string) ([]*app.AppOperationRoleRule, error) {
 	out := make([]*app.AppOperationRoleRule, 0, len(rules))
 	for _, rule := range rules {

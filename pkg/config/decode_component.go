@@ -9,25 +9,6 @@ import (
 	"github.com/nuonco/nuon/pkg/config/source"
 )
 
-// NOTE(jm): this might not be needed
-//func ComponentEncode(fromType reflect.Type, toType reflect.Type, from interface{}) (interface{}, error) {
-//if toType != reflect.TypeOf(Component{}) {
-//return from, nil
-//}
-//if toType != reflect.TypeOf(map[string]interface{}{}) {
-//return from, nil
-//}
-
-// comp := from.(Component)
-
-//var obj map[string]interface{}
-//if err := mapstructure.Decode(comp, &obj); err != nil {
-//return from, fmt.Errorf("unable to convert object: %w", err)
-//}
-
-//return obj, nil
-//}
-
 func DecodeComponent(rootDir string) mapstructure.DecodeHookFunc {
 	return func(fromType reflect.Type, toType reflect.Type, from interface{}) (interface{}, error) {
 		return decodeComponent(fromType, toType, from, rootDir)

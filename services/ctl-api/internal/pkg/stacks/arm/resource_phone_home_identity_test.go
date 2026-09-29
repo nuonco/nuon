@@ -8,8 +8,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
-// phoneHomeScriptFrom picks the deploymentScripts resource out of the returned set,
-// which also carries the identity when phone home auth is active.
 func phoneHomeScriptFrom(t *testing.T, res []any) map[string]any {
 	t.Helper()
 	for _, r := range res {
@@ -78,7 +76,6 @@ func TestGetPhoneHomeResource_AttachesIdentity(t *testing.T) {
 		t.Errorf("identity %q not attached, got %v", wantResourceID, assigned)
 	}
 
-	// The script must not be able to run before the identity exists.
 	var dependsOnIdentity bool
 	for _, dep := range res["dependsOn"].([]string) {
 		if dep == wantResourceID {
@@ -89,7 +86,6 @@ func TestGetPhoneHomeResource_AttachesIdentity(t *testing.T) {
 		t.Errorf("phone home script does not depend on its identity: %v", res["dependsOn"])
 	}
 
-	// The identity has to be emitted with the script, not assumed to exist.
 	if phoneHomeIdentityFrom(all) == nil {
 		t.Error("identity resource not emitted alongside the script")
 	}
@@ -116,24 +112,18 @@ func TestGetPhoneHomeResource_AuthenticatesWithoutLeakingToken(t *testing.T) {
 		}
 	}
 
-	// az login enumerates subscriptions and fails for a role-less identity.
 	if strings.Contains(script, "az login") {
 		t.Error("script should fetch the token from IMDS, not via az login")
 	}
 
-	// Deployment script logs are readable by any reader on the resource group.
 	if strings.Contains(script, "echo $TOKEN") || strings.Contains(script, "set -x") {
 		t.Error("script must not echo the token")
 	}
 
-	// The IMDS response is JSON, so its spacing is not part of the contract. An
-	// extraction anchored on `"access_token":"` silently yields an empty token against a
-	// pretty-printed response, and the script then fails the deployment.
 	if !strings.Contains(script, `"access_token"[[:space:]]*:[[:space:]]*"`) {
 		t.Error("token extraction must tolerate whitespace around the colon")
 	}
 
-	// A token it could not fetch must fail the deployment, never phone home unauthenticated.
 	if !strings.Contains(script, "failed to acquire managed identity token") ||
 		!strings.Contains(script, "exit 1") {
 		t.Error("script must exit non-zero when no token could be acquired")
@@ -162,16 +152,11 @@ func TestGetPhoneHomeIdentityResource_HasNoRoleAssignments(t *testing.T) {
 	if res["name"] != "inst123-phone-home" {
 		t.Errorf("unexpected name %v", res["name"])
 	}
-	// A role-less identity is what makes a stolen token inert.
 	if _, ok := res["properties"]; ok {
 		t.Error("phone home identity should carry no properties, and no roles")
 	}
 }
 
-// At subscription scope the environment array is built in the root, but the identity is
-// created inside the install resource group. Resolving its client ID outside fails the
-// deployment with ResourceNotFound against a null resource group, so it has to be
-// appended within the wrapper.
 func TestGetPhoneHomeResources_SubscriptionScopeResolvesClientIDInside(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 	inp := subscriptionTemplateInput()

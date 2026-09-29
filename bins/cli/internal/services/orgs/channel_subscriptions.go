@@ -54,9 +54,6 @@ func (s *Service) ListChannelSubscriptions(ctx context.Context, asJSON bool) err
 	return nil
 }
 
-// CreateChannelSubscription resolves orgLinkID to the org's single linked
-// Slack workspace when empty; with multiple links, the caller must
-// disambiguate.
 func (s *Service) CreateChannelSubscription(
 	ctx context.Context,
 	channelID, channelName, orgLinkID string,
@@ -123,7 +120,7 @@ func (s *Service) CreateChannelSubscription(
 	return nil
 }
 
-// UpdateChannelSubscription is a partial update: keys omitted from the patch
+// why: UpdateChannelSubscription is a partial update: keys omitted from the patch
 // leave the stored value untouched, and "match": null resets the scope to
 // org-wide. The TUI picker is intentionally not wired here — it writes one
 // resource kind at a time and never pre-loads the existing subscription, so
@@ -190,10 +187,6 @@ func (s *Service) UpdateChannelSubscription(
 	return nil
 }
 
-// parseChannelSubscriptionPatch preserves key presence the same way the API
-// does: "match": null (make org-wide) is distinct from an omitted match
-// (leave unchanged). Interests is passed through as raw JSON so
-// unsupported-but-valid server shapes survive the round trip.
 func parseChannelSubscriptionPatch(raw []byte) (*models.ServiceUpdateChannelSubscriptionRequest, error) {
 	var rawKeys map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &rawKeys); err != nil {
@@ -222,8 +215,6 @@ func parseChannelSubscriptionPatch(raw []byte) (*models.ServiceUpdateChannelSubs
 		return nil, fmt.Errorf("parse match: %w", err)
 	}
 	if match == nil {
-		// "match": null — reset to org-wide. The SDK model's omitempty would
-		// drop a plain nil, so serialize the null explicitly.
 		req.Match = json.RawMessage("null")
 		return req, nil
 	}
@@ -277,10 +268,6 @@ func channelLabel(sub *models.AppSlackChannelSubscription) string {
 	return sub.ChannelID
 }
 
-// describeSubscriptionMatch renders a match predicate the way the dashboard
-// and Slack modal do ("Installs: not monitor=false"). Mirrors
-// client/components/match/types.ts describeMatch and
-// services/ctl-api/internal/app/slack/service/subscribe_modal.go describeMatch.
 func describeSubscriptionMatch(match any) string {
 	if match == nil {
 		return "Org-wide"

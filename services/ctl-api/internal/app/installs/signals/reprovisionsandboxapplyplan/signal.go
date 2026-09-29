@@ -124,7 +124,6 @@ var (
 )
 
 func (s *Signal) Clone(_ workflow.Context, originalStepName string) ([]signal.CloneStepDef, error) {
-	// Clones keep FlowID/lifecycle; the retry path doesn't re-inject it.
 	lifecycle := signal.LifecycleBase{
 		LifecycleWorkflowID:   s.LifecycleWorkflowID,
 		LifecycleWorkflowType: s.LifecycleWorkflowType,

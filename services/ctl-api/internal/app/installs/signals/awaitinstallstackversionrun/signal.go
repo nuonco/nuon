@@ -25,7 +25,7 @@ type Signal struct {
 	versionID string
 }
 
-const maxTimeout = 180 * 24 * time.Hour // 180 days
+const maxTimeout = 180 * 24 * time.Hour
 
 var _ signal.Signal = &Signal{}
 var _ signal.SignalWithStepContext = (*Signal)(nil)

@@ -75,7 +75,6 @@ func (s *GetRunnerJobV2TestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes (no TestOrg/TestAcc needed)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -94,7 +93,6 @@ func (s *GetRunnerJobV2TestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create log stream
 	s.testLogStream = &app.LogStream{
 		ID:      domains.NewLogStreamID(),
 		OrgID:   s.testOrg.ID,
@@ -104,7 +102,6 @@ func (s *GetRunnerJobV2TestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testLogStream).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -116,7 +113,6 @@ func (s *GetRunnerJobV2TestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -170,7 +166,6 @@ func (s *GetRunnerJobV2TestSuite) TestGetRunnerJobV2() {
 				err := s.service.DB.WithContext(ctx).Create(job).Error
 				require.NoError(s.T(), err)
 
-				// Create execution
 				exec := &app.RunnerJobExecution{
 					ID:          domains.NewRunnerID(),
 					OrgID:       s.testOrg.ID,
@@ -330,7 +325,6 @@ func (s *GetRunnerJobV2TestSuite) TestGetRunnerJobV2() {
 				err := s.service.DB.WithContext(ctx).Create(job).Error
 				require.NoError(s.T(), err)
 
-				// Create older execution (finished)
 				exec1 := &app.RunnerJobExecution{
 					ID:          domains.NewRunnerID(),
 					OrgID:       s.testOrg.ID,
@@ -340,7 +334,6 @@ func (s *GetRunnerJobV2TestSuite) TestGetRunnerJobV2() {
 				err = s.service.DB.WithContext(ctx).Create(exec1).Error
 				require.NoError(s.T(), err)
 
-				// Create newer execution (in progress) - this should be preloaded
 				exec2 := &app.RunnerJobExecution{
 					ID:          domains.NewRunnerID(),
 					OrgID:       s.testOrg.ID,

@@ -27,18 +27,7 @@ func (c *cli) registerConsumer() error {
 	return nil
 }
 
-// runConsumer runs the selected Kafka consumer, decoupled from the Temporal
-// workers. Infrastructure providers are lazy, so Temporal is never constructed
-// here — only what the consumers depend on (config, ClickHouse, metrics,
-// logging).
-//
-// Deployed, a pod runs one consumer (`--name=heartbeats`) or a group of them
-// that can share resources and a restart (`--name=otel-logs,otel-traces`); each
-// still gets its own topic, consumer group and client. Locally `--name=all` runs
-// them together.
 func (c *cli) runConsumer(cmd *cobra.Command, _ []string) error {
-	// Parsed before the fx graph is built so a bad --name is an immediate,
-	// legible error rather than a provider failure buried in an fx trace.
 	selection, err := consumer.NewSelection(consumerName)
 	if err != nil {
 		return err

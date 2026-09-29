@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// ParseClaimConditions parses repeated `claim=pattern` flag values.
 func ParseClaimConditions(raw []string) (map[string]string, error) {
 	if len(raw) == 0 {
 		return nil, nil

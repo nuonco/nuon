@@ -1,10 +1,3 @@
-// Package service exposes the org-scoped, dashboard-facing public API for the
-// Slack integration: enumerating installations linked to an org, listing /
-// creating channel subscriptions, and kicking off the OAuth install flow.
-//
-// The Slack-side surface (OAuth callback, slash commands, Events API) is
-// handled separately on the dedicated Slack listener via RegisterSlackRoutes
-// and is intentionally out of scope here (Phase 4).
 package service
 
 import (
@@ -66,7 +59,7 @@ func New(params Params) *service {
 	}
 }
 
-// RegisterPublicRoutes exposes the org-scoped public API (API key + Org ID
+// why: RegisterPublicRoutes exposes the org-scoped public API (API key + Org ID
 // auth) consumed by the dashboard UI.
 //
 // Naming note: in the ctl-api routing model, "public" means "the externally
@@ -96,19 +89,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error       { return n
 func (s *service) RegisterAuthRoutes(api *gin.Engine) error           { return nil }
 func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error { return nil }
 
-// RegisterSlackRoutes wires the Slack-facing listener: OAuth callback, slash
-// commands, and Events API webhooks. This runs on the dedicated Slack HTTP
-// server (cfg.SlackHTTPPort) and is exposed to the public internet.
-//
-// Auth model — distinct from /v1/*:
-//
-//   - The OAuth callback is NOT signed by Slack (browser redirect). Trust
-//     comes from the state JWT signature verified inside the handler.
-//   - Slash commands and events ARE signed by Slack. We mount
-//     signing.Middleware(cfg.SlackSigningSecret) at the route-group level
-//     (not as a global SlackMiddleware) so the OAuth callback is
-//     unaffected. cfg.SlackMiddlewares should remain limited to
-//     non-auth concerns (logging, cors, recovery) — see api/base.go.
 func (s *service) RegisterSlackRoutes(ge *gin.Engine) error {
 	ge.GET("/slack/oauth/callback", s.SlackOAuthCallback)
 
@@ -119,9 +99,6 @@ func (s *service) RegisterSlackRoutes(ge *gin.Engine) error {
 	signed := ge.Group("", signMW)
 	signed.POST("/slack/commands/nuon", s.SlackSlashCommand)
 	signed.POST("/slack/events", s.SlackEvents)
-	// Single request_url for all interactive surfaces (modals, buttons,
-	// select menus, dynamic options). Stub returns 200 today; modal
-	// handlers land in subsequent commits within this PR.
 	signed.POST("/slack/interactions", s.SlackInteractions)
 
 	return nil

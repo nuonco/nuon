@@ -25,7 +25,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// GeneralInternalTestDeps holds all fx-injected dependencies for general internal routes tests.
 type GeneralInternalTestDeps struct {
 	fx.In
 
@@ -38,7 +37,6 @@ type GeneralInternalTestDeps struct {
 	GeneralService *service
 }
 
-// GeneralInternalTestSuite is the testify suite for general internal routes.
 type GeneralInternalTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -68,7 +66,6 @@ func (s *GeneralInternalTestSuite) SetupSuite() {
 			T:               s.T(),
 			CustomValidator: true,
 		}),
-		// Service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -76,7 +73,6 @@ func (s *GeneralInternalTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -84,9 +80,6 @@ func (s *GeneralInternalTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
-
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -108,8 +101,6 @@ func (s *GeneralInternalTestSuite) setupTestData() {
 	s.ctx, s.testOrg = s.service.Seeder.EnsureOrg(s.ctx, s.T())
 }
 
-// makeRequest creates an HTTP request and executes it through the test router.
-// Returns the response recorder for assertions.
 func (s *GeneralInternalTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
 	var reqBody io.Reader
 	if body != nil {

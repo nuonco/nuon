@@ -1,6 +1,3 @@
-// Package awaitcomponenthealthy holds the verified-deploy stabilization gate: it
-// waits for a component to hold healthy after its apply before the deploy step
-// completes. Added at plan time only when the component opts into block_deploy.
 package awaitcomponenthealthy
 
 import (
@@ -27,8 +24,6 @@ import (
 const SignalType signal.SignalType = "await-component-healthy"
 
 const (
-	// noObservationExtension is the only case the gate runs past its configured
-	// window: waiting for a first report when the runner is slow or wedged.
 	noObservationExtension = 75 * time.Second
 	pollInitialInterval    = 10 * time.Second
 	pollMaxInterval        = 20 * time.Second
@@ -53,8 +48,6 @@ var (
 
 func (s *Signal) AutoRetry() bool { return true }
 
-// gateMaxAutoRetries bounds self re-checks before parking for a human, leaving
-// most of the global retry budget for the retry button.
 const gateMaxAutoRetries = 3
 
 func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return gateMaxAutoRetries }
@@ -101,8 +94,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get install component")
 	}
 
-	// Point the step at the component so the dashboard's detail panel can
-	// resolve what is being verified. Best-effort: the gate works without it.
 	if s.WorkflowStepID != "" {
 		_ = activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 			StepID:         s.WorkflowStepID,
@@ -123,8 +114,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// Required checks wait exactly like probes, except the runner cannot produce
-	// them — something external must push before the deploy proceeds.
 	declaredProbes := make([]string, 0, len(ccc.HealthProbes)+len(ccc.HealthRequiredChecks))
 	declaredProbes = append(declaredProbes, ccc.HealthRequiredChecks...)
 	for _, probe := range ccc.HealthProbes {
@@ -134,8 +123,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	window := ccc.HealthStabilization()
-	// Judged off raw runner reports rather than the debounced verdict, so the gate
-	// carries no evaluator-cron or debounce latency.
 	gateStartedAt := workflow.Now(ctx)
 	deadline := gateStartedAt.Add(window).Add(noObservationExtension)
 
@@ -167,8 +154,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				sawData = true
 			}
 
-			// The check snapshot is best-effort context for the step's detail
-			// view; a lookup failure must never affect the gate decision.
 			checks, cerr := activities.AwaitGetComponentHealthCheckRows(ctx, &activities.GetComponentHealthCheckRowsRequest{
 				InstallID:          s.InstallID,
 				InstallComponentID: s.InstallComponentID,
@@ -179,7 +164,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			markRemovedCheckRows(checks, declaredProbes)
 			checks = withAwaitedChecks(checks, declaredProbes, gateStartedAt)
 
-			// An all-healthy window must not verify a deploy whose declared
+			// why: An all-healthy window must not verify a deploy whose declared
 			// checks never ran. This is terminal at the window boundary rather
 			// than a retry: the stabilization window is the wait, so anyone
 			// needing longer for a pusher to arrive lengthens the window.
@@ -191,8 +176,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 					s.narrate(ctx, &lastNarration, failMsg, checks)
 					return errors.Wrap(poll.NonRetryableError, failMsg)
 				}
-				// Reporting is not passing: a declared check that reports failing
-				// has to fail the window, or gating on it means nothing.
 				if failed := failedChecks(declaredProbes, checks, gateStartedAt); len(failed) > 0 {
 					failMsg = "declared checks reported failing: " + strings.Join(failed, ", ")
 					s.narrate(ctx, &lastNarration, failMsg, checks)
@@ -200,15 +183,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				}
 			}
 
-			// The step's status already shows every check's current state, so the
-			// timeline carries transitions only — a readable record of what moved
-			// during the window instead of a line per poll.
-			// Narrate every poll so the detail view always carries the current
-			// state of every check, including the ones still unknown. The dedupe
-			// keys on state rather than the countdown, so a quiet poll adds no
-			// timeline entry; when a check moves, the line says what moved.
-			// One line per poll, carrying the snapshot either way, deduped on
-			// state — so the first poll still writes it while all checks are unknown.
 			if moved := checkTransitions(lastCheckHealth, checks); moved != "" {
 				s.narrate(ctx, &lastNarration, moved, checks)
 			}
@@ -241,7 +215,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return gateErr
 }
 
-// gateResult turns the poll outcome into the user-facing error, or nil on pass.
 func (s *Signal) gateResult(
 	pollErr error,
 	window time.Duration,
@@ -263,17 +236,12 @@ func (s *Signal) gateResult(
 		}
 		return fmt.Errorf("component did not hold healthy for %s: window ended %s", window, describeReport(lastReport))
 	}
-	// The poll sentinel is loop control, not user-facing text — return the
-	// clean message instead of "...: non-retryable".
 	if failMsg != "" && errors.Is(pollErr, poll.NonRetryableError) {
 		return errors.New(failMsg)
 	}
 	return pollErr
 }
 
-// recordDeployOutcome stops the apply step's "active/finished" being the last
-// word on a deploy the gate refused. Resolved here rather than passed in: the
-// gate step is built at plan time, before the deploy row exists.
 func (s *Signal) recordDeployOutcome(ctx workflow.Context, l *zap.Logger, componentID string, gateErr error) {
 	deploy, err := activities.AwaitGetLatestDeploy(ctx, activities.GetLatestDeployRequest{
 		InstallID:   s.InstallID,
@@ -284,7 +252,7 @@ func (s *Signal) recordDeployOutcome(ctx workflow.Context, l *zap.Logger, compon
 		return
 	}
 
-	// status_v2 reuses StatusError because app.Status is an enumerated schema and
+	// why: status_v2 reuses StatusError because app.Status is an enumerated schema and
 	// old SDKs reject unknown values; install_deploys.status is free-form.
 	status, statusV2, message := app.InstallDeployStatusActive, app.Status(app.InstallDeployStatusActive), "health verified"
 	if gateErr != nil {
@@ -313,7 +281,7 @@ func isWatchableComponentType(t app.ComponentType) bool {
 	return t == app.ComponentTypeHelmChart || t == app.ComponentTypeKubernetesManifest
 }
 
-// componentConfig resolves the component's current config, pin first with the
+// why: componentConfig resolves the component's current config, pin first with the
 // latest-configs view as fallback. ccc rows are deltas, so the pin alone returns
 // nil after any unrelated sync and silently turns the gate off.
 func (s *Signal) componentConfig(ctx workflow.Context, componentID string) (*app.ComponentConfigConnection, error) {
@@ -323,7 +291,6 @@ func (s *Signal) componentConfig(ctx workflow.Context, componentID string) (*app
 	})
 }
 
-// badReportMessage names the failing observation and what it said.
 func badReportMessage(r *activities.GateHealthReport) string {
 	if r == nil {
 		return "a health observation inside the stabilization window was failing"
@@ -338,16 +305,11 @@ func badReportMessage(r *activities.GateHealthReport) string {
 	return msg
 }
 
-// missingChecksMessage names the checks that never reported inside the window.
-// Lengthening stabilization_window is the way to wait longer, so the message
-// says so rather than leaving the reader to guess.
 func missingChecksMessage(missing []string, window time.Duration) string {
 	return fmt.Sprintf("no report inside the %s window for: %s — push these before the window closes, or lengthen stabilization_window",
 		window, strings.Join(missing, ", "))
 }
 
-// describeChecks summarises the whole set, so a pass does not read as though a
-// single resource was all that was looked at.
 func describeChecks(checks []activities.ComponentHealthCheckRow) string {
 	if len(checks) == 0 {
 		return "no checks reported"
@@ -384,25 +346,16 @@ func describeReport(r *activities.GateHealthReport) string {
 	return desc
 }
 
-// narrate writes the gate's progress onto its workflow step, so it isn't a silent
-// step that eventually flips. Best-effort — a failure here must not fail the gate.
-// remainingRe matches the "— 39s of the 1m0s window left" fragment so two polls
-// that differ only by the clock dedupe to one entry.
 var remainingRe = regexp.MustCompile(`— [0-9hms.]+ of (the )?[0-9hms.]* ?window left`)
 
 func stripRemaining(narration string) string {
 	return remainingRe.ReplaceAllString(narration, "— window running")
 }
 
-// narrate writes the gate's progress and its check snapshot onto the workflow
-// step. Deduped on state, not on the countdown, so the detail view stays current
-// without the timeline growing a line per poll.
 func (s *Signal) narrate(ctx workflow.Context, lastNarration *string, narration string, checks []activities.ComponentHealthCheckRow) {
 	if s.WorkflowStepID == "" || narration == "" {
 		return
 	}
-	// Keying on the raw narration would defeat the dedupe, since the countdown
-	// changes every poll — 46 lines on a 10m window.
 	key := stripRemaining(narration)
 	for _, c := range checks {
 		key += "|" + c.Kind + "/" + c.Name + "=" + c.Health
@@ -414,8 +367,6 @@ func (s *Signal) narrate(ctx workflow.Context, lastNarration *string, narration 
 
 	metadata := map[string]any{}
 	if len(checks) > 0 {
-		// Explicit lowercase keys: this crosses the Temporal payload converter
-		// into JSONB, and a struct with mismatched tags renders as empty rows.
 		rows := make([]map[string]any, 0, len(checks))
 		for _, c := range checks {
 			row := map[string]any{
@@ -445,15 +396,11 @@ func (s *Signal) narrate(ctx workflow.Context, lastNarration *string, narration 
 	}
 }
 
-// windowNarration renders one poll reading as a human sentence with the real
-// remaining budget.
 func windowNarration(outcome windowOutcome, report *activities.GateHealthReport, gateStartedAt, now time.Time, window time.Duration, checks []activities.ComponentHealthCheckRow) string {
 	switch outcome {
 	case windowPass:
 		return fmt.Sprintf("held healthy for %s — %s", window, describeChecks(checks))
 	case windowFailBad:
-		// Written just before the step's error lands, so the failing snapshot
-		// is locked in the step history with the checks that caused it.
 		return badReportMessage(report)
 	case windowFailState:
 		return fmt.Sprintf("window ended %s", describeReport(report))

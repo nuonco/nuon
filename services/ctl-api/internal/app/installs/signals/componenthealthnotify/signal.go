@@ -1,6 +1,3 @@
-// Package componenthealthnotify holds notification-only carrier signals for the
-// component health axis. Execute is a no-op — they exist only so the dispatcher
-// emits events for subscribers, and carry no WorkflowID/StepID.
 package componenthealthnotify
 
 import (
@@ -16,7 +13,6 @@ const (
 	InstallDegradedSignalType    signal.SignalType = "install-degraded"
 )
 
-// Metadata keys carried through to the webhook payload and Slack renderers.
 const (
 	MetadataKeyHealth         = "health"
 	MetadataKeyPreviousHealth = "previous_health"
@@ -31,8 +27,6 @@ const (
 	MetadataKeyInstallPrev    = "install_previous_health"
 )
 
-// ComponentSignal is the shared body of the two component-level health
-// notifications; Health/PreviousHealth let a renderer say "went from X to Y".
 type ComponentSignal struct {
 	InstallID          string `json:"install_id"`
 	InstallName        string `json:"install_name"`
@@ -48,7 +42,6 @@ type ComponentSignal struct {
 	RootResourceNamespace string `json:"root_resource_namespace"`
 	RootResourceName      string `json:"root_resource_name"`
 
-	// Set only when this crossing also moved the install composite.
 	InstallHealth         string `json:"install_health,omitempty"`
 	InstallPreviousHealth string `json:"install_previous_health,omitempty"`
 }
@@ -94,8 +87,6 @@ func (s *ComponentSignal) lifecycleContext(operation string) signal.SignalLifecy
 	}
 }
 
-// ComponentUnhealthySignal fires when a component's verdict crosses into
-// degraded/unhealthy. Never for unknown — that's runner-inactivity's job, not N alerts.
 type ComponentUnhealthySignal struct {
 	ComponentSignal
 }
@@ -115,8 +106,6 @@ func (s *ComponentUnhealthySignal) Validate(_ workflow.Context) error { return s
 
 func (s *ComponentUnhealthySignal) Execute(_ workflow.Context) error { return nil }
 
-// ComponentRecoveredSignal fires when a component's verdict returns to
-// healthy, so a channel told about a failure always gets its resolution.
 type ComponentRecoveredSignal struct {
 	ComponentSignal
 }
@@ -136,8 +125,6 @@ func (s *ComponentRecoveredSignal) Validate(_ workflow.Context) error { return s
 
 func (s *ComponentRecoveredSignal) Execute(_ workflow.Context) error { return nil }
 
-// InstallDegradedSignal fires when the install's composite health crosses
-// degraded/unhealthy; pairing it with per-component signals double-alerts one outage.
 type InstallDegradedSignal struct {
 	InstallID   string `json:"install_id"`
 	InstallName string `json:"install_name"`

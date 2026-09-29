@@ -9,7 +9,6 @@ import (
 )
 
 type ListAppsNeedingDefaultBranchRequest struct {
-	// OrgIDs narrows the backfill to a subset of orgs. Empty covers every org.
 	OrgIDs []string `json:"org_ids"`
 }
 

@@ -39,7 +39,6 @@ func (s *componentBuildsSuite) TearDownTest() {
 }
 
 func (s *componentBuildsSuite) SetupTest() {
-	// create an org
 	orgReq := s.fakeOrgRequest()
 	org, err := s.apiClient.CreateOrg(s.ctx, orgReq)
 	require.NoError(s.T(), err)
@@ -47,12 +46,10 @@ func (s *componentBuildsSuite) SetupTest() {
 	s.apiClient.SetOrgID(org.ID)
 	s.orgID = org.ID
 
-	// add a vcs connection to the org
 	vcsReq := generics.GetFakeObj[*models.ServiceCreateConnectionRequest]()
 	_, err = s.apiClient.CreateVCSConnection(s.ctx, vcsReq)
 	require.Nil(s.T(), err)
 
-	// create an app
 	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
 	appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
 	app, err := s.apiClient.CreateApp(s.ctx, appReq)
@@ -60,11 +57,9 @@ func (s *componentBuildsSuite) SetupTest() {
 	require.NotNil(s.T(), app)
 	s.appID = app.ID
 
-	// create a component
 	comp := s.createComponent(s.appID)
 	s.compID = comp.ID
 
-	// create a component config
 	req := generics.GetFakeObj[*models.ServiceCreateExternalImageComponentConfigRequest]()
 	cfg, err := s.apiClient.CreateExternalImageComponentConfig(s.ctx, s.compID, req)
 	require.Nil(s.T(), err)
@@ -84,7 +79,6 @@ func (s *componentBuildsSuite) TestCreateComponentBuild() {
 		require.NotNil(t, bld)
 		require.NotEmpty(t, bld.ID)
 
-		// make sure it creates the build for the correct component config
 		require.Equal(t, bld.ComponentConfigConnectionID, s.cfgConnectionID)
 	})
 
@@ -146,7 +140,6 @@ func (s *componentBuildsSuite) TestGetComponentBuilds() {
 		require.NotEmpty(t, blds)
 		require.Len(t, blds, 2)
 
-		// make sure it creates the build for the correct component config
 		require.Equal(t, blds[0].ID, secondBuild.ID)
 	})
 }
@@ -184,7 +177,6 @@ func (s *componentBuildsSuite) TestGetComponentLatestBuild() {
 	s.T().Run("errors when no build exists", func(t *testing.T) {
 		comp := s.createComponent(s.appID)
 
-		// create a component config
 		req := generics.GetFakeObj[*models.ServiceCreateExternalImageComponentConfigRequest]()
 		cfg, err := s.apiClient.CreateExternalImageComponentConfig(s.ctx, comp.ID, req)
 		require.Nil(t, err)

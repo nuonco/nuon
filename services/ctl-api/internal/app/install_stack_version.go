@@ -99,7 +99,7 @@ type InstallStackVersion struct {
 	CompositeError *compositeerrors.CompositeErrorData `json:"composite_error,omitempty" gorm:"type:jsonb" temporaljson:"composite_error,omitzero,omitempty"`
 }
 
-// PhoneHomeTokenEligibleStatuses are the statuses for which a stack version should
+// why: PhoneHomeTokenEligibleStatuses are the statuses for which a stack version should
 // hold a live phone-home token. Retired versions (cancelled, expired, outdated) want
 // no credential at all — the handler rejects an expired version outright, and an
 // outdated one has been superseded by a version that already phoned home.
@@ -113,7 +113,7 @@ var PhoneHomeTokenEligibleStatuses = []Status{
 	InstallStackVersionStatusActive,
 }
 
-// Statuses whose templates were uploaded. Earlier ones carry URLs written at
+// why: Statuses whose templates were uploaded. Earlier ones carry URLs written at
 // creation, pointing at objects that never landed.
 var InstallStackVersionTemplateReadyStatuses = []Status{
 	InstallStackVersionStatusPendingUser,
@@ -122,7 +122,7 @@ var InstallStackVersionTemplateReadyStatuses = []Status{
 	InstallStackVersionStatusOutdated,
 }
 
-// PhoneHomeTokenEligible reports whether this version should hold a live phone-home
+// why: PhoneHomeTokenEligible reports whether this version should hold a live phone-home
 // token. A tombstoned token is never reissued: that is what distinguishes a
 // deliberate revocation from a version that has simply never been minted for.
 func (a *InstallStackVersion) PhoneHomeTokenEligible() bool {

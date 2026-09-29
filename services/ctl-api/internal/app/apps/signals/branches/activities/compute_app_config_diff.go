@@ -26,9 +26,9 @@ type ConfigDiffSection struct {
 }
 
 type ConfigDiffEntry struct {
-	Op          string `json:"op"`          // "add", "remove", "change"
-	Name        string `json:"name"`        // primary identifier (component name, env var key, etc.)
-	Description string `json:"description"` // secondary info (type, value, path, etc.)
+	Op          string `json:"op"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 type ComputeAppConfigDiffOutput struct {
@@ -51,7 +51,6 @@ func (a *Activities) ComputeAppConfigDiff(ctx context.Context, input *ComputeApp
 	if input.OldConfigID != "" {
 		oldCfg, err = a.loadIntermediateConfig(ctx, input.AppID, input.OldConfigID)
 		if err != nil {
-			// Non-fatal: treat as first config (everything is "added")
 			oldCfg = nil
 		}
 	}
@@ -77,9 +76,6 @@ func (a *Activities) ComputeAppConfigDiff(ctx context.Context, input *ComputeApp
 	return output, nil
 }
 
-// diffNodeToSection converts a top-level diff node (like "components", "actions", etc.)
-// into a flat ConfigDiffSection for the UI. Counts are at the entity level:
-// grouped sections count per-entity, ungrouped sections count as a single entity.
 func diffNodeToSection(node *diff.Diff) *ConfigDiffSection {
 	if node == nil {
 		return nil
@@ -137,8 +133,6 @@ func diffNodeToSection(node *diff.Diff) *ConfigDiffSection {
 	return section
 }
 
-// stripDiffEntityPrefix turns diff tree keys like "component.api" into the
-// plain resource name used by source_changed lookups and the builds step.
 func stripDiffEntityPrefix(key string) string {
 	for _, prefix := range []string{"component.", "action.", "runbook."} {
 		if strings.HasPrefix(key, prefix) {
@@ -148,12 +142,6 @@ func stripDiffEntityPrefix(key string) string {
 	return key
 }
 
-// entityAggregateOp determines the overall operation for a diff subtree.
-// If there are adds but no removes → add (changes from zero-value defaults
-// like false→true are treated as part of the add).
-// If there are removes but no adds → remove.
-// Otherwise → change.
-// Returns "" if no changes exist.
 func entityAggregateOp(node *diff.Diff) diff.Op {
 	if node == nil {
 		return ""
@@ -193,9 +181,6 @@ func entityAggregateOp(node *diff.Diff) diff.Op {
 	return diff.OpChange
 }
 
-// sectionDisplayNameAndGrouped maps diff tree keys to UI section names and
-// whether the section contains multiple named entities (grouped) or is a
-// single logical entity (ungrouped).
 func sectionDisplayNameAndGrouped(key string) (string, bool) {
 	switch key {
 	case "components":

@@ -51,7 +51,6 @@ func (s *service) CreateUserJourney(ctx *gin.Context) {
 		return
 	}
 
-	// Delegate business logic to private method
 	updatedAccount, err := s.createUserJourney(ctx, account.ID, &req)
 	if err != nil {
 		ctx.Error(err)
@@ -67,7 +66,6 @@ func (s *service) createUserJourney(ctx *gin.Context, accountID string, req *Cre
 		return nil, err
 	}
 
-	// Check for duplicate journey names
 	for _, journey := range account.UserJourneys {
 		if journey.Name == req.Name {
 			return nil, stderr.ErrConflict{
@@ -77,7 +75,6 @@ func (s *service) createUserJourney(ctx *gin.Context, accountID string, req *Cre
 		}
 	}
 
-	// Create journey steps
 	steps := make([]app.UserJourneyStep, len(req.Steps))
 	for i, stepReq := range req.Steps {
 		steps[i] = app.UserJourneyStep{
@@ -87,20 +84,17 @@ func (s *service) createUserJourney(ctx *gin.Context, accountID string, req *Cre
 		}
 	}
 
-	// Create new journey
 	newJourney := app.UserJourney{
 		Name:  req.Name,
 		Title: req.Title,
 		Steps: steps,
 	}
 
-	// Add journey to account
 	if account.UserJourneys == nil {
 		account.UserJourneys = []app.UserJourney{}
 	}
 	account.UserJourneys = append(account.UserJourneys, newJourney)
 
-	// Save to database
 	if err := s.db.WithContext(ctx).Save(account).Error; err != nil {
 		return nil, fmt.Errorf("unable to create user journey: %w", err)
 	}

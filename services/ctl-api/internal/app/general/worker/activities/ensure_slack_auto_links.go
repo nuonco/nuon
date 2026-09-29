@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// EnsureSlackAutoLinksRequest has no params — policy comes from a.cfg.SlackAutoLink*.
 type EnsureSlackAutoLinksRequest struct{}
 
 type EnsureSlackAutoLinksResult struct {

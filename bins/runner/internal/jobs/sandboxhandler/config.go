@@ -7,7 +7,6 @@ import (
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 )
 
-// Config holds the sandbox job configuration for a specific job type and operation.
 type Config struct {
 	Duration            time.Duration          `json:"duration_ms"`
 	ErrorMessage        string                 `json:"error_message,omitempty"`
@@ -22,7 +21,6 @@ type Config struct {
 	TriggerShutdown     bool                   `json:"trigger_shutdown,omitempty"`
 }
 
-// ConfigFromAPI converts a runner SDK SandboxConfig into a handler Config.
 func ConfigFromAPI(cfg *nuonrunner.SandboxConfig) *Config {
 	var logLines []string
 	if len(cfg.LogLines) > 0 {

@@ -19,7 +19,6 @@ const (
 	defaultGitHubAppName    string = "nuon-connect"
 )
 
-// config holds config values, read from the `~/.nuon` config file and env vars.
 type Config struct {
 	*viper.Viper
 
@@ -35,14 +34,12 @@ type Config struct {
 
 	Interactive bool `mapstructure:"-"`
 
-	// internal configuration, not designed to be used by users
 	GitHubAppName string `mapstructure:"github_app_name"`
 	APIURLSource  string `mapstructure:"-"`
 	Env           string `mapstructure:"-"`
 	UserID        string `mapstructure:"-"`
 }
 
-// NewConfig creates a new config instance.
 func NewConfig(customFilepath string) (*Config, error) {
 	cfg := &Config{
 		Viper:         viper.New(),
@@ -52,17 +49,14 @@ func NewConfig(customFilepath string) (*Config, error) {
 		Preview:       Preview(),
 	}
 
-	// Read values from config file.
 	if err := cfg.readConfigFile(customFilepath); err != nil {
 		return nil, err
 	}
 
-	// Read values from env vars.
 	cfg.SetEnvPrefix("NUON")
 	cfg.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	cfg.AutomaticEnv()
 
-	// Set global config values
 	if cfg.GetString("api_token") != "" {
 		cfg.APIToken = cfg.GetString("api_token")
 	}
@@ -100,7 +94,6 @@ func NewConfig(customFilepath string) (*Config, error) {
 	return cfg, nil
 }
 
-// readConfigFile reads config values from a yaml file at ~/.nuon
 func (c *Config) readConfigFile(customFP string) error {
 	cfgFP := defaultFilePath
 	isDefault := true
@@ -146,11 +139,10 @@ func (c *Config) readConfigFile(customFP string) error {
 	return fmt.Errorf("unable to load config file: %w", err)
 }
 
-// BindCobraFlags binds config values to the flags of the provided cobra command.
 func (c *Config) BindCobraFlags(cmd *cobra.Command) {
 	cmd.Flags().VisitAll(func(f *pflag.Flag) {
 		name := strings.ReplaceAll(f.Name, "-", "_")
-		// `preview` is the NUON_PREVIEW feature gate (config.Preview()), not a
+		// why: `preview` is the NUON_PREVIEW feature gate (config.Preview()), not a
 		// flag value; don't let it bleed into the plan-only `--preview` flags.
 		if name == "preview" {
 			return

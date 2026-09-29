@@ -337,8 +337,6 @@ func TestProbeSpecsFor(t *testing.T) {
 	}
 
 	specs := probeSpecsFor(c)
-	// Every declared probe is reported: the three runnable ones plus the three
-	// that cannot run, which report unknown with a reason rather than vanishing.
 	require.Len(t, specs, 6)
 
 	for _, i := range []int{0, 1, 2} {
@@ -446,7 +444,6 @@ func ptr[T any](v T) *T {
 	return &v
 }
 
-// closedAddr returns a loopback address with nothing listening on it.
 func closedAddr(t *testing.T) string {
 	t.Helper()
 
@@ -457,8 +454,6 @@ func closedAddr(t *testing.T) string {
 	return addr
 }
 
-// A vendor's health check must not inherit the runner's control-plane token or
-// cloud credential env vars.
 func TestRunExecProbeEnvIsolation(t *testing.T) {
 	t.Setenv("NUON_TEST_SECRET_SENTINEL", "leaked")
 
@@ -469,8 +464,6 @@ func TestRunExecProbeEnvIsolation(t *testing.T) {
 	require.Equal(t, healthHealthy, res.health, "probe env is missing PATH/HOME: %s", res.message)
 }
 
-// A declared probe that cannot run must still report — as unknown, with the
-// reason — rather than silently disappearing, or the vendor thinks it ran.
 func TestUnrunnableProbesReportUnknownRatherThanVanish(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -538,7 +531,6 @@ func TestUnrunnableProbesReportUnknownRatherThanVanish(t *testing.T) {
 	}
 }
 
-// A valid probe must be unaffected by the unresolved path.
 func TestValidProbeStillRuns(t *testing.T) {
 	specs := probeSpecsFor(&models.ServiceRunnerInstallComponent{
 		Probes: []*models.ServiceRunnerComponentProbe{

@@ -28,7 +28,6 @@ func (c *Client) FetchSteps(ctx context.Context, req FetchStepsRequest) (*app.Ge
 		return nil, errors.Wrap(err, "unable to get queue signal")
 	}
 
-	// Recover run ID from: heartbeat (fastest) → DB (persisted by dispatcher) → Ready update (fallback).
 	var runID string
 	if activity.HasHeartbeatDetails(ctx) {
 		if err := activity.GetHeartbeatDetails(ctx, &runID); err != nil {
@@ -58,7 +57,7 @@ func (c *Client) FetchSteps(ctx context.Context, req FetchStepsRequest) (*app.Ge
 			WaitForStage: tclient.WorkflowUpdateStageCompleted,
 		})
 		if err != nil {
-			// The update targets the original handler run that has the generated
+			// why: The update targets the original handler run that has the generated
 			// steps in memory. If that run terminated, the steps are lost and
 			// the caller must re-enqueue the generate-steps signal.
 			return nil, temporal.NewNonRetryableApplicationError(

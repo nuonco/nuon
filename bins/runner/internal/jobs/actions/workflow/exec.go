@@ -15,13 +15,11 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
-// actionImagePullTimeout is deliberately separate from the action's own
+// why: actionImagePullTimeout is deliberately separate from the action's own
 // timeout: a cold pull that shares the step budget fails every first run and
 // only passes once the host image cache is warm.
 const actionImagePullTimeout = 15 * time.Minute
 
-// resolveStepConfig builds the step config for execution, preferring interpolated
-// values from the plan (where Go templates have been rendered) over raw config values.
 func resolveStepConfig(
 	configStepCfg *models.AppActionWorkflowStepConfig,
 	step *models.AppInstallActionWorkflowRunStep,
@@ -63,9 +61,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return err
 	}
 
-	// Tag this handler's logger with semantic-convention attributes so every
-	// emitted record (including from helpers further down the call tree) carries
-	// them automatically.
 	installID := ""
 	if h.state.plan != nil {
 		installID = h.state.plan.InstallID
@@ -86,8 +81,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	)
 	ctx = pkgctx.SetLogger(ctx, l)
 
-	// For adhoc runs, workflowCfg is nil - use a default timeout
-	timeout := 5 * time.Minute // default timeout
+	timeout := 5 * time.Minute
 	if h.state.plan != nil && h.state.plan.Timeout > 0 {
 		timeout = h.state.plan.Timeout
 	} else if h.state.workflowCfg != nil && h.state.workflowCfg.Timeout > 0 {
@@ -126,12 +120,10 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 		remainingSteps := h.state.run.Steps[idx+1:]
 		if len(remainingSteps) > 0 {
-			// Build remaining configs for error handling
 			var remainingCfgs []*models.AppActionWorkflowStepConfig
 			if h.state.workflowCfg != nil {
 				remainingCfgs = h.state.workflowCfg.Steps[idx+1:]
 			} else {
-				// For adhoc runs, build configs from step AdHocConfigs
 				for _, s := range remainingSteps {
 					if s.AdhocConfig != nil {
 						remainingCfgs = append(remainingCfgs, &models.AppActionWorkflowStepConfig{

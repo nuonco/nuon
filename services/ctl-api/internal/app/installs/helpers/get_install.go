@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
-// GetInstall reads an install from the DB scoped to the given org.
 func (h *Helpers) GetInstall(ctx context.Context, orgID, installID string) (*app.Install, error) {
 	install := app.Install{}
 	res := h.db.WithContext(ctx).

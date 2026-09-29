@@ -32,8 +32,6 @@ func (*policySignal) AutoApproveOnPoliciesPassing(workflow.Context) bool {
 	return true
 }
 
-// autoApproveOnlySignal has no policy target to evaluate — it only declares the
-// auto-approve capability, like an install group plan step.
 type autoApproveOnlySignal struct {
 	autoApprove bool
 }
@@ -104,8 +102,6 @@ func runCheck(t *testing.T, sig signal.Signal) directive.CheckResult {
 	return result
 }
 
-// A signal with no policy target never evaluates policies, so its opt-in has to
-// be honored on its own or the setting silently does nothing.
 func TestCheckAutoApprovesSignalWithoutPolicyEvaluation(t *testing.T) {
 	result := runCheck(t, &autoApproveOnlySignal{autoApprove: true})
 

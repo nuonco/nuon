@@ -18,22 +18,14 @@ import (
 )
 
 const (
-	defaultFetchMaxWait = 5 * time.Second
-	// batch floor
-	defaultFetchMinBytes = 256 * 1024
-	// batch ceilings. franz-go defaults to 50MiB per broker with unbounded fetch
-	// concurrency, which on a 3-broker cluster buffers ~150MiB of records —
-	// compressed, so more again once decompressed — before any of it is decoded.
-	// Its own docs recommend setting these when consuming compressed data, and we
-	// produce lz4. FetchMinBytes sits well under these, so steady-state batching
-	// and latency are unaffected; the caps only bind during a backlog drain, which
-	// is exactly when memory is tightest.
+	defaultFetchMaxWait           = 5 * time.Second
+	defaultFetchMinBytes          = 256 * 1024
 	defaultFetchMaxBytes          = 8 * 1024 * 1024
 	defaultFetchMaxPartitionBytes = 2 * 1024 * 1024
 	defaultMaxConcurrentFetches   = 2
 )
 
-// A single fetch can transiently exceed FetchMaxPartitionBytes above: a
+// why: A single fetch can transiently exceed FetchMaxPartitionBytes above: a
 // broker always returns at least one full record even if it's larger than
 // the requested partition limit (KIP-74), and the broker's
 // max.message.bytes is 4MiB (mono infra/kafka/vars/defaults.yaml) — twice
@@ -42,28 +34,17 @@ const (
 // large payloads like a dlq record.
 
 type ConsumerConfig struct {
-	Group        string
-	Topics       []string
-	FetchMaxWait time.Duration
-	// FetchMinBytes is the batch floor, the rest are ceilings. Worst-case buffered
-	// bytes is
-	//
-	//	min(FetchMaxBytes, partitionsOnBroker*FetchMaxPartitionBytes) * MaxConcurrentFetches
-	//
-	// so partitions-per-pod — replica count, not topic size — is usually what
-	// actually bounds a consumer's memory.
+	Group                  string
+	Topics                 []string
+	FetchMaxWait           time.Duration
 	FetchMinBytes          int32
 	FetchMaxBytes          int32
 	FetchMaxPartitionBytes int32
 	MaxConcurrentFetches   int
 }
 
-// Handler processes one partition's batch. Returning nil commits the batch;
-// returning an error leaves it uncommitted for redelivery.
 type Handler func(ctx context.Context, partition int32, records []*kgo.Record) error
 
-// Consumer runs a consumer-group poll loop and dispatches each partition's
-// records to a Handler, committing offsets only after the handler succeeds.
 type Consumer struct {
 	l             *zap.Logger
 	client        *kgo.Client
@@ -75,9 +56,6 @@ type Consumer struct {
 	stopCh chan struct{}
 	doneCh chan struct{}
 
-	// inFlightSince is non-nil while a handler call is running, set just before
-	// the call and cleared just after. Read by Stuck for a liveness check; never
-	// consulted on the poll loop's own hot path.
 	inFlightSince atomic.Pointer[time.Time]
 }
 
@@ -116,7 +94,7 @@ func NewConsumer(cfg Config, ccfg ConsumerConfig, handler Handler, l *zap.Logger
 	opts = append(opts,
 		kgo.ConsumerGroup(ccfg.Group),
 		kgo.ConsumeTopics(ccfg.Topics...),
-		// Set explicitly because it decides what a group with no committed
+		// why: Set explicitly because it decides what a group with no committed
 		// offsets does, and that happens twice: at cutover, where starting from
 		// the earliest retained record picks up anything produced before this
 		// deployment rolled rather than dropping it; and whenever a new group
@@ -180,8 +158,6 @@ func (c *Consumer) run() {
 			c.l.Error("kafka fetch error", zap.String("topic", t), zap.Int32("partition", p), zap.Error(err))
 		})
 
-		// One handler call per partition so the committed offset range stays
-		// contiguous, which keeps any offset-derived dedup token stable.
 		fetches.EachPartition(func(ftp kgo.FetchTopicPartition) {
 			if len(ftp.Records) == 0 {
 				return
@@ -249,16 +225,10 @@ func (c *Consumer) handle(ctx context.Context, partition int32, records []*kgo.R
 	return err
 }
 
-// DedupToken builds a stable per-batch token from a partition's offset range,
-// suitable for a ClickHouse insert_deduplication_token.
 func DedupToken(topic string, partition int32, first, last int64) string {
 	return fmt.Sprintf("%s:%d:%d-%d", topic, partition, first, last)
 }
 
-// Stuck reports whether a handler call has been running longer than max, and
-// for how long. Intended for a liveness check, not the hot path: a handler
-// call is expected to be bounded by its own timeout (e.g. a ClickHouse write
-// deadline), so this only trips on a genuine hang that bound failed to catch.
 func (c *Consumer) Stuck(max time.Duration) (time.Duration, bool) {
 	p := c.inFlightSince.Load()
 	if p == nil {

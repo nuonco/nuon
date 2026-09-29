@@ -8,17 +8,11 @@ import (
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
-// TestResumeStartsAtCorrectGroup verifies that when group 1 succeeds and
-// group 2 fails, a retry resumes at group 2 (not group 1).
-// This validates the Bug 1 fix (resumeStartIdx = findGroupPositionForStep).
 func (e *FlowTestSuite) TestResumeStartsAtCorrectGroup() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 	ownerID, ownerType := newTestOwner()
 
-	// Group 1 succeeds, group 2 has a countdown that fails first then succeeds.
-	// But since we need manual retry to test resume position, use FailSignal
-	// in group 2.
 	flw, queueID := e.setupFlowTest(ctx, ownerID, ownerType, []app.WorkflowStep{
 		{Name: "g1-step", Idx: 100, GroupIdx: 1, ExecutionType: app.WorkflowStepExecutionTypeSystem,
 			QueueSignal: &signaldb.SignalData{Signal: &SuccessSignal{}}},
@@ -31,10 +25,8 @@ func (e *FlowTestSuite) TestResumeStartsAtCorrectGroup() {
 
 	e.enqueueFlow(ctx, queueID, flw, ownerID, ownerType)
 
-	// Wait for workflow to error at group 2
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
 
-	// Verify group 1 succeeded
 	steps := e.getStepsByWorkflow(ctx, flw.ID)
 	for _, step := range steps {
 		if step.Name == "g1-step" {
@@ -43,7 +35,6 @@ func (e *FlowTestSuite) TestResumeStartsAtCorrectGroup() {
 		}
 	}
 
-	// Find the failed step for retry
 	var failedStepID string
 	for _, step := range steps {
 		if step.Name == "g2-step" && step.Status.Status == app.StatusError {
@@ -53,7 +44,6 @@ func (e *FlowTestSuite) TestResumeStartsAtCorrectGroup() {
 	}
 	require.NotEmpty(e.T(), failedStepID)
 
-	// Retry the failed step
 	resp, err := e.service.FlowClient.RetryStep(ctx, &flowclient.RetryStepRequest{
 		InstallWorkflowID: flw.ID,
 		StepID:            failedStepID,
@@ -61,8 +51,6 @@ func (e *FlowTestSuite) TestResumeStartsAtCorrectGroup() {
 	require.Nil(e.T(), err)
 	require.True(e.T(), resp.Retryable)
 
-	// Wait for the retry clone itself; the workflow already has StatusError when
-	// the update is submitted.
 	require.Eventually(e.T(), func() bool {
 		steps, err := e.tryStepsByWorkflow(ctx, flw.ID)
 		if err != nil {
@@ -76,8 +64,6 @@ func (e *FlowTestSuite) TestResumeStartsAtCorrectGroup() {
 		return false
 	}, pollTimeout, pollInterval)
 
-	// Key assertion: group 1 step should NOT have been re-executed.
-	// It should still have the same single step with StatusSuccess.
 	steps = e.getStepsByWorkflow(ctx, flw.ID)
 	g1StepCount := 0
 	for _, step := range steps {
@@ -89,7 +75,6 @@ func (e *FlowTestSuite) TestResumeStartsAtCorrectGroup() {
 	}
 	require.Equal(e.T(), 1, g1StepCount, "group 1 should have exactly 1 step (not re-run)")
 
-	// Group 2 should have the original + clone
 	g2StepCount := 0
 	for _, step := range steps {
 		if step.GroupIdx == 2 {
@@ -98,21 +83,12 @@ func (e *FlowTestSuite) TestResumeStartsAtCorrectGroup() {
 	}
 	require.GreaterOrEqual(e.T(), g2StepCount, 2, "group 2 should have original + retry clone")
 
-	// End state: the retry clone failed terminally (FailSignal has no retry
-	// budget), so the workflow must be back in StatusError, not parked.
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
 
 	e.cancelWorkflow(ctx, flw.ID)
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// TestSkipErroredStep verifies that skipping a step on a settled-errored run
-// (flow status errored, group handler already exited) wakes the conductor and
-// resumes past the failed step without cloning it.
-//
-// This restores the pre-#968 contract: a failed run must stay recoverable via
-// skip, not just via retry. The flow-level skip handler owns this case —
-// nothing else would consume a directive written on the step.
 func (e *FlowTestSuite) TestSkipErroredStep() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -129,12 +105,8 @@ func (e *FlowTestSuite) TestSkipErroredStep() {
 
 	e.enqueueFlow(ctx, queueID, flw, ownerID, ownerType)
 
-	// FailSignal has no retry budget, so the run settles into a terminal
-	// StatusError and the group handler exits, leaving the conductor parked
-	// awaiting a resume.
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
 
-	// Find failed step
 	steps := e.getStepsByWorkflow(ctx, flw.ID)
 	var failedStepID string
 	for _, step := range steps {
@@ -145,7 +117,6 @@ func (e *FlowTestSuite) TestSkipErroredStep() {
 	}
 	require.NotEmpty(e.T(), failedStepID)
 
-	// Skip it
 	skipResp, err := e.service.FlowClient.SkipStep(ctx, &flowclient.SkipStepRequest{
 		InstallWorkflowID: flw.ID,
 		StepID:            failedStepID,
@@ -153,7 +124,6 @@ func (e *FlowTestSuite) TestSkipErroredStep() {
 	require.Nil(e.T(), err)
 	require.True(e.T(), skipResp.Skippable)
 
-	// Workflow should resume and succeed (group 2 runs)
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusSuccess)
 
 	steps = e.getStepsByWorkflow(ctx, flw.ID)
@@ -168,7 +138,6 @@ func (e *FlowTestSuite) TestSkipErroredStep() {
 		}
 	}
 
-	// Skip must not clone: exactly one will-fail row.
 	failedCount := 0
 	for _, step := range steps {
 		if step.Name == "will-fail" {
@@ -180,9 +149,6 @@ func (e *FlowTestSuite) TestSkipErroredStep() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// TestSkipParkedStep verifies that skipping a step parked in live await-retry
-// (flow status FailedPendingRetry, group loop still blocked on the step)
-// forwards through the group handler and resumes past it.
 func (e *FlowTestSuite) TestSkipParkedStep() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -200,7 +166,6 @@ func (e *FlowTestSuite) TestSkipParkedStep() {
 	e.enqueueFlow(ctx, queueID, flw, ownerID, ownerType)
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusFailedPendingRetry)
 
-	// Find failed step
 	steps := e.getStepsByWorkflow(ctx, flw.ID)
 	var failedStepID string
 	for _, step := range steps {
@@ -211,7 +176,6 @@ func (e *FlowTestSuite) TestSkipParkedStep() {
 	}
 	require.NotEmpty(e.T(), failedStepID)
 
-	// Skip it
 	skipResp, err := e.service.FlowClient.SkipStep(ctx, &flowclient.SkipStepRequest{
 		InstallWorkflowID: flw.ID,
 		StepID:            failedStepID,
@@ -219,7 +183,6 @@ func (e *FlowTestSuite) TestSkipParkedStep() {
 	require.Nil(e.T(), err)
 	require.True(e.T(), skipResp.Skippable)
 
-	// Workflow should resume and succeed (group 2 runs)
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusSuccess)
 
 	steps = e.getStepsByWorkflow(ctx, flw.ID)

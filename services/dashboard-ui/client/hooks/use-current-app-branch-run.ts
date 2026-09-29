@@ -4,9 +4,6 @@ import { useOrg } from '@/hooks/use-org'
 import { getInstallUpdates } from '@/lib'
 import type { TAppBranchRun } from '@/types'
 
-// The updates endpoint carries current_app_branch_run on the response rather than on
-// any single update, so we fetch a single-item page just for that field. Shared query
-// key means Overview and Updates hit the endpoint once between them.
 export const useCurrentAppBranchRun = (): {
   run: TAppBranchRun | undefined
   isLoading: boolean

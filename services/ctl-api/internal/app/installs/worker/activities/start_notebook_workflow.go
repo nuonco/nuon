@@ -12,7 +12,7 @@ import (
 	"github.com/nuonco/nuon/pkg/workflows"
 )
 
-// notebookWorkflowType and the "notebook-" ID prefix mirror the constants in
+// why: notebookWorkflowType and the "notebook-" ID prefix mirror the constants in
 // the installs/worker/actions package. They are duplicated here (rather than
 // imported) because actions already imports this activities package, and
 // importing it back would create a cycle. Keep in sync with
@@ -31,9 +31,6 @@ type StartNotebookWorkflowResponse struct {
 	WorkflowID string
 }
 
-// startNotebookWorkflowRequest matches the JSON shape of
-// actions.NotebookWorkflowRequest for a cold start (State omitted). Only the
-// NotebookID is carried; the workflow initializes its own state.
 type startNotebookWorkflowRequest struct {
 	NotebookID string
 }

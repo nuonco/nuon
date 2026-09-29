@@ -10,16 +10,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
-// SignalGraphNode represents one signal in the recursive graph.
 type SignalGraphNode struct {
 	Signal       *app.QueueSignal    `json:"signal"`
 	WorkflowInfo *views.WorkflowInfo `json:"workflow_info,omitempty"`
 	Children     []SignalGraphNode   `json:"children,omitempty"`
-	Relationship string              `json:"relationship,omitempty"` // "awaited" or "enqueued"
+	Relationship string              `json:"relationship,omitempty"`
 }
 
-// SignalGraph returns a recursive graph of a signal and everything it awaits.
-// Pass ?depth=N to control recursion depth (default 1 for lazy loading).
 func (s *service) SignalGraph(c *gin.Context) {
 	queueID := c.Param("id")
 	signalID := c.Param("signal_id")
@@ -28,7 +25,6 @@ func (s *service) SignalGraph(c *gin.Context) {
 	if res := s.readDB().WithContext(c.Request.Context()).
 		Where("id = ? AND queue_id = ?", signalID, queueID).
 		First(&signal); res.Error != nil {
-		// Try without queue_id filter (for lazy expand of child signals)
 		if res2 := s.readDB().WithContext(c.Request.Context()).
 			Where("id = ?", signalID).
 			First(&signal); res2.Error != nil {
@@ -61,13 +57,11 @@ func (s *service) buildSignalGraphNode(c *gin.Context, signal *app.QueueSignal, 
 		return node
 	}
 
-	// Get workflow info for this signal
 	if signal.Workflow.Namespace != "" && signal.Workflow.ID != "" {
 		wfInfo := s.getWorkflowInfo(c, signal.Workflow.Namespace, signal.Workflow.ID)
 		if wfInfo != nil {
 			node.WorkflowInfo = wfInfo
 
-			// For each awaited signal, recursively build the graph
 			seen := map[string]bool{}
 			for _, as := range wfInfo.AwaitedSignals {
 				if as.Signal != nil && !seen[as.Signal.ID] {
@@ -88,7 +82,6 @@ func (s *service) buildSignalGraphNode(c *gin.Context, signal *app.QueueSignal, 
 				}
 			}
 
-			// For each enqueued signal, also recursively build the graph
 			for _, es := range wfInfo.EnqueuedSignals {
 				if es.Signal != nil && !seen[es.Signal.ID] {
 					seen[es.Signal.ID] = true

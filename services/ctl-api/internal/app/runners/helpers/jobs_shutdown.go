@@ -24,7 +24,6 @@ func (h *Helpers) CreateShutdownJob(ctx context.Context,
 	)
 }
 
-// These are for management mode and they should all be consolidated into a single helper
 func (h *Helpers) CreateMngJob(ctx context.Context,
 	runnerID string,
 	logStreamID string,

@@ -77,7 +77,6 @@ func (s *AdminForgetInstallTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -140,13 +139,11 @@ func (s *AdminForgetInstallTestSuite) TestAdminForgetInstall() {
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(installID string) {
-				// Verify install was deleted from DB
 				var install app.Install
 				err := s.service.DB.Where("id = ?", installID).First(&install).Error
 				assert.Error(s.T(), err, "install should be deleted")
 				assert.Equal(s.T(), gorm.ErrRecordNotFound, err)
 
-				// Verify signal was sent
 				sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), sigs, 1)
 				assert.Equal(s.T(), forgetinstall.SignalType, sigs[0].Type)
@@ -200,7 +197,6 @@ func (s *AdminForgetInstallTestSuite) TestAdminForgetInstall() {
 				tc.validateFunc(installID)
 			}
 
-			// Verify signal presence matches expectation
 			capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 			if tc.expectedSignal {
 				assert.GreaterOrEqual(s.T(), len(capturedSignals), 1, "expected signal to be sent")

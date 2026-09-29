@@ -34,8 +34,6 @@ import {
   getInputDisplayName,
 } from '@/utils/install-utils'
 
-// Mirrors app.CloudPlatformMetadata in ctl-api — the generated type is an
-// opaque object because the field is serialized as a plain JSON object
 type TCloudPlatformMetadata = {
   target_account_id?: string
   observed_account_id?: string

@@ -74,7 +74,6 @@ func (c ComponentType) DeployJobType() RunnerJobType {
 	case ComponentTypePulumi:
 		return RunnerJobTypePulumiDeploy
 
-		// the following do not require deploys
 	case ComponentTypeDockerBuild,
 		ComponentTypeExternalImage:
 		return RunnerJobTypeJobNOOPDeploy
@@ -157,8 +156,6 @@ type Component struct {
 	Dependencies  []*Component `gorm:"many2many:component_dependencies;constraint:OnDelete:CASCADE;" json:"-" temporaljson:"dependencies,omitzero,omitempty"`
 	DependencyIDs []string     `gorm:"-" json:"dependencies,omitzero" temporaljson:"dependency_i_ds,omitzero,omitempty"`
 
-	// after query loaded items
-
 	Links map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
 
 	Type            ComponentType              `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
@@ -183,21 +180,17 @@ func (c *Component) AfterQuery(tx *gorm.DB) error {
 
 	c.ResolvedVarName = generics.First(c.VarName, c.Name)
 
-	// set dependency ids
 	for _, dep := range c.Dependencies {
 		c.DependencyIDs = append(c.DependencyIDs, dep.ID)
 	}
 
-	// set configs
 	c.ConfigVersions = len(c.ComponentConfigs)
 	if len(c.ComponentConfigs) < 1 {
 		return nil
 	}
 
-	// parse the latest config
 	c.LatestConfig = &c.ComponentConfigs[0]
 
-	// parse the latest build if config builds are preloaded
 	for _, cfg := range c.ComponentConfigs {
 		if len(cfg.ComponentBuilds) > 0 {
 			c.LatestBuild = &cfg.ComponentBuilds[0]

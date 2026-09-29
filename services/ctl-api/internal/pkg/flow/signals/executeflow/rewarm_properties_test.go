@@ -6,9 +6,6 @@ import (
 	"hegel.dev/go/hegel"
 )
 
-// The auto-rewarm gate must only arm on mutating updates: a terminal resident
-// host re-warmed by read-only polls (poll-next-step, is-retryable) must never
-// re-drive the conductor, and must decline so the Handler can finish cleanly.
 func TestReadOnlyUpdatesNeverArmAutoRewarm(t *testing.T) {
 	t.Run("ready iff a mutating update started; declined iff only reads ran and settled", func(t *testing.T) {
 		hegel.Test(t, func(ht *hegel.T) {

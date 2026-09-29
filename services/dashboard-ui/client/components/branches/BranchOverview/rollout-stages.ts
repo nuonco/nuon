@@ -92,7 +92,6 @@ const aggregateStatus = (steps: TInstallWorkflowStep[]) => {
     const category = stepStatusCategory(status)
     if (CATEGORY_RANK[category] > CATEGORY_RANK[best]) best = category
   }
-  // A finished plan with a deploy still queued has started, so it stays in progress.
   if (
     best === 'pending' &&
     meaningful.some((status) => stepStatusCategory(status) === 'success')

@@ -75,7 +75,6 @@ func (s *GetRunnerTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes (no TestOrg/TestAcc needed for runner routes)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -94,7 +93,6 @@ func (s *GetRunnerTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -106,7 +104,6 @@ func (s *GetRunnerTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group settings
 	s.testRunnerGrpSettings = &app.RunnerGroupSettings{
 		ID:                domains.NewRunnerGroupSettingsID(),
 		OrgID:             s.testOrg.ID,
@@ -119,7 +116,6 @@ func (s *GetRunnerTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrpSettings).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -162,13 +158,8 @@ func (s *GetRunnerTestSuite) TestGetRunner() {
 				assert.Equal(s.T(), "Test Runner", runner.DisplayName)
 				assert.Equal(s.T(), app.RunnerStatusActive, runner.Status)
 
-				// Note: Org field has json:"-" tag so it won't be in HTTP response
-				// Only OrgID is returned
-
-				// Verify RunnerGroup is preloaded
 				assert.Equal(s.T(), s.testRunnerGrp.ID, runner.RunnerGroup.ID)
 
-				// Verify RunnerGroup.Settings is preloaded
 				assert.Equal(s.T(), s.testRunnerGrpSettings.ID, runner.RunnerGroup.Settings.ID)
 				assert.Equal(s.T(), "test.ecr.aws/runner", runner.RunnerGroup.Settings.ContainerImageURL)
 				assert.Equal(s.T(), "v1.0.0", runner.RunnerGroup.Settings.ContainerImageTag)
@@ -188,7 +179,6 @@ func (s *GetRunnerTestSuite) TestGetRunner() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -201,7 +191,6 @@ func (s *GetRunnerTestSuite) TestGetRunner() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner group for org2
 				runnerGrp2 := &app.RunnerGroup{
 					ID:        domains.NewRunnerGroupID(),
 					OrgID:     org2.ID,
@@ -213,7 +202,6 @@ func (s *GetRunnerTestSuite) TestGetRunner() {
 				err = s.service.DB.WithContext(ctx).Create(runnerGrp2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner in org2
 				runner2 := &app.Runner{
 					ID:            domains.NewRunnerID(),
 					OrgID:         org2.ID,
@@ -235,7 +223,6 @@ func (s *GetRunnerTestSuite) TestGetRunner() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(runner *app.Runner) {
-				// Runner routes don't enforce org scoping - can access any runner by ID
 				assert.Equal(s.T(), "runner-org2", runner.Name)
 				assert.Equal(s.T(), "Runner in Org 2", runner.DisplayName)
 			},

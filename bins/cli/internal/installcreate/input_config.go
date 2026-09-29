@@ -10,9 +10,6 @@ import (
 
 const branchConfigPageSize = 100
 
-// ResolveInputConfig returns the input config belonging to the app config that
-// install creation will pin. Apps without branches retain the legacy app-wide
-// latest-input behavior.
 func ResolveInputConfig(ctx context.Context, api nuon.Client, appID, appBranchID string) (*models.AppAppInputConfig, error) {
 	if appBranchID == "" {
 		return api.GetAppInputLatestConfig(ctx, appID)
@@ -59,9 +56,6 @@ func ResolveInputConfig(ctx context.Context, api nuon.Client, appID, appBranchID
 	return cfg.Input, nil
 }
 
-// hydrateInputGroups mirrors the nested shape returned by the latest-input
-// endpoint. Full app configs preload inputs as a flat list, while the install
-// creator renders inputs from their groups.
 func hydrateInputGroups(inputConfig *models.AppAppInputConfig) {
 	if inputConfig == nil || len(inputConfig.InputGroups) == 0 || len(inputConfig.Inputs) == 0 {
 		return

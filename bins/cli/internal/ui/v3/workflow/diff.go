@@ -23,7 +23,6 @@ type TerraformDiff struct {
 }
 
 type HelmDiff struct {
-	// wip
 	Version string
 }
 

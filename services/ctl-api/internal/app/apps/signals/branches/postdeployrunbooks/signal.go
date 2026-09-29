@@ -16,9 +16,6 @@ type Signal struct {
 	AppBranchID    string `json:"app_branch_id" validate:"required"`
 	RunID          string `json:"run_id" validate:"required"`
 
-	// AppBranchConfigID pins the config this step was generated from. Resolving
-	// the branch's latest config instead would let a mid-run sync or a saved
-	// deployment plan change which runbooks execute.
 	AppBranchConfigID string `json:"app_branch_config_id" validate:"required"`
 
 	FlowID string `json:"flow_id,omitempty"`

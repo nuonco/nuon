@@ -41,8 +41,6 @@ func pod(name, namespace, ownerKind, ownerName string, ready bool) *unstructured
 	return &unstructured.Unstructured{Object: obj}
 }
 
-// The Always restart policy is what upstream requires before it reads container
-// waiting reasons.
 func failedPod(name, namespace, ownerKind, ownerName, waitingReason, waitingMessage string) *unstructured.Unstructured {
 	u := pod(name, namespace, ownerKind, ownerName, false)
 	u.Object["spec"] = map[string]any{"restartPolicy": "Always"}
@@ -93,8 +91,6 @@ func objIndex(objs ...*unstructured.Unstructured) map[string]*unstructured.Unstr
 
 var deploymentGVR = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
 
-// Pods are never attributed to a component, so the controller is the only thing
-// that reaches a verdict.
 func TestLiftPodHealthToOwnersImagePullBackOff(t *testing.T) {
 	t.Parallel()
 
@@ -115,7 +111,6 @@ func TestLiftPodHealthToOwnersImagePullBackOff(t *testing.T) {
 	assert.Contains(t, res.Message, "Back-off pulling image")
 }
 
-// Keying off status means recovery needs no window to expire.
 func TestLiftPodHealthToOwnersIgnoresRecoveredPod(t *testing.T) {
 	t.Parallel()
 
@@ -129,7 +124,6 @@ func TestLiftPodHealthToOwnersIgnoresRecoveredPod(t *testing.T) {
 		"a pod that recovered must not hold its controller degraded at all")
 }
 
-// Lifting a starting pod would degrade every rollout.
 func TestLiftPodHealthToOwnersIgnoresStartingPod(t *testing.T) {
 	t.Parallel()
 
@@ -142,7 +136,6 @@ func TestLiftPodHealthToOwnersIgnoresStartingPod(t *testing.T) {
 	assert.Empty(t, lifted, "ContainerCreating is not a failure")
 }
 
-// Otherwise the reported message churns with map iteration order.
 func TestLiftPodHealthToOwnersIsDeterministic(t *testing.T) {
 	t.Parallel()
 
@@ -167,7 +160,6 @@ func TestLiftPodHealthToOwnersOrphanPod(t *testing.T) {
 		"a pod with no controller owner lifts nothing and must not panic")
 }
 
-// A controller's own failure is more specific than anything lifted from a child.
 func TestLiftedFailureDoesNotOverrideOwnStatus(t *testing.T) {
 	t.Parallel()
 
@@ -185,14 +177,11 @@ func TestLiftedFailureDoesNotOverrideOwnStatus(t *testing.T) {
 func TestTopOwnerStopsOnOwnerNotListed(t *testing.T) {
 	t.Parallel()
 
-	// The ReplicaSet is absent from the listing (e.g. the list call for
-	// replicasets failed), so the walk must stop rather than guess.
 	p := pod("api-1-abc", "prod", "ReplicaSet", "api-1", false)
 
 	assert.Nil(t, topOwner(p, objIndex(p)))
 }
 
-// An evicted pod lingers until GC, long after its replacement came up.
 func TestLiftPodHealthToOwnersIgnoresTerminatedPod(t *testing.T) {
 	t.Parallel()
 

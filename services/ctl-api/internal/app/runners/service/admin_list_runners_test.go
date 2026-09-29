@@ -73,7 +73,6 @@ func (s *AdminListRunnersTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with internal routes (no org context for admin routes)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -92,7 +91,6 @@ func (s *AdminListRunnersTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -130,7 +128,6 @@ func (s *AdminListRunnersTestSuite) TestAdminListRunners() {
 			queryParams:  "",
 			expectedCode: http.StatusOK,
 			validateFunc: func(_ []string, runners []*app.Runner) {
-				// Admin endpoint returns all runners globally; just verify valid response
 				assert.NotNil(s.T(), runners)
 			},
 		},
@@ -201,7 +198,7 @@ func (s *AdminListRunnersTestSuite) TestAdminListRunners() {
 
 				return []string{runner.ID}
 			},
-			queryParams:  "", // No type param, should default to "org"
+			queryParams:  "",
 			expectedCode: http.StatusOK,
 			validateFunc: func(expectedIDs []string, runners []*app.Runner) {
 				assert.GreaterOrEqual(s.T(), len(runners), 1)
@@ -273,7 +270,6 @@ func (s *AdminListRunnersTestSuite) TestAdminListRunners() {
 			queryParams:  "?offset=2&limit=10",
 			expectedCode: http.StatusOK,
 			validateFunc: func(_ []string, runners []*app.Runner) {
-				// With shared DB, total runners is unpredictable; just verify offset works
 				assert.NotNil(s.T(), runners)
 			},
 		},

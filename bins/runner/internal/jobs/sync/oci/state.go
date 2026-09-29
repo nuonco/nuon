@@ -7,7 +7,6 @@ import (
 )
 
 type handlerState struct {
-	// state for an individual run, that can not be reused
 	plan       *plantypes.SyncOCIPlan
 	descriptor *ocispec.Descriptor
 

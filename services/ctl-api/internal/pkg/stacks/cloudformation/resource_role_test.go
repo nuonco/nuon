@@ -44,9 +44,6 @@ func rolesTestInput() *stacks.TemplateInput {
 	return inp
 }
 
-// The runner instance role's identity policy scopes sts:AssumeRole with a condition on
-// this tag, so every role the runner is meant to assume has to carry it — including
-// break-glass roles, which share the trust policy that names the runner principal.
 func TestGetRolesResources_RunnerAssumableTag(t *testing.T) {
 	tpl := &Templates{cfg: &internal.Config{}}
 	assumable := tags.Tag{Key: TagKeyRunnerAssumable, Value: "true"}
@@ -91,8 +88,6 @@ func TestGetRolesResources_RunnerAssumableTag(t *testing.T) {
 	})
 }
 
-// The tag marks assume-role targets, so it must stay on the role resource rather than
-// moving into tagBuilder.apply, which every tagged resource in the stack goes through.
 func TestGetRunnerPhoneHomeLambdaRole_NotRunnerAssumable(t *testing.T) {
 	tpl := &Templates{cfg: &internal.Config{}}
 	inp := phoneHomeTestInput("instabcdefghijklmnopqrstuv")
@@ -148,9 +143,6 @@ func TestGetRolesResources_NamedPolicies(t *testing.T) {
 	assert.NotContains(t, breakGlass.ManagedPolicyArns, cloudformation.Ref("NamedPolicyLogs"))
 }
 
-// Both the policy's Name and the role's refs carry {{.nuon.install.id}}. They
-// are rendered before the template is generated, so a ref only resolves if it
-// renders alongside the policy name.
 func TestGetRolesResources_NamedPolicyRefsRenderWithPolicyName(t *testing.T) {
 	tpl := &Templates{cfg: &internal.Config{}}
 	inp := rolesTestInput()

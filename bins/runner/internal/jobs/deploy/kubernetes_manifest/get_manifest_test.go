@@ -14,138 +14,7 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 )
 
-// func TestObjDiff(t *testing.T) {
-// 	// Define test cases
-// 	testCases := []struct {
-// 		name         string
-// 		prev         map[string]interface{}
-// 		curr         map[string]interface{}
-// 		expectedDiff string
-// 	}{
-// 		{
-// 			name: "No changes",
-// 			prev: map[string]interface{}{
-// 				"apiVersion": "v1",
-// 				"kind":       "Pod",
-// 				"metadata": map[string]interface{}{
-// 					"name":      "test-pod",
-// 					"namespace": "default",
-// 				},
-// 				"spec": map[string]interface{}{
-// 					"containers": []interface{}{
-// 						map[string]interface{}{
-// 							"name":  "nginx",
-// 							"image": "nginx:1.14",
-// 						},
-// 					},
-// 				},
-// 			},
-// 			curr: map[string]interface{}{
-// 				"apiVersion": "v1",
-// 				"kind":       "Pod",
-// 				"metadata": map[string]interface{}{
-// 					"name":      "test-pod",
-// 					"namespace": "default",
-// 				},
-// 				"spec": map[string]interface{}{
-// 					"containers": []interface{}{
-// 						map[string]interface{}{
-// 							"name":  "nginx",
-// 							"image": "nginx:1.14",
-// 						},
-// 					},
-// 				},
-// 			},
-// 			expectedDiff: "",
-// 		},
-// 		{
-// 			name: "Image updated",
-// 			prev: map[string]interface{}{
-// 				"apiVersion": "v1",
-// 				"kind":       "Pod",
-// 				"metadata": map[string]interface{}{
-// 					"name":      "test-pod",
-// 					"namespace": "default",
-// 				},
-// 				"spec": map[string]interface{}{
-// 					"containers": []interface{}{
-// 						map[string]interface{}{
-// 							"name":  "nginx",
-// 							"image": "nginx:1.14",
-// 						},
-// 					},
-// 				},
-// 			},
-// 			curr: map[string]interface{}{
-// 				"apiVersion": "v1",
-// 				"kind":       "Pod",
-// 				"metadata": map[string]interface{}{
-// 					"name":      "test-pod",
-// 					"namespace": "default",
-// 				},
-// 				"spec": map[string]interface{}{
-// 					"containers": []interface{}{
-// 						map[string]interface{}{
-// 							"name":  "nginx",
-// 							"image": "nginx:1.16",
-// 						},
-// 					},
-// 				},
-// 			},
-// 			expectedDiff: `
-//   spec:
-//     containers:
-//     - image: nginx:1.14
-// +   - image: nginx:1.16
-// `,
-// 		},
-// 		{
-// 			name: "Namespace added",
-// 			prev: map[string]interface{}{
-// 				"apiVersion": "v1",
-// 				"kind":       "Pod",
-// 				"metadata": map[string]interface{}{
-// 					"name": "test-pod",
-// 				},
-// 			},
-// 			curr: map[string]interface{}{
-// 				"apiVersion": "v1",
-// 				"kind":       "Pod",
-// 				"metadata": map[string]interface{}{
-// 					"name":      "test-pod",
-// 					"namespace": "default",
-// 				},
-// 			},
-// 			expectedDiff: `
-//   metadata:
-// +   namespace: default
-// `,
-// 		},
-// 	}
-
-// 	// Iterate over test cases
-// 	for _, tc := range testCases {
-// 		t.Run(tc.name, func(t *testing.T) {
-// 			// Create unstructured objects for prev and curr
-// 			prev := unstructured.Unstructured{Object: tc.prev}
-// 			curr := unstructured.Unstructured{Object: tc.curr}
-
-// 			// Create a handler instance
-// 			handler, _ := New(HandlerParams{})
-
-// 			// Call the function under test
-// 			diff, err := handler.objDiff(prev, curr)
-
-// 			// Assertions
-// 			assert.NoError(t, err)
-
-// 			assert.Equal(t, tc.expectedDiff, diff)
-// 		})
-// 	}
-// }
-
 func TestGetKubernetesResourcesFromManifest(t *testing.T) {
-	// Define test cases
 	testCases := []struct {
 		name             string
 		manifest         string
@@ -241,7 +110,6 @@ spec:
 		},
 	}
 
-	// Create a fake discovery client
 	fakeDiscovery := &discoveryFake.FakeDiscovery{
 		Fake: &kubetesting.Fake{},
 	}
@@ -260,9 +128,7 @@ spec:
 		},
 	}
 
-	// Create a discovery mapper
 	discoveryMapper := restmapper.NewDeferredDiscoveryRESTMapper(memory.NewMemCacheClient(fakeDiscovery))
-	// Create a fake discovery client
 	fakeDiscoveryClient := &discoveryFake.FakeDiscovery{
 		Fake: &kubetesting.Fake{},
 	}
@@ -285,10 +151,8 @@ spec:
 		discoveryClient: fakeDiscoveryClient,
 	}
 
-	// Iterate over test cases
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Create a handler instance
 			handler, _ := New(HandlerParams{})
 			handler.state = &handlerState{
 				plan: &plantypes.DeployPlan{
@@ -300,11 +164,9 @@ spec:
 
 			resources, err := handler.getKubernetesResourcesFromManifest(&k, tc.manifest)
 
-			// Assertions
 			assert.NoError(t, err)
 			assert.Len(t, resources, len(tc.expectedResults))
 
-			// Validate each resource
 			for i, expected := range tc.expectedResults {
 				assert.Equal(t, expected.groupVersionKind, resources[i].groupVersionKind)
 				assert.Equal(t, expected.name, resources[i].name)

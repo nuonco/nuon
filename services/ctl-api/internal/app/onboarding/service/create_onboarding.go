@@ -33,7 +33,6 @@ func (s *service) CreateOnboarding(ctx *gin.Context) {
 		return
 	}
 
-	// Return existing active session if one exists (idempotent)
 	var existing app.Onboarding
 	res := s.db.WithContext(ctx).
 		Where("account_id = ? AND status = ?", account.ID, app.OnboardingStatusActive).

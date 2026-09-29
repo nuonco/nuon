@@ -33,9 +33,6 @@ exporters:
     headers:
       Authorization: Bearer <token>`
 
-// The tfvars envelope ctl-api stores in `terraform_contents` is a JSON
-// document of shape `{"inputs_tfvars": "<hcl>", "secrets_tfvars": "<hcl>"}`.
-// Mirrors the GCP parser at AwaitGCPDetails.tsx.
 interface TfvarsEnvelope {
   inputs: string
   providerInputs: string
@@ -82,8 +79,6 @@ export const AwaitAWSDetails = ({
   loading,
 }: IAwaitAWSDetails) => {
   const version = stack?.versions?.at(0)
-  // The new TerraformContents fields aren't in the regenerated OpenAPI types
-  // yet; bridge with a local widening cast.
   const versionExt = version as
     | (typeof version & {
         terraform_contents?: unknown
@@ -205,9 +200,6 @@ const CloudFormationTab = ({
   const stackName =
     version?.quick_link_url?.match(/stackName=([^&]+)/)?.[1] ||
     `nuon-${installId || 'install'}`
-  // Prefer the server-supplied quick link; otherwise derive one from the
-  // template URL so older stack versions (created before the backend change)
-  // still surface the one-click launch.
   const quickLink =
     version?.quick_link_url ||
     (templateUrl
@@ -215,9 +207,6 @@ const CloudFormationTab = ({
         ? `https://${region}.console.aws.amazon.com/cloudformation/home?region=${region}#/stacks/quickcreate?templateUrl=${encodeURIComponent(templateUrl)}&stackName=${stackName}`
         : `https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate?templateUrl=${encodeURIComponent(templateUrl)}&stackName=${stackName}`
       : '')
-  // CLI commands and console links work whether the user already chose a
-  // region or hasn't yet — when unknown, render a `<YOUR_REGION>` placeholder
-  // and let the user substitute at run-time.
   const regionForCmd = region || '<YOUR_REGION>'
   const consoleUrl = region
     ? `https://console.aws.amazon.com/cloudformation/home?region=${region}#/stacks/events?filteringText=${stackName}&filteringStatus=active&viewNested=true`
@@ -550,8 +539,6 @@ interface ITFModuleTab {
   installAwsRegion?: string
 }
 
-// The AWS half of the TF Module tab: which providers to require, and the module
-// source. Auth, inputs, secrets and the step layout are shared.
 const TFModuleTab = ({ orgId, installId, installAwsRegion }: ITFModuleTab) => {
   const region = installAwsRegion ?? '<your-install-region>'
 

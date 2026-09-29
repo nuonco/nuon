@@ -60,7 +60,6 @@ func (a *Activities) CancelWorkflow(ctx context.Context, req CancelWorkflowReque
 	if _, err := a.flowsClient.CancelWorkflow(ctx, &flowclient.CancelWorkflowRequest{
 		InstallWorkflowID: wf.ID,
 	}); err != nil {
-		// orphaned workflows have no live execute-flow signal left to cancel
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			if dbErr := a.cancelWorkflowInDB(ctx, &wf); dbErr != nil {
 				return nil, dbErr

@@ -18,10 +18,6 @@ const pageStyle = {
   overflow: 'hidden',
 }
 
-/**
- * Config-file-managed install — everything in sync. Branch, config, resources,
- * and infrastructure all match expected state. Drift: none.
- */
 export const ConfigCurrent = () => (
   <div style={pageStyle}>
     <InstallDetailPlayground
@@ -33,11 +29,6 @@ export const ConfigCurrent = () => (
 
 ConfigCurrent.storyName = 'Config current'
 
-/**
- * Expected branch has moved to feat/multi-region. Applied is still main.
- * Stack, sandbox, api, and worker are all pending the new branch target.
- * Frontend is unchanged. Drift: none.
- */
 export const BranchMoved = () => (
   <div style={pageStyle}>
     <InstallDetailPlayground
@@ -49,11 +40,6 @@ export const BranchMoved = () => (
 
 BranchMoved.storyName = 'Branch moved'
 
-/**
- * Branch is current (main) but api and worker components (and their images)
- * are mid-deploy and haven't applied the latest patch. Config lag: api, worker.
- * Sandbox and stack are current. Drift: none.
- */
 export const ResourceLag = () => (
   <div style={pageStyle}>
     <InstallDetailPlayground
@@ -65,11 +51,6 @@ export const ResourceLag = () => (
 
 ResourceLag.storyName = 'Resource lag'
 
-/**
- * Config is fully current — branch, stack, sandbox, components, and images all
- * match expected. Infrastructure drift detected on sandbox and the cache component.
- * Config lag: none.
- */
 export const InfraDrift = () => (
   <div style={pageStyle}>
     <InstallDetailPlayground

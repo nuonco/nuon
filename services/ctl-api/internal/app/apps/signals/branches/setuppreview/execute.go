@@ -31,7 +31,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return s.executeLegacy(ctx, logger, run)
 	}
 
-	// Statuses only need a commit; comments and reactions need a PR.
 	needsComment := run.PreviewGitHubComment() && run.PRNumber != nil
 	needsStatus := run.PreviewGitHubSetStatuses() && run.HeadSHA != ""
 	needsReact := run.PreviewGitHubReact() && run.PRNumber != nil

@@ -8,12 +8,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// Check implements directive.ApprovalResponseCheck for superseded plan detection.
-// It delegates to the signal's ValidateApproval method to determine whether a
-// newer deploy or sandbox run has occurred since the plan was created. If so,
-// the step is auto-retried to generate a fresh plan.
 type Check struct {
-	// stepSignalFn extracts the inner signal from a workflow step.
 	stepSignalFn func(step *app.WorkflowStep) signal.Signal
 
 	SetResultDirective func(ctx workflow.Context, stepID string, d directive.Step) error
@@ -52,7 +47,6 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 		return directive.Pass(), nil
 	}
 
-	// Plan is superseded — auto-retry the group so a fresh plan is generated.
 	if dirErr := c.SetResultDirective(ctx, step.ID, directive.StepRetryGroup); dirErr != nil {
 		return directive.Pass(), dirErr
 	}

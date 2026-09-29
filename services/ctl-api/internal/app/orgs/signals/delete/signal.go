@@ -45,7 +45,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get org: %w", err)
 	}
 
-	// Skip deprovision if org is already deprovisioned
 	if org.Status != app.OrgStatusDeprovisioned {
 		err = s.deprovision(ctx)
 		if err != nil {
@@ -66,7 +65,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 }
 
 func (s *Signal) deprovision(ctx workflow.Context) error {
-	// Check for apps
 	org, err := activities.AwaitGetByOrgID(ctx, s.OrgID)
 	if err != nil {
 		return fmt.Errorf("unable to get org: %w", err)

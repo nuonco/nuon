@@ -25,8 +25,6 @@ type ParseConfig struct {
 
 	FieldTimeout time.Duration
 
-	// SkipBranches loads embedded branch configs without validating them, for
-	// callers that never sync branches from the app config.
 	SkipBranches bool
 }
 
@@ -56,7 +54,6 @@ func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
 		}
 	}
 
-	// go from toml -> map[string]interface{}
 	buf := bytes.NewReader(byts)
 	tomlDec := toml.NewDecoder(buf)
 
@@ -69,7 +66,6 @@ func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
 		}
 	}
 
-	// go from map[string]interface{} => config.AppConfig
 	var cfg config.AppConfig
 	rootDir := ""
 	if parseCfg.Filename != "" {

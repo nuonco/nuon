@@ -11,14 +11,10 @@ import { createServiceAccountToken } from '@/lib'
 import type { TAccount } from '@/types'
 import { CreateServiceAccountTokenModal } from './ServiceAccountToken'
 
-// Takes an account ID and a label rather than a TAccount, so callers that only know
-// the ID — the install stack tab — can use it. The mutation never needed more.
 interface ICreateServiceAccountToken {
   accountId: string
   identity: string
   defaultDuration?: string
-  // Labels the token on the org's API tokens page, which matters when the account's
-  // identity is an opaque ID, as an install stack's is.
   tokenName?: string
   onCreated?: () => void
 }

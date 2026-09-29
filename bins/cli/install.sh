@@ -24,16 +24,13 @@ done
 
 BASE_URL=https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli
 LSP_BASE_URL=https://nuon-artifacts.s3.us-west-2.amazonaws.com/lsp
-# Create a temporary directory for downloading the binaries
 TEMP_DIR=$(mktemp -d)
 
 DIR=~/bin
 if [ ! -d "$DIR" ]; then
   DIR=/usr/local/bin
 
-  # fall back to /usr/local/bin
   if [ ! -d $DIR ]; then
-    # fall back to /bin
     DIR=/bin
   fi
 fi
@@ -66,7 +63,6 @@ fi
 OS=$(uname -s |  awk '{print tolower($0)}')
 echo "✅ using version ${OS}_${ARCH}..."
 
-# Check if version override is provided
 if [ -n "${NUON_VERSION:-}" ]; then
   echo "⚠️  overriding version with NUON_VERSION=${NUON_VERSION}"
   VERSION=$NUON_VERSION
@@ -76,15 +72,12 @@ else
   echo "✅ using version ${VERSION}..."
 fi
 
-# Function to download and install a binary
-# Args: $1=binary_name (e.g., "nuon" or "nuon-lsp"), $2=base_url, $3=optional (true/false)
 download_and_install_binary() {
   local NAME=$1
   local URL=${2:-$BASE_URL}
   local OPTIONAL=${3:-false}
   local success=false
 
-  # Try gzip compressed binary first
   echo "fetching compressed binary for ${OS} ${ARCH}..."
   compressed_url="$URL/$VERSION/${NAME}_${OS}_${ARCH}.gz"
 
@@ -118,14 +111,11 @@ download_and_install_binary() {
     fi
   fi
 
-  # Cleanup failed attempt
   rm -f "$TEMP_DIR/$NAME.gz"
 
-  # Fallback to uncompressed binary
   if [ "$success" = false ]; then
     echo "fetching binary for ${OS} ${ARCH}..."
 
-    # Check if binary exists before downloading
     set +e
     http_response=$(curl -s -f -w "%{http_code}" -o "$TEMP_DIR/$NAME" "$URL/$VERSION/${NAME}_${OS}_${ARCH}" 2>/dev/null)
     status=$?
@@ -142,7 +132,6 @@ download_and_install_binary() {
       success=true
     else
       if [ "$OPTIONAL" = "true" ]; then
-        # Silently skip optional binaries that don't exist
         rm -f "$TEMP_DIR/$NAME"
         return 0
       else
@@ -153,10 +142,8 @@ download_and_install_binary() {
   fi
 }
 
-# Install nuon CLI
 download_and_install_binary "nuon" "$BASE_URL" false
 
-# Install nuon-lsp (Language Server) - optional, silently skips if not available
 download_and_install_binary "nuon-lsp" "$LSP_BASE_URL" true
 
 echo "ensuring installed correctly"
@@ -176,7 +163,6 @@ if [ "$version" != "$VERSION" ]; then
   exit 1
 fi
 
-# Cleanup temp directory
 rm -rf "$TEMP_DIR"
 
 echo "🚀 To get started, please run - nuon login"

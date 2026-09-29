@@ -1,5 +1,3 @@
-// Package oidctoken discovers ambient OIDC ID tokens in CI so callers can exchange
-// them for Nuon API tokens without storing a secret.
 package oidctoken
 
 import (
@@ -16,8 +14,6 @@ const (
 	tfcTokenEnvVar  = "TFC_WORKLOAD_IDENTITY_TOKEN"
 )
 
-// Audience resolves the audience: explicit value, then NUON_OIDC_AUDIENCE, then
-// fallback.
 func Audience(explicit, fallback string) string {
 	if explicit != "" {
 		return explicit
@@ -28,7 +24,6 @@ func Audience(explicit, fallback string) string {
 	return fallback
 }
 
-// Available reports whether an ambient token source is present, without fetching.
 func Available() bool {
 	return os.Getenv(tokenEnvVar) != "" ||
 		os.Getenv(tokenFileEnvVar) != "" ||
@@ -36,8 +31,6 @@ func Available() bool {
 		githubActionsAvailable()
 }
 
-// Detect returns an ambient OIDC ID token and its source. Precedence:
-// NUON_OIDC_TOKEN, NUON_OIDC_TOKEN_FILE, HCP Terraform, GitHub Actions.
 func Detect(ctx context.Context, audience string) (token, source string, ok bool, err error) {
 	if raw := strings.TrimSpace(os.Getenv(tokenEnvVar)); raw != "" {
 		return raw, tokenEnvVar, true, nil

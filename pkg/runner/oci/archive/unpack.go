@@ -38,9 +38,6 @@ func (a *archive) Unpack(ctx context.Context, srcCfg *configs.OCIRegistryReposit
 	pullStart := time.Now()
 
 	timers := new(sync.Map)
-	// spans holds the op.EndFunc per layer digest so PostCopy can finalize
-	// the child span PreCopy opened. Per-layer pulls run concurrently via
-	// oras's worker pool, so a sync.Map is required.
 	spans := new(sync.Map)
 	var totalBytes int64
 
@@ -55,9 +52,6 @@ func (a *archive) Unpack(ctx context.Context, srcCfg *configs.OCIRegistryReposit
 	opts := oras.DefaultCopyOptions
 	opts.PreCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
 		timers.Store(desc.Digest, time.Now())
-		// Open a child of the surrounding oci.unpack span so per-layer
-		// pull duration is visible in traces (e.g. to spot the bundled
-		// terraform binaries layer dominating the pull).
 		_, end := op.Start(ctx, "oci", "pull_layer",
 			attribute.String("oci.digest", string(desc.Digest)),
 			attribute.String("oci.media_type", desc.MediaType),
@@ -95,10 +89,6 @@ func (a *archive) Unpack(ctx context.Context, srcCfg *configs.OCIRegistryReposit
 	}
 
 	manifest, err := oras.Copy(ctx, srcRepo, tag, a.store, tag, opts)
-	// Finalize any layer spans whose PostCopy never fired (typically the
-	// failure case below; PreCopy may also have started spans for layers
-	// the caller cancelled mid-flight). Done before the error return so
-	// no spans leak on the failure path.
 	spans.Range(func(_, v any) bool {
 		v.(op.EndFunc)(err)
 		return true

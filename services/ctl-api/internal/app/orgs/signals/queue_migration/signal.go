@@ -14,11 +14,8 @@ import (
 const SignalType signal.SignalType = "org-queue-migration"
 
 type Signal struct {
-	OrgID string `json:"org_id"`
-	// ReconcileCronEmitters, when true, re-enqueues appconfig-updated per install so
-	// drift/action cron emitters move onto the namespace-correct dedicated cron queues.
-	// Only the cron-migrate endpoint sets this; defaults false (no-op) for other callers.
-	ReconcileCronEmitters bool `json:"reconcile_cron_emitters"`
+	OrgID                 string `json:"org_id"`
+	ReconcileCronEmitters bool   `json:"reconcile_cron_emitters"`
 }
 
 var _ signal.Signal = (*Signal)(nil)
@@ -35,7 +32,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
-	// Mark migration started
 	if err := activities.AwaitUpdateOrgStatusV2Metadata(ctx, activities.UpdateOrgStatusV2MetadataRequest{
 		OrgID: s.OrgID,
 		Data: map[string]any{
@@ -46,7 +42,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		l.Error("unable to update migration started metadata", zap.Error(err))
 	}
 
-	// 1. Ensure org-signals queue
 	l.Info("ensuring org-signals queue", zap.String("org_id", s.OrgID))
 	if err := activities.AwaitEnsureOrgQueueByOrgID(ctx, s.OrgID); err != nil {
 		return fmt.Errorf("unable to ensure org queue: %w", err)
@@ -57,7 +52,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to ensure org healthcheck sweeps: %w", err)
 	}
 
-	// 2. Ensure app queues (branches + components)
 	apps, err := activities.AwaitGetOrgAppsByOrgID(ctx, s.OrgID)
 	if err != nil {
 		return fmt.Errorf("unable to get org apps: %w", err)
@@ -94,7 +88,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	// 3. Ensure install queues
 	installs, err := activities.AwaitGetOrgInstallsByOrgID(ctx, s.OrgID)
 	if err != nil {
 		return fmt.Errorf("unable to get org installs: %w", err)
@@ -113,7 +106,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			}
 		}
 
-		// Ensure install-level runner queues
 		installRunners, err := activities.AwaitGetInstallRunnersByInstallID(ctx, install.ID)
 		if err != nil {
 			l.Warn("unable to get install runners", zap.String("install_id", install.ID), zap.Error(err))
@@ -127,7 +119,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	// 4. Ensure runner queues
 	org, err := activities.AwaitGetByOrgID(ctx, s.OrgID)
 	if err != nil {
 		return fmt.Errorf("unable to get org: %w", err)
@@ -140,7 +131,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	// 5. Ensure VCS connection queues
 	vcsConns, err := activities.AwaitGetOrgVCSConnectionsByOrgID(ctx, s.OrgID)
 	if err != nil {
 		return fmt.Errorf("unable to get vcs connections: %w", err)
@@ -153,13 +143,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	// 6. Enable queues feature flag
 	l.Info("enabling queues feature flag", zap.String("org_id", s.OrgID))
 	if err := activities.AwaitEnableQueuesFeatureFlagByOrgID(ctx, s.OrgID); err != nil {
 		return fmt.Errorf("unable to enable queues feature flag: %w", err)
 	}
 
-	// Mark migration finished
 	if err := activities.AwaitUpdateOrgStatusV2Metadata(ctx, activities.UpdateOrgStatusV2MetadataRequest{
 		OrgID: s.OrgID,
 		Data: map[string]any{

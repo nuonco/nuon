@@ -11,7 +11,6 @@ func (e *EnqueueTestSuite) TestCreateQueue() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 
-	// now, create the queue
 	queue, err := e.service.Client.Create(ctx, &client.CreateQueueRequest{
 		OwnerID:     generics.GetFakeObj[string](),
 		OwnerType:   generics.GetFakeObj[string](),
@@ -27,7 +26,6 @@ func (e *EnqueueTestSuite) TestAwaitReadyOK() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 
-	// now, create the queue
 	queue, err := e.service.Client.Create(ctx, &client.CreateQueueRequest{
 		OwnerID:     generics.GetFakeObj[string](),
 		OwnerType:   generics.GetFakeObj[string](),
@@ -38,7 +36,6 @@ func (e *EnqueueTestSuite) TestAwaitReadyOK() {
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), queue)
 
-	// wait for the queue to be ready
 	err = e.queueReady(ctx, queue.ID)
 	require.Nil(e.T(), err)
 }
@@ -47,7 +44,6 @@ func (e *EnqueueTestSuite) TestAwaitStatusOK() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 
-	// now, create the queue
 	queue, err := e.service.Client.Create(ctx, &client.CreateQueueRequest{
 		OwnerID:     generics.GetFakeObj[string](),
 		OwnerType:   generics.GetFakeObj[string](),

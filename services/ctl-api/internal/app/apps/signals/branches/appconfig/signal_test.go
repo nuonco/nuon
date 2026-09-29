@@ -27,7 +27,7 @@ func TestAppConfigSignalSuite(t *testing.T) {
 
 func (s *AppConfigSignalTestSuite) SetupTest() {
 	s.env = s.NewTestWorkflowEnvironment()
-	// Give the deadlock detector generous headroom so loaded CI runners don't
+	// why: Give the deadlock detector generous headroom so loaded CI runners don't
 	// false-positive on the 1s default while the workflow goroutine runs.
 	s.env.SetWorkerOptions(worker.Options{
 		DeadlockDetectionTimeout: time.Minute,
@@ -68,8 +68,6 @@ func (s *AppConfigSignalTestSuite) mockBranchAndRun() {
 		}, nil)
 }
 
-// mockPreCompiledBranchAndRun stands up a branch with no VCS config at all, the
-// shape the default app branch has.
 func (s *AppConfigSignalTestSuite) mockPreCompiledBranchAndRun() {
 	s.env.OnActivity((*activities.Activities).GetAppBranchRunByID, mock.Anything, mock.Anything, mock.Anything).Return(
 		&app.AppBranchRun{ID: "run-1"}, nil)
@@ -86,9 +84,6 @@ func (s *AppConfigSignalTestSuite) mockPreCompiledBranchAndRun() {
 		}, nil)
 }
 
-// A pre-compiled config syncs without cloning: CloneRepo and
-// FetchIntermediateConfig are left unmocked, so the workflow fails if it reaches
-// them.
 func (s *AppConfigSignalTestSuite) TestPreCompiledConfigSyncsWithoutClone() {
 	sig := &Signal{
 		AppBranchID: "branch-1",

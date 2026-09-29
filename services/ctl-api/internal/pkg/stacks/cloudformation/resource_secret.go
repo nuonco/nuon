@@ -59,7 +59,6 @@ func (a *Templates) getSecretsParameters(inp *stacks.TemplateInput) map[string]c
 		if secret.Default != "" {
 			param.Default = generics.ToPtr(secret.Default)
 		} else if !secret.Required {
-			// Optional secrets should not be required by CloudFormation's create-stack UI.
 			param.Default = generics.ToPtr("")
 		}
 		if secret.Required {
@@ -73,7 +72,6 @@ func (a *Templates) getSecretsParameters(inp *stacks.TemplateInput) map[string]c
 }
 
 func (a *Templates) getSecretsResources(inp *stacks.TemplateInput, t tagBuilder) map[string]cloudformation.Resource {
-	// NOTE: secrets names are "{{install.id}}/{{secret.name}}" to guarantee uniqueness
 	rsrcs := make(map[string]cloudformation.Resource, 0)
 
 	for _, secret := range inp.AppCfg.SecretsConfig.Secrets {

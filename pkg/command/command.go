@@ -24,7 +24,6 @@ type command struct {
 	Args []string
 	Env  map[string]string `validate:"required"`
 
-	// non-optional arguments
 	Cwd    string
 	Stdout io.Writer
 	Stdin  io.Reader
@@ -56,7 +55,6 @@ func New(v *validator.Validate, opts ...commandOption) (*command, error) {
 	return l, nil
 }
 
-// WithCmd sets the command that will be run
 func WithCmd(c string) commandOption {
 	return func(l *command) error {
 		l.Cmd = c
@@ -64,7 +62,6 @@ func WithCmd(c string) commandOption {
 	}
 }
 
-// WithArgs sets the arguments passed to the commands
 func WithArgs(args []string) commandOption {
 	return func(l *command) error {
 		l.Args = args
@@ -72,7 +69,6 @@ func WithArgs(args []string) commandOption {
 	}
 }
 
-// WithEnv sets the environment to run the command within
 func WithEnv(env map[string]string) commandOption {
 	return func(l *command) error {
 		for k, v := range env {
@@ -83,7 +79,6 @@ func WithEnv(env map[string]string) commandOption {
 	}
 }
 
-// WithInheritedEnv automatically inherits the existing environment
 func WithInheritedEnv() commandOption {
 	return func(l *command) error {
 		env := DefaultEnv()
@@ -92,7 +87,6 @@ func WithInheritedEnv() commandOption {
 	}
 }
 
-// WithStdout sets the stdout
 func WithStdout(fw io.Writer) commandOption {
 	return func(l *command) error {
 		l.Stdout = fw
@@ -100,7 +94,6 @@ func WithStdout(fw io.Writer) commandOption {
 	}
 }
 
-// WithStdin sets the stderr
 func WithStdin(fw io.Reader) commandOption {
 	return func(l *command) error {
 		l.Stdin = fw
@@ -108,7 +101,6 @@ func WithStdin(fw io.Reader) commandOption {
 	}
 }
 
-// WithStderr sets the stderr
 func WithStderr(fw io.Writer) commandOption {
 	return func(l *command) error {
 		l.Stderr = fw
@@ -116,7 +108,6 @@ func WithStderr(fw io.Writer) commandOption {
 	}
 }
 
-// WithCwd sets cwd
 func WithCwd(cwd string) commandOption {
 	return func(l *command) error {
 		l.Cwd = cwd
@@ -159,31 +150,25 @@ func WithFileOutput(fp string) commandOption {
 	}
 }
 
-// IsTTY checks if the current stdin is a TTY
 func IsTTY() bool {
 	return term.IsTerminal(int(os.Stdin.Fd()))
 }
 
-// WithTTYAwareStdin sets stdin based on TTY detection
 func WithTTYAwareStdin() commandOption {
 	return func(l *command) error {
 		if IsTTY() {
 			l.Stdin = os.Stdin
 		} else {
-			// Use a closed pipe for non-TTY stdin
 			l.Stdin = io.NopCloser(nil)
 		}
 		return nil
 	}
 }
 
-// WithTTYAwareEnv combines WithInheritedEnv with additional environment variables
 func WithTTYAwareEnv(env map[string]string) commandOption {
 	return func(l *command) error {
-		// First get the inherited environment
 		l.Env = DefaultEnv()
 
-		// Then add the provided environment variables
 		for k, v := range env {
 			l.Env[k] = v
 		}

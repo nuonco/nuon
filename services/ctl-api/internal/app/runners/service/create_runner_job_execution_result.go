@@ -16,7 +16,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/all" // register all errparse parsers
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/all"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
@@ -90,7 +90,6 @@ func (s *service) CreateRunnerJobExecutionResult(ctx *gin.Context) {
 		return
 	}
 
-	// branch on wether or not the content received is compressed.
 	var result *app.RunnerJobExecutionResult
 	var created bool
 	var err error
@@ -110,8 +109,6 @@ func (s *service) CreateRunnerJobExecutionResult(ctx *gin.Context) {
 
 	if created {
 		if err := s.applyComponentBuildSourceIdentity(ctx, runnerJobID, &req); err != nil {
-			// Non-fatal: source-identity persistence shouldn't fail the result
-			// write. The build's status workflow runs independently.
 			s.l.Warn("unable to apply component build source identity", zap.Error(err))
 		}
 	}
@@ -119,9 +116,6 @@ func (s *service) CreateRunnerJobExecutionResult(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, result)
 }
 
-// applyComponentBuildSourceIdentity persists source-identity fields
-// onto the ComponentBuild row when the runner job's owner is a ComponentBuild
-// and the runner reported a SourceDigest. Skipped otherwise.
 func (s *service) applyComponentBuildSourceIdentity(ctx context.Context, runnerJobID string, req *CreateRunnerJobExecutionResultRequest) error {
 	if req.SourceDigest == "" {
 		return nil
@@ -132,9 +126,6 @@ func (s *service) applyComponentBuildSourceIdentity(ctx context.Context, runnerJ
 		return errors.Wrap(err, "unable to get runner job")
 	}
 
-	// Only image-type builds emit source identity; the owner type is the
-	// ComponentBuild table name. Matches the value used when the build job is
-	// created in components/worker/activities/create_build_job.go.
 	if runnerJob.OwnerType != "component_builds" {
 		return nil
 	}
@@ -162,15 +153,11 @@ func (s *service) applyComponentBuildSourceIdentity(ctx context.Context, runnerJ
 	return nil
 }
 
-// metricCompositeErrorParse counts every persisted failed-result parse, tagged
-// with the execution tool, job group, and matched composite-error type (or
-// "miss"/"generic"). A high rate of matched_type:generic for a given tool is
-// the data-driven backlog signal for which specific parser to write next.
 const metricCompositeErrorParse = "runner.composite_error_parse"
 
 func (s *service) recordCompositeErrorParse(req *CreateRunnerJobExecutionResultRequest, runnerJob *app.RunnerJob, ce *compositeerrors.CompositeErrorData) {
 	if !req.Success {
-		// Default empty facets to "unknown" so Datadog never sees a bare
+		// why: Default empty facets to "unknown" so Datadog never sees a bare
 		// "tool:" tag; matched_type stays "miss" for a nil/typeless parse.
 		tool := string(runnerJobTool(runnerJob))
 		if tool == "" {
@@ -192,16 +179,6 @@ func (s *service) recordCompositeErrorParse(req *CreateRunnerJobExecutionResultR
 	}
 }
 
-// parseCompositeError parses a failed execution's untruncated error message
-// into a typed CompositeError at write time. This is the single runner-driven
-// chokepoint: every flow (builds, deploys, sandbox runs, action runs, ...)
-// reports failure here, so parsing once covers them all with no per-flow
-// wiring. The result row is strictly 1:1 with the attempt, so the stored error
-// can never go stale across retries.
-//
-// It is best-effort: a success, a missing message, or a parse miss yields nil,
-// leaving the plain-string status description in place. Source is set to the
-// runner job's owner so a future view can join errors back to their subject.
 func (s *service) parseCompositeError(ctx context.Context, req *CreateRunnerJobExecutionResultRequest, runnerJob *app.RunnerJob) *compositeerrors.CompositeErrorData {
 	resolveProvider := func() errparse.Provider {
 		return errparse.ResolveRunnerJobProvider(ctx, s.db, runnerJob)
@@ -217,30 +194,18 @@ func (s *service) parseCompositeError(ctx context.Context, req *CreateRunnerJobE
 }
 
 const (
-	// errMetaKeyOutput is the captured error output (rich, multi-line: the tool's
-	// diagnostics). The runner populates it so parsers see the real cause rather
-	// than a thin wrapper. Preferred over errMetaKeyMessage when present.
-	errMetaKeyOutput = "error_output"
-	// errMetaKeyMessage is the wrapped Go error string (often just "exit status 1"
-	// for tools whose detail goes to the log stream). The fallback input.
+	errMetaKeyOutput  = "error_output"
 	errMetaKeyMessage = "message"
 )
 
-// rawErrorText picks the richest error text the runner sent: the captured
-// output when present, else the wrapped message.
 func rawErrorText(meta map[string]*string) string {
 	return errparse.RunnerJobErrorText(flattenErrorMetadata(meta))
 }
 
-// runnerJobTool maps a runner job's type to the execution tool errparse uses as
-// a facet, so tool-layer parsers are only considered for the matching tool.
-// Provider-layer parsers are tool-agnostic and are unaffected by ToolUnknown.
 func runnerJobTool(runnerJob *app.RunnerJob) errparse.Tool {
 	return errparse.ToolForRunnerJob(runnerJob)
 }
 
-// flattenErrorMetadata converts the runner-sent hstore metadata into the plain
-// string map errparse parsers read, dropping nil values.
 func flattenErrorMetadata(meta map[string]*string) map[string]string {
 	if len(meta) == 0 {
 		return nil
@@ -254,8 +219,6 @@ func flattenErrorMetadata(meta map[string]*string) map[string]string {
 	return out
 }
 
-// redactedErrorMetadata clones the runner request so parsers can inspect the
-// original diagnostic while only the sanitized values reach persistence.
 func redactedErrorMetadata(meta map[string]*string) pgtype.Hstore {
 	if len(meta) == 0 {
 		return nil
@@ -272,7 +235,7 @@ func redactedErrorMetadata(meta map[string]*string) pgtype.Hstore {
 	return out
 }
 
-// refreshOwnerCompositeError mirrors a runner job execution's parsed composite
+// why: refreshOwnerCompositeError mirrors a runner job execution's parsed composite
 // error onto its owner aggregate row so the dashboard can render it without a
 // read-time join. Each execution result refreshes the column: a failure sets
 // the parsed error, and a success or parse miss (ce == nil) clears it — which
@@ -318,8 +281,6 @@ func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Conte
 		return nil, false, err
 	}
 
-	// Runner sends gzip-compressed payloads encoded as base64 strings.
-	// We decode once here and persist the raw gzip bytes for later decompression.
 	contentsGzip, err := base64.URLEncoding.DecodeString(req.ContentsCompressed)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "unable to decode contents")

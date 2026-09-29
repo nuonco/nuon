@@ -28,7 +28,6 @@ const (
 	minRequiredHeight int = 20
 )
 
-// Exit codes for watch TUI - matches workflows_watch.go constants
 const (
 	ExitCodeSuccess   = 0
 	ExitCodeFailed    = 1
@@ -163,8 +162,6 @@ func (m *model) resize() {
 	contentHeight := m.height - headerHeight - footerHeight
 
 	listWidth := int(float64(m.width) * 0.4)
-	// Width(listWidth) is total outer width including borders (2) and padding (1 right),
-	// so the list content area is listWidth - 3.
 	listContentWidth := listWidth - 3
 	detailWidth := m.width - listWidth - 2
 
@@ -370,15 +367,12 @@ func WatchApp(
 		return ExitCodeFailed
 	}
 
-	// Extract exit code from final model
 	if fm, ok := finalModel.(model); ok {
 		return fm.exitCode
 	}
 	return ExitCodeSuccess
 }
 
-// watchPlainText is the non-interactive fallback for WatchApp. It polls
-// workflows and prints a plain-text summary, similar to WorkflowsWatch.
 func watchPlainText(ctx context.Context, api nuon.Client, installID string) int {
 	workflows, _, err := api.GetWorkflows(ctx, installID, nil)
 	if err != nil {

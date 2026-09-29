@@ -51,7 +51,6 @@ func (s *Service) List(ctx context.Context, compID, appID string, offset, limit 
 	for _, build := range builds {
 		status := build.Status
 		if build.NoOp {
-			// Surface dedup hit so users immediately see why a build was instant.
 			status = status + " (no-op)"
 		}
 		data = append(data, []string{

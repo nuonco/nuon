@@ -1,7 +1,5 @@
 import { expect, test } from "@playwright/test";
 
-// RunRunbook is a multi-page wizard. On the inputs page, Next is gated on the
-// inputs being valid (required inputs filled); the required input errors on touch.
 const STORY = "/?story=features--runbooks--run-runbook-form--with-inputs&mode=preview";
 
 test.describe("RunRunbook wizard behavior", () => {

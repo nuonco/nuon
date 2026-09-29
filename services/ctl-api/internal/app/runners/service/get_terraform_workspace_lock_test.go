@@ -73,7 +73,6 @@ func (s *GetTerraformWorkspaceLockTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes (needs org context)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -94,7 +93,6 @@ func (s *GetTerraformWorkspaceLockTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create terraform workspace (use unique OwnerID to avoid unique constraint on owner_id+owner_type)
 	s.testWS = &app.TerraformWorkspace{
 		ID:        domains.NewTerraformWorkspaceID(),
 		OrgID:     s.testOrg.ID,
@@ -130,12 +128,10 @@ func (s *GetTerraformWorkspaceLockTestSuite) TestGetTerraformWorkspaceLock() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(body string) {
-				// Should return null or empty when no lock exists
 				if body != "null" && body != "" {
 					var lock app.TerraformWorkspaceLock
 					err := json.Unmarshal([]byte(body), &lock)
 					require.NoError(s.T(), err)
-					// If not null, verify it's empty
 					assert.Empty(s.T(), lock.ID)
 				}
 			},
@@ -155,7 +151,6 @@ func (s *GetTerraformWorkspaceLockTestSuite) TestGetTerraformWorkspaceLock() {
 				err := s.service.DB.WithContext(ctx).Create(ws).Error
 				require.NoError(s.T(), err)
 
-				// Create lock
 				lock := &app.TerraformWorkspaceLock{
 					ID:          domains.NewTerraformWorkspaceLockID(),
 					WorkspaceID: ws.ID,
@@ -203,7 +198,6 @@ func (s *GetTerraformWorkspaceLockTestSuite) TestGetTerraformWorkspaceLock() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -216,7 +210,6 @@ func (s *GetTerraformWorkspaceLockTestSuite) TestGetTerraformWorkspaceLock() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create workspace in org2
 				ws2 := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     org2.ID,

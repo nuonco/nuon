@@ -30,7 +30,6 @@ func (s *SignalDataTestSuite) TestMarshalJSON() {
 	byts, err := json.Marshal(sd)
 	require.NoError(s.T(), err)
 
-	// Verify wire format includes type discriminator
 	var raw map[string]json.RawMessage
 	require.NoError(s.T(), json.Unmarshal(byts, &raw))
 	assert.Contains(s.T(), raw, "type")

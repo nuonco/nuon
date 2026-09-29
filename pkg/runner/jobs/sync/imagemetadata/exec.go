@@ -30,7 +30,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		zap.String("tag", plan.Tag),
 	)
 
-	// Build fetch options
 	fetchOpts := &metadata.FetchOptions{
 		Image:                       plan.Registry.Repository,
 		Tag:                         plan.Tag,
@@ -39,7 +38,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		IncludeAttestationLayers:    plan.IncludeAttestationLayers,
 	}
 
-	// Get registry auth if configured
 	accessInfo, err := oci.FetchAccessInfo(ctx, plan.Registry)
 	if err != nil {
 		h.errRecorder.Record("get registry auth", err)
@@ -53,7 +51,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		}
 	}
 
-	// Fetch the metadata
 	imgMetadata, err := metadata.FetchImageMetadata(ctx, fetchOpts)
 	if err != nil {
 		h.errRecorder.Record("fetch image metadata", err)
@@ -68,7 +65,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		zap.Int("attestations_count", len(imgMetadata.Attestations)),
 	)
 
-	// Serialize metadata to JSON and gzip it
 	metadataJSON, err := json.Marshal(imgMetadata)
 	if err != nil {
 		h.errRecorder.Record("marshal metadata", err)
@@ -86,10 +82,8 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return errors.Wrap(err, "unable to close gzip writer")
 	}
 
-	// Base64 encode the gzipped content for the API
 	contentsCompressed := base64.URLEncoding.EncodeToString(buf.Bytes())
 
-	// Write job execution result with compressed metadata
 	resultReq := &models.ServiceCreateRunnerJobExecutionResultRequest{
 		Success:            true,
 		ContentsCompressed: contentsCompressed,

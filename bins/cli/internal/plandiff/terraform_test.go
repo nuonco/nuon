@@ -563,7 +563,7 @@ func TestFormatTerraformFieldDiff(t *testing.T) {
 			},
 			after: map[string]any{
 				"name":          "new-name",
-				"instance_type": "t2.micro", // unchanged
+				"instance_type": "t2.micro",
 				"new_field":     "added",
 			},
 			action: TerraformActionUpdate,
@@ -573,7 +573,7 @@ func TestFormatTerraformFieldDiff(t *testing.T) {
 				"- removed_field",
 			},
 			excludes: []string{
-				"instance_type", // unchanged fields should not appear
+				"instance_type",
 			},
 		},
 		{

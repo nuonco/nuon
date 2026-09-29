@@ -44,7 +44,7 @@ func Sync(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.Helpers, cfg
 	return nil
 }
 
-// Validate runs the branch checks that would otherwise only surface once the
+// why: Validate runs the branch checks that would otherwise only surface once the
 // branches step writes, which is now last. Without it a typo in a branch block
 // only fails after every component, action and runbook has synced and their
 // builds have been dispatched.
@@ -133,7 +133,7 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 	}
 
 	if branchCfg.ConnectedRepo == nil && branchCfg.PublicRepo == nil {
-		// No repo means no AppBranchConfig row is written at all, so anything
+		// why: No repo means no AppBranchConfig row is written at all, so anything
 		// configured below would be silently discarded. Fail loudly rather than
 		// reporting a successful sync of settings that were dropped.
 		if len(branchCfg.PostDeployRunbooks) > 0 {
@@ -214,8 +214,6 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 		return err
 	}
 
-	// Config-as-code is declarative: an omitted field in the TOML means "unset",
-	// so always pass non-nil pointers rather than inheriting the previous config.
 	ignoreChanges := &appshelpers.IgnoreChangesSettings{
 		Regex:                &branchCfg.IgnoreChangesRegex,
 		SendStatusesOnIgnore: &branchCfg.SendStatusesOnIgnore,
@@ -337,9 +335,6 @@ func buildPreviewConfig(branchCfg *config.AppBranchConfig, nameToID map[string]s
 	return &out, nil
 }
 
-// resolvePostDeployRunbooks maps the branch's runbook names to IDs. This runs
-// after the runbook sync steps, so runbooks declared in this same config already
-// exist alongside any pre-existing ones.
 func resolvePostDeployRunbooks(ctx context.Context, db *gorm.DB, appID string, branchCfg *config.AppBranchConfig) ([]string, error) {
 	if len(branchCfg.PostDeployRunbooks) == 0 {
 		return nil, nil

@@ -67,7 +67,7 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		return nil, err
 	}
 
-	sg.nextGroup() // deprovision dns delegation before the sandbox (and its zone) is destroyed
+	sg.nextGroup()
 	step, err = sg.installSignalStep(ctx, installID, "deprovision dns delegation", pgtype.Hstore{}, &deprovisiondns.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly)
@@ -76,7 +76,7 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	}
 	steps = append(steps, step)
 
-	sg.nextGroup() // deprovision sandbox plan + apply
+	sg.nextGroup()
 
 	step, err = sg.installSignalStep(ctx, installID, "deprovision sandbox plan", pgtype.Hstore{}, &deprovisionsandboxplan.Signal{
 		InstallSandboxID: sandbox.ID,

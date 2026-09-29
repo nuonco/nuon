@@ -207,7 +207,6 @@ func (s *service) CreateAppExternalImageComponentConfig(ctx *gin.Context) {
 		return
 	}
 
-	// reuse the same logic as non-app scoped endpoint
 	s.CreateExternalImageComponentConfig(ctx)
 }
 

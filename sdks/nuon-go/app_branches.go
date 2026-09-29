@@ -21,10 +21,6 @@ func (c *client) GetOrgBranches(ctx context.Context) ([]*models.AppAppBranch, er
 	return resp.Payload, nil
 }
 
-// GetAppBranches returns one page of branches for the app. The server
-// defaults to 10 per page when query is nil; callers that need every branch
-// should page through with GetAllAppBranches instead of assuming this is
-// the complete list.
 func (c *client) GetAppBranches(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppBranch, bool, error) {
 	params := &operations.GetAppBranchesParams{
 		Context: ctx,
@@ -41,8 +37,6 @@ func (c *client) GetAppBranches(ctx context.Context, appID string, query *models
 	return resp.Payload, hasNextPage(hr), nil
 }
 
-// GetAllAppBranches pages through GetAppBranches and returns every branch for
-// the app, rather than leaving each caller to reimplement the same loop.
 func GetAllAppBranches(ctx context.Context, api Client, appID string) ([]*models.AppAppBranch, error) {
 	const pageLimit = 100
 

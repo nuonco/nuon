@@ -56,7 +56,6 @@ export const Textarea = forwardRef<HTMLTextAreaElement, ITextarea>(
         const textarea = textareaRef.current
 
         const adjustHeight = () => {
-          // Reset height to calculate scrollHeight properly
           textarea.style.height = 'auto'
 
           const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight)
@@ -83,7 +82,6 @@ export const Textarea = forwardRef<HTMLTextAreaElement, ITextarea>(
         const textarea = textareaRef.current
 
         const checkValidity = () => {
-          // Only show invalid state after user blur or form submission attempt
           if (hasBlurred) {
             setIsInvalid(!textarea.checkValidity())
           }
@@ -94,7 +92,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, ITextarea>(
         }
 
         const handleInvalid = (e: Event) => {
-          e.preventDefault() // Prevent default browser validation message
+          e.preventDefault()
           setHasBlurred(true)
           setIsInvalid(true)
           setShowValidationMessage(true)

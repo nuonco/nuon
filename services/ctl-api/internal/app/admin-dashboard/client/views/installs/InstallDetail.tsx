@@ -125,14 +125,12 @@ export const InstallDetail = () => {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
         <Link to="/installs" className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200">Installs</Link>
         <span>/</span>
         <span className="text-gray-900 dark:text-gray-100">{install.name || truncateId(install.id)}</span>
       </nav>
 
-      {/* Page Heading */}
       <div className="page-heading">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{install.name || truncateId(install.id)}</h1>
@@ -179,7 +177,6 @@ export const InstallDetail = () => {
         </div>
       </div>
 
-      {/* Labels */}
       <div className="table-card p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Labels</h2>
         <div className="mt-2 flex flex-wrap gap-2">
@@ -221,7 +218,6 @@ export const InstallDetail = () => {
         </div>
       </div>
 
-      {/* Status Badges */}
       <div className="table-card p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Status</h2>
         <div className="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -280,7 +276,6 @@ export const InstallDetail = () => {
         </div>
       </div>
 
-      {/* Active Deployments */}
       <div className="table-card p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Active Deployments</h2>
         <div className="mt-2 overflow-x-auto">
@@ -323,7 +318,6 @@ export const InstallDetail = () => {
         </div>
       </div>
 
-      {/* Workflows */}
       <div className="table-card p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Workflows</h2>
         <div className="mt-2 overflow-x-auto">
@@ -375,7 +369,6 @@ export const InstallDetail = () => {
         )}
       </div>
 
-      {/* Activity */}
       <div className="table-card p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Activity</h2>
         <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">

@@ -15,43 +15,33 @@ const (
 	BlobServiceKey      blobContextKey = "blob_service"
 )
 
-// WithBlobWriteEnabled controls whether blobs upload to S3 on save
 func WithBlobWriteEnabled(ctx context.Context, enabled bool) context.Context {
 	return context.WithValue(ctx, BlobWriteEnabledKey, enabled)
 }
 
-// WithBlobReadEnabled controls whether blob-backed reads prefer the S3 blob.
-// When disabled, reads fall back to the legacy column. Used by hook-based reads
-// (e.g. GORM AfterQuery) that have no service call site to thread the flag through.
 func WithBlobReadEnabled(ctx context.Context, enabled bool) context.Context {
 	return context.WithValue(ctx, BlobReadEnabledKey, enabled)
 }
 
-// WithBlobAutoLoad controls whether blobs auto-load from S3 on query
 func WithBlobAutoLoad(ctx context.Context, enabled bool) context.Context {
 	return context.WithValue(ctx, BlobAutoLoadKey, enabled)
 }
 
-// WithBlobService sets the blobstore service in context
 func WithBlobService(ctx context.Context, svc Service) context.Context {
 	return context.WithValue(ctx, BlobServiceKey, svc)
 }
 
-// WithBlobService sets the blobstore service in context
 func WithBlobServiceGin(ctx *gin.Context, svc Service) context.Context {
 	return context.WithValue(ctx, BlobServiceKey, svc)
 }
 
-// IsBlobWriteEnabled checks if blob writes are enabled (default: true)
 func IsBlobWriteEnabled(ctx context.Context) bool {
 	if v := ctx.Value(BlobWriteEnabledKey); v != nil {
 		return v.(bool)
 	}
-	return true // Default: enabled
+	return true
 }
 
-// IsBlobReadEnabled checks if blob-backed reads are enabled (default: false).
-// Must be explicitly enabled, mirroring the BlobReadEnabled config gate.
 func IsBlobReadEnabled(ctx context.Context) bool {
 	if v := ctx.Value(BlobReadEnabledKey); v != nil {
 		return v.(bool)
@@ -59,15 +49,13 @@ func IsBlobReadEnabled(ctx context.Context) bool {
 	return false
 }
 
-// IsBlobAutoLoad checks if auto-load is enabled (default: false)
 func IsBlobAutoLoad(ctx context.Context) bool {
 	if v := ctx.Value(BlobAutoLoadKey); v != nil {
 		return v.(bool)
 	}
-	return false // Default: disabled (must be explicitly enabled)
+	return false
 }
 
-// GetBlobService retrieves the blobstore service from context
 func GetBlobService(ctx context.Context) Service {
 	if v := ctx.Value(BlobServiceKey); v != nil {
 		return v.(Service)

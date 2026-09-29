@@ -7,7 +7,6 @@ func (h *handler) Name() string {
 }
 
 func (h *handler) JobType() models.AppRunnerJobType {
-	// Note: Using string literal until nuon-runner-go SDK is updated with this constant
 	return models.AppRunnerJobType("fetch-image-metadata")
 }
 

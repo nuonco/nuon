@@ -77,7 +77,6 @@ func TestDecideRunnerHealthCorpus(t *testing.T) {
 			}
 			want := tc.want
 			if want.result == runnerHealthResultUnhealthy || want.result == runnerHealthResultHealthy {
-				// reason is always populated on evaluated runners
 				require.NotEmpty(t, want.reason)
 			}
 			require.Equal(t, want, got)

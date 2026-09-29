@@ -11,19 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/updateinstallgroup"
 )
 
-// AppBranchUpdate generates workflow steps for updating specific installs to a
-// new app config without running the full branch pipeline (no build step).
-// Used for re-deploying individual installs or install groups.
-//
-// Required metadata:
-//   - app_branch_id: the app branch
-//   - run_id: the app branch run
-//   - config_id: the app branch config
-//   - app_config_id: the target app config to deploy
-//
-// Optional metadata:
-//   - install_id: update a single install (mutually exclusive with install_group_id)
-//   - install_group_id: update a specific install group
 func AppBranchUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	appBranchID := generics.FromPtrStr(flw.Metadata["app_branch_id"])
 	if appBranchID == "" {
@@ -47,7 +34,6 @@ func AppBranchUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStep
 	sg := newStepGroup()
 
 	if installID != "" {
-		// Single install update: create one install config update workflow
 		sg.nextGroup()
 		step, err := sg.appBranchSignalStep(ctx, appBranchID, "update install", pgtype.Hstore{}, &updateinstallgroup.Signal{
 			InstallGroupID: installGroupID,
@@ -59,7 +45,6 @@ func AppBranchUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStep
 		}
 		steps = append(steps, step)
 	} else if installGroupID != "" {
-		// Single group update
 		sg.nextGroup()
 		step, err := sg.appBranchSignalStep(ctx, appBranchID, "deploy install group", pgtype.Hstore{}, &updateinstallgroup.Signal{
 			InstallGroupID: installGroupID,
@@ -71,7 +56,6 @@ func AppBranchUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStep
 		}
 		steps = append(steps, step)
 	} else {
-		// Update all install groups (like AppBranchRun but without builds)
 		configID := generics.FromPtrStr(flw.Metadata["config_id"])
 		if configID == "" {
 			return nil, errors.New("config_id not found in workflow metadata")

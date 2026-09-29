@@ -18,7 +18,6 @@ func (s *Signal) Scan(v interface{}) (err error) {
 	case nil:
 		return nil
 	case []byte:
-		// JSONB null is not SQL NULL — treat it as no signal
 		if string(v) == "null" {
 			return nil
 		}
@@ -30,7 +29,6 @@ func (s *Signal) Scan(v interface{}) (err error) {
 	return
 }
 
-// Value implements the driver.Valuer interface.
 func (s *Signal) Value() (driver.Value, error) {
 	return json.Marshal(s)
 }

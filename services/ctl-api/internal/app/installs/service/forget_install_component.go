@@ -42,27 +42,23 @@ func (s *service) ForgetInstallComponent(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	componentID := ctx.Param("component_id")
 
-	// Verify install exists and belongs to org
 	if _, err := s.findInstall(ctx, org.ID, installID); err != nil {
 		ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
 		return
 	}
 
-	// Get install component to verify it exists
 	installComponent, err := s.getInstallComponent(ctx, installID, componentID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install component %s: %w", componentID, err))
 		return
 	}
 
-	// Get install details to access app config ID
 	install, err := s.findInstall(ctx, org.ID, installID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install details: %w", err))
 		return
 	}
 
-	// Validate component has been removed from app config
 	activeComponentIDs, err := s.getAppConfigComponentIDs(ctx, install.AppConfigID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to check app config: %w", err))
@@ -77,7 +73,6 @@ func (s *service) ForgetInstallComponent(ctx *gin.Context) {
 		return
 	}
 
-	// Perform the soft delete
 	err = s.forgetInstallComponent(ctx, installComponent.ID)
 	if err != nil {
 		ctx.Error(err)
@@ -87,7 +82,7 @@ func (s *service) ForgetInstallComponent(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
 
-// getAppConfigComponentIDs returns the set of component IDs that are in the given app config
+// why: getAppConfigComponentIDs returns the set of component IDs that are in the given app config
 // version AND still exist as components.
 //
 // AppConfig.ComponentIDs is the authoritative per-version list — unlike ComponentConfigConnection
@@ -129,7 +124,6 @@ func (s *service) getAppConfigComponentIDs(ctx context.Context, appConfigID stri
 	return componentIDs, nil
 }
 
-// Private method to perform soft delete
 func (s *service) forgetInstallComponent(ctx context.Context, installComponentID string) error {
 	res := s.db.WithContext(ctx).Delete(&app.InstallComponent{
 		ID: installComponentID,

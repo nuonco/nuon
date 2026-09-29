@@ -7,7 +7,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// OrgStatus returns the org status as JSON
 func (s *service) OrgStatus(c *gin.Context) {
 	ctx := c.Request.Context()
 	orgID := c.Param("id")

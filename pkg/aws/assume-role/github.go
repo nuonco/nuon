@@ -10,7 +10,6 @@ import (
 )
 
 func (a *assumer) getGithubOIDCToken(ctx context.Context) (string, error) {
-	// Get environment variables set by GitHub Actions
 	idTokenRequestToken := os.Getenv("ACTIONS_ID_TOKEN_REQUEST_TOKEN")
 	idTokenRequestURL := os.Getenv("ACTIONS_ID_TOKEN_REQUEST_URL")
 
@@ -18,16 +17,13 @@ func (a *assumer) getGithubOIDCToken(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("GitHub OIDC environment variables not set")
 	}
 	url := idTokenRequestURL + "&audience=sts.amazonaws.com"
-	// Create HTTP request to get the token
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Add required header
 	req.Header.Add("Authorization", "Bearer "+idTokenRequestToken)
 
-	// Make the request
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -35,7 +31,6 @@ func (a *assumer) getGithubOIDCToken(ctx context.Context) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	// Read response
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("failed to read response body: %w", err)

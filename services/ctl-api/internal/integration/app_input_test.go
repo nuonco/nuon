@@ -37,7 +37,6 @@ func (s *appInputSuite) TearDownTest() {
 }
 
 func (s *appInputSuite) SetupTest() {
-	// create an org
 	org := s.createOrg()
 	s.orgID = org.ID
 

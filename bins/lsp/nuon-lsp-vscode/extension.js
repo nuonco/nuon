@@ -24,7 +24,6 @@ function activate(context) {
   const config = vscode.workspace.getConfiguration("nuonLsp");
   const port = config.get("port") || 0;
 
-  // TCP mode (only when explicitly set)
   if (port > 0) {
     console.log(`📍 Connecting to LSP dev server on localhost:${port}`);
 
@@ -80,7 +79,6 @@ function activate(context) {
     return;
   }
 
-  // Default: Stdio mode (instant startup)
   startStdioMode(context);
 }
 
@@ -98,7 +96,6 @@ function startStdioMode(context) {
     }
   }
 
-  // Validate that the server binary exists
   if (!fs.existsSync(serverCommand)) {
     const errorMsg = `Nuon LSP server not found at: ${serverCommand}`;
     console.error("❌", errorMsg);
@@ -110,9 +107,9 @@ function startStdioMode(context) {
 
   const serverOptions = {
     command: serverCommand,
-    args: [], // nuon-lsp uses stdio by default when no args are provided
+    args: [],
     options: {
-      stdio: 'pipe' // Use pipe transport without extra flags
+      stdio: 'pipe'
     }
   };
 
@@ -128,13 +125,12 @@ function startStdioMode(context) {
 
   console.log("⚙️  Starting Nuon-LSP client");
   client = new LanguageClient(
-    "nuonLsp",               // internal ID
-    "Nuon LSP",              // display name (appears in Output)
+    "nuonLsp",
+    "Nuon LSP",
     serverOptions,
     clientOptions
   );
 
-  // Start the client and register with subscriptions
   const clientStartPromise = client.start();
   context.subscriptions.push({
     dispose: () => client.stop()

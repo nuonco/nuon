@@ -32,7 +32,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// CreateAppActionConfigTestService holds all fx-injected dependencies for create action config tests.
 type CreateAppActionConfigTestService struct {
 	fx.In
 
@@ -48,7 +47,6 @@ type CreateAppActionConfigTestService struct {
 	Seeder         *testseed.Seeder
 }
 
-// CreateAppActionConfigTestSuite is the testify suite for CreateAppActionConfig endpoint.
 type CreateAppActionConfigTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -80,7 +78,6 @@ func (s *CreateAppActionConfigTestSuite) SetupSuite() {
 
 			CustomValidator: true,
 		}),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -88,7 +85,6 @@ func (s *CreateAppActionConfigTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -96,9 +92,6 @@ func (s *CreateAppActionConfigTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
-
-	// Create test router with standard middlewares using helper
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -143,7 +136,7 @@ func (s *CreateAppActionConfigTestSuite) makeRequest(method, path string, body i
 func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigSuccess() {
 	testCases := []struct {
 		name         string
-		setupFunc    func() (string, string, string) // Returns actionID, appConfigID, componentID
+		setupFunc    func() (string, string, string)
 		requestFunc  func(actionID, appConfigID, componentID string) CreateActionWorkflowConfigRequest
 		expectedCode int
 		validateFunc func(*app.ActionWorkflowConfig)
@@ -364,8 +357,6 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigSuccess() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Reset mock at the start of each test case
-
 			actionID, appConfigID, componentID := tc.setupFunc()
 
 			req := tc.requestFunc(actionID, appConfigID, componentID)
@@ -381,12 +372,10 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigSuccess() {
 			err := json.Unmarshal(rr.Body.Bytes(), &config)
 			require.NoError(s.T(), err)
 
-			// Verify signal was sent
 			queueSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 			require.Len(s.T(), queueSignals, 1)
 			assert.Equal(s.T(), actionID, queueSignals[0].OwnerID)
 
-			// Verify database state
 			var dbConfig app.ActionWorkflowConfig
 			res := s.service.DB.WithContext(s.ctx).
 				Preload("Triggers").
@@ -530,7 +519,6 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigImageBackedAction
 			err := json.Unmarshal(rr.Body.Bytes(), &config)
 			require.NoError(s.T(), err)
 
-			// Verify database state
 			var dbConfig app.ActionWorkflowConfig
 			res := s.service.DB.WithContext(s.ctx).
 				Preload("Triggers").
@@ -763,12 +751,10 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigNotFound() {
 }
 
 func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigCrossOrgIsolation() {
-	// Create second org and account
 	ctx2 := context.Background()
 	ctx2, acc2 := s.service.Seeder.EnsureAccount(ctx2, s.T())
 	ctx2, org2 := s.service.Seeder.EnsureOrg(ctx2, s.T())
 
-	// Create action in org2
 	action2 := &app.ActionWorkflow{
 		ID:    domains.NewActionWorkflowID(),
 		OrgID: org2.ID,
@@ -792,7 +778,6 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigCrossOrgIsolation
 		},
 	}
 
-	// Try to create config in org1 for action in org2
 	path := fmt.Sprintf("/v1/apps/%s/actions/%s/configs", s.testApp.ID, action2.ID)
 	rr := s.makeRequest(http.MethodPost, path, req)
 
@@ -801,8 +786,6 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigCrossOrgIsolation
 	}
 	assert.Equal(s.T(), http.StatusNotFound, rr.Code)
 }
-
-// Helper methods
 
 func (s *CreateAppActionConfigTestSuite) createActionWorkflow(appID, name string) *app.ActionWorkflow {
 	action := &app.ActionWorkflow{

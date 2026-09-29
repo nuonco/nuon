@@ -3,7 +3,7 @@ import type { SubscriptionMatch } from '@/components/match/types'
 import { api } from '@/lib/api'
 import type { TWebhook } from '@/types'
 
-// PATCH /v1/orgs/current/webhooks/{webhook_id}
+// why: PATCH /v1/orgs/current/webhooks/{webhook_id}
 //
 // Backend: services/ctl-api/internal/app/orgs/service/current_webhooks.go
 // (UpdateCurrentOrgWebhook). Replaces `interests` and `match` wholesale,

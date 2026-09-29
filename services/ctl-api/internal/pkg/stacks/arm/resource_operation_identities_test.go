@@ -58,8 +58,6 @@ func TestOperationIdentities_CreatedAndStripped(t *testing.T) {
 	}
 	body := string(tmplBytes)
 
-	// Broad grants and the register-action deployment must be stripped off the
-	// runner's system identity when operation identities exist.
 	if strings.Contains(body, contributorRoleGUID) {
 		t.Error("Contributor role assignment on the system identity should be stripped when operation identities are used")
 	}
@@ -67,8 +65,6 @@ func TestOperationIdentities_CreatedAndStripped(t *testing.T) {
 		t.Error("legacy register-action custom role deployment should be stripped when operation identities are used")
 	}
 
-	// Key Vault Secrets User and ACR push stay on the system identity for
-	// secret-sync and image-sync.
 	if !strings.Contains(body, keyVaultUserGUID) {
 		t.Error("Key Vault Secrets User role should remain on the system identity")
 	}
@@ -76,12 +72,10 @@ func TestOperationIdentities_CreatedAndStripped(t *testing.T) {
 		t.Error("ACR push role should remain on the system identity for image sync")
 	}
 
-	// VMSS should carry both its system identity and the operation identities.
 	if !strings.Contains(body, "SystemAssigned, UserAssigned") {
 		t.Error("runner VMSS should have combined system + user-assigned identity when operation identities exist")
 	}
 
-	// Client IDs are surfaced via the phone-home payload.
 	for _, key := range []string{
 		"provision_identity_client_id",
 		"maintenance_identity_client_id",
@@ -115,7 +109,6 @@ func TestOperationIdentities_LegacyWhenNoAzureRoles(t *testing.T) {
 	}
 	body := string(tmplBytes)
 
-	// Legacy behavior: broad grants remain on the system identity.
 	if !strings.Contains(body, contributorRoleGUID) {
 		t.Error("legacy Contributor grant should remain when no operation identities are configured")
 	}
@@ -172,7 +165,6 @@ func TestAzureBuiltInRoleGUID(t *testing.T) {
 	if got := azureBuiltInRoleGUID("Contributor"); got != contributorRoleGUID {
 		t.Errorf("Contributor = %q, want %q", got, contributorRoleGUID)
 	}
-	// Unknown value is treated as an already-resolved GUID.
 	raw := "00000000-0000-0000-0000-000000000000"
 	if got := azureBuiltInRoleGUID(raw); got != raw {
 		t.Errorf("passthrough GUID = %q, want %q", got, raw)

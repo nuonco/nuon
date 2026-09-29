@@ -11,14 +11,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
 )
 
-// IIDResult holds the instance identity document and its RSA-2048 signature.
 type IIDResult struct {
 	Document  string
 	Signature string
 }
 
-// GetInstanceIdentityDocument fetches the IID and RSA-2048 signature from
-// IMDSv2.
 func GetInstanceIdentityDocument(ctx context.Context) (*IIDResult, error) {
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {

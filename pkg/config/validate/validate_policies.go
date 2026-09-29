@@ -114,7 +114,7 @@ func validatePolicyType(policyType config.AppPolicyType) error {
 }
 
 func validatePolicyEngine(engine config.AppPolicyEngine) error {
-	// Empty engine is allowed for backwards compatibility - will default based on type
+	// why: Empty engine is allowed for backwards compatibility - will default based on type
 	if engine == "" {
 		return nil
 	}
@@ -128,14 +128,12 @@ func validatePolicyEngine(engine config.AppPolicyEngine) error {
 }
 
 func validatePolicyTypeEngineCompatibility(policyType config.AppPolicyType, engine config.AppPolicyEngine) error {
-	// If no engine specified, skip compatibility check (will use default)
 	if engine == "" {
 		return nil
 	}
 
 	switch policyType {
 	case config.AppPolicyTypeKubernetesCluster:
-		// kubernetes_cluster only supports kyverno
 		if engine != config.AppPolicyEngineKyverno {
 			return fmt.Errorf("policy type %s requires engine %s, got %s", policyType, config.AppPolicyEngineKyverno, engine)
 		}
@@ -146,7 +144,6 @@ func validatePolicyTypeEngineCompatibility(policyType config.AppPolicyType, engi
 		config.AppPolicyTypeContainerImage,
 		config.AppPolicyTypePulumi,
 		config.AppPolicyTypeSandbox:
-		// component-based and sandbox policy types only support OPA engine
 		if engine != config.AppPolicyEngineOPA {
 			return fmt.Errorf("policy type %s requires engine %s, got %s", policyType, config.AppPolicyEngineOPA, engine)
 		}
@@ -155,9 +152,6 @@ func validatePolicyTypeEngineCompatibility(policyType config.AppPolicyType, engi
 	return nil
 }
 
-// componentScopedPolicyType reports whether a policy type is evaluated per
-// component and therefore requires a non-empty components list. Sandbox and
-// kubernetes_cluster policies are not component-scoped and ignore components.
 func componentScopedPolicyType(policyType config.AppPolicyType) bool {
 	switch policyType {
 	case config.AppPolicyTypeTerraformModule,
@@ -172,21 +166,14 @@ func componentScopedPolicyType(policyType config.AppPolicyType) bool {
 	}
 }
 
-// ValidatePolicyComponents validates the components list for a single policy.
-// It is shared by config validation (nuon CLI sync) and the ctl-api create
-// endpoint so both enforce the same rules.
 func ValidatePolicyComponents(policyName string, policyType config.AppPolicyType, components []string) error {
 	if len(components) == 0 {
-		// Component-scoped policies with an empty components list never run,
-		// which silently disables them. Require an explicit target (["*"] for
-		// all components of the type, or specific component names).
 		if componentScopedPolicyType(policyType) {
 			return fmt.Errorf("policy %q (type %s) requires a non-empty components list; use [\"*\"] to apply to all components of this type or list specific component names", policyName, policyType)
 		}
 		return nil
 	}
 
-	// Check for invalid wildcard usage
 	hasWildcard := false
 	for _, c := range components {
 		if c == "*" {
@@ -197,7 +184,6 @@ func ValidatePolicyComponents(policyName string, policyType config.AppPolicyType
 		}
 	}
 
-	// If wildcard is present, it should be the only element
 	if hasWildcard && len(components) > 1 {
 		return fmt.Errorf("wildcard \"*\" cannot be combined with other component names")
 	}

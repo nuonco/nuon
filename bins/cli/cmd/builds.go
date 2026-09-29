@@ -4,7 +4,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// newBuildsCmd constructs a new builds command
 func (c *cli) buildsCmd() *cobra.Command {
 	var (
 		buildID string

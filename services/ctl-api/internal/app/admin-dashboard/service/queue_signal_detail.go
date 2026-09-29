@@ -34,7 +34,6 @@ func (s *service) QueueSignalDetail(c *gin.Context) {
 		return
 	}
 
-	// Fetch the 10 signals created right before this one in the same queue.
 	var signalsAhead []app.QueueSignal
 	s.readDB().WithContext(ctx).
 		Where("queue_id = ? AND created_at < ? AND id != ?", signal.QueueID, signal.CreatedAt, signal.ID).
@@ -71,10 +70,9 @@ type scheduledActivity struct {
 	name           string
 	scheduledAt    time.Time
 	scheduledEvtID int64
-	input          string // JSON-formatted activity input
+	input          string
 }
 
-// updateState tracks an in-progress or completed workflow update.
 type updateState struct {
 	name          string
 	updateID      string
@@ -90,7 +88,6 @@ type updateState struct {
 func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) *views.WorkflowInfo {
 	ctx := c.Request.Context()
 
-	// Get workflow status
 	status, err := s.temporalClient.GetWorkflowStatusInNamespace(ctx, namespace, workflowID, "")
 	if err != nil {
 		s.l.Warn("failed to get workflow status", zap.Error(err), zap.String("workflow_id", workflowID))
@@ -101,7 +98,6 @@ func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) 
 		Status: formatWorkflowStatus(status),
 	}
 
-	// Get workflow history for activity details
 	nsClient, err := s.temporalClient.GetNamespaceClient(namespace)
 	if err != nil {
 		s.l.Warn("failed to get namespace client", zap.Error(err))
@@ -111,10 +107,9 @@ func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) 
 	iter := nsClient.GetWorkflowHistory(ctx, workflowID, "", false, enumspb.HISTORY_EVENT_FILTER_TYPE_ALL_EVENT)
 
 	scheduled := map[int64]scheduledActivity{}
-	started := map[int64]time.Time{} // keyed by scheduled event ID
-	attempts := map[int64]int32{}    // keyed by scheduled event ID
+	started := map[int64]time.Time{}
+	attempts := map[int64]int32{}
 
-	// Track child workflows by initiated event ID
 	type childWFState struct {
 		workflowType string
 		workflowID   string
@@ -122,9 +117,8 @@ func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) 
 		namespace    string
 		startedAt    time.Time
 	}
-	childWFs := map[int64]childWFState{} // keyed by initiated event ID
+	childWFs := map[int64]childWFState{}
 
-	// Track update executions by accepted event ID
 	updates := map[int64]*updateState{}
 
 	var activities []views.ActivityInfo
@@ -138,7 +132,6 @@ func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) 
 		}
 
 		switch event.GetEventType() {
-		// Workflow Update tracking
 		case enumspb.EVENT_TYPE_WORKFLOW_EXECUTION_UPDATE_ACCEPTED:
 			attrs := event.GetWorkflowExecutionUpdateAcceptedEventAttributes()
 			if attrs != nil {
@@ -177,7 +170,6 @@ func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) 
 			}
 
 		case enumspb.EVENT_TYPE_WORKFLOW_EXECUTION_UPDATE_REJECTED:
-			// Rejected updates don't have an accepted event, skip
 
 		case enumspb.EVENT_TYPE_ACTIVITY_TASK_SCHEDULED:
 			attrs := event.GetActivityTaskScheduledEventAttributes()
@@ -247,7 +239,6 @@ func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) 
 				))
 			}
 
-		// Child workflow tracking
 		case enumspb.EVENT_TYPE_CHILD_WORKFLOW_EXECUTION_STARTED:
 			attrs := event.GetChildWorkflowExecutionStartedEventAttributes()
 			if attrs != nil {
@@ -349,7 +340,6 @@ func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) 
 		}
 	}
 
-	// Add still-running child workflows
 	for _, state := range childWFs {
 		childWorkflows = append(childWorkflows, views.ChildWorkflowInfo{
 			WorkflowType: state.workflowType,
@@ -361,7 +351,6 @@ func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) 
 		})
 	}
 
-	// Add any scheduled-but-not-finished activities as "Running" or "Scheduled"
 	for schedID, sched := range scheduled {
 		found := false
 		for _, a := range activities {
@@ -391,13 +380,10 @@ func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) 
 	info.Activities = activities
 	info.ChildWorkflows = childWorkflows
 
-	// Extract awaited signals from AwaitSignal activities
 	info.AwaitedSignals = s.extractAwaitedSignals(c, activities)
 
-	// Extract enqueued signals from EnqueueSignal activities
 	info.EnqueuedSignals = s.extractEnqueuedSignals(c, activities)
 
-	// Also extract enqueued signals from child workflows (e.g. ExecuteJob enqueues process_job)
 	seen := map[string]bool{}
 	for _, es := range info.EnqueuedSignals {
 		seen[es.QueueSignalID] = true
@@ -422,7 +408,6 @@ func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) 
 		}
 	}
 
-	// Build update executions by associating activities with updates based on event ID ranges
 	if len(updates) > 0 {
 		info.UpdateExecutions, info.OrphanActivities = s.buildUpdateExecutions(updates, activities, info.AwaitedSignals, info.EnqueuedSignals)
 	} else {
@@ -432,8 +417,6 @@ func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) 
 	return info
 }
 
-// extractAwaitedSignals looks for AwaitSignal activities in the workflow history
-// and loads the corresponding queue signals from the database.
 func (s *service) extractAwaitedSignals(c *gin.Context, activities []views.ActivityInfo) []views.AwaitedSignalInfo {
 	ctx := c.Request.Context()
 	var awaited []views.AwaitedSignalInfo
@@ -443,8 +426,6 @@ func (s *service) extractAwaitedSignals(c *gin.Context, activities []views.Activ
 			continue
 		}
 
-		// Extract queue signal ID from the activity input JSON
-		// The input is the first argument: a string (queue signal ID)
 		qsID := extractQueueSignalIDFromInput(act.Input)
 		if qsID == "" {
 			continue
@@ -459,7 +440,6 @@ func (s *service) extractAwaitedSignals(c *gin.Context, activities []views.Activ
 			Failure:       act.Failure,
 		}
 
-		// Load the awaited signal from DB
 		var signal app.QueueSignal
 		if err := s.readDB().WithContext(ctx).Where("id = ?", qsID).First(&signal).Error; err == nil {
 			asi.Signal = &signal
@@ -471,7 +451,6 @@ func (s *service) extractAwaitedSignals(c *gin.Context, activities []views.Activ
 	return awaited
 }
 
-// extractEnqueuedSignals looks for EnqueueSignal activities and extracts the created signal IDs.
 func (s *service) extractEnqueuedSignals(c *gin.Context, activities []views.ActivityInfo) []views.EnqueuedSignalInfo {
 	ctx := c.Request.Context()
 	var enqueued []views.EnqueuedSignalInfo
@@ -481,10 +460,8 @@ func (s *service) extractEnqueuedSignals(c *gin.Context, activities []views.Acti
 			continue
 		}
 
-		// The result of EnqueueSignal contains the created signal ID
 		qsID := extractQueueSignalIDFromResult(act.Result)
 		if qsID == "" {
-			// Also try the input (some variants pass the signal ID as input)
 			qsID = extractQueueSignalIDFromInput(act.Input)
 		}
 		if qsID == "" {
@@ -507,14 +484,12 @@ func (s *service) extractEnqueuedSignals(c *gin.Context, activities []views.Acti
 	return enqueued
 }
 
-// extractQueueSignalIDFromResult parses activity result JSON for a queue signal ID.
 func extractQueueSignalIDFromResult(result string) string {
 	result = strings.TrimSpace(result)
 	if result == "" {
 		return ""
 	}
 
-	// Try as plain JSON string
 	var id string
 	if err := json.Unmarshal([]byte(result), &id); err == nil {
 		if strings.HasPrefix(id, "qsi") {
@@ -522,9 +497,6 @@ func extractQueueSignalIDFromResult(result string) string {
 		}
 	}
 
-	// Try as JSON object with known ID fields.
-	// Temporal's data converter uses Go field names (e.g. "QueueSignalID"),
-	// while JSON tags produce "queue_signal_id".
 	var obj map[string]interface{}
 	if err := json.Unmarshal([]byte(result), &obj); err == nil {
 		for _, key := range []string{"id", "ID", "queue_signal_id", "QueueSignalID"} {
@@ -537,15 +509,12 @@ func extractQueueSignalIDFromResult(result string) string {
 	return ""
 }
 
-// extractQueueSignalIDFromInput parses the activity input JSON to find a queue signal ID.
-// Handles both plain string inputs ("qsi...") and struct inputs with known ID fields.
 func extractQueueSignalIDFromInput(input string) string {
 	input = strings.TrimSpace(input)
 	if input == "" {
 		return ""
 	}
 
-	// Try parsing as a plain JSON string (most common: AwaitSignal takes a single string arg)
 	var id string
 	if err := json.Unmarshal([]byte(input), &id); err == nil {
 		if strings.HasPrefix(id, "qsi") {
@@ -553,7 +522,6 @@ func extractQueueSignalIDFromInput(input string) string {
 		}
 	}
 
-	// Try as JSON object with known ID fields
 	var obj map[string]interface{}
 	if err := json.Unmarshal([]byte(input), &obj); err == nil {
 		for _, key := range []string{"queue_signal_id", "QueueSignalID", "id", "ID"} {
@@ -566,14 +534,7 @@ func extractQueueSignalIDFromInput(input string) string {
 	return ""
 }
 
-// buildUpdateExecutions groups activities into their parent update executions.
-// Activities whose ScheduledEventID falls after an update's accepted event ID
-// (and before the next update's) belong to that update.
-// Activities before any update are returned as orphans (main workflow body).
-// Awaited and enqueued signals are associated with updates by matching their
-// queue signal IDs against AwaitSignal/EnqueueSignal activities in each update.
 func (s *service) buildUpdateExecutions(updates map[int64]*updateState, activities []views.ActivityInfo, awaitedSignals []views.AwaitedSignalInfo, enqueuedSignals []views.EnqueuedSignalInfo) ([]views.UpdateExecution, []views.ActivityInfo) {
-	// Collect and sort updates by accepted event ID
 	type indexedUpdate struct {
 		acceptedEvtID int64
 		state         *updateState
@@ -590,19 +551,17 @@ func (s *service) buildUpdateExecutions(updates map[int64]*updateState, activiti
 		}
 	}
 
-	// For each activity, find which update it belongs to
-	actsByUpdate := make(map[int64][]views.ActivityInfo) // keyed by accepted event ID
+	actsByUpdate := make(map[int64][]views.ActivityInfo)
 	var orphans []views.ActivityInfo
 
 	for _, act := range activities {
 		ownerIdx := -1
 		for i, su := range sorted {
 			if act.ScheduledEventID <= su.acceptedEvtID {
-				break // past all possible owners
+				break
 			}
-			// Activity scheduled after this update's accepted event
 			if i+1 < len(sorted) && act.ScheduledEventID >= sorted[i+1].acceptedEvtID {
-				continue // belongs to a later update
+				continue
 			}
 			ownerIdx = i
 			break
@@ -615,7 +574,6 @@ func (s *service) buildUpdateExecutions(updates map[int64]*updateState, activiti
 		}
 	}
 
-	// Index awaited/enqueued signals by queue signal ID for fast lookup
 	awaitedByID := make(map[string]views.AwaitedSignalInfo)
 	for _, as := range awaitedSignals {
 		if as.QueueSignalID != "" {
@@ -629,7 +587,6 @@ func (s *service) buildUpdateExecutions(updates map[int64]*updateState, activiti
 		}
 	}
 
-	// Build UpdateExecution structs
 	execs := make([]views.UpdateExecution, 0, len(sorted))
 	for _, su := range sorted {
 		ue := views.UpdateExecution{
@@ -647,7 +604,6 @@ func (s *service) buildUpdateExecutions(updates map[int64]*updateState, activiti
 			ue.Duration = su.state.finishedAt.Sub(su.state.startedAt)
 		}
 
-		// Associate awaited/enqueued signals with this update by scanning its activities
 		for _, act := range ue.Activities {
 			if strings.Contains(act.Name, "AwaitSignal") {
 				qsID := extractQueueSignalIDFromInput(act.Input)
@@ -703,7 +659,6 @@ func (s *service) buildActivityInfo(
 	return ai
 }
 
-// decodePayloads runs the codec chain to decode Temporal payloads (e.g. gzip, large payload, s3).
 func (s *service) decodePayloads(payloads *commonpb.Payloads) *commonpb.Payloads {
 	if payloads == nil || len(payloads.GetPayloads()) == 0 {
 		return payloads
@@ -720,7 +675,6 @@ func (s *service) decodePayloads(payloads *commonpb.Payloads) *commonpb.Payloads
 	return &commonpb.Payloads{Payloads: decoded}
 }
 
-// formatPayloads decodes and pretty-prints the JSON data from Temporal payloads.
 func (s *service) formatPayloads(payloads *commonpb.Payloads) string {
 	if payloads == nil {
 		return ""
@@ -755,8 +709,6 @@ func (s *service) formatPayloads(payloads *commonpb.Payloads) string {
 	return buf.String()
 }
 
-// updateHandlersForSignalType returns the known update handler names registered
-// by each signal type. Derived from the RegisterUpdateHandlers implementations.
 func updateHandlersForSignalType(signalType string) []string {
 	switch signalType {
 	case "execute-workflow":

@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 )
 
-// FileProcessor is a function to process config files before they're marshalled into a config struct and synced to the api.
 type FileProcessor func(string, map[string]any) map[string]any
 
 func parseTomlFile(rw io.ReadCloser, name string, out any, processor FileProcessor, rootDir string) error {
@@ -25,14 +24,12 @@ func parseTomlFile(rw io.ReadCloser, name string, out any, processor FileProcess
 		}
 	}
 
-	// Skip files that are effectively empty (e.g., only comments)
 	if len(obj) == 0 {
 		return nil
 	}
 
 	obj = processor(name, obj)
 
-	// go from map[string]interface{} => config.AppConfig
 	mapDecCfg := config.DecoderConfig(config.WithRootDir(rootDir))
 	mapDecCfg.Result = out
 	mapDec, err := mapstructure.NewDecoder(mapDecCfg)

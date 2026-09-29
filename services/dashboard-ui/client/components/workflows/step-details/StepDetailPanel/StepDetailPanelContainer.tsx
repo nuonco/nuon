@@ -49,9 +49,6 @@ export function getStepPanelDetails(step: TWorkflowStep): ReactNode {
     return <SyncSecretsStepDetails />
   if (step.step_target_type === 'app_branches')
     return <InstallGroupStepDetails />
-  // step_target_type only lands once the runner picks up the step;
-  // hold the panel body with a placeholder until then. The container
-  // fast-polls in this window so the gap is ~1-2s.
   return (
     <EmptyState
       variant="history"
@@ -95,8 +92,6 @@ export const StepDetailPanelContainer = ({
     refetchInterval: (query) => {
       if (!shouldPoll) return false
       if (query.state.data?.finished) return 30_000
-      // Fast-poll while waiting for runner pickup so the holding state
-      // in `getStepPanelDetails` flips to the real detail quickly.
       if (!query.state.data?.step_target_type) return 1_500
       return pollInterval
     },

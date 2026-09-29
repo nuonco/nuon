@@ -18,7 +18,6 @@ func (s *GeneralInternalTestSuite) TestAdminGetWaitlist() {
 			name:           "returns waitlist successfully",
 			expectedStatus: http.StatusOK,
 			validateFunc: func(resp []WaitlistResponse) {
-				// Response should be a valid array (even if empty)
 				assert.NotNil(s.T(), resp, "response should not be nil")
 			},
 		},
@@ -26,7 +25,6 @@ func (s *GeneralInternalTestSuite) TestAdminGetWaitlist() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Make request
 			rr := s.makeRequest(http.MethodGet, "/v1/general/waitlist", nil)
 
 			if rr.Code != tc.expectedStatus {
@@ -34,12 +32,10 @@ func (s *GeneralInternalTestSuite) TestAdminGetWaitlist() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Unmarshal response
 			var resp []WaitlistResponse
 			err := json.Unmarshal(rr.Body.Bytes(), &resp)
 			require.NoError(s.T(), err)
 
-			// Validate response
 			if tc.validateFunc != nil {
 				tc.validateFunc(resp)
 			}

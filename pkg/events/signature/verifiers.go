@@ -14,16 +14,13 @@ import (
 )
 
 const (
-	// SlackSignatureHeader is the HMAC signature header sent by Slack.
 	SlackSignatureHeader = "X-Slack-Signature"
-	// SlackTimestampHeader is the request timestamp (unix seconds) sent by Slack.
 	SlackTimestampHeader = "X-Slack-Request-Timestamp"
 
 	slackSignatureVersion    = "v0"
 	slackRequestMaxClockSkew = 5 * time.Minute
 )
 
-// HMAC verifies a request body signature carried in a header.
 type HMAC struct {
 	Header    string
 	Prefix    string
@@ -44,8 +41,6 @@ func (h HMAC) Verify(headers http.Header, body []byte, secrets []string, _ time.
 	return -1, errors.New("invalid signature")
 }
 
-// Slack verifies Slack's timestamp-bound v0 request signature. Reference:
-// https://api.slack.com/authentication/verifying-requests-from-slack
 type Slack struct{}
 
 func (Slack) Verify(headers http.Header, body []byte, secrets []string, now time.Time) (int, error) {
@@ -62,8 +57,6 @@ func (Slack) Verify(headers http.Header, body []byte, secrets []string, now time
 	return -1, errors.New("invalid Slack signature")
 }
 
-// ValidSlackRequestTimestamp reports whether value is a unix timestamp within
-// Slack's recommended 5-minute replay window of now.
 func ValidSlackRequestTimestamp(value string, now time.Time) bool {
 	seconds, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
@@ -73,8 +66,6 @@ func ValidSlackRequestTimestamp(value string, now time.Time) bool {
 	return drift <= slackRequestMaxClockSkew && drift >= -slackRequestMaxClockSkew
 }
 
-// VerifySlack reports whether slackSig matches the HMAC-SHA256 of
-// "v0:{timestamp}:{body}" computed with signingSecret.
 func VerifySlack(signingSecret, timestamp string, body []byte, slackSig string) bool {
 	base := fmt.Sprintf("%s:%s:%s", slackSignatureVersion, timestamp, body)
 	mac := hmac.New(sha256.New, []byte(signingSecret))
@@ -83,8 +74,6 @@ func VerifySlack(signingSecret, timestamp string, body []byte, slackSig string) 
 	return hmac.Equal([]byte(expected), []byte(slackSig))
 }
 
-// APIKey verifies a shared key carried in a header, optionally behind a
-// prefix such as "Bearer ".
 type APIKey struct {
 	Header string
 	Prefix string
@@ -104,8 +93,6 @@ func (k APIKey) Verify(headers http.Header, _ []byte, secrets []string, _ time.T
 	return -1, errors.New("invalid API key")
 }
 
-// Basic verifies HTTP basic authentication with a fixed username and the
-// password matched against candidate secrets.
 type Basic struct {
 	Username string
 }

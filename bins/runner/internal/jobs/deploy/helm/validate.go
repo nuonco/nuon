@@ -22,7 +22,7 @@ func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExe
 		return err
 	}
 
-	// A recovery rebuilds the target release from the revision helm already
+	// why: A recovery rebuilds the target release from the revision helm already
 	// stored, so it needs no chart. Skipping the artifact is not just an
 	// optimisation: requiring it would make recovery fail whenever the artifact
 	// is unreachable, which is exactly when an install is most likely wedged.

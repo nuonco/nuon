@@ -13,10 +13,8 @@ import (
 )
 
 func ChartValues(values []string, helmSet []plantypes.HelmValue, override string) (map[string]interface{}, error) {
-	// Next get all our set configs
 	base := map[string]interface{}{}
 
-	// First merge all our values from YAML documents.
 	for _, values := range values {
 		if values == "" {
 			continue
@@ -49,10 +47,6 @@ func ChartValues(values []string, helmSet []plantypes.HelmValue, override string
 		}
 	}
 
-	// Finally, apply the install-level values override as the highest-precedence
-	// layer. It is coalesced override-authoritative, so it deep-merges over the
-	// values files AND the inline --set values and wins on any overlapping key.
-	// An empty override is an exact no-op.
 	if strings.TrimSpace(override) != "" {
 		overrideVals, err := chartcommon.ReadValues([]byte(override))
 		if err != nil {

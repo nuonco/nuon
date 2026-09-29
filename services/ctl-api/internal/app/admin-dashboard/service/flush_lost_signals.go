@@ -12,8 +12,6 @@ func (s *service) FlushLostSignals(c *gin.Context) {
 	cutoff := time.Now().Add(-1 * time.Hour)
 	now := time.Now().Unix()
 
-	// Mark unenqueued signals older than 1 hour as error and soft-delete them
-	// so they stop appearing in sweep queries.
 	res := s.db.WithContext(c.Request.Context()).Exec(`
 		UPDATE queue_signals
 		SET

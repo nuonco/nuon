@@ -11,9 +11,6 @@ type GetInstallsRequest struct {
 	ID string `validate:"required"`
 }
 
-// OrgInstall is a bare projection rather than app.Install so scanning does not run
-// Install's AfterQuery hook, which fires a per-row org lookup to populate derived
-// fields no fan-out needs.
 type OrgInstall struct {
 	ID string `json:"id"`
 }

@@ -1,6 +1,5 @@
 package sandboxmode
 
-// AllRunnerJobOperationTypes returns all known runner job operation types.
 func AllRunnerJobOperationTypes() []string {
 	return []string{
 		"exec",
@@ -11,7 +10,6 @@ func AllRunnerJobOperationTypes() []string {
 	}
 }
 
-// AllRunnerJobTypes returns all known runner job types.
 func AllRunnerJobTypes() []string {
 	return []string{
 		"terraform-deploy",

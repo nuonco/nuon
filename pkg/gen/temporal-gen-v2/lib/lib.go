@@ -1,5 +1,3 @@
-// Package temporalgen provides a library interface for temporal-gen-v2.
-// It can be used programmatically rather than only via the CLI.
 package temporalgen
 
 import (
@@ -19,47 +17,28 @@ import (
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/tags"
 )
 
-// Options configures a code generation run.
 type Options struct {
-	// Dir is the root directory to process. Defaults to ".".
 	Dir string
 
-	// Recursive processes all packages under Dir recursively (equivalent to ./...).
 	Recursive bool
 
-	// Cleanup removes existing generated files before generating new ones.
 	Cleanup bool
 
-	// Validate fails if any annotation validation errors are found.
 	Validate bool
 
-	// Imports runs golang.org/x/tools/imports on generated files.
 	Imports bool
 
-	// Parallelism controls how many packages are processed concurrently within
-	// each dependency level. Defaults to runtime.NumCPU() when <= 0.
 	Parallelism int
 
-	// OnPackage is called before processing each package. May be nil.
 	OnPackage func(pkgName string)
 
-	// Tags declares the tag vocabulary in code. When set, it is the whole
-	// vocabulary: file discovery and ConfigPath are skipped, so there is only
-	// ever one source of truth for what a tag means.
 	Tags *tags.Config
 
-	// ConfigPath points at an explicit temporal-gen.yaml. When empty, the
-	// config is discovered by walking up from Dir to the module root.
 	ConfigPath string
 
-	// NoConfig skips config discovery entirely, so no tag defaults apply.
 	NoConfig bool
 }
 
-// ResolveConfig loads the tag config for a run: an in-code Tags config if
-// given, then an explicit ConfigPath, otherwise whatever discovery finds
-// walking up from Dir. Returns (nil, nil) when there is no config, which is
-// the normal no-tags case.
 func ResolveConfig(opts Options) (*tags.Config, error) {
 	if opts.NoConfig {
 		return nil, nil
@@ -80,9 +59,6 @@ func ResolveConfig(opts Options) (*tags.Config, error) {
 	return tags.Discover(targetDir)
 }
 
-// Generate runs temporal code generation with the provided options.
-// It loads all packages in a single packages.Load call, resolves dependency
-// ordering, and processes packages in parallel within each level.
 func Generate(ctx context.Context, opts Options) error {
 	targetDir := opts.Dir
 	if targetDir == "" {
@@ -94,8 +70,6 @@ func Generate(ctx context.Context, opts Options) error {
 		parallelism = runtime.NumCPU()
 	}
 
-	// Resolved once per run rather than per package, so which config applies
-	// is deterministic and independent of package traversal order.
 	tagCfg, err := ResolveConfig(opts)
 	if err != nil {
 		return err
@@ -143,8 +117,6 @@ func Generate(ctx context.Context, opts Options) error {
 	return nil
 }
 
-// BuildLoadPattern converts a directory path into the pattern passed to
-// packages.Load. When recursive is true it appends "/...".
 func BuildLoadPattern(targetDir string, recursive bool) string {
 	if !recursive {
 		return targetDir
@@ -159,7 +131,6 @@ func BuildLoadPattern(targetDir string, recursive bool) string {
 	return fmt.Sprintf("%s/...", cleanDir)
 }
 
-// Clean removes all generated _gen.go files (matching the watermark) under dir.
 func Clean(dir string, recursive bool) error {
 	if !recursive {
 		entries, err := os.ReadDir(dir)

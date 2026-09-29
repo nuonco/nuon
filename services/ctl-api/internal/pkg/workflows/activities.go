@@ -20,16 +20,12 @@ import (
 type Params struct {
 	fx.In
 
-	Activities *activities.Activities
-	// runner jobs
-	JobActivities *jobactivities.Activities
-	// workflows
-	FlowActivities *flowactivities.Activities
-	// shared statuses tooling
+	Activities       *activities.Activities
+	JobActivities    *jobactivities.Activities
+	FlowActivities   *flowactivities.Activities
 	StatusActivities *statusactivities.Activities
 	ControlPlaneActs *controlplanejob.Activities
 
-	// queues / signals
 	QueueActs                 *queueactivities.Activities
 	QueueClient               *queueclient.Client
 	Enqueuer                  *enqueuer.Enqueuer

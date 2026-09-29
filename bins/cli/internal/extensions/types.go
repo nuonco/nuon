@@ -1,21 +1,17 @@
 package extensions
 
-// Extension types determine how an extension is installed and executed.
 const (
-	ExtTypeBinary ExtType = "binary" // precompiled platform binaries via GitHub Releases
-	ExtTypeScript ExtType = "script" // executable script at repo root (bash, etc.)
-	ExtTypePython ExtType = "python" // python project managed by uv
+	ExtTypeBinary ExtType = "binary"
+	ExtTypeScript ExtType = "script"
+	ExtTypePython ExtType = "python"
 )
 
-// ExtType represents the type of an extension.
 type ExtType string
 
-// ExtensionManifest represents the parsed nuon-ext.toml file from an extension repo.
 type ExtensionManifest struct {
 	Extension ExtensionMeta `toml:"extension"`
 }
 
-// ExtensionMeta holds the metadata from the [extension] section of nuon-ext.toml.
 type ExtensionMeta struct {
 	Name          string        `toml:"name"`
 	Description   string        `toml:"description"`
@@ -23,7 +19,6 @@ type ExtensionMeta struct {
 	Auth          ExtensionAuth `toml:"auth"`
 }
 
-// ExtensionAuth holds the auth requirements from [extension.auth] in nuon-ext.toml.
 type ExtensionAuth struct {
 	RequiresToken   bool `toml:"requires_token"`
 	RequiresOrg     bool `toml:"requires_org"`
@@ -31,8 +26,6 @@ type ExtensionAuth struct {
 	RequiresInstall bool `toml:"requires_install"`
 }
 
-// InstalledExtension represents a locally installed extension.
-// This is the schema for manifest.json stored in each extension's directory.
 type InstalledExtension struct {
 	Name            string  `json:"name"`
 	Description     string  `json:"description"`
@@ -53,7 +46,6 @@ type InstalledExtension struct {
 	RequiresInstall bool    `json:"requires_install"`
 }
 
-// AvailableExtension represents an extension available for installation from GitHub.
 type AvailableExtension struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -62,7 +54,6 @@ type AvailableExtension struct {
 	Installed   bool   `json:"installed"`
 }
 
-// UpgradeResult represents the result of upgrading a single extension.
 type UpgradeResult struct {
 	Name       string `json:"name"`
 	OldVersion string `json:"old_version"`

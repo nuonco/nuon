@@ -9,7 +9,6 @@ const (
 	KubernetesManifestPlanOperationDelete KubernetesManifestPlanOperation = "delete"
 )
 
-// KubernetesManifestPlanContents for kubernetes plan, summarized before after state of all resources
 type KubernetesManifestPlanContents struct {
 	Plan         string                          `json:"plan"`
 	Op           KubernetesManifestPlanOperation `json:"op"`

@@ -58,15 +58,12 @@ func New(params WorkerParams) (*Worker, error) {
 		DeadlockDetectionTimeout:               params.Cfg.TemporalDeadlockDetectionTimeout,
 	})
 
-	// Register onboarding-specific activities
 	wkr.RegisterActivity(params.OnboardingActs)
 
-	// Register shared activities
 	for _, acts := range params.SharedActivities.AllActivities() {
 		wkr.RegisterActivity(acts)
 	}
 
-	// Register shared workflows (Queue, Handler, etc.)
 	for _, wkflow := range params.SharedWorkflows.AllWorkflows() {
 		wkr.RegisterWorkflow(wkflow)
 	}

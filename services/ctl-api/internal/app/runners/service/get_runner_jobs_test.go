@@ -75,7 +75,6 @@ func (s *GetRunnerJobsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes (no TestOrg/TestAcc needed)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -94,7 +93,6 @@ func (s *GetRunnerJobsTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create log stream
 	s.testLogStream = &app.LogStream{
 		ID:      domains.NewLogStreamID(),
 		OrgID:   s.testOrg.ID,
@@ -104,7 +102,6 @@ func (s *GetRunnerJobsTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testLogStream).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -116,7 +113,6 @@ func (s *GetRunnerJobsTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -153,7 +149,6 @@ func (s *GetRunnerJobsTestSuite) TestGetRunnerJobs() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create available job
 				job1 := &app.RunnerJob{
 					ID:                domains.NewRunnerJobID(),
 					OrgID:             s.testOrg.ID,
@@ -172,7 +167,6 @@ func (s *GetRunnerJobsTestSuite) TestGetRunnerJobs() {
 				err := s.service.DB.WithContext(ctx).Create(job1).Error
 				require.NoError(s.T(), err)
 
-				// Create queued job (should not be returned with default filter)
 				job2 := &app.RunnerJob{
 					ID:                domains.NewRunnerJobID(),
 					OrgID:             s.testOrg.ID,
@@ -222,7 +216,6 @@ func (s *GetRunnerJobsTestSuite) TestGetRunnerJobs() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create build job
 				job1 := &app.RunnerJob{
 					ID:                domains.NewRunnerJobID(),
 					OrgID:             s.testOrg.ID,
@@ -241,7 +234,6 @@ func (s *GetRunnerJobsTestSuite) TestGetRunnerJobs() {
 				err := s.service.DB.WithContext(ctx).Create(job1).Error
 				require.NoError(s.T(), err)
 
-				// Create deploy job
 				job2 := &app.RunnerJob{
 					ID:                domains.NewRunnerJobID(),
 					OrgID:             s.testOrg.ID,
@@ -281,7 +273,6 @@ func (s *GetRunnerJobsTestSuite) TestGetRunnerJobs() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create in-progress job
 				job1 := &app.RunnerJob{
 					ID:                domains.NewRunnerJobID(),
 					OrgID:             s.testOrg.ID,
@@ -300,7 +291,6 @@ func (s *GetRunnerJobsTestSuite) TestGetRunnerJobs() {
 				err := s.service.DB.WithContext(ctx).Create(job1).Error
 				require.NoError(s.T(), err)
 
-				// Create available job
 				job2 := &app.RunnerJob{
 					ID:                domains.NewRunnerJobID(),
 					OrgID:             s.testOrg.ID,
@@ -359,7 +349,6 @@ func (s *GetRunnerJobsTestSuite) TestGetRunnerJobs() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create jobs with different statuses
 				statuses := []app.RunnerJobStatus{
 					app.RunnerJobStatusQueued,
 					app.RunnerJobStatusAvailable,
@@ -406,7 +395,6 @@ func (s *GetRunnerJobsTestSuite) TestGetRunnerJobs() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create jobs with different groups
 				groups := []app.RunnerJobGroup{
 					app.RunnerJobGroupBuild,
 					app.RunnerJobGroupDeploy,
@@ -453,7 +441,6 @@ func (s *GetRunnerJobsTestSuite) TestGetRunnerJobs() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create 5 jobs
 				for i := 0; i < 5; i++ {
 					job := &app.RunnerJob{
 						ID:                domains.NewRunnerJobID(),

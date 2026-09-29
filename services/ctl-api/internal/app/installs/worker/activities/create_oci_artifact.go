@@ -32,7 +32,6 @@ func (a *Activities) CreateOCIArtifact(ctx context.Context, req CreateOCIArtifac
 		Annotations:  generics.ToHstore(req.Outputs.Annotations),
 		ArtifactType: req.Outputs.ArtifactType,
 
-		// Platform fields
 		Architecture: req.Outputs.Platform.Architecture,
 		OS:           req.Outputs.Platform.OS,
 		OSVersion:    req.Outputs.Platform.OSVersion,

@@ -7,7 +7,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// SignalTypeInfo describes the capabilities and attributes of a registered signal type.
 type SignalTypeInfo struct {
 	Type              signal.SignalType
 	Namespace         string
@@ -32,8 +31,6 @@ type SignalTypeInfo struct {
 	Operation         string
 }
 
-// deriveNamespace extracts a namespace from a signal type string.
-// e.g., "install-created" -> "install", "component-deploy-apply-plan" -> "component"
 func deriveNamespace(typ signal.SignalType) string {
 	s := string(typ)
 	if idx := strings.Index(s, "-"); idx > 0 {
@@ -42,8 +39,6 @@ func deriveNamespace(typ signal.SignalType) string {
 	return s
 }
 
-// InspectAll returns information about every registered signal type by instantiating
-// each signal and checking which optional interfaces it implements.
 func InspectAll() []SignalTypeInfo {
 	var infos []SignalTypeInfo
 	for typ, constructor := range SignalCatalog {
@@ -53,7 +48,6 @@ func InspectAll() []SignalTypeInfo {
 	return infos
 }
 
-// InspectType returns information about a single signal type.
 func InspectType(typ signal.SignalType) (SignalTypeInfo, error) {
 	constructor, ok := SignalCatalog[typ]
 	if !ok {
@@ -62,11 +56,9 @@ func InspectType(typ signal.SignalType) (SignalTypeInfo, error) {
 	return inspect(typ, constructor()), nil
 }
 
-// safeCall runs fn and recovers from any panic, returning the zero value on failure.
 func safeCall[T any](fn func() T) (result T) {
 	defer func() {
 		if r := recover(); r != nil {
-			// Method panicked on zero-value receiver; use zero value.
 		}
 	}()
 	return fn()

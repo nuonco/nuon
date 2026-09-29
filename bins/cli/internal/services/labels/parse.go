@@ -1,6 +1,3 @@
-// Package labels provides a shared parser for kubectl-style label arguments
-// used by `nuon installs label`, `nuon components label`, and
-// `nuon actions label`.
 package labels
 
 import (
@@ -8,13 +5,6 @@ import (
 	"strings"
 )
 
-// ParseArgs parses kubectl-style label args into add and remove sets.
-//
-//	"key=value" -> set["key"] = "value"
-//	"key-"      -> remove ["key"]
-//
-// Returns an error on malformed args. Empty args returns empty maps and nil error
-// (caller may interpret that as "no-op / list").
 func ParseArgs(args []string) (set map[string]string, remove []string, err error) {
 	set = map[string]string{}
 	for _, a := range args {
@@ -22,7 +12,6 @@ func ParseArgs(args []string) (set map[string]string, remove []string, err error
 		if a == "" {
 			continue
 		}
-		// Removal form: trailing dash with no '=' anywhere.
 		if strings.HasSuffix(a, "-") && !strings.Contains(a, "=") {
 			key := strings.TrimSuffix(a, "-")
 			if key == "" {
@@ -40,11 +29,6 @@ func ParseArgs(args []string) (set map[string]string, remove []string, err error
 	return set, remove, nil
 }
 
-// ParseKeys validates bare label keys (used by `unset`). It rejects empty keys
-// and any "key=value" form, since a value has no meaning when removing a label.
-//
-//	"key"       -> "key"
-//	"key=value" -> error
 func ParseKeys(args []string) ([]string, error) {
 	keys := make([]string, 0, len(args))
 	for _, a := range args {

@@ -77,7 +77,6 @@ func (s *GetRunnerJobsCtlAPITestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -98,7 +97,6 @@ func (s *GetRunnerJobsCtlAPITestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create log stream for runner jobs
 	s.testLogStream = &app.LogStream{
 		ID:      domains.NewLogStreamID(),
 		OrgID:   s.testOrg.ID,
@@ -108,7 +106,6 @@ func (s *GetRunnerJobsCtlAPITestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testLogStream).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -120,7 +117,6 @@ func (s *GetRunnerJobsCtlAPITestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -511,7 +507,6 @@ func (s *GetRunnerJobsCtlAPITestSuite) TestGetRunnerJobsCtlAPI() {
 		{
 			name: "no jobs for runner",
 			setupFunc: func() []string {
-				// Don't create any jobs
 				return []string{}
 			},
 			queryParams:   "",
@@ -558,7 +553,6 @@ func (s *GetRunnerJobsCtlAPITestSuite) TestGetRunnerJobsCtlAPI() {
 			expectedCode:  http.StatusOK,
 			expectedCount: 3,
 			validateFunc: func(jobs []*app.RunnerJob) {
-				// Verify jobs are ordered by created_at desc (newest first)
 				for i := 0; i < len(jobs)-1; i++ {
 					assert.True(s.T(), jobs[i].CreatedAt.After(jobs[i+1].CreatedAt) ||
 						jobs[i].CreatedAt.Equal(jobs[i+1].CreatedAt),
@@ -607,7 +601,6 @@ func (s *GetRunnerJobsCtlAPITestSuite) TestGetRunnerJobsCrossOrgIsolation() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-	// Create second org
 	org2ID := domains.NewOrgID()
 	org2 := &app.Org{
 		ID:          org2ID,
@@ -620,7 +613,6 @@ func (s *GetRunnerJobsCtlAPITestSuite) TestGetRunnerJobsCrossOrgIsolation() {
 	err := s.service.DB.WithContext(ctx).Create(org2).Error
 	require.NoError(s.T(), err)
 
-	// Create log stream for org2
 	logStream2 := &app.LogStream{
 		ID:      domains.NewLogStreamID(),
 		OrgID:   org2.ID,
@@ -630,7 +622,6 @@ func (s *GetRunnerJobsCtlAPITestSuite) TestGetRunnerJobsCrossOrgIsolation() {
 	err = s.service.DB.WithContext(ctx).Create(logStream2).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group for org2
 	runnerGrp2 := &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     org2.ID,
@@ -642,7 +633,6 @@ func (s *GetRunnerJobsCtlAPITestSuite) TestGetRunnerJobsCrossOrgIsolation() {
 	err = s.service.DB.WithContext(ctx).Create(runnerGrp2).Error
 	require.NoError(s.T(), err)
 
-	// Create runner in org2
 	runner2 := &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         org2.ID,
@@ -654,7 +644,6 @@ func (s *GetRunnerJobsCtlAPITestSuite) TestGetRunnerJobsCrossOrgIsolation() {
 	err = s.service.DB.WithContext(ctx).Create(runner2).Error
 	require.NoError(s.T(), err)
 
-	// Create job in org2
 	job := &app.RunnerJob{
 		ID:                domains.NewRunnerJobID(),
 		OrgID:             org2.ID,
@@ -673,11 +662,9 @@ func (s *GetRunnerJobsCtlAPITestSuite) TestGetRunnerJobsCrossOrgIsolation() {
 	err = s.service.DB.WithContext(ctx).Create(job).Error
 	require.NoError(s.T(), err)
 
-	// Attempt to get jobs from org2's runner with org1 context
 	rr := s.makeRequest("GET", "/v1/runners/"+runner2.ID+"/jobs")
 	require.Equal(s.T(), http.StatusNotFound, rr.Code, "should not access runner from different org")
 
-	// Cleanup
 	s.service.DB.Unscoped().Delete(job)
 	s.service.DB.Unscoped().Delete(logStream2)
 	s.service.DB.Unscoped().Delete(runner2)

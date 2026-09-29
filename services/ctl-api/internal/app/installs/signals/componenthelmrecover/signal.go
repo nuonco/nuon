@@ -25,10 +25,6 @@ const SignalType signal.SignalType = "component-helm-release-recover"
 
 const planCompositeErrorVersion = "helm-recover-plan-composite-error-v1"
 
-// Signal recovers a Helm release that was left mid-operation. It is deliberately
-// not a deploy: it applies no chart and changes no desired state, so it neither
-// plans nor asks for approval. It exists to run one helm rollback (or, when
-// nothing ever rolled out, one uninstall) on the runner and report what it did.
 type Signal struct {
 	signal.LifecycleBase
 
@@ -61,9 +57,6 @@ var (
 	_ signal.SignalWithMaxRetries       = (*Signal)(nil)
 )
 
-// AutoRetry is off. A recovery either works or hit something a retry will not
-// fix, and it is a break-glass operation an operator is already watching — retry
-// loops on a cluster-mutating recovery are worse than an honest failure.
 func (s *Signal) AutoRetry() bool { return false }
 
 func (s *Signal) MaxRetries() int { return 1 }
@@ -125,8 +118,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to update install workflow")
 	}
 
-	// The endpoint's deploy row has no log stream, and runner_jobs.log_stream_id
-	// is a foreign key. Also mints the service account the runner writes with.
 	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
 		DeployID: installDeploy.ID,
 		StepID:   s.InstallWorkflowStepID,
@@ -154,8 +145,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		DeployID: installDeploy.ID,
 	})
 
-	// Not inactive: the dashboard reads the newest deploy of any type as the
-	// component's state and treats inactive as torn down.
 	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusActive, "helm release recovered")
 
 	return nil
@@ -174,7 +163,6 @@ func (s *Signal) execRecover(ctx workflow.Context, install *app.Install, install
 		return fmt.Errorf("unable to get build: %w", err)
 	}
 
-	// Re-checked here: the endpoint's check can go stale before the step runs.
 	if build.ComponentConfigConnection.Type != app.ComponentTypeHelmChart {
 		return fmt.Errorf("component %s is a %s component, not a helm chart",
 			build.ComponentConfigConnection.Component.Name, build.ComponentConfigConnection.Type)
@@ -242,11 +230,8 @@ func (s *Signal) execRecover(ctx workflow.Context, install *app.Install, install
 		return errors.New("deploy plan has no helm section, so there is no release to recover")
 	}
 
-	// Stamped here rather than threaded through the builder: this is its only caller.
 	deployPlan.Plan.HelmDeployPlan.RecoverRelease = true
 
-	// A recovery reads the chart from the stored revision, so any apply contents
-	// inherited from the plan builder would only mislead the runner.
 	deployPlan.Plan.ApplyPlanContents = ""
 	deployPlan.Plan.ApplyPlanDisplay = ""
 

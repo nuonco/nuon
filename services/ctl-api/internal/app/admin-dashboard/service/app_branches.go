@@ -17,8 +17,6 @@ import (
 
 const appBranchesPerPage = 20
 
-// appBranchOwnerType is the polymorphic owner type app branches are recorded
-// under on queues, workflows and signals.
 const appBranchOwnerType = "app_branches"
 
 type appBranchFilters struct {
@@ -131,7 +129,6 @@ func (s *service) getAppBranches(
 	return branches, totalPages, nil
 }
 
-// attachLatestAppBranchRuns sets LatestRun on each branch with a single query.
 func (s *service) attachLatestAppBranchRuns(ctx context.Context, branches []*app.AppBranch) error {
 	if len(branches) == 0 {
 		return nil

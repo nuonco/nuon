@@ -175,8 +175,6 @@ func (s *service) RunnerAuthAWSIID(ctx *gin.Context) {
 	})
 }
 
-// validateRunnerAWSAccountID validates the IID account ID against the
-// install's stack outputs.
 func (s *service) validateRunnerAWSAccountID(ctx context.Context, install *app.Install, iidAccountID string) error {
 	installStack, err := s.getInstallStackWithOutputs(ctx, install.ID)
 	if err != nil {

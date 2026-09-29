@@ -9,10 +9,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-// defaultAzureVNetTemplateURL is the default VNet ARM template URL.
 const defaultAzureVNetTemplateURL = "https://raw.githubusercontent.com/nuonco/sandboxes/main/azure-aks/vnet-template.json"
 
-// azureVNetAPIVersion is correctness-critical and must stay >= 2023-09-01.
+// why: azureVNetAPIVersion is correctness-critical and must stay >= 2023-09-01.
 //
 // We declare subnets as standalone Microsoft.Network/virtualNetworks/subnets
 // child resources and omit properties.subnets on the VNet itself. Prior to API
@@ -25,14 +24,9 @@ const defaultAzureVNetTemplateURL = "https://raw.githubusercontent.com/nuonco/sa
 // See https://techcommunity.microsoft.com/blog/azurenetworkingblog/azure-virtual-network-now-supports-updates-without-subnet-property/4067952
 const azureVNetAPIVersion = "2023-11-01"
 
-// vnetReservedParamNames are the parameter names Nuon supplies values for on a
-// custom VNet template. Everything else the template declares belongs to the
-// customer and is hoisted into the root — a VNet template is itself nested, so it
-// never gets a parameter file of its own and an un-hoisted parameter can only ever
-// take its declared default.
 var vnetReservedParamNames = append(slices.Clone(ReservedParamNames), "commonTags")
 
-// hoistableDefault reports whether a nested template's default value can be lifted
+// why: hoistableDefault reports whether a nested template's default value can be lifted
 // into the root as-is.
 //
 // An ARM expression default is the template author computing a value from its own
@@ -50,9 +44,6 @@ func hoistableDefault(def any) bool {
 	return !strings.HasPrefix(s, "[")
 }
 
-// vnetContractOutputs are the output names the root template and the phone-home
-// read off vnetDeployment. A custom VNet template has to emit every one of them;
-// see vnetPassthroughOutputs for what happens to the rest.
 var vnetContractOutputs = []string{
 	"vnetId", "vnetName",
 	"runnerSubnetId", "runnerSubnetName",
@@ -66,14 +57,6 @@ var vnetContractOutputs = []string{
 	"privateSubnetIds", "privateSubnetNames",
 }
 
-// vnetPassthroughOutputs returns the outputs a custom VNet template declares
-// beyond the fixed contract, sorted for a deterministic render.
-//
-// The contract's fixed slots cannot describe a network richer than one runner
-// subnet plus three public and three private subnets, and a VNet stack that
-// creates its own resource group has no other way to tell the sandbox which
-// group that is. Rather than discard those outputs, each is surfaced to the
-// sandbox as install_stack.outputs.vnet_<snake_case name>.
 func vnetPassthroughOutputs(declared map[string]struct{}) []string {
 	contract := make(map[string]bool, len(vnetContractOutputs))
 	for _, name := range vnetContractOutputs {
@@ -94,17 +77,14 @@ func vnetPassthroughOutputs(declared map[string]struct{}) []string {
 func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput, scope armScope) (map[string]any, map[string]ARMParameter, []string, error) {
 	templateURL := inp.VPCNestedStackTemplateURL
 	if templateURL == "" {
-		// No custom VNet template - build inline default VNet resources
 		return t.getDefaultVNetDeployment(inp, scope), nil, nil, nil
 	}
 
-	// Custom VNet template — fetch and inspect declared parameters.
 	armTmpl, err := fetchARMTemplate(templateURL)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("VNet linked deployment: %w", err)
 	}
 
-	// Nuon-managed parameters: always baked, never customer-facing.
 	managedParams := map[string]any{
 		"nuonInstallID": inp.Install.ID,
 		"nuonOrgID":     inp.Runner.OrgID,
@@ -118,7 +98,6 @@ func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput, scope arm
 	deploymentParams := map[string]any{}
 	for paramName, val := range managedParams {
 		if declared[paramName] {
-			// Nuon-managed — bake the value directly.
 			deploymentParams[paramName] = map[string]any{"value": val}
 		}
 	}
@@ -127,7 +106,6 @@ func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput, scope arm
 			delete(hoistedParams, paramName)
 			continue
 		}
-		// Customer-configurable — surfaced in the root and threaded back down.
 		deploymentParams[paramName] = map[string]any{"value": fmt.Sprintf("[parameters('%s')]", paramName)}
 	}
 
@@ -144,7 +122,7 @@ func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput, scope arm
 		},
 	}
 
-	// A custom VNet template may be written at either scope, and guessing wrong is
+	// why: A custom VNet template may be written at either scope, and guessing wrong is
 	// not a warning: ARM rejects the whole deployment with InvalidScope. Trust the
 	// template's own $schema. Subscription-scoped means it declares its own resource
 	// groups; resource-group-scoped means it expects to run inside the install's,
@@ -196,9 +174,7 @@ func (t *Templates) getDefaultVNetDeployment(inp *stacks.TemplateInput, scope ar
 }
 
 func (t *Templates) getDefaultVNetTemplate() map[string]any {
-	// Core networking resources (Public IP, NAT Gateway, NSGs, Route Table, VNet).
 	resources := []any{
-		// Public IP for NAT Gateway
 		map[string]any{
 			"type":       "Microsoft.Network/publicIPAddresses",
 			"apiVersion": "2023-04-01",
@@ -210,7 +186,6 @@ func (t *Templates) getDefaultVNetTemplate() map[string]any {
 				"publicIPAllocationMethod": "Static",
 			},
 		},
-		// NAT Gateway
 		map[string]any{
 			"type":       "Microsoft.Network/natGateways",
 			"apiVersion": "2023-04-01",
@@ -230,7 +205,6 @@ func (t *Templates) getDefaultVNetTemplate() map[string]any {
 				"[resourceId('Microsoft.Network/publicIPAddresses', format('{0}-natgw-pip', parameters('nuonInstallID')))]",
 			},
 		},
-		// Public NSG
 		map[string]any{
 			"type":       "Microsoft.Network/networkSecurityGroups",
 			"apiVersion": "2023-04-01",
@@ -256,7 +230,6 @@ func (t *Templates) getDefaultVNetTemplate() map[string]any {
 				},
 			},
 		},
-		// Private NSG
 		map[string]any{
 			"type":       "Microsoft.Network/networkSecurityGroups",
 			"apiVersion": "2023-04-01",
@@ -267,7 +240,6 @@ func (t *Templates) getDefaultVNetTemplate() map[string]any {
 				"securityRules": []any{},
 			},
 		},
-		// Route Table
 		map[string]any{
 			"type":       "Microsoft.Network/routeTables",
 			"apiVersion": "2023-04-01",
@@ -278,8 +250,6 @@ func (t *Templates) getDefaultVNetTemplate() map[string]any {
 				"disableBgpRoutePropagation": false,
 			},
 		},
-		// VNet — subnets are declared as standalone child resources below so
-		// that ARM does not delete externally-created subnets on re-deploy.
 		map[string]any{
 			"type":       "Microsoft.Network/virtualNetworks",
 			"apiVersion": azureVNetAPIVersion,
@@ -299,10 +269,6 @@ func (t *Templates) getDefaultVNetTemplate() map[string]any {
 		},
 	}
 
-	// Standalone subnet resources — each depends on the VNet and relevant
-	// NSG/NAT resources. Because they are separate resources (not inline on
-	// the VNet), ARM will not attempt to remove subnets that are not declared
-	// in the template (e.g. subnets created by an AKS AGIC addon).
 	resources = append(resources, t.buildDefaultSubnetResources()...)
 
 	return map[string]any{
@@ -340,10 +306,6 @@ func (t *Templates) getDefaultVNetTemplate() map[string]any {
 	}
 }
 
-// buildDefaultSubnetResources returns subnets as standalone ARM child resources
-// (Microsoft.Network/virtualNetworks/subnets) rather than inline VNet properties.
-// This prevents ARM from deleting subnets that exist in Azure but are not declared
-// in the template (e.g. an ingress-subnet created by an AKS AGIC addon).
 func (t *Templates) buildDefaultSubnetResources() []any {
 	serviceEndpoints := []map[string]any{
 		{"service": "Microsoft.KeyVault"},
@@ -365,7 +327,6 @@ func (t *Templates) buildDefaultSubnetResources() []any {
 	}
 
 	return []any{
-		// Public subnets
 		map[string]any{
 			"type":       "Microsoft.Network/virtualNetworks/subnets",
 			"apiVersion": "2023-04-01",
@@ -409,7 +370,6 @@ func (t *Templates) buildDefaultSubnetResources() []any {
 				"natGateway":                        natGW,
 			},
 		},
-		// Runner subnet
 		map[string]any{
 			"type":       "Microsoft.Network/virtualNetworks/subnets",
 			"apiVersion": "2023-04-01",
@@ -426,7 +386,6 @@ func (t *Templates) buildDefaultSubnetResources() []any {
 				"serviceEndpoints":                  serviceEndpoints,
 			},
 		},
-		// Private subnets
 		map[string]any{
 			"type":       "Microsoft.Network/virtualNetworks/subnets",
 			"apiVersion": "2023-04-01",

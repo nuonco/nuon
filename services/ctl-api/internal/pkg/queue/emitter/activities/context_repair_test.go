@@ -21,7 +21,6 @@ func TestRepairActivityContext(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "orgacme", org)
 
-	// existing values win
 	ctx = cctx.SetAccountIDContext(context.Background(), "accother")
 	ctx = repairActivityContext(ctx, em)
 	acct, _ = cctx.AccountIDFromContext(ctx)

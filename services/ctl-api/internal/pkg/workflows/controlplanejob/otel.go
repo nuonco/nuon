@@ -33,18 +33,12 @@ func (a *Activities) WriteControlPlaneLogs(ctx context.Context, logStreamID stri
 		logStreamIDs = append(logStreamIDs, logStream.ParentLogStreamID.String)
 	}
 
-	// One receive time for the batch, so the parent fan-out matches the child.
 	now := time.Now()
 
 	logs := make([]app.OtelLogRecord, 0, len(records)*len(logStreamIDs))
 	for _, targetLogStreamID := range logStreamIDs {
 		for _, record := range records {
 			logs = append(logs, app.OtelLogRecord{
-				// Stamped here rather than left to BeforeCreate / GORM autofill,
-				// which resolve at insert time: on the Kafka path that happens in a
-				// consumer with no request context, so org_id would be empty (it
-				// leads the destination table's ORDER BY) and created_at would mean
-				// "when the sink flushed" instead of "when we got this".
 				ID:          domains.NewOtelLogID(),
 				OrgID:       logStream.OrgID,
 				CreatedByID: logStream.CreatedByID,
@@ -82,11 +76,6 @@ func (a *Activities) WriteControlPlaneLogs(ctx context.Context, logStreamID stri
 		return a.writeControlPlaneLogs(ctx, logs)
 	}
 
-	// Synchronous for the same reason as the runner OTLP path: this activity's
-	// current write is a blocking ClickHouse insert, and Temporal treats a
-	// returning activity as durably done. Producing fire-and-forget would let the
-	// activity succeed while the records only exist in a process buffer, and a
-	// worker restart would lose them with nothing left to retry.
 	msgs := make([]kafka.Message, 0, len(logs))
 	for _, log := range logs {
 		msgs = append(msgs, kafka.Message{Key: log.LogStreamID, Payload: log})
@@ -124,10 +113,6 @@ func (a *Activities) WriteControlPlaneTraces(ctx context.Context, runnerID strin
 
 	ctx = a.traceWriteContext(ctx, records)
 
-	// Stamped here rather than left to BeforeCreate / GORM autofill, which
-	// resolve at insert time: on the Kafka path that happens in a consumer with
-	// no request context, so created_by_id would be empty and created_at would
-	// mean "when the sink flushed" instead of "when we got this".
 	createdByID := keys.CreatedByIDFromContext(ctx)
 	now := time.Now()
 
@@ -182,11 +167,6 @@ func (a *Activities) WriteControlPlaneTraces(ctx context.Context, runnerID strin
 		return a.writeControlPlaneTraces(ctx, traces)
 	}
 
-	// Synchronous for the same reason as the control-plane logs path above:
-	// Temporal treats a returning activity as durably done, so a fire-and-forget
-	// produce would let this activity succeed while the spans only exist in a
-	// process buffer, and a worker restart would lose them with nothing left to
-	// retry.
 	msgs := make([]kafka.Message, 0, len(traces))
 	for _, trace := range traces {
 		key := trace.RunnerJobID

@@ -18,21 +18,16 @@ type EnqueueSignalToOwnerRequest struct {
 	QueueName string        `json:"queue_name,omitempty"`
 	Signal    signal.Signal `json:"signal" validate:"required"`
 
-	// QueueID short-circuits the owner/name lookup when set.
 	QueueID   string  `json:"queue_id,omitempty"`
 	DedupeKey *string `json:"dedupe_key,omitempty"`
 
-	// SignalOwnerID and SignalOwnerType are set on the QueueSignal record to track
-	// which entity (e.g. workflow step) triggered this signal execution.
 	SignalOwnerID   string `json:"signal_owner_id,omitempty"`
 	SignalOwnerType string `json:"signal_owner_type,omitempty"`
 	IdempotencyKey  string `json:"idempotency_key,omitempty" validate:"omitempty,max=255"`
 
-	// Callback describes where the handler should send a Temporal signal on completion.
 	// Deprecated: use Callbacks for new code.
 	Callback callback.Ref `json:"callback,omitempty"`
 
-	// Callbacks supports multiple completion targets.
 	Callbacks callback.Refs `json:"callbacks,omitempty"`
 }
 
@@ -51,7 +46,6 @@ func (a *Activities) EnqueueSignalToOwner(ctx context.Context, req *EnqueueSigna
 		return nil, errors.Wrap(err, "invalid request")
 	}
 
-	// Resolve queue ID — use direct ID if provided, otherwise look up by owner.
 	queueID := req.QueueID
 	if queueID == "" {
 		var queue *app.Queue
@@ -67,7 +61,6 @@ func (a *Activities) EnqueueSignalToOwner(ctx context.Context, req *EnqueueSigna
 		queueID = queue.ID
 	}
 
-	// Enqueue the signal
 	enqueueResp, err := a.queueClient.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
 		QueueID:        queueID,
 		Signal:         req.Signal,

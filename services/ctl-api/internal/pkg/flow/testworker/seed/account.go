@@ -13,8 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// fakeMu serializes go-faker access: faker mutates package-global state and
-// the seeder runs from concurrent test cases.
 var fakeMu sync.Mutex
 
 func FakeString() string {

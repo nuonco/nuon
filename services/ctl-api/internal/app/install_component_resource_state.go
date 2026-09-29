@@ -25,7 +25,7 @@ const (
 	InstallComponentResourceSourceSandbox   = "sandbox"
 )
 
-// InstallComponentResourceStatesLatestView is the read path for latest state: a
+// why: InstallComponentResourceStatesLatestView is the read path for latest state: a
 // ReplacingMergeTree keyed by resource identity, wrapped in a FINAL view.
 // Aggregating the observation table instead costs ~65 MB per read on prod to
 // return a few dozen rows, because it re-reads every 60s snapshot in the TTL.
@@ -95,11 +95,6 @@ func (*InstallComponentResourceState) ViewVersion() string {
 	return "v1"
 }
 
-// Views keeps the aggregating latest-state view alive even though nothing reads it
-// any more — see InstallComponentResourceStatesLatestView for the live read path.
-// Dropping it in the same release that repoints the readers would 5xx the pods still
-// draining behind the rollout, on the exact endpoint this change exists to speed up.
-// Safe to delete once a release carrying the constant above has fully rolled out.
 func (i *InstallComponentResourceState) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
@@ -110,11 +105,9 @@ func (i *InstallComponentResourceState) Views(db *gorm.DB) []migrations.View {
 	}
 }
 
-// InstallComponentResourceProviderCustom marks a pushed check rather than an
-// observation the runner made of the cluster.
 const InstallComponentResourceProviderCustom = "custom"
 
-// LatestReportOnlySQL restricts the latest-state view to resources a report
+// why: LatestReportOnlySQL restricts the latest-state view to resources a report
 // group's most recent report still contained.
 //
 // Deletion is not representable in an append-only log: a removed resource stops
@@ -133,7 +126,6 @@ func LatestReportOnlySQL() string {
 		" GROUP BY install_component_id, source, owner_name))"
 }
 
-// LatestReportOnlyArgs are the bind values for LatestReportOnlySQL.
 func LatestReportOnlyArgs(orgID, installID string) []any {
 	return []any{
 		InstallComponentResourceProviderCustom,

@@ -21,8 +21,6 @@ func init() {
 	catalog.Register(CountdownGroupSignalType, func() signal.Signal { return &CountdownGroupSignal{} })
 }
 
-// --- SuccessSignal: completes immediately ---
-
 const SuccessSignalType signal.SignalType = "test-flow-success"
 
 type SuccessSignal struct{}
@@ -31,8 +29,6 @@ func (s *SuccessSignal) Type() signal.SignalType         { return SuccessSignalT
 func (s *SuccessSignal) Validate(workflow.Context) error { return nil }
 func (s *SuccessSignal) Execute(workflow.Context) error  { return nil }
 func (s *SuccessSignal) SleepAfter() time.Duration       { return 250 * time.Millisecond }
-
-// --- FailSignal: always fails ---
 
 const FailSignalType signal.SignalType = "test-flow-fail"
 
@@ -44,8 +40,6 @@ func (s *FailSignal) Type() signal.SignalType         { return FailSignalType }
 func (s *FailSignal) Validate(workflow.Context) error { return nil }
 func (s *FailSignal) Execute(workflow.Context) error  { return fmt.Errorf("test failure: %s", s.Reason) }
 func (s *FailSignal) SleepAfter() time.Duration       { return 250 * time.Millisecond }
-
-// --- SlowSignal: blocks until cancelled ---
 
 const SlowSignalType signal.SignalType = "test-flow-slow"
 
@@ -61,8 +55,6 @@ var _ signal.SignalWithCancel = (*SlowSignal)(nil)
 
 func (s *SlowSignal) Cancel(workflow.Context) error { return nil }
 func (s *SlowSignal) SleepAfter() time.Duration     { return 250 * time.Millisecond }
-
-// --- AutoRetrySignal: fails with auto-retry enabled, always fails ---
 
 const AutoRetrySignalType signal.SignalType = "test-flow-auto-retry"
 
@@ -82,8 +74,6 @@ func (s *AutoRetrySignal) SleepAfter() time.Duration { return 250 * time.Millise
 var _ signal.SignalWithAutoRetry = (*AutoRetrySignal)(nil)
 var _ signal.SignalWithMaxRetries = (*AutoRetrySignal)(nil)
 
-// --- RetryGroupSignal: fails and requests group retry ---
-
 const RetryGroupSignalType signal.SignalType = "test-flow-retry-group"
 
 type RetryGroupSignal struct{}
@@ -101,10 +91,6 @@ func (s *RetryGroupSignal) SleepAfter() time.Duration { return 250 * time.Millis
 var _ signal.SignalWithAutoRetry = (*RetryGroupSignal)(nil)
 var _ signal.SignalWithRetryGroup = (*RetryGroupSignal)(nil)
 var _ signal.SignalWithMaxRetries = (*RetryGroupSignal)(nil)
-
-// --- CountdownSignal: fails N times then succeeds ---
-// Uses SignalWithStepContext + GetFlowStep activity to read the step's
-// RetryIndex from DB, then succeeds when RetryIndex >= SucceedAtRetry.
 
 const CountdownSignalType signal.SignalType = "test-flow-countdown"
 
@@ -128,14 +114,13 @@ func (s *CountdownSignal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("countdown signal: no step context")
 	}
 
-	// Look up the step from DB to check its RetryIndex.
 	step, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, s.StepID)
 	if err != nil {
 		return fmt.Errorf("countdown signal: unable to get step: %w", err)
 	}
 
 	if step.RetryIndex >= s.SucceedAtRetry {
-		return nil // success
+		return nil
 	}
 	return fmt.Errorf("countdown signal: retry %d < target %d", step.RetryIndex, s.SucceedAtRetry)
 }
@@ -145,8 +130,6 @@ func (s *CountdownSignal) SleepAfter() time.Duration { return 250 * time.Millise
 var _ signal.SignalWithAutoRetry = (*CountdownSignal)(nil)
 var _ signal.SignalWithMaxRetries = (*CountdownSignal)(nil)
 var _ signal.SignalWithStepContext = (*CountdownSignal)(nil)
-
-// --- CountdownGroupSignal: like CountdownSignal but requests group retry ---
 
 const CountdownGroupSignalType signal.SignalType = "test-flow-countdown-group"
 
@@ -188,10 +171,6 @@ var _ signal.SignalWithAutoRetry = (*CountdownGroupSignal)(nil)
 var _ signal.SignalWithRetryGroup = (*CountdownGroupSignal)(nil)
 var _ signal.SignalWithMaxRetries = (*CountdownGroupSignal)(nil)
 var _ signal.SignalWithStepContext = (*CountdownGroupSignal)(nil)
-
-// --- PlanApplyFailSignal: "apply" signal that always fails and requests group retry.
-// Implements CloneSteps to return both a plan (SuccessSignal) and apply (self) step
-// when retried, simulating a plan+apply retry pattern.
 
 const PlanApplyFailSignalType signal.SignalType = "test-flow-plan-apply-fail"
 
@@ -268,7 +247,7 @@ func (s *ManualRetryGroupCountdownSignal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("manual-retry-group-countdown: unable to get step: %w", err)
 	}
 	if step.GroupRetryIdx >= 1 {
-		return nil // success on manual retry
+		return nil
 	}
 	return fmt.Errorf("manual-retry-group-countdown: group retry %d < 1", step.GroupRetryIdx)
 }
@@ -279,16 +258,6 @@ var _ signal.SignalWithMaxRetries = (*ManualRetryGroupCountdownSignal)(nil)
 var _ signal.SignalWithMaxAutoRetries = (*ManualRetryGroupCountdownSignal)(nil)
 var _ signal.SignalWithStepContext = (*ManualRetryGroupCountdownSignal)(nil)
 var _ signal.SignalWithRetryCount = (*ManualRetryGroupCountdownSignal)(nil)
-
-// --- ManualRetryGroupCountdownSignal: group-retry signal with no auto budget,
-// succeeds on the first manual retry (GroupRetryIdx >= 1) ---
-
-// --- AutoRetryBudgetSignal: group-retry signal with a limited auto budget
-// (MaxAutoRetries=1 < MaxRetries=2). The first failure consumes the auto
-// budget and clones the group; the second failure parks for a manual retry.
-// The manual retry clones the group again, so a workflow using this signal
-// passes through three generations, and the signal succeeds only on
-// GroupRetryIdx >= 2 -- proving the manual retry path after auto exhaustion. ---
 
 const AutoRetryBudgetSignalType signal.SignalType = "test-flow-auto-retry-budget"
 
@@ -321,7 +290,7 @@ func (s *AutoRetryBudgetSignal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("auto-retry-budget: unable to get step: %w", err)
 	}
 	if step.GroupRetryIdx >= 2 {
-		return nil // success on the manual retry
+		return nil
 	}
 	return fmt.Errorf("auto-retry-budget: group retry %d < 2", step.GroupRetryIdx)
 }
@@ -332,13 +301,8 @@ var _ signal.SignalWithMaxRetries = (*AutoRetryBudgetSignal)(nil)
 var _ signal.SignalWithMaxAutoRetries = (*AutoRetryBudgetSignal)(nil)
 var _ signal.SignalWithStepContext = (*AutoRetryBudgetSignal)(nil)
 
-// --- CancellableTestSignal: blocks until cancelled, writes marker on Cancel() ---
-// This proves the Cancel() method was called by writing to the step's
-// ResultDirective field (a known, queryable column).
-
 const CancellableTestSignalType signal.SignalType = "test-flow-cancellable"
 
-// CancelMarker is the value written to ResultDirective when Cancel() is invoked.
 const CancelMarker = "cancel-callback-invoked"
 
 type CancellableTestSignal struct {
@@ -358,7 +322,6 @@ func (s *CancellableTestSignal) SetStepContext(stepID, flowID string) {
 }
 
 func (s *CancellableTestSignal) Execute(ctx workflow.Context) error {
-	// Block forever until the context is cancelled
 	return workflow.Await(ctx, func() bool {
 		return ctx.Err() != nil
 	})
@@ -368,8 +331,6 @@ func (s *CancellableTestSignal) Cancel(ctx workflow.Context) error {
 	if s.StepID == "" {
 		return nil
 	}
-	// Write CancelMarker to the step's ResultDirective so the test can verify
-	// that Cancel() was actually invoked at this level.
 	return activities.AwaitPkgWorkflowsFlowUpdateFlowStepResultDirective(ctx, activities.UpdateFlowStepResultDirectiveRequest{
 		StepID:    s.StepID,
 		Directive: CancelMarker,
@@ -381,8 +342,6 @@ func (s *CancellableTestSignal) SleepAfter() time.Duration { return 250 * time.M
 var _ signal.Signal = (*CancellableTestSignal)(nil)
 var _ signal.SignalWithCancel = (*CancellableTestSignal)(nil)
 var _ signal.SignalWithStepContext = (*CancellableTestSignal)(nil)
-
-// ApprovalInnerSignal implements no optional check interfaces so every pre-approval check passes and the step parks awaiting approval.
 
 const ApprovalInnerSignalType signal.SignalType = "test-flow-approval-inner"
 
@@ -396,8 +355,6 @@ func (s *ApprovalInnerSignal) Type() signal.SignalType         { return Approval
 func (s *ApprovalInnerSignal) Validate(workflow.Context) error { return nil }
 func (s *ApprovalInnerSignal) Execute(workflow.Context) error  { return nil }
 func (s *ApprovalInnerSignal) SleepAfter() time.Duration       { return 250 * time.Millisecond }
-
-// SkipGroupApprovalSignal makes deny-skip-current skip the whole group instead of just the step.
 
 const SkipGroupApprovalSignalType signal.SignalType = "test-flow-skipgroup-approval"
 
@@ -415,8 +372,6 @@ func (s *SkipGroupApprovalSignal) SleepAfter() time.Duration       { return 250 
 
 var _ signal.SignalWithSkipGroup = (*SkipGroupApprovalSignal)(nil)
 
-// PolicyEvalApprovalSignal opts into the policy pre-approval check.
-
 const PolicyEvalApprovalSignalType signal.SignalType = "test-flow-policy-eval-approval"
 
 type PolicyEvalApprovalSignal struct{}
@@ -432,8 +387,6 @@ func (s *PolicyEvalApprovalSignal) RequiresPolicyEvaluation() bool  { return tru
 func (s *PolicyEvalApprovalSignal) SleepAfter() time.Duration       { return 250 * time.Millisecond }
 
 var _ signal.SignalWithPolicyEvaluation = (*PolicyEvalApprovalSignal)(nil)
-
-// SkippableFailSignal always fails; AutoRetry with MaxRetries 0 exhausts the budget on first failure so SkipOnFailure decides continue vs stop.
 
 const SkippableFailSignalType signal.SignalType = "test-flow-skippable-fail"
 
@@ -454,8 +407,6 @@ func (s *SkippableFailSignal) SleepAfter() time.Duration { return 250 * time.Mil
 
 var _ signal.SignalWithAutoRetry = (*SkippableFailSignal)(nil)
 var _ signal.SignalWithMaxRetries = (*SkippableFailSignal)(nil)
-
-// ManualRetrySignal fails until manually retried (no auto budget), then succeeds on the clone.
 
 const ManualRetrySignalType signal.SignalType = "test-flow-manual-retry"
 
@@ -495,8 +446,6 @@ var _ signal.SignalWithAutoRetry = (*ManualRetrySignal)(nil)
 var _ signal.SignalWithMaxRetries = (*ManualRetrySignal)(nil)
 var _ signal.SignalWithMaxAutoRetries = (*ManualRetrySignal)(nil)
 var _ signal.SignalWithStepContext = (*ManualRetrySignal)(nil)
-
-// ManualRetryThenBlockSignal fails until manually retried, then blocks until cancelled so tests can observe mid-retry status.
 
 const ManualRetryThenBlockSignalType signal.SignalType = "test-flow-manual-retry-then-block"
 
@@ -538,8 +487,6 @@ var _ signal.SignalWithMaxRetries = (*ManualRetryThenBlockSignal)(nil)
 var _ signal.SignalWithMaxAutoRetries = (*ManualRetryThenBlockSignal)(nil)
 var _ signal.SignalWithStepContext = (*ManualRetryThenBlockSignal)(nil)
 var _ signal.SignalWithCancel = (*ManualRetryThenBlockSignal)(nil)
-
-// DelayedCloneManualRetrySignal fails until manually retried; its Clone sleeps so tests can observe the resident flow while a retry clone is in flight.
 
 const DelayedCloneManualRetrySignalType signal.SignalType = "test-flow-delayed-clone-manual-retry"
 

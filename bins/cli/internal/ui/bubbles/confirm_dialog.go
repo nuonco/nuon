@@ -12,26 +12,23 @@ import (
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
-// ConfirmDialogModel represents an interactive confirmation dialog
 type ConfirmDialogModel struct {
 	message     string
-	note        string // optional highlighted note rendered before the question
+	note        string
 	confirmed   bool
 	cancelled   bool
-	interrupted bool // ctrl+c, ctrl+d, or esc: user wants out, not just "no"
+	interrupted bool
 	quitting    bool
-	cursor      int // 0 = Yes, 1 = No
+	cursor      int
 }
 
-// NewConfirmDialog creates a new confirmation dialog
 func NewConfirmDialog(message string) ConfirmDialogModel {
 	return ConfirmDialogModel{
 		message: message,
-		cursor:  0, // Default to "Yes"
+		cursor:  0,
 	}
 }
 
-// NewConfirmDialogWithNote creates a confirmation dialog with an additional highlighted note
 func NewConfirmDialogWithNote(message, note string) ConfirmDialogModel {
 	return ConfirmDialogModel{
 		message: message,
@@ -40,12 +37,10 @@ func NewConfirmDialogWithNote(message, note string) ConfirmDialogModel {
 	}
 }
 
-// Init initializes the confirmation dialog
 func (m ConfirmDialogModel) Init() tea.Cmd {
 	return nil
 }
 
-// Update handles messages for the confirmation dialog
 func (m ConfirmDialogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
@@ -57,7 +52,6 @@ func (m ConfirmDialogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		case "left", "right", "tab":
-			// Toggle between Yes/No
 			m.cursor = 1 - m.cursor
 			return m, nil
 
@@ -89,7 +83,6 @@ func (m ConfirmDialogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// View renders the confirmation dialog
 func (m ConfirmDialogModel) View() tea.View {
 	if m.quitting {
 		if m.confirmed {
@@ -101,7 +94,6 @@ func (m ConfirmDialogModel) View() tea.View {
 
 	var b strings.Builder
 
-	// Optional warning note
 	if m.note != "" {
 		noteStyle := lipgloss.NewStyle().
 			Foreground(styles.WarningColor).
@@ -111,7 +103,6 @@ func (m ConfirmDialogModel) View() tea.View {
 		b.WriteString("\n")
 	}
 
-	// Question
 	questionStyle := lipgloss.NewStyle().
 		Foreground(styles.PrimaryColor).
 		Bold(true).
@@ -119,7 +110,6 @@ func (m ConfirmDialogModel) View() tea.View {
 	b.WriteString(questionStyle.Render(m.message))
 	b.WriteString("\n")
 
-	// Yes/No buttons
 	yesStyle := lipgloss.NewStyle().
 		Padding(0, 2).
 		Border(lipgloss.RoundedBorder()).
@@ -127,13 +117,11 @@ func (m ConfirmDialogModel) View() tea.View {
 	noStyle := yesStyle
 
 	if m.cursor == 0 {
-		// Yes is selected
 		yesStyle = yesStyle.
 			BorderForeground(styles.PrimaryColor).
 			Foreground(styles.PrimaryColor).
 			Bold(true)
 	} else {
-		// No is selected
 		noStyle = noStyle.
 			BorderForeground(styles.PrimaryColor).
 			Foreground(styles.PrimaryColor).
@@ -147,7 +135,6 @@ func (m ConfirmDialogModel) View() tea.View {
 	b.WriteString(buttonRow)
 	b.WriteString("\n")
 
-	// Instructions
 	helpStyle := lipgloss.NewStyle().
 		Foreground(styles.SubtleColor).
 		Italic(true).
@@ -157,24 +144,16 @@ func (m ConfirmDialogModel) View() tea.View {
 	return tea.NewView(BorderStyle.Render(b.String()))
 }
 
-// Result reports confirmed ("Yes"), declined ("No"), or interrupted
-// (ctrl+c/ctrl+d/esc).
 func (m ConfirmDialogModel) Result() (confirmed, cancelled, interrupted bool) {
 	return m.confirmed, m.cancelled, m.interrupted
 }
 
-// ErrConfirmInterrupted means the user exited via ctrl+c/ctrl+d/esc, not an
-// explicit "No". Callers looping over multiple confirmations should treat
-// this as "stop everything", not "skip this item".
 var ErrConfirmInterrupted = fmt.Errorf("confirmation interrupted by user")
 
-// Show displays the confirmation dialog and returns the result
-// This provides a pterm-compatible API for easy migration
 func ShowConfirmDialog(message string, interactive bool) (bool, error) {
 	return showDialog(NewConfirmDialog(message), interactive)
 }
 
-// ShowConfirmDialogWithNote displays a confirmation dialog with a highlighted warning note above the question.
 func ShowConfirmDialogWithNote(message, note string, interactive bool) (bool, error) {
 	return showDialog(NewConfirmDialogWithNote(message, note), interactive)
 }

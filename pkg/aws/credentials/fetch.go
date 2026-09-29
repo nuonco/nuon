@@ -14,9 +14,6 @@ import (
 	assumerole "github.com/nuonco/nuon/pkg/aws/assume-role"
 )
 
-// Fetch is used to get credentials, regardless of whether they are in the context, or not. Compared to FromContext,
-// this will _always_ attempt to return credentials, where as if creds are not in a context, they will not be fetched in
-// FromContext
 func Fetch(ctx context.Context, cfg *Config) (aws.Config, error) {
 	if cfg.CacheID != "" {
 		creds, err := FromContext(ctx, cfg)
@@ -62,7 +59,6 @@ func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 	v := validator.New()
 
 	if c.Profile != "" {
-		// if a profile is set, use that profile over the default credentials
 		awsCfg, err := config.LoadDefaultConfig(context.TODO(),
 			config.WithSharedConfigProfile(c.Profile),
 			config.WithRegion(c.Region))
@@ -72,7 +68,6 @@ func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 
 		return awsCfg, nil
 	}
-	// if default credentials are set, just use the machine's credentials
 	if c.UseDefault {
 		if os.Getenv("AWS_REGION") == "" && c.Region == "" {
 			return aws.Config{}, fmt.Errorf("must set AWS_REGION in the environment or on the credentials config")
@@ -87,7 +82,6 @@ func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 		return awsCfg, nil
 	}
 
-	// if static credentials are set, prefer those
 	if c.Static != nil {
 		provider := credentials.NewStaticCredentialsProvider(
 			c.Static.AccessKeyID,

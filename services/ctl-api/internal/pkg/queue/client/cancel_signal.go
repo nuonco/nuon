@@ -19,7 +19,6 @@ func (c *Client) CancelSignal(ctx context.Context, queueSignalID string) (*handl
 		return nil, errors.Wrap(err, "unable to get queue signal")
 	}
 
-	// if already terminal, nothing to cancel
 	if isTerminalStatus(q.Status.Status) {
 		return &handler.CancelResponse{}, nil
 	}
@@ -33,7 +32,6 @@ func (c *Client) CancelSignal(ctx context.Context, queueSignalID string) (*handl
 		},
 	})
 	if err != nil {
-		// workflow may be sleeping/completed — update DB directly
 		c.updateQueueSignalStatus(ctx, queueSignalID, app.StatusCancelled)
 		return &handler.CancelResponse{}, nil
 	}

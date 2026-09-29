@@ -15,7 +15,6 @@ func (s *Helpers) validateApp(parentApp *app.App) error {
 		}
 	}
 
-	// validate the app is correctly configured and healthy
 	if len(parentApp.AppSandboxConfigs) < 1 {
 		return stderr.ErrUser{
 			Err:         fmt.Errorf("app does not have any sandbox configs"),

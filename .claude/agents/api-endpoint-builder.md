@@ -326,7 +326,7 @@ go fmt ./services/ctl-api/...
 - Validate all input data before processing
 - Use constants for magic strings and enumerations
 - Follow existing naming conventions in the codebase
-- Add meaningful comments for complex business logic
+- No comments beyond Swagger annotations and API field docs; see the Comments section of the root AGENTS.md
 - Keep handlers focused - extract complex logic to service layers
 
 ### 7. Testing Considerations

@@ -6,7 +6,6 @@ import (
 	"go.temporal.io/sdk/worker"
 )
 
-// WorkerConfig configures a control-plane build worker.
 type WorkerConfig struct {
 	MaxConcurrentActivityExecutionSize int
 	MaxConcurrentActivityTaskPollers   int
@@ -14,7 +13,7 @@ type WorkerConfig struct {
 	WorkflowPanicPolicy                worker.WorkflowPanicPolicy
 }
 
-// NewWorker creates a worker that polls the control-plane build task queue on
+// why: NewWorker creates a worker that polls the control-plane build task queue on
 // the given namespace client and registers the provided activities.
 //
 // The ExecuteControlPlaneJob workflow runs as a child of its caller, so it

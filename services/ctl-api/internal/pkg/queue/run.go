@@ -49,7 +49,6 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		return true, nil
 	}
 
-	// Clear any stale restart hint so this run doesn't immediately restart.
 	if err := activities.AwaitClearRestartHint(ctx, activities.ClearRestartHintRequest{
 		QueueID: q.queueID,
 	}); err != nil {
@@ -103,7 +102,7 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 				if generics.IsGormErrRecordNotFound(err) {
 					return false, nil
 				}
-				return true, nil // transient error, keep going
+				return true, nil
 			}
 			return true, nil
 		}),
@@ -138,7 +137,6 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 	)
 	mgr.Start(ctx)
 
-	// Bridge manager state to queue fields.
 	workflow.Go(ctx, func(gCtx workflow.Context) {
 		_ = workflow.Await(gCtx, func() bool {
 			return mgr.Stopped || mgr.Restarted || mgr.Terminated
@@ -159,7 +157,6 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 	q.ready = true
 
 	readyToFinish, err := workflow.AwaitWithTimeout(ctx, maxAliveTime, func() bool {
-		// Wait until active workers drain before restarting or stopping.
 		return (q.restarted || q.stopped || q.isIdle(ctx))
 	})
 	if err != nil {
@@ -173,14 +170,11 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		}
 	}
 
-	// This sets a drain timeout on the queue, such that once we've decided it needs to be idle, slept, or restarted
-	// how long we will wait for existing in flight signals to finish.
 	maxDrainTimeout := 5 * time.Minute
 	if q.cfg != nil && q.cfg.QueueDrainTimeout > 0 {
 		maxDrainTimeout = q.cfg.QueueDrainTimeout
 	}
 	if _, err := workflow.AwaitWithTimeout(ctx, maxDrainTimeout, func() bool {
-		// Wait until active workers drain before restarting or stopping.
 		return q.activeWorkers == 0
 	}); err != nil {
 		l.Info("drain timeout exceeded, proceeding with restart",
@@ -194,7 +188,6 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		return false, nil
 	}
 
-	// handle regular stop
 	if q.stopped {
 		if err := q.setStatusTimestamp(ctx, l, "stopped_at"); err != nil {
 			l.Warn("unable to set stopped_at metadata", zap.Error(err))
@@ -204,8 +197,6 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		return true, nil
 	}
 
-	// handle idle functionality
-	// drained > 0 forces continue-as-new so requeueSignals recovers those signals
 	if q.isIdle(ctx) && q.activeWorkers == 0 && drained == 0 {
 		l.Info("queue is idle, terminating workflow")
 		q.setStatus(ctx, l, QueueStatusIdle)

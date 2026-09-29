@@ -15,10 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestCreateAppTerraformModuleConfigSuccess() {
 	s.Run("creates config with public git VCS", func() {
 		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeTerraformModule)
@@ -52,10 +48,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppTerraformModuleConfigSuccess()
 		assert.Equal(s.T(), "1.14.6", response.Version)
 	})
 }
-
-// ---------------------------------------------------------------------------
-// Validation error cases
-// ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestCreateAppTerraformModuleConfigValidationErrors() {
 	comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeTerraformModule)
@@ -123,10 +115,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppTerraformModuleConfigValidatio
 		})
 	}
 }
-
-// ---------------------------------------------------------------------------
-// Signals
-// ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestCreateAppTerraformModuleConfigSignals() {
 	s.Run("sends OperationConfigCreated and OperationUpdateComponentType signals", func() {

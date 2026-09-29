@@ -9,11 +9,6 @@ import (
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
-// stateInputsRefreshStep builds the "update install state inputs" step that
-// refreshes the inputs partial in install state after an input change. Shared
-// by the input-update workflow and the component enable/disable workflows,
-// which are all driven by a synthetic-input change. The caller is responsible
-// for opening the step group (sg.nextGroup()) beforehand.
 func stateInputsRefreshStep(ctx workflow.Context, sg *stepGroup, install *app.Install, planOnly bool) (*app.WorkflowStep, error) {
 	stateSignal := &statepartialgenerate.Signal{
 		InstallID:       install.ID,
@@ -32,17 +27,6 @@ func stateInputsRefreshStep(ctx workflow.Context, sg *stepGroup, install *app.In
 	)
 }
 
-// ComponentEnabledSteps and ComponentDisabledSteps back the dedicated
-// WorkflowTypeComponentEnabled / WorkflowTypeComponentDisabled workflows. These
-// types exist purely for UX and observability: a toggle gets its own
-// recognizable workflow name ("Enabling component" / "Disabling component")
-// instead of a generic input update.
-//
-// They deliberately carry no behavior of their own. The synthetic enabled input
-// is the single source of truth and is persisted by the service layer before
-// the workflow starts, so reconciliation is identical to a config-file toggle.
-// Delegating straight to InputUpdate guarantees the dedicated path can never
-// drift from the generic input-update path.
 func ComponentEnabledSteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	return InputUpdate(ctx, flw)
 }

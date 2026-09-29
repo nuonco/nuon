@@ -62,7 +62,6 @@ func (s *service) CreateConnection(ctx *gin.Context) {
 		return
 	}
 
-	// Fetch org name
 	ghAccount, err := s.ghClient.GetInstallationAccount(ctx, req.GithubInstallID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get org name: %w", err))
@@ -71,14 +70,12 @@ func (s *service) CreateConnection(ctx *gin.Context) {
 	ghAccountID := strconv.FormatInt(ghAccount.GetID(), 10)
 	ghAccountName := ghAccount.GetLogin()
 
-	// Create object
 	vcsConn, err := s.createOrgConnection(ctx, currentOrg.ID, req.GithubInstallID, ghAccountID, ghAccountName)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create org connection: %w", err))
 		return
 	}
 
-	// Create background health check queue for the connection
 	if _, err := s.helpers.CreateConnectionQueue(ctx, vcsConn); err != nil {
 		s.l.Warn("unable to create vcs connection queue",
 			zap.String("vcs_connection_id", vcsConn.ID),
@@ -106,7 +103,7 @@ func (s *service) createOrgConnection(
 		return nil, fmt.Errorf("unable to create vcs_connection: %w", err)
 	}
 
-	// NOTE(jm): when this is a duplicate, the returned ID is not actually valid, as it is set by the create hook in
+	// why: when this is a duplicate, the returned ID is not actually valid, as it is set by the create hook in
 	// GORM, but then the conflict happens after.
 	return &vcsConn, nil
 }

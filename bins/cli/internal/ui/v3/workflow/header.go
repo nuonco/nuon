@@ -23,9 +23,7 @@ func (m model) getProgressPercentage() (int, int, float64) {
 	return common.CalculateStepProgress(m.workflow.Steps)
 }
 
-// action checks for workflows
 func (m model) workflowIsCancellable() bool {
-	// is this workflow cancellable
 	cancellableStatuses := []models.AppStatus{
 		models.AppStatusPending,
 		models.AppStatusInDashProgress,
@@ -37,20 +35,16 @@ func (m model) workflowIsCancellable() bool {
 }
 
 func (m model) workflowIsApprovable() bool {
-	// is this workflow approvable
 	approvableStatuses := []models.AppStatus{
 		models.AppStatusInDashProgress,
 		models.AppStatusRetrying,
-		// models.AppStatus
 	}
 	return generics.SliceContains(m.workflow.Status.Status, approvableStatuses)
 }
 
 // TODO(fd): write an is-retryable for a workflow step
 
-// Actual View Code
 func (m model) actionsOrMessage() string {
-	// Show approving indicator when approval is in flight
 	if m.approvingStep {
 		return m.spinner.View() + " Approving..."
 	}
@@ -77,13 +71,6 @@ func (m model) actionsOrMessage() string {
 }
 
 func (m model) headerView() string {
-	/*
-		renders two rows
-		1. title + action instructions
-		2. details _ progress
-
-		unless it's loading, in which case we render a single row
-	*/
 	content := ""
 	if m.workflow == nil {
 		content += m.spinner.View() + " loading ..."

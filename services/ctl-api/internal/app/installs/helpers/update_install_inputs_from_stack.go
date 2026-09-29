@@ -82,7 +82,7 @@ func (h *Helpers) UpdateInstallInputsFromStackOutputs(
 			return err
 		}
 
-		// newest row for the install: a row this config no longer pins is never read
+		// why: newest row for the install: a row this config no longer pins is never read
 		var installInputs app.InstallInputs
 		res := tx.WithContext(ctx).
 			Where(app.InstallInputs{

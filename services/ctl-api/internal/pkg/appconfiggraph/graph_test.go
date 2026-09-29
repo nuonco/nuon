@@ -9,8 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// graphFor builds a Graph directly from connections, exercising the pure
-// structural layer without any toggle/enablement overlay.
 func graphFor(cccs ...*app.ComponentConfigConnection) *Graph {
 	byID := make(map[string]*app.ComponentConfigConnection, len(cccs))
 	for _, c := range cccs {

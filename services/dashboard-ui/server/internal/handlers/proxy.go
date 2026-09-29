@@ -30,7 +30,7 @@ type ProxyHandler struct {
 	l              *zap.Logger
 	codecClient    *http.Client
 	codecSemaphore chan struct{}
-	authCache      sync.Map // token -> authCacheEntry
+	authCache      sync.Map
 }
 
 func NewProxyHandler(cfg *internal.Config, l *zap.Logger) *ProxyHandler {
@@ -45,18 +45,11 @@ func NewProxyHandler(cfg *internal.Config, l *zap.Logger) *ProxyHandler {
 }
 
 func (h *ProxyHandler) RegisterRoutes(e *gin.Engine) error {
-	// HTML/asset proxy: strips frontend prefix and adds /docs so the page is
-	// served from {upstream}/docs/{path}. ModifyResponse rewrites the embedded
-	// absolute spec URL so it routes through the proxy instead of hitting the
-	// upstream directly.
 	publicSwaggerProxy := h.newSwaggerProxy(h.cfg.APIUrl, "/public/swagger", "")
 	adminSwaggerProxy := h.newSwaggerProxy(h.cfg.AdminAPIUrl, "/admin/swagger", "/admin")
 
 	temporalProxy := h.newTemporalProxy(h.cfg.TemporalUIUrl)
 
-	// kafbat runs with SERVER_SERVLET_CONTEXT_PATH=/admin/kafka, so it already
-	// emits every asset and API URL under that prefix — nothing to strip and
-	// nothing to rewrite.
 	kafkaUIProxy := h.newPassthroughProxy(h.cfg.KafkaUIUrl)
 
 	e.GET("/public/swagger/*path", gin.WrapH(publicSwaggerProxy))
@@ -108,7 +101,7 @@ func (h *ProxyHandler) newProxy(upstreamBase, stripPrefix, addPrefix string) *ht
 	}
 }
 
-// newPassthroughProxy forwards a request to an upstream that already serves under
+// why: newPassthroughProxy forwards a request to an upstream that already serves under
 // the same path the BFF exposes it at, so there is no prefix to rewrite and no
 // body to touch.
 //
@@ -134,12 +127,6 @@ func (h *ProxyHandler) newPassthroughProxy(upstreamBase string) *httputil.Revers
 	}
 }
 
-// newSwaggerProxy builds a reverse proxy for Swagger UI HTML/assets. It strips
-// the frontend prefix and adds /docs so assets are fetched from the upstream
-// docs path. ModifyResponse rewrites the embedded absolute spec URL (/oapi/v2)
-// so the spec loads through the proxy, and rewrites the spec's own
-// host/schemes/basePath so Swagger UI's "Execute" requests route back through
-// the BFF (apiPrefix) instead of hitting the internal upstream host directly.
 func (h *ProxyHandler) newSwaggerProxy(upstreamBase, frontendPrefix, apiPrefix string) *httputil.ReverseProxy {
 	target, _ := url.Parse(upstreamBase)
 	specURLOld := []byte("url: '/oapi/v2'")
@@ -194,7 +181,7 @@ func setProxyBody(resp *http.Response, body []byte) error {
 	return nil
 }
 
-// rewriteSwaggerSpec points the spec's request target at the BFF proxy so
+// why: rewriteSwaggerSpec points the spec's request target at the BFF proxy so
 // Swagger UI's "Execute" stays same-origin. For Swagger 2.0 it drops the
 // upstream host/schemes (so the browser page origin is used) and rewrites
 // basePath; for OpenAPI 3 it rewrites servers. apiPrefix is the BFF path that

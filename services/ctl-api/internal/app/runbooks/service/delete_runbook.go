@@ -68,17 +68,6 @@ func (s *service) DeleteRunbook(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, true)
 }
 
-// branchesUsingRunbookAsPostDeploy returns the names of branches whose current
-// config runs this runbook after deploys.
-//
-// Deleting the runbook only soft-deletes the Runbook row — its RunbookConfigs
-// survive, so a branch run would still resolve a config, find an empty Runbook
-// behind it, and execute a deleted runbook under a blank name. Blocking here
-// turns that into an actionable error at the moment of deletion.
-//
-// Only each branch's newest config is consulted. Older configs are immutable
-// snapshots that will always reference the runbook, so checking them would make
-// the runbook undeletable forever.
 func (s *service) branchesUsingRunbookAsPostDeploy(ctx *gin.Context, orgID, appID, runbookID string) ([]string, error) {
 	var branches []app.AppBranch
 	if err := s.db.WithContext(ctx).

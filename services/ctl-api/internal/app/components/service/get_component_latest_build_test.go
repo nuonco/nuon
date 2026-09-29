@@ -11,10 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestGetAppComponentLatestBuildSuccess() {
 	s.Run("returns latest build", func() {
 		cmp := s.getSeededComponent(app.ComponentTypeHelmChart)
@@ -99,13 +95,8 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentLatestBuildExcludesPrevi
 	}
 }
 
-// ---------------------------------------------------------------------------
-// Not found cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestGetAppComponentLatestBuildNotFound() {
 	s.Run("no builds exist for component", func() {
-		// Create a fresh component with a config connection but no builds
 		freshComp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeDockerBuild)
 		s.deps.Seeder.CreateDockerBuildComponentConfigConnection(s.ctx, s.T(), freshComp.ID, s.testAppConfig.ID)
 

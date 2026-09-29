@@ -14,7 +14,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// InstallUptimeEntry groups all runner data for a single install.
 type InstallUptimeEntry struct {
 	InstallID   string `json:"install_id"`
 	InstallName string `json:"install_name"`
@@ -57,9 +56,7 @@ type JobSummary struct {
 	Other     int64 `json:"other"`
 }
 
-// UptimeMetrics holds aggregate numbers for the pie charts.
 type UptimeMetrics struct {
-	// Effective window (adjusted if runner created after window start).
 	EffectiveWindowMS float64 `json:"effective_window_ms"`
 	TotalUptimeMS     float64 `json:"total_uptime_ms"`
 	TotalProcs        int     `json:"total_procs"`
@@ -85,7 +82,6 @@ func (s *service) RunnerUptime(c *gin.Context) {
 	now := time.Now()
 	windowMS := float64(now.Sub(since).Milliseconds())
 
-	// Fetch installs.
 	type installRow struct {
 		InstallID   string
 		InstallName string
@@ -130,7 +126,6 @@ func (s *service) RunnerUptime(c *gin.Context) {
 		installIDs[i] = inst.InstallID
 	}
 
-	// Fetch runners for these installs.
 	type runnerMapping struct {
 		RunnerID  string
 		CreatedAt time.Time
@@ -171,7 +166,6 @@ func (s *service) RunnerUptime(c *gin.Context) {
 		return
 	}
 
-	// Fetch processes.
 	var processes []app.RunnerProcess
 	s.readDB().WithContext(ctx).
 		Where("runner_id IN ?", allRunnerIDs).
@@ -180,7 +174,6 @@ func (s *service) RunnerUptime(c *gin.Context) {
 		Order("runner_id, type, started_at DESC").
 		Find(&processes)
 
-	// Fetch per-process heartbeat counts and last heartbeat time from ClickHouse.
 	type hbRow struct {
 		RunnerID      string    `gorm:"column:runner_id"`
 		ProcessID     string    `gorm:"column:process_id"`
@@ -202,7 +195,6 @@ func (s *service) RunnerUptime(c *gin.Context) {
 		}
 	}
 
-	// Fetch per-process health check counts with healthy/unhealthy breakdown.
 	type hcRow struct {
 		RunnerID  string `gorm:"column:runner_id"`
 		ProcessID string `gorm:"column:process_id"`
@@ -240,7 +232,6 @@ func (s *service) RunnerUptime(c *gin.Context) {
 		}
 	}
 
-	// Fetch runner job status breakdown.
 	type jobRow struct {
 		RunnerID string `gorm:"column:runner_id"`
 		Status   string `gorm:"column:status"`
@@ -278,18 +269,16 @@ func (s *service) RunnerUptime(c *gin.Context) {
 		}
 	}
 
-	// Build ProcessUptime per runner.
 	procByRunner := make(map[string][]ProcessUptime)
 	for _, p := range processes {
 		key := p.RunnerID + "|" + p.ID
 		hb := hbMap[key]
 		hc := hcMap[key]
 
-		// Uptime = process created_at to last heartbeat (or updated_at if no HB data).
 		var uptimeMS float64
 		var uptimeStr, lastHBStr string
 		if p.StartedAt != nil {
-			end := p.UpdatedAt // fallback
+			end := p.UpdatedAt
 			if !hb.LastHeartbeat.IsZero() {
 				end = hb.LastHeartbeat
 				lastHBStr = hb.LastHeartbeat.Format(time.RFC3339)
@@ -328,8 +317,6 @@ func (s *service) RunnerUptime(c *gin.Context) {
 		procByRunner[p.RunnerID] = append(procByRunner[p.RunnerID], pu)
 	}
 
-	// Collect processes by type and compute metrics.
-	// effectiveSince is max(since, runner.created_at) for each install.
 	collectByType := func(runnerIDs []string, processType string, effectiveSince time.Time) ([]ProcessUptime, UptimeMetrics) {
 		effectiveWindowMS := float64(now.Sub(effectiveSince).Milliseconds())
 		if effectiveWindowMS < 0 {
@@ -359,15 +346,12 @@ func (s *service) RunnerUptime(c *gin.Context) {
 		}
 
 		totalProcs := len(procs)
-		// Restarts = total processes minus 1 (the current one). If 0 procs, 0 restarts.
 		restarts := 0
 		if totalProcs > 1 {
 			restarts = totalProcs - 1
 		}
 
-		// Expected heartbeats: 1 per 5s per effective window.
 		expectedHB := int64(effectiveWindowMS / 5000)
-		// Expected health checks: 1 per 60s per effective window.
 		expectedHC := int64(effectiveWindowMS / 60000)
 
 		return procs, UptimeMetrics{
@@ -399,12 +383,10 @@ func (s *service) RunnerUptime(c *gin.Context) {
 		return js
 	}
 
-	// Assemble per-install entries.
 	entries := make([]InstallUptimeEntry, 0, len(installs))
 	for _, inst := range installs {
 		runnerIDs := installRunnerMap[inst.InstallID]
 
-		// Effective since = max(since, earliest runner created_at).
 		effectiveSince := since
 		var earliestCreated string
 		for _, rid := range runnerIDs {
@@ -436,7 +418,6 @@ func (s *service) RunnerUptime(c *gin.Context) {
 		})
 	}
 
-	// Fetch distinct orgs for filter.
 	var orgs []struct {
 		ID   string
 		Name string
@@ -448,7 +429,6 @@ func (s *service) RunnerUptime(c *gin.Context) {
 		Order("name").
 		Find(&orgs)
 
-	// Fetch label options.
 	type labelRow struct {
 		Labels *string
 	}

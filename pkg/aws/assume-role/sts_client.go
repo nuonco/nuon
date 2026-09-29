@@ -10,9 +10,6 @@ import (
 )
 
 func (a *assumer) fetchSTSClient(ctx context.Context) (*sts.Client, error) {
-	// OIDC flows (GitHub, GCP) use AssumeRoleWithWebIdentity which doesn't
-	// need base AWS credentials. Create a region-only config without
-	// credential providers so it works on non-AWS environments (e.g. GCP).
 	if a.UseGithubOIDC || a.UseGCPOIDC {
 		baseCfg, err := config.LoadDefaultConfig(ctx,
 			config.WithRegion(a.Region),
@@ -30,7 +27,6 @@ func (a *assumer) fetchSTSClient(ctx context.Context) (*sts.Client, error) {
 	}
 	stsClient := sts.NewFromConfig(baseCfg)
 
-	// if now two step config is set, we use the default config
 	if a.TwoStepConfig == nil || *(a.TwoStepConfig) == (TwoStepConfig{}) {
 		return stsClient, nil
 	}
@@ -39,7 +35,6 @@ func (a *assumer) fetchSTSClient(ctx context.Context) (*sts.Client, error) {
 		return nil, fmt.Errorf("iam role arn must be set to use the two step config")
 	}
 
-	// if the static creds are set, we will create an STS client using them
 	if a.TwoStepConfig.SrcStaticCredentials.AccessKeyID != "" {
 		credsProvider := credentials.NewStaticCredentialsProvider(
 			a.TwoStepConfig.SrcStaticCredentials.AccessKeyID,
@@ -66,7 +61,6 @@ func (a *assumer) fetchSTSClient(ctx context.Context) (*sts.Client, error) {
 		stsClient = sts.NewFromConfig(cfg)
 	}
 
-	// finally, if an IAM role is set, we create a set of credentials and then return an STS client using them
 	creds, err := a.assumeIamRole(ctx, stsClient, a.TwoStepConfig.IAMRoleARN, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to assume two step role: %w", err)

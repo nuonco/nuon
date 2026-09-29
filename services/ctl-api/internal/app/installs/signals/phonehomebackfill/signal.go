@@ -1,4 +1,4 @@
-// Package phonehomebackfill onboards one install to phone-home auth.
+// why: Package phonehomebackfill onboards one install to phone-home auth.
 //
 // Two steps in order, because the second cannot work without the first: backfill the
 // install's cloud metadata from the identifier its stack already reported, then
@@ -30,12 +30,8 @@ import (
 const SignalType signal.SignalType = "install-phone-home-backfill"
 
 type Signal struct {
-	InstallID string `json:"install_id"`
-	// IgnoreOrgFeatureGate provisions ahead of the org enabling phone-home-auth,
-	// which is the whole point of the backfill: metadata and secrets land first, the
-	// flag goes on last. See the field of the same name on the activity request for
-	// what it does and does not waive.
-	IgnoreOrgFeatureGate bool `json:"ignore_org_feature_gate,omitempty"`
+	InstallID            string `json:"install_id"`
+	IgnoreOrgFeatureGate bool   `json:"ignore_org_feature_gate,omitempty"`
 }
 
 var _ signal.Signal = (*Signal)(nil)
@@ -63,8 +59,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to backfill install cloud metadata: %w", err)
 	}
 
-	// The full request rather than the ByField helper, which cannot carry the gate
-	// override.
 	if _, err := activities.AwaitEnsureInstallPhoneHomeSecret(ctx, &activities.EnsureInstallPhoneHomeSecretRequest{
 		InstallID:            s.InstallID,
 		IgnoreOrgFeatureGate: s.IgnoreOrgFeatureGate,

@@ -12,10 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/example"
 )
 
-// TestParentNeverCarriesOnAfterChildCancelled runs the real queue worker and
-// asserts the product invariant behind step/workflow cancellation: a parent
-// awaiting a child's completion callback must never carry on when that child
-// is cancelled. The parent signal must terminate as an error, not success.
 func (e *EnqueueTestSuite) TestParentNeverCarriesOnAfterChildCancelled() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -31,7 +27,6 @@ func (e *EnqueueTestSuite) TestParentNeverCarriesOnAfterChildCancelled() {
 	require.NotNil(e.T(), q)
 	require.Nil(e.T(), e.service.Client.QueueReady(ctx, q.ID))
 
-	// Enqueue the parent, which blocks in execute awaiting a completion callback.
 	awaitID := generics.GetFakeObj[string]()
 	parentResp, err := e.service.Client.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
 		QueueID: q.ID,
@@ -65,7 +60,6 @@ func (e *EnqueueTestSuite) TestParentNeverCarriesOnAfterChildCancelled() {
 		return res.Error == nil && qs.Status.Status == app.StatusInProgress
 	}, pollTimeout, 200*time.Millisecond)
 
-	// Cancel the child while the parent is awaiting its callback.
 	cancelResp, err := e.service.Client.CancelSignal(ctx, childResp.ID)
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), cancelResp)
@@ -89,10 +83,6 @@ func (e *EnqueueTestSuite) TestParentNeverCarriesOnAfterChildCancelled() {
 	require.Equalf(e.T(), app.StatusError, parentStatus,
 		"parent carried on after child cancellation (status=%s)", parentStatus)
 
-	// The child's terminal state must be stable. A late transport-layer
-	// error/success stamp overwriting cancelled is exactly the
-	// transport-vs-domain conflation this test guards against, so re-check
-	// after the dispatcher has fully settled.
 	time.Sleep(2 * time.Second)
 	var childQS app.QueueSignal
 	res := e.service.DB.WithContext(ctx).First(&childQS, "id = ?", childResp.ID)
@@ -101,10 +91,6 @@ func (e *EnqueueTestSuite) TestParentNeverCarriesOnAfterChildCancelled() {
 		"child cancelled status was overwritten after settling (status=%s)", childQS.Status.Status)
 }
 
-// TestParentCarriesOnAfterChildSuccess is the positive control for the
-// cancellation test above: with identical callback wiring, a successful child
-// lets the parent complete successfully. This proves the cancelled case fails
-// because of the cancellation semantics, not broken wiring.
 func (e *EnqueueTestSuite) TestParentCarriesOnAfterChildSuccess() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())

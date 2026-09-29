@@ -23,7 +23,6 @@ func (s *GeneralPublicTestSuite) TestGetCloudPlatformRegions() {
 			expectedCode:  http.StatusOK,
 			validateResponse: func(regions []app.CloudPlatformRegion) {
 				assert.NotEmpty(s.T(), regions)
-				// Verify at least one region has expected fields
 				if len(regions) > 0 {
 					assert.NotEmpty(s.T(), regions[0].Name)
 					assert.NotEmpty(s.T(), regions[0].Value)
@@ -59,7 +58,6 @@ func (s *GeneralPublicTestSuite) TestGetCloudPlatformRegions() {
 			cloudPlatform: "invalid-platform",
 			expectedCode:  http.StatusBadRequest,
 			validateResponse: func(regions []app.CloudPlatformRegion) {
-				// Error response - no regions to validate
 			},
 		},
 	}

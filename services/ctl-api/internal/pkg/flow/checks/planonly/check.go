@@ -11,7 +11,6 @@ import (
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// Check implements directive.ApprovalCreateCheck for plan-only mode.
 type Check struct {
 	OwnerID  string
 	checkCtx *directive.CheckContext
@@ -41,11 +40,7 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 
 	return directive.CheckResult{
 		Directive: directive.StepContinue,
-		// handlePlanOnlyApproval already wrote the step's authoritative status
-		// (Approved) and the step-target status (Drifted / NoDrift). Set Status
-		// here so applyCheckResult does not default to StatusError and overwrite
-		// the row we just persisted.
-		Status: app.WorkflowStepApprovalStatusApproved,
+		Status:    app.WorkflowStepApprovalStatusApproved,
 		Reason: directive.CheckReason{
 			Check:   "plan-only",
 			Summary: summary,

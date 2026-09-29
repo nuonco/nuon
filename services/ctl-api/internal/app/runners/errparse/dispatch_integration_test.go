@@ -11,12 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
-// This external test registers parsers solely through the errparse/all
-// manifest, the same wiring production uses, so the two can never drift. It runs
-// fixtures through the contract runner, which dispatches against the real
-// registry and enforces both the layer contract and the persistence
-// round-trip. Cases match on the winning composite error's Type() rather than a
-// concrete parser type so no parser package is imported directly here.
 const (
 	awsPermissionType  compositeerrors.Type = "terraform.aws_permission"
 	genericType        compositeerrors.Type = "generic"
@@ -93,9 +87,6 @@ func TestDefaultRegistry_Contract(t *testing.T) {
 			WantType: helmPendingOpType,
 		},
 		{
-			// The ambiguous name-collision wording must not be pulled into
-			// pending_operation, since recovery is wrong advice for a real
-			// collision with a release Nuon does not own.
 			Name:     "name-in-use stays on the helm catch-all",
 			Raw:      helmNameInUse,
 			Tool:     errparse.ToolHelm,

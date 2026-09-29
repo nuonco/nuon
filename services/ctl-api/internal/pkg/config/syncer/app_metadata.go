@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// syncApp updates the app metadata (description, display name, slack webhook).
 func (s *syncer) syncApp(ctx context.Context) error {
 	currentApp := app.App{
 		ID: s.appID,
@@ -34,7 +33,6 @@ func (s *syncer) syncApp(ctx context.Context) error {
 		}
 	}
 
-	// Update slack webhook URL in notifications config if provided
 	if s.cfg.SlackWebhookURL != "" {
 		res = s.db.WithContext(ctx).
 			Select("slack_webhook_url").

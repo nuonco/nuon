@@ -39,8 +39,6 @@ const (
 	RunnerProcessTypeUnknown RunnerProcessType = ""
 )
 
-// InstallProcessForRunnerGroupType maps a RunnerGroupType to the RunnerProcessType
-// used for install-level health checking.
 func InstallProcessForRunnerGroupType(gt RunnerGroupType) RunnerProcessType {
 	switch gt {
 	case RunnerGroupTypeInstall:
@@ -50,8 +48,6 @@ func InstallProcessForRunnerGroupType(gt RunnerGroupType) RunnerProcessType {
 	}
 }
 
-// HeartBeatProcessForRunnerGroupType maps a RunnerGroupType to the RunnerProcessType
-// used for heartbeat lookups.
 func HeartBeatProcessForRunnerGroupType(gt RunnerGroupType) RunnerProcessType {
 	switch gt {
 	case RunnerGroupTypeInstall:

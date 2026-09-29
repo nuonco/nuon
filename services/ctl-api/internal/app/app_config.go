@@ -28,13 +28,6 @@ const (
 	AppConfigStatusOutdated AppConfigStatus = "outdated"
 )
 
-// type AppConfigType string
-
-// const (
-// 	AppConfigTypeToml   AppConfigType = "toml"
-// 	AppConfigTypeManual AppConfigType = "manual"
-// )
-
 type AppConfigVersion string
 
 const (
@@ -70,11 +63,6 @@ type AppConfig struct {
 
 	IntermediateConfig *blobstore.Blob `json:"intermediate_config" temporaljson:"intermediate_config"`
 	SourceConfig       *blobstore.Blob `json:"source_config,omitempty" temporaljson:"source_config,omitempty"`
-
-	// OwnerID            string         `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"owner_id,omitzero,omitempty"`
-	// OwnerType          string         `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
-
-	// Lookups on the app config
 
 	PermissionsConfig          AppPermissionsConfig        `json:"permissions,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"permissions_config,omitzero,omitempty"`
 	BreakGlassConfig           AppBreakGlassConfig         `json:"break_glass,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"break_glass_config,omitzero,omitempty"`
@@ -158,7 +146,6 @@ func (a *AppConfig) BeforeCreate(tx *gorm.DB) error {
 		a.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
 
-	// NOTE(JM): this will eventually be moved, so we can have hooks on specific nested types
 	if err := a.IntermediateConfig.BeforeCreate(tx); err != nil {
 		return err
 	}

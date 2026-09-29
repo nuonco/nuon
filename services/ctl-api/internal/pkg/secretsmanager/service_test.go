@@ -19,7 +19,6 @@ import (
 
 const testSecretARN = "arn:aws:secretsmanager:us-west-2:123456789012:secret:nuon/phone-home/inst1-aB3xYz"
 
-// fakeAPI models a single secret's server-side state.
 type fakeAPI struct {
 	exists          bool
 	value           string
@@ -35,8 +34,6 @@ type fakeAPI struct {
 	deletes  int
 	tagCalls int
 
-	// tags is what the secret already carries; createTags/addedTags record what the
-	// service asked for.
 	tags       []types.Tag
 	createTags []types.Tag
 	addedTags  []types.Tag
@@ -153,7 +150,6 @@ func TestEnsureSecretCreatesWhenMissing(t *testing.T) {
 	if fake.creates != 1 || fake.puts != 0 {
 		t.Errorf("expected one create and no put, got creates=%d puts=%d", fake.creates, fake.puts)
 	}
-	// The ARN is not derivable from the name, so it has to come back from AWS.
 	if out.ARN != testSecretARN {
 		t.Errorf("ARN = %q, want %q", out.ARN, testSecretARN)
 	}
@@ -162,9 +158,6 @@ func TestEnsureSecretCreatesWhenMissing(t *testing.T) {
 	}
 }
 
-// The regression test for the idempotency guard. Without it, every stack generation
-// across all four provisioning workflows mints a new Secrets Manager version — a
-// cost and noise problem, and it makes version history useless for auditing.
 func TestEnsureSecretSkipsUnchangedValue(t *testing.T) {
 	fake := &fakeAPI{exists: true, value: `{"a":"t1"}`}
 	svc := testService(fake)
@@ -252,8 +245,6 @@ func TestEnsureSecretSkipsMatchingKMSKey(t *testing.T) {
 	}
 }
 
-// AWS's default 7-30 day recovery window otherwise makes re-provisioning the same
-// install ID fail with InvalidRequestException forever.
 func TestEnsureSecretRestoresPendingDeletion(t *testing.T) {
 	const desiredKMSKey = "arn:aws:kms:us-west-2:123456789012:key/desired"
 
@@ -282,8 +273,6 @@ func TestEnsureSecretRestoresPendingDeletion(t *testing.T) {
 	}
 }
 
-// Two installs in the same target account can provision concurrently, so losing the
-// describe/create race must fall through to the update path rather than erroring.
 func TestEnsureSecretHandlesCreateRace(t *testing.T) {
 	fake := &fakeAPI{createErr: &types.ResourceExistsException{}}
 	svc := testService(fake)
@@ -340,7 +329,6 @@ func TestDeleteSecretIsIdempotent(t *testing.T) {
 }
 
 func TestUnsupportedCloudSurfacesSentinel(t *testing.T) {
-	// Azure-hosted: no federation path to AWS, so ManagementSecretsCreds returns nil.
 	svc := NewService(&internal.Config{CloudProvider: "azure", ManagementRegion: "us-west-2"}, zap.NewNop())
 
 	_, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{Name: "n", Value: "{}"})
@@ -352,8 +340,6 @@ func TestUnsupportedCloudSurfacesSentinel(t *testing.T) {
 	}
 }
 
-// A permanent rejection must stay distinguishable from a transient one even after
-// being wrapped on the way out of the service.
 func TestIsPermanentInputError(t *testing.T) {
 	for _, tc := range []struct {
 		name string
@@ -361,7 +347,6 @@ func TestIsPermanentInputError(t *testing.T) {
 		want bool
 	}{
 		{
-			// What a nonexistent target account id produces.
 			name: "malformed policy document",
 			err:  fmt.Errorf("unable to put resource policy: %w", &types.MalformedPolicyDocumentException{}),
 			want: true,
@@ -406,17 +391,6 @@ func TestPhoneHomeSecretName(t *testing.T) {
 	}
 }
 
-// Both halves of this shape are load-bearing and each fails in a different direction.
-//
-// Naming the role as the Principal is what a reader would write, and it is wrong:
-// Secrets Manager validates principals, the role does not exist until the customer's
-// stack creates it, and the call fails outright with "This resource policy contains an
-// unsupported principal". Root as the Principal is what makes the call succeed.
-//
-// Root *alone* would be the opposite mistake — a grant to every principal in the
-// account that holds an identity policy for this ARN, rather than to the one role. The
-// condition is what narrows it back down, so a change that drops it widens the grant
-// while leaving every other assertion here passing.
 func TestPhoneHomeResourcePolicy(t *testing.T) {
 	raw, err := PhoneHomeResourcePolicy("123456789012", "inst123-phone-home")
 	if err != nil {
@@ -454,7 +428,6 @@ func TestPhoneHomeResourcePolicy(t *testing.T) {
 			"statement grants the whole account, not one role", got, roleARN)
 	}
 
-	// Read-only, and only the one action: this grant reaches into a customer account.
 	if len(stmt.Action) != 1 || stmt.Action[0] != "secretsmanager:GetSecretValue" {
 		t.Errorf("Action = %v, want only secretsmanager:GetSecretValue", stmt.Action)
 	}
@@ -510,9 +483,6 @@ func TestEnsureSecretTagsOnCreate(t *testing.T) {
 	}
 }
 
-// The reason tags are reconciled rather than only set on create: CreateSecret is the
-// only Secrets Manager call that accepts tags, so a secret provisioned before a tag
-// existed would never acquire it.
 func TestEnsureSecretTagsAnExistingUntaggedSecret(t *testing.T) {
 	fake := &fakeAPI{exists: true, value: "{}"}
 	svc := testService(fake)
@@ -546,8 +516,6 @@ func TestEnsureSecretSkipsTaggingWhenAlreadyCorrect(t *testing.T) {
 	}
 }
 
-// Only the drifted key is sent, and a tag applied by something outside this reconciler
-// is left alone rather than deleted.
 func TestEnsureSecretCorrectsOnlyDriftedTags(t *testing.T) {
 	fake := &fakeAPI{exists: true, value: "{}", tags: awsTags(map[string]string{
 		"org.nuon.co/id":     "org_123",

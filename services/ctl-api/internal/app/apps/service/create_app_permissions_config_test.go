@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// TestCreateAppPermissionsConfig tests the CreateAppPermissionsConfig endpoint.
 func (s *AppConfigTypesTestSuite) TestCreateAppPermissionsConfig() {
 	testCases := []struct {
 		name         string

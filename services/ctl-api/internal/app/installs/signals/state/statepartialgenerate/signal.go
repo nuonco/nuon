@@ -18,7 +18,6 @@ import (
 
 const SignalType signal.SignalType = "state-partial-generate"
 
-// Signal generates state based on signal input
 type Signal struct {
 	InstallID       string
 	Targets         []state.PartialTarget
@@ -73,7 +72,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 	runtime := time.Since(start)
 
-	// emit metrics
 	if s.metrics == nil {
 		return nil
 	}

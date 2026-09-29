@@ -47,9 +47,6 @@ func (h *handler) getBuiltInEnv(ctx context.Context, cfg *models.AppActionWorkfl
 	return generics.MergeMap(env, cloudEnv), nil
 }
 
-// getContainerBuiltInEnv is the image-backed-action variant of getBuiltInEnv:
-// it maps every host path (outputs file, workspace root, kubeconfig) through
-// mapPath so the values resolve inside the container's workspace mount
 func (h *handler) getContainerBuiltInEnv(ctx context.Context, cfg *models.AppActionWorkflowStepConfig, mapPath func(string) string) (map[string]string, error) {
 	env := map[string]string{
 		outputsEnvVar: mapPath(h.outputsFP(cfg)),
@@ -58,15 +55,13 @@ func (h *handler) getContainerBuiltInEnv(ctx context.Context, cfg *models.AppAct
 
 	if h.state.plan.ClusterInfo != nil {
 		path := h.state.workspace.AbsPath(config.DefaultKubeConfigFilename)
-		// unlink any symlink a prior action container may have planted here
-		// before writing the kubeconfig into the shared workspace.
 		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
 			return nil, errors.Wrap(err, "unable to clear existing kubeconfig path")
 		}
 		if err := config.WriteConfig(ctx, h.state.plan.ClusterInfo, path); err != nil {
 			return nil, errors.Wrap(err, "unable to write kube config")
 		}
-		// client-go writes this 0600, which a container running as a non-root
+		// why: client-go writes this 0600, which a container running as a non-root
 		// user cannot read. The file holds an exec credential plugin reference
 		// rather than a token, and the workspace is already shared with the
 		// container, so widening it does not expose anything new.
@@ -127,9 +122,6 @@ func (h *handler) cloudCredentialEnv(ctx context.Context) (map[string]string, er
 			return nil, errors.Wrap(err, "unable to get Azure credentials")
 		}
 
-		// ARM_* only steers the terraform provider. The azure SDK and az CLI
-		// read AZURE_CLIENT_ID, and a container has no inherited process env to
-		// fall back on, so the identity has to be named for both.
 		if h.state.auth.AzureAuth.ManagedIdentityClientID != "" {
 			azureEnv["AZURE_CLIENT_ID"] = h.state.auth.AzureAuth.ManagedIdentityClientID
 		}

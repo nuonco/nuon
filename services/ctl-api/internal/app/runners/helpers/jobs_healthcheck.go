@@ -51,8 +51,7 @@ func (h *Helpers) createHealthcheckRunnerJob(ctx context.Context,
 		Operation:         op,
 		LogStreamID:       pkggenerics.ToPtr(logStreamID),
 		Metadata:          generics.ToHstore(metadata),
-		// my additions
-		Group: app.RunnerJobGroupOperations,
+		Group:             app.RunnerJobGroupOperations,
 	}
 
 	if res := h.db.WithContext(ctx).Create(&job); res.Error != nil {

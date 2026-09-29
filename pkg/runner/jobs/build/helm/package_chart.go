@@ -84,7 +84,6 @@ func (h *handler) packageChartFromRepoConfig(l *zap.Logger) (string, error) {
 	return packagePath, nil
 }
 
-// loadAndPackageChart loads a chart from the given directory, handles dependencies, and packages it
 func (h *handler) loadAndPackageChart(l *zap.Logger, chartDir, dstDir string) (string, error) {
 	chart, err := loader.Load(chartDir)
 	if err != nil {
@@ -96,7 +95,6 @@ func (h *handler) loadAndPackageChart(l *zap.Logger, chartDir, dstDir string) (s
 	if len(dependencies) > 0 {
 		l.Info("dependencies: chart has dependencies", zap.String("chart_dir", chartDir), zap.Int("count", len(dependencies)))
 
-		// OCI and file:// deps are resolved without a repo entry; registering them errors.
 		repoURLs := map[string]struct{}{}
 		for _, dep := range dependencies {
 			if dep.Repository == "" || registry.IsOCI(dep.Repository) || strings.HasPrefix(dep.Repository, "file://") {
@@ -105,8 +103,6 @@ func (h *handler) loadAndPackageChart(l *zap.Logger, chartDir, dstDir string) (s
 			repoURLs[dep.Repository] = struct{}{}
 		}
 
-		// An update error is not fatal: a chart pulled with deps already vendored
-		// stays valid. verifyDependenciesPresent below decides if the package is complete.
 		if err := h.addDependencyReposAndUpdate(l, chartDir, repoURLs); err != nil {
 			l.Warn("dependency update reported an error; verifying vendored dependencies", zap.Error(err))
 		}
@@ -121,7 +117,6 @@ func (h *handler) loadAndPackageChart(l *zap.Logger, chartDir, dstDir string) (s
 		}
 	}
 
-	// package the chart
 	packagePath, err := chartutil.Save(chart, dstDir)
 	if err != nil {
 		return "", fmt.Errorf("unable to package chart: %w", err)
@@ -131,7 +126,6 @@ func (h *handler) loadAndPackageChart(l *zap.Logger, chartDir, dstDir string) (s
 	return packagePath, nil
 }
 
-// initHelmSettingsForRepo initializes helm settings for repository operations
 func (h *handler) initHelmSettingsForRepo(l *zap.Logger) (*cli.EnvSettings, error) {
 	settings := cli.New()
 	settings.BurstLimit = 10
@@ -140,7 +134,6 @@ func (h *handler) initHelmSettingsForRepo(l *zap.Logger) (*cli.EnvSettings, erro
 	return settings, nil
 }
 
-// addHelmRepo adds a helm repository
 func (h *handler) addHelmRepo(l *zap.Logger, settings *cli.EnvSettings, repoName, repoURL string) error {
 	hcLog := log.NewHClog(l)
 	lw := hcLog.StandardWriter(&hclog.StandardLoggerOptions{})
@@ -153,12 +146,10 @@ func (h *handler) addHelmRepo(l *zap.Logger, settings *cli.EnvSettings, repoName
 	return err
 }
 
-// pullHelmChart pulls a chart from a repository
 func (h *handler) pullHelmChart(l *zap.Logger, settings *cli.EnvSettings, repoName, chartName, destDir string) (string, error) {
 	hcLog := log.NewHClog(l)
 	lw := hcLog.StandardWriter(&hclog.StandardLoggerOptions{})
 
-	// Create registry client
 	opts := []registry.ClientOption{
 		registry.ClientOptDebug(true),
 		registry.ClientOptEnableCache(false),
@@ -170,7 +161,6 @@ func (h *handler) pullHelmChart(l *zap.Logger, settings *cli.EnvSettings, repoNa
 		return "", fmt.Errorf("failed to create registry client: %w", err)
 	}
 
-	// Create action configuration and set registry client
 	cfg := &action.Configuration{
 		RegistryClient: registryClient,
 	}
@@ -178,9 +168,8 @@ func (h *handler) pullHelmChart(l *zap.Logger, settings *cli.EnvSettings, repoNa
 	pull := action.NewPull(action.WithConfig(cfg))
 	pull.Settings = settings
 	pull.DestDir = destDir
-	pull.Untar = true // Extract the chart after downloading
+	pull.Untar = true
 
-	// Construct the chart reference as repoName/chartName
 	chartRef := fmt.Sprintf("%s/%s", repoName, chartName)
 	if h.state.cfg.HelmRepoConfig.Version != "" {
 		chartRef = fmt.Sprintf("%s/%s", repoName, chartName)
@@ -189,19 +178,16 @@ func (h *handler) pullHelmChart(l *zap.Logger, settings *cli.EnvSettings, repoNa
 
 	l.Info("pulling helm chart", zap.String("chart_ref", chartRef), zap.String("dest_dir", destDir))
 
-	// Run the pull operation
 	_, err = pull.Run(chartRef)
 	if err != nil {
 		return "", fmt.Errorf("failed to pull chart: %w", err)
 	}
 
-	// When Untar is true, the chart is extracted to destDir/chartName
 	chartPath := filepath.Join(destDir, chartName)
 
 	return chartPath, nil
 }
 
-// Repositories that have been permanently deleted and no longer work
 var deprecatedRepos = map[string]string{
 	"//kubernetes-charts.storage.googleapis.com":           "https://charts.helm.sh/stable",
 	"//kubernetes-charts-incubator.storage.googleapis.com": "https://charts.helm.sh/incubator",
@@ -209,7 +195,6 @@ var deprecatedRepos = map[string]string{
 
 func (h *handler) addRepo(l *zap.Logger, out io.Writer, settings *cli.EnvSettings, chartDir, name, repository string) error {
 
-	// Set default HTTP client with timeout globally for getters
 	http.DefaultClient.Timeout = 30 * time.Second
 	http.DefaultTransport = &http.Transport{
 		DialContext: (&net.Dialer{
@@ -231,9 +216,8 @@ func (h *handler) addRepo(l *zap.Logger, out io.Writer, settings *cli.EnvSetting
 		return fmt.Errorf("settings.RepositoryConfig is empty")
 	}
 
-	// Block deprecated repos
-	allowDeprecatedRepos := false // hoisted into a var in case we need to do logic here later
-	if !allowDeprecatedRepos {    // we block deprecated reps by default for now
+	allowDeprecatedRepos := false
+	if !allowDeprecatedRepos {
 		for oldURL, newURL := range deprecatedRepos {
 			if strings.Contains(repository, oldURL) {
 				return fmt.Errorf("repo %q is no longer available; try %q instead", repository, newURL)
@@ -241,14 +225,12 @@ func (h *handler) addRepo(l *zap.Logger, out io.Writer, settings *cli.EnvSetting
 		}
 	}
 
-	// Ensure the file directory exists as it is required for file locking
 	repoConfigDir := filepath.Dir(settings.RepositoryConfig)
 	err := os.MkdirAll(repoConfigDir, os.ModePerm)
 	if err != nil && !os.IsExist(err) {
 		return err
 	}
 
-	// Acquire a file lock for process synchronization
 	repoFileExt := filepath.Ext(settings.RepositoryConfig)
 	var lockPath string
 	if len(repoFileExt) > 0 && len(repoFileExt) < len(settings.RepositoryConfig) {
@@ -270,7 +252,6 @@ func (h *handler) addRepo(l *zap.Logger, out io.Writer, settings *cli.EnvSetting
 		return err
 	}
 	if !locked {
-		// Could not acquire file lock within timeout, continue anyway
 	}
 
 	b, err := os.ReadFile(settings.RepositoryConfig)
@@ -286,7 +267,6 @@ func (h *handler) addRepo(l *zap.Logger, out io.Writer, settings *cli.EnvSetting
 		URL:  repository,
 	}
 
-	// Check if the repo name is legal
 	if strings.Contains(name, "/") {
 		return errors.Errorf("repository name (%s) contains '/', please specify a different name without '/'", name)
 	}
@@ -296,10 +276,9 @@ func (h *handler) addRepo(l *zap.Logger, out io.Writer, settings *cli.EnvSetting
 		return err
 	}
 
-	// Add panic recovery around DownloadIndexFile
 	defer func() {
 		if r := recover(); r != nil {
-			panic(r) // re-panic after logging
+			panic(r)
 		}
 	}()
 
@@ -319,16 +298,12 @@ func (h *handler) addRepo(l *zap.Logger, out io.Writer, settings *cli.EnvSetting
 	return nil
 }
 
-// repoNameForURL returns a stable, unique repo name per URL so distinct repos
-// never collide on a name and the entry is idempotent across builds.
 func repoNameForURL(url string) string {
 	h := fnv.New32a()
 	_, _ = h.Write([]byte(url))
 	return fmt.Sprintf("dep-repo-%x", h.Sum32())
 }
 
-// verifyDependenciesPresent fails if any declared dependency was not vendored,
-// which would otherwise package an incomplete chart (commonly dropping CRDs).
 func verifyDependenciesPresent(declared []*chartv2.Dependency, c *chartv2.Chart) error {
 	loaded := map[string]struct{}{}
 	for _, dep := range c.Dependencies() {
@@ -361,17 +336,14 @@ func (h *handler) addDependencyReposAndUpdate(l *zap.Logger, chartDir string, re
 	settings.BurstLimit = 10
 	settings.QPS = 5
 
-	// addRepo failures are non-fatal: the caller verifies dependencies were vendored.
 	for url := range repoURLs {
 		if err := h.addRepo(l, lw, settings, chartDir, repoNameForURL(url), url); err != nil {
 			l.Warn("unable to add dependency repo", zap.String("repo_url", url), zap.Error(err))
 		}
 	}
 
-	// make a helm client
 	client := action.NewDependency()
 
-	// Create a new registry client
 	opts := []registry.ClientOption{
 		registry.ClientOptDebug(true),
 		registry.ClientOptEnableCache(false),
@@ -398,7 +370,6 @@ func (h *handler) addDependencyReposAndUpdate(l *zap.Logger, chartDir string, re
 		man.Verify = downloader.VerifyAlways
 	}
 
-	// update dependencies
 	if err := man.Update(); err != nil {
 		return fmt.Errorf("unable to update chart dependencies: %w", err)
 	}

@@ -64,9 +64,6 @@ func (s *service) AddInstallLabels(ctx *gin.Context) {
 		return
 	}
 
-	// Default labels are set in the app config; a write that echoes the current
-	// rendered value or the default itself is a harmless round-trip, anything
-	// else is rejected.
 	for key, val := range req.Labels {
 		def, isDefault := install.AppDefaultLabels[key]
 		if !isDefault {
@@ -94,9 +91,6 @@ func (s *service) AddInstallLabels(ctx *gin.Context) {
 		}
 	}
 
-	// A static write echoing a template-managed key's rendered value is a
-	// round-trip from a client that only sees rendered labels — keep the
-	// template. A differing value converts the key back to static.
 	for key, val := range static {
 		if _, managed := install.LabelTemplates[key]; managed && install.Labels[key] == val {
 			delete(static, key)

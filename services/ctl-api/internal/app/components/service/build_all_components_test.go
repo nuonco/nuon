@@ -13,10 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestBuildAllComponentsSuccess() {
 	s.Run("builds all 6 seeded components", func() {
 		path := fmt.Sprintf("/v1/apps/%s/components/build-all", s.testApp.ID)
@@ -40,10 +36,6 @@ func (s *ComponentsServiceTestSuite) TestBuildAllComponentsSuccess() {
 	})
 }
 
-// ---------------------------------------------------------------------------
-// Signals
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestBuildAllComponentsSignals() {
 	s.Run("sends OperationBuild signal for each component", func() {
 
@@ -58,7 +50,6 @@ func (s *ComponentsServiceTestSuite) TestBuildAllComponentsSignals() {
 		capturedSignals := tests.GetQueueSignals(s.T(), s.deps.DB)
 		require.Len(s.T(), capturedSignals, 6, "expected 6 signals")
 
-		// Each signal should be a build signal with a unique BuildID
 		buildIDs := map[string]bool{}
 		for _, qs := range capturedSignals {
 			assert.Equal(s.T(), buildsignal.SignalType, qs.Type, "signal should be component-build")
@@ -70,10 +61,6 @@ func (s *ComponentsServiceTestSuite) TestBuildAllComponentsSignals() {
 		assert.Len(s.T(), buildIDs, 6, "each signal should have a distinct BuildID")
 	})
 }
-
-// ---------------------------------------------------------------------------
-// Empty app
-// ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestBuildAllComponentsEmptyApp() {
 	s.Run("returns empty array for app with no components", func() {
@@ -87,7 +74,6 @@ func (s *ComponentsServiceTestSuite) TestBuildAllComponentsEmptyApp() {
 		}
 		require.Equal(s.T(), http.StatusCreated, rr.Code)
 
-		// Response may be null or empty array
 		body := rr.Body.String()
 		assert.True(s.T(), body == "null" || body == "[]",
 			"expected null or empty array but got: %s", body)

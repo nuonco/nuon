@@ -15,9 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// Client provides methods for interacting with running flow workflows
-// via Temporal update handlers. It is a direct Go client (not a Temporal
-// activity) called from API handlers.
 type Client struct {
 	db      *gorm.DB
 	tClient temporalclient.Client
@@ -40,10 +37,6 @@ func New(params Params) *Client {
 	}
 }
 
-// findQueueSignalByOwner looks up the most recent queue signal for a given owner and signal type.
-// The ownerType parameter is accepted for backwards compatibility but is not
-// used in the query — the ownerID + signalType pair is sufficient to uniquely
-// identify the signal regardless of which queue it was enqueued to.
 func (c *Client) findQueueSignalByOwner(ctx context.Context, ownerID, ownerType string, signalType signal.SignalType) (*app.QueueSignal, error) {
 	var qs app.QueueSignal
 	res := c.db.WithContext(ctx).
@@ -54,7 +47,6 @@ func (c *Client) findQueueSignalByOwner(ctx context.Context, ownerID, ownerType 
 		Order("created_at DESC").
 		First(&qs)
 	if errors.Is(res.Error, gorm.ErrRecordNotFound) && signalType == executeflow.SignalType {
-		// Older enqueue paths left owner_id empty; the payload still names the workflow.
 		res = c.db.WithContext(ctx).
 			Where(app.QueueSignal{Type: signalType}).
 			Where("signal->'data'->>'workflow_id' = ?", ownerID).

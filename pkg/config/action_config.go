@@ -25,14 +25,8 @@ type ActionConfig struct {
 
 	EnableKubeConfig *bool `mapstructure:"enable_kube_config,omitempty" toml:"enable_kube_config,omitempty"`
 
-	// Image is an optional container image the action's steps run inside. When
-	// set, Nuon mounts the actions-supervisor into the image and executes each
-	// step's command, inline_contents, or repo-backed script there.
 	Image string `mapstructure:"image,omitempty" toml:"image,omitempty" features:"template"`
 
-	// KubernetesContext is the name of a kubernetes_context this action
-	// targets. Empty means fall back to the implicit sandbox default (when
-	// the sandbox emits cluster outputs). See pkg/config/kubernetes_context.go.
 	KubernetesContext string `mapstructure:"kubernetes_context,omitempty" toml:"kubernetes_context,omitempty" nuonhash:"omitempty"`
 }
 
@@ -53,7 +47,6 @@ type ActionStepConfig struct {
 	Command        string `mapstructure:"command" toml:"command" features:"template"`
 	InlineContents string `mapstructure:"inline_contents" toml:"inline_contents" features:"get,template"`
 
-	// created during parsing
 	References []refs.Ref `mapstructure:"-" jsonschema:"-"`
 }
 

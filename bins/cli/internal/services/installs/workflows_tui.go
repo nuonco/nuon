@@ -15,8 +15,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// selectInstallID resolves an install ID by checking the flag, config, or showing
-// an interactive selector matching `installs select` behavior.
 func (s *Service) selectInstallID(ctx context.Context, installID string) (string, error) {
 	if installID == "" {
 		installID = s.GetInstallID()
@@ -62,7 +60,6 @@ func (s *Service) workflowsTUI(ctx context.Context, installID, workflowID string
 		return ui.PrintError(err)
 	}
 
-	// If no workflow ID provided, show selector
 	if workflowID == "" {
 		selectedID, err := workflowselector.WorkflowSelectorApp(ctx, s.cfg, s.api, installID)
 		if err != nil {
@@ -73,7 +70,6 @@ func (s *Service) workflowsTUI(ctx context.Context, installID, workflowID string
 		}
 		workflowID = selectedID
 	} else {
-		// Validate workflow ID exists
 		_, err := s.api.GetWorkflow(ctx, workflowID)
 		if err != nil {
 			return ui.PrintError(errors.Wrap(err, "failed to get workflow"))
@@ -90,7 +86,6 @@ func (s *Service) workflowsTUILatest(ctx context.Context, installID string) erro
 		return ui.PrintError(err)
 	}
 
-	// Get the latest workflow for this install
 	workflows, _, err := s.api.GetWorkflows(ctx, installID, &models.GetPaginatedQuery{Limit: 1, Offset: 0})
 	if err != nil {
 		return ui.PrintError(errors.Wrap(err, "failed to get workflows"))
@@ -104,17 +99,11 @@ func (s *Service) workflowsTUILatest(ctx context.Context, installID string) erro
 	return nil
 }
 
-// ExitCodeFailed is the process exit code returned when a workflow watch fails.
 const ExitCodeFailed = 1
 
-// WorkflowsWatchTUI launches the full-screen TUI for watching all workflows for an install.
-// It accepts either an installID or workflowID. If workflowID is provided, it resolves
-// the install ID from the workflow's OwnerID field.
-// Returns an exit code and error for proper CLI exit handling.
 func (s *Service) WorkflowsWatchTUI(ctx context.Context, installID, workflowID string) (int, error) {
 	var resolvedInstallID string
 
-	// If workflow ID provided, resolve install ID from workflow
 	if workflowID != "" {
 		workflow, err := s.api.GetWorkflow(ctx, workflowID)
 		if err != nil {

@@ -34,8 +34,6 @@ func (s *service) GetInstallLabelKeys(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, result)
 }
 
-// getDistinctLabels queries a table for all distinct label key→values.
-// Returns map[string][]string where keys are label keys and values are sorted distinct values.
 func (s *service) getDistinctLabels(ctx *gin.Context, table, where string, args ...any) (map[string][]string, error) {
 	type kv struct {
 		Key   string

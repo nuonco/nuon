@@ -39,7 +39,6 @@ var (
 				Bold(true)
 )
 
-// alarmIcon prefixes warnings that block the user from continuing.
 const alarmIcon = "🚨 "
 
 func groupHeaderStyle(width int) lipgloss.Style {

@@ -18,22 +18,11 @@ const (
 	defaultCheckInterval = 3 * time.Minute
 )
 
-// Manager manages the lifecycle of a long-running workflow, providing
-// continue-as-new checks, alive checks, and expiry checks in a single
-// background goroutine. Callers read Stopped and Restarted to decide
-// how to proceed in their main workflow.Await loop.
 type Manager struct {
-	// Stopped is set to true when the backing entity no longer exists
-	// or the workflow has expired.
 	Stopped bool
 
-	// Restarted is set to true when a continue-as-new is needed
-	// (history too large, hint requested, or error recovery).
 	Restarted bool
 
-	// Terminated is set to true when the workflow history exceeds the
-	// terminate threshold. Unlike Restarted, this fires immediately
-	// with no deferral — the workflow must exit without draining.
 	Terminated bool
 
 	opts options
@@ -52,75 +41,48 @@ type options struct {
 	deferRestart       func() bool
 }
 
-// Option configures a Manager.
 type Option func(*options)
 
-// WithHistoryMax sets the maximum workflow history length before triggering
-// continue-as-new. Defaults to 10000.
 func WithHistoryMax(n int) Option {
 	return func(o *options) { o.historyMax = n }
 }
 
-// WithTerminateThreshold sets a hard ceiling on workflow history length.
-// When exceeded, the manager sets Terminated=true immediately — no deferral,
-// no draining. Callers should treat this as an emergency exit. A value of 0
-// (the default) disables the terminate threshold.
 func WithTerminateThreshold(n int) Option {
 	return func(o *options) { o.terminateThreshold = n }
 }
 
-// WithCheckInterval sets how often the background goroutine runs checks.
-// Defaults to 3 minutes. Up to 50% jitter is added automatically.
 func WithCheckInterval(d time.Duration) Option {
 	return func(o *options) { o.checkInterval = d }
 }
 
-// WithAliveChecker provides a function that verifies the backing entity
-// still exists. When it returns (false, nil), the manager sets Stopped=true.
 func WithAliveChecker(fn func(ctx workflow.Context) (bool, error)) Option {
 	return func(o *options) { o.aliveChecker = fn }
 }
 
-// WithCANHintChecker provides a checker for externally-requested
-// continue-as-new hints (e.g., metadata flags in the database).
 func WithCANHintChecker(c CANHintChecker) Option {
 	return func(o *options) { o.canHint = c }
 }
 
-// WithExpiryChecker provides a function that returns when the workflow
-// should terminate. If the returned time is in the past, the manager
-// sets Stopped=true.
 func WithExpiryChecker(fn func(ctx workflow.Context) (*time.Time, error)) Option {
 	return func(o *options) { o.expiryChecker = fn }
 }
 
-// WithMetricsWriter sets the metrics writer for reporting workflow size gauges.
 func WithMetricsWriter(mw tmetrics.Writer) Option {
 	return func(o *options) { o.mw = mw }
 }
 
-// WithOnStopped provides a callback invoked when the manager sets Stopped=true.
-// Useful for writing terminal status to DB before the workflow exits.
 func WithOnStopped(fn func(ctx workflow.Context)) Option {
 	return func(o *options) { o.onStopped = fn }
 }
 
-// WithOnTerminated provides a callback invoked when the manager sets
-// Terminated=true. Use this to write error status or send notifications
-// before the workflow exits. Keep it fast — the workflow is in an
-// emergency-exit path.
 func WithOnTerminated(fn func(ctx workflow.Context, historyLen int)) Option {
 	return func(o *options) { o.onTerminated = fn }
 }
 
-// WithDeferRestart holds off continue-as-new while fn returns true. Stop
-// decisions are still honored. Continue-as-new abandons in-flight updates, so
-// restarting mid-phase would orphan it and be misread as a crash.
 func WithDeferRestart(fn func() bool) Option {
 	return func(o *options) { o.deferRestart = fn }
 }
 
-// New creates a Manager with the given options.
 func New(opts ...Option) *Manager {
 	o := options{
 		historyMax:    defaultHistoryMax,
@@ -132,7 +94,6 @@ func New(opts ...Option) *Manager {
 	return &Manager{opts: o}
 }
 
-// CANResponse holds diagnostic info from a continue-as-new check.
 type CANResponse struct {
 	WorkflowType  string `json:"workflow_type"`
 	Namespace     string `json:"namespace"`
@@ -142,17 +103,12 @@ type CANResponse struct {
 	Restarting    bool   `json:"restarting"`
 }
 
-// Start begins the background lifecycle goroutine. It periodically runs
-// CAN checks, alive checks, and expiry checks, setting Stopped or
-// Restarted as appropriate. Returns immediately.
 func (m *Manager) Start(ctx workflow.Context) {
 	workflow.Go(ctx, func(gCtx workflow.Context) {
 		m.run(gCtx)
 	})
 }
 
-// RunCANCheck performs a single continue-as-new check on demand.
-// Returns whether a restart should be triggered, along with diagnostics.
 func (m *Manager) RunCANCheck(ctx workflow.Context) (bool, *CANResponse) {
 	l, _ := log.WorkflowLogger(ctx)
 	return m.checkCAN(ctx, l)
@@ -166,7 +122,6 @@ func (m *Manager) run(ctx workflow.Context) {
 			return
 		}
 
-		// Add up to 50% jitter to the check interval.
 		interval := m.opts.checkInterval
 		jitterMax := int(interval.Seconds() / 2)
 		if jitterMax < 1 {
@@ -181,7 +136,6 @@ func (m *Manager) run(ctx workflow.Context) {
 			return
 		}
 
-		// Check 0: terminate threshold — hard ceiling, no deferral.
 		if m.opts.terminateThreshold > 0 {
 			info := workflow.GetInfo(ctx)
 			historyLen := info.GetCurrentHistoryLength()
@@ -199,7 +153,6 @@ func (m *Manager) run(ctx workflow.Context) {
 			}
 		}
 
-		// Check 1: continue-as-new (history size + hint).
 		restarting, _ := m.checkCAN(ctx, l)
 		if restarting {
 			if m.restartDeferred() {
@@ -219,7 +172,6 @@ func (m *Manager) run(ctx workflow.Context) {
 			return
 		}
 
-		// Check 2: alive check.
 		if m.opts.aliveChecker != nil {
 			alive, err := m.opts.aliveChecker(ctx)
 			if err != nil {
@@ -247,7 +199,6 @@ func (m *Manager) run(ctx workflow.Context) {
 			}
 		}
 
-		// Check 3: expiry check.
 		if m.opts.expiryChecker != nil {
 			expiresAt, err := m.opts.expiryChecker(ctx)
 			if err != nil {
@@ -278,7 +229,6 @@ func (m *Manager) checkCAN(ctx workflow.Context, l *zap.Logger) (bool, *CANRespo
 	info := workflow.GetInfo(ctx)
 	historyLen := info.GetCurrentHistoryLength()
 
-	// Emit workflow size metric.
 	if m.opts.mw != nil {
 		tags := metrics.ToTags(map[string]string{
 			"namespace":     info.Namespace,
@@ -295,7 +245,6 @@ func (m *Manager) checkCAN(ctx workflow.Context, l *zap.Logger) (bool, *CANRespo
 		HistoryMax:    m.opts.historyMax,
 	}
 
-	// Check 1: history length exceeds threshold.
 	if historyLen > m.opts.historyMax {
 		if l != nil {
 			l.Info("history length exceeded threshold, triggering continue-as-new",
@@ -306,7 +255,6 @@ func (m *Manager) checkCAN(ctx workflow.Context, l *zap.Logger) (bool, *CANRespo
 		return true, resp
 	}
 
-	// Check 2: external hint.
 	if m.opts.canHint != nil {
 		requested, err := m.opts.canHint.CheckCANHint(ctx)
 		if err != nil {

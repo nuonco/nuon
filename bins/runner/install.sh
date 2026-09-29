@@ -13,7 +13,6 @@ BASE_URL=https://nuon-artifacts.s3.us-west-2.amazonaws.com/runner
 NAME=runner
 NO_INPUT=false
 
-# Parse flags and positional arguments
 positional=()
 for arg in "$@"; do
   case "$arg" in
@@ -25,7 +24,6 @@ done
 RUNNER_VERSION="${positional[0]:-latest}"
 DIR="${positional[1]:-/usr/local/bin}"
 
-# Function to fetch and install the binary
 fetch_binary() {
   local dir=$1
   local version=$2
@@ -35,8 +33,6 @@ fetch_binary() {
   echo "fetching binary for ${os} ${arch}..."
   local url="$BASE_URL/$version/${NAME}_${os}_${arch}"
 
-  # Use curl with -f flag to fail on server errors like 404
-  # Also store HTTP status code for checking
   http_response=$(curl -s -f -w "%{http_code}" -o $dir/$NAME "$url" 2>/dev/null)
   local status=$?
 
@@ -56,9 +52,7 @@ fetch_binary() {
 if [ ! -d "$DIR" ]; then
   DIR=/usr/local/bin
 
-  # fall back to /usr/local/bin
   if [ ! -d $DIR ]; then
-    # fall back to /bin
     DIR=/bin
   fi
 fi
@@ -90,12 +84,10 @@ fi
 OS=$(uname -s |  awk '{print tolower($0)}')
 echo "✅ using version ${OS}_${ARCH}..."
 
-# Always fetch the latest version first
 echo "calculating latest version..."
 LATEST_VERSION=$(curl -s $BASE_URL/latest.txt)
 echo "✅ latest version is ${LATEST_VERSION}"
 
-# Try the provided version first, fall back to latest if it fails
 if [ -n "${RUNNER_VERSION:-}" ]; then
   echo "⚠️  trying to use version RUNNER_VERSION=${RUNNER_VERSION}"
   if fetch_binary "$DIR" "$RUNNER_VERSION" "$OS" "$ARCH"; then
@@ -110,7 +102,6 @@ if [ -n "${RUNNER_VERSION:-}" ]; then
     fi
   fi
 else
-  # No specific version requested, use latest
   if fetch_binary "$DIR" "$LATEST_VERSION" "$OS" "$ARCH"; then
     echo "✅ Successfully installed latest version ${LATEST_VERSION}"
   else

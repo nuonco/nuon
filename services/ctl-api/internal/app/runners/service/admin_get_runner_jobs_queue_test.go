@@ -76,7 +76,6 @@ func (s *AdminGetRunnerJobsQueueTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with internal routes (no org context for admin routes)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -95,7 +94,6 @@ func (s *AdminGetRunnerJobsQueueTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create log stream for runner jobs
 	s.testLogStream = &app.LogStream{
 		ID:      domains.NewLogStreamID(),
 		OrgID:   s.testOrg.ID,
@@ -105,7 +103,6 @@ func (s *AdminGetRunnerJobsQueueTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testLogStream).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -117,7 +114,6 @@ func (s *AdminGetRunnerJobsQueueTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -185,7 +181,7 @@ func (s *AdminGetRunnerJobsQueueTestSuite) TestAdminGetRunnerJobsQueue() {
 
 				return []string{queuedJob.ID}
 			},
-			expectedCount: 0, // Handler bug: returns empty runnerJobs slice instead of jobs slice (line 54)
+			expectedCount: 0,
 			expectedCode:  http.StatusOK,
 		},
 		{
@@ -237,7 +233,7 @@ func (s *AdminGetRunnerJobsQueueTestSuite) TestAdminGetRunnerJobsQueue() {
 
 				return []string{availableJob.ID, inProgressJob.ID}
 			},
-			expectedCount: 0, // Handler bug: returns empty runnerJobs slice instead of jobs slice (line 54)
+			expectedCount: 0,
 			expectedCode:  http.StatusOK,
 		},
 		{
@@ -308,10 +304,9 @@ func (s *AdminGetRunnerJobsQueueTestSuite) TestAdminGetRunnerJobsQueue() {
 
 				return []string{queuedJob.ID}
 			},
-			expectedCount: 0, // Handler bug: returns empty runnerJobs slice instead of jobs slice (line 54)
+			expectedCount: 0,
 			expectedCode:  http.StatusOK,
 			validateFunc: func(jobs []*app.RunnerJob) {
-				// Handler bug causes empty results, so no validation needed
 			},
 		},
 		{

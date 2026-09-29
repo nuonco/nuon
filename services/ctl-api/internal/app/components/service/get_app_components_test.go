@@ -11,14 +11,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestGetAppComponentsSuccess() {
 	testCases := []struct {
 		name          string
-		setupFunc     func() []string // Returns component IDs that were created
+		setupFunc     func() []string
 		queryParams   string
 		expectedCount int
 		validateFunc  func([]app.Component)
@@ -26,7 +22,6 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentsSuccess() {
 		{
 			name: "returns seeded components when component ids in app config",
 			setupFunc: func() []string {
-				// testAppConfig already has 6 typed components from the full seed
 				return s.testAppConfig.ComponentIDs
 			},
 			queryParams:   "",
@@ -41,7 +36,6 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentsSuccess() {
 		{
 			name: "filters by search query",
 			setupFunc: func() []string {
-				// Rename a seeded component so we can search for it
 				err := s.deps.DB.WithContext(s.ctx).
 					Model(&app.Component{ID: s.testAppConfig.ComponentIDs[0]}).
 					Update("name", "searchable_component").Error
@@ -58,7 +52,6 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentsSuccess() {
 		{
 			name: "filters by component type",
 			setupFunc: func() []string {
-				// testAppConfig has one terraform_module component (index 1) with a real config connection
 				return s.testAppConfig.ComponentIDs
 			},
 			queryParams:   "?types=terraform_module",
@@ -71,10 +64,9 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentsSuccess() {
 		{
 			name: "filters by component ids",
 			setupFunc: func() []string {
-				// Use the pre-seeded components; filter will request only the first two
 				return s.testAppConfig.ComponentIDs
 			},
-			queryParams:   "", // Will be set dynamically in test
+			queryParams:   "",
 			expectedCount: 2,
 			validateFunc: func(components []app.Component) {
 				assert.Len(s.T(), components, 2)
@@ -86,7 +78,6 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentsSuccess() {
 		s.Run(tc.name, func() {
 			componentIDs := tc.setupFunc()
 
-			// Build query params dynamically for component_ids filter test
 			queryParams := tc.queryParams
 			if tc.name == "filters by component ids" && len(componentIDs) >= 2 {
 				queryParams = fmt.Sprintf("?component_ids=%s,%s", componentIDs[0], componentIDs[1])
@@ -113,13 +104,8 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentsSuccess() {
 	}
 }
 
-// ---------------------------------------------------------------------------
-// Empty app case
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestGetAppComponentsEmptyApp() {
 	s.Run("returns empty for app with no component ids in config", func() {
-		// Use a fresh app with a bare config (no components) to test the empty case
 		emptyApp := s.deps.Seeder.CreateApp(s.ctx, s.T())
 		s.deps.Seeder.CreateBareAppConfig(s.ctx, s.T(), emptyApp.ID)
 
@@ -158,8 +144,6 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentsEmptyApp() {
 	})
 }
 
-// TestGetAppComponentsIgnoresFailedConfig covers the case where a failed sync creates a newer app
-// config: the components from the last successfully synced config must still be listed.
 func (s *ComponentsServiceTestSuite) TestGetAppComponentsIgnoresFailedConfig() {
 	failed := s.deps.Seeder.CreateBareAppConfig(s.ctx, s.T(), s.testApp.ID)
 	s.setAppConfigStatus(failed.ID, app.AppConfigStatusError)
@@ -182,7 +166,6 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentsIgnoresFailedConfig() {
 	assert.Len(s.T(), response, len(s.testAppConfig.ComponentIDs))
 }
 
-// setAppConfigStatus writes both status columns, matching how the syncer records a status.
 func (s *ComponentsServiceTestSuite) setAppConfigStatus(appConfigID string, status app.AppConfigStatus) {
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
 		Model(&app.AppConfig{ID: appConfigID}).

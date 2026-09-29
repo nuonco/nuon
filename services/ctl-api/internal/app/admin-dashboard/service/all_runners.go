@@ -86,7 +86,6 @@ func (s *service) getAllRunnerViews(ctx context.Context, orgID string, page int)
 		return nil, 0, res.Error
 	}
 
-	// batch-collect org IDs and install owner IDs for lookups
 	orgIDs := make(map[string]bool)
 	installIDs := make(map[string]bool)
 	for _, r := range runners {
@@ -96,7 +95,6 @@ func (s *service) getAllRunnerViews(ctx context.Context, orgID string, page int)
 		}
 	}
 
-	// batch fetch org names
 	orgNames := make(map[string]string)
 	if len(orgIDs) > 0 {
 		ids := mapKeys(orgIDs)
@@ -107,7 +105,6 @@ func (s *service) getAllRunnerViews(ctx context.Context, orgID string, page int)
 		}
 	}
 
-	// batch fetch install names
 	installNames := make(map[string]string)
 	if len(installIDs) > 0 {
 		ids := mapKeys(installIDs)
@@ -118,7 +115,6 @@ func (s *service) getAllRunnerViews(ctx context.Context, orgID string, page int)
 		}
 	}
 
-	// batch fetch latest process per runner
 	runnerIDs := make([]string, len(runners))
 	for i, r := range runners {
 		runnerIDs[i] = r.ID
@@ -132,7 +128,6 @@ func (s *service) getAllRunnerViews(ctx context.Context, orgID string, page int)
 	processMap := make(map[string]processInfo)
 	if len(runnerIDs) > 0 {
 		var processes []app.RunnerProcess
-		// use a subquery to get the latest process per runner
 		s.readDB().WithContext(ctx).
 			Raw(`SELECT DISTINCT ON (runner_id) * FROM runner_processes
 				 WHERE runner_id IN ? AND deleted_at = 0
@@ -172,13 +167,9 @@ func (s *service) getAllRunnerViews(ctx context.Context, orgID string, page int)
 	return result, totalCount, nil
 }
 
-// getAllRunnerStats returns cluster-wide runner aggregations for the pie charts.
-// Each query returns one row per category, so memory cost is bounded by the
-// number of distinct group types / versions / process types.
 func (s *service) getAllRunnerStats(ctx context.Context, orgID string) (runnerStats, error) {
 	var stats runnerStats
 
-	// group_type: counts by runner_groups.type
 	groupTypeQuery := s.readDB().WithContext(ctx).
 		Table("runners").
 		Select("COALESCE(NULLIF(runner_groups.type, ''), 'unknown') AS label, COUNT(*) AS value").
@@ -192,9 +183,6 @@ func (s *service) getAllRunnerStats(ctx context.Context, orgID string) (runnerSt
 		return stats, err
 	}
 
-	// version + process_type: counts over the latest runner_process per runner.
-	// Runners with no process row count as 'unknown'/'none' to match the prior
-	// per-runner behavior.
 	latestProcessSQL := `
 		WITH latest AS (
 			SELECT DISTINCT ON (runner_id) runner_id, version, type

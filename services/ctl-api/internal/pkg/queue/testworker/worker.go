@@ -1,7 +1,5 @@
 package testworker
 
-// This package exposes a testworker which is only used for local testing of these workflows.
-// In most common cases, the workflows will be embedded / registered as part of a _different_ worker.
 import (
 	"context"
 	"fmt"
@@ -64,13 +62,11 @@ func New(params WorkerParams) (*Worker, error) {
 		DisableRegistrationAliasing:        true,
 	})
 
-	// register activities
 	wkr.RegisterActivity(params.Acts)
 	wkr.RegisterActivity(params.HandlerActs)
 	wkr.RegisterActivity(params.StatusActs)
 	wkr.RegisterActivity(params.LifecycleActs)
 
-	// register workflows
 	for _, wkflow := range params.QueueWkflows.All() {
 		wkr.RegisterWorkflow(wkflow)
 	}

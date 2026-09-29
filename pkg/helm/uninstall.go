@@ -7,7 +7,7 @@ import (
 	release "helm.sh/helm/v4/pkg/release/v1"
 )
 
-// ConfirmUninstalled resolves a failed uninstall against the release store and
+// why: ConfirmUninstalled resolves a failed uninstall against the release store and
 // returns nil only when the release is genuinely gone.
 //
 // Helm reports "release: not found" both when there was nothing to remove and

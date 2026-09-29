@@ -12,11 +12,9 @@ const (
 )
 
 type handlerState struct {
-	// set during the fetch/validate phase
 	plan *plantypes.BuildPlan
 	cfg  *plantypes.TerraformBuildPlan
 
-	// fields set by the plugin execution
 	workspace      workspace.Workspace
 	arch           ociarchive.Archive
 	resultTag      string

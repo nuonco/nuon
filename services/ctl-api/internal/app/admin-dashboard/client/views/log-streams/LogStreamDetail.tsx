@@ -112,14 +112,12 @@ export const LogStreamDetail = () => {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
       <nav className="text-sm text-gray-500 dark:text-gray-400">
         <Link to="/log-streams" className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200">Log Streams</Link>
         <span className="mx-1">/</span>
         <span className="font-mono">{truncateId(log_stream.id)}</span>
       </nav>
 
-      {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Log Stream</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-mono">{log_stream.id}</p>
@@ -135,7 +133,6 @@ export const LogStreamDetail = () => {
         </div>
       </div>
 
-      {/* Logs */}
       <div className="table-card rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
           Logs
@@ -188,7 +185,6 @@ export const LogStreamDetail = () => {
                       <tr key={`detail-${i}`}>
                         <td colSpan={5} className="px-4 py-4">
                           <div className="space-y-4">
-                            {/* Core details */}
                             <div className="grid grid-cols-2 gap-x-8 gap-y-2 sm:grid-cols-3 lg:grid-cols-4">
                               {[
                                 { label: 'Service Name', value: log.service_name },
@@ -209,7 +205,6 @@ export const LogStreamDetail = () => {
                                 ))}
                             </div>
 
-                            {/* Full body */}
                             {log.body && log.body.length > 80 && (
                               <div>
                                 <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Full Body</h4>
@@ -219,7 +214,6 @@ export const LogStreamDetail = () => {
                               </div>
                             )}
 
-                            {/* Attribute tables */}
                             <AttributeTable title="Resource Attributes" attrs={log.resource_attributes} />
                             <AttributeTable title="Scope Attributes" attrs={log.scope_attributes} />
                             <AttributeTable title="Log Attributes" attrs={log.log_attributes} />

@@ -21,8 +21,6 @@ func TestNew(t *testing.T) {
 		errExpected error
 		assertFn    func(*testing.T, Client)
 	}{
-		// NOTE(jm): we can only load this with lazy load on and assert, otherwise the connection will be
-		// attempted and fail during testing
 		"happy path": {
 			optFns: func() []temporalOption {
 				return []temporalOption{

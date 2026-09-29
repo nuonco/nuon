@@ -31,7 +31,6 @@ func (s *service) OrgDetail(c *gin.Context) {
 
 	page := getPageFromQuery(c)
 
-	// Fetch data in parallel
 	var (
 		org                         *app.Org
 		installs                    []*app.Install
@@ -67,13 +66,11 @@ func (s *service) OrgDetail(c *gin.Context) {
 		return
 	}
 
-	// Fetch graph after getting the app (only if app exists)
 	var graphDot string
 	if recentApp != nil {
 		var err error
 		graphDot, err = s.getAppComponentGraph(ctx, recentApp.ID)
 		if err != nil {
-			// Log but don't fail the page if graph fetch fails
 			s.l.Warn("failed to fetch component graph", zap.String("app_id", recentApp.ID), zap.Error(err))
 		}
 	}
@@ -95,12 +92,7 @@ func (s *service) OrgDetail(c *gin.Context) {
 	})
 }
 
-// getStoredOrgFeatures reads the features column without the model's AfterQuery
-// hook, which backfills absent flags as false and would hide which values the
-// org actually stores.
 func (s *service) getStoredOrgFeatures(ctx context.Context, orgID string) (map[string]bool, error) {
-	// Scan into *string, not []byte: database/sql treats a []byte destination as
-	// a slice of columns and fails to convert the jsonb value.
 	var raw *string
 	if err := s.readDB().WithContext(ctx).
 		Raw("SELECT features FROM orgs WHERE id = ?", orgID).
@@ -141,21 +133,17 @@ func (s *service) getInstallsForOrg(ctx context.Context, orgID string, page int)
 		Unscoped().
 		Where("org_id = ?", orgID)
 
-	// Get total count for pagination
 	if err := query.Count(&totalCount).Error; err != nil {
 		return nil, 0, fmt.Errorf("unable to count installs: %w", err)
 	}
 
-	// Calculate total pages
 	totalPages := int(math.Ceil(float64(totalCount) / float64(orgInstallsPerPage)))
 	if totalPages == 0 {
 		totalPages = 1
 	}
 
-	// Calculate offset
 	offset := (page - 1) * orgInstallsPerPage
 
-	// Get paginated results
 	res := query.
 		Preload("App").
 		Preload("RunnerGroup.Runners").
@@ -183,7 +171,7 @@ func (s *service) getMostRecentApp(ctx context.Context, orgID string) (*app.App,
 
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-			return nil, nil // No apps found, not an error
+			return nil, nil
 		}
 		return nil, fmt.Errorf("unable to get most recent app: %w", res.Error)
 	}
@@ -192,28 +180,24 @@ func (s *service) getMostRecentApp(ctx context.Context, orgID string) (*app.App,
 }
 
 func (s *service) getAppComponentGraph(ctx context.Context, appID string) (string, error) {
-	// 1. Get the latest app config
 	appConfig, err := s.appsHelpers.GetLatestActiveAppConfig(ctx, appID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return "", nil // No config yet, not an error
+			return "", nil
 		}
 		return "", fmt.Errorf("unable to get latest app config: %w", err)
 	}
 
-	// 2. Get the full app config with all component connections
 	fullConfig, err := s.appsHelpers.GetFullAppConfig(ctx, appConfig.ID, true)
 	if err != nil {
 		return "", fmt.Errorf("unable to get full app config: %w", err)
 	}
 
-	// 3. Generate the component graph
 	graph, err := s.appsHelpers.GetConfigGraph(ctx, fullConfig)
 	if err != nil {
 		return "", fmt.Errorf("unable to generate config graph: %w", err)
 	}
 
-	// 4. Render graph to DOT format with styling attributes
 	var buf bytes.Buffer
 	if err := draw.DOT(graph, &buf,
 		draw.GraphAttribute("name", "name"),
@@ -226,7 +210,6 @@ func (s *service) getAppComponentGraph(ctx context.Context, appID string) (strin
 		return "", fmt.Errorf("unable to render graph: %w", err)
 	}
 
-	// Post-process DOT to add node styling and wrap long labels
 	dotString := buf.String()
 	dotString = addNodeStyling(dotString)
 	dotString = wrapLongLabels(dotString)
@@ -234,16 +217,13 @@ func (s *service) getAppComponentGraph(ctx context.Context, appID string) (strin
 }
 
 func addNodeStyling(dotString string) string {
-	// Insert node styling after the first opening brace
 	insertPos := bytes.Index([]byte(dotString), []byte("{\n"))
 	if insertPos == -1 {
 		return dotString
 	}
 
-	// Position after "{\n"
 	insertPos += 2
 
-	// Build the new DOT string with node styling inserted
 	result := dotString[:insertPos] +
 		"    node [shape=box, style=filled, width=1.5, height=0.6, fixedsize=false, margin=0.2];\n" +
 		dotString[insertPos:]
@@ -252,19 +232,15 @@ func addNodeStyling(dotString string) string {
 }
 
 func wrapLongLabels(dotString string) string {
-	// Find and wrap long labels by splitting on underscores
-	// Pattern: label="some_long_name"
 	lines := bytes.Split([]byte(dotString), []byte("\n"))
 
 	for i, line := range lines {
-		// Look for label= attributes
 		if bytes.Contains(line, []byte("label=")) {
-			// Extract the label value
 			start := bytes.Index(line, []byte("label=\""))
 			if start == -1 {
 				continue
 			}
-			start += 7 // Move past 'label="'
+			start += 7
 
 			end := bytes.Index(line[start:], []byte("\""))
 			if end == -1 {
@@ -273,10 +249,8 @@ func wrapLongLabels(dotString string) string {
 
 			label := string(line[start : start+end])
 
-			// If label is long (more than 15 chars), split on underscores
 			if len(label) > 15 {
 				wrapped := wrapLabel(label)
-				// Replace the label in the line
 				newLine := bytes.Replace(line, []byte("label=\""+label+"\""), []byte("label=\""+wrapped+"\""), 1)
 				lines[i] = newLine
 			}
@@ -287,18 +261,15 @@ func wrapLongLabels(dotString string) string {
 }
 
 func wrapLabel(label string) string {
-	// For very long labels (> 15 chars), split on underscores
 	if len(label) <= 15 {
 		return label
 	}
 
-	// Split on underscores
 	parts := strings.Split(label, "_")
 	if len(parts) == 1 {
-		return label // No underscores, can't wrap nicely
+		return label
 	}
 
-	// Build lines, trying to keep each line under 15 characters
 	var lines []string
 	currentLine := ""
 
@@ -309,7 +280,6 @@ func wrapLabel(label string) string {
 		}
 		testLine += part
 
-		// If this would make the line too long, start a new line
 		if len(testLine) > 15 && currentLine != "" {
 			lines = append(lines, currentLine)
 			currentLine = part
@@ -317,12 +287,10 @@ func wrapLabel(label string) string {
 			currentLine = testLine
 		}
 
-		// Add the last line
 		if i == len(parts)-1 && currentLine != "" {
 			lines = append(lines, currentLine)
 		}
 	}
 
-	// Join lines with \n for Graphviz line breaks
 	return strings.Join(lines, "\\n")
 }

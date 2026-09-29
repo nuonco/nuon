@@ -14,7 +14,6 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/services/version"
 )
 
-// Construct an API client for the services to use.
 func newAPIClient(v *validator.Validate, cfg *config.Config) (nuon.Client, error) {
 	var transport stdhttp.RoundTripper
 	if Debug {

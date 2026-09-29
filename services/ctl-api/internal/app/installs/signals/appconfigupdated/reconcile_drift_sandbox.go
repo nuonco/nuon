@@ -11,14 +11,6 @@ import (
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
 
-// reconcileDriftSandboxEmitter reconciles a single per-install sandbox drift
-// cron emitter against AppSandboxConfig.DriftSchedule. Mirrors
-// reconcileDriftEmitters but install-scoped (sandbox drift is configured at
-// the app-sandbox-config level, not per-component).
-//
-// `existing` is the pre-filtered list of emitters whose name matched the
-// driftSandboxEmitterPrefix. They're stopped and deleted unconditionally;
-// when the schedule is non-empty a fresh emitter replaces them.
 func (s *Signal) reconcileDriftSandboxEmitter(
 	ctx workflow.Context,
 	l log.Logger,

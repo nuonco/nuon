@@ -12,10 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// ---------------------------------------------------------------------------
-// Success: basic auth/me with no identities
-// ---------------------------------------------------------------------------
-
 func (s *AccountsServiceTestSuite) TestGetAuthMeSuccess() {
 	rr := s.makeRequest(http.MethodGet, "/v1/auth/me", nil)
 
@@ -35,7 +31,6 @@ func (s *AccountsServiceTestSuite) TestGetAuthMeSuccess() {
 	assert.NotNil(s.T(), response.Identities)
 	assert.Empty(s.T(), response.Identities)
 
-	// Verify computed fields are present in the JSON response
 	var raw map[string]interface{}
 	err = json.Unmarshal(rr.Body.Bytes(), &raw)
 	require.NoError(s.T(), err)
@@ -46,10 +41,6 @@ func (s *AccountsServiceTestSuite) TestGetAuthMeSuccess() {
 	_, hasPermissions := raw["permissions"]
 	assert.True(s.T(), hasPermissions, "response should include permissions field")
 }
-
-// ---------------------------------------------------------------------------
-// Success: auth/me with a single identity
-// ---------------------------------------------------------------------------
 
 func (s *AccountsServiceTestSuite) TestGetAuthMeWithSingleIdentity() {
 	identity := app.AccountIdentity{
@@ -79,10 +70,6 @@ func (s *AccountsServiceTestSuite) TestGetAuthMeWithSingleIdentity() {
 	assert.Equal(s.T(), "Test User", response.Identities[0].Name)
 	assert.Equal(s.T(), "https://example.com/photo.jpg", response.Identities[0].Picture)
 }
-
-// ---------------------------------------------------------------------------
-// Success: auth/me with multiple identities
-// ---------------------------------------------------------------------------
 
 func (s *AccountsServiceTestSuite) TestGetAuthMeWithMultipleIdentities() {
 	identities := []app.AccountIdentity{
@@ -119,7 +106,6 @@ func (s *AccountsServiceTestSuite) TestGetAuthMeWithMultipleIdentities() {
 
 	require.Len(s.T(), response.Identities, 2)
 
-	// Collect provider types to verify both are present (order may vary)
 	providerTypes := make(map[app.ProviderType]AuthMeIdentity)
 	for _, ident := range response.Identities {
 		providerTypes[ident.ProviderType] = ident
@@ -136,10 +122,6 @@ func (s *AccountsServiceTestSuite) TestGetAuthMeWithMultipleIdentities() {
 	assert.Equal(s.T(), "https://github.com/avatar.png", githubIdent.Picture)
 }
 
-// ---------------------------------------------------------------------------
-// Success: identity fields are filtered (only provider_type, name, picture)
-// ---------------------------------------------------------------------------
-
 func (s *AccountsServiceTestSuite) TestGetAuthMeIdentityFieldsFiltered() {
 	identity := app.AccountIdentity{
 		AccountID:    s.testAcc.ID,
@@ -154,7 +136,6 @@ func (s *AccountsServiceTestSuite) TestGetAuthMeIdentityFieldsFiltered() {
 	rr := s.makeRequest(http.MethodGet, "/v1/auth/me", nil)
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	// Parse as raw JSON to inspect the identity object keys
 	var raw map[string]interface{}
 	err = json.Unmarshal(rr.Body.Bytes(), &raw)
 	require.NoError(s.T(), err)
@@ -166,12 +147,10 @@ func (s *AccountsServiceTestSuite) TestGetAuthMeIdentityFieldsFiltered() {
 	identityMap, ok := identitiesRaw[0].(map[string]interface{})
 	require.True(s.T(), ok, "identity should be a JSON object")
 
-	// Filtered fields should be present
 	assert.Equal(s.T(), "oidc", identityMap["provider_type"])
 	assert.Equal(s.T(), "OIDC User", identityMap["name"])
 	assert.Equal(s.T(), "https://idp.example.com/avatar.png", identityMap["picture"])
 
-	// Sensitive fields should NOT be present
 	_, hasSub := identityMap["sub"]
 	assert.False(s.T(), hasSub, "sub should not be exposed in auth/me response")
 
@@ -185,12 +164,7 @@ func (s *AccountsServiceTestSuite) TestGetAuthMeIdentityFieldsFiltered() {
 	assert.False(s.T(), hasIdentityProviderID, "identity_provider_id should not be exposed in auth/me response")
 }
 
-// ---------------------------------------------------------------------------
-// Success: auth/me does not return another account's identities
-// ---------------------------------------------------------------------------
-
 func (s *AccountsServiceTestSuite) TestGetAuthMeIsolatesIdentitiesByAccount() {
-	// Create an identity for the test account
 	ownIdentity := app.AccountIdentity{
 		AccountID:    s.testAcc.ID,
 		ProviderType: app.ProviderTypeGoogle,
@@ -201,7 +175,6 @@ func (s *AccountsServiceTestSuite) TestGetAuthMeIsolatesIdentitiesByAccount() {
 	err := s.service.DB.WithContext(s.ctx).Create(&ownIdentity).Error
 	require.NoError(s.T(), err)
 
-	// Create a different account and give it an identity
 	otherAcc := testseed.BuildAccount()
 	err = s.service.DB.WithContext(s.ctx).Create(otherAcc).Error
 	require.NoError(s.T(), err)
@@ -223,7 +196,6 @@ func (s *AccountsServiceTestSuite) TestGetAuthMeIsolatesIdentitiesByAccount() {
 	err = json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(s.T(), err)
 
-	// Should only see own identity, not the other account's
 	require.Len(s.T(), response.Identities, 1)
 	assert.Equal(s.T(), "Own Account User", response.Identities[0].Name)
 	assert.Equal(s.T(), app.ProviderTypeGoogle, response.Identities[0].ProviderType)

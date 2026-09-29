@@ -49,7 +49,6 @@ func (s *service) ShutdownRunnerProcess(ctx *gin.Context) {
 		return
 	}
 
-	// verify the process belongs to this runner and org
 	process, err := s.getRunnerProcess(ctx, processID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get runner process: %w", err))

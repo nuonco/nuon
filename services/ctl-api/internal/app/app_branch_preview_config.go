@@ -91,8 +91,6 @@ func (c AppBranchPreviewConfig) HasInstallTarget() bool {
 	return c.LabelSelector != nil && len(c.LabelSelector.MatchLabels) > 0
 }
 
-// UnmarshalJSON defaults ignore_drafts and react to true when omitted so existing
-// stored preview configs keep the intended opt-out defaults.
 func (c *AppBranchPreviewConfig) UnmarshalJSON(data []byte) error {
 	type wire struct {
 		Mode          AppBranchRunPreviewMode `json:"mode,omitempty"`

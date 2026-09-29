@@ -88,11 +88,6 @@ func Test_oci_unpackDir(t *testing.T) {
 			dirFn: func(t *testing.T) string {
 				tmpDir := t.TempDir()
 
-				// Files we expect to survive the filter:
-				//   - main.tf (root source)
-				//   - .terraform/modules/foo/main.tf (vendored module)
-				// Files we expect to be filtered out:
-				//   - .terraform/providers/registry.terraform.io/.../terraform-provider-aws
 				mustWrite := func(rel, body string) {
 					fp := filepath.Join(tmpDir, rel)
 					assert.NoError(t, os.MkdirAll(filepath.Dir(fp), 0o755))
@@ -115,7 +110,6 @@ func Test_oci_unpackDir(t *testing.T) {
 						seen[path] = string(byts)
 						return nil
 					}).AnyTimes()
-				// Validation runs after Unpack returns; assert via t.Cleanup.
 				t.Cleanup(func() {
 					assert.Equal(t, "main", seen["main.tf"])
 					assert.Equal(t, "module", seen[".terraform/modules/foo/main.tf"])

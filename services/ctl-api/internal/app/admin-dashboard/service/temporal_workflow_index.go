@@ -18,7 +18,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// WorkflowIndexEntry is a single workflow in the index response.
 type WorkflowIndexEntry struct {
 	WorkflowID       string            `json:"workflow_id"`
 	RunID            string            `json:"run_id"`
@@ -37,9 +36,6 @@ type WorkflowIndexEntry struct {
 
 const descConcurrency = 10
 
-// TemporalWorkflowIndex streams workflow entries for a namespace as newline-delimited JSON.
-// It lists all running workflows, then describes each one in parallel to get accurate
-// history length and size.
 func (s *service) TemporalWorkflowIndex(c *gin.Context) {
 	namespace := c.Query("namespace")
 	if namespace == "" {
@@ -63,11 +59,9 @@ func (s *service) TemporalWorkflowIndex(c *gin.Context) {
 	var nextPageToken []byte
 	totalSent := 0
 
-	// Channel for entries ready to write, semaphore for concurrency.
 	entryCh := make(chan *WorkflowIndexEntry, descConcurrency*2)
 	var wg sync.WaitGroup
 
-	// Writer goroutine: serialize entries to the response as they arrive.
 	writeDone := make(chan struct{})
 	go func() {
 		defer close(writeDone)
@@ -80,7 +74,6 @@ func (s *service) TemporalWorkflowIndex(c *gin.Context) {
 		}
 	}()
 
-	// Semaphore to limit concurrent describe calls.
 	sem := make(chan struct{}, descConcurrency)
 
 	for {
@@ -97,11 +90,11 @@ func (s *service) TemporalWorkflowIndex(c *gin.Context) {
 
 		for _, wf := range resp.Executions {
 			wg.Add(1)
-			sem <- struct{}{} // acquire
+			sem <- struct{}{}
 
 			go func() {
 				defer wg.Done()
-				defer func() { <-sem }() // release
+				defer func() { <-sem }()
 
 				entry := s.describeAndBuildEntry(ctx, nsClient, namespace, wf)
 				entryCh <- entry
@@ -118,7 +111,6 @@ func (s *service) TemporalWorkflowIndex(c *gin.Context) {
 	close(entryCh)
 	<-writeDone
 
-	// Send a final summary line.
 	summary, _ := json.Marshal(map[string]any{
 		"_type": "summary",
 		"total": totalSent,
@@ -128,7 +120,6 @@ func (s *service) TemporalWorkflowIndex(c *gin.Context) {
 	c.Writer.Flush()
 }
 
-// describeAndBuildEntry calls DescribeWorkflowExecution to get accurate history info.
 func (s *service) describeAndBuildEntry(
 	ctx context.Context,
 	nsClient tclient.Client,
@@ -147,13 +138,11 @@ func (s *service) describeAndBuildEntry(
 		entry.StartTime = wf.StartTime.AsTime().Format(time.RFC3339)
 	}
 
-	// Use DescribeWorkflowExecution for accurate history length and size.
 	desc, err := nsClient.DescribeWorkflowExecution(ctx, wf.Execution.WorkflowId, wf.Execution.RunId)
 	if err != nil {
 		s.l.Warn("failed to describe workflow",
 			zap.String("workflow_id", wf.Execution.WorkflowId),
 			zap.Error(err))
-		// Fall back to list data (may be 0).
 		entry.HistoryLength = wf.HistoryLength
 	} else if desc.WorkflowExecutionInfo != nil {
 		entry.HistoryLength = desc.WorkflowExecutionInfo.HistoryLength
@@ -163,16 +152,14 @@ func (s *service) describeAndBuildEntry(
 		}
 	}
 
-	// Count total executions for this workflow ID to derive CAN count.
 	countResp, err := nsClient.CountWorkflow(ctx, &workflowservice.CountWorkflowExecutionsRequest{
 		Namespace: namespace,
 		Query:     fmt.Sprintf("WorkflowId = '%s'", wf.Execution.WorkflowId),
 	})
 	if err == nil && countResp.Count > 1 {
-		entry.CANCount = countResp.Count - 1 // subtract current running execution
+		entry.CANCount = countResp.Count - 1
 	}
 
-	// Parse memo.
 	entry.Memo = decodeMemo(wf.Memo)
 	if entry.Memo["type"] == "queue" || strings.HasPrefix(entry.WorkflowType, "Queue") {
 		entry.IsQueue = true
@@ -185,7 +172,6 @@ func (s *service) describeAndBuildEntry(
 	return entry
 }
 
-// TemporalWorkflowNamespaces returns the list of known namespaces.
 func (s *service) TemporalWorkflowNamespaces(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"namespaces":      temporalWorkerNamespaces,
@@ -193,7 +179,6 @@ func (s *service) TemporalWorkflowNamespaces(c *gin.Context) {
 	})
 }
 
-// decodeMemo extracts string values from a Temporal workflow Memo.
 func decodeMemo(memo *commonpb.Memo) map[string]string {
 	result := make(map[string]string)
 	if memo == nil {
@@ -215,7 +200,6 @@ func decodeMemo(memo *commonpb.Memo) map[string]string {
 	return result
 }
 
-// cleanStatus strips the WORKFLOW_EXECUTION_STATUS_ prefix from protobuf status strings.
 func cleanStatus(s string) string {
 	s = strings.TrimPrefix(s, "WORKFLOW_EXECUTION_STATUS_")
 	return strings.ToLower(strings.ReplaceAll(s, "_", "-"))

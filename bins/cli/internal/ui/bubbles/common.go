@@ -6,17 +6,12 @@ import (
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
-// Common styles and colors for consistent theming
-// Using ANSI colors to respect terminal color schemes
 var (
-	// Neutral colors - use terminal's default colors
 	BorderColor = styles.BorderInactiveColor
 
-	// Base styles
 	BaseStyle = lipgloss.NewStyle().
 			Padding(0, 1)
 
-	// Status message styles
 	InfoStyle = lipgloss.NewStyle().
 			Foreground(styles.InfoColor).
 			Bold(true).
@@ -37,7 +32,6 @@ var (
 			Bold(true).
 			Padding(0, 1)
 
-	// Interactive styles
 	FocusedStyle = lipgloss.NewStyle().
 			Foreground(styles.PrimaryColor).
 			Bold(true)
@@ -45,7 +39,6 @@ var (
 	BlurredStyle = lipgloss.NewStyle().
 			Foreground(styles.SubtleColor)
 
-	// Border styles: padded but border-less
 	BorderStyle = lipgloss.NewStyle().
 			Padding(1)
 
@@ -55,7 +48,6 @@ var (
 				Padding(1, 2)
 )
 
-// Evaluation journey specific styling
 var (
 	EvaluationHeaderStyle = lipgloss.NewStyle().
 				Foreground(styles.AccentColor).

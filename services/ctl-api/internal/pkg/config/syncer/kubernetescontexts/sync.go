@@ -11,7 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 )
 
-// Sync persists the app's named kubernetes_context bindings via the shared
+// why: Sync persists the app's named kubernetes_context bindings via the shared
 // builder in internal/pkg/config/build, which the CreateAppKubernetesContexts
 // handler also uses.
 //

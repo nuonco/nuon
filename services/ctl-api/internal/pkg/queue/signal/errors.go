@@ -5,7 +5,6 @@ import (
 	"runtime/debug"
 )
 
-// SignalErrInit wraps an error that occurred during signal initialization.
 type SignalErrInit struct {
 	Err error
 }
@@ -18,7 +17,6 @@ func (e *SignalErrInit) Unwrap() error {
 	return e.Err
 }
 
-// SignalErrValidate wraps an error that occurred during signal validation.
 type SignalErrValidate struct {
 	Err error
 }
@@ -31,7 +29,6 @@ func (e *SignalErrValidate) Unwrap() error {
 	return e.Err
 }
 
-// SignalErrExecute wraps an error that occurred during signal execution.
 type SignalErrExecute struct {
 	Err error
 }
@@ -44,10 +41,9 @@ func (e *SignalErrExecute) Unwrap() error {
 	return e.Err
 }
 
-// SignalErrPanic wraps a panic that occurred during signal processing.
 type SignalErrPanic struct {
 	Value      any
-	Phase      string // "init", "validate", or "execute"
+	Phase      string
 	StackTrace string
 }
 

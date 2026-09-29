@@ -6,7 +6,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
-// fakeError is a trivial CompositeError used to assert which parser won.
 type fakeError struct{ id string }
 
 func (e fakeError) Error() string                    { return e.id }
@@ -16,7 +15,6 @@ func (fakeError) Sections() []compositeerrors.Section {
 	return nil
 }
 
-// fakeParser is a configurable parser used to probe registry gating/ordering.
 type fakeParser struct {
 	id         string
 	layer      Layer
@@ -42,7 +40,6 @@ func TestRegistry_SignalGating(t *testing.T) {
 	r := &Registry{}
 	r.Register(fakeParser{id: "p", layer: LayerProvider, tools: []Tool{ToolTerraform}, signals: []string{"AccessDenied"}, applicable: true, ran: &ran})
 
-	// No signal present -> parser never runs.
 	if ce := r.Parse(&ParseContext{Raw: "nothing to see", Tool: ToolTerraform}); ce != nil {
 		t.Fatalf("expected nil, got %v", ce)
 	}
@@ -50,7 +47,6 @@ func TestRegistry_SignalGating(t *testing.T) {
 		t.Fatal("parser ran despite no matching signal")
 	}
 
-	// Signal present -> parser runs.
 	if ce := r.Parse(&ParseContext{Raw: "boom AccessDenied boom", Tool: ToolTerraform}); ce == nil {
 		t.Fatal("expected a match once the signal is present")
 	}
@@ -86,7 +82,6 @@ func TestRegistry_UnknownToolFailsOpen(t *testing.T) {
 
 func TestRegistry_LayerOrdering(t *testing.T) {
 	r := &Registry{}
-	// Register generic first to prove ordering isn't registration order.
 	r.Register(fakeParser{id: "generic", layer: LayerGeneric, signals: nil, applicable: true})
 	r.Register(fakeParser{id: "provider", layer: LayerProvider, tools: []Tool{ToolTerraform}, signals: []string{"boom"}, applicable: true})
 
@@ -117,12 +112,9 @@ func TestRegistry_NotApplicableIsSkipped(t *testing.T) {
 
 func TestRegistry_SameLayerTieBreakByRegistrationOrder(t *testing.T) {
 	r := &Registry{}
-	// Both provider-layer, both match, both applicable: first registered wins.
 	r.Register(fakeParser{id: "first", layer: LayerProvider, tools: []Tool{ToolTerraform}, signals: []string{"boom"}, applicable: true})
 	r.Register(fakeParser{id: "second", layer: LayerProvider, tools: []Tool{ToolTerraform}, signals: []string{"boom"}, applicable: true})
 
-	// Run repeatedly; unknown tool exercises the fail-open path where bucket
-	// collection order would otherwise be nondeterministic.
 	for i := 0; i < 20; i++ {
 		ce := r.Parse(&ParseContext{Raw: "boom", Tool: ToolUnknown})
 		if ce == nil || ce.Error() != "first" {
@@ -131,16 +123,10 @@ func TestRegistry_SameLayerTieBreakByRegistrationOrder(t *testing.T) {
 	}
 }
 
-// TestRegistry_HigherLayerSkipsLowerProviderGate proves the dispatch order:
-// candidates are consulted in layer order, so a higher-priority match returns
-// before any lower-priority parser's Applicable runs. A provider-gated parser
-// below the winner therefore never triggers its lazy provider lookup.
 func TestRegistry_HigherLayerSkipsLowerProviderGate(t *testing.T) {
 	resolved := 0
 	r := &Registry{}
-	// Winner: higher priority (lower layer number), no provider gate.
 	r.Register(fakeParser{id: "winner", layer: LayerToolSpecific, tools: []Tool{ToolTerraform}, signals: []string{"boom"}, applicable: true})
-	// Lower priority, provider-gated: its Applicable would resolve the provider.
 	r.Register(NewParser(LayerTool, func(*ParseContext) compositeerrors.CompositeError { return fakeError{id: "loser"} },
 		WithSignals("boom"), WithProviders(ProviderAWS)))
 
@@ -161,7 +147,7 @@ func TestRegistry_HigherLayerSkipsLowerProviderGate(t *testing.T) {
 func TestRegister_PanicsAfterBuild(t *testing.T) {
 	r := &Registry{}
 	r.Register(fakeParser{id: "p", layer: LayerProvider, tools: []Tool{ToolTerraform}, signals: []string{"boom"}, applicable: true})
-	_ = r.Parse(&ParseContext{Raw: "boom", Tool: ToolTerraform}) // triggers build
+	_ = r.Parse(&ParseContext{Raw: "boom", Tool: ToolTerraform})
 
 	defer func() {
 		if recover() == nil {
@@ -182,10 +168,9 @@ func TestRegister_PanicsOnEmptySignal(t *testing.T) {
 }
 
 func TestAhoCorasick_MatchedSet(t *testing.T) {
-	// Overlapping/suffix patterns exercise the failure links.
 	m := newAhoCorasick([]string{"he", "she", "his", "hers"})
 	got := m.matchedSet("ushers")
-	want := []bool{true, true, false, true} // "he" and "hers" via "ushers"; "she" via "she"
+	want := []bool{true, true, false, true}
 	for i := range want {
 		if got[i] != want[i] {
 			t.Errorf("pattern %d: got %v want %v (full=%v)", i, got[i], want[i], got)

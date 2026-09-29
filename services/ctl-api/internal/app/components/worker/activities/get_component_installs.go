@@ -21,7 +21,6 @@ func (a *Activities) GetComponentInstalls(ctx context.Context, req GetComponentI
 
 	activeInstalls := make([]string, 0)
 	for _, inst := range installs {
-		// if an install was never attempted, it does not need to be polled
 		if len(inst.InstallSandboxRuns) < 1 {
 			continue
 		}

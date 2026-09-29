@@ -1,4 +1,4 @@
-// nuontest sets up disposable test databases and runs the ctl-api integration tests.
+// why: nuontest sets up disposable test databases and runs the ctl-api integration tests.
 //
 // With no arguments it only creates and migrates the databases named by DB_NAME and
 // CLICKHOUSE_DB_NAME. With arguments it additionally runs `go test`, forwarding every
@@ -63,15 +63,11 @@ const (
 	maxShards               = 8
 )
 
-// go test flags that take a separate value argument, needed to tell
-// `-skip foo` apart from a package path. Flags passed as `-flag=value`
-// are handled regardless of this table.
 var valueFlags = map[string]bool{
 	"-skip": true, "-run": true, "-timeout": true, "-count": true,
 	"-p": true, "-parallel": true, "-cpu": true, "-bench": true, "-benchtime": true,
 }
 
-// Shared-output flags that make no sense across concurrent lanes.
 var rejectedFlags = map[string]bool{"-coverprofile": true, "-outputdir": true, "-o": true}
 
 func main() {
@@ -101,7 +97,6 @@ func main() {
 	}
 	log.Println("test database setup complete")
 
-	// No go test args: setup-only mode.
 	if len(args) == 0 {
 		return
 	}
@@ -109,7 +104,6 @@ func main() {
 	os.Exit(plan.run())
 }
 
-// shard is one parallel lane: a package list bound to its own databases.
 type shard struct {
 	index    int
 	dbCfg    tests.DBConfig
@@ -123,11 +117,9 @@ type shard struct {
 
 type plan struct {
 	shards     []shard
-	migrations []string // migrations package flags+path, run last on the final shard
+	migrations []string
 }
 
-// parseArgs extracts -shards=N from the argument list and passes the rest through
-// for go test flag/package classification.
 func parseArgs(args []string) (int, []string, error) {
 	shards := 1
 	rest := []string{}
@@ -159,7 +151,6 @@ func parseArgs(args []string) (int, []string, error) {
 	return shards, rest, nil
 }
 
-// splitFlagsAndPackages classifies forwarded go test arguments.
 func splitFlagsAndPackages(args []string) (flags, packages []string, err error) {
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
@@ -197,7 +188,7 @@ func buildPlan(shardCount int, args []string, dbCfg tests.DBConfig, chCfg tests.
 		return nil, err
 	}
 
-	// Lane assignment matches packages by import path, so patterns like ./...
+	// why: Lane assignment matches packages by import path, so patterns like ./...
 	// must be expanded first. Without this, every lane would run the full
 	// pattern set against one database.
 	if shardCount > 1 && len(packages) > 0 {
@@ -205,8 +196,6 @@ func buildPlan(shardCount int, args []string, dbCfg tests.DBConfig, chCfg tests.
 		if err != nil {
 			return nil, err
 		}
-		// go test's 10m default kills the flow testworker package (~12m)
-		// before it finishes; keep a generous default unless one is passed.
 		if !hasTimeoutFlag(flags) {
 			flags = append(flags, "-timeout", "45m")
 		}
@@ -218,7 +207,6 @@ func buildPlan(shardCount int, args []string, dbCfg tests.DBConfig, chCfg tests.
 		blobRoot = "/tmp/temporal-blobs"
 	}
 
-	// Sort packages for deterministic lane assignment.
 	sorted := append([]string(nil), packages...)
 	sort.Strings(sorted)
 
@@ -257,9 +245,6 @@ func buildPlan(shardCount int, args []string, dbCfg tests.DBConfig, chCfg tests.
 		}
 	}
 
-	// The migrations package mutates its shard's schema, so it runs last and
-	// alone on the final lane's database — sequenced by the launcher, not by
-	// go test argument order.
 	if shardCount > 1 {
 		last := &p.shards[shardCount-1]
 		for _, pkg := range last.packages {
@@ -279,10 +264,6 @@ func withDBName(cfg tests.DBConfig, name string) tests.DBConfig {
 	return cfg
 }
 
-// expandPackages resolves go test patterns (./..., ./internal/...) into import
-// paths so lanes can be assigned by suffix. Only packages with test files are
-// kept: linking a test binary for every no-test package under -p=1 adds
-// minutes of pure overhead.
 func expandPackages(patterns []string) ([]string, error) {
 	out, err := exec.Command("go", append([]string{"list", "-f",
 		`{{if or .TestGoFiles .XTestGoFiles}}{{.ImportPath}}{{end}}`}, patterns...)...).Output()
@@ -318,8 +299,6 @@ func withCHName(cfg tests.CHConfig, name string) tests.CHConfig {
 	return cfg
 }
 
-// assignEvenly distributes len(packages) items across lanes as evenly as possible
-// and returns lane i's share. Earlier lanes get the larger remainder.
 func assignEvenly(packages []string, lanes, i int) []string {
 	if lanes <= 0 {
 		return nil
@@ -406,8 +385,6 @@ func (p *plan) run() int {
 	}
 	wg.Wait()
 
-	// Migrations run only after all lanes have finished, exclusively on the
-	// final lane's database.
 	if len(p.migrations) > 0 {
 		last := &p.shards[len(p.shards)-1]
 		res := last.runTests(ctx, "migrations", p.migrations)
@@ -430,7 +407,7 @@ func (s *shard) runTests(ctx context.Context, phase string, packages []string) s
 	res.logPath = s.phaseLogPath(phase)
 
 	if len(packages) == 0 {
-		res.status = 0 // nothing assigned to this lane
+		res.status = 0
 		res.elapsed = time.Since(start)
 		return res
 	}
@@ -469,7 +446,6 @@ func (s *shard) runTests(ctx context.Context, phase string, packages []string) s
 			res.status = 0
 		}
 	case <-ctx.Done():
-		// Kill the whole child process group; go test spawns test binaries.
 		syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM)
 		<-done
 		log.Printf("shard %d %s: cancelled", s.index, phase)
@@ -508,7 +484,6 @@ func summarize(p *plan, results []shardResult) int {
 	return 0
 }
 
-// prefixWriter writes each line prefixed, safe for concurrent cmd.Stdout/cmd.Stderr.
 type prefixWriter struct {
 	mu     sync.Mutex
 	prefix string

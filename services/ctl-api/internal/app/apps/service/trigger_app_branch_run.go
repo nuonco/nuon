@@ -113,7 +113,6 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 		return
 	}
 
-	// Verify branch exists and belongs to this org/app
 	var branch app.AppBranch
 	res := s.db.WithContext(ctx).
 		Preload("Queue", app.DefaultQueueScope).
@@ -127,7 +126,6 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 		return
 	}
 
-	// Validate app_config_id if provided
 	if req.AppConfigID != "" {
 		var appCfg app.AppConfig
 		res = s.db.WithContext(ctx).
@@ -142,7 +140,6 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 		}
 	}
 
-	// Load config (by ID or latest)
 	var config app.AppBranchConfig
 	if req.ConfigID != "" {
 		res = s.db.WithContext(ctx).
@@ -153,7 +150,6 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 			return
 		}
 	} else {
-		// Get latest config
 		res = s.db.WithContext(ctx).
 			Where("app_branch_id = ?", appBranchID).
 			Order("config_number DESC").
@@ -179,7 +175,6 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 	if req.SyncAppConfig {
 		workflowMeta["sync_app_config"] = "true"
 	}
-	// fetchcommit only honours HeadSHA on a git-preview run.
 	runType := app.AppBranchRunTypeManual
 	eventType := "manual"
 	planOnly := req.PlanOnly
@@ -264,8 +259,6 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 	}
 	run := triggerResp.Run
 
-	// The standalone sync path advanced this in appconfigsync's finalize step,
-	// which a branch-run sync never reaches.
 	if req.SyncAppConfig {
 		if acct, acctErr := cctx.AccountFromContext(ctx); acctErr == nil {
 			if journeyErr := s.accountsHelpers.UpdateUserJourneyStepForFirstAppSync(ctx, acct.ID, appID); journeyErr != nil {

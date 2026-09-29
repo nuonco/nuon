@@ -36,7 +36,6 @@ func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExe
 		return nil
 	}
 
-	// 1. YAML validation
 	var yamlData interface{}
 	if err := yaml.Unmarshal([]byte(manifestContent), &yamlData); err != nil {
 		l.Error("failed to parse YAML manifest", zap.Error(err))
@@ -44,8 +43,6 @@ func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExe
 	}
 	l.Debug("YAML validation passed")
 
-	// 2. Kubernetes manifest validation
-	// Parse as unstructured Kubernetes object
 	resources, err := h.getKubernetesResourcesFromManifest(h.state.kubeClient, manifestContent)
 	if err != nil {
 		l.Error("failed to parse Kubernetes manifest", zap.Error(err))
@@ -55,7 +52,6 @@ func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExe
 	for _, r := range resources {
 		obj := r.obj
 
-		// Validate required fields
 		gvk := obj.GroupVersionKind()
 		if gvk.Kind == "" {
 			return fmt.Errorf("manifest missing required field: kind")
@@ -78,7 +74,6 @@ func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExe
 			return fmt.Errorf("manifest missing required field: metadata.name")
 		}
 
-		// Set default namespace if not specified
 		if namespace := obj.GetNamespace(); namespace == "" {
 			metadataMap["namespace"] = h.state.plan.KubernetesManifestDeployPlan.Namespace
 			l.Debug("set default namespace",

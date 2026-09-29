@@ -12,7 +12,6 @@ import (
 )
 
 type handlerState struct {
-	// set during the fetch/validate phase
 	plan                              *plantypes.DeployPlan
 	appCfg                            *models.AppAppConfig
 	kubernetesManifestComponentConfig *models.AppKubernetesManifestComponentConfig
@@ -24,13 +23,10 @@ type handlerState struct {
 
 	outputs map[string]interface{}
 
-	// add validated manifest here
 	kubeClient *kubernetesClient
 
-	// cloud auth information
 	auth *pkgplantypes.PlanAuth
 
-	// OCI artifact archive (for pulling manifest from registry)
 	arch   ociarchive.Archive
 	srcCfg *configs.OCIRegistryRepository
 	srcTag string

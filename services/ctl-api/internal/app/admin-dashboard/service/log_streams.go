@@ -16,18 +16,15 @@ import (
 
 const logStreamLogsPerPage = 100
 
-// LogStreamViewer returns the log stream search endpoint
 func (s *service) LogStreamViewer(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Use GET /log-streams/:log_stream_id to view a log stream"})
 }
 
-// LogStreamDetail returns the log stream detail with logs
 func (s *service) LogStreamDetail(c *gin.Context) {
 	ctx := c.Request.Context()
 	logStreamID := c.Param("log_stream_id")
 	page := getPageFromQuery(c)
 
-	// Find log stream by ID or owner ID
 	ls, err := s.getLogStream(ctx, logStreamID)
 	if err != nil {
 		s.l.Error("failed to fetch log stream", zap.Error(err))
@@ -35,7 +32,6 @@ func (s *service) LogStreamDetail(c *gin.Context) {
 		return
 	}
 
-	// Fetch logs from ClickHouse
 	logs, totalPages, err := s.getLogStreamLogs(ctx, ls.ID, ls.OrgID, page)
 	if err != nil {
 		s.l.Warn("failed to fetch log stream logs", zap.Error(err))
@@ -51,7 +47,6 @@ func (s *service) LogStreamDetail(c *gin.Context) {
 	})
 }
 
-// LogStreamLogsTable handles the endpoint for log pagination
 func (s *service) LogStreamLogsTable(c *gin.Context) {
 	ctx := c.Request.Context()
 	logStreamID := c.Param("log_stream_id")
@@ -95,7 +90,6 @@ func (s *service) getLogStreamLogs(ctx context.Context, logStreamID, orgID strin
 	ctx, cancelFn := context.WithTimeout(ctx, time.Second*10)
 	defer cancelFn()
 
-	// Count total logs
 	var totalCount int64
 	countRes := s.chDB.WithContext(ctx).
 		Model(&app.OtelLogRecord{}).
@@ -131,7 +125,6 @@ func (s *service) getLogStreamLogs(ctx context.Context, logStreamID, orgID strin
 	return logs, totalPages, nil
 }
 
-// helper to format log count
 func formatLogCount(count int) string {
 	if count == 0 {
 		return "0"

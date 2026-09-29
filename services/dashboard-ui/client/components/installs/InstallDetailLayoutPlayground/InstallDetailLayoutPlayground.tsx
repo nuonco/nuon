@@ -526,8 +526,6 @@ export const InstallDetailLayoutPlayground = ({
     DEFAULT_DEPLOYMENT_FILTER
   )
 
-  // Ladle mounts stories at `/`, so nothing in the SubNav reads as active until
-  // the router sits under the install's base path.
   useEffect(() => {
     if (!pathname.startsWith(basePath)) navigate(basePath, { replace: true })
   }, [basePath, navigate, pathname])

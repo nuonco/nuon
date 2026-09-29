@@ -1,6 +1,3 @@
-// Package httpdebug provides an http.RoundTripper that traces every request
-// and prints per-phase timings (DNS, connect, TLS, server wait, transfer) to
-// stderr. Headers and bodies are never printed.
 package httpdebug
 
 import (
@@ -26,9 +23,6 @@ func NewTransport(base http.RoundTripper) *Transport {
 	return &Transport{base: base}
 }
 
-// Printing happens off the request path: lines are handed to a printer
-// goroutine so a slow stderr never delays a response. Flush drains pending
-// lines before the process exits.
 var (
 	printCh     = make(chan string, 512)
 	pending     sync.WaitGroup
@@ -62,8 +56,6 @@ func Flush() {
 	pending.Wait()
 }
 
-// PrintSummary flushes pending request lines, then prints cumulative API call
-// stats alongside the run's wall-clock time.
 func PrintSummary(w io.Writer, wall time.Duration) {
 	Flush()
 	statsMu.Lock()
@@ -207,8 +199,6 @@ func fmtDur(d time.Duration) string {
 	return d.Round(100 * time.Microsecond).String()
 }
 
-// tracedBody defers timing output until the response body is fully consumed
-// or closed, so transfer time covers the actual body read.
 type tracedBody struct {
 	body io.ReadCloser
 	once sync.Once

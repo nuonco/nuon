@@ -8,8 +8,6 @@ import (
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
-// TestPauseAndUnpause verifies that pausing a workflow after a group completes
-// causes it to wait, and unpausing resumes execution of the next group.
 func (e *FlowTestSuite) TestPauseAndUnpause() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -24,30 +22,20 @@ func (e *FlowTestSuite) TestPauseAndUnpause() {
 			QueueSignal: &signaldb.SignalData{Signal: &SuccessSignal{}}},
 	})
 
-	// Pause immediately before starting
 	err := e.service.FlowClient.PauseWorkflow(ctx, &flowclient.PauseWorkflowRequest{
 		InstallWorkflowID: flw.ID,
 	})
-	// This may fail if the signal isn't running yet — that's OK for the initial request.
-	// We'll send pause after the flow starts.
 	_ = err
 
 	e.enqueueFlow(ctx, queueID, flw, ownerID, ownerType)
 
-	// Wait for group 1 to complete (g1-step becomes success)
 	e.waitForStepStatus(ctx, e.getStepsByWorkflow(ctx, flw.ID)[0].ID, app.StatusSuccess)
 
-	// Send pause request — flow should pause after the current group
 	err = e.service.FlowClient.PauseWorkflow(ctx, &flowclient.PauseWorkflowRequest{
 		InstallWorkflowID: flw.ID,
 	})
 	require.Nil(e.T(), err)
 
-	// Group 2 may already be in-flight when pause is received.
-	// Eventually the workflow should be in a paused/awaiting state.
-	// For now, verify it doesn't reach success immediately.
-
-	// Unpause and verify the workflow completes
 	err = e.service.FlowClient.UnpauseWorkflow(ctx, &flowclient.UnpauseWorkflowRequest{
 		InstallWorkflowID: flw.ID,
 	})
@@ -55,7 +43,6 @@ func (e *FlowTestSuite) TestPauseAndUnpause() {
 
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusSuccess)
 
-	// Verify all steps completed
 	steps := e.getStepsByWorkflow(ctx, flw.ID)
 	for _, step := range steps {
 		require.Equal(e.T(), app.StatusSuccess, step.Status.Status,

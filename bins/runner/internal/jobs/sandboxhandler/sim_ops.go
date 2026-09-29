@@ -4,25 +4,12 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
-// simOp describes a fake op span the sandbox handler should emit under the
-// per-step span so the dashboard span-tree UI renders sandbox-mode jobs with
-// the same shape as real deploy jobs. Each op gets a proportional slice of
-// the total execute-step duration and a list of canned log lines spread
-// across that slice.
-//
-// op names intentionally mirror the real handler op.Tool callsites wrapped
-// in Phase 3 (terraform.plan, helm.upgrade, kubernetes_manifest.apply, …) so
-// dashboards filtering by nuon.tool / nuon.op see consistent values across
-// real and sandbox executions.
 type simOp struct {
 	op       string
 	fraction float64
 	logs     []string
 }
 
-// simulatedOps returns the simulated op span layout for a given sandbox job
-// type + operation. Returning nil signals "fall back to a single <tool>.exec
-// span" (preserves prior behavior for job types we have not enumerated yet).
 func simulatedOps(jobType models.AppRunnerJobType, jobOp models.AppRunnerJobOperationType) []simOp {
 	switch jobType {
 	case models.AppRunnerJobTypeTerraformDashDeploy,

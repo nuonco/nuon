@@ -63,9 +63,6 @@ func (h *Helpers) EnqueueAppBranchConfigSignals(ctx context.Context, appBranchID
 	return h.EnqueueAppBranchCreatedIfFirst(ctx, appBranchID, appBranchConfigID)
 }
 
-// EnqueueAppBranchCreatedIfFirst enqueues app-branch-created when configID is
-// the branch's first AppBranchConfig. Later configs are ignored. DedupeKey
-// makes a retry of the first config a no-op.
 func (h *Helpers) EnqueueAppBranchCreatedIfFirst(ctx context.Context, appBranchID, appBranchConfigID string) error {
 	if appBranchID == "" {
 		return fmt.Errorf("app_branch_id is required")

@@ -105,7 +105,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		return nil, err
 	}
 
-	// Validate and pin against the input config belonging to the app config this
+	// why: Validate and pin against the input config belonging to the app config this
 	// install is pinned to. Using the app's newest input config instead lets the
 	// two diverge whenever a newer app config exists, and the config-migration
 	// lookup then misses the install's inputs.
@@ -181,12 +181,11 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}
 		install.Labels = static
 		if len(templated) > 0 {
-			// Rendered once install state exists; the keys stay absent until then.
 			install.LabelTemplates = templated
 		}
 	}
 
-	// When enabled, every install must declare which cloud account it targets, so a
+	// why: When enabled, every install must declare which cloud account it targets, so a
 	// later phone home can be checked against an identifier the vendor asserted up
 	// front rather than one the install reported about itself.
 	requireTargetAccount, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeaturePhoneHomeAuth)
@@ -255,7 +254,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 				return nil, err
 			}
 
-			// The connection already names an account, so it is authoritative. An
+			// why: The connection already names an account, so it is authoritative. An
 			// explicit account ID may agree with it but never override it.
 			if req.AWSAccount.AccountID != "" && req.AWSAccount.AccountID != connection.AccountID {
 				return nil, stderr.ErrUser{
@@ -273,8 +272,6 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 				Description: "aws_account.account_id is required because phone home authentication is enabled for this organization",
 			}
 		}
-		// Only format-checked when the feature is on: the field is advisory otherwise,
-		// and rejecting it would change behaviour for organizations that never opted in.
 		if requireTargetAccount && !awsAccountIDPattern.MatchString(req.AWSAccount.AccountID) {
 			return nil, stderr.ErrUser{
 				Err:         fmt.Errorf("aws_account.account_id %q is not a 12-digit AWS account ID", req.AWSAccount.AccountID),
@@ -314,8 +311,6 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		install.CloudPlatformMetadata.TargetProjectID = req.GCPAccount.ProjectID
 	}
 
-	// A target is never recorded without its provenance, including on the fallback
-	// runner-type branch that does not set targetSource itself.
 	if install.CloudPlatformMetadata.HasTarget() {
 		if targetSource == "" {
 			targetSource = app.CloudPlatformTargetSourceUser
@@ -368,9 +363,6 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}
 	}
 
-	// The install's labels decide which of the branch's groups deploys it, so
-	// labels that put it in two groups have to fail here rather than at the
-	// branch's next run.
 	var appBranchGroupSource app.InstallAppBranchGroupAssignmentSource
 	if pin.BranchID != "" {
 		install.AppBranchID = pkggenerics.NewNullString(pin.BranchID)
@@ -421,7 +413,6 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		"install_id": install.ID,
 	}))
 
-	// Create all install queues (workflows, signals, actions, drift, etc.)
 	if err := s.EnsureInstallQueues(ctx, install.ID); err != nil {
 		return nil, fmt.Errorf("unable to create install queues: %w", err)
 	}
@@ -432,9 +423,6 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 			return nil, fmt.Errorf("unable to create install config: %w", err)
 		}
 	}
-
-	// Install components, actions, and runbooks are created asynchronously
-	// by the install-created signal's reconcile activities.
 
 	loadedInstall, err := s.getInstall(ctx, install.ID)
 	if err != nil {

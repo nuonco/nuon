@@ -7,8 +7,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-// A verdict with no message is the least actionable thing health can show: the
-// reason an ingress was progressing sat in the status the engine had already read.
 func TestAssessResourceExplainsBlankProgressing(t *testing.T) {
 	ingress := func(status map[string]any) *unstructured.Unstructured {
 		return &unstructured.Unstructured{Object: map[string]any{

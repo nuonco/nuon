@@ -31,14 +31,12 @@ import (
 	vcsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/worker/activities"
 )
 
-// GeneralWorkerModule provides the general namespace worker.
 var GeneralWorkerModule = fx.Module("worker-general",
 	fx.Provide(generalactivities.New),
 	fx.Provide(generalworker.NewWorkflows),
 	fx.Provide(worker.AsWorker(generalworker.New)),
 )
 
-// OrgsWorkerModule provides the orgs namespace worker.
 var OrgsWorkerModule = fx.Module("worker-orgs",
 	fx.Provide(orgsactivities.New),
 	fx.Provide(fx.Annotate(appsactivities.New, fx.ResultTags(`name:"org-trigger-activities"`))),
@@ -46,7 +44,6 @@ var OrgsWorkerModule = fx.Module("worker-orgs",
 	fx.Provide(worker.AsWorker(orgsworker.New)),
 )
 
-// AppsWorkerModule provides the apps namespace worker.
 var AppsWorkerModule = fx.Module("worker-apps",
 	fx.Provide(appsactivities.New),
 	fx.Provide(appsworker.NewWorkflows),
@@ -56,16 +53,12 @@ var AppsWorkerModule = fx.Module("worker-apps",
 	fx.Provide(worker.AsWorker(appsworker.New)),
 )
 
-// ComponentsWorkerModule provides the components namespace worker.
 var ComponentsWorkerModule = fx.Module("worker-components",
 	fx.Provide(componentsactivities.New),
 	fx.Provide(componentsworker.NewWorkflows),
 	fx.Provide(worker.AsWorker(componentsworker.New)),
 )
 
-// InstallWorkerProvidersModule provides the install workflow/activity
-// constructors shared by the installs worker and the install crons worker.
-// Kept separate so either worker can run standalone without double-providing.
 var InstallWorkerProvidersModule = fx.Module("worker-installs-providers",
 	fx.Provide(installsactivities.New),
 	fx.Provide(installsworker.NewWorkflows),
@@ -75,46 +68,37 @@ var InstallWorkerProvidersModule = fx.Module("worker-installs-providers",
 	fx.Provide(installsstackworker.NewWorkflows),
 )
 
-// InstallsWorkerModule provides the installs namespace worker (api task queue).
 var InstallsWorkerModule = fx.Module("worker-installs",
 	fx.Provide(worker.AsWorker(installsworker.New)),
 )
 
-// InstallCronWorkerModule provides the install crons worker (install-crons task queue).
 var InstallCronWorkerModule = fx.Module("worker-install-crons",
 	fx.Provide(worker.AsWorker(installsworker.NewCronWorker)),
 )
 
-// RunnerWorkerProvidersModule provides the runner workflow/activity constructors
-// shared by the runners worker and the runner healthcheck crons worker.
 var RunnerWorkerProvidersModule = fx.Module("worker-runners-providers",
 	fx.Provide(runnersactivities.New),
 	fx.Provide(runnersworker.NewWorkflows),
 )
 
-// RunnersWorkerModule provides the runners namespace worker (api task queue).
 var RunnersWorkerModule = fx.Module("worker-runners",
 	fx.Provide(worker.AsWorker(runnersworker.New)),
 )
 
-// RunnerHealthcheckCronWorkerModule provides the runner healthcheck crons worker.
 var RunnerHealthcheckCronWorkerModule = fx.Module("worker-runner-healthcheck-crons",
 	fx.Provide(worker.AsWorker(runnersworker.NewHealthcheckCronWorker)),
 )
 
-// ActionsWorkerModule provides the actions namespace worker.
 var ActionsWorkerModule = fx.Module("worker-actions",
 	fx.Provide(actionsactivities.New),
 	fx.Provide(actionsworker.NewWorkflows),
 	fx.Provide(worker.AsWorker(actionsworker.New)),
 )
 
-// OnboardingsWorkerModule provides the onboardings namespace worker.
 var OnboardingsWorkerModule = fx.Module("worker-onboardings",
 	fx.Provide(worker.AsWorker(onboardingworker.New)),
 )
 
-// VCSWorkerModule provides the vcs namespace worker.
 var VCSWorkerModule = fx.Module("worker-vcs",
 	fx.Provide(func(h *vcshelpers.Helpers) vcsactivities.GithubClient { return h }),
 	fx.Provide(vcsactivities.New),

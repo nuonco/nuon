@@ -11,8 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// Sync updates the AppConfig record with metadata from the parsed config,
-// including the readme and the config schema version.
 func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appConfigID string) error {
 	res := db.WithContext(ctx).
 		Model(&app.AppConfig{}).

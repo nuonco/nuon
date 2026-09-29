@@ -118,9 +118,6 @@ func (c *client) UpdateWorkflow(ctx context.Context, workflowID string, req *mod
 	return resp.Payload, nil
 }
 
-// GetWorkflowSteps returns every step for a workflow. The endpoint is
-// paginated (max 100 per page), so this pages through the full set following
-// the X-Nuon-Page-Next header rather than loading everything in one query.
 func (c *client) GetWorkflowSteps(ctx context.Context, workflowID string) ([]*models.AppWorkflowStep, error) {
 	const pageLimit = int64(100)
 
@@ -169,7 +166,6 @@ func (c *client) GetWorkflowStep(ctx context.Context, workflowID, stepID string)
 }
 
 func (c *client) RetryWorkflowStep(ctx context.Context, workflowID, stepID string, req *models.ServiceRetryWorkflowStepRequest) error {
-	// Note: req parameter is ignored in the current API - the endpoint no longer accepts a request body
 	_, err := c.genClient.Operations.RetryWorkflowStep(&operations.RetryWorkflowStepParams{
 		WorkflowID: workflowID,
 		StepID:     stepID,

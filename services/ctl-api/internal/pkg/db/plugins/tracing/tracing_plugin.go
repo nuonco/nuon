@@ -27,7 +27,7 @@ const (
 
 var _ gorm.Plugin = (*tracingPlugin)(nil)
 
-// This plugin emits OpenTelemetry spans for every gorm operation, mirroring the tags emitted by the
+// why: This plugin emits OpenTelemetry spans for every gorm operation, mirroring the tags emitted by the
 // metrics plugin so high-cardinality dimensions (endpoint, table, org) live on traces instead of
 // metric tags. Preload queries re-enter the Query callback pipeline with the parent operation's
 // context, so they show up as child spans automatically.
@@ -100,11 +100,6 @@ func (p *tracingPlugin) Initialize(db *gorm.DB) error {
 
 func (p *tracingPlugin) before(tx *gorm.DB, op operationType) {
 	spanParent := tx.Statement.Context
-	// Handlers pass the *gin.Context to WithContext, and other callbacks (e.g. routing) may
-	// have wrapped it by now. Gin only exposes request-context values (like the root HTTP
-	// span) through Value when engine.ContextWithFallback is on, which it isn't, so recover
-	// the gin context through its self-key and parent from the request context, while keeping
-	// the original statement chain for Keys-based values like MetricContext.
 	if gc, ok := spanParent.Value(gin.ContextKey).(*gin.Context); ok && gc.Request != nil {
 		spanParent = gc.Request.Context()
 	}
@@ -119,7 +114,7 @@ func (p *tracingPlugin) before(tx *gorm.DB, op operationType) {
 	tx.Statement.Context = ctx
 }
 
-// beforeStatement/afterStatement bracket the core SQL only, so the child span excludes the preload
+// why: beforeStatement/afterStatement bracket the core SQL only, so the child span excludes the preload
 // and association phases the parent span covers. The statement span is deliberately not pushed onto
 // the trace context: preload sub-queries must keep parenting under the operation span.
 func (p *tracingPlugin) beforeStatement(tx *gorm.DB, op operationType) {
@@ -151,7 +146,7 @@ func (p *tracingPlugin) afterStatement(tx *gorm.DB, op operationType) {
 	dbSystem := p.dbSystem()
 	table := tableName(tx)
 
-	// Distinct operation name from the parent span, otherwise the statement spans fold into the
+	// why: Distinct operation name from the parent span, otherwise the statement spans fold into the
 	// same Datadog APM stats family and double-count trace.<operation>.* for every query.
 	span.SetAttributes(
 		attribute.String("operation.name", dbSystem+".statement"),
@@ -185,7 +180,7 @@ func (p *tracingPlugin) after(tx *gorm.DB, op operationType) {
 	table := tableName(tx)
 	dbSystem := p.dbSystem()
 
-	// The ddotel bridge turns the span name into the Datadog operation name, and Datadog
+	// why: The ddotel bridge turns the span name into the Datadog operation name, and Datadog
 	// creates one APM stats metric family per operation name (trace.<operation>.*). Keep the
 	// operation low-cardinality (postgresql.query / clickhouse.query, matching Datadog's own
 	// database integrations) and put the op + table in resource.name, which becomes the

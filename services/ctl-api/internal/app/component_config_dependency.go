@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
-// ComponentConfigDependency is a many2many table used by gorm under the hood
 type ComponentConfigDependency struct {
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`

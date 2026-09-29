@@ -18,9 +18,6 @@ type createInstallPin struct {
 	BranchID  string
 }
 
-// resolveCreateInstallPin decides which app config a new install starts on.
-// Omitting a branch always uses the latest unbranched config from apps sync,
-// even when the app also has branches.
 func (s *Helpers) resolveCreateInstallPin(ctx context.Context, appID string, req *CreateInstallParams) (*createInstallPin, error) {
 	if req.AppBranchID == "" {
 		cfg, err := s.latestActiveAppConfig(ctx, appID, "")
@@ -54,9 +51,6 @@ func (s *Helpers) resolveCreateInstallPin(ctx context.Context, appID string, req
 	}, nil
 }
 
-// LatestActiveBranchAppConfig returns the app config a branch currently
-// deploys: its newest active config that is not a pull request preview. An
-// install joining the branch starts here.
 func (s *Helpers) LatestActiveBranchAppConfig(ctx context.Context, appID, branchID string) (*app.AppConfig, error) {
 	return s.latestActiveAppConfig(ctx, appID, branchID)
 }

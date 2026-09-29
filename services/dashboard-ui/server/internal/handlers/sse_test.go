@@ -18,9 +18,6 @@ type sseScriptStep struct {
 	err error
 }
 
-// runScriptedStream runs runSSEStream against a scripted sequence of fetch
-// results, cancelling the request context once the script is exhausted, and
-// returns the raw response body.
 func runScriptedStream(t *testing.T, steps []sseScriptStep, mod func(*sseStreamConfig)) string {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
@@ -112,9 +109,7 @@ func TestRunSSEStreamHashDedupe(t *testing.T) {
 func TestRunSSEStreamPerEventHashes(t *testing.T) {
 	body := runScriptedStream(t, []sseScriptStep{
 		{res: sseFetchResult{Events: []sseEvent{event("deploy", `{"v":1}`), event("workflow", `{"w":1}`)}}},
-		// workflow omitted: its hash must survive, deploy unchanged
 		{res: sseFetchResult{Events: []sseEvent{event("deploy", `{"v":1}`)}}},
-		// workflow returns unchanged: must not re-emit
 		{res: sseFetchResult{Events: []sseEvent{event("deploy", `{"v":1}`), event("workflow", `{"w":1}`)}}},
 	}, nil)
 
@@ -161,8 +156,6 @@ func TestRunSSEStreamFinishedGracePeriod(t *testing.T) {
 		Events:   []sseEvent{event("build", `{"status":"success"}`)},
 		Finished: true,
 	}
-	// Script never exhausts within the grace period; the stream must close
-	// itself. 50 steps at 1ms polls comfortably outlast a 10ms grace.
 	steps := make([]sseScriptStep, 50)
 	for i := range steps {
 		steps[i] = sseScriptStep{res: finished}
@@ -202,8 +195,6 @@ func TestRunSSEStreamUnnamedEvent(t *testing.T) {
 }
 
 func TestRunSSEStreamMaxLifetime(t *testing.T) {
-	// 200 steps at 1ms polls comfortably outlast a 20ms lifetime; the stream
-	// must expire on its own before the script exhausts.
 	steps := make([]sseScriptStep, 200)
 	for i := range steps {
 		steps[i] = sseScriptStep{res: sseFetchResult{Events: []sseEvent{event("build", `{"v":1}`)}}}

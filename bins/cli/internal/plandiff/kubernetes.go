@@ -5,12 +5,10 @@ import (
 	"strings"
 )
 
-// ParseKubernetesPlan parses a KubernetesPlan into a structured ParsedKubernetesPlan
 func ParseKubernetesPlan(plan *KubernetesPlan) *ParsedKubernetesPlan {
 	parsed := &ParsedKubernetesPlan{}
 
 	for _, item := range plan.K8sContentDiff {
-		// Handle errors separately
 		if item.Error != "" {
 			parsed.Errors = append(parsed.Errors, ParsedKubernetesError{
 				Namespace:    item.Namespace,
@@ -22,20 +20,17 @@ func ParseKubernetesPlan(plan *KubernetesPlan) *ParsedKubernetesPlan {
 			continue
 		}
 
-		// Build resource identifier from Kind and API
 		resource := item.Kind
 		if item.API != "" {
 			resource = fmt.Sprintf("%s.%s", item.API, item.Kind)
 		}
 
-		// Build before/after from entries if available
 		var before, after *string
 		var entryType int
 		if len(item.Entries) > 0 {
 			beforeParts := []string{}
 			afterParts := []string{}
 			for _, entry := range item.Entries {
-				// Use the first entry's type to determine action
 				if entryType == 0 {
 					entryType = entry.Type
 				}
@@ -56,7 +51,6 @@ func ParseKubernetesPlan(plan *KubernetesPlan) *ParsedKubernetesPlan {
 			}
 		}
 
-		// Determine action from item Type field or infer from before/after
 		action := determineKubernetesAction(item.Type, entryType, before, after)
 		incrementKubernetesSummary(&parsed.Summary, action)
 
@@ -74,10 +68,7 @@ func ParseKubernetesPlan(plan *KubernetesPlan) *ParsedKubernetesPlan {
 	return parsed
 }
 
-// determineKubernetesAction determines the action from item type, entry type, or infers from before/after
-// Item/Entry Type values: 1=add, 2=delete, 3=change
 func determineKubernetesAction(itemType, entryType int, before, after *string) HelmK8sChangeAction {
-	// Use item type first if available
 	if itemType > 0 {
 		switch itemType {
 		case 1:
@@ -89,7 +80,6 @@ func determineKubernetesAction(itemType, entryType int, before, after *string) H
 		}
 	}
 
-	// Fall back to entry type if item type is not set
 	if entryType > 0 {
 		switch entryType {
 		case 1:
@@ -101,7 +91,6 @@ func determineKubernetesAction(itemType, entryType int, before, after *string) H
 		}
 	}
 
-	// Infer from before/after
 	hasBefore := before != nil && *before != ""
 	hasAfter := after != nil && *after != ""
 
@@ -115,11 +104,9 @@ func determineKubernetesAction(itemType, entryType int, before, after *string) H
 		return HelmK8sActionChanged
 	}
 
-	// Default to change if we can't determine
 	return HelmK8sActionChanged
 }
 
-// incrementKubernetesSummary increments the appropriate counter in the summary based on action
 func incrementKubernetesSummary(summary *Summary, action HelmK8sChangeAction) {
 	switch action {
 	case HelmK8sActionAdd, HelmK8sActionAdded:
@@ -131,29 +118,24 @@ func incrementKubernetesSummary(summary *Summary, action HelmK8sChangeAction) {
 	}
 }
 
-// FormatKubernetesPlan formats a parsed Kubernetes plan for terminal output
 func FormatKubernetesPlan(parsed *ParsedKubernetesPlan, planText string) string {
 	var sb strings.Builder
 
-	// Show plan text if present
 	if planText != "" {
 		sb.WriteString(colorBold.Sprint("Plan: "))
 		sb.WriteString(planText)
 		sb.WriteString("\n\n")
 	}
 
-	// Show summary
 	sb.WriteString(FormatSummary(parsed.Summary))
 	sb.WriteString("\n")
 
-	// Format changes
 	if len(parsed.Changes) > 0 {
 		sb.WriteString(FormatSectionHeader("Kubernetes Changes"))
 		sb.WriteString("\n")
 		sb.WriteString(formatKubernetesChanges(parsed.Changes))
 	}
 
-	// Format errors
 	if len(parsed.Errors) > 0 {
 		sb.WriteString(FormatSectionHeader("Errors"))
 		sb.WriteString("\n")
@@ -163,12 +145,10 @@ func FormatKubernetesPlan(parsed *ParsedKubernetesPlan, planText string) string 
 	return sb.String()
 }
 
-// formatKubernetesChanges formats a list of Kubernetes changes
 func formatKubernetesChanges(changes []ParsedKubernetesChange) string {
 	var sb strings.Builder
 
 	for _, change := range changes {
-		// Format resource header with namespace/name
 		resourceName := change.Name
 		if change.Namespace != "" {
 			resourceName = fmt.Sprintf("%s/%s", change.Namespace, change.Name)
@@ -177,12 +157,10 @@ func formatKubernetesChanges(changes []ParsedKubernetesChange) string {
 		sb.WriteString(FormatResourceHeader(change.ResourceType, resourceName, string(change.Action)))
 		sb.WriteString("\n")
 
-		// Show resource details
 		if change.Resource != change.ResourceType {
 			sb.WriteString(fmt.Sprintf("    api: %s\n", change.Resource))
 		}
 
-		// Show before/after diff
 		if change.Before != nil || change.After != nil {
 			var before, after string
 			if change.Before != nil {
@@ -205,12 +183,10 @@ func formatKubernetesChanges(changes []ParsedKubernetesChange) string {
 	return sb.String()
 }
 
-// formatKubernetesErrors formats a list of Kubernetes errors
 func formatKubernetesErrors(errors []ParsedKubernetesError) string {
 	var sb strings.Builder
 
 	for _, err := range errors {
-		// Format resource header with namespace/name
 		resourceName := err.Name
 		if err.Namespace != "" {
 			resourceName = fmt.Sprintf("%s/%s", err.Namespace, err.Name)
@@ -218,12 +194,10 @@ func formatKubernetesErrors(errors []ParsedKubernetesError) string {
 
 		sb.WriteString(colorRed.Sprintf("✗ %s %s\n", err.ResourceType, colorBold.Sprint(resourceName)))
 
-		// Show resource details
 		if err.Resource != "" && err.Resource != err.ResourceType {
 			sb.WriteString(fmt.Sprintf("    resource: %s\n", err.Resource))
 		}
 
-		// Show error message
 		sb.WriteString(colorRed.Sprintf("    error: %s\n", err.Error))
 		sb.WriteString("\n")
 	}
@@ -231,7 +205,6 @@ func formatKubernetesErrors(errors []ParsedKubernetesError) string {
 	return sb.String()
 }
 
-// HasKubernetesChanges returns true if the parsed plan has any changes
 func HasKubernetesChanges(parsed *ParsedKubernetesPlan) bool {
 	return parsed.Summary.Add > 0 ||
 		parsed.Summary.Change > 0 ||

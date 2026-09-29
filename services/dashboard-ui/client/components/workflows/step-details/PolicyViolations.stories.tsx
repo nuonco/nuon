@@ -40,11 +40,6 @@ export const WithViolations = () => <PolicyViolations step={violationStep} />
 
 export const AllPassed = () => <PolicyViolations step={passedStep} />
 
-// ---------------------------------------------------------------------------
-// Layout exploration: each story below renders the same two warnings using a
-// different presentation. Pick the one that feels best.
-// ---------------------------------------------------------------------------
-
 const messages = [
   "EKS cluster 'module.eks.aws_eks_cluster.this[0]' allows public API access from 0.0.0.0/0 — restrict public_access_cidrs to known operator/runner IP ranges",
   "EKS cluster 'module.eks.aws_eks_cluster.this[0]' has public endpoint access enabled — ensure this is intentional e.g., an example app or for demonstrating policies in Nuon",

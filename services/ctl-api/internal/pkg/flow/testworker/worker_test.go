@@ -67,7 +67,6 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 
-	// Import all signals to trigger catalog registration
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/catalog/allsignals"
 )
 
@@ -83,11 +82,6 @@ type TestService struct {
 	TClient     temporalclient.Client
 }
 
-// FlowTestSuite is one test case's handle on the shared app. Each case gets
-// its own value with its own *testing.T, so per-case state (queue cache,
-// phase ledger) needs no locking. The old testify suite.Suite embed could not
-// host t.Parallel() tests — testify replaces its shared T between methods and
-// runs suite teardown before parked parallel children resume.
 type FlowTestSuite struct {
 	t *testing.T
 
@@ -110,9 +104,6 @@ func TestSuite(t *testing.T) {
 
 	service := startFlowApp(t)
 
-	// Discover Test* methods by reflection like testify did: signature
-	// func(*FlowTestSuite), alphabetical order, names preserved as
-	// TestSuite/<Method> so -run/-skip filters keep working.
 	typ := reflect.TypeOf(&FlowTestSuite{})
 	for i := 0; i < typ.NumMethod(); i++ {
 		m := typ.Method(i)
@@ -131,19 +122,10 @@ func TestSuite(t *testing.T) {
 	}
 }
 
-// startFlowApp boots the fx app and Temporal worker once for the whole suite.
-// The app stops via parent t.Cleanup: a parent's deferred call runs before its
-// parked parallel children resume, but cleanup runs after they all finish.
 func startFlowApp(t *testing.T) TestService {
-	// Shrink the abandoned-wait ceiling so approval/park expiry paths fire in
-	// test time instead of 3 days. Read at workflow runtime, so setting it
-	// before the worker boots covers every flow the suite starts.
 	callback.MaxWaitCeiling = 5 * time.Second
 	handler.DrainTimeout = 5 * time.Second
 
-	// Shrink the step-handler cache window: assertTemporalDrained waits for
-	// handlers to close, so the production 5s window is a flat 5s tax on every
-	// drain-asserting test. No flow test depends on the reuse window.
 	executeworkflowstep.CacheWindow = 500 * time.Millisecond
 
 	registerTestGeneratorOwnerTypes()
@@ -153,7 +135,6 @@ func startFlowApp(t *testing.T) TestService {
 		t,
 		fx.Provide(internal.NewConfig),
 
-		// infrastructure
 		fx.Provide(telemetry.NewConfig),
 		fx.Provide(log.New),
 		fx.Provide(dblog.New),
@@ -200,12 +181,10 @@ func startFlowApp(t *testing.T) TestService {
 			return pkgkafka.DisabledProducer(l, mw)
 		}),
 
-		// helpers (needed by workflowactivities)
 		fx.Provide(emitterclient.New),
 		fx.Provide(vcshelpers.New),
 		fx.Provide(appshelpers.New),
 
-		// all activity providers
 		fx.Provide(statusactivities.New),
 		fx.Provide(job.New),
 		fx.Provide(signaldb.NewPayloadConverter),
@@ -219,22 +198,17 @@ func startFlowApp(t *testing.T) TestService {
 		fx.Provide(handleractivities.New),
 		fx.Provide(queueclient.New),
 
-		// shared activities aggregation (registers all activities)
 		fx.Provide(sharedactivities.New),
 		fx.Provide(workflows.NewActivities),
 
-		// test dependencies
 		fx.Provide(seed.New),
 		fx.Provide(flowclient.New),
 
-		// queue + handler workflows
 		fx.Provide(queue.NewWorkflows),
 		fx.Provide(handler.NewWorkflows),
 
-		// start the test worker
 		fx.Provide(worker.AsWorker(New)),
 
-		// invokers
 		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
 		fx.Invoke(cleanupStaleWorkflows),
 		fx.Invoke(worker.WithWorkers(func([]worker.Worker) {})),

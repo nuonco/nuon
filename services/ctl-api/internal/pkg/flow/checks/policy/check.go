@@ -29,7 +29,6 @@ const (
 	policyEvaluationMetric = "policy.evaluation"
 )
 
-// Check implements directive.ApprovalCreateCheck for policy evaluation.
 type Check struct {
 	sig      signal.Signal
 	tmw      tmetrics.Writer
@@ -49,8 +48,6 @@ func (c *Check) ShouldRun(step *app.WorkflowStep, flw *app.Workflow) bool {
 	if c.requiresEvaluation() {
 		return true
 	}
-	// Signals whose step has no policy target still route their auto-approval
-	// decision through this check.
 	_, autoApprove := c.sig.(signal.SignalWithAutoApproveOnPoliciesPassing)
 	return autoApprove
 }
@@ -144,8 +141,6 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 		zap.String("step_id", step.ID),
 		zap.String("workflow_id", flw.ID))
 
-	// If the signal opts into auto-approve on policies passing and there are
-	// no deny violations, short-circuit the pipeline with a continue directive.
 	if reportErr == nil {
 		if result, autoApproved := c.autoApprove(ctx, l, step); autoApproved {
 			return result, nil
@@ -155,9 +150,6 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 	return directive.Pass(), nil
 }
 
-// autoApprove builds the approve-and-continue result for signals that opted into
-// auto-approval on passing policies. Callers only reach it once evaluation has
-// produced no deny violations, or when the signal has nothing to evaluate.
 func (c *Check) autoApprove(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep) (directive.CheckResult, bool) {
 	aa, ok := c.sig.(signal.SignalWithAutoApproveOnPoliciesPassing)
 	if !ok || !aa.AutoApproveOnPoliciesPassing(ctx) {

@@ -62,8 +62,6 @@ function parseEnvelope(contents: unknown): StackEnvelope {
   return empty
 }
 
-// Unlike `terraform apply`, which prompts for missing required vars, Spacelift
-// just uploads the file as-is — so surface these at the top as visible blanks.
 function withSpaceliftGCPPlaceholders(tfvars: string): string {
   const rest = tfvars
     .split('\n')
@@ -172,7 +170,6 @@ export const AwaitGCPDetails = ({
       </Text>
 
       <Tabs
-        // The published module is the recommended path, so it opens first.
         initActiveTab="tfmodule"
         tabLabels={{ tfmodule: 'TF Module' }}
         tabs={{
@@ -742,15 +739,6 @@ interface IGCPTFModuleTab {
   gcpRegion?: string
 }
 
-// The GCP half of the TF Module tab: which providers to require, and the module
-// source. Auth, inputs, secrets and the step layout are shared.
-//
-// project and region go in the google provider block only. The module reads the
-// install's target from the control plane, so repeating them as module arguments
-// would be a second copy of the same value to drift. They fall back to
-// placeholders before the first provision has recorded them.
-//
-// GCP records that target on the first apply, so pass them until it does.
 const GCPTFModuleTab = ({
   orgId,
   installId,

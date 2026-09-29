@@ -1,8 +1,3 @@
-// Package deployerrors holds the typed CompositeError implementations produced
-// by the installs deploy orchestration itself (as opposed to a runner job's
-// tool output, which is parsed under runners/errparse). It lives next to the
-// installs domain that consumes it: each domain owns the custom errors it
-// knows how to produce.
 package deployerrors
 
 import (
@@ -11,27 +6,16 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
-// ComponentBuildUnavailableErrorType is the discriminator for a deploy that
-// cannot proceed because the component it targets has no deployable build.
 const ComponentBuildUnavailableErrorType compositeerrors.Type = "deploy.component_build_unavailable"
 
-// ComponentBuildUnavailableReason describes why the build could not be deployed.
 type ComponentBuildUnavailableReason string
 
 const (
-	// ComponentBuildUnavailableReasonFailed means the latest build for the
-	// component is in a terminal failure state (error / policy_failed).
 	ComponentBuildUnavailableReasonFailed ComponentBuildUnavailableReason = "failed"
 
-	// ComponentBuildUnavailableReasonMissing means no build exists for the
-	// component yet, so there is no artifact to deploy.
 	ComponentBuildUnavailableReasonMissing ComponentBuildUnavailableReason = "missing"
 )
 
-// ComponentBuildUnavailableError is the typed payload for a deploy that cannot
-// run because its component build is unavailable. It implements
-// compositeerrors.CompositeError so it can be frozen onto the owning deploy row
-// and rendered in the dashboard, guiding the user to (re)build the component.
 type ComponentBuildUnavailableError struct {
 	Reason ComponentBuildUnavailableReason `json:"reason"`
 

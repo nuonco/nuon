@@ -6,7 +6,6 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-// Copy all known context fields from a workflow context, into a regular context
 func ContextFromWorkflowContext(ctx context.Context, wCtx workflow.Context) context.Context {
 	acctID, _ := AccountIDFromContext(wCtx)
 	isEmployee, _ := IsEmployeeFromContext(wCtx)
@@ -21,7 +20,6 @@ func ContextFromWorkflowContext(ctx context.Context, wCtx workflow.Context) cont
 	return ctx
 }
 
-// Copy all known context fields from a workflow context, into a workflow context
 func WorkflowContextFromContext(wCtx workflow.Context, ctx ValueContext) workflow.Context {
 	acctID, _ := AccountIDFromContext(ctx)
 	orgID, _ := OrgIDFromContext(ctx)

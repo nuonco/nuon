@@ -71,7 +71,6 @@ func (s *DeleteTerraformStateJSONTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes (this endpoint doesn't use getWorkspace validation)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -90,7 +89,6 @@ func (s *DeleteTerraformStateJSONTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create terraform workspace (use unique OwnerID to avoid unique constraint on owner_id+owner_type)
 	s.testWS = &app.TerraformWorkspace{
 		ID:        domains.NewTerraformWorkspaceID(),
 		OrgID:     s.testOrg.ID,
@@ -133,7 +131,6 @@ func (s *DeleteTerraformStateJSONTestSuite) TestDeleteTerraformStateJSON() {
 				err := s.service.DB.WithContext(ctx).Create(ws).Error
 				require.NoError(s.T(), err)
 
-				// Create state JSON
 				stateJSON := &app.TerraformWorkspaceStateJSON{
 					ID:          domains.NewTerraformWorkspaceStateJSONID(),
 					WorkspaceID: ws.ID,
@@ -150,7 +147,6 @@ func (s *DeleteTerraformStateJSONTestSuite) TestDeleteTerraformStateJSON() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(workspaceID string) {
-				// Verify state JSON was deleted
 				var stateJSON []app.TerraformWorkspaceStateJSON
 				err := s.service.DB.Where("workspace_id = ?", workspaceID).Find(&stateJSON).Error
 				require.NoError(s.T(), err)
@@ -195,7 +191,6 @@ func (s *DeleteTerraformStateJSONTestSuite) TestDeleteTerraformStateJSON() {
 				err := s.service.DB.WithContext(ctx).Create(ws).Error
 				require.NoError(s.T(), err)
 
-				// Create multiple state JSON entries
 				for i := 0; i < 3; i++ {
 					stateJSON := &app.TerraformWorkspaceStateJSON{
 						ID:          domains.NewTerraformWorkspaceStateJSONID(),
@@ -214,7 +209,6 @@ func (s *DeleteTerraformStateJSONTestSuite) TestDeleteTerraformStateJSON() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(workspaceID string) {
-				// Verify all state JSON entries were deleted
 				var stateJSON []app.TerraformWorkspaceStateJSON
 				err := s.service.DB.Where("workspace_id = ?", workspaceID).Find(&stateJSON).Error
 				require.NoError(s.T(), err)
@@ -235,7 +229,6 @@ func (s *DeleteTerraformStateJSONTestSuite) TestDeleteTerraformStateJSON() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(workspaceID string) {
-				// Verify no state JSON exists
 				var stateJSON []app.TerraformWorkspaceStateJSON
 				err := s.service.DB.Where("workspace_id = ?", workspaceID).Find(&stateJSON).Error
 				require.NoError(s.T(), err)

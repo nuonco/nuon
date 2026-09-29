@@ -30,7 +30,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("app_id is required")
 	}
 
-	// Validate app exists
 	_, err := activities.AwaitGetByAppID(ctx, s.AppID)
 	if err != nil {
 		return errors.Wrap(err, "app not found")
@@ -45,13 +44,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get logger")
 	}
 
-	// Get the app
 	currentApp, err := activities.AwaitGetByAppID(ctx, s.AppID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get app from database")
 	}
 
-	// Send notification
 	s.sendNotification(ctx, l, notifications.NotificationsTypeAppCreated, s.AppID, map[string]string{
 		"app_name":   currentApp.Name,
 		"created_by": currentApp.CreatedBy.Email,

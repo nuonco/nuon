@@ -28,9 +28,6 @@ func (a *Activities) PkgWorkflowsFlowCreateWorkflowRun(ctx context.Context, req 
 		},
 	}
 
-	// If the context doesn't have an account ID (e.g. running inside a queue
-	// handler workflow), fall back to the parent workflow's CreatedByID so
-	// the NOT NULL constraint is satisfied.
 	if keys.CreatedByIDFromContext(ctx) == "" {
 		var wf app.Workflow
 		if res := a.db.WithContext(ctx).Select("created_by_id", "org_id").First(&wf, "id = ?", req.WorkflowID); res.Error == nil {

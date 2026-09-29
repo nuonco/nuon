@@ -32,7 +32,6 @@ func (s *propagator) Inject(ctx context.Context, writer workflow.HeaderWriter) e
 	return nil
 }
 
-// InjectFromWorkflow injects values from context into headers for propagation
 func (s *propagator) InjectFromWorkflow(ctx workflow.Context, writer workflow.HeaderWriter) error {
 	acctID, err := cctx.AccountIDFromContext(ctx)
 	if err != nil {
@@ -92,7 +91,6 @@ func (s *propagator) getPayload(reader workflow.HeaderReader) (*Payload, error) 
 	return &payload, nil
 }
 
-// Extract extracts values from headers and puts them into context
 func (s *propagator) Extract(ctx context.Context, reader workflow.HeaderReader) (context.Context, error) {
 	payload, err := s.getPayload(reader)
 	if err != nil {
@@ -112,7 +110,6 @@ func (s *propagator) Extract(ctx context.Context, reader workflow.HeaderReader) 
 	return ctx, nil
 }
 
-// ExtractToWorkflow extracts values from headers and puts them into context
 func (s *propagator) ExtractToWorkflow(ctx workflow.Context, reader workflow.HeaderReader) (workflow.Context, error) {
 	payload, err := s.getPayload(reader)
 	if err != nil {

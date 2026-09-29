@@ -78,7 +78,6 @@ func (m *middleware) Handler() gin.HandlerFunc {
 	}
 }
 
-// helper func to add headers to zap fields
 func headerToZapField(header string) zap.Field {
 	parts := strings.SplitN(header, ": ", 2)
 	if len(parts) != 2 {
@@ -87,7 +86,6 @@ func headerToZapField(header string) zap.Field {
 	key := parts[0]
 	value := parts[1]
 
-	// Mask sensitive headers
 	sensitiveHeaders := map[string]struct{}{
 		"Authorization": {},
 		"Cookie":        {},
@@ -103,7 +101,6 @@ func headerToZapField(header string) zap.Field {
 
 func (m *middleware) setCTXLogger(ctx *gin.Context) *zap.Logger {
 	fields := []zap.Field{}
-	// Add organization context
 	org, err := cctx.OrgFromContext(ctx)
 	if err == nil {
 		fields = append(fields,
@@ -113,7 +110,6 @@ func (m *middleware) setCTXLogger(ctx *gin.Context) *zap.Logger {
 		)
 	}
 
-	// Add account context
 	acct, err := cctx.AccountFromContext(ctx)
 	if err == nil {
 		fields = append(fields,
@@ -124,7 +120,6 @@ func (m *middleware) setCTXLogger(ctx *gin.Context) *zap.Logger {
 		m.l.Debug("no account object on request")
 	}
 
-	// Add request body if configured
 	if ctx.Request.Body != nil && m.cfg.LogRequestBody {
 		body, err := ctx.GetRawData()
 		if err == nil || len(body) > 0 {
@@ -139,7 +134,6 @@ func (m *middleware) setCTXLogger(ctx *gin.Context) *zap.Logger {
 	return ctxLogger
 }
 
-// helper func to generate zap fields for request
 func (m *middleware) requestToZapFields(ctx *gin.Context, startAt time.Time) []zap.Field {
 	fields := []zap.Field{
 		zap.String("method", ctx.Request.Method),
@@ -157,7 +151,6 @@ func (m *middleware) requestToZapFields(ctx *gin.Context, startAt time.Time) []z
 		}
 	}
 
-	// Add request body if configured
 	if ctx.Request.Body != nil && m.cfg.LogRequestBody {
 		body, err := ctx.GetRawData()
 		if err == nil || len(body) > 0 {

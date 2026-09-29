@@ -18,8 +18,6 @@ import (
 const (
 	imageActionsJobGroup models.AppRunnerJobGroup = models.AppRunnerJobGroupImageDashActions
 
-	// imageCollectionTimeout bounds a collection pass so a slow docker daemon
-	// can't keep the job loop from claiming its next action.
 	imageCollectionTimeout = 2 * time.Minute
 )
 
@@ -32,7 +30,7 @@ type ImageActionJobLoopParams struct {
 
 func NewImageActionJobLoop(params ImageActionJobLoopParams) jobloop.JobLoop {
 	return jobloop.New(params.Handlers, imageActionsJobGroup, params.BaseParams,
-		// Action images are retained for reuse, so something has to bound them.
+		// why: Action images are retained for reuse, so something has to bound them.
 		// Running collection from the idle hook is what keeps it from removing an
 		// image between a job's pull and its first container: the loop runs a
 		// single worker goroutine, so no job of its own can be in flight here.
@@ -48,10 +46,6 @@ func NewImageActionJobLoop(params ImageActionJobLoopParams) jobloop.JobLoop {
 	)
 }
 
-// GetImageActionJobs wires the image-actions job loop and its docker launcher.
-// It is registered ONLY by the mng process (which runs natively on the VM host
-// with docker access) — that registration is what gates image-backed actions
-// to VM runners.
 func GetImageActionJobs() []fx.Option {
 	return []fx.Option{
 		fx.Provide(launcher.NewImageCache),
@@ -62,22 +56,10 @@ func GetImageActionJobs() []fx.Option {
 	}
 }
 
-// prepareActionHost readies the VM host for image-backed actions. Action
-// workspaces live on the root volume rather than the host's tmpfs /tmp, so this
-// creates that root, clears anything a previous process left in it, and reports
-// a filesystem that would put action content in RAM instead of on disk.
-//
-// Everything here is best effort: the process also runs management jobs, so a
-// host that can't host action workspaces must still start.
 func prepareActionHost(l *zap.Logger) {
-	// Resolving here rather than waiting for the first job means a host that
-	// can't use the preferred root says so at startup, and it logs which root
-	// jobs will actually land in.
 	root := workspace.ResolveHostActionRoot(l)
 	l.Info("image-backed action workspaces will use", zap.String("path", root))
 
-	// Every root is swept, not just the resolved one: a previous process may
-	// have been able to write a different one.
 	for _, candidate := range workspace.HostActionRoots() {
 		removed, err := workspace.SweepStale(candidate)
 		if err != nil {

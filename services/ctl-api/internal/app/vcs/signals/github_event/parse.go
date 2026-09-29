@@ -6,30 +6,29 @@ import (
 )
 
 type pushEventInfo struct {
-	Repo         string // "owner/repo" - matches ConnectedGithubVCSConfig.Repo
-	Branch       string // "main" for a branch push
-	Tag          string // "foobar/v0.0.1" for a tag push
+	Repo         string
+	Branch       string
+	Tag          string
 	Deleted      bool
-	PusherEmail  string   // email of the person who pushed
-	SenderLogin  string   // GitHub username of the sender (always present)
-	PusherEmails []string // all unique emails from the payload (pusher, commit author/committer)
-	ChangedFiles []string // deduplicated list of added/modified/removed files across all commits
-	HeadSHA      string   // SHA of the head commit
-	BeforeSHA    string   // SHA before the push, used to fetch the complete comparison
+	PusherEmail  string
+	SenderLogin  string
+	PusherEmails []string
+	ChangedFiles []string
+	HeadSHA      string
+	BeforeSHA    string
 }
 
 type pullRequestEventInfo struct {
-	Repo       string // "owner/repo"
-	BaseBranch string // target branch (e.g., "main")
-	HeadSHA    string // head commit SHA
-	HeadRef    string // head branch name (e.g., "jm/test-ci")
-	PRNumber   int    // pull request number
-	Action     string // "opened", "synchronize", "closed", etc.
+	Repo       string
+	BaseBranch string
+	HeadSHA    string
+	HeadRef    string
+	PRNumber   int
+	Action     string
 	Draft      bool
 }
 
 func parsePushEvent(payload map[string]any) (*pushEventInfo, error) {
-	// Extract ref (e.g. "refs/heads/main")
 	ref, ok := payload["ref"].(string)
 	if !ok || ref == "" {
 		return nil, fmt.Errorf("missing or invalid ref in push payload")
@@ -45,7 +44,6 @@ func parsePushEvent(payload map[string]any) (*pushEventInfo, error) {
 		return nil, fmt.Errorf("ref %q is not a branch or tag push", ref)
 	}
 
-	// Extract repository.full_name (e.g. "owner/repo")
 	repository, ok := payload["repository"].(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("missing or invalid repository in push payload")

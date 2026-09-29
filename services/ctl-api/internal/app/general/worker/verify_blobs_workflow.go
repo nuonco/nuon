@@ -17,13 +17,9 @@ import (
 const (
 	blobVerifyBatchSize  = 1000
 	blobVerifyMaxBatches = 5000
-	// maxMismatchIDSamples caps retained mismatched ids so parent history stays small.
 	maxMismatchIDSamples = 100
 )
 
-// VerifyBlobs enumerates the day-buckets with rows and walks them one
-// (table, day) child at a time, continue-as-newing to keep history bounded.
-// Running sequentially keeps the per-activity S3 rate limiter acting globally.
 func (w *Workflows) VerifyBlobs(ctx workflow.Context, req blobverify.RangeRequest) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -131,7 +127,6 @@ func (w *Workflows) runVerifyDay(ctx workflow.Context, bucket blobverify.DayBuck
 	return result, nil
 }
 
-// VerifyBlobsDay verifies every row created within its day, walking by id cursor.
 func (w *Workflows) VerifyBlobsDay(ctx workflow.Context, req blobverify.DayRequest) (blobverify.DayResult, error) {
 	var result blobverify.DayResult
 	cursor := ""

@@ -18,8 +18,6 @@ import (
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
-// notebookQueueName is the name of the per-notebook queue that owns the warm
-// workflow lifecycle. The notebook workflow runs in the installs namespace.
 const (
 	notebookQueueName      = "notebook"
 	notebookQueueNamespace = "installs"
@@ -70,9 +68,6 @@ func (s *service) CreateNotebook(ctx *gin.Context) {
 		return
 	}
 
-	// Bring the notebook's warm workflow online via its queue. Non-blocking:
-	// if this fails the notebook is still usable — the first cell run lazily
-	// starts the workflow via update-with-start.
 	if err := s.startNotebookWorkflow(ctx, &nb); err != nil {
 		s.l.Warn("unable to start notebook workflow via queue",
 			zap.String("notebook-id", nb.ID), zap.Error(err))
@@ -81,9 +76,6 @@ func (s *service) CreateNotebook(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, nb)
 }
 
-// startNotebookWorkflow ensures the notebook owns a queue and enqueues a
-// notebook-start signal so the warm per-notebook workflow comes online (and can
-// be re-dispatched for recovery). Cell runs dispatch to that workflow directly.
 func (s *service) startNotebookWorkflow(ctx context.Context, nb *app.Notebook) error {
 	ownerType := plugins.TableName(s.db, app.Notebook{})
 
@@ -288,7 +280,6 @@ func (s *service) DeleteNotebook(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
-// attachListSummaries populates CellCount and LatestRunAt for a list of notebooks.
 func (s *service) attachListSummaries(ctx *gin.Context, orgID string, notebooks []*app.Notebook) {
 	if len(notebooks) == 0 {
 		return
@@ -339,7 +330,6 @@ func (s *service) attachListSummaries(ctx *gin.Context, orgID string, notebooks 
 	}
 }
 
-// attachLatestRuns populates each cell's LatestRun with its most recent run.
 func (s *service) attachLatestRuns(ctx *gin.Context, orgID string, nb *app.Notebook) {
 	for i := range nb.Cells {
 		var run app.NotebookCellRun

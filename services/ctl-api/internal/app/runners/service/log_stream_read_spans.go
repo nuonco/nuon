@@ -66,8 +66,6 @@ func (s *service) LogStreamReadSpans(ctx *gin.Context) {
 		return
 	}
 
-	// Authorize: confirm the log stream exists and belongs to this org.
-	// Reuses the same lookup as LogStreamReadLogs.
 	if _, err := s.getOrgLogStream(ctx, logStreamID, orgID); err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get log stream"))
 		return
@@ -82,19 +80,10 @@ func (s *service) LogStreamReadSpans(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, spans)
 }
 
-// getLogStreamSpans resolves a log_stream_id to the runner_job_ids it owns
-// (otel_traces is keyed by runner_job_id, not log_stream_id) and returns
-// the flat span list ordered by start timestamp ASC.
 func (s *service) getLogStreamSpans(ctx context.Context, logStreamID string) ([]LogStreamSpan, error) {
 	ctx, cancelFn := context.WithTimeout(ctx, time.Second*5)
 	defer cancelFn()
 
-	// 1) Resolve log_stream_id -> runner_job_ids in postgres.
-	//
-	// LogStream.OwnerID/OwnerType are the generic owner pointer; the per-job
-	// link lives on RunnerJob.LogStreamID. Almost always one job per stream,
-	// but we fan out across whatever we find so retries / re-runs that share
-	// a stream all show up.
 	var jobIDs []string
 	res := s.db.WithContext(ctx).
 		Model(&app.RunnerJob{}).
@@ -107,10 +96,6 @@ func (s *service) getLogStreamSpans(ctx context.Context, logStreamID string) ([]
 		return []LogStreamSpan{}, nil
 	}
 
-	// 2) Pull spans from ClickHouse keyed by runner_job_id. otel_traces'
-	// ORDER BY starts with runner_id, runner_job_id, runner_group_id,
-	// runner_job_execution_id, toUnixTimestamp(timestamp), so an IN on
-	// runner_job_id + ORDER BY timestamp is granule-friendly.
 	var rows []app.OtelTraceIngestion
 	res = s.chDB.WithContext(ctx).
 		Where("runner_job_id IN ?", jobIDs).

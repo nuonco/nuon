@@ -23,7 +23,6 @@ export const SignalTreeView = ({ graphData, temporalUIUrl, height = '36rem' }: I
   const [expandedRemote, setExpandedRemote] = useState<Set<string>>(new Set())
   const [loadingId, setLoadingId] = useState<string | null>(null)
 
-  // Sync when graphData prop changes (initial load or parent re-fetch)
   if (graphData !== mergedGraph && expandedRemote.size === 0) {
     setMergedGraph(graphData)
   }
@@ -68,7 +67,6 @@ export const SignalTreeView = ({ graphData, temporalUIUrl, height = '36rem' }: I
 
   return (
     <div className="w-full border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden" style={{ height, maxHeight: height }}>
-      {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
         <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Signal tree</span>
         <div className="flex items-center gap-2">
@@ -84,7 +82,6 @@ export const SignalTreeView = ({ graphData, temporalUIUrl, height = '36rem' }: I
         </div>
       </div>
 
-      {/* Tree body */}
       <div className="overflow-y-auto" style={{ height: `calc(${height} - 2.25rem)` }}>
         <TreeNode
           node={mergedGraph}
@@ -142,7 +139,6 @@ const TreeNode = ({
   return (
     <>
       <div className="group flex items-stretch min-h-[28px] hover:bg-gray-50 dark:hover:bg-gray-800/50">
-        {/* Depth indentation lines */}
         {Array.from({ length: depth }).map((_, i) => (
           <span key={i} className="w-4 shrink-0 flex justify-center">
             <span className="w-px self-stretch bg-gray-200 dark:bg-gray-700" />
@@ -150,7 +146,6 @@ const TreeNode = ({
         ))}
 
         <div className="flex items-center gap-1.5 flex-1 min-w-0 px-2 py-1">
-          {/* Expand/collapse caret */}
           {hasChildren ? (
             <button
               type="button"
@@ -163,15 +158,12 @@ const TreeNode = ({
             <span className="w-4 shrink-0" />
           )}
 
-          {/* Status dot */}
           <span className={`${dotColor} text-[8px] shrink-0`}>●</span>
 
-          {/* Signal type */}
           <span className="font-mono text-xs text-gray-900 dark:text-gray-100 truncate shrink-0">
             {signal.type}
           </span>
 
-          {/* Signal ID link */}
           <Link
             to={`/queues/${signal.queue_id}/signals/${signal.id}`}
             className="font-mono text-[10px] text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 shrink-0"
@@ -179,17 +171,14 @@ const TreeNode = ({
             {truncateId(signal.id)}
           </Link>
 
-          {/* Relationship badge */}
           {node.relationship && (
             <span className={`text-[9px] font-medium ${relationshipColor} shrink-0`}>
               {node.relationship}
             </span>
           )}
 
-          {/* Status badge */}
           <Badge variant="status" status={statusStr}>{statusStr}</Badge>
 
-          {/* Workflow link */}
           {signal.workflow?.id && signal.workflow?.namespace && temporalUIUrl && (
             <a
               href={`${temporalUIUrl}/namespaces/${signal.workflow.namespace}/workflows/${signal.workflow.id}`}
@@ -202,7 +191,6 @@ const TreeNode = ({
             </a>
           )}
 
-          {/* Expand button for lazy loading */}
           {canExpandRemote && (
             <button
               onClick={() => onExpand(signal.queue_id, signal.id)}
@@ -215,7 +203,6 @@ const TreeNode = ({
         </div>
       </div>
 
-      {/* Children */}
       {hasChildren && !isCollapsed
         ? node.children!.map((child, i) => (
             <TreeNode

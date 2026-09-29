@@ -36,7 +36,6 @@ func (s *appRunnersSuite) TearDownTest() {
 }
 
 func (s *appRunnersSuite) SetupTest() {
-	// create an org
 	org := s.createOrg()
 	s.orgID = org.ID
 
@@ -63,7 +62,6 @@ func (s *appRunnersSuite) TestCreateAppRunnerConfig() {
 		require.NoError(t, err)
 		require.NotNil(t, cfg)
 
-		// grab latest and ensure it is correctly configured
 		latestCfg, err := s.apiClient.GetAppRunnerLatestConfig(s.ctx, s.appID)
 		require.NoError(t, err)
 		require.NotNil(t, latestCfg)
@@ -92,7 +90,6 @@ func (s *appRunnersSuite) TestCreateAppRunnerConfig() {
 		appRunnerCfg, err := s.apiClient.CreateAppRunnerConfig(s.ctx, generics.GetFakeObj[string](), req)
 		require.Error(t, err)
 		require.Nil(t, appRunnerCfg)
-		// require.True(t, nuon.IsBadRequest(err))
 	})
 }
 
@@ -110,7 +107,6 @@ func (s *appRunnersSuite) TestGetAppRunnerLatestConfig() {
 		require.NoError(t, err)
 		require.NotNil(t, cfg)
 
-		// grab latest and ensure it is correctly configured
 		latestCfg, err := s.apiClient.GetAppRunnerLatestConfig(s.ctx, s.appID)
 		require.NoError(t, err)
 		require.NotNil(t, latestCfg)
@@ -129,7 +125,6 @@ func (s *appRunnersSuite) TestGetAppRunnerLatestConfig() {
 		require.NoError(t, err)
 		require.NotNil(t, cfg2)
 
-		// grab latest and ensure it is correctly configured
 		latestCfg, err := s.apiClient.GetAppRunnerLatestConfig(s.ctx, s.appID)
 		require.NoError(t, err)
 		require.NotNil(t, latestCfg)

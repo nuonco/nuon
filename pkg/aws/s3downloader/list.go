@@ -10,15 +10,12 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 )
 
-// S3Object represents an S3 object with its metadata
 type S3Object struct {
 	Key          string
 	LastModified time.Time
 	Size         int64
 }
 
-// ListPrefix assumes a role and returns a list of all the files in the s3 prefix
-//
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=list_mock_test.go -source=list.go -package=s3downloader
 func (s *s3Downloader) ListPrefix(ctx context.Context, key string) ([]string, error) {
@@ -39,7 +36,6 @@ func (s *s3Downloader) ListAll(ctx context.Context) ([]string, error) {
 	return s.listPrefix(ctx, client, "")
 }
 
-// ListPrefixWithMetadata returns a list of S3 objects with their metadata
 func (s *s3Downloader) ListPrefixWithMetadata(ctx context.Context, key string) ([]S3Object, error) {
 	client, err := s.getClient(ctx)
 	if err != nil {

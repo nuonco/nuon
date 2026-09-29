@@ -9,8 +9,6 @@ import (
 
 var _ gorm.Plugin = (*viewsPlugin)(nil)
 
-// ViewsPlugin is a plugin that enables turning on a view for specific models. This will overwrite the table name on
-// query/preload to add the _view suffix, and use the straight table name for everything else.
 func NewViewsPlugin(models []interface{}) *viewsPlugin {
 	return &viewsPlugin{
 		models:     models,
@@ -47,8 +45,6 @@ func (m *viewsPlugin) Initialize(db *gorm.DB) error {
 	return nil
 }
 
-// modelsToViewModels walks through each model, and checks to see if the `UseView` function is set and returns true. It
-// builds a map of all view models by table name
 func (m *viewsPlugin) modelsToViewTables(db *gorm.DB) {
 	for _, model := range m.models {
 		vm, ok := model.(ViewModel)
@@ -59,9 +55,6 @@ func (m *viewsPlugin) modelsToViewTables(db *gorm.DB) {
 			continue
 		}
 
-		// this block accepts an interface that points to a model, and turns it into a table name. We probably
-		// don't need to be this robust, but it prevents us from passing invalid types in here and having silent
-		// errors.
 		value := reflect.ValueOf(model)
 		if value.Kind() == reflect.Ptr && value.IsNil() {
 			value = reflect.New(value.Type().Elem())
@@ -83,7 +76,6 @@ func (m *viewsPlugin) modelsToViewTables(db *gorm.DB) {
 	}
 }
 
-// see note above
 func (m *viewsPlugin) enableView(tx *gorm.DB) {
 	disable, ok := tx.InstanceGet(DisableViewsKey)
 	if ok && disable.(bool) {

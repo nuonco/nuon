@@ -24,13 +24,11 @@ func (s *service) QueueEmitterDetail(c *gin.Context) {
 		return
 	}
 
-	// Fetch the parent queue for context
 	var q app.Queue
 	s.readDB().WithContext(c.Request.Context()).
 		Where("id = ?", queueID).
 		First(&q)
 
-	// Fetch signals created by this emitter
 	var signals []app.QueueSignal
 	s.readDB().WithContext(c.Request.Context()).
 		Where("emitter_id = ?", emitterID).

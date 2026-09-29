@@ -60,16 +60,12 @@ func (h *Helpers) GetPublicGitVCSConfigCommit(ctx context.Context, cfg *app.Publ
 	return commitResp, nil
 }
 
-// parseOwnerRepo extracts the GitHub owner and repo name from either
-// an "owner/repo" string or a "https://github.com/owner/repo" URL.
 func parseOwnerRepo(repoStr string) (string, string, error) {
-	// Try owner/repo format first
 	owner, repo, err := githubpkg.ParseRepo(repoStr)
 	if err == nil {
 		return owner, repo, nil
 	}
 
-	// Try URL format: https://github.com/owner/repo[.git]
 	trimmed := strings.TrimPrefix(repoStr, "https://github.com/")
 	if trimmed == repoStr {
 		return "", "", fmt.Errorf("unsupported repo format: %s", repoStr)
@@ -80,8 +76,6 @@ func parseOwnerRepo(repoStr string) (string, string, error) {
 	return githubpkg.ParseRepo(trimmed)
 }
 
-// GithubCommitToVCSConnectionCommit converts a GitHub API commit response to a VCSConnectionCommit struct.
-// The struct is not saved to the database - caller is responsible for persistence.
 func (h *Helpers) GithubCommitToVCSConnectionCommit(ghCommit *github.RepositoryCommit, ownerID, ownerType string, vcsConnectionID string) *app.VCSConnectionCommit {
 	if ghCommit == nil || ghCommit.SHA == nil {
 		return nil
@@ -96,7 +90,6 @@ func (h *Helpers) GithubCommitToVCSConnectionCommit(ghCommit *github.RepositoryC
 		vcsCommit.VCSConnectionID = generics.ToPtr(vcsConnectionID)
 	}
 
-	// Populate commit metadata with defensive nil checking
 	if ghCommit.Commit != nil {
 		if ghCommit.Commit.Author != nil {
 			vcsCommit.AuthorName = generics.FromPtrStr(ghCommit.Commit.Author.Name)

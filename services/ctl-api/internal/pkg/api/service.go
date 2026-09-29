@@ -5,8 +5,6 @@ import (
 	"go.uber.org/fx"
 )
 
-//
-
 type Service interface {
 	RegisterPublicRoutes(*gin.Engine) error
 	RegisterRunnerRoutes(*gin.Engine) error

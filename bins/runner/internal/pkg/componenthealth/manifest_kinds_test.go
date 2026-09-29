@@ -36,7 +36,6 @@ func TestGvksFromManifest(t *testing.T) {
 
 	assert.Empty(t, gvksFromManifest(""))
 	assert.Empty(t, gvksFromManifest("not a manifest"))
-	// A document missing either field is skipped rather than half-guessed.
 	assert.Empty(t, gvksFromManifest("---\nkind: NodePool\n"))
 	assert.Empty(t, gvksFromManifest("---\napiVersion: v1\n"))
 }
@@ -52,8 +51,6 @@ func TestManifestKindsProviderSetAndDiscover(t *testing.T) {
 	p.Set("cmp-a", nodePoolManifest)
 	assert.Len(t, p.DiscoveredGVKs(), 3)
 
-	// A chart that no longer renders anything stops contributing kinds, so a
-	// removed CR does not keep costing a list call every cycle.
 	p.Set("cmp-a", "")
 	assert.Empty(t, p.DiscoveredGVKs())
 
@@ -67,7 +64,6 @@ func TestDecodeComponentKind(t *testing.T) {
 	assert.Equal(t, "cmp1", id)
 	assert.Equal(t, schema.GroupVersionKind{Group: "karpenter.sh", Version: "v1", Kind: "NodePool"}, gvk)
 
-	// Core kinds have an empty group.
 	_, gvk, ok = decodeComponentKind("cmp1|v1/ConfigMap")
 	assert.True(t, ok)
 	assert.Equal(t, schema.GroupVersionKind{Version: "v1", Kind: "ConfigMap"}, gvk)
@@ -78,8 +74,6 @@ func TestDecodeComponentKind(t *testing.T) {
 	}
 }
 
-// A restart must not narrow the watch set: kinds persisted by earlier deploys
-// come back without waiting for every component to redeploy.
 func TestManifestKindsRoundTripsThroughPersistence(t *testing.T) {
 	store := &ClusterProvider{l: zap.NewNop(), sandboxReleases: map[string]struct{}{}}
 
@@ -88,15 +82,12 @@ func TestManifestKindsRoundTripsThroughPersistence(t *testing.T) {
 	assert.Len(t, first.DiscoveredGVKs(), 3)
 	assert.Len(t, store.ComponentKinds(), 3, "kinds should have been handed to the store")
 
-	// A fresh process, same persisted context.
 	restarted := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: store})
 	assert.Empty(t, restarted.DiscoveredGVKs(), "nothing until it loads")
 	restarted.Load()
 	assert.ElementsMatch(t, first.DiscoveredGVKs(), restarted.DiscoveredGVKs())
 }
 
-// A deploy that lands before the engine rehydrates must not wipe the kinds
-// other components already persisted.
 func TestPersistDoesNotClobberOtherComponents(t *testing.T) {
 	store := &ClusterProvider{l: zap.NewNop(), sandboxReleases: map[string]struct{}{}}
 
@@ -104,7 +95,6 @@ func TestPersistDoesNotClobberOtherComponents(t *testing.T) {
 	a.Set("cmp-a", "---\napiVersion: karpenter.sh/v1\nkind: NodePool\nmetadata:\n  name: n\n")
 	assert.Len(t, store.ComponentKinds(), 1)
 
-	// Fresh process; a deploy for a different component arrives with no Load yet.
 	b := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: store})
 	b.Set("cmp-b", "---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: c\n")
 
@@ -112,11 +102,6 @@ func TestPersistDoesNotClobberOtherComponents(t *testing.T) {
 	assert.Len(t, b.DiscoveredGVKs(), 2)
 }
 
-// A terraform module that installs a chart owns real workloads, but they carry
-// no nuon labels and match no chart component, so the release->component map is
-// the only record of who owns them. It used to live in memory only, so any
-// runner restart made every one of those workloads unowned and the component
-// reported "no observable runtime resources" until it was redeployed.
 func TestReleaseOwnershipSurvivesRestart(t *testing.T) {
 	store := &ClusterProvider{l: zap.NewNop(), sandboxReleases: map[string]struct{}{}}
 
@@ -137,7 +122,6 @@ func TestReleaseOwnershipSurvivesRestart(t *testing.T) {
 	assert.Equal(t, "cmp-datadog", owner)
 }
 
-// Releases removed from the module stop being attributed to it.
 func TestReleaseOwnershipReplacedOnReapply(t *testing.T) {
 	store := &ClusterProvider{l: zap.NewNop(), sandboxReleases: map[string]struct{}{}}
 	p := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: store})
@@ -152,7 +136,6 @@ func TestReleaseOwnershipReplacedOnReapply(t *testing.T) {
 	assert.Equal(t, "cmp-a", owner)
 }
 
-// Kinds, objects and releases share one stored list; none may evict another.
 func TestReleaseOwnershipCoexistsWithKindsAndObjects(t *testing.T) {
 	store := &ClusterProvider{l: zap.NewNop(), sandboxReleases: map[string]struct{}{}}
 	p := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: store})

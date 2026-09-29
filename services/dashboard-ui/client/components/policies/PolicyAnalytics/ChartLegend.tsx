@@ -11,12 +11,6 @@ export interface IChartLegend {
   className?: string
 }
 
-/**
- * Inline chart legend rendered outside the SVG so it never shifts the inner
- * plot area as bars/cards resize. Pairs with the design-system `<Text>`
- * subtext variant to stay typographically consistent with the rest of the
- * dashboard.
- */
 export const ChartLegend = ({ items, className }: IChartLegend) => (
   <div className={cn('flex items-center gap-x-4 gap-y-1 flex-wrap', className)}>
     {items.map((item) => (

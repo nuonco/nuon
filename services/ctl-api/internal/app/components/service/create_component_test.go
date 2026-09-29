@@ -16,10 +16,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestCreateComponentSuccess() {
 	testCases := []struct {
 		name         string
@@ -88,7 +84,6 @@ func (s *ComponentsServiceTestSuite) TestCreateComponentSuccess() {
 			assert.Equal(s.T(), tc.expectedName, response.Name)
 			assert.Equal(s.T(), s.testApp.ID, response.AppID)
 
-			// Verify persisted to database
 			var dbComponent app.Component
 			err = s.deps.DB.WithContext(s.ctx).First(&dbComponent, "id = ?", response.ID).Error
 			require.NoError(s.T(), err)
@@ -102,10 +97,6 @@ func (s *ComponentsServiceTestSuite) TestCreateComponentSuccess() {
 		})
 	}
 }
-
-// ---------------------------------------------------------------------------
-// Validation error cases
-// ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestCreateComponentValidationErrors() {
 	testCases := []struct {
@@ -183,15 +174,9 @@ func (s *ComponentsServiceTestSuite) TestCreateComponentValidationErrors() {
 	}
 }
 
-// ---------------------------------------------------------------------------
-// Duplicate name
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestCreateComponentDuplicateName() {
-	// Seed a component via seeder
 	existingComponent := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeTerraformModule)
 
-	// Try to create component with same name for same app
 	reqBody := CreateComponentRequest{
 		Name: existingComponent.Name,
 	}
@@ -205,16 +190,10 @@ func (s *ComponentsServiceTestSuite) TestCreateComponentDuplicateName() {
 	require.Equal(s.T(), http.StatusConflict, rr.Code)
 }
 
-// ---------------------------------------------------------------------------
-// Component with dependencies
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestCreateComponentWithDependencies() {
-	// Seed two components
 	comp1 := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeTerraformModule)
 	comp2 := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeTerraformModule)
 
-	// Create a new component with dependencies
 	reqBody := CreateComponentRequest{
 		Name:         "new_comp",
 		Dependencies: []string{comp1.Name, comp2.Name},
@@ -232,7 +211,6 @@ func (s *ComponentsServiceTestSuite) TestCreateComponentWithDependencies() {
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(s.T(), err)
 
-	// Verify component_dependencies table has records
 	var dependencies []app.ComponentDependency
 	err = s.deps.DB.WithContext(s.ctx).
 		Where("component_id = ?", response.ID).
@@ -240,16 +218,11 @@ func (s *ComponentsServiceTestSuite) TestCreateComponentWithDependencies() {
 	require.NoError(s.T(), err)
 	require.Len(s.T(), dependencies, 2, "expected 2 dependency records")
 
-	// Verify the dependency IDs match
 	depIDs := []string{dependencies[0].DependencyID, dependencies[1].DependencyID}
 	assert.Contains(s.T(), depIDs, comp1.ID)
 	assert.Contains(s.T(), depIDs, comp2.ID)
 
 }
-
-// ---------------------------------------------------------------------------
-// Nonexistent dependency
-// ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestCreateComponentNonexistentDependency() {
 	reqBody := CreateComponentRequest{
@@ -263,13 +236,7 @@ func (s *ComponentsServiceTestSuite) TestCreateComponentNonexistentDependency() 
 	require.Equal(s.T(), http.StatusBadRequest, rr.Code, "should not successfully create component with nonexistent dependency")
 }
 
-// ---------------------------------------------------------------------------
-// Signals sent
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestCreateComponentSendsSignals() {
-	// Reset mock
-
 	reqBody := CreateComponentRequest{
 		Name: "signal_test_component",
 	}
@@ -286,16 +253,13 @@ func (s *ComponentsServiceTestSuite) TestCreateComponentSendsSignals() {
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(s.T(), err)
 
-	// Verify signals were sent
 	capturedSignals := tests.GetQueueSignals(s.T(), s.deps.DB)
 	require.Len(s.T(), capturedSignals, 3, "expected 3 signals")
 
-	// All signals should target the created component
 	for _, qs := range capturedSignals {
 		assert.Equal(s.T(), response.ID, qs.OwnerID, "signal should target the created component")
 	}
 
-	// Verify signal types
 	var signalTypes []string
 	for _, qs := range capturedSignals {
 		signalTypes = append(signalTypes, string(qs.Type))

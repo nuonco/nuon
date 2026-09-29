@@ -58,9 +58,6 @@ func (a AppAWSIAMRole) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Named IAM policies to attach to this role, referenced by name. Use [[named_policies]] like [[policies]]. The name must match a named policy defined under permissions. Those policies are created even when this role is disabled")
 }
 
-// ValidateRoleGrants rejects a role that grants nothing. policies is empty only
-// when named_policies carries the grants instead, so the two are checked
-// together rather than with a jsonschema required tag on either one.
 func ValidateRoleGrants(label string, role *AppAWSIAMRole) error {
 	if role == nil {
 		return nil

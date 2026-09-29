@@ -61,7 +61,6 @@ func (m model) stepDetailViewApprovalConfirmationBanner() string {
 }
 
 func (m model) stepDetailViewStepJSON() string {
-	// takes the m.selectedStep and renders it as a indented string
 	if m.selectedStep == nil {
 		return ""
 	}
@@ -92,7 +91,6 @@ func (m model) stepDetailViewStepJSON() string {
 }
 
 func structToMap(obj any) (map[string]string, error) {
-	// ONLY use this IFF you know all of the values are strings or can be converted to strings
 	jsonBytes, err := json.Marshal(obj)
 	if err != nil {
 		return nil, err
@@ -110,14 +108,12 @@ func structToMap(obj any) (map[string]string, error) {
 		case string:
 			result[key] = v
 		case []any:
-			// Convert array to comma-separated string
 			var strSlice []string
 			for _, item := range v {
 				strSlice = append(strSlice, fmt.Sprintf("%v", item))
 			}
 			result[key] = strings.Join(strSlice, ", ")
 		default:
-			// Convert other types to string
 			result[key] = fmt.Sprintf("%v", v)
 		}
 	}
@@ -125,12 +121,10 @@ func structToMap(obj any) (map[string]string, error) {
 }
 
 func (m model) stepDetailViewInstallStackOutputs() string {
-	// NOTE(fd): aws only rn
 	outputMap, err := structToMap(m.stack.InstallStackOutputs.Aws)
 	if err != nil {
 		return fmt.Sprintf("unable to render stack outputs\n%s", err)
 	}
-	//make read only table
 	keys := []string{}
 	maxKeyLength := 0
 	for key := range outputMap {
@@ -140,14 +134,14 @@ func (m model) stepDetailViewInstallStackOutputs() string {
 		}
 		keys = append(keys, key)
 	}
-	sort.Strings(keys) // sorted so order isn't all jittery
+	sort.Strings(keys)
 	rows := []string{}
 	for i, key := range keys {
 		value := outputMap[key]
 		row := lipgloss.JoinHorizontal(lipgloss.Left,
 			styles.TextGhost.Render(fmt.Sprintf("[%02d] ", i))+styles.TextSubtle.Render(fmt.Sprintf("%s%s", key, strings.Repeat(" ", maxKeyLength-len(key)))),
 			" | ",
-			styles.TextSubtle.Render(value), // this feels SUPER dangerous
+			styles.TextSubtle.Render(value),
 		)
 		rows = append(rows, row)
 	}
@@ -176,7 +170,6 @@ func (m model) stepDetailViewInstallStack() string {
 	s += lipgloss.NewStyle().Width(m.stepDetail.Width()).Padding(1).Render(
 		lipgloss.JoinVertical(
 			lipgloss.Left,
-			// install stack
 			styles.TextBold.Margin(0, 0, 1).Render("Setup your install stack"),
 			lipgloss.JoinHorizontal(
 				lipgloss.Left,
@@ -184,19 +177,15 @@ func (m model) stepDetailViewInstallStack() string {
 				styles.TextSubtle.Render(fmt.Sprintf(" [%s to open]", m.keys.OpenQuickLink.Help().Key)),
 			),
 			styles.Link.Width(m.stepDetail.Width()-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(stack.QuickLinkURL),
-			// install template link
 			lipgloss.JoinHorizontal(
 				lipgloss.Left,
 				styles.TextSubtle.Render(" Install Template Link"),
 				styles.TextSubtle.Render(fmt.Sprintf(" [%s to open]", m.keys.OpenTemplateLink.Help().Key)),
 			),
 			styles.Link.Width(m.stepDetail.Width()-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(stack.TemplateURL),
-			// divider
 			styles.TextSubtle.Width(m.stepDetail.Width()-6).Margin(0, 1, 1).Render(" --- or --- "),
-			// CLI cmd
 			styles.TextSubtle.Render(" Setup your install stack using CLI command"),
 			lipgloss.NewStyle().Width(m.stepDetail.Width()-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(cliCreateCmd),
-			// CLI update cmd
 			styles.TextSubtle.Render(" Setup your install stack using CLI command"),
 			lipgloss.NewStyle().Width(m.stepDetail.Width()-6).Margin(0, 1, 1).Padding(1).Border(lipgloss.NormalBorder()).Render(cliUpdateCmd),
 		),
@@ -214,8 +203,6 @@ func (m model) stepDetailViewInstallStack() string {
 	return s
 }
 
-// emptyStepsView renders a terminal message for a workflow that has been
-// fetched but has no steps, so the TUI does not spin indefinitely.
 func (m model) emptyStepsView() string {
 	status := ""
 	if m.workflow != nil && m.workflow.Status != nil {
@@ -254,23 +241,18 @@ func isTerminalStatus(status string) bool {
 }
 
 func (m *model) populateStepDetailView(goToTop bool) {
-	// loading state: no workflow fetched yet
 	if m.workflow == nil {
 		s := "\n\n\tLoading ...\n"
 		m.stepDetail.SetContent(s)
 		return
 	}
 
-	// fetched, but the workflow has no steps: render a terminal empty state
-	// instead of spinning forever (e.g. a build workflow with no components).
 	if len(m.steps) == 0 {
 		m.stepDetail.SetContent(m.emptyStepsView())
 		return
 	}
 
-	// case: workflow cancellation confirmation prompt
 	if m.workflowCancelationConf {
-		// in this case, we hijack the view to show a big red confirmation
 		content := lipgloss.NewStyle().
 			Padding(1, 3).
 			Render(lipgloss.JoinVertical(lipgloss.Center, "Are you sure you want to cancel this workflow?", "", "Press [C] to confirm."))
@@ -285,9 +267,7 @@ func (m *model) populateStepDetailView(goToTop bool) {
 		return
 	}
 
-	// case: workflow approve all confirmation prompt
 	if m.workflowApprovalConf {
-		// in this case, we hijack the view to show a big confirmation
 		content := lipgloss.NewStyle().Padding(1, 3).
 			Render(
 				lipgloss.JoinVertical(lipgloss.Center, "Are you sure you want to approve all?", "", "Press [A] to confirm."),
@@ -302,17 +282,14 @@ func (m *model) populateStepDetailView(goToTop bool) {
 		return
 	}
 
-	// case: no selected step or a step w/ no status
 	if m.selectedStep == nil || m.selectedStep.Status == nil {
 		m.stepDetail.SetContent(styles.TextSubtle.Padding(3).Render("Select a workflow to get started"))
 		return
 	}
 
 	sections := []string{}
-	// normal case
 	step := m.selectedStep
 
-	// full-width banners
 	if step.Status.Status == models.AppStatusPending {
 		pendingMessage := lipgloss.NewStyle().
 			Padding(2).
@@ -345,7 +322,6 @@ func (m *model) populateStepDetailView(goToTop bool) {
 		sections = append(sections, policySection)
 	}
 
-	// title
 	style := styles.GetStatusStyle(step.Status.Status)
 	title := style.
 		Width(m.stepDetail.Width()).
@@ -361,20 +337,15 @@ func (m *model) populateStepDetailView(goToTop bool) {
 
 	sections = append(sections, title)
 
-	// branch-specific step cards
 	if section := m.stepDetailViewBranchStep(step); section != "" {
 		sections = append(sections, section)
 	}
 
-	// stack section
-	// NOTE(fd): brittle af
 	if step.Name == "await install stack" || step.StepTargetType == "install_stack_versions" {
 		installStack := m.stepDetailViewInstallStack()
 		sections = append(sections, installStack)
 	}
 
-	// approvals section
-	// TODO(fd): handle "install_sandbox_runs",
 	if m.stepHasPlanDiff(step) {
 		m.syncHelmDiffExplorer()
 		diffSection := m.stepDetailViewStepDiff()

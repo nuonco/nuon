@@ -8,8 +8,6 @@ import (
 	"github.com/nuonco/nuon/pkg/runner/settings"
 )
 
-// getResource builds the OTEL Resource shared by every span emitted from this
-// runner process. We mirror slog.getResource so spans and logs stay aligned.
 func getResource(set *settings.Settings) *resource.Resource {
 	attrs := []attribute.KeyValue{}
 	builtInAttrs := map[string]string{

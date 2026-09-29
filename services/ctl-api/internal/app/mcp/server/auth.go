@@ -13,11 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// authenticateToken validates the bearer access token and returns the associated
-// account plus the token itself. It performs NO org authorization — that is
-// handled separately so a valid-but-org-less request (e.g. an OAuth client
-// before selecting an org) still authenticates rather than triggering a re-auth.
-// A nil error means the token is good; a non-nil error should result in a 401.
 func (s *Server) authenticateToken(r *http.Request) (*app.Account, *app.Token, error) {
 	token := extractBearerToken(r)
 	if token == "" {
@@ -57,7 +52,6 @@ func (s *Server) authenticateToken(r *http.Request) (*app.Account, *app.Token, e
 	return &acct, &userToken, nil
 }
 
-// accountHasOrgAccess reports whether the account can access the given org.
 func accountHasOrgAccess(acct *app.Account, orgID string) bool {
 	for _, oid := range acct.OrgIDs {
 		if oid == orgID {

@@ -15,10 +15,10 @@ import (
 )
 
 const (
-	canDefaultHintPeriod        = 3 * time.Minute // fallback when config is unset
-	canStartJitter              = 60              // seconds of initial jitter
-	canDefaultHistoryMax        = 10000           // fallback when config is unset
-	canDefaultTerminateOverhead = 5000            // terminate threshold = historyMax + this
+	canDefaultHintPeriod        = 3 * time.Minute
+	canStartJitter              = 60
+	canDefaultHistoryMax        = 10000
+	canDefaultTerminateOverhead = 5000
 )
 
 const CheckCANUpdateName string = "check-can"
@@ -34,8 +34,6 @@ type CheckCANResponse struct {
 	Restarting    bool   `json:"restarting"`
 }
 
-// checkCANHandler runs the same CAN checks as the background listener
-// but on demand via a Temporal update handler.
 func (q *queue) checkCANHandler(ctx workflow.Context, req *CheckCANRequest) (*CheckCANResponse, error) {
 	l, _ := log.WorkflowLogger(ctx)
 	if q.activeWorkers > 0 {
@@ -59,9 +57,6 @@ func (q *queue) checkCANHandler(ctx workflow.Context, req *CheckCANRequest) (*Ch
 	return resp, nil
 }
 
-// runCANCheck performs the CAN checks and returns whether a restart should
-// be triggered along with diagnostic info. Used by both the background
-// listener and the on-demand update handler.
 func (q *queue) runCANCheck(ctx workflow.Context, l *zap.Logger) (bool, *CheckCANResponse) {
 	info := workflow.GetInfo(ctx)
 	historyLen := info.GetCurrentHistoryLength()
@@ -87,7 +82,6 @@ func (q *queue) runCANCheck(ctx workflow.Context, l *zap.Logger) (bool, *CheckCA
 		HistoryMax:    historyMax,
 	}
 
-	// Check 1: history length exceeds threshold.
 	if historyLen > historyMax {
 		if l != nil {
 			l.Info("history length exceeded threshold, triggering continue-as-new",
@@ -97,7 +91,6 @@ func (q *queue) runCANCheck(ctx workflow.Context, l *zap.Logger) (bool, *CheckCA
 		return true, resp
 	}
 
-	// Check 2: restart_hint set in queue metadata.
 	requested, err := activities.LocalAwaitCheckCANRequested(ctx, activities.CheckCANRequestedRequest{
 		QueueID: q.queueID,
 	})
@@ -110,7 +103,6 @@ func (q *queue) runCANCheck(ctx workflow.Context, l *zap.Logger) (bool, *CheckCA
 			return false, resp
 		}
 
-		// Always restart on error to avoid the workflow getting stuck in a bad state.
 		if l != nil {
 			l.Warn("CAN check failed, restarting workflow to recover", zap.Error(err))
 		}
@@ -123,7 +115,6 @@ func (q *queue) runCANCheck(ctx workflow.Context, l *zap.Logger) (bool, *CheckCA
 		if l != nil {
 			l.Info("continue-as-new requested via metadata, clearing hint")
 		}
-		// Clear the hint so subsequent checks don't re-trigger.
 		if clearErr := activities.LocalAwaitClearCANRequested(ctx, activities.ClearCANRequestedRequest{
 			QueueID: q.queueID,
 		}); clearErr != nil && l != nil {
@@ -140,7 +131,6 @@ func (q *queue) startCANListener(ctx workflow.Context) {
 	workflow.Go(ctx, func(gCtx workflow.Context) {
 		l, _ := log.WorkflowLogger(gCtx)
 
-		// Stagger startup across queues to avoid thundering herd.
 		jitter := time.Duration(rand.Intn(canStartJitter)) * time.Second
 		if err := workflow.Sleep(gCtx, jitter); err != nil {
 			return
@@ -151,7 +141,6 @@ func (q *queue) startCANListener(ctx workflow.Context) {
 			if q.cfg != nil && q.cfg.QueueContinueAsNewHintPeriod > 0 {
 				hintPeriod = q.cfg.QueueContinueAsNewHintPeriod
 			}
-			// Add up to 50% jitter to avoid thundering herd.
 			jitterMax := int(hintPeriod.Seconds() / 2)
 			if jitterMax < 1 {
 				jitterMax = 1

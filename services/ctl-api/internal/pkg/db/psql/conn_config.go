@@ -10,7 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
-// ConnConfig returns the connection config the service itself would use to
+// why: ConnConfig returns the connection config the service itself would use to
 // reach host, resolving an IAM auth token when db_use_iam is set.
 //
 // Exported for preflight: a caller that builds its own password DSN would

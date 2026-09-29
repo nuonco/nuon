@@ -64,8 +64,6 @@ func TestCore_JoinsMultipleLines(t *testing.T) {
 	}
 }
 
-// terraformDiagnosticLine is a synthetic terraform JSON log record of the shape
-// emitted for a failed apply, with the real cause in diagnostic.detail.
 const terraformDiagnosticLine = `{
   "@level": "error",
   "@message": "Error: creating S3 Bucket (acme-artifacts): AccessDenied",
@@ -80,9 +78,6 @@ const terraformDiagnosticLine = `{
   "type": "diagnostic"
 }`
 
-// logTerraformLine mirrors what pkg/zaphclog does with a terraform JSON record:
-// the @-prefixed keys drive the level and message, every other key is logged as
-// a zap.Any field.
 func logTerraformLine(t *testing.T, l *zap.Logger, line string) {
 	t.Helper()
 
@@ -176,7 +171,7 @@ func TestCore_TerraformDiagnosticRespectsBound(t *testing.T) {
 }
 
 func TestAppend_BoundedKeepsHeadAndTruncatesOverflow(t *testing.T) {
-	c := &Capture{max: 12} // "aaaa"(4)+1 then "bbbb"(4)+1 = 10; "cccc" overflows, 1 byte budget left
+	c := &Capture{max: 12}
 	c.append("aaaa")
 	c.append("bbbb")
 	c.append("cccc")
@@ -200,14 +195,12 @@ func TestAppend_FirstLineOversizedKeepsTruncatedPrefix(t *testing.T) {
 	c.append("Error: something very long that exceeds the bound")
 
 	got := c.String()
-	if got != "Erro" { // budget = 5 - 0 - 1 = 4
+	if got != "Erro" {
 		t.Fatalf("captured %q, want a non-empty truncated prefix so the root cause survives", got)
 	}
 }
 
 func TestAppend_OversizedMultibyteDoesNotSplitRune(t *testing.T) {
-	// "€" is 3 bytes. With budget 4 we can only fit one full rune (3 bytes),
-	// never a partial one.
 	c := &Capture{max: 5}
 	c.append("€€€")
 

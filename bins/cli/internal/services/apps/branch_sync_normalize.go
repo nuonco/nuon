@@ -28,11 +28,6 @@ func canonicalizeLocalBranch(ctx context.Context, resolver *branchNameResolver, 
 	return out, nil
 }
 
-// withDefaultInstallGroup mirrors the server, which seeds a single default group
-// on any config written without one. Without this a branch that declares no
-// install_groups compares unequal to the group the server stored and every sync
-// reports drift no update can settle. A branch with no repo has no config
-// written at all, so it keeps an empty list.
 func withDefaultInstallGroup(cfg *config.AppBranchConfig) []config.AppBranchInstallGroupConfig {
 	if len(cfg.InstallGroups) > 0 {
 		return cfg.InstallGroups
@@ -149,8 +144,6 @@ func normalizePreviewDefaults(p *config.AppBranchPreviewConfig) {
 	}
 }
 
-// normalizeRunConfig returns a copy with the server's mode aliases and default
-// applied. An absent run config is written as push, so it compares equal to one.
 func normalizeRunConfig(in *config.AppBranchRunConfig) *config.AppBranchRunConfig {
 	out := &config.AppBranchRunConfig{}
 	if in != nil {

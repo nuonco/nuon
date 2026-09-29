@@ -37,13 +37,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 }
 
 func (s *Signal) executeCreateInstall(ctx workflow.Context, logger interface{ Info(string, ...interface{}) }) error {
-	// Fetch onboarding
 	onboarding, err := activities.AwaitGetOnboardingByOnboardingID(ctx, s.OnboardingID)
 	if err != nil {
 		return fmt.Errorf("unable to get onboarding: %w", err)
 	}
 
-	// Idempotency: skip if install already created
 	if onboarding.InstallID != nil && *onboarding.InstallID != "" {
 		logger.Info("install already created, skipping", "install_id", *onboarding.InstallID)
 		return nil
@@ -57,12 +55,11 @@ func (s *Signal) executeCreateInstall(ctx workflow.Context, logger interface{ In
 		return fmt.Errorf("onboarding has no org_id set; cannot create install")
 	}
 
-	// Set org + account context on workflow so the cctx propagator passes it to all activities.
+	// why: Set org + account context on workflow so the cctx propagator passes it to all activities.
 	// Both are required — InjectFromWorkflow fails silently if either is missing.
 	ctx = cctx.SetOrgIDWorkflowContext(ctx, *onboarding.OrgID)
 	ctx = cctx.SetAccountIDWorkflowContext(ctx, onboarding.AccountID)
 
-	// Create install + workflow
 	installResp, err := activities.AwaitCreateOnboardingInstall(ctx, activities.CreateOnboardingInstallRequest{
 		Input: &activities.CreateOnboardingInstallInput{
 			OnboardingID: s.OnboardingID,
@@ -81,7 +78,6 @@ func (s *Signal) executeCreateInstall(ctx workflow.Context, logger interface{ In
 
 	logger.Info("created onboarding install", "install_id", installResp.InstallID, "workflow_id", installResp.WorkflowID)
 
-	// Update onboarding with install references and advance step
 	nextStep := string(app.OnboardingStepDeploy)
 	stepStatus := string(app.OnboardingStepStatusActive)
 	_, err = activities.AwaitUpdateOnboarding(ctx, activities.UpdateOnboardingRequest{

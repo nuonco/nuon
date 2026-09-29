@@ -56,11 +56,6 @@ func (a *Activities) GetStepErrorHints(ctx context.Context, req GetStepErrorHint
 	return &GetStepErrorHintsResponse{Hints: ce.Hints, Error: ce}, nil
 }
 
-// stepTargetCompositeError reads the canonical composite error for the step's
-// target. Stack versions carry a row-level error set directly by the generator
-// signal. Sandbox runs check the row-level error first (plan render failures),
-// then fall back to the latest runner job (infrastructure failures). Deploys
-// follow the same order.
 func (a *Activities) stepTargetCompositeError(ctx context.Context, step *app.WorkflowStep) (*compositeerrors.CompositeErrorData, error) {
 	if step.StepTargetID == "" {
 		var run app.AppBranchRun
@@ -120,9 +115,6 @@ func (a *Activities) stepTargetCompositeError(ctx context.Context, step *app.Wor
 	}
 }
 
-// stackVersionCompositeError reads the row-level composite error from an
-// InstallStackVersion. A missing row means no row-level error, so the caller
-// can fall through to the next best-effort source.
 func (a *Activities) stackVersionCompositeError(ctx context.Context, stackVersionID string) (*compositeerrors.CompositeErrorData, error) {
 	var sv app.InstallStackVersion
 	if err := a.db.WithContext(ctx).
@@ -151,10 +143,6 @@ func (a *Activities) deployRowCompositeError(ctx context.Context, installDeployI
 	return deploy.CompositeError, nil
 }
 
-// sandboxRunRowCompositeError reads the row-level composite error from an
-// InstallSandboxRun without touching runner jobs. A missing row, or a row
-// that carries no error (e.g. the run succeeded or failed via
-// infrastructure), yields nil so the caller falls through to the next source.
 func (a *Activities) sandboxRunRowCompositeError(ctx context.Context, sandboxRunID string) (*compositeerrors.CompositeErrorData, error) {
 	var run app.InstallSandboxRun
 	if err := a.db.WithContext(ctx).

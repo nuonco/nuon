@@ -9,7 +9,6 @@ var terminalStatuses = []models.AppStatus{
 	models.AppStatusCancelled,
 	models.AppStatusError,
 	models.AppStatusSuccess,
-	// models.AppStatusFailed
 }
 
 func getStatusIcon(status models.AppStatus) string {

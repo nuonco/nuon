@@ -172,9 +172,6 @@ func (c *ComponentBuild) AfterQuery(tx *gorm.DB) error {
 		c.StatusDescription = c.StatusV2.StatusHumanDescription
 	}
 
-	// Surface NoOp on Active builds so consumers (CLI, dashboard, status
-	// columns) can immediately tell a build was a content-address dedup hit
-	// without having to inspect SourceDigest history themselves.
 	if c.NoOp && c.Status == ComponentBuildStatusActive {
 		c.StatusDescription = "no-op: source unchanged from previous build (reusing prior artifact)"
 	}
@@ -182,11 +179,6 @@ func (c *ComponentBuild) AfterQuery(tx *gorm.DB) error {
 	return nil
 }
 
-// IsNoOp returns true when the runner detected this build's resolved source
-// digest matched the previous active build's digest and skipped the artifact
-// push. NoOp builds are deployable by virtue of the prior build's artifact
-// already living in the install registry at the same digest; they should
-// never trigger new install deploys on their own.
 func (c *ComponentBuild) IsNoOp() bool {
 	return c.NoOp
 }

@@ -31,7 +31,6 @@ type Monitor struct {
 	apiClient nuonrunner.Client
 	l         *zap.Logger
 
-	// internal state
 	ctx      context.Context
 	cancelFn func()
 	wg       *conc.WaitGroup

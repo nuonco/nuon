@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// CloneRepoResult contains the result of a repo clone operation.
 type CloneRepoResult struct {
 	WorkspaceID string `json:"workspace_id"`
 	SourceDir   string `json:"source_dir"`
@@ -48,12 +47,9 @@ func (a *Activities) cloneRepo(ctx context.Context, runID string, vcsConfigID st
 	}, nil
 }
 
-// resolveGitSource looks up the VCS config by ID and constructs a workspace.GitSource.
-// It tries ConnectedGithubVCSConfig first (private repos), then PublicGitVCSConfig (public repos).
 func (a *Activities) resolveGitSource(ctx context.Context, vcsConfigID string, commitSHA string) (*workspace.GitSource, error) {
 	vcsHelpers := a.helpers.VCSHelpers()
 
-	// Try ConnectedGithubVCSConfig first
 	var connectedCfg app.ConnectedGithubVCSConfig
 	res := a.db.WithContext(ctx).
 		Preload("VCSConnection").
@@ -66,7 +62,6 @@ func (a *Activities) resolveGitSource(ctx context.Context, vcsConfigID string, c
 		return workspace.GitSourceFromPlanTypes(src), nil
 	}
 
-	// Try PublicGitVCSConfig
 	var publicCfg app.PublicGitVCSConfig
 	res = a.db.WithContext(ctx).First(&publicCfg, "id = ?", vcsConfigID)
 	if res.Error == nil {

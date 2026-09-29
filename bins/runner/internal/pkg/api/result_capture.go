@@ -9,18 +9,10 @@ import (
 	"github.com/nuonco/nuon/pkg/runner/errcapture"
 )
 
-// resultCaptureClient decorates a nuonrunner.Client to attach the execution's
-// captured error output to failed job results. Every result write in the runner
-// goes through CreateJobExecutionResult, so this is the single place that needs
-// to know about error capture — handlers stay unaware of it.
 type resultCaptureClient struct {
 	nuonrunner.Client
 }
 
-// CreateJobExecutionResult attaches the captured error output (from the job
-// logger's error-capture core) to a failed result under errcapture.MetadataKey,
-// unless the handler already set it. Successful results are passed through
-// untouched.
 func (c *resultCaptureClient) CreateJobExecutionResult(ctx context.Context, jobID, jobExecutionID string, req *models.ServiceCreateRunnerJobExecutionResultRequest) (*models.AppRunnerJobExecutionResult, error) {
 	if req != nil && !req.Success {
 		if out := errcapture.Output(ctx); out != "" {

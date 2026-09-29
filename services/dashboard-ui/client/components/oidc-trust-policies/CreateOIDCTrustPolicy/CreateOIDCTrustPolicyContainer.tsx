@@ -24,8 +24,6 @@ const CreateOIDCTrustPolicyModalContainer = ({
 } & Record<string, any>) => {
   const { org } = useOrg()
   const config = useConfig()
-  // Skipped entirely in manual mode: the repos belong to whoever runs the
-  // workflow, so this org's connections are not the right list to fetch.
   const {
     repos,
     isLoading: isLoadingRepos,

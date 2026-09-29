@@ -1,11 +1,9 @@
 package detail
 
-// Type definitions for execute form
-
 type executeInputMapping struct {
-	name  string // the ref name
-	value string // default value
-	input string // the input name
+	name  string
+	value string
+	input string
 }
 
 type executeFormSubmittedMsg struct {

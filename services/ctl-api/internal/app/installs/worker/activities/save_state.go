@@ -27,7 +27,6 @@ type SaveStateRequest struct {
 func (a *Activities) SaveState(ctx context.Context, req *SaveStateRequest) (result *app.InstallState, err error) {
 	started := time.Now()
 	defer func() { a.stateMetrics.Record(ctx, "save", started, err) }()
-	// the blob upload in InstallState's BeforeCreate hook requires org_id on the context
 	if keys.OrgIDFromContext(ctx) == "" {
 		var install app.Install
 		if res := a.db.WithContext(ctx).Select("org_id").First(&install, "id = ?", req.InstallID); res.Error != nil {

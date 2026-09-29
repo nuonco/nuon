@@ -51,7 +51,6 @@ const primaryLabel = (state: ICreateFromAppState): React.ReactNode => {
       </span>
     )
   }
-  // pick-group
   return (
     <span className="flex items-center gap-2">
       <Icon variant="PlusIcon" />

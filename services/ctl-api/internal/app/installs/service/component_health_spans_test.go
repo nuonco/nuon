@@ -68,8 +68,8 @@ func TestHealthSpans(t *testing.T) {
 		from, to := day0.Add(1*time.Hour), day0.Add(2*time.Hour)
 
 		spans := healthSpans([]app.InstallComponentHealthTransition{
-			transitionAt(day0, "unhealthy"),                  // before `from`
-			transitionAt(day0.Add(3*time.Hour), "unhealthy"), // at/after `to`
+			transitionAt(day0, "unhealthy"),
+			transitionAt(day0.Add(3*time.Hour), "unhealthy"),
 		}, from, to, healthUnknown)
 
 		assert.Equal(t, []healthSpan{{From: from, To: to, Health: healthUnknown}}, spans)
@@ -84,12 +84,12 @@ func TestHealthSpans(t *testing.T) {
 func TestFoldDailyHealthCrossesMidnight(t *testing.T) {
 	day0 := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	from := day0
-	to := day0.AddDate(0, 0, 2) // two full calendar days
+	to := day0.AddDate(0, 0, 2)
 
 	transitions := []app.InstallComponentHealthTransition{
 		transitionAt(day0, "healthy"),
-		transitionAt(day0.Add(23*time.Hour), "degraded"),                // 23:00 day0
-		transitionAt(day0.AddDate(0, 0, 1).Add(1*time.Hour), "healthy"), // 01:00 day1, 2h degraded span
+		transitionAt(day0.Add(23*time.Hour), "degraded"),
+		transitionAt(day0.AddDate(0, 0, 1).Add(1*time.Hour), "healthy"),
 	}
 
 	spans := healthSpans(transitions, from, to, healthUnknown)
@@ -127,7 +127,6 @@ func TestFoldDailyHealthBackToBackSameDayFlips(t *testing.T) {
 
 	assert.Len(t, daily, 1)
 	assert.Equal(t, "2026-01-01", daily[0].Date)
-	// unhealthy briefly beat out degraded and healthy despite lasting 5 minutes.
 	assert.Equal(t, "unhealthy", daily[0].Health)
 	assert.Equal(t, int64(300), daily[0].DegradedSeconds)
 	assert.Equal(t, int64(300), daily[0].UnhealthySeconds)
@@ -188,8 +187,6 @@ func TestWorstDailyAcrossComponents(t *testing.T) {
 	assert.Equal(t, int64(86400), out[0].UnhealthySeconds)
 }
 
-// Pins a live failure: resetting the baseline on a stable healthy component left
-// zero transitions in the window, so the whole window read as unknown.
 func TestHealthSpansSeededFromPriorState(t *testing.T) {
 	t.Parallel()
 

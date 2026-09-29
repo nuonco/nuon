@@ -254,7 +254,6 @@ func TestUnmarshalTemplate_LanguageVersion2SymbolicResources(t *testing.T) {
 		t.Error("expected hasManagedIdentity to detect the symbolic-name identity resource")
 	}
 
-	// Sorted by symbolic name, so identity precedes virtualNetwork.
 	if got := tmpl.Resources[0].symbolicName; got != "identity" {
 		t.Errorf("expected first resource symbolicName 'identity', got %q", got)
 	}
@@ -413,9 +412,6 @@ func TestHasManagedIdentity_DeclaredIdentity(t *testing.T) {
 	}
 }
 
-// testdata/vnet_languageversion_2.json is real `bicep build` output, not hand-written:
-// tool-generated ARM is what actually ships languageVersion 2.0, and it is what
-// regressed stack generation for an Azure install with a customer-supplied VNet.
 func TestParseGeneratedBicepTemplate(t *testing.T) {
 	body, err := os.ReadFile(filepath.Join("testdata", "vnet_languageversion_2.json"))
 	if err != nil {

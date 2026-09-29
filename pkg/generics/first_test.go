@@ -25,15 +25,12 @@ func TestFirst(t *testing.T) {
 			expected: true,
 		},
 		"ptrs": {
-			// Empty string value is returned because First relies on simple equality checks
-			// that compare pointer addresses
 			fn: func() any {
 				return First(&emptystr, ToPtr("foo"))
 			},
 			expected: &emptystr,
 		},
 		"nilptrs": {
-			// But a nil pointer in the zero index is skipped
 			fn: func() any {
 				return First(nil, &emptystr)
 			},

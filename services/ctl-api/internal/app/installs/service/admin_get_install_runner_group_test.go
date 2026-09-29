@@ -73,7 +73,6 @@ func (s *AdminGetInstallRunnerGroupTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -95,7 +94,6 @@ func (s *AdminGetInstallRunnerGroupTestSuite) setupTestData() {
 	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
 	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 
-	// Create runner group linked to install via polymorphic association
 	s.testRunnerGrp = &app.RunnerGroup{
 		OrgID:     s.testOrg.ID,
 		OwnerID:   s.testInstall.ID,

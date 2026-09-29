@@ -14,11 +14,8 @@ import (
 func (s *InstallsServiceTestSuite) TestCreateComponentDeploySuccess() {
 	install := s.createTestInstallWithActiveRunner()
 
-	// Get component and config connection from the seeded app config.
 	ccc := s.testAppConfig.ComponentConfigConnections[0]
 
-	// Pre-seed the InstallComponent so the handler skips its auto-create branch
-	// (which triggers a duplicate-table SQL error with the installs view).
 	s.deps.Seeder.CreateInstallComponent(s.ctx, s.T(), install.ID, ccc.ComponentID)
 
 	build := s.deps.Seeder.CreateComponentBuild(s.ctx, s.T(), ccc.ID)
@@ -36,17 +33,14 @@ func (s *InstallsServiceTestSuite) TestCreateComponentDeploySuccess() {
 	assert.NotEmpty(s.T(), deploy.ID)
 	assert.Equal(s.T(), build.ID, deploy.ComponentBuildID)
 
-	// Workflow should have been created.
 	require.NotNil(s.T(), deploy.WorkflowID)
 	workflowID := *deploy.WorkflowID
 	assert.NotEmpty(s.T(), workflowID)
 
-	// Verify deploy persisted in DB.
 	var dbDeploy app.InstallDeploy
 	require.NoError(s.T(), s.deps.DB.Where("id = ?", deploy.ID).First(&dbDeploy).Error)
 	assert.Equal(s.T(), build.ID, dbDeploy.ComponentBuildID)
 
-	// Verify workflow persisted in DB.
 	var dbWorkflow app.Workflow
 	require.NoError(s.T(), s.deps.DB.Where("id = ?", workflowID).First(&dbWorkflow).Error)
 	assert.Equal(s.T(), install.ID, dbWorkflow.OwnerID)

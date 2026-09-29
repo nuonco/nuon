@@ -96,9 +96,6 @@ func renderRunbookStep(step *app.RunbookStepConfig, data map[string]any) error {
 	return nil
 }
 
-// renderRunbookInput renders a single field against the runbook_inputs data map.
-// Fields without a runbook_inputs reference are returned unchanged so that any
-// .nuon templating is left intact for later execution stages.
 func renderRunbookInput(field string, data map[string]any) (string, error) {
 	if !strings.Contains(field, "runbook_inputs") {
 		return field, nil

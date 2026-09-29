@@ -25,9 +25,6 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
 		return false, errors.Wrap(err, "unable to register handlers")
 	}
 
-	// Start the lifecycle manager to detect unbounded history growth and
-	// entity deletion. It bridges to e.restarted/e.stopped which the
-	// mode-specific loops check.
 	mgr := workflowmanager.New(
 		workflowmanager.WithHistoryMax(emitterCANHistoryMax),
 		workflowmanager.WithCheckInterval(10*time.Minute),
@@ -47,7 +44,6 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
 	)
 	mgr.Start(ctx)
 
-	// Bridge manager state to emitter fields read by mode-specific loops.
 	workflow.Go(ctx, func(gCtx workflow.Context) {
 		_ = workflow.Await(gCtx, func() bool {
 			return mgr.Stopped || mgr.Restarted
@@ -60,7 +56,6 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
 		}
 	})
 
-	// Fetch the emitter from DB and set e.queueID from the authoritative record.
 	emitter, err := e.ensureEmitterActive(ctx)
 	if err != nil {
 		return false, errors.Wrap(err, "unable to check emitter status")
@@ -72,7 +67,6 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
 	ctx = repairWorkflowContext(ctx, emitter)
 	e.ctx = ctx
 
-	// Check if the queue still exists before proceeding.
 	if err := e.ensureQueueActive(ctx); err != nil {
 		return false, errors.Wrap(err, "unable to check queue status")
 	}
@@ -111,7 +105,6 @@ func (e *emitterWorkflow) emitSignalMetric(ctx workflow.Context, emitter *app.Qu
 }
 
 func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitter *app.QueueEmitter) error {
-	// Check if emitter signals are globally disabled
 	if e.cfg.DisableEmitterSignals {
 		e.emitSignalMetric(ctx, emitter, "disabled")
 		l.Info("emitter signals disabled globally, skipping emit",
@@ -119,7 +112,6 @@ func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitte
 		return nil
 	}
 
-	// Emit the signal to the queue and get back the signal ref
 	resp, err := activities.AwaitEmitSignal(ctx, &activities.EmitSignalRequest{
 		EmitterID: e.emitterID,
 		QueueID:   emitter.QueueID,
@@ -145,7 +137,6 @@ func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitte
 		zap.String("workflow-id", resp.WorkflowID),
 	)
 
-	// Update the queue signal with the emitter relationship
 	if _, err := activities.AwaitUpdateSignalEmitter(ctx, &activities.UpdateSignalEmitterRequest{
 		QueueSignalID: resp.QueueSignalID,
 		EmitterID:     e.emitterID,
@@ -153,7 +144,6 @@ func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitte
 		return errors.Wrap(err, "unable to update signal emitter relationship")
 	}
 
-	// Update emitter stats
 	if _, err := activities.AwaitUpdateEmitterStats(ctx, &activities.UpdateEmitterStatsRequest{
 		EmitterID: e.emitterID,
 	}); err != nil {

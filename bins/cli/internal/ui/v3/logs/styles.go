@@ -8,7 +8,6 @@ import (
 
 var appStyle = styles.Pane
 
-// header holds a "title card" for the view or the search box
 var headerStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(styles.BorderInactiveColor).
@@ -28,7 +27,6 @@ var logText = logModalBase.
 	Padding(1).
 	BorderStyle(lipgloss.NormalBorder())
 
-// Log Detail Modal
 var logModalBase = lipgloss.NewStyle()
 var logModal = logModalBase.
 	BorderStyle(lipgloss.NormalBorder())

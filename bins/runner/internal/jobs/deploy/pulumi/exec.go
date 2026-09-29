@@ -38,7 +38,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	plan := h.state.plan.PulumiDeployPlan
 
-	// Set up cloud auth env vars
 	envVars := make(map[string]string)
 	for k, v := range plan.EnvVars {
 		envVars[k] = v
@@ -77,7 +76,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		}
 	}
 
-	// Write kube config if cluster info is available
 	if plan.ClusterInfo != nil {
 		kubeConfigPath := filepath.Join(h.state.arch.BasePath(), config.DefaultKubeConfigFilename)
 		if err := config.WriteConfig(ctx, plan.ClusterInfo, kubeConfigPath); err != nil {
@@ -87,7 +85,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		envVars["KUBECONFIG"] = kubeConfigPath
 	}
 
-	// Create Pulumi workspace
 	ws, err := pulumiworkspace.New(ctx, &pulumiworkspace.Options{
 		WorkDir:   h.state.arch.BasePath(),
 		StackName: plan.StackName,
@@ -108,7 +105,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 	h.state.workspace = ws
 
-	// Download existing state from control plane and import into local backend.
 	if _, err := h.downloadState(ctx, l, ws, plan.WorkspaceID); err != nil {
 		h.writeErrorResult(ctx, "download pulumi state", err)
 		return fmt.Errorf("unable to download pulumi state: %w", err)
@@ -150,13 +146,12 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 			return fmt.Errorf("unable to execute pulumi destroy preview: %w", err)
 		}
 
-		// DestroyPreview is synthetic — no real update plan to persist.
 		if err := h.writePlanResult(ctx, result, nil); err != nil {
 			h.errRecorder.Record("write job execution result", err)
 		}
 
 	case models.AppRunnerJobOperationTypeApplyDashPlan:
-		// Persist state on every exit (success, error, or panic) so partially
+		// why: Persist state on every exit (success, error, or panic) so partially
 		// created resources are never lost — the retry then reconciles instead
 		// of recreating.
 		defer func() {
@@ -204,14 +199,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	return nil
 }
 
-// writePlanResult uploads two payloads on the job execution result:
-//   - ContentsCompressed: the Pulumi update plan file (gzip+b64), used by the
-//     subsequent apply job to skip its own preview and enforce drift safety.
-//   - ContentsDisplayCompressed: the structured PreviewResult JSON (gzip+b64),
-//     used by the dashboard to render the per-resource diff.
-//
-// planFileBytes may be empty for synthetic previews (e.g. destroy) — in that
-// case the apply step computes a fresh diff like before.
 func (h *handler) writePlanResult(ctx context.Context, result *pulumiworkspace.PreviewResult, planFileBytes []byte) error {
 	displayJSON, err := json.Marshal(result)
 	if err != nil {
@@ -222,7 +209,6 @@ func (h *handler) writePlanResult(ctx context.Context, result *pulumiworkspace.P
 		return fmt.Errorf("unable to gzip preview result: %w", err)
 	}
 
-	// Orchestrator requires non-empty contents for non-NOOP jobs; teardowns have no real plan.
 	contentsB64 := displayB64
 	if len(planFileBytes) > 0 {
 		contentsB64, err = gzipBase64URL(planFileBytes)
@@ -254,20 +240,12 @@ func gzipBase64URL(raw []byte) (string, error) {
 	return base64.URLEncoding.EncodeToString(gzBuf.Bytes()), nil
 }
 
-// updatePlanBundle is the wire format ctl-api stores in the plan job's
-// execution result Contents and replays into the apply job's ApplyPlanContents.
-// We bundle the stack's encryption salt with the plan so the apply job can
-// decrypt secret values even when no prior state exists to inherit the salt
-// from (i.e. first deploy).
 type updatePlanBundle struct {
 	Version int    `json:"v"`
 	Salt    string `json:"salt,omitempty"`
 	PlanB64 string `json:"plan_b64"`
 }
 
-// bundleUpdatePlan reads the saved plan file plus the stack's encryption salt
-// and returns a JSON bundle ready to be gzip+b64'd into the job result.
-// Returns nil with no error when the preview produced no plan (no-op preview).
 func (h *handler) bundleUpdatePlan(ctx context.Context, ws *pulumiworkspace.Workspace, planPath string) ([]byte, error) {
 	planJSON, err := os.ReadFile(planPath)
 	if err != nil {
@@ -292,11 +270,6 @@ func (h *handler) bundleUpdatePlan(ctx context.Context, ws *pulumiworkspace.Work
 	})
 }
 
-// materializeUpdatePlan reverses bundleUpdatePlan + the gzip+b64 round-trip the
-// API server performs (see RunnerJobExecutionResult.GetContentsB64String): we
-// StdEncoding-decode, gunzip, parse the bundle, restore the plan job's
-// encryption salt onto this stack so secret values decrypt cleanly, and write
-// the plan JSON to a file Pulumi can consume via --plan.
 func (h *handler) materializeUpdatePlan(ctx context.Context, ws *pulumiworkspace.Workspace, b64Contents string) (string, error) {
 	gzBytes, err := base64.StdEncoding.DecodeString(b64Contents)
 	if err != nil {
@@ -319,7 +292,7 @@ func (h *handler) materializeUpdatePlan(ctx context.Context, ws *pulumiworkspace
 		return "", fmt.Errorf("unable to parse plan bundle: %w", err)
 	}
 
-	// Reject payloads that aren't bundle-shaped — most likely a raw plan from
+	// why: Reject payloads that aren't bundle-shaped — most likely a raw plan from
 	// an older runner (the merged-to-main wire format). Pulumi plan JSON has
 	// no plan_b64 field so json.Unmarshal silently produces a zero bundle;
 	// applying that would write an empty plan file and fail on `pulumi up`.
@@ -344,7 +317,7 @@ func (h *handler) materializeUpdatePlan(ctx context.Context, ws *pulumiworkspace
 	return planPath, nil
 }
 
-// downloadState fetches the current pulumi state from the control plane and
+// why: downloadState fetches the current pulumi state from the control plane and
 // imports it into the workspace's local backend. Returns true if state was
 // found and imported. A false return means the stack is fresh — update plans
 // can't cross fresh-stack boundaries because each fresh stack generates its
@@ -397,11 +370,8 @@ func (h *handler) downloadState(ctx context.Context, l *zap.Logger, ws *pulumiwo
 	return true, nil
 }
 
-// updatePulumiState exports pulumi state and uploads it to the control plane.
-// POST /v1/runners/pulumi-state/{workspace_id}?job_id=X stores raw state bytes
-// in the terraform_workspace_states table without parsing.
 func (h *handler) updatePulumiState(ctx context.Context, ws *pulumiworkspace.Workspace) error {
-	// Detach from job cancellation so a mid-deploy cancel still exports + persists
+	// why: Detach from job cancellation so a mid-deploy cancel still exports + persists
 	// state; otherwise created resources are dropped and the retry recreates them.
 	ctx = context.WithoutCancel(ctx)
 

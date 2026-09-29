@@ -13,14 +13,11 @@ import (
 	tomlparser "github.com/nuonco/nuon/pkg/parser/toml"
 )
 
-// PublishDiagnostics handles the full diagnostic cycle: detection, parsing, diagnosis, and publishing
 func PublishDiagnostics(ctx *glsp.Context, uri protocol.DocumentUri, text string) {
 	var diagnostics []protocol.Diagnostic
 
-	// Detect schema type
 	schemaType := models.DetectSchemaTypeForDocument(text, string(uri))
 	if schemaType == "" {
-		// Clear diagnostics if no schema detected
 		ctx.Notify(protocol.ServerTextDocumentPublishDiagnostics, protocol.PublishDiagnosticsParams{
 			URI:         uri,
 			Diagnostics: []protocol.Diagnostic{},
@@ -28,9 +25,7 @@ func PublishDiagnostics(ctx *glsp.Context, uri protocol.DocumentUri, text string
 		return
 	}
 
-	// Check if the schema type is valid
 	if !models.IsValidSchemaType(schemaType) {
-		// Find the position of the schema type on the first line
 		lines := strings.Split(text, "\n")
 		if len(lines) > 0 {
 			firstLine := lines[0]
@@ -59,7 +54,6 @@ func PublishDiagnostics(ctx *glsp.Context, uri protocol.DocumentUri, text string
 		return
 	}
 
-	// Lookup schema
 	schema, err := models.LookupSchema(schemaType)
 	if err != nil {
 		log.Errorf("❌ Schema lookup error during diagnostics: %v", err)
@@ -78,34 +72,26 @@ func PublishDiagnostics(ctx *glsp.Context, uri protocol.DocumentUri, text string
 		return
 	}
 
-	// Parse TOML (always succeeds with loose parser)
 	doc := tomlparser.ParseToml(text)
 
-	// Attempt strict parse to get values for type checking
-	// If strict parse fails (invalid syntax), extract values from raw TOML text
 	if strictDoc, err := tomlparser.ParseStrict(text); err == nil {
 		doc.Values = strictDoc.Values
 	} else {
-		// Strict parsing failed - extract raw value strings from text for type analysis
 		doc.Values = extractRawValues(text, doc)
 	}
 
-	// Generate diagnostics
 	diags := DiagnoseDocument(uri, doc, schema)
 	log.Infof("🩺 Generated %d diagnostics for %s", len(diags), uri)
 
-	// Publish
 	ctx.Notify(protocol.ServerTextDocumentPublishDiagnostics, protocol.PublishDiagnosticsParams{
 		URI:         uri,
 		Diagnostics: diags,
 	})
 }
 
-// DiagnoseDocument generates diagnostics for a TOML document
 func DiagnoseDocument(uri protocol.DocumentUri, doc *tomlparser.TomlDocument, rootSchema *jsonschema.Schema) []protocol.Diagnostic {
 	diagnostics := []protocol.Diagnostic{}
 
-	// Defensive guard: return empty diagnostics if rootSchema is nil
 	if rootSchema == nil {
 		return diagnostics
 	}
@@ -117,29 +103,22 @@ func DiagnoseDocument(uri protocol.DocumentUri, doc *tomlparser.TomlDocument, ro
 
 	effectiveRoot := mergeAllOf(rootSchema, defs)
 
-	// 1. Unknown keys
 	for _, key := range doc.Keys {
-		// Defensive guard: skip keys with empty Path
 		if len(key.Path) == 0 {
 			continue
 		}
 
-		// Determine the table path for this key
 		parentPath := key.Path[:len(key.Path)-1]
 
-		// Resolve parent schema
 		parentSchema := ResolveSchema(effectiveRoot, parentPath, defs)
 		if parentSchema == nil {
 			continue
 		}
 
-		// Check if property exists
 		found := false
 		if parentSchema.Properties != nil && parentSchema.Properties.Len() > 0 {
 			_, found = parentSchema.Properties.Get(key.Name)
 		} else {
-			// If properties are empty/nil, it's likely a map (additionalProperties) or allows everything
-			// We skip "Unknown key" check unless we can verify additionalProperties is false
 			found = true
 		}
 
@@ -151,7 +130,6 @@ func DiagnoseDocument(uri protocol.DocumentUri, doc *tomlparser.TomlDocument, ro
 				Source:   ptr("Nuon LSP"),
 			})
 		} else {
-			// 3. Type mismatches (only if key is known)
 			fullPath := strings.Join(key.Path, ".")
 			if val, ok := doc.Values[fullPath]; ok {
 				var propSchema *jsonschema.Schema
@@ -160,13 +138,11 @@ func DiagnoseDocument(uri protocol.DocumentUri, doc *tomlparser.TomlDocument, ro
 						propSchema = ps
 					}
 				}
-				// If not in properties, use AdditionalProperties (e.g. for maps)
 				if propSchema == nil {
 					propSchema = parentSchema.AdditionalProperties
 				}
 
 				if propSchema != nil {
-					// Resolve ref for property schema if needed for type checking
 					if propSchema.Ref != "" {
 						if r := resolveRef(propSchema.Ref, defs); r != nil {
 							propSchema = r
@@ -193,7 +169,6 @@ func DiagnoseDocument(uri protocol.DocumentUri, doc *tomlparser.TomlDocument, ro
 		}
 	}
 
-	// 2. Missing required fields
 	for _, table := range doc.Tables {
 		schemaNode := ResolveSchema(effectiveRoot, table.Path, defs)
 		if schemaNode == nil {
@@ -212,8 +187,6 @@ func DiagnoseDocument(uri protocol.DocumentUri, doc *tomlparser.TomlDocument, ro
 		}
 	}
 
-	// Also check required fields for the root table (empty path)
-	// Use effectiveRoot for root checks
 	if effectiveRoot != nil {
 		for _, reqField := range effectiveRoot.Required {
 			if !PropertyExists(doc, []string{}, reqField) {
@@ -227,7 +200,6 @@ func DiagnoseDocument(uri protocol.DocumentUri, doc *tomlparser.TomlDocument, ro
 		}
 	}
 
-	// 4. oneOf validation
 	if len(effectiveRoot.OneOf) > 0 {
 		satisfiedCount := 0
 		var satisfiedTitles []string
@@ -257,7 +229,6 @@ func DiagnoseDocument(uri protocol.DocumentUri, doc *tomlparser.TomlDocument, ro
 				} else {
 					satisfiedTitles = append(satisfiedTitles, fmt.Sprintf("[%s]", strings.Join(branch.Required, ", ")))
 				}
-				// Track fields that satisfied this branch
 				satisfiedFields = append(satisfiedFields, branch.Required...)
 			}
 
@@ -278,14 +249,11 @@ func DiagnoseDocument(uri protocol.DocumentUri, doc *tomlparser.TomlDocument, ro
 				Source:   ptr("Nuon LSP"),
 			})
 		} else if satisfiedCount > 1 {
-			// Multiple oneOf branches satisfied - underline all conflicting fields
 			foundAny := false
 
 			for _, fieldName := range satisfiedFields {
-				// Find the key or table for this field at root level (empty tablePath)
 				found := false
 
-				// Check for root-level keys (e.g., "name = value")
 				for _, key := range doc.Keys {
 					if len(key.Path) == 1 && key.Name == fieldName {
 						diagnostics = append(diagnostics, protocol.Diagnostic{
@@ -300,7 +268,6 @@ func DiagnoseDocument(uri protocol.DocumentUri, doc *tomlparser.TomlDocument, ro
 					}
 				}
 
-				// Also check for tables (e.g., [connected_repo], [public_repo])
 				if !found {
 					for _, table := range doc.Tables {
 						if len(table.Path) == 1 && table.Name == fieldName {
@@ -317,7 +284,6 @@ func DiagnoseDocument(uri protocol.DocumentUri, doc *tomlparser.TomlDocument, ro
 					}
 				}
 			}
-			// If we didn't find any fields to underline, fall back to line 0
 			if !foundAny {
 				diagnostics = append(diagnostics, protocol.Diagnostic{
 					Severity: ptrSeverity(protocol.DiagnosticSeverityError),
@@ -331,8 +297,6 @@ func DiagnoseDocument(uri protocol.DocumentUri, doc *tomlparser.TomlDocument, ro
 
 	return diagnostics
 }
-
-// Helper functions
 
 func mergeAllOf(schema *jsonschema.Schema, defs map[string]*jsonschema.Schema) *jsonschema.Schema {
 	if schema == nil {
@@ -365,7 +329,6 @@ func mergeAllOf(schema *jsonschema.Schema, defs map[string]*jsonschema.Schema) *
 			continue
 		}
 
-		// Merge definitions first so $ref resolution works for this branch
 		for k, v := range branch.Definitions {
 			if _, exists := defs[k]; !exists {
 				defs[k] = v
@@ -395,7 +358,6 @@ func mergeAllOf(schema *jsonschema.Schema, defs map[string]*jsonschema.Schema) *
 			merged.OneOf = append(merged.OneOf, resolved.OneOf...)
 		}
 
-		// Also merge definitions from the resolved schema (in case ref target has its own)
 		for k, v := range resolved.Definitions {
 			if _, exists := defs[k]; !exists {
 				defs[k] = v
@@ -408,7 +370,6 @@ func mergeAllOf(schema *jsonschema.Schema, defs map[string]*jsonschema.Schema) *
 
 func ResolveSchema(root *jsonschema.Schema, path []string, defs map[string]*jsonschema.Schema) *jsonschema.Schema {
 	current := root
-	// Resolve root ref/array
 	if current.Ref != "" {
 		if r := resolveRef(current.Ref, defs); r != nil {
 			current = r
@@ -420,7 +381,6 @@ func ResolveSchema(root *jsonschema.Schema, path []string, defs map[string]*json
 			return nil
 		}
 
-		// If array, peel off Items
 		if current.Type == "array" && current.Items != nil {
 			current = current.Items
 			if current.Ref != "" {
@@ -450,8 +410,6 @@ func ResolveSchema(root *jsonschema.Schema, path []string, defs map[string]*json
 		}
 	}
 
-	// If we ended on an array (e.g. path pointed to a table which is an array of tables),
-	// we usually want the ITEM schema to check keys against.
 	if current != nil && current.Type == "array" && current.Items != nil {
 		current = current.Items
 		if current.Ref != "" {
@@ -464,7 +422,6 @@ func ResolveSchema(root *jsonschema.Schema, path []string, defs map[string]*json
 	return current
 }
 
-// resolveRef resolves a JSON Schema $ref to its definition
 func resolveRef(ref string, defsLookup map[string]*jsonschema.Schema) *jsonschema.Schema {
 	ref = strings.TrimPrefix(ref, "#/definitions/")
 	ref = strings.TrimPrefix(ref, "#/$defs/")
@@ -472,24 +429,19 @@ func resolveRef(ref string, defsLookup map[string]*jsonschema.Schema) *jsonschem
 }
 
 func PropertyExists(doc *tomlparser.TomlDocument, tablePath []string, keyName string) bool {
-	// Check keys
 	if keyExistsInKeys(doc, tablePath, keyName) {
 		return true
 	}
 
-	// Check tables
-	// A required property might be satisfied by a table (e.g. [public_repo])
 	targetPathLen := len(tablePath) + 1
 	for _, t := range doc.Tables {
 		if len(t.Path) != targetPathLen {
 			continue
 		}
-		// Last segment of path must match keyName
 		if t.Path[len(t.Path)-1] != keyName {
 			continue
 		}
 
-		// Prefix must match tablePath
 		match := true
 		for i, p := range tablePath {
 			if t.Path[i] != p {
@@ -585,8 +537,6 @@ func enumAllows(schemaNode *jsonschema.Schema, value any) bool {
 	return false
 }
 
-// normalizeEnumValue strips the quotes that extractRawValues leaves on string
-// values when a document fails to parse strictly.
 func normalizeEnumValue(value any) string {
 	s := fmt.Sprintf("%v", value)
 	if len(s) >= 2 {
@@ -623,8 +573,6 @@ func ptrSeverity(s protocol.DiagnosticSeverity) *protocol.DiagnosticSeverity {
 	return &s
 }
 
-// extractRawValues extracts raw value strings from TOML text when strict parsing fails
-// This allows type checking even for invalid TOML syntax like "terraform_version = 1.2.3"
 func extractRawValues(text string, doc *tomlparser.TomlDocument) map[string]any {
 	values := make(map[string]any)
 	lines := strings.Split(text, "\n")
@@ -636,20 +584,16 @@ func extractRawValues(text string, doc *tomlparser.TomlDocument) map[string]any 
 
 		line := lines[key.Range.Start.Line]
 
-		// Find the equals sign
 		eqIdx := strings.Index(line, "=")
 		if eqIdx == -1 {
 			continue
 		}
 
-		// Extract value part (after =)
 		rawValue := strings.TrimSpace(line[eqIdx+1:])
 		if rawValue == "" {
 			continue
 		}
 
-		// Try to parse as number for type checking purposes
-		// This helps catch cases like "1.2.3" which are invalid floats
 		var value any = rawValue
 
 		switch {
@@ -660,18 +604,13 @@ func extractRawValues(text string, doc *tomlparser.TomlDocument) map[string]any 
 		case rawValue == "true" || rawValue == "false":
 			value = rawValue == "true"
 		default:
-			// Try parsing as number
 			if f, err := strconv.ParseFloat(rawValue, 64); err == nil {
-				// Check if it looks like a float or integer
 				if strings.Contains(rawValue, ".") {
 					value = f
 				} else {
 					value = int64(f)
 				}
 			} else if looksLikeNumber(rawValue) {
-				// For values that failed to parse as floats, check if they look like
-				// they were attempting to be numbers (e.g., "1.2.3" which has multiple dots)
-				// Treat as a float64 for type mismatch detection
 				value = 0.0
 			}
 		}
@@ -683,26 +622,20 @@ func extractRawValues(text string, doc *tomlparser.TomlDocument) map[string]any 
 	return values
 }
 
-// looksLikeNumber returns true if a string appears to be a numeric value
-// that failed to parse (e.g., "1.2.3" with multiple decimal points)
 func looksLikeNumber(s string) bool {
 	if len(s) == 0 {
 		return false
 	}
 
-	// Remove quotes if present
 	if (strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"")) ||
 		(strings.HasPrefix(s, "'") && strings.HasSuffix(s, "'")) {
 		return false
 	}
-
-	// Check if it starts with a digit or negative sign
 	firstChar := s[0]
 	if (firstChar < '0' || firstChar > '9') && firstChar != '-' && firstChar != '+' {
 		return false
 	}
 
-	// Check if all characters are digits, dots, or negative sign
 	dotCount := 0
 	for _, ch := range s {
 		if ch >= '0' && ch <= '9' {
@@ -716,12 +649,10 @@ func looksLikeNumber(s string) bool {
 			continue
 		}
 		if ch == 'e' || ch == 'E' {
-			// Scientific notation is valid TOML float
 			continue
 		}
 		return false
 	}
 
-	// If it has multiple dots or ends with a dot, it's malformed numeric
 	return dotCount > 1 || strings.HasSuffix(s, ".")
 }

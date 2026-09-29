@@ -11,17 +11,11 @@ import (
 const (
 	defaultVariablesFilenameTmpl string = "variables-%d.json"
 
-	// terraformrcFilename is the name of the CLI config file written into
-	// the workspace root when FilesystemMirrorPath is set.
 	terraformrcFilename string = ".terraformrc"
 
-	// tfCLIConfigFileEnvVar is the env var terraform reads to locate its
-	// CLI config file. Setting this overrides the default of
-	// ~/.terraformrc / %APPDATA%/terraform.rc.
 	tfCLIConfigFileEnvVar string = "TF_CLI_CONFIG_FILE"
 )
 
-// getEnvironment returns the current environment as a map
 func (w *workspace) getEnvironment() map[string]string {
 	envVars := make(map[string]string)
 	for _, val := range os.Environ() {
@@ -32,7 +26,6 @@ func (w *workspace) getEnvironment() map[string]string {
 	return envVars
 }
 
-// mergeMaps merges b into a, in place.
 func (w *workspace) mergeMaps(a map[string]string, bs ...map[string]string) map[string]string {
 	for _, b := range bs {
 		for k, v := range b {
@@ -43,7 +36,6 @@ func (w *workspace) mergeMaps(a map[string]string, bs ...map[string]string) map[
 	return a
 }
 
-// LoadVariables initializes a variable set
 func (w *workspace) LoadVariables(ctx context.Context) error {
 	w.envVars = w.getEnvironment()
 
@@ -75,9 +67,6 @@ func (w *workspace) LoadVariables(ctx context.Context) error {
 		}
 	}
 
-	// If a filesystem mirror is configured, write a .terraformrc into the
-	// workspace root pointing at it and set TF_CLI_CONFIG_FILE so that
-	// terraform init resolves providers from the local mirror only.
 	if w.FilesystemMirrorPath != "" {
 		rcPath, err := w.writeTerraformRC()
 		if err != nil {
@@ -89,8 +78,6 @@ func (w *workspace) LoadVariables(ctx context.Context) error {
 	return nil
 }
 
-// resolveFilesystemMirrorPath returns the absolute path to the configured
-// filesystem mirror. Relative paths are resolved against the workspace root.
 func (w *workspace) resolveFilesystemMirrorPath() string {
 	if filepath.IsAbs(w.FilesystemMirrorPath) {
 		return w.FilesystemMirrorPath
@@ -98,7 +85,7 @@ func (w *workspace) resolveFilesystemMirrorPath() string {
 	return filepath.Join(w.root, w.FilesystemMirrorPath)
 }
 
-// writeTerraformRC writes a .terraformrc into the workspace root that
+// why: writeTerraformRC writes a .terraformrc into the workspace root that
 // configures terraform to source providers exclusively from the configured
 // filesystem mirror. It returns the absolute path to the written file.
 //

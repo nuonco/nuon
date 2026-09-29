@@ -43,15 +43,12 @@ import (
 func (s *service) LogStreamWriteLogs(ctx *gin.Context) {
 	logStreamID := ctx.Param("log_stream_id")
 
-	// read data into bytes
 	byts, err := io.ReadAll(ctx.Request.Body)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
 
-	// unmarshal bytes into ExportRequest
-	// NOTE(fd): this is essentially our validation step. we do not use this object directly otherwise.
 	expreq := plogotlp.NewExportRequest()
 	if err := expreq.UnmarshalProto(byts); err != nil {
 		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("unable to unmarshal request: %w", err)))
@@ -71,16 +68,10 @@ func (s *service) LogStreamWriteLogs(ctx *gin.Context) {
 		"log_stream_type": logStream.OwnerType,
 	}))
 
-	// One receive time for the whole request, so the parent fan-out below stamps
-	// the same value as the child rather than a few microseconds later.
 	now := time.Now()
 
-	// write the logs to the db
 	logs := s.toLogStreamLogs(ctx, now, logStreamID, expreq)
 
-	// Fan out to the parent stream, if any, so a parent's log view includes its
-	// children's records. The read path matches log_stream_id exactly (it's the
-	// table's sort prefix), so this duplication is what makes that read cheap.
 	if !logStream.ParentLogStreamID.Empty() {
 		logs = append(logs, s.toLogStreamLogs(ctx, now, logStream.ParentLogStreamID.String, expreq)...)
 	}
@@ -95,24 +86,11 @@ func (s *service) LogStreamWriteLogs(ctx *gin.Context) {
 }
 
 func (s *service) toLogStreamLogs(ctx context.Context, now time.Time, logStreamID string, logs plogotlp.ExportRequest) []app.OtelLogRecord {
-	// Resolved here rather than left to app.OtelLogRecord's BeforeCreate hook,
-	// which reads them off the GORM statement context. When these records are
-	// produced to Kafka the insert happens in the consumer, where there is no
-	// request context — and org_id leads the destination table's PRIMARY KEY and
-	// ORDER BY, so an empty one collapses its sort order. Stamping them at the
-	// same place for both paths also keeps the Kafka and inline writes identical.
 	orgID := keys.OrgIDFromContext(ctx)
 	createdByID := keys.CreatedByIDFromContext(ctx)
 
-	// prepare a slice to hold all of the record we will be writing
 	otelLogRecords := []app.OtelLogRecord{}
 
-	// iterate over the logs in the payload
-	// 1. grab the resource and extract common fields (resourceLogs.resource).
-	// 2. grab the scope and extract the comman fields (resourceLogs.scopeLogs.scope)
-	// 3. iterate through the resourceLogs.scopeLogs.scope.logRecords and munge it w/
-	//    the shared resoruce data, scope data, and data from the request (e.g.runnerid).
-	// 4. save it to clickhouse
 	logSlice := logs.Logs().ResourceLogs()
 	for i := 0; i < logSlice.Len(); i++ {
 		log := logSlice.At(i)
@@ -122,7 +100,6 @@ func (s *service) toLogStreamLogs(ctx context.Context, now time.Time, logStreamI
 		resourceAttrsMap := otel.AttributesToMap(resourceAttrs)
 		resourceSchemaUrl := log.SchemaUrl()
 
-		// NOTE(fd): this is a well established convention.
 		var resourceServiceName string
 		snVal, ok := resourceAttributes.Get("service.name")
 		if ok {
@@ -145,10 +122,6 @@ func (s *service) toLogStreamLogs(ctx context.Context, now time.Time, logStreamI
 				logAttrs := log.Attributes()
 				logAttributesMap := otel.AttributesToMap(logAttrs)
 
-				// Allow per-record override of service.name via log attributes
-				// so handlers can tag logs with finer-grained service names
-				// (e.g. "runner.helm") via l.With("service.name", ...) without
-				// having to construct a separate LoggerProvider per tool.
 				serviceName := resourceServiceName
 				if v, ok := logAttributesMap["service.name"]; ok && v != "" {
 					serviceName = v
@@ -158,7 +131,7 @@ func (s *service) toLogStreamLogs(ctx context.Context, now time.Time, logStreamI
 					ID:          domains.NewOtelLogID(),
 					OrgID:       orgID,
 					CreatedByID: createdByID,
-					// Receive time, not sink-insert time. GORM would otherwise
+					// why: Receive time, not sink-insert time. GORM would otherwise
 					// autofill these when the row is written, which on the Kafka
 					// path happens in the consumer — turning "when we got this log
 					// line" into "when the sink flushed it", offset by the fetch
@@ -166,8 +139,6 @@ func (s *service) toLogStreamLogs(ctx context.Context, now time.Time, logStreamI
 					CreatedAt: now,
 					UpdatedAt: now,
 
-					// runner info
-					// NOTE(fd): these locations are a convention
 					LogStreamID:            logStreamID,
 					RunnerID:               generics.FindMap("runner.id", logAttributesMap, resourceAttrsMap),
 					RunnerGroupID:          resourceAttrsMap["runner_group.id"],
@@ -175,19 +146,17 @@ func (s *service) toLogStreamLogs(ctx context.Context, now time.Time, logStreamI
 					RunnerJobExecutionID:   generics.FindMap("runner_job_execution.id", logAttributesMap, resourceAttrsMap),
 					RunnerJobExecutionStep: generics.FindMap("runner_job_execution_step.name", logAttributesMap, resourceAttrsMap),
 
-					// from resource
 					ResourceAttributes: otel.AttributesToMap(resourceAttrs),
 					ResourceSchemaURL:  resourceSchemaUrl,
 
-					// from scope
 					ScopeSchemaURL:  scopeSchemaUrl,
 					ScopeName:       scopeName,
 					ScopeVersion:    scopeVersion,
 					ScopeAttributes: scopeAttrMap,
 
 					Timestamp:      timestamp,
-					TimestampTime:  timestamp, // the gorm model struct sets these to zero so we must be explici
-					TimestampDate:  timestamp, // the gorm model struct sets these to zero so we must be explici
+					TimestampTime:  timestamp, // why: the gorm model struct sets these to zero so we must be explici
+					TimestampDate:  timestamp, // why: the gorm model struct sets these to zero so we must be explici
 					ServiceName:    serviceName,
 					SeverityNumber: int(log.SeverityNumber()),
 					SeverityText:   log.SeverityNumber().String(),
@@ -204,7 +173,7 @@ func (s *service) toLogStreamLogs(ctx context.Context, now time.Time, logStreamI
 	return otelLogRecords
 }
 
-// produceOrWriteLogStreamLogs hands the records to Kafka when it's enabled,
+// why: produceOrWriteLogStreamLogs hands the records to Kafka when it's enabled,
 // falling back to the inline ClickHouse write for anything Kafka didn't ack.
 //
 // Synchronous, unlike the heartbeat producer. This handler currently blocks on a
@@ -229,8 +198,6 @@ func (s *service) produceOrWriteLogStreamLogs(ctx context.Context, logs []app.Ot
 
 	msgs := make([]kafka.Message, 0, len(logs))
 	for _, log := range logs {
-		// Keyed by log stream so one stream's records share a partition, which
-		// keeps them ordered and lands them on the same consumer.
 		msgs = append(msgs, kafka.Message{Key: log.LogStreamID, Payload: log})
 	}
 
@@ -239,8 +206,6 @@ func (s *service) produceOrWriteLogStreamLogs(ctx context.Context, logs []app.Ot
 		return nil
 	}
 
-	// Only the unacked records, so a partial failure doesn't duplicate the ones
-	// Kafka already has.
 	fallback := make([]app.OtelLogRecord, 0, len(failed))
 	for _, i := range failed {
 		fallback = append(fallback, logs[i])
@@ -255,13 +220,11 @@ func (s *service) produceOrWriteLogStreamLogs(ctx context.Context, logs []app.Ot
 }
 
 func (s *service) writeLogStreamLogs(ctx context.Context, logs []app.OtelLogRecord) error {
-	// write the otel logs to the db
 	res := s.chDB.WithContext(ctx).
 		Create(&logs)
 	if res.Error != nil {
 		return fmt.Errorf("unable to ingest logs: %w", res.Error)
 	}
 
-	// save to db
 	return nil
 }

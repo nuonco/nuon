@@ -19,7 +19,6 @@ import (
 	awstypes "github.com/nuonco/nuon/pkg/types/aws"
 )
 
-// getRegionFromIMDS fetches the current region from EC2 instance metadata.
 func getRegionFromIMDS(ctx context.Context) (string, error) {
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
@@ -35,9 +34,6 @@ func getRegionFromIMDS(ctx context.Context) (string, error) {
 	return regionOutput.Region, nil
 }
 
-// GetPresignedSTSRequest creates a presigned STS GetCallerIdentity request.
-// The presigned request can be sent to another service which will make the actual
-// STS call to validate the caller's identity.
 func GetPresignedSTSRequest(ctx context.Context) (*awstypes.PresignedRequest, error) {
 	region, err := getRegionFromIMDS(ctx)
 	if err != nil {
@@ -71,9 +67,6 @@ func GetPresignedSTSRequest(ctx context.Context) (*awstypes.PresignedRequest, er
 	}, nil
 }
 
-// GetPresignedInstanceTagsRequest creates a presigned EC2 DescribeTags request
-// for the current instance. This allows another service to fetch instance tags
-// to verify the runner's identity.
 func GetPresignedInstanceTagsRequest(ctx context.Context) (*awstypes.PresignedRequest, error) {
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
@@ -106,7 +99,6 @@ func GetPresignedInstanceTagsRequest(ctx context.Context) (*awstypes.PresignedRe
 	return presignEC2DescribeTags(ctx, cfg, region, instanceID)
 }
 
-// presignEC2DescribeTags manually creates and signs an EC2 DescribeTags request
 func presignEC2DescribeTags(ctx context.Context, cfg aws.Config, region, instanceID string) (*awstypes.PresignedRequest, error) {
 	params := url.Values{}
 	params.Set("Action", "DescribeTags")

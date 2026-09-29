@@ -8,8 +8,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// apiClient is the subset of nuon.Client the service uses; tests substitute a
-// fake by constructing Service directly.
 type apiClient interface {
 	ListTriggerEvents(context.Context, int, string) ([]*models.TriggerEventSummary, error)
 	ListTriggerEventsPage(context.Context, int, string, string) (*models.TriggerEventPage, error)

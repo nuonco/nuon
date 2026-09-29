@@ -8,7 +8,7 @@ ARG GOCACHE_RELEASE_S3_URI
 ARG GOCACHE_RELEASE_S3_ETAG
 ARG GOCACHE_COMPACT=false
 
-# Which artifact platform set to assemble: "full" for the release matrix, "pr"
+# why: Which artifact platform set to assemble: "full" for the release matrix, "pr"
 # for the two platforms we actually run. Defaults to full so a caller that does
 # not set it can never silently ship fewer binaries.
 ARG ARTIFACT_PLATFORMS=full
@@ -233,11 +233,6 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
     -o /out/${BIN_NAME}_linux_amd64 . && \
     touch /go/pkg/build-cache/.nuon-dirty
 
-# Each extra GOOS/GOARCH is a full cross-compile. Releases come off main, so main
-# builds the whole matrix while PRs build only what we actually run: linux/amd64
-# for CI and containers, darwin/arm64 for dev machines. BuildKit never executes a
-# stage the requested target does not reach, so the unselected cross-compiles
-# cost nothing on a PR.
 FROM scratch AS artifacts-build-pr
 COPY --from=build-darwin-arm64 /out/ /
 COPY --from=build-linux-amd64 /out/ /

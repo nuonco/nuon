@@ -1,4 +1,4 @@
-// Mirror of the Go SubOps map in services/ctl-api/internal/pkg/interests/types.go.
+// why: Mirror of the Go SubOps map in services/ctl-api/internal/pkg/interests/types.go.
 // Empty `ops: []` on a ResourceCfg means "all sub-ops" — we render this list to
 // let the user narrow the per-resource filter, never to enumerate the wire
 // payload. Keep this in sync with the Go map; the backend validator rejects
@@ -23,9 +23,6 @@ export const SUB_OPS: Record<ResourceKind, string[]> = {
   app_branches: ['run'],
 }
 
-// Resources whose workflows can produce a drift_detected event. Mirrors the Go
-// SupportsDriftDetected helper. The picker only renders the drift_detected
-// toggle for these kinds.
 export const RESOURCES_WITH_DRIFT_DETECTED: ReadonlySet<ResourceKind> =
   new Set<ResourceKind>(['components', 'sandboxes'])
 

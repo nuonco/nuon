@@ -102,26 +102,13 @@ func (r *QueueEmitter) Indexes(db *gorm.DB) []migrations.Index {
 				"queue_id",
 			},
 		},
-		// idx_queue_emitters_live_uq is created by migration 123 (dedupe must
-		// run first). Uncomment once the fleet has run it.
-		// {
-		// 	Name: indexes.Name(db, &QueueEmitter{}, "live_uq"),
-		// 	Columns: []string{
-		// 		"queue_id",
-		// 		"name",
-		// 	},
-		// 	UniqueValue: sql.NullBool{Bool: true, Valid: true},
-		// 	Option:      "WHERE deleted_at = 0",
-		// },
 	}
 }
 
-// IsFireOnce returns true if the emitter is a one-shot emitter (scheduled or fire_once mode).
 func (r *QueueEmitter) IsFireOnce() bool {
 	return r.Mode == QueueEmitterModeScheduled || r.Mode == QueueEmitterModeFireOnce
 }
 
-// HasFired returns true if a fire-once emitter has already emitted its signal.
 func (r *QueueEmitter) HasFired() bool {
 	return r.IsFireOnce() && r.Fired
 }

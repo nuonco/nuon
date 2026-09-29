@@ -19,7 +19,6 @@ type PolicyInput struct {
 	Components  []string
 }
 
-// PolicyInputsFromConfig leaves Description empty: it has no config form.
 func PolicyInputsFromConfig(policies *config.PoliciesConfig) []PolicyInput {
 	if policies == nil {
 		return nil

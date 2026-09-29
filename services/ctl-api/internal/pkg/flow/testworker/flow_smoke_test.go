@@ -8,7 +8,6 @@ import (
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
-// TestSingleStepSuccess is the simplest possible flow test: one group, one step.
 func (e *FlowTestSuite) TestSingleStepSuccess() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -40,8 +39,6 @@ func (e *FlowTestSuite) TestSingleStepSuccess() {
 	e.phase("drain")
 }
 
-// TestNoStepsNoSignalErrors verifies that a workflow with no pre-created steps
-// and no GenerateStepsSignal fails with a clear error.
 func (e *FlowTestSuite) TestNoStepsNoSignalErrors() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -50,7 +47,6 @@ func (e *FlowTestSuite) TestNoStepsNoSignalErrors() {
 	stepQueue := e.createTestQueue(ctx, ownerID, ownerType, "install-workflow-steps")
 	e.createTestQueue(ctx, ownerID, ownerType, "install-signals")
 
-	// Create workflow with no steps and no GenerateStepsSignal
 	flw := app.Workflow{
 		OwnerID:   ownerID,
 		OwnerType: ownerType,
@@ -62,11 +58,7 @@ func (e *FlowTestSuite) TestNoStepsNoSignalErrors() {
 
 	e.enqueueFlow(ctx, stepQueue.ID, &flw, ownerID, ownerType)
 
-	// Should error because there are no steps and no way to generate them
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
 
-	// The error is non-retryable, so the handler must exit and leave nothing
-	// pending; a leak here would mean the queue handler never observed the
-	// terminal status.
 	e.assertTemporalDrained(ctx, flw.ID)
 }

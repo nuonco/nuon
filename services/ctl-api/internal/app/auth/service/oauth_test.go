@@ -36,10 +36,10 @@ func TestIsAllowedRedirectURI(t *testing.T) {
 		{"http://localhost:8765/callback", true},
 		{"http://127.0.0.1:53210/cb", true},
 		{"http://[::1]:5000/cb", true},
-		{"http://evil.com/callback", false}, // http non-loopback
-		{"ftp://localhost/cb", false},       // unsupported scheme
+		{"http://evil.com/callback", false},
+		{"ftp://localhost/cb", false},
 		{"not a url", false},
-		{"https://", false}, // no host
+		{"https://", false},
 		{"", false},
 	}
 	for _, tc := range cases {
@@ -50,8 +50,6 @@ func TestIsAllowedRedirectURI(t *testing.T) {
 func TestOAuthScopeToRole(t *testing.T) {
 	assert.Equal(t, string(app.RoleTypeOrgAdmin), oauthScopeToRole(string(app.RoleTypeOrgAdmin)))
 	assert.Equal(t, string(app.RoleTypeOrgReadOnly), oauthScopeToRole(string(app.RoleTypeOrgReadOnly)))
-	// only org_admin grants write; everything else (support, unknown, empty)
-	// defaults to least-privileged read-only
 	assert.Equal(t, string(app.RoleTypeOrgReadOnly), oauthScopeToRole(string(app.RoleTypeOrgSupport)))
 	assert.Equal(t, string(app.RoleTypeOrgReadOnly), oauthScopeToRole("bogus"))
 	assert.Equal(t, string(app.RoleTypeOrgReadOnly), oauthScopeToRole(""))

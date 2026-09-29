@@ -71,7 +71,6 @@ func (s *GetHelmReleasesTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -183,7 +182,6 @@ func (s *GetHelmReleasesTestSuite) TestGetHelmReleasesValidation() {
 }
 
 func (s *GetHelmReleasesTestSuite) TestGetHelmReleasesWithReleases() {
-	// Document that testing with actual helm releases requires valid encoded data
 	s.T().Log("Testing with actual helm releases requires:")
 	s.T().Log("1. Valid helm chart records (foreign key)")
 	s.T().Log("2. Valid encoded helm.Release data (Body field)")

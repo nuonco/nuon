@@ -14,8 +14,6 @@ const appId = 'app-acme'
 const branchId = 'branch-main'
 const app = { id: appId, name: 'acme' } as TApp
 
-// Every layer below the form is real here: the container calls installNameTaken,
-// which calls getAppInstalls, which issues the request stubbed out below.
 const existingNames = ['staging']
 const lookups: string[] = []
 const realFetch = globalThis.fetch

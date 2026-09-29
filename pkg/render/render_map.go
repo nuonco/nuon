@@ -16,7 +16,6 @@ func RenderMap(obj any, data map[string]any) error {
 	}
 
 	val = val.Elem()
-	// If we have an interface, we need to get the concrete value
 	if val.Kind() == reflect.Interface {
 		val = val.Elem()
 	}
@@ -29,8 +28,6 @@ func RenderMap(obj any, data map[string]any) error {
 	for iter.Next() {
 		mapValue := iter.Value()
 
-		// If the map value is a string, try to render it
-		// Handle different types that can be rendered
 		switch mapValue.Kind() {
 		case reflect.String:
 			strValue := mapValue.String()
@@ -40,12 +37,10 @@ func RenderMap(obj any, data map[string]any) error {
 			}
 			val.SetMapIndex(iter.Key(), reflect.ValueOf(rendered))
 		case reflect.Map:
-			// Recursively handle nested maps
 			if err := RenderMap(mapValue.Interface(), data); err != nil {
 				return errors.Wrap(err, "unable to render nested map")
 			}
 		case reflect.Slice:
-			// Handle byte slices
 			if mapValue.Type().Elem().Kind() == reflect.Uint8 {
 				strValue := string(mapValue.Bytes())
 				rendered, err := renderStrField(strValue, data)
@@ -55,7 +50,6 @@ func RenderMap(obj any, data map[string]any) error {
 				val.SetMapIndex(iter.Key(), reflect.ValueOf([]byte(rendered)))
 			}
 		case reflect.Ptr:
-			// Handle pointer values (e.g. *string in pgtype.Hstore)
 			if mapValue.IsNil() {
 				continue
 			}
@@ -74,7 +68,6 @@ func RenderMap(obj any, data map[string]any) error {
 				continue
 			}
 			elem := mapValue.Elem()
-			// If we have a pointer, dereference it first
 			if elem.Kind() == reflect.Ptr {
 				if elem.IsNil() {
 					continue
@@ -83,14 +76,12 @@ func RenderMap(obj any, data map[string]any) error {
 			}
 			switch elem.Kind() {
 			case reflect.Map:
-				// Create a pointer to the map value
 				mapPtr := reflect.New(elem.Type())
 				mapPtr.Elem().Set(elem)
 				if err := RenderMap(mapPtr.Interface(), data); err != nil {
 					return errors.Wrap(err, "unable to render interface map value")
 				}
 
-				// Update the original map with the rendered value
 				val.SetMapIndex(iter.Key(), mapPtr.Elem())
 			case reflect.String:
 				strValue := elem.String()

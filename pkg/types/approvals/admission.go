@@ -8,29 +8,22 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
-// AdmissionReviewInput mimics Kubernetes AdmissionReview structure for OPA policy evaluation.
-// This structure matches what existing OPA policies expect (e.g., input.review.object).
 type AdmissionReviewInput struct {
 	Review AdmissionReviewRequest `json:"review"`
 }
 
-// AdmissionReviewRequest contains the object being reviewed and its kind information.
 type AdmissionReviewRequest struct {
-	Kind AdmissionReviewKind `json:"kind"`
-	// Operation is the plan operation: CREATE, UPDATE or DELETE. Omitted when unknown.
+	Kind      AdmissionReviewKind    `json:"kind"`
 	Operation string                 `json:"operation,omitempty"`
 	Object    map[string]interface{} `json:"object"`
 }
 
-// AdmissionReviewKind contains the GVK (Group, Version, Kind) of the object.
 type AdmissionReviewKind struct {
 	Kind    string `json:"kind"`
 	Group   string `json:"group,omitempty"`
 	Version string `json:"version,omitempty"`
 }
 
-// ParseMultiDocYAMLToAdmissionReviews parses a multi-document YAML stream
-// and converts each document into an AdmissionReviewInput structure suitable for OPA policy evaluation.
 func ParseMultiDocYAMLToAdmissionReviews(multiDocYAML string) ([]AdmissionReviewInput, error) {
 	if strings.TrimSpace(multiDocYAML) == "" {
 		return []AdmissionReviewInput{}, nil
@@ -64,7 +57,6 @@ func ParseMultiDocYAMLToAdmissionReviews(multiDocYAML string) ([]AdmissionReview
 	return results, nil
 }
 
-// extractKindInfo extracts the GVK information from a Kubernetes object.
 func extractKindInfo(obj map[string]interface{}) AdmissionReviewKind {
 	kind := AdmissionReviewKind{}
 

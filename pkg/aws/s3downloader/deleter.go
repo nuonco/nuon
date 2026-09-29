@@ -12,8 +12,6 @@ type Deleter interface {
 	DeleteBlobs(context.Context, s3.DeleteObjectsInput) (s3.DeleteObjectOutput, error)
 }
 
-// This interface exists to allow us to mock s3 calls in test code
-// It exactly matches the function signature for S3 client.DeleteObjects
 type s3Deleter interface {
 	DeleteObjects(context.Context, *s3.DeleteObjectsInput, ...func(*s3.Options)) (*s3.DeleteObjectsOutput, error)
 }

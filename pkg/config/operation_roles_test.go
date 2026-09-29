@@ -188,7 +188,6 @@ func TestOperationRoleRule_Validate(t *testing.T) {
 }
 
 func TestOperationRolesConfig_ValidateWithConfig(t *testing.T) {
-	// Setup test components and actions
 	components := []*Component{
 		{Name: "database"},
 		{Name: "api-server"},
@@ -201,7 +200,6 @@ func TestOperationRolesConfig_ValidateWithConfig(t *testing.T) {
 		{Name: "post-deploy-check"},
 	}
 
-	// Setup test permissions config
 	permissions := &PermissionsConfig{
 		ProvisionRole:   &AppAWSIAMRole{Name: "custom_provision"},
 		MaintenanceRole: &AppAWSIAMRole{Name: "custom_maintenance"},
@@ -223,7 +221,6 @@ func TestOperationRolesConfig_ValidateWithConfig(t *testing.T) {
 		},
 	}
 
-	// Setup test break glass config
 	breakGlass := &BreakGlass{
 		Roles: []*AppAWSIAMRole{
 			{Name: "emergency_access"},

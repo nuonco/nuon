@@ -123,7 +123,6 @@ func (m *healthMetrics) record(ctx context.Context, checks [dependencyCount]depe
 		m.checks.Add(ctx, 1, metric.WithAttributes(attrs...))
 		m.mu.Lock()
 		state := &m.states[i]
-		// Concurrent readiness requests can finish their dependencies in different orders.
 		if check.finished.After(state.completed) {
 			state.completed = check.finished
 			state.healthy = check.reason == ""

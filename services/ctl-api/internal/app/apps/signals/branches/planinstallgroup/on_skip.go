@@ -14,7 +14,7 @@ import (
 
 var _ signal.SignalWithOnSkip = (*Signal)(nil)
 
-// OnSkip marks this install group's deploy step as user-skipped when the plan
+// why: OnSkip marks this install group's deploy step as user-skipped when the plan
 // approval is skipped. The plan and deploy steps live in separate step groups,
 // so the generic same-group skip logic never reaches the deploy — without this,
 // the workflow would continue straight into deploying the group the user skipped.

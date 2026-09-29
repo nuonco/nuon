@@ -38,8 +38,6 @@ func (s *service) mcpUpdateInstallInputs(ctx context.Context, _ *mcp.CallToolReq
 	if len(in.Inputs) == 0 {
 		return nil, nil, fmt.Errorf("inputs is required")
 	}
-	// inputs_only skips every deploy, so an explicit deploy_dependents would be
-	// dropped silently rather than honored.
 	if in.InputsOnly && in.DeployDependents != nil && *in.DeployDependents {
 		return nil, nil, fmt.Errorf("deploy_dependents cannot be true with inputs_only; inputs_only saves values without deploying")
 	}

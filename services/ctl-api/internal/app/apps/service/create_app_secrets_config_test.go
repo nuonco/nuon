@@ -20,7 +20,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// AppConfigTypesTestSuite is the testify suite for app config-type endpoints.
 type AppConfigTypesTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -112,7 +111,6 @@ func (s *AppConfigTypesTestSuite) makeRequest(method, path string, body interfac
 	return rr
 }
 
-// TestCreateAppSecretsConfig tests the CreateAppSecretsConfig endpoint.
 func (s *AppConfigTypesTestSuite) TestCreateAppSecretsConfig() {
 	testCases := []struct {
 		name         string

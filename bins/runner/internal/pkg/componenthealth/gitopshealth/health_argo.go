@@ -7,8 +7,6 @@ import (
 
 type nodePhase string
 
-// Workflow and node statuses
-// See: https://github.com/argoproj/argo-workflows/blob/master/pkg/apis/workflow/v1alpha1/workflow_phase.go
 const (
 	nodePending   nodePhase = "Pending"
 	nodeRunning   nodePhase = "Running"
@@ -17,8 +15,6 @@ const (
 	nodeError     nodePhase = "Error"
 )
 
-// An agnostic workflow object only considers Status.Phase and Status.Message. It is agnostic to the API version or any
-// other fields.
 type argoWorkflow struct {
 	Status struct {
 		Phase   nodePhase

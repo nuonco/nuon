@@ -24,8 +24,6 @@ const (
 	maxCustomCheckMessageBytes = 1024
 	maxCustomCheckDetailsBytes = 16 * 1024
 
-	// maxCustomCheckStaleAfter must not exceed the evaluator's retention
-	// window, or it would promise to remember reports the evaluator drops.
 	maxCustomCheckStaleAfter = 60 * time.Minute
 )
 
@@ -36,8 +34,6 @@ var validCustomCheckStatuses = map[string]bool{
 	string(app.InstallComponentResourceHealthUnknown):   true,
 }
 
-// validateCustomCheckStatus limits status to the four verdicts a custom
-// check can report; "progressing" is runner-only and doesn't apply here.
 func validateCustomCheckStatus(status string) error {
 	if !validCustomCheckStatuses[status] {
 		return stderr.ErrUser{
@@ -48,8 +44,6 @@ func validateCustomCheckStatus(status string) error {
 	return nil
 }
 
-// customCheckNameRe keeps check names safe to render across ClickHouse,
-// dashboards, and Slack, and stable as a key across reports.
 var customCheckNameRe = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9._-]{0,98}[a-zA-Z0-9])?$`)
 
 func validateCustomCheckName(name string) error {
@@ -195,8 +189,6 @@ func (s *service) putInstallComponentHealthCheck(ctx context.Context, orgID, ins
 	return &row, nil
 }
 
-// boundCustomCheckMessage caps a caller-supplied message so a single report
-// can't blow up storage; the cut respects UTF-8 rune boundaries.
 func boundCustomCheckMessage(msg string) string {
 	if len(msg) <= maxCustomCheckMessageBytes {
 		return msg
@@ -204,8 +196,6 @@ func boundCustomCheckMessage(msg string) string {
 	return strings.ToValidUTF8(msg[:maxCustomCheckMessageBytes], "")
 }
 
-// boundCustomCheckDetails mirrors runners/service.boundDetails: truncating
-// mid-JSON would corrupt the blob, so it's replaced by a marker instead.
 func boundCustomCheckDetails(details string) string {
 	if len(details) > maxCustomCheckDetailsBytes {
 		return `{"_truncated":true}`

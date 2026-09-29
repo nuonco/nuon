@@ -74,7 +74,6 @@ func (s *AdminUnlockWorkspaceTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// CRITICAL: TestAcc needed because handler/test creates lock records with created_by_id
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -94,7 +93,6 @@ func (s *AdminUnlockWorkspaceTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create terraform workspace
 	s.testWS = &app.TerraformWorkspace{
 		ID:        domains.NewTerraformWorkspaceID(),
 		OrgID:     s.testOrg.ID,
@@ -139,10 +137,8 @@ func (s *AdminUnlockWorkspaceTestSuite) TestAdminUnlockWorkspace() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Clean up any existing locks for this workspace from previous subtests
 				s.service.DB.Unscoped().Where("workspace_id = ?", s.testWS.ID).Delete(&app.TerraformWorkspaceLock{})
 
-				// Create a lock
 				lock := &app.TerraformWorkspaceLock{
 					WorkspaceID: s.testWS.ID,
 					OrgID:       s.testOrg.ID,
@@ -163,7 +159,6 @@ func (s *AdminUnlockWorkspaceTestSuite) TestAdminUnlockWorkspace() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(workspaceID string) {
-				// Verify lock was deleted
 				var lock app.TerraformWorkspaceLock
 				err := s.service.DB.Where("workspace_id = ?", workspaceID).First(&lock).Error
 				assert.Error(s.T(), err)
@@ -176,7 +171,6 @@ func (s *AdminUnlockWorkspaceTestSuite) TestAdminUnlockWorkspace() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create a unique owner ID to avoid conflicts with s.testWS
 				ownerID := domains.NewInstallID()
 
 				ws := &app.TerraformWorkspace{
@@ -196,7 +190,6 @@ func (s *AdminUnlockWorkspaceTestSuite) TestAdminUnlockWorkspace() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(workspaceID string) {
-				// No lock should exist
 				var lock app.TerraformWorkspaceLock
 				err := s.service.DB.Where("workspace_id = ?", workspaceID).First(&lock).Error
 				assert.Error(s.T(), err)
@@ -209,7 +202,6 @@ func (s *AdminUnlockWorkspaceTestSuite) TestAdminUnlockWorkspace() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create a unique owner ID to avoid conflicts with s.testOrg
 				ownerID := domains.NewAppID()
 
 				ws := &app.TerraformWorkspace{
@@ -237,7 +229,6 @@ func (s *AdminUnlockWorkspaceTestSuite) TestAdminUnlockWorkspace() {
 					s.service.DB.Unscoped().Delete(ws)
 				})
 
-				// Use owner_id instead of workspace_id
 				return ownerID, AdminUnlockWorkspace{}
 			},
 			expectedCode: http.StatusOK,

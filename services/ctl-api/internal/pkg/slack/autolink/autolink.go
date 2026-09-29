@@ -1,7 +1,3 @@
-// Package autolink ensures a SlackOrgLink and optional default channel
-// subscription for a single org under the same gating policy the
-// reconciler applies, so org creation and the periodic sweep share one
-// code path.
 package autolink
 
 import (
@@ -48,10 +44,6 @@ type Result struct {
 	SkippedReason string
 }
 
-// EnsureForOrg upserts the SlackOrgLink and seeds the default channel
-// subscription for one org. Skips silently when the policy is
-// unconfigured, the workspace install is missing, or the org is not
-// labeled for auto-link.
 func (h *Helper) EnsureForOrg(ctx context.Context, orgID string) (*Result, error) {
 	res := &Result{}
 
@@ -109,7 +101,6 @@ func (h *Helper) EnsureForOrg(ctx context.Context, orgID string) (*Result, error
 	return res, nil
 }
 
-// labelMatches treats an empty configured value as a wildcard.
 func labelMatches(have labels.Labels, key, want string) bool {
 	got, ok := have[key]
 	if !ok {
@@ -121,8 +112,6 @@ func labelMatches(have labels.Labels, key, want string) bool {
 	return got == want
 }
 
-// upsertAutoLink revives soft-deleted rows so a re-link reuses the
-// original link id, and attributes the row to the workspace installer.
 func (h *Helper) upsertAutoLink(ctx context.Context, install app.SlackInstallation, orgID string) (string, bool, error) {
 	var existing app.SlackOrgLink
 	err := h.db.WithContext(ctx).
@@ -157,10 +146,6 @@ func (h *Helper) upsertAutoLink(ctx context.Context, install app.SlackInstallati
 	return existing.ID, true, nil
 }
 
-// seedDefaultSubscription inserts one org-wide AllEvents sub iff none
-// exists on this link, so removing or replacing the seed is permanent.
-// Falls back to the channel id when the name lookup fails, so a Slack
-// API blip doesn't block the link.
 func (h *Helper) seedDefaultSubscription(ctx context.Context, install app.SlackInstallation, linkID, orgID, channelID string) (bool, error) {
 	var count int64
 	if err := h.db.WithContext(ctx).

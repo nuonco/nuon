@@ -47,7 +47,6 @@ func (p *parser) parse(ctx context.Context) error {
 		field := t.Field(i)
 		fieldValue := v.Field(i)
 
-		// Get the filename from the name tag
 		arg, ok := field.Tag.Lookup("name")
 		if !ok {
 			continue
@@ -59,9 +58,6 @@ func (p *parser) parse(ctx context.Context) error {
 		}
 
 		if field.Type.Kind() != reflect.Slice {
-			// For regular fields, load the file directly
-			// Create a pointer to the field's type
-			// If field.Type is already a pointer, get its element type
 			elemType := field.Type
 			if field.Type.Kind() == reflect.Ptr {
 				elemType = field.Type.Elem()
@@ -81,7 +77,6 @@ func (p *parser) parse(ctx context.Context) error {
 				continue
 			}
 
-			// Set the source file if the object implements sourceFileSetter
 			if setter, ok := obj.(sourceFileSetter); ok {
 				setter.SetSourceFile(filePath)
 			}
@@ -97,7 +92,6 @@ func (p *parser) parse(ctx context.Context) error {
 			}
 
 			if objs != nil && fieldValue.CanSet() {
-				// obj is already a pointer, so we can set it directly
 				fieldValue.Set(reflect.ValueOf(objs))
 			}
 		}

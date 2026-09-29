@@ -2,9 +2,6 @@ package app
 
 import "testing"
 
-// Only the VCS push path writes run_type into workflow metadata, so a plan-only
-// run triggered through the API used to fall through to the deploy path and
-// start real install workflows.
 func TestAppBranchRunIsPreview(t *testing.T) {
 	cases := []struct {
 		name string

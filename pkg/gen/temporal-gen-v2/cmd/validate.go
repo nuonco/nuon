@@ -47,8 +47,6 @@ func runValidate(targetDir string, recursive bool) error {
 		}
 	}
 
-	// Load the tag config up front so a malformed temporal-gen.yaml fails
-	// validation even when nothing references @tag yet.
 	tagCfg, err := temporalgen.ResolveConfig(temporalgen.Options{
 		Dir:        targetDir,
 		ConfigPath: configFlag,
@@ -73,7 +71,6 @@ func runValidate(targetDir string, recursive bool) error {
 		for i, syntax := range pkg.Pkg.Syntax {
 			path := pkg.Pkg.GoFiles[i]
 
-			// Skip generated files
 			if strings.HasSuffix(path, "_gen.go") {
 				continue
 			}

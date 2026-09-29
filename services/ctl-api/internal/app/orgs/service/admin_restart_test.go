@@ -31,7 +31,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// RestartOrgTestService holds all fx-injected dependencies for restart org tests.
 type RestartOrgTestService struct {
 	fx.In
 
@@ -45,7 +44,6 @@ type RestartOrgTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// RestartOrgTestSuite is the testify suite for restart org endpoint.
 type RestartOrgTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -76,7 +74,6 @@ func (s *RestartOrgTestSuite) SetupSuite() {
 
 			CustomValidator: true,
 		}),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),
 	)
@@ -84,7 +81,6 @@ func (s *RestartOrgTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -92,9 +88,6 @@ func (s *RestartOrgTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
-
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -228,12 +221,8 @@ func (s *RestartOrgTestSuite) TestRestartOrg() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test data
 			org := tc.setupFunc()
 
-			// Reset mock before test
-
-			// Make request
 			rr := s.makeRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-restart", org.ID), tc.requestBody)
 
 			if rr.Code != tc.expectedStatus {
@@ -241,7 +230,6 @@ func (s *RestartOrgTestSuite) TestRestartOrg() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// For successful requests, validate response is true
 			if tc.expectedStatus == http.StatusOK {
 				var response bool
 				err := json.Unmarshal(rr.Body.Bytes(), &response)
@@ -252,7 +240,6 @@ func (s *RestartOrgTestSuite) TestRestartOrg() {
 				assert.True(s.T(), response, "response should be true")
 			}
 
-			// Validate signal was sent
 			if tc.validateSignal {
 				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
@@ -261,8 +248,7 @@ func (s *RestartOrgTestSuite) TestRestartOrg() {
 				signal := signals[0]
 				assert.Equal(s.T(), org.ID, signal.OwnerID, "signal should be sent to correct org ID")
 
-				// Type assert to get the actual signal
-				_ = signal // type check
+				_ = signal
 
 				assert.Equal(s.T(), orgrestart.SignalType, signal.Type, "signal type should be OperationRestart")
 			}
@@ -273,7 +259,7 @@ func (s *RestartOrgTestSuite) TestRestartOrg() {
 func (s *RestartOrgTestSuite) TestRestartOrgErrors() {
 	testCases := []struct {
 		name             string
-		setupFunc        func() string // Returns org ID to use
+		setupFunc        func() string
 		requestBody      interface{}
 		expectedStatus   int
 		shouldSendSignal bool
@@ -281,7 +267,6 @@ func (s *RestartOrgTestSuite) TestRestartOrgErrors() {
 		{
 			name: "returns error when org_id not found",
 			setupFunc: func() string {
-				// Return non-existent org ID
 				return domains.NewOrgID()
 			},
 			requestBody:      RestartOrgRequest{},
@@ -319,12 +304,8 @@ func (s *RestartOrgTestSuite) TestRestartOrgErrors() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test data
 			orgID := tc.setupFunc()
 
-			// Reset mock before test
-
-			// Make request with invalid JSON if needed
 			var rr *httptest.ResponseRecorder
 			if tc.name == "handles invalid JSON" {
 				req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-restart", orgID), bytes.NewBufferString("invalid json"))
@@ -341,7 +322,6 @@ func (s *RestartOrgTestSuite) TestRestartOrgErrors() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Validate no signal was sent for error cases
 			signals := tests.GetQueueSignals(s.T(), s.service.DB)
 			if tc.shouldSendSignal {
 				assert.Greater(s.T(), len(signals), 0, "expected signal to be sent")
@@ -372,14 +352,10 @@ func (s *RestartOrgTestSuite) TestRestartOrgSignalDetails() {
 			s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 		})
 
-		// Reset mock before test
-
-		// Make request
 		rr := s.makeRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-restart", org.ID), RestartOrgRequest{})
 
 		require.Equal(s.T(), http.StatusOK, rr.Code)
 
-		// Validate signal details
 		signals := tests.GetQueueSignals(s.T(), s.service.DB)
 		require.Len(s.T(), signals, 1, "expected exactly one signal")
 

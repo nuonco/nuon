@@ -14,7 +14,6 @@ import (
 )
 
 func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	// Ask the API what version this runner should be running
 	settings, err := h.apiClient.GetSettings(ctx)
 
 	h.state = &handlerState{}
@@ -55,7 +54,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return err
 	}
 
-	// As with the shutdown job handler, fx shutdown cannot be safely triggered in this phase.
+	// why: As with the shutdown job handler, fx shutdown cannot be safely triggered in this phase.
 	// Must be done in cleanup.
 	l.Info("exec", zap.String("job_type", "update-version"), zap.String("expected_version", h.state.expectedVersion))
 	return nil
@@ -70,9 +69,6 @@ func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExec
 	if err != nil {
 		return err
 	}
-
-	// The approach to updating the runner depends on the environment in which
-	// it is running.
 
 	// TODO(sdboyer) this should become a big switch that picks the known supervisor version we want.
 	// But until we have a strategy other than use-latest, just shut down.

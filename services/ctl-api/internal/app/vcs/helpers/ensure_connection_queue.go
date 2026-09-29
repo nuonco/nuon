@@ -12,10 +12,6 @@ import (
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
 
-// EnsureConnectionQueue creates the VCS connection queue if it doesn't exist.
-// Safe to call multiple times — queue creation is idempotent, and the emitter
-// is only created if it doesn't already exist. Existing emitters and queues
-// are updated to match current settings (cron schedule, signal expiry, idle timeout).
 func (h *Helpers) EnsureConnectionQueue(ctx context.Context, vcsConn *app.VCSConnection) error {
 	queueName := fmt.Sprintf("vcs-connection-%s", vcsConn.ID)
 

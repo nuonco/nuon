@@ -27,7 +27,7 @@ type ActivityOptions struct {
 	ByField                string
 	ByFieldOnly            bool
 	GenerateWrapper        bool
-	WrapperPrefix          string // Prefix to add to generated wrapper function name
+	WrapperPrefix          string
 	ReplicaRead            bool
 	IsLocal                bool
 }
@@ -61,7 +61,6 @@ type Annotation struct {
 	UpdateOpts   *UpdateOptions
 }
 
-// Validate checks if the annotation configuration is valid
 func (a *Annotation) Validate() error {
 	if a.ActivityOpts != nil {
 		if a.ActivityOpts.ByFieldOnly && a.ActivityOpts.ByField == "" {
@@ -82,14 +81,6 @@ func (a *Annotation) Validate() error {
 	return nil
 }
 
-// TagError marks a failure to resolve the tags on a function: an unknown or
-// duplicated tag, a `@tag` with no config to resolve it against, or a `@tag` on
-// something other than an activity.
-//
-// It is distinguished from other parse errors because it is never recoverable:
-// non-strict runs downgrade parse failures to a warning and skip the function,
-// which for a mistyped tag would silently drop a wrapper the caller expects to
-// exist. See file.ProcessFile.
 type TagError struct {
 	Err error
 }
@@ -101,21 +92,10 @@ func tagErrorf(format string, args ...any) error {
 	return &TagError{Err: fmt.Errorf(format, args...)}
 }
 
-// Parse checks if a comment group contains the generator annotation.
-//
-// It applies no tag defaults; use ParseWithTags when a tag config is in play.
 func Parse(comments []string) (*Annotation, error) {
 	return ParseWithTags(comments, nil)
 }
 
-// ParseWithTags parses a comment group and folds in the defaults implied by
-// any `@tag <name>` set on the function.
-//
-// Tags apply to activities only. Tag attributes are lowered into synthetic
-// annotation lines that are parsed *ahead* of the function's own comments.
-// Since parseLines is last-write-wins, that yields the precedence chain
-// defaults -> tags (in source order) -> explicit annotations without a
-// second assignment code path.
 func ParseWithTags(comments []string, cfg *tags.Config) (*Annotation, error) {
 	annotation, err := parseLines(comments)
 	if err != nil || annotation == nil {
@@ -136,9 +116,6 @@ func ParseWithTags(comments []string, cfg *tags.Config) (*Annotation, error) {
 
 		if len(lines) > 0 {
 			merged := make([]string, 0, len(lines)+len(comments)+1)
-			// Re-state the marker so the synthetic lines land inside an
-			// annotated block. The duplicate marker in `comments` is a no-op:
-			// parseLines only honours the first one.
 			merged = append(merged, "// @"+config.AnnotationPrefix+" "+annotation.Type)
 			merged = append(merged, lines...)
 			merged = append(merged, comments...)
@@ -157,13 +134,10 @@ func ParseWithTags(comments []string, cfg *tags.Config) (*Annotation, error) {
 	return annotation, nil
 }
 
-// parseLines walks annotation comment lines in order, assigning as it goes.
-// Later lines overwrite earlier ones. It does not run Validate.
 func parseLines(comments []string) (*Annotation, error) {
 	var annotation *Annotation
 
 	for _, comment := range comments {
-		// Strip "// " prefix and trim spaces
 		clean := strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(comment), "//"))
 		if !strings.HasPrefix(clean, "@") {
 			continue
@@ -174,7 +148,6 @@ func parseLines(comments []string) (*Annotation, error) {
 			continue
 		}
 
-		// Check for main marker: @temporal-gen-v2 activity|workflow
 		if parts[0] == "@"+config.AnnotationPrefix {
 			if len(parts) < 2 {
 				return nil, fmt.Errorf("missing type for %s annotation (expected 'activity' or 'workflow')", parts[0])
@@ -198,14 +171,11 @@ func parseLines(comments []string) (*Annotation, error) {
 			continue
 		}
 
-		// If we haven't found the main marker yet, ignore other flags
 		if annotation == nil {
 			continue
 		}
 
-		// Handle arguments
 		switch parts[0] {
-		// Common Arguments
 		case "@tag":
 			if len(parts) < 2 {
 				return nil, tagErrorf("missing name for @tag (usage: @tag name)")
@@ -221,7 +191,6 @@ func parseLines(comments []string) (*Annotation, error) {
 			}
 			// TODO: Add other types that might support @id if needed
 
-		// Activity Arguments
 		case "@namespace":
 			if annotation.Type != "activity" {
 				continue
@@ -350,7 +319,7 @@ func parseLines(comments []string) (*Annotation, error) {
 			annotation.ActivityOpts.RetryPolicy = true
 
 		case "@max-retries":
-			// Kept for backward compatibility, same as @retry-policy-max-attempts
+			// why: Kept for backward compatibility, same as @retry-policy-max-attempts
 			if annotation.Type != "activity" {
 				continue
 			}
@@ -417,7 +386,6 @@ func parseLines(comments []string) (*Annotation, error) {
 			}
 			annotation.ActivityOpts.WrapperPrefix = strings.Trim(parts[1], "\"")
 
-		// Workflow Arguments
 		case "@execution-timeout":
 			if annotation.Type != "workflow" {
 				continue
@@ -503,8 +471,6 @@ func parseLines(comments []string) (*Annotation, error) {
 			annotation.WorkflowOpts.Memo[key] = value
 
 		default:
-			// If it starts with @, assumes it's a directive. If we don't recognize it, error out.
-			// We only error if it's inside a block we are parsing (annotation != nil)
 			return nil, fmt.Errorf("unknown annotation argument: %s", parts[0])
 		}
 	}

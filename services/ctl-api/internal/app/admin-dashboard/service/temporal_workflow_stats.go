@@ -18,7 +18,6 @@ type WorkflowStats struct {
 	Status           string `json:"status"`
 }
 
-// TemporalWorkflowStats returns history length, size, CAN count, and age for a single workflow.
 func (s *service) TemporalWorkflowStats(c *gin.Context) {
 	namespace := c.Query("namespace")
 	workflowID := c.Query("workflow_id")

@@ -6,9 +6,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
 
-// AfterQuery is a custom plugin, that allows us to call an after query hook on models, that is not supported by gorm.
-// This allows us to do things such as, de-nest data and load it from nested objects into top level pointers, without
-// writing a bunch of helper functions and others. It works just like any other gorm hook.
 type afterQuery interface {
 	AfterQuery(db *gorm.DB) error
 }

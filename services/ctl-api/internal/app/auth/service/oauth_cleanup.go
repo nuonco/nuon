@@ -11,9 +11,6 @@ import (
 
 const oauthCleanupInterval = time.Hour
 
-// runOAuthCleanup periodically purges spent OAuth artifacts (expired or consumed
-// authorization codes and refresh tokens) so those tables stay bounded. It runs
-// once at startup and then on an interval until the service stops.
 func (s *service) runOAuthCleanup() {
 	s.purgeExpiredOAuth(context.Background())
 

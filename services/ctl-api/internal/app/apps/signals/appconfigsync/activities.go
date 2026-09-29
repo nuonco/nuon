@@ -84,7 +84,6 @@ type ApplyAppConfigOutput struct {
 	ActionIDs    []string `json:"action_ids"`
 	RunbookIDs   []string `json:"runbook_ids"`
 
-	// ComponentIDsToBuild are the components whose config changed.
 	ComponentIDsToBuild []ComponentToBuild `json:"component_ids_to_build"`
 }
 

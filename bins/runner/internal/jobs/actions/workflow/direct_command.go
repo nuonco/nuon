@@ -8,7 +8,6 @@ import (
 	"mvdan.cc/sh/v3/syntax"
 )
 
-// Shell expressions retain their existing expansion inside the container.
 func directContainerCommand(command string) []string {
 	file, err := syntax.NewParser(syntax.Variant(syntax.LangPOSIX)).Parse(strings.NewReader(command), "")
 	if err != nil || len(file.Stmts) != 1 {

@@ -9,18 +9,14 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
-// StackPhoneHomeRequest is the free-form payload an install stack reports: the
-// stack's outputs plus a `request_type` naming the lifecycle event.
 type StackPhoneHomeRequest map[string]any
 
-// Lifecycle events a stack reports. The legacy route keeps its own copy.
 const (
 	PhoneHomeRequestTypeCreate = "Create"
 	PhoneHomeRequestTypeUpdate = "Update"
 	PhoneHomeRequestTypeDelete = "Delete"
 )
 
-// ValidPhoneHomeRequestType reports whether s is a known lifecycle event.
 func ValidPhoneHomeRequestType(s string) bool {
 	switch s {
 	case PhoneHomeRequestTypeCreate, PhoneHomeRequestTypeUpdate, PhoneHomeRequestTypeDelete:
@@ -30,10 +26,6 @@ func ValidPhoneHomeRequestType(s string) bool {
 	}
 }
 
-// RecordStackPhoneHome marks the version active and appends a run. Returns the run
-// for the caller to enqueue a signal against; doing it here would be an import cycle.
-//
-// Serves the authenticated route only — the legacy one keeps its own copy.
 func (h *Helpers) RecordStackPhoneHome(
 	ctx context.Context,
 	stackVersion *app.InstallStackVersion,

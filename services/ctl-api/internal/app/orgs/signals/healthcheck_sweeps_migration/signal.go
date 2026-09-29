@@ -12,9 +12,6 @@ import (
 
 const SignalType signal.SignalType = "org-healthcheck-sweeps-migration"
 
-// Signal migrates an org between per-entity healthcheck cron emitters and the
-// per-org batch sweep emitters, following the org-healthcheck-sweeps flag the
-// endpoint flipped before enqueueing it.
 type Signal struct {
 	OrgID   string `json:"org_id"`
 	Enabled bool   `json:"enabled"`

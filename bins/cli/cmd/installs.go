@@ -915,7 +915,6 @@ reprovisioning the sandbox.`,
 	inputsSetCmd.Flags().BoolVar(&inputsOnly, "inputs-only", false, "Record the new input values without deploying components or reprovisioning the sandbox")
 	inputsCmd.AddCommand(inputsSetCmd)
 
-	// `inputs edit` is a preview feature, gated behind NUON_PREVIEW.
 	if c.cfg.Preview {
 		inputsEditCmd := &cobra.Command{
 			Use:         "edit",
@@ -1239,7 +1238,6 @@ Examples:
 		Run: c.wrapCmdWithExitCode(func(cmd *cobra.Command, _ []string) (int, error) {
 			svc := c.installs
 
-			// Try to get workflow ID from flag or config
 			wfID := workflowID
 			if wfID == "" {
 				wfID = svc.GetWorkflowID()
@@ -1259,7 +1257,6 @@ Examples:
 	}
 	workflowsCmd.AddCommand(stepsCmd)
 
-	// Helper to get workflow ID from flag or config
 	getWorkflowID := func(svc *installs.Service) (string, error) {
 		wfID := workflowID
 		if wfID == "" {
@@ -1585,7 +1582,6 @@ Available service names: api, runner (or any service name present in the logs)`,
 	stacksReprovisionCmd.MarkFlagRequired("install-id")
 	stacksCmd.AddCommand(stacksReprovisionCmd)
 
-	// NOTE(fd): this may not be the place where this ends up living
 	actionsCmd := &cobra.Command{
 		Use:   "actions",
 		Short: "Manage install actions [preview]",

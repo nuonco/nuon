@@ -19,17 +19,6 @@ const (
 	defaultOTLPTracesEndpointTmpl string = "%s/v1/runners/%s/traces"
 )
 
-// jsonHTTPClient implements otlptrace.Client by POSTing JSON-encoded OTLP
-// trace export requests to the runner traces ingest endpoint.
-//
-// We deliberately do NOT use otlptracehttp here: the existing CTL-API trace
-// ingest endpoint accepts JSON only (it unmarshals the request body via
-// ptraceotlp.NewExportRequest().UnmarshalJSON), and we want to match the
-// established slog/otel.go pattern of POSTing OTLP JSON via the runner API.
-//
-// NOTE: the runner SDK's WriteOTELTraces is currently a no-op stub, so we
-// bypass it the same way the log exporter bypasses WriteOTELLogs in favor of
-// otlploghttp posting directly to /v1/log-streams/{id}/logs.
 type jsonHTTPClient struct {
 	endpoint string
 	token    string
@@ -69,7 +58,7 @@ func (c *jsonHTTPClient) UploadTraces(ctx context.Context, protoSpans []*tracepb
 		return nil
 	}
 
-	// Encode via ptraceotlp so trace_id / span_id land as hex strings, which
+	// why: Encode via ptraceotlp so trace_id / span_id land as hex strings, which
 	// is what the OTLP/JSON spec (and the ctl-api ingest endpoint, which
 	// parses with ptraceotlp.NewExportRequest().UnmarshalJSON) requires.
 	// google.golang.org/protobuf/encoding/protojson would emit them as base64

@@ -76,7 +76,6 @@ func (s *UpdateRunnerJobExecutionTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes (no TestOrg/TestAcc needed)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -95,7 +94,6 @@ func (s *UpdateRunnerJobExecutionTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create log stream
 	s.testLogStream = &app.LogStream{
 		ID:      domains.NewLogStreamID(),
 		OrgID:   s.testOrg.ID,
@@ -105,7 +103,6 @@ func (s *UpdateRunnerJobExecutionTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testLogStream).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -117,7 +114,6 @@ func (s *UpdateRunnerJobExecutionTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -433,9 +429,8 @@ func (s *UpdateRunnerJobExecutionTestSuite) TestUpdateRunnerJobExecution() {
 			},
 			newStatus:        app.RunnerJobExecutionStatusInProgress,
 			expectedCode:     http.StatusOK,
-			expectedNotFound: false, // Update returns 200 even when no rows matched
+			expectedNotFound: false,
 			validateFunc: func(jobID, execID string) {
-				// Verify no execution exists with this ID
 				var exec app.RunnerJobExecution
 				err := s.service.DB.First(&exec, "id = ?", execID).Error
 				assert.Error(s.T(), err, "execution should not exist")

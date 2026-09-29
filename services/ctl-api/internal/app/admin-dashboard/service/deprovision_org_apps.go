@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// DeprovisionOrgApps marks all apps in an org as delete-queued.
 func (s *service) DeprovisionOrgApps(c *gin.Context) {
 	orgID := c.Param("id")
 	ctx := c.Request.Context()

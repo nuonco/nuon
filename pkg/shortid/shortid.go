@@ -19,7 +19,6 @@ const (
 	nanoIDLen      = 23
 )
 
-// ToUUIDs parses a list of string shortids into a list of uuids, failing all if any fail
 func ToUUIDs(strs ...string) ([]uuid.UUID, error) {
 	ids := make([]uuid.UUID, len(strs))
 
@@ -34,7 +33,6 @@ func ToUUIDs(strs ...string) ([]uuid.UUID, error) {
 	return ids, nil
 }
 
-// ToUUID converts a short id string back into a uuid
 func ToUUID(s string) (uuid.UUID, error) {
 	var u uuid.UUID
 	if len(s) < shortIDLen {
@@ -61,7 +59,6 @@ func ToUUID(s string) (uuid.UUID, error) {
 	return u, nil
 }
 
-// ParseUUID parses a uuid into a short id string
 func ParseUUID(u uuid.UUID) string {
 	msi := binary.BigEndian.Uint64(u[:intBytes])
 	lsi := binary.BigEndian.Uint64(u[intBytes:])
@@ -72,7 +69,6 @@ func ParseUUID(u uuid.UUID) string {
 	return fmt.Sprintf("%026s", mss+lss)
 }
 
-// ParseString parses a string uuid into a short id, returning an error if invalid
 func ParseString(s string) (string, error) {
 	u, err := uuid.Parse(s)
 	if err != nil {
@@ -81,12 +77,10 @@ func ParseString(s string) (string, error) {
 	return ParseUUID(u), nil
 }
 
-// New returns a new shortID
 func New() string {
 	return ParseUUID(uuid.New())
 }
 
-// NewNanoID returns a new nanoID
 func NewNanoID(prefix string) string {
 	id, err := gonanoid.Generate(nanoIDAlphabet, nanoIDLen)
 	if err != nil {
@@ -95,11 +89,9 @@ func NewNanoID(prefix string) string {
 	if prefix != "" {
 		return prefix + id
 	}
-	// adding a default prefix value in case none is provided as input
 	return "def" + id
 }
 
-// ParseStrings parses a list of string UUIDs into a list of shortids, failing all if any fail
 func ParseStrings(strs ...string) ([]string, error) {
 	ids := make([]string, len(strs))
 
@@ -118,8 +110,6 @@ func IsShortID(val string) bool {
 	return len(val) == shortIDLen
 }
 
-// ToShortID coerces strings to shortids handling shortids or uuids as input
-// An error will be returned for anything else, including empty string
 func ToShortID(s string) (string, error) {
 	switch len(s) {
 	case 0:
@@ -138,6 +128,4 @@ func ToShortID(s string) (string, error) {
 }
 
 func RegisterFakes() {
-	// no-op to force the package's init function to run
-	// so fields tagged with faker:"shortID" don't cause a panic
 }

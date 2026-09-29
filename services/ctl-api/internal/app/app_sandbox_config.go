@@ -32,12 +32,6 @@ type AppSandboxConfig struct {
 	AppID       string `json:"app_id,omitzero" gorm:"not null;default null" temporaljson:"app_id,omitzero,omitempty"`
 	AppConfigID string `json:"app_config_id,omitzero" temporaljson:"app_config_id,omitzero,omitempty"`
 
-	// NOTE(jm): you can use one of a few different methods of creating an app sandbox, either a built in one, that
-	// Nuon manages, or one of the public git vcs configs.
-
-	// Either a public git repo or private repo using a connected repo source can be used. For now, these fields are
-	// not being respected down stream, but will in the future.
-
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitzero,omitempty" temporaljson:"public_git_vcs_config,omitzero,omitempty"`
 	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitzero,omitempty" temporaljson:"connected_github_vcs_config,omitzero,omitempty"`
 	VCSConnectionType        VCSConnectionType         `json:"-" gorm:"-" temporaljson:"vcs_connection_type,omitzero,omitempty"`
@@ -101,7 +95,6 @@ func (i *AppSandboxConfig) Views(db *gorm.DB) []migrations.View {
 	}
 }
 
-// NOTE: currently, only public repo vcs configs are supported when rendering policies and artifacts
 func (c *AppSandboxConfig) AfterQuery(tx *gorm.DB) error {
 	cRefs := make([]refs.Ref, 0)
 	for _, ref := range c.References {
@@ -109,7 +102,6 @@ func (c *AppSandboxConfig) AfterQuery(tx *gorm.DB) error {
 	}
 	c.Refs = cRefs
 
-	// set the vcs connection type correctly
 	if c.ConnectedGithubVCSConfig != nil {
 		c.VCSConnectionType = VCSConnectionTypeConnectedRepo
 	} else if c.PublicGitVCSConfig != nil {
@@ -125,7 +117,7 @@ func (a *AppSandboxConfig) GetMaxAutoRetries() int {
 	if a.MaxAutoRetries != nil {
 		return *a.MaxAutoRetries
 	}
-	return 0 // default to disabled
+	return 0
 }
 
 func (a *AppSandboxConfig) GetSkipNoops() bool {

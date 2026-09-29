@@ -14,7 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SessionData holds the OAuth flow state in a signed cookie.
 type SessionData struct {
 	State        string `json:"state"`
 	ProviderID   string `json:"pid,omitempty"`
@@ -29,10 +28,8 @@ var (
 	errSessionExpired          = errors.New("session cookie expired")
 )
 
-// sessionCookieMaxAge is how long the session cookie is valid (5 minutes for OAuth flow).
 const sessionCookieMaxAge = 5 * 60
 
-// getSession retrieves and validates the session data from the cookie.
 func (s *service) getSession(c *gin.Context) (*SessionData, error) {
 	cookie, err := c.Request.Cookie(NuonAuthSessionName)
 	if err != nil {
@@ -42,9 +39,7 @@ func (s *service) getSession(c *gin.Context) (*SessionData, error) {
 	return s.decodeSession(cookie.Value)
 }
 
-// setSession creates a signed session cookie with the given data.
 func (s *service) setSession(c *gin.Context, data *SessionData) error {
-	// Set creation time if not already set
 	if data.CreatedAt == 0 {
 		data.CreatedAt = time.Now().Unix()
 	}
@@ -69,7 +64,6 @@ func (s *service) setSession(c *gin.Context, data *SessionData) error {
 	return nil
 }
 
-// clearSession removes the session cookie.
 func (s *service) clearSession(c *gin.Context) {
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     NuonAuthSessionName,
@@ -84,28 +78,20 @@ func (s *service) clearSession(c *gin.Context) {
 	})
 }
 
-// encodeSession serializes and signs the session data.
-// Format: base64(json) + "." + base64(hmac-sha256)
 func (s *service) encodeSession(data *SessionData) (string, error) {
-	// JSON encode the data
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal session: %w", err)
 	}
 
-	// Base64 encode the JSON
 	payload := base64.RawURLEncoding.EncodeToString(jsonData)
 
-	// Create HMAC signature
 	signature := s.signPayload(payload)
 
-	// Combine payload and signature
 	return payload + "." + signature, nil
 }
 
-// decodeSession verifies and deserializes the session data.
 func (s *service) decodeSession(encoded string) (*SessionData, error) {
-	// Split into payload and signature
 	parts := strings.SplitN(encoded, ".", 2)
 	if len(parts) != 2 {
 		return nil, errInvalidSessionFormat
@@ -113,25 +99,21 @@ func (s *service) decodeSession(encoded string) (*SessionData, error) {
 
 	payload, signature := parts[0], parts[1]
 
-	// Verify signature
 	expectedSig := s.signPayload(payload)
 	if !hmac.Equal([]byte(signature), []byte(expectedSig)) {
 		return nil, errInvalidSessionSignature
 	}
 
-	// Base64 decode the payload
 	jsonData, err := base64.RawURLEncoding.DecodeString(payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode session payload: %w", err)
 	}
 
-	// JSON decode the data
 	var data SessionData
 	if err := json.Unmarshal(jsonData, &data); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal session: %w", err)
 	}
 
-	// Check expiration
 	if time.Now().Unix()-data.CreatedAt > sessionCookieMaxAge {
 		return nil, errSessionExpired
 	}
@@ -139,7 +121,6 @@ func (s *service) decodeSession(encoded string) (*SessionData, error) {
 	return &data, nil
 }
 
-// signPayload creates an HMAC-SHA256 signature for the payload.
 func (s *service) signPayload(payload string) string {
 	h := hmac.New(sha256.New, []byte(s.cfg.NuonAuthSessionKey))
 	h.Write([]byte(payload))

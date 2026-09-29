@@ -21,10 +21,6 @@ const (
 	defaultAvailablePollPeriod time.Duration = time.Second * 1
 )
 
-// this function is the most core part of the runner job system, it's responsible for a.) marking a job as available and
-// then b.) waiting until it is picked up by a runner (ie: an execution exists) and then c.) finished.
-//
-// it is responsible for updating the runner job with each state, and in some cases the runner job execution.
 func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bool, bool, error) {
 	startTS := workflow.Now(ctx)
 	tags := map[string]string{
@@ -69,7 +65,7 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 	if job.Group != app.RunnerJobGroupOperations {
 		for runnerStatus != app.RunnerStatusActive {
 			workflow.Sleep(ctx, defaultAvailablePollPeriod)
-			// NOTE - first pass through this loop will have garbage data for the runner status
+			// why: first pass through this loop will have garbage data for the runner status
 			etags["runner_status"] = string(runnerStatus)
 
 			now := workflow.Now(ctx)
@@ -101,14 +97,12 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 					Tags:           metrics.ToTags(etags),
 					SourceTypeName: "nuon-jobsys",
 					Priority:       statsd.Low,
-					AlertType:      statsd.Warning, // This will be retried, so just a warn, not an error
+					AlertType:      statsd.Warning,
 					AggregationKey: "runner-job-timeout-waiting-for-healthy-runner",
 				})
 				return true, false, nil
 			}
 
-			// if the runner is deemed unhealthy, the job execution is marked as unknown, and the job is marked as
-			// not attempted with the correct status, this is retryable.
 			runnerStatus, err = activities.AwaitGetRunnerStatusByID(ctx, job.RunnerID)
 			if err != nil {
 				l.Warn("unable to determine runner status", zap.Error(err))
@@ -127,7 +121,6 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 		}
 	}
 
-	// poll until the job is picked up, and an execution exists
 	for !jobExecutionFound {
 		workflow.Sleep(ctx, defaultAvailablePollPeriod)
 

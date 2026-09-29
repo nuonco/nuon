@@ -11,8 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// configConnectionIDFor returns the seeded app config's connection for a
-// component, which a ComponentBuild needs as its parent.
 func (s *InstallsServiceTestSuite) configConnectionIDFor(componentID string) string {
 	for _, ccc := range s.testAppConfig.ComponentConfigConnections {
 		if ccc.ComponentID == componentID {
@@ -23,9 +21,6 @@ func (s *InstallsServiceTestSuite) configConnectionIDFor(componentID string) str
 	return ""
 }
 
-// seedDeployedHelmComponent gives a helm component the deploy history a recovery
-// needs: the plan reads the release name, namespace and storage driver off the
-// build the component was last deployed with.
 func (s *InstallsServiceTestSuite) seedDeployedHelmComponent() (*app.Install, *app.Component, *app.InstallDeploy) {
 	install := s.createTestInstallWithActiveRunner()
 	helmComp := s.getSeededComponent(app.ComponentTypeHelmChart)
@@ -58,8 +53,6 @@ func (s *InstallsServiceTestSuite) TestRecoverInstallComponentHelmReleaseSuccess
 	}
 	assert.True(s.T(), found, "expected the workflow to be enqueued")
 
-	// The recovery gets its own deploy row so it has a log stream and an audit
-	// trail, and it must be typed as a recovery rather than an apply.
 	var recovery app.InstallDeploy
 	res := s.deps.DB.
 		Where(app.InstallDeploy{Type: app.InstallDeployTypeRecover}).
@@ -69,8 +62,6 @@ func (s *InstallsServiceTestSuite) TestRecoverInstallComponentHelmReleaseSuccess
 	assert.Equal(s.T(), app.InstallDeployStatusQueued, recovery.Status)
 }
 
-// A recovery targets a Helm release, so there is nothing to do for a component
-// that does not have one.
 func (s *InstallsServiceTestSuite) TestRecoverInstallComponentHelmReleaseRejectsNonHelmComponent() {
 	install := s.createTestInstall()
 	tfComp := s.getSeededComponent(app.ComponentTypeTerraformModule)
@@ -82,8 +73,6 @@ func (s *InstallsServiceTestSuite) TestRecoverInstallComponentHelmReleaseRejects
 	assert.Equal(s.T(), http.StatusBadRequest, rr.Code)
 }
 
-// Nothing was ever released, so there is no pending release to recover — telling
-// the caller to deploy is more useful than starting a workflow that no-ops.
 func (s *InstallsServiceTestSuite) TestRecoverInstallComponentHelmReleaseRejectsNeverDeployed() {
 	install := s.createTestInstall()
 	helmComp := s.getSeededComponent(app.ComponentTypeHelmChart)
@@ -93,8 +82,6 @@ func (s *InstallsServiceTestSuite) TestRecoverInstallComponentHelmReleaseRejects
 	assert.Equal(s.T(), http.StatusConflict, rr.Code)
 }
 
-// The safety guard: rolling a release back while Helm is genuinely mid-operation
-// can corrupt it, and nothing else serializes this against a live deploy.
 func (s *InstallsServiceTestSuite) TestRecoverInstallComponentHelmReleaseRejectsWhileJobRunning() {
 	install, helmComp, deploy := s.seedDeployedHelmComponent()
 
@@ -105,8 +92,6 @@ func (s *InstallsServiceTestSuite) TestRecoverInstallComponentHelmReleaseRejects
 	assert.Equal(s.T(), http.StatusConflict, rr.Code)
 }
 
-// A finished job must not block recovery — a deploy that failed and left the
-// release stuck is the whole reason this endpoint exists.
 func (s *InstallsServiceTestSuite) TestRecoverInstallComponentHelmReleaseAllowedAfterFailedJob() {
 	install, helmComp, deploy := s.seedDeployedHelmComponent()
 

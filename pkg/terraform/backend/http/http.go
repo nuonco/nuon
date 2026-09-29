@@ -7,7 +7,6 @@ import (
 )
 
 type NuonWorkspaceConfig struct {
-	// APIEndpoint is the endpoint to use for the API. Ex: http://localhost:8083/
 	APIEndpoint string
 	WorkspaceID string
 	Token       string

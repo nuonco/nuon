@@ -123,7 +123,6 @@ func (c *CreateHelmComponentConfigRequest) Validate(v *validator.Validate) error
 	}
 
 	if err := c.basicVCSConfigRequest.Validate(); err != nil {
-		// Allow helm components without VCS config when using helm_repo_config
 		if c.HelmRepoConfig != nil {
 			if userErr, ok := err.(stderr.ErrUser); ok && userErr.Code == "vcs_config_required" {
 				return nil
@@ -132,7 +131,6 @@ func (c *CreateHelmComponentConfigRequest) Validate(v *validator.Validate) error
 		return err
 	}
 
-	// Validate timeouts if provided
 	if c.BuildTimeout != "" {
 		if err := validation.ValidateBuildTimeout(c.BuildTimeout); err != nil {
 			return err
@@ -191,7 +189,6 @@ func (s *service) CreateAppHelmComponentConfig(ctx *gin.Context) {
 		return
 	}
 
-	// reuse the same logic as non-app scoped endpoint
 	s.CreateHelmComponentConfig(ctx)
 }
 
@@ -252,7 +249,6 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		return nil, errors.Wrap(err, "unable to get component ids")
 	}
 
-	// build component config
 	connectedGithubVCSConfig, err := req.connectedGithubVCSConfig(ctx, parentCmp, s.vcsHelpers)
 	if err != nil {
 		return nil, fmt.Errorf("invalid connected github vcs config: %w", err)

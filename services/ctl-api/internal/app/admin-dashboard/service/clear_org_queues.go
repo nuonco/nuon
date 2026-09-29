@@ -16,7 +16,6 @@ func (s *service) ClearOrgQueues(c *gin.Context) {
 	orgID := c.Param("id")
 	ctx := c.Request.Context()
 
-	// Find the org's signals queue.
 	var queue app.Queue
 	if res := s.db.WithContext(ctx).
 		Where(app.Queue{OwnerID: orgID, Name: orgshelpers.OrgSignalsQueueName}).
@@ -26,7 +25,6 @@ func (s *service) ClearOrgQueues(c *gin.Context) {
 		return
 	}
 
-	// Enqueue the clear-org-queues signal.
 	resp, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 		QueueID: queue.ID,
 		Signal:  &clearorgqueues.Signal{OrgID: orgID},

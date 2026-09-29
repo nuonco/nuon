@@ -13,11 +13,9 @@ const (
 )
 
 type handlerState struct {
-	// set during the fetch/validate phase
 	plan *plantypes.BuildPlan
 	cfg  *plantypes.HelmBuildPlan
 
-	// fields set by the plugin execution
 	workspace      workspace.Workspace
 	arch           ociarchive.Archive
 	resultTag      string

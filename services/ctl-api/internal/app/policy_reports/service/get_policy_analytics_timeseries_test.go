@@ -86,7 +86,6 @@ func TestBuildTimeseriesBuckets_MultiDimension(t *testing.T) {
 		t.Fatalf("got %d series, want 3", len(b.Series))
 	}
 
-	// Verify multi-label structure
 	s := b.Series[0]
 	if len(s.Labels) != 2 {
 		t.Errorf("series[0] has %d labels, want 2", len(s.Labels))

@@ -9,12 +9,8 @@ import (
 	"time"
 )
 
-// AzureEventGridValidationEventType identifies the Event Grid subscription
-// validation handshake event.
 const AzureEventGridValidationEventType = "Microsoft.EventGrid.SubscriptionValidationEvent"
 
-// AzureEventGrid decodes an Azure Event Grid delivery containing exactly one
-// event.
 type AzureEventGrid struct{}
 
 type azureEventGridEvent struct {
@@ -37,8 +33,6 @@ func (AzureEventGrid) Decode(_ http.Header, body []byte) (*Event, error) {
 	return &Event{ID: event.ID, Type: event.EventType, OccurredAt: event.EventTime, Payload: events[0], ContentType: "application/json"}, nil
 }
 
-// AzureEventGridValidationCode extracts the subscription validation code from
-// a validation handshake event. It returns "" for regular events.
 func AzureEventGridValidationCode(event *Event) (string, error) {
 	if event == nil || event.Type != AzureEventGridValidationEventType {
 		return "", nil

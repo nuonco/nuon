@@ -14,7 +14,6 @@ import (
 	"github.com/nuonco/nuon/pkg/workspace"
 )
 
-// GitDiffResult is the structured git diff between two commits.
 type GitDiffResult struct {
 	BaseSHA      string   `json:"base_sha"`
 	HeadSHA      string   `json:"head_sha"`
@@ -23,8 +22,6 @@ type GitDiffResult struct {
 	FilesChanged int      `json:"files_changed"`
 }
 
-// computeGitDiffBetweenSHAs clones the repo at headSHA, ensures baseSHA is
-// present, and returns a unified patch equivalent to `git diff base..head`.
 func (a *Activities) computeGitDiffBetweenSHAs(ctx context.Context, vcsConfigID, baseSHA, headSHA, workspaceID string) (*GitDiffResult, error) {
 	gitSource, err := a.resolveGitSource(ctx, vcsConfigID, headSHA)
 	if err != nil {

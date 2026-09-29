@@ -131,9 +131,6 @@ func TestExecuteNonSandboxDoesNotShortCircuit(t *testing.T) {
 	job := &models.AppRunnerJob{ID: "job1", Type: models.AppRunnerJobTypeContainerDashImageDashBuild}
 	execution := &models.AppRunnerJobExecution{ID: "exec1"}
 
-	// A non-sandbox container-image build will fail on the real fetch path
-	// (no reachable plan/registry here); the point is only that it does NOT
-	// short-circuit as a sandbox build (no outputs/result written).
 	_ = e.Execute(context.Background(), job, execution)
 
 	if client.compositePlanCalls != 1 {

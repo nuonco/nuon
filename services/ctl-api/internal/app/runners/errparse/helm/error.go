@@ -1,4 +1,4 @@
-// Package helm holds tool-layer CompositeError parsers for helm jobs. They
+// why: Package helm holds tool-layer CompositeError parsers for helm jobs. They
 // register at errparse.LayerTool so a provider-specific cause (e.g. an AWS IAM
 // denial parsed at LayerProvider) still wins, but any recognised helm failure
 // yields a clean, structured error instead of falling through to the raw
@@ -29,47 +29,24 @@ import (
 )
 
 const (
-	// HelmErrorType is the fallback discriminator for a helm failure that no
-	// specific classifier recognised.
-	HelmErrorType compositeerrors.Type = "helm.error"
-	// HelmImmutableFieldType is a rejected patch to an immutable/forbidden field
-	// (e.g. a StatefulSet selector), which a blind retry can never fix.
-	HelmImmutableFieldType compositeerrors.Type = "helm.immutable_field"
-	// HelmOwnershipConflictType is a resource that already exists and is not
-	// owned by this release, so it cannot be adopted.
+	HelmErrorType             compositeerrors.Type = "helm.error"
+	HelmImmutableFieldType    compositeerrors.Type = "helm.immutable_field"
 	HelmOwnershipConflictType compositeerrors.Type = "helm.ownership_conflict"
-	// HelmNameInUseType is a release name still held by another (often stuck)
-	// release.
-	HelmNameInUseType compositeerrors.Type = "helm.name_in_use"
-	// HelmNoDeployedReleaseType is an upgrade with no prior deployed release.
+	HelmNameInUseType         compositeerrors.Type = "helm.name_in_use"
 	HelmNoDeployedReleaseType compositeerrors.Type = "helm.no_deployed_release"
-	// HelmHookFailedType is a lifecycle hook (pre/post install/upgrade) that
-	// failed; this can be transient so it stays auto-retryable.
-	HelmHookFailedType compositeerrors.Type = "helm.hook_failed"
-	// HelmWaitTimeoutType is a --wait timeout on resources becoming ready; often
-	// transient (image pull, scheduling) so it stays auto-retryable.
-	HelmWaitTimeoutType compositeerrors.Type = "helm.wait_timeout"
-	// HelmRenderErrorType is a chart render / manifest build failure (template
-	// execution, YAML, unknown kind), a deterministic config error.
-	HelmRenderErrorType compositeerrors.Type = "helm.render_error"
+	HelmHookFailedType        compositeerrors.Type = "helm.hook_failed"
+	HelmWaitTimeoutType       compositeerrors.Type = "helm.wait_timeout"
+	HelmRenderErrorType       compositeerrors.Type = "helm.render_error"
 )
 
 const (
-	// maxHeadline bounds the one-line message; full detail lives in the output.
 	maxHeadline = 240
-	// maxBody bounds the stored output so a pathological log can't bloat the
-	// JSONB payload.
-	maxBody = 8000
+	maxBody     = 8000
 )
 
-// wrappers are the runner's own error-wrap prefixes around the helm SDK error.
-// They are the highest-confidence anchor: the runner always wraps a failed helm
-// action with one of these, so the text following the wrapper is the real SDK
-// cause with the runner's nesting stripped. See bins/runner/internal/jobs/
-// deploy/helm (operation_install.go / operation_upgrade.go).
 var wrappers = []string{"helm release:", "with dry-run:"}
 
-// causes are verified helm v4 SDK (pkg/action, pkg/kube) error substrings, used
+// why: causes are verified helm v4 SDK (pkg/action, pkg/kube) error substrings, used
 // as a backup anchor when the captured output does not carry the runner wrapper
 // (e.g. only a log line was retained). Every entry is helm-specific; generic
 // kubernetes phrases like "timed out waiting for the condition" are
@@ -94,16 +71,12 @@ var causes = []string{
 	"YAML parse error",
 }
 
-// classifier maps an anchored cause to a specific helm failure type. The first
-// classifier whose match hits wins, so more specific ones are listed first.
 type classifier struct {
 	typ   compositeerrors.Type
 	hints compositeerrors.Hints
 	match func(summary string) bool
 }
 
-// skipRetry marks a deterministic failure a blind retry cannot fix, so the
-// orchestrator parks the step for manual retry instead of burning attempts.
 var skipRetry = compositeerrors.NewHints().WithSkipAutoRetry()
 
 var classifiers = []classifier{
@@ -116,7 +89,6 @@ var classifiers = []classifier{
 	{HelmWaitTimeoutType, nil, contains("timed out waiting for the condition")},
 }
 
-// contains returns a matcher that hits when the summary contains any of subs.
 func contains(subs ...string) func(string) bool {
 	return func(summary string) bool {
 		for _, s := range subs {
@@ -128,9 +100,6 @@ func contains(subs ...string) func(string) bool {
 	}
 }
 
-// HelmError is the tool-layer payload: the classified helm failure. Summary is
-// the SDK error with the runner's wrapper stripped; Reason is the specific
-// failure class (empty for the generic fallback); Output is the cleaned context.
 type HelmError struct {
 	Reason  string `json:"reason,omitempty"`
 	Summary string `json:"summary"`
@@ -159,13 +128,10 @@ func (e *HelmError) Sections() []compositeerrors.Section {
 	}
 }
 
-// signals gates the parser on the runner wrapper prefixes plus the verified SDK
-// cause substrings.
 func signals() []string {
 	return append(append([]string{}, wrappers...), causes...)
 }
 
-// parseError recognises helm failures in a helm job's raw output.
 func parseError(ctx *errparse.ParseContext) compositeerrors.CompositeError {
 	lines := cleanedLines(ctx.Raw)
 
@@ -204,7 +170,7 @@ func init() {
 	))
 }
 
-// wrapperSummary returns the SDK error that follows the runner's helm wrapper on
+// why: wrapperSummary returns the SDK error that follows the runner's helm wrapper on
 // the first line that carries one, or "" when no wrapper is present. When a line
 // nests several wrappers the rightmost one is used, so the deepest (real) cause
 // leads. The wrapper phrase itself is only ever on the actual error line, never
@@ -228,8 +194,6 @@ func wrapperSummary(lines []string) string {
 	return ""
 }
 
-// causeSummary returns the text from the earliest verified helm cause marker on
-// the first line that carries one, or "" when none is present.
 func causeSummary(lines []string) string {
 	for _, l := range lines {
 		best := -1
@@ -245,8 +209,6 @@ func causeSummary(lines []string) string {
 	return ""
 }
 
-// cleanedLines returns the non-blank lines of raw, each trimmed of surrounding
-// space (helm SDK errors carry no box-drawing prefix, unlike terraform).
 func cleanedLines(raw string) []string {
 	var out []string
 	for _, line := range strings.Split(raw, "\n") {
@@ -257,7 +219,7 @@ func cleanedLines(raw string) []string {
 	return out
 }
 
-// truncate caps s to n runes (not bytes) so it never splits a multi-byte rune
+// why: truncate caps s to n runes (not bytes) so it never splits a multi-byte rune
 // into invalid UTF-8, appending an ellipsis when it cuts.
 func truncate(s string, n int) string {
 	if len(s) <= n {

@@ -14,7 +14,6 @@ func NewWorkflow(cfg *workers.Config) Wkflow {
 	}
 }
 
-// ListWorkflowFns returns the list of workflow functions for registration
 func (w *Wkflow) ListWorkflowFns() []any {
 	return []any{
 		w.ProvisionECRRepository,

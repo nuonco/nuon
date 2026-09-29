@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// TestCreateAppBreakGlassConfig tests the CreateAppBreakGlassConfig endpoint.
 func (s *AppConfigTypesTestSuite) TestCreateAppBreakGlassConfig() {
 	testCases := []struct {
 		name         string

@@ -44,7 +44,6 @@ func (s *service) UpdateOrgFeatures(ctx *gin.Context) {
 		return
 	}
 
-	// Check if user-managed-features flag is enabled for this org
 	if !org.Features[string(app.OrgFeatureUserManagedFeatures)] {
 		ctx.Error(stderr.ErrUser{
 			Err:         fmt.Errorf("user-managed-features flag is not enabled for this organization"),
@@ -66,8 +65,6 @@ func (s *service) UpdateOrgFeatures(ctx *gin.Context) {
 		return
 	}
 
-	// Filter out any attempts to modify the user-managed-features flag itself
-	// This flag can only be toggled by admins
 	if _, exists := req.Features[string(app.OrgFeatureUserManagedFeatures)]; exists {
 		ctx.Error(stderr.ErrUser{
 			Err:         fmt.Errorf("the %s flag cannot be modified through this endpoint", app.OrgFeatureUserManagedFeatures),
@@ -87,7 +84,6 @@ func (s *service) UpdateOrgFeatures(ctx *gin.Context) {
 		}
 	}
 
-	// Validate that all requested features are user-manageable
 	manageableFeatures := app.GetUserManageableFeatures()
 	manageableMap := make(map[string]bool)
 	for _, feature := range manageableFeatures {
@@ -104,13 +100,11 @@ func (s *service) UpdateOrgFeatures(ctx *gin.Context) {
 		}
 	}
 
-	// Update the features
 	if err := s.features.Enable(ctx, org.ID, req.Features); err != nil {
 		ctx.Error(errors.Wrap(err, "unable to update org features"))
 		return
 	}
 
-	// Return updated org
 	updatedOrg, err := s.getOrg(ctx, org.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to retrieve updated org: %w", err))

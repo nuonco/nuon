@@ -80,7 +80,6 @@ func (s *LogStreamWriteLogsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -101,7 +100,6 @@ func (s *LogStreamWriteLogsTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create log stream in Postgres
 	s.testLogStream = &app.LogStream{
 		ID:      domains.NewLogStreamID(),
 		OrgID:   s.testOrg.ID,
@@ -123,7 +121,6 @@ func (s *LogStreamWriteLogsTestSuite) makeRequest(method, path string, body []by
 	req, err := http.NewRequest(method, path, reqBody)
 	require.NoError(s.T(), err)
 
-	// Set proper content type for protobuf binary
 	if body != nil {
 		req.Header.Set("Content-Type", "application/x-protobuf")
 	}
@@ -133,25 +130,20 @@ func (s *LogStreamWriteLogsTestSuite) makeRequest(method, path string, body []by
 	return rr
 }
 
-// buildOTLPLogExportRequest creates a valid OTEL protobuf export request
 func (s *LogStreamWriteLogsTestSuite) buildOTLPLogExportRequest(logMessages []string) []byte {
 	exportReq := plogotlp.NewExportRequest()
 	logs := exportReq.Logs()
 
-	// Add resource logs
 	resourceLogs := logs.ResourceLogs().AppendEmpty()
 
-	// Set resource attributes
 	resourceAttrs := resourceLogs.Resource().Attributes()
 	resourceAttrs.PutStr("service.name", "test-service")
 	resourceAttrs.PutStr("runner_group.id", "rgrp123456789")
 
-	// Add scope logs
 	scopeLogs := resourceLogs.ScopeLogs().AppendEmpty()
 	scopeLogs.Scope().SetName("test-scope")
 	scopeLogs.Scope().SetVersion("1.0.0")
 
-	// Add log records
 	for i, msg := range logMessages {
 		logRecord := scopeLogs.LogRecords().AppendEmpty()
 		logRecord.SetTimestamp(pcommon.NewTimestampFromTime(time.Now().Add(time.Duration(i) * time.Second)))
@@ -159,25 +151,21 @@ func (s *LogStreamWriteLogsTestSuite) buildOTLPLogExportRequest(logMessages []st
 		logRecord.SetSeverityText("INFO")
 		logRecord.Body().SetStr(msg)
 
-		// Add log attributes
 		logAttrs := logRecord.Attributes()
 		logAttrs.PutStr("runner.id", "rnr123456789")
 		logAttrs.PutStr("runner_job.id", "rjb123456789")
 	}
 
-	// Convert to export request and marshal to protobuf binary
 	protoData, err := exportReq.MarshalProto()
 	require.NoError(s.T(), err)
 
 	return protoData
 }
 
-// buildInvalidOTLPRequest creates an invalid protobuf payload
 func (s *LogStreamWriteLogsTestSuite) buildInvalidOTLPRequest() []byte {
 	return []byte("invalid protobuf data")
 }
 
-// countLogsInCH counts logs for a specific log stream in ClickHouse
 func (s *LogStreamWriteLogsTestSuite) countLogsInCH(logStreamID string) int {
 	var count int64
 	err := s.service.CHDB.Model(&app.OtelLogRecord{}).
@@ -187,7 +175,6 @@ func (s *LogStreamWriteLogsTestSuite) countLogsInCH(logStreamID string) int {
 	return int(count)
 }
 
-// getLogsFromCH retrieves logs for a specific log stream from ClickHouse
 func (s *LogStreamWriteLogsTestSuite) getLogsFromCH(logStreamID string) []app.OtelLogRecord {
 	var logs []app.OtelLogRecord
 	err := s.service.CHDB.
@@ -212,7 +199,6 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create new log stream
 				logStream := &app.LogStream{
 					ID:      domains.NewLogStreamID(),
 					OrgID:   s.testOrg.ID,
@@ -268,7 +254,6 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 				logs := s.getLogsFromCH(logStreamID)
 				assert.Len(s.T(), logs, 5)
 
-				// Verify log bodies
 				expectedMessages := []string{"Log 1", "Log 2", "Log 3", "Log 4", "Log 5"}
 				for i, log := range logs {
 					assert.Equal(s.T(), expectedMessages[i], log.Body)
@@ -278,13 +263,11 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 		{
 			name: "validates log stream exists",
 			setupFunc: func() (string, []byte) {
-				// Use non-existent log stream ID
 				body := s.buildOTLPLogExportRequest([]string{"Test log"})
 				return "lgsnonexistent123456789012", body
 			},
 			expectedCode: http.StatusNotFound,
 			validateFunc: func(logStreamID string) {
-				// No logs should be written
 				count := s.countLogsInCH(logStreamID)
 				assert.Equal(s.T(), 0, count)
 			},
@@ -295,7 +278,6 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -308,7 +290,6 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create log stream in org2
 				logStream2 := &app.LogStream{
 					ID:      domains.NewLogStreamID(),
 					OrgID:   org2.ID,
@@ -324,7 +305,6 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 				})
 
 				body := s.buildOTLPLogExportRequest([]string{"Test log"})
-				// Runner routes don't validate org ownership
 				return logStream2.ID, body
 			},
 			expectedCode:     http.StatusCreated,
@@ -342,7 +322,6 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 			},
 			expectedCode: http.StatusBadRequest,
 			validateFunc: func(logStreamID string) {
-				// No logs should be written
 				count := s.countLogsInCH(logStreamID)
 				assert.Equal(s.T(), 0, count)
 			},
@@ -375,12 +354,10 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 				logs := s.getLogsFromCH(logStreamID)
 				require.Len(s.T(), logs, 1)
 
-				// Verify resource attributes
 				assert.NotNil(s.T(), logs[0].ResourceAttributes)
 				assert.Equal(s.T(), "test-service", logs[0].ResourceAttributes["service.name"])
 				assert.Equal(s.T(), "rgrp123456789", logs[0].ResourceAttributes["runner_group.id"])
 
-				// Verify log attributes
 				assert.NotNil(s.T(), logs[0].LogAttributes)
 				assert.Equal(s.T(), "rnr123456789", logs[0].LogAttributes["runner.id"])
 				assert.Equal(s.T(), "rjb123456789", logs[0].LogAttributes["runner_job.id"])
@@ -392,7 +369,6 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create parent log stream
 				parentLogStream := &app.LogStream{
 					ID:      domains.NewLogStreamID(),
 					OrgID:   s.testOrg.ID,
@@ -402,7 +378,6 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 				err := s.service.DB.WithContext(ctx).Create(parentLogStream).Error
 				require.NoError(s.T(), err)
 
-				// Create child log stream with parent
 				childLogStream := &app.LogStream{
 					ID:                domains.NewLogStreamID(),
 					OrgID:             s.testOrg.ID,
@@ -422,19 +397,16 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 				return childLogStream.ID, body
 			},
 			expectedCode:     http.StatusCreated,
-			expectedLogCount: 1, // countLogsInCH counts by child log stream ID only
+			expectedLogCount: 1,
 			validateFunc: func(logStreamID string) {
-				// Get the child log stream to find parent
 				var childLogStream app.LogStream
 				err := s.service.DB.Where("id = ?", logStreamID).First(&childLogStream).Error
 				require.NoError(s.T(), err)
 
-				// Verify logs written to child log stream
 				childLogs := s.getLogsFromCH(logStreamID)
 				assert.Len(s.T(), childLogs, 1)
 				assert.Equal(s.T(), "Log with parent", childLogs[0].Body)
 
-				// Verify logs also written to parent log stream
 				parentLogs := s.getLogsFromCH(childLogStream.ParentLogStreamID.String)
 				assert.Len(s.T(), parentLogs, 1)
 				assert.Equal(s.T(), "Log with parent", parentLogs[0].Body)
@@ -447,7 +419,6 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 			},
 			expectedCode: http.StatusBadRequest,
 			validateFunc: func(logStreamID string) {
-				// No logs should be written
 				count := s.countLogsInCH(logStreamID)
 				assert.Equal(s.T(), 0, count)
 			},
@@ -466,15 +437,12 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
 			if tc.expectedCode == http.StatusCreated {
-				// Verify response
 				var response string
 				err := json.Unmarshal(rr.Body.Bytes(), &response)
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), "ok", response)
 
-				// Verify logs were written to ClickHouse
 				if tc.expectedLogCount > 0 {
-					// Give ClickHouse a moment to process the write
 					time.Sleep(100 * time.Millisecond)
 
 					count := s.countLogsInCH(logStreamID)
@@ -484,7 +452,6 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 			}
 
 			if tc.validateFunc != nil {
-				// Give ClickHouse a moment to process
 				time.Sleep(100 * time.Millisecond)
 				tc.validateFunc(logStreamID)
 			}

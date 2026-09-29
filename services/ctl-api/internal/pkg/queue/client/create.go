@@ -41,7 +41,7 @@ type CreateQueueRequest struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
 func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queue, error) {
-	// Capacity must be persisted before the restart hint so the next workflow
+	// why: Capacity must be persisted before the restart hint so the next workflow
 	// run cannot reload stale limits.
 	var existing app.Queue
 	res := c.db.WithContext(ctx).

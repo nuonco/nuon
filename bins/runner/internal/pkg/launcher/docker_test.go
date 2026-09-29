@@ -21,7 +21,6 @@ func TestContainerEnvArgs(t *testing.T) {
 			t.Fatalf("expected %v, got %v", want, args)
 		}
 
-		// the secret must never reach argv, only the process env
 		for _, a := range args {
 			if strings.Contains(a, "super-secret") {
 				t.Fatalf("secret value leaked into argv: %v", args)
@@ -89,7 +88,7 @@ func TestDockerEnvPrecedence(t *testing.T) {
 		"DOCKER_CONFIG=/tmp/hijacked",
 	})
 
-	// os/exec keeps the last duplicate, so container values must appear after
+	// why: os/exec keeps the last duplicate, so container values must appear after
 	// the host env, and DOCKER_CONFIG must appear after the container env.
 	lastIndex := func(prefix string) int {
 		idx := -1

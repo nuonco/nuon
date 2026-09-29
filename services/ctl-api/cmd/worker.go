@@ -33,7 +33,6 @@ func (c *cli) registerWorker() error {
 	return nil
 }
 
-// shouldSkipNamespace checks if a namespace should be skipped based on the skipNamespaces flag
 func shouldSkipNamespace(ns string) bool {
 	if skipNamespaces == "" {
 		return false
@@ -55,17 +54,12 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	profilerOptions := profiles.LoadOptionsFromEnv()
 	providers = append(providers, profiles.Module(profilerOptions))
 
-	// Add worker interceptors and shared workflows. SlackLibsModule supplies
-	// *slackclient.Client to the Slack signal lifecycle hook in
-	// SharedWorkflowsModule; without it the hook's Supports() short-circuits
-	// because SlackParams.SlackClient is optional and resolves to nil.
 	providers = append(providers,
 		fxmodules.WorkerInterceptorsModule,
 		fxmodules.SharedWorkflowsModule,
 		fxmodules.SlackLibsModule,
 	)
 
-	// Add namespace-specific worker modules based on flags
 	if (namespace == "all" || namespace == "general") && !shouldSkipNamespace("general") {
 		providers = append(providers, fxmodules.GeneralWorkerModule)
 	}
@@ -94,11 +88,6 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		providers = append(providers, fxmodules.InstallCronWorkerModule)
 	}
 
-	// Releases namespace removed - being deprecated
-	// if (namespace == "all" || namespace == "releases") && !shouldSkipNamespace("releases") {
-	// 	providers = append(providers, fxmodules.ReleasesWorkerModule)
-	// }
-
 	runRunners := (namespace == "all" || namespace == "runners") && !shouldSkipNamespace("runners")
 	runRunnerHealthcheckCrons := (namespace == "all" || namespace == "runner-healthcheck-crons") && !shouldSkipNamespace("runner-healthcheck-crons")
 	if runRunners || runRunnerHealthcheckCrons {
@@ -123,7 +112,6 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		providers = append(providers, fxmodules.VCSWorkerModule)
 	}
 
-	// Add worker healthcheck server
 	providers = append(providers,
 		fx.Provide(health.NewWorkerHealthcheck),
 		fx.Invoke(func(lc fx.Lifecycle, hc *health.WorkerHealthcheckServer) {
@@ -138,7 +126,6 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		}),
 	)
 
-	// Add final invocations
 	providers = append(providers,
 		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
 		fx.Invoke(worker.WithWorkers(func([]worker.Worker) {})),

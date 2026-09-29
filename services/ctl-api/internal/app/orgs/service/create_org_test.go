@@ -25,7 +25,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// CreateOrgTestSuite is the testify suite for create org endpoint.
 type CreateOrgTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -55,7 +54,6 @@ func (s *CreateOrgTestSuite) SetupSuite() {
 
 			CustomValidator: true,
 		}),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),
 	)
@@ -63,7 +61,6 @@ func (s *CreateOrgTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -71,9 +68,6 @@ func (s *CreateOrgTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
-
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -113,7 +107,6 @@ func (s *CreateOrgTestSuite) makeRequest(method, path string, body interface{}) 
 }
 
 func (s *CreateOrgTestSuite) TestCreateOrg() {
-	// Generate unique names for each test case to avoid cross-run collisions
 	minimalName := fmt.Sprintf("test-org-minimal-%s", domains.NewOrgID()[:8])
 	sandboxName := fmt.Sprintf("test-org-sandbox-%s", domains.NewOrgID()[:8])
 	notificationsName := fmt.Sprintf("test-org-notifications-%s", domains.NewOrgID()[:8])
@@ -133,8 +126,6 @@ func (s *CreateOrgTestSuite) TestCreateOrg() {
 			expectedStatus: http.StatusCreated,
 			validateFunc: func(org *app.Org) {
 				require.Equal(s.T(), minimalName, org.Name)
-				// OrgType has json:"-" tag, so it's not returned in API response
-				// Check database record instead
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
@@ -144,7 +135,6 @@ func (s *CreateOrgTestSuite) TestCreateOrg() {
 				require.NotEmpty(s.T(), org.CreatedByID)
 				require.Equal(s.T(), s.testAcc.ID, org.CreatedByID)
 
-				// Cleanup
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
@@ -160,15 +150,12 @@ func (s *CreateOrgTestSuite) TestCreateOrg() {
 			expectedStatus: http.StatusCreated,
 			validateFunc: func(org *app.Org) {
 				require.Equal(s.T(), sandboxName, org.Name)
-				// OrgType has json:"-" tag, so it's not returned in API response
-				// Check database record instead
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
 				require.Equal(s.T(), app.OrgTypeSandbox, dbOrg.OrgType)
 				require.True(s.T(), org.SandboxMode)
 
-				// Cleanup
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
@@ -184,7 +171,6 @@ func (s *CreateOrgTestSuite) TestCreateOrg() {
 			validateFunc: func(org *app.Org) {
 				require.Equal(s.T(), notificationsName, org.Name)
 
-				// Verify notifications config was created
 				var notifConfig app.NotificationsConfig
 				err := s.service.DB.Where("owner_id = ?", org.ID).First(&notifConfig).Error
 				require.NoError(s.T(), err)
@@ -192,7 +178,6 @@ func (s *CreateOrgTestSuite) TestCreateOrg() {
 				require.True(s.T(), notifConfig.EnableSlackNotifications)
 				require.True(s.T(), notifConfig.EnableEmailNotifications)
 
-				// Cleanup
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
@@ -203,9 +188,6 @@ func (s *CreateOrgTestSuite) TestCreateOrg() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Reset mock before test
-
-			// Make request
 			rr := s.makeRequest(http.MethodPost, "/v1/orgs", tc.request)
 
 			if rr.Code != tc.expectedStatus {
@@ -213,7 +195,6 @@ func (s *CreateOrgTestSuite) TestCreateOrg() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Parse response
 			var response app.Org
 			err := json.Unmarshal(rr.Body.Bytes(), &response)
 			if err != nil {
@@ -221,18 +202,15 @@ func (s *CreateOrgTestSuite) TestCreateOrg() {
 			}
 			require.NoError(s.T(), err)
 
-			// Verify org exists in database
 			var dbOrg app.Org
 			err = s.service.DB.First(&dbOrg, "id = ?", response.ID).Error
 			require.NoError(s.T(), err)
 			require.Equal(s.T(), tc.request.Name, dbOrg.Name)
 
-			// Run validation
 			if tc.validateFunc != nil {
 				tc.validateFunc(&response)
 			}
 
-			// Validate signals were sent
 			if tc.validateSignal {
 				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.GreaterOrEqual(s.T(), len(signals), 2, "expected at least org created and provision signals")
@@ -271,12 +249,10 @@ func (s *CreateOrgTestSuite) TestCreateOrgValidation() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Make request
 			rr := s.makeRequest(http.MethodPost, "/v1/orgs", tc.request)
 
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// No signals should be sent on validation failure
 			signals := tests.GetQueueSignals(s.T(), s.service.DB)
 			assert.Len(s.T(), signals, 0)
 		})
@@ -284,7 +260,6 @@ func (s *CreateOrgTestSuite) TestCreateOrgValidation() {
 }
 
 func (s *CreateOrgTestSuite) TestCreateOrgServiceAccountRestriction() {
-	// Create service account
 	serviceAccID := domains.NewAccountID()
 	serviceAcc := &app.Account{
 		ID:          serviceAccID,
@@ -298,7 +273,6 @@ func (s *CreateOrgTestSuite) TestCreateOrgServiceAccountRestriction() {
 		s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", serviceAcc.ID)
 	})
 
-	// Create router with service account context
 	router := tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -307,7 +281,6 @@ func (s *CreateOrgTestSuite) TestCreateOrgServiceAccountRestriction() {
 	err = s.orgsService.RegisterPublicRoutes(router)
 	require.NoError(s.T(), err)
 
-	// Make request
 	request := CreateOrgRequest{
 		Name: fmt.Sprintf("service-org-%s", domains.NewOrgID()[:8]),
 	}
@@ -321,7 +294,6 @@ func (s *CreateOrgTestSuite) TestCreateOrgServiceAccountRestriction() {
 	rr := httptest.NewRecorder()
 	router.ServeHTTP(rr, req)
 
-	// Should fail for service accounts
 	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
 	require.Contains(s.T(), rr.Body.String(), "not allowed to create new orgs")
 }
@@ -331,14 +303,10 @@ func (s *CreateOrgTestSuite) TestCreateOrgCreatesRunnerGroup() {
 		Name: fmt.Sprintf("test-org-runner-group-%s", domains.NewOrgID()[:8]),
 	}
 
-	// Reset mock
-
-	// Make request
 	rr := s.makeRequest(http.MethodPost, "/v1/orgs", request)
 
 	require.Equal(s.T(), http.StatusCreated, rr.Code)
 
-	// Parse response
 	var response app.Org
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(s.T(), err)
@@ -346,7 +314,6 @@ func (s *CreateOrgTestSuite) TestCreateOrgCreatesRunnerGroup() {
 		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", response.ID)
 	})
 
-	// Verify runner group was created
 	var runnerGroup app.RunnerGroup
 	err = s.service.DB.Where("owner_id = ? AND owner_type = ?", response.ID, "orgs").First(&runnerGroup).Error
 	require.NoError(s.T(), err)
@@ -358,9 +325,6 @@ func (s *CreateOrgTestSuite) TestCreateOrgCreatesRoles() {
 		Name: fmt.Sprintf("test-org-roles-%s", domains.NewOrgID()[:8]),
 	}
 
-	// Reset mock
-
-	// Make request with account context
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
@@ -368,7 +332,6 @@ func (s *CreateOrgTestSuite) TestCreateOrgCreatesRoles() {
 
 	require.Equal(s.T(), http.StatusCreated, rr.Code)
 
-	// Parse response
 	var response app.Org
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(s.T(), err)
@@ -376,13 +339,11 @@ func (s *CreateOrgTestSuite) TestCreateOrgCreatesRoles() {
 		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", response.ID)
 	})
 
-	// Verify roles were created
 	var roles []app.Role
 	err = s.service.DB.Where("org_id = ?", response.ID).Find(&roles).Error
 	require.NoError(s.T(), err)
 	require.GreaterOrEqual(s.T(), len(roles), 1, "at least one role should be created for the org")
 
-	// Verify user was assigned to org admin role
 	var accountRoles []app.AccountRole
 	err = s.service.DB.Joins("JOIN roles ON roles.id = account_roles.role_id").
 		Where("account_roles.account_id = ? AND roles.org_id = ?", s.testAcc.ID, response.ID).
@@ -392,7 +353,6 @@ func (s *CreateOrgTestSuite) TestCreateOrgCreatesRoles() {
 }
 
 func (s *CreateOrgTestSuite) TestCreateOrgIntegrationAccountType() {
-	// Create integration account
 	integrationAccID := domains.NewAccountID()
 	integrationAcc := &app.Account{
 		ID:          integrationAccID,
@@ -406,7 +366,6 @@ func (s *CreateOrgTestSuite) TestCreateOrgIntegrationAccountType() {
 		s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", integrationAcc.ID)
 	})
 
-	// Create router with integration account context
 	router := tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -415,7 +374,6 @@ func (s *CreateOrgTestSuite) TestCreateOrgIntegrationAccountType() {
 	err = s.orgsService.RegisterPublicRoutes(router)
 	require.NoError(s.T(), err)
 
-	// Make request
 	request := CreateOrgRequest{
 		Name: fmt.Sprintf("integration-org-%s", domains.NewOrgID()[:8]),
 	}
@@ -426,14 +384,11 @@ func (s *CreateOrgTestSuite) TestCreateOrgIntegrationAccountType() {
 	require.NoError(s.T(), err)
 	req.Header.Set("Content-Type", "application/json")
 
-	// Reset mock
-
 	rr := httptest.NewRecorder()
 	router.ServeHTTP(rr, req)
 
 	require.Equal(s.T(), http.StatusCreated, rr.Code)
 
-	// Parse response
 	var response app.Org
 	err = json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(s.T(), err)
@@ -441,7 +396,6 @@ func (s *CreateOrgTestSuite) TestCreateOrgIntegrationAccountType() {
 		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", response.ID)
 	})
 
-	// Verify org type is integration (check database since OrgType has json:"-")
 	var dbOrg app.Org
 	err = s.service.DB.First(&dbOrg, "id = ?", response.ID).Error
 	require.NoError(s.T(), err)
@@ -449,7 +403,6 @@ func (s *CreateOrgTestSuite) TestCreateOrgIntegrationAccountType() {
 }
 
 func (s *CreateOrgTestSuite) TestCreateOrgDuplicateName() {
-	// Create first org
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
@@ -468,24 +421,20 @@ func (s *CreateOrgTestSuite) TestCreateOrgDuplicateName() {
 		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", existingOrg.ID)
 	})
 
-	// Try to create org with same name
 	request := CreateOrgRequest{
 		Name: dupName,
 	}
 
 	rr := s.makeRequest(http.MethodPost, "/v1/orgs", request)
 
-	// Should fail with conflict/error
 	require.Equal(s.T(), http.StatusConflict, rr.Code)
 	s.T().Logf("Duplicate org creation status: %d, Body: %s", rr.Code, rr.Body.String())
 }
 
 func (s *CreateOrgTestSuite) TestCreateOrgWithoutAccountContext() {
-	// Create router without account context
 	router := tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
-		// TestAcc intentionally omitted
 	})
 
 	err := s.orgsService.RegisterPublicRoutes(router)

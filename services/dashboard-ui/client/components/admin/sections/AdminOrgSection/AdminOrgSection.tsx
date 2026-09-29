@@ -44,8 +44,6 @@ export const AdminOrgSection = ({
   runner,
 }: IAdminOrgSection) => {
   const runnerId = runner?.id ?? ''
-  // Destructive org-level actions require typing the org's name (falling back
-  // to the org id) so admins must explicitly confirm the exact target org.
   const orgConfirmText = org?.name || orgId
 
   const metadata = (

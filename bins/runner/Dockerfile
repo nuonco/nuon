@@ -122,14 +122,11 @@ ARG GOBUILD_RELEASE_CACHE_ID=gobuild-runner-release
 ARG GOMOD_CACHE_ID=gomod-runner
 
 
-# copy each file that is specific to the api into the correct directory
 WORKDIR /src/bins/${SERVICE}
 
-# Copy monorepo shared sources (SDK go.mod/go.sum are in the base image)
 COPY --link sdks /src/sdks/
 COPY --link pkg /src/pkg/
 
-# Copy service-specific files (most frequently changed, last for cache efficiency)
 COPY --link cmd  ./cmd/
 COPY --link internal ./internal/
 COPY --link main.go .
@@ -205,7 +202,6 @@ ARG KUBELOGIN_VERSION
 
 RUN apk add --update --no-cache curl ca-certificates
 WORKDIR /bin
-# kubelogin download url
 RUN curl -LO \
     "https://github.com/Azure/kubelogin/releases/download/v${KUBELOGIN_VERSION}/kubelogin-linux-amd64.zip" \
     && unzip kubelogin-linux-amd64.zip \
@@ -241,13 +237,11 @@ RUN curl -sSL "https://get.pulumi.com/releases/sdk/pulumi-v${PULUMI_VERSION}-lin
 
 FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.25-alpine AS certs
 
-# NOTE(jdt): ideally we would wget -a but busybox doesn't support it
+# why: ideally we would wget -a but busybox doesn't support it
 # or use `update-ca-certificate` but it can't handle a single file w/ multiple certs
 RUN wget \
     https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem \
     && cat global-bundle.pem >> /global-bundle.pem
-
-# START
 
 FROM code AS build-darwin-arm64
 
@@ -335,8 +329,6 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
     -o /out/${BIN_NAME}_linux_amd64 . && \
     touch /go/pkg/build-cache/.nuon-dirty
 
-# END
-
 FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.25-alpine AS runtime-base
 
 RUN apk add --no-cache \
@@ -358,7 +350,6 @@ RUN apk add --no-cache \
     python3 \
     oras-cli
 
-# add dependencies
 COPY --from=kaniko /kaniko/* /kaniko/
 COPY --from=kaniko /kaniko/.docker /kaniko/.docker
 COPY --from=kaniko /etc/nsswitch.conf /etc/nsswitch.conf
@@ -372,7 +363,6 @@ COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
 
 ENV PATH="/opt/pulumi:/opt/google-cloud-sdk/bin:${PATH}"
 
-# udpate the ca certs so python's urllib cert verification passes
 RUN update-ca-certificates
 
 FROM runtime-base AS final
@@ -402,8 +392,6 @@ COPY --from=build-linux-amd64 /out/ /
 
 FROM artifacts-build-${ARTIFACT_PLATFORMS} AS artifacts-build
 
-# Prepare artifacts for upload
-# Go code will handle the S3 upload part
 FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/alpine:latest AS artifacts
 
 ARG BIN_NAME=runner

@@ -30,8 +30,6 @@ import (
 	"github.com/nuonco/nuon/pkg/types/outputs"
 )
 
-// execSyncSecret resolves the shared source value once, then dispatches to the v1 (single destination) or v2
-// (multiple targets, each fanning out across namespaces) sync path.
 func (p *handler) execSyncSecret(ctx context.Context, secr plantypes.KubernetesSecretSync) error {
 	val, ts, exists, err := p.fetchSecretValue(ctx, secr)
 	if err != nil {
@@ -45,7 +43,7 @@ func (p *handler) execSyncSecret(ctx context.Context, secr plantypes.KubernetesS
 	return p.execSyncSecretV1(ctx, secr, val, ts, exists)
 }
 
-// fetchSecretValue resolves the secret value from the cloud provider source shared across all destinations, applying
+// why: fetchSecretValue resolves the secret value from the cloud provider source shared across all destinations, applying
 // base64 decoding when configured. exists is false when the source resolves to an empty value (an optional secret
 // that was never populated), in which case the runner records the output but skips the Kubernetes upsert.
 func (p *handler) fetchSecretValue(ctx context.Context, secr plantypes.KubernetesSecretSync) (string, *time.Time, bool, error) {
@@ -79,8 +77,6 @@ func (p *handler) fetchSecretValue(ctx context.Context, secr plantypes.Kubernete
 	return val, ts, exists, nil
 }
 
-// execSyncSecretV1 is the legacy single-destination path: it upserts one Kubernetes secret using the v1 namespace /
-// name / key fields and records a single output.
 func (p *handler) execSyncSecretV1(ctx context.Context, secr plantypes.KubernetesSecretSync, val string, ts *time.Time, exists bool) error {
 	if exists {
 		if err := p.upsertSecret(ctx, secr.Namespace, secr.Name, secr.KeyName, val); err != nil {
@@ -93,8 +89,6 @@ func (p *handler) execSyncSecretV1(ctx context.Context, secr plantypes.Kubernete
 	return nil
 }
 
-// execSyncSecretV2 fans the shared source value out across every target × namespace, upserting one Kubernetes secret
-// per destination and recording one output per destination.
 func (p *handler) execSyncSecretV2(ctx context.Context, secr plantypes.KubernetesSecretSync, val string, ts *time.Time, exists bool) error {
 	l := pkgctx.LoggerOrDefault(ctx, zap.NewNop())
 	sourceField := sourceSecretField(secr)
@@ -124,8 +118,6 @@ func (p *handler) execSyncSecretV2(ctx context.Context, secr plantypes.Kubernete
 	return nil
 }
 
-// sourceSecretField returns the log field identifying the cloud-provider source secret, keyed by provider type so the
-// value carries its own semantics: an ARN for AWS, a resource name for GCP, or a key vault secret URI for Azure.
 func sourceSecretField(secr plantypes.KubernetesSecretSync) zap.Field {
 	switch {
 	case secr.GCPSecretName != "":
@@ -137,7 +129,7 @@ func sourceSecretField(secr plantypes.KubernetesSecretSync) zap.Field {
 	}
 }
 
-// recordOutput writes a per-destination output keyed uniquely by source secret name and Kubernetes destination, so v2
+// why: recordOutput writes a per-destination output keyed uniquely by source secret name and Kubernetes destination, so v2
 // destinations that share a name (across namespaces, or same namespace/name with different keys) don't overwrite each
 // other in the output map.
 func (p *handler) recordOutput(secr plantypes.KubernetesSecretSync, namespace, name, key, val string, ts *time.Time, exists bool) {
@@ -172,7 +164,7 @@ func (p *handler) fetchAWSSecret(ctx context.Context, secr plantypes.KubernetesS
 
 	input := &secretsmanager.GetSecretValueInput{
 		SecretId:     aws.String(secr.SecretARN),
-		VersionStage: aws.String("AWSCURRENT"), // VersionStage defaults to AWSCURRENT if unspecified
+		VersionStage: aws.String("AWSCURRENT"),
 	}
 
 	result, err := svc.GetSecretValue(context.TODO(), input)
@@ -215,8 +207,6 @@ func (p *handler) fetchGCPSecret(ctx context.Context, secr plantypes.KubernetesS
 }
 
 func (p *handler) fetchAzureSecret(ctx context.Context, secr plantypes.KubernetesSecretSync) (string, *time.Time, error) {
-	// Parse the secret URI to extract vault URL and secret name
-	// Format: https://{vault-name}.vault.azure.net/secrets/{secret-name}
 	parsed, err := url.Parse(secr.AzureKeyVaultSecretID)
 	if err != nil {
 		return "", nil, errors.Wrap(err, "unable to parse azure key vault secret URI")

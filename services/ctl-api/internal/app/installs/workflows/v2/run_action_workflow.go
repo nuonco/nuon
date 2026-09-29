@@ -15,7 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-// createActionWorkflowStep creates a workflow step for executing an action workflow
 func createActionWorkflowStep(ctx workflow.Context, installID string, iaw *app.InstallActionWorkflow, triggeredByID string, runEnvVars map[string]string, role string, sg *stepGroup) (*app.WorkflowStep, error) {
 	sig := &executeactionworkflow.Signal{
 		Signal: &actionworkflowrun.Signal{

@@ -11,7 +11,6 @@ import (
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// handleDenyResponse processes a deny (default) response.
 func (s *Signal) handleDenyResponse(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow) error {
 	l.Debug("handling approval response type: denied",
 		zap.String("step_id", step.ID),
@@ -23,7 +22,6 @@ func (s *Signal) handleDenyResponse(ctx workflow.Context, l *zap.Logger, step *a
 		}
 	}
 
-	// Write the stop directive. The group reads the step's status to get the reason.
 	if err := setResultDirective(ctx, step.ID, DirectiveStop); err != nil {
 		return errors.Wrap(err, "unable to set result directive for denied step")
 	}

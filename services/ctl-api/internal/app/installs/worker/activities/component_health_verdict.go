@@ -8,30 +8,15 @@ import (
 )
 
 const (
-	// componentHealthObservationWindow bounds how far back the evaluator reads
-	// observations from ClickHouse (~10 reports at the runner's ~60s cadence).
 	componentHealthObservationWindow = 10 * time.Minute
-	// componentHealthProgressingLimit is how long a component may stay
-	// progressing before it is treated as degraded. Long enough for a slow
-	// rollout or a cluster autoscaler cold start, short enough that a genuinely
-	// stuck workload is reported the same day.
-	componentHealthProgressingLimit = 30 * time.Minute
-	// componentHealthStaleAfter marks a stale verdict unknown, never unhealthy —
-	// absence of data isn't health data. Matches the 5m runner-inactive cutoff.
-	componentHealthStaleAfter = 5 * time.Minute
+	componentHealthProgressingLimit  = 30 * time.Minute
+	componentHealthStaleAfter        = 5 * time.Minute
 
-	// customCheckRetentionWindow is the longest TTL a pushed check may declare,
-	// and so how far back they are read.
-	customCheckRetentionWindow = 60 * time.Minute
-	// componentHealthFlipBadAfter is how many consecutive bad (degraded or
-	// worse) reports it takes to flip a component's verdict bad.
+	customCheckRetentionWindow  = 60 * time.Minute
 	componentHealthFlipBadAfter = 3
-	// componentHealthFlipAfter is how many consecutive agreeing reports any
-	// other verdict change takes (e.g. recovery to healthy).
-	componentHealthFlipAfter = 2
+	componentHealthFlipAfter    = 2
 )
 
-// componentHealthSeverity mirrors the ranking the ingest latch uses.
 var componentHealthSeverity = map[app.InstallComponentHealthStatus]int{
 	app.InstallComponentHealthStatusHealthy:     0,
 	app.InstallComponentHealthStatusUnknown:     1,
@@ -40,8 +25,6 @@ var componentHealthSeverity = map[app.InstallComponentHealthStatus]int{
 	app.InstallComponentHealthStatusUnhealthy:   3,
 }
 
-// componentHealthReport is one runner report for a component: the worst
-// resource across everything observed at a single report timestamp.
 type componentHealthReport struct {
 	ObservedAt time.Time
 	Health     app.InstallComponentHealthStatus
@@ -55,13 +38,8 @@ type componentHealthReport struct {
 	Resources      int
 	ResourceCounts map[string]int
 
-	// ClusterEvidence is true if this report has any cluster-derived
-	// observation; distinguishes "looks fine" from "can't see the workload".
 	ClusterEvidence bool
 
-	// ValidFor is how long this report stays trustworthy; zero means the
-	// default. A report synthesized from a pushed check inherits that check's
-	// window, since the runner's clock says nothing about it.
 	ValidFor time.Duration
 }
 
@@ -72,9 +50,6 @@ func (r componentHealthReport) validFor() time.Duration {
 	return r.ValidFor
 }
 
-// nextComponentHealthVerdict debounces a verdict against its recent report
-// history; components with no baseline verdict adopt the latest report
-// immediately. No reports means not-applicable if never observed, else unknown.
 func nextComponentHealthVerdict(current app.InstallComponentHealthStatus, reports []componentHealthReport, now time.Time) app.InstallComponentHealthStatus {
 	if len(reports) == 0 {
 		if current == app.InstallComponentHealthStatusUnset || current == app.InstallComponentHealthStatusNotApplicable {
@@ -84,8 +59,6 @@ func nextComponentHealthVerdict(current app.InstallComponentHealthStatus, report
 	}
 
 	latest := reports[0]
-	// Measured against the report's own window, not a global constant: a
-	// pushed check declaring 30m must not be discarded at 5m.
 	if now.Sub(latest.ObservedAt) > latest.validFor() {
 		return app.InstallComponentHealthStatusUnknown
 	}
@@ -99,8 +72,6 @@ func nextComponentHealthVerdict(current app.InstallComponentHealthStatus, report
 	sevCurrent := componentHealthSeverity[current]
 	sevDegraded := componentHealthSeverity[app.InstallComponentHealthStatusDegraded]
 
-	// Fast to good, slow to bad: a component fresh from a deploy has no baseline,
-	// and claiming bad on its first report made every transient an outage.
 	hasBaseline := current != app.InstallComponentHealthStatusUnset &&
 		current != app.InstallComponentHealthStatusNotApplicable &&
 		current != app.InstallComponentHealthStatusUnknown
@@ -135,9 +106,6 @@ func nextComponentHealthVerdict(current app.InstallComponentHealthStatus, report
 	return target
 }
 
-// rootKindRank orders equally-severe resources by how useful naming them is. A
-// pod's name changes on every rollout, so its controller is both what the user
-// declared and what they can act on.
 func rootKindRank(kind string) int {
 	switch kind {
 	case "Deployment", "StatefulSet", "DaemonSet", "Job", "CronJob":
@@ -150,10 +118,6 @@ func rootKindRank(kind string) int {
 	return 1
 }
 
-// betterRoot is a total order, so the same observations always name the same
-// resource. ClickHouse returns no defined row order without ORDER BY, so the
-// named cause could flip between equally-broken resources with nothing in the
-// cluster having changed.
 func betterRoot(cur *componentHealthReport, health app.InstallComponentHealthStatus, kind, namespace, name string) bool {
 	if s, c := componentHealthSeverity[health], componentHealthSeverity[cur.Health]; s != c {
 		return s > c
@@ -170,8 +134,6 @@ func betterRoot(cur *componentHealthReport, health app.InstallComponentHealthSta
 	return name < cur.RootName
 }
 
-// otherAffected counts resources at least as bad as the verdict besides the one
-// named, so one message cannot read as one failure.
 func otherAffected(rep *componentHealthReport, health app.InstallComponentHealthStatus) int {
 	sev := componentHealthSeverity[health]
 	if sev < componentHealthSeverity[app.InstallComponentHealthStatusDegraded] {
@@ -197,18 +159,12 @@ func componentHealthDescription(verdict app.InstallComponentHealthStatus, latest
 		if now.Sub(latest.ObservedAt) > latest.validFor() {
 			return "no recent health observations from the runner"
 		}
-		// Observations arrived but none could be assessed — name what couldn't
-		// be checked rather than blaming the runner.
 		return rootResourceDescription(latest, app.InstallComponentHealthStatusUnknown)
 	case app.InstallComponentHealthStatusHealthy:
-		// The debounce can hold healthy against a newer worse observation —
-		// describe what was actually seen instead of contradicting it.
 		if latest != nil && latest.Health != app.InstallComponentHealthStatusHealthy {
 			return rootResourceDescription(latest, latest.Health) + " — confirming before the status changes"
 		}
 		if latest != nil {
-			// Resources includes unchecked ones; folding them into "all healthy"
-			// would call a check that never ran passing — report separately.
 			unchecked := latest.ResourceCounts[string(app.InstallComponentHealthStatusUnknown)]
 			if unchecked > 0 {
 				return fmt.Sprintf("%d of %d resources healthy, %d could not be checked",
@@ -225,7 +181,6 @@ func componentHealthDescription(verdict app.InstallComponentHealthStatus, latest
 	}
 }
 
-// rootResourceDescription names the resource responsible for a verdict and why.
 func rootResourceDescription(latest *componentHealthReport, health app.InstallComponentHealthStatus) string {
 	if latest == nil || latest.RootKind == "" {
 		return string(health)

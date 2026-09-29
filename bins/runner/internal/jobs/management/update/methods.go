@@ -13,7 +13,6 @@ import (
 )
 
 func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	// Ask the API what version this runner should be running
 	settings, err := h.apiClient.GetSettings(ctx)
 
 	h.state = &handlerState{}

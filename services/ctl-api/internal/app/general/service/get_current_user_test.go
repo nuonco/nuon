@@ -23,7 +23,6 @@ func (s *GeneralPublicTestSuite) TestGetCurrentUser() {
 		err := json.Unmarshal(rr.Body.Bytes(), &account)
 		require.NoError(s.T(), err)
 
-		// Verify returned account matches test account
 		assert.Equal(s.T(), s.testAcc.ID, account.ID)
 		assert.Equal(s.T(), s.testAcc.Email, account.Email)
 		assert.Equal(s.T(), s.testAcc.Subject, account.Subject)

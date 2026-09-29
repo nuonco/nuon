@@ -39,8 +39,6 @@ func TestKeyVault_SecretsBecomeSecureStringParameters(t *testing.T) {
 	if pw.Type != "securestring" {
 		t.Errorf("secretDbPassword type = %q, want securestring — a plain string puts the value in the deployment history", pw.Type)
 	}
-	// No default, so ARM refuses to deploy without one rather than writing a blank
-	// secret over a real one.
 	if pw.DefaultValue != nil {
 		t.Errorf("a required secret must not get a default, got %#v", pw.DefaultValue)
 	}
@@ -53,8 +51,6 @@ func TestKeyVault_SecretsBecomeSecureStringParameters(t *testing.T) {
 		t.Errorf("secretApiToken default = %#v, want the configured default", tok.DefaultValue)
 	}
 
-	// Nothing on the Azure path generates auto-generate secrets, so asking the
-	// customer for one would be asking for a value they do not have.
 	if _, ok := armTmpl.Parameters["secretGeneratedKey"]; ok {
 		t.Error("auto-generate secret surfaced as a customer input")
 	}
@@ -78,7 +74,6 @@ func TestKeyVault_VaultAndSecretsCreatedInTheInstallGroup(t *testing.T) {
 		t.Errorf("a securestring cannot cross an outer-evaluation boundary, got scope %v", got)
 	}
 
-	// The value must be securestring on both sides of the wrapper.
 	innerDecl := props["template"].(map[string]any)["parameters"].(map[string]any)
 	for _, name := range []string{"secretDbPassword", "secretApiToken"} {
 		p, ok := innerDecl[name].(map[string]any)
@@ -111,14 +106,10 @@ func TestKeyVault_VaultAndSecretsCreatedInTheInstallGroup(t *testing.T) {
 		}
 	}
 
-	// RBAC, matching how the runner's role assignment grants access; access policies
-	// would leave the runner unable to read despite the assignment.
 	if got := vault["properties"].(map[string]any)["enableRbacAuthorization"]; got != true {
 		t.Errorf("enableRbacAuthorization = %v", got)
 	}
 
-	// Underscores are illegal in Key Vault secret names and the phone-home builds each
-	// URI from the same mapping, so these have to agree.
 	for name, value := range secretNames {
 		if strings.Contains(name, "_") {
 			t.Errorf("secret name %q keeps an underscore", name)
@@ -132,8 +123,6 @@ func TestKeyVault_VaultAndSecretsCreatedInTheInstallGroup(t *testing.T) {
 	}
 }
 
-// An app with no secrets still needs the vault: the runner is granted a role on it
-// and the phone-home reports its ID, so its absence fails the deploy regardless.
 func TestKeyVault_CreatedEvenWithNoSecrets(t *testing.T) {
 	inp := subscriptionTemplateInput()
 	tmpl := &Templates{cfg: &internal.Config{}}
@@ -160,7 +149,6 @@ func TestKeyVault_CreatedEvenWithNoSecrets(t *testing.T) {
 		t.Errorf("expected no secrets, got %d", got)
 	}
 
-	// No secrets means no new portal fields.
 	for name := range armTmpl.Parameters {
 		if strings.HasPrefix(name, "secret") {
 			t.Errorf("unexpected secret parameter %q", name)
@@ -168,8 +156,6 @@ func TestKeyVault_CreatedEvenWithNoSecrets(t *testing.T) {
 	}
 }
 
-// At resource-group scope the group already exists when the customer deploys, so the
-// vault stays a documented prerequisite and the template must not change at all.
 func TestKeyVault_NotCreatedAtResourceGroupScope(t *testing.T) {
 	inp := secretsTemplateInput(app.StackDeploymentScopeResourceGroup)
 	tmpl := &Templates{cfg: &internal.Config{}}
@@ -182,8 +168,6 @@ func TestKeyVault_NotCreatedAtResourceGroupScope(t *testing.T) {
 	}
 }
 
-// The runner is granted a role on the vault, and the phone-home reports its ID; both
-// fail if they run first.
 func TestKeyVault_OrderedBeforeItsConsumers(t *testing.T) {
 	inp := secretsTemplateInput(app.StackDeploymentScopeSubscription)
 	tmpl := &Templates{cfg: &internal.Config{}}
@@ -232,8 +216,6 @@ func TestAzureSecretParamName(t *testing.T) {
 	}
 }
 
-// Writes the rendered subscription-scope template so it can be validated against a
-// real subscription: AZURE_RENDER_OUT=/path go test -run TestKeyVault_RenderForAzureValidation
 func TestKeyVault_RenderForAzureValidation(t *testing.T) {
 	out := os.Getenv("AZURE_RENDER_OUT")
 	if out == "" {

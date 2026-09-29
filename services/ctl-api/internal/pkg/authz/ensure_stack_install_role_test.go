@@ -22,7 +22,6 @@ func TestStackInstallRole(t *testing.T) {
 	assert.NotEmpty(t, role.Description)
 	assert.False(t, role.Managed, "per-install roles are not reconciled by standardOrgRoles")
 
-	// Contextless keeps it out of every role picker: it is held, never assigned.
 	assert.Empty(t, role.Contexts)
 
 	require.Len(t, role.Policies, 1, "policies carry a unique index on role_id")
@@ -34,8 +33,6 @@ func TestStackInstallRole(t *testing.T) {
 	set := permissions.Set(permissions.NewSet())
 	require.NoError(t, set.Add(role.Policies[0].Permissions))
 
-	// Every verb on its own install and nothing more: not another install, not the
-	// org. Create is what the phone-home route declares.
 	require.NoError(t, set.CanPerform(permissions.StackObject(orgID, installID), permissions.PermissionRead))
 	require.NoError(t, set.CanPerform(permissions.StackObject(orgID, installID), permissions.PermissionCreate))
 	require.Error(t, set.CanPerform(permissions.StackObject(orgID, "install_two"), permissions.PermissionRead))

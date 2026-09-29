@@ -95,7 +95,6 @@ func (s *service) createAppRunnerConfig(ctx context.Context, appID string, req *
 		return nil, res.Error
 	}
 
-	// update the runner configs on all installs in the app
 	res = s.db.WithContext(ctx).Model(&app.Install{}).
 		Where("app_id = ?", appID).
 		Update("app_runner_config_id", appRunnerConfig.ID)

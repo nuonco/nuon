@@ -79,8 +79,6 @@ func New(params Params) *Heartbeater {
 	return h
 }
 
-// Send enqueues a heartbeat for batched writing to ClickHouse.
-// The heartbeat must have ID, CreatedByID, and CreatedAt pre-populated.
 func (h *Heartbeater) Send(hb app.RunnerHeartBeat) {
 	select {
 	case h.ch <- hb:

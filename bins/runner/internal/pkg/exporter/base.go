@@ -12,14 +12,12 @@ import (
 )
 
 type baseExporter struct {
-	// Input  configuration.
 	config   *Config
 	logger   *zap.Logger
 	settings component.TelemetrySettings
 
 	apiClient nuonrunner.Client
 
-	// config settings
 	APIURL    string
 	RunnerID  string
 	AuthToken string
@@ -43,7 +41,6 @@ func (e *baseExporter) start(ctx context.Context, host component.Host) error {
 func newExporter(cfg component.Config, set exporter.Settings) (*baseExporter, error) {
 	oCfg := cfg.(*Config)
 
-	// client construction is deferred to start
 	return &baseExporter{
 		config:   oCfg,
 		logger:   set.Logger,

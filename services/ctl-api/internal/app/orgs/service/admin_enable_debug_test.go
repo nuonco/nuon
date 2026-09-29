@@ -29,7 +29,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// AdminEnableDebugForOrgTestService holds all fx-injected dependencies.
 type AdminEnableDebugForOrgTestService struct {
 	fx.In
 
@@ -43,7 +42,6 @@ type AdminEnableDebugForOrgTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// AdminEnableDebugForOrgTestSuite is the testify suite for admin debug mode endpoint.
 type AdminEnableDebugForOrgTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -70,7 +68,6 @@ func (s *AdminEnableDebugForOrgTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),
 	)
@@ -78,7 +75,6 @@ func (s *AdminEnableDebugForOrgTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -86,7 +82,6 @@ func (s *AdminEnableDebugForOrgTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -166,7 +161,6 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeOrg() {
 			expectedStatus:     http.StatusOK,
 			expectedDebugValue: true,
 			validateFunc: func(org *app.Org) {
-				// Verify database state
 				var dbOrg app.Org
 				err := s.service.DB.Where("id = ?", org.ID).First(&dbOrg).Error
 				require.NoError(s.T(), err)
@@ -202,7 +196,6 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeOrg() {
 			expectedStatus:     http.StatusOK,
 			expectedDebugValue: false,
 			validateFunc: func(org *app.Org) {
-				// Verify database state
 				var dbOrg app.Org
 				err := s.service.DB.Where("id = ?", org.ID).First(&dbOrg).Error
 				require.NoError(s.T(), err)
@@ -238,7 +231,6 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeOrg() {
 			expectedStatus:     http.StatusOK,
 			expectedDebugValue: true,
 			validateFunc: func(org *app.Org) {
-				// Verify database state remains unchanged
 				var dbOrg app.Org
 				err := s.service.DB.Where("id = ?", org.ID).First(&dbOrg).Error
 				require.NoError(s.T(), err)
@@ -274,7 +266,6 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeOrg() {
 			expectedStatus:     http.StatusOK,
 			expectedDebugValue: false,
 			validateFunc: func(org *app.Org) {
-				// Verify database state remains unchanged
 				var dbOrg app.Org
 				err := s.service.DB.Where("id = ?", org.ID).First(&dbOrg).Error
 				require.NoError(s.T(), err)
@@ -285,10 +276,8 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeOrg() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test data
 			org := tc.setupFunc()
 
-			// Make request
 			path := "/v1/orgs/" + org.ID + "/admin-debug-mode"
 			rr := s.makeRequest(http.MethodPost, path, tc.requestBody)
 
@@ -297,7 +286,6 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeOrg() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Parse response
 			var response bool
 			err := json.Unmarshal(rr.Body.Bytes(), &response)
 			if err != nil {
@@ -306,7 +294,6 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeOrg() {
 			require.NoError(s.T(), err)
 			assert.True(s.T(), response, "response should be true for successful operation")
 
-			// Run validation
 			if tc.validateFunc != nil {
 				tc.validateFunc(org)
 			}
@@ -325,7 +312,6 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeOrgErrors() {
 		{
 			name: "returns error for non-existent org",
 			setupFunc: func() string {
-				// Return a valid-format but non-existent org ID
 				return domains.NewOrgID()
 			},
 			requestBody: DebugModeRequest{
@@ -367,7 +353,6 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeOrgErrors() {
 		{
 			name: "returns error for empty org_id",
 			setupFunc: func() string {
-				// Return empty org ID
 				return ""
 			},
 			requestBody: DebugModeRequest{
@@ -382,10 +367,8 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeOrgErrors() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test data
 			orgID := tc.setupFunc()
 
-			// Make request
 			path := "/v1/orgs/" + orgID + "/admin-debug-mode"
 			rr := s.makeRequest(http.MethodPost, path, tc.requestBody)
 
@@ -394,7 +377,6 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeOrgErrors() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Validate error message
 			if tc.validateError != nil {
 				tc.validateError(rr.Body.String())
 			}
@@ -403,7 +385,6 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeOrgErrors() {
 }
 
 func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeToggle() {
-	// This test verifies that debug mode can be toggled multiple times
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
@@ -424,7 +405,6 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeToggle() {
 
 	path := "/v1/orgs/" + org.ID + "/admin-debug-mode"
 
-	// Enable debug mode
 	rr := s.makeRequest(http.MethodPost, path, DebugModeRequest{DebugMode: true})
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
@@ -433,7 +413,6 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeToggle() {
 	require.NoError(s.T(), err)
 	assert.True(s.T(), dbOrg.DebugMode, "debug mode should be enabled after first request")
 
-	// Disable debug mode
 	rr = s.makeRequest(http.MethodPost, path, DebugModeRequest{DebugMode: false})
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
@@ -441,7 +420,6 @@ func (s *AdminEnableDebugForOrgTestSuite) TestAdminDebugModeToggle() {
 	require.NoError(s.T(), err)
 	assert.False(s.T(), dbOrg.DebugMode, "debug mode should be disabled after second request")
 
-	// Enable again
 	rr = s.makeRequest(http.MethodPost, path, DebugModeRequest{DebugMode: true})
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 

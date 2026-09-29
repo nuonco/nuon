@@ -32,8 +32,6 @@ func plain(id, name string, depIDs ...string) *app.ComponentConfigConnection {
 	}
 }
 
-// ctx builds a validation context, materializing per-component-name toggles as
-// the reserved synthetic enabled inputs. In these tests component name == id.
 func ctx(toggles map[string]bool, op Operation, cccs ...*app.ComponentConfigConnection) *Context {
 	byID := make(map[string]*app.ComponentConfigConnection, len(cccs))
 	for _, c := range cccs {
@@ -105,8 +103,6 @@ func TestEnable_TargetWithEnabledDep_OK(t *testing.T) {
 }
 
 func TestEnable_IgnoresUnrelatedInvalidEdge(t *testing.T) {
-	// c<-d is an unrelated pre-existing invalid edge; enabling b (whose dep a is
-	// enabled) must not be blocked by it.
 	c := ctx(map[string]bool{"a": true, "b": true, "cc": false, "d": true},
 		Operation{Kind: OperationEnable, ComponentID: "b"},
 		toggleable("a", "a", true),

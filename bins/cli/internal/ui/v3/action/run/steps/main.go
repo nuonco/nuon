@@ -18,35 +18,28 @@ import (
 	tea "charm.land/bubbletea/v2"
 )
 
-// Model represents the steps list and detail view
 type Model struct {
-	// internal
 	log *common.Logger
 
-	// common/base
 	ctx context.Context
 	api nuon.Client
 
-	// passed down from parent
 	width  int
 	height int
 	run    *models.AppInstallActionWorkflowRun
 
-	// data
 	steps          []stepItem
-	logsByStep     map[string][]*models.AppOtelLogRecord // keyed by step name
+	logsByStep     map[string][]*models.AppOtelLogRecord
 	logStream      *models.AppLogStream
 	logsCursor     string
 	loadingLogs    bool
 	logsFetchError error
 
-	// ui state
 	selectedStepIndex int
 	expandedStepIndex int
-	stepsViewport     viewport.Model // holds the list of steps
-	logsViewport      viewport.Model // holds the logs for expanded step
+	stepsViewport     viewport.Model
+	logsViewport      viewport.Model
 
-	// ui components
 	help help.Model
 	keys keyMap
 }
@@ -62,10 +55,8 @@ func New(
 	height int,
 	run *models.AppInstallActionWorkflowRun,
 ) Model {
-	// this model should be rendered as large as the width/height defines.
 	log, _ := common.NewLogger("run-steps")
 
-	// Calculate header height for expanded view
 	headerHeight := 3
 
 	m := Model{
@@ -87,10 +78,8 @@ func New(
 		keys: keys,
 	}
 
-	// Initialize steps from run data
 	m.updateStepItems()
 
-	// Initialize log stream if available
 	if run != nil && run.LogStream != nil {
 		m.logStream = run.LogStream
 	}
@@ -98,15 +87,12 @@ func New(
 	return m
 }
 
-// SetSize updates the model dimensions
 func (m *Model) SetSize(width, height int) {
 	m.width = width
 	m.height = height
 
-	// Calculate header height for expanded view
 	headerHeight := 3
 
-	// Update both viewports
 	m.stepsViewport.SetWidth(width)
 	m.stepsViewport.SetHeight(height)
 	m.logsViewport.SetWidth(width)
@@ -115,21 +101,17 @@ func (m *Model) SetSize(width, height int) {
 	m.setContent()
 }
 
-// SetRun updates the run data
 func (m *Model) SetRun(run *models.AppInstallActionWorkflowRun) {
 	m.run = run
 	m.updateStepItems()
 
-	// Update log stream if available
 	if run != nil && run.LogStream != nil {
 		m.logStream = run.LogStream
 	}
 
-	// Update viewport content with new run data
 	m.setContent()
 }
 
-// updateStepItems updates the step list based on current run data
 func (m *Model) updateStepItems() {
 	if m.run == nil || m.run.Config == nil || m.run.Config.Steps == nil {
 		return
@@ -141,7 +123,6 @@ func (m *Model) updateStepItems() {
 			continue
 		}
 
-		// Find matching run step
 		var runStep *models.AppInstallActionWorkflowRunStep
 		for _, rs := range m.run.Steps {
 			if rs != nil && rs.StepID == configStep.ID {
@@ -159,7 +140,6 @@ func (m *Model) updateStepItems() {
 	m.steps = steps
 }
 
-// Init initializes the model
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		common.TickCmd(common.DefaultRefreshInterval),
@@ -167,14 +147,12 @@ func (m Model) Init() tea.Cmd {
 	)
 }
 
-// Update handles messages
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
 	case common.TickMsg:
-		// Refresh logs periodically
 		return m, tea.Batch(
 			m.fetchLogsCmd,
 			common.TickCmd(common.DefaultRefreshInterval),
@@ -184,7 +162,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.handleLogsFetched(msg)
 
 	case tea.KeyPressMsg:
-		// If a step is expanded, handle logs viewport scrolling or collapsing
 		if m.expandedStepIndex >= 0 {
 			switch {
 			case key.Matches(msg, keys.Enter):
@@ -199,29 +176,24 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				}
 				return m, nil
 			case msg.String() == "up", msg.String() == "k", msg.String() == "down", msg.String() == "j":
-				// Scroll the logs viewport (header stays fixed)
 				m.logsViewport, cmd = m.logsViewport.Update(msg)
 				return m, cmd
 			}
 		} else {
-			// Normal navigation mode - list of steps
 			switch msg.String() {
 			case "up", "k":
 				m.moveStepSelection(-1)
-				m.setContent() // Update content to reflect new selection
-				// Also update viewport to keep selection visible
+				m.setContent()
 				m.stepsViewport, cmd = m.stepsViewport.Update(msg)
 				cmds = append(cmds, cmd)
 			case "down", "j":
 				m.moveStepSelection(1)
-				m.setContent() // Update content to reflect new selection
-				// Also update viewport to keep selection visible
+				m.setContent()
 				m.stepsViewport, cmd = m.stepsViewport.Update(msg)
 				cmds = append(cmds, cmd)
 			case "enter":
 				m.toggleStepExpansion()
 				if m.expandedStepIndex >= 0 {
-					// Start fetching logs for the expanded step
 					cmds = append(cmds, m.fetchLogsCmd)
 				}
 			}
@@ -231,20 +203,17 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-// View renders the model
 func (m Model) View() string {
 	if m.width == 0 || m.height == 0 {
 		return ""
 	}
 
-	// Branch 1: Step is expanded - render fixed header + scrollable logs viewport
 	if m.expandedStepIndex >= 0 && m.expandedStepIndex < len(m.steps) {
 		item := m.steps[m.expandedStepIndex]
 		status := item.getStatus()
 		name := item.getName()
 		duration := item.getExecutionDuration()
 
-		// Build fixed header: [status] name ... duration
 		statusStyle := styles.GetStatusStyle(models.AppStatus(status))
 		statusText := statusStyle.Render(fmt.Sprintf("[%s] ", status))
 		durationString := styles.TextSubtle.Render(duration)
@@ -258,15 +227,12 @@ func (m Model) View() string {
 			),
 		)
 
-		// Combine fixed header with scrollable logs viewport
 		return lipgloss.JoinVertical(lipgloss.Top, header, m.logsViewport.View())
 	}
 
-	// Branch 2: No step expanded - show scrollable list of steps
 	return m.stepsViewport.View()
 }
 
-// moveStepSelection moves the selection up or down
 func (m *Model) moveStepSelection(delta int) {
 	if len(m.steps) == 0 {
 		return
@@ -281,35 +247,27 @@ func (m *Model) moveStepSelection(delta int) {
 	}
 }
 
-// toggleStepExpansion toggles the expansion of the selected step
 func (m *Model) toggleStepExpansion() {
 	if m.expandedStepIndex == m.selectedStepIndex {
-		// Collapse
 		m.expandedStepIndex = -1
 	} else {
-		// Expand
 		m.expandedStepIndex = m.selectedStepIndex
 	}
-	// Update viewport content based on new expansion state
 	m.setContent()
 }
 
-// renderStepItem renders a single step item (collapsed view)
 func (m Model) renderStepItem(index int, item stepItem, selected bool) string {
 	status := item.getStatus()
 	name := item.getName()
 	duration := item.getExecutionDuration()
 
-	// Get the style based on status and selection
 	stepStyle := styles.GetStepStyle(status, selected)
 
-	// Build the content
 	statusStyle := styles.GetStatusStyle(models.AppStatus(status))
 	statusText := statusStyle.Render(fmt.Sprintf("[%s] ", status))
 
 	durationString := styles.TextSubtle.Render(duration)
 	spacer := strings.Repeat(" ", (m.width-6)-(lipgloss.Width(statusText)+lipgloss.Width(name)+lipgloss.Width(durationString)))
-	// First line: [status] name ... duration
 	content := lipgloss.JoinHorizontal(lipgloss.Left,
 		statusText,
 		name,
@@ -319,14 +277,10 @@ func (m Model) renderStepItem(index int, item stepItem, selected bool) string {
 	return stepStyle.Padding(1).Width(m.width - 2).Render(content)
 }
 
-// setContent updates the viewport content based on the current state
-// This method contains all the branching logic for what content to display
 func (m *Model) setContent() {
-	// Branch 1: Step is expanded - populate logsViewport only
 	if m.expandedStepIndex >= 0 && m.expandedStepIndex < len(m.steps) {
 		item := m.steps[m.expandedStepIndex]
 
-		// Get logs content
 		logsContent := m.getStepLogs(item)
 		if logsContent == "" {
 			if m.loadingLogs {
@@ -338,11 +292,9 @@ func (m *Model) setContent() {
 			}
 		}
 
-		// Set logs content in logsViewport (no header here)
 		m.logsViewport.SetContent(logsContent)
 
 	} else {
-		// Branch 2: No step expanded - show list of all steps in stepsViewport
 		var content string
 		if m.run == nil {
 			content = styles.TextSubtle.Italic(true).Padding(1).Render("Loading")
@@ -374,7 +326,6 @@ func (m Model) preProcessLog(text string) string {
 	return text
 }
 
-// getStepLogs returns the logs for a given step
 func (m Model) getStepLogs(item stepItem) string {
 	maxLength := m.width - 6
 	stepName := item.getName()
@@ -383,16 +334,13 @@ func (m Model) getStepLogs(item stepItem) string {
 		return ""
 	}
 
-	// Format logs for display
 	var logLines []string
 	for _, log := range logs {
-		// Get severity level from log attributes or default to INFO
 		severity := strings.ToUpper(log.SeverityText)
 
-		// Format: [SEVERITY] timestamp: body
 		timestamp := log.Timestamp
 		if len(timestamp) > 19 {
-			timestamp = timestamp[:19] // Truncate to readable format
+			timestamp = timestamp[:19]
 		}
 
 		levelStyle := getLevelStyle(severity)
@@ -411,7 +359,6 @@ func (m Model) getStepLogs(item stepItem) string {
 	return lipgloss.JoinVertical(lipgloss.Left, logLines...)
 }
 
-// getLevelStyle returns the style for a given log level
 func getLevelStyle(level string) lipgloss.Style {
 	switch level {
 	case "ERROR", "FATAL":
@@ -420,7 +367,7 @@ func getLevelStyle(level string) lipgloss.Style {
 		return lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Bold(true)
 	case "DEBUG", "TRACE":
 		return lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-	default: // INFO
+	default:
 		return lipgloss.NewStyle().Foreground(lipgloss.Color("12"))
 	}
 }

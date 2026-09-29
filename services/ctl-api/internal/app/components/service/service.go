@@ -53,11 +53,9 @@ type service struct {
 var _ apiPkg.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
-	// show all components for an org
 	api.GET("/v1/components", s.GetOrgComponents)
 	api.GET("/v1/component-builds", s.ListOrgComponentBuilds)
 
-	// components belong to an app
 	apps := api.Group("/v1/apps/:app_id")
 	{
 		components := apps.Group("/components")
@@ -68,13 +66,11 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 			components.POST("/build-all", s.BuildAllComponents)
 		}
 
-		// single component routes
 		component := apps.Group("/component")
 		{
 			component.GET("/:component_name_or_id", s.GetAppComponent)
 		}
 
-		// component-specific routes
 		comp := apps.Group("/components/:component_id")
 		{
 			comp.PATCH("", s.UpdateAppComponent)
@@ -82,11 +78,9 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 			comp.POST("/labels", s.AddAppComponentLabels)
 			comp.DELETE("/labels", s.RemoveAppComponentLabels)
 
-			// dependencies
 			comp.GET("/dependencies", s.GetAppComponentDependencies)
 			comp.GET("/dependents", s.GetAppComponentDependents)
 
-			// builds
 			builds := comp.Group("/builds")
 			{
 				builds.POST("", s.CreateAppComponentBuild)
@@ -96,7 +90,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 				builds.GET("", s.GetAppComponentBuilds)
 			}
 
-			// component configurations
 			configs := comp.Group("/configs")
 			{
 				configs.POST("/terraform-module", s.CreateAppTerraformModuleComponentConfig)
@@ -113,19 +106,15 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		}
 	}
 
-	// deprecated routes
 	deprecatedComponents := api.Group("/v1/components/:component_id")
 	{
-		// crud ops for components
 		s.GET(deprecatedComponents, "", s.GetComponent, apiPkg.APIContextTypePublic, true)
 		s.PATCH(deprecatedComponents, "", s.UpdateComponent, apiPkg.APIContextTypePublic, true)
 		s.DELETE(deprecatedComponents, "", s.DeleteComponent, apiPkg.APIContextTypePublic, true)
 
-		// dependencies
 		s.GET(deprecatedComponents, "/dependencies", s.GetComponentDependencies, apiPkg.APIContextTypePublic, true)
 		s.GET(deprecatedComponents, "/dependents", s.GetComponentDependents, apiPkg.APIContextTypePublic, true)
 
-		// component configurations
 		deprecatedConfigs := deprecatedComponents.Group("/configs")
 		{
 			s.POST(deprecatedConfigs, "/terraform-module", s.CreateTerraformModuleComponentConfig, apiPkg.APIContextTypePublic, true)
@@ -140,7 +129,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 			s.GET(deprecatedConfigs, "/latest", s.GetComponentLatestConfig, apiPkg.APIContextTypePublic, true)
 		}
 
-		// builds
 		deprecatedBuilds := deprecatedComponents.Group("/builds")
 		{
 			s.POST(deprecatedBuilds, "", s.CreateComponentBuild, apiPkg.APIContextTypePublic, true)
@@ -149,7 +137,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		}
 	}
 
-	// other deprecated build routes
 	s.GET(api, "/v1/builds", s.GetComponentBuilds, apiPkg.APIContextTypePublic, true)
 	s.GET(api, "/v1/components/builds/:build_id", s.GetBuild, apiPkg.APIContextTypePublic, true)
 
@@ -161,7 +148,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	{
 		components.GET("", s.GetAllComponents)
 
-		// component admin routes
 		component := components.Group("/:component_id")
 		{
 			component.POST("/admin-restart", s.RestartComponent)

@@ -12,12 +12,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
-// ForwardCreateStepRetryRequest is the input for forwarding a create-step-retry to a step handler workflow.
 type ForwardCreateStepRetryRequest struct {
 	StepID string `json:"step_id" validate:"required"`
 }
 
-// ForwardCreateStepRetryResponse is the output from forwarding a create-step-retry.
 type ForwardCreateStepRetryResponse struct {
 	StepID    string `json:"step_id"`
 	NewStepID string `json:"new_step_id"`
@@ -25,18 +23,13 @@ type ForwardCreateStepRetryResponse struct {
 }
 
 const (
-	// createStepRetryBudget leaves headroom under the 30s start-to-close so the
-	// activity returns its own error instead of being timed out by Temporal.
-	createStepRetryBudget = 25 * time.Second
-	// createStepRetryMinRemaining stops issuing a new attempt that could not
-	// plausibly finish before the budget expires.
+	createStepRetryBudget       = 25 * time.Second
 	createStepRetryMinRemaining = time.Second
 )
 
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 30s
 func (a *Activities) ForwardCreateStepRetry(ctx context.Context, req ForwardCreateStepRetryRequest) (*ForwardCreateStepRetryResponse, error) {
-	// Find the step's handler workflow via the queue_signals table.
 	var qs app.QueueSignal
 	res := a.db.WithContext(ctx).
 		Where(app.QueueSignal{
@@ -52,15 +45,6 @@ func (a *Activities) ForwardCreateStepRetry(ctx context.Context, req ForwardCrea
 
 	var result stepRetryResult
 
-	// Update-with-start against a completed signal starts a fresh handler run,
-	// and that run accepts updates before run() registers its handlers — under
-	// load the first workflow task can complete inside that window and the
-	// update is rejected with "unknown update". The run registers handlers
-	// moments later, so retry the send until it lands.
-	//
-	// Every attempt shares one deadline inside the 30s start-to-close budget so
-	// a blocked send fails here with a concrete error instead of Temporal
-	// timing out and re-running the whole activity.
 	deadline := time.Now().Add(createStepRetryBudget)
 	ctx, cancel := context.WithDeadline(ctx, deadline)
 	defer cancel()
@@ -91,11 +75,6 @@ type stepRetryResult struct {
 	NewStepID string `json:"new_step_id"`
 }
 
-// sendCreateStepRetryUpdate sends the create-step-retry update once.
-// retryable reports whether the failure is the fresh-run registration window
-// and is worth retrying. Update failures (e.g. max retries exhausted) stay
-// concrete — wrapping them makes the activity's top-level Temporal failure
-// retryable again.
 func (a *Activities) sendCreateStepRetryUpdate(ctx context.Context, qs *app.QueueSignal, stepID string, result *stepRetryResult) (bool, error) {
 	rawResp, err := handler.UpdateWithStart(ctx, a.tClient, qs, handler.UpdateWithStartOptions{
 		UpdateName:   "create-step-retry",
@@ -110,8 +89,6 @@ func (a *Activities) sendCreateStepRetryUpdate(ctx context.Context, qs *app.Queu
 	return false, nil
 }
 
-// isUnknownUpdateError reports whether err is the worker-side rejection of an
-// update delivered before the target run registered its handlers.
 func isUnknownUpdateError(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "unknown update")
 }

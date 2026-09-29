@@ -31,8 +31,6 @@ func StackConfig(stack *config.StackConfig, appID, appConfigID string) (*app.App
 		return nil, err
 	}
 
-	// Copy so marking the upload status pending does not mutate the caller's
-	// parsed config.
 	customNestedStacks := make([]config.CustomNestedStack, 0, len(stack.CustomNestedStacks))
 	seenNames := make(map[string]int, len(stack.CustomNestedStacks))
 	seenIndices := make(map[int]string, len(stack.CustomNestedStacks))
@@ -76,10 +74,8 @@ func StackConfig(stack *config.StackConfig, appID, appConfigID string) (*app.App
 		Description:             stack.Description,
 		VPCNestedTemplateURL:    stack.VPCNestedTemplateURL,
 		RunnerNestedTemplateURL: stack.RunnerNestedTemplateURL,
-		// Not normalized: empty means resource group, and rewriting it would make
-		// every pre-existing config diff on its next sync.
-		DeploymentScope:    app.StackDeploymentScope(stack.DeploymentScope),
-		CustomNestedStacks: customNestedStacks,
+		DeploymentScope:         app.StackDeploymentScope(stack.DeploymentScope),
+		CustomNestedStacks:      customNestedStacks,
 	}, nil
 }
 

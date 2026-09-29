@@ -171,10 +171,6 @@ func (c *logStreamErrorClient) LogStreamReadLogsWithNextOffset(_ context.Context
 	return nil, "", nil
 }
 
-// runErrorSession drives a session whose client errors and records what the
-// session sent. When cancelOnFirstError is set (transient-error case), the
-// context is cancelled as soon as the first error event is sent, cutting the
-// in-flight errorRetryDelay sleep short.
 func runErrorSession(t *testing.T, client *logStreamErrorClient, run func(context.Context, *streamSession), cancelOnFirstError bool) (errs []string, elapsed time.Duration) {
 	t.Helper()
 

@@ -19,10 +19,6 @@ type OrgHealthcheckMigrationResult struct {
 	Errors           []string `json:"errors"`
 }
 
-// MigrateOrgToHealthcheckSweeps moves an org onto the per-org batch sweep
-// emitters: ensures the sweep queue + emitters, then removes the legacy
-// per-runner and per-process healthcheck cron emitters. Requires the
-// org-healthcheck-sweeps feature to already be enabled. Idempotent.
 func (h *Helpers) MigrateOrgToHealthcheckSweeps(ctx context.Context, orgID string) (*OrgHealthcheckMigrationResult, error) {
 	enabled, err := h.featuresClient.OrgHealthcheckSweepsEnabled(ctx, orgID)
 	if err != nil {
@@ -76,10 +72,6 @@ func (h *Helpers) MigrateOrgToHealthcheckSweeps(ctx context.Context, orgID strin
 	return result, nil
 }
 
-// MigrateOrgFromHealthcheckSweeps rolls an org back to per-entity healthcheck
-// cron emitters: terminates the sweep queue and recreates the per-runner and
-// per-process emitters. Requires the org-healthcheck-sweeps feature to already
-// be disabled. Idempotent.
 func (h *Helpers) MigrateOrgFromHealthcheckSweeps(ctx context.Context, orgID string) (*OrgHealthcheckMigrationResult, error) {
 	enabled, err := h.featuresClient.OrgHealthcheckSweepsEnabled(ctx, orgID)
 	if err != nil {

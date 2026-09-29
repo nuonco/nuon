@@ -7,7 +7,6 @@ import (
 )
 
 func (m *Migrations) Migration094VCSCommitPolymorphicOwnership(ctx context.Context, db *gorm.DB) error {
-	// Add polymorphic ownership fields
 	addOwnerFields := `
 		ALTER TABLE vcs_connection_commits 
 			ADD COLUMN IF NOT EXISTS owner_id TEXT,
@@ -17,7 +16,6 @@ func (m *Migrations) Migration094VCSCommitPolymorphicOwnership(ctx context.Conte
 		return res.Error
 	}
 
-	// Make vcs_connection_id nullable
 	makeVCSConnectionIDNullable := `
 		ALTER TABLE vcs_connection_commits 
 			ALTER COLUMN vcs_connection_id DROP NOT NULL;
@@ -26,7 +24,6 @@ func (m *Migrations) Migration094VCSCommitPolymorphicOwnership(ctx context.Conte
 		return res.Error
 	}
 
-	// Add index for polymorphic lookups
 	createIndex := `
 		CREATE INDEX IF NOT EXISTS idx_vcs_commits_owner 
 		ON vcs_connection_commits(owner_id, owner_type);
@@ -35,7 +32,6 @@ func (m *Migrations) Migration094VCSCommitPolymorphicOwnership(ctx context.Conte
 		return res.Error
 	}
 
-	// Add check constraint for owner_id length (26 characters for Nuon IDs)
 	addConstraint := `
 		ALTER TABLE vcs_connection_commits
 			ADD CONSTRAINT owner_id_checker CHECK (owner_id IS NULL OR char_length(owner_id) = 26);

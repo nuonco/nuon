@@ -29,17 +29,14 @@ func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 }
 
 func (d *dataConverter) encodePayload(payload *commonpb.Payload) (*commonpb.Payload, error) {
-	// Skip if already encoded
 	if string(payload.Metadata[converter.MetadataEncoding]) == encoding {
 		return payload, nil
 	}
 
-	// Skip if payload is below threshold
 	if len(payload.Data) < d.cfg.TemporalDataConverterLargePayloadSize {
 		return payload, nil
 	}
 
-	// Skip if encoding is disabled (toggle is set to "db")
 	if !d.encodeEnabled {
 		return payload, nil
 	}
@@ -56,18 +53,12 @@ func (d *dataConverter) encodePayload(payload *commonpb.Payload) (*commonpb.Payl
 		}
 	}()
 
-	// Content-addressed key: identical payloads map to the same blob, so repeated
-	// encodes of the same data (fanned out across activities, or replayed across
-	// cron ticks) dedupe to a single S3 object and a single cache entry.
 	sum := sha256.Sum256(payload.Data)
 	hexSum := hex.EncodeToString(sum[:])
 	blobID := blobIDPrefix + hexSum
 	checksum := "sha256:" + hexSum
 	s3Key := d.cfg.TemporalBlobS3Prefix + blobID
 
-	// A tracked cache entry means this content is already durable in S3 (we either
-	// uploaded it here or fetched it from S3 during a prior decode), so we can skip
-	// the upload and DB write.
 	if d.cache.Has(blobID) {
 		cache = "yes"
 	} else {
@@ -78,7 +69,6 @@ func (d *dataConverter) encodePayload(payload *commonpb.Payload) (*commonpb.Payl
 		if _, err := d.blobSvc.UploadStream(ctx, s3Key, reader); err != nil {
 			status = "error"
 			d.l.Error("error uploading blob to S3", zap.Error(err), zap.String("s3_key", s3Key))
-			// Graceful degradation: return original payload
 			return payload, nil
 		}
 
@@ -89,8 +79,6 @@ func (d *dataConverter) encodePayload(payload *commonpb.Payload) (*commonpb.Payl
 		}
 		if res := d.db.WithContext(ctx).Create(&dbRecord); res.Error != nil {
 			d.l.Error("error writing blob record", zap.Error(res.Error), zap.String("s3_key", s3Key))
-			// S3 upload succeeded but DB write failed; payload is in S3 and can be recovered
-			// Still return the encoded payload since the s3_key is in metadata
 		}
 
 		if err := d.cache.Put(blobID, payload.Data); err != nil {
@@ -98,7 +86,6 @@ func (d *dataConverter) encodePayload(payload *commonpb.Payload) (*commonpb.Payl
 		}
 	}
 
-	// Build encoded payload
 	encoded := &commonpb.Payload{
 		Metadata: map[string][]byte{
 			converter.MetadataEncoding: []byte(encoding),
@@ -111,7 +98,6 @@ func (d *dataConverter) encodePayload(payload *commonpb.Payload) (*commonpb.Payl
 		Data: []byte(blobID),
 	}
 
-	// Preserve original metadata
 	for k, v := range payload.Metadata {
 		if k != converter.MetadataEncoding {
 			encoded.Metadata[k] = v

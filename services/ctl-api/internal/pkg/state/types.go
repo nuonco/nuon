@@ -17,7 +17,6 @@ type ExecuteRegenerationRequest struct {
 	CachedState    *pkgstate.State
 	LastModifiedAt map[PartialName]time.Time
 
-	// MetricsWriter is optional — when set, Regenerate emits timing and count metrics.
 	MetricsWriter metrics.Writer
 }
 

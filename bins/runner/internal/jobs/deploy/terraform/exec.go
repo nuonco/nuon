@@ -27,8 +27,6 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return err
 	}
 
-	// Tag this handler's logger with semantic-convention attributes so every
-	// emitted record (including from terraform-run helpers below) carries them.
 	tfWorkspaceID := ""
 	if p.state.plan != nil && p.state.plan.TerraformDeployPlan != nil && p.state.plan.TerraformDeployPlan.TerraformBackend != nil {
 		tfWorkspaceID = p.state.plan.TerraformDeployPlan.TerraformBackend.WorkspaceID
@@ -43,7 +41,6 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	ctx = pkgctx.SetLogger(ctx, l)
 	hclog := log.NewHClog(l)
 
-	// Load Plan Bytes
 	var planBytes []byte
 	if len(p.state.plan.ApplyPlanContents) > 0 {
 		b64EncodedContent := p.state.plan.ApplyPlanContents
@@ -55,7 +52,6 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		planBytes = []byte{}
 	}
 
-	// get the right workspace
 	var wkspace workspace.Workspace
 	if len(planBytes) > 0 {
 		l.Info("the plan has ApplyPlanContents, intializing workspace with plan", zap.Int("plan.bytes.count", len(planBytes)))
@@ -71,10 +67,7 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 	p.state.tfWorkspace = wkspace
 
-	// Set the cluster info
 	if p.state.plan.TerraformDeployPlan.ClusterInfo != nil {
-		// NOTE(jm): we initialize the root here, because we need to write some state to the directory _before_ we do
-		// the run. Ideally this would be handled as part of the lifecycle of the workspace, but it is not yet.
 		if err := wkspace.InitRoot(ctx); err != nil {
 			return errors.Wrap(err, "unable to initialize root")
 		}
@@ -121,10 +114,6 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	if err != nil {
 		l.Error("terraform run errored", zap.Error(err))
-		// Persist the full, untruncated terraform error onto the job execution
-		// result so ctl-api can parse it into a structured composite error
-		// (e.g. a missing AWS IAM permission). The per-execution status
-		// description is capped, so this is the authoritative error message.
 		p.writeErrorResult(ctx, fmt.Sprintf("terraform %s", job.Operation), err)
 		return fmt.Errorf("unable to execute %s run: %w", job.Operation, err)
 	}
@@ -143,7 +132,7 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	case models.AppRunnerJobOperationTypeApplyDashPlan:
 		if err := p.updateTerraformState(ctx, wkspace, hclog); err != nil {
 			p.writeErrorResult(ctx, "terraform show", err)
-			// skip returning an error here as the terraform operation finished successfully & we don't want to fail the job
+			// why: skip returning an error here as the terraform operation finished successfully & we don't want to fail the job
 		}
 	}
 
@@ -157,9 +146,6 @@ func (p *handler) updateTerraformState(ctx context.Context, wkspace workspace.Wo
 		return fmt.Errorf("unable to show state: %w", err)
 	}
 
-	// Hand the component's managed cloud resources to the component-health
-	// engine: this is the only place the state is readable, since a workspace
-	// needs the artifact, backend token and cloud credentials of a deploy job.
 	if p.terraformProvider != nil {
 		p.terraformProvider.Set(p.state.plan.ComponentID, state)
 	}
@@ -182,10 +168,8 @@ func (p *handler) updateTerraformState(ctx context.Context, wkspace workspace.Wo
 	return nil
 }
 
-// NOTE: createResult is only called in cases when there _is_ a plan. otherwise, we don't really need a result object.
-// as a result, we're handling the loading of the plan.json within createResult
 func (p *handler) createResult(ctx context.Context, wkspace workspace.Workspace, hlog hclog.Logger) error {
-	// NOTE(fd): the tfplan is already a gzip directory so we do not want to gzip it again.
+	// why: the tfplan is already a gzip directory so we do not want to gzip it again.
 	// read the tfplan into b64 bytes.
 	planBytes, err := wkspace.GetTfplan(ctx, hlog)
 	if err != nil {
@@ -201,7 +185,6 @@ func (p *handler) createResult(ctx context.Context, wkspace workspace.Workspace,
 	}
 	hlog.Info("plan json", zap.Int("bytes", len(planJSONBytes)))
 	planJSONBytesB64 := base64.URLEncoding.EncodeToString(planJSONBytes)
-	// create the result object
 	_, err = p.apiClient.CreateJobExecutionResult(ctx, p.state.jobID, p.state.jobExecutionID, &models.ServiceCreateRunnerJobExecutionResultRequest{
 		Success:                   true,
 		ContentsCompressed:        planBytesB64,

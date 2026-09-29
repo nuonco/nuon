@@ -7,7 +7,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
-// TerraformStateLockType is the discriminator for a terraform run that could
+// why: TerraformStateLockType is the discriminator for a terraform run that could
 // not acquire the state lock. It is split out of the generic terraform.error so
 // the dashboard can surface targeted remediation (force-unlock) and so the
 // orchestrator parks the step instead of burning retries: Nuon serialises
@@ -16,15 +16,8 @@ import (
 // blind retry can never clear it.
 const TerraformStateLockType compositeerrors.Type = "terraform.state_lock"
 
-// stateLockSignal is the substring terraform emits when it cannot take the DynamoDB/
-// backend lock. It gates the parser so it is only a candidate for lock failures.
 const stateLockSignal = "acquiring the state lock"
 
-// StateLockError is the payload for a terraform state-lock failure. The detailed
-// lock info (ID, who, path) is emitted to the log stream, not the captured error
-// output, so it is not available here; Output carries whatever context was
-// captured. target ("sandbox"/"component"/"") tailors the force-unlock command
-// in the remediation.
 type StateLockError struct {
 	Output string `json:"output,omitempty"`
 
@@ -56,10 +49,6 @@ func (e *StateLockError) Sections() []compositeerrors.Section {
 	return sections
 }
 
-// parseStateLock recognises a terraform state-lock failure and yields a
-// dedicated composite error. It registers at LayerToolSpecific, independently of
-// the terraform catch-all, so the two classifiers stay decoupled and the more
-// specific state-lock parser wins the tie.
 func parseStateLock(ctx *errparse.ParseContext) compositeerrors.CompositeError {
 	lines := cleanedLines(ctx.Raw)
 	if !containsStateLock(lines) {
@@ -78,9 +67,6 @@ func init() {
 	))
 }
 
-// containsStateLock reports whether any cleaned line carries the state-lock
-// signal. Gating on the cleaned lines (not the raw blob) keeps it robust to
-// terraform's "│" box-drawing prefixes.
 func containsStateLock(lines []string) bool {
 	for _, l := range lines {
 		if strings.Contains(l, stateLockSignal) {
@@ -90,10 +76,6 @@ func containsStateLock(lines []string) bool {
 	return false
 }
 
-// stateLockRemediation renders the "How to fix" body (markdown). It gates
-// force-unlock on confirming nothing is running, since force-unlocking an
-// active operation can corrupt state, and tailors the CLI command to the
-// workspace kind.
 func stateLockRemediation(target string) string {
 	var cmd string
 	switch target {
@@ -118,8 +100,6 @@ func stateLockRemediation(target string) string {
 		"You can also unlock from the dashboard: open the Terraform state panel and choose **Unlock Terraform state**."
 }
 
-// stateLockTarget maps the runner job's owner to the terraform extension
-// workspace kind used in the remediation command.
 func stateLockTarget(ctx *errparse.ParseContext) string {
 	switch ctx.Owner.Type {
 	case "install_sandbox_runs":

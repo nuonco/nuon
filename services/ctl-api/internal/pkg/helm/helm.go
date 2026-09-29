@@ -42,8 +42,6 @@ type Release struct {
 	Labels map[string]string `json:"labels,omitempty"`
 }
 
-// EncodeRelease encodes a release returning a base64 encoded
-// gzipped string representation, or error.
 func EncodeRelease(rls *Release) (string, error) {
 	b, err := json.Marshal(rls)
 	if err != nil {
@@ -62,17 +60,13 @@ func EncodeRelease(rls *Release) (string, error) {
 	return b64.EncodeToString(buf.Bytes()), nil
 }
 
-// DecodeRelease decodes the bytes of data into a release
-// type. Data must contain a base64 encoded gzipped string of a
-// valid release, otherwise an error is returned.
 func DecodeRelease(data string) (*Release, error) {
-	// base64 decode string
 	b, err := b64.DecodeString(data)
 	if err != nil {
 		return nil, err
 	}
 
-	// For backwards compatibility with releases that were stored before
+	// why: For backwards compatibility with releases that were stored before
 	// compression was introduced we skip decompression if the
 	// gzip magic header is not found
 	if len(b) > 3 && bytes.Equal(b[0:3], magicGzip) {
@@ -89,14 +83,12 @@ func DecodeRelease(data string) (*Release, error) {
 	}
 
 	var rls Release
-	// unmarshal release object bytes
 	if err := json.Unmarshal(b, &rls); err != nil {
 		return nil, err
 	}
 	return &rls, nil
 }
 
-// Checks if label is system
 func isSystemLabel(key string) bool {
 	for _, v := range GetSystemLabels() {
 		if key == v {
@@ -106,7 +98,6 @@ func isSystemLabel(key string) bool {
 	return false
 }
 
-// Removes system labels from labels map
 func FilterSystemLabels(lbs map[string]string) map[string]string {
 	result := make(map[string]string)
 	for k, v := range lbs {
@@ -117,7 +108,6 @@ func FilterSystemLabels(lbs map[string]string) map[string]string {
 	return result
 }
 
-// Checks if labels array contains system labels
 func ContainsSystemLabels(lbs map[string]string) bool {
 	for k := range lbs {
 		if isSystemLabel(k) {

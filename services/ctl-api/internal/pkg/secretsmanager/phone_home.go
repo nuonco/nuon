@@ -5,18 +5,10 @@ import (
 	"fmt"
 )
 
-// PhoneHomeSecretName is deterministic, unlike the ARN it resolves to.
 func PhoneHomeSecretName(installID string) string {
 	return fmt.Sprintf("nuon/phone-home/%s", installID)
 }
 
-// Tag keys on the phone-home secret. The secret name carries only the install ID, so
-// without these there is no way to answer "which org owns this?" or "is this from
-// staging?" from the AWS console or a cost report — every secret in the management
-// account looks identical apart from an opaque ID.
-//
-// The domain-qualified form matches how Nuon labels resources elsewhere; runner_api_url
-// and env are plain because they are environment facts rather than entity references.
 const (
 	TagKeyOrgID        = "org.nuon.co/id"
 	TagKeyInstallID    = "install.nuon.co/id"
@@ -24,14 +16,6 @@ const (
 	TagKeyEnv          = "env"
 )
 
-// PhoneHomeSecretTags identifies which install and org a secret belongs to, and which
-// control plane created it.
-//
-// runner_api_url and env together disambiguate control planes that share a management
-// account: a dev, staging and production ctl-api all write secrets named
-// nuon/phone-home/<install_id>, and install IDs do not collide but nothing else
-// distinguishes who owns a given entry. Empty values are dropped rather than written as
-// empty tags.
 func PhoneHomeSecretTags(orgID, installID, runnerAPIURL, env string) map[string]string {
 	tags := map[string]string{}
 	for k, v := range map[string]string{
@@ -48,7 +32,7 @@ func PhoneHomeSecretTags(orgID, installID, runnerAPIURL, env string) map[string]
 	return tags
 }
 
-// PhoneHomeResourcePolicy grants the install's phone-home role read access to its
+// why: PhoneHomeResourcePolicy grants the install's phone-home role read access to its
 // own secret. Per-install isolation comes from this policy rather than from the CMK
 // key policy, which is why one shared key is sufficient.
 //
@@ -108,7 +92,7 @@ func PhoneHomeResourcePolicy(targetAccountID, phoneHomeRoleName string) (string,
 	return string(byts), nil
 }
 
-// Deliberately absent: anything that edits the CMK key policy.
+// why: Deliberately absent: anything that edits the CMK key policy.
 //
 // An earlier revision planned one key-policy statement per target account, added here
 // as installs were provisioned. That cannot coexist with Terraform — PutKeyPolicy is a

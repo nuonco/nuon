@@ -9,8 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
-// ValidateBuildTimeout validates a build timeout duration string.
-// Returns an error if the format is invalid or the value is out of range.
 func ValidateBuildTimeout(timeout string) error {
 	d, err := time.ParseDuration(timeout)
 	if err != nil {
@@ -38,8 +36,6 @@ func ValidateBuildTimeout(timeout string) error {
 	return nil
 }
 
-// ValidateDeployTimeout validates a deploy timeout duration string.
-// Returns an error if the format is invalid or the value is out of range.
 func ValidateDeployTimeout(timeout string) error {
 	d, err := time.ParseDuration(timeout)
 	if err != nil {
@@ -67,8 +63,6 @@ func ValidateDeployTimeout(timeout string) error {
 	return nil
 }
 
-// ValidateHealthStabilizationWindow validates a health stabilization window duration string.
-// Returns an error if the format is invalid or the value is out of range.
 func ValidateHealthStabilizationWindow(window string) error {
 	d, err := time.ParseDuration(window)
 	if err != nil {

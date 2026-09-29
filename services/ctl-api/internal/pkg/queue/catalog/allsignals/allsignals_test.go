@@ -13,17 +13,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// A signal package registers itself in an init(), which only runs if something imports
-// it. This file is that something — so a new signal package that is not listed here is
-// simply absent from the catalog at runtime, and the queue workflow fails to handle it
-// with an error that says nothing about the real cause. Nothing else catches it: the
-// code compiles, the tests pass, and the endpoint that enqueues the signal returns 200.
-//
-// So walk the source tree for signal packages and assert each one is imported here.
 func TestEverySignalPackageIsImported(t *testing.T) {
 	root := repoRelative(t, "services/ctl-api/internal/app")
 
-	found := map[string]string{} // import path -> dir
+	found := map[string]string{}
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil || !info.IsDir() {
 			return err
@@ -60,25 +53,15 @@ func TestEverySignalPackageIsImported(t *testing.T) {
 	}
 }
 
-// Signal packages that are absent from allsignals.go but still reach the catalog because
-// a service or fx module imports them directly. Listed rather than fixed because moving
-// them is a behaviour change to binaries that currently link them for other reasons; the
-// point of this list is that a *new* omission stands out instead of hiding among them.
 var registeredTransitively = map[string]bool{
-	// installs/service/sync_install_config.go, apps/service/trigger_install_config_sync.go
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/installconfigsync": true,
-	// installs/service/admin_generate_state.go
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/installconfigsync":          true,
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state/generatestate":        true,
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state/statepartialgenerate": true,
-	// apps/signals/branches/*
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/syncinstalls": true,
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/setuppreview": true,
-	// fxmodules/workers_shared.go, notebooks/service/notebooks.go
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/notebooks/signals/start": true,
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/syncinstalls":          true,
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/setuppreview":          true,
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/notebooks/signals/start":                     true,
 }
 
-// The catalog is populated by this package's imports, so a non-empty catalog also proves
-// the blank imports are doing what they claim.
 func TestCatalogIsPopulated(t *testing.T) {
 	if len(catalog.SignalCatalog) == 0 {
 		t.Fatal("signal catalog is empty")
@@ -91,8 +74,6 @@ func TestCatalogIsPopulated(t *testing.T) {
 	}
 }
 
-// declaresSignalType reports whether a directory contains `SignalType` — the marker of a
-// real signal package, as opposed to a shared helper directory under signals/.
 func declaresSignalType(t *testing.T, dir string) bool {
 	t.Helper()
 
@@ -139,7 +120,6 @@ func importsOfThisPackage(t *testing.T) map[string]bool {
 func repoRelative(t *testing.T, rel string) string {
 	t.Helper()
 
-	// This test runs in its own package directory; walk up to the repo root.
 	dir, err := filepath.Abs(".")
 	if err != nil {
 		t.Fatalf("abs: %v", err)

@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// The component health sweep runs on a cron and selects installs by
+// why: The component health sweep runs on a cron and selects installs by
 // last_health_report_at alone, which seq-scanned the whole installs table every
 // run. Partial predicate mirrors the sweep's own filters exactly — a mismatch
 // here silently leaves the index unused.

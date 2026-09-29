@@ -30,7 +30,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("install_id is required")
 	}
 
-	// Validate install exists
 	_, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
 	if err != nil {
 		if dbgenerics.IsGormErrRecordNotFound(err) {
@@ -43,7 +42,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Delete the install (copied from worker/forget.go)
 	if err := activities.AwaitDeleteByInstallID(ctx, s.InstallID); err != nil {
 		return fmt.Errorf("unable to delete install: %w", err)
 	}

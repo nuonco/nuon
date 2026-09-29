@@ -60,7 +60,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}); err != nil {
 		return fmt.Errorf("unable to check whether the install runner is disabled: %w", err)
 	} else if disabled.Disabled {
-		// Scheduled drift checks would otherwise pile up a graveyard of failed
+		// why: Scheduled drift checks would otherwise pile up a graveyard of failed
 		// workflows for the whole time the runner stays disabled.
 		workflow.GetLogger(ctx).Info("install runner is disabled, skipping drift check",
 			"install_id", s.InstallID)
@@ -69,7 +69,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	l := workflow.GetLogger(ctx)
 
-	// Resolve latest component build at execution time (not emitter creation time)
 	componentBuild, err := activities.AwaitGetComponentLatestBuildByComponentID(ctx, s.ComponentID)
 	if err != nil {
 		l.Warn("drift-check: unable to get latest component build, skipping",
@@ -116,7 +115,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to update install deploy with workflow: %w", err)
 	}
 
-	// Enqueue the flow execution signal to the install's drift workflows queue
 	_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         s.InstallID,
 		OwnerType:       "installs",

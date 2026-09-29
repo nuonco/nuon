@@ -18,14 +18,12 @@ type CreateOnboardingAppResponse struct {
 // @start-to-close-timeout 5m
 // @as-wrapper
 func (a *Activities) createOnboardingApp(ctx context.Context, orgID, appName string, createBranch bool) (*CreateOnboardingAppResponse, error) {
-	// Load org for context — needed for GORM BeforeCreate hooks (OrgID)
 	var org app.Org
 	if err := a.db.WithContext(ctx).First(&org, "id = ?", orgID).Error; err != nil {
 		return nil, fmt.Errorf("unable to get org: %w", err)
 	}
 	ctx = cctx.SetOrgContext(ctx, &org)
 
-	// Idempotency: if app already exists for this org+name, reuse it
 	var existingApp app.App
 	if err := a.db.WithContext(ctx).
 		Preload("AppBranches").
@@ -49,7 +47,6 @@ func (a *Activities) createOnboardingApp(ctx context.Context, orgID, appName str
 		return resp, nil
 	}
 
-	// Create the app record
 	newApp := app.App{
 		OrgID:             orgID,
 		Name:              appName,
@@ -66,7 +63,6 @@ func (a *Activities) createOnboardingApp(ctx context.Context, orgID, appName str
 		return nil, fmt.Errorf("unable to create app: %w", err)
 	}
 
-	// Create sandbox queue for the app
 	if err := a.appsHelpers.CreateAppSandboxQueue(ctx, newApp.ID); err != nil {
 		return nil, fmt.Errorf("unable to create app sandbox queue: %w", err)
 	}

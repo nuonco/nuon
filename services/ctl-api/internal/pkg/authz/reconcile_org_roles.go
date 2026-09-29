@@ -11,7 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// ReconcileOrgRoles brings an org's managed roles in line with
+// why: ReconcileOrgRoles brings an org's managed roles in line with
 // standardOrgRoles: missing roles are created (with their policies), and
 // existing roles have their metadata (title, description, contexts, managed)
 // updated to match the definition. Existing rows' policies are deliberately
@@ -78,8 +78,6 @@ func ReconcileOrgRoles(ctx context.Context, db *gorm.DB, org app.Org) error {
 	})
 }
 
-// roleMetadataMatches reports whether an existing role already carries the
-// metadata a definition specifies, so reconcile can skip a no-op update.
 func roleMetadataMatches(existing, want app.Role) bool {
 	return existing.Title == want.Title &&
 		existing.Description == want.Description &&

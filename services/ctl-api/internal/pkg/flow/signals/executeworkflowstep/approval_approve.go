@@ -9,7 +9,6 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-// handleApproveResponse processes an "approve" response.
 func (s *Signal) handleApproveResponse(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow) error {
 	l.Debug("handling approval response type: approved",
 		zap.String("step_id", step.ID),
@@ -21,7 +20,6 @@ func (s *Signal) handleApproveResponse(ctx workflow.Context, l *zap.Logger, step
 		}
 	}
 
-	// Workflow resumes from approval-awaiting.
 	_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: flw.ID,
 		Status: app.CompositeStatus{

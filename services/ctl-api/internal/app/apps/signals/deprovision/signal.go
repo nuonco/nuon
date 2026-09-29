@@ -37,7 +37,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("app_id is required")
 	}
 
-	// Validate app exists
 	_, err := activities.AwaitGetByAppID(ctx, s.AppID)
 	if err != nil {
 		return errors.Wrap(err, "app not found")
@@ -49,7 +48,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
-	// Update status - polling for children to deprovision
 	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		AppID:             s.AppID,
 		Status:            app.AppStatusActive,
@@ -63,12 +61,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		StatusDescription: "polling for installs and components to be deprovisioned",
 	})
 
-	// Poll until all children are deprovisioned
 	if err := s.pollChildrenDeprovisioned(ctx); err != nil {
 		return err
 	}
 
-	// Update status to deprovisioning
 	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		AppID:             s.AppID,
 		Status:            app.AppStatusDeprovisioning,
@@ -82,7 +78,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		StatusDescription: "deleting app resources",
 	})
 
-	// Get current app
 	currentApp, err := activities.AwaitGetByAppID(ctx, s.AppID)
 	if err != nil {
 		if updateErr := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
@@ -100,7 +95,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get app from database")
 	}
 
-	// Deprovision ECR repository (only for default org type)
 	if currentApp.Org.OrgType == app.OrgTypeDefault {
 		repoDeprovisionReq := &ecrrepository.DeprovisionECRRepositoryRequest{
 			OrgID: currentApp.OrgID,
@@ -119,7 +113,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			zap.String("org_name", currentApp.Org.Name))
 	}
 
-	// Delete the app
 	if err := activities.AwaitDeleteByAppID(ctx, s.AppID); err != nil {
 		if updateErr := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 			AppID:             s.AppID,
@@ -160,10 +153,8 @@ func (s *Signal) pollChildrenDeprovisioned(ctx workflow.Context) error {
 			return fmt.Errorf("unable to get app from database: %w", err)
 		}
 
-		// Count installs that need to be deprovisioned
 		installCnt := 0
 		for _, install := range currentApp.Installs {
-			// if an install was never attempted, it does not need to be polled
 			if len(install.InstallSandboxRuns) < 1 {
 				continue
 			}
@@ -186,7 +177,6 @@ func (s *Signal) pollChildrenDeprovisioned(ctx workflow.Context) error {
 			return nil
 		}
 
-		// Check timeout
 		if workflow.Now(ctx).After(deadline) {
 			err := fmt.Errorf("timeout waiting for installs and components to deprovision")
 			if updateErr := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
@@ -204,7 +194,6 @@ func (s *Signal) pollChildrenDeprovisioned(ctx workflow.Context) error {
 			return err
 		}
 
-		// Sleep and poll again
 		workflow.Sleep(ctx, defaultPollTimeout)
 	}
 }

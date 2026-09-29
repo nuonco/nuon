@@ -19,9 +19,6 @@ const sourceAfterBuildVersion = "app-branch-sandbox-build-source-after-build-v1"
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
-	// The commit is optional here — it only pins a SHA below. A run triggered with
-	// a pre-existing app config (the CLI's branch-targeted sync) skips fetch-commit
-	// and has none, so requiring it wedges this step forever.
 	run, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID)
 	if err != nil {
 		return fmt.Errorf("unable to get app branch run: %w", err)
@@ -119,7 +116,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	gitSource := source.GitSource
 
-	// Create a log stream for the sandbox build
 	logStreamID := ""
 	logStream, logStreamErr := activities.AwaitCreateSandboxBuildLogStream(ctx, activities.CreateSandboxBuildLogStreamRequest{
 		AppSandboxBuildID: build.ID,
@@ -137,7 +133,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}()
 	}
 
-	// Create the runner job
 	runnerJob, err := activities.AwaitCreateSandboxBuildJob(ctx, activities.CreateSandboxBuildJobRequest{
 		BuildID:     build.ID,
 		LogStreamID: logStreamID,
@@ -211,7 +206,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusPlanning, "planning sandbox build")
 
-	// Execute the runner job
 	s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusBuilding, "building sandbox")
 	err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: runnerJob.ID}, &workflow.ChildWorkflowOptions{
 		WorkflowID: fmt.Sprintf("control-plane-%s-execute-job-%s", build.ID, runnerJob.ID),

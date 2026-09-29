@@ -56,8 +56,6 @@ func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (ap
 	}
 
 	if queueSignalID != "" {
-		// Queue path: await signal completion via callback.
-		// Bound by the workflow's execution timeout (1h), but be explicit.
 		if _, err := callback.AwaitWithTimeout(ctx, cb, time.Hour); err != nil {
 			return app.RunnerJobStatusUnknown, errors.Wrap(err, "queue signal failed")
 		}
@@ -72,7 +70,7 @@ func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (ap
 		return app.RunnerJobStatus(""), errors.Wrap(err, "unable to get job")
 	}
 
-	// Only an explicit "finished" status counts as success. Any other status —
+	// why: Only an explicit "finished" status counts as success. Any other status —
 	// including non-terminal ones like "in-progress" or "available" left behind
 	// by a dropped execution — must fail the job rather than be read as success.
 	if job.Status != app.RunnerJobStatusFinished {
@@ -86,16 +84,12 @@ func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (ap
 	return job.Status, nil
 }
 
-// queueJob dispatches the job for execution. Returns the queue signal ID when the
-// queue path is used (non-empty string), or empty string for the poll path.
 func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string, cb callback.Ref) (string, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return "", errors.Wrap(err, "expected a log stream in the context to poll job")
 	}
 
-	// Check if this runner uses queue-based job dispatch (parallel-runner-jobs feature flag).
-	// If a per-job-group queue exists, enqueue the processjob signal directly.
 	queueResp, err := activities.AwaitPkgWorkflowsJobGetRunnerJobGroupQueue(ctx, &activities.GetRunnerJobGroupQueueRequest{
 		RunnerID: runnerID,
 		JobID:    jobID,
@@ -147,7 +141,6 @@ func (j *Workflows) pollJob(ctx workflow.Context, req *ExecuteJobRequest) (app.R
 		return app.RunnerJobStatusUnknown, errors.Wrap(err, "expected a log stream in the context to poll job")
 	}
 
-	// fetch starting queued
 	queued, err := activities.AwaitPkgWorkflowsJobGetRunnerJobQueueByJobID(ctx, jobID)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to get runner job queue")
@@ -173,10 +166,8 @@ func (j *Workflows) pollJob(ctx workflow.Context, req *ExecuteJobRequest) (app.R
 	})
 
 	for {
-		// if the job is already timed out, there is no reason to continue.
 		now := workflow.Now(dctx)
 		if now.After(job.CreatedAt.Add(job.OverallTimeout)) {
-			// Cancel the runner job so the runner stops executing it.
 			if cancelErr := activities.AwaitPkgWorkflowsJobCancelJobByID(dctx, jobID); cancelErr != nil {
 				l.Error("unable to cancel runner job on timeout", zap.Error(cancelErr))
 			}
@@ -197,7 +188,6 @@ func (j *Workflows) pollJob(ctx workflow.Context, req *ExecuteJobRequest) (app.R
 			return job.Status, nil
 		}
 
-		// handle failure states here
 		if generics.SliceContains(job.Status, failureStatuses) {
 			l.Error(fmt.Sprintf("job failed with status (%s) (%s)", job.Status, job.StatusDescription),
 				zap.Any("status", job.Status),

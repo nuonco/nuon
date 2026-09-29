@@ -57,7 +57,6 @@ func (s *service) GetAppSandboxConfigs(ctx *gin.Context) {
 func (s *service) findAppSandboxConfigs(ctx *gin.Context, orgID, appID string) ([]app.AppSandboxConfig, error) {
 	app := app.App{}
 	res := s.db.WithContext(ctx).
-		// sandbox configs
 		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.
 				Scopes(scopes.WithOffsetPagination).

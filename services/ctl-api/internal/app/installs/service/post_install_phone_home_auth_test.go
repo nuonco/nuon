@@ -111,8 +111,6 @@ func (s *InstallsServiceTestSuite) TestAuthorizePhoneHomeRejectsPreviousToken() 
 	assert.NoError(s.T(), err)
 }
 
-// The payload's account is compared against the coalesced expected identifier, so a
-// backfilled install (observed only) is protected the same as one pinned at creation.
 func TestCheckObservedCloudAccount(t *testing.T) {
 	const expected = "123456789012"
 
@@ -135,15 +133,12 @@ func TestCheckObservedCloudAccount(t *testing.T) {
 			wantReason: phoneHomeRejectAccountMismatch,
 		},
 		{
-			// Nothing to compare against: an install predating the target field, and
-			// not yet reached by the metadata backfill.
 			name:       "no expected account is not a rejection",
 			install:    &app.Install{},
 			props:      map[string]any{"account_id": "999999999999"},
 			wantReason: phoneHomeAuthOK,
 		},
 		{
-			// A stack that posts no identifier at all has nothing to contradict.
 			name:       "a payload without an account is not a rejection",
 			install:    &app.Install{ExpectedAccountID: expected},
 			props:      map[string]any{},
@@ -168,7 +163,6 @@ func TestCheckObservedCloudAccount(t *testing.T) {
 			wantReason: phoneHomeRejectAccountMismatch,
 		},
 		{
-			// An install carries one cloud's identifier; the others must not false-positive.
 			name:       "an unrelated cloud identifier is ignored",
 			install:    &app.Install{ExpectedAccountID: expected},
 			props:      map[string]any{"subscription_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"},
@@ -194,9 +188,6 @@ func TestCheckObservedCloudAccount(t *testing.T) {
 	}
 }
 
-// Every rejection reaches the caller as the same opaque 401. Distinguishing "no such
-// install" from "wrong token" would confirm an install's existence to a caller holding
-// nothing but a leaked phone_home_id — the leak this feature exists to close.
 func TestRejectPhoneHomeIsOpaqueButKeepsTheReason(t *testing.T) {
 	detailed := "token belongs to acct_123, not stack version isv_456"
 
@@ -209,9 +200,6 @@ func TestRejectPhoneHomeIsOpaqueButKeepsTheReason(t *testing.T) {
 		"the reason must survive for the metric tag even though the client never sees it")
 }
 
-// Guards the tag values against silent drift: these strings are what dashboards and
-// alerts key on, and revoked_stack_version in particular is the only signal that the
-// revocation policy cut off a stack still in use.
 func TestPhoneHomeRejectionReasonsAreStable(t *testing.T) {
 	assert.Equal(t, "missing_token", phoneHomeRejectMissingToken)
 	assert.Equal(t, "unknown_token", phoneHomeRejectUnknownToken)

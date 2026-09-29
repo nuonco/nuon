@@ -15,10 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestCreateAppK8sManifestConfigInlineSuccess() {
 	s.Run("creates config with inline manifest", func() {
 		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeKubernetesManifest)
@@ -65,10 +61,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppK8sManifestConfigWithNamespace
 		assert.Equal(s.T(), "my-namespace", response.Namespace)
 	})
 }
-
-// ---------------------------------------------------------------------------
-// Validation error cases
-// ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestCreateAppK8sManifestConfigValidationErrors() {
 	comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeKubernetesManifest)
@@ -130,10 +122,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppK8sManifestConfigValidationErr
 	}
 }
 
-// ---------------------------------------------------------------------------
-// Signals
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestCreateAppK8sManifestConfigSignals() {
 	s.Run("sends OperationConfigCreated and OperationUpdateComponentType signals", func() {
 
@@ -157,10 +145,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppK8sManifestConfigSignals() {
 		assert.Equal(s.T(), app.ComponentTypeKubernetesManifest, sig1.ComponentType)
 	})
 }
-
-// ---------------------------------------------------------------------------
-// Not found cases
-// ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestCreateAppK8sManifestConfigNotFound() {
 	s.Run("nonexistent component id", func() {

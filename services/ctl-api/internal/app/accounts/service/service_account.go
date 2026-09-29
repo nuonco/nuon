@@ -73,8 +73,6 @@ func (s *service) ListRoles(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, roles)
 }
 
-// getOrgServiceAccount looks up an account by ID and ensures it is a service
-// account that belongs to the given org.
 func (s *service) getOrgServiceAccount(ctx context.Context, orgID, accountID string) (*app.Account, error) {
 	acct, err := s.acctClient.FindAccount(ctx, accountID)
 	if err != nil {
@@ -111,10 +109,6 @@ func (s *service) getOrgServiceAccount(ctx context.Context, orgID, accountID str
 	return acct, nil
 }
 
-// orgServiceAccountIDs resolves the org's service accounts off the
-// account_roles org index. Joining accounts to account_roles in the list query
-// instead lets the planner walk the whole accounts table in email order to
-// satisfy the ORDER BY and LIMIT, which took tens of seconds on a cold cache.
 func (s *service) orgServiceAccountIDs(ctx context.Context, orgID string, includeRunners, includeStacks bool) ([]string, error) {
 	tx := s.db.WithContext(ctx).
 		Model(&app.AccountRole{}).
@@ -528,7 +522,7 @@ func (s *service) CreateServiceAccountToken(ctx *gin.Context) {
 		name = acct.Email
 	}
 
-	// createStaticToken, not acctClient.CreateToken: only this one stamps the columns
+	// why: createStaticToken, not acctClient.CreateToken: only this one stamps the columns
 	// ListStaticTokens filters on, so tokens made the other way cannot be revoked
 	// from the org's API tokens page.
 	token, err := s.createStaticToken(ctx, acct, org.ID, caller.ID, name, orgRoleType(acct, org.ID), dur)
@@ -542,7 +536,6 @@ func (s *service) CreateServiceAccountToken(ctx *gin.Context) {
 	})
 }
 
-// orgRoleType reports the account's org role for display only.
 func orgRoleType(acct *app.Account, orgID string) app.RoleType {
 	for _, role := range acct.Roles {
 		if role.OrgID.ValueString() == orgID {

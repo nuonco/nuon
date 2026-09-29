@@ -15,9 +15,6 @@ import (
 )
 
 type ResolveBranchPostDeployRunbooksInput struct {
-	// AppBranchConfigID is the config the run was planned from. Resolving the
-	// branch's latest config instead would let a sync that lands mid-run change
-	// which runbooks execute.
 	AppBranchConfigID string            `json:"app_branch_config_id"`
 	InstallIDs        []string          `json:"install_ids"`
 	NewAppConfigID    string            `json:"new_app_config_id"`
@@ -49,7 +46,7 @@ func (a *Activities) ResolveBranchPostDeployRunbooks(ctx context.Context, input 
 	var config app.AppBranchConfig
 	err := a.db.WithContext(ctx).
 		First(&config, "id = ?", input.AppBranchConfigID).Error
-	// This activity runs for every install group of every branch run, including the
+	// why: This activity runs for every install group of every branch run, including the
 	// overwhelming majority that configure no post-deploy runbooks. A missing
 	// config means "nothing to run", not a reason to fail an otherwise clean group.
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -63,13 +60,10 @@ func (a *Activities) ResolveBranchPostDeployRunbooks(ctx context.Context, input 
 		return out, nil
 	}
 
-	// Activities carry no request auth context, so set the created-by/org the
-	// InstallRunbook and InstallRunbookRun BeforeCreate hooks read; without this
-	// the not-null created_by_id insert fails.
 	ctx = cctx.SetAccountIDContext(ctx, input.CreatedByID)
 	ctx = cctx.SetOrgIDContext(ctx, config.OrgID)
 
-	// Guarantee an InstallRunbook row for every (install, runbook) pair we are
+	// why: Guarantee an InstallRunbook row for every (install, runbook) pair we are
 	// about to run — CreateInstallRunbookRunWorkflow needs one to hang a run off.
 	//
 	// Deliberately not ReconcileInstallRunbooks: that derives its desired set from
@@ -123,9 +117,6 @@ func (a *Activities) ResolveBranchPostDeployRunbooks(ctx context.Context, input 
 	return out, nil
 }
 
-// resolveRunbookConfig returns the runbook config pinned to appConfigID, falling
-// back to the runbook's latest config. The bool is true when the version-pinned
-// config was found.
 func (a *Activities) resolveRunbookConfig(ctx context.Context, orgID, runbookID, appConfigID string) (*app.RunbookConfig, bool, error) {
 	base := func() *gorm.DB {
 		return a.db.WithContext(ctx).
@@ -147,11 +138,6 @@ func (a *Activities) resolveRunbookConfig(ctx context.Context, orgID, runbookID,
 	return &cfg, false, nil
 }
 
-// mergeAndValidateInputs keeps only the inputs the runbook config declares — the
-// branch injects VCS context opportunistically and undeclared names must not trip
-// validation. Validation runs against the merged result rather than the raw branch
-// inputs, so a required input satisfied by its default passes while one with
-// neither default nor branch value fails before any install is touched.
 func (a *Activities) mergeAndValidateInputs(runbookConfig *app.RunbookConfig, supplied map[string]string) (map[string]string, error) {
 	declared := make(map[string]struct{}, len(runbookConfig.Inputs))
 	for _, inp := range runbookConfig.Inputs {

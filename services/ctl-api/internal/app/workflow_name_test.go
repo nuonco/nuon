@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// every type declared in workflow.go — add new ones here so the titles below
+// why: every type declared in workflow.go — add new ones here so the titles below
 // stay mandatory rather than silently falling back to the lowercased type
 var allWorkflowTypes = []WorkflowType{
 	WorkflowTypeProvision,
@@ -37,7 +37,6 @@ var allWorkflowTypes = []WorkflowType{
 
 func TestWorkflowTypeTitlesAreExhaustive(t *testing.T) {
 	for _, wt := range allWorkflowTypes {
-		// app_branches_manual_update is titled from its metadata instead
 		if wt == WorkflowTypeAppBranchesRun {
 			continue
 		}

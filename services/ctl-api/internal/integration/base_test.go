@@ -40,7 +40,6 @@ func (s *baseIntegrationTestSuite) SetupSuite() {
 
 	s.v = validator.New()
 
-	// setup internal api
 	internalAPIURL := os.Getenv("INTEGRATION_INTERNAL_API_URL")
 	require.NotEmpty(s.T(), internalAPIURL)
 
@@ -52,7 +51,6 @@ func (s *baseIntegrationTestSuite) SetupSuite() {
 	require.NotEmpty(s.T(), intApiClient)
 	s.intAPIClient = intApiClient
 
-	// create integration user, while retrying up to 5 times due to twingate network instability inside of GHA.
 	var intUser *api.CreateIntegrationUserResponse
 	err = retry.Do(func() error {
 		intUser, err = s.intAPIClient.CreateIntegrationUser(s.ctx)
@@ -74,8 +72,6 @@ func (s *baseIntegrationTestSuite) SetupSuite() {
 	s.githubInstallID = intUser.GithubInstallID
 }
 
-// uniqueName generates a unique name for test resources to enable parallel execution.
-// Format: prefix-timestamp-random6chars (e.g., "test-org-1709123456-a3f5k2")
 func (s *baseIntegrationTestSuite) uniqueName(prefix string) string {
 	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -283,8 +279,6 @@ func (s *baseIntegrationTestSuite) createInstall(appID string) *models.AppInstal
 }
 
 func (s *baseIntegrationTestSuite) deleteOrg(orgID string) {
-	// Skip cleanup in CI or when explicitly disabled
-	// CI databases are ephemeral and unique names prevent collisions
 	if os.Getenv("CI") != "" || os.Getenv("INTEGRATION_NO_CLEANUP") != "" {
 		return
 	}

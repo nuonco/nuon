@@ -556,7 +556,6 @@ func (c CloudPlatform) awsRegions() []CloudPlatformRegion {
 			Value:       "us-west-2",
 		},
 
-		// africa
 		{
 			Name:        "af-south-1",
 			Icon:        "flag-ZA",
@@ -564,7 +563,6 @@ func (c CloudPlatform) awsRegions() []CloudPlatformRegion {
 			Value:       "af-south-1",
 		},
 
-		// asia
 		{
 			Name:        "ap-east-1",
 			Icon:        "flag-HK",
@@ -626,7 +624,6 @@ func (c CloudPlatform) awsRegions() []CloudPlatformRegion {
 			Value:       "ap-northeast-1",
 		},
 
-		// canada
 		{
 			Name:        "ca-central-1",
 			Icon:        "flag-CA",
@@ -640,7 +637,6 @@ func (c CloudPlatform) awsRegions() []CloudPlatformRegion {
 			Value:       "ca-west-1",
 		},
 
-		// europe
 		{
 			Name:        "eu-central-1",
 			Icon:        "flag-DE",
@@ -690,7 +686,6 @@ func (c CloudPlatform) awsRegions() []CloudPlatformRegion {
 			Value:       "eu-central-2",
 		},
 
-		// israel
 		{
 			Name:        "il-central-1",
 			Icon:        "flag-IL",
@@ -698,7 +693,6 @@ func (c CloudPlatform) awsRegions() []CloudPlatformRegion {
 			Value:       "il-central-1",
 		},
 
-		// middle east
 		{
 			Name:        "me-south-1",
 			Icon:        "flag-BH",
@@ -712,7 +706,6 @@ func (c CloudPlatform) awsRegions() []CloudPlatformRegion {
 			Value:       "me-central-1",
 		},
 
-		// south america
 		{
 			Name:        "sa-east-1",
 			Icon:        "flag-BR",
@@ -720,7 +713,6 @@ func (c CloudPlatform) awsRegions() []CloudPlatformRegion {
 			Value:       "sa-east-1",
 		},
 
-		// gov cloud
 		{
 			Name:        "us-gov-east-1",
 			Icon:        "flag-US",

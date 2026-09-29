@@ -7,7 +7,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// vcs connections
 func (c *client) CreateVCSConnection(ctx context.Context, req *models.ServiceCreateConnectionRequest) (*models.AppVCSConnection, error) {
 	resp, err := c.genClient.Operations.CreateVCSConnection(&operations.CreateVCSConnectionParams{
 		Req:     req,

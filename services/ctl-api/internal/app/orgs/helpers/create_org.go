@@ -67,7 +67,6 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 		"account_type": string(acct.AccountType),
 	}))
 
-	// make sure the notifications config orgID is set
 	if res := h.db.WithContext(ctx).
 		Where(&app.NotificationsConfig{
 			OwnerID: org.ID,
@@ -94,7 +93,6 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 		return nil, fmt.Errorf("unable to create org healthcheck sweep emitters: %w", err)
 	}
 
-	// Best-effort: failures are picked up by the periodic reconciler.
 	if h.slackAutoLinkHelper != nil {
 		if _, err := h.slackAutoLinkHelper.EnsureForOrg(ctx, org.ID); err != nil && h.logger != nil {
 			h.logger.Warn("slack auto-link on org create failed", zap.String("org_id", org.ID), zap.Error(err))
@@ -104,9 +102,6 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 	return &org, nil
 }
 
-// defaultOrgLabels seeds the configured slack-auto-link label on new orgs.
-// Returns nil when the policy is unconfigured or the creator's email domain
-// is in cfg.InternalEmailDomains.
 func defaultOrgLabels(cfg *internal.Config, acct *app.Account) labels.Labels {
 	key := cfg.SlackAutoLinkOrgLabelKey
 	if key == "" {

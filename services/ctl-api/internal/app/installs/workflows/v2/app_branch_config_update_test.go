@@ -28,9 +28,6 @@ const (
 	addedCompID    = "comp-added"
 )
 
-// filterComponentsByDiff can only ever return a subset of the order it is given,
-// so a component the update adds survives only when that order came from the new
-// app config.
 func TestFilterComponentsByDiff(t *testing.T) {
 	newAppCfg := &app.AppConfig{
 		ComponentIDs: pq.StringArray{existingCompID, addedCompID},
@@ -133,8 +130,6 @@ type appBranchConfigUpdateSuite struct {
 	testsuite.WorkflowTestSuite
 	env *testsuite.TestWorkflowEnvironment
 
-	// graphRequests records what the workflow asked the app graph to be ordered
-	// against.
 	graphRequests []activities.GetAppGraphRequest
 }
 
@@ -145,9 +140,6 @@ func TestAppBranchConfigUpdateSuite(t *testing.T) {
 func (s *appBranchConfigUpdateSuite) SetupTest() {
 	s.env = s.NewTestWorkflowEnvironment()
 
-	// app.* models carry their Temporal payload shape on `temporaljson` tags, so
-	// the SDK's default converter would drop fields the step generator reads —
-	// notably ComponentConfigConnection.Component, which is `json:"-"`.
 	s.env.SetDataConverter(converter.NewCompositeDataConverter(
 		converter.NewNilPayloadConverter(),
 		converter.NewByteSlicePayloadConverter(),
@@ -158,9 +150,6 @@ func (s *appBranchConfigUpdateSuite) SetupTest() {
 	})
 	s.graphRequests = nil
 
-	// Registering by name is what lets the test env deserialize each call's
-	// arguments before handing them to the mock; without it the mock sees zero
-	// values.
 	a := &activities.Activities{}
 	for name, fn := range map[string]any{
 		"Get":                                  a.Get,
@@ -177,8 +166,6 @@ func (s *appBranchConfigUpdateSuite) SetupTest() {
 	}
 }
 
-// newAppConfig is the config being rolled out: it carries a component the
-// install's current config does not have.
 func (s *appBranchConfigUpdateSuite) newAppConfig() *app.AppConfig {
 	return &app.AppConfig{
 		ID:           newAppConfigID,
@@ -248,9 +235,6 @@ func (s *appBranchConfigUpdateSuite) run(diff *app.InstallConfigDiff, graphOrder
 	return &result
 }
 
-// The install is still pinned to its old config while these steps are generated,
-// so ordering the graph against the install leaves a newly added component with
-// no vertex — and therefore no deploy step.
 func (s *appBranchConfigUpdateSuite) TestOrdersGraphAgainstNewAppConfig() {
 	s.run(
 		&app.InstallConfigDiff{
@@ -277,8 +261,6 @@ func (s *appBranchConfigUpdateSuite) TestDeploysComponentOnlyInNewConfig() {
 	s.Equal([]string{"existing", "added"}, deployedComponents(result.Steps))
 }
 
-// A component the update leaves alone stays off the deploy list even though the
-// new config's graph includes it.
 func (s *appBranchConfigUpdateSuite) TestSkipsUnchangedComponents() {
 	result := s.run(
 		&app.InstallConfigDiff{
@@ -291,8 +273,6 @@ func (s *appBranchConfigUpdateSuite) TestSkipsUnchangedComponents() {
 	s.Equal([]string{"added"}, deployedComponents(result.Steps))
 }
 
-// The stack apply is what brings a replacement runner up, so gating it on the
-// outgoing runner would make an offline runner unrecoverable through this path.
 func (s *appBranchConfigUpdateSuite) TestStackChangeWaitsOnlyAfterTheStackApply() {
 	result := s.run(
 		&app.InstallConfigDiff{

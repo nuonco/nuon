@@ -11,7 +11,6 @@ import (
 	queuesignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// MaybeEnqueueInitialHealthCheck ensures the process has an initial health check queued.
 func (h *Helpers) MaybeEnqueueInitialHealthCheck(ctx context.Context, runnerID string, process *app.RunnerProcess) error {
 	if process.InitialHealthCheck {
 		return nil

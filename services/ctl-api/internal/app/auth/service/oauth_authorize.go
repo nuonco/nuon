@@ -16,15 +16,11 @@ import (
 
 const oauthAuthorizationCodeExpiry = 10 * time.Minute
 
-// OAuthAuthorize handles GET /oauth/authorize — the OAuth 2.0 authorization-code
-// endpoint with PKCE (RFC 6749 §4.1, RFC 7636). It validates the client request,
-// persists it, and hands the user off to the existing identity-provider login
-// flow, resuming at /oauth/finish once the user has authenticated.
 func (s *service) OAuthAuthorize(c *gin.Context) {
 	clientID := c.Query("client_id")
 	redirectURI := c.Query("redirect_uri")
 
-	// A bad client_id/redirect_uri must NOT redirect back (RFC 6749 §4.1.2.1) —
+	// why: A bad client_id/redirect_uri must NOT redirect back (RFC 6749 §4.1.2.1) —
 	// show an error page instead.
 	if clientID == "" || redirectURI == "" {
 		s.respondError(c, http.StatusBadRequest, fmt.Errorf("client_id and redirect_uri are required"))
@@ -47,7 +43,6 @@ func (s *service) OAuthAuthorize(c *gin.Context) {
 		return
 	}
 
-	// From here, errors are reported by redirecting back to the client.
 	responseType := c.Query("response_type")
 	if responseType != "code" {
 		s.redirectOAuthError(c, redirectURI, c.Query("state"), "unsupported_response_type", "only response_type=code is supported")
@@ -91,7 +86,6 @@ func (s *service) OAuthAuthorize(c *gin.Context) {
 
 	finishURL := fmt.Sprintf("%s/oauth/finish?rid=%s", s.oauthIssuer(), url.QueryEscape(requestID))
 
-	// If the user already has a valid session, skip straight to finishing.
 	if tokenValue := s.findToken(c); tokenValue != "" {
 		if _, err := s.validateToken(tokenValue); err == nil {
 			s.redirect302(c, finishURL)
@@ -105,11 +99,6 @@ func (s *service) OAuthAuthorize(c *gin.Context) {
 	s.redirect302(c, loginURL)
 }
 
-// OAuthFinish handles GET /oauth/finish — resumes the authorization-code flow
-// after the user has authenticated with the identity provider. Rather than
-// issuing the code immediately, it renders a consent screen where the user
-// picks which role (read-only or admin) the token should carry. The choice is
-// submitted to POST /oauth/consent.
 func (s *service) OAuthFinish(c *gin.Context) {
 	requestID := c.Query("rid")
 	authCode, ok := s.loadPendingAuthCode(c, requestID)
@@ -128,14 +117,10 @@ func (s *service) OAuthFinish(c *gin.Context) {
 		"ClientID":      authCode.ClientID,
 		"AdminScope":    string(app.RoleTypeOrgAdmin),
 		"ReadOnlyScope": string(app.RoleTypeOrgReadOnly),
-		// Pre-select the scope the client requested, defaulting to read-only.
-		"DefaultAdmin": authCode.Scope == string(app.RoleTypeOrgAdmin),
+		"DefaultAdmin":  authCode.Scope == string(app.RoleTypeOrgAdmin),
 	})
 }
 
-// OAuthConsent handles POST /oauth/consent — the user has chosen a role on the
-// consent screen. It records the selected scope, issues the authorization code,
-// and redirects back to the client.
 func (s *service) OAuthConsent(c *gin.Context) {
 	requestID := c.PostForm("rid")
 	authCode, ok := s.loadPendingAuthCode(c, requestID)
@@ -184,9 +169,6 @@ func (s *service) OAuthConsent(c *gin.Context) {
 	s.redirect302(c, redirect)
 }
 
-// loadPendingAuthCode fetches and validates an in-flight authorization request
-// by its request ID. It writes the appropriate error response and returns
-// ok=false when the request is missing, already completed, or expired.
 func (s *service) loadPendingAuthCode(c *gin.Context, requestID string) (app.OAuthAuthorizationCode, bool) {
 	var authCode app.OAuthAuthorizationCode
 	if requestID == "" {
@@ -217,8 +199,6 @@ func (s *service) loadPendingAuthCode(c *gin.Context, requestID string) (app.OAu
 	return authCode, true
 }
 
-// requireAuthSession ensures the browser carries a valid login session. It
-// writes a 401 and returns ok=false otherwise.
 func (s *service) requireAuthSession(c *gin.Context, authCode app.OAuthAuthorizationCode) (*TokenInfo, bool) {
 	tokenValue := s.findToken(c)
 	if tokenValue == "" {
@@ -234,7 +214,6 @@ func (s *service) requireAuthSession(c *gin.Context, authCode app.OAuthAuthoriza
 	return tokenInfo, true
 }
 
-// redirectOAuthError redirects back to the client with an OAuth error (RFC 6749 §4.1.2.1).
 func (s *service) redirectOAuthError(c *gin.Context, redirectURI, state, code, desc string) {
 	params := map[string]string{"error": code, "error_description": desc}
 	if state != "" {
@@ -243,8 +222,6 @@ func (s *service) redirectOAuthError(c *gin.Context, redirectURI, state, code, d
 	s.redirect302(c, s.buildRedirectWithParams(redirectURI, params))
 }
 
-// buildRedirectWithParams appends query params to a redirect URI, preserving any
-// existing query string.
 func (s *service) buildRedirectWithParams(redirectURI string, params map[string]string) string {
 	u, err := url.Parse(redirectURI)
 	if err != nil {

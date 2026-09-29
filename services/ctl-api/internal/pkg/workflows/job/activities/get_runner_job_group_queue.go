@@ -13,8 +13,6 @@ type GetRunnerJobGroupQueueRequest struct {
 }
 
 type GetRunnerJobGroupQueueResponse struct {
-	// QueueID is the ID of the job-group queue to use, or empty string if no
-	// queue exists for the group.
 	QueueID string
 }
 

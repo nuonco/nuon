@@ -29,10 +29,9 @@ func (d *dataConverter) Decode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 func (d *dataConverter) decodePayload(payload *commonpb.Payload) (*commonpb.Payload, error) {
 	enc := string(payload.Metadata[converter.MetadataEncoding])
 
-	// Handle current encoding and legacy encodings
 	var metadataPrefix string
 	switch enc {
-	case encoding: // "nuon/blob"
+	case encoding:
 		metadataPrefix = "nuon/blob/"
 	case "nuon/temporal-blob":
 		metadataPrefix = "nuon/temporal-blob/"
@@ -59,14 +58,12 @@ func (d *dataConverter) decodePayload(payload *commonpb.Payload) (*commonpb.Payl
 
 	blobID := string(payload.Data)
 
-	// Check local cache first
 	if data, ok := d.cache.Get(blobID); ok {
 		cache = "yes"
 		size = float64(len(data))
 		return d.restorePayload(payload, data, metadataPrefix), nil
 	}
 
-	// Cache miss: download from S3
 	s3Key := string(payload.Metadata[metadataPrefix+"s3_key"])
 	if s3Key == "" {
 		status = "error"
@@ -106,7 +103,6 @@ func (d *dataConverter) restorePayload(encoded *commonpb.Payload, data []byte, m
 		Data:     data,
 	}
 
-	// Copy non-codec metadata
 	if encoded.Metadata != nil {
 		for k, v := range encoded.Metadata {
 			if k != converter.MetadataEncoding && !strings.HasPrefix(k, metadataPrefix) {
@@ -115,7 +111,6 @@ func (d *dataConverter) restorePayload(encoded *commonpb.Payload, data []byte, m
 		}
 	}
 
-	// Restore original encoding
 	if originalEncoding, ok := encoded.Metadata[metadataPrefix+"original-encoding"]; ok {
 		restored.Metadata[converter.MetadataEncoding] = originalEncoding
 	}

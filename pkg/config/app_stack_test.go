@@ -168,7 +168,6 @@ func TestStackConfig_Parse_MissingTemplateURL(t *testing.T) {
 }
 
 func TestStackConfig_Parse_NonS3URLAccepted(t *testing.T) {
-	// Custom nested stack template URLs no longer require S3 — go-getter handles fetching.
 	cfg := &StackConfig{
 		Type:                    "aws-cloudformation",
 		Name:                    "my-stack",
@@ -240,8 +239,6 @@ func TestStackConfig_Parse_ValidParameters(t *testing.T) {
 				Parameters: map[string]string{
 					"Namespaces":  "{{.nuon.install.inputs.namespaces}}",
 					"ClusterName": "{{ .nuon.install.inputs.cluster_name }}",
-					// Parameter values are full templates: conditionals, sprig
-					// pipelines, composition with literals, and bare literals.
 					"RootDomain":  "{{ if .nuon.install.inputs.root_domain }}{{ .nuon.install.inputs.root_domain }}{{ else }}sandbox-{{ .nuon.install.id | substr 0 15 }}.installs.example.com{{ end }}",
 					"BucketName":  "vendor-{{ .nuon.install.id }}-service",
 					"Inputs":      "{{ .nuon.inputs.inputs.cluster_version }}",

@@ -26,8 +26,6 @@ func init() {
 	config.RegisterDefault("nuon_admin_dashboard_url", "http://localhost:8087")
 	config.RegisterDefault("posthog_host", "https://us.i.posthog.com")
 	config.RegisterDefault("posthog_replay_enabled", true)
-	// docker-compose's kafka-ui, which serves under the same /admin/kafka context
-	// path it does in the cluster
 	config.RegisterDefault("nuon_kafka_ui_url", "http://localhost:8092")
 }
 
@@ -41,9 +39,7 @@ type Config struct {
 	DistDir     string   `config:"dist_dir"`
 	PublicDir   string   `config:"public_dir"`
 
-	APIUrl string `config:"nuon_api_url"`
-	// RunnerAPIUrl is the runner API install stacks authenticate against. A different
-	// host from APIUrl, and the audience a stack's OIDC trust policy names.
+	APIUrl                 string `config:"nuon_api_url"`
 	RunnerAPIUrl           string `config:"nuon_runner_api_url"`
 	AdminAPIUrl            string `config:"nuon_admin_api_url"`
 	TemporalUIUrl          string `config:"nuon_temporal_ui_url"`

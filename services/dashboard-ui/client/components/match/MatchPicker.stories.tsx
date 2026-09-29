@@ -63,10 +63,6 @@ export const PreselectedActionsAny = () => (
   <Story initial={{ actions: {} }} />
 )
 
-// Preselected component ids — exercises the app-first flow on edit. The
-// app picker starts unselected; the existing chips render with bare ids
-// until the user picks the owning app, at which point the listbox scopes
-// to that app and the names resolve.
 export const PreselectedComponentIds = () => (
   <Story initial={{ components: { ids: ['comp_a', 'comp_b'] } }} />
 )

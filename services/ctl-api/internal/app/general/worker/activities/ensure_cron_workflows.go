@@ -30,7 +30,6 @@ type EnsureCronWorkflowsResponse struct {
 func (a *Activities) EnsureCronWorkflows(ctx context.Context, _ EnsureCronWorkflowsRequest) (*EnsureCronWorkflowsResponse, error) {
 	resp := &EnsureCronWorkflowsResponse{}
 
-	// Start (or replace) the enqueuer sweep cron.
 	sweepOpts := tclient.StartWorkflowOptions{
 		ID:                    "enqueuer-sweep",
 		TaskQueue:             workflows.APITaskQueue,
@@ -47,7 +46,6 @@ func (a *Activities) EnsureCronWorkflows(ctx context.Context, _ EnsureCronWorkfl
 	resp.SweepStarted = true
 	a.logger.Info("enqueuer sweep cron started/replaced", zap.String("workflow-id", "enqueuer-sweep"))
 
-	// Start (or replace) the general metrics cron.
 	metricsOpts := tclient.StartWorkflowOptions{
 		ID:                    "general-metrics-cron",
 		TaskQueue:             workflows.APITaskQueue,
@@ -63,7 +61,6 @@ func (a *Activities) EnsureCronWorkflows(ctx context.Context, _ EnsureCronWorkfl
 	resp.MetricsStarted = true
 	a.logger.Info("general metrics cron started/replaced", zap.String("workflow-id", "general-metrics-cron"))
 
-	// Start (or replace) the daily queue-signal cleanup cron.
 	cleanupOpts := tclient.StartWorkflowOptions{
 		ID:                    "general-queue-signal-cleanup-cron",
 		TaskQueue:             workflows.APITaskQueue,
@@ -94,9 +91,6 @@ func (a *Activities) EnsureCronWorkflows(ctx context.Context, _ EnsureCronWorkfl
 	resp.TriggerEventCleanupStarted = true
 	a.logger.Info("trigger event cleanup cron started/replaced", zap.String("workflow-id", "general-trigger-event-cleanup-cron"))
 
-	// One fleet-wide sweep replaces what used to be a cron emitter per install:
-	// live installs are evaluated when their report lands, so all that is left
-	// to schedule is noticing the ones that went quiet.
 	healthSweepOpts := tclient.StartWorkflowOptions{
 		ID:                    "component-health-sweep-cron",
 		TaskQueue:             workflows.APITaskQueue,

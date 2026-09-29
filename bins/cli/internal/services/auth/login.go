@@ -22,24 +22,20 @@ var (
 	AuthAudience string
 )
 
-// LoginResult contains the result of an authentication flow
 type LoginResult struct {
 	AccessToken string
 	DisplayName string
 }
 
 func (a *Service) Login(ctx context.Context) error {
-	// Ask user about deployment type and hostname
 	apiURL, err := a.selectAPIURL()
 	if err != nil {
 		return ui.PrintError(fmt.Errorf("couldn't select API URL: %w", err))
 	}
 
-	// Set the API URL in the config
 	a.cfg.Set("api_url", apiURL)
 	a.cfg.APIURL = apiURL
 
-	// Recreate the API client with the selected URL
 	if err := a.updateAPIClient(apiURL, a.cfg); err != nil {
 		return ui.PrintError(fmt.Errorf("couldn't update API client: %w", err))
 	}
@@ -49,14 +45,11 @@ func (a *Service) Login(ctx context.Context) error {
 		return ui.PrintError(fmt.Errorf("couldn't get cli config: %w", err))
 	}
 
-	// Log in with Nuon Auth
-	// NOTE: we used to branch on a config here but we only support Nuon Auth now
 	result, err := a.loginWithNuonAuth(ctx, cfg)
 	if err != nil {
 		return ui.PrintError(err)
 	}
 
-	// Save access token to config
 	a.cfg.Set("api_token", result.AccessToken)
 	if err := a.cfg.WriteConfig(); err != nil {
 		return ui.PrintError(err)
@@ -66,7 +59,6 @@ func (a *Service) Login(ctx context.Context) error {
 
 	a.printVersionNotice(ctx)
 
-	// Update apiClient with newly-fetched token so we can list orgs
 	api, err := nuon.New(
 		nuon.WithValidator(validator.New()),
 		nuon.WithAuthToken(result.AccessToken),
@@ -77,7 +69,6 @@ func (a *Service) Login(ctx context.Context) error {
 	}
 	a.api = api
 
-	// If user only has a single org, select it
 	orgs, _, err := a.api.GetOrgs(ctx, &models.GetPaginatedQuery{
 		Offset: 0,
 		Limit:  10,
@@ -88,7 +79,6 @@ func (a *Service) Login(ctx context.Context) error {
 
 	switch len(orgs) {
 	case 0:
-		// prompt user to create an org
 		ui.PrintLn("You are not a member of any orgs. You must create an org, or request an invite to one to continue.")
 
 	case 1:
@@ -107,27 +97,20 @@ func (a *Service) Login(ctx context.Context) error {
 	return nil
 }
 
-// selectAPIURL checks for a configured API URL and either confirms it or prompts for selection.
 func (a *Service) selectAPIURL() (string, error) {
 	const nuonCloudURL = "https://api.nuon.co"
 
-	// Check if an API URL was explicitly configured (via config file or NUON_API_URL env).
-	// The struct default is set directly, not via viper, so GetString returns ""
-	// when no explicit value was provided.
 	configuredURL := a.cfg.GetString("api_url")
 
-	// No URL configured — show deployment type selector (first-time user)
 	if configuredURL == "" {
 		return a.promptDeploymentType(nuonCloudURL)
 	}
 
-	// URL is configured — show source info and confirm
 	displayName := configuredURL
 	if configuredURL == nuonCloudURL {
 		displayName = "Nuon Cloud"
 	}
 
-	// Print dim context line showing URL and source
 	source := a.cfg.APIURLSource
 	fmt.Println(styles.TextDim.Render(fmt.Sprintf("  %s (%s)", configuredURL, source)))
 
@@ -150,7 +133,6 @@ func (a *Service) selectAPIURL() (string, error) {
 	return a.promptCustomURL()
 }
 
-// promptDeploymentType shows the Nuon Cloud / Nuon BYOC selector.
 func (a *Service) promptDeploymentType(nuonCloudURL string) (string, error) {
 	deploymentType, err := bubbles.SelectFromOptions(
 		"Which Nuon deployment are you using?",
@@ -168,7 +150,6 @@ func (a *Service) promptDeploymentType(nuonCloudURL string) (string, error) {
 	return a.promptCustomURL()
 }
 
-// promptCustomURL asks for a URL and normalizes the scheme.
 func (a *Service) promptCustomURL() (string, error) {
 	customHostname, err := bubbles.PromptText(
 		"Enter your Nuon API URL:",
@@ -193,24 +174,19 @@ func (a *Service) promptCustomURL() (string, error) {
 	return customHostname, nil
 }
 
-// updateAPIClient recreates the API client with the new URL
 func (a *Service) updateAPIClient(apiURL string, cliCfg *config.Config) error {
-	// Create a new validator instance
 	v := validator.New()
 
-	// Create a new API client with the updated URL
-	// Note: We don't have an API token yet since this is during login
 	api, err := nuon.New(
 		nuon.WithValidator(v),
-		nuon.WithAuthToken(""), // Empty token during login
-		nuon.WithOrgID(""),     // Empty org ID during login
+		nuon.WithAuthToken(""),
+		nuon.WithOrgID(""),
 		nuon.WithURL(apiURL),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to create API client with URL %s: %w", apiURL, err)
 	}
 
-	// Update the service's API client
 	a.api = api
 
 	return nil

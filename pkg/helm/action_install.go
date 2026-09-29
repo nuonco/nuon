@@ -10,8 +10,6 @@ func DefaultInstall(actionCfg *action.Configuration) *action.Install {
 	return ConfigureDefaultInstall(client)
 }
 
-// useful in case we want to configure a client that has already been created
-// NOTE(fd): these default values were yoinked from the runner install code
 func ConfigureDefaultInstall(client *action.Install) *action.Install {
 	client.ClientOnly = false
 	client.DisableHooks = false
@@ -27,7 +25,6 @@ func ConfigureDefaultInstall(client *action.Install) *action.Install {
 	client.SkipCRDs = false
 	client.SubNotes = true
 
-	// wait strategy
 	client.WaitForJobs = false
 	client.WaitStrategy = kube.StatusWatcherStrategy
 

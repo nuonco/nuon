@@ -10,14 +10,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
-// ForwardApprovePlanRequest is the input for forwarding an approval to a step handler workflow.
 type ForwardApprovePlanRequest struct {
 	StepID             string `json:"step_id" validate:"required"`
 	ApprovalResponseID string `json:"approval_response_id"`
 	ResponseType       string `json:"response_type"`
 }
 
-// ForwardApprovePlanResponse is the output from forwarding an approval.
 type ForwardApprovePlanResponse struct {
 	StepID string `json:"step_id"`
 }
@@ -25,7 +23,7 @@ type ForwardApprovePlanResponse struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 30s
 func (a *Activities) ForwardApprovePlan(ctx context.Context, req ForwardApprovePlanRequest) (*ForwardApprovePlanResponse, error) {
-	// Find the step's handler workflow via the queue_signals table.
+	// why: Find the step's handler workflow via the queue_signals table.
 	// Filter by signal type to avoid matching the inner signal (same OwnerID/OwnerType).
 	var qs app.QueueSignal
 	res := a.db.WithContext(ctx).
@@ -40,13 +38,11 @@ func (a *Activities) ForwardApprovePlan(ctx context.Context, req ForwardApproveP
 		return nil, fmt.Errorf("unable to find step queue signal for step %s: %w", req.StepID, res.Error)
 	}
 
-	// The approve-plan update arg must match executeworkflowstep.ApprovePlanRequest JSON shape.
 	type approvePlanArg struct {
 		ApprovalResponseID string `json:"approval_response_id"`
 		ResponseType       string `json:"response_type"`
 	}
 
-	// Send the approve-plan update to the step's handler workflow
 	handle, err := handler.UpdateWithStart(ctx, a.tClient, &qs, handler.UpdateWithStartOptions{
 		UpdateName:   "approve-plan",
 		WaitForStage: tclient.WorkflowUpdateStageAccepted,

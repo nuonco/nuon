@@ -21,9 +21,6 @@ type EnqueueResponse struct {
 	Deduplicated bool
 }
 
-// EnqueueHandlerInput is the input to the enqueue update handler.
-// The QueueSignal is created in the DB by the client before sending this update,
-// so the handler only needs the IDs to start the handler workflow and queue the ref.
 type EnqueueHandlerInput struct {
 	QueueSignalID string `json:"queue_signal_id"`
 	WorkflowID    string `json:"workflow_id"`
@@ -106,7 +103,6 @@ func (w *queue) startEnqueueSignalLoop(ctx workflow.Context) {
 	})
 }
 
-// Drained signals are not dispatched — requeueSignals recovers them on the next run.
 func (w *queue) drainEnqueueSignalChannel(ctx workflow.Context, l *zap.Logger) int {
 	sigCh := workflow.GetSignalChannel(ctx, EnqueueSignalName)
 	drained := 0

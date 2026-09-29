@@ -11,7 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 )
 
-// TestOtelTraceEnvelopeRoundTrip asserts that a span survives the envelope
+// why: TestOtelTraceEnvelopeRoundTrip asserts that a span survives the envelope
 // unchanged, field for field, so the row this consumer inserts is the row the
 // inline write path would have inserted.
 //
@@ -90,7 +90,7 @@ func TestOtelTraceEnvelopeRoundTrip(t *testing.T) {
 	for i := range typ.NumField() {
 		field := typ.Field(i)
 
-		// DeletedAt is the one field the write path never sets and the table
+		// why: DeletedAt is the one field the write path never sets and the table
 		// defaults, so it is deliberately excluded from the payload.
 		if field.Name == "DeletedAt" {
 			continue

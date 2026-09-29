@@ -10,8 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// EnqueueRunnerSignal enqueues a v2 signal to the runner-signals queue for the
-// given runner. The queue must already exist (created during runner provisioning).
 func (h *Helpers) EnqueueRunnerSignal(ctx context.Context, runnerID string, sig signal.Signal) error {
 	q, err := h.queueClient.GetQueueByOwnerAndName(ctx, runnerID, "runners", runnerSignalsQueueName)
 	if err != nil {
@@ -32,7 +30,6 @@ func (h *Helpers) EnqueueRunnerSignal(ctx context.Context, runnerID string, sig 
 
 const orgSignalsQueueName = "org-signals"
 
-// EnqueueOrgSignal enqueues a v2 signal to the org-signals queue for the given org.
 func (h *Helpers) EnqueueOrgSignal(ctx context.Context, orgID string, sig signal.Signal) error {
 	q, err := h.queueClient.GetQueueByOwnerAndName(ctx, orgID, "orgs", orgSignalsQueueName)
 	if err != nil {

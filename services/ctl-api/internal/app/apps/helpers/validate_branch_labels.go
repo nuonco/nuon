@@ -10,8 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// LatestConfigInstallGroups returns the install groups on a branch's newest
-// config, or nothing when the branch has no config yet.
 func (h *Helpers) LatestConfigInstallGroups(ctx context.Context, branchID string) ([]app.AppBranchInstallGroup, error) {
 	return LatestConfigInstallGroupsWithDB(ctx, h.db, branchID)
 }

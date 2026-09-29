@@ -46,18 +46,14 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 
 	val := reflect.ValueOf(v)
 
-	// If it's not a pointer, we need to get a pointer to make it settable
 	if val.Kind() != reflect.Ptr {
-		// Create a new pointer to the value
 		ptr := reflect.New(val.Type())
 		ptr.Elem().Set(val)
 		val = ptr
 	}
 
-	// Now we can safely get the underlying value
 	val = val.Elem()
 
-	// We only process struct types
 	if val.Kind() != reflect.Struct {
 		return nil
 	}
@@ -68,15 +64,12 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 		fieldType := typ.Field(i)
 		fieldSubdir := nextSubdir(subdir, fieldType.Name)
 
-		// if the record is nested, recurse
 		switch field.Kind() {
 		case reflect.Ptr:
-			// If it's a nil pointer, skip it
 			if field.IsNil() {
 				continue
 			}
 
-			// Recurse with the dereferenced pointer
 			if err := g.walkFields(ctx, field.Interface(), fieldSubdir); err != nil {
 				return err
 			}
@@ -85,18 +78,15 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 				return err
 			}
 		case reflect.Slice:
-			// Handle slices of structs
 			for i := 0; i < field.Len(); i++ {
 				elem := field.Index(i)
 				switch elem.Kind() {
 				case reflect.Struct:
-					// Create a pointer to make it settable
 					ptr := reflect.New(elem.Type())
 					ptr.Elem().Set(elem)
 					if err := g.walkFields(ctx, ptr.Interface(), fieldSubdir); err != nil {
 						return err
 					}
-					// Update the slice element with potentially modified value
 					if elem.CanSet() {
 						elem.Set(ptr.Elem())
 					}
@@ -114,7 +104,6 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 			}
 		}
 
-		// check if get-enabled exists
 		getEnabled, err := features.HasGetFeature(fieldType)
 		if err != nil {
 			return errors.Wrap(err, "unable to parse field "+fieldType.Name)
@@ -124,7 +113,6 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 			continue
 		}
 
-		// now, check if it is a string field
 		if field.Kind() == reflect.String {
 			strValue := field.String()
 
@@ -139,10 +127,8 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 
 			if field.Kind() == reflect.Ptr {
 				if field.IsNil() {
-					// Create a new pointer if it's nil
 					field.Set(reflect.New(field.Type().Elem()))
 				}
-				// Set the value on the element that the pointer points to
 				field.Elem().SetString(val)
 			} else {
 				field.SetString(val)
@@ -219,7 +205,6 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 		return "", err
 	}
 
-	// Create a temporary directory to store the downloaded file
 	tmpDir, err := os.MkdirTemp(pwd, ".nuon-get-*")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create temp directory")
@@ -229,12 +214,6 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 	ctx, cancel := context.WithTimeout(ctx, g.opts.FieldTimeout)
 	defer cancel()
 
-	// go-getter's ClientModeFile path for git is broken for `//path/to/file`
-	// references: GitGetter.GetFile() always strips the last path segment of
-	// the URL as the "filename" and treats the rest as the repo URL, which
-	// produces clone errors against non-existent repos. For git sources we
-	// instead clone the containing directory with ClientModeDir and read the
-	// requested file ourselves.
 	if strings.HasPrefix(detected, "git::") {
 		content, err := g.fetchGitFile(ctx, detected, tmpDir, pwd)
 		if errors.Is(err, errIsDirectory) {
@@ -245,7 +224,6 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 
 	tmpFP := filepath.Join(tmpDir, "field")
 
-	// Configure the client
 	client := &getter.Client{
 		Ctx:  ctx,
 		Src:  inputVal,
@@ -295,7 +273,7 @@ func (g *get) recordLocalFile(inputVal, pwd string) error {
 	return g.opts.OnLocalFile(filepath.ToSlash(relative), contents)
 }
 
-// fetchGitFile clones a git repo and reads a single file from it. detected
+// why: fetchGitFile clones a git repo and reads a single file from it. detected
 // must be a `git::`-prefixed URL produced by getter.Detect with a
 // `//path/to/file` subdir reference identifying the file inside the repo.
 //
@@ -317,10 +295,6 @@ func (g *get) fetchGitFile(ctx context.Context, detected, tmpDir, pwd string) (s
 		return "", errors.New("git source path must be relative and within the repo")
 	}
 
-	// go-getter's git getter only knows how to clone into a directory that
-	// does not yet exist; if we hand it tmpDir directly it falls into its
-	// "update" path and runs `git fetch origin -- "<empty ref>"` which fails
-	// with "empty string is not a valid pathspec". Use a fresh subdirectory.
 	cloneDir := filepath.Join(tmpDir, "repo")
 
 	client := &getter.Client{
@@ -338,8 +312,6 @@ func (g *get) fetchGitFile(ctx context.Context, detected, tmpDir, pwd string) (s
 
 	target := filepath.Join(cloneDir, filepath.FromSlash(cleanSubdir))
 
-	// A directory is a module address (e.g. a curated gcp custom stack), not
-	// inlinable file content — pass the original value through untouched.
 	if stat, err := os.Stat(target); err == nil && stat.IsDir() {
 		return "", errIsDirectory
 	}

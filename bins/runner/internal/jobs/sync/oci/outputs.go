@@ -9,7 +9,7 @@ import (
 )
 
 func (h *handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
-	// `repository` and `tag` are a long-standing public output contract:
+	// why: `repository` and `tag` are a long-standing public output contract:
 	// app configs compose them as `{{.repository}}:{{.tag}}` (helm values,
 	// terraform vars). They must stay the bare repository and resolved tag —
 	// rewriting repository to the digest-pinned form breaks every such
@@ -27,12 +27,6 @@ func (h *handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
 		digest = h.state.descriptor.Digest.String()
 	}
 
-	// Mirror the defensive prepend logic in
-	// pkg/registry/access_info.go::RepositoryURI: only prefix LoginServer
-	// when Repository doesn't already include it. Required for registries
-	// like GAR (and ECR) where the configured Repository value is the
-	// fully-qualified `<host>/<path>` form — an unconditional prepend
-	// produces broken `<host>/<host>/<path>` refs that registries reject.
 	fullRepo := strings.TrimPrefix(strings.TrimPrefix(h.state.plan.Dst.Repository, "https://"), "http://")
 	loginServer := strings.TrimPrefix(strings.TrimPrefix(h.state.plan.Dst.LoginServer, "https://"), "http://")
 	if loginServer != "" && fullRepo != "" && !strings.HasPrefix(fullRepo, loginServer+"/") {

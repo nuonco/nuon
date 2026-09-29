@@ -112,10 +112,8 @@ function buildGraph(graphNode: any, parentId: string | null, label: string | nul
     })
   }
 
-  // Only show updates + children if this node is expanded
   if (!isExpanded) return { nodes, edges }
 
-  // Updates
   for (let i = 0; i < updates.length; i++) {
     const ue = updates[i]
     const ueId = `${id}__ue__${i}`
@@ -144,7 +142,6 @@ function buildGraph(graphNode: any, parentId: string | null, label: string | nul
     })
   }
 
-  // Recurse into children
   if (graphNode.children) {
     for (const child of graphNode.children) {
       const lastUpdate = updates.length > 0 ? `${id}__ue__${updates.length - 1}` : id
@@ -157,8 +154,6 @@ function buildGraph(graphNode: any, parentId: string | null, label: string | nul
 
   return { nodes, edges }
 }
-
-// -- Node components with action buttons --
 
 const SignalNode = memo(({ data }: any) => {
   const bg = statusColor(data.status)
@@ -300,7 +295,6 @@ export const SignalFlowGraph = ({ graphData, height = '36rem' }: ISignalFlowGrap
     }
   }, [setNodes, setEdges])
 
-  // Initial load - auto-expand root
   useEffect(() => {
     if (graphData && !graphTree) {
       const tree = graphData
@@ -313,7 +307,6 @@ export const SignalFlowGraph = ({ graphData, height = '36rem' }: ISignalFlowGrap
     }
   }, [graphData, graphTree, rebuild])
 
-  // Handle button clicks inside nodes via event delegation
   useEffect(() => {
     const handler = async (e: MouseEvent) => {
       const btn = (e.target as HTMLElement).closest('.signal-graph-btn') as HTMLElement | null

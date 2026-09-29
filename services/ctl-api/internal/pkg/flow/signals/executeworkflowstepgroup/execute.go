@@ -19,7 +19,6 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-// Execute runs all steps in this group, either sequentially or in parallel.
 func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	defer func() { s.finished = true }()
 
@@ -45,7 +44,6 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		return errors.Wrap(err, "unable to get workflow logger")
 	}
 
-	// Update group status to in-progress.
 	s.updateGroupStatus(ctx, app.CompositeStatus{
 		Status:                 app.StatusInProgress,
 		StatusHumanDescription: "executing group steps",
@@ -58,7 +56,6 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		execErr = s.executeSequential(ctx, l)
 	}
 
-	// Update group status based on outcome.
 	if execErr != nil {
 		if s.cancelRequested {
 			s.updateGroupStatus(ctx, app.CompositeStatus{
@@ -97,7 +94,6 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	return execErr
 }
 
-// updateGroupStatus updates the group's composite status if a StepGroupID is set.
 func (s *Signal) updateGroupStatus(ctx workflow.Context, status app.CompositeStatus) {
 	if s.StepGroupID == "" {
 		return
@@ -108,9 +104,6 @@ func (s *Signal) updateGroupStatus(ctx workflow.Context, status app.CompositeSta
 	})
 }
 
-// executeParallel dispatches all steps concurrently using executeSingleStep.
-// Each step's full lifecycle (dispatch, await, auto-retry, user action) runs
-// in its own goroutine. The group collects results and resolves directives.
 func (s *Signal) executeParallel(ctx workflow.Context, l *zap.Logger) error {
 	steps, err := s.getGroupSteps(ctx)
 	if err != nil {
@@ -182,7 +175,6 @@ func (s *Signal) executeParallel(ctx workflow.Context, l *zap.Logger) error {
 	return s.writeStepGroupDirective(ctx, directive.GroupContinue)
 }
 
-// dispatchStep enqueues an execute-workflow-step signal and returns the queue signal ID.
 func (s *Signal) dispatchStep(ctx workflow.Context, step *app.WorkflowStep, cb callback.Ref) (string, error) {
 	sig := &executeworkflowstep.Signal{
 		StepID:          step.ID,
@@ -214,8 +206,6 @@ func (s *Signal) dispatchStep(ctx workflow.Context, step *app.WorkflowStep, cb c
 	}
 
 	markQueued := func() error {
-		// A resumed approval keeps its awaiting-approval status until the
-		// response handler writes the outcome.
 		if sig.ResumeApproval {
 			return nil
 		}
@@ -256,7 +246,6 @@ func (s *Signal) dispatchStep(ctx workflow.Context, step *app.WorkflowStep, cb c
 	return enqueueResp.QueueSignalID, nil
 }
 
-// nextExecutableStep finds the next step in the group that is pending, queued, or not-attempted.
 func (s *Signal) nextExecutableStep(steps []app.WorkflowStep) (*app.WorkflowStep, bool) {
 	for i := range steps {
 		step := &steps[i]
@@ -272,15 +261,10 @@ func (s *Signal) nextExecutableStep(steps []app.WorkflowStep) (*app.WorkflowStep
 	return nil, false
 }
 
-// hasApprovalResponse reports whether a parked approval step has been answered
-// and can be re-dispatched to apply the response.
 func hasApprovalResponse(step *app.WorkflowStep) bool {
 	return step.Approval != nil && step.Approval.Response != nil
 }
 
-// cancelRemainingSteps marks all non-terminal steps after the given step with
-// the provided status. Use StatusDiscarded for both stop and skip-group
-// directives.
 func (s *Signal) cancelRemainingSteps(ctx workflow.Context, l *zap.Logger, steps []app.WorkflowStep, afterStepID string, status app.Status) {
 	pastTrigger := false
 	for _, step := range steps {
@@ -305,7 +289,6 @@ func (s *Signal) cancelRemainingSteps(ctx workflow.Context, l *zap.Logger, steps
 	}
 }
 
-// handleStepDispatchError handles errors from step dispatch or await.
 func (s *Signal) handleStepDispatchError(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, err error) error {
 	l.Error("step dispatch error",
 		zap.String("step_id", step.ID),
@@ -314,7 +297,6 @@ func (s *Signal) handleStepDispatchError(ctx workflow.Context, l *zap.Logger, st
 	return errors.Wrapf(err, "step %s failed", step.Name)
 }
 
-// handleCancellation handles workflow cancellation during step execution.
 func (s *Signal) handleCancellation(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep) error {
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
 	defer cancel()
@@ -322,7 +304,6 @@ func (s *Signal) handleCancellation(ctx workflow.Context, l *zap.Logger, step *a
 	l.Debug("handling cancellation during step execution",
 		zap.String("step_id", step.ID))
 
-	// Cancel all tracked step signals
 	for _, qsID := range s.stepSignalIDs {
 		client.AwaitCancelSignal(cancelCtx, qsID)
 	}

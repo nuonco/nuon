@@ -79,7 +79,6 @@ func (s *CancelRunnerJobTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -100,7 +99,6 @@ func (s *CancelRunnerJobTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create log stream for runner jobs
 	s.testLogStream = &app.LogStream{
 		ID:      domains.NewLogStreamID(),
 		OrgID:   s.testOrg.ID,
@@ -110,7 +108,6 @@ func (s *CancelRunnerJobTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testLogStream).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -122,7 +119,6 @@ func (s *CancelRunnerJobTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -192,7 +188,6 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJob() {
 			},
 			expectedCode: http.StatusAccepted,
 			validateFunc: func(jobID string) {
-				// Verify job status is cancelled in database
 				var job app.RunnerJob
 				err := s.service.DB.First(&job, "id = ?", jobID).Error
 				require.NoError(s.T(), err)
@@ -225,7 +220,6 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJob() {
 				err := s.service.DB.WithContext(ctx).Create(job).Error
 				require.NoError(s.T(), err)
 
-				// Create running execution
 				exec := &app.RunnerJobExecution{
 					ID:          domains.NewRunnerID(),
 					OrgID:       s.testOrg.ID,
@@ -244,7 +238,6 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJob() {
 			},
 			expectedCode: http.StatusAccepted,
 			validateFunc: func(jobID string) {
-				// Verify job status is cancelled
 				var job app.RunnerJob
 				err := s.service.DB.First(&job, "id = ?", jobID).Error
 				require.NoError(s.T(), err)
@@ -252,7 +245,6 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJob() {
 				require.NotNil(s.T(), job.CompositeError)
 				assert.Equal(s.T(), joberrors.CancellationErrorType, job.CompositeError.Type)
 
-				// Verify execution is also cancelled
 				var exec app.RunnerJobExecution
 				err = s.service.DB.First(&exec, "runner_job_id = ?", jobID).Error
 				require.NoError(s.T(), err)
@@ -283,7 +275,6 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJob() {
 				err := s.service.DB.WithContext(ctx).Create(job).Error
 				require.NoError(s.T(), err)
 
-				// Create finished execution (should not be cancelled)
 				exec1 := &app.RunnerJobExecution{
 					ID:          domains.NewRunnerID(),
 					OrgID:       s.testOrg.ID,
@@ -293,7 +284,6 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJob() {
 				err = s.service.DB.WithContext(ctx).Create(exec1).Error
 				require.NoError(s.T(), err)
 
-				// Create running execution (should be cancelled)
 				exec2 := &app.RunnerJobExecution{
 					ID:          domains.NewRunnerID(),
 					OrgID:       s.testOrg.ID,
@@ -313,15 +303,12 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJob() {
 			},
 			expectedCode: http.StatusAccepted,
 			validateFunc: func(jobID string) {
-				// Verify only running execution is cancelled
 				var executions []app.RunnerJobExecution
 				err := s.service.DB.Where("runner_job_id = ?", jobID).Order("created_at asc").Find(&executions).Error
 				require.NoError(s.T(), err)
 				require.Len(s.T(), executions, 2)
 
-				// First execution should remain finished
 				assert.Equal(s.T(), app.RunnerJobExecutionStatusFinished, executions[0].Status)
-				// Second execution should be cancelled
 				assert.Equal(s.T(), app.RunnerJobExecutionStatusCancelled, executions[1].Status)
 			},
 		},
@@ -357,7 +344,6 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJob() {
 			},
 			expectedCode: http.StatusAccepted,
 			validateFunc: func(jobID string) {
-				// Verify job status is now cancelled
 				var job app.RunnerJob
 				err := s.service.DB.First(&job, "id = ?", jobID).Error
 				require.NoError(s.T(), err)
@@ -380,7 +366,6 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJob() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -393,7 +378,6 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJob() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create log stream for org2
 				logStream2 := &app.LogStream{
 					ID:      domains.NewLogStreamID(),
 					OrgID:   org2.ID,
@@ -403,7 +387,6 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJob() {
 				err = s.service.DB.WithContext(ctx).Create(logStream2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner group for org2
 				runnerGrp2 := &app.RunnerGroup{
 					ID:        domains.NewRunnerGroupID(),
 					OrgID:     org2.ID,
@@ -415,7 +398,6 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJob() {
 				err = s.service.DB.WithContext(ctx).Create(runnerGrp2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner in org2
 				runner2 := &app.Runner{
 					ID:            domains.NewRunnerID(),
 					OrgID:         org2.ID,
@@ -427,7 +409,6 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJob() {
 				err = s.service.DB.WithContext(ctx).Create(runner2).Error
 				require.NoError(s.T(), err)
 
-				// Create job in org2
 				job := &app.RunnerJob{
 					ID:                domains.NewRunnerJobID(),
 					OrgID:             org2.ID,
@@ -486,8 +467,6 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJob() {
 	}
 }
 
-// TestCancelRunnerJobOnlyMostRecentExecution verifies that cancel only affects the
-// most recent execution, since getRunnerJob preloads only the latest one (LIMIT 1).
 func (s *CancelRunnerJobTestSuite) TestCancelRunnerJobOnlyMostRecentExecution() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
@@ -510,7 +489,6 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJobOnlyMostRecentExecution() 
 	err := s.service.DB.WithContext(ctx).Create(job).Error
 	require.NoError(s.T(), err)
 
-	// Create an older finished execution
 	olderExec := &app.RunnerJobExecution{
 		ID:          domains.NewRunnerID(),
 		OrgID:       s.testOrg.ID,
@@ -520,10 +498,8 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJobOnlyMostRecentExecution() 
 	err = s.service.DB.WithContext(ctx).Create(olderExec).Error
 	require.NoError(s.T(), err)
 
-	// Small sleep to ensure distinct created_at timestamps
 	time.Sleep(10 * time.Millisecond)
 
-	// Create a newer running execution (this is the most recent)
 	newerExec := &app.RunnerJobExecution{
 		ID:          domains.NewRunnerID(),
 		OrgID:       s.testOrg.ID,
@@ -533,31 +509,25 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJobOnlyMostRecentExecution() 
 	err = s.service.DB.WithContext(ctx).Create(newerExec).Error
 	require.NoError(s.T(), err)
 
-	// Cancel the job
 	rr := s.makeRequest("POST", "/v1/runner-jobs/"+job.ID+"/cancel", CancelRunnerJobRequest{})
 	require.Equal(s.T(), http.StatusAccepted, rr.Code)
 
-	// Verify: the most recent (in-progress) execution should be cancelled
 	var newerResult app.RunnerJobExecution
 	err = s.service.DB.First(&newerResult, "id = ?", newerExec.ID).Error
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), app.RunnerJobExecutionStatusCancelled, newerResult.Status,
 		"most recent running execution should be cancelled")
 
-	// Verify: the older (finished) execution should remain unchanged
 	var olderResult app.RunnerJobExecution
 	err = s.service.DB.First(&olderResult, "id = ?", olderExec.ID).Error
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), app.RunnerJobExecutionStatusFinished, olderResult.Status,
 		"older finished execution should remain unchanged")
 
-	// Cleanup
 	s.service.DB.Unscoped().Where("runner_job_id = ?", job.ID).Delete(&app.RunnerJobExecution{})
 	s.service.DB.Unscoped().Delete(job)
 }
 
-// TestCancelRunnerJobTerminalMostRecentExecution verifies that when the most recent
-// execution is already terminal, no executions are modified.
 func (s *CancelRunnerJobTestSuite) TestCancelRunnerJobTerminalMostRecentExecution() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
@@ -580,7 +550,6 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJobTerminalMostRecentExecutio
 	err := s.service.DB.WithContext(ctx).Create(job).Error
 	require.NoError(s.T(), err)
 
-	// Create a running execution (older)
 	olderExec := &app.RunnerJobExecution{
 		ID:          domains.NewRunnerID(),
 		OrgID:       s.testOrg.ID,
@@ -592,7 +561,6 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJobTerminalMostRecentExecutio
 
 	time.Sleep(10 * time.Millisecond)
 
-	// Create a terminal execution (newer - most recent)
 	newerExec := &app.RunnerJobExecution{
 		ID:          domains.NewRunnerID(),
 		OrgID:       s.testOrg.ID,
@@ -602,25 +570,21 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJobTerminalMostRecentExecutio
 	err = s.service.DB.WithContext(ctx).Create(newerExec).Error
 	require.NoError(s.T(), err)
 
-	// Cancel the job
 	rr := s.makeRequest("POST", "/v1/runner-jobs/"+job.ID+"/cancel", CancelRunnerJobRequest{})
 	require.Equal(s.T(), http.StatusAccepted, rr.Code)
 
-	// Verify: the most recent (failed) execution stays failed
 	var newerResult app.RunnerJobExecution
 	err = s.service.DB.First(&newerResult, "id = ?", newerExec.ID).Error
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), app.RunnerJobExecutionStatusFailed, newerResult.Status,
 		"most recent terminal execution should remain unchanged")
 
-	// Verify: the older (pending) execution also stays pending - it's not loaded by getRunnerJob
 	var olderResult app.RunnerJobExecution
 	err = s.service.DB.First(&olderResult, "id = ?", olderExec.ID).Error
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), app.RunnerJobExecutionStatusPending, olderResult.Status,
 		"older execution should remain unchanged since only the most recent is loaded")
 
-	// Cleanup
 	s.service.DB.Unscoped().Where("runner_job_id = ?", job.ID).Delete(&app.RunnerJobExecution{})
 	s.service.DB.Unscoped().Delete(job)
 }

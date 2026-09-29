@@ -59,7 +59,6 @@ func (s *service) CreateConnectionCallback(ctx *gin.Context) {
 		return
 	}
 
-	// Fetch org name
 	ghAccount, err := s.ghClient.GetInstallationAccount(ctx, req.GithubInstallID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get org name: %w", err))
@@ -68,7 +67,6 @@ func (s *service) CreateConnectionCallback(ctx *gin.Context) {
 	ghAccountID := strconv.FormatInt(ghAccount.GetID(), 10)
 	ghAccountName := ghAccount.GetLogin()
 
-	// Create object
 	dbCtx := cctx.SetAccountIDContext(ctx, org.CreatedByID)
 	vcsConn, err := s.createOrgConnection(dbCtx, req.OrgID, req.GithubInstallID, ghAccountID, ghAccountName)
 	if err != nil {

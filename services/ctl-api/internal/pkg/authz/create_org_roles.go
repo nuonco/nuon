@@ -23,9 +23,6 @@ func (c *Client) CreateOrgRoles(ctx context.Context, orgID string) error {
 	return nil
 }
 
-// standardOrgRoles defines the managed roles every org gets. It is the single
-// source of truth for their permissions and metadata: new orgs get these rows
-// at creation, and ReconcileOrgRoles keeps existing orgs' metadata in sync.
 func standardOrgRoles(orgID string) []app.Role {
 	return []app.Role{
 		{

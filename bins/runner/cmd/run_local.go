@@ -37,8 +37,6 @@ func (c *cli) runLocalRun(cmd *cobra.Command, args []string) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	// Start health check server for monitoring runner status
-	// Install runners use port 9091
 	arg := args[0]
 	healthPort := 9091
 
@@ -65,8 +63,6 @@ func (c *cli) runLocalRun(cmd *cobra.Command, args []string) {
 	fmt.Println("running runner like usual")
 	switch arg {
 	case "install":
-		// register the image-actions loop in-process so image-backed actions
-		// can be exercised locally (they normally run only in the mng process).
 		c.extraProviders = actions.GetImageActionJobs()
 		c.runInstall(cmd, nil)
 	default:

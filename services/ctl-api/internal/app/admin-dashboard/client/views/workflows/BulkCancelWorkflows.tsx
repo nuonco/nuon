@@ -24,7 +24,6 @@ function getStatus(status: any): string {
   return String(status)
 }
 
-// datetime-local yields local wall-clock; the BFF expects RFC3339
 function toRFC3339(value: string): string | undefined {
   if (!value) return undefined
   const parsed = new Date(value)

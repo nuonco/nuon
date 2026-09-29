@@ -62,11 +62,6 @@ func (e *FlowTestSuite) seedDeployJobWithSkipAutoRetry(ctx context.Context) stri
 	return targetID
 }
 
-// TestSkipAutoRetryParksStepForManualRetry verifies that when a failed step's
-// target carries a composite error with the skip_auto_retry hint, the step is
-// parked for manual retry on the FIRST failure, the workflow reaches
-// StatusFailedPendingRetry and no auto-retry clones are created, instead of
-// burning through the signal's auto-retry budget.
 func (e *FlowTestSuite) TestSkipAutoRetryParksStepForManualRetry() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -84,11 +79,8 @@ func (e *FlowTestSuite) TestSkipAutoRetryParksStepForManualRetry() {
 
 	e.enqueueFlow(ctx, queueID, flw, ownerID, ownerType)
 
-	// The signal always fails and normally auto-retries 3 times, but the
-	// skip_auto_retry hint forces an immediate park for manual retry.
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusFailedPendingRetry)
 
-	// No auto-retry clones should have been created.
 	steps := e.getStepsByWorkflow(ctx, flw.ID)
 	require.Len(e.T(), steps, 1,
 		"expected exactly 1 step (no auto-retry clones), got %d", len(steps))

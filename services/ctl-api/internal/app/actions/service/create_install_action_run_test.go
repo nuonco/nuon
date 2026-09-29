@@ -32,7 +32,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// CreateInstallActionRunTestService holds all fx-injected dependencies for create install action run tests.
 type CreateInstallActionRunTestService struct {
 	fx.In
 
@@ -48,7 +47,6 @@ type CreateInstallActionRunTestService struct {
 	Seeder         *testseed.Seeder
 }
 
-// CreateInstallActionRunTestSuite is the testify suite for CreateInstallActionRun endpoint.
 type CreateInstallActionRunTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -80,7 +78,6 @@ func (s *CreateInstallActionRunTestSuite) SetupSuite() {
 
 			CustomValidator: true,
 		}),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -88,7 +85,6 @@ func (s *CreateInstallActionRunTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -96,9 +92,6 @@ func (s *CreateInstallActionRunTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
-
-	// Create test router with standard middlewares using helper
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -143,7 +136,7 @@ func (s *CreateInstallActionRunTestSuite) makeRequest(method, path string, body 
 func (s *CreateInstallActionRunTestSuite) TestCreateActionRunSuccess() {
 	testCases := []struct {
 		name         string
-		setupFunc    func() (string, string) // Returns installID, actionConfigID
+		setupFunc    func() (string, string)
 		requestFunc  func(configID string) CreateInstallActionWorkflowRunRequest
 		expectedCode int
 		validateFunc func(installID string)
@@ -164,14 +157,12 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunSuccess() {
 			},
 			expectedCode: http.StatusCreated,
 			validateFunc: func(installID string) {
-				// Verify workflow was created
 				var workflows []app.Workflow
 				res := s.service.DB.Where("owner_id = ? AND owner_type = ?", installID, "installs").Find(&workflows)
 				require.NoError(s.T(), res.Error)
 				assert.Len(s.T(), workflows, 1)
 				assert.Equal(s.T(), app.WorkflowTypeActionWorkflowRun, workflows[0].Type)
 
-				// Verify signal was sent
 				queueSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), queueSignals, 1)
 				assert.Equal(s.T(), installID, queueSignals[0].OwnerID)
@@ -196,7 +187,6 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunSuccess() {
 			},
 			expectedCode: http.StatusCreated,
 			validateFunc: func(installID string) {
-				// Verify workflow has env vars with RUNENV_ prefix
 				var workflow app.Workflow
 				res := s.service.DB.Where("owner_id = ? AND owner_type = ?", installID, "installs").First(&workflow)
 				require.NoError(s.T(), res.Error)
@@ -204,7 +194,6 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunSuccess() {
 				metadata := workflow.Metadata
 				assert.Contains(s.T(), metadata, "RUNENV_TEST_VAR")
 				assert.Contains(s.T(), metadata, "RUNENV_FOO")
-				// HSTORE values are *string
 				require.NotNil(s.T(), metadata["RUNENV_TEST_VAR"])
 				require.NotNil(s.T(), metadata["RUNENV_FOO"])
 				assert.Equal(s.T(), "test_value", *metadata["RUNENV_TEST_VAR"])
@@ -215,8 +204,6 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunSuccess() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Reset mock at the start of each test case
-
 			installID, configID := tc.setupFunc()
 
 			req := tc.requestFunc(configID)
@@ -241,12 +228,11 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunSuccess() {
 
 func (s *CreateInstallActionRunTestSuite) TestCreateActionRunValidation() {
 	action, appConfig, install := s.setupActionWorkflowWithInstall()
-	// Create install action workflow once — it has a unique constraint on (install_id, action_workflow_id)
 	s.createInstallActionWorkflow(install.ID, action.ID)
 
 	testCases := []struct {
 		name         string
-		setupFunc    func() string // Returns configID
+		setupFunc    func() string
 		requestFunc  func(configID string) CreateInstallActionWorkflowRunRequest
 		expectedCode int
 	}{
@@ -264,7 +250,6 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunValidation() {
 		{
 			name: "config belongs to different app config",
 			setupFunc: func() string {
-				// Create config with different app config than install
 				otherAppConfig := s.createAppConfig(s.testApp.ID)
 				config := s.createActionConfigWithManualTrigger(action.ID, otherAppConfig.ID)
 				return config.ID
@@ -279,7 +264,6 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunValidation() {
 		{
 			name: "config without manual trigger",
 			setupFunc: func() string {
-				// Use a separate appConfig to avoid unique constraint on (action_workflow_id, app_config_id)
 				otherAppConfig := s.createAppConfig(s.testApp.ID)
 				config := &app.ActionWorkflowConfig{
 					ID:               domains.NewActionWorkflowConfigID(),
@@ -294,7 +278,6 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunValidation() {
 				res := s.service.DB.WithContext(ctx).Create(config)
 				require.NoError(s.T(), res.Error)
 
-				// Create trigger that is NOT manual
 				trigger := &app.ActionWorkflowTriggerConfig{
 					ID:                     domains.NewActionWorkflowTriggerConfigID(),
 					OrgID:                  s.testOrg.ID,
@@ -380,12 +363,10 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunNotFound() {
 }
 
 func (s *CreateInstallActionRunTestSuite) TestCreateActionRunCrossOrgIsolation() {
-	// Create install in org1
 	action1, appConfig1, install1 := s.setupActionWorkflowWithInstall()
 	config1 := s.createActionConfigWithManualTrigger(action1.ID, appConfig1.ID)
 	s.createInstallActionWorkflow(install1.ID, action1.ID)
 
-	// Create second org with install
 	ctx2 := context.Background()
 	ctx2, acc2 := s.service.Seeder.EnsureAccount(ctx2, s.T())
 	ctx2, org2 := s.service.Seeder.EnsureOrg(ctx2, s.T())
@@ -411,7 +392,6 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunCrossOrgIsolation()
 		Create(install2)
 	require.NoError(s.T(), res.Error)
 
-	// Try to create action run in org1 for install in org2
 	req := CreateInstallActionWorkflowRunRequest{
 		ActionWorkFlowConfigID: config1.ID,
 	}
@@ -419,15 +399,11 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunCrossOrgIsolation()
 	path := fmt.Sprintf("/v1/installs/%s/actions/runs", install2.ID)
 	rr := s.makeRequest(http.MethodPost, path, req)
 
-	// Cross-org request returns 400 because the config's app_config_id
-	// doesn't match the other org's install's app_config_id
 	if rr.Code != http.StatusBadRequest {
 		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
 	}
 	assert.Equal(s.T(), http.StatusBadRequest, rr.Code)
 }
-
-// Helper methods
 
 func (s *CreateInstallActionRunTestSuite) setupActionWorkflowWithInstall() (*app.ActionWorkflow, *app.AppConfig, *app.Install) {
 	action := s.createActionWorkflow(s.testApp.ID, fmt.Sprintf("test-action-%s", domains.NewActionWorkflowID()))
@@ -498,7 +474,6 @@ func (s *CreateInstallActionRunTestSuite) createActionConfigWithManualTrigger(ac
 	res := s.service.DB.WithContext(ctx).Create(config)
 	require.NoError(s.T(), res.Error)
 
-	// Create manual trigger
 	trigger := &app.ActionWorkflowTriggerConfig{
 		ID:                     domains.NewActionWorkflowTriggerConfigID(),
 		OrgID:                  s.testOrg.ID,

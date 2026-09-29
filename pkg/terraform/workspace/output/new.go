@@ -42,7 +42,6 @@ func New(v *validator.Validate, opts ...dualOption) (*dual, error) {
 	return d, nil
 }
 
-// WithLogger specifies the log that will be used to output to
 func WithLogger(lg hclog.Logger) dualOption {
 	return func(d *dual) error {
 		d.Logger = lg

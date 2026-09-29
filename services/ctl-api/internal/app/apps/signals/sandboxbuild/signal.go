@@ -15,13 +15,10 @@ import (
 	jobpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
 
-// SignalType is the type for direct (non-branch) sandbox build signals.
 const SignalType signal.SignalType = "app-sandbox-build"
 
 const resolveSourceVersion = "app-sandbox-build-resolve-source-v1"
 
-// Signal triggers a sandbox build for a given app config.
-// If AppSandboxBuildID is set, the existing build record is used; otherwise a new one is created.
 type Signal struct {
 	AppConfigID       string `json:"app_config_id" validate:"required"`
 	AppSandboxBuildID string `json:"app_sandbox_build_id,omitempty"`
@@ -46,7 +43,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	return nil
 }
 
-// getOrCreateBuild returns the existing build if AppSandboxBuildID is set, otherwise creates a new one.
 func (s *Signal) getOrCreateBuild(ctx workflow.Context, appConfig *app.AppConfig, sandboxConfig *app.AppSandboxConfig) (*app.AppSandboxBuild, error) {
 	if s.AppSandboxBuildID != "" {
 		build, err := activities.AwaitGetAppSandboxBuildByIDByBuildID(ctx, s.AppSandboxBuildID)
@@ -72,19 +68,16 @@ func (s *Signal) getOrCreateBuild(ctx workflow.Context, appConfig *app.AppConfig
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
-	// Resolve app config → app ID
 	appConfig, err := activities.AwaitGetAppConfigByIDByAppConfigID(ctx, s.AppConfigID)
 	if err != nil {
 		return fmt.Errorf("unable to get app config: %w", err)
 	}
 
-	// Get the sandbox config for this app
 	sandboxConfig, err := activities.AwaitGetLatestAppSandboxConfigByAppID(ctx, appConfig.AppID)
 	if err != nil {
 		return fmt.Errorf("unable to get sandbox config: %w", err)
 	}
 
-	// Get or create the sandbox build record
 	build, err := s.getOrCreateBuild(ctx, appConfig, sandboxConfig)
 	if err != nil {
 		return err
@@ -102,7 +95,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	// Create log stream
 	logStreamID := ""
 	logStream, logStreamErr := activities.AwaitCreateSandboxBuildLogStream(ctx, activities.CreateSandboxBuildLogStreamRequest{
 		AppSandboxBuildID: build.ID,
@@ -120,7 +112,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}()
 	}
 
-	// Create runner job
 	runnerJob, err := activities.AwaitCreateSandboxBuildJob(ctx, activities.CreateSandboxBuildJobRequest{
 		BuildID:     build.ID,
 		LogStreamID: logStreamID,
@@ -130,7 +121,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to create sandbox build job: %w", err)
 	}
 
-	// Build the plan via child workflow
 	buildPlan, err := workerplan.AwaitCreateSandboxBuildPlan(ctx, &workerplan.CreateSandboxBuildPlanRequest{
 		AppSandboxBuildID: build.ID,
 		WorkflowID:        fmt.Sprintf("%s-create-sandbox-build-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
@@ -157,7 +147,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	updateStatus(ctx, build.ID, app.AppSandboxBuildStatusPlanning, "planning sandbox build")
 
-	// Execute the runner job
 	updateStatus(ctx, build.ID, app.AppSandboxBuildStatusBuilding, "building sandbox")
 	if runnerJob.Executor == app.RunnerJobExecutorControlPlane {
 		err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: runnerJob.ID}, &workflow.ChildWorkflowOptions{

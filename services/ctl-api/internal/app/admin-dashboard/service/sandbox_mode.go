@@ -182,7 +182,6 @@ func (s *service) SandboxModeUpsertSignalConfig(c *gin.Context) {
 
 	s.l.Info("signal config saved", zap.String("id", config.ID), zap.String("signal_type", signalType))
 
-	// Re-read the saved config to get the full record with ID/timestamps
 	var saved app.SandboxModeSignalConfig
 	s.db.WithContext(c.Request.Context()).
 		Where(app.SandboxModeSignalConfig{SignalType: signalType}).
@@ -248,7 +247,6 @@ func (s *service) SandboxModeUpsertRunnerJobConfig(c *gin.Context) {
 		return
 	}
 
-	// Re-read the saved config to get the full record (match both job_type and operation)
 	var saved app.SandboxModeJobConfig
 	s.db.WithContext(c.Request.Context()).
 		Where(map[string]interface{}{"job_type": jobType, "operation": req.Operation}).

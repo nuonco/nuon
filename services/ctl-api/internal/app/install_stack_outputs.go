@@ -45,11 +45,8 @@ type StackOutput interface {
 	MaintenanceRoleID() (string, error)
 	CustomRoleID(string) (string, error)
 	BreakGlassRoleID(string) (string, error)
-	// returns list of custom roles along with their identifier
 	CustomRoles() (map[string]string, error)
-	// returns list of break glass roles along with their identifier
 	BreakGlassRoles() (map[string]string, error)
-	// returns list of customer install inputs along with their values in the stack
 	InstallInputValues() (map[string]string, error)
 }
 
@@ -244,8 +241,6 @@ func (a *GCPStackOutputs) InstallInputValues() (map[string]string, error) {
 	return a.InstallInputs, nil
 }
 
-// RunnerDisabled reports whether the stack was applied with runner_enabled =
-// false. Azure stacks have no such variable, so they are never disabled.
 func (a *InstallStackOutputs) RunnerDisabled() bool {
 	switch {
 	case a.AWSStackOutputs != nil && a.AWSStackOutputs.RunnerEnabled != nil:
@@ -282,7 +277,6 @@ func (a *InstallStackOutputs) AfterQuery(tx *gorm.DB) error {
 		WeaklyTypedInput: true,
 	}
 
-	// decode into content map[string]interface
 	decoderConfig.Result = &a.DataContents
 	decoder, err := mapstructure.NewDecoder(decoderConfig)
 	if err != nil {
@@ -292,8 +286,6 @@ func (a *InstallStackOutputs) AfterQuery(tx *gorm.DB) error {
 		return errors.Wrap(err, "unable to parse gcp outputs")
 	}
 
-	// detect cloud platform from output keys
-	// ja/sk/am: what have we become
 	if _, isGCP := a.Data["runner_service_account_email"]; isGCP {
 		a.GCPStackOutputs = &GCPStackOutputs{}
 		decoderConfig.Result = a.GCPStackOutputs
@@ -305,7 +297,6 @@ func (a *InstallStackOutputs) AfterQuery(tx *gorm.DB) error {
 		decoderConfig.Result = a.AWSStackOutputs
 	}
 
-	// decode into cloud stack output
 	decoder, err = mapstructure.NewDecoder(decoderConfig)
 	if err != nil {
 		return errors.Wrap(err, "unable to create gcp decoder")

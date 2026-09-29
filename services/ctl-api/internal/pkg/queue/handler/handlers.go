@@ -31,12 +31,10 @@ func (h *handler) registerHandlers(ctx workflow.Context) error {
 
 	for _, wh := range handlers {
 		switch wh.typ {
-		// register query handler
 		case handlerTypeQuery:
 			if err := workflow.SetQueryHandler(ctx, wh.name, wh.handler); err != nil {
 				return errors.Wrapf(err, "unable to create query handler %s", wh.name)
 			}
-			// register update handler
 		case handlerTypeUpdate:
 			opts := workflow.UpdateHandlerOptions{
 				Validator: wh.handlerValidator,

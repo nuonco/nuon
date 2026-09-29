@@ -29,7 +29,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// GetAppActionsTestService holds all fx-injected dependencies for get app actions tests.
 type GetAppActionsTestService struct {
 	fx.In
 
@@ -45,7 +44,6 @@ type GetAppActionsTestService struct {
 	Seeder         *testseed.Seeder
 }
 
-// GetAppActionsTestSuite is the testify suite for GetAppActions endpoint.
 type GetAppActionsTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -77,7 +75,6 @@ func (s *GetAppActionsTestSuite) SetupSuite() {
 
 			CustomValidator: true,
 		}),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -85,7 +82,6 @@ func (s *GetAppActionsTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -93,9 +89,6 @@ func (s *GetAppActionsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
-
-	// Create test router with standard middlewares using helper
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -179,7 +172,6 @@ func (s *GetAppActionsTestSuite) TestGetAppActionsSuccess() {
 			name: "get actions with search query filters correctly",
 			setupFunc: func() []string {
 				actionIDs := make([]string, 0)
-				// Create action with specific name
 				action1 := &app.ActionWorkflow{
 					ID:     domains.NewActionWorkflowID(),
 					AppID:  s.testApp.ID,
@@ -191,7 +183,6 @@ func (s *GetAppActionsTestSuite) TestGetAppActionsSuccess() {
 				require.NoError(s.T(), err)
 				actionIDs = append(actionIDs, action1.ID)
 
-				// Create action with different name
 				action2 := &app.ActionWorkflow{
 					ID:     domains.NewActionWorkflowID(),
 					AppID:  s.testApp.ID,
@@ -292,15 +283,11 @@ func (s *GetAppActionsTestSuite) TestGetAppActionsNonExistentApp() {
 }
 
 func (s *GetAppActionsTestSuite) TestGetAppActionsDifferentOrg() {
-	// Create app in different org
 	ctx2 := context.Background()
 	ctx2, _ = s.service.Seeder.EnsureAccount(ctx2, s.T())
 	ctx2, _ = s.service.Seeder.EnsureOrg(ctx2, s.T())
 	otherApp := s.service.Seeder.CreateApp(ctx2, s.T())
 
-	// Note: Current handler behavior has security issue - findApp uses Or("id = ?", appID)
-	// without org_id check. However, findActionWorkflows filters by org_id from context,
-	// so it returns empty array (no actions in requesting org for that app).
 	rr := s.makeRequest(http.MethodGet, "/v1/apps/"+otherApp.ID+"/actions", nil)
 
 	if rr.Code != http.StatusOK {
@@ -308,7 +295,6 @@ func (s *GetAppActionsTestSuite) TestGetAppActionsDifferentOrg() {
 	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	// Verify empty array is returned (no actions in requesting org for this app)
 	var response []app.ActionWorkflow
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(s.T(), err)

@@ -5,9 +5,6 @@ import (
 	"testing"
 )
 
-// TestSlackInnerEventChannelParse covers Slack's polymorphic `channel`
-// shape: object for channel_rename, bare string for channel_archive /
-// channel_left. Both must round-trip through the same field reliably.
 func TestSlackInnerEventChannelParse(t *testing.T) {
 	cases := []struct {
 		name     string
@@ -69,10 +66,6 @@ func TestSlackInnerEventChannelParse(t *testing.T) {
 	}
 }
 
-// TestSlackInnerEventUserParse confirms the `user` field decodes off
-// member_joined_channel events — it's how we tell our bot's own join apart
-// from a human teammate joining (welcomeChannelOnBotJoin compares it to
-// SlackInstallation.BotUserID).
 func TestSlackInnerEventUserParse(t *testing.T) {
 	var ev slackInnerEvent
 	body := `{"type":"member_joined_channel","channel":"C4","user":"UBOT"}`

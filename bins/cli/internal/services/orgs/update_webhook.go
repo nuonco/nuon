@@ -9,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// UpdateWebhook calls PATCH /v1/orgs/current/webhooks/{webhook_id} to replace
+// why: UpdateWebhook calls PATCH /v1/orgs/current/webhooks/{webhook_id} to replace
 // the webhook subscription (interests + match) and optionally rotate the
 // signing secret.
 //

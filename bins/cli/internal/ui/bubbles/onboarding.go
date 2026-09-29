@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
-// OnboardingStep represents a single step in the onboarding flow
 type OnboardingStep struct {
 	Title       string
 	Description string
@@ -19,15 +18,13 @@ type OnboardingStep struct {
 	Completed   bool
 }
 
-// OnboardingModel represents the onboarding flow
 type OnboardingModel struct {
 	steps       []OnboardingStep
 	currentStep int
-	userJourney string // "evaluation" or "production"
+	userJourney string
 	quitting    bool
 }
 
-// NewOnboardingModel creates a new onboarding model
 func NewOnboardingModel(userJourney string) OnboardingModel {
 	var steps []OnboardingStep
 
@@ -88,12 +85,10 @@ func NewOnboardingModel(userJourney string) OnboardingModel {
 	}
 }
 
-// Init initializes the onboarding model
 func (m OnboardingModel) Init() tea.Cmd {
 	return nil
 }
 
-// Update handles messages for the onboarding model
 func (m OnboardingModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
@@ -122,7 +117,6 @@ func (m OnboardingModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// View renders the onboarding interface
 func (m OnboardingModel) View() tea.View {
 	if m.quitting {
 		if m.userJourney == "evaluation" {
@@ -137,7 +131,6 @@ func (m OnboardingModel) View() tea.View {
 
 	currentStep := m.steps[m.currentStep]
 
-	// Header
 	headerStyle := lipgloss.NewStyle().
 		Foreground(styles.PrimaryColor).
 		Bold(true).
@@ -149,7 +142,6 @@ func (m OnboardingModel) View() tea.View {
 		header = "🚀 " + header
 	}
 
-	// Current step
 	titleStyle := lipgloss.NewStyle().
 		Foreground(styles.AccentColor).
 		Bold(true).
@@ -159,7 +151,6 @@ func (m OnboardingModel) View() tea.View {
 		Foreground(styles.TextColor).
 		Margin(0, 0, 1, 0)
 
-	// Action button
 	actionStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#ffffff")).
 		Background(styles.PrimaryColor).
@@ -167,14 +158,12 @@ func (m OnboardingModel) View() tea.View {
 		Padding(0, 2).
 		Margin(1, 0)
 
-	// Progress indicator
 	progressStyle := lipgloss.NewStyle().
 		Foreground(styles.SubtleColor).
 		Margin(1, 0, 0, 0)
 
 	progress := m.renderProgress()
 
-	// Tips for evaluation users
 	var tip string
 	if m.userJourney == "evaluation" {
 		switch m.currentStep {
@@ -208,7 +197,6 @@ func (m OnboardingModel) View() tea.View {
 	return v
 }
 
-// renderProgress renders the progress indicator
 func (m OnboardingModel) renderProgress() string {
 	var progress string
 	for i, step := range m.steps {
@@ -227,8 +215,6 @@ func (m OnboardingModel) renderProgress() string {
 	return progress
 }
 
-// RunOnboarding runs the onboarding flow.
-// When interactive is false, it prints a simplified checklist to stdout.
 func RunOnboarding(userJourney string, interactive bool) error {
 	if !interactive {
 		model := NewOnboardingModel(userJourney)
@@ -248,7 +234,6 @@ func RunOnboarding(userJourney string, interactive bool) error {
 	return err
 }
 
-// ShowEvaluationWelcome displays the evaluation welcome message
 func ShowEvaluationWelcome() {
 	welcomeStyle := lipgloss.NewStyle().
 		Foreground(styles.AccentColor).
@@ -282,7 +267,6 @@ func ShowEvaluationWelcome() {
 	fmt.Println(welcomeStyle.Render(content))
 }
 
-// Helper function to detect user journey from org or other data
 func DetectUserJourney(orgName string, userData map[string]interface{}) string {
 	if orgName != "" && contains(orgName, []string{"eval", "test", "demo", "trial"}) {
 		return "evaluation"
@@ -293,7 +277,6 @@ func DetectUserJourney(orgName string, userData map[string]interface{}) string {
 	return "production"
 }
 
-// Helper function to check if string contains any of the substrings
 func contains(s string, substrings []string) bool {
 	for _, substring := range substrings {
 		if len(s) > 0 && len(substring) > 0 {

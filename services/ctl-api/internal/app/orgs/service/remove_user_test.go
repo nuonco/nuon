@@ -31,7 +31,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// RemoveUserTestService holds all fx-injected dependencies for remove user tests.
 type RemoveUserTestService struct {
 	fx.In
 
@@ -46,7 +45,6 @@ type RemoveUserTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// RemoveUserTestSuite is the testify suite for remove user endpoint.
 type RemoveUserTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -73,7 +71,6 @@ func (s *RemoveUserTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),
 	)
@@ -81,7 +78,6 @@ func (s *RemoveUserTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -89,7 +85,6 @@ func (s *RemoveUserTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -133,21 +128,19 @@ func (s *RemoveUserTestSuite) makeRequest(method, path string, body interface{})
 func (s *RemoveUserTestSuite) TestRemoveUser() {
 	testCases := []struct {
 		name               string
-		setupFunc          func() string // Returns user ID to remove
+		setupFunc          func() string
 		requestBody        interface{}
 		expectedStatus     int
-		validateFunc       func(string) // Validates removal
+		validateFunc       func(string)
 		shouldRemoveRoles  bool
 		shouldRemoveInvite bool
 	}{
-		// Removed "successfully removes user from org" test case - was failing
 		{
 			name: "removes user and associated invite",
 			setupFunc: func() string {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create account with invite
 				userToRemoveID := domains.NewAccountID()
 				userToRemove := &app.Account{
 					ID:          userToRemoveID,
@@ -161,15 +154,12 @@ func (s *RemoveUserTestSuite) TestRemoveUser() {
 					s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", userToRemove.ID)
 				})
 
-				// Create org roles
 				err = s.service.AuthzClient.CreateOrgRoles(ctx, s.testOrg.ID)
 				require.NoError(s.T(), err)
 
-				// Add role
 				err = s.service.AuthzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, s.testOrg.ID, userToRemove.ID)
 				require.NoError(s.T(), err)
 
-				// Create invite
 				invite := &app.OrgInvite{
 					OrgID: s.testOrg.ID,
 					Email: userToRemove.Email,
@@ -177,7 +167,6 @@ func (s *RemoveUserTestSuite) TestRemoveUser() {
 				err = s.service.DB.WithContext(ctx).Create(invite).Error
 				require.NoError(s.T(), err)
 
-				// Verify invite exists
 				var inviteCount int64
 				err = s.service.DB.Model(&app.OrgInvite{}).
 					Where("org_id = ? AND email = ?", s.testOrg.ID, userToRemove.Email).
@@ -192,12 +181,10 @@ func (s *RemoveUserTestSuite) TestRemoveUser() {
 			shouldRemoveRoles:  true,
 			shouldRemoveInvite: true,
 			validateFunc: func(userID string) {
-				// Get account email for invite check
 				var account app.Account
 				err := s.service.DB.Select("email").Where("id = ?", userID).First(&account).Error
 				require.NoError(s.T(), err)
 
-				// Verify invite was removed
 				var inviteCount int64
 				err = s.service.DB.Unscoped().Model(&app.OrgInvite{}).
 					Where("org_id = ? AND email = ?", s.testOrg.ID, account.Email).
@@ -205,7 +192,6 @@ func (s *RemoveUserTestSuite) TestRemoveUser() {
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), int64(0), inviteCount, "invite should be removed")
 
-				// Verify role was removed
 				var roleCount int64
 				err = s.service.DB.Unscoped().Model(&app.AccountRole{}).
 					Where("account_id = ? AND org_id = ?", userID, s.testOrg.ID).
@@ -220,7 +206,6 @@ func (s *RemoveUserTestSuite) TestRemoveUser() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create account
 				userToRemoveID := domains.NewAccountID()
 				userToRemove := &app.Account{
 					ID:          userToRemoveID,
@@ -234,18 +219,15 @@ func (s *RemoveUserTestSuite) TestRemoveUser() {
 					s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", userToRemove.ID)
 				})
 
-				// Create org roles
 				err = s.service.AuthzClient.CreateOrgRoles(ctx, s.testOrg.ID)
 				require.NoError(s.T(), err)
 
-				// Add multiple roles
 				err = s.service.AuthzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, s.testOrg.ID, userToRemove.ID)
 				require.NoError(s.T(), err)
 
 				err = s.service.AuthzClient.AddAccountOrgRole(ctx, app.RoleTypeInstaller, s.testOrg.ID, userToRemove.ID)
 				require.NoError(s.T(), err)
 
-				// Verify multiple roles exist
 				var roleCount int64
 				err = s.service.DB.Model(&app.AccountRole{}).
 					Where("account_id = ? AND org_id = ?", userToRemove.ID, s.testOrg.ID).
@@ -259,7 +241,6 @@ func (s *RemoveUserTestSuite) TestRemoveUser() {
 			expectedStatus:    http.StatusAccepted,
 			shouldRemoveRoles: true,
 			validateFunc: func(userID string) {
-				// Verify all roles were removed
 				var roleCount int64
 				err := s.service.DB.Unscoped().Model(&app.AccountRole{}).
 					Where("account_id = ? AND org_id = ?", userID, s.testOrg.ID).
@@ -274,7 +255,7 @@ func (s *RemoveUserTestSuite) TestRemoveUser() {
 				return ""
 			},
 			requestBody:    map[string]interface{}{},
-			expectedStatus: http.StatusNotFound, // Endpoint attempts lookup with empty ID, returns not found
+			expectedStatus: http.StatusNotFound,
 			validateFunc:   nil,
 		},
 		{
@@ -285,17 +266,15 @@ func (s *RemoveUserTestSuite) TestRemoveUser() {
 			requestBody: map[string]interface{}{
 				"user_id": "",
 			},
-			expectedStatus: http.StatusNotFound, // Endpoint attempts lookup with empty ID, returns not found
+			expectedStatus: http.StatusNotFound,
 			validateFunc:   nil,
 		},
-		// Removed "handles non-existent user gracefully" test case - was failing
 		{
 			name: "user can be re-invited after removal",
 			setupFunc: func() string {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create account
 				userToRemoveID := domains.NewAccountID()
 				userToRemove := &app.Account{
 					ID:          userToRemoveID,
@@ -309,15 +288,12 @@ func (s *RemoveUserTestSuite) TestRemoveUser() {
 					s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", userToRemove.ID)
 				})
 
-				// Create org roles
 				err = s.service.AuthzClient.CreateOrgRoles(ctx, s.testOrg.ID)
 				require.NoError(s.T(), err)
 
-				// Add role
 				err = s.service.AuthzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, s.testOrg.ID, userToRemove.ID)
 				require.NoError(s.T(), err)
 
-				// Create invite
 				invite := &app.OrgInvite{
 					OrgID: s.testOrg.ID,
 					Email: userToRemove.Email,
@@ -333,12 +309,10 @@ func (s *RemoveUserTestSuite) TestRemoveUser() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Get account email
 				var account app.Account
 				err := s.service.DB.Select("email").Where("id = ?", userID).First(&account).Error
 				require.NoError(s.T(), err)
 
-				// Verify invite was removed
 				var inviteCount int64
 				err = s.service.DB.Unscoped().Model(&app.OrgInvite{}).
 					Where("org_id = ? AND email = ?", s.testOrg.ID, account.Email).
@@ -346,7 +320,6 @@ func (s *RemoveUserTestSuite) TestRemoveUser() {
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), int64(0), inviteCount, "old invite should be removed")
 
-				// Create new invite to verify re-invite is possible
 				newInvite := &app.OrgInvite{
 					OrgID: s.testOrg.ID,
 					Email: account.Email,
@@ -354,7 +327,6 @@ func (s *RemoveUserTestSuite) TestRemoveUser() {
 				err = s.service.DB.WithContext(ctx).Create(newInvite).Error
 				assert.NoError(s.T(), err, "should be able to create new invite after removal")
 
-				// Clean up new invite
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.OrgInvite{}, "org_id = ? AND email = ?", s.testOrg.ID, account.Email)
 				})
@@ -364,10 +336,8 @@ func (s *RemoveUserTestSuite) TestRemoveUser() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test data
 			userID := tc.setupFunc()
 
-			// Build request body
 			var reqBody interface{}
 			if tc.requestBody == nil && userID != "" {
 				reqBody = RemoveOrgUserRequest{UserID: userID}
@@ -377,7 +347,6 @@ func (s *RemoveUserTestSuite) TestRemoveUser() {
 				reqBody = RemoveOrgUserRequest{UserID: userID}
 			}
 
-			// Make request
 			rr := s.makeRequest(http.MethodPost, "/v1/orgs/current/remove-user", reqBody)
 
 			if rr.Code != tc.expectedStatus {
@@ -385,7 +354,6 @@ func (s *RemoveUserTestSuite) TestRemoveUser() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Parse response for success cases
 			if tc.expectedStatus == http.StatusAccepted {
 				var response app.Account
 				err := json.Unmarshal(rr.Body.Bytes(), &response)
@@ -395,7 +363,6 @@ func (s *RemoveUserTestSuite) TestRemoveUser() {
 				require.NoError(s.T(), err)
 			}
 
-			// Run validation
 			if tc.validateFunc != nil {
 				tc.validateFunc(userID)
 			}
@@ -411,7 +378,7 @@ func (s *RemoveUserTestSuite) TestRemoveUserInvalidJSON() {
 	}{
 		{
 			name:           "invalid json structure",
-			requestBody:    `{"user_id": 123}`, // user_id should be string
+			requestBody:    `{"user_id": 123}`,
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
@@ -447,7 +414,6 @@ func (s *RemoveUserTestSuite) TestRemoveUserWithoutOrgContext() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-	// Create user to remove
 	userToRemoveID := domains.NewAccountID()
 	userToRemove := &app.Account{
 		ID:          userToRemoveID,
@@ -461,18 +427,15 @@ func (s *RemoveUserTestSuite) TestRemoveUserWithoutOrgContext() {
 		s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", userToRemove.ID)
 	})
 
-	// Create router without org context
 	router := tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
 		TestAcc: s.testAcc,
-		// TestOrg intentionally omitted
 	})
 
 	err = s.orgsService.RegisterPublicRoutes(router)
 	require.NoError(s.T(), err)
 
-	// Make request
 	reqBody := RemoveOrgUserRequest{UserID: userToRemove.ID}
 	jsonData, err := json.Marshal(reqBody)
 	require.NoError(s.T(), err)
@@ -484,7 +447,6 @@ func (s *RemoveUserTestSuite) TestRemoveUserWithoutOrgContext() {
 	rr := httptest.NewRecorder()
 	router.ServeHTTP(rr, req)
 
-	// Should fail without org context
 	require.Equal(s.T(), http.StatusInternalServerError, rr.Code)
 }
 
@@ -492,7 +454,6 @@ func (s *RemoveUserTestSuite) TestRemoveUserAcrossOrgs() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-	// Create second org
 	acc2ID := domains.NewAccountID()
 	acc2 := &app.Account{
 		ID:          acc2ID,
@@ -523,7 +484,6 @@ func (s *RemoveUserTestSuite) TestRemoveUserAcrossOrgs() {
 		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org2.ID)
 	})
 
-	// Create user that belongs to both orgs
 	sharedUserID := domains.NewAccountID()
 	sharedUser := &app.Account{
 		ID:          sharedUserID,
@@ -537,27 +497,23 @@ func (s *RemoveUserTestSuite) TestRemoveUserAcrossOrgs() {
 		s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", sharedUser.ID)
 	})
 
-	// Create roles for both orgs
 	err = s.service.AuthzClient.CreateOrgRoles(ctx, s.testOrg.ID)
 	require.NoError(s.T(), err)
 
 	err = s.service.AuthzClient.CreateOrgRoles(ctx2, org2.ID)
 	require.NoError(s.T(), err)
 
-	// Add user to both orgs
 	err = s.service.AuthzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, s.testOrg.ID, sharedUser.ID)
 	require.NoError(s.T(), err)
 
 	err = s.service.AuthzClient.AddAccountOrgRole(ctx2, app.RoleTypeOrgAdmin, org2.ID, sharedUser.ID)
 	require.NoError(s.T(), err)
 
-	// Remove user from first org only
 	reqBody := RemoveOrgUserRequest{UserID: sharedUser.ID}
 	rr := s.makeRequest(http.MethodPost, "/v1/orgs/current/remove-user", reqBody)
 
 	require.Equal(s.T(), http.StatusAccepted, rr.Code)
 
-	// Verify user removed from first org
 	var org1RoleCount int64
 	err = s.service.DB.Model(&app.AccountRole{}).
 		Where("account_id = ? AND org_id = ?", sharedUser.ID, s.testOrg.ID).
@@ -565,7 +521,6 @@ func (s *RemoveUserTestSuite) TestRemoveUserAcrossOrgs() {
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), int64(0), org1RoleCount, "user should be removed from first org")
 
-	// Verify user still has access to second org
 	var org2RoleCount int64
 	err = s.service.DB.Model(&app.AccountRole{}).
 		Where("account_id = ? AND org_id = ?", sharedUser.ID, org2.ID).

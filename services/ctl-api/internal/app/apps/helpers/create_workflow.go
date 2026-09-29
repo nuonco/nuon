@@ -14,9 +14,6 @@ import (
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
-// generateStepsSignal is a minimal signal type that matches the
-// generateworkflowsteps.Signal type string. We define it here to avoid
-// an import cycle (apps/helpers cannot import generateworkflowsteps).
 type generateStepsSignal struct{}
 
 func (s *generateStepsSignal) Type() qsignal.SignalType          { return "generate-workflow-steps" }

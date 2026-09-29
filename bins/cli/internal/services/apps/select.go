@@ -24,7 +24,6 @@ func (s *Service) Select(ctx context.Context, appID string, asJSON bool) error {
 			return nil
 		}
 
-		// Convert apps to selector options
 		appOptions := make([]bubbles.AppOption, len(apps))
 		for i, app := range apps {
 			appOptions[i] = bubbles.AppOption{
@@ -33,7 +32,6 @@ func (s *Service) Select(ctx context.Context, appID string, asJSON bool) error {
 			}
 		}
 
-		// Show app selector
 		selectedAppID, err := bubbles.SelectApp(appOptions, s.cfg.Interactive)
 		if err != nil {
 			return view.Error(err)
@@ -43,7 +41,6 @@ func (s *Service) Select(ctx context.Context, appID string, asJSON bool) error {
 			return view.Error(err)
 		}
 
-		// Find selected app for display
 		var selectedApp *models.AppApp
 		for _, app := range apps {
 			if app.ID == selectedAppID {

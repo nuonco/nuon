@@ -74,9 +74,6 @@ func EndpointFromAPIURL(apiURL string) (string, error) {
 		return "http://localhost:8088/mcp", nil
 	}
 
-	// api.<host> is the public API. app.<host> is the dashboard, which proxies
-	// /v1, so login accepts it as api_url (for example https://app.nuon.co).
-	// Replacing that first label maps both onto mcp.<host>.
 	prefix, ok := mcpHostPrefix(parsed.Hostname())
 	if !ok {
 		return "", fmt.Errorf("unable to derive MCP URL from API URL %q: hostname must start with api. or app.; pass --url", apiURL)
@@ -169,7 +166,7 @@ func (s *Service) buildProxyServer(ctx context.Context, upstream *mcp.ClientSess
 		return nil, fmt.Errorf("listing upstream tools: %w", err)
 	}
 
-	// Carry upstream's Instructions (e.g. the skills pointer) onto the local
+	// why: Carry upstream's Instructions (e.g. the skills pointer) onto the local
 	// proxy server — it's only sent to clients on initialize, so it doesn't
 	// show up in ListTools/ListResources and must be forwarded explicitly.
 	var instructions string
@@ -209,7 +206,7 @@ func (s *Service) buildProxyServer(ctx context.Context, upstream *mcp.ClientSess
 	return server, nil
 }
 
-// proxyResources mirrors upstream's resources and resource templates (e.g.
+// why: proxyResources mirrors upstream's resources and resource templates (e.g.
 // agent skills) onto the local server, forwarding reads back upstream.
 // Resources are read-only content, so they're never subject to the
 // --allow-writes filter applied to tools.

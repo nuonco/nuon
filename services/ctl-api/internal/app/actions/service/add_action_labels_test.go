@@ -30,7 +30,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// ActionLabelsTestService holds all fx-injected dependencies for action labels tests.
 type ActionLabelsTestService struct {
 	fx.In
 
@@ -46,7 +45,6 @@ type ActionLabelsTestService struct {
 	Seeder         *testseed.Seeder
 }
 
-// ActionLabelsTestSuite is the testify suite for action label endpoints.
 type ActionLabelsTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -160,10 +158,6 @@ func (s *ActionLabelsTestSuite) makeRawRequest(method, path string, rawBody stri
 	return rr
 }
 
-// ---------------------------------------------------------------------------
-// Add action labels tests
-// ---------------------------------------------------------------------------
-
 func (s *ActionLabelsTestSuite) TestAddActionLabelsSuccess() {
 	s.Run("adds labels to action with no existing labels", func() {
 		action := s.createTestAction("test-add-labels")
@@ -185,7 +179,6 @@ func (s *ActionLabelsTestSuite) TestAddActionLabelsSuccess() {
 		assert.Equal(s.T(), "prod", response.Labels["env"])
 		assert.Equal(s.T(), "platform", response.Labels["team"])
 
-		// Verify in DB
 		var dbAction app.ActionWorkflow
 		err = s.service.DB.First(&dbAction, "id = ?", action.ID).Error
 		require.NoError(s.T(), err)
@@ -196,7 +189,6 @@ func (s *ActionLabelsTestSuite) TestAddActionLabelsSuccess() {
 	s.Run("merges labels with existing labels", func() {
 		action := s.createTestAction("test-merge-labels")
 
-		// Set initial labels
 		err := s.service.DB.WithContext(s.ctx).
 			Model(&app.ActionWorkflow{}).
 			Where("id = ?", action.ID).
@@ -267,10 +259,6 @@ func (s *ActionLabelsTestSuite) TestAddActionLabelsNotFound() {
 	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }
 
-// ---------------------------------------------------------------------------
-// Remove action labels tests
-// ---------------------------------------------------------------------------
-
 func (s *ActionLabelsTestSuite) TestRemoveActionLabelsSuccess() {
 	s.Run("removes specified keys", func() {
 		action := s.createTestAction("test-remove-labels")
@@ -300,7 +288,6 @@ func (s *ActionLabelsTestSuite) TestRemoveActionLabelsSuccess() {
 		_, hasTeam := response.Labels["team"]
 		assert.False(s.T(), hasTeam)
 
-		// Verify in DB
 		var dbAction app.ActionWorkflow
 		err = s.service.DB.First(&dbAction, "id = ?", action.ID).Error
 		require.NoError(s.T(), err)

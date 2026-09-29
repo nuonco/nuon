@@ -32,7 +32,6 @@ export default async function globalTeardown(_config: FullConfig) {
 
   log(`deleting org ${state.orgId} (force)...`);
 
-  // seed-user creates accounts as "seed@nuon.co", not the E2E_EMAIL.
   const adminEmail = "seed@nuon.co";
 
   const res = await fetch(

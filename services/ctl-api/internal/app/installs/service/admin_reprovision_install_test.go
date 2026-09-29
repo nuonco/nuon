@@ -76,7 +76,6 @@ func (s *ReprovisionInstallTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// ReprovisionInstall creates install_workflows which require created_by_id and org_id.
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -139,7 +138,6 @@ func (s *ReprovisionInstallTestSuite) TestReprovisionInstall() {
 			expectedCode:   http.StatusCreated,
 			expectedSignal: true,
 			validateFunc: func(installID string) {
-				// Verify workflow was created
 				var workflow app.Workflow
 				err := s.service.DB.Where("owner_id = ?", installID).
 					Where("owner_type = ?", "installs").
@@ -149,7 +147,6 @@ func (s *ReprovisionInstallTestSuite) TestReprovisionInstall() {
 				assert.Equal(s.T(), app.WorkflowTypeReprovision, workflow.Type)
 				assert.False(s.T(), workflow.PlanOnly)
 
-				// Verify signal contains workflow ID
 				sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), sigs, 1)
 				assert.Equal(s.T(), executeflow.SignalType, sigs[0].Type)
@@ -166,7 +163,6 @@ func (s *ReprovisionInstallTestSuite) TestReprovisionInstall() {
 			expectedCode:   http.StatusCreated,
 			expectedSignal: true,
 			validateFunc: func(installID string) {
-				// Verify workflow was created with plan only
 				var workflow app.Workflow
 				err := s.service.DB.Where("owner_id = ?", installID).
 					Where("owner_type = ?", "installs").
@@ -228,7 +224,6 @@ func (s *ReprovisionInstallTestSuite) TestReprovisionInstall() {
 				tc.validateFunc(installID)
 			}
 
-			// Verify signal presence matches expectation
 			allSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 			if tc.expectedSignal {
 				assert.GreaterOrEqual(s.T(), len(allSignals), 1, "expected signal to be sent")

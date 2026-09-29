@@ -1,17 +1,5 @@
 #!/usr/bin/env bun
 
-/**
- * Generate TypeScript types from OpenAPI spec.
- * Supports both remote API endpoints and local spec files.
- *
- * When NUON_API_URL points to localhost, waits for the API to become
- * available before generating (useful when ctl-api starts in parallel).
- *
- * Environment variables:
- * - NUON_OPENAPI_SPEC_FILE: Path to local OpenAPI v3 spec file (takes precedence)
- * - NUON_API_URL: Remote API URL to fetch spec from (default: https://api.nuon.co)
- */
-
 const { execSync } = require('child_process');
 const fs = require('fs');
 

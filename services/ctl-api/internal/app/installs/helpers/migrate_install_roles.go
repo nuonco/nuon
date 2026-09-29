@@ -9,9 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// Install roles mirror the identities that exist in the customer account, so each
-// install keeps one live set. Rows are repointed in place: a stable ID is what keeps
-// install_role_usage history and enabled/provisioned/role_id attached across syncs.
 func (s *Helpers) MigrateInstallRoles(ctx context.Context, txn *gorm.DB, appID string, permCfg app.AppPermissionsConfig) error {
 	if permCfg.ID == "" {
 		return nil

@@ -32,8 +32,6 @@ func TestInstallCarrierIndex(t *testing.T) {
 		assert.Equal(t, 1, installCarrierIndex(resp("healthy", false, true)))
 	})
 
-	// A crossing caused by a component whose alert was suppressed has nothing to
-	// ride on, so the standalone install alert must still fire.
 	t.Run("no matching component keeps the standalone alert", func(t *testing.T) {
 		assert.Equal(t, -1, installCarrierIndex(resp("degraded", true)))
 		assert.Equal(t, -1, installCarrierIndex(resp("degraded")))

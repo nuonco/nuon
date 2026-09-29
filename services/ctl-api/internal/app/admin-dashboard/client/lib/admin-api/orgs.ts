@@ -47,7 +47,6 @@ export const shutdownOrgRunnerProcesses = (id: string) =>
 export const shutdownHintOrgRunnerProcesses = (id: string) =>
   api<{ status: string; processes_shutdown: number }>({ path: `orgs/${id}/shutdown-hint-runner-processes`, method: 'POST' })
 
-// Org cleanup
 export const deprovisionOrg = (id: string) =>
   api<{ status: string }>({ path: `orgs/${id}/deprovision`, method: 'POST' })
 
@@ -75,7 +74,6 @@ export const getOrgQueueSignalStats = (id: string) =>
 export const deleteOrgQueueSignals = (id: string) =>
   api<{ status: string; signals_deleted: number }>({ path: `orgs/${id}/delete-queue-signals`, method: 'POST' })
 
-// Install cleanup
 export const forgetInstall = (id: string) =>
   api<{ status: string }>({ path: `installs/${id}/forget`, method: 'POST' })
 

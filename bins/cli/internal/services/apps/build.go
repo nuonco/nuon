@@ -21,7 +21,6 @@ func (s *Service) Build(ctx context.Context, appID, configID string) error {
 		return ui.PrintError(errors.Wrap(err, "unable to resolve app"))
 	}
 
-	// If no config ID provided, use the latest
 	if configID == "" {
 		configs, _, err := s.api.GetAppConfigs(ctx, appID, &models.GetPaginatedQuery{Limit: 1, Offset: 0})
 		if err != nil {
@@ -42,7 +41,6 @@ func (s *Service) Build(ctx context.Context, appID, configID string) error {
 
 	ui.PrintLn(fmt.Sprintf("workflow %s created", wf.ID))
 
-	// Show the workflow TUI (passing empty installID since this is app-level)
 	workflow.WorkflowApp(ctx, s.cfg, s.api, "", wf.ID, false)
 	return nil
 }

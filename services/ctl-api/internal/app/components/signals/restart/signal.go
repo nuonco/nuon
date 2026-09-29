@@ -33,7 +33,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return nil
 }
 
-// updateStatus is a helper method to update component status
 func (s *Signal) updateStatus(ctx workflow.Context, compID string, status app.ComponentStatus, statusDescription string) {
 	l := workflow.GetLogger(ctx)
 	err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{

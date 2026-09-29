@@ -39,7 +39,6 @@ func (s *service) DeleteAppComponent(ctx *gin.Context) {
 
 	componentID := ctx.Param("component_id")
 
-	// Validate component belongs to org before deleting
 	_, err = s.findComponent(ctx, org.ID, componentID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to find component %s: %w", componentID, err))
@@ -85,7 +84,6 @@ func (s *service) DeleteComponent(ctx *gin.Context) {
 
 	componentID := ctx.Param("component_id")
 
-	// Validate component belongs to org before deleting
 	_, err = s.findComponent(ctx, org.ID, componentID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to find component %s: %w", componentID, err))

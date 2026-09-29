@@ -34,7 +34,6 @@ type AuditLogs []app.InstallAuditLog
 // @Success								200	{object}	AuditLogs
 // @Router								/v1/installs/{install_id}/audit_logs [get]
 func (s *service) GetInstallAuditLogs(ctx *gin.Context) {
-	// get install state
 	installID := ctx.Param("install_id")
 
 	startTS, err := time.Parse(time.RFC3339Nano, ctx.Query("start"))
@@ -63,7 +62,6 @@ func (s *service) GetInstallAuditLogs(ctx *gin.Context) {
 		return
 	}
 
-	// get audit logs from the view
 	auditLogs, err := s.helpers.GetInstallAuditLogs(ctx, installID, startTS, endTS)
 	if err != nil {
 		ctx.Error(stderr.ErrUser{
@@ -81,7 +79,6 @@ func (s *service) GetInstallAuditLogs(ctx *gin.Context) {
 		return
 	}
 
-	// convert audit logs to CSV format
 	var response bytes.Buffer
 	{
 		var csvData [][]string

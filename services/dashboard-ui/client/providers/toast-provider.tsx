@@ -88,7 +88,6 @@ const ToastPortal = ({ toasts }: { toasts: TToasts }) => {
       last3.reduce((sum, h) => sum + h, 0) +
       GAP * (last3.length > 1 ? last3.length - 1 : 0)
 
-    // --height: all toasts + GAP*2 for every toast beyond 3
     let height = 0
     if (last3.length > 0) {
       height =

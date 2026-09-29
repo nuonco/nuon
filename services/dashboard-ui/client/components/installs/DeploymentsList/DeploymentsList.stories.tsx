@@ -6,8 +6,6 @@ import {
   type IDeploymentFilter,
 } from './DeploymentsListPresenter'
 
-// ─── Fixtures ────────────────────────────────────────────────────────────────
-
 const ORG_ID = 'org_example'
 const APP_ID = 'app_example'
 const INSTALL_ID = 'install_example'
@@ -118,8 +116,6 @@ const MOCK_DEPLOYMENTS = [
   DEPLOYMENT_PROVISION,
   DEPLOYMENT_CONFIG_UPDATE,
 ]
-
-// ─── Stories ─────────────────────────────────────────────────────────────────
 
 export default {
   title: 'Features / Installs / Deployments list',

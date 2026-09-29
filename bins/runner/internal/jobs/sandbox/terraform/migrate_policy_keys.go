@@ -15,14 +15,11 @@ import (
 	"github.com/nuonco/nuon/pkg/terraform/workspace"
 )
 
-// vendorPoliciesResourceType is the resource type used by the sandbox TF module
-// for Kyverno vendor policies.
 const vendorPoliciesResourceType = "kubectl_manifest"
 
-// vendorPoliciesResourceName is the resource name used by the sandbox TF module.
 const vendorPoliciesResourceName = "vendor_policies"
 
-// migrateLegacyPolicyKeys renames legacy positional state keys (`N.yaml`) to
+// why: migrateLegacyPolicyKeys renames legacy positional state keys (`N.yaml`) to
 // content-derived keys without touching the underlying K8s objects. Intended
 // to run between `terraform init` and `terraform plan`, after which plan is
 // a no-op for the migrated entries.
@@ -35,7 +32,6 @@ func (h *handler) migrateLegacyPolicyKeys(ctx context.Context, log hclog.Logger,
 		return err
 	}
 
-	// Show requires current provider schemas before plan has upgraded older state.
 	state, err := ws.StatePull(ctx, log)
 	if err != nil {
 		return fmt.Errorf("unable to read state for policy key migration: %w", err)
@@ -83,9 +79,6 @@ type policyKeyMigration struct {
 	name               string
 }
 
-// findLegacyPolicyKeyMigrations walks the state for vendor_policies resources
-// with legacy positional keys, parses their yaml_body to derive the new
-// content-derived key, and returns the list of state-mv operations to perform.
 func findLegacyPolicyKeyMigrations(rawState string) ([]policyKeyMigration, error) {
 	if strings.TrimSpace(rawState) == "" {
 		return nil, nil
@@ -156,9 +149,6 @@ func findLegacyPolicyKeyMigrations(rawState string) ([]policyKeyMigration, error
 	return mvs, nil
 }
 
-// manifestKindAndName is a best-effort extraction of kind/metadata.name for
-// structured logging. Errors are swallowed: if we got this far, ManifestKey
-// already succeeded, so values are present.
 func manifestKindAndName(yamlBody string) (string, string) {
 	var m map[string]any
 	if err := yaml.Unmarshal([]byte(yamlBody), &m); err != nil {

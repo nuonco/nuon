@@ -65,7 +65,6 @@ func (w *workspace) clone(ctx context.Context, rootDir string, src *plantypes.Gi
 		}
 	}
 
-	// first, attempt to check out as a reference
 	l.Info("checking out as reference")
 	coOpts := &git.CheckoutOptions{
 		Hash:  plumbing.NewHash(src.Ref),
@@ -108,7 +107,6 @@ func (w *workspace) clone(ctx context.Context, rootDir string, src *plantypes.Gi
 		}
 	}
 
-	// second, attempt to check out as a branch
 	l.Info("checking out branch")
 	branchRefName := plumbing.NewBranchReferenceName(src.Ref)
 	coOpts = &git.CheckoutOptions{

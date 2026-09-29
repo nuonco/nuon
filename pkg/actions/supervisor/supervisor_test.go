@@ -12,8 +12,6 @@ import (
 	"github.com/nuonco/nuon/pkg/actions/outputs"
 )
 
-// runSupervisor writes the embedded script into workdir and runs it via /bin/sh,
-// mirroring how the launcher invokes it inside the container.
 func runSupervisor(t *testing.T, workdir, scriptPath, outputFile string) int {
 	t.Helper()
 
@@ -105,7 +103,7 @@ func TestSupervisor(t *testing.T) {
 		}
 	})
 
-	// A non-root image can't create anything in a workspace owned by the runner,
+	// why: A non-root image can't create anything in a workspace owned by the runner,
 	// which used to leave nuon_output uninstalled and outputs silently empty.
 	//
 	// The workspace is made unwritable two ways because tests run as root in CI,

@@ -5,8 +5,6 @@ import (
 	"strings"
 )
 
-// NormalizeIntermediateConfig makes intermediate AppConfig JSON deterministic so
-// identical semantic configs do not produce false-positive diffs across runs.
 func NormalizeIntermediateConfig(cfg *AppConfig) {
 	if cfg == nil {
 		return

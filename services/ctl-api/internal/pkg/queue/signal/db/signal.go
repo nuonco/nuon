@@ -38,7 +38,7 @@ func (s *SignalData) Scan(value interface{}) error {
 	}
 
 	if err := s.unmarshalSignalJSON(bytes); err != nil {
-		// this was done to make this part of code rollback compatible, if a signal in db is not found in catalog
+		// why: this was done to make this part of code rollback compatible, if a signal in db is not found in catalog
 		// it should handle the case since its very possible in case of new signal additions. Here, if its a
 		// signal not registered error, we return a nil signal and let caller handle the case.
 		if stderrors.Is(err, catalog.ErrSignalTypeNotRegistered) {
@@ -51,8 +51,6 @@ func (s *SignalData) Scan(value interface{}) error {
 	return nil
 }
 
-// MarshalJSON implements json.Marshaler so that standard JSON serialization
-// (used by temporaljson and Temporal data converters) includes the type discriminator.
 func (s SignalData) MarshalJSON() ([]byte, error) {
 	if s.Signal == nil {
 		return []byte("null"), nil
@@ -64,9 +62,6 @@ func (s SignalData) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// UnmarshalJSON implements json.Unmarshaler so that standard JSON deserialization
-// (used by temporaljson and Temporal data converters) can reconstruct the typed signal
-// from the {type, data} wire format using the catalog.
 func (s *SignalData) UnmarshalJSON(data []byte) error {
 	if string(data) == "null" {
 		return nil

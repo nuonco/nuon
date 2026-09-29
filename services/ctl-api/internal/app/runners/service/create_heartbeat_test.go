@@ -77,7 +77,6 @@ func (s *CreateHeartbeatTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -98,7 +97,6 @@ func (s *CreateHeartbeatTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create runner group
 	s.testRunnerGroup = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -110,7 +108,6 @@ func (s *CreateHeartbeatTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGroup).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -181,7 +178,6 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 				assert.NotEmpty(s.T(), hb.ID)
 				assert.False(s.T(), hb.CreatedAt.IsZero())
 
-				// Verify stored in ClickHouse
 				chHeartbeats := s.getHeartbeatsFromCH(s.testRunner.ID)
 				require.NotEmpty(s.T(), chHeartbeats)
 				assert.Equal(s.T(), s.testRunner.ID, chHeartbeats[0].RunnerID)
@@ -223,7 +219,6 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 				return s.testRunner.ID, CreateRunnerHeartBeatRequest{
 					AliveTime: 2 * time.Minute,
 					Version:   "v1.5.0",
-					// Process field omitted
 				}
 			},
 			expectedCode: http.StatusCreated,
@@ -238,7 +233,6 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 				return s.testRunner.ID, CreateRunnerHeartBeatRequest{
 					AliveTime: 1 * time.Minute,
 					Process:   app.RunnerProcessTypeInstall,
-					// Version field omitted
 				}
 			},
 			expectedCode: http.StatusCreated,
@@ -253,7 +247,6 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create first heartbeat via database
 				hb1 := &app.RunnerHeartBeat{
 					RunnerID:  s.testRunner.ID,
 					AliveTime: 1 * time.Minute,
@@ -263,10 +256,8 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 				err := s.service.CHDB.WithContext(ctx).Create(hb1).Error
 				require.NoError(s.T(), err)
 
-				// Allow ClickHouse eventual consistency
 				time.Sleep(200 * time.Millisecond)
 
-				// Now create second heartbeat via API
 				return s.testRunner.ID, CreateRunnerHeartBeatRequest{
 					AliveTime: 2 * time.Minute,
 					Version:   "v1.0.0",
@@ -275,10 +266,8 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 			},
 			expectedCode: http.StatusCreated,
 			validateFunc: func(hb *app.RunnerHeartBeat) {
-				// Allow ClickHouse eventual consistency for the API-created heartbeat
 				time.Sleep(200 * time.Millisecond)
 
-				// Verify both heartbeats exist in ClickHouse
 				chHeartbeats := s.getHeartbeatsFromCH(s.testRunner.ID)
 				assert.GreaterOrEqual(s.T(), len(chHeartbeats), 2)
 			},
@@ -289,7 +278,6 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -302,7 +290,6 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner group in org2
 				rg2 := &app.RunnerGroup{
 					ID:        domains.NewRunnerGroupID(),
 					OrgID:     org2.ID,
@@ -314,7 +301,6 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 				err = s.service.DB.WithContext(ctx).Create(rg2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner in org2
 				runner2 := &app.Runner{
 					ID:            domains.NewRunnerID(),
 					OrgID:         org2.ID,
@@ -382,9 +368,6 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatValidation() {
 				"version": "v1.0.0",
 				"process": string(app.RunnerProcessTypeInstall),
 			},
-			// The struct uses validate:"required" not binding:"required",
-			// so Gin's ShouldBindJSON does not enforce validation.
-			// AliveTime defaults to 0 and the heartbeat is created successfully.
 			expectedCode: http.StatusCreated,
 		},
 		{
@@ -394,7 +377,6 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatValidation() {
 				Version:   "v1.0.0",
 				Process:   app.RunnerProcessTypeInstall,
 			},
-			// Same as above: validate:"required" is not enforced by ShouldBindJSON.
 			expectedCode: http.StatusCreated,
 		},
 		{
@@ -406,8 +388,7 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatValidation() {
 			errorSubstr:  "error",
 		},
 		{
-			name: "empty request body still succeeds",
-			// All fields default to zero values; ShouldBindJSON succeeds.
+			name:         "empty request body still succeeds",
 			request:      map[string]interface{}{},
 			expectedCode: http.StatusCreated,
 		},
@@ -433,10 +414,6 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatValidation() {
 
 func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatRunnerNotFound() {
 	s.Run("nonexistent runner ID returns error", func() {
-		// The heartbeat is created in ClickHouse first, but then the handler
-		// tries to look up the runner in PostgreSQL for metrics tagging.
-		// When the runner doesn't exist, the lookup fails with gorm.ErrRecordNotFound
-		// which the stderr middleware maps to 404.
 		nonexistentRunnerID := "runnon" + "existent123456"
 		req := CreateRunnerHeartBeatRequest{
 			AliveTime: 5 * time.Minute,
@@ -449,10 +426,6 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatRunnerNotFound() {
 
 		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
 
-		// The heartbeat is written to ClickHouse, but heartbeatGetRunner fails
-		// because the runner doesn't exist in PostgreSQL. The wrapped error contains
-		// gorm.ErrRecordNotFound, which the stderr middleware detects via errors.Is
-		// and returns 404.
 		require.Equal(s.T(), http.StatusNotFound, rr.Code)
 	})
 }
@@ -515,7 +488,6 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatDifferentProcesses() {
 			require.NoError(s.T(), err)
 			assert.Equal(s.T(), tc.process, heartbeat.Process)
 
-			// Verify in ClickHouse
 			chHeartbeats := s.getHeartbeatsFromCH(s.testRunner.ID)
 			found := false
 			for _, chHB := range chHeartbeats {

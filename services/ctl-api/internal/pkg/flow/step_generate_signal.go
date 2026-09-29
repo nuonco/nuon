@@ -1,17 +1,5 @@
 package flow
 
-// step_generate_signal.go — signal-based step generation.
-//
-// When a Workflow has GenerateStepsSignal set, this path is used instead of the
-// legacy generator-map + child-workflow path. The flow is:
-//
-//  1. Idempotency check — if steps already exist for this workflow, return them.
-//  2. Enqueue the generate-steps signal to the target queue (e.g. install-signals).
-//  3. Send the "FetchSteps" update to the signal's handler workflow.
-//  4. Receive the generated GenerateStepsResult (steps + groups).
-//  5. Assign IDs, inject step context (stepID + flowID) into each signal.
-//  6. Persist groups and steps to DB.
-
 import (
 	"time"
 
@@ -27,18 +15,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// EagerStepGroupsResult holds the result of an eager step generation — the eager
-// groups are persisted and ready for execution, while remaining groups can be
-// fetched later via CompleteStepGeneration.
 type EagerStepGroupsResult struct {
 	Workflow      *app.Workflow
 	QueueSignalID string
 }
 
-// generateStepsViaSignal enqueues the workflow's GenerateStepsSignal, fetches the
-// generated steps and groups, then persists them directly — no child workflow needed.
 func generateStepsViaSignal(ctx workflow.Context, cfg StepConfig, flw *app.Workflow) (*app.Workflow, error) {
-	// 1. Idempotency: if steps already exist (e.g. after continue-as-new), return them.
+	// why: 1. Idempotency: if steps already exist (e.g. after continue-as-new), return them.
 	existingSteps, err := activities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, flw.ID)
 	if err == nil && len(existingSteps) > 0 {
 		flw.Steps = existingSteps
@@ -50,7 +33,6 @@ func generateStepsViaSignal(ctx workflow.Context, cfg StepConfig, flw *app.Workf
 		return nil, err
 	}
 
-	// Fetch ALL steps at once.
 	result, err := queueclient.AwaitFetchSteps(ctx, queueclient.FetchStepsRequest{
 		QueueSignalID: queueSignalID,
 	})
@@ -61,12 +43,8 @@ func generateStepsViaSignal(ctx workflow.Context, cfg StepConfig, flw *app.Workf
 	return persistGenerateResult(ctx, flw, result)
 }
 
-// generateEagerStepGroups enqueues the generate-steps signal, fetches the eager
-// step groups via the "eager-step-groups" update, and persists them.
-// The caller can start executing these groups immediately, then call
-// completeStepGeneration() to fetch and persist the remaining groups.
 func generateEagerStepGroups(ctx workflow.Context, cfg StepConfig, flw *app.Workflow) (*EagerStepGroupsResult, error) {
-	// 1. Idempotency: if steps already exist (e.g. after continue-as-new), return them.
+	// why: 1. Idempotency: if steps already exist (e.g. after continue-as-new), return them.
 	existingSteps, err := activities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, flw.ID)
 	if err == nil && len(existingSteps) > 0 {
 		flw.Steps = existingSteps
@@ -78,7 +56,6 @@ func generateEagerStepGroups(ctx workflow.Context, cfg StepConfig, flw *app.Work
 		return nil, err
 	}
 
-	// Fetch the eager step groups.
 	result, err := queueclient.AwaitFetchEagerStepGroups(ctx, queueclient.FetchEagerStepGroupsRequest{
 		QueueSignalID: queueSignalID,
 	})
@@ -97,12 +74,8 @@ func generateEagerStepGroups(ctx workflow.Context, cfg StepConfig, flw *app.Work
 	}, nil
 }
 
-// completeStepGeneration fetches ALL steps via "FetchSteps" and persists any
-// groups/steps not already in the DB. This is called after group 0 finishes
-// (or concurrently) to ensure all remaining groups are available.
 func completeStepGeneration(ctx workflow.Context, cfg StepConfig, flw *app.Workflow, queueSignalID string) (*app.Workflow, error) {
 	if queueSignalID == "" {
-		// No early start was used — steps are already complete.
 		return flw, nil
 	}
 
@@ -113,7 +86,6 @@ func completeStepGeneration(ctx workflow.Context, cfg StepConfig, flw *app.Workf
 		return nil, errors.Wrap(err, "unable to fetch remaining steps from generate-steps signal")
 	}
 
-	// Filter out groups/steps already persisted (group 0).
 	existingSteps, _ := activities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, flw.ID)
 	existingGroupIDs := make(map[int]bool)
 	for _, s := range existingSteps {
@@ -146,8 +118,6 @@ func completeStepGeneration(ctx workflow.Context, cfg StepConfig, flw *app.Workf
 	return persistGenerateResult(ctx, flw, remaining)
 }
 
-// enqueueGenerateStepsSignal sets up and enqueues the generate-steps signal,
-// returning the queue signal ID for subsequent update calls.
 func enqueueGenerateStepsSignal(ctx workflow.Context, cfg StepConfig, flw *app.Workflow) (string, error) {
 	type workflowIDSetter interface {
 		SetWorkflowID(id string)
@@ -163,8 +133,6 @@ func enqueueGenerateStepsSignal(ctx workflow.Context, cfg StepConfig, flw *app.W
 		setter.SetLifecycleIdentity(flw.OrgID, flw.Org.Name, cfg.OwnerID, flw.OwnerName)
 	}
 
-	// Use the dedicated generate-steps queue if configured, otherwise fall back
-	// to the target queue for backward compatibility with existing installs.
 	queueName := cfg.GenerateStepsQueueName
 	if queueName == "" {
 		queueName = cfg.TargetQueueName
@@ -185,13 +153,10 @@ func enqueueGenerateStepsSignal(ctx workflow.Context, cfg StepConfig, flw *app.W
 	return enqueueResp.QueueSignalID, nil
 }
 
-// persistGenerateResult assigns IDs to groups/steps, injects step context, and
-// persists them to the DB. It appends to the workflow's existing Steps/StepGroups.
 func persistGenerateResult(ctx workflow.Context, flw *app.Workflow, result *app.GenerateStepsResult) (*app.Workflow, error) {
 	steps := result.Steps
 	groups := result.Groups
 
-	// Pre-generate group IDs and build GroupIdx→GroupID map.
 	groupIDByIdx := make(map[int]string)
 	if len(groups) > 0 {
 		for _, g := range groups {
@@ -200,9 +165,6 @@ func persistGenerateResult(ctx workflow.Context, flw *app.Workflow, result *app.
 			groupIDByIdx[g.GroupIdx] = g.ID
 		}
 
-		// Derive group timeouts from their steps.
-		// Sequential groups: sum of step timeouts.
-		// Parallel groups: max of step timeouts.
 		groupParallel := make(map[int]bool, len(groups))
 		for _, g := range groups {
 			groupParallel[g.GroupIdx] = g.Parallel
@@ -246,7 +208,6 @@ func persistGenerateResult(ctx workflow.Context, flw *app.Workflow, result *app.
 		}
 	}
 
-	// Pre-generate step IDs and inject step context into signals.
 	for _, step := range steps {
 		step.ID = domains.NewWorkflowStepID()
 		if groupID, ok := groupIDByIdx[step.GroupIdx]; ok {
@@ -257,7 +218,6 @@ func persistGenerateResult(ctx workflow.Context, flw *app.Workflow, result *app.
 		}
 	}
 
-	// Determine starting Idx offset based on existing steps.
 	startIdx := len(flw.Steps)
 
 	stepsReq := activities.CreateFlowStepsRequest{

@@ -64,8 +64,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return err
 	}
 
-	// If no OCI registry destination is configured, the build validates the source
-	// and succeeds without pushing an artifact.
 	if h.state.regCfg == nil {
 		l.Info("no OCI destination configured, skipping push — source validated successfully")
 		resultReq := &models.ServiceCreateRunnerJobExecutionResultRequest{

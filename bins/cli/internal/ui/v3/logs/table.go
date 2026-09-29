@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// extends the base styles
 var logTableStyles = table.Styles{
 	Selected: lipgloss.NewStyle().Bold(true).Background(lipgloss.Color("#9d4ded")).Foreground(lipgloss.Color("#ffffff")),
 	Header:   lipgloss.NewStyle().Bold(true).Padding(0, 1),
@@ -19,12 +18,12 @@ var logTableStyles = table.Styles{
 }
 
 var columns = []table.Column{
-	{Title: "", Width: 0}, // hidden ID
-	{Title: "", Width: 0}, // hidden index
+	{Title: "", Width: 0},
+	{Title: "", Width: 0},
 	{Title: "Level", Width: 7},
 	{Title: "Timestamp", Width: 30},
 	{Title: "Service", Width: 8},
-	{Title: "Body", Width: 100}, // NOTE(fd): this is dynamically configured during resizes
+	{Title: "Body", Width: 100},
 }
 
 func (m model) initTable() table.Model {
@@ -33,7 +32,7 @@ func (m model) initTable() table.Model {
 	}
 	totalWidth := 0
 	for _, col := range columns {
-		totalWidth += col.Width + 2 // +2 for cell padding
+		totalWidth += col.Width + 2
 	}
 
 	table := table.New(
@@ -60,10 +59,8 @@ func rowFromLog(i int, log *models.AppOtelLogRecord) []string {
 }
 
 func (m *model) prepareRows() []table.Row {
-	// this method is hella overloaded, break it up
 	m.loading = true
 	logs := map[string]*models.AppOtelLogRecord{}
-	// NOTE(fd): this is a naive approach
 	if m.searchTerm != "" {
 		m.setMessage(fmt.Sprintf("applying search term: %s", m.searchTerm), "info")
 		filteredLogs := map[string]*models.AppOtelLogRecord{}
@@ -97,14 +94,6 @@ func (m *model) prepareRows() []table.Row {
 }
 
 func (m *model) resizeTableColumns() {
-	// the body columne lengths are dynamic but we want to trim the text in case
-	// the content is too long. so we must resize the body column every time
-	// the viewport resizes. we do this by modifying the column in the Column list var
-	// and setting the modified columns on the table.
-
-	// NOTE(fd): it may be a good idea to make a copy of the columns instead
-
-	// calculate the column width
 	columns := m.table.Columns()
 	otherColsTotalWidth := 0
 	for i, col := range columns {
@@ -112,12 +101,9 @@ func (m *model) resizeTableColumns() {
 			otherColsTotalWidth += col.Width
 		}
 	}
-	// 4 * 2 is (num cols) * padding
 	bodyColWidth := m.table.Width() - otherColsTotalWidth - (4 * 2)
 
-	// set the column width on the body column by index
 	columns[len(columns)-1].Width = bodyColWidth
 
-	// set the new columns on the table
 	m.table.SetColumns(columns)
 }

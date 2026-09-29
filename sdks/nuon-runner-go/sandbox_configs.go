@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-// SandboxConfig represents a per-runner, per-job-type sandbox configuration
-// fetched from the centralized API.
 type SandboxConfig struct {
 	ID        string    `json:"id"`
 	RunnerID  string    `json:"runner_id"`
@@ -36,7 +34,6 @@ type SandboxConfig struct {
 	Outputs             json.RawMessage `json:"outputs,omitempty"`
 }
 
-// GetSandboxConfigs fetches all sandbox configs for this runner.
 func (c *client) GetSandboxConfigs(ctx context.Context) ([]*SandboxConfig, error) {
 	reqURL := fmt.Sprintf("%s/v1/runners/%s/sandbox-configs", c.APIURL, c.RunnerID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
@@ -62,9 +59,6 @@ func (c *client) GetSandboxConfigs(ctx context.Context) ([]*SandboxConfig, error
 	return configs, nil
 }
 
-// GetSandboxConfig fetches the sandbox config for a specific job type and operation.
-// The API performs fallback: if no config matches the exact operation, it returns
-// the config for the job type with no operation set.
 func (c *client) GetSandboxConfig(ctx context.Context, jobType, operation string) (*SandboxConfig, error) {
 	params := url.Values{
 		"job_type": {jobType},

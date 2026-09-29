@@ -27,6 +27,5 @@ type handlerState struct {
 	jobExecutionID string
 	jobID          string
 
-	// outputs captured from pulumi up, returned via Outputs()
 	outputs map[string]interface{}
 }

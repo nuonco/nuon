@@ -51,10 +51,6 @@ func validateDoc(t *testing.T, compiled *sjs.Schema, doc string) error {
 	return compiled.Validate(inst)
 }
 
-// TestComponentSchemasAcceptRealConfigs validates documents mirroring the TOML
-// templates served by the API (config_templates.go) against the published
-// schemas with a strict draft 2020-12 validator. The previous allOf-composed
-// schemas were formally unsatisfiable: no document could validate.
 func TestComponentSchemasAcceptRealConfigs(t *testing.T) {
 	testCases := []struct {
 		schemaType string
@@ -143,8 +139,6 @@ func TestComponentSchemasAcceptRealConfigs(t *testing.T) {
 	}
 }
 
-// TestComponentSchemasStillRejectInvalidConfigs ensures flattening did not
-// loosen the schemas: unknown keys and missing required fields must still fail.
 func TestComponentSchemasStillRejectInvalidConfigs(t *testing.T) {
 	testCases := []struct {
 		schemaType string
@@ -202,8 +196,6 @@ func TestComponentSchemasStillRejectInvalidConfigs(t *testing.T) {
 	}
 }
 
-// TestContainerImageSchemaAllowsBothTypeAliases covers the two valid type
-// values for the container-image schema.
 func TestContainerImageSchemaAllowsBothTypeAliases(t *testing.T) {
 	compiled := compileStrict(t, "container-image")
 	for _, typ := range []string{"container_image", "external_image"} {
@@ -253,8 +245,6 @@ func TestCheckComponentBranches(t *testing.T) {
 	}
 }
 
-// TestComponentSchemasAreFlattened guards against reintroducing the
-// unsatisfiable allOf composition.
 func TestComponentSchemasAreFlattened(t *testing.T) {
 	for _, schemaType := range []string{
 		"container-image", "docker-build", "helm", "job", "kubernetes-manifest", "terraform",
@@ -288,8 +278,6 @@ func TestComponentSchemasAreFlattened(t *testing.T) {
 	}
 }
 
-// TestComponentSchemasHaveUniqueIDs guards against the flattened component
-// schemas shipping without a root $id.
 func TestComponentSchemasHaveUniqueIDs(t *testing.T) {
 	seen := make(map[string]string)
 	for _, schemaType := range []string{

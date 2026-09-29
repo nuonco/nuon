@@ -10,9 +10,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// TestParseInstallConfig_RejectsMalformedOverride proves the CLI parse path
-// validates component-override syntax (Parse + Validate) before any API call,
-// so a malformed Helm values / tfvars override fails fast at config load.
 func TestParseInstallConfig_RejectsMalformedOverride(t *testing.T) {
 	t.Run("invalid helm_values", func(t *testing.T) {
 		raw := `name = "abcd"

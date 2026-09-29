@@ -9,12 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// GetRunnerSandboxConfig returns a single sandbox config for a job type and operation.
-// Query params: job_type (required), operation (optional).
-// Lookup order:
-//  1. Exact match on (job_type, operation)
-//  2. Wildcard match on (job_type, "all") — matches any operation
-//  3. Legacy fallback on (job_type, "") — empty operation
 func (s *service) GetRunnerSandboxConfig(ctx *gin.Context) {
 	jobType := ctx.Query("job_type")
 	operation := ctx.Query("operation")
@@ -24,7 +18,6 @@ func (s *service) GetRunnerSandboxConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Try exact match with operation first
 	if operation != "" {
 		var cfg app.SandboxModeJobConfig
 		if res := s.db.WithContext(ctx).
@@ -35,7 +28,6 @@ func (s *service) GetRunnerSandboxConfig(ctx *gin.Context) {
 		}
 	}
 
-	// Fall back to "all" operation config (wildcard for any operation)
 	var cfg app.SandboxModeJobConfig
 	if res := s.db.WithContext(ctx).
 		Where(app.SandboxModeJobConfig{JobType: jobType, Operation: "all", Enabled: true}).
@@ -44,7 +36,7 @@ func (s *service) GetRunnerSandboxConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Fall back to job-type-only config (empty operation).
+	// why: Fall back to job-type-only config (empty operation).
 	// NOTE: must use map-based Where because GORM silently drops zero-value
 	// fields from struct-based Where, and "" is a zero value for string.
 	if res := s.db.WithContext(ctx).

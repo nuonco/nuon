@@ -5,7 +5,9 @@ org-scoped operations. Go service using Gin, PostgreSQL/GORM, Temporal, and FX d
 
 ## Comments and tests
 
-Do not add comments unless the developer explicitly asks. If a comment seems necessary, ask first instead of writing it.
+Follow the strict comment rules in the [root AGENTS.md](../../AGENTS.md#comments-strict-enforced-in-ci): zero
+comments except Swagger and `@temporal-gen` annotations, API type/field docs, tool directives, and rare `// why:`
+constraints. Enforced by `go run ./scripts/check-comments` in CI.
 
 Do not add or extend unit or integration tests unless the developer explicitly asks. When they do, stop and ask which
 sample they want:

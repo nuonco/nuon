@@ -21,9 +21,6 @@ const currentAppConfigActionSubquery = `
 		AND awc.deleted_at = 0
 `
 
-// appConfigActionFilter keeps only actions present in the install's current app config
-// (synced) when syncedOnly is true, or only actions no longer in the current app config
-// when syncedOnly is false.
 func appConfigActionFilter(syncedOnly bool) string {
 	if syncedOnly {
 		return "EXISTS (" + currentAppConfigActionSubquery + ")"

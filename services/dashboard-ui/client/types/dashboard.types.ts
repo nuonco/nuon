@@ -301,7 +301,7 @@ export type TKubernetesPlanItem = {
   api: string
   resource: string
   op: string
-  type: number // 1=add, 2=delete, 3=change
+  type: number
   dry_run: boolean
   error?: string
   entries?: Array<{

@@ -63,7 +63,6 @@ func (s *service) getInstalls(ctx context.Context, search string, sort string, f
 	default:
 	}
 
-	// Apply search filter if provided
 	if search != "" {
 		search = strings.TrimSpace(search)
 		query = query.Where(
@@ -73,27 +72,22 @@ func (s *service) getInstalls(ctx context.Context, search string, sort string, f
 		)
 	}
 
-	// Get total count for pagination
 	if err := query.Count(&totalCount).Error; err != nil {
 		return nil, 0, fmt.Errorf("unable to count installs: %w", err)
 	}
 
-	// Calculate total pages
 	totalPages := int(math.Ceil(float64(totalCount) / float64(installsPerPage)))
 	if totalPages == 0 {
 		totalPages = 1
 	}
 
-	// Calculate offset
 	offset := (page - 1) * installsPerPage
 
-	// Determine sort order
-	orderClause := "created_at desc" // default: newest first
+	orderClause := "created_at desc"
 	if sort == "oldest" {
 		orderClause = "created_at asc"
 	}
 
-	// Get paginated results
 	res := query.
 		Preload("Org").
 		Preload("App").

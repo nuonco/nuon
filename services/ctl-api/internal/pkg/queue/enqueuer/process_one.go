@@ -14,17 +14,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuecctx"
 )
 
-// EnqueueSource identifies how a signal was enqueued.
 const (
 	EnqueueSourceChannel = "channel"
 	EnqueueSourceAwait   = "await"
 	EnqueueSourceSweep   = "sweep"
 )
 
-// EnqueueInline synchronously enqueues a queue signal by performing the
-// SignalWithStart call inline with the caller. It records enqueue timing
-// metadata (including the enqueue source) and marks the signal as enqueued
-// on success.
 func (e *Enqueuer) EnqueueInline(ctx context.Context, queueSignalID string, source string) error {
 	var qs app.QueueSignal
 	if res := e.db.WithContext(ctx).First(&qs, "id = ?", queueSignalID); res.Error != nil {
@@ -111,8 +106,6 @@ func (e *Enqueuer) EnqueueInline(ctx context.Context, queueSignalID string, sour
 	return nil
 }
 
-// processOne looks up the queue signal and its parent queue, performs the
-// SignalWithStart call, and marks the signal as enqueued.
 func (e *Enqueuer) processOne(queueSignalID string) {
 	e.metrics.processingStarted()
 	defer e.metrics.processingFinished()

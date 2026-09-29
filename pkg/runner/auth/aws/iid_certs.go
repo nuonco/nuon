@@ -13,30 +13,21 @@ import (
 	"go.uber.org/zap"
 )
 
-// iid_certs/ contains one PEM file per AWS region, named <region>.pem.
-// Source: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/regions-certs.html
-//
 //go:embed iid_certs/*.pem
 var iidCertsFS embed.FS
 
-// IIDCertStore provides parsed x509 certificates for IID verification.
 type IIDCertStore struct {
 	certs map[string]*x509.Certificate
 }
 
-// NewIIDCertStore loads IID verification certificates. If certsDir is
-// non-empty and the directory exists, PEM files from it override the
-// embedded defaults.
 func NewIIDCertStore(l *zap.Logger, certsDir string) (*IIDCertStore, error) {
 	certs := make(map[string]*x509.Certificate)
 
-	// Load embedded certs as defaults.
 	embeddedFS, _ := fs.Sub(iidCertsFS, "iid_certs")
 	embedded := loadCertsFromFS(l, embeddedFS, certs)
 	l.Info("loaded AWS IID certificates from embedded",
 		zap.Int("count", embedded))
 
-	// Override with certs from config dir (if configured).
 	if certsDir != "" {
 		loaded := loadCertsFromFS(l, os.DirFS(certsDir), certs)
 		if loaded > 0 {
@@ -56,8 +47,6 @@ func NewIIDCertStore(l *zap.Logger, certsDir string) (*IIDCertStore, error) {
 	return &IIDCertStore{certs: certs}, nil
 }
 
-// loadCertsFromFS reads PEM files from an fs.FS into certs.
-// Returns the number of certs successfully loaded.
 func loadCertsFromFS(l *zap.Logger, fsys fs.FS, certs map[string]*x509.Certificate) int {
 	entries, err := fs.ReadDir(fsys, ".")
 	if err != nil {
@@ -103,7 +92,6 @@ func parsePEM(data []byte) (*x509.Certificate, error) {
 	return x509.ParseCertificate(block.Bytes)
 }
 
-// GetCert returns the certificate for the given AWS region.
 func (s *IIDCertStore) GetCert(region string) (*x509.Certificate, error) {
 	cert, ok := s.certs[region]
 	if !ok {

@@ -75,7 +75,6 @@ func (s *PruneTokensTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -93,11 +92,9 @@ func (s *PruneTokensTestSuite) TearDownSuite() {
 func (s *PruneTokensTestSuite) setupTestData() {
 	ctx := context.Background()
 
-	// Use Seeder for account and org creation
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -109,7 +106,6 @@ func (s *PruneTokensTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -162,7 +158,6 @@ func (s *PruneTokensTestSuite) TestPruneTokens() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -175,7 +170,6 @@ func (s *PruneTokensTestSuite) TestPruneTokens() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner group for org2
 				runnerGrp2 := &app.RunnerGroup{
 					ID:        domains.NewRunnerGroupID(),
 					OrgID:     org2.ID,
@@ -187,7 +181,6 @@ func (s *PruneTokensTestSuite) TestPruneTokens() {
 				err = s.service.DB.WithContext(ctx).Create(runnerGrp2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner in org2
 				runner2 := &app.Runner{
 					ID:            domains.NewRunnerID(),
 					OrgID:         org2.ID,
@@ -261,11 +254,8 @@ func (s *PruneTokensTestSuite) TestPruneTokens() {
 }
 
 func (s *PruneTokensTestSuite) TestPruneTokensRequiresServiceAccount() {
-	// Verify that prune tokens requires a service account to exist
-	// Without a service account, the helper returns an error
 	rr := s.makeRequest("POST", "/v1/runners/"+s.testRunner.ID+"/prune-tokens")
 
-	// Should return 404 because service account doesn't exist
 	assert.Equal(s.T(), http.StatusNotFound, rr.Code)
 	assert.Contains(s.T(), rr.Body.String(), "unable to prune tokens")
 }

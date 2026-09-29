@@ -66,7 +66,6 @@ func (s *DeleteTerraformStateTestSuite) SetupTest() {
 	ctx := context.Background()
 	_, _ = s.service.Seeder.EnsureAccount(ctx, s.T())
 
-	// Create router with runner routes (DELETE endpoint is only registered here)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -89,7 +88,6 @@ func (s *DeleteTerraformStateTestSuite) makeRequest(method, path string) *httpte
 }
 
 func (s *DeleteTerraformStateTestSuite) TestDeleteTerraformState() {
-	// This is a no-op handler that always returns 200
 	testCases := []struct {
 		name         string
 		expectedCode int

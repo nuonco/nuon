@@ -3,7 +3,7 @@ package helpers
 import "fmt"
 
 func NestedColumnName(parent, child string) string {
-	// return a string formatted for SQL queries:
+	// why: only a single level of nesting is supported
 	// e.g.
 	// - parent['child']
 	// - parent['nested.child']

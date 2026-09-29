@@ -4,12 +4,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-// maxDiagnosisContainers bounds how many container statuses travel with a
-// single resource — enough to explain a failure without shipping a large pod.
 const maxDiagnosisContainers = 6
 
-// resourceDiagnosis explains an unhealthy resource from objects already listed.
-// Rides every non-healthy report: the stateless runner can't know what transitioned.
 func resourceDiagnosis(u *unstructured.Unstructured, health string, warn *warningEvent) map[string]any {
 	if health == healthHealthy {
 		return nil
@@ -34,8 +30,6 @@ func resourceDiagnosis(u *unstructured.Unstructured, health string, warn *warnin
 	return diagnosis
 }
 
-// containerDiagnosis summarises the failing containers of a pod. Returns nil
-// for any other kind, and skips containers that are running cleanly.
 func containerDiagnosis(u *unstructured.Unstructured) []map[string]any {
 	if u.GetKind() != "Pod" {
 		return nil
@@ -73,7 +67,6 @@ func containerDiagnosis(u *unstructured.Unstructured) []map[string]any {
 			}
 		}
 
-		// Only the name means the container has nothing wrong to report.
 		if len(entry) <= 1 {
 			continue
 		}

@@ -19,7 +19,6 @@ const WINDOWS = [
   { value: 'quarter', label: 'Past quarter' },
 ] as const
 
-// --- Pie chart (SVG donut) ---
 const PieChart = ({ value, max, label, color }: { value: number; max: number; label: string; color: string }) => {
   const pct = max > 0 ? Math.min(value / max, 1) : 0
   const r = 16

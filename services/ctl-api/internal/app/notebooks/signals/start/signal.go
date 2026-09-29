@@ -1,7 +1,3 @@
-// Package start defines the notebook-start queue signal. The notebook's queue
-// dispatches it (at notebook-create time, and for recovery) to bring the warm
-// per-notebook Temporal workflow online. Cell runs still dispatch to that
-// workflow directly via update-with-start; this signal only owns its lifecycle.
 package start
 
 import (

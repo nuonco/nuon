@@ -11,8 +11,6 @@ import (
 
 const GeneralSignalsQueueName = queuenames.GeneralSignalsQueueName
 
-// EnsureGeneralQueue creates the general-signals queue if it doesn't already exist.
-// Safe to call multiple times — queueClient.Create is idempotent.
 func (h *Helpers) EnsureGeneralQueue(ctx context.Context) (*app.Queue, error) {
 	spec, ok := queuenames.SpecByName(queuenames.OwnerGeneral, queuenames.GeneralSignalsQueueName)
 	if !ok {

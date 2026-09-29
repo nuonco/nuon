@@ -7,8 +7,6 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-// Health prints the fleet-wide component health rollup. With --output agent
-// (or json), a canary or bake-period script can poll it and gate on all_healthy.
 func (s *Service) Health(ctx context.Context, appID, labels string, asJSON bool) error {
 	view := ui.NewListView()
 

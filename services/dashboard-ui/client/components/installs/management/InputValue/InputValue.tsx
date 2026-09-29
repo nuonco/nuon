@@ -15,9 +15,6 @@ interface IInputValue {
   value?: string | null
 }
 
-// InputValue renders a single install input value. Component-override inputs
-// (Helm values / Terraform vars) carry multi-line YAML/HCL, so they render in a
-// syntax-highlighted code block instead of a cramped inline string.
 export const InputValue = ({ name, value }: IInputValue) => {
   if (value == null) {
     return (

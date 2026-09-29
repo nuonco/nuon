@@ -14,9 +14,6 @@ type Payload struct {
 	QueueID           string                 `json:"queue_id,omitempty" temporaljson:"queue_id,omitempty"`
 }
 
-// legacyPayload matches headers written before Payload carried temporaljson
-// tags, when the converter keyed fields by Go name. Long-running workflows
-// (cron emitters) still carry those headers.
 type legacyPayload struct {
 	OrgID             string                 `temporaljson:"OrgID"`
 	AccountID         string                 `temporaljson:"AccountID"`

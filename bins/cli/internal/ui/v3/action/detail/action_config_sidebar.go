@@ -17,7 +17,6 @@ func (m *Model) populateActionConfigView(setContent bool) {
 
 	content := []string{}
 
-	// If no config loaded yet
 	if m.latestConfig == nil {
 		if m.configLoading {
 			content = append(content, "Loading latest configuration...")
@@ -28,16 +27,13 @@ func (m *Model) populateActionConfigView(setContent bool) {
 		return
 	}
 
-	// If no steps in config
 	if len(m.latestConfig.Steps) == 0 {
 		content = append(content, "No steps configured")
 		m.actionConfig.SetContent(lipgloss.JoinVertical(lipgloss.Top, content...))
 		return
 	}
 
-	// Render header
 	content = append(content, m.renderStepsHeader())
-	// Render each step
 	for i, step := range m.latestConfig.Steps {
 		content = append(content, m.renderStep(step, i+1))
 	}
@@ -56,32 +52,27 @@ func (m Model) renderStep(step *models.AppActionWorkflowStepConfig, stepNumber i
 
 	sections := []string{}
 
-	// Step header
 	stepHeader := styles.TextSubtle.Render(fmt.Sprintf("Step %d", stepNumber))
 	if step.Name != "" {
 		stepHeader += ": " + step.Name
 	}
 	sections = append(sections, stepHeader)
 
-	// Repository Details section
 	repoSection := m.renderRepositoryDetails(step)
 	if repoSection != "" {
 		sections = append(sections, "", m.renderSectionHeader("Repository Details"), repoSection)
 	}
 
-	// Command section
 	commandSection := m.renderCommand(step)
 	if commandSection != "" {
 		sections = append(sections, "", m.renderSectionHeader("Command"), commandSection)
 	}
 
-	// Variables section
 	varsSection := m.renderVariables(step)
 	if varsSection != "" {
 		sections = append(sections, "", m.renderSectionHeader("Variables"), varsSection)
 	}
 
-	// Join all sections with a border
 	stepContent := lipgloss.JoinVertical(lipgloss.Left, sections...)
 	return lipgloss.NewStyle().
 		Border(lipgloss.NormalBorder()).
@@ -98,7 +89,6 @@ func (m Model) renderSectionHeader(title string) string {
 func (m Model) renderRepositoryDetails(step *models.AppActionWorkflowStepConfig) string {
 	details := []string{}
 
-	// Connected GitHub VCS
 	if step.ConnectedGithubVcsConfig != nil {
 		if step.ConnectedGithubVcsConfig.Repo != "" {
 			details = append(details, fmt.Sprintf("repo: %s", step.ConnectedGithubVcsConfig.Repo))
@@ -111,7 +101,6 @@ func (m Model) renderRepositoryDetails(step *models.AppActionWorkflowStepConfig)
 		}
 	}
 
-	// Public Git VCS
 	if step.PublicGitVcsConfig.Repo != "" {
 		details = append(details, fmt.Sprintf("repo: %s", step.PublicGitVcsConfig.Repo))
 	}
@@ -157,7 +146,6 @@ func (m Model) renderVariables(step *models.AppActionWorkflowStepConfig) string 
 
 	rows := []string{}
 	for key, value := range step.EnvVars {
-		// Truncate long values
 		rows = append(rows, fmt.Sprintf("%s:\n  %s", styles.TextDim.Width(m.stepsWidth-4).Render(key), value))
 	}
 

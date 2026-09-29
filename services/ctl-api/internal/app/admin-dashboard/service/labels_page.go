@@ -19,7 +19,6 @@ import (
 
 const labelsPerPage = 20
 
-// LabelsPage returns the labels browse data.
 func (s *service) LabelsPage(c *gin.Context) {
 	ctx := c.Request.Context()
 	search := c.Query("search")
@@ -56,7 +55,6 @@ func (s *service) LabelsPage(c *gin.Context) {
 	})
 }
 
-// LabelsTable returns just the labels table data.
 func (s *service) LabelsTable(c *gin.Context) {
 	ctx := c.Request.Context()
 	search := c.Query("search")
@@ -79,12 +77,8 @@ func (s *service) LabelsTable(c *gin.Context) {
 	})
 }
 
-// LabelSearchResult represents a single entity with labels for the browse page.
 type LabelSearchResult = views.LabelSearchResult
 
-// labelTable describes one of the labelled tables that the labels-browse query
-// unions over. Per-table org filtering varies because components are scoped via
-// their parent app, not directly by org.
 type labelTable struct {
 	table         string
 	entityType    string
@@ -125,9 +119,6 @@ func labelTablesFor(entityType string) []labelTable {
 	return nil
 }
 
-// buildLabelFilterClauses turns a search string ("key:value", "key=value",
-// "k1:v1,k2:*", or a bare key) into SQL clause fragments and args that match
-// the same semantics as labels.WithLabels.
 func buildLabelFilterClauses(search string) ([]string, []any) {
 	search = strings.TrimSpace(search)
 	if search == "" {
@@ -244,7 +235,6 @@ func (s *service) getLabelsData(ctx context.Context, search, entityType, orgID s
 func (s *service) getAllLabelKeys(ctx context.Context) []string {
 	var keys []string
 
-	// Query each table separately so a failure in one doesn't break the whole page.
 	tables := []string{"installs", "components", "action_workflows"}
 	for _, table := range tables {
 		var tableKeys []string
@@ -257,7 +247,6 @@ func (s *service) getAllLabelKeys(ctx context.Context) []string {
 		keys = append(keys, tableKeys...)
 	}
 
-	// Deduplicate and sort.
 	seen := make(map[string]bool)
 	unique := make([]string, 0, len(keys))
 	for _, k := range keys {

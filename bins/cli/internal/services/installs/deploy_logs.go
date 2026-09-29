@@ -18,14 +18,12 @@ func (s *Service) DeployLogs(ctx context.Context, installID, deployID, installCo
 		return ui.PrintError(err)
 	}
 
-	// fetch deploy
 	deploy, err := s.api.GetInstallDeploy(ctx, installID, deployID)
 	if err != nil {
 		return ui.PrintError(err)
 	}
 
 	if !s.cfg.Preview {
-		// open in browser
 		cfg, err := s.api.GetCLIConfig(ctx)
 		if err != nil {
 			ui.PrintError(err)
@@ -33,7 +31,6 @@ func (s *Service) DeployLogs(ctx context.Context, installID, deployID, installCo
 		url := fmt.Sprintf("%s/%s/installs/%s/components/%s/deploys/%s", cfg.DashboardURL, s.cfg.OrgID, installID, installComponentID, deployID)
 		browser.OpenURL(url)
 	} else {
-		// open in tui
 		logs.LogStreamApp(ctx, s.cfg, s.api, installID, deployID, deploy.LogStream.ID)
 	}
 

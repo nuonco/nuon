@@ -23,8 +23,6 @@ func cr(kind string, conds ...map[string]any) *unstructured.Unstructured {
 	return &unstructured.Unstructured{Object: obj}
 }
 
-// A kind the vendored library does not know must not be reported unknown
-// forever; unknown means "could not look", which would be a lie here.
 func TestAssessResourceFallsBackToConditions(t *testing.T) {
 	cases := []struct {
 		name       string
@@ -45,7 +43,6 @@ func TestAssessResourceFallsBackToConditions(t *testing.T) {
 		{"reason is used when message is absent",
 			cr("NodePool", map[string]any{"type": "Ready", "status": "False", "reason": "Unschedulable"}), healthDegraded, "Unschedulable"},
 
-		// No signal is not the same as no information.
 		{"no conditions is not-applicable", cr("EC2NodeClass"), healthNotApplicable, ""},
 		{"unrelated conditions only", cr("StorageClass",
 			map[string]any{"type": "SomethingElse", "status": "True"}), healthNotApplicable, ""},
@@ -63,7 +60,6 @@ func TestAssessResourceFallsBackToConditions(t *testing.T) {
 	}
 }
 
-// Ready wins over other ready-style types when both are present.
 func TestAssessConditionsPrefersReady(t *testing.T) {
 	health, _, _ := assessResource(cr("Thing",
 		map[string]any{"type": "Available", "status": "False", "message": "stale"},

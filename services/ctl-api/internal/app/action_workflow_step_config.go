@@ -74,7 +74,6 @@ func (a *ActionWorkflowStepConfig) AfterQuery(tx *gorm.DB) error {
 		a.EnvVars = pgtype.Hstore{}
 	}
 
-	// set the vcs connection type correctly
 	if a.ConnectedGithubVCSConfig != nil {
 		a.VCSConnectionType = VCSConnectionTypeConnectedRepo
 	} else if a.PublicGitVCSConfig != nil {

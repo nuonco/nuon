@@ -7,14 +7,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// maxStackVersionRuns bounds how many runs each stack version carries in a
-// response. A version gains a run every time the customer applies their stack,
-// so a frequently reapplied version would otherwise drag the whole version list
-// with it.
 const maxStackVersionRuns = 10
 
-// rankedStackVersionRunIDs keeps the newest runs per version rather than the
-// newest overall, which a plain LIMIT would give.
 const rankedStackVersionRunIDs = `
 SELECT id FROM (
 	SELECT id, row_number() OVER (
@@ -25,13 +19,6 @@ SELECT id FROM (
 ) ranked
 WHERE rn <= ?`
 
-// attachStackVersionRuns loads the newest runs for each of the given stack
-// versions and hangs them off the versions in place.
-//
-// This replaces a `Preload("Runs", ... Limit(n))`: GORM applies a preload's
-// limit to the whole result set rather than per parent, so the versions that
-// sort first take the entire budget and every older version comes back with no
-// runs at all — and so with no outputs to show for its own phone home.
 func (s *service) attachStackVersionRuns(ctx context.Context, versions []app.InstallStackVersion, perVersion int) error {
 	if len(versions) == 0 {
 		return nil

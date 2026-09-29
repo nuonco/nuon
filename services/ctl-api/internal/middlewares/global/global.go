@@ -9,8 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// globalEndpointList is a list of endpoints that are not scoped to an org,
-// but still need to be authenticated.
 var globalEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"POST", "/v1/orgs"}:                                                  {},
 	{"GET", "/v1/orgs"}:                                                   {},
@@ -30,7 +28,6 @@ var globalEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"GET", "/v1/auth/me"}:                                                {},
 	{"GET", "/v1/auth/validate"}:                                          {},
 
-	// onboarding (pre-org steps are global; post-org steps require org auth)
 	{"GET", "/v1/onboarding/example-apps"}:                {},
 	{"POST", "/v1/onboarding"}:                            {},
 	{"GET", "/v1/onboarding/current"}:                     {},
@@ -46,11 +43,9 @@ func (m middleware) Name() string {
 	return "global"
 }
 
-// Handler marks a request as "global" if it's being sent to one of the endpoints listed in globalEndpointList.
 func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		method := ctx.Request.Method
-		// full path will return the _matched_ path, such as `/v1/sandboxes/:id`
 		path := ctx.FullPath()
 
 		key := [2]string{

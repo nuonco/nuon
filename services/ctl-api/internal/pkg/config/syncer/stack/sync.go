@@ -11,8 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 )
 
-// Sync creates the app stack configuration via the shared builder in
-// internal/pkg/config/build, which the CreateAppStackConfig handler also uses.
 func Sync(ctx context.Context, db *gorm.DB, appsHelpers *appshelpers.Helpers, cfg *config.AppConfig, appID, appConfigID string) error {
 	if cfg.Stack == nil {
 		return nil
@@ -34,8 +32,6 @@ func Sync(ctx context.Context, db *gorm.DB, appsHelpers *appshelpers.Helpers, cf
 		}
 	}
 
-	// Uploads inside the sync transaction: keys are content addressed, so an object
-	// left behind by a rollback is inert.
 	if err := appsHelpers.UploadCustomNestedStackTemplates(ctx, db, obj); err != nil {
 		return sync.SyncInternalErr{
 			Description: "unable to upload custom nested stack templates",

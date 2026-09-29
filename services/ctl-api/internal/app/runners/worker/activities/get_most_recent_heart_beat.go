@@ -10,9 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// runner_heart_beats is ordered by (runner_id, process_id, created_at), so a created_at floor
-// keeps this to a granule read instead of scanning every beat the runner has sent. Live runners
-// beat every few seconds, so anything older than this means the runner is gone, not quiet.
 const heartBeatLookback = time.Hour
 
 type GetMostRecentHeartBeatRequest struct {

@@ -13,9 +13,6 @@ import (
 
 const componentHealthEvaluateEmitterName = "component-health-evaluate"
 
-// EnsureInstallQueues creates the install queues if they don't already exist.
-// Safe to call multiple times — queueClient.Create is idempotent.
-// Also updates existing queue capacities if they have changed.
 func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) error {
 	var install app.Install
 	if res := s.db.WithContext(ctx).Where(app.Install{ID: installID}).First(&install); res.Error != nil {
@@ -59,8 +56,6 @@ func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) err
 			return fmt.Errorf("unable to ensure %s queue: %w", q.Name, err)
 		}
 
-		// queueClient.Create migrates the queue workflow when its namespace
-		// changed; migrate the queue's emitters to match (no-op if unchanged).
 		if err := s.emitterClient.MigrateQueueEmitters(ctx, existing.ID, namespace); err != nil {
 			return fmt.Errorf("unable to migrate %s queue emitters: %w", q.Name, err)
 		}
@@ -73,13 +68,6 @@ func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) err
 	return nil
 }
 
-// ensureComponentHealthQueue creates the component-health queue, which
-// serializes evaluation for one install.
-//
-// It deliberately creates no cron emitter. Evaluation is driven by the runner's
-// report and, for installs that go quiet, by one fleet-wide sweep — an emitter
-// per install cost a workflow execution a minute forever and grew 1:1 with the
-// fleet. Any emitter left over from that design is removed here.
 func (s *Helpers) ensureComponentHealthQueue(ctx context.Context, installID, ownerType, namespace string) error {
 	spec, ok := queuenames.SpecByName(queuenames.OwnerInstalls, queuenames.InstallComponentHealthQueueName)
 	if !ok {
@@ -97,8 +85,6 @@ func (s *Helpers) ensureComponentHealthQueue(ctx context.Context, installID, own
 		return fmt.Errorf("unable to ensure %s queue: %w", InstallComponentHealthQueueName, err)
 	}
 
-	// Create migrates the queue workflow when its namespace changed; move the
-	// emitter to match (no-op if unchanged).
 	if err := s.emitterClient.MigrateQueueEmitters(ctx, q.ID, namespace); err != nil {
 		return fmt.Errorf("unable to migrate %s queue emitters: %w", InstallComponentHealthQueueName, err)
 	}

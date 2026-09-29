@@ -13,13 +13,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
-// MigrateInstallInputsToNewConfig creates new InstallInputs records for installs
-// when their app_config_id is updated. Preserves existing values where field names
-// match, drops fields removed in new config.
 func (h *Helpers) MigrateInstallInputsToNewConfig(
 	ctx context.Context,
 	txn *gorm.DB,
-	installConfigMap map[string]string, // installID -> old appConfigID
+	installConfigMap map[string]string,
 	newAppConfigID string,
 ) error {
 	if len(installConfigMap) == 0 {
@@ -42,14 +39,12 @@ func (h *Helpers) MigrateInstallInputsToNewConfig(
 		validInputs[inp.Name] = true
 	}
 
-	// sorted so concurrent batches take the locks in the same order
 	installIDs := make([]string, 0, len(installConfigMap))
 	for installID := range installConfigMap {
 		installIDs = append(installIDs, installID)
 	}
 	sort.Strings(installIDs)
 
-	// own transaction so the locks are real when handed a plain handle
 	return txn.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		for _, installID := range installIDs {
 			if err := LockInstallInputs(ctx, tx, installID); err != nil {
@@ -59,7 +54,6 @@ func (h *Helpers) MigrateInstallInputsToNewConfig(
 				return fmt.Errorf("unable to migrate inputs for install %s: %w", installID, err)
 			}
 
-			// config-derived partials go stale even when no value moved
 			if err := h.MarkInstallStatePartialsStale(ctx, tx, installID,
 				state.HintToPartials[state.HintAppConfigUpdated]...); err != nil {
 				return fmt.Errorf("unable to mark state partials stale for install %s: %w", installID, err)
@@ -76,7 +70,6 @@ func (h *Helpers) migrateInstallInputs(
 	newAppInputConfigID string,
 	validInputs map[string]bool,
 ) error {
-	// a writer already targeted the incoming config; migrating on top would revert it
 	var onNewConfig int64
 	if err := txn.WithContext(ctx).
 		Model(&app.InstallInputs{}).
@@ -89,7 +82,7 @@ func (h *Helpers) migrateInstallInputs(
 	}
 
 	if onNewConfig == 0 {
-		// newest row, not the outgoing config's: that read cannot see a write pinned to the new one
+		// why: newest row, not the outgoing config's: that read cannot see a write pinned to the new one
 		var existingInputs app.InstallInputs
 		res := txn.WithContext(ctx).
 			Where(app.InstallInputs{
@@ -109,9 +102,7 @@ func (h *Helpers) migrateInstallInputs(
 			}
 		}
 
-		// nothing dropped means nothing to migrate: readers ignore the pin
 		if len(migratedValues) != len(existingInputs.Values) {
-			// OrgID is set by the model's BeforeCreate hook from context.
 			newInputs := app.InstallInputs{
 				InstallID:        installID,
 				AppInputConfigID: newAppInputConfigID,

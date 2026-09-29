@@ -19,45 +19,16 @@ import (
 	"github.com/nuonco/nuon/pkg/terraform/variables"
 )
 
-// DefaultFilesystemMirrorDir is the conventional directory name (relative to
-// a workspace root or an archive base path) that holds a terraform provider
-// filesystem mirror. Build runners write the mirror into this directory and
-// install runners pass the same path to WithFilesystemMirror.
-//
-// The leading dot avoids polluting `terraform fmt` output without colliding
-// with terraform's own `.terraform/` working directory (which the runner
-// ignores during archive packaging).
 const DefaultFilesystemMirrorDir = ".terraform-providers"
 
-// providerZipPlatformRE matches the `<os>_<arch>` suffix of a packed
-// provider zip in a terraform filesystem mirror, e.g.
-// `terraform-provider-azurerm_4.34.0_linux_amd64.zip` →
-// captures "linux_amd64".
 var providerZipPlatformRE = regexp.MustCompile(`_([a-z0-9]+_[a-z0-9]+)\.zip$`)
 
-// DefaultBundledBinaryDir is the conventional directory name (relative to
-// an archive base path) that holds a terraform CLI binary vendored at
-// build time. The build runner writes per-platform binaries at
-// `<archBase>/<DefaultBundledBinaryDir>/<os>_<arch>/terraform` plus a
-// sibling `VERSION` sidecar that records the terraform version they were
-// built for. The install runner looks at the same path to decide whether
-// it can run terraform fully airgapped.
-//
-// Mirrors the shape of DefaultFilesystemMirrorDir for providers — same
-// "filesystem-driven, feature-flag-unaware" rule on the install side.
 const DefaultBundledBinaryDir = ".terraform-binaries"
 
-// BundledBinaryVersionFile is the filename of the version sidecar inside
-// DefaultBundledBinaryDir.
 const BundledBinaryVersionFile = "VERSION"
 
-// bundledBinaryName is the on-disk filename of the vendored terraform CLI.
 const bundledBinaryName = "terraform"
 
-// BundledBinaryVersion returns the trimmed contents of the VERSION sidecar
-// inside the bundled-binary directory of an unpacked archive, or "" if the
-// sidecar is missing or unreadable. Used for the version-mismatch fallback
-// branch in DetectBundledBinary and for diagnostic logging.
 func BundledBinaryVersion(archBase string) string {
 	b, err := os.ReadFile(filepath.Join(archBase, DefaultBundledBinaryDir, BundledBinaryVersionFile))
 	if err != nil {
@@ -66,12 +37,6 @@ func BundledBinaryVersion(archBase string) string {
 	return strings.TrimSpace(string(b))
 }
 
-// BundledBinaryPlatforms returns the sorted, de-duplicated set of
-// `<os>_<arch>` platforms that have a vendored terraform CLI binary inside
-// archBase. Returns nil when the bundled-binary directory is absent or
-// contains no platform subdirectories. Used both by DetectBundledBinary
-// (to decide whether the host platform is supported) and by callers that
-// want to surface the vendored platform set in logs.
 func BundledBinaryPlatforms(archBase string) []string {
 	binDir := filepath.Join(archBase, DefaultBundledBinaryDir)
 	entries, err := os.ReadDir(binDir)
@@ -83,9 +48,6 @@ func BundledBinaryPlatforms(archBase string) []string {
 		if !e.IsDir() {
 			continue
 		}
-		// Only count entries that actually have a binary on disk —
-		// keeps an empty/half-baked subdir from polluting the platform
-		// set we report.
 		if _, err := os.Stat(filepath.Join(binDir, e.Name(), bundledBinaryName)); err != nil {
 			continue
 		}
@@ -98,7 +60,7 @@ func BundledBinaryPlatforms(archBase string) []string {
 	return out
 }
 
-// DetectBundledBinary returns an absolute path to a build-vendored
+// why: DetectBundledBinary returns an absolute path to a build-vendored
 // terraform CLI binary suitable for handing to a workspace's Binary
 // implementation, or "" if the install runner should fall back to fetching
 // terraform from releases.hashicorp.com as before.
@@ -143,7 +105,7 @@ func DetectBundledBinary(archBase, requestedVersion string) string {
 	return binPath
 }
 
-// isBundledTerraformBinary reports whether name (a slash-separated archive
+// why: isBundledTerraformBinary reports whether name (a slash-separated archive
 // path, with any leading "./" already trimmed) refers to a build-vendored
 // terraform CLI at the conventional `.terraform-binaries/<os>_<arch>/terraform`
 // location. Used by archive unpack to re-apply the exec bit lost during OCI
@@ -161,7 +123,7 @@ func isBundledTerraformBinary(name string) bool {
 	return parts[0] == DefaultBundledBinaryDir && parts[2] == bundledBinaryName
 }
 
-// DetectFilesystemMirror returns the path to pass to WithFilesystemMirror
+// why: DetectFilesystemMirror returns the path to pass to WithFilesystemMirror
 // (relative to the workspace root), or "" if the unpacked archive at
 // archBase does not contain a non-empty provider mirror tree at
 // DefaultFilesystemMirrorDir, or if the mirror does not include the current
@@ -190,11 +152,6 @@ func DetectFilesystemMirror(archBase string) string {
 
 	entries, err := os.ReadDir(mirrorDir)
 	if err != nil || len(entries) == 0 {
-		// Common: dir doesn't exist (older artifact / flag off). Other
-		// errors are also fine to ignore — terraform init falls back
-		// to direct registry resolution and (with the .terraformrc
-		// the workspace would have written) we'd never have written
-		// one in this branch anyway.
 		return ""
 	}
 
@@ -206,22 +163,9 @@ func DetectFilesystemMirror(archBase string) string {
 		}
 	}
 
-	// Mirror present but no zips for the current platform. Skip it and let
-	// terraform init resolve providers from the public registry. Callers
-	// that want to surface this case in logs can call MirrorPlatforms
-	// themselves.
 	return ""
 }
 
-// MirrorPlatforms returns the sorted, de-duplicated set of `<os>_<arch>`
-// platforms present in the filesystem mirror at
-// archBase/DefaultFilesystemMirrorDir, derived from packed provider zip
-// filenames. Returns nil if no mirror exists or it has no recognizable
-// provider zips.
-//
-// Used both by DetectFilesystemMirror (to decide whether the current
-// runtime platform is supported) and by callers that want to log the
-// vendored platform set for diagnostics.
 func MirrorPlatforms(archBase string) []string {
 	mirrorDir := filepath.Join(archBase, DefaultFilesystemMirrorDir)
 
@@ -248,9 +192,6 @@ func MirrorPlatforms(archBase string) []string {
 	return out
 }
 
-// Workspace exposes an interface for interacting with terraform and uses inputs to fetch source files, configure the
-// backend, the binary and more.
-//
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=interface_mock.go -source=interface.go -package=workspace
 var _ Workspace = (*workspace)(nil)
@@ -268,19 +209,8 @@ type workspace struct {
 
 	DisableCleanup bool
 
-	// FilesystemMirrorPath, when set, instructs the workspace to:
-	//   1. write a .terraformrc into the workspace root that configures
-	//      provider_installation { filesystem_mirror { path = "<abs path>" } direct { exclude = ["*/*"] } }
-	//   2. set TF_CLI_CONFIG_FILE to point at that .terraformrc
-	//
-	// The path may be relative or absolute. Relative paths are resolved
-	// against the workspace root (which is created lazily). The
-	// `direct { exclude = ["*/*"] }` block is the airgap guarantee:
-	// terraform init will fail loudly if a provider is missing from the
-	// mirror rather than silently fall back to the public registry.
 	FilesystemMirrorPath string
 
-	// internal vars for managing the workspace
 	tmpDirRoot string
 	root       string
 	execPath   string
@@ -352,9 +282,6 @@ func WithDisableCleanup(disable bool) workspaceOption {
 	}
 }
 
-// WithFilesystemMirror configures the workspace to consume providers from a
-// terraform filesystem mirror at the given path instead of downloading them
-// from registry.terraform.io. See the FilesystemMirrorPath field for details.
 func WithFilesystemMirror(path string) workspaceOption {
 	return func(w *workspace) error {
 		w.FilesystemMirrorPath = path

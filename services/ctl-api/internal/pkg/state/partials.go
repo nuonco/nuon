@@ -17,7 +17,6 @@ const (
 	PartialSecrets    PartialName = "secrets"
 )
 
-// AllPartials is the ordered list of all state partials.
 var AllPartials = []PartialName{
 	PartialOrg,
 	PartialApp,
@@ -32,15 +31,11 @@ var AllPartials = []PartialName{
 	PartialSecrets,
 }
 
-// PartialTarget identifies a specific partial and optionally a single entity within it.
-// EntityID scopes the update to one entity (e.g. an install_component_id for PartialComponents,
-// or an install_action_workflow_id for PartialActions). Empty EntityID means refresh the whole partial.
 type PartialTarget struct {
 	Name     PartialName
 	EntityID string
 }
 
-// HintType describes what changed, allowing callers to build a []PartialTarget via TargetsForHint.
 type HintType string
 
 const (
@@ -59,7 +54,6 @@ const (
 	HintInstallCreated       HintType = "install-created"
 )
 
-// HintToPartials maps a hint type to the partials it affects.
 var HintToPartials = map[HintType][]PartialName{
 	HintDeployCompleted:      {PartialComponents},
 	HintComponentTeardown:    {PartialComponents},
@@ -76,8 +70,6 @@ var HintToPartials = map[HintType][]PartialName{
 	HintInstallCreated:       {PartialOrg, PartialApp, PartialRunner, PartialCloud, PartialInputs},
 }
 
-// TargetsForHint converts a HintType + optional entityID into a []PartialTarget.
-// Use this when callers know the specific entity that changed (e.g. a component ID after deploy).
 func TargetsForHint(hintType HintType, entityID string) []PartialTarget {
 	partials := HintToPartials[hintType]
 	targets := make([]PartialTarget, len(partials))

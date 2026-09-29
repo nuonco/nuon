@@ -43,8 +43,6 @@ const (
 
 var errMigrationCancelled = errors.New("app branch migration cancelled")
 
-// printedErr marks an error a reused command already rendered, so the wizard
-// does not print it a second time.
 type printedErr struct{ error }
 
 func (e printedErr) Unwrap() error { return e.error }
@@ -82,9 +80,6 @@ func (s *Service) appSyncWizardAvailable(opts SyncOptions) bool {
 	return s.cfg.Interactive && !opts.PrintJSON && !agentmode.Enabled()
 }
 
-// handleAppSyncDisabled is terminal for `nuon apps sync`: it either returns the
-// deprecation error or runs the migration wizard, and the caller must not go on
-// to parse or upload the app config either way.
 func (s *Service) handleAppSyncDisabled(ctx context.Context, dir, appID string, opts SyncOptions) error {
 	guides, guideErr := s.appSyncBranchGuides(ctx, dir, appID)
 	guidance := renderAppSyncBranchGuides(guides)
@@ -443,8 +438,6 @@ func (s *Service) promptMigrationBranchConfig(ctx context.Context, dir, appID, n
 	return newMigrationBranchConfig(name, repo, directory, gitBranch), nil
 }
 
-// knownConnectedRepos reads the connected repos the app's branches already
-// track; failures only cost the selector a suggestion.
 func (s *Service) knownConnectedRepos(ctx context.Context, appID string, remotes []*models.AppAppBranch) []config.ConnectedRepoConfig {
 	var out []config.ConnectedRepoConfig
 	for _, b := range remotes {
@@ -517,8 +510,6 @@ func promptWithDefault(prompt, def string) (string, error) {
 	return value, nil
 }
 
-// selectOrType offers the candidates plus a free-text escape hatch, and falls
-// straight to a required text prompt when there is nothing to suggest.
 func selectOrType(prompt string, candidates []string, placeholder string) (string, error) {
 	if len(candidates) > 0 {
 		items := make([]bubbles.SelectorItem, 0, len(candidates)+1)

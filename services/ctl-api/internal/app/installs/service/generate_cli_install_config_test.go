@@ -12,10 +12,10 @@ func TestBuildComponentOverridesFromInputs(t *testing.T) {
 	ptr := func(s string) *string { return &s }
 
 	values := map[string]*string{
-		"replicas": ptr("3"), // real input, ignored
+		"replicas": ptr("3"),
 		config.HelmValuesOverrideInputName("clickhouse"): ptr("replicas: 5"),
 		config.TFVarsOverrideInputName("vpc"):            ptr("cidr = \"10.0.0.0/16\""),
-		config.TFVarsOverrideInputName("empty"):          ptr(""), // empty, omitted
+		config.TFVarsOverrideInputName("empty"):          ptr(""),
 	}
 
 	got := config.Install{Components: buildComponentOverridesFromInputs(values)}.Components

@@ -52,7 +52,6 @@ func (s *service) UpdateAppComponent(ctx *gin.Context) {
 		return
 	}
 
-	// Validate component belongs to org before updating
 	_, err = s.findComponent(ctx, org.ID, componentID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to find component %s: %w", componentID, err))
@@ -119,7 +118,6 @@ func (s *service) UpdateComponent(ctx *gin.Context) {
 		return
 	}
 
-	// Validate component belongs to org before updating
 	_, err = s.findComponent(ctx, org.ID, componentID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to find component %s: %w", componentID, err))

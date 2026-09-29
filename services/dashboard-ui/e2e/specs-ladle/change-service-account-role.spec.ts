@@ -1,7 +1,5 @@
 import { expect, test } from "@playwright/test";
 
-// Change-role opens on the current role, so Save is disabled until a different
-// role is picked.
 const STORY =
   "/?story=features--service-accounts--change-service-account-role--default&mode=preview";
 

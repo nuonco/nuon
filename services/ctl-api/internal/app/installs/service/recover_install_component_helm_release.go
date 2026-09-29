@@ -91,15 +91,12 @@ func (s *service) RecoverInstallComponentHelmRelease(ctx *gin.Context) {
 		return
 	}
 
-	// The plan needs a build to resolve the release name, namespace and driver.
 	deploy, err := s.getLatestDeployForRecovery(ctx, installComponent.ID)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	// Gated on live runner jobs, not workflow status: a died deploy parks its
-	// workflow in failed-pending-retry forever, which is this action's whole case.
 	running, err := s.hasRunningDeployJob(ctx, installComponent.ID)
 	if err != nil {
 		ctx.Error(err)
@@ -154,9 +151,6 @@ func (s *service) RecoverInstallComponentHelmRelease(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, app.WorkflowResponse{WorkflowID: workflow.ID})
 }
 
-// getLatestDeployForRecovery returns the deploy whose build describes the release
-// to recover. A component that has never been deployed has no release, and a
-// caller who reaches here has misdiagnosed the problem.
 func (s *service) getLatestDeployForRecovery(ctx context.Context, installComponentID string) (*app.InstallDeploy, error) {
 	var deploy app.InstallDeploy
 	res := s.db.WithContext(ctx).
@@ -176,8 +170,6 @@ func (s *service) getLatestDeployForRecovery(ctx context.Context, installCompone
 	return &deploy, nil
 }
 
-// hasRunningDeployJob reports whether any deploy of this install component still
-// has a runner job that has not reached a terminal status.
 func (s *service) hasRunningDeployJob(ctx context.Context, installComponentID string) (bool, error) {
 	terminal := []app.RunnerJobStatus{
 		app.RunnerJobStatusFinished,
@@ -193,8 +185,6 @@ func (s *service) hasRunningDeployJob(ctx context.Context, installComponentID st
 		Select("id").
 		Where(app.InstallDeploy{InstallComponentID: installComponentID})
 
-	// Unqualified columns and a subquery, not a join: RunnerJob reads resolve to
-	// runner_jobs_view_v2, so naming the table breaks at runtime.
 	var count int64
 	res := s.db.WithContext(ctx).
 		Model(&app.RunnerJob{}).

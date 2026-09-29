@@ -28,7 +28,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// AdminSetCustomerSlackWebhookURLTestService holds all fx-injected dependencies for admin set customer slack webhook url tests.
 type AdminSetCustomerSlackWebhookURLTestService struct {
 	fx.In
 
@@ -42,7 +41,6 @@ type AdminSetCustomerSlackWebhookURLTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// AdminSetCustomerSlackWebhookURLTestSuite is the testify suite for admin set customer slack webhook url endpoint.
 type AdminSetCustomerSlackWebhookURLTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -69,7 +67,6 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),
 	)
@@ -77,7 +74,6 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -85,7 +81,6 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -286,9 +281,8 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 		{
 			name: "handles org not found error",
 			setupFunc: func() *app.Org {
-				// Create org but use non-existent ID for request
 				return &app.Org{
-					ID:          domains.NewOrgID(), // Non-existent ID
+					ID:          domains.NewOrgID(),
 					Name:        "nonexistent-org",
 					SandboxMode: true,
 				}
@@ -337,10 +331,8 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test data
 			org := tc.setupFunc()
 
-			// Update router context to use the test org
 			s.router = tests.NewTestRouter(tests.RouterOptions{
 				L:       s.service.L,
 				DB:      s.service.DB,
@@ -350,7 +342,6 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 			err := s.orgsService.RegisterInternalRoutes(s.router)
 			require.NoError(s.T(), err)
 
-			// Make request
 			rr := s.makeRequest(http.MethodPost, "/v1/orgs/"+org.ID+"/admin-customer-slack-webhook-url", tc.requestBody)
 
 			if rr.Code != tc.expectedStatus {
@@ -358,9 +349,7 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Verify database state if update was expected
 			if tc.expectDatabaseUpdate {
-				// Parse response
 				var response bool
 				err = json.Unmarshal(rr.Body.Bytes(), &response)
 				if err != nil {
@@ -369,7 +358,6 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 				require.NoError(s.T(), err)
 				require.True(s.T(), response)
 
-				// Fetch org from database to verify update
 				var updatedOrg app.Org
 				err = s.service.DB.
 					Preload("NotificationsConfig").
@@ -377,10 +365,8 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 					First(&updatedOrg).Error
 				require.NoError(s.T(), err)
 
-				// Verify webhook URL was updated
 				require.Equal(s.T(), tc.expectedWebhookURL, updatedOrg.NotificationsConfig.SlackWebhookURL)
 
-				// Run additional validations if provided
 				if tc.validateFunc != nil {
 					tc.validateFunc(&updatedOrg)
 				}
@@ -390,8 +376,6 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 }
 
 func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebhookURLVerifyNotificationsConfigUpdate() {
-	// This test specifically verifies that only the SlackWebhookURL field is updated
-	// and that the update happens on the NotificationsConfig table
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
@@ -412,12 +396,10 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 	})
 
-	// Store original values
 	originalInternalURL := org.NotificationsConfig.InternalSlackWebhookURL
 	originalEnableSlack := org.NotificationsConfig.EnableSlackNotifications
 	originalEnableEmail := org.NotificationsConfig.EnableEmailNotifications
 
-	// Update router context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -427,7 +409,6 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 	err = s.orgsService.RegisterInternalRoutes(s.router)
 	require.NoError(s.T(), err)
 
-	// Make request
 	req := SetCustomerSlackWebhookURLRequest{
 		Name: "https://hooks.slack.com/new-customer-webhook",
 	}
@@ -435,7 +416,6 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	// Fetch updated org
 	var updatedOrg app.Org
 	err = s.service.DB.
 		Preload("NotificationsConfig").
@@ -443,10 +423,8 @@ func (s *AdminSetCustomerSlackWebhookURLTestSuite) TestAdminSetCustomerSlackWebh
 		First(&updatedOrg).Error
 	require.NoError(s.T(), err)
 
-	// Verify ONLY SlackWebhookURL was updated
 	require.Equal(s.T(), "https://hooks.slack.com/new-customer-webhook", updatedOrg.NotificationsConfig.SlackWebhookURL)
 
-	// Verify other fields remain unchanged
 	require.Equal(s.T(), originalInternalURL, updatedOrg.NotificationsConfig.InternalSlackWebhookURL)
 	require.Equal(s.T(), originalEnableSlack, updatedOrg.NotificationsConfig.EnableSlackNotifications)
 	require.Equal(s.T(), originalEnableEmail, updatedOrg.NotificationsConfig.EnableEmailNotifications)

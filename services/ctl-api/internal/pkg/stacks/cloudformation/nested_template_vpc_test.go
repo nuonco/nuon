@@ -114,7 +114,6 @@ func TestExtractNestedStackParameters(t *testing.T) {
 		})
 	}
 
-	// verify reserved params are tracked
 	assert.True(t, reservedInTemplate["ClusterName"], "reservedInTemplate should contain ClusterName")
 	assert.True(t, reservedInTemplate["NuonInstallID"], "reservedInTemplate should contain NuonInstallID")
 	assert.True(t, reservedInTemplate["NuonOrgID"], "reservedInTemplate should contain NuonOrgID")
@@ -289,7 +288,6 @@ func TestGetRunnerASGNestedStack_WithoutRunnerApiToken(t *testing.T) {
 	assert.NotContains(t, stack.Parameters, "RunnerApiToken",
 		"RunnerApiToken should not be in parameters when template does not define it")
 
-	// verify the token tag is not present
 	for _, tag := range stack.Tags {
 		assert.NotEqual(t, "nuon_runner_api_token", tag.Key,
 			"nuon_runner_api_token tag should not be present when template does not define RunnerApiToken")
@@ -328,7 +326,6 @@ func TestGetRunnerASGNestedStack_WithRunnerApiToken(t *testing.T) {
 		"RunnerApiToken should be in parameters when template defines it")
 	assert.Equal(t, "test-token-value", stack.Parameters["RunnerApiToken"])
 
-	// verify the token tag is present
 	foundTag := false
 	for _, tag := range stack.Tags {
 		if tag.Key == "nuon_runner_api_token" {
@@ -380,7 +377,6 @@ func TestExtractNestedStackParameters_BYOVPC(t *testing.T) {
 	params, defaultParams, reservedInTemplate, _, err := tpl.extractNestedStackParameters(server.URL + "/stack.yaml")
 	require.NoError(t, err)
 
-	// BYOVPC template has NuonInstallID, NuonOrgID, NuonAppID but no ClusterName
 	assert.False(t, reservedInTemplate["ClusterName"], "BYOVPC template should not have ClusterName")
 	assert.True(t, reservedInTemplate["NuonInstallID"], "BYOVPC template should have NuonInstallID")
 
@@ -415,19 +411,16 @@ func TestExtractNestedStackParameters_BYOVPC(t *testing.T) {
 		})
 	}
 
-	// Verify VpcID parameter details
 	require.Contains(t, defaultParams, "VpcID")
 	assert.Equal(t, "AWS::EC2::VPC::Id", defaultParams["VpcID"].Type)
 	assert.Nil(t, defaultParams["VpcID"].Default)
 	require.NotNil(t, defaultParams["VpcID"].Description)
 	assert.Equal(t, "The ID of the existing VPC (e.g., vpc-xxxxxxxxx).", *defaultParams["VpcID"].Description)
 
-	// Verify RunnerSubnetID parameter details
 	require.Contains(t, defaultParams, "RunnerSubnetID")
 	assert.Equal(t, "AWS::EC2::Subnet::Id", defaultParams["RunnerSubnetID"].Type)
 	assert.Nil(t, defaultParams["RunnerSubnetID"].Default)
 
-	// Verify String type parameters
 	require.Contains(t, defaultParams, "PublicSubnetIDs")
 	assert.Equal(t, "String", defaultParams["PublicSubnetIDs"].Type)
 

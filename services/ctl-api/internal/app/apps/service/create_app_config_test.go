@@ -16,7 +16,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// TestCreateAppConfigV2Success tests POST /v1/apps/:app_id/configs with valid input.
 func (s *AppConfigsTestSuite) TestCreateAppConfigV2Success() {
 	req := CreateAppConfigRequest{
 		Readme:     "test readme",

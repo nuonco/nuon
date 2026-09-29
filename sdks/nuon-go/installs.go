@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// installs
 func (c *client) CreateInstall(ctx context.Context, appID string, req *models.ServiceCreateInstallRequest) (*models.AppInstall, error) {
 	resp, err := c.genClient.Operations.CreateInstall(&operations.CreateInstallParams{
 		AppID:   appID,
@@ -211,9 +210,6 @@ func (c *client) GenerateCLIInstallConfig(ctx context.Context, installID string)
 	return buf.Bytes(), nil
 }
 
-// GetInstallsHealth returns the fleet-wide component health rollup, optionally
-// narrowed by app and by an install label selector. Empty appID or labels omit
-// that filter.
 func (c *client) GetInstallsHealth(ctx context.Context, appID, labels string) (*models.ServiceInstallsHealthResponse, error) {
 	params := &operations.GetInstallsHealthParams{Context: ctx}
 	if appID != "" {

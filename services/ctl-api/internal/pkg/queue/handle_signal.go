@@ -17,11 +17,9 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-// ErrSignalNoop is returned when a signal has already been processed (e.g. via direct-execute)
-// and the dispatcher encounters it again. Callers should check for this error and skip gracefully.
 var ErrSignalNoop = errors.New("queue signal already in terminal state")
 
-// queueSignalErrorStatusGuardVersion gates the status re-read before the error
+// why: queueSignalErrorStatusGuardVersion gates the status re-read before the error
 // write because in-flight histories scheduled the write without that activity.
 const queueSignalErrorStatusGuardVersion = "queue-signal-error-status-guard-v1"
 
@@ -37,7 +35,6 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 		return errors.Wrap(err, "unable to get queue signal")
 	}
 
-	// skip signals that were already processed (e.g. via direct-execute)
 	if generics.SliceContains(queueSignal.Status.Status, []app.Status{app.StatusSuccess, app.StatusError, app.StatusCancelled}) {
 		l.Info("queue signal already in terminal state, skipping",
 			zap.String("queue-signal-id", queueSignal.ID),
@@ -45,7 +42,6 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 		return ErrSignalNoop
 	}
 
-	// If the signal came from an emitter and emitter signals are globally disabled, noop it.
 	if queueSignal.EmitterID != nil && q.cfg.DisableEmitterSignals {
 		l.Info("emitter signals disabled globally, skipping",
 			zap.String("queue-signal-id", queueSignal.ID),
@@ -65,7 +61,6 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 			zap.String("status", string(queueSignal.Status.Status)))
 	}
 
-	// Mark the signal as dequeued with timestamp
 	_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 		QueueSignalID: queueSignal.ID,
 		Status:        app.StatusInProgress,
@@ -77,7 +72,7 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 	var signalErr error
 	signalErr = q.processQueueSignal(ctx, l, queueSignal, queueRef)
 	if signalErr != nil {
-		// Cancellation is a domain outcome, not a dispatch failure — the
+		// why: Cancellation is a domain outcome, not a dispatch failure — the
 		// cancel handler already persisted StatusCancelled; never stamp
 		// error over it.
 		if callback.IsCancelled(signalErr) {
@@ -86,7 +81,7 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 			return nil
 		}
 
-		// Persist error status so callers don't block forever — unless the
+		// why: Persist error status so callers don't block forever — unless the
 		// handler already finalised the signal (e.g. cancelled mid-execute):
 		// the handler's status is the meaningful one and a blanket error
 		// write would corrupt it.
@@ -111,11 +106,7 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 	return nil
 }
 
-// processQueueSignal drives the handler through ready → validate → execute.
-// Each update waits for accepted only (no heartbeating). The queue waits for a
-// per-phase callback after validate and execute to guarantee ordering.
 func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSignal *app.QueueSignal, queueRef QueueRef) error {
-	// 1. Ready: start the handler workflow via update-with-start (waits for completed — fast).
 	l.Info("starting handler workflow")
 	readyResp, err := handleractivities.AwaitUpdateWorkflowReady(ctx, handleractivities.UpdateWorkflowReadyRequest{
 		UpdateID:   queueSignal.ID,
@@ -126,13 +117,11 @@ func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSig
 		return errors.Wrap(err, "unable to start handler")
 	}
 
-	// Persist the handler's RunID for recovery.
 	_ = activities.LocalAwaitUpdateQueueSignalRunID(ctx, &activities.UpdateQueueSignalRunIDRequest{
 		QueueSignalID: queueSignal.ID,
 		RunID:         readyResp.RunID,
 	})
 
-	// 2. Validate: send update (accepted-only), wait for callback.
 	validateCB := callback.New(ctx, queueSignal.ID+"-validate")
 	l.Info("sending validate update")
 	if err := handleractivities.AwaitUpdateWorkflowValidate(ctx, handleractivities.UpdateWorkflowValidateRequest{
@@ -149,8 +138,6 @@ func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSig
 		return errors.Wrap(err, "validate failed")
 	}
 
-	// 3. Execute: send update (accepted-only), wait for callback.
-	// Derive the timeout from the signal so long-running signals get the full budget.
 	executeTimeout := signal.DeriveTimeout(queueSignal.Signal.Signal)
 	executeCB := callback.New(ctx, queueSignal.ID+"-execute")
 	l.Info("sending execute update")

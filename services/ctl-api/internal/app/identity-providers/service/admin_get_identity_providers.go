@@ -76,9 +76,6 @@ func (s *service) AdminGetIdentityProviders(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, summaries)
 }
 
-// envIdentityProviderSummary reports the provider configured through environment variables. It has
-// no row in identity_providers, so without this the endpoint an operator uses to check what is
-// configured omits the provider that is always present.
 func (s *service) envIdentityProviderSummary() *AdminIdentityProviderSummary {
 	providerType := app.ProviderType(s.cfg.NuonAuthProviderType)
 	if providerType == "" {

@@ -62,25 +62,15 @@ func New(params WorkerParams) (*Worker, error) {
 		DisableRegistrationAliasing:        true,
 	})
 
-	// Register emitter activities
 	wkr.RegisterActivity(params.EmitterActs)
 
-	// Register queue activities (needed by emitter)
 	wkr.RegisterActivity(params.QueueActs)
 	wkr.RegisterActivity(params.HandlerActs)
 
-	// Register queue client activities (for EnqueueSignal)
-	// TODO: Register client activities if needed with temporal-gen-v2
-	// for _, act := range queueclient.ClientActivityFns() {
-	// 	wkr.RegisterActivity(act)
-	// }
-
-	// Register emitter workflows
 	for _, wkflow := range params.EmitterWkflows.All() {
 		wkr.RegisterWorkflow(wkflow)
 	}
 
-	// Register queue workflows (needed for enqueue operations)
 	for _, wkflow := range params.QueueWkflows.All() {
 		wkr.RegisterWorkflow(wkflow)
 	}

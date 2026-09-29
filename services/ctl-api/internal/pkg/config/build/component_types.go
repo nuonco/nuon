@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 )
 
-// VCS carries git sources the caller already resolved, which needs a database.
 type VCS struct {
 	Github *app.ConnectedGithubVCSConfig
 	Public *app.PublicGitVCSConfig
@@ -263,7 +262,6 @@ func ExternalImageComponentConfig(obj *config.ExternalImageComponentConfig) (*ap
 	return cfg, nil
 }
 
-// AttachTypeConfig wires the per-type config onto the shared connection.
 func AttachTypeConfig(ccc *app.ComponentConfigConnection, comp *config.Component, vcs VCS, terraformVersion string) error {
 	switch {
 	case comp.DockerBuild != nil:

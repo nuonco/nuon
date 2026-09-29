@@ -25,10 +25,8 @@ func (s *Signal) reconcileActionCronEmitters(
 	queue *app.Queue,
 	existing []app.QueueEmitter,
 ) error {
-	// Stop and delete all existing action cron emitters
 	stopAndDeleteEmitters(ctx, l, existing)
 
-	// Fetch install action workflows
 	actionWorkflows, err := activities.AwaitGetActionWorkflows(ctx, &activities.GetActionWorkflows{
 		InstallID: s.InstallID,
 	})
@@ -41,7 +39,6 @@ func (s *Signal) reconcileActionCronEmitters(
 		iawByActionWorkflowID[iaw.ActionWorkflowID] = iaw
 	}
 
-	// Create emitters for each action workflow with a cron trigger
 	for _, awc := range appCfg.ActionWorkflowConfigs {
 		if awc.CronTrigger == nil {
 			continue

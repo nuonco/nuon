@@ -38,7 +38,6 @@ func (r *AdminCreateIdentityProviderRequest) Validate(v *validator.Validate) err
 		return validatorPkg.FormatValidationError(err)
 	}
 
-	// Ensure the correct config is provided for the provider type
 	switch r.ProviderType {
 	case "oidc":
 		if r.OpenIDConfig == nil {
@@ -84,16 +83,13 @@ func (s *service) AdminCreateIdentityProvider(ctx *gin.Context) {
 
 	providerType := app.ProviderType(req.ProviderType)
 
-	// Build the identity provider
 	ip := &app.IdentityProvider{
 		ProviderType:  providerType,
 		Name:          req.Name,
 		AllowAllUsers: req.AllowAllUsers,
 		Enabled:       req.Enabled,
-		// OrgID is intentionally left empty for global providers
 	}
 
-	// Set the config based on provider type and validate it
 	var configErr error
 	switch providerType {
 	case app.ProviderTypeOIDC:
@@ -108,7 +104,6 @@ func (s *service) AdminCreateIdentityProvider(ctx *gin.Context) {
 		return
 	}
 
-	// Validate the config using the model's validation method
 	if err := ip.ValidateConfig(); err != nil {
 		ctx.Error(fmt.Errorf("invalid provider config: %w", err))
 		return
@@ -119,8 +114,6 @@ func (s *service) AdminCreateIdentityProvider(ctx *gin.Context) {
 		return
 	}
 
-	// Several providers can now share a provider_type, so the only thing worth rejecting is the
-	// same application registered twice.
 	duplicate, err := s.findDuplicateProvider(ctx, ip)
 	if err != nil {
 		ctx.Error(fmt.Errorf("failed to check for duplicate identity provider: %w", err))
@@ -137,7 +130,6 @@ func (s *service) AdminCreateIdentityProvider(ctx *gin.Context) {
 		return
 	}
 
-	// Create the provider in the database
 	if err := s.db.WithContext(ctx).Create(ip).Error; err != nil {
 		s.l.Error("failed to create identity provider",
 			zap.String("provider_type", req.ProviderType),
@@ -154,8 +146,6 @@ func (s *service) AdminCreateIdentityProvider(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, ip)
 }
 
-// findDuplicateProvider reports an existing global provider registered against the same
-// application: same type, same client ID and, for OIDC, same issuer.
 func (s *service) findDuplicateProvider(ctx context.Context, ip *app.IdentityProvider) (*app.IdentityProvider, error) {
 	clientID, err := ip.GetClientID()
 	if err != nil {

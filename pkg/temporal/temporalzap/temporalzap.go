@@ -15,8 +15,6 @@ var _ log.Logger = (*Logger)(nil)
 
 func NewLogger(zapLogger *zap.Logger) *Logger {
 	return &Logger{
-		// Skip one call frame to exclude zap_adapter itself.
-		// Or it can be configured when logger is created (not always possible).
 		zl: zapLogger.WithOptions(zap.AddCallerSkip(1)),
 	}
 }

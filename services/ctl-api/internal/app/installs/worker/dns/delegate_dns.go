@@ -84,9 +84,6 @@ func (a *Activities) upsertCloudDNSRecords(ctx context.Context, req DelegateDNSR
 		return fmt.Errorf("unable to create Cloud DNS client: %w", err)
 	}
 
-	// Cloud DNS requires both the record name and NS rrdata to be
-	// fully-qualified with a trailing dot; Route53 hands back nameservers
-	// without one.
 	nameservers := make([]string, len(req.NameServers))
 	for i, ns := range req.NameServers {
 		nameservers[i] = ensureTrailingDot(ns)
@@ -101,7 +98,7 @@ func (a *Activities) upsertCloudDNSRecords(ctx context.Context, req DelegateDNSR
 	}
 	change := &googledns.Change{Additions: []*googledns.ResourceRecordSet{record}}
 
-	// Cloud DNS has no native upsert; if an NS record set already exists for
+	// why: Cloud DNS has no native upsert; if an NS record set already exists for
 	// this name, replace it by deleting the current one in the same change so
 	// retries and reprovisions are idempotent.
 	// req.ZoneID holds the Cloud DNS managed zone name (set via DNS_ZONE_ID on GCP)
@@ -196,7 +193,7 @@ func (a *Activities) deleteCloudDNSRecords(ctx context.Context, req DeleteDNSReq
 
 	domain := ensureTrailingDot(req.Domain)
 
-	// Cloud DNS delete requires the current record set; if it's already gone the
+	// why: Cloud DNS delete requires the current record set; if it's already gone the
 	// delegation is clean, so treat NotFound as success to keep retries idempotent.
 	existing, err := svc.ResourceRecordSets.Get(a.cfg.ManagementAccountID, req.ZoneID, domain, "NS").Context(ctx).Do()
 	switch {
@@ -217,7 +214,7 @@ func (a *Activities) deleteCloudDNSRecords(ctx context.Context, req DeleteDNSReq
 func (a *Activities) deleteDNSRecords(ctx context.Context, client route53Client, req DeleteDNSRequest) error {
 	name := ensureTrailingDot(req.Domain)
 
-	// Route53 delete must match the existing record set exactly (values + TTL),
+	// why: Route53 delete must match the existing record set exactly (values + TTL),
 	// so look it up first. A missing record means the delegation is already
 	// clean, so return without error to keep retries idempotent.
 	out, err := client.ListResourceRecordSets(ctx, &route53.ListResourceRecordSetsInput{

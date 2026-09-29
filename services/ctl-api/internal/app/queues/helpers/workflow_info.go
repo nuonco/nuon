@@ -16,14 +16,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// Helpers provides shared graph-building and workflow info logic for signals.
 type Helpers struct {
 	db             *gorm.DB
 	temporalClient temporalclient.Client
 	l              *zap.Logger
 }
 
-// New creates a new helpers instance.
 func New(db *gorm.DB, temporalClient temporalclient.Client, l *zap.Logger) *Helpers {
 	return &Helpers{
 		db:             db,
@@ -51,8 +49,6 @@ type updateState struct {
 	failure       string
 }
 
-// GetWorkflowInfo fetches Temporal workflow execution info for display.
-// It does not decode payloads (no codecs) - input/result fields will be empty.
 func (h *Helpers) GetWorkflowInfo(ctx context.Context, namespace, workflowID string) *WorkflowInfo {
 	status, err := h.temporalClient.GetWorkflowStatusInNamespace(ctx, namespace, workflowID, "")
 	if err != nil {
@@ -144,7 +140,6 @@ func (h *Helpers) GetWorkflowInfo(ctx context.Context, namespace, workflowID str
 					scheduledAt:    event.GetEventTime().AsTime(),
 					scheduledEvtID: event.GetEventId(),
 				}
-				// Extract simple payload data for signal ID parsing
 				if input := attrs.GetInput(); input != nil {
 					sa.input = formatPayloadsSimple(input)
 				}
@@ -307,7 +302,6 @@ func (h *Helpers) GetWorkflowInfo(ctx context.Context, namespace, workflowID str
 		}
 	}
 
-	// Add still-running child workflows
 	for _, state := range childWFs {
 		childWorkflows = append(childWorkflows, ChildWorkflowInfo{
 			WorkflowType: state.workflowType,
@@ -319,7 +313,6 @@ func (h *Helpers) GetWorkflowInfo(ctx context.Context, namespace, workflowID str
 		})
 	}
 
-	// Add scheduled-but-not-finished activities
 	for schedID, sched := range scheduled {
 		found := false
 		for _, a := range activities {
@@ -361,7 +354,6 @@ func (h *Helpers) GetWorkflowInfo(ctx context.Context, namespace, workflowID str
 	return info
 }
 
-// ExtractAwaitedSignals looks for AwaitSignal activities and loads the corresponding queue signals.
 func (h *Helpers) ExtractAwaitedSignals(ctx context.Context, activities []ActivityInfo) []AwaitedSignalInfo {
 	var awaited []AwaitedSignalInfo
 
@@ -395,7 +387,6 @@ func (h *Helpers) ExtractAwaitedSignals(ctx context.Context, activities []Activi
 	return awaited
 }
 
-// ExtractEnqueuedSignals looks for EnqueueSignal activities and extracts the created signal IDs.
 func (h *Helpers) ExtractEnqueuedSignals(ctx context.Context, activities []ActivityInfo) []EnqueuedSignalInfo {
 	var enqueued []EnqueuedSignalInfo
 
@@ -428,7 +419,6 @@ func (h *Helpers) ExtractEnqueuedSignals(ctx context.Context, activities []Activ
 	return enqueued
 }
 
-// ExtractQueueSignalIDFromResult parses activity result JSON for a queue signal ID.
 func ExtractQueueSignalIDFromResult(result string) string {
 	result = strings.TrimSpace(result)
 	if result == "" {
@@ -454,7 +444,6 @@ func ExtractQueueSignalIDFromResult(result string) string {
 	return ""
 }
 
-// ExtractQueueSignalIDFromInput parses activity input JSON for a queue signal ID.
 func ExtractQueueSignalIDFromInput(input string) string {
 	input = strings.TrimSpace(input)
 	if input == "" {
@@ -480,7 +469,6 @@ func ExtractQueueSignalIDFromInput(input string) string {
 	return ""
 }
 
-// FormatWorkflowStatus converts a Temporal workflow execution status to a human-readable string.
 func FormatWorkflowStatus(status enumspb.WorkflowExecutionStatus) string {
 	switch status {
 	case enumspb.WORKFLOW_EXECUTION_STATUS_RUNNING:
@@ -533,7 +521,6 @@ func buildActivityInfo(
 	return ai
 }
 
-// BuildUpdateExecutions groups activities into their parent update executions.
 func BuildUpdateExecutions(updates map[int64]*updateState, activities []ActivityInfo, awaitedSignals []AwaitedSignalInfo, enqueuedSignals []EnqueuedSignalInfo) ([]UpdateExecution, []ActivityInfo) {
 	type indexedUpdate struct {
 		acceptedEvtID int64
@@ -628,8 +615,6 @@ func BuildUpdateExecutions(updates map[int64]*updateState, activities []Activity
 	return execs, orphans
 }
 
-// formatPayloadsSimple extracts raw JSON from Temporal payloads without codec decoding.
-// This is a simplified version that works without codec dependencies.
 func formatPayloadsSimple(payloads *commonpb.Payloads) string {
 	if payloads == nil {
 		return ""

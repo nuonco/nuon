@@ -6,7 +6,6 @@ import (
 	awstypes "github.com/nuonco/nuon/pkg/types/aws"
 )
 
-// BuildAuthRequest creates a RunnerAuthAWSRequest from presigned STS and EC2 tags requests.
 func BuildAuthRequest(stsRequest, tagsRequest *awstypes.PresignedRequest) *models.ServiceRunnerAuthAWSRequest {
 	return &models.ServiceRunnerAuthAWSRequest{
 		Sts: &models.AwsPresignedRequest{

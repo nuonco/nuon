@@ -109,8 +109,6 @@ func (s *service) getRunnerInstallComponents(ctx context.Context, runnerID strin
 				rc.HelmReleaseName = cfg.ChartName
 				rc.HelmNamespace = cfg.Namespace.ValueString()
 			}
-			// Never probe before first deploy — a pass would falsely report healthy.
-			// Redeploys still probe: the previous workload is still serving.
 			if ic.Status != app.InstallComponentStatusDisabled && ic.EverDeployed() {
 				rc.Probes = runnerComponentProbes(ccc.HealthProbes)
 			}
@@ -143,8 +141,6 @@ func runnerComponentProbes(probes app.ComponentHealthProbes) []RunnerComponentPr
 	return out
 }
 
-// renderProbeTargets interpolates install state into probe targets in place.
-// Unresolved probes keep their template and surface as unknown, not dropped.
 func (s *service) renderProbeTargets(ctx context.Context, installID string, comps []RunnerInstallComponent) {
 	if !anyTemplatedProbe(comps) {
 		return
@@ -188,8 +184,6 @@ func renderProbe(probe RunnerComponentProbe, stateData map[string]any) (RunnerCo
 	}
 
 	if len(probe.Command) > 0 {
-		// Clone first: probe.Command aliases the source config's backing array;
-		// writing through it would mutate that config on a later render failure.
 		command := slices.Clone(probe.Command)
 		for idx, arg := range command {
 			rendered, err := render.RenderV2(arg, stateData)
@@ -227,8 +221,6 @@ func probeIsTemplated(probe RunnerComponentProbe) bool {
 	return false
 }
 
-// resolveComponentConfigs maps component ID to config connection, falling back
-// to the latest-configs view when a no-op sync reused connections. Best-effort.
 func (s *service) resolveComponentConfigs(ctx context.Context, installID string, comps []app.InstallComponent) map[string]*app.ComponentConfigConnection {
 	out := map[string]*app.ComponentConfigConnection{}
 

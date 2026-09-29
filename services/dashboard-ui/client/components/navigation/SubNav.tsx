@@ -237,7 +237,7 @@ export const SubNav = ({
           'hidden',
           'md:flex md:absolute md:right-[-1rem] md:w-4 md:h-full md:cursor-pointer md:border-l md:border-transparent',
           'md:transition-[border-color] md:duration-fastest md:ease-cubic',
-          'page-nav-handle', // for event handling
+          'page-nav-handle',
           'hover:!border-primary-600'
         )}
         onMouseDown={handleDragStart}

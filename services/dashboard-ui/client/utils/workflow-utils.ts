@@ -136,8 +136,6 @@ export function getWorkflowHref(
   })
 }
 
-// The retry "lineage" badge — how this attempt relates to its retries. Distinct
-// from the outcome badge (below) so a retry row can show both.
 function getStepLineageBadge(step: TWorkflowStep): TBadgeCfg | undefined {
   const metadata = step?.status?.metadata
 
@@ -145,9 +143,6 @@ function getStepLineageBadge(step: TWorkflowStep): TBadgeCfg | undefined {
     return { children: 'Auto-retried', theme: 'info' }
   }
 
-  // An approved plan that was later retried (e.g. its apply failed and the
-  // whole group re-ran) is no longer valid — surface that the approval was
-  // superseded rather than a generic "Retried".
   const wasApprovedPlan =
     step?.execution_type === 'approval' &&
     (metadata?.status === 'approved' ||
@@ -174,8 +169,6 @@ function getStepLineageBadge(step: TWorkflowStep): TBadgeCfg | undefined {
   return undefined
 }
 
-// The step's outcome badge — its terminal result (Completed / Failed / Plan
-// approved / etc.), independent of any retry lineage.
 function getStepOutcomeBadge(
   step: TWorkflowStep,
   isApprovalPrompt?: boolean,
@@ -244,8 +237,6 @@ function getStepOutcomeBadge(
   return status && WORKFLOW_BADGE_MAP[status] ? WORKFLOW_BADGE_MAP[status] : {}
 }
 
-// Badges for a step, in render order: the retry lineage badge (if any) followed
-// by the outcome badge, so a retry attempt shows both "Retry #2" and its result.
 export function getStepBadges(
   step: TWorkflowStep,
   isApprovalPrompt?: boolean,
@@ -253,7 +244,6 @@ export function getStepBadges(
 ): TBadgeCfg[] {
   const lineage = getStepLineageBadge(step)
 
-  // "Plan superseded" already conveys the outcome — don't double up.
   if (lineage?.children === 'Plan superseded') {
     return [lineage]
   }
@@ -276,25 +266,10 @@ export function getStepBadge(
 ): TBadgeCfg {
   return getStepBadges(step, isApprovalPrompt, planOnly)[0] ?? {}
 }
-/**
- * A step's logical "kind" — stable across retry attempts. Retrying a step
- * creates a new step row that shares the same group and name as the prior
- * attempt(s), so callers can group attempts together (e.g. to only show retry
- * controls on the latest attempt of a kind).
- */
 export function getStepKind(step: TWorkflowStep): string {
   return `${step?.group_idx ?? ''}:${step?.step_target_type ?? ''}:${step?.name ?? step?.id ?? ''}`
 }
 
-/**
- * Whether same-kind siblings are retry attempts of one step rather than
- * distinct steps that happen to share a group and name.
- *
- * A kind is only a retry chain if every step but the last has run — a retry
- * clone is created after its predecessor fails. Two steps that have not started
- * cannot be attempts of each other, which is what a workflow emitting the same
- * step name twice in one group produces.
- */
 export function isRetryChain(kindSteps: TWorkflowStep[]): boolean {
   if (kindSteps.length < 2) return false
   return kindSteps
@@ -314,8 +289,6 @@ export type TStepButtonsCfg = {
 
 export function getStepButtons(step: TWorkflowStep): TStepButtonsCfg {
   const status = step?.status?.status
-  // A step that has already been superseded by a newer retry attempt
-  // (`retried === true`) should never offer retry/skip controls.
   const isFailedAwaitingRetry =
     status === 'failed-pending-retry' && !step?.retried
   const isRetryableError =

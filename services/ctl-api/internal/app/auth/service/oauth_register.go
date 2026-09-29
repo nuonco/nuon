@@ -20,13 +20,10 @@ type oauthRegisterRequest struct {
 	Scope                   string   `json:"scope"`
 }
 
-// oauthError writes an RFC 6749 / 7591 style error body.
 func oauthError(c *gin.Context, status int, code, desc string) {
 	c.JSON(status, gin.H{"error": code, "error_description": desc})
 }
 
-// isAllowedRedirectURI permits https URLs and http loopback URLs (localhost /
-// 127.0.0.1), which is what native/CLI-style public clients (e.g. MCP agents) use.
 func isAllowedRedirectURI(raw string) bool {
 	u, err := url.Parse(raw)
 	if err != nil {
@@ -43,9 +40,6 @@ func isAllowedRedirectURI(raw string) bool {
 	}
 }
 
-// OAuthRegister handles POST /oauth/register — OAuth 2.0 Dynamic Client
-// Registration (RFC 7591). Clients self-register as public clients (no secret)
-// that authenticate with PKCE.
 func (s *service) OAuthRegister(c *gin.Context) {
 	if !s.cfg.OAuthDCREnabled {
 		oauthError(c, http.StatusForbidden, "access_denied", "dynamic client registration is disabled")
@@ -69,7 +63,6 @@ func (s *service) OAuthRegister(c *gin.Context) {
 		}
 	}
 
-	// We only support public clients authenticating with PKCE.
 	if req.TokenEndpointAuthMethod != "" && req.TokenEndpointAuthMethod != "none" {
 		oauthError(c, http.StatusBadRequest, "invalid_client_metadata", "only token_endpoint_auth_method \"none\" is supported")
 		return

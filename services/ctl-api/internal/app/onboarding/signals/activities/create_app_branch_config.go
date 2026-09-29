@@ -12,18 +12,18 @@ import (
 // @as-wrapper
 func (a *Activities) createOnboardingAppBranchConfig(ctx context.Context, appBranchID, repo, directory, branch string) (*app.AppBranchConfig, error) {
 	config, err := a.appsHelpers.CreateAppBranchConfig(ctx, appBranchID,
-		nil, // no connected github VCS
+		nil,
 		&app.PublicGitVCSConfig{
 			Repo:      repo,
 			Directory: directory,
 			Branch:    branch,
 		},
-		nil, // no install groups yet
-		nil, // no post-deploy runbooks
-		nil, // ignore-changes settings: carry forward
-		nil, // preview config: carry forward
+		nil,
+		nil,
+		nil,
+		nil,
 		false,
-		nil, // run config: carry forward
+		nil,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create app branch config: %w", err)

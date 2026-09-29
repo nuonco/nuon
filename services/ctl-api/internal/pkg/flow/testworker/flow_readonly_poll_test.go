@@ -11,9 +11,6 @@ import (
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
-// A read-only poll against a completed resident flow starts a fresh Handler
-// run via update-with-start, but must never re-drive the conductor: no new
-// WorkflowRun rows, no status rewrites.
 func (e *FlowTestSuite) TestReadOnlyPollDoesNotRewarmTerminalFlow() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())

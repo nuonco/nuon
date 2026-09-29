@@ -17,7 +17,6 @@ type View struct {
 	SQL string
 	DB  *gorm.DB
 
-	// Controls whether a view is always reapplied (by dropping it and recreating it)
 	AlwaysReapply bool
 }
 

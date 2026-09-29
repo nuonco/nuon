@@ -72,7 +72,6 @@ func New(params WorkerParams) (*Worker, error) {
 		wkr.RegisterActivity(acts)
 	}
 
-	// register workflows
 	for _, wkflow := range params.WKflows.All() {
 		wkr.RegisterWorkflow(wkflow)
 	}

@@ -8,7 +8,6 @@ import (
 	ecr_types "github.com/aws/aws-sdk-go-v2/service/ecr/types"
 )
 
-// parseAuthorizationData: parses authorization data into the required return format
 func ParseAuthorizationData(data *ecr_types.AuthorizationData) (*Authorization, error) {
 	auth, err := base64.StdEncoding.DecodeString(*data.AuthorizationToken)
 	if err != nil {

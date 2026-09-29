@@ -47,8 +47,6 @@ func (c *client) CreateAppConfig(ctx context.Context, appID string, req *models.
 	return resp.Payload, nil
 }
 
-// SyncAppConfig asks the API to apply the intermediate config stored on an app
-// config. The sync runs asynchronously — poll GetAppConfig for the outcome.
 func (c *client) SyncAppConfig(ctx context.Context, appID, appConfigID string) (*models.AppAppConfig, error) {
 	resp, err := c.genClient.Operations.SyncAppConfig(&operations.SyncAppConfigParams{
 		AppID:    appID,
@@ -123,7 +121,6 @@ func (c *client) UpdateAppConfig(ctx context.Context, appID, appConfigID string,
 	return resp.Payload, nil
 }
 
-// UpdateAppConfigInstalls update the installs using the provided app config version.
 func (c *client) UpdateAppConfigInstalls(ctx context.Context, appID, appConfigID string, req *models.ServiceUpdateAppConfigInstallsRequest) error {
 	_, err := c.genClient.Operations.UpdateAppConfigInstalls(&operations.UpdateAppConfigInstallsParams{
 		AppID:       appID,

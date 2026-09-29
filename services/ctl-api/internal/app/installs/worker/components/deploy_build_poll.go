@@ -34,7 +34,6 @@ func (w *Workflows) pollForDeployableBuild(ctx workflow.Context, installDeployId
 	}
 
 	l.Info("build is not yet deployable, polling")
-	// check the build every 10 seconds for 1 hour
 	sleepTimer := time.Second * 10
 	maxAttempts := 360
 	attempt := 0
@@ -45,13 +44,11 @@ func (w *Workflows) pollForDeployableBuild(ctx workflow.Context, installDeployId
 
 		attempt++
 
-		// Get the latest build
 		bld, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, bld.ID)
 		if err != nil {
 			return fmt.Errorf("unable to get component build: %w", err)
 		}
 
-		// Check if the build is deployable
 		if w.isBuildDeployable(bld) {
 			return nil
 		}

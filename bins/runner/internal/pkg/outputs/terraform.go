@@ -12,8 +12,6 @@ import (
 	terraformworkspace "github.com/nuonco/nuon/pkg/terraform/workspace"
 )
 
-// TerraformOutputs is a helper method that returns outputs in a compatible way with the way they are currently stored
-// in s3
 func TerraformOutputs(ctx context.Context, workspace terraformworkspace.Workspace) (map[string]interface{}, error) {
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {

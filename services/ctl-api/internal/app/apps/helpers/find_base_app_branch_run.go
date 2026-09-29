@@ -9,16 +9,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
 
-// FindBaseAppBranchRun returns the most recent deploy run on the same app branch
-// with labels.builds_completed=true. Preview runs (git-preview-run, plan-only)
-// are excluded from the candidate pool.
 func (h *Helpers) FindBaseAppBranchRun(ctx context.Context, appBranchID string) (*app.AppBranchRun, error) {
 	return h.findLatestBaseRun(ctx, appBranchID, "", true)
 }
 
-// FindBaseAppBranchRunForHead resolves preview baselines from the git branch a
-// pull request targets. Regular branch runs continue to compare with their
-// previous completed build on the same app branch.
 func (h *Helpers) FindBaseAppBranchRunForHead(ctx context.Context, headRun *app.AppBranchRun) (*app.AppBranchRun, error) {
 	if headRun == nil {
 		return nil, gorm.ErrRecordNotFound
@@ -144,7 +138,6 @@ func (h *Helpers) findTargetAppBranchID(ctx context.Context, headRun *app.AppBra
 	return branch.ID, nil
 }
 
-// shouldCreateComparison reports whether a run of this type gets an AppBranchRunComparison row.
 func shouldCreateComparison(runType app.AppBranchRunType, planOnly bool) bool {
 	switch runType {
 	case app.AppBranchRunTypeGit:
@@ -158,9 +151,6 @@ func shouldCreateComparison(runType app.AppBranchRunType, planOnly bool) bool {
 	}
 }
 
-// createAppBranchRunComparison creates a comparison row for headRun.
-// BaseRunID is set when a prior deploy with builds_completed=true exists; otherwise nil.
-// Ownership is HeadRunID on the comparison (has-one from the run); no column on AppBranchRun.
 func (h *Helpers) createAppBranchRunComparison(ctx context.Context, headRun *app.AppBranchRun) error {
 	var baseRunID *string
 	baseRun, err := h.FindBaseAppBranchRunForHead(ctx, headRun)

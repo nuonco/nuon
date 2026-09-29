@@ -9,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
-// ErrTailJobsNotAvailable is returned by TailJobs when the org does not
+// why: ErrTailJobsNotAvailable is returned by TailJobs when the org does not
 // have the `runner-job-long-poll` feature flag on. Callers should fall
 // back to GetJobs polling for the rest of the runner's lifetime to avoid
 // reprobing a known-disabled endpoint every iteration.
@@ -33,13 +33,6 @@ func (c *client) GetJobs(ctx context.Context, grp models.AppRunnerJobGroup, stat
 	return resp.Payload, nil
 }
 
-// TailJobs long-polls the ctl-api for an available job. wait is rounded
-// down to seconds for transport. A nil job list is returned with no error
-// when the long-poll times out with the queue still empty; callers should
-// reissue immediately in that case.
-//
-// Returns ErrTailJobsNotAvailable on a 404 from the server, which signals
-// the `runner-job-long-poll` org feature flag is off.
 func (c *client) TailJobs(ctx context.Context, grp models.AppRunnerJobGroup, wait time.Duration) ([]*models.AppRunnerJob, error) {
 	grpStr := string(grp)
 	waitStr := wait.String()

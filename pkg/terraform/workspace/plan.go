@@ -43,7 +43,7 @@ func (w *workspace) plan(ctx context.Context, client Terraform, log hclog.Logger
 
 	opts := []tfexec.PlanOption{
 		tfexec.Refresh(true),
-		tfexec.Out("tfplan"), // NOTE: this should probably be configured w/ a WithPlanOut
+		tfexec.Out("tfplan"),
 	}
 	for _, fp := range w.varsPaths {
 		opts = append(opts, tfexec.VarFile(fp))
@@ -63,13 +63,7 @@ func (w *workspace) plan(ctx context.Context, client Terraform, log hclog.Logger
 	return out.Bytes()
 }
 
-// WritePlan writes the Terraform tfplan to a file called tfplan in the workspace. the bytes are provided externally. e.g. in the runner in exec.
 func (w *workspace) WriteTFPlan(ctx context.Context, log hclog.Logger) ([]byte, error) {
-	// NOTE: the plan is expected to be an opaque format tfplan file (not human legible)
-
-	// Create the plan.json file in the workspace directory this method writes the raw bytes.
-
-	// write the tfplan to a file in the workspace directory
 	planFilePath := filepath.Join(w.root, defaultPlanFilename)
 	log.Debug("writing plan", zap.String("path", planFilePath), zap.Int("plan.bytes.count", len(w.PlanBytes)))
 	fd, err := os.Create(planFilePath)
@@ -84,7 +78,6 @@ func (w *workspace) WriteTFPlan(ctx context.Context, log hclog.Logger) ([]byte, 
 	log.Debug("wrote plan", zap.String("path", planFilePath), zap.Int("plan.bytes.count", len(w.PlanBytes)), zap.Int("bytes-written", n))
 	fd.Sync()
 
-	// compress the tfplan file and write it as tfplan.gz
 	var zipBytes bytes.Buffer
 	gzipWriter := gzip.NewWriter(&zipBytes)
 	gzipWriter.Write(w.PlanBytes)
@@ -107,7 +100,6 @@ func (w *workspace) WriteTFPlan(ctx context.Context, log hclog.Logger) ([]byte, 
 	return w.PlanBytes, nil
 }
 
-// Compresses an existing tfplan already at the root
 func (w *workspace) CompressTFPlan(ctx context.Context, log hclog.Logger) ([]byte, error) {
 
 	planFilePath := filepath.Join(w.root, defaultPlanFilename)

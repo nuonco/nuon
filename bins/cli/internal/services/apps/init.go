@@ -29,8 +29,6 @@ func (s *Service) newGen(params ConfigGenParams) *generator.ConfigGen {
 	)
 }
 
-// schemaBaseURL returns the configured API host so generated #:schema
-// directives point at the control plane the CLI is targeting.
 func (s *Service) schemaBaseURL() string {
 	if s.cfg != nil {
 		return s.cfg.APIURL
@@ -52,7 +50,6 @@ func (s *Service) Init(ctx context.Context, genParams ConfigGenParams, params *I
 	var c *generator.ConfigStructure
 	var err error
 
-	// Check if prebuilt template is selected
 	if params != nil && params.PrebuiltTemplate != "" {
 		switch params.PrebuiltTemplate {
 		case "aws-eks":
@@ -112,7 +109,6 @@ type SampleActionsParams struct {
 func (s *Service) InitSampleActions(ctx context.Context, genParams ConfigGenParams, params SampleActionsParams) error {
 	c := generator.NewConfigStructure(genParams.Path)
 	if len(params.Actions) > 0 {
-		// action name is not being used now
 		for range params.Actions {
 			c.AddActions(
 				generator.ConfigFileDefinition{
@@ -201,10 +197,7 @@ func (s *Service) InitSampleComponents(ctx context.Context, genParams ConfigGenP
 
 func (s *Service) InitConfigFile(ctx context.Context, path string, configType string, genParams ConfigGenParams) error {
 	gen := s.newGen(genParams)
-	// Create a custom ConfigStructure with only the specified config file
 	configStructure := generator.DefaultAppConfigConfigStructure(path)
-
-	// Filter to only include the requested config type
 	filteredConfigs := []generator.ConfigFileDefinition{}
 	for _, config := range configStructure.Configs {
 		if config.Name == configType {
@@ -217,7 +210,6 @@ func (s *Service) InitConfigFile(ctx context.Context, path string, configType st
 		return errors.Errorf("unknown config type: %s", configType)
 	}
 
-	// Create a new structure with only the requested config
 	customStructure := &generator.ConfigStructure{
 		Name:              path,
 		Configs:           filteredConfigs,
@@ -249,14 +241,12 @@ type SandboxParams struct {
 func (s *Service) InitSandboxConfig(ctx context.Context, genParams ConfigGenParams, params SandboxParams) error {
 	gen := s.newGen(genParams)
 
-	// Build the sandbox config instance
 	sandboxConfig := &config.AppSandboxConfig{
 		TerraformVersion: params.TerraformVersion,
 		EnvVarMap:        params.EnvVars,
 		VarsMap:          params.Vars,
 	}
 
-	// Set public repo if provided
 	if params.PublicRepo != "" {
 		sandboxConfig.PublicRepo = &config.PublicRepoConfig{
 			Repo:      params.PublicRepo,
@@ -265,7 +255,6 @@ func (s *Service) InitSandboxConfig(ctx context.Context, genParams ConfigGenPara
 		}
 	}
 
-	// Set connected repo if provided
 	if params.ConnectedRepo != "" {
 		sandboxConfig.ConnectedRepo = &config.ConnectedRepoConfig{
 			Repo:      params.ConnectedRepo,
@@ -274,12 +263,10 @@ func (s *Service) InitSandboxConfig(ctx context.Context, genParams ConfigGenPara
 		}
 	}
 
-	// Set drift schedule if provided
 	if params.DriftSchedule != "" {
 		sandboxConfig.DriftSchedule = &params.DriftSchedule
 	}
 
-	// Set var files if provided
 	if len(params.VarFiles) > 0 {
 		sandboxConfig.VariablesFiles = make([]config.TerraformVariablesFile, len(params.VarFiles))
 		for i, vf := range params.VarFiles {
@@ -323,7 +310,6 @@ type StackParams struct {
 func (s *Service) InitStackConfig(ctx context.Context, genParams ConfigGenParams, params StackParams) error {
 	gen := s.newGen(genParams)
 
-	// Build the stack config instance
 	stackConfig := &config.StackConfig{
 		Type:                    params.Type,
 		Name:                    params.Name,
@@ -365,7 +351,6 @@ type RunnerParams struct {
 func (s *Service) InitRunnerConfig(ctx context.Context, genParams ConfigGenParams, params RunnerParams) error {
 	gen := s.newGen(genParams)
 
-	// Build the runner config instance
 	runnerConfig := &config.AppRunnerConfig{
 		RunnerType:    params.RunnerType,
 		EnvVarMap:     params.EnvVars,
@@ -396,7 +381,6 @@ func (s *Service) InitRunnerConfig(ctx context.Context, genParams ConfigGenParam
 	return nil
 }
 
-// TerraformModuleComponentParams holds parameters for Terraform module component configuration
 type TerraformModuleComponentParams struct {
 	Name             string
 	VarName          string
@@ -417,14 +401,12 @@ type TerraformModuleComponentParams struct {
 func (s *Service) InitTerraformModuleComponentConfig(ctx context.Context, genParams ConfigGenParams, params TerraformModuleComponentParams) error {
 	gen := s.newGen(genParams)
 
-	// Build the terraform module component config
 	tfModuleConfig := &config.TerraformModuleComponentConfig{
 		TerraformVersion: params.TerraformVersion,
 		EnvVarMap:        params.EnvVars,
 		VarsMap:          params.Vars,
 	}
 
-	// Set public repo if provided
 	if params.PublicRepo != "" {
 		tfModuleConfig.PublicRepo = &config.PublicRepoConfig{
 			Repo:      params.PublicRepo,
@@ -433,7 +415,6 @@ func (s *Service) InitTerraformModuleComponentConfig(ctx context.Context, genPar
 		}
 	}
 
-	// Set connected repo if provided
 	if params.ConnectedRepo != "" {
 		tfModuleConfig.ConnectedRepo = &config.ConnectedRepoConfig{
 			Repo:      params.ConnectedRepo,
@@ -442,12 +423,10 @@ func (s *Service) InitTerraformModuleComponentConfig(ctx context.Context, genPar
 		}
 	}
 
-	// Set drift schedule if provided
 	if params.DriftSchedule != "" {
 		tfModuleConfig.DriftSchedule = &params.DriftSchedule
 	}
 
-	// Set var files if provided
 	if len(params.VarFiles) > 0 {
 		tfModuleConfig.VariablesFiles = make([]config.TerraformVariablesFile, len(params.VarFiles))
 		for i, vf := range params.VarFiles {
@@ -457,7 +436,6 @@ func (s *Service) InitTerraformModuleComponentConfig(ctx context.Context, genPar
 		}
 	}
 
-	// Build the component wrapper
 	component := &config.Component{
 		Type:            config.TerraformModuleComponentType,
 		Name:            params.Name,
@@ -493,7 +471,6 @@ func (s *Service) InitTerraformModuleComponentConfig(ctx context.Context, genPar
 	return nil
 }
 
-// HelmChartComponentParams holds parameters for Helm chart component configuration
 type HelmChartComponentParams struct {
 	Name             string
 	VarName          string
@@ -519,7 +496,6 @@ type HelmChartComponentParams struct {
 func (s *Service) InitHelmChartComponentConfig(ctx context.Context, genParams ConfigGenParams, params HelmChartComponentParams) error {
 	gen := s.newGen(genParams)
 
-	// Build the helm chart component config
 	helmConfig := &config.HelmChartComponentConfig{
 		ChartName:     params.ChartName,
 		ValuesMap:     params.Values,
@@ -528,7 +504,6 @@ func (s *Service) InitHelmChartComponentConfig(ctx context.Context, genParams Co
 		TakeOwnership: params.TakeOwnership,
 	}
 
-	// Set public repo if provided
 	if params.PublicRepo != "" {
 		helmConfig.PublicRepo = &config.PublicRepoConfig{
 			Repo:      params.PublicRepo,
@@ -537,7 +512,6 @@ func (s *Service) InitHelmChartComponentConfig(ctx context.Context, genParams Co
 		}
 	}
 
-	// Set connected repo if provided
 	if params.ConnectedRepo != "" {
 		helmConfig.ConnectedRepo = &config.ConnectedRepoConfig{
 			Repo:      params.ConnectedRepo,
@@ -546,7 +520,6 @@ func (s *Service) InitHelmChartComponentConfig(ctx context.Context, genParams Co
 		}
 	}
 
-	// Set helm repo if provided
 	if params.HelmRepoURL != "" {
 		helmConfig.HelmRepo = &config.HelmRepoConfig{
 			RepoURL: params.HelmRepoURL,
@@ -555,12 +528,10 @@ func (s *Service) InitHelmChartComponentConfig(ctx context.Context, genParams Co
 		}
 	}
 
-	// Set drift schedule if provided
 	if params.DriftSchedule != "" {
 		helmConfig.DriftSchedule = &params.DriftSchedule
 	}
 
-	// Set values files if provided
 	if len(params.ValuesFiles) > 0 {
 		helmConfig.ValuesFiles = make([]config.HelmValuesFile, len(params.ValuesFiles))
 		for i, vf := range params.ValuesFiles {
@@ -570,7 +541,6 @@ func (s *Service) InitHelmChartComponentConfig(ctx context.Context, genParams Co
 		}
 	}
 
-	// Build the component wrapper
 	component := &config.Component{
 		Type:         config.HelmChartComponentType,
 		Name:         params.Name,
@@ -606,7 +576,6 @@ func (s *Service) InitHelmChartComponentConfig(ctx context.Context, genParams Co
 	return nil
 }
 
-// KubernetesManifestComponentParams holds parameters for Kubernetes manifest component configuration
 type KubernetesManifestComponentParams struct {
 	Name          string
 	VarName       string
@@ -619,18 +588,15 @@ type KubernetesManifestComponentParams struct {
 func (s *Service) InitKubernetesManifestComponentConfig(ctx context.Context, genParams ConfigGenParams, params KubernetesManifestComponentParams) error {
 	gen := s.newGen(genParams)
 
-	// Build the kubernetes manifest component config
 	k8sManifestConfig := &config.KubernetesManifestComponentConfig{
 		Manifest:  params.Manifest,
 		Namespace: params.Namespace,
 	}
 
-	// Set drift schedule if provided
 	if params.DriftSchedule != "" {
 		k8sManifestConfig.DriftSchedule = &params.DriftSchedule
 	}
 
-	// Build the component wrapper
 	component := &config.Component{
 		Type:               config.KubernetesManifestComponentType,
 		Name:               params.Name,
@@ -766,7 +732,6 @@ func (s *Service) InitActionConfig(ctx context.Context, genParams ConfigGenParam
 	return nil
 }
 
-// build config structure from raw params
 func BuildConfigStructureFromParams(path string, params *InitParams) *generator.ConfigStructure {
 	structure := &generator.ConfigStructure{
 		Name:              path,
@@ -774,13 +739,10 @@ func BuildConfigStructureFromParams(path string, params *InitParams) *generator.
 		ConfigDirectories: []generator.ConfigDirectoryDefinition{},
 	}
 
-	// Add inputs config
 	structure.UpdateInputs(&config.AppInputConfig{})
 
-	// Add sandbox config
 	structure.UpdateSandbox(&config.AppSandboxConfig{})
 
-	// Add stack config
 	if params.StackType != "" || params.AppName != "" {
 		stackConfig := &config.StackConfig{}
 		if params.StackType != "" {
@@ -794,7 +756,6 @@ func BuildConfigStructureFromParams(path string, params *InitParams) *generator.
 		structure.UpdateStack(&config.StackConfig{})
 	}
 
-	// Add runner config
 	if params.RunnerType != "" {
 		runnerConfig := &config.AppRunnerConfig{
 			RunnerType: params.RunnerType,
@@ -804,16 +765,12 @@ func BuildConfigStructureFromParams(path string, params *InitParams) *generator.
 		structure.UpdateRunner(&config.AppRunnerConfig{})
 	}
 
-	// Add secrets config
 	structure.UpdateSecrets(&config.SecretsConfig{})
 
-	// Add break glass config
 	structure.UpdateBreakGlass(&config.BreakGlass{})
 
-	// Add policies config
 	structure.UpdatePolicies(&config.PoliciesConfig{})
 
-	// Add component configs
 	if len(params.ComponentTypes) > 0 {
 		for _, componentType := range params.ComponentTypes {
 			switch componentType {
@@ -861,7 +818,6 @@ func BuildConfigStructureFromParams(path string, params *InitParams) *generator.
 		}
 	}
 
-	// Add action configs
 	if len(params.Actions) > 0 {
 		for _, actionName := range params.Actions {
 			structure.AddActions(

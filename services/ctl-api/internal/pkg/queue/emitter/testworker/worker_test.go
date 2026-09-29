@@ -87,7 +87,6 @@ func (e *EmitterTestSuite) SetupSuite() {
 		e.T(),
 		fx.Provide(internal.NewConfig),
 
-		// various dependencies
 		fx.Provide(log.New),
 		fx.Provide(dblog.New),
 		fx.Provide(loops.New),
@@ -125,33 +124,26 @@ func (e *EmitterTestSuite) SetupSuite() {
 		fx.Provide(analytics.NewTemporal),
 		fx.Provide(cloudformation.NewTemplates),
 
-		// shared activities and workflows
 		fx.Provide(statusactivities.New),
 		fx.Provide(job.New),
 		fx.Provide(signaldb.NewPayloadConverter),
 
-		// clients
 		fx.Provide(enqueuer.New),
 		fx.Provide(queueclient.New),
 		fx.Provide(emitterclient.New),
 
-		// test dependencies
 		fx.Provide(seed.New),
 
-		// queue package dependencies
 		fx.Provide(queueactivities.New),
 		fx.Provide(queue.NewWorkflows),
 		fx.Provide(handler.NewWorkflows),
 		fx.Provide(handleractivities.New),
 
-		// emitter package dependencies
 		fx.Provide(activities.New),
 		fx.Provide(emitter.NewWorkflows),
 
-		// start the test worker
 		fx.Provide(worker.AsWorker(New)),
 
-		// invokers
 		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
 		fx.Invoke(worker.WithWorkers(func([]worker.Worker) {
 		})),

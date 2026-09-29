@@ -150,9 +150,6 @@ func (s *service) getComponentHealthContext(ctx context.Context, runnerID string
 	return resp, nil
 }
 
-// resolveComponentHealthInstallID resolves the install a runner belongs to,
-// exactly like getRunnerInstallComponents. Returns ok=false (no error) when
-// the runner's group isn't owned by an install.
 func (s *service) resolveComponentHealthInstallID(ctx context.Context, runnerID string) (string, bool, error) {
 	var runner app.Runner
 	if err := s.db.WithContext(ctx).

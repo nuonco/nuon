@@ -12,15 +12,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
-// ForwardStepFinishedRequest is the input for forwarding a step-finished update
-// to a step handler workflow.
 type ForwardStepFinishedRequest struct {
 	StepID string `json:"step_id" validate:"required"`
 }
 
-// StepFinishedResponse is the typed response from the step-finished update
-// handler. It contains the step's final status and directive so callers don't
-// need to re-fetch the step from the database.
 type StepFinishedResponse struct {
 	StepID    string     `json:"step_id"`
 	Status    app.Status `json:"status"`

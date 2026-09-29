@@ -291,7 +291,7 @@ func (a *Activities) processHealthTags(p *app.RunnerProcess, runner app.Runner, 
 }
 
 func (a *Activities) handleBatchProcessShutdown(ectx context.Context, p *app.RunnerProcess, now time.Time, resp *BatchProcessHealthchecksResponse) {
-	// Without the per-process queue's MaxInFlight=1 serialization this can race
+	// why: Without the per-process queue's MaxInFlight=1 serialization this can race
 	// trigger_shutdown; an existing requested graceful shutdown absorbs the flag.
 	var existing int64
 	if res := a.db.WithContext(ectx).
@@ -446,7 +446,7 @@ func (a *Activities) checkBatchVersionMismatch(ectx context.Context, p *app.Runn
 	}
 }
 
-// guardedProcessStatusUpdate is a single-statement status transition that
+// why: guardedProcessStatusUpdate is a single-statement status transition that
 // re-checks the process is still active/offline at write time, so batch checks
 // can't clobber a concurrent shutdown or init transition.
 func (a *Activities) guardedProcessStatusUpdate(ectx context.Context, current *app.RunnerProcess, to app.RunnerProcessStatus, desc string) (bool, error) {

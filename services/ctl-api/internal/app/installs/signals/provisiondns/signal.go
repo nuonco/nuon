@@ -79,7 +79,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// Check if sandbox - skip DNS provisioning for sandbox installs
 	install, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install")
@@ -90,7 +89,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// The ProvisionDNSDelegation child workflow handles the root domain check internally
 	dnsReq := &installdelegationdns.ProvisionDNSDelegationRequest{
 		Domain:      outputs.DNS.PublicDomain.Name,
 		Nameservers: outputs.DNS.PublicDomain.Nameservers,

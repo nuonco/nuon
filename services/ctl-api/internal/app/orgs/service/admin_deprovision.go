@@ -41,9 +41,6 @@ func (s *service) AdminDeprovisionOrg(ctx *gin.Context) {
 		return
 	}
 
-	// App deletion is handled by the deprovision signal automatically.
-	// The signal will fail if any apps still have installs that need to be forgotten first.
-
 	queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))

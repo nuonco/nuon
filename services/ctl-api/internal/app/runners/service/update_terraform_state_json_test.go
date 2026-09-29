@@ -76,7 +76,6 @@ func (s *UpdateTerraformStateJSONTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes - must include TestAcc for created_by_id context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -97,7 +96,6 @@ func (s *UpdateTerraformStateJSONTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create terraform workspace (use unique OwnerID to avoid unique constraint on owner_id+owner_type)
 	s.testWS = &app.TerraformWorkspace{
 		ID:        domains.NewTerraformWorkspaceID(),
 		OrgID:     s.testOrg.ID,
@@ -134,7 +132,6 @@ func (s *UpdateTerraformStateJSONTestSuite) TestUpdateTerraformStateJSON() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(workspaceID string) {
-				// Verify state JSON was created
 				var stateJSON app.TerraformWorkspaceStateJSON
 				err := s.service.DB.Where("workspace_id = ?", workspaceID).
 					Order("created_at DESC").

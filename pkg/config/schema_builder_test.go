@@ -29,12 +29,10 @@ func TestFieldBuilder_Short(t *testing.T) {
 	fb := builder.Field("test_field")
 	result := fb.Short("This is a short description")
 
-	// Verify chaining works
 	if result != fb {
 		t.Error("Short() did not return the FieldBuilder for chaining")
 	}
 
-	// Verify description was set
 	prop, ok := schema.Properties.Get("test_field")
 	if !ok {
 		t.Fatal("Property was not created")
@@ -144,7 +142,6 @@ func TestFieldBuilder_DeprecatedWithoutReason(t *testing.T) {
 	if !prop.Deprecated {
 		t.Error("Expected Deprecated to be true")
 	}
-	// Description should only have the original text
 	if prop.Description != "Some field" {
 		t.Errorf("Expected description 'Some field', got %q", prop.Description)
 	}
@@ -160,17 +157,14 @@ func TestFieldBuilder_Required(t *testing.T) {
 	fb := builder.Field("test_field")
 	result := fb.Required()
 
-	// Verify chaining works
 	if result != fb {
 		t.Error("Required() did not return the FieldBuilder for chaining")
 	}
 
-	// Verify field was added to Required
 	if len(schema.Required) != 1 || schema.Required[0] != "test_field" {
 		t.Errorf("Expected Required to contain 'test_field', got %v", schema.Required)
 	}
 
-	// Verify it doesn't add duplicates
 	fb.Required()
 	if len(schema.Required) != 1 {
 		t.Errorf("Expected Required to still have 1 item, got %d", len(schema.Required))
@@ -384,7 +378,6 @@ func TestFieldBuilder_SchemaBackref(t *testing.T) {
 		t.Error("SchemaBackref did not return correct schema")
 	}
 
-	// Verify we can use it to build another field
 	backref.Field("field2").Short("Field 2")
 	prop, ok := schema.Properties.Get("field2")
 	if !ok || prop.Description != "Field 2" {
@@ -454,7 +447,6 @@ func TestFluentChaining(t *testing.T) {
 		Required:   []string{},
 	}
 
-	// Test comprehensive fluent chaining as shown in the example usage
 	NewSchemaBuilder(schema).
 		Field("repo_url").
 		Short("URL of repo").
@@ -469,7 +461,6 @@ func TestFluentChaining(t *testing.T) {
 		Short("Chart version").
 		Format("semver")
 
-	// Verify all fields were created
 	repoURL, ok1 := schema.Properties.Get("repo_url")
 	chart, ok2 := schema.Properties.Get("chart")
 	version, ok3 := schema.Properties.Get("version")
@@ -478,7 +469,6 @@ func TestFluentChaining(t *testing.T) {
 		t.Fatal("Not all properties were created")
 	}
 
-	// Verify repo_url
 	if !contains(repoURL.Description, "Full URL") {
 		t.Error("repo_url description not set correctly")
 	}
@@ -486,17 +476,14 @@ func TestFluentChaining(t *testing.T) {
 		t.Errorf("Expected 1 example for repo_url, got %d", len(repoURL.Examples))
 	}
 
-	// Verify chart
 	if chart.Description != "Chart name" {
 		t.Errorf("chart description incorrect: %q", chart.Description)
 	}
 
-	// Verify version
 	if version.Format != "semver" {
 		t.Errorf("version format incorrect: %q", version.Format)
 	}
 
-	// Verify required
 	if len(schema.Required) != 2 {
 		t.Errorf("Expected 2 required fields, got %d", len(schema.Required))
 	}
@@ -615,7 +602,6 @@ func TestFieldBuilder_DeeplyNestedObject(t *testing.T) {
 	}
 	builder := NewSchemaBuilder(schema)
 
-	// Three levels of nesting
 	builder.Field("app").
 		Short("Application config").
 		Object(func(sb *SchemaBuilder) {
@@ -705,13 +691,11 @@ func TestFieldBuilder_NestedObjectWithChaining(t *testing.T) {
 		t.Error("logging description not set")
 	}
 
-	// Verify server properties
 	serverHost, _ := server.Properties.Get("host")
 	if serverHost.Format != "hostname" {
 		t.Errorf("Expected host format 'hostname', got %q", serverHost.Format)
 	}
 
-	// Verify logging properties
 	loggingLevel, _ := logging.Properties.Get("level")
 	if len(loggingLevel.Enum) != 4 {
 		t.Errorf("Expected 4 enum values for level, got %d", len(loggingLevel.Enum))
@@ -724,7 +708,6 @@ func TestFieldBuilder_NestedObjectArrayItems(t *testing.T) {
 	}
 	builder := NewSchemaBuilder(schema)
 
-	// Create an array of objects with properly initialized Properties
 	itemSchema := &jsonschema.Schema{
 		Properties: jsonschema.NewProperties(),
 	}
@@ -759,7 +742,6 @@ func TestFieldBuilder_ComplexNestedStructure(t *testing.T) {
 		Properties: jsonschema.NewProperties(),
 	}
 
-	// Simulate a real-world structure like HelmChartComponentConfig
 	NewSchemaBuilder(schema).
 		Field("chart_name").
 		Short("Chart name").
@@ -800,7 +782,6 @@ func TestFieldBuilder_ComplexNestedStructure(t *testing.T) {
 		Type("string").
 		Default("default")
 
-	// Verify top-level structure
 	chartName, _ := schema.Properties.Get("chart_name")
 	if chartName.Type != "string" {
 		t.Errorf("Expected chart_name type 'string', got %q", chartName.Type)
@@ -811,13 +792,11 @@ func TestFieldBuilder_ComplexNestedStructure(t *testing.T) {
 		t.Errorf("Expected helm_repo type 'object', got %q", helmRepo.Type)
 	}
 
-	// Verify nested structure
 	repoURL, _ := helmRepo.Properties.Get("repo_url")
 	if repoURL.Format != "uri" {
 		t.Errorf("Expected repo_url format 'uri', got %q", repoURL.Format)
 	}
 
-	// Verify deeply nested structure
 	values, _ := schema.Properties.Get("values")
 	if values.Type != "object" {
 		t.Errorf("Expected values type 'object', got %q", values.Type)
@@ -834,7 +813,6 @@ func TestFieldBuilder_ComplexNestedStructure(t *testing.T) {
 	}
 }
 
-// Helper function to check if a string contains a substring
 func contains(s, substr string) bool {
 	for i := 0; i <= len(s)-len(substr); i++ {
 		if s[i:i+len(substr)] == substr {

@@ -9,54 +9,28 @@ import (
 )
 
 type AppConfig struct {
-	// Config file version
 	Version string `mapstructure:"version" toml:"version" jsonschema:"required"`
 
-	// Description for your app, which is rendered in the installers
-	Description string `mapstructure:"description,omitempty" toml:"description,omitempty"`
-	// Display name for the app, rendered in the installer
-	DisplayName string `mapstructure:"display_name,omitempty" toml:"display_name,omitempty"`
-	// Slack webhook url to receive notifications
-	SlackWebhookURL string `mapstructure:"slack_webhook_url" toml:"slack_webhook_url"`
-	// Readme for the app
-	Readme string `mapstructure:"readme,omitempty" toml:"readme,omitempty" features:"get,template"`
-	// Color codes for label keys
-	LabelColors map[string]string `mapstructure:"label_colors,omitempty" toml:"label_colors,omitempty"`
-	// Labels applied to every install of the app; editable only via app config
-	DefaultLabels map[string]string `mapstructure:"default_labels,omitempty" toml:"default_labels,omitempty"`
+	Description     string            `mapstructure:"description,omitempty" toml:"description,omitempty"`
+	DisplayName     string            `mapstructure:"display_name,omitempty" toml:"display_name,omitempty"`
+	SlackWebhookURL string            `mapstructure:"slack_webhook_url" toml:"slack_webhook_url"`
+	Readme          string            `mapstructure:"readme,omitempty" toml:"readme,omitempty" features:"get,template"`
+	LabelColors     map[string]string `mapstructure:"label_colors,omitempty" toml:"label_colors,omitempty"`
+	DefaultLabels   map[string]string `mapstructure:"default_labels,omitempty" toml:"default_labels,omitempty"`
 
-	// Default App Branch config
-	Branch *AppBranchConfig `mapstructure:"branch,omitempty" toml:"branch,omitempty"`
-	// App branch configs (from branches/ directory)
-	Branches []*AppBranchConfig `mapstructure:"branches,omitempty" toml:"branches,omitempty"`
-	// Input configuration
-	Inputs *AppInputConfig `mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
-	// Sandbox configuration
-	Sandbox *AppSandboxConfig `mapstructure:"sandbox" toml:"sandbox" jsonschema:"required"`
-	// Runner configuration
-	Runner *AppRunnerConfig `mapstructure:"runner" toml:"runner" jsonschema:"required"`
-	// Permissions config
-	Permissions *PermissionsConfig `mapstructure:"permissions,omitempty" toml:"permissions,omitempty"`
-	// Policies config
-	Policies *PoliciesConfig `mapstructure:"policies,omitempty" toml:"policies,omitempty"`
-	// Secrets config
-	Secrets *SecretsConfig `mapstructure:"secrets,omitempty" toml:"secrets,omitempty"`
-	// Break-glass config
-	BreakGlass *BreakGlass `mapstructure:"break_glass,omitempty" toml:"break_glass,omitempty"`
-	// Stack config
-	Stack *StackConfig `mapstructure:"stack,omitempty" toml:"stack,omitempty"`
-	// Operation rules
-	OperationRoles *OperationRolesConfig `mapstructure:"operation_roles,omitempty" toml:"operation_roles,omitempty"`
-	// Kubernetes contexts
+	Branch             *AppBranchConfig          `mapstructure:"branch,omitempty" toml:"branch,omitempty"`
+	Branches           []*AppBranchConfig        `mapstructure:"branches,omitempty" toml:"branches,omitempty"`
+	Inputs             *AppInputConfig           `mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
+	Sandbox            *AppSandboxConfig         `mapstructure:"sandbox" toml:"sandbox" jsonschema:"required"`
+	Runner             *AppRunnerConfig          `mapstructure:"runner" toml:"runner" jsonschema:"required"`
+	Permissions        *PermissionsConfig        `mapstructure:"permissions,omitempty" toml:"permissions,omitempty"`
+	Policies           *PoliciesConfig           `mapstructure:"policies,omitempty" toml:"policies,omitempty"`
+	Secrets            *SecretsConfig            `mapstructure:"secrets,omitempty" toml:"secrets,omitempty"`
+	BreakGlass         *BreakGlass               `mapstructure:"break_glass,omitempty" toml:"break_glass,omitempty"`
+	Stack              *StackConfig              `mapstructure:"stack,omitempty" toml:"stack,omitempty"`
+	OperationRoles     *OperationRolesConfig     `mapstructure:"operation_roles,omitempty" toml:"operation_roles,omitempty"`
 	KubernetesContexts *KubernetesContextsConfig `mapstructure:"kubernetes_contexts,omitempty" toml:"kubernetes_contexts,omitempty"`
 
-	// NOTE: in order to prevent users having to declare multiple arrays of _different_ component types:
-	// eg: [[terraform_module_components]]
-	// eg: [[helm_chart_components]]
-	// we have one flat type, and convert the toml to a mapstructure.
-	// This requires a bit more work/indirection by us, but a bit less by our customers!
-
-	// Components are used to connect container images, automation and infrastructure as code to your Nuon App
 	Components ComponentList `mapstructure:"components,omitempty" toml:"components,omitempty"`
 
 	Installs       []*Install      `mapstructure:"installs,omitempty" toml:"installs,omitempty"`
@@ -232,12 +206,10 @@ func (a *AppConfig) Parse(opts ...ParseOption) error {
 		}
 	}
 
-	// Default cloud_platform on all roles from runner type if not explicitly set
 	if err := a.defaultCloudPlatformFromRunner(); err != nil {
 		return err
 	}
 
-	// Resolve kubernetes_contexts <-> component wiring after both are parsed.
 	if err := a.resolveKubernetesContexts(); err != nil {
 		return err
 	}
@@ -245,16 +217,6 @@ func (a *AppConfig) Parse(opts ...ParseOption) error {
 	return nil
 }
 
-// resolveKubernetesContexts cross-validates the kubernetes_contexts block
-// against the components list and injects an implicit dependency from each
-// component using a context to that context's source component, so build /
-// deploy ordering works without users also listing the cluster component in
-// `dependencies`.
-//
-// TODO(apps-sync-validate): warn (but don't fail) when a referenced source
-// component's TF/Pulumi source doesn't declare cluster.{name,endpoint,...}
-// outputs. Static validation belongs at apps-sync time; runtime template
-// failure during deploy planning is acceptable for now.
 func (a *AppConfig) resolveKubernetesContexts() error {
 	componentsByName := make(map[string]*Component, len(a.Components))
 	for _, c := range a.Components {

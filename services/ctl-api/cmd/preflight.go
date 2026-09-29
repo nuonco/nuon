@@ -33,9 +33,6 @@ Available checks: ` + strings.Join(preflight.Names(), ", "),
 }
 
 func runPreflight(cmd *cobra.Command, args []string) {
-	// Deliberately not internal.NewConfig: it validates the whole struct up
-	// front, so a single missing field would abort before any check could
-	// report which ones are actually wrong.
 	cfg, err := preflight.LoadConfig()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)

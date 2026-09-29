@@ -7,11 +7,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 )
 
-// The app-branch-changed signal runs on the install-signals queue, so these
-// activities have to be registered on the installs worker. They mirror the
-// app-branch signal activities in apps/signals/branches/activities; both sets
-// delegate to the same install helpers.
-
 type EnsureInstallAppBranchInput struct {
 	InstallID   string `json:"install_id" validate:"required"`
 	AppBranchID string `json:"app_branch_id" validate:"required"`

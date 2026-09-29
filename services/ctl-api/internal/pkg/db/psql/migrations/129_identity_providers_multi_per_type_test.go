@@ -33,9 +33,6 @@ func TestMigration129Suite(t *testing.T) {
 	suite.Run(t, new(migration129TestSuite))
 }
 
-// SetupSuite runs against a database of its own. This suite rebuilds pre-migration schema, which
-// means dropping indexes and rewriting whole tables - safe only when nothing else is using them,
-// and `go test ./...` runs package binaries concurrently against the shared test database.
 func (s *migration129TestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 
@@ -57,11 +54,6 @@ func (s *migration129TestSuite) TearDownSuite() {
 	require.NoError(s.T(), db.Close())
 }
 
-// restoreLegacySchema puts the two tables back the way they were before this migration so the
-// migration can be exercised against the state it will actually meet in a long-lived database.
-//
-// Existing rows have to go first: the legacy indexes forbid exactly the rows the post-migration
-// schema allows, so recreating them over rows left by an earlier test fails on a duplicate key.
 func (s *migration129TestSuite) restoreLegacySchema(ctx context.Context) {
 	require.NoError(s.T(), s.db.WithContext(ctx).Exec(`
 		DELETE FROM account_identities;
@@ -147,8 +139,6 @@ func (s *migration129TestSuite) TestBackfillsEnvIdentitiesAndDropsLegacyIndexes(
 	require.False(s.T(), s.indexExists(ctx, "idx_provider_type"))
 }
 
-// The sentinel is namespaced by provider type precisely so the backfill cannot collide on the
-// unique indexes that replace (account_id, provider_type) and (provider_type, sub).
 func (s *migration129TestSuite) TestBackfillSurvivesAnAccountWithTwoEnvIdentities() {
 	ctx := context.Background()
 	s.restoreLegacySchema(ctx)
@@ -170,7 +160,6 @@ func (s *migration129TestSuite) TestAllowsMultipleProvidersOfTheSameType() {
 
 	migrations := psqlmigrations.New(psqlmigrations.Params{L: zap.NewNop()})
 	require.NoError(s.T(), migrations.Migration129IdentityProvidersMultiPerType(ctx, s.db))
-	// idempotent: a redeploy re-runs nothing but must not fail if it does
 	require.NoError(s.T(), migrations.Migration129IdentityProvidersMultiPerType(ctx, s.db))
 
 	for range 2 {

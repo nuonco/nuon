@@ -35,8 +35,6 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 			return ValidateTriggers(a)
 		},
 
-		// NOTE(jm): we are moving validation functions for types into the actual types.
-		// We build this validation tooling here, so we can validate as many things up front as possible.
 		func() error {
 			if a.Secrets != nil {
 				return a.Secrets.Validate()
@@ -60,13 +58,10 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 		func() error {
 			return ValidateDefaultLabels(a)
 		},
-		// TBH, this does not really work
 		func() error {
-			// return ValidateVars(ctx, a)
 			return nil
 		},
 
-		// permissions cant be empty, required parameter
 		func() error {
 			return a.Permissions.Validate()
 		},
@@ -86,7 +81,6 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 		func() error {
 			return validateAzureCustomNestedStacks(a)
 		},
-		//
 		func() error {
 			if err := a.OperationRoles.Validate(); err != nil {
 				return err

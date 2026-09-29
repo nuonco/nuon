@@ -9,12 +9,10 @@ import (
 )
 
 type handlerState struct {
-	// set during the fetch/validate phase
 	workflowCfg *models.AppActionWorkflowConfig
 	run         *models.AppInstallActionWorkflowRun
 	plan        *plantypes.ActionWorkflowRunPlan
 
-	// state that must be reset before each run
 	workspace workspace.Workspace
 
 	auth *pkgplantypes.PlanAuth

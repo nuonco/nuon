@@ -16,7 +16,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// NOTE: the process will require ownership of /opt/nuon/runner and its children
 const (
 	ConfigDirectory                 = "/opt/nuon/runner"
 	ImageConfigFilename             = "/opt/nuon/runner/image"
@@ -30,14 +29,12 @@ var imageConfigTemplate string
 func (h *Monitor) checkRunnerService(ctx context.Context) error {
 	h.l.Info("checking runner service")
 
-	// sanity check/debug
 	err := h.whoami(ctx)
 	if err != nil {
 		h.l.Error(err.Error())
 		return err
 	}
 
-	// the basics
 	err = h.ensureConfigDirectories(ctx)
 	if err != nil {
 		h.l.Error(err.Error())
@@ -76,7 +73,6 @@ func (h *Monitor) whoami(ctx context.Context) error {
 
 func (h *Monitor) ensureConfigDirectories(ctx context.Context) error {
 	h.l.Debug(fmt.Sprintf("ensuring config directory exists: %s", ConfigDirectory))
-	// ensure the config dir exists: this dir may be created by the init script
 	_, err := os.Stat(ConfigDirectory)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -93,8 +89,6 @@ func (h *Monitor) ensureConfigDirectories(ctx context.Context) error {
 }
 
 func (h *Monitor) ensureImageConfigFile(ctx context.Context) error {
-	// NOTE(fd): this method just writes the settings no matter what
-	// TODO: we should really be comparing the settings to the contents of the file and writing only when they have changed
 	h.l.Debug(fmt.Sprintf("ensuring runner image config file exists: %s", ImageConfigFilename))
 	tmpl := template.Must(template.New("").Parse(imageConfigTemplate))
 	f, err := os.Create(ImageConfigFilename)
@@ -141,7 +135,6 @@ func (h *Monitor) ensureRunnerTokenValid(ctx context.Context) error {
 		return errors.Wrap(err, "unable to fetch new token")
 	}
 
-	// Update the in-memory token on both the API client and config.
 	h.apiClient.SetAuthToken(result.Token)
 	h.settings.Cfg.RunnerAPIToken = result.Token
 
@@ -150,8 +143,6 @@ func (h *Monitor) ensureRunnerTokenValid(ctx context.Context) error {
 }
 
 func EnsureImageConfigFile(ctx context.Context, l *zap.Logger, settings *settings.Settings) error {
-	// NOTE(fd): this method just writes the settings no matter what
-	// TODO: we should really be comparing the settings to the contents of the file and writing only when they have changed
 	l.Debug(fmt.Sprintf("ensuring runner image config file exists: %s", ImageConfigFilename))
 	tmpl := template.Must(template.New("").Parse(imageConfigTemplate))
 	f, err := os.Create(ImageConfigFilename)

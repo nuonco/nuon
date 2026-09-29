@@ -76,7 +76,6 @@ func (s *CreateRunnerJobExecutionOutputsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes (no TestOrg/TestAcc needed)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -95,7 +94,6 @@ func (s *CreateRunnerJobExecutionOutputsTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create log stream
 	s.testLogStream = &app.LogStream{
 		ID:      domains.NewLogStreamID(),
 		OrgID:   s.testOrg.ID,
@@ -105,7 +103,6 @@ func (s *CreateRunnerJobExecutionOutputsTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testLogStream).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -117,7 +114,6 @@ func (s *CreateRunnerJobExecutionOutputsTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -182,7 +178,6 @@ func (s *CreateRunnerJobExecutionOutputsTestSuite) TestCreateRunnerJobExecutionO
 					s.service.DB.Unscoped().Delete(job)
 				})
 
-				// Return non-existent execution ID
 				return job.ID, "rjexnonexistent12345678901"
 			},
 			expectedCode:     http.StatusNotFound,
@@ -216,10 +211,6 @@ func (s *CreateRunnerJobExecutionOutputsTestSuite) TestCreateRunnerJobExecutionO
 }
 
 func (s *CreateRunnerJobExecutionOutputsTestSuite) TestCreateRunnerJobExecutionOutputsRequiresAuthz() {
-	// This test documents a known limitation: CreateRunnerJobExecutionOutputs has
-	// authz.CanCreate check AND CreatedByID NOT NULL constraint, but runner routes
-	// don't have account context. The endpoint will fail with authorization or constraint errors.
-
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
@@ -265,12 +256,7 @@ func (s *CreateRunnerJobExecutionOutputsTestSuite) TestCreateRunnerJobExecutionO
 	}
 	rr := s.makeRequest("POST", path, req)
 
-	// Expect error due to authz check (CanCreate requires account context)
-	// OR CreatedByID constraint (RunnerJobExecutionOutputs has CreatedByID NOT NULL)
 	require.Equal(s.T(), http.StatusInternalServerError, rr.Code,
 		"should fail due to missing account context for authz or CreatedByID")
 	s.T().Logf("Expected error due to authz/CreatedByID - Status: %d, Body: %s", rr.Code, rr.Body.String())
-
-	// The handler calls authz.CanCreate which requires account context
-	// If that passes (shouldn't on runner routes), the DB create will fail on CreatedByID constraint
 }

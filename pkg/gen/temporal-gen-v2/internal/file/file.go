@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/tags"
 )
 
-// File represents a single file that may contain generated code
 type File struct {
 	Path        string
 	Package     *dir.Package
@@ -18,14 +17,11 @@ type File struct {
 	Functions   []*Function
 }
 
-// Function represents a function declaration that was annotated
 type Function struct {
 	Decl       *ast.FuncDecl
 	Annotation *parser.Annotation
 }
 
-// ProcessFile scans a file for annotations and returns a File struct if any are found.
-// cfg supplies tag defaults and may be nil when no tag config is in use.
 func ProcessFile(pkg *dir.Package, file *ast.File, path string, strict bool, cfg *tags.Config) (*File, error) {
 	var functions []*Function
 	var parseErr error
@@ -40,16 +36,14 @@ func ProcessFile(pkg *dir.Package, file *ast.File, path string, strict bool, cfg
 			return true
 		}
 
-		// Extract comments
 		var comments []string
 		for _, c := range fn.Doc.List {
 			comments = append(comments, c.Text)
 		}
 
-		// Parse annotations
 		annotation, err := parser.ParseWithTags(comments, cfg)
 		if err != nil {
-			// A tag that cannot be resolved is fatal even when not strict:
+			// why: A tag that cannot be resolved is fatal even when not strict:
 			// downgrading it to a warning would skip the function and silently
 			// drop a wrapper the caller expects to exist.
 			var tagErr *parser.TagError

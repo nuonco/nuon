@@ -7,7 +7,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// general methods
 func (c *client) GetAuthMe(ctx context.Context) (*models.ServiceAuthMeResponse, error) {
 	resp, err := c.genClient.Operations.GetAuthMe(&operations.GetAuthMeParams{
 		Context: ctx,

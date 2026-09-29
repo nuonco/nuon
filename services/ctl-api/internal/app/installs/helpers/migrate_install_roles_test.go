@@ -106,8 +106,6 @@ var baseRoles = map[string]app.AWSIAMRoleType{
 	"maintenance": app.AWSIAMRoleTypeRunnerMaintenance,
 }
 
-// A sync must not replace the live rows: install_role_usage points at their IDs,
-// and the provisioned ARN is state about the customer account, not the config.
 func (s *MigrateInstallRolesTestSuite) TestRepointsLiveRolesInPlace() {
 	ctx := context.Background()
 	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
@@ -145,9 +143,6 @@ func (s *MigrateInstallRolesTestSuite) TestRepointsLiveRolesInPlace() {
 	s.False(added.Provisioned)
 	s.Empty(added.RoleID)
 
-	// The live set follows the newest permissions config even though the install
-	// stays pinned to the config it was created against, so nothing reading the
-	// live set may filter by install.app_config_id.
 	var pinned app.Install
 	s.Require().NoError(s.deps.DB.WithContext(ctx).Where(app.Install{ID: install.ID}).First(&pinned).Error)
 	s.Equal(oldCfg.ID, pinned.AppConfigID)

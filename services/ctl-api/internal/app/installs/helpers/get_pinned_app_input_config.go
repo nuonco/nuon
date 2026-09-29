@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// GetPinnedAppInputConfig gets the pinned input config for an install.
 func (h *Helpers) GetPinnedAppInputConfig(ctx context.Context, appID, appConfigID string) (*app.AppInputConfig, error) {
 	parentAppConfig := app.AppConfig{}
 	res := h.db.WithContext(ctx).

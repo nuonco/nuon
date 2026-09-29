@@ -24,7 +24,6 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
-	// create deploy
 	install, err := a.getInstall(ctx, req.InstallID)
 	if err != nil {
 		return nil, err

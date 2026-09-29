@@ -11,10 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestGetAppComponentConfigsSuccess() {
 	s.Run("returns configs for seeded helm component", func() {
 		cmp := s.getSeededComponent(app.ComponentTypeHelmChart)
@@ -36,10 +32,6 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentConfigsSuccess() {
 		assert.Equal(s.T(), cmp.ID, response[0].ComponentID)
 	})
 }
-
-// ---------------------------------------------------------------------------
-// Not found cases
-// ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestGetAppComponentConfigsNotFound() {
 	s.Run("nonexistent component id", func() {

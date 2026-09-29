@@ -78,7 +78,6 @@ func (s *UpdateTerraformStateTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes (terraform backend needs org context)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -99,7 +98,6 @@ func (s *UpdateTerraformStateTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create terraform workspace
 	s.testWS = &app.TerraformWorkspace{
 		ID:        domains.NewTerraformWorkspaceID(),
 		OrgID:     s.testOrg.ID,
@@ -149,7 +147,6 @@ func (s *UpdateTerraformStateTestSuite) TestUpdateTerraformState() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func() {
-				// Verify state was created in DB
 				var state app.TerraformWorkspaceState
 				err := s.service.DB.Where("terraform_workspace_id = ?", s.testWS.ID).
 					Order("created_at DESC").
@@ -187,7 +184,6 @@ func (s *UpdateTerraformStateTestSuite) TestUpdateTerraformState() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -200,7 +196,6 @@ func (s *UpdateTerraformStateTestSuite) TestUpdateTerraformState() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create workspace in org2
 				ws2 := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     org2.ID,
@@ -235,7 +230,6 @@ func (s *UpdateTerraformStateTestSuite) TestUpdateTerraformState() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func() {
-				// Verify state was created
 				var state app.TerraformWorkspaceState
 				err := s.service.DB.Where("terraform_workspace_id = ?", s.testWS.ID).
 					Order("created_at DESC").

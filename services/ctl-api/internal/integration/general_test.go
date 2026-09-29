@@ -41,7 +41,6 @@ func (s *generalIntegrationTestSuite) TestGetCloudPlatforms() {
 		require.NotNil(t, regions)
 		require.NotEmpty(t, regions)
 
-		// verify eastus is in there
 		found := false
 		for _, region := range regions {
 			if region.Value == "eastus" {
@@ -58,7 +57,6 @@ func (s *generalIntegrationTestSuite) TestGetCloudPlatforms() {
 		require.NotNil(t, regions)
 		require.NotEmpty(t, regions)
 
-		// verify us-east-1 is in there
 		found := false
 		for _, region := range regions {
 			if region.Value == "us-east-1" {

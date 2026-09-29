@@ -32,9 +32,7 @@ type ActivityData struct {
 	Params        []Param
 	Receiver      string
 	ByFieldType   string
-	// Tags names the tags whose defaults were folded into Options, purely so
-	// generated code documents where its values came from.
-	Tags []string
+	Tags          []string
 }
 
 func GenerateActivity(data ActivityData) ([]byte, error) {
@@ -42,10 +40,8 @@ func GenerateActivity(data ActivityData) ([]byte, error) {
 }
 
 func GenerateActivityStub(data ActivityData) ([]byte, error) {
-	// For stubs, generate minimal valid code without templates
 	var buf bytes.Buffer
 
-	// Generate request type if needed
 	if data.Options.GenerateWrapper && len(data.Params) > 0 {
 		reqType := toPascalCase(data.Name) + "Request"
 		buf.WriteString(fmt.Sprintf("type %s struct {\n", reqType))
@@ -54,7 +50,6 @@ func GenerateActivityStub(data ActivityData) ([]byte, error) {
 		}
 		buf.WriteString("}\n\n")
 
-		// Generate wrapper method
 		buf.WriteString(fmt.Sprintf("func (a %s) ", data.Receiver))
 		if data.Options.WrapperPrefix != "" {
 			buf.WriteString(data.Options.WrapperPrefix)
@@ -70,7 +65,6 @@ func GenerateActivityStub(data ActivityData) ([]byte, error) {
 		buf.WriteString("}\n\n")
 	}
 
-	// Generate Await function
 	buf.WriteString(fmt.Sprintf("func Await%s(ctx workflow.Context, input interface{}, opts ...*workflow.ActivityOptions) ", toPascalCase(data.Name)))
 	if data.OutputType != "" && data.OutputType != "interface{}" {
 		buf.WriteString("(interface{}, error) {\n")
@@ -80,7 +74,6 @@ func GenerateActivityStub(data ActivityData) ([]byte, error) {
 	buf.WriteString("\tpanic(\"stub implementation - will be replaced in phase 2\")\n")
 	buf.WriteString("}\n\n")
 
-	// Generate ByField function if needed
 	if data.Options.ByField != "" && !data.Options.ByFieldOnly {
 		buf.WriteString(fmt.Sprintf("func Await%sBy%s(ctx workflow.Context, input interface{}, opts ...*workflow.ActivityOptions) ", toPascalCase(data.Name), data.Options.ByField))
 		if data.OutputType != "" && data.OutputType != "interface{}" {
@@ -137,15 +130,12 @@ func generateActivityWithMode(data ActivityData, stubMode bool) ([]byte, error) 
 		return nil, fmt.Errorf("failed to execute template: %w", err)
 	}
 
-	// Format the generated code
 	formatted, err := format.Source(buf.Bytes())
 	if err != nil {
-		// Save unformatted code for debugging
 		debugPath := fmt.Sprintf("/tmp/temporal-gen-debug-%s.go", data.Name)
 		if debugErr := os.WriteFile(debugPath, buf.Bytes(), 0644); debugErr == nil {
 			return buf.Bytes(), fmt.Errorf("failed to format source (saved to %s for debugging): %w", debugPath, err)
 		}
-		// Return unformatted code for debugging if formatting fails
 		return buf.Bytes(), fmt.Errorf("failed to format source: %w", err)
 	}
 
@@ -215,10 +205,8 @@ func GenerateActivityRegistration(data ActivityData) ([]byte, error) {
 		return nil, fmt.Errorf("failed to execute registration template: %w", err)
 	}
 
-	// Format the generated code
 	formatted, err := format.Source(buf.Bytes())
 	if err != nil {
-		// Return unformatted code for debugging if formatting fails
 		return buf.Bytes(), fmt.Errorf("failed to format registration source: %w", err)
 	}
 

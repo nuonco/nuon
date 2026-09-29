@@ -24,7 +24,6 @@ type k8sSecretManager struct {
 	Key         string `validate:"required"`
 	ClusterInfo *kube.ClusterInfo
 
-	// internal state
 	v *validator.Validate
 }
 

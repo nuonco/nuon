@@ -13,8 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 )
 
-// buildDeadLetter is pure — no I/O — so Decode can collect every failure in a
-// fetch before recordDeadLetters does anything over the network.
 func (s *Sink) buildDeadLetter(rec *kgo.Record, reason string, cause error, env pkgkafka.Envelope) app.DLQRecord {
 	return app.DLQRecord{
 		Topic:         s.topic,
@@ -31,7 +29,7 @@ func (s *Sink) buildDeadLetter(rec *kgo.Record, reason string, cause error, env 
 	}
 }
 
-// recordDeadLetters durably records every record Decode() couldn't process
+// why: recordDeadLetters durably records every record Decode() couldn't process
 // from one fetch, in a single batched call — one produce round trip and, on
 // the fallback path, one ClickHouse insert, regardless of how many records
 // failed. Produces to the dead-letter topic synchronously, same durability

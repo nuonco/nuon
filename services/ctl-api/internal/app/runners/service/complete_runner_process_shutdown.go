@@ -48,7 +48,6 @@ func (s *service) completeRunnerProcessShutdown(ctx context.Context, processID, 
 		return nil, fmt.Errorf("unable to find shutdown: %w", res.Error)
 	}
 
-	// Mark the shutdown record as completed
 	newComposite := app.NewCompositeStatus(ctx, app.Status(app.RunnerProcessShutdownStatusCompleted))
 	newComposite.StatusHumanDescription = "shutdown completed by runner"
 	newComposite.History = append([]app.CompositeStatus{shutdown.CompositeStatus}, shutdown.CompositeStatus.History...)
@@ -63,8 +62,6 @@ func (s *service) completeRunnerProcessShutdown(ctx context.Context, processID, 
 		return nil, fmt.Errorf("unable to update shutdown status: %w", res.Error)
 	}
 
-	// Transition the process to shut-down so the process_shutdown signal
-	// workflow can detect it and complete cleanly.
 	s.updateProcessStatusShutDown(ctx, processID)
 
 	var updated app.RunnerProcessShutdown

@@ -22,9 +22,6 @@ func issuer(readyStatus, transitionedAt string) *unstructured.Unstructured {
 
 var issuerGVR = schema.GroupVersionResource{Group: "cert-manager.io", Version: "v1", Resource: "issuers"}
 
-// The invariant: an event may explain a verdict, never set one. Any code that
-// lets one decide health has to invent an expiry, which is how a one-minute
-// metrics gap pinned a component degraded for 15m + 2 reports.
 func TestEventNeverChangesVerdict(t *testing.T) {
 	t.Parallel()
 
@@ -64,7 +61,6 @@ func TestEventNeverChangesVerdict(t *testing.T) {
 	}
 }
 
-// The failure mode was a recovered object rendered with a stale message over it.
 func TestHealthyResourceDiscardsEvent(t *testing.T) {
 	t.Parallel()
 
@@ -76,7 +72,6 @@ func TestHealthyResourceDiscardsEvent(t *testing.T) {
 	assert.NotContains(t, res.Details, "ErrGetKeyPair")
 }
 
-// An event is often the only place the cause is written down.
 func TestFailingResourceKeepsEventAsEvidence(t *testing.T) {
 	t.Parallel()
 
@@ -87,7 +82,6 @@ func TestFailingResourceKeepsEventAsEvidence(t *testing.T) {
 	assert.Contains(t, res.Details, "ErrGetKeyPair", "the cause must still reach the detail view")
 }
 
-// An event may add to what the object says, never contradict it.
 func TestEventDoesNotOverwriteStatusMessage(t *testing.T) {
 	t.Parallel()
 
@@ -102,7 +96,6 @@ func TestEventDoesNotOverwriteStatusMessage(t *testing.T) {
 	assert.Equal(t, "the CA is unreachable", res.Message)
 }
 
-// A controller has not necessarily read the spec it is graded against.
 func TestStaleGenerationReadsProgressing(t *testing.T) {
 	t.Parallel()
 
@@ -119,7 +112,6 @@ func TestStaleGenerationReadsProgressing(t *testing.T) {
 	assert.Equal(t, healthHealthy, health)
 }
 
-// Most kinds never write observedGeneration.
 func TestMissingObservedGenerationIsNotStale(t *testing.T) {
 	t.Parallel()
 

@@ -10,29 +10,23 @@ type keyMap struct {
 	Help key.Binding
 	Quit key.Binding
 
-	// hybrid key
 	Esc key.Binding
 
 	Enter key.Binding
 
-	// nav controls (we override or handle directly)
-	Up   key.Binding
-	Down key.Binding
-	// nav for step detail viewport
+	Up       key.Binding
+	Down     key.Binding
 	PageDown key.Binding
 	PageUp   key.Binding
 
-	// shift focus
 	Left  key.Binding
 	Right key.Binding
 	Tab   key.Binding
 
-	// display controls
 	ToggleJson       key.Binding
 	OpenQuickLink    key.Binding
 	OpenTemplateLink key.Binding
 
-	// actions
 	Copy           key.Binding
 	Slash          key.Binding
 	Browser        key.Binding
@@ -117,7 +111,6 @@ var keys = keyMap{
 		key.WithKeys("/"),
 		key.WithHelp("/", "Search Steps"),
 	),
-	// step detail actions
 	Browser: key.NewBinding(
 		key.WithKeys("B"),
 		key.WithHelp("B", "Browser"),
@@ -125,20 +118,18 @@ var keys = keyMap{
 	OpenQuickLink: key.NewBinding(
 		key.WithKeys("L"),
 		key.WithHelp("L", "quick link"),
-		key.WithDisabled(), // disabled by default
+		key.WithDisabled(),
 	),
 	OpenTemplateLink: key.NewBinding(
 		key.WithKeys("T"),
 		key.WithHelp("T", "template"),
-		key.WithDisabled(), // disabled by default
+		key.WithDisabled(),
 	),
-	// step options
 	ApproveStep: key.NewBinding(
 		key.WithKeys("a"),
 		key.WithHelp("a", "approve step "),
-		key.WithDisabled(), // disabled by default
+		key.WithDisabled(),
 	),
-	// workflow actions
 	CancelWorkflow: key.NewBinding(
 		key.WithKeys("C"),
 		key.WithHelp("C", "cancel workflow"),
@@ -152,10 +143,9 @@ var keys = keyMap{
 		key.WithKeys("R"),
 		key.WithHelp("R", "toggle retry all"),
 	),
-	// step detail display options
 	ToggleJson: key.NewBinding(
 		key.WithKeys("J"),
 		key.WithHelp("J", "toggle json"),
-		key.WithDisabled(), // disabled by default
+		key.WithDisabled(),
 	),
 }

@@ -31,7 +31,6 @@ func successMesssage(path string, configType string) {
 }
 
 func (c *cli) initCmd() *cobra.Command {
-	// nuon apps init command
 	var (
 		initPath           string
 		initEnableDefaults bool
@@ -42,13 +41,12 @@ func (c *cli) initCmd() *cobra.Command {
 		includeNonRequired bool
 	)
 
-	// Parent init command
 	initCmd := &cobra.Command{
 		Use:               "init",
 		Short:             "Initialize app configuration",
 		Long:              "Generate app configuration files. Use subcommands to generate specific config files, or run without subcommands to generate all files.",
 		Annotations:       tuiAnnotation(TUIContextual),
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil }, // Skip auth for local init
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.apps
 			params := apps.InitParams{
@@ -71,26 +69,12 @@ func (c *cli) initCmd() *cobra.Command {
 					return errors.Wrap(err, "unable to get init parameters")
 				}
 
-				// if params.PrebuiltTemplate != "" {
-				// sampleComponentPArams := apps.SampleComponentParams{}
-				// err = ui.RunComponentsMenu(&sampleComponentPArams)
-				// if err != nil {
-				// 	return errors.Wrap(err, "unable to get sample components parameters")
-				// }
-				// err = ui.RunActionsMenu(&sampleActionsParams)
-				// if err != nil {
-				// 	return errors.Wrap(err, "unable to get sample actions parameters")
-				// }
-				//
-				// }
-
 				err = ui.RunGeneratorConfigMenu(&genParams)
 				if err != nil {
 					return errors.Wrap(err, "unable to get sample actions parameters")
 				}
 			}
 
-			// run config gens here
 			err := svc.Init(cmd.Context(), genParams, &params)
 			if err != nil {
 				return errors.Wrap(err, "unable to init app config")
@@ -128,29 +112,9 @@ func (c *cli) initCmd() *cobra.Command {
 	initCmd.PersistentFlags().BoolVar(&initOverwrite, "overwrite", false, "overwrite existing directory contents")
 	initCmd.PersistentFlags().BoolVarP(&interactive, "interactive", "i", false, "interactive session")
 
-	// Helper function to create config-specific subcommands
-	// createConfigCmd := func(commandName, configFileName, description string) *cobra.Command {
-	// 	return &cobra.Command{
-	// 		Use:               commandName,
-	// 		Short:             fmt.Sprintf("Initialize %s", description),
-	// 		Long:              fmt.Sprintf("Generate the %s configuration file", configFileName),
-	// 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
-	// 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-	// 			svc := c.apps
-	// 			return svc.InitConfigFile(cmd.Context(), initPath, configFileName, initEnableDefaults, initEnableComments, initOverwrite)
-	// 		}),
-	// 	}
-	// }
-
-	// Add subcommands for each config type
-	// initCmd.AddCommand(createConfigCmd("inputs", "inputs.toml", "inputs configuration"))
-	// initCmd.AddCommand(createConfigCmd("installer", "installer.toml", "installer configuration"))
 	initCmd.AddCommand(c.initSandboxCmd())
 	initCmd.AddCommand(c.initRunnerCmd())
 	initCmd.AddCommand(c.initStackCmd())
-	// initCmd.AddCommand(createConfigCmd("secrets", "secrets.toml", "secrets configuration"))
-	// initCmd.AddCommand(createConfigCmd("break-glass", "break_glass.toml", "break glass configuration"))
-	// initCmd.AddCommand(createConfigCmd("policies", "policies.toml", "policies configuration"))
 	initCmd.AddCommand(c.initComponentCmd())
 	initCmd.AddCommand(c.initActionCmd())
 
@@ -159,7 +123,6 @@ func (c *cli) initCmd() *cobra.Command {
 
 func (c *cli) initSandboxCmd() *cobra.Command {
 	var (
-		// Sandbox-specific flags
 		terraformVersion string
 		publicRepo       string
 		publicRepoDir    string
@@ -206,23 +169,18 @@ func (c *cli) initSandboxCmd() *cobra.Command {
 		}),
 	}
 
-	// Terraform version
 	sandboxCmd.Flags().StringVar(&terraformVersion, "terraform-version", "1.11.3", "Terraform version to use")
 
-	// Public repo flags
 	sandboxCmd.Flags().StringVar(&publicRepo, "public-repo", "", "Public repository (e.g., 'nuonco/aws-eks-sandbox')")
 	sandboxCmd.Flags().StringVar(&publicRepoDir, "public-repo-dir", ".", "Directory within the public repository")
 	sandboxCmd.Flags().StringVar(&publicRepoBranch, "public-repo-branch", "main", "Branch of the public repository")
 
-	// Connected repo flags
 	sandboxCmd.Flags().StringVar(&connectedRepo, "connected-repo", "", "Connected repository")
 	sandboxCmd.Flags().StringVar(&connectedRepoDir, "connected-repo-dir", ".", "Directory within the connected repository")
 	sandboxCmd.Flags().StringVar(&connectedBranch, "connected-branch", "main", "Branch of the connected repository")
 
-	// Drift schedule
 	sandboxCmd.Flags().StringVar(&driftSchedule, "drift-schedule", "", "Cron expression for drift detection")
 
-	// Environment variables and Terraform variables
 	sandboxCmd.Flags().StringArrayVar(&envVars, "env-var", []string{}, "Environment variable in key=value format (can be specified multiple times)")
 	sandboxCmd.Flags().StringArrayVar(&vars, "var", []string{}, "Terraform variable in key=value format (can be specified multiple times)")
 	sandboxCmd.Flags().StringArrayVar(&varFiles, "var-file", []string{}, "Terraform variable file path (can be specified multiple times)")
@@ -232,7 +190,6 @@ func (c *cli) initSandboxCmd() *cobra.Command {
 
 func (c *cli) initStackCmd() *cobra.Command {
 	var (
-		// Stack-specific flags
 		stackType               string
 		stackName               string
 		stackDescription        string
@@ -267,14 +224,12 @@ func (c *cli) initStackCmd() *cobra.Command {
 		}),
 	}
 
-	// Stack-specific flags
 	stackCmd.Flags().StringVar(&stackType, "type", "aws-cloudformation", "Type of infrastructure stack. Supported values: aws-cloudformation, azure-bicep, gcp-terraform")
 	stackCmd.Flags().StringVar(&stackName, "name", "", "Name of the CloudFormation stack (required)")
 	stackCmd.Flags().StringVar(&stackDescription, "description", "", "Description of the stack (required)")
 	stackCmd.Flags().StringVar(&vpcNestedTemplateURL, "vpc-template-url", "", "URL to the CloudFormation nested template for VPC resources")
 	stackCmd.Flags().StringVar(&runnerNestedTemplateURL, "runner-template-url", "", "URL to the CloudFormation nested template for runner infrastructure")
 
-	// Mark required flags
 	stackCmd.MarkFlagRequired("name")
 	stackCmd.MarkFlagRequired("description")
 
@@ -283,7 +238,6 @@ func (c *cli) initStackCmd() *cobra.Command {
 
 func (c *cli) initRunnerCmd() *cobra.Command {
 	var (
-		// Runner-specific flags
 		runnerType    string
 		envVars       []string
 		helmDriver    string
@@ -316,13 +270,11 @@ func (c *cli) initRunnerCmd() *cobra.Command {
 		}),
 	}
 
-	// Runner-specific flags
 	runnerCmd.Flags().StringVar(&runnerType, "runner-type", "kubernetes", "Type of runner (kubernetes, docker, vm)")
 	runnerCmd.Flags().StringArrayVar(&envVars, "env-var", []string{}, "Environment variable in key=value format (can be specified multiple times)")
 	runnerCmd.Flags().StringVar(&helmDriver, "helm-driver", "", "Helm backend driver (e.g., 'configmap', 'secret')")
 	runnerCmd.Flags().StringVar(&initScriptURL, "init-script-url", "", "URL to initialization script")
 
-	// Mark required flags
 	runnerCmd.MarkFlagRequired("runner-type")
 
 	return runnerCmd
@@ -330,12 +282,10 @@ func (c *cli) initRunnerCmd() *cobra.Command {
 
 func (c *cli) initComponentTerraformModuleCmd() *cobra.Command {
 	var (
-		// Component flags
 		componentName string
 		varName       string
 		dependencies  []string
 
-		// Terraform module flags
 		terraformVersion string
 		envVars          []string
 		vars             []string
@@ -385,12 +335,10 @@ func (c *cli) initComponentTerraformModuleCmd() *cobra.Command {
 		}),
 	}
 
-	// Component flags
 	cmd.Flags().StringVar(&componentName, "name", "", "Component name (required)")
 	cmd.Flags().StringVar(&varName, "var-name", "", "Variable name for component output")
 	cmd.Flags().StringArrayVar(&dependencies, "dependency", []string{}, "Component dependencies (can be specified multiple times)")
 
-	// Terraform module flags
 	cmd.Flags().StringVar(&terraformVersion, "terraform-version", "1.11.3", "Terraform version")
 	cmd.Flags().StringArrayVar(&envVars, "env-var", []string{}, "Environment variable in key=value format (can be specified multiple times)")
 	cmd.Flags().StringArrayVar(&vars, "var", []string{}, "Terraform variable in key=value format (can be specified multiple times)")
@@ -403,7 +351,6 @@ func (c *cli) initComponentTerraformModuleCmd() *cobra.Command {
 	cmd.Flags().StringVar(&connectedBranch, "connected-branch", "main", "Branch of the connected repository")
 	cmd.Flags().StringVar(&driftSchedule, "drift-schedule", "", "Cron expression for drift detection")
 
-	// Mark required flags
 	cmd.MarkFlagRequired("name")
 
 	return cmd
@@ -411,12 +358,10 @@ func (c *cli) initComponentTerraformModuleCmd() *cobra.Command {
 
 func (c *cli) initComponentHelmChartCmd() *cobra.Command {
 	var (
-		// Component flags
 		componentName string
 		varName       string
 		dependencies  []string
 
-		// Helm chart flags
 		chartName        string
 		values           []string
 		valuesFiles      []string
@@ -476,12 +421,10 @@ func (c *cli) initComponentHelmChartCmd() *cobra.Command {
 		}),
 	}
 
-	// Component flags
 	cmd.Flags().StringVar(&componentName, "name", "", "Component name (required)")
 	cmd.Flags().StringVar(&varName, "var-name", "", "Variable name for component output")
 	cmd.Flags().StringArrayVar(&dependencies, "dependency", []string{}, "Component dependencies (can be specified multiple times)")
 
-	// Helm chart flags
 	cmd.Flags().StringVar(&chartName, "chart-name", "", "Helm chart name (required)")
 	cmd.Flags().StringArrayVar(&values, "value", []string{}, "Helm value in key=value format (can be specified multiple times)")
 	cmd.Flags().StringArrayVar(&valuesFiles, "values-file", []string{}, "Helm values file path (can be specified multiple times)")
@@ -499,7 +442,6 @@ func (c *cli) initComponentHelmChartCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&takeOwnership, "take-ownership", false, "Take ownership of existing releases")
 	cmd.Flags().StringVar(&driftSchedule, "drift-schedule", "", "Cron expression for drift detection")
 
-	// Mark required flags
 	cmd.MarkFlagRequired("name")
 	cmd.MarkFlagRequired("chart-name")
 
@@ -508,12 +450,10 @@ func (c *cli) initComponentHelmChartCmd() *cobra.Command {
 
 func (c *cli) initComponentKubernetesManifestCmd() *cobra.Command {
 	var (
-		// Component flags
 		componentName string
 		varName       string
 		dependencies  []string
 
-		// Kubernetes manifest flags
 		manifest      string
 		namespace     string
 		driftSchedule string
@@ -547,17 +487,14 @@ func (c *cli) initComponentKubernetesManifestCmd() *cobra.Command {
 		}),
 	}
 
-	// Component flags
 	cmd.Flags().StringVar(&componentName, "name", "", "Component name (required)")
 	cmd.Flags().StringVar(&varName, "var-name", "", "Variable name for component output")
 	cmd.Flags().StringArrayVar(&dependencies, "dependency", []string{}, "Component dependencies (can be specified multiple times)")
 
-	// Kubernetes manifest flags
 	cmd.Flags().StringVar(&manifest, "manifest", "", "Kubernetes manifest YAML content (required)")
 	cmd.Flags().StringVar(&namespace, "namespace", "", "Kubernetes namespace (required)")
 	cmd.Flags().StringVar(&driftSchedule, "drift-schedule", "", "Cron expression for drift detection")
 
-	// Mark required flags
 	cmd.MarkFlagRequired("name")
 	cmd.MarkFlagRequired("manifest")
 	cmd.MarkFlagRequired("namespace")
@@ -572,7 +509,6 @@ func (c *cli) initComponentCmd() *cobra.Command {
 		Long:  "Generate component configuration files for terraform modules, helm charts, or kubernetes manifests",
 	}
 
-	// Add subcommands for each component type
 	componentCmd.AddCommand(c.initComponentTerraformModuleCmd())
 	componentCmd.AddCommand(c.initComponentHelmChartCmd())
 	componentCmd.AddCommand(c.initComponentKubernetesManifestCmd())
@@ -582,7 +518,6 @@ func (c *cli) initComponentCmd() *cobra.Command {
 
 func (c *cli) initActionCmd() *cobra.Command {
 	var (
-		// Action-specific flags
 		actionName       string
 		timeout          string
 		triggerType      string
@@ -641,22 +576,18 @@ func (c *cli) initActionCmd() *cobra.Command {
 		}),
 	}
 
-	// Action flags
 	actionCmd.Flags().StringVar(&actionName, "name", "", "Action name (required)")
 	actionCmd.Flags().StringVar(&timeout, "timeout", "5m", "Timeout for action execution (e.g., 30s, 5m, 30m)")
 
-	// Trigger flags
 	actionCmd.Flags().StringVar(&triggerType, "trigger-type", "manual", "Type of trigger (manual, cron, post-provision, etc.)")
 	actionCmd.Flags().StringVar(&cronSchedule, "cron-schedule", "", "Cron schedule expression (required for cron triggers)")
 	actionCmd.Flags().StringVar(&componentName, "component-name", "", "Component name (required for component-specific triggers)")
 
-	// Step flags
 	actionCmd.Flags().StringVar(&stepName, "step-name", "", "Name of the step (required)")
 	actionCmd.Flags().StringVar(&stepCommand, "step-command", "", "Command to execute (required)")
 	actionCmd.Flags().StringVar(&inlineContents, "inline-contents", "", "Inline script contents")
 	actionCmd.Flags().StringArrayVar(&envVars, "env-var", []string{}, "Environment variable in key=value format (can be specified multiple times)")
 
-	// Repository flags
 	actionCmd.Flags().StringVar(&publicRepo, "public-repo", "", "Public repository URL")
 	actionCmd.Flags().StringVar(&publicRepoDir, "public-repo-dir", ".", "Directory within the public repository")
 	actionCmd.Flags().StringVar(&publicRepoBranch, "public-repo-branch", "main", "Branch of the public repository")
@@ -664,11 +595,9 @@ func (c *cli) initActionCmd() *cobra.Command {
 	actionCmd.Flags().StringVar(&connectedRepoDir, "connected-repo-dir", ".", "Directory within the connected repository")
 	actionCmd.Flags().StringVar(&connectedBranch, "connected-branch", "main", "Branch of the connected repository")
 
-	// Break glass and dependencies
 	actionCmd.Flags().StringVar(&breakGlassRole, "break-glass-role", "", "IAM role for break-glass access")
 	actionCmd.Flags().StringArrayVar(&dependencies, "dependency", []string{}, "Component dependencies (can be specified multiple times)")
 
-	// Mark required flags
 	actionCmd.MarkFlagRequired("name")
 	actionCmd.MarkFlagRequired("step-name")
 	actionCmd.MarkFlagRequired("step-command")
@@ -680,7 +609,6 @@ func splitKeyValue(s string) []string {
 	return strings.SplitN(s, "=", 2)
 }
 
-// parseKeyValuePairs string slice in key=value format to map[string]string
 func parseKeyValuePairs(pairs []string) map[string]string {
 	result := make(map[string]string)
 	for _, pair := range pairs {

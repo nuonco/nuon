@@ -62,9 +62,6 @@ func TestNewAuditReturnsNilForNonAuditableJob(t *testing.T) {
 	}
 }
 
-// The bundled collector drops records whose nuon.audit log-record attribute is
-// not exactly the string "true". A bool value, or moving the attribute to the
-// resource, silently discards every audit record, so pin both here.
 func TestAuditAttrMatchesCollectorFilter(t *testing.T) {
 	if AuditAttrValue != "true" {
 		t.Fatalf("AuditAttrValue = %q, want \"true\"", AuditAttrValue)

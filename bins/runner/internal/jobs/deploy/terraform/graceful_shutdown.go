@@ -20,7 +20,7 @@ func (p *handler) GracefulShutdown(ctx context.Context, job *models.AppRunnerJob
 		err := p.updateTerraformState(ctx, p.state.tfWorkspace, hlog)
 		if err != nil {
 			p.writeErrorResult(ctx, "update terraform state", err)
-			// we don't return an error here because we want to allow the graceful shutdown to complete even when state update fails
+			// why: we don't return an error here because we want to allow the graceful shutdown to complete even when state update fails
 		}
 		l.Info("terraform state updated during  graceful shutdown")
 	}
@@ -30,7 +30,7 @@ func (p *handler) GracefulShutdown(ctx context.Context, job *models.AppRunnerJob
 		err := p.apiClient.UnlockTerraformWorkspace(ctx, p.state.plan.TerraformDeployPlan.TerraformBackend.WorkspaceID)
 		if err != nil {
 			p.writeErrorResult(ctx, "unlock terraform workspace", err)
-			// we don't return an error here because we want to allow the graceful shutdown to complete even when unlock fails
+			// why: we don't return an error here because we want to allow the graceful shutdown to complete even when unlock fails
 		}
 		l.Info("terraform workspace unlocked during graceful shutdown")
 	}

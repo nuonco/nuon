@@ -32,9 +32,6 @@ func cccPlain(id, name string, depIDs ...string) *app.ComponentConfigConnection 
 	}
 }
 
-// resolverFor returns a builder that takes per-component-name enabled toggles
-// and materializes them as the reserved synthetic enabled inputs the resolver
-// reads. In these tests component name == component id.
 func resolverFor(cccs ...*app.ComponentConfigConnection) func(map[string]bool) *ComponentEnablementResolver {
 	byID := make(map[string]*app.ComponentConfigConnection, len(cccs))
 	for _, c := range cccs {
@@ -141,8 +138,6 @@ func TestTopoSort_DepsFirstAndReverse(t *testing.T) {
 }
 
 func TestEffectiveEnabled_CycleWithDisabledExternalDepFailsClosed(t *testing.T) {
-	// a <-> b cycle, and a also depends on disabled c. The cycle must not let
-	// b be cached as enabled; both should resolve effectively disabled.
 	r := resolverFor(
 		cccPlain("a", "a", "b", "c"),
 		cccPlain("b", "b", "a"),

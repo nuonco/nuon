@@ -75,10 +75,6 @@ func (t *TerraformWorkspaceState) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-// GetContents returns the state contents. When blobRead is enabled it prefers
-// the S3 blob, falling back to the legacy bytea column when the blob is unset or
-// unreadable. When disabled it always reads the legacy column. The second return
-// reports whether the contents came from the blob.
 func (t *TerraformWorkspaceState) GetContents(ctx context.Context, blobRead bool) ([]byte, bool) {
 	if blobRead {
 		if raw, err := t.ContentsBlob.Get(ctx); err == nil && raw != "" {
@@ -116,7 +112,6 @@ type TerraformStateData struct {
 	Resources        []TerraformStateResource `json:"resources,omitzero,omitempty" temporaljson:"resources,omitzero,omitempty"`
 	CheckResults     any                      `json:"check_results,omitzero,omitempty" temporaljson:"check_results,omitzero,omitempty"`
 
-	// base 64 encoded version of the contents for compatibility
 	Contents string `json:"contents,omitzero" temporaljson:"contents,omitzero,omitempty"`
 }
 
@@ -146,7 +141,6 @@ func (c *TerraformStateData) Scan(v interface{}) (err error) {
 	return
 }
 
-// Value implements the driver.Valuer interface.
 func (c *TerraformStateData) Value() (driver.Value, error) {
 	return json.Marshal(c)
 }

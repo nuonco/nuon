@@ -9,8 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
-// CreateFetchImageMetadataJob creates a job for fetching image metadata from an OCI registry.
-// This job is used during external image builds to fetch metadata for policy evaluation.
 func (h *Helpers) CreateFetchImageMetadataJob(ctx context.Context,
 	ownerType string,
 	ownerID string,

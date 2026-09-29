@@ -28,7 +28,7 @@ type AdHocParams struct {
 	Wait             bool
 }
 
-// Kafka-backed log ingestion can trail stream closure by up to five seconds.
+// why: Kafka-backed log ingestion can trail stream closure by up to five seconds.
 const adHocClosedLogDrainPolls = 4
 
 func (s *Service) CreateAdHocRun(ctx context.Context, params AdHocParams, asJSON bool) error {

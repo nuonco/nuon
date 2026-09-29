@@ -13,8 +13,6 @@ import (
 	"github.com/nuonco/nuon/sdks/auth"
 )
 
-// resolveToken produces the bearer token. The precedence lives in sdks/auth; this
-// supplies only the transport-specific exchange.
 func resolveToken(ctx context.Context, opts Options) (string, error) {
 	return auth.Resolve(ctx, auth.Options{
 		APIToken: opts.APIToken,
@@ -23,7 +21,6 @@ func resolveToken(ctx context.Context, opts Options) (string, error) {
 	}, exchanger{opts: opts})
 }
 
-// exchanger implements auth.Exchanger against the runner API.
 type exchanger struct {
 	opts Options
 }
@@ -38,8 +35,6 @@ type exchangeResponse struct {
 	Token         string `json:"token,omitempty"`
 }
 
-// ExchangeOIDCToken trades an OIDC ID token for a short-lived Nuon API token. Not
-// routed through runClient, which would attach a bearer token this call is obtaining.
 func (e exchanger) ExchangeOIDCToken(ctx context.Context, orgID, jwt string) (string, error) {
 	opts := e.opts
 
@@ -76,7 +71,6 @@ func (e exchanger) ExchangeOIDCToken(ctx context.Context, orgID, jwt string) (st
 		return "", fmt.Errorf("decode exchange response: %w", err)
 	}
 	if !out.Authenticated || out.Token == "" {
-		// The control plane returns a uniform error for every auth failure.
 		return "", fmt.Errorf("token exchange did not authenticate: check the org's OIDC trust policies")
 	}
 

@@ -6,15 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Migration109BackfillRunbookStepDeployDependents copies values from the legacy
-// `deploy_dependencies` column to the new `deploy_dependents` column on
-// runbook_step_configs. The field was renamed because the original name was
-// misleading — the behavior walks the downstream subgraph (dependents), not
-// upstream dependencies. The old column is left in place so a rollback can
-// fall back to it.
 func (m *Migrations) Migration109BackfillRunbookStepDeployDependents(ctx context.Context, db *gorm.DB) error {
-	// No-op if either column is missing (older schemas during fresh migration,
-	// or the legacy column was already manually dropped).
 	var hasLegacy bool
 	if err := db.WithContext(ctx).Raw(`
 		SELECT EXISTS (

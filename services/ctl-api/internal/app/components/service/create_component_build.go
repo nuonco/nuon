@@ -120,7 +120,6 @@ func (s *service) CreateComponentBuild(ctx *gin.Context) {
 
 	cmpID := ctx.Param("component_id")
 
-	// Validate component belongs to org before creating build
 	_, err = s.findComponent(ctx, org.ID, cmpID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to find component %s: %w", cmpID, err))

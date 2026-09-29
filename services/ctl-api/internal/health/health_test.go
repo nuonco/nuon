@@ -24,7 +24,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// TestService holds all fx-injected dependencies for health endpoint tests.
 type TestService struct {
 	fx.In
 
@@ -35,7 +34,6 @@ type TestService struct {
 	Health *Service
 }
 
-// HealthTestSuite is the testify suite for health endpoints.
 type HealthTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -59,11 +57,9 @@ func (s *HealthTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	// Create mock controller and temporal client
 	s.mockCtrl = gomock.NewController(s.T())
 	s.mockTemporalClient = temporalclient.NewMockClient(s.mockCtrl)
 
-	// Set up expectation for CheckHealth - can be called multiple times in tests
 	s.mockTemporalClient.EXPECT().
 		CheckHealth(gomock.Any(), gomock.Any()).
 		Return(&client.CheckHealthResponse{}, nil).
@@ -77,7 +73,6 @@ func (s *HealthTestSuite) SetupSuite() {
 			},
 			CustomValidator: false,
 		}),
-		// service under test
 		fx.Provide(New),
 		fx.Provide(func() metric.MeterProvider { return noop.NewMeterProvider() }),
 		fx.Populate(&s.service),
@@ -87,10 +82,8 @@ func (s *HealthTestSuite) SetupSuite() {
 
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 
-	// Create test router and register routes
 	s.router = gin.New()
 	err := s.service.Health.RegisterPublicRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -127,19 +120,16 @@ func (s *HealthTestSuite) TestLivezReturnsOK() {
 func (s *HealthTestSuite) TestReadyzReturnsValidResponse() {
 	rr := s.makeRequest(http.MethodGet, "/readyz")
 
-	// Should return 200 OK or 207 Multi-Status (degraded)
 	require.Contains(s.T(), []int{http.StatusOK, http.StatusMultiStatus}, rr.Code)
 
 	var response map[string]any
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(s.T(), err)
 
-	// Response should have status field
 	status, ok := response["status"].(string)
 	require.True(s.T(), ok, "response should have status field")
 	require.Contains(s.T(), []string{"ok", "degraded"}, status)
 
-	// Response should have degraded array
 	_, ok = response["degraded"].([]any)
 	require.True(s.T(), ok, "response should have degraded field")
 }
@@ -153,11 +143,9 @@ func (s *HealthTestSuite) TestVersionReturnsVersionInfo() {
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(s.T(), err)
 
-	// Should have version field
 	_, ok := response["version"]
 	require.True(s.T(), ok, "response should have version field")
 
-	// Should have git_ref field
 	_, ok = response["git_ref"]
 	require.True(s.T(), ok, "response should have git_ref field")
 

@@ -23,8 +23,6 @@ const (
 	componentTypeTerraformModule = "terraform_module"
 )
 
-// terraformClouds maps a provider's short name to its cloud. Absent providers
-// (null/random/local/tls, kubernetes/helm) are pseudo or already report live.
 var terraformClouds = map[string]string{
 	"aws":         providerAWS,
 	"awscc":       providerAWS,
@@ -37,21 +35,14 @@ var terraformClouds = map[string]string{
 	"azurestack":  providerAzure,
 }
 
-// TerraformProvider holds the cloud resources of each terraform-module
-// component, handed over by the deploy job since the engine can't read state itself.
 type TerraformProvider struct {
 	l *zap.Logger
 
 	mu          sync.RWMutex
 	byComponent map[string][]*models.ServiceComponentHealthResource
-	// byRelease maps a helm release this component's terraform manages to the
-	// component, so the release's live workloads are attributed to it instead of
-	// being dropped as unowned.
-	byRelease map[string]string
-	// byObject does the same for individual objects a module applies directly
-	// (kubectl_manifest), keyed by resourceKey.
-	byObject  map[string]string
-	kindsSink *ManifestKindsProvider
+	byRelease   map[string]string
+	byObject    map[string]string
+	kindsSink   *ManifestKindsProvider
 }
 
 type TerraformProviderParams struct {
@@ -71,8 +62,6 @@ func NewTerraformProvider(params TerraformProviderParams) *TerraformProvider {
 	}
 }
 
-// Set replaces the resources recorded for a component from a freshly applied
-// terraform state; a destroy apply (no cloud resources) clears the rows.
 func (p *TerraformProvider) Set(componentID string, state *tfjson.State) {
 	if componentID == "" {
 		return
@@ -94,8 +83,6 @@ func (p *TerraformProvider) Set(componentID string, state *tfjson.State) {
 	p.mu.Lock()
 	p.byComponent[componentID] = rows
 
-	// Drop this component's previous entries first, so anything removed from the
-	// module stops being attributed to it.
 	for release, owner := range p.byRelease {
 		if owner == componentID {
 			delete(p.byRelease, release)
@@ -120,8 +107,6 @@ func (p *TerraformProvider) Set(componentID string, state *tfjson.State) {
 	}
 }
 
-// ComponentForObject returns the terraform component that applied an object
-// directly, keyed as resourceKey(kind, namespace, name).
 func (p *TerraformProvider) ComponentForObject(key string) (string, bool) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -129,12 +114,6 @@ func (p *TerraformProvider) ComponentForObject(key string) (string, bool) {
 	return componentID, ok
 }
 
-// terraformManifestObjects walks state for kubectl_manifest resources and keys
-// each applied object. The provider records kind/name/namespace as attributes,
-// so the manifest body only needs parsing when they are absent.
-//
-// This is attribution only: a kind nobody watches still will not be listed, so
-// discovering it here cannot make it reportable on its own.
 func terraformManifestObjects(state *tfjson.State) ([]string, []schema.GroupVersionKind) {
 	if state == nil || state.Values == nil || state.Values.RootModule == nil {
 		return nil, nil
@@ -219,12 +198,6 @@ func manifestFromBody(body string) (apiVersion, kind, namespace, name string) {
 	return doc.APIVersion, doc.Kind, doc.Metadata.Namespace, doc.Metadata.Name
 }
 
-// ComponentForRelease returns the terraform component managing a helm release.
-//
-// Falls back to the persisted store: byRelease is only repopulated by an apply,
-// so after a restart the live map is empty and every workload of a
-// terraform-installed chart would be dropped as unowned — leaving the component
-// reporting nothing and reading not-applicable until someone redeployed it.
 func (p *TerraformProvider) ComponentForRelease(release string) (string, bool) {
 	if release == "" {
 		return "", false
@@ -242,10 +215,6 @@ func (p *TerraformProvider) ComponentForRelease(release string) (string, bool) {
 	return sink.ComponentForRelease(release)
 }
 
-// terraformHelmReleases walks state for helm_release resources. A terraform
-// module that installs a chart owns real workloads in the cluster; without this
-// they carry no nuon labels and no matching chart component, so they were
-// dropped as unowned and the component reported only identity rows.
 func terraformHelmReleases(state *tfjson.State) []string {
 	if state == nil || state.Values == nil || state.Values.RootModule == nil {
 		return nil
@@ -274,8 +243,6 @@ func terraformHelmReleases(state *tfjson.State) []string {
 	return releases
 }
 
-// Resources returns the rows recorded for a component, empty when this process
-// has not applied the component's state yet.
 func (p *TerraformProvider) Resources(componentID string) []*models.ServiceComponentHealthResource {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -289,7 +256,6 @@ func (p *TerraformProvider) Resources(componentID string) []*models.ServiceCompo
 	return out
 }
 
-// ComponentIDs returns every component this process has recorded state for.
 func (p *TerraformProvider) ComponentIDs() []string {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -301,8 +267,6 @@ func (p *TerraformProvider) ComponentIDs() []string {
 	return out
 }
 
-// terraformResourceRows maps state to identity-only health rows, walking child
-// modules. Health is unknown — state proves a resource is managed, not that it lives.
 func terraformResourceRows(state *tfjson.State) []*models.ServiceComponentHealthResource {
 	if state == nil || state.Values == nil || state.Values.RootModule == nil {
 		return nil
@@ -347,8 +311,6 @@ func terraformResourceRow(r *tfjson.StateResource) *models.ServiceComponentHealt
 	}
 }
 
-// isDataSourceAddress covers state written without a mode, where the address is
-// the only place a data source is distinguishable.
 func isDataSourceAddress(address string) bool {
 	return strings.HasPrefix(address, "data.") || strings.Contains(address, ".data.")
 }
@@ -363,8 +325,6 @@ func terraformCloud(r *tfjson.StateResource) string {
 	return ""
 }
 
-// providerShortName reduces a fully qualified provider source address
-// ("registry.terraform.io/hashicorp/aws") to its type ("aws").
 func providerShortName(providerName string) string {
 	if providerName == "" {
 		return ""
@@ -375,8 +335,6 @@ func providerShortName(providerName string) string {
 	return providerName
 }
 
-// terraformResourceName prefers the cloud-facing name, then id, then the
-// configuration name, so count/for_each instances stay distinct.
 func terraformResourceName(r *tfjson.StateResource) string {
 	for _, key := range []string{"name", "id"} {
 		if s, ok := r.AttributeValues[key].(string); ok && s != "" {

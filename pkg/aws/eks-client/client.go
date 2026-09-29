@@ -12,13 +12,11 @@ type eksClient struct {
 	ClusterName string `validate:"required"`
 	Region      string `validate:"required"`
 
-	// internal state
 	v *validator.Validate
 }
 
 type eksOptions func(*eksClient) error
 
-// New creates a new, validated eks with the given options
 func New(v *validator.Validate, opts ...eksOptions) (*eksClient, error) {
 	e := &eksClient{
 		v: v,
@@ -35,7 +33,6 @@ func New(v *validator.Validate, opts ...eksOptions) (*eksClient, error) {
 	return e, nil
 }
 
-// WithCredentials
 func WithCredentials(cfg *credentials.Config) eksOptions {
 	return func(e *eksClient) error {
 		e.AWSAuth = cfg
@@ -44,7 +41,6 @@ func WithCredentials(cfg *credentials.Config) eksOptions {
 	}
 }
 
-// WithClusterName specifies the session name to use when assuming the role
 func WithClusterName(s string) eksOptions {
 	return func(e *eksClient) error {
 		e.ClusterName = s

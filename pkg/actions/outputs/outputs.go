@@ -1,7 +1,3 @@
-// Package outputs implements the action-output file grammar shared by the
-// runner's action handler and the actions-supervisor. Both ends must agree on
-// how a step's outputs file is written and parsed, so the grammar lives here
-// rather than in either binary.
 package outputs
 
 import (
@@ -22,22 +18,15 @@ const (
 	jsonObjStart   string = "{"
 	jsonArrayStart string = "["
 
-	// FilenameFormat is the per-step outputs filename, indexed by step index.
 	FilenameFormat string = "%d.nuon-outputs.json"
 
-	// MaxFileSize bounds how much of an action's outputs file the runner will
-	// read, so a step can't exhaust runner memory by emitting an enormous file.
 	MaxFileSize int64 = 1048576
 )
 
-// Filename returns the outputs filename for a given step index.
 func Filename(idx int64) string {
 	return fmt.Sprintf(FilenameFormat, idx)
 }
 
-// ParseLine parses a single outputs line. A line beginning with "{" is a JSON
-// object; a top-level JSON array is unsupported; otherwise the line is a
-// "key=value" pair.
 func ParseLine(str string) (map[string]interface{}, error) {
 	if strings.HasPrefix(str, jsonObjStart) {
 		var out map[string]interface{}
@@ -61,11 +50,6 @@ func ParseLine(str string) (map[string]interface{}, error) {
 	return nil, errors.New("unsupported outputs format, must be a json object or k=v string")
 }
 
-// ParseFile reads an outputs file and merges every line into a single map. A
-// missing file is treated as empty output. An image-backed action shares this
-// workspace, so the path is attacker-controlled: O_NOFOLLOW stops a symlink
-// redirecting the read at host state, O_NONBLOCK stops a FIFO hanging the
-// runner on open, and the fstat rejects anything but a regular file.
 func ParseFile(path string) (map[string]interface{}, error) {
 	out := make(map[string]interface{}, 0)
 

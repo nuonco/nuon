@@ -18,7 +18,7 @@ const SignalType signal.SignalType = "appconfig-updated"
 const (
 	actionCronEmitterPrefix = "action-cron-"
 	driftEmitterPrefix      = "drift-"
-	// driftSandboxEmitterPrefix is the per-install sandbox drift cron prefix.
+	// why: driftSandboxEmitterPrefix is the per-install sandbox drift cron prefix.
 	// IMPORTANT: this string starts with the more generic `drift-` prefix —
 	// the splitting loop in Execute() must check for `drift-sandbox-` BEFORE
 	// the bare `drift-` case or sandbox emitters get classified as
@@ -78,7 +78,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	// Best-effort: default-label reconciliation must not fail config updates.
 	if err := activities.AwaitApplyAppDefaultLabels(ctx, &activities.ApplyAppDefaultLabelsRequest{
 		InstallID: s.InstallID,
 	}); err != nil {
@@ -87,10 +86,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			zap.Error(err))
 	}
 
-	// A config change can move config-derived state (.nuon.app, migrated inputs)
-	// without touching the default-label set, and ApplyAppDefaultLabels only
-	// renders when that set changed. Best-effort re-render so templates pick up
-	// the new config; reads regenerate the partials marked stale above.
 	if err := activities.AwaitRenderInstallLabels(ctx, &activities.RenderInstallLabelsRequest{
 		InstallID: s.InstallID,
 	}); err != nil {
@@ -134,8 +129,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get drift cron queue emitters: %w", err)
 	}
 
-	// Legacy: cron emitters that lived on the signals queue before they got
-	// their own dedicated queues. Clean them up.
 	var legacyEmitters []app.QueueEmitter
 	for _, em := range signalsEmitters {
 		if strings.HasPrefix(em.Name, actionCronEmitterPrefix) ||
@@ -153,7 +146,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	// Check the more specific `drift-sandbox-` prefix BEFORE the bare `drift-`
+	// why: Check the more specific `drift-sandbox-` prefix BEFORE the bare `drift-`
 	// case — otherwise sandbox emitters get swept into the per-component bucket.
 	var driftEmitters, driftSandboxEmitters []app.QueueEmitter
 	for _, em := range driftCronEmitters {
@@ -180,7 +173,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return nil
 }
 
-// stopAndDeleteEmitters stops and deletes a list of emitters. Errors are logged but not fatal.
 func stopAndDeleteEmitters(ctx workflow.Context, l interface{ Warn(string, ...interface{}) }, emitters []app.QueueEmitter) {
 	for _, em := range emitters {
 		if _, err := emitterclient.AwaitStopEmitter(ctx, em.ID); err != nil {

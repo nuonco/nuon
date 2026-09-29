@@ -15,7 +15,6 @@ func (e *EnqueueTestSuite) TestCancelSignalDuringExecute() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 
-	// create a queue
 	q, err := e.service.Client.Create(ctx, &client.CreateQueueRequest{
 		OwnerID:     generics.GetFakeObj[string](),
 		OwnerType:   generics.GetFakeObj[string](),
@@ -29,7 +28,6 @@ func (e *EnqueueTestSuite) TestCancelSignalDuringExecute() {
 	err = e.queueReady(ctx, q.ID)
 	require.Nil(e.T(), err)
 
-	// enqueue a slow signal that will block in execute
 	resp, err := e.service.Client.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
 		QueueID: q.ID,
 		Signal:  &example.SlowSignal{},
@@ -37,8 +35,6 @@ func (e *EnqueueTestSuite) TestCancelSignalDuringExecute() {
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), resp)
 
-	// Wait until Execute has started so cancellation exercises the executing
-	// context rather than racing validation.
 	pollTimeout := integrationEventuallyTimeout
 	require.Eventually(e.T(), func() bool {
 		var qs app.QueueSignal
@@ -47,14 +43,10 @@ func (e *EnqueueTestSuite) TestCancelSignalDuringExecute() {
 		return res.Error == nil && executing
 	}, pollTimeout, 200*time.Millisecond)
 
-	// cancel the signal while it's executing
 	cancelResp, err := e.service.Client.CancelSignal(ctx, resp.ID)
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), cancelResp)
 
-	// cancel is the terminal status: executeHandler finalises a
-	// mid-execute-cancel as cancelled and handleQueueSignal skips its error
-	// fallback for already-terminal signals.
 	e.waitForSignalStatus(ctx, resp.ID, app.StatusCancelled)
 }
 
@@ -62,7 +54,6 @@ func (e *EnqueueTestSuite) TestCancelCallbackInvoked() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 
-	// create a queue
 	q, err := e.service.Client.Create(ctx, &client.CreateQueueRequest{
 		OwnerID:     generics.GetFakeObj[string](),
 		OwnerType:   generics.GetFakeObj[string](),
@@ -76,7 +67,6 @@ func (e *EnqueueTestSuite) TestCancelCallbackInvoked() {
 	err = e.queueReady(ctx, q.ID)
 	require.Nil(e.T(), err)
 
-	// enqueue a cancellable signal that blocks in execute
 	resp, err := e.service.Client.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
 		QueueID: q.ID,
 		Signal:  &example.CancellableSignal{},
@@ -84,8 +74,6 @@ func (e *EnqueueTestSuite) TestCancelCallbackInvoked() {
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), resp)
 
-	// Wait until Execute has started so cancellation exercises the executing
-	// context rather than racing validation.
 	pollTimeout := integrationEventuallyTimeout
 	require.Eventually(e.T(), func() bool {
 		var qs app.QueueSignal
@@ -94,14 +82,10 @@ func (e *EnqueueTestSuite) TestCancelCallbackInvoked() {
 		return res.Error == nil && executing
 	}, pollTimeout, 200*time.Millisecond)
 
-	// cancel the signal while it's executing
 	cancelResp, err := e.service.Client.CancelSignal(ctx, resp.ID)
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), cancelResp)
 
-	// cancel is the terminal status. Assert on the current composite, not
-	// status.History: the cancel-callback write replaces the status without
-	// appending a cancelled history entry, so a history scan never sees one.
 	require.Eventually(e.T(), func() bool {
 		var qs app.QueueSignal
 		res := e.service.DB.WithContext(ctx).First(&qs, "id = ?", resp.ID)
@@ -124,7 +108,6 @@ func (e *EnqueueTestSuite) TestCancelAlreadyFinishedSignal() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 
-	// create a queue
 	q, err := e.service.Client.Create(ctx, &client.CreateQueueRequest{
 		OwnerID:     generics.GetFakeObj[string](),
 		OwnerType:   generics.GetFakeObj[string](),
@@ -138,7 +121,6 @@ func (e *EnqueueTestSuite) TestCancelAlreadyFinishedSignal() {
 	err = e.queueReady(ctx, q.ID)
 	require.Nil(e.T(), err)
 
-	// enqueue a fast signal that completes immediately
 	resp, err := e.service.Client.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
 		QueueID: q.ID,
 		Signal: &example.ExampleSignal{
@@ -151,12 +133,10 @@ func (e *EnqueueTestSuite) TestCancelAlreadyFinishedSignal() {
 
 	e.waitForSignalStatus(ctx, resp.ID, app.StatusSuccess)
 
-	// cancel should succeed gracefully (already terminal)
 	cancelResp, err := e.service.Client.CancelSignal(ctx, resp.ID)
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), cancelResp)
 
-	// verify DB status is still success (not changed to cancelled)
 	var qs app.QueueSignal
 	res := e.service.DB.WithContext(ctx).First(&qs, "id = ?", resp.ID)
 	require.Nil(e.T(), res.Error)

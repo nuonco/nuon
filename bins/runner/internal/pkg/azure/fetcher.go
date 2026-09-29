@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/tokenfetcher"
 )
 
-// Fetcher implements tokenfetcher.TokenFetcher for Azure managed identity.
 type Fetcher struct {
 	RunnerID string
 }

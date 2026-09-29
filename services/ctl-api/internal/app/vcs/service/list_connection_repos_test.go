@@ -10,7 +10,6 @@ import (
 )
 
 func (s *VCSServiceTestSuite) TestListConnectionRepos_Success() {
-	// Create a test connection
 	conn := s.createTestVCSConnection()
 
 	rr := s.makeRequest(http.MethodGet, fmt.Sprintf("/v1/vcs/connections/%s/repos", conn.ID), nil)

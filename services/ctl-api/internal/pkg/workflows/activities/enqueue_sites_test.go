@@ -65,10 +65,6 @@ func TestQueueEnqueueSitesAreExplicit(t *testing.T) {
 	require.Empty(t, violations)
 }
 
-// stringConstants maps every string constant declared under root to its value,
-// keyed by identifier. Queue names reach enqueue sites through package aliases
-// (appshelpers.AppInstallSyncsQueueName and friends), so resolving by name lets
-// the guard follow them without type-checking the whole tree.
 func stringConstants(t *testing.T, root string) map[string]string {
 	t.Helper()
 

@@ -10,56 +10,34 @@ import (
 )
 
 const (
-	// QuickTimeout is for fast infrastructure operations: validation, no-op
-	// signals, DB-row creation. If these take longer than 5 minutes something
-	// is stuck.
 	QuickTimeout = 5 * time.Minute
 
-	// DriftDetectionTimeout is for drift-detection signals which are lightweight
-	// but fan out through the webhook/Slack pipeline.
 	DriftDetectionTimeout = 15 * time.Minute
 
-	// ShortTimeout is for operations expected to complete within minutes:
-	// state generation, lightweight queue signals.
 	ShortTimeout = 30 * time.Minute
 )
 
-// MaxWaitCeiling bounds every long-lived wait (parked retries, approvals,
-// fallback callback waits) so an abandoned workflow closes instead of holding
-// its Temporal workflows open indefinitely. A var, not a const, so the flow
-// testworker suite can shrink it to exercise expiry paths.
 var MaxWaitCeiling = 3 * 24 * time.Hour
 
-// Both snapshot MaxWaitCeiling at init, so overriding it later only affects
-// the sites that read MaxWaitCeiling directly.
 var (
-	// HumanGatedTimeout is for operations that require human interaction:
-	// approval workflows, user-initiated stack runs.
 	HumanGatedTimeout = MaxWaitCeiling
 
-	// FallbackAwaitTimeout caps a wait that has no configured timeout.
 	FallbackAwaitTimeout = MaxWaitCeiling
 )
 
-// ErrAwaitTimeout marks an AwaitWithTimeout that expired without receiving
-// its completion signal. Match with errors.Is.
 var ErrAwaitTimeout = errors.New("callback await timed out")
 
-// Result is the payload sent by the handler on completion.
 type Result struct {
 	Status            string `json:"status"`
 	StatusDescription string `json:"status_description,omitempty"`
 }
 
-// CancelledErrType is the application error type returned by AwaitWithTimeout
+// why: CancelledErrType is the application error type returned by AwaitWithTimeout
 // when the awaited signal was cancelled. Cancellation must never be treated as
 // success — a parent that carries on past a cancelled child silently executes
 // steps the user asked to stop.
 const CancelledErrType = "SIGNAL_CANCELLED"
 
-// IsCancelled reports whether err (possibly wrapped) is a cancelled-signal
-// error from AwaitWithTimeout. Callers use this to stop without invoking
-// failure/retry handling.
 func IsCancelled(err error) bool {
 	var appErr *temporal.ApplicationError
 	if errors.As(err, &appErr) {
@@ -68,12 +46,8 @@ func IsCancelled(err error) bool {
 	return false
 }
 
-// cancelledCallbackErrVersion gates cancelled results erroring instead of
-// returning as success; in-flight histories carried on past them.
 const cancelledCallbackErrVersion = "callback-cancelled-result-err-v1"
 
-// AwaitWithTimeout waits for a completion signal on the Ref's signal channel.
-// A timeout <= 0 waits with no wall-clock deadline (for human-gated waits).
 func AwaitWithTimeout(ctx workflow.Context, ref Ref, timeout time.Duration) (*Result, error) {
 	ch := workflow.GetSignalChannel(ctx, ref.SignalName)
 
@@ -95,7 +69,7 @@ func AwaitWithTimeout(ctx workflow.Context, ref Ref, timeout time.Duration) (*Re
 	sel.Select(ctx)
 
 	if received {
-		// Senders can legitimately arrive with an empty description (status
+		// why: Senders can legitimately arrive with an empty description (status
 		// writers that only set Status, cancellations with no error text).
 		// The message below becomes user-visible failure text on the parent,
 		// so never let it be empty.

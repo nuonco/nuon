@@ -16,7 +16,6 @@ const (
 	ErrTypeFramework ErrType = "framework"
 )
 
-// RunnerError is the root of the runner's error taxonomy. It is used when no more specific error type is applicable.
 type RunnerError struct {
 	cause error
 }
@@ -30,9 +29,6 @@ func (e *RunnerError) Error() string {
 	return e.cause.Error()
 }
 
-// RunnerHandlerError is a wrapper that indicates the contained error chain was emitted from a runner job handler.
-//
-// Job handlers should NOT create this error directly - it is used by the runner framework itself to categorize errors. The type is exported only to enable sniffing
 type RunnerHandlerError struct {
 	RunnerError
 	JobGroup models.AppRunnerJobGroup
@@ -81,11 +77,6 @@ func WithFrameworkError(err error, jobType string) error {
 	}
 }
 
-// RunnerFrameworkError is a wrapper that indicates the contained error chain was emitted from some part of the runner framework itself, not a handler.
-//
-// This error type is applied as a fallback during job processing if no other error type is applied.
-//
-// TODO(sdboyer) having an error type like this doesn't do much until we make our errors properly network-portable
 type RunnerFrameworkError struct {
 	RunnerError
 	JobType string

@@ -9,10 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
-// rootOnly strips the inline templates out of a resource, leaving only what the
-// root itself evaluates. A nested deployment's inline template declares its own
-// parameters and is a separate evaluation context, so references inside it are not
-// the root's business.
 func rootOnly(resource map[string]any) map[string]any {
 	out := make(map[string]any, len(resource))
 	for k, v := range resource {
@@ -37,11 +33,6 @@ func rootOnly(resource map[string]any) map[string]any {
 	return out
 }
 
-// At subscription scope the Nuon-managed values are variables so the portal's
-// deployment form cannot offer them as editable fields. Any expression the root
-// still evaluates as parameters('nuonInstallID') would reference a parameter that no
-// longer exists, and ARM rejects the whole template — so this failing is a hard
-// break, not a cosmetic one.
 func TestGetAzureTemplate_SubscriptionScopeRootNeverReadsNuonIDsAsParameters(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 
@@ -78,9 +69,6 @@ func TestGetAzureTemplate_SubscriptionScopeRootNeverReadsNuonIDsAsParameters(t *
 	}
 }
 
-// The mirror of the above: inner templates must keep reading parameters, both
-// because that is what they declare and because role assignment names embed the
-// install ID in a guid() that must not change.
 func TestGetAzureTemplate_WrappedTemplatesStillDeclareTheirOwnParameters(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 

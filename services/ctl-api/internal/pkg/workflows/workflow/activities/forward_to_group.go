@@ -10,8 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
-// getGroupQueueSignal fetches the step group's preloaded QueueSignal to get the
-// Temporal workflow reference for sending updates.
 func (a *Activities) getGroupQueueSignal(ctx context.Context, stepGroupID string) (*app.QueueSignal, error) {
 	var group app.WorkflowStepGroup
 	res := a.db.WithContext(ctx).
@@ -27,13 +25,11 @@ func (a *Activities) getGroupQueueSignal(ctx context.Context, stepGroupID string
 	return group.QueueSignal, nil
 }
 
-// ForwardRetryStepToGroupRequest is the input for forwarding a retry-step to the group.
 type ForwardRetryStepToGroupRequest struct {
 	StepID      string `json:"step_id" validate:"required"`
 	StepGroupID string `json:"step_group_id" validate:"required"`
 }
 
-// ForwardRetryStepToGroupResponse wraps the group's retry-step response.
 type ForwardRetryStepToGroupResponse struct {
 	Retryable bool `json:"retryable"`
 }
@@ -66,13 +62,11 @@ func (a *Activities) ForwardRetryStepToGroup(ctx context.Context, req ForwardRet
 	return &resp, nil
 }
 
-// ForwardCancelStepToGroupRequest is the input for forwarding a cancel-step to the group.
 type ForwardCancelStepToGroupRequest struct {
 	StepID      string `json:"step_id" validate:"required"`
 	StepGroupID string `json:"step_group_id" validate:"required"`
 }
 
-// ForwardCancelStepToGroupResponse wraps the group's cancel-step response.
 type ForwardCancelStepToGroupResponse struct{}
 
 // @temporal-gen-v2 activity
@@ -99,7 +93,6 @@ func (a *Activities) ForwardCancelStepToGroup(ctx context.Context, req ForwardCa
 	return &ForwardCancelStepToGroupResponse{}, nil
 }
 
-// ForwardApproveStepToGroupRequest is the input for forwarding an approve-step to the group.
 type ForwardApproveStepToGroupRequest struct {
 	StepID             string `json:"step_id" validate:"required"`
 	StepGroupID        string `json:"step_group_id" validate:"required"`
@@ -107,7 +100,6 @@ type ForwardApproveStepToGroupRequest struct {
 	ResponseType       string `json:"response_type"`
 }
 
-// ForwardApproveStepToGroupResponse wraps the group's approve-step response.
 type ForwardApproveStepToGroupResponse struct{}
 
 // @temporal-gen-v2 activity
@@ -144,13 +136,11 @@ func (a *Activities) ForwardApproveStepToGroup(ctx context.Context, req ForwardA
 	return &resp, nil
 }
 
-// ForwardSkipStepToGroupRequest is the input for forwarding a skip-step to the group.
 type ForwardSkipStepToGroupRequest struct {
 	StepID      string `json:"step_id" validate:"required"`
 	StepGroupID string `json:"step_group_id" validate:"required"`
 }
 
-// ForwardSkipStepToGroupResponse wraps the group's skip-step response.
 type ForwardSkipStepToGroupResponse struct {
 	Skippable bool   `json:"skippable"`
 	Directive string `json:"directive,omitempty"`

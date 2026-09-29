@@ -21,14 +21,12 @@ export const StatusHistory = ({ status, defaultExpanded = false, maxCollapsed = 
 
   const currentStatus = getStatus(status)
   const history: any[] = status.history || []
-  // Most recent first: current status, then history reversed (newest to oldest)
   const allEntries = [{ ...status, _isCurrent: true }, ...[...history].reverse()]
   const visibleEntries = expanded ? allEntries : allEntries.slice(0, maxCollapsed)
   const hasMore = allEntries.length > maxCollapsed
 
   return (
     <div className="space-y-1.5">
-      {/* Most recent status shown first */}
       {visibleEntries.map((h: any, i: number) => {
         const s = getStatus(h)
         return (

@@ -52,7 +52,7 @@ func (s *service) DeleteOrgLink(ctx *gin.Context) {
 }
 
 func (s *service) deleteOrgLink(ctx context.Context, orgID, linkID string) error {
-	// ABAC: the link must belong to the caller's org. We resolve+scope the
+	// why: ABAC: the link must belong to the caller's org. We resolve+scope the
 	// row in a single query so callers can't delete other orgs' links.
 	var link app.SlackOrgLink
 	res := s.db.WithContext(ctx).
@@ -68,11 +68,6 @@ func (s *service) deleteOrgLink(ctx context.Context, orgID, linkID string) error
 		return res.Error
 	}
 
-	// PG CASCADE on slack_channel_subscriptions.org_link_id only fires on
-	// hard deletes, so we mirror it explicitly for the soft-delete path:
-	// soft-delete every channel subscription routed via this link, then
-	// soft-delete the link itself. Wrapped in a transaction so a partial
-	// failure can't leave dangling subs.
 	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where(app.SlackChannelSubscription{OrgLinkID: link.ID}).
 			Delete(&app.SlackChannelSubscription{}).Error; err != nil {

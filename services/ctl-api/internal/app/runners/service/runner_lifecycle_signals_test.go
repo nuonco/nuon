@@ -79,7 +79,6 @@ func (s *RunnerLifecycleSignalsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes (lifecycle signal endpoints are public)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -97,11 +96,9 @@ func (s *RunnerLifecycleSignalsTestSuite) TearDownSuite() {
 func (s *RunnerLifecycleSignalsTestSuite) setupTestData() {
 	ctx := context.Background()
 
-	// Use Seeder for account and org creation
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create runner group (domain-specific entity, built manually)
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -113,7 +110,6 @@ func (s *RunnerLifecycleSignalsTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner (domain-specific entity, built manually)
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -173,7 +169,6 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 
-			// Send empty JSON body
 			rr := s.makeRequest("POST", tc.path, map[string]interface{}{})
 
 			if rr.Code != http.StatusCreated {
@@ -181,13 +176,11 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals() {
 			}
 			require.Equal(s.T(), http.StatusCreated, rr.Code)
 
-			// Verify response is true
 			var response bool
 			err := json.Unmarshal(rr.Body.Bytes(), &response)
 			require.NoError(s.T(), err)
 			assert.True(s.T(), response)
 
-			// Verify signal was sent with correct type and runner ID
 			sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 			require.Len(s.T(), sigs, 1)
 			assert.Equal(s.T(), s.testRunner.ID, sigs[0].OwnerID)
@@ -229,11 +222,9 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_RunnerNotFound() 
 
 			rr := s.makeRequest("POST", tc.path, map[string]interface{}{})
 
-			// Should return error (not 201)
 			require.Equal(s.T(), http.StatusNotFound, rr.Code)
 			assert.Contains(s.T(), rr.Body.String(), "unable to get runner")
 
-			// Verify no signal was sent
 			sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 			assert.Len(s.T(), sigs, 0, "should not send signal when runner not found")
 		})
@@ -244,7 +235,6 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_CrossOrgIsolation
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-	// Create second org
 	org2ID := domains.NewOrgID()
 	org2 := &app.Org{
 		ID:          org2ID,
@@ -257,7 +247,6 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_CrossOrgIsolation
 	err := s.service.DB.WithContext(ctx).Create(org2).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group for org2
 	runnerGrp2 := &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     org2.ID,
@@ -269,7 +258,6 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_CrossOrgIsolation
 	err = s.service.DB.WithContext(ctx).Create(runnerGrp2).Error
 	require.NoError(s.T(), err)
 
-	// Create runner in org2
 	runner2 := &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         org2.ID,
@@ -316,14 +304,11 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_CrossOrgIsolation
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 
-			// Try to access runner from different org (router has s.testOrg context)
 			rr := s.makeRequest("POST", tc.path, map[string]interface{}{})
 
-			// Should return error due to cross-org isolation
 			require.Equal(s.T(), http.StatusNotFound, rr.Code)
 			assert.Contains(s.T(), rr.Body.String(), "unable to get runner")
 
-			// Verify no signal was sent
 			sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 			assert.Len(s.T(), sigs, 0, "should not send signal for cross-org access")
 		})
@@ -331,15 +316,12 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_CrossOrgIsolation
 }
 
 func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_CorrectRunnerID() {
-	// Verify signals are sent to runner ID, not org ID or runner group ID
-
 	rr := s.makeRequest("POST", "/v1/runners/"+s.testRunner.ID+"/graceful-shutdown", map[string]interface{}{})
 	require.Equal(s.T(), http.StatusCreated, rr.Code)
 
 	sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 	require.Len(s.T(), sigs, 1)
 
-	// Signal ID should be runner ID
 	assert.Equal(s.T(), s.testRunner.ID, sigs[0].OwnerID, "signal should be sent to runner ID")
 	assert.NotEqual(s.T(), s.testOrg.ID, sigs[0].OwnerID, "signal should not be sent to org ID")
 	assert.NotEqual(s.T(), s.testRunnerGrp.ID, sigs[0].OwnerID, "signal should not be sent to runner group ID")

@@ -1,9 +1,3 @@
-/*
-
-An inline tui for viewing logs from the terminal.
-
-*/
-
 package logs
 
 import (
@@ -39,27 +33,20 @@ const (
 )
 
 type model struct {
-	// configs and api client
 	ctx context.Context
 	cfg *config.Config
 	api nuon.Client
 
-	// NOTE(fd): these should likely live elsewhere
-	// fixed vars
 	install_id   string
 	deploy_id    string
 	logstream_id string
 
-	// dynamic state
 	logStream    *models.AppLogStream
 	loading      bool
 	logs         map[string]*models.AppOtelLogRecord
 	filteredLogs map[string]*models.AppOtelLogRecord
-	logsCursor   string // this is the cursor for the next request for logs
+	logsCursor   string
 
-	// we want the SelectedLog to be updated when the cursor changes to allow the users to
-	// open the sidebar and continue to scroll logs which would change the log on display in the sidebar.
-	// cursor      int // cursor for the selected table (perhaps this should move into the table model and can be sent up via a message)
 	selectedLog *models.AppOtelLogRecord
 
 	searchEnabled bool
@@ -68,10 +55,9 @@ type model struct {
 	altscreen    bool
 	width        int
 	height       int
-	mainHeight   int // for table and sidebar (main isn't a real object, just a concept)
+	mainHeight   int
 	sidebarWidth int
 
-	// components
 	message     common.StatusBarRequest
 	keys        keyMap
 	table       table.Model
@@ -91,7 +77,7 @@ func initialModel(
 ) model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(styles.PrimaryColor) // .Padding(0, 0, 0, 1)
+	s.Style = lipgloss.NewStyle().Foreground(styles.PrimaryColor)
 	m := model{
 		ctx: ctx,
 		cfg: cfg,
@@ -119,7 +105,6 @@ func initialModel(
 }
 
 func (m *model) setMessage(message string, level string) {
-	// for use from within update
 	m.message.Message = message
 	m.message.Level = level
 }
@@ -130,30 +115,24 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m *model) setLoading(v bool) {
-	// used to fire off a loading indicator
-	// not really used to set loading to false, that happens downstream usually
 	m.loading = v
 }
 func (m *model) resize() {
-	// when the window resizes, we need to set the width of our components
 	vMargin := lipgloss.Height(m.headerView()) + lipgloss.Height(m.footerView()) + 2
 	hMargin := 2
 	m.mainHeight = m.height - vMargin
-	m.sidebarWidth = max(maxSidebarWidth, int(m.width/3)) - 4 // minus margin. stored here so we can access everywhere.
+	m.sidebarWidth = max(maxSidebarWidth, int(m.width/3)) - 4
 
-	// header search input
-	m.searchInput.SetWidth(m.width - hMargin - lipgloss.Width(m.spinner.View()) - 3) // 3 is the width of the caret
+	m.searchInput.SetWidth(m.width - hMargin - lipgloss.Width(m.spinner.View()) - 3)
 
-	// logs table
 	m.table.SetHeight(m.height - vMargin)
 	if m.selectedLog == nil {
 		m.table.SetWidth(m.width - hMargin)
 	} else {
-		m.table.SetWidth(m.width - (hMargin + m.sidebarWidth + 2)) // minus additional padding
+		m.table.SetWidth(m.width - (hMargin + m.sidebarWidth + 2))
 	}
 	m.resizeTableColumns()
 
-	// 3 is the height of the modal header (8 and 6 are scaling factors)
 	m.details.SetWidth(m.sidebarWidth)
 	m.details.SetHeight(m.height - vMargin)
 	m.help.SetWidth(m.width)
@@ -173,9 +152,7 @@ func (m *model) setSelected() {
 		selectedLog, ok := m.logs[row[0]]
 		if ok {
 			m.selectedLog = selectedLog
-			// resize everything
 			m.resize()
-			// set content
 			m.details.SetContent(m.getDetailContent())
 		} else {
 			m.setMessage(fmt.Sprintf("[selected] log with id:%s not found", row[0]), "info")
@@ -191,23 +168,19 @@ func (m *model) resetSelected() {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-	// var cmds []tea.Cmd
 	switch msg := msg.(type) {
 
-	// handle tick: fetch data
 	case common.TickMsg:
 		m.setLoading(true)
 		m.getLatestLogs()
 		return m, common.TickCmd(common.DefaultRefreshInterval)
 
-	// handle re-size
 	case tea.WindowSizeMsg:
 		m.handleResize(msg)
 
-	// handle keys
 	case tea.KeyPressMsg:
 		switch {
-		case key.Matches(msg, m.keys.Quit): // "ctrl+c", "q"
+		case key.Matches(msg, m.keys.Quit):
 			return m, tea.Quit
 		case key.Matches(msg, m.keys.Help):
 			m.help.ShowAll = !m.help.ShowAll
@@ -220,7 +193,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.searchInput.Blur()
 				m.table.Focus()
 			} else if len(m.logs) > 0 && len(m.table.Rows()) > 0 {
-				// set the selectedLog to the log corresponding to selected row's log id
 				m.setSelected()
 			}
 
@@ -236,7 +208,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		case key.Matches(msg, m.keys.Slash):
-			// search is only usable from the table view
 			if m.selectedLog == nil {
 				if m.searchEnabled && !m.searchInput.Focused() {
 					m.searchInput.Focus()
@@ -248,36 +219,30 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case key.Matches(msg, m.keys.Esc):
 			if m.selectedLog != nil {
-				// if the model is open, close the modal
 				m.resetSelected()
 			} else if m.searchEnabled {
-				// if there is a search term, reset the field and focus the table
 				m.ResetSearchInput()
 				m.table.Focus()
 			} else {
-				// otherwise, quit
 				return m, tea.Quit
 			}
 		}
 	}
 
-	// pass the message to the relevant component
-	if m.selectedLog != nil { // send to log modal
+	if m.selectedLog != nil {
 		m.details, cmd = m.details.Update(msg)
-	} else if m.searchEnabled && m.searchInput.Focused() { // send to search input
-		// we use this term to ensure we can have the
+	} else if m.searchEnabled && m.searchInput.Focused() {
 		m.searchInput, cmd = m.searchInput.Update(msg)
-	} else { // send to table
+	} else {
 		m.table, cmd = m.table.Update(msg)
 	}
 
-	// cmds = append(cmds, cmd)
-	return m, cmd // tea.Batch(cmds...)
+	return m, cmd
 }
 
 func (m model) headerView() string {
 	s := ""
-	spinner := "" // placeholder text
+	spinner := ""
 	if m.loading {
 		spinner += m.spinner.View()
 	}
@@ -331,11 +296,9 @@ func (m model) viewContent() string {
 		return content
 
 	}
-	// easy sections
 	header := m.headerView()
 	footer := m.footerView()
 
-	// Main Content
 	main := ""
 	tableStyle := appStyle
 	if m.table.Focused() && m.selectedLog == nil {
@@ -360,7 +323,6 @@ func (m model) viewContent() string {
 		main = lipgloss.JoinHorizontal(lipgloss.Left, tableView, logView)
 	}
 
-	// compose view
 	view := lipgloss.JoinVertical(
 		lipgloss.Top,
 		header, main, footer,
@@ -381,9 +343,7 @@ func LogStreamApp(
 		return
 	}
 
-	// initialize the model
 	m := initialModel(ctx, cfg, api, install_id, deploy_id, logstream_id)
-	// initialize the program
 	p := teaprogram.NewProgram(m)
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Something has gone terribly wrong: %v", err)
@@ -391,7 +351,6 @@ func LogStreamApp(
 	}
 }
 
-// logStreamPlainText streams logs to stdout as plain text lines.
 func logStreamPlainText(ctx context.Context, api nuon.Client, logstreamID string) {
 	cursor := "0"
 	for {
@@ -405,14 +364,12 @@ func logStreamPlainText(ctx context.Context, api nuon.Client, logstreamID string
 			fmt.Printf("[%s] %s %s: %s\n", log.Timestamp, log.SeverityText, log.ServiceName, log.Body)
 		}
 
-		// Update cursor to the latest timestamp
 		for _, log := range logs {
 			if log.Timestamp > cursor {
 				cursor = log.Timestamp
 			}
 		}
 
-		// Check if stream is still open
 		logStream, err := api.GetLogStream(ctx, logstreamID)
 		if err != nil || !logStream.Open {
 			return

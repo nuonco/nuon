@@ -20,10 +20,6 @@ import (
 	"github.com/nuonco/nuon/pkg/terraform/workspace"
 )
 
-// buildBinary picks between a build-vendored terraform CLI binary inside
-// the OCI artifact and the existing remote (releases.hashicorp.com) path.
-// See the deploy handler's buildBinary for the full contract; the sandbox
-// handler shares the same compat semantics.
 func (h *handler) buildBinary(archBase, requestedVersion string) (binary.Binary, error) {
 	if path := h.detectAndLogBundledBinary(archBase, requestedVersion); path != "" {
 		return localbinary.New(h.v, localbinary.WithPath(path))
@@ -31,10 +27,6 @@ func (h *handler) buildBinary(archBase, requestedVersion string) (binary.Binary,
 	return remotebinary.New(h.v, remotebinary.WithVersion(requestedVersion))
 }
 
-// detectAndLogBundledBinary mirrors the deploy handler's helper of the
-// same name. Kept as a per-handler method so each handler can use its
-// own *zap.Logger (h.l vs p.l) without plumbing a logger through the
-// workspace package.
 func (h *handler) detectAndLogBundledBinary(archBase, requestedVersion string) string {
 	path := workspace.DetectBundledBinary(archBase, requestedVersion)
 	bundledVersion := workspace.BundledBinaryVersion(archBase)
@@ -69,9 +61,6 @@ func (h *handler) detectAndLogBundledBinary(archBase, requestedVersion string) s
 	return path
 }
 
-// detectAndLogMirror runs DetectFilesystemMirror and emits a single Info log
-// describing which provider-resolution path the install runner will take.
-// Returned value is suitable to pass to workspace.WithFilesystemMirror.
 func (h *handler) detectAndLogMirror(archBase string) string {
 	path := workspace.DetectFilesystemMirror(archBase)
 	platforms := workspace.MirrorPlatforms(archBase)
@@ -100,7 +89,6 @@ func (h *handler) detectAndLogMirror(archBase string) string {
 	return path
 }
 
-// getWorkspace returns a valid workspace for working with this plugin
 func (h *handler) getWorkspace() (workspace.Workspace, error) {
 	plan := h.state.plan
 	sandboxCfg := h.state.sandboxCfg
@@ -178,11 +166,6 @@ func (h *handler) getWorkspace() (workspace.Workspace, error) {
 		workspace.WithBinary(bin),
 		workspace.WithVariables(vars),
 		workspace.WithVariables(authVars),
-		// Auto-detect the build-time provider mirror inside the unpacked
-		// OCI artifact. When the build runner shipped one (gated by an
-		// org feature flag server-side), this swaps in a .terraformrc
-		// pointing at it; otherwise it's a no-op and terraform init
-		// fetches providers from registry.terraform.io as before.
 		workspace.WithFilesystemMirror(h.detectAndLogMirror(archDir)),
 	)
 	if err != nil {
@@ -192,8 +175,6 @@ func (h *handler) getWorkspace() (workspace.Workspace, error) {
 	return wkspace, nil
 }
 
-// getWorkspace returns a valid workspace for working with this plugin when we have a plan
-// NOTE: these are kept distinct in case they continue to evolve separately and to make it easier to reason about
 func (h *handler) getWorkspaceWithPlan(planBytes []byte) (workspace.Workspace, error) {
 	plan := h.state.plan
 	sandboxCfg := h.state.sandboxCfg
@@ -271,7 +252,6 @@ func (h *handler) getWorkspaceWithPlan(planBytes []byte) (workspace.Workspace, e
 		workspace.WithBinary(bin),
 		workspace.WithVariables(vars),
 		workspace.WithVariables(authVars),
-		// See getWorkspace for an explanation of the filesystem mirror.
 		workspace.WithFilesystemMirror(h.detectAndLogMirror(archDir)),
 		workspace.WithPlanBytes(planBytes),
 	)

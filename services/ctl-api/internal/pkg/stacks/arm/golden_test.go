@@ -9,17 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-// The golden files were generated from the commit before the deployment-scope
-// work began, so this asserts the real backwards-compatibility contract: an app
-// that has not opted in renders exactly the bytes it rendered before.
-//
-// A checksum alone would only say that drift happened. Committing the bytes means
-// the diff shows what drifted, which matters because the subscription-scope work
-// changes how these resources are assembled — resource ordering included.
-//
-// Regenerate deliberately, never reflexively: UPDATE_GOLDEN=1 go test ./...
-// and read the diff. A change here re-renders every existing Azure install's
-// template on its next reprovision.
 func TestGetAzureTemplate_RGScopeMatchesGolden(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 

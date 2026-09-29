@@ -7,7 +7,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
-// ErrFeatureNotEnabled returns a standard user error when a required feature is not enabled
 func ErrFeatureNotEnabled(feature app.OrgFeature) stderr.ErrUser {
 	return stderr.ErrUser{
 		Err:         fmt.Errorf("feature not enabled: %s", feature),

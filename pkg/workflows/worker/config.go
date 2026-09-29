@@ -25,16 +25,13 @@ func init() {
 	config.RegisterDefault("temporal_cp_build_max_concurrent_activities", defaultCPBuildMaxConcurrentActivities)
 }
 
-// Config defines the standard workflow worker config, which all workers should embed as part of their application.
 type Config struct {
-	// builtin configuration
 	Env         config.Env `config:"env" validate:"required"`
 	ServiceName string     `config:"service_name" validate:"required"`
 
 	GitRef  string `config:"git_ref" validate:"required"`
 	Version string `config:"version" validate:"required"`
 
-	// temporal configuration
 	TemporalHost                                   string `config:"temporal_host" validate:"required"`
 	TemporalNamespace                              string `config:"temporal_namespace"`
 	TemporalTaskQueue                              string `config:"temporal_task_queue" validate:"required"`
@@ -42,13 +39,8 @@ type Config struct {
 	TemporalMaxConcurrentWorkflowTaskExecutionSize int    `config:"temporal_max_concurrent_workflow_task_execution_size" validate:"required" faker:"oneof: 10,20"`
 	TemporalMaxConcurrentActivityTaskPollers       int    `config:"temporal_max_concurrent_activity_task_pollers" validate:"required" faker:"oneof: 10,20"`
 	TemporalMaxConcurrentWorkflowTaskPollers       int    `config:"temporal_max_concurrent_workflow_task_pollers" validate:"required" faker:"oneof: 10,20"`
-	// TemporalCPBuildMaxConcurrentActivities caps how many control-plane build
-	// activities (git clone + OCI pack) a single worker pod runs at once. It is
-	// deliberately separate from TemporalMaxConcurrentActivities so builds do
-	// not inherit the 10k orchestration default and exhaust pod CPU/disk.
-	TemporalCPBuildMaxConcurrentActivities int `config:"temporal_cp_build_max_concurrent_activities" validate:"required" faker:"oneof: 10,20"`
+	TemporalCPBuildMaxConcurrentActivities         int    `config:"temporal_cp_build_max_concurrent_activities" validate:"required" faker:"oneof: 10,20"`
 
-	// observability configuration
 	HostIP               string `config:"host_ip" validate:"required"`
 	LogLevel             string `config:"log_level"`
 	SlowQueryThresholdMS int    `config:"slow_query_threshold_ms"`

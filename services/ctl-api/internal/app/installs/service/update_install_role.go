@@ -90,9 +90,6 @@ func (s *service) updateInstallRole(ctx *gin.Context, orgID, installID, roleID s
 		return nil, fmt.Errorf("unable to update install role: %w", res.Error)
 	}
 
-	// Fire a rolechange signal when the enabled state changes so Slack /
-	// webhook subscribers are notified. Best-effort: failures here never
-	// block the API response.
 	if previousEnabled != *req.Enabled {
 		s.enqueueRoleChangeSignal(ctx, installID, &role)
 	}
@@ -100,9 +97,6 @@ func (s *service) updateInstallRole(ctx *gin.Context, orgID, installID, roleID s
 	return &role, nil
 }
 
-// enqueueRoleChangeSignal fires a role-change signal for the given install
-// role. All errors are swallowed — notification delivery must never fail the
-// API request.
 func (s *service) enqueueRoleChangeSignal(ctx *gin.Context, installID string, role *app.InstallRoles) {
 	var roleConfig app.AppAWSIAMRoleConfig
 	if err := s.db.WithContext(ctx).Where("id = ?", role.AppRoleConfigID).First(&roleConfig).Error; err != nil {

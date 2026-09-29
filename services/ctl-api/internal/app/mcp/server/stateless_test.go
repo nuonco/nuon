@@ -41,8 +41,6 @@ func withMCPAuth(ctx context.Context, orgID, accountID string) context.Context {
 	return ctx
 }
 
-// newStatelessTestServer serves the real MCP handler behind a stub auth layer
-// that injects the same context the production middleware would.
 func newStatelessTestServer(t *testing.T, orgID string) *httptest.Server {
 	t.Helper()
 
@@ -62,9 +60,6 @@ func newStatelessTestServer(t *testing.T, orgID string) *httptest.Server {
 	return ts
 }
 
-// TestStatelessRoundTrip drives the server with a real MCP client over the same
-// transport the CLI proxy uses, so an SDK upgrade that breaks the handshake,
-// tool listing, or tool calls fails here.
 func TestStatelessRoundTrip(t *testing.T) {
 	ts := newStatelessTestServer(t, "org_a")
 	ctx := context.Background()
@@ -90,8 +85,6 @@ func TestStatelessRoundTrip(t *testing.T) {
 	assert.JSONEq(t, `{"org_id":"org_a"}`, text.Text)
 }
 
-// TestStatelessIssuesNoSessionID guards the stateless contract: the server must
-// not hand out an Mcp-Session-Id, because no replica retains session state.
 func TestStatelessIssuesNoSessionID(t *testing.T) {
 	ts := newStatelessTestServer(t, "org_a")
 
@@ -112,8 +105,6 @@ func TestStatelessIssuesNoSessionID(t *testing.T) {
 	assert.Empty(t, resp.Header.Get("Mcp-Session-Id"), "stateless server must not issue a session id")
 }
 
-// TestStatelessRejectsGET documents that the server-initiated SSE stream is gone
-// in stateless mode; clients must not depend on it.
 func TestStatelessRejectsGET(t *testing.T) {
 	ts := newStatelessTestServer(t, "org_a")
 

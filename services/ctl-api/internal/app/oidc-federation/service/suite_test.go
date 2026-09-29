@@ -93,8 +93,6 @@ func (s *OIDCFederationTestSuite) TearDownSuite() {
 	s.app.RequireStop()
 }
 
-// setupTestData seeds an account and org, creates the org's standard roles,
-// and makes the account an org admin so trust-policy CRUD is permitted.
 func (s *OIDCFederationTestSuite) setupTestData() {
 	s.ctx = context.Background()
 	s.ctx, s.testAcc = s.deps.Seeder.EnsureAccount(s.ctx, s.T())
@@ -111,7 +109,6 @@ func (s *OIDCFederationTestSuite) setupTestData() {
 	s.testAcc = &acct
 }
 
-// demoteTestAccount rebuilds the router with an account that has no org roles.
 func (s *OIDCFederationTestSuite) demoteTestAccount() {
 	_, nonAdmin := s.deps.Seeder.EnsureAccount(context.Background(), s.T())
 

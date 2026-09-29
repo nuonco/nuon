@@ -12,8 +12,6 @@ import (
 type CheckFlowRunnerDisabledRequest struct {
 	FlowID string `validate:"required"`
 
-	// HonorStackChanged defers the disabled-runner stop until the stack apply
-	// step has finished. Empty on histories that started before that deferral.
 	HonorStackChanged bool `temporaljson:"honor_stack_changed,omitempty"`
 }
 
@@ -72,10 +70,6 @@ func (a *Activities) CheckFlowRunnerDisabled(ctx context.Context, req CheckFlowR
 	return statuses[0] == app.RunnerStatusDisabled, nil
 }
 
-// stackAwaitFinished reports whether the stack apply and the following runner
-// startup wait have both finished. The startup wait is what lets a replacement
-// runner come up; stopping before it would reject the workflow the stack just
-// repaired. A missing step means generation has not persisted it yet.
 func (a *Activities) stackAwaitFinished(ctx context.Context, flowID string) (bool, error) {
 	var steps []app.WorkflowStep
 	res := a.db.WithContext(ctx).

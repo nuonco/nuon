@@ -82,7 +82,6 @@ func (s *service) CreateCell(ctx *gin.Context) {
 		return
 	}
 
-	// new cell goes to the end of the notebook
 	var maxPos *int
 	s.db.WithContext(ctx).
 		Model(&app.NotebookCell{}).
@@ -185,7 +184,6 @@ func (s *service) UpdateCell(ctx *gin.Context) {
 	}
 
 	if len(updates) > 0 {
-		// any edit bumps the revision so the UI can flag "edited since last run"
 		updates["revision"] = cell.Revision + 1
 		if res := s.db.WithContext(ctx).Model(cell).Updates(updates); res.Error != nil {
 			ctx.Error(fmt.Errorf("unable to update cell: %w", res.Error))
@@ -290,7 +288,6 @@ func (s *service) ReorderCells(ctx *gin.Context) {
 }
 
 func (s *service) getCell(ctx *gin.Context, orgID, installID, notebookID, cellID string) (*app.NotebookCell, error) {
-	// confirm the notebook belongs to the org+install before touching cells
 	if _, err := s.getNotebook(ctx, orgID, installID, notebookID); err != nil {
 		return nil, err
 	}

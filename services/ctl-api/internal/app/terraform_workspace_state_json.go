@@ -65,10 +65,6 @@ func (t *TerraformWorkspaceStateJSON) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-// GetContents returns the state contents. When blobRead is enabled it prefers
-// the S3 blob, falling back to the legacy bytea column when the blob is unset or
-// unreadable. When disabled it always reads the legacy column. The second return
-// reports whether the contents came from the blob.
 func (t *TerraformWorkspaceStateJSON) GetContents(ctx context.Context, blobRead bool) ([]byte, bool) {
 	if blobRead {
 		if raw, err := t.ContentsBlob.Get(ctx); err == nil && raw != "" {

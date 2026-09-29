@@ -16,9 +16,6 @@ func envToken(s string) string {
 
 var camelBoundaryRegexp = regexp.MustCompile(`([a-z0-9])([A-Z])`)
 
-// snakeCase converts an ARM output name to the snake_case an install_stack
-// output key uses, so ARM's virtualNetworkId reaches a template as
-// vnet_virtual_network_id rather than vnet_virtualNetworkId.
 func snakeCase(s string) string {
 	s = camelBoundaryRegexp.ReplaceAllString(s, "${1}_${2}")
 	return strings.ToLower(envNameRegexp.ReplaceAllString(s, "_"))
@@ -29,9 +26,6 @@ func (t *Templates) getPhoneHomeResources(inp *stacks.TemplateInput, customOutpu
 
 	operationIDs := azureOperationIdentities(inp.AppCfg)
 
-	// The script reports the whole VNet contract, so most of the env vars below are
-	// reads off the VNet deployment. vnetOutOptional covers the outputs a custom VNet
-	// template is allowed to leave empty.
 	vnetDeployment := scope.vnetDeploymentName(inp.Install.ID)
 	vnetOut := func(output string) string {
 		return fmt.Sprintf("[reference('%s').outputs.%s.value]", vnetDeployment, output)
@@ -43,22 +37,16 @@ func (t *Templates) getPhoneHomeResources(inp *stacks.TemplateInput, customOutpu
 		)
 	}
 
-	// Build per-secret env vars and payload fields dynamically.
 	var secretEnvVars []map[string]any
 	var secretPayloadFields []string
 	for _, secret := range inp.AppCfg.SecretsConfig.Secrets {
 		envName := fmt.Sprintf("SECRET_%s_ID", secret.Name)
-		// Construct the Key Vault secret URI from the vault name and secret name. The
-		// secret itself is created by keyVaultDeployment at subscription scope, and by
-		// the customer beforehand at resource-group scope; either way it is referenced
-		// by this convention rather than read.
 		kvSecretName := azureKeyVaultSecretName(secret.Name)
 		envValue := fmt.Sprintf("[format('https://{0}.vault.azure.net/secrets/%s', %s)]", kvSecretName, scope.keyVaultNameInner())
 		secretEnvVars = append(secretEnvVars, map[string]any{"name": envName, "value": envValue})
 		secretPayloadFields = append(secretPayloadFields, fmt.Sprintf(`  "%s_secret_id": "$%s"`, secret.Name, envName))
 	}
 
-	// Build the payload JSON with optional secret fields.
 	payloadFields := []string{
 		`  "request_type": "Create"`,
 		`  "phone_home_type": "azure"`,
@@ -76,15 +64,9 @@ func (t *Templates) getPhoneHomeResources(inp *stacks.TemplateInput, customOutpu
 		`  "subscription_id": "$SUBSCRIPTION_ID"`,
 		`  "subscription_tenant_id": "$SUBSCRIPTION_TENANT_ID"`,
 	}
-	// The region the customer picked in the portal, or passed to `az stack sub
-	// create`. Only meaningful at subscription scope, where deployment() carries a
-	// location and where the record's location is immutable — see
-	// AzureStackOutputs.DeploymentLocation. Gated so resource-group installs render
-	// unchanged.
 	if scope.subscription {
 		payloadFields = append(payloadFields, `  "deployment_location": "$DEPLOYMENT_LOCATION"`)
 	}
-	// Local runners have no runnerDeployment to reference.
 	if !t.cfg.UseLocalRunners {
 		payloadFields = append(payloadFields, `  "runner_identity_principal_id": "$RUNNER_IDENTITY_PRINCIPAL_ID"`)
 	}
@@ -95,11 +77,10 @@ func (t *Templates) getPhoneHomeResources(inp *stacks.TemplateInput, customOutpu
 
 	customerInputs := azureCustomerInputs(inp)
 	if len(customerInputs) > 0 {
-		// Unquoted, unlike every other field: the env var already holds a JSON object.
 		payloadFields = append(payloadFields, fmt.Sprintf(`  "install_inputs": $%s`, installInputsEnvName))
 	}
 
-	// Outputs a custom VNet template declares beyond the fixed contract. Namespaced
+	// why: Outputs a custom VNet template declares beyond the fixed contract. Namespaced
 	// under vnet_ because the raw names collide: a VNet stack that makes its own
 	// resource group emits resourceGroupName, which is already Nuon's install group.
 	var vnetExtraEnvVars []map[string]any
@@ -112,9 +93,6 @@ func (t *Templates) getPhoneHomeResources(inp *stacks.TemplateInput, customOutpu
 		payloadFields = append(payloadFields, fmt.Sprintf(`  "vnet_%s": "$%s"`, snakeCase(key), envName))
 	}
 
-	// Custom nested stack outputs, mirroring the AWS phone-home shape:
-	// custom_nested_stacks.<name>.outputs.<key>. Non-string ARM outputs are
-	// serialized with string().
 	var customEnvVars []map[string]any
 	if len(customOutputs) > 0 {
 		var stackFields []string
@@ -133,7 +111,6 @@ func (t *Templates) getPhoneHomeResources(inp *stacks.TemplateInput, customOutpu
 		payloadFields = append(payloadFields, "  \"custom_nested_stacks\": {\n"+strings.Join(stackFields, ",\n")+"\n  }")
 	}
 
-	// Surface each identity's client ID as a stack output.
 	identityEnvVars, identityPayloadFields := operationIdentityPhoneHomeFields(operationIDs, scope)
 	payloadFields = append(payloadFields, identityPayloadFields...)
 
@@ -174,8 +151,6 @@ fi
 		{"name": "SUBSCRIPTION_ID", "value": "[subscription().subscriptionId]"},
 		{"name": "SUBSCRIPTION_TENANT_ID", "value": "[subscription().tenantId]"},
 	}
-	// deployment().location exists only for subscription, management-group and
-	// tenant deployments; at resource-group scope it is not available at all.
 	if scope.subscription {
 		envVars = append(envVars, map[string]any{"name": "DEPLOYMENT_LOCATION", "value": "[deployment().location]"})
 	}
@@ -204,10 +179,6 @@ fi
 		{"name": "PRIVATE_SUBNET_IDS_CSV", "value": vnetOut("privateSubnetIds")},
 		{"name": "PRIVATE_SUBNET_NAMES_CSV", "value": vnetOut("privateSubnetNames")},
 	}...)
-	// The runner's system-assigned identity. Secret sync and image sync run as
-	// this identity rather than a per-operation one, so a sandbox has to be able
-	// to grant it cluster access -- the Azure counterpart of the runner role ARNs
-	// the AWS stack outputs.
 	if !t.cfg.UseLocalRunners {
 		envVars = append(envVars, map[string]any{
 			"name":  "RUNNER_IDENTITY_PRINCIPAL_ID",
@@ -228,8 +199,6 @@ fi
 	envVars = append(envVars, customEnvVars...)
 	envVars = append(envVars, identityEnvVars...)
 
-	// Depend on the identity role setup so a failed role deployment blocks the
-	// outputs rather than reporting half-configured identities.
 	dependsOn := []string{vnetDeployment}
 	if telemetryEndpoint != "" {
 		dependsOn = append(dependsOn, "runnerDeployment")
@@ -241,19 +210,8 @@ fi
 		dependsOn = append(dependsOn, uamiDependsOn...)
 	}
 	dependsOn = append(dependsOn, operationIdentitySetupDependencies(operationIDs, scope)...)
-	// The payload reports the vault's ID and a URI per secret, so it must not run
-	// before they exist.
 	dependsOn = append(dependsOn, scope.keyVaultDependsOn()...)
 
-	// Microsoft.Resources/deploymentScripts is resource-group-scoped only, so at
-	// subscription scope the script moves into the install resource group.
-	//
-	// The environment variables stay evaluated at the *outer* scope and cross the
-	// boundary as a single array parameter. That is what makes this tractable: every
-	// VNet-output reference and identity lookup in there resolves in the root,
-	// where those deployments are declared, instead of needing ~25 individual
-	// parameters. It also means the scope-sensitive expressions among them —
-	// resourceGroup().id and friends — are correctly the subscription-scope forms.
 	environmentVariables := any(envVars)
 	if scope.subscription {
 		environmentVariables = "[parameters('environmentVariables')]"
@@ -276,9 +234,6 @@ fi
 		},
 	}
 
-	// deploymentScripts supports user-assigned identities only, so there is no
-	// system-assigned alternative. The identity travels with the script into whichever
-	// scope it lands in, so its resourceId always resolves where the script is declared.
 	var identity []any
 	identityID := ""
 	if inp.PhoneHomeIdentityName != "" {
@@ -303,12 +258,9 @@ fi
 		return append(identity, script)
 	}
 
-	// A UAMI is not subscription-deployable, so it moves into the install resource
-	// group alongside the script. Only the identity dependency can be expressed
-	// inside; everything else is declared in the root and goes on the wrapper.
 	if identityID != "" {
 		script["dependsOn"] = []string{identityID}
-		// The outer array cannot name the identity: it is created inside this wrapper,
+		// why: The outer array cannot name the identity: it is created inside this wrapper,
 		// so resourceId() in the root resolves against no resource group at all.
 		script["properties"].(map[string]any)["environmentVariables"] =
 			phoneHomeInnerEnvVarsExpr(inp.PhoneHomeIdentityName)
@@ -322,8 +274,6 @@ fi
 		"environmentVariables": {typ: "array", value: envVars},
 	}, append(identity, script), nil)
 
-	// Everything the script reports on has to exist first, and the script can no
-	// longer say so itself — inner evaluation hides the root.
 	for _, r := range resources {
 		dependOn(r.(map[string]any), dependsOn)
 	}

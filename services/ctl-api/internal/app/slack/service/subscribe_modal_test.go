@@ -29,8 +29,6 @@ func TestSubscribeModalStateRoundTrip(t *testing.T) {
 		t.Fatalf("roundtrip mismatch: in=%+v out=%+v", in, out)
 	}
 
-	// Empty private_metadata is rejected so callers always know whether
-	// state was set.
 	if _, err := decodeSubscribeModalState(""); err == nil {
 		t.Fatal("expected error decoding empty state")
 	}
@@ -56,7 +54,6 @@ func TestBuildSubscribeModalView(t *testing.T) {
 		mustNotContainID(t, ids, subscribePredicateBlockID)
 		mustNotContainID(t, ids, subscribeEntitiesBlockID)
 		mustNotContainID(t, ids, subscribeLabelsBlockID)
-		// No per-resource blocks render until notif=specific.
 		for _, kind := range interests.AllResources {
 			mustNotContainID(t, ids, subscribeResourceOptsBlockID(kind))
 			mustNotContainID(t, ids, subscribeResourceCategoriesBlockID(kind))
@@ -64,8 +61,6 @@ func TestBuildSubscribeModalView(t *testing.T) {
 			mustNotContainID(t, ids, subscribeResourceSubOpsBlockID(kind))
 		}
 
-		// Notif options for the new modal are All / Specific only —
-		// the legacy Mute option is gone with the install pin.
 		notifOpts := readRadioOptions(t, view, subscribeNotifBlockID, subscribeNotifActionID)
 		for _, o := range notifOpts {
 			m, _ := o.(map[string]any)
@@ -74,7 +69,6 @@ func TestBuildSubscribeModalView(t *testing.T) {
 			}
 		}
 
-		// private_metadata round-trips.
 		pm, _ := view["private_metadata"].(string)
 		if !strings.Contains(pm, "T1") || !strings.Contains(pm, "C1") {
 			t.Fatalf("private_metadata missing state: %q", pm)
@@ -93,7 +87,6 @@ func TestBuildSubscribeModalView(t *testing.T) {
 		mustNotContainID(t, ids, subscribeEntitiesBlockID)
 		mustNotContainID(t, ids, subscribeLabelsBlockID)
 
-		// Default kind is Installs.
 		kindBlock := findBlockByID(t, view, subscribeKindBlockID)
 		init := kindBlock["element"].(map[string]any)["initial_option"].(map[string]any)
 		if init["value"] != kindOptionInstalls {
@@ -194,8 +187,6 @@ func TestBuildSubscribeModalView(t *testing.T) {
 		if err != nil {
 			t.Fatalf("build: %v", err)
 		}
-		// The context block has no block_id so we have to find it by
-		// type. Verify by scanning for the mrkdwn body.
 		blocks, _ := view["blocks"].([]any)
 		found := false
 		for _, b := range blocks {
@@ -354,7 +345,6 @@ func TestReadResourceRenderStateFromValues_HealthCategories(t *testing.T) {
 		t.Fatalf("installs: expected enabled + install degraded, got %+v", inst)
 	}
 
-	// The persisted config must carry the ticks through submission.
 	in := buildSpecificEventsInterests(got.Resources)
 	if !in.Resources[interests.ResourceComponents].ComponentHealth {
 		t.Fatal("components: component_health must persist")
@@ -459,7 +449,6 @@ func TestReadSubscribeRenderStateFromPayload_MatchAndPredicate(t *testing.T) {
 				t.Fatalf("unmarshal: %v", err)
 			}
 			got := readSubscribeRenderStateFromPayload(p)
-			// Resources is computed separately and varies; don't compare.
 			got.Resources = nil
 			if !renderStateEq(got, tc.want) {
 				t.Fatalf("render mismatch:\n got: %+v\nwant: %+v", got, tc.want)
@@ -648,7 +637,6 @@ func TestBuildSubscribeModalView_AppPickerGate(t *testing.T) {
 
 func TestLabelsToQueryString(t *testing.T) {
 	got := labelsToQueryString(labels.Labels{"env": "prod", "owner": "*", "tier": "critical"})
-	// Keys sorted alphabetically.
 	want := "env=prod, owner=*, tier=critical"
 	if got != want {
 		t.Fatalf("got %q want %q", got, want)
@@ -763,24 +751,16 @@ func TestTruncatePlainText(t *testing.T) {
 	if got := truncatePlainText("short", 10); got != "short" {
 		t.Fatalf("short: got %q", got)
 	}
-	// "…" is U+2026 = 3 UTF-8 bytes, so a max=5 truncation reserves 3
-	// bytes for the ellipsis and 2 bytes for content → "01…" (5 bytes).
 	if got := truncatePlainText("0123456789", 5); got != "01…" {
 		t.Fatalf("long: got %q (len=%d)", got, len(got))
 	}
-	// max smaller than the ellipsis falls through to a hard rune-safe
-	// truncation; ASCII input lets us assert exact bytes.
 	if got := truncatePlainText("abcdef", 1); got != "a" {
 		t.Fatalf("max=1: got %q", got)
 	}
-	// 75-byte cap is the Slack contract; assert the post-condition the
-	// block_suggestion handlers depend on.
 	if got := truncatePlainText(strings.Repeat("x", 200), 75); len(got) > 75 {
 		t.Fatalf("max=75: got len=%d (must be <=75)", len(got))
 	}
 }
-
-// --- helpers ---
 
 func blockIDs(view map[string]any) []string {
 	blocks, _ := view["blocks"].([]any)

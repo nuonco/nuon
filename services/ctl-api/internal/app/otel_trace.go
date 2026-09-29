@@ -30,14 +30,12 @@ type OtelTrace struct {
 	UpdatedAt time.Time             `gorm:"notnull" json:"updated_at,omitzero" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	// internal attributes
 	RunnerID               string `json:"runner_id,omitzero" temporaljson:"runner_id,omitzero,omitempty"`
 	RunnerJobID            string `json:"runner_job_id,omitzero" temporaljson:"runner_job_id,omitzero,omitempty"`
 	RunnerGroupID          string `json:"runner_group_id,omitzero" temporaljson:"runner_group_id,omitzero,omitempty"`
 	RunnerJobExecutionID   string `json:"runner_job_execution_id,omitzero" temporaljson:"runner_job_execution_id,omitzero,omitempty"`
 	RunnerJobExecutionStep string `json:"runner_job_execution_step,omitzero" temporaljson:"runner_job_execution_step,omitzero,omitempty"`
 
-	// OTEL log trace attributes
 	Timestamp     time.Time `json:"timestamp,omitzero" gorm:"type:DateTime64(9);codec:Delta(8),ZSTD(1);" temporaljson:"timestamp,omitzero,omitempty"`
 	TimestampDate time.Time `json:"timestamp_date,omitzero" gorm:"type:Date;default:toDate(timestamp);" temporaljson:"timestamp_date,omitzero,omitempty"`
 	TimestampTime time.Time `json:"timestamp_time,omitzero" gorm:"type:DateTime;default:toDateTime(timestamp);" temporaljson:"timestamp_time,omitzero,omitempty"`
@@ -63,8 +61,6 @@ type OtelTrace struct {
 	StatusCode     string            `json:"status_code,omitzero" gorm:"type:LowCardinality(String);codec:ZSTD(1);" temporaljson:"status_code,omitzero,omitempty"`
 	StatusMessage  string            `json:"status_message,omitzero" gorm:"codec:ZSTD(1);" temporaljson:"status_message,omitzero,omitempty"`
 
-	// Nested Fields
-	// NOTE(fd): these control the actual migration. careful when modifying. ALTER does not work the same way on nested clickhouse columns.
 	Events []OtelTraceEvent `gorm:"type:Nested(timestamp DateTime64(9), name LowCardinality(String), attributes Map(LowCardinality(String), String));" temporaljson:"events,omitzero,omitempty"`
 	Links  []OtelTraceLink  `gorm:"type:Nested(trace_id String, span_id String, span_state String, attributes Map(LowCardinality(String), String));" temporaljson:"links,omitzero,omitempty"`
 }
@@ -93,8 +89,6 @@ func (r *OtelTrace) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// NOTE(fd): DO NOT MIGRATE THIS
-// it's just here so we can write to the table and read data w/ Nested columns as an Array of Structs
 type OtelTraceIngestion struct {
 	ID          string `gorm:"primary_key" json:"id" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string `gorm:"notnull;" json:"created_by_id" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -103,14 +97,12 @@ type OtelTraceIngestion struct {
 	UpdatedAt time.Time             `gorm:"notnull" json:"updated_at" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	// internal attributes
 	RunnerID               string `json:"runner_id" temporaljson:"runner_id,omitzero,omitempty"`
 	RunnerJobID            string `json:"runner_job_id" temporaljson:"runner_job_id,omitzero,omitempty"`
 	RunnerGroupID          string `json:"runner_group_id" temporaljson:"runner_group_id,omitzero,omitempty"`
 	RunnerJobExecutionID   string `json:"runner_job_execution_id" temporaljson:"runner_job_execution_id,omitzero,omitempty"`
 	RunnerJobExecutionStep string `json:"runner_job_execution_step" temporaljson:"runner_job_execution_step,omitzero,omitempty"`
 
-	// OTEL log trace attributes
 	Timestamp     time.Time `json:"timestamp" gorm:"type:DateTime64(9);codec:Delta(8),ZSTD(1);" temporaljson:"timestamp,omitzero,omitempty"`
 	TimestampDate time.Time `json:"timestamp_date" gorm:"type:Date;default:toDate(timestamp);" temporaljson:"timestamp_date,omitzero,omitempty"`
 	TimestampTime time.Time `json:"timestamp_time" gorm:"type:DateTime;default:toDateTime(timestamp);" temporaljson:"timestamp_time,omitzero,omitempty"`
@@ -136,15 +128,6 @@ type OtelTraceIngestion struct {
 	StatusCode     string            `json:"status_code" gorm:"type:LowCardinality(String);codec:ZSTD(1);" temporaljson:"status_code,omitzero,omitempty"`
 	StatusMessage  string            `json:"status_message" gorm:"codec:ZSTD(1);" temporaljson:"status_message,omitzero,omitempty"`
 
-	// NOTE(fd): it may be useful to scan the nested columns back into Structs in AfterFind
-
-	// the items of interest here are these attrs/columns that define a `column` in the `gorm` struct tag so gorm knows what column to send these to
-	//
-	// These carry real json tags, not `json:"-"`, because this struct is the
-	// Kafka payload for the otel_traces topic — the producer marshals it into the
-	// envelope and the consumer unmarshals it back before inserting. Excluded
-	// from JSON, every span's events and links would survive the inline write and
-	// silently vanish on the Kafka path.
 	EventsTimestamp  []time.Time         `json:"events_timestamp" gorm:"type:DateTime64(9);column:events.timestamp" temporaljson:"events_timestamp,omitzero,omitempty"`
 	EventsName       []string            `json:"events_name" gorm:"type:LowCardinality(String);column:events.name" temporaljson:"events_name,omitzero,omitempty"`
 	EventsAttributes []map[string]string `json:"events_attributes" gorm:"type:Map(LowCardinality(String), String);column:events.attributes" temporaljson:"events_attributes,omitzero,omitempty"`
@@ -154,7 +137,6 @@ type OtelTraceIngestion struct {
 	LinksAttributes  []map[string]string `json:"links_attributes" gorm:"type:Map(LowCardinality(String), String);column:links.attributes" temporaljson:"links_attributes,omitzero,omitempty"`
 }
 
-// TableName
 func (m OtelTraceIngestion) TableName() string {
 	return "otel_traces"
 }

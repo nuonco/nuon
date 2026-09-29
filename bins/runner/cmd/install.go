@@ -38,46 +38,34 @@ func (c *cli) registerInstall() error {
 func (c *cli) runInstall(cmd *cobra.Command, _ []string) {
 	providers := []fx.Option{}
 
-	// common providers
 	providers = append(providers, c.providers()...)
 
-	// operations
 	providers = append(providers, operations.GetJobs()...)
 	providers = append(providers, fx.Provide(jobs.AsJobHandler("operations", check.New)))
 
-	// install-mode providers
 	providers = append(providers, sync.GetJobs()...)
 	providers = append(providers, sandbox.GetJobs()...)
 	providers = append(providers, deploy.GetJobs()...)
 	providers = append(providers, actions.GetJobs()...)
 	providers = append(providers, audit.Module, telemetryexport.Module)
 
-	// dev-only: run-local appends the image-actions loop so image-backed
-	// actions can be exercised locally without a separate mng process.
 	providers = append(providers, c.extraProviders...)
 
-	// heartbeat, registry, job loop execution
 	providers = append(
 		providers,
 		[]fx.Option{
-			// provide process for the heartbeater
 			fx.Supply(fx.Annotate("install", fx.ResultTags(`name:"process"`))),
-			// start all job loops
 			fx.Invoke(jobloop.WithJobLoops(func([]jobloop.JobLoop) {})),
 			fx.Invoke(jobloop.WithOperationsJobLoops(func([]jobloop.JobLoop) {})),
-			// sandbox control API
 
-			// start registry, heartbeater, and shutdown poller
 			fx.Invoke(func(*heartbeater.HeartBeater) {}),
 			fx.Invoke(func(*process.ShutdownPoller) {}),
 			fx.Invoke(func(*registry.Registry) {}),
 
-			// component health watch engine
 			fx.Provide(componenthealth.New),
 			fx.Invoke(func(*componenthealth.Engine) {}),
 		}...,
 	)
 
-	// run
 	fx.New(providers...).Run()
 }

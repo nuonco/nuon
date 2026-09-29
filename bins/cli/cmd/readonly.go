@@ -11,7 +11,7 @@ import (
 
 const readOnlyEnvVar = "NUON_READ_ONLY"
 
-// readOnlyCommands are leaf commands allowed in read-only mode: anything that
+// why: readOnlyCommands are leaf commands allowed in read-only mode: anything that
 // does not mutate remote state (local config selection and scaffolding are
 // allowed). Default-deny: new read commands must be added here explicitly.
 var readOnlyCommands = map[string]struct{}{
@@ -79,8 +79,6 @@ func readOnlyFromEnv() bool {
 	return v == "true" || v == "1"
 }
 
-// guardReadOnly blocks commands that mutate remote state when read-only mode
-// is on.
 func guardReadOnly(cmd *cobra.Command) error {
 	if !ReadOnly && !readOnlyFromEnv() {
 		return nil

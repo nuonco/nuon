@@ -169,7 +169,6 @@ func (s *LogoutTestSuite) TestLogout() {
 				body := rr.Body.String()
 				assert.Contains(s.T(), body, "logged out", "should show logout success message")
 
-				// Verify cookies are cleared
 				cookies := rr.Result().Cookies()
 				for _, cookie := range cookies {
 					if cookie.Name == NuonAuthCookieName || cookie.Name == NuonAuthSessionName {
@@ -187,7 +186,6 @@ func (s *LogoutTestSuite) TestLogout() {
 				body := rr.Body.String()
 				assert.Contains(s.T(), body, "logged out")
 
-				// Verify cookies are cleared
 				cookies := rr.Result().Cookies()
 				var foundAuthCookie, foundSessionCookie bool
 				for _, cookie := range cookies {
@@ -213,7 +211,6 @@ func (s *LogoutTestSuite) TestLogout() {
 				assert.Equal(s.T(), "http://localhost:4000/login", location,
 					"should redirect to provided URL")
 
-				// Verify cookies are cleared
 				cookies := rr.Result().Cookies()
 				for _, cookie := range cookies {
 					if cookie.Name == NuonAuthCookieName || cookie.Name == NuonAuthSessionName {
@@ -228,11 +225,9 @@ func (s *LogoutTestSuite) TestLogout() {
 			withToken:    false,
 			expectedCode: http.StatusOK,
 			validateFunc: func(rr *httptest.ResponseRecorder) {
-				// Should show HTML page instead of redirecting to invalid URL
 				body := rr.Body.String()
 				assert.Contains(s.T(), body, "logged out")
 
-				// Should NOT have Location header
 				location := rr.Header().Get("Location")
 				assert.Empty(s.T(), location, "should not redirect to invalid URL")
 			},
@@ -258,7 +253,6 @@ func (s *LogoutTestSuite) TestLogout() {
 			if tc.withToken {
 				authToken = s.createTestToken()
 
-				// Verify token exists before logout
 				var token app.Token
 				err := s.service.DB.Where("token = ?", authToken).First(&token).Error
 				require.NoError(s.T(), err, "token should exist before logout")
@@ -276,7 +270,6 @@ func (s *LogoutTestSuite) TestLogout() {
 			}
 
 			if tc.withToken && authToken != "" {
-				// Verify token was soft-deleted from DB
 				var token app.Token
 				err := s.service.DB.Where("token = ?", authToken).First(&token).Error
 				assert.Error(s.T(), err, "token should be deleted after logout")
@@ -286,7 +279,6 @@ func (s *LogoutTestSuite) TestLogout() {
 }
 
 func (s *LogoutTestSuite) TestLogoutClearsSessionCookie() {
-	// Create a session cookie
 	sessionData := &SessionData{
 		State:      "test-state",
 		ProviderID: "auth0",
@@ -307,7 +299,6 @@ func (s *LogoutTestSuite) TestLogoutClearsSessionCookie() {
 
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	// Verify session cookie was cleared
 	cookies := rr.Result().Cookies()
 	var foundSessionCookie bool
 	for _, cookie := range cookies {

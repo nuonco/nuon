@@ -50,7 +50,6 @@ func (s *service) AdminForceShutdownOrgRunnerProcesses(ctx *gin.Context) {
 func (s *service) shutdownOrgRunnerProcesses(ctx *gin.Context, shutdownType app.RunnerProcessShutdownType) {
 	orgID := ctx.Param("org_id")
 
-	// Accept an empty body
 	if err := ctx.ShouldBindJSON(&struct{}{}); err != nil && !errors.Is(err, io.EOF) {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return

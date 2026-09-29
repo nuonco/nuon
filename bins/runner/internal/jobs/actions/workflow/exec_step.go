@@ -14,7 +14,6 @@ import (
 )
 
 func (h *handler) updateStepStatus(ctx context.Context, stepID string, startTS time.Time, status models.AppInstallActionWorkflowRunStepStatus) error {
-	// For adhoc runs, workflowCfg is nil - use run ID as action workflow ID
 	actionWorkflowID := h.state.run.ID
 	if h.state.workflowCfg != nil {
 		actionWorkflowID = h.state.workflowCfg.ActionWorkflowID

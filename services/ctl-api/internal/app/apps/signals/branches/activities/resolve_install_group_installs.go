@@ -21,8 +21,6 @@ type ResolveInstallGroupInstallsInput struct {
 
 	Default bool `json:"default,omitempty"`
 
-	// AppBranchID is the branch the group belongs to. Every mode resolves within
-	// the installs that branch owns.
 	AppBranchID string `json:"app_branch_id,omitempty"`
 }
 
@@ -52,9 +50,6 @@ func (a *Activities) ResolveInstallGroupInstalls(ctx context.Context, input *Res
 		Default:       input.Default,
 	}
 
-	// A config save already rejects an install two groups target, but a config
-	// can go stale against installs that moved since, so the run refuses rather
-	// than deploying the same install from two groups.
 	siblings, err := a.siblingInstallGroups(ctx, input.GroupID)
 	if err != nil {
 		return nil, err
@@ -99,8 +94,6 @@ func (a *Activities) ResolveInstallGroupInstalls(ctx context.Context, input *Res
 	return &ResolveInstallGroupInstallsOutput{InstallIDs: ids}, nil
 }
 
-// siblingInstallGroups returns every group on the same config as groupID,
-// including groupID itself. Callers without a group (preview targets) get none.
 func (a *Activities) siblingInstallGroups(ctx context.Context, groupID string) ([]app.AppBranchInstallGroup, error) {
 	if groupID == "" {
 		return nil, nil

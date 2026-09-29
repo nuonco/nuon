@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// NOTE(jm): fake gh key generated using `openssl genrsa 1024`
 const fakeGHKey string = `
 -----BEGIN RSA PRIVATE KEY-----
 MIICXAIBAAKBgQC6XXN7LZest86JsvMx+z9oBfMOmiDtbPx2inZYQ+znH8K9Xkws

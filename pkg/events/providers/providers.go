@@ -1,6 +1,3 @@
-// Package providers registers the built-in inbound event providers. Plain
-// providers are declarative provider.Base values; protocol-heavy providers
-// (Slack, Azure Event Grid) override the default behavior they differ in.
 package providers
 
 import (
@@ -94,8 +91,6 @@ var registry = func() map[string]provider.Provider {
 	return byName
 }()
 
-// Lookup returns the provider registered under preset. It returns the default
-// provider for the empty preset and reports false for unknown presets.
 func Lookup(preset string) (provider.Provider, bool) {
 	if preset == "" {
 		return defaultProvider, true
@@ -104,8 +99,6 @@ func Lookup(preset string) (provider.Provider, bool) {
 	return p, ok
 }
 
-// Resolve returns the provider for preset, falling back to the default
-// provider when the preset is empty or unknown.
 func Resolve(preset string) provider.Provider {
 	if p, ok := Lookup(preset); ok {
 		return p
@@ -113,7 +106,6 @@ func Resolve(preset string) provider.Provider {
 	return defaultProvider
 }
 
-// Names returns the registered preset names in sorted order.
 func Names() []string {
 	names := make([]string, 0, len(registry))
 	for name := range registry {

@@ -73,7 +73,6 @@ func (s *GetLogStreamTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -94,7 +93,6 @@ func (s *GetLogStreamTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create log stream
 	s.testLogStream = &app.LogStream{
 		ID:      domains.NewLogStreamID(),
 		OrgID:   s.testOrg.ID,
@@ -125,7 +123,6 @@ func (s *GetLogStreamTestSuite) TestGetLogStream() {
 		{
 			name: "successfully get log stream by ID",
 			setupFunc: func() string {
-				// Use the existing test log stream
 				return s.testLogStream.ID
 			},
 			expectedCode: http.StatusOK,
@@ -150,7 +147,6 @@ func (s *GetLogStreamTestSuite) TestGetLogStream() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -163,7 +159,6 @@ func (s *GetLogStreamTestSuite) TestGetLogStream() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create log stream in org2
 				logStream2 := &app.LogStream{
 					ID:      domains.NewLogStreamID(),
 					OrgID:   org2.ID,
@@ -189,7 +184,6 @@ func (s *GetLogStreamTestSuite) TestGetLogStream() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create additional log streams in same org
 				logStream2 := &app.LogStream{
 					ID:      domains.NewLogStreamID(),
 					OrgID:   s.testOrg.ID,
@@ -213,7 +207,6 @@ func (s *GetLogStreamTestSuite) TestGetLogStream() {
 					s.service.DB.Unscoped().Delete(logStream3)
 				})
 
-				// Return logStream2's ID for verification
 				return logStream2.ID
 			},
 			expectedCode: http.StatusOK,

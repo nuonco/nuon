@@ -32,9 +32,6 @@ func (s *AppBranchRunStepsTestSuite) SetupTest() {
 	})
 }
 
-// The generator's activities are registered by method name off the Activities
-// struct, which needs a database. Stubs registered under the same names keep the
-// test to what it is about: the shape of the generated steps.
 func (s *AppBranchRunStepsTestSuite) stubActivities(runType app.AppBranchRunType, previews ...*app.AppBranchRunPreview) {
 	s.env.RegisterActivityWithOptions(
 		func(ctx context.Context, req activities.GetAppBranchRunByIDRequest) (*app.AppBranchRun, error) {

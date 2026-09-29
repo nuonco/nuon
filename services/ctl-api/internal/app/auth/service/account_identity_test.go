@@ -89,7 +89,6 @@ func (s *AccountIdentityTestSuite) seedOIDCProvider(ctx context.Context, name, i
 	}))
 	ip.Name = name
 	require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(ip).Error)
-	// other suites in this package assert on the provider list, so don't leak an enabled provider
 	s.T().Cleanup(func() {
 		require.NoError(s.T(), s.service.DB.Unscoped().Delete(ip).Error)
 	})
@@ -104,9 +103,6 @@ func (s *AccountIdentityTestSuite) identitiesFor(ctx context.Context, accountID 
 	return identities
 }
 
-// Before identities were keyed on identity_provider_id, a user with an existing OIDC identity who
-// signed in through a second OIDC provider hit the (account_id, provider_type) unique index and got
-// a 500 at login.
 func (s *AccountIdentityTestSuite) TestOneAccountCanHoldTwoIdentitiesOfTheSameProviderType() {
 	ctx := context.Background()
 
@@ -140,8 +136,6 @@ func (s *AccountIdentityTestSuite) TestOneAccountCanHoldTwoIdentitiesOfTheSamePr
 	require.True(s.T(), providerIDs[second.ID])
 }
 
-// Two providers of one type can mint the same sub. Keyed on provider_type alone, the second one
-// would have authenticated into the first one's account.
 func (s *AccountIdentityTestSuite) TestSameSubFromTwoProvidersResolvesToDifferentAccounts() {
 	ctx := context.Background()
 
@@ -175,8 +169,6 @@ func (s *AccountIdentityTestSuite) TestSameSubFromTwoProvidersResolvesToDifferen
 	require.Equal(s.T(), secondAcct.ID, resolved.ID)
 }
 
-// The point of the per-provider override: with a deployment-wide flag alone, a contractor IdP
-// could not be invite-only while the staff IdP allowed self-signup.
 func (s *AccountIdentityTestSuite) TestInviteOnlyProviderRejectsUnknownUsers() {
 	ctx := context.Background()
 	inviteOnly := false
@@ -201,8 +193,6 @@ func (s *AccountIdentityTestSuite) TestInviteOnlyProviderRejectsUnknownUsers() {
 	require.Zero(s.T(), count, "an invite-only provider must not create an account")
 }
 
-// The same stranger on a provider that inherits an open deployment does get an account, so the
-// rejection above is the override doing its job rather than something else failing.
 func (s *AccountIdentityTestSuite) TestOpenProviderAdmitsUnknownUsers() {
 	ctx := context.Background()
 	if !s.service.Cfg.NuonAuthAllowAllUsers {

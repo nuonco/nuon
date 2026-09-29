@@ -8,7 +8,6 @@ import (
 	"github.com/nuonco/nuon/pkg/terraform/archive"
 )
 
-// Package json exposes an archive from a tarball, stored on json.
 var _ archive.Archive = (*json)(nil)
 
 type json struct {
@@ -37,7 +36,6 @@ func New(v *validator.Validate, opts ...jsonOption) (*json, error) {
 	return s, nil
 }
 
-// WithFileame name sets the json filename
 func WithFileName(fileName string) jsonOption {
 	return func(d *json) error {
 		d.FileName = fileName
@@ -45,7 +43,6 @@ func WithFileName(fileName string) jsonOption {
 	}
 }
 
-// WithFileame name sets the json filename
 func WithJSON(byts []byte) jsonOption {
 	return func(d *json) error {
 		d.Byts = byts

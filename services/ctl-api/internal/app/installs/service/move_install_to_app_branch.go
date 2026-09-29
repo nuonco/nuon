@@ -100,8 +100,6 @@ func (s *service) MoveInstallToAppBranch(ctx *gin.Context) {
 		return
 	}
 
-	// Refusing up front beats moving the install somewhere that has nothing to
-	// deploy and leaving it stranded there.
 	candidate := install
 	candidate.Labels = make(labels.Labels, len(install.Labels)+len(req.Labels))
 	candidate.LabelTemplates = make(labels.Labels, len(install.LabelTemplates))

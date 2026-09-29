@@ -21,7 +21,6 @@ func DeployAllComponents(ctx workflow.Context, flw *app.Workflow) (*app.Generate
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup(flw)
 
-	// Eager group — returned early so execution can start immediately.
 	sg.nextGroupEager()
 
 	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
@@ -33,7 +32,6 @@ func DeployAllComponents(ctx workflow.Context, flw *app.Workflow) (*app.Generate
 	}
 	steps = append(steps, step)
 
-	// Remaining groups — fetch dependencies needed for component deploys.
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get app config")

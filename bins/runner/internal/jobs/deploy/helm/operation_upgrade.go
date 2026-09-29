@@ -50,9 +50,7 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	l.Debug("rendered values", zap.Any("values", values))
 
 	client := helm.DefaultUpgrade(actionCfg)
-	// configure the client with additional, chart and context -specific values
 	client.DryRun = true
-	// wait logic
 	client.Devel = true
 	client.Namespace = h.state.plan.HelmDeployPlan.Namespace
 	client.TakeOwnership = h.state.plan.HelmDeployPlan.TakeOwnership
@@ -61,7 +59,6 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 
 	crds := chart.CRDObjects()
 	if len(crds) > 0 && !client.SkipCRDs {
-		// skip dry run
 		crdZapFieldList := []zap.Field{}
 		for i, crd := range crds {
 			field := zap.String(fmt.Sprintf("crd.%d", i), crd.Name)
@@ -101,8 +98,6 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 		return nil, fmt.Errorf("unable to upgrade helm release: %w", err)
 	}
 
-	// NOTE(jm): we parse these here, so we have more context and the hanging action client, vs passing more stuff
-	// around.
 	outs, err := outputs.HelmOutputs(rel.Manifest, rel.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to parse outputs")

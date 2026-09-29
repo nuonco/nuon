@@ -8,11 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// Auth handles the /auth callback endpoint from the OAuth provider.
-// It validates the response and redirects to /auth/:state for final processing.
-// This two-step approach ensures the session cookie path is properly scoped.
 func (s *service) Auth(c *gin.Context) {
-	// Check if the IdP returned an error
 	if idpError := c.Query("error"); idpError != "" {
 		errorDesc := c.Query("error_description")
 		s.l.Error("OAuth provider returned error",
@@ -22,7 +18,6 @@ func (s *service) Auth(c *gin.Context) {
 		return
 	}
 
-	// Get the state from query params
 	queryState := c.Query("state")
 	if queryState == "" {
 		s.l.Error("no state parameter in callback")
@@ -30,8 +25,6 @@ func (s *service) Auth(c *gin.Context) {
 		return
 	}
 
-	// Redirect to /auth/:state with the full query string preserved
-	// This allows the session cookie to be properly scoped
 	authStateURL := fmt.Sprintf("/auth/%s?%s", queryState, c.Request.URL.RawQuery)
 
 	s.l.Debug("redirecting to auth state handler",

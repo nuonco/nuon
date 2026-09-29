@@ -32,7 +32,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-// WorkflowStepOptions is a functional option for configuring WorkflowStep
 type WorkflowStepOptions func(*app.WorkflowStep)
 
 func WithSkippable(skippable bool) WorkflowStepOptions {
@@ -53,7 +52,7 @@ func WithGroupIdx(n int) WorkflowStepOptions {
 	}
 }
 
-// componentMaxAutoRetries looks up the max auto retries for a component from
+// why: componentMaxAutoRetries looks up the max auto retries for a component from
 // the pre-fetched app config, avoiding redundant activity calls.
 // componentGateEnabled reports whether the verified-deploy gate should get its
 // own workflow step for a component: block_deploy is opt-in per component, so
@@ -101,14 +100,12 @@ func WithExecutionType(executionType app.WorkflowStepExecutionType) WorkflowStep
 	}
 }
 
-// signalStepMetadata holds the computed step metadata for a given signal type
 type signalStepMetadata struct {
 	targetType    string
 	executionType app.WorkflowStepExecutionType
 	retryable     bool
 }
 
-// getSignalStepMetadata maps v2 signal types to step metadata (target type, execution type, retryable).
 func getSignalStepMetadata(sigType signal.SignalType, planOnly bool) signalStepMetadata {
 	meta := signalStepMetadata{
 		executionType: app.WorkflowStepExecutionTypeSystem,
@@ -138,19 +135,17 @@ func getSignalStepMetadata(sigType signal.SignalType, planOnly bool) signalStepM
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallStates)
 	}
 
-	// User execution type signals
 	if sigType == awaitinstallstackversionrun.SignalType {
 		meta.executionType = app.WorkflowStepExecutionTypeUser
 	}
 
-	// Approval execution type signals
 	switch sigType {
 	case provisionsandboxplan.SignalType, deprovisionsandboxplan.SignalType, reprovisionsandboxplan.SignalType,
 		componentdeploysyncandplan.SignalType, componentteardownsyncandplan.SignalType:
 		meta.executionType = app.WorkflowStepExecutionTypeApproval
 	}
 
-	// Plan-only skip signals. The stack pair is here because generating a stack
+	// why: Plan-only skip signals. The stack pair is here because generating a stack
 	// version is itself a write — it creates a stack version row that supersedes
 	// the install's active one, mints a service account and runner token, and
 	// then parks awaiting a human to apply the stack.
@@ -167,7 +162,6 @@ func getSignalStepMetadata(sigType signal.SignalType, planOnly bool) signalStepM
 	return meta
 }
 
-// installSignalStep creates a WorkflowStep from a v2 queue signal
 func installSignalStep(ctx workflow.Context, installID, name string, metadata pgtype.Hstore, sig signal.Signal, planOnly bool, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) {
 	if sig == nil {
 		step := &app.WorkflowStep{
@@ -201,13 +195,10 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 
 	step.Timeout = signal.DeriveTimeout(sig)
 
-	// Apply options first so WithMaxAutoRetries can set the metadata before
-	// we decide whether to call the (expensive) MaxAutoRetries activity.
 	for _, o := range opts {
 		o(step)
 	}
 
-	// Only call MaxAutoRetries if not already provided via WithMaxAutoRetries.
 	if _, alreadySet := step.Status.Metadata["max_auto_retries"]; !alreadySet {
 		if mar, ok := sig.(signal.SignalWithMaxAutoRetries); ok {
 			maxAutoRetries := mar.MaxAutoRetries(ctx)

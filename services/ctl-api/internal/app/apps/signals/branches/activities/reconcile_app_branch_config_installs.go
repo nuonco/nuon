@@ -13,9 +13,6 @@ type ReconciledAppBranchInstall struct {
 	InstallID      string `json:"install_id"`
 	InstallGroupID string `json:"install_group_id"`
 
-	// ShouldSignal is set when the install changed branches or joined an
-	// explicit group in this config, and so needs to reconcile against the
-	// branch's latest run.
 	ShouldSignal bool `json:"should_signal"`
 }
 

@@ -4,11 +4,6 @@ import (
 	"context"
 )
 
-// All of the context keys are defined here so we can use them in different contexts.
-//
-// While most every package can use the cctx helpers directly, since they do leverage models, anything in the models
-// that needs information from the context can not rely on that package directly, otherwise a circular dependency will
-// be created.
 const (
 	AccountCtxKey           string = "account"
 	AccountIDCtxKey         string = "account_id"
@@ -50,7 +45,7 @@ type WorkflowTelemetry struct {
 	InstallName  string `json:"install_name,omitempty"`
 }
 
-// Merge returns t with every non-empty field of overlay applied, so a caller
+// why: Merge returns t with every non-empty field of overlay applied, so a caller
 // holding partial identity never erases fields resolved further upstream.
 func (t WorkflowTelemetry) Merge(overlay WorkflowTelemetry) WorkflowTelemetry {
 	if overlay.OrgID != "" {
@@ -83,38 +78,26 @@ func (t WorkflowTelemetry) Merge(overlay WorkflowTelemetry) WorkflowTelemetry {
 	return t
 }
 
-// OrgSelectFunc persists the selected org for the authenticated MCP token. It is
-// injected by the MCP server so leaf tool handlers (in other packages) can
-// change the active org without importing the server package.
 type OrgSelectFunc func(orgID string)
 
-// WithOrgSelector attaches an org-selector to the context.
 func WithOrgSelector(ctx context.Context, fn OrgSelectFunc) context.Context {
 	return context.WithValue(ctx, OrgSelectorCtxKey, fn)
 }
 
-// OrgSelectorFromContext returns the org-selector, or nil if none is set (e.g.
-// outside the MCP server).
 func OrgSelectorFromContext(ctx context.Context) OrgSelectFunc {
 	fn, _ := ctx.Value(OrgSelectorCtxKey).(OrgSelectFunc)
 	return fn
 }
 
-// WithTokenRole attaches the authenticating token's org role/scope to the
-// context (e.g. org_read_only, org_support, org_admin).
 func WithTokenRole(ctx context.Context, role string) context.Context {
 	return context.WithValue(ctx, TokenRoleCtxKey, role)
 }
 
-// TokenRoleFromContext returns the authenticating token's role, or "" if unset.
 func TokenRoleFromContext(ctx context.Context) string {
 	role, _ := ctx.Value(TokenRoleCtxKey).(string)
 	return role
 }
 
-// CreatedByIDFromContext returns the account ID from context.
-// Returns empty string if not set. This is safe to call from leaf packages
-// that cannot import the full cctx package due to circular dependencies.
 func CreatedByIDFromContext(ctx context.Context) string {
 	val := ctx.Value(AccountIDCtxKey)
 	valStr, ok := val.(string)
@@ -124,9 +107,6 @@ func CreatedByIDFromContext(ctx context.Context) string {
 	return valStr
 }
 
-// OrgIDFromContext returns the org ID from context.
-// Returns empty string if not set. This is safe to call from leaf packages
-// that cannot import the full cctx package due to circular dependencies.
 func OrgIDFromContext(ctx context.Context) string {
 	val := ctx.Value(OrgIDCtxKey)
 	valStr, ok := val.(string)

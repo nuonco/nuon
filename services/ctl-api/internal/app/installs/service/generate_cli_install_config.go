@@ -54,7 +54,6 @@ func (s *service) GenerateCLIInstallConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Add a comment above the approval_option field to document valid values
 	output := strings.Replace(response.String(),
 		"approval_option = ",
 		"# Valid options: 'prompt' (default, requires manual approval) or 'approve-all' (automatic approval)\napproval_option = ",
@@ -79,9 +78,6 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 		return nil, fmt.Errorf("unable to get install %s: %w", installID, err)
 	}
 
-	// Template-managed keys echo template text, and app-default keys are
-	// omitted — otherwise every CLI sync diffs against rendered values it can
-	// never declare. Kept in step with upstreamLabels in the installs syncer.
 	installLabels := make(map[string]string, len(install.Labels)+len(install.LabelTemplates))
 	for k, v := range install.Labels {
 		installLabels[k] = v
@@ -99,17 +95,12 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 	}
 	installCfg.AppBranchGroup = install.AppBranchGroup
 
-	// The target identifiers must be echoed back, otherwise a config that legitimately
-	// declares them diffs against an upstream that never reports them and `apps sync`
-	// shows drift on every run.
 	if install.AWSAccount != nil {
 		installCfg.AWSAccount = &config.AWSAccount{
 			Region:    install.AWSAccount.Region,
 			AccountID: install.CloudPlatformMetadata.TargetAccountID,
 		}
 	}
-	// Azure and GCP already carry their identifier on the account record, so installs
-	// created before CloudPlatformMetadata existed still round-trip.
 	if install.AzureAccount != nil {
 		installCfg.AzureAccount = &config.AzureAccount{
 			Location: install.AzureAccount.Location,
@@ -138,7 +129,6 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 		if installConfig.TelemetryEnabled != nil {
 			installCfg.Telemetry = &config.InstallTelemetry{Enabled: installConfig.TelemetryEnabled}
 		}
-		// Normalize the approval option: "auto" and empty both map to "prompt" in the generated config.
 		approvalOpt := config.InstallApprovalOption(installConfig.ApprovalOption)
 		switch approvalOpt {
 		case config.InstallApprovalOptionApproveAll:
@@ -179,10 +169,6 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 	return &installCfg, nil
 }
 
-// buildComponentTogglesFromInputs reconstructs the install config's
-// [component_toggles] section from the reserved synthetic enabled inputs, so a
-// generated config round-trips symmetrically with what the user authored.
-// Components left at their default (no explicit enabled input) are omitted.
 func buildComponentTogglesFromInputs(installInputValues map[string]*string) map[string]bool {
 	toggles := make(map[string]bool)
 	for name, val := range installInputValues {
@@ -206,10 +192,6 @@ func buildComponentTogglesFromInputs(installInputValues map[string]*string) map[
 	return toggles
 }
 
-// buildComponentOverridesFromInputs reconstructs the install config's
-// [components.<name>] sections from the reserved synthetic override inputs, so a
-// generated config round-trips symmetrically with what the user authored.
-// Empty override values are omitted.
 func buildComponentOverridesFromInputs(installInputValues map[string]*string) map[string]config.ComponentOverride {
 	components := make(map[string]config.ComponentOverride)
 	for name, val := range installInputValues {
@@ -217,7 +199,6 @@ func buildComponentOverridesFromInputs(installInputValues map[string]*string) ma
 		if !ok {
 			continue
 		}
-		// Enabled toggles round-trip via [component_toggles], not [components.<name>].
 		if kind == config.ComponentOverrideKindEnabled {
 			continue
 		}
@@ -240,60 +221,44 @@ func buildComponentOverridesFromInputs(installInputValues map[string]*string) ma
 	return components
 }
 
-// buildInputGroupsFromInputs constructs input groups from app inputs and install input values.
-// it filters out sensitive inputs and only includes inputs that have values or are required.
-// returns a sorted list of input groups with their corresponding inputs.
 func (s *service) buildInputGroupsFromInputs(appInputs []app.AppInput, installInputValues map[string]*string, logger *zap.Logger) []config.InputGroup {
-	// Build a map of input groups
 	inputGroupsMap := make(map[string]*config.InputGroup)
 
 	for _, inp := range appInputs {
-		// Skip reserved per-component override inputs - they are emitted under
-		// [components.<name>] instead of as flat inputs (see
-		// buildComponentOverridesFromInputs).
 		if config.IsComponentOverrideInputName(inp.Name) {
 			continue
 		}
 
-		// Initialize input group if it doesn't exist
 		if inputGroupsMap[inp.AppInputGroup.Name] == nil {
 			inputGroupsMap[inp.AppInputGroup.Name] = &config.InputGroup{
 				Inputs: make(map[string]string),
 			}
 		}
 
-		// Skip sensitive inputs - they should not be included in the generated config
 		if inp.Sensitive {
 			continue
 		}
 
-		// Check if the input has a value in install inputs
 		val, ok := installInputValues[inp.Name]
 		if !ok {
-			// Log error if input is not set
 			logger.Error("input is not set when generating install config",
 				zap.String("key", inp.Name),
 			)
 
-			// If input is required but not set, add it with empty string as placeholder
 			if inp.Required {
 				inputGroupsMap[inp.AppInputGroup.Name].Inputs[inp.Name] = ""
 			}
-			// If not required and not set, skip it entirely
 		} else {
-			// Add the input value to the group
 			inputGroupsMap[inp.AppInputGroup.Name].Inputs[inp.Name] = generics.FromPtrStr(val)
 		}
 	}
 
-	// Convert map to sorted slice
 	inputGroupsNames := slices.Collect(maps.Keys(inputGroupsMap))
 	slices.Sort(inputGroupsNames)
 
 	var result []config.InputGroup
 	for _, groupName := range inputGroupsNames {
 		ig := inputGroupsMap[groupName]
-		// Only include groups that have at least one input
 		if len(ig.Inputs) > 0 {
 			result = append(result, config.InputGroup{
 				Group:  groupName,

@@ -337,8 +337,6 @@ func requestRunnerServiceOperation(ctx context.Context, operation string) error 
 	return errors.Wrapf(err, "unable to request runner service %s: %s", operation, message)
 }
 
-// this method encapsulates all of the logic to ensure the service is running.
-// NOTE: we use start instead of enable
 func (h *Monitor) ensureRunnerServiceIsActive(ctx context.Context) error {
 	h.l.Debug("ensuring runner service is active")
 	statusCtx, cancelStatus := context.WithTimeout(ctx, runnerServiceSystemctlTimeout)

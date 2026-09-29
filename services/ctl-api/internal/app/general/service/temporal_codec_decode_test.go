@@ -27,11 +27,9 @@ func (s *GeneralInternalTestSuite) TestTemporalCodecDecode() {
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(rr *httptest.ResponseRecorder) {
-				// Response should be valid JSON (codec response structure varies)
 				var resp map[string]interface{}
 				err := json.Unmarshal(rr.Body.Bytes(), &resp)
 				require.NoError(s.T(), err)
-				// Just verify we got valid JSON back from the codec
 				assert.NotNil(s.T(), resp, "response should be valid JSON")
 			},
 		},
@@ -40,7 +38,7 @@ func (s *GeneralInternalTestSuite) TestTemporalCodecDecode() {
 			requestBody: &commonpb.Payloads{
 				Payloads: nil,
 			},
-			expectedStatus: http.StatusOK, // Codec handles nil payloads gracefully
+			expectedStatus: http.StatusOK,
 			validateFunc: func(rr *httptest.ResponseRecorder) {
 				var resp commonpb.Payloads
 				err := json.Unmarshal(rr.Body.Bytes(), &resp)
@@ -51,16 +49,13 @@ func (s *GeneralInternalTestSuite) TestTemporalCodecDecode() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Marshal request body as JSON (protobuf JSON format)
 			bodyBytes, err := json.Marshal(tc.requestBody)
 			require.NoError(s.T(), err)
 
-			// Create request with protobuf JSON content type
 			req, err := http.NewRequest(http.MethodPost, "/v1/general/temporal-codec/decode", bytes.NewReader(bodyBytes))
 			require.NoError(s.T(), err)
 			req.Header.Set("Content-Type", "application/json")
 
-			// Make request
 			rr := httptest.NewRecorder()
 			s.router.ServeHTTP(rr, req)
 
@@ -69,7 +64,6 @@ func (s *GeneralInternalTestSuite) TestTemporalCodecDecode() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Validate response
 			if tc.validateFunc != nil {
 				tc.validateFunc(rr)
 			}
@@ -77,7 +71,6 @@ func (s *GeneralInternalTestSuite) TestTemporalCodecDecode() {
 	}
 }
 
-// TestTemporalCodecDecodeRawJSON tests with raw JSON payloads format.
 func (s *GeneralInternalTestSuite) TestTemporalCodecDecodeRawJSON() {
 	testCases := []struct {
 		name           string
@@ -93,12 +86,10 @@ func (s *GeneralInternalTestSuite) TestTemporalCodecDecodeRawJSON() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Create request with raw JSON
 			req, err := http.NewRequest(http.MethodPost, "/v1/general/temporal-codec/decode", bytes.NewReader([]byte(tc.requestJSON)))
 			require.NoError(s.T(), err)
 			req.Header.Set("Content-Type", "application/json")
 
-			// Make request
 			rr := httptest.NewRecorder()
 			s.router.ServeHTTP(rr, req)
 
@@ -107,7 +98,6 @@ func (s *GeneralInternalTestSuite) TestTemporalCodecDecodeRawJSON() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Verify response is valid JSON
 			if rr.Code == http.StatusOK {
 				var resp map[string]interface{}
 				err := json.Unmarshal(rr.Body.Bytes(), &resp)
@@ -117,7 +107,6 @@ func (s *GeneralInternalTestSuite) TestTemporalCodecDecodeRawJSON() {
 	}
 }
 
-// TestTemporalCodecDecodeInvalidBody tests handling of invalid request bodies.
 func (s *GeneralInternalTestSuite) TestTemporalCodecDecodeInvalidBody() {
 	testCases := []struct {
 		name           string
@@ -138,12 +127,10 @@ func (s *GeneralInternalTestSuite) TestTemporalCodecDecodeInvalidBody() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Create request
 			req, err := http.NewRequest(http.MethodPost, "/v1/general/temporal-codec/decode", tc.requestBody)
 			require.NoError(s.T(), err)
 			req.Header.Set("Content-Type", "application/json")
 
-			// Make request
 			rr := httptest.NewRecorder()
 			s.router.ServeHTTP(rr, req)
 

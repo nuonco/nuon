@@ -7,8 +7,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
-// https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/metrics/v1/metrics.proto#L358
-// define two types for one datapoint value, clickhouse only use one value of float64 to store them
 func GetValue(intValue int64, floatValue float64, dataType any) float64 {
 	switch t := dataType.(type) {
 	case pmetric.ExemplarValueType:
@@ -39,8 +37,6 @@ func GetValue(intValue int64, floatValue float64, dataType any) float64 {
 	}
 }
 
-// SpanIDToHexOrEmptyString returns a hex string from SpanID.
-// An empty string is returned, if SpanID is empty.
 func SpanIDToHexOrEmptyString(id pcommon.SpanID) string {
 	if id.IsEmpty() {
 		return ""
@@ -48,8 +44,6 @@ func SpanIDToHexOrEmptyString(id pcommon.SpanID) string {
 	return hex.EncodeToString(id[:])
 }
 
-// TraceIDToHexOrEmptyString returns a hex string from TraceID.
-// An empty string is returned, if TraceID is empty.
 func TraceIDToHexOrEmptyString(id pcommon.TraceID) string {
 	if id.IsEmpty() {
 		return ""

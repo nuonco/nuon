@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/pkg/terraform/archive"
 )
 
-// Unpack fetches an archive, and calls the callback with each file contained within it
 func (o *oci) Unpack(ctx context.Context, cb archive.Callback) error {
 	if err := o.pull(ctx); err != nil {
 		return fmt.Errorf("unable to pull archive: %w", err)

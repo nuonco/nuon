@@ -232,7 +232,7 @@ func (s *service) cleanupQueues(ctx *gin.Context, queueIDs []string, dryRun bool
 	return nil
 }
 
-// emitters left live on queues that were already deleted (or whose row is gone)
+// why: emitters left live on queues that were already deleted (or whose row is gone)
 // are never reachable through the owner sweeps, so they get their own pass
 func (s *service) cleanupStrayEmitters(ctx *gin.Context, dryRun bool, resp *AdminCleanupOrphanedResponse) error {
 	var emitterIDs []string

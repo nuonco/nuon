@@ -71,7 +71,6 @@ func (s *DeleteHelmReleaseTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -154,7 +153,6 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(helmChartID, namespace, key string) {
-				// Verify release is deleted (soft delete)
 				var release app.HelmRelease
 				err := s.service.DB.Unscoped().
 					Where("helm_chart_id = ? AND namespace = ? AND key = ?", helmChartID, namespace, key).
@@ -204,7 +202,6 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 						Delete(&app.HelmRelease{})
 				})
 
-				// Try to delete with wrong namespace
 				return helmChartID, "staging", key
 			},
 			expectedCode: http.StatusOK,
@@ -243,7 +240,6 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 						Delete(&app.HelmRelease{})
 				})
 
-				// Try to delete with wrong key
 				return helmChartID, namespace, "sh.helm.release.v1.different-release.v1"
 			},
 			expectedCode: http.StatusOK,
@@ -276,7 +272,6 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 				err := s.service.DB.WithContext(ctx).Create(release).Error
 				require.NoError(s.T(), err)
 
-				// Soft delete the release
 				err = s.service.DB.WithContext(ctx).
 					Where("helm_chart_id = ? AND namespace = ? AND key = ?", helmChartID, namespace, key).
 					Delete(&app.HelmRelease{}).Error
@@ -304,7 +299,6 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 
 				namespace := "default"
 
-				// Create first release
 				release1 := &app.HelmRelease{
 					HelmChartID: helmChartID,
 					Key:         "sh.helm.release.v1.release-1.v1",
@@ -321,7 +315,6 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 				err := s.service.DB.WithContext(ctx).Create(release1).Error
 				require.NoError(s.T(), err)
 
-				// Create second release
 				release2 := &app.HelmRelease{
 					HelmChartID: helmChartID,
 					Key:         "sh.helm.release.v1.release-2.v1",
@@ -346,12 +339,10 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 						Delete(&app.HelmRelease{})
 				})
 
-				// Return first release to delete
 				return helmChartID, namespace, release1.Key
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(helmChartID, namespace, key string) {
-				// Verify first release is deleted
 				var release1 app.HelmRelease
 				err := s.service.DB.Unscoped().
 					Where("helm_chart_id = ? AND namespace = ? AND key = ?", helmChartID, namespace, key).
@@ -359,7 +350,6 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 				assert.NoError(s.T(), err)
 				assert.NotZero(s.T(), release1.DeletedAt)
 
-				// Verify second release still exists
 				var release2 app.HelmRelease
 				err = s.service.DB.
 					Where("helm_chart_id = ? AND namespace = ? AND key = ?", helmChartID, namespace, "sh.helm.release.v1.release-2.v1").
@@ -388,8 +378,6 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 }
 
 func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmReleaseSoftDelete() {
-	// Verify that delete is a soft delete (sets DeletedAt, doesn't remove from DB)
-
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
@@ -421,11 +409,9 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmReleaseSoftDelete() {
 			Delete(&app.HelmRelease{})
 	})
 
-	// Delete the release
 	rr := s.makeRequest("DELETE", "/v1/helm-releases/"+helmChartID+"/releases/"+namespace+"/"+key)
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	// Verify soft delete - record still exists but DeletedAt is set
 	var deletedRelease app.HelmRelease
 	err = s.service.DB.Unscoped().
 		Where("helm_chart_id = ? AND namespace = ? AND key = ?", helmChartID, namespace, key).
@@ -435,7 +421,6 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmReleaseSoftDelete() {
 	assert.NotZero(s.T(), deletedRelease.DeletedAt, "DeletedAt should be set for soft delete")
 	assert.Equal(s.T(), "test-release", deletedRelease.Name, "Record should still exist in database")
 
-	// Verify release cannot be found with normal query
 	var normalQuery app.HelmRelease
 	err = s.service.DB.
 		Where("helm_chart_id = ? AND namespace = ? AND key = ?", helmChartID, namespace, key).

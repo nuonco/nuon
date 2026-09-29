@@ -28,15 +28,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
-// genCtx is the per-workflow-invocation context for step generation. It bundles
-// the read-only inputs every helper needs (workflow row, install ID, pinned
-// app config, install action workflows) along with the workflow-scoped
-// mutable state (step group, image-dep sync dedup map, derived component
-// maps).
-//
-// One genCtx is constructed at workflow entry and threaded through every
-// helper that emits steps. Sharing it across all calls inside a single
-// workflow gives dep-aware deploys a single dedup boundary for free.
 type genCtx struct {
 	sg        *stepGroup
 	flw       *app.Workflow
@@ -44,24 +35,14 @@ type genCtx struct {
 	appCfg    *app.AppConfig
 	awData    []*app.InstallActionWorkflow
 
-	// enabledInputs holds the install's latest input values, used to resolve
-	// whether a toggleable component is enabled via its synthetic enabled input
-	// (see config.EnabledOverrideInputName). May be nil if no inputs exist.
 	enabledInputs map[string]*string
 
-	// Derived once from appCfg.ComponentConfigConnections for dep-aware
-	// deploys.
 	components   map[string]app.Component
 	depIDsByComp map[string][]string
 	cccByComp    map[string]*app.ComponentConfigConnection
 
-	// enablement resolves effective-enabled state and cascade ordering from the
-	// pinned app config and the install's enabled inputs.
 	enablement *appconfiggraph.ComponentEnablementResolver
 
-	// addedImageDepSyncs tracks image-dep components that already had a
-	// sync step prepended in this workflow. Multiple non-image components
-	// may share the same image dep; we only sync it once per workflow.
 	addedImageDepSyncs map[string]struct{}
 }
 
@@ -87,9 +68,6 @@ func newGenCtx(sg *stepGroup, flw *app.Workflow, installID string, appCfg *app.A
 
 type genCtxOption func(*genCtx)
 
-// WithInstallInputs supplies the install's latest input values so the step
-// generator can resolve toggleable-component enabled-state from the synthetic
-// enabled inputs (the source of truth for component toggles).
 func WithInstallInputs(ii *app.InstallInputs) genCtxOption {
 	return func(dg *genCtx) {
 		if ii != nil {
@@ -98,20 +76,10 @@ func WithInstallInputs(ii *app.InstallInputs) genCtxOption {
 	}
 }
 
-// componentEnabledFromInputs resolves whether a toggleable component is enabled
-// from a set of install input values. The synthetic enabled input
-// (config.EnabledOverrideInputName) is the source of truth; when unset it falls
-// back to the component's default_enabled. Non-toggleable components are always
-// enabled.
 func componentEnabledFromInputs(enabledInputs map[string]*string, ccc *app.ComponentConfigConnection) bool {
 	return app.ComponentEnabledFromInputs(enabledInputs, ccc)
 }
 
-// buildComponentConfigMaps builds the (components, depIDsByComp, cccByComp)
-// trio used by the dep-aware deploy logic from an AppConfig's pinned
-// ComponentConfigConnections. cccByComp records membership of each component
-// in the install's pinned app config snapshot — used to skip deps that are
-// not part of this app config version and to pin build resolution.
 func buildComponentConfigMaps(appCfg *app.AppConfig) (
 	map[string]app.Component,
 	map[string][]string,
@@ -144,11 +112,6 @@ func pinnedCCCID(dg *genCtx, compID string) string {
 	return ""
 }
 
-// filterActionWorkflowsByTrigger filters pre-fetched install action workflows by trigger type,
-// optionally scoped to a specific component. It uses the version-pinned configs from
-// appCfg.ActionWorkflowConfigs (with Triggers preloaded) instead of fetching latest configs.
-// This replaces individual AwaitGetInstallActionWorkflowsByTriggerType activity calls
-// with in-memory filtering.
 func filterActionWorkflowsByTrigger(installActionWorkflows []*app.InstallActionWorkflow, triggerTyp app.ActionWorkflowTriggerType, componentID string, appCfg *app.AppConfig) []*app.InstallActionWorkflow {
 	awcMap := make(map[string]app.ActionWorkflowConfig, len(appCfg.ActionWorkflowConfigs))
 	for _, awc := range appCfg.ActionWorkflowConfigs {
@@ -244,7 +207,7 @@ func getLifecycleActionsSteps(ctx workflow.Context, dg *genCtx, triggerTyp app.A
 		steps = append(steps, imageDepSyncSteps...)
 	}
 
-	dg.sg.nextGroup() // lifecycleSteps
+	dg.sg.nextGroup()
 
 	for _, installAction := range installActions {
 		sig := &executeactionworkflow.Signal{
@@ -364,17 +327,11 @@ func getActionImageDepSyncSteps(ctx workflow.Context, dg *genCtx, installActions
 func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []string) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 
-	// componentIDIdx maps each component ID to its position in componentIDs.
-	// Used by the dep-aware deploy logic to avoid prepending an image sync
-	// step for an image dep that already appears earlier in this batch (it
-	// will be sync'd by the normal per-component flow).
 	componentIDIdx := make(map[string]int, len(componentIDs))
 	for i, id := range componentIDs {
 		componentIDIdx[id] = i
 	}
 
-	// Batch fetch all install components in one activity call instead of
-	// fetching them individually per component in the loop below.
 	installComps, err := activities.AwaitGetInstallComponentsBatch(ctx, activities.GetInstallComponentsBatchRequest{
 		InstallID:    dg.installID,
 		ComponentIDs: componentIDs,
@@ -384,7 +341,7 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 	}
 
 	for i, compID := range componentIDs {
-		// Yield to the Temporal scheduler periodically to avoid deadlock detection
+		// why: Yield to the Temporal scheduler periodically to avoid deadlock detection
 		// when generating steps for many components (TMPRL1101).
 		// Sleep(0) is a no-op; a real timer is needed to force a yield.
 		if i%5 == 0 && i > 0 {
@@ -396,29 +353,10 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 			continue
 		}
 
-		// Skip a component that is not effectively enabled: either its own
-		// toggle is off, or a component it depends on (declared or
-		// output-referenced) is disabled. This guards every deploy path — not
-		// just toggle reconciliation — from deploying a component against a
-		// dependency that is gone.
 		if _, ok := dg.cccByComp[compID]; ok && !dg.effectiveEnabled(compID) {
 			continue
 		}
 
-		// Dep-aware image-sync prepend.
-		//
-		// When deploying a non-image component, walk its image dependencies
-		// and prepend a sync step for any image dep whose latest Active
-		// ComponentBuild differs from what is currently deployed on the
-		// install. The dep sync steps live in their own step group ordered
-		// before the parent component's group so the new image bytes land in
-		// the install registry before the parent renders/deploys against
-		// them.
-		//
-		// Skipped when:
-		//   - dg.flw.PlanOnly is true (matches existing image-sync gating)
-		//   - the parent component is itself an image (its own sync is
-		//     handled by the normal flow below)
 		if !dg.flw.PlanOnly && !comp.Type.IsImage() {
 			depSyncSteps, err := getImageDepSyncSteps(ctx, dg, compID, i, componentIDIdx)
 			if err != nil {
@@ -451,7 +389,6 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 			steps = append(steps, preDeploySteps...)
 		}
 
-		// sync image
 		if comp.Type.IsImage() && !dg.flw.PlanOnly {
 			if _, alreadySynced := dg.addedImageDepSyncs[compID]; alreadySynced {
 				skipStep, err := dg.sg.installSignalStep(ctx, dg.installID, "skipped sync "+comp.Name, pgtype.Hstore{
@@ -549,12 +486,6 @@ func componentStepMetadata(componentName string) pgtype.Hstore {
 	return pgtype.Hstore{"component_name": generics.ToPtr(componentName)}
 }
 
-// getComponentTeardownSteps emits the steps that tear a single component down
-// off an install: a teardown sync-and-plan followed by an apply for
-// infrastructure components, or a no-op skip step for image components (whose
-// bytes live in the registry and have nothing to destroy). It opens its own
-// step group and does not include lifecycle action steps — callers weave those
-// in around it.
 func getComponentTeardownSteps(ctx workflow.Context, dg *genCtx, comp app.Component) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 	dg.sg.nextGroup()
@@ -603,7 +534,7 @@ func getComponentTeardownSteps(ctx workflow.Context, dg *genCtx, comp app.Compon
 	return append(steps, planStep, applyStep), nil
 }
 
-// getImageDepSyncSteps returns image-dep sync steps to prepend before the
+// why: getImageDepSyncSteps returns image-dep sync steps to prepend before the
 // non-image parent component identified by parentCompID at parentIdx in
 // componentIDs. It walks the parent's pinned dependencies (from the AppConfig
 // snapshot), filters to image-typed deps, and emits a componentsyncimage
@@ -686,7 +617,6 @@ func getImageDepSyncStepsForIDs(
 		}
 		dep, has := dg.components[depID]
 		if !has {
-			// Dep is not part of this app config snapshot — nothing to do.
 			continue
 		}
 
@@ -750,9 +680,6 @@ func (l *genCtxDepLoader) LatestActiveBuildID(ctx workflow.Context, componentID 
 	return build.ID, nil
 }
 
-// gateRunnerHealthy is false when the caller's preceding phase already waited on
-// the install's runner, where a second wait immediately after can only
-// re-confirm the same result.
 func deployAllComponents(ctx workflow.Context, dg *genCtx, gateRunnerHealthy bool) ([]*app.WorkflowStep, error) {
 	componentIDs, err := activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
 		InstallID: dg.installID,
@@ -763,10 +690,6 @@ func deployAllComponents(ctx workflow.Context, dg *genCtx, gateRunnerHealthy boo
 
 	steps := make([]*app.WorkflowStep, 0)
 
-	// The gate opens its own group rather than appending into whichever group the
-	// caller left current: it belongs to the deploys, and sharing a group with a
-	// caller that also ends in a runner-health step makes the two
-	// indistinguishable downstream, where a step's identity is its group + name.
 	if gateRunnerHealthy {
 		dg.sg.nextGroup()
 
@@ -794,7 +717,7 @@ func deployAllComponents(ctx workflow.Context, dg *genCtx, gateRunnerHealthy boo
 	}
 	steps = append(steps, deploySteps...)
 	if !dg.flw.PlanOnly {
-		// Yield after processing all component deploy steps to avoid deadlock detection (TMPRL1101).
+		// why: Yield after processing all component deploy steps to avoid deadlock detection (TMPRL1101).
 		_ = workflow.Sleep(ctx, time.Millisecond)
 
 		lifecycleSteps, err = getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePostDeployAllComponents)

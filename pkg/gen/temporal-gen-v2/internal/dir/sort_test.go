@@ -17,8 +17,6 @@ func pkgDir(t *testing.T) string {
 	t.Helper()
 	_, thisFile, _, ok := runtime.Caller(0)
 	require.True(t, ok, "runtime.Caller failed")
-	// thisFile is .../internal/dir/sort_test.go
-	// go up to pkg/gen/temporal-gen-v2/
 	return filepath.Join(filepath.Dir(thisFile), "..", "..")
 }
 
@@ -31,7 +29,6 @@ func TestGetDependencyLevels_Examples(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, levels, "expected at least one level from examples")
 
-	// Flatten all packages and verify both examples packages are present
 	var allPkgs []string
 	for _, level := range levels {
 		allPkgs = append(allPkgs, level...)
@@ -61,12 +58,10 @@ func TestGetDependencyLevels_WithDeps(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, levels, 2, "pkgc (no deps) should be level 0, pkgb (imports pkgc) should be level 1")
 
-	// Level 0: pkgc (no dependencies within target set)
 	require.Len(t, levels[0], 1)
 	assert.True(t, strings.HasSuffix(levels[0][0], "/pkgc"),
 		"expected pkgc at level 0, got %s", levels[0][0])
 
-	// Level 1: pkgb (depends on pkgc)
 	require.Len(t, levels[1], 1)
 	assert.True(t, strings.HasSuffix(levels[1][0], "/pkgb"),
 		"expected pkgb at level 1, got %s", levels[1][0])

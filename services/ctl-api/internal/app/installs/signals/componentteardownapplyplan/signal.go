@@ -102,7 +102,6 @@ func (s *Signal) MaxAutoRetries(ctx workflow.Context) int {
 }
 
 func (s *Signal) Clone(_ workflow.Context, originalStepName string) ([]signal.CloneStepDef, error) {
-	// Clones keep FlowID/lifecycle; the retry path doesn't re-inject it.
 	lifecycle := signal.LifecycleBase{
 		LifecycleWorkflowID:   s.LifecycleWorkflowID,
 		LifecycleWorkflowType: s.LifecycleWorkflowType,
@@ -164,7 +163,6 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
-	// Validate install component exists
 	_, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
 	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
@@ -263,7 +261,6 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 		return fmt.Errorf("unable to get build: %w", err)
 	}
 
-	// get previous job
 	operation := app.RunnerJobOperationTypeCreateApplyPlan
 	if installDeploy.Type == app.InstallDeployTypeTeardown {
 		operation = app.RunnerJobOperationTypeCreateTeardownPlan
@@ -313,7 +310,6 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 	}
 	s.runnerJobID = runnerJob.ID
 
-	// NOTE(jm): this is probably going to need to be refactored
 	planCompositeErrorsEnabled := workflow.GetVersion(ctx, planCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
 	if planCompositeErrorsEnabled {
 		_ = activities.AwaitSetInstallDeployPlanCompositeError(ctx, activities.SetInstallDeployPlanCompositeErrorRequest{
@@ -348,7 +344,6 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 		return errors.Wrap(err, "unable to update install workflow")
 	}
 
-	// Add Plan contents from the result to the plan
 	if runnerJob.Type == app.RunnerJobTypeJobNOOPDeploy {
 		deployPlan.Plan.ApplyPlanContents = ""
 		deployPlan.Plan.ApplyPlanDisplay = ""

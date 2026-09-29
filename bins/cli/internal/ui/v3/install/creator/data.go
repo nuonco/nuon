@@ -72,15 +72,10 @@ func fetchConfigCmd(m model) tea.Cmd {
 	}
 }
 
-// needsRegion reports whether the install creation form should collect an AWS
-// region. GCP and Azure installs have their region determined automatically
-// from the stack output after provisioning.
 func (m *model) needsRegion() bool {
 	return m.cloudPlatform != models.AppCloudPlatformGcp && m.cloudPlatform != models.AppCloudPlatformAzure
 }
 
-// regionOffset is 1 when the region field is present (shifting focus indexes
-// for the dynamic input fields that follow it), otherwise 0.
 func (m *model) regionOffset() int {
 	if m.needsRegion() {
 		return 1
@@ -88,8 +83,6 @@ func (m *model) regionOffset() int {
 	return 0
 }
 
-// fieldPrefilled reports whether the field at focusIdx was already supplied
-// via a CLI flag (--name / --region), and so doesn't need user input.
 func (m *model) fieldPrefilled(focusIdx int) bool {
 	if focusIdx == 0 {
 		return m.name != ""
@@ -104,7 +97,6 @@ func (m *model) createFormInputs() {
 	m.inputs = make([]textinput.Model, 0)
 	m.inputMappings = make([]inputMapping, 0)
 
-	// 1. Name field
 	nameInput := textinput.New()
 	nameInput.Placeholder = "my-install"
 	nameInput.CharLimit = 100
@@ -121,7 +113,6 @@ func (m *model) createFormInputs() {
 		required:    true,
 	})
 
-	// 2. Region is handled separately with regionIndex
 	if m.presetRegion != "" {
 		for i, r := range awsRegions {
 			if r == m.presetRegion {
@@ -131,7 +122,6 @@ func (m *model) createFormInputs() {
 		}
 	}
 
-	// 3. Dynamic inputs from app config, organized by groups
 	seenInputs := make(map[string]struct{})
 	inputKey := func(input *models.AppAppInput) string {
 		if input.ID != "" {
@@ -182,8 +172,6 @@ func (m *model) createFormInputs() {
 		}
 	}
 
-	// Full app configs expose inputs as a flat list. Render any inputs that
-	// were not nested into a group so branch configs and ungrouped inputs work.
 	if m.inputConfig != nil {
 		for _, input := range m.inputConfig.Inputs {
 			if input == nil || input.Internal {
@@ -218,8 +206,6 @@ func (m *model) createFormInputs() {
 		}
 	}
 
-	// Focus the first field that wasn't already pre-filled via --name/--region
-	// flags, stopping at the last field so there's always something focused.
 	if len(m.inputs) > 0 {
 		m.focusIndex = 0
 		totalFields := len(m.inputs) + m.regionOffset()
@@ -234,15 +220,12 @@ func (m *model) createFormInputs() {
 	m.updateViewportContent()
 }
 
-// focusIndexToInputIndex converts a focusIndex (which includes the region
-// field at index 1, when present) to an index in the m.inputs array. Returns
-// -1 if focusIndex points to the region field.
 func (m *model) focusIndexToInputIndex(focusIdx int) int {
 	if focusIdx == 0 {
-		return 0 // name field
+		return 0
 	}
 	if m.needsRegion() && focusIdx == 1 {
-		return -1 // region field, not in inputs array
+		return -1
 	}
 	return focusIdx - m.regionOffset()
 }
@@ -354,8 +337,6 @@ func checkInstallNameCmd(m model, name string, generation int) tea.Cmd {
 	}
 }
 
-// selectedGroup returns the highlighted group, or nil when the cursor is on the
-// skip row.
 func (m *model) selectedGroup() *models.AppAppBranchInstallGroup {
 	if m.groupIndex < 0 || m.groupIndex >= len(m.groups) {
 		return nil
@@ -363,8 +344,6 @@ func (m *model) selectedGroup() *models.AppAppBranchInstallGroup {
 	return m.groups[m.groupIndex]
 }
 
-// applyGroupSelection folds the selected group's labels into the install's labels
-// so group membership is set at creation time rather than afterwards.
 func (m *model) applyGroupSelection() error {
 	group := m.selectedGroup()
 	if group == nil {

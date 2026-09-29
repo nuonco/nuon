@@ -20,9 +20,6 @@ import (
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// Execute runs the full workflow step lifecycle. This replicates the logic from
-// WorkflowConductor.executeFlowStep but as a self-contained signal that fetches
-// its own state from the database.
 func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	defer func() { s.finished = true }()
 
@@ -58,7 +55,6 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		return errors.Wrap(err, "unable to get workflow logger")
 	}
 
-	// Fetch step and workflow from the database
 	step, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, s.StepID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get step")
@@ -75,7 +71,6 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		return s.resumeApproval(ctx, l, step, flw)
 	}
 
-	// Check if step is in executable state
 	if step.Status.Status != app.StatusPending && step.Status.Status != app.StatusNotAttempted && step.Status.Status != app.StatusQueued {
 		l.Debug("step not in executable state, exiting",
 			zap.String("step_id", step.ID),
@@ -96,7 +91,6 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		}
 	}()
 
-	// Update flow status to in-progress
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: flw.ID,
 		Status: app.CompositeStatus{
@@ -108,15 +102,9 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		return errors.Wrap(err, "unable to update step")
 	}
 
-	// Execute the inner signal
 	stepErr := s.executeInnerSignal(ctx, step)
 	if stepErr != nil {
 		if ctx.Err() != nil {
-			// If Cancel() was called (via the cancel update handler), it already
-			// wrote DirectiveStop and updated status — nothing more to do.
-			// But if the context was cancelled without Cancel() (e.g., handler
-			// lifecycle stopped the workflow), write a fallback directive so the
-			// group doesn't default to StepContinue and skip the step.
 			if !s.canceled {
 				dctx, dcancel := workflow.NewDisconnectedContext(ctx)
 				defer dcancel()
@@ -146,18 +134,16 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		return nil
 	}
 
-	// Refetch the step after signal execution to gather new state (e.g. step target ID)
 	step, err = activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, step.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get step")
 	}
 
-	// Non-approval steps: mark success and return
 	if step.ExecutionType != app.WorkflowStepExecutionTypeApproval {
 		l.Debug("step type non approval, step successful",
 			zap.String("step_id", step.ID),
 			zap.String("workflow_id", flw.ID))
-		// A signal that skipped its own work marks the step skipped before
+		// why: A signal that skipped its own work marks the step skipped before
 		// returning. Overwriting that with success would report work as done
 		// that never ran, so leave an already-skipped status alone.
 		if !isSkippedStatus(step.Status.Status) {
@@ -192,13 +178,9 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		return nil
 	}
 
-	// Approval steps: delegate to plan processing
 	return s.processPlan(ctx, step, flw)
 }
 
-// executeInnerSignal handles the actual signal dispatch for a step.
-// It updates step status, then enqueues the inner signal to the install-signals
-// queue and awaits completion.
 func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep) error {
 	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepStartedAtByID(ctx, step.ID); err != nil {
 		return err
@@ -234,12 +216,8 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 		return nil
 	}
 
-	// Ensure the inner signal references this step's ID, not the original step's.
-	// Cloned (retry) steps copy QueueSignal from the original, so the embedded
-	// step ID fields (WorkflowStepID, FlowStepID, etc.) may be stale.
 	signal.ApplyStepContext(sig, step.ID, s.WorkflowID)
 
-	// Inject retry count so signals can branch on retry index or group generation.
 	signal.ApplyRetryCount(sig, step.RetryIndex, step.GroupRetryIdx)
 
 	logger := workflow.GetLogger(ctx)
@@ -253,15 +231,13 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 
 	cb := callback.New(ctx, step.ID)
 	dedupeKey := fmt.Sprintf("workflow-step:%s:retry:%d:group-retry:%d", step.ID, step.RetryIndex, step.GroupRetryIdx)
-	// Cancel() already wrote the stop directive (Execute exits on s.canceled);
-	// a lifecycle cancel has none yet, so return an error for Execute's fallback.
 	if s.canceled {
 		return nil
 	}
 	if ctx.Err() != nil {
 		return errors.Errorf("step %s cancelled before inner signal dispatch", step.Name)
 	}
-	// Dispatch on a disconnected context: the enqueue commits the inner signal
+	// why: Dispatch on a disconnected context: the enqueue commits the inner signal
 	// to the DB before returning, so a cancel landing mid-dispatch cannot stop
 	// the write — it can only hide the committed result, orphaning a signal
 	// whose ID nobody ever learns (failed TestCancelWorkflowPropagatesDown).
@@ -282,11 +258,8 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 		return errors.Wrapf(err, "unable to enqueue signal for step %s", step.Name)
 	}
 
-	// Track the inner signal ID so Cancel() can propagate cancellation
 	s.innerQueueSignalID = enqueueResp.QueueSignalID
 
-	// Cancellation may have landed while the dispatch was in flight. Cancel the
-	// committed inner signal whether it came from Cancel() or the handler lifecycle.
 	if s.canceled || ctx.Err() != nil {
 		cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
 		defer cancelCtxCancel()
@@ -318,8 +291,6 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 	return nil
 }
 
-// isSkippedStatus reports whether a step status represents work that was
-// deliberately not performed, which the success write must not clobber.
 func isSkippedStatus(status app.Status) bool {
 	return status == app.StatusAutoSkipped || status == app.StatusUserSkipped
 }

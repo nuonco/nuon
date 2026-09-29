@@ -14,8 +14,6 @@ type CreateSandboxRunPlanRequest struct {
 
 	WorkflowID string
 
-	// OCISource is set by the caller for non-branch sandbox runs
-	// when a sandbox build artifact is available.
 	OCISource *plantypes.OCISource
 }
 

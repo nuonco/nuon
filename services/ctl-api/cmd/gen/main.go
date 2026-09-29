@@ -44,7 +44,6 @@ func generateRunnerSchema(ctx context.Context) error {
 		"--parseDependency",
 		"--parseInternal", "-g", "runner.go",
 		"--markdownFiles", "docs/runner/descriptions",
-		// stacks/runner has its own instance; see generateStackSchema.
 		"-t", "orgs/runner,apps/runner,general/runner,sandboxes/runner,installs/runner,installers/runner,components/runner,runners/runner,runners/auth,actions/runner",
 	}
 
@@ -66,8 +65,6 @@ func generateRunnerSchema(ctx context.Context) error {
 	return nil
 }
 
-// generateStackSchema emits a spec containing only the stacks/runner namespace,
-// so the generated sdks/stack client does not carry the whole runner API.
 func generateStackSchema(ctx context.Context) error {
 	args := []string{
 		"run", "github.com/swaggo/swag/cmd/swag",
@@ -159,19 +156,16 @@ func generatePublicSchema(ctx context.Context) error {
 }
 
 func generatePublicOAPI3Spec(ctx context.Context) error {
-	// Load the generated Swagger 2.0 spec
 	doc, err := LoadPublicOAPI2Spec()
 	if err != nil {
 		return fmt.Errorf("unable to load swagger spec: %w", err)
 	}
 
-	// Convert to OpenAPI 3.0
 	oapi3Doc, err := openapi2conv.ToV3(doc)
 	if err != nil {
 		return fmt.Errorf("unable to convert to openapi v3: %w", err)
 	}
 
-	// Write to docs/public/swagger-v3.json
 	outputPath := "docs/public/swagger-v3.json"
 	file, err := os.Create(outputPath)
 	if err != nil {
@@ -197,17 +191,6 @@ func generateTemporal(ctx context.Context) error {
 		Validate:    true,
 		Imports:     true,
 		Parallelism: runtime.NumCPU(),
-
-		// Declare the `@tag <name>` vocabulary here rather than in a
-		// temporal-gen.yaml. Setting Tags makes it the whole vocabulary: file
-		// discovery is skipped, and any @tag not listed is a generation error.
-		//
-		//	Tags: &tags.Config{
-		//		Defaults: &tags.Attrs{StartToCloseTimeout: "1m"},
-		//		Tags: map[string]*tags.Attrs{
-		//			"db-read": {StartToCloseTimeout: "30s", MaxRetries: generics.ToPtr(3)},
-		//		},
-		//	},
 	})
 }
 
@@ -231,8 +214,6 @@ func goimportsDir(dir string) error {
 		if err != nil {
 			return fmt.Errorf("unable to read %s: %w", path, err)
 		}
-		// Collapse blank lines inside import blocks so goimports
-		// sees a single group and re-sorts into stdlib / third-party.
 		src = collapseImportGroups(src)
 		formatted, err := imports.Process(path, src, nil)
 		if err != nil {
@@ -242,13 +223,9 @@ func goimportsDir(dir string) error {
 	})
 }
 
-// collapseImportGroups merges standalone import lines and grouped import blocks
-// into a single import block with no blank lines, so goimports can re-sort
-// them into proper stdlib / third-party groups.
 func collapseImportGroups(src []byte) []byte {
 	lines := strings.Split(string(src), "\n")
 
-	// First pass: collect all import specs and find where to insert the merged block.
 	var (
 		importSpecs []string
 		out         []string
@@ -258,23 +235,21 @@ func collapseImportGroups(src []byte) []byte {
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
 
-		// Standalone: import "pkg" or import alias "pkg"
 		if !inBlock && strings.HasPrefix(trimmed, "import ") && !strings.HasPrefix(trimmed, "import (") {
 			spec := strings.TrimPrefix(trimmed, "import ")
 			importSpecs = append(importSpecs, spec)
 			if insertIdx == -1 {
 				insertIdx = len(out)
-				out = append(out, "") // placeholder
+				out = append(out, "")
 			}
 			continue
 		}
 
-		// Start of grouped block
 		if !inBlock && (trimmed == "import (" || strings.HasPrefix(trimmed, "import (")) {
 			inBlock = true
 			if insertIdx == -1 {
 				insertIdx = len(out)
-				out = append(out, "") // placeholder
+				out = append(out, "")
 			}
 			continue
 		}
@@ -298,7 +273,6 @@ func collapseImportGroups(src []byte) []byte {
 		return src
 	}
 
-	// Build merged import block.
 	var block strings.Builder
 	block.WriteString("import (\n")
 	for _, spec := range importSpecs {

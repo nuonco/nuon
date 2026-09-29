@@ -1,27 +1,4 @@
 #!/usr/bin/env bash
-# Run flow testworker integration tests from the repo root.
-#
-#   ./services/ctl-api/tests/run-flow-test.sh TestApprovalApproveContinues
-#   ./services/ctl-api/tests/run-flow-test.sh 'TestFail.*'          # regex ok
-#   ./services/ctl-api/tests/run-flow-test.sh                       # whole suite
-#   SKIP='TestSuite/TestPin' ./services/ctl-api/tests/run-flow-test.sh
-#
-# Parallel shards: two runs sharing a namespace stomp each other (shared task
-# queue + boot-time stale-workflow cleanup). PARALLEL=1 gives the run its own
-# Temporal namespace so shards are fully isolated:
-#
-#   PARALLEL=1 ./services/ctl-api/tests/run-flow-test.sh 'TestApproval.*' &
-#   PARALLEL=1 ./services/ctl-api/tests/run-flow-test.sh 'TestFail.*' &
-#   wait
-#
-# SHARDS=4 splits the whole suite round-robin into that many concurrent
-# namespace-isolated runs (logs land in /tmp/flow-shard-N.log):
-#
-#   SHARDS=4 ./services/ctl-api/tests/run-flow-test.sh
-#
-# Requires the local dev containers (postgres, clickhouse, temporal) running,
-# the temporal `default` namespace, and the ctl_api_test databases created once
-# with `go run ./cmd/nuontest` from services/ctl-api.
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -68,8 +45,6 @@ set -a
 # shellcheck disable=SC1091
 source "$here/integration.env"
 set +a
-# The github client is built from GITHUB_APP_KEY and needs a parseable PEM; the
-# shared integration.env only carries a non-empty dummy, so swap in a throwaway.
 if [[ ${GITHUB_APP_KEY:-} != *"PRIVATE KEY"* ]]; then
   keyfile="${TMPDIR:-/tmp}/flow-testworker-gh-key.pem"
   [[ -s $keyfile ]] || openssl genrsa 2048 > "$keyfile" 2>/dev/null
@@ -83,8 +58,6 @@ if [[ $# -ge 1 && -n $1 ]]; then
 fi
 
 args=(-run "$run" -timeout "${TIMEOUT:-45m}" -v -parallel "${NUON_FLOW_PARALLELISM:-1}")
-# NUON_FLOW_PARALLELISM=N runs up to N flow cases concurrently (each test
-# calls t.Parallel); the default 1 keeps the original serial behavior.
 if [[ -n ${SKIP:-} ]]; then
   args+=(-skip "$SKIP")
 fi

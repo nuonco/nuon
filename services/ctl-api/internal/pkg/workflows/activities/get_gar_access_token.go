@@ -15,7 +15,7 @@ import (
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 )
 
-// azureTokenExchangeAudience is the audience the Azure managed identity token is
+// why: azureTokenExchangeAudience is the audience the Azure managed identity token is
 // minted for. It must match the `allowed_audiences` on the GCP Workload
 // Identity provider created by the `nuonco/gar-access/google` Terraform module.
 const azureTokenExchangeAudience = "api://AzureADTokenExchange"
@@ -73,8 +73,6 @@ func (a *Activities) GetGARAccessToken(ctx context.Context, req *GetGARAccessTok
 	return &GARAccessToken{Username: "oauth2accesstoken", Password: token.AccessToken}, nil
 }
 
-// awsCredentialSupplier implements externalaccount.AwsSecurityCredentialsSupplier
-// using the AWS SDK's default credential chain (handles IRSA, IMDS, env vars).
 type awsCredentialSupplier struct {
 	region string
 }
@@ -138,8 +136,6 @@ func (a *Activities) getGARTokenViaFederation(ctx context.Context, req *GetGARAc
 	return &GARAccessToken{Username: "oauth2accesstoken", Password: token.AccessToken}, nil
 }
 
-// azureSubjectTokenSupplier feeds the Azure managed-identity OIDC token to GCP's
-// STS as the subject token to exchange for a GAR access token.
 type azureSubjectTokenSupplier struct {
 	cred  azcore.TokenCredential
 	scope string

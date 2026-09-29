@@ -6,9 +6,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// This CallObjMethod function, is copied from
-// https://raw.githubusercontent.com/go-gorm/gorm/master/callbacks/callmethod.go, which is how the gorm hooks dispatch
-// calls to model functions.
 func CallObjMethod(db *gorm.DB, fc func(value interface{}, tx *gorm.DB) bool) {
 	if !db.Statement.ReflectValue.IsValid() {
 		return

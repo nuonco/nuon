@@ -76,7 +76,6 @@ func (s *AdminForgetAccountInstallsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -130,14 +129,12 @@ func (s *AdminForgetAccountInstallsTestSuite) TestForgetAccountInstalls() {
 			setupFunc: func() AdminForgetAccountInstallsRequest {
 				ctx := context.Background()
 
-				// Must set account context before creating entities with created_by_id
 				ctx, _ = s.service.Seeder.EnsureAccount(ctx, s.T())
 				ctx, org := s.service.Seeder.EnsureOrg(ctx, s.T())
 				testApp := s.service.Seeder.CreateApp(ctx, s.T())
 				s.service.Seeder.CreateAppConfig(ctx, s.T(), testApp.ID)
 				install := s.service.Seeder.CreateInstall(ctx, s.T(), testApp)
 
-				// Update the install's AWS account with specific IAMRoleARN
 				testAccountID := "123456789012"
 				err := s.service.DB.WithContext(ctx).
 					Model(&app.AWSAccount{}).
@@ -145,7 +142,6 @@ func (s *AdminForgetAccountInstallsTestSuite) TestForgetAccountInstalls() {
 					Update("iam_role_arn", "arn:aws:iam::"+testAccountID+":role/test-role").Error
 				require.NoError(s.T(), err)
 
-				// Toggle sandbox mode off so the handler's filter doesn't skip it
 				err = s.service.DB.WithContext(ctx).Model(org).Update("sandbox_mode", false).Error
 				require.NoError(s.T(), err)
 
@@ -162,7 +158,6 @@ func (s *AdminForgetAccountInstallsTestSuite) TestForgetAccountInstalls() {
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(req AdminForgetAccountInstallsRequest) {
-				// Verify signals were sent
 				sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.GreaterOrEqual(s.T(), len(sigs), 1, "expected at least one signal")
 
@@ -222,7 +217,6 @@ func (s *AdminForgetAccountInstallsTestSuite) TestForgetAccountInstalls() {
 				tc.validateFunc(req)
 			}
 
-			// Verify signal presence matches expectation
 			capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 			if tc.expectedSignal {
 				assert.GreaterOrEqual(s.T(), len(capturedSignals), 1, "expected at least one signal to be sent")

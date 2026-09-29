@@ -19,8 +19,6 @@ func newTestTerraformClient(url string) *TerraformClient {
 }
 
 func TestGetLatestVersion_ReturnsPinned(t *testing.T) {
-	// GetLatestVersion is temporarily hard-coded to avoid the GitHub API's
-	// 403 rate-limiting; it must not make any HTTP call.
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Fatal("GetLatestVersion should not make an HTTP call while pinned")
 	}))
@@ -30,9 +28,6 @@ func TestGetLatestVersion_ReturnsPinned(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, PinnedLatestVersion, version)
 }
-
-// The tests below cover FetchVersion, which is dormant while GetLatestVersion
-// is pinned but retained so the GitHub-API path is ready to be restored.
 
 func TestFetchVersion_Success(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -76,8 +71,6 @@ func TestFetchVersion_InvalidJSON(t *testing.T) {
 	require.Error(t, err)
 }
 
-// rewriteTransport redirects all requests to the given base URL,
-// allowing the client to hit the test server regardless of the original host.
 type rewriteTransport string
 
 func (base rewriteTransport) RoundTrip(req *http.Request) (*http.Response, error) {

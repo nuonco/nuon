@@ -8,7 +8,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// runnerHealthyStepName gates a phase on the install's runner reporting healthy.
 const runnerHealthyStepName = app.RunnerHealthyStepName
 
 type stepGroup struct {
@@ -16,10 +15,6 @@ type stepGroup struct {
 	groups       []*app.WorkflowStepGroup
 	currentGroup *app.WorkflowStepGroup
 
-	// flw is the install workflow currently being generated. It is used to
-	// stamp install workflow identity onto signals that implement
-	// signal.SignalWithMutableLifecycleContext, removing the need for a
-	// runtime DB lookup in the queue handler.
 	flw *app.Workflow
 }
 
@@ -70,8 +65,6 @@ func (s *stepGroup) Result(steps []*app.WorkflowStep) *app.GenerateStepsResult {
 func (s *stepGroup) installSignalStep(ctx workflow.Context, installID, name string, metadata pgtype.Hstore, sig signal.Signal, planOnly bool, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) {
 	opts = append(opts, WithGroupIdx(s.idx))
 
-	// Stamp install workflow identity onto the signal so the queue handler can
-	// emit lifecycle events without a separate DB lookup.
 	if s.flw != nil && sig != nil {
 		if mlc, ok := sig.(signal.SignalWithMutableLifecycleContext); ok {
 			mlc.SetLifecycleWorkflow(s.flw.ID, string(s.flw.Type))

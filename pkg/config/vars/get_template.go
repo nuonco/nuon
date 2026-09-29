@@ -16,15 +16,12 @@ func (v *varsValidator) getTemplate(ctx context.Context) (map[string]interface{}
 	inps := v.getInputs()
 	obj.Install.Inputs = inps
 
-	// add components
 	compOut := v.getComponents()
 	obj.Components = compOut
 
-	// install stack
 	stackOut := v.getInstallStack()
 	obj.InstallStack = stackOut
 
-	// add the vcs config into the fake data
 	if !v.ignoreSandboxOutputs {
 		out, err := v.getSandboxOutputs(ctx)
 		if err != nil {

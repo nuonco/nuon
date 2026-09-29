@@ -15,10 +15,6 @@ import (
 
 const persistTimeout = 15 * time.Second
 
-// ClusterProvider holds the install's cluster access + the sandbox's managed
-// helm releases, mirrored to ctl-api so the stateless engine rehydrates on boot
-// (surviving restarts/image-swaps). ClusterInfo carries a durable assume-role
-// config, so credentials are re-derived fresh on every use.
 type ClusterProvider struct {
 	apiClient nuonrunner.Client
 	l         *zap.Logger
@@ -26,9 +22,7 @@ type ClusterProvider struct {
 	mu              sync.RWMutex
 	clusterInfo     *kube.ClusterInfo
 	sandboxReleases map[string]struct{}
-	// componentKinds is owned by ManifestKindsProvider; mirrored here because
-	// this provider owns the single round trip to ctl-api.
-	componentKinds []string
+	componentKinds  []string
 }
 
 type ProviderParams struct {
@@ -78,9 +72,6 @@ func (p *ClusterProvider) IsSandboxRelease(name string) bool {
 	return ok
 }
 
-// SetComponentKinds records the kinds discovered by deploys and persists them,
-// so a restarted engine keeps watching them instead of narrowing back to the
-// core workload kinds until every component is redeployed.
 func (p *ClusterProvider) SetComponentKinds(kinds []string) {
 	p.mu.Lock()
 	p.componentKinds = append([]string(nil), kinds...)
@@ -88,14 +79,12 @@ func (p *ClusterProvider) SetComponentKinds(kinds []string) {
 	p.persist()
 }
 
-// ComponentKinds returns the persisted kinds, for rehydration on boot.
 func (p *ClusterProvider) ComponentKinds() []string {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return append([]string(nil), p.componentKinds...)
 }
 
-// Load rehydrates the context from ctl-api on engine boot.
 func (p *ClusterProvider) Load(ctx context.Context) {
 	if p.apiClient == nil {
 		return
@@ -135,10 +124,8 @@ func (p *ClusterProvider) Load(ctx context.Context) {
 	p.mu.Unlock()
 }
 
-// persist mirrors the full current context to ctl-api, best-effort and off the
-// caller's goroutine so it never slows or breaks a deploy.
 func (p *ClusterProvider) persist() {
-	// A background goroutine must never panic the runner on a missing client.
+	// why: A background goroutine must never panic the runner on a missing client.
 	if p.apiClient == nil {
 		return
 	}

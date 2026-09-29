@@ -51,7 +51,6 @@ func New(params Params) *service {
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	oidc := api.Group("/v1/oidc")
 	{
-		// unauthenticated token exchange; listed in the public endpoint list
 		oidc.POST("/token", s.ExchangeOIDCToken)
 
 		policies := oidc.Group("/trust-policies")
@@ -67,8 +66,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	return nil
 }
 
-// Also on the runner API: a stack applying from CI reaches that surface and needs
-// somewhere to trade an OIDC token. Same already-public handler.
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	api.POST("/v1/oidc/token", s.ExchangeOIDCToken)
 

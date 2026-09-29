@@ -12,11 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// RenderLabelTemplates renders label templates against current install state,
-// returning only keys that rendered non-empty. Unresolvable templates (e.g. a
-// component output not yet populated) are skipped with a warning, never an
-// error. State is redacted so sensitive inputs can't leak into org-visible
-// labels, and labels are stripped from the context to prevent self-reference.
 func (h *Helpers) RenderLabelTemplates(ctx context.Context, installID string, templates labels.Labels) (labels.Labels, error) {
 	rendered := make(labels.Labels, len(templates))
 	if len(templates) == 0 {
@@ -49,10 +44,6 @@ func (h *Helpers) RenderLabelTemplates(ctx context.Context, installID string, te
 	return rendered, nil
 }
 
-// RenderInstallLabels materializes the install's label templates into the
-// labels column so label matching only ever sees literal values. Unresolvable
-// keys keep their previous rendered value, or stay absent if they never
-// rendered.
 func (h *Helpers) RenderInstallLabels(ctx context.Context, installID string) error {
 	var install app.Install
 	if err := h.db.WithContext(ctx).

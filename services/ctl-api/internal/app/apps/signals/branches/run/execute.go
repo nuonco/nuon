@@ -27,7 +27,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	previewStatusesEnabled := workflow.GetVersion(ctx, previewCommitStatusesVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
 	previewCommentFinalizerEnabled := workflow.GetVersion(ctx, previewCommentRunFinalizerVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
 
-	// Fetch run from DB
 	run, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID)
 	if err != nil {
 		return fmt.Errorf("unable to get app branch run: %w", err)
@@ -46,7 +45,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"force", run.Force,
 	)
 
-	// Update status to running
 	if _, err = activities.AwaitUpdateAppBranchRunStatus(ctx, &activities.UpdateAppBranchRunStatusRequest{
 		RunID:  run.ID,
 		Status: "running",
@@ -55,7 +53,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return err
 	}
 
-	// Enqueue the shared execute-workflow signal to the branch's queue
 	cb := callback.New(ctx, run.ID)
 	enqueue := func() (*sharedactivities.EnqueueSignalToOwnerResponse, error) {
 		return sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
@@ -103,7 +100,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"queue_signal_id", enqueueResp.QueueSignalID,
 	)
 
-	// Await the execute-workflow signal completion
 	if _, err = callback.AwaitWithTimeout(ctx, cb, callback.FallbackAwaitTimeout); err != nil {
 		if previewStatusesEnabled {
 			latestRun, getErr := activities.AwaitGetAppBranchRunByIDByRunID(ctx, run.ID)
@@ -139,8 +135,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("workflow execution failed: %w", err)
 	}
 
-	// Re-fetch the workflow to check actual status — the callback completing
-	// doesn't mean all steps succeeded (cancelled/errored steps are terminal).
 	wf, wfErr := workflowactivities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, *run.WorkflowID)
 	if wfErr == nil && wf.Status.Status != "" {
 		switch wf.Status.Status {

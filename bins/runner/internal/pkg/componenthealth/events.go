@@ -13,7 +13,7 @@ import (
 
 var eventsGVR = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "events"}
 
-// eventWarningWindow bounds how recent a Warning event must be to count. A
+// why: eventWarningWindow bounds how recent a Warning event must be to count. A
 // persistent controller failure keeps re-emitting (fresh timestamp) and stays
 // flagged; a one-off warning the resource recovered from ages out and clears.
 const eventWarningWindow = 15 * time.Minute
@@ -21,14 +21,9 @@ const eventWarningWindow = 15 * time.Minute
 type warningEvent struct {
 	reason  string
 	message string
-	// at is when the event last fired, so a resource that has since recovered is
-	// not held down by it.
-	at time.Time
+	at      time.Time
 }
 
-// latestWarnings returns, keyed by resource identity, the resources whose latest
-// recent event is a Warning — surfacing controller-side failures that never
-// show in the object's own status. Listed on demand, no informer or cache.
 func (e *Engine) latestWarnings(ctx context.Context, dynClient dynamic.Interface) map[string]warningEvent {
 	list, err := dynClient.Resource(eventsGVR).List(ctx, metav1.ListOptions{FieldSelector: "type=Warning"})
 	if err != nil {

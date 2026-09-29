@@ -22,7 +22,7 @@ func (a *Activities) UpdateQueueSignalRunID(ctx context.Context, req *UpdateQueu
 		return generics.TemporalGormError(res.Error, fmt.Sprintf("unable to get queue signal %s", req.QueueSignalID))
 	}
 
-	// Write-once: only set the RunID if it hasn't been set yet.
+	// why: Write-once: only set the RunID if it hasn't been set yet.
 	// This preserves the original handler run's ID so that callers like
 	// FetchSteps always target the run that actually has the in-memory results.
 	if qs.Workflow.RunID != "" {

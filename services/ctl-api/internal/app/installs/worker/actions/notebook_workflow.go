@@ -17,35 +17,25 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-// NotebookWorkflowType is the registered Temporal workflow type name.
 const NotebookWorkflowType = "NotebookWorkflow"
 
-// NotebookRunCellUpdateName is the Temporal update handler name used to run a
-// cell on a warm notebook workflow.
 const NotebookRunCellUpdateName = "run-cell"
 
-// notebookIdleTimeout is how long the warm workflow waits with no pending runs
-// before completing. The next RunCell re-starts it via update-with-start.
 const notebookIdleTimeout = 15 * time.Minute
 
-// NotebookWorkflowID returns the deterministic per-notebook workflow ID.
 func NotebookWorkflowID(notebookID string) string {
 	return "notebook-" + notebookID
 }
 
 type NotebookWorkflowRequest struct {
 	NotebookID string
-	// State carries pending runs across continue-as-new. Nil on first start.
-	State *NotebookWorkflowState
+	State      *NotebookWorkflowState
 }
 
 type NotebookWorkflowState struct {
 	Pending []NotebookRunRef
 }
 
-// NotebookRunRef is everything the workflow needs to execute one cell run,
-// carried explicitly so the long-lived workflow never relies on a stale start
-// context for per-run ownership/audit.
 type NotebookRunRef struct {
 	NotebookCellRunID string
 	ActionRunID       string
@@ -69,11 +59,6 @@ type RunCellUpdateResult struct {
 	InstallActionWorkflowRunID string
 }
 
-// NotebookWorkflow is a warm, long-lived per-notebook workflow. Running a cell
-// is a Temporal update ("run-cell") that creates the run rows and enqueues the
-// run, returning IDs immediately; the workflow's main loop then dispatches the
-// runner job. This skips the cold nested install-workflow step tree that a
-// normal adhoc action run pays on every invocation.
 func (w *Workflows) NotebookWorkflow(ctx workflow.Context, req NotebookWorkflowRequest) error {
 	l := workflow.GetLogger(ctx)
 	state := req.State
@@ -95,8 +80,6 @@ func (w *Workflows) NotebookWorkflow(ctx workflow.Context, req NotebookWorkflowR
 				return RunCellUpdateResult{}, err
 			}
 
-			// Only enqueue genuinely new runs; an idempotency-key hit means the
-			// run was already created (and enqueued) by a prior request.
 			if !resp.AlreadyDispatched {
 				state.Pending = append(state.Pending, NotebookRunRef{
 					NotebookCellRunID: resp.NotebookCellRunID,
@@ -125,8 +108,6 @@ func (w *Workflows) NotebookWorkflow(ctx workflow.Context, req NotebookWorkflowR
 			if err != nil {
 				return err
 			}
-			// Idle with no in-flight updates: let the workflow complete. The
-			// next RunCell re-starts it via update-with-start.
 			if !ok && workflow.AllHandlersFinished(ctx) {
 				return nil
 			}
@@ -135,8 +116,6 @@ func (w *Workflows) NotebookWorkflow(ctx workflow.Context, req NotebookWorkflowR
 			}
 		}
 
-		// Continue-as-new only between runs, once all update handlers have
-		// finished. Pending runs are carried forward.
 		if workflow.GetInfo(ctx).GetContinueAsNewSuggested() && workflow.AllHandlersFinished(ctx) {
 			ctx = cctx.SetLogStreamWorkflowContext(ctx, nil)
 			return workflow.NewContinueAsNewError(ctx, w.NotebookWorkflow, NotebookWorkflowRequest{
@@ -147,22 +126,14 @@ func (w *Workflows) NotebookWorkflow(ctx workflow.Context, req NotebookWorkflowR
 
 		ref := state.Pending[0]
 		state.Pending = state.Pending[1:]
-		// A single bad run must not stop the notebook; executeNotebookRun
-		// records terminal status on the run and returns.
 		w.executeNotebookRun(ctx, ref)
 		l.Info("notebook cell run finished", zap.String("action_run_id", ref.ActionRunID))
 	}
 }
 
-// executeNotebookRun dispatches one cell run: log stream, plan, runner job, and
-// job execution. It mirrors the adhoc action-run execution path but scopes
-// child-workflow IDs to the action run (the parent workflow ID is stable across
-// many runs) and mirrors status onto the NotebookCellRun for the UI.
 func (w *Workflows) executeNotebookRun(ctx workflow.Context, ref NotebookRunRef) {
 	l := workflow.GetLogger(ctx)
 
-	// Per-run context: the long-lived workflow serves many accounts, so set
-	// org/account explicitly and start each run with a clean log stream.
 	runCtx := cctx.SetOrgIDWorkflowContext(ctx, ref.OrgID)
 	runCtx = cctx.SetAccountIDWorkflowContext(runCtx, ref.TriggeredByID)
 	runCtx = cctx.SetLogStreamWorkflowContext(runCtx, nil)
@@ -185,7 +156,6 @@ func (w *Workflows) executeNotebookRun(ctx workflow.Context, ref NotebookRunRef)
 	}()
 	runCtx = cctx.SetLogStreamWorkflowContext(runCtx, ls)
 
-	// Surface the log stream on the cell run ASAP so the UI can start tailing.
 	if err := activities.AwaitUpdateNotebookCellRun(runCtx, &activities.UpdateNotebookCellRunRequest{
 		NotebookCellRunID: ref.NotebookCellRunID,
 		LogStreamID:       ls.ID,
@@ -261,8 +231,6 @@ func (w *Workflows) executeNotebookRun(ctx workflow.Context, ref NotebookRunRef)
 	w.updateNotebookRunStatus(runCtx, ref, app.InstallActionRunStatusFinished, "finished")
 }
 
-// updateNotebookRunStatus mirrors a status onto the underlying
-// InstallActionWorkflowRun (v1 + v2) and the NotebookCellRun row.
 func (w *Workflows) updateNotebookRunStatus(ctx workflow.Context, ref NotebookRunRef, status app.InstallActionWorkflowRunStatus, msg string) {
 	l := workflow.GetLogger(ctx)
 

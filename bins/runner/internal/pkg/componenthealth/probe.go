@@ -29,39 +29,24 @@ const (
 	resourceKindTCPProbe  = "TCPProbe"
 	resourceKindExecProbe = "ExecProbe"
 
-	// probeTimeout is the hard per-probe budget: a probe can never hold up a
-	// report cycle longer than this, whatever the target does.
 	probeTimeout = 5 * time.Second
 
-	// probeBodyDrainLimit bounds the response body read: it is irrelevant to the
-	// verdict, drained only to free the connection.
 	probeBodyDrainLimit = 4 * 1024
 
-	// probeOutputLimit bounds how much of an exec probe's combined output travels
-	// as the failure message.
 	probeOutputLimit = 2 * 1024
 
 	probeUserAgent = "nuon-runner/component-health"
 )
 
-// probeSpec is one synthetic probe declared on a component. Only specs built by
-// newProbeSpec or newExecProbeSpec run, so a probe can never reach an unnamed target.
 type probeSpec struct {
-	kind   string
-	target string
-	// dialAddr is the host:port a tcp probe connects to, derived from target.
-	dialAddr string
-	// command is the argv an exec probe runs, never a shell string.
-	command []string
-	// name is the vendor's display label; falls back to the target or argv[0].
-	name string
-	// unresolved explains why a declared probe cannot run. Such a probe still
-	// reports as unknown carrying this reason, rather than silently vanishing.
+	kind       string
+	target     string
+	dialAddr   string
+	command    []string
+	name       string
 	unresolved string
 }
 
-// newProbeSpec validates and normalizes a declared http or tcp probe. Anything
-// it rejects is never executed.
 func newProbeSpec(kind, target string) (probeSpec, bool) {
 	kind = strings.ToLower(strings.TrimSpace(kind))
 	target = strings.TrimSpace(target)
@@ -90,8 +75,6 @@ func newProbeSpec(kind, target string) (probeSpec, bool) {
 	}
 }
 
-// tcpDialAddr resolves a tcp probe target — either a bare host:port or a URL
-// whose scheme implies the port — to a dialable address.
 func tcpDialAddr(target string) (string, bool) {
 	if u, err := url.Parse(target); err == nil && u.Host != "" && u.Scheme != "" {
 		host := u.Hostname()
@@ -116,8 +99,6 @@ func tcpDialAddr(target string) (string, bool) {
 	return net.JoinHostPort(host, port), true
 }
 
-// newExecProbeSpec validates and normalizes a declared exec probe. The argv is
-// taken verbatim — it is never joined into a shell string.
 func newExecProbeSpec(command []string) (probeSpec, bool) {
 	if len(command) == 0 || strings.TrimSpace(command[0]) == "" {
 		return probeSpec{}, false
@@ -140,7 +121,6 @@ func (s probeSpec) resourceKind() string {
 	}
 }
 
-// displayName is what the health row is named by.
 func (s probeSpec) displayName() string {
 	if s.name != "" {
 		return s.name
@@ -159,7 +139,7 @@ type probeResult struct {
 	latency    time.Duration
 }
 
-// newProbeHTTPClient never follows redirects, so a probe cannot be bounced to an
+// why: newProbeHTTPClient never follows redirects, so a probe cannot be bounced to an
 // unnamed host, and owns its transport because the runner mutates the default one.
 func newProbeHTTPClient() *http.Client {
 	return &http.Client{
@@ -234,7 +214,7 @@ func runTCPProbe(ctx context.Context, addr string) probeResult {
 	return probeResult{health: healthHealthy, latency: time.Since(started)}
 }
 
-// execProbeEnv is deliberately minimal — the runner's own env carries its
+// why: execProbeEnv is deliberately minimal — the runner's own env carries its
 // control-plane token and cloud credentials, which a probe must not inherit.
 func execProbeEnv() []string {
 	path := os.Getenv("PATH")
@@ -244,8 +224,6 @@ func execProbeEnv() []string {
 	return []string{"PATH=" + path, "HOME=" + os.TempDir(), "TMPDIR=" + os.TempDir()}
 }
 
-// runExecProbe runs the declared argv directly — no shell, so nothing in the
-// config is interpreted as a pipeline, redirect or expansion.
 func runExecProbe(ctx context.Context, command []string) probeResult {
 	ctx, cancel := context.WithTimeout(ctx, probeTimeout)
 	defer cancel()
@@ -284,8 +262,6 @@ func runExecProbe(ctx context.Context, command []string) probeResult {
 	return res
 }
 
-// outputTail returns the last probeOutputLimit bytes of an exec probe's output:
-// failures report at the end.
 func outputTail(out []byte) string {
 	if len(out) > probeOutputLimit {
 		out = out[len(out)-probeOutputLimit:]
@@ -321,8 +297,6 @@ func probeResourceRow(spec probeSpec, res probeResult) *models.ServiceComponentH
 	}
 
 	details := map[string]any{"probe": detail}
-	// A failing probe is the reason a component went bad, so it also travels as
-	// a diagnosis — that is the copy the evaluator puts on a transition.
 	if res.health != healthHealthy {
 		details["diagnosis"] = map[string]any{"probe": detail}
 	}
@@ -342,9 +316,6 @@ func probeResourceRow(spec probeSpec, res probeResult) *models.ServiceComponentH
 	}
 }
 
-// probeSpecsFor maps a component's declared probes onto executable specs. One
-// that cannot be built becomes an unresolved spec reporting unknown with the
-// reason, rather than being silently skipped.
 func probeSpecsFor(c *models.ServiceRunnerInstallComponent) []probeSpec {
 	if c == nil || len(c.Probes) == 0 {
 		return nil
@@ -358,8 +329,6 @@ func probeSpecsFor(c *models.ServiceRunnerInstallComponent) []probeSpec {
 
 		kind := strings.ToLower(strings.TrimSpace(p.Type))
 
-		// Checked before validity, or an exec probe whose argv still holds a
-		// template would run with a literal "{{...}}" as input.
 		var (
 			spec probeSpec
 			ok   bool
@@ -390,7 +359,6 @@ func probeSpecsFor(c *models.ServiceRunnerInstallComponent) []probeSpec {
 	return specs
 }
 
-// unresolvedProbeReason explains in the vendor's terms why a probe cannot run.
 func unresolvedProbeReason(p *models.ServiceRunnerComponentProbe) string {
 	target := strings.TrimSpace(p.URL)
 	if strings.Contains(target, "{{") || anyTemplated(p.Command) {
@@ -409,8 +377,6 @@ func unresolvedProbeReason(p *models.ServiceRunnerComponentProbe) string {
 	}
 }
 
-// probeTargetsResolved reports whether every templated value in the probe was
-// substituted before it reached the runner.
 func probeTargetsResolved(p *models.ServiceRunnerComponentProbe) bool {
 	return !strings.Contains(p.URL, "{{") && !anyTemplated(p.Command)
 }

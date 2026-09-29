@@ -39,6 +39,6 @@ else
   echo >&2 "swagger spec unchanged, skipping client generation"
 fi
 
-# No mockgen step, unlike nuon-go/nuon-runner-go: mock.go is gitignored repo-wide,
+# why: No mockgen step, unlike nuon-go/nuon-runner-go: mock.go is gitignored repo-wide,
 # so the golang/mock require would reach the terraform provider's module graph to
 # support a file that is never committed. Client has two methods; hand-fake it.

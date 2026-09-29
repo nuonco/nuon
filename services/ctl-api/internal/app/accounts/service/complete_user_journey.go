@@ -38,7 +38,6 @@ func (s *service) CompleteUserJourney(ctx *gin.Context) {
 		return
 	}
 
-	// Delegate business logic to private method
 	updatedAccount, err := s.completeUserJourney(ctx, account.ID, journeyName)
 	if err != nil {
 		ctx.Error(err)
@@ -49,13 +48,11 @@ func (s *service) CompleteUserJourney(ctx *gin.Context) {
 }
 
 func (s *service) completeUserJourney(ctx *gin.Context, accountID string, journeyName string) (*app.Account, error) {
-	// Get full account with user journeys
 	fullAccount, err := s.getAccount(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Find the specified journey and complete all steps
 	found := false
 	updated := false
 
@@ -79,7 +76,6 @@ func (s *service) completeUserJourney(ctx *gin.Context, accountID string, journe
 		}
 	}
 
-	// Save if we found and updated any steps
 	if updated {
 		if err := s.db.WithContext(ctx).Select("user_journeys").Save(fullAccount).Error; err != nil {
 			return nil, fmt.Errorf("unable to complete user journey '%s': %w", journeyName, err)

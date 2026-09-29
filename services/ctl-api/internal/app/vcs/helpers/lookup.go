@@ -15,7 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
-// LookupVCSConnection returns the org VCS connection for the GitHub account that
+// why: LookupVCSConnection returns the org VCS connection for the GitHub account that
 // owns the repository. Public repositories must still use that owner connection
 // rather than the first installation whose token can read the repo.
 func (h *Helpers) LookupVCSConnection(ctx context.Context,

@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// TestCreateAppPoliciesConfig tests the CreateAppPoliciesConfig endpoint.
 func (s *AppConfigTypesTestSuite) TestCreateAppPoliciesConfig() {
 	testCases := []struct {
 		name         string

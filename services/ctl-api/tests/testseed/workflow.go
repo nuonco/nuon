@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// WorkflowOption allows overriding defaults when creating a Workflow.
 type WorkflowOption func(*app.Workflow)
 
 func WithWorkflowStatus(status app.CompositeStatus) WorkflowOption {
@@ -29,7 +28,6 @@ func WithWorkflowCreatedAt(createdAt time.Time) WorkflowOption {
 	return func(w *app.Workflow) { w.CreatedAt = createdAt }
 }
 
-// CreateWorkflow persists a Workflow owned by the given install.
 func (s *Seeder) CreateWorkflow(ctx context.Context, t *testing.T, installID string, workflowType app.WorkflowType, opts ...WorkflowOption) *app.Workflow {
 	wf := &app.Workflow{
 		OwnerID:        installID,
@@ -46,7 +44,6 @@ func (s *Seeder) CreateWorkflow(ctx context.Context, t *testing.T, installID str
 	return wf
 }
 
-// WorkflowStepOption allows overriding defaults when creating a WorkflowStep.
 type WorkflowStepOption func(*app.WorkflowStep)
 
 func WithStepStatus(status app.CompositeStatus) WorkflowStepOption {
@@ -69,7 +66,6 @@ func WithStepGroup(groupID string) WorkflowStepOption {
 	return func(s *app.WorkflowStep) { s.WorkflowStepGroupID = groupID }
 }
 
-// CreateWorkflowStep persists a WorkflowStep for the given workflow.
 func (s *Seeder) CreateWorkflowStep(ctx context.Context, t *testing.T, workflowID string, opts ...WorkflowStepOption) *app.WorkflowStep {
 	step := &app.WorkflowStep{
 		InstallWorkflowID: workflowID,
@@ -83,7 +79,7 @@ func (s *Seeder) CreateWorkflowStep(ctx context.Context, t *testing.T, workflowI
 	}
 	tx := s.db.WithContext(ctx)
 	if step.WorkflowStepGroupID == "" {
-		// The column has an FK to workflow_step_groups; an empty string
+		// why: The column has an FK to workflow_step_groups; an empty string
 		// violates it, so ungrouped steps must insert NULL.
 		tx = tx.Omit("workflow_step_group_id")
 	}
@@ -92,7 +88,6 @@ func (s *Seeder) CreateWorkflowStep(ctx context.Context, t *testing.T, workflowI
 	return step
 }
 
-// CreateWorkflowStepGroup persists a WorkflowStepGroup for the given workflow.
 func (s *Seeder) CreateWorkflowStepGroup(ctx context.Context, t *testing.T, workflowID string) *app.WorkflowStepGroup {
 	group := &app.WorkflowStepGroup{
 		WorkflowID: workflowID,
@@ -104,7 +99,6 @@ func (s *Seeder) CreateWorkflowStepGroup(ctx context.Context, t *testing.T, work
 	return group
 }
 
-// CreateWorkflowStepApproval persists a WorkflowStepApproval for the given step.
 func (s *Seeder) CreateWorkflowStepApproval(ctx context.Context, t *testing.T, stepID string, approvalType app.WorkflowStepApprovalType, contents string) *app.WorkflowStepApproval {
 	approval := &app.WorkflowStepApproval{
 		InstallWorkflowStepID: stepID,

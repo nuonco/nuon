@@ -51,7 +51,6 @@ func (s *service) RefreshInstallHealthClusterAccess(ctx *gin.Context) {
 		return
 	}
 
-	// An empty body is valid: it means "use the default role".
 	var req RefreshInstallHealthClusterAccessRequest
 	if ctx.Request.ContentLength > 0 {
 		if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -93,7 +92,6 @@ func (s *service) refreshHealthClusterAccess(ctx context.Context, orgID, install
 		return nil, fmt.Errorf("unable to marshal cluster info: %w", err)
 	}
 
-	// Keep the sandbox releases the runner discovered; only access is derived.
 	update := app.Install{
 		ComponentHealthContext: app.ComponentHealthContext{
 			ClusterInfoJSON:     string(raw),

@@ -81,12 +81,8 @@ func Parse(obj any) ([]Ref, error) {
 	return result, nil
 }
 
-// NOTE(jm): this was the fastest way to build out a list of all references, however long term we would like to switch
-// to use an AST to identify all references in a "smarter" and less-brittle way.
-//
-// https://pkg.go.dev/text/template/parse
 func ParseFieldRefs(inputVar string) []Ref {
-	// Order matters: more-specific patterns (workflows, legacy install.* paths) run first.
+	// why: Order matters: more-specific patterns (workflows, legacy install.* paths) run first.
 	orderedPatterns := []struct {
 		refType RefType
 		pattern string

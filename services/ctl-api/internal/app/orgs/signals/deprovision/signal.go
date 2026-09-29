@@ -47,7 +47,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	if len(org.Apps) > 0 {
-		// Check if any apps have installs — installs must be forgotten first
 		for _, a := range org.Apps {
 			if len(a.Installs) > 0 {
 				s.updateStatus(ctx, app.OrgStatusError, "cannot deprovision: apps have installs that must be forgotten first")
@@ -59,7 +58,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			}
 		}
 
-		// No installs — safe to delete apps as part of org deprovision
 		l := workflow.GetLogger(ctx)
 		s.updateStatus(ctx, app.OrgStatusDeprovisioning, "deprovisioning: deleting all apps")
 		for _, a := range org.Apps {
@@ -77,7 +75,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			}
 		}
 
-		// Wait for all apps to be deleted before proceeding
 		if err := s.pollAppsDeleted(ctx); err != nil {
 			return err
 		}

@@ -18,7 +18,6 @@ func (w *workspace) ShowPlan(ctx context.Context, log hclog.Logger) (*tfjson.Pla
 }
 
 func (w *workspace) showPlan(ctx context.Context, client Terraform) (*tfjson.Plan, error) {
-	// NOTE: takes the tf plan and returns a json serializable *struct
 	out, err := client.ShowPlanFile(ctx, "tfplan")
 	if err != nil {
 		return nil, fmt.Errorf("unable to execute show: %w", err)

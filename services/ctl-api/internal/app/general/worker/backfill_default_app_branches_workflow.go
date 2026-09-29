@@ -14,25 +14,14 @@ import (
 )
 
 const (
-	// caps apps per run so workflow history stays bounded across a fleet-wide backfill.
 	defaultAppBranchesPerRun = 200
 
-	// a permanently broken app must not hold the rest of the fleet for the
-	// activity's 24h schedule-to-close default.
 	defaultAppBranchAttempts = 3
 	defaultAppBranchTimeout  = 5 * time.Minute
 
-	// keeps the progress query readable when a whole class of apps fails.
 	defaultAppBranchMaxFailedIDs = 50
 )
 
-// BackfillDefaultAppBranches gives every app the `default` branch and
-// all-installs group that `nuon apps sync` otherwise creates lazily on its first
-// run under default-app-branches, so flipping the flag does not make the next
-// sync of each app a migration.
-//
-// One app failing is counted rather than fatal: a fleet-wide backfill that stops
-// at the first bad app leaves the rest unmigrated with nothing to show for it.
 func (w *Workflows) BackfillDefaultAppBranches(ctx workflow.Context, req defaultappbranches.Request) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {

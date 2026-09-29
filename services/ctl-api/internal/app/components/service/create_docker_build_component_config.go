@@ -100,7 +100,6 @@ func (s *service) CreateAppDockerBuildComponentConfig(ctx *gin.Context) {
 		return
 	}
 
-	// reuse the same logic as non-app scoped endpoint
 	s.CreateDockerBuildComponentConfig(ctx)
 }
 

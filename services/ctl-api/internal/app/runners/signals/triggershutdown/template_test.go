@@ -17,7 +17,6 @@ func TestTemplateDecode(t *testing.T) {
 	require.Equal(t, "runacme", sig.RunnerID)
 	require.Equal(t, "rpracme", sig.ProcessID)
 
-	// legacy template stored before process_id existed
 	var legacy signaldb.SignalData
 	require.NoError(t, json.Unmarshal([]byte(`{"type":"trigger_shutdown","data":{"runner_id":"runacme","process_type":"install"}}`), &legacy))
 	require.Equal(t, "", legacy.Signal.(*Signal).ProcessID)

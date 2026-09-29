@@ -113,7 +113,6 @@ func (s *orgsIntegrationTestSuite) TestUpdateOrg() {
 		require.Equal(t, *updateReq.Name, org.Name)
 		require.Equal(t, seedOrg.ID, org.ID)
 
-		// fetch org
 		fetchedOrg, err := s.apiClient.GetOrg(s.ctx)
 		require.NoError(t, err)
 		require.NotNil(t, fetchedOrg)
@@ -181,22 +180,6 @@ func (s *orgsIntegrationTestSuite) TestCreateOrgInvite() {
 		require.Len(t, invites, 1)
 	})
 }
-
-// func (s *orgsIntegrationTestSuite) TestGetRunnerGroup() {
-// fakeReq := s.fakeOrgRequest()
-
-// seedOrg, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
-// require.NoError(s.T(), err)
-// require.NotNil(s.T(), seedOrg)
-// s.apiClient.SetOrgID(seedOrg.ID)
-
-//s.T().Run("success", func(t *testing.T) {
-//grp, err := s.apiClient.GetOrgRunnerGroup(s.ctx)
-//require.NoError(t, err)
-//require.NotEmpty(t, grp.Runners)
-//require.NotEmpty(t, grp.Settings)
-//})
-//}
 
 func (s *orgsIntegrationTestSuite) TestDeleteOrg() {
 	fakeReq := s.fakeOrgRequest()

@@ -60,15 +60,13 @@ func (h *HeartBeater) writeHeartBeat(ctx context.Context) error {
 		return err
 	}
 
-	// ey: How does this work on the runner side? Do we have a ddog agent running?
-	// does this add noise for the api side metric?
 	h.mw.Incr("runner.heart_beat", tags)
 	h.mw.Timing("runner.heart_beat.alive_time", aliveDur, tags)
 	return nil
 }
 
 func (h *HeartBeater) loop(ctx context.Context) {
-	// Smear initial heartbeat across the interval window so concurrent runners
+	// why: Smear initial heartbeat across the interval window so concurrent runners
 	// don't sync up and pile up requests on the API every interval. After the
 	// initial offset, ticks fire at exact intervals.
 	if h.settings.HeartBeatTimeout > 0 {
@@ -92,7 +90,7 @@ func (h *HeartBeater) loop(ctx context.Context) {
 
 		h.l.Info("recording heart beat")
 
-		// Bound each heartbeat write so a hung HTTP request (e.g. a stalled
+		// why: Bound each heartbeat write so a hung HTTP request (e.g. a stalled
 		// HTTP/2 stream where http.DefaultTransport has no
 		// ResponseHeaderTimeout) cannot park the loop forever and silently
 		// stop heartbeats from reaching the API.

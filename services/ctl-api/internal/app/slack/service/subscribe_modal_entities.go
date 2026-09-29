@@ -8,23 +8,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// The action_id constants for the subscribe modal's per-resource-kind
+// why: The action_id constants for the subscribe modal's per-resource-kind
 // multi_external_select pickers (subscribeEntitiesActionIDInstalls /
 // subscribeEntitiesActionIDComponents / subscribeEntitiesActionIDActions)
 // are declared in subscribe_modal.go alongside the modal's other Block-Kit
 // identifiers; this file only references them so the dispatcher and the
 // modal cannot drift.
 
-// resolveSubscribeSuggestionOrgLink decodes the modal state from
-// private_metadata, re-verifies the workspace TeamID, reads the
-// currently-selected org link from the in-flight render state, and
-// re-checks that link is still verified for the workspace. Returns the
-// resolved trusted SlackOrgLink or false if the request should be
-// rejected with an empty options list (state mismatch, missing org
-// link, link revoked since the modal opened).
-//
-// Centralising this lets the components/actions handlers share the
-// install handler's exact trust derivation without copy-pasting it.
 func (s *service) resolveSubscribeSuggestionOrgLink(
 	ctx context.Context,
 	payload slackInteractionPayload,
@@ -61,16 +51,8 @@ func (s *service) resolveSubscribeSuggestionOrgLink(
 	return link, true
 }
 
-// suggestionOptionsMaxResults caps option lists at Slack's
-// external_select limit. Shared with the install handler.
 const suggestionOptionsMaxResults = 100
 
-// buildSuggestionOptions formats a list of (id, name) pairs into the
-// Slack {options:[...]} body shape used by all entity-search
-// block_suggestion handlers. Each label is the bare entity name (not
-// "Name (id)") — entities are commonly addressed by name in the modal
-// preview and the picker's selection round-trips the id via "value".
-// truncatePlainText caps to Slack's 75-byte plain_text limit.
 func buildSuggestionOptions(items []suggestionItem) map[string]any {
 	options := make([]any, 0, len(items))
 	for _, it := range items {
@@ -82,14 +64,12 @@ func buildSuggestionOptions(items []suggestionItem) map[string]any {
 	return map[string]any{"options": options}
 }
 
-// suggestionItem is the projection both DB queries return — the modal
-// only needs id (option value) and name (option label).
 type suggestionItem struct {
 	ID   string
 	Name string
 }
 
-// handleSubscribeModalAppsBlockSuggestion serves the app picker's
+// why: handleSubscribeModalAppsBlockSuggestion serves the app picker's
 // external_select dynamic options. The app picker is only rendered when
 // the user has chosen a kind that scopes to an app (components /
 // actions); selecting an app re-renders the entity picker against that
@@ -129,14 +109,6 @@ func (s *service) handleSubscribeModalAppsBlockSuggestion(
 	return buildSuggestionOptions(items)
 }
 
-// resolveSubscribeSuggestionApp re-derives the trusted SlackOrgLink and
-// then verifies the user-selected app id (from the in-flight render
-// state) belongs to the link's org. Returns the trusted link, the
-// matched app, and ok=true. ok=false signals the picker should respond
-// with an empty options list (no app chosen yet, app vanished, app
-// belongs to another org). Used by the components / actions entity
-// pickers, which must constrain results to the chosen app rather than
-// scanning the whole org.
 func (s *service) resolveSubscribeSuggestionApp(
 	ctx context.Context,
 	payload slackInteractionPayload,
@@ -160,11 +132,6 @@ func (s *service) resolveSubscribeSuggestionApp(
 	return link, a, true
 }
 
-// handleSubscribeModalComponentsBlockSuggestion serves the components
-// picker's external_select dynamic options. Components belong to an app,
-// so the picker is scoped to the user-selected app. The trusted org
-// boundary is enforced in resolveSubscribeSuggestionApp by checking the
-// app's org_id against the SlackOrgLink's org_id.
 func (s *service) handleSubscribeModalComponentsBlockSuggestion(
 	ctx context.Context,
 	payload slackInteractionPayload,
@@ -198,9 +165,6 @@ func (s *service) handleSubscribeModalComponentsBlockSuggestion(
 	return buildSuggestionOptions(items)
 }
 
-// handleSubscribeModalAppBranchesBlockSuggestion serves the app branches
-// picker's external_select dynamic options. App branches belong to an app,
-// so the picker is scoped to the user-selected app.
 func (s *service) handleSubscribeModalAppBranchesBlockSuggestion(
 	ctx context.Context,
 	payload slackInteractionPayload,
@@ -234,11 +198,6 @@ func (s *service) handleSubscribeModalAppBranchesBlockSuggestion(
 	return buildSuggestionOptions(items)
 }
 
-// handleSubscribeModalActionsBlockSuggestion serves the actions picker's
-// external_select dynamic options. Action workflows belong to an app, so
-// the picker is scoped to the user-selected app. resolveSubscribeSuggestionApp
-// already validated the app's org against the trusted SlackOrgLink, so a
-// straight WHERE app_id=? lookup is safe.
 func (s *service) handleSubscribeModalActionsBlockSuggestion(
 	ctx context.Context,
 	payload slackInteractionPayload,

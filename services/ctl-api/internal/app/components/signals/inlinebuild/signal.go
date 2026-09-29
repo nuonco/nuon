@@ -26,13 +26,11 @@ import (
 
 type Signal struct {
 	ComponentID string `json:"component_id" validate:"required"`
-	BuildID     string `json:"build_id"` // optional; if set, skip build creation and trigger pre-created build
+	BuildID     string `json:"build_id"`
 
-	// Optional VCS pinning: caller resolves these before creating the signal.
 	GitRef                *string `json:"git_ref,omitempty"`
 	VCSConnectionCommitID *string `json:"vcs_connection_commit_id,omitempty"`
 
-	// Step context injected by the flow engine via SignalWithStepContext.
 	FlowID string `json:"flow_id,omitempty"`
 	StepID string `json:"step_id,omitempty"`
 }
@@ -61,7 +59,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Phase 1: Create build record (if not pre-created).
 	buildID := s.BuildID
 	if buildID == "" {
 		cmp, err := activities.AwaitGetComponentByComponentID(ctx, s.ComponentID)
@@ -81,11 +78,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		buildID = build.ID
 	}
 
-	// Phase 2: Execute build inline (no queue hop).
 	return s.execBuild(ctx, buildID)
 }
 
-// execBuild runs the full build lifecycle inline.
 func (s *Signal) execBuild(ctx workflow.Context, buildID string) error {
 	s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusPlanning, "creating build plan")
 
@@ -139,16 +134,11 @@ func (s *Signal) execBuild(ctx workflow.Context, buildID string) error {
 		return err
 	}
 
-	// A component is activated asynchronously by its `created` signal. During a
-	// sync burst the build can be enqueued before that signal commits the active
-	// status, so wait for the activation signal to finish before checking status
-	// rather than racing it and hard-failing.
 	if err := queueclient.EnsureQueueSignal(ctx, comp.ID, "components", created.SignalType); err != nil {
 		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "component activation not ready")
 		return notify(fmt.Errorf("component activation not ready: %w", err))
 	}
 
-	// Re-fetch to observe the status committed by the activation signal.
 	comp, err = activities.AwaitGetComponentByComponentID(ctx, s.ComponentID)
 	if err != nil {
 		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component")
@@ -160,7 +150,6 @@ func (s *Signal) execBuild(ctx workflow.Context, buildID string) error {
 		return notify(fmt.Errorf("component is not active"))
 	}
 
-	// Get full component with org/runner preloads.
 	fullComp, err := activities.AwaitGetComponent(ctx, activities.GetComponentRequest{
 		ComponentID: s.ComponentID,
 	})
@@ -226,7 +215,6 @@ func (s *Signal) execBuild(ctx workflow.Context, buildID string) error {
 		return notify(fmt.Errorf("unable to save runner job plan: %w", err))
 	}
 
-	// Execute the build job.
 	s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusBuilding, "building")
 	err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: runnerJob.ID}, &workflow.ChildWorkflowOptions{
 		WorkflowID: fmt.Sprintf("control-plane-%s-execute-job-%s", fullComp.ID, runnerJob.ID),
@@ -240,7 +228,6 @@ func (s *Signal) execBuild(ctx workflow.Context, buildID string) error {
 	return nil
 }
 
-// updateBuildStatus updates the build status.
 func (s *Signal) updateBuildStatus(ctx workflow.Context, bldID string, status app.ComponentBuildStatus, statusDescription string) {
 	l := workflow.GetLogger(ctx)
 	err := activities.AwaitUpdateBuildStatus(ctx, activities.UpdateBuildStatus{

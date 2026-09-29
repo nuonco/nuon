@@ -79,9 +79,6 @@ func (s *service) RemoveInstallLabels(ctx *gin.Context) {
 	}
 	remaining.RemoveKeys(req.Keys)
 
-	// Dropping a label can widen which groups on the branch match, so the same
-	// one-group-per-install rule applies here as on add. It never changes which
-	// branch owns the install.
 	if err := s.appsHelpers.ValidateInstallLabelsSingleGroup(ctx, &install, remaining); err != nil {
 		ctx.Error(err)
 		return

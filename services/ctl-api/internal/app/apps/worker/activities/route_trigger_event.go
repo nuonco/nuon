@@ -213,11 +213,6 @@ func (a *Activities) RouteTriggerEvent(ctx context.Context, req RouteTriggerEven
 	return resp, nil
 }
 
-// routeTriggerEventReplay evaluates the event against the currently active
-// rules and creates replay-scoped dispatches. It never mutates the original
-// event's routing record: the ledger row permanently describes initial
-// routing, while replay outcomes are observable through dispatch rows
-// carrying the replay ID.
 func (a *Activities) routeTriggerEventReplay(ctx context.Context, req RouteTriggerEventRequest) (*RouteTriggerEventResponse, error) {
 	resp := &RouteTriggerEventResponse{}
 	err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -321,8 +316,6 @@ func createRuleDispatch(tx *gorm.DB, event *app.TriggerEvent, rule *app.TriggerR
 	return &persisted, nil
 }
 
-// ensureDispatchQueues guarantees the per-app trigger queues exist before the
-// trigger-event signal fans dispatches out to them.
 func (a *Activities) ensureDispatchQueues(ctx context.Context, dispatches []TriggerEventDispatchRef) error {
 	ensured := make(map[string]struct{}, len(dispatches))
 	for _, dispatch := range dispatches {

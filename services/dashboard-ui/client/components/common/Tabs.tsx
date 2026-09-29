@@ -15,8 +15,6 @@ import './Tabs.css'
 interface ITabs extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   initActiveTab?: string
   tabs: Record<string, ReactNode>
-  // Overrides a tab's label. Otherwise derived from the key, which lowercases
-  // everything after the first character.
   tabLabels?: Record<string, string>
   tabsClassName?: string
   tabControlsClassName?: string
@@ -113,7 +111,6 @@ export const Tabs = ({
       resizeObserver.current.disconnect()
     }
 
-    // Wait for TransitionDiv to complete its transition (155ms + small buffer)
     heightMeasurementTimeout.current = setTimeout(() => {
       updateHeight()
 

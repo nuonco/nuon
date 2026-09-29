@@ -51,23 +51,17 @@ type ConfigFileDefinition struct {
 }
 
 type ConfigDirectoryDefinition struct {
-	Name string
-	// configFiles
+	Name    string
 	Configs []ConfigFileDefinition
 }
 
 type ConfigStructure struct {
-	Name string
-	// config files
-	Configs []ConfigFileDefinition
-	// directory containing config files
+	Name              string
+	Configs           []ConfigFileDefinition
 	ConfigDirectories []ConfigDirectoryDefinition
-	// non-config files written verbatim (e.g. README.md)
-	RawFiles []RawFileDefinition
+	RawFiles          []RawFileDefinition
 }
 
-// RawFileDefinition is a plain file written to the config root as-is, without
-// TOML encoding or a schema directive.
 type RawFileDefinition struct {
 	Name     string
 	Contents string
@@ -82,10 +76,8 @@ func NewConfigStructure(name string) ConfigStructure {
 }
 
 func (c *ConfigStructure) AddDirectoryFile(dirName string, cfd ConfigFileDefinition) error {
-	// Find the directory
 	for i := range c.ConfigDirectories {
 		if c.ConfigDirectories[i].Name == dirName {
-			// Check if file with same name already exists
 			for _, existingConfig := range c.ConfigDirectories[i].Configs {
 				if existingConfig.Name == cfd.Name {
 					return fmt.Errorf("config file '%s' already exists in directory '%s'", cfd.Name, dirName)
@@ -96,7 +88,6 @@ func (c *ConfigStructure) AddDirectoryFile(dirName string, cfd ConfigFileDefinit
 		}
 	}
 
-	// If directory doesn't exist, create it
 	c.ConfigDirectories = append(c.ConfigDirectories, ConfigDirectoryDefinition{
 		Name:    dirName,
 		Configs: []ConfigFileDefinition{cfd},
@@ -119,7 +110,6 @@ func (c *ConfigStructure) AddFile(cfd ConfigFileDefinition, overwrite bool) erro
 	return nil
 }
 
-// updates the config in the structure
 func (c *ConfigStructure) UpdateConfig(cfd ConfigFileDefinition) error {
 	return c.AddFile(cfd, true)
 }
@@ -137,7 +127,6 @@ func (c *ConfigStructure) AddComponent(cfd ConfigFileDefinition) error {
 		}
 
 		if comp != nil {
-			// map component type to schema header based on config/schema/types.go
 			switch comp.Type {
 			case config.TerraformModuleComponentType:
 				cfd.Header = "terraform"
@@ -168,7 +157,6 @@ func (c *ConfigStructure) AddPermission(cfd ConfigFileDefinition) error {
 	return c.AddDirectoryFile("permissions", cfd)
 }
 
-// UpdateInputs updates the inputs.toml configuration
 func (c *ConfigStructure) UpdateInputs(cfg *config.AppInputConfig) error {
 	return c.UpdateConfig(ConfigFileDefinition{
 		Header: "inputs",
@@ -182,7 +170,6 @@ func (c *ConfigStructure) UpdateInputs(cfg *config.AppInputConfig) error {
 	})
 }
 
-// UpdateSandbox updates the sandbox.toml configuration
 func (c *ConfigStructure) UpdateSandbox(cfg *config.AppSandboxConfig) error {
 	return c.UpdateConfig(ConfigFileDefinition{
 		Header: "sandbox",
@@ -195,7 +182,6 @@ func (c *ConfigStructure) UpdateSandbox(cfg *config.AppSandboxConfig) error {
 	})
 }
 
-// UpdateStack updates the stack.toml configuration
 func (c *ConfigStructure) UpdateStack(cfg *config.StackConfig) error {
 	return c.UpdateConfig(ConfigFileDefinition{
 		Header: "stack",
@@ -208,7 +194,6 @@ func (c *ConfigStructure) UpdateStack(cfg *config.StackConfig) error {
 	})
 }
 
-// UpdateRunner updates the runner.toml configuration
 func (c *ConfigStructure) UpdateRunner(cfg *config.AppRunnerConfig) error {
 	return c.UpdateConfig(ConfigFileDefinition{
 		Header: "runner",
@@ -221,7 +206,6 @@ func (c *ConfigStructure) UpdateRunner(cfg *config.AppRunnerConfig) error {
 	})
 }
 
-// UpdatePolicies updates the policies.toml configuration
 func (c *ConfigStructure) UpdatePolicies(cfg *config.PoliciesConfig) error {
 	return c.UpdateConfig(ConfigFileDefinition{
 		Header: "policies",
@@ -235,7 +219,6 @@ func (c *ConfigStructure) UpdatePolicies(cfg *config.PoliciesConfig) error {
 	})
 }
 
-// UpdateBreakGlass updates the break_glass.toml configuration
 func (c *ConfigStructure) UpdateBreakGlass(cfg *config.BreakGlass) error {
 	return c.UpdateConfig(ConfigFileDefinition{
 		Header: "break-glass",
@@ -248,7 +231,6 @@ func (c *ConfigStructure) UpdateBreakGlass(cfg *config.BreakGlass) error {
 	})
 }
 
-// UpdateSecrets updates the secrets.toml configuration
 func (c *ConfigStructure) UpdateSecrets(cfg *config.SecretsConfig) error {
 	return c.UpdateConfig(ConfigFileDefinition{
 		Header: "secrets",
@@ -262,7 +244,6 @@ func (c *ConfigStructure) UpdateSecrets(cfg *config.SecretsConfig) error {
 	})
 }
 
-// UpdateInstaller updates the installer.toml configuration
 func (c *ConfigStructure) UpdateInstaller(cfg *config.InstallerConfig) error {
 	return c.UpdateConfig(ConfigFileDefinition{
 		Header: "installer",
@@ -275,7 +256,6 @@ func (c *ConfigStructure) UpdateInstaller(cfg *config.InstallerConfig) error {
 	})
 }
 
-// UpdateMetadata updates the metadata.toml configuration
 func (c *ConfigStructure) UpdateMetadata(cfg *config.MetadataConfig) error {
 	return c.UpdateConfig(ConfigFileDefinition{
 		Header: "metadata",
@@ -293,7 +273,6 @@ func DefaultAppConfigConfigStructure(name string) *ConfigStructure {
 
 	return &ConfigStructure{
 		Name: name,
-		// Root-level config files
 		Configs: []ConfigFileDefinition{
 			{
 				Name: "metadata.toml",
@@ -397,7 +376,6 @@ func DefaultAppConfigConfigStructure(name string) *ConfigStructure {
 				},
 			},
 		},
-		// Subdirectories with their config files
 		ConfigDirectories: []ConfigDirectoryDefinition{
 			{
 				Name: "input_groups",

@@ -71,7 +71,6 @@ func (s *DeleteTerraformWorkspaceTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes (needs org context)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -128,7 +127,6 @@ func (s *DeleteTerraformWorkspaceTestSuite) TestDeleteTerraformWorkspace() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(workspaceID string) {
-				// Verify workspace is deleted (soft delete)
 				var ws app.TerraformWorkspace
 				err := s.service.DB.Where("id = ?", workspaceID).First(&ws).Error
 				assert.Error(s.T(), err)
@@ -148,7 +146,6 @@ func (s *DeleteTerraformWorkspaceTestSuite) TestDeleteTerraformWorkspace() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -161,7 +158,6 @@ func (s *DeleteTerraformWorkspaceTestSuite) TestDeleteTerraformWorkspace() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create workspace in org2
 				ws2 := &app.TerraformWorkspace{
 					ID:        domains.NewTerraformWorkspaceID(),
 					OrgID:     org2.ID,
@@ -180,7 +176,6 @@ func (s *DeleteTerraformWorkspaceTestSuite) TestDeleteTerraformWorkspace() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(workspaceID string) {
-				// Verify workspace still exists (wasn't deleted)
 				var ws app.TerraformWorkspace
 				err := s.service.DB.Unscoped().Where("id = ?", workspaceID).First(&ws).Error
 				require.NoError(s.T(), err)
@@ -202,7 +197,6 @@ func (s *DeleteTerraformWorkspaceTestSuite) TestDeleteTerraformWorkspace() {
 				err := s.service.DB.WithContext(ctx).Create(ws).Error
 				require.NoError(s.T(), err)
 
-				// Create associated state
 				state := &app.TerraformWorkspaceState{
 					ID:                   domains.NewTerraformWorkspaceStateID(),
 					OrgID:                s.testOrg.ID,
@@ -220,12 +214,10 @@ func (s *DeleteTerraformWorkspaceTestSuite) TestDeleteTerraformWorkspace() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(workspaceID string) {
-				// Verify workspace is soft-deleted (not visible in normal query)
 				var ws app.TerraformWorkspace
 				err := s.service.DB.Where("id = ?", workspaceID).First(&ws).Error
 				assert.Error(s.T(), err)
 
-				// Associated states are NOT cascade-deleted (handler only deletes workspace)
 				var states []app.TerraformWorkspaceState
 				err = s.service.DB.Where("terraform_workspace_id = ?", workspaceID).Find(&states).Error
 				require.NoError(s.T(), err)

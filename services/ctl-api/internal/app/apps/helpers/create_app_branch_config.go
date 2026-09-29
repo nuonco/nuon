@@ -13,16 +13,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
-// IgnoreChangesSettings carries the ignore-changes fields through config
-// creation. A nil pointer on either field means "carry the previous config's
-// value forward", matching how the rest of this helper treats omitted input.
 type IgnoreChangesSettings struct {
 	Regex                *string
 	SendStatusesOnIgnore *bool
 }
 
-// ValidateIgnoreChangesRegex rejects patterns Go's regexp engine cannot compile
-// so a bad expression fails at config time rather than mid-run.
 func ValidateIgnoreChangesRegex(pattern string) error {
 	if pattern == "" {
 		return nil
@@ -59,11 +54,6 @@ func (h *Helpers) CreateAppBranchConfig(
 	return config, err
 }
 
-// withDefaultInstallGroup guarantees every config has somewhere for installs to
-// land. A branch block that declares no install_groups, or an API caller that
-// sends none, would otherwise produce a config where no install resolves to a
-// group. Callers that declare groups must mark one default themselves; that is
-// validated before it reaches here.
 func WithDefaultInstallGroup(groups []app.AppBranchInstallGroup) []app.AppBranchInstallGroup {
 	if len(groups) > 0 {
 		return groups
@@ -75,7 +65,7 @@ func WithDefaultInstallGroup(groups []app.AppBranchInstallGroup) []app.AppBranch
 	}}
 }
 
-// Callers inside a transaction must use this, or the app_branch_id FK fails.
+// why: Callers inside a transaction must use this, or the app_branch_id FK fails.
 func (h *Helpers) CreateAppBranchConfigWithDB(
 	ctx context.Context,
 	db *gorm.DB,
@@ -122,10 +112,6 @@ func (h *Helpers) CreateAppBranchConfigWithDB(
 		return nil, fmt.Errorf("unable to load previous app branch config: %w", res.Error)
 	}
 
-	// Each call mints a new config row, and several callers (deployment plan
-	// editor, branch rename, install branch connection) legitimately know nothing
-	// about post-deploy runbooks. A nil slice therefore means "carry forward"; an
-	// explicitly empty one means "clear".
 	if postDeployRunbookIDs != nil {
 		config.PostDeployRunbookIDs = pq.StringArray(*postDeployRunbookIDs)
 	} else if hasPrevious {
@@ -171,9 +157,6 @@ func (h *Helpers) CreateAppBranchConfigWithDB(
 	return &config, nil
 }
 
-// validatePostDeployRunbooks rejects runbook IDs that don't belong to the branch's
-// app. Every caller passes through here, so a bad ID fails at config time rather
-// than mid-rollout.
 func (h *Helpers) validatePostDeployRunbooks(ctx context.Context, db *gorm.DB, appBranchID string, runbookIDs []string) error {
 	var branch app.AppBranch
 	if err := db.WithContext(ctx).First(&branch, "id = ?", appBranchID).Error; err != nil {

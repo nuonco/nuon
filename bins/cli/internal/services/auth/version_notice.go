@@ -8,9 +8,6 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-// printVersionNotice reports a CLI/control-plane version mismatch after login. Both are
-// promoted from the same release stream, so a difference is normal and only worth
-// mentioning once, at the point the user picks a control plane.
 func (a *Service) printVersionNotice(ctx context.Context) {
 	if version.IsDev() {
 		return

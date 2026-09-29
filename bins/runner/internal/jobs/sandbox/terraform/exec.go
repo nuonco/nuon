@@ -28,8 +28,6 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return err
 	}
 
-	// Tag this handler's logger with semantic-convention attributes so every
-	// emitted record (including from terraform-run helpers below) carries them.
 	tfWorkspaceID := ""
 	if p.state.plan != nil && p.state.plan.TerraformBackend != nil {
 		tfWorkspaceID = p.state.plan.TerraformBackend.WorkspaceID
@@ -49,7 +47,6 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return errors.Wrap(err, "unable to write policies")
 	}
 
-	// Load Plan Bytes
 	var planBytes []byte
 	if len(p.state.plan.ApplyPlanContents) > 0 {
 		b64EncodedContent := p.state.plan.ApplyPlanContents
@@ -61,7 +58,6 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		planBytes = []byte{}
 	}
 
-	// get the right workspace
 	var wkspace workspace.Workspace
 	if len(planBytes) > 0 {
 		l.Info("the plan has ApplyPlanContents, intializing workspace with plan", zap.Int("plan.bytes.count", len(planBytes)))
@@ -81,12 +77,10 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		zap.String("root", wkspace.Root()),
 	)
 
-	// initialize
 	if err := wkspace.InitRoot(ctx); err != nil {
 		return errors.Wrap(err, "unable to initialize root")
 	}
 
-	// assign workspace
 	p.state.tfWorkspace = wkspace
 
 	tfRun, err := run.New(p.v, run.WithWorkspace(wkspace),
@@ -160,9 +154,6 @@ func (p *handler) updateTerraformState(ctx context.Context, wkspace workspace.Wo
 		return fmt.Errorf("unable to show state: %w", err)
 	}
 
-	// Share the sandbox's helm releases and cluster access with the
-	// component-health engine, so it can surface sandbox infra (authoritatively,
-	// from the tf state) and report even before the first component deploy.
 	if p.clusterProvider != nil {
 		p.clusterProvider.SetSandboxReleases(sandboxHelmReleaseNames(state))
 		if ci := sandboxClusterInfo(p.state.plan, state); ci != nil {
@@ -184,9 +175,6 @@ func (p *handler) updateTerraformState(ctx context.Context, wkspace workspace.Wo
 	return nil
 }
 
-// sandboxClusterInfo builds a ClusterInfo from the sandbox's `cluster` output and
-// the plan's cloud-auth — the same inputs ctl-api uses for deploy plans. Returns
-// nil when the sandbox emits no cluster output (non-k8s sandboxes).
 func sandboxClusterInfo(plan *plantypes.SandboxRunPlan, state *tfjson.State) *kube.ClusterInfo {
 	if plan == nil || state == nil || state.Values == nil {
 		return nil
@@ -218,8 +206,6 @@ func sandboxClusterInfo(plan *plantypes.SandboxRunPlan, state *tfjson.State) *ku
 	return ci
 }
 
-// sandboxHelmReleaseNames walks the sandbox terraform state and returns the
-// names of every helm_release resource it manages.
 func sandboxHelmReleaseNames(state *tfjson.State) []string {
 	if state == nil || state.Values == nil || state.Values.RootModule == nil {
 		return nil
@@ -248,10 +234,8 @@ func sandboxHelmReleaseNames(state *tfjson.State) []string {
 	return names
 }
 
-// NOTE: createJobExecutionResultRequest is only called in cases when there _is_ a plan. otherwise, we don't really need a result object.
-// as a result, we're handling the loading of the plan.json within createJobExecutionResultRequest
 func (p *handler) createJobExecutionResultRequest(ctx context.Context, wkspace workspace.Workspace, hlog hclog.Logger) error {
-	// NOTE(fd): the tfplan is already a gzip directory so we do not want to gzip it again.
+	// why: the tfplan is already a gzip directory so we do not want to gzip it again.
 	// read the tfplan into b64 bytes.
 	planBytes, err := wkspace.GetTfplan(ctx, hlog)
 	if err != nil {
@@ -267,7 +251,6 @@ func (p *handler) createJobExecutionResultRequest(ctx context.Context, wkspace w
 	}
 	hlog.Info("plan json", zap.Int("bytes", len(planJsonBytes)))
 	planJsonBytesB64 := base64.URLEncoding.EncodeToString(planJsonBytes)
-	// create the result object
 	_, err = p.apiClient.CreateJobExecutionResult(ctx, p.state.jobID, p.state.jobExecutionID, &models.ServiceCreateRunnerJobExecutionResultRequest{
 		Success:                   true,
 		ContentsCompressed:        planBytesB64,
@@ -277,6 +260,5 @@ func (p *handler) createJobExecutionResultRequest(ctx context.Context, wkspace w
 		return fmt.Errorf("unable to create terraform apply job execution result : %w", err)
 	}
 
-	// return nil
 	return nil
 }

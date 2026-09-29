@@ -45,10 +45,8 @@ func (m middleware) shouldTriggerWithProbability() bool {
 		return true
 	}
 
-	// Generate random float from 0.0 to 1.0
 	randomFloat := rand.Float64()
 
-	// Convert percentage to decimal probability
 	probability := float64(percentage) / 100.0
 
 	return randomFloat <= probability
@@ -76,7 +74,6 @@ func (m middleware) Handler() gin.HandlerFunc {
 		if len(m.allowedRoutes) > 0 {
 			route := strings.ToLower(ctx.Request.Method) + "_" + ctx.FullPath()
 			if _, ok := m.allowedRoutes[route]; !ok {
-				// route not in allowed list
 				ctx.Next()
 				return
 			}
@@ -98,7 +95,6 @@ func (m middleware) Handler() gin.HandlerFunc {
 
 		allowedErrors := m.GetAllowedErrors()
 
-		// Chaos triggered! Select random error type
 		errorTypes := make([]string, 0, len(allowedErrors))
 		for errorType := range allowedErrors {
 			errorTypes = append(errorTypes, errorType)
@@ -106,7 +102,6 @@ func (m middleware) Handler() gin.HandlerFunc {
 
 		selectedError := errorTypes[rand.IntN(len(errorTypes))]
 
-		// Execute the selected error
 		m.errors[selectedError](ctx, m.l)
 	}
 }

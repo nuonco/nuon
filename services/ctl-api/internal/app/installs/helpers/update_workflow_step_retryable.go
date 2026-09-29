@@ -12,8 +12,6 @@ type UpdateInstallWorkflowStepRetry struct {
 	StepID string `validate:"required"`
 }
 
-// UpdateInstallWorkflowStepRetry updates the retry status of an install workflow step.
-// This makes the step non retryable for next attempts.
 func (h *Helpers) UpdateInstallWorkflowStepRetry(ctx context.Context, req UpdateInstallWorkflowStepRetry) error {
 	step := app.WorkflowStep{
 		ID: req.StepID,

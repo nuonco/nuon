@@ -29,8 +29,6 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 
 	l.Info("starting policy evaluation", zap.String("build_id", buildID))
 
-	// Check if any container image policies exist BEFORE fetching metadata
-	// This avoids expensive runner job + OCI registry calls when no policies are configured
 	policyCheckResult, err := activities.AwaitCheckContainerImagePoliciesExist(ctx, &activities.CheckContainerImagePoliciesExistRequest{
 		BuildID: buildID,
 	})
@@ -67,7 +65,6 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		return fmt.Errorf("unable to get log stream ID: %w", err)
 	}
 
-	// Create a fetch-image-metadata job on the control plane
 	metadataJob, err := activities.AwaitCreateFetchImageMetadataJob(ctx, &activities.CreateFetchImageMetadataJobRequest{
 		BuildID:     buildID,
 		LogStreamID: logStreamID,
@@ -83,7 +80,6 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		return fmt.Errorf("unable to create metadata job: %w", err)
 	}
 
-	// Save the job plan
 	if err := activities.AwaitSaveFetchImageMetadataPlan(ctx, &activities.SaveFetchImageMetadataPlanRequest{
 		JobID:   metadataJob.ID,
 		BuildID: buildID,
@@ -93,7 +89,6 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		return fmt.Errorf("unable to save metadata job plan: %w", err)
 	}
 
-	// Execute the job (queue and poll for completion)
 	w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusPlanning, "fetching image metadata")
 	err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: metadataJob.ID}, &workflow.ChildWorkflowOptions{
 		WorkflowID: fmt.Sprintf("%s-fetch-image-metadata", workflow.GetInfo(ctx).WorkflowExecution.ID),
@@ -104,7 +99,6 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		return fmt.Errorf("unable to fetch image metadata: %w", err)
 	}
 
-	// Get the metadata from the job result
 	metadataResult, err := activities.AwaitGetImageMetadataFromJobResult(ctx, &activities.GetImageMetadataFromJobResultRequest{
 		JobID: metadataJob.ID,
 	})
@@ -131,7 +125,6 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 
 	l.Info("evaluating policies", zap.Int("policy_count", len(prepResult.Policies)))
 
-	// Execute all policy evaluations in parallel using futures
 	ao := workflow.ActivityOptions{
 		StartToCloseTimeout:    1*time.Minute + 30*time.Second,
 		ScheduleToCloseTimeout: 2 * time.Minute,
@@ -151,7 +144,6 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		futures = append(futures, fut)
 	}
 
-	// Collect all violations from parallel evaluations
 	var allViolations []sharedactivities.PolicyViolation
 	evaluationFailed := false
 	for _, fut := range futures {
@@ -258,10 +250,6 @@ func (w *Workflows) recordComponentPolicyEvaluationFailure(ctx workflow.Context,
 
 const maxDescriptionLength = 500
 
-// shouldFetchImageMetadataForPolicy is the gate in front of the
-// fetch-image-metadata job. Sandbox orgs cannot reach vendor registries, and
-// fake metadata would still fail typical deny policies (signature/SBOM), so
-// we skip the fetch and the rest of policy eval together.
 func shouldFetchImageMetadataForPolicy(hasPolicies, orgSandbox bool) bool {
 	return hasPolicies && !orgSandbox
 }

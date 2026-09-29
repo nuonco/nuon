@@ -46,7 +46,6 @@ func (s *service) RunCell(ctx *gin.Context) {
 	}
 
 	var req RunCellRequest
-	// body is optional
 	_ = ctx.ShouldBindJSON(&req)
 	if err := s.v.Struct(&req); err != nil {
 		ctx.Error(fmt.Errorf("invalid request: %w", err))
@@ -75,8 +74,6 @@ func (s *service) RunCell(ctx *gin.Context) {
 		return
 	}
 
-	// Reload the cell run (created by the workflow) so the response carries the
-	// full record, including the log stream once the workflow records it.
 	var run app.NotebookCellRun
 	if res := s.db.WithContext(ctx).
 		First(&run, "id = ?", resp.NotebookCellRunID); res.Error != nil {

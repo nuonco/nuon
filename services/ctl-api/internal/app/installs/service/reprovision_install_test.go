@@ -22,7 +22,7 @@ func (s *InstallsServiceTestSuite) TestReprovisionInstallSuccess() {
 
 	captured := tests.GetQueueSignals(s.T(), s.deps.DB)
 	require.Len(s.T(), captured, 1)
-	_ = captured[0] // signal type check via .Type
+	_ = captured[0]
 
 	assert.Equal(s.T(), "ExecuteFlow-type", string(captured[0].Type))
 }

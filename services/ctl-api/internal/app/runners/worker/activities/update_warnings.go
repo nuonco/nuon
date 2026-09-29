@@ -35,7 +35,6 @@ func (a *Activities) UpdateWarnings(ctx context.Context, req UpdateWarningsReque
 		return fmt.Errorf("no runner found: %s %w", req.RunnerID, gorm.ErrRecordNotFound)
 	}
 
-	// Merge is_alias_tag into the runner's status_v2 metadata.
 	if err := generics.MergeJSONBMetadata(a.db.WithContext(ctx), &app.Runner{}, req.RunnerID, "status_v2", map[string]any{
 		"is_alias_tag": req.IsAliasTag,
 	}); err != nil {

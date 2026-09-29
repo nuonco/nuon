@@ -1,9 +1,6 @@
-// Package allsignals imports all signal packages to trigger their init() registrations
-// into the signal catalog. Import this package in any binary that needs the full catalog.
 package allsignals
 
 import (
-	// apps signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/appconfigsync"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/appconfigsynced"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/addinstall"
@@ -36,12 +33,10 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/triggereventdispatch"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/updatesandbox"
 
-	// general signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/bulk_cancel_workflows"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/promotion"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/slack_auto_link"
 
-	// components signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/build"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/configcreated"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/created"
@@ -53,7 +48,6 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/restart"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/updatecomponenttype"
 
-	// installs signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/actionworkflowrun"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appbranchchanged"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appconfigupdated"
@@ -105,12 +99,10 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/workflowstepapprovalrequest"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/workflowstepapprovalresponse"
 
-	// onboarding signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/create_app"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/create_install"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/create_org"
 
-	// orgs signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/clear_org_queues"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/created"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/delete"
@@ -132,7 +124,6 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/restart_runners"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/terminate_workflows"
 
-	// runners signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/created"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/delete"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/flushorphanedjobs"
@@ -161,12 +152,10 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/updatetag"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/updateversion"
 
-	// vcs signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/github_event"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/healthcheck"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/webhook_subscription"
 
-	// flow signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstep"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstepgroup"

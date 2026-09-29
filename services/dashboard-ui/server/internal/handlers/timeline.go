@@ -42,9 +42,6 @@ func timelineQuery(c *gin.Context) (limit, offset int) {
 	return limit, offset
 }
 
-// timelineFetcher adapts a paginated fetch into an sseStreamConfig.Fetch
-// emitting a single timelinePayload event. A 404 becomes an empty payload
-// rather than an error.
 func timelineFetcher(eventName string, fetch func(ctx context.Context) (any, bool, error)) func(context.Context) (sseFetchResult, error) {
 	return func(ctx context.Context) (sseFetchResult, error) {
 		data, hasNext, err := fetch(ctx)

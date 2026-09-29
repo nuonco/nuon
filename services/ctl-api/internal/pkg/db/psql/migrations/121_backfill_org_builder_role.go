@@ -13,9 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
-// orgBuilderComponentBuildsObject preserves the permission key format the
-// org_builder policies used, so migrations 121/122 stay byte-for-byte
-// reproducible now that the live authz code no longer has the concept.
 func orgBuilderComponentBuildsObject(orgID string) string {
 	return orgID + ":component_builds"
 }

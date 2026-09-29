@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// GetAppRunbook retrieves a runbook by name or ID for an app.
 func (c *client) GetAppRunbook(ctx context.Context, appID, nameOrID string) (*models.AppRunbook, error) {
 	resp, err := c.genClient.Operations.GetRunbook(&operations.GetRunbookParams{
 		AppID:     appID,
@@ -23,7 +22,6 @@ func (c *client) GetAppRunbook(ctx context.Context, appID, nameOrID string) (*mo
 	return resp.Payload, nil
 }
 
-// CreateRunbook creates a new runbook for an app.
 func (c *client) CreateRunbook(ctx context.Context, appID string, req *models.ServiceCreateRunbookRequest) (*models.AppRunbook, error) {
 	resp, err := c.genClient.Operations.CreateRunbook(&operations.CreateRunbookParams{
 		AppID:   appID,
@@ -36,7 +34,6 @@ func (c *client) CreateRunbook(ctx context.Context, appID string, req *models.Se
 	return resp.Payload, nil
 }
 
-// UpdateRunbook updates a runbook.
 func (c *client) UpdateRunbook(ctx context.Context, runbookID string, req *models.ServiceUpdateRunbookRequest) (*models.AppRunbook, error) {
 	resp, err := c.genClient.Operations.UpdateRunbook(&operations.UpdateRunbookParams{
 		AppID:     "_",
@@ -50,7 +47,6 @@ func (c *client) UpdateRunbook(ctx context.Context, runbookID string, req *model
 	return resp.Payload, nil
 }
 
-// CreateRunbookConfig creates a new config for a runbook.
 func (c *client) CreateRunbookConfig(ctx context.Context, runbookID string, req *models.ServiceCreateRunbookConfigRequest) (*models.AppRunbookConfig, error) {
 	resp, err := c.genClient.Operations.CreateRunbookConfig(&operations.CreateRunbookConfigParams{
 		AppID:     "_",
@@ -64,7 +60,6 @@ func (c *client) CreateRunbookConfig(ctx context.Context, runbookID string, req 
 	return resp.Payload, nil
 }
 
-// GetInstallRunbooks retrieves all runbooks for an install.
 func (c *client) GetInstallRunbooks(ctx context.Context, installID string) ([]*models.AppInstallRunbook, error) {
 	resp, err := c.genClient.Operations.GetInstallRunbooks(&operations.GetInstallRunbooksParams{
 		InstallID: installID,
@@ -76,7 +71,6 @@ func (c *client) GetInstallRunbooks(ctx context.Context, installID string) ([]*m
 	return resp.Payload, nil
 }
 
-// GetInstallRunbook retrieves a single install runbook.
 func (c *client) GetInstallRunbook(ctx context.Context, installID, runbookID string) (*models.AppInstallRunbook, error) {
 	resp, err := c.genClient.Operations.GetInstallRunbook(&operations.GetInstallRunbookParams{
 		InstallID: installID,
@@ -89,7 +83,6 @@ func (c *client) GetInstallRunbook(ctx context.Context, installID, runbookID str
 	return resp.Payload, nil
 }
 
-// GetInstallRunbookRuns lists runbook runs for an install, optionally filtered by runbook ID or name.
 func (c *client) GetInstallRunbookRuns(ctx context.Context, installID, runbookIDOrName string, query *models.GetPaginatedQuery) ([]*models.AppInstallRunbookRun, bool, error) {
 	params := &operations.GetInstallRunbookRunsParams{
 		InstallID: installID,
@@ -110,7 +103,6 @@ func (c *client) GetInstallRunbookRuns(ctx context.Context, installID, runbookID
 	return resp.Payload, hasNextPage(hr), nil
 }
 
-// GetInstallRunbookRun retrieves a single runbook run on an install.
 func (c *client) GetInstallRunbookRun(ctx context.Context, installID, runID string) (*models.AppInstallRunbookRun, error) {
 	resp, err := c.genClient.Operations.GetInstallRunbookRun(&operations.GetInstallRunbookRunParams{
 		InstallID: installID,
@@ -123,7 +115,6 @@ func (c *client) GetInstallRunbookRun(ctx context.Context, installID, runID stri
 	return resp.Payload, nil
 }
 
-// CreateInstallRunbookRun triggers a runbook run on an install.
 func (c *client) CreateInstallRunbookRun(ctx context.Context, installID, runbookID string) (*models.AppInstallRunbookRun, error) {
 	var result models.AppInstallRunbookRun
 	path := fmt.Sprintf(

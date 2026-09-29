@@ -96,17 +96,12 @@ func (s *service) getInstallHealthTimeline(ctx context.Context, orgID, installID
 		return nil, fmt.Errorf("unable to list install components: %w", err)
 	}
 
-	// windowFrom anchors the calendar-day buckets; spanFrom clamps to the
-	// health baseline for uptime. Folding the daily grid from spanFrom instead
-	// would shift bucket boundaries by the baseline's time of day.
 	windowFrom, to := healthWindow(time.Now(), days)
 	baseline, err := s.healthBaseline(ctx, orgID, installID)
 	if err != nil {
 		return nil, err
 	}
 	if baseline.IsZero() {
-		// No explicit reset: start from the first verdict this install ever
-		// produced, so enabling the feature doesn't read as 90 days of downtime.
 		firstSeen, err := s.firstHealthObservedAt(ctx, orgID, installID)
 		if err != nil {
 			return nil, err
@@ -161,9 +156,6 @@ func (s *service) getInstallHealthTimeline(ctx context.Context, orgID, installID
 
 	currentHealth, _ := app.CompositeComponentHealthStatus(statuses)
 
-	// Best-effort: the cluster-access reason is context on top of the timeline,
-	// never a reason to fail it. Blanking the whole health view because one
-	// column could not be read would be far worse than omitting the banner.
 	var install app.Install
 	if err := s.db.WithContext(ctx).
 		Select("id", "health_cluster_error").

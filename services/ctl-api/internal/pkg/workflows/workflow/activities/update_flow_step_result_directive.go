@@ -12,7 +12,7 @@ import (
 
 type UpdateFlowStepResultDirectiveRequest struct {
 	StepID    string `validate:"required"`
-	Directive string // empty string is valid (used to clear the directive)
+	Directive string
 }
 
 // @temporal-gen-v2 activity

@@ -43,7 +43,7 @@ type localCallbackOption func(*localCallback) error
 type localCallback struct {
 	v        *validator.Validate
 	Filename string `validate:"required"`
-	Compress bool   // if we should ADDITIONALLY gzip
+	Compress bool
 }
 
 // TODO(fd): this should likely be a standalone mapper to avoid overloading this method

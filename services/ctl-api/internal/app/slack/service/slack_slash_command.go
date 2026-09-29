@@ -15,21 +15,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// slashResponseTypeEphemeral is the response_type Slack honors for
-// "only the invoking user can see this message" replies.
 const slashResponseTypeEphemeral = "ephemeral"
 
-// defaultSlashCommand is the fallback command name used when Slack's payload
-// is missing the `command` field (malformed / replayed requests). Real slash
-// POSTs always carry the actual invoked command.
 const defaultSlashCommand = "/nuon"
 
-// slashHelpText renders the canonical help shown for `<command> help` and
-// unknown subcommands. command is the actual invoked slash command from the
-// Slack payload (e.g. "/nuon", or a workspace-custom name like
-// "/byoc-acme-dev"), so the examples match exactly what the user types.
-// Kept as a single string (vs. block-kit) since the slash command surface is
-// intentionally thin in v1; richer affordances live in the dashboard.
 func slashHelpText(command string) string {
 	return "*Nuon Slack commands*\n" +
 		"`" + command + " subscribe`" + " — subscribe this channel to Nuon events (opens a dialog)\n" +
@@ -71,17 +60,12 @@ func (s *service) SlackSlashCommand(ctx *gin.Context) {
 	triggerID := ctx.PostForm("trigger_id")
 	text := strings.TrimSpace(ctx.PostForm("text"))
 
-	// command is the actual invoked slash command (e.g. "/nuon" or a
-	// workspace-custom name); we echo it back in help so examples match what
-	// the user types. Falls back to the canonical name if Slack omits it.
 	command := strings.TrimSpace(ctx.PostForm("command"))
 	if command == "" {
 		command = defaultSlashCommand
 	}
 
 	if teamID == "" || channelID == "" || userID == "" {
-		// Slack is malformed or replayed; respond OK with an ephemeral
-		// hint so the user sees something rather than a Slack-side error.
 		respondSlash(ctx, "Sorry — that command was missing required Slack metadata.")
 		return
 	}
@@ -102,11 +86,6 @@ func (s *service) SlackSlashCommand(ctx *gin.Context) {
 	}
 }
 
-// handleSlashSubscribe always opens the subscribe modal so the user can pick
-// the org, scope, and per-resource filters — symmetric with /nuon unsubscribe.
-// We still verify the workspace has an active installation and at least one
-// verified org link before opening the modal, so the user gets a useful
-// ephemeral message rather than an empty modal in the misconfigured case.
 func (s *service) handleSlashSubscribe(
 	ctx *gin.Context,
 	teamID, channelID, channelName, slackUserID, triggerID string,
@@ -140,17 +119,9 @@ func (s *service) handleSlashSubscribe(
 	}
 
 	if triggerID == "" {
-		// No trigger_id from Slack means we can't open a modal. This
-		// should never happen with a real slash command POST, but
-		// guard so we return something useful instead of opaque-failing.
 		respondSlash(ctx, "Sorry — Slack didn't send a trigger id. Try the command again.")
 		return
 	}
-	// Pre-populate the modal from this channel's most recently updated
-	// existing subscription (if any) so re-running /nuon subscribe doesn't
-	// throw away the user's prior org / scope / install / event-filter
-	// selections. With no existing sub this returns the zero value and the
-	// modal renders its default empty state.
 	preselect := s.preselectSubscribeRenderStateForChannel(ctx, teamID, channelID)
 	if err := s.openSubscribeModalForSlash(ctx, triggerID, teamID, channelID, channelName, slackUserID, preselect); err != nil {
 		s.l.Error("slash subscribe: open modal failed", zap.Error(err),
@@ -158,21 +129,11 @@ func (s *service) handleSlashSubscribe(
 		respondSlash(ctx, "Sorry — couldn't open the subscribe dialog. Please try again.")
 		return
 	}
-	// Modal opens; reply with an empty 200 so Slack doesn't render an
-	// extra ephemeral message in the channel.
 	ctx.Status(http.StatusOK)
 }
 
-// handleSlashUnsubscribe always opens the unsubscribe modal so the user can
-// see (and selectively remove) every active subscription targeting this
-// channel — across orgs and scopes.
-//
-// The modal renders an empty-state message when nothing is subscribed, so
-// users still get visual confirmation that the command worked.
 func (s *service) handleSlashUnsubscribe(ctx *gin.Context, teamID, channelID, channelName, triggerID string) {
 	if triggerID == "" {
-		// Defensive: real Slack POSTs always include trigger_id. Tell the
-		// user to retry instead of silently failing.
 		respondSlash(ctx, "Sorry — Slack didn't send a trigger id. Try the command again.")
 		return
 	}
@@ -182,15 +143,9 @@ func (s *service) handleSlashUnsubscribe(ctx *gin.Context, teamID, channelID, ch
 		respondSlash(ctx, "Sorry — couldn't open the unsubscribe dialog. Please try again.")
 		return
 	}
-	// Modal opens; reply with empty 200 so Slack doesn't render an extra
-	// ephemeral message in-channel.
 	ctx.Status(http.StatusOK)
 }
 
-// handleSlashStatus reports — ephemerally — what Nuon knows about this
-// workspace and channel: whether the installation is active, which Nuon orgs
-// the workspace is linked to, and whether this channel has any active
-// subscriptions. Read-only and safe to invoke from any channel.
 func (s *service) handleSlashStatus(ctx *gin.Context, teamID, channelID string) {
 	var install app.SlackInstallation
 	res := s.db.WithContext(ctx).
@@ -247,9 +202,6 @@ func (s *service) handleSlashStatus(ctx *gin.Context, teamID, channelID string) 
 		fmt.Fprintf(&b, "• <#%s> subscription: none\n", channelID)
 	} else {
 		fmt.Fprintf(&b, "• <#%s> subscriptions (%d):\n", channelID, len(subs))
-		// Index linked orgs for name lookup; subs may reference an
-		// org_link that's no longer verified, in which case we fall back
-		// to the org id stored on the sub itself.
 		orgNameByLinkID := make(map[string]string, len(links))
 		for _, l := range links {
 			if l.Org.Name != "" {
@@ -263,9 +215,6 @@ func (s *service) handleSlashStatus(ctx *gin.Context, teamID, channelID string) 
 			if !ok {
 				name = sub.OrgID
 			}
-			// describeMatch lives in subscribe_modal.go; the unsubscribe
-			// modal uses the same helper so the two surfaces show
-			// identical scope tags.
 			scopeTag := describeMatch(sub.Match)
 			filter := "specific events"
 			if sub.Interests.AllEvents {
@@ -278,10 +227,6 @@ func (s *service) handleSlashStatus(ctx *gin.Context, teamID, channelID string) 
 	respondSlash(ctx, strings.TrimRight(b.String(), "\n"))
 }
 
-// contextWithInstallerAccount resolves the SlackInstallation's installer
-// account and stamps it on the context so BeforeCreate hooks can populate
-// CreatedByID for slash-command-originated writes (which have no
-// dashboard-authenticated account).
 func (s *service) contextWithInstallerAccount(ctx context.Context, teamID string) (context.Context, error) {
 	var install app.SlackInstallation
 	if err := s.db.WithContext(ctx).
@@ -298,9 +243,6 @@ func (s *service) contextWithInstallerAccount(ctx context.Context, teamID string
 	return cctx.SetAccountContext(ctx, &acct), nil
 }
 
-// splitSubcommand parses the leading subcommand token from `text`. Slack
-// passes everything after the slash command as a single string; we split on
-// whitespace so `subscribe foo bar` returns ("subscribe", "foo bar").
 func splitSubcommand(text string) (string, string) {
 	t := strings.TrimSpace(text)
 	if t == "" {
@@ -314,7 +256,6 @@ func splitSubcommand(text string) (string, string) {
 	return cmd, ""
 }
 
-// respondSlash writes an ephemeral Slack slash-command response.
 func respondSlash(ctx *gin.Context, text string) {
 	ctx.JSON(http.StatusOK, slashResponse{
 		ResponseType: slashResponseTypeEphemeral,

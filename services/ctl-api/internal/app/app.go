@@ -84,10 +84,6 @@ type App struct {
 
 	ConfigRepo      string `json:"config_repo,omitzero" temporaljson:"config_repo,omitzero,omitempty"`
 	ConfigDirectory string `json:"config_directory,omitzero" temporaljson:"config_directory,omitzero,omitempty"`
-
-	// PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:AppConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitzero,omitempty" temporaljson:"public_git_vcs_config,omitzero,omitempty"`
-	// ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:AppConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitzero,omitempty" temporaljson:"connected_github_vcs_config,omitzero,omitempty"`
-	// VCSConnectionType        VCSConnectionType         `json:"-" gorm:"-" temporaljson:"vcs_connection_type,omitzero,omitempty"`
 }
 
 func (a *App) TableName() string {

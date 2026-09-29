@@ -32,7 +32,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// AdminDeprovisionOrgTestService holds all fx-injected dependencies for admin deprovision org tests.
 type AdminDeprovisionOrgTestService struct {
 	fx.In
 
@@ -47,7 +46,6 @@ type AdminDeprovisionOrgTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// AdminDeprovisionOrgTestSuite is the testify suite for AdminDeprovisionOrg endpoint.
 type AdminDeprovisionOrgTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -77,7 +75,6 @@ func (s *AdminDeprovisionOrgTestSuite) SetupSuite() {
 
 			CustomValidator: true,
 		}),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -85,7 +82,6 @@ func (s *AdminDeprovisionOrgTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -93,10 +89,6 @@ func (s *AdminDeprovisionOrgTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
-
-	// Create test router with standard middlewares
-	// AdminDeprovisionOrg is an admin endpoint, no org context needed
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -231,7 +223,7 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 
 				return org
 			},
-			requestBody:    map[string]interface{}{}, // Empty JSON object
+			requestBody:    map[string]interface{}{},
 			expectedCode:   http.StatusOK,
 			validateSignal: true,
 			expectedType:   string(orgdeprovision.SignalType),
@@ -239,7 +231,6 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 		{
 			name: "returns error when org_id not found",
 			setupFunc: func() *app.Org {
-				// Return non-existent org
 				return &app.Org{
 					ID:          domains.NewOrgID(),
 					Name:        "non-existent-org",
@@ -313,12 +304,8 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test data
 			org := tc.setupFunc()
 
-			// Reset mock before test
-
-			// Make request
 			path := fmt.Sprintf("/v1/orgs/%s/admin-deprovision", org.ID)
 			rr := s.makeRequest(http.MethodPost, path, tc.requestBody)
 
@@ -327,7 +314,6 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 			}
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
-			// Validate signal was sent (or not sent)
 			if tc.validateSignal {
 				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
@@ -335,12 +321,10 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 				signal := signals[0]
 				assert.Equal(s.T(), org.ID, signal.OwnerID, "signal should be sent to correct org ID")
 
-				// Type assert to get the actual signal
-				_ = signal // type check via .Type
+				_ = signal
 
 				assert.Equal(s.T(), tc.expectedType, string(signal.Type), "signal type should match expected")
 
-				// Parse response body to verify it returns true
 				if rr.Code == http.StatusOK {
 					var result bool
 					err := json.Unmarshal(rr.Body.Bytes(), &result)
@@ -378,7 +362,6 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrgSignalTypes() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Create org for this test
 			ctx := context.Background()
 			ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
@@ -397,16 +380,12 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrgSignalTypes() {
 				s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 			})
 
-			// Reset mock
-
-			// Make request
 			path := fmt.Sprintf("/v1/orgs/%s/admin-deprovision", org.ID)
 			req := AdminDeprovisionOrgRequest{Force: tc.force}
 			rr := s.makeRequest(http.MethodPost, path, req)
 
 			require.Equal(s.T(), http.StatusOK, rr.Code)
 
-			// Validate signal type
 			signals := tests.GetQueueSignals(s.T(), s.service.DB)
 			require.Len(s.T(), signals, 1)
 			assert.Equal(s.T(), tc.expectedType, string(signals[0].Type))
@@ -415,7 +394,6 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrgSignalTypes() {
 }
 
 func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrgDoesNotModifyDatabase() {
-	// Create org
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
@@ -434,20 +412,15 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrgDoesNotModifyDatab
 		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 	})
 
-	// Store original state
 	originalCreatedAt := org.CreatedAt
 	originalUpdatedAt := org.UpdatedAt
 
-	// Reset mock
-
-	// Make deprovision request
 	path := fmt.Sprintf("/v1/orgs/%s/admin-deprovision", org.ID)
 	req := AdminDeprovisionOrgRequest{Force: false}
 	rr := s.makeRequest(http.MethodPost, path, req)
 
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	// Verify org still exists and unchanged in database
 	var orgAfter app.Org
 	err = s.service.DB.First(&orgAfter, "id = ?", org.ID).Error
 	require.NoError(s.T(), err)

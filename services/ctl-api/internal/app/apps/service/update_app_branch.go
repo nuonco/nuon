@@ -72,7 +72,6 @@ func (s *service) UpdateAppBranch(ctx *gin.Context) {
 		return
 	}
 
-	// Verify branch exists and belongs to this org/app
 	var branch app.AppBranch
 	res := s.db.WithContext(ctx).
 		Where(app.AppBranch{
@@ -85,7 +84,6 @@ func (s *service) UpdateAppBranch(ctx *gin.Context) {
 		return
 	}
 
-	// Check for name uniqueness within the app
 	var existingBranch app.AppBranch
 	res = s.db.WithContext(ctx).
 		Where(app.AppBranch{
@@ -102,7 +100,6 @@ func (s *service) UpdateAppBranch(ctx *gin.Context) {
 		return
 	}
 
-	// Update only the name field
 	branch.Name = req.Name
 	res = s.db.WithContext(ctx).Save(&branch)
 	if res.Error != nil {

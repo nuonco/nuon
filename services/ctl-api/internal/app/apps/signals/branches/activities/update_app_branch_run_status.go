@@ -31,7 +31,6 @@ func (a *Activities) UpdateAppBranchRunStatus(ctx context.Context, req *UpdateAp
 		"status": req.Status,
 	}
 
-	// Set timestamps based on status
 	now := time.Now()
 	switch req.Status {
 	case "running":
@@ -44,7 +43,6 @@ func (a *Activities) UpdateAppBranchRunStatus(ctx context.Context, req *UpdateAp
 		}
 	}
 
-	// Set error message if provided
 	if req.ErrorMessage != "" {
 		updates["error_message"] = req.ErrorMessage
 	}
@@ -53,7 +51,6 @@ func (a *Activities) UpdateAppBranchRunStatus(ctx context.Context, req *UpdateAp
 		return nil, errors.Wrap(err, "unable to update app branch run status")
 	}
 
-	// Reload to get updated values
 	if err := a.db.WithContext(ctx).First(&run, "id = ?", req.RunID).Error; err != nil {
 		return nil, errors.Wrap(err, "unable to reload app branch run")
 	}

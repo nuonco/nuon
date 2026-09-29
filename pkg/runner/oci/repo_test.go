@@ -62,7 +62,7 @@ func TestGetRepoDoesNotShareAuthCache(t *testing.T) {
 	require.NoError(t, secondRepo.Tags(context.Background(), "", func(tags []string) error { return nil }))
 }
 
-// TestGetRepoAnonymousDoesNotUseSharedGlobalClient guards the fix for
+// why: TestGetRepoAnonymousDoesNotUseSharedGlobalClient guards the fix for
 // anonymous/public pulls leaking credentials through oras-go's process-global
 // auth.DefaultClient/auth.DefaultCache. GetRepo must always install an isolated
 // per-repo auth client with its own cache — never leave repo.Client nil (which

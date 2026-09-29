@@ -151,7 +151,6 @@ func (s *service) getDefaultAppBranchesBackfillStatus(ctx context.Context) (*Bac
 
 	encoded, err := s.temporalClient.QueryWorkflowInNamespace(ctx, defaultAppBranchesNamespace, defaultappbranches.WorkflowID, "", defaultappbranches.ProgressQueryType)
 	if err != nil {
-		// progress query is best-effort: a completed run on a closed workflow may not answer queries.
 		return resp, nil
 	}
 

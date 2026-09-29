@@ -7,7 +7,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// repairWorkflowContext restores account/org from the emitter row when the
+// why: repairWorkflowContext restores account/org from the emitter row when the
 // propagated header carried none. Child starts and continue-as-new re-inject
 // headers from this ctx, so an empty header would otherwise persist forever.
 func repairWorkflowContext(ctx workflow.Context, emitter *app.QueueEmitter) workflow.Context {

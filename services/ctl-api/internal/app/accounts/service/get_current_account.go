@@ -27,7 +27,6 @@ func (s *service) GetCurrentAccount(ctx *gin.Context) {
 		return
 	}
 
-	// Get full account with all relations
 	fullAccount, err := s.getAccount(ctx, account.ID)
 	if err != nil {
 		ctx.Error(err)

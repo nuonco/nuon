@@ -14,8 +14,6 @@ import (
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
-// GithubClient defines the GitHub API operations needed by VCS activities.
-// This mirrors helpers.GithubClient to avoid an import cycle.
 type GithubClient interface {
 	GetInstallation(ctx context.Context, installID string) (*github.Installation, error)
 	ListInstallationRepos(ctx context.Context, vcsConn *app.VCSConnection) ([]*github.Repository, error)

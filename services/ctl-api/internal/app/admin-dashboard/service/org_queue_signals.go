@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// OrgQueueSignals returns all queue signals for an org.
 func (s *service) OrgQueueSignals(c *gin.Context) {
 	orgID := c.Param("id")
 
@@ -27,7 +26,6 @@ func (s *service) OrgQueueSignals(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"signals": signals})
 }
 
-// DeleteOrgQueueSignals hard-deletes all queue signals for an org.
 func (s *service) DeleteOrgQueueSignals(c *gin.Context) {
 	orgID := c.Param("id")
 

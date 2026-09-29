@@ -38,10 +38,8 @@ func (s *service) GetOrgInvites(ctx *gin.Context) {
 		return
 	}
 
-	// Get pagination from context (set by middleware)
 	pagination := cctx.OffsetPaginationFromContext(ctx)
 
-	// If no limit query param was provided, use custom default of 60
 	if ctx.Query("limit") == "" && pagination != nil {
 		pagination.Limit = 60
 		cctx.SetOffPaginationGinCtx(ctx, *pagination)

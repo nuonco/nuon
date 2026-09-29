@@ -119,8 +119,6 @@ func (s *service) getInstallDeploy(ctx context.Context, installID, deployID stri
 				zap.String("deploy_id", installDeploy.ID),
 				zap.Error(err))
 		} else {
-			// Keep orchestration-owned errors, but derive runner-owned mirrors from
-			// the latest job so retries can replace or clear stale values.
 			runnerErrorMirrored := installDeploy.CompositeError != nil &&
 				(installDeploy.CompositeError.SourceType == "install_deploys" || installDeploy.CompositeError.SourceType == "runner_jobs")
 			if compositeError != nil || runnerErrorMirrored {

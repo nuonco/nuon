@@ -66,7 +66,6 @@ func (s *service) CompleteYourStackStep(ctx *gin.Context) {
 
 	onboarding.AppType = req.AppType
 
-	// Build the signal with example app fields if applicable
 	sig := &createapp.Signal{
 		OnboardingID: onboarding.ID,
 	}
@@ -98,8 +97,6 @@ func (s *service) CompleteYourStackStep(ctx *gin.Context) {
 		}
 	}
 
-	// Mark step as in-progress; the signal will advance to the next step
-	// after the app is created and config is synced.
 	onboarding.StepStatus = app.OnboardingStepStatusInProgress
 	onboarding.SetCompositeStatus(ctx, app.StatusInProgress)
 
@@ -108,7 +105,6 @@ func (s *service) CompleteYourStackStep(ctx *gin.Context) {
 		return
 	}
 
-	// Get queue and enqueue signal
 	queue, err := s.queueClient.GetDefaultQueueByOwner(ctx, onboarding.ID, plugins.TableName(s.db, app.Onboarding{}))
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get onboarding queue: %w", err))

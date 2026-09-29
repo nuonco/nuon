@@ -35,8 +35,6 @@ func TestFetchControlPlane(t *testing.T) {
 		assert.Equal(t, "0.19.1102", cp.MinCLIForServerSideSync())
 	})
 
-	// Callers only ever inform off this, so an old or unreachable control plane has to
-	// degrade to "no information" rather than an error.
 	t.Run("older control plane without the field", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			_, _ = w.Write([]byte(`{"version":"0.19.1000","git_ref":"0.19.1000"}`))

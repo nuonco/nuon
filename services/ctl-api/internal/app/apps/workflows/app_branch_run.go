@@ -27,14 +27,7 @@ const (
 	setupPreviewHiddenVersion = "app-branch-setup-preview-hidden-v1"
 )
 
-// AppBranchRun builds the workflow steps for an app branch run
-// This workflow orchestrates:
-// 1. Fetching the latest commit from VCS
-// 2. Cloning the repo and parsing the intermediate config
-// 3. Building all components in the config
-// 4. Deploying to install groups in order
 func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
-	// Extract metadata from workflow
 	appBranchID := generics.FromPtrStr(flw.Metadata["app_branch_id"])
 	if appBranchID == "" {
 		return nil, errors.New("app_branch_id not found in workflow metadata")
@@ -54,9 +47,6 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 	skipBuilds := generics.FromPtrStr(flw.Metadata["skip_builds"]) == "true"
 	syncAppConfig := generics.FromPtrStr(flw.Metadata["sync_app_config"]) == "true"
 
-	// Read the run rather than the workflow metadata: only the VCS push path
-	// writes run_type into metadata, so a plan-only run triggered through the
-	// API looked like a full deploy here.
 	run, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, runID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to fetch app branch run")
@@ -126,8 +116,6 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 		steps = append(steps, step)
 
 	case syncAppConfig:
-		// Config was compiled by the caller: nothing to fetch, but it still has
-		// to be synced into database records before the builds step can run.
 		sg.nextGroup()
 		step, err := sg.appBranchSignalStep(ctx, appBranchID, "fetch commit (skipped)", pgtype.Hstore{}, nil)
 		if err != nil {
@@ -147,7 +135,6 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 		steps = append(steps, step)
 
 	default:
-		// Pre-existing app config: skip VCS fetch and config parse
 		sg.nextGroup()
 		step, err := sg.appBranchSignalStep(ctx, appBranchID, "fetch commit (skipped)", pgtype.Hstore{}, nil)
 		if err != nil {
@@ -173,7 +160,6 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 	}
 	steps = append(steps, step)
 
-	// Step 3: Build all components and sandbox
 	if appConfigID != "" && skipBuilds {
 		sg.nextGroup()
 		step, err := sg.appBranchSignalStep(ctx, appBranchID, "building components and sandbox (skipped)", pgtype.Hstore{}, nil)
@@ -193,9 +179,6 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 		steps = append(steps, step)
 	}
 
-	// Preview runs use a synthetic target instead of the branch's deployment
-	// groups. A target is either one install or all installs matching the
-	// preview selector.
 	if isPreview {
 		if run.Preview != nil {
 			previewSelector := run.Preview.ResolvedPreviewConfig.LabelSelector
@@ -288,7 +271,7 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 		}
 		steps = append(steps, deployStep)
 
-		// Only branches that configure post-deploy runbooks get the extra step, so
+		// why: Only branches that configure post-deploy runbooks get the extra step, so
 		// runs that don't use the feature keep the step list they had before.
 		if hasPostDeployRunbooks {
 			sg.nextGroup()

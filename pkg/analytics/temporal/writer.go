@@ -19,8 +19,6 @@ type Writer interface {
 
 var _ Writer = (*writer)(nil)
 
-// TemporalWriter wraps a ContextWriter, and calls it's methods via Temporal's workflow.SideEffect.
-// It's methods accept workflow.Context instead of the standard context.Context.
 type writer struct {
 	v *validator.Validate
 

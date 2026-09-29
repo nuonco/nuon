@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 
-// Default selected actions (all except read and noop)
 const DEFAULT_SELECTED_ACTIONS = new Set([
   'create',
   'update',

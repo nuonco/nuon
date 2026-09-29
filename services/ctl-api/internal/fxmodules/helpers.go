@@ -15,8 +15,6 @@ import (
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 )
 
-// HelpersModule provides all domain-specific helper functions
-// used across different parts of the application.
 var HelpersModule = fx.Module("helpers",
 	fx.Provide(accountshelpers.New),
 	fx.Provide(vcshelpers.New),

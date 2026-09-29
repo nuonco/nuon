@@ -8,9 +8,6 @@ import (
 
 const EnvelopeVersion = 1
 
-// Envelope is the versioned wrapper every Kafka message uses. Payload is left as
-// raw JSON so consumers decode it by Type/Version rather than the producer and
-// consumer sharing a compiled payload type.
 type Envelope struct {
 	Version    int             `json:"version"`
 	Type       string          `json:"type"`
@@ -19,7 +16,6 @@ type Envelope struct {
 	Payload    json.RawMessage `json:"payload"`
 }
 
-// Wrap marshals payload into a versioned envelope stamped with source and type.
 func Wrap(source, typ string, payload any) ([]byte, error) {
 	raw, err := json.Marshal(payload)
 	if err != nil {
@@ -35,7 +31,7 @@ func Wrap(source, typ string, payload any) ([]byte, error) {
 	})
 }
 
-// Unwrap parses an envelope. The caller unmarshals Payload based on Type/Version.
+// why: Unwrap parses an envelope. The caller unmarshals Payload based on Type/Version.
 //
 // Rejects a version newer than EnvelopeVersion, not merely a different one: an
 // older envelope must still pass, since a rolling deploy can have

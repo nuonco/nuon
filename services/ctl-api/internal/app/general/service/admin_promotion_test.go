@@ -44,7 +44,7 @@ func (s *GeneralInternalTestSuite) TestAdminPromotion() {
 		{
 			name:           "fails with missing tag",
 			requestBody:    AdminPromotionRequest{},
-			expectedStatus: http.StatusCreated, // Note: Handler doesn't validate tag, still succeeds
+			expectedStatus: http.StatusCreated,
 			validateFunc: func(tag string) {
 				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.GreaterOrEqual(s.T(), len(capturedSignals), 1, "expected at least one signal to be sent")
@@ -54,9 +54,6 @@ func (s *GeneralInternalTestSuite) TestAdminPromotion() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Reset mock before test
-
-			// Make request
 			rr := s.makeRequest(http.MethodPost, "/v1/general/promotion", tc.requestBody)
 
 			if rr.Code != tc.expectedStatus {
@@ -64,7 +61,6 @@ func (s *GeneralInternalTestSuite) TestAdminPromotion() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Validate signals
 			if tc.validateFunc != nil {
 				tc.validateFunc(tc.requestBody.Tag)
 			}

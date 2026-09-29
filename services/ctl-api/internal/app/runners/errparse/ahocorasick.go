@@ -1,22 +1,12 @@
 package errparse
 
-// ahoCorasick is a compact case-sensitive Aho-Corasick multi-pattern matcher.
-// It compiles a set of patterns once and reports, in a single pass over the
-// text, which patterns are present. This keeps signal gating O(text length)
-// regardless of how many patterns (error signatures) are registered, which is
-// what lets the provider layer grow without bound.
-//
-// It answers only "which patterns are present" (a set), not where, which is all
-// the registry needs to decide which parsers are candidates.
 type ahoCorasick struct {
-	next    []map[byte]int // goto transitions per node
-	fail    []int          // failure links
-	outputs [][]int        // pattern ids that end at each node
-	count   int            // number of patterns
+	next    []map[byte]int
+	fail    []int
+	outputs [][]int
+	count   int
 }
 
-// newAhoCorasick builds a matcher over patterns. Pattern ids are their index in
-// the slice. Empty patterns are ignored (they would match everywhere).
 func newAhoCorasick(patterns []string) *ahoCorasick {
 	ac := &ahoCorasick{
 		next:    []map[byte]int{{}},
@@ -49,9 +39,6 @@ func newAhoCorasick(patterns []string) *ahoCorasick {
 	return ac
 }
 
-// buildFailureLinks wires the failure links via BFS and folds each node's
-// output with its failure target's output so a single lookup at match time
-// yields every pattern ending at that position.
 func (ac *ahoCorasick) buildFailureLinks() {
 	queue := make([]int, 0, len(ac.next))
 	for _, child := range ac.next[0] {
@@ -84,8 +71,6 @@ func (ac *ahoCorasick) buildFailureLinks() {
 	}
 }
 
-// matchedSet returns a boolean slice of length count where index i is true when
-// pattern i occurs in text.
 func (ac *ahoCorasick) matchedSet(text string) []bool {
 	found := make([]bool, ac.count)
 	node := 0

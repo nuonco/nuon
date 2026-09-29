@@ -37,7 +37,6 @@ func (a *Activities) GetComponentOCIRegistryRepository(ctx context.Context, req 
 	switch a.cfg.CloudProvider {
 	case string(app.CloudPlatformGCP):
 		cfg.RegistryType = configs.OCIRegistryTypeGAR
-		// LoginServer is the GAR host (e.g. "us-central1-docker.pkg.dev")
 		if idx := strings.Index(compApp.Repository.RepositoryURI, "/"); idx != -1 {
 			cfg.LoginServer = compApp.Repository.RepositoryURI[:idx]
 		}

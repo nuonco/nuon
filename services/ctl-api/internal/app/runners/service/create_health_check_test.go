@@ -78,7 +78,6 @@ func (s *CreateHealthCheckTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes (no TestOrg/TestAcc needed for runner routes)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -97,7 +96,6 @@ func (s *CreateHealthCheckTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -109,7 +107,6 @@ func (s *CreateHealthCheckTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group settings
 	s.testRunnerGrpSettings = &app.RunnerGroupSettings{
 		ID:                domains.NewRunnerGroupSettingsID(),
 		OrgID:             s.testOrg.ID,
@@ -122,7 +119,6 @@ func (s *CreateHealthCheckTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrpSettings).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -199,7 +195,6 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheck() {
 				assert.Equal(s.T(), runnerID, healthCheck.RunnerID)
 				assert.Equal(s.T(), app.RunnerProcessTypeMng, healthCheck.Process)
 
-				// Verify stored in ClickHouse
 				stored := s.getHealthCheckFromClickHouse(healthCheck.ID)
 				require.NotNil(s.T(), stored)
 				assert.Equal(s.T(), healthCheck.ID, stored.ID)
@@ -220,7 +215,6 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheck() {
 				assert.Equal(s.T(), runnerID, healthCheck.RunnerID)
 				assert.Equal(s.T(), app.RunnerProcessTypeInstall, healthCheck.Process)
 
-				// Verify stored in ClickHouse
 				stored := s.getHealthCheckFromClickHouse(healthCheck.ID)
 				require.NotNil(s.T(), stored)
 				assert.Equal(s.T(), app.RunnerProcessTypeInstall, stored.Process)
@@ -239,7 +233,6 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheck() {
 				assert.Equal(s.T(), runnerID, healthCheck.RunnerID)
 				assert.Equal(s.T(), app.RunnerProcessTypeOrg, healthCheck.Process)
 
-				// Verify stored in ClickHouse
 				stored := s.getHealthCheckFromClickHouse(healthCheck.ID)
 				require.NotNil(s.T(), stored)
 				assert.Equal(s.T(), app.RunnerProcessTypeOrg, stored.Process)
@@ -258,7 +251,6 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheck() {
 				assert.Equal(s.T(), runnerID, healthCheck.RunnerID)
 				assert.Equal(s.T(), app.RunnerProcessTypeUnknown, healthCheck.Process)
 
-				// Verify stored in ClickHouse
 				stored := s.getHealthCheckFromClickHouse(healthCheck.ID)
 				require.NotNil(s.T(), stored)
 				assert.Equal(s.T(), app.RunnerProcessTypeUnknown, stored.Process)
@@ -270,7 +262,6 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheck() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create a new runner for this test
 				runner := &app.Runner{
 					ID:            domains.NewRunnerID(),
 					OrgID:         s.testOrg.ID,
@@ -285,8 +276,6 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheck() {
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(runner)
 				})
-
-				// Create first health check
 				firstReq := CreateRunnerHealthCheckRequest{
 					Process: app.RunnerProcessTypeMng,
 				}
@@ -294,7 +283,6 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheck() {
 				rr := s.makeRequest("POST", path, firstReq)
 				require.Equal(s.T(), http.StatusCreated, rr.Code)
 
-				// Allow ClickHouse eventual consistency for the first health check write
 				time.Sleep(200 * time.Millisecond)
 
 				return runner.ID, CreateRunnerHealthCheckRequest{
@@ -303,10 +291,8 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheck() {
 			},
 			expectedCode: http.StatusCreated,
 			validateFunc: func(healthCheck *app.RunnerHealthCheck, runnerID string) {
-				// Allow ClickHouse eventual consistency for the second health check write
 				time.Sleep(200 * time.Millisecond)
 
-				// Should have 2 health checks for this runner
 				count := s.countHealthChecksInClickHouse(runnerID)
 				assert.Equal(s.T(), 2, count)
 			},
@@ -321,11 +307,9 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheck() {
 			},
 			expectedCode: http.StatusCreated,
 			validateFunc: func(healthCheck *app.RunnerHealthCheck, runnerID string) {
-				// ClickHouse doesn't enforce foreign key constraints
 				assert.NotEmpty(s.T(), healthCheck.ID)
 				assert.Equal(s.T(), runnerID, healthCheck.RunnerID)
 
-				// Verify stored in ClickHouse
 				stored := s.getHealthCheckFromClickHouse(healthCheck.ID)
 				require.NotNil(s.T(), stored)
 			},
@@ -333,12 +317,10 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheck() {
 		{
 			name: "invalid JSON body returns 400",
 			setupFunc: func() (string, CreateRunnerHealthCheckRequest) {
-				// Will be handled specially in test execution
 				return s.testRunner.ID, CreateRunnerHealthCheckRequest{}
 			},
 			expectedCode: http.StatusBadRequest,
 			validateFunc: func(healthCheck *app.RunnerHealthCheck, runnerID string) {
-				// No health check should be created
 			},
 		},
 	}
@@ -349,7 +331,6 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheck() {
 
 			var rr *httptest.ResponseRecorder
 			if tc.name == "invalid JSON body returns 400" {
-				// Send malformed JSON
 				path := fmt.Sprintf("/v1/runners/%s/health-checks", runnerID)
 				reqBody := bytes.NewBuffer([]byte(`{"process": invalid}`))
 				httpReq, err := http.NewRequest("POST", path, reqBody)
@@ -376,7 +357,6 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheck() {
 					tc.validateFunc(&healthCheck, runnerID)
 				}
 			} else {
-				// Error cases should have error in response
 				assert.Contains(s.T(), rr.Body.String(), "error")
 			}
 		})
@@ -441,7 +421,6 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheckProcessValidatio
 				}
 				assert.Equal(s.T(), expectedProcess, healthCheck.Process)
 
-				// Verify stored in ClickHouse
 				stored := s.getHealthCheckFromClickHouse(healthCheck.ID)
 				require.NotNil(s.T(), stored)
 				assert.Equal(s.T(), expectedProcess, stored.Process)

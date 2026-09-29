@@ -33,9 +33,6 @@ Example Claude Code config (.mcp.json):
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			fmt.Fprintln(os.Stderr, `Warning: "nuon mcp" is deprecated; use "nuon agents mcp" instead.`)
 
-			// An MCP client drives this over piped stdio, so keep proxying for
-			// existing .mcp.json configs. A human on a TTY would just see the
-			// server block on stdin, so point them at the new command instead.
 			if c.cfg.Interactive {
 				fmt.Fprintln(os.Stderr, `Run "nuon agents mcp --allow-writes" to start the stdio MCP proxy.`)
 				return nil

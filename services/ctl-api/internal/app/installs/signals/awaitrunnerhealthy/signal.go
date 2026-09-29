@@ -20,15 +20,15 @@ import (
 
 const SignalType signal.SignalType = "await-runner-healthy"
 
-// Existing await-runner-healthy histories already scheduled their poll
+// why: Existing await-runner-healthy histories already scheduled their poll
 // activities, so the disabled-runner short circuit must not apply on replay.
 const skipDisabledRunnerVersion = "await-runner-healthy-skip-disabled-runner-v1"
 
-// Offline or error runners will never become healthy during the poll window.
+// why: Offline or error runners will never become healthy during the poll window.
 // Old histories that already started the poll loop must not be interrupted.
 const failFastUnhealthyRunnerVersion = "await-runner-healthy-failfast-unhealthy-v1"
 
-// Existing histories must retain the aggregate-status fail-fast behavior they recorded.
+// why: Existing histories must retain the aggregate-status fail-fast behavior they recorded.
 const processReadinessPolicyVersion = "await-runner-healthy-process-readiness-v1"
 
 type Mode string
@@ -58,8 +58,6 @@ var (
 func (s *Signal) AutoRetry() bool { return true }
 func (s *Signal) Skippable() bool { return false }
 
-// Manual retry remains available if the runner is repaired, but another
-// automatic one-hour poll cannot repair it.
 func (s *Signal) MaxAutoRetries(ctx workflow.Context) int { return 0 }
 
 func (s *Signal) WithParams(params *signal.Params) {
@@ -82,7 +80,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.Errorf("unsupported runner readiness mode %q", s.Mode)
 	}
 
-	// Validate that the install exists
 	_, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
 	if err != nil {
 		return errors.Wrap(err, "install not found")
@@ -92,29 +89,19 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Get the install
 	install, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install")
 	}
 
-	// Get the runner
 	runner, err := activities.AwaitGetRunnerByID(ctx, install.RunnerID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get runner")
 	}
 
-	// A runner disabled by the install stack will never report a healthy
-	// process, so waiting out the poll window would stall the workflow for an
-	// hour and then fail it. Nothing downstream can run without a runner
-	// either, but that is the deploy steps' problem to report, not this
-	// step's.
 	skipDisabled := workflow.GetVersion(ctx, skipDisabledRunnerVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
 	if skipDisabled && runnerDisabled(runner) {
 		if s.WorkflowStepID != "" {
-			// The step executor only preserves a status it recognises as a skip,
-			// so write auto-skipped here rather than letting it default to
-			// success for a wait that never happened.
 			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: s.WorkflowStepID,
 				Status: app.CompositeStatus{
@@ -131,13 +118,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	failFast := workflow.GetVersion(ctx, failFastUnhealthyRunnerVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
 	processReadiness := workflow.GetVersion(ctx, processReadinessPolicyVersion, workflow.DefaultVersion, 1)
 
-	// Determine the process type to poll based on runner group type
 	processType := app.InstallProcessForRunnerGroupType(runner.RunnerGroup.Type)
 	if processType == app.RunnerProcessTypeUnknown {
 		return errors.Errorf("unsupported runner group type %s for health checking", runner.RunnerGroup.Type)
 	}
 
-	// Update the workflow step target if step ID is available
 	if s.WorkflowStepID != "" {
 		if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 			StepID:         s.WorkflowStepID,
@@ -148,7 +133,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	// Poll for runner process health
 	processReq := activities.GetCurrentRunnerProcessRequest{
 		RunnerID:    runner.ID,
 		ProcessType: processType,

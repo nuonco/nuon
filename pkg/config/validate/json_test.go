@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 )
 
-// mockResultError implements gojsonschema.ResultError for testing
 type mockResultError struct {
 	gojsonschema.ResultErrorFields
 }
@@ -18,7 +17,6 @@ func newMockError(field, description string) *mockResultError {
 	err := &mockResultError{}
 	err.SetType("invalid_type")
 	err.SetDescription(description)
-	// Use SetContext to set the field path
 	ctx := gojsonschema.NewJsonContext(field, nil)
 	err.SetContext(ctx)
 	return err

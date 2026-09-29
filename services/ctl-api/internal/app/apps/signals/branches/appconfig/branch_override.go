@@ -57,10 +57,6 @@ func overrideRepoConfigs(connected *config.ConnectedRepoConfig, public *config.P
 	}
 }
 
-// repoURLsMatch normalizes and compares two repo identifiers.
-// Handles both formats:
-//   - ConnectedGithubVCSConfig: "owner/repo"
-//   - PublicGitVCSConfig: "https://github.com/owner/repo.git"
 func repoURLsMatch(a, b string) bool {
 	return normalizeRepo(a) == normalizeRepo(b)
 }

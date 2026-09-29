@@ -3,7 +3,7 @@ import { createContext, useMemo } from 'react'
 export type TRuntimeConfig = {
   apiUrl: string
 
-  // The runner API, which install stacks authenticate against — a different host
+  // why: The runner API, which install stacks authenticate against — a different host
   // from apiUrl, and the audience a stack's OIDC trust policy must name.
   runnerApiUrl?: string
 

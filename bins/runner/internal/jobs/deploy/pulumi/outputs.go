@@ -13,8 +13,6 @@ func (h *handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
 		return map[string]interface{}{}, nil
 	}
 
-	// Round-trip through JSON to normalize types (e.g. json.Number → float64)
-	// then through structpb for consistency with how terraform outputs are stored.
 	b, err := json.Marshal(h.state.outputs)
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal pulumi outputs: %w", err)

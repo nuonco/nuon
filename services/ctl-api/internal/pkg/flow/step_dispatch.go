@@ -13,9 +13,6 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-// StepConfig holds the queue/owner configuration needed to dispatch and manage
-// workflow steps. Used by both the execute-flow signal (directly) and the
-// WorkflowConductor (for backward compatibility).
 type StepConfig struct {
 	GroupQueueName         string
 	QueueName              string
@@ -26,8 +23,6 @@ type StepConfig struct {
 	MW                     tmetrics.Writer
 }
 
-// DispatchStepSignal enqueues the execute-workflow-step signal to the step queue.
-// The signal runs the full step lifecycle in its own handler workflow.
 func DispatchStepSignal(ctx workflow.Context, cfg StepConfig, step *app.WorkflowStep, flw *app.Workflow) error {
 	stepStart := workflow.Now(ctx)
 	logger := workflow.GetLogger(ctx)
@@ -101,15 +96,12 @@ func DispatchStepSignal(ctx workflow.Context, cfg StepConfig, step *app.Workflow
 		}
 	}
 
-	// Wait for completion via signal channel — zero activity overhead, zero heartbeats.
-	// Bound by the step's derived timeout so we don't wait 30 days on a misconfigured step.
 	stepTimeout := step.Timeout
 	if stepTimeout == 0 {
 		stepTimeout = callback.FallbackAwaitTimeout
 	}
 	_, err := callback.AwaitWithTimeout(ctx, cb, stepTimeout)
 	if err != nil {
-		// If the parent workflow was cancelled, propagate cancellation to the step signal
 		if ctx.Err() != nil {
 			cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
 			defer cancelCtxCancel()

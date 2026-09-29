@@ -20,7 +20,7 @@ const (
 	recoverActionUninstall = "uninstall"
 )
 
-// The "is stuck in pending-" phrasing is the errparse signal for
+// why: The "is stuck in pending-" phrasing is the errparse signal for
 // helm.pending_operation; changing it must change the parser too.
 func newPendingReleaseError(releaseName string, rel *release.Release) error {
 	return fmt.Errorf(
@@ -30,7 +30,6 @@ func newPendingReleaseError(releaseName string, rel *release.Release) error {
 	)
 }
 
-// Readable before the apply contents are decoded, since it gates the chart fetch.
 func (h *handler) isRecovery() bool {
 	return h.state != nil &&
 		h.state.plan != nil &&
@@ -38,7 +37,7 @@ func (h *handler) isRecovery() bool {
 		h.state.plan.HelmDeployPlan.RecoverRelease
 }
 
-// Empty for a recovery, which fetches no archive; reading the nil archive panics.
+// why: Empty for a recovery, which fetches no archive; reading the nil archive panics.
 func (h *handler) basePath() string {
 	if h.state == nil || h.state.arch == nil {
 		return ""
@@ -46,16 +45,13 @@ func (h *handler) basePath() string {
 	return h.state.arch.BasePath()
 }
 
-// recoverResult is what the recovery did, for the job result and the log stream.
 type recoverResult struct {
 	Action   string
 	Revision int
-	// After is empty when the release no longer exists.
-	Before string
-	After  string
+	Before   string
+	After    string
 }
 
-// Summary renders the result for the job's plan contents and the log stream.
 func (r *recoverResult) Summary(releaseName string) string {
 	switch r.Action {
 	case recoverActionRollback:
@@ -70,15 +66,13 @@ func (r *recoverResult) Summary(releaseName string) string {
 	}
 }
 
-// recoverRelease rolls a stuck release back to the last revision that finished a
+// why: recoverRelease rolls a stuck release back to the last revision that finished a
 // rollout, or removes it when none did. Refusing to touch a non-pending release
 // is what makes it safe to expose and idempotent.
 func (h *handler) recoverRelease(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration) (*recoverResult, error) {
 	releaseName := h.state.plan.HelmDeployPlan.Name
 
 	rel, err := helm.GetRelease(actionCfg, releaseName)
-	// Error before nil: a store failure read as "not installed" would report
-	// success while the release stayed stuck.
 	if err != nil {
 		return nil, fmt.Errorf("unable to read release %s: %w", releaseName, err)
 	}
@@ -135,7 +129,6 @@ func (h *handler) recoverRelease(ctx context.Context, l *zap.Logger, actionCfg *
 	return res, nil
 }
 
-// The release status rides in the plan contents, the existing channel for it.
 func (h *handler) writeRecoverResult(
 	ctx context.Context,
 	l *zap.Logger,
@@ -163,7 +156,6 @@ func (h *handler) writeRecoverResult(
 	return nil
 }
 
-// A read failure is not fatal: the recovery already succeeded.
 func (h *handler) releaseStatusAfterRecovery(l *zap.Logger, actionCfg *action.Configuration, releaseName string) string {
 	rel, err := helm.GetRelease(actionCfg, releaseName)
 	if err != nil {

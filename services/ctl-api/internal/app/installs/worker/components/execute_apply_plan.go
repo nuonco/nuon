@@ -33,7 +33,6 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 		return fmt.Errorf("unable to get build: %w", err)
 	}
 
-	// get previous job
 	operation := app.RunnerJobOperationTypeCreateApplyPlan
 	if installDeploy.Type == app.InstallDeployTypeTeardown {
 		operation = app.RunnerJobOperationTypeCreateTeardownPlan
@@ -100,7 +99,6 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 		return errors.Wrap(err, "unable to update install workflow")
 	}
 
-	// Add Plan contents from the result to the plan
 	if runnerJob.Type == app.RunnerJobTypeJobNOOPDeploy {
 		planResponse.Plan.ApplyPlanContents = ""
 		planResponse.Plan.ApplyPlanDisplay = ""

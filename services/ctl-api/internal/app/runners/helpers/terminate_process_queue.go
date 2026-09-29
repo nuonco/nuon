@@ -10,8 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// TerminateProcessQueue finds the queue for a runner process and fully terminates it:
-// stops and deletes all emitters, stops the queue workflow, and soft-deletes the queue.
 func (h *Helpers) TerminateProcessQueue(ctx context.Context, runnerID, processID string) error {
 	queueName := fmt.Sprintf("runner-process-%s", processID)
 
@@ -32,9 +30,6 @@ func (h *Helpers) TerminateProcessQueue(ctx context.Context, runnerID, processID
 	return nil
 }
 
-// TerminateProcessQueueStrict is like TerminateProcessQueue but propagates
-// errors from the underlying CancelWorkflow + Stop calls so the caller can
-// retry. A missing queue row is treated as success (already terminated).
 func (h *Helpers) TerminateProcessQueueStrict(ctx context.Context, runnerID, processID string) error {
 	queueName := fmt.Sprintf("runner-process-%s", processID)
 

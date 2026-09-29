@@ -13,8 +13,6 @@ import (
 
 var accountIDPattern = regexp.MustCompile(`^\d{12}$`)
 
-// InstanceIdentityDocument represents the JSON document returned by
-// the EC2 IMDS at /latest/dynamic/instance-identity/document.
 type InstanceIdentityDocument struct {
 	AccountID        string    `json:"accountId"`
 	Architecture     string    `json:"architecture"`
@@ -28,8 +26,6 @@ type InstanceIdentityDocument struct {
 	Version          string    `json:"version"`
 }
 
-// ParseAndValidateIID parses a raw IID JSON document and validates
-// that required fields are present and well-formed.
 func ParseAndValidateIID(document string) (*InstanceIdentityDocument, error) {
 	var iid InstanceIdentityDocument
 	if err := json.Unmarshal([]byte(document), &iid); err != nil {
@@ -47,10 +43,6 @@ func ParseAndValidateIID(document string) (*InstanceIdentityDocument, error) {
 	return &iid, nil
 }
 
-// VerifyIIDSignature verifies the PKCS7 signature of an instance
-// identity document using the AWS public certificate for the given
-// region. The signature from IMDS /instance-identity/rsa2048 is a
-// PKCS7/SMIME signed message.
 func VerifyIIDSignature(certStore *IIDCertStore, region string, document []byte, signatureB64 string) error {
 	cert, err := certStore.GetCert(region)
 	if err != nil {

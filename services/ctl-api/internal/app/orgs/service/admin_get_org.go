@@ -25,7 +25,6 @@ import (
 func (s *service) AdminGetOrg(ctx *gin.Context) {
 	nameOrID := ctx.DefaultQuery("name", "")
 
-	// Validate nameOrID is not empty
 	if nameOrID == "" {
 		ctx.Error(stderr.ErrNotFound{
 			Err:         fmt.Errorf("name parameter is required"),

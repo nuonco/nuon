@@ -24,7 +24,7 @@ type MapTestStruct struct {
 func TestHashStructBasic(t *testing.T) {
 	t.Run("ignored_fields_dont_affect_hash", func(t *testing.T) {
 		s1 := TestStruct{ID: 1, Name: "test", Password: "secret1", Age: 25}
-		s2 := TestStruct{ID: 1, Name: "test", Password: "secret2", Age: 25} // Different ignored field
+		s2 := TestStruct{ID: 1, Name: "test", Password: "secret2", Age: 25}
 
 		hash1, err1 := HashStruct(s1, StructHasherOptions{})
 		if err1 != nil {
@@ -47,7 +47,7 @@ func TestHashStructBasic(t *testing.T) {
 
 	t.Run("included_fields_affect_hash", func(t *testing.T) {
 		s1 := TestStruct{ID: 1, Name: "test", Password: "secret", Age: 25, Phonenumber: nil}
-		s2 := TestStruct{ID: 1, Name: "different", Password: "secret", Age: 25, Phonenumber: nil} // Different included field
+		s2 := TestStruct{ID: 1, Name: "different", Password: "secret", Age: 25, Phonenumber: nil}
 
 		hash1, err1 := HashStruct(s1, StructHasherOptions{EnableOmitEmpty: false})
 		if err1 != nil {
@@ -87,17 +87,16 @@ func TestHashStructMapConsistency(t *testing.T) {
 		m2 := MapTestStruct{
 			Name: "test",
 			ValuesMap: map[string]string{
-				"key3": "value3", // Different insertion order
+				"key3": "value3",
 				"key1": "value1",
 				"key2": "value2",
 			},
-			Secret: "secret2", // Different ignored field
+			Secret: "secret2",
 			Options: StructHasherOptions{
 				EnableOmitEmpty: false,
 			},
 		}
 
-		// Test multiple times to check consistency
 		for i := 0; i < 5; i++ {
 			hashM1, err := HashStruct(m1, StructHasherOptions{})
 			if err != nil {
@@ -122,7 +121,6 @@ func TestHashStructMapConsistency(t *testing.T) {
 		m1.Options.EnableOmitEmpty = true
 		m2.Options.EnableOmitEmpty = true
 
-		// Test multiple times to check consistency
 		for i := 0; i < 5; i++ {
 			hashM1, err := HashStruct(m1, StructHasherOptions{})
 			if err != nil {
@@ -146,8 +144,6 @@ func TestHashStructMapConsistency(t *testing.T) {
 	})
 
 	t.Run("test_config_component_hash_the_same", func(t *testing.T) {
-		// Test with a config component hash with an expected consistent output
-		// this should catch if we may have change the shape of the config.Component struct that would affect the hash
 		m := config.Component{
 			Name: "test_component",
 		}
@@ -185,7 +181,7 @@ func TestHashStructMapConsistency(t *testing.T) {
 			Name: "test",
 			ValuesMap: map[string]string{
 				"key1": "value1",
-				"key2": "different_value", // Different value
+				"key2": "different_value",
 			},
 			Options: StructHasherOptions{
 				EnableOmitEmpty: false,

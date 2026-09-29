@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// getInstallStacks gets an install stack.
 func (h *Helpers) getInstallStack(ctx context.Context, installID string) (*app.InstallStack, error) {
 	var installStack app.InstallStack
 	res := h.db.WithContext(ctx).

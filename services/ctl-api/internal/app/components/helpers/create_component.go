@@ -20,7 +20,6 @@ type CreateComponentParams struct {
 	Labels           map[string]string
 	SkipDependencies bool
 
-	// Queue creation starts Temporal workflows, so a transactional caller must defer it.
 	SkipQueues bool
 }
 

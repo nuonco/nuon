@@ -12,7 +12,7 @@ func TestFormatToLineByLine(t *testing.T) {
 		input         ResourceDiff
 		expectedCount int
 		expectedTypes []DiffEntryType
-		exactCount    bool // When true, expect exactly the expected count
+		exactCount    bool
 	}{
 		{
 			name: "empty diff",
@@ -50,9 +50,9 @@ func TestFormatToLineByLine(t *testing.T) {
 					},
 				},
 			},
-			expectedCount: 8, // 1 header + 7 lines
+			expectedCount: 8,
 			expectedTypes: []DiffEntryType{EntryAdded, EntryAdded, EntryAdded, EntryAdded, EntryAdded, EntryAdded, EntryAdded, EntryAdded},
-			exactCount:    false, // YAML serialization may produce a slightly different number of lines
+			exactCount:    false,
 		},
 		{
 			name: "removed resource",
@@ -75,9 +75,9 @@ func TestFormatToLineByLine(t *testing.T) {
 					},
 				},
 			},
-			expectedCount: 6, // 1 header + 5 lines
+			expectedCount: 6,
 			expectedTypes: []DiffEntryType{EntryRemoved, EntryRemoved, EntryRemoved, EntryRemoved, EntryRemoved, EntryRemoved},
-			exactCount:    false, // YAML serialization may produce a slightly different number of lines
+			exactCount:    false,
 		},
 		{
 			name: "modified resource",
@@ -96,9 +96,9 @@ func TestFormatToLineByLine(t *testing.T) {
 					},
 				},
 			},
-			expectedCount: 2, // 1 removed + 1 added
+			expectedCount: 2,
 			expectedTypes: []DiffEntryType{EntryRemoved, EntryAdded},
-			exactCount:    false, // The exact count may vary depending on how simple values are represented
+			exactCount:    false,
 		},
 		{
 			name: "fallback to raw diff",
@@ -114,8 +114,8 @@ func TestFormatToLineByLine(t *testing.T) {
 					},
 				},
 			},
-			expectedCount: 3,     // 3 separate diff entries from parsing the raw diff
-			exactCount:    false, // The parser might handle whitespace differently
+			expectedCount: 3,
+			exactCount:    false,
 		},
 	}
 
@@ -139,7 +139,6 @@ func TestFormatToLineByLine(t *testing.T) {
 				}
 			}
 
-			// Check entry types if expected types are specified
 			if len(tt.expectedTypes) > 0 {
 				for i, expectedType := range tt.expectedTypes {
 					if i < len(result.Entries) {
@@ -148,9 +147,7 @@ func TestFormatToLineByLine(t *testing.T) {
 				}
 			}
 
-			// Verify each entry has a payload (except for header entries)
 			for i, entry := range result.Entries {
-				// Skip the header entry for added/removed resources
 				if i == 0 && (tt.input.Type == EntryAdded || tt.input.Type == EntryRemoved) {
 					continue
 				}

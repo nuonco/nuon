@@ -26,7 +26,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("install_id is required")
 	}
 
-	// Validate install exists
 	_, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
 	if err != nil {
 		return errors.Wrap(err, "install not found")
@@ -36,6 +35,5 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Restart children signal - currently a no-op
 	return nil
 }

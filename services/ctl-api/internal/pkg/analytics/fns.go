@@ -33,8 +33,6 @@ func identifyFn(ctx context.Context) (*segment.Identify, error) {
 
 	traits := segment.NewTraits().SetEmail(acct.Email)
 
-	// Extract attribution from user journey metadata and add as traits
-	// This enables GA4 user_id linking for marketing ROI analysis
 	if len(acct.UserJourneys) > 0 {
 		for _, journey := range acct.UserJourneys {
 			for _, step := range journey.Steps {

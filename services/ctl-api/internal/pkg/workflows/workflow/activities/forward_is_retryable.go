@@ -10,12 +10,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
-// ForwardIsRetryableRequest is the input for forwarding an is-retryable query to a step handler workflow.
 type ForwardIsRetryableRequest struct {
 	StepID string `json:"step_id" validate:"required"`
 }
 
-// ForwardIsRetryableResponse is the output from the is-retryable update.
 type ForwardIsRetryableResponse struct {
 	Retryable  bool   `json:"retryable"`
 	Skippable  bool   `json:"skippable"`
@@ -29,7 +27,6 @@ type ForwardIsRetryableResponse struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 30s
 func (a *Activities) ForwardIsRetryable(ctx context.Context, req ForwardIsRetryableRequest) (*ForwardIsRetryableResponse, error) {
-	// Find the step's handler workflow via the queue_signals table.
 	var qs app.QueueSignal
 	res := a.db.WithContext(ctx).
 		Where(app.QueueSignal{
@@ -43,7 +40,6 @@ func (a *Activities) ForwardIsRetryable(ctx context.Context, req ForwardIsRetrya
 		return nil, fmt.Errorf("unable to find step queue signal for step %s: %w", req.StepID, res.Error)
 	}
 
-	// Send the is-retryable update via update-with-start.
 	rawResp, err := handler.UpdateWithStart(ctx, a.tClient, &qs, handler.UpdateWithStartOptions{
 		UpdateName:   "is-retryable",
 		WaitForStage: tclient.WorkflowUpdateStageCompleted,

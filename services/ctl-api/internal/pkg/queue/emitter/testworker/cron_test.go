@@ -24,7 +24,7 @@ func (e *EmitterTestSuite) TestCronTickEmitsSignal() {
 	})
 
 	run, err := e.service.TemporalClient.ExecuteWorkflowInNamespace(ctx, defaultNamespace, temporalclient.StartWorkflowOptions{
-		ID:                    "test-cron-ticker-54", // Hashes to zero seconds of deterministic cron jitter.
+		ID:                    "test-cron-ticker-54",
 		TaskQueue:             queue.Workflow.TaskQueue,
 		WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 	}, "CronTicker", emitter.CronTickerWorkflowRequest{

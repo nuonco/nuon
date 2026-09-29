@@ -32,7 +32,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// GetAppActionConfigTestService holds all fx-injected dependencies for get action config tests.
 type GetAppActionConfigTestService struct {
 	fx.In
 
@@ -48,7 +47,6 @@ type GetAppActionConfigTestService struct {
 	Seeder         *testseed.Seeder
 }
 
-// GetAppActionConfigTestSuite is the testify suite for GetAppActionConfig endpoint.
 type GetAppActionConfigTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -138,7 +136,7 @@ func (s *GetAppActionConfigTestSuite) makeRequest(method, path string, body inte
 func (s *GetAppActionConfigTestSuite) TestGetActionConfigSuccess() {
 	testCases := []struct {
 		name         string
-		setupFunc    func() string // Returns configID
+		setupFunc    func() string
 		expectedCode int
 		validateFunc func(*app.ActionWorkflowConfig)
 	}{
@@ -186,7 +184,6 @@ func (s *GetAppActionConfigTestSuite) TestGetActionConfigSuccess() {
 			expectedCode: http.StatusOK,
 			validateFunc: func(config *app.ActionWorkflowConfig) {
 				assert.Len(s.T(), config.Steps, 3)
-				// Verify steps are ordered by idx
 				assert.Equal(s.T(), "step1", config.Steps[0].Name)
 				assert.Equal(s.T(), "step2", config.Steps[1].Name)
 				assert.Equal(s.T(), "step3", config.Steps[2].Name)
@@ -275,12 +272,10 @@ func (s *GetAppActionConfigTestSuite) TestGetActionConfigNotFound() {
 }
 
 func (s *GetAppActionConfigTestSuite) TestGetActionConfigCrossOrgIsolation() {
-	// Create config in org1
 	action1 := s.createActionWorkflow(s.testApp.ID, "org1-action")
 	appConfig1 := s.createAppConfig(s.testApp.ID)
 	config1 := s.createActionConfig(action1.ID, appConfig1.ID)
 
-	// Create second org with config
 	ctx2 := context.Background()
 	ctx2, acc2 := s.service.Seeder.EnsureAccount(ctx2, s.T())
 	ctx2, org2 := s.service.Seeder.EnsureOrg(ctx2, s.T())
@@ -325,7 +320,6 @@ func (s *GetAppActionConfigTestSuite) TestGetActionConfigCrossOrgIsolation() {
 	res = s.service.DB.WithContext(ctx2).Create(config2)
 	require.NoError(s.T(), res.Error)
 
-	// Org1 should be able to get config1
 	path1 := fmt.Sprintf("/v1/apps/%s/actions/configs/%s", s.testApp.ID, config1.ID)
 	rr1 := s.makeRequest(http.MethodGet, path1, nil)
 	require.Equal(s.T(), http.StatusOK, rr1.Code)
@@ -335,13 +329,10 @@ func (s *GetAppActionConfigTestSuite) TestGetActionConfigCrossOrgIsolation() {
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), config1.ID, retrievedConfig.ID)
 
-	// Org1 should NOT be able to get config2 (different org)
 	path2 := fmt.Sprintf("/v1/apps/%s/actions/configs/%s", s.testApp.ID, config2.ID)
 	rr2 := s.makeRequest(http.MethodGet, path2, nil)
 	assert.Equal(s.T(), http.StatusNotFound, rr2.Code)
 }
-
-// Helper methods
 
 func (s *GetAppActionConfigTestSuite) createActionWorkflow(appID, name string) *app.ActionWorkflow {
 	action := &app.ActionWorkflow{
@@ -392,7 +383,6 @@ func (s *GetAppActionConfigTestSuite) createActionConfigWithTimeout(actionID, ap
 }
 
 func (s *GetAppActionConfigTestSuite) createActionTrigger(configID string, triggerType app.ActionWorkflowTriggerType) *app.ActionWorkflowTriggerConfig {
-	// Get the parent config to extract AppConfigID
 	var config app.ActionWorkflowConfig
 	res := s.service.DB.First(&config, "id = ?", configID)
 	require.NoError(s.T(), res.Error)
@@ -413,7 +403,6 @@ func (s *GetAppActionConfigTestSuite) createActionTrigger(configID string, trigg
 }
 
 func (s *GetAppActionConfigTestSuite) createActionStep(configID, name string, idx int) *app.ActionWorkflowStepConfig {
-	// Get the parent config to extract AppConfigID
 	var config app.ActionWorkflowConfig
 	res := s.service.DB.First(&config, "id = ?", configID)
 	require.NoError(s.T(), res.Error)

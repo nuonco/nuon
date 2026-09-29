@@ -1,8 +1,3 @@
-// Package provider defines the interface an inbound event provider
-// implements: creation-time defaults, envelope decoding, request
-// verification, protocol handshakes, and rejection behavior. Base supplies
-// the complete default behavior so plain providers are declarative data and
-// protocol-heavy providers override only what differs.
 package provider
 
 import (
@@ -35,11 +30,8 @@ const (
 	EnvelopeSNS         EnvelopeType = "sns"
 )
 
-// ErrUnsupportedEnvelope is returned by Decoder for envelope types the
-// provider does not implement.
 var ErrUnsupportedEnvelope = errors.New("trigger envelope is not implemented")
 
-// AuthConfig configures how inbound requests authenticate.
 type AuthConfig struct {
 	Header          string   `json:"header,omitempty"`
 	Prefix          string   `json:"prefix,omitempty"`
@@ -53,8 +45,6 @@ type AuthConfig struct {
 	ExpectedSubject string   `json:"expected_subject,omitempty"`
 }
 
-// CallerField names an AuthConfig field the caller supplies at creation time
-// instead of the provider defaults.
 type CallerField string
 
 const (
@@ -64,56 +54,31 @@ const (
 	CallerFieldTopicARN        CallerField = "topic_arn"
 )
 
-// Defaults is the declarative creation-time configuration a provider preset
-// applies to a trigger.
 type Defaults struct {
-	Auth         AuthType
-	Envelope     EnvelopeType
-	AuthConfig   AuthConfig
-	TypeFrom     envelope.FieldSelector
-	IDFrom       envelope.FieldSelector
-	CallerFields []CallerField
-	// NativeProtocol marks providers that speak their own webhook protocol:
-	// the envelope decoder is fixed and field selectors do not apply.
+	Auth           AuthType
+	Envelope       EnvelopeType
+	AuthConfig     AuthConfig
+	TypeFrom       envelope.FieldSelector
+	IDFrom         envelope.FieldSelector
+	CallerFields   []CallerField
 	NativeProtocol bool
-	// CallerSecret marks providers whose signing secret is issued by the
-	// external provider and supplied by the caller at creation time. Such
-	// secrets are write-only: they cannot be revealed, rotated, or revoked
-	// independently of the trigger.
-	CallerSecret bool
+	CallerSecret   bool
 }
 
-// Handshake is a provider protocol response that ends request processing
-// without persisting an event, such as Slack URL verification or Azure Event
-// Grid subscription validation.
 type Handshake struct {
 	Status int
 	Body   map[string]string
 }
 
-// Provider implements one inbound event source. All methods are complete on
-// Base; providers embed Base and override only protocol-specific behavior.
 type Provider interface {
 	Name() string
 	Defaults() Defaults
-	// Decoder returns the envelope decoder for the trigger's configured
-	// envelope type. Native-protocol providers ignore the envelope type.
 	Decoder(envelopeType EnvelopeType) (envelope.Decoder, error)
-	// Verifier returns the shared-secret verifier for the trigger's auth
-	// mechanism, or nil for mechanisms that do not verify against managed
-	// secrets (none, bearer_jwt, sns_signature).
 	Verifier(auth AuthType, cfg AuthConfig) signature.Verifier
-	// Handshake inspects a decoded event and returns a non-nil response when
-	// the request is a protocol handshake rather than an event delivery.
 	Handshake(event *envelope.Event) (*Handshake, error)
-	// RejectStatus returns the HTTP status for an envelope decode failure.
-	// http.StatusAccepted means record the rejection and acknowledge the
-	// delivery; other statuses surface the error to the sender.
 	RejectStatus(err error) int
 }
 
-// Base is the default Provider implementation: config-driven decoding and
-// verification, no handshake, and accept-and-record rejection.
 type Base struct {
 	ProviderName     string
 	ProviderDefaults Defaults
@@ -160,13 +125,8 @@ func (b Base) Handshake(*envelope.Event) (*Handshake, error) { return nil, nil }
 
 func (b Base) RejectStatus(error) int { return http.StatusAccepted }
 
-// ErrConflictingAuthConfig is returned by ApplyDefaults when the caller
-// supplies auth config that contradicts the provider defaults.
 var ErrConflictingAuthConfig = errors.New("conflicting auth_config")
 
-// ApplyDefaults resolves a caller-supplied auth config against provider
-// defaults: caller fields are adopted, unset basic fields are defaulted, and
-// any remaining difference is a conflict.
 func ApplyDefaults(defaults Defaults, provided AuthConfig) (AuthConfig, error) {
 	desired := defaults.AuthConfig
 	for _, field := range defaults.CallerFields {

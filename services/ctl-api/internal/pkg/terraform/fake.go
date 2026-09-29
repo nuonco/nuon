@@ -1,6 +1,5 @@
 package terraform
 
-// FakeClient is a test implementation of Client that returns a static version.
 type FakeClient struct{}
 
 func NewFakeClient() *FakeClient {

@@ -8,7 +8,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// builds
 func (c *client) CreateComponentBuild(ctx context.Context, componentID string, req *models.ServiceCreateComponentBuildRequest) (*models.AppComponentBuild, error) {
 	resp, err := c.genClient.Operations.CreateComponentBuild(&operations.CreateComponentBuildParams{
 		ComponentID: componentID,

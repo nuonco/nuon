@@ -19,7 +19,6 @@ type OtelMetricHistogramExemplar struct {
 	TraceID            string            `json:"trace_id,omitzero" temporaljson:"trace_id,omitzero,omitempty"`
 }
 
-// https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/clickhouseexporter/exporter_traces.go#L164
 type OtelMetricHistogram struct {
 	ID          string `gorm:"primary_key" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string `json:"created_by_id,omitzero" gorm:"notnull" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -28,7 +27,6 @@ type OtelMetricHistogram struct {
 	UpdatedAt time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	// internal attributes
 	OrgID                  string `json:"org_id,omitzero" temporaljson:"org_id,omitzero,omitempty"`
 	RunnerID               string `json:"runner_id,omitzero" temporaljson:"runner_id,omitzero,omitempty"`
 	RunnerJobID            string `json:"runner_job_id,omitzero" temporaljson:"runner_job_id,omitzero,omitempty"`
@@ -36,7 +34,6 @@ type OtelMetricHistogram struct {
 	RunnerJobExecutionID   string `json:"runner_job_execution_id,omitzero" temporaljson:"runner_job_execution_id,omitzero,omitempty"`
 	RunnerJobExecutionStep string `json:"runner_job_execution_step,omitzero" temporaljson:"runner_job_execution_step,omitzero,omitempty"`
 
-	// OTEL log message attributes
 	ResourceAttributes map[string]string `json:"resource_attributes,omitzero" gorm:"type:Map(LowCardinality(String),String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1" temporaljson:"resource_attributes,omitzero,omitempty"`
 	ResourceSchemaURL  string            `json:"resource_schema_url,omitzero" gorm:"type:LowCardinality(String);codec:ZSTD(1)" temporaljson:"resource_schema_url,omitzero,omitempty"`
 
@@ -99,7 +96,6 @@ func (m *OtelMetricHistogram) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// DO NOT MIGRATE
 type OtelMetricHistogramIngestion struct {
 	ID          string `gorm:"primary_key" json:"id" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string `json:"created_by_id" gorm:"notnull" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -108,7 +104,6 @@ type OtelMetricHistogramIngestion struct {
 	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	// internal attributes
 	OrgID                  string `json:"org_id" temporaljson:"org_id,omitzero,omitempty"`
 	RunnerID               string `json:"runner_id" temporaljson:"runner_id,omitzero,omitempty"`
 	RunnerJobID            string `json:"runner_job_id" temporaljson:"runner_job_id,omitzero,omitempty"`
@@ -116,7 +111,6 @@ type OtelMetricHistogramIngestion struct {
 	RunnerJobExecutionID   string `json:"runner_job_execution_id" temporaljson:"runner_job_execution_id,omitzero,omitempty"`
 	RunnerJobExecutionStep string `json:"runner_job_execution_step" temporaljson:"runner_job_execution_step,omitzero,omitempty"`
 
-	// OTEL log message attributes
 	ResourceAttributes map[string]string `json:"resource_attributes" gorm:"type:Map(LowCardinality(String),String);codec:ZSTD(1); index:idx_res_attr_key,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1; index:idx_res_attr_value,expression:mapKeys(resource_attributes),type:bloom_filter(0.1),granularity:1" temporaljson:"resource_attributes,omitzero,omitempty"`
 	ResourceSchemaURL  string            `json:"resource_schema_url" gorm:"type:LowCardinality(String);codec:ZSTD(1)" temporaljson:"resource_schema_url,omitzero,omitempty"`
 
@@ -147,8 +141,6 @@ type OtelMetricHistogramIngestion struct {
 	Max   float64 `json:"maxx" gorm:"type:Float64;codec:ZSTD(1)" temporaljson:"max,omitzero,omitempty"`
 
 	AggregationTemporality int32 `json:"aggregation_temporality" gorm:"type:Int32; codec:ZSTD(1)" temporaljson:"aggregation_temporality,omitzero,omitempty"`
-
-	// Exemplars []OtelMetricHistogramExemplar `json:"-" temporaljson:"-" gorm:"type:Nested(filtered_attributes Map(LowCardinality(String), String), time_unix DateTime64(9), value Float64, span_id String, trace_id String); codec:ZSTD(1);"`
 
 	ExemplarsFilteredAttributes clickhouse.ArraySet `json:"-" gorm:"type:Array(Map(LowCardinality(String), String));column:exemplars.filtered_attributes" temporaljson:"exemplars_filtered_attributes,omitzero,omitempty"`
 	ExemplarsTimeUnix           clickhouse.ArraySet `json:"-" gorm:"type:Array(DateTime64(9));column:exemplars.time_unix" temporaljson:"exemplars_time_unix,omitzero,omitempty"`

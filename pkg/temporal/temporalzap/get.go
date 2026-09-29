@@ -12,8 +12,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// logWrapper is a wrapper around log.Logger, with a zap interface. While we emit _all_ logs to zap using the client, we
-// use this to consolidate logging with zap from the workflows/activities themselves.
 type logCore struct {
 	l     log.Logger
 	attrs []zap.Field
@@ -30,7 +28,6 @@ func (o *logCore) Check(ent zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.Ch
 	return ce
 }
 
-// we let the underlying logger decide if the log should be passed on
 func (o *logCore) Enabled(level zapcore.Level) bool {
 	return true
 }
@@ -48,13 +45,10 @@ func (o *logCore) Write(ent zapcore.Entry, fields []zapcore.Field) error {
 	kvs := make([]interface{}, 0)
 
 	for _, f := range fields {
-		// depening on the type, only one of String, Integer, Interface will be set
-		// we convert all to string to not miss any info in the default case.
 		val := fmt.Sprintf("%s %d %v", f.String, f.Integer, f.Interface)
 		if f.Interface != nil {
 			val = fmt.Sprintf("%v", f.Interface)
 		}
-		// Use String or Integer based on well known Field types
 		switch f.Type {
 		case zapcore.StringType:
 			val = f.String

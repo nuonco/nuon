@@ -43,7 +43,7 @@ func (z *zaphclogWriter) writeTerraform(byts []byte) error {
 	case "warning", "warn":
 		z.zl.Warn(tfLine.Msg, attrs...)
 	default:
-		// Unknown levels (or empty) fall back to Info so we don't silently drop them.
+		// why: Unknown levels (or empty) fall back to Info so we don't silently drop them.
 		z.zl.Info(tfLine.Msg, attrs...)
 	}
 

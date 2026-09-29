@@ -11,8 +11,6 @@ func identityFixture() []azureOperationIdentity {
 	return azureOperationIdentities(azureRolesTemplateInput().AppCfg)
 }
 
-// innerResources pulls the resource list out of a nested deployment's inline
-// template.
 func innerResources(t *testing.T, wrapper map[string]any) []any {
 	t.Helper()
 	props, ok := wrapper["properties"].(map[string]any)
@@ -49,8 +47,6 @@ func TestOperationIdentities_WrappedIntoInstallRG(t *testing.T) {
 		t.Errorf("wrapper must use inner evaluation, got %v", got)
 	}
 
-	// Inner evaluation hides the root, so everything the wrapped resources read has
-	// to be declared. Missing one fails at deploy, not at render.
 	innerDecl := props["template"].(map[string]any)["parameters"].(map[string]any)
 	for _, name := range []string{"nuonInstallID", "location", "commonTags"} {
 		if _, ok := innerDecl[name]; !ok {
@@ -58,8 +54,6 @@ func TestOperationIdentities_WrappedIntoInstallRG(t *testing.T) {
 		}
 	}
 
-	// Every UAMI and every built-in role assignment moves inside; nothing stays
-	// loose in the root, where a subscription-scoped root cannot host it.
 	inner := innerResources(t, wrapper)
 	if got := countResourceType(inner, uamiResourceType); got != len(ids) {
 		t.Errorf("wrapper holds %d identities, want %d", got, len(ids))
@@ -68,8 +62,6 @@ func TestOperationIdentities_WrappedIntoInstallRG(t *testing.T) {
 		t.Error("wrapper holds no built-in role assignments")
 	}
 
-	// The custom role deployments target the subscription, which ARM will not allow
-	// inside another nested deployment, so they stay in the root.
 	root := resources[1:]
 	if got := countResourceType(root, "Microsoft.Resources/deployments"); got != len(ids) {
 		t.Errorf("root holds %d custom role deployments, want %d", got, len(ids))
@@ -79,10 +71,6 @@ func TestOperationIdentities_WrappedIntoInstallRG(t *testing.T) {
 	}
 }
 
-// Wrapping exists to keep these names stable: Azure dedupes role assignments by
-// principal+role+scope, and a renamed assignment fails redeploy with
-// RoleAssignmentExists. Inside the wrapper resourceGroup() resolves to the install
-// group again, so the guid() inputs are unchanged.
 func TestOperationIdentities_RoleAssignmentNamesUnchangedByWrapping(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 	ids := identityFixture()
@@ -117,11 +105,6 @@ func TestOperationIdentities_RoleAssignmentNamesUnchangedByWrapping(t *testing.T
 	}
 }
 
-// A root resource cannot depend on something declared inside a nested deployment,
-// and it cannot reference() it either: ARM resolves a reference() to a resource the
-// current template does not declare during preflight, so it races the wrapper that
-// creates it and the deployment fails with ResourceGroupNotFound even though the
-// resource group reports Created. The value has to come back out as an output.
 func TestOperationIdentities_RootReadsIdentitiesAcrossTheWrapper(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 	id := identityFixture()[0]
@@ -140,7 +123,6 @@ func TestOperationIdentities_RootReadsIdentitiesAcrossTheWrapper(t *testing.T) {
 	}
 	assertNoNestedBrackets(t, []byte(principal))
 
-	// The output has to actually be declared, or the read is just a different error.
 	wrapper := tmpl.getOperationIdentityResources(identityFixture(), armScope{subscription: true})[0].(map[string]any)
 	outputs, ok := wrapper["properties"].(map[string]any)["template"].(map[string]any)["outputs"].(map[string]any)
 	if !ok {
@@ -151,8 +133,6 @@ func TestOperationIdentities_RootReadsIdentitiesAcrossTheWrapper(t *testing.T) {
 	}
 }
 
-// Every identity the root reads has to be exported by the wrapper, for both fields.
-// A missing one only shows up as a failed deploy.
 func TestOperationIdentities_EveryRootReadHasAMatchingOutput(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 	ids := identityFixture()
@@ -170,8 +150,6 @@ func TestOperationIdentities_EveryRootReadHasAMatchingOutput(t *testing.T) {
 		}
 	}
 
-	// The inner reads are the ones that resolve, because the identity is declared in
-	// the same template there.
 	for _, id := range ids {
 		if got := identityPrincipalIDExpr(id, armScope{}); strings.Contains(got, "outputs.") {
 			t.Errorf("resource-group scope should read the identity directly, got %s", got)
@@ -179,9 +157,6 @@ func TestOperationIdentities_EveryRootReadHasAMatchingOutput(t *testing.T) {
 	}
 }
 
-// The runner's inline template lives in the install resource group alongside the
-// identities, so it reads them at resource-group scope; the root passes the map to
-// a custom runner template and must read them at its own scope.
 func TestOperationIdentityAttachment_ScopeOfTheReader(t *testing.T) {
 	ids := identityFixture()
 

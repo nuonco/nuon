@@ -55,26 +55,22 @@ func (s *service) AdminAddTags(ctx *gin.Context) {
 		return
 	}
 
-	// Build set of existing tags for uniqueness check
 	existingTags := make(map[string]bool)
 	for _, tag := range org.Tags {
 		existingTags[tag] = true
 	}
 
-	// Add only unique tags
 	for _, tag := range req.Tags {
 		if !existingTags[tag] {
 			org.Tags = append(org.Tags, tag)
 		}
 	}
 
-	// Update only the tags field
 	if err := s.db.WithContext(ctx).Model(org).Select("tags").Updates(org).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to update org tags: %w", err))
 		return
 	}
 
-	// Reload org to get fresh data with all preloads
 	org, err = s.adminGetOrg(ctx, orgID)
 	if err != nil {
 		ctx.Error(err)

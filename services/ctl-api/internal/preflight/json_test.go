@@ -12,8 +12,6 @@ import (
 	internal "github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
-// The whole point of the DTO: no path through the encoder can publish a secret.
-// Runs over every real check so a new one cannot opt out by accident.
 func TestJSONNeverEmitsSecretValues(t *testing.T) {
 	const sentinel = "SUPER-SECRET-SENTINEL"
 
@@ -38,8 +36,6 @@ func TestJSONNeverEmitsSecretValues(t *testing.T) {
 
 	assert.NotContains(t, buf.String(), sentinel)
 
-	// ...and the secrets really were present, so the assertion above means
-	// something.
 	var report jsonReport
 	require.NoError(t, json.Unmarshal(buf.Bytes(), &report))
 
@@ -55,8 +51,6 @@ func TestJSONNeverEmitsSecretValues(t *testing.T) {
 	assert.Positive(t, secretsSeen, "no secret fields exercised")
 }
 
-// set distinguishes configured-but-hidden from absent, which is all a caller
-// can learn about a secret.
 func TestJSONSetFlagTracksPresenceForSecrets(t *testing.T) {
 	fields := toJSONFields([]Field{
 		{Name: "with_value", Value: "v", Secret: true},
@@ -74,7 +68,6 @@ func TestJSONSetFlagTracksPresenceForSecrets(t *testing.T) {
 	assert.Equal(t, "visible", fields[2].Value)
 }
 
-// --list did not run anything, so it must not claim a status or a tally.
 func TestJSONChecksOmitStatusAndSummary(t *testing.T) {
 	var buf bytes.Buffer
 	require.NoError(t, WriteJSONChecks(&buf, Describe(&internal.Config{}, []string{"rds"})))
@@ -108,8 +101,6 @@ func TestJSONResultsCarrySummaryAndExitCode(t *testing.T) {
 	assert.Equal(t, 1, WriteJSONResults(&buf, []Result{{Name: "a", Status: StatusFail}}))
 }
 
-// A run and a listing must describe a check identically, so docs generated from
-// either agree.
 func TestJSONSkippedCheckStillCarriesFields(t *testing.T) {
 	cfg := &internal.Config{}
 

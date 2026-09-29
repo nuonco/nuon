@@ -176,7 +176,6 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
-	// Validate install component exists
 	_, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
 	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
@@ -201,7 +200,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	})
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			// no op, because no deploys exist
 			return nil
 		}
 
@@ -247,7 +245,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to create log stream")
 	}
-	// NOTE: not closed so we can re-use this log stream for apply plan
+	// why: not closed so we can re-use this log stream for apply plan
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
 	l, err := log.WorkflowLogger(ctx)
@@ -260,14 +258,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get install deploy")
 	}
 
-	// Check if component type requires teardown
 	_, err = activities.AwaitGetComponentByComponentID(ctx, installDeploy.InstallComponent.ComponentID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get component")
 	}
 
-	// For components that don't require teardown, exit early
-	// The original code checks if comp.Type is in an empty slice, which means all types require teardown
 	shouldTeardown := true
 	if !shouldTeardown {
 		l.Info("nothing to teardown")
@@ -328,7 +323,6 @@ func (s *Signal) pollForDeployableBuild(ctx workflow.Context, installDeployId, c
 	}
 
 	l.Info("build is not yet deployable, polling")
-	// check the build every 10 seconds for 1 hour
 	sleepTimer := time.Second * 10
 	maxAttempts := 360
 	attempt := 0
@@ -339,13 +333,11 @@ func (s *Signal) pollForDeployableBuild(ctx workflow.Context, installDeployId, c
 
 		attempt++
 
-		// Get the latest build
 		bld, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, bld.ID)
 		if err != nil {
 			return fmt.Errorf("unable to get component build: %w", err)
 		}
 
-		// Check if the build is deployable
 		if s.isBuildDeployable(bld) {
 			return nil
 		}
@@ -399,7 +391,6 @@ func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDep
 	}
 	s.runnerJobID = runnerJob.ID
 
-	// create the plan request
 	runPlan, err := plan.AwaitCreateSyncPlan(ctx, &plan.CreateSyncPlanRequest{
 		InstallID:       install.ID,
 		InstallDeployID: installDeploy.ID,
@@ -428,7 +419,6 @@ func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDep
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	// queue job
 	s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusSyncing, "executing sync plan")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		RunnerID: install.RunnerID,
@@ -443,7 +433,6 @@ func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDep
 	}
 	l.Info("sync image job was successfully completed")
 
-	// parse outputs and create OCI artifact record
 	job, err := activities.AwaitGetJobByID(ctx, runnerJob.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get runner job")
@@ -606,7 +595,6 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 		approvalTyp = app.NoopApprovalType
 	}
 
-	// all component types require a plan EXCEPT for docker builds
 	if job.Execution.Result == nil || (len(job.Execution.Result.Contents) < 1 && len(job.Execution.Result.ContentsGzip) < 1) {
 		if runnerJob.Type != app.RunnerJobTypeJobNOOPDeploy {
 			return errors.New("no plan returned from job")

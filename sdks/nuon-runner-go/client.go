@@ -18,20 +18,17 @@ import (
 )
 
 const (
-	// defaultRequestTimeout bounds every SDK call so a stalled HTTP/2
+	// why: defaultRequestTimeout bounds every SDK call so a stalled HTTP/2
 	// stream or a hung server response can never park a caller forever.
 	// Callers that need shorter (heartbeats, polling) can pass a tighter
 	// ctx; callers that need longer can override via WithRequestTimeout.
 	defaultRequestTimeout = 60 * time.Second
 
-	// HTTP/2 ping config — without these, a half-open stream on a
-	// dropped LB connection blocks indefinitely even with
-	// ResponseHeaderTimeout set on the HTTP/1 transport.
 	defaultH2ReadIdleTimeout = 30 * time.Second
 	defaultH2PingTimeout     = 15 * time.Second
 )
 
-// newDefaultTransport builds an *http.Transport that does not share state with
+// why: newDefaultTransport builds an *http.Transport that does not share state with
 // http.DefaultTransport. Sharing the default is unsafe: other code in the
 // runner mutates http.DefaultTransport globally (see helm chart packaging),
 // which silently invalidates our connection pool and obscures network errors.
@@ -66,7 +63,6 @@ type Client interface {
 
 	GetSettings(ctx context.Context) (*models.AppRunnerGroupSettings, error)
 
-	// heartbeat and health checks
 	CreateHeartBeat(ctx context.Context, req *models.ServiceCreateRunnerHeartBeatRequest) (*models.AppRunnerHeartBeat, error)
 	CreateHealthCheck(ctx context.Context, req *models.ServiceCreateRunnerHealthCheckRequest) (*models.AppRunnerHealthCheck, error)
 	CreateComponentHealth(ctx context.Context, req *models.ServiceCreateComponentHealthRequest) (*models.ServiceCreateComponentHealthResponse, error)
@@ -74,7 +70,6 @@ type Client interface {
 	PutComponentHealthContext(ctx context.Context, clusterInfoJSON string, sandboxReleases, componentKinds []string) error
 	GetComponentHealthContext(ctx context.Context) (string, []string, []string, error)
 
-	// jobs
 	GetJobs(ctx context.Context, grp models.AppRunnerJobGroup, status models.AppRunnerJobStatus, limit *int64) ([]*models.AppRunnerJob, error)
 	TailJobs(ctx context.Context, grp models.AppRunnerJobGroup, wait time.Duration) ([]*models.AppRunnerJob, error)
 	GetJob(ctx context.Context, jobID string) (*models.AppRunnerJob, error)
@@ -83,28 +78,23 @@ type Client interface {
 	GetJobCompositePlan(ctx context.Context, jobID string) (*models.PlantypesCompositePlan, error)
 	UpdateJob(ctx context.Context, jobID string, req *models.ServiceUpdateRunnerJobRequest) (*models.AppRunnerJob, error)
 
-	// job executions
 	GetJobExecutions(ctx context.Context, jobID string) ([]*models.AppRunnerJobExecution, error)
 	CreateJobExecution(ctx context.Context, jobID string, req *models.ServiceCreateRunnerJobExecutionRequest) (*models.AppRunnerJobExecution, error)
 	UpdateJobExecution(ctx context.Context, jobID, jobExecutionID string, req *models.ServiceUpdateRunnerJobExecutionRequest) (*models.AppRunnerJobExecution, error)
 	CreateJobExecutionResult(ctx context.Context, jobID, jobExecutionID string, req *models.ServiceCreateRunnerJobExecutionResultRequest) (*models.AppRunnerJobExecutionResult, error)
 	CreateJobExecutionOutputs(ctx context.Context, jobID, jobExecutionID string, req *models.ServiceCreateRunnerJobExecutionOutputsRequest) (*models.AppRunnerJobExecutionOutputs, error)
 
-	// otel operations
 	WriteOTELLogs(ctx context.Context, req interface{}) error
 	WriteOTELTraces(ctx context.Context, req interface{}) error
 	WriteOTELMetrics(ctx context.Context, req interface{}) error
 
-	// actions specific endpoints
 	UpdateInstallActionWorkflowRunStep(ctx context.Context, installID, workflowID, runID string, req *models.ServiceUpdateInstallActionWorkflowRunStepRequest) (*models.AppInstallActionWorkflowRunStep, error)
 	GetInstallActionWorkflowRun(ctx context.Context, installID, runID string) (*models.AppInstallActionWorkflowRun, error)
 
 	GetActionWorkflowConfig(ctx context.Context, workflowConfigID string) (*models.AppActionWorkflowConfig, error)
 
-	// get an app config
 	GetAppConfig(ctx context.Context, appID, appConfigID string) (*models.AppAppConfig, error)
 
-	// installs
 	GetInstallComponenetLastActivePlan(ctx context.Context, installId, componentId string) (*models.ServiceGetInstallComponenetLastActivePlanResponse, error)
 
 	UpdateTerraformStateJSON(ctx context.Context, workspaceID string, jobID *string, reqBody any) (any, error)
@@ -112,7 +102,6 @@ type Client interface {
 	LockTerraformWorkspace(ctx context.Context, workspaceID string, jobID *string, reqBody any) error
 	UnlockTerraformWorkspace(ctx context.Context, workspaceID string) error
 
-	// runner processes
 	CreateProcess(ctx context.Context, req *models.ServiceCreateRunnerProcessRequest) (*models.AppRunnerProcess, error)
 	GetProcess(ctx context.Context, processID string) (*models.AppRunnerProcess, error)
 	GetProcessShutdowns(ctx context.Context, processID string) ([]*models.AppRunnerProcessShutdown, error)
@@ -120,15 +109,12 @@ type Client interface {
 	CompleteShutdown(ctx context.Context, processID, shutdownID string) (*models.AppRunnerProcessShutdown, error)
 	ReportTerminating(ctx context.Context, processID string) error
 
-	// runner
 	GetRunner(ctx context.Context) (*models.AppRunner, error)
 	CreateTelemetryAccessToken(ctx context.Context) (*models.ServiceCreateTelemetryAccessTokenResponse, error)
 
-	// sandbox configs
 	GetSandboxConfigs(ctx context.Context) ([]*SandboxConfig, error)
 	GetSandboxConfig(ctx context.Context, jobType, operation string) (*SandboxConfig, error)
 
-	// authentication
 	RunnerAuthAWS(ctx context.Context, req *models.ServiceRunnerAuthAWSRequest) (*models.ServiceRunnerAuthAWSResponse, error)
 	RunnerAuthAWSIID(ctx context.Context, req *models.ServiceRunnerAuthAWSIIDRequest) (*models.ServiceRunnerAuthAWSIIDResponse, error)
 	RunnerAuthGCP(ctx context.Context, req *models.ServiceRunnerAuthGCPRequest) (*models.ServiceRunnerAuthGCPResponse, error)
@@ -185,18 +171,11 @@ func New(opts ...clientOption) (*client, error) {
 	}
 	c.appTransport = appTransport
 
-	// http.Client.Timeout backstops every request — including a slow body
-	// read, which ResponseHeaderTimeout does not cover. The caller's ctx
-	// deadline still wins if shorter.
 	c.httpClient = &http.Client{
 		Transport: appTransport,
 		Timeout:   c.RequestTimeout,
 	}
 
-	// unauthClient shares the tuned base transport (timeouts, HTTP/2 pings,
-	// connection pool) but skips appTransport's Authorization injection. It is
-	// used for endpoints that are public by design — runner-auth bootstrap and
-	// shutdown polling — so SDK requests to those routes carry no auth header.
 	c.unauthClient = &http.Client{
 		Transport: base,
 		Timeout:   c.RequestTimeout,
@@ -208,7 +187,6 @@ func New(opts ...clientOption) (*client, error) {
 	return c, nil
 }
 
-// WithAuthToken specifies the auth token to use
 func WithAuthToken(token string) clientOption {
 	return func(c *client) error {
 		c.APIToken = token
@@ -216,7 +194,6 @@ func WithAuthToken(token string) clientOption {
 	}
 }
 
-// WithURL specifies the url to use
 func WithURL(url string) clientOption {
 	return func(c *client) error {
 		c.APIURL = url
@@ -224,7 +201,6 @@ func WithURL(url string) clientOption {
 	}
 }
 
-// WithRunnerID specifies the runner id to use
 func WithRunnerID(runnerID string) clientOption {
 	return func(c *client) error {
 		c.RunnerID = runnerID
@@ -232,7 +208,6 @@ func WithRunnerID(runnerID string) clientOption {
 	}
 }
 
-// WithValidator specifies a validator to use
 func WithValidator(v *validator.Validate) clientOption {
 	return func(c *client) error {
 		c.v = v
@@ -240,7 +215,6 @@ func WithValidator(v *validator.Validate) clientOption {
 	}
 }
 
-// WithRetryer specifies a retryer to use
 func WithRetryer(r Retryer) clientOption {
 	return func(c *client) error {
 		c.retryer = r
@@ -248,9 +222,6 @@ func WithRetryer(r Retryer) clientOption {
 	}
 }
 
-// WithRequestTimeout overrides the default per-request timeout enforced by the
-// underlying http.Client. A caller-supplied context deadline still wins if
-// shorter. Pass 0 to rely solely on caller contexts (discouraged for loops).
 func WithRequestTimeout(d time.Duration) clientOption {
 	return func(c *client) error {
 		c.RequestTimeout = d

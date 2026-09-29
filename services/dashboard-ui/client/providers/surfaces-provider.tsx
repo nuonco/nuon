@@ -50,9 +50,6 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
 
-  // Panels are keyed to the route that opened them. A route change drops the
-  // previous route's panels, but not ones a newly mounted child opened for the
-  // route being navigated to — child effects run before this one.
   useEffect(() => {
     setPanels((ps) => ps.filter((p) => p.pathname === pathname))
   }, [pathname])

@@ -178,7 +178,6 @@ func (s *SuccessTestSuite) TestSuccess() {
 				body := rr.Body.String()
 				assert.Contains(s.T(), body, s.testAcc.Email,
 					"should display user email")
-				// Success page shows HTML content
 				s.T().Logf("Success page body length: %d", len(body))
 			},
 		},
@@ -191,7 +190,6 @@ func (s *SuccessTestSuite) TestSuccess() {
 				location := rr.Header().Get("Location")
 				assert.Equal(s.T(), "/", location, "should redirect to index page")
 
-				// Verify cookie was cleared
 				cookies := rr.Result().Cookies()
 				for _, cookie := range cookies {
 					if cookie.Name == NuonAuthCookieName {
@@ -216,7 +214,6 @@ func (s *SuccessTestSuite) TestSuccess() {
 			var authToken string
 			if tc.withToken {
 				if tc.tokenExpired {
-					// Create expired token
 					now := time.Now()
 					tokenValue := domains.NewUserTokenID()
 					token := app.Token{
@@ -224,7 +221,7 @@ func (s *SuccessTestSuite) TestSuccess() {
 						AccountID:   s.testAcc.ID,
 						Token:       tokenValue,
 						TokenType:   app.TokenTypeNuon,
-						ExpiresAt:   now.Add(-1 * time.Hour), // Expired 1 hour ago
+						ExpiresAt:   now.Add(-1 * time.Hour),
 						IssuedAt:    now.Add(-2 * time.Hour),
 						Issuer:      "test",
 					}
@@ -251,7 +248,6 @@ func (s *SuccessTestSuite) TestSuccess() {
 }
 
 func (s *SuccessTestSuite) TestSuccessDisplaysUserInfo() {
-	// Create valid token
 	authToken := s.createTestToken()
 
 	rr := s.makeRequestWithCookie("GET", "/success", authToken)
@@ -260,26 +256,21 @@ func (s *SuccessTestSuite) TestSuccessDisplaysUserInfo() {
 
 	body := rr.Body.String()
 
-	// Verify user information is displayed
 	assert.Contains(s.T(), body, s.testAcc.Email, "should display user email")
 
-	// Verify HTML structure (basic check)
 	assert.Contains(s.T(), body, "html", "should be HTML response")
 }
 
 func (s *SuccessTestSuite) TestSuccessWithInvalidTokenFormat() {
-	// Use invalid token that doesn't exist in DB
 	invalidToken := "invalid-token-12345"
 
 	rr := s.makeRequestWithCookie("GET", "/success", invalidToken)
 
-	// Should redirect to index since token is invalid
 	require.Equal(s.T(), http.StatusFound, rr.Code)
 
 	location := rr.Header().Get("Location")
 	assert.Equal(s.T(), "/", location, "should redirect to index page")
 
-	// Verify cookie was cleared
 	cookies := rr.Result().Cookies()
 	var foundAuthCookie bool
 	for _, cookie := range cookies {
@@ -293,20 +284,16 @@ func (s *SuccessTestSuite) TestSuccessWithInvalidTokenFormat() {
 }
 
 func (s *SuccessTestSuite) TestSuccessMultipleTimes() {
-	// Verify success page can be accessed multiple times with same token
 	authToken := s.createTestToken()
 
-	// First access
 	rr1 := s.makeRequestWithCookie("GET", "/success", authToken)
 	require.Equal(s.T(), http.StatusOK, rr1.Code)
 	assert.Contains(s.T(), rr1.Body.String(), s.testAcc.Email)
 
-	// Second access (token should still be valid)
 	rr2 := s.makeRequestWithCookie("GET", "/success", authToken)
 	require.Equal(s.T(), http.StatusOK, rr2.Code)
 	assert.Contains(s.T(), rr2.Body.String(), s.testAcc.Email)
 
-	// Verify token still exists in DB
 	var token app.Token
 	err := s.service.DB.Where("token = ?", authToken).First(&token).Error
 	require.NoError(s.T(), err, "token should still exist after multiple accesses")

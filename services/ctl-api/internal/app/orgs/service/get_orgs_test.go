@@ -28,7 +28,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// TestService holds all fx-injected dependencies for orgs endpoint tests.
 type TestService struct {
 	fx.In
 
@@ -43,7 +42,6 @@ type TestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// OrgsTestSuite is the testify suite for orgs endpoints.
 type OrgsTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -68,7 +66,6 @@ func (s *OrgsTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -77,7 +74,6 @@ func (s *OrgsTestSuite) SetupSuite() {
 
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -85,7 +81,6 @@ func (s *OrgsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -115,7 +110,6 @@ func (s *OrgsTestSuite) makeRequest(method, path string) *httptest.ResponseRecor
 }
 
 func (s *OrgsTestSuite) TestGetOrgs() {
-	// Generate unique names for each test case to avoid cross-run collisions
 	org1Name := fmt.Sprintf("test-org-1-%s", domains.NewOrgID()[:8])
 	org2Name := fmt.Sprintf("test-org-2-%s", domains.NewOrgID()[:8])
 	searchSuffix := domains.NewOrgID()[:8]
@@ -124,10 +118,10 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 
 	testCases := []struct {
 		name          string
-		setupFunc     func() []string // Returns org IDs that should be accessible
+		setupFunc     func() []string
 		queryParams   string
 		expectedCount int
-		validateFunc  func([]app.Org) // Additional validations
+		validateFunc  func([]app.Org)
 	}{
 		{
 			name: "returns empty array when no orgs",
@@ -260,7 +254,6 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 		{
 			name: "only returns user accessible orgs",
 			setupFunc: func() []string {
-				// Create second account
 				acc2ID := domains.NewAccountID()
 				acc2 := &app.Account{
 					ID:          acc2ID,
@@ -274,7 +267,6 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 					s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", acc2.ID)
 				})
 
-				// Create two orgs with different account contexts
 				ctx1 := context.Background()
 				ctx1 = cctx.SetAccountContext(ctx1, s.testAcc)
 
@@ -311,7 +303,6 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", otherOrg.ID)
 				})
 
-				// Return only myOrg ID (simulates RBAC permission resolution)
 				return []string{myOrg.ID}
 			},
 			queryParams:   "",
@@ -324,15 +315,12 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test data
 			orgIDs := tc.setupFunc()
 
-			// Update account's OrgIDs (simulates permission resolution)
 			s.testAcc.OrgIDs = orgIDs
 			err := s.service.DB.Save(s.testAcc).Error
 			require.NoError(s.T(), err)
 
-			// Make request
 			rr := s.makeRequest(http.MethodGet, "/v1/orgs"+tc.queryParams)
 
 			if rr.Code != http.StatusOK {
@@ -340,7 +328,6 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 			}
 			require.Equal(s.T(), http.StatusOK, rr.Code)
 
-			// Parse response
 			var response []app.Org
 			err = json.Unmarshal(rr.Body.Bytes(), &response)
 			if err != nil {
@@ -349,12 +336,10 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 			require.NoError(s.T(), err)
 			require.NotNil(s.T(), response)
 
-			// Validate expected count
 			if tc.expectedCount > 0 {
 				require.Len(s.T(), response, tc.expectedCount)
 			}
 
-			// Run additional validations if provided
 			if tc.validateFunc != nil && len(response) > 0 {
 				tc.validateFunc(response)
 			}

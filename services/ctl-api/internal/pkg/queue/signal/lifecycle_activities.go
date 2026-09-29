@@ -74,9 +74,6 @@ func boundedHookPhase(phase SignalPhase) string {
 	}
 }
 
-// emitActivityLatency records the wrapper activity's wall-clock duration
-// tagged by Temporal namespace. Only emits when a metrics writer is wired
-// (tests skip metrics setup).
 func (a *SignalLifecycleActivities) emitActivityLatency(ctx context.Context, metricName string, startTS time.Time) {
 	if a.mw == nil {
 		return
@@ -196,7 +193,7 @@ func (a *SignalLifecycleActivities) RunSignalLifecycleAfterPhase(ctx context.Con
 		if err := hook.AfterPhase(ctx, req.Event, req.Outcome); err != nil {
 			a.recordHookInvocation(ctx, hook, req.Event, "after", "error")
 			failedHooks++
-			// Fail open: the activity never re-fires the whole hook set
+			// why: Fail open: the activity never re-fires the whole hook set
 			// (that would duplicate already-delivered Slack posts and
 			// webhooks), so a hook error here means the notification is
 			// dropped for good. Make the drop loud.

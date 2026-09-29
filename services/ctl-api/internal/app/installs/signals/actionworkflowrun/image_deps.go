@@ -33,8 +33,6 @@ func (s *Signal) syncActionImageDeps(
 		return nil
 	}
 
-	// ComponentDependencyIDs includes step env/script refs; only sync image
-	// components named in the image template.
 	imageRefNames := map[string]bool{}
 	for _, ref := range refs.ParseFieldRefs(run.ActionWorkflowConfig.Image) {
 		if ref.Type == refs.RefTypeComponents {

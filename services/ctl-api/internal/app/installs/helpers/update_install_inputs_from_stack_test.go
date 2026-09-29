@@ -76,9 +76,6 @@ func (s *StackOutputInputsTestSuite) TearDownSuite() {
 	s.app.RequireStop()
 }
 
-// Customer stack outputs must land on the row readers actually resolve. Keying the
-// write on the input config the caller was handed writes to a row a newer config pin
-// already supersedes, and the outputs never take effect.
 func (s *StackOutputInputsTestSuite) TestOutputsMergeOntoNewestRow() {
 	ctx := context.Background()
 	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
@@ -96,7 +93,6 @@ func (s *StackOutputInputsTestSuite) TestOutputsMergeOntoNewestRow() {
 	s.Require().NoError(s.deps.DB.WithContext(ctx).
 		Where(app.AppInputGroup{AppInputConfigID: oldInputCfg.ID}).First(&oldGroup).Error)
 
-	// The stack can only write inputs it declares as customer-sourced.
 	s.Require().NoError(s.deps.DB.WithContext(ctx).Create(&app.AppInput{
 		AppInputConfigID: oldInputCfg.ID,
 		AppInputGroupID:  oldGroup.ID,
@@ -110,8 +106,6 @@ func (s *StackOutputInputsTestSuite) TestOutputsMergeOntoNewestRow() {
 	s.deps.Seed.CreateInstallInputs(ctx, s.T(), install.ID, oldInputCfg.ID,
 		map[string]*string{"region": ptrTo("us-west-2")})
 
-	// The install has since rolled onto a newer config, so the newest row — the one
-	// every reader resolves — is pinned somewhere else.
 	newCfg := s.deps.Seed.CreateBareAppConfig(ctx, s.T(), testApp.ID)
 	newInputCfg := s.deps.Seed.CreateAppInputConfig(ctx, s.T(), testApp.ID, newCfg.ID)
 	s.deps.Seed.CreateInstallInputs(ctx, s.T(), install.ID, newInputCfg.ID,

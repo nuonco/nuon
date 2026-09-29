@@ -22,7 +22,6 @@ type stderrResponse interface {
 	GetPayload() *models.StderrErrResponse
 }
 
-// ToUserError returns the error as a user error if possible
 func ToUserError(inputErr error) (*models.StderrErrResponse, bool) {
 	var (
 		stderr stderrResponse

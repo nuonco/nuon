@@ -8,7 +8,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/links"
 )
 
-// This must match the step name emitted by the app branch run workflow.
+// why: This must match the step name emitted by the app branch run workflow.
 const (
 	previewBuildsStepName = "building components and sandbox"
 	SandboxComponentID    = "sandbox"
@@ -26,19 +26,13 @@ type GetPreviewCommentContextInput struct {
 }
 
 type GetPreviewCommentContextOutput struct {
-	RunURL             string                 `json:"run_url"`
-	ComponentChanges   []ComponentBuildChange `json:"component_changes"`
-	PreviewInstallName string                 `json:"preview_install_name"`
-	PreviewInstallURL  string                 `json:"preview_install_url"`
-	// Diff holds the config diff computed from the run's app config IDs.
-	// Nil when the run has no app config or the diff cannot be computed.
-	Diff *ComputeAppConfigDiffOutput `json:"diff,omitempty"`
-	// InstallImpact holds install impact groups parsed from the impact step metadata.
-	// Nil when the impact step has not run or has no groups.
-	InstallImpact []InstallGroupImpact `json:"install_impact,omitempty"`
-	// Phases holds per-phase check statuses derived from workflow step records.
-	// Nil when the run has no workflow ID or the steps cannot be queried.
-	Phases *PRCommentPhases `json:"phases,omitempty"`
+	RunURL             string                      `json:"run_url"`
+	ComponentChanges   []ComponentBuildChange      `json:"component_changes"`
+	PreviewInstallName string                      `json:"preview_install_name"`
+	PreviewInstallURL  string                      `json:"preview_install_url"`
+	Diff               *ComputeAppConfigDiffOutput `json:"diff,omitempty"`
+	InstallImpact      []InstallGroupImpact        `json:"install_impact,omitempty"`
+	Phases             *PRCommentPhases            `json:"phases,omitempty"`
 }
 
 // @temporal-gen-v2 activity
@@ -107,10 +101,6 @@ func (a *Activities) GetPreviewCommentContext(ctx context.Context, input *GetPre
 	return out, nil
 }
 
-// deriveCommentPhases maps workflow step statuses to PR comment phase statuses.
-// It is called from the GetPreviewCommentContext activity so the state is always
-// read from the database — any signal that rewrites the comment can call the
-// same activity and get a consistent view of all phases.
 func deriveCommentPhases(mode app.AppBranchRunPreviewMode, steps []app.WorkflowStep, appConfigID string) *PRCommentPhases {
 	byName := make(map[string]*app.WorkflowStep, len(steps))
 	for i := range steps {
@@ -120,20 +110,16 @@ func deriveCommentPhases(mode app.AppBranchRunPreviewMode, steps []app.WorkflowS
 
 	phases := &PRCommentPhases{}
 
-	// Config phase
 	if s, ok := findStep(byName, previewConfigStepNameFetch, previewConfigStepNameSync); ok {
 		phases.Config = stepToPhaseStatus(s.Status.Status, "config")
 	} else if appConfigID != "" {
-		// Pre-existing config: no fetch/sync step, but config is implicitly valid.
 		phases.Config = PRCommentPhaseValid
 	}
 
-	// Builds phase
 	if s, ok := findStep(byName, previewBuildsStepName); ok {
 		phases.Builds = stepToPhaseStatus(s.Status.Status, "builds")
 	}
 
-	// Install phase — only shown for non-build-only modes.
 	if mode != app.AppBranchRunPreviewModeBuildOnly {
 		if s, ok := findStep(byName, previewInstallStepNamePlan, previewInstallStepNameApply, previewInstallStepNameImpact); ok {
 			phases.Install = stepToPhaseStatus(s.Status.Status, "install")
@@ -152,8 +138,6 @@ func findStep(byName map[string]*app.WorkflowStep, names ...string) (*app.Workfl
 	return nil, false
 }
 
-// stepToPhaseStatus maps a workflow step CompositeStatus to a PR comment phase status.
-// The kind parameter ("config", "builds", "install") picks the right in-progress label.
 func stepToPhaseStatus(status app.Status, kind string) PRCommentPhaseStatus {
 	switch status {
 	case app.StatusSuccess:
@@ -173,8 +157,6 @@ func stepToPhaseStatus(status app.Status, kind string) PRCommentPhaseStatus {
 	}
 }
 
-// computeCommentDiff resolves the baseline config and computes the app config diff.
-// Returns nil when there is no app config on the run or any step fails.
 func (a *Activities) computeCommentDiff(ctx context.Context, run *app.AppBranchRun) *ComputeAppConfigDiffOutput {
 	if run.AppConfigID == "" || run.AppBranch.AppID == "" {
 		return nil
@@ -196,8 +178,6 @@ func (a *Activities) computeCommentDiff(ctx context.Context, run *app.AppBranchR
 	return result
 }
 
-// installImpactFromStepMetadata parses InstallGroupImpact from the metadata
-// written by previewimpact.updateStepMetadata.
 func installImpactFromStepMetadata(metadata map[string]any) []InstallGroupImpact {
 	raw, ok := metadata["install_groups"].([]any)
 	if !ok || len(raw) == 0 {

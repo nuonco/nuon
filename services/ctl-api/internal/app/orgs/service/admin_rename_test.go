@@ -29,7 +29,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// AdminRenameOrgTestService holds all fx-injected dependencies for admin rename org tests.
 type AdminRenameOrgTestService struct {
 	fx.In
 
@@ -43,7 +42,6 @@ type AdminRenameOrgTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// AdminRenameOrgTestSuite is the testify suite for admin rename org endpoint.
 type AdminRenameOrgTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -70,7 +68,6 @@ func (s *AdminRenameOrgTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),
 	)
@@ -78,7 +75,6 @@ func (s *AdminRenameOrgTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -86,7 +82,6 @@ func (s *AdminRenameOrgTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -165,13 +160,11 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(org *app.Org, rr *httptest.ResponseRecorder) {
-				// Verify HTTP response is true
 				var response bool
 				err := json.Unmarshal(rr.Body.Bytes(), &response)
 				require.NoError(s.T(), err)
 				require.True(s.T(), response)
 
-				// Verify database state - name changed
 				var updatedOrg app.Org
 				err = s.service.DB.Where("id = ?", org.ID).First(&updatedOrg).Error
 				require.NoError(s.T(), err)
@@ -205,7 +198,6 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 			},
 			expectedStatus: http.StatusBadRequest,
 			validateFunc: func(org *app.Org, rr *httptest.ResponseRecorder) {
-				// Verify database state - name unchanged
 				var unchangedOrg app.Org
 				err := s.service.DB.Where("id = ?", org.ID).First(&unchangedOrg).Error
 				require.NoError(s.T(), err)
@@ -234,12 +226,9 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 
 				return org
 			},
-			requestBody: map[string]interface{}{
-				// name field intentionally omitted
-			},
+			requestBody:    map[string]interface{}{},
 			expectedStatus: http.StatusBadRequest,
 			validateFunc: func(org *app.Org, rr *httptest.ResponseRecorder) {
-				// Verify database state - name unchanged
 				var unchangedOrg app.Org
 				err := s.service.DB.Where("id = ?", org.ID).First(&unchangedOrg).Error
 				require.NoError(s.T(), err)
@@ -249,7 +238,6 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 		{
 			name: "returns error when org_id not found",
 			setupFunc: func() *app.Org {
-				// Return org with non-existent ID
 				return &app.Org{
 					ID:          "org_nonexistent_id_12345",
 					Name:        "does-not-exist",
@@ -261,7 +249,6 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 			},
 			expectedStatus: http.StatusNotFound,
 			validateFunc: func(org *app.Org, rr *httptest.ResponseRecorder) {
-				// Verify org does not exist in database
 				var count int64
 				err := s.service.DB.Model(&app.Org{}).Where("id = ?", org.ID).Count(&count).Error
 				require.NoError(s.T(), err)
@@ -293,7 +280,6 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 			requestBody:    "invalid-json-string",
 			expectedStatus: http.StatusBadRequest,
 			validateFunc: func(org *app.Org, rr *httptest.ResponseRecorder) {
-				// Verify database state - name unchanged
 				var unchangedOrg app.Org
 				err := s.service.DB.Where("id = ?", org.ID).First(&unchangedOrg).Error
 				require.NoError(s.T(), err)
@@ -306,7 +292,6 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create target org
 				targetOrg := &app.Org{
 					ID:          domains.NewOrgID(),
 					Name:        "target-org",
@@ -321,7 +306,6 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", targetOrg.ID)
 				})
 
-				// Create other org that should NOT be affected
 				otherOrgID := domains.NewOrgID()
 				otherOrg := &app.Org{
 					ID:          otherOrgID,
@@ -338,9 +322,7 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", otherOrg.ID)
 				})
 
-				// Store other org ID for validation
 				s.T().Cleanup(func() {
-					// Verify other org name unchanged in final validation
 					var unchangedOtherOrg app.Org
 					err := s.service.DB.Where("id = ?", otherOrg.ID).First(&unchangedOtherOrg).Error
 					require.NoError(s.T(), err)
@@ -354,29 +336,23 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(org *app.Org, rr *httptest.ResponseRecorder) {
-				// Verify HTTP response is true
 				var response bool
 				err := json.Unmarshal(rr.Body.Bytes(), &response)
 				require.NoError(s.T(), err)
 				require.True(s.T(), response)
 
-				// Verify target org was renamed
 				var updatedOrg app.Org
 				err = s.service.DB.Where("id = ?", org.ID).First(&updatedOrg).Error
 				require.NoError(s.T(), err)
 				require.Equal(s.T(), "renamed-target-org", updatedOrg.Name)
-
-				// Additional validation of other org happens in cleanup
 			},
 		},
 	}
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test data
 			org := tc.setupFunc()
 
-			// Update router context to use the test org
 			s.router = tests.NewTestRouter(tests.RouterOptions{
 				L:       s.service.L,
 				DB:      s.service.DB,
@@ -386,7 +362,6 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 			err := s.orgsService.RegisterInternalRoutes(s.router)
 			require.NoError(s.T(), err)
 
-			// Make request
 			rr := s.makeRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-rename", org.ID), tc.requestBody)
 
 			if rr.Code != tc.expectedStatus {
@@ -394,7 +369,6 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Run validation
 			if tc.validateFunc != nil {
 				tc.validateFunc(org, rr)
 			}

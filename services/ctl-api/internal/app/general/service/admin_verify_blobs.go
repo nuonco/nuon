@@ -145,7 +145,6 @@ func (s *service) getBlobVerifyStatus(ctx context.Context) (*VerifyBlobsStatusRe
 
 	encoded, err := s.temporalClient.QueryWorkflowInNamespace(ctx, blobVerifyNamespace, blobverify.WorkflowID, "", blobverify.ProgressQueryType)
 	if err != nil {
-		// progress query is best-effort: a completed run on a closed workflow may not answer queries.
 		return resp, nil
 	}
 

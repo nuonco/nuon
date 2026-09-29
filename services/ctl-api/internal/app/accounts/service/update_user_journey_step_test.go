@@ -11,14 +11,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *AccountsServiceTestSuite) TestUpdateUserJourneyStepSuccess() {
 	testCases := []struct {
 		name             string
-		setupComplete    bool // initial completion state of create-org step
+		setupComplete    bool
 		reqBody          UpdateUserJourneyStepRequest
 		expectedComplete bool
 	}{
@@ -56,7 +52,6 @@ func (s *AccountsServiceTestSuite) TestUpdateUserJourneyStepSuccess() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Seed journey with the desired initial state
 			journey := testseed.BuildUserJourney()
 			journey.Steps[0].Complete = tc.setupComplete
 			s.testAcc.UserJourneys = app.UserJourneys{journey}
@@ -78,14 +73,12 @@ func (s *AccountsServiceTestSuite) TestUpdateUserJourneyStepSuccess() {
 			require.Len(s.T(), response.UserJourneys[0].Steps, 3)
 			assert.Equal(s.T(), tc.expectedComplete, response.UserJourneys[0].Steps[0].Complete)
 
-			// Verify metadata if it was sent
 			if tc.reqBody.Metadata != nil {
 				for k, v := range tc.reqBody.Metadata {
 					assert.Equal(s.T(), v, response.UserJourneys[0].Steps[0].Metadata[k])
 				}
 			}
 
-			// Verify persisted to database
 			var dbAccount app.Account
 			err = s.service.DB.WithContext(s.ctx).First(&dbAccount, "id = ?", s.testAcc.ID).Error
 			require.NoError(s.T(), err)
@@ -95,10 +88,6 @@ func (s *AccountsServiceTestSuite) TestUpdateUserJourneyStepSuccess() {
 		})
 	}
 }
-
-// ---------------------------------------------------------------------------
-// Metadata merging preserves existing metadata
-// ---------------------------------------------------------------------------
 
 func (s *AccountsServiceTestSuite) TestUpdateStepMetadataMergesWithExisting() {
 	journey := testseed.BuildUserJourney()
@@ -131,17 +120,10 @@ func (s *AccountsServiceTestSuite) TestUpdateStepMetadataMergesWithExisting() {
 	stepMeta := response.UserJourneys[0].Steps[1].Metadata
 	require.NotNil(s.T(), stepMeta)
 
-	// Existing key preserved
 	assert.Equal(s.T(), "2024-01-01", stepMeta["started_at"])
-	// New key added
 	assert.Equal(s.T(), "app_99999", stepMeta["app_id"])
-	// Overwritten key
 	assert.Equal(s.T(), "api", stepMeta["source"])
 }
-
-// ---------------------------------------------------------------------------
-// Update without metadata preserves existing metadata
-// ---------------------------------------------------------------------------
 
 func (s *AccountsServiceTestSuite) TestUpdateStepWithoutMetadataPreservesExisting() {
 	journey := testseed.BuildUserJourney()
@@ -166,10 +148,6 @@ func (s *AccountsServiceTestSuite) TestUpdateStepWithoutMetadataPreservesExistin
 	require.NotNil(s.T(), stepMeta)
 	assert.Equal(s.T(), "app_existing", stepMeta["app_id"])
 }
-
-// ---------------------------------------------------------------------------
-// Does not affect other steps or journeys
-// ---------------------------------------------------------------------------
 
 func (s *AccountsServiceTestSuite) TestUpdateStepDoesNotAffectOtherSteps() {
 	s.testAcc.UserJourneys = app.UserJourneys{testseed.BuildUserJourney()}
@@ -215,10 +193,6 @@ func (s *AccountsServiceTestSuite) TestUpdateStepDoesNotAffectOtherJourneys() {
 	assert.False(s.T(), response.UserJourneys[1].Steps[0].Complete, "advanced step should be untouched")
 }
 
-// ---------------------------------------------------------------------------
-// Not found cases
-// ---------------------------------------------------------------------------
-
 func (s *AccountsServiceTestSuite) TestUpdateStepNotFound() {
 	testCases := []struct {
 		name        string
@@ -262,10 +236,6 @@ func (s *AccountsServiceTestSuite) TestUpdateStepNotFound() {
 		})
 	}
 }
-
-// ---------------------------------------------------------------------------
-// Validation errors
-// ---------------------------------------------------------------------------
 
 func (s *AccountsServiceTestSuite) TestUpdateStepValidationErrors() {
 	s.testAcc.UserJourneys = app.UserJourneys{testseed.BuildUserJourney()}

@@ -29,7 +29,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// DeleteAppActionTestService holds all fx-injected dependencies for delete app action tests.
 type DeleteAppActionTestService struct {
 	fx.In
 
@@ -45,7 +44,6 @@ type DeleteAppActionTestService struct {
 	Seeder         *testseed.Seeder
 }
 
-// DeleteAppActionTestSuite is the testify suite for DeleteAppAction endpoint.
 type DeleteAppActionTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -77,7 +75,6 @@ func (s *DeleteAppActionTestSuite) SetupSuite() {
 
 			CustomValidator: true,
 		}),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -85,7 +82,6 @@ func (s *DeleteAppActionTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -93,9 +89,6 @@ func (s *DeleteAppActionTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
-
-	// Create test router with standard middlewares using helper
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -165,7 +158,6 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionSuccess() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(actionID string) {
-				// Verify action status was updated to delete_queued
 				var dbAction app.ActionWorkflow
 				err := s.service.DB.First(&dbAction, "id = ?", actionID).Error
 				require.NoError(s.T(), err)
@@ -176,7 +168,6 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionSuccess() {
 		{
 			name: "delete action by name returns 200",
 			setupFunc: func() string {
-				// Use unique name per test run to avoid conflicts
 				uniqueName := "action-by-name-delete-" + domains.NewActionWorkflowID()
 				action := &app.ActionWorkflow{
 					ID:     domains.NewActionWorkflowID(),
@@ -196,7 +187,6 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionSuccess() {
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(actionName string) {
-				// Verify action status was updated
 				var dbAction app.ActionWorkflow
 				err := s.service.DB.Where("name = ? AND org_id = ?", actionName, s.testOrg.ID).First(&dbAction).Error
 				require.NoError(s.T(), err)
@@ -241,7 +231,6 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionNonExistent() {
 }
 
 func (s *DeleteAppActionTestSuite) TestDeleteAppActionDifferentOrg() {
-	// Create action in different org
 	ctx2 := context.Background()
 	ctx2, _ = s.service.Seeder.EnsureAccount(ctx2, s.T())
 	ctx2, org2 := s.service.Seeder.EnsureOrg(ctx2, s.T())
@@ -260,7 +249,6 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionDifferentOrg() {
 		s.service.DB.Unscoped().Delete(&app.ActionWorkflow{}, "id = ?", otherAction.ID)
 	})
 
-	// Try to delete action from different org
 	rr := s.makeRequest(http.MethodDelete, "/v1/apps/"+s.testApp.ID+"/actions/"+otherAction.ID, nil)
 
 	if rr.Code != http.StatusNotFound {
@@ -268,7 +256,6 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionDifferentOrg() {
 	}
 	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 
-	// Verify action was NOT deleted (status still active)
 	var dbAction app.ActionWorkflow
 	err = s.service.DB.First(&dbAction, "id = ?", otherAction.ID).Error
 	require.NoError(s.T(), err)
@@ -276,7 +263,6 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionDifferentOrg() {
 }
 
 func (s *DeleteAppActionTestSuite) TestDeleteAppActionAlreadyDeleted() {
-	// Create action already marked for deletion
 	action := &app.ActionWorkflow{
 		ID:                domains.NewActionWorkflowID(),
 		AppID:             s.testApp.ID,
@@ -292,7 +278,6 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionAlreadyDeleted() {
 		s.service.DB.Unscoped().Delete(&app.ActionWorkflow{}, "id = ?", action.ID)
 	})
 
-	// Try to delete again - should succeed (idempotent operation)
 	rr := s.makeRequest(http.MethodDelete, "/v1/apps/"+s.testApp.ID+"/actions/"+action.ID, nil)
 
 	if rr.Code != http.StatusOK {
@@ -300,7 +285,6 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionAlreadyDeleted() {
 	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	// Verify status is still delete_queued
 	var dbAction app.ActionWorkflow
 	err = s.service.DB.First(&dbAction, "id = ?", action.ID).Error
 	require.NoError(s.T(), err)

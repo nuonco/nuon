@@ -8,13 +8,12 @@ import (
 )
 
 const (
-	// by default, the maximum number of time that you can assume a role, via a chained assume (like we do in all of
+	// why: by default, the maximum number of time that you can assume a role, via a chained assume (like we do in all of
 	// our processes), is 3600 seconds. However, due to rounding issues, when this was originally set to time.Hour,
 	// this failed because it would come out as slightly larger than 3600 seconds and aws would reject the role
 	// assume step.
 	defaultRoleSessionDuration time.Duration = time.Second * 3600
 
-	// max session duration, as defined by aws
 	maxSessionDuration time.Duration = time.Second * 3600
 )
 
@@ -42,11 +41,8 @@ type Settings struct {
 	RoleSessionDuration time.Duration
 	ExternalID          string
 
-	// TwoStepRoleARN is an optional second role, to assume. This is useful for situations where nuon has a shared
-	// role that is assumable by our systems/workers, that our customer's grant access too.
 	TwoStepConfig *TwoStepConfig
 
-	// Github Config is an optional config which will direct this to grab the github OIDC role
 	UseGithubOIDC bool
 	UseGCPOIDC    bool
 
@@ -69,13 +65,11 @@ type assumer struct {
 	UseGithubOIDC bool
 	UseGCPOIDC    bool
 
-	// internal state
 	v *validator.Validate
 }
 
 type assumerOptions func(*assumer) error
 
-// New creates a new, validated assumer with the given options
 func New(v *validator.Validate, opts ...assumerOptions) (*assumer, error) {
 	a := &assumer{
 		RoleSessionDuration: defaultRoleSessionDuration,
@@ -95,7 +89,6 @@ func New(v *validator.Validate, opts ...assumerOptions) (*assumer, error) {
 		return nil, err
 	}
 
-	// ensure that the role duration is not greater than 1 hour.
 	if a.RoleSessionDuration > maxSessionDuration {
 		return nil, fmt.Errorf("role session duration must be less than %d", maxSessionDuration)
 	}
@@ -106,7 +99,6 @@ func New(v *validator.Validate, opts ...assumerOptions) (*assumer, error) {
 	return a, nil
 }
 
-// WithSettings sets settings to use this to assume roles
 func WithSettings(s Settings) assumerOptions {
 	return func(a *assumer) error {
 		if err := s.Validate(a.v); err != nil {
@@ -129,7 +121,6 @@ func WithSettings(s Settings) assumerOptions {
 	}
 }
 
-// WithRoleARN sets the ARN of the role to assume
 func WithRoleARN(s string) assumerOptions {
 	return func(a *assumer) error {
 		a.RoleARN = s
@@ -137,7 +128,6 @@ func WithRoleARN(s string) assumerOptions {
 	}
 }
 
-// WithRoleSessionName specifies the session name to use when assuming the role
 func WithRoleSessionName(s string) assumerOptions {
 	return func(a *assumer) error {
 		a.RoleSessionName = s
@@ -145,7 +135,6 @@ func WithRoleSessionName(s string) assumerOptions {
 	}
 }
 
-// WithRoleSessionDuration specifies the duration for the session
 func WithRoleSessionDuration(s time.Duration) assumerOptions {
 	return func(a *assumer) error {
 		a.RoleSessionDuration = s
@@ -153,7 +142,6 @@ func WithRoleSessionDuration(s time.Duration) assumerOptions {
 	}
 }
 
-// WithTwoStepConfig specifies a two-step role to assume, before assuming the final role
 func WithTwoStepConfig(s *TwoStepConfig) assumerOptions {
 	return func(a *assumer) error {
 		a.TwoStepConfig = s
@@ -161,7 +149,6 @@ func WithTwoStepConfig(s *TwoStepConfig) assumerOptions {
 	}
 }
 
-// WithRegion specifies a region to return the config in
 func WithRegion(s string) assumerOptions {
 	return func(a *assumer) error {
 		a.Region = s

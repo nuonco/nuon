@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Migration123DedupeQueueEmitters dedupes live emitters per (queue_id, name),
+// why: Migration123DedupeQueueEmitters dedupes live emitters per (queue_id, name),
 // keeping the newest, then creates the partial unique index. Creation lives
 // here instead of QueueEmitter.Indexes because the indexes phase runs before
 // custom migrations and would fail while duplicates exist.

@@ -9,8 +9,6 @@ import (
 	_ "github.com/nuonco/nuon/pkg/types/state"
 )
 
-// type State = state.State
-
 // @ID						GetInstallState
 // @Summary				Get the current state of an install.
 // @Description.markdown	get_install_state.md

@@ -75,7 +75,6 @@ func (s *GetRunnerCtlAPITestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with public routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -96,7 +95,6 @@ func (s *GetRunnerCtlAPITestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -108,7 +106,6 @@ func (s *GetRunnerCtlAPITestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group settings (required for Preload test)
 	s.testRunnerGrpSettings = &app.RunnerGroupSettings{
 		ID:                domains.NewRunnerGroupSettingsID(),
 		OrgID:             s.testOrg.ID,
@@ -121,7 +118,6 @@ func (s *GetRunnerCtlAPITestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrpSettings).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -154,7 +150,6 @@ func (s *GetRunnerCtlAPITestSuite) TestGetRunnerCtlAPI() {
 		{
 			name: "successfully get runner with preloaded associations",
 			setupFunc: func() string {
-				// Use the existing test runner
 				return s.testRunner.ID
 			},
 			expectedCode: http.StatusOK,
@@ -165,10 +160,8 @@ func (s *GetRunnerCtlAPITestSuite) TestGetRunnerCtlAPI() {
 				assert.Equal(s.T(), "Test Runner", runner.DisplayName)
 				assert.Equal(s.T(), app.RunnerStatusActive, runner.Status)
 
-				// Verify RunnerGroup is populated (json:"runner_group,omitzero")
 				assert.Equal(s.T(), s.testRunnerGrp.ID, runner.RunnerGroup.ID)
 
-				// Verify RunnerGroup.Settings is populated
 				assert.Equal(s.T(), s.testRunnerGrpSettings.ID, runner.RunnerGroup.Settings.ID)
 				assert.Equal(s.T(), "test.ecr.aws/runner", runner.RunnerGroup.Settings.ContainerImageURL)
 				assert.Equal(s.T(), "v1.0.0", runner.RunnerGroup.Settings.ContainerImageTag)
@@ -188,7 +181,6 @@ func (s *GetRunnerCtlAPITestSuite) TestGetRunnerCtlAPI() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -201,7 +193,6 @@ func (s *GetRunnerCtlAPITestSuite) TestGetRunnerCtlAPI() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner group for org2
 				runnerGrp2 := &app.RunnerGroup{
 					ID:        domains.NewRunnerGroupID(),
 					OrgID:     org2.ID,
@@ -213,7 +204,6 @@ func (s *GetRunnerCtlAPITestSuite) TestGetRunnerCtlAPI() {
 				err = s.service.DB.WithContext(ctx).Create(runnerGrp2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner in org2
 				runner2 := &app.Runner{
 					ID:            domains.NewRunnerID(),
 					OrgID:         org2.ID,
@@ -242,7 +232,6 @@ func (s *GetRunnerCtlAPITestSuite) TestGetRunnerCtlAPI() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create additional runners in same org
 				runner2 := &app.Runner{
 					ID:            domains.NewRunnerID(),
 					OrgID:         s.testOrg.ID,
@@ -270,7 +259,6 @@ func (s *GetRunnerCtlAPITestSuite) TestGetRunnerCtlAPI() {
 					s.service.DB.Unscoped().Delete(runner3)
 				})
 
-				// Return runner2's ID for verification
 				return runner2.ID
 			},
 			expectedCode: http.StatusOK,

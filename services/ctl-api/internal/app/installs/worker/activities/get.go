@@ -37,20 +37,12 @@ func (a *Activities) get(ctx context.Context, installID string) (*app.Install, e
 		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_sandbox_runs.created_at DESC").Limit(1)
 		}).
-
-		// load app secrets for deploys
 		Preload("App.AppSecrets").
 		Preload("AppRunnerConfig").
 		Preload("InstallConfig").
-
-		// load connected github
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig.VCSConnection").
-
-		// load public git
 		Preload("AppSandboxConfig.PublicGitVCSConfig").
-
-		// load runners
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Runners").
 		Preload("RunnerGroup.Runners.RunnerGroup").
@@ -67,8 +59,6 @@ func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Ins
 	return a.get(ctx, installID)
 }
 
-// SlimInstallResponse is a trimmed projection of app.Install for hot paths that
-// only need core columns, avoiding confusion with a fully-preloaded install.
 type SlimInstallResponse struct {
 	ID          string
 	OrgID       string
@@ -82,8 +72,6 @@ type SlimInstallResponse struct {
 // @as-wrapper
 // @by-field installID
 func (a *Activities) getSlimInstall(ctx context.Context, installID string) (*SlimInstallResponse, error) {
-	// full install object is quite costly from query and from logistics in temporal pov, this trim down version only
-	// returns the metadat which is needed in application flow rather than entire app config
 	install := app.Install{}
 	res := a.db.WithContext(ctx).
 		First(&install, "id = ?", installID)

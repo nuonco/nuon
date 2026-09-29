@@ -9,11 +9,6 @@ import (
 type GetAppGraphRequest struct {
 	InstallID string `json:"install_id" validate:"required"`
 
-	// AppConfigID orders the graph against a config the install has not been
-	// moved to yet. Callers generating steps for a pending config update must
-	// set it: the install still points at the old config, whose graph has no
-	// vertex for a component the update introduces, so those components would
-	// be dropped from the generated steps entirely.
 	AppConfigID string `json:"app_config_id"`
 
 	Reverse bool `json:"reverse"`

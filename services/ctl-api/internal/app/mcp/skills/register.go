@@ -12,11 +12,6 @@ import (
 
 const indexURI = "skill:///index.md"
 
-// Register adds the skill index/skill resources and the list_skills/load_skill
-// tools to server. Resources are the primary surface for clients that browse
-// MCP resources; the tools are a fallback for clients (like the CLI proxy)
-// that only exercise tools, and their descriptions keep the catalog visible
-// even to a model that never calls them.
 func Register(server *mcp.Server) {
 	server.AddResource(&mcp.Resource{
 		URI:         indexURI,
@@ -75,7 +70,6 @@ func readSkill(_ context.Context, req *mcp.ReadResourceRequest) (*mcp.ReadResour
 	}, nil
 }
 
-// parseSkillURI extracts domain/name from skill:///{domain}/{name}.md.
 func parseSkillURI(uri string) (domain, name string, ok bool) {
 	path := strings.TrimPrefix(uri, "skill:///")
 	if path == uri {

@@ -70,7 +70,6 @@ test.describe('InstallUpdatesTimeline', () => {
   })
 })
 
-// The Panel surface renders as an aside, not a dialog.
 const openPanel = async (page: import('@playwright/test').Page) => {
   await page.getByRole('button', { name: 'Open panel' }).click()
   return page.getByRole('complementary')
@@ -94,8 +93,6 @@ test.describe('InstallUpdateDetails', () => {
     await expect(panel.getByText(/via Operation role/i)).toBeVisible()
   })
 
-  // A component whose own config is byte-identical is only in the diff because the
-  // graph reached it. Labeling that "Changed" would read as an edit the author made.
   test('labels a checksum-identical component as impacted, not changed', async ({
     page,
   }) => {

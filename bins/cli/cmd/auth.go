@@ -19,7 +19,6 @@ func (c *cli) authCmd() *cobra.Command {
 		GroupID:           CoreGroup.ID,
 	}
 
-	// Add login subcommand
 	loginCmd := &cobra.Command{
 		Use:         "login",
 		Short:       "Login to Nuon",
@@ -30,7 +29,6 @@ func (c *cli) authCmd() *cobra.Command {
 		}),
 	}
 
-	// Add logout subcommand
 	logoutCmd := &cobra.Command{
 		Use:         "logout",
 		Short:       "Logout from Nuon",

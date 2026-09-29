@@ -1,4 +1,3 @@
-// Integration tests: run with INTEGRATION=true against the migrated test database.
 package service
 
 import (
@@ -55,16 +54,10 @@ func (s *StackTokenExpiryTestSuite) TearDownSuite() {
 	s.fxApp.RequireStop()
 }
 
-// revoke soft-deletes a token the way production revocation does.
 func (s *StackTokenExpiryTestSuite) revoke(tok *app.Token) {
 	require.NoError(s.T(), s.deps.DB.Delete(tok).Error)
 }
 
-// liveStackTokenExpiry drives what the TF Module tab tells the customer: whether they
-// still hold a working credential, and when it dies. Getting it wrong either claims a
-// stack is authenticated when it is not, or prompts a duplicate token.
-//
-// Each case seeds its own account, so the shared database isolates by account ID.
 func (s *StackTokenExpiryTestSuite) TestLiveStackTokenExpiry() {
 	t := s.T()
 	ctx := context.Background()
@@ -117,7 +110,6 @@ func (s *StackTokenExpiryTestSuite) TestLiveStackTokenExpiry() {
 		assert.True(t, expiry.IsZero())
 	})
 
-	// Ordered by expiry, not created_at: the newest token can be the shortest-lived.
 	s.Run("reports the longest-lived token, not the newest", func() {
 		acct := s.deps.Seeder.CreateAccount(ctx, t)
 		s.deps.Seeder.CreateToken(ctx, t, acct, farFuture)
@@ -185,7 +177,6 @@ func (s *StackRunnerAPIURLTestSuite) seedInstall(ctx context.Context) (context.C
 	return ctx, s.deps.Seeder.CreateInstall(ctx, t, a)
 }
 
-// A wrong answer points the customer's Terraform at the wrong control plane.
 func (s *StackRunnerAPIURLTestSuite) TestStackRunnerAPIURL() {
 	t := s.T()
 	const globalURL = "https://runner.example.com"
@@ -219,7 +210,6 @@ func (s *StackRunnerAPIURLTestSuite) TestStackRunnerAPIURL() {
 		assert.Equal(t, groupURL, url)
 	})
 
-	// The endpoint answers not-found for it, so this lookup must not error first.
 	s.Run("an unknown install still reports the global config", func() {
 		ctx, install := s.seedInstall(context.Background())
 

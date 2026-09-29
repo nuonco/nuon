@@ -1,11 +1,5 @@
 package gcp
 
-// spaceliftAdminTfTmpl renders an administrative-stack Terraform config that uses
-// the spacelift-io/spacelift provider to create a stack running the public
-// install-stacks//gcp module. The inputs/secrets tfvars are read from sibling
-// files (delivered alongside this config) rather than embedded, so the customer
-// can edit inputs.auto.tfvars and replace secrets.auto.tfvars before applying.
-// The secrets file is write-only so its contents aren't exposed after apply.
 const spaceliftAdminTfTmpl = `terraform {
   required_providers {
     spacelift = {
@@ -73,11 +67,6 @@ output "gcp_service_account_email" {
 }
 `
 
-// spaceliftBlueprintTmpl renders a Spacelift blueprint that provisions a stack
-// running the public install-stacks//gcp module. Customer install inputs and
-// secrets are exposed as blueprint inputs and interpolated into the mounted
-// tfvars via CEL (`${{ inputs.<id> }}`); the mounted-file content is plaintext,
-// which is what blueprints expect (unlike the provider's spacelift_mounted_file).
 const spaceliftBlueprintTmpl = `{{- if .Inputs}}
 inputs:
 {{- range .Inputs}}

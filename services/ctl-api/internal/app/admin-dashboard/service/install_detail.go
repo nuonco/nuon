@@ -21,7 +21,6 @@ func (s *service) InstallDetail(c *gin.Context) {
 	ctx := c.Request.Context()
 	page := getPageFromQuery(c)
 
-	// Parse date range (default to last 30 days)
 	endDate := time.Now()
 	startDate := endDate.AddDate(0, 0, -30)
 
@@ -55,7 +54,6 @@ func (s *service) InstallDetail(c *gin.Context) {
 		return
 	}
 
-	// Parse entity type filters
 	var entityTypes []string
 	typeFilter := c.Query("entity_types")
 	if typeFilter != "" {
@@ -65,12 +63,10 @@ func (s *service) InstallDetail(c *gin.Context) {
 			}
 		}
 	}
-	// If we ended up with an empty array after parsing, set to nil so defaults work
 	if len(entityTypes) == 0 {
 		entityTypes = nil
 	}
 
-	// Fetch activity logs
 	activityLogs, activityTotalPages, err := s.getActivityForInstall(
 		ctx, install.ID, startDate, endDate, page, entityTypes,
 	)
@@ -92,7 +88,6 @@ func (s *service) InstallDetail(c *gin.Context) {
 	})
 }
 
-// InstallActiveDeploymentsTable handles the polling endpoint for active deployments
 func (s *service) InstallActiveDeploymentsTable(c *gin.Context) {
 	installID := c.Param("id")
 	if installID == "" {
@@ -113,7 +108,6 @@ func (s *service) InstallActiveDeploymentsTable(c *gin.Context) {
 	})
 }
 
-// InstallActivityTable handles the polling endpoint for install activity
 func (s *service) InstallActivityTable(c *gin.Context) {
 	ctx := c.Request.Context()
 	installID := c.Param("id")
@@ -124,7 +118,6 @@ func (s *service) InstallActivityTable(c *gin.Context) {
 		return
 	}
 
-	// Parse date range
 	endDate := time.Now()
 	startDate := endDate.AddDate(0, 0, -30)
 
@@ -140,7 +133,6 @@ func (s *service) InstallActivityTable(c *gin.Context) {
 		}
 	}
 
-	// Parse entity type filters
 	var entityTypes []string
 	typeFilter := c.Query("entity_types")
 	if typeFilter != "" {
@@ -150,7 +142,6 @@ func (s *service) InstallActivityTable(c *gin.Context) {
 			}
 		}
 	}
-	// If we ended up with an empty array after parsing, set to nil so defaults work
 	if len(entityTypes) == 0 {
 		entityTypes = nil
 	}
@@ -176,7 +167,6 @@ func (s *service) InstallActivityTable(c *gin.Context) {
 
 const installWorkflowsPerPage = 10
 
-// InstallWorkflowsTable handles the endpoint for install workflows
 func (s *service) InstallWorkflowsTable(c *gin.Context) {
 	ctx := c.Request.Context()
 	installID := c.Param("id")
@@ -231,7 +221,6 @@ func (s *service) getWorkflowsForInstall(ctx context.Context, installID string, 
 	return workflows, totalPages, nil
 }
 
-// getInstall fetches an install by ID with necessary preloads
 func (s *service) getInstall(c *gin.Context) (*app.Install, error) {
 	installID := c.Param("id")
 	if installID == "" {
@@ -258,7 +247,6 @@ func (s *service) getInstall(c *gin.Context) (*app.Install, error) {
 	return &install, nil
 }
 
-// getActiveDeployments fetches active deployments for an install
 func (s *service) getActiveDeployments(c *gin.Context, installID string) ([]app.InstallDeploy, error) {
 	activeStatuses := []app.InstallDeployStatus{
 		app.InstallDeployStatusPlanning,
@@ -292,7 +280,6 @@ func (s *service) getActiveDeployments(c *gin.Context, installID string) ([]app.
 	return deployments, nil
 }
 
-// getActivityForInstall fetches runner jobs and workflows for an install
 func (s *service) getActivityForInstall(
 	ctx context.Context,
 	installID string,
@@ -302,8 +289,6 @@ func (s *service) getActivityForInstall(
 ) ([]*AuditLogEntry, int, error) {
 	var entries []*AuditLogEntry
 
-	// Default to runner_job and workflow if no types specified
-	// Also handle case where empty string is passed
 	if len(entityTypes) == 0 || (len(entityTypes) == 1 && entityTypes[0] == "") {
 		entityTypes = []string{"runner_job", "workflow"}
 		s.l.Debug("using default entity types for install activity",
@@ -317,15 +302,12 @@ func (s *service) getActivityForInstall(
 		)
 	}
 
-	// Build queries based on selected entity types
 	var queries []string
 	var queryParams []interface{}
 
 	for _, entityType := range entityTypes {
 		switch entityType {
 		case "runner_job":
-			// Runner jobs are related to installs through multiple owner types
-			// We need to join through install_deploys, install_sandbox_runs, install_components, and install_action_workflow_runs
 			queries = append(queries, `
 				SELECT DISTINCT
 					'runner_job' as entity_type,
@@ -353,7 +335,6 @@ func (s *service) getActivityForInstall(
 			queryParams = append(queryParams, installID, installID, installID, installID, startDate, endDate)
 
 		case "workflow":
-			// Query install workflows (table name is install_workflows)
 			queries = append(queries, `
 				SELECT
 					'workflow' as entity_type,
@@ -379,7 +360,6 @@ func (s *service) getActivityForInstall(
 		return []*AuditLogEntry{}, 1, nil
 	}
 
-	// Join queries with UNION ALL
 	query := ""
 	for i, q := range queries {
 		if i > 0 {
@@ -389,7 +369,6 @@ func (s *service) getActivityForInstall(
 	}
 	query += " ORDER BY created_at DESC"
 
-	// Get total count
 	countQuery := `SELECT COUNT(*) FROM (` + query + `) as activity_entries`
 	var totalCount int64
 	err := s.readDB().WithContext(ctx).Raw(countQuery, queryParams...).Scan(&totalCount).Error
@@ -406,7 +385,6 @@ func (s *service) getActivityForInstall(
 		zap.Time("end_date", endDate),
 	)
 
-	// Calculate pagination
 	totalPages := int(math.Ceil(float64(totalCount) / float64(installActivityPerPage)))
 	if totalPages == 0 {
 		totalPages = 1
@@ -414,7 +392,6 @@ func (s *service) getActivityForInstall(
 
 	offset := (page - 1) * installActivityPerPage
 
-	// Execute paginated query
 	queryParams = append(queryParams, installActivityPerPage, offset)
 	err = s.readDB().WithContext(ctx).Raw(query+` LIMIT ? OFFSET ?`, queryParams...).Scan(&entries).Error
 	if err != nil {

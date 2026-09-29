@@ -118,8 +118,6 @@ func (s *service) getInstallResources(ctx context.Context, orgID, installID stri
 	return resources, nil
 }
 
-// declaredProbesByInstallComponent maps each install component to the probe
-// names its CURRENT config declares, from the install's pinned app config.
 func (s *service) declaredProbesByInstallComponent(ctx context.Context, orgID, installID string) (map[string]map[string]bool, error) {
 	return s.declaredNamesByInstallComponent(ctx, orgID, installID, func(ccc app.ComponentConfigConnection) map[string]bool {
 		return probeNameSet(ccc.HealthProbes)
@@ -165,7 +163,7 @@ func (s *service) declaredNamesByInstallComponent(
 		return nil, fmt.Errorf("unable to list install components: %w", err)
 	}
 
-	// An app config version only carries ccc rows for components CHANGED in
+	// why: An app config version only carries ccc rows for components CHANGED in
 	// that sync. Components missing from the pinned version resolve via the
 	// latest-configs view — the same fallback the runner probe handout uses —
 	// otherwise a no-op sync marks every live probe as removed.
@@ -224,10 +222,6 @@ func probeNameSet(probes app.ComponentHealthProbes) map[string]bool {
 	return names
 }
 
-// markRemovedProbes labels probe rows whose name is no longer declared in the
-// owning component's current config. Observations persist in ClickHouse for
-// days after a probe is deleted from config; without the label the last
-// reading keeps rendering as a live check.
 func markRemovedProbes(resources []app.InstallComponentResourceState, declared map[string]map[string]bool) {
 	for i := range resources {
 		r := &resources[i]
@@ -256,24 +250,11 @@ func (s *service) deployedInstallComponentIDs(ctx context.Context, orgID, instal
 
 	deployed := make(map[string]bool, len(comps))
 	for i := range comps {
-		// EverDeployed, not HasDeployed: a redeploy transiently leaves the
-		// deployed set (planning/syncing/executing), and hiding a component's
-		// resources for the duration of every deploy is exactly when someone
-		// is watching them. Torn-down components resolve false again.
 		deployed[comps[i].ID] = comps[i].Status != app.InstallComponentStatusDisabled && comps[i].EverDeployed()
 	}
 	return deployed, nil
 }
 
-// retainDeployedComponentResources drops rows belonging to a component that has
-// never deployed. Observations live in ClickHouse for days, so a row recorded
-// before a component was torn down — or during the window where it briefly
-// looked deployed — keeps rendering with a fresh timestamp long after there is
-// any workload to observe. Showing them invites the reader to judge a component
-// by resources that no longer describe anything.
-//
-// Sandbox rows are always kept: they belong to the install's own infrastructure,
-// not to a component, so no component deploy state governs them.
 func retainDeployedComponentResources(resources []app.InstallComponentResourceState, deployed map[string]bool) []app.InstallComponentResourceState {
 	kept := make([]app.InstallComponentResourceState, 0, len(resources))
 	for _, r := range resources {

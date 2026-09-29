@@ -33,8 +33,6 @@ type RunnerJobExecutionOutputs struct {
 	Outputs     []byte          `json:"outputs_json,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"outputs,omitzero,omitempty"`
 	OutputsBlob *blobstore.Blob `json:"-" temporaljson:"-"`
 
-	// after query
-
 	ParsedOutputs map[string]interface{} `json:"outputs,omitzero" gorm:"-" swaggertype:"object,object" temporaljson:"parsed_outputs,omitzero,omitempty"`
 }
 

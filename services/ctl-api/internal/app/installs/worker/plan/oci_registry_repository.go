@@ -53,8 +53,6 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 		Plugin: "oci",
 	}
 
-	// NOTE(jm): this is mainly a relic of not having the outputs properly passed from the install sandbox, or a
-	// good way of "cataloging" resources.
 	switch {
 	case stack.InstallStackOutputs.AWSStackOutputs != nil:
 
@@ -94,7 +92,7 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 			)
 			return nil, errors.Wrap(err, "unable to render acr repository name")
 		}
-		// Per-component paths so resolved-version tags can't collide across
+		// why: Per-component paths so resolved-version tags can't collide across
 		// components. ACR creates nested repositories implicitly on push.
 		cfg.Repository = repositoryStr + "/" + imageNameSegment(installDeploy.ComponentName)
 		loginServer, err := render.RenderV2("{{.nuon.sandbox.outputs.acr.login_server}}", stateData)
@@ -123,7 +121,7 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 			)
 			return nil, errors.Wrap(err, "unable to render gar repository url")
 		}
-		// GAR requires an image name within the repo: HOST/PROJECT/REPO/IMAGE.
+		// why: GAR requires an image name within the repo: HOST/PROJECT/REPO/IMAGE.
 		// Per-component paths so resolved-version tags can't collide across components.
 		cfg.Repository = repositoryStr + "/" + imageNameSegment(installDeploy.ComponentName)
 		loginServer, err := render.RenderV2("{{.nuon.sandbox.outputs.gar.registry_url}}", stateData)
@@ -145,11 +143,6 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 	return cfg, nil
 }
 
-// installRegistryLoginServer returns the login server of the install's own
-// registry, or "" when the sandbox emits no registry outputs. Best-effort by
-// design: it is used to decide whether an image ref already points at the
-// install registry, and an install whose sandbox has no registry is a perfectly
-// valid host for an action that pulls a public image.
 func installRegistryLoginServer(stateData map[string]interface{}, stack *app.InstallStack) string {
 	var tmpl string
 	switch {
@@ -171,11 +164,6 @@ func installRegistryLoginServer(stateData map[string]interface{}, stack *app.Ins
 	return strings.TrimPrefix(strings.TrimSpace(loginServer), "https://")
 }
 
-// getInstallRegistryPullConfig builds the registry config for pulling an image
-// that already lives in the install's registry, so the runner authenticates
-// with the install's cloud credentials rather than attempting an anonymous
-// pull. Unlike getInstallRegistryRepositoryConfig this is not tied to a
-// component deploy: the repository comes from the ref the caller resolved.
 func getInstallRegistryPullConfig(
 	repository string,
 	loginServer string,
@@ -211,9 +199,6 @@ func getInstallRegistryPullConfig(
 	return cfg
 }
 
-// imageNameSegment reduces a component name to a docker image path segment /
-// tag prefix: lowercase, every run of non-alphanumerics (including "_")
-// collapsed to a single "-", no leading or trailing separator.
 func imageNameSegment(componentName string) string {
 	var b strings.Builder
 	lastDash := false
@@ -259,10 +244,6 @@ func (b *Planner) getOrgRegistryRepositoryConfig(ctx workflow.Context, installID
 	appRepoName := fmt.Sprintf("%s/%s", install.OrgID, install.AppID)
 	loginServer := strings.TrimPrefix(accessInfo.ServerAddress, "https://")
 
-	// For GCP/GAR, the RegistryID from GetOrgECRAccessInfo contains the full GAR URL
-	// (e.g. "us-central1-docker.pkg.dev/project/repo"). Use it to build the full image path.
-	// Always use PrivateOCI with static credentials — the install runner may not have GCP
-	// default credentials (it runs in the customer's cloud, not ours).
 	if accessInfo.RegistryID != "" && strings.Contains(accessInfo.ServerAddress, "pkg.dev") {
 		garURL := accessInfo.RegistryID
 		if idx := strings.Index(garURL, "/"); idx != -1 {
@@ -283,7 +264,7 @@ func (b *Planner) getOrgRegistryRepositoryConfig(ctx workflow.Context, installID
 	}, nil
 }
 
-// RenderText does the same thing as render.RenderV2, but using "text/template" instead of "html/template",
+// why: RenderText does the same thing as render.RenderV2, but using "text/template" instead of "html/template",
 // to avoid escaping special characters.
 func RenderText(inputVal string, data map[string]interface{}) (string, error) {
 	data = render.EnsurePrefix(data)

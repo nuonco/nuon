@@ -18,7 +18,6 @@ type Signal struct {
 	NewAppConfigID            string `json:"new_app_config_id" validate:"required"`
 	InstallAppConfigVersionID string `json:"install_config_update_id,omitempty"`
 
-	// FlowID and StepID are injected by the flow engine via SignalWithStepContext.
 	FlowID string `json:"flow_id,omitempty"`
 	StepID string `json:"step_id,omitempty"`
 }
@@ -45,22 +44,18 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	return nil
 }
 
-// ComponentDiffEntry is an alias for the shared type.
 type ComponentDiffEntry = app.ComponentDiffEntry
 
-// ConfigDiff is an alias for the shared type.
 type ConfigDiff = app.InstallConfigDiff
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
-	// Get the install to find its current app config
 	install, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
 	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	// Get new app config with component config connections
 	newAppCfg, err := activities.AwaitGetAppConfigByID(ctx, s.NewAppConfigID)
 	if err != nil {
 		return fmt.Errorf("unable to get new app config: %w", err)
@@ -73,27 +68,23 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		Unchanged: []ComponentDiffEntry{},
 	}
 
-	// Build lookup for new config connections by component ID
 	newConnByComponent := make(map[string]*app.ComponentConfigConnection, len(newAppCfg.ComponentConfigConnections))
 	for i := range newAppCfg.ComponentConfigConnections {
 		ccc := &newAppCfg.ComponentConfigConnections[i]
 		newConnByComponent[ccc.ComponentID] = ccc
 	}
 
-	// If the install has an existing app config, compare against it
 	if install.AppConfigID != "" {
 		oldAppCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 		if err != nil {
 			l.Warn("unable to get old app config, treating all components as added", "error", err)
 		} else {
-			// Build lookup for old config connections by component ID
 			oldConnByComponent := make(map[string]*app.ComponentConfigConnection, len(oldAppCfg.ComponentConfigConnections))
 			for i := range oldAppCfg.ComponentConfigConnections {
 				ccc := &oldAppCfg.ComponentConfigConnections[i]
 				oldConnByComponent[ccc.ComponentID] = ccc
 			}
 
-			// Compare: find changed, unchanged, and removed
 			for componentID, oldConn := range oldConnByComponent {
 				newConn, exists := newConnByComponent[componentID]
 				if !exists {
@@ -121,11 +112,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 					})
 				}
 
-				// Remove from new map so we can find truly new components
 				delete(newConnByComponent, componentID)
 			}
 
-			// Remaining in newConnByComponent are new additions
 			for componentID, newConn := range newConnByComponent {
 				diff.Added = append(diff.Added, ComponentDiffEntry{
 					ComponentID:   componentID,
@@ -136,7 +125,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	// If no old config, everything is new
 	if install.AppConfigID == "" {
 		for componentID, newConn := range newConnByComponent {
 			diff.Added = append(diff.Added, ComponentDiffEntry{
@@ -155,13 +143,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"unchanged", len(diff.Unchanged),
 	)
 
-	// Serialize and persist the diff.
 	diffJSON, err := json.Marshal(diff)
 	if err != nil {
 		return fmt.Errorf("unable to marshal diff: %w", err)
 	}
 
-	// Save the diff blob on the InstallAppConfigVersion record if we have the ID.
 	if s.InstallAppConfigVersionID != "" {
 		if err := activities.AwaitSaveInstallAppConfigVersionDiff(ctx, &activities.SaveInstallAppConfigVersionDiffInput{
 			InstallAppConfigVersionID: s.InstallAppConfigVersionID,

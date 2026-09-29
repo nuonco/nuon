@@ -19,7 +19,7 @@ func (k *k8sSecretManager) Upsert(ctx context.Context, value []byte) error {
 	return k.upsert(ctx, kubeClient, value)
 }
 
-// upsert applies the secret using server-side apply with a per-key field manager. The field manager is scoped to
+// why: upsert applies the secret using server-side apply with a per-key field manager. The field manager is scoped to
 // k.Key so two Nuon secrets writing different keys into the same Kubernetes secret each own only their own key and
 // never clobber one another's data: with SSA's granular map merge, an apply that declares only its key leaves keys
 // owned by other managers intact. Force is set so the first SSA apply can take ownership of a key previously written
@@ -28,7 +28,6 @@ func (k *k8sSecretManager) Upsert(ctx context.Context, value []byte) error {
 // It is split out of Upsert so tests can pass a fake clientset (fake.NewClientset models SSA field management, so the
 // multi-key coexistence guarantee is unit-testable; see create_test.go).
 func (k *k8sSecretManager) upsert(ctx context.Context, kubeClient kubernetes.Interface, value []byte) error {
-	// Create the namespace if it doesn't exist.
 	nsClient := kubeClient.CoreV1().Namespaces()
 	if _, err := nsClient.Get(ctx, k.Namespace, metav1.GetOptions{}); err != nil {
 		namespace := &v1.Namespace{

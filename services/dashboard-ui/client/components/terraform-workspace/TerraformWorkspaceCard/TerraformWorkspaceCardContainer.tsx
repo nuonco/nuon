@@ -44,7 +44,7 @@ export const TerraformWorkspaceCardContainer = ({
 
   const latestStateId = states?.[0]?.id
 
-  // Pulumi state isn't terraform JSON, so it can't go through the parsed endpoint.
+  // why: Pulumi state isn't terraform JSON, so it can't go through the parsed endpoint.
   const { data: currentRevision, isLoading: revisionLoading } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: [

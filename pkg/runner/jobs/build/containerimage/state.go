@@ -7,7 +7,6 @@ import (
 )
 
 type handlerState struct {
-	// state for an individual run, that can not be reused
 	plan      *plantypes.BuildPlan
 	workspace workspace.Workspace
 
@@ -15,7 +14,6 @@ type handlerState struct {
 	jobExecutionID string
 	resultTag      string
 
-	// the config can be one of the following:
 	cfg    *plantypes.ContainerImagePullPlan
 	regCfg *configs.OCIRegistryRepository
 }

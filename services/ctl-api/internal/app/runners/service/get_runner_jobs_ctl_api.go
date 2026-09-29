@@ -69,16 +69,12 @@ func (s *service) GetRunnerJobsCtlAPI(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, runnerJobs)
 }
 
-// runnerJobFilters holds the group/status/limit query filters shared by the
-// runner-scoped and org-scoped runner job listing endpoints.
 type runnerJobFilters struct {
 	groups   []app.RunnerJobGroup
 	statuses []app.RunnerJobStatus
 	limit    int
 }
 
-// parseRunnerJobFilters reads the group(s), status(es) and limit query params
-// used to filter runner jobs.
 func parseRunnerJobFilters(ctx *gin.Context) (runnerJobFilters, error) {
 	groups := []app.RunnerJobGroup{}
 	groupStr := ctx.DefaultQuery("group", "")
@@ -89,7 +85,6 @@ func parseRunnerJobFilters(ctx *gin.Context) (runnerJobFilters, error) {
 		groupsStr := ctx.DefaultQuery("groups", "")
 		if groupsStr != "" {
 			groupsStr := strings.Split(groupsStr, ",")
-			// trim whitespace
 			for i, groupStr := range groupsStr {
 				groupsStr[i] = strings.TrimSpace(groupStr)
 			}
@@ -108,7 +103,6 @@ func parseRunnerJobFilters(ctx *gin.Context) (runnerJobFilters, error) {
 		statuses = append(statuses, status)
 	} else if statusesStr != "" {
 		statusesStr := strings.Split(statusesStr, ",")
-		// trim whitespace
 		for i, statusStr := range statusesStr {
 			statusesStr[i] = strings.TrimSpace(statusStr)
 		}

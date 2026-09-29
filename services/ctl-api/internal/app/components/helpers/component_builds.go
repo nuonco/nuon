@@ -22,7 +22,6 @@ func (s *Helpers) GetComponentLatestBuilds(ctx context.Context, cmpIDs ...string
 	for _, cmpID := range cmpIDs {
 		build, err := s.getComponentLatestBuild(ctx, cmpID)
 		if err != nil {
-			// Skip components that don't have builds instead of failing entirely
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				continue
 			}

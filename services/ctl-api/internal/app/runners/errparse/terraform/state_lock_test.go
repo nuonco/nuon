@@ -59,8 +59,6 @@ func TestParse_StateLock(t *testing.T) {
 	_ = e
 }
 
-// TestParse_OrdinaryErrorIsNotStateLock guards that the state-lock split does
-// not swallow a normal terraform diagnostic.
 func TestParse_OrdinaryErrorIsNotStateLock(t *testing.T) {
 	raw := readFixture(t, "invalid_reference.txt")
 	if ce := parseStateLockRaw(raw); ce != nil {

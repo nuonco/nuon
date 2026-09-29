@@ -10,28 +10,20 @@ import (
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// StepResult describes the outcome of executing a single step.
 type StepResult struct {
-	// Result carries the directive and status metadata from the step.
 	Result directive.StepResult
 
 	ManualRetry bool
 
-	// Error is set when the step failed unexpectedly (not handled by the
-	// directive system). The caller should propagate this as a group error.
 	Error error
 }
 
-// executeSingleStep dispatches a step, awaits its queue signal completion, and
-// reads the step's directive from the database. Resident await-retry outcomes
-// return to the flow host; legacy inputs continue waiting in place.
 func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep) StepResult {
 	l.Debug("dispatching step",
 		zap.String("step_id", step.ID),
 		zap.String("step_name", step.Name),
 		zap.Int("group_idx", s.GroupIdx))
 
-	// Dispatch the step signal with a callback for completion notification.
 	s.stepDispatchSeq++
 	cb := callback.NewAttempt(ctx, step.ID, s.stepDispatchSeq)
 	qsID, err := s.dispatchStep(ctx, step, cb)
@@ -42,13 +34,8 @@ func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *ap
 		return StepResult{Error: err}
 	}
 
-	// Track for cancellation.
 	s.stepSignalIDs = append(s.stepSignalIDs, qsID)
 
-	// Await step completion. Execute() stays alive until the directive is
-	// terminal, so this blocks for the full lifecycle including approval and
-	// retry waiting. Bound by the step's derived timeout, falling back to the
-	// human-wait cap when unset.
 	stepTimeout := step.Timeout
 	if stepTimeout == 0 {
 		stepTimeout = callback.FallbackAwaitTimeout
@@ -67,7 +54,6 @@ func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *ap
 			}
 		}
 
-		// Read the step's final state from DB.
 		var err error
 		updatedStep, err = activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, step.ID)
 		if err != nil {
@@ -76,8 +62,6 @@ func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *ap
 
 		d = directive.Step(updatedStep.ResultDirective)
 
-		// await-retry remains non-terminal for legacy inputs. Resident flows
-		// unwind it to the parent host instead.
 		if d == directive.StepAwaitRetry && !s.ResidentFlow {
 			continue
 		}
@@ -89,7 +73,6 @@ func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *ap
 		zap.String("directive", string(d)))
 
 	if qsErr != nil && d == "" {
-		// Step failed without a directive — unexpected error.
 		return StepResult{Error: qsErr}
 	}
 
@@ -97,13 +80,11 @@ func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *ap
 		d = directive.StepContinue
 	}
 
-	// Build the result with the step's status metadata for reason/status info.
 	result := directive.NewStepResult(d)
 	manualRetry := false
 	if updatedStep.Status.StatusHumanDescription != "" {
 		result.Reason = updatedStep.Status.StatusHumanDescription
 	}
-	// Read optional status overrides from step metadata.
 	if meta := updatedStep.Status.Metadata; meta != nil {
 		if retryType, ok := meta["retry_type"].(string); ok && retryType == "manual" {
 			manualRetry = true

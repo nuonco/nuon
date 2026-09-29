@@ -6,27 +6,22 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/sandboxmode/templates"
 )
 
-// SandboxLogTemplate represents a pre-built log template that can be used
-// to populate sandbox config log lines.
 type SandboxLogTemplate struct {
 	Key         string   `json:"key"`
 	Description string   `json:"description"`
 	Category    string   `json:"category"`
-	Type        string   `json:"type"` // e.g. "failing-action", "kube-action", "success"
+	Type        string   `json:"type"`
 	Lines       []string `json:"lines"`
 }
 
-// SandboxPlanTemplate represents a pre-built plan template that can be used
-// to populate sandbox config plan contents.
 type SandboxPlanTemplate struct {
 	Key         string `json:"key"`
 	Description string `json:"description"`
 	Category    string `json:"category"`
-	Type        string `json:"type"` // e.g. "noop", "s3", "database", "full-sandbox"
+	Type        string `json:"type"`
 	Contents    string `json:"contents"`
 }
 
-// SandboxTemplates is the response for the templates endpoint.
 type SandboxTemplates struct {
 	LogTemplates         []SandboxLogTemplate  `json:"log_templates"`
 	PlanTemplates        []SandboxPlanTemplate `json:"plan_templates"`
@@ -119,7 +114,6 @@ func defaultStateTemplates() []SandboxPlanTemplate {
 	return result
 }
 
-// categoryFromJobTypes infers the legacy category from job types.
 func categoryFromJobTypes(jobTypes []string) string {
 	if len(jobTypes) == 0 {
 		return "deploy"
@@ -137,7 +131,6 @@ func categoryFromJobTypes(jobTypes []string) string {
 	}
 }
 
-// categoryFromKey infers the legacy plan category from the template key.
 func categoryFromKey(key string) string {
 	switch {
 	case strings.HasPrefix(key, "terraform"):

@@ -28,7 +28,6 @@ type EmitSignalResponse struct {
 // @temporal-gen-v2 activity
 // @max-retries 10
 func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*EmitSignalResponse, error) {
-	// Get the emitter to access its signal template
 	var emitter app.QueueEmitter
 	if res := a.db.WithContext(ctx).
 		Where("id = ?", req.EmitterID).
@@ -45,7 +44,6 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 		)
 	}
 
-	// Check for existing in-flight signals from this emitter to prevent backup
 	var existingSignals []*app.QueueSignal
 	jdb := generics.NewJSONBQuery(a.db.WithContext(ctx))
 	if res := jdb.WhereJSON(generics.JSONBQuery{
@@ -91,13 +89,11 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 		}
 	}
 
-	// Look up the queue so we can propagate its owner to the signal.
 	var queue app.Queue
 	if res := a.db.WithContext(ctx).First(&queue, "id = ?", req.QueueID); res.Error != nil {
 		return nil, generics.TemporalGormError(res.Error, "unable to get queue")
 	}
 
-	// Enqueue the signal to the queue using the queue client
 	enqueueReq := &client.EnqueueSignalRequest{
 		QueueID:   req.QueueID,
 		Signal:    emitter.SignalTemplate.Signal,
@@ -132,7 +128,7 @@ const (
 	staleReasonExpired        = "expired"
 )
 
-// partitionStaleSignals splits an emitter's in-flight signals into ones that should
+// why: partitionStaleSignals splits an emitter's in-flight signals into ones that should
 // no longer hold the emitter back, keyed by why, and ones still considered live.
 //
 // Expiry is otherwise only enforced by the handler itself, so a handler that died

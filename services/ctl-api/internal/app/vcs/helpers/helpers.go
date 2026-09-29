@@ -44,7 +44,6 @@ func New(params Params) *Helpers {
 	}
 }
 
-// Logger returns the helpers logger (may be nil in tests).
 func (h *Helpers) Logger() *zap.Logger {
 	return h.l
 }

@@ -11,10 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestGetAppComponentBuildsSuccess() {
 	s.Run("returns seeded build", func() {
 		cmp := s.getSeededComponent(app.ComponentTypeHelmChart)
@@ -46,13 +42,8 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentBuildsSuccess() {
 	})
 }
 
-// ---------------------------------------------------------------------------
-// Empty cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestGetAppComponentBuildsEmpty() {
 	s.Run("returns empty array for component with no builds", func() {
-		// Create a fresh component with a config connection but no builds
 		freshComp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeDockerBuild)
 		s.deps.Seeder.CreateDockerBuildComponentConfigConnection(s.ctx, s.T(), freshComp.ID, s.testAppConfig.ID)
 

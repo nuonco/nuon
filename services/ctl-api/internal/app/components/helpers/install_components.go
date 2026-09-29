@@ -10,7 +10,6 @@ import (
 )
 
 func (h *Helpers) EnsureInstallComponents(ctx context.Context, appID string, installIDs []string) error {
-	// fetch the parent app's installs and ensure each gets the new component
 	parentApp := app.App{}
 	res := h.db.WithContext(ctx).
 		Preload("Installs").
@@ -20,14 +19,12 @@ func (h *Helpers) EnsureInstallComponents(ctx context.Context, appID string, ins
 		return fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
-	// if install IDs are not passed in, then update all installs
 	if len(installIDs) < 1 {
 		for _, install := range parentApp.Installs {
 			installIDs = append(installIDs, install.ID)
 		}
 	}
 
-	// create an install component for all known installs
 	installCmps := make([]app.InstallComponent, 0)
 	for _, installID := range installIDs {
 		for _, component := range parentApp.Components {

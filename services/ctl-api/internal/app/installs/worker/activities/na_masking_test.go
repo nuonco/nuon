@@ -9,11 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// Pins a prod flap: a component reporting 19 not-applicable and 33 healthy
-// resources read not-applicable, because not-applicable shares unknown's zero
-// severity and whichever row the store returned first won. The same cluster
-// state reported healthy or not-applicable at random, and each round trip reset
-// the alert baseline and re-notified.
 func TestNotApplicableNeverMasksAssessedResources(t *testing.T) {
 	at := time.Now().Truncate(time.Second)
 	row := func(kind, name, health string) app.InstallComponentResourceState {

@@ -13,7 +13,7 @@ export interface ITracePanel {
   logStream?: TLogStream
 }
 
-// Wrapper around TraceView that handles the missing-log-stream empty state and
+// why: Wrapper around TraceView that handles the missing-log-stream empty state and
 // the standard provider stack. Used by every Trace tab / Trace panel so they
 // stay in sync.
 //

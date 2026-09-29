@@ -21,8 +21,6 @@ func TestActionImageRef(t *testing.T) {
 		assert.Equal(t, "reg/org/app@sha256:abc", ref)
 	})
 
-	// Without a digest there is nothing to run but whatever the tag points at
-	// now, which is not what Nuon resolved.
 	t.Run("fails when the plan carries no digest", func(t *testing.T) {
 		h := &handler{state: &handlerState{plan: &plantypes.ActionWorkflowRunPlan{
 			SourceImage: "curlimages/curl:latest",

@@ -83,9 +83,6 @@ export const NoImpacts = () => (
   </PanelStory>
 )
 
-// The graph case: `frontend`'s own config is byte-identical, but an upstream role change
-// reached it, so ComputeInstallConfigDiff promotes it out of `unchanged` into `changed`
-// carrying only impact reasons. It should read as impacted, not as edited.
 export const ImpactedButUnchanged = () => (
   <PanelStory>
     <InstallUpdateDetails

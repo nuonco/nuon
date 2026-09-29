@@ -49,7 +49,6 @@ func (r FullPageDialogRequest) getLevelStyle() color.Color {
 }
 
 func FullPageDialog(req FullPageDialogRequest) string {
-	// dialog that fits the w, h provided w/ content centered..
 	levelStyle := req.getLevelStyle()
 	dialog := lipgloss.Place(req.Width, req.Height,
 		lipgloss.Center, lipgloss.Center,

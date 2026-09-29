@@ -93,8 +93,6 @@ func (s *service) getInstallComponentHealthTimeline(ctx context.Context, orgID, 
 	}
 	installComponentID := ic.ID
 
-	// windowFrom anchors the calendar-day buckets; spanFrom clamps to the
-	// health baseline — see getInstallHealthTimeline for why the two differ.
 	windowFrom, to := healthWindow(time.Now(), days)
 	baseline, err := s.healthBaseline(ctx, orgID, installID)
 	if err != nil {
@@ -109,8 +107,6 @@ func (s *service) getInstallComponentHealthTimeline(ctx context.Context, orgID, 
 	}
 	spanFrom := clampToBaseline(windowFrom, baseline)
 
-	// Transitions are history and ignore the baseline — a reset changes what
-	// counts toward uptime, not what happened.
 	transitions, err := s.listHealthTransitions(ctx, orgID, installID, installComponentID, windowFrom, to)
 	if err != nil {
 		return nil, err

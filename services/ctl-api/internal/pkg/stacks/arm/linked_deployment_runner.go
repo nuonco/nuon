@@ -26,16 +26,12 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 
 	vnetDeployment := scope.vnetDeploymentName(inp.Install.ID)
 
-	// Custom runner template — fetch and inspect declared parameters.
-	// Unlike the generic custom-nested-stack path we do NOT hoist arbitrary
-	// params. The runner template is Nuon-owned plumbing; every parameter
-	// is either baked by us or has a safe default in the template itself.
 	armTmpl, err := fetchARMTemplate(templateURL)
 	if err != nil {
 		return nil, nil, fmt.Errorf("runner linked deployment: %w", err)
 	}
 
-	// Per-operation user-assigned identities must be attached to the runner
+	// why: Per-operation user-assigned identities must be attached to the runner
 	// VMSS to be usable via IMDS (Azure has no assume-role). The default runner
 	// attaches them automatically; a custom template must opt in by declaring a
 	// "userAssignedIdentities" object parameter, into which we inject the
@@ -54,7 +50,7 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		}
 	}
 
-	// All values Nuon can supply. Only injected if the template declares
+	// why: All values Nuon can supply. Only injected if the template declares
 	// the parameter — otherwise ARM rejects unknown params.
 	managedParams := map[string]any{
 		"nuonInstallID":       inp.Install.ID,
@@ -78,9 +74,6 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		if val, ok := managedParams[paramName]; ok {
 			deploymentParams[paramName] = map[string]any{"value": val}
 		}
-		// Parameters not in managedParams are left to their template
-		// defaults. If the template declares a required param we don't
-		// know about, ARM will surface a clear deployment error.
 	}
 
 	customerParams := map[string]ARMParameter{}
@@ -113,10 +106,6 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		},
 	}
 
-	// A custom runner template only ever creates a VMSS, so it stays RG-targeted
-	// even at subscription scope. That keeps the runnerSubnetId wiring and the
-	// userAssignedIdentities contract above untouched. A subscription-scoped runner
-	// template would be a separate opt-in.
 	scope.targetInstallRG(deployment)
 
 	return deployment, customerParams, nil
@@ -127,7 +116,6 @@ func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operat
 
 	vnetDeployment := scope.vnetDeploymentName(inp.Install.ID)
 
-	// VMSS references the operation identities, so they must exist first.
 	dependsOn := []string{vnetDeployment}
 	if _, uamiDependsOn := operationIdentityAttachment(operationIDs, scope); len(uamiDependsOn) > 0 {
 		dependsOn = append(dependsOn, uamiDependsOn...)
@@ -161,7 +149,7 @@ func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operat
 	return deployment
 }
 
-// Settings.AWSInstanceType is not consulted: the generators resolve the platform default into it
+// why: Settings.AWSInstanceType is not consulted: the generators resolve the platform default into it
 // before rendering, so it can never express "unset" — and on Azure it holds an AWS-shaped value.
 func runnerVMSize(inp *stacks.TemplateInput) string {
 	if inp.ConfiguredRunnerInstanceType != "" {
@@ -228,8 +216,6 @@ func runnerCustomerParameters(inp *stacks.TemplateInput) map[string]ARMParameter
 
 func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdentity) map[string]any {
 	identity := map[string]any{"type": "SystemAssigned"}
-	// The runner deployment is RG-targeted, so its inline template reads the
-	// identities at resource-group scope alongside them.
 	if userAssigned, _ := operationIdentityAttachment(operationIDs, armScope{}); len(userAssigned) > 0 {
 		identity = map[string]any{
 			"type":                   "SystemAssigned, UserAssigned",
@@ -268,11 +254,6 @@ func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdenti
 					"upgradePolicy": map[string]any{
 						"mode": "Manual",
 					},
-					// Self-heal the runner instance when it goes unhealthy (e.g.
-					// the mng process powers the VM off on shutdown). This is the
-					// Azure analog to the AWS ASG EC2 health check, which is what
-					// brings a shut-down AWS runner back automatically. Health is
-					// sourced from the Application Health extension below.
 					"automaticRepairsPolicy": map[string]any{
 						"enabled":      true,
 						"gracePeriod":  "PT10M",
@@ -331,11 +312,6 @@ func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdenti
 								},
 							},
 						},
-						// Reports instance health to the VMSS by probing the mng
-						// process's /livez endpoint. When the runner is down
-						// (or the VM is powered off on shutdown) the probe fails,
-						// the instance is marked unhealthy, and automaticRepairsPolicy
-						// replaces it.
 						"extensionProfile": map[string]any{
 							"extensions": []map[string]any{
 								{
@@ -343,13 +319,13 @@ func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdenti
 									"properties": map[string]any{
 										"publisher":               "Microsoft.ManagedServices",
 										"type":                    "ApplicationHealthLinux",
-										"typeHandlerVersion":      "1.0", // Binary Health States (v1.0): a 200 from the probe
+										"typeHandlerVersion":      "1.0",
 										"autoUpgradeMinorVersion": true,
 										"settings": map[string]any{
 											"protocol":       "http",
 											"port":           9999,
 											"requestPath":    "/livez",
-											"numberOfProbes": 3, // Require 3 consecutive failing probes
+											"numberOfProbes": 3,
 										},
 									},
 								},

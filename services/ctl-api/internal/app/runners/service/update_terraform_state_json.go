@@ -38,7 +38,7 @@ func (s *service) UpdateTerraformWorkspaceStateJSON(ctx *gin.Context) {
 		return
 	}
 
-	// keeping jobID optional to remain backwards compatible for old runners
+	// why: keeping jobID optional to remain backwards compatible for old runners
 	jobID := ctx.Query("job_id")
 	var sJobID *string
 	if jobID != "" {

@@ -1,4 +1,4 @@
-// Package phone_home_backfill onboards one org's installs to phone-home auth.
+// why: Package phone_home_backfill onboards one org's installs to phone-home auth.
 //
 // It is step one of two. This backfills every install in the org — cloud metadata
 // first, then the phone-home secret — while phone-home-auth is still off for the org.
@@ -59,16 +59,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	for _, install := range installs {
 		_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-			OwnerID:   install.ID,
-			OwnerType: "installs",
-			// Named explicitly: an install owns several queues, so the
-			// owner-only lookup restart_runners relies on is ambiguous here.
+			OwnerID:        install.ID,
+			OwnerType:      "installs",
 			QueueName:      installhelpers.InstallSignalsQueueName,
 			IdempotencyKey: fmt.Sprintf("phone-home-backfill-%s", install.ID),
 			Signal: &phonehomebackfill.Signal{
-				InstallID: install.ID,
-				// The point of the backfill: metadata and secrets land while the
-				// flag is still off, so turning it on never races provisioning.
+				InstallID:            install.ID,
 				IgnoreOrgFeatureGate: true,
 			},
 		})

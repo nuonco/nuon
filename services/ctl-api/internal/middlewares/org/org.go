@@ -65,7 +65,6 @@ func (m middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		// make sure org exists
 		org := app.Org{}
 		res := m.db.WithContext(ctx).
 			Preload("NotificationsConfig").
@@ -79,7 +78,6 @@ func (m middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		// make sure account has access to org
 		perm := permissions.FromRequest(ctx)
 		err = acct.AllPermissions.CanPerform(org.ID, perm)
 		if err != nil {

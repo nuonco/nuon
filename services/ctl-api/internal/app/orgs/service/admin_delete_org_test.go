@@ -31,7 +31,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// AdminDeleteOrgTestService holds all fx-injected dependencies for admin delete org tests.
 type AdminDeleteOrgTestService struct {
 	fx.In
 
@@ -45,7 +44,6 @@ type AdminDeleteOrgTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// AdminDeleteOrgTestSuite is the testify suite for admin delete org endpoint.
 type AdminDeleteOrgTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -76,7 +74,6 @@ func (s *AdminDeleteOrgTestSuite) SetupSuite() {
 
 			CustomValidator: true,
 		}),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),
 	)
@@ -84,7 +81,6 @@ func (s *AdminDeleteOrgTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -92,9 +88,6 @@ func (s *AdminDeleteOrgTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
-
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -233,7 +226,6 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
-				// No cleanup needed - hard delete removes it
 
 				return org
 			},
@@ -264,7 +256,6 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
-				// No cleanup needed - hard delete removes it
 
 				return org
 			},
@@ -349,12 +340,8 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test data
 			org := tc.setupFunc()
 
-			// Reset mock before test
-
-			// Make request
 			rr := s.makeRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-delete", org.ID), tc.requestBody)
 
 			if rr.Code != tc.expectedStatus {
@@ -362,13 +349,11 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Verify response body is true
 			var response bool
 			err := json.Unmarshal(rr.Body.Bytes(), &response)
 			require.NoError(s.T(), err)
 			assert.True(s.T(), response, "response should be true")
 
-			// Validate signal was sent (or not sent)
 			if tc.validateSignal {
 				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
@@ -376,12 +361,10 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 				signal := signals[0]
 				assert.Equal(s.T(), org.ID, signal.OwnerID, "signal should be sent to correct org ID")
 
-				// Type assert to get the actual signal
-				_ = signal // type check via .Type
+				_ = signal
 
 				assert.Equal(s.T(), orgdelete.SignalType, signal.Type, "signal type should be OperationDelete")
 
-				// Verify force flag if applicable
 				if tc.checkForceFlag {
 					sig, _ := signal.Signal.Signal.(*orgdelete.Signal)
 					assert.Equal(s.T(), tc.expectedForce, sig.ForceDelete, "ForceDelete flag should match request")
@@ -391,7 +374,6 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 				assert.Len(s.T(), signals, 0, "no signal should be sent for integration org")
 			}
 
-			// For hard delete, verify org is actually deleted from database
 			if tc.shouldHardDelete {
 				var count int64
 				err := s.service.DB.Unscoped().Model(&app.Org{}).Where("id = ?", org.ID).Count(&count).Error
@@ -429,9 +411,6 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgNotFound() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Reset mock before test
-
-			// Make request
 			rr := s.makeRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-delete", tc.orgID), tc.requestBody)
 
 			if rr.Code != tc.expectedStatus {
@@ -439,7 +418,6 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgNotFound() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Verify no signal was sent
 			signals := tests.GetQueueSignals(s.T(), s.service.DB)
 			assert.Len(s.T(), signals, 0, "no signal should be sent when org not found")
 		})
@@ -465,13 +443,12 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgRequestParsing() {
 		{
 			name:           "handles null request body",
 			requestBody:    "",
-			expectedStatus: http.StatusOK, // BindJSON treats empty body as empty struct
+			expectedStatus: http.StatusOK,
 		},
 	}
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Create a test org
 			ctx := context.Background()
 			ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
@@ -490,9 +467,6 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgRequestParsing() {
 				s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 			})
 
-			// Reset mock before test
-
-			// Make request with raw body
 			req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-delete", org.ID), bytes.NewBufferString(tc.requestBody))
 			require.NoError(s.T(), err)
 			req.Header.Set("Content-Type", "application/json")
@@ -534,7 +508,6 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgByName() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Create test org
 			ctx := context.Background()
 			ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
@@ -553,9 +526,6 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgByName() {
 				s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 			})
 
-			// Reset mock before test
-
-			// Make request using name instead of ID
 			requestBody := AdminDeleteOrgRequest{Force: false}
 			rr := s.makeRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-delete", tc.lookupValue), requestBody)
 
@@ -565,14 +535,13 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgByName() {
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
 			if tc.validateSignal {
-				// Verify signal was sent
 				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
 
 				signal := signals[0]
 				assert.Equal(s.T(), org.ID, signal.OwnerID, "signal should be sent to correct org ID")
 
-				_ = signal // type check via .Type
+				_ = signal
 
 				assert.Equal(s.T(), orgdelete.SignalType, signal.Type, "signal type should be OperationDelete")
 			}

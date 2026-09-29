@@ -9,15 +9,9 @@ import (
 	"github.com/nuonco/nuon/pkg/api"
 )
 
-// This package contains some tooling to help us run runners locally, while mimicing a real environment.
-//
-// Notably, when run locally we a.) automatically look up a runner from the API and b.) execute it with credentials for
-// an AWS IAM Role if applicable. This allows us to re-enact the credential/sts environment and ensures that we can
-// easily run `nctl api seed` to automatically pick the most recent runner and process jobs.
 type devver struct {
 	watchRunnerType string
 
-	// current runner state
 	runnerType     string
 	runnerID       string
 	runnerAPIToken string

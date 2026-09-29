@@ -10,8 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 )
 
-// Sync owns its own AppBreakGlassConfig row rather than relying on the roles
-// permissions.Sync attaches: every consumer reads AppConfig.BreakGlassConfig.
 func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appConfigID string) error {
 	if cfg.BreakGlass == nil {
 		return nil

@@ -53,7 +53,7 @@ func (h *WorkflowsHandler) StreamWorkflow(c *gin.Context) {
 			return sseFetchResult{
 				Events: []sseEvent{
 					ev,
-					// Legacy unnamed duplicate so stale tabs running the old
+					// why: Legacy unnamed duplicate so stale tabs running the old
 					// bundle (which consumes onmessage) keep updating. Remove
 					// after the next release.
 					{Name: "", Data: ev.Data},

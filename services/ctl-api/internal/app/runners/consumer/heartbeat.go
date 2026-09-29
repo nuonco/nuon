@@ -1,6 +1,3 @@
-// Package consumer holds the runners domain's Kafka consumers. Each is a
-// pkg/consumer Sink plus a decode-and-insert handler; the naming, selection,
-// poll-loop and dead-letter machinery all live in that runtime package.
 package consumer
 
 import (
@@ -13,9 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 )
 
-// HeartbeatConsumer reads runner heartbeats off Kafka and batch-writes them to
-// ClickHouse. When it doesn't run — not selected, or Kafka disabled — New returns
-// nil and the inline heartbeater path remains in effect.
 type HeartbeatConsumer struct {
 	*pkgconsumer.Sink
 }

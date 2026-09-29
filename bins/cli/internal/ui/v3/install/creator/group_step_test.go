@@ -21,8 +21,6 @@ func testGroup(id, name string, matchLabels map[string]string) *models.AppAppBra
 	}
 }
 
-// validFormModel is a model whose name check has already cleared, so Enter is
-// allowed to move past the form.
 func validFormModel(groups []*models.AppAppBranchInstallGroup) model {
 	input := textinput.New()
 	input.SetValue("staging")
@@ -102,7 +100,6 @@ func TestSkipRowLeavesLabelsUnchanged(t *testing.T) {
 	m.presetLabels = map[string]string{"owner": "team-a"}
 	m.step = stepGroup
 
-	// Move past the last group onto the skip row.
 	next, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
 	moved := next.(model)
 	require.Equal(t, len(groups), moved.groupIndex)

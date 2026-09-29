@@ -20,7 +20,6 @@ const (
 
 var Module = fx.Options(fx.Provide(New, NewClient), fx.Invoke(func(*Client) {}))
 
-// LocalRouteLifecycle orders Client shutdown before an in-process route owner without coupling audit to its implementation.
 type LocalRouteLifecycle interface {
 	AuditRouteLifecycle()
 }

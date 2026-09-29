@@ -43,7 +43,7 @@ func (w *Workflows) Metrics(ctx workflow.Context) error {
 
 	w.mw.Gauge(ctx, "deadman.snitch", 1.0, metrics.ToTags(map[string]string{"snitchfor": "general-eloop-metrics"})...)
 
-	// NOTE: this MUST be an ordered slice, not a map. Ranging a map schedules
+	// why: this MUST be an ordered slice, not a map. Ranging a map schedules
 	// activities in a non-deterministic order, which breaks Temporal replay.
 	steps := []struct {
 		name string
@@ -113,7 +113,6 @@ func (w *Workflows) writeCHPartsPerPartition(ctx workflow.Context) error {
 }
 
 func (w *Workflows) writeCHPartRowStats(ctx workflow.Context) error {
-	// currently, we only query this stat for runner_heart_beat_table
 	defaultTags := map[string]string{"general": "true", "db_type": "ch", "table": "runner_heart_beats"}
 
 	stats, err := activities.AwaitGetCHRowsPerPartStats(ctx, activities.GetCHPartStatisticsRequest{})
@@ -154,7 +153,6 @@ func (w *Workflows) writeCHPartStats(ctx workflow.Context) error {
 func (w *Workflows) writeCHTableMetrics(ctx workflow.Context) error {
 	defaultTags := map[string]string{"general": "true"}
 
-	// write psql tables
 	tables, err := activities.AwaitGetCHTableMetrics(ctx, activities.GetCHTableMetricsRequest{})
 	if err != nil {
 		return errors.Wrap(err, "unable to get table metrics")
@@ -172,7 +170,6 @@ func (w *Workflows) writeCHTableMetrics(ctx workflow.Context) error {
 func (w *Workflows) writePSQLTableMetrics(ctx workflow.Context) error {
 	defaultTags := map[string]string{"general": "true"}
 
-	// write psql tables
 	tables, err := activities.AwaitGetPSQLTableMetrics(ctx, activities.GetPSQLTableMetricsRequest{})
 	if err != nil {
 		return errors.Wrap(err, "unable to get table metrics")

@@ -20,9 +20,6 @@ export const EditLabelsModalContainer = ({ ...props }: IModal) => {
   const { addToast } = useToast()
   const queryClient = useQueryClient()
 
-  // Template-managed keys edit as template text so saving unchanged rows
-  // round-trips the template instead of converting the label to static.
-  // App-default keys are excluded — they are read-only per install.
   const defaultLabels = install?.app_default_labels || {}
   const currentLabels: Record<string, string> = Object.fromEntries(
     Object.entries({

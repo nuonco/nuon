@@ -38,7 +38,6 @@ const NextButton = ({
   onClick?: () => void
   onBack?: () => void
   showNext?: boolean
-  // Rendered beside the primary (e.g. a cost line while a push is still pending).
   secondary?: ReactNode
 }) => (
   <div className={cn('flex gap-3', onBack ? 'justify-between' : 'justify-end')}>
@@ -518,16 +517,6 @@ ChoiceHeavy.meta = { fullBleed: true }
 export const Minimal = () => <Playground steps={MINIMAL_FLOW} />
 Minimal.meta = { fullBleed: true }
 
-// ---------------------------------------------------------------------------
-// Fork flow: post-login screen that splits into two paths.
-//   example → deploy Kitchen Sink into the user's own cloud (stack link, pre-filled inputs)
-//   own     → connect GitHub, set the app up from the terminal or an MCP agent
-// The steps array is swapped when the fork picks a path; the provider reads
-// `steps` from props on every render so the stepper follows the chosen path.
-// An intro page sits before the stepper. The fork leads with the user's own app
-// as the single primary; the example app is the secondary path.
-// ---------------------------------------------------------------------------
-
 type TCloud = 'aws' | 'gcp' | 'azure'
 type TPath = 'example' | 'own'
 
@@ -539,7 +528,6 @@ interface IForkChoice {
 interface IForkActions {
   choose: (choice: IForkChoice) => void
   backToIntro: () => void
-  // Review-only: bumps each time "Simulate push" is pressed; the product's trigger is the push itself.
   pushTick: number
 }
 
@@ -550,8 +538,6 @@ const ForkContext = createContext<IForkActions>({
 })
 const useForkChoice = () => useContext(ForkContext)
 
-// Clouds the example app (Kitchen Sink) can be deployed to from the fork. The
-// own-app path offers all three.
 const EXAMPLE_CLOUDS: TCloud[] = ['aws', 'gcp']
 
 const CLOUD_LABEL: Record<TCloud, string> = { aws: 'AWS', gcp: 'GCP', azure: 'Azure' }
@@ -562,15 +548,11 @@ const CLOUD_ICON: Record<TCloud, TIconVariant> = {
   azure: 'AzureColor',
 }
 
-// Maps onto the real install stack types: aws-cloudformation, gcp-terraform, azure-bicep.
-// Only AWS and Azure get a console quick link (ctl-api install_stack_version.go); GCP is applied by hand.
 const CLOUD_CONNECT: Record<
   TCloud,
   {
     accountNoun: string
     stackLabel: string
-    // What exists once generation finishes. AWS gets a console link; GCP and Azure (at its
-    // default scope) get a template and commands, so the status line must not say "link".
     artifactNoun: string
     generating: string
     launch: string
@@ -632,7 +614,6 @@ const CLOUD_REGIONS: Record<TCloud, { label: string; options: string[] }> = {
 const regionOptions = (cloud: TCloud) =>
   CLOUD_REGIONS[cloud].options.map((value) => ({ value, label: value }))
 
-// The sandbox each cloud lands on, and the repo that provisions it.
 const CLOUD_SANDBOX: Record<TCloud, string> = {
   aws: 'nuonco/aws-eks-sandbox',
   gcp: 'nuonco/gcp-gke-sandbox',
@@ -650,12 +631,6 @@ const readPath = (sharedData: Record<string, unknown>): TPath =>
 const readAppName = (sharedData: Record<string, unknown>): string =>
   ((sharedData.appName as string | undefined) ?? '').trim() || 'my-app'
 
-// --- Step 0: intro, outside the stepper -----------------------------------------
-// Reads as an extension of sign-in: one sentence, one button, one diagram. It is
-// rendered by the harness before the wizard mounts, so no stepper shows yet.
-
-// Nuon mark without the wordmark (brand asset, not a Phosphor icon). Black in
-// light mode, white in dark; same path as the design kit's logo-mark-black.svg.
 const NuonMark = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 23.119 32" fill="none" className={className} role="img" aria-label="Nuon">
     <path
@@ -666,8 +641,6 @@ const NuonMark = ({ className }: { className?: string }) => (
   </svg>
 )
 
-// The same three tiers appear in both boxes: described once by the vendor,
-// recreated as-is inside every customer account.
 const APP_TIERS: { icon: TIconVariant; label: string }[] = [
   { icon: 'GlobeIcon', label: 'Web' },
   { icon: 'CubeIcon', label: 'API' },
@@ -707,8 +680,6 @@ const IntroDiagram = () => (
       <Icon variant="ArrowDownIcon" size={24} weight="bold" theme="neutral" />
     </div>
 
-    {/* Offset rings behind the account stand in for "every customer". The
-        account itself is the loudest thing on the page: brand tint, brand ring. */}
     <div className="relative">
       <div className="absolute inset-0 translate-x-3 translate-y-3 rounded-xl ring-2 ring-primary-200 dark:ring-primary-900" aria-hidden />
       <div className="absolute inset-0 translate-x-1.5 translate-y-1.5 rounded-xl ring-2 ring-primary-300 dark:ring-primary-800" aria-hidden />
@@ -756,7 +727,6 @@ const IntroScreen = ({ onStart }: { onStart: () => void }) => (
       </Button>
     </div>
     <div className="flex-1 flex px-6 py-12">
-      {/* my-auto centers vertically when there is room and falls back to top-aligned when the content is taller than the viewport. */}
       <div className="max-w-5xl mx-auto my-auto w-full grid gap-10 md:grid-cols-[1fr_1.2fr] items-center">
         <div className="flex flex-col gap-8">
           <div className="flex flex-col gap-3">
@@ -782,22 +752,6 @@ const IntroScreen = ({ onStart }: { onStart: () => void }) => (
   </div>
 )
 
-// --- Step 1: the fork --------------------------------------------------------
-//
-// "Start with your app" does not advance the wizard. It expands the setup in
-// place: connect GitHub, install the CLI, then create the app. On the Template
-// step the agent path is the whole card; manual setup is a cautioned option
-// below it, beside a way to have Nuon's team write the config.
-//
-// Order, verified against docs/guides/agents: the MCP server is `nuon agents
-// mcp`, a CLI subcommand, so the CLI must be installed and logged in first. The
-// nuon-loop paste drives the CLI directly and does not need the MCP server; MCP
-// is offered as an optional extra. GitHub is only required for `connected_repo`
-// components (private repos); production onboarding v2 has no GitHub step.
-
-// Where "Contact us" lands. In the product, AuthLayout loads the Pylon chat widget
-// for signed-in users (lib/pylon-chat), so the button opens it with a message
-// started. The playground has no widget, so it falls back to the demo form.
 const DEMO_REQUEST = 'https://nuon.co/demo-request'
 const CONTACT_MESSAGE = 'I would like help writing the app config for my first install.'
 const contactUs = () => {
@@ -809,7 +763,6 @@ const contactUs = () => {
 }
 
 const DOCS_MCP = 'https://docs.nuon.co/guides/agents/mcp-walkthrough'
-// Placeholder until the marketing site hosts the prompt as its own text file.
 const PROMPT_TXT_URL = 'https://nuon.co/llms.txt'
 const DOCS_APPS = 'https://docs.nuon.co/concepts/apps'
 const DOCS_RUNNERS = 'https://docs.nuon.co/concepts/runners'
@@ -824,12 +777,7 @@ const GIT_PUSH = (app: string) => `git add ${app}\ngit commit -m "Add Nuon app c
 const VSCODE_EXTENSION = 'https://marketplace.visualstudio.com/items?itemName=Nuon.nuon-lsp'
 const LSP_NEOVIM_SETUP = 'https://github.com/nuonco/nuon/blob/main/bins/lsp/README.md#neovim'
 const DOCS_LSP = 'https://docs.nuon.co/configuration-files#language-server-protocol-lsp'
-// The one layout we show: config at the root of the connected repo, the way every
-// example-app-config does (kitchen-sink: metadata.toml at the top level, components/
-// beside it). Nesting under nuon/<app> exists in the wild but is an anti-pattern.
 
-// The nuon-loop paste, vendored verbatim from the Kitchen Sink demo UI
-// (components/ui/frontend/src/lib/nuon-loop-paste.ts → nuonco/nuon-loop PASTE.md @ a446c31, nuon-loop 0.5).
 const AGENT_PASTE =
   "/goal Set up this application on Nuon (nuon.co) so a customer can run it in their own AWS account, with no help from me unless a step truly needs a human. BOOTSTRAP FIRST, printing each result: (1) git clone --depth 1 https://github.com/nuonco/nuon-loop /tmp/nuon-loop (or gh repo clone nuonco/nuon-loop /tmp/nuon-loop if git prompts for credentials); mkdir -p .nuon-loop; copy NUON_LOOP.md and nuon-config-check.py into .nuon-loop/; read NUON_LOOP.md in full and print its Version line — it is the spec and overrides anything you assume about Nuon, and re-running it is safe. (2) Do its Phase 0 in order: locate the application (this directory if it is a git repo, else the repos/Dockerfiles/compose files/charts one level down, treated as one app unless the names clearly say otherwise — ask me only if two candidates are different products); write .claude/settings.local.json from Appendix F so nuon, python3, git and sleep never prompt me (if one still does, ask me once for \"always allow\"); make sure the nuon CLI and python3 >= 3.11 with jsonschema and pyyaml exist; nuon agents context, then nuon auth login if needed (tell me to finish the browser step), select the org if there is exactly one else ask me once, nuon apps deselect; add Appendix E to CLAUDE.md. (3) FOLLOW THE SPEC, Phases 1 through 6, under its §0.2 limits: I apply the CloudFormation stack; you never deprovision, delete or push. Infer every intake fact from the repo, its CI, its registries and this org's history; print the inferred-facts table and continue — ask me only for a fact you cannot determine and a gate depends on. THE GOAL IS MET when either (A) the transcript shows every §4 gate passing as command plus output — check script ending RESULT: PASS — 0 error(s); nuon apps validate exit 0; fresh-context review ending NO BLOCKING GAPS; nuon apps sync --no-wait with ok:true then a builds list where every component's newest build is active; an install named <app>-first (reused if it exists, else created) with an id starting inl; nuon installs stacks latest with a quick_link_url and composite_status.status awaiting-user-run; the provision workflow set to approve-all via nuon installs workflows set-approval-option (or that exact command printed in HANDOFF if you were not allowed to run it); the install's rendered readme fetched from https://api.nuon.co/v1/installs/<id>/readme returning HTTP 200 with a non-empty readme and empty warnings — and .nuon-loop/HANDOFF.md written and printed in full with no placeholders; or (B) .nuon-loop/BLOCKED.md written and printed, naming the item and gate you stopped on, every ask one that §6 allows, and the current check-script result shown. A gate counts only if its command and output are in the transcript. If I later paste a failed workflow or error, continue under Phase 7. Stop after 60 turns if neither A nor B is reached and write BLOCKED.md saying where you got stuck."
 
@@ -875,8 +823,6 @@ const OWN_APP_STEPS: { icon: TIconVariant; title: string }[] = [
   { icon: 'CloudIcon', title: 'Create the first install' },
 ]
 
-// The step's live moment: Nuon watching the tracked branch. In the prototype the
-// review panel's "Simulate push" stands in for the push.
 const PushListener = ({ detected, cloud }: { detected: boolean; cloud: TCloud }) => (
   <div
     className={cn(
@@ -932,8 +878,6 @@ interface IAppFileStub {
   snippet: (app: string, cloud: TCloud) => string
 }
 
-// Policy shapes per cloud, from nuonco/example-app-configs: kitchen-sink (AWS managed
-// policy), gke-simple (gcp_predefined_role), aks-simple (azure_built_in_roles).
 const ROLE_POLICY: Record<TCloud, string[]> = {
   aws: ['managed_policy_name = "AdministratorAccess"'],
   gcp: ['name                = "owner"', 'gcp_predefined_role = "roles/owner"'],
@@ -1008,7 +952,6 @@ const APP_FILE_STUBS: IAppFileStub[] = [
   },
 ]
 
-// The files were just stubbed out, so they arrive one after another on mount.
 const useMountedReveal = () => {
   const [shown, setShown] = useState(false)
   useEffect(() => {
@@ -1021,7 +964,6 @@ const staggerClass = (shown: boolean) =>
   cn('transition-all duration-500 ease-out', shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1')
 const staggerDelay = (order: number) => ({ transitionDelay: `${order * 90}ms` })
 
-// One expandable row per file.
 const FileStubRows = ({ appName, cloud }: { appName: string; cloud: TCloud }) => {
   const shown = useMountedReveal()
   const [open, setOpen] = useState<string[]>([])
@@ -1202,12 +1144,9 @@ const OwnAppSetup = ({
 
   return (
     <>
-      {/* Setup: its own container, kept compact so the value card below leads. */}
       <Card className="!gap-4">
         {heading}
         <div className="grid gap-4 md:grid-cols-2">
-          {/* Ring, not border, so the required/connected/error edge can change color
-              (the global border-color rule would paint a border grey regardless). */}
           <div
             className={cn(
               'flex flex-col gap-3 rounded-md p-4 ring-1 transition-shadow',
@@ -1218,7 +1157,6 @@ const OwnAppSetup = ({
                   : 'ring-neutral-200 dark:ring-neutral-700'
             )}
           >
-            {/* The CTA is the heading here — the button label says what this tile is. */}
             <div className="flex flex-col gap-2 items-start">
               {githubBlock}
               <Badge size="sm" theme={githubDone ? 'success' : 'brand'}>
@@ -1249,8 +1187,6 @@ const OwnAppSetup = ({
         </div>
       </Card>
 
-      {/* Name your app: typing a name is the moment the app starts to exist. The files
-          it needs are stubbed out on the next step, where they get filled in. */}
       <Card className="!gap-4">
         <div className="flex flex-col gap-1">
           <Text variant="h3" role="heading" level={3}>
@@ -1274,22 +1210,12 @@ const OwnAppSetup = ({
             spellCheck={false}
           />
         </div>
-        {/* Asked here, before the template step, so the stubbed runner, sandbox and
-            permissions match the cloud the install will use. */}
         <TestCloudPicker value={cloud} onChange={onCloud} error={showErrors && !cloud} />
       </Card>
     </>
   )
 }
 
-// --- Step 1b: the template (own path only) ------------------------------------
-//
-// The app exists and its config is stubbed. This step shows the stubs and the
-// two ways to fill them in.
-// The optional reading, as one line of fine print under the step. NN/g's progressive
-// disclosure: show the primary task, disclose the rest only when asked, with labels
-// that say what opens. Grey, dotted underline, no border: nothing here competes with
-// "Copy prompt".
 type TFootnote = 'mcp' | 'deps' | 'manual'
 const FOOTNOTE_LINK =
   'cursor-pointer text-cool-grey-500 underline decoration-dotted underline-offset-2 hover:text-foreground dark:text-cool-grey-400'
@@ -1384,10 +1310,6 @@ const Footnotes = ({
   )
 }
 
-// Manual setup, push-based. The config lives in the repo connected in Set up and the
-// default app branch tracks it, so a push is the sync (docs/guides/app-branches: any
-// push to the tracked branch starts a run). The six files live here, for the person
-// who chose to fill them in.
 const ManualSetup = ({ appName, repo, cloud }: { appName: string; repo: string; cloud: TCloud }) => {
   const steps: { title: string; body: ReactNode; detail?: ReactNode }[] = [
     {
@@ -1462,7 +1384,6 @@ const ManualSetup = ({ appName, repo, cloud }: { appName: string; repo: string; 
   )
 }
 
-// The agent path is the card. The prompt is the one thing to act on.
 const AgentSetup = () => (
   <div className="flex flex-col gap-4">
     <div className="flex flex-col gap-1.5">
@@ -1498,14 +1419,11 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
   const { choose, pushTick } = useForkChoice()
   const appName = readAppName(sharedData)
   const cloud = readCloud(sharedData)
-  // The connected account from Set up, and a repo named after the app.
   const repo = `jane-doe/${appName}`
   const detected = pushTick > 0
-  // Continuing before the push is allowed; the first click states the cost instead of advancing.
   const [confirmSkip, setConfirmSkip] = useState(false)
   const tryAdvance = () => (detected || confirmSkip ? onAdvance() : setConfirmSkip(true))
 
-  // Back to the fork, collapsed, with the example path selected.
   const exitToExample = () => {
     setSharedData('expandOwn', false)
     setSharedData('path', 'example')
@@ -1560,7 +1478,6 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
   const named = ((sharedData.appName as string | undefined) ?? '').trim().length > 0
   const githubDone = Boolean(sharedData.githubDone)
   const testCloud = sharedData.testCloud as TCloud | undefined
-  // Errors show only after a failed attempt to continue, on whichever field is missing.
   const [showErrors, setShowErrors] = useState(false)
 
   const tryContinue = () => {
@@ -1579,11 +1496,9 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
     onAdvance()
   }
 
-  // Expanding commits to the own-app path so the stepper stops showing the example path's "Deploy" dot.
   const expand = () => {
     choose({ path: 'own', cloud: readCloud(sharedData) })
     setSharedData('path', 'own')
-    // Persisted so Back from the template step remounts this step still expanded.
     setSharedData('expandOwn', true)
     setExpanded(true)
     requestAnimationFrame(() => setupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
@@ -1700,15 +1615,10 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
   )
 }
 
-// --- Step 2a (example path): deploy Kitchen Sink into the user's cloud ---------
-
-// One phase machine for the stack: Nuon renders the link (about 30s in the product),
-// the customer launches it, the stack reports back.
 type TStackPhase = 'generating' | 'ready' | 'opening' | 'waiting' | 'done'
 
 const TEST_CLOUDS: TCloud[] = ['aws', 'gcp', 'azure']
 
-// No default: the test cloud is the user's own account, so nothing is preselected.
 const TestCloudPicker = ({
   value,
   onChange,
@@ -1774,9 +1684,6 @@ const TestCloudPicker = ({
   </fieldset>
 )
 
-// How a customer creates the install stack, per cloud (docs/concepts/stacks.mdx and
-// docs/platform-support/*): Terraform plus the platform's native format, except GCP,
-// which is Terraform only. The first entry is the one this install's link uses.
 const DOCS_STACKS = 'https://docs.nuon.co/concepts/stacks'
 const STACK_METHODS: Record<TCloud, { name: string; how: string }[]> = {
   aws: [
@@ -1794,10 +1701,6 @@ const STACK_METHODS: Record<TCloud, { name: string; how: string }[]> = {
   ],
 }
 
-// What this install will contain, as a card worth reading: source, sandbox, and
-// components, plus the same three tiers the intro drew. Framing-agnostic — the
-// example and own paths differ only in the facts.
-// Both repo facts are chips that open the repo.
 const RepoChip = ({ repo }: { repo: string }) => (
   <Link href={`https://github.com/${repo}`} isExternal textVariant="subtext">
     <Badge size="sm" variant="code">
@@ -1895,10 +1798,6 @@ const InstallSummaryCard = ({
   )
 }
 
-// --- Step: set up the install --------------------------------------------------
-//
-// Settings and the app, nothing else. "Create install" is the moment the install
-// exists; the stack link starts generating on the next step.
 const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
   const path = readPath(sharedData)
   const cloud = readCloud(sharedData)
@@ -1940,13 +1839,6 @@ const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardS
   )
 }
 
-// --- Step: the install stack ----------------------------------------------------
-//
-// Two things happen here. While Nuon renders the stack link (about 30s), the
-// page explains how a customer creates that stack — quick-create, CLI, Terraform.
-// When the link exists the primary becomes the link itself; once the stack
-// reports back this advances to the workflow explainer. Users never get past
-// this page before the link exists.
 const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
   const path = readPath(sharedData)
   const cloud = readCloud(sharedData)
@@ -2089,11 +1981,6 @@ const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProp
   )
 }
 
-// --- Step 4 (all paths): how the install gets built ---------------------------
-//
-// A static preview of what the install builds, in order. Live progress lives on
-// the install's workflow page, which the primary opens.
-
 type TStageId = 'runner' | 'sandbox' | 'components'
 
 interface IBuildStage {
@@ -2102,7 +1989,6 @@ interface IBuildStage {
   blurb: string
 }
 
-// Onboarding is a proof of concept, so the account is always framed as a test one.
 const accountLabel = (_path: TPath, cloud: TCloud) => `your test ${CLOUD_CONNECT[cloud].accountNoun}`
 
 const SANDBOX_CLUSTER: Record<TCloud, string> = {
@@ -2112,9 +1998,6 @@ const SANDBOX_CLUSTER: Record<TCloud, string> = {
 }
 const SANDBOX_PARTS = ['cluster', 'registry', 'ingress', 'namespaces']
 
-// What is left AFTER the stack, which the user created on the previous step.
-// Durations from docs/get-started: a healthy runner ≈ 1 min after the stack
-// reports home; eks-simple end to end ≈ 35 min.
 const buildStages = (path: TPath, cloud: TCloud, appName: string): IBuildStage[] => [
   {
     id: 'runner',
@@ -2133,7 +2016,6 @@ const buildStages = (path: TPath, cloud: TCloud, appName: string): IBuildStage[]
   },
 ]
 
-// Placeholder in Nuon's install-ID shape; the product passes the real one.
 const EXAMPLE_INSTALL_ID = 'inlk3x9q2m7v4w8p1z6r5t0y2c'
 
 const ProvisionAccountView = ({
@@ -2294,9 +2176,6 @@ const ProvisionStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponent
   )
 }
 
-// --- Step definitions ---------------------------------------------------------
-
-// The step renders its own, larger title (no subhead) instead of the wizard's default h2.
 const FORK_STEP: IWizardStepDef = {
   id: 'fork',
   title: 'Create your first app template',
@@ -2396,13 +2275,6 @@ const buildForkFlow = (path: TPath, cloud: TCloud): IWizardStepDef[] => {
   ]
 }
 
-// --- Copy editor (review tooling — strip before this leaves the playground) ---
-//
-// Wraps the wizard so any visible text can be retyped directly at :61000, then
-// handed back as a JSON list of { from, to } pairs. Headings, body copy, links,
-// and button labels are all editable (verified in Chromium). While editing is on,
-// clicks on buttons and links are swallowed so placing a caret does not navigate.
-
 interface ICopyEdit {
   from: string
   to: string
@@ -2433,10 +2305,6 @@ const elementOf = (node: Node | null | undefined): Element | null => {
 
 const CopyEditor = ({ children, tools }: { children: ReactNode; tools?: ReactNode }) => {
   const wrapRef = useRef<HTMLDivElement>(null)
-  // React reuses DOM nodes across steps (the step heading is one <h2> whose text
-  // changes), so an element's "original" is only valid until React rewrites it.
-  // Live edits are keyed by element; once React repurposes or detaches the
-  // element, the edit is moved to `committed` and the original is refreshed.
   const tracked = useRef(new Set<Element>())
   const originals = useRef(new WeakMap<Element, ICopyOriginal>())
   const live = useRef(new Map<Element, ICopyEdit & { toOwn: string }>())
@@ -2455,8 +2323,6 @@ const CopyEditor = ({ children, tools }: { children: ReactNode; tools?: ReactNod
     if (ownCopy(el)) snapshot(el)
   }
 
-  // If the element's text no longer matches what we last saw (our edit, or the
-  // original), React rewrote it: finalize any live edit and start fresh.
   const resync = (el: Element, root: HTMLElement) => {
     const original = originals.current.get(el)
     if (!original) return
@@ -2496,7 +2362,6 @@ const CopyEditor = ({ children, tools }: { children: ReactNode; tools?: ReactNod
       return out
     }
 
-    // Placing a caret in a button or link must not trigger it.
     const swallowClicks = (event: MouseEvent) => {
       if ((event.target as Element).closest('button, a, summary, [role="button"]')) {
         event.preventDefault()
@@ -2504,7 +2369,6 @@ const CopyEditor = ({ children, tools }: { children: ReactNode; tools?: ReactNod
       }
     }
 
-    // Keep edits inside one text block: no new paragraphs, no formatting, no cross-element deletes.
     const guardInput = (event: InputEvent) => {
       const selection = document.getSelection()
       if (
@@ -2618,8 +2482,6 @@ const CopyEditor = ({ children, tools }: { children: ReactNode; tools?: ReactNod
       <div ref={wrapRef} className="contents">
         {children}
       </div>
-      {/* Bottom-center: every step ends in a Back/Next row whose middle is empty, so the
-          panel never covers a button. Bottom-right sat on top of right-aligned primaries. */}
       <Card className="fixed bottom-4 left-1/2 z-50 max-w-[calc(100vw-2rem)] -translate-x-1/2 !flex-row flex-wrap items-center justify-center !gap-3 !p-3 bg-background">
         {tools ? (
           <>
@@ -2662,8 +2524,6 @@ const CopyEditor = ({ children, tools }: { children: ReactNode; tools?: ReactNod
   )
 }
 
-// --- Harness ------------------------------------------------------------------
-
 const BranchingPlayground = ({
   initialPath = 'example',
   initialCloud = 'aws',
@@ -2678,12 +2538,10 @@ const BranchingPlayground = ({
   expandOwnApp?: boolean
 }) => {
   const [runId, setRunId] = useState(0)
-  // Deep-linked stories skip the intro; the default story starts on it.
   const [started, setStarted] = useState(initialStepIndex > 0 || skipIntro)
   const [startIndex, setStartIndex] = useState(initialStepIndex)
   const [finished, setFinished] = useState(false)
   const [choice, setChoice] = useState<IForkChoice>({ path: initialPath, cloud: initialCloud })
-  // Review-only: stands in for a git push to the tracked branch.
   const [pushes, setPushes] = useState(0)
 
   const steps = useMemo(

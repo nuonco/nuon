@@ -46,8 +46,6 @@ func (p palette) status(s Status) string {
 	}
 }
 
-// PrintResults renders the results table and returns the process exit code. A
-// skipped check is not a failure.
 func PrintResults(w io.Writer, results []Result) int {
 	p := paletteFor(w)
 	s := summarize(results)
@@ -56,12 +54,8 @@ func PrintResults(w io.Writer, results []Result) int {
 	fmt.Fprintln(w)
 	fmt.Fprintf(w, "  %-*s  %-6s  %s\n", width, "CHECK", "STATUS", "DETAIL")
 	for _, r := range results {
-		// Details are not truncated: on a failure the message is the whole
-		// point, and a clipped driver error sends people back to the logs.
 		fmt.Fprintf(w, "  %-*s  %s  %s\n", width, r.Name, p.status(r.Status), r.Detail)
 
-		// Only failures get their config expanded — on a pass the values are
-		// noise, and `--list` covers deliberate inspection.
 		if r.Failed() {
 			for _, f := range r.Fields {
 				fmt.Fprintf(w, "  %-*s  %s%s%s\n", width, "", p.dim, fieldLine(f), p.reset)
@@ -80,8 +74,6 @@ func PrintResults(w io.Writer, results []Result) int {
 	return 0
 }
 
-// PrintChecks renders every check, its skip state, and the config it reads.
-// Pair it with Describe to list checks without touching the network.
 func PrintChecks(w io.Writer, results []Result) {
 	p := paletteFor(w)
 

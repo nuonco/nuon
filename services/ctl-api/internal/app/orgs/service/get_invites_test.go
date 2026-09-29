@@ -30,7 +30,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// GetOrgInvitesTestService holds all fx-injected dependencies for org invites endpoint tests.
 type GetOrgInvitesTestService struct {
 	fx.In
 
@@ -45,7 +44,6 @@ type GetOrgInvitesTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// GetOrgInvitesTestSuite is the testify suite for GetOrgInvites endpoint.
 type GetOrgInvitesTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -71,7 +69,6 @@ func (s *GetOrgInvitesTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -80,7 +77,6 @@ func (s *GetOrgInvitesTestSuite) SetupSuite() {
 
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -88,7 +84,6 @@ func (s *GetOrgInvitesTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares and org context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -122,17 +117,16 @@ func (s *GetOrgInvitesTestSuite) makeRequest(method, path string) *httptest.Resp
 func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 	testCases := []struct {
 		name          string
-		setupFunc     func() []string // Returns invite IDs for cleanup
+		setupFunc     func() []string
 		queryParams   string
 		expectedCount int
 		expectedCode  int
-		validateFunc  func([]app.OrgInvite) // Additional validations
-		validateError func(string)          // Error response validation
+		validateFunc  func([]app.OrgInvite)
+		validateError func(string)
 	}{
 		{
 			name: "returns empty array when no invites exist",
 			setupFunc: func() []string {
-				// No invites created
 				return []string{}
 			},
 			queryParams:   "",
@@ -180,7 +174,6 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 			expectedCount: 2,
 			expectedCode:  http.StatusOK,
 			validateFunc: func(invites []app.OrgInvite) {
-				// Verify all invites belong to test org
 				for _, invite := range invites {
 					assert.Equal(s.T(), s.testOrg.ID, invite.OrgID)
 					assert.Contains(s.T(), invite.Email, "@test.nuon.co")
@@ -224,7 +217,6 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create invites with different timestamps
 				oldEmail := fmt.Sprintf("old-%s@test.nuon.co", domains.NewAccountID()[:8])
 				oldInvite := &app.OrgInvite{
 					OrgID:    s.testOrg.ID,
@@ -239,7 +231,6 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 					s.service.DB.Unscoped().Delete(&app.OrgInvite{}, "id = ?", oldInviteID)
 				})
 
-				// Wait to ensure different timestamps
 				time.Sleep(10 * time.Millisecond)
 
 				newEmail := fmt.Sprintf("new-%s@test.nuon.co", domains.NewAccountID()[:8])
@@ -262,7 +253,6 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 			expectedCount: 2,
 			expectedCode:  http.StatusOK,
 			validateFunc: func(invites []app.OrgInvite) {
-				// Verify timestamps are in descending order (newest first)
 				assert.True(s.T(), invites[0].CreatedAt.After(invites[1].CreatedAt),
 					"First invite should have later timestamp than second")
 			},
@@ -273,7 +263,6 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create another org
 				otherOrgID := domains.NewOrgID()
 				otherOrg := &app.Org{
 					ID:          otherOrgID,
@@ -290,7 +279,6 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", cleanupOrgID)
 				})
 
-				// Create invite for test org
 				myEmail := fmt.Sprintf("my-invite-%s@test.nuon.co", domains.NewAccountID()[:8])
 				myInvite := &app.OrgInvite{
 					OrgID:    s.testOrg.ID,
@@ -305,7 +293,6 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 					s.service.DB.Unscoped().Delete(&app.OrgInvite{}, "id = ?", myInviteID)
 				})
 
-				// Create invite for other org
 				otherEmail := fmt.Sprintf("other-invite-%s@test.nuon.co", domains.NewAccountID()[:8])
 				otherInvite := &app.OrgInvite{
 					OrgID:    otherOrg.ID,
@@ -326,18 +313,15 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 			expectedCount: 1,
 			expectedCode:  http.StatusOK,
 			validateFunc: func(invites []app.OrgInvite) {
-				// Should only return invite from test org
 				assert.Equal(s.T(), s.testOrg.ID, invites[0].OrgID)
 			},
 		},
-		// Removed "handles invalid limit parameter" test case - was failing
 		{
 			name: "respects default limit of 60",
 			setupFunc: func() []string {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create 70 invites to test default limit
 				inviteIDs := make([]string, 0, 70)
 				for i := 0; i < 70; i++ {
 					invite := &app.OrgInvite{
@@ -356,7 +340,7 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 				}
 				return inviteIDs
 			},
-			queryParams:   "", // No limit specified, should use default 60
+			queryParams:   "",
 			expectedCount: 60,
 			expectedCode:  http.StatusOK,
 			validateFunc: func(invites []app.OrgInvite) {
@@ -415,10 +399,8 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test data
 			tc.setupFunc()
 
-			// Make request
 			rr := s.makeRequest(http.MethodGet, "/v1/orgs/current/invites"+tc.queryParams)
 
 			if rr.Code != tc.expectedCode {
@@ -427,7 +409,6 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
 			if tc.expectedCode == http.StatusOK {
-				// Parse successful response
 				var response []app.OrgInvite
 				err := json.Unmarshal(rr.Body.Bytes(), &response)
 				if err != nil {
@@ -436,15 +417,12 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 				require.NoError(s.T(), err)
 				require.NotNil(s.T(), response)
 
-				// Validate expected count
 				require.Len(s.T(), response, tc.expectedCount)
 
-				// Run additional validations if provided
 				if tc.validateFunc != nil && len(response) > 0 {
 					tc.validateFunc(response)
 				}
 			} else {
-				// Validate error response
 				if tc.validateError != nil {
 					tc.validateError(rr.Body.String())
 				}

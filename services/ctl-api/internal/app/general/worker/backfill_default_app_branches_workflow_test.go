@@ -17,10 +17,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/worker/activities"
 )
 
-// Activities are registered by name before any mock is set up: the test
-// environment only deserializes an activity's input for mocks when the activity
-// itself is registered, and every registration has to precede the first
-// OnActivity call.
 func newBackfillDefaultAppBranchesEnv(t *testing.T, appIDs []string) *testsuite.TestWorkflowEnvironment {
 	t.Helper()
 
@@ -68,8 +64,6 @@ func TestBackfillDefaultAppBranchesDryRunCreatesNothing(t *testing.T) {
 	env.AssertExpectations(t)
 }
 
-// A fleet-wide backfill that stops at the first bad app leaves the rest
-// unmigrated, so a failure is counted and the run carries on.
 func TestBackfillDefaultAppBranchesTalliesOutcomes(t *testing.T) {
 	env := newBackfillDefaultAppBranchesEnv(t, []string{"app-new", "app-existing", "app-claimed", "app-broken"})
 

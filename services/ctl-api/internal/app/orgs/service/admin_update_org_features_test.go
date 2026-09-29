@@ -30,7 +30,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// AdminUpdateOrgFeaturesTestService holds all fx-injected dependencies for admin update org features tests.
 type AdminUpdateOrgFeaturesTestService struct {
 	fx.In
 
@@ -45,7 +44,6 @@ type AdminUpdateOrgFeaturesTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// AdminUpdateOrgFeaturesTestSuite is the testify suite for the AdminUpdateOrgFeatures endpoint.
 type AdminUpdateOrgFeaturesTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -71,7 +69,6 @@ func (s *AdminUpdateOrgFeaturesTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -79,7 +76,6 @@ func (s *AdminUpdateOrgFeaturesTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -87,7 +83,6 @@ func (s *AdminUpdateOrgFeaturesTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares (no org context for admin endpoints)
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -106,7 +101,6 @@ func (s *AdminUpdateOrgFeaturesTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 
-	// Create test org with account context (required by BeforeCreate hook)
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 	orgID := domains.NewOrgID()
@@ -118,7 +112,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) setupTestData() {
 			InternalSlackWebhookURL: "https://hooks.slack.com/test",
 		},
 		Features: map[string]bool{
-			string(app.OrgFeatureUserManagedFeatures): false, // Disabled by default
+			string(app.OrgFeatureUserManagedFeatures): false,
 			string(app.OrgFeatureTraceView):           false,
 		},
 	}
@@ -421,15 +415,13 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 			},
 			requestBody: AdminUpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureTraceView): false, // Toggle this one
+					string(app.OrgFeatureTraceView): false,
 				},
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
 				require.NotNil(s.T(), org)
-				// Modified feature
 				assert.False(s.T(), org.Features[string(app.OrgFeatureTraceView)])
-				// Unmodified features should be preserved
 				assert.False(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureSupportRole)])
 			},
@@ -437,7 +429,6 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
-				// Verify database state matches
 				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureTraceView)])
 				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureAppBranches)])
 				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureSupportRole)])
@@ -558,7 +549,6 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
 				require.NotNil(s.T(), org)
-				// Empty map should not modify existing features
 				assert.True(s.T(), org.Features[string(app.OrgFeatureTraceView)])
 			},
 			checkDBFunc: func(org *app.Org) {
@@ -575,7 +565,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 			},
 			requestBody:   "invalid-json-string",
 			expectedCode:  http.StatusBadRequest,
-			errorContains: "json:", // BindJSON returns JSON parsing errors with this prefix
+			errorContains: "json:",
 		},
 		{
 			name: "fails when features field is missing",
@@ -586,14 +576,13 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				"wrong_field": "value",
 			},
 			expectedCode:  http.StatusBadRequest,
-			errorContains: "invalid request", // BindJSON validation error
+			errorContains: "invalid request",
 		},
 		{
 			name: "fails when org not found",
 			setupFunc: func() *app.Org {
-				// Return org with ID that doesn't exist
 				return &app.Org{
-					ID:          domains.NewOrgID(), // Non-existent org ID
+					ID:          domains.NewOrgID(),
 					Name:        "nonexistent",
 					SandboxMode: true,
 				}
@@ -620,7 +609,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
 					Features: map[string]bool{
-						string(app.OrgFeatureUserManagedFeatures): false, // User flag disabled
+						string(app.OrgFeatureUserManagedFeatures): false,
 						string(app.OrgFeatureTraceView):           false,
 					},
 				}
@@ -640,7 +629,6 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
 				require.NotNil(s.T(), org)
-				// Admin can update even when user-managed-features is disabled
 				assert.True(s.T(), org.Features[string(app.OrgFeatureTraceView)])
 				assert.False(s.T(), org.Features[string(app.OrgFeatureUserManagedFeatures)])
 			},
@@ -655,11 +643,9 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test org
 			org := tc.setupFunc()
 			require.NotNil(s.T(), org)
 
-			// Make request with org_id path parameter
 			path := "/v1/orgs/" + org.ID + "/admin-features"
 			rr := s.makeRequest(http.MethodPatch, path, tc.requestBody)
 
@@ -668,9 +654,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 			}
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
-			// For success cases
 			if tc.expectedCode == http.StatusOK {
-				// Parse response
 				var response app.Org
 				err := json.Unmarshal(rr.Body.Bytes(), &response)
 				if err != nil {
@@ -678,18 +662,15 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				}
 				require.NoError(s.T(), err)
 
-				// Run validations
 				if tc.validateFunc != nil {
 					tc.validateFunc(&response)
 				}
 
-				// Check database state
 				if tc.checkDBFunc != nil {
 					tc.checkDBFunc(&response)
 				}
 			}
 
-			// For error cases
 			if tc.errorContains != "" {
 				body := rr.Body.String()
 				assert.Contains(s.T(), body, tc.errorContains,

@@ -81,21 +81,17 @@ RUN bun run build
 
 FROM ${BUILD_IMAGE} AS code
 
-# Service specific arguments
 ARG SERVICE=ctl-api
 ARG PKG_ROOT=github.com/nuonco/nuon/services/ctl-api
 ARG ETCSSL=/etc/ssl/cert.pem
 ARG GOBUILD_CACHE_ID=gobuild-ctl-api
 ARG GOMOD_CACHE_ID=gomod-ctl-api
 
-# Copy service-specific files
 WORKDIR /src/services/${SERVICE}
 
-# Copy monorepo shared sources (SDK go.mod/go.sum are in the base image)
 COPY --link sdks /src/sdks/
 COPY --link pkg /src/pkg/
 
-# Copy service-specific files (most frequently changed, last for cache efficiency)
 COPY --link cmd  ./cmd/
 COPY --link internal ./internal/
 RUN mkdir -p ./docs/admin/descriptions ./docs/public/descriptions ./docs/runner/descriptions
@@ -131,9 +127,6 @@ COPY --from=generated /src/services/${SERVICE}/internal ./internal/
 COPY --from=generated /src/services/${SERVICE}/docs ./docs/
 COPY --from=generated /src/pkg/temporal/client/mock_client.go /src/pkg/temporal/client/mock_client.go
 
-# Hegel property tests spawn a Python-based hegel-core server via uv; the cache
-# mounts ensure /root/.cache exists (hegel installs uv there) and persist the uv
-# binary, package cache, and managed Python across builds.
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing=shared \
     --mount=type=cache,target=/go/pkg/mod,id=${GOMOD_CACHE_ID},sharing=shared \
     --mount=type=cache,target=/root/.cache,id=uv-hegel-cache \
@@ -201,14 +194,12 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
     rm -f /go/pkg/build-cache/.nuon-dirty && \
     echo "S3 stream total: $(($(date +%s) - START))s"
 
-# Use the provided runtime image
 FROM ${RUNTIME_IMAGE} AS final
 
 WORKDIR /src/services/ctl-api
 
 ENV PATH=/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.local/bin
 
-# expected as --build-args flags
 ARG VERSION
 ARG GIT_REF
 ENV VERSION=$VERSION

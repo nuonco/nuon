@@ -64,7 +64,6 @@ const sourceBadgeColor = (source: string) =>
 export const SlowQueries = () => {
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // Read initial state from URL, falling back to defaults.
   const search = searchParams.get('search') || ''
   const table = searchParams.get('table') || ''
   const dbType = searchParams.get('db_type') || ''
@@ -77,7 +76,6 @@ export const SlowQueries = () => {
 
   const [explainResult, setExplainResult] = useState<{ key: string; rows?: Record<string, unknown>[]; error?: string; loading?: boolean } | null>(null)
 
-  // Update a single param while preserving others.
   const setParam = useCallback((key: string, value: string) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
@@ -108,13 +106,11 @@ export const SlowQueries = () => {
   const queries = data?.queries || []
   const tables = [...(data?.tables || [])].sort()
 
-  // Auto-expand the query matching the hash in the URL.
   const expanded = expandedHash
     ? queries.findIndex((q) => hashSQL(q.sql) === expandedHash)
     : -1
   const expandedKey = expanded >= 0 ? `${expanded}` : null
 
-  // Scroll to the expanded query on initial load.
   const expandedRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (expandedRef.current && expandedHash) {

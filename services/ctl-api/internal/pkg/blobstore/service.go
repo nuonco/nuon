@@ -24,23 +24,15 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
-// Service provides blob storage operations with S3
 type Service interface {
-	// Upload stores blob data in S3 (byte-based, for small payloads)
 	Upload(ctx context.Context, s3Key string, data []byte) error
 
-	// Download retrieves blob data from S3 (byte-based, for small payloads)
 	Download(ctx context.Context, s3Key string) ([]byte, error)
 
-	// UploadStream stores blob data in S3 (streaming, for large payloads)
-	// Returns SHA256 checksum
 	UploadStream(ctx context.Context, s3Key string, reader io.Reader) (checksum string, err error)
 
-	// DownloadStream retrieves blob data from S3 (streaming, for large payloads)
-	// Returns io.ReadCloser that must be closed by caller
 	DownloadStream(ctx context.Context, s3Key string) (io.ReadCloser, error)
 
-	// GetMetadata retrieves blob metadata without downloading content
 	GetMetadata(ctx context.Context, s3Key string) (size int64, contentType string, err error)
 }
 
@@ -51,13 +43,9 @@ type service struct {
 	s3Client   *s3.Client
 	mw         metrics.Writer
 
-	// dlInFlight tracks the number of blob downloads currently open (from
-	// GetObject until the caller closes the body). Emitted as a gauge so a
-	// cron burst that saturates the S3 fetch path is observable.
 	dlInFlight int64
 }
 
-// NewService creates a new blob storage service
 func NewService(cfg *internal.Config, mw metrics.Writer) (Service, error) {
 	if cfg.BlobStorageProvider == "gcs" {
 		return newGCSService(context.Background(), cfg, mw)
@@ -65,7 +53,6 @@ func NewService(cfg *internal.Config, mw metrics.Writer) (Service, error) {
 
 	v := validator.New()
 
-	// Create downloader
 	downloader, err := s3downloader.New(
 		cfg.BlobStorageBucket,
 	)
@@ -73,7 +60,7 @@ func NewService(cfg *internal.Config, mw metrics.Writer) (Service, error) {
 		return nil, fmt.Errorf("failed to create s3 downloader: %w", err)
 	}
 
-	// Load AWS config for direct S3 operations. A shared HTTP client with a
+	// why: Load AWS config for direct S3 operations. A shared HTTP client with a
 	// pooled transport lets every blob operation reuse TCP/TLS connections
 	// instead of opening a new one per request; a fresh s3.NewFromConfig per
 	// call would otherwise get its own connection pool and churn connections
@@ -135,7 +122,6 @@ func (s *service) Download(ctx context.Context, s3Key string) ([]byte, error) {
 }
 
 func (s *service) UploadStream(ctx context.Context, s3Key string, reader io.Reader) (string, error) {
-	// UploadStream returns SHA256 checksum
 	checksum, err := s.uploader.UploadStream(ctx, reader, s3Key)
 	if err != nil {
 		return "", fmt.Errorf("failed to upload stream: %w", err)
@@ -153,21 +139,15 @@ func (s *service) DownloadStream(ctx context.Context, s3Key string) (io.ReadClos
 		Key:    aws.String(s3Key),
 	})
 	if err != nil {
-		// GetObject failed: nothing to read, so release the in-flight slot now.
 		s.mw.Gauge("blobstore.s3.download.in_flight", float64(atomic.AddInt64(&s.dlInFlight, -1)), nil)
 		s.mw.Timing("blobstore.s3.get_object.latency", time.Since(start), []string{"status:error"})
 		s.mw.Incr("blobstore.s3.get_object", []string{"status:error"})
 		return nil, fmt.Errorf("failed to get object: %w", err)
 	}
 
-	// GetObject latency = connection setup + time-to-first-byte, isolated from
-	// the body read that the caller drives below.
 	s.mw.Timing("blobstore.s3.get_object.latency", time.Since(start), []string{"status:success"})
 	s.mw.Incr("blobstore.s3.get_object", []string{"status:success"})
 
-	// The body read (and thus the bulk of the download time) happens in the
-	// caller. Wrap it so the total download duration, byte count, and in-flight
-	// gauge are recorded when the caller closes the stream.
 	return &meteredBody{
 		rc:    resp.Body,
 		start: start,
@@ -206,8 +186,6 @@ func (s *service) GetMetadata(ctx context.Context, s3Key string) (int64, string,
 	return size, contentType, nil
 }
 
-// meteredBody wraps an S3 GetObject body to record the total download duration
-// and byte count when the caller closes the stream. onClose runs exactly once.
 type meteredBody struct {
 	rc      io.ReadCloser
 	start   time.Time

@@ -6,14 +6,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// Migration101SlackChannelSubsCreatorCheck enforces the creator-present
-// invariant on slack_channel_subscriptions: at least one creator identity
-// must be recorded (Slack user OR Nuon account), so a row can always be
-// attributed. GORM doesn't model multi-column CHECKs cleanly, so it lives
-// here as a raw constraint.
 func (m *Migrations) Migration101SlackChannelSubsCreatorCheck(ctx context.Context, db *gorm.DB) error {
 	stmts := []string{
-		// Creator-present check (one of slack user / account).
 		`DO $$
 BEGIN
     IF NOT EXISTS (

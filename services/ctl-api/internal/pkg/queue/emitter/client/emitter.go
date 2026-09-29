@@ -31,17 +31,11 @@ type CreateEmitterRequest struct {
 	Name        string `validate:"required"`
 	Description string
 
-	// Mode determines if this is a recurring cron emitter or a one-shot scheduled emitter
 	Mode app.QueueEmitterMode `validate:"required"`
 
-	// For cron mode: the cron schedule expression (e.g., "0 * * * *")
 	CronSchedule string
-	// For cron mode: spread fire times deterministically across this window by
-	// shifting the schedule's minute field (offset = hash(emitter ID) % window
-	// minutes). Zero or sub-minute windows disable jitter.
 	JitterWindow time.Duration
-	// For scheduled mode: when to fire the signal
-	ScheduledAt *time.Time
+	ScheduledAt  *time.Time
 
 	SignalType      signal.SignalType `validate:"required"`
 	SignalTemplate  signal.Signal
@@ -187,7 +181,6 @@ func (c *Client) getEmitterByID(ctx context.Context, emitterID string) (*app.Que
 	return em, nil
 }
 
-// emitterMemo returns the standard memo map for an emitter workflow.
 func emitterMemo(em *app.QueueEmitter) map[string]any {
 	return map[string]any{
 		"id":       em.ID,

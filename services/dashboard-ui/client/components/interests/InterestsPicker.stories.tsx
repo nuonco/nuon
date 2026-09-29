@@ -49,9 +49,6 @@ export const SpecificEventsPopulated = () => (
   />
 )
 
-// Only drift_detected is on — lifecycle category is muted (outcome: 'none').
-// Exercises the per-category collapsing that happens when toggling lifecycle
-// off but leaving drift on.
 export const DriftOnly = () => (
   <Wrapper
     initial={{
@@ -65,8 +62,6 @@ export const DriftOnly = () => (
   />
 )
 
-// Explicitly-empty resources map — backend matches nothing. The summary
-// switches to the warn tone "No events selected" so it's obvious at a glance.
 export const EmptyWarn = () => <Wrapper initial={{ resources: {} }} />
 
 export const Disabled = () => <Wrapper initial={allEvents()} disabled />

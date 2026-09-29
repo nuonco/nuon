@@ -128,7 +128,10 @@ event names.
 
 ## Comments
 
-Comment only when the *why* is non-obvious. Do not narrate what the code does.
+Zero comments. No JSX section labels (`{/* Header */}`), no JSDoc on props or helpers, no banners in stories or
+fixtures. Only tool directives (`eslint-*`, `oxlint-*`, `@ts-*`, `prettier-ignore`) and rare `// why:` constraints
+are allowed. See the [root AGENTS.md](../../AGENTS.md#comments-strict-enforced-in-ci); enforced in CI by
+`go run ./scripts/check-comments`. `client/lite/` allows directives only.
 
 ## Forms (TanStack Form + Zod)
 

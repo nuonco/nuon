@@ -20,9 +20,6 @@ const (
 	OrgProcessHealthcheckSweepEmitter = "org-process-healthcheck-sweep"
 )
 
-// EnsureOrgHealthcheckSweeps creates the org-healthcheck-crons queue and its two
-// sweep cron emitters if missing. No-op unless the org has the
-// org-healthcheck-sweeps feature. Idempotent.
 func (h *Helpers) EnsureOrgHealthcheckSweeps(ctx context.Context, orgID string) error {
 	sweeps, err := h.featuresClient.OrgHealthcheckSweepsEnabled(ctx, orgID)
 	if err != nil {

@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestBuildMinimalAppConfig verifies that BuildMinimalAppConfig returns a valid config.
 func TestBuildMinimalAppConfig(t *testing.T) {
 	cfg := BuildMinimalAppConfig()
 
@@ -23,7 +22,6 @@ func TestBuildMinimalAppConfig(t *testing.T) {
 	assert.Empty(t, cfg.Actions, "Actions should be empty by default")
 }
 
-// TestBuildMinimalSandboxConfig verifies that BuildMinimalSandboxConfig returns a valid config.
 func TestBuildMinimalSandboxConfig(t *testing.T) {
 	cfg := BuildMinimalSandboxConfig()
 
@@ -34,13 +32,11 @@ func TestBuildMinimalSandboxConfig(t *testing.T) {
 	assert.NotNil(t, cfg.EnvVarMap, "EnvVarMap should be initialized")
 	assert.NotNil(t, cfg.VarsMap, "VarsMap should be initialized")
 
-	// Verify public repo details
 	assert.NotEmpty(t, cfg.PublicRepo.Repo, "PublicRepo.Repo should be set")
 	assert.Equal(t, "/", cfg.PublicRepo.Directory, "PublicRepo.Directory should be '/'")
 	assert.Equal(t, "main", cfg.PublicRepo.Branch, "PublicRepo.Branch should be 'main'")
 }
 
-// TestBuildMinimalSandboxConfigWithConnectedRepo verifies the connected repo variant.
 func TestBuildMinimalSandboxConfigWithConnectedRepo(t *testing.T) {
 	cfg := BuildMinimalSandboxConfigWithConnectedRepo()
 
@@ -49,13 +45,11 @@ func TestBuildMinimalSandboxConfigWithConnectedRepo(t *testing.T) {
 	assert.NotNil(t, cfg.ConnectedRepo, "ConnectedRepo should be set")
 	assert.Nil(t, cfg.PublicRepo, "PublicRepo should be nil for connected repo config")
 
-	// Verify connected repo details
 	assert.NotEmpty(t, cfg.ConnectedRepo.Repo, "ConnectedRepo.Repo should be set")
 	assert.Equal(t, "/", cfg.ConnectedRepo.Directory, "ConnectedRepo.Directory should be '/'")
 	assert.Equal(t, "main", cfg.ConnectedRepo.Branch, "ConnectedRepo.Branch should be 'main'")
 }
 
-// TestBuildMinimalRunnerConfig verifies that BuildMinimalRunnerConfig returns a valid config.
 func TestBuildMinimalRunnerConfig(t *testing.T) {
 	cfg := BuildMinimalRunnerConfig()
 

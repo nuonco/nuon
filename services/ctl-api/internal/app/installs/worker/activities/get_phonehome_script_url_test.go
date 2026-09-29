@@ -12,10 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
-// Precedence lives in the activity so the two stack-generation paths cannot disagree
-// about which script an install gets. It is also the only thing keeping an edit to
-// nuonco/runner's main from shipping itself to the fleet, hence the assertion that the
-// default is a pinned tag.
 func TestGetPhoneHomeScriptRawResolvesURL(t *testing.T) {
 	newServer := func(t *testing.T, body string) *httptest.Server {
 		t.Helper()
@@ -48,8 +44,6 @@ func TestGetPhoneHomeScriptRawResolvesURL(t *testing.T) {
 		assert.Equal(t, "env-script", string(got))
 	})
 
-	// A 404 body would otherwise be embedded as the Lambda's source and fail at
-	// CreateStack in the customer's account rather than here.
 	t.Run("a non-2xx response is an error, not a rendered 404 page", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusNotFound)

@@ -84,7 +84,6 @@ func addAppConfigDependencyEdges(graph *diff.Graph, cfg *AppConfig) {
 		graph.AddDependency(StackResourceID, RoleResourceID(role.Name), diff.EdgeReasonStackRender)
 	}
 	if cfg.Permissions != nil {
-		// Named policies render into the stack even when every role is disabled.
 		for _, policy := range cfg.Permissions.NamedPolicies {
 			graph.AddDependency(StackResourceID, NamedPolicyResourceID(policy.Name), diff.EdgeReasonStackRender)
 		}

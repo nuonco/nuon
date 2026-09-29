@@ -23,7 +23,6 @@ type UpdateEmitterStatsResponse struct {
 func (a *Activities) UpdateEmitterStats(ctx context.Context, req *UpdateEmitterStatsRequest) (*UpdateEmitterStatsResponse, error) {
 	now := time.Now()
 
-	// Update emit count and last emitted timestamp
 	res := a.db.WithContext(ctx).
 		Model(&app.QueueEmitter{}).
 		Where("id = ?", req.EmitterID).

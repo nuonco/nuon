@@ -20,7 +20,6 @@ type EmitterWorkflowRequest struct {
 	State *EmitterState
 }
 
-// EmitterState is the data that is passed between continue-as-news
 type EmitterState struct {
 	EmitCount int64
 }
@@ -58,7 +57,7 @@ func (w *Workflows) Emitter(ctx workflow.Context, req EmitterWorkflowRequest) er
 		return workflow.NewContinueAsNewError(ctx, w.Emitter, req)
 	}
 
-	// For cron-scheduled emitters, returning nil just completes this run —
+	// why: For cron-scheduled emitters, returning nil just completes this run —
 	// Temporal will schedule the next one. We must terminate the workflow
 	// to actually stop the cron.
 	info := workflow.GetInfo(ctx)
@@ -81,8 +80,7 @@ type emitterWorkflow struct {
 
 	emitterID string
 	queueID   string
-	// ctx is the run context after repairWorkflowContext, used for continue-as-new.
-	ctx workflow.Context
+	ctx       workflow.Context
 
 	stopped   bool
 	restarted bool

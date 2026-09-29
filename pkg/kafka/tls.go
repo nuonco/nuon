@@ -15,13 +15,6 @@ import (
 
 const tlsDialTimeout = 10 * time.Second
 
-// tlsReloader re-reads the CA bundle and client keypair from disk when their
-// mtimes change, so a rotated certificate is picked up without a restart.
-//
-// Certificates are renewed well before they expire and the previous one stays
-// valid throughout the renewal window, so continuing to serve the last good
-// certificate after a failed reload is safe — and strictly better than failing
-// every handshake.
 type tlsReloader struct {
 	caPath   string
 	certPath string
@@ -36,8 +29,6 @@ type tlsReloader struct {
 	keyMod  time.Time
 }
 
-// newTLSReloader loads the configured material once so a bad path or unreadable
-// secret fails at startup rather than on the first produce.
 func newTLSReloader(c Config, l *zap.Logger) (*tlsReloader, error) {
 	r := &tlsReloader{
 		caPath:   c.TLSCAPath,
@@ -67,9 +58,6 @@ func newTLSReloader(c Config, l *zap.Logger) (*tlsReloader, error) {
 func (r *tlsReloader) reloadCA() (*x509.CertPool, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-
-	// kubelet swaps the whole secret directory symlink, so a stat can fail
-	// transiently mid-rotation; keep the last good bundle rather than failing.
 	fi, err := os.Stat(r.caPath)
 	if err != nil {
 		return r.pool, fmt.Errorf("kafka tls: stat ca %q: %w", r.caPath, err)
@@ -130,8 +118,6 @@ func (r *tlsReloader) reloadCert() (*tls.Certificate, error) {
 	return r.cert, nil
 }
 
-// clientCertificate is invoked per TLS handshake. An empty certificate tells the
-// server we have none to present, which is correct when it doesn't ask for one.
 func (r *tlsReloader) clientCertificate(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
 	if r.certPath == "" {
 		return &tls.Certificate{}, nil
@@ -173,8 +159,6 @@ func (r *tlsReloader) tlsConfig() (*tls.Config, error) {
 	return cfg, nil
 }
 
-// dial replaces franz-go's DialTLSConfig, which snapshots a single tls.Config at
-// client construction and would pin RootCAs for the process lifetime.
 func (r *tlsReloader) dial(ctx context.Context, network, host string) (net.Conn, error) {
 	cfg, err := r.tlsConfig()
 	if err != nil {

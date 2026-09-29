@@ -49,7 +49,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get logger")
 	}
 
-	// Check VCS connection health via GitHub APIs
 	healthResult, err := activities.AwaitCheckVCSConnectionHealth(ctx, activities.CheckVCSConnectionHealthRequest{
 		VCSConnectionID: s.VCSConnectionID,
 	})
@@ -60,7 +59,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	l.Info(fmt.Sprintf("vcs connection health check completed: status=%s repo_count=%d",
 		healthResult.Status, healthResult.RepoCount))
 
-	// Persist the status
 	if err := activities.AwaitUpdateVCSConnectionStatus(ctx, activities.UpdateVCSConnectionStatusRequest{
 		VCSConnectionID: s.VCSConnectionID,
 		Status:          healthResult.Status,

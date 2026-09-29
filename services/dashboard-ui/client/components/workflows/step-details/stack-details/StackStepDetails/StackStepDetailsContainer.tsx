@@ -41,9 +41,6 @@ export const StackStepDetailsContainer = ({
         return isStepTerminal && hasVersionData ? false : 3000
       }
 
-      // Keep polling past the launch links: the run carrying the stack
-      // outputs only lands once the customer applies the stack, and the
-      // outputs card stays empty until it does.
       const hasRun = !!version?.runs?.length
       if (isStepTerminal && (hasRun || stepStatus !== 'success')) return false
 

@@ -10,18 +10,6 @@ import (
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 )
 
-// cleanupStaleWorkflows terminates workflows left Running in the test
-// namespace by previous test runs. When a test binary exits, its queue and
-// handler workflows lose their only poller; the next run's worker inherits
-// that backlog, which starves the live tests and blows their poll budgets.
-// This runs as an fx.Invoke so it completes before the worker's OnStart hook
-// begins polling.
-//
-// The namespace is registered here first: the frontend's namespace registry
-// negatively caches a name it failed to resolve for the cache refresh
-// interval, so listing a not-yet-registered namespace would leave every
-// StartWorkflow/poll in that window failing with NamespaceNotFound even after
-// the worker registers it.
 func cleanupStaleWorkflows(tc temporalclient.Client, l *zap.Logger) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -51,8 +39,6 @@ func cleanupStaleWorkflows(tc temporalclient.Client, l *zap.Logger) {
 		}
 
 		for _, ex := range resp.Executions {
-			// Terminate errors are expected for workflows that finished
-			// between list and terminate (visibility lag) — ignore them.
 			if err := c.TerminateWorkflow(ctx,
 				ex.Execution.WorkflowId, ex.Execution.RunId,
 				"stale test workflow cleanup"); err == nil {

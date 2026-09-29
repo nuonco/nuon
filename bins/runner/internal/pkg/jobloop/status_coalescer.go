@@ -10,25 +10,12 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
-// statusCoalescer is a per-execution single-writer that drops intermediate
-// non-terminal status pings while the previous write is still in flight.
-// Each synchronous step-boundary update is a 50-200ms round-trip, and the
-// dashboard only renders the latest non-terminal status, so dropping the
-// intermediate values is safe and removes that latency from the init /
-// finalize edges.
-//
-// Terminal statuses MUST land in order, so they go through WriteTerminal,
-// which stops the background loop, drains it, then writes synchronously —
-// guaranteeing a queued non-terminal update can never overwrite a final one.
 type statusCoalescer struct {
 	jobID       string
 	executionID string
 	write       writeJobExecutionStatusFn
 	l           *zap.Logger
 
-	// pending holds the latest queued non-terminal update; the mutex
-	// guards coalesce-on-enqueue (replacing any earlier pending value).
-	// wake is buffered to 1 so EnqueueNonTerminal never blocks the caller.
 	mu       sync.Mutex
 	pending  *coalescedStatus
 	closed   bool
@@ -38,9 +25,6 @@ type statusCoalescer struct {
 	stopCh   chan struct{}
 }
 
-// writeJobExecutionStatusFn is the existing retry-wrapped update path
-// from `exec_job_step.go`. Injecting it keeps coalescer logic free of the
-// retry/metrics policy.
 type writeJobExecutionStatusFn func(ctx context.Context, jobID, executionID string, status models.AppRunnerJobExecutionStatus, description string) error
 
 type coalescedStatus struct {
@@ -62,10 +46,6 @@ func newStatusCoalescer(jobID, executionID string, l *zap.Logger, write writeJob
 	return c
 }
 
-// EnqueueNonTerminal records `status` as the latest pending non-terminal
-// update and signals the background writer. Returns immediately. Failures
-// inside the writer are logged but never bubbled back; the contract is
-// best-effort, because the next status update will overwrite it anyway.
 func (c *statusCoalescer) EnqueueNonTerminal(status models.AppRunnerJobExecutionStatus, description string) {
 	c.mu.Lock()
 	if c.closed {
@@ -81,11 +61,6 @@ func (c *statusCoalescer) EnqueueNonTerminal(status models.AppRunnerJobExecution
 	}
 }
 
-// WriteTerminal stops the background writer, drops any in-flight pending
-// non-terminal update, then writes the terminal status synchronously
-// with the existing retry policy. Safe to call from panic recovery —
-// idempotent via stopOnce so the deferred guard in `executeJob` can
-// call it again without double-writing.
 func (c *statusCoalescer) WriteTerminal(ctx context.Context, status models.AppRunnerJobExecutionStatus, description string) error {
 	c.stopOnce.Do(func() {
 		c.mu.Lock()
@@ -98,9 +73,6 @@ func (c *statusCoalescer) WriteTerminal(ctx context.Context, status models.AppRu
 	return c.write(ctx, c.jobID, c.executionID, status, description)
 }
 
-// Close stops the background writer without writing a terminal status.
-// Used as a `defer` guard so a panic before WriteTerminal still drains
-// the goroutine. No-op after the first WriteTerminal / Close call.
 func (c *statusCoalescer) Close() {
 	c.stopOnce.Do(func() {
 		c.mu.Lock()
@@ -129,7 +101,7 @@ func (c *statusCoalescer) run() {
 			continue
 		}
 
-		// Use a fresh context decoupled from the job context so a
+		// why: Use a fresh context decoupled from the job context so a
 		// step that just returned doesn't cancel the trailing
 		// status write. Bound it at 10s — the underlying write has
 		// its own retry, this is a hard ceiling so we don't pile
@@ -145,9 +117,6 @@ func (c *statusCoalescer) run() {
 	}
 }
 
-// isTerminalExecutionStatus identifies statuses that must be written
-// synchronously and in order. Anything else is treated as a step-boundary
-// transition the dashboard renders as a current-state string.
 func isTerminalExecutionStatus(status models.AppRunnerJobExecutionStatus) bool {
 	switch status {
 	case models.AppRunnerJobExecutionStatusFinished,

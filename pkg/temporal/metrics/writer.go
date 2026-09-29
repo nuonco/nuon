@@ -13,13 +13,11 @@ import (
 )
 
 type Writer interface {
-	// dogstatsd metrics
 	Incr(workflow.Context, string, ...string)
 	Decr(workflow.Context, string, ...string)
 	Gauge(workflow.Context, string, float64, ...string)
 	Timing(workflow.Context, string, time.Duration, ...string)
 
-	// datadog specific
 	Event(workflow.Context, *statsd.Event)
 
 	Flush(workflow.Context)
@@ -34,7 +32,6 @@ type writer struct {
 
 var _ Writer = (*writer)(nil)
 
-// New returns a workflow writer, which uses the underlying metrics writer to emit metrics
 func New(v *validator.Validate, opts ...writerOption) (*writer, error) {
 	l := zap.L()
 	mw, err := metrics.New(v,

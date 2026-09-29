@@ -6,7 +6,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// NOTE(sdboyer) - version to update to is determined by a call from the runner
+// why: version to update to is determined by a call from the runner
 // to the API when processing this job, so version is not a parameter here
 
 type CreateUpdateVersionJobRequest struct {

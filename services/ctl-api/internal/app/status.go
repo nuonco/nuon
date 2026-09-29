@@ -15,7 +15,6 @@ import (
 // generic statuses
 type Status string
 
-// define standard statuses
 const (
 	StatusError              Status = "error"
 	StatusPending            Status = "pending"
@@ -36,7 +35,6 @@ const (
 	StatusDisabled           Status = "disabled"
 )
 
-// type specific statuses
 const (
 	InstallStackVersionStatusGenerating   Status = "generating"
 	InstallStackVersionStatusPendingUser  Status = "awaiting-user-run"
@@ -56,13 +54,11 @@ const (
 	WorkflowStepApprovalStatusApprovalRetryPlan Status = "approval-retry"
 )
 
-// component build specific statuses
 const (
 	StatusBuilding Status = "building"
 	StatusDeleting Status = "deleting"
 )
 
-// release specific statuses
 const (
 	StatusProvisioning   ReleaseStatus = "provisioning"
 	StatusDeprovisioning ReleaseStatus = "deprovisioning"
@@ -74,11 +70,6 @@ const (
 	InstallDeployStatusV2Noop Status = "noop"
 )
 
-// const (
-// 	WorkflowAwaitingApproval Status = "approval-awaiting" // NOTE(fd): superceded by shared const below
-// )
-
-// shared by WorkflowStep and Workflow
 const (
 	AwaitingApproval Status = "approval-awaiting"
 )
@@ -137,8 +128,6 @@ type CompositeStatus struct {
 	History []CompositeStatus `json:"history,omitzero,omitempty" temporaljson:"history,omitzero,omitempty"`
 }
 
-// MetadataUnixTime returns a Unix timestamp from metadata regardless of whether
-// it came directly from Go or through a JSON round trip.
 func (c CompositeStatus) MetadataUnixTime(key string) (time.Time, bool) {
 	var ts int64
 	switch value := c.Metadata[key].(type) {
@@ -163,7 +152,6 @@ func (c CompositeStatus) MetadataUnixTime(key string) (time.Time, bool) {
 	return time.Unix(ts, 0), true
 }
 
-// Scan implements the database/sql.Scanner interface.
 func (c *CompositeStatus) Scan(v interface{}) (err error) {
 	switch v := v.(type) {
 	case nil:
@@ -176,7 +164,6 @@ func (c *CompositeStatus) Scan(v interface{}) (err error) {
 	return
 }
 
-// Value implements the driver.Valuer interface.
 func (c *CompositeStatus) Value() (driver.Value, error) {
 	return json.Marshal(c)
 }

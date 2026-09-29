@@ -13,7 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// proxyToInternalAPI forwards a request to the internal admin API (port 8082).
 func (s *service) proxyToInternalAPI(c *gin.Context, method, path string, body io.Reader) {
 	targetURL := fmt.Sprintf("http://localhost:%s%s", s.cfg.InternalHTTPPort, path)
 	target, err := url.Parse(targetURL)
@@ -23,7 +22,6 @@ func (s *service) proxyToInternalAPI(c *gin.Context, method, path string, body i
 		return
 	}
 
-	// Get the authenticated account's email from context (set by requireAuth middleware)
 	acct, _ := cctx.AccountFromGinContext(c)
 
 	proxy := &httputil.ReverseProxy{
@@ -43,21 +41,18 @@ func (s *service) proxyToInternalAPI(c *gin.Context, method, path string, body i
 	proxy.ServeHTTP(c.Writer, c.Request)
 }
 
-// ProxyAddSupportUsers proxies the add-support-users request to the admin API.
 func (s *service) ProxyAddSupportUsers(c *gin.Context) {
 	orgID := c.Param("id")
 	path := fmt.Sprintf("/v1/orgs/%s/admin-support-users", orgID)
 	s.proxyToInternalAPI(c, "POST", path, c.Request.Body)
 }
 
-// ProxyMigrateQueues proxies the migrate-queues request to the admin API.
 func (s *service) ProxyMigrateQueues(c *gin.Context) {
 	orgID := c.Param("id")
 	path := fmt.Sprintf("/v1/orgs/%s/admin-migrate-queues", orgID)
 	s.proxyToInternalAPI(c, "POST", path, c.Request.Body)
 }
 
-// ProxySeed proxies the seed request to the internal admin API.
 func (s *service) ProxySeed(c *gin.Context) {
 	s.proxyToInternalAPI(c, "POST", "/v1/general/seed", c.Request.Body)
 }

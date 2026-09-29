@@ -25,13 +25,9 @@ import (
 const (
 	providerKubernetes = "kubernetes"
 
-	// maxResourcesPerComponent mirrors the server-side cap on a single
-	// component's resource list, bounded here so the server never truncates.
 	maxResourcesPerComponent = 500
 )
 
-// report runs one stateless cycle: refresh the index, collect resources from
-// every surface (cluster objects, probes, terraform state), and push one batch.
 func (e *Engine) report(ctx context.Context) error {
 	if err := e.rebuildIndex(ctx); err != nil {
 		return fmt.Errorf("unable to refresh component index: %w", err)
@@ -47,14 +43,6 @@ func (e *Engine) report(ctx context.Context) error {
 
 	e.collectProbes(ctx, grouped)
 
-	// Missing or transiently broken cluster access is not a reason to drop the
-	// surfaces that did report.
-	//
-	// Cluster access is one fact about the install, so it is reported once at
-	// install level instead of copied onto every component. A component that
-	// cannot be inspected simply reports nothing this cycle and ages into
-	// unknown through the normal staleness path, which also clears it on
-	// recovery — a per-component row would linger forever instead.
 	var clusterErr string
 	if ci := e.cluster.Get(); ci == nil {
 		e.l.Info("component health: waiting for cluster access (not yet provided by a deploy)")
@@ -125,8 +113,6 @@ func (e *Engine) bound(resources []*models.ServiceComponentHealthResource, owner
 	return resources[:maxResourcesPerComponent], true
 }
 
-// collectCluster lists the watched kinds plus current warning events, assesses
-// each object, and groups it under the component or sandbox release owning it.
 func (e *Engine) collectCluster(
 	ctx context.Context,
 	installID string,
@@ -153,7 +139,7 @@ func (e *Engine) collectCluster(
 	objects := make([]listedObject, 0, 256)
 	byKey := map[string]*unstructured.Unstructured{}
 
-	// Counting failed lists is what tells "owns nothing of that kind" apart from
+	// why: Counting failed lists is what tells "owns nothing of that kind" apart from
 	// "we were not allowed to look" — both otherwise arrive as an empty report.
 	var failedKinds []string
 	var firstListErr error
@@ -180,12 +166,10 @@ func (e *Engine) collectCluster(
 		return fmt.Errorf("unable to list any watched resource kind: %w", firstListErr)
 	}
 	if len(failedKinds) > 0 {
-		// Partial loss still ships the kinds that did list; the message is what
-		// keeps the gap visible, since otherwise the report looks complete.
 		*clusterErr = fmt.Sprintf("unable to list %s: %v", strings.Join(failedKinds, ", "), firstListErr)
 	}
 
-	// The owner chain is walked through byKey, so intermediate owners that are
+	// why: The owner chain is walked through byKey, so intermediate owners that are
 	// not listed have to be fetched before lifting — otherwise the walk stops
 	// short and an ImagePullBackOff reads as benign progressing for 10m.
 	failed := failedPods(byKey)
@@ -226,7 +210,7 @@ func (e *Engine) collectCluster(
 	return nil
 }
 
-// watchList is the core workload kinds plus any kind this install's components
+// why: watchList is the core workload kinds plus any kind this install's components
 // actually deploy. Without it a component shipping only CRs (a Karpenter
 // NodePool, a ClickHouseInstallation) reports nothing at all, because nobody
 // lists its kind.
@@ -283,11 +267,8 @@ func (e *Engine) watchList(ctx context.Context, restCfg *rest.Config) []schema.G
 	return out
 }
 
-// maxOwnerHops bounds the ownerReferences walk so a cyclic chain cannot spin.
 const maxOwnerHops = 4
 
-// Fetched on demand rather than listing every ReplicaSet each cycle: a healthy
-// install has no failing pods and so costs no GETs.
 func (e *Engine) hydrateFailedPodOwners(
 	ctx context.Context,
 	dynClient dynamic.Interface,
@@ -324,8 +305,6 @@ func (e *Engine) hydrateFailedPodOwners(
 	}
 }
 
-// Surfaces an ImagePullBackOff immediately instead of waiting out the
-// Deployment's progressDeadlineSeconds.
 func liftPodHealthToOwners(failed []podFailure, byKey map[string]*unstructured.Unstructured) map[string]string {
 	lifted := map[string]string{}
 	for _, f := range failed {
@@ -347,7 +326,7 @@ type podFailure struct {
 	message string
 }
 
-// Only degraded qualifies: a starting pod is progressing, and lifting that would
+// why: Only degraded qualifies: a starting pod is progressing, and lifting that would
 // degrade every rollout. Sorted so a shared owner's explanation cannot churn
 // with map iteration order.
 func failedPods(byKey map[string]*unstructured.Unstructured) []podFailure {
@@ -372,8 +351,6 @@ func failedPods(byKey map[string]*unstructured.Unstructured) []podFailure {
 	return out
 }
 
-// Upstream reports a restarting pod with whatever status.message holds, which is
-// usually empty, so the container status is the only place the reason exists.
 func podFailureReason(u *unstructured.Unstructured) string {
 	for _, c := range containerDiagnosis(u) {
 		for _, field := range []string{"waiting_reason", "last_termination_reason"} {
@@ -386,15 +363,11 @@ func podFailureReason(u *unstructured.Unstructured) string {
 	return ""
 }
 
-// Failed pods linger until the GC threshold, so an evicted one would outlive the
-// replacement that already came up healthy.
 func terminalPodPhase(u *unstructured.Unstructured) bool {
 	phase, _, _ := unstructured.NestedString(u.Object, "status", "phase")
 	return phase == "Failed" || phase == "Succeeded"
 }
 
-// topOwner returns the furthest controller ancestor present in the listed
-// objects, or nil when the object has no owner in the set.
 func topOwner(u *unstructured.Unstructured, byKey map[string]*unstructured.Unstructured) *unstructured.Unstructured {
 	cur := u
 	for hop := 0; hop < maxOwnerHops; hop++ {
@@ -414,8 +387,6 @@ func topOwner(u *unstructured.Unstructured, byKey map[string]*unstructured.Unstr
 	return cur
 }
 
-// collectTerraform adds identity-only rows from the state this process last
-// applied; a component whose state it has not seen is skipped.
 func (e *Engine) collectTerraform(grouped map[string][]*models.ServiceComponentHealthResource) {
 	if e.terraform == nil {
 		return
@@ -426,8 +397,6 @@ func (e *Engine) collectTerraform(grouped map[string][]*models.ServiceComponentH
 		if len(resources) == 0 {
 			continue
 		}
-		// A component the index no longer carries has been removed from the
-		// install; its resources are not ours to report.
 		if _, ok := e.idx.lookup(componentID); !ok {
 			continue
 		}
@@ -442,8 +411,6 @@ func (e *Engine) collectTerraform(grouped map[string][]*models.ServiceComponentH
 	}
 }
 
-// collectProbes runs every declared probe once per cycle, one row each. Collected
-// first so truncation can never drop a vendor's own assertion.
 func (e *Engine) collectProbes(ctx context.Context, grouped map[string][]*models.ServiceComponentHealthResource) {
 	targets := e.idx.probeTargets()
 	if len(targets) == 0 {
@@ -478,14 +445,12 @@ func resourceModel(
 ) *models.ServiceComponentHealthResource {
 	health, message, native := assessResource(u)
 
-	// Helm annotates only what it renders, so a pod carries no ownership labels
-	// and its controller is the only thing that reaches a verdict.
 	if liftedFailure != "" && (health == healthHealthy || health == healthProgressing) {
 		health = healthDegraded
 		message = liftedFailure
 	}
 
-	// Evidence, never verdict: an event is edge-triggered with no "all clear", so
+	// why: Evidence, never verdict: an event is edge-triggered with no "all clear", so
 	// letting one decide health forces an invented expiry.
 	if health == healthHealthy {
 		warn = nil
@@ -506,8 +471,6 @@ func resourceModel(
 	}
 }
 
-// componentFor attributes a live object to an install component: manifests by the
-// nuon.co ownership labels stamped at apply, helm by release name.
 func (e *Engine) componentFor(installID string, u *unstructured.Unstructured) (string, bool) {
 	lbls := u.GetLabels()
 
@@ -519,8 +482,6 @@ func (e *Engine) componentFor(installID string, u *unstructured.Unstructured) (s
 		}
 	}
 
-	// A terraform module can apply an object directly (kubectl_manifest); it
-	// carries no nuon labels and no helm annotations, so nothing else claims it.
 	if e.manifestKinds != nil {
 		key := resourceKey(u.GetKind(), u.GetNamespace(), u.GetName())
 		if componentID, ok := e.manifestKinds.ComponentForObject(key); ok {
@@ -536,9 +497,6 @@ func (e *Engine) componentFor(installID string, u *unstructured.Unstructured) (s
 			if entry, ok := e.idx.lookupHelm(release); ok {
 				return entry.componentID, true
 			}
-			// A terraform module can install a chart too; its workloads carry no
-			// nuon labels and match no chart component, so they would otherwise
-			// be dropped as unowned.
 			if e.terraform != nil {
 				if componentID, ok := e.terraform.ComponentForRelease(release); ok {
 					if _, known := e.idx.lookup(componentID); known {
@@ -552,7 +510,7 @@ func (e *Engine) componentFor(installID string, u *unstructured.Unstructured) (s
 	return "", false
 }
 
-// sandboxReleaseFor returns the helm release owning a resource, proven by
+// why: sandboxReleaseFor returns the helm release owning a resource, proven by
 // membership in the sandbox's reported release set rather than inferred by
 // exclusion, so customer workloads are never surfaced.
 func (e *Engine) sandboxReleaseFor(u *unstructured.Unstructured) (string, bool) {
@@ -569,6 +527,4 @@ func (e *Engine) sandboxReleaseFor(u *unstructured.Unstructured) (string, bool) 
 	return release, true
 }
 
-// clusterWatchedTypes are the component types whose resources this engine
-// inspects in the cluster; probes and pushed checks are supplementary for them.
 var clusterWatchedTypes = []string{"helm_chart", "kubernetes_manifest"}

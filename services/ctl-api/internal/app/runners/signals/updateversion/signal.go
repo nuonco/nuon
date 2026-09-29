@@ -38,7 +38,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("health_check_id is required")
 	}
 
-	// Validate runner exists
 	_, err := activities.AwaitGetByRunnerID(ctx, s.RunnerID)
 	if err != nil {
 		return errors.Wrap(err, "runner not found")
@@ -53,7 +52,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get runner")
 	}
 
-	// Create a logstream tied to the healthcheck
 	logStream, err := activities.AwaitCreateLogStreamByOperationID(ctx, s.HealthCheckID)
 	if err != nil {
 		return errors.Wrap(err, "unable to create log stream for health check")
@@ -65,7 +63,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "could not get logger")
 	}
 
-	// Create update-version job
 	runnerJob, err := activities.AwaitCreateUpdateVersionJob(ctx, &activities.CreateUpdateVersionJobRequest{
 		RunnerID:    runner.Org.RunnerGroup.Runners[0].ID,
 		OwnerID:     s.HealthCheckID,
@@ -87,7 +84,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to create job")
 	}
 
-	// Update the healthcheck with the job it caused to happen
 	err = activities.AwaitSetHealthCheckRunnerJob(ctx, activities.SetHealthCheckRunnerJobRequest{
 		HealthCheckID: s.HealthCheckID,
 		RunnerJobID:   runnerJob.ID,
@@ -102,8 +98,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		zap.String("expected_version", runner.RunnerGroup.Settings.ExpectedVersion),
 	)
 
-	// Send process_job signal to the runner's queue (cross-namespace)
-	// This is fire-and-forget - we don't wait for the job to complete
 	_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   runner.Org.RunnerGroup.Runners[0].ID,
 		OwnerType: "runners",

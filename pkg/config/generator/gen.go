@@ -15,10 +15,6 @@ import (
 
 const defaultSchemaBaseURL = "https://api.nuon.co"
 
-// schemaTypeForDefinition resolves the schema type slug for a config file. It
-// prefers an explicitly-set Header, then falls back to deriving the slug from
-// the config instances the file was built from, so scaffolded files that don't
-// set Header still get a #:schema directive.
 func schemaTypeForDefinition(cfd ConfigFileDefinition) string {
 	if cfd.Header != "" {
 		return cfd.Header
@@ -128,8 +124,6 @@ type ConfigGen struct {
 	SkipNonRequired         bool
 	OverwriteConfigContents bool
 
-	// SchemaBaseURL is the API host used in generated #:schema directives. When
-	// empty, defaultSchemaBaseURL is used.
 	SchemaBaseURL string
 }
 
@@ -152,23 +146,19 @@ func NewConfigGen(EnableDefaults, EnableInfoComments, EnableDeprecated, Overwrit
 }
 
 func (g *ConfigGen) Validate(path string) error {
-	// path needs to be a directory not a file
 	stat, err := os.Stat(path)
 	if err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("failed to stat path %s: %w", path, err)
 	}
 
-	// if path doesn't exist, it's valid (we can create it later)
 	if os.IsNotExist(err) {
 		return nil
 	}
 
-	// path exists but is not a directory, error out
 	if stat != nil && !stat.IsDir() {
 		return fmt.Errorf("path %s is not a directory", path)
 	}
 
-	// if directory exists, check if it's empty
 	entries, err := os.ReadDir(path)
 	if err != nil {
 		return fmt.Errorf("failed to read directory %s: %w", path, err)
@@ -207,7 +197,6 @@ func (g *ConfigGen) Gen(path string, c *ConfigStructure) error {
 
 func (g *ConfigGen) WriteConfigToDisk(c *ConfigStructure) error {
 	if _, err := os.Stat(c.Name); err != nil && os.IsNotExist(err) {
-		// create config directory if it doesn't exist
 		if err := os.Mkdir(c.Name, 0o755); err != nil {
 			return errors.Wrapf(err, "unable to create app config directory for path: %s", c.Name)
 		}
@@ -268,14 +257,11 @@ func (g *ConfigGen) EncodeToTOML(cs *ConfigStructure) error {
 	return nil
 }
 
-// alignAssignments aligns the `=` in contiguous runs of `key = value` lines
-// (including commented `# key = value` blocks) and collapses repeated blank
-// lines, matching the hand-formatted style of well-organized Nuon configs.
 func alignAssignments(s string) string {
 	lines := strings.Split(s, "\n")
 	out := make([]string, 0, len(lines))
 
-	var group []int // indices into out awaiting alignment
+	var group []int
 	flush := func() {
 		if len(group) < 1 {
 			group = nil
@@ -307,7 +293,6 @@ func alignAssignments(s string) string {
 			continue
 		}
 
-		// Collapse consecutive blank lines.
 		if strings.TrimSpace(line) == "" {
 			flush()
 			if len(out) > 0 && out[len(out)-1] == "" {
@@ -331,8 +316,6 @@ func alignAssignments(s string) string {
 		}
 
 		flush()
-		// Separate the scalar block (and adjacent tables) with a single blank
-		// line before each table header.
 		if isTableHeader(line) && len(out) > 0 && out[len(out)-1] != "" {
 			out = append(out, "")
 		}
@@ -344,9 +327,6 @@ func alignAssignments(s string) string {
 	return strings.TrimRight(result, "\n") + "\n"
 }
 
-// isAssignmentLine reports whether a line is a `key = value` (or commented
-// `# key = value`) assignment, as opposed to a table header, schema directive,
-// or comment.
 func isAssignmentLine(line string) bool {
 	core := strings.TrimSpace(line)
 	if strings.HasPrefix(core, "#") {
@@ -359,8 +339,6 @@ func isAssignmentLine(line string) bool {
 	return eq > 0
 }
 
-// isTableHeader reports whether a line is a TOML [table]/[[array]] header,
-// including a commented-out one.
 func isTableHeader(line string) bool {
 	core := strings.TrimSpace(line)
 	if strings.HasPrefix(core, "#") {
@@ -369,19 +347,13 @@ func isTableHeader(line string) bool {
 	return strings.HasPrefix(core, "[")
 }
 
-// encodeConfigFile returns contents of a file
 func (g *ConfigGen) encodeConfigFile(cfd ConfigFileDefinition, name string) (*strings.Builder, error) {
 	var output strings.Builder
 
-	// write the schema directive so editors with a TOML LSP resolve the
-	// dedicated per-type schema for this file
 	if slug := schemaTypeForDefinition(cfd); schema.IsValidSchemaType(slug) {
 		output.WriteString(fmt.Sprintf("#:schema %s/v1/general/config-schema/%s\n\n", g.schemaBaseURL(), slug))
 	}
 
-	// Emit all scalar fields (across every schema) before any table headers so
-	// the concatenated output is valid TOML — top-level key/values must precede
-	// [table] sections.
 	for _, phase := range []encodePhase{phaseLines, phaseBlocks} {
 		for _, configFile := range cfd.Schemas {
 			schema := configFile.Schema()

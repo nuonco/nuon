@@ -8,10 +8,8 @@ import (
 )
 
 func init() {
-	// print log output to stdout
 	azlog.SetListener(func(event azlog.Event, s string) {
 		log.Println(s)
 	})
-	// include only azidentity credential logs
 	azlog.SetEvents(azidentity.EventAuthentication)
 }

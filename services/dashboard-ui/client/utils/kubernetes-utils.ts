@@ -82,13 +82,10 @@ function buildBeforeAfterStrings(entries: any[]): {
   entries.forEach((entry) => {
     const path = entry.path
 
-    // Handle content-based diffs (no path)
     if (!path) {
       if (entry.type === 1) {
-        // Before value (removal)
         beforeLines.push(entry.payload || '')
       } else if (entry.type === 2) {
-        // After value (addition)
         afterLines.push(entry.payload || '')
       }
       return
@@ -97,10 +94,8 @@ function buildBeforeAfterStrings(entries: any[]): {
     const existing = pathGroups.get(path) || {}
 
     if (entry.type === 1) {
-      // Before value (removal)
       existing.before = entry.payload || null
     } else if (entry.type === 2) {
-      // After value (addition)
       existing.after = entry.payload || null
     }
 

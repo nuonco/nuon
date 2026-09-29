@@ -74,7 +74,6 @@ func (s *AdminGracefulShutdownTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -130,7 +129,7 @@ func (s *AdminGracefulShutdownTestSuite) TestAdminGracefulShutDown() {
 				require.Len(s.T(), capturedSignals, 1)
 				assert.Equal(s.T(), runnerID, capturedSignals[0].OwnerID)
 
-				_ = capturedSignals[0] // type check
+				_ = capturedSignals[0]
 
 				assert.NotEmpty(s.T(), string(capturedSignals[0].Type))
 			},
@@ -154,7 +153,6 @@ func (s *AdminGracefulShutdownTestSuite) TestAdminGracefulShutDown() {
 			expectedCode:   http.StatusCreated,
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
-				// Handler sends signal directly without validation
 				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1)
 				assert.Equal(s.T(), runnerID, signals[0].OwnerID)
@@ -167,7 +165,6 @@ func (s *AdminGracefulShutdownTestSuite) TestAdminGracefulShutDown() {
 			expectedCode:   http.StatusCreated,
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
-				// Even with empty ID, signal is sent
 				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1)
 				assert.Equal(s.T(), "", signals[0].OwnerID)
@@ -188,7 +185,6 @@ func (s *AdminGracefulShutdownTestSuite) TestAdminGracefulShutDown() {
 				tc.validateFunc(tc.runnerID)
 			}
 
-			// Verify signal presence
 			if tc.expectedSignal {
 				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.Len(s.T(), capturedSignals, 1, "expected signal to be sent")

@@ -22,8 +22,6 @@ func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExec
 		l.Info("error cleaning up terraform workspace", zap.Error(err))
 	}
 
-	// Workspace cleanup also removes the kyverno-policies directory since
-	// policies are now written inside the workspace root.
 	l.Info("cleaning up workspace", zap.String("path", h.state.workspace.Root()))
 	if err := h.state.workspace.Cleanup(ctx); err != nil {
 		h.errRecorder.Record("unable to cleanup", err)

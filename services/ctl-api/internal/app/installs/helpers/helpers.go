@@ -23,50 +23,28 @@ import (
 )
 
 const (
-	// InstallWorkflowsQueueName is the queue that orchestrates install workflow execution.
 	InstallWorkflowsQueueName = queuenames.InstallWorkflowsQueueName
 
-	// InstallSignalsQueueName is the queue that handles individual install signal execution.
 	InstallSignalsQueueName = queuenames.InstallSignalsQueueName
 
-	// InstallApprovalsQueueName isolates approval requests from the signals that await them.
 	InstallApprovalsQueueName = queuenames.InstallApprovalsQueueName
 
-	// InstallWorkflowStepGroupsQueueName is the queue that executes workflow step groups.
 	InstallWorkflowStepGroupsQueueName = queuenames.InstallWorkflowStepGroupsQueueName
 
-	// InstallWorkflowStepsQueueName is the queue that executes individual workflow steps
-	// as their own signals (when steps-workflows feature is enabled).
 	InstallWorkflowStepsQueueName = queuenames.InstallWorkflowStepsQueueName
 
-	// InstallStateManagerQueueName is the queue that handles state manager operations
-	// (force-regenerate, regenerate, hint) for an install.
 	InstallStateManagerQueueName = queuenames.InstallStateManagerQueueName
 
-	// InstallGenerateStepsQueueName is the queue that handles generate-steps signals.
-	// Throttled at the same concurrency as workflows to prevent overload.
 	InstallGenerateStepsQueueName = queuenames.InstallGenerateStepsQueueName
 
-	// InstallActionWorkflowsQueueName is the queue for action workflow execution.
-	// Separate from install-workflows so action runs don't compete with deploys.
 	InstallActionWorkflowsQueueName = queuenames.InstallActionWorkflowsQueueName
 
-	// InstallDriftWorkflowsQueueName is the queue for drift scan workflow execution.
-	// Separate from install-workflows so drift scans don't compete with deploys.
 	InstallDriftWorkflowsQueueName = queuenames.InstallDriftWorkflowsQueueName
 
-	// InstallActionCronSignalsQueueName is the queue for action cron emitter signals.
-	// Separate from install-signals so action crons don't compete with other signals.
 	InstallActionCronSignalsQueueName = queuenames.InstallActionCronSignalsQueueName
 
-	// InstallComponentHealthQueueName is the queue for the periodic component
-	// health evaluator. Its own queue (MaxInFlight 1) so evaluations never
-	// overlap and never compete with deploys or other signals.
 	InstallComponentHealthQueueName = queuenames.InstallComponentHealthQueueName
 
-	// InstallDriftCronSignalsQueueName is the queue for drift cron emitter signals.
-	// Separate from install-signals so drift crons don't compete with other signals
-	// and can be routed to the isolated install-crons task queue.
 	InstallDriftCronSignalsQueueName = queuenames.InstallDriftCronSignalsQueueName
 )
 

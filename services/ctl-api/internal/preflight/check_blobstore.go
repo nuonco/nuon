@@ -12,7 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 )
 
-// probeKey is never written. A not-found response still proves the bucket
+// why: probeKey is never written. A not-found response still proves the bucket
 // resolves and the credentials carry read access, which is what we want to
 // verify without mutating the bucket.
 const probeKey = ".nuon-preflight-probe"

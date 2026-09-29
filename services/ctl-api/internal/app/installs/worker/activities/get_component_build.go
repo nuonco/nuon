@@ -21,8 +21,6 @@ func (a *Activities) GetComponentBuild(ctx context.Context, req GetComponentBuil
 	var build app.ComponentBuild
 	res := a.db.WithContext(ctx).
 		Where("id = ?", req.ComponentBuildID).
-
-		// load component config connection
 		Preload("ComponentConfigConnection").
 		Preload("ComponentConfigConnection.Component").
 		Preload("ComponentConfigConnection.TerraformModuleComponentConfig").
@@ -34,8 +32,6 @@ func (a *Activities) GetComponentBuild(ctx context.Context, req GetComponentBuil
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.AzureACRImageConfig").
 		Preload("ComponentConfigConnection.JobComponentConfig").
 		Preload("ComponentConfigConnection.KubernetesManifestComponentConfig").
-
-		// load pulumi config
 		Preload("ComponentConfigConnection.PulumiComponentConfig").
 		Preload("ComponentConfigConnection.PulumiComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigConnection.PulumiComponentConfig.ConnectedGithubVCSConfig").

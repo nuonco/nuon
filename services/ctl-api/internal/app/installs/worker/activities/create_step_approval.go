@@ -63,7 +63,6 @@ func (a *Activities) CreateStepApproval(ctx context.Context, req *CreateStepAppr
 	sa.SetChanges(counts, state)
 
 	if plan != "" {
-		// the blob upload in WorkflowStepApproval's BeforeCreate hook requires org_id on the context
 		if keys.OrgIDFromContext(ctx) == "" {
 			var step app.WorkflowStep
 			if res := a.db.WithContext(ctx).Select("org_id").First(&step, "id = ?", req.StepID); res.Error != nil {
@@ -76,13 +75,10 @@ func (a *Activities) CreateStepApproval(ctx context.Context, req *CreateStepAppr
 		sa.ContentsBlob.Set(plan)
 	}
 
-	// workflows polymorphic step approvals do not have a runner job ID
 	if req.RunnerJobID != "" {
 		sa.RunnerJobID = generics.ToPtr(req.RunnerJobID)
 	}
 
-	// Soft-delete any existing approval for this step so the unique index
-	// (install_workflow_step_id, deleted_at) allows the new row.
 	if res := a.db.WithContext(ctx).
 		Where("install_workflow_step_id = ? AND deleted_at = 0", req.StepID).
 		Delete(&app.WorkflowStepApproval{}); res.Error != nil {

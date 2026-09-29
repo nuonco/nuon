@@ -15,10 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestCreateAppHelmConfigSuccess() {
 	s.Run("creates config with public git VCS and chart_name", func() {
 		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeHelmChart)
@@ -87,10 +83,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppHelmConfigWithHelmRepo() {
 		assert.Equal(s.T(), "https://charts.example.com", response.HelmConfig.HelmRepoConfig.RepoURL)
 	})
 }
-
-// ---------------------------------------------------------------------------
-// Validation error cases
-// ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestCreateAppHelmConfigValidationErrors() {
 	comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeHelmChart)
@@ -170,10 +162,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppHelmConfigValidationErrors() {
 		})
 	}
 }
-
-// ---------------------------------------------------------------------------
-// Signals
-// ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestCreateAppHelmConfigSignals() {
 	s.Run("sends OperationConfigCreated and OperationUpdateComponentType signals", func() {

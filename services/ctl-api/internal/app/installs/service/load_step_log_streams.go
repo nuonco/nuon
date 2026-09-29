@@ -6,8 +6,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// loadStepLogStreams loads log streams for workflow steps that have step_target_type "install_workflow_steps".
-// These steps (e.g., sync-secrets) own their log stream directly rather than through a separate target entity.
 func (s *service) loadStepLogStreams(ctx context.Context, steps []*app.WorkflowStep) {
 	var stepIDs []string
 	stepMap := make(map[string]*app.WorkflowStep)

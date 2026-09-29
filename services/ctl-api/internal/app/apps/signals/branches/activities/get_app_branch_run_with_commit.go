@@ -23,7 +23,7 @@ func (a *Activities) getAppBranchRunWithCommit(ctx context.Context, runID string
 		return nil, fmt.Errorf("unable to find app branch run: %w", res.Error)
 	}
 
-	// Non-retryable: a run either has a commit or never will, and retrying holds
+	// why: Non-retryable: a run either has a commit or never will, and retrying holds
 	// the signal in-flight, which blocks every later run on the branch queue.
 	if run.VCSConnectionCommit == nil {
 		return nil, temporal.NewNonRetryableApplicationError(

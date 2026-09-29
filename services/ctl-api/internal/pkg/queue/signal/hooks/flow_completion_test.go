@@ -191,8 +191,6 @@ func TestResolveFlowCompletionOutcome(t *testing.T) {
 	}
 }
 
-// TestNilDBSkipsLookup proves hooks without a DB publish the transport outcome
-// unchanged instead of failing closed.
 func TestNilDBSkipsLookup(t *testing.T) {
 	event := signal.SignalPhaseEvent{
 		SignalType: signalTypeExecuteWorkflow,
@@ -206,9 +204,6 @@ func TestNilDBSkipsLookup(t *testing.T) {
 	assert.Equal(t, signal.SignalPhaseOutcome{Status: signal.SignalStatusSuccess}, outcome)
 }
 
-// TestFlowCompletionStatusLookupFailureFailsClosed drives the hooks against a
-// PostgreSQL DSN nothing listens on, so the status read fails after retries
-// and AfterPhase must refuse to publish.
 func TestFlowCompletionStatusLookupFailureFailsClosed(t *testing.T) {
 	db, err := gorm.Open(postgres.New(postgres.Config{
 		DSN: "host=127.0.0.1 port=1 user=unused dbname=unused sslmode=disable connect_timeout=1",

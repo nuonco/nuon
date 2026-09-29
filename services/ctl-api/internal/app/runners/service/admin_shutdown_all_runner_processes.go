@@ -68,7 +68,6 @@ func (s *service) shutdownAllRunnerProcesses(ctx context.Context, shutdownType a
 		return nil, res.Error
 	}
 
-	// Deduplicate: keep only the most recent process per runner+type.
 	type key struct {
 		RunnerID string
 		Type     app.RunnerProcessType
@@ -84,7 +83,6 @@ func (s *service) shutdownAllRunnerProcesses(ctx context.Context, shutdownType a
 		}
 	}
 
-	// Build all shutdown records and batch-insert them.
 	shutdowns := make([]app.RunnerProcessShutdown, len(latest))
 	for i, p := range latest {
 		shutdowns[i] = app.RunnerProcessShutdown{

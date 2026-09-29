@@ -19,7 +19,7 @@ type ForgetInstallRequest struct {
 func (a *Activities) ForgetInstall(ctx context.Context, req ForgetInstallRequest) error {
 	installOwnerType := plugins.TableName(a.db, app.Install{})
 
-	// must run before the cascade delete below soft-deletes the queues
+	// why: must run before the cascade delete below soft-deletes the queues
 	var queueIDs []string
 	if res := a.db.WithContext(ctx).
 		Model(&app.Queue{}).
@@ -94,7 +94,7 @@ func (a *Activities) ForgetInstall(ctx context.Context, req ForgetInstallRequest
 		}
 	}
 
-	// must run before the cascade delete below; see the helper's doc comment.
+	// why: must run before the cascade delete below; see the helper's doc comment.
 	if err := a.acctClient.DeleteInstallStackServiceAccounts(ctx, req.InstallID); err != nil {
 		return err
 	}

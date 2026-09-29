@@ -45,7 +45,7 @@ func (s *service) GetRunnerSettings(ctx *gin.Context) {
 	settings.VendorTelemetryEnabled = false
 	installTable := plugins.TableName(s.db, app.Install{})
 	if s.telemetryRelayEndpoint != "" && runner.RunnerGroup.Type == app.RunnerGroupTypeInstall && runner.RunnerGroup.OwnerType == installTable && runner.Status != app.RunnerStatusDisabled && runner.Status != app.RunnerStatusDeprovisioned {
-		// A projection avoids model AfterQuery hooks, which also run with SkipHooks.
+		// why: A projection avoids model AfterQuery hooks, which also run with SkipHooks.
 		var install struct {
 			Name                string
 			Labels              labels.Labels

@@ -102,7 +102,6 @@ export const QueueDetail = () => {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
       <nav className="text-sm text-gray-500 dark:text-gray-400">
         <Link
           to="/queues"
@@ -114,7 +113,6 @@ export const QueueDetail = () => {
         <span className="font-mono">{truncateId(queue.id)}</span>
       </nav>
 
-      {/* Header */}
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3 flex-wrap">
@@ -137,7 +135,6 @@ export const QueueDetail = () => {
         </div>
       </div>
 
-      {/* Temporal workflow stats */}
       {temporal_ui_url && queue.workflow?.id && queue.workflow?.namespace && (
         <TemporalWorkflowCard
           temporalUIUrl={temporal_ui_url}
@@ -146,7 +143,6 @@ export const QueueDetail = () => {
         />
       )}
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Max Depth</div>
@@ -170,7 +166,6 @@ export const QueueDetail = () => {
         </div>
       </div>
 
-      {/* Status Timestamps */}
       {queue.metadata && (
         <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Status Timestamps</h2>
@@ -193,7 +188,6 @@ export const QueueDetail = () => {
         </div>
       )}
 
-      {/* Actions */}
       <div className="flex gap-2">
         <button
           onClick={() => setActiveModal('hint')}
@@ -225,7 +219,6 @@ export const QueueDetail = () => {
         </button>
       </div>
 
-      {/* Confirmation Modals */}
       <ConfirmModal
         open={activeModal === 'hint'}
         title="Restart Hint"
@@ -257,7 +250,6 @@ export const QueueDetail = () => {
         isPending={clearMutation.isPending}
       />
 
-      {/* Check CAN Result Modal */}
       <InfoModal
         open={canResult !== null}
         title={canResult?.restarting ? 'CAN Triggered' : 'CAN Check Result'}
@@ -293,7 +285,6 @@ export const QueueDetail = () => {
         )}
       </InfoModal>
 
-      {/* Queue Status (StatusV2) */}
       {queue.status_v2?.status && (
         <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Queue Status</h2>
@@ -304,7 +295,6 @@ export const QueueDetail = () => {
         </div>
       )}
 
-      {/* Emitters */}
       <div className="table-card rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Emitters</h2>
         <div className="mt-2 overflow-x-auto">
@@ -404,7 +394,6 @@ export const QueueDetail = () => {
         )}
       </div>
 
-      {/* Recent Signals */}
       <div className="table-card rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Recent Signals</h2>
         <div className="mt-2 overflow-x-auto">
@@ -473,7 +462,6 @@ export const QueueDetail = () => {
         </div>
       </div>
 
-      {/* In-Flight Signals */}
       <div className="table-card rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
           In-Flight Signals

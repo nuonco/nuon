@@ -82,8 +82,6 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
-	// Default to deploying dependents when the field is omitted, preserving the
-	// historical always-deploy behavior; an explicit false is now respected.
 	deployDependents := req.DeployDependents == nil || *req.DeployDependents
 
 	inputs, err := s.applyInstallInputsUpdate(ctx, install, req.Inputs, req.Role, deployDependents, req.InputsOnly, false, app.WorkflowTypeInputUpdate)
@@ -95,11 +93,6 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, inputs)
 }
 
-// applyInstallInputsUpdate merges patch over the install's current inputs,
-// persists a new install-inputs revision, and starts (plus enqueues) the
-// input-update workflow that reconciles the change. It is shared by the
-// inputs PATCH endpoint and any flow that drives install inputs (e.g. the
-// component enable/disable toggle, which writes the synthetic enabled input).
 func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Install, patch map[string]*string, role string, deployDependents bool, inputsOnly bool, planOnly bool, workflowType app.WorkflowType) (*app.InstallInputs, error) {
 	pinnedAppInputConfig, err := s.helpers.GetPinnedAppInputConfig(ctx, install.AppID, install.AppConfigID)
 	if err != nil {
@@ -112,9 +105,6 @@ func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Ins
 		}
 	}
 
-	// Reject any install_stack (customer) sourced inputs in the provided subset.
-	// This intentionally operates ONLY on the subset the caller sent — existing
-	// customer-sourced values carried over by the merge are preserved, not re-validated.
 	if err := s.validateVendorSourceInputs(pinnedAppInputConfig, patch); err != nil {
 		return nil, err
 	}
@@ -123,7 +113,6 @@ func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Ins
 	var changedInputs *[]string
 	var changedInputValues string
 
-	// read-modify-append, so serialized against the other inputs writers
 	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := helpers.LockInstallInputs(ctx, tx, install.ID); err != nil {
 			return err
@@ -134,16 +123,11 @@ func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Ins
 			return fmt.Errorf("unable to get latest install inputs: %w", err)
 		}
 
-		// Merge the provided subset over the install's current inputs, then validate the
-		// full resulting set so required inputs remain satisfied after a partial update.
 		merged := mergeInstallInputs(latest.Values, patch, pinnedAppInputConfig)
 		if err := s.helpers.ValidateInstallInputs(ctx, pinnedAppInputConfig, merged); err != nil {
 			return err
 		}
 
-		// Reject an inputs update that would leave the install in an inconsistent
-		// component-enablement state (e.g. an enabled component depending on a
-		// disabled one). Validated against the full resulting desired state.
 		if err := s.validateInstallToggles(ctx, install, patch, merged); err != nil {
 			return err
 		}
@@ -152,8 +136,6 @@ func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Ins
 		if err != nil {
 			return fmt.Errorf("unable to create install inputs: %w", err)
 		}
-		// stale_at alone is inert: the partial has to be named or state (and the
-		// updated signal's label render) serves the old inputs
 		return s.helpers.MarkInstallStatePartialsStale(ctx, tx, install.ID, pkgstate.PartialInputs)
 	}); err != nil {
 		return nil, err
@@ -174,7 +156,6 @@ func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Ins
 		return nil, fmt.Errorf("unable to create install inputs: %w", err)
 	}
 
-	// Enqueue queue signals so the input-update workflow runs.
 	signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
 	if err != nil {
 		return nil, err
@@ -244,7 +225,6 @@ func (s *service) newInstallInputs(
 		return nil, nil, "", fmt.Errorf("unable to compute changed inputs: %w", err)
 	}
 
-	// this update will be tied to the latest AppInputConfigID for the app
 	obj := &app.InstallInputs{
 		AppInputConfigID: appInputConfig.ID,
 		InstallID:        installInputs.InstallID,
@@ -265,8 +245,6 @@ func (s *service) newInstallInputs(
 	return latestInstallInputs, &changed.Names, changed.ChangedValuesJSON, nil
 }
 
-// mergeInstallInputs overlays the provided subset onto the install's existing input
-// values and drops any inputs no longer defined in the pinned app input config.
 func mergeInstallInputs(existing map[string]*string, patch map[string]*string, appInputConfig *app.AppInputConfig) map[string]*string {
 	merged := map[string]*string{}
 	for k, v := range existing {
@@ -304,7 +282,6 @@ func (s *service) validateVendorSourceInputs(appInputConfig *app.AppInputConfig,
 			}
 		}
 
-		// Reject customer sourced inputs
 		if source == app.AppInputSourceCustomer {
 			return stderr.ErrUser{
 				Err:         fmt.Errorf("%s has source install_stack, cannot be updated via api", name),
@@ -316,13 +293,6 @@ func (s *service) validateVendorSourceInputs(appInputConfig *app.AppInputConfig,
 	return nil
 }
 
-// validateInstallToggles rejects an inputs update that would leave the install
-// in an inconsistent component-enablement state: an enabled component depending
-// on a disabled one, or a disabled component that still has enabled dependents.
-// It runs only when the patch touches a synthetic enabled input, and validates
-// the full resulting desired state (merged) through the installvalidate
-// framework. With dependent-cascade removed from the disable workflow, this is
-// what stops a user from authoring an inconsistent toggle combination.
 func (s *service) validateInstallToggles(ctx context.Context, install *app.Install, patch, merged map[string]*string) error {
 	touchesToggle := false
 	for name := range patch {

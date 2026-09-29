@@ -6,15 +6,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// SignalGraphNode represents one signal in the recursive graph.
 type SignalGraphNode struct {
 	Signal       *app.QueueSignal  `json:"signal"`
 	WorkflowInfo *WorkflowInfo     `json:"workflow_info,omitempty"`
 	Children     []SignalGraphNode `json:"children,omitempty"`
-	Relationship string            `json:"relationship,omitempty"` // "awaited" or "enqueued"
+	Relationship string            `json:"relationship,omitempty"`
 }
 
-// WorkflowInfo holds Temporal workflow execution info for display.
 type WorkflowInfo struct {
 	Status           string               `json:"status"`
 	Activities       []ActivityInfo       `json:"activities"`
@@ -26,14 +24,12 @@ type WorkflowInfo struct {
 	OrphanActivities []ActivityInfo       `json:"orphan_activities"`
 }
 
-// EnqueuedSignalInfo holds info about a signal that was enqueued by this workflow.
 type EnqueuedSignalInfo struct {
 	QueueSignalID string           `json:"queue_signal_id"`
 	Signal        *app.QueueSignal `json:"signal"`
 	ActivityName  string           `json:"activity_name"`
 }
 
-// UpdateExecution groups activities that ran within a single Temporal update handler call.
 type UpdateExecution struct {
 	Name            string               `json:"name"`
 	UpdateID        string               `json:"update_id"`
@@ -49,7 +45,6 @@ type UpdateExecution struct {
 	EnqueuedSignals []EnqueuedSignalInfo `json:"enqueued_signals"`
 }
 
-// ActivityInfo holds Temporal activity execution info for display.
 type ActivityInfo struct {
 	Name             string        `json:"name"`
 	Status           string        `json:"status"`
@@ -63,7 +58,6 @@ type ActivityInfo struct {
 	ScheduledEventID int64         `json:"scheduled_event_id"`
 }
 
-// ChildWorkflowInfo holds info about a child workflow execution.
 type ChildWorkflowInfo struct {
 	WorkflowType string        `json:"workflow_type"`
 	WorkflowID   string        `json:"workflow_id"`
@@ -76,7 +70,6 @@ type ChildWorkflowInfo struct {
 	Failure      string        `json:"failure"`
 }
 
-// AwaitedSignalInfo holds info about a queue signal that was awaited.
 type AwaitedSignalInfo struct {
 	QueueSignalID string           `json:"queue_signal_id"`
 	Signal        *app.QueueSignal `json:"signal"`

@@ -48,8 +48,6 @@ func (m *model) getFlatSteps() []list.Item {
 	return stepsList
 }
 
-// updateListSpinnerViews updates the spinner view string on all list items
-// so in-progress step spinners animate at the same rate as the header spinner.
 func (m *model) updateListSpinnerViews() {
 	items := m.stepsList.Items()
 	if len(items) == 0 {
@@ -65,8 +63,6 @@ func (m *model) updateListSpinnerViews() {
 	m.stepsList.SetItems(items)
 }
 
-// hasRetryableCurrentStep returns true when any step is in error and retryable.
-// Mirrors the target selection logic in retryAllCmd.
 func (m *model) hasRetryableCurrentStep() bool {
 	if m.workflow == nil {
 		return false
@@ -84,9 +80,6 @@ func (m *model) handleWorkflowFetched(msg workflowFetchedMsg) tea.Cmd {
 	workflow := msg.workflow
 	err := msg.err
 	if err != nil {
-		// Surface the error so an initial load that never succeeds shows the
-		// error instead of spinning forever (viewContent renders m.error when
-		// no workflow has loaded yet).
 		if m.workflow == nil {
 			m.error = err
 		}
@@ -112,21 +105,17 @@ func (m *model) handleWorkflowFetched(msg workflowFetchedMsg) tea.Cmd {
 		}
 		m.policyNames = policyNames
 	}
-	// set progress from workflow steps
 	_, _, progress := m.getProgressPercentage()
 	m.progress.SetPercent(progress)
-	// populate the nested step list
 	stepsList := m.getSteps()
 	m.steps = stepsList
-	flatSteps := m.getFlatSteps() // flat steps is a flat list of sorted steps
+	flatSteps := m.getFlatSteps()
 	m.stepsList.SetItems(flatSteps)
 	m.loading = false
 
-	//
 	if m.selectedStep != nil {
 		// TODO(fd): factor this out and use it in setSelected
 		item := m.stepsList.Items()[m.selectedIndex]
-		// coerce to our type so we can use the niecities to grab the step details
 		m.selectedStep = item.(listStep).Step()
 
 	}
@@ -144,7 +133,6 @@ func (m *model) handleWorkflowFetched(msg workflowFetchedMsg) tea.Cmd {
 		m.retryInFlight = true
 		return m.retryAllCmd
 	}
-	// clear the in-flight flag once the step is no longer in error
 	if m.retryInFlight && !m.hasRetryableCurrentStep() {
 		m.retryInFlight = false
 	}
@@ -170,7 +158,6 @@ func (m *model) handleWorkflowStepApprovalResponseCreated(msg createWorkflowStep
 	m.loading = false
 	m.stepApprovalConf = false
 	m.approvingStep = false
-	// after a step is approved, we want to immediately fetch the workflow to get the updated version
 	return m.fetchWorkflowCmd
 }
 
@@ -206,7 +193,7 @@ func (m *model) handleApproveAll(msg approveAllMsg) []tea.Cmd {
 func (m *model) handleRetryAll(msg retryAllMsg) []tea.Cmd {
 	cmds := []tea.Cmd{}
 	if msg.err != nil {
-		m.retryInFlight = false // allow a retry attempt on the next poll
+		m.retryInFlight = false
 		m.setLogMessage(fmt.Sprintf("retry error: %s", msg.err), "error")
 	}
 	if msg.retried > 0 {

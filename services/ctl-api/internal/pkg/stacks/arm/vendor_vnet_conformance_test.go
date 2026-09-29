@@ -13,11 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
-// Serves the on-disk vendor VNet template so the real renderer, not a hand-copy
-// of the contract, decides whether it conforms.
-//
-// Run with -count=1: the template is an input Go's test cache does not track, so a
-// re-run after editing it otherwise replays the previous result.
 func TestVendorVNetTemplateConforms(t *testing.T) {
 	path := os.Getenv("VENDOR_VNET_TEMPLATE")
 	if path == "" {
@@ -64,7 +59,6 @@ func TestVendorVNetTemplateConforms(t *testing.T) {
 		t.Error("subscription-targeted deployment needs a location")
 	}
 
-	// The root reads these off vnetDeployment; a missing one fails at deploy.
 	var shape struct {
 		Outputs map[string]json.RawMessage `json:"outputs"`
 	}
@@ -80,8 +74,6 @@ func TestVendorVNetTemplateConforms(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Every parameter hoisted out of the VNet template has to be declared in the
-	// root that now references it.
 	var root map[string]any
 	if err := json.Unmarshal(rendered, &root); err != nil {
 		t.Fatal(err)

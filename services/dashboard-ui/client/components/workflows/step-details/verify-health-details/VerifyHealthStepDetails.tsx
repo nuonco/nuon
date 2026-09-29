@@ -41,9 +41,6 @@ function checksFrom(entry?: TStatusEntry): TVerifyHealthCheck[] {
   )
 }
 
-// The latest snapshot wins: while the gate runs the current status carries the
-// live checks; once it closes (success or error overwrote the description) the
-// last narration in history holds the locked snapshot.
 export function latestChecks(step?: TWorkflowStep): TVerifyHealthCheck[] {
   const status = step?.status as TStatusEntry | undefined
   const current = checksFrom(status)

@@ -13,7 +13,7 @@ import (
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
 
-// vcsTemporalNamespace mirrors the constant in vcs/worker to avoid import cycle.
+// why: vcsTemporalNamespace mirrors the constant in vcs/worker to avoid import cycle.
 const vcsTemporalNamespace = "vcs"
 
 const (
@@ -21,8 +21,6 @@ const (
 	vcsHealthCheckJitterWindow = cronutil.MaxJitterWindow
 )
 
-// CreateConnectionQueue creates a queue for the given VCS connection with an hourly cron health
-// check emitter, a fire-once webhook subscription emitter, and enqueues an immediate health check signal.
 func (h *Helpers) CreateConnectionQueue(ctx context.Context, vcsConn *app.VCSConnection) (*app.Queue, error) {
 	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     vcsConn.ID,
@@ -39,7 +37,6 @@ func (h *Helpers) CreateConnectionQueue(ctx context.Context, vcsConn *app.VCSCon
 		return nil, fmt.Errorf("unable to create vcs connection queue: %w", err)
 	}
 
-	// Cron emitter: hourly health check, jittered across the hour
 	if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
 		QueueID:         q.ID,
 		Name:            fmt.Sprintf("vcs-connection-%s-health-check", vcsConn.ID),
@@ -56,7 +53,6 @@ func (h *Helpers) CreateConnectionQueue(ctx context.Context, vcsConn *app.VCSCon
 		return nil, fmt.Errorf("unable to create vcs health check emitter: %w", err)
 	}
 
-	// Fire-once emitter: create webhook subscription on first queue run
 	if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
 		QueueID:     q.ID,
 		Name:        fmt.Sprintf("vcs-connection-%s-webhook-subscription", vcsConn.ID),
@@ -70,7 +66,6 @@ func (h *Helpers) CreateConnectionQueue(ctx context.Context, vcsConn *app.VCSCon
 		return nil, fmt.Errorf("unable to create vcs webhook subscription emitter: %w", err)
 	}
 
-	// Enqueue an immediate health check signal
 	if _, err := h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 		QueueID: q.ID,
 		Signal: &healthcheck.Signal{

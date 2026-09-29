@@ -11,20 +11,10 @@ import { TraceView } from './TraceView'
 export interface ITraceViewContainer {
   logStreamId: string
   shouldPoll?: boolean
-  // When the parent already fetches spans (TracePanel does, so it can pass
-  // the same list down to LogViewerProvider for parent-aggregation in the
-  // span→logs cross-link), it forwards them here. If omitted, this container
-  // falls back to fetching them itself — preserves the original standalone
-  // usage.
   spans?: TSpan[]
   spansLoading?: boolean
 }
 
-// Container — orchestrates spans fetch + URL-driven span selection.
-// Selecting a span pushes ?span_id=... onto the URL; the log viewer's
-// client-side filters pick up that param and filter to that span.
-// Cross-link in the other direction (log → span) works the same way:
-// landing on the trace tab with ?span_id=... preselects the matching span.
 export const TraceViewContainer = ({
   logStreamId,
   shouldPoll,
@@ -68,11 +58,6 @@ export const TraceViewContainer = ({
     }
   }, [])
 
-  // Cross-link: when the user clicks a log row in the right pane, the
-  // LogViewerProvider exposes the active log via useLogViewer. Each log
-  // record already carries span_id from otelzap, so we mirror it onto
-  // the URL — this both highlights the matching node in the tree and
-  // narrows the logs pane to that span.
   const { activeLog } = useLogViewer()
   const lastSyncedSpanRef = useRef<string | undefined>()
   useEffect(() => {

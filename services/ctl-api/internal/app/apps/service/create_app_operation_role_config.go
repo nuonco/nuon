@@ -65,14 +65,12 @@ func (s *service) CreateAppOperationRoleConfig(ctx *gin.Context) {
 
 	var cfg *app.AppOperationRoleConfig
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Create rule config
 		var err error
 		cfg, err = s.createAppOperationRoleConfigRecord(ctx, tx, appID, &req)
 		if err != nil {
 			return fmt.Errorf("unable to create operation role config: %w", err)
 		}
 
-		// Create operation role rules
 		rules, err := s.createOperationRoleRules(ctx, tx, cfg, &req)
 		if err != nil {
 			return fmt.Errorf("unable to create operation role rules: %w", err)

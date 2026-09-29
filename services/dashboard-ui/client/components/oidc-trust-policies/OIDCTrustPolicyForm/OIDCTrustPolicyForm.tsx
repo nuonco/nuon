@@ -134,8 +134,6 @@ export const OIDCTrustPolicyFormModal = ({
   initialRepoDefaultBranch?: string
   lockPreset?: boolean
   reservedNames?: string[]
-  // 'manual' takes a typed owner/repo, for policies about a repository this org has
-  // no connection to — a customer's, in the install-stack flow.
   repoSource?: 'connections' | 'manual'
   defaultRole?: string
   defaultName?: string
@@ -214,8 +212,6 @@ export const OIDCTrustPolicyFormModal = ({
     form.setFieldValue('tokenDurationSeconds', '900')
   }
 
-  // Shared by both repo modes: a picked repo and a typed one derive the policy name
-  // and the sub claim identically.
   const applyRepo = (
     nextRepoFullName: string,
     branch?: string,
@@ -329,7 +325,6 @@ export const OIDCTrustPolicyFormModal = ({
 
         {isCreate && isGithub ? (
           repoSource === 'manual' ? (
-            // No repo Select: the repository belongs to whoever runs the workflow, not this org.
             <div className="flex flex-col gap-2">
               <Label htmlFor="policy-repo">Repository</Label>
               <Input

@@ -17,8 +17,6 @@ func (c *Client) CompleteSignal(ctx context.Context, signalID, updateName string
 		return errors.Wrap(err, "unable to get queue signal")
 	}
 
-	// The signal runs in a specific workflow.
-	// We should use that workflow ID to send the update.
 	_, err := c.tClient.UpdateWorkflowInNamespace(ctx, signal.Workflow.Namespace, tclient.UpdateWorkflowOptions{
 		WorkflowID:   signal.Workflow.ID,
 		UpdateName:   updateName,

@@ -16,9 +16,6 @@ type GetInstallGroupRunInput struct {
 }
 
 type GetInstallGroupRunOutput struct {
-	// Found is false when the deploy step never recorded a group run: an empty
-	// install group auto-skipped by the emptygroup check, or a deploy step a user
-	// skipped. Callers must read this as "no deploy happened" rather than an error.
 	Found bool `json:"found"`
 
 	InstallGroupRunID string                       `json:"install_group_run_id"`

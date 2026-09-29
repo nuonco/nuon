@@ -38,8 +38,6 @@ type Blob struct {
 	s3Prefix string       // Optional custom S3 prefix (bypasses org_id requirement)
 }
 
-// Scan implements database/sql.Scanner
-// Reads the blob metadata from database (JSONB column)
 func (b *Blob) Scan(value interface{}) error {
 	if value == nil {
 		b.metadata = BlobMetadata{}
@@ -62,12 +60,10 @@ func (b *Blob) Scan(value interface{}) error {
 		return fmt.Errorf("failed to unmarshal blob metadata: %w", err)
 	}
 
-	b.loaded = false // Not loaded from S3 yet
+	b.loaded = false
 	return nil
 }
 
-// Value implements driver.Valuer
-// Returns the blob metadata as JSONB to store in database
 func (b *Blob) Value() (driver.Value, error) {
 	if b == nil || b.metadata.BlobID == "" {
 		return nil, nil
@@ -81,32 +77,26 @@ func (b *Blob) Value() (driver.Value, error) {
 	return bytes, nil
 }
 
-// GormDataType returns the database column type
 func (b Blob) GormDataType() string {
 	return "jsonb"
 }
 
-// BeforeSave implements GORM hook for automatic S3 upload
 func (b *Blob) BeforeCreate(tx *gorm.DB) error {
 	if b == nil {
 		return nil
 	}
-	// Skip if not dirty (no changes)
 	if !b.dirty {
 		return nil
 	}
 
-	// Check context - is blob write enabled?
 	if !IsBlobWriteEnabled(tx.Statement.Context) {
 		return nil
 	}
 
-	// Generate blob ID if new
 	if b.metadata.BlobID == "" {
 		b.metadata.BlobID = domains.NewBlobID()
 	}
 
-	// Construct S3 key: use custom prefix if set, otherwise use org_id
 	var s3Key string
 	if b.s3Prefix != "" {
 		s3Key = fmt.Sprintf("%s/%s", b.s3Prefix, b.metadata.BlobID)
@@ -119,16 +109,12 @@ func (b *Blob) BeforeCreate(tx *gorm.DB) error {
 	}
 	b.metadata.S3Key = s3Key
 
-	// Get account ID for created_by
 	if accountID, err := cctxAccountIDFromContext(tx.Statement.Context); err == nil {
 		b.metadata.CreatedBy = accountID
 	}
 
-	// Set created timestamp
 	b.metadata.CreatedAt = time.Now().Format(time.RFC3339)
 
-	// If there's no value yet, write empty metadata but skip S3 upload
-	// This supports the case where the blob entry is created first, then content is uploaded later
 	if b.value == nil || *b.value == "" {
 		b.metadata.Size = 0
 		b.metadata.Checksum = ""
@@ -139,79 +125,64 @@ func (b *Blob) BeforeCreate(tx *gorm.DB) error {
 		return nil
 	}
 
-	// Get blobstore service from context
 	svc := GetBlobService(tx.Statement.Context)
 	if svc == nil {
 		return fmt.Errorf("blob service not set in context")
 	}
 
-	// Upload to S3 with streaming
 	reader := strings.NewReader(*b.value)
 	checksum, err := svc.UploadStream(tx.Statement.Context, s3Key, reader)
 	if err != nil {
 		return fmt.Errorf("failed to upload blob to S3 key (%s): %w", s3Key, err)
 	}
 
-	// Store metadata
 	b.metadata.Checksum = checksum
 	b.metadata.Size = int64(len(*b.value))
 	if b.metadata.ContentType == "" {
-		b.metadata.ContentType = "application/octet-stream" // Default
+		b.metadata.ContentType = "application/octet-stream"
 	}
 
-	// Clear dirty flag
 	b.dirty = false
 
 	return nil
 }
 
-// AfterFind implements GORM hook for automatic S3 download
 func (b *Blob) AfterFind(tx *gorm.DB) error {
-	// Skip if no blob ID
 	if b.metadata.BlobID == "" {
 		return nil
 	}
 
-	// Skip if already loaded
 	if b.loaded {
 		return nil
 	}
 
-	// Detect if this is a single-row or multi-row query
 	autoLoad := IsBlobAutoLoad(tx.Statement.Context)
 	if !autoLoad {
-		// Check if single row via reflection
 		autoLoad = isSingleRowQuery(tx)
 	}
 
 	if !autoLoad {
-		return nil // Skip auto-load for multi-row queries
-	}
-
-	// Get blobstore service
-	svc := GetBlobService(tx.Statement.Context)
-	if svc == nil {
-		// No service available - skip silently
 		return nil
 	}
 
-	// Use S3 key from metadata (already stored in JSONB)
+	svc := GetBlobService(tx.Statement.Context)
+	if svc == nil {
+		return nil
+	}
+
 	s3Key := b.metadata.S3Key
 
-	// Download from S3 with streaming
 	reader, err := svc.DownloadStream(tx.Statement.Context, s3Key)
 	if err != nil {
 		return fmt.Errorf("failed to download blob from S3: %w", err)
 	}
 	defer reader.Close()
 
-	// Read into string
 	data, err := io.ReadAll(reader)
 	if err != nil {
 		return fmt.Errorf("failed to read blob: %w", err)
 	}
 
-	// Set value
 	valueStr := string(data)
 	b.value = &valueStr
 	b.loaded = true
@@ -219,7 +190,6 @@ func (b *Blob) AfterFind(tx *gorm.DB) error {
 	return nil
 }
 
-// isSingleRowQuery checks if the query returns a single struct vs slice
 func isSingleRowQuery(tx *gorm.DB) bool {
 	if tx.Statement.Dest == nil {
 		return false
@@ -230,18 +200,15 @@ func isSingleRowQuery(tx *gorm.DB) bool {
 		destType = destType.Elem()
 	}
 
-	// If dest is a slice, it's a multi-row query
 	return destType.Kind() != reflect.Slice && destType.Kind() != reflect.Array
 }
 
-// Set sets the blob value and marks it dirty for upload
 func (b *Blob) Set(value string) {
 	b.value = &value
 	b.dirty = true
 	b.loaded = true
 }
 
-// Get returns the blob value, loading from S3 if needed
 func (b *Blob) Get(ctx context.Context) (string, error) {
 	if b == nil {
 		return "", nil
@@ -259,7 +226,6 @@ func (b *Blob) Get(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("blob service not set in context")
 	}
 
-	// Use S3 key from metadata (already stored in JSONB)
 	s3Key := b.metadata.S3Key
 
 	reader, err := svc.DownloadStream(ctx, s3Key)
@@ -280,12 +246,11 @@ func (b *Blob) Get(ctx context.Context) (string, error) {
 	return valueStr, nil
 }
 
-// IsSet returns whether the blob has a value (either loaded or with blob ID)
 func (b *Blob) IsSet() bool {
 	return b.metadata.BlobID != "" || (b.loaded && b.value != nil)
 }
 
-// String returns the blob value if loaded, or empty string
+// why: String returns the blob value if loaded, or empty string
 // Warning: Does not load from S3 if not already loaded
 func (b *Blob) String() string {
 	if b.loaded && b.value != nil {
@@ -294,30 +259,22 @@ func (b *Blob) String() string {
 	return ""
 }
 
-// BlobID returns the S3 key (blob ID)
 func (b *Blob) BlobID() string {
 	return b.metadata.BlobID
 }
 
-// Metadata returns the blob metadata
 func (b *Blob) Metadata() BlobMetadata {
 	return b.metadata
 }
 
-// SetContentType sets the content type for the blob
 func (b *Blob) SetContentType(contentType string) {
 	b.metadata.ContentType = contentType
 }
 
-// SetS3Prefix sets a custom S3 key prefix, bypassing the org_id requirement.
-// Use this for cross-org records that don't belong to a specific organization.
 func (b *Blob) SetS3Prefix(prefix string) {
 	b.s3Prefix = prefix
 }
 
-// Helper functions to extract values from context using cctx
-
-// cctxOrgIDFromContext extracts org ID from context using cctx package
 func cctxOrgIDFromContext(ctx context.Context) (string, error) {
 	orgID := keys.OrgIDFromContext(ctx)
 	if orgID == "" {
@@ -326,7 +283,6 @@ func cctxOrgIDFromContext(ctx context.Context) (string, error) {
 	return orgID, nil
 }
 
-// cctxAccountIDFromContext extracts account ID from context using cctx package
 func cctxAccountIDFromContext(ctx context.Context) (string, error) {
 	accountID := keys.CreatedByIDFromContext(ctx)
 	if accountID == "" {
@@ -335,8 +291,6 @@ func cctxAccountIDFromContext(ctx context.Context) (string, error) {
 	return accountID, nil
 }
 
-// buildS3Key constructs the S3 key for blob storage
-// Format: {org_id}/{blob_id}
 func buildS3Key(orgID, blobID string) string {
 	return fmt.Sprintf("blobs/%s/%s", orgID, blobID)
 }

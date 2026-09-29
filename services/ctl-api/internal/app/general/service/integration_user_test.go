@@ -27,7 +27,6 @@ func (s *GeneralInternalTestSuite) TestCreateIntegrationUser() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Make request
 			rr := s.makeRequest(http.MethodPost, "/v1/general/integration-user", map[string]interface{}{})
 
 			if rr.Code != tc.expectedStatus {
@@ -35,12 +34,10 @@ func (s *GeneralInternalTestSuite) TestCreateIntegrationUser() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Unmarshal response
 			var resp CreateIntegrationUserResponse
 			err := json.Unmarshal(rr.Body.Bytes(), &resp)
 			require.NoError(s.T(), err)
 
-			// Validate response
 			if tc.validateFunc != nil {
 				tc.validateFunc(resp)
 			}

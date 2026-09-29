@@ -199,7 +199,7 @@ func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, existing *app.Install, installCfg *config.Install, appBranchID string) (*sync.InstallSyncResult, error) {
 	upstream := existingToConfig(existing)
 
-	// Refused rather than ignored: nothing below writes the account, so without this
+	// why: Refused rather than ignored: nothing below writes the account, so without this
 	// a changed identifier would diff forever and never converge. Shared with the CLI
 	// syncer so the rule cannot differ by interface.
 	if err := installCfg.CheckImmutableTargetAccount(upstream); err != nil {
@@ -226,8 +226,6 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 		if err := syncInstallInputs(ctx, db, installHelpers, existing, definedInputs); err != nil {
 			return nil, fmt.Errorf("unable to update inputs for install %s: %w", installCfg.Name, err)
 		}
-		// syncLabels only renders when the label config itself changed; an
-		// inputs-only sync still moves state that templates can reference.
 		if len(existing.LabelTemplates) > 0 {
 			if err := installHelpers.RenderInstallLabels(ctx, existing.ID); err != nil {
 				return nil, fmt.Errorf("unable to render install label templates for install %s: %w", installCfg.Name, err)
@@ -341,13 +339,11 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 	}, nil
 }
 
-// syncLabels merges config labels over current labels so out-of-band values
+// why: syncLabels merges config labels over current labels so out-of-band values
 // survive a sync. Removed keys are only cleaned up when template-managed — a
 // stale rendered value would otherwise keep matching selectors forever.
 // Template text is never written to the labels column.
 func syncLabels(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, existing *app.Install, desired labels.Labels) error {
-	// Default-label keys are owned by the app config; an install config echoing
-	// the rendered value or the default itself round-trips, anything else fails.
 	if len(existing.AppDefaultLabels) > 0 && len(desired) > 0 {
 		pruned := make(labels.Labels, len(desired))
 		for key, val := range desired {
@@ -406,7 +402,6 @@ func syncLabels(ctx context.Context, db *gorm.DB, installHelpers *installhelpers
 		return fmt.Errorf("unable to update install labels: %w", err)
 	}
 
-	// Render now so a new template doesn't wait for the next state change.
 	if len(templated) > 0 {
 		if err := installHelpers.RenderInstallLabels(ctx, existing.ID); err != nil {
 			return fmt.Errorf("unable to render install label templates: %w", err)
@@ -428,7 +423,7 @@ func existingToConfig(install *app.Install) *config.Install {
 		Labels:         upstreamLabels(install),
 	}
 
-	// The target identifiers must be echoed back, otherwise a config that legitimately
+	// why: The target identifiers must be echoed back, otherwise a config that legitimately
 	// declares them diffs against an upstream that never reports them and every sync
 	// shows drift that no update can ever resolve. Kept in step with genCLIInstallConfig,
 	// which does the same for the CLI's view of upstream.
@@ -438,8 +433,6 @@ func existingToConfig(install *app.Install) *config.Install {
 			AccountID: install.CloudPlatformMetadata.TargetAccountID,
 		}
 	}
-	// Azure and GCP already carry their identifier on the account record, so installs
-	// created before CloudPlatformMetadata existed still round-trip.
 	if install.GCPAccount != nil {
 		cfg.GCPAccount = &config.GCPAccount{
 			ProjectID: firstNonEmpty(
@@ -482,7 +475,7 @@ func existingToConfig(install *app.Install) *config.Install {
 	return cfg
 }
 
-// upstreamLabels echoes template text for template-managed keys so a dynamic
+// why: upstreamLabels echoes template text for template-managed keys so a dynamic
 // label diffs clean instead of showing drift against its rendered value, and
 // strips app-default keys, which install configs never declare.
 func upstreamLabels(install *app.Install) labels.Labels {
@@ -513,7 +506,6 @@ func firstNonEmpty(vals ...string) string {
 
 var _ func(ctx context.Context, db *gorm.DB, h *installhelpers.Helpers, appID string, i *config.Install) (*sync.InstallSyncResult, error) = SyncInstall
 
-// syncInstallInputs merges rather than replaces so values set out of band survive a sync.
 func syncInstallInputs(
 	ctx context.Context,
 	db *gorm.DB,
@@ -561,7 +553,6 @@ func syncInstallInputs(
 			return err
 		}
 
-		// nothing else on this path invalidates state
 		return installHelpers.MarkInstallStatePartialsStale(ctx, tx, existing.ID, pkgstate.PartialInputs)
 	})
 }

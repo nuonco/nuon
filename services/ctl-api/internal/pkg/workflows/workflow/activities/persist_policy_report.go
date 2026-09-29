@@ -33,7 +33,6 @@ type PersistPolicyReportRequest struct {
 	WarnCount                      int               `json:"warn_count"`
 	PassCount                      int               `json:"pass_count"`
 
-	// Human-readable names for display in reports
 	OrgName       string `json:"org_name"`
 	AppName       string `json:"app_name"`
 	InstallName   string `json:"install_name"`
@@ -115,11 +114,10 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 		WarnCount:                      warnCount,
 		PassCount:                      passCount,
 		Status:                         buildPolicyReportStatus(ctx, denyCount, warnCount, passCount),
-		// Human-readable names for display in reports
-		OrgName:       req.OrgName,
-		AppName:       req.AppName,
-		InstallName:   stringPtrToPtr(req.InstallName),
-		ComponentName: stringPtrToPtr(req.ComponentName),
+		OrgName:                        req.OrgName,
+		AppName:                        req.AppName,
+		InstallName:                    stringPtrToPtr(req.InstallName),
+		ComponentName:                  stringPtrToPtr(req.ComponentName),
 	}
 
 	if err := a.db.WithContext(ctx).Create(report).Error; err != nil {
@@ -158,7 +156,6 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 		},
 	})
 
-	// Write analytics events to ClickHouse (non-blocking — failures don't affect the activity)
 	a.persistPolicyAnalyticsEvents(ctx, l, report, policyResults)
 
 	passedPolicyIDs := make([]string, 0)

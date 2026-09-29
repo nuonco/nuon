@@ -108,8 +108,6 @@ export interface IChangeCounts {
 export const endWithNewline = (value: string) =>
   !value || value.endsWith('\n') ? value : `${value}\n`
 
-// @pierre/diffs matches its highlight cache on cacheKey alone, ignoring
-// contents, and defaults the key to the filename.
 export const fileCacheKey = (
   name: string,
   lang: string,

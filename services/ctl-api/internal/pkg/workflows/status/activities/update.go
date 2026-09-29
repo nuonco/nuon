@@ -27,17 +27,6 @@ func isTerminalStatus(s app.Status) bool {
 	return false
 }
 
-// NOTE
-//
-// This package is the beginning of consolidating all status logic into a single package.
-//
-// Right now, it's a bit verbose with getters for statuses when updating, however long term we can either generate this
-// or make the status selectable in isolation by selecting the field using reflection or something else.
-//
-// However, for now, this interface provides a few things:
-// 1. ability to manage history of a status
-// 2. ability to start doing things such as sending a signal to a channel if needed. This enables the ability to start
-// blocking for a "status" change or a specific status.
 type UpdateStatusRequest struct {
 	ID     string              `validate:"required"`
 	Status app.CompositeStatus `json:"status" validate:"required"`
@@ -136,7 +125,7 @@ func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app
 		return errors.New("no object found to update")
 	}
 
-	// Also atomically merge new metadata keys via jsonb_set so that any
+	// why: Also atomically merge new metadata keys via jsonb_set so that any
 	// metadata written concurrently (e.g. by the background enqueuer)
 	// between our read and this write is not lost.
 	if len(status.Metadata) > 0 {
@@ -163,18 +152,13 @@ func nextCompositeStatus(ctx context.Context, existingStatus, status app.Composi
 func prepareCompositeStatus(existingStatus, status app.CompositeStatus) app.CompositeStatus {
 	history := existingStatus.History
 	existingStatus.History = nil
-	// A composite error carries the full diagnostic output, so keeping one per
-	// history entry would grow the status column without bound. Only the current
-	// status keeps its error.
 	existingStatus.CompositeError = nil
 	history = append(history, existingStatus)
-	// Limit history to the most recent 25 entries to prevent unbounded growth.
 	if len(history) > 25 {
 		history = history[len(history)-25:]
 	}
 	status.History = history
 
-	// Carry forward existing metadata into the new status so it's not lost.
 	newMetadata := status.Metadata
 	if newMetadata == nil {
 		newMetadata = make(map[string]any, 0)
@@ -190,7 +174,6 @@ func prepareCompositeStatus(existingStatus, status app.CompositeStatus) app.Comp
 	return status
 }
 
-// reflectID extracts the ID field from a model pointer via reflection.
 func reflectID(obj any) string {
 	v := reflect.ValueOf(obj)
 	if v.Kind() == reflect.Ptr {
@@ -211,7 +194,7 @@ func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateSt
 	}
 
 	_, cancelRequested := loaded.Status.Metadata["cancel_requested_at"]
-	// Cancellation is terminal because downstream step/group writers can race the cancel handler with stale statuses.
+	// why: Cancellation is terminal because downstream step/group writers can race the cancel handler with stale statuses.
 	if req.Status.Status != app.StatusCancelled && (loaded.Status.Status == app.StatusCancelled || cancelRequested) {
 		return nil
 	}
@@ -250,10 +233,6 @@ func (a *Activities) UpdateFlowStatusMetadata(ctx context.Context, req UpdateFlo
 	return nil
 }
 
-// syncInstallAppConfigVersionFromFlowStatus copies the install workflow status
-// onto the InstallAppConfigVersion linked by workflow_id. Best-effort: never
-// fails the flow status write. This keeps IACV in sync when executeflow parks
-// on error (awaiting retry) without sending the parent enqueue callback.
 func (a *Activities) syncInstallAppConfigVersionFromFlowStatus(ctx context.Context, workflowID string, status app.CompositeStatus) {
 	statusJSON, err := json.Marshal(status)
 	if err != nil {

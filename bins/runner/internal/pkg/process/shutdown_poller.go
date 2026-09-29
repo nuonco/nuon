@@ -38,7 +38,6 @@ type ShutdownPollerParams struct {
 	V          *validator.Validate
 	Drainer    *drain.Drainer
 
-	// only provided in the mng process; nil in the install/run process.
 	Health *health.Server `optional:"true"`
 }
 

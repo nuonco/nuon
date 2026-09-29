@@ -47,7 +47,7 @@ func New(params Params) (*Registry, error) {
 		shutdown: params.Shutdowner,
 	}
 
-	// distribution inits otel unconditionally inside NewRegistry with no config knob to disable it,
+	// why: distribution inits otel unconditionally inside NewRegistry with no config knob to disable it,
 	// and autoexport defaults to an OTLP exporter at localhost:4318 that logs a connection-refused
 	// error on every flush. We run no collector and never consume its spans, so turn it off.
 	if os.Getenv("OTEL_TRACES_EXPORTER") == "" {

@@ -1,9 +1,3 @@
-/*
-
-An alt-screen TUI for viewing a workflow in detail and approving steps.
-
-*/
-
 package workflow
 
 import (
@@ -38,22 +32,19 @@ const (
 )
 
 type approvalContents struct {
-	raw      interface{}
-	contents map[string]interface{}
-	loading  bool
-	error    error
-	// target attrs for decompression
+	raw              interface{}
+	contents         map[string]interface{}
+	loading          bool
+	error            error
 	terraformContent map[string]any
 	helmDiff         map[string]any
 }
 
 type model struct {
-	// common/base
 	ctx context.Context
 	cfg *config.Config
 	api nuon.Client
 
-	// top level information
 	installID  string
 	workflowID string
 
@@ -61,14 +52,12 @@ type model struct {
 	height    int
 	listWidth int
 
-	// data
 	workflow                     *models.AppWorkflow
-	steps                        [][]*models.AppWorkflowStep // standalone so we can sort them, nested so we can group them
-	selectedIndex                int                         // used to set selectedStep on data refresh (smells, use map or something better)
+	steps                        [][]*models.AppWorkflowStep
+	selectedIndex                int
 	selectedStep                 *models.AppWorkflowStep
 	selectedStepApprovalResponse *models.ServiceCreateWorkflowStepApprovalResponseResponse
 
-	// conditional
 	stack        *models.AppInstallStack
 	stackLoading bool
 
@@ -76,48 +65,36 @@ type model struct {
 	policyNames      map[string]string
 	helmDiffExplorer helmDiffExplorerModel
 
-	// ui components
-	// 1. layout
 	header     viewport.Model
 	stepsList  list.Model
 	stepDetail viewport.Model
 	footer     viewport.Model
-	focus      string // one of "list" or "detail"
+	focus      string
 
-	// 2. ui
-	// for the header
 	progress    progress.Model
 	searchInput textinput.Model
 	spinner     spinner.Model
 
-	// 3. for the footer
 	status common.StatusBarRequest
 
-	// branch config diff navigation
 	expandedDiffSections map[int]bool
 	diffSectionCursor    int
 	diffSectionCount     int
 
-	// approval confirmations
 	stepApprovalConf        bool
 	workflowApprovalConf    bool
 	workflowCancelationConf bool
 	showJson                bool
 
-	// approval processing state
-	approvingStep bool // whether an approval request is in flight
+	approvingStep bool
 
-	// auto-retry
-	autoRetryAll  bool // when true, failed retryable steps are retried automatically on each poll
-	retryInFlight bool // true after a retry is fired; cleared once the step leaves error state
+	autoRetryAll  bool
+	retryInFlight bool
 
-	// for the footer
 	help help.Model
 
-	// keys
 	keys keyMap
 
-	// other
 	error    error
 	quitting bool
 	loading  bool
@@ -141,7 +118,7 @@ func initialModel(
 ) model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(styles.AccentColor) // .Padding(0, 0, 0, 1)
+	s.Style = lipgloss.NewStyle().Foreground(styles.AccentColor)
 	stepsList := initialStepsList()
 	progress := progress.New()
 	approvalContents := approvalContents{error: nil, loading: false, raw: []int64{}}
@@ -153,7 +130,6 @@ func initialModel(
 		installID:  installID,
 		workflowID: workflowID,
 
-		// data
 		approvalContents:     approvalContents,
 		policyNames:          map[string]string{},
 		expandedDiffSections: map[int]bool{},
@@ -201,10 +177,6 @@ func (m *model) collapseDiffSections() {
 }
 
 func (m *model) scrollDiffCursorIntoView() {
-	// Estimate the line offset of the cursor item in the step detail viewport.
-	// Header (title + summary + hint) takes ~12 lines, then each section takes
-	// ~4 lines collapsed or ~8+ expanded. We scroll so the cursor item is
-	// roughly in the upper third of the viewport.
 	headerLines := 12
 	lineEstimate := headerLines
 	for i := 0; i < m.diffSectionCursor; i++ {
@@ -237,7 +209,6 @@ func (m *model) toggleAutoRetryAll() {
 }
 
 func (m *model) setLogMessage(message string, level string) {
-	// for use from within m.Update
 	m.status.Message = message
 	m.status.Level = level
 }
@@ -252,7 +223,6 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m *model) resetSelected() {
-	// reset state
 	m.stepApprovalConf = false
 	m.workflowApprovalConf = false
 	m.selectedStep = nil
@@ -264,26 +234,22 @@ func (m *model) resetSelected() {
 	m.approvalContents = approvalContents{loading: false, error: nil}
 	m.helmDiffExplorer.Reset()
 
-	// toggle detail-specific key help
 	m.keys.Esc.SetHelp("esc", "quit")
 	m.keys.ToggleJson.SetEnabled(false)
 	m.keys.OpenQuickLink.SetEnabled(false)
 	m.keys.OpenTemplateLink.SetEnabled(false)
 
-	// populate step detail view
 	m.populateStepDetailView(true)
 	m.focus = "list"
 }
 
 func (m *model) setSelected() []tea.Cmd {
 	cmds := []tea.Cmd{}
-	// reset any and all approval modals
 	m.stepApprovalConf = false
 	m.workflowApprovalConf = false
 	m.showJson = false
 	m.approvalContents = approvalContents{loading: false, error: nil}
 	m.helmDiffExplorer.Reset()
-	// grab the item from the list using the cursor
 	items := m.stepsList.Items()
 	if len(items) == 0 {
 		return cmds
@@ -291,7 +257,6 @@ func (m *model) setSelected() []tea.Cmd {
 	m.selectedIndex = m.stepsList.Index()
 
 	item := items[m.stepsList.Index()]
-	// coerce to our type so we can use the niecities to grab the step details
 	m.selectedStep = item.(listStep).Step()
 	if m.stepIsApprovable() {
 		m.keys.ApproveStep.SetEnabled(true)
@@ -307,10 +272,9 @@ func (m *model) setSelected() []tea.Cmd {
 		m.keys.ApproveStep.SetEnabled(false)
 	}
 	m.keys.Esc.SetHelp("esc", "back")
-	m.keys.ToggleJson.SetEnabled(true) // enable the json toggle
+	m.keys.ToggleJson.SetEnabled(true)
 	m.populateStepDetailView(true)
 
-	// enable actions for install stack
 	if m.selectedStep.StepTargetType == "install_stack_versions" {
 		m.keys.OpenQuickLink.SetEnabled(true)
 		m.keys.OpenTemplateLink.SetEnabled(true)
@@ -383,40 +347,30 @@ func (m *model) resetWorkflowApprovalConf() {
 }
 
 func (m *model) resize() {
-	// vertical margin height is the height of the header + the height of the footer
 	vMarginHeight := lipgloss.Height(m.headerView()) + lipgloss.Height(m.footerView()) + 2
 	third := int(m.width / 3)
-	// the list width controls the width of the style.Width we render the list with
 	m.listWidth = third
-	// horizontal margin is just 2 because of the padding of 1
 	hMargin := 2
 	m.header.SetWidth(m.width - hMargin)
 	m.progress.SetWidth(third)
 	m.footer.SetWidth(m.width - hMargin)
 
-	// resize the list
 	stepsListHeight := m.height - vMarginHeight
 	m.stepsList.SetHeight(stepsListHeight)
-	// Width(listWidth) is total outer width including borders (2) and padding (1 right),
-	// so the list content area is listWidth - 3.
 	m.stepsList.SetWidth(m.listWidth - 3)
 
-	// make the detail viewport: total width minus list pane (listWidth) minus detail borders (2)
 	vpWidth := m.width - m.listWidth - 2
 	vpHeight := m.height - vMarginHeight
 	m.stepDetail.SetHeight(vpHeight)
 	m.stepDetail.SetWidth(vpWidth)
 	m.helmDiffExplorer.SetWidth(m.stepDetail.Width() - 4)
 
-	// NOTE: called here to ensure proportions
 	m.populateStepDetailView(true)
 }
 
 func (m *model) handleResize(msg tea.WindowSizeMsg) {
-	// when the window resizes, store the dimensions of the window
 	m.width = msg.Width
 	m.height = msg.Height
-	// then we call resize
 	m.resize()
 }
 
@@ -428,11 +382,9 @@ func (m *model) toggleFocus() {
 	}
 }
 
-// handle up and down
-
 func (m *model) handleNav(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-	if m.focus == "detail" { // m.selectedStep != nil
+	if m.focus == "detail" {
 		m.stepDetail, cmd = m.stepDetail.Update(msg)
 	} else {
 		m.stepsList, cmd = m.stepsList.Update(msg)
@@ -446,7 +398,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 
-	// handle tick: data refresh and ticks
 	case common.TickMsg:
 		return m, tea.Batch(
 			m.fetchWorkflowCmd,
@@ -476,12 +427,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		commands := m.handleGetWorkflowStepApprovalContents(msg)
 		cmds = append(cmds, commands...)
 
-	// handle re-size
 	case tea.WindowSizeMsg:
 		m.handleResize(msg)
 		return m, tea.Batch(cmds...)
 
-	// handle keystrokes
 	case tea.KeyPressMsg:
 		if m.handleDetailContentKey(msg) {
 			m.populateStepDetailView(false)
@@ -489,12 +438,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		switch {
-		case key.Matches(msg, m.keys.Quit): // "ctrl+c", "q"
+		case key.Matches(msg, m.keys.Quit):
 			m.setQuitting()
 			return m, tea.Quit
 		case key.Matches(msg, m.keys.Help):
 			m.help.ShowAll = !m.help.ShowAll
-		case key.Matches(msg, m.keys.Esc): // "esc": we overload this one a bit
+		case key.Matches(msg, m.keys.Esc):
 			if m.stepApprovalConf {
 				m.resetApprovalConf()
 			} else if m.workflowCancelationConf {
@@ -510,7 +459,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Quit
 			}
 
-		// actions: for a step
 		case key.Matches(msg, m.keys.ToggleJson):
 			m.toggleShowJson()
 			return m, tea.Batch(cmds...)
@@ -519,7 +467,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.OpenTemplateLink):
 			m.openTemplateLink()
 
-		// nav
 		case key.Matches(msg, m.keys.Up):
 			m, cmd := m.handleNav(msg)
 			return m, cmd
@@ -531,7 +478,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.Right):
 			m.toggleFocus()
 
-		// these are really only for the step detail viewport
 		case key.Matches(msg, m.keys.PageDown):
 			m.stepDetail, cmd = m.stepDetail.Update(msg)
 			cmds = append(cmds, cmd)
@@ -545,7 +491,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.stepsList.SetShowFilter(!m.stepsList.ShowFilter())
 			m.stepsList.Update(msg)
 
-		// selection
 		case key.Matches(msg, m.keys.Enter):
 			if m.focus == "detail" {
 				return m, tea.Batch(cmds...)
@@ -555,11 +500,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, commands...)
 			m.stepsList.Update(msg)
 
-			// data actions
 		case key.Matches(msg, m.keys.ApproveStep):
 			if m.stepApprovalConf {
 				m.approvingStep = true
-				// Capture values needed for the API call before returning
 				cmd := m.makeApproveStepCmd()
 				cmds = append(cmds, cmd)
 			} else {
@@ -587,7 +530,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.Browser):
 			m.openInBrowser()
 
-		// search
 		case key.Matches(msg, m.keys.Slash):
 			m.enableSearch()
 			m.stepsList.Update(msg)
@@ -597,7 +539,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	default:
 		m.spinner, cmd = m.spinner.Update(msg)
 		cmds = append(cmds, cmd)
-		// Update spinner view on list items so in-progress steps animate in sync with the header
 		m.updateListSpinnerViews()
 	}
 
@@ -633,11 +574,10 @@ func (m model) viewContent() string {
 
 	}
 
-	// this is the actual bulk of the work
 	header := m.headerView()
 	content := ""
-	if m.workflow == nil { // initial load hasn't taken place
-		if m.error != nil { // likely a 404 but worth refining later
+	if m.workflow == nil {
+		if m.error != nil {
 			content = common.FullPageDialog(common.FullPageDialogRequest{
 				Width:   m.width,
 				Height:  m.stepDetail.Height(),
@@ -686,10 +626,8 @@ func WorkflowApp(
 		return
 	}
 
-	// initialize the model
 	m := initialModel(ctx, cfg, api, install_id, workflow_id)
 	m.autoRetryAll = autoRetry
-	// initialize the program
 	p := teaprogram.NewProgram(m)
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Something has gone terribly wrong: %v", err)
@@ -697,7 +635,6 @@ func WorkflowApp(
 	}
 }
 
-// workflowPlainText fetches a workflow once and prints a plain-text summary.
 func workflowPlainText(ctx context.Context, api nuon.Client, workflowID string) {
 	wf, err := api.GetWorkflow(ctx, workflowID)
 	if err != nil {

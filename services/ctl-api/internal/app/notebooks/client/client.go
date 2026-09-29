@@ -1,5 +1,3 @@
-// Package client dispatches notebook cell runs to the warm, long-lived
-// per-notebook Temporal workflow via update-with-start.
 package client
 
 import (
@@ -17,8 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/actions"
 )
 
-// notebookNamespace is the Temporal namespace the installs worker (which
-// registers NotebookWorkflow) runs in.
 const notebookNamespace = "installs"
 
 type Client struct {
@@ -49,10 +45,6 @@ type RunCellResponse struct {
 	InstallActionWorkflowRunID string
 }
 
-// RunCell dispatches a cell run to the notebook's warm workflow, starting the
-// workflow if it isn't already running. It blocks only until the "run-cell"
-// update handler completes (the run is created + enqueued), not until the run
-// finishes — so the HTTP caller returns fast.
 func (c *Client) RunCell(ctx context.Context, req RunCellRequest) (*RunCellResponse, error) {
 	startOp := c.tClient.NewWithStartWorkflowOperation(
 		tclient.StartWorkflowOptions{

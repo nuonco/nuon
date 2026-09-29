@@ -8,8 +8,6 @@ import (
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
-// CreateSubscriptionQueue creates a queue for the given VCS webhook subscription.
-// This queue processes github_event signals that fan out to VCS connections.
 func (h *Helpers) CreateSubscriptionQueue(ctx context.Context, sub *app.VCSWebhookSubscription) (*app.Queue, error) {
 	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     sub.ID,

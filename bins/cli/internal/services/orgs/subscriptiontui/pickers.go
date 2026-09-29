@@ -1,13 +1,3 @@
-// pickers.go houses the data-driven entity pickers that fire after the
-// main subscription form (tui.go) when the user selects "specific" for a
-// given kind. Components and actions are app-scoped on the server, so
-// the picker first asks the user to pick an app, then fetches the
-// entities for that app. Installs are org-scoped — no app picker step.
-//
-// Each picker is its own short huh.Form so the option list can be
-// fetched between forms (huh's options are evaluated when the Form is
-// constructed, not when the field is rendered, so dynamic option lists
-// have to be split across forms).
 package subscriptiontui
 
 import (
@@ -20,21 +10,8 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// entityListPageSize is the upper bound we ask the API for when
-// populating a picker. Picker UX assumes the full set fits on one screen
-// (huh's MultiSelect is filterable so 200 items is browsable). Above
-// this the user should narrow with --subscription-json — flagged in the
-// "no entities" / "exceeds page size" copy.
 const entityListPageSize = 200
 
-// pickSpecificEntities runs the right picker flow for the given kind:
-//   - installs:           org-scoped multi-select
-//   - components/actions: app picker (auto-skipped when there's exactly
-//     one app in the org), then app-scoped entity multi-select
-//
-// Returns the selected entity IDs in the order the user picked them.
-// An empty result is a legitimate outcome — the caller (Run) treats it
-// as "this kind matches nothing", same as if the user had picked skip.
 func pickSpecificEntities(ctx context.Context, api API, kind string) ([]string, error) {
 	switch kind {
 	case "installs":
@@ -48,9 +25,6 @@ func pickSpecificEntities(ctx context.Context, api API, kind string) ([]string, 
 	}
 }
 
-// pickInstalls fetches every install in the current org and asks the
-// user to multi-select. Installs aren't app-scoped, so there's no app
-// picker step here — they enumerate org-wide via GetAllInstalls.
 func pickInstalls(ctx context.Context, api API) ([]string, error) {
 	installs, _, err := api.GetAllInstalls(ctx, &models.GetPaginatedQuery{Limit: entityListPageSize})
 	if err != nil {
@@ -82,17 +56,6 @@ func pickInstalls(ctx context.Context, api API) ([]string, error) {
 	return selected, nil
 }
 
-// pickAppScopedEntities runs the two-step "pick app, then pick entities
-// in that app" flow used for components and actions. The loader callback
-// is parameterised so this function works for both kinds without
-// duplicating the surrounding huh wiring.
-//
-// The app picker is auto-skipped when the org has exactly one app — the
-// pick is degenerate and forcing the user through a 1-option select
-// just adds keystrokes. We surface a one-line confirmation so the user
-// knows which app the picker is operating on (the alternative — silent
-// auto-pick — is confusing when the org is later expanded with a second
-// app and the same flow suddenly grows a step).
 func pickAppScopedEntities(
 	ctx context.Context,
 	api API,
@@ -180,9 +143,6 @@ func loadActions(ctx context.Context, api API, appID string) ([]huh.Option[strin
 	return options, nil
 }
 
-// displayName formats an entity's display label. Falls back to the bare
-// ID when name is empty (older entities, entities created via API
-// without a name) so the user can still pick them.
 func displayName(name, id string) string {
 	if name == "" {
 		return id
@@ -190,10 +150,6 @@ func displayName(name, id string) string {
 	return fmt.Sprintf("%s (%s)", name, id)
 }
 
-// sortOptions sorts huh options alphabetically by Key (the rendered
-// label) so picker output is stable regardless of API ordering. The
-// underlying API may return rows in created_at order, which is rarely
-// what a human wants when scrolling a list to pick from.
 func sortOptions(options []huh.Option[string]) {
 	sort.Slice(options, func(i, j int) bool {
 		return options[i].Key < options[j].Key

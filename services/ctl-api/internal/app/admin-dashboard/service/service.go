@@ -33,11 +33,9 @@ import (
 
 type Params struct {
 	fx.In
-	V   *validator.Validate
-	Cfg *internal.Config
-	DB  *gorm.DB `name:"psql"`
-	// optional because non-admin-dashboard binaries instantiate this service
-	// via sharedServices but don't provide a replica.
+	V              *validator.Validate
+	Cfg            *internal.Config
+	DB             *gorm.DB `name:"psql"`
 	ReplicaDB      *gorm.DB `name:"psql-replica" optional:"true"`
 	CHDB           *gorm.DB `name:"ch"`
 	MW             metrics.Writer
@@ -89,8 +87,6 @@ func (s *Service) readDB() *gorm.DB {
 	return s.db
 }
 
-// psqlForTarget returns the psql connection matching the requested target
-// ("primary" or "replica"). Falls back to primary if the replica is unset.
 func (s *Service) psqlForTarget(target string) *gorm.DB {
 	if target == "replica" {
 		return s.readDB()
@@ -134,7 +130,6 @@ func (s *service) adminDashboardURL() string {
 
 func (s *service) requireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Skip auth for health checks and static assets
 		if c.Request.URL.Path == "/livez" ||
 			c.Request.URL.Path == "/readyz" ||
 			c.Request.URL.Path == "/version" ||
@@ -158,13 +153,11 @@ func (s *service) requireAuth() gin.HandlerFunc {
 			}
 		}
 
-		// For API requests, return 401 so the SPA can redirect client-side
 		if strings.HasPrefix(c.Request.URL.Path, "/api/") {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
 			return
 		}
 
-		// For page requests, redirect to the auth service
 		loginURL := s.authURL() + "/?url=" + url.QueryEscape(s.adminDashboardURL())
 		c.Redirect(http.StatusFound, loginURL)
 		c.Abort()
@@ -172,16 +165,12 @@ func (s *service) requireAuth() gin.HandlerFunc {
 }
 
 func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
-	// Require login via the auth service
 	e.Use(s.requireAuth())
 
-	// Health check
 	e.GET("/api/livez", s.Livez)
 
-	// JSON API endpoints
 	api := e.Group("/api")
 	{
-		// Orgs
 		api.GET("/orgs", s.Orgs)
 		api.GET("/orgs/table", s.OrgsTable)
 		api.GET("/orgs/:id", s.OrgDetail)
@@ -197,7 +186,6 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.POST("/orgs/:id/shutdown-hint-runner-processes", s.ShutdownHintOrgRunnerProcesses)
 		api.GET("/orgs/:id/installs", s.InstallsTable)
 
-		// Org cleanup
 		api.POST("/orgs/:id/deprovision", s.ProxyDeprovisionOrg)
 		api.POST("/orgs/:id/forget", s.ProxyForgetOrg)
 		api.POST("/orgs/:id/forget-installs", s.ProxyForgetOrgInstalls)
@@ -208,35 +196,28 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.GET("/orgs/:id/queue-signal-stats", s.OrgQueueSignalStats)
 		api.POST("/orgs/:id/delete-queue-signals", s.DeleteOrgQueueSignals)
 
-		// Accounts
 		api.GET("/accounts", s.Accounts)
 		api.GET("/accounts/table", s.AccountsTable)
 		api.GET("/accounts/:id", s.AccountDetail)
 		api.GET("/accounts/:id/installs", s.AccountInstallsTable)
 		api.GET("/accounts/:id/audit-logs", s.AccountAuditLogsTable)
 
-		// Runner uptime
 		api.GET("/runner-uptime", s.RunnerUptime)
 
-		// Runners
 		api.GET("/runners/all", s.AllRunners)
 		api.GET("/runners/:id", s.RunnerDetail)
 		api.PUT("/runners/:id/configs", s.RunnerUpsertConfig)
 		api.DELETE("/runners/:id/configs/:job_type", s.RunnerDeleteConfig)
 		api.POST("/runners/:id/configs/reset", s.RunnerResetConfigs)
 
-		// Labels
 		api.GET("/labels", s.LabelsPage)
 		api.GET("/labels/table", s.LabelsTable)
 
-		// Feature flags
 		api.GET("/feature-flags", s.FeatureFlags)
 
-		// Global installs
 		api.GET("/installs", s.Installs)
 		api.GET("/installs/table", s.InstallsTableGlobal)
 
-		// Install detail
 		api.GET("/installs/:id", s.InstallDetail)
 		api.GET("/installs/:id/status/runner", s.InstallRunnerStatus)
 		api.GET("/installs/:id/status/sandbox", s.InstallSandboxStatus)
@@ -248,29 +229,24 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.POST("/installs/:id/labels", s.AddInstallLabel)
 		api.POST("/installs/:id/labels/remove/:key", s.RemoveInstallLabel)
 
-		// Install cleanup
 		api.POST("/installs/:id/forget", s.ProxyForgetInstall)
 		api.POST("/installs/:id/deprovision", s.ProxyDeprovisionInstall)
 
-		// App branches
 		api.GET("/app-branches", s.AppBranches)
 		api.GET("/app-branches/:id", s.AppBranchDetail)
 		api.GET("/app-branches/:id/runs", s.AppBranchRunsTable)
 		api.GET("/app-branches/:id/workflows", s.AppBranchWorkflowsTable)
 
-		// Workflows
 		api.GET("/workflows", s.Workflows)
 		api.GET("/workflows/table", s.WorkflowsTable)
 		api.GET("/workflows/filter-options", s.WorkflowFilterOptions)
 		api.POST("/workflows/bulk-cancel", s.BulkCancelWorkflows)
 		api.GET("/workflows/:workflow_id", s.WorkflowDetail)
 
-		// Log streams
 		api.GET("/log-streams", s.LogStreamViewer)
 		api.GET("/log-streams/:log_stream_id", s.LogStreamDetail)
 		api.GET("/log-streams/:log_stream_id/logs", s.LogStreamLogsTable)
 
-		// Queue routes
 		api.GET("/queues", s.Queues)
 		api.GET("/queues/table", s.QueuesTable)
 		api.GET("/queues/:id", s.QueueDetail)
@@ -287,31 +263,25 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.POST("/queues/:id/signals/:signal_id/direct-execute", s.DirectExecuteSignal)
 		api.POST("/queues/:id/signals/:signal_id/re-enqueue", s.ReEnqueueSignal)
 
-		// Temporal workflow viewer
 		api.GET("/temporal-workflows", s.TemporalWorkflowViewer)
 		api.GET("/temporal-workflows/index", s.TemporalWorkflowIndex)
 		api.GET("/temporal-workflows/namespaces", s.TemporalWorkflowNamespaces)
 		api.GET("/temporal-workflows/stats", s.TemporalWorkflowStats)
 
-		// Temporal workers
 		api.GET("/temporal-workers", s.TemporalWorkers)
 		api.GET("/temporal-workers/table", s.TemporalWorkersTable)
 		api.GET("/temporal-workers/:namespace", s.TemporalWorkerDetail)
 
-		// Queue signals (global view)
 		api.GET("/queue-signals", s.QueueSignals)
 		api.GET("/queue-signals/table", s.QueueSignalsGlobalTable)
 		api.GET("/queue-signals/signal-type-options", s.QueueSignalTypeOptions)
 
-		// In-flight signals
 		api.GET("/in-flight-signals", s.InFlightSignals)
 		api.GET("/in-flight-signals/table", s.InFlightSignalsTable)
 
-		// Signal catalog
 		api.GET("/signal-catalog", s.SignalCatalog)
 		api.GET("/signal-catalog/:signal_type", s.SignalCatalogDetail)
 
-		// Sandbox mode
 		api.GET("/sandbox-mode", s.SandboxMode)
 		api.GET("/sandbox-mode/runner-jobs", s.SandboxModeRunnerJobsTable)
 		api.GET("/sandbox-mode/runner-jobs/rows", s.SandboxModeRunnerJobsRows)
@@ -326,25 +296,21 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.POST("/sandbox-mode/runner-jobs/disable-all", s.SandboxModeDisableAllRunnerJobs)
 		api.POST("/sandbox-mode/templates/:template_key/apply", s.SandboxModeApplyFlowTemplate)
 
-		// Queries
 		api.GET("/queries", s.QueriesClickHouse)
 		api.POST("/queries/explain", s.ExplainQuery)
 
-		// Query catalog
 		api.GET("/query-catalog", s.QueryCatalogList)
 		api.POST("/query-catalog/:query_id/run", s.QueryCatalogRun)
 		api.POST("/query-collector/toggle", s.QueryCollectorToggle)
 
-		// Enqueuer actions
 		api.POST("/enqueuer/full-sweep", s.FullSweep)
 		api.POST("/enqueuer/flush-lost-signals", s.FlushLostSignals)
 
-		// General actions
 		api.POST("/promote", s.Promote)
 		api.POST("/seed", s.ProxySeed)
 	}
 
-	// SPA serving (must be AFTER api routes)
+	// why: SPA serving (must be AFTER api routes)
 	s.registerSPARoutes(e)
 
 	s.l.Info("admin-dashboard routes registered")

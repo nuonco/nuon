@@ -60,7 +60,6 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 		return fmt.Errorf("unable to create runner job: %w", err)
 	}
 
-	// create the plan request
 	runPlan, err := plan.AwaitCreateSyncPlan(ctx, &plan.CreateSyncPlanRequest{
 		InstallID:       install.ID,
 		InstallDeployID: installDeploy.ID,
@@ -88,7 +87,6 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	// queue job
 	w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusSyncing, "executing sync plan")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		RunnerID:   install.RunnerID,
@@ -102,7 +100,6 @@ func (w *Workflows) execSync(ctx workflow.Context, install *app.Install, install
 	}
 	l.Info("sync image job was successfully completed")
 
-	// parse outputs
 	job, err := activities.AwaitGetJobByID(ctx, runnerJob.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get runner job")

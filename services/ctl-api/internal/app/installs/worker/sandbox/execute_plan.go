@@ -85,7 +85,6 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		return fmt.Errorf("unable to record install role usage: %w", err)
 	}
 
-	// queue job
 	l.Info("queued job and waiting on it to be picked up by runner")
 	status, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		JobID:      runnerJob.ID,

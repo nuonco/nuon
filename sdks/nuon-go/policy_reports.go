@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// PolicyReportsQuery contains optional filters for listing policy reports.
 type PolicyReportsQuery struct {
 	OwnerType string
 	OwnerID   string
@@ -21,7 +20,6 @@ type PolicyReportsQuery struct {
 	Limit     int
 }
 
-// GetPolicyReports retrieves policy reports with optional filters.
 func (c *client) GetPolicyReports(ctx context.Context, query *PolicyReportsQuery) ([]*models.AppPolicyReport, error) {
 	reqURL := c.APIURL + "/v1/policy-reports"
 
@@ -76,7 +74,6 @@ func (c *client) GetPolicyReports(ctx context.Context, query *PolicyReportsQuery
 	return reports, nil
 }
 
-// GetPolicyReport retrieves a single policy report by ID.
 func (c *client) GetPolicyReport(ctx context.Context, reportID string) (*models.AppPolicyReport, error) {
 	reqURL := fmt.Sprintf("%s/v1/policy-reports/%s", c.APIURL, reportID)
 
@@ -105,8 +102,6 @@ func (c *client) GetPolicyReport(ctx context.Context, reportID string) (*models.
 	return &report, nil
 }
 
-// ExportPolicyReport exports a policy report in the specified format.
-// Valid formats: "json", "sarif", "pdf"
 func (c *client) ExportPolicyReport(ctx context.Context, reportID, format string) ([]byte, string, error) {
 	reqURL := fmt.Sprintf("%s/v1/policy-reports/%s/export", c.APIURL, reportID)
 

@@ -15,17 +15,11 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 )
 
-// AppBranchConfigFile pairs a parsed branch config with the file it came from,
-// so callers can point at the offending file when two files declare the same
-// branch name.
 type AppBranchConfigFile struct {
 	Path   string
 	Config *config.AppBranchConfig
 }
 
-// ParseAppBranchConfig reads a single standalone app branch config from a TOML
-// document. Unlike the app config directory parser, the document is the branch
-// itself rather than a `[branch]` section of a larger config.
 func ParseAppBranchConfig(r io.Reader) (*config.AppBranchConfig, error) {
 	obj := make(map[string]interface{})
 	if err := toml.NewDecoder(r).Decode(&obj); err != nil {
@@ -55,7 +49,6 @@ func ParseAppBranchConfig(r io.Reader) (*config.AppBranchConfig, error) {
 	return &cfg, nil
 }
 
-// ParseAppBranchConfigFile parses one branch config file.
 func ParseAppBranchConfigFile(path string) (*config.AppBranchConfig, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -74,9 +67,6 @@ func ParseAppBranchConfigFile(path string) (*config.AppBranchConfig, error) {
 	return cfg, nil
 }
 
-// ParseAppBranchConfigDir recursively parses every *.toml file under dir. Files
-// are visited in sorted path order so the resulting plan is deterministic, and
-// two files declaring the same branch name are rejected.
 func ParseAppBranchConfigDir(dir string) ([]AppBranchConfigFile, error) {
 	var paths []string
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
@@ -117,7 +107,6 @@ func ParseAppBranchConfigDir(dir string) ([]AppBranchConfigFile, error) {
 	return configs, nil
 }
 
-// LoadAppBranchConfigs loads a single TOML file or a directory of them.
 func LoadAppBranchConfigs(path string) ([]AppBranchConfigFile, bool, error) {
 	info, err := os.Stat(path)
 	if err != nil {

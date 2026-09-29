@@ -13,7 +13,5 @@ func (s *InstallsServiceTestSuite) TestGetComponentOutputsNoDeploy() {
 
 	path := fmt.Sprintf("/v1/installs/%s/components/%s/outputs", install.ID, ccc.ComponentID)
 	rr := s.makeRequest(http.MethodGet, path, nil)
-	// No deploy exists — getInstallComponentLatestDeploy returns an empty deploy,
-	// then querying runner jobs by that empty ID returns ErrRecordNotFound → 404.
 	assert.Equal(s.T(), http.StatusNotFound, rr.Code)
 }

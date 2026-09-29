@@ -9,13 +9,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-// keyVaultDeploymentName is the nested deployment the install Key Vault and its
-// secrets are created in at subscription scope.
 const keyVaultDeploymentName = "keyVaultDeployment"
 
 const keyVaultAPIVersion = "2023-07-01"
 
-// azureKeyVaultSecretName is the sole source of truth for how an app-config secret
+// why: azureKeyVaultSecretName is the sole source of truth for how an app-config secret
 // name maps onto a Key Vault secret name — Key Vault allows only alphanumerics and
 // hyphens. The phone-home builds each secret's URI from the same mapping, so the two
 // must not drift.
@@ -23,28 +21,18 @@ func azureKeyVaultSecretName(name string) string {
 	return strings.ReplaceAll(name, "_", "-")
 }
 
-// azureSecretParamName turns an app-config secret name into an ARM parameter name:
-// db_password reads as "Secret Db Password" on the portal's deployment form.
 func azureSecretParamName(name string) string {
 	return camelParamName("secret", name)
 }
 
 type azureSecret struct {
-	name      string
-	kvName    string
-	paramName string
-	// description is what the customer reads next to the field in the portal.
-	description string
-	// defaultValue empty means the customer has to supply one; ARM then refuses to
-	// deploy without it rather than writing a blank secret.
+	name         string
+	kvName       string
+	paramName    string
+	description  string
 	defaultValue string
 }
 
-// azureCustomerSecrets are the secrets whose values the customer supplies. Sorted so
-// the render is deterministic.
-//
-// AutoGenerate secrets are excluded because nothing on the Azure path generates them
-// — they are unimplemented rather than handled elsewhere.
 func azureCustomerSecrets(appCfg *app.AppConfig) []azureSecret {
 	if appCfg == nil {
 		return nil
@@ -72,12 +60,6 @@ func azureCustomerSecrets(appCfg *app.AppConfig) []azureSecret {
 	return out
 }
 
-// azureSecretParameters surfaces each customer-supplied secret as a securestring in
-// the root, which the portal renders as a masked field on the deployment form.
-//
-// Only at subscription scope. At resource-group scope the customer creates the vault
-// and its secrets by hand before deploying, because the resource group already
-// exists by then.
 func azureSecretParameters(inp *stacks.TemplateInput, scope armScope) map[string]ARMParameter {
 	if !scope.subscription {
 		return nil
@@ -98,24 +80,11 @@ func azureSecretParameters(inp *stacks.TemplateInput, scope armScope) map[string
 	return params
 }
 
-// getKeyVaultResources creates the install Key Vault and the customer's secrets in
-// the install resource group.
-//
-// This exists because subscription scope removed the customer's `az group create`
-// step, which they used to run before `az keyvault create`. With the resource group
-// now created by the stack itself, there is no longer a point at which the customer
-// could have made the vault by hand — the deploy would fail assigning the runner a
-// role on a vault that cannot exist yet.
-//
-// Returns nil at resource-group scope, where the vault stays a documented
-// prerequisite and the rendered template is unchanged.
 func (t *Templates) getKeyVaultResources(inp *stacks.TemplateInput, scope armScope) []any {
 	if !scope.subscription {
 		return nil
 	}
 
-	// Read at resource-group scope: these expressions live inside the wrapper, where
-	// the vault's own resource group is the ambient one.
 	inner := armScope{}
 	vaultNameInner := inner.keyVaultNameInner()
 
@@ -127,10 +96,8 @@ func (t *Templates) getKeyVaultResources(inp *stacks.TemplateInput, scope armSco
 			"location":   "[parameters('location')]",
 			"tags":       "[parameters('commonTags')]",
 			"properties": map[string]any{
-				"sku":      map[string]any{"family": "A", "name": "standard"},
-				"tenantId": "[subscription().tenantId]",
-				// RBAC rather than access policies, matching how the runner's role
-				// assignment grants access.
+				"sku":                       map[string]any{"family": "A", "name": "standard"},
+				"tenantId":                  "[subscription().tenantId]",
 				"enableRbacAuthorization":   true,
 				"enableSoftDelete":          true,
 				"softDeleteRetentionInDays": 7,
@@ -154,7 +121,7 @@ func (t *Templates) getKeyVaultResources(inp *stacks.TemplateInput, scope armSco
 				"value": fmt.Sprintf("[parameters('%s')]", s.paramName),
 			},
 		})
-		// securestring the whole way down: a secure value cannot cross into a nested
+		// why: securestring the whole way down: a secure value cannot cross into a nested
 		// deployment that uses outer evaluation, and declaring it as a plain string
 		// here would put the value in the deployment history.
 		params[s.paramName] = nestedParam{

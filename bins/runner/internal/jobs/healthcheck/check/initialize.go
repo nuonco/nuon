@@ -17,7 +17,6 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 		return err
 	}
 
-	// initialize empty state
 	h.state = &handlerState{cfg: &HealthcheckConfig{}}
 	l.Info("initializing...")
 	return nil

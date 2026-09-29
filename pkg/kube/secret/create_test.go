@@ -12,10 +12,6 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-// TestUpsert_CreatesNamespaceAndSecret exercises the server-side-apply path against a fake clientset. The fake
-// clientset does not model SSA field-manager merge, so this only asserts the namespace-creation pre-step and that the
-// apply round-trips the key/value; the multi-key coexistence guarantee is covered by integration testing against a
-// real apiserver.
 func TestUpsert_CreatesNamespaceAndSecret(t *testing.T) {
 	t.Parallel()
 
@@ -40,7 +36,6 @@ func TestUpsert_CreatesNamespaceAndSecret(t *testing.T) {
 	assert.Equal(t, []byte("s3cr3t"), got.Data["api-key"])
 }
 
-// TestUpsert_ExistingNamespace ensures upsert does not fail when the namespace already exists.
 func TestUpsert_ExistingNamespace(t *testing.T) {
 	t.Parallel()
 
@@ -59,9 +54,6 @@ func TestUpsert_ExistingNamespace(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// TestUpsert_PerKeyFieldManagerDoesNotClobber verifies the crux of the v2 design: two managers (one per key) writing
-// different keys into the same Kubernetes secret coexist rather than overwriting one another. This is the second use
-// case in the spec (datadog/datadog with api-key and app-key from two distinct Nuon secrets).
 func TestUpsert_PerKeyFieldManagerDoesNotClobber(t *testing.T) {
 	t.Parallel()
 

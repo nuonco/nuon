@@ -21,9 +21,6 @@ func (c *Client) QueueReady(ctx context.Context, queueID string) error {
 	for {
 		resp, err := c.tClient.QueryWorkflowInNamespace(ctx, q.Workflow.Namespace, q.Workflow.ID, "", queue.ReadyHandlerName)
 		if err != nil {
-			// The queue workflow registers its query handlers after running
-			// startup activities, so a query can land before registration.
-			// Treat that window the same as "not ready" and keep polling.
 			var queryFailed *serviceerror.QueryFailed
 			if errors.As(err, &queryFailed) {
 				select {

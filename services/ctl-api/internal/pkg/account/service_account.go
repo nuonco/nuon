@@ -26,10 +26,6 @@ func (c *Client) CreateServiceAccount(ctx context.Context, svcAcctID, name strin
 	return &acct, nil
 }
 
-// EnsureServiceAccount returns the service account for svcAcctID, creating it if it
-// does not exist yet. CreateServiceAccount is a bare insert that conflicts on the
-// unique email, so callers that may run against entities predating service-account
-// creation need this instead.
 func (c *Client) EnsureServiceAccount(ctx context.Context, svcAcctID, name string) (*app.Account, error) {
 	acct, err := c.FindAccount(ctx, ServiceAccountEmail(svcAcctID))
 	if err == nil {

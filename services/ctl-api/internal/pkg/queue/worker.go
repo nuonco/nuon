@@ -30,14 +30,6 @@ func (q *queue) isIdle(ctx workflow.Context) bool {
 		return false
 	}
 
-	//queueSignals, err := activities.AwaitGetQueueSignalsByQueueID(ctx, q.queueID)
-	//if err != nil {
-	//return false
-	//}
-	//if len(queueSignals) > 0 {
-	//return false
-	//}
-
 	return workflow.Now(ctx).Sub(q.lastActivityTime) >= q.getIdleTimeout()
 }
 
@@ -77,7 +69,6 @@ func (q *queue) dispatcher(ctx workflow.Context) error {
 			continue
 		}
 
-		// Wait until not paused before dispatching.
 		if q.paused {
 			if err := workflow.Await(ctx, func() bool {
 				return !q.paused || q.stopped
@@ -89,12 +80,11 @@ func (q *queue) dispatcher(ctx workflow.Context) error {
 			}
 		}
 
-		// Acquire semaphore permit — blocks if at MaxInFlight.
 		if err := q.sem.Acquire(ctx, 1); err != nil {
 			return err
 		}
 
-		// Increment activeWorkers in the dispatcher (before workflow.Go) to
+		// why: Increment activeWorkers in the dispatcher (before workflow.Go) to
 		// prevent the main coroutine from observing activeWorkers == 0 and
 		// triggering continue-as-new before the goroutine starts.
 		q.activeWorkers++

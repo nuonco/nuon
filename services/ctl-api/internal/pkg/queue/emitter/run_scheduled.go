@@ -16,7 +16,6 @@ func (e *emitterWorkflow) runScheduledMode(ctx workflow.Context, l *zap.Logger, 
 		zap.Timep("scheduled-at", emitter.ScheduledAt),
 	)
 
-	// Check if already fired
 	if emitter.Fired {
 		l.Info("scheduled emitter already fired, stopping")
 		return true, nil
@@ -26,7 +25,6 @@ func (e *emitterWorkflow) runScheduledMode(ctx workflow.Context, l *zap.Logger, 
 		return false, errors.New("scheduled emitter has no scheduled_at time")
 	}
 
-	// Calculate how long to wait
 	now := workflow.Now(ctx)
 	waitDuration := emitter.ScheduledAt.Sub(now)
 
@@ -36,9 +34,6 @@ func (e *emitterWorkflow) runScheduledMode(ctx workflow.Context, l *zap.Logger, 
 			zap.Time("scheduled-at", *emitter.ScheduledAt),
 		)
 
-		// Wait until the scheduled time. Liveness checks (emitter/queue
-		// existence) are handled by the workflowmanager.Manager started
-		// in run(), which sets e.stopped/e.restarted.
 		timerFuture := workflow.NewTimer(ctx, waitDuration)
 		var timerFired bool
 
@@ -63,14 +58,12 @@ func (e *emitterWorkflow) runScheduledMode(ctx workflow.Context, l *zap.Logger, 
 		}
 	}
 
-	// Fire the signal
 	l.Info("scheduled time reached, emitting signal")
 
 	if err := e.emitSignal(ctx, l, emitter); err != nil {
 		return false, err
 	}
 
-	// Mark as fired in the database
 	if _, err := activities.AwaitMarkEmitterFired(ctx, &activities.MarkEmitterFiredRequest{
 		EmitterID: e.emitterID,
 	}); err != nil {
@@ -83,6 +76,5 @@ func (e *emitterWorkflow) runScheduledMode(ctx workflow.Context, l *zap.Logger, 
 		zap.Int64("total-emit-count", e.state.EmitCount),
 	)
 
-	// Return true to indicate workflow is finished (no continue-as-new)
 	return true, nil
 }

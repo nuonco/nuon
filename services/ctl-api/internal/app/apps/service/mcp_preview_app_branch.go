@@ -59,7 +59,6 @@ func (s *service) mcpPreviewAppBranch(ctx context.Context, _ *mcp.CallToolReques
 		return nil, nil, fmt.Errorf("branch is required")
 	}
 
-	// A negative number would otherwise read as "no pr_number given".
 	if in.PRNumber < 0 {
 		return nil, nil, fmt.Errorf("pr_number must be greater than zero")
 	}

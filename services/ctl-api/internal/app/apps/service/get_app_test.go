@@ -23,7 +23,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// AppCRUDTestSuite tests GetApp, UpdateApp, and DeleteApp endpoints.
 type AppCRUDTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -66,8 +65,6 @@ func (s *AppCRUDTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Reset mock before each test
-
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -108,7 +105,6 @@ func (s *AppCRUDTestSuite) makeRequest(method, path string, body interface{}) *h
 	return rr
 }
 
-// TestGetApp tests the GetApp endpoint.
 func (s *AppCRUDTestSuite) TestGetApp() {
 	testCases := []struct {
 		name         string

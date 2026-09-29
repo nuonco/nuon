@@ -25,7 +25,6 @@ type orgWorkflowEntry struct {
 	Memo         map[string]string `json:"memo,omitempty"`
 }
 
-// OrgWorkflows lists all running Temporal workflows that belong to an org (via org-id memo).
 func (s *service) OrgWorkflows(c *gin.Context) {
 	orgID := c.Param("id")
 	ctx := c.Request.Context()
@@ -86,13 +85,10 @@ func (s *service) OrgWorkflows(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"workflows": allEntries})
 }
 
-// TerminateOrgWorkflows enqueues a signal to terminate all running Temporal workflows
-// belonging to an org. This runs asynchronously in the org's signal queue.
 func (s *service) TerminateOrgWorkflows(c *gin.Context) {
 	orgID := c.Param("id")
 	ctx := c.Request.Context()
 
-	// Find the org's signals queue.
 	var queue app.Queue
 	if res := s.db.WithContext(ctx).
 		Where(app.Queue{OwnerID: orgID, Name: orgshelpers.OrgSignalsQueueName}).
@@ -102,7 +98,6 @@ func (s *service) TerminateOrgWorkflows(c *gin.Context) {
 		return
 	}
 
-	// Enqueue the terminate-workflows signal.
 	resp, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 		QueueID: queue.ID,
 		Signal:  &terminateworkflows.Signal{OrgID: orgID},

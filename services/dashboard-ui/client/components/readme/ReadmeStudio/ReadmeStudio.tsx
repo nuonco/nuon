@@ -310,7 +310,6 @@ export function ReadmeStudio({
         const draft = localStorage.getItem(draftKey(appId))
         if (draft) return JSON.parse(draft) as TBlock[]
       } catch {
-        /* fall through to seed */
       }
     }
     return seedBlocks()

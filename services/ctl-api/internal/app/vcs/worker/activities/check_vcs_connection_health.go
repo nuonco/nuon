@@ -32,7 +32,6 @@ func (a *Activities) CheckVCSConnectionHealth(ctx context.Context, req CheckVCSC
 		"checked_at":          time.Now().UTC().Format(time.RFC3339),
 	}
 
-	// Check GitHub installation status
 	installation, err := a.ghClient.GetInstallation(ctx, vcsConn.GithubInstallID)
 	if err != nil {
 		return &CheckVCSConnectionHealthResponse{
@@ -51,7 +50,6 @@ func (a *Activities) CheckVCSConnectionHealth(ctx context.Context, req CheckVCSC
 		}, nil
 	}
 
-	// List repos to verify access
 	repos, err := a.ghClient.ListInstallationRepos(ctx, &vcsConn)
 	if err != nil {
 		return &CheckVCSConnectionHealthResponse{

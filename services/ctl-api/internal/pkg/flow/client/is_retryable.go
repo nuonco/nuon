@@ -10,20 +10,16 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
-// IsRetryableRequest is the input for checking step retryability.
 type IsRetryableRequest struct {
 	StepID string
 }
 
-// IsRetryableResponse is the response indicating step retryability.
 type IsRetryableResponse struct {
 	Retryable bool   `json:"retryable"`
 	Skippable bool   `json:"skippable"`
 	StepID    string `json:"step_id"`
 }
 
-// IsRetryable sends an "is-retryable" update to the execute-workflow-step
-// handler workflow to check if the step can be retried.
 func (c *Client) IsRetryable(ctx context.Context, req *IsRetryableRequest) (*IsRetryableResponse, error) {
 	qs, err := c.findQueueSignalByOwner(ctx, req.StepID, "install_workflow_steps", executeworkflowstep.SignalType)
 	if err != nil {

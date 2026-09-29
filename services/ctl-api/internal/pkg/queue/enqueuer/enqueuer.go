@@ -25,10 +25,6 @@ const (
 	defaultMaxWorkers  = 100
 )
 
-// Enqueuer processes signal enqueue requests in the background. It receives
-// queue signal IDs via a channel and performs the UpdateWithStart call to
-// enqueue them into their respective queue workflows. Up to maxWorkers
-// signals are processed in parallel.
 type Enqueuer struct {
 	db      *gorm.DB
 	cfg     *internal.Config
@@ -102,8 +98,6 @@ func New(params Params) *Enqueuer {
 	return e
 }
 
-// Send enqueues a queue signal ID for background processing. If the channel
-// is full the ID is dropped — the AwaitSignal inline path will pick it up.
 func (e *Enqueuer) Send(queueSignalID string) {
 	select {
 	case e.ch <- queueSignalID:
@@ -135,16 +129,11 @@ func (e *Enqueuer) run() {
 
 	e.l.Info("enqueuer started", zap.Int("max_workers", e.maxWorkers))
 
-	// Wait for stop signal, then drain remaining items.
 	<-e.stopCh
 	wg.Wait()
 	e.drain()
 }
 
-// startSweepWorkflow starts the EnqueuerSweep workflow as a cron-scheduled
-// workflow. Each run executes the sweep activity once and exits; Temporal
-// handles re-scheduling. This avoids history bloat from long-lived loops
-// and ensures the next run starts immediately after the previous one finishes.
 func (e *Enqueuer) startSweepWorkflow(ctx context.Context) {
 	opts := tclient.StartWorkflowOptions{
 		ID:                       "enqueuer-sweep",
@@ -165,7 +154,6 @@ func (e *Enqueuer) startSweepWorkflow(ctx context.Context) {
 	e.l.Info("enqueuer sweep workflow started")
 }
 
-// drain processes any remaining channel items during shutdown.
 func (e *Enqueuer) drain() {
 	for {
 		select {

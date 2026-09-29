@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// testSignal is a local signal type to avoid import cycles with the example package
 type testSignal struct {
 	Value string
 }
@@ -31,7 +30,6 @@ func TestCatalogSuite(t *testing.T) {
 }
 
 func (s *CatalogTestSuite) SetupTest() {
-	// Register our test signal for each test
 	Register(testSignalType, func() signal.Signal {
 		return &testSignal{}
 	})
@@ -62,7 +60,6 @@ func (s *CatalogTestSuite) TestNewFromType_ReturnsNewInstanceEachTime() {
 	sig2, err := NewFromType(testSignalType)
 	require.NoError(s.T(), err)
 
-	// Different instances
 	assert.NotSame(s.T(), sig1, sig2)
 }
 

@@ -17,7 +17,6 @@ func (c *Client) DirectExecuteSignal(ctx context.Context, queueSignalID string) 
 		return nil, errors.Wrap(err, "unable to get queue signal")
 	}
 
-	// if already terminal, nothing to do
 	if isTerminalStatus(qs.Status.Status) {
 		return &queue.DirectExecuteResponse{QueueSignalID: queueSignalID}, nil
 	}

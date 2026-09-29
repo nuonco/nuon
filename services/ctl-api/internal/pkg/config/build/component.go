@@ -13,8 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 )
 
-// ComponentConnectionInput is everything that lands on
-// ComponentConfigConnection rather than on the per-type config row.
 type ComponentConnectionInput struct {
 	ComponentID   string
 	AppConfigID   string
@@ -42,8 +40,6 @@ type ComponentConnectionInput struct {
 	KubernetesContextName string
 }
 
-// ComponentConnection validates and builds the shared connection; the caller
-// attaches the per-type config before persisting.
 func ComponentConnection(in ComponentConnectionInput) (*app.ComponentConfigConnection, error) {
 	if in.BuildTimeout != "" {
 		if err := validation.ValidateBuildTimeout(in.BuildTimeout); err != nil {
@@ -109,7 +105,7 @@ func ComponentConnection(in ComponentConnectionInput) (*app.ComponentConfigConne
 	return ccc, nil
 }
 
-// ComponentChecksum hashes the resolved component. Sync compares this against
+// why: ComponentChecksum hashes the resolved component. Sync compares this against
 // the checksum on the previous config connection to decide whether a component
 // changed, so it must cover everything that resolution folded in — vars from
 // other files, interpolated values — not just the component's own file. The
@@ -118,8 +114,6 @@ func ComponentChecksum(comp *config.Component) (string, error) {
 	return hasher.HashStruct(comp, hasher.StructHasherOptions{EnableOmitEmpty: true})
 }
 
-// ComponentConnectionInputFromConfig is the single place that knows which
-// shared connection fields each component type exposes.
 func ComponentConnectionInputFromConfig(comp *config.Component, componentID, appConfigID string, dependencyIDs []string) (ComponentConnectionInput, error) {
 	checksum, err := ComponentChecksum(comp)
 	if err != nil {
@@ -212,7 +206,7 @@ func refStrings(in []refs.Ref) []string {
 	return out
 }
 
-// RequiresFreshBuild reports whether a component must build even when its config
+// why: RequiresFreshBuild reports whether a component must build even when its config
 // is unchanged. An external image with an update_policy resolves tags against
 // the registry at build time, so an unchanged config does not imply an unchanged
 // artifact; the runner no-ops when the digest matches.

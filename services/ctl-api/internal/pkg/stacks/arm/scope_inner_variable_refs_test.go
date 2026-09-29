@@ -16,15 +16,6 @@ var (
 	parameterRefRegexp = regexp.MustCompile(`parameters\('([^']+)'\)`)
 )
 
-// A nested deployment using inner expression evaluation cannot see the root, and
-// the root cannot see into it. So every variables()/parameters() read has to be
-// satisfied by the declarations of the template it physically sits in, or the
-// deploy fails with "The template variable 'x' is not found" — at deploy time, long
-// after the render looked fine.
-//
-// Subscription scope makes this easy to get wrong in both directions, because it
-// moves nuonInstallID, location and the Nuon IDs from root parameters to root
-// variables while the wrappers still receive them as parameters.
 func TestScopedExpressionsResolveWhereTheyLand(t *testing.T) {
 	for _, tc := range []struct {
 		name string
@@ -55,8 +46,6 @@ func TestScopedExpressionsResolveWhereTheyLand(t *testing.T) {
 	}
 }
 
-// unresolvedScopedRefs returns a sorted description of every variables()/parameters()
-// read in a rendered template that the template it sits in does not declare.
 func unresolvedScopedRefs(root map[string]any) []string {
 	var problems []string
 	for _, lvl := range append([]scopeLevel{{path: "root", body: root}}, inlineTemplates(root, "")...) {
@@ -93,8 +82,6 @@ type scopeLevel struct {
 	body map[string]any
 }
 
-// inlineTemplates finds every properties.template in the tree, including nested
-// ones, so a wrapper inside a wrapper is checked too.
 func inlineTemplates(node any, path string) []scopeLevel {
 	var found []scopeLevel
 	switch v := node.(type) {
@@ -118,10 +105,6 @@ func inlineTemplates(node any, path string) []scopeLevel {
 	return found
 }
 
-// refsIn collects reads belonging to one template, skipping any deeper
-// properties.template: that is its own scope and gets its own pass. A wrapper's
-// name/location/dependsOn and the parameter values it passes down still belong to
-// the enclosing scope, so those are kept.
 func refsIn(node any, path string, re *regexp.Regexp) map[string]string {
 	refs := map[string]string{}
 	switch v := node.(type) {

@@ -13,7 +13,6 @@ type queueSignalStatRow struct {
 	Count  int64  `json:"count"`
 }
 
-// OrgQueueSignalStats returns queue signal counts grouped by type and status for an org.
 func (s *service) OrgQueueSignalStats(c *gin.Context) {
 	orgID := c.Param("id")
 

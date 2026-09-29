@@ -19,8 +19,8 @@ type EvaluateSinglePolicyRequest struct {
 	PolicyName    string `json:"policy_name"`
 	Contents      string `json:"contents" validate:"required"`
 	InputJSON     []byte `json:"input_json" validate:"required"`
-	InputIndex    int    `json:"input_index"`                // Index of the input document being evaluated
-	InputIdentity string `json:"input_identity" validate:""` // Human-readable input reference
+	InputIndex    int    `json:"input_index"`
+	InputIdentity string `json:"input_identity" validate:""`
 }
 
 type EvaluateSinglePolicyResult struct {

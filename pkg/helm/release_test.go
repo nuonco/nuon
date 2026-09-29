@@ -52,9 +52,6 @@ func TestLastGoodRevision(t *testing.T) {
 			wantOK:  false,
 		},
 		{
-			// The common pending-install case: one revision that never rolled
-			// out. There is nothing to roll back to, so the caller has to
-			// uninstall instead.
 			name:    "only a pending first install",
 			history: []*release.Release{rev(1, release.StatusPendingInstall)},
 			wantOK:  false,
@@ -70,7 +67,6 @@ func TestLastGoodRevision(t *testing.T) {
 			wantOK: true,
 		},
 		{
-			// A failed rollout is not a safe target: it ran and did not work.
 			name: "failed revisions are skipped",
 			history: []*release.Release{
 				rev(1, release.StatusDeployed),

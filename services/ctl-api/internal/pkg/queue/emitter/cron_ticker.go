@@ -14,9 +14,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
 )
 
-// cronTickSecondJitterWindow spreads tick execution across the firing minute.
-// Cron jitter is minute-granular, so without this every ticker fires at second
-// :00 of its scheduled minute and the fleet detonates as one synchronized wall.
 const cronTickSecondJitterWindow = 45
 
 type CronTickerWorkflowRequest struct {
@@ -24,8 +21,6 @@ type CronTickerWorkflowRequest struct {
 	EmitterID string `validate:"required"`
 }
 
-// cronTickSecondJitter derives a deterministic (replay-safe) per-emitter delay
-// from the ticker's workflow ID.
 func cronTickSecondJitter(workflowID string) time.Duration {
 	h := fnv.New32a()
 	_, _ = h.Write([]byte(workflowID))
@@ -52,7 +47,6 @@ func (w *Workflows) CronTicker(ctx workflow.Context, req CronTickerWorkflowReque
 		}
 	}
 
-	// Fetch emitter to check status and get signal template
 	emitter, err := activities.AwaitGetEmitter(ctx, &activities.GetEmitterRequest{
 		EmitterID: req.EmitterID,
 	})
@@ -73,8 +67,6 @@ func (w *Workflows) CronTicker(ctx workflow.Context, req CronTickerWorkflowReque
 		return err
 	}
 
-	// The parent only notices a disable on its next alive check, so terminate
-	// here too rather than emitting from a tick that beat it.
 	if emitter.Status.Status == app.StatusDisabled {
 		l.Info("emitter disabled, terminating cron ticker",
 			zap.String("emitter-id", req.EmitterID),
@@ -89,7 +81,6 @@ func (w *Workflows) CronTicker(ctx workflow.Context, req CronTickerWorkflowReque
 		return nil
 	}
 
-	// Check if emitter is paused (status is cancelled)
 	ctx = repairWorkflowContext(ctx, emitter)
 
 	if emitter.Status.Status == app.StatusCancelled {
@@ -97,14 +88,12 @@ func (w *Workflows) CronTicker(ctx workflow.Context, req CronTickerWorkflowReque
 		return nil
 	}
 
-	// Check if emitter signals are globally disabled
 	if w.cfg.DisableEmitterSignals {
 		l.Info("emitter signals disabled globally, skipping emit",
 			zap.String("queue-id", req.QueueID))
 		return nil
 	}
 
-	// Emit the signal
 	if err := w.emitSignal(ctx, l, emitter); err != nil {
 		l.Error("failed to emit signal", zap.Error(err))
 		return err
@@ -125,7 +114,6 @@ func (w *Workflows) emitSignalMetric(ctx workflow.Context, emitter *app.QueueEmi
 }
 
 func (w *Workflows) emitSignal(ctx workflow.Context, l *zap.Logger, emitter *app.QueueEmitter) error {
-	// Emit the signal to the queue and get back the signal ref
 	resp, err := activities.AwaitEmitSignal(ctx, &activities.EmitSignalRequest{
 		EmitterID: emitter.ID,
 		QueueID:   emitter.QueueID,
@@ -151,7 +139,6 @@ func (w *Workflows) emitSignal(ctx workflow.Context, l *zap.Logger, emitter *app
 		zap.String("workflow-id", resp.WorkflowID),
 	)
 
-	// Update the queue signal with the emitter relationship
 	if _, err := activities.AwaitUpdateSignalEmitter(ctx, &activities.UpdateSignalEmitterRequest{
 		QueueSignalID: resp.QueueSignalID,
 		EmitterID:     emitter.ID,
@@ -159,7 +146,6 @@ func (w *Workflows) emitSignal(ctx workflow.Context, l *zap.Logger, emitter *app
 		return err
 	}
 
-	// Update emitter stats
 	if _, err := activities.AwaitUpdateEmitterStats(ctx, &activities.UpdateEmitterStatsRequest{
 		EmitterID: emitter.ID,
 	}); err != nil {

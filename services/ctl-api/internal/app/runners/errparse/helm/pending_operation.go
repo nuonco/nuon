@@ -8,24 +8,18 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
-// HelmPendingOperationType is split out of the generic helm.error so the step
-// parks with targeted remediation instead of burning retries a pending release
-// can never clear.
 const HelmPendingOperationType compositeerrors.Type = "helm.pending_operation"
 
 const (
-	// The runner's own message, which also names the status and revision.
-	stuckSignal = "is stuck in pending-"
-	// Helm's SDK wording, for jobs that predate the runner check.
+	stuckSignal      = "is stuck in pending-"
 	inProgressSignal = "another operation (install/upgrade/rollback) is in progress"
 )
 
-// "cannot reuse a name that is still in use" is deliberately NOT a signal: helm
+// why: "cannot reuse a name that is still in use" is deliberately NOT a signal: helm
 // emits it for a genuine name collision too, where recovery is wrong advice.
 
 var pendingStatusPattern = regexp.MustCompile(`pending-(install|upgrade|rollback)`)
 
-// PendingOperationError is the payload for a deploy blocked by a stuck release.
 type PendingOperationError struct {
 	Status string `json:"status,omitempty"`
 	Output string `json:"output,omitempty"`
@@ -63,7 +57,6 @@ func (e *PendingOperationError) Sections() []compositeerrors.Section {
 	return sections
 }
 
-// Registers at LayerToolSpecific so it wins the tie against the helm catch-all.
 func parsePendingOperation(ctx *errparse.ParseContext) compositeerrors.CompositeError {
 	lines := cleanedLines(ctx.Raw)
 	if !containsPendingOperation(lines) {
@@ -92,7 +85,6 @@ func containsPendingOperation(lines []string) bool {
 	return false
 }
 
-// Empty when only helm's status-less SDK wording is present.
 func pendingStatus(lines []string) string {
 	for _, l := range lines {
 		if m := pendingStatusPattern.FindString(l); m != "" {
@@ -102,8 +94,6 @@ func pendingStatus(lines []string) string {
 	return ""
 }
 
-// No "confirm nothing is running" step, unlike a state lock: the recovery itself
-// refuses to act unless the release really is pending.
 func pendingOperationRemediation(status string) string {
 	var intro string
 	if status != "" {

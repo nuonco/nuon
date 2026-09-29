@@ -75,6 +75,35 @@ account/RBAC models.
 - After Go edits: `gofmt` and `goimports` on the package/directory (do not hand-manage imports).
 - Prefer struct-based GORM `Where` clauses over raw SQL strings.
 - Log with zap (see conventions above), not `fmt.Println`.
-- Comment only when the *why* is non-obvious.
 - After changing annotated types, Temporal `@temporal-gen` surfaces, or swagger endpoints: `go generate` in the
   affected package (see `services/ctl-api`, `sdks/`).
+
+## Comments (strict, enforced in CI)
+
+Write zero comments. Code, names, and commit messages carry the explanation. This applies to every language and
+file: Go, TS/TSX, CSS, shell, YAML, Terraform, Dockerfiles, tests, stories, fixtures.
+
+Never write:
+
+- narration of what the next line or block does (`// Fetch the installs`, `{/* Header */}`)
+- doc comments that restate a name (`// GetApp returns the app.`, `/** Counts lines. */`)
+- section banners and dividers (`// ---- helpers ----`, `# ── parse args ──`)
+- history, reviewer notes, or justification of your change (`// now uses X`, `// moved from Y`)
+- commented-out code
+
+Allowed, and nothing else:
+
+- Swagger annotations (`// @Summary`, `// @Router`, ...) and `@temporal-gen` annotation blocks
+- doc comments on Go types and struct fields that are part of the API (swag turns them into OpenAPI descriptions)
+- compiler, codegen, and linter directives: `//go:*`, `// +build`, `//nolint`, `//lint:`, `eslint-*`, `oxlint-*`,
+  `@ts-*`, `/// <reference>`, `prettier-ignore`, `# shellcheck`, `# syntax=`, shebangs
+- `// Output:` in Go examples, `Deprecated:` notices, license headers
+- `TODO` / `FIXME`
+- a constraint the code genuinely cannot express, written as a comment group whose first line starts with
+  `why:`: `// why: GORM drops zero values in struct Where, so this uses a map`. If you are explaining what the
+  code does, rename or extract a function instead.
+
+`client/lite/` in the dashboard is stricter: directives only, no `why:` (see its `AGENTS.md`).
+
+Check locally with `go run ./scripts/check-comments` (add `-fix` to delete offenders). CI runs the same check
+on every pull request. Delete narrating comments you find in code you touch.

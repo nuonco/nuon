@@ -20,7 +20,6 @@ const (
 	OrgTypeIntegration OrgType = "integration"
 	OrgTypeDefault     OrgType = "default"
 
-	// Legacy
 	OrgTypeLegacy OrgType = "real"
 
 	OrgTypeUnknown OrgType = ""
@@ -37,70 +36,35 @@ const (
 	OrgStatusDeprovisioned  OrgStatus = "deprovisioned"
 )
 
-// org feature flags
 type OrgFeature string
 
 const (
-	OrgFeatureAppBranches         OrgFeature = "app-branches"
-	OrgFeatureUserManagedFeatures OrgFeature = "user-managed-features"
-	OrgFeatureSupportRole         OrgFeature = "support-role"
-	OrgFeatureInstallRename       OrgFeature = "install-rename"
-	// OrgFeatureTerraformProviderMirror enables build-time vendoring of
-	// terraform providers via `terraform providers mirror` and ships the
-	// resulting filesystem mirror inside the OCI artifact. The install
-	// runner auto-detects the mirror at unpack time, so toggling this
-	// flag only affects the build runner.
-	OrgFeatureTerraformProviderMirror OrgFeature = "terraform-provider-mirror"
-	OrgFeatureAppBranchesUI           OrgFeature = "app-branches-ui"
-	OrgFeatureTraceView               OrgFeature = "trace-view"
-	OrgFeatureAutoSkipNoop            OrgFeature = "auto-skip-noop"
-	OrgFeatureSlack                   OrgFeature = "slack"
-	OrgFeaturePulumiSandbox           OrgFeature = "pulumi-sandbox"
-	OrgFeaturePulumiUpdatePlans       OrgFeature = "pulumi-update-plans"
-	// OrgFeatureNotebooks enables install-scoped Notebooks: a
-	// Jupyter-style execution surface where each cell runs a command on
-	// the install's runner via a long-lived, warm per-notebook Temporal
-	// workflow. Gates all `/v1/installs/:id/notebooks` endpoints and the
-	// dashboard notebooks UI.
-	OrgFeatureNotebooks  OrgFeature = "notebooks"
-	OrgFeatureVersionsUI OrgFeature = "enable-versions-ui"
-	// OrgFeatureSpaceliftInstallStacks surfaces the Spacelift options
-	// (blueprint and administrative stack) on the install stack "await"
-	// step in the dashboard, letting customers provision the Terraform
-	// install stack through Spacelift instead of running Terraform locally.
+	OrgFeatureAppBranches              OrgFeature = "app-branches"
+	OrgFeatureUserManagedFeatures      OrgFeature = "user-managed-features"
+	OrgFeatureSupportRole              OrgFeature = "support-role"
+	OrgFeatureInstallRename            OrgFeature = "install-rename"
+	OrgFeatureTerraformProviderMirror  OrgFeature = "terraform-provider-mirror"
+	OrgFeatureAppBranchesUI            OrgFeature = "app-branches-ui"
+	OrgFeatureTraceView                OrgFeature = "trace-view"
+	OrgFeatureAutoSkipNoop             OrgFeature = "auto-skip-noop"
+	OrgFeatureSlack                    OrgFeature = "slack"
+	OrgFeaturePulumiSandbox            OrgFeature = "pulumi-sandbox"
+	OrgFeaturePulumiUpdatePlans        OrgFeature = "pulumi-update-plans"
+	OrgFeatureNotebooks                OrgFeature = "notebooks"
+	OrgFeatureVersionsUI               OrgFeature = "enable-versions-ui"
 	OrgFeatureSpaceliftInstallStacks   OrgFeature = "spacelift-install-stacks"
 	OrgFeatureAWSAccountConnections    OrgFeature = "aws-account-connections"
 	OrgFeatureServiceAccountsAndTokens OrgFeature = "service-accounts-and-tokens"
-	// OrgFeaturePhoneHomeAuth requires install phone-home requests to carry an
-	// HMAC signature derived from a per-install secret, and requires a target
-	// cloud account identifier at install creation.
-	OrgFeaturePhoneHomeAuth OrgFeature = "phone-home-auth"
-	OrgFeatureRunbookStudio OrgFeature = "runbook-studio"
-	// OrgFeatureCronNamespaceIsolation routes the org's runner-healthcheck and
-	// install cron queues into dedicated Temporal namespaces + task queues polled
-	// by their own workers, instead of sharing the runners/installs namespaces on
-	// the api task queue.
-	OrgFeatureCronNamespaceIsolation OrgFeature = "cron-namespace-isolation"
-	OrgFeatureNewAppIA               OrgFeature = "new-app-ia"
-	// OrgFeatureOrgHealthcheckSweeps replaces per-runner and per-process
-	// healthcheck cron emitters with two per-org sweep emitters whose signals
-	// check all of the org's runners/processes in paginated batches.
-	OrgFeatureOrgHealthcheckSweeps OrgFeature = "org-healthcheck-sweeps"
-	// OrgFeatureAppInstallSyncing enables app-level install config syncing: an
-	// app points at a git repo of per-install configs, and pushes to that repo
-	// (or a manual trigger) sync every install's config, creating any missing
-	// installs behind an approval step. Gates the /v1/apps/:app_id/install-syncs
-	// and /installs-configs endpoints, the VCS push fan-out, the installs config
-	// record written during app config sync, and the dashboard install syncs tab.
-	OrgFeatureAppInstallSyncing OrgFeature = "app-install-syncing"
-	// OrgFeatureSandboxOCIArtifacts builds the app sandbox into an OCI artifact
-	// during branch runs and resolves sandbox runs against that artifact instead
-	// of cloning the sandbox git source. With it off, sandbox runs always clone
-	// git — the path every install used before artifacts existed.
-	OrgFeatureSandboxOCIArtifacts OrgFeature = "sandbox-oci-artifacts"
-	OrgFeatureDefaultAppBranches  OrgFeature = "default-app-branches"
-	OrgFeatureNewInstallIA        OrgFeature = "new-install-ia"
-	OrgFeatureDisableAppSync      OrgFeature = "disable-app-sync"
+	OrgFeaturePhoneHomeAuth            OrgFeature = "phone-home-auth"
+	OrgFeatureRunbookStudio            OrgFeature = "runbook-studio"
+	OrgFeatureCronNamespaceIsolation   OrgFeature = "cron-namespace-isolation"
+	OrgFeatureNewAppIA                 OrgFeature = "new-app-ia"
+	OrgFeatureOrgHealthcheckSweeps     OrgFeature = "org-healthcheck-sweeps"
+	OrgFeatureAppInstallSyncing        OrgFeature = "app-install-syncing"
+	OrgFeatureSandboxOCIArtifacts      OrgFeature = "sandbox-oci-artifacts"
+	OrgFeatureDefaultAppBranches       OrgFeature = "default-app-branches"
+	OrgFeatureNewInstallIA             OrgFeature = "new-install-ia"
+	OrgFeatureDisableAppSync           OrgFeature = "disable-app-sync"
 )
 
 type OrgTelemetrySettings struct {
@@ -145,8 +109,6 @@ type Org struct {
 	Tags                  pq.StringArray         `json:"tags,omitzero" gorm:"type:text[];default '{}'" swaggertype:"array,string" temporaljson:"tags,omitzero,omitempty"`
 	labels.Labeled
 
-	// Other relationships as part of the data model
-
 	Runners                   []Runner                   `gorm:"constraint:OnDelete:CASCADE;" json:"-" temporaljson:"runners,omitzero,omitempty"`
 	PublicGitVCSConfigs       []PublicGitVCSConfig       `gorm:"constraint:OnDelete:CASCADE;" json:"-" temporaljson:"public_git_vcs_configs,omitzero,omitempty"`
 	ConnectedGithubVCSConfigs []ConnectedGithubVCSConfig `gorm:"constraint:OnDelete:CASCADE;" json:"-" temporaljson:"connected_github_vcs_configs,omitzero,omitempty"`
@@ -163,8 +125,6 @@ type Org struct {
 	Roles        []Role        `faker:"-" swaggerignore:"true" json:"roles,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"roles,omitzero,omitempty"`
 	Policies     []Policy      `faker:"-" swaggerignore:"true" json:"policies,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"policies,omitzero,omitempty"`
 	AccountRoles []AccountRole `faker:"-" swaggerignore:"true" json:"account_roles,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"account_roles,omitzero,omitempty"`
-
-	// after query
 
 	Links map[string]any `json:"links,omitempty" temporaljson:"-" gorm:"-"`
 
@@ -187,7 +147,6 @@ func (o *Org) AfterQuery(tx *gorm.DB) error {
 	actieFeatures := GetFeatures()
 	forced := ForcedFeatures()
 
-	// if active feature not in features, add it
 	for _, feature := range actieFeatures {
 		if forced[string(feature)] {
 			o.Features[string(feature)] = true
@@ -203,7 +162,6 @@ func (o *Org) AfterQuery(tx *gorm.DB) error {
 		afLookup[string(feature)] = true
 	}
 
-	// if feature key not in active features, remove it
 	for key := range o.Features {
 		if !afLookup[key] {
 			delete(o.Features, key)
@@ -239,11 +197,8 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// DefaultFeatures returns the feature flag values applied to newly created
-// orgs, before the config-driven ForcedEnabledFeatures overrides.
 func DefaultFeatures() map[OrgFeature]bool {
 	return map[OrgFeature]bool{
-		// Disabled by default
 		OrgFeatureInstallRename:           false,
 		OrgFeatureSupportRole:             false,
 		OrgFeatureTerraformProviderMirror: false,
@@ -265,13 +220,11 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeatureNewInstallIA:            false,
 		OrgFeatureDisableAppSync:          false,
 
-		// Enabled by default
 		OrgFeatureAppBranches:   true,
 		OrgFeatureAppBranchesUI: true,
 	}
 }
 
-// active feature flags for an orgs
 func GetFeatures() []OrgFeature {
 	return []OrgFeature{
 		OrgFeatureAppBranches,
@@ -312,7 +265,6 @@ type OrgFeatureInfo struct {
 	Forced bool `json:"forced"`
 }
 
-// GetFeatureDescriptions returns a map of feature names to their descriptions
 func GetFeatureDescriptions() map[OrgFeature]string {
 	return map[OrgFeature]string{
 		OrgFeatureAppBranches:              "Support for multiple application branches allowing parallel development and testing",
@@ -344,7 +296,6 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 	}
 }
 
-// GetFeaturesWithDescriptions returns all features with their descriptions
 func GetFeaturesWithDescriptions() []OrgFeatureInfo {
 	features := GetFeatures()
 	descriptions := GetFeatureDescriptions()
@@ -362,7 +313,7 @@ func GetFeaturesWithDescriptions() []OrgFeatureInfo {
 	return result
 }
 
-// adminOnlyFeatures are never exposed to org users via the public API, either
+// why: adminOnlyFeatures are never exposed to org users via the public API, either
 // because they gate the flag system itself or because enabling them depends on
 // infrastructure prerequisites outside the org's control.
 var adminOnlyFeatures = map[OrgFeature]struct{}{
@@ -371,7 +322,6 @@ var adminOnlyFeatures = map[OrgFeature]struct{}{
 	OrgFeaturePhoneHomeAuth:         {},
 }
 
-// GetUserManageableFeatures returns features that users are allowed to toggle
 func GetUserManageableFeatures() []OrgFeature {
 	allFeatures := GetFeatures()
 	forced := ForcedFeatures()

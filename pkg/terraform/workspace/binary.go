@@ -17,15 +17,10 @@ import (
 
 const tracerName = "github.com/nuonco/nuon/pkg/terraform/workspace"
 
-// binarySource is the optional Source() method exposed by binary
-// implementations (binary/local and binary/remote) so LoadBinary can
-// stamp the trace span with which path was taken without coupling
-// pkg/terraform/binary's interface to observability concerns.
 type binarySource interface {
 	Source() string
 }
 
-// LoadBinary installs the binary using the provided binary
 func (w *workspace) LoadBinary(ctx context.Context, log hclog.Logger) (retErr error) {
 	source := "unknown"
 	if s, ok := w.Binary.(binarySource); ok {
@@ -65,19 +60,16 @@ func (w *workspace) LoadBinary(ctx context.Context, log hclog.Logger) (retErr er
 }
 
 func (w *workspace) loadLocalBinary(ctx context.Context) {
-	// Find the terraform executable path (equivalent to `which terraform`)
 	terraformPath, err := exec.LookPath("terraform")
 	if err != nil {
 		panic(err)
 	}
 
-	// Ensure the bins directory exists
 	err = os.MkdirAll(filepath.Join(w.root, "bins"), 0755)
 	if err != nil {
 		panic(err)
 	}
 
-	// Copy the file
 	err = copyFile(terraformPath, filepath.Join(w.root, "/bins/terraform"))
 	if err != nil {
 		panic(err)
@@ -102,7 +94,6 @@ func copyFile(src, dst string) error {
 		return err
 	}
 
-	// Copy permissions
 	srcInfo, err := srcFile.Stat()
 	if err != nil {
 		return err

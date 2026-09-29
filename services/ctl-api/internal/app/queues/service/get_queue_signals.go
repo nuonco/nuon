@@ -37,7 +37,6 @@ func (s *service) GetQueueSignals(ctx *gin.Context) {
 		return
 	}
 
-	// Verify queue exists and user has access
 	var queue app.Queue
 	res := s.db.WithContext(ctx).
 		Where("id = ?", queueID).
@@ -49,7 +48,6 @@ func (s *service) GetQueueSignals(ctx *gin.Context) {
 		return
 	}
 
-	// Parse query parameters
 	ownerID := ctx.Query("owner_id")
 	ownerType := ctx.Query("owner_type")
 	status := ctx.Query("status")
@@ -69,7 +67,6 @@ func (s *service) GetQueueSignals(ctx *gin.Context) {
 		}
 	}
 
-	// Build query with filters
 	query := s.db.WithContext(ctx).
 		Preload("CreatedBy").
 		Preload("Org").

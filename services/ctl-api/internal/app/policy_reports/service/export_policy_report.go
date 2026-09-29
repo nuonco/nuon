@@ -35,9 +35,9 @@ type PolicyReportTemplateData struct {
 	GeneratedAt   string
 	ReportID      string
 	OrgID         string
-	OrgName       string // Human-readable name when available
+	OrgName       string
 	AppID         string
-	AppName       string // Human-readable name when available
+	AppName       string
 	DenyCount     int
 	WarnCount     int
 	PassCount     int
@@ -49,12 +49,10 @@ type PolicyReportTemplateData struct {
 	Inputs        []helpers.PolicyInputDisplay
 }
 
-// Type aliases for backward compatibility and local convenience
 type PolicyResultDisplay = helpers.PolicyResultDisplay
 type PolicyInputDisplay = helpers.PolicyInputDisplay
 type PolicyViolationDisplay = helpers.PolicyViolationDisplay
 
-// SARIF types for export
 type SARIFPropertyBag map[string]any
 
 type SARIFReport struct {
@@ -133,7 +131,6 @@ type SARIFMessage struct {
 	Text string `json:"text"`
 }
 
-// PolicyReportJSON is the JSON export format for policy reports
 type PolicyReportJSON struct {
 	ReportID    string                `json:"report_id"`
 	OrgID       string                `json:"org_id"`
@@ -230,7 +227,6 @@ func toJSONFormat(report *app.PolicyReport) PolicyReportJSON {
 }
 
 func toSARIFFormat(report *app.PolicyReport) SARIFReport {
-	// Build artifacts from inputs
 	artifacts := make([]SARIFArtifact, len(report.Inputs))
 	for i, input := range report.Inputs {
 		artifacts[i] = SARIFArtifact{
@@ -246,13 +242,11 @@ func toSARIFFormat(report *app.PolicyReport) SARIFReport {
 		}
 	}
 
-	// Build policy lookup for per-policy counts
 	policyLookup := make(map[string]app.PolicyResult)
 	for _, p := range report.Policies {
 		policyLookup[p.PolicyID] = p
 	}
 
-	// Build rules for ALL policies (not just those with violations)
 	rules := make([]SARIFRule, len(report.PolicyIDs))
 	for i, policyID := range report.PolicyIDs {
 		rule := SARIFRule{
@@ -265,7 +259,6 @@ func toSARIFFormat(report *app.PolicyReport) SARIFReport {
 			},
 		}
 
-		// Add per-policy counts from report.Policies if available
 		if policyResult, ok := policyLookup[policyID]; ok {
 			rule.ShortDescription.Text = "Policy: " + policyResult.PolicyName
 			if policyResult.PolicyName == "" {
@@ -281,7 +274,6 @@ func toSARIFFormat(report *app.PolicyReport) SARIFReport {
 				"input_count": policyResult.InputCount,
 			}
 
-			// Set default level based on status
 			switch policyResult.Status {
 			case "deny":
 				rule.DefaultConfiguration.Level = "error"
@@ -295,7 +287,6 @@ func toSARIFFormat(report *app.PolicyReport) SARIFReport {
 		rules[i] = rule
 	}
 
-	// Build results with locations referencing artifacts
 	results := make([]SARIFResult, len(report.Violations))
 	for i, v := range report.Violations {
 		level := "warning"
@@ -311,7 +302,6 @@ func toSARIFFormat(report *app.PolicyReport) SARIFReport {
 			},
 		}
 
-		// Add location referencing the artifact by index
 		if v.InputIndex >= 0 && v.InputIndex < len(artifacts) {
 			idx := v.InputIndex
 			result.Locations = []SARIFLocation{
@@ -325,7 +315,6 @@ func toSARIFFormat(report *app.PolicyReport) SARIFReport {
 			}
 		}
 
-		// Preserve InputIdentity and other violation data in properties
 		if v.InputIdentity != "" || v.InputIndex >= 0 {
 			result.Properties = SARIFPropertyBag{
 				"input_index":    v.InputIndex,
@@ -336,7 +325,6 @@ func toSARIFFormat(report *app.PolicyReport) SARIFReport {
 		results[i] = result
 	}
 
-	// Build invocation with timestamp
 	evaluatedAt := report.EvaluatedAt
 	invocations := []SARIFInvocation{
 		{
@@ -345,7 +333,6 @@ func toSARIFFormat(report *app.PolicyReport) SARIFReport {
 		},
 	}
 
-	// Run-level properties with summary counts
 	runProperties := SARIFPropertyBag{
 		"deny_count":       report.DenyCount,
 		"warn_count":       report.WarnCount,
@@ -424,11 +411,9 @@ func (s *service) servePDFReport(ctx *gin.Context, report *app.PolicyReport) {
 		status = "warning"
 	}
 
-	// Use computed counts from policies for accurate summary
 	denyCount := computedDenyCount
 	warnCount := computedWarnCount
 	passCount := computedPassCount
-	// Fall back to report-level counts if no policies data
 	if len(report.Policies) == 0 {
 		denyCount = report.DenyCount
 		warnCount = report.WarnCount
@@ -459,13 +444,12 @@ func (s *service) servePDFReport(ctx *gin.Context, report *app.PolicyReport) {
 	}
 }
 
-// Color constants for severity
 var (
-	colorDeny = [3]int{200, 50, 50}   // Red
-	colorWarn = [3]int{200, 150, 0}   // Yellow/Orange
-	colorPass = [3]int{50, 150, 50}   // Green
-	colorText = [3]int{40, 40, 40}    // Dark gray
-	colorMute = [3]int{120, 120, 120} // Muted gray
+	colorDeny = [3]int{200, 50, 50}
+	colorWarn = [3]int{200, 150, 0}
+	colorPass = [3]int{50, 150, 50}
+	colorText = [3]int{40, 40, 40}
+	colorMute = [3]int{120, 120, 120}
 )
 
 func (s *service) renderPDFReport(ctx *gin.Context, data PolicyReportTemplateData) error {
@@ -475,12 +459,10 @@ func (s *service) renderPDFReport(ctx *gin.Context, data PolicyReportTemplateDat
 	pdf.SetMargins(15, 15, 15)
 	pdf.AddPage()
 
-	// Header with title and status badge
 	pdf.SetFont("Helvetica", "B", 18)
 	pdf.SetTextColor(colorText[0], colorText[1], colorText[2])
 	pdf.Cell(140, 10, data.Title)
 
-	// Status badge
 	statusColor := colorPass
 	if data.Status == "failed" {
 		statusColor = colorDeny
@@ -496,7 +478,6 @@ func (s *service) renderPDFReport(ctx *gin.Context, data PolicyReportTemplateDat
 		return errors.Wrap(pdf.Error(), "unable to render pdf header")
 	}
 
-	// Report metadata
 	pdf.SetTextColor(colorText[0], colorText[1], colorText[2])
 	pdf.SetFont("Helvetica", "", 9)
 	pdf.Cell(0, 5, fmt.Sprintf("Report ID: %s    Generated: %s UTC", data.ReportID, data.GeneratedAt))
@@ -516,7 +497,6 @@ func (s *service) renderPDFReport(ctx *gin.Context, data PolicyReportTemplateDat
 	pdf.Cell(0, 5, fmt.Sprintf("App: %s", appDisplay))
 	pdf.Ln(10)
 
-	// Summary section - horizontal layout
 	pdf.SetFont("Helvetica", "B", 11)
 	pdf.Cell(0, 6, "Summary")
 	pdf.Ln(6)
@@ -532,13 +512,11 @@ func (s *service) renderPDFReport(ctx *gin.Context, data PolicyReportTemplateDat
 	pdf.Cell(0, 5, fmt.Sprintf("Total: %d", data.TotalCount))
 	pdf.Ln(10)
 
-	// Policies Evaluated section
 	if len(data.Policies) > 0 {
 		pdf.SetFont("Helvetica", "B", 11)
 		pdf.Cell(0, 6, "Policies Evaluated")
 		pdf.Ln(6)
 
-		// Table header
 		pdf.SetFont("Helvetica", "B", 9)
 		pdf.SetFillColor(240, 240, 240)
 		pdf.CellFormat(80, 6, "Policy", "1", 0, "L", true, 0, "")
@@ -558,12 +536,10 @@ func (s *service) renderPDFReport(ctx *gin.Context, data PolicyReportTemplateDat
 			pdf.SetTextColor(colorText[0], colorText[1], colorText[2])
 			pdf.CellFormat(80, 5, truncateString(policyDisplay, 40), "1", 0, "L", false, 0, "")
 
-			// Status with color
 			statusColor := getStatusColor(p.Status)
 			pdf.SetTextColor(statusColor[0], statusColor[1], statusColor[2])
 			pdf.CellFormat(25, 5, p.Status, "1", 0, "C", false, 0, "")
 
-			// Counts
 			pdf.SetTextColor(colorText[0], colorText[1], colorText[2])
 			pdf.CellFormat(25, 5, fmt.Sprintf("%d", p.DenyCount), "1", 0, "C", false, 0, "")
 			pdf.CellFormat(25, 5, fmt.Sprintf("%d", p.WarnCount), "1", 0, "C", false, 0, "")
@@ -573,7 +549,6 @@ func (s *service) renderPDFReport(ctx *gin.Context, data PolicyReportTemplateDat
 		pdf.Ln(5)
 	}
 
-	// Inputs Evaluated section
 	if len(data.Inputs) > 0 {
 		pdf.SetFont("Helvetica", "B", 11)
 		pdf.Cell(0, 6, "Inputs Evaluated")
@@ -594,7 +569,6 @@ func (s *service) renderPDFReport(ctx *gin.Context, data PolicyReportTemplateDat
 		pdf.Ln(5)
 	}
 
-	// Violations section
 	pdf.SetFont("Helvetica", "B", 11)
 	pdf.SetTextColor(colorText[0], colorText[1], colorText[2])
 	pdf.Cell(0, 6, "Violations")
@@ -608,18 +582,15 @@ func (s *service) renderPDFReport(ctx *gin.Context, data PolicyReportTemplateDat
 	} else {
 		pdf.SetFont("Helvetica", "", 9)
 		for _, v := range data.Violations {
-			// Severity indicator with color
 			severityColor := getStatusColor(v.Severity)
 			pdf.SetTextColor(severityColor[0], severityColor[1], severityColor[2])
 			pdf.SetFont("Helvetica", "B", 9)
 			pdf.Cell(15, 5, fmt.Sprintf("[%s]", v.Severity))
 
-			// Message
 			pdf.SetTextColor(colorText[0], colorText[1], colorText[2])
 			pdf.SetFont("Helvetica", "", 9)
 			pdf.MultiCell(0, 5, v.Message, "", "L", false)
 
-			// Policy reference with input identity
 			pdf.SetTextColor(colorMute[0], colorMute[1], colorMute[2])
 			pdf.SetFont("Helvetica", "", 8)
 			inputRef := v.InputIdentity
@@ -631,7 +602,6 @@ func (s *service) renderPDFReport(ctx *gin.Context, data PolicyReportTemplateDat
 		}
 	}
 
-	// CLI Reference section
 	pdf.Ln(5)
 	s.renderCLIReferenceSection(pdf, data)
 
@@ -662,7 +632,6 @@ func (s *service) renderCLIReferenceSection(pdf *fpdf.Fpdf, data PolicyReportTem
 		fmt.Sprintf("nuon policies get -a %s", data.AppID),
 	}
 
-	// Add component/build commands if we have inputs
 	for _, inp := range data.Inputs {
 		switch inp.Type {
 		case "component":

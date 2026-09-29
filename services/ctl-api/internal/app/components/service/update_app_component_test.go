@@ -12,16 +12,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestUpdateAppComponentSuccess() {
-	// Each subtest uses a different seeded component to avoid mutation interference.
-	// Index: 0=helm, 1=terraform, 2=docker, 3=k8s, 4=external_image, 5=job
-
 	s.Run("updates name", func() {
-		// Use helm component (index 0)
 		componentID := s.testAppConfig.ComponentConfigConnections[0].ComponentID
 
 		reqBody := UpdateComponentRequest{
@@ -48,7 +40,6 @@ func (s *ComponentsServiceTestSuite) TestUpdateAppComponentSuccess() {
 	})
 
 	s.Run("updates name and var_name", func() {
-		// Use terraform component (index 1)
 		componentID := s.testAppConfig.ComponentConfigConnections[1].ComponentID
 
 		reqBody := UpdateComponentRequest{
@@ -77,8 +68,6 @@ func (s *ComponentsServiceTestSuite) TestUpdateAppComponentSuccess() {
 	})
 
 	s.Run("updates dependencies", func() {
-		// Use docker component (index 2), with k8s (index 3) and external_image (index 4) as deps.
-		// Read current names from DB to avoid stale references.
 		k8sComponentID := s.testAppConfig.ComponentConfigConnections[3].ComponentID
 		extImageComponentID := s.testAppConfig.ComponentConfigConnections[4].ComponentID
 
@@ -113,12 +102,7 @@ func (s *ComponentsServiceTestSuite) TestUpdateAppComponentSuccess() {
 	})
 }
 
-// ---------------------------------------------------------------------------
-// Validation error cases
-// ---------------------------------------------------------------------------
-
 func (s *ComponentsServiceTestSuite) TestUpdateAppComponentValidationErrors() {
-	// Use a pre-seeded component from the full app config
 	seededComponentID := s.testAppConfig.ComponentConfigConnections[0].ComponentID
 
 	testCases := []struct {
@@ -189,10 +173,6 @@ func (s *ComponentsServiceTestSuite) TestUpdateAppComponentValidationErrors() {
 		})
 	}
 }
-
-// ---------------------------------------------------------------------------
-// Not found cases
-// ---------------------------------------------------------------------------
 
 func (s *ComponentsServiceTestSuite) TestUpdateAppComponentNotFound() {
 	s.Run("nonexistent component id", func() {

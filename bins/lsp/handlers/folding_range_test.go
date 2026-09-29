@@ -8,7 +8,6 @@ import (
 )
 
 func TestBuildTableFoldingRanges(t *testing.T) {
-	// Nuon-style config with components and nested tables
 	config := `version = "v1"
 description = "test app"
 
@@ -47,8 +46,6 @@ dockerfile = "Dockerfile"
 		t.Error("expected folding ranges for tables, got none")
 	}
 
-	// Verify we have ranges for: installer, sandbox, sandbox.public_repo,
-	// components (x2), components.public_repo
 	tableNames := []string{}
 	for _, table := range doc.Tables {
 		tableNames = append(tableNames, table.Name)
@@ -62,7 +59,6 @@ dockerfile = "Dockerfile"
 }
 
 func TestFindMultiLineStringRanges(t *testing.T) {
-	// Config with multi-line strings (common in Nuon for markdown)
 	config := `[installer]
 post_install_markdown = """
 # My App
@@ -117,7 +113,6 @@ name = "web"
 }
 
 func TestNuonFullConfig(t *testing.T) {
-	// Real-world Nuon config structure
 	config := `#:schema https://api.nuon.co/v1/general/config-schema
 # This file contains template values for common Nuon application configuration options.
 # To use it for your app, edit as needed, then rename this file and run:
@@ -202,9 +197,6 @@ sensitive = true
 		t.Error("expected some folding ranges for full Nuon config")
 	}
 
-	// Should have ranges for: installer, runner, sandbox, sandbox.public_repo,
-	// components (x2), components.connected_repo (x2), components.vars,
-	// values_file, input (x2)
 	if len(doc.Tables) < 10 {
 		t.Errorf("expected at least 10 tables in full config, got %d", len(doc.Tables))
 	}

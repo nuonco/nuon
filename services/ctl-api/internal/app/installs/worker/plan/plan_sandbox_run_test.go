@@ -34,8 +34,6 @@ metadata:
 `,
 		},
 	}
-
-	// Run twice with the slice reordered — the resulting map must be identical.
 	first, err := p.getPolicies(&app.AppPoliciesConfig{Policies: policies})
 	require.NoError(t, err)
 
@@ -80,7 +78,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 	tests := []struct {
 		name               string
 		sandboxRunType     app.SandboxRunType
-		sandboxRuntimeRole string // Runtime role from sandboxRun.Role
+		sandboxRuntimeRole string
 		sandboxEntityRoles pgtype.Hstore
 		matrixRules        []*app.AppOperationRoleRule
 		expectedOperation  app.OperationType
@@ -178,7 +176,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 			sandboxRunType:     app.SandboxRunTypeProvision,
 			sandboxRuntimeRole: "",
 			sandboxEntityRoles: pgtype.Hstore{
-				"deprovision": generics.ToPtr("SandboxDeprovisionRole"), // Different operation
+				"deprovision": generics.ToPtr("SandboxDeprovisionRole"),
 			},
 			matrixRules:        nil,
 			expectedOperation:  app.OperationProvision,
@@ -195,7 +193,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 				{
 					Operation:     app.OperationProvision,
 					PrincipalType: "sandbox",
-					PrincipalName: "", // Sandboxes don't have names
+					PrincipalName: "",
 					Role:          "MatrixProvisionRole",
 				},
 			},
@@ -248,7 +246,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 			matrixRules: []*app.AppOperationRoleRule{
 				{
 					Operation:     app.OperationProvision,
-					PrincipalType: "component", // Wrong principal type
+					PrincipalType: "component",
 					PrincipalName: "*",
 					Role:          "ComponentRole",
 				},
@@ -265,7 +263,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 			sandboxEntityRoles: pgtype.Hstore{},
 			matrixRules: []*app.AppOperationRoleRule{
 				{
-					Operation:     app.OperationDeprovision, // Wrong operation
+					Operation:     app.OperationDeprovision,
 					PrincipalType: "sandbox",
 					PrincipalName: "",
 					Role:          "MatrixDeprovisionRole",
@@ -440,7 +438,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 			sandboxRunType:     app.SandboxRunTypeProvision,
 			sandboxRuntimeRole: "",
 			sandboxEntityRoles: pgtype.Hstore{
-				"provision": generics.ToPtr("MissingEntityRole"), // Not in stack outputs
+				"provision": generics.ToPtr("MissingEntityRole"),
 			},
 			matrixRules:        nil,
 			expectedOperation:  app.OperationProvision,
@@ -453,7 +451,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 			sandboxRunType:     app.SandboxRunTypeDeprovision,
 			sandboxRuntimeRole: "",
 			sandboxEntityRoles: pgtype.Hstore{
-				"deprovision": generics.ToPtr("MissingDeprovisionRole"), // Not in stack outputs
+				"deprovision": generics.ToPtr("MissingDeprovisionRole"),
 			},
 			matrixRules:        nil,
 			expectedOperation:  app.OperationDeprovision,
@@ -471,7 +469,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 					Operation:     app.OperationProvision,
 					PrincipalType: "sandbox",
 					PrincipalName: "",
-					Role:          "MissingMatrixRole", // Not in stack outputs
+					Role:          "MissingMatrixRole",
 				},
 			},
 			expectedOperation:  app.OperationProvision,
@@ -482,7 +480,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 		{
 			name:               "runtime_role_missing_provision_returns_error",
 			sandboxRunType:     app.SandboxRunTypeProvision,
-			sandboxRuntimeRole: "MissingRuntimeRole", // Not in stack outputs
+			sandboxRuntimeRole: "MissingRuntimeRole",
 			sandboxEntityRoles: pgtype.Hstore{},
 			matrixRules:        nil,
 			expectedError:      `unable to use requested role "MissingRuntimeRole"`,
@@ -491,7 +489,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 		{
 			name:               "runtime_role_missing_deprovision_returns_error",
 			sandboxRunType:     app.SandboxRunTypeDeprovision,
-			sandboxRuntimeRole: "MissingRuntimeRole", // Not in stack outputs
+			sandboxRuntimeRole: "MissingRuntimeRole",
 			sandboxEntityRoles: pgtype.Hstore{},
 			matrixRules:        nil,
 			expectedError:      `unable to use requested role "MissingRuntimeRole"`,
@@ -615,7 +613,6 @@ func TestGetSandboxRunTerraformVarsInstallTags(t *testing.T) {
 		tags, ok := vars["tags"].(map[string]string)
 		require.True(t, ok, "tags var should be a string map, got %T", vars["tags"])
 
-		// install locks filter the nuke on these
 		assert.Equal(t, "{{.nuon.install.id}}", tags["install.nuon.co/id"])
 		assert.Equal(t, "{{.nuon.install.id}}", tags["NUON_INSTALL_ID"])
 	})
@@ -626,7 +623,6 @@ func TestGetSandboxRunTerraformVarsInstallTags(t *testing.T) {
 		}, "nuon.co")
 		require.NoError(t, err)
 
-		// gcp label keys can't contain dots or slashes
 		labels, ok := vars["labels"].(map[string]string)
 		require.True(t, ok, "labels var should be a string map, got %T", vars["labels"])
 		assert.Equal(t, "{{.nuon.install.id}}", labels["nuon-install-id"])

@@ -6,7 +6,6 @@ import (
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
-// ConfigSet is a callback for when a configuration is written
 func (p *handler) ConfigSet(config interface{}) error {
 	_, ok := config.(*configs.JobDeploy)
 	if !ok {

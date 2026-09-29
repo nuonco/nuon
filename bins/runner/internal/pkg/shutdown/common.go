@@ -13,7 +13,6 @@ import (
 	"github.com/nuonco/nuon/pkg/zapwriter"
 )
 
-// NOTE: cannibalized from github.com/plackemacher/system-shutdown
 func runCommand(ctx context.Context, l *zap.Logger, v *validator.Validate, command string, args ...string) (err error) {
 	lf := zapwriter.New(l, zapcore.InfoLevel, "shutdown")
 

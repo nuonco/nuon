@@ -15,10 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 )
 
-// Rejection reasons, used as a metric tag and in the warn log. They are deliberately
-// finer-grained than the HTTP status: a rejection fails open on the customer's side,
-// so these tags plus PhoneHomeAuth.LastRejectedAt are the only evidence anything
-// happened.
 const (
 	phoneHomeAuthOK = ""
 
@@ -30,13 +26,9 @@ const (
 	phoneHomeRejectVersionExpired  = "version_expired"
 	phoneHomeRejectAccountMismatch = "account_mismatch"
 
-	// Not a rejection: the org is not enrolled, or this stack version predates
-	// token minting, so there is nothing to check.
 	phoneHomeAuthSkipped = "skipped"
 )
 
-// errPhoneHomeAuth carries the metric reason alongside the client-facing error, so the
-// handler reports one and returns the other without the two drifting apart.
 type errPhoneHomeAuth struct {
 	reason string
 	err    error
@@ -45,7 +37,7 @@ type errPhoneHomeAuth struct {
 func (e errPhoneHomeAuth) Error() string { return e.err.Error() }
 func (e errPhoneHomeAuth) Unwrap() error { return e.err }
 
-// rejectPhoneHome is the only 401 the caller ever sees. The description is
+// why: rejectPhoneHome is the only 401 the caller ever sees. The description is
 // deliberately uniform: distinguishing "no such install" from "wrong token" would
 // confirm the existence of installs to an unauthenticated caller holding nothing but a
 // leaked phone_home_id, which is the exact leak this feature closes.
@@ -59,7 +51,7 @@ func rejectPhoneHome(reason string, err error) error {
 	}
 }
 
-// authorizePhoneHome verifies that this request was made by the stack version it claims
+// why: authorizePhoneHome verifies that this request was made by the stack version it claims
 // to be, returning the reason to record.
 //
 // Enforcement requires three things to line up: the org is enrolled, this version has a
@@ -87,17 +79,10 @@ func (s *service) authorizePhoneHome(
 			phoneHomeRejectRevokedVersion,
 			fmt.Errorf("phone home token for stack version %s was revoked", stackVersion.ID),
 		)
-	// A version carries whichever credential its cloud renders. Neither means it was
-	// rendered before enforcement reached that cloud, so it is skipped rather than
-	// rejected.
 	case stackVersion.PhoneHomeIdentityName == "" && stackVersion.PhoneHomeTokenID == "":
 		return phoneHomeAuthSkipped, nil
 	}
 
-	// An Expired version is one the await workflow already gave up on after 180
-	// unapplied days. Resurrecting it would leave the control plane and that workflow
-	// disagreeing, so it is a 409 rather than a 401 — a different problem with a
-	// different fix (reprovision), and worth telling the operator apart.
 	if stackVersion.Status.Status == app.InstallStackVersionStatusExpired {
 		return phoneHomeRejectVersionExpired, errPhoneHomeAuth{
 			reason: phoneHomeRejectVersionExpired,
@@ -138,12 +123,6 @@ func (s *service) authorizePhoneHome(
 		)
 	}
 
-	// The one piece of real authorization in the scheme. Without it any valid Nuon
-	// token — a user's, or another stack version's — could post outputs for any
-	// install, which is materially worse than the status quo. Compared against the
-	// *calling* stack version rather than the install's runner: the runner identity is
-	// shared by every version of the install, so a leak from any one of them would
-	// pass a runner-scoped check.
 	var acct app.Account
 	if res := s.db.WithContext(ctx).
 		Where(app.Account{ID: token.AccountID}).
@@ -168,8 +147,6 @@ func (s *service) authorizePhoneHome(
 	return phoneHomeAuthOK, nil
 }
 
-// bearerToken pulls the credential out of an Authorization header, tolerating case and
-// surrounding whitespace. Returns "" when there is nothing usable.
 func bearerToken(header string) string {
 	const prefix = "bearer "
 
@@ -181,13 +158,6 @@ func bearerToken(header string) string {
 	return strings.TrimSpace(header[len(prefix):])
 }
 
-// checkObservedCloudAccount rejects a verified caller whose payload names a different
-// cloud account than the install is pinned to.
-//
-// Separate from token verification on purpose: a valid token proves *who* is calling,
-// this proves the call is about the account we expect. A mismatch means either the
-// install was created against the wrong account or a token escaped into a different
-// one, and neither should be allowed to overwrite stack outputs.
 func checkObservedCloudAccount(install *app.Install, props map[string]any) (string, error) {
 	for _, field := range []struct {
 		payloadKey string
@@ -212,8 +182,6 @@ func checkObservedCloudAccount(install *app.Install, props map[string]any) (stri
 	return phoneHomeAuthOK, nil
 }
 
-// recordPhoneHomeAuthResult stamps the install so the dashboard can say "stack outputs
-// may be stale". Best-effort: failing to record an outcome must not change it.
 func (s *service) recordPhoneHomeAuthResult(ctx context.Context, install *app.Install, verified bool) {
 	auth := app.PhoneHomeAuth{}
 	if install.PhoneHomeAuth != nil {

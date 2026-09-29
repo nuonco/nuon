@@ -12,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// BuildOrg creates an app.Org with fake defaults.
 func BuildOrg() *app.Org {
 	acct := BuildAccount()
 	id := domains.NewOrgID()
@@ -27,8 +26,6 @@ func BuildOrg() *app.Org {
 	}
 }
 
-// CreateOrg builds and persists an org to the database.
-// Uses account from context if available for CreatedByID.
 func (s *Seeder) CreateOrg(ctx context.Context, t *testing.T) *app.Org {
 	org := BuildOrg()
 	if accountID, err := cctx.AccountIDFromContext(ctx); err == nil {
@@ -40,7 +37,6 @@ func (s *Seeder) CreateOrg(ctx context.Context, t *testing.T) *app.Org {
 	return org
 }
 
-// EnsureOrg creates a test org and sets its ID in the context via cctx.SetOrgIDContext.
 func (s *Seeder) EnsureOrg(ctx context.Context, t *testing.T) (context.Context, *app.Org) {
 	org := s.CreateOrg(ctx, t)
 	return cctx.SetOrgIDContext(ctx, org.ID), org

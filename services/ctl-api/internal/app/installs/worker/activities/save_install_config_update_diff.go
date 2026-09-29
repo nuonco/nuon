@@ -24,7 +24,6 @@ func (a *Activities) SaveInstallAppConfigVersionDiff(ctx context.Context, input 
 		return fmt.Errorf("invalid input: %w", err)
 	}
 
-	// Upload diff to S3
 	blobID := domains.NewBlobID()
 	s3Key := fmt.Sprintf("blobs/install_config_diffs/%s", blobID)
 
@@ -34,7 +33,6 @@ func (a *Activities) SaveInstallAppConfigVersionDiff(ctx context.Context, input 
 		return fmt.Errorf("unable to upload diff to S3: %w", err)
 	}
 
-	// Build blob metadata JSONB
 	metadata := blobstore.BlobMetadata{
 		BlobID:      blobID,
 		S3Key:       s3Key,
@@ -49,7 +47,6 @@ func (a *Activities) SaveInstallAppConfigVersionDiff(ctx context.Context, input 
 		return fmt.Errorf("unable to marshal blob metadata: %w", err)
 	}
 
-	// Update the InstallAppConfigVersion record with the diff metadata
 	res := a.db.WithContext(ctx).
 		Model(&app.InstallAppConfigVersion{}).
 		Where(app.InstallAppConfigVersion{ID: input.InstallAppConfigVersionID}).

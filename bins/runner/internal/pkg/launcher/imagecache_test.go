@@ -10,8 +10,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// newTestCache returns a cache rooted in a temp dir, with docker calls recorded
-// instead of executed and a fixed amount of free space.
 func newTestCache(t *testing.T, freeSpace uint64) (*ImageCache, *[]string) {
 	t.Helper()
 
@@ -31,7 +29,6 @@ func newTestCache(t *testing.T, freeSpace uint64) (*ImageCache, *[]string) {
 	return c, &removed
 }
 
-// age backdates an image record so it looks least-recently-used.
 func age(t *testing.T, c *ImageCache, image string, d time.Duration) {
 	t.Helper()
 
@@ -72,7 +69,6 @@ func TestCollectGarbage(t *testing.T) {
 		if len(*removed) != 1 || !strings.Contains((*removed)[0], "repo@sha256:aaa") {
 			t.Fatalf("expected the image to be removed, got %v", *removed)
 		}
-		// no -f, so docker refuses while a container still uses the image
 		if strings.Contains((*removed)[0], "-f") {
 			t.Fatalf("removal must not force: %v", (*removed)[0])
 		}
@@ -161,7 +157,6 @@ func TestCollectGarbage(t *testing.T) {
 					return nil, nil
 				}
 				removed = append(removed, strings.Join(args, " "))
-				// the first removal frees enough to clear the floor
 				free = minFreeBytes * 2
 				return nil, nil
 			},
@@ -180,7 +175,6 @@ func TestCollectGarbage(t *testing.T) {
 		if len(removed) != 1 {
 			t.Fatalf("expected collection to stop after one removal, got %v", removed)
 		}
-		// least-recently-used goes first
 		if !strings.Contains(removed[0], "repo@sha256:oldest") {
 			t.Fatalf("expected the coldest image to go first, got %v", removed[0])
 		}
@@ -235,7 +229,6 @@ func TestImageCacheLease(t *testing.T) {
 		t.Fatal("expected an error for an empty image")
 	}
 
-	// Unlease is idempotent so cleanup can call it unconditionally
 	c.Unlease("never-leased")
 	c.Unlease("")
 }
@@ -266,8 +259,6 @@ func TestImageCacheLock(t *testing.T) {
 		}
 		defer unlock()
 
-		// A holder stuck mid-pull must never wedge the caller, which on the
-		// collection side is the job loop's own goroutine.
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 		defer cancel()
 

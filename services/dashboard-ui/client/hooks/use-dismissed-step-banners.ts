@@ -23,8 +23,6 @@ const persistStore = (store: DismissedStore) => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
   } catch {
-    // localStorage may be unavailable (private mode, quota) — dismissals
-    // simply fall back to in-memory state for the session.
   }
 }
 

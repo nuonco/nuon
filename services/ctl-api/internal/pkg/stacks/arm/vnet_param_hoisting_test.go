@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-// serveVNetTemplate stands in for a customer-hosted VNet template.
 func serveVNetTemplate(t *testing.T, body string) string {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -48,8 +47,6 @@ const hoistFixture = `{
   "outputs": {}
 }`
 
-// A VNet template is nested, so it never receives a parameter file of its own.
-// Anything Nuon does not supply has to reach the root to be settable at all.
 func TestVNetLinkedDeployment_HoistsNonReservedParams(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 	inp := vnetInputWithTemplate(t, app.StackDeploymentScopeSubscription, hoistFixture)
@@ -71,7 +68,6 @@ func TestVNetLinkedDeployment_HoistsNonReservedParams(t *testing.T) {
 		}
 	}
 
-	// Nuon owns these; surfacing them would put internal values in the portal form.
 	for _, name := range []string{"nuonInstallID", "location", "commonTags"} {
 		if _, ok := hoisted[name]; ok {
 			t.Errorf("%q is Nuon-managed and must not be hoisted", name)
@@ -81,8 +77,6 @@ func TestVNetLinkedDeployment_HoistsNonReservedParams(t *testing.T) {
 		}
 	}
 
-	// Metadata and defaults travel with the parameter, so the portal form keeps its
-	// description and pre-filled value.
 	if got := hoisted["addressSpace"]; got.DefaultValue != "10.100.0.0/22" {
 		t.Errorf("default not carried up: %v", got.DefaultValue)
 	} else if got.Metadata == nil || got.Metadata.Description != "VNet address space." {
@@ -91,21 +85,15 @@ func TestVNetLinkedDeployment_HoistsNonReservedParams(t *testing.T) {
 		t.Errorf("allowed values not carried up: %#v", got.AllowedValues)
 	}
 
-	// A non-string default has to survive as its own type.
 	if got := hoisted["peeringEnabled"]; got.DefaultValue != false {
 		t.Errorf("bool default became %#v", got.DefaultValue)
 	}
 
-	// requiredByOwner has no default, so the portal must ask for it rather than
-	// silently deploy an empty string.
 	if got := hoisted["requiredByOwner"]; got.DefaultValue != nil {
 		t.Errorf("invented a default: %#v", got.DefaultValue)
 	}
 }
 
-// An expression default is computed in the nested template's own scope. Hoisting it
-// re-binds those references to the root, where at subscription scope nuonInstallID
-// is a variable and not a parameter at all.
 func TestVNetLinkedDeployment_LeavesExpressionDefaultsInPlace(t *testing.T) {
 	for _, scope := range []app.StackDeploymentScope{
 		app.StackDeploymentScopeResourceGroup,
@@ -131,7 +119,6 @@ func TestVNetLinkedDeployment_LeavesExpressionDefaultsInPlace(t *testing.T) {
 	}
 }
 
-// The whole point of hoisting is that the root declares what it references.
 func TestVNetLinkedDeployment_HoistedParamsReachTheRoot(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 	inp := vnetInputWithTemplate(t, app.StackDeploymentScopeSubscription, hoistFixture)

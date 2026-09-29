@@ -5,9 +5,6 @@ import (
 	"testing"
 )
 
-// unmarshalableError carries a field json.Marshal cannot encode, so New() must
-// surface the marshal failure instead of persisting a record with a null typed
-// payload.
 type unmarshalableError struct {
 	Ch chan int `json:"ch"`
 }
@@ -27,8 +24,6 @@ func TestNew_ReturnsErrorOnUnmarshalablePayload(t *testing.T) {
 	}
 }
 
-// sectionedError returns a caller-owned slice from Sections() so the test can
-// confirm New() detaches its copy from the source.
 type sectionedError struct{ sections []Section }
 
 func (sectionedError) Error() string         { return "boom" }

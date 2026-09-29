@@ -24,7 +24,6 @@ const (
 	RunnerProcessStatusUnknown         RunnerProcessStatus = "unknown"
 )
 
-// ActiveRunnerProcessStatuses is the canonical liveness set for runner admission checks.
 func ActiveRunnerProcessStatuses() []RunnerProcessStatus {
 	return []RunnerProcessStatus{
 		RunnerProcessStatusActive,
@@ -91,12 +90,10 @@ func (r *RunnerProcess) AfterQuery(tx *gorm.DB) error {
 
 	status := r.ProcessStatus()
 
-	// Initializing warning: active but no health check yet
 	if status == RunnerProcessStatusActive && !r.InitialHealthCheck {
 		r.Warnings = append(r.Warnings, "This runner is still initializing and will not process jobs until its first health check")
 	}
 
-	// Surface status descriptions as warnings for non-healthy statuses
 	if r.CompositeStatus.StatusHumanDescription != "" {
 		switch status {
 		case RunnerProcessStatusPendingShutdown, RunnerProcessStatusOffline, RunnerProcessStatusError:
@@ -104,22 +101,16 @@ func (r *RunnerProcess) AfterQuery(tx *gorm.DB) error {
 		}
 	}
 
-	// Version warning from metadata
 	if vw, ok := r.CompositeStatus.Metadata["version_warning"]; ok {
 		if warning, ok := vw.(string); ok && warning != "" {
 			r.Warnings = append(r.Warnings, warning)
 		}
 	}
 
-	// External (customer-initiated) VM termination. The terminating beacon
-	// stamps termination_reason into the composite status metadata, which
-	// propagates forward across subsequent status transitions, so this
-	// indicator survives even after the process drops to offline/inactive.
 	if reason, ok := r.CompositeStatus.Metadata["termination_reason"].(string); ok && reason == "external" {
 		r.Labels = append(r.Labels, "Terminated by customer")
 	}
 
-	// Label local runners
 	if r.Version == "development" {
 		r.Labels = append(r.Labels, "Local Runner")
 	}

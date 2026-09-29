@@ -12,7 +12,6 @@ import (
 type PoliciesConfig struct {
 	Policies []AppPolicy `mapstructure:"policy,omitempty" toml:"policy,omitempty"`
 
-	// SourceFile is the file path this config was parsed from (set during parsing, not serialized)
 	SourceFile string `mapstructure:"-" toml:"-" json:"-" jsonschema:"-"`
 }
 
@@ -31,31 +30,23 @@ func (a PoliciesConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 func (a *PoliciesConfig) parse() error {
-	// Extract line numbers from the source file if available
 	policyLineNumbers := extractPolicyLineNumbers(a.SourceFile)
 
 	for i := range a.Policies {
-		// to maintain backwards compatibility, default engine based on type
 		if a.Policies[i].Engine == "" {
 			a.Policies[i].Engine = AppPolicyEngineKyverno
 		}
-		// propagate source file to individual policies if not already set
 		if a.Policies[i].SourceFile == "" && a.SourceFile != "" {
 			a.Policies[i].SourceFile = a.SourceFile
 		}
-		// set source line if we have it
 		if i < len(policyLineNumbers) {
 			a.Policies[i].SourceLine = policyLineNumbers[i]
 		}
-		// derive name from Contents path if Name is not set
-		// (e.g., "./block-mutable-tags.rego" → "block-mutable-tags")
 		a.Policies[i].SetNameFromContents()
 	}
 	return nil
 }
 
-// extractPolicyLineNumbers reads the source file and returns the 1-indexed line numbers
-// of each [[policy]] table header. Returns nil if the file cannot be read.
 func extractPolicyLineNumbers(sourceFile string) []int {
 	if sourceFile == "" {
 		return nil
@@ -102,7 +93,6 @@ const (
 	AppPolicyTypeSandbox AppPolicyType = "sandbox"
 )
 
-// AllAppPolicyTypes contains all valid policy types
 var AllAppPolicyTypes = []AppPolicyType{
 	AppPolicyTypeKubernetesCluster,
 	AppPolicyTypeTerraformModule,
@@ -121,7 +111,6 @@ const (
 	AppPolicyEngineOPA     AppPolicyEngine = "opa"
 )
 
-// AllAppPolicyEngines contains all valid policy engines
 var AllAppPolicyEngines = []AppPolicyEngine{
 	AppPolicyEngineKyverno,
 	AppPolicyEngineOPA,
@@ -134,10 +123,8 @@ type AppPolicy struct {
 	Contents   string          `mapstructure:"contents" features:"get,template"`
 	Components []string        `mapstructure:"components,omitempty"`
 
-	// SourceFile is the file path this policy was parsed from (set during parsing, not serialized)
 	SourceFile string `mapstructure:"-" toml:"-" json:"-" jsonschema:"-"`
-	// SourceLine is the line number in the source file where this policy starts (1-indexed)
-	SourceLine int `mapstructure:"-" toml:"-" json:"-" jsonschema:"-"`
+	SourceLine int    `mapstructure:"-" toml:"-" json:"-" jsonschema:"-"`
 }
 
 func (a *AppPolicy) SetSourceFile(path string) {
@@ -156,9 +143,6 @@ func (a *AppPolicy) GetSourceLine() int {
 	return a.SourceLine
 }
 
-// SetNameFromSourceFile derives the policy name from the source filename by stripping
-// the directory path and file extension (e.g., "policies/block-mutable-tags.rego" → "block-mutable-tags").
-// This is only called if Name is not already set.
 func (a *AppPolicy) SetNameFromSourceFile() {
 	if a.Name != "" || a.SourceFile == "" {
 		return
@@ -166,28 +150,21 @@ func (a *AppPolicy) SetNameFromSourceFile() {
 	a.Name = extractNameFromPath(a.SourceFile)
 }
 
-// SetNameFromContents derives the policy name from the Contents path when Name is not set.
-// This is used when policies are defined in policies.toml with Contents referencing a file
-// (e.g., "./block-mutable-tags.rego" → "block-mutable-tags").
 func (a *AppPolicy) SetNameFromContents() {
 	if a.Name != "" || a.Contents == "" {
 		return
 	}
-	// Only derive from file paths (starting with ./, ../, or /)
 	if !strings.HasPrefix(a.Contents, "./") && !strings.HasPrefix(a.Contents, "../") && !strings.HasPrefix(a.Contents, "/") {
 		return
 	}
 	a.Name = extractNameFromPath(a.Contents)
 }
 
-// extractNameFromPath extracts a name from a file path by stripping directory and extension.
 func extractNameFromPath(path string) string {
 	name := path
-	// Remove directory path
 	if idx := strings.LastIndex(name, "/"); idx >= 0 {
 		name = name[idx+1:]
 	}
-	// Remove file extension
 	if idx := strings.LastIndex(name, "."); idx >= 0 {
 		name = name[:idx]
 	}

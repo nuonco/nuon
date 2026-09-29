@@ -12,10 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// ---------------------------------------------------------------------------
-// Success cases
-// ---------------------------------------------------------------------------
-
 func (s *AccountsServiceTestSuite) TestCreateUserJourneySuccess() {
 	testCases := []struct {
 		name          string
@@ -74,7 +70,6 @@ func (s *AccountsServiceTestSuite) TestCreateUserJourneySuccess() {
 			err := json.Unmarshal(rr.Body.Bytes(), &response)
 			require.NoError(s.T(), err)
 
-			// Find the created journey in the response
 			require.NotEmpty(s.T(), response.UserJourneys)
 			var found *app.UserJourney
 			for i := range response.UserJourneys {
@@ -88,12 +83,10 @@ func (s *AccountsServiceTestSuite) TestCreateUserJourneySuccess() {
 			assert.Equal(s.T(), tc.expectedName, found.Name)
 			assert.Len(s.T(), found.Steps, tc.expectedSteps)
 
-			// Verify all steps are initialized as incomplete
 			for _, step := range found.Steps {
 				assert.False(s.T(), step.Complete, "step %q should be incomplete on creation", step.Name)
 			}
 
-			// Verify persisted to database
 			var dbAccount app.Account
 			err = s.service.DB.WithContext(s.ctx).First(&dbAccount, "id = ?", s.testAcc.ID).Error
 			require.NoError(s.T(), err)
@@ -114,12 +107,7 @@ func (s *AccountsServiceTestSuite) TestCreateUserJourneySuccess() {
 	}
 }
 
-// ---------------------------------------------------------------------------
-// Steps with complete=true in request should still initialize as false
-// ---------------------------------------------------------------------------
-
 func (s *AccountsServiceTestSuite) TestCreateUserJourneyStepsAlwaysStartIncomplete() {
-	// Send a request with complete=true via raw map — the handler ignores it
 	reqBody := map[string]interface{}{
 		"name":  "sneaky-journey",
 		"title": "Sneaky",
@@ -145,10 +133,6 @@ func (s *AccountsServiceTestSuite) TestCreateUserJourneyStepsAlwaysStartIncomple
 		assert.False(s.T(), step.Complete, "step %q should be initialized as incomplete regardless of request", step.Name)
 	}
 }
-
-// ---------------------------------------------------------------------------
-// Validation error cases
-// ---------------------------------------------------------------------------
 
 func (s *AccountsServiceTestSuite) TestCreateUserJourneyValidationErrors() {
 	testCases := []struct {
@@ -273,17 +257,11 @@ func (s *AccountsServiceTestSuite) TestCreateUserJourneyValidationErrors() {
 	}
 }
 
-// ---------------------------------------------------------------------------
-// Duplicate journey name
-// ---------------------------------------------------------------------------
-
 func (s *AccountsServiceTestSuite) TestCreateUserJourneyDuplicateNameFails() {
-	// Seed the account with an existing journey
 	s.testAcc.UserJourneys = app.UserJourneys{testseed.BuildUserJourney()}
 	err := s.service.DB.WithContext(s.ctx).Save(s.testAcc).Error
 	require.NoError(s.T(), err)
 
-	// Attempt to create another journey with the same name
 	reqBody := CreateUserJourneyRequest{
 		Name:  "onboarding",
 		Title: "Duplicate Journey",
@@ -299,24 +277,17 @@ func (s *AccountsServiceTestSuite) TestCreateUserJourneyDuplicateNameFails() {
 	}
 	require.Equal(s.T(), http.StatusConflict, rr.Code)
 
-	// Verify error message mentions the duplicate
 	var errResp map[string]interface{}
 	err = json.Unmarshal(rr.Body.Bytes(), &errResp)
 	require.NoError(s.T(), err)
 	assert.Contains(s.T(), errResp["error"], "already exists")
 }
 
-// ---------------------------------------------------------------------------
-// Appends to existing journeys
-// ---------------------------------------------------------------------------
-
 func (s *AccountsServiceTestSuite) TestCreateUserJourneyAppendsToExisting() {
-	// Seed the account with an existing journey
 	s.testAcc.UserJourneys = app.UserJourneys{testseed.BuildCompletedUserJourney()}
 	err := s.service.DB.WithContext(s.ctx).Save(s.testAcc).Error
 	require.NoError(s.T(), err)
 
-	// Create a second journey with a different name
 	reqBody := CreateUserJourneyRequest{
 		Name:  "advanced-setup",
 		Title: "Advanced Setup",
@@ -337,16 +308,13 @@ func (s *AccountsServiceTestSuite) TestCreateUserJourneyAppendsToExisting() {
 	err = json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(s.T(), err)
 
-	// Should now have both journeys
 	require.Len(s.T(), response.UserJourneys, 2)
 
-	// Verify the original journey is preserved
 	assert.Equal(s.T(), "onboarding", response.UserJourneys[0].Name)
 	for _, step := range response.UserJourneys[0].Steps {
 		assert.True(s.T(), step.Complete, "original journey step %q should remain complete", step.Name)
 	}
 
-	// Verify the new journey
 	assert.Equal(s.T(), "advanced-setup", response.UserJourneys[1].Name)
 	assert.Len(s.T(), response.UserJourneys[1].Steps, 2)
 	for _, step := range response.UserJourneys[1].Steps {

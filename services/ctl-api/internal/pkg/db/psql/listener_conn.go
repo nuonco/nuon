@@ -9,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
-// NewPrimaryListenerConn opens a single dedicated, non-pooled connection to the
+// why: NewPrimaryListenerConn opens a single dedicated, non-pooled connection to the
 // PRIMARY database, suitable for LISTEN/NOTIFY. The caller owns the connection
 // and must Close it.
 //
@@ -42,8 +42,6 @@ func NewPrimaryListenerConn(ctx context.Context, cfg *internal.Config) (*pgx.Con
 		return nil, fmt.Errorf("unable to build listener conn config: %w", err)
 	}
 
-	// connCfg() omits password from the DSN when a PasswordFn is set (mirrors
-	// the pool's beforeConnect hook); inject the freshly-fetched token here.
 	if d.PasswordFn != nil {
 		pw, err := d.PasswordFn(ctx, *d)
 		if err != nil {

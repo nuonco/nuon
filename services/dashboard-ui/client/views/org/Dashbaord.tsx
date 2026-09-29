@@ -56,7 +56,6 @@ function persistSandboxBannerDismiss(orgId: string) {
       )
     }
   } catch {
-    // ignore storage failures
   }
 }
 

@@ -27,7 +27,6 @@ type Worker struct {
 	worker.Worker
 }
 
-// CronWorker polls the isolated install-crons task queue.
 type CronWorker struct {
 	worker.Worker
 }
@@ -88,7 +87,6 @@ func buildWorker(params WorkerParams, namespace string, taskQueue string, logNam
 		DisableRegistrationAliasing:            params.Cfg.TemporalDisableRegistrationAliasing,
 	})
 
-	// register activities
 	wkr.RegisterActivity(params.Acts)
 	wkr.RegisterActivity(installdelegationdns.NewActivities(params.V, params.Cfg))
 
@@ -96,7 +94,6 @@ func buildWorker(params WorkerParams, namespace string, taskQueue string, logNam
 		wkr.RegisterActivity(acts)
 	}
 
-	// register workflows
 	for _, wkflow := range params.Wkflows.All() {
 		wkr.RegisterWorkflow(wkflow)
 	}

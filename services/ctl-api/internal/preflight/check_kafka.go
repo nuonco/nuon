@@ -41,7 +41,7 @@ var kafkaCheck = Check{
 
 	Probe: func(ctx context.Context, cfg *internal.Config) (string, error) {
 		if strings.EqualFold(cfg.KafkaSecurityProtocol, kafkaSSLProtocol) {
-			// Checked before dialling: a missing mount surfaces as an opaque
+			// why: Checked before dialling: a missing mount surfaces as an opaque
 			// handshake error otherwise.
 			for _, path := range []string{cfg.KafkaTLSCAPath, cfg.KafkaTLSCertPath, cfg.KafkaTLSKeyPath} {
 				if _, err := os.Stat(path); err != nil {

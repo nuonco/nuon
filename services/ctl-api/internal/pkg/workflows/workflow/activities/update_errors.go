@@ -9,7 +9,7 @@ import (
 	"go.temporal.io/sdk/temporal"
 )
 
-// updateOutcomeError classifies an error returned while waiting on a workflow
+// why: updateOutcomeError classifies an error returned while waiting on a workflow
 // update result. A rejection from the update handler is a domain outcome (e.g.
 // "max retries exhausted", "step is not retryable") — retrying the activity
 // re-sends the same update and can never succeed, so it must be non-retryable

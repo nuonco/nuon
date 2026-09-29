@@ -12,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// TestUpdateApp tests the UpdateApp endpoint.
 func (s *AppCRUDTestSuite) TestUpdateApp() {
 	testCases := []struct {
 		name         string

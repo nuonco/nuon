@@ -61,9 +61,6 @@ func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.Ap
 		}
 	}
 
-	// Tag the user's script stdout/stderr so the UI can show just the command
-	// output and hide the runner's own job-lifecycle logs (which share the
-	// same oteljob scope and Info severity).
 	outL := l.With(zap.String("nuon.command_output", "true"))
 	lOut := zapwriter.NewWithOpts(outL, zapwriter.WithLogLevel(zapcore.InfoLevel), zapwriter.WithLineBuffering())
 	lErr := zapwriter.NewWithOpts(outL, zapwriter.WithLogLevel(zapcore.ErrorLevel), zapwriter.WithLineBuffering())

@@ -1,7 +1,4 @@
 #!/bin/sh
-# actions-supervisor: mounted into an image-backed action container and run via
-# the image's own /bin/sh. Installs the nuon_output helper on PATH, then runs
-# the rendered step script in workdir and propagates its exit code.
 set -u
 
 script=""
@@ -33,7 +30,7 @@ fi
 
 root="${NUON_ACTIONS_ROOT:-$workdir}"
 
-# The helper is supervisor-private, so it goes in the container's own filesystem
+# why: The helper is supervisor-private, so it goes in the container's own filesystem
 # rather than the shared workspace: a non-root image often cannot write the bind
 # mount, and silently skipping the helper would leave nuon_output missing at the
 # point a step calls it.
@@ -43,8 +40,6 @@ if ! mkdir -p "$bindir" 2>/dev/null; then
 	exit 1
 fi
 
-# nuon_output <key> <value>: append a key=value line to the outputs file, which
-# the runner reads back from the shared workspace mount after the container exits.
 if ! cat >"$bindir/nuon_output" <<'HELPER'
 #!/bin/sh
 printf '%s=%s\n' "$1" "$2" >>"$NUON_ACTIONS_OUTPUT_FILEPATH"
@@ -57,7 +52,6 @@ chmod 0755 "$bindir/nuon_output"
 PATH="$bindir:$PATH"
 export PATH
 
-# ensure the step script carries a shebang so it runs under the image's shell
 case "$(head -n1 "$script" 2>/dev/null)" in
 '#!'*) ;;
 *)

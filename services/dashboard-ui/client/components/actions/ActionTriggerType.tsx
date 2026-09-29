@@ -33,10 +33,6 @@ const TRIGGER_LABELS: Partial<Record<TActionConfigTriggerType, string>> = {
 export interface IActionTriggerType {
   componentName?: string
   componentPath?: string
-  /**
-   * Kept for backwards compatibility; no longer renders a badge.
-   * @deprecated
-   */
   size?: 'sm' | 'md' | 'lg'
   triggerType: TActionConfigTriggerType
   cronSchedule?: string

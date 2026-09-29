@@ -97,9 +97,6 @@ func TestGetRunnerParameters_NestedTemplateDefaults(t *testing.T) {
 		assert.Equal(t, 200.0, *rootVolume.MaxValue)
 	})
 
-	// The stack generators resolve the platform default into Settings.AWSInstanceType before
-	// rendering, which used to mask the template's own default and pin every install to
-	// t3.medium no matter what the runner template declared.
 	t.Run("a resolved settings value does not mask the template default", func(t *testing.T) {
 		inp := runnerTemplateInput(t, "", runnerTemplateWithDefaults)
 		inp.Settings.AWSInstanceType = app.DefaultAWSInstanceType

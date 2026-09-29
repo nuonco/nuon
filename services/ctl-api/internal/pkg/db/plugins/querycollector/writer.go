@@ -9,7 +9,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// WriterConfig configures the buffered ClickHouse writer.
 type WriterConfig struct {
 	DB             *gorm.DB
 	Logger         *zap.Logger
@@ -19,7 +18,6 @@ type WriterConfig struct {
 	FlushInterval  time.Duration
 }
 
-// Writer buffers QueryRecords and flushes them to ClickHouse in batches.
 type Writer struct {
 	cfg       WriterConfig
 	ch        chan CHQueryRecord
@@ -28,7 +26,6 @@ type Writer struct {
 	done      chan struct{}
 }
 
-// NewWriter creates a Writer. Call Start() to begin the background flush loop.
 func NewWriter(cfg WriterConfig) *Writer {
 	if cfg.BufferSize == 0 {
 		cfg.BufferSize = 4096
@@ -42,7 +39,7 @@ func NewWriter(cfg WriterConfig) *Writer {
 	if cfg.DisabledTables == nil {
 		cfg.DisabledTables = make(map[string]struct{})
 	}
-	// Always disable our own table to prevent recursion.
+	// why: Always disable our own table to prevent recursion.
 	cfg.DisabledTables["queries"] = struct{}{}
 
 	hostname, _ := os.Hostname()
@@ -55,7 +52,6 @@ func NewWriter(cfg WriterConfig) *Writer {
 	}
 }
 
-// Write enqueues a record for persistence. Non-blocking; drops if the channel is full.
 func (w *Writer) Write(r QueryRecord) {
 	if _, disabled := w.cfg.DisabledTables[r.Table]; disabled {
 		return
@@ -85,14 +81,12 @@ func (w *Writer) Write(r QueryRecord) {
 	}
 }
 
-// Start begins the background flush goroutine. Call Stop() to shut down.
 func (w *Writer) Start() {
 	ctx, cancel := context.WithCancel(context.Background())
 	w.cancel = cancel
 	go w.loop(ctx)
 }
 
-// Stop signals the flush goroutine to drain and exit, then blocks until done.
 func (w *Writer) Stop() {
 	if w.cancel != nil {
 		w.cancel()
@@ -122,7 +116,6 @@ func (w *Writer) loop(ctx context.Context) {
 				buf = buf[:0]
 			}
 		case <-ctx.Done():
-			// Drain remaining records from the channel.
 			for {
 				select {
 				case rec := <-w.ch:
@@ -146,7 +139,6 @@ func (w *Writer) flush(batch []CHQueryRecord) {
 	if len(batch) == 0 {
 		return
 	}
-	// Copy so the caller can reuse the slice.
 	rows := make([]CHQueryRecord, len(batch))
 	copy(rows, batch)
 

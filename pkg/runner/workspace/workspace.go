@@ -12,35 +12,20 @@ import (
 )
 
 const (
-	// this is a legacy compatibility value, that was used when we _actually_ didn't need a git repo, but waypoint
-	// did not work without having _some_ repo.
 	emptyGithubRepoURL string = "https://github.com/jonmorehouse/empty"
 
-	// DefaultTmpRootDir is the root used when no root is passed in. This allows a user of this workspace to create
-	// workspaces in a different directory
 	DefaultTmpRootDir string = "/tmp"
 
-	// HostActionRootDir is the root the mng process uses for image-backed action
-	// workspaces. mng runs natively on the VM host, where /tmp is tmpfs sized at
-	// a fraction of RAM, so an action writing multi-GiB content there would
-	// consume memory rather than disk. This path is on the root volume.
 	HostActionRootDir string = "/opt/nuon/action-workspaces"
 
-	// HostActionFallbackRootDir is used when the process can't create
-	// HostActionRootDir, which happens when the mng unit's sandboxing leaves /opt
-	// read-only. /var/tmp is on the root volume on a default VM image, unlike
-	// /tmp, so it keeps action content on disk.
 	HostActionFallbackRootDir string = "/var/tmp/nuon-action-workspaces"
 )
 
-// HostActionRoots are the roots an image-backed action workspace can land in,
-// most preferred first. Cleanup has to sweep all of them, since which one a job
-// used depends on what the process could write at the time.
 func HostActionRoots() []string {
 	return []string{HostActionRootDir, HostActionFallbackRootDir, DefaultTmpRootDir}
 }
 
-// ResolveHostActionRoot returns the first root the process can create that is
+// why: ResolveHostActionRoot returns the first root the process can create that is
 // not memory-backed, so a multi-GiB action writes to disk rather than RAM.
 // Landing on a memory-backed root is the failure this exists to prevent, so it
 // is reported rather than silently accepted.
@@ -98,7 +83,6 @@ type Workspace interface {
 	Source() *Source
 	Cleanup(context.Context) error
 
-	// helpers
 	Root() string
 	AbsPath(string) string
 	IsFile(string) bool
@@ -141,21 +125,18 @@ func New(v *validator.Validate, opts ...workspaceOption) (*workspace, error) {
 
 type workspaceOption func(*workspace)
 
-// WithGitSource sets a git source
 func WithGitSource(src *plantypes.GitSource) workspaceOption {
 	return func(obj *workspace) {
 		obj.Src = src
 	}
 }
 
-// WithWorkspaceID sets an ID on the workspace, prefixed for identification.
 func WithWorkspaceID(workspaceID string) workspaceOption {
 	return func(obj *workspace) {
 		obj.ID = "workspace-" + workspaceID
 	}
 }
 
-// WithTmpRoot sets a root temp directory for the workspace
 func WithTmpRoot(root string) workspaceOption {
 	return func(obj *workspace) {
 		obj.TmpRootDir = root

@@ -13,14 +13,6 @@ import (
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
-// SignalType is the queue signal type for triggering a v2 sandbox drift scan.
-//
-// Mirrors the per-component drift-check signal in signals/driftcheck. This
-// one is install-scoped: each install gets a single sandbox drift cron emitter
-// (vs the per-component drift cron). It creates a drift_run_reprovision_sandbox
-// workflow with PlanOnly:true and hands it to the install-workflows queue —
-// the same plan-only execution path used by manual sandbox drift scans, so the
-// drift-detected notification fires from a single hook point.
 const SignalType signal.SignalType = "drift-check-sandbox"
 
 type Signal struct {
@@ -59,7 +51,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}); err != nil {
 		return fmt.Errorf("unable to check whether the install runner is disabled: %w", err)
 	} else if disabled.Disabled {
-		// Scheduled drift checks would otherwise pile up a graveyard of failed
+		// why: Scheduled drift checks would otherwise pile up a graveyard of failed
 		// workflows for the whole time the runner stays disabled.
 		workflow.GetLogger(ctx).Info("install runner is disabled, skipping drift check",
 			"install_id", s.InstallID)

@@ -114,9 +114,6 @@ func (s *AuthStateTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(testOrg).Error
 	require.NoError(s.T(), err)
 	s.testOrg = testOrg
-
-	// Note: Identity provider comes from environment config (default provider)
-	// No need to create test identity provider in DB
 }
 
 func (s *AuthStateTestSuite) makeRequestWithCookie(method, path string, sessionData *SessionData) *httptest.ResponseRecorder {
@@ -192,7 +189,7 @@ func (s *AuthStateTestSuite) TestAuthState() {
 			queryParams: "?state=test-state&code=auth-code",
 			sessionData: &SessionData{
 				State:      "test-state",
-				ProviderID: "", // Missing provider
+				ProviderID: "",
 				CreatedAt:  now,
 			},
 			expectedCode:   http.StatusBadRequest,
@@ -237,15 +234,13 @@ func (s *AuthStateTestSuite) TestAuthState() {
 }
 
 func (s *AuthStateTestSuite) TestAuthStateSessionValidation() {
-	// Test various session validation scenarios
 	testState := "valid-state-123"
 
 	s.Run("expired session", func() {
-		// Create session with old timestamp (expired)
 		sessionData := &SessionData{
 			State:      testState,
 			ProviderID: s.service.Cfg.NuonAuthProviderType,
-			CreatedAt:  1000000000, // Very old timestamp
+			CreatedAt:  1000000000,
 		}
 
 		path := "/auth/" + testState + "?state=" + testState + "&code=auth-code"
@@ -268,9 +263,6 @@ func (s *AuthStateTestSuite) TestAuthStateSessionValidation() {
 		path := "/auth/" + testState + "?state=" + testState + "&code=auth-code"
 		rr := s.makeRequestWithCookie("GET", path, sessionData)
 
-		// Will fail at OAuth exchange since we don't have a real auth code,
-		// but should pass session validation
-		// The actual response code depends on whether OAuth exchange succeeds
 		s.T().Logf("Response code: %d", rr.Code)
 	})
 }
@@ -289,7 +281,6 @@ func (s *AuthStateTestSuite) TestAuthStateRedirectFlow() {
 		path := "/auth/" + testState + "?state=" + testState + "&code=valid-code"
 		rr := s.makeRequestWithCookie("GET", path, sessionData)
 
-		// This will fail at OAuth token exchange in test, but verifies session handling
 		s.T().Logf("Response: code=%d, body=%s", rr.Code, rr.Body.String())
 	})
 
@@ -297,14 +288,13 @@ func (s *AuthStateTestSuite) TestAuthStateRedirectFlow() {
 		sessionData := &SessionData{
 			State:        testState,
 			ProviderID:   s.service.Cfg.NuonAuthProviderType,
-			RequestedURL: "", // No requested URL
+			RequestedURL: "",
 			CreatedAt:    time.Now().Unix(),
 		}
 
 		path := "/auth/" + testState + "?state=" + testState + "&code=valid-code"
 		rr := s.makeRequestWithCookie("GET", path, sessionData)
 
-		// This will fail at OAuth token exchange in test
 		s.T().Logf("Response: code=%d", rr.Code)
 	})
 }

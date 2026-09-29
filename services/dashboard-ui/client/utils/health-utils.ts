@@ -5,7 +5,7 @@ export const HEALTH_HEALTHY = 'healthy'
 export const HEALTH_UNKNOWN = 'unknown'
 export const HEALTH_NOT_APPLICABLE = 'not-applicable'
 
-// Mirrors componentHealthSeverity in the evaluator: unknown and not-applicable
+// why: Mirrors componentHealthSeverity in the evaluator: unknown and not-applicable
 // share zero severity because neither is a verdict — one is "tried and could
 // not tell", the other "nothing here exposes health".
 const HEALTH_SEVERITY: Record<string, number> = {
@@ -27,7 +27,7 @@ export function bearsHealthVerdict(health?: string): boolean {
   return healthSeverity(health) > 0
 }
 
-// Falls back the way the evaluator does when nothing was assessed: unknown
+// why: Falls back the way the evaluator does when nothing was assessed: unknown
 // outranks not-applicable, because "tried and could not tell" is more
 // informative than "nothing here exposes health".
 export function worstHealth(healths: (string | undefined)[]): string {

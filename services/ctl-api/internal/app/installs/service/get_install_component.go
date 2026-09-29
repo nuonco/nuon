@@ -63,8 +63,6 @@ func (s *service) getInstallComponent(ctx context.Context, installID, componentI
 		return nil, fmt.Errorf("unable to get install component: %w", res.Error)
 	}
 
-	// Derived from the newest job, as getInstallDeploy does: a stored mirror would
-	// keep claiming a release is stuck after it was recovered.
 	if len(installCmp.InstallDeploys) > 0 {
 		latest := &installCmp.InstallDeploys[0]
 		compositeError, err := runnershelpers.GetLatestJobCompositeError(ctx, s.db, runnershelpers.GetLatestJobCompositeErrorRequest{

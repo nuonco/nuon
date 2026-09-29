@@ -21,14 +21,12 @@ const (
 	statusError      = "error"
 )
 
-// installVersionStatusVersion gates the per-install config-version status
+// why: installVersionStatusVersion gates the per-install config-version status
 // writes added by the diffing engine; in-flight histories never scheduled
 // those activities between the enqueue and await commands.
 // todo(sk): cleanup after terminating old workflows
 const installVersionStatusVersion = "install-app-config-version-status-v1"
 
-// installMetadataBeforeEnqueueVersion gates the step metadata write that lists
-// the resolved installs before any install workflow is created.
 const installMetadataBeforeEnqueueVersion = "install-metadata-before-enqueue-v1"
 
 const statusPending = "pending"
@@ -114,8 +112,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	completed, failed, awaitErr := s.awaitInstallUpdates(ctx, groupName, enqueued, groupRunID, installEntries)
 
-	// workflow.Now, not time.Now: wall-clock reads are non-deterministic across
-	// replay, so the recorded completion time has to come from workflow time.
 	now := workflow.Now(ctx)
 	finalStatus := app.StatusSuccess
 	desc := fmt.Sprintf("%d/%d installs deployed", completed, len(enqueued))
@@ -227,7 +223,7 @@ func (s *Signal) awaitInstallUpdates(
 			installEntries[i].Status = statusError
 			s.updateInstallAppConfigVersionStatus(ctx, e.installID, app.StatusError, err.Error())
 
-		// Only an "error" result comes back as a Go error, so a cancelled or expired
+		// why: Only an "error" result comes back as a Go error, so a cancelled or expired
 		// deploy arrives here as a clean return and would otherwise be counted as a
 		// successful install.
 		case res == nil || res.Status != statusSuccess:

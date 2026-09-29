@@ -1,4 +1,3 @@
-/* Inter - Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
 
 :root {
@@ -6,7 +5,6 @@
   --font-hack: 'Hack', monospace;
 }
 
-/* Hack - Local Font */
 @font-face {
   font-family: 'Hack';
   src: url('/fonts/hack-regular.woff2') format('woff2');

@@ -8,7 +8,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// Response headers for validated requests
 const (
 	HeaderNuonAuthUser    = "X-Nuon-Auth-User"
 	HeaderNuonAuthEmail   = "X-Nuon-Auth-Email"
@@ -22,27 +21,21 @@ var (
 	errBadHost = errors.New("host not authorized")
 )
 
-// Validate handles the /validate endpoint.
-// This is called by reverse proxies (nginx, etc.) to validate requests.
-// It checks the auth cookie and returns headers with user information.
 func (s *service) Validate(c *gin.Context) {
 	s.l.Debug("/validate")
 
-	// Try to find the token from cookie or Authorization header
 	token := s.findToken(c)
 	if token == "" {
 		s.sendValidateError(c, errNoToken)
 		return
 	}
 
-	// Validate the token and get account info
 	tokenInfo, err := s.validateToken(token)
 	if err != nil {
 		s.sendValidateError(c, err)
 		return
 	}
 
-	// Ensure we have user info
 	if tokenInfo.Email == "" && tokenInfo.Username == "" {
 		s.sendValidateError(c, errNoUser)
 		return
@@ -55,7 +48,6 @@ func (s *service) Validate(c *gin.Context) {
 	//     return
 	// }
 
-	// Set response headers with user information
 	c.Header(HeaderNuonAuthSuccess, "true")
 	c.Header(HeaderNuonAuthUser, tokenInfo.Username)
 	c.Header(HeaderNuonAuthEmail, tokenInfo.Email)
@@ -67,7 +59,6 @@ func (s *service) Validate(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-// sendValidateError sends an appropriate error response for validation failures.
 func (s *service) sendValidateError(c *gin.Context, err error) {
 	s.l.Debug("validate failed", zap.Error(err))
 

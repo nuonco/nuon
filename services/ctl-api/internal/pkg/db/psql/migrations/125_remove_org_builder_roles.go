@@ -9,10 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// Migration125RemoveOrgBuilderRoles retires the deprecated org_builder role: a
-// prod audit (2026-08-07) found no live assignments beyond test artifacts, so
-// every org's org_builder role, its policy, and any remaining assignments are
-// soft-deleted.
 func (m *Migrations) Migration125RemoveOrgBuilderRoles(ctx context.Context, db *gorm.DB) error {
 	const batchSize = 50
 

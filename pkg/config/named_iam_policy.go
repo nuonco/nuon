@@ -4,13 +4,7 @@ import (
 	"github.com/invopop/jsonschema"
 )
 
-// NamedIAMPolicy is a customer-managed IAM policy defined once under
-// permissions and attached to any number of roles. It is not a Kyverno/OPA
-// AppPolicy (those live in the root policies/ directory).
 type NamedIAMPolicy struct {
-	// Name is both the config identifier and the AWS IAM managed policy name.
-	// Roles attach this policy by repeating the same name, matching inline
-	// [[policies]] name = "..." attachments. Supports templating.
 	Name        string `mapstructure:"name" toml:"name" jsonschema:"required" features:"template"`
 	Description string `mapstructure:"description,omitempty" toml:"description,omitempty" features:"template"`
 	Contents    string `mapstructure:"contents" toml:"contents" jsonschema:"required" features:"template,get"`
@@ -40,7 +34,6 @@ func (p NamedIAMPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"logs:*\",\"Resource\":\"*\"}]}")
 }
 
-// NamedPolicyRef attaches a NamedIAMPolicy to a role by name.
 type NamedPolicyRef struct {
 	Name string `mapstructure:"name" toml:"name" json:"name" jsonschema:"required"`
 }

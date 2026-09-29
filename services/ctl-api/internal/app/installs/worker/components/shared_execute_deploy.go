@@ -143,7 +143,6 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		approvalTyp = app.NoopApprovalType
 	}
 
-	// all component types require a plan EXCEPT fro docker builds
 	if job.Execution.Result == nil || (len(job.Execution.Result.Contents) < 1 && len(job.Execution.Result.ContentsGzip) < 1) {
 		if runnerJob.Type != app.RunnerJobTypeJobNOOPDeploy {
 			return errors.New("no plan returned from job")

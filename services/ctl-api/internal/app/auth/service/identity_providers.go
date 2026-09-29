@@ -14,9 +14,6 @@ import (
 
 var errIdentityProviderNotFound = errors.New("identity provider not found")
 
-// getIdentityProviders returns every provider a user can sign in with: the env-configured provider
-// first, then the enabled global providers from the database. Order is the sign-in page's button
-// order.
 func (s *service) getIdentityProviders(ctx context.Context) ([]*app.IdentityProvider, error) {
 	defaultProvider, err := s.getDefaultIdentityProvider()
 	if err != nil {
@@ -26,7 +23,6 @@ func (s *service) getIdentityProviders(ctx context.Context) ([]*app.IdentityProv
 
 	dbProviders, err := s.getIdentityProvidersFromDB(ctx)
 	if err != nil {
-		// Log but don't fail - default provider is sufficient
 		s.l.Warn("failed to load identity providers from database", zap.Error(err))
 	} else {
 		allProviders = append(allProviders, dbProviders...)
@@ -35,8 +31,6 @@ func (s *service) getIdentityProviders(ctx context.Context) ([]*app.IdentityProv
 	return allProviders, nil
 }
 
-// getDefaultIdentityProvider builds an IdentityProvider from environment variables.
-// This provider is required and the service should not start without valid config.
 func (s *service) getDefaultIdentityProvider() (*app.IdentityProvider, error) {
 	providerType := s.cfg.NuonAuthProviderType
 	if providerType == "" {
@@ -100,15 +94,12 @@ func (s *service) getDefaultIdentityProvider() (*app.IdentityProvider, error) {
 		}
 	}
 
-	// the Set*Config helpers reset ProviderType, and the name is not part of the config blob
 	ip.ProviderType = pType
 	ip.Name = s.cfg.NuonAuthProviderName
 
 	return ip, nil
 }
 
-// getIdentityProvidersFromDB fetches all enabled global identity providers from the database.
-// Global providers have no org_id (NULL) and are available to all users.
 func (s *service) getIdentityProvidersFromDB(ctx context.Context) ([]*app.IdentityProvider, error) {
 	var dbProviders []*app.IdentityProvider
 	err := s.db.WithContext(ctx).
@@ -122,9 +113,6 @@ func (s *service) getIdentityProvidersFromDB(ctx context.Context) ([]*app.Identi
 	return dbProviders, nil
 }
 
-// getIdentityProvider resolves the `provider` query param, which is a provider ID. A bare provider
-// type is still accepted so that links minted before providers became individually addressable keep
-// working; it resolves to the first enabled provider of that type.
 func (s *service) getIdentityProvider(ctx context.Context, ref string) (*app.IdentityProvider, error) {
 	if ref == "" {
 		return nil, errIdentityProviderNotFound
@@ -152,8 +140,6 @@ func (s *service) getIdentityProvider(ctx context.Context, ref string) (*app.Ide
 	return s.getIdentityProviderByType(ctx, app.ProviderType(ref))
 }
 
-// getIdentityProviderByType returns the first enabled identity provider of the given type,
-// preferring the env-configured provider.
 func (s *service) getIdentityProviderByType(ctx context.Context, providerType app.ProviderType) (*app.IdentityProvider, error) {
 	defaultProvider, err := s.getDefaultIdentityProvider()
 	if err == nil && defaultProvider.ProviderType == providerType {
@@ -176,7 +162,6 @@ func (s *service) getIdentityProviderByType(ctx context.Context, providerType ap
 	return nil, fmt.Errorf("%w: %s", errIdentityProviderNotFound, providerType)
 }
 
-// createProviderFromIdentityProvider creates a configured Provider from an IdentityProvider model.
 func (s *service) createProviderFromIdentityProvider(ip *app.IdentityProvider) (providers.Provider, error) {
 	switch ip.ProviderType {
 	case app.ProviderTypeOIDC:

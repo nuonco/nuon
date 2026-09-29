@@ -17,20 +17,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-// these parameter values should never be provided by the customer. these are always provided by nuon.
+// why: these parameter values should never be provided by the customer. these are always provided by nuon.
 // as a result, if they are specified as input Params, we ensure the values are configurable only by us
 // by excluding them from the Parameters for the nested stack.
 var ReservedParamNames = []string{"ClusterName", "Namespaces", "NuonInstallID", "NuonAppID", "NuonOrgID"}
 
 func (tpl *Templates) getClusterName(inp *stacks.TemplateInput) string {
-	// NOTE: we need to provide a cluster name to the eks vpc template in order to pre-tag the subnets
-	// historically, we've pre-emptively used the install.id. this is not necessarily the best
-	// because it's forced us to re-tag subnets in the sandbox. that's fine but we prefer it to be
-	// more correct. this method attempts to fetch a cluster_name from the inputs and uses that, if
-	// present.
-	// NOTE: this decision is essentially encoding a convention but this is fine because we consider mapping
-	// one well-known input to a parameter to be uncontroversial.
-
 	if inp.Install.CurrentInstallInputs != nil {
 		if val, ok := inp.Install.CurrentInstallInputs.Values["cluster_name"]; ok && val != nil {
 			return *val
@@ -40,28 +32,24 @@ func (tpl *Templates) getClusterName(inp *stacks.TemplateInput) string {
 	return inp.Install.ID
 }
 
-// VPCNestedStack returns a nested stack template for VPC resources
 func (tpl *Templates) getVPCNestedStack(inp *stacks.TemplateInput, t tagBuilder) (*nestedcloudformation.Stack, map[string]cloudformation.Parameter, map[string]struct{}, error) {
 	parameters, defaultParameters, reservedInTemplate, outputs, err := tpl.extractNestedStackParameters(inp.AppCfg.StackConfig.VPCNestedTemplateURL)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("VPC nested stack: %w", err)
 	}
 
-	// these common params should always be set by nuon so they are explicitly
-	// set aside so they can override any template values
 	commonParams := map[string]string{
 		"NuonInstallID": inp.Install.ID,
 		"NuonAppID":     inp.Install.AppID,
 		"NuonOrgID":     inp.Install.OrgID,
 	}
 
-	// only include ClusterName if the nested template defines it as a parameter,
+	// why: only include ClusterName if the nested template defines it as a parameter,
 	// otherwise CloudFormation will fail with an unknown parameter error
 	if reservedInTemplate["ClusterName"] {
 		commonParams["ClusterName"] = tpl.getClusterName(inp)
 	}
 
-	// merge specific params into common params
 	maps.Copy(parameters, commonParams)
 
 	stack := &nestedcloudformation.Stack{

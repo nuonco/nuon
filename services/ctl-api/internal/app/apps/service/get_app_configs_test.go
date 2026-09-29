@@ -23,7 +23,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// AppConfigsTestSuite is the testify suite for app config endpoints.
 type AppConfigsTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -44,9 +43,6 @@ func TestAppConfigsSuite(t *testing.T) {
 	suite.Run(t, new(AppConfigsTestSuite))
 }
 
-// skipBlobTestsInCI: these tests upload intermediate configs as blobs to the
-// KMS-encrypted nuon-dev bucket, and the CI runner role lacks
-// kms:GenerateDataKey until the self-hosted-runners KMS policy change is applied.
 func (s *AppConfigsTestSuite) skipBlobTestsInCI() {
 	if os.Getenv("CI") == "true" {
 		s.T().Skip("uploads config blobs to the KMS-encrypted nuon-dev bucket; the CI runner role lacks kms:GenerateDataKey until the self-hosted-runners KMS policy change is applied")
@@ -158,7 +154,6 @@ func (s *AppConfigsTestSuite) makeRequestWithBody(method, path string, body inte
 	return rr
 }
 
-// TestGetAppConfigsReturnsEmptyArrayWhenNoConfigs tests GET /v1/apps/:app_id/configs with no configs.
 func (s *AppConfigsTestSuite) TestGetAppConfigsReturnsEmptyArrayWhenNoConfigs() {
 	path := fmt.Sprintf("/v1/apps/%s/configs", s.testApp.ID)
 	rr := s.makeGetRequest(http.MethodGet, path)

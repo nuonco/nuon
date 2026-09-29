@@ -50,7 +50,6 @@ type CreateOnboardingInstallResponse struct {
 // @start-to-close-timeout 5m
 // @as-wrapper
 func (a *Activities) createOnboardingInstall(ctx context.Context, input *CreateOnboardingInstallInput) (*CreateOnboardingInstallResponse, error) {
-	// Load org from onboarding — needed for GORM BeforeCreate hooks (OrgID)
 	var onboarding app.Onboarding
 	if err := a.db.WithContext(ctx).First(&onboarding, "id = ?", input.OnboardingID).Error; err != nil {
 		return nil, fmt.Errorf("unable to get onboarding: %w", err)
@@ -96,7 +95,6 @@ func (a *Activities) createOnboardingInstall(ctx context.Context, input *CreateO
 		return nil, fmt.Errorf("unable to create install: %w", err)
 	}
 
-	// Create provision workflow
 	workflow, err := a.installsHelpers.CreateWorkflow(ctx,
 		install.ID,
 		app.WorkflowTypeProvision,
@@ -135,7 +133,6 @@ func (a *Activities) createOnboardingInstall(ctx context.Context, input *CreateO
 	}); err != nil {
 		return nil, fmt.Errorf("enqueue executeflow signal: %w", err)
 	}
-	// reconcile cron/drift emitters from app config triggers
 	if _, err := a.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 		QueueID: signalsQueue.ID,
 		Signal:  &appconfigupdated.Signal{InstallID: install.ID},

@@ -20,9 +20,6 @@ import (
 	pkgop "github.com/nuonco/nuon/pkg/runner/op"
 )
 
-// renderedManifest is what the chart produced this run: the applied release when
-// there is one, otherwise the plan's template output. An uninstall renders the
-// objects being removed, so it is skipped rather than recorded as owned.
 func renderedManifest(rel *release.Release, plan HelmPlanContents) string {
 	if rel != nil {
 		return rel.Manifest
@@ -33,27 +30,21 @@ func renderedManifest(rel *release.Release, plan HelmPlanContents) string {
 	return plan.TemplateOutput
 }
 
-// Use the common diff package for the plan contents
 type HelmPlanContents struct {
 	Diff           string              `json:"plan"`
 	Op             string              `json:"op"`
 	ContentDiff    []diff.ResourceDiff `json:"helm_content_diff"`
 	TemplateOutput string              `json:"template_output,omitempty"`
 
-	// an empty diff only means "nothing to do" when the release is actually deployed
 	ReleaseStatus string `json:"helm_release_status,omitempty"`
 }
 
-// Modify Exec function to use the common diff package
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return err
 	}
 
-	// Tag this handler's logger with semantic-convention attributes so every
-	// emitted record (including those from helpers further down the call tree
-	// that read the logger from ctx) carries them automatically.
 	l = l.With(
 		zap.String("service.name", "runner.helm"),
 		zap.String("nuon.tool", "helm"),
@@ -64,8 +55,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	)
 	ctx = pkgctx.SetLogger(ctx, l)
 
-	// Share the cluster access with the component-health engine so it can watch
-	// this component's resources (the runner may not be in the cluster).
 	if h.clusterProvider != nil {
 		h.clusterProvider.Set(h.state.plan.HelmDeployPlan.ClusterInfo)
 	}
@@ -78,7 +67,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return fmt.Errorf("unable to initialize helm actions: %w", err)
 	}
 
-	// set the release storage backend dynamically
 	releaseStore, err := h.getHelmReleaseStore(ctx, kubeCfg)
 	if err != nil {
 		return errors.Wrap(err, "unable to get release store")
@@ -86,9 +74,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	actionCfg.Releases = releaseStore
 
-	// A recovery job unsticks a pending release and stops. It is handled before
-	// the operation switch because it shares nothing with the apply path: no
-	// chart, no diff, no plan contents to honour.
 	if job.Operation == models.AppRunnerJobOperationTypeApplyDashPlan && h.isRecovery() {
 		opCtx, end := pkgop.Tool(ctx, "helm", "recover")
 		opLog := pkgctx.LoggerOrDefault(opCtx, l)
@@ -117,9 +102,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		helmPlan HelmPlanContents
 	)
 
-	// Load helm plan from the plan
 	if len(h.state.plan.ApplyPlanContents) > 0 {
-		// Use the new plans utility to decompress and decode the plan
 		l.Debug("extracting apply plan contents", zap.Int("contents.compressed.length", len(h.state.plan.ApplyPlanContents)))
 		decompressedPlan, err := plans.DecompressPlan(h.state.plan.ApplyPlanContents)
 		if err != nil {
@@ -133,7 +116,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		l.Debug("extracting apply plan contents", zap.String("plan.op", helmPlan.Op))
 	}
 
-	// A pending release breaks the plan's dry-run as well as the apply, and helm's
+	// why: A pending release breaks the plan's dry-run as well as the apply, and helm's
 	// own errors there are ambiguous ("cannot reuse a name that is still in use"
 	// also means a genuine name collision). Failing here instead names the status
 	// and revision, which is what the operator needs to act on.
@@ -148,7 +131,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		var contentDiff *[]diff.ResourceDiff
 		var templateOutput string
 		var err error
-		// in this case, the diff is generated so it is available to the createAPIResult method
 		if prevRel == nil {
 			helmPlan.Op = "install"
 			l = l.With(zap.String("helm.operation", helmPlan.Op))
@@ -255,13 +237,12 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return fmt.Errorf("unsupported run type %s", job.Operation)
 	}
 
-	// handle error
 	if err != nil {
 		h.writeErrorResult(ctx, op, err)
 		return fmt.Errorf("unable to %s helm chart: %w", op, err)
 	}
 
-	// Hand the rendered kinds to the health engine: a chart shipping only custom
+	// why: Hand the rendered kinds to the health engine: a chart shipping only custom
 	// resources is otherwise invisible, since nothing else knows to list them.
 	// The release secret is the only other copy and health is denied secret
 	// reads, so the deploy is where this has to happen.
@@ -277,7 +258,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	var apiRes *models.ServiceCreateRunnerJobExecutionResultRequest
 	var planContents HelmPlanContents
 
-	// save plan if its not apply job operation is not apply
 	if job.Operation != models.AppRunnerJobOperationTypeApplyDashPlan {
 		planContents = helmPlan
 	}

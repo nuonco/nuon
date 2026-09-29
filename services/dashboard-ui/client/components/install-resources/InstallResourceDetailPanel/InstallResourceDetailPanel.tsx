@@ -48,9 +48,6 @@ export const InstallResourceDetailPanel = ({
             <Icon variant="MinusIcon" />
           )}
         </LabeledValue>
-        {/* Kubernetes-shaped fields are omitted rather than shown empty: a probe
-            or custom check has no namespace, api group, or native status, and a
-            column of dashes reads as missing data rather than not applicable. */}
         {resource?.namespace ? (
           <LabeledValue label="Namespace">{resource.namespace}</LabeledValue>
         ) : null}

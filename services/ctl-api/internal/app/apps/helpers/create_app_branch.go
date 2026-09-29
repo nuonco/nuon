@@ -13,8 +13,6 @@ import (
 )
 
 const (
-	// DefaultAppBranchName is the branch `nuon apps sync` routes through when the org
-	// has default-app-branches on; the CLI holds the same value in sync_branch.go.
 	DefaultAppBranchName = "default"
 
 	DefaultAppBranchInstallGroupName = "default"
@@ -37,7 +35,7 @@ func (h *Helpers) CreateAppBranch(
 	return branch, nil
 }
 
-// Queue creation starts Temporal workflows, so a transactional caller must call
+// why: Queue creation starts Temporal workflows, so a transactional caller must call
 // EnsureAppBranchQueues itself once committed.
 func (h *Helpers) CreateAppBranchWithDB(
 	ctx context.Context,
@@ -57,7 +55,6 @@ func (h *Helpers) CreateAppBranchWithDB(
 		ManagedBy: managedBy,
 	}
 
-	// Create branch first to get ID
 	if err := db.WithContext(ctx).Create(&branch).Error; err != nil {
 		return nil, fmt.Errorf("unable to create app branch: %w", err)
 	}

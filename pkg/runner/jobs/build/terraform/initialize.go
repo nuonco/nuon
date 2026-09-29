@@ -17,7 +17,6 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 		return err
 	}
 
-	// create a new workspace here
 	wkspace, err := workspace.New(h.v,
 		workspace.WithLogger(l),
 		workspace.WithGitSource(h.state.plan.Src),

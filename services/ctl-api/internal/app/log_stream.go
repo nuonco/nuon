@@ -38,8 +38,6 @@ type LogStream struct {
 
 	RunnerJobs []RunnerJob `json:"-" temporaljson:"runner_jobs,omitzero,omitempty"`
 
-	// fields not stored in the DB
-
 	WriteToken   string `json:"write_token,omitzero" gorm:"-" temporaljson:"write_token,omitzero,omitempty"`
 	RunnerAPIURL string `json:"runner_api_url,omitzero" gorm:"-" temporaljson:"runner_apiurl,omitzero,omitempty"`
 }

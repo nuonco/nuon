@@ -1,6 +1,5 @@
 package generics
 
-// Error interface defines the Error() string method.
 type Error interface {
 	Error() string
 }

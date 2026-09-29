@@ -14,7 +14,6 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/services/version"
 )
 
-// ParseManifest parses a nuon-ext.toml file from raw bytes.
 func ParseManifest(data []byte) (*ExtensionManifest, error) {
 	var m ExtensionManifest
 	if err := toml.Unmarshal(data, &m); err != nil {
@@ -23,8 +22,6 @@ func ParseManifest(data []byte) (*ExtensionManifest, error) {
 	return &m, nil
 }
 
-// FetchManifest fetches and parses nuon-ext.toml from a GitHub repo at a given ref.
-// It uses the GitHub contents API to get the file content.
 func FetchManifest(repo, ref string) (*ExtensionManifest, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/contents/nuon-ext.toml", repo)
 	if ref != "" {
@@ -56,7 +53,6 @@ func FetchManifest(repo, ref string) (*ExtensionManifest, error) {
 		return nil, fmt.Errorf("unable to read response: %w", err)
 	}
 
-	// GitHub contents API returns JSON with base64-encoded content
 	var contents struct {
 		Content  string `json:"content"`
 		Encoding string `json:"encoding"`
@@ -77,7 +73,6 @@ func FetchManifest(repo, ref string) (*ExtensionManifest, error) {
 	return ParseManifest(decoded)
 }
 
-// ValidateManifest checks that a manifest has required fields and the name matches the repo suffix.
 func ValidateManifest(m *ExtensionManifest, repoName string) error {
 	if m.Extension.Name == "" {
 		return fmt.Errorf("extension.name is required in nuon-ext.toml")
@@ -86,9 +81,7 @@ func ValidateManifest(m *ExtensionManifest, repoName string) error {
 		return fmt.Errorf("extension.description is required in nuon-ext.toml")
 	}
 
-	// Check that the name matches the repo suffix (nuon-ext-<name>)
 	expectedSuffix := "nuon-ext-" + m.Extension.Name
-	// repoName may be "nuonco/nuon-ext-foo" or just "nuon-ext-foo"
 	parts := strings.Split(repoName, "/")
 	actual := parts[len(parts)-1]
 	if actual != expectedSuffix {
@@ -98,7 +91,6 @@ func ValidateManifest(m *ExtensionManifest, repoName string) error {
 	return nil
 }
 
-// CheckCLIVersion checks if the current CLI version meets the extension's minimum version requirement.
 func CheckCLIVersion(m *ExtensionManifest) error {
 	if m.Extension.MinCLIVersion == "" {
 		return nil

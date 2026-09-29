@@ -31,8 +31,6 @@ func (s *service) AdminDeleteOrg(ctx *gin.Context) {
 
 	var req AdminDeleteOrgRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		// ShouldBindJSON returns error for invalid JSON but accepts empty body
-		// For empty body, Force defaults to false which is the desired behavior
 		if err.Error() != "EOF" {
 			ctx.Error(stderr.ErrUser{
 				Err:         fmt.Errorf("unable to parse request: %w", err),
@@ -48,7 +46,6 @@ func (s *service) AdminDeleteOrg(ctx *gin.Context) {
 		return
 	}
 
-	// Validate that all apps have been deprovisioned before allowing org deletion
 	var orgWithApps app.Org
 	if err := s.db.WithContext(ctx).Preload("Apps").First(&orgWithApps, "id = ?", org.ID).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to check org apps: %w", err))

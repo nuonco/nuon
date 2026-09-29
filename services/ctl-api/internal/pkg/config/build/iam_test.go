@@ -26,8 +26,6 @@ func TestValidateAzureBuiltInRoles(t *testing.T) {
 		}
 	})
 
-	// Without this the value is forwarded to ARM verbatim and the customer's
-	// stack deploy fails with InvalidRoleDefinitionId.
 	t.Run("unknown name is rejected at sync", func(t *testing.T) {
 		err := ValidateAzureBuiltInRoles("install-preview-operations", []config.AppAWSIAMPolicy{
 			{Name: "k8s", AzureBuiltInRoles: []string{"Azure Kubernetes Service RBAC Readr"}},

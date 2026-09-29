@@ -22,12 +22,10 @@ func (h *handler) parseOutputs(ctx context.Context) (map[string]interface{}, err
 	steps := make(map[string]any, 0)
 	merged := make(map[string]interface{}, 0)
 
-	// build the list of step configs to read outputs from
 	var stepCfgs []*models.AppActionWorkflowStepConfig
 	if h.state.workflowCfg != nil {
 		stepCfgs = h.state.workflowCfg.Steps
 	} else {
-		// for adhoc actions, build configs from run steps
 		for idx, step := range h.state.run.Steps {
 			if step.AdhocConfig != nil {
 				stepCfgs = append(stepCfgs, &models.AppActionWorkflowStepConfig{

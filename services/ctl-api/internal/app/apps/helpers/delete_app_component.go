@@ -31,7 +31,6 @@ func (s *Helpers) DeleteAppComponent(ctx context.Context, compID string) error {
 		return fmt.Errorf("unable to get app latest config: %w", err)
 	}
 
-	// Check if the component is part of the current app config, if so, do not allow deletion.
 	if appCfg != nil && slices.Contains(appCfg.ComponentIDs, compID) {
 		msg := fmt.Sprintf("unable to delete component %s as it's a part of current app config", compID)
 		return stderr.ErrUser{
@@ -40,7 +39,6 @@ func (s *Helpers) DeleteAppComponent(ctx context.Context, compID string) error {
 		}
 	}
 
-	// Check if any active installs are using this component, if so, do not allow deletion.
 	{
 		installs, err := s.GetAppInstalls(ctx, appID)
 		if err != nil {
@@ -49,7 +47,6 @@ func (s *Helpers) DeleteAppComponent(ctx context.Context, compID string) error {
 
 		activeInstalls := make([]string, 0)
 		for _, inst := range installs {
-			// if an install was never attempted, it does not need to be polled
 			if len(inst.InstallSandboxRuns) < 1 {
 				continue
 			}
@@ -79,7 +76,6 @@ func (s *Helpers) DeleteAppComponent(ctx context.Context, compID string) error {
 		}
 	}
 
-	// Mark component to signal it is queued for deletion.
 	res = s.db.WithContext(ctx).Model(&comp).Updates(app.Component{
 		Status:            app.ComponentStatusDeleteQueued,
 		StatusDescription: "delete has been queued and waiting",

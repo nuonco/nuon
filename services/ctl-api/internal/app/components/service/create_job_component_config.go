@@ -124,7 +124,6 @@ func (s *service) CreateAppJobComponentConfig(ctx *gin.Context) {
 		return
 	}
 
-	// reuse the same logic as non-app scoped endpoint
 	s.CreateJobComponentConfig(ctx)
 }
 

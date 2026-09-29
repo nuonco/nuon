@@ -25,8 +25,6 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-// planCompositeErrorVersion gates composite-error recording for plan render
-// failures. New histories write the error; replaying old histories skip it.
 const planCompositeErrorVersion = "provision-sandbox-plan-composite-error-v1"
 
 const SignalType signal.SignalType = "provision-sandbox-plan"
@@ -213,7 +211,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return fmt.Errorf("install sandbox id is required")
 	}
 
-	// Validate install sandbox exists
 	_, err := activities.AwaitGetInstallForSandboxBySandboxID(ctx, s.InstallSandboxID)
 	if err != nil {
 		return fmt.Errorf("unable to get install for sandbox: %w", err)
@@ -367,7 +364,6 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 		return fmt.Errorf("unable to record install role usage: %w", err)
 	}
 
-	// queue job
 	l.Info("queued job and waiting on it to be picked up by runner")
 	status, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		JobID:    runnerJob.ID,

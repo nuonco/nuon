@@ -28,7 +28,6 @@ func TestBuildComponentsForceSelection(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var suite testsuite.WorkflowTestSuite
 			env := suite.NewTestWorkflowEnvironment()
-			// loaded CI runners starve the workflow goroutine past the 1s default
 			env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 			sig := &Signal{RunID: "run-1"}
 

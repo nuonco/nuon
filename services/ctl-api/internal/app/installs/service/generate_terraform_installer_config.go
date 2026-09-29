@@ -47,16 +47,6 @@ func (s *service) genTerraformInstallerConfig(ctx context.Context, installID str
 		return "", err
 	}
 
-	// For installs whose stack-generation workflow has already produced a
-	// tfvars file (GCP installs, and AWS installs which now always render a
-	// Terraform tfvars envelope alongside the CloudFormation template), the
-	// tfvars are stored on the latest InstallStackVersion as a JSON envelope
-	// with the inputs and secrets split into separate bodies:
-	// {"inputs_tfvars": "<hcl>", "secrets_tfvars": "<hcl>"}. AWS installs put
-	// the envelope in TerraformContents (so the CFN template can stay in
-	// Contents); GCP keeps it in Contents. Try TerraformContents first, then
-	// fall back to Contents. This single-file endpoint concatenates both bodies
-	// — the dashboard offers them as separate downloads.
 	var version app.InstallStackVersion
 	if res := s.db.WithContext(ctx).
 		Where(app.InstallStackVersion{InstallID: install.ID}).
@@ -79,7 +69,6 @@ func (s *service) genTerraformInstallerConfig(ctx context.Context, installID str
 		}
 	}
 
-	// Legacy fallback: emit a minimal tfvars block with phone-home URL.
 	runnerGroup, err := s.getInstallRunnerGroup(ctx, installID)
 	if err != nil {
 		return "", err

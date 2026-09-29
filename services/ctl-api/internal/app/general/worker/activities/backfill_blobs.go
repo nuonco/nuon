@@ -19,7 +19,7 @@ const (
 	blobBackfillContentType          = "application/octet-stream"
 )
 
-// blobBackfillTargets whitelists the tables/columns the backfill is allowed to
+// why: blobBackfillTargets whitelists the tables/columns the backfill is allowed to
 // touch. Table and column names are interpolated into SQL, so they must never
 // come from request input — only from this map.
 var blobBackfillTargets = map[string]blobBackfillTarget{
@@ -34,20 +34,11 @@ var blobBackfillTargets = map[string]blobBackfillTarget{
 type blobBackfillTarget struct {
 	originColumn string
 	blobColumn   string
-	// jsonSemantic compares the blob against its origin column as parsed JSON
-	// rather than byte-for-byte. Required for jsonb origin columns, whose
-	// Postgres serialization differs from the Go-marshaled bytes uploaded to S3.
 	jsonSemantic bool
-	// binary marks a bytea origin column: it is read raw rather than cast to
-	// text (a ::text cast would yield Postgres hex escapes, not the bytes), and
-	// compared byte-for-byte.
-	binary bool
-	// noSoftDelete marks a table without a deleted_at column, so the
-	// "deleted_at = 0" predicate must be skipped (it would be a SQL error).
+	binary       bool
 	noSoftDelete bool
 }
 
-// contentExpr selects the origin column's bytes: raw for bytea, ::text otherwise.
 func (t blobBackfillTarget) contentExpr() string {
 	if t.binary {
 		return t.originColumn
@@ -55,8 +46,6 @@ func (t blobBackfillTarget) contentExpr() string {
 	return t.originColumn + "::text"
 }
 
-// applyNotDeleted adds the soft-delete predicate unless the target's table has
-// no deleted_at column.
 func (t blobBackfillTarget) applyNotDeleted(q *gorm.DB) *gorm.DB {
 	if t.noSoftDelete {
 		return q
@@ -67,8 +56,7 @@ func (t blobBackfillTarget) applyNotDeleted(q *gorm.DB) *gorm.DB {
 type BackfillBlobsRequest struct {
 	Table     string `json:"table"`
 	BatchSize int    `json:"batch_size"`
-	// Day scopes the batch to a single UTC calendar day ("2006-01-02"); empty means the whole table.
-	Day string `json:"day"`
+	Day       string `json:"day"`
 }
 
 type BackfillBlobsResponse struct {
@@ -84,8 +72,6 @@ type ListBlobDaysResponse struct {
 }
 
 const (
-	// dayLayout is the Go layout; pgDayFormat is the equivalent Postgres to_char
-	// template — they are NOT interchangeable (different pattern languages).
 	dayLayout   = "2006-01-02"
 	pgDayFormat = "YYYY-MM-DD"
 )
@@ -208,7 +194,7 @@ func (a *Activities) ListBackfillDays(ctx context.Context, req ListBlobDaysReque
 	return &ListBlobDaysResponse{Days: days}, nil
 }
 
-// listBlobDays returns the distinct UTC days with a non-null origin column,
+// why: listBlobDays returns the distinct UTC days with a non-null origin column,
 // optionally narrowed by blobPredicate. table/predicate/column come only from the
 // whitelist map — never request input — since they are interpolated into SQL.
 func (a *Activities) listBlobDays(ctx context.Context, table string, target blobBackfillTarget, blobPredicate string) ([]string, error) {
@@ -228,8 +214,6 @@ func (a *Activities) listBlobDays(ctx context.Context, table string, target blob
 	return days, nil
 }
 
-// whereDay scopes a query to rows created within a single UTC calendar day. An
-// empty day is a no-op.
 func whereDay(q *gorm.DB, day string) (*gorm.DB, error) {
 	if day == "" {
 		return q, nil

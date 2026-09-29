@@ -43,7 +43,6 @@ func (s *vcsIntegrationTestSuite) SetupTest() {
 
 func (s *vcsIntegrationTestSuite) TestCreateConnection() {
 	s.T().Run("success", func(t *testing.T) {
-		// add a vcs connection to the org
 		vcsReq := generics.GetFakeObj[*models.ServiceCreateConnectionRequest]()
 		vcs, err := s.apiClient.CreateVCSConnection(s.ctx, vcsReq)
 		require.Nil(t, err)
@@ -61,7 +60,6 @@ func (s *vcsIntegrationTestSuite) TestCreateConnectionCallback() {
 	s.apiClient.SetOrgID("")
 
 	s.T().Run("success", func(t *testing.T) {
-		// add a vcs connection to the org
 		vcsReq := generics.GetFakeObj[*models.ServiceCreateConnectionCallbackRequest]()
 		vcsReq.OrgID = generics.ToPtr(s.orgID)
 
@@ -99,7 +97,6 @@ func (s *vcsIntegrationTestSuite) TestGetConnections() {
 	require.NotNil(s.T(), vcs)
 
 	s.T().Run("success", func(t *testing.T) {
-		// add a vcs connection to the org
 		vcs, _, err := s.apiClient.GetVCSConnections(s.ctx, nil)
 		require.Nil(t, err)
 		require.NotNil(t, vcs)
@@ -113,7 +110,6 @@ func (s *vcsIntegrationTestSuite) TestGetConnection() {
 	require.NotNil(s.T(), vcs)
 
 	s.T().Run("success", func(t *testing.T) {
-		// add a currentVCS connection to the org
 		currentVCS, err := s.apiClient.GetVCSConnection(s.ctx, vcs.ID)
 		require.Nil(t, err)
 		require.NotNil(t, currentVCS)
@@ -129,18 +125,3 @@ func (s *vcsIntegrationTestSuite) TestGetConnection() {
 // 			t.Skip("skipping because INTEGRATION_GITHUB_INSTALL_ID is not set")
 // 			return
 // 		}
-
-// 		repos, _, err := s.apiClient.GetAllVCSConnectedRepos(s.ctx, nil)  // func no longer exists
-// 		require.NoError(t, err)
-// 		require.NotEmpty(t, repos)
-
-// 		found := false
-// 		for _, repo := range repos {
-// 			if *repo.Name == "mono" {
-// 				found = true
-// 				break
-// 			}
-// 		}
-// 		require.True(t, found)
-// 	})
-// }

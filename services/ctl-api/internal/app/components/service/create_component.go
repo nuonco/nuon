@@ -58,14 +58,12 @@ func (s *service) CreateComponent(ctx *gin.Context) {
 		return
 	}
 
-	// create component
 	component, err := s.createComponent(ctx, appID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create component: %w", err))
 		return
 	}
 
-	// validate to make sure graph does not have cycles
 	if err = s.appsHelpers.ValidateGraph(ctx, appID); err != nil {
 		ctx.Error(fmt.Errorf("invalid graph: %w", err))
 		return

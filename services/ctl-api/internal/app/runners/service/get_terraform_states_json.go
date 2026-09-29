@@ -65,7 +65,6 @@ func (s *service) GetTerraformWorkspaceStatesJSON(ctx *gin.Context) {
 		return
 	}
 
-	// Validate workspace belongs to org
 	if _, err := s.getWorkspace(ctx, workspaceID); err != nil {
 		ctx.Error(fmt.Errorf("unable to get workspace: %w", err))
 		return
@@ -91,7 +90,6 @@ func (s *service) GetTerraformStatesJSON(ctx *gin.Context, workspaceID string) (
 	query := s.db.WithContext(ctx).Model(&app.TerraformWorkspaceStateJSON{}).
 		Scopes(scopes.WithOffsetPagination).Where("workspace_id = ?", workspaceID)
 
-	// include_contents=true returns raw state bytes (used by pulumi state download)
 	if ctx.Query("include_contents") == "true" {
 		query = query.Select("*")
 	} else {

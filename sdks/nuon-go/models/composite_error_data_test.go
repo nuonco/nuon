@@ -5,11 +5,6 @@ import (
 	"testing"
 )
 
-// A composite error's `data` is a polymorphic, per-error-type object (e.g. the
-// marshaled AWSPermissionError). It must decode into the generated model as an
-// arbitrary object, not a typed array. Regression guard for the "failed to
-// fetch deploys" outage, where `data` was generated as []int64 and every deploy
-// carrying a composite error failed to unmarshal in the dashboard BFF.
 func TestCompositeErrorDataDecodesObjectPayload(t *testing.T) {
 	const awsPermissionErr = `{
 		"version": 1,
@@ -36,8 +31,6 @@ func TestCompositeErrorDataDecodesObjectPayload(t *testing.T) {
 		}
 	})
 
-	// The install deploy list is the surface that broke: a single deploy with a
-	// composite error poisoned the whole response decode in the BFF.
 	t.Run("embedded in deploy", func(t *testing.T) {
 		payload := `{"id": "dpl123", "composite_error": ` + awsPermissionErr + `}`
 		var d AppInstallDeploy

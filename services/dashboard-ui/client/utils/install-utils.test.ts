@@ -9,7 +9,6 @@ import {
   groupComponentOverrideInputs,
 } from './install-utils'
 
-// hex-encoded component names used by the reserved synthetic input naming scheme
 const HEX = {
   certificate: '6365727469666963617465',
   api_gateway: '6170695f67617465776179',

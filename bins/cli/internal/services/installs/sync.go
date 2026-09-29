@@ -74,8 +74,6 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, conf
 				continue
 			}
 
-			// Check if the install is managed by Nuon CLI config.
-			// If not, return an error to prevent overwriting.
 			if appInstall.Metadata["managed_by"] != ManagedByNuonCLIConfig {
 				return ui.PrintError(fmt.Errorf("install %s is not managed by an install config file, aborting sync to prevent overwriting", installCfg.Name))
 			}
@@ -248,7 +246,7 @@ func readInstallConfigsFromDir(fileOrDir string) ([]*config.Install, error) {
 		}
 
 		if info.IsDir() {
-			return nil // Skip directories
+			return nil
 		}
 
 		if strings.HasSuffix(info.Name(), ".toml") {
@@ -291,7 +289,6 @@ func parseInstallConfig(raw io.Reader) (*config.Install, error) {
 		return nil, fmt.Errorf("error decoding TOML: %w", err)
 	}
 
-	// go from map[string]interface{} => config.Install
 	var cfg config.Install
 	mapDecCfg := config.DecoderConfig()
 	mapDecCfg.Result = &cfg

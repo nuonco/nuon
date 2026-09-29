@@ -14,7 +14,6 @@ type GetComponentByNameRequest struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) GetComponentByName(ctx context.Context, req GetComponentByNameRequest) (*app.Component, error) {
-	// Get the install to find its app
 	var install app.Install
 	res := a.db.WithContext(ctx).First(&install, "id = ?", req.InstallID)
 	if res.Error != nil {

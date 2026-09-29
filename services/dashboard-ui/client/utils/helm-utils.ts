@@ -42,12 +42,10 @@ export function parseHelmPlan(plan: THelmPlan): {
       let after: string | null = null
 
       if (diff) {
-        // Check if this diff has direct before/after properties (old format)
         if (diff.before !== undefined && diff.after !== undefined) {
           before = diff.before
           after = diff.after
         }
-        // Or if it has entries array (new format)
         else if (diff.entries && Array.isArray(diff.entries)) {
           const result = buildBeforeAfterStrings(diff.entries)
           before = result.before
@@ -89,18 +87,15 @@ function buildBeforeAfterStrings(entries: any[]): {
 
   entries.forEach((entry) => {
     if (entry.type === 0) {
-      // Unchanged lines - add to both before and after
       if (entry.payload) {
         beforeLines.push(entry.payload)
         afterLines.push(entry.payload)
       }
     } else if (entry.type === 1) {
-      // Before value (removal) - lines that existed before
       if (entry.payload) {
         beforeLines.push(entry.payload)
       }
     } else if (entry.type === 2) {
-      // After value (addition) - lines that will exist after
       if (entry.payload) {
         afterLines.push(entry.payload)
       }

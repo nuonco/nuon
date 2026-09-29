@@ -13,14 +13,11 @@ import (
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
-// USAGE: go run ... this file
-// NOTE: contributed by claude
 func main() {
 	fmt.Println()
 	fmt.Println(styles.TextBold.Render("🎨 NUON CLI LIPGLOSS STYLE PALETTE"))
 	fmt.Println()
 
-	// Color Palette Section
 	fmt.Println(styles.TextBold.Render("📍 COLOR PALETTE"))
 	fmt.Println()
 
@@ -39,7 +36,6 @@ func main() {
 	fmt.Println(colorTable.Render())
 	fmt.Println()
 
-	// Text Styles Section
 	fmt.Println(styles.TextBold.Render("✨ TEXT STYLES"))
 	fmt.Println()
 
@@ -71,7 +67,6 @@ func main() {
 	fmt.Println(textTable.Render())
 	fmt.Println()
 
-	// Status Styles Section
 	fmt.Println(styles.TextBold.Render("🚦 STATUS STYLES"))
 	fmt.Println()
 
@@ -104,7 +99,6 @@ func main() {
 	fmt.Println(statusTable.Render())
 	fmt.Println()
 
-	// Banner Styles Section
 	fmt.Println(styles.TextBold.Render("🎯 BANNER STYLES"))
 	fmt.Println()
 
@@ -116,7 +110,6 @@ func main() {
 	fmt.Println(styles.SuccessBanner.Render("🎉 Deployment completed successfully!"))
 	fmt.Println()
 
-	// Log Message Style
 	fmt.Println(styles.TextBold.Render("📋 LOG MESSAGE STYLE"))
 	fmt.Println()
 	fmt.Println(styles.LogMessageStyle.Render("2024-01-01 12:00:00 INFO: Application started successfully"))
@@ -124,7 +117,6 @@ func main() {
 	fmt.Println(styles.LogMessageStyle.Render("2024-01-01 12:00:02 WARN: High memory usage detected"))
 	fmt.Println()
 
-	// Help Style
 	fmt.Println(styles.TextBold.Render("❓ HELP STYLE"))
 	fmt.Println()
 	helpContent := `This is an example of help content that would be displayed to users.
@@ -133,23 +125,19 @@ Use this style for help messages and documentation.`
 	fmt.Println(styles.HelpStyle.Render(helpContent))
 	fmt.Println()
 
-	// Common Elements Section
 	fmt.Println(styles.TextBold.Render("🧩 COMMON ELEMENTS"))
 	fmt.Println()
 
-	// Humanized Duration Examples
 	fmt.Println(styles.TextBold.Render("Duration Formatting:"))
-	durations := []int64{0, 5000000000, 90000000000, 3661000000000} // 0s, 5s, 1m30s, 1h1m1s
+	durations := []int64{0, 5000000000, 90000000000, 3661000000000}
 	for _, d := range durations {
 		fmt.Printf("  %d ns → %s\n", d, common.HumanizeNSDuration(d))
 	}
 	fmt.Println()
 
-	// Full Page Dialog Examples
 	fmt.Println(styles.TextBold.Render("Full Page Dialogs:"))
 	fmt.Println()
 
-	// Info dialog
 	infoDialog := common.FullPageDialog(common.FullPageDialogRequest{
 		Width:   60,
 		Height:  10,
@@ -159,7 +147,6 @@ Use this style for help messages and documentation.`
 	fmt.Println("Info Dialog:")
 	fmt.Println(infoDialog)
 
-	// Warning dialog
 	warningDialog := common.FullPageDialog(common.FullPageDialogRequest{
 		Width:   60,
 		Height:  8,
@@ -169,7 +156,6 @@ Use this style for help messages and documentation.`
 	fmt.Println("Warning Dialog:")
 	fmt.Println(warningDialog)
 
-	// Error dialog
 	errorDialog := common.FullPageDialog(common.FullPageDialogRequest{
 		Width:   60,
 		Height:  8,
@@ -179,7 +165,6 @@ Use this style for help messages and documentation.`
 	fmt.Println("Error Dialog:")
 	fmt.Println(errorDialog)
 
-	// Complex Table Example
 	fmt.Println(styles.TextBold.Render("📊 COMPLEX TABLE EXAMPLE"))
 	fmt.Println()
 
@@ -226,11 +211,9 @@ Use this style for help messages and documentation.`
 	fmt.Println(complexTable.Render())
 	fmt.Println()
 
-	// Layout Examples
 	fmt.Println(styles.TextBold.Render("📐 LAYOUT EXAMPLES"))
 	fmt.Println()
 
-	// Side-by-side content
 	leftContent := lipgloss.NewStyle().
 		Width(30).
 		Align(lipgloss.Left).
@@ -253,7 +236,6 @@ Use this style for help messages and documentation.`
 	fmt.Println(sideBySide)
 	fmt.Println()
 
-	// Centered content with border
 	centeredStyle := lipgloss.NewStyle().
 		Width(50).
 		Align(lipgloss.Center).

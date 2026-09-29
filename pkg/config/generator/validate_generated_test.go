@@ -14,8 +14,6 @@ import (
 	"github.com/nuonco/nuon/pkg/config/schema"
 )
 
-// schemaTypeForFile maps a generated config file (relative path) to its schema
-// type slug.
 func schemaTypeForFile(rel string) string {
 	switch {
 	case strings.HasPrefix(rel, "input_groups/"):
@@ -61,12 +59,9 @@ func schemaTypeForFile(rel string) string {
 	return ""
 }
 
-// TestGeneratedConfigsValidateAgainstSchemas guards that every file produced by
-// the default `nuon apps init` scaffold validates against its dedicated schema.
 func TestGeneratedConfigsValidateAgainstSchemas(t *testing.T) {
 	dir := t.TempDir()
 
-	// Mirror the default `nuon apps init` flags (SkipNonRequired=true).
 	gen := generator.NewConfigGen(false, false, false, true, true, "")
 	if err := gen.Gen(dir, generator.DefaultAppConfigConfigStructure(dir)); err != nil {
 		t.Fatalf("generating config: %v", err)

@@ -18,8 +18,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// writeKeyPair emits a self-signed cert/key pair and returns the cert's serial,
-// which the tests use to tell one generation of the cert from the next.
 func writeKeyPair(t *testing.T, certPath, keyPath string, serial int64) int64 {
 	t.Helper()
 
@@ -47,8 +45,6 @@ func writeKeyPair(t *testing.T, certPath, keyPath string, serial int64) int64 {
 	return serial
 }
 
-// setMTime pins mtimes explicitly so reload detection isn't at the mercy of
-// filesystem timestamp resolution.
 func setMTime(t *testing.T, path string, ts time.Time) {
 	t.Helper()
 	require.NoError(t, os.Chtimes(path, ts, ts))
@@ -81,7 +77,6 @@ func TestTLSReloaderReloadsOnChange(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(1), serialOf(t, r))
 
-	// unchanged mtime: must not re-read
 	require.Equal(t, int64(1), serialOf(t, r))
 
 	writeKeyPair(t, certPath, keyPath, 2)
@@ -125,7 +120,6 @@ func TestTLSReloaderKeepsLastGoodCertOnMissingFile(t *testing.T) {
 	r, err := newTLSReloader(Config{TLSCertPath: certPath, TLSKeyPath: keyPath}, zap.NewNop())
 	require.NoError(t, err)
 
-	// mid-rotation the secret dir symlink can briefly not resolve
 	require.NoError(t, os.Remove(certPath))
 
 	require.Equal(t, int64(9), serialOf(t, r))

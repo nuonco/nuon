@@ -21,23 +21,17 @@ func (m *middleware) Name() string {
 	return "timeout"
 }
 
-// Handler returns a Gin middleware that monitors request duration.
-// If a request takes longer than the configured duration, it will log an error
-// but will NOT cancel the request.
 func (m *middleware) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Create a timeout context for monitoring only (don't replace the request context)
 		timeoutCtx, cancel := context.WithTimeout(context.Background(), m.cfg.MaxRequestDuration)
 		defer cancel()
 
 		finished := make(chan struct{})
 		var once sync.Once
 
-		// Start monitoring goroutine
 		go func() {
 			select {
 			case <-finished:
-				// Request completed normally
 				return
 			case <-timeoutCtx.Done():
 				cl := cctx.GetLogger(c, m.l)
@@ -56,10 +50,8 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			}
 		}()
 
-		// Execute the request handlers
 		c.Next()
 
-		// Signal that the request is finished
 		once.Do(func() {
 			close(finished)
 		})

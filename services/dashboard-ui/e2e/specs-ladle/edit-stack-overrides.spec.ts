@@ -1,8 +1,5 @@
 import { expect, test } from "@playwright/test";
 
-// Stack overrides have no required fields (all optional), so submit is always
-// enabled. The meaningful behavior here is the custom-stacks array field:
-// Add stack reveals a row, Remove clears it.
 const STORY =
   "/?story=features--installs--management--edit-stack-overrides--empty&mode=preview";
 

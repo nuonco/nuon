@@ -73,7 +73,6 @@ func (s *UpdateHelmReleaseTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -190,9 +189,6 @@ func (s *UpdateHelmReleaseTestSuite) TestUpdateHelmReleaseValidation() {
 }
 
 func (s *UpdateHelmReleaseTestSuite) TestUpdateHelmReleaseEncoding() {
-	// Document that UpdateHelmRelease requires valid helm.Release for encoding
-	// Similar to CreateHelmRelease, this is complex due to proto structures
-
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
@@ -200,10 +196,8 @@ func (s *UpdateHelmReleaseTestSuite) TestUpdateHelmReleaseEncoding() {
 	namespace := "default"
 	key := "sh.helm.release.v1.test-release.v1"
 
-	// Create helm chart to satisfy FK constraint
 	s.createHelmChart(ctx, helmChartID)
 
-	// Create an existing release to update
 	existingRelease := &app.HelmRelease{
 		HelmChartID: helmChartID,
 		Key:         key,
@@ -231,7 +225,6 @@ func (s *UpdateHelmReleaseTestSuite) TestUpdateHelmReleaseEncoding() {
 	s.T().Log("The helm.Release type has complex nested proto structures")
 	s.T().Log("Incomplete release data will cause encoding failures")
 
-	// Try to update with minimal data (will likely fail encoding)
 	requestBody := map[string]interface{}{
 		"name":      "updated-release",
 		"version":   2,
@@ -244,16 +237,9 @@ func (s *UpdateHelmReleaseTestSuite) TestUpdateHelmReleaseEncoding() {
 	rr := s.makeRequest("PUT", "/v1/helm-releases/"+helmChartID+"/releases/"+namespace+"/"+key, requestBody)
 
 	s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
-
-	// Will likely fail due to incomplete helm.Release structure for encoding
-	// or succeed if the encoding tolerates missing fields
 }
 
 func (s *UpdateHelmReleaseTestSuite) TestUpdateHelmReleaseNonexistent() {
-	// Test updating a nonexistent release
-	// The handler doesn't explicitly check if the release exists before updating,
-	// so it may succeed with 0 rows affected
-
 	helmChartID := domains.NewHelmChartID()
 	namespace := "default"
 	key := "nonexistent-key"
@@ -270,13 +256,9 @@ func (s *UpdateHelmReleaseTestSuite) TestUpdateHelmReleaseNonexistent() {
 	rr := s.makeRequest("PUT", "/v1/helm-releases/"+helmChartID+"/releases/"+namespace+"/"+key, requestBody)
 
 	s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
-
-	// Behavior depends on encoding success and GORM's Updates behavior
-	// Updates doesn't return error for 0 rows affected
 }
 
 func (s *UpdateHelmReleaseTestSuite) TestUpdateHelmReleaseComplexity() {
-	// Document the complexity of helm release updates
 	s.T().Log("UpdateHelmRelease faces the same complexity as CreateHelmRelease:")
 	s.T().Log("1. Requires valid helm.Release JSON with nested proto structures")
 	s.T().Log("2. helm.EncodeRelease does protobuf encoding + gzip + base64")
@@ -288,9 +270,6 @@ func (s *UpdateHelmReleaseTestSuite) TestUpdateHelmReleaseComplexity() {
 }
 
 func (s *UpdateHelmReleaseTestSuite) TestUpdateHelmReleaseSuccessPath() {
-	// Document what a successful update would look like
-	// (even though we can't easily create valid helm.Release test data)
-
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
@@ -298,10 +277,8 @@ func (s *UpdateHelmReleaseTestSuite) TestUpdateHelmReleaseSuccessPath() {
 	namespace := "default"
 	key := "sh.helm.release.v1.test-release.v1"
 
-	// Create helm chart to satisfy FK constraint
 	s.createHelmChart(ctx, helmChartID)
 
-	// Create existing release
 	existingRelease := &app.HelmRelease{
 		HelmChartID: helmChartID,
 		Key:         key,
@@ -332,7 +309,6 @@ func (s *UpdateHelmReleaseTestSuite) TestUpdateHelmReleaseSuccessPath() {
 	s.T().Log("4. GORM Updates will update Body, Name, Version, Status, Owner, UpdatedAt")
 	s.T().Log("5. Returns 200 with null body on success")
 
-	// Verify the release exists
 	var checkRelease app.HelmRelease
 	err = s.service.DB.WithContext(ctx).
 		Where("helm_chart_id = ? AND namespace = ? AND key = ?", helmChartID, namespace, key).

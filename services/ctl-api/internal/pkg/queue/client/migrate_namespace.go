@@ -14,12 +14,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 )
 
-// migrateQueueNamespace moves a queue's workflow from its current Temporal
-// namespace to newNamespace. The old-namespace workflow is terminated
-// (since its cross-namespace, TERMINATE_IF_RUNNING on the restart is not enough), the
-// DB row is repointed, and the workflow is restarted in the new namespace.
-//
-//	Emitters are migrated separately by the emitter client (queue/client cannot import the emitter package).
 func (c *Client) migrateQueueNamespace(ctx context.Context, q *app.Queue, newNamespace, newTaskQueue string) error {
 	oldNamespace := q.Workflow.Namespace
 

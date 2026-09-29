@@ -9,10 +9,7 @@ import (
 
 type AppAWSIAMPolicy struct {
 	ManagedPolicyName string `mapstructure:"managed_policy_name,omitempty" toml:"managed_policy_name,omitempty"`
-	// Name is optional: a managed_policy_name attachment identifies itself, so a
-	// bare AWS managed policy needs no separate name. The runtime does not
-	// require it (see parse below).
-	Name string `mapstructure:"name,omitempty" toml:"name,omitempty"`
+	Name              string `mapstructure:"name,omitempty" toml:"name,omitempty"`
 
 	Contents string `mapstructure:"contents" toml:"contents" features:"template,get"`
 

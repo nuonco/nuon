@@ -16,7 +16,6 @@ import (
 func TestActionWorkflowTriggerConfigSize(t *testing.T) {
 	size := reflect.TypeOf(ActionWorkflowTriggerConfig{}).Size()
 	t.Logf("trigger size: %d bytes; 120 ten-slot slices: %.2f MiB", size, float64(120*10*size)/(1024*1024))
-	// GORM reserves ten trigger values per action even when only one trigger is loaded.
 	require.Less(t, size, uintptr(8*1024))
 }
 

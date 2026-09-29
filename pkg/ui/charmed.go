@@ -1,7 +1,3 @@
-/*
-1. Charmed version of the Step method
-2. PrintEnv with redaction list
-*/
 package ui
 
 import (

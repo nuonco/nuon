@@ -11,7 +11,6 @@ type componentSource struct {
 	Directory string
 }
 
-// normalizeRepoPath cleans a repo-relative path for prefix matching.
 func normalizeRepoPath(p string) string {
 	p = strings.TrimSpace(p)
 	p = strings.TrimPrefix(p, "./")
@@ -38,8 +37,6 @@ func repoURLsEqual(a, b string) bool {
 	return normalizeRepoURL(a) == normalizeRepoURL(b)
 }
 
-// pathMatchesDirectory reports whether path is under directory (or equal to it).
-// Empty / "." directories match any path in the same repo.
 func pathMatchesDirectory(path, directory string) bool {
 	path = normalizeRepoPath(path)
 	directory = normalizeRepoPath(directory)
@@ -52,8 +49,6 @@ func pathMatchesDirectory(path, directory string) bool {
 	return path == directory || strings.HasPrefix(path, directory+"/")
 }
 
-// anyPathMatchesDirectory returns true if any changed path falls under directory.
-// An empty directory (repo root) matches any changed path.
 func anyPathMatchesDirectory(changedPaths []string, directory string) bool {
 	if normalizeRepoPath(directory) == "" {
 		return len(changedPaths) > 0
@@ -73,10 +68,6 @@ func componentSourceChanged(src componentSource, branchRepo string, changedPaths
 	return anyPathMatchesDirectory(changedPaths, src.Directory)
 }
 
-// enrichConfigDiffWithSourceChanged copies FullDiff into a ConfigDiff blob shape
-// and sets source_changed on component entries whose tracked repo+directory
-// intersect changedPaths. A top-level map covers every component, including
-// those with source-only changes that do not appear in the config diff.
 func enrichConfigDiffWithSourceChanged(
 	full *ComputeAppConfigDiffOutput,
 	sources []componentSource,

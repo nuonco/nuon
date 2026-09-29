@@ -24,7 +24,6 @@ type namespaceClient struct {
 	client    kubernetes.Interface
 }
 
-// secretClient implements a corev1.SecretsInterface
 type secretClient struct{ *namespaceClient }
 
 var _ corev1.SecretInterface = (*secretClient)(nil)
@@ -69,7 +68,6 @@ func (s *secretClient) Apply(ctx context.Context, secretConfiguration *applycore
 	return s.client.CoreV1().Secrets(s.namespace).Apply(ctx, secretConfiguration, opts)
 }
 
-// configMapClient implements a corev1.ConfigMapInterface
 type configMapClient struct{ *namespaceClient }
 
 var _ corev1.ConfigMapInterface = (*configMapClient)(nil)

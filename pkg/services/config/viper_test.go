@@ -12,11 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// CustomType is an enum determining the type of service to generate
 type CustomType int8
 
-// UnmarshalConfig unmarshals a config value string to the associated interface
-// type
 func (c *CustomType) UnmarshalConfig(value string) {
 	switch value {
 	case "one":
@@ -398,11 +395,9 @@ func assertConfig(t *testing.T, config Config, overrides map[string]interface{})
 	assert.Equal(t, expected["slice"], config.GetStringSlice("slice"))
 	assert.Equal(t, expected["duration"], config.GetDuration("duration"))
 	assert.Equal(t, expected["password"], config.GetString("password"))
-	assert.Equal(t, "two", config.Get("custom")) // custom unmarshal doesn't run
+	assert.Equal(t, "two", config.Get("custom"))
 }
 
-// assertTestConfig asserts the config bound to the TestConfig struct matches
-// what is expected
 func assertTestConfig(t *testing.T, config TestConfig, overrides map[string]interface{}) {
 	t.Helper()
 	expected := expected(t, overrides)

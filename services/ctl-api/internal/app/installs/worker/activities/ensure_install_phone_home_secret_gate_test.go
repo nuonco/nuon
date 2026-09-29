@@ -13,7 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// The gate is what stops the operator-initiated backfill from becoming "provision
+// why: The gate is what stops the operator-initiated backfill from becoming "provision
 // everything unconditionally". Waiving the org feature flag must waive that and
 // nothing else.
 //
@@ -43,9 +43,6 @@ func TestPhoneHomeSecretSkipReasonIgnoringFeatureGate(t *testing.T) {
 			want: phoneHomeSkipNotAWS,
 		},
 		{
-			// The one that matters most: target_account_id is only required at
-			// creation once the flag is on, so an org that never had the flag is
-			// mostly full of installs that skip here regardless of the bypass.
 			name:    "an install with no target account is still skipped",
 			cfg:     reachableCfg,
 			install: &app.Install{ID: "inst", AWSAccount: &app.AWSAccount{}},
@@ -73,8 +70,6 @@ func TestPhoneHomeSecretSkipReasonIgnoringFeatureGate(t *testing.T) {
 			want: phoneHomeSkipSandboxMode,
 		},
 		{
-			// An install created before AdminForceSandboxMode flipped the org keeps an
-			// explicit false that Install.AfterQuery will not override.
 			name: "an install in a sandboxed org is skipped even when its own flag is false",
 			cfg:  reachableCfg,
 			install: &app.Install{

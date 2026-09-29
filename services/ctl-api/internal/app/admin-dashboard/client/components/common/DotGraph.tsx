@@ -71,14 +71,11 @@ function parseDot(dot: string): { nodes: Node[]; edges: Edge[] } {
   const edges: Edge[] = []
   const allIds = new Set<string>()
 
-  // Parse node declarations: "id" [label="...", ...];
-  // Also match: "id" [attrs]; and id [attrs];
   const nodeRe = /^\s*"?([^"\s\[]+)"?\s*\[\s*([^\]]+?)\s*\];?\s*$/gm
   let m: RegExpExecArray | null
   while ((m = nodeRe.exec(dot)) !== null) {
     const [, rawId, attrs] = m
     const id = rawId.trim()
-    // Skip graph-level attributes like "node [...]" or "graph [...]"
     if (id === 'node' || id === 'graph' || id === 'edge') continue
 
     allIds.add(id)
@@ -95,7 +92,6 @@ function parseDot(dot: string): { nodes: Node[]; edges: Edge[] } {
     })
   }
 
-  // Parse edges: "source" -> "target" or "source" -> "target" [attrs];
   const edgeRe = /^\s*"?([^"\s]+)"?\s*->\s*"?([^"\s\[;]+)"?\s*(?:\[\s*([^\]]*)\s*\])?\s*;?\s*$/gm
   while ((m = edgeRe.exec(dot)) !== null) {
     const [, rawSrc, rawTgt, attrs] = m
@@ -124,7 +120,6 @@ function parseDot(dot: string): { nodes: Node[]; edges: Edge[] } {
     })
   }
 
-  // Add implicit nodes (referenced in edges but not declared)
   allIds.forEach((id) => {
     if (!nodesMap.has(id)) {
       nodesMap.set(id, {

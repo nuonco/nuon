@@ -29,9 +29,6 @@ func (e *EmitterTestSuite) ensureOwnedQueue(ctx context.Context, ownerID string)
 	return q
 }
 
-// insertEmitter writes a row without going through CreateEmitter, so no
-// Temporal workflow is started. Used for the cases that must be left alone —
-// nothing should ever reach their (nonexistent) workflows.
 func (e *EmitterTestSuite) insertEmitter(ctx context.Context, queueID string, mode app.QueueEmitterMode, deleted bool) *app.QueueEmitter {
 	em := app.QueueEmitter{
 		QueueID:      queueID,
@@ -94,7 +91,6 @@ func (e *EmitterTestSuite) TestToggleCronEmittersForOwnerScope() {
 	require.Equal(e.T(), app.StatusInProgress, e.emitter(deletedCron.ID).Status.Status, "soft-deleted emitters must not be touched")
 	require.Equal(e.T(), app.StatusInProgress, e.emitter(otherOwnerCron.ID).Status.Status, "another owner's emitters must not be touched")
 
-	// A converged install must not keep re-issuing Temporal work every sweep.
 	require.Equal(e.T(), 0, disable().Changed)
 }
 

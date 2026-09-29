@@ -93,7 +93,6 @@ func Test_writer_Incr(t *testing.T) {
 			writer, err := New(v, opts...)
 			assert.NoError(t, err)
 
-			// Bypass the sync.Once
 			writer.getClient()
 			writer.client = client
 
@@ -170,7 +169,6 @@ func Test_writer_Decr(t *testing.T) {
 			writer, err := New(v, opts...)
 			assert.NoError(t, err)
 
-			// Bypass the sync.Once
 			writer.getClient()
 			writer.client = client
 
@@ -248,7 +246,6 @@ func Test_writer_Count(t *testing.T) {
 			writer, err := New(v, opts...)
 			assert.NoError(t, err)
 
-			// Bypass the sync.Once
 			writer.getClient()
 			writer.client = client
 
@@ -326,7 +323,6 @@ func Test_writer_Timing(t *testing.T) {
 			writer, err := New(v, opts...)
 			assert.NoError(t, err)
 
-			// Bypass the sync.Once
 			writer.getClient()
 			writer.client = client
 
@@ -378,7 +374,6 @@ func Test_writer_Event(t *testing.T) {
 			writer, err := New(v, opts...)
 			assert.NoError(t, err)
 
-			// Bypass the sync.Once
 			writer.getClient()
 			writer.client = client
 

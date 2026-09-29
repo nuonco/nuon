@@ -20,7 +20,7 @@ const (
 	runnerHealthResultUnhealthy = "unhealthy"
 )
 
-// skippableRunnerStatuses mirrors the statuses the runner healthcheck never
+// why: skippableRunnerStatuses mirrors the statuses the runner healthcheck never
 // acts on (provisioning lifecycle states, plus runners the install stack
 // disabled, which never report health by design).
 var skippableRunnerStatuses = []app.RunnerStatus{
@@ -66,9 +66,6 @@ type runnerHealthDecision struct {
 	InstallCronToggleDecision *InstallCronState
 }
 
-// decideRunnerHealth encodes runnerhealthcheck.Signal.Execute's branch logic:
-// arm offline_ts before status writes, alert only on a tick after the offline
-// transition once the delay has elapsed, guard every write on current state.
 func decideRunnerHealth(now time.Time, runner *app.Runner, presence runnerProcessPresence) runnerHealthDecision {
 	var d runnerHealthDecision
 
@@ -159,9 +156,6 @@ const (
 	processActionActive
 )
 
-// decideProcessHealth encodes processhealthcheck.Signal.Execute's branch
-// order: status gate, shutdown_requested short-circuit, nil-heartbeat no-op,
-// then heartbeat-age tiers.
 func decideProcessHealth(now time.Time, process *app.RunnerProcess, heartbeatAt *time.Time) processHealthAction {
 	switch process.ProcessStatus() {
 	case app.RunnerProcessStatusActive, app.RunnerProcessStatusOffline:
@@ -186,8 +180,6 @@ func decideProcessHealth(now time.Time, process *app.RunnerProcess, heartbeatAt 
 	return processActionActive
 }
 
-// decideVersionWarning lifts processhealthcheck.Signal.checkVersionMismatch's
-// warning derivation. emitLatestEvent flags the 'latest' tag Datadog event.
 func decideVersionWarning(configured, reported string) (warning string, emitLatestEvent bool) {
 	if reported == "" {
 		return "", false

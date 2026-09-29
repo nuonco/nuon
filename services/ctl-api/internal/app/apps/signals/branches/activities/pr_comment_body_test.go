@@ -73,8 +73,6 @@ func TestBuildPRCommentBodyOmitsEmptyInstallImpact(t *testing.T) {
 	}
 }
 
-// A no-changes preview short-circuits before any install is resolved, so the
-// impact section would be misleading there.
 func TestBuildPRCommentBodySkippedHasNoInstallImpact(t *testing.T) {
 	body := BuildPRCommentBody(&PRCommentParams{
 		AppName: "acme",
@@ -177,7 +175,6 @@ func TestBuildPRCommentBodyApplyOmitsInstallWhenNotApplied(t *testing.T) {
 		Mode:               app.AppBranchRunPreviewModeApply,
 		PreviewInstallName: "preview-us-west",
 		PreviewInstallURL:  "https://app.example.com/org/installs/install/app-branch-runs",
-		// InstallApplied intentionally false
 	})
 
 	if strings.Contains(body, "Applied to") {

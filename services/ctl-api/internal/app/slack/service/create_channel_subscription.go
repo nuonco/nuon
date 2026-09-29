@@ -99,19 +99,13 @@ func (s *service) CreateChannelSubscription(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, sub)
 }
 
-// createChannelSubscription is the dashboard-side creator. It mirrors the
-// slash-command modal's upsertModalSubscription path: trust-bind the
-// org_link to the calling org, then insert a SlackChannelSubscription
-// keyed on (team, channel, link, match_canonical). Re-creating with an
-// identical Match upserts in place rather than 23505-ing — same semantics
-// the modal relies on.
 func (s *service) createChannelSubscription(
 	ctx context.Context,
 	acct *app.Account,
 	orgID string,
 	req *CreateChannelSubscriptionRequest,
 ) (*app.SlackChannelSubscription, error) {
-	// Trust-bind: the link must be verified AND belong to the caller's org.
+	// why: Trust-bind: the link must be verified AND belong to the caller's org.
 	// Re-derive both invariants from the DB rather than trusting the request
 	// — the org_link_id is user-supplied.
 	var link app.SlackOrgLink
@@ -131,9 +125,6 @@ func (s *service) createChannelSubscription(
 		return nil, fmt.Errorf("lookup slack org link: %w", err)
 	}
 
-	// Default Interests to AllEvents=true so a bare {org_link_id, channel_id}
-	// request lands a working subscription. The modal already does the
-	// same default; mirroring it here keeps the two creators consistent.
 	in := interests.Interests{AllEvents: true}
 	if req.Interests != nil {
 		in = *req.Interests

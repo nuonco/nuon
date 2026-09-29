@@ -20,7 +20,6 @@ type handler struct {
 }
 
 func (w *queue) registerHandlers(ctx workflow.Context) error {
-	// Using a slice for temporal determinism.
 	updateHandlers := []handler{
 		{EnqueueUpdateName, handlerTypeUpdate, w.enqueueHandler, nil},
 		{ReadyHandlerName, handlerTypeQuery, w.readyHandler, nil},
@@ -33,13 +32,11 @@ func (w *queue) registerHandlers(ctx workflow.Context) error {
 	}
 	for _, h := range updateHandlers {
 		switch h.typ {
-		// register query handler
 		case handlerTypeQuery:
 			if err := workflow.SetQueryHandler(ctx, h.name, h.handler); err != nil {
 				return errors.Wrapf(err, "unable to create query handler %s", h.name)
 			}
 
-			// register update handler
 		case handlerTypeUpdate:
 			opts := workflow.UpdateHandlerOptions{
 				Validator: h.handlerValidator,

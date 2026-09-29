@@ -41,11 +41,11 @@ type UpdateChannelSubscriptionRequest struct {
 	Interests *interests.Interests      `json:"interests,omitempty" swaggertype:"object"`
 }
 
-// UnmarshalJSON sets MatchSet whenever the body carries a `match` key,
+// why: UnmarshalJSON sets MatchSet whenever the body carries a `match` key,
 // even if its value is JSON null. Without this, "match: null" and an
 // omitted match are indistinguishable from the request struct.
 func (r *UpdateChannelSubscriptionRequest) UnmarshalJSON(data []byte) error {
-	// Two-pass decode: first into a raw map to detect key presence,
+	// why: Two-pass decode: first into a raw map to detect key presence,
 	// then into the struct shape via an alias to avoid recursion.
 	var raw map[string]json.RawMessage
 	if err := json.Unmarshal(data, &raw); err != nil {
@@ -126,10 +126,6 @@ func (s *service) UpdateChannelSubscription(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, sub)
 }
 
-// updateChannelSubscription trust-binds the row to the caller's org and
-// applies the requested patches. The model's BeforeSave hook keeps
-// MatchCanonical in lockstep with Match for both inserts and updates, so
-// changing Match here recomputes the index column correctly.
 func (s *service) updateChannelSubscription(
 	ctx context.Context,
 	orgID, subID string,
@@ -148,9 +144,6 @@ func (s *service) updateChannelSubscription(
 		return nil, fmt.Errorf("lookup slack channel subscription: %w", err)
 	}
 
-	// Apply patches to the loaded row, then Save — using a map of updates
-	// would skip the BeforeSave hook that recomputes MatchCanonical for
-	// the unique index.
 	if req.ChannelID != nil {
 		sub.ChannelID = strings.TrimSpace(*req.ChannelID)
 	}
@@ -165,11 +158,6 @@ func (s *service) updateChannelSubscription(
 	}
 
 	if err := s.db.WithContext(ctx).Save(&sub).Error; err != nil {
-		// Postgres unique_violation = 23505. The unique index on
-		// (team_id, channel_id, org_link_id, match_canonical, deleted_at)
-		// fires when an edit collapses the new Match canonical onto an
-		// existing row. Surface that as a 409 with a description that
-		// mirrors the create flow's "Channel already subscribed" toast.
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			return nil, stderr.ErrConflict{

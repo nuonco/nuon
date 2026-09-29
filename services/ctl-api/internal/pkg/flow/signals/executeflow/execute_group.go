@@ -12,11 +12,6 @@ import (
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// executeGroup enqueues an execute-workflow-step-group signal and awaits its
-// completion via the framework's built-in finished handler. Returns the group's
-// directive by reading the step group's ResultDirective from the DB after the
-// signal finishes. Falls back to reading the workflow's ResultDirective for
-// backward compatibility with synthetic groups that have no ID.
 func (s *Signal) executeGroup(ctx workflow.Context, group *app.WorkflowStepGroup, flw *app.Workflow) (string, error) {
 	logger := workflow.GetLogger(ctx)
 	cfg := s.stepConfig()
@@ -64,11 +59,9 @@ func (s *Signal) executeGroup(ctx workflow.Context, group *app.WorkflowStepGroup
 		return "", errors.Wrapf(err, "unable to enqueue group signal for group %d", group.GroupIdx)
 	}
 
-	// Track the active group so cancel-workflow can propagate.
 	s.activeGroupQueueSignalID = enqueueResp.QueueSignalID
 	defer func() { s.activeGroupQueueSignalID = "" }()
 
-	// Bound by the group's derived timeout; fall back to the human-wait cap when unset.
 	groupTimeout := group.Timeout
 	if groupTimeout == 0 {
 		groupTimeout = callback.FallbackAwaitTimeout
@@ -83,8 +76,6 @@ func (s *Signal) executeGroup(ctx workflow.Context, group *app.WorkflowStepGroup
 		return "", errors.Wrapf(err, "group signal failed for group %d", group.GroupIdx)
 	}
 
-	// Read the directive from the step group after the group finishes.
-	// Falls back to reading from the workflow for synthetic groups.
 	if group.ID != "" {
 		updatedGroup, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroupByID(ctx, group.ID)
 		if err != nil {

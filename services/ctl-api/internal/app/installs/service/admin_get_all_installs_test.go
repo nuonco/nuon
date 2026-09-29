@@ -61,8 +61,6 @@ func (s *GetAllInstallsTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// flowclient is intentionally not in tests.CtlApiFXOptions (see the note
-		// in tests/testfx.go); the installs service constructor needs it.
 		fx.Provide(flowclient.New),
 		fx.Provide(New),
 		fx.Populate(&s.service),
@@ -77,7 +75,6 @@ func (s *GetAllInstallsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -128,13 +125,11 @@ func (s *GetAllInstallsTestSuite) TestGetAllInstalls() {
 		{
 			name: "get all sandbox installs",
 			setupFunc: func() {
-				// testInstall already exists from setupTestData
 			},
 			queryParams:  "?type=sandbox",
 			expectedCode: http.StatusOK,
 			validateFunc: func(installs []*app.Install) {
 				assert.GreaterOrEqual(s.T(), len(installs), 1, "should have at least one install")
-				// Find our test install in results
 				found := false
 				for _, install := range installs {
 					if install.ID == s.testInstall.ID {
@@ -152,7 +147,6 @@ func (s *GetAllInstallsTestSuite) TestGetAllInstalls() {
 				ctx := context.Background()
 				ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
 				ctx = cctx.SetAccountIDContext(ctx, s.testAcc.ID)
-				// Create 3 more installs
 				for i := 0; i < 3; i++ {
 					install := s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
 					s.T().Cleanup(func() {
@@ -169,12 +163,10 @@ func (s *GetAllInstallsTestSuite) TestGetAllInstalls() {
 		{
 			name: "filter by org type sandbox",
 			setupFunc: func() {
-				// testOrg already has OrgType=sandbox via seeder
 			},
 			queryParams:  "?type=sandbox",
 			expectedCode: http.StatusOK,
 			validateFunc: func(installs []*app.Install) {
-				// Should include our sandbox test install
 				found := false
 				for _, install := range installs {
 					if install.ID == s.testInstall.ID {
@@ -188,12 +180,10 @@ func (s *GetAllInstallsTestSuite) TestGetAllInstalls() {
 		{
 			name: "filter by org type real returns no test installs",
 			setupFunc: func() {
-				// All test orgs are sandbox, so filtering by "real" should exclude them
 			},
 			queryParams:  "?type=real",
 			expectedCode: http.StatusOK,
 			validateFunc: func(installs []*app.Install) {
-				// Our sandbox test install should NOT appear in real type filter
 				for _, install := range installs {
 					assert.NotEqual(s.T(), s.testInstall.ID, install.ID, "sandbox test install should not appear in real type filter")
 				}
@@ -202,7 +192,6 @@ func (s *GetAllInstallsTestSuite) TestGetAllInstalls() {
 		{
 			name: "invalid limit returns error",
 			setupFunc: func() {
-				// No setup needed
 			},
 			queryParams:  "?limit=invalid",
 			expectedCode: http.StatusBadRequest,
@@ -229,8 +218,6 @@ func (s *GetAllInstallsTestSuite) TestGetAllInstalls() {
 	}
 }
 
-// createAppRunnerConfig persists an AppRunnerConfig of an arbitrary type, unlike
-// testseed's CreateAppRunnerConfig which always creates an "aws" one.
 func (s *GetAllInstallsTestSuite) createAppRunnerConfig(ctx context.Context, appConfigID string, runnerType app.AppRunnerType) *app.AppRunnerConfig {
 	runner := &app.AppRunnerConfig{
 		AppID:       s.testApp.ID,
@@ -241,9 +228,6 @@ func (s *GetAllInstallsTestSuite) createAppRunnerConfig(ctx context.Context, app
 	return runner
 }
 
-// pinInstallConfig overwrites an install's app_config_id/app_runner_config_id
-// directly, mirroring the bulk `UPDATE installs SET app_runner_config_id = ...`
-// that internal/pkg/config/syncer/runner/sync.go runs on every app config sync.
 func (s *GetAllInstallsTestSuite) pinInstallConfig(ctx context.Context, installID, appConfigID, appRunnerConfigID string) {
 	require.NoError(s.T(), s.service.DB.WithContext(ctx).
 		Model(&app.Install{}).
@@ -254,10 +238,6 @@ func (s *GetAllInstallsTestSuite) pinInstallConfig(ctx context.Context, installI
 		}).Error)
 }
 
-// TestGetAllInstallsResolvesCloudPlatform covers get_all_installs.go's
-// Preload("AppRunnerConfig") / Preload("AppConfig.RunnerConfig") fixes: before
-// them, this admin endpoint had no runner-config preload at all and every
-// install came back with cloud_platform "unknown".
 func (s *GetAllInstallsTestSuite) TestGetAllInstallsResolvesCloudPlatform() {
 	ctx := context.Background()
 	ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
@@ -275,9 +255,6 @@ func (s *GetAllInstallsTestSuite) TestGetAllInstallsResolvesCloudPlatform() {
 				azureCfg := s.service.Seeder.CreateBareAppConfig(ctx, s.T(), s.testApp.ID)
 				s.createAppRunnerConfig(ctx, azureCfg.ID, app.AppRunnerTypeAzure)
 
-				// Represents the runner config a later app config sync created — the
-				// syncer rewrites app_runner_config_id on every install for the app to
-				// point at this, without touching the install's pinned app_config_id.
 				staleCfg := s.service.Seeder.CreateBareAppConfig(ctx, s.T(), s.testApp.ID)
 				awsRunner := s.createAppRunnerConfig(ctx, staleCfg.ID, app.AppRunnerTypeAWS)
 

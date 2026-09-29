@@ -31,10 +31,6 @@ type LatestReportTestService struct {
 	InstallsService *service
 }
 
-// Covers app.LatestReportOnlySQL, which is a raw predicate and so unreachable
-// from a pure-Go test. Deletion is not representable in an append-only log: a
-// removed resource stops being reported and the latest-state view keeps its
-// final row forever, so a deleted pod read degraded permanently.
 type LatestReportTestSuite struct {
 	tests.BaseDBTestSuite
 	app     *fxtest.App
@@ -61,8 +57,6 @@ func (s *LatestReportTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// Provided locally on purpose: the shared test options leave flowclient
-		// out because its import tree would create a cycle.
 		fx.Provide(flowclient.New),
 		fx.Provide(New),
 		fx.Populate(&s.service),
@@ -87,21 +81,15 @@ func (s *LatestReportTestSuite) SetupTest() {
 	s.service.Seeder.CreateAppConfig(ctx, s.T(), testApp.ID)
 	install := s.service.Seeder.CreateInstall(ctx, s.T(), testApp)
 
-	// A fresh install per test: the ClickHouse table has a 7 day TTL and no
-	// per-test truncation, so rows must not be able to leak between runs.
 	s.orgID = org.ID
 	s.installID = install.ID
 	s.componentA = s.deployedComponent(ctx, testApp.ID, install.ID)
 	s.componentB = s.deployedComponent(ctx, testApp.ID, install.ID)
 
-	// Truncated to the second: observed_at is what groups a report, and a
-	// sub-second skew would split one report into two.
 	s.latest = time.Now().UTC().Truncate(time.Second)
 	s.previous = s.latest.Add(-time.Minute)
 }
 
-// Resource rows are dropped for a component that never deployed, so the
-// component has to look deployed for any of this to be reachable.
 func (s *LatestReportTestSuite) deployedComponent(ctx context.Context, appID, installID string) string {
 	comp := s.service.Seeder.CreateComponent(ctx, s.T(), appID, app.ComponentTypeHelmChart)
 	ic := s.service.Seeder.CreateInstallComponent(ctx, s.T(), installID, comp.ID)
@@ -148,8 +136,6 @@ func (s *LatestReportTestSuite) fetchNames() []string {
 	return names
 }
 
-// The reported bug: a pod deleted by a rollout kept its final degraded row, and
-// the dashboard read it as a live failure 14 minutes later.
 func (s *LatestReportTestSuite) TestVanishedResourceIsDropped() {
 	s.insert([]app.InstallComponentResourceState{
 		s.row(s.componentA, app.InstallComponentResourceSourceComponent, "", "kubernetes", "Pod", "old-pod", "degraded", s.previous, 0),
@@ -163,8 +149,6 @@ func (s *LatestReportTestSuite) TestVanishedResourceIsDropped() {
 	assert.ElementsMatch(s.T(), []string{"new-pod", "api"}, names)
 }
 
-// Each component reports on its own cadence, so one component's newest report
-// must not hide another's.
 func (s *LatestReportTestSuite) TestScopedPerComponent() {
 	s.insert([]app.InstallComponentResourceState{
 		s.row(s.componentA, app.InstallComponentResourceSourceComponent, "", "kubernetes", "Deployment", "fresh", "healthy", s.latest, 0),
@@ -177,8 +161,6 @@ func (s *LatestReportTestSuite) TestScopedPerComponent() {
 		"a component's own newest report is what counts, not the install's")
 }
 
-// Sandbox rows carry no install_component_id and are keyed by owner_name, so
-// grouping on the component alone would collapse every release into one.
 func (s *LatestReportTestSuite) TestSandboxGroupedByOwner() {
 	s.insert([]app.InstallComponentResourceState{
 		s.row("", app.InstallComponentResourceSourceSandbox, "ingress-nginx", "kubernetes", "Deployment", "nginx-live", "healthy", s.latest, 0),
@@ -194,8 +176,6 @@ func (s *LatestReportTestSuite) TestSandboxGroupedByOwner() {
 	assert.Contains(s.T(), names, "nginx-live")
 }
 
-// Pushed checks arrive on their own cadence and expire by their own TTL, so the
-// cluster report clock must not evict them.
 func (s *LatestReportTestSuite) TestCustomChecksExempt() {
 	s.insert([]app.InstallComponentResourceState{
 		s.row(s.componentA, app.InstallComponentResourceSourceComponent, "", "kubernetes", "Deployment", "api", "healthy", s.latest, 0),
@@ -209,7 +189,6 @@ func (s *LatestReportTestSuite) TestCustomChecksExempt() {
 	assert.Contains(s.T(), names, "api")
 }
 
-// Terraform identity rows ride the same report as the workload rows.
 func (s *LatestReportTestSuite) TestCloudIdentityRowsRideTheReport() {
 	s.insert([]app.InstallComponentResourceState{
 		s.row(s.componentA, app.InstallComponentResourceSourceComponent, "", "kubernetes", "Deployment", "api", "healthy", s.latest, 0),
@@ -223,9 +202,6 @@ func (s *LatestReportTestSuite) TestCloudIdentityRowsRideTheReport() {
 	assert.NotContains(s.T(), names, "record-gone", "a cloud row absent from the newest report is gone too")
 }
 
-// The health filter is applied alongside the predicate, so the newest report has
-// to be established independently of it — otherwise filtering to degraded makes
-// a vanished degraded row the newest thing the query can see.
 func (s *LatestReportTestSuite) TestFilterDoesNotResurrectVanishedRows() {
 	s.insert([]app.InstallComponentResourceState{
 		s.row(s.componentA, app.InstallComponentResourceSourceComponent, "", "kubernetes", "Pod", "old-bad-pod", "degraded", s.previous, 0),

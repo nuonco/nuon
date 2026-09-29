@@ -108,9 +108,6 @@ func (s *Service) ComponentDeployCreate(ctx context.Context, installID, componen
 	return nil
 }
 
-// resolveComponentDeployBuildID picks a build when --build-id is omitted.
-// Prefer the prior deploy's build so a redeploy stays on the same artifact;
-// when the component has never been deployed, fall back to its latest build.
 func (s *Service) resolveComponentDeployBuildID(ctx context.Context, installID, componentID string) (string, error) {
 	if buildID, ok := priorDeployBuildID(s.api.GetInstallComponentLatestDeploy(ctx, installID, componentID)); ok {
 		return buildID, nil

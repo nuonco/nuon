@@ -29,12 +29,11 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 	l, _ := log.WorkflowLogger(ctx)
 	h.executing = true
 
-	// apply the terminal status only after the completion callback is sent: setting h.finished sooner lets run() complete the workflow and abandon the in-flight callback activity, dropping the callback the dispatcher awaits (wedges the queue)
 	var finStatus app.Status
 	var finDesc string
 	defer func() {
 		if h.canceled && finStatus == app.StatusSuccess {
-			// cancel raced in after execute finished — never let a stale
+			// why: cancel raced in after execute finished — never let a stale
 			// success overwrite the cancelled terminal state
 			finStatus, finDesc = app.StatusCancelled, "signal was canceled during execution"
 		}
@@ -57,7 +56,6 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 		h.executingCancel = nil
 	}()
 
-	// Increment execution count to track how many times this signal has been executed.
 	_ = activities.LocalAwaitIncrementQueueSignalExecutionCount(ctx, &activities.IncrementQueueSignalExecutionCountRequest{
 		QueueSignalID: h.queueSignalID,
 	})
@@ -73,7 +71,6 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 
 	event := h.buildSignalPhaseEvent(signal.SignalPhaseExecute)
 
-	// run before-phase hooks (fail-open)
 	decision := h.runBeforePhase(ctx, event)
 	if !decision.Allow {
 		blockedErr := &signal.SignalErrExecute{Err: errors.New("blocked by lifecycle hook: " + decision.Reason)}
@@ -111,13 +108,11 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 	err = h.runSignalExecute(execCtx)
 	dur := workflow.Now(ctx).Sub(start)
 
-	// run after-phase hooks (best-effort)
 	h.runAfterPhaseSafe(ctx, event, outcomeFromError(err, dur))
 
 	h.emitExecuteMetrics(event, err, dur)
 
 	if err != nil {
-		// If the signal panicked, write error status here (outside the panic boundary).
 		var panicErr *signal.SignalErrPanic
 		if errors.As(err, &panicErr) {
 			_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
@@ -133,7 +128,6 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 		}
 
 		if h.canceled {
-			// canceled mid-execute — cancelHandler already wrote StatusCancelled
 			finStatus, finDesc = app.StatusCancelled, "signal was canceled during execution"
 			return nil, errors.Wrap(err, "signal was canceled during execution")
 		}
@@ -155,7 +149,7 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 			execErr)
 	}
 
-	// persist success status to DB — unless the signal was cancelled
+	// why: persist success status to DB — unless the signal was cancelled
 	// mid-execute: cancellation must win over a nil-error return, otherwise
 	// the success write resurrects a signal the cancel handler already
 	// finalised.
@@ -221,9 +215,6 @@ func (h *handler) signalContext(ctx workflow.Context, refreshLogStream bool) (wo
 	return cctx.SetLogStreamWorkflowContext(ctx, h.signalLogStream), nil
 }
 
-// emitExecuteMetrics records the latency and execution count for the signal's
-// Execute phase. Tags are sourced from the SignalPhaseEvent which already carries
-// lifecycle context populated by buildSignalPhaseEvent.
 func (h *handler) emitExecuteMetrics(event signal.SignalPhaseEvent, err error, dur time.Duration) {
 	if h.mw == nil {
 		return
@@ -246,12 +237,6 @@ func (h *handler) emitExecuteMetrics(event signal.SignalPhaseEvent, err error, d
 	h.mw.Timing("queue.signal.latency", dur, tags)
 }
 
-// startAutoRewarm self-drives validate→execute for a resident host that is
-// re-warming from a terminal-success QueueSignal (see run.go). It mirrors the
-// dispatcher's phase order — Validate stamps execute-flow fields that Execute
-// relies on — but runs in a child coroutine so run()'s Await still observes
-// mgr.Stopped/Restarted/h.finished. A nil callback.Ref is passed so no stale
-// completion signal is sent for this internal re-run.
 func (h *handler) startAutoRewarm(ctx workflow.Context) {
 	if h.autoRewarmStarted || h.finished || h.canceled || h.validating || h.executing {
 		return
@@ -281,9 +266,6 @@ func (h *handler) startAutoRewarm(ctx workflow.Context) {
 			return
 		}
 		if !r.AutoExecuteReady() {
-			// Only read-only updates (poll/is-retryable) landed on this
-			// re-warm. Finish with the signal's existing terminal outcome
-			// instead of re-driving execute on a completed flow.
 			h.autoRewarmDeclined = true
 			h.setFinished(h.queueSignal.Status.Status, h.queueSignal.Status.StatusHumanDescription)
 			return
@@ -298,7 +280,6 @@ func (h *handler) startAutoRewarm(ctx workflow.Context) {
 	})
 }
 
-// runSignalExecute calls the user-provided signal Execute in a panic-safe boundary.
 func (h *handler) runSignalExecute(ctx workflow.Context) (retErr error) {
 	defer func() {
 		if r := recover(); r != nil {

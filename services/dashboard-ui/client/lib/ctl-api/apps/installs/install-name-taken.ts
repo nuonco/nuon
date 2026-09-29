@@ -8,8 +8,6 @@ export interface IInstallNameTaken {
 
 const PAGE_SIZE = 100
 
-// The `q` param is a substring search, so every page has to be compared for an
-// exact match before the name can be treated as available.
 export async function installNameTaken({
   appId,
   orgId,

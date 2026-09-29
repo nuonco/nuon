@@ -23,12 +23,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
 )
 
-// BenchmarkGetFullAppConfig measures full-config GORM allocations using in-memory
-// SQL rows; no database server is required. Setup, warmup and graph checks are
-// excluded from timing. This measures allocations, not SQL correctness or latency.
-// Run from the repository root:
-//
-//	go test ./services/ctl-api/internal/app/apps/helpers/ -run '^$' -bench BenchmarkGetFullAppConfig -benchmem
 func BenchmarkGetFullAppConfig(b *testing.B) {
 	for _, actions := range []int{8, 120} {
 		b.Run(fmt.Sprintf("actions_%d", actions), func(b *testing.B) {
@@ -140,8 +134,6 @@ type fullConfigTable struct {
 	rows    [][]driver.Value
 }
 
-// Each fixture's first column is its lookup ID. This driver supplies matching rows
-// for GORM's bound IDs; it does not implement SQL semantics or database validation.
 type fullConfigDriver map[string]fullConfigTable
 
 func (d fullConfigDriver) Driver() driver.Driver                        { return d }

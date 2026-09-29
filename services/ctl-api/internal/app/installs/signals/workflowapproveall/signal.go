@@ -31,7 +31,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("workflow_step_id is required")
 	}
 
-	// Validate install exists
 	_, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
 	if err != nil {
 		return errors.Wrap(err, "install not found")
@@ -41,14 +40,11 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Create workflow approval (copied from worker/execute_workflow_approval.go)
 	_, err := activities.AwaitCreateInstallWorkflowApproval(ctx, &activities.CreateInstallWorkflowApprovalRequest{
 		InstallWorkflowStepID: s.WorkflowStepID,
 	})
 	if err != nil {
 		return nil
-		// Original code returns nil even on error, keeping that behavior
-		// return w.handleStepErr(ctx, sreq.WorkflowStepID, err)
 	}
 
 	return nil

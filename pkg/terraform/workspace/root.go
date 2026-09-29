@@ -17,7 +17,6 @@ func (w *workspace) Root() string {
 	return w.root
 }
 
-// createRoot creates a new root directory for the workspace
 func (w *workspace) createRoot() error {
 	dir, err := os.MkdirTemp(w.tmpDirRoot, "workspace")
 	if err != nil {
@@ -27,8 +26,6 @@ func (w *workspace) createRoot() error {
 	return nil
 }
 
-// writeFile writes a file into the workspace
-//
 //nolint:unparam
 func (w *workspace) writeFile(path string, byts []byte, perms fs.FileMode) error {
 	fullPath := filepath.Join(w.root, path)

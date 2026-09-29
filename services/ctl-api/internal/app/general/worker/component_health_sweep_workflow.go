@@ -8,11 +8,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
-// ComponentHealthSweep marks components unknown once their runner goes quiet.
-//
-// One workflow for the whole fleet, not one per install: live installs get
-// their verdicts when a report arrives, so the only thing left to schedule is
-// noticing silence.
 func (w *Workflows) ComponentHealthSweep(ctx workflow.Context) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {

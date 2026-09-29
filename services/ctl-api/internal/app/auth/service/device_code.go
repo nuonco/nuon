@@ -20,7 +20,6 @@ const (
 	deviceCodeExpiry = 5 * time.Minute
 )
 
-// deviceCodePattern validates device codes in the format XXXX-XXXX where X is [A-Z0-9]
 var deviceCodePattern = regexp.MustCompile(`^[A-Z0-9]{4}-[A-Z0-9]{4}$`)
 
 var (
@@ -31,7 +30,6 @@ var (
 	errNotAuthenticated   = errors.New("you must be logged in to approve CLI access")
 )
 
-// validateDeviceCode checks if the code matches the expected format [A-Z0-9]{4}-[A-Z0-9]{4}
 func validateDeviceCode(code string) error {
 	if !deviceCodePattern.MatchString(code) {
 		return errDeviceCodeInvalid
@@ -39,9 +37,6 @@ func validateDeviceCode(code string) error {
 	return nil
 }
 
-// buildDeviceCodeURL constructs the full device code URL with protocol.
-// For localhost: http://localhost:8084/device/code?code=XXX
-// Otherwise: https://auth.{RootDomain}/device/code?code=XXX
 func (s *service) buildDeviceCodeURL(code string) string {
 	if s.cfg.RootDomain == "localhost" {
 		return fmt.Sprintf("http://localhost:8084/device/code?code=%s", code)
@@ -49,9 +44,6 @@ func (s *service) buildDeviceCodeURL(code string) string {
 	return fmt.Sprintf("https://%s/device/code?code=%s", s.domain, code)
 }
 
-// DeviceCodePage handles GET /device/code
-// Displays the approval page for CLI authentication.
-// Requires the user to be authenticated via X-Nuon-Auth cookie.
 func (s *service) DeviceCodePage(c *gin.Context) {
 	code := c.Query("code")
 	if code == "" {
@@ -59,22 +51,17 @@ func (s *service) DeviceCodePage(c *gin.Context) {
 		return
 	}
 
-	// Validate code format
 	if err := validateDeviceCode(code); err != nil {
 		s.respondError(c, http.StatusBadRequest, err)
 		return
 	}
 
-	// Check if user is authenticated via cookie
 	tokenValue := s.findToken(c)
 	if tokenValue == "" {
-		// User not logged in - redirect to login with return URL
-		// Must use full URL with protocol for proper redirect after authentication
 		s.redirect302(c, s.deviceCodeLoginURL(c.Request.Context(), code))
 		return
 	}
 
-	// Validate the token
 	tokenInfo, err := s.validateToken(tokenValue)
 	if err != nil {
 		s.l.Warn("invalid token in device code flow", zap.Error(err))
@@ -83,7 +70,6 @@ func (s *service) DeviceCodePage(c *gin.Context) {
 		return
 	}
 
-	// Render the approval page
 	c.HTML(http.StatusOK, "auth/device_approve.tmpl", gin.H{
 		"Code":     code,
 		"Email":    tokenInfo.Email,
@@ -91,8 +77,6 @@ func (s *service) DeviceCodePage(c *gin.Context) {
 	})
 }
 
-// DeviceCodeApprove handles POST /device/code/approve
-// Processes the user's approval and stores the code -> account mapping.
 func (s *service) DeviceCodeApprove(c *gin.Context) {
 	code := c.PostForm("code")
 	if code == "" {
@@ -100,13 +84,11 @@ func (s *service) DeviceCodeApprove(c *gin.Context) {
 		return
 	}
 
-	// Validate code format
 	if err := validateDeviceCode(code); err != nil {
 		s.respondError(c, http.StatusBadRequest, err)
 		return
 	}
 
-	// Check if user is authenticated
 	tokenValue := s.findToken(c)
 	if tokenValue == "" {
 		s.respondError(c, http.StatusUnauthorized, errNotAuthenticated)
@@ -120,7 +102,6 @@ func (s *service) DeviceCodeApprove(c *gin.Context) {
 		return
 	}
 
-	// Look up the account
 	var account app.Account
 	if err := s.db.Where("id = ?", tokenInfo.AccountID).First(&account).Error; err != nil {
 		s.l.Error("failed to find account for device code approval",
@@ -130,7 +111,6 @@ func (s *service) DeviceCodeApprove(c *gin.Context) {
 		return
 	}
 
-	// Check if this code was already approved (prevent duplicates)
 	var existing app.DeviceCode
 	err = s.db.Where("code = ?", code).First(&existing).Error
 	if err == nil {
@@ -142,7 +122,6 @@ func (s *service) DeviceCodeApprove(c *gin.Context) {
 			s.respondError(c, http.StatusBadRequest, errDeviceCodeExpired)
 			return
 		}
-		// Already approved, show success
 		c.HTML(http.StatusOK, "auth/device_success.tmpl", gin.H{
 			"Email": tokenInfo.Email,
 		})
@@ -154,7 +133,6 @@ func (s *service) DeviceCodeApprove(c *gin.Context) {
 		return
 	}
 
-	// Create the approved device code record
 	deviceCode := &app.DeviceCode{
 		Code:      code,
 		AccountID: account.ID,
@@ -179,8 +157,6 @@ func (s *service) DeviceCodeApprove(c *gin.Context) {
 	})
 }
 
-// DeviceCodeToken handles GET /device/token
-// CLI polls this endpoint to get a token once the code is approved.
 func (s *service) DeviceCodeToken(c *gin.Context) {
 	code := c.Query("code")
 	if code == "" {
@@ -191,7 +167,6 @@ func (s *service) DeviceCodeToken(c *gin.Context) {
 		return
 	}
 
-	// Validate code format
 	if err := validateDeviceCode(code); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":             "invalid_code",
@@ -200,11 +175,9 @@ func (s *service) DeviceCodeToken(c *gin.Context) {
 		return
 	}
 
-	// Look up the approved device code
 	var deviceCode app.DeviceCode
 	err := s.db.Where("code = ?", code).First(&deviceCode).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		// Code not approved yet - authorization_pending
 		c.JSON(http.StatusOK, gin.H{
 			"error":             "authorization_pending",
 			"error_description": "waiting for user approval",
@@ -220,7 +193,6 @@ func (s *service) DeviceCodeToken(c *gin.Context) {
 		return
 	}
 
-	// Check if expired
 	if time.Now().After(deviceCode.ExpiresAt) {
 		c.JSON(http.StatusOK, gin.H{
 			"error":             "expired_token",
@@ -229,7 +201,6 @@ func (s *service) DeviceCodeToken(c *gin.Context) {
 		return
 	}
 
-	// Check if already consumed
 	if deviceCode.Consumed {
 		c.JSON(http.StatusOK, gin.H{
 			"error":             "access_denied",
@@ -238,7 +209,6 @@ func (s *service) DeviceCodeToken(c *gin.Context) {
 		return
 	}
 
-	// Look up the account
 	var account app.Account
 	if err := s.db.Where("id = ?", deviceCode.AccountID).First(&account).Error; err != nil {
 		s.l.Error("failed to find account for device code",
@@ -251,7 +221,6 @@ func (s *service) DeviceCodeToken(c *gin.Context) {
 		return
 	}
 
-	// Create a new API token for the CLI
 	tokenValue, err := s.createToken(&account)
 	if err != nil {
 		s.l.Error("failed to create token for device code", zap.Error(err))
@@ -262,10 +231,8 @@ func (s *service) DeviceCodeToken(c *gin.Context) {
 		return
 	}
 
-	// Mark the device code as consumed
 	if err := s.db.Model(&deviceCode).Update("consumed", true).Error; err != nil {
 		s.l.Error("failed to mark device code as consumed", zap.Error(err))
-		// Continue anyway - token was created successfully
 	}
 
 	s.l.Info("device code token issued",
@@ -279,9 +246,6 @@ func (s *service) DeviceCodeToken(c *gin.Context) {
 	})
 }
 
-// deviceCodeLoginURL sends the user straight to the only provider when there is one, and to the
-// picker otherwise. Hardcoding the env provider here used to lock every CLI login onto it, leaving
-// users whose account lives on another provider unable to complete `nuon auth login`.
 func (s *service) deviceCodeLoginURL(ctx context.Context, code string) string {
 	returnURL := url.QueryEscape(s.buildDeviceCodeURL(code))
 

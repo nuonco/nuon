@@ -8,9 +8,6 @@ import (
 	"github.com/nuonco/nuon/pkg/events/signature"
 )
 
-// slackEvents speaks the Slack Events API: a fixed envelope, timestamp-bound
-// v0 signatures, the url_verification handshake, and HTTP 200 rejections so
-// Slack does not retry or disable the subscription.
 type slackEvents struct {
 	provider.Base
 }

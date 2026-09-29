@@ -38,7 +38,6 @@ func (s *Service) Delete(ctx context.Context, installID string, asJSON bool) err
 		return view.Fail(err)
 	}
 
-	// unset install_id if it is the currentInstallID
 	currentInstallID := s.GetInstallID()
 
 	if installID == currentInstallID {

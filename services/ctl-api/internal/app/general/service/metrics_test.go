@@ -12,7 +12,6 @@ import (
 )
 
 func (s *GeneralRunnerTestSuite) TestPublishMetrics_Success() {
-	// Create a valid metrics request with one incr metric
 	req := []PublishMetricInput{
 		{
 			Incr: &metrics.Incr{
@@ -29,7 +28,6 @@ func (s *GeneralRunnerTestSuite) TestPublishMetrics_Success() {
 	}
 	require.Equal(s.T(), http.StatusCreated, rr.Code)
 
-	// Verify response body
 	var resp map[string]string
 	err := json.Unmarshal(rr.Body.Bytes(), &resp)
 	require.NoError(s.T(), err)
@@ -37,7 +35,6 @@ func (s *GeneralRunnerTestSuite) TestPublishMetrics_Success() {
 }
 
 func (s *GeneralRunnerTestSuite) TestPublishMetrics_MultipleMetricTypes() {
-	// Create a request with multiple metric types
 	req := []PublishMetricInput{
 		{
 			Incr: &metrics.Incr{
@@ -67,7 +64,6 @@ func (s *GeneralRunnerTestSuite) TestPublishMetrics_MultipleMetricTypes() {
 	}
 	require.Equal(s.T(), http.StatusCreated, rr.Code)
 
-	// Verify response body
 	var resp map[string]string
 	err := json.Unmarshal(rr.Body.Bytes(), &resp)
 	require.NoError(s.T(), err)
@@ -75,7 +71,6 @@ func (s *GeneralRunnerTestSuite) TestPublishMetrics_MultipleMetricTypes() {
 }
 
 func (s *GeneralRunnerTestSuite) TestPublishMetrics_EmptyArray() {
-	// Empty array should succeed with no metrics to write
 	req := []PublishMetricInput{}
 
 	rr := s.makeRequest(http.MethodPost, "/v1/general/metrics", req)
@@ -85,7 +80,6 @@ func (s *GeneralRunnerTestSuite) TestPublishMetrics_EmptyArray() {
 	}
 	require.Equal(s.T(), http.StatusCreated, rr.Code)
 
-	// Verify response body
 	var resp map[string]string
 	err := json.Unmarshal(rr.Body.Bytes(), &resp)
 	require.NoError(s.T(), err)
@@ -93,7 +87,6 @@ func (s *GeneralRunnerTestSuite) TestPublishMetrics_EmptyArray() {
 }
 
 func (s *GeneralRunnerTestSuite) TestPublishMetrics_InvalidBody() {
-	// Send invalid JSON
 	req, err := http.NewRequest(http.MethodPost, "/v1/general/metrics", nil)
 	require.NoError(s.T(), err)
 	req.Header.Set("Content-Type", "application/json")
@@ -102,7 +95,6 @@ func (s *GeneralRunnerTestSuite) TestPublishMetrics_InvalidBody() {
 	rr := httptest.NewRecorder()
 	s.router.ServeHTTP(rr, req)
 
-	// Should return error response
 	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
 	s.T().Logf("Invalid body error - Status: %d, Body: %s", rr.Code, rr.Body.String())
 }

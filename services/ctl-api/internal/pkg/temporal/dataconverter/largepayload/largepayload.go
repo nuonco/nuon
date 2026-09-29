@@ -38,7 +38,6 @@ func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 	result := make([]*commonpb.Payload, len(payloads))
 
 	for i, payload := range payloads {
-		// Skip if already encoded
 		if string(payload.Metadata[converter.MetadataEncoding]) == "nuon/largepayload" {
 			result[i] = payload
 			continue
@@ -49,7 +48,6 @@ func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 			continue
 		}
 
-		// Skip encoding if disabled (toggle set to "blob")
 		if !d.encodeEnabled {
 			result[i] = payload
 			continue
@@ -67,7 +65,6 @@ func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 			return nil, errors.Wrap(res.Error, "unable to write temporal payload")
 		}
 
-		// Create new payload with compressed data
 		result[i] = &commonpb.Payload{
 			Metadata: map[string][]byte{
 				converter.MetadataEncoding:  []byte("nuon/largepayload"),
@@ -75,7 +72,6 @@ func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 			},
 			Data: []byte(dbPayload.ID),
 		}
-		// Preserve original metadata if exists
 		for k, v := range payload.Metadata {
 			if k != converter.MetadataEncoding {
 				result[i].Metadata[k] = v
@@ -100,9 +96,7 @@ func (d *dataConverter) Decode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 	result := make([]*commonpb.Payload, len(payloads))
 
 	for i, payload := range payloads {
-		// Check if payload is larg payload encoded
 		if string(payload.Metadata[converter.MetadataEncoding]) != "nuon/largepayload" {
-			// Not large payload encoded, return as-is
 			result[i] = payload
 			continue
 		}
@@ -121,13 +115,11 @@ func (d *dataConverter) Decode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 			return nil, errors.Wrap(res.Error, "unable to get payload")
 		}
 
-		// Create new payload with decompressed data
 		result[i] = &commonpb.Payload{
 			Metadata: make(map[string][]byte),
 			Data:     []byte(dbPayload.Contents),
 		}
 
-		// Copy all metadata except the encoding
 		if payload.Metadata != nil {
 			for k, v := range payload.Metadata {
 				if k != converter.MetadataEncoding {
@@ -136,7 +128,6 @@ func (d *dataConverter) Decode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 			}
 		}
 
-		// Restore original encoding if it was preserved
 		if originalEncoding, ok := payload.Metadata["nuon/large-payload/original-encoding"]; ok {
 			result[i].Metadata[converter.MetadataEncoding] = originalEncoding
 		}

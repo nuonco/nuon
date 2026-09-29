@@ -23,7 +23,6 @@ type workerInterceptor struct {
 	interceptor.InterceptorBase
 }
 
-// this is just to intercept and return a new interceptor
 func (m *workerInterceptor) InterceptActivity(
 	ctx context.Context,
 	next interceptor.ActivityInboundInterceptor,

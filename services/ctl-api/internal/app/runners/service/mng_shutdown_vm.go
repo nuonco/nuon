@@ -51,7 +51,6 @@ func (s *service) MngVMShutDown(ctx *gin.Context) {
 		return
 	}
 
-	// Reuse the log stream from the most recent mng process if one exists
 	var logStreamID string
 	var mngProcess app.RunnerProcess
 	if res := s.db.WithContext(ctx).

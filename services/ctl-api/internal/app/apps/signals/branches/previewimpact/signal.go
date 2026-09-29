@@ -11,10 +11,6 @@ import (
 
 const SignalType signal.SignalType = "app-branch-preview-impact"
 
-// Signal reports what a preview run would change across the app's installs. It
-// only reads: no install is pinned to the new config and no workflow is started
-// for one. The result lands in the step's status metadata and, when the run came
-// from a pull request, in the run's PR comment.
 type Signal struct {
 	RunID             string `json:"run_id" validate:"required"`
 	AppBranchID       string `json:"app_branch_id" validate:"required"`

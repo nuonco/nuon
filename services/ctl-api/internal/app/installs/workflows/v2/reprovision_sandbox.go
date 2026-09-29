@@ -48,9 +48,6 @@ func ReprovisionSandbox(ctx workflow.Context, flw *app.Workflow) (*app.GenerateS
 	return sg.Result(steps), nil
 }
 
-// gateRunnerHealthy is false when the caller's preceding phase already waited on
-// the install's runner, where a second wait immediately after can only
-// re-confirm the same result.
 func getSandboxReprovisionSteps(ctx workflow.Context, dg *genCtx, install *app.Install, gateRunnerHealthy bool) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 
@@ -78,7 +75,7 @@ func getSandboxReprovisionSteps(ctx workflow.Context, dg *genCtx, install *app.I
 		return nil, err
 	}
 
-	dg.sg.nextGroup() // sandbox plan + apply
+	dg.sg.nextGroup()
 	step, err := dg.sg.installSignalStep(ctx, dg.installID, "reprovision sandbox plan", pgtype.Hstore{}, &reprovisionsandboxplan.Signal{
 		InstallSandboxID: sandbox.ID,
 		InstallID:        dg.installID,
@@ -108,7 +105,7 @@ func getSandboxReprovisionSteps(ctx workflow.Context, dg *genCtx, install *app.I
 	}
 	steps = append(steps, lifecycleSteps...)
 
-	dg.sg.nextGroup() // sync secrets
+	dg.sg.nextGroup()
 	step, err = dg.sg.installSignalStep(ctx, dg.installID, "sync secrets", pgtype.Hstore{}, &syncsecrets.Signal{
 		InstallID: dg.installID,
 	}, dg.flw.PlanOnly, WithSkippable(false))

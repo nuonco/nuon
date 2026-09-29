@@ -42,7 +42,6 @@ func (s *service) AdminTriggerAppBranchRun(ctx *gin.Context) {
 		return
 	}
 
-	// Load branch with queue
 	var branch app.AppBranch
 	res := s.db.WithContext(ctx).
 		Preload("Queue", app.DefaultQueueScope).
@@ -52,7 +51,6 @@ func (s *service) AdminTriggerAppBranchRun(ctx *gin.Context) {
 		return
 	}
 
-	// Get latest config
 	var config app.AppBranchConfig
 	res = s.db.WithContext(ctx).
 		Where("app_branch_id = ?", appBranchID).
@@ -83,7 +81,6 @@ func (s *service) AdminTriggerAppBranchRun(ctx *gin.Context) {
 	}
 	run := triggerResp.Run
 
-	// Reload with relationships
 	res = s.db.WithContext(ctx).
 		Preload("Workflow").
 		Preload("Workflow.Steps").

@@ -1,10 +1,3 @@
-/*
-
-An alt-screen TUI for editing an install's inputs, with a dynamically generated
-form based on the app's input config and the install's current values.
-
-*/
-
 package editor
 
 import (
@@ -38,38 +31,30 @@ const (
 )
 
 type model struct {
-	// common/base
 	ctx context.Context
 	cfg *config.Config
 	api nuon.Client
 
-	// top level information
 	installID string
 
 	width  int
 	height int
 
-	// data
 	inputConfig   *models.AppAppInputConfig
 	install       *models.AppInstall
 	currentInputs *models.AppInstallInputs
 
-	// form state
 	inputs           []textinput.Model
 	inputMappings    []inputMapping
 	focusIndex       int
 	deployDependents bool
 
-	// ui components
-	viewport viewport.Model
-	spinner  spinner.Model
-	help     help.Model
-	status   common.StatusBarRequest
-
-	// field position tracking for scroll-into-view
+	viewport      viewport.Model
+	spinner       spinner.Model
+	help          help.Model
+	status        common.StatusBarRequest
 	fieldEndLines map[int]int
 
-	// state
 	loading    bool
 	submitting bool
 	error      error
@@ -162,9 +147,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 
 	case tea.PasteMsg:
-		// Bracketed paste (e.g. cmd+v) arrives as a single PasteMsg, which the
-		// textinput component does not handle itself. Insert it at the cursor
-		// of the focused text field.
 		if !m.loading && !m.submitting && !m.success && m.focusIndex < len(m.inputs) {
 			m.insertAtCursor(m.focusIndex, msg.Content)
 			m.updateViewportContent()
@@ -183,7 +165,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyPressMsg:
-		// Global keys
 		switch {
 		case key.Matches(msg, m.keys.Quit):
 			m.quitting = true
@@ -202,7 +183,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		// Form navigation
 		switch {
 		case key.Matches(msg, m.keys.Enter):
 			if !m.submitting {
@@ -228,14 +208,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		default:
 			if m.focusIndex == m.toggleIndex() {
-				// Deploy dependents toggle
 				switch msg.String() {
 				case " ", "left", "right", "h", "l":
 					m.deployDependents = !m.deployDependents
 					m.updateViewportContent()
 				}
 			} else if m.focusIndex < len(m.inputs) {
-				// Text input field
 				m.inputs[m.focusIndex], cmd = m.inputs[m.focusIndex].Update(msg)
 				cmds = append(cmds, cmd)
 				m.updateViewportContent()
@@ -261,7 +239,6 @@ func (m model) View() tea.View {
 	return v
 }
 
-// EditInputsApp launches the install inputs editor TUI.
 func EditInputsApp(
 	ctx context.Context,
 	cfg *config.Config,

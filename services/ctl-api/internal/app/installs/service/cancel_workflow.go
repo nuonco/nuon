@@ -85,8 +85,6 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 	ctx.JSON(http.StatusAccepted, app.EmptyResponse{})
 }
 
-// cancelSingleWorkflow validates, cancels, and signals a single workflow.
-// It returns an error suitable for ctx.Error().
 func (s *service) cancelSingleWorkflow(ctx *gin.Context, orgID, workflowID string) error {
 	wf, err := s.getWorkflow(ctx, orgID, workflowID)
 	if err != nil {
@@ -109,8 +107,6 @@ func (s *service) cancelSingleWorkflow(ctx *gin.Context, orgID, workflowID strin
 		zap.String("install_id", wf.OwnerID),
 	)
 
-	// If the workflow hasn't started yet, cancel it directly in the DB —
-	// there is no signal to cancel.
 	if wf.Status.Status == app.StatusPending {
 		if err := s.cancelWorkflow(ctx, wf.ID); err != nil {
 			return fmt.Errorf("unable to cancel workflow: %w", err)
@@ -121,10 +117,6 @@ func (s *service) cancelSingleWorkflow(ctx *gin.Context, orgID, workflowID strin
 	if _, err := s.flowsClient.CancelWorkflow(ctx, &flowclient.CancelWorkflowRequest{
 		InstallWorkflowID: wf.ID,
 	}); err != nil {
-		// Orphaned workflows (e.g. weeks-old rows stuck in-progress) no longer
-		// have a live execute-flow queue signal — it was soft-deleted once the
-		// handler finished. There is nothing to signal, so flip the row
-		// directly in the DB rather than leaving it stuck in-progress forever.
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			if dbErr := s.cancelWorkflow(ctx, wf.ID); dbErr != nil {
 				return fmt.Errorf("unable to cancel orphaned workflow: %w", dbErr)
@@ -137,7 +129,6 @@ func (s *service) cancelSingleWorkflow(ctx *gin.Context, orgID, workflowID strin
 	return nil
 }
 
-// findCancelableStep returns the first in-progress or awaiting-approval step, if any.
 func (s *service) findCancelableStep(wf *app.Workflow) *app.WorkflowStep {
 	for i := range wf.Steps {
 		switch wf.Steps[i].Status.Status {
@@ -149,8 +140,6 @@ func (s *service) findCancelableStep(wf *app.Workflow) *app.WorkflowStep {
 }
 
 func (s *service) cancelWorkflow(ctx context.Context, installWorkflowID string) error {
-	// Load-then-Save so Workflow.BeforeSave sees Type/Metadata and can
-	// recompute name to the past-tense title.
 	var obj app.Workflow
 	if err := s.db.WithContext(ctx).Where("id = ?", installWorkflowID).Take(&obj).Error; err != nil {
 		return pkgerrors.Wrap(err, "unable to load workflow")

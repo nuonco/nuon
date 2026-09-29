@@ -5,9 +5,6 @@ import (
 	"time"
 )
 
-// Eligibility is the reconciler's desired-state rule, so every status needs a
-// verdict here — a new status silently defaulting to "no credential" (or worse, to
-// "mint one") is exactly the kind of drift this pins down.
 func TestInstallStackVersionPhoneHomeTokenEligible(t *testing.T) {
 	revoked := time.Now()
 
@@ -21,13 +18,11 @@ func TestInstallStackVersionPhoneHomeTokenEligible(t *testing.T) {
 		"provisioning":      {status: InstallStackVersionStatusProvisioning, want: true},
 		"active":            {status: InstallStackVersionStatusActive, want: true},
 
-		// Retired: the handler rejects an expired version outright, and an outdated
-		// one has been superseded by a version that already phoned home.
 		"outdated":  {status: InstallStackVersionStatusOutdated, want: false},
 		"expired":   {status: InstallStackVersionStatusExpired, want: false},
 		"cancelled": {status: StatusCancelled, want: false},
 
-		// The tombstone outranks status. Without this, revocation and
+		// why: The tombstone outranks status. Without this, revocation and
 		// never-minted are indistinguishable and the reconciler resurrects a
 		// credential it was just told to kill.
 		"active but revoked": {
@@ -54,7 +49,7 @@ func TestInstallStackVersionPhoneHomeTokenEligible(t *testing.T) {
 	}
 }
 
-// The Go rule and the SQL pre-filter must agree, or the reconciler loads one set of
+// why: The Go rule and the SQL pre-filter must agree, or the reconciler loads one set of
 // versions and reasons about another.
 func TestPhoneHomeTokenEligibleStatusesMatchesPredicate(t *testing.T) {
 	for _, status := range PhoneHomeTokenEligibleStatuses {

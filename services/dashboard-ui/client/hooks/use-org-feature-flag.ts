@@ -4,11 +4,6 @@ import { useOrg } from '@/hooks/use-org'
 
 const evaluated = new Set<string>()
 
-/**
- * Reads an org feature flag and reports each evaluation to PostHog, so flag
- * usage, rollout timing (first evaluation per org), and stale flags are all
- * visible. Call in place of `!!org?.features?.[flag]`.
- */
 export const useOrgFeatureFlag = (flag: string) => {
   const { org } = useOrg()
   const enabled = !!org?.features?.[flag]

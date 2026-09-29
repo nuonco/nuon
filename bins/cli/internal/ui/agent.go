@@ -23,13 +23,8 @@ type agentError struct {
 
 func agentEnabled() bool { return agentmode.Enabled() }
 
-// jsonOutput is set when --output json is selected (non-agent). It makes the
-// error helpers emit a JSON error object instead of human-styled text.
 var jsonOutput bool
 
-// SetJSONOutput toggles plain JSON output mode. Called once during output
-// resolution. Agent mode is tracked separately via agentmode and takes
-// precedence in every helper.
 func SetJSONOutput(v bool) { jsonOutput = v }
 
 func jsonOutputEnabled() bool { return jsonOutput }
@@ -52,7 +47,6 @@ func emitAgent(env agentEnvelope) {
 	fmt.Fprintln(os.Stdout, string(j))
 }
 
-// classifyError maps an error to a stable machine code and a human message.
 func classifyError(err error) (string, string) {
 	var exitErr *ErrExitCode
 	if errors.As(err, &exitErr) && exitErr.Code != "" {

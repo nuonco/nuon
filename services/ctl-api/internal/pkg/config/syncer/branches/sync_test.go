@@ -29,7 +29,6 @@ func TestBuildInstallGroupsThreadsAutoApproveOnPoliciesPassing(t *testing.T) {
 				Name:          "manual",
 				Order:         2,
 				LabelSelector: map[string]string{"tier": "manual"},
-				// Omitted in the TOML — stays nil so the getter defaults it off.
 			},
 		},
 	}

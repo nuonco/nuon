@@ -45,7 +45,7 @@ func (s *service) GetOrgPendingApprovals(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, approvals)
 }
 
-// Do not use a view here: the pushed-down org_id makes the planner scan the
+// why: Do not use a view here: the pushed-down org_id makes the planner scan the
 // org's full approval history (~2s cold). ANY(ARRAY(...)) fences the active-step
 // set so it materializes first and approvals are probed by step id, which keeps
 // the plan fast regardless of the planner's choice.

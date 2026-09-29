@@ -54,7 +54,6 @@ func (s *service) GetWorkflowStepApprovalContents(ctx *gin.Context) {
 		return
 	}
 
-	// Create a buffer to hold the gzipped data
 	var buf bytes.Buffer
 	gzipWriter := gzip.NewWriter(&buf)
 
@@ -65,23 +64,19 @@ func (s *service) GetWorkflowStepApprovalContents(ctx *gin.Context) {
 			zap.Int("bytes", len(contents)))
 	}
 
-	// Write the contents to the gzip writer
 	_, err = gzipWriter.Write([]byte(contents))
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to gzip approval contents"))
 		return
 	}
 
-	// Close the gzip writer to flush any remaining data
 	err = gzipWriter.Close()
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to close gzip writer"))
 		return
 	}
 
-	// Set the Content-Encoding header to indicate gzip compression
 	ctx.Header("Content-Encoding", "gzip")
 
-	// Return the gzipped bytes
 	ctx.Data(http.StatusOK, "application/json", buf.Bytes())
 }

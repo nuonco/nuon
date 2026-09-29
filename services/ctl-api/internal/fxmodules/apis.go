@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetry"
 )
 
-// PublicAPIModule provides the public-facing API server.
 var PublicAPIModule = fx.Module("public-api",
 	fx.Provide(api.NewEndpointAudit),
 	fx.Provide(poolmetrics.New),
@@ -20,7 +19,6 @@ var PublicAPIModule = fx.Module("public-api",
 	fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
 )
 
-// InternalAPIModule provides the internal API server.
 var InternalAPIModule = fx.Module("internal-api",
 	fx.Provide(api.NewEndpointAudit),
 	fx.Provide(poolmetrics.New),
@@ -30,7 +28,6 @@ var InternalAPIModule = fx.Module("internal-api",
 	fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
 )
 
-// RunnerAPIModule provides the runner API server.
 var RunnerAPIModule = fx.Module("runner-api",
 	fx.Provide(api.NewEndpointAudit),
 	fx.Provide(poolmetrics.New),
@@ -40,7 +37,6 @@ var RunnerAPIModule = fx.Module("runner-api",
 	fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
 )
 
-// AuthAPIModule provides the auth API server.
 var AuthAPIModule = fx.Module("auth-api",
 	fx.Provide(api.NewEndpointAudit),
 	fx.Provide(poolmetrics.New),
@@ -50,7 +46,6 @@ var AuthAPIModule = fx.Module("auth-api",
 	fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
 )
 
-// AdminDashboardAPIModule provides the admin dashboard API server.
 var AdminDashboardAPIModule = fx.Module("admin-dashboard-api",
 	fx.Provide(api.NewEndpointAudit),
 	fx.Provide(poolmetrics.New),
@@ -60,8 +55,6 @@ var AdminDashboardAPIModule = fx.Module("admin-dashboard-api",
 	fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
 )
 
-// SlackAPIModule provides the dedicated Slack-facing API server (OAuth
-// callback, slash commands, Events API webhooks).
 var SlackAPIModule = fx.Module("slack-api",
 	fx.Provide(api.NewEndpointAudit),
 	fx.Provide(poolmetrics.New),
@@ -71,7 +64,6 @@ var SlackAPIModule = fx.Module("slack-api",
 	fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
 )
 
-// AllAPIsModule provides all API servers (for running all in one process).
 var AllAPIsModule = fx.Module("all-apis",
 	fx.Provide(api.NewEndpointAudit),
 	fx.Provide(poolmetrics.New),

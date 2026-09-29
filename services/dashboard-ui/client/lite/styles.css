@@ -410,9 +410,6 @@
 
   --code-bg: var(--hc-blue-deep);
   --code-inline-bg: rgba(255, 255, 255, 0.16);
-  /* Four hues, not two: JSON only uses plain, keyword, punctuation,
-     string-expression and constant, so collapsing them all to yellow made a
-     document unreadable. Every value below clears AAA on --hc-blue-deep. */
   --syntax-plain: var(--neutral-000);
   --syntax-comment: #ffb86c;
   --syntax-string: var(--hc-yellow);
@@ -594,7 +591,7 @@
   }
 }
 
-/* The renderer's shadow host forces color-scheme: dark, which would resolve
+/* why: The renderer's shadow host forces color-scheme: dark, which would resolve
    every light-dark() token we inherit into it to its dark branch. Outer rules
    beat :host rules, so this hands the page's scheme back. It reads the scheme
    from a variable because Lightning CSS minifies `color-scheme: inherit` to
@@ -628,9 +625,6 @@ diffs-container {
   }
 }
 
-/* A light wash caps every hue at AA, because the chip fill is what limits
-   contrast. A dark fill plus a currentColor outline keeps all six statuses
-   saturated and distinct at AAA. */
 :root[data-theme='high-contrast'] .status-tint {
   background-color: var(--hc-blue-deep);
   border: 1px solid currentColor;

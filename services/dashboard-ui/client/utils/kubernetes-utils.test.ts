@@ -12,7 +12,7 @@ describe('kubernetes-utils', () => {
           {
             _version: '2',
             op: 'apply',
-            type: 2, // added
+            type: 2,
             dry_run: true,
             namespace: 'default',
             name: 'myapp-deployment',
@@ -32,7 +32,7 @@ describe('kubernetes-utils', () => {
           {
             _version: '2',
             op: 'apply',
-            type: 3, // changed
+            type: 3,
             dry_run: true,
             namespace: 'default',
             name: 'myapp-service',
@@ -58,8 +58,8 @@ describe('kubernetes-utils', () => {
           } as TKubernetesPlanItem,
           {
             _version: '2',
-            op: 'delete', // op delete takes precedence
-            type: 1, // destroyed
+            op: 'delete',
+            type: 1,
             dry_run: true,
             namespace: 'default',
             name: 'myapp-configmap',
@@ -151,7 +151,7 @@ describe('kubernetes-utils', () => {
           {
             _version: '2',
             op: 'apply',
-            type: 1, // destroyed
+            type: 1,
             dry_run: true,
             namespace: 'default',
             name: 'myapp-pod',

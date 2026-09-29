@@ -1,4 +1,4 @@
-// Package errparsetest provides a shared, table-driven contract runner for
+// why: Package errparsetest provides a shared, table-driven contract runner for
 // errparse parsers. It dispatches fixtures through the real default registry
 // (the same path production uses) and enforces the invariants every parser must
 // satisfy: the expected type wins for a given input, and the resulting record
@@ -23,9 +23,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
-// Case is one dispatch expectation. WantType is the discriminator of the
-// composite error that must win for Raw under the given facets; an empty
-// WantType asserts that no parser matches.
 type Case struct {
 	Name     string
 	Raw      string
@@ -34,10 +31,6 @@ type Case struct {
 	WantType compositeerrors.Type
 }
 
-// Run dispatches each case through the default registry and asserts the winning
-// type, then that the record persists and round-trips as valid JSON. Overlap
-// and layer-ordering expectations are expressed by giving the same input a
-// WantType of whichever parser must win.
 func Run(t *testing.T, cases []Case) {
 	t.Helper()
 	for _, tc := range cases {
@@ -67,11 +60,6 @@ func Run(t *testing.T, cases []Case) {
 	}
 }
 
-// assertPersistable checks the composite error can be frozen into a record and
-// survive the driver.Valuer / sql.Scanner round-trip GORM uses for the jsonb
-// column, with its discriminator and typed payload intact. It compares payloads
-// by bytes in both directions so a dropped or altered payload (e.g. a "data":
-// null record that still carries the right type) cannot slip through.
 func assertPersistable(t *testing.T, ce compositeerrors.CompositeError) {
 	t.Helper()
 

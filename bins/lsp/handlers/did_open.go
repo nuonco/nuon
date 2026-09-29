@@ -14,7 +14,6 @@ func TextDocumentDidOpen(ctx *glsp.Context, params *protocol.DidOpenTextDocument
 	openDocuments[uri] = text
 	openDocumentsMutex.Unlock()
 
-	// Trigger diagnostics
 	PublishDiagnostics(ctx, uri, text)
 
 	return nil

@@ -22,8 +22,6 @@ const (
 	RunbookStepTypeSandboxDeprovision RunbookStepType = "sandbox_deprovision"
 	RunbookStepTypeWaitForEvent       RunbookStepType = "wait_for_event"
 
-	// RunbookStepTypeDeployLegacy is the prior name for component_deploy. Accepted
-	// as input and canonicalized to component_deploy at parse/ingress time.
 	RunbookStepTypeDeployLegacy RunbookStepType = "deploy"
 )
 
@@ -38,8 +36,6 @@ type RunbookConfig struct {
 	References   []refs.Ref `mapstructure:"-" jsonschema:"-"`
 	Dependencies []string   `mapstructure:"dependencies,omitempty" toml:"dependencies,omitempty"`
 
-	// DeprecationWarnings collects messages about legacy field usage observed during parse().
-	// Populated by parse(); consumed by callers (e.g. the CLI sync) to surface to the
 	DeprecationWarnings []string `mapstructure:"-" toml:"-" jsonschema:"-"`
 }
 
@@ -48,23 +44,16 @@ type RunbookStepConfig struct {
 	Type     RunbookStepType `mapstructure:"type" toml:"type" jsonschema:"required"`
 	PlanOnly bool            `mapstructure:"plan_only,omitempty" toml:"plan_only,omitempty"`
 
-	// For type = "component_deploy" / "component_tear_down"
 	ComponentName      string `mapstructure:"component_name,omitempty" toml:"component_name,omitempty"`
 	DeployDependents   bool   `mapstructure:"deploy_dependents,omitempty" toml:"deploy_dependents,omitempty"`
 	TearDownDependents bool   `mapstructure:"tear_down_dependents,omitempty" toml:"tear_down_dependents,omitempty"`
 
-	// Legacy alias for DeployDependents — kept for back-compat with TOML configs
-	// written before the rename. Folded into DeployDependents in parse().
 	DeployDependenciesLegacy bool `mapstructure:"deploy_dependencies,omitempty" toml:"deploy_dependencies,omitempty"`
 
-	// For type = "sandbox_reprovision" — when true, only run the sandbox infra plan + apply
-	// and do NOT redeploy components on top.
 	SkipComponentDeploys bool `mapstructure:"skip_component_deploys,omitempty" toml:"skip_component_deploys,omitempty"`
 
-	// For type = "action" — reference existing action
 	ActionName string `mapstructure:"action_name,omitempty" toml:"action_name,omitempty"`
 
-	// For type = "action" — inline action (same fields as ActionStepConfig)
 	Command        string            `mapstructure:"command,omitempty" toml:"command,omitempty" features:"template"`
 	InlineContents string            `mapstructure:"inline_contents,omitempty" toml:"inline_contents,omitempty" features:"get,template"`
 	EnvVarMap      map[string]string `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
@@ -90,8 +79,6 @@ func (r RunbookConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("./release-notes.md").
 		Field("steps").Short("ordered steps to execute in the runbook").Required().
 		Long("Sequential list of deploy and action steps. Each step executes in order. Deploy steps can include dependency deployment. Action steps can reference existing actions or define inline actions")
-	// Field("input").Short("inputs collected when the runbook is run").
-	// Long("List of inputs prompted for when running the runbook. Values are templated into step fields (command, inline_contents, env_vars, role) via {{.runbook_inputs.input_name}}")
 }
 
 func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -178,12 +165,10 @@ func (r *RunbookConfig) parse() error {
 				}
 			}
 		}
-		// Fold the legacy alias into the canonical field. New code should only read DeployDependents.
 		if step.DeployDependenciesLegacy {
 			step.DeployDependents = true
 			r.DeprecationWarnings = append(r.DeprecationWarnings, fmt.Sprintf("runbook %q step %q: 'deploy_dependencies' is deprecated, use 'deploy_dependents' instead", r.Name, step.Name))
 		}
-		// Canonicalize the legacy "deploy" type to "component_deploy".
 		if step.Type == RunbookStepTypeDeployLegacy {
 			step.Type = RunbookStepTypeComponentDeploy
 			r.DeprecationWarnings = append(r.DeprecationWarnings, fmt.Sprintf("runbook %q step %q: type 'deploy' is deprecated, use 'component_deploy' instead", r.Name, step.Name))

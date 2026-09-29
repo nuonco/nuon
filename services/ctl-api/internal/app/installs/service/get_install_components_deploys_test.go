@@ -26,7 +26,6 @@ func (s *InstallsServiceTestSuite) TestGetComponentsDeploysEmpty() {
 func (s *InstallsServiceTestSuite) TestGetComponentsDeploysReturnsList() {
 	install := s.createTestInstall()
 
-	// Seed the full deploy chain: component -> install component -> build -> deploy.
 	ccc := s.testAppConfig.ComponentConfigConnections[0]
 	installComp := s.deps.Seeder.CreateInstallComponent(s.ctx, s.T(), install.ID, ccc.ComponentID)
 	build := s.deps.Seeder.CreateComponentBuild(s.ctx, s.T(), ccc.ID)

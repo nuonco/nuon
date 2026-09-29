@@ -18,7 +18,6 @@ type contextKey string
 
 const ctxKey contextKey = "query_collector_start"
 
-// QueryRecord holds the captured data for a single query execution.
 type QueryRecord struct {
 	Table        string        `json:"table"`
 	Operation    string        `json:"operation"`
@@ -37,7 +36,6 @@ type QueryRecord struct {
 	Endpoint     string        `json:"endpoint"`
 }
 
-// Collector accumulates query records in a fixed-size ring buffer.
 type Collector struct {
 	mu      sync.RWMutex
 	records []QueryRecord
@@ -47,7 +45,6 @@ type Collector struct {
 	writer  *Writer
 }
 
-// NewCollector creates a new collector with the given max buffer size.
 func NewCollector(maxSize int) *Collector {
 	return &Collector{
 		records: make([]QueryRecord, 0, maxSize),
@@ -55,14 +52,12 @@ func NewCollector(maxSize int) *Collector {
 	}
 }
 
-// SetWriter attaches a Writer that persists records to ClickHouse.
 func (c *Collector) SetWriter(w *Writer) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.writer = w
 }
 
-// callerURL builds a GitHub permalink for the given caller string (file:line).
 func (c *Collector) callerURL(caller string) string {
 	if caller == "" {
 		return ""
@@ -76,7 +71,6 @@ func (c *Collector) callerURL(caller string) string {
 	return fmt.Sprintf("https://github.com/nuonco/nuon/tree/main/%s#L%s", filePath, line)
 }
 
-// Add inserts a record into the ring buffer and forwards to the writer if set.
 func (c *Collector) Add(r QueryRecord) {
 	c.mu.Lock()
 	w := c.writer
@@ -94,7 +88,6 @@ func (c *Collector) Add(r QueryRecord) {
 	}
 }
 
-// Records returns a snapshot of all collected records (newest first).
 func (c *Collector) Records() []QueryRecord {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -108,14 +101,12 @@ func (c *Collector) Records() []QueryRecord {
 	return out
 }
 
-// Total returns the total number of queries captured (including evicted).
 func (c *Collector) Total() int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.total
 }
 
-// Clear resets the collector.
 func (c *Collector) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -124,7 +115,6 @@ func (c *Collector) Clear() {
 	c.total = 0
 }
 
-// Tables returns the distinct table names seen in the buffer.
 func (c *Collector) Tables() []string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -141,7 +131,6 @@ func (c *Collector) Tables() []string {
 	return out
 }
 
-// Plugin is a GORM plugin that records every query into a Collector.
 type Plugin struct {
 	collector *Collector
 	dbType    string
@@ -149,7 +138,6 @@ type Plugin struct {
 
 var _ gorm.Plugin = (*Plugin)(nil)
 
-// NewPlugin creates a plugin that tags records with the given dbType ("psql" or "ch").
 func NewPlugin(collector *Collector, dbType string) *Plugin {
 	return &Plugin{collector: collector, dbType: dbType}
 }
@@ -234,14 +222,12 @@ func (p *Plugin) afterAll(tx *gorm.DB, operation string) {
 	})
 }
 
-// skipPrefixes are package paths that belong to GORM/plugin internals.
 var skipPrefixes = []string{
 	"gorm.io/",
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/",
 	"moul.io/zapgorm2",
 }
 
-// findCaller walks the stack to find the first frame outside GORM and plugin internals.
 func findCaller() string {
 	for i := 4; i < 20; i++ {
 		pc, file, line, ok := runtime.Caller(i)

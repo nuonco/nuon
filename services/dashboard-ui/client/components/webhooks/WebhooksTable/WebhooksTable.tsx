@@ -43,9 +43,6 @@ export const WebhooksTable = ({
         header: 'URL',
         accessorKey: 'webhook_url',
         cell: (props) => {
-          // Scope subtitle mirrors the Slack channel-subscriptions table /
-          // CLI describeMatch vocabulary so the dashboard, Slack modal,
-          // and CLI describe a row identically.
           const scope = describeMatch(props.row.original.match)
           return (
             <div className="flex flex-col gap-1">

@@ -36,8 +36,6 @@ func (h *Helpers) GetGitSource(ctx context.Context, cfg *app.ConnectedGithubVCSC
 	}, nil
 }
 
-// GetGitSourceAtCommit returns a git source for a connected GitHub repo at a specific commit SHA.
-// Unlike GetGitSource, it does not look up the latest commit — it uses the provided SHA directly.
 func (h *Helpers) GetGitSourceAtCommit(ctx context.Context, cfg *app.ConnectedGithubVCSConfig, commitSHA string) (*plantypes.GitSource, error) {
 	token, err := h.CreateInstallationToken(ctx, &cfg.VCSConnection, cfg.RepoName)
 	if err != nil {
@@ -51,8 +49,6 @@ func (h *Helpers) GetGitSourceAtCommit(ctx context.Context, cfg *app.ConnectedGi
 	}, nil
 }
 
-// GetPublicGitSourceAtCommit returns a git source for a public repo at a specific commit SHA.
-// Uses an org VCS connection token when available; otherwise falls back to a plain HTTPS URL.
 func (h *Helpers) GetPublicGitSourceAtCommit(ctx context.Context, cfg *app.PublicGitVCSConfig, commitSHA string) (*plantypes.GitSource, error) {
 	return h.publicGitSource(ctx, cfg, commitSHA)
 }
@@ -86,7 +82,6 @@ func (h *Helpers) publicGitSource(ctx context.Context, cfg *app.PublicGitVCSConf
 	}, nil
 }
 
-// CreateInstallationToken creates a GitHub installation token for the given VCS connection and repo.
 func (h *Helpers) CreateInstallationToken(ctx context.Context, vcsConn *app.VCSConnection, repoName string) (string, error) {
 	ghInstallID, err := strconv.Atoi(vcsConn.GithubInstallID)
 	if err != nil {

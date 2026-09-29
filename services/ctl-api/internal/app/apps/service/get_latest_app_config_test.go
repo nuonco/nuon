@@ -15,7 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// TestGetAppLatestConfigSuccess tests GET /v1/apps/:app_id/latest-config.
 func (s *AppConfigsTestSuite) TestGetAppLatestConfigSuccess() {
 	testCases := []struct {
 		name         string
@@ -171,8 +170,6 @@ func (s *AppConfigsTestSuite) TestGetAppLatestConfigNotFound() {
 	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }
 
-// TestGetAppLatestConfigNeverSynced asserts a config that never finished syncing is not served as
-// the app's latest config.
 func (s *AppConfigsTestSuite) TestGetAppLatestConfigNeverSynced() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)

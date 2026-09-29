@@ -17,7 +17,6 @@ type handlerState struct {
 
 	timeout time.Duration
 
-	// fields set by the plugin execution
 	jobExecutionID string
 	jobID          string
 	plan           *plantypes.SyncSecretsPlan

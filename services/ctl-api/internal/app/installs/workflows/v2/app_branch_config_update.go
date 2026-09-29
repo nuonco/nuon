@@ -61,8 +61,6 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 
 	stackChanged := diff != nil && diff.StackChanged
 
-	// A stack change recycles the runner, so gating on the outgoing one would
-	// block the apply that brings its replacement up.
 	if !stackChanged {
 		sg.nextGroupEager()
 		step, err := sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
@@ -128,7 +126,7 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
-	// Order against the config being rolled out, not the one the install is
+	// why: Order against the config being rolled out, not the one the install is
 	// still pinned to: a component this update adds has no vertex in the old
 	// graph, and would otherwise never get a deploy step.
 	componentIDs, err := activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
@@ -151,7 +149,7 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	return sg.Result(steps), nil
 }
 
-// filterComponentsByDiff narrows a dependency-ordered component list to the ones
+// why: filterComponentsByDiff narrows a dependency-ordered component list to the ones
 // this config update touches. componentIDs must be ordered against newAppCfg —
 // the result can only ever be a subset of it, so anything the update adds is
 // silently dropped if the caller ordered against the install's current config.
@@ -188,10 +186,6 @@ func filterComponentsByDiff(componentIDs []string, newAppCfg *app.AppConfig, dif
 	return filtered
 }
 
-// getStackVersionSteps emits a new install stack version and the wait for its run.
-// This regenerates the stack template only — see getStackReprovisionSteps for the
-// full stack recreation, which also recycles the runner service account and install
-// state around it.
 func getStackVersionSteps(ctx workflow.Context, sg *stepGroup, installID string, planOnly bool) ([]*app.WorkflowStep, error) {
 	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, installID)
 	if err != nil {

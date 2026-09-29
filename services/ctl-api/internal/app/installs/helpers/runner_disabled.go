@@ -10,14 +10,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
-// ErrRunnerDisabled is returned when a workflow that needs the install runner is
-// requested while the stack has the runner disabled.
 var ErrRunnerDisabled = errors.New("the install runner is disabled")
 
 const runnerDisabledDescription = "This install's runner is disabled, so it cannot run jobs. Re-enable it in the install stack, then try again."
 
-// NewRunnerDisabledConflict wraps ErrRunnerDisabled as a 409 with actionable
-// copy, so every surface reports the same reason and remedy.
 func NewRunnerDisabledConflict() error {
 	return stderr.ErrConflict{
 		Err:         ErrRunnerDisabled,
@@ -25,9 +21,6 @@ func NewRunnerDisabledConflict() error {
 	}
 }
 
-// IsRunnerDisabled reports whether the install's runner was disabled by its
-// stack. A missing runner is not disabled — it has simply not been provisioned
-// yet, which the provisioning lifecycle already models.
 func (s *Helpers) IsRunnerDisabled(ctx context.Context, installID string) (bool, error) {
 	groupIDs := s.db.WithContext(ctx).
 		Model(&app.RunnerGroup{}).

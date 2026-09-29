@@ -7,9 +7,6 @@ import (
 	"github.com/nuonco/nuon/pkg/events/provider"
 )
 
-// azureEventGrid speaks the Azure Event Grid webhook protocol: a fixed
-// single-event envelope, the subscription validation handshake, and HTTP 400
-// rejections as the protocol expects.
 type azureEventGrid struct {
 	provider.Base
 }

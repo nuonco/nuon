@@ -16,10 +16,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// Generating a stack version is a write: it creates a stack version row that
-// supersedes the install's active one, mints a service account and a runner
-// token, and then parks awaiting a human to apply the stack. A plan-only
-// workflow must not do any of that.
 func TestPlanOnlySkipsWriteSignals(t *testing.T) {
 	skipped := []signal.SignalType{
 		provisionsandboxapplyplan.SignalType,
@@ -46,7 +42,6 @@ func TestPlanOnlySkipsWriteSignals(t *testing.T) {
 	}
 }
 
-// Plans are the point of a plan-only run — they must keep running.
 func TestPlanOnlyKeepsPlanSignals(t *testing.T) {
 	for _, sigType := range []signal.SignalType{componentdeploysyncandplan.SignalType} {
 		if getSignalStepMetadata(sigType, true).executionType == app.WorkflowStepExecutionTypeSkipped {

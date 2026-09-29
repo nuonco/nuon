@@ -67,7 +67,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return fmt.Errorf("install id is required")
 	}
 
-	// Validate install exists
 	_, err := activities.AwaitGet(ctx, activities.GetRequest{
 		InstallID: s.InstallID,
 	})
@@ -129,7 +128,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// create the job
 	l.Info("creating sync secrets job")
 	runnerJob, err := activities.AwaitCreateSyncSecretsJob(ctx, &activities.CreateSyncSecretsJobRequest{
 		RunnerID:  install.RunnerID,

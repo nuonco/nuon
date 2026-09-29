@@ -73,7 +73,6 @@ func (s *QueryHelmReleaseTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -142,10 +141,8 @@ func (s *QueryHelmReleaseTestSuite) TestQueryHelmRelease() {
 				helmChartID := domains.NewHelmChartID()
 				namespace := "default"
 
-				// Create helm chart before releases
 				s.createHelmChart(ctx, helmChartID)
 
-				// Create releases with different statuses
 				release1 := &app.HelmRelease{
 					HelmChartID: helmChartID,
 					Key:         domains.NewHelmChartID(),
@@ -199,10 +196,8 @@ func (s *QueryHelmReleaseTestSuite) TestQueryHelmRelease() {
 				helmChartID := domains.NewHelmChartID()
 				namespace := "default"
 
-				// Create helm chart before releases
 				s.createHelmChart(ctx, helmChartID)
 
-				// Create releases with different versions
 				for i := 1; i <= 3; i++ {
 					release := &app.HelmRelease{
 						HelmChartID: helmChartID,
@@ -241,7 +236,6 @@ func (s *QueryHelmReleaseTestSuite) TestQueryHelmRelease() {
 				helmChartID := domains.NewHelmChartID()
 				namespace := "default"
 
-				// Create helm chart before releases
 				s.createHelmChart(ctx, helmChartID)
 
 				release1 := &app.HelmRelease{
@@ -297,7 +291,6 @@ func (s *QueryHelmReleaseTestSuite) TestQueryHelmRelease() {
 				helmChartID := domains.NewHelmChartID()
 				namespace := "default"
 
-				// Create helm chart before release
 				s.createHelmChart(ctx, helmChartID)
 
 				release := &app.HelmRelease{
@@ -327,7 +320,6 @@ func (s *QueryHelmReleaseTestSuite) TestQueryHelmRelease() {
 			},
 			expectedCode: http.StatusInternalServerError,
 			validateFunc: func(releases []helm.Release) {
-				// Should return error for unknown label
 			},
 		},
 		{
@@ -339,7 +331,6 @@ func (s *QueryHelmReleaseTestSuite) TestQueryHelmRelease() {
 				helmChartID := domains.NewHelmChartID()
 				namespace := "default"
 
-				// Create helm chart before release
 				s.createHelmChart(ctx, helmChartID)
 
 				release := &app.HelmRelease{
@@ -435,7 +426,6 @@ func (s *QueryHelmReleaseTestSuite) TestQueryHelmReleaseValidation() {
 }
 
 func (s *QueryHelmReleaseTestSuite) TestQueryHelmReleaseAllowedLabels() {
-	// Document allowed label filters
 	allowedLabels := []string{"modifiedAt", "createdAt", "version", "status", "owner", "name"}
 
 	s.T().Logf("Allowed label filters: %v", allowedLabels)

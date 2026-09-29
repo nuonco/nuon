@@ -44,7 +44,6 @@ export const SendStackOutputsModal = ({
     try {
       onSend(JSON.parse(value))
     } catch {
-      // invalid JSON
     }
   }
 

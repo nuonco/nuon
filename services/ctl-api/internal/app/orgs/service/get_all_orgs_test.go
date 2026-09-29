@@ -28,7 +28,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// GetAllOrgsTestService holds all fx-injected dependencies for GetAllOrgs endpoint tests.
 type GetAllOrgsTestService struct {
 	fx.In
 
@@ -43,7 +42,6 @@ type GetAllOrgsTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// GetAllOrgsTestSuite is the testify suite for GetAllOrgs endpoint.
 type GetAllOrgsTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -68,7 +66,6 @@ func (s *GetAllOrgsTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -77,7 +74,6 @@ func (s *GetAllOrgsTestSuite) SetupSuite() {
 
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -85,8 +81,6 @@ func (s *GetAllOrgsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares
-	// Note: GetAllOrgs is an admin endpoint, no org context needed
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -118,11 +112,11 @@ func (s *GetAllOrgsTestSuite) makeRequest(method, path string) *httptest.Respons
 func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 	testCases := []struct {
 		name          string
-		setupFunc     func() []string // Returns org IDs that should be returned
+		setupFunc     func() []string
 		queryParams   string
 		expectedCount int
 		expectedCode  int
-		validateFunc  func([]app.Org) // Additional validations
+		validateFunc  func([]app.Org)
 	}{
 		{
 			name: "returns empty array when no orgs",
@@ -173,10 +167,9 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 				return []string{org1.ID, org2.ID}
 			},
 			queryParams:   "?type=",
-			expectedCount: -1, // shared DB may have other orgs
+			expectedCount: -1,
 			expectedCode:  http.StatusOK,
 			validateFunc: func(orgs []app.Org) {
-				// Verify both our created orgs are in the response
 				ids := make(map[string]bool)
 				for _, o := range orgs {
 					ids[o.Name] = true
@@ -197,7 +190,7 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 						ID:          domains.NewOrgID(),
 						Name:        fmt.Sprintf("test-org-%02d", i),
 						SandboxMode: true,
-						OrgType:     app.OrgTypeSandbox, // Use sandbox so type=sandbox filter works
+						OrgType:     app.OrgTypeSandbox,
 						NotificationsConfig: app.NotificationsConfig{
 							InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 						},
@@ -253,7 +246,6 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create orgs sequentially
 				org1 := &app.Org{
 					ID:          domains.NewOrgID(),
 					Name:        "oldest-org",
@@ -299,7 +291,7 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org3.ID)
 				})
 
-				return []string{org3.ID, org2.ID, org1.ID} // Expect DESC order
+				return []string{org3.ID, org2.ID, org1.ID}
 			},
 			queryParams:   "?type=integration",
 			expectedCount: 3,
@@ -345,10 +337,8 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test data
 			_ = tc.setupFunc()
 
-			// Make request
 			rr := s.makeRequest(http.MethodGet, "/v1/orgs"+tc.queryParams)
 
 			if rr.Code != tc.expectedCode {
@@ -356,7 +346,6 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 			}
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
-			// Parse response
 			var response []app.Org
 			err := json.Unmarshal(rr.Body.Bytes(), &response)
 			if err != nil {
@@ -365,12 +354,10 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 			require.NoError(s.T(), err)
 			require.NotNil(s.T(), response)
 
-			// Validate expected count
 			if tc.expectedCount >= 0 {
 				require.Len(s.T(), response, tc.expectedCount)
 			}
 
-			// Run additional validations if provided
 			if tc.validateFunc != nil && len(response) > 0 {
 				tc.validateFunc(response)
 			}

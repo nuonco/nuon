@@ -16,7 +16,6 @@ type dogstatsdClient interface {
 	statsd.ClientInterface
 }
 
-// getClient returns a new dogstatsd client
 func (w *writer) getClient() (dogstatsdClient, error) {
 	w.clientonce.Do(func() {
 		client, err := statsd.New(w.Address, statsd.WithMaxBytesPerPayload(maxBytesPerPayload))

@@ -188,7 +188,6 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		}
 	}
 
-	// Build VCS configs
 	githubVCSConfig, err := s.vcsHelpers.BuildConnectedGithubVCSConfig(ctx, req.ConnectedGithubVCSConfig, parentApp.Org)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create connected github vcs config: %w", err)

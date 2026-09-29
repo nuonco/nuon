@@ -36,12 +36,10 @@ func (h *handler) cancelHandler(ctx workflow.Context, req *CancelRequest) (*Canc
 
 	h.canceled = true
 
-	// cancel executing context if mid-execute
 	if h.executingCtx != nil {
 		h.executingCancel()
 	}
 
-	// call signal-level cancel callback if implemented
 	cancelCallbackInvoked := false
 	if sc, ok := h.sig.(signal.SignalWithCancel); ok {
 		if err := sc.Cancel(ctx); err != nil {
@@ -53,7 +51,6 @@ func (h *handler) cancelHandler(ctx workflow.Context, req *CancelRequest) (*Canc
 		}
 	}
 
-	// persist cancelled status to DB
 	statusReq := statusactivities.UpdateQueueSignalStatusV2Request{
 		QueueSignalID: h.queueSignalID,
 		Status:        app.StatusCancelled,

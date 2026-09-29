@@ -32,7 +32,6 @@ func (s *service) GetQueueStatus(ctx *gin.Context) {
 		return
 	}
 
-	// Verify queue exists and user has access
 	var q app.Queue
 	res := s.db.WithContext(ctx).
 		Where("id = ?", queueID).
@@ -44,7 +43,6 @@ func (s *service) GetQueueStatus(ctx *gin.Context) {
 		return
 	}
 
-	// Get queue status from Temporal workflow
 	statusResp, err := s.getQueueStatusFromTemporal(ctx, q.Workflow.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get queue status from temporal: %w", err))
@@ -55,7 +53,6 @@ func (s *service) GetQueueStatus(ctx *gin.Context) {
 }
 
 func (s *service) getQueueStatusFromTemporal(ctx context.Context, workflowID string) (*queue.StatusResponse, error) {
-	// Query the queue workflow for its status
 	encodedValue, err := s.temporalClient.QueryWorkflow(ctx, workflowID, "", queue.StatusHandlerName)
 	if err != nil {
 		return nil, fmt.Errorf("unable to query workflow: %w", err)

@@ -36,18 +36,13 @@ func TestComponentHealthNotification(t *testing.T) {
 		{"unhealthy to healthy resolves", unhealthy, healthy, true, true, true},
 		{"degraded to healthy resolves", degraded, healthy, true, true, true},
 
-		// Escalation and de-escalation inside the bad band are silent: the
-		// subscriber already knows the component is broken.
 		{"degraded to unhealthy is silent", degraded, unhealthy, true, false, false},
 		{"unhealthy to degraded is silent", unhealthy, degraded, true, false, false},
 
-		// Alerts/resolutions pair via the alerted flag: a suppressed spell
-		// resolves silently, a late one alerts once lifted, a steady spell is quiet.
 		{"suppressed spell resolves silently", unhealthy, healthy, false, false, false},
 		{"suppression lifted mid-spell alerts late", unhealthy, unhealthy, false, true, false},
 		{"steady alerted spell is silent", unhealthy, unhealthy, true, false, false},
 
-		// Losing visibility is not a recovery and is not an alert.
 		{"degraded to unknown is silent", degraded, unknown, true, false, false},
 		{"unhealthy to unknown is silent", unhealthy, unknown, true, false, false},
 		{"healthy to unknown is silent", healthy, unknown, false, false, false},
@@ -136,8 +131,6 @@ func TestInstallHealthNotification(t *testing.T) {
 	})
 }
 
-// markDownstream's graph logic is what turns "postgres down plus six
-// crashlooping dependents" into one alert instead of seven.
 func TestMarkDownstreamLabelling(t *testing.T) {
 	unhealthy := app.InstallComponentHealthStatusUnhealthy
 	degraded := app.InstallComponentHealthStatusDegraded
@@ -155,12 +148,10 @@ func TestMarkDownstreamLabelling(t *testing.T) {
 	}
 
 	tests := []struct {
-		name string
-		// deps maps componentID -> dependency componentIDs
+		name  string
 		deps  map[string][]string
 		evals []componentEval
-		// want maps component name -> expected downstreamOf
-		want map[string]string
+		want  map[string]string
 	}{
 		{
 			name:  "a lone failure is its own root cause",
@@ -238,8 +229,6 @@ func TestDiagnosisFromDetails(t *testing.T) {
 	}
 }
 
-// Regression: an undeployed component must never get a health verdict. Found
-// on stage — probes reported `whoami` healthy before it had ever been deployed.
 func TestComponentVerdictRequiresADeploy(t *testing.T) {
 	now := time.Now()
 	healthyReports := []componentHealthReport{{
@@ -263,7 +252,6 @@ func TestComponentVerdictRequiresADeploy(t *testing.T) {
 		{"torn down", app.InstallComponentStatusInactive, app.InstallComponentHealthStatusNotApplicable},
 		{"deleted", app.InstallComponentStatusDeleted, app.InstallComponentHealthStatusNotApplicable},
 
-		// Deployed at least once: health applies.
 		{"active", app.InstallComponentStatusActive, app.InstallComponentHealthStatusHealthy},
 		{"noop deploy", app.InstallComponentStatusNoop, app.InstallComponentHealthStatusHealthy},
 		{"failed deploy still reports health", app.InstallComponentStatusError, app.InstallComponentHealthStatusHealthy},

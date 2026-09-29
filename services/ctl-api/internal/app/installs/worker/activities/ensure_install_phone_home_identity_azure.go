@@ -11,16 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workloadjwt"
 )
 
-// ensureAzurePhoneHomeIdentity records which managed identity each of this install's live
-// stack versions should phone home as.
-//
-// Azure needs no credential published anywhere: the stack presents a token Entra already
-// signed. So unlike the AWS path there is nothing to mint, encrypt, or grant — only a name
-// that the rendered template and the verifier both derive the same way.
-//
-// Convergent like its AWS counterpart. The name is written to every eligible version and
-// cleared from the rest, so a re-run after a partial failure is a no-op and a retired
-// version cannot keep authenticating.
 func (a *Activities) ensureAzurePhoneHomeIdentity(
 	ctx context.Context, install *app.Install, ignoreFeatureGate bool,
 ) (*EnsureInstallPhoneHomeSecretResponse, error) {
@@ -72,9 +62,6 @@ func (a *Activities) ensureAzurePhoneHomeIdentity(
 	return resp, nil
 }
 
-// azurePhoneHomeSkipReason returns a non-empty reason when this install must be passed
-// over. Every one is a clean no-op: enforcement is opt-in per cloud and a miss must never
-// fail a provision.
 func (a *Activities) azurePhoneHomeSkipReason(
 	ctx context.Context, install *app.Install, ignoreFeatureGate bool,
 ) (string, error) {
@@ -88,14 +75,12 @@ func (a *Activities) azurePhoneHomeSkipReason(
 		}
 	}
 
-	// The org is checked too because AdminForceSandboxMode flips the org without
+	// why: The org is checked too because AdminForceSandboxMode flips the org without
 	// updating installs.sandbox_mode.
 	if install.SandboxMode.Bool || install.Org.SandboxMode {
 		return phoneHomeSkipSandboxMode, nil
 	}
 
-	// The verifier binds the token's subscription to this value, so rendering an
-	// identity without it would mean enforcing against nothing.
 	if install.CloudPlatformMetadata.TargetSubscriptionID == "" {
 		a.l.Info("skipping azure phone home identity: no target subscription",
 			zap.String("install_id", install.ID), zap.String("org_id", install.OrgID))

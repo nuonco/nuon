@@ -2,8 +2,6 @@ package templates
 
 import "strings"
 
-// planDisplayTemplates returns all human-readable plan display templates.
-// These match the format of `terraform show planfile` text output.
 func planDisplayTemplates() []Template {
 	return []Template{
 		{

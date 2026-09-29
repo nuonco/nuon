@@ -1,4 +1,4 @@
-// Package workloadjwt verifies cloud-issued workload identity JWTs.
+// why: Package workloadjwt verifies cloud-issued workload identity JWTs.
 //
 // Callers supply the issuer and audience; they are never read out of the presented
 // token, so an unauthenticated caller cannot steer which key set is trusted.
@@ -23,8 +23,6 @@ const (
 	jwksCacheTTL     = 5 * time.Minute
 	allowedClockSkew = time.Minute
 
-	// Bounds memory and outbound discovery if a caller ever passes an issuer it did
-	// not fully constrain.
 	maxCachedIssuers = 256
 )
 
@@ -57,7 +55,7 @@ func NewVerifier() *Verifier {
 	return &Verifier{providers: map[string]*jwks.CachingProvider{}}
 }
 
-// Verify checks signature, issuer, audience and time claims.
+// why: Verify checks signature, issuer, audience and time claims.
 //
 // A valid signature only establishes which cloud tenant minted the token, not that it is
 // the right one, so callers must bind the returned claims to stored state.
@@ -86,9 +84,6 @@ func (v *Verifier) Verify(ctx context.Context, req Request) (map[string]any, err
 		return nil, fmt.Errorf("token validation failed: %w", err)
 	}
 
-	// Decoded rather than read off the validator, which only surfaces registered claims
-	// unless a concrete type is registered up front. Safe: the signature over this
-	// payload is already checked.
 	claims, err := decodeClaims(req.Token)
 	if err != nil {
 		return nil, err
@@ -126,7 +121,7 @@ func (v *Verifier) provider(issuer string) (*jwks.CachingProvider, error) {
 	return provider, nil
 }
 
-// UnverifiedClaims decodes claims without checking the signature. Only for selecting
+// why: UnverifiedClaims decodes claims without checking the signature. Only for selecting
 // which key set to verify against; never for authorization.
 func UnverifiedClaims(token string) (map[string]any, error) {
 	return decodeClaims(token)
@@ -151,8 +146,6 @@ func decodeClaims(token string) (map[string]any, error) {
 	return claims, nil
 }
 
-// StringClaim reads a string claim. A claim of any other type is treated as absent
-// rather than coerced.
 func StringClaim(claims map[string]any, name string) (string, bool) {
 	raw, ok := claims[name]
 	if !ok {

@@ -53,9 +53,6 @@ func (s *service) UpdateRunnerJobExecution(ctx *gin.Context) {
 	}
 	helpers.AuditJobExecutionResult(ctx, s.db, s.mw, runnerJobExecutionID, req.Status, "runner_api")
 
-	// On a terminal status, wake the process_job workflow so it finalizes
-	// (stamps finished_at) on this request instead of on its next poll tick.
-	// Intermediate transitions still drive the workflow via its poll loop.
 	if !req.Status.IsRunning() {
 		s.wakeProcessJobWorkflow(ctx, runnerJobID, processjob.TerminalSignalName(runnerJobID))
 	}
@@ -103,7 +100,7 @@ func (s *service) updateRunnerJobExecution(ctx context.Context, runnerJobID, run
 	return &jobExecution, nil
 }
 
-// statusDescriptionMaxLen caps stored status descriptions so a long stack trace
+// why: statusDescriptionMaxLen caps stored status descriptions so a long stack trace
 // doesn't bloat the composite status jsonb column or Temporal history.
 const statusDescriptionMaxLen = 2048
 

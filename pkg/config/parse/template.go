@@ -7,7 +7,7 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-// NOTE(jm): we have to be careful about just using template/text here, because it will mark all of our user config
+// why: we have to be careful about just using template/text here, because it will mark all of our user config
 // values as empty or errors.
 //
 // Thus, we have a very simple substition in our config file, that just reads the top level keys and uses

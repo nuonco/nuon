@@ -21,11 +21,8 @@ import (
 
 const buildBatchSize = 5
 
-// buildsCompositeErrorVersion gates attaching the canonical build composite
-// error to the step status: histories written before it have no such payload.
 const buildsCompositeErrorVersion = "app-branch-builds-composite-error-v1"
 
-// buildEntry tracks a single component build for metadata updates.
 type buildEntry struct {
 	BuildID       string  `json:"build_id,omitempty"`
 	ComponentID   string  `json:"component_id"`
@@ -34,10 +31,10 @@ type buildEntry struct {
 	IsNew         bool    `json:"is_new,omitempty"`
 	Status        string  `json:"status"`
 	Skipped       bool    `json:"skipped,omitempty"`
-	CacheStatus   string  `json:"cache_status,omitempty"` // deprecated: use change_reason in UI
+	CacheStatus   string  `json:"cache_status,omitempty"`
 	ChangeReason  string  `json:"change_reason,omitempty"`
-	ImageDigest   string  `json:"image_digest,omitempty"` // sha256:...
-	Duration      float64 `json:"duration,omitempty"`     // seconds
+	ImageDigest   string  `json:"image_digest,omitempty"`
+	Duration      float64 `json:"duration,omitempty"`
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
@@ -59,7 +56,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	isPreview := run.IsPreview()
 
-	// Get app config with component IDs
 	appConfig, err := activities.AwaitGetAppConfigByIDByAppConfigID(ctx, run.AppConfigID)
 	if err != nil {
 		return fmt.Errorf("unable to get app config: %w", err)
@@ -76,7 +72,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// Determine previous run's app config for build diffing via comparison baseline.
 	var previousAppConfigID string
 	if run.Comparison != nil && run.Comparison.BaseRun != nil && run.Comparison.BaseRun.AppConfigID != "" {
 		previousAppConfigID = run.Comparison.BaseRun.AppConfigID
@@ -141,9 +136,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return nil
 }
 
-// buildsFailure returns the step error for a failed builds step, preferring the
-// canonical composite error message so the step description names the actual
-// cause instead of the generic wrapper.
 func buildsFailure(wrapper string, ce *compositeerrors.CompositeErrorData, cause error) error {
 	if ce != nil && ce.Message != "" {
 		return temporal.NewNonRetryableApplicationError(ce.Message, string(ce.Type), nil)
@@ -151,9 +143,6 @@ func buildsFailure(wrapper string, ce *compositeerrors.CompositeErrorData, cause
 	return fmt.Errorf("%s: %w", wrapper, cause)
 }
 
-// buildComponents enqueues queuebuild signals directly to component queues
-// (batched, parallel within each batch) and tracks progress via the parent
-// step's status metadata — no sub-steps or sub-groups are created.
 func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *app.AppConfig, appConfigID, previousAppConfigID string, force bool) ([]buildEntry, error) {
 	componentIDs := appConfig.ComponentIDs
 
@@ -255,7 +244,6 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 		toBuild = append(toBuild, componentID)
 	}
 
-	// Update parent step metadata with initial build list
 	s.updateBuildMetadata(ctx, builds)
 
 	if len(toBuild) == 0 {
@@ -263,10 +251,6 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 		return builds, nil
 	}
 
-	// Phase 1: Enqueue all queuebuild signals in batches. Each queuebuild
-	// creates a build record and enqueues the actual build signal onto the
-	// component queue. We await queuebuild completion (via callback) so we
-	// know the build records exist before moving to phase 2.
 	for batchStart := 0; batchStart < len(toBuild); batchStart += buildBatchSize {
 		batchEnd := batchStart + buildBatchSize
 		if batchEnd > len(toBuild) {
@@ -322,8 +306,6 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 		}
 	}
 
-	// Phase 2: All build records exist and build signals are enqueued. Poll
-	// until every build reaches a terminal status.
 	l.Info("all builds enqueued, awaiting build completions", "count", len(toBuild))
 
 	for {
@@ -349,7 +331,6 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 			break
 		}
 
-		// Update metadata with current statuses
 		for _, br := range result.Builds {
 			s.setBuildID(builds, br.ComponentID, br.BuildID)
 			switch br.Status {
@@ -361,7 +342,6 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 		}
 		s.updateBuildMetadata(ctx, builds)
 
-		// Sleep before polling again
 		if err := workflow.Sleep(ctx, 5*time.Second); err != nil {
 			return builds, fmt.Errorf("sleep interrupted: %w", err)
 		}
@@ -371,7 +351,6 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 	return builds, nil
 }
 
-// setBuildStatus updates a build entry's status in the builds list.
 func (s *Signal) setBuildStatus(builds []buildEntry, componentID, status string) {
 	for i := range builds {
 		if builds[i].ComponentID == componentID {
@@ -390,8 +369,6 @@ func (s *Signal) setBuildID(builds []buildEntry, componentID, buildID string) {
 	}
 }
 
-// updateBuildMetadata writes the current builds list to the parent step's
-// status metadata so the UI can display real-time build progress.
 func (s *Signal) updateBuildMetadata(ctx workflow.Context, builds []buildEntry) {
 	s.updateBuildMetadataWithCompleted(ctx, builds, nil, nil)
 }
@@ -536,10 +513,6 @@ func (s *Signal) finalizePreview(ctx workflow.Context, l log.Logger, run *app.Ap
 		RunID: s.RunID,
 	})
 
-	// Derive phases from DB context and override Builds with the known result.
-	// Config is accurately derived from the DB (the appconfig step completed
-	// before builds started).  Builds is still in-progress in the DB at this
-	// point, so we override it explicitly.
 	phases := commentContextPhases(commentContext)
 	if buildErr != nil {
 		phases.Builds = activities.PRCommentPhaseInvalid
@@ -558,11 +531,8 @@ func (s *Signal) finalizePreview(ctx workflow.Context, l log.Logger, run *app.Ap
 		Mode:             run.PreviewMode(),
 		Diff:             diff,
 		ComponentChanges: componentBuildChanges(builds, commentContext),
-		// PreviewInstallName and InstallApplied are intentionally omitted:
-		// the install step has not run yet at this point.  The run finalizer
-		// writes the final comment once the install step completes.
-		ErrorMessage: errMsg,
-		Phases:       phases,
+		ErrorMessage:     errMsg,
+		Phases:           phases,
 	})
 
 	_, _ = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
@@ -606,8 +576,6 @@ func previewRunURL(commentContext *activities.GetPreviewCommentContextOutput) st
 	return commentContext.RunURL
 }
 
-// commentContextPhases returns a copy of the Phases from commentContext, or an
-// empty PRCommentPhases when the context is nil or carries no phase data.
 func commentContextPhases(commentContext *activities.GetPreviewCommentContextOutput) *activities.PRCommentPhases {
 	if commentContext == nil || commentContext.Phases == nil {
 		return &activities.PRCommentPhases{}

@@ -41,23 +41,17 @@ func (c *cli) runRun(_ *cobra.Command, _ []string) {
 func (c *cli) runOptions() []fx.Option {
 	providers := []fx.Option{}
 
-	// common providers
 	providers = append(providers, c.providers()...)
 
-	// sandbox
 	providers = append(providers, sandbox.GetJobs()...)
 
-	// operations
 	providers = append(providers, operations.GetJobs()...)
 	providers = append(providers, fx.Provide(jobs.AsJobHandler("operations", check.New)))
 
-	// sync
 	providers = append(providers, sync.GetJobs()...)
 
-	// actions
 	providers = append(providers, actions.GetJobs()...)
 
-	// deploy providers
 	providers = append(providers, deploy.GetJobs()...)
 	providers = append(providers, audit.Module, telemetryexport.Module)
 
@@ -65,19 +59,14 @@ func (c *cli) runOptions() []fx.Option {
 		providers,
 		[]fx.Option{
 			fx.Supply(fx.Annotate("install", fx.ResultTags(`name:"process"`))),
-			// start all job loops
 			fx.Invoke(jobloop.WithJobLoops(func([]jobloop.JobLoop) {})),
 			fx.Invoke(jobloop.WithOperationsJobLoops(func([]jobloop.JobLoop) {})),
 
-			// sandbox control API
-
-			// registry, heartbeater, process registrar, and shutdown poller
 			fx.Invoke(func(*heartbeater.HeartBeater) {}),
 			fx.Invoke(func(*process.Registrar) {}),
 			fx.Invoke(func(*process.ShutdownPoller) {}),
 			fx.Invoke(func(*registry.Registry) {}),
 
-			// component health watch engine (no-op unless install process)
 			fx.Provide(componenthealth.New),
 			fx.Invoke(func(*componenthealth.Engine) {}),
 		}...,

@@ -23,12 +23,10 @@ import (
 type StatusFunc func(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string)
 
 type RunSyncJobRequest struct {
-	Install       *app.Install
-	InstallDeploy *app.InstallDeploy
-	Status        StatusFunc
-	OnJobCreated  func(jobID string)
-	// PlanWorkflowID and JobWorkflowID are part of in-flight Temporal histories
-	// and must stay caller-supplied.
+	Install        *app.Install
+	InstallDeploy  *app.InstallDeploy
+	Status         StatusFunc
+	OnJobCreated   func(jobID string)
 	PlanWorkflowID string
 	JobWorkflowID  string
 }
@@ -81,7 +79,6 @@ func RunSyncJob(ctx workflow.Context, req RunSyncJobRequest) error {
 		req.OnJobCreated(runnerJob.ID)
 	}
 
-	// create the plan request
 	runPlan, err := plan.AwaitCreateSyncPlan(ctx, &plan.CreateSyncPlanRequest{
 		InstallID:       install.ID,
 		InstallDeployID: installDeploy.ID,
@@ -109,7 +106,6 @@ func RunSyncJob(ctx workflow.Context, req RunSyncJobRequest) error {
 		return fmt.Errorf("unable to save runner job plan: %w", err)
 	}
 
-	// queue job
 	status(ctx, installDeploy.ID, app.InstallDeployStatusSyncing, "executing sync plan")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		RunnerID:   install.RunnerID,
@@ -162,8 +158,6 @@ func Sync(ctx workflow.Context, req SyncRequest) (*app.InstallDeploy, error) {
 		BuildID:     req.BuildID,
 		Type:        app.InstallDeployTypeSync,
 		WorkflowID:  req.FlowID,
-		// Empty role: a non-empty one is a hard request with no fallback, and
-		// an action's role is often not a valid deploy role for the image.
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create install deploy")

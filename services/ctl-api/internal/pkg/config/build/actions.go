@@ -27,9 +27,7 @@ type ActionWorkflowInput struct {
 	Image                 string
 }
 
-// ActionWorkflowConfig builds the row; the caller attaches triggers and steps.
 func ActionWorkflowConfig(in ActionWorkflowInput) *app.ActionWorkflowConfig {
-	// Written for action steps unless the config opts out.
 	enableKubeConfig := true
 	if in.EnableKubeConfig != nil {
 		enableKubeConfig = *in.EnableKubeConfig

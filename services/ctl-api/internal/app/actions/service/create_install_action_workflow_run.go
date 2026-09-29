@@ -74,8 +74,6 @@ func (s *service) createInstallActionWorkflowRun(ctx context.Context, installID 
 		return nil, fmt.Errorf("unable to get action workflow config: %w", err)
 	}
 
-	// Callers pass whichever config they last read, usually the app's newest rather
-	// than the install's pinned one, so re-resolve instead of rejecting.
 	if awc.AppConfigID != install.AppConfigID {
 		pinned, err := s.actionsHelpers.GetActionWorkflowConfig(ctx, awc.ActionWorkflowID, install.AppConfigID)
 		if err != nil {
@@ -145,8 +143,6 @@ func (s *service) createInstallActionWorkflowRun(ctx context.Context, installID 
 	}, nil
 }
 
-// PrependRunEnvPrefix modifies the keys in the provided RunEnvVars map
-// by prepending "RUNENV_" to each key.
 func PrependRunEnvPrefix(runEnvVars map[string]string) map[string]string {
 	result := make(map[string]string, len(runEnvVars))
 

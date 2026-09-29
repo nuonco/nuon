@@ -21,11 +21,8 @@ const (
 	AppInputTypeBool   AppInputType = "bool"
 	AppInputTypeList   AppInputType = "list"
 	AppInputTypeJSON   AppInputType = "json"
-	// AppInputTypeYAML / AppInputTypeHCL are structured document types whose
-	// syntax is validated on input update (used by per-component overrides:
-	// Helm values are YAML, Terraform vars are HCL/tfvars).
-	AppInputTypeYAML AppInputType = "yaml"
-	AppInputTypeHCL  AppInputType = "hcl"
+	AppInputTypeYAML   AppInputType = "yaml"
+	AppInputTypeHCL    AppInputType = "hcl"
 )
 
 type AppInputSource string
@@ -101,7 +98,6 @@ func (a *AppInput) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (a *AppInput) AfterQuery(tx *gorm.DB) error {
-	// Compute CloudFormation configuration fields for install_stack sourced inputs
 	if a.Source == AppInputSourceCustomer {
 		a.CloudFormationStackName = computeCloudFormationStackName(a.Name)
 		a.CloudFormationStackParamName = computeCloudFormationStackParameterName(a.Name)
@@ -109,12 +105,10 @@ func (a *AppInput) AfterQuery(tx *gorm.DB) error {
 	return nil
 }
 
-// computeCloudFormationStackName generates the CloudFormation stack resource name
 func computeCloudFormationStackName(inputName string) string {
 	return "Install" + strcase.ToCamel(inputName)
 }
 
-// computeCloudFormationStackParameterName generates the CloudFormation parameter name
 func computeCloudFormationStackParameterName(inputName string) string {
 	return "Install" + strcase.ToCamel(inputName)
 }

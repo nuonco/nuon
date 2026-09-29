@@ -66,12 +66,10 @@ type sourceAwarePoliciesTestApp struct {
 }
 
 func TestGetAll(t *testing.T) {
-	// Create a temporary directory for local file tests
 	tmpDir, err := os.MkdirTemp("", "getall-test")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
-	// Create a test file in the temporary directory
 	testFilePath := filepath.Join(tmpDir, "test.txt")
 	err = os.WriteFile(testFilePath, []byte("test content"), 0o644)
 	require.NoError(t, err)
@@ -97,28 +95,6 @@ func TestGetAll(t *testing.T) {
 				require.Equal(t, "test content", ts.Obj)
 			},
 		},
-		// NOTE: The following tests are commented out because they are flaky.
-		// They make network calls to private GitHub repos and frequently
-		// timeout with the 1-second deadline, causing CI failures.
-		//
-		// "git_repo_file": {
-		// 	input: testStruct{
-		// 		Obj: "https://github.com/nuonco/byoc/blob/main/byoc-nuon/policies/set-karpenter-non-cpu-limits.yaml",
-		// 	},
-		// 	outputFn: func(t *testing.T, ts testStruct) {
-		// 		require.NotEqual(t, ts.Obj, "https://github.com/nuonco/byoc/blob/main/byoc-nuon/policies/set-karpenter-non-cpu-limits.yaml")
-		// 		require.NotEmpty(t, ts.Obj)
-		// 	},
-		// },
-		// "git_tag_file": {
-		// 	input: testStruct{
-		// 		Obj: "https://github.com/nuonco/aws-eks-sandbox/blob/0.0.0/README.md",
-		// 	},
-		// 	outputFn: func(t *testing.T, ts testStruct) {
-		// 		require.NotEqual(t, ts.Obj, "https://github.com/nuonco/aws-eks-sandbox/blob/0.0.0/README.md")
-		// 		require.NotEmpty(t, ts.Obj)
-		// 	},
-		// },
 	}
 
 	for name, tc := range tests {
@@ -236,11 +212,6 @@ func TestGetAll_UsesPolicySourceFileDirForRelativePaths(t *testing.T) {
 	require.Equal(t, "apiVersion: kyverno.io/v1", input.Policies[0].Contents)
 }
 
-// TestGetAll_GitFileContents exercises the git source code path end-to-end
-// against a local git repository. It guards the bug where go-getter's
-// fetchSubmodules toggles DisableSymlinks on the shared client, causing the
-// follow-up copyDir to fail on macOS with "copying of symlinks has been
-// disabled" because /var/folders -> /private/var.
 func TestGetAll_GitFileContents(t *testing.T) {
 	gitBin, err := exec.LookPath("git")
 	if err != nil {
@@ -253,7 +224,6 @@ func TestGetAll_GitFileContents(t *testing.T) {
 		t.Helper()
 		cmd := exec.Command(gitBin, args...)
 		cmd.Dir = repoDir
-		// Make sure the test does not depend on the host git config.
 		cmd.Env = append(os.Environ(),
 			"GIT_AUTHOR_NAME=test",
 			"GIT_AUTHOR_EMAIL=test@example.com",
@@ -305,9 +275,6 @@ func TestGetAll_GitSourceWithoutFileReturnsError(t *testing.T) {
 	require.Contains(t, err.Error(), "git source must include a `//path/to/file` reference")
 }
 
-// TestGetAll_GitDirectoryPassthrough guards module-address values (e.g. gcp
-// curated custom stacks): a git source whose subdir is a directory is left
-// untouched instead of being inlined.
 func TestGetAll_GitDirectoryPassthrough(t *testing.T) {
 	gitBin, err := exec.LookPath("git")
 	if err != nil {

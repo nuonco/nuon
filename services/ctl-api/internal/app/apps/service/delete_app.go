@@ -34,7 +34,6 @@ import (
 func (s *service) DeleteApp(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
-	// Check if there are any active installs for the app, if so, do not allow deletion.
 	{
 		installs, err := s.getAppInstalls(ctx, appID)
 		if err != nil {
@@ -44,7 +43,6 @@ func (s *service) DeleteApp(ctx *gin.Context) {
 
 		activeInstalls := make([]string, 0)
 		for _, ins := range installs {
-			// if an install was never attempted, it does not need to be accounted for
 			if len(ins.InstallSandboxRuns) < 1 {
 				continue
 			}
@@ -71,15 +69,12 @@ func (s *service) DeleteApp(ctx *gin.Context) {
 	}
 
 	if cfgErr == nil {
-		// Check if there are any active components for the app, if so, do not proceed for deletion.
 		if len(appCfg.ComponentIDs) > 0 {
 			ctx.Error(fmt.Errorf("app has %d active component(s) in it's latest config, please remove them first", len(appCfg.ComponentIDs)))
 			return
 		}
 
-		// Trigger deletion for all components associated with the app in reverse order of their dependencies.
 		{
-			// Get full app config to include all components including missing components in the latest config.
 			appComponents, err := s.helpers.GetAppComponents(ctx, appID)
 			if err != nil {
 				ctx.Error(err)

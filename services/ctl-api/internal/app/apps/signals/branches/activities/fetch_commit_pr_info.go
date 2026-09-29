@@ -42,7 +42,6 @@ func (a *Activities) FetchCommitPRInfo(ctx context.Context, input *FetchCommitPR
 		return nil, err
 	}
 
-	// List open PRs for this branch
 	prs, _, err := client.PullRequests.List(ctx, owner, repo, &github.PullRequestListOptions{
 		Head:  fmt.Sprintf("%s:%s", owner, input.Branch),
 		State: "open",
@@ -69,7 +68,6 @@ func (a *Activities) FetchCommitPRInfo(ctx context.Context, input *FetchCommitPR
 		PRURL:    pr.GetHTMLURL(),
 	}
 
-	// Get reviewer count
 	reviews, _, err := client.PullRequests.ListReviews(ctx, owner, repo, pr.GetNumber(), &github.ListOptions{PerPage: 100})
 	if err == nil {
 		reviewers := map[string]bool{}
@@ -81,7 +79,6 @@ func (a *Activities) FetchCommitPRInfo(ctx context.Context, input *FetchCommitPR
 		info.ReviewerCount = len(reviewers)
 	}
 
-	// Also count requested reviewers
 	if info.ReviewerCount == 0 {
 		info.ReviewerCount = len(pr.RequestedReviewers)
 	}
@@ -150,10 +147,6 @@ func (a *Activities) FetchCommitDiffStats(ctx context.Context, input *FetchCommi
 	return stats, nil
 }
 
-// resolveAuthenticatedGithubClient returns an authenticated GitHub client for the given VCS config.
-// For ConnectedGithubVCSConfig, uses its VCS connection directly.
-// For PublicGitVCSConfig, looks up a VCS connection in the same org that has a GitHub App
-// installation for the repo's owner (e.g., finds a "nuonco" connection for a nuonco/* repo).
 func (a *Activities) resolveAuthenticatedGithubClient(ctx context.Context, vcsConfigID string) (owner, repo string, client *github.Client, err error) {
 	vcsHelpers := a.helpers.VCSHelpers()
 
@@ -214,14 +207,9 @@ func parseGithubRepo(repoURL string) (owner, name string, err error) {
 	return parts[0], parts[1], nil
 }
 
-// resolveGithubClient loads the VCS config and returns a GitHub client.
-// For ConnectedGithubVCSConfig, returns an authenticated client.
-// For PublicGitVCSConfig, prefers an org VCS connection token and falls back
-// to an unauthenticated client with a warning when none is available.
 func (a *Activities) resolveGithubClient(ctx context.Context, vcsConfigID string) (owner, repo string, client *github.Client, err error) {
 	vcsHelpers := a.helpers.VCSHelpers()
 
-	// Try ConnectedGithubVCSConfig first
 	var connectedCfg app.ConnectedGithubVCSConfig
 	connectedRes := a.db.WithContext(ctx).
 		Preload("VCSConnection").
@@ -235,7 +223,6 @@ func (a *Activities) resolveGithubClient(ctx context.Context, vcsConfigID string
 		return connectedCfg.RepoOwner, connectedCfg.RepoName, client, nil
 	}
 
-	// Try PublicGitVCSConfig
 	var publicCfg app.PublicGitVCSConfig
 	publicRes := a.db.WithContext(ctx).First(&publicCfg, "id = ?", vcsConfigID)
 	if publicRes.Error == nil {

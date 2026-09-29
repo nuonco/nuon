@@ -9,16 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 )
 
-// DLQConsumer drains the dead-letter topic into the same app.DLQRecord table the
-// other consumers write to directly when a produce to this topic fails.
-//
-// It lives in the runtime package rather than with a domain because the topic
-// isn't any domain's data — every consumer produces to it, and what it carries
-// is a decode failure from some other topic.
-//
-// Its own decode failures go straight to that direct write rather than back
-// through the topic — a dead-letter-about-a-dead-letter stops here, one level
-// deep.
 type DLQConsumer struct {
 	*Sink
 }

@@ -89,9 +89,6 @@ export const SandboxRunStepDetails = ({
   )
 }
 
-// Plan tab is only rendered once the runner has produced an approval
-// (step.approval set). When present it's the first tab so finished
-// approval steps land on Plan; otherwise Logs is first.
 const ApprovalStepTabs = ({
   step,
   sandboxRun,

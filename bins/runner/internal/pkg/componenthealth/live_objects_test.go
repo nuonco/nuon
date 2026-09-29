@@ -11,9 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// testdata/live_objects.json is captured verbatim from a real cluster running
-// the failure modes below, so hand-written fixtures cannot drift from what
-// Kubernetes actually writes.
 func loadLiveObjects(t *testing.T) map[string]*unstructured.Unstructured {
 	t.Helper()
 
@@ -60,7 +57,6 @@ func TestLiveObjectVerdicts(t *testing.T) {
 	}
 }
 
-// Every verdict above must hold with an arbitrary event attached.
 func TestLiveObjectVerdictsIgnoreEvents(t *testing.T) {
 	t.Parallel()
 
@@ -75,8 +71,6 @@ func TestLiveObjectVerdictsIgnoreEvents(t *testing.T) {
 	}
 }
 
-// The incident: upstream grades this HPA healthy because Kubernetes writes
-// AbleToScale first, which left the metrics failure reachable only as an event.
 func TestLiveHPAFailureCarriesTheRealReason(t *testing.T) {
 	t.Parallel()
 
@@ -89,8 +83,6 @@ func TestLiveHPAFailureCarriesTheRealReason(t *testing.T) {
 	assert.Equal(t, "ScalingActive=False/FailedGetResourceMetric", native)
 }
 
-// A Deployment blocked by quota reports availableReplicas matching its own
-// expectations, so only ReplicaFailure reveals it.
 func TestLiveQuotaBlockedDeployment(t *testing.T) {
 	t.Parallel()
 
@@ -102,8 +94,6 @@ func TestLiveQuotaBlockedDeployment(t *testing.T) {
 	assert.Contains(t, message, "exceeded quota")
 }
 
-// Lifting crosses two owner hops, and the pod's own status.message is empty
-// here so the reason has to come from the container status.
 func TestLiveCrashLoopReachesDeployment(t *testing.T) {
 	t.Parallel()
 

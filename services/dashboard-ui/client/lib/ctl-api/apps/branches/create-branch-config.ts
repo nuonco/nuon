@@ -26,7 +26,6 @@ export type TCreateBranchConfigRequest = {
     max_parallel?: number
     auto_approve_on_policies_passing?: boolean
   }>
-  // Omit to carry the current setting forward; send [] to clear it.
   post_deploy_runbook_ids?: string[]
   ignore_changes_regex?: string
   send_statuses_on_ignore?: boolean

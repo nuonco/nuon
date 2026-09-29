@@ -14,7 +14,6 @@ type explainRequest struct {
 	DBType string `json:"db_type" binding:"required"`
 }
 
-// placeholderRe matches PostgreSQL positional parameters ($1, $2, …).
 var placeholderRe = regexp.MustCompile(`\$\d+`)
 
 func (s *service) ExplainQuery(c *gin.Context) {
@@ -30,7 +29,6 @@ func (s *service) ExplainQuery(c *gin.Context) {
 		return
 	}
 
-	// Only allow SELECT statements to be explained.
 	upper := strings.ToUpper(sql)
 	if !strings.HasPrefix(upper, "SELECT") {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "only SELECT statements can be explained"})
@@ -42,7 +40,6 @@ func (s *service) ExplainQuery(c *gin.Context) {
 	if req.DBType == "ch" {
 		db = s.chDB
 	} else {
-		// Replace $N placeholders with NULL so EXPLAIN can plan without values.
 		sql = placeholderRe.ReplaceAllString(sql, "NULL")
 	}
 

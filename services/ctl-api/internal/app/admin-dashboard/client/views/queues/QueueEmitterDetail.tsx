@@ -35,7 +35,6 @@ export const QueueEmitterDetail = () => {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
       <div className="flex gap-2 text-xs text-gray-500 dark:text-gray-400">
         <Link to="/queues" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">Queues</Link>
         <span>&rarr;</span>
@@ -44,7 +43,6 @@ export const QueueEmitterDetail = () => {
         <span>Emitter</span>
       </div>
 
-      {/* Header */}
       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <div className="flex flex-wrap items-center gap-2 mb-2">
           <h1 className="text-lg font-semibold">{emitter.name || 'Emitter'}</h1>
@@ -88,7 +86,6 @@ export const QueueEmitterDetail = () => {
           </div>
         </div>
 
-        {/* Runtime state */}
         <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Runtime State</h2>
           <div className="space-y-2 text-xs">
@@ -112,7 +109,6 @@ export const QueueEmitterDetail = () => {
         </div>
       </div>
 
-      {/* Signal template */}
       {emitter.signal_template && (
         <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Signal Template</h2>
@@ -120,7 +116,6 @@ export const QueueEmitterDetail = () => {
         </div>
       )}
 
-      {/* Emitted signals */}
       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Emitted Signals ({signals.length})</h2>
         {signals.length > 0 ? (

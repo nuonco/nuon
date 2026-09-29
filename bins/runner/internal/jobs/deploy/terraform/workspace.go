@@ -20,14 +20,6 @@ import (
 	"github.com/nuonco/nuon/pkg/terraform/workspace"
 )
 
-// buildBinary picks between a build-vendored terraform CLI binary inside
-// the OCI artifact and the existing remote (releases.hashicorp.com) path.
-// The picker is purely filesystem-driven and feature-flag-unaware on the
-// install side: workspace.DetectBundledBinary returns "" for any artifact
-// that doesn't ship a usable host-platform binary at the requested
-// version, in which case we fall through to remotebinary — the exact code
-// path this runner has always taken. Old artifacts and old runners both
-// hit the remote path with no behavior change.
 func (p *handler) buildBinary(archBase, requestedVersion string) (binary.Binary, error) {
 	if path := p.detectAndLogBundledBinary(archBase, requestedVersion); path != "" {
 		return localbinary.New(p.v, localbinary.WithPath(path))
@@ -35,23 +27,6 @@ func (p *handler) buildBinary(archBase, requestedVersion string) (binary.Binary,
 	return remotebinary.New(p.v, remotebinary.WithVersion(requestedVersion))
 }
 
-// detectAndLogBundledBinary calls workspace.DetectBundledBinary and emits
-// a single log line describing which terraform CLI path was chosen. We
-// keep the detection + the log together so each install run produces
-// exactly one operator-visible signal for the binary decision (mirroring
-// detectAndLogMirror's contract for providers).
-//
-// Logged states:
-//   - airgap-ready: bundled binary present, host-platform match, version
-//     match → use it.
-//   - version-mismatch: bundled binary present but VERSION sidecar
-//     disagrees with requestedVersion → fall through to remote (warn).
-//   - wrong-platform: bundled binaries present, none for this host → fall
-//     through to remote (warn).
-//   - absent: no bundled binary dir → silent, falls through. We don't
-//     log the absent case to keep non-vendored installs noise-free; the
-//     provider-mirror line already tells the operator whether the
-//     artifact participates in airgap at all.
 func (p *handler) detectAndLogBundledBinary(archBase, requestedVersion string) string {
 	path := workspace.DetectBundledBinary(archBase, requestedVersion)
 	bundledVersion := workspace.BundledBinaryVersion(archBase)
@@ -86,9 +61,6 @@ func (p *handler) detectAndLogBundledBinary(archBase, requestedVersion string) s
 	return path
 }
 
-// detectAndLogMirror runs DetectFilesystemMirror and emits a single Info log
-// describing which provider-resolution path the install runner will take.
-// Returned value is suitable to pass to workspace.WithFilesystemMirror.
 func (p *handler) detectAndLogMirror(archBase string) string {
 	path := workspace.DetectFilesystemMirror(archBase)
 	platforms := workspace.MirrorPlatforms(archBase)
@@ -117,7 +89,6 @@ func (p *handler) detectAndLogMirror(archBase string) string {
 	return path
 }
 
-// GetWorkspace returns a valid workspace for working with this plugin
 func (p *handler) GetWorkspace(ctx context.Context) (workspace.Workspace, error) {
 	arch, err := dirarchive.New(p.v,
 		dirarchive.WithPath(p.state.arch.BasePath()),
@@ -147,8 +118,6 @@ func (p *handler) GetWorkspace(ctx context.Context) (workspace.Workspace, error)
 	extraEnvVars := make(map[string]string, 0)
 	if p.state.plan.TerraformDeployPlan.ClusterInfo != nil {
 		extraEnvVars[config.DefaultKubeConfigEnvVar] = config.DefaultKubeConfigFilename
-		// The Terraform Kubernetes provider does not read the standard
-		// KUBECONFIG env var — it uses KUBE_CONFIG_PATH instead.
 		extraEnvVars["KUBE_CONFIG_PATH"] = config.DefaultKubeConfigFilename
 	}
 
@@ -180,8 +149,6 @@ func (p *handler) GetWorkspace(ctx context.Context) (workspace.Workspace, error)
 		workspace.WithBinary(bin),
 		workspace.WithVariables(vars),
 		workspace.WithVariables(authVars),
-		// Empty path = no-op; only enables the mirror if the build runner
-		// actually shipped one inside the OCI artifact.
 		workspace.WithFilesystemMirror(p.detectAndLogMirror(p.state.arch.BasePath())),
 	)
 	if err != nil {
@@ -191,7 +158,6 @@ func (p *handler) GetWorkspace(ctx context.Context) (workspace.Workspace, error)
 	return wkspace, nil
 }
 
-// GetWorkspace returns a valid workspace for working with this plugin
 func (p *handler) GetWorkspaceWithPlan(ctx context.Context, planBytes []byte) (workspace.Workspace, error) {
 	arch, err := dirarchive.New(p.v,
 		dirarchive.WithPath(p.state.arch.BasePath()),
@@ -221,8 +187,6 @@ func (p *handler) GetWorkspaceWithPlan(ctx context.Context, planBytes []byte) (w
 	extraEnvVars := make(map[string]string, 0)
 	if p.state.plan.TerraformDeployPlan.ClusterInfo != nil {
 		extraEnvVars[config.DefaultKubeConfigEnvVar] = config.DefaultKubeConfigFilename
-		// The Terraform Kubernetes provider does not read the standard
-		// KUBECONFIG env var — it uses KUBE_CONFIG_PATH instead.
 		extraEnvVars["KUBE_CONFIG_PATH"] = config.DefaultKubeConfigFilename
 	}
 
@@ -255,7 +219,6 @@ func (p *handler) GetWorkspaceWithPlan(ctx context.Context, planBytes []byte) (w
 		workspace.WithVariables(vars),
 		workspace.WithVariables(authVars),
 		workspace.WithPlanBytes(planBytes),
-		// See GetWorkspace for an explanation of the filesystem mirror.
 		workspace.WithFilesystemMirror(p.detectAndLogMirror(p.state.arch.BasePath())),
 	)
 	if err != nil {

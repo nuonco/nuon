@@ -4,8 +4,6 @@ import (
 	"time"
 )
 
-// PolicyReportEvent is a ClickHouse analytics event for policy evaluations.
-// One row per policy per report, with outcome derived from PolicyResult.Status.
 type PolicyReportEvent struct {
 	ReportID    string    `gorm:"column:report_id"                               json:"report_id"`
 	OrgID       string    `gorm:"column:org_id;type:LowCardinality(String)"      json:"org_id"`

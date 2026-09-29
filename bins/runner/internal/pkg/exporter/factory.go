@@ -31,12 +31,10 @@ func createDefaultConfig() component.Config {
 		RetryConfig: configretry.NewDefaultBackOffConfig(),
 		QueueConfig: exporterhelper.NewDefaultQueueConfig(),
 		ClientConfig: confighttp.ClientConfig{
-			Endpoint: "",
-			Timeout:  30 * time.Second,
-			Headers:  map[string]configopaque.String{},
-			// Default to gzip compression
-			Compression: configcompression.TypeGzip,
-			// We almost read 0 bytes, so no need to tune ReadBufferSize.
+			Endpoint:        "",
+			Timeout:         30 * time.Second,
+			Headers:         map[string]configopaque.String{},
+			Compression:     configcompression.TypeGzip,
 			WriteBufferSize: 512 * 1024,
 		},
 	}

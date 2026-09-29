@@ -88,7 +88,6 @@ func New(v *validator.Validate, opts ...clientOption) (*client, error) {
 	return c, nil
 }
 
-// WithURL specifies the url to use
 func WithURL(url string) clientOption {
 	return func(c *client) error {
 		c.APIURL = url
@@ -96,7 +95,6 @@ func WithURL(url string) clientOption {
 	}
 }
 
-// WithTimeout specifies the timeout to use
 func WithTimeout(dur time.Duration) clientOption {
 	return func(c *client) error {
 		c.Timeout = dur
@@ -104,7 +102,6 @@ func WithTimeout(dur time.Duration) clientOption {
 	}
 }
 
-// WithAdminEmail specifies the email to use
 func WithAdminEmail(email string) clientOption {
 	return func(c *client) error {
 		c.AdminEmail = email

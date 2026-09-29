@@ -25,6 +25,5 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// This is a noop signal - provision workflow does nothing
 	return nil
 }

@@ -40,7 +40,6 @@ func (s *service) GetInstallEvents(ctx *gin.Context) {
 
 	installID := ctx.Param("install_id")
 
-	// Validate install belongs to org before fetching events
 	install, err := s.findInstall(ctx, org.ID, installID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))

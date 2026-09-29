@@ -96,8 +96,6 @@ func TestCheckEmbeddedBranches(t *testing.T) {
 	}
 }
 
-// Embedded branches in an app config dir are parsed by the same loader the
-// wizard's branches/<name>.toml output lands in, so the check must see them.
 func TestCheckEmbeddedBranchesFromParsedDir(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "metadata.toml"), []byte("version = \"v1\"\n"), 0o644))

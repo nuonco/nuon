@@ -13,7 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// oldPayload is the Payload shape shipped before temporaljson tags were added.
 type oldPayload struct {
 	OrgID     string         `json:"org_id"`
 	AccountID string         `json:"account_id"`

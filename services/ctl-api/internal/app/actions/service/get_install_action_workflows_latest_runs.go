@@ -94,7 +94,6 @@ func (s *service) GetInstallActionWorkflowsLatestRuns(ctx *gin.Context) {
 func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, installID string, triggerTypes []string, q string, lbls labels.Labels, syncedOnly bool) ([]*app.InstallActionWorkflow, error) {
 	iaws := []*app.InstallActionWorkflow{}
 
-	// Always join action_workflows for label filtering; the q filter also needs this join.
 	needsAWJoin := len(lbls) > 0 || q != ""
 
 	install, err := s.findInstall(ctx, orgID, installID)
@@ -105,8 +104,6 @@ func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, in
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("ActionWorkflow").
-		// No LIMIT: it would cap the whole preload rather than each row, and the unique
-		// index on (action_workflow_id, app_config_id) already yields at most one.
 		Preload("ActionWorkflow.Configs", func(db *gorm.DB) *gorm.DB {
 			if install.AppConfigID == "" {
 				return db.Scopes(scopes.WithOverrideTable("action_workflow_configs_latest_view_v1"))

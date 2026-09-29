@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// QueriesClickHouse returns aggregated query data from the ClickHouse queries table.
 func (s *service) QueriesClickHouse(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -49,7 +48,7 @@ func (s *service) QueriesClickHouse(c *gin.Context) {
 		orderBy = "max_ms DESC"
 	}
 
-	// Build query with manual SQL to avoid GORM rewriting ClickHouse-specific syntax.
+	// why: Build query with manual SQL to avoid GORM rewriting ClickHouse-specific syntax.
 	var wheres []string
 	var args []interface{}
 
@@ -116,7 +115,6 @@ func (s *service) QueriesClickHouse(c *gin.Context) {
 		return
 	}
 
-	// Fetch distinct tables for the filter dropdown.
 	type tblRow struct {
 		Tbl string `gorm:"column:tbl"`
 	}
@@ -129,7 +127,6 @@ func (s *service) QueriesClickHouse(c *gin.Context) {
 		tables[i] = r.Tbl
 	}
 
-	// Total row count in the time range.
 	var total int64
 	s.chDB.WithContext(ctx).Raw(
 		"SELECT count(*) FROM queries WHERE timestamp >= now() - INTERVAL " + interval,

@@ -47,7 +47,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("install_id is required")
 	}
 
-	// Validate install exists
 	_, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
 	if err != nil {
 		return errors.Wrap(err, "install not found")
@@ -65,7 +64,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get install")
 	}
 
-	// Enqueue reprovision-service-account signal to the runner's queue
 	_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   install.RunnerID,
 		OwnerType: "runners",

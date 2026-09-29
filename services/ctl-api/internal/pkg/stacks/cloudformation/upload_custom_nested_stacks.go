@@ -10,14 +10,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// BlobUploader writes a template body to a key in the stack template bucket.
 type BlobUploader interface {
 	UploadBlob(ctx context.Context, blob []byte, key string) error
 }
 
-// UploadCustomNestedStackTemplates uploads each custom nested stack's contents and
-// rewrites the slice in place with the resulting hash, source URL, and ready status.
-// Keys are content addressed, so repeating a partially completed run is safe.
 func UploadCustomNestedStackTemplates(ctx context.Context, uploader BlobUploader, baseURL string, stackConfig *app.AppStackConfig) error {
 	sourceURL := func(contentsHash, templateURL string) string {
 		if baseURL == "" {
@@ -27,8 +23,6 @@ func UploadCustomNestedStackTemplates(ctx context.Context, uploader BlobUploader
 	}
 
 	for i, stack := range stackConfig.CustomNestedStacks {
-		// Already uploaded (ContentsHash set, Contents cleared) — nothing to do
-		// beyond backfilling the source URL for configs synced before it existed.
 		if stack.Contents == "" {
 			if stack.ContentsHash != "" {
 				stackConfig.CustomNestedStacks[i].Status = config.CustomNestedStackStatusReady

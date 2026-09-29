@@ -1,9 +1,5 @@
-// Mirrors AllEvents() and Default() in
-// services/ctl-api/internal/pkg/interests/defaults.go.
-
 import type { Interests } from './types'
 
-// New-subscription default: matches every supported lifecycle + approval event.
 export const allEvents = (): Interests => ({ all_events: true })
 
 export const defaultInterests = (): Interests => ({

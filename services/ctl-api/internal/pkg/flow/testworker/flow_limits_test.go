@@ -10,10 +10,6 @@ import (
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
-// Lifeline tests for PR #2320: cancelled flows write a terminal cancelled
-// status, legacy approval waits expire at callback.MaxWaitCeiling (shrunk to
-// 15s in SetupSuite), and every stopped flow drains its Temporal workflows.
-
 func parkedFailingStep(name string) app.WorkflowStep {
 	return app.WorkflowStep{
 		Name:          name,
@@ -25,8 +21,6 @@ func parkedFailingStep(name string) app.WorkflowStep {
 	}
 }
 
-// Cancelling a workflow must leave it in a terminal cancelled status with a
-// finished-at time — not wedged at failed-pending-retry / running.
 func (e *FlowTestSuite) TestCancelledWorkflowHasCancelledStatusAndFinishedAt() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -47,8 +41,6 @@ func (e *FlowTestSuite) TestCancelledWorkflowHasCancelledStatusAndFinishedAt() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// An approval response arriving in time lets the workflow continue, complete,
-// and release its Temporal workflows.
 func (e *FlowTestSuite) TestApprovalReceivedWorkflowCompletes() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -76,11 +68,6 @@ func (e *FlowTestSuite) TestApprovalReceivedWorkflowCompletes() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// Legacy only: a resident approval parks with no Temporal workflow open, so
-// there is nothing to expire. On legacy the step blocks in-workflow and the
-// wait expires at MaxWaitCeiling: the step is marked approval-expired with a
-// stop directive, no retry clone is created, and the workflow finishes and
-// drains instead of living forever.
 func (e *FlowTestSuite) TestLegacyApprovalExpiresStopsWorkflow() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
@@ -94,8 +81,6 @@ func (e *FlowTestSuite) TestLegacyApprovalExpiresStopsWorkflow() {
 	e.enqueueLegacyFlow(ctx, queueID, flw, ownerID, ownerType)
 	e.awaitApprovalParked(ctx, flw, steps[0].ID)
 
-	// The expire path writes the status before the stop directive lands, so
-	// wait for the full terminal step state instead of asserting immediately.
 	require.Eventually(e.T(), func() bool {
 		step := e.getStep(ctx, steps[0].ID)
 		return step.Status.Status == app.WorkflowStepApprovalStatusApprovalExpired &&
@@ -116,8 +101,6 @@ func (e *FlowTestSuite) TestLegacyApprovalExpiresStopsWorkflow() {
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
-// Denying the approval ends the workflow: terminal status, finished-at set,
-// Temporal workflows closed.
 func (e *FlowTestSuite) TestApprovalDeniedStopsWorkflow() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())

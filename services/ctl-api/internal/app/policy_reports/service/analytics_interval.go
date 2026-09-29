@@ -7,7 +7,7 @@ import (
 
 type timeInterval struct {
 	Label  string
-	chExpr string // ClickHouse expression template with %s placeholder for column name
+	chExpr string
 }
 
 func (t timeInterval) BucketExpr(column string) string {

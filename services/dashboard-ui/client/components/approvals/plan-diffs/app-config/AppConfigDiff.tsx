@@ -241,8 +241,6 @@ function isFileNode(n: TDiffNode): boolean {
 
 const GENERIC_FILE_KEYS = new Set(['inline_contents', 'contents', 'content', 'file'])
 
-// Inline-content file nodes carry a generic/empty key (e.g. "inline_contents"),
-// so fall back to the parent node's key (e.g. "step.coder-health") for a label.
 function fileLabel(nodeKey: string, parentKey: string): string {
   if (nodeKey && !GENERIC_FILE_KEYS.has(nodeKey)) return nodeKey
   const fromParent = parentKey.replace(/^(step|component|action|app_config)\./, '')
@@ -743,7 +741,6 @@ const SectionGroup = ({
   useEffect(() => {
     if (!focus || focus.sectionKey !== section.sectionKey) return
     setOpen(true)
-    // When a specific entity is targeted, the EntityRow handles scroll + highlight.
     if (focus.entityName) return
     setHighlighted(true)
     const raf = requestAnimationFrame(() => {

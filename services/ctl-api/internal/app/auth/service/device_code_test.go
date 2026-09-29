@@ -29,10 +29,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// ===========================
-// DeviceCodePage Handler Tests
-// ===========================
-
 type DeviceCodePageTestService struct {
 	fx.In
 	DB          *gorm.DB `name:"psql"`
@@ -263,7 +259,6 @@ func (s *DeviceCodePageTestSuite) TestDeviceCodePage() {
 }
 
 func (s *DeviceCodePageTestSuite) TestDeviceCodePageWithExpiredToken() {
-	// Create expired token
 	now := time.Now()
 	tokenValue := domains.NewUserTokenID()
 	token := app.Token{
@@ -271,7 +266,7 @@ func (s *DeviceCodePageTestSuite) TestDeviceCodePageWithExpiredToken() {
 		AccountID:   s.testAcc.ID,
 		Token:       tokenValue,
 		TokenType:   app.TokenTypeNuon,
-		ExpiresAt:   now.Add(-1 * time.Hour), // Expired
+		ExpiresAt:   now.Add(-1 * time.Hour),
 		IssuedAt:    now.Add(-2 * time.Hour),
 		Issuer:      "test",
 	}
@@ -280,14 +275,9 @@ func (s *DeviceCodePageTestSuite) TestDeviceCodePageWithExpiredToken() {
 
 	rr := s.makeRequestWithCookie("GET", "/device/code?code=ABCD-1234", tokenValue)
 
-	// Should redirect to login (expired token treated as no auth)
 	require.Equal(s.T(), http.StatusFound, rr.Code)
 	s.assertDeviceCodeLoginRedirect(rr.Header().Get("Location"), "ABCD-1234")
 }
-
-// ===========================
-// DeviceCodeApprove Handler Tests
-// ===========================
 
 type DeviceCodeApproveTestService struct {
 	fx.In
@@ -461,7 +451,6 @@ func (s *DeviceCodeApproveTestSuite) TestDeviceCodeApprove() {
 				assert.Contains(s.T(), body, "CLI Authorized", "should show success message")
 				assert.Contains(s.T(), body, s.testAcc.Email, "should show user email")
 
-				// Verify device code was created in database
 				var deviceCode app.DeviceCode
 				err := s.service.DB.Where("code = ?", code).First(&deviceCode).Error
 				require.NoError(s.T(), err, "device code should exist in database")
@@ -476,12 +465,10 @@ func (s *DeviceCodeApproveTestSuite) TestDeviceCodeApprove() {
 			withToken:    true,
 			expectedCode: http.StatusOK,
 			validateFunc: func(rr *httptest.ResponseRecorder, code string) {
-				// First approval
 				authToken := s.createTestToken()
 				rr1 := s.makePostRequestWithCookie("/device/code/approve", "code="+code, authToken)
 				require.Equal(s.T(), http.StatusOK, rr1.Code)
 
-				// Second approval (same code)
 				rr2 := s.makePostRequestWithCookie("/device/code/approve", "code="+code, authToken)
 				require.Equal(s.T(), http.StatusOK, rr2.Code)
 
@@ -493,7 +480,6 @@ func (s *DeviceCodeApproveTestSuite) TestDeviceCodeApprove() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Cleanup device codes created by this test case
 			code := tc.code
 			s.T().Cleanup(func() {
 				s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
@@ -529,7 +515,6 @@ func (s *DeviceCodeApproveTestSuite) TestDeviceCodeApprove() {
 }
 
 func (s *DeviceCodeApproveTestSuite) TestDeviceCodeApproveWithExpiredToken() {
-	// Create expired token
 	now := time.Now()
 	tokenValue := domains.NewUserTokenID()
 	token := app.Token{
@@ -553,14 +538,12 @@ func (s *DeviceCodeApproveTestSuite) TestDeviceCodeApproveWithExpiredToken() {
 
 func (s *DeviceCodeApproveTestSuite) TestDeviceCodeApproveConsumedCode() {
 	authToken := s.createTestToken()
-	// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
 	code := strings.ToUpper(fmt.Sprintf("CONS-%s", domains.NewAccountID()[:4]))
 
 	s.T().Cleanup(func() {
 		s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
 	})
 
-	// Create a device code that's already consumed
 	deviceCode := &app.DeviceCode{
 		Code:      code,
 		AccountID: s.testAcc.ID,
@@ -579,18 +562,16 @@ func (s *DeviceCodeApproveTestSuite) TestDeviceCodeApproveConsumedCode() {
 
 func (s *DeviceCodeApproveTestSuite) TestDeviceCodeApproveExpiredCode() {
 	authToken := s.createTestToken()
-	// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
 	code := strings.ToUpper(fmt.Sprintf("EXPR-%s", domains.NewAccountID()[:4]))
 
 	s.T().Cleanup(func() {
 		s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
 	})
 
-	// Create a device code that's already expired
 	deviceCode := &app.DeviceCode{
 		Code:      code,
 		AccountID: s.testAcc.ID,
-		ExpiresAt: time.Now().Add(-1 * time.Minute), // Expired
+		ExpiresAt: time.Now().Add(-1 * time.Minute),
 		Consumed:  false,
 	}
 	err := s.service.DB.Create(deviceCode).Error
@@ -602,10 +583,6 @@ func (s *DeviceCodeApproveTestSuite) TestDeviceCodeApproveExpiredCode() {
 	body := rr.Body.String()
 	assert.Contains(s.T(), body, "expired")
 }
-
-// ===========================
-// DeviceCodeToken Handler Tests
-// ===========================
 
 type DeviceCodeTokenTestService struct {
 	fx.In
@@ -710,7 +687,7 @@ func (s *DeviceCodeTokenTestSuite) TestDeviceCodeToken() {
 	testCases := []struct {
 		name         string
 		code         string
-		setupFunc    func() string // Returns device code
+		setupFunc    func() string
 		expectedCode int
 		validateFunc func(*httptest.ResponseRecorder, string)
 	}{
@@ -741,7 +718,6 @@ func (s *DeviceCodeTokenTestSuite) TestDeviceCodeToken() {
 			name: "authorization pending - code not approved yet",
 			code: "",
 			setupFunc: func() string {
-				// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
 				code := strings.ToUpper(fmt.Sprintf("PEND-%s", domains.NewAccountID()[:4]))
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
@@ -761,7 +737,6 @@ func (s *DeviceCodeTokenTestSuite) TestDeviceCodeToken() {
 			name: "expired device code",
 			code: "",
 			setupFunc: func() string {
-				// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
 				code := strings.ToUpper(fmt.Sprintf("EXPR-%s", domains.NewAccountID()[:4]))
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
@@ -788,7 +763,6 @@ func (s *DeviceCodeTokenTestSuite) TestDeviceCodeToken() {
 			name: "already consumed device code",
 			code: "",
 			setupFunc: func() string {
-				// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
 				code := strings.ToUpper(fmt.Sprintf("CONS-%s", domains.NewAccountID()[:4]))
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
@@ -816,7 +790,6 @@ func (s *DeviceCodeTokenTestSuite) TestDeviceCodeToken() {
 			name: "successful token issuance",
 			code: "",
 			setupFunc: func() string {
-				// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
 				code := strings.ToUpper(fmt.Sprintf("SUCC-%s", domains.NewAccountID()[:4]))
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
@@ -837,12 +810,10 @@ func (s *DeviceCodeTokenTestSuite) TestDeviceCodeToken() {
 				err := s.unmarshalJSON(rr.Body.Bytes(), &resp)
 				require.NoError(s.T(), err)
 
-				// Verify response structure
 				assert.NotEmpty(s.T(), resp["access_token"], "should have access token")
 				assert.Equal(s.T(), "Bearer", resp["token_type"])
 				assert.Equal(s.T(), s.testAcc.Email, resp["email"])
 
-				// Verify token was created in database
 				tokenValue := resp["access_token"].(string)
 				var token app.Token
 				err = s.service.DB.Where("token = ?", tokenValue).First(&token).Error
@@ -850,7 +821,6 @@ func (s *DeviceCodeTokenTestSuite) TestDeviceCodeToken() {
 				assert.Equal(s.T(), s.testAcc.ID, token.AccountID)
 				assert.Equal(s.T(), app.TokenTypeNuon, token.TokenType)
 
-				// Verify device code was marked as consumed
 				var deviceCode app.DeviceCode
 				err = s.service.DB.Where("code = ?", code).First(&deviceCode).Error
 				require.NoError(s.T(), err)
@@ -888,14 +858,12 @@ func (s *DeviceCodeTokenTestSuite) TestDeviceCodeToken() {
 }
 
 func (s *DeviceCodeTokenTestSuite) TestDeviceCodeTokenPollingBehavior() {
-	// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
 	code := strings.ToUpper(fmt.Sprintf("POLL-%s", domains.NewAccountID()[:4]))
 
 	s.T().Cleanup(func() {
 		s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
 	})
 
-	// Poll before approval - should get authorization_pending
 	rr1 := s.makeRequest("GET", "/device/token?code="+code)
 	require.Equal(s.T(), http.StatusOK, rr1.Code)
 
@@ -904,7 +872,6 @@ func (s *DeviceCodeTokenTestSuite) TestDeviceCodeTokenPollingBehavior() {
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), "authorization_pending", resp1["error"])
 
-	// Approve the device code
 	deviceCode := &app.DeviceCode{
 		Code:      code,
 		AccountID: s.testAcc.ID,
@@ -914,7 +881,6 @@ func (s *DeviceCodeTokenTestSuite) TestDeviceCodeTokenPollingBehavior() {
 	err = s.service.DB.Create(deviceCode).Error
 	require.NoError(s.T(), err)
 
-	// Poll after approval - should get token
 	rr2 := s.makeRequest("GET", "/device/token?code="+code)
 	require.Equal(s.T(), http.StatusOK, rr2.Code)
 
@@ -924,7 +890,6 @@ func (s *DeviceCodeTokenTestSuite) TestDeviceCodeTokenPollingBehavior() {
 	assert.NotEmpty(s.T(), resp2["access_token"])
 	assert.Equal(s.T(), "Bearer", resp2["token_type"])
 
-	// Poll again - should get access_denied (already consumed)
 	rr3 := s.makeRequest("GET", "/device/token?code="+code)
 	require.Equal(s.T(), http.StatusOK, rr3.Code)
 
@@ -938,10 +903,6 @@ func (s *DeviceCodeTokenTestSuite) unmarshalJSON(data []byte, v interface{}) err
 	return json.Unmarshal(data, v)
 }
 
-// assertDeviceCodeLoginRedirect checks the unauthenticated device-code redirect. Which shape is
-// correct depends on how many providers are enabled, and this database is shared with other
-// suites, so the expectation is derived rather than hardcoded: one provider goes straight to it,
-// more than one goes to the picker so the user can choose.
 func (s *DeviceCodePageTestSuite) assertDeviceCodeLoginRedirect(location, code string) {
 	identityProviders, err := s.service.AuthService.getIdentityProviders(context.Background())
 	require.NoError(s.T(), err)

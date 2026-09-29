@@ -41,7 +41,6 @@ func TestPublicEndpointsSendNoAuthHeader(t *testing.T) {
 
 	ctx := context.Background()
 
-	// authenticated call → must carry the bearer token
 	if _, err := c.CreateHeartBeat(ctx, &models.ServiceCreateRunnerHeartBeatRequest{}); err != nil {
 		t.Fatalf("CreateHeartBeat: %v", err)
 	}
@@ -49,7 +48,6 @@ func TestPublicEndpointsSendNoAuthHeader(t *testing.T) {
 		t.Fatalf("CreateTelemetryAccessToken: %v", err)
 	}
 
-	// public calls → must NOT carry an Authorization header
 	_, _ = c.GetProcessShutdowns(ctx, "prc_test")
 	_, _ = c.RunnerAuthAWS(ctx, &models.ServiceRunnerAuthAWSRequest{})
 

@@ -1,20 +1,5 @@
 package otel
 
-// NOTE(jm): we have to define this here, because the `plogotlp.ExportRequest` type is actually a hidden type and means
-// we would have to define this otherwise.
-//
-// Instead, we use https://mholt.github.io/json-to-go/ to generate the types from the example JSON in the OTEL examples
-// here: https://github.com/open-telemetry/opentelemetry-proto/blob/main/examples/logs.json#L67
-
-// NOTE(fd): Attributes can be key, and StringValue, IntValue, BoolValue, ArrayValue, KeylistValue, etc.
-// this struct is not used for validation of incoming or outgoing data, it is just used in our API docs.
-// validation takes place when we unmarsal the json w/ expreq.UnmarshalJSON.
-
-// we would have to define this otherwise.
-//
-// Instead, we use https://mholt.github.io/json-to-go/ to generate the types from the example JSON in the OTEL examples
-// here: https://opentelemetry.io/docs/specs/otel/protocol/file-exporter/#examples
-
 type Attribute struct {
 	Key   string `json:"key"`
 	Value struct {
@@ -84,11 +69,6 @@ type OTLPLogExportRequest struct {
 	} `json:"resourceLogs"`
 }
 
-// NOTE(jm): we have to define this here, because the `pmetricotlp.ExportRequest` type is actually a hidden type and
-// means we would have to define this otherwise.
-//
-// Instead, we use https://mholt.github.io/json-to-go/ to generate the types from the example JSON in the OTEL examples
-// here: https://opentelemetry.io/docs/specs/otel/protocol/file-exporter/#examples
 type OTLPMetricExportRequest struct {
 	ResourceMetrics []struct {
 		Resource struct {

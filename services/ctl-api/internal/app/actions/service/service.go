@@ -50,7 +50,6 @@ type service struct {
 var _ apiPkg.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
-	// apps
 	apps := api.Group("/v1/apps/:app_id")
 	{
 		actions := apps.Group("/actions")
@@ -70,10 +69,8 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		}
 	}
 
-	// installs
 	installs := api.Group("/v1/installs/:install_id")
 	{
-		// install action runs
 		actionRuns := installs.Group("/actions/runs")
 		{
 			actionRuns.POST("", s.CreateInstallActionRun)
@@ -82,7 +79,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 			actionRuns.GET("/:run_id/steps/:step_id", s.GetInstallActionRunStep)
 		}
 
-		// install actions
 		installActions := installs.Group("/actions")
 		{
 			installActions.POST("/adhoc-run", s.CreateAdHocAction)
@@ -93,8 +89,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		}
 	}
 
-	// Deprecated routes
-	// work with actions apps path
 	deprecatedApps := api.Group("/v1/apps/:app_id")
 	{
 		s.POST(deprecatedApps, "/action-workflows", s.CreateAppActionWorkflow, apiPkg.APIContextTypePublic, true)
@@ -102,21 +96,18 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		s.GET(deprecatedApps, "/action-workflows/:action_workflow_id", s.GetAppActionWorkflow, apiPkg.APIContextTypePublic, true)
 	}
 
-	// work with actions directly
 	actionWorkflows := api.Group("/v1/action-workflows")
 	{
 		s.PATCH(actionWorkflows, "/:action_workflow_id", s.UpdateActionWorkflow, apiPkg.APIContextTypePublic, true)
 		s.GET(actionWorkflows, "/:action_workflow_id", s.GetActionWorkflow, apiPkg.APIContextTypePublic, true)
 		s.DELETE(actionWorkflows, "/:action_workflow_id", s.DeleteActionWorkflow, apiPkg.APIContextTypePublic, true)
 
-		// config versions
 		s.POST(actionWorkflows, "/:action_workflow_id/configs", s.CreateActionWorkflowConfig, apiPkg.APIContextTypePublic, true)
 		s.GET(actionWorkflows, "/:action_workflow_id/configs", s.GetActionWorkflowConfigs, apiPkg.APIContextTypePublic, true)
 		s.GET(actionWorkflows, "/:action_workflow_id/latest-config", s.GetActionWorkflowLatestConfig, apiPkg.APIContextTypePublic, true)
 		s.GET(actionWorkflows, "/configs/:action_workflow_config_id", s.GetActionWorkflowConfig, apiPkg.APIContextTypePublic, true)
 	}
 
-	// install runs (deprecated)
 	deprecatedInstalls := api.Group("/v1/installs/:install_id")
 	{
 		actionWorkflowRuns := deprecatedInstalls.Group("/action-workflows/runs")
@@ -127,7 +118,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 			s.GET(actionWorkflowRuns, "/:run_id/steps/:step_id", s.GetInstallActionWorkflowRunStep, apiPkg.APIContextTypePublic, true)
 		}
 
-		// install action workflows (deprecated)
 		installActionWorkflows := deprecatedInstalls.Group("/action-workflows")
 		{
 			s.GET(installActionWorkflows, "", s.GetInstallActionWorkflows, apiPkg.APIContextTypePublic, true)
@@ -147,14 +137,12 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
-	// action workflows
 	actionWorkflows := api.Group("/v1/action-workflows")
 	{
 		actionWorkflows.GET("/:workflow_id/latest-config", s.GetActionWorkflowLatestConfig)
 		actionWorkflows.GET("/configs/:action_workflow_config_id", s.GetActionWorkflowConfig)
 	}
 
-	// installs
 	installs := api.Group("/v1/installs/:install_id")
 	{
 		installs.PUT("/action-workflow-runs/:workflow_run_id/steps/:step_id", s.UpdateInstallActionWorkflowRunStep)

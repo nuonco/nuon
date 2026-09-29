@@ -36,8 +36,6 @@ import {
 import { humanize } from '@/utils/string-utils'
 import { isStaleObservation, latestTimestamp } from '@/utils/time-utils'
 
-// Synthetic filter value covering everything that carries no verdict, so the
-// summary chips and the dropdown share one filter axis instead of two.
 export const NO_SIGNAL_FILTER = 'no-signal'
 
 export const HEALTH_FILTER_OPTIONS = [
@@ -58,13 +56,8 @@ export const HEALTH_SUMMARY_ORDER = [
   NO_SIGNAL_FILTER,
 ]
 
-// How many rows a group shows before folding the tail away: a component with
-// 80 pods otherwise buries every other component on the page. Only the healthy
-// tail is ever folded — see visibleRowCount.
 const GROUP_PREVIEW_ROWS = 8
 
-// Folding two rows behind a "show more" saves nothing and just adds a click;
-// real components cluster at either 1-3 rows or 10+.
 const MIN_FOLDED_ROWS = 3
 
 function healthFilterLabel(value: string): string {
@@ -72,7 +65,7 @@ function healthFilterLabel(value: string): string {
   return humanize(value)
 }
 
-// Cloud identity rows (aws/gcp/azure) never bear a verdict — mirrors the
+// why: Cloud identity rows (aws/gcp/azure) never bear a verdict — mirrors the
 // evaluator's bearsVerdict. Staleness is meaningless for them: they are a
 // snapshot of what terraform manages, refreshed at apply time.
 export function isIdentityOnlyResource(resource: TInstallResource): boolean {
@@ -164,8 +157,6 @@ function toInstallResourceRow(resource: TInstallResource): TInstallResourceRow {
   }
 }
 
-// Identity rows have no staleness window and removed rows are historical, so
-// neither can tell you whether the component stopped reporting.
 function isStaleRow(row: TInstallResourceRow): boolean {
   return (
     !row.removed &&
@@ -174,9 +165,6 @@ function isStaleRow(row: TInstallResourceRow): boolean {
   )
 }
 
-// A component whose every probe went quiet is a different failure from a few
-// stale rows: the badges below it are all last-known values, so the group says
-// so once instead of repeating a chip on every row.
 function staleSummary(rows: TInstallResourceRow[]): {
   fullyStale: boolean
   lastReportedAt?: string
@@ -189,8 +177,6 @@ function staleSummary(rows: TInstallResourceRow[]): {
   }
 }
 
-// Rows are sorted worst-first, so keeping at least as many as there are
-// non-healthy ones guarantees the fold can only ever hide green rows.
 export function visibleRowCount(rows: TInstallResourceRow[]): number {
   const needingAttention = rows.filter(
     (row) => row.health !== HEALTH_HEALTHY
@@ -241,18 +227,11 @@ function buildInstallResourceGroups(
     )
 }
 
-// A group nobody has heard from outranks a healthy one: its badges are last
-// known values, so "we are blind here" needs attention before "all good".
-// A live failure still outranks both.
 function groupTier(group: { failing: number; fullyStale: boolean }): number {
   if (group.failing > 0) return 2
   return group.fullyStale ? 1 : 0
 }
 
-// failingCounts mirrors the server-side fold's exclusions: removed and stale
-// rows say nothing about live health, and unknown is the absence of
-// information, not a failure. What the group header adds over the per-row
-// badges is the count — how many of the live resources are actually bad.
 function failingCounts(rows: TInstallResourceRow[]): { failing: number; live: number } {
   const live = rows.filter(
     (row) => !row.removed && !isStaleObservation(row.observedAt, row.staleAfterSeconds)
@@ -326,8 +305,6 @@ function buildColumns({
       const badge = <Status variant="badge" status={info.getValue() as string} />
       if (!stale) return badge
 
-      // A green badge on an observation nobody has refreshed is the most
-      // misleading thing this table can show, so say so next to it.
       return (
         <span className="flex items-center gap-1.5">
           {badge}
@@ -587,10 +564,6 @@ const InstallResourceGroupTable = ({
             </Badge>
           </Tooltip>
         ) : null}
-        {/* Everything in this section is live, matching the filter chips and the
-            rows. The debounced verdict is the badge in the 90-day card above —
-            keeping the two time bases apart is what stops them reading as a
-            contradiction. */}
         {group.fullyStale ? (
           <Tooltip
             position="top"
@@ -801,9 +774,6 @@ export const InstallResourcesTable = ({
   }
 
   const hasResources = componentGroups.length > 0 || sandboxGroups.length > 0
-  // A filter is an explicit request to see the matching rows, so it overrides
-  // every "tucked away by default" decision below — otherwise filtering to
-  // `unknown` renders a page of empty groups.
   const forceExpanded = !!(kind || namespace || health || search)
 
   return (

@@ -10,8 +10,6 @@ import (
 	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
-// CloudAuth is a wrapper around multiple auth configurations, its not a construct by itself, mostly used for passing
-// around auth information to and from function calls
 type CloudAuth struct {
 	AWS   *awscredentials.Config
 	Azure *azurecredentials.Config
@@ -47,7 +45,7 @@ func getCloudAuth(
 				SubscriptionTenantID: stackOutputs.AzureStackOutputs.SubscriptionTenantID,
 			},
 		}
-		// Legacy installs have no per-operation identity; fall back to the runner's
+		// why: Legacy installs have no per-operation identity; fall back to the runner's
 		// ambient identity.
 		if roleSelection.RoleARN != "" {
 			azureAuth.ManagedIdentityClientID = roleSelection.RoleARN
@@ -55,7 +53,6 @@ func getCloudAuth(
 			azureAuth.UseDefault = true
 		}
 	case stackOutputs.GCPStackOutputs != nil:
-		// gcp uses default instance auth, no config needed
 		gcpAuth = &gcpcredentials.Config{
 			ProjectID:                 stackOutputs.GCPStackOutputs.ProjectID,
 			Region:                    stackOutputs.GCPStackOutputs.Region,

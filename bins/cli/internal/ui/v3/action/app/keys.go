@@ -8,7 +8,6 @@ const spacebar = " "
 
 type keyMap struct {
 	Help key.Binding
-	// high level
 	Quit key.Binding
 	Esc  key.Binding
 }
@@ -25,7 +24,6 @@ func (k keyMap) ShortHelp() []key.Binding {
 	}
 }
 
-// updateNavigationKeys updates the Up/Down key bindings based on view mode
 var keys = keyMap{
 	Quit: key.NewBinding(
 		key.WithKeys("q", "ctrl+c"),

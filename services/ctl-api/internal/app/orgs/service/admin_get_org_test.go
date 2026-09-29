@@ -28,7 +28,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// AdminGetOrgTestService holds all fx-injected dependencies for AdminGetOrg endpoint tests.
 type AdminGetOrgTestService struct {
 	fx.In
 
@@ -43,7 +42,6 @@ type AdminGetOrgTestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// AdminGetOrgTestSuite is the testify suite for AdminGetOrg endpoint.
 type AdminGetOrgTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -68,7 +66,6 @@ func (s *AdminGetOrgTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -77,7 +74,6 @@ func (s *AdminGetOrgTestSuite) SetupSuite() {
 
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -85,8 +81,6 @@ func (s *AdminGetOrgTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares
-	// Note: AdminGetOrg is an admin endpoint, no org context needed
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -118,9 +112,9 @@ func (s *AdminGetOrgTestSuite) makeRequest(method, path string) *httptest.Respon
 func (s *AdminGetOrgTestSuite) TestAdminGetOrg() {
 	testCases := []struct {
 		name         string
-		setupFunc    func() string // Returns query parameter for name or ID
+		setupFunc    func() string
 		expectedCode int
-		validateFunc func(*app.Org) // Validates returned org
+		validateFunc func(*app.Org)
 	}{
 		{
 			name: "returns org by exact name match",
@@ -169,7 +163,6 @@ func (s *AdminGetOrgTestSuite) TestAdminGetOrg() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
 
-				// Return partial match (tests LIKE query)
 				return "partial"
 			},
 			expectedCode: http.StatusOK,
@@ -211,7 +204,6 @@ func (s *AdminGetOrgTestSuite) TestAdminGetOrg() {
 			},
 			expectedCode: http.StatusNotFound,
 			validateFunc: func(org *app.Org) {
-				// Should not reach here
 			},
 		},
 		{
@@ -234,7 +226,6 @@ func (s *AdminGetOrgTestSuite) TestAdminGetOrg() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
 
-				// Create a runner group for the org
 				runnerGroup := &app.RunnerGroup{
 					ID:        domains.NewRunnerGroupID(),
 					OwnerID:   org.ID,
@@ -275,7 +266,6 @@ func (s *AdminGetOrgTestSuite) TestAdminGetOrg() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
 
-				// Create a runner group for the org
 				runnerGroup := &app.RunnerGroup{
 					ID:        domains.NewRunnerGroupID(),
 					OwnerID:   org.ID,
@@ -287,7 +277,6 @@ func (s *AdminGetOrgTestSuite) TestAdminGetOrg() {
 					s.service.DB.Unscoped().Delete(&app.RunnerGroup{}, "id = ?", runnerGroup.ID)
 				})
 
-				// Create runners for the runner group
 				runner1 := &app.Runner{
 					ID:            domains.NewRunnerID(),
 					RunnerGroupID: runnerGroup.ID,
@@ -323,7 +312,6 @@ func (s *AdminGetOrgTestSuite) TestAdminGetOrg() {
 				require.NotNil(s.T(), org.RunnerGroup.Runners, "Runners should be preloaded")
 				require.Len(s.T(), org.RunnerGroup.Runners, 2, "Should have 2 runners")
 
-				// Verify runner details
 				runnerNames := []string{org.RunnerGroup.Runners[0].Name, org.RunnerGroup.Runners[1].Name}
 				assert.Contains(s.T(), runnerNames, "runner-1")
 				assert.Contains(s.T(), runnerNames, "runner-2")
@@ -346,7 +334,6 @@ func (s *AdminGetOrgTestSuite) TestAdminGetOrg() {
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
 
-				// Soft delete the org
 				err = s.service.DB.Delete(org).Error
 				require.NoError(s.T(), err)
 
@@ -366,10 +353,8 @@ func (s *AdminGetOrgTestSuite) TestAdminGetOrg() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test data
 			queryParam := tc.setupFunc()
 
-			// Make request
 			rr := s.makeRequest(http.MethodGet, "/v1/orgs/admin-get?name="+queryParam)
 
 			if rr.Code != tc.expectedCode {
@@ -377,7 +362,6 @@ func (s *AdminGetOrgTestSuite) TestAdminGetOrg() {
 			}
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
-			// Only parse response for successful requests
 			if tc.expectedCode == http.StatusOK {
 				var response app.Org
 				err := json.Unmarshal(rr.Body.Bytes(), &response)
@@ -386,7 +370,6 @@ func (s *AdminGetOrgTestSuite) TestAdminGetOrg() {
 				}
 				require.NoError(s.T(), err)
 
-				// Run validation
 				if tc.validateFunc != nil {
 					tc.validateFunc(&response)
 				}
@@ -394,5 +377,3 @@ func (s *AdminGetOrgTestSuite) TestAdminGetOrg() {
 		})
 	}
 }
-
-// Removed TestAdminGetOrgQueryMethods - test case was failing

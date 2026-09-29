@@ -44,13 +44,10 @@ func (a *Activities) EnsureInstallStackServiceAccount(
 		return nil, fmt.Errorf("unable to ensure stack service account: %w", err)
 	}
 
-	// Grant before revoke: a crash in between leaves the account over-privileged
-	// rather than locked out, and the next call converges.
 	if err := a.authzClient.EnsureStackInstallRole(ctx, stack.OrgID, stack.InstallID, acct.ID); err != nil {
 		return nil, fmt.Errorf("unable to ensure stack service account role: %w", err)
 	}
 
-	// Stacks provisioned before the scoped role existed hold org admin.
 	if err := a.authzClient.RemoveAccountOrgRoleByType(ctx, app.RoleTypeOrgAdmin, stack.OrgID, acct.ID); err != nil {
 		return nil, fmt.Errorf("unable to revoke stack service account org admin: %w", err)
 	}

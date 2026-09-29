@@ -10,7 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// Derived from action_workflow_configs, not AppConfig.ActionIDs: configs synced
+// why: Derived from action_workflow_configs, not AppConfig.ActionIDs: configs synced
 // before server-side sync never populated that column, and nil there is
 // indistinguishable from "this app has no actions".
 func (h *Helpers) desiredActionWorkflowIDs(ctx context.Context, appConfigID string) ([]string, error) {
@@ -25,7 +25,6 @@ func (h *Helpers) desiredActionWorkflowIDs(ctx context.Context, appConfigID stri
 	return ids, nil
 }
 
-// Same rationale as desiredActionWorkflowIDs.
 func (h *Helpers) desiredRunbookIDs(ctx context.Context, appConfigID string) ([]string, error) {
 	var ids []string
 	if err := h.db.WithContext(ctx).
@@ -242,9 +241,6 @@ func (h *Helpers) ReconcileInstallRunbooks(ctx context.Context, installID string
 	return nil
 }
 
-// Components stay on AppConfig.ComponentIDs: component_config_connections rows are
-// deltas, so an unchanged component has no row on the new config and deriving from
-// them would drop it.
 func (h *Helpers) ReconcileInstallComponents(ctx context.Context, installID string) error {
 	appCfg, err := h.installAppConfig(ctx, installID, "component_ids")
 	if err != nil {

@@ -22,9 +22,6 @@ func provisionWorkflow(status app.Status, stackOnly bool) *app.Workflow {
 	}
 }
 
-// A stack-only provision deliberately stops before the sandbox and components,
-// so reporting it as provisioned would mark an install complete while it has no
-// sandbox and zero component deploys.
 func TestInstallLifecycleTransitionStackOnlyProvision(t *testing.T) {
 	a := &Activities{}
 
@@ -49,8 +46,6 @@ func TestInstallLifecycleTransitionFullProvision(t *testing.T) {
 	}
 }
 
-// A failed stack-only provision is still a failure: it must not be reported as
-// the healthy "waiting to provision the sandbox" hold.
 func TestInstallLifecycleTransitionStackOnlyFailureKeepsFailureDescription(t *testing.T) {
 	a := &Activities{}
 

@@ -29,9 +29,6 @@ const buildSummary = (value: Interests): Summary => {
   }
 }
 
-// Compact summary + button. Opens InterestsModal in a stacked modal layer so
-// the parent form (e.g. CreateWebhookModal) stays mounted underneath. The
-// modal owns the draft and only commits back through onChange on Save.
 export const InterestsPicker = ({
   value,
   onChange,

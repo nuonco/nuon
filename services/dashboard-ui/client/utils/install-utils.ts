@@ -1,4 +1,4 @@
-// Reserved prefix for auto-generated per-component install-level override
+// why: Reserved prefix for auto-generated per-component install-level override
 // inputs (Helm values, Terraform vars, enabled toggle, ...). Must match the Go
 // constant config.ComponentOverrideInputPrefix. Synthetic input names have the
 // shape:
@@ -9,7 +9,7 @@
 // and the component name is hex-encoded to keep the key safe and reversible.
 const COMPONENT_OVERRIDE_INPUT_PREFIX = 'nuon_component_override_v1_'
 
-// Reserved input group that holds all synthetic per-component override inputs.
+// why: Reserved input group that holds all synthetic per-component override inputs.
 // Must match the Go constant config.ComponentOverrideInputGroup.
 export const COMPONENT_OVERRIDE_INPUT_GROUP = 'nuon_component_overrides'
 

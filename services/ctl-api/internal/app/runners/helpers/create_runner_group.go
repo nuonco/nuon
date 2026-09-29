@@ -50,7 +50,6 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		platform = app.AppRunnerTypeLocal
 	}
 
-	// Install-level sandbox mode takes precedence when set, else fall back to org.
 	sandboxMode := install.Org.SandboxMode
 	if install.SandboxMode.Valid {
 		sandboxMode = install.SandboxMode.Bool
@@ -65,9 +64,8 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 	runnerGroup := app.RunnerGroup{
 		OwnerID:   install.ID,
 		OwnerType: "installs",
-		// OwnerName: install.Name,
-		Type:     app.RunnerGroupTypeInstall,
-		Platform: install.AppRunnerConfig.Type,
+		Type:      app.RunnerGroupTypeInstall,
+		Platform:  install.AppRunnerConfig.Type,
 		Runners: []app.Runner{
 			{
 				Name:              "default",
@@ -84,7 +82,7 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 			HeartBeatTimeout:  defaultRunnerGroupHeartBeatTimeout,
 			EnableLogging:     true,
 			LoggingLevel:      slog.LevelInfo.String(),
-			// NOTE(jm): until we add support for writing metrics via our API, this must be disabled as we
+			// why: until we add support for writing metrics via our API, this must be disabled as we
 			// do not guarantee datadog is running in install accounts.
 			EnableMetrics:   false,
 			EnableSentry:    true,
@@ -99,7 +97,6 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 				"runner.type":     generics.ToPtr(string(app.RunnerGroupTypeInstall)),
 				"runner.platform": generics.ToPtr(string(platform)),
 				"env":             generics.ToPtr(string(h.cfg.Env)),
-				// NOTE(jm): we also set the runner group at create time
 			}),
 		},
 	}

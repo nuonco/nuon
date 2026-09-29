@@ -49,32 +49,22 @@ func (c *cli) runMng(cmd *cobra.Command, _ []string) {
 	providers := []fx.Option{fx.Provide(log.NewSystem)}
 	providers = append(c.commonProviders(), providers...)
 	providers = append(providers, management.GetJobs()...)
-	// image-backed actions run on the mng host (which has docker); registering
-	// this loop only here is what gates image-backed actions to VM runners.
 	providers = append(providers, actions.GetImageActionJobs()...)
 	providers = append(providers, fx.Provide(shutdownbeacon.New))
 	providers = append(providers, audit.Module)
-	// add mng and heartbeater to the mng process
 	providers = append(providers,
 		[]fx.Option{
-			// provide process for the heartbeater
 			fx.Supply(fx.Annotate("mng", fx.ResultTags(`name:"process"`))),
-			// start all job loops
 			fx.Invoke(jobloop.WithJobLoops(func([]jobloop.JobLoop) {})),
-			// NOTE: we do not include the `operations` job loops here
-			// sandbox control API
 
-			// start heartbeater, process registrar, and shutdown poller
 			fx.Invoke(func(*heartbeater.HeartBeater) {}),
 			fx.Invoke(func(*process.Registrar) {}),
 			fx.Invoke(func(*process.ShutdownPoller) {}),
 			fx.Invoke(func(*shutdownbeacon.Beacon) {}),
-			// serve /healthz for the Azure VMSS Application Health extension
 			fx.Provide(health.New),
 			fx.Invoke(func(*health.Server) {}),
 		}...,
 	)
-	// run
 	fx.New(providers...).Run()
 }
 
@@ -83,7 +73,6 @@ func (c *cli) runFetchToken(cmd *cobra.Command, _ []string) {
 	jsonOutput, _ := cmd.Flags().GetBool("json")
 	platform, _ := cmd.Flags().GetString("platform")
 
-	// Fall back to env var if flag not set.
 	if platform == "" {
 		platform = os.Getenv("RUNNER_PLATFORM")
 	}
@@ -101,7 +90,6 @@ func (c *cli) runFetchToken(cmd *cobra.Command, _ []string) {
 		os.Exit(1)
 	}
 
-	// Azure uses the TokenFetcher interface; AWS/GCP use existing inline code paths.
 	var result *fetchtoken.FetchTokenResult
 	if platform == "azure" {
 		runnerID := os.Getenv("RUNNER_ID")

@@ -9,8 +9,6 @@ func (m *model) ToggleSearch() {
 
 func (m *model) SetSearchTerm(term string) {
 	m.searchTerm = term
-
-	// apply search term
 }
 
 func (m *model) ResetSearchInput() {
@@ -18,6 +16,5 @@ func (m *model) ResetSearchInput() {
 	m.searchInput.Reset()
 	m.searchInput.Blur()
 	m.searchEnabled = false
-	// this is really bordering on overloading but it's the easies way to return to the state we want
 	m.selectedLog = nil
 }

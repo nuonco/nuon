@@ -20,8 +20,6 @@ type EvaluateComponentHealthRequest struct {
 	InstallID string `validate:"required"`
 }
 
-// ComponentHealthNotification is a component transition worth notifying on.
-// Only crossings into and out of the bad band produce one.
 type ComponentHealthNotification struct {
 	Recovered             bool   `json:"recovered"`
 	InstallComponentID    string `json:"install_component_id"`
@@ -35,8 +33,6 @@ type ComponentHealthNotification struct {
 	RootResourceName      string `json:"root_resource_name"`
 }
 
-// InstallHealthNotification is the install-level rollup crossing, set only when
-// the composite health entered or left the bad band.
 type InstallHealthNotification struct {
 	Health                  string `json:"health"`
 	PreviousHealth          string `json:"previous_health"`
@@ -101,7 +97,7 @@ func (a *Activities) EvaluateComponentHealth(ctx context.Context, req *EvaluateC
 
 	resp.InstallName = install.Name
 
-	// Verdicts for every component are needed before any can be written,
+	// why: Verdicts for every component are needed before any can be written,
 	// because dependency root-cause analysis reads the whole set.
 	evals := make([]componentEval, 0, len(installComponents))
 	for i := range installComponents {
@@ -172,8 +168,6 @@ func (a *Activities) EvaluateComponentHealth(ctx context.Context, req *EvaluateC
 		resp.Transitions = len(transitions)
 		a.enrichTransitions(ctx, install.OrgID, install.ID, transitions, now)
 		if err := a.chDB.WithContext(ctx).CreateInBatches(&transitions, 100).Error; err != nil {
-			// Best-effort: verdicts in Postgres are the source of truth, the
-			// transition log only powers the (future) timeline.
 			a.l.Warn("unable to record component health transitions",
 				zap.String("install_id", install.ID),
 				zap.Error(err),
@@ -184,9 +178,6 @@ func (a *Activities) EvaluateComponentHealth(ctx context.Context, req *EvaluateC
 	return resp, nil
 }
 
-// componentVerdict wraps the debounce with the component-level short-circuits.
-// Disabled or never-deployed components carry no signal at all, so a
-// trivially-passing probe can't report an undeployed component as healthy.
 func (a *Activities) componentVerdict(ic *app.InstallComponent, reports []componentHealthReport, now time.Time) app.InstallComponentHealthStatus {
 	if ic.Status == app.InstallComponentStatusDisabled || !ic.EverDeployed() {
 		return app.InstallComponentHealthStatusNotApplicable
@@ -204,7 +195,7 @@ func (a *Activities) componentVerdict(ic *app.InstallComponent, reports []compon
 	return escalateStuckProgressing(verdict, ic, now)
 }
 
-// escalateStuckProgressing turns a progressing verdict that has not moved in a
+// why: escalateStuckProgressing turns a progressing verdict that has not moved in a
 // long time into degraded.
 //
 // Progressing means "on its way", and the resource libraries have no clock, so a
@@ -216,8 +207,6 @@ func escalateStuckProgressing(verdict app.InstallComponentHealthStatus, ic *app.
 	if verdict != app.InstallComponentHealthStatusProgressing {
 		return verdict
 	}
-	// CreatedAtTS is only meaningful while the verdict is unchanged; a fresh
-	// progressing verdict has no elapsed time to judge yet.
 	if ic.HealthStatus != app.InstallComponentHealthStatusProgressing || ic.HealthStatusV2.CreatedAtTS <= 0 {
 		return verdict
 	}
@@ -231,7 +220,7 @@ func clusterWatchedComponent(t app.ComponentType) bool {
 	return t == app.ComponentTypeHelmChart || t == app.ComponentTypeKubernetesManifest
 }
 
-// componentClusterBlind reports a watched component whose cluster observations
+// why: componentClusterBlind reports a watched component whose cluster observations
 // went stale while probes kept reporting: a passing probe must not certify a
 // workload nobody can see. Requires cluster_seen, so probe-only charts still work.
 func componentClusterBlind(ic *app.InstallComponent, reports []componentHealthReport, now time.Time) bool {
@@ -259,9 +248,6 @@ func anyClusterEvidence(reports []componentHealthReport) bool {
 	return false
 }
 
-// bearsVerdict reports whether a provider's observations assess live state
-// rather than being identity-only inventory. Cloud rows are identity-only today,
-// so counting them would drag every terraform component to unknown.
 func bearsVerdict(provider string) bool {
 	switch provider {
 	case providerAWS, providerGCP, providerAzure:
@@ -278,7 +264,6 @@ const (
 	providerKubernetes = "kubernetes"
 )
 
-// customCheckObservation is one reported state of a named custom check.
 type customCheckObservation struct {
 	Name              string
 	Health            app.InstallComponentHealthStatus
@@ -287,7 +272,6 @@ type customCheckObservation struct {
 	StaleAfterSeconds uint32
 }
 
-// staleAfter is how long this report stands before it reads as unknown.
 func (o customCheckObservation) staleAfter() time.Duration {
 	if o.StaleAfterSeconds == 0 {
 		return componentHealthStaleAfter
@@ -295,7 +279,7 @@ func (o customCheckObservation) staleAfter() time.Duration {
 	return time.Duration(o.StaleAfterSeconds) * time.Second
 }
 
-// applyCustomChecks merges pushed checks onto the runner's report clock so one
+// why: applyCustomChecks merges pushed checks onto the runner's report clock so one
 // can't become the newest observation and discard what the runner saw.
 func applyCustomChecks(reports []componentHealthReport, customs []customCheckObservation) []componentHealthReport {
 	if len(customs) == 0 {
@@ -319,8 +303,6 @@ func applyCustomChecks(reports []componentHealthReport, customs []customCheckObs
 				continue
 			}
 			seen[c.ObservedAt.UnixNano()] = true
-			// No runner report to hang this on, so the check's own window is
-			// what keeps the component out of unknown.
 			reports = append(reports, componentHealthReport{
 				ObservedAt:     c.ObservedAt,
 				Health:         app.InstallComponentHealthStatusHealthy,
@@ -341,7 +323,7 @@ func applyCustomChecks(reports []componentHealthReport, customs []customCheckObs
 				continue
 			}
 			health, message := state.Health, state.Message
-			// Past its TTL the check reads as unknown, but is still counted:
+			// why: Past its TTL the check reads as unknown, but is still counted:
 			// dropping it would silently remove a configured check.
 			if age := rep.ObservedAt.Sub(state.ObservedAt); age > state.staleAfter() {
 				health = app.InstallComponentHealthStatusUnknown
@@ -349,7 +331,7 @@ func applyCustomChecks(reports []componentHealthReport, customs []customCheckObs
 			}
 			rep.Resources++
 			rep.ResourceCounts[string(health)]++
-			// unknown is absence of information, so it must never outrank a
+			// why: unknown is absence of information, so it must never outrank a
 			// check that did report.
 			if health == app.InstallComponentHealthStatusUnknown {
 				continue
@@ -371,7 +353,6 @@ func applyCustomChecks(reports []componentHealthReport, customs []customCheckObs
 	return reports
 }
 
-// assessedResourceCount is how many of a report's resources carry a real verdict.
 func assessedResourceCount(rep *componentHealthReport) int {
 	assessed := 0
 	for health, n := range rep.ResourceCounts {
@@ -382,7 +363,6 @@ func assessedResourceCount(rep *componentHealthReport) int {
 	return assessed
 }
 
-// customStateAt returns the newest observation at or before t.
 func customStateAt(obs []customCheckObservation, t time.Time) (customCheckObservation, bool) {
 	var out customCheckObservation
 	found := false
@@ -396,8 +376,6 @@ func customStateAt(obs []customCheckObservation, t time.Time) (customCheckObserv
 	return out, found
 }
 
-// recentComponentHealthReports reads the observation window from ClickHouse and
-// collapses it to one report (worst resource) per component per timestamp.
 func (a *Activities) recentComponentHealthReports(ctx context.Context, orgID, installID string, now time.Time) (map[string][]componentHealthReport, error) {
 	cols := []string{"install_component_id", "provider", "kind", "namespace", "name", "health", "message", "native_status", "observed_at", "stale_after_seconds"}
 	base := func() *gorm.DB {
@@ -418,8 +396,6 @@ func (a *Activities) recentComponentHealthReports(ctx context.Context, orgID, in
 		return nil, err
 	}
 
-	// Pushed checks declare their own TTL, so they read over the longest TTL we
-	// honour — separate query so the runner-report path picks up no extra rows.
 	var customRows []app.InstallComponentResourceState
 	if err := base().
 		Where(app.InstallComponentResourceState{Provider: providerCustom}).
@@ -431,8 +407,6 @@ func (a *Activities) recentComponentHealthReports(ctx context.Context, orgID, in
 	return collapseComponentHealthRows(append(rows, customRows...)), nil
 }
 
-// collapseComponentHealthRows folds raw resource observations into one report
-// (the worst resource) per component per timestamp, newest first.
 func collapseComponentHealthRows(rows []app.InstallComponentResourceState) map[string][]componentHealthReport {
 	type reportKey struct {
 		componentID string
@@ -440,8 +414,6 @@ func collapseComponentHealthRows(rows []app.InstallComponentResourceState) map[s
 	}
 	customs := map[string][]customCheckObservation{}
 	merged := make(map[reportKey]*componentHealthReport)
-	// unknownFallback keeps one unassessable resource per report, used only when
-	// nothing in that report could be assessed.
 	knownSeen := map[reportKey]bool{}
 	unknownFallback := map[reportKey]app.InstallComponentResourceState{}
 	naFallback := map[reportKey]app.InstallComponentResourceState{}
@@ -479,7 +451,7 @@ func collapseComponentHealthRows(rows []app.InstallComponentResourceState) map[s
 		rep.Resources++
 		rep.ResourceCounts[r.Health]++
 
-		// unknown is absence of information, not a severity, so it must never
+		// why: unknown is absence of information, not a severity, so it must never
 		// outrank an assessed resource — otherwise one unrunnable probe masks
 		// every healthy resource behind it.
 		health := app.InstallComponentHealthStatus(r.Health)
@@ -489,7 +461,7 @@ func collapseComponentHealthRows(rows []app.InstallComponentResourceState) map[s
 			}
 			continue
 		}
-		// not-applicable is not a severity either: it says this resource has no
+		// why: not-applicable is not a severity either: it says this resource has no
 		// signal, which must never outrank one that does. It shares unknown's
 		// zero severity, so whichever row the store returned first won and the
 		// same cluster state reported healthy or not-applicable at random.
@@ -510,9 +482,6 @@ func collapseComponentHealthRows(rows []app.InstallComponentResourceState) map[s
 		}
 	}
 
-	// Only a report in which nothing at all could be assessed falls back, and
-	// unknown outranks not-applicable: "tried and could not tell" is more
-	// informative than "nothing here exposes health".
 	for key, rep := range merged {
 		if knownSeen[key] {
 			continue
@@ -552,8 +521,6 @@ func collapseComponentHealthRows(rows []app.InstallComponentResourceState) map[s
 
 func (a *Activities) writeComponentHealth(ctx context.Context, ic *app.InstallComponent, verdict app.InstallComponentHealthStatus, description, downstreamOf string, flags healthFlags, latest *componentHealthReport, now time.Time) error {
 	metadata := map[string]any{}
-	// Structured twin of the "(downstream of X)" description suffix so UIs don't
-	// have to parse text.
 	if downstreamOf != "" {
 		metadata["downstream_of"] = downstreamOf
 	}
@@ -578,8 +545,6 @@ func (a *Activities) writeComponentHealth(ctx context.Context, ic *app.InstallCo
 		}
 	}
 
-	// CreatedAtTS marks when the current verdict began, not when it was last
-	// written: the verified-deploy gate measures hold time from it.
 	startedAt := now.Unix()
 	if verdict == ic.HealthStatus && ic.HealthStatusV2.CreatedAtTS > 0 {
 		startedAt = ic.HealthStatusV2.CreatedAtTS
@@ -599,30 +564,20 @@ func (a *Activities) writeComponentHealth(ctx context.Context, ic *app.InstallCo
 		}).Error
 }
 
-// componentEval is one component's pending evaluation, held before any write so
-// dependency root-cause analysis can see the whole set at once.
 type componentEval struct {
 	ic      *app.InstallComponent
 	prior   app.InstallComponentHealthStatus
 	verdict app.InstallComponentHealthStatus
 	latest  *componentHealthReport
 
-	// downstreamOf names the unhealthy dependency this failure is most likely a
-	// consequence of. Empty means this component may alert.
 	downstreamOf string
 
-	// priorAlerted is whether the current bad spell already alerted, which is
-	// what pairs alerts with resolutions across evaluations.
 	priorAlerted bool
 
-	// clusterBlind is whether the absence of cluster observations forced the
-	// verdict to unknown.
 	clusterEvidence bool
 	clusterBlind    bool
 }
 
-// healthFlags are sticky bits carried in health metadata across evaluations, so
-// they must be read back and rewritten rather than derived fresh.
 type healthFlags struct {
 	alerted     bool
 	clusterSeen bool
@@ -633,9 +588,6 @@ func componentAlerted(ic *app.InstallComponent) bool {
 	return v
 }
 
-// markDownstream labels each bad component that has a bad dependency so its
-// alert is suppressed. One hop only, keeping the label on the nearest thing to
-// investigate. Failing to load the graph over-alerts rather than going silent.
 func (a *Activities) markDownstream(ctx context.Context, install app.Install, evals []componentEval) {
 	badCount := 0
 	for i := range evals {
@@ -644,7 +596,6 @@ func (a *Activities) markDownstream(ctx context.Context, install app.Install, ev
 		}
 	}
 	if badCount < 2 {
-		// A single failure is always its own root cause.
 		return
 	}
 
@@ -662,7 +613,6 @@ func (a *Activities) markDownstream(ctx context.Context, install app.Install, ev
 	markDownstreamWithDeps(evals, deps)
 }
 
-// markDownstreamWithDeps is the pure graph half of markDownstream.
 func markDownstreamWithDeps(evals []componentEval, deps map[string][]string) {
 	bad := map[string]*componentEval{}
 	names := map[string]string{}
@@ -691,8 +641,6 @@ func markDownstreamWithDeps(evals []componentEval, deps map[string][]string) {
 	}
 }
 
-// componentDependencies returns componentID -> dependency component IDs for
-// the install's app config.
 func (a *Activities) componentDependencies(ctx context.Context, appConfigID string, componentIDs []string) (map[string][]string, error) {
 	out := map[string][]string{}
 	seen := map[string]bool{}
@@ -713,8 +661,6 @@ func (a *Activities) componentDependencies(ctx context.Context, appConfigID stri
 		}
 	}
 
-	// ccc rows are deltas — an app config version only carries rows for
-	// components changed in that sync, so the pin alone can yield an empty graph.
 	var missing []string
 	for _, id := range componentIDs {
 		if !seen[id] {
@@ -742,12 +688,8 @@ func (a *Activities) componentDependencies(ctx context.Context, appConfigID stri
 	return out, nil
 }
 
-// componentHealthDeployWindow is how close a deploy must be to a health
-// transition for the two to be considered related.
 const componentHealthDeployWindow = 10 * time.Minute
 
-// enrichTransitions attaches the runner's diagnosis and the deploy a transition
-// followed. Both best-effort — a transition is worth recording without them.
 func (a *Activities) enrichTransitions(ctx context.Context, orgID, installID string, transitions []app.InstallComponentHealthTransition, now time.Time) {
 	componentIDs := make([]string, 0, len(transitions))
 	for i := range transitions {
@@ -786,9 +728,6 @@ func transitionResourceKey(t *app.InstallComponentHealthTransition) string {
 	}, "\x00")
 }
 
-// resourceDiagnoses returns the runner's diagnosis per non-healthy resource,
-// keyed by resource identity. Its own query because details is the largest
-// column and transitions are rare.
 func (a *Activities) resourceDiagnoses(ctx context.Context, orgID, installID string, installComponentIDs []string) (map[string]string, error) {
 	out := map[string]string{}
 	if len(installComponentIDs) == 0 {
@@ -817,8 +756,6 @@ func (a *Activities) resourceDiagnoses(ctx context.Context, orgID, installID str
 	return out, nil
 }
 
-// diagnosisFromDetails extracts the runner's diagnosis object out of a
-// resource's details blob, or "" when there is none.
 func diagnosisFromDetails(details string) string {
 	if details == "" {
 		return ""
@@ -835,8 +772,6 @@ func diagnosisFromDetails(details string) string {
 	return string(parsed.Diagnosis)
 }
 
-// recentDeploysByComponent returns the most recent deploy per install component
-// that started inside componentHealthDeployWindow.
 func (a *Activities) recentDeploysByComponent(ctx context.Context, installComponentIDs []string, now time.Time) (map[string]string, error) {
 	out := map[string]string{}
 	if len(installComponentIDs) == 0 {
@@ -865,11 +800,7 @@ func (a *Activities) recentDeploysByComponent(ctx context.Context, installCompon
 	return out, nil
 }
 
-// componentHealthDescriptionFor renders an eval's description, naming the
-// unhealthy dependency when this failure is downstream of one.
 func componentHealthDescriptionFor(e *componentEval, now time.Time) string {
-	// The generic unknown wording would point the reader at the wrong thing here,
-	// since the remaining checks are reporting and healthy.
 	if e.clusterBlind && e.verdict == app.InstallComponentHealthStatusUnknown {
 		return "the runner is no longer reporting this component's cluster resources, so its health cannot be assessed from the remaining checks alone"
 	}
@@ -881,9 +812,6 @@ func componentHealthDescriptionFor(e *componentEval, now time.Time) string {
 	return description
 }
 
-// componentHealthNotificationFor decides whether an eval alerts. Downstream
-// failures are suppressed so one root cause produces one alert, but the verdict
-// itself stays truthful.
 func componentHealthNotificationFor(e *componentEval, description string) (ComponentHealthNotification, bool) {
 	if e.downstreamOf != "" {
 		return ComponentHealthNotification{}, false
@@ -891,7 +819,7 @@ func componentHealthNotificationFor(e *componentEval, description string) (Compo
 	return componentHealthNotification(e.ic, e.prior, e.verdict, e.priorAlerted, description, e.latest)
 }
 
-// Alerts and resolutions are strictly paired via the persisted alerted flag, so
+// why: Alerts and resolutions are strictly paired via the persisted alerted flag, so
 // a suppressed failure never sends an orphan "recovered" and a component still
 // broken after its root cause recovers fires its own late alert.
 func componentHealthNotification(ic *app.InstallComponent, prior, verdict app.InstallComponentHealthStatus, priorAlerted bool, description string, latest *componentHealthReport) (ComponentHealthNotification, bool) {
@@ -909,8 +837,6 @@ func componentHealthNotification(ic *app.InstallComponent, prior, verdict app.In
 		Health:             string(verdict),
 		Message:            description,
 	}
-	// A late alert has no transition to report, and "previously unhealthy" on an
-	// unhealthy alert is noise.
 	if prior != verdict {
 		n.PreviousHealth = string(prior)
 	}
@@ -922,8 +848,6 @@ func componentHealthNotification(ic *app.InstallComponent, prior, verdict app.In
 	return n, true
 }
 
-// installHealthNotification returns the install-level rollup crossing, or nil
-// when the composite verdict stayed on the same side of the bad band.
 func installHealthNotification(prior, current []app.InstallComponentHealthStatus) *InstallHealthNotification {
 	priorComposite, _ := app.CompositeComponentHealthStatus(prior)
 	composite, description := app.CompositeComponentHealthStatus(current)

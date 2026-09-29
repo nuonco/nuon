@@ -1,9 +1,3 @@
-// Package terraform holds tool-layer CompositeError parsers for terraform jobs.
-// They register at errparse.LayerTool so a provider-specific cause (e.g. an AWS
-// IAM denial parsed at LayerProvider) still wins, but any other terraform
-// diagnostic yields a clean, structured error instead of falling through to the
-// raw generic dump. This is the first tool-layer parser; more specific
-// terraform causes (state lock, backend init, ...) can register alongside it.
 package terraform
 
 import (
@@ -14,35 +8,23 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
-// TerraformErrorType is the discriminator for a terraform diagnostic that no
-// provider-layer parser recognised.
 const TerraformErrorType compositeerrors.Type = "terraform.error"
 
 const (
-	// maxHeadline bounds the one-line message; full detail lives in the output.
 	maxHeadline = 240
-	// maxBody bounds the stored output so a pathological log can't bloat the
-	// JSONB payload.
-	maxBody = 8000
-	// maxErrors caps how many distinct summaries we keep for the list section.
-	maxErrors = 20
+	maxBody     = 8000
+	maxErrors   = 20
 )
 
-// TerraformError is the tool-layer payload: the terraform "Error:" summaries
-// extracted from the diagnostics, plus the cleaned output for context.
 type TerraformError struct {
-	// Summary is the first terraform error summary (the text after "Error:").
-	Summary string `json:"summary"`
-	// Errors lists every distinct error summary when terraform reported more
-	// than one. Empty when there is only the single Summary.
-	Errors []string `json:"errors,omitempty"`
-	// Output is the cleaned, possibly-truncated diagnostic output.
-	Output string `json:"output,omitempty"`
+	Summary string   `json:"summary"`
+	Errors  []string `json:"errors,omitempty"`
+	Output  string   `json:"output,omitempty"`
 }
 
 var _ compositeerrors.CompositeError = (*TerraformError)(nil)
 
-// Error returns the first error summary as the headline, noting the count when
+// why: Error returns the first error summary as the headline, noting the count when
 // terraform reported several. The summary is truncated first so the "+N more"
 // suffix is never cut off.
 func (e *TerraformError) Error() string {
@@ -58,8 +40,6 @@ func (e *TerraformError) Severity() compositeerrors.Severity {
 	return compositeerrors.SeverityError
 }
 
-// Sections lists every summary when there are several (the headline shows only
-// the first), then the cleaned diagnostic output for full context.
 func (e *TerraformError) Sections() []compositeerrors.Section {
 	var sections []compositeerrors.Section
 
@@ -74,10 +54,6 @@ func (e *TerraformError) Sections() []compositeerrors.Section {
 	return sections
 }
 
-// parseError recognises terraform "Error:" diagnostics in a terraform job's raw
-// output. It is registered at LayerTool and gated to terraform jobs by the
-// "Error:" signal; that signal is broad, but the parser only ever runs on
-// terraform jobs where its presence reliably marks a diagnostic block.
 func parseError(ctx *errparse.ParseContext) compositeerrors.CompositeError {
 	lines := cleanedLines(ctx.Raw)
 	summaries := errorSummaries(lines)
@@ -104,8 +80,6 @@ func init() {
 	))
 }
 
-// errorSummaries returns the distinct text following each terraform "Error:"
-// diagnostic line, in order of first appearance.
 func errorSummaries(lines []string) []string {
 	var out []string
 	seen := map[string]bool{}
@@ -127,8 +101,6 @@ func errorSummaries(lines []string) []string {
 	return out
 }
 
-// cleanedLines returns the non-blank lines of raw, each trimmed of surrounding
-// space and terraform's "│" box-drawing prefix.
 func cleanedLines(raw string) []string {
 	var out []string
 	for _, line := range strings.Split(raw, "\n") {
@@ -143,7 +115,7 @@ func cleanedLines(raw string) []string {
 	return out
 }
 
-// truncate caps s to n runes (not bytes) so it never splits a multi-byte rune
+// why: truncate caps s to n runes (not bytes) so it never splits a multi-byte rune
 // into invalid UTF-8, appending an ellipsis when it cuts.
 func truncate(s string, n int) string {
 	if len(s) <= n {

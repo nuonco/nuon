@@ -6,8 +6,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// BuildSignalGraphNode recursively builds a signal graph tree.
-// orgID is used to scope all DB queries to the caller's org.
 func (h *Helpers) BuildSignalGraphNode(ctx context.Context, signal *app.QueueSignal, depth, maxDepth int, orgID string) SignalGraphNode {
 	node := SignalGraphNode{
 		Signal: signal,

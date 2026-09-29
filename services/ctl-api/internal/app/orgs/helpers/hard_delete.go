@@ -91,7 +91,6 @@ func (h *Helpers) HardDelete(ctx context.Context, orgID string) error {
 		}
 	}
 
-	// delete org
 	res := h.db.WithContext(ctx).Unscoped().Delete(&app.Org{
 		ID: orgID,
 	})

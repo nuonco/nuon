@@ -26,7 +26,6 @@ func (h *handler) getKubernetesResourcesFromManifest(k *kubernetesClient, manife
 	dec := yaml.NewYAMLOrJSONDecoder(manifestRaw, 1024)
 	var currentKubernetesResources []*kubernetesResource
 	for {
-		// parse the YAML doc
 		o := map[string]interface{}{}
 		err := dec.Decode(&o)
 		if err == io.EOF {

@@ -1,10 +1,3 @@
-// Package supervisor provides the actions-supervisor: a small POSIX shell
-// script Nuon mounts into an image-backed action's container and runs via the
-// image's own /bin/sh. It installs the nuon_output helper and runs the
-// rendered step script. Shipping it as a shell script (rather than a compiled
-// binary) means it runs in any base image that has a shell — which
-// image-backed actions require anyway, since command, inline_contents, and
-// repo-backed scripts all run as a shell script — with no arch/libc/static-linking concerns.
 package supervisor
 
 import (
@@ -20,19 +13,12 @@ import (
 var Script []byte
 
 const (
-	// OutputFilepathEnvVar names the file the nuon_output helper appends to.
 	OutputFilepathEnvVar = "NUON_ACTIONS_OUTPUT_FILEPATH"
-	// RootEnvVar names the workspace root inside the container.
-	RootEnvVar = "NUON_ACTIONS_ROOT"
+	RootEnvVar           = "NUON_ACTIONS_ROOT"
 
-	// Filename is the supervisor script name written into the workspace.
 	Filename = ".nuon-actions-supervisor.sh"
 )
 
-// Write writes the embedded supervisor script into dir and returns its path.
-// It refuses to follow a pre-existing symlink at the destination: the script
-// lands in the shared workspace, where a prior image-backed action container
-// could have planted one to redirect the write to a host file.
 func Write(dir string) (string, error) {
 	path := filepath.Join(dir, Filename)
 

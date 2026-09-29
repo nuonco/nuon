@@ -1,15 +1,3 @@
-/**
- * Image-reference helpers for image-type component builds.
- *
- * Mirrors the Go helpers in `pkg/oci/imageref/imageref.go` so the
- * dashboard renders the same human-friendly form for image refs as the
- * CLI and audit logs.
- *
- * - `imageRef(b)`     → "repo@sha256:..." (digest-only, machine ref).
- *                       Empty for legacy builds without source_digest.
- * - `displayRef(b)`   → "repo:tag (sha256:abcdef0)" (human-friendly,
- *                       falls back gracefully for partial info).
- */
 export type TImageBuildSource = {
   source_image?: string
   source_ref?: string

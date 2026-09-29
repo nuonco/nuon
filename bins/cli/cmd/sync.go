@@ -7,8 +7,6 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/services/version"
 )
 
-// syncLongHelp documents the sync → build-wait phases and exit codes; shared
-// by `nuon sync` and `nuon apps sync`.
 const syncLongHelp = `Sync local config files to Nuon.
 
 When the synced config changes components, the sync schedules component builds

@@ -23,31 +23,19 @@ func (a *Activities) GetComponentsWithType(ctx context.Context, req GetComponent
 		Preload("ComponentConfigs").
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order(views.TableOrViewName(a.db, &app.ComponentConfigConnection{}, ".created_at DESC")).Limit(1)
-		}). // preload all terraform configs
+		}).
 		Preload("ComponentConfigs.TerraformModuleComponentConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
-
-		// preload all helm configs
 		Preload("ComponentConfigs.HelmComponentConfig").
 		Preload("ComponentConfigs.HelmComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.HelmComponentConfig.ConnectedGithubVCSConfig").
-
-		// preload all docker configs
 		Preload("ComponentConfigs.DockerBuildComponentConfig").
 		Preload("ComponentConfigs.DockerBuildComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.DockerBuildComponentConfig.ConnectedGithubVCSConfig").
-
-		// preload all external image configs
 		Preload("ComponentConfigs.ExternalImageComponentConfig").
-
-		// preload all job configs
 		Preload("ComponentConfigs.JobComponentConfig").
-
-		// preload all kubernetes configs
 		Preload("ComponentConfigs.KubernetesManifestComponentConfig").
-
-		// preload all pulumi configs
 		Preload("ComponentConfigs.PulumiComponentConfig").
 		Preload("ComponentConfigs.PulumiComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.PulumiComponentConfig.ConnectedGithubVCSConfig").

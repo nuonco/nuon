@@ -23,8 +23,6 @@ var rdsCheck = Check{
 			{Name: "db_user", Value: cfg.DBUser, Required: true},
 			{Name: "db_ssl_mode", Value: cfg.DBSSLMode, Required: true},
 			{Name: "db_use_iam", Value: strconv.FormatBool(cfg.DBUseIAM)},
-			// Exactly one credential path applies: an IAM token is minted per
-			// connection, otherwise the static password is used.
 			{Name: "db_password", Value: cfg.DBPassword, Required: !cfg.DBUseIAM, Secret: true},
 			{Name: "db_region", Value: cfg.DBRegion, Required: cfg.DBUseIAM},
 			{Name: "cloud_provider", Value: cfg.CloudProvider},

@@ -32,7 +32,6 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 
 		h.state.ociArch = arch
 
-		// Create a workspace pointed at the unpacked OCI directory (no git clone needed)
 		wkspace, err := workspace.New(h.v,
 			workspace.WithLogger(l),
 			workspace.WithWorkspaceID(jobExecution.ID),

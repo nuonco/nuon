@@ -1,7 +1,3 @@
-// Package defaultappbranches carries the input and progress types for the
-// fleet-wide default app branch backfill, which gives every app the `default`
-// branch and all-installs group that `nuon apps sync` otherwise creates lazily
-// on its first run under the default-app-branches flag.
 package defaultappbranches
 
 const (
@@ -11,8 +7,6 @@ const (
 	ProgressQueryType = "progress"
 )
 
-// Request is the orchestrator input. Callers populate OrgIDs and DryRun; the
-// workflow fills in the rest and carries it across continue-as-new.
 type Request struct {
 	OrgIDs []string `json:"org_ids"`
 	DryRun bool     `json:"dry_run"`

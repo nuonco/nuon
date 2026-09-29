@@ -55,13 +55,11 @@ func (s *service) AdminRemoveTags(ctx *gin.Context) {
 		return
 	}
 
-	// Build set of tags to remove
 	tagsToRemove := make(map[string]bool)
 	for _, tag := range req.Tags {
 		tagsToRemove[tag] = true
 	}
 
-	// Filter out tags to remove
 	var newTags []string
 	for _, tag := range org.Tags {
 		if !tagsToRemove[tag] {
@@ -71,13 +69,11 @@ func (s *service) AdminRemoveTags(ctx *gin.Context) {
 
 	org.Tags = newTags
 
-	// Update only the tags field
 	if err := s.db.WithContext(ctx).Model(org).Select("tags").Updates(org).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to update org tags: %w", err))
 		return
 	}
 
-	// Reload org
 	org, err = s.adminGetOrg(ctx, orgID)
 	if err != nil {
 		ctx.Error(err)

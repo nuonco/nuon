@@ -87,7 +87,7 @@ func teardownComponents(ctx workflow.Context, dg *genCtx, install *app.Install, 
 		}
 		steps = append(steps, actionDepSyncSteps...)
 
-		dg.sg.nextGroup() // new group for each component
+		dg.sg.nextGroup()
 
 		installComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
 			InstallID:   dg.installID,

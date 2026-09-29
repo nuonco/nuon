@@ -46,8 +46,6 @@ func TestLoadValid(t *testing.T) {
 
 func TestLoadRejectsUnknownAttribute(t *testing.T) {
 	dir := t.TempDir()
-	// "start-to-close" is a typo for "start-to-close-timeout" and must not be
-	// silently ignored.
 	path := writeConfig(t, dir, `
 version: 1
 tags:
@@ -103,7 +101,6 @@ func TestValidateVersion(t *testing.T) {
 	assert.Contains(t, err.Error(), "unsupported version 99")
 }
 
-// A config built in code does not have to restate the version.
 func TestValidateInCodeVersionOptional(t *testing.T) {
 	cfg := &Config{Tags: map[string]*Attrs{"critical": {MaxRetries: generics.ToPtr(870)}}}
 	require.NoError(t, cfg.Validate())
@@ -144,7 +141,6 @@ func TestAnnotationLines(t *testing.T) {
 	cfg, err := Load(writeConfig(t, dir, validConfig))
 	require.NoError(t, err)
 
-	// defaults first, then tags in source order.
 	lines, err := cfg.AnnotationLines([]string{"bulk", "critical"})
 	require.NoError(t, err)
 	assert.Equal(t, []string{
@@ -243,7 +239,6 @@ func TestDiscoverPrefersNearest(t *testing.T) {
 
 func TestDiscoverStopsAtModuleRoot(t *testing.T) {
 	outer := t.TempDir()
-	// A config above the module root must not leak into the module.
 	writeConfig(t, outer, validConfig)
 
 	module := filepath.Join(outer, "module")

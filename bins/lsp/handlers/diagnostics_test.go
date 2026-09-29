@@ -11,10 +11,7 @@ import (
 	tomlparser "github.com/nuonco/nuon/pkg/parser/toml"
 )
 
-// TestDiagnostics_TerraformVersionTypeMismatch tests that type mismatches are caught
-// for both valid floats (1.2) and invalid floats (1.2.3) in terraform_version fields.
 func TestDiagnostics_TerraformVersionTypeMismatch(t *testing.T) {
-	// Create a minimal schema that expects terraform_version to be a string
 	props := jsonschema.NewProperties()
 	props.Set("terraform_version", &jsonschema.Schema{
 		Type: "string",
@@ -60,21 +57,16 @@ func TestDiagnostics_TerraformVersionTypeMismatch(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Parse TOML
 			doc := tomlparser.ParseToml(tc.tomlContent)
 
-			// Extract values (this is what PublishDiagnostics does)
 			if strictDoc, err := tomlparser.ParseStrict(tc.tomlContent); err == nil {
 				doc.Values = strictDoc.Values
 			} else {
-				// Use our new extractRawValues fallback
 				doc.Values = extractRawValues(tc.tomlContent, doc)
 			}
 
-			// Generate diagnostics
 			diags := DiagnoseDocument("file:///test.toml", doc, schema)
 
-			// Check results
 			hasTypeMismatch := false
 			for _, diag := range diags {
 				if tc.errorMessage != "" && strings.Contains(diag.Message, tc.errorMessage) {
@@ -94,9 +86,6 @@ func TestDiagnostics_TerraformVersionTypeMismatch(t *testing.T) {
 	}
 }
 
-// TestDiagnostics_ArrayTypes tests that array values are typed as arrays rather than
-// falling through to "unknown", which produced a bogus
-// "Type mismatch for 'dependencies': expected array, got unknown" on every array field.
 func TestDiagnostics_ArrayTypes(t *testing.T) {
 	props := jsonschema.NewProperties()
 	props.Set("dependencies", &jsonschema.Schema{
@@ -177,7 +166,6 @@ func TestDiagnostics_ArrayTypes(t *testing.T) {
 	}
 }
 
-// TestTomlTypeOf covers the value-to-JSON-schema type mapping used for type checking.
 func TestTomlTypeOf(t *testing.T) {
 	testCases := []struct {
 		value    any
@@ -202,8 +190,6 @@ func TestTomlTypeOf(t *testing.T) {
 	}
 }
 
-// TestExtractRawValues_ParsesValuesFromInvalidTOML tests that extractRawValues
-// correctly extracts values even when TOML is syntactically invalid
 func TestExtractRawValues_ParsesValuesFromInvalidTOML(t *testing.T) {
 	testCases := []struct {
 		name          string
@@ -287,7 +273,6 @@ func TestExtractRawValues_ParsesValuesFromInvalidTOML(t *testing.T) {
 	}
 }
 
-// TestDiagnostics_MissingRequiredFields tests that missing required fields are detected
 func TestDiagnostics_MissingRequiredFields(t *testing.T) {
 	props := jsonschema.NewProperties()
 	props.Set("name", &jsonschema.Schema{Type: "string"})
@@ -318,10 +303,7 @@ func TestDiagnostics_MissingRequiredFields(t *testing.T) {
 	}
 }
 
-// TestDiagnostics_MissingRequiredFieldsAllOf tests that required fields from allOf
-// branches are checked. Component schemas use allOf: [Component, SpecificConfig].
 func TestDiagnostics_MissingRequiredFieldsAllOf(t *testing.T) {
-	// Branch 1: Component base with "name" required
 	componentProps := jsonschema.NewProperties()
 	componentProps.Set("name", &jsonschema.Schema{Type: "string"})
 	componentBranch := &jsonschema.Schema{
@@ -330,7 +312,6 @@ func TestDiagnostics_MissingRequiredFieldsAllOf(t *testing.T) {
 		Required:   []string{"name"},
 	}
 
-	// Branch 2: Helm-specific config with "chart_name" required
 	helmProps := jsonschema.NewProperties()
 	helmProps.Set("chart_name", &jsonschema.Schema{Type: "string"})
 	helmProps.Set("namespace", &jsonschema.Schema{Type: "string"})
@@ -340,7 +321,6 @@ func TestDiagnostics_MissingRequiredFieldsAllOf(t *testing.T) {
 		Required:   []string{"chart_name"},
 	}
 
-	// Root schema with allOf (no root properties/required)
 	schema := &jsonschema.Schema{
 		AllOf:       []*jsonschema.Schema{componentBranch, helmBranch},
 		Definitions: map[string]*jsonschema.Schema{},
@@ -395,7 +375,6 @@ func TestDiagnostics_MissingRequiredFieldsAllOf(t *testing.T) {
 	})
 }
 
-// TestDiagnostics_UnknownKeys tests that unknown keys are detected
 func TestDiagnostics_UnknownKeys(t *testing.T) {
 	props := jsonschema.NewProperties()
 	props.Set("name", &jsonschema.Schema{Type: "string"})

@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// RenderTextV2 does the same thing as RenderV2, but using "text/template" instead of "html/template", so special
+// why: RenderTextV2 does the same thing as RenderV2, but using "text/template" instead of "html/template", so special
 // characters are not escaped. Use it for values that end up in infrastructure APIs rather than in a browser: an input
 // value containing "&" or a quote renders as "&amp;" / "&#34;" through RenderV2, which silently corrupts things like
 // CloudFormation parameters.
@@ -35,8 +35,6 @@ func RenderTextV2(inputVal string, data map[string]interface{}) (string, error) 
 	return buf.String(), nil
 }
 
-// ValidateTextTemplate reports whether inputVal parses against the same function set RenderTextV2 executes with. Use it
-// to reject a bad template early (e.g. at config sync) instead of failing later at render time.
 func ValidateTextTemplate(inputVal string) error {
 	_, err := newTextTemplate(inputVal)
 	return err
@@ -54,7 +52,6 @@ func newTextTemplate(inputVal string) (*template.Template, error) {
 		Parse(inputVal)
 }
 
-// RenderTextStringMap renders every value of m in place using RenderTextV2.
 func RenderTextStringMap(m map[string]string, data map[string]interface{}) error {
 	for key, val := range m {
 		rendered, err := RenderTextV2(val, data)

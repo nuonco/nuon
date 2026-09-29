@@ -45,7 +45,6 @@ func (s *service) CreateUser(ctx *gin.Context) {
 		return
 	}
 
-	// Add the authenticated user to the org (UserID field is ignored)
 	if err := s.authzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, org.ID, acct.ID); err != nil {
 		ctx.Error(err)
 		return

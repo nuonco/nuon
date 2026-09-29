@@ -20,11 +20,6 @@ var (
 	namedPolicyNonAlnum     = regexp.MustCompile(`[^a-zA-Z0-9]+`)
 )
 
-// NamedIAMPolicyCloudFormationStackName is the template logical ID for a
-// customer-managed IAM policy. The prefix keeps it from colliding with inline
-// AWS::IAM::Policy resources, which use ToCamel(policy.Name) alone. Template
-// expressions are stripped so "{{.nuon.install.id}}-alb-create" becomes
-// NamedPolicyAlbCreate.
 func NamedIAMPolicyCloudFormationStackName(name string) string {
 	stripped := namedPolicyTemplateExpr.ReplaceAllString(name, " ")
 	stripped = namedPolicyNonAlnum.ReplaceAllString(stripped, " ")
@@ -109,9 +104,6 @@ func (a *AppNamedIAMPolicyConfig) AWSPolicyName() string {
 	return a.Name
 }
 
-// AWSPolicyNameForInstall is the account-global IAM managed policy name.
-// IAM policy names are unique per account, so the install id is prefixed
-// unless the name is already install-scoped.
 func (a *AppNamedIAMPolicyConfig) AWSPolicyNameForInstall(installID string) string {
 	name := a.AWSPolicyName()
 	if installID == "" || strings.HasPrefix(name, installID+"-") {

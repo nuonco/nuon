@@ -59,7 +59,7 @@ func (s *service) GetStackServiceAccount(ctx *gin.Context) {
 		return
 	}
 
-	// Scoped to the caller's org, and not-found on a mismatch so this cannot probe
+	// why: Scoped to the caller's org, and not-found on a mismatch so this cannot probe
 	// which install IDs exist elsewhere.
 	var stack app.InstallStack
 	if res := s.db.WithContext(ctx).
@@ -108,9 +108,6 @@ func (s *service) GetStackServiceAccount(ctx *gin.Context) {
 	})
 }
 
-// liveStackTokenExpiry returns the expiry of the account's longest-lived usable
-// token, or zero if it has none. Ordered by expiry, not creation: a fresh 1-day
-// token can sit alongside an older 1-year one.
 func liveStackTokenExpiry(ctx context.Context, db *gorm.DB, accountID string) (time.Time, error) {
 	var live app.Token
 	res := db.WithContext(ctx).
@@ -128,8 +125,6 @@ func liveStackTokenExpiry(ctx context.Context, db *gorm.DB, accountID string) (t
 	return time.Time{}, fmt.Errorf("load stack token: %w", res.Error)
 }
 
-// Same precedence as BuildInstallerSDKConfig: the per-runner-group setting wins,
-// global config is the safety net for installs that pre-date it.
 func (s *service) stackRunnerAPIURL(ctx context.Context, installID, orgID string) (string, error) {
 	var install app.Install
 	if res := s.db.WithContext(ctx).

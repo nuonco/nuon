@@ -7,7 +7,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// AccountsTable returns just the accounts table data as JSON
 func (s *service) AccountsTable(c *gin.Context) {
 	ctx := c.Request.Context()
 	search := c.Query("search")

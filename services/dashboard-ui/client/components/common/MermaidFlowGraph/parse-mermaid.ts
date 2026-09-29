@@ -330,12 +330,10 @@ export function parseMermaidFlowchart(code: string): ParseResult {
 
   const subgraphIdMap = new Map(subgraphs.map((sg) => [sg.id, sg]))
 
-  // Remove any phantom nodes that share an ID with a subgraph
   for (const sgId of subgraphIdMap.keys()) {
     nodes.delete(sgId)
   }
 
-  // Rewire edges that reference subgraph IDs to the first real child node
   for (let i = edges.length - 1; i >= 0; i--) {
     const edge = edges[i]
     let removed = false

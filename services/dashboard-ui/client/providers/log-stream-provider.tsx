@@ -50,7 +50,7 @@ export function LogStreamProvider({
   const [searchParams] = useSearchParams()
   const isNewestFirst = searchParams.get('sort') !== 'asc'
 
-  // Effective filter set from the URL, applied server-side by the ctl-api
+  // why: Effective filter set from the URL, applied server-side by the ctl-api
   // read/tail endpoints. Compared via its serialized form so unrelated URL
   // changes don't reconnect the stream.
   const serverFiltersRef = useRef<TLogStreamFilters>({})
@@ -58,7 +58,7 @@ export function LogStreamProvider({
     const filters = buildServerFilters(searchParams)
     if (runnerJobId) filters.runner_job_id = runnerJobId
     serverFiltersRef.current = filters
-    // q stays client-side for the live stream — sending it here would
+    // why: q stays client-side for the live stream — sending it here would
     // reconnect the SSE and re-drain the tail on every keystroke. The
     // seed read and download keep it as one-shot server-side filters.
     const sseFilters = { ...filters }
@@ -97,7 +97,7 @@ export function LogStreamProvider({
     }
   }, [])
 
-  // The stream itself must stay ASC: the tail cursor only moves forward, so an
+  // why: The stream itself must stay ASC: the tail cursor only moves forward, so an
   // `order=desc` stream would page backwards into history and never surface new
   // lines on a running job. Instead fetch the newest page once, so newest-first
   // has a correct top immediately and the ASC stream backfills below it.
@@ -245,8 +245,6 @@ export function LogStreamProvider({
     }
   }, [logStreamId, org?.id, runnerJobId, sseQuery])
 
-  // Switching to newest-first while a long catch-up is still draining needs the
-  // same seed; the `catching-up` event has already come and gone by then.
   useEffect(() => {
     if (!logStreamId || !org?.id || !isNewestFirst || !isCatchingUp) return
     seedNewestPage(logStreamId, org.id)

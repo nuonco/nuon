@@ -20,27 +20,12 @@ type ConsumerHealthcheckParams struct {
 	Cfg *internal.Config
 	L   *zap.Logger
 
-	// Each is nil when that consumer isn't selected/enabled in this process
-	// (see consumer.NewSink) — Healthy on a nil sink always reports healthy.
 	HB  *runnersconsumer.HeartbeatConsumer
 	OL  *runnersconsumer.OtelLogsConsumer
 	OT  *runnersconsumer.OtelTracesConsumer
 	DLQ *consumer.DLQConsumer
 }
 
-// ConsumerHealthcheckServer exposes /livez for the `consumer` command.
-//
-// Deliberately narrower than WorkerHealthcheckServer: it checks only whether
-// a handler call is stuck (pkgkafka.Consumer.Stuck), never ClickHouse or
-// Kafka reachability directly. Restarting a consumer pod doesn't fix a
-// degraded dependency, and pinging one from every replica risks a
-// synchronized restart storm exactly when the dependency is already
-// struggling. This only fires for something a restart can actually fix: an
-// in-process hang the write timeout itself failed to bound.
-//
-// Always started — no enabled flag. The only case you'd want it off (running
-// two named consumer processes by hand on one host) is solved by pointing one
-// at a different consumer_healthcheck_port, not a toggle.
 type ConsumerHealthcheckServer struct {
 	cfg *internal.Config
 	l   *zap.Logger
@@ -50,8 +35,6 @@ type ConsumerHealthcheckServer struct {
 	sinks    []healthySink
 }
 
-// healthySink is the subset of consumer.Sink — which every consumer embeds —
-// that this server needs.
 type healthySink interface {
 	ConsumerName() string
 	Healthy(max time.Duration) (bool, time.Duration)
@@ -104,11 +87,6 @@ func (h *ConsumerHealthcheckServer) Stop(ctx context.Context) error {
 	return h.srv.Shutdown(ctx)
 }
 
-// livezHandler fails the pod if any consumer it hosts is stuck. A deployment can
-// host several (the `otel` deployment runs otel-logs and otel-traces), so the
-// response names the stuck ones: otherwise a restart tells you a pod wedged but
-// not which consumer caused it, and the pod that gets killed is also carrying
-// the healthy one's partitions.
 func (h *ConsumerHealthcheckServer) livezHandler(rw http.ResponseWriter, _ *http.Request) {
 	var stuckFor time.Duration
 	var stuckNames []string

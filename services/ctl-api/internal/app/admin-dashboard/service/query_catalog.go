@@ -7,24 +7,15 @@ import (
 	"go.uber.org/zap"
 )
 
-// CatalogQuery is a pre-defined SQL query that can be run from the admin dashboard.
 type CatalogQuery struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	SQL         string `json:"sql"`
-	DBType      string `json:"db_type"` // "psql" or "ch"
+	DBType      string `json:"db_type"`
 }
 
-// queryCatalog is grouped by purpose:
-//   - Storage:       table-sizes, bloat-dead-tuples
-//   - Indexes:       index-usage, unused-indexes, fk-missing-indexes, seq-scans
-//   - Cache:         cache-hit-ratio
-//   - Live sessions: connection-counts, long-running-queries, idle-in-transaction,
-//     active-locks, blocked-queries
-//   - Queue signals: unenqueued-signals, unenqueued-signals-count
 var queryCatalog = []CatalogQuery{
-	// --- Storage ---
 	{
 		ID:          "table-sizes",
 		Name:        "Table sizes",
@@ -59,7 +50,6 @@ ORDER BY n_dead_tup DESC
 LIMIT 20`,
 	},
 
-	// --- Indexes ---
 	{
 		ID:          "index-usage",
 		Name:        "Index usage (non-unique)",
@@ -133,7 +123,6 @@ ORDER BY seq_tup_read DESC
 LIMIT 20`,
 	},
 
-	// --- Cache ---
 	{
 		ID:          "cache-hit-ratio",
 		Name:        "Cache hit ratio",
@@ -147,7 +136,6 @@ FROM pg_statio_user_tables
 ORDER BY heap_blks_read DESC`,
 	},
 
-	// --- Live sessions ---
 	{
 		ID:          "connection-counts",
 		Name:        "Connection counts by state",
@@ -230,7 +218,6 @@ JOIN pg_stat_activity AS blocking
   ON blocking.pid = ANY(pg_blocking_pids(activity.pid))`,
 	},
 
-	// --- Queue signals ---
 	{
 		ID:          "unenqueued-signals",
 		Name:        "Unenqueued queue signals",

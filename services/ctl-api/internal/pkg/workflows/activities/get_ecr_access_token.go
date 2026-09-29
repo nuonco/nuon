@@ -14,9 +14,8 @@ type GetECRAccessTokenRequest struct {
 }
 
 type ECRAccessToken struct {
-	Username string
-	Password string
-	// Scheme-less, so it can prefix-match the repository URI.
+	Username      string
+	Password      string
 	ServerAddress string
 }
 

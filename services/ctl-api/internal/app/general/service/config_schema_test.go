@@ -56,8 +56,6 @@ func TestGetConfigSchemaByTypePathAndID(t *testing.T) {
 	router := gin.New()
 	router.GET("/v1/general/config-schema/:type", (&service{}).GetConfigSchemaByType)
 
-	// Each type is served at its own path with $id set to the fetch URL, so
-	// distinct types get distinct $ids.
 	ids := map[string]string{}
 	for _, typ := range []string{"sandbox", "terraform", "action", "break-glass"} {
 		t.Run(typ, func(t *testing.T) {
@@ -71,7 +69,6 @@ func TestGetConfigSchemaByTypePathAndID(t *testing.T) {
 			var result map[string]interface{}
 			require.NoError(t, json.Unmarshal(rr.Body.Bytes(), &result))
 
-			// TLS is nil in httptest, and no X-Forwarded-Proto, so scheme is http.
 			wantID := "http://api.nuon.co/v1/general/config-schema/" + typ
 			assert.Equal(t, wantID, result["$id"], "$id must equal the fetch URL")
 			ids[typ] = result["$id"].(string)
@@ -181,11 +178,9 @@ func (s *GeneralPublicTestSuite) TestGetConfigSchema() {
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
 			if tc.expectedCode == http.StatusOK {
-				// Verify response is valid JSON - schema structure varies by type
 				var result map[string]interface{}
 				err := json.Unmarshal(rr.Body.Bytes(), &result)
 				require.NoError(s.T(), err)
-				// Just verify it's a non-empty valid JSON object
 				assert.NotEmpty(s.T(), result, "Schema response should be non-empty")
 
 				if tc.expectDeprecation {

@@ -34,24 +34,17 @@ func customVNetDeployment(t *testing.T, fixture string) map[string]any {
 	return dep
 }
 
-// A resource-group-scoped VNet template run against the subscription fails the
-// entire stack with InvalidScope: "resources that must be deployed at a resource
-// group scope but a different scope was found". Nothing catches that before the
-// deploy, so the child's target has to follow its own $schema.
 func TestVNetLinkedDeployment_RGScopedCustomTemplateTargetsInstallRG(t *testing.T) {
 	dep := customVNetDeployment(t, rgScopedVNetFixture)
 
 	if got := dep["resourceGroup"]; got != "[variables('installResourceGroupName')]" {
 		t.Errorf("resourceGroup = %v, want the install resource group", got)
 	}
-	// location is what makes a nested deployment subscription-targeted.
 	if got, present := dep["location"]; present {
 		t.Errorf("resource-group-targeted deployment must not set location, got %v", got)
 	}
 }
 
-// The converse: a subscription-scoped custom template declares its own resource
-// groups, so pinning it to the install's would reject those declarations.
 func TestVNetLinkedDeployment_SubscriptionScopedCustomTemplateTargetsSubscription(t *testing.T) {
 	dep := customVNetDeployment(t, hoistFixture)
 
@@ -71,7 +64,6 @@ func TestIsSubscriptionScopedTemplate(t *testing.T) {
 	}{
 		{"subscription", subscriptionTemplateSchema, true},
 		{"resource group", rgTemplateSchema, false},
-		// ARM defaults an unrecognised or absent $schema to resource-group scope.
 		{"missing", "", false},
 		{"unrecognised", "https://example.com/whatever.json#", false},
 		{"no trailing hash", "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json", true},

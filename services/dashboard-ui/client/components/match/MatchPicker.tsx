@@ -24,34 +24,6 @@ import {
 
 type MatchMode = 'all' | 'specific'
 
-// MatchPicker mirrors the Slack /nuon subscribe modal's scope picker
-// (buildSubscribeModalView in services/ctl-api/internal/app/slack/service/
-// subscribe_modal.go) so the dashboard and Slack surfaces feel
-// identical:
-//
-//   ◉ Everything in this org   ○ Specific resources
-//   (when Specific)
-//     Resource type:  ◉ Installs ○ Components ○ Actions
-//     (Components/Actions only) App: [ searchable app picker ]
-//     Match by:       ◉ Any ○ Specific ○ Labels
-//     (Specific)      [ entity multi-select scoped to the picked app
-//                       — installs stay org-scoped ]
-//     (Labels)        [ "env=prod, tier=critical, owner=*" include input ]
-//                     [ "env=stage" exclude input — "everything except…" ]
-//
-// `value` is the exact wire shape persisted to the slack_channel_subscriptions
-// row's `match` JSONB column. Undefined => org-wide subscription.
-//
-// Components and actions are app-owned, so picking them as a kind
-// gates the entity multi-select on first picking an app — we use the
-// per-app endpoints (GET /v1/apps/:app_id/{components,actions}) which
-// already support q + labels. Installs stay org-scoped (they have an
-// app_id but enumerating across the org is the right UX for them).
-//
-// The picker keeps internal state for the currently-edited kind /
-// predicate / labels text / app id so switching kinds or predicates
-// doesn't lose in-flight selections from the other branches. Only the
-// externally visible `value` ever leaks back through onChange.
 export const MatchPicker = ({
   value,
   onChange,
@@ -79,10 +51,6 @@ export const MatchPicker = ({
   const [labelsRaw, setLabelsRaw] = useState<string>(initialLabels)
   const [excludeLabelsRaw, setExcludeLabelsRaw] =
     useState<string>(initialExcludeLabels)
-  // appId is only meaningful when kind ∈ {components, actions} and
-  // predicate is 'specific'. It's a UX gate, not part of the wire format
-  // — the picked entity ids are globally unique so SubscriptionMatch
-  // doesn't need to round-trip an app reference.
   const [appId, setAppId] = useState<string | undefined>(undefined)
 
   const { org } = useOrg()
@@ -103,10 +71,6 @@ export const MatchPicker = ({
     [appsQuery.data]
   )
 
-  // Whenever any of the local controls change, project them back into the
-  // SubscriptionMatch wire shape and notify the parent. This is the
-  // single source-of-truth flow — the parent's `value` is purely
-  // derived from these inputs while the picker is mounted.
   useEffect(() => {
     if (mode === 'all') {
       onChange(undefined)
@@ -123,7 +87,7 @@ export const MatchPicker = ({
     }
     const include = parseLabelsQuery(labelsRaw)
     const exclude = parseLabelsQuery(excludeLabelsRaw)
-    // Mirror the Slack modal: emit only the populated halves so the
+    // why: Mirror the Slack modal: emit only the populated halves so the
     // wire payload stays minimal. Empty include+exclude is invalid
     // (server-side Validate rejects it); we still emit the empty
     // shape so the submit-time validator can surface the error rather
@@ -132,17 +96,12 @@ export const MatchPicker = ({
     if (Object.keys(include).length > 0) selector.match_labels = include
     if (Object.keys(exclude).length > 0) selector.not_match_labels = exclude
     onChange({ [kind]: { selector } })
-    // We intentionally exclude `value` and `onChange` from deps to avoid
+    // why: We intentionally exclude `value` and `onChange` from deps to avoid
     // an infinite loop — onChange is called with the derived value, which
     // the parent re-passes as `value`. Including either would re-fire the
     // effect on every parent render.
   }, [mode, kind, predicate, labelsRaw, excludeLabelsRaw])
 
-  // Switching kind clears the entity ids to mirror the Slack modal's
-  // clearStaleSpecificFields behaviour — ids belong to the previous
-  // kind's taxonomy and would never resolve under the new one. The app
-  // picker also resets because component/action ids are scoped to a
-  // specific app.
   const handleKindChange = (next: TargetKind) => {
     if (next === kind) return
     setKind(next)
@@ -151,9 +110,6 @@ export const MatchPicker = ({
     setExcludeLabelsRaw('')
   }
 
-  // Switching the app inside components/actions invalidates the
-  // currently selected ids — they belong to the previous app's
-  // namespace. Clear them so the user starts the picker fresh.
   const handleAppChange = (nextAppId: string) => {
     if (nextAppId === appId) return
     setAppId(nextAppId)
@@ -320,11 +276,6 @@ export const MatchPicker = ({
   )
 }
 
-// derivePredicate inspects an existing SubscriptionMatch to figure out
-// which predicate radio should start out checked. Mirrors the slack
-// modal's render-state derivation: selector → labels, ids → specific,
-// otherwise any (which covers both the empty TargetMatch{} and an
-// undefined match for the chosen kind).
 const derivePredicate = (
   m: SubscriptionMatch | undefined,
   kind: TargetKind

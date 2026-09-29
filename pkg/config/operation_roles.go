@@ -28,15 +28,12 @@ const (
 type OperationType string
 
 const (
-	// for sandbox
 	OperationProvision   OperationType = "provision"
 	OperationDeprovision OperationType = "deprovision"
 	OperationReprovision OperationType = "reprovision"
-	// for components
-	OperationDeploy   OperationType = "deploy"
-	OperationTeardown OperationType = "teardown"
-	// for actions
-	OperationTrigger OperationType = "trigger"
+	OperationDeploy      OperationType = "deploy"
+	OperationTeardown    OperationType = "teardown"
+	OperationTrigger     OperationType = "trigger"
 )
 
 type ValidOperations []OperationType
@@ -58,9 +55,8 @@ var validOperations ValidOperations = []OperationType{
 	OperationTrigger,
 }
 
-// OperationRolesConfig defines role assignments for operations at the app level
 type OperationRolesConfig struct {
-	Type       OperationRuleConfigType `mapstructure:"type" toml:"type" jsonschema:"required"` // Should be "matrix"
+	Type       OperationRuleConfigType `mapstructure:"type" toml:"type" jsonschema:"required"`
 	RuleMatrix []*OperationRoleRule    `mapstructure:"rules,omitempty" toml:"rules,omitempty"`
 }
 
@@ -85,7 +81,6 @@ func (c *OperationRolesConfig) Validate() error {
 		return errors.New("operation roles supports only matrix type config")
 	}
 
-	// validate if a particular rule is duplicated for a principal and a operation
 	seen := make(map[string]bool)
 	for i, rule := range c.RuleMatrix {
 		key := fmt.Sprintf("%s:%s", rule.Principal, rule.Operation)
@@ -104,7 +99,6 @@ func (c *OperationRolesConfig) Validate() error {
 	return nil
 }
 
-// ValidateWithConfig validates operation role rules against actual components and actions, to make sure refs are correct
 func (c *OperationRolesConfig) ValidateWithConfig(
 	components []*Component,
 	actions []*ActionConfig,
@@ -112,7 +106,7 @@ func (c *OperationRolesConfig) ValidateWithConfig(
 	breakGlass *BreakGlass,
 ) error {
 	if c == nil {
-		return nil // Optional config
+		return nil
 	}
 
 	if err := c.Validate(); err != nil {
@@ -175,7 +169,6 @@ func (c *OperationRolesConfig) ValidateWithConfig(
 			return fmt.Errorf("rule at index %d: failed to parse principal: %w", i, err)
 		}
 
-		// skip checking refs for wildcard rules
 		if principalName != "*" {
 			switch PrincipalType(principalType) {
 			case PrincipalTypeComponent:
@@ -211,11 +204,8 @@ func (c *OperationRolesConfig) ValidateWithConfig(
 	return nil
 }
 
-// OperationRoleRule maps a principal (component/sandbox/action) + operation to a role name
 type OperationRoleRule struct {
-	// Format: "nuon::component:name", "nuon::sandbox", "nuon::action:name"
-	Principal string `mapstructure:"principal" toml:"principal" jsonschema:"required"`
-	// "provision", "deprovision", "update", "reprovision", "trigger"
+	Principal string        `mapstructure:"principal" toml:"principal" jsonschema:"required"`
 	Operation OperationType `mapstructure:"operation" toml:"operation" jsonschema:"required"`
 	RoleName  string        `mapstructure:"role" toml:"role" jsonschema:"required"`
 }
@@ -286,11 +276,6 @@ func (r *OperationRoleRule) ValidatePrincipal() error {
 	return nil
 }
 
-// ParsePrincipal extracts the principal type and name from the principal string
-// Examples:
-//   - "nuon::component:database" -> ("component", "database", nil)
-//   - "nuon::sandbox" -> ("sandbox", "", nil)
-//   - "nuon::action:*" -> ("action", "*", nil)
 func (r *OperationRoleRule) ParsePrincipal() (string, string, error) {
 	p, err := principal.ParsePrincipal(r.Principal)
 	if err != nil {
@@ -300,9 +285,6 @@ func (r *OperationRoleRule) ParsePrincipal() (string, string, error) {
 	return string(p.Type), p.Name, nil
 }
 
-// EntityOperationRole is used within entities like component, sandbox to specify roles for specific operation
-// todo(sk): see if this needs to be used for actions  as well or we can use just role, using this makes easier for
-// future modifications, otoh using just role makes it a bit brittle
 type EntityOperationRole struct {
 	Operation OperationType `mapstructure:"operation" toml:"operation" jsonschema:"required"`
 	RoleName  string        `mapstructure:"role" toml:"role" jsonschema:"required"`
@@ -323,7 +305,6 @@ func (e *EntityOperationRole) Validate() error {
 		return fmt.Errorf("operation must be one of: %s", validOperations.String())
 	}
 
-	// Validate role name is not empty
 	if strings.TrimSpace(e.RoleName) == "" {
 		return errors.New("role name cannot be empty")
 	}

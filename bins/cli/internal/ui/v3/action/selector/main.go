@@ -125,8 +125,6 @@ func loadActions(ctx context.Context, api nuon.Client, appID string, limit, offs
 	}
 }
 
-// calculateNameWidth determines the optimal width for the name column
-// based on the longest name in the actions list, capped at maxNameWidth
 func calculateNameWidth(actions []*models.AppActionWorkflow) int {
 	maxLen := minNameWidth
 	for _, action := range actions {
@@ -136,7 +134,6 @@ func calculateNameWidth(actions []*models.AppActionWorkflow) int {
 		}
 	}
 
-	// Cap at maximum width
 	if maxLen > maxNameWidth {
 		maxLen = maxNameWidth
 	}
@@ -144,7 +141,6 @@ func calculateNameWidth(actions []*models.AppActionWorkflow) int {
 	return maxLen
 }
 
-// truncateName truncates a name to the specified width with ellipsis if needed
 func truncateName(name string, width int) string {
 	if len(name) <= width {
 		return name
@@ -156,16 +152,15 @@ func truncateName(name string, width int) string {
 }
 
 func initialModel(ctx context.Context, cfg *config.Config, api nuon.Client, installID string, limit, offset int) model {
-	// Initial columns with default name width
 	columns := []table.Column{
 		{Title: "ID", Width: idColumnWidth},
-		{Title: "NAME", Width: minNameWidth}, // Will be adjusted when actions load
+		{Title: "NAME", Width: minNameWidth},
 		{Title: "TRIGGERS", Width: triggerWidth},
 	}
 
 	totalWidth := 0
 	for _, col := range columns {
-		totalWidth += col.Width + 2 // +2 for cell padding
+		totalWidth += col.Width + 2
 	}
 
 	t := table.New(
@@ -222,7 +217,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.table.SetWidth(msg.Width)
-		m.table.SetHeight(msg.Height - 6) // leave room for pagination + help
+		m.table.SetHeight(msg.Height - 6)
 		m.help.SetWidth(msg.Width)
 		return m, nil
 
@@ -235,10 +230,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.actions = msg.actions
 		m.hasMore = msg.hasMore
 
-		// Calculate optimal name column width based on data
 		nameWidth := calculateNameWidth(m.actions)
 
-		// Update table columns with new name width
 		columns := []table.Column{
 			{Title: "ID", Width: idColumnWidth},
 			{Title: "NAME", Width: nameWidth},
@@ -246,14 +239,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.table.SetColumns(columns)
 
-		// Recalculate width from updated columns
 		totalWidth := 0
 		for _, col := range columns {
 			totalWidth += col.Width + 2
 		}
 		m.table.SetWidth(totalWidth)
 
-		// Convert actions to table rows with truncated names
 		rows := []table.Row{}
 		for _, action := range m.actions {
 			triggers := []string{}
@@ -395,7 +386,6 @@ func (m model) viewContent() string {
 	)
 }
 
-// ActionSelectorApp runs the action selector and returns the selected action ID
 func App(
 	ctx context.Context,
 	cfg *config.Config,

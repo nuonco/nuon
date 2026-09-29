@@ -34,7 +34,6 @@ type TriggerAppBranchRunRequest struct {
 	Callback  callback.Ref
 	DedupeKey *string
 
-	// ApprovalOption gates the run's plan steps. Empty means prompt.
 	ApprovalOption app.InstallApprovalOption
 }
 

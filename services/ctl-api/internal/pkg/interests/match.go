@@ -6,33 +6,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// Matches reports whether the given Interests config wants to receive this
-// lifecycle event. Hooks (Slack channel sub, webhook) call this once per
-// subscription before dispatching.
-//
-// Semantics:
-//   - AllEvents=true: matches every classifiable event.
-//   - Empty Resources (and AllEvents=false): never matches.
-//   - Resource missing from Resources: never matches.
-//   - Resource present:
-//   - Approval events are gated by ApprovalRequests / ApprovalResponses
-//     (independent of Outcome and Ops).
-//   - Drift-detected events are gated by DriftDetected (independent of
-//     Outcome and Ops).
-//   - Lifecycle events:
-//   - Ops empty → every sub-op for this resource matches.
-//   - Ops non-empty → only the listed sub-op matches.
-//     The Ops filter applies ONLY to lifecycle events; it never silences
-//     approval or drift-detected events.
-//   - Outcome:
-//   - "none" → no lifecycle events (drift / approval still flow if enabled).
-//   - "" / "all" → every started + terminal event.
-//   - "completion" → terminal events only (suppress started).
-//   - "failures" → only failed/cancelled terminal events.
-//
-// outcome may be nil at BeforePhase (started). db may be nil — when nil,
-// classification falls back to the WorkflowType-only path which is enough
-// for execute-workflow events but skips step-scoped enrichment.
 func Matches(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome, db *gorm.DB, in Interests) bool {
 	if !in.AllEvents && len(in.Resources) == 0 {
 		return false
@@ -43,7 +16,7 @@ func Matches(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome, 
 		return false
 	}
 
-	// Drift workflows (drift_run, drift_run_reprovision_sandbox) emit a flood
+	// why: Drift workflows (drift_run, drift_run_reprovision_sandbox) emit a flood
 	// of started/completed lifecycle events on every cron tick — including
 	// clean scans where nothing drifted. That noise is never useful: drift is
 	// signaled exclusively through the dedicated drift-detected event class
@@ -81,10 +54,6 @@ func Matches(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome, 
 	case eventClassDriftDetected:
 		return cfg.DriftDetected
 	case eventClassAwaitingRetry:
-		// Awaiting-retry is a failure-flavoured "action required" event: any
-		// subscriber who would receive a failed lifecycle event for this
-		// resource/op receives it (failures, completion, and all outcomes;
-		// only OutcomeNone suppresses it).
 		if len(cfg.Ops) > 0 && !contains(cfg.Ops, f.Op) {
 			return false
 		}
@@ -108,7 +77,7 @@ func Matches(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome, 
 		if len(cfg.Ops) > 0 && !contains(cfg.Ops, f.Op) {
 			return false
 		}
-		// Lifecycle outcome filter. Empty Outcome is treated as OutcomeAll
+		// why: Lifecycle outcome filter. Empty Outcome is treated as OutcomeAll
 		// for forward-compatibility with rows persisted before this field
 		// existed.
 		switch cfg.Outcome {
@@ -119,7 +88,6 @@ func Matches(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome, 
 		case OutcomeCompletion:
 			return f.IsTerminal()
 		default:
-			// OutcomeAll / "": every started + terminal event matches.
 			return true
 		}
 	}

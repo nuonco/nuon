@@ -6,7 +6,6 @@ import (
 )
 
 func (m *model) getLogStream() error {
-	// use the m.api and m.logStream
 	logStream, err := m.api.GetLogStream(m.ctx, m.logstream_id)
 	if err != nil {
 		return err
@@ -18,7 +17,6 @@ func (m *model) getLogStream() error {
 func (m *model) getLogs() error {
 	m.loading = true
 	m.setMessage(fmt.Sprintf("[data] fetching logs cursor:%s", m.logsCursor), "info")
-	// get the next page of logs
 	logs, err := m.api.LogStreamReadLogs(m.ctx, m.logstream_id, m.logsCursor, "", nil)
 	if err != nil {
 		return err
@@ -39,12 +37,10 @@ func (m *model) setCursorFromLogs() {
 			timestamp = v.Timestamp
 		}
 	}
-	// Convert timestamp string to nanosecond string
 	if parsedTime, err := time.Parse(time.RFC3339, timestamp); err == nil {
 		cursor := fmt.Sprintf("%d", parsedTime.UnixNano())
 		m.logsCursor = cursor
 	} else {
-		// Fallback to original timestamp if parsing fails
 		m.logsCursor = "0"
 	}
 }

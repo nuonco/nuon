@@ -19,7 +19,7 @@ function broadcast(data) {
   }
 }
 
-// fs.watch({recursive:true}) is unreliable on Linux (inotify) — it silently
+// why: fs.watch({recursive:true}) is unreliable on Linux (inotify) — it silently
 // stops emitting after a while. dist/ is a handful of files, so we poll mtimes.
 function distSignature() {
   const parts = [];
@@ -62,8 +62,6 @@ setInterval(() => broadcast(": ping\n\ndata: ping\n\n"), 20000);
 
 Bun.serve({
   port: DEV_PORT,
-  // /__dev/reload is a long-lived SSE stream; Bun's default 10s idleTimeout
-  // would close it between heartbeats and the client would reconnect-loop.
   idleTimeout: 0,
   async fetch(req) {
     const url = new URL(req.url);

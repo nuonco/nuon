@@ -80,7 +80,6 @@ export const AppLayout = () => {
 
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar */}
       <aside className="w-56 flex-shrink-0 border-r border-gray-200 dark:border-gray-800">
         <div className="sticky top-0 flex h-screen flex-col overflow-y-auto">
           <div className="flex h-12 items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800">
@@ -139,7 +138,6 @@ export const AppLayout = () => {
         </div>
       </aside>
 
-      {/* Main content */}
       <div className="flex-1 min-w-0">
         <main className="p-6 lg:p-8">
           <Outlet />

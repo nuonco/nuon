@@ -12,13 +12,9 @@ type CreateNotebookCellRunRequest struct {
 	NotebookID     string `validate:"required"`
 	CellID         string `validate:"required"`
 	IdempotencyKey string `validate:"required"`
-	// OrgID / InstallID / TriggeredByID are passed explicitly because the
-	// long-lived notebook workflow is started once and serves runs from many
-	// accounts — the workflow's start context cannot be trusted for per-run
-	// ownership/audit fields.
-	OrgID         string `validate:"required"`
-	InstallID     string `validate:"required"`
-	TriggeredByID string `validate:"required"`
+	OrgID          string `validate:"required"`
+	InstallID      string `validate:"required"`
+	TriggeredByID  string `validate:"required"`
 }
 
 type CreateNotebookCellRunResponse struct {
@@ -26,9 +22,7 @@ type CreateNotebookCellRunResponse struct {
 	InstallActionWorkflowRunID string
 	RunnerID                   string
 	Role                       string
-	// AlreadyDispatched is true when an existing run for this idempotency key
-	// already has an action run, so the caller must not enqueue it again.
-	AlreadyDispatched bool
+	AlreadyDispatched          bool
 }
 
 // CreateNotebookCellRun idempotently (keyed on notebook_id + idempotency_key)
@@ -61,7 +55,6 @@ func (a *Activities) CreateNotebookCellRun(ctx context.Context, req *CreateNoteb
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
-	// Idempotency: if a run already exists for this key, return it as-is.
 	var existing app.NotebookCellRun
 	res := a.db.WithContext(ctx).
 		Where(app.NotebookCellRun{NotebookID: req.NotebookID, IdempotencyKey: req.IdempotencyKey}).
@@ -76,9 +69,6 @@ func (a *Activities) CreateNotebookCellRun(ctx context.Context, req *CreateNoteb
 		}, nil
 	}
 
-	// Build the adhoc-shaped action run from the cell snapshot. This reuses the
-	// proven adhoc plan + dispatch path; notebook runs are identified by the
-	// NotebookCellRun row, not by a distinct trigger type.
 	stepConfig := app.ActionWorkflowStepConfig{
 		InlineContents: cell.InlineContents,
 		Command:        cell.Command,

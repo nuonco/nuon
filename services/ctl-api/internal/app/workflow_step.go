@@ -28,11 +28,6 @@ const (
 
 type WorkflowStepTargetType string
 
-// install_cloudformation_stack
-// install_sandbox_run
-// install_runner_update
-// install_deploy
-// install_action_workflow_run (can be many of these)
 const (
 	WorkflowStepTargetTypeInstallCloudformationStack WorkflowStepTargetType = "install_cloudformation_stack"
 	WorkflowStepTargetTypeInstallSandboxRun          WorkflowStepTargetType = "install_sandbox_run"
@@ -115,8 +110,6 @@ type WorkflowStep struct {
 	FinishedAt time.Time `json:"finished_at,omitzero" gorm:"default:null" temporaljson:"finished_at,omitzero,omitempty"`
 	Finished   bool      `json:"finished,omitzero" gorm:"-" temporaljson:"finished,omitzero,omitempty"`
 
-	// the step approval is built into each step at the runner level.
-
 	Approval         *WorkflowStepApproval         `gorm:"foreignKey:InstallWorkflowStepID" json:"approval,omitzero" temporaljson:"approval,omitzero,omitempty"`
 	PolicyValidation *WorkflowStepPolicyValidation `gorm:"foreignKey:InstallWorkflowStepID" json:"policy_validation,omitzero" temporaljson:"policy_validation,omitzero,omitempty"`
 
@@ -187,7 +180,6 @@ func (i *WorkflowStep) Indexes(db *gorm.DB) []migrations.Index {
 }
 
 func (i *WorkflowStep) TableName() string {
-	// WorkflowStep used to be called InstallWorkflowStep
 	return "install_workflow_steps"
 }
 
@@ -219,50 +211,3 @@ func (r *WorkflowStep) AfterQuery(tx *gorm.DB) error {
 	r.WorkflowID = r.InstallWorkflowID
 	return nil
 }
-
-// Dual-write install workflows to flows.
-// func (i *InstallWorkflowStep) AfterCreate(tx *gorm.DB) error {
-// 	return errors.Wrap(tx.Create(i.TransformToFlowStep()).Error, "failed dual-write to flows after create")
-// }
-
-// func (i *InstallWorkflowStep) AfterUpdate(tx *gorm.DB) error {
-// 	fls := i.TransformToFlowStep()
-// 	return errors.Wrap(tx.Model(&FlowStep{
-// 		ID: fls.ID,
-// 	}).Updates(fls).Error, "failed dual-write to flows after save")
-// }
-
-// func (i *InstallWorkflowStep) AfterDelete(tx *gorm.DB) error {
-// 	return errors.Wrap(tx.Delete(i.TransformToFlowStep()).Error, "failed dual-write to flows after delete")
-// }
-
-// func (r *InstallWorkflowStep) TransformToFlowStep() *FlowStep {
-// 	return &FlowStep{
-// 		ID:               strings.Replace(r.ID, "iws", "fls", 1),
-// 		CreatedByID:      r.CreatedByID,
-// 		CreatedBy:        r.CreatedBy,
-// 		CreatedAt:        r.CreatedAt,
-// 		UpdatedAt:        r.UpdatedAt,
-// 		DeletedAt:        r.DeletedAt,
-// 		OrgID:            r.OrgID,
-// 		Org:              r.Org,
-// 		OwnerID:          r.OwnerID,
-// 		OwnerType:        r.OwnerType,
-// 		FlowID:           strings.Replace(r.InstallWorkflowID, "inw", "flw", 1),
-// 		Status:           r.Status,
-// 		Name:             r.Name,
-// 		Signal:           r.Signal,
-// 		Idx:              r.Idx,
-// 		ExecutionType:    FlowStepExecutionType(r.ExecutionType),
-// 		StepTargetID:     r.StepTargetID,
-// 		StepTargetType:   r.StepTargetType,
-// 		Metadata:         r.Metadata,
-// 		StartedAt:        r.StartedAt,
-// 		FinishedAt:       r.FinishedAt,
-// 		Finished:         r.Finished,
-// 		Approval:         r.Approval,
-// 		PolicyValidation: r.PolicyValidation,
-// 		ExecutionTime:    r.ExecutionTime,
-// 		Links:            r.Links,
-// 	}
-// }

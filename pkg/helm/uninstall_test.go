@@ -17,9 +17,6 @@ import (
 
 const confirmReleaseName = "uninstall-me"
 
-// joinedNotFound is the shape helm returns when a real uninstall ran and then
-// failed to purge the release record: the sentinel is reachable through an
-// Unwrap() []error, not a single Unwrap.
 func joinedNotFound() error {
 	inner := fmt.Errorf("uninstall: Failed to purge the release: %w", driver.ErrReleaseNotFound)
 
@@ -42,7 +39,6 @@ func TestIsReleaseNotFound(t *testing.T) {
 		},
 		{"joined, as a failed purge returns it", joinedNotFound(), true},
 		{
-			// Some helm paths format the driver error with %s, dropping the chain.
 			"message only, chain broken",
 			errors.New("uninstall: Release not loaded: acme: release: not found"),
 			true,
@@ -90,8 +86,6 @@ func storedRelease(version int, status release.Status) *release.Release {
 	}
 }
 
-// A store that answers every read but refuses to hand back a release, standing in
-// for an unreachable or broken release backend.
 type queryFailureDriver struct {
 	driver.Driver
 }

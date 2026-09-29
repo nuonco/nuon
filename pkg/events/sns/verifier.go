@@ -20,16 +20,12 @@ import (
 
 const maxCertificateSize = 1 << 20
 
-// Verifier verifies SNS message signatures, fetching and caching the AWS
-// signing certificates.
 type Verifier struct {
 	client *http.Client
 	mu     sync.RWMutex
 	certs  map[string]*x509.Certificate
 }
 
-// NewVerifier returns a Verifier that fetches signing certificates with
-// client, or http.DefaultClient when client is nil.
 func NewVerifier(client *http.Client) *Verifier {
 	if client == nil {
 		client = http.DefaultClient
@@ -37,8 +33,6 @@ func NewVerifier(client *http.Client) *Verifier {
 	return &Verifier{client: client, certs: make(map[string]*x509.Certificate)}
 }
 
-// Verify checks msg's RSA signature against the AWS signing certificate for
-// the topic's region.
 func (v *Verifier) Verify(ctx context.Context, msg *Message) error {
 	if msg == nil {
 		return errors.New("nil SNS message")

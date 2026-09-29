@@ -11,7 +11,6 @@ import (
 )
 
 func (s *VCSServiceTestSuite) TestGetConnections_Success() {
-	// Create a test connection
 	s.createTestVCSConnection()
 
 	rr := s.makeRequest(http.MethodGet, "/v1/vcs/connections", nil)

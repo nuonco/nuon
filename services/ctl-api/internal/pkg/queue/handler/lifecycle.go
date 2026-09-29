@@ -8,9 +8,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// buildSignalPhaseEvent creates a SignalPhaseEvent from the handler's current state.
-// If the signal implements SignalWithLifecycleContext, it enriches the event
-// with install/component/operation metadata.
 func (h *handler) buildSignalPhaseEvent(phase signal.SignalPhase) signal.SignalPhaseEvent {
 	event := signal.SignalPhaseEvent{
 		QueueSignalID: h.queueSignalID,
@@ -18,7 +15,6 @@ func (h *handler) buildSignalPhaseEvent(phase signal.SignalPhase) signal.SignalP
 		Phase:         phase,
 	}
 
-	// populate from loaded queue signal state
 	if h.queueSignal != nil {
 		event.SignalType = h.queueSignal.Type
 		if h.queueSignal.OrgID != nil {
@@ -26,11 +22,6 @@ func (h *handler) buildSignalPhaseEvent(phase signal.SignalPhase) signal.SignalP
 		}
 	}
 
-	// enrich from signal if it implements the optional lifecycle context interface.
-	// Workflow identity is also sourced from the signal's lifecycle context: it
-	// is stamped at signal-construction time via SignalWithMutableLifecycleContext
-	// (see signal.LifecycleBase) so the queue handler does not need a runtime
-	// DB lookup to resolve the owning install workflow.
 	if lc, ok := h.sig.(signal.SignalWithLifecycleContext); ok {
 		ctx := lc.LifecycleContext()
 		if ctx.OrgID != "" {
@@ -40,8 +31,6 @@ func (h *handler) buildSignalPhaseEvent(phase signal.SignalPhase) signal.SignalP
 			event.OrgName = ctx.OrgName
 		}
 		event.InstallID = ctx.InstallID
-		// Install-owned workflows carry the install as the queue owner but don't
-		// always set InstallID explicitly; default it so consumers can rely on it.
 		if event.InstallID == nil && ctx.OwnerType == "installs" && ctx.OwnerID != "" {
 			event.InstallID = &ctx.OwnerID
 		}
@@ -97,12 +86,11 @@ func (h *handler) buildSignalPhaseEvent(phase signal.SignalPhase) signal.SignalP
 	return event
 }
 
-// runAfterPhaseSafe runs after-phase hooks as a best-effort operation.
+// why: runAfterPhaseSafe runs after-phase hooks as a best-effort operation.
 // It uses a disconnected context so that hook delivery is not affected
 // by workflow cancellation. Errors are swallowed because after-phase
 // hooks must never block or fail the signal execution.
 func (h *handler) runAfterPhaseSafe(ctx workflow.Context, event signal.SignalPhaseEvent, outcome signal.SignalPhaseOutcome) {
-	// use a disconnected context so cancellation doesn't prevent hook delivery
 	dctx, _ := workflow.NewDisconnectedContext(ctx)
 
 	_ = signal.AwaitRunSignalLifecycleAfterPhase(dctx, &signal.RunSignalLifecycleAfterPhaseRequest{
@@ -111,14 +99,11 @@ func (h *handler) runAfterPhaseSafe(ctx workflow.Context, event signal.SignalPha
 	})
 }
 
-// runBeforePhase runs before-phase hooks and returns the decision.
-// If hook execution fails, it returns an allow decision (fail-open).
 func (h *handler) runBeforePhase(ctx workflow.Context, event signal.SignalPhaseEvent) signal.BeforePhaseDecision {
 	resp, err := signal.AwaitRunSignalLifecycleBeforePhase(ctx, &signal.RunSignalLifecycleBeforePhaseRequest{
 		Event: event,
 	})
 	if err != nil {
-		// fail-open: if hooks fail to run, allow execution to continue
 		return signal.AllowPhaseDecision()
 	}
 
@@ -129,7 +114,6 @@ func (h *handler) runBeforePhase(ctx workflow.Context, event signal.SignalPhaseE
 	}
 }
 
-// outcomeFromError builds a SignalPhaseOutcome from an error and duration.
 func outcomeFromError(err error, dur time.Duration) signal.SignalPhaseOutcome {
 	if err != nil {
 		return signal.SignalPhaseOutcome{

@@ -37,24 +37,17 @@ func TestExtractAzureStandardRolesRawSplitsGrantAxes(t *testing.T) {
 	if want := []string{"Microsoft.Network/virtualNetworks/write"}; !reflect.DeepEqual(prov.Actions, want) {
 		t.Fatalf("provision actions = %#v, want %#v", prov.Actions, want)
 	}
-	// Built-in roles are resolved to GUIDs here, not forwarded by name: the
-	// Terraform module builds a role definition ID from the value verbatim.
 	if want := []string{contributorGUID}; !reflect.DeepEqual(prov.BuiltInRoles, want) {
 		t.Fatalf("provision built-in roles = %#v, want %#v", prov.BuiltInRoles, want)
 	}
 	if want := []string{"Microsoft.Resources/subscriptions/resourceGroups/delete"}; !reflect.DeepEqual(deprov.Actions, want) {
 		t.Fatalf("deprovision actions = %#v, want %#v", deprov.Actions, want)
 	}
-	// No maintenance role declared, so it stays zero — which is what makes the
-	// module skip the identity and fall back to the runner's ambient one.
 	if len(maint.Actions) != 0 || len(maint.BuiltInRoles) != 0 {
 		t.Fatalf("maintenance = %#v, want empty", maint)
 	}
 }
 
-// An unmapped built-in role passes through unchanged, so a literal GUID in the
-// app config still works and a typo reaches Azure rather than being silently
-// dropped here.
 func TestExtractAzureStandardRolesRawPassesThroughUnmappedRole(t *testing.T) {
 	appCfg := &app.AppConfig{
 		PermissionsConfig: app.AppPermissionsConfig{
@@ -127,8 +120,6 @@ func TestExtractAzureRolesRawKeepsNamesAndSkipsEmpty(t *testing.T) {
 			},
 		},
 		{
-			// No azure grants at all: skipped rather than emitted as an identity
-			// with no access.
 			CloudPlatform: "azure",
 			Name:          "empty-role",
 			Policies:      []app.AppAWSIAMPolicyConfig{{Name: "nothing"}},

@@ -77,7 +77,7 @@ func (s *service) InstallPhoneHome(ctx *gin.Context) {
 		return
 	}
 
-	// Delete short-circuits ahead of every check, including auth. It carries nothing
+	// why: Delete short-circuits ahead of every check, including auth. It carries nothing
 	// the control plane trusts, and rejecting it would leave a deprovisioned install's
 	// stack undeletable — its tokens are gone by then, so it cannot authenticate even
 	// in principle.
@@ -100,9 +100,6 @@ func (s *service) InstallPhoneHome(ctx *gin.Context) {
 		}
 	}()
 
-	// Hoisted out of updateInstallPhoneHome so authorization and the write share one
-	// lookup, and so a missing version is a 401 rather than the 500 it used to be —
-	// that 500 told an unauthenticated caller whether an install exists.
 	stackVersion, install, err := s.getPhoneHomeTarget(ctx, installID, phoneHomeID)
 	if err != nil {
 		var authErr errPhoneHomeAuth
@@ -128,7 +125,7 @@ func (s *service) InstallPhoneHome(ctx *gin.Context) {
 	if err != nil {
 		var authErr errPhoneHomeAuth
 		if errors.As(err, &authErr) {
-			// Warn rather than Info: a rejection fails open on the customer's side, so
+			// why: Warn rather than Info: a rejection fails open on the customer's side, so
 			// nothing else surfaces it. Never log the token.
 			s.l.Warn("rejected phone home",
 				zap.String("install_id", install.ID),
@@ -155,9 +152,6 @@ func (s *service) InstallPhoneHome(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, app.EmptyResponse{})
 }
 
-// getPhoneHomeTarget resolves the stack version being called and its install. A miss on
-// either is reported as an authentication failure so the endpoint reveals nothing about
-// what does or does not exist.
 func (s *service) getPhoneHomeTarget(
 	ctx context.Context, installID, phoneHomeID string,
 ) (*app.InstallStackVersion, *app.Install, error) {
@@ -176,8 +170,6 @@ func (s *service) getPhoneHomeTarget(
 		return nil, nil, errors.Wrap(res.Error, "unable to find stack")
 	}
 
-	// AppRunnerConfig is preloaded because Install.AfterQuery derives CloudPlatform from
-	// it, and that is a metric tag on every rejection.
 	var install app.Install
 	if res := s.db.WithContext(ctx).
 		Preload("AppRunnerConfig").

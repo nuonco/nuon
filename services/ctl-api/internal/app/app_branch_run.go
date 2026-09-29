@@ -51,8 +51,6 @@ type AppBranchRunMetadata struct {
 	TagPrefix string `json:"tag_prefix,omitempty"`
 }
 
-// AppBranchRunLabelBuildsCompleted is set on AppBranchRun.labels when the builds
-// step finishes. Used to select baseline runs for AppBranchRunComparison.
 const AppBranchRunLabelBuildsCompleted = "builds_completed"
 const AppBranchRunLabelIsDraftMode = "is-draft-mode"
 
@@ -124,8 +122,6 @@ type AppBranchRun struct {
 	labels.Labeled
 }
 
-// IsPreview reports whether the run is a preview run (has AppBranchRunPreview child).
-// PlanOnly and git-preview-run are legacy signals mapped to preview at create time.
 func (a *AppBranchRun) IsPreview() bool {
 	if a.Preview != nil {
 		return true
@@ -133,8 +129,6 @@ func (a *AppBranchRun) IsPreview() bool {
 	return a.RunType == AppBranchRunTypeGitPreview || a.PlanOnly
 }
 
-// RunMetadata returns the provenance snapshot with legacy columns filled in
-// for rows created before metadata was introduced.
 func (a *AppBranchRun) RunMetadata() AppBranchRunMetadata {
 	metadata := a.Metadata
 	if metadata.Trigger == "" {

@@ -15,8 +15,7 @@ import (
 
 type SetInstallSandboxRunPlanCompositeErrorRequest struct {
 	SandboxRunID string `validate:"required"`
-	// Detail is the sanitised plan-render error message. Empty clears the field.
-	Detail string
+	Detail       string
 }
 
 // SetInstallSandboxRunPlanCompositeError freezes a SandboxPlanRenderError onto

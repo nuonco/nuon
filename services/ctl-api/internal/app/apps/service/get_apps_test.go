@@ -31,7 +31,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// TestService holds all fx-injected dependencies for apps endpoint tests.
 type TestService struct {
 	fx.In
 
@@ -48,7 +47,6 @@ type TestService struct {
 	Seeder          *testseed.Seeder
 }
 
-// AppsTestSuite is the testify suite for apps endpoints.
 type AppsTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -74,7 +72,6 @@ func (s *AppsTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -83,7 +80,6 @@ func (s *AppsTestSuite) SetupSuite() {
 
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -91,7 +87,6 @@ func (s *AppsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares using helper
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -130,7 +125,6 @@ func (s *AppsTestSuite) TestGetAppsReturnsEmptyArrayWhenNoApps() {
 	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	// Use OpenAPI-generated response type
 	var response []*models.AppApp
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(s.T(), err)
@@ -139,7 +133,6 @@ func (s *AppsTestSuite) TestGetAppsReturnsEmptyArrayWhenNoApps() {
 }
 
 func (s *AppsTestSuite) TestGetAppsReturnsCreatedApps() {
-	// Create test apps (BeforeCreate hook adds "app" prefix automatically)
 	app1 := &app.App{
 		ID:          domains.NewAppID(),
 		Name:        "test-app-1",
@@ -170,7 +163,6 @@ func (s *AppsTestSuite) TestGetAppsReturnsCreatedApps() {
 	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	// Use OpenAPI-generated response type
 	var response []*models.AppApp
 	err = json.Unmarshal(rr.Body.Bytes(), &response)
 	if err != nil {
@@ -179,13 +171,11 @@ func (s *AppsTestSuite) TestGetAppsReturnsCreatedApps() {
 	require.NoError(s.T(), err)
 	require.Len(s.T(), response, 2)
 
-	// Verify apps are returned in alphabetical order by name
 	require.Equal(s.T(), "test-app-1", response[0].Name)
 	require.Equal(s.T(), "test-app-2", response[1].Name)
 }
 
 func (s *AppsTestSuite) TestGetAppsFiltersWithSearchQuery() {
-	// Create test apps with different names (BeforeCreate hook adds "app" prefix automatically)
 	app1 := &app.App{
 		ID:          domains.NewAppID(),
 		Name:        "frontend-app",
@@ -209,7 +199,6 @@ func (s *AppsTestSuite) TestGetAppsFiltersWithSearchQuery() {
 	require.NoError(s.T(), err)
 	defer s.service.DB.Unscoped().Delete(&app.App{}, "id = ?", app2.ID)
 
-	// Search for "frontend"
 	rr := s.makeRequest(http.MethodGet, "/v1/apps?q=frontend")
 
 	if rr.Code != http.StatusOK {
@@ -217,7 +206,6 @@ func (s *AppsTestSuite) TestGetAppsFiltersWithSearchQuery() {
 	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	// Use OpenAPI-generated response type
 	var response []*models.AppApp
 	err = json.Unmarshal(rr.Body.Bytes(), &response)
 	if err != nil {
@@ -229,7 +217,6 @@ func (s *AppsTestSuite) TestGetAppsFiltersWithSearchQuery() {
 }
 
 func (s *AppsTestSuite) TestGetAppsRespectsPagination() {
-	// Create multiple test apps (BeforeCreate hook adds "app" prefix automatically)
 	for i := 0; i < 15; i++ {
 		testApp := &app.App{
 			ID:          domains.NewAppID(),
@@ -243,7 +230,6 @@ func (s *AppsTestSuite) TestGetAppsRespectsPagination() {
 		defer s.service.DB.Unscoped().Delete(&app.App{}, "id = ?", testApp.ID)
 	}
 
-	// Request with limit
 	rr := s.makeRequest(http.MethodGet, "/v1/apps?limit=5")
 
 	if rr.Code != http.StatusOK {
@@ -251,7 +237,6 @@ func (s *AppsTestSuite) TestGetAppsRespectsPagination() {
 	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	// Use OpenAPI-generated response type
 	var response []*models.AppApp
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	if err != nil {
@@ -262,11 +247,10 @@ func (s *AppsTestSuite) TestGetAppsRespectsPagination() {
 }
 
 func (s *AppsTestSuite) TestGetAppsOnlyReturnsAppsFromCurrentOrg() {
-	// Create another org with account context (required by BeforeCreate hook)
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 	otherOrg := &app.Org{
-		ID:          domains.NewOrgID(), // BeforeCreate adds "org" prefix
+		ID:          domains.NewOrgID(),
 		Name:        "other-org-" + domains.NewOrgID(),
 		SandboxMode: true,
 	}
@@ -274,7 +258,6 @@ func (s *AppsTestSuite) TestGetAppsOnlyReturnsAppsFromCurrentOrg() {
 	require.NoError(s.T(), err)
 	defer s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", otherOrg.ID)
 
-	// Create app in test org (BeforeCreate hook adds "app" prefix automatically)
 	app1 := &app.App{
 		ID:          domains.NewAppID(),
 		Name:        "my-app",
@@ -286,7 +269,6 @@ func (s *AppsTestSuite) TestGetAppsOnlyReturnsAppsFromCurrentOrg() {
 	require.NoError(s.T(), err)
 	defer s.service.DB.Unscoped().Delete(&app.App{}, "id = ?", app1.ID)
 
-	// Create app in other org (BeforeCreate hook adds "app" prefix automatically)
 	app2 := &app.App{
 		ID:          domains.NewAppID(),
 		Name:        "other-app",
@@ -305,7 +287,6 @@ func (s *AppsTestSuite) TestGetAppsOnlyReturnsAppsFromCurrentOrg() {
 	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	// Use OpenAPI-generated response type
 	var response []*models.AppApp
 	err = json.Unmarshal(rr.Body.Bytes(), &response)
 	if err != nil {

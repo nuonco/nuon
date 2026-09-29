@@ -104,7 +104,6 @@ func Regenerate(ctx workflow.Context, req *state.ExecuteRegenerationRequest) (*s
 			return nil, errors.Wrap(err, "error while archiving state")
 		}
 
-		// Best-effort: label rendering must not fail state generation.
 		if err := installactivities.AwaitRenderInstallLabels(ctx, &installactivities.RenderInstallLabelsRequest{
 			InstallID: req.InstallID,
 		}); err != nil {

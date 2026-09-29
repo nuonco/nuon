@@ -80,37 +80,24 @@ func (s *service) getComponentConfig(ctx *gin.Context, cmpID, cfgID string) (*ap
 
 	cfg := app.ComponentConfigConnection{}
 	res := s.db.WithContext(ctx).
-		// preload all terraform configs
 		Preload("TerraformModuleComponentConfig").
 		Preload("TerraformModuleComponentConfig.PublicGitVCSConfig").
 		Preload("TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
 		Preload("TerraformModuleComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
-
-		// preload all helm configs
 		Preload("HelmComponentConfig").
 		Preload("HelmComponentConfig.PublicGitVCSConfig").
 		Preload("HelmComponentConfig.ConnectedGithubVCSConfig").
 		Preload("HelmComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
-
-		// preload all docker configs
 		Preload("DockerBuildComponentConfig").
 		Preload("DockerBuildComponentConfig.PublicGitVCSConfig").
 		Preload("DockerBuildComponentConfig.ConnectedGithubVCSConfig").
 		Preload("DockerBuildComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
-
-		// preload all external image configs
 		Preload("ExternalImageComponentConfig").
 		Preload("ExternalImageComponentConfig.AWSECRImageConfig").
 		Preload("ExternalImageComponentConfig.GCPGARImageConfig").
 		Preload("ExternalImageComponentConfig.AzureACRImageConfig").
-
-		// preload all job configs
 		Preload("JobComponentConfig").
-
-		// preload all kubernetes configs
 		Preload("KubernetesManifestComponentConfig").
-
-		// preload all pulumi configs
 		Preload("PulumiComponentConfig").
 		Preload("PulumiComponentConfig.PublicGitVCSConfig").
 		Preload("PulumiComponentConfig.ConnectedGithubVCSConfig").

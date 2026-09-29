@@ -36,7 +36,6 @@ func (s *service) ResetUserJourney(ctx *gin.Context) {
 
 	journeyName := ctx.Param("journey_name")
 
-	// Delegate business logic to private method
 	updatedAccount, err := s.resetUserJourney(ctx, account.ID, journeyName)
 	if err != nil {
 		ctx.Error(err)
@@ -47,13 +46,11 @@ func (s *service) ResetUserJourney(ctx *gin.Context) {
 }
 
 func (s *service) resetUserJourney(ctx *gin.Context, accountID, journeyName string) (*app.Account, error) {
-	// Get full account with user journeys
 	fullAccount, err := s.getAccount(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Find the specified journey and reset all steps
 	found := false
 	updated := false
 	for i, journey := range fullAccount.UserJourneys {
@@ -76,7 +73,6 @@ func (s *service) resetUserJourney(ctx *gin.Context, accountID, journeyName stri
 		}
 	}
 
-	// Save if we found and updated any steps
 	if updated {
 		if err := s.db.WithContext(ctx).Select("user_journeys").Save(fullAccount).Error; err != nil {
 			return nil, fmt.Errorf("unable to reset user journey: %w", err)

@@ -41,7 +41,7 @@ func TestCache_EntryRemovedAfterExpiry(t *testing.T) {
 	c := newTestCache(1 * time.Millisecond)
 	c.Set("key", "value")
 	time.Sleep(5 * time.Millisecond)
-	c.Get("key") // triggers deletion
+	c.Get("key")
 	c.mu.RLock()
 	_, exists := c.store["key"]
 	c.mu.RUnlock()

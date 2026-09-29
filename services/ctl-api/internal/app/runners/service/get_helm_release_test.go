@@ -73,7 +73,6 @@ func (s *GetHelmReleaseTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -134,10 +133,8 @@ func (s *GetHelmReleaseTestSuite) TestGetHelmRelease() {
 				namespace := "default"
 				key := "sh.helm.release.v1.test-release.v1"
 
-				// Create helm chart first to satisfy FK constraint
 				s.createHelmChart(ctx, helmChartID)
 
-				// Create release with empty body - decode will fail
 				release := &app.HelmRelease{
 					HelmChartID: helmChartID,
 					Key:         key,
@@ -181,7 +178,6 @@ func (s *GetHelmReleaseTestSuite) TestGetHelmRelease() {
 				helmChartID := domains.NewHelmChartID()
 				key := "sh.helm.release.v1.test-release.v1"
 
-				// Create helm chart first to satisfy FK constraint
 				s.createHelmChart(ctx, helmChartID)
 
 				release := &app.HelmRelease{
@@ -207,7 +203,6 @@ func (s *GetHelmReleaseTestSuite) TestGetHelmRelease() {
 						Delete(&app.HelmRelease{})
 				})
 
-				// Query different namespace
 				return helmChartID, "staging", key
 			},
 			expectedCode: http.StatusInternalServerError,
@@ -221,7 +216,6 @@ func (s *GetHelmReleaseTestSuite) TestGetHelmRelease() {
 				helmChartID := domains.NewHelmChartID()
 				namespace := "default"
 
-				// Create helm chart first to satisfy FK constraint
 				s.createHelmChart(ctx, helmChartID)
 
 				release := &app.HelmRelease{
@@ -247,7 +241,6 @@ func (s *GetHelmReleaseTestSuite) TestGetHelmRelease() {
 						Delete(&app.HelmRelease{})
 				})
 
-				// Query different key
 				return helmChartID, namespace, "sh.helm.release.v1.different-release.v1"
 			},
 			expectedCode: http.StatusInternalServerError,

@@ -16,7 +16,7 @@ type armParametersShape struct {
 	Parameters map[string]json.RawMessage `yaml:"parameters" json:"parameters"`
 }
 
-// ValidateAzureRunnerIdentities guards the one combination that otherwise fails
+// why: ValidateAzureRunnerIdentities guards the one combination that otherwise fails
 // with an opaque IMDS "Identity not found" at runtime: an azure-bicep app that
 // defines per-operation identities (any azure permission role) AND pins a custom
 // runner_nested_template_url whose template does not accept a
@@ -32,7 +32,7 @@ func ValidateAzureRunnerIdentities(a *config.AppConfig) error {
 
 	params, err := fetchTemplateParameters(a.Stack.RunnerNestedTemplateURL)
 	if err != nil {
-		// Don't fail validation on a transient fetch error; the render-time
+		// why: Don't fail validation on a transient fetch error; the render-time
 		// check in ctl-api still enforces this.
 		return nil
 	}

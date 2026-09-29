@@ -1,4 +1,4 @@
-// Package shutdownbeacon reports to the control plane when the runner's host VM
+// why: Package shutdownbeacon reports to the control plane when the runner's host VM
 // is shutting down.
 //
 // It subscribes to systemd-logind's PrepareForShutdown D-Bus signal, which
@@ -31,9 +31,6 @@ import (
 )
 
 const (
-	// These operations share the logind inhibitor delay window
-	// (InhibitDelayMaxSec, default 5s). Keep their sum under that so logind
-	// does not force shutdown to proceed mid-call.
 	auditTimeout  = 2 * time.Second
 	beaconTimeout = time.Second
 	flushTimeout  = time.Second
@@ -74,8 +71,6 @@ func New(p Params) *Beacon {
 
 	p.LC.Append(fx.Hook{
 		OnStart: func(context.Context) error {
-			// best-effort: never block runner startup if the system bus or
-			// logind is unavailable (e.g. local dev, minimal images).
 			b.start()
 			return nil
 		},
@@ -113,10 +108,6 @@ func (b *Beacon) start() {
 	b.l.Info("shutdown beacon armed")
 }
 
-// takeInhibitor acquires a "delay" inhibitor lock so logind waits (up to
-// InhibitDelayMaxSec) after emitting PrepareForShutdown before proceeding,
-// guaranteeing a window for the beacon + log flush. Releasing the lock (closing
-// the fd) lets shutdown continue.
 func (b *Beacon) takeInhibitor() {
 	var fd dbus.UnixFD
 	mgr := b.conn.Object("org.freedesktop.login1", "/org/freedesktop/login1")
@@ -141,7 +132,6 @@ func (b *Beacon) loop(ch <-chan *dbus.Signal) {
 			}
 			down, ok := sig.Body[0].(bool)
 			if !ok || !down {
-				// false => a previously scheduled shutdown was cancelled.
 				continue
 			}
 			b.onShutdown()
@@ -174,8 +164,6 @@ func (b *Beacon) fire() {
 	defer cancel()
 
 	if err := b.apiClient.ReportTerminating(ctx, b.registrar.ProcessID()); err != nil {
-		// best-effort breadcrumb only; the authoritative "did it arrive" signal
-		// is server-side. This log races the same network teardown.
 		b.l.Warn("terminating beacon failed", zap.Error(err))
 	}
 }

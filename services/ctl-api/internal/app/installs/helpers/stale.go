@@ -22,7 +22,7 @@ func (h *Helpers) MarkInstallStateStale(ctx context.Context, installID string) e
 		First(&is).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil // No record to update
+			return nil
 		}
 
 		return err
@@ -35,8 +35,6 @@ func (h *Helpers) MarkInstallStateStale(ctx context.Context, installID string) e
 	return nil
 }
 
-// MarkInstallStatePartialsStale marks the latest install state stale and appends the given partials
-// to its stale_partials list (unioned + deduped).
 func (h *Helpers) MarkInstallStatePartialsStale(ctx context.Context, db *gorm.DB, installID string, partials ...pkgstate.PartialName) error {
 	if len(partials) == 0 {
 		return nil
@@ -49,7 +47,7 @@ func (h *Helpers) MarkInstallStatePartialsStale(ctx context.Context, db *gorm.DB
 		First(&is).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil // No record to update
+			return nil
 		}
 
 		return err
@@ -63,7 +61,6 @@ func (h *Helpers) MarkInstallStatePartialsStale(ctx context.Context, db *gorm.DB
 		set[p] = struct{}{}
 	}
 
-	// preserve deterministic order from AllPartials
 	merged := make([]pkgstate.PartialName, 0, len(set))
 	for _, p := range pkgstate.AllPartials {
 		if _, ok := set[p]; ok {

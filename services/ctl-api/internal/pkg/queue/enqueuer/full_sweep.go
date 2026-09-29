@@ -20,8 +20,6 @@ type FullSweepResponse struct {
 	DurationMS int64 `json:"duration_ms"`
 }
 
-// FullSweep processes all unenqueued signals with no grace period or page cap.
-// It is intended to be called from the admin dashboard to recover from large backlogs.
 func (e *Enqueuer) FullSweep(ctx context.Context) (*FullSweepResponse, error) {
 	start := time.Now()
 	totalEnqueued := 0

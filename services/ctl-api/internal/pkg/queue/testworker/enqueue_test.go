@@ -15,7 +15,6 @@ func (e *EnqueueTestSuite) TestEnqueueAndProcessNSignals() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 
-	// create a queue
 	queue, err := e.service.Client.Create(ctx, &client.CreateQueueRequest{
 		OwnerID:     generics.GetFakeObj[string](),
 		OwnerType:   generics.GetFakeObj[string](),
@@ -26,11 +25,9 @@ func (e *EnqueueTestSuite) TestEnqueueAndProcessNSignals() {
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), queue)
 
-	// wait for queue to be ready
 	err = e.queueReady(ctx, queue.ID)
 	require.Nil(e.T(), err)
 
-	// enqueue N signals
 	const numSignals = 10
 	signalIDs := make([]string, 0, numSignals)
 
@@ -53,7 +50,6 @@ func (e *EnqueueTestSuite) TestEnqueueAndProcessNSignals() {
 		e.waitForSignalStatus(ctx, id, app.StatusSuccess)
 	}
 
-	// verify DB status is success for all signals
 	for _, id := range signalIDs {
 		var qs app.QueueSignal
 		res := e.service.DB.WithContext(ctx).First(&qs, "id = ?", id)
@@ -126,7 +122,6 @@ func (e *EnqueueTestSuite) TestPanickingSignalUpdatesDBStatus() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 
-	// create a queue
 	q, err := e.service.Client.Create(ctx, &client.CreateQueueRequest{
 		OwnerID:     generics.GetFakeObj[string](),
 		OwnerType:   generics.GetFakeObj[string](),
@@ -140,7 +135,6 @@ func (e *EnqueueTestSuite) TestPanickingSignalUpdatesDBStatus() {
 	err = e.queueReady(ctx, q.ID)
 	require.Nil(e.T(), err)
 
-	// enqueue a panicking signal
 	resp, err := e.service.Client.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
 		QueueID: q.ID,
 		Signal: &example.PanickingSignal{
@@ -152,7 +146,6 @@ func (e *EnqueueTestSuite) TestPanickingSignalUpdatesDBStatus() {
 
 	e.waitForSignalStatus(ctx, resp.ID, app.StatusError)
 
-	// verify the DB has the error status persisted (not stuck in-progress)
 	var qs app.QueueSignal
 	res := e.service.DB.WithContext(ctx).First(&qs, "id = ?", resp.ID)
 	require.Nil(e.T(), res.Error)
@@ -163,7 +156,6 @@ func (e *EnqueueTestSuite) TestFailingSignalUpdatesDBStatus() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 
-	// create a queue
 	q, err := e.service.Client.Create(ctx, &client.CreateQueueRequest{
 		OwnerID:     generics.GetFakeObj[string](),
 		OwnerType:   generics.GetFakeObj[string](),
@@ -177,7 +169,6 @@ func (e *EnqueueTestSuite) TestFailingSignalUpdatesDBStatus() {
 	err = e.queueReady(ctx, q.ID)
 	require.Nil(e.T(), err)
 
-	// enqueue a failing signal
 	resp, err := e.service.Client.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
 		QueueID: q.ID,
 		Signal: &example.FailingSignal{
@@ -189,7 +180,6 @@ func (e *EnqueueTestSuite) TestFailingSignalUpdatesDBStatus() {
 
 	e.waitForSignalStatus(ctx, resp.ID, app.StatusError)
 
-	// verify the DB has the error status persisted
 	var qs app.QueueSignal
 	res := e.service.DB.WithContext(ctx).First(&qs, "id = ?", resp.ID)
 	require.Nil(e.T(), res.Error)

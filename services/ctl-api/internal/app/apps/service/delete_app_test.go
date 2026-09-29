@@ -12,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// TestDeleteApp tests the DeleteApp endpoint.
 func (s *AppCRUDTestSuite) TestDeleteApp() {
 	testCases := []struct {
 		name         string

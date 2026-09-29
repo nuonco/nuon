@@ -1,7 +1,7 @@
 import { api } from '@/lib/api'
 import type { TSpan } from '@/types'
 
-// Wire shape from ctl-api (services/ctl-api/internal/app/runners/service/
+// why: Wire shape from ctl-api (services/ctl-api/internal/app/runners/service/
 // log_stream_read_spans.go). Field names differ from TSpan — we remap below
 // so consumers don't have to think about the protocol surface.
 type TLogStreamSpanWire = {
@@ -35,14 +35,6 @@ const fromWire = (w: TLogStreamSpanWire): TSpan => ({
   service_name: w.service_name,
 })
 
-// Phase 4 endpoint: GET /v1/log-streams/:id/spans
-// Returns a flat span list. The frontend assembles the tree from
-// parent_span_id (siblings sorted by start_time, root has empty parent).
-//
-// While Phase 4 is in flight the endpoint may not exist yet. We swallow
-// 404s into an empty array so the trace tab can render its empty state
-// instead of throwing — once the endpoint ships this becomes a normal
-// passthrough.
 export const getLogStreamSpans = async ({
   logStreamId,
   orgId,

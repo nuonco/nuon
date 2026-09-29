@@ -22,8 +22,6 @@ const (
 	statusCancelled  = "cancelled"
 )
 
-// pendingRunbookRun tracks one in-flight runbook run so its callback can be
-// awaited after every install in the wave has been started.
 type pendingRunbookRun struct {
 	entryIdx   int
 	runbookIdx int
@@ -32,7 +30,7 @@ type pendingRunbookRun struct {
 	cb         callback.Ref
 }
 
-// Execute runs the branch config's post-deploy runbooks against every install
+// why: Execute runs the branch config's post-deploy runbooks against every install
 // that deployed successfully in this group.
 //
 // Runbooks are sequential over the list and parallel over installs: each runbook
@@ -58,7 +56,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get app branch run: %w", err)
 	}
 
-	// RunType is how preview runs are identified now; PlanOnly is the legacy flag
+	// why: RunType is how preview runs are identified now; PlanOnly is the legacy flag
 	// nothing in the branch flow sets anymore. Check both so a preview never runs
 	// migrations or smoke tests against real installs.
 	if run.RunType == app.AppBranchRunTypeGitPreview || run.PlanOnly {
@@ -76,9 +74,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get install group run: %w", err)
 	}
 
-	// No group run means the deploy never ran — an empty install group auto-skipped
-	// by the emptygroup check, or a deploy step a user skipped. There is nothing to
-	// run runbooks against, and failing here would abort a run that is otherwise fine.
 	if !groupRun.Found {
 		logger.Info("install group never deployed, skipping post-deploy runbooks",
 			"install_group_id", s.InstallGroupID,
@@ -140,9 +135,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	s.persistGroupRun(ctx, groupRun.InstallGroupRunID, installEntries, finalStatus, summary)
 
-	// Write the terminal metadata and summary onto the step itself. Without this
-	// the last in-loop update is the only thing the step ever carried, and its
-	// description read as mid-flight after the step had already finished.
 	s.updateStepMetadata(ctx, summary, installEntries)
 
 	if len(errs) > 0 {
@@ -155,13 +147,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return nil
 }
 
-// seedRunbookPlan reconciles each deployed install's recorded runbooks with the
-// plan, so the step shows every runbook it intends to run from the first render.
-//
-// It is resume-aware because the step is retryable: a runbook that already
-// succeeded is left alone, and one that failed or was cancelled is reset to
-// pending with a bumped attempt so the retry starts a genuinely new run rather
-// than adopting the failed one through its idempotency key.
 func seedRunbookPlan(installEntries []app.InstallGroupRunInstall, runbooks []activities.ResolvedPostDeployRunbook) {
 	for i := range installEntries {
 		if installEntries[i].Status != statusSuccess {
@@ -200,9 +185,6 @@ func seedRunbookPlan(installEntries []app.InstallGroupRunInstall, runbooks []act
 	}
 }
 
-// startRunbookWave starts rb on every eligible install, without awaiting any of
-// them. An install is eligible if it deployed cleanly, none of its earlier
-// runbooks failed, and this runbook has not already succeeded on a prior attempt.
 func (s *Signal) startRunbookWave(
 	ctx workflow.Context,
 	run *app.AppBranchRun,
@@ -257,7 +239,7 @@ func (s *Signal) startRunbookWave(
 			"install_runbook_run_id", result.InstallRunbookRunID,
 		)
 
-		// The run had already reached a terminal state, so no completion signal is
+		// why: The run had already reached a terminal state, so no completion signal is
 		// coming. Record what that state actually was — a deduped run may have
 		// failed, and treating every terminal state as success would advance the
 		// rollout past a runbook that never passed.
@@ -284,7 +266,6 @@ func (s *Signal) startRunbookWave(
 	return pending
 }
 
-// awaitRunbookWave waits for every run started in the wave.
 func (s *Signal) awaitRunbookWave(
 	ctx workflow.Context,
 	rb activities.ResolvedPostDeployRunbook,
@@ -305,11 +286,6 @@ func (s *Signal) awaitRunbookWave(
 			continue
 		}
 
-		// Only an "error" result comes back as a Go error, so a cancelled or expired
-		// run arrives here as a clean return. Recording it as success would advance
-		// the rollout past a runbook that never actually passed. It is marked as an
-		// error rather than cancelled because statusCancelled means "never reached",
-		// which neither stops later runbooks nor fails the step.
 		if res == nil || res.Status != statusSuccess {
 			status := "unknown"
 			if res != nil && res.Status != "" {
@@ -338,9 +314,6 @@ func (s *Signal) persistGroupRun(
 	status app.Status,
 	description string,
 ) {
-	// Completed/failed stay the deploy tally: this step never rewrites an
-	// install's deploy result, so a runbook failure shows as a failed step and a
-	// failed group rather than masquerading as a failed deploy.
 	completed, failed := tallyDeployed(installEntries)
 	_ = activities.AwaitUpdateInstallGroupRun(ctx, &activities.UpdateInstallGroupRunInput{
 		InstallGroupRunID: groupRunID,
@@ -367,8 +340,6 @@ func hasFailedRunbook(entry *app.InstallGroupRunInstall) bool {
 	return false
 }
 
-// cancelRemainingRunbooks marks the runbooks an install will never reach, so the
-// step shows why they didn't run instead of leaving them pending forever.
 func cancelRemainingRunbooks(entry *app.InstallGroupRunInstall, from int) {
 	for i := from; i < len(entry.Runbooks); i++ {
 		if entry.Runbooks[i].Status == statusPending {
@@ -377,8 +348,6 @@ func cancelRemainingRunbooks(entry *app.InstallGroupRunInstall, from int) {
 	}
 }
 
-// branchRunbookInputs builds the runbook input overrides sourced from the branch
-// run's VCS context. Only inputs the runbook config declares are kept downstream.
 func branchRunbookInputs(run *app.AppBranchRun) map[string]string {
 	inputs := map[string]string{}
 	if run.HeadSHA != "" {
@@ -449,8 +418,6 @@ func failedRunbookNames(installEntries []app.InstallGroupRunInstall) []string {
 	return order
 }
 
-// postDeployRunbookSummary names the runbook that stopped the rollout, so the
-// step's final description says more than a bare pass/fail.
 func postDeployRunbookSummary(installEntries []app.InstallGroupRunInstall) string {
 	ran := map[string]struct{}{}
 	for _, e := range installEntries {
@@ -473,9 +440,6 @@ func postDeployRunbookSummary(installEntries []app.InstallGroupRunInstall) strin
 	return fmt.Sprintf("%d post-deploy runbooks succeeded", len(ran))
 }
 
-// updateStepMetadata writes the given description and the current per-install
-// runbook state onto the flow step. The description is used verbatim — callers
-// pass an already-formatted string.
 func (s *Signal) updateStepMetadata(ctx workflow.Context, description string, installEntries []app.InstallGroupRunInstall) {
 	if s.StepID == "" {
 		return

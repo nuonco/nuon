@@ -90,7 +90,6 @@ func (a *InstallState) BeforeCreate(tx *gorm.DB) error {
 		a.ID = domains.NewInstallStateID()
 	}
 
-	// NOTE: temporary but we need to fallback to the install's created_by_id and org_id if not set
 	var install *Install
 	if a.CreatedByID == "" || a.OrgID == "" {
 		res := tx.WithContext(tx.Statement.Context).
@@ -129,11 +128,6 @@ func (a *InstallState) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// GetState returns the install state. When blobRead is enabled it prefers the S3
-// blob, falling back to the legacy jsonb column when the blob is unset or
-// unreadable. When disabled it always reads the legacy column. The second return
-// reports whether the state came from the blob. Archived rows null out the
-// column, so the blob is their only source.
 func (i *InstallState) GetState(ctx context.Context, blobRead bool) (*state.State, bool) {
 	if blobRead {
 		if raw, err := i.StateBlob.Get(ctx); err == nil && raw != "" {

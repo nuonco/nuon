@@ -12,13 +12,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
-// Producer and Message are re-exported so ctl-api call sites depend on this glue
-// package rather than the generic transport directly.
 type Producer = pkgkafka.Producer
 type Message = pkgkafka.Message
 
-// Topics this service produces to / consumes from. Names mirror the destination
-// ClickHouse tables.
 const (
 	TopicRunnerHeartBeats = "runner_heart_beats"
 	TopicOtelLogRecords   = "otel_log_records"
@@ -26,7 +22,6 @@ const (
 	TopicDLQ              = "dlq"
 )
 
-// Envelope message types.
 const (
 	TypeRunnerHeartBeat = "runner_heart_beat"
 	TypeOtelLogRecord   = "otel_log_record"
@@ -34,15 +29,6 @@ const (
 	TypeDLQ             = "dlq_record"
 )
 
-// ClientID identifies this process to the brokers. Kafka reports it in request
-// metrics, broker logs, and consumer group member ids, and — the reason it is
-// worth being specific — applies client quotas per client id, so a shared value
-// would make it impossible to throttle one producer without throttling all of
-// them. It is also stamped into every envelope as the message source.
-//
-// Derived from the same service_type/service_deployment that tag our pods in
-// Datadog, so a client id here names the deployment the same way the dashboards
-// do: ctl-api/api-runner, ctl-api/worker-installs, ctl-api/consumer-clickhouse-sink.
 func ClientID(cfg *internal.Config) string {
 	if cfg.KafkaClientID != "" {
 		return cfg.KafkaClientID
@@ -54,8 +40,6 @@ func ClientID(cfg *internal.Config) string {
 	return cfg.ServiceName + "/" + cfg.ServiceType + "-" + cfg.ServiceDeployment
 }
 
-// ClientConfig maps ctl-api config into the generic Kafka client config. Shared
-// by the producer here and the domain consumers.
 func ClientConfig(cfg *internal.Config) pkgkafka.Config {
 	return pkgkafka.Config{
 		Brokers:          splitBrokers(cfg.KafkaBrokers),
@@ -68,7 +52,7 @@ func ClientConfig(cfg *internal.Config) pkgkafka.Config {
 	}
 }
 
-// ConsumerGroup names the group for one consumer. Per-consumer rather than one
+// why: ConsumerGroup names the group for one consumer. Per-consumer rather than one
 // shared group because a group with heterogeneous topic subscriptions rebalances
 // every member whenever any member restarts — so a deploy of one consumer would
 // stall the others for no reason.
@@ -81,9 +65,6 @@ func ConsumerGroup(cfg *internal.Config, name string) string {
 	return cfg.KafkaConsumerGroupPrefix + "-" + name
 }
 
-// ConsumerConfig maps ctl-api config into the generic consumer config for one
-// topic. The fetch tunables are process-wide config, set per deployment, since
-// each consumer runs in its own pod.
 func ConsumerConfig(cfg *internal.Config, name, topic string) pkgkafka.ConsumerConfig {
 	return pkgkafka.ConsumerConfig{
 		Group:                  ConsumerGroup(cfg, name),
@@ -105,7 +86,7 @@ type Params struct {
 	LC  fx.Lifecycle
 }
 
-// New provides the shared Kafka producer. When KAFKA_ENABLED is false it returns
+// why: New provides the shared Kafka producer. When KAFKA_ENABLED is false it returns
 // a no-op producer so callers fall back to their legacy inline path and
 // downstream writes never depend on Kafka being present.
 func New(params Params) (*pkgkafka.Producer, error) {

@@ -11,11 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-// Pins each armScope method's resource-group output to the literal that was
-// inlined at the call site before armScope existed. The scope work is only safe
-// if these never drift: a change here silently re-renders every existing Azure
-// install's template, and for role assignments a changed name expression fails
-// redeploys with RoleAssignmentExists.
 func TestArmScope_ResourceGroupExpressionsMatchLegacyLiterals(t *testing.T) {
 	s := armScope{}
 
@@ -75,10 +70,6 @@ func TestScopeFor(t *testing.T) {
 	}
 }
 
-// TestGetAzureTemplate_RGScopeUnchanged is the backwards-compatibility contract:
-// an app that omits deployment_scope and one that sets it explicitly to
-// resource_group must render byte-identical templates, and both must match what
-// the renderer produced before the field existed.
 func TestGetAzureTemplate_RGScopeUnchanged(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 
@@ -112,7 +103,6 @@ func TestGetAzureTemplate_RGScopeUnchanged(t *testing.T) {
 				t.Error("rendered template differs between omitted and explicit resource_group")
 			}
 
-			// The literals armScope replaced must still be present verbatim.
 			body := string(omittedBytes)
 			for _, want := range []string{
 				`"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#"`,
@@ -130,9 +120,6 @@ func TestGetAzureTemplate_RGScopeUnchanged(t *testing.T) {
 				t.Errorf("%s must not appear at resource-group scope", installRGVarName)
 			}
 
-			// The install resource group is created by the template only at
-			// subscription scope. At resource-group scope the customer creates it
-			// before deploying, and declaring one here is InvalidTemplate.
 			armTmpl, err := tmpl.getAzureTemplate(fixture.build())
 			if err != nil {
 				t.Fatalf("render: %v", err)
@@ -182,9 +169,6 @@ func TestArmScope_TargetInstallRG(t *testing.T) {
 		}
 	})
 
-	// The runner already depends on the VNet and on each operation identity;
-	// replacing dependsOn instead of merging would let the VMSS deploy before its
-	// subnet or its identities exist.
 	t.Run("merges into existing dependsOn", func(t *testing.T) {
 		dep := map[string]any{"name": "runnerDeployment", "dependsOn": []string{"vnetDeployment", "uami"}}
 		armScope{subscription: true}.targetInstallRG(dep)
@@ -214,9 +198,6 @@ func TestArmScope_TargetInstallRG(t *testing.T) {
 	})
 }
 
-// A subscription-targeted child deployment fails without an explicit location,
-// which is the failure mode a custom VNet template hits when it declares its own
-// resource groups.
 func TestArmScope_TargetSubscription(t *testing.T) {
 	dep := map[string]any{"name": "vnetDeployment"}
 	armScope{}.targetSubscription(dep)
@@ -233,9 +214,6 @@ func TestArmScope_TargetSubscription(t *testing.T) {
 	}
 }
 
-// The built-in VNet and runner hold Nuon's own resources, so they must keep
-// landing in the install resource group even when the root moves to subscription
-// scope. Only a custom VNet template escapes to subscription scope.
 func TestBuiltInDeployments_TargetInstallRGAtSubscriptionScope(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 	inp := minimalTemplateInput()
@@ -262,7 +240,6 @@ func TestBuiltInDeployments_TargetInstallRGAtSubscriptionScope(t *testing.T) {
 		})
 	}
 
-	// The runner's pre-existing VNet dependency has to survive the merge.
 	scope := armScope{subscription: true}
 	vnetDeployment := scope.vnetDeploymentName(inp.Install.ID)
 	runner := tmpl.getDefaultRunnerDeployment(inp, nil, scope)
@@ -307,11 +284,6 @@ func TestGetAzureTemplate_SubscriptionScopeRoot(t *testing.T) {
 		t.Errorf("root $schema = %s, want the subscription schema", armTmpl.Schema)
 	}
 
-	// The portal renders a form from the parameters, so a parameter without a
-	// default is an empty required field the customer has to guess.
-	// A variable, so the portal never renders a form field for it, holding a literal
-	// that matches the group name the resource-group-scope flow tells customers to
-	// create by hand — nothing downstream moves.
 	want := minimalTemplateInput().Install.ID + "-rg"
 	if got := armTmpl.Variables[installRGVarName]; got != want {
 		t.Errorf("variable %s = %v, want the literal %q", installRGVarName, got, want)
@@ -330,9 +302,6 @@ func TestGetAzureTemplate_SubscriptionScopeRoot(t *testing.T) {
 	}
 }
 
-// Both values are Nuon-internal and not customer-configurable, and the plain
-// deployment blade renders a field for every parameter with no way to hide one. As
-// variables they stay out of the form entirely.
 func TestGetAzureTemplate_SubscriptionScopeHidesNuonInternalsFromTheForm(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 	inp := subscriptionTemplateInput()
@@ -354,7 +323,6 @@ func TestGetAzureTemplate_SubscriptionScopeHidesNuonInternalsFromTheForm(t *test
 		}
 	}
 
-	// Nothing may still be reaching for the parameter that no longer exists.
 	blob, err := json.Marshal(armTmpl)
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
@@ -364,9 +332,6 @@ func TestGetAzureTemplate_SubscriptionScopeHidesNuonInternalsFromTheForm(t *test
 	}
 }
 
-// The portal prompts for a Region that a quick link cannot pre-set, and a
-// subscription-scoped deployment record's location is immutable — so Nuon has to
-// learn where the customer actually deployed rather than assume.
 func TestGetAzureTemplate_DeploymentLocationReportedOnlyAtSubscriptionScope(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 
@@ -381,8 +346,6 @@ func TestGetAzureTemplate_DeploymentLocationReportedOnlyAtSubscriptionScope(t *t
 		}
 	}
 
-	// deployment().location does not exist at resource-group scope, and emitting the
-	// field there would drift the golden template for every existing install.
 	rg := tmpl.getPhoneHomeResources(minimalTemplateInput(), nil, nil, armScope{}, "")
 	rgBlob, err := json.Marshal(rg)
 	if err != nil {
@@ -395,10 +358,6 @@ func TestGetAzureTemplate_DeploymentLocationReportedOnlyAtSubscriptionScope(t *t
 	}
 }
 
-// The assertion that proves the phase: at subscription scope there is no ambient
-// resource group, so resourceGroup() may only appear inside the inline template of
-// an RG-targeted nested deployment. Anywhere else it is a render-time bug that
-// surfaces as an opaque ARM error at the customer.
 func TestGetAzureTemplate_SubscriptionScopeResourceGroupFuncOnlyInsideWrappers(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 
@@ -413,8 +372,6 @@ func TestGetAzureTemplate_SubscriptionScopeResourceGroupFuncOnlyInsideWrappers(t
 			continue
 		}
 
-		// An RG-targeted nested deployment re-establishes an ambient resource group
-		// for everything in its inline template, so skip its contents.
 		if res["resourceGroup"] != nil {
 			continue
 		}
@@ -437,8 +394,6 @@ func TestGetAzureTemplate_SubscriptionScopeWrapsRGScopedResources(t *testing.T) 
 		t.Fatalf("render at subscription scope: %v", err)
 	}
 
-	// None of these types are subscription-deployable, so any left directly in the
-	// root would be rejected as InvalidTemplate.
 	for _, resourceType := range []string{
 		uamiResourceType,
 		"Microsoft.Authorization/roleAssignments",

@@ -7,13 +7,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 )
 
-// PauseWorkflowRequest is the input for pausing a workflow.
 type PauseWorkflowRequest struct {
 	InstallWorkflowID string
 }
 
-// PauseWorkflow sends a "pause-workflow" update to the execute-flow handler
-// workflow. The workflow will pause after the current group completes.
 func (c *Client) PauseWorkflow(ctx context.Context, req *PauseWorkflowRequest) error {
 	qs, err := c.findQueueSignalByOwner(ctx, req.InstallWorkflowID, "install_workflows", executeflow.SignalType)
 	if err != nil {

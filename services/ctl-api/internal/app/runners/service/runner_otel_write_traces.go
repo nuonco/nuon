@@ -38,7 +38,6 @@ import (
 func (s *service) OtelWriteTraces(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
-	// read data into bytes
 	jsonData, err := io.ReadAll(ctx.Request.Body)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
@@ -61,7 +60,7 @@ func (s *service) OtelWriteTraces(ctx *gin.Context) {
 }
 
 func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req ptraceotlp.ExportRequest) error {
-	// Resolved here rather than left to OtelTraceIngestion's BeforeCreate hook and
+	// why: Resolved here rather than left to OtelTraceIngestion's BeforeCreate hook and
 	// GORM's timestamp autofill, both of which run at insert time. On the Kafka
 	// path that insert happens in the consumer, where there is no request context
 	// to read created_by_id from and where "now" means when the sink flushed
@@ -98,7 +97,7 @@ func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req pt
 				span := spans.At(k)
 				timestamp := span.StartTimestamp().AsTime()
 				endtimestamp := span.EndTimestamp().AsTime()
-				// NOTE: use Sub().Nanoseconds() — endtimestamp.Unix()-timestamp.Unix()
+				// why: use Sub().Nanoseconds() — endtimestamp.Unix()-timestamp.Unix()
 				// truncated sub-second spans to 0.
 				duration := endtimestamp.Sub(timestamp).Nanoseconds()
 				traceAttrs := span.Attributes()
@@ -125,23 +124,19 @@ func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req pt
 					CreatedAt:   now,
 					UpdatedAt:   now,
 
-					// runner info
 					RunnerID:               runnerID,
 					RunnerGroupID:          resourceAttrsMap["runner_group.id"],
 					RunnerJobID:            traceAttrsMap["runner_job.id"],
 					RunnerJobExecutionID:   traceAttrsMap["runner_job_execution.id"],
 					RunnerJobExecutionStep: traceAttrsMap["runner_job_execution_step.name"],
 
-					// topmatter
 					Timestamp:     timestamp,
 					TimestampTime: timestamp,
 					TimestampDate: timestamp,
 
-					// from resource
 					ResourceAttributes: resourceAttrsMap,
 					ResourceSchemaURL:  resourceSchemaUrl,
 
-					// from scope
 					ScopeSchemaURL:  scopeSchemaUrl,
 					ScopeName:       scopeName,
 					ScopeVersion:    scopeVersion,
@@ -175,7 +170,7 @@ func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req pt
 	return s.produceOrWriteRunnerTraces(ctx, otelTraces)
 }
 
-// produceOrWriteRunnerTraces hands the spans to Kafka when it's enabled, falling
+// why: produceOrWriteRunnerTraces hands the spans to Kafka when it's enabled, falling
 // back to the inline ClickHouse write for anything Kafka didn't ack.
 //
 // Synchronous, for the same reason as the OTel logs path: this handler blocks on
@@ -200,7 +195,7 @@ func (s *service) produceOrWriteRunnerTraces(ctx context.Context, traces []app.O
 
 	msgs := make([]kafka.Message, 0, len(traces))
 	for _, trace := range traces {
-		// Keyed by runner job so one job's spans share a partition, which keeps
+		// why: Keyed by runner job so one job's spans share a partition, which keeps
 		// them ordered and lands them on the same consumer. It also matches the
 		// destination table's ORDER BY prefix, so a consumer's batch inserts into
 		// a narrow key range instead of scattering across it. Spans produced
@@ -217,7 +212,7 @@ func (s *service) produceOrWriteRunnerTraces(ctx context.Context, traces []app.O
 		return nil
 	}
 
-	// Only the unacked spans, so a partial failure doesn't duplicate the ones
+	// why: Only the unacked spans, so a partial failure doesn't duplicate the ones
 	// Kafka already has.
 	fallback := make([]app.OtelTraceIngestion, 0, len(failed))
 	for _, i := range failed {

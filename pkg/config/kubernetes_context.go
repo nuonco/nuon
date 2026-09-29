@@ -4,11 +4,6 @@ import (
 	"github.com/invopop/jsonschema"
 )
 
-// KubernetesContextsConfig is the top-level container for named Kubernetes
-// context bindings. Each context maps a stable name to a peer component that
-// emits cluster connection details as outputs (in the same shape the sandbox
-// uses today). Components can opt into a context by name; otherwise they fall
-// back to the implicit sandbox default when the sandbox emits cluster outputs.
 type KubernetesContextsConfig struct {
 	Contexts []*KubernetesContext `mapstructure:"kubernetes_context,omitempty" toml:"kubernetes_context,omitempty"`
 }
@@ -39,14 +34,6 @@ func (a *KubernetesContextsConfig) Validate() error {
 	return nil
 }
 
-// KubernetesContext is a named binding to a peer component that emits cluster
-// connection details as outputs. The peer component must be a terraform_module
-// or pulumi component, and must expose a `cluster` output object matching the
-// per-cloud shape the sandbox uses (see resolveKubernetesContext for the exact
-// per-cloud field contract).
-//
-// Static / external clusters are intentionally not modeled here — wrap them in
-// a thin terraform_module component that emits the same cluster outputs.
 type KubernetesContext struct {
 	Name      string `mapstructure:"name" toml:"name" jsonschema:"required"`
 	Component string `mapstructure:"component" toml:"component" jsonschema:"required"`

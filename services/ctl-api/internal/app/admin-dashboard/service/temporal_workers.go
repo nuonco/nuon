@@ -15,7 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
-// Known Temporal namespaces used by ctl-api workers.
 var temporalWorkerNamespaces = []string{
 	"general",
 	"installs",
@@ -28,7 +27,6 @@ var temporalWorkerNamespaces = []string{
 	"onboardings",
 }
 
-// TemporalWorkers returns the temporal workers overview data.
 func (s *service) TemporalWorkers(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -43,7 +41,6 @@ func (s *service) TemporalWorkers(c *gin.Context) {
 	})
 }
 
-// TemporalWorkersTable returns just the table data for polling.
 func (s *service) TemporalWorkersTable(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -57,7 +54,6 @@ func (s *service) TemporalWorkersTable(c *gin.Context) {
 	})
 }
 
-// TemporalWorkerDetail returns the detail data for a specific namespace.
 func (s *service) TemporalWorkerDetail(c *gin.Context) {
 	ctx := c.Request.Context()
 	namespace := c.Param("namespace")
@@ -77,7 +73,6 @@ func (s *service) TemporalWorkerDetail(c *gin.Context) {
 	})
 }
 
-// getTemporalWorkers fetches poller info for all known namespaces in parallel.
 func (s *service) getTemporalWorkers(ctx context.Context) ([]*views.NamespaceWorkerInfo, error) {
 	results := make([]*views.NamespaceWorkerInfo, len(temporalWorkerNamespaces))
 
@@ -86,7 +81,6 @@ func (s *service) getTemporalWorkers(ctx context.Context) ([]*views.NamespaceWor
 		g.Go(func() error {
 			info, err := s.getNamespaceWorkerInfo(gCtx, ns)
 			if err != nil {
-				// Don't fail the whole page if one namespace is unreachable.
 				results[i] = &views.NamespaceWorkerInfo{
 					Namespace: ns,
 					Error:     err.Error(),
@@ -105,7 +99,6 @@ func (s *service) getTemporalWorkers(ctx context.Context) ([]*views.NamespaceWor
 	return results, nil
 }
 
-// getNamespaceWorkerInfo fetches worker/poller details for a single namespace.
 func (s *service) getNamespaceWorkerInfo(ctx context.Context, namespace string) (*views.NamespaceWorkerInfo, error) {
 	nsClient, err := s.temporalClient.GetNamespaceClient(namespace)
 	if err != nil {
@@ -117,7 +110,6 @@ func (s *service) getNamespaceWorkerInfo(ctx context.Context, namespace string) 
 		TaskQueue: pkgworkflows.APITaskQueue,
 	}
 
-	// Describe workflow task queue pollers.
 	wfResp, err := nsClient.DescribeTaskQueue(ctx, pkgworkflows.APITaskQueue, enumspb.TASK_QUEUE_TYPE_WORKFLOW)
 	if err != nil {
 		return nil, fmt.Errorf("unable to describe workflow task queue for %s: %w", namespace, err)
@@ -146,10 +138,8 @@ func (s *service) getNamespaceWorkerInfo(ctx context.Context, namespace string) 
 		}
 	}
 
-	// Describe activity task queue pollers.
 	actResp, err := nsClient.DescribeTaskQueue(ctx, pkgworkflows.APITaskQueue, enumspb.TASK_QUEUE_TYPE_ACTIVITY)
 	if err != nil {
-		// Activity queue might not have pollers; don't fail entirely.
 		s.l.Warn("failed to describe activity task queue", zap.String("namespace", namespace), zap.Error(err))
 		return info, nil
 	}

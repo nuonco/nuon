@@ -4,7 +4,6 @@ import (
 	"github.com/invopop/jsonschema"
 )
 
-// NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type JobComponentConfig struct {
 	ImageURL string   `mapstructure:"image_url" toml:"image_url" jsonschema:"required"`
 	Tag      string   `mapstructure:"tag" toml:"tag" jsonschema:"required"`
@@ -16,7 +15,6 @@ type JobComponentConfig struct {
 	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 
-	// deprecated
 	EnvVars []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var,omitempty"`
 }
 

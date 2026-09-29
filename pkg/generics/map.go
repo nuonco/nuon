@@ -75,7 +75,6 @@ func SubMap[K comparable, T any](newVals, oldVals map[K]T) map[K]T {
 	return addVals
 }
 
-// DiffMaps returns two additions, the additions that need to be added, and the ones that need to be deleted
 func DiffMaps[K comparable, T any](newVals, oldVals map[K]T) (map[K]T, map[K]T) {
 	return SubMap(newVals, oldVals), SubMap(oldVals, newVals)
 }
@@ -137,8 +136,6 @@ func MapToKeys[T comparable, V any](in map[T]V) []T {
 	return out
 }
 
-// Merges source and destination map, preferring values from the source map
-// Taken from github.com/helm/pkg/cli/values/options.go
 func MergeMaps(a, b map[string]interface{}) map[string]interface{} {
 	out := make(map[string]interface{}, len(a))
 	for k, v := range a {
@@ -158,7 +155,7 @@ func MergeMaps(a, b map[string]interface{}) map[string]interface{} {
 	return out
 }
 
-// StringToMapDecodeHook decodes hstore values back into maps.
+// why: StringToMapDecodeHook decodes hstore values back into maps.
 //
 // Two on-disk formats are accepted:
 //
@@ -170,9 +167,8 @@ func MergeMaps(a, b map[string]interface{}) map[string]interface{} {
 //     compatibility — new writes must go through EncodeNestedForHstore.
 func StringToMapDecodeHook() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
-		// 1. Check if the target is an interface{} or map[string]string(any)
 		if t.Kind() != reflect.Interface && t != reflect.TypeOf(map[string]string{}) {
-			return data, nil // Pass through if types don't match
+			return data, nil
 		}
 
 		var raw string
@@ -181,7 +177,7 @@ func StringToMapDecodeHook() mapstructure.DecodeHookFunc {
 		} else if strPtr, ok := data.(*string); ok {
 			raw = FromPtrStr(strPtr)
 		} else {
-			return data, nil // Skip if not string or *string
+			return data, nil
 		}
 
 		if strings.HasPrefix(raw, "{") {
@@ -196,21 +192,18 @@ func StringToMapDecodeHook() mapstructure.DecodeHookFunc {
 					return out, nil
 				}
 			}
-			// JSON parse failed — fall through to legacy parser. Defensive
+			// why: JSON parse failed — fall through to legacy parser. Defensive
 			// only: EncodeNestedForHstore always emits valid JSON.
 		}
 
 		if !strings.HasPrefix(raw, "map[") || !strings.HasSuffix(raw, "]") {
-			return data, nil // Skip if not in the expected format
+			return data, nil
 		}
 
-		// 1. Strip "map[" and "]"
 		content := raw[4 : len(raw)-1]
 
 		resultMap := make(map[string]string)
 
-		// 2. Parse multiple key:value pairs
-		// Split by space to get individual key:value pairs
 		for pair := range strings.FieldsSeq(content) {
 			parts := strings.SplitN(pair, ":", 2)
 			if len(parts) == 2 {
@@ -222,7 +215,7 @@ func StringToMapDecodeHook() mapstructure.DecodeHookFunc {
 	}
 }
 
-// EncodeNestedForHstore returns a copy of data where any map-valued entry has
+// why: EncodeNestedForHstore returns a copy of data where any map-valued entry has
 // been replaced with its JSON encoding. Scalars and slices pass through
 // unchanged.
 //
@@ -251,18 +244,11 @@ func EncodeNestedForHstore(data map[string]any) map[string]any {
 	return out
 }
 
-// parseMap parses input map string into map[string]interface{}
-// parses nested maps as well
-// primarily crafted for roles which have ':' in them
-// Beta: use with caution
 func parseMap(input string) map[string]interface{} {
-	// 1. Strip "map[" and "]"
 	content := input[4 : len(input)-1]
 
 	resultMap := make(map[string]interface{})
 
-	// 2. Parse multiple key:value pairs
-	// Split by space to get individual key:value pairs
 	for pair := range strings.FieldsSeq(content) {
 		parts := strings.SplitN(pair, ":", 2)
 		if len(parts) == 2 {
@@ -276,13 +262,10 @@ func parseMap(input string) map[string]interface{} {
 	return resultMap
 }
 
-// StringToNestedMapDecodeHook decodes input interface into nested map if needed
-// Beta: use with caution, not used anywhere as of now, bugs expected
 func StringToNestedMapDecodeHook() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
-		// 1. Check if the target is an interface{} or map[string]string(any)
 		if t.Kind() != reflect.Interface && t != reflect.TypeOf(map[string]string{}) {
-			return data, nil // Pass through if types don't match
+			return data, nil
 		}
 
 		var raw string
@@ -291,11 +274,11 @@ func StringToNestedMapDecodeHook() mapstructure.DecodeHookFunc {
 		} else if strPtr, ok := data.(*string); ok {
 			raw = FromPtrStr(strPtr)
 		} else {
-			return data, nil // Skip if not string or *string
+			return data, nil
 		}
 
 		if !strings.HasPrefix(raw, "map[") || !strings.HasSuffix(raw, "]") {
-			return data, nil // Skip if not in the expected format
+			return data, nil
 		}
 
 		return parseMap(raw), nil

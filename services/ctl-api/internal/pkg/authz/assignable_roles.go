@@ -9,8 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// AssignableRoles returns the org's roles offerable on the given assignment
-// surface (see app.RoleContext*), ordered by role type.
 func (c *Client) AssignableRoles(ctx context.Context, orgID, roleContext string) ([]app.Role, error) {
 	var roles []app.Role
 	res := c.db.WithContext(ctx).
@@ -30,9 +28,6 @@ func (c *Client) AssignableRoles(ctx context.Context, orgID, roleContext string)
 	return assignable, nil
 }
 
-// ResolveAssignableRole validates that roleType is offerable on the given
-// surface in the org and returns its role row. The error lists the roles that
-// are assignable there.
 func (c *Client) ResolveAssignableRole(ctx context.Context, orgID string, roleType app.RoleType, roleContext string) (*app.Role, error) {
 	assignable, err := c.AssignableRoles(ctx, orgID, roleContext)
 	if err != nil {

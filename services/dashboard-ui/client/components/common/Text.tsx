@@ -60,7 +60,6 @@ const WEIGHT_CLASSES: Record<TTextWeight, string> = {
   stronger: 'font-stronger',
 }
 
-// Special case: headings + mono = reduced letter spacing
 const headingMonoTracking = 'tracking-[-0.2px]'
 
 const THEME_CLASSES: Record<TTextTheme, string> = {

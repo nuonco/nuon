@@ -25,12 +25,6 @@ interface IBreakdownChart {
   breakdown: TPolicyAnalyticsBreakdown | undefined
   title: string
   formatLabel?: (key: string) => string
-  /**
-   * Optional shared upper bound for the X-axis domain. When provided, every
-   * breakdown chart on the page uses the same scale so bars are visually
-   * comparable across charts (a value of 2 produces the same bar length in
-   * every chart).
-   */
   xMax?: number
 }
 
@@ -49,8 +43,6 @@ function defaultFormatLabel(key: string) {
   return OWNER_TYPE_LABELS[key] ?? key
 }
 
-// Fixed sizing keeps every breakdown chart visually consistent regardless of
-// how many rows are in the data set or how wide the parent card happens to be.
 const BAR_SIZE = 22
 const BAR_CATEGORY_GAP = 18
 const Y_AXIS_WIDTH = 168
@@ -70,15 +62,6 @@ interface IYAxisTickProps {
   payload?: { value?: string | number }
 }
 
-/**
- * Left-aligns Y-axis labels at a fixed offset from the card edge so the bar
- * plot starts at the same x-coordinate in every chart, regardless of label
- * length. `x` from Recharts is the right edge of the axis area; subtract the
- * full axis width to find the left edge, then push in by `Y_AXIS_LABEL_INSET`
- * so the first character isn't flush against the SVG boundary. The full,
- * untruncated value is exposed via a `<title>` element for hover tooltips and
- * a11y readers.
- */
 const renderYAxisTick = ({ x = 0, y = 0, payload }: IYAxisTickProps) => {
   const numericX = typeof x === 'number' ? x : Number(x) || 0
   const labelX = numericX - Y_AXIS_WIDTH + Y_AXIS_LABEL_INSET

@@ -98,8 +98,6 @@ func testInputWithCustomRoles() *stacks.TemplateInput {
 	return inp
 }
 
-// extractTfvars parses the JSON envelope and returns the inputs tfvars string
-// (standard vars, permissions, roles, install_inputs).
 func extractTfvars(t *testing.T, out []byte) string {
 	t.Helper()
 	var envelope map[string]string
@@ -109,8 +107,6 @@ func extractTfvars(t *testing.T, out []byte) string {
 	return tfvars
 }
 
-// extractSecretsTfvars parses the JSON envelope and returns the secrets tfvars
-// string (auto_generate_secrets, secrets).
 func extractSecretsTfvars(t *testing.T, out []byte) string {
 	t.Helper()
 	var envelope map[string]string
@@ -268,7 +264,6 @@ func TestRenderMultipleBreakGlassRoles(t *testing.T) {
 	assert.Contains(t, tfvars, `["iam.roles.get"]`)
 	assert.Contains(t, tfvars, `["compute.instances.list","storage.buckets.list"]`)
 
-	// Both should be disabled by default
 	count := strings.Count(tfvars, "enabled          = false")
 	assert.Equal(t, 2, count, "both breakglass roles should be disabled by default")
 }
@@ -358,10 +353,8 @@ func TestRenderSecrets(t *testing.T) {
 
 		tfvars := extractSecretsTfvars(t, out)
 
-		// auto-gen should be in the list
 		assert.Contains(t, tfvars, `auto_generate_secrets = ["db_password", ]`)
 
-		// customer secrets should be in the secrets block
 		assert.Contains(t, tfvars, `"stripe_key"`)
 		assert.Contains(t, tfvars, `description = "Your Stripe API key"`)
 		assert.Contains(t, tfvars, `required    = true`)
@@ -369,7 +362,6 @@ func TestRenderSecrets(t *testing.T) {
 		assert.Contains(t, tfvars, `"optional_key"`)
 		assert.Contains(t, tfvars, `value       = "default-val"`)
 
-		// auto-gen should NOT appear in customer secrets
 		assert.NotContains(t, tfvars, `"db_password" = {`)
 	})
 
@@ -420,8 +412,6 @@ func TestRenderSpaceliftArtifacts(t *testing.T) {
 		assert.Contains(t, artifact, "install-stacks")
 	}
 
-	// The admin stack reads the tfvars from sibling files so the customer can
-	// edit inputs and replace secrets before applying.
 	assert.Contains(t, adminTF, "spacelift_stack")
 	assert.Contains(t, adminTF, `project_root`)
 	assert.Contains(t, adminTF, `"gcp"`)
@@ -445,8 +435,6 @@ func TestRenderSpaceliftArtifacts(t *testing.T) {
 	assert.Contains(t, blueprint, "vendor:")
 	assert.NotContains(t, blueprint, "trigger_run", "blueprint must not auto-trigger: GCP creds aren't attachable via blueprint, so the first run would fail auth")
 
-	// GCP project/region, customer install inputs, and secrets are exposed as
-	// blueprint inputs and interpolated into the (plaintext) mounted tfvars via CEL.
 	assert.Contains(t, blueprint, "inputs:")
 	assert.Contains(t, blueprint, "id: gcp_project_id")
 	assert.Contains(t, blueprint, `default: "my-gcp-project"`)
@@ -463,7 +451,6 @@ func TestRenderSpaceliftArtifacts(t *testing.T) {
 	assert.Contains(t, blueprint, `"cluster_name" = "${{ inputs.input_cluster_name }}"`)
 	assert.Contains(t, blueprint, `value       = "${{ inputs.secret_stripe_key }}"`)
 
-	// Content is plaintext (not base64) so CEL interpolation works.
 	assert.Contains(t, blueprint, "nuon_install_id")
 	assert.NotContains(t, blueprint, base64.StdEncoding.EncodeToString([]byte("nuon_install_id")))
 }
@@ -488,13 +475,9 @@ func TestRenderSpaceliftDefaults(t *testing.T) {
 	secretsTfvars := extractEnvelopeKey(t, out, "secrets_tfvars")
 	blueprint := extractEnvelopeKey(t, out, "spacelift_blueprint_yaml")
 
-	// The normal (admin-TF sibling) tfvars pre-fill install-input and secret
-	// defaults as literals.
 	assert.Contains(t, inputsTfvars, `"cluster_name" = "my-default-cluster"`)
 	assert.Contains(t, secretsTfvars, `value       = "sk_default"`)
 
-	// The blueprint surfaces those same defaults as the blueprint input `default`,
-	// so the Spacelift UI is pre-populated.
 	assert.Contains(t, blueprint, `default: "my-default-cluster"`)
 	assert.Contains(t, blueprint, `default: "sk_default"`)
 
@@ -511,9 +494,6 @@ func TestRenderSpaceliftBlueprintYAMLValid(t *testing.T) {
 	}
 	inp.AppCfg.SecretsConfig = app.AppSecretsConfig{
 		Secrets: []app.AppSecretConfig{
-			// Description contains ": " which, if interpolated unquoted, makes YAML
-			// read it as a nested mapping ("mapping values are not allowed in this
-			// context"). This mirrors the byoc slack secret descriptions.
 			{Name: "slack_signing_secret", Description: "Signing Secret. Managed out-of-band: the central AWS Secrets Manager entry is the source of truth.", Required: false},
 		},
 	}
@@ -547,7 +527,6 @@ func TestRenderPredefinedRoleValues(t *testing.T) {
 
 	tfvars := extractTfvars(t, out)
 
-	// Find the line with provision_predefined_role and verify value.
 	for _, line := range strings.Split(tfvars, "\n") {
 		if strings.HasPrefix(strings.TrimSpace(line), "provision_predefined_role") {
 			assert.Contains(t, line, `"roles/editor"`)

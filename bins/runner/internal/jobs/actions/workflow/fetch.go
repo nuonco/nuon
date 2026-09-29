@@ -19,7 +19,6 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 		return err
 	}
 
-	// fetch the plan json
 	l.Info("fetching actions job plan")
 	cp, err := h.apiClient.GetJobCompositePlan(ctx, job.ID)
 	if err != nil {
@@ -42,7 +41,6 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 		GCPAuth:   plan.GCPAuth,
 	}
 
-	// fetch the run object
 	run, err := h.apiClient.GetInstallActionWorkflowRun(ctx,
 		plan.InstallID,
 		plan.ID,
@@ -52,7 +50,6 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	}
 	h.state.run = run
 
-	// fetch the workflow config (skip for adhoc runs)
 	if run.ActionWorkflowConfigID != "" {
 		l.Info("fetching actions workflow config")
 		cfg, err := h.apiClient.GetActionWorkflowConfig(ctx, run.ActionWorkflowConfigID)

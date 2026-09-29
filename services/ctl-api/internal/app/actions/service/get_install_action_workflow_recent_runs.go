@@ -129,9 +129,6 @@ func (s *service) getRecentRuns(ctx *gin.Context, orgID, installID, actionWorkfl
 			OrgID:            orgID,
 		}).
 		Preload("ActionWorkflow").
-		// Pinned config, not the app's newest: runs execute the pinned one, so any
-		// other version hands callers a config ID that does not match. Legacy installs
-		// have no pinned config and still resolve to the newest at run time.
 		Preload("ActionWorkflow.Configs", func(db *gorm.DB) *gorm.DB {
 			if install.AppConfigID == "" {
 				return db.Order("action_workflow_configs.created_at DESC").Limit(1)
@@ -159,7 +156,6 @@ func (s *service) getRecentRuns(ctx *gin.Context, orgID, installID, actionWorkfl
 		return nil, fmt.Errorf("unable to get install state: %w", err)
 	}
 
-	// interpolate the state into the readme md
 	if len(installActionWorkflow.ActionWorkflow.Configs) > 0 {
 		stateMap, err := installState.AsMap()
 		if err != nil {

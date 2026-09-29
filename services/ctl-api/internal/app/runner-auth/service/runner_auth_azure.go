@@ -41,7 +41,6 @@ type RunnerAuthAzureResponse struct {
 	Token         string `json:"token,omitempty"`
 }
 
-// azureClaims holds the custom claims we extract from Azure managed identity JWTs.
 type azureClaims struct {
 	TenantID string `json:"tid"`
 	ObjectID string `json:"oid"`
@@ -59,7 +58,6 @@ func (a *azureClaims) Validate(_ context.Context) error {
 	return nil
 }
 
-// azureJWKSProvider caches JWKS providers per tenant to avoid repeated discovery.
 type azureJWKSProvider struct {
 	mu        sync.RWMutex
 	providers map[string]*jwks.CachingProvider
@@ -82,7 +80,6 @@ func (p *azureJWKSProvider) getProvider(tenantID string) *jwks.CachingProvider {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	// Double-check after acquiring write lock.
 	if provider, ok := p.providers[tenantID]; ok {
 		return provider
 	}
@@ -95,15 +92,12 @@ func (p *azureJWKSProvider) getProvider(tenantID string) *jwks.CachingProvider {
 
 var azureJWKS = newAzureJWKSProvider()
 
-// parseUnverifiedTenantID extracts the tid claim from a JWT without signature verification.
-// This is needed to determine which tenant's JWKS endpoint to use for verification.
 func parseUnverifiedTenantID(tokenStr string) (string, error) {
 	parts := strings.Split(tokenStr, ".")
 	if len(parts) != 3 {
 		return "", errors.New("invalid JWT format")
 	}
 
-	// Decode the payload (second part).
 	payload, err := decodeJWTSegment(parts[1])
 	if err != nil {
 		return "", fmt.Errorf("failed to decode JWT payload: %w", err)
@@ -122,12 +116,10 @@ func parseUnverifiedTenantID(tokenStr string) (string, error) {
 	return claims.TenantID, nil
 }
 
-// decodeJWTSegment decodes a base64url-encoded JWT segment.
 func decodeJWTSegment(seg string) ([]byte, error) {
 	return base64.RawURLEncoding.DecodeString(seg)
 }
 
-// verifyAzureJWT verifies an Azure managed identity JWT and returns the parsed claims.
 func (s *service) verifyAzureJWT(ctx context.Context, tokenStr string) (*azureClaims, error) {
 	tenantID, err := parseUnverifiedTenantID(tokenStr)
 	if err != nil {
@@ -171,11 +163,6 @@ func (s *service) verifyAzureJWT(ctx context.Context, tokenStr string) (*azureCl
 	return azClaims, nil
 }
 
-// extractRunnerIDFromXMSMirID parses the Azure managed identity resource ID to extract the runner ID.
-// The format is: /subscriptions/{sub}/resourcegroups/{rg}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{name}
-// The identity name is expected to contain or be the runner ID.
-// For system-assigned identities (e.g. VMSS), xms_mirid points to the compute resource
-// rather than a ManagedIdentity resource — those are not supported here.
 func extractRunnerIDFromXMSMirID(xmsMirID string) (runnerID string, subscriptionID string, err error) {
 	if xmsMirID == "" {
 		return "", "", errors.New("empty xms_mirid claim")
@@ -184,7 +171,6 @@ func extractRunnerIDFromXMSMirID(xmsMirID string) (runnerID string, subscription
 	lower := strings.ToLower(xmsMirID)
 	parts := strings.Split(strings.TrimPrefix(lower, "/"), "/")
 
-	// Expected: subscriptions/{sub}/resourcegroups/{rg}/providers/microsoft.managedidentity/userassignedidentities/{name}
 	if len(parts) < 8 {
 		return "", "", fmt.Errorf("unexpected xms_mirid format: %s", xmsMirID)
 	}
@@ -195,22 +181,16 @@ func extractRunnerIDFromXMSMirID(xmsMirID string) (runnerID string, subscription
 
 	subscriptionID = parts[1]
 
-	// Only extract runner ID from user-assigned managed identity resources.
-	// System-assigned identities (e.g. VMSS, VM) have a different resource type
-	// and the last segment is not a runner ID.
 	if !strings.Contains(lower, "microsoft.managedidentity/userassignedidentities") {
 		return "", subscriptionID, fmt.Errorf("xms_mirid is not a user-assigned managed identity: %s", xmsMirID)
 	}
 
-	// The identity name is the last segment.
 	originalParts := strings.Split(strings.TrimPrefix(xmsMirID, "/"), "/")
 	identityName := originalParts[len(originalParts)-1]
 
 	return identityName, subscriptionID, nil
 }
 
-// extractRunnerIDFromClaims extracts the runner ID from Azure JWT claims.
-// It first tries xms_mirid, then falls back to the request-provided runner_id.
 func extractRunnerIDFromClaims(claims *azureClaims, requestRunnerID string) (runnerID string, subscriptionID string, err error) {
 	if claims.XMSMirID != "" {
 		runnerID, subscriptionID, err = extractRunnerIDFromXMSMirID(claims.XMSMirID)
@@ -219,7 +199,6 @@ func extractRunnerIDFromClaims(claims *azureClaims, requestRunnerID string) (run
 		}
 	}
 
-	// Fallback to request-provided runner ID.
 	if requestRunnerID != "" {
 		return requestRunnerID, subscriptionID, nil
 	}

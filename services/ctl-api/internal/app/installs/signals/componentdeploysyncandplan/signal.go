@@ -32,18 +32,11 @@ const planCompositeErrorVersion = "deploy-sync-and-plan-composite-error-v1"
 type Signal struct {
 	signal.LifecycleBase
 
-	InstallComponentID string
-	InstallID          string
-	DeployID           string
-	ComponentID        string
-	// BuildID is the ComponentBuild to deploy. When DeployID is empty and
-	// BuildID is set, the signal creates an InstallDeploy pinned to this
-	// build instead of falling back to "latest build for component" at
-	// signal-run time. The workflow generator resolves this at step-gen
-	// so the build identity is captured up front.
-	BuildID string
-	// ComponentConfigConnectionID sets the ccc id for which we shuold lookup
-	// build for when build id is not passed in.
+	InstallComponentID          string
+	InstallID                   string
+	DeployID                    string
+	ComponentID                 string
+	BuildID                     string
 	ComponentConfigConnectionID string
 	WorkflowStepID              string
 	FlowStepID                  string
@@ -120,8 +113,6 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 }
 
 func (s *Signal) Clone(ctx workflow.Context, stepName string) ([]signal.CloneStepDef, error) {
-	// Return a clean signal — Execute() will create a fresh deploy.
-	// OnRetry() handles marking the old deploy as retried.
 	return []signal.CloneStepDef{
 		{
 			Signal: &Signal{
@@ -197,7 +188,6 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
-	// Validate install component exists
 	_, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
 	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
@@ -205,8 +195,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	return nil
 }
 
-// not every caller pins the connection on the signal, so fall back to the one
-// this install's app config resolves to rather than failing the step
 func (s *Signal) configConnectionID(ctx workflow.Context, install *app.Install) (string, error) {
 	if s.ComponentConfigConnectionID != "" {
 		return s.ComponentConfigConnectionID, nil
@@ -280,9 +268,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}()
 
-	// Point the workflow step at this deploy up front so the dashboard can
-	// surface a composite error recorded below even when the build never
-	// becomes deployable.
 	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 		StepID:         s.WorkflowStepID,
 		StepTargetID:   installDeploy.ID,
@@ -314,7 +299,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to create log stream")
 	}
-	// NOTE: not closed so we can re-use this log stream for apply plan
+	// why: not closed so we can re-use this log stream for apply plan
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
 	l, err := log.WorkflowLogger(ctx)
@@ -346,18 +331,11 @@ func (s *Signal) isBuildDeployable(bld *app.ComponentBuild) bool {
 	return bld.Status == app.ComponentBuildStatusActive
 }
 
-// isTerminalBuildFailure reports whether a build is in a state it cannot
-// recover from, so the deploy should fail fast rather than keep polling.
 func isTerminalBuildFailure(status app.ComponentBuildStatus) bool {
 	return status == app.ComponentBuildStatusError ||
 		status == app.ComponentBuildStatusPolicyFailed
 }
 
-// recordBuildFailureCompositeError freezes a ComponentBuildUnavailableError onto
-// the deploy when the build is in a terminal failure state, and reports whether
-// it did so. It is best-effort: a build that is merely un-deployable for another
-// reason (e.g. a polling timeout while still building) records nothing and
-// returns false, so the caller can leave it with its plain status.
 func (s *Signal) recordBuildFailureCompositeError(ctx workflow.Context, deployID, componentBuildID string) bool {
 	bld, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, componentBuildID)
 	if err != nil || bld == nil || !isTerminalBuildFailure(bld.Status) {
@@ -393,7 +371,6 @@ func (s *Signal) pollForDeployableBuild(ctx workflow.Context, installDeployId, c
 	}
 
 	l.Info("build is not yet deployable, polling")
-	// check the build every 10 seconds for 1 hour
 	sleepTimer := time.Second * 10
 	maxAttempts := 360
 	attempt := 0
@@ -404,13 +381,11 @@ func (s *Signal) pollForDeployableBuild(ctx workflow.Context, installDeployId, c
 
 		attempt++
 
-		// Get the latest build
 		bld, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, bld.ID)
 		if err != nil {
 			return fmt.Errorf("unable to get component build: %w", err)
 		}
 
-		// Check if the build is deployable
 		if s.isBuildDeployable(bld) {
 			return nil
 		}
@@ -464,7 +439,6 @@ func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDep
 	}
 	s.runnerJobID = runnerJob.ID
 
-	// create the plan request
 	runPlan, err := plan.AwaitCreateSyncPlan(ctx, &plan.CreateSyncPlanRequest{
 		InstallID:       install.ID,
 		InstallDeployID: installDeploy.ID,
@@ -493,7 +467,6 @@ func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDep
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	// queue job
 	s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusSyncing, "executing sync plan")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		RunnerID: install.RunnerID,
@@ -508,7 +481,6 @@ func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDep
 	}
 	l.Info("sync image job was successfully completed")
 
-	// parse outputs and create OCI artifact record
 	job, err := activities.AwaitGetJobByID(ctx, runnerJob.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get runner job")
@@ -671,7 +643,6 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 		approvalTyp = app.NoopApprovalType
 	}
 
-	// all component types require a plan EXCEPT for docker builds
 	if job.Execution.Result == nil || (len(job.Execution.Result.Contents) < 1 && len(job.Execution.Result.ContentsGzip) < 1) {
 		if runnerJob.Type != app.RunnerJobTypeJobNOOPDeploy {
 			return errors.New("no plan returned from job")

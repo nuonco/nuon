@@ -95,7 +95,6 @@ func TestParseLabelsQuery(t *testing.T) {
 }
 
 func TestWithLabels_EmptyIsNoop(t *testing.T) {
-	// WithLabels with empty labels should return a function that doesn't modify the db
 	scope := WithLabels("labels", nil)
 	if scope == nil {
 		t.Fatal("expected non-nil scope function")

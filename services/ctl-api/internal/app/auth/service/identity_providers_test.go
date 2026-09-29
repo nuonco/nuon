@@ -115,7 +115,6 @@ func TestProviderHint(t *testing.T) {
 	require.Equal(t, "login.microsoftonline.com",
 		providerHint(oidcWithIssuer("https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000/v2.0")))
 
-	// the sign-in page is unauthenticated, so a broken issuer must degrade rather than error
 	require.Empty(t, providerHint(oidcWithIssuer("://not a url")))
 	require.Empty(t, providerHint(oidcWithIssuer("")))
 	require.Empty(t, providerHint(&app.IdentityProvider{ProviderType: app.ProviderTypeGoogle}))

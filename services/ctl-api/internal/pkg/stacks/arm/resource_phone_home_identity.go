@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// getPhoneHomeIdentityResource creates the identity the phone-home script authenticates
+// why: getPhoneHomeIdentityResource creates the identity the phone-home script authenticates
 // as. Deliberately carries no role assignments: it never touches Azure, so a token minted
 // for it is inert everywhere except the phone-home endpoint.
 func getPhoneHomeIdentityResource(identityName string, scope armScope) map[string]any {
@@ -23,7 +23,6 @@ func phoneHomeIdentityResourceID(identityName string) string {
 		"[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', '%s')]", identityName)
 }
 
-// phoneHomeIdentityClientIDEnvVar is evaluated wherever the identity is declared.
 func phoneHomeIdentityClientIDEnvVar(identityName string) map[string]any {
 	return map[string]any{
 		"name":  phoneHomeIdentityClientIDEnvName,
@@ -31,9 +30,6 @@ func phoneHomeIdentityClientIDEnvVar(identityName string) map[string]any {
 	}
 }
 
-// phoneHomeInnerEnvVarsExpr appends the identity's client ID to the environment array
-// the root passed in, resolving it inside the install resource group where the identity
-// actually exists.
 func phoneHomeInnerEnvVarsExpr(identityName string) string {
 	return fmt.Sprintf(
 		"[concat(parameters('environmentVariables'), createArray(createObject('name', '%s', 'value', %s)))]",
@@ -50,13 +46,6 @@ func phoneHomeIdentityClientID(identityName string) string {
 		identityName)
 }
 
-// phoneHomeAuthScript fetches a token straight from IMDS rather than going through
-// `az login --identity`, which enumerates subscriptions and fails for an identity holding
-// no role assignments.
-//
-// The token is written to a curl config file instead of an argv header so it stays out of
-// the process list, and nothing echoes it: deployment script logs are readable by any
-// reader on the resource group.
 const phoneHomeAuthScript = `
 IMDS_URL="http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fmanagement.azure.com%2F&client_id=${PHONE_HOME_IDENTITY_CLIENT_ID}"
 

@@ -19,7 +19,6 @@ const (
 	InstallComponentStatusDeleteFailed InstallComponentStatus = "delete_failed"
 	InstallComponentStatusQueued       InstallComponentStatus = "queued"
 
-	// all legacy statuses that could be set from install deploy
 	InstallComponentStatusActive    InstallComponentStatus = "active"
 	InstallComponentStatusInactive  InstallComponentStatus = "inactive"
 	InstallComponentStatusError     InstallComponentStatus = "error"
@@ -32,8 +31,6 @@ const (
 	InstallComponentStatusDisabled  InstallComponentStatus = "disabled"
 )
 
-// InstallComponentHealthStatus is the live-health axis of an install
-// component, separate from and never overwriting the deploy/lifecycle Status.
 type InstallComponentHealthStatus string
 
 const (
@@ -46,8 +43,6 @@ const (
 	InstallComponentHealthStatusNotApplicable InstallComponentHealthStatus = "not-applicable"
 )
 
-// HasDeployed reports whether a deploy has actually run, so health is never
-// computed pre-deploy (a passing probe would lie healthy). Failed counts too.
 func (s InstallComponentStatus) HasDeployed() bool {
 	switch s {
 	case InstallComponentStatusActive,
@@ -58,11 +53,7 @@ func (s InstallComponentStatus) HasDeployed() bool {
 	return false
 }
 
-// EverDeployed reports whether a deploy has ever run, staying true mid-redeploy
-// (previous workload still serving) using a prior health verdict as proof.
 func (ic *InstallComponent) EverDeployed() bool {
-	// Torn down = deliberately deleted; evaluating it would alert on a wanted
-	// removal. DeleteFailed is the opposite: lingering resources you want to see.
 	switch ic.Status {
 	case InstallComponentStatusInactive, InstallComponentStatusDeleted:
 		return false
@@ -74,15 +65,11 @@ func (ic *InstallComponent) EverDeployed() bool {
 		ic.HealthStatus != InstallComponentHealthStatusNotApplicable
 }
 
-// ClusterHealthSeen reports whether the runner has ever observed this
-// component's resources — distinguishes "went unobservable" from "probe-only".
 func (ic *InstallComponent) ClusterHealthSeen() bool {
 	seen, _ := ic.HealthStatusV2.Metadata["cluster_seen"].(bool)
 	return seen
 }
 
-// IsBadHealth reports whether a verdict is actionable — the only verdicts
-// that notify. Progressing is transient; unknown is lost visibility, not alerts.
 func (s InstallComponentHealthStatus) IsBadHealth() bool {
 	return s == InstallComponentHealthStatusDegraded || s == InstallComponentHealthStatusUnhealthy
 }

@@ -107,10 +107,6 @@ func TestParse_HookFailedIsRetryable(t *testing.T) {
 	}
 }
 
-// TestParse_WrapperWinsOverEarlierGenericLogLine is the key regression guard:
-// the generic phrase "timed out waiting for the condition" appears in earlier
-// streamed pod-log lines, but the headline must come from the runner's wrapper
-// line, not the first line that merely mentions a generic phrase.
 func TestParse_WrapperWinsOverEarlierGenericLogLine(t *testing.T) {
 	ce := parse(readFixture(t, "wait_timeout_with_pod_logs.txt"))
 	e := helmErr(t, ce)
@@ -145,8 +141,6 @@ func TestParse_DryRunTemplateError(t *testing.T) {
 	}
 }
 
-// TestParse_CauseFallbackWithoutWrapper covers captured output that lost the
-// runner wrapper but still carries a verified helm SDK cause string.
 func TestParse_CauseFallbackWithoutWrapper(t *testing.T) {
 	ce := parse("unable to build kubernetes objects from release manifest: error validating \"\": error validating data: apiVersion not set")
 	e := helmErr(t, ce)
@@ -178,8 +172,6 @@ func TestParse_NoHelmMarker(t *testing.T) {
 		"exit status 1",
 		"helm upgrade failed\nsome trailing context",
 		"job step errored unable to execute job: unable to execute deploy pipeline",
-		// A generic kubernetes phrase with no helm wrapper or cause marker must
-		// defer to the generic parser, not produce a misleading helm error.
 		"pod api-server-0: timed out waiting for the condition",
 	}
 	for _, in := range cases {

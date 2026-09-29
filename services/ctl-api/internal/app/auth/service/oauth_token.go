@@ -16,8 +16,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// OAuthToken handles POST /oauth/token — the OAuth 2.0 token endpoint (RFC 6749).
-// Supports the authorization_code grant (with PKCE) and the refresh_token grant.
 func (s *service) OAuthToken(c *gin.Context) {
 	switch c.PostForm("grant_type") {
 	case "authorization_code":
@@ -74,7 +72,6 @@ func (s *service) oauthTokenAuthorizationCode(c *gin.Context) {
 		return
 	}
 
-	// Consume the code (single use).
 	if err := s.db.WithContext(ctx).Model(&authCode).Update("consumed", true).Error; err != nil {
 		s.l.Error("failed to consume authorization code", zap.Error(err))
 		oauthError(c, http.StatusInternalServerError, "server_error", "failed to exchange code")
@@ -119,7 +116,6 @@ func (s *service) oauthTokenRefresh(c *gin.Context) {
 		return
 	}
 
-	// Rotate: consume the old refresh token before issuing a new pair.
 	if err := s.db.WithContext(ctx).Model(&refresh).Update("consumed", true).Error; err != nil {
 		s.l.Error("failed to rotate refresh token", zap.Error(err))
 		oauthError(c, http.StatusInternalServerError, "server_error", "failed to refresh")
@@ -129,8 +125,6 @@ func (s *service) oauthTokenRefresh(c *gin.Context) {
 	s.issueOAuthTokens(c, refresh.AccountID, refresh.ClientID, refresh.Scope)
 }
 
-// issueOAuthTokens creates an access token (in the tokens table) and a refresh
-// token, then writes the RFC 6749 token response.
 func (s *service) issueOAuthTokens(c *gin.Context, accountID, clientID, scope string) {
 	ctx := c.Request.Context()
 	now := time.Now()
@@ -184,9 +178,6 @@ func (s *service) issueOAuthTokens(c *gin.Context, accountID, clientID, scope st
 	})
 }
 
-// oauthScopeToRole maps a requested scope to the org role stored on the token.
-// Only org_admin grants write access; everything else (including unknown/empty
-// scopes) defaults to the least-privileged read-only role.
 func oauthScopeToRole(scope string) string {
 	if scope == string(app.RoleTypeOrgAdmin) {
 		return string(app.RoleTypeOrgAdmin)
@@ -194,8 +185,6 @@ func oauthScopeToRole(scope string) string {
 	return string(app.RoleTypeOrgReadOnly)
 }
 
-// verifyPKCE checks an S256 PKCE code_verifier against the stored code_challenge
-// (RFC 7636): base64url(sha256(verifier)) == challenge, compared in constant time.
 func verifyPKCE(verifier, challenge string) bool {
 	sum := sha256.Sum256([]byte(verifier))
 	computed := base64.RawURLEncoding.EncodeToString(sum[:])

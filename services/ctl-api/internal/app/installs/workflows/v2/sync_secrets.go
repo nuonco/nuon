@@ -42,7 +42,7 @@ func SyncSecrets(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	}
 	steps = append(steps, lifecycleSteps...)
 
-	sg.nextGroup() // sync secrets
+	sg.nextGroup()
 	step, err := sg.installSignalStep(ctx, installID, "sync secrets", pgtype.Hstore{}, &syncsecrets.Signal{
 		InstallID:      installID,
 		WorkflowStepID: "",

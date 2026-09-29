@@ -106,9 +106,6 @@ func (a *Templates) getRoleResources(role app.AppAWSIAMRoleConfig, named map[str
 	}
 
 	if len(role.PermissionsBoundaryJSON) < 1 || bytes.Equal(role.PermissionsBoundaryJSON, []byte("{}")) {
-		// json.RawMessage requires the input to be valid json,
-		// {} is a valid json but bytes slice with 0 size is not
-		// role.PermissionsBoundaryJSON = []byte(`""`)
 	} else {
 		boundaryPolicyName := role.CloudFormationStackName + "Boundary"
 		rsrcs[boundaryPolicyName] = a.getPermissionsBoundaryPolicy(role)
@@ -116,10 +113,8 @@ func (a *Templates) getRoleResources(role app.AppAWSIAMRoleConfig, named map[str
 		roleRsrc.PermissionsBoundary = cloudformation.RefPtr(boundaryPolicyName)
 	}
 
-	// Add the role resource
 	rsrcs[role.CloudFormationStackName] = roleRsrc
 
-	// create each policy
 	for _, policy := range role.Policies {
 		if policy.ManagedPolicyName != "" {
 			continue

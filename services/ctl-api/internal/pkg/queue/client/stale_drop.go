@@ -6,9 +6,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// StaleDropInFlightSignals marks in-flight signals as errored to release
-// in-flight checks. Rows are not soft-deleted: a handler may still be running
-// one, and deleting the row would make its status updates loop on ErrRecordNotFound.
 func (c *Client) StaleDropInFlightSignals(ctx context.Context, reason string, staleIDs []string) error {
 	if len(staleIDs) == 0 {
 		return nil

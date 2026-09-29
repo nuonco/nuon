@@ -11,11 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// sendCompletionCallbacks sends Temporal signals to all registered parent
-// workflows with the handler's terminal status.
-//
-// It reloads the QueueSignal from the DB before sending so that callbacks
-// added after initializeState (e.g. by EnsureSignal) are picked up.
 func (h *handler) sendCompletionCallbacks(ctx workflow.Context) {
 	l, _ := log.WorkflowLogger(ctx)
 
@@ -24,13 +19,6 @@ func (h *handler) sendCompletionCallbacks(ctx workflow.Context) {
 		StatusDescription: h.finishedErr,
 	}
 
-	// Resident flows complete their queue signal independently of the workflow
-	// row, so the transport status can read "success" while the workflow is
-	// parked, failed, or cancelled. Gate on the domain outcome instead: hold
-	// while parked (the re-warmed run delivers later), rewrite the result for
-	// terminal failure/cancellation, and fail closed on lookup errors — a
-	// held callback surfaces as a parent timeout, a false success does not
-	// surface at all.
 	if workflowID := completionCallbacksWorkflowID(h.sig); workflowID != "" {
 		outcome, err := activities.LocalAwaitWorkflowCompletionOutcomeByWorkflowID(ctx, workflowID)
 		if err != nil {
@@ -50,11 +38,9 @@ func (h *handler) sendCompletionCallbacks(ctx workflow.Context) {
 		}
 	}
 
-	// Reload from DB to pick up callbacks added after init (e.g. by EnsureSignal).
 	qs, err := activities.LocalAwaitGetQueueSignalByQueueSignalID(ctx, h.queueSignalID)
 	if err == nil {
 		h.callbacks = qs.Callbacks
-		// Merge legacy single Callback if set.
 		if qs.Callback.IsSet() {
 			found := false
 			for _, cb := range h.callbacks {
@@ -86,7 +72,6 @@ func completionCallbacksWorkflowID(sig signal.Signal) string {
 	return residentFlow.CompletionCallbacksWorkflowID()
 }
 
-// hasCallbacks returns true if at least one completion callback is configured.
 func (h *handler) hasCallbacks() bool {
 	return h.callbacks.IsSet()
 }

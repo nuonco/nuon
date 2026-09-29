@@ -30,14 +30,6 @@ export const WorkflowSteps = ({
     .filter((step) => step.execution_type !== 'hidden')
     .filter((step) => step.name.includes(searchName))
 
-  // Steps are organized by `group_idx` (plan+apply for one component share a
-  // group; independent steps get their own). A group is retried two ways:
-  //   • group retry — apply fails and the whole group re-runs, cloning every
-  //     step with an incremented `group_retry_idx`. These render as one card
-  //     with the current round on top and prior rounds nested (WorkflowStepRoundGroup).
-  //   • step retry — a single step auto-retries on its own (e.g. a plan), keeping
-  //     `group_retry_idx` at 0 while appending same-kind attempts. These collapse
-  //     per kind (WorkflowStepGroup), with single-attempt kinds as plain rows.
   const groupsByGroupIdx = new Map<string, TWorkflowStep[]>()
   let soloIdx = 0
   for (const step of filteredSteps) {

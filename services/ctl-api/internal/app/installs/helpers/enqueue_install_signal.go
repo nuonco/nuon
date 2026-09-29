@@ -11,19 +11,14 @@ import (
 	queuesignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// EnqueueInstallSignal enqueues a v2 signal onto the named queue for an install.
 func (h *Helpers) EnqueueInstallSignal(ctx context.Context, installID, queueName string, sig queuesignal.Signal) error {
 	return h.enqueueInstallSignal(ctx, installID, queueName, sig, "", "", callback.Ref{})
 }
 
-// EnqueueInstallWorkflow starts an install workflow. The queue signal must be owned
-// by the workflow: approve/cancel/retry/pause look the handler up by owner_id.
 func (h *Helpers) EnqueueInstallWorkflow(ctx context.Context, installID, workflowID string) error {
 	return h.EnqueueInstallWorkflowWithCallback(ctx, installID, workflowID, callback.Ref{})
 }
 
-// EnqueueInstallWorkflowWithCallback starts an install workflow and attaches a
-// callback the caller can await for completion.
 func (h *Helpers) EnqueueInstallWorkflowWithCallback(ctx context.Context, installID, workflowID string, cb callback.Ref) error {
 	return h.enqueueInstallSignal(ctx, installID, InstallWorkflowsQueueName,
 		executeflow.NewSignal(workflowID),

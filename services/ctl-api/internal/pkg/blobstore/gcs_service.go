@@ -15,16 +15,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
-// gcsService is the GCS-backed implementation of Service, used when
-// BLOB_STORAGE_PROVIDER=gcs. Auth is via Application Default Credentials —
-// on a GCP-hosted control plane this resolves through GKE Workload Identity,
-// which already carries roles/storage.admin on the blob bucket.
 type gcsService struct {
 	cfg    *internal.Config
 	bucket *storage.BucketHandle
 	mw     metrics.Writer
 
-	// dlInFlight mirrors the S3 service's in-flight download gauge.
 	dlInFlight int64
 }
 
@@ -70,11 +65,7 @@ func (s *gcsService) UploadStream(ctx context.Context, key string, reader io.Rea
 	return checksum, nil
 }
 
-// writeObject streams reader into the object at key, returning a sha256:<hex>
-// checksum of the content — same format as the S3 uploader.
 func (s *gcsService) writeObject(ctx context.Context, key string, reader io.Reader) (string, error) {
-	// Cancelling the writer's context aborts the upload on a copy error,
-	// replacing the deprecated Writer.CloseWithError.
 	wctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	w := s.bucket.Object(key).NewWriter(wctx)

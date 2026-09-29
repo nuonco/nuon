@@ -154,7 +154,7 @@ func (h *Handler) publicFS() fs.FS {
 	return f
 }
 
-// This MUST be called after all API routes are registered so that API routes
+// why: This MUST be called after all API routes are registered so that API routes
 // take precedence.
 func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 	distDir := h.cfg.DistDir
@@ -321,8 +321,6 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 	return nil
 }
 
-// mimeOverrideWriter forces a Content-Type on the response, preventing
-// http.FileServer from sniffing and setting an incorrect MIME type.
 type mimeOverrideWriter struct {
 	gin.ResponseWriter
 	contentType string

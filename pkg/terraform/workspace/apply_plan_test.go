@@ -30,7 +30,7 @@ func (f *fakeTerraform) ApplyJSON(_ context.Context, _ io.Writer, opts ...tfexec
 }
 
 func TestApplyPlanVarFilesByTerraformVersion(t *testing.T) {
-	const baseOpts = 2 // -refresh plus the saved plan itself
+	const baseOpts = 2
 
 	for _, tc := range []struct {
 		tfVersion    string

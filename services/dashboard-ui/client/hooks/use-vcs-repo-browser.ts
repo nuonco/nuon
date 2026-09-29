@@ -44,8 +44,6 @@ export function useVcsRepoBrowser({
   useEffect(() => {
     if (repos.length === 0) {
       if (initialRepo && !selectedRepo) {
-        // Config has a repo that isn't in the VCS connection list (e.g. public repo).
-        // Create a synthetic entry so the selector shows the correct value.
         setSelectedRepo({ full_name: initialRepo, name: initialRepo.split('/')[1] || initialRepo, private: false } as TVCSConnectionRepo)
       } else {
         setSelectedRepo(null)
@@ -57,7 +55,6 @@ export function useVcsRepoBrowser({
       if (match) {
         setSelectedRepo(match)
       } else {
-        // Repo not in this connection's list — keep the saved value
         setSelectedRepo({ full_name: initialRepo, name: initialRepo.split('/')[1] || initialRepo, private: false } as TVCSConnectionRepo)
       }
     } else if (!selectedRepo) {

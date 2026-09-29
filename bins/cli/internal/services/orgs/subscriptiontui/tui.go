@@ -1,4 +1,4 @@
-// Package subscriptiontui owns the interactive picker for webhook
+// why: Package subscriptiontui owns the interactive picker for webhook
 // subscriptions and is intentionally kept in its own subpackage so the
 // non-TUI orgs commands (delete / list / get / api-token / etc.) don't
 // transitively import lipgloss + bubbletea.
@@ -22,15 +22,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// API is the slice of the nuon-go client surface the picker needs to
-// resolve "specific entity" selections. Declared as a local interface so
-// the subpackage doesn't pull in the entire SDK transitively and so tests
-// can substitute fakes without standing up a full mock client.
-//
-// All four endpoints already exist on the server and accept q + labels
-// query params; the picker stays client-side only — it never asks for an
-// org-wide actions enumeration (no such endpoint exists by design, the
-// labels-mode predicate covers cross-app cases).
 type API interface {
 	GetApps(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppApp, bool, error)
 	GetAppComponents(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppComponent, bool, error)
@@ -38,7 +29,7 @@ type API interface {
 	GetAllInstalls(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppInstall, bool, error)
 }
 
-// Local mirror of the resource taxonomy from
+// why: Local mirror of the resource taxonomy from
 // services/ctl-api/internal/pkg/interests/types.go. The interests package
 // lives behind an internal/ boundary that the CLI can't cross, and the
 // SDK doesn't model it (the wire shape is just JSON). Keep these
@@ -57,9 +48,6 @@ var (
 		"actions",
 	}
 
-	// resourceOps mirrors interests.SubOps. Empty Ops in the wire
-	// payload means "every op for this resource", so leaving the
-	// multi-select blank is a valid (and idiomatic) choice.
 	resourceOps = map[string][]string{
 		"installs":               {"provision", "deprovision", "reprovision", "label_added", "app_branch_changed"},
 		"stacks":                 {"version_active"},
@@ -70,31 +58,19 @@ var (
 		"actions":                {"run"},
 	}
 
-	// driftSupported mirrors interests.SupportsDriftDetected: only
-	// components and sandboxes can produce a drift-detected event.
 	driftSupported = map[string]bool{
 		"components": true,
 		"sandboxes":  true,
 	}
 
-	// componentHealthSupported mirrors
-	// interests.SupportsComponentHealth: only components carry a live
-	// health verdict.
 	componentHealthSupported = map[string]bool{
 		"components": true,
 	}
 
-	// installDegradedSupported mirrors
-	// interests.SupportsInstallDegraded: the health rollup is an
-	// install-level event.
 	installDegradedSupported = map[string]bool{
 		"installs": true,
 	}
 
-	// outcomeOptions are the four canonical outcome filters from
-	// interests.Outcome. Surface order matches the dashboard radio.
-	// "completion" is pre-selected because it matches the dashboard
-	// modal's per-resource default (see InterestsPicker.tsx).
 	outcomeOptions = []huh.Option[string]{
 		huh.NewOption("All (every started + terminal event)", "all"),
 		huh.NewOption("Completion (terminal only)", "completion").Selected(true),
@@ -102,9 +78,6 @@ var (
 		huh.NewOption("None (mute lifecycle for this resource)", "none"),
 	}
 
-	// matchKinds mirrors labels.TargetKind values that
-	// SubscriptionMatch can target. Surface order matches the
-	// dashboard.
 	matchKinds = []string{
 		string(labels.TargetKindInstalls),
 		string(labels.TargetKindComponents),
@@ -112,10 +85,6 @@ var (
 	}
 )
 
-// Per-kind match modes. "skip" is the default: the kind is not populated
-// on the resulting SubscriptionMatch, so events of that kind are excluded
-// from delivery. "any" / "specific" / "labels" mirror the three branches
-// of the dashboard MatchPicker.
 const (
 	matchModeSkip     = "skip"
 	matchModeAny      = "any"
@@ -132,16 +101,6 @@ func matchModeOptions() []huh.Option[string] {
 	}
 }
 
-// resourceState mirrors interests.ResourceCfg as flat scalars so huh
-// fields can bind to pointers. Defaults come from the dashboard modal
-// (InterestsPicker.tsx onToggleEnabled): outcome=completion, approvals
-// on, drift and health on (when supported), no explicit ops list
-// (= every op).
-//
-// The picker collapses approval_requests + approval_responses into a
-// single Approval boolean — same simplification the slack variant of
-// the dashboard picker makes (services/dashboard-ui/.../InterestsPicker.tsx).
-// Users who need the split shape have --subscription-json.
 type resourceState struct {
 	enabled         bool
 	refine          bool
@@ -163,16 +122,6 @@ func newResourceState(kind string) *resourceState {
 	}
 }
 
-// kindMatchState collects the picker's per-kind selection. Mode drives
-// which other field is consulted by buildMatch:
-//   - matchModeSkip / matchModeAny: nothing else read.
-//   - matchModeSpecific: ids populated by the data-driven entity picker
-//     in pickers.go.
-//   - matchModeLabels: selectorRaw parsed into MatchLabels and
-//     excludeRaw into NotMatchLabels. Either may be empty as long as
-//     at least one is non-empty — mirrors the Slack/dashboard
-//     "include" + "exclude" inputs so "everything except env=stage"
-//     works without enumerating positives.
 type kindMatchState struct {
 	mode        string
 	ids         []string
@@ -180,7 +129,7 @@ type kindMatchState struct {
 	excludeRaw  string
 }
 
-// Run walks the user through an interactive picker that produces the two
+// why: Run walks the user through an interactive picker that produces the two
 // halves of a webhook SubscriptionPayload. Mirrors the dashboard "Slack
 // channel subscription" modal flow:
 //
@@ -218,20 +167,12 @@ func Run(ctx context.Context, api API) (any, *labels.SubscriptionMatch, error) {
 
 	groups := buildPhase1Groups(&allEvents, resources, &scoped, kindStates)
 
-	// WithShowHelp surfaces huh's keymap legend (Tab/Shift+Tab/Enter/Esc,
-	// plus space-toggle on multi-selects) in the footer. Without it the
-	// per-widget hints are easy to miss and the TUI feels modal — see
-	// the original "feels off" complaint about Enter vs Space.
 	if err := huh.NewForm(groups...).WithShowHelp(true).Run(); err != nil {
 		return nil, nil, err
 	}
 
 	interestsCfg := buildInterests(allEvents, resources)
 
-	// Phase 3 only runs when the user opted into a scoped match AND
-	// at least one kind was set to "specific" (the data-driven branch).
-	// "any" and "labels" modes need no follow-up — they're fully
-	// determined by the phase 2 form.
 	if scoped {
 		for _, kind := range matchKinds {
 			if kindStates[kind].mode != matchModeSpecific {
@@ -252,10 +193,6 @@ func Run(ctx context.Context, api API) (any, *labels.SubscriptionMatch, error) {
 	return interestsCfg, match, nil
 }
 
-// buildPhase1Groups assembles the conditional huh groups walked in a
-// single form: events filter (interests) + match-mode-per-kind. Group
-// ordering is deliberate — the user walks events first, then scope,
-// mirroring the JSON shape `{"interests": ..., "match": ...}`.
 func buildPhase1Groups(
 	allEvents *bool,
 	resources map[string]*resourceState,
@@ -273,9 +210,6 @@ func buildPhase1Groups(
 		),
 	}
 
-	// One group with N Confirms — pick which resources are enabled.
-	// All in one screen so the user sees their full selection at once,
-	// like the dashboard's stacked toggle list.
 	resourceToggles := make([]huh.Field, 0, len(resourceKinds))
 	for _, kind := range resourceKinds {
 		st := resources[kind]
@@ -292,12 +226,6 @@ func buildPhase1Groups(
 		Description("Each enabled resource starts with sensible defaults: completion-only lifecycle, approvals on, drift and health on (where supported). Refine on the next screen if needed.").
 		WithHideFunc(func() bool { return *allEvents }))
 
-	// Per-resource refinement: split across two groups so we can gate
-	// the field group on the refine flag (huh v0.8.0 only exposes
-	// WithHideFunc on Group, not on individual Fields). The refine
-	// Confirm is its own short group, then the fields appear only if
-	// the user opts in. The common case (accept defaults) shows just
-	// the Confirm and skips the fields entirely.
 	for _, kind := range resourceKinds {
 		k := kind
 		st := resources[k]
@@ -361,7 +289,6 @@ func buildPhase1Groups(
 			WithHideFunc(func() bool { return *allEvents || !st.enabled || !st.refine }))
 	}
 
-	// Scope toggle.
 	groups = append(groups, huh.NewGroup(
 		huh.NewConfirm().
 			Title("Scope to specific entities?").
@@ -371,7 +298,7 @@ func buildPhase1Groups(
 			Value(scoped),
 	))
 
-	// Per-kind mode select. Each kind gets two groups: a select for
+	// why: Per-kind mode select. Each kind gets two groups: a select for
 	// the mode, and a hidden-by-default text input for the labels
 	// branch (huh v0.8.0 only supports WithHideFunc at the Group
 	// level, not per-Field).
@@ -404,9 +331,6 @@ func buildPhase1Groups(
 	return groups
 }
 
-// buildInterests projects the form state onto the interests JSON shape.
-// allEvents short-circuits to {"all_events": true} — same payload
-// SubscriptionFlags.Resolve uses for the no-flag default.
 func buildInterests(allEvents bool, resources map[string]*resourceState) any {
 	if allEvents {
 		return map[string]any{"all_events": true}
@@ -424,9 +348,6 @@ func buildInterests(allEvents bool, resources map[string]*resourceState) any {
 		if st.outcome != "" {
 			cfg["outcome"] = st.outcome
 		}
-		// Mirror the slack variant of the dashboard picker: one
-		// boolean fans out to both wire fields. Users who need
-		// the split shape have --subscription-json.
 		if st.approval {
 			cfg["approval_requests"] = true
 			cfg["approval_responses"] = true
@@ -445,20 +366,6 @@ func buildInterests(allEvents bool, resources map[string]*resourceState) any {
 	return map[string]any{"resources": out}
 }
 
-// buildMatch projects the per-kind mode + entity selections onto a
-// *labels.SubscriptionMatch. Returns nil when scope is off, when every
-// kind is set to skip, OR when "specific" produced an empty ID list and
-// no other kind contributed — all three legitimately mean "every entity
-// in the org" on the wire.
-//
-// Mode → TargetMatch mapping:
-//   - skip:     omit the kind (nil pointer)
-//   - any:      &TargetMatch{} — empty filter, server treats as "any"
-//   - specific: &TargetMatch{IDs: ...}
-//   - labels:   &TargetMatch{Selector: ...} with the parsed include
-//     selector in MatchLabels and the parsed exclude selector in
-//     NotMatchLabels. Either map may be empty as long as at least one
-//     of them is non-empty.
 func buildMatch(scoped bool, kindStates map[string]*kindMatchState) (*labels.SubscriptionMatch, error) {
 	if !scoped {
 		return nil, nil
@@ -475,7 +382,7 @@ func buildMatch(scoped bool, kindStates map[string]*kindMatchState) (*labels.Sub
 			tm = &labels.TargetMatch{}
 		case matchModeSpecific:
 			if len(st.ids) == 0 {
-				// Picker returned no IDs (user unselected everything
+				// why: Picker returned no IDs (user unselected everything
 				// or there were no entities to pick). Treat as skip
 				// rather than poisoning the wire payload with an
 				// empty selector that would silently behave like

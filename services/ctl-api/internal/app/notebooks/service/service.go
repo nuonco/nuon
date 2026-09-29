@@ -97,8 +97,6 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error         { return n
 func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error { return nil }
 func (s *service) RegisterSlackRoutes(api *gin.Engine) error          { return nil }
 
-// gate verifies the notebooks feature is enabled and resolves the org +
-// install for the request. All notebook handlers begin with it.
 func (s *service) gate(ctx *gin.Context) (*app.Org, *app.Install, error) {
 	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureNotebooks)
 	if err != nil || !enabled {
@@ -118,7 +116,6 @@ func (s *service) gate(ctx *gin.Context) (*app.Org, *app.Install, error) {
 	return org, install, nil
 }
 
-// getNotebook loads a notebook scoped to the org + install in the request.
 func (s *service) getNotebook(ctx *gin.Context, orgID, installID, notebookID string) (*app.Notebook, error) {
 	var nb app.Notebook
 	res := s.db.WithContext(ctx).

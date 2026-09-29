@@ -33,7 +33,6 @@ func (s *s3) Unpack(ctx context.Context, cb archive.Callback) error {
 	return nil
 }
 
-// unpack: accepts a gzipped, tarballed file and calls the callback for each file found
 func (s *s3) unpack(ctx context.Context, r io.Reader, fn archive.Callback) error {
 	gz := archiver.Gz{}
 	reader, err := gz.OpenReader(r)

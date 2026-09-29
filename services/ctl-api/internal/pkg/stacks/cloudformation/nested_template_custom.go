@@ -19,9 +19,6 @@ import (
 
 var logicalIDRegexp = regexp.MustCompile(`[^A-Za-z0-9]`)
 
-// AWSCustomStacksOnlyContractParams are the frozen top-level parameter names
-// the custom-stacks-only template always declares, standing in for the
-// VPC/runner nested stack outputs that don't exist in this mode.
 var AWSCustomStacksOnlyContractParams = []string{"VPC", "CIDRBlock", "RunnerSubnet", "PublicSubnets", "PrivateSubnets"}
 
 type customNestedStackOutput struct {
@@ -68,9 +65,6 @@ func (tpl *Templates) getCustomNestedStacks(inp *stacks.TemplateInput, t tagBuil
 		seenIndices[stack.Index] = stack.Name
 	}
 
-	// CustomStacksOnly mode has no VPC/runner nested stack to fetch outputs from,
-	// so first-class seeding is skipped in favor of the contract-parameter wiring
-	// in buildCustomNestedStack.
 	fcOutputs := map[string]firstClassOutput{}
 	if !inp.CustomStacksOnly {
 		firstClassStacks := map[string]string{
@@ -97,7 +91,7 @@ func (tpl *Templates) getCustomNestedStacks(inp *stacks.TemplateInput, t tagBuil
 		if stack.Name == "" {
 			return nil, fmt.Errorf("custom_nested_stacks[%d]: name is required", i)
 		}
-		// A nested stack is generated from a pre-hosted remote template_url, or
+		// why: A nested stack is generated from a pre-hosted remote template_url, or
 		// from contents that have been uploaded to S3 (ContentsHash set). A
 		// local-path template_url with no uploaded contents means the
 		// sync_custom_stacks upload has not finished yet (status pending);
@@ -134,9 +128,6 @@ func (tpl *Templates) getCustomNestedStacks(inp *stacks.TemplateInput, t tagBuil
 		result.resources[logicalID] = nestedStack
 		maps.Copy(result.params, defaultParams)
 
-		// hoistedParams (explicit config) need a fresh top-level String parameter
-		// declared here, tracked in allParamNames since two stacks hoisting the
-		// same name is a collision.
 		if len(hoistedParams) > 0 || len(installInputParams) > 0 {
 			merged := make(map[string]string, len(hoistedParams)+len(installInputParams))
 			maps.Copy(merged, hoistedParams)
@@ -186,7 +177,6 @@ func (tpl *Templates) getCustomNestedStacks(inp *stacks.TemplateInput, t tagBuil
 }
 
 func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack config.CustomNestedStack, t tagBuilder, logicalID string, prevLogicalID string, fcOutputs map[string]firstClassOutput, reservedParamNames map[string]string) (*nestedcloudformation.Stack, map[string]cloudformation.Parameter, map[string]struct{}, map[string]string, map[string]string, error) {
-	// Build role param lookup so we can treat them as reserved during extraction.
 	type roleRef struct {
 		paramValue string
 		resource   string
@@ -210,7 +200,6 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 		roleParamNames = append(roleParamNames, k)
 	}
 
-	// Use S3 URL when template has been uploaded (ContentsHash is set).
 	templateURL := stack.TemplateURL
 	if stack.ContentsHash != "" {
 		templateURL = CustomNestedStackTemplateURL(
@@ -225,7 +214,6 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 		return nil, nil, nil, nil, nil, err
 	}
 
-	// Inject reserved Nuon params only if the template declares them
 	nuonParams := map[string]string{
 		"NuonInstallID": inp.Install.ID,
 		"NuonAppID":     inp.Install.AppID,
@@ -237,7 +225,7 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 		}
 	}
 
-	// Inject role enable params only if the template declares them.
+	// why: Inject role enable params only if the template declares them.
 	// NOTE: we intentionally do NOT add roleDeps to DependsOn because
 	// the role resources are conditional (they have Condition:
 	// Enable<RoleType>). A hard DependsOn on a conditional resource
@@ -250,11 +238,6 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 		}
 	}
 
-	// Explicit parameter values. These arrive already rendered -- see
-	// config.RenderCustomNestedStackParameters, called when the install stack
-	// version is generated -- so they are used verbatim. The install-input
-	// reference form is still resolved here as a fallback for callers that read the
-	// config without rendering it first.
 	hoistedParams := map[string]string{}
 	installInputParams := map[string]string{}
 	explicitlyConfigured := map[string]bool{}
@@ -300,7 +283,6 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 		delete(defaultParameters, cfnParamName)
 	}
 
-	// Wire first-class stack outputs (VPC, Runner) to matching parameter names
 	for paramName := range parameters {
 		if fc, ok := fcOutputs[paramName]; ok {
 			parameters[paramName] = cloudformation.GetAtt(fc.resource, "Outputs."+fc.outputName)
@@ -309,9 +291,6 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 	}
 
 	if inp.CustomStacksOnly {
-		// No VPC/runner nested stack exists in this mode, so a parameter matching
-		// one of the frozen contract names is wired to the top-level template
-		// parameter of the same name instead of an fcOutputs GetAtt.
 		for paramName := range parameters {
 			if slices.Contains(AWSCustomStacksOnlyContractParams, paramName) {
 				parameters[paramName] = cloudformation.Ref(paramName)
@@ -319,10 +298,6 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 			}
 		}
 
-		// A custom stack's own template parameter can share a name with an
-		// install input's CloudFormationStackParamName. getAWSCustomStacksOnlyTemplate
-		// already declares that top-level parameter, so it's wired here the same
-		// way rather than requiring a Default in the vendor's template.
 		installInputNameByParam := make(map[string]string, len(inp.AppCfg.InputConfig.AppInputs))
 		for _, appInput := range inp.AppCfg.InputConfig.AppInputs {
 			if appInput.Source != app.AppInputSourceCustomer {
@@ -341,7 +316,7 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 			}
 		}
 
-		// Anything still unbound and without a template default can never
+		// why: Anything still unbound and without a template default can never
 		// resolve. Fail loudly here rather than deploy a broken template.
 		for paramName, cfnParam := range defaultParameters {
 			if cfnParam.Default != nil {
@@ -367,8 +342,6 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 	case prevLogicalID != "":
 		dependsOn = append(dependsOn, prevLogicalID)
 	case inp.CustomStacksOnly:
-		// No VPC or runner ASG resource exists in this template, so the first
-		// custom stack has nothing to depend on.
 	default:
 		dependsOn = append(dependsOn, "VPC")
 		if !tpl.cfg.UseLocalRunners {

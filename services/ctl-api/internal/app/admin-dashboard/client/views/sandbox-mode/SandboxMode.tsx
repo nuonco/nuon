@@ -53,12 +53,10 @@ export const SandboxMode = () => {
     setSearchParams(next, { replace: true })
   }
 
-  // Runner jobs state - editingJobType is the job_type being edited (or '__new__' for new)
   const [editingJobType, setEditingJobType] = useState<string | null>(null)
   const [selectedNewJobType, setSelectedNewJobType] = useState('')
   const [jobForm, setJobForm] = useState(defaultJobForm)
 
-  // Signals state
   const [editingSignalType, setEditingSignalType] = useState<string | null>(null)
   const [selectedNewSignalType, setSelectedNewSignalType] = useState('')
   const [signalForm, setSignalForm] = useState(defaultSignalForm)
@@ -188,7 +186,6 @@ export const SandboxMode = () => {
       </div>
 
       <div className="mt-4">
-        {/* Runner Jobs Tab */}
         {activeTab === 'runner-jobs' && (
           <div>
             <div className="mb-3 flex gap-2">
@@ -204,7 +201,6 @@ export const SandboxMode = () => {
               </button>
             </div>
 
-            {/* Edit/New form panel */}
             {editingJobType && (
               <JobFormPanel
                 isNew={editingJobType === '__new__'}
@@ -274,7 +270,6 @@ export const SandboxMode = () => {
           </div>
         )}
 
-        {/* Signals Tab */}
         {activeTab === 'signals' && (
           <div>
             <div className="mb-3 flex gap-2">
@@ -290,7 +285,6 @@ export const SandboxMode = () => {
               </button>
             </div>
 
-            {/* Edit/New form panel */}
             {editingSignalType && (
               <SignalFormPanel
                 isNew={editingSignalType === '__new__'}
@@ -348,7 +342,6 @@ export const SandboxMode = () => {
           </div>
         )}
 
-        {/* Stacks Tab */}
         {activeTab === 'stacks' && (
           <div>
             {stackConfig ? (

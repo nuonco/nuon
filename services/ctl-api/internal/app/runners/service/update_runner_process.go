@@ -53,17 +53,14 @@ func (s *service) UpdateRunnerProcess(ctx *gin.Context) {
 }
 
 func (s *service) updateRunnerProcess(ctx context.Context, processID string, req UpdateRunnerProcessRequest) (*app.RunnerProcess, error) {
-	// get current process for composite status history
 	current, err := s.getRunnerProcess(ctx, processID)
 	if err != nil {
 		return nil, err
 	}
 
-	// build new composite status with history
 	newComposite := app.NewCompositeStatus(ctx, app.Status(req.Status))
 	newComposite.StatusHumanDescription = req.StatusDescription
 	newComposite.History = append([]app.CompositeStatus{current.CompositeStatus}, current.CompositeStatus.History...)
-	// flatten: keep only top-level history
 	newComposite.History[0].History = nil
 
 	updates := app.RunnerProcess{

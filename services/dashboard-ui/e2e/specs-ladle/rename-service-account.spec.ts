@@ -1,7 +1,5 @@
 import { expect, test } from "@playwright/test";
 
-// Rename prefills the current name, so Save is disabled until it changes AND is
-// non-empty; clearing it errors on touch.
 const STORY = "/?story=features--service-accounts--rename-service-account--default&mode=preview";
 
 test.describe("RenameServiceAccount form behavior", () => {

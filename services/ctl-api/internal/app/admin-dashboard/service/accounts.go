@@ -39,22 +39,18 @@ func (s *service) getAccounts(ctx context.Context, search string, filter string,
 	var accounts []*app.Account
 	var totalCount int64
 
-	// Build base query
 	query := s.readDB().WithContext(ctx).
 		Model(&app.Account{}).
 		Preload("Roles.Org").
 		Where("account_type IN ?", []app.AccountType{app.AccountTypeAuth0, app.AccountTypeAuth})
 
-	// Apply account type filter
 	switch filter {
 	case "nuon":
 		query = query.Where("email LIKE ?", "%@nuon.co")
 	case "user":
 		query = query.Where("email NOT LIKE ?", "%@nuon.co")
-		// "all" or empty = no additional filter
 	}
 
-	// Apply search filter if provided
 	if search != "" {
 		search = strings.TrimSpace(search)
 		query = query.Where(
@@ -64,21 +60,17 @@ func (s *service) getAccounts(ctx context.Context, search string, filter string,
 		)
 	}
 
-	// Get total count for pagination
 	if err := query.Count(&totalCount).Error; err != nil {
 		return nil, 0, fmt.Errorf("unable to count accounts: %w", err)
 	}
 
-	// Calculate total pages
 	totalPages := int(math.Ceil(float64(totalCount) / float64(accountsPerPage)))
 	if totalPages == 0 {
 		totalPages = 1
 	}
 
-	// Calculate offset
 	offset := (page - 1) * accountsPerPage
 
-	// Get paginated results
 	res := query.
 		Order("created_at desc").
 		Limit(accountsPerPage).

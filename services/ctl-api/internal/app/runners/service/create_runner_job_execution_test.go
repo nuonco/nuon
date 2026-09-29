@@ -77,7 +77,6 @@ func (s *CreateRunnerJobExecutionTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create router with runner routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -96,7 +95,6 @@ func (s *CreateRunnerJobExecutionTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create log stream
 	s.testLogStream = &app.LogStream{
 		ID:      domains.NewLogStreamID(),
 		OrgID:   s.testOrg.ID,
@@ -106,7 +104,6 @@ func (s *CreateRunnerJobExecutionTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testLogStream).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -118,7 +115,6 @@ func (s *CreateRunnerJobExecutionTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -243,10 +239,6 @@ func (s *CreateRunnerJobExecutionTestSuite) TestCreateRunnerJobExecution() {
 }
 
 func (s *CreateRunnerJobExecutionTestSuite) TestCreateRunnerJobExecutionRequiresAccountContext() {
-	// This test documents a known limitation: CreateRunnerJobExecution requires
-	// CreatedByID but runner routes don't have account context.
-	// The endpoint will fail with a database constraint error.
-
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
@@ -275,7 +267,6 @@ func (s *CreateRunnerJobExecutionTestSuite) TestCreateRunnerJobExecutionRequires
 
 	rr := s.makeRequest("POST", "/v1/runner-jobs/"+job.ID+"/executions", CreateRunnerJobExecutionRequest{})
 
-	// Expect 500 due to CreatedByID constraint
 	assert.Equal(s.T(), http.StatusInternalServerError, rr.Code)
 	assert.Contains(s.T(), rr.Body.String(), "created_by_id")
 }

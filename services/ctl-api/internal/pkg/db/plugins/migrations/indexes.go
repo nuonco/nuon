@@ -102,7 +102,6 @@ func (m *Migrator) applyIndexes(ctx context.Context, obj any) error {
 	return nil
 }
 
-// BuildIndexOptionsInterface build index options interface
 type BuildIndexOptionsInterface interface {
 	BuildIndexOptions([]schema.IndexOption, *gorm.Statement) []interface{}
 }

@@ -7,7 +7,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// InstallsTableGlobal returns the global installs table data as JSON
 func (s *service) InstallsTableGlobal(c *gin.Context) {
 	ctx := c.Request.Context()
 	search := c.Query("search")

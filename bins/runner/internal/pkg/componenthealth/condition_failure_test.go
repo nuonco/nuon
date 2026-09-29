@@ -28,8 +28,6 @@ func hpaObj(name string, conds ...map[string]any) *unstructured.Unstructured {
 	}}
 }
 
-// Kubernetes orders AbleToScale ahead of ScalingActive, and upstream returns on
-// the first condition matched.
 func TestHPAMetricFailureIsReadFromStatus(t *testing.T) {
 	t.Parallel()
 
@@ -55,7 +53,6 @@ func TestHPAHealthyWhenScalingActive(t *testing.T) {
 	assert.Equal(t, healthHealthy, health)
 }
 
-// A target scaled to zero, not a failure.
 func TestHPAScalingDisabledIsNotAFailure(t *testing.T) {
 	t.Parallel()
 
@@ -89,8 +86,6 @@ func deploymentWithConditions(replicas int64, conds ...map[string]any) *unstruct
 	}}
 }
 
-// Not an HPA problem: upstream reads only Progressing here, so a Deployment that
-// cannot create pods reads healthy whenever replica counts line up.
 func TestDeploymentReplicaFailureIsRead(t *testing.T) {
 	t.Parallel()
 
@@ -116,7 +111,6 @@ func TestHealthyDeploymentStaysHealthy(t *testing.T) {
 	assert.Equal(t, healthHealthy, health)
 }
 
-// A reason left behind on a now-True ready condition is already over.
 func TestRecoveredReadyConditionIsNotAFailure(t *testing.T) {
 	t.Parallel()
 
@@ -144,8 +138,6 @@ func TestFailureReasonNaming(t *testing.T) {
 	}
 }
 
-// The API conventions define a condition set against an older generation as out
-// of date, so it must not produce a verdict either way.
 func TestStaleConditionIsIgnored(t *testing.T) {
 	t.Parallel()
 
@@ -154,8 +146,6 @@ func TestStaleConditionIsIgnored(t *testing.T) {
 		hpaCond("ReplicaFailure", "True", "FailedCreate", "exceeded quota"),
 	)
 	obj.SetGeneration(9)
-	// Object-level generation must match, or the whole object reads progressing
-	// and the per-condition rule is never reached.
 	_ = unstructured.SetNestedField(obj.Object, int64(9), "status", "observedGeneration")
 	conds, _, _ := unstructured.NestedSlice(obj.Object, "status", "conditions")
 	conds[1].(map[string]any)["observedGeneration"] = int64(8)
@@ -172,7 +162,6 @@ func TestStaleConditionIsIgnored(t *testing.T) {
 	assert.Equal(t, healthDegraded, health)
 }
 
-// A condition without the field is the common case and must stay trusted.
 func TestConditionWithoutObservedGenerationIsTrusted(t *testing.T) {
 	t.Parallel()
 
@@ -181,8 +170,6 @@ func TestConditionWithoutObservedGenerationIsTrusted(t *testing.T) {
 	assert.True(t, staleCondition(map[string]any{"observedGeneration": float64(9)}, 12))
 }
 
-// Upstream reads containerStatuses only, so an init container stuck pulling an
-// image left the pod merely Pending.
 func TestInitContainerFailureIsRead(t *testing.T) {
 	t.Parallel()
 
@@ -210,8 +197,6 @@ func TestInitContainerFailureIsRead(t *testing.T) {
 	assert.Equal(t, "init/ImagePullBackOff", native)
 }
 
-// A pod the scheduler cannot place says so in status; Unschedulable matches none
-// of the failure naming patterns.
 func TestUnschedulablePodIsRead(t *testing.T) {
 	t.Parallel()
 

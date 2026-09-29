@@ -16,7 +16,6 @@ const (
 //go:embed templates/token.env
 var tokenTemplate string
 
-// WriteFile writes the runner token to the token file using the token template.
 func WriteFile(tok string) error {
 	dir := filepath.Dir(Filename)
 	if err := os.MkdirAll(dir, 0700); err != nil {

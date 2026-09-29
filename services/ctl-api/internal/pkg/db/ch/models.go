@@ -23,8 +23,5 @@ func AllModels() []any {
 		&app.InstallComponentHealthTransition{},
 
 		&app.DLQRecord{},
-
-		// noted but not migrated
-		// &app.LatestRunnerHeartBeat{},
 	}
 }

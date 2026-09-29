@@ -17,9 +17,8 @@ import (
 	queuesignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// Default uptime thresholds when config values are not set
 const (
-	DefaultMngUptimeThreshold     = 168 * time.Hour // 1 week
+	DefaultMngUptimeThreshold     = 168 * time.Hour
 	DefaultInstallUptimeThreshold = 8 * time.Hour
 )
 
@@ -38,10 +37,6 @@ func traceProcessOperation(ctx context.Context, name string, fn func(context.Con
 	return nil
 }
 
-// CreateProcessQueues creates a queue for the given runner process with a
-// scheduled uptime TTL emitter, then enqueues the process_init signal. For
-// sweep-enabled orgs health checks arrive from the per-org sweep emitter;
-// otherwise a legacy per-process cron emitter is created.
 func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, process *app.RunnerProcess) (*app.Queue, error) {
 	var q *app.Queue
 	err := traceProcessOperation(ctx, "runner.process.queue.create", func(ctx context.Context) error {
@@ -77,7 +72,6 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 		}
 	}
 
-	// Scheduled emitter: uptime TTL (from config, with fallback defaults)
 	var threshold time.Duration
 	switch process.Type {
 	case app.RunnerProcessTypeMng:
@@ -112,7 +106,6 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 		return nil, fmt.Errorf("unable to create trigger shutdown emitter: %w", err)
 	}
 
-	// Enqueue the process_init signal to transition process from pending to active
 	err = traceProcessOperation(ctx, "runner.process.init_signal.enqueue", func(ctx context.Context) error {
 		_, err := h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 			QueueID:   q.ID,

@@ -15,9 +15,6 @@ export type TLogStreamFilters = {
   k8s_name?: string
   q?: string
   runner_job_id?: string
-  // Phase 2 — span/trace filtering. The runner emits otelzap log records
-  // whose trace context populates these columns directly, so the API can
-  // narrow log results to a single span / trace.
   span_id?: string
   trace_id?: string
 }

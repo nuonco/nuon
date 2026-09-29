@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Replaces a manually-created sibling whose partial predicate referenced
+// why: Replaces a manually-created sibling whose partial predicate referenced
 // 'in_progress' instead of the Go enum value 'in-progress', so it was never used.
 func (m *Migrations) Migration103QueueSignalsInflightIndex(ctx context.Context, db *gorm.DB) error {
 	const name = "idx_queue_signals_emitter_id_queue_id_inflight"

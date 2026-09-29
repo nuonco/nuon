@@ -124,7 +124,6 @@ func TestParseWithTags(t *testing.T) {
 	t.Run("workflow without tags is unaffected", func(t *testing.T) {
 		a, err := ParseWithTags([]string{marker("workflow")}, cfg)
 		require.NoError(t, err)
-		// the activity-only defaults block must not leak onto workflows
 		assert.Zero(t, a.WorkflowOpts.ExecutionTimeout)
 	})
 
@@ -169,8 +168,6 @@ func TestParseWithTags(t *testing.T) {
 	})
 }
 
-// requireTagError asserts the failure is a *TagError, which is what makes it
-// fatal in non-strict generation runs.
 func requireTagError(t *testing.T, err error) {
 	t.Helper()
 	require.Error(t, err)

@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// CheckImmutableTargetAccount refuses a sync that would change the cloud account an
+// why: CheckImmutableTargetAccount refuses a sync that would change the cloud account an
 // existing install targets.
 //
 // The account is fixed at creation: UpdateInstallRequest carries no field for it, and
@@ -48,7 +48,7 @@ func (i *Install) CheckImmutableTargetAccount(upstream *Install) error {
 
 	var errs []error
 	for _, f := range fields {
-		// An unset value in the config is "don't care", not "clear it".
+		// why: An unset value in the config is "don't care", not "clear it".
 		if f.desired == "" || f.desired == f.upstream {
 			continue
 		}

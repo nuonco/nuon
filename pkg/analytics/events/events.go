@@ -22,9 +22,6 @@ const (
 	// meaninguful goalpoasts. Tracking failed an successful operations
 	// is useful for monitoring, but probably not for product.
 
-	// OrgProvisionFailed    Event = "org_provision_failed"
-	// OrgProvisionSucceeded Event = "org_provision_succeeded"
-
 	RunnerCreated Event = "runner_created"
 
 	HealthCheckCreated Event = "health_check_created"

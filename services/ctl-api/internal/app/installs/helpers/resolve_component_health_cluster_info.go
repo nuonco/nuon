@@ -14,27 +14,14 @@ import (
 	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
-// componentHealthSessionName keeps health's assume-role sessions separable from
-// deploys in the customer's cloud audit log.
 const componentHealthSessionName = "nuon-component-health"
 
-// ComponentHealthClusterAccess describes the access health will read through,
-// and the roles it could have used instead.
 type ComponentHealthClusterAccess struct {
 	ClusterInfo *kube.ClusterInfo
 	RoleName    string
 	Roles       map[string]string
 }
 
-// ResolveComponentHealthClusterAccess builds the cluster access the health
-// engine needs from the same install outputs a deploy plan templates against,
-// so an install can be watched without waiting for its next deploy.
-//
-// roleName picks the identity to read through; empty means the maintenance
-// role, matching every other day-2 operation (drift, action runs).
-//
-// Returns nil when the install has no cluster to watch — a Lambda or ECS
-// sandbox emits no cluster output, and that is an answer rather than a failure.
 func (h *Helpers) ResolveComponentHealthClusterAccess(ctx context.Context, installID, roleName string) (*ComponentHealthClusterAccess, error) {
 	in, err := h.componentHealthClusterInputs(ctx, installID)
 	if err != nil {
@@ -69,7 +56,6 @@ func (h *Helpers) ResolveComponentHealthClusterAccess(ctx context.Context, insta
 		return nil, fmt.Errorf("unable to render cluster info: %w", err)
 	}
 
-	// An unresolved template renders empty; half a cluster is unusable.
 	if clusterInfo.ID == "" || clusterInfo.Endpoint == "" || clusterInfo.CAData == "" {
 		return nil, nil
 	}
@@ -124,8 +110,6 @@ func (h *Helpers) componentHealthClusterInputs(ctx context.Context, installID st
 	}, nil
 }
 
-// componentHealthClusterInfo mirrors the deploy planner's cluster templating,
-// pinned to the sandbox default context and the caller's chosen identity.
 func componentHealthClusterInfo(outputs *app.InstallStackOutputs, roleID string) *kube.ClusterInfo {
 	const clusterPath = ".nuon.sandbox.outputs.cluster"
 
@@ -174,8 +158,6 @@ func componentHealthClusterInfo(outputs *app.InstallStackOutputs, roleID string)
 	return nil
 }
 
-// sandboxEmitsClusterOutputs reports whether the sandbox emitted a `cluster`
-// output, the same signal deploy planning uses to pick the default context.
 func sandboxEmitsClusterOutputs(stateData map[string]any) bool {
 	sandbox, ok := stateData["sandbox"].(map[string]any)
 	if !ok {

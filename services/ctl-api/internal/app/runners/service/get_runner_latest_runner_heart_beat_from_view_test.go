@@ -97,7 +97,6 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -109,7 +108,6 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group settings
 	s.testRunnerGrpS = &app.RunnerGroupSettings{
 		ID:            domains.NewRunnerGroupSettingsID(),
 		OrgID:         s.testOrg.ID,
@@ -118,7 +116,6 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrpS).Error
 	require.NoError(s.T(), err)
 
-	// Create runner in Postgres
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -182,7 +179,6 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 				err := s.service.DB.WithContext(ctx).Create(runner).Error
 				require.NoError(s.T(), err)
 
-				// Create heartbeats from different processes
 				baseTime := time.Now().Add(-10 * time.Minute)
 				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeMng, baseTime, time.Minute*5, "1.0.0")
 				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeMng, baseTime.Add(2*time.Minute), time.Minute*7, "1.0.1")
@@ -197,10 +193,8 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(heartBeats LatestRunnerHeartBeats) {
-				// Should have one entry per process
 				assert.Len(s.T(), heartBeats, 3, "Should have 3 process types")
 
-				// Verify each process has the latest heartbeat
 				mngHB, ok := heartBeats[string(app.RunnerProcessTypeMng)]
 				assert.True(s.T(), ok, "Should have mng process")
 				if ok {
@@ -240,7 +234,6 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 				err := s.service.DB.WithContext(ctx).Create(runner).Error
 				require.NoError(s.T(), err)
 
-				// Create multiple heartbeats for same process
 				baseTime := time.Now().Add(-10 * time.Minute)
 				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeMng, baseTime, time.Minute*5, "1.0.0")
 				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeMng, baseTime.Add(1*time.Minute), time.Minute*6, "1.0.1")
@@ -255,7 +248,6 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(heartBeats LatestRunnerHeartBeats) {
-				// Should dedupe to one entry per process
 				assert.Len(s.T(), heartBeats, 1, "Should dedupe to single entry")
 
 				mngHB, ok := heartBeats[string(app.RunnerProcessTypeMng)]
@@ -300,7 +292,6 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 			},
 			expectedCode: http.StatusNotFound,
 			validateFunc: func(heartBeats LatestRunnerHeartBeats) {
-				// Error response
 			},
 		},
 		{
@@ -309,7 +300,6 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
-				// Create second org
 				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
 					ID:          org2ID,
@@ -322,7 +312,6 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner group for org2
 				runnerGrp2 := &app.RunnerGroup{
 					ID:        domains.NewRunnerGroupID(),
 					OrgID:     org2.ID,
@@ -334,7 +323,6 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 				err = s.service.DB.WithContext(ctx).Create(runnerGrp2).Error
 				require.NoError(s.T(), err)
 
-				// Create runner in org2
 				runner2 := &app.Runner{
 					ID:            domains.NewRunnerID(),
 					OrgID:         org2.ID,
@@ -356,7 +344,6 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 			},
 			expectedCode: http.StatusNotFound,
 			validateFunc: func(heartBeats LatestRunnerHeartBeats) {
-				// Error response
 			},
 		},
 		{
@@ -376,7 +363,6 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 				err := s.service.DB.WithContext(ctx).Create(runner).Error
 				require.NoError(s.T(), err)
 
-				// Create heartbeat with known AliveTime
 				createdAt := time.Now()
 				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeMng, createdAt, time.Minute*15, "1.0.0")
 
@@ -392,7 +378,6 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 				mngHB, ok := heartBeats[string(app.RunnerProcessTypeMng)]
 				assert.True(s.T(), ok)
 				if ok {
-					// StartedAt should be CreatedAt - AliveTime
 					expectedStartedAt := mngHB.CreatedAt.Add(-1 * mngHB.AliveTime)
 					assert.WithinDuration(s.T(), expectedStartedAt, mngHB.StartedAt, time.Second,
 						"StartedAt should be calculated as CreatedAt - AliveTime")
@@ -416,7 +401,6 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 				err := s.service.DB.WithContext(ctx).Create(runner).Error
 				require.NoError(s.T(), err)
 
-				// Create heartbeats for all process types
 				baseTime := time.Now()
 				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeMng, baseTime, time.Minute*5, "mng-1.0.0")
 				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeInstall, baseTime.Add(time.Minute), time.Minute*6, "install-2.0.0")
@@ -432,7 +416,6 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 			validateFunc: func(heartBeats LatestRunnerHeartBeats) {
 				assert.Len(s.T(), heartBeats, 3, "Should have all three process types")
 
-				// Verify each process type
 				processTypes := []app.RunnerProcessType{
 					app.RunnerProcessTypeMng,
 					app.RunnerProcessTypeInstall,

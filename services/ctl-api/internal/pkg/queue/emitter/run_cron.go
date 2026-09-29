@@ -26,13 +26,12 @@ func (e *emitterWorkflow) runCronMode(ctx workflow.Context, l *zap.Logger, emitt
 		zap.Int64("emit-count", e.state.EmitCount),
 	)
 
-	// Start the cron ticker child workflow
 	childWorkflowID := fmt.Sprintf(cronTickerIDTemplate, emitter.QueueID, e.emitterID)
 	if err := e.ensureCronTickerRunning(ctx, l, emitter, childWorkflowID); err != nil {
 		return false, errors.Wrap(err, "failed to ensure cron ticker running")
 	}
 
-	// Parent workflow runs for a duration, then continues-as-new to prevent unbounded history.
+	// why: Parent workflow runs for a duration, then continues-as-new to prevent unbounded history.
 	// Liveness checks (emitter/queue existence) are handled by the workflowmanager.Manager
 	// started in run(), which sets e.stopped/e.restarted. This loop only needs to sleep
 	// and check those flags.
@@ -65,7 +64,7 @@ func (e *emitterWorkflow) ensureCronTickerRunning(ctx workflow.Context, l *zap.L
 		TaskQueue:             parentInfo.TaskQueueName,
 		CronSchedule:          emitter.CronSchedule,
 		WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
-		// TERMINATE so the child is cleaned up when the parent closes
+		// why: TERMINATE so the child is cleaned up when the parent closes
 		// (including ContinueAsNew). The new parent run re-starts a fresh
 		// child, which is allowed because TERMINATE puts the old child in
 		// a terminated state that satisfies ALLOW_DUPLICATE_FAILED_ONLY.

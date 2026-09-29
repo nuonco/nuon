@@ -32,8 +32,6 @@ const mockStack = {
   },
 } as any
 
-// A reprovision creates a new stack version while the previous one's outputs
-// are still on the stack record — the new version has no run yet.
 const reprovisioningStep = {
   id: 'step-2',
   status: { status: 'active' },
@@ -85,8 +83,6 @@ export const Reprovisioning = () => (
   </div>
 )
 
-// A step old enough that its version has dropped off the stack response must
-// not borrow outputs from a version that is still there.
 export const VersionNotAvailable = () => (
   <div className="max-w-2xl p-4">
     <AwaitStackDetails

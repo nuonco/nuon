@@ -27,7 +27,6 @@ func (s *service) QueueDetail(c *gin.Context) {
 		return
 	}
 
-	// Get live status from Temporal (best effort)
 	var status *queue.StatusResponse
 	statusResp, err := s.getQueueStatusFromTemporal(c.Request.Context(), q.Workflow.ID)
 	if err != nil {
@@ -36,7 +35,6 @@ func (s *service) QueueDetail(c *gin.Context) {
 		status = statusResp
 	}
 
-	// Get recent signals
 	var signals []app.QueueSignal
 	s.readDB().WithContext(c.Request.Context()).
 		Where("queue_id = ?", queueID).
@@ -44,7 +42,6 @@ func (s *service) QueueDetail(c *gin.Context) {
 		Limit(20).
 		Find(&signals)
 
-	// Get in-flight signals for this queue
 	var inFlightSignals []app.QueueSignal
 	s.readDB().WithContext(c.Request.Context()).
 		Where("queue_id = ?", queueID).
@@ -80,7 +77,6 @@ func (s *service) QueueInFlightSignalsTable(c *gin.Context) {
 }
 
 func (s *service) getQueueStatusFromTemporal(ctx context.Context, workflowID string) (*queue.StatusResponse, error) {
-	// Use the update-with-start approach that the queue client uses
 	encodedValue, err := s.temporalClient.QueryWorkflow(ctx, workflowID, "", queue.StatusHandlerName)
 	if err != nil {
 		return nil, fmt.Errorf("unable to query workflow: %w", err)

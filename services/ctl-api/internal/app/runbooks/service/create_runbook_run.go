@@ -105,7 +105,7 @@ func (s *service) createRunbookRun(ctx context.Context, orgID, accountID, instal
 		Where(app.RunbookConfig{RunbookID: installRunbook.RunbookID, OrgID: orgID})
 
 	if install.AppConfigID != "" {
-		// Never fall back to the newest config: it could run steps the install
+		// why: Never fall back to the newest config: it could run steps the install
 		// was not configured with.
 		if err := configQuery.Where(app.RunbookConfig{AppConfigID: install.AppConfigID}).First(&runbookConfig).Error; err != nil {
 			return nil, stderr.ErrUser{
@@ -142,7 +142,6 @@ func (s *service) createRunbookRun(ctx context.Context, orgID, accountID, instal
 	return triggered, nil
 }
 
-// resolveInstallRef looks an install up by name or ID within the org.
 func (s *service) resolveInstallRef(ctx context.Context, orgID, installRef string) (*app.Install, error) {
 	var install app.Install
 	if err := s.db.WithContext(ctx).
@@ -156,7 +155,7 @@ func (s *service) resolveInstallRef(ctx context.Context, orgID, installRef strin
 	return &install, nil
 }
 
-// buildStepSelections validates the supplied step selections against the config's steps
+// why: buildStepSelections validates the supplied step selections against the config's steps
 // and returns the persisted selections. Unknown step IDs are rejected; an empty request
 // means all steps run. At least one step must remain enabled.
 func buildStepSelections(rbConfig *app.RunbookConfig, supplied []CreateRunbookRunStepSelection) ([]app.RunbookStepSelection, error) {

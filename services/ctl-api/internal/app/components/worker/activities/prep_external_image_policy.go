@@ -32,16 +32,15 @@ type ExternalImagePolicyToEvaluate struct {
 }
 
 type PrepExternalImagePolicyResult struct {
-	Policies    []ExternalImagePolicyToEvaluate `json:"policies" temporaljson:"policies,omitempty"`
-	HasPolicies bool                            `json:"has_policies" temporaljson:"has_policies,omitempty"`
-	AppID       string                          `json:"app_id" temporaljson:"app_id,omitempty"`
-	ComponentID string                          `json:"component_id" temporaljson:"component_id,omitempty"`
-	PolicyIDs   []string                        `json:"policy_ids" temporaljson:"policy_ids,omitempty"`
-	InputCount  int                             `json:"input_count" temporaljson:"input_count,omitempty"`
-	// Human-readable names for display in reports
-	OrgName       string `json:"org_name" temporaljson:"org_name,omitempty"`
-	AppName       string `json:"app_name" temporaljson:"app_name,omitempty"`
-	ComponentName string `json:"component_name" temporaljson:"component_name,omitempty"`
+	Policies      []ExternalImagePolicyToEvaluate `json:"policies" temporaljson:"policies,omitempty"`
+	HasPolicies   bool                            `json:"has_policies" temporaljson:"has_policies,omitempty"`
+	AppID         string                          `json:"app_id" temporaljson:"app_id,omitempty"`
+	ComponentID   string                          `json:"component_id" temporaljson:"component_id,omitempty"`
+	PolicyIDs     []string                        `json:"policy_ids" temporaljson:"policy_ids,omitempty"`
+	InputCount    int                             `json:"input_count" temporaljson:"input_count,omitempty"`
+	OrgName       string                          `json:"org_name" temporaljson:"org_name,omitempty"`
+	AppName       string                          `json:"app_name" temporaljson:"app_name,omitempty"`
+	ComponentName string                          `json:"component_name" temporaljson:"component_name,omitempty"`
 }
 
 // @temporal-gen-v2 activity

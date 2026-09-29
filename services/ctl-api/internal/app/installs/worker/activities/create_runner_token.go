@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// NOTE(JM): this is a short term thing until we are doing cross namespace steps
 type CreateRunnerTokenRequest struct {
 	RunnerID string `validate:"required"`
 }

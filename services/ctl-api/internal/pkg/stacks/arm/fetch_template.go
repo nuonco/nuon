@@ -14,7 +14,7 @@ import (
 
 const (
 	fetchTimeout     = 10 * time.Second
-	maxTemplateBytes = 10 << 20 // 10 MB
+	maxTemplateBytes = 10 << 20
 )
 
 type armTemplateResource struct {
@@ -24,20 +24,11 @@ type armTemplateResource struct {
 	SubscriptionId string                 `json:"subscriptionId,omitempty"`
 	Properties     *armResourceProperties `json:"properties,omitempty"`
 
-	// Existing marks a languageVersion 2.0 reference to a pre-existing resource.
-	// Such a resource is not declared by the template, so it must not count as
-	// one the parent template can read outputs off of.
 	Existing bool `json:"existing,omitempty"`
 
-	// symbolicName is the map key under languageVersion 2.0; empty under 1.0.
-	// In 2.0 dependsOn references these keys rather than resource names.
 	symbolicName string
 }
 
-// armResources accepts both resource declaration forms: the languageVersion 1.0
-// array and the 2.0 object keyed by symbolic name. Azure-authored templates
-// increasingly ship as 2.0, and a plain []armTemplateResource field fails the
-// whole unmarshal on them.
 type armResources []armTemplateResource
 
 func (r *armResources) UnmarshalJSON(data []byte) error {
@@ -60,7 +51,6 @@ func (r *armResources) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	// Sorted so validation errors are reported in a stable order.
 	out := make(armResources, 0, len(obj))
 	for _, key := range slices.Sorted(maps.Keys(obj)) {
 		res := obj[key]
@@ -95,8 +85,6 @@ type armTemplateShape struct {
 	Outputs   map[string]struct{} `json:"outputs"`
 }
 
-// hasManagedIdentity returns true if the template declares a
-// Microsoft.ManagedIdentity/userAssignedIdentities resource.
 func (t *armTemplateShape) hasManagedIdentity() bool {
 	for _, r := range t.Resources {
 		if r.Existing {
@@ -134,9 +122,6 @@ func fetchARMTemplate(templateURL string) (*armTemplateShape, error) {
 	return &tmpl, nil
 }
 
-// extractARMParameters returns two maps:
-// 1. params: all parameter names from the template (including reserved)
-// 2. hoistedParams: parameter definitions to hoist into the parent template (excluding reserved)
 func extractARMParameters(tmpl *armTemplateShape, reservedNames []string) (map[string]bool, map[string]ARMParameter) {
 	params := map[string]bool{}
 	hoistedParams := map[string]ARMParameter{}
@@ -164,14 +149,9 @@ func extractARMParameters(tmpl *armTemplateShape, reservedNames []string) (map[s
 	return params, hoistedParams
 }
 
-// validateARMTemplate performs structural validation on a custom nested stack
-// ARM template. It catches issues that would only surface at deploy time, such
-// as subscription-level nested deployments (which ARM does not support inside
-// linked deployments) and invalid dependsOn references.
 func validateARMTemplate(tmpl *armTemplateShape) error {
 	var errs []string
 
-	// Build set of resource names declared at the top level for dependsOn validation.
 	resourceNames := map[string]bool{}
 	for _, r := range tmpl.Resources {
 		if r.Name != "" {
@@ -185,7 +165,7 @@ func validateARMTemplate(tmpl *armTemplateShape) error {
 	for i, r := range tmpl.Resources {
 		label := resourceLabel(r, i)
 
-		// Subscription-level nested deployments are not supported inside linked
+		// why: Subscription-level nested deployments are not supported inside linked
 		// deployments. ARM silently scopes them to resource-group level causing
 		// confusing "resource is not defined in the template" errors.
 		if r.Type == "Microsoft.Resources/deployments" && r.SubscriptionId != "" {
@@ -197,16 +177,12 @@ func validateARMTemplate(tmpl *armTemplateShape) error {
 			))
 		}
 
-		// Validate dependsOn references point to resources declared in this template.
 		deps, err := parseDependsOn(r.DependsOn)
 		if err != nil {
 			errs = append(errs, fmt.Sprintf("resource %q: invalid dependsOn: %v", label, err))
 			continue
 		}
 		for _, dep := range deps {
-			// ARM dependsOn can use either plain resource names or full
-			// resourceId expressions like "[resourceId(...)]". We can only
-			// validate plain name references.
 			if strings.HasPrefix(dep, "[") {
 				continue
 			}
@@ -218,9 +194,6 @@ func validateARMTemplate(tmpl *armTemplateShape) error {
 			}
 		}
 
-		// Check for subscription-level deployments nested inside inline
-		// template blocks (e.g., deployment resources with inner templates
-		// that themselves contain subscription-scoped deployments).
 		if r.Type == "Microsoft.Resources/deployments" && r.Properties != nil &&
 			r.Properties.Template != nil {
 			for j, nested := range r.Properties.Template.Resources {
@@ -242,8 +215,6 @@ func validateARMTemplate(tmpl *armTemplateShape) error {
 	return nil
 }
 
-// resourceLabel identifies a resource in validation messages, preferring its ARM
-// name, then its languageVersion 2.0 symbolic name, then its position.
 func resourceLabel(r armTemplateResource, i int) string {
 	if r.Name != "" {
 		return r.Name
@@ -255,21 +226,16 @@ func resourceLabel(r armTemplateResource, i int) string {
 	return fmt.Sprintf("index %d", i)
 }
 
-// parseDependsOn extracts the dependency list from a raw JSON value.
-// ARM templates allow dependsOn to be either a JSON array of strings or a
-// single string.
 func parseDependsOn(raw json.RawMessage) ([]string, error) {
 	if len(raw) == 0 {
 		return nil, nil
 	}
 
-	// Try array first (most common).
 	var arr []string
 	if err := json.Unmarshal(raw, &arr); err == nil {
 		return arr, nil
 	}
 
-	// Try single string.
 	var single string
 	if err := json.Unmarshal(raw, &single); err == nil {
 		return []string{single}, nil

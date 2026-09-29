@@ -14,9 +14,6 @@ import (
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// awaitApprovalResponse writes the await-approval directive, waits for a user
-// response, and returns it. The caller is responsible for dispatching the response
-// to the appropriate handler.
 func (s *Signal) awaitApprovalResponse(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) (*app.WorkflowStepApprovalResponse, error) {
 	if err := setResultDirective(ctx, step.ID, DirectiveAwaitApproval); err != nil {
 		return nil, errors.Wrap(err, "unable to write await-approval directive")
@@ -37,7 +34,6 @@ func (s *Signal) awaitApprovalResponse(ctx workflow.Context, step *app.WorkflowS
 		return nil, errors.Wrap(err, "unable to update step to awaiting approval status")
 	}
 
-	// Update workflow status so the UI shows the workflow is awaiting approval.
 	_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: flw.ID,
 		Status: app.CompositeStatus{
@@ -49,9 +45,6 @@ func (s *Signal) awaitApprovalResponse(ctx workflow.Context, step *app.WorkflowS
 		},
 	})
 
-	// Resident flows do not hold a workflow open for a human: the step
-	// returns with await-approval written, the group and flow unwind, and the
-	// response re-dispatches this step with ResumeApproval set.
 	if s.ResidentFlow {
 		return nil, errApprovalParked
 	}
@@ -59,13 +52,8 @@ func (s *Signal) awaitApprovalResponse(ctx workflow.Context, step *app.WorkflowS
 	return s.waitForApprovalResponse(ctx, flw, step)
 }
 
-// errApprovalParked marks a resident step that returned after writing
-// await-approval; the caller returns nil so the group sees the directive.
 var errApprovalParked = errors.New("approval parked")
 
-// resumeApproval applies the persisted response to a step that parked in
-// awaiting-approval. A step that is no longer parked (already resolved,
-// cancelled, or retried) is left alone.
 func (s *Signal) resumeApproval(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow) error {
 	if step.Status.Status != app.AwaitingApproval || step.Approval == nil || step.Approval.Response == nil {
 		l.Debug("step is not parked awaiting approval with a response, exiting",
@@ -83,7 +71,6 @@ func (s *Signal) resumeApproval(ctx workflow.Context, l *zap.Logger, step *app.W
 	return s.processApprovalResponse(ctx, step, flw, step.Approval.Response)
 }
 
-// dispatchApprovalResponse routes the approval response to the appropriate handler.
 func (s *Signal) dispatchApprovalResponse(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, resp *app.WorkflowStepApprovalResponse) error {
 	l, _ := log.WorkflowLogger(ctx)
 
@@ -99,17 +86,13 @@ func (s *Signal) dispatchApprovalResponse(ctx workflow.Context, step *app.Workfl
 	}
 }
 
-// errApprovalExpired marks an approval wait that hit MaxWaitCeiling; the stop
-// directive and expired status are already written when it is returned.
 var errApprovalExpired = errors.New("approval expired")
 
-// approvalExpiredStopVersion gates the expired-approval stop path: histories
+// why: approvalExpiredStopVersion gates the expired-approval stop path: histories
 // written before it recorded only the step-status update on expiry, so the
 // target-status and stop-directive activities must not replay into them.
 const approvalExpiredStopVersion = "approval-expired-stop-v1"
 
-// waitForApprovalResponse waits for an approval response reactively using the
-// "approve-plan" update handler.
 func (s *Signal) waitForApprovalResponse(ctx workflow.Context, flw *app.Workflow, step *app.WorkflowStep) (*app.WorkflowStepApprovalResponse, error) {
 	ok, err := workflow.AwaitWithTimeout(ctx, callback.MaxWaitCeiling, func() bool {
 		return s.approved || s.retried || s.canceled || s.skipped
@@ -136,7 +119,7 @@ func (s *Signal) waitForApprovalResponse(ctx workflow.Context, flw *app.Workflow
 		}); terr != nil {
 			return nil, errors.Wrap(terr, "unable to update step target status for expired approval")
 		}
-		// Stop the group instead of erroring: an expired approval must not
+		// why: Stop the group instead of erroring: an expired approval must not
 		// enter the retry machinery and re-park.
 		if derr := setResultDirective(ctx, step.ID, DirectiveStop); derr != nil {
 			return nil, errors.Wrap(derr, "unable to set stop directive for expired approval")
@@ -158,9 +141,6 @@ func (s *Signal) waitForApprovalResponse(ctx workflow.Context, flw *app.Workflow
 	return step.Approval.Response, nil
 }
 
-// awaitAndHandleApproval is the legacy entry point that combines awaiting and
-// dispatching. Kept for backward compatibility but new code should use
-// awaitApprovalResponse + dispatchApprovalResponse separately.
 func (s *Signal) awaitAndHandleApproval(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) error {
 	l, _ := log.WorkflowLogger(ctx)
 	_ = l

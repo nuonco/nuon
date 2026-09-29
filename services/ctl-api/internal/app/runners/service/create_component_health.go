@@ -21,16 +21,10 @@ import (
 )
 
 const (
-	// maxResourcesPerComponent is a defensive server-side cap; the runner
-	// truncates first.
-	maxResourcesPerComponent = 500
-	// maxResourceDetailsBytes bounds the per-resource details JSON blob.
-	maxResourceDetailsBytes = 16 * 1024
-	// componentHealthEvaluateSignalType doubles as the dedupe key: one pending
-	// evaluation per install queue is all that is ever useful.
+	maxResourcesPerComponent          = 500
+	maxResourceDetailsBytes           = 16 * 1024
 	componentHealthEvaluateSignalType = "component-health-evaluate"
-	// componentHealthInsertBatchSize bounds each ClickHouse insert.
-	componentHealthInsertBatchSize = 500
+	componentHealthInsertBatchSize    = 500
 
 	sourceComponent = "component"
 	sourceSandbox   = "sandbox"
@@ -39,8 +33,6 @@ const (
 	healthUnknown = "unknown"
 )
 
-// healthSeverity ranks health so Degraded/unhealthy latch over a later
-// Progressing/unknown report; Healthy is 0 and clears the latch (in latchHealth).
 var healthSeverity = map[string]int{
 	healthHealthy: 0,
 	healthUnknown: 1,
@@ -137,14 +129,10 @@ func (s *service) CreateComponentHealth(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, resp)
 }
 
-// resourceStateKey matches the latest-state view's partition key so a report's
-// resource can be matched to its previously-stored state.
 func resourceStateKey(installComponentID, provider, apiGroup, kind, namespace, name string) string {
 	return strings.Join([]string{installComponentID, provider, apiGroup, kind, namespace, name}, "\x00")
 }
 
-// priorHealth is a resource's last stored health, so a degraded resource doesn't
-// fall back to progressing when the k8s Warning event ages out.
 type priorHealth struct {
 	health       string
 	message      string
@@ -173,14 +161,10 @@ func (s *service) priorResourceHealth(ctx context.Context, orgID, installID stri
 	return out, nil
 }
 
-// latchHealth applies the sticky-degraded rule: a healthy report clears the latch,
-// otherwise the worse of incoming vs prior is kept, with its matching message.
 func latchHealth(inHealth, inMessage, inNative string, prior priorHealth, hasPrior bool) (string, string, string) {
 	if inHealth == healthHealthy {
 		return inHealth, inMessage, inNative
 	}
-	// unknown is absence of an assessment, so latching would republish a stale
-	// diagnosis under a fresh timestamp as if just confirmed.
 	if inHealth == healthUnknown {
 		return inHealth, inMessage, inNative
 	}
@@ -300,16 +284,11 @@ func (s *service) createComponentHealth(ctx context.Context, orgID, runnerID str
 		return nil, fmt.Errorf("unable to write resource states: %w", res.Error)
 	}
 
-	// Only after the observations are durable — evaluating before the write
-	// lands would read the previous report and draw last cycle's verdict.
 	s.triggerHealthEvaluation(ctx, req.InstallID)
 
 	return &CreateComponentHealthResponse{Ingested: len(rows)}, nil
 }
 
-// ensureInstallHealthQueues lazily reconciles the install's health queue and its
-// evaluator emitter, so installs predating the evaluator don't sit with
-// observations flowing but no verdict. Memoized, best-effort.
 func (s *service) ensureInstallHealthQueues(ctx context.Context, installID string) {
 	if _, done := s.ensuredHealthQueues.Load(installID); done {
 		return
@@ -323,15 +302,11 @@ func (s *service) ensureInstallHealthQueues(ctx context.Context, installID strin
 	s.ensuredHealthQueues.Store(installID, struct{}{})
 }
 
-// componentHealthEvaluateDedupeKey buckets by minute so concurrent reports for
-// one install collapse, while the next minute still gets evaluated. A constant
-// key would not: a completed signal stays undeleted until the nightly cleanup,
-// and would absorb every later enqueue — freezing the verdict indefinitely.
 func componentHealthEvaluateDedupeKey(now time.Time) string {
 	return fmt.Sprintf("%s-%d", componentHealthEvaluateSignalType, now.Truncate(time.Minute).Unix())
 }
 
-// triggerHealthEvaluation evaluates on the report that just arrived rather than
+// why: triggerHealthEvaluation evaluates on the report that just arrived rather than
 // waiting for a timer, so a verdict lands with the data that justifies it.
 //
 // Deduped per queue: while an evaluation is still pending, further reports
@@ -367,9 +342,6 @@ func (s *service) triggerHealthEvaluation(ctx context.Context, installID string)
 	}
 }
 
-// updateInstallSandboxHealth denormalizes the worst sandbox-resource health onto
-// the install so reads can surface a degraded sandbox without a ClickHouse query.
-// Only degraded/unhealthy is recorded; best-effort (never fails the ingest).
 func (s *service) updateInstallSandboxHealth(ctx context.Context, installID, worst, message, clusterAccessError string, enabled bool) {
 	status := ""
 	msg := ""
@@ -395,8 +367,6 @@ func (s *service) updateInstallSandboxHealth(ctx context.Context, installID, wor
 
 func boundDetails(details string) string {
 	if len(details) > maxResourceDetailsBytes {
-		// truncating mid-JSON would corrupt the blob for consumers, so drop it
-		// for a valid marker instead. The runner is expected to bound this first.
 		return `{"_truncated":true}`
 	}
 	return details

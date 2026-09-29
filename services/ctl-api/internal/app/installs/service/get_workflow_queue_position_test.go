@@ -64,9 +64,7 @@ func (s *InstallsServiceTestSuite) TestGetWorkflowQueuePositionWithSignalsAhead(
 	wfTarget := s.deps.Seeder.CreateWorkflow(s.ctx, s.T(), install.ID, app.WorkflowTypeReprovision)
 
 	s.createQueueSignal(queue.ID, wfA.ID, app.StatusQueued, base)
-	// A parked (pending) signal still occupies the queue and must be counted.
 	s.createQueueSignal(queue.ID, wfB.ID, app.StatusPending, base.Add(time.Minute))
-	// A completed signal is no longer in the queue and must be excluded.
 	s.createQueueSignal(queue.ID, wfDone.ID, app.StatusSuccess, base.Add(2*time.Minute))
 	s.createQueueSignal(queue.ID, wfTarget.ID, app.StatusQueued, base.Add(3*time.Minute))
 

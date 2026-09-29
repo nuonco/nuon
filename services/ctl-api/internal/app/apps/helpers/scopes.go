@@ -7,7 +7,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
-// ActiveAppConfigs restricts a query to the app's configs that finished syncing.
+// why: ActiveAppConfigs restricts a query to the app's configs that finished syncing.
 // A pending, syncing or errored config has no component_ids and no config records, so it must never
 // stand in as the app's current config.
 //
@@ -25,32 +25,27 @@ func ActiveAppConfigs(appID string) func(*gorm.DB) *gorm.DB {
 	}
 }
 
-// secrets config
 func PreloadAppSecretsConfig(db *gorm.DB) *gorm.DB {
 	return db.Preload("SecretsConfig").
 		Preload("SecretsConfig.Secrets").
 		Preload("SecretsConfig.Secrets.KubernetesSyncTargets")
 }
 
-// break glass config
 func PreloadAppBreakGlassConfig(db *gorm.DB) *gorm.DB {
 	return db.Preload("BreakGlassConfig").
 		Preload("BreakGlassConfig.Roles").
 		Preload("BreakGlassConfig.Roles.Policies")
 }
 
-// component role config
 func PreloadAppOperationRoleConfig(db *gorm.DB) *gorm.DB {
 	return db.Preload("OperationRoleConfig").
 		Preload("OperationRoleConfig.Rules")
 }
 
-// cloudformation stack config
 func PreloadAppConfigStackConfig(db *gorm.DB) *gorm.DB {
 	return db.Preload("StackConfig")
 }
 
-// permissions config
 func PreloadAppConfigPermissionsConfig(db *gorm.DB) *gorm.DB {
 	return db.Preload("PermissionsConfig").
 		Preload("PermissionsConfig.Roles").
@@ -58,7 +53,6 @@ func PreloadAppConfigPermissionsConfig(db *gorm.DB) *gorm.DB {
 		Preload("PermissionsConfig.NamedPolicies")
 }
 
-// policies config
 func PreloadAppConfigPolicyConfig(db *gorm.DB) *gorm.DB {
 	return db.Preload("PoliciesConfig").
 		Preload("PoliciesConfig.Policies", func(db *gorm.DB) *gorm.DB {
@@ -66,7 +60,6 @@ func PreloadAppConfigPolicyConfig(db *gorm.DB) *gorm.DB {
 		})
 }
 
-// input config
 func PreloadAppConfigInputConfig(db *gorm.DB) *gorm.DB {
 	return db.Preload("InputConfig").
 		Preload("InputConfig.AppInputGroups", func(db *gorm.DB) *gorm.DB {
@@ -77,7 +70,6 @@ func PreloadAppConfigInputConfig(db *gorm.DB) *gorm.DB {
 		})
 }
 
-// sandbox config
 func PreloadAppConfigSandboxConfig(db *gorm.DB) *gorm.DB {
 	return db.Preload("SandboxConfig").
 		Preload("SandboxConfig.PublicGitVCSConfig").
@@ -85,88 +77,55 @@ func PreloadAppConfigSandboxConfig(db *gorm.DB) *gorm.DB {
 		Preload("SandboxConfig.ConnectedGithubVCSConfig.VCSConnection")
 }
 
-// kubernetes contexts config
 func PreloadAppConfigKubernetesContextsConfig(db *gorm.DB) *gorm.DB {
 	return db.Preload("KubernetesContextsConfig").
 		Preload("KubernetesContextsConfig.Contexts")
 }
 
-// runner config
 func PreloadAppConfigRunnerConfig(db *gorm.DB) *gorm.DB {
 	return db.Preload("RunnerConfig")
 }
 
-// preload action workflow configs
 func PreloadAppActionWorkflowConfigs(db *gorm.DB) *gorm.DB {
 	return db.
 		Preload("ActionWorkflowConfigs").
 		Preload("ActionWorkflowConfigs.Triggers")
 }
 
-// component config connections
 func PreloadAppConfigComponentConfigConnections(db *gorm.DB) *gorm.DB {
 	return db.
-		// preload the component this belongs too
 		Preload("ComponentConfigConnections.Component").
-
-		// preload all terraform configs
 		Preload("ComponentConfigConnections.TerraformModuleComponentConfig").
 		Preload("ComponentConfigConnections.TerraformModuleComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigConnections.TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
-
-		// preload all helm configs
 		Preload("ComponentConfigConnections.HelmComponentConfig").
 		Preload("ComponentConfigConnections.HelmComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigConnections.HelmComponentConfig.ConnectedGithubVCSConfig").
-
-		// preload all docker configs
 		Preload("ComponentConfigConnections.DockerBuildComponentConfig").
 		Preload("ComponentConfigConnections.DockerBuildComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigConnections.DockerBuildComponentConfig.ConnectedGithubVCSConfig").
-
-		// preload all external image configs
 		Preload("ComponentConfigConnections.ExternalImageComponentConfig").
-
-		// preload all job configs
 		Preload("ComponentConfigConnections.JobComponentConfig").
-
-		// preload all kubernetes manifest configs
 		Preload("ComponentConfigConnections.KubernetesManifestComponentConfig").
-
-		// preload all pulumi configs
 		Preload("ComponentConfigConnections.PulumiComponentConfig").
 		Preload("ComponentConfigConnections.PulumiComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigConnections.PulumiComponentConfig.ConnectedGithubVCSConfig")
 }
 
-// component config connections
 func PreloadComponentConfigConnections(db *gorm.DB) *gorm.DB {
 	return db.
-		// preload all terraform configs
 		Preload("ComponentConfigs.TerraformModuleComponentConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
-
-		// preload all helm configs
 		Preload("ComponentConfigs.HelmComponentConfig").
 		Preload("ComponentConfigs.HelmComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.HelmComponentConfig.ConnectedGithubVCSConfig").
-
-		// preload all docker configs
 		Preload("ComponentConfigs.DockerBuildComponentConfig").
 		Preload("ComponentConfigs.DockerBuildComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.DockerBuildComponentConfig.ConnectedGithubVCSConfig").
-
-		// preload all external image configs
 		Preload("ComponentConfigs.ExternalImageComponentConfig").
-
-		// preload all job configs
 		Preload("ComponentConfigs.JobComponentConfig").
-
-		// preload all kubernetes manifest configs
 		Preload("ComponentConfigs.KubernetesManifestComponentConfig").
-
-		// preload all pulumi configs
 		Preload("ComponentConfigs.PulumiComponentConfig").
 		Preload("ComponentConfigs.PulumiComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.PulumiComponentConfig.ConnectedGithubVCSConfig")

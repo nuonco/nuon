@@ -7,11 +7,6 @@ import { collectDescendantIds } from '@/utils/span-tree'
 type SortDirection = 'asc' | 'desc'
 export type ViewMode = 'structured' | 'raw'
 
-// URL-backed filter state. Multi-value params (severity) are repeated in
-// the URL, e.g. ?severity=Info&severity=Warn. Single-value params
-// (tool, helm.release_name, k8s.kind, system_logs, etc.) appear once.
-// System logs (scope=system) are shown by default; the user opts out
-// via the "Include system logs" toggle (?system_logs=false).
 const PARAM_SEVERITY = 'severity'
 const PARAM_TOOL = 'tool'
 const PARAM_HELM_RELEASE = 'helm_release_name'
@@ -25,13 +20,13 @@ const PARAM_BODY = 'q'
 const PARAM_SYSTEM_LOGS = 'system_logs'
 const PARAM_SORT = 'sort'
 const PARAM_VIEW = 'view'
-// Span / trace cross-link from the trace tab. trace_id is an exact server-side
+// why: Span / trace cross-link from the trace tab. trace_id is an exact server-side
 // match; span_id stays client-side because the UI expands a parent span into
 // its descendants before filtering, which the server can't do.
 const PARAM_SPAN_ID = 'span_id'
 const PARAM_TRACE_ID = 'trace_id'
 
-// URL filter state mapped onto the ctl-api log read/tail query params, so
+// why: URL filter state mapped onto the ctl-api log read/tail query params, so
 // filtering happens server-side instead of only in the browser. span_id is
 // deliberately excluded — the server can only exact-match it, while the UI
 // expands a parent span into its descendants before filtering.
@@ -40,8 +35,6 @@ export const buildServerFilters = (
 ): TLogStreamFilters => {
   const filters: TLogStreamFilters = {}
 
-  // Empty selection == show everything; otherwise the user's set, or the
-  // default set when they haven't touched severity at all.
   const severities = searchParams.getAll(PARAM_SEVERITY)
   if (severities.length === 0 && DEFAULT_SEVERITIES.length > 0) {
     filters.severity_text = [...DEFAULT_SEVERITIES]
@@ -89,27 +82,11 @@ const ALL_FILTER_PARAMS = [
 
 const KNOWN_SEVERITIES = ['Trace', 'Debug', 'Info', 'Warn', 'Error', 'Fatal']
 
-// Severity has a sensible default — Trace/Debug are very noisy and almost
-// always want hiding out of the box. When no `severity` param is present in
-// the URL we apply this set; once the user toggles anything we honor exactly
-// what they asked for. handleSeverityReset clears the URL param to return
-// to defaults.
 const DEFAULT_SEVERITIES = ['Info', 'Warn', 'Error', 'Fatal']
 
 export const useLogFilters = <T extends TOTELLog>(
   logs: T[] | null,
-  // Optional span list for parent-aggregation in the span→logs cross-link.
-  // When provided, a single ?span_id=X URL param is expanded into the set
-  // { X, ...descendants(X) } before filtering, so clicking a parent step
-  // span (e.g. step.execute) shows logs from all child tool spans too.
-  // When omitted (most callers), span_id behaves as an exact-match filter
-  // — preserving the original behavior for surfaces that don't render the
-  // trace tab.
   spans?: TSpan[],
-  // Log stream identity for facet accumulation. When provided, the
-  // available-tool facet resets when the stream changes rather than when
-  // logs are cleared (a server-side tool filter clears logs on reconnect,
-  // which must not collapse the facet to the selection).
   streamId?: string
 ) => {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -173,7 +150,7 @@ export const useLogFilters = <T extends TOTELLog>(
     [updateParams]
   )
 
-  // Available values are derived from the logs loaded so far for this
+  // why: Available values are derived from the logs loaded so far for this
   // stream — not just the current page. Once `tool` filters server-side,
   // newly loaded rows only ever contain the selected tool, so deriving
   // the facet from the live set alone would collapse the dropdown to the
@@ -196,7 +173,7 @@ export const useLogFilters = <T extends TOTELLog>(
         prev.streamId !== undefined &&
         prev.streamId !== streamId
       ) {
-        // Stream changed: this render's logs may still belong to the old
+        // why: Stream changed: this render's logs may still belong to the old
         // stream, so start empty without accumulating. Recording the new id
         // here (even when logs are empty) matters — the render that carries
         // the id change can only hold old-stream logs or [], so dropping
@@ -240,9 +217,6 @@ export const useLogFilters = <T extends TOTELLog>(
     })
   }
 
-  // Span-id match set for the cross-link. When a span list is provided we
-  // expand the URL's span_id into the full descendant set; otherwise we fall
-  // back to exact match. The filter callback below reads `spanIdMatchSet`.
   const spanIdMatchSet = useMemo(() => {
     if (!spanId) return new Set<string>()
     if (spans && spans.length > 0) return collectDescendantIds(spans, spanId)
@@ -254,7 +228,6 @@ export const useLogFilters = <T extends TOTELLog>(
 
     let filtered = logs
 
-    // Empty selection == show everything for these multi-value filters.
     if (selectedSeverities.size > 0) {
       filtered = filtered.filter((item) =>
         selectedSeverities.has(item.severity_text)
@@ -291,9 +264,6 @@ export const useLogFilters = <T extends TOTELLog>(
     }
 
     if (spanId) {
-      // Expand spanId into { spanId, ...descendants } when a span list is
-      // available so clicking a parent step span shows all child tool span
-      // logs too. Without spans we fall back to exact match.
       filtered = filtered.filter((item) => spanIdMatchSet.has(item.span_id))
     }
     if (traceId) {
@@ -337,8 +307,6 @@ export const useLogFilters = <T extends TOTELLog>(
   )
   const handleSeverityButtonClick = useCallback(
     (severity: string) => {
-      // "Only" semantics: pin selection to just this one. If already
-      // pinned to it, clear (== show all).
       if (selectedSeverities.size === 1 && selectedSeverities.has(severity)) {
         setMultiValue(PARAM_SEVERITY, [])
       } else {
@@ -414,8 +382,6 @@ export const useLogFilters = <T extends TOTELLog>(
     })
   }, [updateParams])
 
-  // serverFilters mirrors the URL state in the shape the ctl-api endpoint
-  // expects, so callers can pass it straight to getLogStreamLogs[WithMeta].
   const serverFilters: TLogStreamFilters = useMemo(
     () => buildServerFilters(searchParams),
     [searchParams]
@@ -476,7 +442,6 @@ export const useLogFilters = <T extends TOTELLog>(
     severityStats: {
       selectedCount: selectedSeverities.size,
       totalCount: availableSeverities.size,
-      // "Is the user currently on the default selection (no URL override)?"
       isDefault: severityIsDefault,
     },
   }

@@ -5,7 +5,6 @@ export default {
 import { AwaitAWSDetails } from './AwaitAWSDetails'
 import { InstallAppConfigContext } from '@/providers/install-app-config-provider'
 
-// useInstallAppConfig throws outside its provider, so feed the context directly.
 const mockAppConfig = {
   input: {
     inputs: [

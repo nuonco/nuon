@@ -35,7 +35,6 @@ func New(v *validator.Validate, opts ...loggerOption) (*logger, error) {
 	return log, nil
 }
 
-// WithSilent prevents all output
 func WithSilent(silent bool) loggerOption {
 	return func(l *logger) error {
 		l.Silent = silent
@@ -43,7 +42,6 @@ func WithSilent(silent bool) loggerOption {
 	}
 }
 
-// WithJSON outputs everything as json
 func WithJSON(enableJSON bool) loggerOption {
 	return func(l *logger) error {
 		l.JSON = enableJSON

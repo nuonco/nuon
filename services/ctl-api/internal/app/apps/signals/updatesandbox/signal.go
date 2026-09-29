@@ -27,7 +27,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("app_id is required")
 	}
 
-	// Validate app exists
 	_, err := activities.AwaitGetByAppID(ctx, s.AppID)
 	if err != nil {
 		return errors.Wrap(err, "app not found")
@@ -39,8 +38,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
-	// NOTE(sdboyer): This whole behavior is a no-op right now and the signal can't carry a release-id,
-	// so we print an empty string
 	l.Info("updating sandbox release",
 		zap.String("app-id", s.AppID),
 		zap.String("release-id", ""))

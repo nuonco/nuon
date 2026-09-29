@@ -43,7 +43,6 @@ func (s *componentConfigsSuite) SetupTest() {
 	app := s.createApp()
 	s.appID = app.ID
 
-	// create a component
 	comp := s.createComponent(s.appID)
 	s.compID = comp.ID
 }
@@ -199,7 +198,6 @@ func (s *componentConfigsSuite) TestComponentConfigs() {
 		require.Nil(t, err)
 		require.NotNil(t, cfg)
 
-		// assert that latest is this id
 		cfgs, _, err := s.apiClient.GetComponentConfigs(s.ctx, s.compID, nil)
 		require.NoError(t, err)
 		require.Len(t, cfgs, 1)
@@ -220,7 +218,6 @@ func (s *componentConfigsSuite) TestComponentConfigs() {
 		require.Nil(t, err)
 		require.NotNil(t, cfg)
 
-		// assert that latest is this id
 		cfgs, _, err := s.apiClient.GetComponentConfigs(s.ctx, s.compID, nil)
 		require.Nil(t, err)
 		require.Len(t, cfgs, 2)
@@ -243,7 +240,6 @@ func (s *componentConfigsSuite) TestGetLatestComponentConfig() {
 		require.Nil(t, err)
 		require.NotNil(t, cfg)
 
-		// assert that latest is this id
 		latestCfg, err := s.apiClient.GetComponentLatestConfig(s.ctx, s.compID)
 		require.Nil(t, err)
 		require.NotNil(t, latestCfg)

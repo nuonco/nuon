@@ -20,7 +20,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// GetOrgTestSuite is the test suite for get org endpointi.
 type GetOrgTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -47,7 +46,6 @@ func (s *GetOrgTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),
 	)
@@ -55,7 +53,6 @@ func (s *GetOrgTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
@@ -63,7 +60,6 @@ func (s *GetOrgTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -122,7 +118,6 @@ func (s *GetOrgTestSuite) TestGetOrg() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
 
-				// Create a runner group for the org
 				runnerGroup := &app.RunnerGroup{
 					ID:        domains.NewRunnerGroupID(),
 					OwnerID:   org.ID,
@@ -160,7 +155,6 @@ func (s *GetOrgTestSuite) TestGetOrg() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
 
-				// Create a VCS connection
 				vcsConn := &app.VCSConnection{
 					OrgID:             org.ID,
 					GithubInstallID:   "12345",
@@ -183,10 +177,8 @@ func (s *GetOrgTestSuite) TestGetOrg() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test data
 			org := tc.setupFunc()
 
-			// Update router context to use the test org
 			s.router = tests.NewTestRouter(tests.RouterOptions{
 				L:       s.service.L,
 				DB:      s.service.DB,
@@ -196,7 +188,6 @@ func (s *GetOrgTestSuite) TestGetOrg() {
 			err := s.orgsService.RegisterPublicRoutes(s.router)
 			require.NoError(s.T(), err)
 
-			// Make request
 			rr := s.makeRequest(http.MethodGet, "/v1/orgs/current")
 
 			if rr.Code != tc.expectedStatus {
@@ -204,7 +195,6 @@ func (s *GetOrgTestSuite) TestGetOrg() {
 			}
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
-			// Parse response
 			var response app.Org
 			err = json.Unmarshal(rr.Body.Bytes(), &response)
 			if err != nil {
@@ -212,7 +202,6 @@ func (s *GetOrgTestSuite) TestGetOrg() {
 			}
 			require.NoError(s.T(), err)
 
-			// Run validation
 			if tc.validateFunc != nil {
 				tc.validateFunc(&response)
 			}
@@ -221,12 +210,10 @@ func (s *GetOrgTestSuite) TestGetOrg() {
 }
 
 func (s *GetOrgTestSuite) TestGetOrgWithoutOrgContext() {
-	// Create router without org context
 	router := tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
 		TestAcc: s.testAcc,
-		// TestOrg intentionally omitted
 	})
 
 	err := s.orgsService.RegisterPublicRoutes(router)
@@ -238,6 +225,5 @@ func (s *GetOrgTestSuite) TestGetOrgWithoutOrgContext() {
 	rr := httptest.NewRecorder()
 	router.ServeHTTP(rr, req)
 
-	// Should fail without org context
 	require.Equal(s.T(), http.StatusInternalServerError, rr.Code)
 }

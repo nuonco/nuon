@@ -1,6 +1,5 @@
 package oci
 
-// package oci exposes methods for working with oci archives
 import (
 	"fmt"
 	"os"
@@ -14,7 +13,6 @@ import (
 	"github.com/nuonco/nuon/pkg/terraform/archive"
 )
 
-// Package oci exposes an archive that loads a terraform archive from an oci artifact
 var _ archive.Archive = (*oci)(nil)
 
 type oci struct {
@@ -25,7 +23,6 @@ type oci struct {
 
 	store *file.Store
 
-	// the following fields are exposed to make this more easily tested
 	testSrc oras.ReadOnlyTarget
 	tmpDir  string
 }
@@ -50,7 +47,6 @@ func New(v *validator.Validate, opts ...ociOption) (*oci, error) {
 	return s, nil
 }
 
-// WithAuth sets the iam role and ecr token to use with this archive
 func WithAuth(auth *Auth) ociOption {
 	return func(o *oci) error {
 		if err := auth.Validate(o.v); err != nil {
@@ -62,7 +58,6 @@ func WithAuth(auth *Auth) ociOption {
 	}
 }
 
-// WithImage sets the image
 func WithImage(img *Image) ociOption {
 	return func(o *oci) error {
 		o.Image = img

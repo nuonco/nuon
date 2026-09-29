@@ -51,7 +51,6 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStreamID)
 	}()
 
-	// create the job
 	runnerJob, err := activities.AwaitCreateSandboxJob(ctx, &activities.CreateSandboxJobRequest{
 		InstallID: install.ID,
 		RunnerID:  install.RunnerID,
@@ -92,7 +91,6 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 		return errors.Wrap(err, "unable to update install workflow")
 	}
 
-	// Add Plan contents from the result to the plan
 	if len(planJob.Execution.Result.Contents) > 0 {
 		l.Info("using the legacy contents from the runner job execution result")
 		runPlan.ApplyPlanContents = planJob.Execution.Result.Contents
@@ -148,7 +146,6 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 		return fmt.Errorf("unable to record install role usage: %w", err)
 	}
 
-	// queue job
 	l.Info("queued job and waiting on it to be picked up by runner")
 	status, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		JobID:      runnerJob.ID,

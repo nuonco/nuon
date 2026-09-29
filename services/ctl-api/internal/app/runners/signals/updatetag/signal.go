@@ -46,7 +46,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
-	// Update the container image tag in the database
 	if err := activities.AwaitUpdateContainerImageTag(ctx, activities.UpdateContainerImageTagRequest{
 		RunnerID: s.RunnerID,
 		Tag:      s.Tag,
@@ -56,7 +55,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	l.Info("updated container image tag", "runner_id", s.RunnerID, "tag", s.Tag)
 
-	// Get runner details to determine type
 	runner, err := activities.AwaitGet(ctx, activities.GetRequest{
 		RunnerID: s.RunnerID,
 	})
@@ -70,12 +68,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return s.handleInstallRunner(ctx, l, runner)
 }
 
-// handleInstallRunner updates the tag and triggers a graceful shutdown so the runner
-// restarts with the new tag.
 func (s *Signal) handleInstallRunner(ctx workflow.Context, l log.Logger, runner *app.Runner) error {
 	l.Info("install runner: triggering graceful shutdown for tag update", "runner_id", s.RunnerID)
 
-	// Try process-based shutdown first
 	process, err := activities.AwaitGetCurrentRunnerProcess(ctx, activities.GetCurrentRunnerProcessRequest{
 		RunnerID:    s.RunnerID,
 		ProcessType: string(app.RunnerProcessTypeInstall),
@@ -91,7 +86,6 @@ func (s *Signal) handleInstallRunner(ctx workflow.Context, l log.Logger, runner 
 		return nil
 	}
 
-	// Fallback: update status to indicate restart needed
 	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		RunnerID:          s.RunnerID,
 		Status:            runner.Status,

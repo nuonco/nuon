@@ -80,10 +80,6 @@ func (h *RootHandler) Handle(c *gin.Context) {
 		zap.Bool("has_org_cookie", hasOrgCookie),
 	)
 
-	// Trust the org session cookie and redirect immediately. The SPA's
-	// OrgProvider will validate the org and show an error if it's stale.
-	// This avoids an expensive GetOrg API call that loads all roles/policies
-	// for the account, which is slow for users with many orgs.
 	if orgId, err := c.Cookie(orgCookie); err == nil && orgId != "" {
 		h.l.Info("root: redirecting to org from session cookie",
 			zap.String("org_id", orgId),

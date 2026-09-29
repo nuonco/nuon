@@ -59,7 +59,6 @@ func (s *service) AdminMigrateOrg(ctx *gin.Context) {
 }
 
 func (s *service) adminMigrateOrg(ctx context.Context, org *app.Org) error {
-	// create runner role
 	role := app.Role{
 		OrgID:    generics.NewNullString(org.ID),
 		RoleType: app.RoleTypeRunner,
@@ -80,7 +79,6 @@ func (s *service) adminMigrateOrg(ctx context.Context, org *app.Org) error {
 		return errors.Wrap(res.Error, "unable to create role")
 	}
 
-	// update org type to default
 	res = s.db.WithContext(ctx).Model(org).Updates(app.Org{
 		OrgType: app.OrgTypeDefault,
 	})
@@ -91,7 +89,6 @@ func (s *service) adminMigrateOrg(ctx context.Context, org *app.Org) error {
 		return errors.Wrap(gorm.ErrRecordNotFound, "org not found")
 	}
 
-	// Org signals use v2 queues
 	queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
 	if err != nil {
 		return fmt.Errorf("unable to get org signals queue: %w", err)

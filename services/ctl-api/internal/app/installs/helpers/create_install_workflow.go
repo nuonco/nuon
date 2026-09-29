@@ -85,7 +85,6 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 		approvalOption = installConfig.ApprovalOption
 	}
 
-	// Label the approval source so the UI can show where auto-approve came from
 	if approvalOption == app.InstallApprovalOptionApproveAll {
 		metadata["approval_type"] = "install-config"
 	}
@@ -102,12 +101,11 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 	}
 
 	installWorkflow := app.Workflow{
-		Type:      workflowType,
-		OwnerID:   installID,
-		OwnerType: "installs",
-		Metadata:  generics.ToHstore(metadata),
-		Status:    status,
-		// DEPRECATED: for now we always abort on step errors
+		Type:              workflowType,
+		OwnerID:           installID,
+		OwnerType:         "installs",
+		Metadata:          generics.ToHstore(metadata),
+		Status:            status,
 		StepErrorBehavior: app.StepErrorBehaviorAbort,
 		ApprovalOption:    approvalOption,
 		PlanOnly:          planOnly,
@@ -144,9 +142,6 @@ func requiresLiveInstallRunner(workflowType app.WorkflowType, metadata map[strin
 	return workflowType.RequiresLiveInstallRunner()
 }
 
-// stackChangeDefersRunnerGate reports whether this workflow is an app-branch
-// config update whose stack apply can bring the install runner back. Creation
-// must not reject it for an offline or disabled runner.
 func stackChangeDefersRunnerGate(workflowType app.WorkflowType, metadata map[string]string) bool {
 	return workflowType == app.WorkflowTypeAppBranchConfigUpdate &&
 		metadata[app.WorkflowMetadataKeyStackChanged] == "true"

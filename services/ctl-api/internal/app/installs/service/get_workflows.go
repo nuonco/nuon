@@ -130,13 +130,6 @@ func (s *service) getWorkflows(ctx *gin.Context, installID string, excludePlanOn
 		query = query.Where("status->>'status' IN ?", statuses)
 	}
 
-	// Search matches the user-visible title each workflow is rendered with
-	// (e.g. "Deploying to install (rds_cluster_temporal)"). The title lives
-	// in the `name` column — a STORED generated column maintained by
-	// Postgres, see migrations.Migration108InstallWorkflowsNameGenerated —
-	// so we don't have to recompute it here. Whitespace tokens are AND'd so
-	// a query like "deploying rds" matches a title containing both words in
-	// any order. Workflow id is also accepted so users can paste a ULID.
 	for _, token := range strings.Fields(search) {
 		like := "%" + token + "%"
 		query = query.Where("name ILIKE ? OR id ILIKE ?", like, like)

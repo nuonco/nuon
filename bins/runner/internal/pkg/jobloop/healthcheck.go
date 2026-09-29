@@ -4,12 +4,6 @@ import (
 	"time"
 )
 
-// Healthcheck
-//
-// On every healthcheck run, we update the relevant values in the Healthcheck struct.
-// These are returned as outputs by the healthcheck job handler. We can then use them
-// on the ctl-api side to determine the runner health and take action.
-
 type Healthcheck struct {
 	StartTime           time.Time
 	StopTime            time.Time
@@ -41,20 +35,3 @@ func (j *jobLoop) TimeSinceLastHealthcheck() time.Duration {
 	}
 	return time.Since(j.healthcheck.LatestHealthcheckAt)
 }
-
-// func (j *jobLoop) setLatestJobRun(start time.Time) error {
-// 	j.healthcheck.LatestJobRunAt = start
-// 	return nil
-// }
-
-// func (j *jobLoop) setLatestJobDuration(d time.Duration) error {
-// 	j.healthcheck.LatestJobRunDuration = d
-// 	return nil
-// }
-
-// func (j *jobLoop) timeSinceLastJobRun() time.Duration {
-// 	if j.healthcheck.LatestJobRunAt.IsZero() {
-// 		return time.Now().Sub(j.healthcheck.LatestJobRunAt)
-// 	}
-// 	return time.Duration(0)
-// }

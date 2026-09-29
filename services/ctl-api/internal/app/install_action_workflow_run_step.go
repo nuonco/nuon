@@ -30,8 +30,6 @@ func (a *AdHocStepConfig) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, a)
 }
 
-// Value implements driver.Valuer for database serialization to JSONB.
-// See queue/signal/db/signal.go for a more complex example with Type() info.
 func (a AdHocStepConfig) Value() (driver.Value, error) {
 	return json.Marshal(a)
 }

@@ -79,7 +79,6 @@ func (s *AdminCancelJobTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:  s.service.L,
 		DB: s.service.DB,
@@ -98,7 +97,6 @@ func (s *AdminCancelJobTestSuite) setupTestData() {
 	ctx, s.testAcc = s.service.Seeder.EnsureAccount(ctx, s.T())
 	s.testOrg = s.service.Seeder.CreateOrg(ctx, s.T())
 
-	// Create log stream for runner jobs
 	s.testLogStream = &app.LogStream{
 		ID:      domains.NewLogStreamID(),
 		OrgID:   s.testOrg.ID,
@@ -108,7 +106,6 @@ func (s *AdminCancelJobTestSuite) setupTestData() {
 	err := s.service.DB.WithContext(ctx).Create(s.testLogStream).Error
 	require.NoError(s.T(), err)
 
-	// Create runner group
 	s.testRunnerGrp = &app.RunnerGroup{
 		ID:        domains.NewRunnerGroupID(),
 		OrgID:     s.testOrg.ID,
@@ -120,7 +117,6 @@ func (s *AdminCancelJobTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunnerGrp).Error
 	require.NoError(s.T(), err)
 
-	// Create runner
 	s.testRunner = &app.Runner{
 		ID:            domains.NewRunnerID(),
 		OrgID:         s.testOrg.ID,
@@ -287,7 +283,6 @@ func (s *AdminCancelJobTestSuite) TestAdminCancelRunnerJob() {
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), app.RunnerJobStatusCancelled, job.Status)
 
-				// Verify execution is also cancelled
 				var exec app.RunnerJobExecution
 				err = s.service.DB.First(&exec, "runner_job_id = ?", jobID).Error
 				require.NoError(s.T(), err)
@@ -374,7 +369,6 @@ func (s *AdminCancelJobTestSuite) TestAdminCancelRunnerJob() {
 			requestBody:  AdminCancelRunnerJobRequest{},
 			expectedCode: http.StatusOK,
 			validateFunc: func(jobID string) {
-				// Admin routes have no org scoping - can cancel any job
 				var job app.RunnerJob
 				err := s.service.DB.First(&job, "id = ?", jobID).Error
 				require.NoError(s.T(), err)

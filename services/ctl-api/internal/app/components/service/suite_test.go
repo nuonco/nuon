@@ -27,7 +27,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-// mockWorkflowRun implements tclient.WorkflowRun for mock return values.
 type mockWorkflowRun struct{}
 
 func (m *mockWorkflowRun) GetID() string    { return "mock-workflow-id" }
@@ -39,7 +38,6 @@ func (m *mockWorkflowRun) GetWithOptions(ctx context.Context, valuePtr interface
 	return nil
 }
 
-// ComponentsTestDeps holds all fx-injected dependencies for components service tests.
 type ComponentsTestDeps struct {
 	fx.In
 
@@ -51,7 +49,6 @@ type ComponentsTestDeps struct {
 	Seeder *testseed.Seeder
 }
 
-// ComponentsServiceTestSuite is the shared testify suite for all components service endpoint tests.
 type ComponentsServiceTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -80,11 +77,9 @@ func (s *ComponentsServiceTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	// Create mock clients for testing
 	ctrl := gomock.NewController(s.T())
 	s.mockTC = temporal.NewMockClient(ctrl)
 
-	// Queue creation is a side effect of component creation — allow it in all tests.
 	s.mockTC.EXPECT().ExecuteWorkflowInNamespace(
 		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Return(&mockWorkflowRun{}, nil).AnyTimes()
@@ -97,7 +92,6 @@ func (s *ComponentsServiceTestSuite) SetupSuite() {
 			},
 			CustomValidator: true,
 		}),
-		// Service under test
 		fx.Provide(New),
 		fx.Populate(&s.deps, &s.componentsService),
 	)
@@ -105,18 +99,14 @@ func (s *ComponentsServiceTestSuite) SetupSuite() {
 	s.fxApp = fxtest.New(s.T(), options...)
 	s.fxApp.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.deps.DB)
 }
 
 func (s *ComponentsServiceTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 
-	// Reset mock before each test
-
 	s.setupTestData()
 
-	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.deps.L,
 		DB:      s.deps.DB,
@@ -140,8 +130,6 @@ func (s *ComponentsServiceTestSuite) setupTestData() {
 	s.testAppConfig = s.deps.Seeder.CreateAppConfig(s.ctx, s.T(), s.testApp.ID)
 }
 
-// makeRequest sends an HTTP request through the test router and returns the recorder.
-// Pass nil for body on requests that have no body (GET, no-body POST).
 func (s *ComponentsServiceTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
 	var reqBody *bytes.Buffer
 	if body != nil {
@@ -161,8 +149,6 @@ func (s *ComponentsServiceTestSuite) makeRequest(method, path string, body inter
 	return rr
 }
 
-// makeRawRequest sends a raw string body through the test router, bypassing json.Marshal.
-// Useful for testing malformed JSON.
 func (s *ComponentsServiceTestSuite) makeRawRequest(method, path string, rawBody string) *httptest.ResponseRecorder {
 	req, err := http.NewRequest(method, path, bytes.NewBufferString(rawBody))
 	require.NoError(s.T(), err)
@@ -173,7 +159,6 @@ func (s *ComponentsServiceTestSuite) makeRawRequest(method, path string, rawBody
 	return rr
 }
 
-// getSeededComponent returns the first seeded component of the given type from testAppConfig.
 func (s *ComponentsServiceTestSuite) getSeededComponent(componentType app.ComponentType) *app.Component {
 	for _, ccc := range s.testAppConfig.ComponentConfigConnections {
 		var cmp app.Component
@@ -186,7 +171,6 @@ func (s *ComponentsServiceTestSuite) getSeededComponent(componentType app.Compon
 	return nil
 }
 
-// getSeededConfigConnection returns the ComponentConfigConnection for the given component ID.
 func (s *ComponentsServiceTestSuite) getSeededConfigConnection(componentID string) *app.ComponentConfigConnection {
 	for _, ccc := range s.testAppConfig.ComponentConfigConnections {
 		if ccc.ComponentID == componentID {

@@ -46,8 +46,6 @@ func (a *actInterceptor) ExecuteActivity(
 
 	a.mw.Gauge("temporal_activity.retry_count", float64(info.Attempt), metrics.ToTags(tags))
 
-	// Inject a MetricContext so the GORM metrics plugin can emit per-query metrics
-	// from worker activities (same key used by HTTP middleware).
 	metricCtx := &cctx.MetricContext{
 		Endpoint:   info.ActivityType.Name,
 		Method:     "temporal",
@@ -58,7 +56,6 @@ func (a *actInterceptor) ExecuteActivity(
 	}
 	ctx = context.WithValue(ctx, keys.MetricsKey, metricCtx)
 
-	// NOTE(jm): we emit from a defer, so we can catch any type of panic and still emit metrics.
 	defer func() {
 		rec := recover()
 		if rec != nil {

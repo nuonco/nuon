@@ -6,9 +6,6 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid"
 )
 
-// GetFakeObj returns a faked instance of type T
-// will panic on error
-// meant exclusively for testing
 func GetFakeObj[T any]() T {
 	shortid.RegisterFakes()
 	var obj T

@@ -21,7 +21,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/configdiff"
 )
 
-// AppBranchRunForInstall describes the app branch run an install should be on.
 type AppBranchRunForInstall struct {
 	AppBranchRunID               string
 	AppConfigID                  string
@@ -31,7 +30,6 @@ type AppBranchRunForInstall struct {
 	AlreadyCurrent               bool
 }
 
-// AppBranchConfigUpdateInput describes the config update to run for an install.
 type AppBranchConfigUpdateInput struct {
 	InstallID      string
 	NewAppConfigID string
@@ -41,13 +39,11 @@ type AppBranchConfigUpdateInput struct {
 	Callback       callback.Ref
 }
 
-// AppBranchConfigUpdate is the workflow and version created for a config update.
 type AppBranchConfigUpdate struct {
 	WorkflowID                string
 	InstallAppConfigVersionID string
 }
 
-// EnsureInstallAppBranch pins the install to the app branch, if it isn't already.
 func (h *Helpers) EnsureInstallAppBranch(ctx context.Context, installID, appBranchID string) error {
 	var install app.Install
 	if err := h.db.WithContext(ctx).Where(app.Install{ID: installID}).First(&install).Error; err != nil {
@@ -73,9 +69,6 @@ var (
 	ErrNoMatchingInstallGroup   = errors.New("install matches no install group on app branch")
 )
 
-// LatestAppBranchRunForInstall returns the latest deployable app branch run for
-// the branch, along with the install group the install falls into. It returns a
-// zero value only when the install is no longer pinned to the branch.
 func (h *Helpers) LatestAppBranchRunForInstall(ctx context.Context, appBranchID, installID string) (*AppBranchRunForInstall, error) {
 	var install app.Install
 	if err := h.db.WithContext(ctx).Where(app.Install{ID: installID}).First(&install).Error; err != nil {
@@ -102,10 +95,6 @@ func (h *Helpers) ResolveAppBranchRunForInstall(ctx context.Context, appBranchID
 		return nil, err
 	}
 
-	// Membership follows the branch's latest config (what the API and dashboard
-	// expose). Group rows are minted per config version, so a pin to a group
-	// added after the last deployable run would miss if we resolved against
-	// that run's config.
 	groups, err := h.appsHelpers.LatestConfigInstallGroups(ctx, appBranchID)
 	if err != nil {
 		return nil, err
@@ -193,8 +182,6 @@ func (h *Helpers) installOnAppConfig(ctx context.Context, install *app.Install, 
 	return inFlight > 0, nil
 }
 
-// CreateAppBranchConfigUpdateWorkflow records an install app config version for
-// the new config and enqueues the workflow that rolls the install onto it.
 func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input AppBranchConfigUpdateInput) (*AppBranchConfigUpdate, error) {
 	var install app.Install
 	if err := h.db.WithContext(ctx).First(&install, "id = ?", input.InstallID).Error; err != nil {
@@ -263,8 +250,6 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 	}, nil
 }
 
-// SaveInstallConfigDiffBlob uploads the diff and records its blob metadata on
-// the install app config version.
 func (h *Helpers) SaveInstallConfigDiffBlob(ctx context.Context, installConfigVersionID string, diff *app.InstallConfigDiff) error {
 	diffJSON, err := json.Marshal(diff)
 	if err != nil {

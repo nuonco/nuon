@@ -15,21 +15,14 @@ import (
 type ComponentType string
 
 const (
-	// TerraformModuleComponentType is the type for a terraform module component
-	TerraformModuleComponentType ComponentType = "terraform_module"
-	// HelmChartComponentType is the type for a helm chart component
-	HelmChartComponentType ComponentType = "helm_chart"
-	// DockerBuildComponentType is the type for a docker build component
-	DockerBuildComponentType ComponentType = "docker_build"
-	// ContainerImageComponentType is the type for an external image component
-	ContainerImageComponentType ComponentType = "container_image"
-	ExternalImageComponentType  ComponentType = "external_image"
-	// JobComponentType is the type for a job component
-	JobComponentType ComponentType = "job"
-	// KubernetesManifestComponentType is a type for kubernetes manifest compnent
+	TerraformModuleComponentType    ComponentType = "terraform_module"
+	HelmChartComponentType          ComponentType = "helm_chart"
+	DockerBuildComponentType        ComponentType = "docker_build"
+	ContainerImageComponentType     ComponentType = "container_image"
+	ExternalImageComponentType      ComponentType = "external_image"
+	JobComponentType                ComponentType = "job"
 	KubernetesManifestComponentType ComponentType = "kubernetes_manifest"
-	// PulumiComponentType is the type for a pulumi component
-	PulumiComponentType ComponentType = "pulumi"
+	PulumiComponentType             ComponentType = "pulumi"
 
 	ComponentTypeUnknown ComponentType = ""
 )
@@ -55,14 +48,12 @@ func (c ComponentType) APIType() models.AppComponentType {
 	return models.AppComponentTypeUnknown
 }
 
-// Component is a flattened configuration type that allows us to define components using a `type: type` field.
 type Component struct {
 	Source string `mapstructure:"source,omitempty" toml:"source,omitempty"`
 
 	Type ComponentType `mapstructure:"type,omitempty" toml:"type,omitempty" jsonschema:"required"`
 	Name string        `mapstructure:"name" toml:"name" jsonschema:"required"`
 
-	// SourceFile is the file path this component was parsed from (set during parsing, not serialized)
 	SourceFile     string                `mapstructure:"-" toml:"-" json:"-" jsonschema:"-" nuonhash:"-"`
 	VarName        string                `mapstructure:"var_name,omitempty" toml:"var_name,omitempty"`
 	Labels         map[string]string     `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
@@ -71,12 +62,8 @@ type Component struct {
 	Toggleable     *bool                 `mapstructure:"toggleable,omitempty" toml:"toggleable,omitempty"`
 	DefaultEnabled *bool                 `mapstructure:"default_enabled,omitempty" toml:"default_enabled,omitempty"`
 
-	// KubernetesContext is the name of a kubernetes_context this component
-	// targets. Empty means fall back to the implicit sandbox default (when
-	// the sandbox emits cluster outputs). See pkg/config/kubernetes_context.go.
 	KubernetesContext string `mapstructure:"kubernetes_context,omitempty" toml:"kubernetes_context,omitempty" nuonhash:"omitempty"`
 
-	// WARNING: properties below should be ignored by nuonhash when empty
 	HelmChart          *HelmChartComponentConfig          `mapstructure:"helm_chart,omitempty" toml:"helm_chart,omitempty" jsonschema:"oneof_required=helm" nuonhash:"omitempty"`
 	TerraformModule    *TerraformModuleComponentConfig    `mapstructure:"terraform_module,omitempty" toml:"terraform_module,omitempty" jsonschema:"oneof_required=terraform_module" nuonhash:"omitempty"`
 	DockerBuild        *DockerBuildComponentConfig        `mapstructure:"docker_build,omitempty" toml:"docker_build,omitempty" jsonschema:"oneof_required=docker_build" nuonhash:"omitempty"`
@@ -85,8 +72,6 @@ type Component struct {
 	KubernetesManifest *KubernetesManifestComponentConfig `mapstructure:"kubernetes_manifest,omitempty" toml:"kubernetes_manifest,omitempty" jsonschema:"oneof_required=kubernetes_manifest" nuonhash:"omitempty"`
 	Pulumi             *PulumiComponentConfig             `mapstructure:"pulumi,omitempty" toml:"pulumi,omitempty" jsonschema:"oneof_required=pulumi" nuonhash:"omitempty"`
 
-	// created during parsing
-	// WARNING: properties below should not be hashed with nuonhash
 	References []refs.Ref `mapstructure:"-" jsonschema:"-" nuonhash:"-"`
 	Checksum   string     `mapstructure:"-" jsonschema:"-" toml:"checksum" nuonhash:"-"`
 }
@@ -138,7 +123,6 @@ func (c *Component) parse(rootDir string) error {
 	}
 	c.References = references
 
-	// set all of the components
 	for _, ref := range c.References {
 		if !generics.SliceContains(ref.Type, []refs.RefType{refs.RefTypeComponents}) {
 			continue

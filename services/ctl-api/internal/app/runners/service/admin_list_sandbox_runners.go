@@ -28,7 +28,6 @@ func (s *service) AdminListSandboxRunners(ctx *gin.Context) {
 }
 
 func (s *service) listSandboxRunners(ctx context.Context) ([]SandboxRunnerInfo, error) {
-	// Find all runner groups with sandbox mode enabled
 	var settings []app.RunnerGroupSettings
 	if res := s.db.WithContext(ctx).
 		Where(app.RunnerGroupSettings{SandboxMode: true}).
@@ -40,13 +39,11 @@ func (s *service) listSandboxRunners(ctx context.Context) ([]SandboxRunnerInfo, 
 		return []SandboxRunnerInfo{}, nil
 	}
 
-	// Collect runner group IDs
 	groupIDs := make([]string, len(settings))
 	for i, s := range settings {
 		groupIDs[i] = s.RunnerGroupID
 	}
 
-	// Find all runners in those groups
 	var runners []app.Runner
 	if res := s.db.WithContext(ctx).
 		Where("runner_group_id IN ?", groupIDs).
@@ -54,7 +51,6 @@ func (s *service) listSandboxRunners(ctx context.Context) ([]SandboxRunnerInfo, 
 		return nil, fmt.Errorf("unable to find sandbox runners: %w", res.Error)
 	}
 
-	// Check heartbeat for each runner
 	now := time.Now()
 	result := make([]SandboxRunnerInfo, 0, len(runners))
 	for _, runner := range runners {

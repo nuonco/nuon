@@ -46,20 +46,16 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Stop the process queue emitters (health check cron, uptime check) as a safety net
-	// in case the HTTP handler's emitter stop failed.
 	_ = activities.AwaitStopProcessQueue(ctx, activities.StopProcessQueueRequest{
 		RunnerID:  s.RunnerID,
 		ProcessID: s.ProcessID,
 	})
 
-	// Get process and find the requested shutdown
 	process, err := activities.AwaitGetRunnerProcessByProcessID(ctx, s.ProcessID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get runner process")
 	}
 
-	// Find the most recent requested shutdown
 	var shutdownID string
 	for _, shutdown := range process.Shutdowns {
 		if shutdown.Status == app.RunnerProcessShutdownStatusRequested {
@@ -72,7 +68,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// Wait for the runner to ACK the shutdown by calling CompleteRunnerProcessShutdown,
+	// why: Wait for the runner to ACK the shutdown by calling CompleteRunnerProcessShutdown,
 	// which transitions the process to shut-down. We don't update intermediate statuses
 	// here to avoid racing with the runner's shutdown poller (which looks for "requested"
 	// shutdowns).
@@ -92,8 +88,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		selector.Select(ctx)
 
 		if timedOut {
-			// Timeout: mark shutdown as failed and transition process to inactive
-			// so it doesn't stay stuck at pending-shutdown forever.
 			_, _ = activities.AwaitUpdateRunnerProcessShutdownStatus(ctx, activities.UpdateRunnerProcessShutdownStatusRequest{
 				ShutdownID:        shutdownID,
 				Status:            app.RunnerProcessShutdownStatusFailed,
@@ -106,7 +100,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				StatusDescription: "shutdown timed out",
 			})
 
-			// Enqueue on_inactive to clean up the queue
 			_, _ = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 				OwnerID:   s.RunnerID,
 				OwnerType: "runners",
@@ -121,14 +114,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			return errors.New("shutdown timed out")
 		}
 
-		// Check process status
 		updated, err := activities.AwaitGetRunnerProcessByProcessID(ctx, s.ProcessID)
 		if err != nil {
 			return errors.Wrap(err, "unable to poll runner process status")
 		}
 
 		if updated.ProcessStatus() == app.RunnerProcessStatusShutDown {
-			// Process confirmed shut down
 			_, err = activities.AwaitUpdateRunnerProcessShutdownStatus(ctx, activities.UpdateRunnerProcessShutdownStatusRequest{
 				ShutdownID:        shutdownID,
 				Status:            app.RunnerProcessShutdownStatusCompleted,
@@ -138,7 +129,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				return errors.Wrap(err, "unable to update shutdown status to completed")
 			}
 
-			// Enqueue on_inactive signal for shutdown completion
 			_, _ = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 				OwnerID:   s.RunnerID,
 				OwnerType: "runners",
@@ -153,7 +143,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			return nil
 		}
 
-		// Reset poll timer
 		pollInterval = workflow.NewTimer(ctx, 10*time.Second)
 	}
 }

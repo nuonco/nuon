@@ -29,7 +29,7 @@ type baseMiddleware struct {
 	context       string
 	cfg           *internal.Config
 	endpointAudit *api.EndpointAudit
-	cache         *sync.Map // stores last write time for each endpoint key
+	cache         *sync.Map
 }
 
 func (m baseMiddleware) Name() string {
@@ -70,7 +70,6 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		// Skip unmatched routes
 		if ctx.FullPath() == "" {
 			ctx.Next()
 			return

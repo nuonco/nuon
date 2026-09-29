@@ -22,7 +22,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
-// GetCurrentOrgFeaturesTestSuite is the testify suite for get current org features endpoint.
 type GetCurrentOrgFeaturesTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -49,7 +48,6 @@ func (s *GetCurrentOrgFeaturesTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// service under test
 		fx.Provide(New),
 		fx.Populate(&s.service, &s.orgsService),
 	)
@@ -57,16 +55,12 @@ func (s *GetCurrentOrgFeaturesTestSuite) SetupSuite() {
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
-	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
 }
 
 func (s *GetCurrentOrgFeaturesTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
-
-	// Router setup is deferred to individual test cases
-	// since we need different org contexts for different scenarios
 }
 
 func (s *GetCurrentOrgFeaturesTestSuite) TearDownSuite() {
@@ -88,15 +82,11 @@ func (s *GetCurrentOrgFeaturesTestSuite) makeRequest(method, path string) *httpt
 	return rr
 }
 
-// Removed TestGetCurrentOrgFeatures - all test cases were failing
-
 func (s *GetCurrentOrgFeaturesTestSuite) TestGetCurrentOrgFeaturesWithoutOrgContext() {
-	// Create router without org context
 	router := tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
 		TestAcc: s.testAcc,
-		// TestOrg intentionally omitted
 	})
 
 	err := s.orgsService.RegisterPublicRoutes(router)
@@ -108,7 +98,6 @@ func (s *GetCurrentOrgFeaturesTestSuite) TestGetCurrentOrgFeaturesWithoutOrgCont
 	rr := httptest.NewRecorder()
 	router.ServeHTTP(rr, req)
 
-	// Should fail without org context
 	require.Equal(s.T(), http.StatusInternalServerError, rr.Code)
 	s.T().Logf("Status without org context: %d, Body: %s", rr.Code, rr.Body.String())
 }
@@ -135,7 +124,6 @@ func (s *GetCurrentOrgFeaturesTestSuite) TestGetCurrentOrgFeaturesResponseFormat
 			s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 		})
 
-		// Create router with org context
 		s.router = tests.NewTestRouter(tests.RouterOptions{
 			L:       s.service.L,
 			DB:      s.service.DB,
@@ -148,15 +136,12 @@ func (s *GetCurrentOrgFeaturesTestSuite) TestGetCurrentOrgFeaturesResponseFormat
 		rr := s.makeRequest(http.MethodGet, "/v1/orgs/current/features")
 		require.Equal(s.T(), http.StatusOK, rr.Code)
 
-		// Verify Content-Type header
 		assert.Contains(s.T(), rr.Header().Get("Content-Type"), "application/json")
 
-		// Verify response is valid JSON object (not array)
 		var response map[string]bool
 		err = json.Unmarshal(rr.Body.Bytes(), &response)
 		require.NoError(s.T(), err, "Response should be valid JSON object")
 
-		// Verify features are present
 		assert.Equal(s.T(), true, response["test_feature"])
 	})
 }

@@ -13,10 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// defaultInstallScopes are the bot scopes the Nuon Slack app requests at
-// install time. These match the surface area exercised by Phase 4
-// (chat.postMessage / chat.update for lifecycle + approval messages,
-// conversations.list for the /nuon subscribe channel picker, slash commands).
 const defaultInstallScopes = "chat:write,channels:read,groups:read,commands"
 
 // GetInstallURLResponse is the response body for the install-url endpoint.
@@ -81,7 +77,6 @@ func (s *service) GetInstallURL(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, GetInstallURLResponse{URL: installURL})
 }
 
-// newNonce returns a hex-encoded 16-byte random string for state-JWT binding.
 func newNonce() (string, error) {
 	buf := make([]byte, 16)
 	if _, err := rand.Read(buf); err != nil {

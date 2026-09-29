@@ -136,8 +136,6 @@ export type TPlaygroundOperations = {
   runner: TRunnerInfo
 }
 
-// ─── Configuration ────────────────────────────────────────────────────────────
-
 export type TInputEntry = {
   name: string
   displayName: string
@@ -191,8 +189,6 @@ export type TPlaygroundConfiguration = {
   appBranchVersions: TConfigurationVersion[]
   overrides: TOverrideEntry[]
 }
-
-// ─── Deployment changes ───────────────────────────────────────────────────────
 
 export type TDeploymentRecordType =
   | 'provision'
@@ -265,8 +261,6 @@ export type TDeploymentRecord = {
   changeGroups: TDeploymentChangeGroup[]
 }
 
-// ─── Activity event types ─────────────────────────────────────────────────────
-
 export type TAppBranchSourceType = 'push' | 'pr' | 'tag' | 'commit' | 'manual'
 
 export type TAppBranchSource = {
@@ -293,13 +287,9 @@ export type TActivityEvent = {
   createdAt: string
   title: string
   details?: string
-  /** Present on app_branch_run and deploy events */
   source?: TAppBranchSource
-  /** Name of the affected component, for deploy and drift_scan events */
   componentName?: string
 }
-
-// ─── Branch tracking ──────────────────────────────────────────────────────────
 
 export type TBranchCommitRef = {
   sha: string
@@ -322,8 +312,6 @@ export type TBranchTracking = {
   appliedCommit?: TBranchCommitRef
   status: TBranchTrackingStatus
 }
-
-// ─── Install ──────────────────────────────────────────────────────────────────
 
 export type TPlaygroundInstall = {
   id: string

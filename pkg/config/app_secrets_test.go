@@ -9,8 +9,6 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 )
 
-// decodeAppSecret decodes a raw map (as produced by the TOML decoder) into an AppSecret using the same decoder config
-// the real parse path uses.
 func decodeAppSecret(t *testing.T, raw map[string]interface{}) *AppSecret {
 	t.Helper()
 
@@ -49,7 +47,6 @@ func TestAppSecret_KubernetesSyncEnabled(t *testing.T) {
 	require.True(t, (&AppSecret{
 		KubernetesSyncTargets: []*KubernetesSyncTarget{{Namespaces: []string{"ns"}, Name: "n", Key: "k"}},
 	}).KubernetesSyncEnabled())
-	// targets present + explicit false -> still enabled (targets win)
 	require.True(t, (&AppSecret{
 		KubernetesSync:        generics.ToPtr(false),
 		KubernetesSyncTargets: []*KubernetesSyncTarget{{Namespaces: []string{"ns"}, Name: "n", Key: "k"}},
@@ -87,7 +84,7 @@ func TestAppSecret_Validate_Targets(t *testing.T) {
 
 	t.Run("legacy requirement skipped when targets present", func(t *testing.T) {
 		s := base()
-		s.KubernetesSync = generics.ToPtr(true) // explicitly on, but using targets
+		s.KubernetesSync = generics.ToPtr(true)
 		s.KubernetesSyncTargets = []*KubernetesSyncTarget{{Namespaces: []string{"ns"}, Name: "n", Key: "k"}}
 		require.NoError(t, s.Validate())
 	})

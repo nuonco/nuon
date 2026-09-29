@@ -16,14 +16,12 @@ const (
 	OpenIDProviderName = "openid"
 )
 
-// OpenIDProvider implements the Provider interface for generic OpenID Connect providers.
 type OpenIDProvider struct {
 	BaseProvider
 	issuerURL       string
 	discoveryConfig *OpenIDDiscoveryConfig
 }
 
-// OpenIDDiscoveryConfig holds the discovered OIDC configuration from the well-known endpoint.
 type OpenIDDiscoveryConfig struct {
 	Issuer                            string   `json:"issuer"`
 	AuthorizationEndpoint             string   `json:"authorization_endpoint"`
@@ -35,7 +33,6 @@ type OpenIDDiscoveryConfig struct {
 	TokenEndpointAuthMethodsSupported []string `json:"token_endpoint_auth_methods_supported"`
 }
 
-// NewOpenIDProvider creates a new OpenID Connect provider instance.
 func NewOpenIDProvider() *OpenIDProvider {
 	return &OpenIDProvider{
 		BaseProvider: BaseProvider{
@@ -44,8 +41,6 @@ func NewOpenIDProvider() *OpenIDProvider {
 	}
 }
 
-// Configure initializes the OpenID provider with the given configuration.
-// If IssuerURL is provided, it will attempt OIDC discovery to auto-configure endpoints.
 func (p *OpenIDProvider) Configure(cfg *ProviderConfig) error {
 	if cfg.Logger != nil {
 		p.log = cfg.Logger
@@ -55,14 +50,12 @@ func (p *OpenIDProvider) Configure(cfg *ProviderConfig) error {
 
 	p.issuerURL = cfg.IssuerURL
 
-	// If we have an issuer URL, try OIDC discovery
 	if p.issuerURL != "" {
 		if err := p.discover(context.Background()); err != nil {
 			p.log.Warn("OIDC discovery failed, falling back to manual configuration",
 				zap.Error(err),
 				zap.String("issuer", p.issuerURL))
 		} else {
-			// Use discovered endpoints if not explicitly configured
 			if cfg.AuthURL == "" && p.discoveryConfig != nil {
 				cfg.AuthURL = p.discoveryConfig.AuthorizationEndpoint
 			}
@@ -72,14 +65,12 @@ func (p *OpenIDProvider) Configure(cfg *ProviderConfig) error {
 			if cfg.UserInfoURL == "" && p.discoveryConfig != nil {
 				cfg.UserInfoURL = p.discoveryConfig.UserinfoEndpoint
 			}
-			// Set AuthStyle from discovered token endpoint auth methods
 			if cfg.AuthStyle == 0 && p.discoveryConfig != nil {
 				cfg.AuthStyle = resolveAuthStyle(p.discoveryConfig.TokenEndpointAuthMethodsSupported)
 			}
 		}
 	}
 
-	// Validate required configuration
 	if cfg.ClientID == "" {
 		return fmt.Errorf("openid: client_id is required")
 	}
@@ -93,7 +84,6 @@ func (p *OpenIDProvider) Configure(cfg *ProviderConfig) error {
 		return fmt.Errorf("openid: token_url is required (or provide issuer_url for discovery)")
 	}
 
-	// Set default scopes if not provided
 	if len(cfg.Scopes) == 0 {
 		cfg.Scopes = []string{"openid", "email", "profile"}
 	}
@@ -111,7 +101,6 @@ func (p *OpenIDProvider) Configure(cfg *ProviderConfig) error {
 	return nil
 }
 
-// discover fetches the OpenID Connect discovery document from the well-known endpoint.
 func (p *OpenIDProvider) discover(ctx context.Context) error {
 	wellKnownURL := strings.TrimSuffix(p.issuerURL, "/") + "/.well-known/openid-configuration"
 
@@ -146,14 +135,12 @@ func (p *OpenIDProvider) discover(ctx context.Context) error {
 	return nil
 }
 
-// GetUserInfo exchanges the authorization code for tokens and retrieves user information.
 func (p *OpenIDProvider) GetUserInfo(ctx context.Context, r *http.Request, opts ...oauth2.AuthCodeOption) (*UserInfo, *ProviderTokens, error) {
 	code := r.URL.Query().Get("code")
 	if code == "" {
 		return nil, nil, fmt.Errorf("openid: authorization code not found in request")
 	}
 
-	// Exchange the code for tokens
 	client, _, ptokens, err := p.ExchangeCode(ctx, code, opts...)
 	if err != nil {
 		return nil, nil, fmt.Errorf("openid: %w", err)
@@ -163,7 +150,6 @@ func (p *OpenIDProvider) GetUserInfo(ctx context.Context, r *http.Request, opts 
 		zap.Int("access_token_len", len(ptokens.AccessToken)),
 		zap.Int("id_token_len", len(ptokens.IDToken)))
 
-	// Fetch user info from the userinfo endpoint
 	data, err := p.FetchUserInfo(ctx, client)
 	if err != nil {
 		return nil, ptokens, fmt.Errorf("openid: %w", err)
@@ -171,7 +157,6 @@ func (p *OpenIDProvider) GetUserInfo(ctx context.Context, r *http.Request, opts 
 
 	p.log.Debug("userinfo response", zap.String("body", string(data)))
 
-	// Parse the userinfo response
 	user, err := p.ParseUserInfo(data)
 	if err != nil {
 		return nil, ptokens, fmt.Errorf("openid: %w", err)
@@ -180,22 +165,18 @@ func (p *OpenIDProvider) GetUserInfo(ctx context.Context, r *http.Request, opts 
 	return user, ptokens, nil
 }
 
-// GetDiscoveryConfig returns the discovered OIDC configuration, if available.
 func (p *OpenIDProvider) GetDiscoveryConfig() *OpenIDDiscoveryConfig {
 	return p.discoveryConfig
 }
 
-// AuthCodeURL returns the URL to redirect the user to for authentication.
 func (p *OpenIDProvider) AuthCodeURL(state string, opts ...oauth2.AuthCodeOption) string {
 	return p.oauth2Cfg.AuthCodeURL(state, opts...)
 }
 
-// resolveAuthStyle maps OIDC token_endpoint_auth_methods_supported to an oauth2.AuthStyle.
 func resolveAuthStyle(methods []string) oauth2.AuthStyle {
 	if len(methods) == 0 {
 		return oauth2.AuthStyleAutoDetect
 	}
-	// Prefer client_secret_post (most common for Auth0 and similar providers)
 	if slices.Contains(methods, "client_secret_post") {
 		return oauth2.AuthStyleInParams
 	}
@@ -205,7 +186,6 @@ func resolveAuthStyle(methods []string) oauth2.AuthStyle {
 	return oauth2.AuthStyleAutoDetect
 }
 
-// authStyleName returns a human-readable name for the auth style (for logging).
 func authStyleName(s oauth2.AuthStyle) string {
 	switch s {
 	case oauth2.AuthStyleInParams:

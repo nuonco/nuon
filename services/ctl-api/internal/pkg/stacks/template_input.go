@@ -19,64 +19,30 @@ type TemplateInput struct {
 	Settings *app.RunnerGroupSettings `validate:"required"`
 	APIToken string                   `validate:"required"`
 
-	// ConfiguredRunnerInstanceType is the instance type the app's runner config declares,
-	// empty when it declares none. Settings.AWSInstanceType cannot express "unset" — the
-	// stack generators resolve the platform default into it before rendering, because the
-	// GCP tfvars and the persisted runner group settings both need a concrete value — and
-	// the CloudFormation renderer needs the distinction to know whether it may fall back to
-	// the nested runner template's own default.
 	ConfiguredRunnerInstanceType string
 
-	// runner env vars from runner.toml [env_vars] section, formatted as
-	// newline-delimited "export key=value" pairs for injection into user-data.
 	RunnerEnvVars string
 
-	// subscripts and embedded templates
 	RunnerInitScriptURL string `validate:"required"`
 
-	// AWS-only: the inline source for the phone-home Lambda (Code.ZipFile). Unvalidated
-	// because the Azure and GCP paths share this struct — ARM builds its own phone-home
-	// script from PhoneHomeURL, and GCP has no equivalent resource. The AWS renderer
-	// enforces it instead.
 	PhonehomeScript string
 
-	// Custom template URLs for VPC/VNet and runner nested/linked deployments (AWS CloudFormation, Azure ARM)
 	VPCNestedStackTemplateURL    string
 	RunnerNestedStackTemplateURL string
 
-	// DeploymentScope is the ARM scope the Azure root template renders at, copied
-	// from the app's stack config by the caller so the renderer reads one struct.
-	// Empty means resource group, which is every install predating the field —
-	// compare against app.StackDeploymentScopeSubscription rather than testing for
-	// the resource-group value. Unvalidated because the AWS and GCP renderers share
-	// this struct and never set it.
 	DeploymentScope app.StackDeploymentScope
 
-	// Where the phone-home token map lives, for the Lambda to fetch at invocation
-	// time. Never the token itself: the rendered template is fetched
-	// unauthenticated from S3 via the quick-link, so it may only carry the secret's
-	// location. Empty whenever phone-home auth is not active for the install, which
-	// is why these are unvalidated — the GCP path shares this struct and never sets
-	// them.
 	PhoneHomeSecretARN    string
 	PhoneHomeSecretRegion string
 
-	// Azure-only: the managed identity the phone-home script authenticates as. A name,
-	// not a credential, so unlike the fields above it is safe in a template anyone can
-	// fetch. Empty whenever Azure phone-home auth is not active for the install, which
-	// is what leaves the script unauthenticated for stacks that predate it.
 	PhoneHomeIdentityName string
 
-	// Switches the AWS renderer to custom-stacks-only mode.
 	CustomStacksOnly bool
 
-	// Each custom stack's Parameters as authored, keyed by stack name, before
-	// RenderCustomNestedStackParameters rewrites install-input references into
-	// literals.
 	UnrenderedCustomStackParameters map[string]map[string]string
 }
 
-// PhoneHomeRoleName is the deterministic IAM role name for an install's phone-home
+// why: PhoneHomeRoleName is the deterministic IAM role name for an install's phone-home
 // Lambda, matching the `<install_id>-<purpose>` convention the install stack's other
 // roles already use (`<install_id>-provision`, `-maintenance`, `-deprovision`).
 //
@@ -89,21 +55,16 @@ func PhoneHomeRoleName(installID string) string {
 	return fmt.Sprintf("%s-phone-home", installID)
 }
 
-// FormatRunnerEnvVars converts an AppRunnerConfig's EnvVars hstore into a
-// newline-delimited string of "export key=value" statements. Default values
-// are injected only when not already defined in cfg.EnvVars.
 func FormatRunnerEnvVars(cfg *app.AppRunnerConfig, runnerBinaryVersion string) string {
 	if cfg == nil {
 		cfg = &app.AppRunnerConfig{}
 	}
 
-	// Shallow-copy so we don't mutate the caller's map.
 	merged := make(map[string]*string, len(cfg.EnvVars)+1)
 	for k, v := range cfg.EnvVars {
 		merged[k] = v
 	}
 
-	// Inject defaults only when not already present.
 	if _, ok := merged["RUNNER_BINARY_VERSION"]; !ok {
 		merged["RUNNER_BINARY_VERSION"] = &runnerBinaryVersion
 	}

@@ -31,10 +31,6 @@ func (s *Signal) Validate(_ workflow.Context) error {
 	return validator.New().Struct(s)
 }
 
-// Execute routes the event, then fans each dispatch out to its own durable
-// trigger-event-dispatch signal on the target app's trigger queue so that a
-// failing dispatch or waiter never blocks its siblings. Waiter notifications
-// run in parallel with bounded retries for the same reason.
 func (s *Signal) Execute(ctx workflow.Context) error {
 	routed, err := activities.AwaitRouteTriggerEvent(ctx, activities.RouteTriggerEventRequest{EventID: s.EventID, ReplayID: s.ReplayID, RoutingGenerationToken: s.RoutingGenerationToken})
 	if err != nil {

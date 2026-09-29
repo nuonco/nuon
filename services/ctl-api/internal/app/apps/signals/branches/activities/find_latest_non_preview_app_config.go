@@ -31,8 +31,6 @@ func (a *Activities) FindLatestNonPreviewAppConfig(ctx context.Context, input *F
 		return &FindLatestNonPreviewAppConfigOutput{AppConfigID: cfg.ID}, nil
 	}
 
-	// Fallback: use the latest config with an intermediate config (may be a previous preview).
-	// This lets subsequent PR pushes diff against each other.
 	err = a.db.WithContext(ctx).
 		Where(app.AppConfig{
 			AppID:  input.AppID,

@@ -54,7 +54,7 @@ type Registrar struct {
 	tracerProvider *sdktrace.TracerProvider
 }
 
-// New creates a process and registers it with the API during initialization
+// why: New creates a process and registers it with the API during initialization
 // (not in a lifecycle hook) so that the process ID, log stream ID, and OTEL
 // provider are available to other FX dependencies during their New() calls.
 func New(params Params) (Result, error) {
@@ -93,9 +93,6 @@ func New(params Params) (Result, error) {
 		}
 	}
 
-	// Process-scope TracerProvider for the tool-call-graph spike. We register
-	// it as the global so op.Start can pick it up via otel.Tracer(...) without
-	// having to thread a TracerProvider through every job handler.
 	if tp, err := strace.NewProcessProvider(r.cfg, r.settings); err == nil {
 		r.tracerProvider = tp
 		otel.SetTracerProvider(tp)
@@ -126,12 +123,11 @@ func (r *Registrar) LogStreamID() string {
 	return r.logStreamID
 }
 
-// LogProvider returns the OTEL log provider for the process log stream.
 func (r *Registrar) LogProvider() *otellog.LoggerProvider {
 	return r.logProvider
 }
 
-// TracerProvider returns the process-scoped OTEL TracerProvider, falling back
+// why: TracerProvider returns the process-scoped OTEL TracerProvider, falling back
 // to the global if none was created. Callers should prefer this over
 // otel.GetTracerProvider() because transitive deps (e.g. the docker
 // distribution registry) call otel.SetTracerProvider during their init and

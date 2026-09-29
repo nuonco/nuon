@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/action/app"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/action/selector"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
-	// workflowui "github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow"
 )
 
 var errInstallActionsPreviewDisabled = errors.New("[NUON_PREVIEW=false] installs actions is a preview feature, set NUON_PREVIEW=true to enable")
@@ -26,7 +25,6 @@ func (s *Service) Actions(ctx context.Context, installID string, offset, limit i
 		return ui.PrintError(err)
 	}
 
-	// Show workflow selector
 	selectedActionWorkflowID, err := selector.App(ctx, s.cfg, s.api, installID, limit, offset)
 	if err != nil {
 		return ui.PrintError(err)
@@ -36,8 +34,6 @@ func (s *Service) Actions(ctx context.Context, installID string, offset, limit i
 	// TODO: execute the action
 	// workflowID := ...
 
-	// open the workflow for the action
-	// workflowui.WorkflowApp(ctx, s.cfg, s.api, installID, workflowID)
 	return nil
 }
 

@@ -32,7 +32,6 @@ func (p *Planner) createStepPlan(ctx workflow.Context,
 		InterpolatedEnvVars: make(map[string]string, 0),
 	}
 
-	// step 1 - fetch token for repo
 	l.Debug("creating git source for config")
 	gitSource, err := activities.AwaitGetActionWorkflowStepGitSourceByStepID(ctx, step.Step.ID)
 	if err != nil {

@@ -16,21 +16,6 @@ export interface EntityOption {
   name: string
 }
 
-// EntityMultiSelect renders a search-as-you-type multi-select bound to one
-// of the three TargetKind taxonomies. Mirrors the slack subscribe modal's
-// multi_external_select for parity — installs/components/actions all share
-// the same `q` ILIKE-on-name search semantics.
-//
-// Installs are listed org-wide (they aren't app-owned the same way the
-// other kinds are). Components and actions are listed *per app*, so an
-// `appId` is required when `kind` is `components` or `actions` — the
-// MatchPicker gates rendering on the user picking an app first to avoid
-// org-wide enumeration.
-//
-// The component also batch-loads names for any preselected ids that
-// aren't in the current search results so the chip area always shows
-// friendly "Name (id)" labels (mirrors lookupEntityNames in the slack
-// modal).
 export const EntityMultiSelect = ({
   kind,
   appId,
@@ -46,8 +31,6 @@ export const EntityMultiSelect = ({
 }) => {
   const { org } = useOrg()
   const [search, setSearch] = useState('')
-  // names cache for ids that aren't in the current search results — keeps
-  // the chip labels stable across re-renders.
   const [resolvedNames, setResolvedNames] = useState<Record<string, string>>(
     {}
   )
@@ -62,11 +45,6 @@ export const EntityMultiSelect = ({
     enabled: fetchEnabled,
   })
 
-  // Lookup pass for preselected ids that aren't in the search results.
-  // Same per-app scoping rule as the search query — names for ids that
-  // belong to a different app than the currently picked one stay
-  // unresolved and chips fall back to bare ids (which round-trips fine
-  // through the wire format).
   const missingIds = useMemo(
     () => selectedIds.filter((id) => !resolvedNames[id]),
     [selectedIds, resolvedNames]
@@ -223,8 +201,6 @@ export const EntityMultiSelect = ({
   )
 }
 
-// entityPickerLabel mirrors the Slack modal helper of the same name —
-// "Name (id)" when both are known, bare id otherwise.
 const entityPickerLabel = (id: string, name: string): string => {
   if (!name) return id
   return `${name} (${id})`

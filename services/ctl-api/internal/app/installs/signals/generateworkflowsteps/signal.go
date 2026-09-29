@@ -16,17 +16,13 @@ import (
 
 const SignalType qsignal.SignalType = "generate-workflow-steps"
 
-// cancelFinishedAtVersion gates the finished-at write on cancellation so
+// why: cancelFinishedAtVersion gates the finished-at write on cancellation so
 // in-flight histories, which never scheduled it, replay deterministically.
 // todo(sk): clean this after teminating old workflows
 const cancelFinishedAtVersion = "generate-steps-cancel-finished-at-v1"
 
-// generatorRegistry is populated at init time by packages that register
-// step generators for specific owner types. This avoids import cycles.
 var generatorRegistry = map[string]func() map[app.WorkflowType]flow.WorkflowStepGenerator{}
 
-// RegisterGenerators registers a step generator factory for an owner type.
-// Called from init() functions to avoid import cycles.
 func RegisterGenerators(ownerType string, factory func() map[app.WorkflowType]flow.WorkflowStepGenerator) {
 	generatorRegistry[ownerType] = factory
 }
@@ -40,18 +36,13 @@ type Signal struct {
 	OwnerID   string `json:"owner_id,omitempty"`
 	OwnerName string `json:"owner_name,omitempty"`
 
-	// result is populated by Execute and read by the FetchSteps handler.
 	result *app.GenerateStepsResult
 	done   bool
 	err    error
 
-	// eagerStepGroups holds step groups that can be executed immediately while
-	// remaining groups are still generating. Set before done to allow early consumption.
 	eagerStepGroups      *app.GenerateStepsResult
 	eagerStepGroupsReady bool
 
-	// fetched tracks whether each update handler has been called, so Execute
-	// can block until all consumers have retrieved results before completing.
 	fetchStepsCalled      bool
 	eagerStepGroupsCalled bool
 }
@@ -94,12 +85,6 @@ func (s *Signal) Type() qsignal.SignalType {
 	return SignalType
 }
 
-// SleepAfter returns 1s instead of the 1-minute default: both consumers
-// (eager-step-groups and FetchSteps) are served before Execute returns, so
-// the post-completion cache window serves nothing (this signal is enqueued
-// at most once per workflow) and a 60s idle would only linger a dead handler.
-// The short window keeps the flow test lane fast: no dead handler workflow
-// parks for a minute per generated flow, and drain assertions don't wait it out.
 func (s *Signal) SleepAfter() time.Duration { return time.Second }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
@@ -110,7 +95,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Look up the workflow and generate steps.
 	flw, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, s.WorkflowID)
 	if err != nil {
 		s.err = errors.Wrap(err, "unable to get workflow")
@@ -136,17 +120,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		if ctx.Err() == nil {
 			return
 		}
-		// new disconnected context because current context has already been cancelled due to workflow cancellation
+		// why: new disconnected context because current context has already been cancelled due to workflow cancellation
 		dCtx, dCancel := workflow.NewDisconnectedContext(ctx)
 		defer dCancel()
-		// In-flight histories never scheduled this activity on cancel.
+		// why: In-flight histories never scheduled this activity on cancel.
 		if workflow.GetVersion(dCtx, cancelFinishedAtVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
 			return
 		}
 		_ = workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(dCtx, flw.ID)
 	}()
 
-	// Resolve owner type — prefer the signal field, fall back to the workflow.
 	ownerType := s.OwnerType
 	if ownerType == "" {
 		ownerType = flw.OwnerType
@@ -174,9 +157,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return s.err
 	}
 
-	// Extract eager step groups for early consumption before marking done.
-	// Eager groups are those marked with EagerExecution, or just the first
-	// group if none are explicitly marked.
 	if len(result.Groups) > 0 {
 		var eagerGroups []*app.WorkflowStepGroup
 		for _, g := range result.Groups {
@@ -184,7 +164,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				eagerGroups = append(eagerGroups, g)
 			}
 		}
-		// Default: if no groups are explicitly eager, use the first group.
 		if len(eagerGroups) == 0 {
 			eagerGroups = []*app.WorkflowStepGroup{result.Groups[0]}
 		}
@@ -210,8 +189,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	s.result = result
 	s.done = true
 
-	// Wait for both update handlers to be called so the conductor can
-	// retrieve the generated steps before this signal completes.
 	return workflow.Await(ctx, func() bool {
 		return s.fetchStepsCalled && s.eagerStepGroupsCalled
 	})
@@ -222,7 +199,6 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 		ctx, "eager-step-groups",
 		func(ctx workflow.Context) (*app.GenerateStepsResult, error) {
 			defer func() { s.eagerStepGroupsCalled = true }()
-			// Block until eager step groups are ready.
 			if err := workflow.Await(ctx, func() bool { return s.eagerStepGroupsReady }); err != nil {
 				return nil, err
 			}
@@ -240,7 +216,6 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 		ctx, "FetchSteps",
 		func(ctx workflow.Context) (*app.GenerateStepsResult, error) {
 			defer func() { s.fetchStepsCalled = true }()
-			// Block until Execute has finished generating steps.
 			if err := workflow.Await(ctx, func() bool { return s.done }); err != nil {
 				return nil, err
 			}

@@ -12,14 +12,12 @@ import (
 	"oras.land/oras-go/v2/content/file"
 )
 
-// testFile is a test file that is used for writing into an archive
 type testFile struct {
 	Name      string
 	Bytes     []byte
 	MediaType string
 }
 
-// testStore creates a store with different images in the store, based on their tag
 func testStore(t *testing.T, artifacts map[string][]testFile) *file.Store {
 	ctx := context.Background()
 	tmpDir := t.TempDir()
@@ -28,7 +26,6 @@ func testStore(t *testing.T, artifacts map[string][]testFile) *file.Store {
 	fs.AllowPathTraversalOnWrite = true
 
 	for tag, files := range artifacts {
-		// fetch file descriptors
 		descriptors := make([]v1.Descriptor, 0, len(files))
 		for _, file := range files {
 			fp := filepath.Join(tmpDir, file.Name)
@@ -43,7 +40,6 @@ func testStore(t *testing.T, artifacts map[string][]testFile) *file.Store {
 			descriptors = append(descriptors, desc)
 		}
 
-		// pack files
 		manifest, err := oras.Pack(ctx, fs, defaultArtifactType, descriptors, oras.PackOptions{
 			PackImageManifest: true,
 		})

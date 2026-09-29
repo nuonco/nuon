@@ -17,9 +17,6 @@ type EnqueueOrgSignalParams struct {
 	IdempotencyKey string
 }
 
-// EnqueueOrgSignal ensures the org-signals queue exists and enqueues sig onto
-// it. Callers that only have an org ID should use this rather than looking the
-// queue up themselves, so the ensure always happens before the enqueue.
 func (h *Helpers) EnqueueOrgSignal(ctx context.Context, params EnqueueOrgSignalParams) error {
 	queue, err := h.ensureOrgQueue(ctx, params.OrgID)
 	if err != nil {

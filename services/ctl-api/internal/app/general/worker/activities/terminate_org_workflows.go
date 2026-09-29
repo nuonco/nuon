@@ -99,7 +99,6 @@ func (a *Activities) TerminateOrgWorkflows(ctx context.Context, req TerminateOrg
 	return resp, nil
 }
 
-// memoStringValue extracts a string value from a Temporal workflow Memo by key.
 func memoStringValue(memo *commonpb.Memo, key string) string {
 	if memo == nil {
 		return ""

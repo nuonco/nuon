@@ -15,7 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 
-	// Blank imports to register queue signal types in the catalog.
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/github_event"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/healthcheck"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/webhook_subscription"
@@ -63,13 +62,11 @@ func New(params WorkerParams) (*Worker, error) {
 		DeadlockDetectionTimeout:               params.Cfg.TemporalDeadlockDetectionTimeout,
 	})
 
-	// register activities
 	wkr.RegisterActivity(params.Acts)
 	for _, acts := range params.SharedActivities.AllActivities() {
 		wkr.RegisterActivity(acts)
 	}
 
-	// register shared workflows (queue, handler, emitter)
 	for _, wkflow := range params.SharedWorkflows.AllWorkflows() {
 		wkr.RegisterWorkflow(wkflow)
 	}

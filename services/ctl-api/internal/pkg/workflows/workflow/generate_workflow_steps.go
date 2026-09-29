@@ -23,7 +23,7 @@ type GenerateWorkflowStepsRequest struct {
 func (w *Workflows) GenerateWorkflowSteps(ctx workflow.Context, req *GenerateWorkflowStepsRequest) ([]*app.WorkflowStep, error) {
 	fid := req.WorkflowID
 
-	// Check if steps already exist - return them for idempotency.
+	// why: Check if steps already exist - return them for idempotency.
 	// This is critical for continue-as-new semantics where this child workflow
 	// may be called multiple times across workflow runs.
 	existingSteps, err := activities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, fid)
@@ -43,8 +43,6 @@ func (w *Workflows) GenerateWorkflowSteps(ctx workflow.Context, req *GenerateWor
 
 	steps := req.Steps
 
-	// Pre-generate step IDs and inject step context (stepID, flowID) into signals
-	// before persisting, so signals have access to their own step ID and the parent flow ID.
 	for _, step := range steps {
 		step.ID = domains.NewWorkflowStepID()
 		if step.QueueSignal != nil && step.QueueSignal.Signal != nil {

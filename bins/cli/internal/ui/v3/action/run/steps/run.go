@@ -1,7 +1,3 @@
-/*
-This run.go file contains a stub used to render the step component in a standalone way.
-The intention is for it to be used by the forthcoming storybook.
-*/
 package steps
 
 import (
@@ -17,7 +13,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-// model wraps the Model for bubbletea
 type model struct {
 	m Model
 }
@@ -38,7 +33,6 @@ func (m model) View() tea.View {
 	return v
 }
 
-// NOTE(fd): for the storybook or any other scenario where you want to run as a standalone bubbletea program
 func Run(
 	ctx context.Context,
 	api nuon.Client,
@@ -52,11 +46,9 @@ func Run(
 		os.Exit(1)
 	}
 
-	// Initialize the model
 	app := New(ctx, api, width, height, run)
 	m := model{m: app}
 
-	// Initialize the program
 	p := teaprogram.NewProgram(m)
 
 	if _, err := p.Run(); err != nil {

@@ -27,8 +27,6 @@ func declared(names ...string) map[string]struct{} {
 }
 
 func TestVNetPassthroughOutputs_ExcludesTheContract(t *testing.T) {
-	// A template emitting only the contract has nothing to pass through, which is
-	// what keeps the built-in default VNet's render unchanged.
 	if got := vnetPassthroughOutputs(declared(vnetContractOutputs...)); len(got) != 0 {
 		t.Errorf("contract outputs should not be passed through, got %v", got)
 	}
@@ -78,9 +76,6 @@ func TestPhoneHome_VNetPassthroughIsNamespaced(t *testing.T) {
 		}
 	}
 
-	// The namespace is the whole point: a VNet stack that creates its own resource
-	// group emits resourceGroupName, and un-namespaced that would overwrite the
-	// install resource group the rest of the platform depends on.
 	if strings.Contains(script, `"resource_group_name": "$VNET_OUT_RESOURCEGROUPNAME"`) {
 		t.Error("vnet output overwrote the install resource_group_name")
 	}
@@ -100,8 +95,6 @@ func TestPhoneHome_VNetPassthroughIsNamespaced(t *testing.T) {
 	}
 }
 
-// The wrapper crosses an inner-evaluation boundary, so a reference() the root can
-// resolve has to be passed in rather than re-evaluated inside.
 func TestPhoneHome_VNetPassthroughSurvivesSubscriptionWrapper(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 
