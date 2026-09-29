@@ -1,9 +1,6 @@
 ---
 name: auto update label
 "on":
-  pull_request:
-    types:
-      - opened
   push:
     branches:
       - main
@@ -11,7 +8,6 @@ name: auto update label
 jobs:
   update-prs:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'pull_request' }}
     steps:
       - name: update prs
         uses: docker://chinthakagodawita/autoupdate-action:v1
@@ -20,12 +16,3 @@ jobs:
           PR_FILTER: "labelled"
           PR_LABELS: "auto-update"
           PR_READY_STATE: "ready_for_review"
-
-  add-label:
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' }}
-    steps:
-      - name: add label
-        uses: actions-ecosystem/action-add-labels@v1
-        with:
-          labels: auto-update
