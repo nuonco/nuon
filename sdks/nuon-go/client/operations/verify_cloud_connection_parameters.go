@@ -14,8 +14,6 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
-
-	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 // NewVerifyCloudConnectionParams creates a new VerifyCloudConnectionParams object,
@@ -68,12 +66,6 @@ type VerifyCloudConnectionParams struct {
 	   connection ID
 	*/
 	ConnectionID string
-
-	/* Req.
-
-	   Input
-	*/
-	Req models.ServiceVerifyRequest
 
 	timeout    time.Duration
 	Context    context.Context
@@ -139,17 +131,6 @@ func (o *VerifyCloudConnectionParams) SetConnectionID(connectionID string) {
 	o.ConnectionID = connectionID
 }
 
-// WithReq adds the req to the verify cloud connection params
-func (o *VerifyCloudConnectionParams) WithReq(req models.ServiceVerifyRequest) *VerifyCloudConnectionParams {
-	o.SetReq(req)
-	return o
-}
-
-// SetReq adds the req to the verify cloud connection params
-func (o *VerifyCloudConnectionParams) SetReq(req models.ServiceVerifyRequest) {
-	o.Req = req
-}
-
 // WriteToRequest writes these params to a swagger request
 func (o *VerifyCloudConnectionParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -161,11 +142,6 @@ func (o *VerifyCloudConnectionParams) WriteToRequest(r runtime.ClientRequest, re
 	// path param connection_id
 	if err := r.SetPathParam("connection_id", o.ConnectionID); err != nil {
 		return err
-	}
-	if o.Req != nil {
-		if err := r.SetBodyParam(o.Req); err != nil {
-			return err
-		}
 	}
 
 	if len(res) > 0 {

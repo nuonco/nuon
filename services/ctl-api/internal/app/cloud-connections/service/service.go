@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
@@ -22,7 +21,6 @@ type Params struct {
 
 	DB            *gorm.DB `name:"psql"`
 	Cfg           *internal.Config
-	L             *zap.Logger
 	EndpointAudit *apiPkg.EndpointAudit
 	Helpers       *cloudconnectionshelpers.Helpers
 }
@@ -30,7 +28,6 @@ type Params struct {
 type service struct {
 	apiPkg.RouteRegister
 	db                  *gorm.DB
-	l                   *zap.Logger
 	issuer              *oidcissuer.Issuer
 	helpers             *cloudconnectionshelpers.Helpers
 	enqueueVerification func(context.Context, *app.CloudConnection) error
@@ -47,7 +44,6 @@ func New(params Params) (*service, error) {
 	return &service{
 		RouteRegister:       apiPkg.RouteRegister{EndpointAudit: params.EndpointAudit},
 		db:                  params.DB,
-		l:                   params.L,
 		issuer:              issuer,
 		helpers:             params.Helpers,
 		enqueueVerification: params.Helpers.EnqueueVerification,

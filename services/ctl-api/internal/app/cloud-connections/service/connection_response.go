@@ -25,8 +25,6 @@ type ConnectionUsage struct {
 	Installs int64 `json:"installs"`
 }
 
-type VerifyRequest struct{}
-
 func userError(err error) error {
 	return stderr.ErrUser{Err: err, Description: err.Error()}
 }

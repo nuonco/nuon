@@ -44,13 +44,8 @@ func (a *Activities) Reverify(ctx context.Context, req ReverifyRequest) error {
 	}
 	now := time.Now().UTC()
 	update := app.CloudConnection{Status: result.Status, StatusMessage: result.Message, LastVerifiedAt: &now}
-	selected := []string{"status", "status_message", "last_verified_at"}
-	if result.Status == app.CloudConnectionStatusVerified {
-		update.AuthMode = app.CloudConnectionAuthModeOIDC
-		selected = append(selected, "auth_mode")
-	}
 	res := a.db.WithContext(ctx).Model(&app.CloudConnection{}).
-		Where(app.CloudConnection{OrgID: connection.OrgID, ID: connection.ID, Principal: connection.Principal}).Select(selected).Updates(update)
+		Where(app.CloudConnection{OrgID: connection.OrgID, ID: connection.ID, Principal: connection.Principal}).Select([]string{"status", "status_message", "last_verified_at"}).Updates(update)
 	if res.Error != nil {
 		return fmt.Errorf("save cloud connection verification: %w", res.Error)
 	}

@@ -41,13 +41,13 @@ type cloudFormationStackStatusAPI interface {
 	DescribeStacks(context.Context, *cloudformation.DescribeStacksInput, ...func(*cloudformation.Options)) (*cloudformation.DescribeStacksOutput, error)
 }
 
-func (a *Activities) managedStackSession(ctx context.Context, req *DeleteManagedAWSCloudFormationStackRequest, sessionName string) (*app.InstallStackVersion, aws.Config, error) {
+func (a *Activities) managedStackSession(ctx context.Context, installID, stackVersionID, connectionID, sessionName string) (*app.InstallStackVersion, aws.Config, error) {
 	var install app.Install
-	if result := a.db.WithContext(ctx).Preload("AWSAccount").Preload("CloudConnection").First(&install, "id = ?", req.InstallID); result.Error != nil {
+	if result := a.db.WithContext(ctx).Preload("AWSAccount").Preload("CloudConnection").First(&install, "id = ?", installID); result.Error != nil {
 		return nil, aws.Config{}, fmt.Errorf("load install: %w", result.Error)
 	}
-	if install.CloudConnectionID == nil || *install.CloudConnectionID != req.ConnectionID || install.CloudConnection == nil {
-		return nil, aws.Config{}, fmt.Errorf("install does not use cloud connection %s", req.ConnectionID)
+	if install.CloudConnectionID == nil || *install.CloudConnectionID != connectionID || install.CloudConnection == nil {
+		return nil, aws.Config{}, fmt.Errorf("install does not use cloud connection %s", connectionID)
 	}
 	if install.CloudConnection.Status != app.CloudConnectionStatusVerified || install.CloudConnection.Platform != app.CloudPlatformAWS {
 		return nil, aws.Config{}, fmt.Errorf("cloud connection %s is not a verified AWS connection", install.CloudConnection.ID)
@@ -56,7 +56,7 @@ func (a *Activities) managedStackSession(ctx context.Context, req *DeleteManaged
 		return nil, aws.Config{}, fmt.Errorf("install %s has no AWS account", install.ID)
 	}
 	var version app.InstallStackVersion
-	if result := a.db.WithContext(ctx).First(&version, "id = ? AND install_id = ?", req.StackVersionID, install.ID); result.Error != nil {
+	if result := a.db.WithContext(ctx).First(&version, "id = ? AND install_id = ?", stackVersionID, install.ID); result.Error != nil {
 		return nil, aws.Config{}, fmt.Errorf("load install stack version: %w", result.Error)
 	}
 	credentialsConfig, err := a.cloudConnectionsHelpers.Credentials(ctx, install.CloudConnection, sessionName)
@@ -119,7 +119,7 @@ func getManagedStackStatus(ctx context.Context, client cloudFormationStackStatus
 
 // @temporal-gen-v2 activity
 func (a *Activities) DeleteManagedAWSCloudFormationStack(ctx context.Context, req *DeleteManagedAWSCloudFormationStackRequest) error {
-	version, awsConfig, err := a.managedStackSession(ctx, req, "nuon-install-stack-delete")
+	version, awsConfig, err := a.managedStackSession(ctx, req.InstallID, req.StackVersionID, req.ConnectionID, "nuon-install-stack-delete")
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func (a *Activities) DeleteManagedAWSCloudFormationStack(ctx context.Context, re
 
 // @temporal-gen-v2 activity
 func (a *Activities) GetManagedAWSCloudFormationStackStatus(ctx context.Context, req *DeleteManagedAWSCloudFormationStackRequest) (*GetManagedAWSCloudFormationStackStatusResponse, error) {
-	version, awsConfig, err := a.managedStackSession(ctx, req, "nuon-install-stack-status")
+	version, awsConfig, err := a.managedStackSession(ctx, req.InstallID, req.StackVersionID, req.ConnectionID, "nuon-install-stack-status")
 	if err != nil {
 		return nil, err
 	}

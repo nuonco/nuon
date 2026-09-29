@@ -1,11 +1,9 @@
 import { useEffect, useRef } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { Text } from '@/components/common/Text'
 import { InstallsTable } from '@/components/installs/InstallsTable'
 import { Toast } from '@/components/surfaces/Toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
-import { getCloudConnectionSetup } from '@/lib'
 import type { TAPIError, TCloudConnection } from '@/types'
 import { DeleteConnection } from '../DeleteConnection'
 import { useVerifyCloudConnection } from '../queries'
@@ -52,19 +50,12 @@ export const ConnectionDetailContainer = ({
       </Toast>
     )
   }, [connection, verify.data, addToast])
-  const setup = useQuery({
-    queryKey: ['cloud-connections', orgId, connectionId, 'setup'],
-    queryFn: () => getCloudConnectionSetup({ orgId, connectionId }),
-    enabled: !!connection && tab === 'overview',
-  })
   return (
     <ConnectionDetail
       connection={connection}
       tab={tab}
       basePath={`/${orgId}/cloud-connections/${connectionId}`}
       error={error || verify.error}
-      setup={setup.data}
-      setupError={setup.error}
       isVerifying={verify.isPending || isVerifying}
       verificationTimedOut={verificationTimedOut}
       onVerify={() =>

@@ -1,9 +1,8 @@
 import { Banner } from '@/components/common/Banner'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Link } from '@/components/common/Link'
-import { Loading } from '@/components/common/Loading'
 import { Text } from '@/components/common/Text'
-import type { TCloudConnection, TCloudConnectionSetup } from '@/types'
+import type { TCloudConnection } from '@/types'
 
 export const roleName = (principal: string) =>
   principal.split(':role/')[1] || ''
@@ -19,12 +18,10 @@ export const failedRunbookStep = (connection: TCloudConnection) =>
 
 export const ConnectionPolicies = ({
   connection,
-  setup,
 }: {
   connection: TCloudConnection
-  setup?: TCloudConnectionSetup
 }) => {
-  if (!setup) return <Loading />
+  const setup = connection.setup
   return (
     <div className="flex min-w-0 flex-col gap-6">
       <section

@@ -22,9 +22,6 @@ import (
 // swagger:model service.ConnectionResponse
 type ServiceConnectionResponse struct {
 
-	// auth mode
-	AuthMode AppCloudConnectionAuthMode `json:"auth_mode,omitempty"`
-
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -88,10 +85,6 @@ type ServiceConnectionResponse struct {
 func (m *ServiceConnectionResponse) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateAuthMode(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validatePlatform(formats); err != nil {
 		res = append(res, err)
 	}
@@ -119,27 +112,6 @@ func (m *ServiceConnectionResponse) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *ServiceConnectionResponse) validateAuthMode(formats strfmt.Registry) error {
-	if swag.IsZero(m.AuthMode) { // not required
-		return nil
-	}
-
-	if err := m.AuthMode.Validate(formats); err != nil {
-		ve := new(errors.Validation)
-		if stderrors.As(err, &ve) {
-			return ve.ValidateName("auth_mode")
-		}
-		ce := new(errors.CompositeError)
-		if stderrors.As(err, &ce) {
-			return ce.ValidateName("auth_mode")
-		}
-
-		return err
-	}
-
 	return nil
 }
 
@@ -304,10 +276,6 @@ func (m *ServiceConnectionResponse) validateUsedBy(formats strfmt.Registry) erro
 func (m *ServiceConnectionResponse) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidateAuthMode(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidatePreset(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -331,28 +299,6 @@ func (m *ServiceConnectionResponse) ContextValidate(ctx context.Context, formats
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *ServiceConnectionResponse) contextValidateAuthMode(ctx context.Context, formats strfmt.Registry) error {
-
-	if swag.IsZero(m.AuthMode) { // not required
-		return nil
-	}
-
-	if err := m.AuthMode.ContextValidate(ctx, formats); err != nil {
-		ve := new(errors.Validation)
-		if stderrors.As(err, &ve) {
-			return ve.ValidateName("auth_mode")
-		}
-		ce := new(errors.CompositeError)
-		if stderrors.As(err, &ce) {
-			return ce.ValidateName("auth_mode")
-		}
-
-		return err
-	}
-
 	return nil
 }
 

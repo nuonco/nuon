@@ -57,7 +57,7 @@ func (s *Service) Create(ctx context.Context, name, platform, targetID, principa
 }
 
 func (s *Service) Verify(ctx context.Context, connectionID string, wait, asJSON bool) error {
-	connection, err := s.api.VerifyCloudConnection(ctx, connectionID, nil)
+	connection, err := s.api.VerifyCloudConnection(ctx, connectionID)
 	if err != nil {
 		return ui.PrintError(err)
 	}

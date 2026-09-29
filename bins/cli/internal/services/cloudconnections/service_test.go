@@ -21,7 +21,7 @@ type verificationClient struct {
 	getCalls int
 }
 
-func (c *verificationClient) VerifyCloudConnection(context.Context, string, *models.ServiceVerifyRequest) (*models.ServiceConnectionResponse, error) {
+func (c *verificationClient) VerifyCloudConnection(context.Context, string) (*models.ServiceConnectionResponse, error) {
 	return &models.ServiceConnectionResponse{Status: models.AppCloudConnectionStatusError, VerificationInProgress: true}, nil
 }
 

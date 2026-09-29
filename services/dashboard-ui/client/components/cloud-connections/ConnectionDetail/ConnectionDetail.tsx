@@ -13,11 +13,7 @@ import { Time } from '@/components/common/Time'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { DetailPage } from '@/components/layout/DetailPage'
-import type {
-  TAPIError,
-  TCloudConnection,
-  TCloudConnectionSetup,
-} from '@/types'
+import type { TAPIError, TCloudConnection } from '@/types'
 import { ConnectionPolicies, failedRunbookStep } from '../ConnectionPolicies'
 import { ConnectionStatus } from '../ConnectionStatus'
 
@@ -25,7 +21,6 @@ export type TConnectionTab = 'overview' | 'installs' | 'verification'
 
 export const ConnectionDetail = ({
   connection,
-  setup,
   basePath,
   tab,
   isVerifying = false,
@@ -33,11 +28,9 @@ export const ConnectionDetail = ({
   onVerify,
   onDelete,
   error,
-  setupError,
   installs,
 }: {
   connection?: TCloudConnection
-  setup?: TCloudConnectionSetup
   basePath: string
   tab: TConnectionTab
   isVerifying?: boolean
@@ -45,7 +38,6 @@ export const ConnectionDetail = ({
   onVerify: () => void
   onDelete: () => void
   error?: TAPIError | null
-  setupError?: TAPIError | null
   installs?: ReactNode
 }) => (
   <DetailPage
@@ -149,13 +141,7 @@ export const ConnectionDetail = ({
               : 'Custom policy'}
           </LabeledValue>
         </div>
-        <FormErrorBanner
-          error={setupError}
-          fallback="Connection setup failed to load"
-        />
-        {!setupError && (
-          <ConnectionPolicies connection={connection} setup={setup} />
-        )}
+        <ConnectionPolicies connection={connection} />
       </div>
     )}
     {tab === 'installs' && installs}
@@ -181,18 +167,20 @@ export const ConnectionDetail = ({
               : connection.status_message || 'Verification has not run yet.'}
           </LabeledValue>
         </div>
-        {connection.status === 'error' && !isVerifying && !verificationTimedOut && (
-          <Banner theme="error">
-            <div className="flex flex-col items-start gap-2">
-              <Text>{connection.status_message}</Text>
-              <Link
-                href={`${basePath}/setup#runbook-step-${failedRunbookStep(connection)}`}
-              >
-                View runbook step {failedRunbookStep(connection)}
-              </Link>
-            </div>
-          </Banner>
-        )}
+        {connection.status === 'error' &&
+          !isVerifying &&
+          !verificationTimedOut && (
+            <Banner theme="error">
+              <div className="flex flex-col items-start gap-2">
+                <Text>{connection.status_message}</Text>
+                <Link
+                  href={`${basePath}/setup#runbook-step-${failedRunbookStep(connection)}`}
+                >
+                  View runbook step {failedRunbookStep(connection)}
+                </Link>
+              </div>
+            </Banner>
+          )}
       </div>
     )}
   </DetailPage>

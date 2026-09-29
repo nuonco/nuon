@@ -17,12 +17,6 @@ const (
 	CloudConnectionStatusError    CloudConnectionStatus = "error"
 )
 
-type CloudConnectionAuthMode string
-
-const (
-	CloudConnectionAuthModeOIDC CloudConnectionAuthMode = "oidc"
-)
-
 type CloudConnectionPreset string
 
 const (
@@ -31,26 +25,25 @@ const (
 )
 
 type CloudConnection struct {
-	ID                      string                  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitempty"`
-	CreatedByID             string                  `gorm:"not null;default:null" json:"created_by_id" temporaljson:"created_by_id,omitempty"`
-	CreatedBy               Account                 `json:"-" temporaljson:"created_by,omitempty"`
-	CreatedAt               time.Time               `gorm:"notnull" json:"created_at" temporaljson:"created_at,omitempty"`
-	UpdatedAt               time.Time               `gorm:"notnull" json:"updated_at" temporaljson:"updated_at,omitempty"`
-	DeletedAt               soft_delete.DeletedAt   `gorm:"uniqueIndex:idx_cloud_connections_org_platform_principal_deleted" json:"-" temporaljson:"deleted_at,omitempty"`
-	OrgID                   string                  `gorm:"notnull;uniqueIndex:idx_cloud_connections_org_platform_principal_deleted" json:"org_id" temporaljson:"org_id,omitempty"`
-	Org                     Org                     `json:"-" temporaljson:"org,omitempty"`
-	Name                    string                  `gorm:"notnull" json:"name" temporaljson:"name,omitempty"`
-	Platform                CloudPlatform           `gorm:"notnull;uniqueIndex:idx_cloud_connections_org_platform_principal_deleted" json:"platform" temporaljson:"platform,omitempty" swaggertype:"string" enums:"aws"`
-	TargetID                string                  `gorm:"notnull" json:"target_id" temporaljson:"target_id,omitempty"`
-	Principal               string                  `gorm:"notnull;uniqueIndex:idx_cloud_connections_org_platform_principal_deleted" json:"principal" temporaljson:"principal,omitempty"`
-	DefaultRegion           string                  `gorm:"notnull;default:''" json:"default_region,omitempty" temporaljson:"default_region,omitempty"`
-	AuthMode                CloudConnectionAuthMode `gorm:"notnull;default:''" json:"auth_mode,omitempty" temporaljson:"auth_mode,omitempty"`
-	Status                  CloudConnectionStatus   `gorm:"notnull;default:'pending'" json:"status" temporaljson:"status,omitempty"`
-	StatusMessage           string                  `gorm:"notnull;default:''" json:"status_message,omitempty" temporaljson:"status_message,omitempty"`
-	LastVerifiedAt          *time.Time              `json:"last_verified_at,omitempty" temporaljson:"last_verified_at,omitempty"`
-	VerificationRequestedAt *time.Time              `json:"verification_requested_at,omitempty" temporaljson:"verification_requested_at,omitempty"`
-	Preset                  CloudConnectionPreset   `gorm:"notnull;default:'stacks'" json:"preset" temporaljson:"preset,omitempty"`
-	Queues                  []Queue                 `json:"queues,omitzero" gorm:"polymorphic:Owner;polymorphicValue:cloud_connections" temporaljson:"queues,omitzero,omitempty"`
+	ID                      string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id" temporaljson:"id,omitempty"`
+	CreatedByID             string                `gorm:"not null;default:null" json:"created_by_id" temporaljson:"created_by_id,omitempty"`
+	CreatedBy               Account               `json:"-" temporaljson:"created_by,omitempty"`
+	CreatedAt               time.Time             `gorm:"notnull" json:"created_at" temporaljson:"created_at,omitempty"`
+	UpdatedAt               time.Time             `gorm:"notnull" json:"updated_at" temporaljson:"updated_at,omitempty"`
+	DeletedAt               soft_delete.DeletedAt `gorm:"uniqueIndex:idx_cloud_connections_org_platform_principal_deleted" json:"-" temporaljson:"deleted_at,omitempty"`
+	OrgID                   string                `gorm:"notnull;uniqueIndex:idx_cloud_connections_org_platform_principal_deleted" json:"org_id" temporaljson:"org_id,omitempty"`
+	Org                     Org                   `json:"-" temporaljson:"org,omitempty"`
+	Name                    string                `gorm:"notnull" json:"name" temporaljson:"name,omitempty"`
+	Platform                CloudPlatform         `gorm:"notnull;uniqueIndex:idx_cloud_connections_org_platform_principal_deleted" json:"platform" temporaljson:"platform,omitempty" swaggertype:"string" enums:"aws"`
+	TargetID                string                `gorm:"notnull" json:"target_id" temporaljson:"target_id,omitempty"`
+	Principal               string                `gorm:"notnull;uniqueIndex:idx_cloud_connections_org_platform_principal_deleted" json:"principal" temporaljson:"principal,omitempty"`
+	DefaultRegion           string                `gorm:"notnull;default:''" json:"default_region,omitempty" temporaljson:"default_region,omitempty"`
+	Status                  CloudConnectionStatus `gorm:"notnull;default:'pending'" json:"status" temporaljson:"status,omitempty"`
+	StatusMessage           string                `gorm:"notnull;default:''" json:"status_message,omitempty" temporaljson:"status_message,omitempty"`
+	LastVerifiedAt          *time.Time            `json:"last_verified_at,omitempty" temporaljson:"last_verified_at,omitempty"`
+	VerificationRequestedAt *time.Time            `json:"verification_requested_at,omitempty" temporaljson:"verification_requested_at,omitempty"`
+	Preset                  CloudConnectionPreset `gorm:"notnull;default:'stacks'" json:"preset" temporaljson:"preset,omitempty"`
+	Queues                  []Queue               `json:"queues,omitzero" gorm:"polymorphic:Owner;polymorphicValue:cloud_connections" temporaljson:"queues,omitzero,omitempty"`
 }
 
 func (c *CloudConnection) BeforeCreate(tx *gorm.DB) error {

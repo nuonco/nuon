@@ -1,7 +1,6 @@
 import { api } from '@/lib'
 import type {
   TCloudConnection,
-  TCloudConnectionSetup,
   TCloudConnectionSummary,
   TCreateCloudConnectionRequest,
   TPaginationParams,
@@ -37,18 +36,6 @@ export const getCloudConnections = ({
     paginated: true,
   })
 
-export const getCloudConnectionSetup = ({
-  connectionId,
-  orgId,
-}: {
-  connectionId: string
-  orgId: string
-}) =>
-  api<TCloudConnectionSetup>({
-    orgId,
-    path: `cloud-connections/${connectionId}/setup`,
-  })
-
 export const getCloudConnection = ({
   connectionId,
   orgId,
@@ -72,7 +59,6 @@ export const verifyCloudConnection = ({
     method: 'POST',
     orgId,
     path: `cloud-connections/${connectionId}/verify`,
-    body: {},
   })
 
 export const deleteCloudConnection = ({

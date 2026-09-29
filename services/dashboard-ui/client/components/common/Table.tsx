@@ -35,7 +35,6 @@ export interface ITable<TData extends object> {
   initialSorting?: SortingState
   isLoading?: boolean
   pagination?: Omit<IPagination, 'position'>
-  rowClassName?: (row: TData) => string
   searchPlaceholder?: string
   skeletonRows?: number
 }
@@ -52,7 +51,6 @@ export function TableBase<TData extends object>({
   initialSorting = [],
   isLoading = false,
   pagination,
-  rowClassName,
   searchPlaceholder,
   skeletonRows = 5,
 }: ITable<TData>) {
@@ -165,10 +163,7 @@ export function TableBase<TData extends object>({
               </tr>
             ) : (
               table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className={rowClassName?.(row.original)}
-                >
+                <tr key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}

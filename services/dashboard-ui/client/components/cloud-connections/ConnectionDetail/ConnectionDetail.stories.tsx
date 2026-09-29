@@ -16,22 +16,12 @@ const props = {
 }
 export const Overview = () => (
   <PageStory>
-    <ConnectionDetail
-      {...props}
-      connection={connection}
-      setup={connection.setup}
-      tab="overview"
-    />
+    <ConnectionDetail {...props} connection={connection} tab="overview" />
   </PageStory>
 )
 export const Custom = () => (
   <PageStory>
-    <ConnectionDetail
-      {...props}
-      connection={customConnection}
-      setup={customConnection.setup}
-      tab="overview"
-    />
+    <ConnectionDetail {...props} connection={customConnection} tab="overview" />
   </PageStory>
 )
 export const Loading = () => (

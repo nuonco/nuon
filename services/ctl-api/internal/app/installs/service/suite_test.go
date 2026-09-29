@@ -130,7 +130,7 @@ func (s *InstallsServiceTestSuite) SetupTest() {
 
 	err := s.installsService.RegisterPublicRoutes(s.router)
 	require.NoError(s.T(), err)
-	connections, err := cloudconnectionsservice.New(cloudconnectionsservice.Params{DB: s.deps.DB, L: s.deps.L})
+	connections, err := cloudconnectionsservice.New(cloudconnectionsservice.Params{DB: s.deps.DB})
 	require.NoError(s.T(), err)
 	require.NoError(s.T(), connections.RegisterPublicRoutes(s.router))
 }

@@ -829,7 +829,6 @@ export type TCloudConnection = {
   target_id: string
   principal: string
   default_region?: string
-  auth_mode?: 'oidc'
   status: 'pending' | 'verified' | 'error'
   status_message?: string
   last_verified_at?: string

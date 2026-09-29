@@ -39,11 +39,7 @@ func (s *service) Get(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
-func (s *service) get(ctx *gin.Context, orgID, id string) (*app.CloudConnection, error) {
-	return s.getContext(ctx, orgID, id)
-}
-
-func (s *service) getContext(ctx context.Context, orgID, id string) (*app.CloudConnection, error) {
+func (s *service) get(ctx context.Context, orgID, id string) (*app.CloudConnection, error) {
 	var connection app.CloudConnection
 	result := s.db.WithContext(ctx).Where(app.CloudConnection{OrgID: orgID, ID: id}).First(&connection)
 	if result.Error != nil {

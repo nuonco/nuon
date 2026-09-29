@@ -9,9 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	cloudformationtypes "github.com/aws/aws-sdk-go-v2/service/cloudformation/types"
-
-	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type CreateManagedAWSCloudFormationStackRequest struct {
@@ -71,42 +68,16 @@ func createManagedStack(ctx context.Context, client cloudFormationCreateStackAPI
 
 // @temporal-gen-v2 activity
 func (a *Activities) CreateManagedAWSCloudFormationStack(ctx context.Context, req *CreateManagedAWSCloudFormationStackRequest) error {
-	var install app.Install
-	if result := a.db.WithContext(ctx).Preload("AWSAccount").Preload("CloudConnection").First(&install, "id = ?", req.InstallID); result.Error != nil {
-		return fmt.Errorf("load install: %w", result.Error)
-	}
-	if install.CloudConnectionID == nil || *install.CloudConnectionID != req.ConnectionID || install.CloudConnection == nil {
-		return fmt.Errorf("install does not use cloud connection %s", req.ConnectionID)
-	}
-	if install.CloudConnection.Status != app.CloudConnectionStatusVerified || install.CloudConnection.Platform != app.CloudPlatformAWS {
-		return fmt.Errorf("cloud connection %s is not verified for install stacks", install.CloudConnection.ID)
-	}
-	if install.AWSAccount == nil {
-		return fmt.Errorf("install %s has no AWS account", install.ID)
-	}
-
-	var version app.InstallStackVersion
-	if result := a.db.WithContext(ctx).First(&version, "id = ? AND install_id = ?", req.StackVersionID, install.ID); result.Error != nil {
-		return fmt.Errorf("load install stack version: %w", result.Error)
+	version, awsConfig, err := a.managedStackSession(ctx, req.InstallID, req.StackVersionID, req.ConnectionID, "nuon-install-stack")
+	if err != nil {
+		return err
 	}
 	if version.TemplateURL == "" {
 		return fmt.Errorf("install stack version %s has no template URL", version.ID)
 	}
-
 	if version.StackName == "" {
 		return fmt.Errorf("install stack version %s has no stack name", version.ID)
 	}
-
-	credentialsConfig, err := a.cloudConnectionsHelpers.Credentials(ctx, install.CloudConnection, "nuon-install-stack")
-	if err != nil {
-		return fmt.Errorf("resolve cloud connection credentials: %w", err)
-	}
-	credentialsConfig.Region = install.AWSAccount.Region
-	awsConfig, err := awscredentials.Fetch(ctx, credentialsConfig)
-	if err != nil {
-		return fmt.Errorf("assume cloud connection role: %w", err)
-	}
-
 	if err := createManagedStack(ctx, cloudformation.NewFromConfig(awsConfig), managedCreateStackInput(version.StackName, version.TemplateURL, version.ID)); err != nil {
 		return fmt.Errorf("create or update cloudformation stack %q: %w", version.StackName, err)
 	}

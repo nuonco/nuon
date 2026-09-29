@@ -34,8 +34,8 @@ func (c *client) GetCloudConnection(ctx context.Context, connectionID string) (*
 	return resp.Payload, nil
 }
 
-func (c *client) VerifyCloudConnection(ctx context.Context, connectionID string, req *models.ServiceVerifyRequest) (*models.ServiceConnectionResponse, error) {
-	resp, err := c.genClient.Operations.VerifyCloudConnection(&operations.VerifyCloudConnectionParams{Context: ctx, ConnectionID: connectionID, Req: req}, c.getOrgIDAuthInfo())
+func (c *client) VerifyCloudConnection(ctx context.Context, connectionID string) (*models.ServiceConnectionResponse, error) {
+	resp, err := c.genClient.Operations.VerifyCloudConnection(&operations.VerifyCloudConnectionParams{Context: ctx, ConnectionID: connectionID}, c.getOrgIDAuthInfo())
 	if err != nil {
 		return nil, err
 	}

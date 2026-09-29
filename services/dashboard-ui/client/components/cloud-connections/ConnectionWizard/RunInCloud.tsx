@@ -114,7 +114,7 @@ export const RunInCloud = ({
           ),
         }}
       />
-      <ConnectionPolicies connection={connection} setup={setup} />
+      <ConnectionPolicies connection={connection} />
     </div>
   )
 }

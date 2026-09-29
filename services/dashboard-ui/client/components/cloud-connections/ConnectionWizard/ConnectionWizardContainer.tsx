@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { Loading } from '@/components/common/Loading'
-import { createCloudConnection, getCloudConnectionSetup } from '@/lib'
+import { createCloudConnection } from '@/lib'
 import type { TCloudConnection } from '@/types'
 import { useCloudConnection, useVerifyCloudConnection } from '../queries'
 import { AccountForm } from './AccountForm'
@@ -26,12 +26,6 @@ export const ConnectionWizardContainer = ({
   const navigate = useNavigate()
   const client = useQueryClient()
   const connection = useCloudConnection(orgId, connectionId || '')
-  const setup = useQuery({
-    queryKey: ['cloud-connections', orgId, connectionId, 'setup'],
-    queryFn: () =>
-      getCloudConnectionSetup({ orgId, connectionId: connectionId! }),
-    enabled: !!orgId && !!connectionId,
-  })
   const verify = useVerifyCloudConnection(orgId, connectionId || '')
   const step = connectionId
     ? params.get('step') === '4'
@@ -90,17 +84,10 @@ export const ConnectionWizardContainer = ({
       {connectionId && connection.isLoading && <Loading />}
       {step === 3 && connection.data && (
         <div className="flex flex-col gap-6">
-          <FormErrorBanner
-            error={setup.error}
-            fallback="Connection setup failed to load"
+          <RunInCloud
+            connection={connection.data}
+            setup={connection.data.setup}
           />
-          {setup.error && (
-            <Button onClick={() => setup.refetch()}>Retry setup</Button>
-          )}
-          {setup.isLoading && <Loading />}
-          {setup.data && (
-            <RunInCloud connection={connection.data} setup={setup.data} />
-          )}
           <div className="flex justify-end gap-2 border-t pt-4">
             <Button variant="secondary" href={detailHref}>
               View connection

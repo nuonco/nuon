@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws/arn"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 

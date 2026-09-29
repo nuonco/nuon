@@ -130,9 +130,6 @@ func TestReverify(t *testing.T) {
 				require.Equal(t, tc.result, update.Status)
 				require.Equal(t, message, update.StatusMessage)
 				require.WithinDuration(t, time.Now(), *update.LastVerifiedAt, time.Second)
-				if tc.result == app.CloudConnectionStatusVerified {
-					require.Equal(t, app.CloudConnectionAuthModeOIDC, update.AuthMode)
-				}
 				tx.RowsAffected = 1
 			}))
 			a := &Activities{db: db, l: zap.NewNop(), verifier: fakeVerifier(func(ctx context.Context, c *app.CloudConnection, opts cloudconnections.VerifyOptions) (cloudconnections.VerificationResult, error) {

@@ -4369,7 +4369,6 @@ export interface components {
       subscription_tenant_id?: string;
     };
     "app.CloudConnection": {
-      auth_mode?: components["schemas"]["app.CloudConnectionAuthMode"];
       created_at?: string;
       created_by_id?: string;
       default_region?: string;
@@ -4388,8 +4387,6 @@ export interface components {
       updated_at?: string;
       verification_requested_at?: string;
     };
-    /** @enum {string} */
-    "app.CloudConnectionAuthMode": "oidc";
     /** @enum {string} */
     "app.CloudConnectionPreset": "stacks" | "custom";
     /** @enum {string} */
@@ -8249,7 +8246,6 @@ export interface components {
       repo: string;
     };
     "service.ConnectionListResponse": {
-      auth_mode?: components["schemas"]["app.CloudConnectionAuthMode"];
       created_at?: string;
       created_by_id?: string;
       default_region?: string;
@@ -8271,7 +8267,6 @@ export interface components {
       verification_requested_at?: string;
     };
     "service.ConnectionResponse": {
-      auth_mode?: components["schemas"]["app.CloudConnectionAuthMode"];
       created_at?: string;
       created_by_id?: string;
       default_region?: string;
@@ -9852,7 +9847,6 @@ export interface components {
       id?: number;
       login?: string;
     };
-    "service.VerifyRequest": Record<string, never>;
     "service.WaitlistRequest": {
       org_name: string;
     };
@@ -19048,12 +19042,6 @@ export interface operations {
       path: {
         /** @description connection ID */
         connection_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody?: {
-      content: {
-        "application/json": components["schemas"]["service.VerifyRequest"];
       };
     };
     responses: {
