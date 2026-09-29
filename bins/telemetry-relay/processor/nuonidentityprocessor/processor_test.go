@@ -13,6 +13,8 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor/processortest"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/nuonco/nuon/bins/telemetry-relay/extension/nuonjwtauthextension"
 )
@@ -279,6 +281,7 @@ func TestFactoryEnforcesAllowedOrgs(t *testing.T) {
 				} else {
 					require.ErrorIs(t, consumeErr, errOrgNotAllowed)
 					require.True(t, consumererror.IsPermanent(consumeErr))
+					require.Equal(t, codes.PermissionDenied, status.Code(consumeErr))
 					require.Zero(t, forwarded)
 					requireAttribute(t, attributes, "nuon.org.id", "forged")
 				}

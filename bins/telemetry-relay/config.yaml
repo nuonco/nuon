@@ -4,7 +4,8 @@ extensions:
     endpoint: 0.0.0.0:13133
   nuonjwtauth:
     issuer: ${env:NUON_TELEMETRY_ISSUER}
-    audience: urn:nuon:telemetry
+    audience: ${env:NUON_TELEMETRY_AUDIENCE}
+    allow_legacy_audience: ${env:NUON_TELEMETRY_ALLOW_LEGACY_AUDIENCE:-true}
     jwks_url: ${env:NUON_TELEMETRY_JWKS_URL}
     jwks_allow_insecure: ${env:NUON_TELEMETRY_JWKS_ALLOW_INSECURE:-false}
   nuonpartialsuccess:
