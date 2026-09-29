@@ -104,7 +104,8 @@ const (
 )
 
 type OrgTelemetrySettings struct {
-	Enabled bool `json:"enabled" gorm:"not null;default:false" temporaljson:"enabled,omitempty"`
+	Enabled       bool    `json:"enabled" gorm:"not null;default:false" temporaljson:"enabled,omitempty"`
+	RelayEndpoint *string `json:"relay_endpoint" temporaljson:"relay_endpoint,omitempty" extensions:"x-nullable"`
 }
 
 type Org struct {

@@ -19,7 +19,7 @@ func NewFactory() extension.Factory {
 }
 
 func createDefaultConfig() component.Config {
-	return &Config{Audience: defaultAudience}
+	return &Config{AllowLegacyAudience: true}
 }
 
 func createExtension(_ context.Context, settings extension.Settings, rawConfig component.Config) (extension.Extension, error) {
