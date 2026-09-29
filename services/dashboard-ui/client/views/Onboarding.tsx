@@ -236,6 +236,7 @@ function FirstRunOnboarding() {
           {isStarted ? (
             <OnboardingWizard
               key={mounts}
+              onHistoryBack={started ? backToIntro : undefined}
               steps={steps}
               initialStepIndex={
                 firstMount ? stepIndexFor(steps, resume.step) : 0

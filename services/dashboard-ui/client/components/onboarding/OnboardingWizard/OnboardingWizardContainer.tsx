@@ -5,6 +5,7 @@ import {
   type IOnboardingWizardProps,
 } from '@/providers/onboarding-wizard-provider'
 import { OnboardingWizardLayout } from './OnboardingWizard'
+import { useWizardHistory } from './use-wizard-history'
 
 function FirstRunSkipLayout({ onSkip }: { onSkip: (stepId: string) => void }) {
   const { steps, currentStepIndex } = useOnboardingWizard()
@@ -27,12 +28,23 @@ function ConnectedWizardLayout({ onSkip }: { onSkip?: (stepId: string) => void }
   return <ExistingSkipLayout />
 }
 
+function WizardHistory({ onHistoryBack }: { onHistoryBack?: () => void }) {
+  const { currentStepIndex, goPrev } = useOnboardingWizard()
+  useWizardHistory(currentStepIndex, goPrev, onHistoryBack)
+  return null
+}
+
 export function OnboardingWizardContainer({
   onSkip,
+  onHistoryBack,
   ...props
-}: IOnboardingWizardProps & { onSkip?: (stepId: string) => void }) {
+}: IOnboardingWizardProps & {
+  onSkip?: (stepId: string) => void
+  onHistoryBack?: () => void
+}) {
   return (
     <OnboardingWizardProvider {...props}>
+      <WizardHistory onHistoryBack={onHistoryBack} />
       <ConnectedWizardLayout onSkip={onSkip} />
     </OnboardingWizardProvider>
   )
