@@ -2,7 +2,9 @@ export default {
   title: 'Features / Installs / Components / Components list',
 }
 
+import { useState } from 'react'
 import { Button } from '@/components/common/Button'
+import type { TCollectionView } from '@/components/common/CollectionViewToggle'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Text } from '@/components/common/Text'
 import { LatestDeployCard } from '@/components/install-components/LatestDeployCard'
@@ -105,23 +107,46 @@ const components: TInstallComponentListItem[] = [
     status: 'in-progress',
     latestDeploy: details(false),
   }),
+  component({
+    id: 'cmp-4',
+    name: 'ingress',
+    type: 'kubernetes_manifest',
+    status: 'active',
+    latestDeploy: details(false),
+  }),
 ]
 
-export const Default = () => (
-  <InstallComponentsList
-    components={components}
-    actions={<Button variant="secondary">Component controls</Button>}
-    search={
-      <SearchInput
-        placeholder="Search by name or ID..."
-        value=""
-        onChange={() => {}}
-      />
-    }
-    filterActions={<Button variant="secondary">Filter (5)</Button>}
-    pagination={{ hasNext: true, offset: 0, limit: 10 }}
-  />
-)
+const ListStory = ({
+  initialView = 'list',
+  items = components,
+}: {
+  initialView?: TCollectionView
+  items?: TInstallComponentListItem[]
+}) => {
+  const [view, setView] = useState<TCollectionView>(initialView)
+
+  return (
+    <InstallComponentsList
+      view={view}
+      onViewChange={setView}
+      components={items}
+      actions={<Button variant="secondary">Component controls</Button>}
+      search={
+        <SearchInput
+          placeholder="Search by name or ID..."
+          value=""
+          onChange={() => {}}
+        />
+      }
+      filterActions={<Button variant="secondary">Filter (5)</Button>}
+      pagination={{ hasNext: true, offset: 0, limit: 10 }}
+    />
+  )
+}
+
+export const Default = () => <ListStory />
+
+export const Grid = () => <ListStory initialView="grid" />
 
 export const NoResults = () => (
   <InstallComponentsList
@@ -198,3 +223,15 @@ export const AllComponentsDisabled = () => (
 export const Empty = () => <InstallComponentsList components={[]} />
 
 export const Loading = () => <InstallComponentsList components={[]} loading />
+
+export const LoadingGrid = () => {
+  const [view, setView] = useState<TCollectionView>('grid')
+  return (
+    <InstallComponentsList
+      components={[]}
+      loading
+      view={view}
+      onViewChange={setView}
+    />
+  )
+}
