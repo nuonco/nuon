@@ -168,13 +168,6 @@ func (c *AppBranchConfig) Validate() error {
 			Description: fmt.Sprintf("branch %q: only one install group can be default", c.Name),
 		}
 	}
-	// Installs that match no selector, and installs pinned to a group that was
-	// deleted, have nowhere to land without a default group.
-	if len(c.InstallGroups) > 0 && defaultGroups == 0 {
-		return ErrConfig{
-			Description: fmt.Sprintf("branch %q: one install group must be default", c.Name),
-		}
-	}
 	if c.Preview != nil {
 		hasInstallID := c.Preview.InstallID != ""
 		hasInstallName := c.Preview.InstallName != ""

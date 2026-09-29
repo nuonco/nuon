@@ -69,13 +69,11 @@ func TestCreateAppBranchConfigRequestValidateInstallGroups(t *testing.T) {
 			groups: []InstallGroupRequest{
 				{Name: "prod", Order: 0, LabelSelector: &labels.Selector{MatchLabels: labels.Labels{"env": "prod"}}},
 			},
-			wantErr: "one install group must be default",
 		},
 		"pinned only group without a default": {
 			groups: []InstallGroupRequest{
 				{Name: "manual", Order: 0},
 			},
-			wantErr: "one install group must be default",
 		},
 		"two default groups": {
 			groups: []InstallGroupRequest{
