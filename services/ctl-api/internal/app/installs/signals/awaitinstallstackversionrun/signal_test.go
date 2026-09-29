@@ -34,30 +34,30 @@ func TestShouldCreateManagedAWSCloudFormationStack(t *testing.T) {
 	}{
 		"verified connection selection": {
 			create:  true,
-			install: &app.Install{AWSAccount: &app.AWSAccount{AWSAccountConnectionID: &connectionID}},
+			install: &app.Install{CloudConnectionID: &connectionID},
 			appCfg:  &app.AppConfig{RunnerConfig: app.AppRunnerConfig{Type: app.AppRunnerTypeAWS}},
 			want:    true,
 		},
 		"manual AWS install": {
 			create:  true,
-			install: &app.Install{AWSAccount: &app.AWSAccount{}},
+			install: &app.Install{},
 			appCfg:  &app.AppConfig{RunnerConfig: app.AppRunnerConfig{Type: app.AppRunnerTypeAWS}},
 		},
 		"sandbox install": {
 			create: true,
 			install: &app.Install{
-				SandboxMode: sql.NullBool{Bool: true, Valid: true},
-				AWSAccount:  &app.AWSAccount{AWSAccountConnectionID: &connectionID},
+				SandboxMode:       sql.NullBool{Bool: true, Valid: true},
+				CloudConnectionID: &connectionID,
 			},
 			appCfg: &app.AppConfig{RunnerConfig: app.AppRunnerConfig{Type: app.AppRunnerTypeAWS}},
 		},
 		"non-AWS install": {
 			create:  true,
-			install: &app.Install{AWSAccount: &app.AWSAccount{AWSAccountConnectionID: &connectionID}},
+			install: &app.Install{CloudConnectionID: &connectionID},
 			appCfg:  &app.AppConfig{RunnerConfig: app.AppRunnerConfig{Type: app.AppRunnerTypeAzure}},
 		},
 		"reprovision": {
-			install: &app.Install{AWSAccount: &app.AWSAccount{AWSAccountConnectionID: &connectionID}},
+			install: &app.Install{CloudConnectionID: &connectionID},
 			appCfg:  &app.AppConfig{RunnerConfig: app.AppRunnerConfig{Type: app.AppRunnerTypeAWS}},
 		},
 	}

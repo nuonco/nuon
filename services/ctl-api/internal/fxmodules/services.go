@@ -8,7 +8,7 @@ import (
 	admindashboardservice "github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service"
 	appsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/service"
 	authservice "github.com/nuonco/nuon/services/ctl-api/internal/app/auth/service"
-	awsaccountconnectionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/aws-account-connections/service"
+	cloudconnectionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/service"
 	componentsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/components/service"
 	generalservice "github.com/nuonco/nuon/services/ctl-api/internal/app/general/service"
 	identityprovidersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/identity-providers/service"
@@ -16,6 +16,7 @@ import (
 	notebooksservice "github.com/nuonco/nuon/services/ctl-api/internal/app/notebooks/service"
 	nuonctlmcpservice "github.com/nuonco/nuon/services/ctl-api/internal/app/nuonctl-mcp/service"
 	oidcfederationservice "github.com/nuonco/nuon/services/ctl-api/internal/app/oidc-federation/service"
+	oidcservice "github.com/nuonco/nuon/services/ctl-api/internal/app/oidc/service"
 	onboardingservice "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/service"
 	orgsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/service"
 	policyreportsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/service"
@@ -48,7 +49,7 @@ var sharedServices = fx.Options(
 	// Domain services with swagger-annotated routes.
 	fx.Provide(api.AsService(accountsservice.New)),
 	fx.Provide(api.AsService(actionsservice.New)),
-	fx.Provide(api.AsService(awsaccountconnectionsservice.New)),
+	fx.Provide(api.AsService(cloudconnectionsservice.New)),
 	fx.Provide(api.AsService(appsservice.New)),
 	fx.Provide(api.AsService(componentsservice.New)),
 	fx.Provide(api.AsService(triggersservice.New)),
@@ -57,6 +58,7 @@ var sharedServices = fx.Options(
 	fx.Provide(api.AsService(installsservice.New)),
 	fx.Provide(api.AsService(notebooksservice.New)),
 	fx.Provide(api.AsService(oidcfederationservice.New)),
+	fx.Provide(api.AsService(oidcservice.New)),
 	fx.Provide(api.AsService(orgsservice.New)),
 	fx.Provide(api.AsService(policyreportsservice.New)),
 	fx.Provide(api.AsService(queuesservice.New)),

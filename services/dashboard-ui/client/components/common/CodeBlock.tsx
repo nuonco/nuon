@@ -68,7 +68,7 @@ export function CodeBlock({
   if (!showCopy) return prism
 
   return (
-    <div className="relative">
+    <div className="relative rounded-md bg-code pr-12">
       <div className="absolute top-2 right-2 z-10">
         <ClickToCopyButton textToCopy={children} />
       </div>

@@ -34,6 +34,11 @@ const SettingsTemplate = () => {
       text: 'VCS connections',
     },
     {
+      path: `/cloud-connections`,
+      iconVariant: 'CloudIcon' as const,
+      text: 'Cloud connections',
+    },
+    {
       path: `/webhooks`,
       iconVariant: 'WebhooksLogoIcon' as const,
       text: 'Webhooks',

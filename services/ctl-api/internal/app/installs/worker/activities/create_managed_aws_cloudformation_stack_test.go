@@ -2,7 +2,6 @@ package activities
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -14,6 +13,12 @@ import (
 type fakeCloudFormationCreateStackClient struct {
 	createErr *cloudformationtypes.AlreadyExistsException
 	events    []cloudformationtypes.StackEvent
+	updated   bool
+}
+
+func (f *fakeCloudFormationCreateStackClient) UpdateStack(context.Context, *cloudformation.UpdateStackInput, ...func(*cloudformation.Options)) (*cloudformation.UpdateStackOutput, error) {
+	f.updated = true
+	return &cloudformation.UpdateStackOutput{}, nil
 }
 
 func (f *fakeCloudFormationCreateStackClient) CreateStack(context.Context, *cloudformation.CreateStackInput, ...func(*cloudformation.Options)) (*cloudformation.CreateStackOutput, error) {
@@ -43,24 +48,11 @@ func TestCreateManagedStack(t *testing.T) {
 		require.NoError(t, createManagedStack(context.Background(), &fakeCloudFormationCreateStackClient{}, input))
 	})
 
-	t.Run("accepted request is reconciled after a lost response", func(t *testing.T) {
+	t.Run("existing stack is updated", func(t *testing.T) {
 		client := &fakeCloudFormationCreateStackClient{
 			createErr: &cloudformationtypes.AlreadyExistsException{},
-			events: []cloudformationtypes.StackEvent{
-				{ClientRequestToken: aws.String("isv_test")},
-			},
 		}
 		require.NoError(t, createManagedStack(context.Background(), client, input))
-	})
-
-	t.Run("unrelated existing stack remains an error", func(t *testing.T) {
-		client := &fakeCloudFormationCreateStackClient{
-			createErr: &cloudformationtypes.AlreadyExistsException{},
-			events: []cloudformationtypes.StackEvent{
-				{ClientRequestToken: aws.String("isv_other")},
-			},
-		}
-		var alreadyExists *cloudformationtypes.AlreadyExistsException
-		require.True(t, errors.As(createManagedStack(context.Background(), client, input), &alreadyExists))
+		require.True(t, client.updated)
 	})
 }

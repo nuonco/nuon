@@ -38,6 +38,10 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		return false, err
 	}
 
+	if err := workflow.SetUpdateHandler(ctx, StopUpdateName, q.stopUpdateHandler); err != nil {
+		return false, errors.Wrap(err, "unable to register stop handler")
+	}
+
 	l.Info("ensuring queue is active")
 	if err := q.ensureActive(ctx); err != nil {
 		return false, errors.Wrap(err, "unable to ensure queue is active")

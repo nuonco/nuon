@@ -14,6 +14,9 @@ import { VCSConnectionDetail } from './VCSConnectionDetail'
 import { Slack } from './Slack'
 import { Webhooks } from './Webhooks'
 import { OIDCTrustPolicies } from './OIDCTrustPolicies'
+import { CloudConnections } from './CloudConnections'
+import { CloudConnection } from './CloudConnection'
+import { CloudConnectionCreate } from './CloudConnectionCreate'
 import { Triggers } from './Triggers'
 import { TriggerLayout } from './TriggerLayout'
 import { TriggerOverview } from './trigger-tabs/TriggerOverview'
@@ -63,6 +66,30 @@ export const orgRoutes: RouteObject[] = [
             path: ':orgId/settings/vcs/:connectionId',
             element: <VCSConnectionDetail />,
           },
+          {
+            path: ':orgId/settings/cloud-connections',
+            element: <CloudConnections />,
+          },
+          {
+            path: ':orgId/settings/cloud-connections/create',
+            element: <CloudConnectionCreate />,
+          },
+          {
+            path: ':orgId/settings/cloud-connections/:connectionId/setup',
+            element: <CloudConnectionCreate />,
+          },
+          {
+            path: ':orgId/settings/cloud-connections/:connectionId',
+            element: <CloudConnection />,
+          },
+          {
+            path: ':orgId/settings/cloud-connections/:connectionId/installs',
+            element: <CloudConnection tab="installs" />,
+          },
+          {
+            path: ':orgId/settings/cloud-connections/:connectionId/verification',
+            element: <CloudConnection tab="verification" />,
+          },
           { path: ':orgId/settings/webhooks', element: <Webhooks /> },
           { path: ':orgId/settings/api-tokens', element: <ApiTokens /> },
           {
@@ -89,6 +116,20 @@ export const orgRoutes: RouteObject[] = [
           },
           { path: ':orgId/settings/slack', element: <Slack /> },
         ],
+      },
+      {
+        path: ':orgId/cloud-connections/*',
+        loader: ({ request }) => {
+          const url = new URL(request.url)
+          return redirect(
+            url.pathname.replace(
+              '/cloud-connections',
+              '/settings/cloud-connections'
+            ) +
+              url.search +
+              url.hash
+          )
+        },
       },
       {
         path: ':orgId/webhooks',

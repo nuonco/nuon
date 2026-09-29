@@ -23,6 +23,7 @@ import (
 // @Param         q								 query	string	false	"search query to filter installs by name, ID, or branch name"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Param					runner_id				query	string	false	"filter by runner ID"
+// @Param cloud_connection_id query string false "filter by cloud connection ID"
 // @Param					branches				query	string	false	"filter installs by branch name (comma-separated; use __none__ for installs with no branch)"
 // @Param					include_components	query	bool	false	"include install components"	Default(true)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
@@ -52,7 +53,7 @@ func (s *service) GetOrgInstalls(ctx *gin.Context) {
 	branches := ctx.Query("branches")
 	includeComponents := ctx.Query("include_components") != "false"
 
-	install, err := s.getOrgInstalls(ctx, org.ID, q, lbls, runnerID, branches, includeComponents)
+	install, err := s.getOrgInstalls(ctx, org.ID, q, lbls, runnerID, branches, ctx.Query("cloud_connection_id"), includeComponents)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get installs for org %s: %w", org.ID, err))
 		return
@@ -81,7 +82,7 @@ func parseBranchesFilter(raw string) (names []string, none bool) {
 	return names, none
 }
 
-func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.Labels, runnerID, branches string, includeComponents bool) ([]app.Install, error) {
+func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.Labels, runnerID, branches, cloudConnectionID string, includeComponents bool) ([]app.Install, error) {
 	var installs []app.Install
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -118,6 +119,10 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 		Joins("JOIN orgs ON orgs.id=apps.org_id").
 		Where(views.TableOrViewName(s.db, &app.Install{}, ".org_id")+" = ?", orgID).
 		Order("name ASC")
+
+	if cloudConnectionID != "" {
+		tx = tx.Where(app.Install{CloudConnectionID: &cloudConnectionID})
+	}
 
 	if runnerID != "" {
 		viewName := views.TableOrViewName(s.db, &app.Install{}, "")

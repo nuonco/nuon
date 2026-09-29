@@ -101,7 +101,6 @@ const (
 var _ apiPkg.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
-	api.GET("/.well-known/jwks.json", s.GetTelemetryJWKS)
 	api.GET("/v1/runners/:runner_id", s.GetRunnerCtlAPI)
 	api.GET("/v1/runners/:runner_id/connected", s.GetRunnerConnectStatus)
 	api.GET("/v1/runners/:runner_id/jobs", s.GetRunnerJobsCtlAPI)

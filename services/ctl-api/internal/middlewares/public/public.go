@@ -10,16 +10,17 @@ import (
 )
 
 var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
-	{"GET", "/livez"}:                          {},
-	{"GET", "/version"}:                        {},
-	{"GET", "/readyz"}:                         {},
-	{"OPTIONS", "*"}:                           {},
-	{"GET", "/docs/*any"}:                      {},
-	{"GET", "/oapi/v2"}:                        {},
-	{"GET", "/oapi/v3"}:                        {},
-	{"GET", "/.well-known/jwks.json"}:          {},
-	{"GET", "/v1/general/config-schema"}:       {},
-	{"GET", "/v1/general/config-schema/:type"}: {},
+	{"GET", "/livez"}:                            {},
+	{"GET", "/version"}:                          {},
+	{"GET", "/readyz"}:                           {},
+	{"OPTIONS", "*"}:                             {},
+	{"GET", "/docs/*any"}:                        {},
+	{"GET", "/oapi/v2"}:                          {},
+	{"GET", "/oapi/v3"}:                          {},
+	{"GET", "/.well-known/jwks.json"}:            {},
+	{"GET", "/.well-known/openid-configuration"}: {},
+	{"GET", "/v1/general/config-schema"}:         {},
+	{"GET", "/v1/general/config-schema/:type"}:   {},
 
 	{"*", "/httpbin/*any"}: {},
 

@@ -87,6 +87,7 @@ nuon sync
 		// Additional commands
 		c.actionsCmd(),
 		c.componentsCmd(),
+		c.cloudConnectionsCmd(),
 		c.orgsCmd(),
 		c.serviceAccountsCmd(),
 		c.rolesCmd(),

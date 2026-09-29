@@ -17,9 +17,6 @@ import (
 // swagger:model app.AWSAccount
 type AppAWSAccount struct {
 
-	// connection id
-	ConnectionID string `json:"connection_id,omitempty"`
-
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 

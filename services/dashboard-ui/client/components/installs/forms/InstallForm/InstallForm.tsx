@@ -3,7 +3,11 @@ import { FormInput } from '@/components/common/form/FormInput'
 import { Text } from '@/components/common/Text'
 import { Expand } from '@/components/common/Expand'
 import { RoleSelector } from '@/components/roles/RoleSelector'
-import type { TAppInputConfig, TAWSAccountConnection, TInstall } from '@/types'
+import type {
+  TAppInputConfig,
+  TCloudConnectionSummary,
+  TInstall,
+} from '@/types'
 import { FieldRow } from './FieldRow'
 import { InstallInputFields } from './InstallInputFields'
 import { InstallPlatformFields } from './InstallPlatformFields'
@@ -20,7 +24,7 @@ export interface IInstallForm {
   inputConfig?: TAppInputConfig
   install?: TInstall
   installId?: string
-  awsAccountConnections?: TAWSAccountConnection[]
+  cloudConnections?: TCloudConnectionSummary[]
   requireTargetAccount?: boolean
   autoApproveDescription?: string
   showNameField?: boolean
@@ -34,7 +38,7 @@ export const InstallForm = ({
   inputConfig,
   install,
   installId,
-  awsAccountConnections,
+  cloudConnections,
   requireTargetAccount,
   autoApproveDescription,
   showNameField = true,
@@ -81,7 +85,7 @@ export const InstallForm = ({
         <InstallPlatformFields
           form={form}
           platform={platform}
-          awsAccountConnections={awsAccountConnections}
+          cloudConnections={cloudConnections}
           requireTargetAccount={requireTargetAccount}
         />
       )}

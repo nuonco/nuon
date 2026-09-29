@@ -189,7 +189,8 @@ func (h *SlackSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) bool 
 		signalTypeRunnerUnhealthy,
 		signalTypeSyncInstalls,
 		signalTypeInstallConfigSync,
-		signalTypeLabelAdded:
+		signalTypeLabelAdded,
+		signalTypeCloudConnectionVerificationFailed:
 		return true
 	default:
 		return false

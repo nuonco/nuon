@@ -25,6 +25,7 @@ func (a *Activities) get(ctx context.Context, installID string) (*app.Install, e
 		Preload("App").
 		Preload("AppConfig").
 		Preload("App.Org").
+		Preload("CloudConnection").
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("GCPAccount").

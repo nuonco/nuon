@@ -28,11 +28,16 @@ import {
   getAppBranches,
   getBranchConfigs,
   createAppInstall,
-  getAWSAccountConnections,
+  getCloudConnections,
   getComponents,
   installNameTaken,
 } from '@/lib'
-import type { TApp, TAppBranch, TAppConfig } from '@/types'
+import type {
+  TApp,
+  TAppBranch,
+  TAppConfig,
+  TCloudConnectionSummary,
+} from '@/types'
 import { shouldDefaultStackOnly } from './app-install-readiness'
 import { BranchStep } from './BranchStep'
 import {
@@ -104,8 +109,9 @@ export const CreateInstallFromAppContainer = ({
   const queryClient = useQueryClient()
   const platform = app.runner_config?.app_runner_type
   const requireTargetAccount = useOrgFeatureFlag('phone-home-auth')
-  const awsConnectionsFlag = useOrgFeatureFlag('aws-account-connections')
-  const awsConnectionsEnabled = platform === 'aws' && awsConnectionsFlag
+  const installPlatform = normalizeInstallPlatform(platform)
+  const cloudConnectionsEnabled =
+    installPlatform === 'aws' || installPlatform === 'azure'
 
   const [fields, setFields] = useState<ICreateFormTriggerState>({
     canSubmit: false,
@@ -212,15 +218,27 @@ export const CreateInstallFromAppContainer = ({
     enabled: !!org?.id && !!configId && phase === 'form',
   })
 
-  const {
-    data: awsAccountConnections,
-    isLoading: awsAccountConnectionsLoading,
-  } = useQuery({
-    placeholderData: keepPreviousData,
-    queryKey: ['aws-account-connections', org?.id],
-    queryFn: () => getAWSAccountConnections({ orgId: org.id }),
-    enabled: !!org?.id && awsConnectionsEnabled && phase === 'form',
-  })
+  const { data: cloudConnections, isLoading: cloudConnectionsLoading } =
+    useQuery({
+      placeholderData: keepPreviousData,
+      queryKey: ['cloud-connections', org?.id, 'all'],
+      queryFn: async () => {
+        const all: TCloudConnectionSummary[] = []
+        let offset = 0
+        for (;;) {
+          const { data, pagination } = await getCloudConnections({
+            orgId: org.id,
+            offset,
+            limit: 100,
+          })
+          const page = data ?? []
+          all.push(...page)
+          if (!pagination?.hasNext || page.length === 0) return all
+          offset += page.length
+        }
+      },
+      enabled: !!org?.id && cloudConnectionsEnabled && phase === 'form',
+    })
 
   const componentIds = config?.component_ids ?? []
   const needsComponents = componentIds.length > 0
@@ -297,7 +315,7 @@ export const CreateInstallFromAppContainer = ({
     branchConfigsLoading ||
     configLoading ||
     (needsComponents && componentsLoading) ||
-    (awsConnectionsEnabled && awsAccountConnectionsLoading)
+    (cloudConnectionsEnabled && cloudConnectionsLoading)
 
   const missingBranchConfigError =
     phase === 'form' &&
@@ -535,8 +553,15 @@ export const CreateInstallFromAppContainer = ({
             needsComponents ? componentsResult?.data : []
           )}
           requireTargetAccount={requireTargetAccount}
-          awsAccountConnections={
-            awsConnectionsEnabled ? awsAccountConnections || [] : undefined
+          cloudConnections={
+            cloudConnectionsEnabled
+              ? (cloudConnections || []).filter(
+                  (connection) =>
+                    connection.platform === installPlatform &&
+                    connection.platform === 'aws' &&
+                    connection.status === 'verified'
+                )
+              : undefined
           }
           submitError={
             !selectedBranch && submitError
