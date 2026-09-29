@@ -29,6 +29,12 @@ type CreateRequest struct {
 // @Security APIKey
 // @Security OrgID
 // @Param req body CreateRequest true "Input"
+// @Failure 400 {object} stderr.ErrResponse
+// @Failure 401 {object} stderr.ErrResponse
+// @Failure 403 {object} stderr.ErrResponse
+// @Failure 404 {object} stderr.ErrResponse
+// @Failure 409 {object} stderr.ErrResponse
+// @Failure 500 {object} stderr.ErrResponse
 // @Success 201 {object} ConnectionResponse
 // @Router /v1/cloud-connections [post]
 func (s *service) Create(ctx *gin.Context) {
