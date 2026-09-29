@@ -17,10 +17,11 @@ import (
 var errTelemetryRunnerUnauthorized = errors.New("runner is not authorized to export telemetry")
 
 type telemetryRunnerPrincipal struct {
-	OrgID     string
-	AppID     string
-	InstallID string
-	RunnerID  string
+	OrgID         string
+	AppID         string
+	InstallID     string
+	RunnerID      string
+	RelayEndpoint string
 }
 
 func (s *service) resolveTelemetryRunnerPrincipal(ctx context.Context, acct *app.Account) (telemetryRunnerPrincipal, error) {
@@ -71,11 +72,20 @@ func (s *service) resolveTelemetryRunnerPrincipal(ctx context.Context, acct *app
 		return principal, telemetryRunnerAuthorizationError()
 	}
 
+	endpoint := install.Org.Telemetry.ResolveRelayEndpoint(s.telemetryRelayEndpoint)
+	if endpoint == "" {
+		return principal, stderr.ErrUser{Err: fmt.Errorf("telemetry relay is not configured"), Description: "telemetry relay is not configured"}
+	}
+	if err := app.ValidateTelemetryRelayEndpoint(endpoint); err != nil {
+		return principal, err
+	}
+
 	return telemetryRunnerPrincipal{
-		OrgID:     orgID,
-		AppID:     install.AppID,
-		InstallID: install.ID,
-		RunnerID:  runner.ID,
+		OrgID:         orgID,
+		AppID:         install.AppID,
+		InstallID:     install.ID,
+		RunnerID:      runner.ID,
+		RelayEndpoint: endpoint,
 	}, nil
 }
 

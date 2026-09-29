@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"maps"
+	"slices"
 	"testing"
 	"time"
 
@@ -18,7 +19,7 @@ type fakeTokenLifecycle struct {
 	events    *[]string
 }
 
-func (f *fakeTokenLifecycle) Enable(context.Context) error {
+func (f *fakeTokenLifecycle) Enable(context.Context, string) error {
 	f.enables++
 	if f.events != nil {
 		*f.events = append(*f.events, "token")
@@ -72,11 +73,14 @@ func TestVendorSupervisorEnablesAfterBeingDisabled(t *testing.T) {
 }
 
 func TestVendorSupervisorReplacesCollectorWhenEndpointChanges(t *testing.T) {
-	tokens := &fakeTokenLifecycle{}
+	var events []string
+	tokens := &fakeTokenLifecycle{events: &events}
 	var endpoints []string
 	s := newVendorTestSupervisor(tokens)
+	s.stopChildFn = func() { events = append(events, "stop") }
 	s.replaceChildFn = func(_ context.Context, endpoint string, _ map[string]string) error {
 		endpoints = append(endpoints, endpoint)
+		events = append(events, "collector")
 		return nil
 	}
 
@@ -84,6 +88,9 @@ func TestVendorSupervisorReplacesCollectorWhenEndpointChanges(t *testing.T) {
 	s.reconcile(context.Background(), vendorSettings{enabled: true, endpoint: "https://relay-two.example.com"})
 	if !s.enabled || s.activeEndpoint != "https://relay-two.example.com" || len(endpoints) != 2 || endpoints[0] != "https://relay-one.example.com" || endpoints[1] != "https://relay-two.example.com" {
 		t.Fatalf("endpoint change was not reconciled: enabled=%t active=%q endpoints=%q", s.enabled, s.activeEndpoint, endpoints)
+	}
+	if !slices.Equal(events, []string{"token", "collector", "stop", "disable-token", "token", "collector"}) {
+		t.Fatalf("endpoint switch did not stop the old exporter before replacing credentials: %q", events)
 	}
 }
 
@@ -106,7 +113,7 @@ func TestVendorSupervisorDisableStopsCollectorAndToken(t *testing.T) {
 	}
 }
 
-func TestVendorSupervisorRollsBackFailedEndpointChange(t *testing.T) {
+func TestVendorSupervisorDoesNotRollBackFailedEndpointChange(t *testing.T) {
 	tokens := &fakeTokenLifecycle{}
 	var endpoints []string
 	s := newVendorTestSupervisor(tokens)
@@ -120,14 +127,14 @@ func TestVendorSupervisorRollsBackFailedEndpointChange(t *testing.T) {
 	s.reconcile(context.Background(), vendorSettings{enabled: true, endpoint: "https://relay-one.example.com"})
 
 	s.reconcile(context.Background(), vendorSettings{enabled: true, endpoint: "https://relay-two.example.com"})
-	if !s.enabled || s.activeEndpoint != "https://relay-one.example.com" || s.desiredEndpoint != "https://relay-two.example.com" || s.nextStart.IsZero() {
-		t.Fatalf("failed replacement did not retain last-known-good endpoint: enabled=%t active=%q desired=%q next=%s", s.enabled, s.activeEndpoint, s.desiredEndpoint, s.nextStart)
+	if s.enabled || s.activeEndpoint != "" || s.desiredEndpoint != "https://relay-two.example.com" || s.nextStart.IsZero() {
+		t.Fatalf("failed replacement did not stop export and schedule a retry: enabled=%t active=%q desired=%q next=%s", s.enabled, s.activeEndpoint, s.desiredEndpoint, s.nextStart)
 	}
-	if len(endpoints) != 3 || endpoints[0] != "https://relay-one.example.com" || endpoints[1] != "https://relay-two.example.com" || endpoints[2] != "https://relay-one.example.com" {
-		t.Fatalf("unexpected replacement and rollback sequence: %q", endpoints)
+	if len(endpoints) != 2 || endpoints[0] != "https://relay-one.example.com" || endpoints[1] != "https://relay-two.example.com" {
+		t.Fatalf("unexpected replacement sequence: %q", endpoints)
 	}
-	if tokens.disables != 0 {
-		t.Fatalf("failed endpoint replacement disabled a token still used by rollback: %d", tokens.disables)
+	if tokens.disables != 2 {
+		t.Fatalf("old and failed destination credentials were not removed: %d", tokens.disables)
 	}
 }
 
@@ -309,7 +316,7 @@ func TestVendorSupervisorShutdownCancelsReplacementWithoutRollback(t *testing.T)
 	default:
 		t.Fatal("shutdown returned while replacement was still running")
 	}
-	if ctx.Err() != nil || replacements != 1 || stops != 1 || tokens.disables == 0 {
+	if ctx.Err() != nil || replacements != 1 || stops != 2 || tokens.disables == 0 {
 		t.Fatalf("shutdown retried replacement or exhausted its deadline: err=%v replacements=%d stops=%d disables=%d", ctx.Err(), replacements, stops, tokens.disables)
 	}
 }
