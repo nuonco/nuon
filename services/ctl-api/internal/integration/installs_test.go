@@ -187,13 +187,13 @@ func (s *installsIntegrationTestSuite) TestReprovisionInstall() {
 	seedInstall := s.createInstall(s.appID)
 
 	s.T().Run("success", func(t *testing.T) {
-		resp, err := s.apiClient.ReprovisionInstall(s.ctx, seedInstall.ID)
+		resp, err := s.apiClient.ReprovisionInstall(s.ctx, seedInstall.ID, "")
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 		require.NotEmpty(t, resp.WorkflowID)
 	})
 	s.T().Run("invalid id", func(t *testing.T) {
-		_, err := s.apiClient.ReprovisionInstall(s.ctx, generics.GetFakeObj[string]())
+		_, err := s.apiClient.ReprovisionInstall(s.ctx, generics.GetFakeObj[string](), "")
 		require.Error(t, err)
 		require.True(t, nuon.IsNotFound(err))
 	})
@@ -203,13 +203,13 @@ func (s *installsIntegrationTestSuite) TestDeprovisionInstall() {
 	seedInstall := s.createInstall(s.appID)
 
 	s.T().Run("success", func(t *testing.T) {
-		resp, err := s.apiClient.DeprovisionInstall(s.ctx, seedInstall.ID)
+		resp, err := s.apiClient.DeprovisionInstall(s.ctx, seedInstall.ID, "")
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 		require.NotEmpty(t, resp.WorkflowID)
 	})
 	s.T().Run("invalid id", func(t *testing.T) {
-		_, err := s.apiClient.DeprovisionInstall(s.ctx, generics.GetFakeObj[string]())
+		_, err := s.apiClient.DeprovisionInstall(s.ctx, generics.GetFakeObj[string](), "")
 		require.Error(t, err)
 		require.True(t, nuon.IsNotFound(err))
 	})
