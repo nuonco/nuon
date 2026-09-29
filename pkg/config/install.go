@@ -161,16 +161,17 @@ func (s *InstallStackOverrides) HasOverrides() bool {
 
 // Install is a flattened configuration type that allows us to define installs for an app.
 type Install struct {
-	Name           string                `mapstructure:"name" toml:"name" comment:"install" jsonschema:"required"`
-	AppBranch      string                `mapstructure:"app_branch,omitempty" toml:"app_branch,omitempty"`
-	AppBranchGroup string                `mapstructure:"app_branch_group,omitempty" toml:"app_branch_group,omitempty"`
-	ApprovalOption InstallApprovalOption `mapstructure:"approval_option,omitempty" toml:"approval_option,omitempty"`
-	Telemetry      *InstallTelemetry     `mapstructure:"telemetry,omitempty" toml:"telemetry,omitempty" json:",omitempty"`
-	Labels         map[string]string     `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
-	AWSAccount     *AWSAccount           `mapstructure:"aws_account,omitempty" toml:"aws_account,omitempty"`
-	GCPAccount     *GCPAccount           `mapstructure:"gcp_account,omitempty" toml:"gcp_account,omitempty"`
-	AzureAccount   *AzureAccount         `mapstructure:"azure_account,omitempty" toml:"azure_account,omitempty"`
-	InputGroups    []InputGroup          `mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
+	Name            string                `mapstructure:"name" toml:"name" comment:"install" jsonschema:"required"`
+	AppBranch       string                `mapstructure:"app_branch,omitempty" toml:"app_branch,omitempty"`
+	AppBranchGroup  string                `mapstructure:"app_branch_group,omitempty" toml:"app_branch_group,omitempty"`
+	ApprovalOption  InstallApprovalOption `mapstructure:"approval_option,omitempty" toml:"approval_option,omitempty"`
+	Telemetry       *InstallTelemetry     `mapstructure:"telemetry,omitempty" toml:"telemetry,omitempty" json:",omitempty"`
+	Labels          map[string]string     `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
+	AWSAccount      *AWSAccount           `mapstructure:"aws_account,omitempty" toml:"aws_account,omitempty"`
+	GCPAccount      *GCPAccount           `mapstructure:"gcp_account,omitempty" toml:"gcp_account,omitempty"`
+	AzureAccount    *AzureAccount         `mapstructure:"azure_account,omitempty" toml:"azure_account,omitempty"`
+	CloudConnection string                `mapstructure:"cloud_connection,omitempty" toml:"cloud_connection,omitempty"`
+	InputGroups     []InputGroup          `mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
 
 	StackOverrides *InstallStackOverrides `mapstructure:"stack_overrides,omitempty" toml:"stack_overrides,omitempty"`
 
@@ -242,6 +243,9 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("GCP-specific settings for this install, including project ID and region").
 		Field("azure_account").Short("Azure account configuration").
 		Long("Azure-specific settings for this install, including the deployment location").
+		Field("cloud_connection").Short("cloud connection name or ID").
+		Long("AWS cloud connection this install uses for provisioning, by name or ID. The connection must exist in the organization and be verified. When omitted, the install falls back to legacy account-level credentials.").
+		Example("demo-aws").
 		Field("inputs").Short("input values").
 		Long("Array of input groups with key-value pairs for customer inputs provided during installation").
 		Type("array").
@@ -364,6 +368,13 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 		diffs = append(diffs, diff.NewDiff(
 			diff.WithKey("app_branch_group"),
 			diff.WithStringDiff(upstreamInstall.AppBranchGroup, i.AppBranchGroup),
+		))
+	}
+
+	if i.CloudConnection != "" || upstreamInstall.CloudConnection != "" {
+		diffs = append(diffs, diff.NewDiff(
+			diff.WithKey("cloud_connection"),
+			diff.WithStringDiff(upstreamInstall.CloudConnection, i.CloudConnection),
 		))
 	}
 
