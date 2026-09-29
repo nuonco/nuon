@@ -24,6 +24,7 @@ import (
 	installsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/service"
 	notebooksservice "github.com/nuonco/nuon/services/ctl-api/internal/app/notebooks/service"
 	oidcfederationservice "github.com/nuonco/nuon/services/ctl-api/internal/app/oidc-federation/service"
+	oidcservice "github.com/nuonco/nuon/services/ctl-api/internal/app/oidc/service"
 	onboardingservice "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/service"
 	orgsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/service"
 	policyreportsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/service"
@@ -49,8 +50,10 @@ func testDomainServices(t *testing.T, ea *api.EndpointAudit) []api.Service {
 	require.NoError(t, err)
 	cloudConnectionsService, err := cloudconnectionsservice.New(cloudconnectionsservice.Params{EndpointAudit: ea})
 	require.NoError(t, err)
+	oidcSvc, err := oidcservice.New(oidcservice.Params{})
+	require.NoError(t, err)
 
-	return []api.Service{
+	services := []api.Service{
 		accountsservice.New(accountsservice.Params{}),
 		actionsservice.New(actionsservice.Params{EndpointAudit: ea}),
 		cloudConnectionsService,
@@ -74,7 +77,9 @@ func testDomainServices(t *testing.T, ea *api.EndpointAudit) []api.Service {
 		vcsservice.New(vcsservice.Params{}),
 		onboardingservice.New(onboardingservice.Params{EndpointAudit: ea}),
 		oidcfederationservice.New(oidcfederationservice.Params{}),
+		oidcSvc,
 	}
+	return services
 }
 
 // SwaggerSpec represents the structure of a Swagger/OpenAPI 2.0 specification
