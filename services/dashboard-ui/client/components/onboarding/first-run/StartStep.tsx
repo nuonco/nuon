@@ -1,13 +1,15 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useForm, useStore } from '@tanstack/react-form'
 import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
-import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Code } from '@/components/common/Code'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Icon } from '@/components/common/Icon'
-import { Input } from '@/components/common/form/Input'
+import { fieldErrorMessage } from '@/components/common/form/field-error'
+import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
+import { FormInput } from '@/components/common/form/FormInput'
 import { Text } from '@/components/common/Text'
 import { githubAppInstallUrl } from '@/components/vcs-connections/ConnectGithub'
 import { useAuth } from '@/hooks/use-auth'
@@ -34,6 +36,7 @@ import {
   type TCloud,
   type TExampleCloud,
 } from './constants'
+import { startSchema, type StartValues } from './schema'
 import { NextButton, TestCloudPicker } from './shared'
 
 const OWN_APP_STEPS = [
@@ -124,7 +127,7 @@ const ExampleEscapeHatch = ({ onExit }: { onExit: () => void }) => (
         Want to see an install work before touching your repo?
       </Text>
     </div>
-    <Button variant="ghost" size="sm" onClick={onExit}>
+    <Button type="button" variant="ghost" size="sm" onClick={onExit}>
       Use the example app <Icon variant="ArrowRightIcon" size={14} />
     </Button>
   </div>
@@ -174,6 +177,7 @@ const GithubTile = ({
           </Text>
         ) : (
           <Button
+            type="button"
             variant="secondary"
             size="lg"
             disabled={connecting || !connectHref}
@@ -229,7 +233,7 @@ export interface IStartStepView {
   cloud?: TCloud
   onCloud: (cloud: TCloud) => void
   showErrors: boolean
-  onNext: () => void
+  onNext: (values: StartValues) => void
   nextPending?: boolean
   // Set while something Next depends on is still loading.
   nextBlockedReason?: string
@@ -261,13 +265,41 @@ export const StartStepView = ({
   examplePending,
   error,
 }: IStartStepView) => {
-  const named = appName.length > 0
-  const nameInvalid = named && !APP_NAME_PATTERN.test(appName)
-  const nameError = nameInvalid
-    ? APP_NAME_RULE
-    : appNameError ??
-      repoError ??
-      (showErrors && !named ? 'Name your app template to continue.' : undefined)
+  const [githubAttempted, setGithubAttempted] = useState(false)
+  const initialReveal = useRef({ appName, showErrors })
+  const form = useForm({
+    defaultValues: { appName, cloud: cloud ?? '' } as StartValues,
+    validators: { onMount: startSchema, onChange: startSchema },
+    onSubmit: ({ value }) => {
+      if (github.status !== 'connected') {
+        setGithubAttempted(true)
+        return
+      }
+      onNext(value)
+    },
+    onSubmitInvalid: () => setGithubAttempted(true),
+  })
+  const appNameValue = useStore(form.store, (s) => s.values.appName)
+  const nameInvalid = appNameValue.length > 0 && !APP_NAME_PATTERN.test(appNameValue)
+  const githubMissing = (showErrors || githubAttempted) && github.status !== 'connected'
+  const fieldsLocked = !!nextPending
+
+  useEffect(() => {
+    const message = appNameError || repoError || undefined
+    form.setFieldMeta('appName', (prev) => ({
+      ...prev,
+      isTouched: message ? true : prev.isTouched,
+      errorMap: { ...prev.errorMap, onServer: message },
+    }))
+  }, [appNameError, repoError, form])
+
+  useEffect(() => {
+    const { appName: initialName, showErrors: reveal } = initialReveal.current
+    if (initialName && !APP_NAME_PATTERN.test(initialName)) {
+      form.setFieldMeta('appName', (prev) => ({ ...prev, isTouched: true }))
+    }
+    if (reveal) void form.handleSubmit()
+  }, [form])
 
   let body: ReactNode
   if (expanded) {
@@ -283,7 +315,7 @@ export const StartStepView = ({
               connectHref={connectHref}
               onConnect={onConnectGithub}
               connecting={connectingGithub}
-              showErrors={showErrors}
+              showErrors={githubMissing}
             />
             <div className="flex flex-col gap-3 rounded-md border p-4">
               <div className="flex items-center gap-2">
@@ -309,22 +341,42 @@ export const StartStepView = ({
             </Text>
           </div>
           <div className="max-w-sm">
-            <Input
-              id="first-run-app-name"
-              size="lg"
-              placeholder="my-app"
-              value={appName}
-              onChange={(e) => onAppName(e.currentTarget.value)}
-              labelProps={{ labelText: 'App template name' }}
-              error={!!nameError}
-              errorMessage={nameError}
-              helperText={nameError ? undefined : APP_NAME_RULE}
-              autoComplete="off"
-              spellCheck={false}
-            />
+            <form.Field
+              name="appName"
+              listeners={{ onChange: ({ value }) => onAppName(value) }}
+            >
+              {(field) => (
+                <FormInput
+                  field={field}
+                  id="first-run-app-name"
+                  size="lg"
+                  placeholder="my-app"
+                  labelProps={{ labelText: 'App template name' }}
+                  helperText={APP_NAME_RULE}
+                  autoComplete="off"
+                  spellCheck={false}
+                  disabled={fieldsLocked}
+                />
+              )}
+            </form.Field>
           </div>
-          {/* Asked here so the stubbed runner, sandbox and permissions match the cloud the install will use. */}
-          <TestCloudPicker value={cloud} onChange={onCloud} error={showErrors && !cloud} />
+          <form.Field
+            name="cloud"
+            listeners={{
+              onChange: ({ value }) => {
+                if (isCloud(value)) onCloud(value)
+              },
+            }}
+          >
+            {(field) => (
+              <TestCloudPicker
+                value={isCloud(field.state.value) ? field.state.value : undefined}
+                onChange={(next) => field.handleChange(next)}
+                error={!!fieldErrorMessage(field)}
+                disabled={fieldsLocked}
+              />
+            )}
+          </form.Field>
         </Card>
         <ExampleEscapeHatch onExit={onExitToExample} />
       </div>
@@ -350,7 +402,7 @@ export const StartStepView = ({
             ))}
           </ol>
           <div>
-            <Button variant="primary" size="lg" onClick={onExpand}>
+            <Button type="button" variant="primary" size="lg" onClick={onExpand}>
               Start with your app <Icon variant="CaretRightIcon" weight="bold" />
             </Button>
           </div>
@@ -372,6 +424,7 @@ export const StartStepView = ({
             {EXAMPLE_CLOUDS.map((option) => (
               <Button
                 key={option}
+                type="button"
                 variant="secondary"
                 size="md"
                 disabled={!!examplePending}
@@ -393,16 +446,28 @@ export const StartStepView = ({
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <form
+      className="flex flex-col gap-6"
+      autoComplete="off"
+      noValidate
+      onSubmit={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        void form.handleSubmit()
+      }}
+    >
       <Text variant="h1" role="heading" level={1}>
         Create your first app template
       </Text>
-      {error ? <Banner theme="error">{error}</Banner> : null}
+      <FormErrorBanner
+        error={error ? { error, description: '', user_error: true } : null}
+        fallback="Unable to create the app template."
+      />
       {body}
       {expanded ? (
         <NextButton
           label="Next"
-          onClick={onNext}
+          onClick={() => void form.handleSubmit()}
           onBack={onBackToIntro}
           loading={nextPending}
           disabled={nameInvalid || !!nextBlockedReason}
@@ -411,7 +476,7 @@ export const StartStepView = ({
       ) : (
         <NextButton onBack={onBackToIntro} showNext={false} />
       )}
-    </div>
+    </form>
   )
 }
 
@@ -502,28 +567,29 @@ export const StartStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepC
     window.location.assign(connectHref)
   }
 
-  const next = async () => {
+  const next = async ({ appName: name, cloud }: StartValues) => {
+    const chosenCloud = isCloud(cloud) ? cloud : undefined
     setAppNameError(undefined)
     setRepoError(undefined)
     setError(undefined)
-    if (!appName || !connectionId || !testCloud) {
+    if (!name || !connectionId || !chosenCloud) {
       setShowErrors(true)
       scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       return
     }
-    if (!APP_NAME_PATTERN.test(appName) || reposLoading) return
-    const repo = pickConfigRepo(repos?.repositories, appName)
+    if (!APP_NAME_PATTERN.test(name) || reposLoading) return
+    const repo = pickConfigRepo(repos?.repositories, name)
     if (!repo) {
-      setRepoError(`No repo named ${appName} in your GitHub connection.`)
+      setRepoError(`No repo named ${name} in your GitHub connection.`)
       return
     }
 
     setNextPending(true)
-    const base = { path: 'own', cloud: testCloud, app_name: appName, repo: repo.full_name }
+    const base = { path: 'own', cloud: chosenCloud, app_name: name, repo: repo.full_name }
     try {
       const { appId, branchId } = await setUpOwnApp({
         orgId,
-        name: appName,
+        name,
         repo: repo.full_name,
         vcsConnectionId: connectionId,
         saved: {
@@ -540,9 +606,9 @@ export const StartStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepC
       )
       // Connect may be marked done from an earlier pass on the example path.
       await journey.saveStep('connect', {}, { complete: false })
-      trackEvent({ event: 'app_create', status: 'ok', user, props: { appId, path: 'own', cloud: testCloud } })
-      setOwn({ ...base, app_id: appId, app_branch_id: branchId, region: defaultRegion(testCloud) })
-      choosePath('own', testCloud)
+      trackEvent({ event: 'app_create', status: 'ok', user, props: { appId, path: 'own', cloud: chosenCloud } })
+      setOwn({ ...base, app_id: appId, app_branch_id: branchId, region: defaultRegion(chosenCloud) })
+      choosePath('own', chosenCloud)
       onAdvance()
     } catch (err) {
       trackEvent({
@@ -551,7 +617,7 @@ export const StartStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepC
         user,
         props: {
           path: 'own',
-          cloud: testCloud,
+          cloud: chosenCloud,
           err: err instanceof AppNameTakenError ? 'name_taken' : (err as TAPIError)?.error,
         },
       })

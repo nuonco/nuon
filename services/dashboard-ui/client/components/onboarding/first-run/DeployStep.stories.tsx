@@ -2,14 +2,13 @@ export default {
   title: 'Onboarding/First run/Deploy',
 }
 
-import { useState } from 'react'
 import { DeployStepView, type IDeployStepView } from './DeployStep'
 import { StoryFrame } from './StoryFrame'
 
 const Harness = ({ path = 'own', ...overrides }: Partial<IDeployStepView>) => {
   const cloud = overrides.cloud ?? 'aws'
-  const [region, setRegion] = useState(overrides.region ?? (cloud === 'gcp' ? 'us-central1' : cloud === 'azure' ? 'eastus' : 'us-east-1'))
-  const [autoApprove, setAutoApprove] = useState(true)
+  const region =
+    overrides.region ?? (cloud === 'gcp' ? 'us-central1' : cloud === 'azure' ? 'eastus' : 'us-east-1')
   return (
     <StoryFrame step="deploy" path={path} cloud={cloud}>
       <DeployStepView
@@ -24,9 +23,6 @@ const Harness = ({ path = 'own', ...overrides }: Partial<IDeployStepView>) => {
         onBack={() => {}}
         {...overrides}
         region={region}
-        onRegion={setRegion}
-        autoApprove={autoApprove}
-        onAutoApprove={setAutoApprove}
       />
     </StoryFrame>
   )

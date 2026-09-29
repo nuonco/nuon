@@ -39,13 +39,12 @@ export const NextButton = ({
   onClick?: () => void
   onBack?: () => void
   showNext?: boolean
-  // Rendered beside the primary, e.g. a way to get help.
   secondary?: ReactNode
   size?: 'md' | 'lg'
 }) => (
   <div className={cn('flex flex-wrap gap-3', onBack ? 'justify-between' : 'justify-end')}>
     {onBack ? (
-      <Button variant="secondary" size={size} onClick={onBack}>
+      <Button type="button" variant="secondary" size={size} onClick={onBack}>
         <Icon variant="CaretLeftIcon" weight="bold" /> Back
       </Button>
     ) : null}
@@ -53,6 +52,7 @@ export const NextButton = ({
       {secondary}
       {showNext ? (
         <Button
+          type="button"
           variant="primary"
           size={size}
           disabled={disabled || loading}
@@ -175,10 +175,12 @@ export const TestCloudPicker = ({
   value,
   onChange,
   error,
+  disabled,
 }: {
   value?: TCloud
   onChange: (cloud: TCloud) => void
   error: boolean
+  disabled?: boolean
 }) => (
   <fieldset aria-describedby={error ? 'test-cloud-error' : 'test-cloud-hint'}>
     <legend className="mb-2">
@@ -195,7 +197,8 @@ export const TestCloudPicker = ({
               key={cloud}
               title={CLOUD_LABEL[cloud]}
               className={cn(
-                'flex h-14 cursor-pointer items-center gap-3 rounded-md px-4 ring-1 transition-shadow',
+                'flex h-14 items-center gap-3 rounded-md px-4 ring-1 transition-shadow',
+                disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
                 'has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary-500',
                 checked
                   ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-950/40'
@@ -209,6 +212,7 @@ export const TestCloudPicker = ({
                 name="test-cloud"
                 value={cloud}
                 checked={checked}
+                disabled={disabled}
                 onChange={() => onChange(cloud)}
                 aria-invalid={error || undefined}
                 className="accent-primary-600 focus-visible:outline-none"
