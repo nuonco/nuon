@@ -19,18 +19,21 @@ const (
 func TestRootHandle(t *testing.T) {
 	tests := []struct {
 		name      string
+		firstRun  bool
 		orgCookie string
 		orgs      string
 		account   func(http.ResponseWriter, *http.Request)
 		want      string
 	}{
 		{name: "new sign-up with no org", orgs: `[]`, want: "/onboarding"},
-		{name: "mid-onboarding via org list", orgs: oneOrg, account: jsonResponse(http.StatusOK, accountFirstRunOpen), want: "/onboarding"},
-		{name: "mid-onboarding via org cookie", orgCookie: "orgabc123", account: jsonResponse(http.StatusOK, accountFirstRunOpen), want: "/onboarding"},
-		{name: "finished or skipped", orgs: oneOrg, account: jsonResponse(http.StatusOK, accountFirstRunDone), want: "/orgabc123"},
-		{name: "finished via org cookie", orgCookie: "orgabc123", account: jsonResponse(http.StatusOK, accountFirstRunDone), want: "/orgabc123"},
-		{name: "existing user without first_run", orgs: oneOrg, account: jsonResponse(http.StatusOK, accountNoJourney), want: "/orgabc123"},
-		{name: "account lookup fails", orgCookie: "orgabc123", account: jsonResponse(http.StatusInternalServerError, `{"error":"boom"}`), want: "/orgabc123"},
+		{name: "flag off ignores an open first_run", orgs: oneOrg, account: jsonResponse(http.StatusOK, accountFirstRunOpen), want: "/orgabc123"},
+		{name: "flag off trusts the org cookie", orgCookie: "orgabc123", want: "/orgabc123"},
+		{name: "mid-onboarding via org list", firstRun: true, orgs: oneOrg, account: jsonResponse(http.StatusOK, accountFirstRunOpen), want: "/onboarding"},
+		{name: "mid-onboarding via org cookie", firstRun: true, orgCookie: "orgabc123", account: jsonResponse(http.StatusOK, accountFirstRunOpen), want: "/onboarding"},
+		{name: "finished or skipped", firstRun: true, orgs: oneOrg, account: jsonResponse(http.StatusOK, accountFirstRunDone), want: "/orgabc123"},
+		{name: "finished via org cookie", firstRun: true, orgCookie: "orgabc123", account: jsonResponse(http.StatusOK, accountFirstRunDone), want: "/orgabc123"},
+		{name: "existing user without first_run", firstRun: true, orgs: oneOrg, account: jsonResponse(http.StatusOK, accountNoJourney), want: "/orgabc123"},
+		{name: "account lookup fails", firstRun: true, orgCookie: "orgabc123", account: jsonResponse(http.StatusInternalServerError, `{"error":"boom"}`), want: "/orgabc123"},
 	}
 
 	for _, tt := range tests {
@@ -40,7 +43,7 @@ func TestRootHandle(t *testing.T) {
 				fake.orgs = jsonResponse(http.StatusOK, tt.orgs)
 			}
 			api := fake.start(t)
-			h := NewRootHandler(&internal.Config{APIUrl: api.URL}, zap.NewNop())
+			h := NewRootHandler(&internal.Config{APIUrl: api.URL, OnboardingFirstRun: tt.firstRun}, zap.NewNop())
 
 			cookies := []*http.Cookie{authed()}
 			if tt.orgCookie != "" {

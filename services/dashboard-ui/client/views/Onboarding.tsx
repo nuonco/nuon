@@ -5,6 +5,12 @@ import { ProviderError } from '@/components/layout/ProviderError'
 import { ProviderLoading } from '@/components/layout/ProviderLoading'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
+import { CreateAppStep } from '@/components/onboarding/steps/CreateAppStep'
+import { CreateInstallStep } from '@/components/onboarding/steps/CreateInstallStep'
+import { CreateOrgStep } from '@/components/onboarding/steps/CreateOrgStep'
+import { DownloadCliStep } from '@/components/onboarding/steps/DownloadCliStep'
+import { SyncAppStep } from '@/components/onboarding/steps/SyncAppStep'
+import { WelcomeStep } from '@/components/onboarding/steps/WelcomeStep'
 import {
   IntroScreen,
   buildFirstRunSteps,
@@ -15,6 +21,7 @@ import {
   type TPath,
 } from '@/components/onboarding/first-run'
 import { useAuth } from '@/hooks/use-auth'
+import { useConfig } from '@/hooks/use-config'
 import {
   useFirstRunJourney,
   type TFirstRunStep,
@@ -24,10 +31,83 @@ import {
   FirstRunProvider,
   type IFirstRunContext,
 } from '@/providers/first-run-provider'
+import { OnboardingJourneyProvider } from '@/providers/onboarding-journey-provider'
 import { OrgProvider } from '@/providers/org-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastProvider } from '@/providers/toast-provider'
 import type { TAPIError } from '@/types'
+
+const STEPS = [
+  {
+    id: 'step-1',
+    title: 'Welcome to Nuon',
+    navLabel: 'Get Started',
+    component: WelcomeStep,
+  },
+  {
+    id: 'step-2',
+    title: 'Create your org',
+    navLabel: 'Create Org',
+    description: (
+      <div className="flex flex-col gap-2">
+        <p>
+          An org is an isolated place for metadata about your apps, installs, workflows and logs in Nuon Cloud.
+        </p>
+        <p className="text-sm opacity-80">
+          <a
+            href="https://nuon.co/contact-sales"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-600 dark:text-primary-400 underline underline-offset-2"
+          >
+            Contact sales
+          </a>{' '}
+          if you want to run Nuon&apos;s control plane in your AWS, Azure, or GCP.
+        </p>
+      </div>
+    ),
+    component: CreateOrgStep,
+  },
+  {
+    id: 'step-3',
+    title: 'Download the Nuon CLI',
+    navLabel: 'Nuon CLI',
+    description:
+      'Download the Nuon CLI to create and manage your apps from the terminal.',
+    component: DownloadCliStep,
+  },
+  {
+    id: 'step-4',
+    title: 'Create your first app',
+    navLabel: 'Create App',
+    description:
+      'Choose an example app to get started. You can customize it later.',
+    component: CreateAppStep,
+  },
+  {
+    id: 'step-5',
+    title: 'Sync your app',
+    navLabel: 'Sync App',
+    description: (
+      <div className="flex flex-col gap-2">
+        <p>
+          Syncing pushes your app to Nuon and triggers a build. Run this from inside your cloned app directory.
+        </p>
+        <p className="text-sm opacity-80">
+          A build creates OCI artifacts for the components in your app (e.g., Helm, Terraform, container image, Kubernetes manifest, etc.) and stores them in an isolated container registry in your org.
+        </p>
+      </div>
+    ),
+    component: SyncAppStep,
+  },
+  {
+    id: 'step-6',
+    title: 'Create an install',
+    navLabel: 'Deploy Install',
+    description: 'Create an install to deploy your app to a cloud account. (Scroll down to find the Create install button.)',
+    component: CreateInstallStep,
+  },
+]
 
 const ONCE = {
   staleTime: Infinity,
@@ -35,7 +115,7 @@ const ONCE = {
   retry: false,
 } as const
 
-export function Onboarding() {
+function FirstRunOnboarding() {
   const [searchParams, setSearchParams] = useSearchParams()
   // Read once, then dropped from the URL so a reload does not replay a GitHub callback.
   const [params] = useState(() => ({
@@ -112,7 +192,6 @@ export function Onboarding() {
     [journey, orgId, user]
   )
 
-  // The GitHub App callback lands here with the outcome in the URL.
   useEffect(() => {
     if (!orgId || (!params.vcsConnectionId && !params.vcsError)) return
     trackEvent({
@@ -188,4 +267,28 @@ export function Onboarding() {
       <SurfacesProvider>{content}</SurfacesProvider>
     </ToastProvider>
   )
+}
+
+function ExistingOnboarding() {
+  return (
+    <ToastProvider>
+      <PageTitle title="Onboarding" />
+      <SurfacesProvider>
+        <OnboardingJourneyProvider>
+          <OnboardingWizard
+            steps={STEPS}
+            onComplete={() => {
+              window.location.href = '/'
+            }}
+          />
+        </OnboardingJourneyProvider>
+      </SurfacesProvider>
+    </ToastProvider>
+  )
+}
+
+export function Onboarding() {
+  const { onboardingFirstRun } = useConfig()
+  if (onboardingFirstRun) return <FirstRunOnboarding />
+  return <ExistingOnboarding />
 }

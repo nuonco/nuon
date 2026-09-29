@@ -35,7 +35,8 @@ cloud's repo variable is unset. The other onboarding specs need only `E2E_EMAIL`
 
 ## Onboarding specs
 
-`specs/onboarding/` covers the first-run flow ([flow](./flows/onboarding.flow.md)). Each spec makes a brand-new
+`specs/onboarding/` covers the first-run flow ([flow](./flows/onboarding.flow.md)). The dashboard has to be started
+with `NUON_ONBOARDING_FIRST_RUN=true`, or `/onboarding` serves the existing wizard. Each spec makes a brand-new
 account (`e2e/onboarding.ts`), so it starts with no org, the way a new sign-up does, and does not use the shared
 session from global setup. They expect ctl-api's `force_sandbox_mode` (on in the local stack), so the install stack
 reports back without a real cloud account.

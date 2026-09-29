@@ -73,6 +73,7 @@ type clientConfig struct {
 	BYOCName               string `json:"byocName,omitempty"`
 	BYOCColor              string `json:"byocColor,omitempty"`
 	BYOCTextColor          string `json:"byocTextColor,omitempty"`
+	OnboardingFirstRun     bool   `json:"onboardingFirstRun,omitempty"`
 	DashboardLite          bool   `json:"dashboardLite,omitempty"`
 	StatusBarAutoEnabled   bool   `json:"statusBarAutoEnabled,omitempty"`
 	InstallsTabAutoEnabled bool   `json:"installsTabAutoEnabled,omitempty"`
@@ -99,6 +100,7 @@ func buildClientConfig(cfg *internal.Config) clientConfig {
 		Version:                cfg.Version,
 		GitRef:                 cfg.GitRef,
 		IsBYOC:                 cfg.IsBYOC,
+		OnboardingFirstRun:     cfg.OnboardingFirstRun,
 		DashboardLite:          cfg.DashboardLite,
 		StatusBarAutoEnabled:   cfg.StatusBarAutoEnabled,
 		InstallsTabAutoEnabled: cfg.InstallsTabAutoEnabled,

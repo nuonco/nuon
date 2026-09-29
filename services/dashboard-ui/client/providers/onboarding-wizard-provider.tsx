@@ -1,4 +1,4 @@
-import { createContext, useState, useCallback } from 'react'
+import { createContext, useState, useCallback, useEffect } from 'react'
 import type { ComponentType, ReactNode } from 'react'
 
 export interface IWizardStepComponentProps {
@@ -25,8 +25,8 @@ export interface IOnboardingWizardProps {
   onComplete: () => void
   canClose?: boolean
   onClose?: () => void
-  initialSharedData: Record<string, unknown>
-  initialStepIndex: number
+  initialSharedData?: Record<string, unknown>
+  initialStepIndex?: number
 }
 
 export interface IWizardContext {
@@ -46,6 +46,8 @@ export interface IWizardContext {
 
 export const WizardContext = createContext<IWizardContext | undefined>(undefined)
 
+const STORAGE_KEY = 'onboarding-wizard-step'
+
 export function OnboardingWizardProvider({
   steps,
   onComplete,
@@ -55,13 +57,33 @@ export function OnboardingWizardProvider({
   initialStepIndex,
   children,
 }: IOnboardingWizardProps & { children: React.ReactNode }) {
-  const [currentStepIndex, setCurrentStepIndex] = useState(initialStepIndex)
+  const useLocalStorage = initialStepIndex === undefined
 
-  const [completedSteps, setCompletedSteps] = useState<Set<string>>(
-    () => new Set(steps.slice(0, initialStepIndex).map((s) => s.id))
-  )
+  const [currentStepIndex, setCurrentStepIndex] = useState(() => {
+    if (!useLocalStorage) return initialStepIndex
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved === null) return 0
+    const parsed = parseInt(saved, 10)
+    return parsed >= 0 && parsed < steps.length ? parsed : 0
+  })
 
-  const [sharedData, setSharedDataState] = useState<Record<string, unknown>>(initialSharedData)
+  const [completedSteps, setCompletedSteps] = useState<Set<string>>(() => {
+    if (!useLocalStorage) {
+      return new Set(steps.slice(0, initialStepIndex).map((s) => s.id))
+    }
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved === null) return new Set()
+    const parsed = parseInt(saved, 10)
+    return new Set(steps.slice(0, parsed).map((s) => s.id))
+  })
+
+  const [sharedData, setSharedDataState] = useState<Record<string, unknown>>(initialSharedData ?? {})
+
+  useEffect(() => {
+    if (useLocalStorage) {
+      localStorage.setItem(STORAGE_KEY, String(currentStepIndex))
+    }
+  }, [currentStepIndex, useLocalStorage])
 
   const markComplete = useCallback((id: string) => {
     setCompletedSteps((prev) => new Set([...prev, id]))
@@ -87,10 +109,11 @@ export function OnboardingWizardProvider({
         setCompletedSteps((s) => new Set([...s, currentStepId]))
       }
       if (prev < steps.length - 1) return prev + 1
+      if (useLocalStorage) localStorage.removeItem(STORAGE_KEY)
       onComplete()
       return prev
     })
-  }, [steps, onComplete])
+  }, [steps, onComplete, useLocalStorage])
 
   const goPrev = useCallback(() => {
     setCurrentStepIndex((prev) => Math.max(0, prev - 1))

@@ -26,18 +26,18 @@ type IUserDropdownContainerProps = Omit<
   | 'onAddToast'
   | 'user'
   | 'isUserLoading'
+  | 'onboardingFirstRun'
   | 'onReopenOnboarding'
 >
 
 export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
   const { isAdmin, isNuonEmployee, user, isLoading } = useAuth()
-  const { apiUrl, authServiceUrl, adminDashboardUrl, isDev, isByoc } =
+  const { apiUrl, authServiceUrl, adminDashboardUrl, isDev, isByoc, onboardingFirstRun } =
     useConfig()
   const { addPanel } = useSurfaces()
   const { addToast } = useToast()
   const { permission, requestPermission, isSupported, muted, toggleMute } =
     useNotifications()
-  // Clears the saved IDs so onboarding opens at an empty Start step.
   const reopenOnboarding = async () => {
     try {
       await resetFirstRunJourney()
@@ -67,7 +67,8 @@ export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
       onAddToast={addToast}
       user={user}
       isUserLoading={isLoading}
-      onReopenOnboarding={reopenOnboarding}
+      onboardingFirstRun={onboardingFirstRun}
+      onReopenOnboarding={onboardingFirstRun ? reopenOnboarding : undefined}
       {...props}
     />
   )

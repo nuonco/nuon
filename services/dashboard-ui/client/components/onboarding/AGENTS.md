@@ -1,7 +1,8 @@
 # Onboarding Components
 
-The first-run flow at `/onboarding`: an intro, then a wizard that creates an app template and a first test install.
-Read [README.md](./README.md) for the steps, the `first_run` journey, and the calls each step makes.
+`/onboarding` serves the existing wizard in `steps/` (welcome, org, CLI, app, sync, install). Set
+`NUON_ONBOARDING_FIRST_RUN=true` on the dashboard server to serve the first-run flow in `first-run/` instead.
+Read [README.md](./README.md).
 
 Service-wide rules still apply: [services/dashboard-ui/AGENTS.md](../../../AGENTS.md).
 
@@ -9,7 +10,8 @@ Service-wide rules still apply: [services/dashboard-ui/AGENTS.md](../../../AGENT
 
 | Path | Role |
 |------|------|
-| `first-run/` | The live flow: one file per step, plus `constants.ts`, `api.ts`, `resume.ts`, `steps.tsx`. |
+| `steps/` | The default onboarding steps. |
+| `first-run/` | The first-run flow, served when `NUON_ONBOARDING_FIRST_RUN` is set. |
 | `OnboardingWizard/` | Full-screen layout (nav + step view). `OnboardingWizardLayout` is the presentational shell. |
 | `WizardNav/` | Stepper: dots, labels, animated progress, header with Docs and Skip. |
 | `WizardStepView.tsx` | Renders the current step's title, description, and component; owns the transition animation. |
@@ -18,7 +20,7 @@ Wizard state lives in `@/providers/onboarding-wizard-provider`; read it with `us
 context (org ID, journey helpers, `choosePath`, `backToIntro`) lives in `@/providers/first-run-provider`; read it with
 `useFirstRun()`. The route view is `@/views/Onboarding.tsx`.
 
-## Changing a step
+## Changing a first-run step
 
 - Each step file exports a presentational `*StepView` (props only, no queries) and a `*Step` container that the wizard
   renders. Stories use the view with mock props inside `StoryFrame`, which draws the real wizard chrome.

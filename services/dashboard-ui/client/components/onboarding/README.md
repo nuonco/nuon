@@ -1,8 +1,9 @@
 # Onboarding
 
-Everyone who reaches `/onboarding` gets the first-run flow: an intro, then a wizard that creates an app template and a
-first test install in the user's own cloud account. The flow lives in [`first-run/`](./first-run) and runs on the
-wizard shell in this directory.
+`/onboarding` serves the existing wizard in [`steps/`](./steps): welcome, create an org, download the CLI, create an
+app, sync it, and create an install. Set `NUON_ONBOARDING_FIRST_RUN=true` on the dashboard server to serve the
+first-run flow instead. That flow lives in [`first-run/`](./first-run) and runs on the same wizard shell: an intro,
+then a wizard that creates an app template and a first test install.
 
 ## Files
 
@@ -23,9 +24,10 @@ wizard shell in this directory.
 | `WizardNav/` | Stepper and header (Docs, Skip). Also used by `RunRunbookForm`. |
 | `WizardStepView.tsx` | Renders the current step's title, description, and component; owns the transition. |
 
-The route view is `@/views/Onboarding.tsx`. The dashboard server sends new sign-ups (no org) and anyone with an
-unfinished `first_run` journey from `/` to `/onboarding`, and returns GitHub App callbacks there when the `state` is
-`<orgID>:onboarding` (`server/internal/handlers/root.go`, `connect.go`).
+The route view is `@/views/Onboarding.tsx`. With `NUON_ONBOARDING_FIRST_RUN` set, the dashboard server sends new
+sign-ups (no org) and anyone with an unfinished `first_run` journey from `/` to `/onboarding`, and returns GitHub App
+callbacks there when the `state` is `<orgID>:onboarding` (`server/internal/handlers/root.go`, `connect.go`). Without
+the flag, `/` still sends accounts with no org to `/onboarding`, and that page is the existing wizard.
 
 ## Paths
 

@@ -1,3 +1,4 @@
+import { useOnboardingJourney } from '@/hooks/use-onboarding-journey'
 import { useOnboardingWizard } from '@/hooks/use-onboarding-wizard'
 import {
   OnboardingWizardProvider,
@@ -5,13 +6,25 @@ import {
 } from '@/providers/onboarding-wizard-provider'
 import { OnboardingWizardLayout } from './OnboardingWizard'
 
-function ConnectedWizardLayout({ onSkip }: { onSkip?: (stepId: string) => void }) {
+function FirstRunSkipLayout({ onSkip }: { onSkip: (stepId: string) => void }) {
   const { steps, currentStepIndex } = useOnboardingWizard()
   const stepId = steps[currentStepIndex]?.id
 
   return (
-    <OnboardingWizardLayout onSkip={onSkip && stepId ? () => onSkip(stepId) : undefined} />
+    <OnboardingWizardLayout onSkip={stepId ? () => onSkip(stepId) : undefined} />
   )
+}
+
+function ExistingSkipLayout() {
+  const { orgId } = useOnboardingJourney()
+  const skipHref = orgId ? `/${orgId}/apps` : null
+
+  return <OnboardingWizardLayout skipHref={skipHref} />
+}
+
+function ConnectedWizardLayout({ onSkip }: { onSkip?: (stepId: string) => void }) {
+  if (onSkip) return <FirstRunSkipLayout onSkip={onSkip} />
+  return <ExistingSkipLayout />
 }
 
 export function OnboardingWizardContainer({

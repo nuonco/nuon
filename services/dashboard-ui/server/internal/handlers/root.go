@@ -52,6 +52,9 @@ type currentUserGetter interface {
 }
 
 func (h *RootHandler) orgDestination(ctx context.Context, client currentUserGetter, orgPath string) string {
+	if !h.cfg.OnboardingFirstRun {
+		return orgPath
+	}
 	account, err := client.GetCurrentUser(ctx)
 	if err != nil {
 		h.l.Warn("root: unable to read account journeys, skipping onboarding check", zap.Error(err))
@@ -123,10 +126,20 @@ func (h *RootHandler) Handle(c *gin.Context) {
 		zap.Bool("has_org_cookie", hasOrgCookie),
 	)
 
-	// Trust the org session cookie and redirect immediately. The SPA's
-	// OrgProvider will validate the org and show an error if it's stale.
-	// This avoids an expensive GetOrg API call that loads all roles/policies
-	// for the account, which is slow for users with many orgs.
+	// Trust the org session cookie and redirect immediately when first-run
+	// routing is off. The SPA's OrgProvider validates the org. This avoids an
+	// account lookup on every visit.
+	if !h.cfg.OnboardingFirstRun {
+		if orgId, err := c.Cookie(orgCookie); err == nil && orgId != "" {
+			h.l.Info("root: redirecting to org from session cookie",
+				zap.String("org_id", orgId),
+				zap.Duration("duration", time.Since(start)),
+			)
+			c.Redirect(http.StatusFound, "/"+orgId)
+			return
+		}
+	}
+
 	client, err := nuon.New(nuon.WithURL(h.cfg.APIUrl), nuon.WithAuthToken(token))
 	if err != nil {
 		h.l.Error("root: failed to create nuon client",
