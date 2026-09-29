@@ -19,6 +19,9 @@ type AppOrgTelemetrySettings struct {
 
 	// enabled
 	Enabled bool `json:"enabled,omitempty"`
+
+	// relay endpoint
+	RelayEndpoint *string `json:"relay_endpoint,omitempty"`
 }
 
 // Validate validates this app org telemetry settings

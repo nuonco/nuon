@@ -5,13 +5,12 @@ import (
 	"net/url"
 )
 
-const defaultAudience = "urn:nuon:telemetry"
-
 type Config struct {
-	Issuer            string `mapstructure:"issuer"`
-	Audience          string `mapstructure:"audience"`
-	JWKSURL           string `mapstructure:"jwks_url"`
-	JWKSAllowInsecure bool   `mapstructure:"jwks_allow_insecure"`
+	Issuer              string `mapstructure:"issuer"`
+	Audience            string `mapstructure:"audience"`
+	AllowLegacyAudience bool   `mapstructure:"allow_legacy_audience"`
+	JWKSURL             string `mapstructure:"jwks_url"`
+	JWKSAllowInsecure   bool   `mapstructure:"jwks_allow_insecure"`
 }
 
 func (c *Config) Validate() error {

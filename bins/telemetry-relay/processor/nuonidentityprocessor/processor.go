@@ -12,13 +12,15 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/nuonco/nuon/bins/telemetry-relay/extension/nuonjwtauthextension"
 )
 
 var (
 	errMissingPrincipal = errors.New("verified Nuon telemetry principal is required")
-	errOrgNotAllowed    = consumererror.NewPermanent(errors.New("verified Nuon telemetry org is not allowed"))
+	errOrgNotAllowed    = consumererror.NewPermanent(status.Error(codes.PermissionDenied, "verified Nuon telemetry org is not allowed"))
 )
 
 func processLogs(ctx context.Context, logs plog.Logs, allowedOrgIDs []string) error {

@@ -25,11 +25,11 @@ const (
 )
 
 type telemetryAccessTokenClient interface {
-	CreateTelemetryAccessToken(context.Context) (*models.ServiceCreateTelemetryAccessTokenResponse, error)
+	CreateTelemetryAccessToken(context.Context, string) (*models.ServiceCreateTelemetryAccessTokenResponse, error)
 }
 
 type tokenLifecycle interface {
-	Enable(context.Context) error
+	Enable(context.Context, string) error
 	Disable()
 }
 
@@ -42,9 +42,10 @@ type tokenManager struct {
 	retryInitial time.Duration
 	retryMax     time.Duration
 
-	mu     sync.Mutex
-	cancel context.CancelFunc
-	done   chan struct{}
+	mu       sync.Mutex
+	cancel   context.CancelFunc
+	done     chan struct{}
+	endpoint string
 }
 
 func newTokenManager(client telemetryAccessTokenClient, logger *zap.Logger) *tokenManager {
@@ -59,14 +60,20 @@ func newTokenManager(client telemetryAccessTokenClient, logger *zap.Logger) *tok
 	}
 }
 
-func (m *tokenManager) Enable(ctx context.Context) error {
+func (m *tokenManager) Enable(ctx context.Context, endpoint string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	if endpoint == "" {
+		return fmt.Errorf("telemetry token requires a relay endpoint")
+	}
 	if m.cancel != nil {
+		if m.endpoint != endpoint {
+			return fmt.Errorf("disable telemetry token renewal before changing relay endpoint")
+		}
 		return nil
 	}
 
-	lifetime, err := m.issue(ctx)
+	lifetime, err := m.issue(ctx, endpoint)
 	if err != nil {
 		_ = os.RemoveAll(m.directory)
 		return err
@@ -76,7 +83,8 @@ func (m *tokenManager) Enable(ctx context.Context) error {
 	done := make(chan struct{})
 	m.cancel = cancel
 	m.done = done
-	go m.run(runCtx, done, lifetime)
+	m.endpoint = endpoint
+	go m.run(runCtx, done, lifetime, endpoint)
 	m.logger.Info("telemetry access token issued")
 	return nil
 }
@@ -90,12 +98,13 @@ func (m *tokenManager) Disable() {
 		m.cancel = nil
 		m.done = nil
 	}
+	m.endpoint = ""
 	if err := os.RemoveAll(m.directory); err != nil {
 		m.logger.Warn("unable to remove telemetry access token directory", zap.Error(err))
 	}
 }
 
-func (m *tokenManager) run(ctx context.Context, done chan<- struct{}, lifetime time.Duration) {
+func (m *tokenManager) run(ctx context.Context, done chan<- struct{}, lifetime time.Duration, endpoint string) {
 	defer close(done)
 	delay := m.renewalDelay(lifetime)
 	backoff := m.retryInitial
@@ -114,7 +123,7 @@ func (m *tokenManager) run(ctx context.Context, done chan<- struct{}, lifetime t
 		}
 
 		renewCtx, cancel := context.WithTimeout(ctx, telemetryTokenRequestTimeout)
-		newLifetime, err := m.issue(renewCtx)
+		newLifetime, err := m.issue(renewCtx, endpoint)
 		cancel()
 		if err != nil {
 			m.logger.Warn("telemetry access token renewal failed", zap.Error(err))
@@ -133,11 +142,11 @@ func (m *tokenManager) run(ctx context.Context, done chan<- struct{}, lifetime t
 	}
 }
 
-func (m *tokenManager) issue(ctx context.Context) (time.Duration, error) {
+func (m *tokenManager) issue(ctx context.Context, endpoint string) (time.Duration, error) {
 	requestCtx, cancel := context.WithTimeout(ctx, telemetryTokenRequestTimeout)
 	defer cancel()
 
-	response, err := m.client.CreateTelemetryAccessToken(requestCtx)
+	response, err := m.client.CreateTelemetryAccessToken(requestCtx, endpoint)
 	if err != nil {
 		return 0, fmt.Errorf("create telemetry access token: %w", err)
 	}
