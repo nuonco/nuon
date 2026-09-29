@@ -19,6 +19,7 @@ import type {
   TInstallGroupRun,
 } from '@/types'
 import type { TOverviewRollout } from './BranchOverview'
+import { fetchCommitReady } from './overview-loading'
 import { buildRolloutStages } from './rollout-stages'
 import type { TTrackGroup, TTrackInstall } from './RolloutTrack'
 import { commitUrl, resolveRunSource } from './run-source'
@@ -255,8 +256,20 @@ export const useRolloutGroups = () => {
         author: branchRun?.vcs_connection_commit?.author_name,
         status: rolloutRun.status?.status || 'unknown',
         activity: rolloutRun.status?.status_human_description,
+        commit: fetchCommitReady(rolloutRun.steps ?? [], sha)
+          ? {
+              message: branchRun?.vcs_connection_commit?.message,
+              author: branchRun?.vcs_connection_commit?.author_name,
+              avatarUrl: branchRun?.vcs_connection_commit?.author_avatar_url,
+              sha,
+              shaUrl: commitUrl(repoSlug, sha),
+              createdAt: branchRun?.vcs_connection_commit?.created_at,
+            }
+          : undefined,
       }
     : undefined
+
+  const workflowSteps = rolloutRun?.steps ?? []
 
   return {
     app,
@@ -268,6 +281,11 @@ export const useRolloutGroups = () => {
     repoSlug,
     branchRunId,
     rollout,
+    workflowSteps,
+    showLoadingTrack:
+      isLoadingLatest ||
+      (!!latestId && isLoadingRollout && !rolloutRun) ||
+      (!!rollout && !isTerminal),
     groups: trackGroups,
     hasPlan: groups.length > 0,
     isLoading:

@@ -617,7 +617,7 @@ export type TInstallHealthTimelineComponent = {
   install_component_id: string
   component_id?: string
   component_name: string
-  component_type?: string
+  component_type?: TComponentType
   current_health: string
   uptime_percent: number
   observed_seconds?: number

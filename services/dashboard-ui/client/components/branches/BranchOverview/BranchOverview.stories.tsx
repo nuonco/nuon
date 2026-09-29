@@ -5,7 +5,9 @@ export default {
 
 import { Text } from '@/components/common/Text'
 import { SectionHeader } from '@/components/layout/SectionHeader'
+import type { TCompositeError } from '@/types'
 import { BranchOverview, type TOverviewRollout } from './BranchOverview'
+import { buildOverviewLoadingStages } from './overview-loading'
 import type { TTrackGroup } from './RolloutTrack'
 
 const groups: TTrackGroup[] = [
@@ -104,6 +106,134 @@ export const TagPush = () => (
   />
 )
 TagPush.storyName = 'Tag push'
+
+const manualRollout: TOverviewRollout = {
+  ...rollout,
+  source: { kind: 'manual' },
+  title: 'Manual run',
+  sha: undefined,
+  author: undefined,
+  status: 'in-progress',
+  activity: 'Executing step fetch commit',
+}
+
+export const WaitingForWorkflow = () => (
+  <BranchOverview
+    hasPlan
+    isLoading
+    loadingStages={buildOverviewLoadingStages({ steps: [] })}
+    groups={[]}
+    rolloutHref="#rollout"
+    onSelectGroup={() => {}}
+  />
+)
+WaitingForWorkflow.storyName = 'Waiting for workflow'
+
+export const FetchingCommit = () => (
+  <BranchOverview
+    hasPlan
+    rollout={manualRollout}
+    changes={changes}
+    loadingStages={buildOverviewLoadingStages({
+      steps: [
+        {
+          id: 'fetch',
+          name: 'fetch commit',
+          status: { status: 'in-progress' },
+        },
+      ],
+    })}
+    groups={groups}
+    rolloutHref="#rollout"
+    onSelectGroup={() => {}}
+  />
+)
+FetchingCommit.storyName = 'Fetching commit'
+
+export const CommitReady = () => (
+  <BranchOverview
+    hasPlan
+    rollout={{
+      ...manualRollout,
+      sha: 'a1b2c3d4e5f6',
+      author: 'jane@example.com',
+      commit: {
+        message: 'Add cache component',
+        author: 'jane@example.com',
+        sha: 'a1b2c3d4e5f6',
+        shaUrl: 'https://github.com/acme/platform/commit/a1b2c3d4e5f6',
+        createdAt: '2026-09-29T18:00:00Z',
+      },
+    }}
+    changes={changes}
+    loadingStages={buildOverviewLoadingStages({
+      steps: [
+        { id: 'fetch', name: 'fetch commit', status: { status: 'success' } },
+        {
+          id: 'config',
+          name: 'sync app config',
+          status: { status: 'in-progress' },
+        },
+      ],
+      sha: 'a1b2c3d4e5f6',
+    })}
+    groups={groups}
+    rolloutHref="#rollout"
+    onSelectGroup={() => {}}
+  />
+)
+CommitReady.storyName = 'Commit ready'
+
+const buildError = {
+  message: 'api image build failed',
+  severity: 'error',
+} as TCompositeError
+
+export const BuildFailed = () => (
+  <BranchOverview
+    hasPlan
+    rollout={{
+      ...manualRollout,
+      status: 'error',
+      sha: 'a1b2c3d4e5f6',
+      commit: {
+        message: 'Add cache component',
+        author: 'jane@example.com',
+        sha: 'a1b2c3d4e5f6',
+        shaUrl: 'https://github.com/acme/platform/commit/a1b2c3d4e5f6',
+      },
+    }}
+    changes={changes}
+    loadingStages={buildOverviewLoadingStages({
+      steps: [
+        { id: 'fetch', name: 'fetch commit', status: { status: 'success' } },
+        {
+          id: 'config',
+          name: 'sync app config',
+          status: { status: 'success' },
+        },
+        {
+          id: 'build',
+          name: 'build components',
+          status: { status: 'error', composite_error: buildError },
+        },
+      ],
+      sha: 'a1b2c3d4e5f6',
+    })}
+    compositeError={buildError}
+    failedBuilds={[
+      {
+        id: 'bld_api',
+        name: 'api',
+        href: '#components/api/builds/bld_api',
+      },
+    ]}
+    groups={groups}
+    rolloutHref="#rollout"
+    onSelectGroup={() => {}}
+  />
+)
+BuildFailed.storyName = 'Build failed'
 
 export const NoPlan = () => (
   <BranchOverview

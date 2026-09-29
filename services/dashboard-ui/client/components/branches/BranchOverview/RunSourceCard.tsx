@@ -1,3 +1,4 @@
+import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
 import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
 import { Icon } from '@/components/common/Icon'
@@ -6,6 +7,15 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import type { TRunSource } from './run-source'
 
+export interface IRunCommit {
+  message?: string
+  author?: string
+  avatarUrl?: string
+  sha?: string
+  shaUrl?: string
+  createdAt?: string
+}
+
 export interface IRunSourceCard {
   source: TRunSource
   title: string
@@ -13,6 +23,7 @@ export interface IRunSourceCard {
   shaUrl?: string
   author?: string
   status: string
+  commit?: IRunCommit
 }
 
 const SOURCE_LABEL: Record<TRunSource['kind'], string> = {
@@ -113,6 +124,7 @@ export const RunSourceCard = ({
   shaUrl,
   author,
   status,
+  commit,
 }: IRunSourceCard) => {
   const shortSha = sha?.slice(0, 7)
 
@@ -124,6 +136,19 @@ export const RunSourceCard = ({
         </Text>
         <Status status={status} />
       </span>
+      {commit ? (
+        <BranchRunCommit
+          showStatus={false}
+          displayVariant="stacked"
+          message={commit.message}
+          author={commit.author}
+          avatarUrl={commit.avatarUrl}
+          sha={commit.sha}
+          href={commit.shaUrl}
+          isExternal={!!commit.shaUrl}
+          createdAt={commit.createdAt}
+        />
+      ) : null}
       <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <Text variant="label" theme="neutral">
           Triggered by
@@ -133,25 +158,27 @@ export const RunSourceCard = ({
       <Text variant="body" weight="strong">
         {title}
       </Text>
-      <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        {shortSha ? (
-          <Text variant="subtext" family="mono" theme="neutral" flex>
-            <Icon variant="GitCommitIcon" />
-            {shaUrl ? (
-              <Link href={shaUrl} isExternal>
-                {shortSha}
-              </Link>
-            ) : (
-              shortSha
-            )}
-          </Text>
-        ) : null}
-        {author ? (
-          <Text variant="subtext" family="mono" theme="neutral">
-            {author}
-          </Text>
-        ) : null}
-      </span>
+      {commit ? null : (
+        <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          {shortSha ? (
+            <Text variant="subtext" family="mono" theme="neutral" flex>
+              <Icon variant="GitCommitIcon" />
+              {shaUrl ? (
+                <Link href={shaUrl} isExternal>
+                  {shortSha}
+                </Link>
+              ) : (
+                shortSha
+              )}
+            </Text>
+          ) : null}
+          {author ? (
+            <Text variant="subtext" family="mono" theme="neutral">
+              {author}
+            </Text>
+          ) : null}
+        </span>
+      )}
     </Card>
   )
 }
