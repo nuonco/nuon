@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
+import { Status } from '@/components/common/Status'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Icon } from '@/components/common/Icon'
@@ -28,6 +29,7 @@ import {
   isCloud,
   type TCloud,
 } from './constants'
+import { FirstRunCloudRegion } from './shared'
 
 const STACK_POLL_MS = 3000
 
@@ -80,15 +82,26 @@ export const StackStepView = ({
   const failed = phase === 'error'
   const linkLaunch = cloud === 'aws' && !!quickLinkUrl
 
-  const status = generating
-    ? `Generating the ${connect.artifactNoun} for ${region}. About 30 seconds.`
-    : ready
-      ? `${connect.artifactNoun} ready for ${region}. From launch to a healthy runner is about 11 minutes. This page updates on its own.`
-      : launched
-        ? `${connect.waitingHint} This page updates on its own.`
-        : failed
-          ? `Nuon could not generate the ${connect.artifactNoun}. The deploy workflow has the details.`
-          : `${connect.stackLabel} created. Test ${connect.accountNoun} connected.`
+  const statusTheme = failed ? 'error' : ready || done ? 'success' : 'neutral'
+  const regionName = (
+    <FirstRunCloudRegion cloud={cloud} region={region} variant="subtext" theme={statusTheme} />
+  )
+  const status = generating ? (
+    <>
+      Generating the {connect.artifactNoun} for {regionName}. About 30 seconds.
+    </>
+  ) : ready ? (
+    <>
+      {connect.artifactNoun} ready for {regionName}. From launch to a healthy runner is about 11 minutes. This
+      page updates on its own.
+    </>
+  ) : launched ? (
+    `${connect.waitingHint} This page updates on its own.`
+  ) : failed ? (
+    `Nuon could not generate the ${connect.artifactNoun}. The deploy workflow has the details.`
+  ) : (
+    `${connect.stackLabel} created. Test ${connect.accountNoun} connected.`
+  )
 
   const launchLabel = generating
     ? connect.generating
@@ -110,13 +123,16 @@ export const StackStepView = ({
               {connect.stackLabel} for {appName}
             </Text>
             <Text variant="body" theme="neutral">
-              Test {connect.accountNoun} · {region}
+              Test {connect.accountNoun} ·{' '}
+              <FirstRunCloudRegion cloud={cloud} region={region} variant="body" theme="neutral" />
             </Text>
           </div>
         </div>
-        <Badge size="sm" theme={failed ? 'error' : ready || done ? 'success' : 'brand'}>
+        <Status
+          status={failed ? 'failed' : ready || done ? 'success' : generating ? 'provisioning' : 'waiting'}
+        >
           {generating ? 'Generating' : ready ? 'Ready' : done ? 'Created' : failed ? 'Failed' : 'Waiting'}
-        </Badge>
+        </Status>
       </Card>
 
       <Card className="!gap-5">
@@ -158,7 +174,7 @@ export const StackStepView = ({
             ) : (
               <Icon variant="Loading" size={16} />
             )}
-            <Text variant="subtext" theme={failed ? 'error' : ready || done ? 'success' : 'neutral'}>
+            <Text variant="subtext" theme={statusTheme}>
               {status}
             </Text>
           </div>

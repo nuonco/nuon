@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Card } from '@/components/common/Card'
+import { Code } from '@/components/common/Code'
 import { Icon } from '@/components/common/Icon'
 import { Select } from '@/components/common/form/Select'
 import { Toggle } from '@/components/common/form/Toggle'
@@ -20,13 +20,14 @@ import {
   getBranchRuns,
 } from './api'
 import {
-  CLOUD_REGIONS,
   CLOUD_SANDBOX,
   KITCHEN_SINK_APP,
   KITCHEN_SINK_LABEL,
   TRACKED_GIT_BRANCH,
   defaultRegion,
   isCloud,
+  isKnownRegion,
+  regionFieldLabel,
   regionOptions,
   type TCloud,
   type TPath,
@@ -53,9 +54,7 @@ const InstallSummaryCard = ({
       value: (
         <>
           <RepoChip repo={repo} />
-          <Badge size="sm" variant="code">
-            {TRACKED_GIT_BRANCH}
-          </Badge>
+          <Code variant="inline">{TRACKED_GIT_BRANCH}</Code>
         </>
       ),
     },
@@ -139,7 +138,6 @@ export interface IDeployStepView {
   phase: TDeployPhase
   installCreated: boolean
   missingInputs: string[]
-  // Set while waiting when the branch's latest sync failed.
   syncError?: string
   error?: string
   onCreate: () => void
@@ -186,10 +184,14 @@ export const DeployStepView = ({
         <Select
           id="first-run-region"
           options={regionOptions(cloud)}
-          labelProps={{ labelText: CLOUD_REGIONS[cloud].label }}
+          labelProps={{ labelText: regionFieldLabel(cloud) }}
           value={region}
           onChange={onRegion}
           disabled={busy || installCreated}
+          searchable
+          placeholder={
+            cloud === 'azure' ? 'Choose Azure location' : cloud === 'gcp' ? 'Choose GCP region' : 'Choose AWS region'
+          }
         />
         <Toggle
           checked={autoApprove}
@@ -241,9 +243,8 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
   const branchId = readString(sharedData.app_branch_id)
   const repo = readString(sharedData.repo)
   const installId = readString(sharedData.install_id)
-  const region = CLOUD_REGIONS[cloud].options.includes(readString(sharedData.region))
-    ? readString(sharedData.region)
-    : defaultRegion(cloud)
+  const savedRegion = readString(sharedData.region)
+  const region = isKnownRegion(cloud, savedRegion) ? savedRegion : defaultRegion(cloud)
 
   const [autoApprove, setAutoApprove] = useState(true)
   const [phase, setPhase] = useState<TDeployPhase>('idle')

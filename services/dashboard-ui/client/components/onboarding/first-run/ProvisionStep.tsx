@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { Badge } from '@/components/common/Badge'
+import { useRef, useState, type KeyboardEvent } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Card } from '@/components/common/Card'
+import { Code } from '@/components/common/Code'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { useAuth } from '@/hooks/use-auth'
@@ -25,7 +25,7 @@ import {
   type TCloud,
   type TStageId,
 } from './constants'
-import { CopyTextButton, NextButton } from './shared'
+import { CopyTextButton, FirstRunCloudRegion, NextButton } from './shared'
 
 const ProvisionAccountView = ({
   stages,
@@ -37,10 +37,26 @@ const ProvisionAccountView = ({
   region: string
 }) => {
   const [picked, setPicked] = useState<TStageId>('runner')
-  const [hovered, setHovered] = useState<TStageId | null>(null)
-  const focus = hovered ?? picked
+  const buttons = useRef<(HTMLButtonElement | null)[]>([])
+  const onStageKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const last = stages.length - 1
+    const next =
+      event.key === 'ArrowDown'
+        ? Math.min(index + 1, last)
+        : event.key === 'ArrowUp'
+          ? Math.max(index - 1, 0)
+          : event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+              ? last
+              : null
+    if (next === null) return
+    event.preventDefault()
+    setPicked(stages[next].id)
+    buttons.current[next]?.focus()
+  }
   const regionClass = (id: TStageId) =>
-    focus === id
+    picked === id
       ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-950/40'
       : 'ring-1 ring-neutral-200 dark:ring-neutral-700 bg-background'
 
@@ -48,19 +64,19 @@ const ProvisionAccountView = ({
     <div className="flex flex-col gap-5 md:flex-row">
       <ol className="flex shrink-0 flex-col gap-2 md:w-60" aria-label="What the install builds">
         {stages.map((stage, index) => {
-          const on = focus === stage.id
+          const on = picked === stage.id
           return (
             <li key={stage.id}>
               <button
+                ref={(el) => {
+                  buttons.current[index] = el
+                }}
                 type="button"
                 aria-pressed={on}
                 onClick={() => setPicked(stage.id)}
-                onMouseEnter={() => setHovered(stage.id)}
-                onMouseLeave={() => setHovered(null)}
-                onFocus={() => setHovered(stage.id)}
-                onBlur={() => setHovered(null)}
+                onKeyDown={(event) => onStageKeyDown(event, index)}
                 className={cn(
-                  'flex w-full flex-col gap-1.5 rounded-lg px-3 py-2.5 text-left transition-colors',
+                  'flex w-full cursor-pointer flex-col gap-1.5 rounded-lg px-3 py-2.5 text-left transition-colors',
                   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500',
                   on
                     ? 'ring-1 ring-primary-500 bg-primary-50 dark:bg-primary-950/40'
@@ -101,9 +117,7 @@ const ProvisionAccountView = ({
               Your test {CLOUD_CONNECT[cloud].accountNoun}
             </Text>
           </div>
-          <Badge size="sm" variant="code">
-            {region}
-          </Badge>
+          <FirstRunCloudRegion cloud={cloud} region={region} variant="subtext" theme="neutral" />
         </div>
 
         <div className={cn('flex flex-col rounded-lg px-3.5 py-3 transition-colors', regionClass('runner'))}>
@@ -180,19 +194,13 @@ export const ProvisionStepView = ({
             </Text>
             <Text variant="subtext" theme="neutral" flex className="flex-wrap">
               Needs the Nuon CLI:
-              <Badge size="sm" variant="code">
-                {CLI_INSTALL}
-              </Badge>
+              <Code variant="inline">{CLI_INSTALL}</Code>
               then
-              <Badge size="sm" variant="code">
-                {CLI_LOGIN}
-              </Badge>
+              <Code variant="inline">{CLI_LOGIN}</Code>
             </Text>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge size="sm" variant="code">
-              {command}
-            </Badge>
+            <Code variant="inline">{command}</Code>
             <CopyTextButton text={command} label="Copy" size="sm" />
           </div>
         </div>

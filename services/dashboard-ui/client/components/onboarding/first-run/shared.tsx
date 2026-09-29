@@ -1,11 +1,25 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
+import { CloudRegion } from '@/components/common/CloudRegion'
+import { Code } from '@/components/common/Code'
 import { Icon, type TIconVariant } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
-import { Text } from '@/components/common/Text'
+import { Text, type IText } from '@/components/common/Text'
 import { cn } from '@/utils/classnames'
 import { CLOUD_ICON, CLOUD_LABEL, TEST_CLOUDS, type TCloud } from './constants'
+
+export const FirstRunCloudRegion = ({
+  cloud,
+  region,
+  ...textProps
+}: { cloud: TCloud; region: string } & Omit<IText, 'children'>) => (
+  <CloudRegion
+    platform={cloud}
+    region={cloud === 'azure' ? undefined : region}
+    location={cloud === 'azure' ? region : undefined}
+    {...textProps}
+  />
+)
 
 export const NextButton = ({
   label,
@@ -152,9 +166,7 @@ export const InlineLink = ({
 
 export const RepoChip = ({ repo }: { repo: string }) => (
   <Link href={`https://github.com/${repo}`} isExternal textVariant="subtext">
-    <Badge size="sm" variant="code">
-      {repo}
-    </Badge>
+    <Code variant="inline">{repo}</Code>
   </Link>
 )
 

@@ -1,4 +1,6 @@
 import type { TIconVariant } from '@/components/common/Icon'
+import { AWS_REGIONS, AZURE_REGIONS, GCP_REGIONS } from '@/configs/cloud-regions'
+import { getFlagEmoji } from '@/utils/string-utils'
 
 export type TCloud = 'aws' | 'gcp' | 'azure'
 export type TPath = 'example' | 'own'
@@ -67,25 +69,31 @@ export const CLOUD_CONNECT: Record<
   },
 }
 
-export const CLOUD_REGIONS: Record<TCloud, { label: string; options: string[] }> = {
-  aws: {
-    label: 'AWS region',
-    options: ['us-east-1', 'us-west-2', 'eu-west-1', 'ap-southeast-1'],
-  },
-  gcp: {
-    label: 'GCP region',
-    options: ['us-central1', 'us-east1', 'europe-west1', 'asia-southeast1'],
-  },
-  azure: {
-    label: 'Azure location',
-    options: ['eastus', 'westus2', 'westeurope', 'southeastasia'],
-  },
+type TRegionCatalogEntry = { text: string; value: string; iconVariant?: string }
+
+const REGION_CATALOG: Record<TCloud, { label: string; regions: readonly TRegionCatalogEntry[]; withCode: boolean }> = {
+  aws: { label: 'AWS region', regions: AWS_REGIONS, withCode: true },
+  gcp: { label: 'GCP region', regions: GCP_REGIONS, withCode: true },
+  azure: { label: 'Azure location', regions: AZURE_REGIONS, withCode: false },
 }
 
-export const defaultRegion = (cloud: TCloud) => CLOUD_REGIONS[cloud].options[0]
+const regionLabel = (region: TRegionCatalogEntry, withCode: boolean) => {
+  if (!region.iconVariant) return region.text
+  const name = `${getFlagEmoji(region.iconVariant.substring(5))} ${region.text}`
+  return withCode ? `${name} [${region.value}]` : name
+}
 
-export const regionOptions = (cloud: TCloud) =>
-  CLOUD_REGIONS[cloud].options.map((value) => ({ value, label: value }))
+export const regionFieldLabel = (cloud: TCloud) => REGION_CATALOG[cloud].label
+
+export const regionOptions = (cloud: TCloud) => {
+  const { regions, withCode } = REGION_CATALOG[cloud]
+  return regions.map((region) => ({ value: region.value, label: regionLabel(region, withCode) }))
+}
+
+export const defaultRegion = (cloud: TCloud) => REGION_CATALOG[cloud].regions[0].value
+
+export const isKnownRegion = (cloud: TCloud, region: string) =>
+  REGION_CATALOG[cloud].regions.some((item) => item.value === region)
 
 // The Nuon sandbox each cloud lands on, and the repo that provisions it.
 export const CLOUD_SANDBOX: Record<TCloud, string> = {

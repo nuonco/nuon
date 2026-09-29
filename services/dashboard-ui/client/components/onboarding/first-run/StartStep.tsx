@@ -4,6 +4,7 @@ import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
+import { Code } from '@/components/common/Code'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Icon } from '@/components/common/Icon'
 import { Input } from '@/components/common/form/Input'
@@ -68,9 +69,7 @@ const ExampleAppDrawer = () => {
           <Text variant="subtext" weight="strong">
             See the example app repo
           </Text>
-          <Badge size="sm" variant="code">
-            {KITCHEN_SINK_REPO}
-          </Badge>
+          <Code variant="inline">{KITCHEN_SINK_REPO}</Code>
         </span>
         <span className={cn('flex transition-transform duration-300', open && 'rotate-180')} aria-hidden>
           <Icon variant="CaretDownIcon" size={14} weight="bold" theme="neutral" />
@@ -167,9 +166,7 @@ const GithubTile = ({
             <Icon variant="CheckCircleIcon" size={18} weight="fill" theme="success" />
             Connected as
             {github.owner ? (
-              <Badge size="sm" variant="code">
-                {github.owner}
-              </Badge>
+              <Code variant="inline">{github.owner}</Code>
             ) : null}
             {github.repoCount !== undefined
               ? `· ${github.repoCount} ${github.repoCount === 1 ? 'repo' : 'repos'}`

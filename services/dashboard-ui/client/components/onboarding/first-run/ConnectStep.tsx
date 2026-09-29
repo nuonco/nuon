@@ -4,6 +4,7 @@ import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
+import { Code } from '@/components/common/Code'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
@@ -77,9 +78,7 @@ const PushListener = ({
           <Text variant="subtext" theme="neutral" flex className="flex-wrap">
             Commit
             {sha ? (
-              <Badge size="sm" variant="code">
-                {sha}
-              </Badge>
+              <Code variant="inline">{sha}</Code>
             ) : null}
             updated the default app branch. Building your components now.
           </Text>
@@ -155,9 +154,7 @@ const ManualSetup = ({ appName, repo, cloud }: { appName: string; repo: string; 
       body: (
         <>
           Top level of{' '}
-          <Badge size="sm" variant="code">
-            {repo}
-          </Badge>
+          <Code variant="inline">{repo}</Code>
           , the same layout as <InlineLink href={KITCHEN_SINK_URL}>nuonco/kitchen-sink</InlineLink>
         </>
       ),
