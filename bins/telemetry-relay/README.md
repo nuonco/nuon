@@ -24,6 +24,8 @@ The supplied [Collector configuration](config.yaml) uses these environment varia
 | Variable | Purpose |
 |---|---|
 | `NUON_TELEMETRY_ISSUER` | Expected JWT issuer |
+| `NUON_TELEMETRY_AUDIENCE` | Required JWT audience: the exact public relay endpoint configured in the control plane, whether deployment-default or org-specific. |
+| `NUON_TELEMETRY_ALLOW_LEGACY_AUDIENCE` | Also accept tokens with the legacy audience `urn:nuon:telemetry`; defaults to `true`. Set to `false` to require endpoint-bound tokens. |
 | `NUON_TELEMETRY_JWKS_URL` | Issuer's public signing-key URL |
 | `NUON_TELEMETRY_JWKS_ALLOW_INSECURE` | Permit HTTP issuer and JWKS URLs; defaults to `false` |
 | `NUON_TELEMETRY_ALLOWED_ORG_IDS` | YAML/JSON list of allowed JWT org IDs for install telemetry; unset or `[]` allows all verified orgs |
@@ -42,6 +44,33 @@ does not accept loopback traffic, update `NUON_TELEMETRY_SELF_OTLP_ENDPOINT` to 
 
 Health checks listen on `0.0.0.0:13133`; keep them private. Prometheus self-metrics remain available on
 `127.0.0.1:8888/metrics`.
+
+## Org-specific relay endpoints
+
+An org admin can set `relay_endpoint` on `PATCH /v1/orgs/current/telemetry` to an HTTPS OTLP/HTTP base URL.
+Setting it to `null` or an empty string restores the control plane's deployment-default relay; omitting it preserves the current
+endpoint. The `enabled` setting is independent and can be omitted when changing only the endpoint.
+
+For a customer-run relay, set `NUON_TELEMETRY_AUDIENCE` to the exact registered endpoint (including any path or
+trailing slash), configure the control plane's issuer and JWKS URL, and set `NUON_TELEMETRY_ALLOWED_ORG_IDS` to
+that org's ID. Backend credentials stay on the relay. For new customer-run relays that do not need legacy-token
+compatibility, set `NUON_TELEMETRY_ALLOW_LEGACY_AUDIENCE=false`. Keep the unauthenticated environment listener private.
+
+By default, the relay accepts either its configured endpoint or `urn:nuon:telemetry` as a token's single audience,
+supporting both older and newer runners. Legacy-audience acceptance has no automatic cutoff.
+Signature, issuer, expiry, telemetry scope, identity checks, and any org allowlist still apply. Legacy tokens
+are not bound to one destination: any relay trusting the issuer, accepting that audience, and permitting the
+token's org can accept them.
+
+Runner settings resolve org overrides for all runners. Newer runners include the selected `relay_endpoint`
+when requesting a token; the control plane verifies it matches current settings and uses it as the audience.
+Older runners omit this parameter and receive `urn:nuon:telemetry` tokens, including on renewal. Keep legacy-audience
+acceptance enabled on any relay serving those runners.
+
+On an endpoint change, updated runners stop the old exporter and token renewal before obtaining credentials
+for the new endpoint. A stale token request is rejected; the runner refreshes settings and retries. A failed
+switch does not resume sending to the old destination. Existing disk-queued telemetry may be forwarded to the
+new destination; endpoint changes are not a queue-drain or lossless-cutover mechanism.
 
 ## Install identity and organization filtering
 
