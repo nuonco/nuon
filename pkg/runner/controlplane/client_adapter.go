@@ -146,7 +146,7 @@ func (c *clientAdapter) GetRunner(context.Context) (*models.AppRunner, error) {
 	return nil, unsupported("GetRunner")
 }
 
-func (c *clientAdapter) CreateTelemetryAccessToken(context.Context) (*models.ServiceCreateTelemetryAccessTokenResponse, error) {
+func (c *clientAdapter) CreateTelemetryAccessToken(context.Context, string) (*models.ServiceCreateTelemetryAccessTokenResponse, error) {
 	return nil, unsupported("CreateTelemetryAccessToken")
 }
 
