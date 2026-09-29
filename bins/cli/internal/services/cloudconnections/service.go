@@ -3,6 +3,7 @@ package cloudconnections
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
@@ -53,7 +54,21 @@ func (s *Service) Create(ctx context.Context, name, platform, targetID, principa
 	if err != nil {
 		return ui.PrintError(err)
 	}
-	return render(connection, asJSON)
+	if asJSON {
+		return render(connection, true)
+	}
+	if err := render(connection, false); err != nil {
+		return err
+	}
+	ui.PrintLn("\nNext steps: configure AWS using the AWS CLI, Terraform, or CloudFormation setup instructions:")
+	cliConfig, err := s.api.GetCLIConfig(ctx)
+	if err == nil && cliConfig.DashboardURL != "" {
+		ui.Printf("  %s/%s/settings/cloud-connections/%s/setup\n", strings.TrimRight(cliConfig.DashboardURL, "/"), connection.OrgID, connection.ID)
+	} else {
+		ui.PrintLn("  Open your dashboard: Settings > Cloud connections > select this connection > View setup runbook.")
+	}
+	ui.Printf("\nAfter applying the AWS setup, verify the connection:\n  nuon cloud-connections verify %s\n", connection.ID)
+	return nil
 }
 
 func (s *Service) Verify(ctx context.Context, connectionID string, wait, asJSON bool) error {

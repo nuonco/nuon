@@ -2,6 +2,9 @@ package cloudconnections
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"os"
 	"testing"
 	"testing/synctest"
 	"time"
@@ -9,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/nuonco/nuon/bins/cli/internal/agentmode"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
@@ -79,6 +83,80 @@ func TestVerify(t *testing.T) {
 					assert.Zero(t, api.getCalls)
 				}
 			})
+		})
+	}
+}
+
+type creationClient struct {
+	nuon.Client
+	connection  *models.ServiceConnectionResponse
+	dashboard   string
+	configErr   error
+	configCalls int
+}
+
+func (c *creationClient) CreateCloudConnection(context.Context, *models.ServiceCreateRequest) (*models.ServiceConnectionResponse, error) {
+	return c.connection, nil
+}
+
+func (c *creationClient) GetCLIConfig(context.Context) (*models.ServiceCLIConfig, error) {
+	c.configCalls++
+	return &models.ServiceCLIConfig{DashboardURL: c.dashboard}, c.configErr
+}
+
+func TestCreateNextSteps(t *testing.T) {
+	for name, tc := range map[string]struct {
+		dashboard string
+		configErr error
+		asJSON    bool
+		agent     bool
+		wantLink  string
+	}{
+		"dashboard link": {dashboard: "https://app.example.com", wantLink: "https://app.example.com/org-acme/settings/cloud-connections/clc-example/setup"},
+		"BYOC subpath":   {dashboard: "https://example.com/dashboard/", wantLink: "https://example.com/dashboard/org-acme/settings/cloud-connections/clc-example/setup"},
+		"config failure": {configErr: errors.New("unavailable")},
+		"missing URL":    {},
+		"JSON":           {asJSON: true},
+		"agent":          {asJSON: true, agent: true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			output, err := os.CreateTemp(t.TempDir(), "stdout")
+			require.NoError(t, err)
+			stdout, wasAgent := os.Stdout, agentmode.Enabled()
+			os.Stdout = output
+			agentmode.SetEnabled(tc.agent)
+			t.Cleanup(func() {
+				os.Stdout = stdout
+				agentmode.SetEnabled(wasAgent)
+				output.Close()
+			})
+			connection := &models.ServiceConnectionResponse{
+				ID: "clc-example", OrgID: "org-acme", Name: "acme-production", Status: models.AppCloudConnectionStatusPending,
+				Setup: &models.ServiceSetupResponse{IssuerURL: "https://api.example.com"},
+			}
+			api := &creationClient{connection: connection, dashboard: tc.dashboard, configErr: tc.configErr}
+			require.NoError(t, New(api, nil).Create(context.Background(), "acme-production", "aws", "123456789012", "arn:aws:iam::123456789012:role/nuon", "us-west-2", "stacks", tc.asJSON))
+			bytes, err := os.ReadFile(output.Name())
+			require.NoError(t, err)
+			if tc.asJSON {
+				var want any = connection
+				if tc.agent {
+					want = map[string]any{"ok": true, "data": connection}
+				}
+				expected, err := json.Marshal(want)
+				require.NoError(t, err)
+				assert.JSONEq(t, string(expected), string(bytes))
+				assert.Zero(t, api.configCalls)
+				return
+			}
+			assert.Equal(t, 1, api.configCalls)
+			assert.Contains(t, string(bytes), "AWS CLI, Terraform, or CloudFormation")
+			assert.Contains(t, string(bytes), "nuon cloud-connections verify clc-example")
+			if tc.wantLink != "" {
+				assert.Contains(t, string(bytes), tc.wantLink)
+			} else {
+				assert.Contains(t, string(bytes), "Settings > Cloud connections > select this connection > View setup runbook")
+			}
 		})
 	}
 }

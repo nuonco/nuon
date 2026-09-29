@@ -24,7 +24,7 @@ Create and get responses include the exact values and self-contained Terraform, 
 
 ## Create and configure a connection
 
-Create the connection first, apply the returned setup in the AWS account, and then verify it.
+Create the connection first. This saves the connection in Nuon; it does not create the IAM role or OIDC provider in AWS.
 
 ```bash
 nuon cloud-connections create \
@@ -36,11 +36,17 @@ nuon cloud-connections create \
   --preset stacks
 ```
 
+Open the setup link printed below the command's output. It takes you to **Run in your cloud**, where you can choose **AWS CLI**, **Terraform**, or **CloudFormation** and apply the generated setup in the target AWS account. You can also reach this page from **Settings → Cloud connections → select your connection → View setup runbook**.
+
 Each setup option creates an OIDC provider and an IAM role with a trust policy restricted to the connection. The `stacks` preset also includes an explicit action allowlist covering the resources in Nuon's install stack templates. It does not include image registry access. With `--preset custom`, no permissions policy is generated: attach your own policy.
+
+After applying the setup, verify the connection from the dashboard's **Verify** step or run:
 
 ```bash
 nuon cloud-connections verify <connection-id>
 ```
+
+The command waits for the result by default. Once the status is `verified`, the connection is available in the install creation wizard. For scripts, `create --output json` and `get <connection-id> --output json` include the generated setup material in `setup` without the human-readable next-step instructions.
 
 Verification exchanges a Nuon OIDC token for temporary AWS credentials, checks the returned identity, and confirms that a foreign connection subject cannot assume the role. For `stacks`, it also makes a read-only CloudFormation `DescribeStacks` probe. This probe does not prove that every stack operation is permitted. For `custom`, verification checks identity and trust only; you are responsible for the permissions required by your stacks.
 
