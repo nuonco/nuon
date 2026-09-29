@@ -1,32 +1,41 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
+import { useQuery } from '@tanstack/react-query'
+import { ProviderError } from '@/components/layout/ProviderError'
+import { ProviderLoading } from '@/components/layout/ProviderLoading'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
-import { WelcomeStep } from '@/components/onboarding/steps/WelcomeStep'
+import { CreateAppStep } from '@/components/onboarding/steps/CreateAppStep'
+import { CreateInstallStep } from '@/components/onboarding/steps/CreateInstallStep'
 import { CreateOrgStep } from '@/components/onboarding/steps/CreateOrgStep'
 import { DownloadCliStep } from '@/components/onboarding/steps/DownloadCliStep'
-import { CreateAppStep } from '@/components/onboarding/steps/CreateAppStep'
 import { SyncAppStep } from '@/components/onboarding/steps/SyncAppStep'
-import { CreateInstallStep } from '@/components/onboarding/steps/CreateInstallStep'
-import { WelcomeNameOrgStep } from '@/components/onboarding/steps/v2/WelcomeNameOrgStep'
-import { AppProfileStep } from '@/components/onboarding/steps/v2/AppProfileStep'
-import { CloudSetupStep } from '@/components/onboarding/steps/v2/CloudSetupStep'
-import { ProvisioningStep } from '@/components/onboarding/steps/v2/ProvisioningStep'
-import { NextStepsStep } from '@/components/onboarding/steps/v2/NextStepsStep'
-import { PageTitle } from '@/components/navigation/PageTitle'
+import { WelcomeStep } from '@/components/onboarding/steps/WelcomeStep'
+import {
+  IntroScreen,
+  buildFirstRunSteps,
+  resolveFirstRunOrg,
+  resolveFirstRunResume,
+  stepIndexFor,
+  type TCloud,
+  type TPath,
+} from '@/components/onboarding/first-run'
+import { useAuth } from '@/hooks/use-auth'
+import { useConfig } from '@/hooks/use-config'
+import {
+  useFirstRunJourney,
+  type TFirstRunStep,
+} from '@/hooks/use-first-run-journey'
+import { trackEvent } from '@/lib/posthog-analytics'
+import {
+  FirstRunProvider,
+  type IFirstRunContext,
+} from '@/providers/first-run-provider'
 import { OnboardingJourneyProvider } from '@/providers/onboarding-journey-provider'
+import { OrgProvider } from '@/providers/org-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastProvider } from '@/providers/toast-provider'
-import { useConfig } from '@/hooks/use-config'
-import { createOnboarding, completeOrganizationStep } from '@/lib'
-import type { TOnboarding } from '@/types'
-
-const ONBOARDING_STEP_TO_INDEX: Record<string, number> = {
-  organization: 0,
-  your_stack: 1,
-  install: 2,
-  deploy: 3,
-  get_started: 4,
-}
+import type { TAPIError } from '@/types'
 
 const STEPS = [
   {
@@ -100,110 +109,183 @@ const STEPS = [
   },
 ]
 
-const STEPS_V2 = [
-  {
-    id: 'v2-step-1',
-    title: 'Create your organization',
-    navLabel: 'Organization',
-    hideTitle: true,
-    component: WelcomeNameOrgStep,
-  },
-  {
-    id: 'v2-step-2',
-    title: 'Tell us about your app',
-    navLabel: 'Your stack',
-    description: 'Pick your cloud platform and app attributes, or start from a working example.',
-    component: AppProfileStep,
-  },
-  {
-    id: 'v2-step-3',
-    title: 'Choose how to deploy',
-    navLabel: 'Install',
-    description: 'Connect your own cloud account or use a managed sandbox to explore the platform.',
-    component: CloudSetupStep,
-  },
-  {
-    id: 'v2-step-4',
-    title: 'Your install is being created!',
-    navLabel: 'Deploy',
-    description: 'Hang tight. While the resources are getting provisioned.',
-    component: ProvisioningStep,
-  },
-  {
-    id: 'v2-step-5',
-    title: "You're all set",
-    navLabel: 'Get started',
-    hideTitle: true,
-    component: NextStepsStep,
-  },
-]
+const ONCE = {
+  staleTime: Infinity,
+  refetchOnWindowFocus: false,
+  retry: false,
+} as const
 
-export function Onboarding() {
-  const { onboardingV2 } = useConfig()
-  const [searchParams] = useSearchParams()
-  const requestedOrgId = searchParams.get('org_id')
-  const steps = onboardingV2 ? STEPS_V2 : STEPS
-  const [initialSharedData, setInitialSharedData] = useState<
-    Record<string, unknown> | undefined
-  >(onboardingV2 ? undefined : {})
+function FirstRunOnboarding() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [params] = useState(() => ({
+    vcsConnectionId: searchParams.get('vcs-connected') ?? undefined,
+    vcsError: searchParams.get('vcs-error') === '1',
+    reopen: searchParams.get('reopen') === '1',
+  }))
+  useEffect(() => {
+    if (searchParams.toString()) setSearchParams({}, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const journey = useFirstRunJourney()
+  const { user } = useAuth()
+
+  const orgQuery = useQuery({
+    queryKey: ['first-run-org'],
+    queryFn: () => resolveFirstRunOrg({ user }),
+    enabled: journey.isReady,
+    ...ONCE,
+  })
+  const orgId = orgQuery.data?.id as string | undefined
+
+  const resumeQuery = useQuery({
+    queryKey: ['first-run-resume', orgId],
+    queryFn: () =>
+      resolveFirstRunResume({
+        orgId: orgId!,
+        journey: journey.journey,
+        metadata: journey.metadata,
+        forceStart:
+          !!params.vcsConnectionId || params.vcsError || params.reopen,
+      }),
+    enabled: !!orgId && journey.isReady,
+    ...ONCE,
+  })
+  const resume = resumeQuery.data
+
+  const [started, setStarted] = useState<boolean>()
+  const [route, setRoute] = useState<{ path: TPath; cloud: TCloud }>()
+  const [mounts, setMounts] = useState(0)
+
+  const path = route?.path ?? resume?.path ?? 'example'
+  const cloud = route?.cloud ?? resume?.cloud ?? 'aws'
+  const steps = useMemo(() => buildFirstRunSteps(path, cloud), [path, cloud])
+  const isStarted = started ?? resume?.started ?? false
+
+  const choosePath = useCallback(
+    (nextPath: TPath, nextCloud: TCloud) =>
+      setRoute({ path: nextPath, cloud: nextCloud }),
+    []
+  )
+  const backToIntro = useCallback(() => setStarted(false), [])
+
+  const onSkip = useCallback(
+    async (stepId: string) => {
+      try {
+        await journey.skip(stepId as TFirstRunStep)
+        trackEvent({ event: 'onboarding_skip', status: 'ok', user, props: { step: stepId } })
+      } catch (err) {
+        trackEvent({
+          event: 'onboarding_skip',
+          status: 'error',
+          user,
+          props: { step: stepId, err: (err as TAPIError)?.error },
+        })
+      } finally {
+        window.location.assign(`/${orgId}`)
+      }
+    },
+    [journey, orgId, user]
+  )
 
   useEffect(() => {
-    if (!onboardingV2) return
-    let cancelled = false
-    const load = async () => {
-      try {
-        let ob = await createOnboarding()
-        // Auto-attach the org passed in via `?org_id=` whenever it differs
-        // from whatever is currently associated with the onboarding session.
-        // The backend rejects switching after resources have been created,
-        // in which case we just fall through and let the user see the wizard
-        // in its existing state.
-        if (requestedOrgId && ob.org_id !== requestedOrgId) {
-          try {
-            ob = await completeOrganizationStep({
-              body: { org_id: requestedOrgId },
-            })
-          } catch {
-            // Fall through; the wizard will render existing state.
-          }
-        }
-        if (!cancelled) setInitialSharedData({ onboarding: ob })
-      } catch {
-        if (!cancelled) setInitialSharedData({})
-      }
+    if (!orgId || (!params.vcsConnectionId && !params.vcsError)) return
+    trackEvent({
+      event: 'vcs_connection_create',
+      status: params.vcsError ? 'error' : 'ok',
+      user,
+      props: { connectionId: params.vcsConnectionId, source: 'onboarding' },
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orgId])
+
+  const error = (orgQuery.error ??
+    journey.error ??
+    resumeQuery.error) as TAPIError | null
+
+  let content
+  if (error) {
+    content = (
+      <div className="h-screen flex bg-background">
+        <ProviderError error={error} />
+      </div>
+    )
+  } else if (!orgId || !resume) {
+    content = (
+      <div className="h-screen flex bg-background">
+        <ProviderLoading />
+      </div>
+    )
+  } else {
+    const context: IFirstRunContext = {
+      orgId,
+      journey,
+      vcsConnectionId: params.vcsConnectionId,
+      vcsError: params.vcsError,
+      choosePath,
+      backToIntro,
     }
-    load()
-    return () => { cancelled = true }
-  }, [onboardingV2, requestedOrgId])
-
-  if (!initialSharedData) return null
-
-  const onboarding = initialSharedData.onboarding as TOnboarding | undefined
-  const initialStepIndex = onboardingV2 && onboarding?.current_step
-    ? ONBOARDING_STEP_TO_INDEX[onboarding.current_step] ?? 0
-    : undefined
-
-  const wizard = (
-    <OnboardingWizard
-      steps={steps}
-      initialSharedData={initialSharedData}
-      initialStepIndex={initialStepIndex}
-      onComplete={() => {
-        window.location.href = '/'
-      }}
-    />
-  )
+    const firstMount = mounts === 0
+    content = (
+      <OrgProvider orgId={orgId}>
+        <FirstRunProvider value={context}>
+          {isStarted ? (
+            <OnboardingWizard
+              key={mounts}
+              onHistoryBack={started ? backToIntro : undefined}
+              steps={steps}
+              initialStepIndex={
+                firstMount ? stepIndexFor(steps, resume.step) : 0
+              }
+              initialSharedData={
+                firstMount
+                  ? resume.sharedData
+                  : { ...resume.sharedData, ...journey.metadata, path, cloud }
+              }
+              onSkip={onSkip}
+              onComplete={() => window.location.assign(`/${orgId}`)}
+            />
+          ) : (
+            <IntroScreen
+              onStart={() => {
+                if (started === false) setMounts((n) => n + 1)
+                setStarted(true)
+              }}
+            />
+          )}
+        </FirstRunProvider>
+      </OrgProvider>
+    )
+  }
 
   return (
     <ToastProvider>
       <PageTitle title="Onboarding" />
+      <SurfacesProvider>{content}</SurfacesProvider>
+    </ToastProvider>
+  )
+}
+
+function ExistingOnboarding() {
+  return (
+    <ToastProvider>
+      <PageTitle title="Onboarding" />
       <SurfacesProvider>
-        {onboardingV2 ? wizard : (
-          <OnboardingJourneyProvider>
-            {wizard}
-          </OnboardingJourneyProvider>
-        )}
+        <OnboardingJourneyProvider>
+          <OnboardingWizard
+            steps={STEPS}
+            onComplete={() => {
+              window.location.href = '/'
+            }}
+          />
+        </OnboardingJourneyProvider>
       </SurfacesProvider>
     </ToastProvider>
   )
+}
+
+export function Onboarding() {
+  const { onboardingFirstRun } = useConfig()
+  if (onboardingFirstRun) return <FirstRunOnboarding />
+  return <ExistingOnboarding />
 }
