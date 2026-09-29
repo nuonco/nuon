@@ -20,7 +20,6 @@ export const ConnectionWizard = ({
   children: ReactNode
 }) => (
   <DetailPage
-    variant="page"
     header={
       <SectionHeader
         title={created ? 'Set up cloud connection' : 'Create cloud connection'}

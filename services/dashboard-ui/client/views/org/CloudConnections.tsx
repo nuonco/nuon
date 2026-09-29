@@ -11,7 +11,11 @@ export const CloudConnections = () => {
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org.id}`, text: org.name },
-          { path: `/${org.id}/cloud-connections`, text: 'Cloud connections' },
+          { path: `/${org.id}/settings`, text: 'Settings' },
+          {
+            path: `/${org.id}/settings/cloud-connections`,
+            text: 'Cloud connections',
+          },
         ]}
       />
       <ConnectionsList />

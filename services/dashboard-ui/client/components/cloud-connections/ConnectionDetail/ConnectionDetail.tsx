@@ -41,7 +41,6 @@ export const ConnectionDetail = ({
   installs?: ReactNode
 }) => (
   <DetailPage
-    variant="page"
     header={
       <DetailHeader
         backLink={false}

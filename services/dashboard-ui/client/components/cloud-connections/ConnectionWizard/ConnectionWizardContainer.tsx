@@ -50,12 +50,12 @@ export const ConnectionWizardContainer = ({
     onSuccess: (created) => {
       client.setQueryData(['cloud-connections', orgId, created.id], created)
       client.invalidateQueries({ queryKey: ['cloud-connections', orgId] })
-      navigate(`/${orgId}/cloud-connections/${created.id}/setup`, {
+      navigate(`/${orgId}/settings/cloud-connections/${created.id}/setup`, {
         replace: true,
       })
     },
   })
-  const detailHref = `/${orgId}/cloud-connections/${connectionId}`
+  const detailHref = `/${orgId}/settings/cloud-connections/${connectionId}`
   return (
     <ConnectionWizard step={step} created={!!connectionId} onStep={setStep}>
       {step === 1 && (

@@ -10,7 +10,7 @@ import {
 } from '../__stories__/fixtures'
 export default { title: 'Features / Cloud connections / Detail' }
 const props = {
-  basePath: '/org-mock-001/cloud-connections/cc-example',
+  basePath: '/org-mock-001/settings/cloud-connections/cc-example',
   onVerify: noop,
   onDelete: noop,
 }

@@ -25,7 +25,7 @@ export const ConnectionsList = ({
   error?: TAPIError | null
   pagination?: TPaginationMeta & { offset?: number }
 }) => {
-  const createHref = `/${orgId}/cloud-connections/create`
+  const createHref = `/${orgId}/settings/cloud-connections/create`
   const [params] = useSearchParams()
   const search = (params.get('q') || '').toLowerCase()
   const columns = useMemo<ColumnDef<TCloudConnectionSummary>[]>(
@@ -35,7 +35,9 @@ export const ConnectionsList = ({
         header: 'Name',
         cell: ({ row }) => (
           <div className="flex min-w-0 max-w-lg flex-col gap-1">
-            <Link href={`/${orgId}/cloud-connections/${row.original.id}`}>
+            <Link
+              href={`/${orgId}/settings/cloud-connections/${row.original.id}`}
+            >
               <Text family="mono" weight="strong">
                 {row.original.name}
               </Text>
@@ -78,7 +80,6 @@ export const ConnectionsList = ({
   )
   return (
     <ListPage
-      variant="page"
       title="Cloud connections"
       description="Manage the AWS roles Nuon can assume to operate installs in this org."
       createAction={

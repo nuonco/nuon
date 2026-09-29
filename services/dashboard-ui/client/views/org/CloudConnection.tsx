@@ -28,9 +28,13 @@ export const CloudConnection = ({
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
-          { path: `/${org?.id}/cloud-connections`, text: 'Cloud connections' },
+          { path: `/${org?.id}/settings`, text: 'Settings' },
           {
-            path: `/${org?.id}/cloud-connections/${connectionId}`,
+            path: `/${org?.id}/settings/cloud-connections`,
+            text: 'Cloud connections',
+          },
+          {
+            path: `/${org?.id}/settings/cloud-connections/${connectionId}`,
             text: query.data?.name || 'Cloud connection',
           },
         ]}

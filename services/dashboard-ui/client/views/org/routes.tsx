@@ -46,12 +46,6 @@ export const orgRoutes: RouteObject[] = [
       { path: ':orgId', element: <Dashboard /> },
       { path: ':orgId/apps', element: <Apps /> },
       { path: ':orgId/installs', element: <Installs /> },
-      { path: ':orgId/cloud-connections', element: <CloudConnections /> },
-      { path: ':orgId/cloud-connections/create', element: <CloudConnectionCreate /> },
-      { path: ':orgId/cloud-connections/:connectionId/setup', element: <CloudConnectionCreate /> },
-      { path: ':orgId/cloud-connections/:connectionId', element: <CloudConnection /> },
-      { path: ':orgId/cloud-connections/:connectionId/installs', element: <CloudConnection tab="installs" /> },
-      { path: ':orgId/cloud-connections/:connectionId/verification', element: <CloudConnection tab="verification" /> },
       { path: ':orgId/runner', element: <BuildRunner /> },
       { path: ':orgId/runner/jobs/:jobId', element: <RunnerJobDetail /> },
       { path: ':orgId/runner/processes', element: <RunnerProcesses /> },
@@ -71,6 +65,30 @@ export const orgRoutes: RouteObject[] = [
           {
             path: ':orgId/settings/vcs/:connectionId',
             element: <VCSConnectionDetail />,
+          },
+          {
+            path: ':orgId/settings/cloud-connections',
+            element: <CloudConnections />,
+          },
+          {
+            path: ':orgId/settings/cloud-connections/create',
+            element: <CloudConnectionCreate />,
+          },
+          {
+            path: ':orgId/settings/cloud-connections/:connectionId/setup',
+            element: <CloudConnectionCreate />,
+          },
+          {
+            path: ':orgId/settings/cloud-connections/:connectionId',
+            element: <CloudConnection />,
+          },
+          {
+            path: ':orgId/settings/cloud-connections/:connectionId/installs',
+            element: <CloudConnection tab="installs" />,
+          },
+          {
+            path: ':orgId/settings/cloud-connections/:connectionId/verification',
+            element: <CloudConnection tab="verification" />,
           },
           { path: ':orgId/settings/webhooks', element: <Webhooks /> },
           { path: ':orgId/settings/api-tokens', element: <ApiTokens /> },
@@ -98,6 +116,20 @@ export const orgRoutes: RouteObject[] = [
           },
           { path: ':orgId/settings/slack', element: <Slack /> },
         ],
+      },
+      {
+        path: ':orgId/cloud-connections/*',
+        loader: ({ request }) => {
+          const url = new URL(request.url)
+          return redirect(
+            url.pathname.replace(
+              '/cloud-connections',
+              '/settings/cloud-connections'
+            ) +
+              url.search +
+              url.hash
+          )
+        },
       },
       {
         path: ':orgId/webhooks',

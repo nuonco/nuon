@@ -24,7 +24,7 @@ export const DeleteConnectionContainer = ({
         connectionId: connection.id,
       }),
     onSuccess: () => {
-      navigate(`/${connection.org_id}/cloud-connections`)
+      navigate(`/${connection.org_id}/settings/cloud-connections`)
       client.removeQueries({
         queryKey: ['cloud-connections', connection.org_id, connection.id],
       })

@@ -54,7 +54,7 @@ export const ConnectionDetailContainer = ({
     <ConnectionDetail
       connection={connection}
       tab={tab}
-      basePath={`/${orgId}/cloud-connections/${connectionId}`}
+      basePath={`/${orgId}/settings/cloud-connections/${connectionId}`}
       error={error || verify.error}
       isVerifying={verify.isPending || isVerifying}
       verificationTimedOut={verificationTimedOut}
