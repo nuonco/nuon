@@ -17089,9 +17089,9 @@ func (a *Client) GetStackServiceAccount(params *GetStackServiceAccountParams, au
 }
 
 /*
-GetTelemetryJWKS gets telemetry j w t public keys
+GetTelemetryJWKS gets o ID c signing public keys
 
-Returns the public RSA keys used to verify BYOC telemetry access tokens.
+Returns the public RSA keys used to verify cloud federation and telemetry tokens.
 */
 func (a *Client) GetTelemetryJWKS(params *GetTelemetryJWKSParams, opts ...ClientOption) (*GetTelemetryJWKSOK, error) {
 	// NOTE: parameters are not validated before sending

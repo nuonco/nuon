@@ -20,11 +20,6 @@ const (
 	maxTelemetryJWKSSize   = 64 * 1024
 )
 
-// Aliases keep the swagger model names stable now that JWKS parsing and
-// validation live in the shared oidcissuer package.
-type TelemetryJSONWebKey = oidcissuer.JWK
-type TelemetryJSONWebKeySet = oidcissuer.JWKS
-
 type telemetryAccessTokenClaims struct {
 	ClientID  string `json:"client_id"`
 	Scope     string `json:"scope"`
@@ -39,7 +34,6 @@ type telemetryTokenIssuer struct {
 	issuer     string
 	keyID      string
 	privateKey *rsa.PrivateKey
-	publicKeys TelemetryJSONWebKeySet
 	now        func() time.Time
 }
 
@@ -59,7 +53,7 @@ func newTelemetryTokenIssuer(cfg *internal.Config) (*telemetryTokenIssuer, error
 		return nil, err
 	}
 
-	privateKey, keyID, publicKeys, err := oidcissuer.ParseJWKS(cfg.TelemetryJWKS)
+	privateKey, keyID, _, err := oidcissuer.ParseJWKS(cfg.TelemetryJWKS)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +62,6 @@ func newTelemetryTokenIssuer(cfg *internal.Config) (*telemetryTokenIssuer, error
 		issuer:     issuer,
 		keyID:      keyID,
 		privateKey: privateKey,
-		publicKeys: publicKeys,
 		now:        time.Now,
 	}, nil
 }
@@ -105,10 +98,4 @@ func (i *telemetryTokenIssuer) issue(principal telemetryRunnerPrincipal) (string
 		return "", fmt.Errorf("sign telemetry access token: %w", err)
 	}
 	return signed, nil
-}
-
-func (i *telemetryTokenIssuer) publicJWKS() TelemetryJSONWebKeySet {
-	keys := make([]TelemetryJSONWebKey, len(i.publicKeys.Keys))
-	copy(keys, i.publicKeys.Keys)
-	return TelemetryJSONWebKeySet{Keys: keys}
 }

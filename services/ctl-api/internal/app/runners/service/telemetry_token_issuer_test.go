@@ -131,29 +131,6 @@ func TestTelemetryTokenIssuerIssuesScopedAccessToken(t *testing.T) {
 	require.Equal(t, []any{telemetryTokenAudience}, wireClaims["aud"])
 }
 
-func TestTelemetryTokenIssuerPublishesOnlyPublicKeyMaterial(t *testing.T) {
-	issuer, _ := newTelemetryTestTokenIssuer(t)
-
-	keys := issuer.publicJWKS()
-	require.Len(t, keys.Keys, 1)
-	require.Equal(t, TelemetryJSONWebKey{
-		KeyType:   "RSA",
-		KeyID:     "telemetry-key-1",
-		Use:       "sig",
-		Algorithm: "RS256",
-		Modulus:   base64.RawURLEncoding.EncodeToString(issuer.privateKey.N.Bytes()),
-		Exponent:  telemetryTestJWKInteger(big.NewInt(int64(issuer.privateKey.E))),
-	}, keys.Keys[0])
-
-	encoded, err := json.Marshal(keys)
-	require.NoError(t, err)
-	var published map[string][]map[string]any
-	require.NoError(t, json.Unmarshal(encoded, &published))
-	require.NotContains(t, published["keys"][0], "d")
-	require.NotContains(t, published["keys"][0], "p")
-	require.NotContains(t, published["keys"][0], "q")
-}
-
 func TestTelemetryTokenIssuerRequiresOnePrivateSigningKey(t *testing.T) {
 	key := telemetryTestRSAKey(t)
 
@@ -199,23 +176,6 @@ func TestRunnerServiceTelemetryTokenIssuerConfiguration(t *testing.T) {
 	})
 }
 
-func TestGetTelemetryJWKS(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	issuer, _ := newTelemetryTestTokenIssuer(t)
-	svc := &service{telemetryTokenIssuer: issuer}
-	recorder := httptest.NewRecorder()
-	ctx, _ := gin.CreateTestContext(recorder)
-	ctx.Request = httptest.NewRequest(http.MethodGet, "/.well-known/jwks.json", nil)
-
-	svc.GetTelemetryJWKS(ctx)
-
-	require.Equal(t, http.StatusOK, recorder.Code)
-	require.Equal(t, "public, max-age=300", recorder.Header().Get("Cache-Control"))
-	var response TelemetryJSONWebKeySet
-	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
-	require.Equal(t, issuer.publicJWKS(), response)
-}
-
 func TestTelemetryEndpointsUnavailableWithoutIssuer(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	svc := &service{}
@@ -231,18 +191,6 @@ func TestTelemetryEndpointsUnavailableWithoutIssuer(t *testing.T) {
 			method: http.MethodPost,
 			path:   "/v1/telemetry/access-token",
 			invoke: svc.CreateTelemetryAccessToken,
-		},
-		{
-			name:   "public keys",
-			method: http.MethodGet,
-			path:   "/.well-known/jwks.json",
-			invoke: svc.GetTelemetryJWKS,
-		},
-		{
-			name:   "openid configuration",
-			method: http.MethodGet,
-			path:   "/.well-known/openid-configuration",
-			invoke: svc.GetOpenIDConfiguration,
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {

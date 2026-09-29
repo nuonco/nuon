@@ -16,6 +16,7 @@ import (
 	notebooksservice "github.com/nuonco/nuon/services/ctl-api/internal/app/notebooks/service"
 	nuonctlmcpservice "github.com/nuonco/nuon/services/ctl-api/internal/app/nuonctl-mcp/service"
 	oidcfederationservice "github.com/nuonco/nuon/services/ctl-api/internal/app/oidc-federation/service"
+	oidcservice "github.com/nuonco/nuon/services/ctl-api/internal/app/oidc/service"
 	onboardingservice "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/service"
 	orgsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/service"
 	policyreportsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/service"
@@ -57,6 +58,7 @@ var sharedServices = fx.Options(
 	fx.Provide(api.AsService(installsservice.New)),
 	fx.Provide(api.AsService(notebooksservice.New)),
 	fx.Provide(api.AsService(oidcfederationservice.New)),
+	fx.Provide(api.AsService(oidcservice.New)),
 	fx.Provide(api.AsService(orgsservice.New)),
 	fx.Provide(api.AsService(policyreportsservice.New)),
 	fx.Provide(api.AsService(queuesservice.New)),

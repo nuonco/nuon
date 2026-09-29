@@ -7,8 +7,8 @@
 export interface paths {
   "/.well-known/jwks.json": {
     /**
-     * Get telemetry JWT public keys
-     * @description Returns the public RSA keys used to verify BYOC telemetry access tokens.
+     * Get OIDC signing public keys
+     * @description Returns the public RSA keys used to verify cloud federation and telemetry tokens.
      */
     get: operations["GetTelemetryJWKS"];
   };
@@ -10051,8 +10051,8 @@ export type external = Record<string, never>;
 export interface operations {
 
   /**
-   * Get telemetry JWT public keys
-   * @description Returns the public RSA keys used to verify BYOC telemetry access tokens.
+   * Get OIDC signing public keys
+   * @description Returns the public RSA keys used to verify cloud federation and telemetry tokens.
    */
   GetTelemetryJWKS: {
     responses: {
