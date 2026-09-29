@@ -133,7 +133,7 @@ export const DeploymentDetailPanel = ({
     ? `/${orgId}/apps/${appId}/branches/${deployment.app_branch.id}`
     : undefined
   const workflowHref = deployment.workflow
-    ? installLink({ orgId: orgId, installId: installId, suffix: `/history/${deployment.workflow.id}` })
+    ? installLink({ orgId: orgId, installId: installId, suffix: `/deployments/${deployment.workflow.id}` })
     : undefined
 
   return (

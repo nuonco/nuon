@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
@@ -76,7 +77,7 @@ const DeploymentCard = ({
     ? `/${orgId}/apps/${appId}/branches/${deployment.app_branch.id}`
     : undefined
   const workflowHref = deployment.workflow
-    ? installLink({ orgId: orgId, installId: installId, suffix: `/history/${deployment.workflow.id}` })
+    ? installLink({ orgId: orgId, installId: installId, suffix: `/deployments/${deployment.workflow.id}` })
     : undefined
 
   const affectedResources = [
@@ -279,6 +280,8 @@ const DeploymentsListBase = ({
   onClearFilters,
 }: IDeploymentsListPresenter) => {
   const { addPanel } = useSurfaces()
+  const navigate = useNavigate()
+  const installLink = useInstallLink()
   const { isPaginating, setIsPaginating } = usePagination()
 
   useEffect(() => {
@@ -402,7 +405,17 @@ const DeploymentsListBase = ({
               orgId={orgId}
               appId={appId}
               installId={installId}
-              onViewDetails={() =>
+              onViewDetails={() => {
+                if (deployment.workflow?.id) {
+                  navigate(
+                    installLink({
+                      orgId,
+                      installId,
+                      suffix: `/deployments/${deployment.workflow.id}`,
+                    })
+                  )
+                  return
+                }
                 addPanel(
                   <DeploymentDetailPanel
                     deployment={deployment}
@@ -411,7 +424,7 @@ const DeploymentsListBase = ({
                     installId={installId}
                   />
                 )
-              }
+              }}
             />
           ))}
         </div>

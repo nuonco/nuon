@@ -25,6 +25,7 @@ type ActionWorkflowInput struct {
 	EnableKubeConfig      *bool
 	KubernetesContextName string
 	Image                 string
+	IsHealthcheck         bool
 }
 
 // ActionWorkflowConfig builds the row; the caller attaches triggers and steps.
@@ -48,5 +49,6 @@ func ActionWorkflowConfig(in ActionWorkflowInput) *app.ActionWorkflowConfig {
 		EnableKubeConfig:       generics.NewNullBoolFromPtr(&enableKubeConfig),
 		KubernetesContextName:  in.KubernetesContextName,
 		Image:                  in.Image,
+		IsHealthcheck:          in.IsHealthcheck,
 	}
 }

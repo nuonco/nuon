@@ -617,9 +617,18 @@ export type TInstallHealthTimelineComponent = {
   install_component_id: string
   component_id?: string
   component_name: string
+  component_type?: string
   current_health: string
   uptime_percent: number
   observed_seconds?: number
+}
+
+export type TInstallHealthcheck = {
+  action_id: string
+  name: string
+  status: string
+  last_run_at?: string
+  workflow_id?: string
 }
 
 export type TInstallStatusAxis = {
@@ -629,6 +638,7 @@ export type TInstallStatusAxis = {
   metadata?: {
     counts?: Record<string, number>
     cluster_access_error?: string
+    config_drift?: number
   }
 }
 
@@ -645,6 +655,7 @@ export type TInstallHealthTimeline = {
   current_health: string
   cluster_access_error?: string
   components?: TInstallHealthTimelineComponent[]
+  healthchecks?: TInstallHealthcheck[]
   daily?: THealthTimelineDay[]
 }
 
