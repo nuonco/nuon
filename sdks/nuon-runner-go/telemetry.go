@@ -7,9 +7,10 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
-func (c *client) CreateTelemetryAccessToken(ctx context.Context) (*models.ServiceCreateTelemetryAccessTokenResponse, error) {
+func (c *client) CreateTelemetryAccessToken(ctx context.Context, relayEndpoint string) (*models.ServiceCreateTelemetryAccessTokenResponse, error) {
 	resp, err := c.genClient.Operations.CreateTelemetryAccessToken(&operations.CreateTelemetryAccessTokenParams{
-		Context: ctx,
+		Context:       ctx,
+		RelayEndpoint: &relayEndpoint,
 	}, c.getAuthInfo())
 	if err != nil {
 		return nil, err

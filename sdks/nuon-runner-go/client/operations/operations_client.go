@@ -642,7 +642,7 @@ func (a *Client) CreateRunnerProcess(params *CreateRunnerProcessParams, authInfo
 /*
 CreateTelemetryAccessToken creates a telemetry access token
 
-Creates a short-lived, install-runner-scoped JWT for the BYOC telemetry relay.
+Creates a short-lived, install-runner-scoped JWT for the resolved telemetry relay. Org overrides require relay_endpoint to match current settings.
 */
 func (a *Client) CreateTelemetryAccessToken(params *CreateTelemetryAccessTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateTelemetryAccessTokenOK, error) {
 	// NOTE: parameters are not validated before sending

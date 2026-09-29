@@ -19,6 +19,7 @@ import (
 // @Summary				get runner settings
 // @Description.markdown	get_runner_settings.md
 // @Param					runner_id	path	string	true	"runner ID"
+// @Param telemetry_relay_routing query bool false "Supports endpoint-bound telemetry tokens and org relay overrides"
 // @Tags					runners/runner
 // @Accept					json
 // @Produce				json
@@ -43,15 +44,18 @@ func (s *service) GetRunnerSettings(ctx *gin.Context) {
 	settings := runner.RunnerGroup.Settings
 	settings.LongPollJobs = true
 	settings.VendorTelemetryEnabled = false
+	settings.TelemetryRelayEndpoint = ""
+	settings.VendorTelemetryResourceAttributes = nil
 	installTable := plugins.TableName(s.db, app.Install{})
-	if s.telemetryRelayEndpoint != "" && runner.RunnerGroup.Type == app.RunnerGroupTypeInstall && runner.RunnerGroup.OwnerType == installTable && runner.Status != app.RunnerStatusDisabled && runner.Status != app.RunnerStatusDeprovisioned {
+	if runner.RunnerGroup.Type == app.RunnerGroupTypeInstall && runner.RunnerGroup.OwnerType == installTable && runner.Status != app.RunnerStatusDisabled && runner.Status != app.RunnerStatusDeprovisioned {
 		// A projection avoids model AfterQuery hooks, which also run with SkipHooks.
 		var install struct {
 			Name                string
 			Labels              labels.Labels
-			AppName             string `gorm:"column:App__name"`
-			TelemetryEnabled    *bool  `gorm:"column:InstallConfig__telemetry_enabled"`
-			OrgTelemetryEnabled bool   `gorm:"column:Org__telemetry_enabled"`
+			AppName             string  `gorm:"column:App__name"`
+			TelemetryEnabled    *bool   `gorm:"column:InstallConfig__telemetry_enabled"`
+			OrgTelemetryEnabled bool    `gorm:"column:Org__telemetry_enabled"`
+			OrgRelayEndpoint    *string `gorm:"column:Org__telemetry_relay_endpoint"`
 		}
 		err := s.db.WithContext(ctx).
 			Model(&app.Install{}).
@@ -59,17 +63,32 @@ func (s *service) GetRunnerSettings(ctx *gin.Context) {
 			Select(installTable+".name", installTable+".labels").
 			Joins("App", s.db.Select("name")).
 			Joins("InstallConfig", s.db.Select("telemetry_enabled")).
-			Joins("Org", s.db.Select("telemetry_enabled")).
+			Joins("Org", s.db.Select("telemetry_enabled", "telemetry_relay_endpoint")).
 			Where(app.Install{ID: runner.RunnerGroup.OwnerID, OrgID: runner.OrgID}).
 			Take(&install).Error
 		if err == nil {
+			orgTelemetry := app.OrgTelemetrySettings{RelayEndpoint: install.OrgRelayEndpoint}
+			endpoint := orgTelemetry.ResolveRelayEndpoint(s.telemetryRelayEndpoint)
+			if endpoint == "" || (install.OrgRelayEndpoint != nil && (ctx.Query("telemetry_relay_routing") != "true" || s.telemetryTokenIssuer == nil)) {
+				ctx.JSON(http.StatusOK, settings)
+				return
+			}
+			if err := app.ValidateTelemetryRelayEndpoint(endpoint); err != nil {
+				s.l.Warn("vendor telemetry disabled: invalid relay endpoint",
+					zap.String("runner_id", runner.ID),
+					zap.String("org_id", runner.OrgID),
+					zap.Error(err),
+				)
+				ctx.JSON(http.StatusOK, settings)
+				return
+			}
 			cfg := app.InstallConfig{TelemetryEnabled: install.TelemetryEnabled}
 			settings.VendorTelemetryEnabled = cfg.IsTelemetryEnabled(install.OrgTelemetryEnabled)
 			if !settings.VendorTelemetryEnabled {
 				ctx.JSON(http.StatusOK, settings)
 				return
 			}
-			settings.TelemetryRelayEndpoint = s.telemetryRelayEndpoint
+			settings.TelemetryRelayEndpoint = endpoint
 			settings.VendorTelemetryResourceAttributes = map[string]string{
 				"nuon.org.name":     runner.Org.Name,
 				"nuon.app.name":     install.AppName,
@@ -86,8 +105,12 @@ func (s *service) GetRunnerSettings(ctx *gin.Context) {
 				zap.String("org_id", runner.OrgID),
 			)
 		} else {
-			ctx.Error(err)
-			return
+			s.l.Warn("vendor telemetry disabled: unable to load install telemetry settings",
+				zap.String("runner_id", runner.ID),
+				zap.String("owner_id", runner.RunnerGroup.OwnerID),
+				zap.String("org_id", runner.OrgID),
+				zap.Error(err),
+			)
 		}
 	} else {
 		settings.VendorTelemetryEnabled = false

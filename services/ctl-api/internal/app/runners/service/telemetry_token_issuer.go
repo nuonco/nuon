@@ -18,7 +18,6 @@ import (
 )
 
 const (
-	telemetryTokenAudience = "urn:nuon:telemetry"
 	telemetryTokenScope    = "telemetry:write"
 	telemetryTokenLifetime = 10 * time.Minute
 	maxTelemetryJWKSSize   = 64 * 1024
@@ -231,7 +230,7 @@ func encodeTelemetryJWKInteger(value int64) string {
 }
 
 func (i *telemetryTokenIssuer) issue(principal telemetryRunnerPrincipal) (string, error) {
-	if principal.OrgID == "" || principal.AppID == "" || principal.InstallID == "" || principal.RunnerID == "" {
+	if principal.OrgID == "" || principal.AppID == "" || principal.InstallID == "" || principal.RunnerID == "" || principal.RelayEndpoint == "" {
 		return "", fmt.Errorf("telemetry runner principal is incomplete")
 	}
 
@@ -246,7 +245,7 @@ func (i *telemetryTokenIssuer) issue(principal telemetryRunnerPrincipal) (string
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    i.issuer,
 			Subject:   fmt.Sprintf("org:%s:install:%s:runner:%s", principal.OrgID, principal.InstallID, principal.RunnerID),
-			Audience:  jwt.ClaimStrings{telemetryTokenAudience},
+			Audience:  jwt.ClaimStrings{principal.RelayEndpoint},
 			ExpiresAt: jwt.NewNumericDate(now.Add(telemetryTokenLifetime)),
 			NotBefore: jwt.NewNumericDate(now),
 			IssuedAt:  jwt.NewNumericDate(now),

@@ -13,12 +13,18 @@ import (
 func TestPublicEndpointsSendNoAuthHeader(t *testing.T) {
 	var mu sync.Mutex
 	authByPath := map[string]string{}
+	queryByPath := map[string]string{}
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mu.Lock()
 		authByPath[r.URL.Path] = r.Header.Get("Authorization")
+		queryByPath[r.URL.Path] = r.URL.RawQuery
 		mu.Unlock()
 		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/v1/runners/rnr_test/settings" {
+			w.Write([]byte(`{}`))
+			return
+		}
 		if r.URL.Path == "/v1/telemetry/access-token" {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`{"access_token":"access.jwt","token_type":"Bearer","expires_in":600}`))
@@ -45,8 +51,11 @@ func TestPublicEndpointsSendNoAuthHeader(t *testing.T) {
 	if _, err := c.CreateHeartBeat(ctx, &models.ServiceCreateRunnerHeartBeatRequest{}); err != nil {
 		t.Fatalf("CreateHeartBeat: %v", err)
 	}
-	if _, err := c.CreateTelemetryAccessToken(ctx); err != nil {
+	if _, err := c.CreateTelemetryAccessToken(ctx, "https://relay.example.com/acme"); err != nil {
 		t.Fatalf("CreateTelemetryAccessToken: %v", err)
+	}
+	if _, err := c.GetSettings(ctx); err != nil {
+		t.Fatalf("GetSettings: %v", err)
 	}
 
 	// public calls → must NOT carry an Authorization header
@@ -62,6 +71,12 @@ func TestPublicEndpointsSendNoAuthHeader(t *testing.T) {
 	}
 	if got := authByPath["/v1/telemetry/access-token"]; got != "Bearer secret-token" {
 		t.Errorf("telemetry access token: got Authorization %q, want %q", got, "Bearer secret-token")
+	}
+	if got := queryByPath["/v1/telemetry/access-token"]; got != "relay_endpoint=https%3A%2F%2Frelay.example.com%2Facme" {
+		t.Errorf("token request was not bound to the selected relay: %q", got)
+	}
+	if got := queryByPath["/v1/runners/rnr_test/settings"]; got != "telemetry_relay_routing=true" {
+		t.Errorf("settings request did not advertise relay routing support: %q", got)
 	}
 
 	shutdownPath := "/v1/runners/rnr_test/processes/prc_test/shutdowns"
