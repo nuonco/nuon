@@ -28,8 +28,10 @@ export type TConfigLag = {
 
 export type TDriftedObject = {
   id: string
-  targetType: 'install_deploy' | 'sandbox'
+  targetType: 'install_deploy' | 'sandbox' | 'stack' | 'image'
   componentName?: string
+  imageRepository?: string
+  summary?: string
 }
 
 export type TStackVersion = {
