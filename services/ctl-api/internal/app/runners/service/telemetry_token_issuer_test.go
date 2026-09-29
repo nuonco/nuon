@@ -71,19 +71,20 @@ func newTelemetryTestTokenIssuer(t *testing.T) (*telemetryTokenIssuer, time.Time
 func TestTelemetryTokenIssuerIssuesScopedAccessToken(t *testing.T) {
 	issuer, now := newTelemetryTestTokenIssuer(t)
 	principal := telemetryRunnerPrincipal{
-		OrgID:     "org-test",
-		AppID:     "app-test",
-		InstallID: "install-test",
-		RunnerID:  "runner-test",
+		OrgID:         "org-test",
+		AppID:         "app-test",
+		InstallID:     "install-test",
+		RunnerID:      "runner-test",
+		RelayEndpoint: "https://relay.example.com/acme",
 	}
 
-	raw, err := issuer.issue(principal)
+	raw, err := issuer.issue(principal, true)
 	require.NoError(t, err)
 
 	claims := &telemetryAccessTokenClaims{}
 	token, err := jwt.ParseWithClaims(raw, claims, func(token *jwt.Token) (any, error) {
 		return &issuer.privateKey.PublicKey, nil
-	}, jwt.WithValidMethods([]string{jwt.SigningMethodRS256.Alg()}), jwt.WithIssuer(issuer.issuer), jwt.WithAudience(telemetryTokenAudience), jwt.WithTimeFunc(func() time.Time { return now }))
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodRS256.Alg()}), jwt.WithIssuer(issuer.issuer), jwt.WithAudience("https://relay.example.com/acme"), jwt.WithTimeFunc(func() time.Time { return now }))
 	require.NoError(t, err)
 	require.True(t, token.Valid)
 	require.Equal(t, "at+jwt", token.Header["typ"])
@@ -106,7 +107,7 @@ func TestTelemetryTokenIssuerIssuesScopedAccessToken(t *testing.T) {
 	require.NoError(t, err)
 	var wireClaims map[string]any
 	require.NoError(t, json.Unmarshal(payload, &wireClaims))
-	require.Equal(t, []any{telemetryTokenAudience}, wireClaims["aud"])
+	require.Equal(t, []any{"https://relay.example.com/acme"}, wireClaims["aud"])
 }
 
 func TestTelemetryTokenIssuerPublishesOnlyPublicKeyMaterial(t *testing.T) {

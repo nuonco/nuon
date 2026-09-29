@@ -59,7 +59,7 @@ func TestNewRejectsInvalidTelemetryRelayConfiguration(t *testing.T) {
 	require.ErrorContains(t, err, "invalid telemetry relay configuration")
 }
 
-func TestCreateTelemetryAccessTokenUnavailableWithoutRelay(t *testing.T) {
+func TestCreateTelemetryAccessTokenRequiresAccountWithoutDeploymentRelay(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	issuer, _ := newTelemetryTestTokenIssuer(t)
 	svc := &service{telemetryTokenIssuer: issuer}
@@ -69,5 +69,6 @@ func TestCreateTelemetryAccessTokenUnavailableWithoutRelay(t *testing.T) {
 
 	svc.CreateTelemetryAccessToken(ctx)
 
-	require.Equal(t, http.StatusServiceUnavailable, recorder.Code)
+	require.Len(t, ctx.Errors, 1)
+	require.ErrorContains(t, ctx.Errors[0].Err, "get telemetry runner account")
 }

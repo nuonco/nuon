@@ -18,7 +18,8 @@ type CreateTelemetryAccessTokenResponse struct {
 
 // @ID CreateTelemetryAccessToken
 // @Summary Create a telemetry access token
-// @Description Creates a short-lived, install-runner-scoped JWT for the BYOC telemetry relay.
+// @Description Creates a short-lived, install-runner-scoped JWT. When supplied, relay_endpoint must match current settings and becomes the token audience. Omit it for the legacy telemetry audience.
+// @Param relay_endpoint query string false "Relay endpoint from runner settings; prevents issuing a token for a stale destination"
 // @Tags runners/runner
 // @Produce json
 // @Security APIKey
@@ -26,11 +27,13 @@ type CreateTelemetryAccessTokenResponse struct {
 // @Success 200 {object} CreateTelemetryAccessTokenResponse
 // @Failure 401 {object} stderr.ErrResponse
 // @Failure 403 {object} stderr.ErrResponse
+// @Failure 409 {object} stderr.ErrResponse
 // @Failure 500 {object} stderr.ErrResponse
 // @Failure 503 {object} stderr.ErrResponse
 // @Router /v1/telemetry/access-token [POST]
 func (s *service) CreateTelemetryAccessToken(ctx *gin.Context) {
-	if s.telemetryTokenIssuer == nil || s.telemetryRelayEndpoint == "" {
+	requestedEndpoint := ctx.Query("relay_endpoint")
+	if s.telemetryTokenIssuer == nil {
 		ctx.JSON(http.StatusServiceUnavailable, stderr.ErrResponse{
 			Error:       "telemetry token issuance is unavailable",
 			Description: "telemetry token issuance is unavailable",
@@ -52,7 +55,15 @@ func (s *service) CreateTelemetryAccessToken(ctx *gin.Context) {
 		return
 	}
 
-	accessToken, err := s.telemetryTokenIssuer.issue(principal)
+	if requestedEndpoint != "" && requestedEndpoint != principal.RelayEndpoint {
+		ctx.JSON(http.StatusConflict, stderr.ErrResponse{
+			Error:       "telemetry relay endpoint does not match current settings",
+			Description: "refresh runner settings before requesting a telemetry token",
+		})
+		return
+	}
+
+	accessToken, err := s.telemetryTokenIssuer.issue(principal, requestedEndpoint != "")
 	if err != nil {
 		ctx.Error(stderr.ErrSystem{
 			Err:         fmt.Errorf("create telemetry access token: %w", err),

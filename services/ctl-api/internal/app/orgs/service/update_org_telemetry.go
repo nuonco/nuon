@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -13,11 +14,13 @@ import (
 )
 
 type UpdateOrgTelemetryRequest struct {
-	Enabled *bool `json:"enabled" validate:"required"`
+	Enabled       *bool   `json:"enabled,omitempty" extensions:"x-nullable"`
+	RelayEndpoint *string `json:"relay_endpoint,omitempty" extensions:"x-nullable"`
 }
 
 // @ID UpdateOrgTelemetry
 // @Summary Update current org telemetry settings
+// @Description Omitted fields are unchanged. Set relay_endpoint to null or an empty string to use the deployment default. Relay endpoints must be HTTPS OTLP base URLs.
 // @Tags orgs
 // @Accept json
 // @Produce json
@@ -44,8 +47,8 @@ func (s *service) UpdateOrgTelemetry(ctx *gin.Context) {
 	}
 	if !s.isOrgAdmin(caller, org.ID) {
 		ctx.Error(stderr.ErrAuthorization{
-			Err:         fmt.Errorf("only org admins can change the telemetry default"),
-			Description: "only org admins can change the telemetry default",
+			Err:         fmt.Errorf("only org admins can change telemetry settings"),
+			Description: "only org admins can change telemetry settings",
 		})
 		return
 	}
@@ -60,8 +63,34 @@ func (s *service) UpdateOrgTelemetry(ctx *gin.Context) {
 		return
 	}
 
+	updates := map[string]interface{}{}
+	if req.Enabled != nil {
+		updates["telemetry_enabled"] = *req.Enabled
+	}
+	patch := cctx.PatcherFromContext(ctx)
+	if req.Enabled == nil && patch != nil && slices.Contains(patch.SelectFields, "enabled") {
+		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("enabled must be true or false")))
+		return
+	}
+	if req.RelayEndpoint != nil || (patch != nil && slices.Contains(patch.SelectFields, "relay_endpoint")) {
+		if req.RelayEndpoint != nil && *req.RelayEndpoint == "" {
+			req.RelayEndpoint = nil
+		}
+		if req.RelayEndpoint != nil {
+			if err := app.ValidateTelemetryRelayEndpoint(*req.RelayEndpoint); err != nil {
+				ctx.Error(stderr.NewInvalidRequest(err))
+				return
+			}
+		}
+		updates["telemetry_relay_endpoint"] = req.RelayEndpoint
+	}
+	if len(updates) == 0 {
+		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("provide enabled or relay_endpoint")))
+		return
+	}
+
 	res := s.db.WithContext(ctx).Model(&app.Org{}).
-		Where(app.Org{ID: org.ID}).Update("telemetry_enabled", *req.Enabled)
+		Where(app.Org{ID: org.ID}).Updates(updates)
 	if res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to update org telemetry: %w", res.Error))
 		return

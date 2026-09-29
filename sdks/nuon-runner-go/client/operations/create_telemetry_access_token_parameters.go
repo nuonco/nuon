@@ -60,6 +60,13 @@ CreateTelemetryAccessTokenParams contains all the parameters to send to the API 
 	Typically these are written to a http.Request.
 */
 type CreateTelemetryAccessTokenParams struct {
+
+	/* RelayEndpoint.
+
+	   Relay endpoint from runner settings; prevents issuing a token for a stale destination
+	*/
+	RelayEndpoint *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -113,6 +120,17 @@ func (o *CreateTelemetryAccessTokenParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithRelayEndpoint adds the relayEndpoint to the create telemetry access token params
+func (o *CreateTelemetryAccessTokenParams) WithRelayEndpoint(relayEndpoint *string) *CreateTelemetryAccessTokenParams {
+	o.SetRelayEndpoint(relayEndpoint)
+	return o
+}
+
+// SetRelayEndpoint adds the relayEndpoint to the create telemetry access token params
+func (o *CreateTelemetryAccessTokenParams) SetRelayEndpoint(relayEndpoint *string) {
+	o.RelayEndpoint = relayEndpoint
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *CreateTelemetryAccessTokenParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -120,6 +138,23 @@ func (o *CreateTelemetryAccessTokenParams) WriteToRequest(r runtime.ClientReques
 		return err
 	}
 	var res []error
+
+	if o.RelayEndpoint != nil {
+
+		// query param relay_endpoint
+		var qrRelayEndpoint string
+
+		if o.RelayEndpoint != nil {
+			qrRelayEndpoint = *o.RelayEndpoint
+		}
+		qRelayEndpoint := qrRelayEndpoint
+		if qRelayEndpoint != "" {
+
+			if err := r.SetQueryParam("relay_endpoint", qRelayEndpoint); err != nil {
+				return err
+			}
+		}
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
