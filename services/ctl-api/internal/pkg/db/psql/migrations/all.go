@@ -240,17 +240,5 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "141-backfill-install-app-branch-group-assignment-source",
 			Fn:   m.Migration141BackfillInstallAppBranchGroupAssignmentSource,
 		},
-		{
-			Name: "142-cloud-connections",
-			Fn:   m.Migration142CloudConnections,
-		},
-		{
-			Name: "143-drop-cloud-connection-legacy-columns",
-			Fn:   m.Migration143DropCloudConnectionLegacyColumns,
-		},
-		{
-			Name: "144-retire-cloud-connection-cron-emitters",
-			Fn:   m.Migration144RetireCloudConnectionCronEmitters,
-		},
 	}
 }
