@@ -122,7 +122,7 @@ type Client interface {
 
 	// runner
 	GetRunner(ctx context.Context) (*models.AppRunner, error)
-	CreateTelemetryAccessToken(ctx context.Context) (*models.ServiceCreateTelemetryAccessTokenResponse, error)
+	CreateTelemetryAccessToken(ctx context.Context, relayEndpoint string) (*models.ServiceCreateTelemetryAccessTokenResponse, error)
 
 	// sandbox configs
 	GetSandboxConfigs(ctx context.Context) ([]*SandboxConfig, error)

@@ -20,14 +20,16 @@ type tokenClientResult struct {
 }
 
 type fakeTokenClient struct {
-	mu      sync.Mutex
-	results []tokenClientResult
-	calls   chan struct{}
+	mu        sync.Mutex
+	results   []tokenClientResult
+	calls     chan struct{}
+	endpoints []string
 }
 
-func (c *fakeTokenClient) CreateTelemetryAccessToken(context.Context) (*models.ServiceCreateTelemetryAccessTokenResponse, error) {
+func (c *fakeTokenClient) CreateTelemetryAccessToken(_ context.Context, endpoint string) (*models.ServiceCreateTelemetryAccessTokenResponse, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.endpoints = append(c.endpoints, endpoint)
 	select {
 	case c.calls <- struct{}{}:
 	default:
@@ -83,7 +85,7 @@ func TestTokenManagerWritesRenewsAndRemovesProtectedToken(t *testing.T) {
 	}
 	defer manager.Disable()
 
-	if err := manager.Enable(context.Background()); err != nil {
+	if err := manager.Enable(context.Background(), "https://relay.example.com"); err != nil {
 		t.Fatal(err)
 	}
 	waitForTokenCall(t, client.calls)
@@ -113,6 +115,14 @@ func TestTokenManagerWritesRenewsAndRemovesProtectedToken(t *testing.T) {
 	}
 
 	manager.Disable()
+	client.mu.Lock()
+	endpoints := append([]string(nil), client.endpoints...)
+	client.mu.Unlock()
+	for _, endpoint := range endpoints {
+		if endpoint != "https://relay.example.com" {
+			t.Fatalf("token renewal used a different endpoint: %q", endpoint)
+		}
+	}
 	if _, err := os.Stat(manager.directory); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("token directory still exists after shutdown: %v", err)
 	}
@@ -127,7 +137,7 @@ func TestTokenManagerRetainsCurrentTokenAfterRenewalFailure(t *testing.T) {
 	manager.renewalDelay = func(time.Duration) time.Duration { return time.Millisecond }
 	defer manager.Disable()
 
-	if err := manager.Enable(context.Background()); err != nil {
+	if err := manager.Enable(context.Background(), "https://relay.example.com"); err != nil {
 		t.Fatal(err)
 	}
 	waitForTokenCall(t, client.calls)
@@ -155,7 +165,7 @@ func TestTokenManagerRejectsInvalidResponsesWithoutLeavingCredentials(t *testing
 		t.Run(name, func(t *testing.T) {
 			client := &fakeTokenClient{results: []tokenClientResult{{response: response}}, calls: make(chan struct{}, 1)}
 			manager := testTokenManager(t, client)
-			if err := manager.Enable(context.Background()); err == nil {
+			if err := manager.Enable(context.Background(), "https://relay.example.com"); err == nil {
 				t.Fatal("expected invalid token response to fail")
 			}
 			if _, err := os.Stat(manager.directory); !errors.Is(err, os.ErrNotExist) {
@@ -172,5 +182,32 @@ func TestRandomizedRenewalDelayStaysWithinWindow(t *testing.T) {
 		if delay < 6*time.Minute || delay >= 7*time.Minute {
 			t.Fatalf("renewal delay %s is outside the 60-70%% lifetime window", delay)
 		}
+	}
+}
+
+func TestTokenManagerRequiresDisableBeforeChangingEndpoint(t *testing.T) {
+	client := &fakeTokenClient{
+		results: []tokenClientResult{{response: validTokenResponse("first.jwt")}, {response: validTokenResponse("second.jwt")}},
+		calls:   make(chan struct{}, 2),
+	}
+	manager := testTokenManager(t, client)
+	defer manager.Disable()
+	if err := manager.Enable(context.Background(), "https://first.example.com"); err != nil {
+		t.Fatal(err)
+	}
+	if err := manager.Enable(context.Background(), "https://second.example.com"); err == nil {
+		t.Fatal("changed endpoint without disabling the old token")
+	}
+	contents, err := os.ReadFile(manager.path)
+	if err != nil || string(contents) != "first.jwt" {
+		t.Fatalf("rejected switch changed token: contents=%q error=%v", contents, err)
+	}
+	manager.Disable()
+	if err := manager.Enable(context.Background(), "https://second.example.com"); err != nil {
+		t.Fatal(err)
+	}
+	contents, err = os.ReadFile(manager.path)
+	if err != nil || string(contents) != "second.jwt" {
+		t.Fatalf("switch retained old token: contents=%q error=%v", contents, err)
 	}
 }

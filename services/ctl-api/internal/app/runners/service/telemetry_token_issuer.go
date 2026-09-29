@@ -18,10 +18,10 @@ import (
 )
 
 const (
-	telemetryTokenAudience = "urn:nuon:telemetry"
-	telemetryTokenScope    = "telemetry:write"
-	telemetryTokenLifetime = 10 * time.Minute
-	maxTelemetryJWKSSize   = 64 * 1024
+	telemetryLegacyAudience = "urn:nuon:telemetry"
+	telemetryTokenScope     = "telemetry:write"
+	telemetryTokenLifetime  = 10 * time.Minute
+	maxTelemetryJWKSSize    = 64 * 1024
 )
 
 type TelemetryJSONWebKey struct {
@@ -230,11 +230,15 @@ func encodeTelemetryJWKInteger(value int64) string {
 	return base64.RawURLEncoding.EncodeToString(big.NewInt(value).Bytes())
 }
 
-func (i *telemetryTokenIssuer) issue(principal telemetryRunnerPrincipal) (string, error) {
-	if principal.OrgID == "" || principal.AppID == "" || principal.InstallID == "" || principal.RunnerID == "" {
+func (i *telemetryTokenIssuer) issue(principal telemetryRunnerPrincipal, endpointBound bool) (string, error) {
+	if principal.OrgID == "" || principal.AppID == "" || principal.InstallID == "" || principal.RunnerID == "" || principal.RelayEndpoint == "" {
 		return "", fmt.Errorf("telemetry runner principal is incomplete")
 	}
 
+	audience := telemetryLegacyAudience
+	if endpointBound {
+		audience = principal.RelayEndpoint
+	}
 	now := i.now().UTC()
 	claims := telemetryAccessTokenClaims{
 		ClientID:  principal.RunnerID,
@@ -246,7 +250,7 @@ func (i *telemetryTokenIssuer) issue(principal telemetryRunnerPrincipal) (string
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    i.issuer,
 			Subject:   fmt.Sprintf("org:%s:install:%s:runner:%s", principal.OrgID, principal.InstallID, principal.RunnerID),
-			Audience:  jwt.ClaimStrings{telemetryTokenAudience},
+			Audience:  jwt.ClaimStrings{audience},
 			ExpiresAt: jwt.NewNumericDate(now.Add(telemetryTokenLifetime)),
 			NotBefore: jwt.NewNumericDate(now),
 			IssuedAt:  jwt.NewNumericDate(now),

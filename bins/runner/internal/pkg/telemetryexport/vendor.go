@@ -195,6 +195,13 @@ func (s *VendorSupervisor) reconcile(ctx context.Context, settings vendorSetting
 		return
 	}
 
+	if s.desiredEndpoint != "" && s.desiredEndpoint != settings.endpoint {
+		s.stopChildFn()
+		s.tokens.Disable()
+		s.activeEndpoint = ""
+		s.activeAttributes = nil
+		s.enabled = false
+	}
 	s.desiredEndpoint = settings.endpoint
 	s.desiredAttributes = maps.Clone(settings.attributes)
 	s.disabled = false
@@ -229,7 +236,7 @@ func (s *VendorSupervisor) startCollector(ctx context.Context) {
 	if ctx.Err() != nil {
 		return
 	}
-	if err := s.tokens.Enable(ctx); err != nil {
+	if err := s.tokens.Enable(ctx, s.desiredEndpoint); err != nil {
 		s.logger.Warn("vendor telemetry access token unavailable", zap.Error(err))
 		s.scheduleRestart()
 		return
