@@ -27,14 +27,14 @@ func (d *DriftedObject) UseView() bool {
 }
 
 func (d *DriftedObject) ViewVersion() string {
-	return "v3"
+	return "v4"
 }
 
 func (d *DriftedObject) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
-			Name:          views.DefaultViewName(db, &DriftedObject{}, 3),
-			SQL:           viewsql.DriftsViewV3,
+			Name:          views.DefaultViewName(db, &DriftedObject{}, 4),
+			SQL:           viewsql.DriftsViewV4,
 			AlwaysReapply: true,
 		},
 	}
