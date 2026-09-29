@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	actionhelper "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	cloudconnectionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/helpers"
 	componentshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
@@ -29,80 +30,83 @@ import (
 type Params struct {
 	fx.In
 
-	V                 *validator.Validate
-	DB                *gorm.DB `name:"psql"`
-	CHDB              *gorm.DB `name:"ch"`
-	AppsHelpers       *appshelpers.Helpers
-	ComponentsHelpers *componentshelpers.Helpers
-	RunnersHelpers    *runnershelpers.Helpers
-	VCSHelpers        *vcshelpers.Helpers
-	Helpers           *helpers.Helpers
-	ActionHelpers     *actionhelper.Helpers
-	AcctClient        *account.Client
-	AuthzClient       *authz.Client
-	Cfg               *internal.Config
-	CFTemplates       *cloudformation.Templates
-	BlobService       blobstore.Service
-	Features          *features.Features
-	L                 *zap.Logger
-	Audit             *audit.Emitter
-	AccountsHelpers   *account.Client
-	TClient           temporalclient.Client
-	SecretsService    secretsmanager.Service
-	StatusActivities  *statusactivities.Activities
-	MeterProvider     metric.MeterProvider `optional:"true"`
+	V                       *validator.Validate
+	DB                      *gorm.DB `name:"psql"`
+	CHDB                    *gorm.DB `name:"ch"`
+	AppsHelpers             *appshelpers.Helpers
+	CloudConnectionsHelpers *cloudconnectionshelpers.Helpers
+	ComponentsHelpers       *componentshelpers.Helpers
+	RunnersHelpers          *runnershelpers.Helpers
+	VCSHelpers              *vcshelpers.Helpers
+	Helpers                 *helpers.Helpers
+	ActionHelpers           *actionhelper.Helpers
+	AcctClient              *account.Client
+	AuthzClient             *authz.Client
+	Cfg                     *internal.Config
+	CFTemplates             *cloudformation.Templates
+	BlobService             blobstore.Service
+	Features                *features.Features
+	L                       *zap.Logger
+	Audit                   *audit.Emitter
+	AccountsHelpers         *account.Client
+	TClient                 temporalclient.Client
+	SecretsService          secretsmanager.Service
+	StatusActivities        *statusactivities.Activities
+	MeterProvider           metric.MeterProvider `optional:"true"`
 }
 
 type Activities struct {
-	v                 *validator.Validate
-	db                *gorm.DB
-	chDB              *gorm.DB
-	cfg               *internal.Config
-	cfTemplates       *cloudformation.Templates
-	blobSvc           blobstore.Service
-	appsHelpers       *appshelpers.Helpers
-	componentsHelpers *componentshelpers.Helpers
-	runnersHelpers    *runnershelpers.Helpers
-	helpers           *helpers.Helpers
-	actionHelpers     *actionhelper.Helpers
-	acctClient        *account.Client
-	authzClient       *authz.Client
-	vcsHelpers        *vcshelpers.Helpers
-	features          *features.Features
-	l                 *zap.Logger
-	audit             *audit.Emitter
-	accountsHelpers   *account.Client
-	tClient           temporalclient.Client
-	secretsSvc        secretsmanager.Service
-	statusActivities  *statusactivities.Activities
-	stateMetrics      *state.Metrics
-	healthMetrics     *componentHealthEvaluationMetrics
+	v                       *validator.Validate
+	db                      *gorm.DB
+	chDB                    *gorm.DB
+	cfg                     *internal.Config
+	cfTemplates             *cloudformation.Templates
+	blobSvc                 blobstore.Service
+	appsHelpers             *appshelpers.Helpers
+	cloudConnectionsHelpers *cloudconnectionshelpers.Helpers
+	componentsHelpers       *componentshelpers.Helpers
+	runnersHelpers          *runnershelpers.Helpers
+	helpers                 *helpers.Helpers
+	actionHelpers           *actionhelper.Helpers
+	acctClient              *account.Client
+	authzClient             *authz.Client
+	vcsHelpers              *vcshelpers.Helpers
+	features                *features.Features
+	l                       *zap.Logger
+	audit                   *audit.Emitter
+	accountsHelpers         *account.Client
+	tClient                 temporalclient.Client
+	secretsSvc              secretsmanager.Service
+	statusActivities        *statusactivities.Activities
+	stateMetrics            *state.Metrics
+	healthMetrics           *componentHealthEvaluationMetrics
 }
 
 func New(params Params) *Activities {
 	return &Activities{
-		db:                params.DB,
-		chDB:              params.CHDB,
-		v:                 params.V,
-		cfg:               params.Cfg,
-		cfTemplates:       params.CFTemplates,
-		blobSvc:           params.BlobService,
-		appsHelpers:       params.AppsHelpers,
-		runnersHelpers:    params.RunnersHelpers,
-		actionHelpers:     params.ActionHelpers,
-		helpers:           params.Helpers,
-		acctClient:        params.AcctClient,
-		authzClient:       params.AuthzClient,
-		vcsHelpers:        params.VCSHelpers,
-		componentsHelpers: params.ComponentsHelpers,
-		features:          params.Features,
-		l:                 params.L,
-		audit:             params.Audit,
-		accountsHelpers:   params.AccountsHelpers,
-		tClient:           params.TClient,
-		secretsSvc:        params.SecretsService,
-		statusActivities:  params.StatusActivities,
-		stateMetrics:      state.NewMetrics(params.MeterProvider),
-		healthMetrics:     newComponentHealthEvaluationMetrics(params.MeterProvider),
+		db:                      params.DB,
+		chDB:                    params.CHDB,
+		v:                       params.V,
+		cfg:                     params.Cfg,
+		cfTemplates:             params.CFTemplates,
+		blobSvc:                 params.BlobService,
+		appsHelpers:             params.AppsHelpers,
+		cloudConnectionsHelpers: params.CloudConnectionsHelpers,
+		runnersHelpers:          params.RunnersHelpers,
+		actionHelpers:           params.ActionHelpers,
+		helpers:                 params.Helpers,
+		acctClient:              params.AcctClient,
+		authzClient:             params.AuthzClient,
+		vcsHelpers:              params.VCSHelpers,
+		componentsHelpers:       params.ComponentsHelpers,
+		features:                params.Features,
+		l:                       params.L,
+		audit:                   params.Audit,
+		accountsHelpers:         params.AccountsHelpers,
+		tClient:                 params.TClient,
+		secretsSvc:              params.SecretsService,
+		statusActivities:        params.StatusActivities,
+		stateMetrics:            state.NewMetrics(params.MeterProvider),
+		healthMetrics:           newComponentHealthEvaluationMetrics(params.MeterProvider),
 	}
 }

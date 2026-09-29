@@ -117,8 +117,8 @@ func NewAWSAccountID() string {
 	return shortid.NewNanoID("aws")
 }
 
-func NewAWSAccountConnectionID() string {
-	return shortid.NewNanoID("awc")
+func NewCloudConnectionID() string {
+	return shortid.NewNanoID("clc")
 }
 
 func NewInstallStackID() string {

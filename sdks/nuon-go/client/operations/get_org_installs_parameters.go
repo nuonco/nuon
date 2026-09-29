@@ -68,6 +68,12 @@ type GetOrgInstallsParams struct {
 	*/
 	Branches *string
 
+	/* CloudConnectionID.
+
+	   filter by cloud connection ID
+	*/
+	CloudConnectionID *string
+
 	/* IncludeComponents.
 
 	   include install components
@@ -198,6 +204,17 @@ func (o *GetOrgInstallsParams) SetBranches(branches *string) {
 	o.Branches = branches
 }
 
+// WithCloudConnectionID adds the cloudConnectionID to the get org installs params
+func (o *GetOrgInstallsParams) WithCloudConnectionID(cloudConnectionID *string) *GetOrgInstallsParams {
+	o.SetCloudConnectionID(cloudConnectionID)
+	return o
+}
+
+// SetCloudConnectionID adds the cloudConnectionId to the get org installs params
+func (o *GetOrgInstallsParams) SetCloudConnectionID(cloudConnectionID *string) {
+	o.CloudConnectionID = cloudConnectionID
+}
+
 // WithIncludeComponents adds the includeComponents to the get org installs params
 func (o *GetOrgInstallsParams) WithIncludeComponents(includeComponents *bool) *GetOrgInstallsParams {
 	o.SetIncludeComponents(includeComponents)
@@ -295,6 +312,23 @@ func (o *GetOrgInstallsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if qBranches != "" {
 
 			if err := r.SetQueryParam("branches", qBranches); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.CloudConnectionID != nil {
+
+		// query param cloud_connection_id
+		var qrCloudConnectionID string
+
+		if o.CloudConnectionID != nil {
+			qrCloudConnectionID = *o.CloudConnectionID
+		}
+		qCloudConnectionID := qrCloudConnectionID
+		if qCloudConnectionID != "" {
+
+			if err := r.SetQueryParam("cloud_connection_id", qCloudConnectionID); err != nil {
 				return err
 			}
 		}

@@ -124,6 +124,25 @@ func (a *Activities) EnsureVCSConnectionQueue(ctx context.Context, req EnsureVCS
 	return a.vcsHelpers.EnsureConnectionQueue(ctx, &vcsConn)
 }
 
+type EnsureOrgCloudConnectionQueuesRequest struct {
+	OrgID string `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+// @by-field OrgID
+func (a *Activities) EnsureOrgCloudConnectionQueues(ctx context.Context, req EnsureOrgCloudConnectionQueuesRequest) error {
+	var connections []app.CloudConnection
+	if err := a.db.WithContext(ctx).Where(app.CloudConnection{OrgID: req.OrgID}).Find(&connections).Error; err != nil {
+		return err
+	}
+	for i := range connections {
+		if _, err := a.cloudConnectionsHelpers.EnsureConnectionQueue(ctx, &connections[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 type GetInstallRunnersRequest struct {
 	InstallID string `validate:"required"`
 }

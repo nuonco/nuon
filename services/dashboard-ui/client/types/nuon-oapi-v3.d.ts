@@ -7,10 +7,17 @@
 export interface paths {
   "/.well-known/jwks.json": {
     /**
-     * Get telemetry JWT public keys
-     * @description Returns the public RSA keys used to verify BYOC telemetry access tokens.
+     * Get OIDC signing public keys
+     * @description Returns the public RSA keys used to verify cloud federation and telemetry tokens.
      */
     get: operations["GetTelemetryJWKS"];
+  };
+  "/.well-known/openid-configuration": {
+    /**
+     * Get OIDC discovery document
+     * @description Returns the OIDC discovery document cloud providers use to federate to this control plane.
+     */
+    get: operations["GetOpenIDConfiguration"];
   };
   "/slack/commands/nuon": {
     /**
@@ -1077,6 +1084,29 @@ export interface paths {
      * @description Returns all builds for the provided component.
      */
     get: operations["GetComponentBuilds"];
+  };
+  "/v1/cloud-connections": {
+    /** list cloud connections */
+    get: operations["ListCloudConnections"];
+    /**
+     * create a cloud connection
+     * @description Create an AWS connection using the stacks or custom preset. Custom renders trust only; attach your own permissions policy.
+     */
+    post: operations["CreateCloudConnection"];
+  };
+  "/v1/cloud-connections/{connection_id}": {
+    /** get a cloud connection */
+    get: operations["GetCloudConnection"];
+    /** delete a cloud connection */
+    delete: operations["DeleteCloudConnection"];
+  };
+  "/v1/cloud-connections/{connection_id}/setup": {
+    /** get cloud connection setup material */
+    get: operations["GetCloudConnectionSetup"];
+  };
+  "/v1/cloud-connections/{connection_id}/verify": {
+    /** verify a cloud connection */
+    post: operations["VerifyCloudConnection"];
   };
   "/v1/component-builds": {
     /** list component build history for the current organization */
@@ -3401,7 +3431,6 @@ export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
     "app.AWSAccount": {
-      connection_id?: string;
       created_at?: string;
       created_by_id?: string;
       iam_role_arn?: string;
@@ -4332,6 +4361,29 @@ export interface components {
       subscription_id?: string;
       subscription_tenant_id?: string;
     };
+    "app.CloudConnection": {
+      created_at?: string;
+      created_by_id?: string;
+      default_region?: string;
+      id?: string;
+      last_verified_at?: string;
+      name?: string;
+      org_id?: string;
+      /** @enum {string} */
+      platform?: "aws";
+      preset?: components["schemas"]["app.CloudConnectionPreset"];
+      principal?: string;
+      queues?: components["schemas"]["app.Queue"][];
+      status?: components["schemas"]["app.CloudConnectionStatus"];
+      status_message?: string;
+      target_id?: string;
+      updated_at?: string;
+      verification_requested_at?: string;
+    };
+    /** @enum {string} */
+    "app.CloudConnectionPreset": "stacks" | "custom";
+    /** @enum {string} */
+    "app.CloudConnectionStatus": "pending" | "verified" | "error";
     /** @enum {string} */
     "app.CloudPlatform": "aws" | "azure" | "gcp" | "unknown";
     "app.CloudPlatformRegion": {
@@ -4783,6 +4835,8 @@ export interface components {
       app_sandbox_config?: components["schemas"]["app.AppSandboxConfig"];
       aws_account?: components["schemas"]["app.AWSAccount"];
       azure_account?: components["schemas"]["app.AzureAccount"];
+      cloud_connection?: components["schemas"]["app.CloudConnection"];
+      cloud_connection_id?: string;
       cloud_platform?: string;
       /**
        * @description CloudPlatformMetadata records the cloud account this install is expected to
@@ -7310,7 +7364,6 @@ export interface components {
        * creation — there is deliberately no equivalent field on UpdateInstallRequest.
        */
       account_id?: string;
-      connection_id?: string;
       region?: string;
     };
     "helpers.CreateInstallAzureAccountParams": {
@@ -7407,6 +7460,22 @@ export interface components {
        * NOTE(JM): we are deprecating this
        */
       trusted_role_arn?: string;
+    };
+    "oidcissuer.DiscoveryDocument": {
+      claims_supported?: string[];
+      id_token_signing_alg_values_supported?: string[];
+      issuer?: string;
+      jwks_uri?: string;
+      response_types_supported?: string[];
+      subject_types_supported?: string[];
+    };
+    "oidcissuer.JWK": {
+      alg?: string;
+      e?: string;
+      kid?: string;
+      kty?: string;
+      n?: string;
+      use?: string;
     };
     "outputs.SecretSyncOutput": {
       arn?: string;
@@ -8169,6 +8238,52 @@ export interface components {
       gitRef?: string;
       repo: string;
     };
+    "service.ConnectionListResponse": {
+      created_at?: string;
+      created_by_id?: string;
+      default_region?: string;
+      id?: string;
+      last_verified_at?: string;
+      name?: string;
+      org_id?: string;
+      /** @enum {string} */
+      platform?: "aws";
+      preset?: components["schemas"]["app.CloudConnectionPreset"];
+      principal?: string;
+      queues?: components["schemas"]["app.Queue"][];
+      status?: components["schemas"]["app.CloudConnectionStatus"];
+      status_message?: string;
+      target_id?: string;
+      updated_at?: string;
+      used_by?: components["schemas"]["service.ConnectionUsage"];
+      verification_in_progress?: boolean;
+      verification_requested_at?: string;
+    };
+    "service.ConnectionResponse": {
+      created_at?: string;
+      created_by_id?: string;
+      default_region?: string;
+      id?: string;
+      last_verified_at?: string;
+      name?: string;
+      org_id?: string;
+      /** @enum {string} */
+      platform?: "aws";
+      preset?: components["schemas"]["app.CloudConnectionPreset"];
+      principal?: string;
+      queues?: components["schemas"]["app.Queue"][];
+      setup?: components["schemas"]["service.SetupResponse"];
+      status?: components["schemas"]["app.CloudConnectionStatus"];
+      status_message?: string;
+      target_id?: string;
+      updated_at?: string;
+      used_by?: components["schemas"]["service.ConnectionUsage"];
+      verification_in_progress?: boolean;
+      verification_requested_at?: string;
+    };
+    "service.ConnectionUsage": {
+      installs?: number;
+    };
     "service.CreateActionWorkflowConfigRequest": {
       app_config_id: string;
       break_glass_role_arn?: string;
@@ -8572,6 +8687,7 @@ export interface components {
       app_branch_id?: string;
       aws_account?: components["schemas"]["helpers.CreateInstallAWSAccountParams"];
       azure_account?: components["schemas"]["helpers.CreateInstallAzureAccountParams"];
+      cloud_connection_id?: string;
       gcp_account?: components["schemas"]["helpers.CreateInstallGCPAccountParams"];
       inputs?: {
         [key: string]: string;
@@ -8604,6 +8720,7 @@ export interface components {
       app_id: string;
       aws_account?: components["schemas"]["helpers.CreateInstallAWSAccountParams"];
       azure_account?: components["schemas"]["helpers.CreateInstallAzureAccountParams"];
+      cloud_connection_id?: string;
       gcp_account?: components["schemas"]["helpers.CreateInstallGCPAccountParams"];
       inputs?: {
         [key: string]: string;
@@ -8748,6 +8865,15 @@ export interface components {
       skip_noops?: boolean;
       toggleable?: boolean;
       version?: string;
+    };
+    "service.CreateRequest": {
+      default_region?: string;
+      name?: string;
+      /** @enum {string} */
+      platform?: "aws";
+      preset?: components["schemas"]["app.CloudConnectionPreset"];
+      principal?: string;
+      target_id?: string;
     };
     "service.CreateRunbookConfigRequest": {
       app_config_id?: string;
@@ -9417,6 +9543,21 @@ export interface components {
       passes?: number;
       warns?: number;
     };
+    "service.SetupResponse": {
+      audience?: string;
+      cli?: string;
+      cloudformation?: string;
+      issuer_url?: string;
+      permissions_policy?: {
+        [key: string]: unknown;
+      };
+      preset?: components["schemas"]["app.CloudConnectionPreset"];
+      subject?: string;
+      terraform?: string;
+      trust_policy?: {
+        [key: string]: unknown;
+      };
+    };
     "service.ShutdownRunnerProcessRequest": {
       shutdown_type: string;
     };
@@ -9451,16 +9592,8 @@ export interface components {
       plan_only?: boolean;
       role?: string;
     };
-    "service.TelemetryJSONWebKey": {
-      alg?: string;
-      e?: string;
-      kid?: string;
-      kty?: string;
-      n?: string;
-      use?: string;
-    };
     "service.TelemetryJSONWebKeySet": {
-      keys?: components["schemas"]["service.TelemetryJSONWebKey"][];
+      keys?: components["schemas"]["oidcissuer.JWK"][];
     };
     "service.TimeseriesBucket": {
       denies?: number;
@@ -9906,8 +10039,8 @@ export type external = Record<string, never>;
 export interface operations {
 
   /**
-   * Get telemetry JWT public keys
-   * @description Returns the public RSA keys used to verify BYOC telemetry access tokens.
+   * Get OIDC signing public keys
+   * @description Returns the public RSA keys used to verify cloud federation and telemetry tokens.
    */
   GetTelemetryJWKS: {
     responses: {
@@ -9915,6 +10048,26 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["service.TelemetryJSONWebKeySet"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get OIDC discovery document
+   * @description Returns the OIDC discovery document cloud providers use to federate to this control plane.
+   */
+  GetOpenIDConfiguration: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["oidcissuer.DiscoveryDocument"];
         };
       };
       /** @description Service Unavailable */
@@ -18773,6 +18926,157 @@ export interface operations {
       };
     };
   };
+  /** list cloud connections */
+  ListCloudConnections: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+        /** @description search by name, account, or role ARN */
+        q?: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.ConnectionListResponse"][];
+        };
+      };
+    };
+  };
+  /**
+   * create a cloud connection
+   * @description Create an AWS connection using the stacks or custom preset. Custom renders trust only; attach your own permissions policy.
+   */
+  CreateCloudConnection: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.ConnectionResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get a cloud connection */
+  GetCloudConnection: {
+    parameters: {
+      path: {
+        /** @description connection ID */
+        connection_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.ConnectionResponse"];
+        };
+      };
+    };
+  };
+  /** delete a cloud connection */
+  DeleteCloudConnection: {
+    parameters: {
+      path: {
+        /** @description connection ID */
+        connection_id: string;
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get cloud connection setup material */
+  GetCloudConnectionSetup: {
+    parameters: {
+      path: {
+        /** @description connection ID */
+        connection_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.SetupResponse"];
+        };
+      };
+    };
+  };
+  /** verify a cloud connection */
+  VerifyCloudConnection: {
+    parameters: {
+      path: {
+        /** @description connection ID */
+        connection_id: string;
+      };
+    };
+    responses: {
+      /** @description Accepted */
+      202: {
+        content: {
+          "application/json": components["schemas"]["service.ConnectionResponse"];
+        };
+      };
+    };
+  };
   /** list component build history for the current organization */
   ListOrgComponentBuilds: {
     parameters: {
@@ -20584,6 +20888,8 @@ export interface operations {
         labels?: string;
         /** @description filter by runner ID */
         runner_id?: string;
+        /** @description filter by cloud connection ID */
+        cloud_connection_id?: string;
         /** @description filter installs by branch name (comma-separated; use __none__ for installs with no branch) */
         branches?: string;
         /** @description include install components */

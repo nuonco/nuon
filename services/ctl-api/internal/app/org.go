@@ -69,7 +69,6 @@ const (
 	// step in the dashboard, letting customers provision the Terraform
 	// install stack through Spacelift instead of running Terraform locally.
 	OrgFeatureSpaceliftInstallStacks   OrgFeature = "spacelift-install-stacks"
-	OrgFeatureAWSAccountConnections    OrgFeature = "aws-account-connections"
 	OrgFeatureServiceAccountsAndTokens OrgFeature = "service-accounts-and-tokens"
 	// OrgFeaturePhoneHomeAuth requires install phone-home requests to carry an
 	// HMAC signature derived from a per-install secret, and requires a target
@@ -138,12 +137,12 @@ type Org struct {
 
 	Priority int `json:"-" temporaljson:"priority,omitzero,omitempty"`
 
-	Apps                  []App                  `faker:"-" swaggerignore:"true" json:"apps,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"apps,omitzero,omitempty"`
-	VCSConnections        []VCSConnection        `json:"vcs_connections,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"vcs_connections,omitzero,omitempty"`
-	AWSAccountConnections []AWSAccountConnection `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"aws_account_connections,omitzero,omitempty"`
-	Invites               []OrgInvite            `faker:"-" swaggerignore:"true" json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"invites,omitzero,omitempty"`
-	Features              types.StringBoolMap    `json:"features,omitzero" gorm:"type:jsonb;default null" temporaljson:"features,omitzero,omitempty"`
-	Tags                  pq.StringArray         `json:"tags,omitzero" gorm:"type:text[];default '{}'" swaggertype:"array,string" temporaljson:"tags,omitzero,omitempty"`
+	Apps             []App               `faker:"-" swaggerignore:"true" json:"apps,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"apps,omitzero,omitempty"`
+	VCSConnections   []VCSConnection     `json:"vcs_connections,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"vcs_connections,omitzero,omitempty"`
+	CloudConnections []CloudConnection   `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"cloud_connections,omitzero,omitempty"`
+	Invites          []OrgInvite         `faker:"-" swaggerignore:"true" json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"invites,omitzero,omitempty"`
+	Features         types.StringBoolMap `json:"features,omitzero" gorm:"type:jsonb;default null" temporaljson:"features,omitzero,omitempty"`
+	Tags             pq.StringArray      `json:"tags,omitzero" gorm:"type:text[];default '{}'" swaggertype:"array,string" temporaljson:"tags,omitzero,omitempty"`
 	labels.Labeled
 
 	// Other relationships as part of the data model
@@ -254,7 +253,6 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeaturePulumiUpdatePlans:       false,
 		OrgFeatureNotebooks:               false,
 		OrgFeatureSpaceliftInstallStacks:  false,
-		OrgFeatureAWSAccountConnections:   false,
 		OrgFeaturePhoneHomeAuth:           false,
 		OrgFeatureRunbookStudio:           false,
 		OrgFeatureCronNamespaceIsolation:  false,
@@ -289,7 +287,6 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureNotebooks,
 		OrgFeatureVersionsUI,
 		OrgFeatureSpaceliftInstallStacks,
-		OrgFeatureAWSAccountConnections,
 		OrgFeatureServiceAccountsAndTokens,
 		OrgFeaturePhoneHomeAuth,
 		OrgFeatureRunbookStudio,
@@ -330,7 +327,6 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureNotebooks:                "Enable install-scoped Notebooks — a Jupyter-style surface where each cell runs a command on the install's runner via a long-lived, warm per-notebook Temporal workflow, skipping the cold install-workflow step tree for near-real-time adhoc execution.",
 		OrgFeatureVersionsUI:               "Enable the install app config versions tab in the dashboard, showing the history of config updates and component diffs for each install.",
 		OrgFeatureSpaceliftInstallStacks:   "Surface the Spacelift options (blueprint and administrative stack) on the install stack await step, so customers can provision the Terraform install stack through Spacelift instead of running Terraform locally.",
-		OrgFeatureAWSAccountConnections:    "Enable organization-owned cross-account AWS connections with external ID trust verification.",
 		OrgFeatureServiceAccountsAndTokens: "Enable the API tokens and service accounts management pages in the dashboard settings navigation.",
 		OrgFeaturePhoneHomeAuth:            "Require install phone-home requests to carry an HMAC signature derived from a per-install secret, and require a target cloud account identifier (AWS account ID, GCP project ID, or Azure subscription ID) at install creation. Depends on the phone-home CMK and management-role IAM grants being in place.",
 		OrgFeatureRunbookStudio:            "Enable the runbook studio in the dashboard — a literate editor for authoring runbook markdown around executable steps with a live install-state preview.",
@@ -367,9 +363,8 @@ func GetFeaturesWithDescriptions() []OrgFeatureInfo {
 // because they gate the flag system itself or because enabling them depends on
 // infrastructure prerequisites outside the org's control.
 var adminOnlyFeatures = map[OrgFeature]struct{}{
-	OrgFeatureUserManagedFeatures:   {},
-	OrgFeatureAWSAccountConnections: {},
-	OrgFeaturePhoneHomeAuth:         {},
+	OrgFeatureUserManagedFeatures: {},
+	OrgFeaturePhoneHomeAuth:       {},
 }
 
 // GetUserManageableFeatures returns features that users are allowed to toggle

@@ -5,7 +5,7 @@ import type { InstallFormValues } from './schema'
 const base: InstallFormValues = {
   name: '  my-install  ',
   region: 'us-west-2',
-  aws_connection_id: '',
+  cloud_connection_id: '',
   aws_account_id: '',
   location: '',
   azure_subscription_id: '',
@@ -36,15 +36,19 @@ describe('buildCreateInstallBody', () => {
 
   test('aws account carries region + optional connection/account', () => {
     const body = buildCreateInstallBody(
-      { ...base, aws_connection_id: 'conn-1', aws_account_id: '123456789012' },
+      {
+        ...base,
+        cloud_connection_id: 'conn-1',
+        aws_account_id: '123456789012',
+      },
       'aws'
     )
     expect(body.aws_account).toEqual({
       iam_role_arn: '',
       region: 'us-west-2',
-      connection_id: 'conn-1',
       account_id: '123456789012',
     })
+    expect(body.cloud_connection_id).toBe('conn-1')
   })
 
   test('prompt approval when autoApprove is false', () => {
@@ -77,7 +81,12 @@ describe('buildCreateInstallBody', () => {
 
   test('azure and gcp account mapping', () => {
     const azure = buildCreateInstallBody(
-      { ...base, region: '', location: 'eastus', azure_subscription_id: 'sub-1' },
+      {
+        ...base,
+        region: '',
+        location: 'eastus',
+        azure_subscription_id: 'sub-1',
+      },
       'azure'
     )
     expect(azure.azure_account?.location).toBe('eastus')

@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitinstallstackversionrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/deprovisiondns"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/deprovisionsandboxapplyplan"
@@ -67,35 +68,46 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		return nil, err
 	}
 
-	sg.nextGroup() // deprovision dns delegation before the sandbox (and its zone) is destroyed
-	step, err = sg.installSignalStep(ctx, installID, "deprovision dns delegation", pgtype.Hstore{}, &deprovisiondns.Signal{
-		InstallID: installID,
-	}, flw.PlanOnly)
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
+	if sandboxNeedsDeprovision(sandbox.Status) {
+		sg.nextGroup() // deprovision dns delegation before the sandbox (and its zone) is destroyed
+		step, err = sg.installSignalStep(ctx, installID, "deprovision dns delegation", pgtype.Hstore{}, &deprovisiondns.Signal{
+			InstallID: installID,
+		}, flw.PlanOnly)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
 
-	sg.nextGroup() // deprovision sandbox plan + apply
+		sg.nextGroup() // deprovision sandbox plan + apply
 
-	step, err = sg.installSignalStep(ctx, installID, "deprovision sandbox plan", pgtype.Hstore{}, &deprovisionsandboxplan.Signal{
-		InstallSandboxID: sandbox.ID,
-		InstallID:        installID,
-		Role:             flw.Role,
-	}, flw.PlanOnly, WithSkippable(false))
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
+		step, err = sg.installSignalStep(ctx, installID, "deprovision sandbox plan", pgtype.Hstore{}, &deprovisionsandboxplan.Signal{
+			InstallSandboxID: sandbox.ID,
+			InstallID:        installID,
+			Role:             flw.Role,
+		}, flw.PlanOnly, WithSkippable(false))
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
 
-	step, err = sg.installSignalStep(ctx, installID, "deprovision sandbox apply", pgtype.Hstore{}, &deprovisionsandboxapplyplan.Signal{
-		InstallSandboxID: sandbox.ID,
-		InstallID:        installID,
-	}, flw.PlanOnly, WithMaxAutoRetries(install.AppSandboxConfig.GetMaxAutoRetries()))
-	if err != nil {
-		return nil, err
+		step, err = sg.installSignalStep(ctx, installID, "deprovision sandbox apply", pgtype.Hstore{}, &deprovisionsandboxapplyplan.Signal{
+			InstallSandboxID: sandbox.ID,
+			InstallID:        installID,
+		}, flw.PlanOnly, WithMaxAutoRetries(install.AppSandboxConfig.GetMaxAutoRetries()))
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
+	} else {
+		sg.nextGroup()
+		step, err = sg.installSignalStep(ctx, installID, "deprovision sandbox", pgtype.Hstore{
+			"reason": generics.ToPtr("sandbox is not provisioned"),
+		}, nil, flw.PlanOnly)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
 	}
-	steps = append(steps, step)
 
 	lifecycleSteps, err = getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePostDeprovision)
 	if err != nil {
@@ -103,5 +115,30 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	}
 	steps = append(steps, lifecycleSteps...)
 
+	if install.CloudConnectionID != nil && (appCfg.RunnerConfig.Type == app.AppRunnerTypeAWS || appCfg.RunnerConfig.Type == app.AppRunnerTypeAzure) {
+		stack, err := activities.AwaitGetInstallStackByInstallID(ctx, installID)
+		if err != nil {
+			return nil, err
+		}
+		sg.nextGroup()
+		step, err = sg.installSignalStep(ctx, installID, "delete install stack", pgtype.Hstore{}, &awaitinstallstackversionrun.Signal{
+			InstallStackID:     stack.ID,
+			DeleteManagedStack: true,
+		}, flw.PlanOnly, WithSkippable(false))
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
+	}
+
 	return sg.Result(steps), nil
+}
+
+func sandboxNeedsDeprovision(status app.InstallSandboxStatus) bool {
+	switch status {
+	case app.InstallSandboxStatusQueued, app.InstallSandboxStatusDeprovisioned, app.InstallSandboxStatusDeleted:
+		return false
+	default:
+		return true
+	}
 }

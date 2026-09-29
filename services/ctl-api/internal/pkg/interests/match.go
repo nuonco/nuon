@@ -99,7 +99,7 @@ func Matches(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome, 
 		return cfg.ComponentHealth
 	case eventClassInstallDegraded:
 		return cfg.InstallDegraded
-	case eventClassRunnerUnhealthy:
+	case eventClassRunnerUnhealthy, eventClassCloudConnectionVerificationFailed:
 		if len(cfg.Ops) > 0 && !contains(cfg.Ops, f.Op) {
 			return false
 		}

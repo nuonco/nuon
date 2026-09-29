@@ -17,6 +17,7 @@ type FlowSpec struct {
 const (
 	OwnerAppBranches             = "app_branches"
 	OwnerApps                    = "apps"
+	OwnerCloudConnections        = "cloud_connections"
 	OwnerComponents              = "components"
 	OwnerGeneral                 = "general"
 	OwnerInstalls                = "installs"
@@ -158,6 +159,7 @@ var defaults = map[string]string{
 }
 
 var soleOwnerTypes = map[string]struct{}{
+	OwnerCloudConnections:        {},
 	OwnerNotebooks:               {},
 	OwnerVCSConnections:          {},
 	OwnerVCSWebhookSubscriptions: {},

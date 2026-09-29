@@ -228,6 +228,8 @@ type ClientService interface {
 
 	CreateAppTerraformModuleComponentConfig(params *CreateAppTerraformModuleComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppTerraformModuleComponentConfigCreated, error)
 
+	CreateCloudConnection(params *CreateCloudConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCloudConnectionCreated, error)
+
 	CreateComponent(params *CreateComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateComponentCreated, error)
 
 	CreateComponentBuild(params *CreateComponentBuildParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateComponentBuildCreated, error)
@@ -325,6 +327,8 @@ type ClientService interface {
 	DeleteAppSecret(params *DeleteAppSecretParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAppSecretOK, error)
 
 	DeleteAppSecretV2(params *DeleteAppSecretV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAppSecretV2OK, error)
+
+	DeleteCloudConnection(params *DeleteCloudConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteCloudConnectionNoContent, error)
 
 	DeleteComponent(params *DeleteComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteComponentOK, error)
 
@@ -513,6 +517,10 @@ type ClientService interface {
 	GetBuild(params *GetBuildParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetBuildOK, error)
 
 	GetCLIConfig(params *GetCLIConfigParams, opts ...ClientOption) (*GetCLIConfigOK, error)
+
+	GetCloudConnection(params *GetCloudConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCloudConnectionOK, error)
+
+	GetCloudConnectionSetup(params *GetCloudConnectionSetupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCloudConnectionSetupOK, error)
 
 	GetCloudPlatformRegions(params *GetCloudPlatformRegionsParams, opts ...ClientOption) (*GetCloudPlatformRegionsOK, error)
 
@@ -718,6 +726,8 @@ type ClientService interface {
 
 	GetOnboardingExampleApps(params *GetOnboardingExampleAppsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOnboardingExampleAppsOK, error)
 
+	GetOpenIDConfiguration(params *GetOpenIDConfigurationParams, opts ...ClientOption) (*GetOpenIDConfigurationOK, error)
+
 	GetOrg(params *GetOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgOK, error)
 
 	GetOrgAcounts(params *GetOrgAcountsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgAcountsOK, error)
@@ -859,6 +869,8 @@ type ClientService interface {
 	GetWorkspaceStateJSONRawByID(params *GetWorkspaceStateJSONRawByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkspaceStateJSONRawByIDOK, error)
 
 	GracefulShutDownRunner(params *GracefulShutDownRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GracefulShutDownRunnerOK, error)
+
+	ListCloudConnections(params *ListCloudConnectionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListCloudConnectionsOK, error)
 
 	ListOIDCTrustPolicies(params *ListOIDCTrustPoliciesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOIDCTrustPoliciesOK, error)
 
@@ -1041,6 +1053,8 @@ type ClientService interface {
 	UpdateWorkflow(params *UpdateWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateWorkflowOK, error)
 
 	ValidateToken(params *ValidateTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateTokenOK, error)
+
+	VerifyCloudConnection(params *VerifyCloudConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*VerifyCloudConnectionAccepted, error)
 
 	WriteVCSEvent(params *WriteVCSEventParams, opts ...ClientOption) (*WriteVCSEventOK, error)
 
@@ -3688,6 +3702,52 @@ func (a *Client) CreateAppTerraformModuleComponentConfig(params *CreateAppTerraf
 }
 
 /*
+CreateCloudConnection creates a cloud connection
+
+Create an AWS connection using the stacks or custom preset. Custom renders trust only; attach your own permissions policy.
+*/
+func (a *Client) CreateCloudConnection(params *CreateCloudConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCloudConnectionCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateCloudConnectionParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateCloudConnection",
+		Method:             "POST",
+		PathPattern:        "/v1/cloud-connections",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateCloudConnectionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateCloudConnectionCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateCloudConnection: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 CreateComponent creates a component
 
 Create a new component for an app.
@@ -5930,6 +5990,50 @@ func (a *Client) DeleteAppSecretV2(params *DeleteAppSecretV2Params, authInfo run
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for DeleteAppSecretV2: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+DeleteCloudConnection deletes a cloud connection
+*/
+func (a *Client) DeleteCloudConnection(params *DeleteCloudConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteCloudConnectionNoContent, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewDeleteCloudConnectionParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "DeleteCloudConnection",
+		Method:             "DELETE",
+		PathPattern:        "/v1/cloud-connections/{connection_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteCloudConnectionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*DeleteCloudConnectionNoContent)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for DeleteCloudConnection: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -10175,15 +10279,24 @@ func (a *Client) GetAuthMe(params *GetAuthMeParams, authInfo runtime.ClientAuthI
 /*
 	GetAvailableRoles gets available i a m roles for a specific operation
 
-	Returns a list of available IAM roles that can be used for a specific operation on an install.
+	Returns the roles available in the install's stack outputs, including provision,
 
-The endpoint filters roles based on the operation type:
-- **provision/reprovision**: Custom roles, break glass roles, provision IAM role
-- **deprovision/teardown**: Custom roles, break glass roles, deprovision IAM role
-- **deploy**: Custom roles, break glass roles, maintenance IAM role
-- **trigger** (actions): Custom roles, break glass roles, provision + maintenance IAM roles
+deprovision, maintenance, custom, and break-glass roles.
 
-Roles are sourced from the install's stack outputs.
+Pass `workflow_type` to preview the parent workflow's default for component and
+action steps. Workflow-type defaults are enabled by default, using the same
+mapping as execution. Set `USE_LEGACY_MAINTENANCE_ROLE_DEFAULT=true` to keep the
+legacy maintenance default instead. The API and worker must use the same flag
+value.
+
+With `principal_type`, `operation_type`, and `principal_id`, the `default` marker
+also accounts for entity, break-glass, and operation-matrix configuration. Omit
+`principal_id` for adhoc actions. Sandbox defaults follow their operation type
+independently of the workflow-default flag.
+
+Without a principal, the preview is the workflow's base default; individual steps
+may use configured role overrides. Omitting `workflow_type` preserves the legacy
+component/action maintenance default.
 */
 func (a *Client) GetAvailableRoles(params *GetAvailableRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAvailableRolesOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -10314,6 +10427,94 @@ func (a *Client) GetCLIConfig(params *GetCLIConfigParams, opts ...ClientOption) 
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetCLIConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetCloudConnection gets a cloud connection
+*/
+func (a *Client) GetCloudConnection(params *GetCloudConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCloudConnectionOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetCloudConnectionParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetCloudConnection",
+		Method:             "GET",
+		PathPattern:        "/v1/cloud-connections/{connection_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetCloudConnectionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetCloudConnectionOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetCloudConnection: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetCloudConnectionSetup gets cloud connection setup material
+*/
+func (a *Client) GetCloudConnectionSetup(params *GetCloudConnectionSetupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCloudConnectionSetupOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetCloudConnectionSetupParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetCloudConnectionSetup",
+		Method:             "GET",
+		PathPattern:        "/v1/cloud-connections/{connection_id}/setup",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetCloudConnectionSetupReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetCloudConnectionSetupOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetCloudConnectionSetup: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -11109,7 +11310,6 @@ Example response:
 	{
 	  "api-pagination": true,
 	  "org-dashboard": true,
-	  "org-runner": true,
 	  "stratus-layout": true,
 	  "user-managed-features": false
 	}
@@ -15058,6 +15258,51 @@ func (a *Client) GetOnboardingExampleApps(params *GetOnboardingExampleAppsParams
 }
 
 /*
+GetOpenIDConfiguration gets o ID c discovery document
+
+Returns the OIDC discovery document cloud providers use to federate to this control plane.
+*/
+func (a *Client) GetOpenIDConfiguration(params *GetOpenIDConfigurationParams, opts ...ClientOption) (*GetOpenIDConfigurationOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetOpenIDConfigurationParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetOpenIDConfiguration",
+		Method:             "GET",
+		PathPattern:        "/.well-known/openid-configuration",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetOpenIDConfigurationReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetOpenIDConfigurationOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetOpenIDConfiguration: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetOrg gets an org
 
 Return an organization by id.
@@ -16844,9 +17089,9 @@ func (a *Client) GetStackServiceAccount(params *GetStackServiceAccountParams, au
 }
 
 /*
-GetTelemetryJWKS gets telemetry j w t public keys
+GetTelemetryJWKS gets o ID c signing public keys
 
-Returns the public RSA keys used to verify BYOC telemetry access tokens.
+Returns the public RSA keys used to verify cloud federation and telemetry tokens.
 */
 func (a *Client) GetTelemetryJWKS(params *GetTelemetryJWKSParams, opts ...ClientOption) (*GetTelemetryJWKSOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -18313,6 +18558,50 @@ func (a *Client) GracefulShutDownRunner(params *GracefulShutDownRunnerParams, au
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GracefulShutDownRunner: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ListCloudConnections lists cloud connections
+*/
+func (a *Client) ListCloudConnections(params *ListCloudConnectionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListCloudConnectionsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListCloudConnectionsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListCloudConnections",
+		Method:             "GET",
+		PathPattern:        "/v1/cloud-connections",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListCloudConnectionsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListCloudConnectionsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListCloudConnections: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -22533,6 +22822,50 @@ func (a *Client) ValidateToken(params *ValidateTokenParams, authInfo runtime.Cli
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for ValidateToken: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+VerifyCloudConnection verifies a cloud connection
+*/
+func (a *Client) VerifyCloudConnection(params *VerifyCloudConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*VerifyCloudConnectionAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewVerifyCloudConnectionParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "VerifyCloudConnection",
+		Method:             "POST",
+		PathPattern:        "/v1/cloud-connections/{connection_id}/verify",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &VerifyCloudConnectionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*VerifyCloudConnectionAccepted)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for VerifyCloudConnection: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

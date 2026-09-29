@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	cloudconnectionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
@@ -21,37 +22,39 @@ import (
 )
 
 type Activities struct {
-	cfg            *internal.Config
-	db             *gorm.DB
-	chDB           *gorm.DB
-	appsHelpers    *appshelpers.Helpers
-	orgsHelpers    *orgshelpers.Helpers
-	mw             metrics.Writer
-	logger         *temporalzap.Logger
-	l              *zap.Logger
-	tClient        temporalclient.Client
-	slackClient    *slackclient.Client
-	autoLinkHelper *autolink.Helper
-	blobSvc        blobstore.Service
-	queueClient    *queueclient.Client
-	flowsClient    *flowclient.Client
+	cfg                     *internal.Config
+	db                      *gorm.DB
+	chDB                    *gorm.DB
+	appsHelpers             *appshelpers.Helpers
+	cloudConnectionsHelpers *cloudconnectionshelpers.Helpers
+	orgsHelpers             *orgshelpers.Helpers
+	mw                      metrics.Writer
+	logger                  *temporalzap.Logger
+	l                       *zap.Logger
+	tClient                 temporalclient.Client
+	slackClient             *slackclient.Client
+	autoLinkHelper          *autolink.Helper
+	blobSvc                 blobstore.Service
+	queueClient             *queueclient.Client
+	flowsClient             *flowclient.Client
 }
 
 type Params struct {
 	fx.In
 
-	Cfg            *internal.Config
-	DB             *gorm.DB `name:"psql"`
-	CHDB           *gorm.DB `name:"ch"`
-	QueueClient    *queueclient.Client
-	AppsHelpers    *appshelpers.Helpers
-	OrgsHelpers    *orgshelpers.Helpers
-	MW             metrics.Writer
-	TemporalClient temporalclient.Client
-	SlackClient    *slackclient.Client
-	AutoLinkHelper *autolink.Helper
-	BlobSvc        blobstore.Service
-	FlowsClient    *flowclient.Client
+	Cfg                     *internal.Config
+	DB                      *gorm.DB `name:"psql"`
+	CHDB                    *gorm.DB `name:"ch"`
+	QueueClient             *queueclient.Client
+	AppsHelpers             *appshelpers.Helpers
+	CloudConnectionsHelpers *cloudconnectionshelpers.Helpers
+	OrgsHelpers             *orgshelpers.Helpers
+	MW                      metrics.Writer
+	TemporalClient          temporalclient.Client
+	SlackClient             *slackclient.Client
+	AutoLinkHelper          *autolink.Helper
+	BlobSvc                 blobstore.Service
+	FlowsClient             *flowclient.Client
 }
 
 func New(params Params) (*Activities, error) {
@@ -61,19 +64,20 @@ func New(params Params) (*Activities, error) {
 		return nil, fmt.Errorf("unable to create temporal logger: %w", err)
 	}
 	return &Activities{
-		cfg:            params.Cfg,
-		db:             params.DB,
-		chDB:           params.CHDB,
-		appsHelpers:    params.AppsHelpers,
-		orgsHelpers:    params.OrgsHelpers,
-		mw:             params.MW,
-		logger:         tlogger,
-		l:              logger,
-		tClient:        params.TemporalClient,
-		slackClient:    params.SlackClient,
-		autoLinkHelper: params.AutoLinkHelper,
-		blobSvc:        params.BlobSvc,
-		queueClient:    params.QueueClient,
-		flowsClient:    params.FlowsClient,
+		cfg:                     params.Cfg,
+		db:                      params.DB,
+		chDB:                    params.CHDB,
+		appsHelpers:             params.AppsHelpers,
+		cloudConnectionsHelpers: params.CloudConnectionsHelpers,
+		orgsHelpers:             params.OrgsHelpers,
+		mw:                      params.MW,
+		logger:                  tlogger,
+		l:                       logger,
+		tClient:                 params.TemporalClient,
+		slackClient:             params.SlackClient,
+		autoLinkHelper:          params.AutoLinkHelper,
+		blobSvc:                 params.BlobSvc,
+		queueClient:             params.QueueClient,
+		flowsClient:             params.FlowsClient,
 	}, nil
 }

@@ -38,16 +38,17 @@ import (
 // multi-phase concepts (plan/apply), and inner signal type names are
 // deliberately NOT exposed.
 const (
-	cloudEventTypeWorkflow                  = "com.nuon.workflow.lifecycle.v1"
-	cloudEventTypeWorkflowStep              = "com.nuon.workflow_step.lifecycle.v1"
-	cloudEventTypeWorkflowStepApproval      = "com.nuon.workflow_step.approval.v1"
-	cloudEventTypeWorkflowStepAwaitingRetry = "com.nuon.workflow_step.awaiting_retry.v1"
-	cloudEventTypeStackRun                  = "com.nuon.stack.run.v1"
-	cloudEventTypeRoleChange                = "com.nuon.stack.role_change.v1"
-	cloudEventTypeInputsUpdated             = "com.nuon.stack.inputs_updated.v1"
-	cloudEventTypeAppConfigSynced           = "com.nuon.app.config_synced.v1"
-	cloudEventTypeUpdateAppConfig           = "com.nuon.install.app_config_updated.v1"
-	cloudEventTypeRunnerUnhealthy           = "com.nuon.runner.unhealthy.v1"
+	cloudEventTypeWorkflow                          = "com.nuon.workflow.lifecycle.v1"
+	cloudEventTypeWorkflowStep                      = "com.nuon.workflow_step.lifecycle.v1"
+	cloudEventTypeWorkflowStepApproval              = "com.nuon.workflow_step.approval.v1"
+	cloudEventTypeWorkflowStepAwaitingRetry         = "com.nuon.workflow_step.awaiting_retry.v1"
+	cloudEventTypeStackRun                          = "com.nuon.stack.run.v1"
+	cloudEventTypeRoleChange                        = "com.nuon.stack.role_change.v1"
+	cloudEventTypeInputsUpdated                     = "com.nuon.stack.inputs_updated.v1"
+	cloudEventTypeAppConfigSynced                   = "com.nuon.app.config_synced.v1"
+	cloudEventTypeUpdateAppConfig                   = "com.nuon.install.app_config_updated.v1"
+	cloudEventTypeRunnerUnhealthy                   = "com.nuon.runner.unhealthy.v1"
+	cloudEventTypeCloudConnectionVerificationFailed = "com.nuon.cloud_connection.verification_failed.v1"
 	// Component health emits one CloudEvent type per level; `transition`
 	// distinguishes going bad from recovering, the way the approval event uses
 	// requested / approved / rejected.
@@ -58,21 +59,22 @@ const (
 	cloudEventTypeLabelAdded        = "com.nuon.install.label_added.v1"
 	cloudEventTypeAppBranchChanged  = "com.nuon.install.app_branch_changed.v1"
 
-	kindWorkflow             = "workflow"
-	kindWorkflowStep         = "workflow_step"
-	kindWorkflowStepApproval = "workflow_step_approval"
-	kindStackRun             = "stack_run"
-	kindRoleChange           = "role_change"
-	kindInputsUpdated        = "inputs_updated"
-	kindAppConfigSynced      = "app_config_synced"
-	kindUpdateAppConfig      = "app_config_updated"
-	kindRunnerUnhealthy      = "runner_unhealthy"
-	kindComponentHealth      = "component_health"
-	kindInstallHealth        = "install_health"
-	kindInstallSync          = "install_sync"
-	kindInstallConfigSync    = "install_config_sync"
-	kindLabelAdded           = "label_added"
-	kindAppBranchChanged     = "app_branch_changed"
+	kindWorkflow                          = "workflow"
+	kindWorkflowStep                      = "workflow_step"
+	kindWorkflowStepApproval              = "workflow_step_approval"
+	kindStackRun                          = "stack_run"
+	kindRoleChange                        = "role_change"
+	kindInputsUpdated                     = "inputs_updated"
+	kindAppConfigSynced                   = "app_config_synced"
+	kindUpdateAppConfig                   = "app_config_updated"
+	kindRunnerUnhealthy                   = "runner_unhealthy"
+	kindCloudConnectionVerificationFailed = "cloud_connection_verification_failed"
+	kindComponentHealth                   = "component_health"
+	kindInstallHealth                     = "install_health"
+	kindInstallSync                       = "install_sync"
+	kindInstallConfigSync                 = "install_config_sync"
+	kindLabelAdded                        = "label_added"
+	kindAppBranchChanged                  = "app_branch_changed"
 )
 
 // Status values surfaced to webhook consumers in the *.lifecycle events.
@@ -138,12 +140,13 @@ const (
 	// outcome sourced from the step's own error.
 	signalTypeWorkflowStepAwaitingRetry signal.SignalType = "workflow-step-awaiting-retry"
 
-	signalTypeStackRun        signal.SignalType = "stack-run"
-	signalTypeRoleChange      signal.SignalType = "role-change"
-	signalTypeInputsUpdated   signal.SignalType = "inputs-updated"
-	signalTypeAppConfigSynced signal.SignalType = "app-config-synced"
-	signalTypeUpdateAppConfig signal.SignalType = "update-app-config"
-	signalTypeRunnerUnhealthy signal.SignalType = "runner-unhealthy"
+	signalTypeStackRun                          signal.SignalType = "stack-run"
+	signalTypeRoleChange                        signal.SignalType = "role-change"
+	signalTypeInputsUpdated                     signal.SignalType = "inputs-updated"
+	signalTypeAppConfigSynced                   signal.SignalType = "app-config-synced"
+	signalTypeUpdateAppConfig                   signal.SignalType = "update-app-config"
+	signalTypeRunnerUnhealthy                   signal.SignalType = "runner-unhealthy"
+	signalTypeCloudConnectionVerificationFailed signal.SignalType = "cloud-connection-verification-failed"
 
 	// Component health carriers, mirroring the componenthealthnotify
 	// SignalTypes. Emitted by the component-health evaluator on a debounced
@@ -313,7 +316,8 @@ func (h *WebhookSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) boo
 		signalTypeSyncInstalls,
 		signalTypeInstallConfigSync,
 		signalTypeLabelAdded,
-		signalTypeAppBranchChanged:
+		signalTypeAppBranchChanged,
+		signalTypeCloudConnectionVerificationFailed:
 		return true
 	default:
 		return false
@@ -353,7 +357,8 @@ func isNotificationOnlySignalType(t signal.SignalType) bool {
 	case signalTypeDriftDetected, signalTypeStackRun, signalTypeRoleChange, signalTypeInputsUpdated, signalTypeAppConfigSynced, signalTypeUpdateAppConfig,
 		signalTypeRunnerUnhealthy,
 		signalTypeComponentUnhealthy, signalTypeComponentRecovered, signalTypeInstallDegraded,
-		signalTypeSyncInstalls, signalTypeInstallConfigSync, signalTypeLabelAdded, signalTypeAppBranchChanged:
+		signalTypeSyncInstalls, signalTypeInstallConfigSync, signalTypeLabelAdded, signalTypeAppBranchChanged,
+		signalTypeCloudConnectionVerificationFailed:
 		return true
 	}
 	return false
@@ -680,6 +685,8 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 		ceType = cloudEventTypeUpdateAppConfig
 	case kindRunnerUnhealthy:
 		ceType = cloudEventTypeRunnerUnhealthy
+	case kindCloudConnectionVerificationFailed:
+		ceType = cloudEventTypeCloudConnectionVerificationFailed
 	case kindComponentHealth:
 		ceType = cloudEventTypeComponentHealth
 	case kindInstallHealth:
@@ -819,6 +826,8 @@ func (h *WebhookSignalLifecycleHook) buildEventDataForSignal(ctx context.Context
 		return h.buildUpdateAppConfigEventData(ctx, event, outcome)
 	case signalTypeRunnerUnhealthy:
 		return h.buildRunnerUnhealthyEventData(event, outcome)
+	case signalTypeCloudConnectionVerificationFailed:
+		return h.buildCloudConnectionVerificationFailedEventData(event, outcome)
 	case signalTypeComponentUnhealthy, signalTypeComponentRecovered, signalTypeInstallDegraded:
 		return h.buildComponentHealthEventData(event, outcome)
 	case signalTypeSyncInstalls, signalTypeInstallConfigSync:
@@ -1140,6 +1149,19 @@ func (h *WebhookSignalLifecycleHook) buildRunnerUnhealthyEventData(event signal.
 	}
 	data.Links = h.buildContextLinks(event, nil)
 	return data, true
+}
+
+func (h *WebhookSignalLifecycleHook) buildCloudConnectionVerificationFailedEventData(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (lifecycleEventData, bool) {
+	if event.Phase != signal.SignalPhaseExecute || outcome == nil || outcome.Status != signal.SignalStatusSuccess {
+		return lifecycleEventData{}, false
+	}
+	message, _ := event.Metadata["message"].(string)
+	return lifecycleEventData{
+		Kind: kindCloudConnectionVerificationFailed, Transition: transitionFailed,
+		OrgID: event.OrgID, OrgName: event.OrgName,
+		Workflow: workflowRef{OwnerID: event.OwnerID, OwnerType: event.OwnerType, OwnerName: event.OwnerName},
+		Outcome:  &lifecycleOutcome{Status: statusFailed, Error: message}, Metadata: event.Metadata,
+	}, true
 }
 
 func (h *WebhookSignalLifecycleHook) buildOutcome(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) *lifecycleOutcome {

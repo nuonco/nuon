@@ -12,7 +12,7 @@ import type {
   TApp,
   TAppInputConfig,
   TAPIError,
-  TAWSAccountConnection,
+  TCloudConnectionSummary,
 } from '@/types'
 
 export interface ICreateFormTriggerState {
@@ -24,7 +24,7 @@ export interface ICreateFormTriggerState {
 interface ICreateInstallFormFields {
   app: TApp
   inputConfig: TAppInputConfig
-  awsAccountConnections?: TAWSAccountConnection[]
+  cloudConnections?: TCloudConnectionSummary[]
   requireTargetAccount?: boolean
   defaultAutoApprove?: boolean
   defaultStackOnly?: boolean
@@ -38,7 +38,7 @@ interface ICreateInstallFormFields {
 export const CreateInstallFormFields = ({
   app,
   inputConfig,
-  awsAccountConnections,
+  cloudConnections,
   requireTargetAccount,
   defaultAutoApprove,
   defaultStackOnly,
@@ -65,22 +65,22 @@ export const CreateInstallFormFields = ({
     clearDraft,
     restoreDraft,
   } = useInstallForm({
-      mode: 'create',
-      platform,
-      inputConfig,
-      requireTargetAccount,
-      defaultAutoApprove,
-      defaultStackOnly,
-      storageKey: `install-draft:${app.id}`,
-      onSubmit: async (values) => {
-        try {
-          await onSubmit(values)
-          clearDraft()
-        } catch {
-          return
-        }
-      },
-    })
+    mode: 'create',
+    platform,
+    inputConfig,
+    requireTargetAccount,
+    defaultAutoApprove,
+    defaultStackOnly,
+    storageKey: `install-draft:${app.id}`,
+    onSubmit: async (values) => {
+      try {
+        await onSubmit(values)
+        clearDraft()
+      } catch {
+        return
+      }
+    },
+  })
 
   useEffect(() => {
     onStateChange({
@@ -122,13 +122,16 @@ export const CreateInstallFormFields = ({
 
   return (
     <div className="flex flex-col gap-6">
-      <FormErrorBanner error={submitError} fallback="Unable to create install" />
+      <FormErrorBanner
+        error={submitError}
+        fallback="Unable to create install"
+      />
       <InstallForm
         form={form}
         mode="create"
         platform={platform}
         inputConfig={inputConfig}
-        awsAccountConnections={awsAccountConnections}
+        cloudConnections={cloudConnections}
         requireTargetAccount={requireTargetAccount}
         autoApproveDescription={autoApproveDescription}
         validateName={validateName}
