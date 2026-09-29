@@ -284,8 +284,6 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
   const creating = useRef(false)
   const choice = useRef<DeployValues>({ region, autoApprove: true })
 
-  // Install create needs an active app config, which exists only once the
-  // branch has synced one from the repo.
   const { data: runs } = useQuery({
     queryKey: ['first-run-branch-runs', orgId, appId, branchId],
     queryFn: () => getBranchRuns({ orgId, appId, branchId }),

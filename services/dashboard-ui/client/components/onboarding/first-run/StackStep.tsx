@@ -33,8 +33,6 @@ import { FirstRunCloudRegion } from './shared'
 
 const STACK_POLL_MS = 3000
 
-// The stack version's lifecycle, as the step shows it. `launched` is local: the
-// user opened the link or copied the commands and the stack has not reported back.
 export type TStackPhase = 'generating' | 'ready' | 'launched' | 'done' | 'error'
 
 export const stackStatus = (stack?: TInstallStack | null) =>
@@ -53,7 +51,6 @@ export interface IStackStepView {
   region: string
   phase: TStackPhase
   quickLinkUrl?: string
-  // ctl-api's description of a failed stack version.
   errorDescription?: string
   details?: React.ReactNode
   onLaunch: () => void
@@ -266,13 +263,11 @@ export const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepCompon
   const advanceRef = useRef(advance)
   advanceRef.current = advance
 
-  // Phone-home moves the user on without a click.
   useEffect(() => {
     if (phase === 'done') advanceRef.current()
   }, [phase])
 
   const showDetails = !!stack && (phase === 'launched' || phase === 'ready') && cloud !== 'aws'
-  // The workflow page's stack views, which read the install from context.
   const details = showDetails ? (
     <InstallProvider installId={installId}>
       <InstallAppConfigProvider>

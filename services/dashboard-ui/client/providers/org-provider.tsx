@@ -15,8 +15,6 @@ type OrgContextValue = {
 
 export const OrgContext = createContext<OrgContextValue | undefined>(undefined)
 
-// Org routes take the org from the URL. Onboarding has no org in its route, so it
-// passes the one it resolved.
 export function OrgProvider({
   children,
   orgId: orgIdProp,

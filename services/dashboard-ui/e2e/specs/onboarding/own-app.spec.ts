@@ -10,9 +10,6 @@ import {
   startOnboarding,
 } from "../../onboarding";
 
-// The own-app path against a fixture repo per cloud. The repo already has a
-// config at its root, so the branch's first run syncs it and no push is needed;
-// the spec continues past the push warning and the stack by hand.
 const CLOUDS = [
   { key: "aws", label: "AWS", envVar: "E2E_ONBOARDING_REPO_AWS" },
   { key: "gcp", label: "GCP", envVar: "E2E_ONBOARDING_REPO_GCP" },
@@ -34,7 +31,6 @@ test.describe("Onboarding: own app", () => {
       await startOnboarding(page);
       const orgId = await currentOrgId(token);
 
-      // What the GitHub App callback does, without leaving for github.com.
       const connection = await publicApi<{ id: string }>(token, "/v1/vcs/connection-callback", {
         method: "POST",
         orgId,
@@ -45,7 +41,6 @@ test.describe("Onboarding: own app", () => {
       await expect(page.getByText("Connected as")).toBeVisible({ timeout: 30000 });
       await expect(page.getByRole("button", { name: /^Go to step/ })).toHaveCount(5);
 
-      // The name is validated as typed and never rewritten.
       const name = page.locator("#first-run-app-name");
       await name.fill("My App");
       await expect(page.locator("#first-run-app-name-description")).toHaveText(

@@ -117,7 +117,6 @@ const ONCE = {
 
 function FirstRunOnboarding() {
   const [searchParams, setSearchParams] = useSearchParams()
-  // Read once, then dropped from the URL so a reload does not replay a GitHub callback.
   const [params] = useState(() => ({
     vcsConnectionId: searchParams.get('vcs-connected') ?? undefined,
     vcsError: searchParams.get('vcs-error') === '1',
@@ -128,8 +127,6 @@ function FirstRunOnboarding() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // The journey comes first: see ensureFirstRunJourney for why it has to exist
-  // before the org does.
   const journey = useFirstRunJourney()
   const { user } = useAuth()
 
@@ -158,7 +155,6 @@ function FirstRunOnboarding() {
 
   const [started, setStarted] = useState<boolean>()
   const [route, setRoute] = useState<{ path: TPath; cloud: TCloud }>()
-  // Bumped each time the wizard mounts, so returning from the intro starts fresh.
   const [mounts, setMounts] = useState(0)
 
   const path = route?.path ?? resume?.path ?? 'example'

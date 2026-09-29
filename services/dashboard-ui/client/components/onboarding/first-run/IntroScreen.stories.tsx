@@ -1,5 +1,5 @@
 export default {
-  title: 'Onboarding/First run/Intro',
+  title: 'Features / Onboarding / First run / Intro',
 }
 
 import { IntroScreen } from './IntroScreen'

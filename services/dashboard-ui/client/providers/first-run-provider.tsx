@@ -5,10 +5,8 @@ import type { IFirstRunJourney } from '@/hooks/use-first-run-journey'
 export interface IFirstRunContext {
   orgId: string
   journey: Pick<IFirstRunJourney, 'metadata' | 'saveStep' | 'complete'>
-  // Set when the GitHub App callback returned to onboarding.
   vcsConnectionId?: string
   vcsError?: boolean
-  // The stepper follows the path, so choosing one swaps the wizard's steps.
   choosePath: (path: TPath, cloud: TCloud) => void
   backToIntro: () => void
 }

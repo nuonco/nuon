@@ -9,7 +9,6 @@ import {
   startOnboarding,
 } from "../../onboarding";
 
-// The example path: Kitchen Sink deployed to a test cloud account, no GitHub.
 const CLOUDS = [
   { label: "AWS", app: "kitchen-sink" },
   { label: "GCP", app: "kitchen-sink-gcp" },
@@ -25,7 +24,6 @@ test.describe("Onboarding: example app", () => {
 
       await startOnboarding(page);
       const orgId = await currentOrgId(token);
-      // Example path: Start, Deploy, Stack, Provision.
       await expect(page.getByRole("button", { name: /^Go to step/ })).toHaveCount(4);
 
       await page.getByRole("button", { name: `Deploy to ${cloud.label}` }).click();

@@ -23,8 +23,6 @@ export const fetchRandomName = async (): Promise<string> => {
   return data.name
 }
 
-// Org names are unique, so a generated name can collide. Each 409 draws a new
-// name; any other error is the caller's to handle.
 export async function createTrialOrg({
   attempts = TRIAL_ORG_ATTEMPTS,
 }: { attempts?: number } = {}): Promise<TOrg> {

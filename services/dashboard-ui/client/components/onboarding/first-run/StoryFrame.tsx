@@ -5,9 +5,6 @@ import { OnboardingWizardProvider } from '@/providers/onboarding-wizard-provider
 import type { TCloud, TPath } from './constants'
 import { buildFirstRunSteps } from './steps'
 
-// Stories only: the real wizard chrome (stepper, title, description) around a
-// step's presentational view, so a story shows the step as users see it without
-// the container's API calls.
 export const StoryFrame = ({
   step,
   path = 'own',

@@ -40,8 +40,6 @@ import { CopyTextButton, InlineLink, NextButton } from './shared'
 
 const PUSH_POLL_MS = 5000
 
-// The prompt is served as a plain file so it can change without a dashboard
-// release. It is shown and copied exactly as served.
 export const fetchAgentPrompt = async (): Promise<string> => {
   const res = await fetch(PROMPT_URL, { credentials: 'omit' })
   const type = res.headers.get('content-type') ?? ''
@@ -145,8 +143,6 @@ const FileStubRows = ({ appName, cloud, repo }: { appName: string; cloud: TCloud
   )
 }
 
-// Manual setup, push-based. The default app branch tracks the connected repo, so
-// a push to main is the sync.
 const ManualSetup = ({ appName, repo, cloud }: { appName: string; repo: string; cloud: TCloud }) => {
   const steps: { title: string; body: ReactNode; detail?: ReactNode }[] = [
     {
@@ -222,7 +218,6 @@ type TFootnote = 'mcp' | 'deps' | 'manual'
 const FOOTNOTE_LINK =
   'cursor-pointer text-cool-grey-500 underline decoration-dotted underline-offset-2 hover:text-foreground dark:text-cool-grey-400'
 
-// The optional reading, as one line of fine print. Only one panel is open at a time.
 const Footnotes = ({
   appName,
   repo,
@@ -298,7 +293,6 @@ const Footnotes = ({
   )
 }
 
-// The agent path is the card. The prompt is the one thing to act on.
 const AgentSetup = ({
   prompt,
   promptFailed,
@@ -453,7 +447,6 @@ export const ConnectStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: 
     retry: 1,
   })
 
-  // Polls until a push lands; the query stops with the component on unmount.
   const { data: runs } = useQuery({
     queryKey: ['first-run-branch-runs', orgId, appId, branchId],
     queryFn: () => getBranchRuns({ orgId, appId, branchId }),

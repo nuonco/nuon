@@ -112,8 +112,6 @@ export const CopyTextButton = ({
   )
 }
 
-// Nuon mark without the wordmark (brand asset, not a Phosphor icon). Black in
-// light mode, white in dark; same path as the design kit's logo-mark-black.svg.
 export const NuonMark = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 23.119 32" fill="none" className={className} role="img" aria-label="Nuon">
     <path
@@ -124,8 +122,6 @@ export const NuonMark = ({ className }: { className?: string }) => (
   </svg>
 )
 
-// The same three tiers appear in the intro diagram and the install summary:
-// described once by the vendor, recreated as-is inside every customer account.
 const APP_TIERS: { icon: TIconVariant; label: string }[] = [
   { icon: 'GlobeIcon', label: 'Web' },
   { icon: 'CubeIcon', label: 'API' },
@@ -170,7 +166,6 @@ export const RepoChip = ({ repo }: { repo: string }) => (
   </Link>
 )
 
-// No default: the test cloud is the user's own account, so nothing is preselected.
 export const TestCloudPicker = ({
   value,
   onChange,

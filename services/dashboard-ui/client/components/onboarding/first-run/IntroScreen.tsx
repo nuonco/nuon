@@ -22,7 +22,6 @@ const IntroDiagram = () => (
       <Icon variant="ArrowDownIcon" size={24} weight="bold" theme="neutral" />
     </div>
 
-    {/* Offset rings behind the account stand in for "every customer". */}
     <div className="relative">
       <div
         className="absolute inset-0 translate-x-3 translate-y-3 rounded-xl ring-2 ring-primary-200 dark:ring-primary-900"
@@ -67,8 +66,6 @@ const IntroDiagram = () => (
   </div>
 )
 
-// Sits before the stepper and reads as an extension of sign-in: one sentence,
-// one button, one diagram. The org already exists by the time it renders.
 export const IntroScreen = ({ onStart }: { onStart: () => void }) => (
   <div className="h-screen flex flex-col bg-background overflow-y-auto">
     <div className="flex justify-between w-full px-6 pt-4">
@@ -78,7 +75,6 @@ export const IntroScreen = ({ onStart }: { onStart: () => void }) => (
       </Button>
     </div>
     <div className="flex-1 flex px-6 py-12">
-      {/* my-auto centers when there is room and top-aligns when the content is taller than the viewport. */}
       <div className="max-w-5xl mx-auto my-auto w-full grid gap-10 md:grid-cols-[1fr_1.2fr] items-center">
         <div className="flex flex-col gap-8">
           <div className="flex flex-col gap-3">

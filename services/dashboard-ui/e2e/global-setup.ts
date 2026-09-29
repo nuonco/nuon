@@ -89,8 +89,6 @@ function seedApp(token: string, orgId: string, configName: string) {
   }
 }
 
-// Onboarding specs make their own accounts (e2e/onboarding.ts), so all global
-// setup does for them is say up front which ones will skip.
 function logOnboardingEnv() {
   const missing = [
     !env.githubInstallId && "E2E_GITHUB_INSTALL_ID",

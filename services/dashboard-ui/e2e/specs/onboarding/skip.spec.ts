@@ -18,7 +18,6 @@ test.describe("Onboarding: skip", () => {
     expect(journey?.steps.every((s) => s.complete)).toBe(true);
     expect(journey?.steps.find((s) => s.name === "start")?.metadata?.skipped).toBe("true");
 
-    // A finished or skipped user is not sent back to onboarding.
     await page.goto("/");
     await expect(page).toHaveURL(new RegExp(`/${orgId}$`), { timeout: 30000 });
   });

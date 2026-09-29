@@ -13,8 +13,6 @@ const json = (status: number, body: unknown) =>
     headers: { 'content-type': 'application/json' },
   })
 
-// fetch is swapped by hand rather than with spyOn, because mock.restore() in
-// other test files also tears down global spies installed here.
 const realFetch = globalThis.fetch
 
 beforeEach(() => {

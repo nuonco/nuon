@@ -13,9 +13,6 @@ export const env = {
   },
   orgId: process.env.E2E_ORG_ID,
   appConfig: process.env.E2E_APP_CONFIG ?? "httpbin",
-  // Onboarding specs. The GitHub App installation the own-app specs connect
-  // (seed-user returns the local one as github_install_id), and per cloud an
-  // `owner/repo` that installation can see with a valid app config at its root.
   githubInstallId: process.env.E2E_GITHUB_INSTALL_ID,
   onboardingRepo: {
     aws: process.env.E2E_ONBOARDING_REPO_AWS,

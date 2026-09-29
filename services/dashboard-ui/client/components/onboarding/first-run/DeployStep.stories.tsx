@@ -1,5 +1,5 @@
 export default {
-  title: 'Onboarding/First run/Deploy',
+  title: 'Features / Onboarding / First run / Deploy',
 }
 
 import { DeployStepView, type IDeployStepView } from './DeployStep'

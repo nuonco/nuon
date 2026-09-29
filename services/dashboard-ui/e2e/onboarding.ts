@@ -1,9 +1,6 @@
 import { expect, type Browser, type Page } from "@playwright/test";
 import { env } from "./env";
 
-// Helpers for the first-run onboarding specs. Each spec gets a brand-new
-// account with no org, the way a real sign-up arrives at /onboarding.
-
 async function admin(path: string, body: unknown) {
   const res = await fetch(`${env.adminApiUrl}${path}`, {
     method: "POST",
@@ -12,7 +9,6 @@ async function admin(path: string, body: unknown) {
   });
   const text = await res.text();
   if (!res.ok) throw new Error(`Admin API ${path} failed (${res.status}): ${text}`);
-  // Some admin routes append a second JSON object; the first is the response.
   const first = text.match(/^\{[^}]*\}/);
   return JSON.parse(first ? first[0] : text);
 }
@@ -36,8 +32,6 @@ export async function publicApi<T = any>(
   return (text ? JSON.parse(text) : undefined) as T;
 }
 
-// Integration users are fresh accounts; their own token lasts 10 minutes, so a
-// longer static token is minted for the same account.
 export async function freshAccount(): Promise<{ token: string; email: string }> {
   const user = await admin("/v1/general/integration-user", {});
   const { api_token } = await admin("/v1/general/admin-static-token", {
@@ -69,7 +63,6 @@ export async function firstRun(token: string) {
     | undefined;
 }
 
-// Intro → wizard.
 export async function startOnboarding(page: Page) {
   await page.goto("/onboarding");
   await page.waitForLoadState("domcontentloaded");
@@ -80,8 +73,6 @@ export async function startOnboarding(page: Page) {
   await expect(page.getByRole("heading", { name: "Create your first app template" })).toBeVisible();
 }
 
-// Create install → Stack (launch and Continue if it has not reported back) →
-// Provision → the deploy workflow page.
 export async function deployToWorkflow(page: Page) {
   await expect(page.getByRole("heading", { name: "Your app is ready for BYOC" })).toBeVisible({
     timeout: 60000,
@@ -92,11 +83,9 @@ export async function deployToWorkflow(page: Page) {
   await expect(stack.or(provision)).toBeVisible({ timeout: 300000 });
 
   if (await stack.isVisible()) {
-    // Launch opens the console in a new tab on AWS; the step only needs the click.
     const launch = page.getByRole("link", { name: /Open the CloudFormation stack/ }).or(
       page.getByRole("button", { name: /Get the Terraform stack|Get the Azure commands/ }),
     );
-    // Stack generation usually takes under a minute but can take several.
     await expect(launch.or(provision)).toBeVisible({ timeout: 300000 });
     if (await launch.isVisible()) {
       const popup = page.context().waitForEvent("page", { timeout: 5000 }).catch(() => null);

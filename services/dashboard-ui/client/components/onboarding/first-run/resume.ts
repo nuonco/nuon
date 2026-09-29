@@ -12,8 +12,6 @@ import { defaultRegion, isCloud, type TCloud, type TPath } from './constants'
 
 const statusOf = (error: unknown) => (error as TAPIError | undefined)?.status
 
-// A new sign-up has no org yet: onboarding creates one before anything renders.
-// Anyone else keeps working in their current org.
 export async function resolveFirstRunOrg({ user }: { user: IUser | null }): Promise<TOrg> {
   const orgs = await getOrgs({ limit: 50 })
   let org: TOrg | undefined
@@ -32,7 +30,6 @@ export async function resolveFirstRunOrg({ user }: { user: IUser | null }): Prom
       })
       throw error
     }
-    // The org's super property is not registered until OrgProvider mounts.
     trackEvent({ event: 'org_create', status: 'ok', user, props: { orgId: org.id, source: 'onboarding' } })
   }
   setOrgSession(org.id as string)
@@ -40,7 +37,6 @@ export async function resolveFirstRunOrg({ user }: { user: IUser | null }): Prom
 }
 
 export interface IFirstRunResume {
-  // Whether to skip the intro and open the wizard directly.
   started: boolean
   path: TPath
   cloud: TCloud
@@ -74,7 +70,6 @@ export async function resolveFirstRunResume({
   orgId: string
   journey?: TUserJourney
   metadata: TFirstRunMetadata
-  // Returning from GitHub or Re-open onboarding: open the wizard, not the intro.
   forceStart: boolean
 }): Promise<IFirstRunResume> {
   const path: TPath = metadata.path === 'own' ? 'own' : 'example'

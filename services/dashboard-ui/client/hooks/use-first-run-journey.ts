@@ -43,8 +43,6 @@ export const findFirstRun = (account?: TAccount | null): TUserJourney | undefine
     (journey) => journey.name === FIRST_RUN_JOURNEY
   )
 
-// Metadata is written to the step that produced it, so later steps win when a
-// key appears twice. Empty strings are how a reset clears a key.
 export const readFirstRunMetadata = (journey?: TUserJourney): TFirstRunMetadata => {
   const merged: TFirstRunMetadata = {}
   for (const step of journey?.steps ?? []) {
@@ -62,10 +60,6 @@ export const firstIncompleteStep = (journey?: TUserJourney): TFirstRunStep | und
 export const isFirstRunStepComplete = (journey: TUserJourney | undefined, step: TFirstRunStep) =>
   Boolean(journey?.steps?.find((s) => s.name === step)?.complete)
 
-// Runs before onboarding creates the org. ctl-api's journey create saves the
-// whole account, which fails once the account holds a role, so a new sign-up
-// has to get the journey while it still has none. When the create fails anyway
-// (an existing user), the flow still runs; it just is not saved.
 async function ensureFirstRunJourney(): Promise<TAccount> {
   const account = await getAccount()
   if (findFirstRun(account)) return account
@@ -78,16 +72,12 @@ async function ensureFirstRunJourney(): Promise<TAccount> {
       },
     })
   } catch (error) {
-    // Another tab created it first.
     if ((error as TAPIError)?.status === 409) return getAccount()
     console.warn('first_run journey unavailable; onboarding progress will not be saved', error)
     return account
   }
 }
 
-// Clears the flow's saved IDs as well as the completion flags, so Re-open
-// onboarding starts at an empty Start step. A missing journey is fine: the
-// onboarding page creates it.
 export async function resetFirstRunJourney(): Promise<void> {
   let account: TAccount
   try {
@@ -112,7 +102,6 @@ export async function resetFirstRunJourney(): Promise<void> {
 }
 
 export interface IFirstRunJourney {
-  // False until the account has loaded and the journey exists or could not be made.
   isReady: boolean
   isLoading: boolean
   error: TAPIError | null
@@ -143,8 +132,6 @@ export function useFirstRunJourney({ enabled = true }: { enabled?: boolean } = {
     async (step, metadata, opts = {}) => {
       const current = findFirstRun(queryClient.getQueryData<TAccount>(FIRST_RUN_QUERY_KEY))
       if (!current) return
-      // PATCH sets `complete` to whatever it is sent (false when omitted), so
-      // a metadata-only save has to resend the step's current state.
       const complete = opts.complete ?? isFirstRunStepComplete(current, step)
       const updated = await updateUserJourneyStepMetadata({
         journeyName: FIRST_RUN_JOURNEY,

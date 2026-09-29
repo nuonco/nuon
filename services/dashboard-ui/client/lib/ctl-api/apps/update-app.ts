@@ -10,7 +10,6 @@ export const updateApp = ({
   orgId: string
   body: {
     label_colors?: Record<string, string>
-    // ctl-api only writes these when both are sent.
     config_repo?: string
     config_directory?: string
   }

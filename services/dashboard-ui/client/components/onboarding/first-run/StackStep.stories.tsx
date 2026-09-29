@@ -1,12 +1,10 @@
 export default {
-  title: 'Onboarding/First run/Stack',
+  title: 'Features / Onboarding / First run / Stack',
 }
 
 import { StackStepView, type IStackStepView } from './StackStep'
 import { StoryFrame } from './StoryFrame'
 
-// GCP and Azure render the workflow page's stack views below the card in the
-// product; those have their own stories under Workflows/StepDetails.
 const Harness = (overrides: Partial<IStackStepView>) => {
   const cloud = overrides.cloud ?? 'aws'
   return (

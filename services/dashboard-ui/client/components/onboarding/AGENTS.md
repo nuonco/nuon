@@ -44,7 +44,7 @@ Use components from `@/components/common/`: `Button`, `Card`, `Text`, `Badge`, `
 ## Viewing and checking work
 
 ```bash
-bun run dev:ladle                                             # http://localhost:61000 → Onboarding/First run
+bun run dev:ladle                                             # http://localhost:61000 → Features / Onboarding / First run
 bunx oxlint -c client/.oxlintrc.json client/components/onboarding/<file>
 bun test client/components/onboarding                         # config stub snapshots
 ```

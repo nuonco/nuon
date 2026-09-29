@@ -17,18 +17,12 @@ import (
 const authCookie = "X-Nuon-Auth"
 const orgCookie = "org_session"
 
-// firstRunJourney is the user journey the first-run onboarding flow creates
-// and completes (on finish or skip).
 const firstRunJourney = "first_run"
 
 func orgLandingPath(org *models.AppOrg) string {
 	return "/" + org.ID
 }
 
-// firstRunPending reports whether the account started first-run onboarding and
-// has not finished or skipped it. Accounts without the journey (everyone who
-// signed up before it existed) are never sent back to onboarding. Errors fall
-// through to the org so a slow account lookup never blocks the dashboard.
 func firstRunPending(account *models.AppAccount) bool {
 	if account == nil {
 		return false
@@ -126,9 +120,6 @@ func (h *RootHandler) Handle(c *gin.Context) {
 		zap.Bool("has_org_cookie", hasOrgCookie),
 	)
 
-	// Trust the org session cookie and redirect immediately when first-run
-	// routing is off. The SPA's OrgProvider validates the org. This avoids an
-	// account lookup on every visit.
 	if !h.cfg.OnboardingFirstRun {
 		if orgId, err := c.Cookie(orgCookie); err == nil && orgId != "" {
 			h.l.Info("root: redirecting to org from session cookie",

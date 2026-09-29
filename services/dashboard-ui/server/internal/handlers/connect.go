@@ -17,16 +17,10 @@ import (
 
 var githubAppSlugPattern = regexp.MustCompile(`[^a-z0-9]+`)
 
-// Org IDs are lowercase alphanumerics. Anything else in `state` is user-controlled
-// and would otherwise land in a redirect path.
 var orgIDPattern = regexp.MustCompile(`^[a-z0-9]+$`)
 
-// onboardingStateMarker is appended to the GitHub App `state` by the first-run
-// onboarding flow so the callback returns there instead of the apps page.
 const onboardingStateMarker = "onboarding"
 
-// parseConnectState splits `<orgID>[:<marker>]`. Only the literal onboarding
-// marker is honored; any other suffix is ignored.
 func parseConnectState(state string) (orgID string, onboarding bool) {
 	orgID, marker, _ := strings.Cut(state, ":")
 	return orgID, marker == onboardingStateMarker

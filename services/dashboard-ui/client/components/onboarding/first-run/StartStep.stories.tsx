@@ -1,5 +1,5 @@
 export default {
-  title: 'Onboarding/First run/Start',
+  title: 'Features / Onboarding / First run / Start',
 }
 
 import { useState } from 'react'

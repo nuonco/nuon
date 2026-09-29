@@ -15,8 +15,6 @@ export const githubAppSlug = (githubAppName: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
 
-// `state` round-trips through GitHub to the BFF's /connect callback, which reads
-// the org ID from it (and, for `<orgID>:onboarding`, returns to onboarding).
 export const githubAppInstallUrl = ({
   githubAppName,
   orgId,

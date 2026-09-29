@@ -15,12 +15,10 @@ test.describe("Onboarding: resume", () => {
 
     await page.reload();
     await page.waitForLoadState("domcontentloaded");
-    // No intro on resume, straight back to Deploy with the example app's facts.
     await expect(deploy).toBeVisible({ timeout: 30000 });
     await expect(page.getByText("nuonco/kitchen-sink")).toBeVisible();
     await expect(page.getByText("nuonco/aws-eks-auto-sandbox")).toBeVisible();
 
-    // The completed step keeps its check; going back shows the Start step.
     await page.getByRole("button", { name: /Back/ }).click();
     await expect(page.getByRole("heading", { name: "Create your first app template" })).toBeVisible();
 

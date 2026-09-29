@@ -43,8 +43,6 @@ export async function findAppByName({
   return (data ?? []).find((app) => app.name === name)
 }
 
-// Finds or creates the `default` branch, then gives it a config if it has none.
-// No install groups are sent, so ctl-api creates the default one.
 export async function ensureDefaultBranch({
   orgId,
   appId,
@@ -100,8 +98,6 @@ export interface ISavedApp {
   branchId?: string
 }
 
-// Each create is skipped when the journey already holds its ID, and progress is
-// reported after every call so a failure part way through never repeats one.
 export async function setUpOwnApp({
   orgId,
   name,
@@ -117,7 +113,6 @@ export async function setUpOwnApp({
   saved: ISavedApp
   onProgress: (progress: { appId: string; branchId?: string }) => Promise<void>
 }): Promise<{ appId: string; branchId: string }> {
-  // Back then Next reuses the app; renaming it on the way makes a new one.
   let appId: string | undefined
   if (saved.appId) {
     try {
@@ -169,7 +164,6 @@ export async function setUpKitchenSink({
     try {
       app = await createApp({ orgId, body: { name: appName } })
     } catch (error) {
-      // Created by another tab between the lookup and the create.
       if (statusOf(error) !== 409) throw error
       app = await findAppByName({ orgId, name: appName })
       if (!app) throw error
@@ -184,8 +178,6 @@ export async function setUpKitchenSink({
   return { appId, appName, branchId }
 }
 
-// A push shows up as a git run on the branch. The automatic run ctl-api starts
-// when the branch config is created is a manual run, so it never counts.
 export const findPushRun = (runs?: TInstallWorkflow[]) =>
   (runs ?? []).find((run) => {
     const meta = (run.metadata ?? {}) as Record<string, unknown>
@@ -210,8 +202,6 @@ export const getBranchRuns = ({
   branchId: string
 }) => getBranchWorkflowRuns({ orgId, appId, branchId, limit: 20 }).then((res) => res.data ?? [])
 
-// Install create uses the branch's newest active app config, so that is what the
-// Deploy step waits for.
 export async function findActiveAppConfig({
   orgId,
   appId,
@@ -238,8 +228,6 @@ export const getAppConfigWithInputs = ({
   appConfigId: string
 }) => getAppConfig({ orgId, appId, appConfigId, recurse: true })
 
-// First-run installs get no inputs form: every required input the vendor owns
-// is sent with its default. Customer inputs are collected by the install stack.
 export function defaultInputs(config?: TAppConfig): {
   inputs: Record<string, string>
   missing: string[]

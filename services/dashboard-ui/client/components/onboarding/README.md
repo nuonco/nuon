@@ -138,7 +138,7 @@ interface IWizardStepComponentProps {
 ## Viewing it
 
 ```bash
-bun run dev:ladle   # http://localhost:61000 → Onboarding / First run
+bun run dev:ladle   # http://localhost:61000 → Features / Onboarding / First run
 ```
 
 To run the live flow locally, see [services/dashboard-ui/AGENTS.md](../../../AGENTS.md#first-run-onboarding-locally).

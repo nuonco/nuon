@@ -1,8 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useBlocker } from 'react-router'
 
-// A browser Back is a router POP, which would leave /onboarding. While the
-// wizard still has somewhere to go, cancel that POP and step back instead.
 export function useWizardHistory(
   stepIndex: number,
   onBack: () => void,

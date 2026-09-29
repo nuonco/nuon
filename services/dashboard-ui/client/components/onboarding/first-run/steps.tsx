@@ -16,11 +16,8 @@ import { InlineLink } from './shared'
 import { StackStep } from './StackStep'
 import { StartStep } from './StartStep'
 
-// Step IDs are the first_run journey's step names, so completion and resume map
-// one to one.
 type TFirstRunStepDef = IWizardStepDef & { id: TFirstRunStep }
 
-// The step renders its own, larger title instead of the wizard's default h2.
 const START_STEP: TFirstRunStepDef = {
   id: 'start',
   title: 'Create your first app template',
@@ -106,8 +103,6 @@ export const buildFirstRunSteps = (path: TPath, cloud: TCloud): TFirstRunStepDef
     ? [START_STEP, CONNECT_STEP, DEPLOY_STEP, stackStep(cloud), PROVISION_STEP]
     : [START_STEP, DEPLOY_STEP, stackStep(cloud), PROVISION_STEP]
 
-// The journey always has every step; the example path skips Connect, so a
-// resume there lands on the next step the path does have.
 export const stepIndexFor = (steps: TFirstRunStepDef[], step: TFirstRunStep) => {
   const order: TFirstRunStep[] = ['start', 'connect', 'deploy', 'stack', 'provision']
   for (const name of order.slice(order.indexOf(step))) {

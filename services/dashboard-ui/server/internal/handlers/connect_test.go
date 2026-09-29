@@ -12,8 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
 )
 
-// fakeCtlAPI answers the handful of ctl-api routes the BFF redirect handlers
-// call. Unset handlers return 500 so an unexpected call fails loudly.
 type fakeCtlAPI struct {
 	callback func(w http.ResponseWriter, r *http.Request)
 	orgs     func(w http.ResponseWriter, r *http.Request)

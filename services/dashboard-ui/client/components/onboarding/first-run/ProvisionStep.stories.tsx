@@ -1,5 +1,5 @@
 export default {
-  title: 'Onboarding/First run/Provision',
+  title: 'Features / Onboarding / First run / Provision',
 }
 
 import { ProvisionStepView } from './ProvisionStep'

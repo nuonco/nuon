@@ -45,8 +45,6 @@ const OWN_APP_STEPS = [
   { icon: 'CloudIcon', title: 'Create the first install' },
 ] as const
 
-// The repo the app template's config lives in: one named after the app, or the
-// only repo the connection can see.
 export const pickConfigRepo = (repos: TVCSConnectionRepo[] | undefined, appName: string) => {
   if (!repos?.length) return undefined
   return repos.find((repo) => repo.name === appName) ?? (repos.length === 1 ? repos[0] : undefined)
@@ -151,8 +149,6 @@ const GithubTile = ({
   const missing = showErrors && !connected
 
   return (
-    // Ring, not border, so the required/connected/error edge can change color
-    // (the global border-color rule would paint a border grey regardless).
     <div
       className={cn(
         'flex flex-col gap-3 rounded-md p-4 ring-1 transition-shadow',
@@ -223,7 +219,6 @@ export interface IStartStepView {
   onExitToExample: () => void
   appName: string
   onAppName: (name: string) => void
-  // A server-side rejection of the name (e.g. already taken).
   appNameError?: string
   repoError?: string
   github: TGithubTile
@@ -235,7 +230,6 @@ export interface IStartStepView {
   showErrors: boolean
   onNext: (values: StartValues) => void
   nextPending?: boolean
-  // Set while something Next depends on is still loading.
   nextBlockedReason?: string
   onDeployExample: (cloud: TExampleCloud) => void
   examplePending?: TExampleCloud
@@ -286,8 +280,6 @@ export const StartStepView = ({
 
   useEffect(() => {
     const message = appNameError || repoError || undefined
-    // A valid name never gets field meta from mount validation, and the name
-    // input is unmounted until the own-app path is expanded.
     if (!message && !form.getFieldMeta('appName')) return
     form.setFieldMeta('appName', (prev) => ({
       ...prev,
@@ -510,7 +502,6 @@ export const StartStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepC
     queryFn: () => getVCSConnections({ orgId }),
     enabled: expanded,
   })
-  // The connection GitHub just returned with, else any the org already has.
   const connectionId = callbackConnectionId ?? connections?.[0]?.id
   const connection = connections?.find((c) => c.id === connectionId)
 
@@ -554,7 +545,6 @@ export const StartStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepC
     choosePath('own', cloud)
   }
 
-  // Leaving for GitHub drops in-memory state, so the draft rides on the journey.
   const connectGithub = async () => {
     if (!connectHref) return
     setConnectingGithub(true)
@@ -565,7 +555,6 @@ export const StartStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepC
         cloud: testCloud ?? '',
       })
     } catch {
-      // The draft is a convenience; connecting still works without it.
     }
     window.location.assign(connectHref)
   }
@@ -607,7 +596,6 @@ export const StartStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepC
         { ...base, app_id: appId, app_branch_id: branchId },
         { complete: true }
       )
-      // Connect may be marked done from an earlier pass on the example path.
       await journey.saveStep('connect', {}, { complete: false })
       trackEvent({ event: 'app_create', status: 'ok', user, props: { appId, path: 'own', cloud: chosenCloud } })
       setOwn({ ...base, app_id: appId, app_branch_id: branchId, region: defaultRegion(chosenCloud) })
@@ -649,7 +637,6 @@ export const StartStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepC
         repo: KITCHEN_SINK_REPO,
       }
       await journey.saveStep('start', values, { complete: true })
-      // The example path has no Connect step, so it is done by definition.
       await journey.saveStep('connect', {}, { complete: true })
       trackEvent({ event: 'app_create', status: 'ok', user, props: { appId, path: 'example', cloud } })
       setOwn({ ...values, expandOwn: false, region: defaultRegion(cloud) })

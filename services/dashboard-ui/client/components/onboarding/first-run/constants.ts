@@ -6,7 +6,6 @@ export type TCloud = 'aws' | 'gcp' | 'azure'
 export type TPath = 'example' | 'own'
 
 export const TEST_CLOUDS: TCloud[] = ['aws', 'gcp', 'azure']
-// Clouds Kitchen Sink can be deployed to from the Start step.
 export type TExampleCloud = 'aws' | 'gcp'
 export const EXAMPLE_CLOUDS: TExampleCloud[] = ['aws', 'gcp']
 
@@ -21,15 +20,11 @@ export const CLOUD_ICON: Record<TCloud, TIconVariant> = {
   azure: 'AzureColor',
 }
 
-// Maps onto the install stack types: aws-cloudformation, gcp-terraform, azure-bicep.
-// Only AWS (and Azure at subscription scope) get a console quick link; GCP is applied by hand.
 export const CLOUD_CONNECT: Record<
   TCloud,
   {
     accountNoun: string
     stackLabel: string
-    // What exists once generation finishes. AWS gets a console link; GCP and Azure (at its
-    // default scope) get a template and commands, so the status line must not say "link".
     artifactNoun: string
     generating: string
     launch: string
@@ -95,7 +90,6 @@ export const defaultRegion = (cloud: TCloud) => REGION_CATALOG[cloud].regions[0]
 export const isKnownRegion = (cloud: TCloud, region: string) =>
   REGION_CATALOG[cloud].regions.some((item) => item.value === region)
 
-// The Nuon sandbox each cloud lands on, and the repo that provisions it.
 export const CLOUD_SANDBOX: Record<TCloud, string> = {
   aws: 'nuonco/aws-eks-auto-sandbox',
   gcp: 'nuonco/gcp-gke-sandbox',
@@ -110,8 +104,6 @@ export const SANDBOX_CLUSTER: Record<TCloud, string> = {
 export const SANDBOX_PARTS = ['cluster', 'registry', 'ingress', 'namespaces']
 
 export const KITCHEN_SINK_APP = 'kitchen-sink'
-// Kitchen Sink's root config is AWS-only (runner_type = "aws"); its GCP variant
-// lives in gcp/. Each gets its own app so both can exist in one org.
 export const KITCHEN_SINK_VARIANTS: Record<TExampleCloud, { appName: string; directory: string }> = {
   aws: { appName: KITCHEN_SINK_APP, directory: '.' },
   gcp: { appName: `${KITCHEN_SINK_APP}-gcp`, directory: 'gcp' },
@@ -125,13 +117,10 @@ export const EXAMPLE_APP_FACTS = [
   'Actions, policies, runbooks, app branches',
 ]
 
-// The branch every first-run app template tracks, and where its config lives:
-// the root of the repo, the way every example app config does.
 export const DEFAULT_BRANCH_NAME = 'default'
 export const TRACKED_GIT_BRANCH = 'main'
 export const CONFIG_DIRECTORY = '.'
 
-// Same rule ctl-api's entity_name validator enforces on app names.
 export const APP_NAME_PATTERN = /^[a-z0-9_-]+$/
 export const APP_NAME_RULE = 'Lowercase letters, numbers, underscores, and hyphens only.'
 
@@ -139,7 +128,6 @@ export const installNameFor = (appName: string, attempt: number) =>
   attempt === 0 ? `${appName}-test` : `${appName}-test-${attempt + 1}`
 export const INSTALL_NAME_ATTEMPTS = 3
 
-// The agent prompt. Shown and copied exactly as served.
 export const PROMPT_URL = 'https://nuon.co/loop.md'
 
 export const DEMO_REQUEST = 'https://nuon.co/demo-request'
@@ -167,8 +155,6 @@ export const MCP_ADD_CLAUDE =
 export const GIT_PUSH = 'git add .\ngit commit -m "Add Nuon app config"\ngit push origin main'
 export const watchCommand = (installId: string) => `nuon installs workflows watch -i ${installId}`
 
-// --- Manual steps: the app config files, stubbed per cloud --------------------
-
 export interface IAppFileStub {
   name: string
   purpose: string
@@ -177,8 +163,6 @@ export interface IAppFileStub {
   snippet: string
 }
 
-// Policy shapes per cloud, from nuonco/example-app-configs: kitchen-sink (AWS managed
-// policy), gke-simple (gcp_predefined_role), aks-simple (azure_built_in_roles).
 export const ROLE_POLICY: Record<TCloud, string[]> = {
   aws: ['managed_policy_name = "AdministratorAccess"'],
   gcp: ['name                = "owner"', 'gcp_predefined_role = "roles/owner"'],
@@ -256,11 +240,6 @@ export const appFileStubs = ({
   },
 ]
 
-// --- Stack step copy ----------------------------------------------------------
-
-// How a customer creates the install stack, per cloud (docs/concepts/stacks.mdx and
-// docs/platform-support/*): Terraform plus the platform's native format, except GCP,
-// which is Terraform only. The first entry is the one this install uses.
 export const STACK_METHODS: Record<TCloud, { name: string; how: string }[]> = {
   aws: [
     {
@@ -295,7 +274,6 @@ export const STACK_METHODS: Record<TCloud, { name: string; how: string }[]> = {
   ],
 }
 
-// Onboarding is a proof of concept, so the account is always framed as a test one.
 export const testAccountLabel = (cloud: TCloud) => `your test ${CLOUD_CONNECT[cloud].accountNoun}`
 
 export type TStageId = 'runner' | 'sandbox' | 'components'
@@ -306,8 +284,6 @@ export interface IBuildStage {
   blurb: string
 }
 
-// What is left after the stack. Durations from docs/get-started: a healthy runner
-// about a minute after the stack reports home; the sandbox is the long pole.
 export const buildStages = (cloud: TCloud, appName: string): IBuildStage[] => [
   {
     id: 'runner',

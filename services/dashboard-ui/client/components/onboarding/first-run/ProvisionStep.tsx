@@ -170,8 +170,6 @@ export interface IProvisionStepView {
   onBack?: () => void
 }
 
-// A static preview of what the install builds, in order. Live progress lives on
-// the install's workflow page, which the primary opens.
 export const ProvisionStepView = ({
   cloud,
   appName,
