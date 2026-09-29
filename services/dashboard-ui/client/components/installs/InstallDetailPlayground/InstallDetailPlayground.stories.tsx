@@ -67,8 +67,8 @@ ResourceLag.storyName = 'Resource lag'
 
 /**
  * Config is fully current — branch, stack, sandbox, components, and images all
- * match expected. Infrastructure drift detected on sandbox and the cache component.
- * Config lag: none.
+ * match expected. Infrastructure drift detected on the stack, sandbox, the
+ * cache component, and the acme/api image. Config lag: none.
  */
 export const InfraDrift = () => (
   <div style={pageStyle}>

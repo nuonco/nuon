@@ -31,6 +31,7 @@ import {
   ConfigurationVersionFeed,
   DEFAULT_DEPLOYMENT_FILTER,
   DeploymentsTab,
+  driftTargetLabel,
   getInstallStatusEntries,
   HealthChecksTab,
   ImageDetail,
@@ -39,6 +40,7 @@ import {
   OverviewTab,
   OverridesTab,
   PoliciesTab,
+  resourceDrift,
   RunbookDetail,
   RunnerTab,
   SandboxTab,
@@ -135,12 +137,25 @@ const ResourcesPages = ({
       {
         id: 'stack',
         label: 'Stack',
-        content: <StackTab versions={install.resources.stackVersions} />,
+        content: (
+          <StackTab
+            versions={install.resources.stackVersions}
+            drift={resourceDrift(install, (obj) => obj.targetType === 'stack')}
+          />
+        ),
       },
       {
         id: 'sandbox',
         label: 'Sandbox',
-        content: <SandboxTab sandbox={install.resources.sandbox} />,
+        content: (
+          <SandboxTab
+            sandbox={install.resources.sandbox}
+            drift={resourceDrift(
+              install,
+              (obj) => obj.targetType === 'sandbox'
+            )}
+          />
+        ),
       },
       {
         id: 'components',
@@ -148,7 +163,16 @@ const ResourcesPages = ({
         content: install.resources.components.length ? (
           <div className="divide-y">
             {install.resources.components.map((component) => (
-              <ComponentDetail key={component.id} component={component} />
+              <ComponentDetail
+                key={component.id}
+                component={component}
+                drift={resourceDrift(
+                  install,
+                  (obj) =>
+                    obj.targetType === 'install_deploy' &&
+                    obj.componentName === component.name
+                )}
+              />
             ))}
           </div>
         ) : (
@@ -161,7 +185,16 @@ const ResourcesPages = ({
         content: install.resources.images.length ? (
           <div className="divide-y">
             {install.resources.images.map((image) => (
-              <ImageDetail key={image.id} image={image} />
+              <ImageDetail
+                key={image.id}
+                image={image}
+                drift={resourceDrift(
+                  install,
+                  (obj) =>
+                    obj.targetType === 'image' &&
+                    obj.imageRepository === image.repository
+                )}
+              />
             ))}
           </div>
         ) : (
@@ -366,10 +399,7 @@ const driftItems = (install: TPlaygroundInstall): TContextTooltipItem[] =>
   install.driftedObjects.length
     ? install.driftedObjects.map((drift) => ({
         id: drift.id,
-        title:
-          drift.targetType === 'sandbox'
-            ? 'Sandbox'
-            : (drift.componentName ?? 'Component'),
+        title: driftTargetLabel(drift),
         subtitle: 'Drift detected',
         leftContent: (
           <Status
