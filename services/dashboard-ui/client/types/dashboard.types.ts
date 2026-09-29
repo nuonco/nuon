@@ -82,6 +82,13 @@ export type TNavLink = {
   isExternal?: boolean
   shortcut?: string
   matchPaths?: string[]
+  quickNav?: {
+    type: 'branch' | 'install'
+    orgId: string
+    appId: string
+    resourceId: string
+    basePath: string
+  }
 }
 
 export type TNavSectionHeader = {

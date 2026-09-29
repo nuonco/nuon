@@ -5,9 +5,14 @@ import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { BreadcrumbQuickNav } from '@/components/navigation/BreadcrumbQuickNav'
 import { useBreadcrumb } from '@/hooks/use-breadcrumb'
 import { useInstallNested } from '@/hooks/use-install-path'
+import { useNewAppIA } from '@/hooks/use-new-app-ia'
+import { useNewInstallIA } from '@/hooks/use-new-install-ia'
+import { withBreadcrumbQuickNav } from '@/lib/breadcrumb-quick-nav'
 import { withAppInstallBreadcrumbs } from '@/lib/install-path'
+import { BranchContext } from '@/providers/branch-provider'
 import { InstallContext } from '@/providers/install-provider'
 import { OrgContext } from '@/providers/org-provider'
 import type { TNavLink } from '@/types'
@@ -22,15 +27,23 @@ const BreadcrumbItem = ({
   crumb: TNavLink
   isLast: boolean
   isLoading: boolean
-}) => (
-  <Text weight="strong">
-    {isLoading ? (
+}) => {
+  if (isLoading) {
+    return (
       <Skeleton
         height="17px"
         width={`${crumb?.text?.length * 16 * 0.6}px`}
         maxWidth="200px"
       />
-    ) : (
+    )
+  }
+
+  if (crumb.quickNav) {
+    return <BreadcrumbQuickNav label={crumb.text} config={crumb.quickNav} />
+  }
+
+  return (
+    <Text weight="strong">
       <Link
         href={crumb.path}
         isActive={isLast}
@@ -39,9 +52,9 @@ const BreadcrumbItem = ({
       >
         {crumb.text}
       </Link>
-    )}
-  </Text>
-)
+    </Text>
+  )
+}
 
 const GAP = 8
 const ELLIPSIS_ITEM_WIDTH = 40
@@ -183,14 +196,35 @@ export const Breadcrumbs = ({ breadcrumbs }: { breadcrumbs: TNavLink[] }) => {
   const { updateBreadcrumb } = useBreadcrumb()
   const org = useContext(OrgContext)?.org
   const install = useContext(InstallContext)?.install
+  const branch = useContext(BranchContext)?.branch
   const nested = useInstallNested()
+  const hasNewAppIA = useNewAppIA()
+  const hasNewInstallIA = useNewInstallIA()
   const params = useParams()
-  const routed = withAppInstallBreadcrumbs(breadcrumbs, {
+  const routedBreadcrumbs = withAppInstallBreadcrumbs(breadcrumbs, {
     nested,
     orgId: org?.id ?? params.orgId,
     appId: install?.app_id ?? params.appId,
     appName: install?.app?.name,
     installId: install?.id ?? params.installId,
+  })
+  const orgId = org?.id ?? params.orgId
+  const appId = install?.app_id ?? params.appId
+  const routed = withBreadcrumbQuickNav(routedBreadcrumbs, {
+    branch: {
+      enabled: hasNewAppIA,
+      orgId,
+      appId: params.appId,
+      resourceId: params.branchId,
+      name: branch?.name,
+    },
+    install: {
+      enabled: hasNewInstallIA,
+      orgId,
+      appId,
+      resourceId: install?.id ?? params.installId,
+      name: install?.name,
+    },
   })
   const key = JSON.stringify(routed)
 
