@@ -128,6 +128,12 @@ export const installNameFor = (appName: string, attempt: number) =>
   attempt === 0 ? `${appName}-test` : `${appName}-test-${attempt + 1}`
 export const INSTALL_NAME_ATTEMPTS = 3
 
+// What the user pastes into their agent: the short /goal block, which instructs the
+// agent to fetch PROMPT_URL itself. Copy must serve this, not PROMPT_URL — loop.md is
+// ~87 KB and a client collapses a paste that size to "[Pasted text +N lines]", so the
+// user cannot see what they are agreeing to.
+export const PASTE_URL = 'https://nuon.co/loop-paste.txt'
+// The full procedure, for "See full prompt" and for the agent to fetch.
 export const PROMPT_URL = 'https://nuon.co/loop.md'
 
 export const DEMO_REQUEST = 'https://nuon.co/demo-request'

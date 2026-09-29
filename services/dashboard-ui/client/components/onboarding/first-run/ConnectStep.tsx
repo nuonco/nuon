@@ -29,6 +29,7 @@ import {
   KITCHEN_SINK_URL,
   LSP_NEOVIM_SETUP,
   MCP_ADD_CLAUDE,
+  PASTE_URL,
   PROMPT_URL,
   VSCODE_EXTENSION,
   appFileStubs,
@@ -41,7 +42,7 @@ import { CopyTextButton, InlineLink, NextButton } from './shared'
 const PUSH_POLL_MS = 5000
 
 export const fetchAgentPrompt = async (): Promise<string> => {
-  const res = await fetch(PROMPT_URL, { credentials: 'omit' })
+  const res = await fetch(PASTE_URL, { credentials: 'omit' })
   const type = res.headers.get('content-type') ?? ''
   if (!res.ok || type.includes('text/html')) throw new Error(`prompt returned ${res.status}`)
   return res.text()
