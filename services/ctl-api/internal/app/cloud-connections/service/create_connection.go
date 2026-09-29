@@ -1,10 +1,12 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -54,6 +56,13 @@ func (s *service) Create(ctx *gin.Context) {
 		return
 	}
 	if err := s.db.WithContext(ctx).Create(&connection).Error; err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			ctx.Error(stderr.ErrConflict{
+				Err:         err,
+				Description: "A cloud connection for this IAM role already exists in this organization. Use the existing connection or choose a different IAM role.",
+			})
+			return
+		}
 		ctx.Error(fmt.Errorf("unable to create cloud connection: %w", err))
 		return
 	}
