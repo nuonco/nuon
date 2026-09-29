@@ -183,6 +183,11 @@ func (i *WorkflowStep) Indexes(db *gorm.DB) []migrations.Index {
 				"deleted_at",
 			},
 		},
+		{
+			Name:    indexes.Name(db, &WorkflowStep{}, "awaiting_approval"),
+			Columns: []string{"install_workflow_id"},
+			Option:  "WHERE deleted_at = 0 AND (status->>'status') = 'approval-awaiting'",
+		},
 	}
 }
 
