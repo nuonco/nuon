@@ -38,15 +38,15 @@ func TestRunnerDependentWorkflowErrorsIncludeResponseDescription(t *testing.T) {
 
 	for name, deprovision := range map[string]func() error{
 		"install": func() error {
-			_, err := client.DeprovisionInstall(context.Background(), "install-1")
+			_, err := client.DeprovisionInstall(context.Background(), "install-1", "")
 			return err
 		},
 		"sandbox": func() error {
-			_, err := client.DeprovisionInstallSandbox(context.Background(), "install-1")
+			_, err := client.DeprovisionInstallSandbox(context.Background(), "install-1", "")
 			return err
 		},
 		"reprovision sandbox": func() error {
-			_, err := client.ReprovisionInstallSandbox(context.Background(), "install-1")
+			_, err := client.ReprovisionInstallSandbox(context.Background(), "install-1", false, "")
 			return err
 		},
 		"deploy components": func() error {
@@ -54,7 +54,7 @@ func TestRunnerDependentWorkflowErrorsIncludeResponseDescription(t *testing.T) {
 			return err
 		},
 		"teardown components": func() error {
-			_, err := client.TeardownInstallComponents(context.Background(), "install-1")
+			_, err := client.TeardownInstallComponents(context.Background(), "install-1", "")
 			return err
 		},
 		"teardown component": func() error {
@@ -97,7 +97,7 @@ func TestDeprovisionDecodesWorkflowResponse(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	resp, err := client.DeprovisionInstall(context.Background(), "install-1")
+	resp, err := client.DeprovisionInstall(context.Background(), "install-1", "")
 	if err != nil {
 		t.Fatal(err)
 	}
