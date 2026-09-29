@@ -19,6 +19,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const testRelayEndpoint = "https://relay.example.com"
+
 func testRSAKey(t *testing.T) *rsa.PrivateKey {
 	t.Helper()
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -73,7 +75,7 @@ func testClaims(now time.Time, principal Principal) *telemetryClaims {
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "https://ctl.example.com",
 			Subject:   "org:" + principal.OrgID + ":install:" + principal.InstallID + ":runner:" + principal.RunnerID,
-			Audience:  jwt.ClaimStrings{defaultAudience},
+			Audience:  jwt.ClaimStrings{testRelayEndpoint},
 			ExpiresAt: jwt.NewNumericDate(now.Add(tokenLifetime)),
 			NotBefore: jwt.NewNumericDate(now),
 			IssuedAt:  jwt.NewNumericDate(now),
@@ -108,7 +110,7 @@ func newTestExtension(t *testing.T, contents *atomic.Value) (*telemetryJWTAuthEx
 	}))
 	extension := newExtension(Config{
 		Issuer:            "https://ctl.example.com",
-		Audience:          defaultAudience,
+		Audience:          testRelayEndpoint,
 		JWKSURL:           server.URL,
 		JWKSAllowInsecure: true,
 	}, zap.NewNop())
@@ -141,6 +143,39 @@ func TestAuthenticateAttachesVerifiedPrincipal(t *testing.T) {
 	require.NotContains(t, authData.GetAttributeNames(), "raw")
 }
 
+func TestAuthenticateRequiresConfiguredRelayAudience(t *testing.T) {
+	key := testRSAKey(t)
+	var contents atomic.Value
+	contents.Store(testJWKS(t, map[string]*rsa.PrivateKey{"key-1": key}))
+	extension, _ := newTestExtension(t, &contents)
+	extension.config.Audience = "https://relay.example.com/acme"
+	for mode, allowLegacy := range map[string]bool{"strict": false, "legacy enabled": true} {
+		t.Run(mode, func(t *testing.T) {
+			extension.config.AllowLegacyAudience = allowLegacy
+			for name, audience := range map[string]jwt.ClaimStrings{
+				"selected relay":   {"https://relay.example.com/acme"},
+				"another relay":    {"https://other.example.com/acme"},
+				"another path":     {"https://relay.example.com/other"},
+				"legacy audience":  {"urn:nuon:telemetry"},
+				"both audiences":   {"https://relay.example.com/acme", "urn:nuon:telemetry"},
+				"missing audience": nil,
+			} {
+				t.Run(name, func(t *testing.T) {
+					claims := testClaims(time.Now().UTC().Truncate(time.Second), testPrincipal())
+					claims.Audience = audience
+					raw := signTestToken(t, key, "key-1", claims, nil)
+					_, err := extension.Authenticate(context.Background(), map[string][]string{"Authorization": {"Bearer " + raw}})
+					if name == "selected relay" || (name == "legacy audience" && allowLegacy) {
+						require.NoError(t, err)
+					} else {
+						require.ErrorIs(t, err, errAuthenticationFailed)
+					}
+				})
+			}
+		})
+	}
+}
+
 func TestAuthenticateRejectsInvalidTokens(t *testing.T) {
 	key := testRSAKey(t)
 	var contents atomic.Value
@@ -165,6 +200,13 @@ func TestAuthenticateRejectsInvalidTokens(t *testing.T) {
 		"wrong scope": {
 			mutateClaims: func(claims *telemetryClaims) { claims.Scope = "other" },
 		},
+		"expired": {
+			mutateClaims: func(claims *telemetryClaims) {
+				claims.IssuedAt = jwt.NewNumericDate(now.Add(-2 * time.Minute))
+				claims.NotBefore = claims.IssuedAt
+				claims.ExpiresAt = jwt.NewNumericDate(now.Add(-time.Minute))
+			},
+		},
 		"missing not before": {
 			mutateClaims: func(claims *telemetryClaims) { claims.NotBefore = nil },
 		},
@@ -187,19 +229,27 @@ func TestAuthenticateRejectsInvalidTokens(t *testing.T) {
 		},
 	}
 
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			claims := testClaims(now, principal)
-			if test.mutateClaims != nil {
-				test.mutateClaims(claims)
+	for mode, allowLegacy := range map[string]bool{"strict": false, "legacy enabled": true} {
+		t.Run(mode, func(t *testing.T) {
+			extension.config.AllowLegacyAudience = allowLegacy
+			for name, test := range tests {
+				t.Run(name, func(t *testing.T) {
+					claims := testClaims(now, principal)
+					if allowLegacy {
+						claims.Audience = jwt.ClaimStrings{"urn:nuon:telemetry"}
+					}
+					if test.mutateClaims != nil {
+						test.mutateClaims(claims)
+					}
+					raw := signTestToken(t, key, "key-1", claims, test.mutateToken)
+
+					_, err := extension.Authenticate(context.Background(), map[string][]string{
+						"authorization": {"Bearer " + raw},
+					})
+
+					require.ErrorIs(t, err, errAuthenticationFailed)
+				})
 			}
-			raw := signTestToken(t, key, "key-1", claims, test.mutateToken)
-
-			_, err := extension.Authenticate(context.Background(), map[string][]string{
-				"authorization": {"Bearer " + raw},
-			})
-
-			require.ErrorIs(t, err, errAuthenticationFailed)
 		})
 	}
 }
@@ -244,7 +294,7 @@ func TestStartRejectsJWKSRedirect(t *testing.T) {
 
 	extension := newExtension(Config{
 		Issuer:            "https://ctl.example.com",
-		Audience:          defaultAudience,
+		Audience:          testRelayEndpoint,
 		JWKSURL:           redirect.URL,
 		JWKSAllowInsecure: true,
 	}, zap.NewNop())
@@ -288,6 +338,17 @@ func TestKeyCacheBoundsKnownKeyStaleness(t *testing.T) {
 	require.ErrorIs(t, err, errJWKSUnavailable)
 }
 
+func TestConfigRequiresExplicitAudience(t *testing.T) {
+	cfg := createDefaultConfig().(*Config)
+	require.True(t, cfg.AllowLegacyAudience)
+	cfg.Issuer = "https://issuer.example.com"
+	cfg.JWKSURL = "https://keys.example.com/jwks"
+	require.ErrorContains(t, cfg.Validate(), "audience is required")
+
+	cfg.Audience = "https://relay.example.com/acme"
+	require.NoError(t, cfg.Validate())
+}
+
 func TestConfigHTTPRequiresExplicitOptIn(t *testing.T) {
 	for _, test := range []struct {
 		name   string
@@ -308,6 +369,7 @@ func TestConfigHTTPRequiresExplicitOptIn(t *testing.T) {
 				t.Run(field, func(t *testing.T) {
 					cfg := createDefaultConfig().(*Config)
 					cfg.Issuer = "https://issuer.example.com"
+					cfg.Audience = testRelayEndpoint
 					cfg.JWKSURL = "https://keys.example.com/jwks"
 					if field == "issuer" {
 						cfg.Issuer = test.url
@@ -341,7 +403,7 @@ func TestInsecureOptInStillValidatesURLs(t *testing.T) {
 		{name: "other scheme", url: "ftp://keys.example.com/jwks"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			cfg := Config{Issuer: "https://issuer.example.com", Audience: defaultAudience, JWKSURL: test.url, JWKSAllowInsecure: true}
+			cfg := Config{Issuer: "https://issuer.example.com", Audience: testRelayEndpoint, JWKSURL: test.url, JWKSAllowInsecure: true}
 			require.Error(t, cfg.Validate())
 			cfg.Issuer = test.url
 			cfg.JWKSURL = "https://keys.example.com/jwks"
