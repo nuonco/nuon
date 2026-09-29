@@ -214,9 +214,9 @@ type Client interface {
 	MoveInstallToAppBranch(ctx context.Context, installID, appBranchID, appBranchGroup string) (*models.AppInstall, error)
 	DeleteInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
 	ForgetInstall(ctx context.Context, installID string) (bool, error)
-	ReprovisionInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
-	ReprovisionInstallStack(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
-	DeprovisionInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
+	ReprovisionInstall(ctx context.Context, installID string, role string) (*models.AppWorkflowResponse, error)
+	ReprovisionInstallStack(ctx context.Context, installID string, role string) (*models.AppWorkflowResponse, error)
+	DeprovisionInstall(ctx context.Context, installID string, role string) (*models.AppWorkflowResponse, error)
 	AddInstallLabels(ctx context.Context, installID string, labels map[string]string) (*models.AppInstall, error)
 	RemoveInstallLabels(ctx context.Context, installID string, keys []string) (*models.AppInstall, error)
 
@@ -240,7 +240,7 @@ type Client interface {
 	TeardownInstallComponent(ctx context.Context, installID, componentID string, roleName string) (*models.AppWorkflowResponse, error)
 	RecoverInstallComponentHelmRelease(ctx context.Context, installID, componentID string, roleName string) (*models.AppWorkflowResponse, error)
 	ForgetInstallComponent(ctx context.Context, installID, componentID string) error
-	TeardownInstallComponents(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
+	TeardownInstallComponents(ctx context.Context, installID string, role string) (*models.AppWorkflowResponse, error)
 	DeployInstallComponents(ctx context.Context, installID string, roleName string, planOnly bool) (*models.AppWorkflowResponse, error)
 	GetInstallComponentDeploys(ctx context.Context, installID, componentID string, query *models.GetPaginatedQuery) ([]*models.AppInstallDeploy, bool, error)
 	GetInstallComponent(ctx context.Context, installID, componentID string) (*models.AppInstallComponent, error)
@@ -248,8 +248,8 @@ type Client interface {
 	GetInstallComponentOutputs(ctx context.Context, installID, componentID string) (any, error)
 
 	// install sandbox
-	DeprovisionInstallSandbox(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
-	ReprovisionInstallSandbox(ctx context.Context, installID string, skipComponents ...bool) (*models.AppWorkflowResponse, error)
+	DeprovisionInstallSandbox(ctx context.Context, installID string, role string) (*models.AppWorkflowResponse, error)
+	ReprovisionInstallSandbox(ctx context.Context, installID string, skipComponents bool, role string) (*models.AppWorkflowResponse, error)
 	GetInstallSandboxRuns(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppInstallSandboxRun, bool, error)
 	GetInstallSandboxRun(ctx context.Context, installID, runID string) (*models.AppInstallSandboxRun, error)
 

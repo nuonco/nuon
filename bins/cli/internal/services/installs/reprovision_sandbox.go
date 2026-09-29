@@ -6,7 +6,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-func (s *Service) ReprovisionSandbox(ctx context.Context, installID string, skipComponents bool, asJSON bool) error {
+func (s *Service) ReprovisionSandbox(ctx context.Context, installID string, skipComponents bool, role string, asJSON bool) error {
 	installID, err := s.selectInstallID(ctx, installID)
 	if err != nil {
 		return ui.PrintError(err)
@@ -16,7 +16,7 @@ func (s *Service) ReprovisionSandbox(ctx context.Context, installID string, skip
 		ui.PrintLn("install id: " + installID)
 	}
 
-	resp, err := s.api.ReprovisionInstallSandbox(ctx, installID, skipComponents)
+	resp, err := s.api.ReprovisionInstallSandbox(ctx, installID, skipComponents, role)
 	if err != nil {
 		return ui.PrintJSONError(err)
 	}
