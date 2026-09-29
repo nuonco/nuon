@@ -3,6 +3,9 @@ import { useConfig } from '@/hooks/use-config'
 import { useNotifications } from '@/hooks/use-notifications'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
+import { resetFirstRunJourney } from '@/hooks/use-first-run-journey'
+import { trackEvent } from '@/lib/posthog-analytics'
+import type { TAPIError } from '@/types'
 import { UserDropdown, type IUserDropdown } from './UserDropdown'
 
 type IUserDropdownContainerProps = Omit<
@@ -23,16 +26,29 @@ type IUserDropdownContainerProps = Omit<
   | 'onAddToast'
   | 'user'
   | 'isUserLoading'
+  | 'onboardingFirstRun'
+  | 'onReopenOnboarding'
 >
 
 export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
   const { isAdmin, isNuonEmployee, user, isLoading } = useAuth()
-  const { apiUrl, authServiceUrl, adminDashboardUrl, isDev, isByoc } =
+  const { apiUrl, authServiceUrl, adminDashboardUrl, isDev, isByoc, onboardingFirstRun } =
     useConfig()
   const { addPanel } = useSurfaces()
   const { addToast } = useToast()
   const { permission, requestPermission, isSupported, muted, toggleMute } =
     useNotifications()
+  const reopenOnboarding = async () => {
+    try {
+      await resetFirstRunJourney()
+      trackEvent({ event: 'onboarding_reopen', status: 'ok', user, props: {} })
+    } catch (err) {
+      trackEvent({ event: 'onboarding_reopen', status: 'error', user, props: { err: (err as TAPIError)?.error } })
+    } finally {
+      window.location.assign('/onboarding?reopen=1')
+    }
+  }
+
   return (
     <UserDropdown
       isByoc={!!isByoc}
@@ -51,6 +67,8 @@ export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
       onAddToast={addToast}
       user={user}
       isUserLoading={isLoading}
+      onboardingFirstRun={onboardingFirstRun}
+      onReopenOnboarding={onboardingFirstRun ? reopenOnboarding : undefined}
       {...props}
     />
   )
