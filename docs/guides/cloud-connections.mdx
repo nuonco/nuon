@@ -57,7 +57,3 @@ Use `nuon cloud-connections list|get|create|verify|delete`. Responses report the
 Nuon verifies connections on demand, not on a recurring schedule. The last verification time records the most recent verification attempt; a verified status does not guarantee that AWS trust or permissions have not changed since then. Use `verify` after changing the role or its policies. A failed verification updates the connection's status and emits `cloud-connection-verification-failed` for notification subscriptions.
 
 Stack operations still obtain temporary AWS credentials through the connection when needed. This does not repeat the full verification checks, including the foreign-subject trust check.
-
-## Image authentication is separate
-
-Cloud connections do not authenticate image builds or pulls. ECR uses `iam_role_arn` assumed by the control plane; ACR uses a client secret or certificate; GAR uses the control plane's Workload Identity Federation flow. Keep using the registry configuration documented in [Container image components](/guides/container-image-components).
