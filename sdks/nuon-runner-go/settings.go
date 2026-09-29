@@ -19,11 +19,9 @@ func (c *client) SetAuthToken(token string) {
 }
 
 func (c *client) GetSettings(ctx context.Context) (*models.AppRunnerGroupSettings, error) {
-	telemetryRelayRouting := true
 	resp, err := c.genClient.Operations.GetRunnerSettings(&operations.GetRunnerSettingsParams{
-		RunnerID:              c.RunnerID,
-		Context:               ctx,
-		TelemetryRelayRouting: &telemetryRelayRouting,
+		RunnerID: c.RunnerID,
+		Context:  ctx,
 	}, c.getAuthInfo())
 	if err != nil {
 		return nil, err

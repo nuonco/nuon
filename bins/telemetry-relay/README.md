@@ -57,17 +57,15 @@ that org's ID. Backend credentials stay on the relay. For new customer-run relay
 compatibility, set `NUON_TELEMETRY_ALLOW_LEGACY_AUDIENCE=false`. Keep the unauthenticated environment listener private.
 
 By default, the relay accepts either its configured endpoint or `urn:nuon:telemetry` as a token's single audience,
-so cached legacy tokens remain valid while runners renew them. Legacy-audience acceptance
-has no automatic cutoff and does not change token issuance: new tokens use the resolved relay endpoint.
+supporting both older and newer runners. Legacy-audience acceptance has no automatic cutoff.
 Signature, issuer, expiry, telemetry scope, identity checks, and any org allowlist still apply. Legacy tokens
 are not bound to one destination: any relay trusting the issuer, accepting that audience, and permitting the
 token's org can accept them.
 
-Upgrade runners before configuring an org override. Runners supporting org relay routing advertise
-`telemetry_relay_routing=true` when fetching settings and include the selected `relay_endpoint` when requesting
-a token. Older runners receive telemetry disabled for an org with an override until upgraded, avoiding
-exports with a token for the previous endpoint. Older runners using the deployment-default relay receive endpoint-bound tokens on renewal
-without changing their token requests.
+Runner settings resolve org overrides for all runners. Newer runners include the selected `relay_endpoint`
+when requesting a token; the control plane verifies it matches current settings and uses it as the audience.
+Older runners omit this parameter and receive `urn:nuon:telemetry` tokens, including on renewal. Keep legacy-audience
+acceptance enabled on any relay serving those runners.
 
 On an endpoint change, updated runners stop the old exporter and token renewal before obtaining credentials
 for the new endpoint. A stale token request is rejected; the runner refreshes settings and retries. A failed

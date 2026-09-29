@@ -75,8 +75,8 @@ func TestPublicEndpointsSendNoAuthHeader(t *testing.T) {
 	if got := queryByPath["/v1/telemetry/access-token"]; got != "relay_endpoint=https%3A%2F%2Frelay.example.com%2Facme" {
 		t.Errorf("token request was not bound to the selected relay: %q", got)
 	}
-	if got := queryByPath["/v1/runners/rnr_test/settings"]; got != "telemetry_relay_routing=true" {
-		t.Errorf("settings request did not advertise relay routing support: %q", got)
+	if got := queryByPath["/v1/runners/rnr_test/settings"]; got != "" {
+		t.Errorf("settings request has unexpected query parameters: %q", got)
 	}
 
 	shutdownPath := "/v1/runners/rnr_test/processes/prc_test/shutdowns"

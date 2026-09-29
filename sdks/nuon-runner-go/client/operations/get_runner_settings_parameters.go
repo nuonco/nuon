@@ -14,7 +14,6 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
-	"github.com/go-openapi/swag"
 )
 
 // NewGetRunnerSettingsParams creates a new GetRunnerSettingsParams object,
@@ -67,12 +66,6 @@ type GetRunnerSettingsParams struct {
 	   runner ID
 	*/
 	RunnerID string
-
-	/* TelemetryRelayRouting.
-
-	   Supports endpoint-bound telemetry tokens and org relay overrides
-	*/
-	TelemetryRelayRouting *bool
 
 	timeout    time.Duration
 	Context    context.Context
@@ -138,17 +131,6 @@ func (o *GetRunnerSettingsParams) SetRunnerID(runnerID string) {
 	o.RunnerID = runnerID
 }
 
-// WithTelemetryRelayRouting adds the telemetryRelayRouting to the get runner settings params
-func (o *GetRunnerSettingsParams) WithTelemetryRelayRouting(telemetryRelayRouting *bool) *GetRunnerSettingsParams {
-	o.SetTelemetryRelayRouting(telemetryRelayRouting)
-	return o
-}
-
-// SetTelemetryRelayRouting adds the telemetryRelayRouting to the get runner settings params
-func (o *GetRunnerSettingsParams) SetTelemetryRelayRouting(telemetryRelayRouting *bool) {
-	o.TelemetryRelayRouting = telemetryRelayRouting
-}
-
 // WriteToRequest writes these params to a swagger request
 func (o *GetRunnerSettingsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -160,23 +142,6 @@ func (o *GetRunnerSettingsParams) WriteToRequest(r runtime.ClientRequest, reg st
 	// path param runner_id
 	if err := r.SetPathParam("runner_id", o.RunnerID); err != nil {
 		return err
-	}
-
-	if o.TelemetryRelayRouting != nil {
-
-		// query param telemetry_relay_routing
-		var qrTelemetryRelayRouting bool
-
-		if o.TelemetryRelayRouting != nil {
-			qrTelemetryRelayRouting = *o.TelemetryRelayRouting
-		}
-		qTelemetryRelayRouting := swag.FormatBool(qrTelemetryRelayRouting)
-		if qTelemetryRelayRouting != "" {
-
-			if err := r.SetQueryParam("telemetry_relay_routing", qTelemetryRelayRouting); err != nil {
-				return err
-			}
-		}
 	}
 
 	if len(res) > 0 {

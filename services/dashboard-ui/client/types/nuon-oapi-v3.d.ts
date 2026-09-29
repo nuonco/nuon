@@ -2580,7 +2580,10 @@ export interface paths {
     get: operations["GetOrgStats"];
   };
   "/v1/orgs/current/telemetry": {
-    /** Update current org telemetry settings */
+    /**
+     * Update current org telemetry settings
+     * @description Omitted fields are unchanged. Set relay_endpoint to null or an empty string to use the deployment default. Relay endpoints must be HTTPS OTLP base URLs.
+     */
     patch: operations["UpdateOrgTelemetry"];
   };
   "/v1/orgs/current/user": {
@@ -5846,6 +5849,7 @@ export interface components {
     "app.OrgMemberStatus": "active" | "invited";
     "app.OrgTelemetrySettings": {
       enabled?: boolean;
+      relay_endpoint?: string | null;
     };
     "app.OtelLogRecord": {
       body?: string;
@@ -9630,7 +9634,8 @@ export interface components {
       name: string;
     };
     "service.UpdateOrgTelemetryRequest": {
-      enabled: boolean;
+      enabled?: boolean | null;
+      relay_endpoint?: string | null;
     };
     "service.UpdateRunbookRequest": {
       description?: string;
@@ -28764,7 +28769,10 @@ export interface operations {
       };
     };
   };
-  /** Update current org telemetry settings */
+  /**
+   * Update current org telemetry settings
+   * @description Omitted fields are unchanged. Set relay_endpoint to null or an empty string to use the deployment default. Relay endpoints must be HTTPS OTLP base URLs.
+   */
   UpdateOrgTelemetry: {
     /** @description Input */
     requestBody: {

@@ -78,7 +78,7 @@ func TestTelemetryTokenIssuerIssuesScopedAccessToken(t *testing.T) {
 		RelayEndpoint: "https://relay.example.com/acme",
 	}
 
-	raw, err := issuer.issue(principal)
+	raw, err := issuer.issue(principal, true)
 	require.NoError(t, err)
 
 	claims := &telemetryAccessTokenClaims{}

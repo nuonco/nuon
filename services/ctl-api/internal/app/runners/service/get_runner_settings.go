@@ -19,7 +19,6 @@ import (
 // @Summary				get runner settings
 // @Description.markdown	get_runner_settings.md
 // @Param					runner_id	path	string	true	"runner ID"
-// @Param telemetry_relay_routing query bool false "Supports endpoint-bound telemetry tokens and org relay overrides"
 // @Tags					runners/runner
 // @Accept					json
 // @Produce				json
@@ -69,7 +68,7 @@ func (s *service) GetRunnerSettings(ctx *gin.Context) {
 		if err == nil {
 			orgTelemetry := app.OrgTelemetrySettings{RelayEndpoint: install.OrgRelayEndpoint}
 			endpoint := orgTelemetry.ResolveRelayEndpoint(s.telemetryRelayEndpoint)
-			if endpoint == "" || (install.OrgRelayEndpoint != nil && (ctx.Query("telemetry_relay_routing") != "true" || s.telemetryTokenIssuer == nil)) {
+			if endpoint == "" || (install.OrgRelayEndpoint != nil && s.telemetryTokenIssuer == nil) {
 				ctx.JSON(http.StatusOK, settings)
 				return
 			}
