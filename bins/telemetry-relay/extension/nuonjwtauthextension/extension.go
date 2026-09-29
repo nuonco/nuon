@@ -20,6 +20,7 @@ import (
 const (
 	tokenType          = "at+jwt"
 	tokenScope         = "telemetry:write"
+	legacyAudience     = "urn:nuon:telemetry"
 	tokenLifetime      = 10 * time.Minute
 	tokenClockSkew     = 30 * time.Second
 	refreshInterval    = 5 * time.Minute
@@ -136,6 +137,10 @@ func bearerToken(sources map[string][]string) (string, error) {
 }
 
 func (e *telemetryJWTAuthExtension) verify(ctx context.Context, raw string) (Principal, error) {
+	audiences := []string{e.config.Audience}
+	if e.config.AllowLegacyAudience {
+		audiences = append(audiences, legacyAudience)
+	}
 	claims := &telemetryClaims{}
 	token, err := jwt.ParseWithClaims(raw, claims, func(token *jwt.Token) (any, error) {
 		if token.Method != jwt.SigningMethodRS256 || token.Header["typ"] != tokenType {
@@ -149,7 +154,7 @@ func (e *telemetryJWTAuthExtension) verify(ctx context.Context, raw string) (Pri
 	},
 		jwt.WithValidMethods([]string{jwt.SigningMethodRS256.Alg()}),
 		jwt.WithIssuer(e.config.Issuer),
-		jwt.WithAudience(e.config.Audience),
+		jwt.WithAudience(audiences...),
 		jwt.WithExpirationRequired(),
 		jwt.WithIssuedAt(),
 		jwt.WithLeeway(tokenClockSkew),
@@ -164,20 +169,20 @@ func (e *telemetryJWTAuthExtension) verify(ctx context.Context, raw string) (Pri
 		InstallID: claims.InstallID,
 		RunnerID:  claims.RunnerID,
 	}
-	if err := validateClaims(claims, principal, e.config.Audience); err != nil {
+	if err := validateClaims(claims, principal); err != nil {
 		return Principal{}, errAuthenticationFailed
 	}
 	return principal, nil
 }
 
-func validateClaims(claims *telemetryClaims, principal Principal, audience string) error {
+func validateClaims(claims *telemetryClaims, principal Principal) error {
 	if claims.IssuedAt == nil || claims.NotBefore == nil || claims.ExpiresAt == nil || claims.ID == "" {
 		return errAuthenticationFailed
 	}
 	if claims.ExpiresAt.Sub(claims.IssuedAt.Time) > tokenLifetime || !claims.ExpiresAt.After(claims.IssuedAt.Time) || claims.NotBefore.After(claims.ExpiresAt.Time) {
 		return errAuthenticationFailed
 	}
-	if len(claims.Audience) != 1 || claims.Audience[0] != audience || claims.Scope != tokenScope || claims.ClientID != principal.RunnerID {
+	if len(claims.Audience) != 1 || claims.Scope != tokenScope || claims.ClientID != principal.RunnerID {
 		return errAuthenticationFailed
 	}
 	if !validPrincipal(principal) {
