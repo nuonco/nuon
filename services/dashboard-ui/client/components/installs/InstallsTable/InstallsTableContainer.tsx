@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
 import { useInstallHref } from '@/hooks/use-install-path'
+import { useNewInstallIA } from '@/hooks/use-new-install-ia'
 import { useOrg } from '@/hooks/use-org'
 import {
   getAppInstalls,
@@ -44,14 +45,11 @@ export const InstallsTableContainer = ({
   const [searchParams] = useSearchParams()
   const { org } = useOrg()
   const installHref = useInstallHref()
+  const newInstallIA = useNewInstallIA()
   const offset = Number(searchParams.get('offset') ?? 0)
   const q = searchParams.get('q') || undefined
 
-  const scope: TInstallsTableScope = branchId
-    ? 'branch'
-    : appId
-      ? 'app'
-      : 'org'
+  const scope: TInstallsTableScope = branchId ? 'branch' : appId ? 'app' : 'org'
 
   const { data: result, isLoading } = useQuery({
     queryKey: [
@@ -133,8 +131,13 @@ export const InstallsTableContainer = ({
             <InstallBranchFilter
               queryKey={['org-branch-names', org.id]}
               queryFn={async () => {
-                const { data } = await getBranches({ orgId: org.id, limit: 100 })
-                return [...new Set(data.map((b) => b.name).filter(Boolean))].sort()
+                const { data } = await getBranches({
+                  orgId: org.id,
+                  limit: 100,
+                })
+                return [
+                  ...new Set(data.map((b) => b.name).filter(Boolean)),
+                ].sort()
               }}
             />
           </div>
@@ -146,6 +149,7 @@ export const InstallsTableContainer = ({
         limit: LIMIT,
       }}
       scope={scope}
+      statusAxes={newInstallIA && scope === 'branch'}
     />
   )
 }
