@@ -162,14 +162,14 @@ func (c *client) ForgetInstallComponent(ctx context.Context, installID, componen
 	return err
 }
 
-func (c *client) TeardownInstallComponents(ctx context.Context, installID string) (*models.AppWorkflowResponse, error) {
+func (c *client) TeardownInstallComponents(ctx context.Context, installID string, role string) (*models.AppWorkflowResponse, error) {
 	var result models.AppWorkflowResponse
 	path := fmt.Sprintf("%s/v1/installs/%s/components/teardown-all", c.APIURL, url.PathEscape(installID))
 	err := c.triggerRequest(
 		ctx,
 		http.MethodPost,
 		path,
-		&models.ServiceTeardownInstallComponentsRequest{},
+		&models.ServiceTeardownInstallComponentsRequest{Role: role},
 		http.StatusCreated,
 		&result,
 	)
