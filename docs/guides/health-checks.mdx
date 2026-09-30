@@ -77,7 +77,9 @@ flowchart LR
     v --> history["Timeline and uptime"]
 ```
 
-A component's verdict is the worst status among everything Nuon observes for it.
+Nuon combines every resource, probe and custom check on a component into one verdict. The component
+shows `healthy` when all of them are healthy. If any of them reports a problem, the component shows
+that problem.
 
 | Verdict | Meaning |
 | --- | --- |
