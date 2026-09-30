@@ -22,6 +22,7 @@ import {
   isPreviewWorkflow,
 } from '@/components/branches/shared/preview-run-utils'
 import type { TInstall, TInstallGroupRun, TWorkflow } from '@/types'
+import { manualRunPinLabel } from '@/utils/branch-utils'
 import {
   getWorkflowBadge,
   getWorkflowPendingApprovals,
@@ -74,6 +75,7 @@ export const WorkflowTimeline = ({
         const isBranchRun = isBranchRunWorkflow(workflow)
         const branchRun = getBranchRunFromWorkflow(workflow)
         const trigger = getRunTrigger(branchRun)
+        const pinLabel = manualRunPinLabel(branchRun)
         const commit = branchRun?.vcs_connection_commit
         const runGraph = workflow.id
           ? branchRunGraphs?.[workflow.id]
@@ -148,9 +150,16 @@ export const WorkflowTimeline = ({
                       preview
                     </Badge>
                     {trigger === 'manual' ? (
-                      <Badge variant="code" size="sm">
-                        manual
-                      </Badge>
+                      <>
+                        <Badge variant="code" size="sm">
+                          manual
+                        </Badge>
+                        {pinLabel ? (
+                          <Badge variant="code" size="sm" theme="info">
+                            {pinLabel}
+                          </Badge>
+                        ) : null}
+                      </>
                     ) : branchRun?.preview?.source === 'commit' ? (
                       <Badge variant="code" size="sm">
                         commit
@@ -181,9 +190,16 @@ export const WorkflowTimeline = ({
                 {isBranchRun &&
                 !isPreviewWorkflow(workflow) &&
                 trigger === 'manual' ? (
-                  <Badge variant="code" size="sm">
-                    manual
-                  </Badge>
+                  <>
+                    <Badge variant="code" size="sm">
+                      manual
+                    </Badge>
+                    {pinLabel ? (
+                      <Badge variant="code" size="sm" theme="info">
+                        {pinLabel}
+                      </Badge>
+                    ) : null}
+                  </>
                 ) : null}
                 {isBranchRun &&
                 !isPreviewWorkflow(workflow) &&
