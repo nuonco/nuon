@@ -19,7 +19,7 @@ import { InstallLayout } from './InstallLayout'
 import { Overview } from './Overview'
 import { Components } from './Components'
 import { Resources } from './Resources'
-import { NewInstallPlaceholder } from './NewInstallPlaceholder'
+import { NewInstallOverview } from './NewInstallOverview'
 import { Deployments } from './Deployments'
 import {
   NewInstallConfigurationLayout,
@@ -116,11 +116,7 @@ const NewInstallIAGate = () => {
 const InstallOverviewRoute = () => {
   const hasNewInstallIA = useNewInstallIA()
 
-  return hasNewInstallIA ? (
-    <NewInstallPlaceholder path="" title="Overview" />
-  ) : (
-    <Overview />
-  )
+  return hasNewInstallIA ? <NewInstallOverview /> : <Overview />
 }
 
 const InstallResourcesRoute = () => {
