@@ -26,7 +26,7 @@ export const OrgStatusBarContainer = () => {
   const { activeWorkflows } = useActiveWorkflows()
   const { appId, branchId, installId } = useParams()
 
-  const { data: app } = useQuery({
+  const { data: appData } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['app', org.id, appId],
     queryFn: () => getApp({ orgId: org.id, appId: appId! }),
@@ -40,29 +40,35 @@ export const OrgStatusBarContainer = () => {
     enabled: !!appId,
     refetchInterval: 30_000,
   })
-  const latestConfig = appConfigs?.[0]
 
-  const { data: branch } = useQuery({
-    placeholderData: keepPreviousData,
-    queryKey: ['app-branch', org.id, appId, branchId],
-    queryFn: () => getAppBranch({ orgId: org.id, appId: appId!, branchId: branchId! }),
-    enabled: !!appId && !!branchId,
-  })
-
-  const { data: install } = useQuery({
+  const { data: installData } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['install', org.id, installId],
     queryFn: () => getInstall({ orgId: org.id, installId: installId! }),
     enabled: !!installId,
   })
+  const install = installId ? installData : undefined
+  const resolvedBranchId = branchId ?? install?.app_branch_id
 
-  const { data: stack } = useQuery({
+  const { data: branchData } = useQuery({
+    placeholderData: keepPreviousData,
+    queryKey: ['app-branch', org.id, appId, resolvedBranchId],
+    queryFn: () => getAppBranch({ orgId: org.id, appId: appId!, branchId: resolvedBranchId! }),
+    enabled: !!appId && !!resolvedBranchId,
+  })
+
+  const { data: stackData } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['install-stack', org.id, installId],
     queryFn: () => getInstallStack({ installId: installId!, orgId: org.id }),
     enabled: !!installId,
     refetchInterval: 30_000,
   })
+
+  const app = appId ? appData : undefined
+  const latestConfig = appId ? appConfigs?.[0] : undefined
+  const branch = appId && resolvedBranchId ? branchData : undefined
+  const stack = installId ? stackData : undefined
 
   const workflowItems: TContextTooltipItem[] = activeWorkflows.map((workflow) => ({
     id: workflow.id ?? '',
