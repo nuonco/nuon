@@ -29,6 +29,11 @@ const SettingsTemplate = () => {
 
   const navLinks = [
     {
+      path: `/general`,
+      iconVariant: 'BuildingsIcon' as const,
+      text: 'General',
+    },
+    {
       path: `/vcs`,
       iconVariant: 'GitHub' as const,
       text: 'VCS connections',
