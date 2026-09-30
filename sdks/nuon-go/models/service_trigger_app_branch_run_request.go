@@ -46,6 +46,12 @@ type ServiceTriggerAppBranchRunRequest struct {
 	// preview run
 	PreviewRun *ServicePreviewRunRequest `json:"preview_run,omitempty"`
 
+	// run ref
+	RunRef string `json:"run_ref,omitempty"`
+
+	// run type
+	RunType ServiceTriggerAppBranchRunSource `json:"run_type,omitempty"`
+
 	// skip builds
 	SkipBuilds bool `json:"skip_builds,omitempty"`
 
@@ -58,6 +64,10 @@ func (m *ServiceTriggerAppBranchRunRequest) Validate(formats strfmt.Registry) er
 	var res []error
 
 	if err := m.validatePreviewRun(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRunType(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -90,11 +100,36 @@ func (m *ServiceTriggerAppBranchRunRequest) validatePreviewRun(formats strfmt.Re
 	return nil
 }
 
+func (m *ServiceTriggerAppBranchRunRequest) validateRunType(formats strfmt.Registry) error {
+	if swag.IsZero(m.RunType) { // not required
+		return nil
+	}
+
+	if err := m.RunType.Validate(formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("run_type")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("run_type")
+		}
+
+		return err
+	}
+
+	return nil
+}
+
 // ContextValidate validate this service trigger app branch run request based on the context it is used
 func (m *ServiceTriggerAppBranchRunRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidatePreviewRun(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateRunType(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -124,6 +159,28 @@ func (m *ServiceTriggerAppBranchRunRequest) contextValidatePreviewRun(ctx contex
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *ServiceTriggerAppBranchRunRequest) contextValidateRunType(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.RunType) { // not required
+		return nil
+	}
+
+	if err := m.RunType.ContextValidate(ctx, formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("run_type")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("run_type")
+		}
+
+		return err
 	}
 
 	return nil
