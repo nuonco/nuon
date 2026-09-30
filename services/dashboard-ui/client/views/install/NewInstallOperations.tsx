@@ -1,5 +1,5 @@
 import { InstallActionsList } from '@/components/actions/InstallActionsList'
-import { Text } from '@/components/common/Text'
+import { ActivityList } from '@/components/operations/ActivityList'
 import { ActivityPins } from '@/components/operations/ActivityPins'
 import { InstallPolicyReports } from '@/components/policies/InstallPolicyReports'
 import { InstallRunbooksList } from '@/components/runbooks/InstallRunbooksList'
@@ -15,7 +15,7 @@ export const NewInstallActivity = () => {
       <PageTitle segments={['Activity', install?.name]} />
       <div className="flex flex-col gap-6">
         <ActivityPins />
-        <Text theme="neutral">Placeholder content.</Text>
+        <ActivityList shouldPoll />
       </div>
     </>
   )
