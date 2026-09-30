@@ -60,7 +60,7 @@ const rollout: TOverviewRollout = {
 
 const changes = (
   <div className="flex flex-col gap-3">
-    <SectionHeader title="What's changed" />
+    <SectionHeader title="Template and source changes" />
     <Text variant="subtext" theme="neutral">
       cache added, api image tag 1.4.2
     </Text>

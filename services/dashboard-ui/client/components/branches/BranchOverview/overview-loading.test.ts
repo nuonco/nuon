@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test'
-import type { TInstallWorkflowStep } from '@/types'
+import type { TCompositeError, TInstallWorkflowStep } from '@/types'
 import {
   buildOverviewLoadingStages,
   fetchCommitReady,
+  installFailureHref,
   overviewCompositeError,
 } from './overview-loading'
 
@@ -25,12 +26,25 @@ describe('buildOverviewLoadingStages', () => {
         stage.status,
       ])
     ).toEqual([
-      ['waiting', 'in-progress'],
+      ['starting', 'in-progress'],
       ['fetch-commit', 'pending'],
-      ['show-commit', 'pending'],
       ['app-config', 'pending'],
       ['build-components', 'pending'],
+      ['rollout', 'pending'],
     ])
+  })
+
+  test('summarizes install groups in the rollout stage', () => {
+    const rollout = (groupStatuses: string[]) =>
+      buildOverviewLoadingStages({ steps: [], groupStatuses }).find(
+        (stage) => stage.id === 'rollout'
+      )?.status
+
+    expect(rollout(['pending', 'pending'])).toBe('pending')
+    expect(rollout(['success', 'approval-awaiting'])).toBe('in-progress')
+    expect(rollout(['success', 'pending'])).toBe('in-progress')
+    expect(rollout(['success', 'auto-skipped'])).toBe('success')
+    expect(rollout(['success', 'error', 'pending'])).toBe('error')
   })
 
   test('shows the commit only after fetch commit succeeds and a sha exists', () => {
@@ -38,21 +52,26 @@ describe('buildOverviewLoadingStages', () => {
       steps: [step('fetch commit', 'in-progress')],
       sha: 'abc',
     })
-    expect(fetching.find((stage) => stage.id === 'show-commit')?.status).toBe(
-      'pending'
+    expect(fetching.find((stage) => stage.id === 'fetch-commit')?.status).toBe(
+      'in-progress'
     )
     expect(
-      fetchCommitReady([step('fetch commit', 'in-progress')], 'abc')
-    ).toBe(false)
+      buildOverviewLoadingStages({
+        steps: [step('fetch commit', 'success')],
+      }).find((stage) => stage.id === 'fetch-commit')?.status
+    ).toBe('in-progress')
+    expect(fetchCommitReady([step('fetch commit', 'in-progress')], 'abc')).toBe(
+      false
+    )
 
     const ready = buildOverviewLoadingStages({
       steps: [step('fetch commit', 'success')],
       sha: 'abc',
     })
-    expect(ready.find((stage) => stage.id === 'waiting')?.status).toBe(
+    expect(ready.find((stage) => stage.id === 'starting')?.status).toBe(
       'success'
     )
-    expect(ready.find((stage) => stage.id === 'show-commit')?.status).toBe(
+    expect(ready.find((stage) => stage.id === 'fetch-commit')?.status).toBe(
       'success'
     )
     expect(fetchCommitReady([step('fetch commit', 'success')], 'abc')).toBe(
@@ -85,5 +104,40 @@ describe('buildOverviewLoadingStages', () => {
       step('build components', 'error', { message: 'Build failed' }),
     ])
     expect(error?.message).toBe('Config failed')
+  })
+
+  test('uses a failed install group deploy when earlier steps succeeded', () => {
+    const error = overviewCompositeError([
+      step('fetch commit', 'success'),
+      step('fetch app config', 'success'),
+      step('build components', 'success'),
+      step('deploy install group: canary', 'error', {
+        message: 'jm-test-001 failed during deploy',
+      }),
+    ])
+    expect(error?.message).toBe('jm-test-001 failed during deploy')
+  })
+
+  test('prefers the app branch run composite error', () => {
+    const runError = {
+      message: 'delta failed during deploy',
+    } as TCompositeError
+    const error = overviewCompositeError(
+      [step('fetch app config', 'error', { message: 'Config failed' })],
+      runError
+    )
+    expect(error?.message).toBe('delta failed during deploy')
+  })
+
+  test('links an install update failure to the install workflow', () => {
+    const error = {
+      type: 'install_group.install_update_failed',
+      message: 'jm-test-001 failed during deploy',
+      data: { install_id: 'ins_1', workflow_id: 'wf_1' },
+    } as unknown as TCompositeError
+    expect(installFailureHref(error, 'org_acme')).toBe(
+      '/org_acme/installs/ins_1/workflows/wf_1'
+    )
+    expect(installFailureHref({ message: 'other' }, 'org_acme')).toBeUndefined()
   })
 })

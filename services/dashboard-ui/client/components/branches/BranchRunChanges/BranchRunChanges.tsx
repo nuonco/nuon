@@ -77,6 +77,7 @@ interface IBranchRunChanges {
   repoSlug?: string
   title?: string
   headerAction?: ReactNode
+  isPending?: boolean
 }
 
 export const BranchRunChanges = ({
@@ -88,6 +89,7 @@ export const BranchRunChanges = ({
   repoSlug,
   title = 'Config Changes',
   headerAction,
+  isPending,
 }: IBranchRunChanges) => {
   const { org } = useOrg()
   const { app } = useApp()
@@ -134,6 +136,7 @@ export const BranchRunChanges = ({
         sections={[]}
         summary={null}
         isLoading={false}
+        isPending={isPending}
         isOpen
         className={className}
       />
@@ -161,6 +164,7 @@ export const BranchRunChanges = ({
         sections={sections}
         summary={summary}
         isLoading={isLoading && !data}
+        isPending={isPending}
         isOpen
         focus={focus}
         expandId="branch-run-config-diff"

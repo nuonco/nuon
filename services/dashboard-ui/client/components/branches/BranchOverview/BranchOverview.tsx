@@ -11,6 +11,19 @@ import { RolloutTiles } from './RolloutTiles'
 import type { TTrackGroup } from './RolloutTrack'
 import { RunSourceCard, type IRunSourceCard } from './RunSourceCard'
 
+export const InstallFailureNotice = ({
+  error,
+  href,
+}: {
+  error: TCompositeError
+  href?: string
+}) => (
+  <div className="flex flex-col gap-2">
+    <CompositeError error={error} />
+    {href ? <Link href={href}>View install workflow</Link> : null}
+  </div>
+)
+
 export interface TOverviewRollout extends IRunSourceCard {
   id: string
   href: string
@@ -33,6 +46,7 @@ export interface IBranchOverview {
   onSelectGroup: (groupId: string) => void
   loadingStages?: TOverviewStage[]
   compositeError?: TCompositeError
+  installWorkflowHref?: string
   failedBuilds?: TFailedBuildLink[]
 }
 
@@ -46,6 +60,7 @@ export const BranchOverview = ({
   onSelectGroup,
   loadingStages,
   compositeError,
+  installWorkflowHref,
   failedBuilds,
 }: IBranchOverview) => (
   <div className="flex flex-col gap-10 p-4 md:p-6">
@@ -55,7 +70,9 @@ export const BranchOverview = ({
       <Loading />
     ) : null}
 
-    {compositeError ? <CompositeError error={compositeError} /> : null}
+    {compositeError ? (
+      <InstallFailureNotice error={compositeError} href={installWorkflowHref} />
+    ) : null}
 
     {failedBuilds?.length ? (
       <div className="flex flex-col gap-2">
@@ -77,7 +94,7 @@ export const BranchOverview = ({
     ) : null}
 
     {rollout ? (
-      <section className="grid items-start gap-6 lg:grid-cols-[20rem_minmax(0,1fr)]">
+      <section className="grid items-start gap-6 lg:grid-cols-2">
         <RunSourceCard
           source={rollout.source}
           title={rollout.title}
@@ -104,7 +121,13 @@ export const BranchOverview = ({
           description={rollout?.activity}
           actions={<Link href={rolloutHref}>View rollout</Link>}
         />
-        <RolloutTiles groups={groups} onSelectGroup={onSelectGroup} />
+        {groups.length ? (
+          <RolloutTiles groups={groups} onSelectGroup={onSelectGroup} />
+        ) : (
+          <Text variant="subtext" theme="neutral">
+            No install groups in this run yet.
+          </Text>
+        )}
       </section>
     ) : null}
   </div>

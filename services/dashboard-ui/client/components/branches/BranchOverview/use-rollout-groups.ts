@@ -19,6 +19,7 @@ import type {
   TInstallGroupRun,
 } from '@/types'
 import type { TOverviewRollout } from './BranchOverview'
+import { installGroupMatch } from './InstallGroupMatch'
 import { fetchCommitReady } from './overview-loading'
 import { buildRolloutStages } from './rollout-stages'
 import type { TTrackGroup, TTrackInstall } from './RolloutTrack'
@@ -26,28 +27,24 @@ import { commitUrl, resolveRunSource } from './run-source'
 
 const TERMINAL = new Set(['success', 'failed', 'error', 'cancelled'])
 
-const groupRules = (group?: TAppBranchInstallGroup) => {
+const approvalLabel = (group?: TAppBranchInstallGroup) => {
   if (!group) return undefined
-  const labels = Object.entries(group.label_selector?.match_labels ?? {})
-    .map(([key, value]) => `${key}=${value}`)
-    .join(', ')
-  return [
-    labels || (group.default ? 'Every other install' : undefined),
-    group.max_parallel ? `up to ${group.max_parallel} at a time` : undefined,
-    group.auto_approve_on_policies_passing
-      ? 'auto-approves when policies pass'
-      : 'manual approval',
-  ]
-    .filter(Boolean)
-    .join(' · ')
+  return group.auto_approve_on_policies_passing
+    ? 'Auto-approves when policies pass'
+    : 'Manual approval'
 }
+
+const installRegion = (install?: TInstall) =>
+  install?.aws_account?.region ||
+  install?.gcp_account?.region ||
+  install?.azure_account?.location
 
 const installSnapshot = (
   install: TInstall | undefined,
   orgId?: string
 ): Pick<
   TTrackInstall,
-  'resources' | 'deployment' | 'health' | 'overviewHref'
+  'resources' | 'deployment' | 'health' | 'overviewHref' | 'labels' | 'region'
 > => {
   if (!install?.id) return {}
   const resourcesActive =
@@ -78,43 +75,74 @@ const installSnapshot = (
         }
       : undefined,
     overviewHref: orgId ? `/${orgId}/installs/${install.id}` : undefined,
+    labels: install.labels,
+    region: installRegion(install),
   }
 }
 
-const fromGroupRuns = (
+const fromGroupRun = (
+  groupRun: TInstallGroupRun,
+  groups: TAppBranchInstallGroup[],
+  installsById: Record<string, TInstall>,
+  orgId?: string
+): TTrackGroup => {
+  const group =
+    groups.find((item) => item.id === groupRun.install_group_id) ??
+    groupRun.install_group
+  return {
+    id: groupRun.install_group_id ?? groupRun.id ?? '',
+    name: groupRun.install_group_name || group?.name || 'Install group',
+    status: groupRun.status?.status || 'pending',
+    plannedCount: groupRun.total_installs,
+    match: installGroupMatch(group),
+    approval: approvalLabel(group),
+    installs: (groupRun.installs ?? []).map((install) => {
+      const id = install.install_id ?? ''
+      return {
+        id,
+        name: installsById[id]?.name ?? id,
+        status: install.status || 'pending',
+        detail: install.runbooks?.length
+          ? `${install.runbooks.length} post-deploy runbooks`
+          : undefined,
+        ...installSnapshot(installsById[id], orgId),
+        workflowId: install.workflow_id,
+        workflowHref:
+          id && orgId && install.workflow_id
+            ? `/${orgId}/installs/${id}/workflows/${install.workflow_id}`
+            : undefined,
+      }
+    }),
+  }
+}
+
+const sameName = (a?: string, b?: string) =>
+  !!a && !!b && a.toLowerCase() === b.toLowerCase()
+
+export const mergeGroupRuns = (
+  planned: TTrackGroup[],
   groupRuns: TInstallGroupRun[],
   groups: TAppBranchInstallGroup[],
   installsById: Record<string, TInstall>,
   orgId?: string
-): TTrackGroup[] =>
-  groupRuns.map((groupRun) => {
-    const group =
-      groups.find((item) => item.id === groupRun.install_group_id) ??
-      groupRun.install_group
-    return {
-      id: groupRun.install_group_id ?? groupRun.id ?? '',
-      name: groupRun.install_group_name || group?.name || 'Install group',
-      status: groupRun.status?.status || 'pending',
-      plannedCount: groupRun.total_installs,
-      rules: groupRules(group),
-      installs: (groupRun.installs ?? []).map((install) => {
-        const id = install.install_id ?? ''
-        return {
-          id,
-          name: installsById[id]?.name ?? id,
-          status: install.status || 'pending',
-          detail: install.runbooks?.length
-            ? `${install.runbooks.length} post-deploy runbooks`
-            : undefined,
-          ...installSnapshot(installsById[id], orgId),
-          workflowHref:
-            id && orgId && install.workflow_id
-              ? `/${orgId}/installs/${id}/workflows/${install.workflow_id}`
-              : undefined,
-        }
-      }),
-    }
+): TTrackGroup[] => {
+  const used = new Set<TInstallGroupRun>()
+  const merged = planned.map((group) => {
+    const groupRun = groupRuns.find(
+      (run) =>
+        !used.has(run) &&
+        (run.install_group_id === group.id ||
+          sameName(run.install_group_name, group.name))
+    )
+    if (!groupRun) return group
+    used.add(groupRun)
+    return fromGroupRun(groupRun, groups, installsById, orgId)
   })
+  const extra = groupRuns
+    .filter((run) => !used.has(run))
+    .map((run) => fromGroupRun(run, groups, installsById, orgId))
+  return [...merged, ...extra]
+}
 
 export const useRolloutGroups = () => {
   const { org } = useOrg()
@@ -217,31 +245,45 @@ export const useRolloutGroups = () => {
   )
 
   const trackGroups = useMemo<TTrackGroup[]>(() => {
-    if (groupRuns?.length) {
-      return fromGroupRuns(groupRuns, groups, installsById, orgId)
-    }
-    return buildRolloutStages({
+    const planned = buildRolloutStages({
       groups,
       steps: rolloutRun?.steps ?? [],
       installsByGroup: membership.installsByGroup,
     })
       .filter((stage) => stage.kind === 'group')
-      .map((stage) => {
-        const group = groups.find((item) => item.id === stage.groupId)
+      .map((stage): TTrackGroup => {
+        const index = groups.findIndex((item) => item.id === stage.groupId)
+        const group = groups[index]
+        const members = membership.installsByGroup[index] ?? []
+        const installs: {
+          id: string
+          name: string
+          status: string
+          region?: string
+        }[] =
+          stage.installs ??
+          members.map((install) => ({
+            id: install.id ?? '',
+            name: install.name ?? install.id ?? 'Install',
+            status: 'pending',
+          }))
         return {
           id: stage.groupId ?? stage.id,
           name: stage.name,
           status: stage.status,
-          rules: groupRules(group),
-          installs: (stage.installs ?? []).map((install) => ({
+          match: installGroupMatch(group),
+          approval: approvalLabel(group),
+          installs: installs.map((install) => ({
             id: install.id,
             name: install.name,
             status: install.status,
-            detail: install.region,
             ...installSnapshot(installsById[install.id], orgId),
           })),
         }
       })
+    return groupRuns?.length
+      ? mergeGroupRuns(planned, groupRuns, groups, installsById, orgId)
+      : planned
   }, [groupRuns, groups, installsById, rolloutRun?.steps, membership, orgId])
 
   const sha = branchRun?.vcs_connection_commit?.sha ?? branchRun?.head_sha
@@ -282,10 +324,11 @@ export const useRolloutGroups = () => {
     branchRunId,
     rollout,
     workflowSteps,
+    branchRun,
     showLoadingTrack:
       isLoadingLatest ||
       (!!latestId && isLoadingRollout && !rolloutRun) ||
-      (!!rollout && !isTerminal),
+      !!rollout,
     groups: trackGroups,
     hasPlan: groups.length > 0,
     isLoading:

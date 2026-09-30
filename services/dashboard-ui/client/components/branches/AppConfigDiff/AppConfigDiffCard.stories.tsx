@@ -66,6 +66,12 @@ export const Loading = () => (
   </div>
 )
 
+export const Pending = () => (
+  <div className="max-w-3xl">
+    <AppConfigDiffCard sections={[]} summary={null} isPending />
+  </div>
+)
+
 export const Snapshot = () => (
   <div className="max-w-3xl">
     <AppConfigDiffCard

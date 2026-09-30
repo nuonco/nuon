@@ -1,10 +1,11 @@
-import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
+import type { ReactNode } from 'react'
+import { Avatar } from '@/components/common/Avatar'
 import { Badge } from '@/components/common/Badge'
-import { Card } from '@/components/common/Card'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 import type { TRunSource } from './run-source'
 
 export interface IRunCommit {
@@ -26,36 +27,29 @@ export interface IRunSourceCard {
   commit?: IRunCommit
 }
 
-const SOURCE_LABEL: Record<TRunSource['kind'], string> = {
+const TRIGGER_LABEL: Record<TRunSource['kind'], string> = {
   'pull-request': 'Pull request',
   tag: 'Tag',
   manual: 'Manual run',
-  commit: 'Commit',
+  commit: 'Push',
 }
 
-const TriggeredBy = ({
-  source,
-  shortSha,
-  shaUrl,
-}: {
-  source: TRunSource
-  shortSha?: string
-  shaUrl?: string
-}) => {
+const MaybeLink = ({ href, children }: { href?: string; children: ReactNode }) =>
+  href ? (
+    <Link href={href} isExternal>
+      {children}
+    </Link>
+  ) : (
+    <>{children}</>
+  )
+
+const SourceIdentity = ({ source }: { source: TRunSource }) => {
   if (source.kind === 'pull-request') {
-    const number = `#${source.number}`
     return (
       <span className="flex flex-wrap items-center gap-2">
-        <Text variant="subtext" flex>
+        <Text variant="body" weight="strong" flex>
           <Icon variant="GitPullRequestIcon" />
-          Pull request{' '}
-          {source.url ? (
-            <Link href={source.url} isExternal>
-              {number}
-            </Link>
-          ) : (
-            number
-          )}
+          <MaybeLink href={source.url}>Pull request #{source.number}</MaybeLink>
         </Text>
         {source.baseBranch ? (
           <Text variant="subtext" theme="neutral">
@@ -77,44 +71,18 @@ const TriggeredBy = ({
 
   if (source.kind === 'tag') {
     return (
-      <Text variant="subtext" flex>
+      <Text variant="body" weight="strong" flex>
         <Icon variant="TagIcon" />
-        Tag{' '}
-        {source.url ? (
-          <Link href={source.url} isExternal>
-            {source.tag}
-          </Link>
-        ) : (
-          <Text as="span" variant="subtext" family="mono">
+        <MaybeLink href={source.url}>
+          <Text as="span" variant="body" weight="strong" family="mono">
             {source.tag}
           </Text>
-        )}
+        </MaybeLink>
       </Text>
     )
   }
 
-  if (source.kind === 'manual') {
-    return (
-      <Text variant="subtext" flex>
-        <Icon variant="PlayIcon" />
-        Manual run
-      </Text>
-    )
-  }
-
-  return (
-    <Text variant="subtext" family="mono" flex>
-      <Icon variant="GitCommitIcon" />
-      Commit{' '}
-      {shortSha && shaUrl ? (
-        <Link href={shaUrl} isExternal>
-          {shortSha}
-        </Link>
-      ) : (
-        (shortSha ?? 'push')
-      )}
-    </Text>
-  )
+  return null
 }
 
 export const RunSourceCard = ({
@@ -126,59 +94,67 @@ export const RunSourceCard = ({
   status,
   commit,
 }: IRunSourceCard) => {
-  const shortSha = sha?.slice(0, 7)
+  const commitSha = commit?.sha ?? sha
+  const commitUrl = commit?.shaUrl ?? shaUrl
+  const commitAuthor = commit?.author ?? author
+  const message = commit?.message
+  const hasIdentity = source.kind === 'pull-request' || source.kind === 'tag'
 
   return (
-    <Card className="!p-4 !gap-3 min-w-0">
-      <span className="flex items-center justify-between gap-2">
-        <Text variant="label" theme="neutral">
-          {SOURCE_LABEL[source.kind]}
+    <section className="border rounded-xl bg-white dark:bg-dark-grey-900 shadow-sm overflow-hidden min-w-0">
+      <header className="flex items-center justify-between gap-3 px-5 py-4">
+        <Text variant="h3" weight="strong">
+          Run information
         </Text>
         <Status status={status} />
-      </span>
-      {commit ? (
-        <BranchRunCommit
-          showStatus={false}
-          displayVariant="stacked"
-          message={commit.message}
-          author={commit.author}
-          avatarUrl={commit.avatarUrl}
-          sha={commit.sha}
-          href={commit.shaUrl}
-          isExternal={!!commit.shaUrl}
-          createdAt={commit.createdAt}
-        />
-      ) : null}
-      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <Text variant="label" theme="neutral">
-          Triggered by
+      </header>
+      <div className="flex flex-col gap-3 p-5 border-t">
+        {hasIdentity ? <SourceIdentity source={source} /> : null}
+        <Text
+          variant="body"
+          weight={hasIdentity ? undefined : 'strong'}
+          className="break-words"
+        >
+          {message || title}
         </Text>
-        <TriggeredBy source={source} shortSha={shortSha} shaUrl={shaUrl} />
-      </span>
-      <Text variant="body" weight="strong">
-        {title}
-      </Text>
-      {commit ? null : (
-        <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          {shortSha ? (
-            <Text variant="subtext" family="mono" theme="neutral" flex>
-              <Icon variant="GitCommitIcon" />
-              {shaUrl ? (
-                <Link href={shaUrl} isExternal>
-                  {shortSha}
-                </Link>
-              ) : (
-                shortSha
-              )}
-            </Text>
-          ) : null}
-          {author ? (
-            <Text variant="subtext" family="mono" theme="neutral">
-              {author}
-            </Text>
-          ) : null}
+        {commitSha || commitAuthor || commit?.createdAt ? (
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            {commitSha ? (
+              <Text variant="subtext" family="mono" theme="neutral" flex>
+                <Icon variant="GitCommitIcon" />
+                <MaybeLink href={commitUrl}>{commitSha.slice(0, 7)}</MaybeLink>
+              </Text>
+            ) : null}
+            {commit?.avatarUrl ? (
+              <Avatar
+                src={commit.avatarUrl}
+                alt={commitAuthor ?? ''}
+                size="xs"
+                shape="circle"
+              />
+            ) : null}
+            {commitAuthor ? (
+              <Text variant="subtext" theme="neutral">
+                {commitAuthor}
+              </Text>
+            ) : null}
+            {commit?.createdAt ? (
+              <Time
+                variant="subtext"
+                theme="neutral"
+                time={commit.createdAt}
+                format="relative"
+              />
+            ) : null}
+          </span>
+        ) : null}
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <Text variant="label" theme="neutral">
+            Triggered by
+          </Text>
+          <Text variant="subtext">{TRIGGER_LABEL[source.kind]}</Text>
         </span>
-      )}
-    </Card>
+      </div>
+    </section>
   )
 }
