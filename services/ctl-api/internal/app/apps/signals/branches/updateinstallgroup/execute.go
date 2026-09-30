@@ -6,10 +6,12 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/installgrouperrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/installgroups"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateappconfig"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -31,12 +33,27 @@ const installVersionStatusVersion = "install-app-config-version-status-v1"
 // the resolved installs before any install workflow is created.
 const installMetadataBeforeEnqueueVersion = "install-metadata-before-enqueue-v1"
 
+// installUpdateFailedCompositeErrorVersion gates the step composite error that
+// names the install whose update failed. In-flight histories have no GetInstall
+// or status write between the group-run update and the return.
+const installUpdateFailedCompositeErrorVersion = "install-update-failed-composite-error-v1"
+
+// installUpdateFailedBranchRunErrorVersion gates copying that error onto the
+// app branch run, which the branch overview reads.
+const installUpdateFailedBranchRunErrorVersion = "install-update-failed-branch-run-error-v1"
+
 const statusPending = "pending"
 
 type enqueuedInstall struct {
 	installID  string
 	workflowID string
 	cb         callback.Ref
+}
+
+type installUpdateFailure struct {
+	installID  string
+	workflowID string
+	detail     string
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
@@ -112,7 +129,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	s.updateInstallMetadata(ctx, groupName, enqueued, nil)
 
-	completed, failed, awaitErr := s.awaitInstallUpdates(ctx, groupName, enqueued, groupRunID, installEntries)
+	completed, failed, failure, awaitErr := s.awaitInstallUpdates(ctx, groupName, enqueued, groupRunID, installEntries)
 
 	// workflow.Now, not time.Now: wall-clock reads are non-deterministic across
 	// replay, so the recorded completion time has to come from workflow time.
@@ -136,6 +153,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				StatusHumanDescription: desc,
 			},
 		})
+	}
+
+	if failure != nil {
+		s.recordInstallUpdateFailure(ctx, failure)
 	}
 
 	return awaitErr
@@ -209,19 +230,31 @@ func (s *Signal) awaitInstallUpdates(
 	enqueued []enqueuedInstall,
 	groupRunID string,
 	installEntries []app.InstallGroupRunInstall,
-) (int, int, error) {
+) (int, int, *installUpdateFailure, error) {
 	logger := workflow.GetLogger(ctx)
 
 	completed := 0
 	failed := 0
 	results := make(map[string]string, len(enqueued))
 	var errs []error
+	var failure *installUpdateFailure
+	noteFailure := func(installID, workflowID, detail string) {
+		if failure != nil {
+			return
+		}
+		failure = &installUpdateFailure{
+			installID:  installID,
+			workflowID: workflowID,
+			detail:     detail,
+		}
+	}
 
 	for i, e := range enqueued {
 		res, err := callback.AwaitWithTimeout(ctx, e.cb, callback.FallbackAwaitTimeout)
 		switch {
 		case err != nil:
 			errs = append(errs, fmt.Errorf("install %s workflow %s: %w", e.installID, e.workflowID, err))
+			noteFailure(e.installID, e.workflowID, err.Error())
 			results[e.installID] = statusError
 			failed++
 			installEntries[i].Status = statusError
@@ -237,6 +270,7 @@ func (s *Signal) awaitInstallUpdates(
 			}
 			errMsg := fmt.Sprintf("install %s workflow %s: finished as %s", e.installID, e.workflowID, status)
 			errs = append(errs, fmt.Errorf("%s", errMsg))
+			noteFailure(e.installID, e.workflowID, errMsg)
 			results[e.installID] = statusError
 			failed++
 			installEntries[i].Status = statusError
@@ -277,10 +311,70 @@ func (s *Signal) awaitInstallUpdates(
 	}
 
 	if len(errs) > 0 {
-		return completed, failed, fmt.Errorf("update install group had %d errors: %v", len(errs), errs)
+		return completed, failed, failure, fmt.Errorf("update install group had %d errors: %v", len(errs), errs)
 	}
 
-	return completed, failed, nil
+	return completed, failed, nil, nil
+}
+
+func (s *Signal) recordInstallUpdateFailure(ctx workflow.Context, failure *installUpdateFailure) {
+	logger := workflow.GetLogger(ctx)
+
+	onStep := s.StepID != "" &&
+		workflow.GetVersion(ctx, installUpdateFailedCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+	onBranchRun := workflow.GetVersion(ctx, installUpdateFailedBranchRunErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+	if !onStep && !onBranchRun {
+		return
+	}
+
+	name := failure.installID
+	install, err := activities.AwaitGetInstallByInstallID(ctx, failure.installID)
+	if err != nil {
+		logger.Warn("unable to load install for deploy failure", "install_id", failure.installID, "error", err)
+	} else if install != nil && install.Name != "" {
+		name = install.Name
+	}
+
+	if onBranchRun {
+		if _, err := activities.AwaitSetAppBranchRunInstallUpdateFailedError(ctx, activities.SetAppBranchRunInstallUpdateFailedErrorRequest{
+			RunID:       s.RunID,
+			InstallID:   failure.installID,
+			InstallName: name,
+			WorkflowID:  failure.workflowID,
+			Detail:      failure.detail,
+		}); err != nil {
+			logger.Warn("unable to record install update error on app branch run", "run_id", s.RunID, "error", err)
+		}
+	}
+
+	if !onStep {
+		return
+	}
+
+	data, err := compositeerrors.New(
+		&installgrouperrors.InstallUpdateFailedError{
+			InstallID:   failure.installID,
+			InstallName: name,
+			WorkflowID:  failure.workflowID,
+			Detail:      failure.detail,
+		},
+		compositeerrors.WithSource("installs", failure.installID),
+	)
+	if err != nil {
+		logger.Warn("unable to build install update composite error", "error", err)
+		return
+	}
+
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: s.StepID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusError,
+			StatusHumanDescription: data.Message,
+			CompositeError:         data,
+		},
+	}); err != nil {
+		logger.Warn("unable to record install update composite error", "step_id", s.StepID, "error", err)
+	}
 }
 
 func (s *Signal) Cancel(ctx workflow.Context) error {

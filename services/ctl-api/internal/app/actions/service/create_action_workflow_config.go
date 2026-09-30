@@ -92,6 +92,8 @@ type CreateActionWorkflowConfigRequest struct {
 
 	EnableKubeConfig *bool `json:"enable_kube_config" swaggertype:"boolean" extensions:"x-nullable"`
 
+	IsHealthcheck bool `json:"is_healthcheck"`
+
 	KubernetesContext string `json:"kubernetes_context,omitempty"`
 
 	Image string `json:"image,omitempty"`
@@ -296,6 +298,7 @@ func (s *service) createActionWorkflowConfig(ctx context.Context, parentApp *app
 		EnableKubeConfig:      req.EnableKubeConfig,
 		KubernetesContextName: req.KubernetesContext,
 		Image:                 req.Image,
+		IsHealthcheck:         req.IsHealthcheck,
 	})
 
 	res := s.db.WithContext(ctx).

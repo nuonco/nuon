@@ -64,7 +64,6 @@ func (s *service) GetInstallStatus(ctx *gin.Context) {
 func (s *service) getInstallStatus(ctx context.Context, orgID, installID string) (*InstallStatusResponse, error) {
 	var install app.Install
 	if err := s.db.WithContext(ctx).
-		Select("id", "health_cluster_error").
 		Where(app.Install{ID: installID, OrgID: orgID}).
 		First(&install).Error; err != nil {
 		return nil, fmt.Errorf("unable to get install: %w", err)
@@ -88,11 +87,45 @@ func (s *service) getInstallStatus(ctx context.Context, orgID, installID string)
 	}
 
 	now := time.Now()
+	health := healthCheckStatus(resources, declared, deployedComponentIDs(components), install.HealthClusterError, now)
+	checks, err := s.listInstallHealthchecks(ctx, orgID, install.ID, currentAppConfigID(&install))
+	if err != nil {
+		return nil, err
+	}
+	applyFailingHealthchecks(&health, failingHealthchecks(checks))
+
+	resourcesStatus := resourceStatus(resources, install.HealthClusterError, now)
+	drift, err := s.installConfigDrift(ctx, &install)
+	if err != nil {
+		return nil, err
+	}
+	if resourcesStatus.Metadata == nil {
+		resourcesStatus.Metadata = map[string]any{}
+	}
+	resourcesStatus.Metadata["config_drift"] = drift.driftedCount()
+
 	return &InstallStatusResponse{
 		Deployments:  deploymentStatus(components, now),
-		Resources:    resourceStatus(resources, install.HealthClusterError, now),
-		HealthChecks: healthCheckStatus(resources, declared, deployedComponentIDs(components), install.HealthClusterError, now),
+		Resources:    resourcesStatus,
+		HealthChecks: health,
 	}, nil
+}
+
+func applyFailingHealthchecks(status *app.CompositeStatus, failed int) {
+	if failed == 0 || status == nil {
+		return
+	}
+	status.Status = app.Status(app.InstallComponentHealthStatusUnhealthy)
+	status.StatusHumanDescription = "Unhealthy"
+	counts, _ := status.Metadata["counts"].(map[string]int)
+	if counts == nil {
+		counts = map[string]int{}
+		if status.Metadata == nil {
+			status.Metadata = map[string]any{}
+		}
+		status.Metadata["counts"] = counts
+	}
+	counts["unhealthy"] += failed
 }
 
 func deployedComponentIDs(components []app.InstallComponent) map[string]bool {

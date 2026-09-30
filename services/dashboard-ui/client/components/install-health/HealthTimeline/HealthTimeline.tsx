@@ -19,6 +19,7 @@ import type {
   THealthTimelineDay,
   TInstallComponentHealthTransition,
   TInstallHealthTimelineComponent,
+  TInstallHealthcheck,
 } from '@/types'
 import { cn } from '@/utils/classnames'
 import {
@@ -383,6 +384,8 @@ export interface IHealthTimeline {
   observedSeconds?: number
   currentHealth?: string
   components?: THealthTimelineComponent[]
+  healthchecks?: TInstallHealthcheck[]
+  getHealthcheckHref?: (check: TInstallHealthcheck) => string | undefined
   componentBasePath?: string
   getComponentHref?: (component: THealthTimelineComponentLink) => string
   groupByKind?: boolean
@@ -402,6 +405,8 @@ export const HealthTimeline = ({
   observedSeconds,
   currentHealth,
   components,
+  healthchecks,
+  getHealthcheckHref,
   componentBasePath,
   getComponentHref,
   groupByKind = false,
@@ -564,6 +569,30 @@ export const HealthTimeline = ({
           getComponentHref={getComponentHref}
         />
       ))}
+
+      {healthchecks?.length ? (
+        <div className="flex flex-col gap-2">
+          <Text variant="body" weight="strong">
+            Health checks
+          </Text>
+          {healthchecks.map((check) => {
+            const href = getHealthcheckHref?.(check)
+            return (
+              <div
+                key={check.action_id}
+                className="flex items-center justify-between gap-3"
+              >
+                {href ? (
+                  <Link href={href}>{check.name}</Link>
+                ) : (
+                  <Text>{check.name}</Text>
+                )}
+                <Status variant="badge" status={check.status} />
+              </div>
+            )
+          })}
+        </div>
+      ) : null}
 
       {scope === 'component' ? (
         <>

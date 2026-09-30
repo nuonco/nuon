@@ -4,7 +4,11 @@ import type {
   TInstall,
   TInstallWorkflowStep,
 } from '@/types'
-import { buildRolloutStages } from './rollout-stages'
+import {
+  buildRolloutStages,
+  deployStepForGroup,
+  planStepForGroup,
+} from './rollout-stages'
 
 const step = (
   over: Partial<TInstallWorkflowStep> & { name: string }
@@ -154,5 +158,20 @@ describe('buildRolloutStages', () => {
     })
 
     expect(stages[2].status).toBe('in-progress')
+  })
+})
+
+describe('planStepForGroup', () => {
+  test('returns only the plan step for that group', () => {
+    const steps = [
+      step({ id: 'plan-1', name: 'plan install group: group-1' }),
+      step({ id: 'deploy-1', name: 'deploy install group: group-1' }),
+      step({ id: 'plan-2', name: 'plan install group: group-2' }),
+    ]
+    expect(planStepForGroup(steps, 'group-1')?.id).toBe('plan-1')
+    expect(planStepForGroup(steps, 'Group-2')?.id).toBe('plan-2')
+    expect(planStepForGroup(steps, 'preview')).toBeUndefined()
+    expect(deployStepForGroup(steps, 'group-1')?.id).toBe('deploy-1')
+    expect(deployStepForGroup(steps, 'group-2')).toBeUndefined()
   })
 })

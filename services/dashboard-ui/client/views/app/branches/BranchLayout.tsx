@@ -72,10 +72,9 @@ const BranchTemplate = () => {
 
   const navLinks: TNavItem[] = [
     { path: `/`, iconVariant: 'GraphIcon', text: 'Overview' },
+    { path: `/installs`, iconVariant: 'CubeIcon', text: 'Installs' },
     { path: `/rollout`, iconVariant: 'StackIcon', text: 'Rollout' },
     { path: `/runs`, iconVariant: 'ListIcon', text: 'Previous runs' },
-    { path: `/settings`, iconVariant: 'GearIcon', text: 'Settings' },
-    { path: `/installs`, iconVariant: 'CubeIcon', text: 'Installs' },
     ...(hasInstallSyncing
       ? [
           {
@@ -85,6 +84,7 @@ const BranchTemplate = () => {
           },
         ]
       : []),
+    { path: `/settings`, iconVariant: 'GearIcon', text: 'Settings' },
     {
       type: 'section',
       label: 'App template',
@@ -171,7 +171,6 @@ const BranchTemplate = () => {
           {latestRun && params.runId !== latestRun.id ? (
             <BranchPendingApprovals
               run={latestRun}
-              runHref={`${basePath}/runs/${latestRun.id}`}
               className="px-4 md:px-6 pt-4 md:pt-6"
             />
           ) : null}

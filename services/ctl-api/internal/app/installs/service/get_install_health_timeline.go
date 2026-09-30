@@ -21,6 +21,7 @@ type InstallComponentHealthSummary struct {
 	// built from the install-component id instead dead-ends on an empty page.
 	ComponentID   string  `json:"component_id"`
 	ComponentName string  `json:"component_name"`
+	ComponentType string  `json:"component_type,omitempty"`
 	CurrentHealth string  `json:"current_health"`
 	UptimePercent float64 `json:"uptime_percent"`
 	// ObservedSeconds distinguishes "no data" from "0% up" — without it a
@@ -36,6 +37,7 @@ type InstallHealthTimelineResponse struct {
 	ObservedSeconds int64                           `json:"observed_seconds"`
 	Daily           []dailyHealthBucket             `json:"daily"`
 	Components      []InstallComponentHealthSummary `json:"components"`
+	Healthchecks    []InstallHealthcheck            `json:"healthchecks"`
 
 	// ClusterAccessError is why health cannot currently inspect the install's
 	// cluster, empty when it can. Surfaced once here rather than per component.
@@ -143,6 +145,7 @@ func (s *service) getInstallHealthTimeline(ctx context.Context, orgID, installID
 			InstallComponentID: c.ID,
 			ComponentID:        c.ComponentID,
 			ComponentName:      c.Component.Name,
+			ComponentType:      string(c.Component.Type),
 			CurrentHealth:      string(c.HealthStatus),
 			UptimePercent:      uptime,
 			ObservedSeconds:    totals.observedSeconds(),
@@ -165,12 +168,18 @@ func (s *service) getInstallHealthTimeline(ctx context.Context, orgID, installID
 	// never a reason to fail it. Blanking the whole health view because one
 	// column could not be read would be far worse than omitting the banner.
 	var install app.Install
+	healthchecks := []InstallHealthcheck{}
 	if err := s.db.WithContext(ctx).
-		Select("id", "health_cluster_error").
+		Select("id", "org_id", "app_config_id", "app_config_ref", "health_cluster_error").
 		Where(app.Install{ID: installID, OrgID: orgID}).
 		First(&install).Error; err != nil {
-		s.l.Warn("unable to read install cluster access error",
+		s.l.Warn("unable to read install for health timeline",
 			zap.String("install_id", installID), zap.Error(err))
+	} else {
+		healthchecks, err = s.listInstallHealthchecks(ctx, orgID, installID, currentAppConfigID(&install))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	resp := &InstallHealthTimelineResponse{
@@ -179,6 +188,7 @@ func (s *service) getInstallHealthTimeline(ctx context.Context, orgID, installID
 		CurrentHealth:      string(currentHealth),
 		Daily:              worstDailyAcrossComponents(dailyPerComponent, windowFrom, days),
 		Components:         summaries,
+		Healthchecks:       healthchecks,
 		ClusterAccessError: install.HealthClusterError,
 	}
 	if worstFound {

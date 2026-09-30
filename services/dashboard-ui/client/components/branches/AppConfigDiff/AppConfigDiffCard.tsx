@@ -1,3 +1,4 @@
+import { EmptyState } from '@/components/common/EmptyState'
 import { Expand } from '@/components/common/Expand'
 import { Text } from '@/components/common/Text'
 import { ChangeCountSummary } from '@/components/approvals/plan-diffs/ChangeCountSummary'
@@ -17,6 +18,7 @@ export interface IAppConfigDiffCard {
   title?: string
   headerAction?: ReactNode
   isLoading?: boolean
+  isPending?: boolean
   isOpen?: boolean
   focus?: TConfigDiffFocus | null
   className?: string
@@ -31,12 +33,15 @@ export const AppConfigDiffCard = ({
   title = 'Config changes',
   headerAction,
   isLoading = false,
+  isPending = false,
   isOpen = true,
   focus,
   className,
   presentation = 'diff',
   expandId = 'config-changes',
 }: IAppConfigDiffCard) => {
+  const showPending = isPending && sections.length === 0
+
   return (
     <Expand
       id={expandId}
@@ -57,28 +62,43 @@ export const AppConfigDiffCard = ({
             </Text>
           )}
           <div className="ml-auto flex items-center gap-3">
-            {!isLoading && presentation === 'diff' && (
+            {showPending ? (
+              <Text variant="subtext" theme="neutral">
+                Pending
+              </Text>
+            ) : !isLoading && presentation === 'diff' ? (
               <ChangeCountSummary
                 added={summary?.added ?? 0}
                 updated={summary?.changed ?? 0}
                 removed={summary?.removed ?? 0}
                 emptyText="No changes"
               />
-            )}
+            ) : null}
             {headerAction}
           </div>
         </div>
       }
     >
       <div className="p-5 border-t max-h-[70vh] overflow-y-auto">
-        <AppConfigDiff
-          sections={sections}
-          summary={null}
-          isLoading={isLoading}
-          defaultSectionsOpen={presentation === 'snapshot'}
-          focus={focus}
-          presentation={presentation}
-        />
+        {showPending ? (
+          <div className="px-4 py-3 text-center">
+            <EmptyState
+              emptyTitle="Changes pending"
+              emptyMessage="Changes appear after the app config builds."
+              variant="diagram"
+              size="sm"
+            />
+          </div>
+        ) : (
+          <AppConfigDiff
+            sections={sections}
+            summary={null}
+            isLoading={isLoading}
+            defaultSectionsOpen={presentation === 'snapshot'}
+            focus={focus}
+            presentation={presentation}
+          />
+        )}
       </div>
     </Expand>
   )

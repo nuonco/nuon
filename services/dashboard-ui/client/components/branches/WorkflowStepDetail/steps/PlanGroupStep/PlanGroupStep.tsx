@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Banner } from '@/components/common/Banner'
+import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { Link } from '@/components/common/Link'
@@ -25,6 +26,9 @@ export interface PlanInstallDiff {
   isLoading?: boolean
 }
 
+const INSTALL_CARD =
+  'rounded-xl border bg-white shadow-sm dark:bg-dark-grey-900'
+
 interface IPlanGroupStep {
   installs: PlanInstallDiff[]
   groupName?: string
@@ -35,6 +39,12 @@ interface IPlanGroupStep {
   showApproveBar: boolean
   isInProgress: boolean
   actions?: ReactNode
+  hideHeading?: boolean
+  onSelectInstall?: (installId: string) => void
+  installFacts?: Record<
+    string,
+    { labels?: Record<string, string>; region?: string }
+  >
 }
 
 export const PlanGroupStep = ({
@@ -47,12 +57,15 @@ export const PlanGroupStep = ({
   showApproveBar,
   isInProgress: _isInProgress,
   actions,
+  hideHeading = false,
+  onSelectInstall,
+  installFacts,
 }: IPlanGroupStep) => {
   const installLink = useInstallLink()
   return (
     <>
       {(hasResponse || showApproveBar) && (
-        <StepBlock>
+        <StepBlock className={hideHeading ? 'px-0 pt-0 sm:px-0' : undefined}>
           {hasResponse && (
             <Banner theme={getApprovalResponseTheme(responseType)}>
               <Text weight="strong">
@@ -84,57 +97,32 @@ export const PlanGroupStep = ({
         </StepBlock>
       )}
 
-      <StepBlock>
-        <div className="flex items-center gap-3">
-          <Icon variant="ListChecksIcon" size="16" />
-          <Text variant="base" weight="strong">
-            {groupName || 'Install group'}
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            {installs.length} {installs.length === 1 ? 'install' : 'installs'}
-          </Text>
-        </div>
-      </StepBlock>
+      {hideHeading ? null : (
+        <StepBlock>
+          <div className="flex items-center gap-3">
+            <Icon variant="ListChecksIcon" size="16" />
+            <Text variant="base" weight="strong">
+              {groupName || 'Install group'}
+            </Text>
+            <Text variant="subtext" theme="neutral">
+              {installs.length} {installs.length === 1 ? 'install' : 'installs'}
+            </Text>
+          </div>
+        </StepBlock>
+      )}
 
-      <StepRowList>
+      <StepRowList className={hideHeading ? 'gap-2 divide-y-0' : undefined}>
         {installs.map((inst) => {
           const total =
             (inst.summary?.added ?? 0) +
             (inst.summary?.removed ?? 0) +
             (inst.summary?.changed ?? 0)
           const hasChanges = total > 0 && inst.sections.length > 0
-          const labelEntries = inst.installLabels
-            ? Object.entries(inst.installLabels)
-            : []
+          const facts = installFacts?.[inst.installId]
+          const labels = inst.installLabels ?? facts?.labels
+          const labelEntries = labels ? Object.entries(labels) : []
+          const region = facts?.region
           const installLabel = inst.installName || inst.installId
-
-          const heading = (
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 min-w-0 flex-1">
-              {orgId && inst.installId ? (
-                <Link
-                  href={installLink({ orgId: orgId, installId: inst.installId })}
-                  textVariant="body"
-                  className="font-strong break-words"
-                >
-                  {installLabel}
-                </Link>
-              ) : (
-                <Text weight="strong" className="break-words">
-                  {installLabel}
-                </Text>
-              )}
-              {labelEntries.map(([k, v]) => (
-                <LabelBadge
-                  key={k}
-                  labelKey={k}
-                  labelValue={v}
-                  size="sm"
-                  className="shrink-0"
-                  customColor={labelColors?.[k]}
-                />
-              ))}
-            </div>
-          )
 
           const changeSummary = inst.isLoading ? (
             <Text variant="subtext" theme="neutral" className="shrink-0">
@@ -150,14 +138,82 @@ export const PlanGroupStep = ({
             />
           )
 
+          const name =
+            onSelectInstall && inst.installId ? (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onSelectInstall(inst.installId)
+                }}
+                className="text-left font-strong break-words hover:underline"
+              >
+                {installLabel}
+              </button>
+            ) : orgId && inst.installId ? (
+              <Link
+                href={installLink({
+                  orgId: orgId,
+                  installId: inst.installId,
+                })}
+                textVariant="body"
+                className="font-strong break-words"
+              >
+                {installLabel}
+              </Link>
+            ) : (
+              <Text weight="strong" className="break-words">
+                {installLabel}
+              </Text>
+            )
+
+          const heading = (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 min-w-0 flex-1">
+              {name}
+              {hideHeading ? changeSummary : null}
+              {labelEntries.map(([k, v]) => (
+                <LabelBadge
+                  key={k}
+                  labelKey={k}
+                  labelValue={v}
+                  size="sm"
+                  className="shrink-0"
+                  customColor={labelColors?.[k]}
+                />
+              ))}
+              {region ? (
+                <Text variant="subtext" theme="neutral" className="shrink-0">
+                  {region}
+                </Text>
+              ) : null}
+              {onSelectInstall ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="ml-auto shrink-0"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onSelectInstall(inst.installId)
+                  }}
+                >
+                  Details
+                </Button>
+              ) : null}
+            </div>
+          )
+
           if (!hasChanges) {
             return (
               <div
                 key={inst.installId}
-                className={cn('flex items-start gap-3 py-3', STEP_GUTTER)}
+                className={cn(
+                  'flex items-start gap-3 py-3',
+                  STEP_GUTTER,
+                  hideHeading && INSTALL_CARD
+                )}
               >
                 {heading}
-                {changeSummary}
+                {hideHeading ? null : changeSummary}
                 <Icon
                   variant="CaretDownIcon"
                   className="invisible shrink-0"
@@ -173,9 +229,10 @@ export const PlanGroupStep = ({
               id={`plan-install-${inst.installId}`}
               interactiveHeading
               toggleLabel={`Show plan changes for ${installLabel}`}
-              toggleContent={changeSummary}
+              toggleContent={hideHeading ? undefined : changeSummary}
               heading={heading}
               headerClassName={cn(STEP_GUTTER, 'py-3')}
+              className={hideHeading ? INSTALL_CARD : undefined}
             >
               <div className="border-t bg-black/[0.015] dark:bg-white/[0.0075]">
                 <AppConfigDiff

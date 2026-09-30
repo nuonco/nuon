@@ -33,6 +33,7 @@ import {
 import { getRunTitle } from '@/components/branches/shared/run-title'
 import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
 import { WorkflowChangesLink } from '@/components/workflows/WorkflowChangesSummary'
+import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import { useOrg } from '@/hooks/use-org'
 import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
@@ -46,6 +47,7 @@ import { getBranchRunComparison, getBranchWorkflowRun } from '@/lib'
 import type { TBranchRunComparisonRunSummary } from '@/lib/ctl-api/apps/branches/get-branch-run-comparison'
 
 const BranchRunDetailContent = () => {
+  const hasNewAppIA = useNewAppIA()
   const { org } = useOrg()
   const { app } = useApp()
   const { branch } = useBranch()
@@ -247,7 +249,9 @@ const BranchRunDetailContent = () => {
                     path={`/workflows/${run.id}`}
                     label="admin"
                   />
-                  <WorkflowRunPanelButton runId={run.id!} />
+                  {hasNewAppIA ? null : (
+                    <WorkflowRunPanelButton runId={run.id!} />
+                  )}
                   <CancelWorkflowButton workflow={run} />
                 </>
               }
