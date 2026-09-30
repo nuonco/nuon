@@ -1,9 +1,10 @@
 import { InstallActionsList } from '@/components/actions/InstallActionsList'
-import { Text } from '@/components/common/Text'
+import { ActivityList } from '@/components/operations/ActivityList'
 import { ActivityPins } from '@/components/operations/ActivityPins'
 import { InstallPolicyReports } from '@/components/policies/InstallPolicyReports'
 import { InstallRunbooksList } from '@/components/runbooks/InstallRunbooksList'
 import { InstallRunner } from '@/components/runners/InstallRunner'
+import { InstallWorkflowPanelController } from '@/components/workflows/InstallWorkflowPanel'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 
@@ -15,8 +16,9 @@ export const NewInstallActivity = () => {
       <PageTitle segments={['Activity', install?.name]} />
       <div className="flex flex-col gap-6">
         <ActivityPins />
-        <Text theme="neutral">Placeholder content.</Text>
+        <ActivityList shouldPoll />
       </div>
+      <InstallWorkflowPanelController />
     </>
   )
 }

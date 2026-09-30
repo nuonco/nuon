@@ -44,7 +44,12 @@ export type TAppBranchRunConfig = {
 
 export type TAppBranchRunMetadata = {
   trigger?:
-    'manual' | 'push' | 'pull_request' | 'tag' | 'github_label' | 'onboarding'
+    | 'manual'
+    | 'push'
+    | 'pull_request'
+    | 'tag'
+    | 'github_label'
+    | 'onboarding'
   head_sha?: string
   git_ref?: string
   base_branch?: string
@@ -57,7 +62,10 @@ export type TAppBranchRunMetadata = {
 }
 
 export type TAppBranchRunPreviewMode =
-  'none' | 'plan-only' | 'apply' | 'build-only'
+  | 'none'
+  | 'plan-only'
+  | 'apply'
+  | 'build-only'
 export type TAppBranchRunPreviewSource = 'pr' | 'commit' | 'branch' | 'local'
 
 export type TAppBranchPreviewConfig = {
@@ -310,7 +318,12 @@ export type TTriggerEventRaw = {
 }
 
 export type TTriggerAuthType =
-  'none' | 'hmac' | 'api_key' | 'basic' | 'bearer_jwt' | 'sns_signature'
+  | 'none'
+  | 'hmac'
+  | 'api_key'
+  | 'basic'
+  | 'bearer_jwt'
+  | 'sns_signature'
 
 export type TTriggerEnvelope = 'none' | 'pubsub_push' | 'cloudevents' | 'sns'
 
@@ -989,7 +1002,10 @@ export interface TRoleInfo {
 }
 
 export type TRoleContext =
-  'team' | 'service_account' | 'api_token' | 'oidc_trust_policy'
+  | 'team'
+  | 'service_account'
+  | 'api_token'
+  | 'oidc_trust_policy'
 
 export interface TCreateServiceAccountBody {
   name: string
@@ -1422,6 +1438,50 @@ export type TInstallDeploymentRecord = {
 
 export type TInstallDeploymentsResponse = {
   deployments: TInstallDeploymentRecord[]
+  page: number
+  offset: number
+  limit: number
+  has_more: boolean
+}
+
+export type TInstallActivityType = 'action_run' | 'runbook_run' | 'policy_check'
+
+export type TInstallActivity = {
+  id: string
+  type: TInstallActivityType
+  status: string
+  created_at: string
+  title: string
+  summary: string
+  workflow?: {
+    id: string
+    type: string
+    name: string
+  }
+  action?: {
+    run_id: string
+    action_workflow_id?: string
+    name?: string
+    trigger_type?: string
+  }
+  runbook?: {
+    run_id: string
+    runbook_id?: string
+    name?: string
+  }
+  policy?: {
+    report_id: string
+    owner_type: string
+    owner_id: string
+    component_name?: string
+    deny_count: number
+    warn_count: number
+    pass_count: number
+  }
+}
+
+export type TInstallActivityResponse = {
+  activity: TInstallActivity[]
   page: number
   offset: number
   limit: number
