@@ -248,10 +248,16 @@ func (s *service) listActivityActionRuns(
 	query := s.db.WithContext(ctx).
 		Preload("InstallActionWorkflow.ActionWorkflow").
 		Where(app.InstallActionWorkflowRun{OrgID: orgID, InstallID: installID}).
-		Order("created_at DESC").
+		Where(`install_workflow_id IS NULL OR EXISTS (
+			SELECT 1
+			FROM install_workflows
+			WHERE install_workflows.id = install_action_workflow_runs.install_workflow_id
+			  AND install_workflows.type = ?
+		)`, app.WorkflowTypeActionWorkflowRun).
+		Order("install_action_workflow_runs.created_at DESC").
 		Limit(fetchLimit)
-	query = applyActivityStatusFilter(query, "status", filterStatuses)
-	query = applyActivityTimeFilter(query, "created_at", createdAtGte, createdAtLte)
+	query = applyActivityStatusFilter(query, "install_action_workflow_runs.status", filterStatuses)
+	query = applyActivityTimeFilter(query, "install_action_workflow_runs.created_at", createdAtGte, createdAtLte)
 	for _, token := range strings.Fields(search) {
 		like := "%" + token + "%"
 		query = query.Where(`install_action_workflow_runs.id ILIKE ? OR EXISTS (
@@ -383,7 +389,7 @@ func actionRunActivity(run *app.InstallActionWorkflowRun) InstallActivity {
 	if title == "" {
 		title = "Action run"
 	}
-	summary := run.StatusDescription
+	summary := actionRunActivitySummary(run)
 	if summary == "" {
 		summary = string(run.TriggerType)
 	}
@@ -407,6 +413,23 @@ func actionRunActivity(run *app.InstallActionWorkflowRun) InstallActivity {
 		},
 	}
 	return item
+}
+
+func actionRunActivitySummary(run *app.InstallActionWorkflowRun) string {
+	if run.CompositeError != nil && run.CompositeError.Message != "" {
+		return run.CompositeError.Message
+	}
+
+	description := run.StatusDescription
+	normalized := strings.ToLower(description)
+	if strings.Contains(normalized, "runner did not pick up the job within the available timeout") ||
+		strings.Contains(normalized, "runner did not reserve it before the pickup timeout") ||
+		(strings.Contains(normalized, "runner") &&
+			strings.Contains(normalized, "pick up") &&
+			strings.Contains(normalized, "timeout")) {
+		return "Runner did not pick up the job before it timed out."
+	}
+	return description
 }
 
 func runbookRunActivity(run *app.InstallRunbookRun) InstallActivity {
