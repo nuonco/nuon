@@ -3,6 +3,7 @@ package apps
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
@@ -101,16 +102,23 @@ func (s *Service) CreateBranch(ctx context.Context, appID, name string, asJSON b
 }
 
 // TriggerBranchRunOptions carries the optional inputs for a branch run. Preview
-// and pull request inputs live on `branches preview` instead.
+// inputs live on `branches preview` instead.
 type TriggerBranchRunOptions struct {
-	Force  bool
-	NoWait bool
+	Force   bool
+	NoWait  bool
+	RunType string
+	RunRef  string
 }
 
 func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, opts TriggerBranchRunOptions, asJSON bool) error {
 	view := ui.NewGetView()
 
-	appID, err := s.resolveAppID(ctx, appID)
+	runType, err := branchRunSource(opts.RunType, opts.RunRef)
+	if err != nil {
+		return view.Error(err)
+	}
+
+	appID, err = s.resolveAppID(ctx, appID)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -121,7 +129,9 @@ func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, 
 	}
 
 	req := &models.ServiceTriggerAppBranchRunRequest{
-		Force: opts.Force,
+		Force:   opts.Force,
+		RunType: runType,
+		RunRef:  opts.RunRef,
 	}
 
 	run, err := s.api.TriggerAppBranchRun(ctx, appID, branchID, req)
@@ -141,6 +151,29 @@ func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, 
 
 	workflow.WorkflowApp(ctx, s.cfg, s.api, "", run.WorkflowID, false)
 	return nil
+}
+
+func branchRunSource(runType, runRef string) (models.ServiceTriggerAppBranchRunSource, error) {
+	if runType == "" && runRef == "" {
+		return "", nil
+	}
+	if runType == "" || runRef == "" {
+		return "", fmt.Errorf("--run-type and --run-ref must be set together")
+	}
+	switch models.ServiceTriggerAppBranchRunSource(runType) {
+	case models.ServiceTriggerAppBranchRunSourcePr:
+		n, err := strconv.Atoi(runRef)
+		if err != nil || n <= 0 {
+			return "", fmt.Errorf("--run-ref must be a positive integer when --run-type is pr")
+		}
+		return models.ServiceTriggerAppBranchRunSourcePr, nil
+	case models.ServiceTriggerAppBranchRunSourceTag:
+		return models.ServiceTriggerAppBranchRunSourceTag, nil
+	case models.ServiceTriggerAppBranchRunSourceCommit:
+		return models.ServiceTriggerAppBranchRunSourceCommit, nil
+	default:
+		return "", fmt.Errorf("--run-type must be one of pr, tag, commit")
+	}
 }
 
 func (s *Service) ListBranchRuns(ctx context.Context, appID, branchID string, asJSON bool) error {
