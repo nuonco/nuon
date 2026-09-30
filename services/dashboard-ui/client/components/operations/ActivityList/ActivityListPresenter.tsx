@@ -63,17 +63,17 @@ const ActivityCard = ({
   onViewDetails,
 }: IActivityCard) => {
   const installLink = useInstallLink()
-  const subjectHref = activity.action?.action_workflow_id
+  const subjectHref = activity.action?.name
     ? installLink({
         orgId,
         installId,
-        suffix: `/actions/${activity.action.action_workflow_id}/runs/${activity.action.run_id}`,
+        suffix: `/operations/actions?q=${encodeURIComponent(activity.action.name)}`,
       })
-    : activity.runbook?.runbook_id
+    : activity.runbook?.name
       ? installLink({
           orgId,
           installId,
-          suffix: `/runbooks/${activity.runbook.runbook_id}`,
+          suffix: `/operations/runbooks?q=${encodeURIComponent(activity.runbook.name)}`,
         })
       : undefined
   const subjectLabel =

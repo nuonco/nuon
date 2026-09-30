@@ -2,7 +2,9 @@ export default {
   title: 'Features / Policies / Install policy reports',
 }
 
+import { useState } from 'react'
 import { Button } from '@/components/common/Button'
+import type { TCollectionView } from '@/components/common/CollectionViewToggle'
 import { groupPolicyReports } from '@/components/policies/PolicyReportsTable'
 import type { TPolicyReport, TPolicyResult, TPolicyViolation } from '@/types'
 import { InstallPolicyReports } from './InstallPolicyReports'
@@ -74,7 +76,11 @@ const sandboxWarn: TPolicyReport = {
   status: { status: 'warning', status_human_description: 'Policy warnings.' },
   policies: [result('pol-3', 'warn', 2)],
   violations: [
-    violation('pol-3', 'warn', 'EKS API server endpoint is publicly accessible'),
+    violation(
+      'pol-3',
+      'warn',
+      'EKS API server endpoint is publicly accessible'
+    ),
     violation('pol-3', 'warn', 'Cluster logging is disabled'),
   ],
 } as TPolicyReport
@@ -123,6 +129,20 @@ export const Default = () => (
   />
 )
 
+export const Grid = () => {
+  const [view, setView] = useState<TCollectionView>('grid')
+  return (
+    <InstallPolicyReports
+      rows={rows}
+      view={view}
+      onViewChange={setView}
+      orgId="org-1"
+      policyNameMap={policyNameMap}
+      filterActions={filter}
+    />
+  )
+}
+
 export const AllPassed = () => (
   <InstallPolicyReports
     rows={groupPolicyReports([passed])}
@@ -150,11 +170,7 @@ export const NoResults = () => (
 )
 
 export const Empty = () => (
-  <InstallPolicyReports
-    rows={[]}
-    orgId="org-1"
-    policyNameMap={policyNameMap}
-  />
+  <InstallPolicyReports rows={[]} orgId="org-1" policyNameMap={policyNameMap} />
 )
 
 export const Loading = () => (

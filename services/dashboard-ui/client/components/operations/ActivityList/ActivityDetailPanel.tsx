@@ -29,19 +29,18 @@ export const ActivityDetailPanel = ({
   installId: string
 } & Partial<IPanel>) => {
   const installLink = useInstallLink()
-  const actionHref =
-    activity.action?.action_workflow_id && activity.action.run_id
-      ? installLink({
-          orgId,
-          installId,
-          suffix: `/actions/${activity.action.action_workflow_id}/runs/${activity.action.run_id}`,
-        })
-      : undefined
-  const runbookHref = activity.runbook?.runbook_id
+  const actionHref = activity.action?.name
     ? installLink({
         orgId,
         installId,
-        suffix: `/runbooks/${activity.runbook.runbook_id}`,
+        suffix: `/operations/actions?q=${encodeURIComponent(activity.action.name)}`,
+      })
+    : undefined
+  const runbookHref = activity.runbook?.name
+    ? installLink({
+        orgId,
+        installId,
+        suffix: `/operations/runbooks?q=${encodeURIComponent(activity.runbook.name)}`,
       })
     : undefined
 

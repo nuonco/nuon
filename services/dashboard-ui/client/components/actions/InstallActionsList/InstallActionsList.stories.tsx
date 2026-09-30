@@ -2,7 +2,9 @@ export default {
   title: 'Features / Actions / Install actions list',
 }
 
+import { useState } from 'react'
 import { Button } from '@/components/common/Button'
+import type { TCollectionView } from '@/components/common/CollectionViewToggle'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Banner } from '@/components/common/Banner'
 import { Text } from '@/components/common/Text'
@@ -59,7 +61,10 @@ const items: TInstallActionListItem[] = [
     name: 'notify-slack',
     latestRun: latestRun({
       ...run,
-      status_v2: { status: 'error', status_human_description: 'Action failed.' },
+      status_v2: {
+        status: 'error',
+        status_human_description: 'Action failed.',
+      },
     } as TInstallActionRun),
   }),
 ]
@@ -79,6 +84,25 @@ export const Default = () => (
     pagination={{ hasNext: true, offset: 0, limit: 10 }}
   />
 )
+
+export const Grid = () => {
+  const [view, setView] = useState<TCollectionView>('grid')
+  return (
+    <InstallActionsList
+      items={items}
+      view={view}
+      onViewChange={setView}
+      actions={<Button variant="secondary">Run adhoc action</Button>}
+      search={
+        <SearchInput
+          placeholder="Search by name or ID..."
+          value=""
+          onChange={() => {}}
+        />
+      }
+    />
+  )
+}
 
 export const NeverRun = () => (
   <InstallActionsList
