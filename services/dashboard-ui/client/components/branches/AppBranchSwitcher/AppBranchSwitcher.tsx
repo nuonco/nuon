@@ -17,6 +17,7 @@ export interface IAppBranchSwitcher {
   currentBranch: TAppBranch
   orgId: string
   appId: string
+  sectionPath?: string
   isLoading: boolean
 }
 
@@ -25,6 +26,7 @@ export const AppBranchSwitcher = ({
   currentBranch,
   orgId,
   appId,
+  sectionPath = '',
   isLoading,
 }: IAppBranchSwitcher) => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -82,7 +84,7 @@ export const AppBranchSwitcher = ({
             return (
               <Link
                 key={b.id}
-                href={`/${orgId}/apps/${appId}/branches/${b.id}`}
+                href={`/${orgId}/apps/${appId}/branches/${b.id}${sectionPath}`}
                 variant="ghost"
                 className={cn('items-center', {
                   '!text-primary-600 dark:!text-primary-400': isCurrent,
