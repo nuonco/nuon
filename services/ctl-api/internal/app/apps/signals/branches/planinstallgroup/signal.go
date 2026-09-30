@@ -98,7 +98,9 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.Wrap(err, "app branch run not found")
 	}
 
-	if run.AppConfigID == "" {
+	// A run with no config changes legitimately has no app config; Execute
+	// skips it before the ID would be needed.
+	if run.AppConfigID == "" && !(run.NoConfigChanges && !run.Force) {
 		return fmt.Errorf("app branch run %s has no app config ID", s.RunID)
 	}
 
