@@ -9,9 +9,9 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
+import { WorkflowPanelLink } from '@/components/workflows/InstallWorkflowPanel'
 import type { TInstallDeploymentRecord } from '@/types'
 import { humanize } from '@/utils/string-utils'
-import { useInstallLink } from '@/hooks/use-install-path'
 
 const CHANGE_THEME = {
   add: 'success',
@@ -125,17 +125,11 @@ export const DeploymentDetailPanel = ({
   deployment,
   orgId,
   appId,
-  installId,
   ...props
 }: IDeploymentDetailPanel) => {
-  const installLink = useInstallLink()
   const branchHref = deployment.app_branch
     ? `/${orgId}/apps/${appId}/branches/${deployment.app_branch.id}`
     : undefined
-  const workflowHref = deployment.workflow
-    ? installLink({ orgId: orgId, installId: installId, suffix: `/deployments/${deployment.workflow.id}` })
-    : undefined
-
   return (
     <Panel heading={deployment.title} size="half" {...props}>
       <div className="flex items-center gap-2 flex-wrap">
@@ -174,10 +168,12 @@ export const DeploymentDetailPanel = ({
             </span>
           </LabeledValue>
         )}
-        {deployment.workflow && workflowHref && (
+        {deployment.workflow && (
           <LabeledValue label="Workflow">
             <span className="flex items-center gap-2 flex-wrap">
-              <Link href={workflowHref}>{deployment.workflow.name}</Link>
+              <WorkflowPanelLink workflowId={deployment.workflow.id}>
+                {deployment.workflow.name}
+              </WorkflowPanelLink>
               <Badge size="sm" theme="neutral">
                 {humanize(deployment.workflow.type)}
               </Badge>

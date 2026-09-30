@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useNavigate } from 'react-router'
+import { useSearchParams } from 'react-router'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
@@ -13,6 +13,7 @@ import { SearchInput } from '@/components/common/SearchInput'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { WorkflowPanelLink } from '@/components/workflows/InstallWorkflowPanel'
 import { usePagination } from '@/hooks/use-pagination'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { PaginationProvider } from '@/providers/pagination-provider'
@@ -29,7 +30,6 @@ import {
   type TWorkflowStatusOption,
 } from '@/utils/workflow-filters'
 import { DeploymentDetailPanel } from './DeploymentDetailPanel'
-import { useInstallLink } from '@/hooks/use-install-path'
 
 export const DEPLOYMENT_TYPE_LABELS: Record<
   TInstallDeploymentRecordType,
@@ -69,15 +69,10 @@ const DeploymentCard = ({
   deployment,
   orgId,
   appId,
-  installId,
   onViewDetails,
 }: IDeploymentCard) => {
-  const installLink = useInstallLink()
   const branchHref = deployment.app_branch
     ? `/${orgId}/apps/${appId}/branches/${deployment.app_branch.id}`
-    : undefined
-  const workflowHref = deployment.workflow
-    ? installLink({ orgId: orgId, installId: installId, suffix: `/deployments/${deployment.workflow.id}` })
     : undefined
 
   const affectedResources = [
@@ -140,14 +135,17 @@ const DeploymentCard = ({
             )}
           </span>
         )}
-        {deployment.workflow && workflowHref && (
+        {deployment.workflow && (
           <span className="flex items-center gap-2">
             <Text as="span" variant="subtext" theme="neutral">
               Workflow
             </Text>
-            <Link href={workflowHref} textVariant="subtext">
+            <WorkflowPanelLink
+              workflowId={deployment.workflow.id}
+              textVariant="subtext"
+            >
               {deployment.workflow.name}
-            </Link>
+            </WorkflowPanelLink>
           </span>
         )}
       </div>
@@ -280,8 +278,7 @@ const DeploymentsListBase = ({
   onClearFilters,
 }: IDeploymentsListPresenter) => {
   const { addPanel } = useSurfaces()
-  const navigate = useNavigate()
-  const installLink = useInstallLink()
+  const [, setSearchParams] = useSearchParams()
   const { isPaginating, setIsPaginating } = usePagination()
 
   useEffect(() => {
@@ -406,13 +403,15 @@ const DeploymentsListBase = ({
               appId={appId}
               installId={installId}
               onViewDetails={() => {
-                if (deployment.workflow?.id) {
-                  navigate(
-                    installLink({
-                      orgId,
-                      installId,
-                      suffix: `/deployments/${deployment.workflow.id}`,
-                    })
+                const workflowId = deployment.workflow?.id
+                if (workflowId) {
+                  setSearchParams(
+                    (current) => {
+                      const next = new URLSearchParams(current)
+                      next.set('workflow', workflowId)
+                      return next
+                    },
+                    { replace: true }
                   )
                   return
                 }

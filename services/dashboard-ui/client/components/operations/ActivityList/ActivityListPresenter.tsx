@@ -12,6 +12,7 @@ import { SearchInput } from '@/components/common/SearchInput'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { WorkflowPanelLink } from '@/components/workflows/InstallWorkflowPanel'
 import { useInstallLink } from '@/hooks/use-install-path'
 import { usePagination } from '@/hooks/use-pagination'
 import { useSurfaces } from '@/hooks/use-surfaces'
@@ -62,13 +63,6 @@ const ActivityCard = ({
   onViewDetails,
 }: IActivityCard) => {
   const installLink = useInstallLink()
-  const workflowHref = activity.workflow
-    ? installLink({
-        orgId,
-        installId,
-        suffix: `/deployments/${activity.workflow.id}`,
-      })
-    : undefined
   const subjectHref = activity.action?.action_workflow_id
     ? installLink({
         orgId,
@@ -128,7 +122,7 @@ const ActivityCard = ({
         </div>
       </div>
 
-      {(subjectHref || workflowHref || activity.policy) && (
+      {(subjectHref || activity.workflow || activity.policy) && (
         <div className="flex items-center gap-x-6 gap-y-2 flex-wrap">
           {subjectHref && subjectName && (
             <span className="flex items-center gap-2">
@@ -140,14 +134,17 @@ const ActivityCard = ({
               </Link>
             </span>
           )}
-          {activity.workflow && workflowHref && (
+          {activity.workflow && (
             <span className="flex items-center gap-2">
               <Text as="span" variant="subtext" theme="neutral">
                 Workflow
               </Text>
-              <Link href={workflowHref} textVariant="subtext">
+              <WorkflowPanelLink
+                workflowId={activity.workflow.id}
+                textVariant="subtext"
+              >
                 {activity.workflow.name}
-              </Link>
+              </WorkflowPanelLink>
             </span>
           )}
           {activity.policy && (

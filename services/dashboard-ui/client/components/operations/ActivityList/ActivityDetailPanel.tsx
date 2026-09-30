@@ -6,6 +6,7 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
+import { WorkflowPanelLink } from '@/components/workflows/InstallWorkflowPanel'
 import { useInstallLink } from '@/hooks/use-install-path'
 import type { TInstallActivity } from '@/types'
 import { humanize } from '@/utils/string-utils'
@@ -28,13 +29,6 @@ export const ActivityDetailPanel = ({
   installId: string
 } & Partial<IPanel>) => {
   const installLink = useInstallLink()
-  const workflowHref = activity.workflow
-    ? installLink({
-        orgId,
-        installId,
-        suffix: `/deployments/${activity.workflow.id}`,
-      })
-    : undefined
   const actionHref =
     activity.action?.action_workflow_id && activity.action.run_id
       ? installLink({
@@ -77,9 +71,11 @@ export const ActivityDetailPanel = ({
         <LabeledValue label="Activity ID">
           <ID>{activity.id}</ID>
         </LabeledValue>
-        {activity.workflow && workflowHref && (
+        {activity.workflow && (
           <LabeledValue label="Workflow">
-            <Link href={workflowHref}>{activity.workflow.name}</Link>
+            <WorkflowPanelLink workflowId={activity.workflow.id}>
+              {activity.workflow.name}
+            </WorkflowPanelLink>
           </LabeledValue>
         )}
         {activity.action && (

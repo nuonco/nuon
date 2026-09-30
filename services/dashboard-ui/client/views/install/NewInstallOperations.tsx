@@ -4,6 +4,7 @@ import { ActivityPins } from '@/components/operations/ActivityPins'
 import { InstallPolicyReports } from '@/components/policies/InstallPolicyReports'
 import { InstallRunbooksList } from '@/components/runbooks/InstallRunbooksList'
 import { InstallRunner } from '@/components/runners/InstallRunner'
+import { InstallWorkflowPanelController } from '@/components/workflows/InstallWorkflowPanel'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 
@@ -17,6 +18,7 @@ export const NewInstallActivity = () => {
         <ActivityPins />
         <ActivityList shouldPoll />
       </div>
+      <InstallWorkflowPanelController />
     </>
   )
 }
