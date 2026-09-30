@@ -91,19 +91,36 @@ func (c AppBranchPreviewConfig) HasInstallTarget() bool {
 	return c.LabelSelector != nil && len(c.LabelSelector.MatchLabels) > 0
 }
 
+// wire is the snake_case JSON contract for preview configs, shared by
+// MarshalJSON and UnmarshalJSON so every encoder (API, DB, Temporal's
+// converter) produces keys UnmarshalJSON accepts.
+type wire struct {
+	Mode          AppBranchRunPreviewMode `json:"mode,omitempty"`
+	InstallID     *string                 `json:"install_id,omitempty"`
+	InstallName   *string                 `json:"install_name,omitempty"`
+	LabelSelector *labels.Selector        `json:"label_selector,omitempty"`
+	SetStatuses   bool                    `json:"set_statuses"`
+	Comment       bool                    `json:"comment"`
+	IgnoreDrafts  *bool                   `json:"ignore_drafts"`
+	React         *bool                   `json:"react"`
+}
+
+func (c AppBranchPreviewConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(wire{
+		Mode:          c.Mode,
+		InstallID:     c.InstallID,
+		InstallName:   c.InstallName,
+		LabelSelector: c.LabelSelector,
+		SetStatuses:   c.SetStatuses,
+		Comment:       c.Comment,
+		IgnoreDrafts:  &c.IgnoreDrafts,
+		React:         &c.React,
+	})
+}
+
 // UnmarshalJSON defaults ignore_drafts and react to true when omitted so existing
 // stored preview configs keep the intended opt-out defaults.
 func (c *AppBranchPreviewConfig) UnmarshalJSON(data []byte) error {
-	type wire struct {
-		Mode          AppBranchRunPreviewMode `json:"mode,omitempty"`
-		InstallID     *string                 `json:"install_id,omitempty"`
-		InstallName   *string                 `json:"install_name,omitempty"`
-		LabelSelector *labels.Selector        `json:"label_selector,omitempty"`
-		SetStatuses   bool                    `json:"set_statuses"`
-		Comment       bool                    `json:"comment"`
-		IgnoreDrafts  *bool                   `json:"ignore_drafts"`
-		React         *bool                   `json:"react"`
-	}
 	var w wire
 	if err := json.Unmarshal(data, &w); err != nil {
 		return err
