@@ -24,6 +24,7 @@ import { TriggerRules } from './trigger-tabs/TriggerRules'
 import { TriggerEvents } from './trigger-tabs/TriggerEvents'
 import { TriggerRule } from './TriggerRule'
 import { TriggerEvent } from './TriggerEvent'
+import { GeneralSettings } from '@/views/settings/General'
 import { SettingsLayout } from '@/views/settings/SettingsLayout'
 import { VCSConnections } from '@/views/settings/VCSConnections'
 import { NotFound } from '@/views/NotFound'
@@ -59,8 +60,10 @@ export const orgRoutes: RouteObject[] = [
         children: [
           {
             path: ':orgId/settings',
-            loader: ({ params }) => redirect(`/${params.orgId}/settings/vcs`),
+            loader: ({ params }) =>
+              redirect(`/${params.orgId}/settings/general`),
           },
+          { path: ':orgId/settings/general', element: <GeneralSettings /> },
           { path: ':orgId/settings/vcs', element: <VCSConnections /> },
           {
             path: ':orgId/settings/vcs/:connectionId',
