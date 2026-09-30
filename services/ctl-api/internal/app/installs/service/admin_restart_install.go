@@ -63,6 +63,7 @@ func (s *service) getInstall(ctx context.Context, installID string) (*app.Instal
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("GCPAccount").
+		Preload("CloudConnection").
 		Preload("App").
 		Preload("App.AppInputConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_input_configs.created_at DESC").Limit(1)

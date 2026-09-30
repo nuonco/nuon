@@ -3,6 +3,7 @@ package installs
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"maps"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
@@ -47,6 +49,7 @@ func SyncInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelper
 		Preload("AWSAccount").
 		Preload("GCPAccount").
 		Preload("AzureAccount").
+		Preload("CloudConnection").
 		Where(app.Install{AppID: appID, Name: install.Name}).
 		First(&existing).Error
 
@@ -64,13 +67,42 @@ func SyncInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelper
 	}
 
 	if err == gorm.ErrRecordNotFound {
-		return createInstall(ctx, db, installHelpers, appID, install, appBranchID)
+		return createInstall(ctx, db, installHelpers, application.OrgID, appID, install, appBranchID)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("unable to look up install %s: %w", install.Name, err)
 	}
 
 	return updateInstall(ctx, db, installHelpers, &existing, install, appBranchID)
+}
+
+// resolveCloudConnection resolves a cloud_connection reference from an install
+// config by ID first, then by name within the org.
+func resolveCloudConnection(ctx context.Context, db *gorm.DB, orgID string, installCfg *config.Install) (*app.CloudConnection, error) {
+	var connection app.CloudConnection
+	err := db.WithContext(ctx).
+		Where(app.CloudConnection{ID: installCfg.CloudConnection, OrgID: orgID}).
+		First(&connection).Error
+	if err == nil {
+		return &connection, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("unable to look up cloud connection %q: %w", installCfg.CloudConnection, err)
+	}
+
+	err = db.WithContext(ctx).
+		Where(app.CloudConnection{OrgID: orgID, Name: installCfg.CloudConnection}).
+		First(&connection).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("cloud connection %q was not found in org %s", installCfg.CloudConnection, orgID),
+			Description: "cloud_connection must reference a cloud connection in the org by name or ID",
+		}
+	}
+	if err != nil {
+		return nil, fmt.Errorf("unable to look up cloud connection %q: %w", installCfg.CloudConnection, err)
+	}
+	return &connection, nil
 }
 
 func resolveAppBranch(ctx context.Context, db *gorm.DB, appID, ref string) (*app.AppBranch, error) {
@@ -117,7 +149,7 @@ func validateAppBranchGroup(ctx context.Context, db *gorm.DB, branchID, group st
 	return fmt.Errorf("app branch group %q was not found on branch %s", group, branchID)
 }
 
-func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, appID string, installCfg *config.Install, appBranchID string) (*sync.InstallSyncResult, error) {
+func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, orgID, appID string, installCfg *config.Install, appBranchID string) (*sync.InstallSyncResult, error) {
 	inputs := make(map[string]*string)
 	for k, v := range installCfg.FlattenedInputs() {
 		val := v
@@ -140,6 +172,13 @@ func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 			Region:    installCfg.AWSAccount.Region,
 			AccountID: installCfg.AWSAccount.AccountID,
 		}
+	}
+	if installCfg.CloudConnection != "" {
+		connection, err := resolveCloudConnection(ctx, db, orgID, installCfg)
+		if err != nil {
+			return nil, err
+		}
+		req.CloudConnectionID = connection.ID
 	}
 	if installCfg.GCPAccount != nil {
 		req.GCPAccount = &installhelpers.CreateInstallGCPAccountParams{
@@ -289,6 +328,34 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 		}
 	}
 
+	if installCfg.CloudConnection != "" {
+		connection, err := resolveCloudConnection(ctx, db, existing.OrgID, installCfg)
+		if err != nil {
+			return nil, err
+		}
+		// The connection is immutable after creation, like the target account:
+		// refused rather than ignored, so a changed reference never converges
+		// silently. An install created before the field existed may still
+		// attach one.
+		if existing.CloudConnectionID != nil && *existing.CloudConnectionID != connection.ID {
+			existingName := ""
+			if existing.CloudConnection != nil {
+				existingName = existing.CloudConnection.Name
+			}
+			return nil, fmt.Errorf(
+				"refusing to change cloud_connection on existing install %q from %q to %q: the cloud connection is immutable after creation",
+				installCfg.Name, existingName, installCfg.CloudConnection)
+		}
+		if existing.CloudConnectionID == nil {
+			if err := db.WithContext(ctx).Model(&app.Install{}).
+				Where(app.Install{ID: existing.ID, OrgID: existing.OrgID}).
+				Update("cloud_connection_id", connection.ID).Error; err != nil {
+				return nil, fmt.Errorf("unable to update cloud connection for install %s: %w", installCfg.Name, err)
+			}
+			existing.CloudConnectionID = &connection.ID
+		}
+	}
+
 	appBranchChanged := appBranchID != "" && (!existing.AppBranchID.Valid || existing.AppBranchID.String != appBranchID)
 	appBranchGroupChanged := false
 	if appBranchChanged {
@@ -426,6 +493,9 @@ func existingToConfig(install *app.Install) *config.Install {
 		AppBranch:      appBranchName,
 		AppBranchGroup: install.AppBranchGroup,
 		Labels:         upstreamLabels(install),
+	}
+	if install.CloudConnection != nil {
+		cfg.CloudConnection = install.CloudConnection.Name
 	}
 
 	// The target identifiers must be echoed back, otherwise a config that legitimately
