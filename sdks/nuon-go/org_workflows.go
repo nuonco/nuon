@@ -8,8 +8,9 @@ import (
 )
 
 type GetOrgWorkflowsQuery struct {
-	Finished bool
+	Finished *bool
 	Planonly bool
+	Type     string
 	Limit    int64
 	Offset   int64
 }
@@ -20,8 +21,11 @@ func (c *client) GetOrgWorkflows(ctx context.Context, query *GetOrgWorkflowsQuer
 	}
 
 	if query != nil {
-		params.Finished = &query.Finished
+		params.Finished = query.Finished
 		params.Planonly = &query.Planonly
+		if query.Type != "" {
+			params.Type = &query.Type
+		}
 		if query.Limit > 0 {
 			params.Limit = &query.Limit
 		}

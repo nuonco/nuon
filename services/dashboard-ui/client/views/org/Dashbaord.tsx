@@ -8,6 +8,7 @@ import {
   RecentActivities,
   type IActivity,
 } from '@/components/orgs/RecentActivities'
+import { RecentUpdates } from '@/components/orgs/RecentUpdates'
 import { StatsGrid } from '@/components/orgs/StatsGrid'
 import { Text } from '@/components/common/Text'
 import { PageContent } from '@/components/layout/PageContent'
@@ -20,6 +21,7 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { ActiveWorkflows } from '@/components/workflows/ActiveWorkflows'
 import { useActiveWorkflows } from '@/hooks/use-active-workflows'
 import { useInstallNested } from '@/hooks/use-install-path'
+import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import { useOrg } from '@/hooks/use-org'
 import { useWorkflowApprovals } from '@/hooks/use-workflow-approvals'
 import { getOrgStats, getRunnerJobs } from '@/lib'
@@ -74,6 +76,7 @@ export const Dashboard = () => {
   const offset = Number(searchParams.get('offset') ?? 0)
   const { org } = useOrg()
   const nestedInstalls = useInstallNested()
+  const showRecentUpdates = useNewAppIA()
   const { approvals } = useWorkflowApprovals()
   const { activeWorkflows } = useActiveWorkflows()
 
@@ -91,7 +94,7 @@ export const Dashboard = () => {
     placeholderData: keepPreviousData,
     queryKey: ['org-stats', org?.id],
     queryFn: () => getOrgStats({ orgId: org!.id }),
-    enabled: !!org?.id,
+    enabled: !!org?.id && !showRecentUpdates,
   })
 
   const { data: jobs } = useQuery({
@@ -105,7 +108,7 @@ export const Dashboard = () => {
         limit: 10,
         offset,
       }),
-    enabled: !!org?.id && !!runnerId,
+    enabled: !!org?.id && !!runnerId && !showRecentUpdates,
     refetchInterval: 20_000,
   })
 
@@ -159,34 +162,52 @@ export const Dashboard = () => {
       )}
       <PageContent className="@container">
         <PageGrid className="@4xl:divide-x flex-auto !grid-cols-1 @4xl:!grid-cols-[1fr_400px]">
-          <PageSection className="flex-1 @4xl:border-r !gap-12">
-            <div className="flex flex-col gap-4">
-              <Text variant="h3" weight="strong">
-                Overview
-              </Text>
-              <StatsGrid
-                stats={[
-                  { label: 'Total installs', value: stats?.install_count ?? 0 },
-                  {
-                    label: 'Active applications',
-                    value: stats?.app_count ?? 0,
-                  },
-                  { label: 'Active workflows', value: activeWorkflows.length },
-                  { label: 'Pending approvals', value: approvals.length },
-                ]}
-              />
-            </div>
-            <PendingApprovals />
-            <ActiveWorkflows workflows={activeWorkflows} />
-            <div className="flex flex-col gap-4">
-              <Text variant="base" weight="strong">
-                Recent activities
-              </Text>
-              <RecentActivities
-                activities={recentActivities}
-                pagination={jobs?.pagination}
-              />
-            </div>
+          <PageSection
+            className={
+              showRecentUpdates
+                ? 'flex-1 @4xl:border-r'
+                : 'flex-1 @4xl:border-r !gap-12'
+            }
+          >
+            {showRecentUpdates ? (
+              <RecentUpdates />
+            ) : (
+              <>
+                <div className="flex flex-col gap-4">
+                  <Text variant="h3" weight="strong">
+                    Overview
+                  </Text>
+                  <StatsGrid
+                    stats={[
+                      {
+                        label: 'Total installs',
+                        value: stats?.install_count ?? 0,
+                      },
+                      {
+                        label: 'Active applications',
+                        value: stats?.app_count ?? 0,
+                      },
+                      {
+                        label: 'Active workflows',
+                        value: activeWorkflows.length,
+                      },
+                      { label: 'Pending approvals', value: approvals.length },
+                    ]}
+                  />
+                </div>
+                <PendingApprovals />
+                <ActiveWorkflows workflows={activeWorkflows} />
+                <div className="flex flex-col gap-4">
+                  <Text variant="base" weight="strong">
+                    Recent activities
+                  </Text>
+                  <RecentActivities
+                    activities={recentActivities}
+                    pagination={jobs?.pagination}
+                  />
+                </div>
+              </>
+            )}
           </PageSection>
           <PageSection className="w-full hidden @4xl:flex">
             <AnnouncementsList

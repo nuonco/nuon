@@ -41,6 +41,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
 
   'approval-denied': 'warn',
   'approval-awaiting': 'warn',
+  'awaiting-approval': 'warn',
   cancelled: 'warn',
   outdated: 'warn',
   warn: 'warn',
@@ -116,6 +117,7 @@ const STATUS_ICON_MAP: Record<string, TStatusIconVariant> = {
 
   'approval-denied': 'WarningIcon',
   'approval-awaiting': 'WarningIcon',
+  'awaiting-approval': 'WarningIcon',
   cancelled: 'WarningIcon',
   outdated: 'WarningIcon',
   warn: 'WarningIcon',

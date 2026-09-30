@@ -35,7 +35,7 @@ const VARIANT_CLASSES: Record<TLinkVariant, string> = {
     'active:bg-cool-grey-100 active:dark:bg-white/15',
   ].join(' '),
   nav: [
-    'flex items-center gap-4 overflow-hidden rounded-md py-2.5 px-3 transition-colors w-full',
+    'flex items-center gap-4 overflow-hidden rounded-md px-3 transition-colors w-full',
     'text-[14px] h-[36px] leading-[21px] tracking-[-0.2px]',
     'hover:bg-black/5 hover:dark:bg-white/10',
   ].join(' '),

@@ -32,6 +32,7 @@ describe('status-utils', () => {
     test('should return warn theme for warning statuses', () => {
       expect(getStatusTheme('approval-denied')).toBe('warn')
       expect(getStatusTheme('approval-awaiting')).toBe('warn')
+      expect(getStatusTheme('awaiting-approval')).toBe('warn')
       expect(getStatusTheme('cancelled')).toBe('warn')
       expect(getStatusTheme('outdated')).toBe('warn')
       expect(getStatusTheme('warn')).toBe('warn')
@@ -96,6 +97,7 @@ describe('status-utils', () => {
 
     test('should return Warning for warning statuses', () => {
       expect(getStatusIconVariant('approval-denied')).toBe('WarningIcon')
+      expect(getStatusIconVariant('awaiting-approval')).toBe('WarningIcon')
       expect(getStatusIconVariant('cancelled')).toBe('WarningIcon')
       expect(getStatusIconVariant('outdated')).toBe('WarningIcon')
     })
