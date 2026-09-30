@@ -9,10 +9,18 @@ jobs:
   update-prs:
     runs-on: ubuntu-latest
     steps:
-      - name: update prs
+      - name: update labelled prs
         uses: docker://chinthakagodawita/autoupdate-action:v1
         env:
           GITHUB_TOKEN: "${{ secrets.NUON_BOT_GITHUB_TOKEN }}"
           PR_FILTER: "labelled"
           PR_LABELS: "auto-update"
+          PR_READY_STATE: "ready_for_review"
+
+      # main requires up-to-date branches; keep auto-merge PRs from stalling
+      - name: update auto-merge prs
+        uses: docker://chinthakagodawita/autoupdate-action:v1
+        env:
+          GITHUB_TOKEN: "${{ secrets.NUON_BOT_GITHUB_TOKEN }}"
+          PR_FILTER: "auto_merge"
           PR_READY_STATE: "ready_for_review"
