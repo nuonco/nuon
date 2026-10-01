@@ -6,6 +6,9 @@ on:
       - '*'
   workflow_dispatch:
 
+env:
+  RUNNER_API_URL: https://runner.nuon.co
+
 jobs:
   install-runner-versioned:
     runs-on: ubuntu-latest
