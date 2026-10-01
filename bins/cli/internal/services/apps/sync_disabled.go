@@ -17,9 +17,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/paginate"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
-	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/pkg/config"
-	"github.com/nuonco/nuon/pkg/config/parse"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -30,9 +28,8 @@ const (
 	migrationBranchFile  = "branch.toml"
 	migrationBranchesDir = "branches"
 
-	fileChoiceUseExisting = "use-existing"
-	fileChoiceOverwrite   = "overwrite"
-	fileChoiceCancel      = "cancel"
+	installChoiceAll  = "all"
+	installChoiceNone = "none"
 
 	gitProbeTimeout = 3 * time.Second
 )
@@ -45,15 +42,9 @@ type printedErr struct{ error }
 
 func (e printedErr) Unwrap() error { return e.error }
 
-func appSyncDisabledErr(guidance string) error {
-	msg := "`nuon apps sync` is disabled for this org: app config now ships through config-managed app branches. " +
-		"Add a branch.toml next to the app config (name, [connected_repo], and [run] mode = \"push\"), " +
-		"apply it with `nuon branches sync --file branch.toml`, then move installs onto that branch. " +
-		"Rerun `nuon apps sync` in an interactive terminal to be walked through the migration."
-	if guidance != "" {
-		msg += "\n\n" + guidance
-	}
-	return &ui.CLIUserError{Msg: msg}
+func appSyncDisabledErr() error {
+	return &ui.CLIUserError{Msg: "`nuon apps sync` is disabled for this org; app config now ships through app branches. " +
+		"Rerun `nuon apps sync` in an interactive terminal to migrate, or add branches/<name>.toml and run `nuon branches sync --file branches/<name>.toml`."}
 }
 
 func embeddedBranchesErr(dir string) error {
@@ -78,33 +69,23 @@ func (s *Service) appSyncWizardAvailable(opts SyncOptions) bool {
 	return s.cfg.Interactive && !opts.PrintJSON && !agentmode.Enabled()
 }
 
-// handleAppSyncDisabled is terminal for `nuon apps sync`: it either returns the
-// deprecation error or runs the migration wizard, and the caller must not go on
-// to parse or upload the app config either way.
+// handleAppSyncDisabled is terminal for `nuon apps sync`: the caller must not
+// go on to parse or upload the app config.
 func (s *Service) handleAppSyncDisabled(ctx context.Context, dir, appID string, opts SyncOptions) error {
-	guides, guideErr := s.appSyncBranchGuides(ctx, dir, appID)
-	guidance := renderAppSyncBranchGuides(guides)
-	if guideErr != nil {
-		guidance = "Unable to load existing app branches: " + guideErr.Error()
-	}
-
 	if !s.appSyncWizardAvailable(opts) {
-		return ui.PrintError(appSyncDisabledErr(guidance))
+		return ui.PrintError(appSyncDisabledErr())
 	}
 
-	printMigrationIntro()
-	if guidance != "" {
-		ui.PrintLn(guidance)
-	}
-	start, err := bubbles.InlineConfirm("Set up an app branch now?", true, true)
-	if err != nil || !start {
-		return ui.PrintError(appSyncDisabledErr(guidance))
+	ok, err := bubbles.InlineConfirm("This will migrate you to app branches. Would you like to continue?", true, true)
+	if err != nil || !ok {
+		ui.PrintLn("migration cancelled")
+		return nil
 	}
 
 	err = s.runAppBranchMigration(ctx, dir, appID)
 	if errors.Is(err, errMigrationCancelled) {
-		ui.PrintLn("migration cancelled; nothing further was changed")
-		return ui.PrintError(appSyncDisabledErr(guidance))
+		ui.PrintLn("migration cancelled")
+		return nil
 	}
 	var printed printedErr
 	if errors.As(err, &printed) {
@@ -113,129 +94,11 @@ func (s *Service) handleAppSyncDisabled(ctx context.Context, dir, appID string, 
 	if err != nil {
 		return ui.PrintError(err)
 	}
-
-	updatedGuides, updatedErr := s.appSyncBranchGuides(ctx, dir, appID)
-	if updatedErr == nil {
-		guidance = renderAppSyncBranchGuides(updatedGuides)
-	}
-	return ui.PrintError(appSyncDisabledErr(guidance))
-}
-
-type appSyncBranchGuide struct {
-	Name         string
-	ID           string
-	ManagedBy    string
-	DashboardURL string
-	ConfigPath   string
-	Config       string
-	ConfigError  string
-}
-
-func (s *Service) appSyncBranchGuides(ctx context.Context, dir, appID string) ([]appSyncBranchGuide, error) {
-	branches, err := nuon.GetAllAppBranches(ctx, s.api, appID)
-	if err != nil {
-		return nil, fmt.Errorf("unable to list app branches: %w", err)
-	}
-
-	dashboardURL := ""
-	if cliCfg, cfgErr := s.api.GetCLIConfig(ctx); cfgErr == nil {
-		dashboardURL = strings.TrimRight(cliCfg.DashboardURL, "/")
-	}
-
-	localPath, localName := localBranchConfig(dir)
-
-	resolver := newBranchNameResolver(s.api, appID)
-	guides := make([]appSyncBranchGuide, 0, len(branches))
-	for _, branch := range branches {
-		if branch == nil {
-			continue
-		}
-		guide := appSyncBranchGuide{
-			Name:      branch.Name,
-			ID:        branch.ID,
-			ManagedBy: branch.ManagedBy,
-		}
-		if dashboardURL != "" {
-			guide.DashboardURL = fmt.Sprintf("%s/%s/apps/%s/branches/%s", dashboardURL, s.cfg.OrgID, appID, branch.ID)
-		}
-
-		if localPath != "" && branch.Name == localName {
-			guide.ConfigPath = localPath
-		}
-
-		latest, latestErr := s.latestBranchConfig(ctx, appID, branch.ID)
-		if latestErr != nil {
-			guide.ConfigError = latestErr.Error()
-			guides = append(guides, guide)
-			continue
-		}
-		normalized, normalizeErr := normalizeRemoteBranch(ctx, resolver, branch.Name, latest)
-		if normalizeErr != nil {
-			guide.ConfigError = normalizeErr.Error()
-			guides = append(guides, guide)
-			continue
-		}
-		byts, renderErr := renderBranchConfigTOML(normalized)
-		if renderErr != nil {
-			guide.ConfigError = renderErr.Error()
-		} else {
-			guide.Config = strings.TrimSpace(string(byts))
-		}
-		guides = append(guides, guide)
-	}
-	return guides, nil
-}
-
-func renderAppSyncBranchGuides(guides []appSyncBranchGuide) string {
-	if len(guides) == 0 {
-		return "No app branches exist yet."
-	}
-
-	var out strings.Builder
-	out.WriteString("Existing app branches:\n")
-	for _, guide := range guides {
-		fmt.Fprintf(&out, "\n- %s (%s, managed by %s)\n", guide.Name, guide.ID, guide.ManagedBy)
-		if guide.DashboardURL != "" {
-			fmt.Fprintf(&out, "  Dashboard: %s\n", guide.DashboardURL)
-		}
-		if guide.ConfigPath != "" {
-			fmt.Fprintf(&out, "  Local config: %s\n", guide.ConfigPath)
-			fmt.Fprintf(&out, "  Sync: nuon branches sync --file %s\n", guide.ConfigPath)
-		}
-		if guide.ConfigError != "" {
-			fmt.Fprintf(&out, "  Config unavailable: %s\n", guide.ConfigError)
-			continue
-		}
-		if guide.Config != "" {
-			out.WriteString("  Shareable config:\n")
-			for _, line := range strings.Split(guide.Config, "\n") {
-				fmt.Fprintf(&out, "    %s\n", line)
-			}
-		}
-	}
-	return strings.TrimRight(out.String(), "\n")
-}
-
-func printMigrationIntro() {
-	lines := []string{
-		"`nuon apps sync` is disabled for this org.",
-		"App config now ships through a config-managed app branch: a branch file in your repo points",
-		"Nuon at a repo, directory and git branch, and pushes to that git branch run the app branch.",
-		"",
-		"This wizard will:",
-		"  1. write branch.toml in this app config directory from the git checkout and the connected GitHub repo",
-		"  2. create or update that app branch with `nuon branches sync`",
-		"  3. ask whether to move this app's installs onto the branch (no by default)",
-		"",
-		"It will not sync this app config; commit and push branch.toml afterwards.",
-	}
-	for _, l := range lines {
-		fmt.Println(styles.TextDim.Render("  " + l))
-	}
+	return nil
 }
 
 func (s *Service) runAppBranchMigration(ctx context.Context, dir, appID string) error {
-	if err := refuseBranchesDirectory(dir); err != nil {
+	if err := refuseRootBranchToml(dir); err != nil {
 		return err
 	}
 
@@ -243,11 +106,20 @@ func (s *Service) runAppBranchMigration(ctx context.Context, dir, appID string) 
 	if err != nil {
 		return err
 	}
-	repo, err := s.connectedRepoFullName(ctx, source.Repo)
+	connected, err := s.connectedRepoFullName(ctx, source.Repo)
 	if err != nil {
 		return err
 	}
-	source.Repo = repo
+	public := connected == ""
+	if !public {
+		source.Repo = connected
+	}
+
+	path, err := migrationBranchConfigPath(dir, source.Branch)
+	if err != nil {
+		return err
+	}
+	rel := branchConfigDisplayPath(dir, path)
 
 	remotes, err := nuon.GetAllAppBranches(ctx, s.api, appID)
 	if err != nil {
@@ -255,44 +127,42 @@ func (s *Service) runAppBranchMigration(ctx context.Context, dir, appID string) 
 	}
 	if existing := findBranchByName(remotes, source.Branch); existing != nil && existing.ManagedBy != appBranchManagedByConfig {
 		return &ui.CLIUserError{Msg: fmt.Sprintf(
-			"app branch %q already exists and is managed manually, so branch.toml cannot take it over",
-			source.Branch,
+			"app branch %q already exists and is managed manually, so %s cannot take it over",
+			source.Branch, rel,
 		)}
 	}
 
-	ui.PrintLn(fmt.Sprintf("branch.toml will track %s (%s) on git branch %s", source.Repo, source.Directory, source.Branch))
+	cfg := newMigrationBranchConfig(source.Branch, source.Repo, source.Directory, source.Branch, public)
+	rendered, err := renderBranchConfigTOML(cfg)
+	if err != nil {
+		return err
+	}
+	if public {
+		ui.PrintLn(rel + " (public repo)")
+	} else {
+		ui.PrintLn(rel)
+	}
+	fmt.Println(strings.TrimRight(string(rendered), "\n"))
 
-	path := migrationBranchConfigPath(dir)
-	write := true
-	branchName := source.Branch
-	if _, statErr := os.Stat(path); statErr == nil {
-		choice, err := chooseExistingFileAction(path)
-		if err != nil {
-			return err
-		}
-		switch choice {
-		case fileChoiceCancel:
-			return errMigrationCancelled
-		case fileChoiceUseExisting:
-			write = false
-		}
-	} else if !os.IsNotExist(statErr) {
+	_, statErr := os.Stat(path)
+	exists := statErr == nil
+	if statErr != nil && !os.IsNotExist(statErr) {
 		return fmt.Errorf("unable to check %s: %w", path, statErr)
 	}
-
-	if write {
-		cfg := newMigrationBranchConfig(source.Branch, source.Repo, source.Directory, source.Branch)
-		if err := writeBranchConfigFile(path, cfg); err != nil {
-			return err
-		}
-		ui.PrintSuccess("wrote " + path)
-	} else {
-		existingCfg, err := parse.ParseAppBranchConfigFile(path)
-		if err != nil {
-			return err
-		}
-		branchName = existingCfg.Name
+	prompt := fmt.Sprintf("Write %s and sync it?", rel)
+	defaultYes := true
+	if exists {
+		prompt = fmt.Sprintf("Overwrite %s and sync it?", rel)
+		defaultYes = false
 	}
+	ok, err := bubbles.InlineConfirm(prompt, defaultYes, true)
+	if err != nil || !ok {
+		return errMigrationCancelled
+	}
+	if err := writeBranchConfigBytes(path, rendered); err != nil {
+		return err
+	}
+	ui.PrintSuccess("wrote " + rel)
 
 	if err := s.SyncBranches(ctx, SyncBranchesOptions{
 		Path:    path,
@@ -306,17 +176,16 @@ func (s *Service) runAppBranchMigration(ctx context.Context, dir, appID string) 
 	if err != nil {
 		return fmt.Errorf("unable to list app branches: %w", err)
 	}
-	branch := findBranchByName(refreshed, branchName)
+	branch := findBranchByName(refreshed, source.Branch)
 	if branch == nil {
-		return fmt.Errorf("app branch %q was not found after syncing %s", branchName, path)
+		return fmt.Errorf("app branch %q was not found after syncing %s", source.Branch, rel)
 	}
 
 	if err := s.migrateInstallsToBranch(ctx, appID, branch); err != nil {
 		return err
 	}
 
-	ui.PrintLn("next: commit branch.toml and push it; pushes to the tracked git branch now run this app branch.")
-	ui.PrintLn("`nuon apps sync` stays disabled for this org; use `nuon branches sync --file branch.toml` to change branch settings.")
+	ui.PrintSuccess(fmt.Sprintf("migrated to app branch %q; commit and push %s to finish", branch.Name, rel))
 	return nil
 }
 
@@ -329,35 +198,25 @@ func findBranchByName(remotes []*models.AppAppBranch, name string) *models.AppAp
 	return nil
 }
 
-func chooseExistingFileAction(path string) (string, error) {
-	items := []bubbles.SelectorItem{
-		bubbles.NewSelectorItem("Use the existing file as is", "", fileChoiceUseExisting),
-		bubbles.NewSelectorItem("Overwrite it", "", fileChoiceOverwrite),
-		bubbles.NewSelectorItem("Cancel", "", fileChoiceCancel),
-	}
-	choice, err := bubbles.SelectFromItems(fmt.Sprintf("%s already exists", path), items, true)
-	if err != nil {
-		return "", errMigrationCancelled
-	}
-	if choice == fileChoiceOverwrite {
-		ok, err := bubbles.InlineConfirm(fmt.Sprintf("Overwrite %s?", path), false, true)
-		if err != nil || !ok {
-			return "", errMigrationCancelled
-		}
-	}
-	return choice, nil
-}
-
-func newMigrationBranchConfig(name, repo, directory, gitBranch string) *config.AppBranchConfig {
-	return &config.AppBranchConfig{
+func newMigrationBranchConfig(name, repo, directory, gitBranch string, public bool) *config.AppBranchConfig {
+	cfg := &config.AppBranchConfig{
 		Name: name,
-		ConnectedRepo: &config.ConnectedRepoConfig{
+		Run:  &config.AppBranchRunConfig{Mode: string(models.AppAppBranchRunModePush)},
+	}
+	if public {
+		cfg.PublicRepo = &config.PublicRepoConfig{
 			Repo:      repo,
 			Directory: directory,
 			Branch:    gitBranch,
-		},
-		Run: &config.AppBranchRunConfig{Mode: string(models.AppAppBranchRunModePush)},
+		}
+		return cfg
 	}
+	cfg.ConnectedRepo = &config.ConnectedRepoConfig{
+		Repo:      repo,
+		Directory: directory,
+		Branch:    gitBranch,
+	}
+	return cfg
 }
 
 func renderBranchConfigTOML(cfg *config.AppBranchConfig) ([]byte, error) {
@@ -373,6 +232,10 @@ func writeBranchConfigFile(path string, cfg *config.AppBranchConfig) error {
 	if err != nil {
 		return err
 	}
+	return writeBranchConfigBytes(path, byts)
+}
+
+func writeBranchConfigBytes(path string, byts []byte) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return fmt.Errorf("unable to create %s: %w", filepath.Dir(path), err)
 	}
@@ -382,37 +245,57 @@ func writeBranchConfigFile(path string, cfg *config.AppBranchConfig) error {
 	return nil
 }
 
-func migrationBranchConfigPath(dir string) string {
-	return filepath.Join(dir, migrationBranchFile)
+func migrationBranchConfigPath(dir, name string) (string, error) {
+	parts, err := branchConfigParts(name)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(append([]string{dir}, parts...)...), nil
 }
 
-func localBranchConfig(dir string) (path, name string) {
-	path = migrationBranchConfigPath(dir)
-	if _, err := os.Stat(path); err != nil {
-		return "", ""
+func branchConfigParts(name string) ([]string, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return nil, &ui.CLIUserError{Msg: "git branch name is empty, so branches/<name>.toml cannot be written"}
 	}
-	cfg, err := parse.ParseAppBranchConfigFile(path)
-	if err != nil || cfg == nil {
-		return "", ""
+	segs := strings.Split(name, "/")
+	parts := make([]string, 0, len(segs)+1)
+	parts = append(parts, migrationBranchesDir)
+	for i, seg := range segs {
+		if seg == "" || seg == "." || seg == ".." || strings.ContainsAny(seg, `\:`) {
+			return nil, &ui.CLIUserError{Msg: fmt.Sprintf("git branch %q cannot be used as a branches/ filename", name)}
+		}
+		if i == len(segs)-1 {
+			seg += ".toml"
+		}
+		parts = append(parts, seg)
 	}
-	return path, cfg.Name
+	return parts, nil
 }
 
-func refuseBranchesDirectory(dir string) error {
-	branchesDir := filepath.Join(dir, migrationBranchesDir)
-	info, err := os.Stat(branchesDir)
+func branchConfigDisplayPath(dir, path string) string {
+	rel, err := filepath.Rel(dir, path)
+	if err != nil {
+		return filepath.ToSlash(path)
+	}
+	return filepath.ToSlash(rel)
+}
+
+func refuseRootBranchToml(dir string) error {
+	path := filepath.Join(dir, migrationBranchFile)
+	info, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
 		}
-		return fmt.Errorf("unable to check %s: %w", branchesDir, err)
+		return fmt.Errorf("unable to check %s: %w", path, err)
 	}
-	if !info.IsDir() {
+	if info.IsDir() {
 		return nil
 	}
 	return &ui.CLIUserError{Msg: fmt.Sprintf(
-		"%s already has a branches/ directory. Sync those files with `nuon branches sync --file %s` instead of writing branch.toml alongside them.",
-		dir, branchesDir,
+		"%s already has branch.toml. Remove it before writing branches/; the app parser rejects both together. Sync the existing file with `nuon branches sync --file %s`.",
+		dir, path,
 	)}
 }
 
@@ -426,7 +309,7 @@ func migrationSourceFromGit(ctx context.Context, dir string) (*migrationGitSourc
 	repo := gitOriginRepo(ctx, dir)
 	if repo == "" {
 		return nil, &ui.CLIUserError{Msg: fmt.Sprintf(
-			"could not read a GitHub remote.origin.url from %s. branch.toml needs a connected GitHub repo.",
+			"could not read a GitHub remote.origin.url from %s. branch.toml needs a GitHub repo.",
 			dir,
 		)}
 	}
@@ -509,13 +392,7 @@ func (s *Service) connectedRepoFullName(ctx context.Context, origin string) (str
 		}
 		repos = append(repos, resp.Repositories...)
 	}
-	if fullName := matchConnectedRepo(origin, repos); fullName != "" {
-		return fullName, nil
-	}
-	return "", &ui.CLIUserError{Msg: fmt.Sprintf(
-		"git repo %q is not on a connected GitHub installation in this org. Connect it, then rerun `nuon apps sync`.",
-		origin,
-	)}
+	return matchConnectedRepo(origin, repos), nil
 }
 
 func matchConnectedRepo(origin string, repos []*models.ServiceVCSConnectionRepo) string {
@@ -569,39 +446,89 @@ func (s *Service) migrateInstallsToBranch(ctx context.Context, appID string, bra
 		return nil
 	}
 
-	fmt.Println(styles.TextDim.Render(fmt.Sprintf("  %d install(s) are not on app branch %q:", len(pending), branch.Name)))
-	for _, inst := range pending {
-		fmt.Println(styles.TextDim.Render("    - " + installLabel(inst)))
-	}
 	if runs, err := s.api.GetAppBranchRuns(ctx, appID, branch.ID); err == nil && len(runs) == 0 {
 		ui.PrintWarning(fmt.Sprintf("app branch %q has no runs yet; the API refuses to move installs until a branch run has completed", branch.Name))
 	}
 
-	move, err := bubbles.InlineConfirm(fmt.Sprintf("Move %d install(s) to app branch %q?", len(pending), branch.Name), false, true)
-	if err != nil || !move {
+	add, err := bubbles.InlineConfirm(fmt.Sprintf("Add installs to app branch %q?", branch.Name), false, true)
+	if err != nil || !add {
 		ui.PrintLn("installs were not moved")
 		return nil
 	}
 
-	result := moveInstallsToBranch(ctx, pending, branch.ID, func(ctx context.Context, installID, branchID string) error {
-		_, err := s.api.MoveInstallToAppBranch(ctx, installID, branchID, "")
-		return err
-	})
-	for _, inst := range result.Moved {
-		ui.PrintSuccess("moved " + installLabel(inst))
+	var moved []*models.AppInstall
+	var failed []installMoveFailure
+	for len(pending) > 0 {
+		choice, err := bubbles.SelectFromItems(
+			fmt.Sprintf("Add installs to app branch %q", branch.Name),
+			installSelectItems(pending),
+			true,
+		)
+		if err != nil || choice == installChoiceNone {
+			if len(moved) == 0 && len(failed) == 0 {
+				ui.PrintLn("installs were not moved")
+			}
+			break
+		}
+		batch, rest := installsForChoice(pending, choice)
+		if len(batch) == 0 {
+			break
+		}
+		pending = rest
+		result := moveInstallsToBranch(ctx, batch, branch.ID, func(ctx context.Context, installID, branchID string) error {
+			_, err := s.api.MoveInstallToAppBranch(ctx, installID, branchID, "")
+			return err
+		})
+		for _, inst := range result.Moved {
+			ui.PrintSuccess("moved " + installLabel(inst))
+		}
+		moved = append(moved, result.Moved...)
+		failed = append(failed, result.Failed...)
 	}
-	if len(result.Failed) == 0 {
+	if len(failed) == 0 {
 		return nil
 	}
 
-	msgs := make([]string, 0, len(result.Failed))
-	for _, f := range result.Failed {
+	msgs := make([]string, 0, len(failed))
+	for _, f := range failed {
 		msgs = append(msgs, fmt.Sprintf("%s: %s", installLabel(f.Install), apiErrorMessage(f.Err)))
 	}
 	return &ui.CLIUserError{Msg: fmt.Sprintf(
 		"moved %d of %d install(s) to app branch %q; failed:\n  %s",
-		len(result.Moved), len(pending), branch.Name, strings.Join(msgs, "\n  "),
+		len(moved), len(moved)+len(failed), branch.Name, strings.Join(msgs, "\n  "),
 	)}
+}
+
+func installSelectItems(pending []*models.AppInstall) []bubbles.SelectorItem {
+	items := []bubbles.SelectorItem{
+		bubbles.NewSelectorItem("All", "", installChoiceAll),
+		bubbles.NewSelectorItem("None", "", installChoiceNone),
+	}
+	for _, inst := range pending {
+		items = append(items, bubbles.NewSelectorItem(installLabel(inst), "", inst.ID))
+	}
+	return items
+}
+
+func installsForChoice(pending []*models.AppInstall, choice string) (batch, rest []*models.AppInstall) {
+	if choice == "" || choice == installChoiceNone {
+		return nil, pending
+	}
+	if choice == installChoiceAll {
+		return pending, nil
+	}
+	rest = make([]*models.AppInstall, 0, len(pending))
+	for _, inst := range pending {
+		if inst.ID == choice && len(batch) == 0 {
+			batch = []*models.AppInstall{inst}
+			continue
+		}
+		rest = append(rest, inst)
+	}
+	if len(batch) == 0 {
+		return nil, pending
+	}
+	return batch, rest
 }
 
 func installsToMove(installs []*models.AppInstall, branchID string) []*models.AppInstall {

@@ -120,18 +120,21 @@ Branch runs are `nuon branches`, not `nuon apps sync`.
 #### `disable-app-sync`
 
 When the org has `disable-app-sync` on, `nuon apps sync` does not upload the app config (`internal/services/apps/sync_disabled.go`).
-On a TTY it offers a migration wizard. Non-interactive, JSON, and agent mode print the deprecation error and write nothing.
+It resolves the selected app (or the directory-name app) without the directory mismatch prompt. On a TTY it asks once
+whether to migrate to app branches (default yes). Non-interactive, JSON, and agent mode print a short deprecation error
+and write nothing.
 
 The wizard reads the app config directory's git checkout (`remote.origin.url`, `HEAD`, and the directory relative to the
-repo root) and `GET /v1/vcs/connections/{id}/repos` for each org VCS connection. It writes `branch.toml` next to the app
-config only when that origin matches a connected repo's `full_name`, using `[connected_repo]` (never `[public_repo]`).
-The Nuon branch `name` and `connected_repo.branch` are the current git branch. A `branches/` directory already in that
-folder is refused, and an existing `branch.toml` is kept, overwritten, or cancelled. It then runs `nuon branches sync`
-on that file. A manually managed remote branch with the same name cannot be taken over.
+repo root) and `GET /v1/vcs/connections/{id}/repos` for each org VCS connection. A matching `full_name` uses
+`[connected_repo]`. No match uses `[public_repo]` with the same `owner/repo`. It prints that TOML and asks before writing
+`branches/<name>.toml` (a `/` in the branch name is a subdirectory) and running `nuon branches sync` on that file.
+Syncing the file reconciles only this branch. A root `branch.toml` already in the folder is refused, because the app
+parser rejects `branch.toml` and `branches/` together. A manually managed remote branch with the same name cannot be
+taken over.
 
-Afterwards it lists installs that are not on the branch and asks whether to move all of them. The default is no, so
-installs can be moved one by one later. `nuon installs sync` requires `app_branch` in each install config while this
-flag is on.
+Afterwards it asks whether to add installs to the branch (default no). On yes, a select list offers all, none, or one
+install at a time, and repeats until none or all are chosen. `nuon installs sync` requires `app_branch` in each install
+config while this flag is on.
 
 ### Output format (`--output table|json|agent`)
 

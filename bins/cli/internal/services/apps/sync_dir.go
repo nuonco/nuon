@@ -90,9 +90,12 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 	if err != nil {
 		return ui.PrintError(fmt.Errorf("unable to read org features: %w", err))
 	}
-	appSyncDisabled := org.Features[disableAppSyncFeature]
-	if appSyncDisabled {
-		opts.Create = false
+	if org.Features[disableAppSyncFeature] {
+		appID, err := s.resolveMigrationAppID(ctx, dir, opts)
+		if err != nil {
+			return ui.PrintError(err)
+		}
+		return s.handleAppSyncDisabled(ctx, dir, appID, opts)
 	}
 
 	appID, err := s.resolveSyncAppID(ctx, dir, opts)
@@ -101,10 +104,6 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 	}
 
 	s.warnIfCLIOutdated(ctx)
-
-	if appSyncDisabled {
-		return s.handleAppSyncDisabled(ctx, dir, appID, opts)
-	}
 
 	cfg, err := parse.ParseDir(ctx, parse.ParseConfig{
 		Dirname:       dir,
@@ -269,6 +268,16 @@ func (s *Service) resolveSyncAppID(ctx context.Context, dir string, opts SyncOpt
 		return "", errs.NewUserFacing("sync cancelled")
 	}
 	return targetAppID, nil
+}
+
+// resolveMigrationAppID skips the directory-name mismatch check: the selected
+// app is the migration target regardless of the config directory's name.
+func (s *Service) resolveMigrationAppID(ctx context.Context, dir string, opts SyncOptions) (string, error) {
+	if opts.AppFlag != "" {
+		return s.resolveOrCreateApp(ctx, opts.AppFlag, false)
+	}
+	appID, _, err := s.resolveFromDirName(ctx, dir, false)
+	return appID, err
 }
 
 func (s *Service) resolveFromDirName(ctx context.Context, dir string, create bool) (string, string, error) {
