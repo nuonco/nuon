@@ -23,6 +23,7 @@ export interface IUserDropdown
   isDev: boolean
   apiUrl: string
   adminDashboardUrl?: string
+  grafanaUiUrl?: string
   authServiceUrl: string
   notificationsSupported: boolean
   notificationPermission: string
@@ -48,6 +49,7 @@ export const UserDropdown = ({
   isDev,
   apiUrl,
   adminDashboardUrl,
+  grafanaUiUrl,
   authServiceUrl,
   notificationsSupported,
   notificationPermission,
@@ -122,6 +124,11 @@ export const UserDropdown = ({
         {!hideOrgSettings && isAdmin && (
           <Link href="/admin/temporal" isExternal>
             Temporal dashboard
+          </Link>
+        )}
+        {!hideOrgSettings && isAdmin && grafanaUiUrl && (
+          <Link href="/admin/grafana" isExternal>
+            Grafana
           </Link>
         )}
         {!hideOrgSettings && isAdmin && (

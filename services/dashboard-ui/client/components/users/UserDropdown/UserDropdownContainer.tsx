@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/use-auth'
 import { useConfig } from '@/hooks/use-config'
 import { useNotifications } from '@/hooks/use-notifications'
@@ -16,6 +17,7 @@ type IUserDropdownContainerProps = Omit<
   | 'isDev'
   | 'apiUrl'
   | 'adminDashboardUrl'
+  | 'grafanaUiUrl'
   | 'authServiceUrl'
   | 'notificationsSupported'
   | 'notificationPermission'
@@ -30,20 +32,53 @@ type IUserDropdownContainerProps = Omit<
   | 'onReopenOnboarding'
 >
 
+async function probeGrafanaHealth(): Promise<boolean> {
+  try {
+    const res = await fetch('/admin/grafana/api/health', {
+      credentials: 'include',
+      method: 'GET',
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
 export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
   const { isAdmin, isNuonEmployee, user, isLoading } = useAuth()
-  const { apiUrl, authServiceUrl, adminDashboardUrl, isDev, isByoc, onboardingFirstRun } =
-    useConfig()
+  const {
+    apiUrl,
+    authServiceUrl,
+    adminDashboardUrl,
+    grafanaUiUrl,
+    isDev,
+    isByoc,
+    onboardingFirstRun,
+  } = useConfig()
   const { addPanel } = useSurfaces()
   const { addToast } = useToast()
   const { permission, requestPermission, isSupported, muted, toggleMute } =
     useNotifications()
+
+  const { data: grafanaReachable = false } = useQuery({
+    queryKey: ['admin', 'grafana', 'health'],
+    queryFn: probeGrafanaHealth,
+    enabled: !!isAdmin && !!grafanaUiUrl,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  })
+
   const reopenOnboarding = async () => {
     try {
       await resetFirstRunJourney()
       trackEvent({ event: 'onboarding_reopen', status: 'ok', user, props: {} })
     } catch (err) {
-      trackEvent({ event: 'onboarding_reopen', status: 'error', user, props: { err: (err as TAPIError)?.error } })
+      trackEvent({
+        event: 'onboarding_reopen',
+        status: 'error',
+        user,
+        props: { err: (err as TAPIError)?.error },
+      })
     } finally {
       window.location.assign('/onboarding?reopen=1')
     }
@@ -57,6 +92,7 @@ export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
       isDev={!!isDev}
       apiUrl={apiUrl}
       adminDashboardUrl={adminDashboardUrl}
+      grafanaUiUrl={grafanaReachable ? grafanaUiUrl : undefined}
       authServiceUrl={authServiceUrl}
       notificationsSupported={isSupported}
       notificationPermission={permission ?? ''}

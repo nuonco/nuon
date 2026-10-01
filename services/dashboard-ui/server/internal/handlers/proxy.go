@@ -58,6 +58,7 @@ func (h *ProxyHandler) RegisterRoutes(e *gin.Engine) error {
 	// emits every asset and API URL under that prefix — nothing to strip and
 	// nothing to rewrite.
 	kafkaUIProxy := h.newPassthroughProxy(h.cfg.KafkaUIUrl)
+	grafanaUIProxy := h.newPassthroughProxy(h.cfg.GrafanaUIUrl)
 
 	e.GET("/public/swagger/*path", gin.WrapH(publicSwaggerProxy))
 
@@ -87,6 +88,10 @@ func (h *ProxyHandler) RegisterRoutes(e *gin.Engine) error {
 	nuonOnly.Any("/admin/temporal/*path", gin.WrapH(temporalProxy))
 	nuonOnly.GET("/_app/*path", gin.WrapH(temporalProxy))
 	nuonOnly.Any("/admin/kafka/*path", gin.WrapH(kafkaUIProxy))
+	if h.cfg.GrafanaUIUrl != "" {
+		nuonOnly.Any("/admin/grafana", gin.WrapH(grafanaUIProxy))
+		nuonOnly.Any("/admin/grafana/*path", gin.WrapH(grafanaUIProxy))
+	}
 	nuonOnly.Any("/admin/v1/*path", gin.WrapH(adminAPIProxy))
 	nuonOnly.Any("/admin/dashboard/*path", gin.WrapH(adminDashboardProxy))
 
