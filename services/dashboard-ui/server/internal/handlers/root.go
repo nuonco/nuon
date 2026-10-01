@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"net/http"
 	"net/url"
 	"time"
@@ -17,47 +16,8 @@ import (
 const authCookie = "X-Nuon-Auth"
 const orgCookie = "org_session"
 
-const firstRunJourney = "first_run"
-
 func orgLandingPath(org *models.AppOrg) string {
 	return "/" + org.ID
-}
-
-func firstRunPending(account *models.AppAccount) bool {
-	if account == nil {
-		return false
-	}
-	for _, journey := range account.UserJourneys {
-		if journey == nil || journey.Name != firstRunJourney {
-			continue
-		}
-		for _, step := range journey.Steps {
-			if step != nil && !step.Complete {
-				return true
-			}
-		}
-		return false
-	}
-	return false
-}
-
-type currentUserGetter interface {
-	GetCurrentUser(ctx context.Context) (*models.AppAccount, error)
-}
-
-func (h *RootHandler) orgDestination(ctx context.Context, client currentUserGetter, orgPath string) string {
-	if !h.cfg.OnboardingFirstRun {
-		return orgPath
-	}
-	account, err := client.GetCurrentUser(ctx)
-	if err != nil {
-		h.l.Warn("root: unable to read account journeys, skipping onboarding check", zap.Error(err))
-		return orgPath
-	}
-	if firstRunPending(account) {
-		return "/onboarding"
-	}
-	return orgPath
 }
 
 type RootHandler struct {
@@ -120,15 +80,13 @@ func (h *RootHandler) Handle(c *gin.Context) {
 		zap.Bool("has_org_cookie", hasOrgCookie),
 	)
 
-	if !h.cfg.OnboardingFirstRun {
-		if orgId, err := c.Cookie(orgCookie); err == nil && orgId != "" {
-			h.l.Info("root: redirecting to org from session cookie",
-				zap.String("org_id", orgId),
-				zap.Duration("duration", time.Since(start)),
-			)
-			c.Redirect(http.StatusFound, "/"+orgId)
-			return
-		}
+	if orgId, err := c.Cookie(orgCookie); err == nil && orgId != "" {
+		h.l.Info("root: redirecting to org from session cookie",
+			zap.String("org_id", orgId),
+			zap.Duration("duration", time.Since(start)),
+		)
+		c.Redirect(http.StatusFound, "/"+orgId)
+		return
 	}
 
 	client, err := nuon.New(nuon.WithURL(h.cfg.APIUrl), nuon.WithAuthToken(token))
@@ -138,17 +96,6 @@ func (h *RootHandler) Handle(c *gin.Context) {
 			zap.Duration("duration", time.Since(start)),
 		)
 		c.Redirect(http.StatusFound, "/error?reason=api-error")
-		return
-	}
-
-	if orgId, err := c.Cookie(orgCookie); err == nil && orgId != "" {
-		dest := h.orgDestination(c.Request.Context(), client, "/"+orgId)
-		h.l.Info("root: redirecting to org from session cookie",
-			zap.String("org_id", orgId),
-			zap.String("destination", dest),
-			zap.Duration("duration", time.Since(start)),
-		)
-		c.Redirect(http.StatusFound, dest)
 		return
 	}
 
@@ -188,7 +135,7 @@ func (h *RootHandler) Handle(c *gin.Context) {
 	}
 
 	if len(orgs) > 0 {
-		dest := h.orgDestination(c.Request.Context(), client, orgLandingPath(orgs[0]))
+		dest := orgLandingPath(orgs[0])
 		h.l.Info("root: redirecting to org",
 			zap.String("org_id", orgs[0].ID),
 			zap.String("destination", dest),

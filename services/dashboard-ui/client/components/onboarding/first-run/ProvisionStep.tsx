@@ -25,6 +25,7 @@ import {
   type TCloud,
   type TStageId,
 } from './constants'
+import { clearFirstRunSession } from './session'
 import { CopyTextButton, FirstRunCloudRegion, NextButton } from './shared'
 
 const ProvisionAccountView = ({
@@ -227,6 +228,7 @@ export const ProvisionStep = ({ sharedData, onGoBack }: IWizardStepComponentProp
     setError(undefined)
     try {
       await journey.complete()
+      clearFirstRunSession(user?.sub)
       trackEvent({
         event: 'onboarding_complete',
         status: 'ok',
