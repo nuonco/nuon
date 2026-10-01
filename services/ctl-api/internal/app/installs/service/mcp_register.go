@@ -46,27 +46,51 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"get_workflow",
 		"Get workflow",
-		"Get a workflow by ID with a summary of all steps and their statuses. If a step is awaiting approval, the pending_approval field will contain the approval_id needed to approve or reject it. Use this to follow a workflow's progress and find pending approvals.",
+		"Get a workflow by ID with a summary of all steps and their statuses. approval_option is prompt or approve-all. pending_approvals lists every step whose approval has no response, including stored change counts and next_actions. It does not include plan diffs. When you stop for user input (approval, retry, or any next_actions menu), do not report only completed_steps/total_steps. List every step from the steps array by name and status so the user can see what already finished before the waiting step. Keep that list compact (name and status only); do not dump stack_setup, tfvars, or outputs again unless the user is waiting on await install stack. Present each pending approval's next_actions as a menu. Do not call get_approval_plan_diff or render diffs until the user chooses review_plan_diff. Choosing review means load every diff: call get_approval_plan_diff and follow continue_review, using each response's offset, until continue_review is absent. A full page is not the end of the plan. Do not reply until every page is loaded, then show one review. Plan review is optional: if the user selects approve, reject, or approve_all from next_actions, that selection is confirmation. Call the selected tool immediately without loading diffs or asking again. Offer approve_all only when that action is present, and only once per workflow. Tell the user approve_all applies every remaining plan in this workflow before presenting that choice. A parallel group can have several entries. After one approval is resolved, call watch_workflow to find the next. When a step includes stack_setup, show that install-stack setup to the user: status, quick launch link, template URL, create and update commands, and the Terraform clone, backend, tfvars, and apply command when those fields are set. Then keep watching. That step stays in progress until the stack is applied and the runner connects. When a step is waiting for a retry, next_actions lists every menu choice: show_step_logs, retry when the step is retryable, skip when it is skippable, and cancel_workflow. Present every one of those actions. Do not show only Show step logs. Call get_workflow_step_logs when presenting the menu; showing logs does not retry, skip, or cancel, and the workflow stays parked. If the log page has has_more, offer to load older logs with next_cursor. If message says the step has no log stream, tell the user that. If the user selects retry, skip, or cancel_workflow, that selection is confirmation: call that action's tool immediately. When a step includes composite_error, show its message, type, and each section before the menu. hints.skip_auto_retry means the step parked on the first failure.",
 	), s.mcpGetWorkflow)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"get_pending_approvals",
 		"Get pending approvals",
-		"List pending workflow step approvals across the org (id, type, step, workflow). Does not return plan contents. Use get_workflow for step details, then approve_step or reject_step."+apiPkg.MCPListToolHint,
+		"List pending workflow step approvals across the org (id, type, step, workflow, stored change counts, and next_actions). Does not return plan diffs. Present each approval's next_actions as a menu. Do not call get_approval_plan_diff until the user chooses review_plan_diff. Choosing review means load every diff: call get_approval_plan_diff and follow continue_review, using each response's offset, until continue_review is absent. A full page is not the end of the plan. Do not reply until every page is loaded, then show one review. Plan review is optional: selecting approve, reject, or approve_all is confirmation; call that tool immediately without loading diffs or asking again. Offer approve_all only when that action is present."+apiPkg.MCPListToolHint,
 	), s.mcpGetPendingApprovals)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"watch_workflow",
 		"Watch workflow",
-		"Watch a workflow for status changes. If last_known_status is provided and differs from current status, "+
-			"returns immediately. Otherwise polls every 3 seconds until the status changes or the timeout is reached. "+
-			"Use this to follow a deploy or provision workflow's progress without repeated polling.",
+		"Watch an install workflow, including a runbook_run from run_runbook or an action_workflow_run from run_action. "+
+			"Pass cursor from the previous response to wake on any step, approval, or retry change, even when the workflow status stays in_progress. "+
+			"last_known_status is the older check and compares only the workflow status. "+
+			"If neither is set, this returns the current snapshot and a cursor immediately. "+
+			"Otherwise it polls every 3 seconds and returns when a step starts or finishes, or the timeout is reached. It does not return only to repeat an in-progress step. "+
+			"step_progress lists only steps to show now: no pending or queued steps, and no step already reported at the same status. An in-progress step is included again. Write step_progress as given and do not add other steps from workflow.steps. If step_progress is empty, write nothing about steps. Pass reported from this response on the next watch. After every watch_workflow result, the next user-visible message is step_progress. Then call next_action. A row of watch_workflow calls with no step_progress between them is wrong. Do not end the turn after printing the list, and do not wait for the user. Only stop when the workflow is terminal or a step needs a decision. If steps is empty, say the workflow is still generating steps, then keep watching. "+
+			"When you stop for user input (approval, retry, or any next_actions menu), do not report only completed_steps/total_steps. "+
+			"List every step from the steps array by name and status so the user can see what already finished before the waiting step. "+
+			"Keep that list compact (name and status only); do not dump stack_setup, tfvars, or outputs again unless the user is waiting on await install stack. "+
+			"If a step includes stack_setup, show that install-stack setup once (status, quick launch link, template URL, create and update commands, and Terraform files when present), then keep watching. "+
+			"An in-progress await-install-stack step is the customer applying the stack. A timeout there is not a stop. "+
+			"When a step is waiting for a retry, next_actions lists every menu choice: show_step_logs, retry when the step is retryable, skip when it is skippable, and cancel_workflow. Present every one of those actions. Do not show only Show step logs. Call get_workflow_step_logs when presenting the menu; showing logs does not retry, skip, or cancel. If the user selects retry, skip, or cancel_workflow, that selection is confirmation: call that action's tool immediately. When a step includes composite_error, show its message, type, and each section before the menu.",
 	), s.mcpWatchWorkflow)
+
+	mcp.AddTool(server, apiPkg.MCPReadTool(
+		"get_approval_plan_diff",
+		"Get approval plan diff",
+		"Get one page of unified diffs for a workflow step approval. Pages are for the agent, not the user. "+
+			"When the user asks to review a plan, keep calling this until every change is loaded. "+
+			"If next_actions contains continue_review, call that tool immediately with its arguments, including offset. "+
+			"Do not stop after one page, and do not stop because a page returned 100 changes. "+
+			"Do not reply, do not render a partial page, and do not show a menu while continue_review is present. "+
+			"After the last page, review every change from every page together in one response. Put each changes[].diff in a markdown diff fence. "+
+			"Lead with delete and replace counts. no-op and read changes are omitted unless action asks for them. "+
+			"Then present the last page's next_actions as a menu. Those are approve, reject, stop, and approve_all when allowed. "+
+			"If too_large is true, the plan exceeded the parse cap: report the stored counts and do not invent a diff. "+
+			"Review every entry in get_workflow.pending_approvals separately. Selecting approve, reject, or approve_all from the menu is sufficient confirmation; do not ask again.",
+	), s.mcpGetApprovalPlanDiff)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"get_workflow_step",
 		"Get workflow step",
-		"Get full details for a workflow step including target type, approval status, policy validation, and execution time.",
+		"Get full details for a workflow step including target type, approval status, policy validation, and execution time. The await install stack step includes stack_setup: status, quick launch link, template URL, create and update commands, and Terraform files when present. Show that setup, then keep watching the workflow until the stack is applied. When a step is waiting for a retry, next_actions lists every menu choice: show_step_logs, retry when the step is retryable, skip when it is skippable, and cancel_workflow. Present every one of those actions. Do not show only Show step logs. show_step_logs is read-only. If the user selects retry, skip, or cancel_workflow, that selection is confirmation: call that action's tool immediately. When composite_error is set, show its message, type, and each section before the menu.",
 	), s.mcpGetWorkflowStep)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
@@ -156,20 +180,36 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPWriteTool(
 		"approve_step",
 		"Approve step",
-		"WRITE OPERATION: Approve a pending workflow step approval. This unblocks the workflow and allows it to proceed to the next step. "+
-			"The approval is irreversible — once approved, the workflow will continue executing (e.g., terraform apply, helm install). "+
-			"Always review the plan contents via get_workflow before approving. Requires the approval_id from get_workflow or get_pending_approvals. "+
-			"Optional note is stored on the approval response.",
+		"WRITE OPERATION: Approve one pending workflow step approval. This unblocks that step and lets the workflow continue (for example terraform apply or helm install). "+
+			"The approval is irreversible. Plan review is optional. If the user selected Approve this step from next_actions, that selection is confirmation: call this tool immediately without loading the plan diff or asking again. "+
+			"Requires the approval_id from get_workflow or get_pending_approvals. Optional note is stored on the approval response. "+
+			"If this tool returns an error, the approval was not applied and the step is still pending. "+
+			"On success, call the returned next_action (watch_workflow) immediately.",
 		true,
 		false,
 	), s.mcpApproveStep)
+
+	mcp.AddTool(server, apiPkg.MCPWriteTool(
+		"approve_all",
+		"Approve all",
+		"WRITE OPERATION: Switch one workflow to approve-all, matching the dashboard Approve all button. "+
+			"Approves steps already waiting and auto-approves every later plan in this workflow. Does not change the install default. "+
+			"Only valid when approval_option is prompt, the workflow is still running, it is not a drift scan, it is not cancelled, and it has an approval step. "+
+			"Tell the user this applies every remaining plan in this workflow before presenting the choice. Selecting Approve all is confirmation; call this tool without asking again. "+
+			"Requires the workflow_id from get_workflow.",
+		true,
+		false,
+	), s.mcpApproveAll)
 
 	mcp.AddTool(server, apiPkg.MCPWriteTool(
 		"reject_step",
 		"Reject step",
 		"WRITE OPERATION: Reject a pending workflow step approval. This stops the workflow from proceeding. "+
 			"The rejection is irreversible for this workflow run — a new workflow must be triggered to retry. "+
-			"Provide a reason to help the team understand why the approval was denied.",
+			"Plan review is optional. If the user selected Reject this step from next_actions, that selection is confirmation: call this tool immediately without loading the plan diff or asking again. "+
+			"Provide a reason to help the team understand why the approval was denied. "+
+			"If this tool returns an error, the rejection was not applied and the step is still pending. "+
+			"On success, call the returned next_action (watch_workflow) immediately.",
 		true,
 		false,
 	), s.mcpRejectStep)
@@ -178,16 +218,31 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 		"retry_step",
 		"Retry step",
 		"WRITE OPERATION: Retry a failed workflow step. The step must be retryable. "+
-			"This creates a new attempt for the step and the workflow resumes from that point.",
+			"If the user selected Retry step from next_actions, that selection is confirmation: call this tool immediately. "+
+			"This creates a new attempt for the step and the workflow resumes from that point. "+
+			"On success, call the returned next_action (watch_workflow) immediately.",
 		false,
 		false,
 	), s.mcpRetryStep)
 
 	mcp.AddTool(server, apiPkg.MCPWriteTool(
+		"skip_step",
+		"Skip step",
+		"WRITE OPERATION: Skip a failed workflow step and continue the workflow. The step must be skippable. "+
+			"If the user selected Skip step from next_actions, that selection is confirmation: call this tool immediately. "+
+			"Changes from the skipped step are not applied. "+
+			"On success, call the returned next_action (watch_workflow) immediately.",
+		false,
+		false,
+	), s.mcpSkipStep)
+
+	mcp.AddTool(server, apiPkg.MCPWriteTool(
 		"cancel_workflow",
 		"Cancel workflow",
 		"WRITE OPERATION: Cancel an in-progress workflow. The workflow must be in a cancelable state "+
-			"(in_progress, pending, awaiting_approval, or failed_pending_retry).",
+			"(in_progress, pending, awaiting_approval, or failed_pending_retry). "+
+			"If the user selected Cancel workflow from next_actions, that selection is confirmation: call this tool immediately. "+
+			"On success, call the returned next_action (watch_workflow) until the workflow reaches a terminal status.",
 		true,
 		false,
 	), s.mcpCancelWorkflow)

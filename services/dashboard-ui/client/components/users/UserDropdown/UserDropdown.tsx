@@ -86,9 +86,7 @@ export const UserDropdown = ({
           </Text>
         )}
         {!hideOrgSettings && <InviteUserButton isMenuButton />}
-        {!hideOrgSettings && (isByoc || isDev) && (
-          <OrgTelemetryButton isMenuButton />
-        )}
+        {!hideOrgSettings && <OrgTelemetryButton isMenuButton />}
         {!hideOrgSettings && (isByoc || !onboardingFirstRun) && (
           <Link href={isByoc ? '/byoc-setup' : '/onboarding'}>
             {isByoc ? 'Setup guide' : 'Re-open onboarding'}{' '}
@@ -152,7 +150,10 @@ export const UserDropdown = ({
             User settings
           </Text>
         )}
-        <Button onClick={() => onAddPanel(<UserPreferencesPanel />)} isMenuButton>
+        <Button
+          onClick={() => onAddPanel(<UserPreferencesPanel />)}
+          isMenuButton
+        >
           Preferences <Icon variant="SlidersHorizontalIcon" />
         </Button>
         {notificationsSupported && notificationPermission === 'granted' ? (

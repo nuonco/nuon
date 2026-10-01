@@ -128,6 +128,9 @@ func (h *Helpers) TriggerRunbookRun(ctx context.Context, req TriggerRunbookRunRe
 		}
 		metadata := map[string]string{"install_runbook_id": installRunbook.ID, "install_runbook_run_id": run.ID, "runbook_name": installRunbook.Runbook.Name, "runbook_config_id": req.RunbookConfigID, "install_id": installRunbook.InstallID}
 		if run.InstallWorkflowID == nil {
+			if err := h.requireLiveInstallRunner(ctx, installRunbook.InstallID); err != nil {
+				return err
+			}
 			approvalOption := app.InstallApprovalOptionPrompt
 			var installConfig app.InstallConfig
 			err := tx.Where(app.InstallConfig{InstallID: installRunbook.InstallID}).Order("created_at DESC").First(&installConfig).Error

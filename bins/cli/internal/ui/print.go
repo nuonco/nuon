@@ -54,33 +54,45 @@ func printHumanError(err error) error {
 		err = withstack.WithStackDepth(err, 1)
 	}
 
+	resolved := resolveError(err)
+	if resolved.warning {
+		fmt.Println(bubbles.WarningStyle.Render(resolved.msg))
+	} else {
+		fmt.Println(bubbles.ErrorStyle.Render(resolved.msg))
+	}
+	return resolved.err
+}
+
+// resolvedError is an error reduced to what a user should see. The JSON and human
+// output paths share it so a config or parse failure reads the same in both.
+type resolvedError struct {
+	msg     string
+	warning bool
+	err     error
+}
+
+func resolveError(err error) resolvedError {
 	cliUserErr := &CLIUserError{}
 	if errors.As(err, &cliUserErr) {
-		fmt.Println(bubbles.ErrorStyle.Render(err.Error()))
-		return err
+		return resolvedError{msg: err.Error(), err: err}
 	}
 
-	apiUserErr, ok := nuon.ToUserError(err)
-	if ok {
-		fmt.Println(bubbles.ErrorStyle.Render(apiUserErr.Description))
-		return err
+	if apiUserErr, ok := nuon.ToUserError(err); ok {
+		return resolvedError{msg: apiUserErr.Description, err: err}
 	}
 
 	if nuon.IsServerError(err) {
-		fmt.Println(bubbles.ErrorStyle.Render(defaultServerErrorMessage))
-		return err
+		return resolvedError{msg: defaultServerErrorMessage, err: err}
 	}
 
 	// Handle any other API errors with a user-friendly message
 	if apiErrMsg, ok := nuon.ToAPIError(err); ok {
-		fmt.Println(bubbles.ErrorStyle.Render(apiErrMsg))
-		return err
+		return resolvedError{msg: apiErrMsg, err: err}
 	}
 
 	var parseErr parse.ParseErr
 	if errors.As(err, &parseErr) {
-		fmt.Println(bubbles.ErrorStyle.Render(parseErr.Error()))
-		return parseErr
+		return resolvedError{msg: parseErr.Error(), err: parseErr}
 	}
 
 	var cfgErr config.ErrConfig
@@ -91,36 +103,29 @@ func printHumanError(err error) error {
 			if wmsg == "" {
 				wmsg = cfgErr.Error()
 			}
-			fmt.Println(bubbles.WarningStyle.Render(wmsg))
-			return cfgErr
+			return resolvedError{msg: wmsg, warning: true, err: cfgErr}
 		}
 
-		msg := fmt.Sprintf("%s %s", cfgErr.Description, cfgErr.Error())
-		fmt.Println(bubbles.ErrorStyle.Render(msg))
-		return cfgErr
+		return resolvedError{msg: fmt.Sprintf("%s %s", cfgErr.Description, cfgErr.Error()), err: cfgErr}
 	}
 
 	var syncErr sync.SyncErr
 	if errors.As(err, &syncErr) {
-		fmt.Println(bubbles.ErrorStyle.Render(syncErr.Error()))
-		return syncErr
+		return resolvedError{msg: syncErr.Error(), err: syncErr}
 	}
 
 	var syncAPIErr sync.SyncAPIErr
 	if errors.As(err, &syncAPIErr) {
-		fmt.Println(bubbles.ErrorStyle.Render(syncAPIErr.Error()))
-		return syncAPIErr
+		return resolvedError{msg: syncAPIErr.Error(), err: syncAPIErr}
 	}
 
 	// Filter out ugly technical error messages that shouldn't be shown to users
 	errMsg := err.Error()
 	if containsTechnicalError(errMsg) {
-		fmt.Println(bubbles.ErrorStyle.Render(defaultUnknownErrorMessage))
-		return err
+		return resolvedError{msg: defaultUnknownErrorMessage, err: err}
 	}
 
-	fmt.Println(bubbles.ErrorStyle.Render(errMsg))
-	return err
+	return resolvedError{msg: errMsg, err: err}
 }
 
 // containsTechnicalError checks if an error message contains technical details

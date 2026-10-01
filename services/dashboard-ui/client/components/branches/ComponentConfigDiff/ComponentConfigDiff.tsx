@@ -182,10 +182,11 @@ const ComponentSourceTree = ({
 
   return (
     <FileTree
-      className={cn(files.length > 5 ? 'h-144' : 'h-96', 'w-full')}
       model={model}
+      // The tree overwrites its host's class attribute, so size it via style.
       style={
         {
+          height: files.length > 5 ? '36rem' : '24rem',
           '--trees-bg-override': 'var(--background)',
           '--trees-border-color-override': 'var(--border-color)',
           '--trees-fg-override': 'var(--foreground)',
@@ -303,8 +304,8 @@ export const SourceFilesPanel = ({
   }, [focus])
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
+    <div className="@container flex flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Text variant="label" theme="neutral">
           Referenced files
         </Text>
@@ -326,11 +327,11 @@ export const SourceFilesPanel = ({
         <div
           ref={panelRef}
           className={cn(
-            'flex flex-col overflow-hidden border rounded-md lg:flex-row',
+            'flex flex-col overflow-hidden border rounded-md @3xl:flex-row',
             files.length > 5 ? 'min-h-144' : 'min-h-96'
           )}
         >
-          <div className="border-b p-3 lg:w-2/5 lg:border-b-0 lg:border-r">
+          <div className="border-b p-3 @3xl:w-2/5 @3xl:border-b-0 @3xl:border-r">
             <ComponentSourceTree
               files={files}
               onSelect={setSelectedPath}
@@ -340,7 +341,7 @@ export const SourceFilesPanel = ({
           </div>
           <div
             className={cn(
-              'min-w-0 overflow-auto p-4 transition-colors duration-500 lg:w-3/5',
+              'min-w-0 overflow-auto p-4 transition-colors duration-500 @3xl:w-3/5',
               flash && 'bg-primary-50 dark:bg-primary-900/20'
             )}
           >
@@ -369,7 +370,7 @@ const VersionRange = ({
   previous: string
   current: string
 }) => (
-  <div className="flex items-center gap-1.5">
+  <div className="flex min-w-0 flex-wrap items-center gap-1.5">
     <Badge variant="code">{previous}</Badge>
     <Icon variant="ArrowRightIcon" size={12} />
     <Badge variant="code">{current}</Badge>
