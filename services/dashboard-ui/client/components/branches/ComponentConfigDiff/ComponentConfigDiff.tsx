@@ -303,7 +303,7 @@ export const SourceFilesPanel = ({
   }, [focus])
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <Text variant="label" theme="neutral">
           Referenced files
@@ -330,7 +330,7 @@ export const SourceFilesPanel = ({
             files.length > 5 ? 'min-h-144' : 'min-h-96'
           )}
         >
-          <div className="border-b lg:w-2/5 lg:border-b-0 lg:border-r">
+          <div className="border-b p-3 lg:w-2/5 lg:border-b-0 lg:border-r">
             <ComponentSourceTree
               files={files}
               onSelect={setSelectedPath}
@@ -538,7 +538,7 @@ const SectionSummary = ({
     />
   )
   return (
-    <div className="mb-3 flex flex-col break-inside-avoid rounded-lg border px-2 py-2">
+    <div className="mb-3 flex flex-col break-inside-avoid rounded-lg border px-3 py-3">
       {summary}
       <div className="flex flex-col">{entityRows}</div>
     </div>
