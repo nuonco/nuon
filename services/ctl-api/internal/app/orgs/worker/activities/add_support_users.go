@@ -7,6 +7,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 )
 
+type SupportUsersOnOrgCreateRequest struct{}
+
+// @temporal-gen-v2 activity
+func (a *Activities) SupportUsersOnOrgCreate(ctx context.Context, req SupportUsersOnOrgCreateRequest) (bool, error) {
+	return a.enableSupportUsers, nil
+}
+
 type AddSupportUsersRequest struct {
 	OrgID string `json:"org_id" validate:"required"`
 }

@@ -27,12 +27,8 @@ import (
 const (
 	disableAppSyncFeature = "disable-app-sync"
 
-	migrationDefaultBranchName = "default"
-	migrationDefaultDirectory  = "."
-	migrationBranchesDir       = "branches"
-
-	migrationEnterOtherValue = "__enter_other__"
-	migrationCreateNewBranch = "__create_new__"
+	migrationBranchFile  = "branch.toml"
+	migrationBranchesDir = "branches"
 
 	fileChoiceUseExisting = "use-existing"
 	fileChoiceOverwrite   = "overwrite"
@@ -51,8 +47,8 @@ func (e printedErr) Unwrap() error { return e.error }
 
 func appSyncDisabledErr(guidance string) error {
 	msg := "`nuon apps sync` is disabled for this org: app config now ships through config-managed app branches. " +
-		"Add a branch file (for example branches/default.toml with name, [connected_repo] and [run] mode = \"push\"), " +
-		"apply it with `nuon branches sync --file branches/default.toml`, then move installs onto that branch. " +
+		"Add a branch.toml next to the app config (name, [connected_repo], and [run] mode = \"push\"), " +
+		"apply it with `nuon branches sync --file branch.toml`, then move installs onto that branch. " +
 		"Rerun `nuon apps sync` in an interactive terminal to be walked through the migration."
 	if guidance != "" {
 		msg += "\n\n" + guidance
@@ -146,6 +142,8 @@ func (s *Service) appSyncBranchGuides(ctx context.Context, dir, appID string) ([
 		dashboardURL = strings.TrimRight(cliCfg.DashboardURL, "/")
 	}
 
+	localPath, localName := localBranchConfig(dir)
+
 	resolver := newBranchNameResolver(s.api, appID)
 	guides := make([]appSyncBranchGuide, 0, len(branches))
 	for _, branch := range branches {
@@ -161,9 +159,8 @@ func (s *Service) appSyncBranchGuides(ctx context.Context, dir, appID string) ([
 			guide.DashboardURL = fmt.Sprintf("%s/%s/apps/%s/branches/%s", dashboardURL, s.cfg.OrgID, appID, branch.ID)
 		}
 
-		path := branchConfigFilePath(dir, branch.Name)
-		if _, statErr := os.Stat(path); statErr == nil {
-			guide.ConfigPath = path
+		if localPath != "" && branch.Name == localName {
+			guide.ConfigPath = localPath
 		}
 
 		latest, latestErr := s.latestBranchConfig(ctx, appID, branch.ID)
@@ -226,11 +223,11 @@ func printMigrationIntro() {
 		"Nuon at a repo, directory and git branch, and pushes to that git branch run the app branch.",
 		"",
 		"This wizard will:",
-		"  1. write branches/<name>.toml in this app config directory (asking before overwriting)",
+		"  1. write branch.toml in this app config directory from the git checkout and the connected GitHub repo",
 		"  2. create or update that app branch with `nuon branches sync`",
-		"  3. optionally move this app's installs onto the branch",
+		"  3. ask whether to move this app's installs onto the branch (no by default)",
 		"",
-		"It will not sync this app config; commit and push the branch file afterwards.",
+		"It will not sync this app config; commit and push branch.toml afterwards.",
 	}
 	for _, l := range lines {
 		fmt.Println(styles.TextDim.Render("  " + l))
@@ -238,140 +235,61 @@ func printMigrationIntro() {
 }
 
 func (s *Service) runAppBranchMigration(ctx context.Context, dir, appID string) error {
+	if err := refuseBranchesDirectory(dir); err != nil {
+		return err
+	}
+
+	source, err := migrationSourceFromGit(ctx, dir)
+	if err != nil {
+		return err
+	}
+	repo, err := s.connectedRepoFullName(ctx, source.Repo)
+	if err != nil {
+		return err
+	}
+	source.Repo = repo
+
 	remotes, err := nuon.GetAllAppBranches(ctx, s.api, appID)
 	if err != nil {
 		return fmt.Errorf("unable to list app branches: %w", err)
 	}
-
-	branch, err := s.pickExistingConfigBranch(remotes)
-	if err != nil {
-		return err
+	if existing := findBranchByName(remotes, source.Branch); existing != nil && existing.ManagedBy != appBranchManagedByConfig {
+		return &ui.CLIUserError{Msg: fmt.Sprintf(
+			"app branch %q already exists and is managed manually, so branch.toml cannot take it over",
+			source.Branch,
+		)}
 	}
 
-	if branch == nil {
-		branch, err = s.createMigrationBranch(ctx, dir, appID, remotes)
-		if err != nil {
-			return err
-		}
-	}
+	ui.PrintLn(fmt.Sprintf("branch.toml will track %s (%s) on git branch %s", source.Repo, source.Directory, source.Branch))
 
-	if err := s.migrateInstallsToBranch(ctx, appID, branch); err != nil {
-		return err
-	}
-
-	ui.PrintLn("next: commit the branch file and push it; pushes to the tracked git branch now run this app branch.")
-	ui.PrintLn("`nuon apps sync` stays disabled for this org; use `nuon branches sync --file <file>` to change branch settings.")
-	return nil
-}
-
-func configManagedBranches(remotes []*models.AppAppBranch) []*models.AppAppBranch {
-	out := make([]*models.AppAppBranch, 0, len(remotes))
-	for _, b := range remotes {
-		if b != nil && b.ManagedBy == appBranchManagedByConfig {
-			out = append(out, b)
-		}
-	}
-	return out
-}
-
-func findBranchByName(remotes []*models.AppAppBranch, name string) *models.AppAppBranch {
-	for _, b := range remotes {
-		if b != nil && b.Name == name {
-			return b
-		}
-	}
-	return nil
-}
-
-func (s *Service) pickExistingConfigBranch(remotes []*models.AppAppBranch) (*models.AppAppBranch, error) {
-	managed := configManagedBranches(remotes)
-	if len(managed) == 0 {
-		return nil, nil
-	}
-
-	items := make([]bubbles.SelectorItem, 0, len(managed)+1)
-	items = append(items, bubbles.NewSelectorItem("Create or update a branch from a new branch file", "", migrationCreateNewBranch))
-	for _, b := range managed {
-		items = append(items, bubbles.NewSelectorItem(
-			"Reuse "+b.Name,
-			styles.TextDim.Render("config-managed, ID: "+b.ID+" (left as is)"),
-			b.ID,
-		))
-	}
-	choice, err := bubbles.SelectFromItems("This app already has config-managed branches", items, true)
-	if err != nil {
-		return nil, errMigrationCancelled
-	}
-	if choice == migrationCreateNewBranch {
-		return nil, nil
-	}
-	for _, b := range managed {
-		if b.ID == choice {
-			return b, nil
-		}
-	}
-	return nil, nil
-}
-
-func (s *Service) createMigrationBranch(ctx context.Context, dir, appID string, remotes []*models.AppAppBranch) (*models.AppAppBranch, error) {
-	name, err := promptWithDefault("App branch name", migrationDefaultBranchName)
-	if err != nil {
-		return nil, err
-	}
-	fileName := sanitizeBranchFileName(name)
-	if fileName == "" {
-		return nil, &ui.CLIUserError{Msg: fmt.Sprintf("app branch name %q has no characters usable in a file name", name)}
-	}
-
-	if existing := findBranchByName(remotes, name); existing != nil {
-		if existing.ManagedBy != appBranchManagedByConfig {
-			return nil, &ui.CLIUserError{Msg: fmt.Sprintf(
-				"app branch %q already exists and is managed manually, so a branch file cannot take it over; rerun and pick a different name",
-				name,
-			)}
-		}
-		reuse, err := bubbles.InlineConfirm(fmt.Sprintf("App branch %q already exists and is config-managed. Reuse it as is?", name), true, true)
-		if err != nil {
-			return nil, errMigrationCancelled
-		}
-		if reuse {
-			return existing, nil
-		}
-	}
-
-	path := branchConfigFilePath(dir, name)
+	path := migrationBranchConfigPath(dir)
 	write := true
+	branchName := source.Branch
 	if _, statErr := os.Stat(path); statErr == nil {
 		choice, err := chooseExistingFileAction(path)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		switch choice {
 		case fileChoiceCancel:
-			return nil, errMigrationCancelled
+			return errMigrationCancelled
 		case fileChoiceUseExisting:
 			write = false
 		}
 	} else if !os.IsNotExist(statErr) {
-		return nil, fmt.Errorf("unable to check %s: %w", path, statErr)
+		return fmt.Errorf("unable to check %s: %w", path, statErr)
 	}
 
 	if write {
-		cfg, err := s.promptMigrationBranchConfig(ctx, dir, appID, name, remotes)
-		if err != nil {
-			return nil, err
-		}
+		cfg := newMigrationBranchConfig(source.Branch, source.Repo, source.Directory, source.Branch)
 		if err := writeBranchConfigFile(path, cfg); err != nil {
-			return nil, err
+			return err
 		}
 		ui.PrintSuccess("wrote " + path)
-	}
-
-	branchName := name
-	if !write {
+	} else {
 		existingCfg, err := parse.ParseAppBranchConfigFile(path)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		branchName = existingCfg.Name
 	}
@@ -381,18 +299,34 @@ func (s *Service) createMigrationBranch(ctx context.Context, dir, appID string, 
 		AppID:   appID,
 		Confirm: true,
 	}); err != nil {
-		return nil, printedErr{err}
+		return printedErr{err}
 	}
 
 	refreshed, err := nuon.GetAllAppBranches(ctx, s.api, appID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to list app branches: %w", err)
+		return fmt.Errorf("unable to list app branches: %w", err)
 	}
 	branch := findBranchByName(refreshed, branchName)
 	if branch == nil {
-		return nil, fmt.Errorf("app branch %q was not found after syncing %s", branchName, path)
+		return fmt.Errorf("app branch %q was not found after syncing %s", branchName, path)
 	}
-	return branch, nil
+
+	if err := s.migrateInstallsToBranch(ctx, appID, branch); err != nil {
+		return err
+	}
+
+	ui.PrintLn("next: commit branch.toml and push it; pushes to the tracked git branch now run this app branch.")
+	ui.PrintLn("`nuon apps sync` stays disabled for this org; use `nuon branches sync --file branch.toml` to change branch settings.")
+	return nil
+}
+
+func findBranchByName(remotes []*models.AppAppBranch, name string) *models.AppAppBranch {
+	for _, b := range remotes {
+		if b != nil && b.Name == name {
+			return b
+		}
+	}
+	return nil
 }
 
 func chooseExistingFileAction(path string) (string, error) {
@@ -412,53 +346,6 @@ func chooseExistingFileAction(path string) (string, error) {
 		}
 	}
 	return choice, nil
-}
-
-func (s *Service) promptMigrationBranchConfig(ctx context.Context, dir, appID, name string, remotes []*models.AppAppBranch) (*config.AppBranchConfig, error) {
-	known := s.knownConnectedRepos(ctx, appID, remotes)
-
-	repo, err := selectOrType(
-		"Connected GitHub repo (owner/name)",
-		repoCandidates(gitOriginRepo(ctx, dir), known),
-		"",
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	directory, err := promptWithDefault("Directory of the app config within the repo", migrationDefaultDirectory)
-	if err != nil {
-		return nil, err
-	}
-
-	gitBranch, err := selectOrType(
-		"Git branch to track",
-		gitBranchCandidates(repo, gitCurrentBranch(ctx, dir), known),
-		"",
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return newMigrationBranchConfig(name, repo, directory, gitBranch), nil
-}
-
-// knownConnectedRepos reads the connected repos the app's branches already
-// track; failures only cost the selector a suggestion.
-func (s *Service) knownConnectedRepos(ctx context.Context, appID string, remotes []*models.AppAppBranch) []config.ConnectedRepoConfig {
-	var out []config.ConnectedRepoConfig
-	for _, b := range remotes {
-		if b == nil {
-			continue
-		}
-		latest, err := s.latestBranchConfig(ctx, appID, b.ID)
-		if err != nil || latest == nil || latest.ConnectedGithubVcsConfig == nil {
-			continue
-		}
-		vcs := latest.ConnectedGithubVcsConfig
-		out = append(out, config.ConnectedRepoConfig{Repo: vcs.Repo, Directory: vcs.Directory, Branch: vcs.Branch})
-	}
-	return out
 }
 
 func newMigrationBranchConfig(name, repo, directory, gitBranch string) *config.AppBranchConfig {
@@ -495,77 +382,149 @@ func writeBranchConfigFile(path string, cfg *config.AppBranchConfig) error {
 	return nil
 }
 
-var unsafeFileNameChars = regexp.MustCompile(`[^a-z0-9._-]+`)
-
-func sanitizeBranchFileName(name string) string {
-	out := unsafeFileNameChars.ReplaceAllString(strings.ToLower(strings.TrimSpace(name)), "-")
-	return strings.Trim(out, "-._")
+func migrationBranchConfigPath(dir string) string {
+	return filepath.Join(dir, migrationBranchFile)
 }
 
-func branchConfigFilePath(dir, name string) string {
-	return filepath.Join(dir, migrationBranchesDir, sanitizeBranchFileName(name)+".toml")
+func localBranchConfig(dir string) (path, name string) {
+	path = migrationBranchConfigPath(dir)
+	if _, err := os.Stat(path); err != nil {
+		return "", ""
+	}
+	cfg, err := parse.ParseAppBranchConfigFile(path)
+	if err != nil || cfg == nil {
+		return "", ""
+	}
+	return path, cfg.Name
 }
 
-func promptWithDefault(prompt, def string) (string, error) {
-	value, err := bubbles.PromptText(fmt.Sprintf("%s (default %q)", prompt, def), def, "", false, true)
+func refuseBranchesDirectory(dir string) error {
+	branchesDir := filepath.Join(dir, migrationBranchesDir)
+	info, err := os.Stat(branchesDir)
 	if err != nil {
-		return "", errMigrationCancelled
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return fmt.Errorf("unable to check %s: %w", branchesDir, err)
 	}
-	if value == "" {
-		return def, nil
+	if !info.IsDir() {
+		return nil
 	}
-	return value, nil
+	return &ui.CLIUserError{Msg: fmt.Sprintf(
+		"%s already has a branches/ directory. Sync those files with `nuon branches sync --file %s` instead of writing branch.toml alongside them.",
+		dir, branchesDir,
+	)}
 }
 
-// selectOrType offers the candidates plus a free-text escape hatch, and falls
-// straight to a required text prompt when there is nothing to suggest.
-func selectOrType(prompt string, candidates []string, placeholder string) (string, error) {
-	if len(candidates) > 0 {
-		items := make([]bubbles.SelectorItem, 0, len(candidates)+1)
-		for _, c := range candidates {
-			items = append(items, bubbles.NewSelectorItem(c, "", c))
+type migrationGitSource struct {
+	Repo      string
+	Directory string
+	Branch    string
+}
+
+func migrationSourceFromGit(ctx context.Context, dir string) (*migrationGitSource, error) {
+	repo := gitOriginRepo(ctx, dir)
+	if repo == "" {
+		return nil, &ui.CLIUserError{Msg: fmt.Sprintf(
+			"could not read a GitHub remote.origin.url from %s. branch.toml needs a connected GitHub repo.",
+			dir,
+		)}
+	}
+	branch := gitCurrentBranch(ctx, dir)
+	if branch == "" || branch == "HEAD" {
+		return nil, &ui.CLIUserError{Msg: "check out a git branch before migrating; a detached HEAD has no branch name to write into branch.toml"}
+	}
+	directory, err := gitConfigDirectory(ctx, dir)
+	if err != nil {
+		return nil, err
+	}
+	return &migrationGitSource{Repo: repo, Directory: directory, Branch: branch}, nil
+}
+
+func gitConfigDirectory(ctx context.Context, dir string) (string, error) {
+	toplevel := gitOutput(ctx, dir, "rev-parse", "--show-toplevel")
+	if toplevel == "" {
+		return "", &ui.CLIUserError{Msg: fmt.Sprintf("%s is not a git checkout, so branch.toml cannot be generated from it", dir)}
+	}
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		return "", fmt.Errorf("unable to resolve %s: %w", dir, err)
+	}
+	return relativeRepoDirectory(toplevel, absDir)
+}
+
+func relativeRepoDirectory(toplevel, dir string) (string, error) {
+	absTop, err := resolvePath(toplevel)
+	if err != nil {
+		return "", fmt.Errorf("unable to resolve %s: %w", toplevel, err)
+	}
+	absDir, err := resolvePath(dir)
+	if err != nil {
+		return "", fmt.Errorf("unable to resolve %s: %w", dir, err)
+	}
+	rel, err := filepath.Rel(absTop, absDir)
+	if err != nil {
+		return "", fmt.Errorf("unable to locate %s within %s: %w", dir, toplevel, err)
+	}
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", &ui.CLIUserError{Msg: fmt.Sprintf("%s is not inside the git checkout at %s", dir, toplevel)}
+	}
+	if rel == "." {
+		return ".", nil
+	}
+	return filepath.ToSlash(rel), nil
+}
+
+func resolvePath(path string) (string, error) {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+	resolved, err := filepath.EvalSymlinks(abs)
+	if err != nil {
+		return abs, nil
+	}
+	return resolved, nil
+}
+
+func (s *Service) connectedRepoFullName(ctx context.Context, origin string) (string, error) {
+	connections, err := paginate.All(func(offset, limit int) ([]*models.AppVCSConnection, bool, error) {
+		return s.api.GetVCSConnections(ctx, &models.GetPaginatedQuery{Offset: offset, Limit: limit})
+	})
+	if err != nil {
+		return "", fmt.Errorf("unable to list vcs connections: %w", err)
+	}
+
+	var repos []*models.ServiceVCSConnectionRepo
+	for _, conn := range connections {
+		if conn == nil {
+			continue
 		}
-		items = append(items, bubbles.NewSelectorItem("Enter a different value", "", migrationEnterOtherValue))
-		choice, err := bubbles.SelectFromItems(prompt, items, true)
+		resp, err := s.api.GetVCSConnectionRepos(ctx, conn.ID)
 		if err != nil {
-			return "", errMigrationCancelled
+			return "", fmt.Errorf("unable to list repos for vcs connection %s: %w", conn.ID, err)
 		}
-		if choice != migrationEnterOtherValue {
-			return choice, nil
+		if resp == nil {
+			continue
 		}
+		repos = append(repos, resp.Repositories...)
 	}
-
-	value, err := bubbles.PromptText(prompt, placeholder, "", true, true)
-	if err != nil {
-		return "", errMigrationCancelled
+	if fullName := matchConnectedRepo(origin, repos); fullName != "" {
+		return fullName, nil
 	}
-	return value, nil
+	return "", &ui.CLIUserError{Msg: fmt.Sprintf(
+		"git repo %q is not on a connected GitHub installation in this org. Connect it, then rerun `nuon apps sync`.",
+		origin,
+	)}
 }
 
-func repoCandidates(gitOrigin string, known []config.ConnectedRepoConfig) []string {
-	var out []string
-	if gitOrigin != "" {
-		out = appendUnique(out, gitOrigin)
-	}
-	for _, k := range known {
-		if k.Repo != "" {
-			out = appendUnique(out, k.Repo)
+func matchConnectedRepo(origin string, repos []*models.ServiceVCSConnectionRepo) string {
+	for _, repo := range repos {
+		if repo != nil && strings.EqualFold(repo.FullName, origin) {
+			return repo.FullName
 		}
 	}
-	return out
-}
-
-func gitBranchCandidates(repo, current string, known []config.ConnectedRepoConfig) []string {
-	var out []string
-	if current != "" && current != "HEAD" {
-		out = appendUnique(out, current)
-	}
-	for _, k := range known {
-		if k.Branch != "" && strings.EqualFold(k.Repo, repo) {
-			out = appendUnique(out, k.Branch)
-		}
-	}
-	return out
+	return ""
 }
 
 var githubRemotePattern = regexp.MustCompile(`^(?:https?://|ssh://)?(?:[^@/]+@)?github\.com[:/]([^/\s]+)/([^/\s]+?)(?:\.git)?/?$`)

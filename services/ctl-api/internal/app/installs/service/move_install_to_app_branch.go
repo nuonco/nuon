@@ -14,7 +14,6 @@ import (
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appbranchchanged"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -51,16 +50,6 @@ func (r *MoveInstallToAppBranchRequest) Validate(v *validator.Validate) error {
 // @Success				200	{object}	app.Install
 // @Router					/v1/installs/{install_id}/app-branch [PATCH]
 func (s *service) MoveInstallToAppBranch(ctx *gin.Context) {
-	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureAppBranches)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to check feature: %w", err))
-		return
-	}
-	if !enabled {
-		ctx.Error(features.ErrFeatureNotEnabled(app.OrgFeatureAppBranches))
-		return
-	}
-
 	installID := ctx.Param("install_id")
 
 	var req MoveInstallToAppBranchRequest

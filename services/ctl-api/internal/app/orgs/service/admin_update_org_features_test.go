@@ -119,7 +119,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) setupTestData() {
 		},
 		Features: map[string]bool{
 			string(app.OrgFeatureUserManagedFeatures): false, // Disabled by default
-			string(app.OrgFeatureTraceView):           false,
+			string(app.OrgFeatureNotebooks):           false,
 		},
 	}
 	err := s.service.DB.WithContext(ctx).Create(testOrg).Error
@@ -173,7 +173,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
 					Features: map[string]bool{
-						string(app.OrgFeatureTraceView): false,
+						string(app.OrgFeatureNotebooks): false,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -186,20 +186,20 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 			},
 			requestBody: AdminUpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureTraceView): true,
+					string(app.OrgFeatureNotebooks): true,
 				},
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
 				require.NotNil(s.T(), org)
 				assert.Equal(s.T(), "test-update-single-admin", org.Name)
-				assert.True(s.T(), org.Features[string(app.OrgFeatureTraceView)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureNotebooks)])
 			},
 			checkDBFunc: func(org *app.Org) {
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
-				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureTraceView)])
+				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureNotebooks)])
 			},
 		},
 		{
@@ -216,9 +216,9 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
 					Features: map[string]bool{
-						string(app.OrgFeatureTraceView):   false,
-						string(app.OrgFeatureAppBranches): true,
-						string(app.OrgFeatureSupportRole): false,
+						string(app.OrgFeatureNotebooks):   false,
+						string(app.OrgFeatureNewAppIA): true,
+						string(app.OrgFeatureDisableAppSync): false,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -231,25 +231,25 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 			},
 			requestBody: AdminUpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureTraceView):   true,
-					string(app.OrgFeatureAppBranches): false,
-					string(app.OrgFeatureSupportRole): true,
+					string(app.OrgFeatureNotebooks):   true,
+					string(app.OrgFeatureNewAppIA): false,
+					string(app.OrgFeatureDisableAppSync): true,
 				},
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
 				require.NotNil(s.T(), org)
-				assert.True(s.T(), org.Features[string(app.OrgFeatureTraceView)])
-				assert.False(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
-				assert.True(s.T(), org.Features[string(app.OrgFeatureSupportRole)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureNotebooks)])
+				assert.False(s.T(), org.Features[string(app.OrgFeatureNewAppIA)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureDisableAppSync)])
 			},
 			checkDBFunc: func(org *app.Org) {
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
-				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureTraceView)])
-				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureAppBranches)])
-				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureSupportRole)])
+				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureNotebooks)])
+				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureNewAppIA)])
+				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureDisableAppSync)])
 			},
 		},
 		{
@@ -350,9 +350,9 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
 					Features: map[string]bool{
-						string(app.OrgFeatureTraceView):           false,
-						string(app.OrgFeatureAppBranches):         false,
-						string(app.OrgFeatureSupportRole):         false,
+						string(app.OrgFeatureNotebooks):           false,
+						string(app.OrgFeatureNewAppIA):         false,
+						string(app.OrgFeatureDisableAppSync):         false,
 						string(app.OrgFeatureUserManagedFeatures): false,
 					},
 				}
@@ -366,29 +366,29 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 			},
 			requestBody: AdminUpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureTraceView):           true,
-					string(app.OrgFeatureAppBranches):         true,
-					string(app.OrgFeatureSupportRole):         true,
+					string(app.OrgFeatureNotebooks):           true,
+					string(app.OrgFeatureNewAppIA):         true,
+					string(app.OrgFeatureDisableAppSync):         true,
 					string(app.OrgFeatureUserManagedFeatures): true,
-					string(app.OrgFeatureSlack):               true,
-					string(app.OrgFeatureInstallRename):       true,
+					string(app.OrgFeatureRunbookStudio):               true,
+					string(app.OrgFeatureAppInstallSyncing):       true,
 				},
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
 				require.NotNil(s.T(), org)
-				assert.True(s.T(), org.Features[string(app.OrgFeatureTraceView)])
-				assert.True(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
-				assert.True(s.T(), org.Features[string(app.OrgFeatureSupportRole)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureNotebooks)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureNewAppIA)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureDisableAppSync)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureUserManagedFeatures)])
-				assert.True(s.T(), org.Features[string(app.OrgFeatureSlack)])
-				assert.True(s.T(), org.Features[string(app.OrgFeatureInstallRename)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureRunbookStudio)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureAppInstallSyncing)])
 			},
 			checkDBFunc: func(org *app.Org) {
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
-				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureTraceView)])
+				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureNotebooks)])
 				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureUserManagedFeatures)])
 			},
 		},
@@ -406,9 +406,9 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
 					Features: map[string]bool{
-						string(app.OrgFeatureTraceView):   true,
-						string(app.OrgFeatureAppBranches): false,
-						string(app.OrgFeatureSupportRole): true,
+						string(app.OrgFeatureNotebooks):   true,
+						string(app.OrgFeatureNewAppIA): false,
+						string(app.OrgFeatureDisableAppSync): true,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -421,26 +421,26 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 			},
 			requestBody: AdminUpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureTraceView): false, // Toggle this one
+					string(app.OrgFeatureNotebooks): false, // Toggle this one
 				},
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
 				require.NotNil(s.T(), org)
 				// Modified feature
-				assert.False(s.T(), org.Features[string(app.OrgFeatureTraceView)])
+				assert.False(s.T(), org.Features[string(app.OrgFeatureNotebooks)])
 				// Unmodified features should be preserved
-				assert.False(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
-				assert.True(s.T(), org.Features[string(app.OrgFeatureSupportRole)])
+				assert.False(s.T(), org.Features[string(app.OrgFeatureNewAppIA)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureDisableAppSync)])
 			},
 			checkDBFunc: func(org *app.Org) {
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
 				// Verify database state matches
-				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureTraceView)])
-				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureAppBranches)])
-				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureSupportRole)])
+				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureNotebooks)])
+				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureNewAppIA)])
+				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureDisableAppSync)])
 			},
 		},
 		{
@@ -457,7 +457,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
 					Features: map[string]bool{
-						string(app.OrgFeatureTraceView): true,
+						string(app.OrgFeatureNotebooks): true,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -470,19 +470,19 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 			},
 			requestBody: AdminUpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureTraceView): false,
+					string(app.OrgFeatureNotebooks): false,
 				},
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
 				require.NotNil(s.T(), org)
-				assert.False(s.T(), org.Features[string(app.OrgFeatureTraceView)])
+				assert.False(s.T(), org.Features[string(app.OrgFeatureNotebooks)])
 			},
 			checkDBFunc: func(org *app.Org) {
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
-				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureTraceView)])
+				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureNotebooks)])
 			},
 		},
 		{
@@ -499,7 +499,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
 					Features: map[string]bool{
-						string(app.OrgFeatureTraceView): false,
+						string(app.OrgFeatureNotebooks): false,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -512,19 +512,19 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 			},
 			requestBody: AdminUpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureTraceView): true,
+					string(app.OrgFeatureNotebooks): true,
 				},
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
 				require.NotNil(s.T(), org)
-				assert.True(s.T(), org.Features[string(app.OrgFeatureTraceView)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureNotebooks)])
 			},
 			checkDBFunc: func(org *app.Org) {
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
-				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureTraceView)])
+				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureNotebooks)])
 			},
 		},
 		{
@@ -541,7 +541,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
 					Features: map[string]bool{
-						string(app.OrgFeatureTraceView): true,
+						string(app.OrgFeatureNotebooks): true,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -559,13 +559,13 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 			validateFunc: func(org *app.Org) {
 				require.NotNil(s.T(), org)
 				// Empty map should not modify existing features
-				assert.True(s.T(), org.Features[string(app.OrgFeatureTraceView)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureNotebooks)])
 			},
 			checkDBFunc: func(org *app.Org) {
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
-				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureTraceView)])
+				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureNotebooks)])
 			},
 		},
 		{
@@ -600,7 +600,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 			},
 			requestBody: AdminUpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureTraceView): true,
+					string(app.OrgFeatureNotebooks): true,
 				},
 			},
 			expectedCode:  http.StatusNotFound,
@@ -621,7 +621,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 					},
 					Features: map[string]bool{
 						string(app.OrgFeatureUserManagedFeatures): false, // User flag disabled
-						string(app.OrgFeatureTraceView):           false,
+						string(app.OrgFeatureNotebooks):           false,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -634,21 +634,21 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 			},
 			requestBody: AdminUpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureTraceView): true,
+					string(app.OrgFeatureNotebooks): true,
 				},
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
 				require.NotNil(s.T(), org)
 				// Admin can update even when user-managed-features is disabled
-				assert.True(s.T(), org.Features[string(app.OrgFeatureTraceView)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureNotebooks)])
 				assert.False(s.T(), org.Features[string(app.OrgFeatureUserManagedFeatures)])
 			},
 			checkDBFunc: func(org *app.Org) {
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
-				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureTraceView)])
+				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureNotebooks)])
 			},
 		},
 	}

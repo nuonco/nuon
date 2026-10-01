@@ -46,6 +46,7 @@ type Activities struct {
 	features                *features.Features
 	salesforce              salesforce.Client
 	acctClient              *account.Client
+	enableSupportUsers      bool
 }
 
 func New(params Params) (*Activities, error) {
@@ -61,5 +62,6 @@ func New(params Params) (*Activities, error) {
 		features:                params.Features,
 		salesforce:              params.Salesforce,
 		acctClient:              params.AcctClient,
+		enableSupportUsers:      params.Cfg != nil && params.Cfg.EnableSupportUsers,
 	}, nil
 }

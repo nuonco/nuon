@@ -12,7 +12,7 @@ title: 'Install'
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
 | **`name`**<br/>string | name of the install Unique identifier for this install configuration | **✅ Required** | `"production"`, `"staging"`, `"customer-acme"` |
-| **`app_branch`**<br/>string | app branch name or ID App branch this install belongs to, by name or ID. Changing it moves the install and applies the branch's latest run. Required when disable-app-sync is enabled for the organiz... | **Optional** | `"main"` |
+| **`app_branch`**<br/>string | app branch name or ID App branch this install belongs to, by name or ID. Changing it moves the install and applies the branch's latest run. | **✅ Required** | `"main"` |
 | **`app_branch_group`**<br/>string | app branch deployment group Deployment group this install belongs to within its app branch. This explicit selection takes precedence over label matching. | **Optional** | `"canary"` |
 | **`approval_option`**<br/>string | approval option for the install Controls how deployments are approved. Options: 'approve-all' (automatic approval) or 'prompt' (requires confirmation) | **Optional** | `"approve-all"`, `"prompt"` |
 | **`telemetry`**<br/>[InstallTelemetry](#telemetry) | Install telemetry settings | **Optional** | - |
@@ -20,6 +20,7 @@ title: 'Install'
 | **`aws_account`**<br/>[AWSAccount](#aws_account) | AWS account configuration AWS-specific settings for this install, including region and other account details | **Optional** | - |
 | **`gcp_account`**<br/>[GCPAccount](#gcp_account) | GCP account configuration GCP-specific settings for this install, including project ID and region | **Optional** | - |
 | **`azure_account`**<br/>[AzureAccount](#azure_account) | Azure account configuration Azure-specific settings for this install, including the deployment location | **Optional** | - |
+| **`cloud_connection`**<br/>string | cloud connection name or ID AWS cloud connection this install uses for provisioning, by name or ID. The connection must exist in the organization and be verified. When omitted, the install falls ba... | **Optional** | `"demo-aws"` |
 | **`inputs`**<br/>array | input values Array of input groups with key-value pairs for customer inputs provided during installation | **Optional** | - |
 | **`stack_overrides`**<br/>[InstallStackOverrides](#stack_overrides) | Stack template overrides Per-install overrides for the app-level stack template configuration. Overrides take precedence over app-level defaults. | **Optional** | - |
 | **`component_toggles`**<br/>object | - | **Optional** | - |

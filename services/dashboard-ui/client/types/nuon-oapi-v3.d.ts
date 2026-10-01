@@ -7959,11 +7959,8 @@ export interface components {
       terraform_version?: string;
       /**
        * @description VendorProviders enables build-time vendoring of terraform providers
-       * via `terraform providers mirror`. Gated by the
-       * `terraform-provider-mirror` org feature flag in ctl-api so we can
-       * roll the change out gradually without coupling install-runner
-       * behaviour to the flag (the install runner auto-detects whether a
-       * mirror is present in the OCI artifact).
+       * via `terraform providers mirror`. The install runner auto-detects
+       * whether a mirror is present in the OCI artifact.
        */
       vendor_providers?: boolean;
     };
@@ -9784,9 +9781,13 @@ export interface components {
       plan_only?: boolean;
       pr_number?: number;
       preview_run?: components["schemas"]["service.PreviewRunRequest"];
+      run_ref?: string;
+      run_type?: components["schemas"]["service.TriggerAppBranchRunSource"];
       skip_builds?: boolean;
       sync_app_config?: boolean;
     };
+    /** @enum {string} */
+    "service.TriggerAppBranchRunSource": "pr" | "tag" | "commit";
     "service.TriggerInstallConfigSyncRequest": {
       install_name?: string;
     };
