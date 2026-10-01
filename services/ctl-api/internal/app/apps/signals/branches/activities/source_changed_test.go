@@ -87,7 +87,7 @@ func TestEnrichConfigDiffWithSourceChanged(t *testing.T) {
 	}
 	changed := []string{"components/api/main.go", "docs/readme.md"}
 
-	out := enrichConfigDiffWithSourceChanged(full, sources, "acme/app", changed)
+	out := enrichConfigDiffWithSourceChanged(full, sources, "acme/app", changed, nil, nil)
 	require.Len(t, out.Sections, 2)
 
 	comp := out.Sections[0]
@@ -113,7 +113,7 @@ func TestEnrichConfigDiffSourceOnlyComponent(t *testing.T) {
 	sources := []componentSource{
 		{Name: "api", Repo: "acme/app", Directory: "components/api"},
 	}
-	out := enrichConfigDiffWithSourceChanged(full, sources, "acme/app", []string{"components/api/main.go"})
+	out := enrichConfigDiffWithSourceChanged(full, sources, "acme/app", []string{"components/api/main.go"}, nil, nil)
 	require.True(t, out.ComponentSourceChanged["api"])
 	require.False(t, out.Sections[0].Entries[0].SourceChanged)
 }
@@ -130,7 +130,7 @@ func TestEnrichConfigDiffWithSourceChangedMissingDirectoryIsFalse(t *testing.T) 
 		},
 	}
 
-	out := enrichConfigDiffWithSourceChanged(full, nil, "acme/app", []string{"any/file.go"})
+	out := enrichConfigDiffWithSourceChanged(full, nil, "acme/app", []string{"any/file.go"}, nil, nil)
 	require.False(t, out.Sections[0].Entries[0].SourceChanged)
 }
 
@@ -151,7 +151,7 @@ func TestEnrichConfigDiffWithSourceChangedRootDirMatchesSameRepo(t *testing.T) {
 		{Name: "alb", Repo: "acme/app", Directory: "."},
 		{Name: "pulumi", Repo: "acme/app", Directory: "components/pulumi"},
 	}
-	out := enrichConfigDiffWithSourceChanged(full, sources, "acme/app", []string{"inputs/dns/domain.toml"})
+	out := enrichConfigDiffWithSourceChanged(full, sources, "acme/app", []string{"inputs/dns/domain.toml"}, nil, nil)
 	require.True(t, out.Sections[0].Entries[0].SourceChanged)
 	require.False(t, out.Sections[0].Entries[1].SourceChanged)
 }

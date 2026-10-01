@@ -38,6 +38,8 @@ type AppBranchRunComparison struct {
 	FullDiff *blobstore.Blob `json:"full_diff,omitempty" temporaljson:"full_diff,omitzero,omitempty"`
 
 	ConfigDiff *blobstore.Blob `json:"config_diff,omitempty" temporaljson:"config_diff,omitzero,omitempty"`
+
+	SourceDiff *blobstore.Blob `json:"source_diff,omitempty" temporaljson:"source_diff,omitzero,omitempty"`
 }
 
 func (c *AppBranchRunComparison) Indexes(db *gorm.DB) []migrations.Index {

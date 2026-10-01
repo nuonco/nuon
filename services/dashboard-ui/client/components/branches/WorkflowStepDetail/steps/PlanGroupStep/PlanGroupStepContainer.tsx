@@ -6,6 +6,7 @@ import {
   extractSections,
   computeSummary,
 } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
+import { filterExcludedSections } from '../ConfigStep/lib'
 import type { TInstallWorkflowStep } from '@/types'
 import { PlanGroupStep, type PlanInstallDiff } from './PlanGroupStep'
 import { GroupApprovalActions } from './GroupApprovalActions'
@@ -86,7 +87,9 @@ export const PlanGroupStepContainer = ({
 
   const installs: PlanInstallDiff[] = rawInstalls.map((inst, i) => {
     const query = diffQueries[i]
-    const sections = query?.data?.diff ? extractSections(query.data.diff) : []
+    const sections = filterExcludedSections(
+      query?.data?.diff ? extractSections(query.data.diff) : []
+    )
     const summary =
       sections.length > 0
         ? computeSummary(sections)

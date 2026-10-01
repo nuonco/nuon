@@ -1,4 +1,3 @@
-import { useCallback, useState } from 'react'
 import { useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
@@ -38,10 +37,6 @@ import { useOrg } from '@/hooks/use-org'
 import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
 import { BranchProvider } from '@/providers/branch-provider'
-import {
-  ConfigDiffFocusContext,
-  type TConfigDiffFocus,
-} from '@/components/approvals/plan-diffs/config-diff-focus'
 import type { TAPIError } from '@/types'
 import { getBranchRunComparison, getBranchWorkflowRun } from '@/lib'
 import type { TBranchRunComparisonRunSummary } from '@/lib/ctl-api/apps/branches/get-branch-run-comparison'
@@ -56,17 +51,6 @@ const BranchRunDetailContent = () => {
   const appId = params.appId as string
   const branchId = params.branchId as string
   const runId = params.runId as string
-  const [configFocus, setConfigFocus] = useState<TConfigDiffFocus | null>(null)
-  const requestConfigFocus = useCallback(
-    (sectionKey: string, entityName?: string) => {
-      setConfigFocus((prev) => ({
-        sectionKey,
-        entityName,
-        nonce: (prev?.nonce ?? 0) + 1,
-      }))
-    },
-    []
-  )
 
   const {
     data: run,
@@ -168,10 +152,7 @@ const BranchRunDetailContent = () => {
       : undefined)
 
   return (
-    <ConfigDiffFocusContext.Provider
-      value={{ requestFocus: requestConfigFocus }}
-    >
-      <>
+    <>
         <PageTitle segments={[runTitle, app?.name]} />
         <Breadcrumbs
           breadcrumbs={[
@@ -337,7 +318,6 @@ const BranchRunDetailContent = () => {
               <BranchRunChanges
                 branchId={branchId}
                 appBranchRunId={branchRun.id}
-                focus={configFocus}
                 repoSlug={repoSlug}
                 showRunComparison={false}
               />
@@ -345,7 +325,6 @@ const BranchRunDetailContent = () => {
           </div>
         </DetailPage>
       </>
-    </ConfigDiffFocusContext.Provider>
   )
 }
 

@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	pkgconfig "github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
@@ -34,6 +35,7 @@ type ComputeAndStoreAppBranchRunComparisonOutput struct {
 	GitDiffStored    bool   `json:"git_diff_stored"`
 	FullDiffStored   bool   `json:"full_diff_stored"`
 	ConfigDiffStored bool   `json:"config_diff_stored"`
+	SourceDiffStored bool   `json:"source_diff_stored"`
 }
 
 // ConfigDiffWithSourceOutput is FullDiff enriched with source_changed flags.
@@ -59,6 +61,9 @@ type ConfigDiffEntryWithSource struct {
 	Name          string `json:"name"`
 	Description   string `json:"description,omitempty"`
 	SourceChanged bool   `json:"source_changed"`
+	// File is the repo-relative path of the config file this entity was
+	// parsed from, resolved from the head config's source archive members.
+	File string `json:"file,omitempty"`
 }
 
 // @temporal-gen-v2 activity
@@ -105,22 +110,25 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 		}
 	}
 
-	if comparison.BaseRunID == nil || *comparison.BaseRunID == "" {
-		out.Skipped = true
-		out.SkipReason = "no base run"
-		return out, nil
-	}
-	out.BaseRunID = *comparison.BaseRunID
+	// A first run on a branch has no baseline: diff against an empty baseline
+	// so every entity and file shows as added rather than an empty diff.
+	noBase := comparison.BaseRunID == nil || *comparison.BaseRunID == ""
 
 	var baseRun app.AppBranchRun
-	if err := a.db.WithContext(ctx).
-		Preload("VCSConnectionCommit").
-		First(&baseRun, "id = ?", *comparison.BaseRunID).Error; err != nil {
-		return nil, fmt.Errorf("unable to load base run: %w", err)
+	if !noBase {
+		out.BaseRunID = *comparison.BaseRunID
+		if err := a.db.WithContext(ctx).
+			Preload("VCSConnectionCommit").
+			First(&baseRun, "id = ?", *comparison.BaseRunID).Error; err != nil {
+			return nil, fmt.Errorf("unable to load base run: %w", err)
+		}
 	}
 
 	headSHA := runCommitSHA(&headRun)
-	baseSHA := runCommitSHA(&baseRun)
+	baseSHA := ""
+	if !noBase {
+		baseSHA = runCommitSHA(&baseRun)
+	}
 	out.HeadSHA = headSHA
 	out.BaseSHA = baseSHA
 
@@ -130,7 +138,12 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 	}
 
 	var changedPaths []string
-	if headSHA != "" && baseSHA != "" {
+	switch {
+	case noBase:
+		a.l.Info("no base run for comparison; diffing against empty baseline",
+			zap.String("run_id", input.RunID),
+			zap.String("head_sha", headSHA))
+	case headSHA != "" && baseSHA != "":
 		vcsConfigID := branchVCSConfigID(branch)
 		if vcsConfigID == "" {
 			a.l.Warn("no VCS config for git diff",
@@ -153,14 +166,14 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 				}
 			}
 		}
-	} else {
+	default:
 		a.l.Warn("missing commit SHAs for git diff",
 			zap.String("run_id", input.RunID),
 			zap.String("base_sha", baseSHA),
 			zap.String("head_sha", headSHA))
 	}
 
-	if headRun.AppConfigID == "" || baseRun.AppConfigID == "" {
+	if headRun.AppConfigID == "" || (!noBase && baseRun.AppConfigID == "") {
 		if err := a.persistComparisonBlobs(ctx, &comparison); err != nil {
 			return nil, err
 		}
@@ -195,11 +208,24 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 		componentSources = nil
 	}
 
-	configDiff := enrichConfigDiffWithSourceChanged(fullDiff, componentSources, branchRepo(branch), changedPaths)
+	configDiff := a.computeAndEnrichConfigDiff(ctx, branch, fullDiff, componentSources, changedPaths, headRun.AppConfigID, baseRun.AppConfigID)
 	if err := a.uploadComparisonBlob(ctx, comparison.ID, "config_diff", configDiff, &comparison.ConfigDiff); err != nil {
 		return nil, fmt.Errorf("unable to store config diff blob: %w", err)
 	}
 	out.ConfigDiffStored = true
+
+	sourceDiff, sourceDiffErr := a.computeSourceArchiveDiff(ctx, branch.AppID, headRun.AppConfigID, baseRun.AppConfigID)
+	if sourceDiffErr != nil {
+		a.l.Warn("unable to compute source archive diff",
+			zap.String("run_id", input.RunID),
+			zap.Error(sourceDiffErr))
+	} else if sourceDiff != nil {
+		if err := a.uploadComparisonBlob(ctx, comparison.ID, "source_diff", sourceDiff, &comparison.SourceDiff); err != nil {
+			a.l.Warn("unable to store source diff blob", zap.Error(err))
+		} else {
+			out.SourceDiffStored = true
+		}
+	}
 
 	if err := a.persistComparisonBlobs(ctx, &comparison); err != nil {
 		return nil, err
@@ -305,6 +331,13 @@ func (a *Activities) persistComparisonBlobs(ctx context.Context, comparison *app
 		}
 		updates["config_diff"] = v
 	}
+	if comparison.SourceDiff != nil {
+		v, err := comparison.SourceDiff.Value()
+		if err != nil {
+			return fmt.Errorf("source_diff value: %w", err)
+		}
+		updates["source_diff"] = v
+	}
 	if len(updates) == 0 {
 		return nil
 	}
@@ -370,4 +403,34 @@ func (a *Activities) loadComponentSources(ctx context.Context, appConfigID strin
 		out = append(out, src)
 	}
 	return out, nil
+}
+
+// computeAndEnrichConfigDiff enriches the config diff with source_changed
+// flags and per-entity file refs. Member refs resolve from the head archive
+// first (added/changed entities), falling back to the base archive (removed
+// entities exist only there).
+func (a *Activities) computeAndEnrichConfigDiff(
+	ctx context.Context,
+	branch *app.AppBranch,
+	fullDiff *ComputeAppConfigDiffOutput,
+	componentSources []componentSource,
+	changedPaths []string,
+	headConfigID, baseConfigID string,
+) *ConfigDiffWithSourceOutput {
+	headArchive, headErr := a.loadSourceArchive(ctx, branch.AppID, headConfigID)
+	if headErr != nil {
+		a.l.Warn("unable to load head source archive for member refs", zap.Error(headErr))
+		headArchive = nil
+	}
+	var baseArchive *pkgconfig.SourceArchive
+	if baseConfigID != "" {
+		var baseErr error
+		baseArchive, baseErr = a.loadSourceArchive(ctx, branch.AppID, baseConfigID)
+		if baseErr != nil {
+			a.l.Warn("unable to load base source archive for member refs", zap.Error(baseErr))
+			baseArchive = nil
+		}
+	}
+
+	return enrichConfigDiffWithSourceChanged(fullDiff, componentSources, branchRepo(branch), changedPaths, headArchive, baseArchive)
 }
