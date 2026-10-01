@@ -24,8 +24,9 @@ context (org ID, journey helpers, `choosePath`, `backToIntro`) lives in `@/provi
 
 - Each step file exports a presentational `*StepView` (props only, no queries) and a `*Step` container that the wizard
   renders. Stories use the view with mock props inside `StoryFrame`, which draws the real wizard chrome.
-- Anything a later step or a reload needs goes in both `sharedData` and the journey (`journey.saveStep`). Add new keys
-  to `FIRST_RUN_METADATA_KEYS` so Re-open onboarding clears them.
+- Anything a later step needs goes in both `sharedData` and the journey (`journey.saveStep`). The place to resume is
+  the local session written by `FirstRunProgress`, not the journey's first incomplete step. Add new keys to
+  `FIRST_RUN_METADATA_KEYS` so a journey reset can still clear them.
 - Create calls must be safe to repeat: Back then Next, a reload, and a second tab all rerun them. Look for the
   existing resource before creating one (see `ensureDefaultBranch`, `setUpKitchenSink`).
 - Cloud tables, copy that varies by cloud, and config stubs belong in `constants.ts`, not in step files.

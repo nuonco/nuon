@@ -24,10 +24,11 @@ then a wizard that creates an app template and a first test install.
 | `WizardNav/` | Stepper and header (Docs, Skip). Also used by `RunRunbookForm`. |
 | `WizardStepView.tsx` | Renders the current step's title, description, and component; owns the transition. |
 
-The route view is `@/views/Onboarding.tsx`. With `NUON_ONBOARDING_FIRST_RUN` set, the dashboard server sends new
-sign-ups (no org) and anyone with an unfinished `first_run` journey from `/` to `/onboarding`, and returns GitHub App
-callbacks there when the `state` is `<orgID>:onboarding` (`server/internal/handlers/root.go`, `connect.go`). Without
-the flag, `/` still sends accounts with no org to `/onboarding`, and that page is the existing wizard.
+The route view is `@/views/Onboarding.tsx`. With `NUON_ONBOARDING_FIRST_RUN` set, the dashboard server sends accounts
+with no org from `/` to `/onboarding`, and returns GitHub App callbacks there when the `state` is `<orgID>:onboarding`
+(`server/internal/handlers/root.go`, `connect.go`). An account that already has an org stays on that org, including
+while first-run is unfinished. The logo and the browser back button leave onboarding. The Back button on a step still moves to the previous step. Without the flag, `/` still sends accounts with no org to
+`/onboarding`, and that page is the existing wizard.
 
 ## Paths
 
@@ -37,7 +38,7 @@ the flag, `/` still sends accounts with no org to `/onboarding`, and that page i
 | Example app | Start, Deploy, Stack, Provision |
 
 The stepper follows the path: `choosePath(path, cloud)` from `useFirstRun()` swaps the step array. Step IDs are the
-journey's step names, so completion and resume map one to one.
+journey's step names. Where the wizard reopens comes from the local session, not from which journey steps are complete.
 
 ## The `first_run` journey
 
@@ -65,12 +66,13 @@ Step metadata:
 | `skipped` | any | `"true"` on the step the user skipped from |
 
 Metadata saves resend the step's current `complete` value, because the step PATCH sets `complete` to whatever it is
-sent. Resume opens the first incomplete step with the saved data, and starts over at Start if a saved app or install
-returns 404.
+sent. The step the user is on is stored in this browser (`nuon.first-run-onboarding:<user id>`), with the path, cloud,
+and wizard data. Coming back to `/onboarding` opens that step. The journey is only a fallback when this browser has no
+saved place. Resume still starts over at Start if a saved app or install returns 404.
 
-- **Skip** saves `skipped` on the current step, completes the journey, and goes to `/<orgID>`.
-- **Finish** completes the journey and opens `/<orgID>/installs/<install_id>/history/<workflow_id>`.
-- **Re-open onboarding** (user menu) resets the journey, clears the metadata keys, and opens `/onboarding?reopen=1`.
+- **Skip** saves `skipped` on the current step, completes the journey, and goes to `/<orgID>`. The saved step stays, so opening onboarding again returns there.
+- **Finish** completes the journey, clears the saved step, and opens `/<orgID>/installs/<install_id>/history/<workflow_id>`.
+- **Re-open onboarding** (user menu) opens `/onboarding` on the saved step. It does not reset the journey.
 
 ## What each step calls
 
@@ -117,7 +119,7 @@ has no `posthog_key`, including local runs). `org_id` is a super property once `
 />
 ```
 
-The provider never reads or writes browser storage; callers pass where to start.
+The provider never reads or writes browser storage. First-run writes the current step from `FirstRunProgress` while the wizard is open. Callers pass where to start.
 
 A step component receives `IWizardStepComponentProps`:
 
