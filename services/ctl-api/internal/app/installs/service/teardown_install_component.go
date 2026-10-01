@@ -92,6 +92,7 @@ func (s *service) TeardownInstallComponent(ctx *gin.Context) {
 		install.ID,
 		app.WorkflowTypeTeardownComponent,
 		map[string]string{
+			app.WorkflowMetadataKeyWorkflowNameSuffix: component.Name,
 			"component_id": component.ID,
 		},
 		req.PlanOnly,
