@@ -94,7 +94,7 @@ export const BranchOverview = ({
     ) : null}
 
     {rollout ? (
-      <section className="flex flex-col gap-6">
+      <section className="grid items-start gap-6 lg:grid-cols-2">
         <RunSourceCard
           source={rollout.source}
           title={rollout.title}

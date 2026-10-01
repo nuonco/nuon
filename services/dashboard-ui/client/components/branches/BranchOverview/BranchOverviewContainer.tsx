@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Text } from '@/components/common/Text'
 import { PageTitle } from '@/components/navigation/PageTitle'
-import { BranchRunChanges } from '@/components/branches/BranchRunChanges'
+import { BranchRunChangesSummary } from '@/components/branches/BranchRunChangesSummary'
 import { stepStatusCategory } from '@/components/branches/shared/step-status'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { getBranchRunBuilds } from '@/lib'
@@ -35,7 +35,6 @@ export const BranchOverviewContainer = () => {
     appId,
     branchId,
     basePath,
-    repoSlug,
     branchRunId,
     branchRun,
     rollout,
@@ -134,11 +133,9 @@ export const BranchOverviewContainer = () => {
         rollout={rollout}
         changes={
           branchRunId ? (
-            <BranchRunChanges
+            <BranchRunChangesSummary
               branchId={branchId}
               appBranchRunId={branchRunId}
-              repoSlug={repoSlug}
-              showRunComparison={false}
               title="Template and source changes"
               isPending={changesPending}
               headerAction={
