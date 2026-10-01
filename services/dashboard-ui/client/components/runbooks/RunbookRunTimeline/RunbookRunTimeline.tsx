@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
@@ -10,6 +11,7 @@ interface IRunbookRunTimeline {
   runbookName: string
   runs: TInstallRunbookRun[]
   basePath: string
+  renderTitle?: (run: TInstallRunbookRun) => ReactNode
   workflowHref?: (workflowId: string) => string
 }
 
@@ -17,6 +19,7 @@ export const RunbookRunTimeline = ({
   runbookName,
   runs,
   basePath,
+  renderTitle,
   workflowHref,
 }: IRunbookRunTimeline) => {
   if (runs.length === 0) {
@@ -50,7 +53,9 @@ export const RunbookRunTimeline = ({
             createdAt={run.created_at ?? ''}
             status={status}
             title={
-              workflowId ? (
+              renderTitle ? (
+                renderTitle(run)
+              ) : workflowId ? (
                 <Link
                   href={
                     workflowHref?.(workflowId) ??

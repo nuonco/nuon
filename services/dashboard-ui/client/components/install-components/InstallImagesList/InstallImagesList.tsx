@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { ComponentType } from '@/components/components/ComponentType'
+import { InstallConfigBehindBadge } from '@/components/installs/InstallResourceConfig'
 import { usePagination } from '@/hooks/use-pagination'
 import { useStoredViewMode } from '@/hooks/use-stored-view-mode'
 import { PaginationProvider } from '@/providers/pagination-provider'
@@ -21,6 +22,7 @@ import { cn } from '@/utils/classnames'
 
 export type TInstallImageListItem = {
   actions?: ReactNode
+  behind?: boolean
   id: string
   image: ReactNode
   name: string
@@ -127,6 +129,7 @@ const InstallImagesListBase = ({
                       {image.name}
                     </Text>
                     <Status status={image.status} variant="badge" />
+                    {image.behind ? <InstallConfigBehindBadge /> : null}
                   </div>
                   <ID>{image.id}</ID>
                 </div>

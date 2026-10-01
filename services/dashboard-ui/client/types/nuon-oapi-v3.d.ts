@@ -1650,7 +1650,7 @@ export interface paths {
      * get normalized activity feed for an install
      * @description Returns a normalized, chronological activity feed for an install.
      *
-     * Each record is something that ran against the install rather than a change to it: an action run, a runbook run, or an install-scoped policy check. Policy checks recorded only against a component build, with no install, are omitted.
+     * Each record is a top-level operation that ran against the install rather than a change to it: a standalone action run, a runbook run, or an install-scoped policy check. Action runs executed as steps within another workflow are omitted. Policy checks recorded only against a component build, with no install, are also omitted.
      *
      * Records include a `type` (`action_run`, `runbook_run`, or `policy_check`), a `status` taken from that source, a human-readable `title` and `summary`, and a type-specific payload (`action`, `runbook`, or `policy`). Action and runbook records include a `workflow` reference when the run has one.
      *
@@ -22659,7 +22659,7 @@ export interface operations {
    * get normalized activity feed for an install
    * @description Returns a normalized, chronological activity feed for an install.
    *
-   * Each record is something that ran against the install rather than a change to it: an action run, a runbook run, or an install-scoped policy check. Policy checks recorded only against a component build, with no install, are omitted.
+   * Each record is a top-level operation that ran against the install rather than a change to it: a standalone action run, a runbook run, or an install-scoped policy check. Action runs executed as steps within another workflow are omitted. Policy checks recorded only against a component build, with no install, are also omitted.
    *
    * Records include a `type` (`action_run`, `runbook_run`, or `policy_check`), a `status` taken from that source, a human-readable `title` and `summary`, and a type-specific payload (`action`, `runbook`, or `policy`). Action and runbook records include a `workflow` reference when the run has one.
    *

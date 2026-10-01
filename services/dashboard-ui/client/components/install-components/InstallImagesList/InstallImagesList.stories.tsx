@@ -100,6 +100,10 @@ export const Default = () => <ListStory />
 
 export const Grid = () => <ListStory initialView="grid" />
 
+export const Behind = () => (
+  <InstallImagesList images={[image({ behind: true })]} />
+)
+
 export const NeverBuilt = () => (
   <InstallImagesList
     images={[

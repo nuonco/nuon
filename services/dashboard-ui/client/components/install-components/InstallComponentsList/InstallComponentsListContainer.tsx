@@ -94,15 +94,22 @@ export const InstallComponentsListContainer = () => {
       const component = installComponent.component
       const componentId = component?.id ?? installComponent.component_id ?? ''
       const latestDeploy = installComponent.install_deploys?.[0]
+      const appliedConfigId = installComponent.app_config_ref?.applied_config_id
+      const behind =
+        !!appliedConfigId &&
+        !!install?.app_config_id &&
+        appliedConfigId !== install.app_config_id
 
       return {
         id: componentId || (installComponent.id ?? ''),
         name: component?.name ?? 'Component',
         type: component?.type,
+        behind,
         enabled: installComponent.enabled,
         status: installComponent.status_v2?.status ?? installComponent.status,
         actions: component ? (
           <ResourceComponentActions
+            appliedConfigId={appliedConfigId}
             component={component}
             currentBuildId={latestDeploy?.build_id}
             currentDeployStatus={
@@ -136,6 +143,7 @@ export const InstallComponentsListContainer = () => {
     org?.id,
     install?.id,
     install?.app_id,
+    install?.app_config_id,
     showHealth,
   ])
 

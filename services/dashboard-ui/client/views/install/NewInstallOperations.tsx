@@ -30,6 +30,7 @@ export const NewInstallActions = () => {
     <>
       <PageTitle segments={['Actions', install?.name]} />
       <InstallActionsList />
+      <InstallWorkflowPanelController />
     </>
   )
 }
@@ -41,6 +42,7 @@ export const NewInstallRunbooks = () => {
     <>
       <PageTitle segments={['Runbooks', install?.name]} />
       <InstallRunbooksList />
+      <InstallWorkflowPanelController />
     </>
   )
 }
