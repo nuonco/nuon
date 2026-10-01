@@ -24,6 +24,7 @@ type AppBranchRunComparisonRunSummary struct {
 	PRNumber            *int                     `json:"pr_number,omitempty"`
 	BaseBranch          string                   `json:"base_branch,omitempty"`
 	EventType           string                   `json:"event_type,omitempty"`
+	AppConfigID         string                   `json:"app_config_id,omitempty"`
 	VCSConnectionCommit *app.VCSConnectionCommit `json:"vcs_connection_commit,omitempty"`
 }
 
@@ -41,9 +42,13 @@ type AppBranchRunComparisonResponse struct {
 	FullDiff   *blobstore.BlobMetadata `json:"full_diff,omitempty"`
 	ConfigDiff *blobstore.BlobMetadata `json:"config_diff,omitempty"`
 
+	SourceDiff *blobstore.BlobMetadata `json:"source_diff,omitempty"`
+
 	GitDiffContent    any `json:"git_diff_content,omitempty"`
 	FullDiffContent   any `json:"full_diff_content,omitempty"`
 	ConfigDiffContent any `json:"config_diff_content,omitempty"`
+
+	SourceDiffContent any `json:"source_diff_content,omitempty"`
 }
 
 // @ID						GetAppBranchRunComparison
@@ -53,7 +58,7 @@ type AppBranchRunComparisonResponse struct {
 // @Param					app_id			path	string	true	"app ID"
 // @Param					app_branch_id	path	string	true	"app branch ID"
 // @Param					run_id			path	string	true	"app branch run ID"
-// @Param					include_diff	query	string	false	"comma-separated: git,full,config"
+// @Param					include_diff	query	string	false	"comma-separated: git,full,config,source"
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
@@ -121,6 +126,7 @@ func (s *service) GetAppBranchRunComparison(ctx *gin.Context) {
 		GitDiff:    blobMetadataPtr(comparison.GitDiff),
 		FullDiff:   blobMetadataPtr(comparison.FullDiff),
 		ConfigDiff: blobMetadataPtr(comparison.ConfigDiff),
+		SourceDiff: blobMetadataPtr(comparison.SourceDiff),
 	}
 	if comparison.BaseRunID != nil {
 		resp.BaseRunID = *comparison.BaseRunID
@@ -159,6 +165,14 @@ func (s *service) GetAppBranchRunComparison(ctx *gin.Context) {
 			}
 			resp.ConfigDiffContent = content
 		}
+		if include["source"] && comparison.SourceDiff != nil {
+			content, err := loadBlobJSONContent(blobCtx, comparison.SourceDiff)
+			if err != nil {
+				ctx.Error(fmt.Errorf("unable to load source diff: %w", err))
+				return
+			}
+			resp.SourceDiffContent = content
+		}
 	}
 
 	ctx.JSON(http.StatusOK, resp)
@@ -187,12 +201,13 @@ func comparisonRunSummary(run *app.AppBranchRun) *AppBranchRunComparisonRunSumma
 		return nil
 	}
 	out := &AppBranchRunComparisonRunSummary{
-		ID:         run.ID,
-		Status:     run.Status,
-		CreatedAt:  run.CreatedAt,
-		PRNumber:   run.PRNumber,
-		BaseBranch: run.BaseBranch,
-		EventType:  run.EventType,
+		ID:          run.ID,
+		Status:      run.Status,
+		CreatedAt:   run.CreatedAt,
+		PRNumber:    run.PRNumber,
+		BaseBranch:  run.BaseBranch,
+		EventType:   run.EventType,
+		AppConfigID: run.AppConfigID,
 	}
 	if run.WorkflowID != nil {
 		out.WorkflowID = *run.WorkflowID

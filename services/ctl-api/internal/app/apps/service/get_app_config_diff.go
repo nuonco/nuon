@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -16,11 +17,13 @@ import (
 )
 
 type AppConfigDiffResponse struct {
-	ConfigID    string           `json:"config_id"`
-	OldConfigID string           `json:"old_config_id,omitempty"`
-	Diff        *diff.Diff       `json:"diff"`
-	Summary     diff.DiffSummary `json:"summary"`
-	Changed     string           `json:"changed"`
+	ConfigID      string                    `json:"config_id"`
+	OldConfigID   string                    `json:"old_config_id,omitempty"`
+	Diff          *diff.Diff                `json:"diff"`
+	Summary       diff.DiffSummary          `json:"summary"`
+	Changed       string                    `json:"changed"`
+	Source        *config.SourceArchiveDiff `json:"source,omitempty"`
+	SourceSkipped bool                      `json:"source_skipped,omitempty"`
 }
 
 // @ID						GetAppConfigDiff
@@ -29,6 +32,7 @@ type AppConfigDiffResponse struct {
 // @Param					app_id		path	string	true	"app ID"
 // @Param					config_id	path	string	true	"new config ID"
 // @Param					old_config_id	query	string	false	"previous config ID to compare against"
+// @Param					include			query	string	false	"comma-separated extras: source"
 // @Tags					apps
 // @Accept					json
 // @Produce				json
@@ -51,6 +55,7 @@ func (s *service) GetAppConfigDiff(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 	configID := ctx.Param("config_id")
 	oldConfigID := ctx.Query("old_config_id")
+	include := parseIncludeDiff(ctx.Query("include"))
 
 	// Load the new config's intermediate representation
 	newCfg, err := s.loadIntermediateConfig(ctx, org.ID, appID, configID)
@@ -73,13 +78,29 @@ func (s *service) GetAppConfigDiff(ctx *gin.Context) {
 	d := newCfg.Diff(oldCfg)
 	summary := d.Summary()
 
-	ctx.JSON(http.StatusOK, AppConfigDiffResponse{
+	resp := AppConfigDiffResponse{
 		ConfigID:    configID,
 		OldConfigID: oldConfigID,
 		Diff:        d,
 		Summary:     summary,
 		Changed:     d.FormatChanged(""),
-	})
+	}
+
+	if include["source"] {
+		blobCtx := blobstore.WithBlobService(ctx.Request.Context(), s.blobSvc)
+		source, skipped, err := s.loadSourceArchiveDiff(blobCtx, org.ID, appID, configID, oldConfigID)
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to diff source archives: %w", err))
+			return
+		}
+		if skipped {
+			resp.SourceSkipped = true
+		} else {
+			resp.Source = source
+		}
+	}
+
+	ctx.JSON(http.StatusOK, resp)
 }
 
 // loadIntermediateConfig fetches an app config from the DB and deserializes
@@ -109,4 +130,68 @@ func (s *service) loadIntermediateConfig(ctx *gin.Context, orgID, appID, configI
 	}
 
 	return &cfg, nil
+}
+
+// maxSourceDiffServeBytes bounds the source archives this handler loads
+// synchronously per request; larger archives are only diffed by the run
+// comparison activity.
+const maxSourceDiffServeBytes = 64 << 20
+
+// loadSourceArchiveDiff diffs the stored source archives of two configs. An
+// empty oldConfigID diffs against an empty archive. skipped reports that an
+// archive exceeds maxSourceDiffServeBytes and was not loaded.
+func (s *service) loadSourceArchiveDiff(ctx context.Context, orgID, appID, configID, oldConfigID string) (*config.SourceArchiveDiff, bool, error) {
+	load := func(id string) (*config.SourceArchive, bool, error) {
+		var appCfg app.AppConfig
+		res := s.db.WithContext(ctx).
+			Where(app.AppConfig{AppID: appID, OrgID: orgID}).
+			First(&appCfg, "id = ?", id)
+		if res.Error != nil {
+			return nil, false, fmt.Errorf("config not found: %w", res.Error)
+		}
+		if appCfg.SourceConfig == nil {
+			return nil, false, nil
+		}
+		if appCfg.SourceConfig.Metadata().Size > maxSourceDiffServeBytes {
+			return nil, true, nil
+		}
+		raw, err := appCfg.SourceConfig.Get(ctx)
+		if err != nil {
+			return nil, false, fmt.Errorf("unable to load source config: %w", err)
+		}
+		if raw == "" {
+			return nil, false, nil
+		}
+		var archive config.SourceArchive
+		if err := json.Unmarshal([]byte(raw), &archive); err != nil {
+			return nil, false, fmt.Errorf("unable to parse source config: %w", err)
+		}
+		return &archive, false, nil
+	}
+
+	head, skipped, err := load(configID)
+	if err != nil || skipped {
+		return nil, skipped, err
+	}
+
+	if head == nil {
+		return nil, false, nil
+	}
+
+	base := config.NewSourceArchive()
+	if oldConfigID != "" {
+		var baseSkipped bool
+		var err error
+		base, baseSkipped, err = load(oldConfigID)
+		if err != nil {
+			return nil, false, err
+		}
+		if baseSkipped {
+			return nil, true, nil
+		}
+		if base == nil {
+			base = config.NewSourceArchive()
+		}
+	}
+	return head.Diff(base), false, nil
 }

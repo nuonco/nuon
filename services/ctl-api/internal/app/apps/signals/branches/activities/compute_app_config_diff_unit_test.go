@@ -225,7 +225,7 @@ func TestSectionDisplayNameAndGrouped(t *testing.T) {
 		{"policies", "Policies", true},
 		{"sandbox", "Sandbox", false},
 		{"runner", "Runner", false},
-		{"permissions", "Permissions", false},
+		{"permissions", "Permissions", true},
 		{"stack", "Stack", false},
 		{"break_glass", "Break glass", false},
 		{"operation_roles", "Operation roles", false},

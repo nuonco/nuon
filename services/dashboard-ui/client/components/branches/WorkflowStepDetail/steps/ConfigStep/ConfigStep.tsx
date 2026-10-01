@@ -1,6 +1,7 @@
 import { Text } from '@/components/common/Text'
+import { AppConfigFilesDiff } from '@/components/branches/ComponentConfigDiff/ComponentConfigDiff'
 import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
-import { AppConfigDiff } from '@/components/diffs/plan-diff-switch'
+import { filterExcludedSections } from './lib'
 import { StepStatePlaceholder } from '../../shared/StepStatePlaceholder'
 
 interface IConfigStep {
@@ -48,14 +49,23 @@ export const ConfigStep = ({
     )
   }
 
+  if (isLoading) {
+    return (
+      <div className={BODY_PADDING}>
+        <StepStatePlaceholder variant="loading">
+          Loading app configuration
+        </StepStatePlaceholder>
+      </div>
+    )
+  }
+
+  // Snapshot of the config as-of this run: no baseline, so no diff badges.
   return (
-    <AppConfigDiff
-      sections={sections}
-      summary={null}
-      isLoading={isLoading}
-      defaultSectionsOpen
-      presentation="snapshot"
-      embedded
+    <AppConfigFilesDiff
+      configSections={filterExcludedSections(sections)}
+      files={[]}
+      snapshot
+      className="border-none shadow-none"
     />
   )
 }
