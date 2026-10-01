@@ -10,6 +10,7 @@ import {
 import { ManageAllDropdown } from '@/components/install-components/management/ManageAllDropdown'
 import { ResourceComponentActions } from '@/components/install-components/ResourceComponentActions'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallComponents } from '@/lib'
 import type { TComponentType, TInstallComponent } from '@/types'
@@ -50,6 +51,7 @@ const enabledRank = (enabled?: boolean | null) => {
 export const InstallComponentsListContainer = () => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const installLink = useInstallLink()
   const [searchParams, setSearchParams] = useSearchParams()
   const showHealth = !!org?.features?.['component-health']
 
@@ -100,6 +102,14 @@ export const InstallComponentsListContainer = () => {
         name: component?.name ?? 'Component',
         type: component?.type,
         enabled: installComponent.enabled,
+        href: componentId
+          ? installLink({
+              orgId: org?.id,
+              installId: install?.id,
+              appId: install?.app_id,
+              suffix: `/components/${componentId}`,
+            })
+          : undefined,
         status: installComponent.status_v2?.status ?? installComponent.status,
         actions: component ? (
           <ResourceComponentActions
@@ -133,6 +143,7 @@ export const InstallComponentsListContainer = () => {
   }, [
     result?.data,
     enabledFilter,
+    installLink,
     org?.id,
     install?.id,
     install?.app_id,
