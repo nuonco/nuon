@@ -68,6 +68,28 @@ func TestParseComponentOverrideInputName_NonOverride(t *testing.T) {
 	}
 }
 
+func TestEnabledOverrideInputNameRaw_RoundTrip(t *testing.T) {
+	comp := "grafana_lgtm"
+	raw := EnabledOverrideInputNameRaw(comp)
+	if raw != ComponentOverrideInputPrefix+"enabled_"+comp {
+		t.Fatalf("raw = %q", raw)
+	}
+	if !IsEnabledOverrideInputNameRaw(raw) {
+		t.Fatalf("IsEnabledOverrideInputNameRaw(%q) = false", raw)
+	}
+	if IsEnabledOverrideInputNameRaw(EnabledOverrideInputName(comp)) {
+		t.Fatalf("hex SoT key should not be reported as raw alias")
+	}
+
+	kind, got, ok := ParseComponentOverrideInputName(raw)
+	if !ok {
+		t.Fatal("parse raw ok=false")
+	}
+	if kind != ComponentOverrideKindEnabled || got != comp {
+		t.Fatalf("got kind=%q comp=%q", kind, got)
+	}
+}
+
 func TestSyntheticComponentOverrideInputs(t *testing.T) {
 	components := ComponentList{
 		{Name: "vpc", Type: TerraformModuleComponentType},
