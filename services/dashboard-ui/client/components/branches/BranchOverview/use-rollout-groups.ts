@@ -19,6 +19,7 @@ import type {
   TInstallGroupRun,
 } from '@/types'
 import type { TOverviewRollout } from './BranchOverview'
+import { installGroupApprovalLabel } from '@/components/branches/install-group-approval'
 import { installGroupMatch } from './InstallGroupMatch'
 import { fetchCommitReady } from './overview-loading'
 import { buildRolloutStages } from './rollout-stages'
@@ -26,13 +27,6 @@ import type { TTrackGroup, TTrackInstall } from './RolloutTrack'
 import { commitUrl, resolveRunSource } from './run-source'
 
 const TERMINAL = new Set(['success', 'failed', 'error', 'cancelled'])
-
-const approvalLabel = (group?: TAppBranchInstallGroup) => {
-  if (!group) return undefined
-  return group.auto_approve_on_policies_passing
-    ? 'Auto-approves when policies pass'
-    : 'Manual approval'
-}
 
 const installRegion = (install?: TInstall) =>
   install?.aws_account?.region ||
@@ -95,7 +89,7 @@ const fromGroupRun = (
     status: groupRun.status?.status || 'pending',
     plannedCount: groupRun.total_installs,
     match: installGroupMatch(group),
-    approval: approvalLabel(group),
+    approval: installGroupApprovalLabel(group),
     maxParallel: group ? (group.max_parallel ?? 1) : undefined,
     installs: (groupRun.installs ?? []).map((install) => {
       const id = install.install_id ?? ''
@@ -273,7 +267,7 @@ export const useRolloutGroups = () => {
           name: stage.name,
           status: stage.status,
           match: installGroupMatch(group),
-          approval: approvalLabel(group),
+          approval: installGroupApprovalLabel(group),
           maxParallel: group ? (group.max_parallel ?? 1) : undefined,
           installs: installs.map((install) => ({
             id: install.id,

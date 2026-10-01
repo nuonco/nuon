@@ -6,6 +6,7 @@ import { LabelBadge } from '@/components/common/LabelBadge'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { InstallStatuses } from '@/components/installs/InstallStatuses'
+import { installGroupApprovalLabel } from '@/components/branches/install-group-approval'
 import { resolveInstallGroupMembership } from '@/components/branches/install-group-membership'
 import type { TAppBranchConfig, TInstall } from '@/types'
 
@@ -139,11 +140,16 @@ export const InstallGroupsSection = ({
                   />
                 ))}
               </div>
-              {(group.max_parallel || 1) > 1 && (
+              <span className="flex shrink-0 items-center gap-3">
                 <Text variant="subtext" theme="neutral">
-                  Max {group.max_parallel} parallel
+                  {installGroupApprovalLabel(group)}
                 </Text>
-              )}
+                {(group.max_parallel || 1) > 1 && (
+                  <Text variant="subtext" theme="neutral">
+                    Max {group.max_parallel} parallel
+                  </Text>
+                )}
+              </span>
             </div>
 
             {overlappingInstalls.length > 0 && (
