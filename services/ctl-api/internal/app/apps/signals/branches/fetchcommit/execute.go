@@ -2,6 +2,7 @@ package fetchcommit
 
 import (
 	"fmt"
+	"strconv"
 
 	"go.temporal.io/sdk/workflow"
 
@@ -51,14 +52,31 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	var vcsCommit *app.VCSConnectionCommit
 	previewRef := previewCommitRef(run)
+	pin, pinned := pinnedManualCommit(run)
 	requestedRef := configBranch
-	if previewRef != "" {
+	switch {
+	case previewRef != "":
 		requestedRef = previewRef
 		vcsCommit, err = activities.AwaitFetchCommitBySHA(ctx, &activities.FetchCommitBySHAInput{
 			VcsConfigID: vcsConfigID,
 			SHA:         previewRef,
 		})
-	} else {
+	case pinned:
+		requestedRef = pin.ref
+		if pin.prNumber > 0 {
+			requestedRef = strconv.Itoa(pin.prNumber)
+		}
+		ref, refErr := resolveManualPinRef(ctx, vcsConfigID, pin)
+		if refErr != nil {
+			err = refErr
+			break
+		}
+		requestedRef = ref
+		vcsCommit, err = activities.AwaitFetchCommitBySHA(ctx, &activities.FetchCommitBySHAInput{
+			VcsConfigID: vcsConfigID,
+			SHA:         ref,
+		})
+	default:
 		vcsCommit, err = activities.AwaitFetchLatestCommitByVcsConfigID(ctx, vcsConfigID)
 	}
 	if err != nil {
@@ -210,4 +228,45 @@ func previewCommitRef(run *app.AppBranchRun) string {
 		return run.Preview.GitRef
 	}
 	return ""
+}
+
+type commitPin struct {
+	ref      string
+	prNumber int
+}
+
+func pinnedManualCommit(run *app.AppBranchRun) (commitPin, bool) {
+	if run == nil || run.RunType != app.AppBranchRunTypeManual {
+		return commitPin{}, false
+	}
+	meta := run.RunMetadata()
+	switch {
+	case meta.Tag != "":
+		return commitPin{ref: meta.Tag}, true
+	case meta.PRNumber != nil && run.HeadSHA == "":
+		return commitPin{prNumber: *meta.PRNumber}, true
+	case run.HeadSHA != "":
+		return commitPin{ref: run.HeadSHA}, true
+	case meta.GitRef != "":
+		return commitPin{ref: meta.GitRef}, true
+	default:
+		return commitPin{}, false
+	}
+}
+
+func resolveManualPinRef(ctx workflow.Context, vcsConfigID string, pin commitPin) (string, error) {
+	if pin.prNumber <= 0 {
+		return pin.ref, nil
+	}
+	out, err := activities.AwaitResolvePullRequestHeadSHA(ctx, &activities.ResolvePullRequestHeadSHAInput{
+		VcsConfigID: vcsConfigID,
+		PRNumber:    pin.prNumber,
+	})
+	if err != nil {
+		return "", err
+	}
+	if out == nil || out.HeadSHA == "" {
+		return "", fmt.Errorf("pull request %d has no head sha", pin.prNumber)
+	}
+	return out.HeadSHA, nil
 }

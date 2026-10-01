@@ -1,8 +1,9 @@
 import type { HTMLAttributes } from 'react'
 import type { TAppBranchRun, TWorkflow } from '@/types/ctl-api.types'
+import { manualRunPinLabel } from '@/utils/branch-utils'
 import type { TStatusTheme } from '@/utils/status-utils'
 import { WORKFLOW_BADGE_MAP, isServiceAccount } from '@/utils/workflow-utils'
-import { Badge } from '../atoms/Badge'
+import { Badge, type TBadgeTone } from '../atoms/Badge'
 import { Status } from '../atoms/Status'
 import { Text } from '../atoms/Text'
 import { Link } from '../atoms/Link'
@@ -24,6 +25,7 @@ type TCaptionBadge = {
   id: string
   label: string
   theme?: TStatusTheme
+  tone?: TBadgeTone
 }
 
 const DASHBOARD_THEMES: Record<string, TStatusTheme> = {
@@ -65,7 +67,9 @@ const statusChip = (workflow: TWorkflow) => {
   }
 
   const inFlight = IN_FLIGHT_LABELS[status]
-  return inFlight ? { label: inFlight, theme: 'info' as TStatusTheme } : undefined
+  return inFlight
+    ? { label: inFlight, theme: 'info' as TStatusTheme }
+    : undefined
 }
 
 const branchRunOf = (workflow: TWorkflow): TAppBranchRun | undefined =>
@@ -135,6 +139,8 @@ const captionBadges = (
 
   if (isBranchRun(workflow) && branchRun?.event_type === 'manual') {
     badges.push({ id: 'manual', label: 'manual' })
+    const pin = manualRunPinLabel(branchRun)
+    if (pin) badges.push({ id: 'pin', label: pin, tone: 'accent' })
   }
 
   if (workflow?.type && CRON_TYPES.includes(workflow.type)) {
@@ -245,7 +251,7 @@ export const WorkflowTimelineItem = ({
                 variant="chip"
               />
             ) : (
-              <Badge key={entry.id} variant="code">
+              <Badge key={entry.id} variant="code" tone={entry.tone}>
                 {entry.label}
               </Badge>
             )
