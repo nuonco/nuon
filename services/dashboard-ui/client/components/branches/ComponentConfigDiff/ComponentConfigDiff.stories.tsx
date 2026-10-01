@@ -3,6 +3,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Select } from '@/components/common/form/Select'
 import type { DiffSectionData } from '@/components/branches/AppConfigDiff'
+import { BranchOverview } from '@/components/branches/BranchOverview/BranchOverview'
 import { AppConfigFilesDiff, ComponentConfigDiff } from './ComponentConfigDiff'
 
 export default {
@@ -420,6 +421,40 @@ export const FullAppConfig = () => (
     />
   </div>
 )
+
+// The branch overview renders this card full width below the run source card.
+export const InBranchOverview = () => (
+  <BranchOverview
+    hasPlan={false}
+    rollout={{
+      id: 'wf_184',
+      href: '#run',
+      source: { kind: 'manual' },
+      title: 'feat: remove preview_ping action',
+      sha: '960a77709002e4b851bed23457a4b79f98ca6422',
+      author: 'jane@example.com',
+      status: 'success',
+    }}
+    changes={
+      <AppConfigFilesDiff
+        title="Template and source changes"
+        previousVersion="960a777"
+        currentVersion="e4f5a6b"
+        configSections={fullAppSections}
+        files={fullAppFiles}
+        headerAction={
+          <Text as="span" variant="subtext" className="text-link">
+            View builds
+          </Text>
+        }
+      />
+    }
+    groups={[]}
+    rolloutHref="#rollout"
+    onSelectGroup={() => {}}
+  />
+)
+InBranchOverview.storyName = 'In branch overview'
 
 const branchRefs = [
   { name: 'main', sha: 'a1b2c3d' },
