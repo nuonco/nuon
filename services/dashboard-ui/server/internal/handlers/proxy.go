@@ -89,8 +89,8 @@ func (h *ProxyHandler) RegisterRoutes(e *gin.Engine) error {
 	nuonOnly.GET("/_app/*path", gin.WrapH(temporalProxy))
 	nuonOnly.Any("/admin/kafka/*path", gin.WrapH(kafkaUIProxy))
 	if h.cfg.GrafanaUIUrl != "" {
-		nuonOnly.Any("/admin/grafana", gin.WrapH(grafanaUIProxy))
-		nuonOnly.Any("/admin/grafana/*path", gin.WrapH(grafanaUIProxy))
+		authed.Any("/admin/grafana", gin.WrapH(grafanaUIProxy))
+		authed.Any("/admin/grafana/*path", gin.WrapH(grafanaUIProxy))
 	}
 	nuonOnly.Any("/admin/v1/*path", gin.WrapH(adminAPIProxy))
 	nuonOnly.Any("/admin/dashboard/*path", gin.WrapH(adminDashboardProxy))

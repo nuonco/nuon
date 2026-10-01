@@ -63,7 +63,7 @@ export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
   const { data: grafanaReachable = false } = useQuery({
     queryKey: ['admin', 'grafana', 'health'],
     queryFn: probeGrafanaHealth,
-    enabled: !!isAdmin && !!grafanaUiUrl,
+    enabled: !!grafanaUiUrl && !isLoading && !!user,
     staleTime: 5 * 60 * 1000,
     retry: false,
   })

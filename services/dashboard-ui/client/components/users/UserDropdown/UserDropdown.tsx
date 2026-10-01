@@ -126,11 +126,6 @@ export const UserDropdown = ({
             Temporal dashboard
           </Link>
         )}
-        {!hideOrgSettings && isAdmin && grafanaUiUrl && (
-          <Link href="/admin/grafana" isExternal>
-            Grafana
-          </Link>
-        )}
         {!hideOrgSettings && isAdmin && (
           <Link href="/admin/kafka" isExternal>
             Kafka UI
@@ -147,6 +142,11 @@ export const UserDropdown = ({
           </Link>
         )}
         {!hideOrgSettings && isAdmin && <hr />}
+        {grafanaUiUrl && (
+          <Link href="/admin/grafana" isExternal>
+            Grafana
+          </Link>
+        )}
         {!hideOrgSettings && (
           <Text variant="label" theme="neutral">
             User settings
