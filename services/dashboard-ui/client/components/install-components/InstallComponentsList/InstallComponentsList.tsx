@@ -9,7 +9,6 @@ import {
 } from '@/components/common/CollectionViewToggle'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ID } from '@/components/common/ID'
-import { Link } from '@/components/common/Link'
 import { Pagination, type IPagination } from '@/components/common/Pagination'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
@@ -24,7 +23,6 @@ import { cn } from '@/utils/classnames'
 export type TInstallComponentListItem = {
   actions?: ReactNode
   enabled?: boolean | null
-  href?: string
   id: string
   latestDeploy: ReactNode
   name: string
@@ -139,13 +137,7 @@ const InstallComponentsListBase = ({
                         level={3}
                         theme={disabled ? 'neutral' : undefined}
                       >
-                        {component.href ? (
-                          <Link href={component.href} variant="inline">
-                            {component.name}
-                          </Link>
-                        ) : (
-                          component.name
-                        )}
+                        {component.name}
                       </Text>
                       {disabled ? (
                         <Badge size="sm" theme="neutral">
