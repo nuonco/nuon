@@ -682,6 +682,13 @@ export interface paths {
      */
     get: operations["GetAppConfigGraphV2"];
   };
+  "/v1/apps/{app_id}/configs/{config_id}/source-files/{path}": {
+    /**
+     * get a single file from an app config's source archive
+     * @description Returns the raw contents of one file captured in the config's source archive. The path must exactly match a captured file.
+     */
+    get: operations["GetAppConfigSourceFile"];
+  };
   "/v1/apps/{app_id}/configs/{config_id}/sync": {
     /**
      * @description Sync an app config that was created with an intermediate config.
@@ -3844,6 +3851,7 @@ export interface components {
       head_run_id?: string;
       id?: string;
       org_id?: string;
+      source_diff?: components["schemas"]["blobstore.Blob"];
       updated_at?: string;
     };
     "app.AppBranchRunConfig": {
@@ -7242,6 +7250,21 @@ export interface components {
     "config.InstallTelemetry": {
       enabled?: boolean | null;
     };
+    "config.SourceArchiveDiff": {
+      files?: components["schemas"]["config.SourceFileDiff"][];
+      total_files?: number;
+      unchanged?: number;
+    };
+    "config.SourceFileDiff": {
+      after_sha256?: string;
+      after_size?: number;
+      before_sha256?: string;
+      before_size?: number;
+      op?: string;
+      patch?: string;
+      patch_truncated?: boolean;
+      path?: string;
+    };
     "configs.ACRAppRegistration": {
       clientCertificateName?: string;
       clientID?: string;
@@ -8051,8 +8074,11 @@ export interface components {
       head_run_id?: string;
       head_sha?: string;
       id?: string;
+      source_diff?: components["schemas"]["blobstore.BlobMetadata"];
+      source_diff_content?: unknown;
     };
     "service.AppBranchRunComparisonRunSummary": {
+      app_config_id?: string;
       base_branch?: string;
       created_at?: string;
       event_type?: string;
@@ -8067,6 +8093,8 @@ export interface components {
       config_id?: string;
       diff?: components["schemas"]["diff.Diff"];
       old_config_id?: string;
+      source?: components["schemas"]["config.SourceArchiveDiff"];
+      source_skipped?: boolean;
       summary?: components["schemas"]["diff.DiffSummary"];
     };
     "service.AppConfigTemplate": {
@@ -13029,7 +13057,7 @@ export interface operations {
   GetAppBranchRunComparison: {
     parameters: {
       query?: {
-        /** @description comma-separated: git,full,config */
+        /** @description comma-separated: git,full,config,source */
         include_diff?: string;
       };
       path: {
@@ -15490,6 +15518,8 @@ export interface operations {
       query?: {
         /** @description previous config ID to compare against */
         old_config_id?: string;
+        /** @description comma-separated extras: source */
+        include?: string;
       };
       path: {
         /** @description app ID */
@@ -15588,6 +15618,60 @@ export interface operations {
       500: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a single file from an app config's source archive
+   * @description Returns the raw contents of one file captured in the config's source archive. The path must exactly match a captured file.
+   */
+  GetAppConfigSourceFile: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description config ID */
+        config_id: string;
+        /** @description file path relative to the config root */
+        path: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/octet-stream": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };

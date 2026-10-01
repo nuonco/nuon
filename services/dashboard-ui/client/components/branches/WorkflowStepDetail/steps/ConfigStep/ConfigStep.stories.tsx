@@ -65,6 +65,43 @@ export const Empty = () => (
   <ConfigStep appConfigId="cfg-123" status="success" sections={[]} />
 )
 
+export const ExcludedSectionsHidden = () => (
+  <ConfigStep
+    appConfigId="cfg-123"
+    status="success"
+    sections={[
+      ...sections,
+      {
+        name: 'Stack',
+        sectionKey: 'stack',
+        grouped: false,
+        additions: 1,
+        removals: 0,
+        changed: 0,
+        entities: [],
+        fields: [{ key: 'name', op: 'add', diff: "'acme-prod'" }],
+        files: [{ name: 'stack.toml', op: 'add' }],
+      },
+      {
+        name: 'Install inputs',
+        sectionKey: 'inputs',
+        grouped: true,
+        additions: 1,
+        removals: 0,
+        changed: 0,
+        entities: [
+          {
+            name: 'environment',
+            op: 'add',
+            fields: [{ key: 'default', op: 'add', diff: "'staging'" }],
+          },
+        ],
+        fields: [],
+      },
+    ]}
+  />
+)
+
 export const WaitingForConfig = () => (
   <ConfigStep appConfigId={undefined} status="in-progress" sections={[]} />
 )
