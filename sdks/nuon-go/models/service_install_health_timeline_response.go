@@ -36,6 +36,9 @@ type ServiceInstallHealthTimelineResponse struct {
 	// days
 	Days int64 `json:"days,omitempty"`
 
+	// healthchecks
+	Healthchecks []*ServiceInstallHealthcheck `json:"healthchecks"`
+
 	// install id
 	InstallID string `json:"install_id,omitempty"`
 
@@ -55,6 +58,10 @@ func (m *ServiceInstallHealthTimelineResponse) Validate(formats strfmt.Registry)
 	}
 
 	if err := m.validateDaily(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateHealthchecks(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -124,6 +131,36 @@ func (m *ServiceInstallHealthTimelineResponse) validateDaily(formats strfmt.Regi
 	return nil
 }
 
+func (m *ServiceInstallHealthTimelineResponse) validateHealthchecks(formats strfmt.Registry) error {
+	if swag.IsZero(m.Healthchecks) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Healthchecks); i++ {
+		if swag.IsZero(m.Healthchecks[i]) { // not required
+			continue
+		}
+
+		if m.Healthchecks[i] != nil {
+			if err := m.Healthchecks[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("healthchecks" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("healthchecks" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 // ContextValidate validate this service install health timeline response based on the context it is used
 func (m *ServiceInstallHealthTimelineResponse) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -133,6 +170,10 @@ func (m *ServiceInstallHealthTimelineResponse) ContextValidate(ctx context.Conte
 	}
 
 	if err := m.contextValidateDaily(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateHealthchecks(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -189,6 +230,35 @@ func (m *ServiceInstallHealthTimelineResponse) contextValidateDaily(ctx context.
 				ce := new(errors.CompositeError)
 				if stderrors.As(err, &ce) {
 					return ce.ValidateName("daily" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *ServiceInstallHealthTimelineResponse) contextValidateHealthchecks(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Healthchecks); i++ {
+
+		if m.Healthchecks[i] != nil {
+
+			if swag.IsZero(m.Healthchecks[i]) { // not required
+				return nil
+			}
+
+			if err := m.Healthchecks[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("healthchecks" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("healthchecks" + "." + strconv.Itoa(i))
 				}
 
 				return err

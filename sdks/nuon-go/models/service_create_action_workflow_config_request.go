@@ -37,6 +37,9 @@ type ServiceCreateActionWorkflowConfigRequest struct {
 	// image
 	Image string `json:"image,omitempty"`
 
+	// is healthcheck
+	IsHealthcheck bool `json:"is_healthcheck,omitempty"`
+
 	// kubernetes context
 	KubernetesContext string `json:"kubernetes_context,omitempty"`
 

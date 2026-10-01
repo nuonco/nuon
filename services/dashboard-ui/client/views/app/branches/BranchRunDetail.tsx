@@ -38,6 +38,7 @@ import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
 import { BranchProvider } from '@/providers/branch-provider'
 import type { TAPIError } from '@/types'
+import { manualRunPinLabel } from '@/utils/branch-utils'
 import { getBranchRunComparison, getBranchWorkflowRun } from '@/lib'
 import type { TBranchRunComparisonRunSummary } from '@/lib/ctl-api/apps/branches/get-branch-run-comparison'
 
@@ -106,6 +107,10 @@ const BranchRunDetailContent = () => {
     previewModeLabel(branchRun?.preview) ??
     (branchRun?.plan_only ? 'Plan only' : undefined)
   const previewSource = previewSourceLabel(branchRun)
+  const pinLabel =
+    branchRun?.event_type === 'manual'
+      ? manualRunPinLabel(branchRun)
+      : undefined
   const previewInstall = branchRun?.preview?.install_name
   const isDraftMode =
     !!branchRun?.preview &&
@@ -219,6 +224,16 @@ const BranchRunDetailContent = () => {
                   {branchRun?.event_type === 'manual' ? (
                     <Badge size="sm" variant="code" className="shrink-0">
                       manual
+                    </Badge>
+                  ) : null}
+                  {pinLabel ? (
+                    <Badge
+                      size="sm"
+                      theme="info"
+                      variant="code"
+                      className="shrink-0"
+                    >
+                      {pinLabel}
                     </Badge>
                   ) : null}
                 </>

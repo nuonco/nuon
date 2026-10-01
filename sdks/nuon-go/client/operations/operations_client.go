@@ -596,6 +596,8 @@ type ClientService interface {
 
 	GetInstallActionsLatestRuns(params *GetInstallActionsLatestRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActionsLatestRunsOK, error)
 
+	GetInstallActivity(params *GetInstallActivityParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActivityOK, error)
+
 	GetInstallAppConfigVersionDiff(params *GetInstallAppConfigVersionDiffParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAppConfigVersionDiffOK, error)
 
 	GetInstallAppConfigVersions(params *GetInstallAppConfigVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAppConfigVersionsOK, error)
@@ -652,6 +654,8 @@ type ClientService interface {
 
 	GetInstallLatestDeploy(params *GetInstallLatestDeployParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallLatestDeployOK, error)
 
+	GetInstallOverview(params *GetInstallOverviewParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallOverviewOK, error)
+
 	GetInstallReadme(params *GetInstallReadmeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallReadmeOK, *GetInstallReadmePartialContent, error)
 
 	GetInstallResources(params *GetInstallResourcesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallResourcesOK, error)
@@ -685,6 +689,8 @@ type ClientService interface {
 	GetInstallState(params *GetInstallStateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallStateOK, error)
 
 	GetInstallStateHistory(params *GetInstallStateHistoryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallStateHistoryOK, error)
+
+	GetInstallStatus(params *GetInstallStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallStatusOK, error)
 
 	GetInstallTelemetrySettings(params *GetInstallTelemetrySettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTelemetrySettingsOK, error)
 
@@ -12278,6 +12284,58 @@ func (a *Client) GetInstallActionsLatestRuns(params *GetInstallActionsLatestRuns
 }
 
 /*
+	GetInstallActivity gets normalized activity feed for an install
+
+	Returns a normalized, chronological activity feed for an install.
+
+Each record is a top-level operation that ran against the install rather than a change to it: a standalone action run, a runbook run, or an install-scoped policy check. Action runs executed as steps within another workflow are omitted. Policy checks recorded only against a component build, with no install, are also omitted.
+
+Records include a `type` (`action_run`, `runbook_run`, or `policy_check`), a `status` taken from that source, a human-readable `title` and `summary`, and a type-specific payload (`action`, `runbook`, or `policy`). Action and runbook records include a `workflow` reference when the run has one.
+
+Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `search`, `created_at_gte`, and `created_at_lte`. `status` matches each source's own status string. Action and runbook runs use values such as `queued`, `in-progress`, `finished`, and `error`. Policy checks use `success`, `warning`, and `error`.
+*/
+func (a *Client) GetInstallActivity(params *GetInstallActivityParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActivityOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallActivityParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallActivity",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/activity",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallActivityReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallActivityOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallActivity: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetInstallAppConfigVersionDiff gets the diff for an install app config version
 
 Returns the component diff for a specific app config version transition.
@@ -13110,7 +13168,7 @@ func (a *Client) GetInstallDeploy(params *GetInstallDeployParams, authInfo runti
 
 	Returns a normalized, chronological deployment feed for an install.
 
-Each record represents one install-owned workflow that caused a real change: provisioning, reprovisioning, component deploys, input updates, stack reprovisioning, sandbox reprovisioning, action runs, runbook runs, and install-config updates. Plan-only and preview records are excluded.
+Each record represents one install-owned workflow that caused a real change: provisioning, reprovisioning, component deploys, input updates, stack reprovisioning, sandbox reprovisioning, and install-config updates. Action runs, runbook runs, and policy checks are returned by the activity feed. Plan-only and preview records are excluded.
 
 Records include a `type`, unified `status`, human-readable `title` and `summary`, an optional `workflow` reference, an optional `app_branch` reference (when the change originated from a branch run), an optional primary `component` reference (for single-component operations), a flat `affected_resources` list of component names, and `change_groups` that group the affected resources by logical category.
 
@@ -13570,6 +13628,52 @@ func (a *Client) GetInstallLatestDeploy(params *GetInstallLatestDeployParams, au
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetInstallLatestDeploy: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallOverview installs overview
+
+Returns branch tracking and config drift for an install. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
+*/
+func (a *Client) GetInstallOverview(params *GetInstallOverviewParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallOverviewOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallOverviewParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallOverview",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/overview",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallOverviewReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallOverviewOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallOverview: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -14346,6 +14450,52 @@ func (a *Client) GetInstallStateHistory(params *GetInstallStateHistoryParams, au
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetInstallStateHistory: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallStatus installs status
+
+Returns deployment, resource, and health-check status for an install. Each axis is a composite status with counts in metadata. Deployment state stays on the component lifecycle, so a failed deploy remains failed after the workload is repaired. Resources and health checks are the latest observations.
+*/
+func (a *Client) GetInstallStatus(params *GetInstallStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallStatusOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallStatusParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallStatus",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/status",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallStatusReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallStatusOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallStatus: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -22321,6 +22471,8 @@ func (a *Client) UpdateOrgFeatures(params *UpdateOrgFeaturesParams, authInfo run
 
 /*
 UpdateOrgTelemetry updates current org telemetry settings
+
+Omitted fields are unchanged. Set relay_endpoint to null or an empty string to use the deployment default. Relay endpoints must be HTTPS OTLP base URLs.
 */
 func (a *Client) UpdateOrgTelemetry(params *UpdateOrgTelemetryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgTelemetryOK, error) {
 	// NOTE: parameters are not validated before sending

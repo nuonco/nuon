@@ -24,6 +24,9 @@ type ServiceInstallComponentHealthSummary struct {
 	// component name
 	ComponentName string `json:"component_name,omitempty"`
 
+	// component type
+	ComponentType string `json:"component_type,omitempty"`
+
 	// current health
 	CurrentHealth string `json:"current_health,omitempty"`
 
