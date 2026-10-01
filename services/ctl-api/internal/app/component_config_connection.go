@@ -409,18 +409,23 @@ func (c *ComponentConfigConnection) GetDefaultEnabled() bool {
 }
 
 // ComponentEnabledFromInputs resolves whether a toggleable component is enabled
-// from a set of install input values. The synthetic enabled input
-// (config.EnabledOverrideInputName) is the source of truth; when unset it falls
-// back to the component's default_enabled. Non-toggleable components are always
-// enabled.
+// from a set of install input values. The hex synthetic enabled input
+// (config.EnabledOverrideInputName) is the source of truth; the cleartext alias
+// (EnabledOverrideInputNameRaw) is consulted as a fallback. When neither is set
+// it falls back to the component's default_enabled. Non-toggleable components
+// are always enabled.
 func ComponentEnabledFromInputs(enabledInputs map[string]*string, ccc *ComponentConfigConnection) bool {
 	if ccc == nil || !ccc.IsToggleable() {
 		return true
 	}
-	name := config.EnabledOverrideInputName(ccc.Component.Name)
-	if v, ok := enabledInputs[name]; ok && v != nil {
-		if enabled, err := strconv.ParseBool(*v); err == nil {
-			return enabled
+	for _, name := range []string{
+		config.EnabledOverrideInputName(ccc.Component.Name),
+		config.EnabledOverrideInputNameRaw(ccc.Component.Name),
+	} {
+		if v, ok := enabledInputs[name]; ok && v != nil {
+			if enabled, err := strconv.ParseBool(*v); err == nil {
+				return enabled
+			}
 		}
 	}
 	return ccc.GetDefaultEnabled()

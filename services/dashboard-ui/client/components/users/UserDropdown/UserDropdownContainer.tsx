@@ -16,6 +16,7 @@ type IUserDropdownContainerProps = Omit<
   | 'isDev'
   | 'apiUrl'
   | 'adminDashboardUrl'
+  | 'grafanaUiUrl'
   | 'authServiceUrl'
   | 'notificationsSupported'
   | 'notificationPermission'
@@ -32,18 +33,31 @@ type IUserDropdownContainerProps = Omit<
 
 export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
   const { isAdmin, isNuonEmployee, user, isLoading } = useAuth()
-  const { apiUrl, authServiceUrl, adminDashboardUrl, isDev, isByoc, onboardingFirstRun } =
-    useConfig()
+  const {
+    apiUrl,
+    authServiceUrl,
+    adminDashboardUrl,
+    grafanaUiUrl,
+    isDev,
+    isByoc,
+    onboardingFirstRun,
+  } = useConfig()
   const { addPanel } = useSurfaces()
   const { addToast } = useToast()
   const { permission, requestPermission, isSupported, muted, toggleMute } =
     useNotifications()
+
   const reopenOnboarding = async () => {
     try {
       await resetFirstRunJourney()
       trackEvent({ event: 'onboarding_reopen', status: 'ok', user, props: {} })
     } catch (err) {
-      trackEvent({ event: 'onboarding_reopen', status: 'error', user, props: { err: (err as TAPIError)?.error } })
+      trackEvent({
+        event: 'onboarding_reopen',
+        status: 'error',
+        user,
+        props: { err: (err as TAPIError)?.error },
+      })
     } finally {
       window.location.assign('/onboarding?reopen=1')
     }
@@ -57,6 +71,7 @@ export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
       isDev={!!isDev}
       apiUrl={apiUrl}
       adminDashboardUrl={adminDashboardUrl}
+      grafanaUiUrl={grafanaUiUrl}
       authServiceUrl={authServiceUrl}
       notificationsSupported={isSupported}
       notificationPermission={permission ?? ''}
