@@ -136,6 +136,7 @@ func init() {
 	config.RegisterDefault("temporal_blob_s3_timeout", "30s")
 
 	config.RegisterDefault("forced_enabled_features", "")
+	config.RegisterDefault("auto_enabled_features", "")
 	config.RegisterDefault("enable_httpbin_debug_endpoints", false)
 	config.RegisterDefault("enable_endpoint_auditing", false)
 	config.RegisterDefault("org_default_user_journeys_enabled", false)
@@ -387,6 +388,9 @@ type Config struct {
 	// ForcedEnabledFeatures lists flags this deployment pins on for every org: they
 	// resolve enabled regardless of the stored per-org value and cannot be toggled off.
 	ForcedEnabledFeatures string `config:"forced_enabled_features"`
+	// AutoEnabledFeatures lists flags stored true on newly created orgs. Unlike
+	// ForcedEnabledFeatures, they can still be toggled off.
+	AutoEnabledFeatures string `config:"auto_enabled_features"`
 
 	// flags for controlling creation of integration users
 	IntegrationGithubInstallID string `config:"integration_github_install_id" validate:"required"`
@@ -668,6 +672,7 @@ func NewConfig() (*Config, error) {
 	}
 
 	orgfeatures.SetForced(cfg.ForcedEnabledFeatures)
+	orgfeatures.SetAuto(cfg.AutoEnabledFeatures)
 
 	switch {
 	case cfg.IsGCP():

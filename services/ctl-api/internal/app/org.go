@@ -192,6 +192,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 
 	defaultFeatures := DefaultFeatures()
 	forced := ForcedFeatures()
+	auto := AutoFeatures()
 
 	for _, feature := range GetFeatures() {
 		if forced[string(feature)] {
@@ -199,6 +200,10 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 			continue
 		}
 		if _, ok := o.Features[string(feature)]; !ok {
+			if auto[string(feature)] {
+				o.Features[string(feature)] = true
+				continue
+			}
 			o.Features[string(feature)] = defaultFeatures[feature]
 		}
 	}
