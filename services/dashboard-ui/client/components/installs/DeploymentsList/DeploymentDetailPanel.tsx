@@ -1,3 +1,4 @@
+import { BranchRunChanges } from '@/components/branches/BranchRunChanges/BranchRunChanges'
 import { Badge } from '@/components/common/Badge'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Divider } from '@/components/common/Divider'
@@ -10,6 +11,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import { WorkflowPanelLink } from '@/components/workflows/InstallWorkflowPanel'
+import { AppProvider } from '@/providers/app-provider'
 import type { TInstallDeploymentRecord } from '@/types'
 import { humanize } from '@/utils/string-utils'
 
@@ -187,22 +189,36 @@ export const DeploymentDetailPanel = ({
         affectedResources={deployment.affected_resources}
       />
 
-      {deployment.change_groups.map((group) => (
-        <div key={group.id} className="flex flex-col gap-3">
-          <Divider dividerWord={group.label} />
-          {group.summary && (
-            <Text variant="subtext" theme="neutral">
-              {group.summary}
-            </Text>
-          )}
-          {group.changes.length > 0 && <ChangeRows changes={group.changes} />}
-          {group.file_diff && (
-            <CodeBlock language={group.diff_language ?? 'diff'} showCopy>
-              {group.file_diff}
-            </CodeBlock>
-          )}
-        </div>
-      ))}
+      {deployment.app_branch?.id && deployment.app_branch.run_id ? (
+        <>
+          <Divider dividerWord="Change set" />
+          <AppProvider appId={appId}>
+            <BranchRunChanges
+              branchId={deployment.app_branch.id}
+              appBranchRunId={deployment.app_branch.run_id}
+              showRunComparison={false}
+              title="Config changes"
+            />
+          </AppProvider>
+        </>
+      ) : (
+        deployment.change_groups.map((group) => (
+          <div key={group.id} className="flex flex-col gap-3">
+            <Divider dividerWord={group.label} />
+            {group.summary && (
+              <Text variant="subtext" theme="neutral">
+                {group.summary}
+              </Text>
+            )}
+            {group.changes.length > 0 && <ChangeRows changes={group.changes} />}
+            {group.file_diff && (
+              <CodeBlock language={group.diff_language ?? 'diff'} showCopy>
+                {group.file_diff}
+              </CodeBlock>
+            )}
+          </div>
+        ))
+      )}
     </Panel>
   )
 }

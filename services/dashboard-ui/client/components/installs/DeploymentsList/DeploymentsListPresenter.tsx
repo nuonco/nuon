@@ -1,5 +1,4 @@
 import { useEffect } from 'react'
-import { useSearchParams } from 'react-router'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
@@ -264,7 +263,6 @@ const DeploymentsListBase = ({
   onClearFilters,
 }: IDeploymentsListPresenter) => {
   const { addPanel } = useSurfaces()
-  const [, setSearchParams] = useSearchParams()
   const { isPaginating, setIsPaginating } = usePagination()
 
   useEffect(() => {
@@ -389,18 +387,6 @@ const DeploymentsListBase = ({
               appId={appId}
               installId={installId}
               onViewDetails={() => {
-                const workflowId = deployment.workflow?.id
-                if (workflowId) {
-                  setSearchParams(
-                    (current) => {
-                      const next = new URLSearchParams(current)
-                      next.set('workflow', workflowId)
-                      return next
-                    },
-                    { replace: true }
-                  )
-                  return
-                }
                 addPanel(
                   <DeploymentDetailPanel
                     deployment={deployment}
