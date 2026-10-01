@@ -9442,6 +9442,7 @@ export interface components {
       enabled?: boolean;
       org_default?: boolean;
       override?: boolean | null;
+      relay_configured?: boolean;
     };
     "service.InstallUpdate": {
       app_config?: components["schemas"]["service.InstallAppConfigUpdate"];
