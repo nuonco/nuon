@@ -7,6 +7,7 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { SubNav } from '@/components/navigation/SubNav'
 import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
+import { useBranchNavCounts } from '@/hooks/use-branch-nav-counts'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import { useOrg } from '@/hooks/use-org'
 import { BranchProvider } from '@/providers/branch-provider'
@@ -69,6 +70,7 @@ const BranchTemplate = () => {
   const showTriggerNudge =
     hasDeploymentPlan && !isLoadingLatestRun && !latestRun
   const hasInstallSyncing = !!org?.features?.['app-install-syncing']
+  const navCounts = useBranchNavCounts({ orgId, appId, branchId })
 
   const navLinks: TNavItem[] = [
     { path: `/`, iconVariant: 'GraphIcon', text: 'Overview' },
@@ -95,6 +97,7 @@ const BranchTemplate = () => {
       path: `/inputs`,
       iconVariant: 'ListChecksIcon',
       text: 'Inputs',
+      count: navCounts.inputs,
     },
     {
       path: `/components`,
@@ -119,9 +122,24 @@ const BranchTemplate = () => {
       iconVariant: 'ShippingContainerIcon',
       text: 'Sandboxes',
     },
-    { path: `/policies`, iconVariant: 'ShieldCheckIcon', text: 'Policies' },
-    { path: `/roles`, iconVariant: 'FileLockIcon', text: 'Roles' },
-    { path: `/labels`, iconVariant: 'TagIcon', text: 'Labels' },
+    {
+      path: `/policies`,
+      iconVariant: 'ShieldCheckIcon',
+      text: 'Policies',
+      count: navCounts.policies,
+    },
+    {
+      path: `/roles`,
+      iconVariant: 'FileLockIcon',
+      text: 'Roles',
+      count: navCounts.roles,
+    },
+    {
+      path: `/labels`,
+      iconVariant: 'TagIcon',
+      text: 'Labels',
+      count: navCounts.labels,
+    },
     { path: `/readme`, iconVariant: 'BookOpenIcon', text: 'README' },
   ]
 

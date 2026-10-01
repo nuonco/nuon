@@ -111,9 +111,8 @@ export const RunSourceCard = ({
       <div className="flex flex-col gap-3 p-5 border-t">
         {hasIdentity ? <SourceIdentity source={source} /> : null}
         <Text
-          variant="body"
-          weight={hasIdentity ? undefined : 'strong'}
-          className="break-words"
+          variant="subtext"
+          className="break-words whitespace-pre-line"
         >
           {message || title}
         </Text>

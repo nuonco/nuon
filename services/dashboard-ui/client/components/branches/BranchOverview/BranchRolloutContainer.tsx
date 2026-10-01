@@ -177,7 +177,15 @@ export const BranchRolloutContainer = () => {
       <PageTitle segments={['Rollout', branch?.name, app?.name]} />
       <SectionHeader
         title="Rollout"
-        actions={rollout ? <Status status={rollout.status} /> : undefined}
+        description={rollout?.activity}
+        actions={
+          rollout ? (
+            <span className="flex items-center gap-3">
+              <Status status={rollout.status} />
+              <Link href={rollout.href}>View run</Link>
+            </span>
+          ) : undefined
+        }
       />
       {rollout ? <RolloutRunCard rollout={rollout} /> : null}
       {isLoading ? (

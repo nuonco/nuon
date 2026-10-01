@@ -19,9 +19,18 @@ export type TRunbookRow = {
   labels: ReactNode
   lastUpdated: ReactNode
   href: string
+  steps?: number
   lastRun?: ReactNode
   actions?: ReactNode
   removed?: boolean
+}
+
+export const runbookStepCount = (runbook?: {
+  configs?: { steps?: unknown[] }[]
+}) => {
+  const config = runbook?.configs?.[0]
+  if (!config) return undefined
+  return config.steps?.length ?? 0
 }
 
 export function parseRunbooksToTableData(
@@ -72,6 +81,7 @@ export function parseRunbooksToTableData(
         <Icon variant="MinusIcon" />
       ),
       href: `${basePath}/runbooks/${runbook.id}`,
+      steps: runbookStepCount(runbook),
     }
   })
 }
@@ -93,6 +103,19 @@ const columns: ColumnDef<TRunbookRow>[] = [
         <ID>{info.row.original.runbookId}</ID>
       </span>
     ),
+    enableSorting: true,
+  },
+  {
+    accessorKey: 'steps',
+    header: 'Steps',
+    cell: (info) => {
+      const count = info.row.original.steps
+      return count == null ? (
+        <Icon variant="MinusIcon" />
+      ) : (
+        <Text variant="subtext">{count}</Text>
+      )
+    },
     enableSorting: true,
   },
   {

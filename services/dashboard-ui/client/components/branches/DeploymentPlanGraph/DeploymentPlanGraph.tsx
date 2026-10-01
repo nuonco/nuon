@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { Link } from '@/components/common/Link'
+import { installGroupApprovalLabel } from '@/components/branches/install-group-approval'
 import { resolveInstallGroupMembership } from '@/components/branches/install-group-membership'
 import { cn } from '@/utils/classnames'
 import type { TAppBranchConfig, TInstall } from '@/types'
@@ -36,6 +37,7 @@ interface GroupNodeData {
   labelEntries: [string, string][]
   isDefault: boolean
   maxParallel: number
+  approval?: string
   compact: boolean
   orgId: string
   panelKey: string
@@ -136,6 +138,7 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
           installs={installs}
           orgId={orgId}
           maxParallel={data.maxParallel}
+          approval={data.approval}
           labelEntries={data.labelEntries}
         />
       )}
@@ -195,6 +198,7 @@ export const DeploymentPlanGraph = ({
           labelEntries,
           isDefault,
           maxParallel: group.max_parallel ?? 1,
+          approval: installGroupApprovalLabel(group),
           compact,
           orgId,
           panelKey: `install-group-plan:${groupId}`,
