@@ -107,6 +107,9 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 	}
 
 	inputLabels := azureInputLabels(inp)
+	for name, label := range azureRoleEnableLabels(azureOperationIdentities(inp.AppCfg)) {
+		inputLabels[name] = label
+	}
 	for _, name := range sortedParamNames(wrapperParams) {
 		if name == "location" || name == "deployTimestamp" {
 			continue

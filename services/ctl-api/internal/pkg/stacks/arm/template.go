@@ -127,6 +127,9 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 
 	if useOperationIdentities {
 		tmpl.Resources = append(tmpl.Resources, t.getOperationIdentityResources(operationIDs, scope)...)
+		for name, p := range azureRoleEnableParameters(operationIDs) {
+			tmpl.Parameters[name] = p
+		}
 	}
 
 	// Runner linked deployment (or use default inline)
