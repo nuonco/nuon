@@ -13,6 +13,7 @@ import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
 import { Tooltip } from '@/components/common/Tooltip'
 import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
 import { RunDeploymentGraph } from '@/components/branches/RunDeploymentGraph'
+import { branchRunOutcome } from '@/components/branches/shared/run-outcome'
 import {
   getRunTitle,
   getRunTrigger,
@@ -88,6 +89,7 @@ export const WorkflowTimeline = ({
               appId: install?.app_id,
               suffix: `/workflows/${workflow.id}`,
             })
+        const outcome = isBranchRun ? branchRunOutcome(workflow) : undefined
         const createdByAccount = workflow?.created_by
         const createdBy = createdByAccount?.email ? (
           isServiceAccount(createdByAccount) ? (
@@ -226,6 +228,14 @@ export const WorkflowTimeline = ({
                         ? 'auto-approve (config)'
                         : 'auto-approve'}
                   </Badge>
+                ) : null}
+                {outcome ? (
+                  <Text
+                    variant="subtext"
+                    theme={outcome.failed ? 'error' : 'neutral'}
+                  >
+                    {outcome.text}
+                  </Text>
                 ) : null}
               </span>
             }

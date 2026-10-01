@@ -17,6 +17,7 @@ const mockRows: TRunbookRow[] = Array.from({ length: 3 }, (_, i) => ({
   labels: <Text variant="subtext" theme="neutral">production</Text>,
   lastUpdated: <Text variant="subtext" theme="neutral">3 days ago</Text>,
   href: `/org-1/apps/app-1/runbooks/runbook-${i + 1}`,
+  steps: 4 - i,
 }))
 
 export const Default = () => (

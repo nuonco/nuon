@@ -4,20 +4,29 @@ import { PoliciesTable, policiesTableColumns } from '@/components/policies/Polic
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
+import { useBranchScopedAppConfig } from '@/hooks/use-branch-scoped-app-config'
 import { useOrg } from '@/hooks/use-org'
 import { getAppPoliciesConfigs } from '@/lib'
+import type { TAppPolicyConfig } from '@/types'
 
 export const Policies = () => {
   const { org } = useOrg()
   const { app } = useApp()
   const { branchId } = useParams()
 
-  const { data: policiesConfigs, isLoading } = useQuery({
+  const { data: policiesConfigs, isLoading: isLoadingPolicies } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['app-policies-configs', org?.id, app?.id],
     queryFn: () => getAppPoliciesConfigs({ orgId: org.id, appId: app.id }),
-    enabled: !!org?.id && !!app?.id,
+    enabled: !!org?.id && !!app?.id && !branchId,
   })
+
+  const { appConfig, isLoading: isLoadingBranchConfig } =
+    useBranchScopedAppConfig({
+      orgId: org?.id,
+      appId: app?.id,
+      branchId,
+    })
 
   const latestConfig = policiesConfigs
     ?.slice()
@@ -27,7 +36,10 @@ export const Policies = () => {
       return dateB - dateA
     })
     .at(0)
-  const policies = latestConfig?.policies ?? []
+  const policies = (
+    branchId ? (appConfig?.policies?.policies ?? []) : (latestConfig?.policies ?? [])
+  ) as TAppPolicyConfig[]
+  const isLoading = branchId ? isLoadingBranchConfig : isLoadingPolicies
 
   return (
     <div className="flex flex-auto">

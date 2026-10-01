@@ -17,6 +17,7 @@ interface IDeploymentPlanGroupPanel {
   installs: PlanGroupInstall[]
   orgId: string
   maxParallel: number
+  approval?: string
   labelEntries: [string, string][]
 }
 
@@ -25,6 +26,7 @@ const DeploymentPlanGroupContent = memo(
     installs,
     orgId,
     maxParallel,
+    approval,
     labelEntries,
   }: Omit<IDeploymentPlanGroupPanel, 'panelKey' | 'groupName'>) => {
     const installLink = useInstallLink()
@@ -47,6 +49,11 @@ const DeploymentPlanGroupContent = memo(
             <Text variant="subtext" theme="neutral">
               {installs.length} {installs.length === 1 ? 'install' : 'installs'}
             </Text>
+            {approval ? (
+              <Text variant="subtext" theme="neutral">
+                · {approval}
+              </Text>
+            ) : null}
             {maxParallel > 1 && (
               <Text variant="subtext" theme="neutral">
                 · {maxParallel} in parallel
@@ -131,6 +138,7 @@ export const DeploymentPlanGroupPanel = ({
   installs,
   orgId,
   maxParallel,
+  approval,
   labelEntries,
 }: IDeploymentPlanGroupPanel) => (
   <Panel
@@ -148,6 +156,7 @@ export const DeploymentPlanGroupPanel = ({
       installs={installs}
       orgId={orgId}
       maxParallel={maxParallel}
+      approval={approval}
       labelEntries={labelEntries}
     />
   </Panel>
