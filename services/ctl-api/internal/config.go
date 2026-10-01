@@ -99,6 +99,7 @@ func init() {
 	// if sandbox_enable_runners is set to true, all jobs require that you process them via a runner, which means
 	// running an org runner during seeding and then install runners, etc.
 	config.RegisterDefault("sandbox_mode_enable_runners", false)
+	config.RegisterDefault("enable_support_users", false)
 
 	// runner defaults; per-cloud overrides avoid cross-cloud egress against AWS ECR's pull quota.
 	config.RegisterDefault("runner_container_image_url", "public.ecr.aws/p7e3r5y0/runner")
@@ -381,6 +382,7 @@ type Config struct {
 	ForceOnboardingSandboxMode bool          `config:"force_onboarding_sandbox_mode"`
 	SandboxModeSleep           time.Duration `config:"sandbox_mode_sleep" validate:"required"`
 	SandboxModeEnableRunners   bool          `config:"sandbox_mode_enable_runners"`
+	EnableSupportUsers         bool          `config:"enable_support_users"`
 
 	// ForcedEnabledFeatures lists flags this deployment pins on for every org: they
 	// resolve enabled regardless of the stored per-org value and cannot be toggled off.

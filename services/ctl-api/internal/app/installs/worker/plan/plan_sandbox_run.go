@@ -149,14 +149,6 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		return nil, nil, errors.Wrap(err, "unable to get policies")
 	}
 
-	ociArtifacts, err := activities.AwaitHasOrgFeature(ctx, activities.HasOrgFeatureRequest{
-		OrgID:   install.OrgID,
-		Feature: string(app.OrgFeatureSandboxOCIArtifacts),
-	})
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "unable to check sandbox-oci-artifacts feature")
-	}
-
 	var gitSource *plantypes.GitSource
 	var ociSource *plantypes.OCISource
 	switch {
@@ -165,8 +157,6 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		// is faked — so its registry and region cannot mint credentials, and the
 		// run does not pull the artifact anyway.
 		l.Info("install is in sandbox mode, using git source")
-	case !ociArtifacts:
-		l.Info("sandbox-oci-artifacts disabled, using git source")
 	case req.OCISource != nil:
 		l.Info("using OCI source from caller")
 		ociSource = req.OCISource
@@ -250,17 +240,13 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	}
 
 	if isPulumi {
-		updatePlans, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeaturePulumiUpdatePlans))
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "unable to check pulumi-update-plans feature")
-		}
 		plan.PulumiBackend = &plantypes.PulumiBackend{
 			WorkspaceID:   install.InstallSandbox.TerraformWorkspace.ID,
 			StackName:     fmt.Sprintf("install-%s", install.ID),
 			Runtime:       appCfg.SandboxConfig.Runtime,
 			PulumiVersion: appCfg.SandboxConfig.PulumiVersion,
 			Config:        pulumiCfg,
-			UpdatePlans:   updatePlans,
+			UpdatePlans:   true,
 		}
 	} else {
 		plan.TerraformBackend = &plantypes.TerraformBackend{

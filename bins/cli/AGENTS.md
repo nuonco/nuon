@@ -115,30 +115,23 @@ All config-to-database conversion lives server-side in `services/ctl-api/interna
 config knowledge to the CLI beyond parsing and validation** — a client-side syncer (`pkg/config/sync/apisyncer`) is
 exactly what this replaced, after it silently drifted from the server's conversion for months.
 
-#### The app branch path (`default-app-branches`)
+Branch runs are `nuon branches`, not `nuon apps sync`.
 
-When the org has the `default-app-branches` feature flag on, or the user passes `--branch` / `--app-branch`, the sync
-routes through an app branch run instead (`internal/services/apps/sync_branch.go`). This path adds **no** endpoints of
-its own:
+#### `disable-app-sync`
 
-1. `GET /v1/orgs/current` for the flag, then `GET /v1/apps/:app_id/branches` for a branch named `default`. On the first
-   sync it does not exist yet, so `POST /v1/apps/:app_id/branches` creates it and
-   `POST /v1/apps/:app_id/branches/:branch_id/configs` gives it a single default install group. A name collision
-   on create means a concurrent sync won the race, so re-list and use theirs.
-2. `POST /v1/apps/:app_id/configs` with `intermediate_config_json` and `app_branch_id`. The config is left unsynced.
-   **Resolving the branch here as a side effect of an empty `app_branch_id` does not work**: an older CLI would get a
-   branch-linked config and then call `/configs/:id/sync`, whose `finalizeAppConfigSync` skips the install rollout for
-   branch-linked configs on the assumption a branch run owns it. No run exists, so installs silently never update.
-3. `POST /v1/apps/:app_id/branches/:branch_id/runs` with `app_config_id` and `sync_app_config: true`. The run's
-   `sync app config` step is what calls the syncer, so the config still moves `pending` to `syncing` to
-   `active`/`error` and the status poll above is unchanged.
-4. The run's builds step owns component builds. **Do not also call `POST /configs/:id/sync` on this path**: it
-   dispatches builds too, and the run would build every changed component twice.
-5. The CLI waits until the run's builds step reaches a terminal status, then returns. The install group plan and deploy
-   steps that follow keep running server-side.
+When the org has `disable-app-sync` on, `nuon apps sync` does not upload the app config (`internal/services/apps/sync_disabled.go`).
+On a TTY it offers a migration wizard. Non-interactive, JSON, and agent mode print the deprecation error and write nothing.
 
-Exit codes are unchanged: 0 synced, 1 sync failed, 3 builds failed. `--auto-approve` sets `approve-all` on the run;
-without it the gate follows the targeted installs' own `approval_option`, which defaults to `prompt`.
+The wizard reads the app config directory's git checkout (`remote.origin.url`, `HEAD`, and the directory relative to the
+repo root) and `GET /v1/vcs/connections/{id}/repos` for each org VCS connection. It writes `branch.toml` next to the app
+config only when that origin matches a connected repo's `full_name`, using `[connected_repo]` (never `[public_repo]`).
+The Nuon branch `name` and `connected_repo.branch` are the current git branch. A `branches/` directory already in that
+folder is refused, and an existing `branch.toml` is kept, overwritten, or cancelled. It then runs `nuon branches sync`
+on that file. A manually managed remote branch with the same name cannot be taken over.
+
+Afterwards it lists installs that are not on the branch and asks whether to move all of them. The default is no, so
+installs can be moved one by one later. `nuon installs sync` requires `app_branch` in each install config while this
+flag is on.
 
 ### Output format (`--output table|json|agent`)
 

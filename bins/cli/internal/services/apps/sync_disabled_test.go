@@ -18,28 +18,35 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-func TestSanitizeBranchFileName(t *testing.T) {
-	tests := map[string]struct {
-		in   string
-		want string
-	}{
-		"default":          {in: "default", want: "default"},
-		"mixed case":       {in: "Prod-US", want: "prod-us"},
-		"spaces and slash": {in: " feature/new thing ", want: "feature-new-thing"},
-		"keeps dots":       {in: "v1.2", want: "v1.2"},
-		"trims separators": {in: "..-hidden-..", want: "hidden"},
-		"no usable chars":  {in: "///", want: ""},
-		"path traversal":   {in: "../../etc", want: "etc"},
-	}
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			require.Equal(t, tc.want, sanitizeBranchFileName(tc.in))
-		})
-	}
+func TestMigrationBranchConfigPath(t *testing.T) {
+	require.Equal(t, filepath.Join("apps", "acme", "branch.toml"), migrationBranchConfigPath(filepath.Join("apps", "acme")))
 }
 
-func TestBranchConfigFilePath(t *testing.T) {
-	require.Equal(t, filepath.Join("apps", "acme", "branches", "feature-x.toml"), branchConfigFilePath(filepath.Join("apps", "acme"), "Feature/X"))
+func TestRelativeRepoDirectory(t *testing.T) {
+	root := t.TempDir()
+	nested := filepath.Join(root, "apps", "platform")
+	require.NoError(t, os.MkdirAll(nested, 0o755))
+
+	got, err := relativeRepoDirectory(root, nested)
+	require.NoError(t, err)
+	require.Equal(t, "apps/platform", got)
+
+	got, err = relativeRepoDirectory(root, root)
+	require.NoError(t, err)
+	require.Equal(t, ".", got)
+
+	_, err = relativeRepoDirectory(nested, root)
+	require.Error(t, err)
+}
+
+func TestMatchConnectedRepo(t *testing.T) {
+	repos := []*models.ServiceVCSConnectionRepo{
+		{FullName: "acme/other"},
+		nil,
+		{FullName: "Acme/Platform"},
+	}
+	require.Equal(t, "Acme/Platform", matchConnectedRepo("acme/platform", repos))
+	require.Empty(t, matchConnectedRepo("acme/missing", repos))
 }
 
 func TestMigrationBranchConfigRoundTrips(t *testing.T) {
@@ -59,17 +66,16 @@ func TestMigrationBranchConfigRoundTrips(t *testing.T) {
 	require.Nil(t, parsed.Preview)
 }
 
-func TestWriteBranchConfigFileCreatesBranchesDir(t *testing.T) {
+func TestWriteBranchConfigFile(t *testing.T) {
 	dir := t.TempDir()
-	path := branchConfigFilePath(dir, "default")
+	path := migrationBranchConfigPath(dir)
 
-	require.NoError(t, writeBranchConfigFile(path, newMigrationBranchConfig("default", "acme/platform", ".", "main")))
+	require.NoError(t, writeBranchConfigFile(path, newMigrationBranchConfig("main", "acme/platform", "apps/platform", "main")))
 
-	files, directory, err := parse.LoadAppBranchConfigs(filepath.Join(dir, "branches"))
+	cfg, err := parse.ParseAppBranchConfigFile(path)
 	require.NoError(t, err)
-	require.True(t, directory)
-	require.Len(t, files, 1)
-	require.Equal(t, "default", files[0].Config.Name)
+	require.Equal(t, "main", cfg.Name)
+	require.Equal(t, "apps/platform", cfg.ConnectedRepo.Directory)
 }
 
 func TestCheckEmbeddedBranches(t *testing.T) {
@@ -112,7 +118,7 @@ helm_driver = "configmap"
 init_script_url = "https://example.com/init.sh"
 `), 0o644))
 	require.NoError(t, os.Mkdir(filepath.Join(dir, "components"), 0o755))
-	require.NoError(t, writeBranchConfigFile(branchConfigFilePath(dir, "default"), newMigrationBranchConfig("default", "acme/platform", ".", "main")))
+	require.NoError(t, writeBranchConfigFile(migrationBranchConfigPath(dir), newMigrationBranchConfig("default", "acme/platform", ".", "main")))
 
 	cfg, err := parse.ParseDir(context.Background(), parse.ParseConfig{
 		Dirname:       dir,
@@ -169,16 +175,12 @@ func TestHandleAppSyncDisabledNonInteractive(t *testing.T) {
 	}
 }
 
-func TestConfigManagedBranches(t *testing.T) {
+func TestFindBranchByName(t *testing.T) {
 	remotes := []*models.AppAppBranch{
 		{ID: "b1", Name: "default"},
-		{ID: "b2", Name: "prod", ManagedBy: appBranchManagedByConfig},
 		nil,
 		{ID: "b3", Name: "manual", ManagedBy: appBranchManagedByManually},
 	}
-	got := configManagedBranches(remotes)
-	require.Len(t, got, 1)
-	require.Equal(t, "b2", got[0].ID)
 	require.Equal(t, "b3", findBranchByName(remotes, "manual").ID)
 	require.Nil(t, findBranchByName(remotes, "missing"))
 }
@@ -189,31 +191,14 @@ func TestRenderAppSyncBranchGuides(t *testing.T) {
 		ID:           "br-1",
 		ManagedBy:    appBranchManagedByConfig,
 		DashboardURL: "https://app.nuon.co/org-1/apps/app-1/branches/br-1",
-		ConfigPath:   "branches/production.toml",
+		ConfigPath:   "branch.toml",
 		Config:       "name = 'production'\n[run]\nmode = 'push'",
 	}})
 
 	require.Contains(t, got, "production (br-1, managed by config)")
 	require.Contains(t, got, "https://app.nuon.co/org-1/apps/app-1/branches/br-1")
-	require.Contains(t, got, "nuon branches sync --file branches/production.toml")
+	require.Contains(t, got, "nuon branches sync --file branch.toml")
 	require.Contains(t, got, "name = 'production'")
-}
-
-func TestRepoAndGitBranchCandidates(t *testing.T) {
-	known := []config.ConnectedRepoConfig{
-		{Repo: "acme/platform", Branch: "main"},
-		{Repo: "acme/platform", Branch: "release"},
-		{Repo: "acme/other", Branch: "dev"},
-		{Repo: "", Branch: "ignored"},
-	}
-
-	require.Equal(t, []string{"acme/platform", "acme/other"}, repoCandidates("acme/platform", known))
-	require.Equal(t, []string{"acme/fork", "acme/platform", "acme/other"}, repoCandidates("acme/fork", known))
-	require.Nil(t, repoCandidates("", nil))
-
-	require.Equal(t, []string{"feature-x", "main", "release"}, gitBranchCandidates("acme/platform", "feature-x", known))
-	require.Equal(t, []string{"dev"}, gitBranchCandidates("ACME/other", "HEAD", known))
-	require.Nil(t, gitBranchCandidates("acme/unknown", "", known))
 }
 
 func TestGithubRepoFromRemoteURL(t *testing.T) {

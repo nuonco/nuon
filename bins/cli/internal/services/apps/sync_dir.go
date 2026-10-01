@@ -37,15 +37,6 @@ type SyncOptions struct {
 	Force bool
 	// Create indicates the app should be created if it does not exist.
 	Create bool
-	// Branch optionally targets a specific app branch for this sync.
-	Branch string
-	// AppBranch triggers interactive branch selection when true.
-	AppBranch bool
-	// Preview creates a plan-only run (no apply). Only used with Branch or AppBranch.
-	Preview bool
-	// AutoApprove skips the branch run's approval gate before each install group
-	// deploys. Without it the gate follows the targeted installs' approval option.
-	AutoApprove bool
 	// PrintJSON emits a machine-readable result on success (--output json/agent).
 	PrintJSON bool
 	// NoWait skips waiting for scheduled component builds to complete; the
@@ -56,11 +47,9 @@ type SyncOptions struct {
 // syncResult is the machine-readable summary emitted via ui.PrintJSON when
 // SyncOptions.PrintJSON is set, so --output agent gets a success envelope.
 type syncResult struct {
-	AppID    string            `json:"app_id"`
-	Dir      string            `json:"dir"`
-	BranchID string            `json:"branch_id,omitempty"`
-	RunID    string            `json:"run_id,omitempty"`
-	Builds   *syncBuildsResult `json:"builds,omitempty"`
+	AppID  string            `json:"app_id"`
+	Dir    string            `json:"dir"`
+	Builds *syncBuildsResult `json:"builds,omitempty"`
 }
 
 // syncBuildsResult summarizes the component builds the sync scheduled.
@@ -157,43 +146,9 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 		}
 	}
 
-	var branchID string
-	switch {
-	case opts.Branch != "":
-		var branchErr error
-		branchID, branchErr = s.resolveAppBranchID(ctx, appID, opts.Branch)
-		if branchErr != nil {
-			return ui.PrintError(branchErr)
-		}
-		ui.PrintLn(fmt.Sprintf("targeting app branch %q", opts.Branch))
-	case opts.AppBranch:
-		var branchErr error
-		branchID, branchErr = s.selectAppBranch(ctx, appID)
-		if branchErr != nil {
-			return ui.PrintError(branchErr)
-		}
-	default:
-		var branchErr error
-		branchID, branchErr = s.resolveDefaultBranchID(ctx, appID, org.Features)
-		if branchErr != nil {
-			return ui.PrintError(branchErr)
-		}
-	}
-
-	appConfig, err := s.createConfig(ctx, appID, version, cfg, branchID, opts.Preview)
+	appConfig, err := s.createConfig(ctx, appID, version, cfg)
 	if err != nil {
 		return ui.PrintError(err)
-	}
-
-	if branchID != "" {
-		result, branchErr := s.syncViaBranchRun(ctx, appID, branchID, dir, appConfig, opts)
-		if branchErr != nil {
-			return ui.PrintError(branchRunSyncErr(branchErr, result))
-		}
-		if opts.PrintJSON {
-			ui.PrintJSON(*result)
-		}
-		return nil
 	}
 
 	state, err := s.syncConfig(ctx, appID, appConfig, opts)
@@ -379,29 +334,6 @@ func (s *Service) resolveAppBranchID(ctx context.Context, appID, branchNameOrID 
 	}
 
 	return "", fmt.Errorf("app branch %q not found", branchNameOrID)
-}
-
-func (s *Service) selectAppBranch(ctx context.Context, appID string) (string, error) {
-	branches, err := nuon.GetAllAppBranches(ctx, s.api, appID)
-	if err != nil {
-		return "", fmt.Errorf("unable to list app branches: %w", err)
-	}
-
-	if len(branches) == 0 {
-		return "", fmt.Errorf("no app branches found for this app")
-	}
-
-	opts := make([]bubbles.BranchOption, 0, len(branches))
-	for _, b := range branches {
-		opts = append(opts, bubbles.BranchOption{ID: b.ID, Name: b.Name})
-	}
-
-	selected, err := bubbles.SelectBranch(opts, s.cfg.Interactive)
-	if err != nil {
-		return "", err
-	}
-
-	return selected, nil
 }
 
 func (s *Service) notifyOrphanedActions(actions map[string]string) {

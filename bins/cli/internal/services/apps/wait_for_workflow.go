@@ -11,6 +11,35 @@ import (
 	"github.com/nuonco/nuon/pkg/errs"
 )
 
+const defaultBranchRunPoll = time.Second * 5
+
+func isTerminalStatus(status models.AppStatus) bool {
+	switch status {
+	case models.AppStatusSuccess,
+		models.AppStatusError,
+		models.AppStatusCancelled,
+		models.AppStatusDiscarded,
+		models.AppStatusUserDashSkipped,
+		models.AppStatusAutoDashSkipped:
+		return true
+	}
+	return false
+}
+
+// checkRunFailed reports a workflow that reached a terminal non-success state,
+// so a wait on one of its steps stops instead of running out its own timeout.
+func (s *Service) checkRunFailed(ctx context.Context, workflowID string) error {
+	wf, err := s.api.GetWorkflow(ctx, workflowID)
+	if err != nil || wf.Status == nil {
+		return nil
+	}
+	if !isTerminalStatus(wf.Status.Status) || wf.Status.Status == models.AppStatusSuccess {
+		return nil
+	}
+
+	return errs.NewUserFacing("app branch run did not succeed: %s", wf.Status.StatusHumanDescription)
+}
+
 func (s *Service) waitForWorkflowComplete(ctx context.Context, workflowID string, asJSON bool) error {
 	if workflowID == "" {
 		return nil
