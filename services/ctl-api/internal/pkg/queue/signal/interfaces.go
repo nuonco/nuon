@@ -135,6 +135,14 @@ type SignalWithEmptyGroupCheck interface {
 	IsEmptyInstallGroup(ctx workflow.Context) (bool, error)
 }
 
+// SignalWithNoConfigChangesCheck is implemented by approval-type signals whose
+// run can have no config changes. Such runs never dispatch an approval request,
+// so the approval step must auto-skip instead of parking in AwaitingApproval
+// with nothing to grant.
+type SignalWithNoConfigChangesCheck interface {
+	HasNoConfigChanges(ctx workflow.Context) (bool, error)
+}
+
 // SignalWithSkipNoops is implemented by plan signals that can control whether
 // noop plans are auto-skipped. When SkipNoops returns false, noop plans proceed
 // through the normal approval flow instead of being auto-skipped.

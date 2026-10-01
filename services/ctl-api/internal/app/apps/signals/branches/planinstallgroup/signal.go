@@ -30,6 +30,7 @@ type Signal struct {
 var _ signal.Signal = (*Signal)(nil)
 var _ signal.SignalWithStepContext = (*Signal)(nil)
 var _ signal.SignalWithEmptyGroupCheck = (*Signal)(nil)
+var _ signal.SignalWithNoConfigChangesCheck = (*Signal)(nil)
 var _ signal.SignalWithAutoApproveOnPoliciesPassing = (*Signal)(nil)
 
 func (s *Signal) SetStepContext(stepID, flowID string) {
@@ -45,6 +46,17 @@ func (s *Signal) IsEmptyInstallGroup(ctx workflow.Context) (bool, error) {
 		return false, err
 	}
 	return len(installIDs) == 0, nil
+}
+
+// HasNoConfigChanges reports whether the run has no config changes and was not
+// forced. Execute skips such runs before dispatching an approval request, so
+// the plan step must skip too (see checks/noconfigchange).
+func (s *Signal) HasNoConfigChanges(ctx workflow.Context) (bool, error) {
+	run, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID)
+	if err != nil {
+		return false, err
+	}
+	return run.NoConfigChanges && !run.Force, nil
 }
 
 // AutoApproveOnPoliciesPassing reports whether the group opted into approving

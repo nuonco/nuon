@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/checks/autoapproval"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/checks/emptygroup"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/checks/noconfigchange"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/checks/noop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/checks/planonly"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/checks/policy"
@@ -142,6 +143,9 @@ func (s *Signal) approvalCreateChecks(ctx workflow.Context, sig qsignal.Signal, 
 	return []directive.ApprovalCreateCheck{
 		// Empty install groups have nothing to approve; skip before the approval wait.
 		emptygroup.New(sig, setResultDirective),
+		// Runs with no config changes never dispatch an approval request; skip
+		// before the approval wait.
+		noconfigchange.New(sig, setResultDirective),
 		noop.New(sig, checkCtx, orgAutoSkipNoop, setResultDirective),
 		planonly.New(s.OwnerID, checkCtx),
 		policy.New(sig, s.tmw, checkCtx),
