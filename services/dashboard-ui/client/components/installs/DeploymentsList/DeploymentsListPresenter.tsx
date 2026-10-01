@@ -89,21 +89,11 @@ const DeploymentCard = ({
           <span className="flex h-8 items-center text-cool-grey-400 shrink-0">
             <Icon variant={DEPLOYMENT_TYPE_ICON[deployment.type]} size={16} />
           </span>
-          <div className="flex flex-col gap-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Button variant="ghost" onClick={onViewDetails}>
-                {deployment.title}
-              </Button>
-              <Status status={deployment.status} variant="badge" />
-              <Badge size="sm" theme="neutral">
-                {DEPLOYMENT_TYPE_LABELS[deployment.type]}
-              </Badge>
-            </div>
-            {deployment.summary && (
-              <Text variant="subtext" theme="neutral">
-                {deployment.summary}
-              </Text>
-            )}
+          <div className="flex items-center gap-2 flex-wrap min-w-0">
+            <Button variant="ghost" onClick={onViewDetails}>
+              {deployment.title}
+            </Button>
+            <Status status={deployment.status} variant="badge" />
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
@@ -208,13 +198,9 @@ const DeploymentCardSkeleton = () => (
     <div className="flex items-start justify-between gap-4">
       <div className="flex items-start gap-3 min-w-0">
         <Text variant="subtext" loading loadingWidth={2} className="mt-0.5" />
-        <div className="flex flex-col gap-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Text loading loadingWidth={22} />
-            <Status loading variant="badge" loadingWidth={8} />
-            <Badge loading size="sm" loadingWidth={12} />
-          </div>
-          <Text variant="subtext" loading loadingWidth={44} />
+        <div className="flex items-center gap-2 flex-wrap min-w-0">
+          <Text loading loadingWidth={22} />
+          <Status loading variant="badge" loadingWidth={8} />
         </div>
       </div>
       <div className="flex items-center gap-3 shrink-0">
