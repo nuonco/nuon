@@ -377,7 +377,19 @@ func (h *ProxyHandler) verifyAndCache(c *gin.Context, token string) (string, err
 func (h *ProxyHandler) requireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		redirectToLogin := func() {
-			returnURL := h.cfg.AppUrl + c.Request.URL.RequestURI()
+			scheme := "http"
+			if c.Request.TLS != nil {
+				scheme = "https"
+			}
+			if proto := c.GetHeader("X-Forwarded-Proto"); proto != "" {
+				scheme = proto
+			}
+			host := c.Request.Host
+			if host == "" {
+				host = strings.TrimPrefix(h.cfg.AppUrl, "https://")
+				host = strings.TrimPrefix(host, "http://")
+			}
+			returnURL := scheme + "://" + host + c.Request.URL.RequestURI()
 			c.Redirect(http.StatusFound, h.cfg.AuthServiceUrl+"/?url="+url.QueryEscape(returnURL))
 			c.Abort()
 		}

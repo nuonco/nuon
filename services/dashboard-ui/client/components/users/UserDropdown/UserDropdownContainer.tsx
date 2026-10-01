@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/use-auth'
 import { useConfig } from '@/hooks/use-config'
 import { useNotifications } from '@/hooks/use-notifications'
@@ -32,18 +31,6 @@ type IUserDropdownContainerProps = Omit<
   | 'onReopenOnboarding'
 >
 
-async function probeGrafanaHealth(): Promise<boolean> {
-  try {
-    const res = await fetch('/admin/grafana/api/health', {
-      credentials: 'include',
-      method: 'GET',
-    })
-    return res.ok
-  } catch {
-    return false
-  }
-}
-
 export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
   const { isAdmin, isNuonEmployee, user, isLoading } = useAuth()
   const {
@@ -59,14 +46,6 @@ export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
   const { addToast } = useToast()
   const { permission, requestPermission, isSupported, muted, toggleMute } =
     useNotifications()
-
-  const { data: grafanaReachable = false } = useQuery({
-    queryKey: ['admin', 'grafana', 'health'],
-    queryFn: probeGrafanaHealth,
-    enabled: !!grafanaUiUrl && !isLoading && !!user,
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  })
 
   const reopenOnboarding = async () => {
     try {
@@ -92,7 +71,7 @@ export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
       isDev={!!isDev}
       apiUrl={apiUrl}
       adminDashboardUrl={adminDashboardUrl}
-      grafanaUiUrl={grafanaReachable ? grafanaUiUrl : undefined}
+      grafanaUiUrl={grafanaUiUrl}
       authServiceUrl={authServiceUrl}
       notificationsSupported={isSupported}
       notificationPermission={permission ?? ''}
