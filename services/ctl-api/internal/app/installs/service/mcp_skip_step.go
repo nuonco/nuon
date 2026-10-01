@@ -12,12 +12,12 @@ import (
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 )
 
-type mcpRetryStepInput struct {
+type mcpSkipStepInput struct {
 	WorkflowID string `json:"workflow_id" jsonschema:"workflow ID"`
-	StepID     string `json:"step_id" jsonschema:"step ID to retry"`
+	StepID     string `json:"step_id" jsonschema:"step ID to skip"`
 }
 
-func (s *service) mcpRetryStep(ctx context.Context, _ *mcp.CallToolRequest, in mcpRetryStepInput) (*mcp.CallToolResult, any, error) {
+func (s *service) mcpSkipStep(ctx context.Context, _ *mcp.CallToolRequest, in mcpSkipStepInput) (*mcp.CallToolResult, any, error) {
 	orgID, err := require.Write(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -43,18 +43,18 @@ func (s *service) mcpRetryStep(ctx context.Context, _ *mcp.CallToolRequest, in m
 		return nil, nil, fmt.Errorf("unable to find step %q: %w", in.StepID, err)
 	}
 
-	resp, err := s.flowsClient.RetryStep(ctx, &flowclient.RetryStepRequest{
+	resp, err := s.flowsClient.SkipStep(ctx, &flowclient.SkipStepRequest{
 		InstallWorkflowID: workflow.ID,
 		StepID:            step.ID,
 	})
 	if err != nil {
-		return nil, nil, fmt.Errorf("retry step: %w", err)
+		return nil, nil, fmt.Errorf("skip step: %w", err)
 	}
 
 	out := map[string]any{
 		"workflow_id": workflow.ID,
 		"step_id":     step.ID,
-		"retryable":   resp.Retryable,
+		"skippable":   resp.Skippable,
 	}
 	if next := mcpWatchContinuation(workflow.ID); next != nil {
 		out["next_action"] = next

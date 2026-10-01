@@ -41,10 +41,10 @@ Replace names like `acme-prod` with your own install, app, or workflow IDs.
   </Accordion>
   <Accordion title="Approve or reject a plan">
     ```
-    Review the pending plan on workflow <workflow_id>. Summarize the change, then ask me before approving or rejecting it.
+    Walk through workflow <workflow_id>. At each approval, give me a menu: review the current plan diffs, approve this step, reject this step, approve all, or stop. When I ask to review, load every diff page and show them together. When the workflow is waiting on the install stack, show me how to create it, then keep watching. Continue until the workflow finishes.
     ```
 
-    Write. The agent should inspect the workflow first and wait for your confirmation.
+    Write. The agent should present each pending approval's `next_actions`. Review loads every `get_approval_plan_diff` page, following `continue_review`, before it replies. It waits for confirmation before `approve_step`, `reject_step`, or `approve_all`. `approve_all` appears only when the workflow is still set to prompt. On the await install stack step, it shows `stack_setup` and keeps watching. Pass `cursor` from each `watch_workflow` response into the next call.
   </Accordion>
   <Accordion title="Retry a failed step">
     ```
@@ -116,7 +116,7 @@ Replace names like `acme-prod` with your own install, app, or workflow IDs.
     Run the <action name> action on install acme-prod. Confirm the action with me before triggering it, then watch the workflow.
     ```
 
-    Write.
+    Write. Call the returned `next_action`. Each `watch_workflow` returns when a step starts or finishes. After every result, show `step_progress`, then call watch again with `cursor`. A row of watch calls with no progress between them is wrong.
   </Accordion>
   <Accordion title="See what runbooks you can run for an install">
     ```
@@ -125,10 +125,10 @@ Replace names like `acme-prod` with your own install, app, or workflow IDs.
   </Accordion>
   <Accordion title="Run a runbook">
     ```
-    Run the <runbook> runbook on install acme-prod. Summarize its inputs and steps first, ask me before triggering it, then follow its workflow.
+    Run the <runbook> runbook on install acme-prod. Show its inputs and a checklist of every step, all enabled, and let me turn steps off. Ask me before triggering it, then follow its workflow.
     ```
 
-    Write.
+    Write. The `run_runbook` description requires a prompt first: load the install-pinned runbook, confirm inputs, show the step checklist with every step enabled, and let the user turn steps off before triggering. Then call the returned `next_action`. Each `watch_workflow` returns when a step starts or finishes. After every result, show `step_progress`, then call watch again with `cursor`. A row of watch calls with no progress between them is wrong.
   </Accordion>
 </AccordionGroup>
 

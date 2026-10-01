@@ -24,9 +24,11 @@ func (c *command) ExecWithOutput(ctx context.Context) ([]byte, error) {
 	}
 	defer cleanup()
 
+	// Return whatever was captured even on failure: a command that fails after
+	// printing a diagnostic is the case where the output matters most.
 	output, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("unable to get command output: %w", err)
+		return output, fmt.Errorf("unable to get command output: %w", err)
 	}
 
 	return output, nil

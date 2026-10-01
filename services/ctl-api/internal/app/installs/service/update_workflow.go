@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -120,20 +121,9 @@ func (s *service) updateWorkflow(ctx *gin.Context, installWorkflowID string, req
 		return nil, fmt.Errorf("install workflow not found: %w", gorm.ErrRecordNotFound)
 	}
 
-	// Label the approval source on the workflow metadata when approve-all is set via the API
+	// Label the approval source and release steps already waiting when approve-all is set.
 	if req.ApprovalOption != nil && *req.ApprovalOption == app.InstallApprovalOptionApproveAll {
-		s.db.WithContext(ctx).Exec(
-			`UPDATE install_workflows SET metadata = COALESCE(metadata, ''::hstore) || hstore('approval_type', 'approve-workflow') WHERE id = ?`,
-			installWorkflowID,
-		)
-		s.db.WithContext(ctx).Exec(
-			`UPDATE install_workflows SET status = jsonb_set(COALESCE(status::jsonb, '{}'::jsonb), '{metadata,approval_type}', '"approve-workflow"'::jsonb) WHERE id = ?`,
-			installWorkflowID,
-		)
-
-		// Approve any steps currently stuck in awaiting-approval status.
-		s.approveStuckSteps(ctx, installWorkflowID)
-
+		s.markWorkflowApproveAll(ctx, installWorkflowID)
 		s.logFlowAPIAction(ctx, "workflow.approve_all_requested",
 			zap.String("workflow_id", installWorkflowID),
 		)
@@ -142,10 +132,24 @@ func (s *service) updateWorkflow(ctx *gin.Context, installWorkflowID string, req
 	return &currentWorkflow, nil
 }
 
+// markWorkflowApproveAll records that this workflow was switched to approve-all
+// and approves steps already waiting. Later plans in the workflow auto-approve.
+func (s *service) markWorkflowApproveAll(ctx context.Context, workflowID string) {
+	s.db.WithContext(ctx).Exec(
+		`UPDATE install_workflows SET metadata = COALESCE(metadata, ''::hstore) || hstore('approval_type', 'approve-workflow') WHERE id = ?`,
+		workflowID,
+	)
+	s.db.WithContext(ctx).Exec(
+		`UPDATE install_workflows SET status = jsonb_set(COALESCE(status::jsonb, '{}'::jsonb), '{metadata,approval_type}', '"approve-workflow"'::jsonb) WHERE id = ?`,
+		workflowID,
+	)
+	s.approveStuckSteps(ctx, workflowID)
+}
+
 // approveStuckSteps finds workflow steps in awaiting-approval status that have
 // an approval without a response, and auto-approves them so the workflow can
 // proceed immediately when approve-all is set.
-func (s *service) approveStuckSteps(ctx *gin.Context, workflowID string) {
+func (s *service) approveStuckSteps(ctx context.Context, workflowID string) {
 	var steps []app.WorkflowStep
 	res := s.db.WithContext(ctx).
 		Where("install_workflow_id = ?", workflowID).
