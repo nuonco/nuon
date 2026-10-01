@@ -91,11 +91,7 @@ const DeploymentCard = ({
           </span>
           <div className="flex flex-col gap-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <Button
-                variant="ghost"
-                onClick={onViewDetails}
-                className="!h-auto !p-0 text-left font-strong hover:underline underline-offset-2 hover:!bg-transparent active:!bg-transparent"
-              >
+              <Button variant="ghost" onClick={onViewDetails}>
                 {deployment.title}
               </Button>
               <Status status={deployment.status} variant="badge" />
