@@ -125,7 +125,8 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 		"Update install inputs",
 		"WRITE OPERATION: Update install input values (partial merge over current values). Starts an input-update workflow. "+
 			"deploy_dependents defaults to true. Use get_install_inputs first to inspect current values. "+
-			"Call list_available_roles (operation_type=deploy) before passing role.",
+			"Call list_available_roles (operation_type=deploy) before passing role. "+
+			mcpWatchAfterStart,
 		false,
 		false,
 	), s.mcpUpdateInstallInputs)
@@ -133,8 +134,9 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPWriteTool(
 		"deploy_install_components",
 		"Deploy install components",
-		"WRITE OPERATION: Deploy all components on an install. Returns a workflow_id; use get_workflow and watch_workflow to follow progress. "+
-			"Set plan_only to generate plans without applying. Call list_available_roles (operation_type=deploy, principal_type=component) before passing role.",
+		"WRITE OPERATION: Deploy all components on an install. "+
+			"Set plan_only to generate plans without applying. Call list_available_roles (operation_type=deploy, principal_type=component) before passing role. "+
+			mcpWatchAfterStart,
 		true,
 		false,
 	), s.mcpDeployInstallComponents)
@@ -142,9 +144,10 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPWriteTool(
 		"reprovision_install",
 		"Reprovision install",
-		"WRITE OPERATION: Reprovision an install (stack, sandbox, then components). Returns a workflow_id. "+
+		"WRITE OPERATION: Reprovision an install (stack, sandbox, then components). "+
 			"Set plan_only to generate plans without applying. Set stack_only to reprovision only the stack (runner infra), leaving sandbox and components unchanged. "+
-			"Call list_available_roles (operation_type=reprovision, principal_type=sandbox) before passing role.",
+			"Call list_available_roles (operation_type=reprovision, principal_type=sandbox) before passing role. "+
+			mcpWatchAfterStart,
 		true,
 		false,
 	), s.mcpReprovisionInstall)
@@ -153,7 +156,8 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 		"reprovision_sandbox",
 		"Reprovision sandbox",
 		"WRITE OPERATION: Reprovision only the install sandbox. Set skip_components to leave components unchanged after the sandbox apply. "+
-			"Returns a workflow_id. Call list_available_roles (operation_type=reprovision, principal_type=sandbox) before passing role.",
+			"Call list_available_roles (operation_type=reprovision, principal_type=sandbox) before passing role. "+
+			mcpWatchAfterStart,
 		true,
 		false,
 	), s.mcpReprovisionSandbox)
@@ -162,7 +166,8 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 		"deprovision_install",
 		"Deprovision install",
 		"WRITE OPERATION: Deprovision an install (tear down components and cloud resources). This is destructive. "+
-			"confirm must be true to apply. Ask the user before setting confirm. plan_only does not require confirm. Returns a workflow_id.",
+			"confirm must be true to apply. Ask the user before setting confirm. plan_only does not require confirm. "+
+			mcpWatchAfterStart,
 		true,
 		false,
 	), s.mcpDeprovisionInstall)
@@ -171,8 +176,9 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 		"deprovision_sandbox",
 		"Deprovision sandbox",
 		"WRITE OPERATION: Deprovision only the install sandbox, leaving the stack. This is destructive. "+
-			"confirm must be true to apply. Ask the user before setting confirm. plan_only does not require confirm. Returns a workflow_id. "+
-			"Call list_available_roles (operation_type=deprovision, principal_type=sandbox) before passing role.",
+			"confirm must be true to apply. Ask the user before setting confirm. plan_only does not require confirm. "+
+			"Call list_available_roles (operation_type=deprovision, principal_type=sandbox) before passing role. "+
+			mcpWatchAfterStart,
 		true,
 		false,
 	), s.mcpDeprovisionSandbox)

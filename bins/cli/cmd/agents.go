@@ -116,12 +116,14 @@ which MCP URL resolves from your config.`,
 var agentsContextDoc string
 
 type agentsContext struct {
-	Authed    string
-	APIURL    string
-	MCPURL    string
-	OrgID     string
-	AppID     string
-	InstallID string
+	Authed          string
+	APIURL          string
+	MCPURL          string
+	OrgID           string
+	AppID           string
+	InstallID       string
+	ConfigFile      string
+	CLIInstructions string
 }
 
 func (c *cli) agentsContextMarkdown() string {
@@ -155,6 +157,8 @@ func (c *cli) agentsContextMarkdown() string {
 			data.Authed = "yes (API token present in ~/.nuon)"
 		}
 	}
+	data.ConfigFile = mcpserver.CLIConfigFlag(cfg)
+	data.CLIInstructions = mcpserver.CLICommandInstructions(mcpserver.CLIBinary(), data.ConfigFile)
 
 	tmpl, err := template.New("agents_context").Parse(agentsContextDoc)
 	if err != nil {

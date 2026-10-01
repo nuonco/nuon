@@ -2,12 +2,18 @@ package apps
 
 import (
 	"context"
+	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/config/diagnostics"
 	"github.com/nuonco/nuon/pkg/config/parse"
 	"github.com/nuonco/nuon/pkg/config/schema"
 	"github.com/nuonco/nuon/pkg/config/validate"
@@ -36,10 +42,28 @@ func (s *Service) ValidateDir(ctx context.Context, dir string) error {
 		return ui.PrintError(err)
 	}
 
+	found, err := diagnoseConfigDir(dir)
+	if err != nil {
+		return ui.PrintError(err)
+	}
+	var failures []string
+	for _, diag := range found {
+		line := formatConfigDiagnostic(diag)
+		if diag.Severity == diagnostics.SeverityWarning {
+			ui.PrintWarning(line)
+			continue
+		}
+		failures = append(failures, line)
+	}
+
 	_, err = lookup.AppID(ctx, s.api, appName)
 	if err != nil {
 		err = errs.WithUserFacing(err, "error looking up app id")
-		return ui.PrintError(err)
+		if len(failures) == 0 {
+			return ui.PrintError(err)
+		}
+		failures = append(failures, err.Error())
+		return ui.PrintError(&ui.CLIUserError{Msg: strings.Join(failures, "\n")})
 	}
 
 	cfg, err := parse.ParseDir(ctx, parse.ParseConfig{
@@ -48,26 +72,73 @@ func (s *Service) ValidateDir(ctx context.Context, dir string) error {
 		FileProcessor: func(name string, obj map[string]any) map[string]any { return obj },
 	})
 	if err != nil {
-		return ui.PrintError(err)
-	}
-
-	if s.cfg.Debug {
-		ui.PrintJSON(cfg)
-	}
-
-	ui.PrintLn("validating configs")
-	err = validate.Validate(ctx, s.v, cfg)
-	if err != nil {
-		if config.IsWarningErr(err) {
-			ui.PrintError(err)
-		} else {
-			s.checkSchemaCompatibility(ctx)
-			return ui.PrintError(err)
+		failures = append(failures, err.Error())
+	} else {
+		if s.cfg.Debug {
+			ui.PrintJSON(cfg)
 		}
+
+		ui.PrintLn("validating configs")
+		err = validate.Validate(ctx, s.v, cfg)
+		if err != nil {
+			if config.IsWarningErr(err) {
+				ui.PrintError(err)
+			} else {
+				s.checkSchemaCompatibility(ctx)
+				failures = append(failures, err.Error())
+			}
+		}
+	}
+
+	if len(failures) > 0 {
+		return ui.PrintError(&ui.CLIUserError{Msg: strings.Join(failures, "\n")})
 	}
 	ui.PrintLn("all configs valid")
 
 	return nil
+}
+
+type configFileDiagnostic struct {
+	Path string
+	diagnostics.Diagnostic
+}
+
+func diagnoseConfigDir(dir string) ([]configFileDiagnostic, error) {
+	root := filepath.Clean(dir)
+	var out []configFileDiagnostic
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			name := d.Name()
+			if path != root && (strings.HasPrefix(name, ".") || name == "node_modules" || name == "vendor") {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(strings.ToLower(d.Name()), ".toml") {
+			return nil
+		}
+		text, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		rel = filepath.ToSlash(rel)
+		for _, diag := range diagnostics.DiagnoseFile(rel, string(text)) {
+			out = append(out, configFileDiagnostic{Path: rel, Diagnostic: diag})
+		}
+		return nil
+	})
+	return out, err
+}
+
+func formatConfigDiagnostic(diag configFileDiagnostic) string {
+	return fmt.Sprintf("%s:%d:%d: %s: %s", diag.Path, diag.StartLine+1, diag.StartChar+1, diag.Severity, diag.Message)
 }
 
 func (s *Service) checkSchemaCompatibility(ctx context.Context) {
