@@ -12,9 +12,10 @@ import (
 )
 
 type InstallTelemetrySettings struct {
-	Enabled    bool  `json:"enabled"`
-	Override   *bool `json:"override" extensions:"x-nullable"`
-	OrgDefault bool  `json:"org_default"`
+	Enabled         bool  `json:"enabled"`
+	Override        *bool `json:"override" extensions:"x-nullable"`
+	OrgDefault      bool  `json:"org_default"`
+	RelayConfigured bool  `json:"relay_configured"`
 }
 
 // @ID GetInstallTelemetrySettings
@@ -53,8 +54,9 @@ func (s *service) getInstallTelemetrySettings(ctx context.Context, orgID, instal
 		return nil, err
 	}
 	settings := &InstallTelemetrySettings{
-		Enabled:    install.InstallConfig.IsTelemetryEnabled(install.Org.Telemetry.Enabled),
-		OrgDefault: install.Org.Telemetry.Enabled,
+		Enabled:         install.InstallConfig.IsTelemetryEnabled(install.Org.Telemetry.Enabled),
+		OrgDefault:      install.Org.Telemetry.Enabled,
+		RelayConfigured: app.ValidateTelemetryRelayEndpoint(install.Org.Telemetry.ResolveRelayEndpoint(s.cfg.TelemetryRelayEndpoint)) == nil,
 	}
 	if install.InstallConfig != nil {
 		settings.Override = install.InstallConfig.TelemetryEnabled
