@@ -1,16 +1,20 @@
 import { useMemo, type ReactNode } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { ChangeCountSummary } from '@/components/approvals/plan-diffs/ChangeCountSummary'
 import {
   computeSummary,
   type DiffSectionData,
 } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
-import { AppConfigDiffCard } from '@/components/branches/AppConfigDiff/AppConfigDiffCard'
+import { EmptyState } from '@/components/common/EmptyState'
+import { Text } from '@/components/common/Text'
+import { AppConfigDiff } from '@/components/diffs/plan-diff-switch'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import {
   getBranchRunComparison,
   type TBranchRunComparisonConfigDiff,
 } from '@/lib'
+import { cn } from '@/utils/classnames'
 
 const GROUPED_SECTIONS = new Set([
   'Components',
@@ -112,19 +116,59 @@ export const BranchRunChangesSummary = ({
     [data?.config_diff_content]
   )
 
-  const summary = sections.length > 0 ? computeSummary(sections) : null
+  const visibleSections = isError ? [] : sections
+  const summary =
+    visibleSections.length > 0 ? computeSummary(visibleSections) : null
+  const loading = !isError && isLoading && !data
+  const showPending = isPending && visibleSections.length === 0
 
   return (
-    <AppConfigDiffCard
-      title={title}
-      headerAction={headerAction}
-      sections={isError ? [] : sections}
-      summary={isError ? null : summary}
-      isLoading={!isError && isLoading && !data}
-      isPending={isPending}
-      isOpen
-      className={className}
-      expandId="branch-overview-config-diff"
-    />
+    <section
+      className={cn(
+        'border rounded-xl bg-white dark:bg-dark-grey-900 shadow-sm overflow-hidden min-w-0',
+        className
+      )}
+    >
+      <header className="flex items-center justify-between gap-3 px-5 py-4">
+        <Text variant="h3" weight="strong">
+          {title}
+        </Text>
+        <div className="flex items-center gap-3">
+          {showPending ? (
+            <Text variant="subtext" theme="neutral">
+              Pending
+            </Text>
+          ) : !loading ? (
+            <ChangeCountSummary
+              added={summary?.added ?? 0}
+              updated={summary?.changed ?? 0}
+              removed={summary?.removed ?? 0}
+              emptyText="No changes"
+            />
+          ) : null}
+          {headerAction}
+        </div>
+      </header>
+      <div className="border-t max-h-[70vh] overflow-y-auto">
+        {showPending ? (
+          <div className="px-4 py-6 text-center">
+            <EmptyState
+              emptyTitle="Changes pending"
+              emptyMessage="Changes appear after the app config builds."
+              variant="diagram"
+              size="sm"
+            />
+          </div>
+        ) : (
+          <AppConfigDiff
+            sections={visibleSections}
+            summary={null}
+            isLoading={loading}
+            defaultSectionsOpen={false}
+            embedded
+          />
+        )}
+      </div>
+    </section>
   )
 }
