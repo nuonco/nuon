@@ -86,7 +86,7 @@ const DeploymentCard = ({
     <Card className="!p-4 !gap-3 !shadow-none">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3 min-w-0">
-          <span className="mt-0.5 text-cool-grey-400 shrink-0">
+          <span className="flex h-8 items-center text-cool-grey-400 shrink-0">
             <Icon variant={DEPLOYMENT_TYPE_ICON[deployment.type]} size={16} />
           </span>
           <div className="flex flex-col gap-1 min-w-0">
