@@ -7,6 +7,7 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
@@ -20,10 +21,20 @@ type mcpRunActionInput struct {
 }
 
 type mcpRunActionResult struct {
-	WorkflowID             string `json:"workflow_id"`
-	InstallID              string `json:"install_id"`
-	ActionWorkflowID       string `json:"action_workflow_id"`
-	ActionWorkflowConfigID string `json:"action_workflow_config_id"`
+	WorkflowID             string         `json:"workflow_id"`
+	WorkflowType           string         `json:"workflow_type"`
+	WorkflowStatus         string         `json:"workflow_status"`
+	InstallID              string         `json:"install_id"`
+	ActionWorkflowID       string         `json:"action_workflow_id"`
+	ActionWorkflowConfigID string         `json:"action_workflow_config_id"`
+	NextAction             *mcpNextAction `json:"next_action,omitempty"`
+}
+
+type mcpNextAction struct {
+	Action    string         `json:"action"`
+	Label     string         `json:"label"`
+	Tool      string         `json:"tool,omitempty"`
+	Arguments map[string]any `json:"arguments,omitempty"`
 }
 
 func (s *service) mcpRunAction(ctx context.Context, _ *mcp.CallToolRequest, in mcpRunActionInput) (*mcp.CallToolResult, any, error) {
@@ -64,12 +75,32 @@ func (s *service) mcpRunAction(ctx context.Context, _ *mcp.CallToolRequest, in m
 		return nil, nil, err
 	}
 
+	workflowStatus := string(app.StatusPending)
 	return apiPkg.MCPJSONResult(mcpRunActionResult{
 		WorkflowID:             result.WorkflowID,
+		WorkflowType:           string(app.WorkflowTypeActionWorkflowRun),
+		WorkflowStatus:         workflowStatus,
 		InstallID:              install.ID,
 		ActionWorkflowID:       result.ActionWorkflowID,
 		ActionWorkflowConfigID: result.ActionWorkflowConfigID,
+		NextAction:             mcpWatchNextAction(result.WorkflowID, workflowStatus),
 	})
+}
+
+func mcpWatchNextAction(workflowID, lastKnownStatus string) *mcpNextAction {
+	if workflowID == "" {
+		return nil
+	}
+	args := map[string]any{"workflow_id": workflowID}
+	if lastKnownStatus != "" {
+		args["last_known_status"] = lastKnownStatus
+	}
+	return &mcpNextAction{
+		Action:    "watch_workflow",
+		Label:     "Watch workflow",
+		Tool:      "watch_workflow",
+		Arguments: args,
+	}
 }
 
 // validateRunEnvVarKeys rejects keys the runner cannot export as environment

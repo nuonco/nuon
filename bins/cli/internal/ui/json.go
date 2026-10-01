@@ -43,29 +43,18 @@ func emitJSONError(err error) error {
 		err = withstack.WithStackDepth(err, 1)
 	}
 
+	// API user errors keep their structured shape so JSON consumers can read the
+	// individual fields rather than a flattened string.
 	cliUserErr := &CLIUserError{}
-	if errors.As(err, &cliUserErr) {
-		PrintJSON(jsonError{
-			Error: err.Error(),
-		})
-		return err
-	}
-
-	userErr, ok := nuon.ToUserError(err)
-	if ok {
-		PrintJSON(userErr)
-		return err
-	}
-
-	if nuon.IsServerError(err) {
-		PrintJSON(jsonError{
-			Error: defaultServerErrorMessage,
-		})
-		return err
+	if !errors.As(err, &cliUserErr) {
+		if userErr, ok := nuon.ToUserError(err); ok {
+			PrintJSON(userErr)
+			return err
+		}
 	}
 
 	PrintJSON(jsonError{
-		Error: defaultUnknownErrorMessage,
+		Error: resolveError(err).msg,
 	})
 	return err
 }

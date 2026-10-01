@@ -12,7 +12,8 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 		"Get workflow step logs",
 		"Get logs for a workflow step. Resolves the step's target (deploy, sandbox run, or action run) "+
 			"to its log stream and returns log records from ClickHouse. Returns newest logs first by default. "+
-			"Use the cursor for pagination when has_more is true.",
+			"Use the cursor for pagination when has_more is true. "+
+			"If the step has no log stream yet, logs is empty and message says so. That is not a workflow failure.",
 	), s.mcpGetWorkflowStepLogs)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(

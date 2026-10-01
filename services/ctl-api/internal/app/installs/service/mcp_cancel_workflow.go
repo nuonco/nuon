@@ -49,10 +49,7 @@ func (s *service) mcpCancelWorkflow(ctx context.Context, _ *mcp.CallToolRequest,
 		if err := s.cancelWorkflow(ctx, wf.ID); err != nil {
 			return nil, nil, fmt.Errorf("unable to cancel workflow: %w", err)
 		}
-		return apiPkg.MCPJSONResult(map[string]string{
-			"workflow_id": wf.ID,
-			"status":      "cancelled",
-		})
+		return apiPkg.MCPJSONResult(mcpCancelResult(wf.ID, "cancelled"))
 	}
 
 	if _, err := s.flowsClient.CancelWorkflow(ctx, &flowclient.CancelWorkflowRequest{
@@ -62,16 +59,21 @@ func (s *service) mcpCancelWorkflow(ctx context.Context, _ *mcp.CallToolRequest,
 			if dbErr := s.cancelWorkflow(ctx, wf.ID); dbErr != nil {
 				return nil, nil, fmt.Errorf("unable to cancel orphaned workflow: %w", dbErr)
 			}
-			return apiPkg.MCPJSONResult(map[string]string{
-				"workflow_id": wf.ID,
-				"status":      "cancelled",
-			})
+			return apiPkg.MCPJSONResult(mcpCancelResult(wf.ID, "cancelled"))
 		}
 		return nil, nil, fmt.Errorf("unable to cancel workflow: %w", err)
 	}
 
-	return apiPkg.MCPJSONResult(map[string]string{
-		"workflow_id": wf.ID,
-		"status":      "cancelling",
-	})
+	return apiPkg.MCPJSONResult(mcpCancelResult(wf.ID, "cancelling"))
+}
+
+func mcpCancelResult(workflowID, status string) map[string]any {
+	out := map[string]any{
+		"workflow_id": workflowID,
+		"status":      status,
+	}
+	if next := mcpWatchContinuation(workflowID); next != nil {
+		out["next_action"] = next
+	}
+	return out
 }
