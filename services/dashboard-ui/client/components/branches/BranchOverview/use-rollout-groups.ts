@@ -96,6 +96,7 @@ const fromGroupRun = (
     plannedCount: groupRun.total_installs,
     match: installGroupMatch(group),
     approval: approvalLabel(group),
+    maxParallel: group ? (group.max_parallel ?? 1) : undefined,
     installs: (groupRun.installs ?? []).map((install) => {
       const id = install.install_id ?? ''
       return {
@@ -273,6 +274,7 @@ export const useRolloutGroups = () => {
           status: stage.status,
           match: installGroupMatch(group),
           approval: approvalLabel(group),
+          maxParallel: group ? (group.max_parallel ?? 1) : undefined,
           installs: installs.map((install) => ({
             id: install.id,
             name: install.name,
