@@ -267,8 +267,6 @@ func (s *service) newInstallInputs(
 
 // mergeInstallInputs overlays the provided subset onto the install's existing input
 // values and drops any inputs no longer defined in the pinned app input config.
-// Cleartext enabled-toggle aliases (EnabledOverrideInputNameRaw) are kept when
-// the corresponding hex SoT input is still declared.
 func mergeInstallInputs(existing map[string]*string, patch map[string]*string, appInputConfig *app.AppInputConfig) map[string]*string {
 	merged := map[string]*string{}
 	for k, v := range existing {
@@ -327,8 +325,6 @@ func (s *service) validateVendorSourceInputs(appInputConfig *app.AppInputConfig,
 	return nil
 }
 
-// isAllowedEnabledOverrideAlias reports whether name is a cleartext enabled-toggle
-// alias whose hex SoT counterpart is a declared app input.
 func isAllowedEnabledOverrideAlias(name string, appInputNames map[string]struct{}) bool {
 	if !config.IsEnabledOverrideInputNameRaw(name) {
 		return false

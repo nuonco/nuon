@@ -83,19 +83,10 @@ func TFVarsOverrideInputName(componentName string) string {
 
 // EnabledOverrideInputName returns the reserved synthetic input name that carries
 // the install-level enabled/disabled toggle for the named toggleable component.
-// The component name is hex-encoded so the key stays TOML-safe and collision-proof.
 func EnabledOverrideInputName(componentName string) string {
 	return componentOverrideInputName(ComponentOverrideKindEnabled, componentName)
 }
 
-// EnabledOverrideInputNameRaw returns a human-readable alias of
-// [EnabledOverrideInputName] that keeps the component name in cleartext:
-//
-//	nuon_component_override_v1_enabled_<componentName>
-//
-// Written alongside the hex key on toggle / [component_toggles] so templates can
-// reference `.nuon.inputs.inputs.nuon_component_override_v1_enabled_<name>`
-// without decoding. The hex key remains the declared AppInput and source of truth.
 func EnabledOverrideInputNameRaw(componentName string) string {
 	return ComponentOverrideInputPrefix + string(ComponentOverrideKindEnabled) + "_" + componentName
 }
@@ -106,8 +97,6 @@ func IsComponentOverrideInputName(name string) bool {
 	return strings.HasPrefix(name, ComponentOverrideInputPrefix)
 }
 
-// IsEnabledOverrideInputNameRaw reports whether name is a readable enabled-alias
-// key (prefix + enabled_ + cleartext component name), as opposed to the hex SoT.
 func IsEnabledOverrideInputNameRaw(name string) bool {
 	kind, comp, ok := ParseComponentOverrideInputName(name)
 	if !ok || kind != ComponentOverrideKindEnabled || comp == "" {
@@ -190,7 +179,7 @@ func ParseComponentOverrideInputName(name string) (kind ComponentOverrideKind, c
 
 	rest := strings.TrimPrefix(name, ComponentOverrideInputPrefix)
 
-	// rest is "<kind>_<hex-or-raw>"; kind values themselves contain underscores, so
+	// rest is "<kind>_<hex>"; kind values themselves contain underscores, so
 	// match against the known kinds rather than splitting on "_".
 	for _, k := range []ComponentOverrideKind{ComponentOverrideKindHelmValues, ComponentOverrideKindTFVars, ComponentOverrideKindEnabled} {
 		prefix := string(k) + "_"
@@ -202,8 +191,6 @@ func ParseComponentOverrideInputName(name string) (kind ComponentOverrideKind, c
 		if err == nil {
 			return k, string(decoded), true
 		}
-		// Enabled toggles also accept a cleartext component-name alias so
-		// templates can reference the key without hex-decoding.
 		if k == ComponentOverrideKindEnabled && encoded != "" {
 			return k, encoded, true
 		}

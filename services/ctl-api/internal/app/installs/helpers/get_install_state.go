@@ -476,9 +476,6 @@ func ToInputState(inputs *app.InstallInputs, cfg *app.AppConfig, redacted bool) 
 		}
 		is.Inputs[inp.Name] = pkggenerics.FromPtrStr(val)
 	}
-	// Expose cleartext aliases for enabled toggles so templates can reference
-	// nuon_component_override_v1_enabled_<componentName> without hex-decoding.
-	// Prefer a value already stored under the alias; otherwise mirror the hex SoT.
 	for name, val := range is.Inputs {
 		kind, comp, ok := config.ParseComponentOverrideInputName(name)
 		if !ok || kind != config.ComponentOverrideKindEnabled {
