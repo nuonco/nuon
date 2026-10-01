@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { ComponentType } from '@/components/components/ComponentType'
+import { InstallConfigBehindBadge } from '@/components/installs/InstallResourceConfig'
 import { usePagination } from '@/hooks/use-pagination'
 import { useStoredViewMode } from '@/hooks/use-stored-view-mode'
 import { PaginationProvider } from '@/providers/pagination-provider'
@@ -22,6 +23,7 @@ import { cn } from '@/utils/classnames'
 
 export type TInstallComponentListItem = {
   actions?: ReactNode
+  behind?: boolean
   enabled?: boolean | null
   id: string
   latestDeploy: ReactNode
@@ -146,6 +148,7 @@ const InstallComponentsListBase = ({
                       ) : (
                         <Status status={component.status} variant="badge" />
                       )}
+                      {component.behind ? <InstallConfigBehindBadge /> : null}
                     </div>
                     <ID>{component.id}</ID>
                   </div>

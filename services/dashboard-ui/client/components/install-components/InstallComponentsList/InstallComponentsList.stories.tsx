@@ -172,6 +172,12 @@ export const WithoutHealth = () => (
   />
 )
 
+export const Behind = () => (
+  <InstallComponentsList
+    components={[component({ behind: true, name: 'api' })]}
+  />
+)
+
 export const NeverDeployed = () => (
   <InstallComponentsList
     components={[
