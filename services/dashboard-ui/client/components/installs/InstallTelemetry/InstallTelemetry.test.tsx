@@ -41,6 +41,7 @@ function setup({
   telemetryEnabled = false,
   telemetryOverride = undefined as boolean | null | undefined,
   orgDefault = false,
+  relayConfigured = true,
   telemetryEndpoint = endpoint as unknown,
   runnerId = 'runner-acme',
   runnerStatus = 'active',
@@ -69,6 +70,7 @@ function setup({
       enabled: telemetryEnabled,
       override: telemetryOverride,
       org_default: orgDefault,
+      relay_configured: relayConfigured,
     })
   }
   const addToast = mock()
@@ -124,45 +126,98 @@ function setup({
   }
 }
 
-test('hides telemetry outside BYOC even with an endpoint and enabled settings', () => {
-  const fetch = spyOn(globalThis, 'fetch')
-  setup({
-    isByoc: false,
-    telemetryEnabled: true,
-    runnerId: '',
-    renderPanel: true,
-  })
-  expect(screen.queryByText('Telemetry', { exact: true })).toBeNull()
-  expect(screen.queryByRole('switch', { name: 'Enable telemetry' })).toBeNull()
-  expect(fetch).not.toHaveBeenCalled()
-})
+test.each([
+  { isByoc: false, isDev: false },
+  { isByoc: true, isDev: false },
+  { isByoc: false, isDev: true },
+])(
+  'settings panel shows telemetry with a configured relay in every environment (%p)',
+  ({ isByoc, isDev }) => {
+    setup({ isByoc, isDev, runnerId: '', renderPanel: true })
+    expect(
+      screen.getByText('Configuration', { exact: true })
+    ).toBeInTheDocument()
+    const heading = screen.getByText('Telemetry', { exact: true })
+    const card = heading.closest('.shadow-sm')!
+    expect(card).toContainElement(
+      screen.getByRole('switch', { name: 'Enable telemetry' })
+    )
+    expect(card.querySelector('.shadow-sm')).toBeNull()
+    expect(
+      screen.getByRole('switch', { name: 'Enable telemetry' })
+    ).not.toBeDisabled()
+  }
+)
 
 test.each([
   { isByoc: false, isDev: false },
   { isByoc: true, isDev: false },
   { isByoc: false, isDev: true },
 ])(
-  'settings panel shows telemetry in BYOC or local dev (%p)',
+  'settings panel hides telemetry without a relay even with an install endpoint (%p)',
   ({ isByoc, isDev }) => {
-    setup({ isByoc, isDev, runnerId: '', renderPanel: true })
+    const fetch = spyOn(globalThis, 'fetch')
+    setup({
+      isByoc,
+      isDev,
+      relayConfigured: false,
+      telemetryEnabled: true,
+      runnerId: '',
+      renderPanel: true,
+    })
+    expect(screen.queryByText('Telemetry', { exact: true })).toBeNull()
     expect(
-      screen.getByText('Configuration', { exact: true })
-    ).toBeInTheDocument()
-    if (isByoc || isDev) {
-      const heading = screen.getByText('Telemetry', { exact: true })
-      const card = heading.closest('.shadow-sm')!
-      expect(card).toContainElement(
-        screen.getByRole('switch', { name: 'Enable telemetry' })
-      )
-      expect(card.querySelector('.shadow-sm')).toBeNull()
-      expect(
-        screen.getByRole('switch', { name: 'Enable telemetry' })
-      ).not.toBeDisabled()
-    } else {
-      expect(screen.queryByText('Telemetry', { exact: true })).toBeNull()
-    }
+      screen.queryByRole('switch', { name: 'Enable telemetry' })
+    ).toBeNull()
+    expect(fetch).not.toHaveBeenCalled()
   }
 )
+
+test('cloud settings show a disabled toggle when the relay exists but the stack endpoint is missing', () => {
+  setup({
+    isByoc: false,
+    telemetryEndpoint: '',
+    runnerId: '',
+    renderPanel: true,
+  })
+  expect(screen.getByText('Telemetry', { exact: true })).toBeInTheDocument()
+  expect(
+    screen.getByRole('switch', { name: 'Enable telemetry' })
+  ).toBeDisabled()
+})
+
+test('settings panel waits for relay availability and hides the card after it is removed', async () => {
+  let finish!: (response: Response) => void
+  mockFetch(
+    () =>
+      new Promise<Response>((resolve) => {
+        finish = resolve
+      })
+  )
+  const { client } = setup({
+    isByoc: false,
+    loadSettings: true,
+    runnerId: '',
+    renderPanel: true,
+  })
+  expect(screen.queryByText('Telemetry', { exact: true })).toBeNull()
+  finish(
+    Response.json({
+      enabled: false,
+      override: null,
+      org_default: false,
+      relay_configured: true,
+    })
+  )
+  await screen.findByRole('switch', { name: 'Enable telemetry' })
+  client.setQueryData(['install-telemetry', orgId, installId], {
+    enabled: false,
+    relay_configured: false,
+  })
+  await waitFor(() =>
+    expect(screen.queryByText('Telemetry', { exact: true })).toBeNull()
+  )
+})
 
 test.each(['', '  ', null, 123])(
   'shows but blocks enabling telemetry without an endpoint (%p)',

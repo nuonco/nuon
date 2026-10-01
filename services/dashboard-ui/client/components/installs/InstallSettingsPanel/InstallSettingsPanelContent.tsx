@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { Card } from '@/components/common/Card'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -5,9 +6,10 @@ import { Text } from '@/components/common/Text'
 import { InstallTelemetry } from '@/components/installs/InstallTelemetry'
 import { ShutdownRunnerControl } from '@/components/runners/management/ShutdownRunnerControl'
 import { ReprovisionSandboxButton } from '@/components/sandbox/management/ReprovisionSandbox'
-import { useConfig } from '@/hooks/use-config'
 import { useInstall } from '@/hooks/use-install'
+import { useOrg } from '@/hooks/use-org'
 import { useOrgFeatureFlag } from '@/hooks/use-org-feature-flag'
+import { getInstallTelemetrySettings } from '@/lib/ctl-api/installs/get-install-telemetry-settings'
 import { RunnerProvider } from '@/providers/runner-provider'
 import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocAction/RunAdhocActionContainer'
 import { AuditHistoryButton } from '@/components/installs/management/AuditHistory'
@@ -60,9 +62,16 @@ const ActionCard = ({
 )
 
 const InstallSettingsPanelContentInner = () => {
-  const { isByoc, isDev } = useConfig()
   const { install } = useInstall()
+  const { org } = useOrg()
   const canRenameInstall = useOrgFeatureFlag('install-rename')
+  const { data: telemetry } = useQuery({
+    queryKey: ['install-telemetry', org?.id, install?.id],
+    queryFn: () =>
+      getInstallTelemetrySettings({ orgId: org!.id, installId: install!.id }),
+    enabled: !!org?.id && !!install?.id,
+    retry: false,
+  })
 
   return (
     <div className="@container flex flex-col gap-6">
@@ -91,10 +100,10 @@ const InstallSettingsPanelContentInner = () => {
         >
           <GenerateInstallConfigButton />
         </ActionCard>
-        {isByoc || isDev ? (
+        {telemetry?.relay_configured ? (
           <ActionCard
             title="Telemetry"
-            description="Forward application logs, metrics, and traces through the BYOC relay. Confirm the relay is setup before enabling."
+            description="Forward application logs, metrics, and traces through the telemetry relay."
           >
             <InstallTelemetry />
           </ActionCard>

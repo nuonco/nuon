@@ -11,6 +11,7 @@ import { MemoryRouter } from 'react-router'
 import { OrgContext } from '@/providers/org-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastContext } from '@/providers/toast-provider'
+import { UserDropdown } from '@/components/users/UserDropdown/UserDropdown'
 import type { TOrg } from '@/types'
 import { OrgTelemetryButton } from './OrgTelemetryContainer'
 
@@ -27,6 +28,7 @@ function setup({
   enabled = false,
   role = 'org_admin',
   roleOrgId = orgId,
+  renderCloudMenu = false,
 } = {}) {
   const client = new QueryClient({
     defaultOptions: {
@@ -51,7 +53,27 @@ function setup({
         <OrgContext.Provider value={{ org, refresh: () => {} }}>
           <ToastContext.Provider value={{ addToast, removeToast: () => {} }}>
             <SurfacesProvider>
-              <OrgTelemetryButton />
+              {renderCloudMenu ? (
+                <UserDropdown
+                  isByoc={false}
+                  isDev={false}
+                  isAdmin={false}
+                  isNuonEmployee={false}
+                  apiUrl="https://api.example.com"
+                  authServiceUrl="https://auth.example.com"
+                  notificationsSupported={false}
+                  notificationPermission="default"
+                  muted={false}
+                  onToggleMute={() => {}}
+                  onRequestPermission={async () => 'denied'}
+                  onAddPanel={() => {}}
+                  onAddToast={() => {}}
+                  user={{ name: 'Acme admin', email: 'admin@example.com' }}
+                  isUserLoading={false}
+                />
+              ) : (
+                <OrgTelemetryButton />
+              )}
             </SurfacesProvider>
           </ToastContext.Provider>
         </OrgContext.Provider>
@@ -60,6 +82,24 @@ function setup({
   )
   return { client, addToast }
 }
+
+test.each(['org_admin', 'org_read_only'])(
+  'cloud user menu exposes telemetry only to org admins (%s)',
+  (role) => {
+    setup({ renderCloudMenu: true, role })
+    fireEvent.click(screen.getByRole('button', { name: /Acme admin/ }))
+    const button = screen.queryByRole('button', { name: 'Manage telemetry' })
+    if (role === 'org_admin') {
+      expect(button).toBeInTheDocument()
+      fireEvent.click(button!)
+      expect(
+        screen.getByRole('switch', { name: 'Enable telemetry by default' })
+      ).toBeInTheDocument()
+    } else {
+      expect(button).toBeNull()
+    }
+  }
+)
 
 test.each([
   { role: 'org_read_only', roleOrgId: orgId },
