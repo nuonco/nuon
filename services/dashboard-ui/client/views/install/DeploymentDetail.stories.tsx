@@ -3,9 +3,9 @@ export default {
 }
 
 import type { ReactNode } from 'react'
+import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
 import { AppConfigFilesDiff } from '@/components/branches/ComponentConfigDiff/ComponentConfigDiff'
 import { Banner } from '@/components/common/Banner'
-import { Text } from '@/components/common/Text'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { DeploymentDetail } from '@/components/installs/DeploymentDetail'
 import { WorkflowChangesSummary } from '@/components/workflows/WorkflowChangesSummary'
@@ -105,6 +105,14 @@ const steps = [
   },
 ] as TWorkflowStep[]
 
+const approvalStep = {
+  id: 'step-stack-approval',
+  name: 'Plan stack',
+  execution_type: 'approval',
+  status: { status: 'approval-awaiting' },
+  approval: { id: 'approval-1', type: 'terraform_plan' },
+} as TWorkflowStep
+
 const Page = ({
   activeTabIndex,
   children,
@@ -115,16 +123,7 @@ const Page = ({
   <div className="mx-auto w-full max-w-6xl">
     <DeploymentDetail
       activeTabIndex={activeTabIndex}
-      banners={
-        <Banner theme="warn">
-          <div className="flex flex-col gap-1">
-            <Text weight="strong">Terraform plan requires review</Text>
-            <Text variant="subtext" theme="neutral">
-              Review the proposed infrastructure changes before applying them.
-            </Text>
-          </div>
-        </Banner>
-      }
+      banners={<ApprovalBanner step={approvalStep} />}
       basePath="/deployments/wf-deploy-1"
       branchHref="/branches/branch-main"
       deployment={deployment}

@@ -7,9 +7,14 @@ import type { TWorkflow, TInstall } from '@/types'
 interface IWorkflowHeader {
   workflow: TWorkflow
   install?: TInstall
+  backLink?: boolean
 }
 
-export const WorkflowHeader = ({ workflow, install }: IWorkflowHeader) => {
+export const WorkflowHeader = ({
+  workflow,
+  install,
+  backLink = true,
+}: IWorkflowHeader) => {
   const hasDrift =
     install?.drifted_objects?.length &&
     install?.drifted_objects?.find(
@@ -20,6 +25,7 @@ export const WorkflowHeader = ({ workflow, install }: IWorkflowHeader) => {
 
   return (
     <DetailHeader
+      backLink={backLink}
       title={
         workflow?.type === 'action_workflow_run' &&
         workflow?.metadata?.adhoc_action

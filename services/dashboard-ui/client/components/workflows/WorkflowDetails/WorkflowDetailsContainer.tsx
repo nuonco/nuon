@@ -3,8 +3,10 @@ import { WorkflowDetails } from './WorkflowDetails'
 
 export const WorkflowDetailsContainer = ({
   showBanners = true,
+  backLink = true,
 }: {
   showBanners?: boolean
+  backLink?: boolean
 }) => {
   const { workflow, failedSteps } = useWorkflow()
   return (
@@ -12,6 +14,7 @@ export const WorkflowDetailsContainer = ({
       workflow={workflow}
       failedSteps={failedSteps}
       showBanners={showBanners}
+      backLink={backLink}
     />
   )
 }

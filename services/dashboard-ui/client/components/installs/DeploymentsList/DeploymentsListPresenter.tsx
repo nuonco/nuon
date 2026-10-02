@@ -89,31 +89,28 @@ const DeploymentCard = ({
             <Icon variant={DEPLOYMENT_TYPE_ICON[deployment.type]} size={16} />
           </span>
           <div className="flex items-center gap-2 flex-wrap min-w-0">
-            <Text weight="strong">{deployment.title}</Text>
+            <Link
+              href={installHref({
+                orgId,
+                appId,
+                installId,
+                nested,
+                suffix: `/deployments/${deployment.id}`,
+              })}
+              className="font-strong"
+            >
+              {deployment.title}
+            </Link>
             <Status status={deployment.status} variant="badge" />
           </div>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <Time
-            time={deployment.created_at}
-            format="relative"
-            variant="subtext"
-            theme="neutral"
-          />
-          <Button
-            variant="secondary"
-            size="sm"
-            href={installHref({
-              orgId,
-              appId,
-              installId,
-              nested,
-              suffix: `/deployments/${deployment.id}`,
-            })}
-          >
-            View details
-          </Button>
-        </div>
+        <Time
+          time={deployment.created_at}
+          format="relative"
+          variant="subtext"
+          theme="neutral"
+          className="shrink-0"
+        />
       </div>
 
       <div className="flex items-center gap-x-6 gap-y-2 flex-wrap">
@@ -210,10 +207,7 @@ const DeploymentCardSkeleton = () => (
           <Status loading variant="badge" loadingWidth={8} />
         </div>
       </div>
-      <div className="flex items-center gap-3 shrink-0">
-        <Text variant="subtext" loading loadingWidth={10} />
-        <Badge loading size="lg" loadingWidth={11} className="!rounded-lg" />
-      </div>
+      <Text variant="subtext" loading loadingWidth={10} className="shrink-0" />
     </div>
 
     <div className="flex items-center gap-x-6 gap-y-2 flex-wrap">

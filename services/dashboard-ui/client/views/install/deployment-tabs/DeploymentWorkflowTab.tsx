@@ -18,7 +18,7 @@ export const DeploymentWorkflowTab = () => {
     <>
       <PageTitle segments={[title, install?.name]} />
       <div className="flex flex-col gap-6">
-        <WorkflowDetails showBanners={false} />
+        <WorkflowDetails showBanners={false} backLink={false} />
         <div className="flex flex-col gap-4">
           <SectionHeader title="Workflow steps" />
           {workflow ? (
