@@ -161,6 +161,38 @@ func (s *InstallsServiceTestSuite) TestMoveInstallToAppBranchRecordsRunGroupIDWh
 	assert.Equal(s.T(), fixture.runDefaultGroupID, payload.InstallGroupID)
 }
 
+func (s *InstallsServiceTestSuite) TestMoveInstallToAppBranchPinsWithoutRun() {
+	branch := &app.AppBranch{
+		AppID: s.testApp.ID,
+		OrgID: s.testOrg.ID,
+		Name:  fmt.Sprintf("no-run-%d", time.Now().UnixNano()),
+	}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&app.AppBranchConfig{
+		AppBranchID: branch.ID,
+		InstallGroups: []app.AppBranchInstallGroup{
+			{Name: "Default", Order: 0, Default: true},
+		},
+	}).Error)
+	install := s.createInstallWithSignalsQueue()
+
+	rr := s.makeRequest(http.MethodPatch, fmt.Sprintf("/v1/installs/%s/app-branch", install.ID), MoveInstallToAppBranchRequest{
+		AppBranchID: branch.ID,
+	})
+	if rr.Code != http.StatusOK {
+		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+	}
+	require.Equal(s.T(), http.StatusOK, rr.Code)
+
+	connection := s.activeBranchConnection(install.ID, branch.ID)
+	assert.Equal(s.T(), "Default", connection.AppBranchGroup)
+	assert.Equal(s.T(), app.InstallAppBranchGroupAssignmentSourceDefault, connection.AppBranchGroupAssignmentSource)
+
+	payload := s.lastAppBranchChangedSignal(install.ID)
+	assert.Equal(s.T(), branch.ID, payload.AppBranchID)
+	assert.Empty(s.T(), payload.InstallGroupID)
+}
+
 func (s *InstallsServiceTestSuite) TestMoveInstallToAppBranchRejectsUnknownGroup() {
 	fixture := s.seedBranchWithPinnedGroupAfterRun()
 	install := s.createTestInstall()

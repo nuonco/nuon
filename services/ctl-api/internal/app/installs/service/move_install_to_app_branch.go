@@ -19,7 +19,7 @@ import (
 
 type MoveInstallToAppBranchRequest struct {
 	// AppBranchID is the branch to move the install to. It must belong to the
-	// install's app and have an app config to deploy.
+	// install's app. A branch with no completed run still accepts the install.
 	AppBranchID    string            `json:"app_branch_id" validate:"required"`
 	AppBranchGroup string            `json:"app_branch_group,omitempty"`
 	Labels         map[string]string `json:"labels,omitempty"`
@@ -34,7 +34,7 @@ func (r *MoveInstallToAppBranchRequest) Validate(v *validator.Validate) error {
 
 // @ID						MoveInstallToAppBranch
 // @Summary				move an install to another app branch
-// @Description			Moves the install to the given app branch and reconciles it onto that branch's current app config. An install belongs to exactly one app branch and this is the only way to change which one; labels and install group selectors decide which group inside the owning branch deploys it. The destination branch must belong to the same app and have an active, non-preview app config. There is no way to move an install off a branch without naming another.
+// @Description			Moves the install to the given app branch and reconciles it onto that branch's current app config when one exists. An install belongs to exactly one app branch and this is the only way to change which one; labels and install group selectors decide which group inside the owning branch deploys it. The destination branch must belong to the same app. A branch with no completed run still accepts the install, and the deploy waits until a branch run completes. There is no way to move an install off a branch without naming another.
 // @Param					install_id	path	string							true	"install ID"
 // @Param					req			body	MoveInstallToAppBranchRequest	true	"Input"
 // @Tags					installs
@@ -89,8 +89,8 @@ func (s *service) MoveInstallToAppBranch(ctx *gin.Context) {
 		return
 	}
 
-	// Refusing up front beats moving the install somewhere that has nothing to
-	// deploy and leaving it stranded there.
+	// Group membership is resolved before the pin, including when the branch has
+	// no completed run yet. The deploy waits for that run.
 	candidate := install
 	candidate.Labels = make(labels.Labels, len(install.Labels)+len(req.Labels))
 	candidate.LabelTemplates = make(labels.Labels, len(install.LabelTemplates))

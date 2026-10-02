@@ -491,10 +491,6 @@ func (s *Service) migrateInstallsToBranch(ctx context.Context, appID string, bra
 		return nil
 	}
 
-	if runs, err := s.api.GetAppBranchRuns(ctx, appID, branch.ID); err == nil && len(runs) == 0 {
-		ui.PrintWarning(fmt.Sprintf("app branch %q has no runs yet; the API refuses to move installs until a branch run has completed", branch.Name))
-	}
-
 	add, err := bubbles.InlineConfirm(fmt.Sprintf("Add installs to app branch %q?", branch.Name), false, true)
 	if err != nil || !add {
 		ui.PrintLn("installs were not moved")
