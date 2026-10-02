@@ -15,7 +15,8 @@ import { AppBranchSwitcher } from '@/components/branches/AppBranchSwitcher'
 import { BranchDetailActions } from '@/components/branches/BranchDetailActions'
 import { BranchHeaderMeta } from '@/components/branches/BranchHeaderMeta'
 import { BranchPendingApprovals } from '@/components/branches/BranchRunApproval'
-import { getBranchWorkflowRuns } from '@/lib'
+import { getRunTitle } from '@/components/branches/shared/run-title'
+import { getBranchWorkflowRun, getBranchWorkflowRuns } from '@/lib'
 import { latestBranchConfig } from '@/utils/branch-utils'
 import type { TAppBranchConfig, TNavItem } from '@/types'
 
@@ -46,6 +47,9 @@ const BranchTemplate = () => {
   const detailMatch = useMatch(
     '/:orgId/apps/:appId/branches/:branchId/:section/:detail/*'
   )
+  const runRolloutMatch = useMatch(
+    '/:orgId/apps/:appId/branches/:branchId/runs/:runId/rollout'
+  )
   const isDetailRoute = !!detailMatch && !params.runId
   const branchId = params.branchId as string
   const orgId = org.id!
@@ -66,6 +70,17 @@ const BranchTemplate = () => {
   })
 
   const latestRun = latestRunsResult?.data?.[0]
+  const { data: pinnedWorkflow } = useQuery({
+    queryKey: ['branch-run', orgId, appId, branchId, params.runId],
+    queryFn: () =>
+      getBranchWorkflowRun({
+        orgId,
+        appId,
+        branchId,
+        runId: params.runId!,
+      }),
+    enabled: !!orgId && !!appId && !!branchId && !!params.runId,
+  })
   const hasDeploymentPlan = (currentConfig?.install_groups?.length ?? 0) > 0
   const showTriggerNudge =
     hasDeploymentPlan && !isLoadingLatestRun && !latestRun
@@ -142,6 +157,7 @@ const BranchTemplate = () => {
     },
     { path: `/readme`, iconVariant: 'BookOpenIcon', text: 'README' },
   ]
+  const approvalRun = params.runId ? pinnedWorkflow : latestRun
 
   return (
     <>
@@ -152,6 +168,23 @@ const BranchTemplate = () => {
             { path: `/${orgId}/apps`, text: 'Apps' },
             { path: `/${orgId}/apps/${appId}`, text: app.name },
             { path: basePath, text: branch.name },
+            ...(params.runId
+              ? [
+                  { path: `${basePath}/runs`, text: 'Previous runs' },
+                  {
+                    path: `${basePath}/runs/${params.runId}`,
+                    text: pinnedWorkflow ? getRunTitle(pinnedWorkflow) : 'Run',
+                  },
+                ]
+              : []),
+            ...(runRolloutMatch
+              ? [
+                  {
+                    path: `${basePath}/runs/${params.runId}/rollout`,
+                    text: 'Rollout',
+                  },
+                ]
+              : []),
           ]}
         />
       ) : null}
@@ -186,9 +219,9 @@ const BranchTemplate = () => {
           pinLastGroup
         />
         <div className="flex flex-col flex-1 min-w-0">
-          {latestRun && params.runId !== latestRun.id ? (
+          {approvalRun ? (
             <BranchPendingApprovals
-              run={latestRun}
+              run={approvalRun}
               className="px-4 md:px-6 pt-4 md:pt-6"
             />
           ) : null}

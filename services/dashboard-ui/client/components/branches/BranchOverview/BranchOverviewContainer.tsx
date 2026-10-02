@@ -2,11 +2,13 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
+import { ProviderError } from '@/components/layout/ProviderError'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { BranchRunChangesSummary } from '@/components/branches/BranchRunChangesSummary'
 import { stepStatusCategory } from '@/components/branches/shared/step-status'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { getBranchRunBuilds } from '@/lib'
+import type { TAPIError } from '@/types'
 import { BranchOverview, type TFailedBuildLink } from './BranchOverview'
 import { changedBuildRows, type TBuildMeta } from './changed-builds'
 import {
@@ -34,7 +36,9 @@ export const BranchOverviewContainer = () => {
     orgId,
     appId,
     branchId,
-    basePath,
+    pinnedWorkflowId,
+    rolloutHref,
+    rolloutError,
     branchRunId,
     branchRun,
     rollout,
@@ -124,9 +128,24 @@ export const BranchOverviewContainer = () => {
     branchRun?.composite_error
   )
 
+  if (pinnedWorkflowId && rolloutError && !rollout) {
+    return (
+      <>
+        <PageTitle segments={['Run', app?.name]} />
+        <ProviderError error={rolloutError as TAPIError} />
+      </>
+    )
+  }
+
   return (
     <>
-      <PageTitle segments={[branch?.name, app?.name]} />
+      <PageTitle
+        segments={
+          pinnedWorkflowId
+            ? [rollout?.title ?? 'Run', app?.name]
+            : [branch?.name, app?.name]
+        }
+      />
       <BranchOverview
         hasPlan={hasPlan}
         isLoading={isLoading}
@@ -153,9 +172,9 @@ export const BranchOverviewContainer = () => {
         compositeError={compositeError}
         installWorkflowHref={installFailureHref(compositeError, orgId)}
         failedBuilds={failedBuilds}
-        rolloutHref={`${basePath}/rollout`}
+        rolloutHref={rolloutHref}
         onSelectGroup={(groupId) =>
-          navigate(`${basePath}/rollout?group=${encodeURIComponent(groupId)}`)
+          navigate(`${rolloutHref}?group=${encodeURIComponent(groupId)}`)
         }
       />
     </>
