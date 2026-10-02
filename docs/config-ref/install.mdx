@@ -20,6 +20,7 @@ title: 'Install'
 | **`aws_account`**<br/>[AWSAccount](#aws_account) | AWS account configuration AWS-specific settings for this install, including region and other account details | **Optional** | - |
 | **`gcp_account`**<br/>[GCPAccount](#gcp_account) | GCP account configuration GCP-specific settings for this install, including project ID and region | **Optional** | - |
 | **`azure_account`**<br/>[AzureAccount](#azure_account) | Azure account configuration Azure-specific settings for this install, including the deployment location | **Optional** | - |
+| **`cloud_connection`**<br/>string | cloud connection name or ID AWS cloud connection this install uses for provisioning, by name or ID. The connection must exist in the organization and be verified. When omitted, the install falls ba... | **Optional** | `"demo-aws"` |
 | **`inputs`**<br/>array | input values Array of input groups with key-value pairs for customer inputs provided during installation | **Optional** | - |
 | **`stack_overrides`**<br/>[InstallStackOverrides](#stack_overrides) | Stack template overrides Per-install overrides for the app-level stack template configuration. Overrides take precedence over app-level defaults. | **Optional** | - |
 | **`component_toggles`**<br/>object | - | **Optional** | - |
