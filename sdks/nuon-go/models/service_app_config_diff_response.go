@@ -31,6 +31,12 @@ type ServiceAppConfigDiffResponse struct {
 	// old config id
 	OldConfigID string `json:"old_config_id,omitempty"`
 
+	// source
+	Source *ConfigSourceArchiveDiff `json:"source,omitempty"`
+
+	// source skipped
+	SourceSkipped bool `json:"source_skipped,omitempty"`
+
 	// summary
 	Summary *DiffDiffSummary `json:"summary,omitempty"`
 }
@@ -40,6 +46,10 @@ func (m *ServiceAppConfigDiffResponse) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateDiff(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateSource(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -67,6 +77,29 @@ func (m *ServiceAppConfigDiffResponse) validateDiff(formats strfmt.Registry) err
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("diff")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceAppConfigDiffResponse) validateSource(formats strfmt.Registry) error {
+	if swag.IsZero(m.Source) { // not required
+		return nil
+	}
+
+	if m.Source != nil {
+		if err := m.Source.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("source")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("source")
 			}
 
 			return err
@@ -107,6 +140,10 @@ func (m *ServiceAppConfigDiffResponse) ContextValidate(ctx context.Context, form
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateSource(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateSummary(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -133,6 +170,31 @@ func (m *ServiceAppConfigDiffResponse) contextValidateDiff(ctx context.Context, 
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("diff")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceAppConfigDiffResponse) contextValidateSource(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Source != nil {
+
+		if swag.IsZero(m.Source) { // not required
+			return nil
+		}
+
+		if err := m.Source.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("source")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("source")
 			}
 
 			return err

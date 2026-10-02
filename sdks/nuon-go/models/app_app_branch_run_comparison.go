@@ -52,6 +52,9 @@ type AppAppBranchRunComparison struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
+	// source diff
+	SourceDiff BlobstoreBlob `json:"source_diff,omitempty"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 }
