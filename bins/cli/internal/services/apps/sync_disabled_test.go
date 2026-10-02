@@ -17,6 +17,26 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
+func TestMigrationBranchChoices(t *testing.T) {
+	values := func(current string) []string {
+		choices := migrationBranchChoices(current)
+		out := make([]string, len(choices))
+		for i, choice := range choices {
+			out[i] = choice.Value
+		}
+		return out
+	}
+
+	require.Equal(t, []string{migrationDefaultBranch, branchChoiceAdd}, values(""))
+	require.Equal(t, []string{migrationDefaultBranch, branchChoiceAdd}, values("HEAD"))
+	require.Equal(t, []string{migrationDefaultBranch, branchChoiceAdd}, values("main"))
+
+	choices := migrationBranchChoices("feature/foo")
+	require.Equal(t, []string{migrationDefaultBranch, "feature/foo", branchChoiceAdd}, values("feature/foo"))
+	require.Equal(t, "feature/foo (current)", choices[1].Title)
+	require.Equal(t, "Add a branch", choices[2].Title)
+}
+
 func TestMigrationBranchConfigPath(t *testing.T) {
 	dir := filepath.Join("apps", "acme")
 
