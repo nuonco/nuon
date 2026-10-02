@@ -126,7 +126,9 @@ and write nothing.
 
 The wizard reads the app config directory's git checkout (`remote.origin.url`, `HEAD`, and the directory relative to the
 repo root) and `GET /v1/vcs/connections/{id}/repos` for each org VCS connection. A matching `full_name` uses
-`[connected_repo]`. No match uses `[public_repo]` with the same `owner/repo`. It prints that TOML and asks before writing
+`[connected_repo]`. No match uses `[public_repo]` with the same `owner/repo`. It asks which app branch to write, defaulting
+to `main`, with the current git branch (when it is not `main`) or a typed name as the other choices. A detached HEAD omits
+the current-branch row. It prints that TOML and asks before writing
 `branches/<name>.toml` (a `/` in the branch name is a subdirectory) and running `nuon branches sync` on that file.
 Syncing the file reconciles only this branch. A root `branch.toml` already in the folder is refused, because the app
 parser rejects `branch.toml` and `branches/` together. A manually managed remote branch with the same name cannot be

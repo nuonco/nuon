@@ -31,6 +31,9 @@ const (
 	installChoiceAll  = "all"
 	installChoiceNone = "none"
 
+	migrationDefaultBranch = "main"
+	branchChoiceAdd        = "add"
+
 	gitProbeTimeout = 3 * time.Second
 )
 
@@ -115,6 +118,12 @@ func (s *Service) runAppBranchMigration(ctx context.Context, dir, appID string) 
 		source.Repo = connected
 	}
 
+	branchName, err := chooseMigrationBranch(source.Branch)
+	if err != nil {
+		return err
+	}
+	source.Branch = branchName
+
 	path, err := migrationBranchConfigPath(dir, source.Branch)
 	if err != nil {
 		return err
@@ -187,6 +196,46 @@ func (s *Service) runAppBranchMigration(ctx context.Context, dir, appID string) 
 
 	ui.PrintSuccess(fmt.Sprintf("migrated to app branch %q; commit and push %s to finish", branch.Name, rel))
 	return nil
+}
+
+type migrationBranchChoice struct {
+	Title string
+	Value string
+}
+
+func migrationBranchChoices(current string) []migrationBranchChoice {
+	choices := []migrationBranchChoice{{Title: migrationDefaultBranch, Value: migrationDefaultBranch}}
+	if current != "" && current != "HEAD" && current != migrationDefaultBranch {
+		choices = append(choices, migrationBranchChoice{
+			Title: current + " (current)",
+			Value: current,
+		})
+	}
+	choices = append(choices, migrationBranchChoice{Title: "Add a branch", Value: branchChoiceAdd})
+	return choices
+}
+
+func chooseMigrationBranch(current string) (string, error) {
+	choices := migrationBranchChoices(current)
+	items := make([]bubbles.SelectorItem, len(choices))
+	for i, choice := range choices {
+		items[i] = bubbles.NewSelectorItem(choice.Title, "", choice.Value)
+	}
+	choice, err := bubbles.SelectFromItems("App branch", items, true)
+	if err != nil {
+		return "", errMigrationCancelled
+	}
+	if choice != branchChoiceAdd {
+		return choice, nil
+	}
+	name, err := bubbles.PromptText("Branch name", migrationDefaultBranch, "", true, true)
+	if err != nil || strings.TrimSpace(name) == "" {
+		return "", errMigrationCancelled
+	}
+	if _, err := branchConfigParts(name); err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(name), nil
 }
 
 func findBranchByName(remotes []*models.AppAppBranch, name string) *models.AppAppBranch {
@@ -313,15 +362,11 @@ func migrationSourceFromGit(ctx context.Context, dir string) (*migrationGitSourc
 			dir,
 		)}
 	}
-	branch := gitCurrentBranch(ctx, dir)
-	if branch == "" || branch == "HEAD" {
-		return nil, &ui.CLIUserError{Msg: "check out a git branch before migrating; a detached HEAD has no branch name to write into branch.toml"}
-	}
 	directory, err := gitConfigDirectory(ctx, dir)
 	if err != nil {
 		return nil, err
 	}
-	return &migrationGitSource{Repo: repo, Directory: directory, Branch: branch}, nil
+	return &migrationGitSource{Repo: repo, Directory: directory, Branch: gitCurrentBranch(ctx, dir)}, nil
 }
 
 func gitConfigDirectory(ctx context.Context, dir string) (string, error) {
