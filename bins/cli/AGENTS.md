@@ -120,9 +120,10 @@ Branch runs are `nuon branches`, not `nuon apps sync`.
 #### `disable-app-sync`
 
 When the org has `disable-app-sync` on, `nuon apps sync` does not upload the app config (`internal/services/apps/sync_disabled.go`).
-It resolves the selected app (or the directory-name app) without the directory mismatch prompt. On a TTY it asks once
-whether to migrate to app branches (default yes). Non-interactive, JSON, and agent mode print a short deprecation error
-and write nothing.
+It resolves the selected app (or the directory-name app) without the directory mismatch prompt. On a TTY it prints a short
+note that app sync now goes through an app branch, then asks whether to create one (default yes). No prints the manual
+`nuon branches sync --file branches/<name>.toml` path. Non-interactive, JSON, and agent mode print a short deprecation
+error and write nothing.
 
 The wizard reads the app config directory's git checkout (`remote.origin.url`, `HEAD`, and the directory relative to the
 repo root) and `GET /v1/vcs/connections/{id}/repos` for each org VCS connection. A matching `full_name` uses

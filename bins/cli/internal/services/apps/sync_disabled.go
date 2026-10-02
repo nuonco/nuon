@@ -11,12 +11,14 @@ import (
 	"strings"
 	"time"
 
+	"charm.land/lipgloss/v2"
 	"github.com/pelletier/go-toml/v2"
 
 	"github.com/nuonco/nuon/bins/cli/internal/agentmode"
 	"github.com/nuonco/nuon/bins/cli/internal/paginate"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
+	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
@@ -79,9 +81,10 @@ func (s *Service) handleAppSyncDisabled(ctx context.Context, dir, appID string, 
 		return ui.PrintError(appSyncDisabledErr())
 	}
 
-	ok, err := bubbles.InlineConfirm("This will migrate you to app branches. Would you like to continue?", true, true)
+	printMigrationIntro()
+	ok, err := bubbles.InlineConfirm("Create an app branch now?", true, true)
 	if err != nil || !ok {
-		ui.PrintLn("migration cancelled")
+		ui.PrintLn("Do it manually: add branches/<name>.toml, then run `nuon branches sync --file branches/<name>.toml`.")
 		return nil
 	}
 
@@ -98,6 +101,17 @@ func (s *Service) handleAppSyncDisabled(ctx context.Context, dir, appID string, 
 		return ui.PrintError(err)
 	}
 	return nil
+}
+
+func printMigrationIntro() {
+	title := styles.TextBold.Render("App sync now goes through an app branch")
+	body := styles.TextDim.Render("To move forward, create an app branch and sync your changes through it.\nYes sets one up in this directory. No leaves it for you to do manually.")
+	box := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(styles.PrimaryColor).
+		Padding(0, 1).
+		Render(title + "\n\n" + body)
+	fmt.Fprintln(agentmode.HumanWriter(), "\n"+box)
 }
 
 func (s *Service) runAppBranchMigration(ctx context.Context, dir, appID string) error {
