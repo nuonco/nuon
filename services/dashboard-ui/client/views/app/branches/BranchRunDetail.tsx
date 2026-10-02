@@ -14,6 +14,7 @@ import { PageSection } from '@/components/layout/PageSection'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { BranchOverview } from '@/components/branches/BranchOverview'
 import { BranchRunApproval } from '@/components/branches/BranchRunApproval'
 import { BranchRunChanges } from '@/components/branches/BranchRunChanges'
 import { BranchRunComparisonRuns } from '@/components/branches/BranchRunComparisonRuns'
@@ -344,8 +345,11 @@ const BranchRunDetailContent = () => {
 }
 
 export const BranchRunDetail = () => {
+  const hasNewAppIA = useNewAppIA()
   const params = useParams()
   const branchId = params.branchId as string
+
+  if (hasNewAppIA) return <BranchOverview />
 
   return (
     <BranchProvider branchId={branchId}>

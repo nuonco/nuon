@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'bun:test'
-import type { TInstallGroupRun } from '@/types'
+import type { TInstallGroupRun, TInstallWorkflowStep } from '@/types'
 import type { TTrackGroup } from './RolloutTrack'
-import { mergeGroupRuns } from './use-rollout-groups'
+import {
+  historicalRunGroups,
+  mergeGroupRuns,
+  rolloutHrefForWorkflow,
+} from './use-rollout-groups'
 
 const planned = (id: string, name: string): TTrackGroup => ({
   id,
@@ -38,5 +42,45 @@ describe('mergeGroupRuns', () => {
       ['rest', 'pending'],
     ])
     expect(groups[2].installs).toHaveLength(1)
+  })
+})
+
+describe('rolloutHrefForWorkflow', () => {
+  test('opens the branch rollout for the current run', () => {
+    expect(rolloutHrefForWorkflow('/org-1/apps/app-1/branches/branch-1')).toBe(
+      '/org-1/apps/app-1/branches/branch-1/rollout'
+    )
+  })
+
+  test('keeps a previous run on that run rollout', () => {
+    expect(
+      rolloutHrefForWorkflow('/org-1/apps/app-1/branches/branch-1', 'wf-1')
+    ).toBe('/org-1/apps/app-1/branches/branch-1/runs/wf-1/rollout')
+  })
+})
+
+describe('historicalRunGroups', () => {
+  test('drops install groups added to the plan after this run', () => {
+    const groups = historicalRunGroups(
+      [planned('canary', 'Canary'), planned('later', 'Later')],
+      [
+        {
+          name: 'plan install group: Canary',
+          status: { status: 'pending' },
+        } as TInstallWorkflowStep,
+      ]
+    )
+    expect(groups.map((group) => group.id)).toEqual(['canary'])
+  })
+
+  test('keeps groups this run already finished', () => {
+    const groups = historicalRunGroups(
+      [
+        { ...planned('canary', 'Canary'), status: 'success' },
+        planned('later', 'Later'),
+      ],
+      []
+    )
+    expect(groups.map((group) => group.id)).toEqual(['canary'])
   })
 })

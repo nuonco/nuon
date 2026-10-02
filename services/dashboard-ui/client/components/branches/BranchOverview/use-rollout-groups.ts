@@ -17,12 +17,17 @@ import type {
   TAppBranchInstallGroup,
   TInstall,
   TInstallGroupRun,
+  TInstallWorkflowStep,
 } from '@/types'
 import type { TOverviewRollout } from './BranchOverview'
 import { installGroupApprovalLabel } from '@/components/branches/install-group-approval'
 import { installGroupMatch } from './InstallGroupMatch'
 import { fetchCommitReady } from './overview-loading'
-import { buildRolloutStages } from './rollout-stages'
+import {
+  buildRolloutStages,
+  deployStepForGroup,
+  planStepForGroup,
+} from './rollout-stages'
 import type { TTrackGroup, TTrackInstall } from './RolloutTrack'
 import { commitUrl, resolveRunSource } from './run-source'
 
@@ -114,6 +119,32 @@ const fromGroupRun = (
 const sameName = (a?: string, b?: string) =>
   !!a && !!b && a.toLowerCase() === b.toLowerCase()
 
+export const rolloutHrefForWorkflow = (basePath: string, workflowId?: string) =>
+  workflowId ? `${basePath}/runs/${workflowId}/rollout` : `${basePath}/rollout`
+
+const groupBelongsToRun = (
+  group: TTrackGroup,
+  steps: TInstallWorkflowStep[]
+) => {
+  if (group.status !== 'pending') return true
+  if (
+    group.installs.some(
+      (install) => install.workflowId || install.status !== 'pending'
+    )
+  ) {
+    return true
+  }
+  return (
+    !!planStepForGroup(steps, group.name) ||
+    !!deployStepForGroup(steps, group.name)
+  )
+}
+
+export const historicalRunGroups = (
+  groups: TTrackGroup[],
+  steps: TInstallWorkflowStep[]
+) => groups.filter((group) => groupBelongsToRun(group, steps))
+
 export const mergeGroupRuns = (
   planned: TTrackGroup[],
   groupRuns: TInstallGroupRun[],
@@ -147,6 +178,7 @@ export const useRolloutGroups = () => {
   const orgId = org?.id
   const appId = app?.id
   const branchId = params.branchId as string
+  const pinnedWorkflowId = params.runId
   const basePath = `/${orgId}/apps/${appId}/branches/${branchId}`
 
   const currentConfig = useMemo(() => latestBranchConfig(branch), [branch])
@@ -188,19 +220,27 @@ export const useRolloutGroups = () => {
   })
 
   const latestId = latestResult?.data?.[0]?.id
-  const { data: rolloutRun, isLoading: isLoadingRollout } = useQuery({
-    queryKey: ['branch-run', orgId, appId, branchId, latestId],
+  const workflowId = pinnedWorkflowId ?? latestId
+  const {
+    data: fetchedRun,
+    isLoading: isLoadingRollout,
+    isPlaceholderData,
+    error: rolloutError,
+  } = useQuery({
+    queryKey: ['branch-run', orgId, appId, branchId, workflowId],
     queryFn: () =>
       getBranchWorkflowRun({
         orgId: orgId!,
         appId: appId!,
         branchId,
-        runId: latestId!,
+        runId: workflowId!,
       }),
-    enabled: !!orgId && !!appId && !!branchId && !!latestId,
+    enabled: !!orgId && !!appId && !!branchId && !!workflowId,
     refetchInterval: 5000,
     placeholderData: keepPreviousData,
   })
+  const rolloutRun =
+    pinnedWorkflowId && isPlaceholderData ? undefined : fetchedRun
 
   const branchRun = rolloutRun?.app_branch_runs?.at(0)
   const branchRunId = branchRun?.id
@@ -282,6 +322,16 @@ export const useRolloutGroups = () => {
       : planned
   }, [groupRuns, groups, installsById, rolloutRun?.steps, membership, orgId])
 
+  const isHistoricalRun =
+    !!pinnedWorkflowId && !!latestId && pinnedWorkflowId !== latestId
+  const visibleGroups = useMemo(
+    () =>
+      isHistoricalRun
+        ? historicalRunGroups(trackGroups, rolloutRun?.steps ?? [])
+        : trackGroups,
+    [isHistoricalRun, trackGroups, rolloutRun?.steps]
+  )
+
   const sha = branchRun?.vcs_connection_commit?.sha ?? branchRun?.head_sha
   const rollout: TOverviewRollout | undefined = rolloutRun?.id
     ? {
@@ -308,6 +358,9 @@ export const useRolloutGroups = () => {
     : undefined
 
   const workflowSteps = rolloutRun?.steps ?? []
+  const isLoading = pinnedWorkflowId
+    ? !rolloutRun && !rolloutError
+    : isLoadingLatest || (!!latestId && isLoadingRollout && !rolloutRun)
 
   return {
     app,
@@ -317,17 +370,16 @@ export const useRolloutGroups = () => {
     branchId,
     basePath,
     repoSlug,
+    pinnedWorkflowId,
+    rolloutHref: rolloutHrefForWorkflow(basePath, pinnedWorkflowId),
+    rolloutError,
     branchRunId,
     rollout,
     workflowSteps,
     branchRun,
-    showLoadingTrack:
-      isLoadingLatest ||
-      (!!latestId && isLoadingRollout && !rolloutRun) ||
-      !!rollout,
-    groups: trackGroups,
-    hasPlan: groups.length > 0,
-    isLoading:
-      isLoadingLatest || (!!latestId && isLoadingRollout && !rolloutRun),
+    showLoadingTrack: isLoading || !!rollout,
+    groups: visibleGroups,
+    hasPlan: isHistoricalRun ? visibleGroups.length > 0 : groups.length > 0,
+    isLoading,
   }
 }
