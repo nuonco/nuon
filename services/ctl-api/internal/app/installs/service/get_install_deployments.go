@@ -3,11 +3,13 @@ package service
 import (
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
@@ -240,7 +242,9 @@ func (s *service) getInstallDeployments(
 
 	query := s.db.WithContext(ctx).
 		Preload("CreatedBy").
-		Preload("InstallDeploys").
+		Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_deploys.created_at ASC").Order("install_deploys.id ASC")
+		}).
 		Preload("InstallDeploys.InstallComponent").
 		Preload("InstallDeploys.InstallComponent.Component").
 		Preload("InstallDeploys.ComponentBuild").
@@ -326,6 +330,8 @@ func (s *service) getInstallDeployments(
 			Preload("AppBranchRun.VCSConnectionCommit").
 			Where(app.InstallAppConfigVersion{OrgID: orgID, InstallID: installID}).
 			Where("workflow_id IN ?", workflowIDs).
+			Order("created_at ASC").
+			Order("id ASC").
 			Find(&versions).Error; err != nil {
 			return nil, fmt.Errorf("unable to query install app config versions: %w", err)
 		}
@@ -487,6 +493,8 @@ func buildInstallDeployment(wf *app.Workflow, version *app.InstallAppConfigVersi
 	}
 	applyInstallConfigDiff(&d, configDiff, builds)
 	applyDeploymentImage(&d, wf)
+	sort.Strings(d.AffectedResources.Components)
+	sort.Strings(d.AffectedResources.Images)
 
 	return d
 }
