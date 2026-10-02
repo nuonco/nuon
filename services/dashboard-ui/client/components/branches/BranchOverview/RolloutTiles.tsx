@@ -1,3 +1,4 @@
+import { Button } from '@/components/common/Button'
 import { Text } from '@/components/common/Text'
 import { statusAccent } from '@/components/branches/graph/accents'
 import {
@@ -106,7 +107,7 @@ export const RolloutTiles = ({
   selectedGroupId,
   onSelectGroup,
 }: IRolloutTiles) => (
-  <ol className="flex items-start overflow-x-auto">
+  <ol className="-m-1 flex items-start overflow-x-auto p-1">
     {groups.map((group, index) => {
       const tiles = tilesFor(group)
       const done = tiles.filter(
@@ -125,15 +126,13 @@ export const RolloutTiles = ({
           {index > 0 ? (
             <span aria-hidden className="mt-4 w-6 shrink-0 border-t" />
           ) : null}
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             onClick={() => onSelectGroup(group.id)}
             aria-pressed={selectedGroupId ? isSelected : undefined}
             className={cn(
-              'flex w-full min-w-0 flex-col gap-2 rounded-md p-2 text-left transition-colors duration-fast',
-              isSelected
-                ? 'bg-black/5 dark:bg-white/5'
-                : 'hover:bg-black/[0.03] dark:hover:bg-white/[0.03]'
+              '!flex !h-auto !w-full min-w-0 !flex-col !items-stretch !gap-2 !rounded-md !p-2 text-left !font-normal !whitespace-normal',
+              isSelected && '!bg-black/5 dark:!bg-white/5'
             )}
           >
             <span className="flex items-baseline justify-between gap-2">
@@ -149,7 +148,7 @@ export const RolloutTiles = ({
               </Text>
             </span>
             <GroupTiles group={group} />
-          </button>
+          </Button>
         </li>
       )
     })}

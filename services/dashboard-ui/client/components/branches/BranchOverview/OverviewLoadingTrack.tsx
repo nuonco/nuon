@@ -1,3 +1,4 @@
+import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
@@ -40,13 +41,14 @@ export const OverviewLoadingTrack = ({
           />
         ) : null}
         {onSelectStage ? (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => onSelectStage(stage.id)}
-            className="flex items-center gap-2 rounded-md px-1 py-0.5 hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
+            className="!gap-2 !rounded-md !px-1 !font-normal"
           >
             <StageLabel stage={stage} />
-          </button>
+          </Button>
         ) : (
           <StageLabel stage={stage} />
         )}

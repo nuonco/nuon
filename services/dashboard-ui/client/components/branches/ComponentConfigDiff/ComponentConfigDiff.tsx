@@ -9,6 +9,7 @@ import { File as DiffFile, MultiFileDiff } from '@pierre/diffs/react'
 import { FileTree, useFileTree } from '@pierre/trees/react'
 import type { GitStatusEntry } from '@pierre/trees'
 import { Badge, type TBadgeTheme } from '@/components/common/Badge'
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Loading } from '@/components/common/Loading'
@@ -470,13 +471,13 @@ const EntityRow = ({
     )
   }
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
       onClick={() => onFocusFile(targetPath)}
-      className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-cool-grey-100 dark:hover:bg-dark-grey-700 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary-500"
+      className="!flex !h-auto !w-full justify-between !gap-2 !rounded-md !px-2 !py-1.5 text-left !font-normal !whitespace-normal"
     >
       {row}
-    </button>
+    </Button>
   )
 }
 

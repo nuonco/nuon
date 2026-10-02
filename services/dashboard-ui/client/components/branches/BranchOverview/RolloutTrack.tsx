@@ -226,7 +226,7 @@ const InstallList = ({
               variant="secondary"
               onClick={() => onSelectInstall(group.id, install.id)}
             >
-              Details
+              View details
             </Button>
           ) : null}
         </li>
