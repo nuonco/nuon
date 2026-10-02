@@ -40,6 +40,9 @@ type Config struct {
 	APIURLSource  string `mapstructure:"-"`
 	Env           string `mapstructure:"-"`
 	UserID        string `mapstructure:"-"`
+	// ConfigFlag is the -C/--config value when that flag was passed. Empty
+	// when the process is using the default config file.
+	ConfigFlag string `mapstructure:"-"`
 }
 
 // NewConfig creates a new config instance.
