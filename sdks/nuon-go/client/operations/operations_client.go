@@ -456,6 +456,8 @@ type ClientService interface {
 
 	GetAppConfigGraphV2(params *GetAppConfigGraphV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppConfigGraphV2OK, error)
 
+	GetAppConfigSourceFile(params *GetAppConfigSourceFileParams, authInfo runtime.ClientAuthInfoWriter, writer io.Writer, opts ...ClientOption) (*GetAppConfigSourceFileOK, error)
+
 	GetAppConfigTemplate(params *GetAppConfigTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppConfigTemplateCreated, error)
 
 	GetAppConfigs(params *GetAppConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppConfigsOK, error)
@@ -8993,6 +8995,52 @@ func (a *Client) GetAppConfigGraphV2(params *GetAppConfigGraphV2Params, authInfo
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetAppConfigGraphV2: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetAppConfigSourceFile gets a single file from an app config s source archive
+
+Returns the raw contents of one file captured in the config's source archive. The path must exactly match a captured file.
+*/
+func (a *Client) GetAppConfigSourceFile(params *GetAppConfigSourceFileParams, authInfo runtime.ClientAuthInfoWriter, writer io.Writer, opts ...ClientOption) (*GetAppConfigSourceFileOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppConfigSourceFileParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppConfigSourceFile",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/configs/{config_id}/source-files/{path}",
+		ProducesMediaTypes: []string{"application/octet-stream"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppConfigSourceFileReader{formats: a.formats, writer: writer},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppConfigSourceFileOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppConfigSourceFile: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

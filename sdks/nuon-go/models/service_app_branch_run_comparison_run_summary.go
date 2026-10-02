@@ -19,6 +19,9 @@ import (
 // swagger:model service.AppBranchRunComparisonRunSummary
 type ServiceAppBranchRunComparisonRunSummary struct {
 
+	// app config id
+	AppConfigID string `json:"app_config_id,omitempty"`
+
 	// base branch
 	BaseBranch string `json:"base_branch,omitempty"`
 
