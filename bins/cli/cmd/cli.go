@@ -144,6 +144,9 @@ func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 	if err := c.initConfig(); err != nil {
 		return errors.Wrap(err, "unable to initialize config")
 	}
+	if cmd.Flags().Changed("config") || cmd.Flags().Changed("config-file") {
+		c.cfg.ConfigFlag = ConfigFile
+	}
 	if agentmode.Enabled() {
 		c.cfg.Interactive = false
 	}

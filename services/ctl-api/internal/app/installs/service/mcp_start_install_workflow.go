@@ -9,11 +9,12 @@ import (
 )
 
 type mcpWorkflowStarted struct {
-	WorkflowID  string `json:"workflow_id"`
-	InstallID   string `json:"install_id"`
-	InstallName string `json:"install_name"`
-	Type        string `json:"workflow_type"`
-	PlanOnly    bool   `json:"plan_only"`
+	WorkflowID  string         `json:"workflow_id"`
+	InstallID   string         `json:"install_id"`
+	InstallName string         `json:"install_name"`
+	Type        string         `json:"workflow_type"`
+	PlanOnly    bool           `json:"plan_only"`
+	NextAction  *mcpNextAction `json:"next_action,omitempty"`
 }
 
 func (s *service) startInstallWorkflow(
@@ -51,12 +52,17 @@ func (s *service) startInstallWorkflow(
 		return nil, fmt.Errorf("enqueue signal: %w", err)
 	}
 
+	status := string(workflow.Status.Status)
+	if status == "" {
+		status = string(app.StatusPending)
+	}
 	return &mcpWorkflowStarted{
 		WorkflowID:  workflow.ID,
 		InstallID:   install.ID,
 		InstallName: install.Name,
 		Type:        string(workflowType),
 		PlanOnly:    planOnly,
+		NextAction:  mcpWatchStart(workflow.ID, status),
 	}, nil
 }
 

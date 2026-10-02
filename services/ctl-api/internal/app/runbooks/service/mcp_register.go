@@ -26,7 +26,7 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 			"Do not call this tool until the user has chosen which steps to run. First call get_runbook with the install and show every step as a numbered checklist (name and type), all enabled. Let the user turn steps off. At least one must stay enabled. Show inputs and collect required values. "+
 			"Execution role is optional: call list_available_roles (operation_type=trigger) and offer the returned names, or omit role for the default. A role configured on a step still applies. "+
 			"After the user confirms, call this tool. Omit steps only when every step stays enabled. To skip any, pass every step_id from get_runbook and set enabled false for the ones they turned off; a step left out of steps still runs. "+
-			"Returns run_id, workflow_id, and next_action. Call that watch_workflow action. Each watch returns when a step starts or finishes. After every watch result, the next user-visible message is step_progress, then call watch again with the returned cursor. A row of watch calls with no step_progress between them is wrong.",
+			"Returns run_id, workflow_id, and next_action. Ask the user whether they want to watch the workflow. Call next_action only if they choose to watch. Once watching, each watch returns when a step starts or finishes. After every watch result, the next user-visible message is step_progress, then call watch again with the returned cursor. A row of watch calls with no step_progress between them is wrong.",
 		true,
 		false,
 	), s.mcpRunRunbook)

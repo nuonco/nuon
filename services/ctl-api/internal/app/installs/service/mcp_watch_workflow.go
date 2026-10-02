@@ -252,6 +252,24 @@ func mcpWorkflowCursor(summary mcpWorkflowSummary) string {
 	return hex.EncodeToString(sum[:])
 }
 
+const mcpWatchAfterStart = "Returns workflow_id and next_action. Ask the user whether they want to watch the workflow. Call next_action only if they choose to watch. Once watching, each watch returns when a step starts or finishes. After every watch result, the next user-visible message is step_progress, then call watch again with the returned cursor. A row of watch calls with no step_progress between them is wrong."
+
+func mcpWatchStart(workflowID, lastKnownStatus string) *mcpNextAction {
+	if workflowID == "" {
+		return nil
+	}
+	args := map[string]any{"workflow_id": workflowID}
+	if lastKnownStatus != "" {
+		args["last_known_status"] = lastKnownStatus
+	}
+	return &mcpNextAction{
+		Action:    "watch_workflow",
+		Label:     "Watch workflow",
+		Tool:      "watch_workflow",
+		Arguments: args,
+	}
+}
+
 func mcpWatchContinuation(workflowID string) *mcpNextAction {
 	if workflowID == "" {
 		return nil

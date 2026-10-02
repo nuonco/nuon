@@ -21,10 +21,11 @@ type mcpUpdateInstallInputsInput struct {
 }
 
 type mcpUpdateInstallInputsResult struct {
-	InstallID   string `json:"install_id"`
-	InstallName string `json:"install_name"`
-	InputsID    string `json:"inputs_id"`
-	WorkflowID  string `json:"workflow_id,omitempty"`
+	InstallID   string         `json:"install_id"`
+	InstallName string         `json:"install_name"`
+	InputsID    string         `json:"inputs_id"`
+	WorkflowID  string         `json:"workflow_id,omitempty"`
+	NextAction  *mcpNextAction `json:"next_action,omitempty"`
 }
 
 func (s *service) mcpUpdateInstallInputs(ctx context.Context, _ *mcp.CallToolRequest, in mcpUpdateInstallInputsInput) (*mcp.CallToolResult, any, error) {
@@ -73,6 +74,7 @@ func (s *service) mcpUpdateInstallInputs(ctx context.Context, _ *mcp.CallToolReq
 	}
 	if inputs.WorkflowID != nil {
 		result.WorkflowID = *inputs.WorkflowID
+		result.NextAction = mcpWatchStart(*inputs.WorkflowID, string(app.StatusPending))
 	}
 	return apiPkg.MCPJSONResult(result)
 }
