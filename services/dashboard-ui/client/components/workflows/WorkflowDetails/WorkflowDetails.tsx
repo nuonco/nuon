@@ -20,12 +20,16 @@ import type { TWorkflow, TWorkflowStep } from '@/types'
 interface IWorkflowDetails {
   workflow: TWorkflow
   failedSteps: TWorkflowStep[]
+  showBanners?: boolean
 }
 
-export const WorkflowDetails = ({
+export const WorkflowAlertBanners = ({
   workflow,
   failedSteps,
-}: IWorkflowDetails) => {
+}: {
+  workflow: TWorkflow
+  failedSteps: TWorkflowStep[]
+}) => {
   const metadata = workflow?.status?.metadata
   const retriesExhausted = metadata?.retries_exhausted === true
   const stopped = metadata?.stopped === true
@@ -37,8 +41,10 @@ export const WorkflowDetails = ({
     stopReason && statusLine.includes(stopReason)
   )
 
+  if (!retriesExhausted && !stopped && !failedSteps?.length) return null
+
   return (
-    <div className="flex flex-col gap-2">
+    <>
       {retriesExhausted && (
         <Banner theme="error">
           <div className="flex flex-col gap-1">
@@ -77,6 +83,20 @@ export const WorkflowDetails = ({
       )}
 
       {failedSteps?.length > 0 && <FailedStepBanners steps={failedSteps} />}
+    </>
+  )
+}
+
+export const WorkflowDetails = ({
+  workflow,
+  failedSteps,
+  showBanners = true,
+}: IWorkflowDetails) => {
+  return (
+    <div className="flex flex-col gap-2">
+      {showBanners ? (
+        <WorkflowAlertBanners workflow={workflow} failedSteps={failedSteps} />
+      ) : null}
 
       <WorkflowHeaderContainer />
 

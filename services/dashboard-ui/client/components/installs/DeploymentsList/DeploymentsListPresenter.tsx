@@ -13,8 +13,9 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { WorkflowPanelLink } from '@/components/workflows/InstallWorkflowPanel'
+import { useInstallNested } from '@/hooks/use-install-path'
 import { usePagination } from '@/hooks/use-pagination'
-import { useSurfaces } from '@/hooks/use-surfaces'
+import { installHref } from '@/lib/install-path'
 import { PaginationProvider } from '@/providers/pagination-provider'
 import type {
   TAPIError,
@@ -28,7 +29,6 @@ import {
   type TWorkflowDatePreset,
   type TWorkflowStatusOption,
 } from '@/utils/workflow-filters'
-import { DeploymentDetailPanel } from './DeploymentDetailPanel'
 
 export const DEPLOYMENT_TYPE_LABELS: Record<
   TInstallDeploymentRecordType,
@@ -61,15 +61,15 @@ interface IDeploymentCard {
   orgId: string
   appId: string
   installId: string
-  onViewDetails: () => void
 }
 
 const DeploymentCard = ({
   deployment,
   orgId,
   appId,
-  onViewDetails,
+  installId,
 }: IDeploymentCard) => {
+  const nested = useInstallNested()
   const branchHref = deployment.app_branch
     ? `/${orgId}/apps/${appId}/branches/${deployment.app_branch.id}`
     : undefined
@@ -100,7 +100,17 @@ const DeploymentCard = ({
             variant="subtext"
             theme="neutral"
           />
-          <Button variant="secondary" size="sm" onClick={onViewDetails}>
+          <Button
+            variant="secondary"
+            size="sm"
+            href={installHref({
+              orgId,
+              appId,
+              installId,
+              nested,
+              suffix: `/deployments/${deployment.id}`,
+            })}
+          >
             View details
           </Button>
         </div>
@@ -262,7 +272,6 @@ const DeploymentsListBase = ({
   onDateChange,
   onClearFilters,
 }: IDeploymentsListPresenter) => {
-  const { addPanel } = useSurfaces()
   const { isPaginating, setIsPaginating } = usePagination()
 
   useEffect(() => {
@@ -386,16 +395,6 @@ const DeploymentsListBase = ({
               orgId={orgId}
               appId={appId}
               installId={installId}
-              onViewDetails={() => {
-                addPanel(
-                  <DeploymentDetailPanel
-                    deployment={deployment}
-                    orgId={orgId}
-                    appId={appId}
-                    installId={installId}
-                  />
-                )
-              }}
             />
           ))}
         </div>
