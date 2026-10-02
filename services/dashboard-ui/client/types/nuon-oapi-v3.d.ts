@@ -9784,9 +9784,13 @@ export interface components {
       plan_only?: boolean;
       pr_number?: number;
       preview_run?: components["schemas"]["service.PreviewRunRequest"];
+      run_ref?: string;
+      run_type?: components["schemas"]["service.TriggerAppBranchRunSource"];
       skip_builds?: boolean;
       sync_app_config?: boolean;
     };
+    /** @enum {string} */
+    "service.TriggerAppBranchRunSource": "pr" | "tag" | "commit";
     "service.TriggerInstallConfigSyncRequest": {
       install_name?: string;
     };

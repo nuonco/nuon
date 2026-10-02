@@ -66,7 +66,7 @@ export const PlanGroupStep = ({
   return (
     <>
       {(hasResponse || showApproveBar) && (
-        <StepBlock className={hideHeading ? 'px-0 pt-0 sm:px-0' : undefined}>
+        <StepBlock className={hideHeading ? '!px-0 !pt-0' : undefined}>
           {hasResponse && (
             <Banner theme={getApprovalResponseTheme(responseType)}>
               <Text weight="strong">
@@ -79,8 +79,8 @@ export const PlanGroupStep = ({
 
           {showApproveBar && (
             <Banner className="@container" theme="warn">
-              <div className="flex flex-col gap-2">
-                <div className="flex flex-col">
+              <div className="flex flex-col gap-3 @md:flex-row @md:items-center @md:justify-between">
+                <div className="flex min-w-0 flex-col">
                   <Text weight="strong">
                     Install group plan requires review
                   </Text>
@@ -89,9 +89,11 @@ export const PlanGroupStep = ({
                     this install group.
                   </Text>
                 </div>
-                {actions && (
-                  <div className="flex self-end gap-2">{actions}</div>
-                )}
+                {actions ? (
+                  <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                    {actions}
+                  </div>
+                ) : null}
               </div>
             </Banner>
           )}
@@ -141,18 +143,7 @@ export const PlanGroupStep = ({
           )
 
           const name =
-            onSelectInstall && inst.installId ? (
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onSelectInstall(inst.installId)
-                }}
-                className="text-left font-strong break-words hover:underline"
-              >
-                {installLabel}
-              </button>
-            ) : orgId && inst.installId ? (
+            orgId && inst.installId ? (
               <Link
                 href={installLink({
                   orgId: orgId,
@@ -198,7 +189,7 @@ export const PlanGroupStep = ({
                     onSelectInstall(inst.installId)
                   }}
                 >
-                  Details
+                  View details
                 </Button>
               ) : null}
             </div>
