@@ -24,12 +24,25 @@ const buildTimestamp = (build: TBuild) =>
 export const excludePreviewBuilds = (builds: TBuild[]) =>
   builds.filter((build) => !build?.is_preview)
 
+export const buildBranchName = (build: TBuild) =>
+  build.app_branch_run?.app_branch?.name
+
+export const buildMatchesInstallConfig = (
+  build: TBuild,
+  installAppConfigId?: string
+) => {
+  const buildConfigId = build.component_config_connection?.app_config_id
+  if (!installAppConfigId || !buildConfigId) return true
+  return buildConfigId === installAppConfigId
+}
+
 const matchesQuery = (build: TBuild, query: string) => {
   const haystack = [
     build?.id,
     build?.vcs_connection_commit?.message,
     build?.created_by?.email,
     build?.component_config_connection?.external_image?.tag,
+    buildBranchName(build),
   ]
     .filter(Boolean)
     .join(' ')
@@ -48,6 +61,7 @@ interface IBuildSelect {
   isLoadingMore: boolean
   hasMorePages: boolean
   error?: { error?: string } | null
+  installAppConfigId?: string
   onScroll: (e: React.UIEvent<HTMLDivElement>) => void
 }
 
@@ -62,6 +76,7 @@ export const BuildSelect = ({
   isLoadingMore,
   hasMorePages,
   error,
+  installAppConfigId,
   onScroll,
 }: IBuildSelect) => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -91,6 +106,15 @@ export const BuildSelect = ({
   }, [deployableBuilds, searchQuery, sortOrder])
 
   const showControls = deployableBuilds.length > 0 && !error
+  const selectedBuild = deployableBuilds.find(
+    (build) => build.id === selectedBuildId
+  )
+  const selectedConfigMismatch = selectedBuild
+    ? !buildMatchesInstallConfig(selectedBuild, installAppConfigId)
+    : false
+  const selectedBranchName = selectedBuild
+    ? buildBranchName(selectedBuild)
+    : undefined
 
   const renderContent = () => {
     if (isLoading && builds.length === 0) {
@@ -173,6 +197,7 @@ export const BuildSelect = ({
               componentType === 'external_image'
                 ? build?.component_config_connection?.external_image?.tag
                 : undefined
+            const branchName = buildBranchName(build)
             return (
               <RadioInput
                 key={build.id}
@@ -210,9 +235,14 @@ export const BuildSelect = ({
                                 className="!leading-relaxed max-w-[280px] truncate"
                                 variant="subtext"
                                 theme="neutral"
+                                nowrap
                                 title={build.vcs_connection_commit.message}
                               >
-                                {build.vcs_connection_commit.message}
+                                {
+                                  build.vcs_connection_commit.message.split(
+                                    '\n'
+                                  )[0]
+                                }
                               </Text>
                               <Text theme="neutral">•</Text>
                             </>
@@ -220,6 +250,14 @@ export const BuildSelect = ({
                           <Text variant="subtext" theme="neutral">
                             {build.created_by?.email || 'Unknown'}
                           </Text>
+                          {branchName && (
+                            <>
+                              <Text theme="neutral">•</Text>
+                              <Text variant="subtext" theme="neutral">
+                                Branch {branchName}
+                              </Text>
+                            </>
+                          )}
                           {build.created_at && (
                             <>
                               <Text theme="neutral">•</Text>
@@ -315,20 +353,29 @@ export const BuildSelect = ({
       onScroll={onScroll}
     >
       {showControls && (
-        <div className="sticky top-0 z-10 flex items-center gap-2 bg-white dark:bg-dark-grey-900 px-6 py-3 border-b border-cool-grey-200 dark:border-dark-grey-600">
-          <SearchInput
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Search builds…"
-            labelClassName="flex-1"
-            className="!min-w-0 w-full"
-          />
-          <div className="w-44 shrink-0">
-            <Select
-              value={sortOrder}
-              onChange={(value) => setSortOrder(value as TSortOrder)}
-              options={SORT_OPTIONS}
+        <div className="sticky top-0 z-10 flex flex-col gap-3 bg-white dark:bg-dark-grey-900 px-6 py-3 border-b border-cool-grey-200 dark:border-dark-grey-600">
+          {selectedConfigMismatch && (
+            <Banner theme="warn">
+              {selectedBranchName
+                ? `This build is from the ${selectedBranchName} branch and uses a different app config than this install.`
+                : 'This build uses a different app config than this install.'}
+            </Banner>
+          )}
+          <div className="flex items-center gap-2">
+            <SearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search builds…"
+              labelClassName="flex-1"
+              className="!min-w-0 w-full"
             />
+            <div className="w-44 shrink-0">
+              <Select
+                value={sortOrder}
+                onChange={(value) => setSortOrder(value as TSortOrder)}
+                options={SORT_OPTIONS}
+              />
+            </div>
           </div>
         </div>
       )}

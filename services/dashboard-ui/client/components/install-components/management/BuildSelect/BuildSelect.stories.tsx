@@ -14,7 +14,8 @@ const mockBuilds: TBuild[] = [
     created_by: { email: 'dev@example.com' },
     created_at: '2024-01-15T10:30:00Z',
     vcs_connection_commit: { message: 'fix: update container config' },
-    component_config_connection: {},
+    app_branch_run: { app_branch: { name: 'main' } },
+    component_config_connection: { app_config_id: 'cfg-main' },
   } as TBuild,
   {
     id: 'bld-def456',
@@ -22,7 +23,8 @@ const mockBuilds: TBuild[] = [
     created_by: { email: 'dev@example.com' },
     created_at: '2024-01-14T08:00:00Z',
     vcs_connection_commit: { message: 'feat: add new endpoint' },
-    component_config_connection: {},
+    app_branch_run: { app_branch: { name: 'feature/payments' } },
+    component_config_connection: { app_config_id: 'cfg-feature' },
   } as TBuild,
   {
     id: 'bld-ghi789',
@@ -37,6 +39,19 @@ const mockBuilds: TBuild[] = [
 export const Default = () => (
   <BuildSelect
     builds={mockBuilds}
+    isLoading={false}
+    isLoadingMore={false}
+    hasMorePages={false}
+    onSelectBuild={noop}
+    onScroll={noop}
+  />
+)
+
+export const ConfigMismatch = () => (
+  <BuildSelect
+    builds={mockBuilds}
+    selectedBuildId="bld-def456"
+    installAppConfigId="cfg-main"
     isLoading={false}
     isLoadingMore={false}
     hasMorePages={false}
