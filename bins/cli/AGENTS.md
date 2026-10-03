@@ -115,30 +115,29 @@ All config-to-database conversion lives server-side in `services/ctl-api/interna
 config knowledge to the CLI beyond parsing and validation** — a client-side syncer (`pkg/config/sync/apisyncer`) is
 exactly what this replaced, after it silently drifted from the server's conversion for months.
 
-#### The app branch path (`default-app-branches`)
+Branch runs are `nuon branches`, not `nuon apps sync`.
 
-When the org has the `default-app-branches` feature flag on, or the user passes `--branch` / `--app-branch`, the sync
-routes through an app branch run instead (`internal/services/apps/sync_branch.go`). This path adds **no** endpoints of
-its own:
+#### `disable-app-sync`
 
-1. `GET /v1/orgs/current` for the flag, then `GET /v1/apps/:app_id/branches` for a branch named `default`. On the first
-   sync it does not exist yet, so `POST /v1/apps/:app_id/branches` creates it and
-   `POST /v1/apps/:app_id/branches/:branch_id/configs` gives it a single default install group. A name collision
-   on create means a concurrent sync won the race, so re-list and use theirs.
-2. `POST /v1/apps/:app_id/configs` with `intermediate_config_json` and `app_branch_id`. The config is left unsynced.
-   **Resolving the branch here as a side effect of an empty `app_branch_id` does not work**: an older CLI would get a
-   branch-linked config and then call `/configs/:id/sync`, whose `finalizeAppConfigSync` skips the install rollout for
-   branch-linked configs on the assumption a branch run owns it. No run exists, so installs silently never update.
-3. `POST /v1/apps/:app_id/branches/:branch_id/runs` with `app_config_id` and `sync_app_config: true`. The run's
-   `sync app config` step is what calls the syncer, so the config still moves `pending` to `syncing` to
-   `active`/`error` and the status poll above is unchanged.
-4. The run's builds step owns component builds. **Do not also call `POST /configs/:id/sync` on this path**: it
-   dispatches builds too, and the run would build every changed component twice.
-5. The CLI waits until the run's builds step reaches a terminal status, then returns. The install group plan and deploy
-   steps that follow keep running server-side.
+When the org has `disable-app-sync` on, `nuon apps sync` does not upload the app config (`internal/services/apps/sync_disabled.go`).
+It resolves the selected app (or the directory-name app) without the directory mismatch prompt. On a TTY it prints a short
+note that app sync now goes through an app branch, then asks whether to create one (default yes). No prints the manual
+`nuon branches sync --file branches/<name>.toml` path. Non-interactive, JSON, and agent mode print a short deprecation
+error and write nothing.
 
-Exit codes are unchanged: 0 synced, 1 sync failed, 3 builds failed. `--auto-approve` sets `approve-all` on the run;
-without it the gate follows the targeted installs' own `approval_option`, which defaults to `prompt`.
+The wizard reads the app config directory's git checkout (`remote.origin.url`, `HEAD`, and the directory relative to the
+repo root) and `GET /v1/vcs/connections/{id}/repos` for each org VCS connection. A matching `full_name` uses
+`[connected_repo]`. No match uses `[public_repo]` with the same `owner/repo`. It asks which app branch to write, defaulting
+to `main`, with the current git branch (when it is not `main`) or a typed name as the other choices. A detached HEAD omits
+the current-branch row. It prints that TOML and asks before writing
+`branches/<name>.toml` (a `/` in the branch name is a subdirectory) and running `nuon branches sync` on that file.
+Syncing the file reconciles only this branch. A root `branch.toml` already in the folder is refused, because the app
+parser rejects `branch.toml` and `branches/` together. A manually managed remote branch with the same name cannot be
+taken over.
+
+Afterwards it asks whether to add installs to the branch (default no). On yes, a select list offers all, none, or one
+install at a time, and repeats until none or all are chosen. `nuon installs sync` requires `app_branch` in each install
+config while this flag is on.
 
 ### Output format (`--output table|json|agent`)
 

@@ -11,3 +11,8 @@ func ForcedFeatures() map[string]bool {
 func FeatureForced(feature OrgFeature) bool {
 	return orgfeatures.IsForced(string(feature))
 }
+
+// AutoFeatures returns flags this deployment turns on for newly created orgs.
+func AutoFeatures() map[string]bool {
+	return orgfeatures.Auto()
+}

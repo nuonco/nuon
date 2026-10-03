@@ -160,18 +160,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			"app_id":               appConfig.AppID,
 			"app_sandbox_build_id": build.ID,
 		},
-	}
-	mirrorEnabled, err := activities.AwaitOrgHasFeature(ctx, activities.OrgHasFeatureRequest{
-		OrgID:   run.OrgID,
-		Feature: string(app.OrgFeatureTerraformProviderMirror),
-	})
-	if err != nil {
-		s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, "unable to check terraform provider mirror feature flag")
-		return fmt.Errorf("unable to check terraform provider mirror feature flag: %w", err)
-	}
-	if mirrorEnabled {
-		tfPlan.VendorProviders = true
-		tfPlan.TerraformVersion = sandboxConfig.TerraformVersion
+		VendorProviders:  true,
+		TerraformVersion: sandboxConfig.TerraformVersion,
 	}
 
 	isSandboxOrg, err := activities.AwaitIsOrgSandboxMode(ctx, activities.IsOrgSandboxModeRequest{

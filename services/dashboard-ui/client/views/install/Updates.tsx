@@ -16,8 +16,6 @@ export const Updates = () => {
   const { install, refresh } = useInstall()
   const { run: currentAppBranchRun, isLoading: isAppBranchRunLoading } =
     useCurrentAppBranchRun()
-  const hasAppBranchesUI = !!org?.features?.['app-branches-ui']
-
   return (
     <PageSection>
       <PageTitle segments={['Updates', install?.name]} />
@@ -43,7 +41,7 @@ export const Updates = () => {
           ) : null
         }
         actions={
-          install && hasAppBranchesUI ? (
+          install ? (
             <div className="flex items-center gap-2">
               {install.app_branch_id ? (
                 <Link

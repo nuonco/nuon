@@ -22,9 +22,6 @@ const SettingsTemplate = () => {
 
   if (!org) return null
 
-  const hasServiceAccountsAndTokens =
-    !!org?.features?.['service-accounts-and-tokens']
-  const hasSlack = !!org?.features?.['slack']
   const hasOIDCFederation = !!cliConfig?.oidc_federation_enabled
 
   const navLinks = [
@@ -48,7 +45,7 @@ const SettingsTemplate = () => {
       iconVariant: 'WebhooksLogoIcon' as const,
       text: 'Webhooks',
     },
-    hasSlack && {
+    {
       path: `/slack`,
       iconVariant: 'SlackLogoIcon' as const,
       text: 'Slack',
@@ -58,12 +55,12 @@ const SettingsTemplate = () => {
       iconVariant: 'LightningIcon' as const,
       text: 'Triggers',
     },
-    hasServiceAccountsAndTokens && {
+    {
       path: `/api-tokens`,
       iconVariant: 'KeyIcon' as const,
       text: 'API tokens',
     },
-    hasServiceAccountsAndTokens && {
+    {
       path: `/service-accounts`,
       iconVariant: 'RobotIcon' as const,
       text: 'Service accounts',

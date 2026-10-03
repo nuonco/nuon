@@ -98,9 +98,12 @@ func AppBranchRunResolveActivityError(err error) error {
 
 func (h *Helpers) ResolveAppBranchRunForInstall(ctx context.Context, appBranchID string, install *app.Install) (*AppBranchRunForInstall, error) {
 	run, err := h.LatestDeployableAppBranchRun(ctx, appBranchID)
-	if err != nil {
+	if err != nil && !errors.Is(err, ErrNoDeployableAppBranchRun) {
 		return nil, err
 	}
+	// A new branch can own installs before its first completed run. The pin
+	// still records the group; the deploy waits until a run exists.
+	noRun := err != nil
 
 	// Membership follows the branch's latest config (what the API and dashboard
 	// expose). Group rows are minted per config version, so a pin to a group
@@ -121,13 +124,20 @@ func (h *Helpers) ResolveAppBranchRunForInstall(ctx context.Context, appBranchID
 		}
 	}
 
-	installGroupID := ""
+	resolved := &AppBranchRunForInstall{
+		InstallGroupName:             group.Name,
+		InstallGroupAssignmentSource: source,
+	}
+	if noRun {
+		return resolved, nil
+	}
+
 	var runGroup app.AppBranchInstallGroup
 	err = h.db.WithContext(ctx).
 		Where(app.AppBranchInstallGroup{AppBranchConfigID: run.AppBranchConfigID, Name: group.Name}).
 		First(&runGroup).Error
 	if err == nil {
-		installGroupID = runGroup.ID
+		resolved.InstallGroupID = runGroup.ID
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("unable to get install group for app branch run: %w", err)
 	}
@@ -136,15 +146,10 @@ func (h *Helpers) ResolveAppBranchRunForInstall(ctx context.Context, appBranchID
 	if err != nil {
 		return nil, err
 	}
-
-	return &AppBranchRunForInstall{
-		AppBranchRunID:               run.ID,
-		AppConfigID:                  run.AppConfigID,
-		InstallGroupID:               installGroupID,
-		InstallGroupName:             group.Name,
-		InstallGroupAssignmentSource: source,
-		AlreadyCurrent:               alreadyCurrent,
-	}, nil
+	resolved.AppBranchRunID = run.ID
+	resolved.AppConfigID = run.AppConfigID
+	resolved.AlreadyCurrent = alreadyCurrent
+	return resolved, nil
 }
 
 func (h *Helpers) LatestDeployableAppBranchRun(ctx context.Context, appBranchID string) (*app.AppBranchRun, error) {

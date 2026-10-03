@@ -31,9 +31,6 @@ func (s *service) mcpGetAppBranchRun(ctx context.Context, _ *mcp.CallToolRequest
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := s.requireAppBranches(ctx); err != nil {
-		return nil, nil, err
-	}
 	if in.App == "" {
 		return nil, nil, fmt.Errorf("app is required")
 	}
