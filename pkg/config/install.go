@@ -337,7 +337,9 @@ func (i *Install) FlattenedInputs() map[string]string {
 	// synthetic enabled input per component, so [component_toggles] flows through
 	// the same install-input update + reconcile path as everything else.
 	for compName, enabled := range i.ComponentToggles {
-		flattened[EnabledOverrideInputName(compName)] = strconv.FormatBool(enabled)
+		v := strconv.FormatBool(enabled)
+		flattened[EnabledOverrideInputName(compName)] = v
+		flattened[EnabledOverrideInputNameRaw(compName)] = v
 	}
 	return flattened
 }

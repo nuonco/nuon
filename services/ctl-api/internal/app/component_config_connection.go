@@ -417,10 +417,14 @@ func ComponentEnabledFromInputs(enabledInputs map[string]*string, ccc *Component
 	if ccc == nil || !ccc.IsToggleable() {
 		return true
 	}
-	name := config.EnabledOverrideInputName(ccc.Component.Name)
-	if v, ok := enabledInputs[name]; ok && v != nil {
-		if enabled, err := strconv.ParseBool(*v); err == nil {
-			return enabled
+	for _, name := range []string{
+		config.EnabledOverrideInputName(ccc.Component.Name),
+		config.EnabledOverrideInputNameRaw(ccc.Component.Name),
+	} {
+		if v, ok := enabledInputs[name]; ok && v != nil {
+			if enabled, err := strconv.ParseBool(*v); err == nil {
+				return enabled
+			}
 		}
 	}
 	return ccc.GetDefaultEnabled()

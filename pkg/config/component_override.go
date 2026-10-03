@@ -87,10 +87,22 @@ func EnabledOverrideInputName(componentName string) string {
 	return componentOverrideInputName(ComponentOverrideKindEnabled, componentName)
 }
 
+func EnabledOverrideInputNameRaw(componentName string) string {
+	return ComponentOverrideInputPrefix + string(ComponentOverrideKindEnabled) + "_" + componentName
+}
+
 // IsComponentOverrideInputName reports whether an input name is a reserved
 // component-override synthetic input.
 func IsComponentOverrideInputName(name string) bool {
 	return strings.HasPrefix(name, ComponentOverrideInputPrefix)
+}
+
+func IsEnabledOverrideInputNameRaw(name string) bool {
+	kind, comp, ok := ParseComponentOverrideInputName(name)
+	if !ok || kind != ComponentOverrideKindEnabled || comp == "" {
+		return false
+	}
+	return name == EnabledOverrideInputNameRaw(comp)
 }
 
 // SyntheticOverrideInput describes a single synthetic vendor input that must be
@@ -176,10 +188,13 @@ func ParseComponentOverrideInputName(name string) (kind ComponentOverrideKind, c
 		}
 		encoded := strings.TrimPrefix(rest, prefix)
 		decoded, err := hex.DecodeString(encoded)
-		if err != nil {
-			return "", "", false
+		if err == nil {
+			return k, string(decoded), true
 		}
-		return k, string(decoded), true
+		if k == ComponentOverrideKindEnabled && encoded != "" {
+			return k, encoded, true
+		}
+		return "", "", false
 	}
 
 	return "", "", false
