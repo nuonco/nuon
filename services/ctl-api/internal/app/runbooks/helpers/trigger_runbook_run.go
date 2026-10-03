@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/apiidem"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -22,6 +24,9 @@ type TriggerRunbookRunRequest struct {
 	StepSelections                                   []app.RunbookStepSelection
 	TriggerEventDispatchID                           *string
 	Role                                             string
+
+	RequestID   string
+	RequestHash string
 
 	// IdempotencyKey makes the call safe to repeat: a second call with the same
 	// key returns the existing run instead of starting the runbook again. Callers
@@ -53,15 +58,65 @@ type TriggerRunbookRunResponse struct {
 }
 
 func (h *Helpers) TriggerRunbookRun(ctx context.Context, req TriggerRunbookRunRequest) (*TriggerRunbookRunResponse, error) {
+	resp, err := h.triggerRunbookRun(ctx, req)
+	if err == nil || req.RequestID == "" || !apiidem.IsDuplicateKey(err) {
+		return resp, err
+	}
+	var lastErr error
+	for attempt := 0; attempt < 5; attempt++ {
+		time.Sleep(time.Duration(attempt+1) * 20 * time.Millisecond)
+		resp, lastErr = h.replayAPIRequestRunbook(ctx, req)
+		if lastErr == nil || !errors.Is(lastErr, gorm.ErrRecordNotFound) {
+			return resp, lastErr
+		}
+	}
+	return nil, err
+}
+
+func (h *Helpers) triggerRunbookRun(ctx context.Context, req TriggerRunbookRunRequest) (*TriggerRunbookRunResponse, error) {
+	if req.RequestID != "" {
+		if err := apiidem.ValidateRequestID(req.RequestID); err != nil {
+			return nil, err
+		}
+		if req.RequestHash == "" {
+			return nil, fmt.Errorf("request hash is required")
+		}
+	}
+
 	var run app.InstallRunbookRun
 	var workflow app.Workflow
 	var queueSignalID string
 	var queueID string
+	var dedupe string
 	var terminalStatus string
 	err := h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var installRunbook app.InstallRunbook
 		if err := tx.Preload("Runbook").Preload("Install").Where(app.InstallRunbook{ID: req.InstallRunbookID}).First(&installRunbook).Error; err != nil {
 			return err
+		}
+		if req.RequestID != "" {
+			var existing app.Workflow
+			err := tx.Where(app.Workflow{
+				OrgID:     installRunbook.OrgID,
+				OwnerID:   installRunbook.InstallID,
+				OwnerType: "installs",
+				Type:      app.WorkflowTypeRunbookRun,
+			}).Where("idempotency->>'request_id' = ?", req.RequestID).First(&existing).Error
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+			if err == nil {
+				if err := apiidem.Check(existing.Idempotency, req.RequestHash, installRunbook.Install.AppConfigID); err != nil {
+					return err
+				}
+				runID := ""
+				if existing.Metadata != nil && existing.Metadata["install_runbook_run_id"] != nil {
+					runID = *existing.Metadata["install_runbook_run_id"]
+				}
+				if err := tx.Where(app.InstallRunbookRun{ID: runID}).First(&run).Error; err != nil {
+					return err
+				}
+			}
 		}
 		var runbookConfig app.RunbookConfig
 		if err := tx.Preload("Inputs").Where(app.RunbookConfig{
@@ -151,6 +206,21 @@ func (h *Helpers) TriggerRunbookRun(ctx context.Context, req TriggerRunbookRunRe
 			if err := tx.Model(&run).Update("install_workflow_id", workflow.ID).Error; err != nil {
 				return err
 			}
+			if req.RequestID != "" {
+				idem := &app.WorkflowIdempotency{
+					RequestID:         req.RequestID,
+					RequestHash:       req.RequestHash,
+					PinnedAppConfigID: installRunbook.Install.AppConfigID,
+				}
+				blob, err := json.Marshal(idem)
+				if err != nil {
+					return err
+				}
+				if err := tx.Model(&app.Workflow{}).Where("id = ?", workflow.ID).Update("idempotency", string(blob)).Error; err != nil {
+					return err
+				}
+				workflow.Idempotency = idem
+			}
 		} else if err := tx.Where(app.Workflow{ID: *run.InstallWorkflowID}).First(&workflow).Error; err != nil {
 			return err
 		}
@@ -159,7 +229,10 @@ func (h *Helpers) TriggerRunbookRun(ctx context.Context, req TriggerRunbookRunRe
 			return err
 		}
 		queueID = q.ID
-		dedupe := "runbook-run:" + run.ID
+		dedupe = "runbook-run:" + run.ID
+		if req.RequestID != "" {
+			dedupe = apiidem.DedupeKey("runbook-run", req.RequestID)
+		}
 		var existing app.QueueSignal
 		if err := tx.Where(app.QueueSignal{QueueID: q.ID, DedupeKey: &dedupe}).First(&existing).Error; err == nil {
 			queueSignalID = existing.ID
@@ -201,9 +274,47 @@ func (h *Helpers) TriggerRunbookRun(ctx context.Context, req TriggerRunbookRunRe
 	if err != nil {
 		return nil, fmt.Errorf("trigger runbook run: %w", err)
 	}
-	dedupe := "runbook-run:" + run.ID
 	_, _ = h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{QueueID: queueID, Signal: executeflow.NewSignal(workflow.ID), OwnerID: workflow.ID, OwnerType: "install_workflows", DedupeKey: &dedupe, Callback: req.Callback})
 	return &TriggerRunbookRunResponse{Run: &run, Workflow: &workflow, QueueSignalID: queueSignalID, TerminalStatus: terminalStatus}, nil
+}
+
+func (h *Helpers) replayAPIRequestRunbook(ctx context.Context, req TriggerRunbookRunRequest) (*TriggerRunbookRunResponse, error) {
+	var installRunbook app.InstallRunbook
+	if err := h.db.WithContext(ctx).Preload("Install").Where(app.InstallRunbook{ID: req.InstallRunbookID}).First(&installRunbook).Error; err != nil {
+		return nil, err
+	}
+	var workflow app.Workflow
+	err := h.db.WithContext(ctx).Where(app.Workflow{
+		OrgID:     installRunbook.OrgID,
+		OwnerID:   installRunbook.InstallID,
+		OwnerType: "installs",
+		Type:      app.WorkflowTypeRunbookRun,
+	}).Where("idempotency->>'request_id' = ?", req.RequestID).First(&workflow).Error
+	if err != nil {
+		return nil, err
+	}
+	if err := apiidem.Check(workflow.Idempotency, req.RequestHash, installRunbook.Install.AppConfigID); err != nil {
+		return nil, err
+	}
+	runID := ""
+	if workflow.Metadata != nil && workflow.Metadata["install_runbook_run_id"] != nil {
+		runID = *workflow.Metadata["install_runbook_run_id"]
+	}
+	var run app.InstallRunbookRun
+	if err := h.db.WithContext(ctx).Where(app.InstallRunbookRun{ID: runID}).First(&run).Error; err != nil {
+		return nil, err
+	}
+	var q app.Queue
+	if err := h.db.WithContext(ctx).Where(app.Queue{OwnerID: installRunbook.InstallID, OwnerType: "installs", Name: "install-workflows"}).First(&q).Error; err != nil {
+		return nil, err
+	}
+	dedupe := apiidem.DedupeKey("runbook-run", req.RequestID)
+	resp, _ := h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{QueueID: q.ID, Signal: executeflow.NewSignal(workflow.ID), OwnerID: workflow.ID, OwnerType: "install_workflows", DedupeKey: &dedupe, Callback: req.Callback})
+	queueSignalID := ""
+	if resp != nil {
+		queueSignalID = resp.ID
+	}
+	return &TriggerRunbookRunResponse{Run: &run, Workflow: &workflow, QueueSignalID: queueSignalID}, nil
 }
 
 // appendSignalCallback atomically appends a callback to an in-flight queue signal.

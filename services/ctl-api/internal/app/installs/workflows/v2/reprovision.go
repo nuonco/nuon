@@ -23,6 +23,9 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install")
 	}
+	if err := failIfPinnedAppConfigMoved(install, flw); err != nil {
+		return nil, err
+	}
 
 	sg := newStepGroup(flw)
 
