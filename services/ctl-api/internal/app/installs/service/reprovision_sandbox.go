@@ -9,11 +9,15 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/apiidem"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 )
 
 type ReprovisionInstallSandboxRequest struct {
+	// RequestID is an optional idempotency key. The same id and body returns the original workflow. A different body, or an install that has moved to another app config, returns 409.
+	RequestID      string `json:"request_id,omitempty" validate:"omitempty,max=255"`
 	Role           string `json:"role,omitempty"`
 	PlanOnly       bool   `json:"plan_only"`
 	SkipComponents bool   `json:"skip_components"`
@@ -33,6 +37,7 @@ type ReprovisionInstallSandboxRequest struct {
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.WorkflowResponse
 // @Router					/v1/installs/{install_id}/reprovision-sandbox [post]
@@ -54,6 +59,33 @@ func (s *service) ReprovisionInstallSandbox(ctx *gin.Context) {
 	metadata := map[string]string{}
 	if req.SkipComponents {
 		metadata["skip_components"] = "true"
+	}
+
+	if req.RequestID != "" {
+		hashReq := req
+		hashReq.RequestID = ""
+		hash, err := apiidem.Hash(hashReq)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		workflow, _, err := s.helpers.RunIdempotentInstallWorkflow(ctx, installhelpers.IdempotentInstallWorkflowRequest{
+			InstallID:    install.ID,
+			WorkflowType: app.WorkflowTypeReprovisionSandbox,
+			Metadata:     metadata,
+			PlanOnly:     req.PlanOnly,
+			Role:         req.Role,
+			RequestID:    req.RequestID,
+			RequestHash:  hash,
+			Operation:    "reprovision-sandbox",
+			QueueName:    installhelpers.InstallWorkflowsQueueName,
+		}, nil)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		ctx.JSON(http.StatusCreated, app.WorkflowResponse{WorkflowID: workflow.ID})
+		return
 	}
 
 	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
