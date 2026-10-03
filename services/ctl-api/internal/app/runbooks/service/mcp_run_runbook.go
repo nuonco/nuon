@@ -13,11 +13,12 @@ import (
 )
 
 type mcpRunRunbookInput struct {
-	Install string                          `json:"install" jsonschema:"install name or ID"`
-	Runbook string                          `json:"runbook" jsonschema:"runbook name or ID"`
-	Inputs  map[string]*string              `json:"inputs,omitempty" jsonschema:"runbook input values"`
-	Steps   []CreateRunbookRunStepSelection `json:"steps,omitempty" jsonschema:"omit to run every step. To skip steps, pass every step_id from get_runbook and set enabled false for the ones to skip. A step omitted from this list still runs. At least one step must be enabled"`
-	Role    string                          `json:"role,omitempty" jsonschema:"optional IAM role name from list_available_roles; omit to use the default"`
+	Install   string                          `json:"install" jsonschema:"install name or ID"`
+	Runbook   string                          `json:"runbook" jsonschema:"runbook name or ID"`
+	Inputs    map[string]*string              `json:"inputs,omitempty" jsonschema:"runbook input values"`
+	Steps     []CreateRunbookRunStepSelection `json:"steps,omitempty" jsonschema:"omit to run every step. To skip steps, pass every step_id from get_runbook and set enabled false for the ones to skip. A step omitted from this list still runs. At least one step must be enabled"`
+	Role      string                          `json:"role,omitempty" jsonschema:"optional IAM role name from list_available_roles; omit to use the default"`
+	RequestID string                          `json:"request_id,omitempty" jsonschema:"optional idempotency key. The same id, runbook, inputs, and steps returns the original run. A different body, or an install that has moved to another app config, is rejected"`
 }
 
 type mcpRunRunbookResult struct {
@@ -65,9 +66,10 @@ func (s *service) mcpRunRunbook(ctx context.Context, _ *mcp.CallToolRequest, in 
 	}
 
 	triggered, err := s.createRunbookRun(ctx, orgID, accountID, install.ID, in.Runbook, CreateRunbookRunRequest{
-		Inputs: in.Inputs,
-		Steps:  in.Steps,
-		Role:   in.Role,
+		Inputs:    in.Inputs,
+		Steps:     in.Steps,
+		Role:      in.Role,
+		RequestID: in.RequestID,
 	})
 	if err != nil {
 		return nil, nil, err

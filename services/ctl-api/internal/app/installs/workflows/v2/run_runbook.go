@@ -80,6 +80,9 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install")
 	}
+	if err := failIfPinnedAppConfigMoved(install, flw); err != nil {
+		return nil, err
+	}
 
 	var enabledInputs map[string]*string
 	if install.CurrentInstallInputs != nil {

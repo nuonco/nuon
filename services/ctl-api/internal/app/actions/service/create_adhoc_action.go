@@ -8,10 +8,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/apiidem"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
@@ -20,6 +23,8 @@ import (
 )
 
 type CreateAdHocActionRequest struct {
+	// RequestID is an optional idempotency key. The same id and body returns the original run. A different body returns 409.
+	RequestID        string            `json:"request_id,omitempty" validate:"omitempty,max=255"`
 	InlineContents   string            `json:"inline_contents" validate:"required_without=Command"`
 	Command          string            `json:"command" validate:"required_without=InlineContents"`
 	EnvVars          map[string]string `json:"env_vars"`
@@ -114,6 +119,16 @@ func (s *service) CreateAdHocAction(ctx *gin.Context) {
 		return
 	}
 
+	if req.RequestID != "" {
+		resp, err := s.createIdempotentAdHocAction(ctx, install, account.ID, &req)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		ctx.JSON(http.StatusCreated, resp)
+		return
+	}
+
 	run, err := s.createAdHocActionRun(ctx, install, account.ID, &req)
 	if err != nil {
 		ctx.Error(stderr.ErrUser{
@@ -184,6 +199,98 @@ func (s *service) createAdHocActionRun(
 	accountID string,
 	req *CreateAdHocActionRequest,
 ) (*app.InstallActionWorkflowRun, error) {
+	run, err := s.insertAdHocActionRun(ctx, s.db, install, accountID, req)
+	if err != nil {
+		return nil, err
+	}
+	s.emitAdHocActionAudit(ctx, install.ID, run.ID, accountID)
+	return run, nil
+}
+
+func (s *service) createIdempotentAdHocAction(ctx context.Context, install *app.Install, accountID string, req *CreateAdHocActionRequest) (*CreateAdHocActionResponse, error) {
+	hashReq := *req
+	hashReq.RequestID = ""
+	hash, err := apiidem.Hash(hashReq)
+	if err != nil {
+		return nil, err
+	}
+
+	actionName := req.Name
+	if actionName == "" {
+		if req.InlineContents != "" {
+			actionName = "Adhoc script"
+		} else {
+			actionName = "Adhoc command"
+		}
+	}
+
+	var createdRun *app.InstallActionWorkflowRun
+	workflow, created, err := s.installHelpers.RunIdempotentInstallWorkflow(ctx, installhelpers.IdempotentInstallWorkflowRequest{
+		InstallID:             install.ID,
+		WorkflowType:          app.WorkflowTypeActionWorkflowRun,
+		Role:                  req.Role,
+		RequestID:             req.RequestID,
+		RequestHash:           hash,
+		Operation:             "actions-adhoc-run",
+		QueueName:             installhelpers.InstallActionWorkflowsQueueName,
+		SkipAppConfigConflict: true,
+	}, &installhelpers.IdempotentInstallWorkflowHooks{
+		Prepare: func(tx *gorm.DB) (map[string]string, error) {
+			run, err := s.insertAdHocActionRun(ctx, tx, install, accountID, req)
+			if err != nil {
+				return nil, err
+			}
+			createdRun = run
+			metadata := PrependRunEnvPrefix(req.EnvVars)
+			metadata["adhoc_action_run_id"] = run.ID
+			metadata["triggered_by_id"] = accountID
+			metadata["trigger_type"] = "adhoc"
+			metadata["install_action_workflow_name"] = actionName
+			metadata["adhoc_action"] = "true"
+			return metadata, nil
+		},
+		AfterCreate: func(tx *gorm.DB, wf *app.Workflow) error {
+			if createdRun == nil {
+				return fmt.Errorf("adhoc action run was not created")
+			}
+			createdRun.InstallWorkflowID = &wf.ID
+			return tx.Model(createdRun).Update("install_workflow_id", wf.ID).Error
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if created && createdRun != nil {
+		s.emitAdHocActionAudit(ctx, install.ID, createdRun.ID, accountID)
+	}
+
+	run := createdRun
+	if run == nil {
+		runID := generics.FromPtrStr(workflow.Metadata["adhoc_action_run_id"])
+		run = &app.InstallActionWorkflowRun{}
+		if err := s.db.WithContext(ctx).Where(app.InstallActionWorkflowRun{ID: runID}).First(run).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	return &CreateAdHocActionResponse{
+		ID:                run.ID,
+		InstallID:         install.ID,
+		Status:            run.Status,
+		StatusDescription: run.StatusDescription,
+		TriggerType:       app.ActionWorkflowTriggerTypeAdHoc,
+		CreatedAt:         run.CreatedAt,
+		WorkflowID:        workflow.ID,
+	}, nil
+}
+
+func (s *service) insertAdHocActionRun(
+	ctx context.Context,
+	db *gorm.DB,
+	install *app.Install,
+	accountID string,
+	req *CreateAdHocActionRequest,
+) (*app.InstallActionWorkflowRun, error) {
 	stepConfig := app.ActionWorkflowStepConfig{
 		InlineContents: req.InlineContents,
 		Command:        req.Command,
@@ -226,24 +333,25 @@ func (s *service) createAdHocActionRun(
 		EnableKubeConfig:  enableKubeConfig,
 	}
 
-	if err := s.db.WithContext(ctx).Create(&run).Error; err != nil {
+	if err := db.WithContext(ctx).Create(&run).Error; err != nil {
 		return nil, err
 	}
+	return &run, nil
+}
 
+func (s *service) emitAdHocActionAudit(ctx context.Context, installID, runID, accountID string) {
 	s.audit.Emit(ctx, audit.Event{
 		Type:        audit.EventInstallActionWorkflowRun,
 		Message:     "adhoc action run created",
 		Outcome:     audit.OutcomeStarted,
-		InstallID:   install.ID,
-		SubjectID:   run.ID,
+		InstallID:   installID,
+		SubjectID:   runID,
 		SubjectType: "install_action_workflow_runs",
 		Attrs: map[string]string{
-			"action_workflow_run.id": run.ID,
+			"action_workflow_run.id": runID,
 			"trigger.type":           string(app.ActionWorkflowTriggerTypeAdHoc),
 			"triggered_by.id":        accountID,
 			"triggered_by.type":      "account",
 		},
 	})
-
-	return &run, nil
 }

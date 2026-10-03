@@ -18,6 +18,7 @@ type mcpRunActionInput struct {
 	ActionWorkflowConfigID string            `json:"action_workflow_config_id,omitempty" jsonschema:"optional action workflow config ID; defaults to the install-pinned or latest config"`
 	RunEnvVars             map[string]string `json:"run_env_vars,omitempty" jsonschema:"optional run environment variables (keys become RUNENV_<key>)"`
 	Role                   string            `json:"role,omitempty" jsonschema:"optional IAM role name from list_available_roles; omit to use the default"`
+	RequestID              string            `json:"request_id,omitempty" jsonschema:"optional idempotency key. The same id and body returns the original workflow. A different body, or an install that has moved to another app config, is rejected"`
 }
 
 type mcpRunActionResult struct {
@@ -70,6 +71,7 @@ func (s *service) mcpRunAction(ctx context.Context, _ *mcp.CallToolRequest, in m
 		ActionWorkFlowConfigID: configID,
 		RunEnvVars:             in.RunEnvVars,
 		Role:                   in.Role,
+		RequestID:              in.RequestID,
 	})
 	if err != nil {
 		return nil, nil, err

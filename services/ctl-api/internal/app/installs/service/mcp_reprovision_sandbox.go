@@ -16,6 +16,7 @@ type mcpReprovisionSandboxInput struct {
 	PlanOnly       bool   `json:"plan_only,omitempty" jsonschema:"if true, only plan sandbox reprovision; do not apply"`
 	Role           string `json:"role,omitempty" jsonschema:"optional IAM role name from list_available_roles; omit to use the default"`
 	SkipComponents bool   `json:"skip_components,omitempty" jsonschema:"if true, skip deploying components after sandbox reprovision"`
+	RequestID      string `json:"request_id,omitempty" jsonschema:"optional idempotency key. The same id and body returns the original workflow. A different body, or an install that has moved to another app config, is rejected"`
 }
 
 func (s *service) mcpReprovisionSandbox(ctx context.Context, _ *mcp.CallToolRequest, in mcpReprovisionSandboxInput) (*mcp.CallToolResult, any, error) {
@@ -32,7 +33,15 @@ func (s *service) mcpReprovisionSandbox(ctx context.Context, _ *mcp.CallToolRequ
 		metadata["skip_components"] = "true"
 	}
 
-	started, err := s.startInstallWorkflow(ctx, orgID, in.Install, app.WorkflowTypeReprovisionSandbox, in.PlanOnly, in.Role, metadata)
+	requestID, requestHash, operation, err := mcpInstallRequest(in.RequestID, "reprovision-sandbox", ReprovisionInstallSandboxRequest{
+		Role:           in.Role,
+		PlanOnly:       in.PlanOnly,
+		SkipComponents: in.SkipComponents,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	started, err := s.startInstallWorkflowWithRequestID(ctx, orgID, in.Install, app.WorkflowTypeReprovisionSandbox, in.PlanOnly, in.Role, metadata, requestID, requestHash, operation)
 	if err != nil {
 		return nil, nil, err
 	}

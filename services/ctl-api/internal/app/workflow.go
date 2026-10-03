@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -405,6 +406,14 @@ type Workflow struct {
 	WorkflowRuns              []WorkflowRun              `json:"workflow_runs,omitzero" gorm:"foreignKey:WorkflowID;constraint:OnDelete:CASCADE;" temporaljson:"workflow_runs,omitzero,omitempty"`
 
 	Links map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
+
+	Idempotency *WorkflowIdempotency `json:"-" gorm:"column:idempotency;type:jsonb;serializer:json" swaggerignore:"true" temporaljson:"idempotency,omitzero,omitempty"`
+}
+
+type WorkflowIdempotency struct {
+	RequestID         string `json:"request_id" temporaljson:"request_id"`
+	RequestHash       string `json:"request_hash" temporaljson:"request_hash"`
+	PinnedAppConfigID string `json:"pinned_app_config_id" temporaljson:"pinned_app_config_id"`
 }
 
 func (i *Workflow) TableName() string {
@@ -485,6 +494,17 @@ func (i *Workflow) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 			Option: "WHERE finished_at IS NULL AND deleted_at = 0 AND approval_option = 'prompt'",
+		},
+		{
+			Name: "idx_install_workflows_request_id",
+			Columns: []string{
+				"org_id",
+				"owner_id",
+				"type",
+				"(idempotency->>'request_id')",
+			},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
+			Option:      "WHERE deleted_at = 0 AND idempotency->>'request_id' IS NOT NULL",
 		},
 	}
 }
