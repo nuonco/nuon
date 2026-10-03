@@ -402,7 +402,8 @@ func resolveRoleARN(
 	}
 
 	roleARN, ok := availableRoles[renderedRoleName]
-	if !ok {
+	// A role that is disabled in the install stack reports an empty ID.
+	if !ok || roleARN == "" {
 		return "", fmt.Errorf("role %s not found in install stack outputs, please enable it in install stack", renderedRoleName)
 	}
 

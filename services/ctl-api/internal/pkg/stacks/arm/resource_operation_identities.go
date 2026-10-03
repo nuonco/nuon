@@ -22,6 +22,10 @@ type azureOperationIdentity struct {
 	kind         string
 	actions      []string
 	builtInRoles []string
+	displayName  string
+	description  string
+	// enabledByDefault is the default of the role's enable parameter in the stack.
+	enabledByDefault bool
 }
 
 func sanitizeAzureIdentitySuffix(name string) string {
@@ -59,11 +63,14 @@ func azureOperationIdentities(appCfg *app.AppConfig) []azureOperationIdentity {
 		}
 		actions, builtIn := flattenAzurePolicies(role.Policies)
 		ids = append(ids, azureOperationIdentity{
-			roleName:     role.Name,
-			suffix:       suffix,
-			kind:         kind,
-			actions:      actions,
-			builtInRoles: builtIn,
+			roleName:         role.Name,
+			suffix:           suffix,
+			kind:             kind,
+			actions:          actions,
+			builtInRoles:     builtIn,
+			displayName:      role.DisplayName,
+			description:      role.Description,
+			enabledByDefault: resolveAzureEnabledInStack(role, true),
 		})
 	}
 
@@ -73,15 +80,93 @@ func azureOperationIdentities(appCfg *app.AppConfig) []azureOperationIdentity {
 		}
 		actions, builtIn := flattenAzurePolicies(role.Policies)
 		ids = append(ids, azureOperationIdentity{
-			roleName:     role.Name,
-			suffix:       "bg-" + sanitizeAzureIdentitySuffix(role.Name),
-			kind:         "breakglass",
-			actions:      actions,
-			builtInRoles: builtIn,
+			roleName:         role.Name,
+			suffix:           "bg-" + sanitizeAzureIdentitySuffix(role.Name),
+			kind:             "breakglass",
+			actions:          actions,
+			builtInRoles:     builtIn,
+			displayName:      role.DisplayName,
+			description:      role.Description,
+			enabledByDefault: resolveAzureEnabledInStack(role, false),
 		})
 	}
 
 	return ids
+}
+
+// resolveAzureEnabledInStack mirrors the CloudFormation default: standard roles are
+// on unless the app opts out, break-glass roles are off unless it opts in.
+func resolveAzureEnabledInStack(role app.AppAWSIAMRoleConfig, fallback bool) bool {
+	if role.EnabledInStack.Valid {
+		return role.EnabledInStack.Bool
+	}
+	return fallback
+}
+
+// azureRoleEnableParamName is the bool stack parameter that gates every resource for
+// one role, so a customer can opt out of it at deploy time.
+func azureRoleEnableParamName(id azureOperationIdentity) string {
+	token := strings.ReplaceAll(azureRoleDeploymentToken(id), "-", "")
+	return "enable" + strings.ToUpper(token[:1]) + token[1:] + "Role"
+}
+
+func azureRoleEnabledRef(id azureOperationIdentity) string {
+	return fmt.Sprintf("parameters('%s')", azureRoleEnableParamName(id))
+}
+
+func azureRoleCondition(id azureOperationIdentity) string {
+	return "[" + azureRoleEnabledRef(id) + "]"
+}
+
+// ifRoleEnabled guards an expression that reads one of the role's resources. ARM only
+// evaluates the branch that is taken, so a disabled role's reference() is never resolved.
+func ifRoleEnabled(id azureOperationIdentity, expr, otherwise string) string {
+	inner := strings.TrimSuffix(strings.TrimPrefix(expr, "["), "]")
+	return fmt.Sprintf("[if(%s, %s, %s)]", azureRoleEnabledRef(id), inner, otherwise)
+}
+
+func azureRoleEnableParameters(ids []azureOperationIdentity) map[string]ARMParameter {
+	params := make(map[string]ARMParameter, len(ids))
+	for _, id := range ids {
+		label := id.displayName
+		if label == "" {
+			label = id.roleName
+		}
+		description := fmt.Sprintf("Create the %s role.", label)
+		if id.description != "" {
+			description = fmt.Sprintf("Create the %s role: %s", label, id.description)
+		}
+		params[azureRoleEnableParamName(id)] = ARMParameter{
+			Type:         "bool",
+			DefaultValue: id.enabledByDefault,
+			Metadata:     &ARMParameterMetadata{Description: description},
+		}
+	}
+	return params
+}
+
+// azureRoleEnableLabels labels each role's checkbox in the quick-link form; the
+// parameter name alone carries a hash for custom and break-glass roles.
+func azureRoleEnableLabels(ids []azureOperationIdentity) map[string]string {
+	labels := make(map[string]string, len(ids))
+	for _, id := range ids {
+		label := id.displayName
+		if label == "" {
+			label = id.roleName
+		}
+		labels[azureRoleEnableParamName(id)] = fmt.Sprintf("Enable %s role", label)
+	}
+	return labels
+}
+
+// azureRoleEnableNestedParams threads the enable parameters into a wrapper that uses
+// inner expression evaluation, where the root's parameters are not visible.
+func azureRoleEnableNestedParams(ids []azureOperationIdentity) map[string]nestedParam {
+	params := make(map[string]nestedParam, len(ids))
+	for _, id := range ids {
+		params[azureRoleEnableParamName(id)] = nestedParam{typ: "bool", value: azureRoleCondition(id)}
+	}
+	return params
 }
 
 func flattenAzurePolicies(policies []app.AppAWSIAMPolicyConfig) (actions []string, builtInRoles []string) {
@@ -161,11 +246,11 @@ func identityWrapperOutputs(ids []azureOperationIdentity) map[string]any {
 	for _, id := range ids {
 		outputs[azureIdentityOutputKey(id, "PrincipalId")] = map[string]any{
 			"type":  "string",
-			"value": uamiPrincipalIDExpr(id.suffix, inner),
+			"value": ifRoleEnabled(id, uamiPrincipalIDExpr(id.suffix, inner), "''"),
 		}
 		outputs[azureIdentityOutputKey(id, "ClientId")] = map[string]any{
 			"type":  "string",
-			"value": uamiClientIDExpr(id.suffix, inner),
+			"value": ifRoleEnabled(id, uamiClientIDExpr(id.suffix, inner), "''"),
 		}
 	}
 	return outputs
@@ -191,6 +276,7 @@ func uamiNameInner(suffix string, scope armScope) string {
 func (t *Templates) uamiResource(id azureOperationIdentity, scope armScope) map[string]any {
 	return map[string]any{
 		"type":       uamiResourceType,
+		"condition":  azureRoleCondition(id),
 		"apiVersion": "2023-01-31",
 		"name":       uamiNameExpr(id.suffix, armScope{}),
 		"location":   "[parameters('location')]",
@@ -231,11 +317,15 @@ func (t *Templates) getOperationIdentityResources(ids []azureOperationIdentity, 
 		grouped = append(grouped, t.getOperationIdentityBuiltInRoleAssignments(id, inner)...)
 	}
 
-	resources := scope.wrapInInstallRG(identitiesDeploymentName, map[string]nestedParam{
+	wrapperParams := map[string]nestedParam{
 		"nuonInstallID": {typ: "string", value: scope.nuonIDRef("nuonInstallID")},
 		"location":      {typ: "string", value: scope.rootLocationRef()},
 		"commonTags":    {typ: "object", value: "[variables('commonTags')]"},
-	}, grouped, identityWrapperOutputs(ids))
+	}
+	for name, p := range azureRoleEnableNestedParams(ids) {
+		wrapperParams[name] = p
+	}
+	resources := scope.wrapInInstallRG(identitiesDeploymentName, wrapperParams, grouped, identityWrapperOutputs(ids))
 
 	// The custom role deployments target the subscription, and ARM does not allow a
 	// subscription-scoped nested deployment inside another nested deployment, so
@@ -278,6 +368,7 @@ func (t *Templates) getOperationIdentityCustomRole(id azureOperationIdentity, sc
 
 	return map[string]any{
 		"type":           "Microsoft.Resources/deployments",
+		"condition":      azureRoleCondition(id),
 		"apiVersion":     "2022-09-01",
 		"name":           roleDeploymentNameExpr(id, scope),
 		"subscriptionId": "[subscription().subscriptionId]",
@@ -290,7 +381,7 @@ func (t *Templates) getOperationIdentityCustomRole(id azureOperationIdentity, sc
 			"mode": "Incremental",
 			"parameters": map[string]any{
 				"roleName":    map[string]any{"value": fmt.Sprintf("[format('{0}-%s-role', %s)]", id.suffix, scope.nuonIDInner("nuonInstallID"))},
-				"principalID": map[string]any{"value": identityPrincipalIDExpr(id, scope)},
+				"principalID": map[string]any{"value": ifRoleEnabled(id, identityPrincipalIDExpr(id, scope), "''")},
 			},
 			"template": map[string]any{
 				"$schema":        "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
@@ -350,6 +441,7 @@ func (t *Templates) getOperationIdentityBuiltInRoleAssignments(id azureOperation
 		guid := azureBuiltInRoleGUID(role)
 		assignments = append(assignments, map[string]any{
 			"type":       "Microsoft.Authorization/roleAssignments",
+			"condition":  azureRoleCondition(id),
 			"apiVersion": "2022-04-01",
 			"name":       fmt.Sprintf("[guid(resourceGroup().id, %s, '%s')]", uamiNameInner(id.suffix, scope), guid),
 			"dependsOn":  []string{uamiResourceIDExpr(id.suffix, scope)},
@@ -393,7 +485,7 @@ func operationIdentityPhoneHomeFields(ids []azureOperationIdentity, scope armSco
 
 	for _, id := range ids {
 		envName := azureIdentityEnvName(id.suffix)
-		envVars = append(envVars, map[string]any{"name": envName, "value": identityClientIDExpr(id, scope)})
+		envVars = append(envVars, map[string]any{"name": envName, "value": ifRoleEnabled(id, identityClientIDExpr(id, scope), "''")})
 
 		switch id.kind {
 		case "provision":
@@ -453,17 +545,20 @@ func operationIdentitySetupDependencies(ids []azureOperationIdentity, scope armS
 	return deps
 }
 
-// operationIdentityAttachment returns the VMSS userAssignedIdentities map and the
-// dependencies a consumer needs. scope is the consumer's scope: the runner's inner
-// template reads at resource-group scope, while the root reads at its own.
-func operationIdentityAttachment(ids []azureOperationIdentity, scope armScope) (userAssigned map[string]any, dependsOn []string) {
+// operationIdentityAttachment returns the VMSS userAssignedIdentities value and the
+// dependencies a consumer needs. The value is an expression that only includes the
+// identities whose roles are enabled, read at the consumer's scope: the root passes it
+// into the runner deployment as a parameter. hasIdentities is false when the app
+// declares no Azure roles at all.
+func operationIdentityAttachment(ids []azureOperationIdentity, scope armScope) (userAssigned string, hasIdentities bool, dependsOn []string) {
 	if len(ids) == 0 {
-		return nil, nil
+		return "", false, nil
 	}
-	userAssigned = map[string]any{}
+	parts := []string{"createObject()"}
 	seen := map[string]bool{}
 	for _, id := range ids {
-		userAssigned[uamiResourceIDExpr(id.suffix, scope)] = map[string]any{}
+		entry := fmt.Sprintf("createObject(%s, createObject())", scope.rgResourceIDInner(uamiResourceType, uamiNameInner(id.suffix, scope)))
+		parts = append(parts, fmt.Sprintf("if(%s, %s, createObject())", azureRoleEnabledRef(id), entry))
 
 		dep := identityDependency(id, scope)
 		if seen[dep] {
@@ -472,5 +567,5 @@ func operationIdentityAttachment(ids []azureOperationIdentity, scope armScope) (
 		seen[dep] = true
 		dependsOn = append(dependsOn, dep)
 	}
-	return userAssigned, dependsOn
+	return "[union(" + strings.Join(parts, ", ") + ")]", true, dependsOn
 }
