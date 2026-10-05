@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -398,16 +399,65 @@ type UpdateFlowStepStatusesRequest struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
 func (a *Activities) PkgStatusUpdateFlowStepStatuses(ctx context.Context, req UpdateFlowStepStatusesRequest) error {
+	ids := make([]string, 0, len(req.IDs))
 	for _, id := range req.IDs {
-		if id == "" {
-			continue
+		if id != "" {
+			ids = append(ids, id)
 		}
-		if err := a.PkgStatusUpdateFlowStepStatus(ctx, UpdateStatusRequest{
-			ID:     id,
-			Status: req.Status,
-		}); err != nil {
-			return errors.Wrapf(err, "unable to update flow step %s", id)
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+
+	var steps []app.WorkflowStep
+	if err := a.db.WithContext(ctx).Where("id IN ?", ids).Find(&steps).Error; err != nil {
+		return errors.Wrap(err, "unable to load flow steps")
+	}
+	if len(steps) == 0 {
+		return errors.New("no object found to update")
+	}
+
+	createdBy, err := cctx.AccountIDFromContext(ctx)
+	if err != nil {
+		return errors.Wrap(err, "unable to get created by")
+	}
+
+	now := time.Now().Unix()
+	valueSQL := make([]string, 0, len(steps))
+	valueArgs := make([]any, 0, len(steps)*2)
+	prepared := make([]app.CompositeStatus, len(steps))
+	for i, step := range steps {
+		status := req.Status
+		status.CreatedByID = createdBy
+		status.CreatedAtTS = now
+		status = prepareCompositeStatus(step.Status, status)
+		prepared[i] = status
+
+		raw, err := json.Marshal(status)
+		if err != nil {
+			return errors.Wrapf(err, "unable to marshal status for step %s", step.ID)
 		}
+		valueSQL = append(valueSQL, "(?::text, ?::jsonb)")
+		valueArgs = append(valueArgs, step.ID, raw)
+	}
+
+	query := fmt.Sprintf(`
+UPDATE install_workflow_steps AS t
+SET status = v.status
+FROM (VALUES %s) AS v(id, status)
+WHERE t.id = v.id
+`, strings.Join(valueSQL, ", "))
+
+	res := a.db.WithContext(ctx).Exec(query, valueArgs...)
+	if res.Error != nil {
+		return errors.Wrap(res.Error, "unable to update flow steps")
+	}
+	if res.RowsAffected < 1 {
+		return errors.New("no object found to update")
+	}
+
+	for i, step := range steps {
+		a.logStepStatus(ctx, step, step.Status, prepared[i])
 	}
 	return nil
 }
