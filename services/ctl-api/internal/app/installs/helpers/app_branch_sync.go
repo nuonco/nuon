@@ -302,50 +302,55 @@ func (h *Helpers) SaveInstallConfigDiffBlob(ctx context.Context, installConfigVe
 	return nil
 }
 
-// AppBranchConfigDiff diffs the install's deployed app config against newAppConfigID, deciding the stack against the
-// active stack version.
+// AppBranchConfigDiff diffs the install's deployed app config against newAppConfigID. The stack is decided against the
+// active stack version's app config: the applied config lags while an earlier rollout is still running after its stack
+// was applied, and diffing the stack against it re-detects a change that is already live.
 func (h *Helpers) AppBranchConfigDiff(ctx context.Context, install *app.Install, newAppConfigID string) (*app.InstallConfigDiff, error) {
 	deployedAppConfigID := install.DeployedAppConfigID()
 	diff, err := configdiff.ComputeInstallConfigDiff(ctx, h.db, deployedAppConfigID, newAppConfigID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to compute config diff: %w", err)
 	}
-	if err := h.diffStackAgainstActiveStackVersion(ctx, install.ID, deployedAppConfigID, newAppConfigID, diff); err != nil {
+	if !diff.StackChanged {
+		return diff, nil
+	}
+
+	active, err := h.getActiveStackVersion(ctx, install.ID)
+	if err != nil {
 		return nil, err
 	}
-	return diff, nil
-}
-
-// diffStackAgainstActiveStackVersion re-decides the stack fields of diff against the app config of the install's active
-// stack version. The applied config lags while an earlier rollout is still running after its stack was applied, and
-// diffing the stack against it re-detects a change that is already live.
-func (h *Helpers) diffStackAgainstActiveStackVersion(ctx context.Context, installID, deployedAppConfigID, newAppConfigID string, diff *app.InstallConfigDiff) error {
-	if diff == nil || !diff.StackChanged {
-		return nil
-	}
-
-	var active app.InstallStackVersion
-	res := h.db.WithContext(ctx).
-		Where(app.InstallStackVersion{InstallID: installID}).
-		Where("status->>'status' = ?", app.InstallStackVersionStatusActive).
-		Order("created_at DESC").
-		Limit(1).
-		Find(&active)
-	if res.Error != nil {
-		return fmt.Errorf("unable to get active stack version: %w", res.Error)
-	}
-	if res.RowsAffected == 0 || active.AppConfigID == "" || active.AppConfigID == deployedAppConfigID {
-		return nil
+	if active == nil || active.AppConfigID == "" || active.AppConfigID == deployedAppConfigID {
+		return diff, nil
 	}
 
 	stackDiff, err := configdiff.ComputeInstallConfigDiff(ctx, h.db, active.AppConfigID, newAppConfigID)
 	if err != nil {
-		return fmt.Errorf("unable to compute stack diff against active stack version: %w", err)
+		return nil, fmt.Errorf("unable to compute stack diff against active stack version %s: %w", active.ID, err)
 	}
+	useStackDiff(diff, stackDiff)
+	return diff, nil
+}
+
+func (h *Helpers) getActiveStackVersion(ctx context.Context, installID string) (*app.InstallStackVersion, error) {
+	var versions []app.InstallStackVersion
+	if err := h.db.WithContext(ctx).
+		Where(app.InstallStackVersion{InstallID: installID}).
+		Where("status->>'status' = ?", app.InstallStackVersionStatusActive).
+		Order("created_at DESC").
+		Limit(1).
+		Find(&versions).Error; err != nil {
+		return nil, fmt.Errorf("unable to get active stack version: %w", err)
+	}
+	if len(versions) == 0 {
+		return nil, nil
+	}
+	return &versions[0], nil
+}
+
+func useStackDiff(diff, stackDiff *app.InstallConfigDiff) {
 	diff.StackChanged = stackDiff.StackChanged
 	diff.StackOldID = stackDiff.StackOldID
 	diff.StackNewID = stackDiff.StackNewID
 	diff.StackImpacts = stackDiff.StackImpacts
 	diff.StackImpactReasons = stackDiff.StackImpactReasons
-	return nil
 }
