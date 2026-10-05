@@ -37,6 +37,9 @@ func (s *Settings) fetch(ctx context.Context) error {
 	// container
 	s.ContainerImageTag = settings.ContainerImageTag
 	s.ContainerImageURL = settings.ContainerImageURL
+	s.ContainerImageVerificationMode = settings.ContainerImageVerificationMode
+	s.ContainerImageSignatureIssuer = settings.ContainerImageSignatureIssuer
+	s.ContainerImageSignatureIdentityRegexp = settings.ContainerImageSignatureIdentityRegexp
 
 	// NOTE: we add a few additional fields into the metadata so they appear on all tags, but can not be set by the
 	// API.
