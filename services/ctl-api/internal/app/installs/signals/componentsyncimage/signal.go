@@ -24,6 +24,7 @@ const SignalType signal.SignalType = "component-sync-image"
 
 type Signal struct {
 	InstallComponentID string
+	InstallID          string
 	DeployID           string
 	ComponentID        string
 	// BuildID is the ComponentBuild to sync. When DeployID is empty and
@@ -77,7 +78,20 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 	return nil
 }
 
+func (s *Signal) resolveInstallComponentID(ctx workflow.Context) error {
+	id, err := activities.ResolveInstallComponentID(ctx, s.InstallComponentID, s.InstallID, s.ComponentID)
+	if err != nil {
+		return errors.Wrap(err, "unable to resolve install component")
+	}
+	s.InstallComponentID = id
+	return nil
+}
+
 func (s *Signal) Validate(ctx workflow.Context) error {
+	if err := s.resolveInstallComponentID(ctx); err != nil {
+		return err
+	}
+
 	// Validate install component exists
 	_, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
 	if err != nil {
@@ -111,6 +125,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return errors.Wrap(err, "unable to create logger")
+	}
+
+	if err := s.resolveInstallComponentID(ctx); err != nil {
+		return err
 	}
 
 	install, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
