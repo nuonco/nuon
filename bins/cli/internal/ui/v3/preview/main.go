@@ -139,6 +139,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.loading = false
 		if msg.err != nil {
 			m.err = msg.err
+			// Pre-selected branch has no picker to fall back to; exit so the
+			// caller can surface the load error instead of "preview cancelled".
+			if m.opts.BranchID != "" && len(m.branches) == 0 {
+				return m, tea.Quit
+			}
 			return m, nil
 		}
 		m.data = msg.data
@@ -650,11 +655,15 @@ func App(ctx context.Context, branches []Branch, loadBranch LoadBranchFunc, opts
 		return nil, fmt.Errorf("run preview wizard: %w", err)
 	}
 	fm, ok := finalModel.(model)
-	if !ok || fm.cancelled {
+	if !ok {
 		return nil, fmt.Errorf("preview cancelled")
 	}
+	// Prefer a real wizard/load failure over a cancel that happened after it.
 	if fm.err != nil {
 		return nil, fm.err
+	}
+	if fm.cancelled {
+		return nil, fmt.Errorf("preview cancelled")
 	}
 	if fm.result.Request == nil {
 		return nil, fmt.Errorf("preview configuration incomplete")

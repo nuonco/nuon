@@ -35,16 +35,21 @@ func (s *Service) PreviewBranchRun(ctx context.Context, appID, branchID string, 
 		return view.Error(err)
 	}
 
+	branchID, err = s.validatePreviewInputs(ctx, appID, branchID, &opts)
+	if err != nil {
+		return view.Error(err)
+	}
+
 	if s.cfg.Interactive && !asJSON {
-		return s.previewBranchRunInteractive(ctx, appID, branchID, opts)
+		// wrapCmd exits on error but does not print; surface the message here.
+		if err := s.previewBranchRunInteractive(ctx, appID, branchID, opts); err != nil {
+			return view.Error(err)
+		}
+		return nil
 	}
 
 	if branchID == "" {
 		return view.Error(fmt.Errorf("app branch required: use --branch-id or run interactively"))
-	}
-	branchID, err = s.selectBranchID(ctx, appID, branchID)
-	if err != nil {
-		return view.Error(err)
 	}
 
 	configID := opts.ConfigID
@@ -100,22 +105,14 @@ func (s *Service) PreviewBranchRun(ctx context.Context, appID, branchID string, 
 }
 
 func (s *Service) previewBranchRunInteractive(ctx context.Context, appID, branchID string, opts PreviewBranchRunOptions) error {
-	if opts.PRNumber != nil && opts.GitRef != "" {
-		return fmt.Errorf("specify either --pr-number or --git-ref, not both")
-	}
 	mode, err := parsePreviewMode(opts.Mode)
 	if err != nil {
 		return err
 	}
 
+	// branchID is already validated/resolved by validatePreviewInputs when set.
 	branches := make([]previewui.Branch, 0)
-	if branchID != "" {
-		resolved, err := s.resolveAppBranchID(ctx, appID, branchID)
-		if err != nil {
-			return err
-		}
-		branchID = resolved
-	} else {
+	if branchID == "" {
 		appBranches, err := nuon.GetAllAppBranches(ctx, s.api, appID)
 		if err != nil {
 			return fmt.Errorf("unable to list app branches: %w", err)
@@ -210,10 +207,6 @@ func (s *Service) resolvePreviewRunRequest(
 		return nil, err
 	}
 
-	if opts.PRNumber != nil && opts.GitRef != "" {
-		return nil, fmt.Errorf("specify either --pr-number or --git-ref, not both")
-	}
-
 	hasPR := opts.PRNumber != nil
 	hasBranch := opts.GitRef != ""
 	sources, err := s.api.GetAppBranchPreviewSources(ctx, appID, branchID)
@@ -258,6 +251,75 @@ func (s *Service) resolvePreviewRunRequest(
 	}
 
 	return req, nil
+}
+
+// validatePreviewInputs checks independently-resolvable preview flags and returns
+// every failure together so callers can fix branch and install in one pass.
+// Branch and install accept a name or ID; both are resolved against the app
+// (org comes from API auth). Resolved IDs are written back for the trigger call.
+func (s *Service) validatePreviewInputs(ctx context.Context, appID, branchID string, opts *PreviewBranchRunOptions) (string, error) {
+	var (
+		branchErr        error
+		resolvedBranchID = branchID
+		installErr       error
+	)
+
+	if branchID != "" {
+		resolvedBranchID, branchErr = s.resolveAppBranchID(ctx, appID, branchID)
+		if branchErr != nil {
+			resolvedBranchID = ""
+		}
+	}
+	if opts.InstallID != "" && opts.Mode != "build-only" {
+		installID, err := s.resolvePreviewInstallID(ctx, appID, opts.InstallID)
+		if err != nil {
+			installErr = err
+		} else {
+			opts.InstallID = installID
+		}
+	}
+
+	return collectPreviewInputFailures(*opts, resolvedBranchID, branchErr, installErr)
+}
+
+func collectPreviewInputFailures(
+	opts PreviewBranchRunOptions,
+	resolvedBranchID string,
+	branchErr, installErr error,
+) (string, error) {
+	var failures []string
+
+	if opts.Mode != "" {
+		if _, err := parsePreviewMode(opts.Mode); err != nil {
+			failures = append(failures, err.Error())
+		}
+	}
+	if opts.PRNumber != nil && opts.GitRef != "" {
+		failures = append(failures, "specify either --pr-number or --git-ref, not both")
+	}
+	if branchErr != nil {
+		failures = append(failures, branchErr.Error())
+	}
+	if installErr != nil {
+		failures = append(failures, installErr.Error())
+	}
+
+	if len(failures) > 0 {
+		return "", &ui.CLIUserError{Msg: strings.Join(failures, "\n")}
+	}
+	return resolvedBranchID, nil
+}
+
+// resolvePreviewInstallID resolves an install name or ID to an install ID on the app.
+func (s *Service) resolvePreviewInstallID(ctx context.Context, appID, installRef string) (string, error) {
+	install, err := s.api.GetInstall(ctx, installRef)
+	if err != nil {
+		return "", fmt.Errorf("install %q not found", installRef)
+	}
+	if install.AppID != "" && install.AppID != appID {
+		return "", fmt.Errorf("install %q not found on this app", installRef)
+	}
+	return install.ID, nil
 }
 
 func (s *Service) resolvePreviewMode(ctx context.Context, flagMode, configID, appID, branchID string) (models.AppAppBranchRunPreviewMode, error) {

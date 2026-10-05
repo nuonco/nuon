@@ -2,6 +2,7 @@ package preview
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -27,6 +28,18 @@ func TestCurrentRequestPrefersPullRequest(t *testing.T) {
 	require.Equal(t, models.AppAppBranchRunPreviewSourcePr, req.Source)
 	require.Equal(t, int64(42), req.PrNumber)
 	require.Equal(t, "pr-sha", req.HeadSha)
+}
+
+func TestLoadErrorWithPreselectedBranchQuits(t *testing.T) {
+	load := func(context.Context, string) (*Data, error) {
+		return nil, fmt.Errorf("unable to load branch config: boom")
+	}
+	m := initialModel(context.Background(), nil, load, Options{BranchID: "branch-id"})
+
+	updated, cmd := m.Update(branchLoadedMsg{err: fmt.Errorf("unable to load branch config: boom")})
+	m = updated.(model)
+	require.Error(t, m.err)
+	require.NotNil(t, cmd)
 }
 
 func TestWizardUsesPreviewDefaultsAndCurrentSource(t *testing.T) {

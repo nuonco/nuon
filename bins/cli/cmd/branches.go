@@ -111,7 +111,10 @@ func (c *cli) newBranchesCmd(deprecatedAlias bool) *cobra.Command {
 		Long: `Trigger a git preview run against a pull request or branch.
 
 By default, an interactive wizard selects the app branch, preview mode, source,
-and installation. Use flags with --output json or --output agent for scripting.`,
+and installation. Use flags with --output json or --output agent for scripting.
+
+--branch-id and --install-id accept a name or ID; both are resolved against the
+selected app (org from your auth config).`,
 		Annotations: annotations(tuiAnnotation(TUIAltScreen), outputsAnnotation(OutputTable, OutputJSON, OutputAgent)),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			opts := apps.PreviewBranchRunOptions{
@@ -132,11 +135,11 @@ and installation. Use flags with --output json or --output agent for scripting.`
 		}),
 	}
 	previewCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app. Defaults to the selected app.")
-	previewCmd.Flags().StringVarP(&branchID, "branch-id", "b", "", "The ID or name of the branch")
+	previewCmd.Flags().StringVarP(&branchID, "branch-id", "b", "", "App branch ID or name (resolved against the selected app)")
 	previewCmd.Flags().IntVar(&previewPRNumber, "pr-number", 0, "Pull request number to preview")
 	previewCmd.Flags().StringVar(&previewGitRef, "git-ref", "", "Git branch to preview")
 	previewCmd.Flags().StringVar(&previewHeadSHA, "head-sha", "", "Commit SHA for the preview source")
-	previewCmd.Flags().StringVar(&previewInstallID, "install-id", "", "Install to run the preview against")
+	previewCmd.Flags().StringVar(&previewInstallID, "install-id", "", "Install ID or name (resolved against the selected app)")
 	previewCmd.Flags().StringVar(&previewMode, "mode", "", "Preview mode: plan-only, apply, or build-only")
 	previewCmd.Flags().StringVar(&previewConfigID, "config-id", "", "Branch config ID (defaults to latest)")
 	previewCmd.Flags().BoolVar(&previewForce, "force", false, "Force rebuild all components")
