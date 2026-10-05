@@ -27,7 +27,7 @@ export const WorkflowStepGroup = ({
       id={`step-group-${latest.id}`}
       interactiveHeading
       toggleLabel="Show previous attempts"
-      headerClassName="px-4 py-2"
+      headerClassName="px-4 py-2 flex-col md:flex-row"
       toggleContent={
         <Text variant="subtext" theme="neutral" nowrap>
           {prior.length} previous {prior.length === 1 ? 'attempt' : 'attempts'}

@@ -1,7 +1,6 @@
 import { DeploymentsList } from '@/components/installs/DeploymentsList'
 import { InstallWorkflowPanelController } from '@/components/workflows/InstallWorkflowPanel'
-import { PageSection } from '@/components/layout/PageSection'
-import { SectionHeader } from '@/components/layout/SectionHeader'
+import { ListPage } from '@/components/layout/ListPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
@@ -12,7 +11,7 @@ export const Deployments = () => {
   const { install } = useInstall()
 
   return (
-    <PageSection>
+    <>
       <PageTitle segments={['Deployments', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
@@ -25,12 +24,13 @@ export const Deployments = () => {
           },
         ]}
       />
-      <SectionHeader
+      <ListPage
         title="Deployments"
-        description="View all deployments applied to this install, including config changes and affected resources."
-      />
-      <DeploymentsList shouldPoll />
+        description={`Follow rollouts for ${install?.name}. View details to inspect a workflow or its changes.`}
+      >
+        <DeploymentsList shouldPoll />
+      </ListPage>
       <InstallWorkflowPanelController />
-    </PageSection>
+    </>
   )
 }

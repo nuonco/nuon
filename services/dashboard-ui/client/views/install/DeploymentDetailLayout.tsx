@@ -1,45 +1,25 @@
-import { Outlet, useParams } from 'react-router'
+import { useState } from 'react'
+import { Outlet, useLocation, useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
 import { DeploymentDetail } from '@/components/installs/DeploymentDetail'
+import { DeploymentAlerts } from '@/components/installs/DeploymentDetail/DeploymentDetailContent'
+import {
+  DEPLOYMENT_TABS,
+  deploymentTabOrder,
+} from '@/components/installs/DeploymentDetail/deployment-progress'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { WorkflowAlertBanners } from '@/components/workflows/WorkflowDetails'
 import { useInstallPage } from '@/hooks/use-install-path'
-import { useRespondedApprovals } from '@/hooks/use-responded-approvals'
 import { useWorkflow } from '@/hooks/use-workflow'
 import { getInstallDeployments } from '@/lib'
 import { WorkflowProvider } from '@/providers/workflow-provider'
-import type { TWorkflowStep } from '@/types'
 import { humanize } from '@/utils/string-utils'
-
-const awaitingApproval = (
-  step: TWorkflowStep,
-  hasResponded: (id: string) => boolean
-) => {
-  const status = step?.status?.status
-  const terminal =
-    status === 'error' ||
-    status === 'cancelled' ||
-    status === 'discarded' ||
-    status === 'approval-expired' ||
-    status === 'approval-denied'
-  return (
-    !!step?.approval?.type &&
-    step.approval.type !== 'approve-all' &&
-    step.approval.type !== 'noop' &&
-    !step.approval.response &&
-    status !== 'auto-skipped' &&
-    !terminal &&
-    !!step.id &&
-    !hasResponded(step.id)
-  )
-}
 
 const DeploymentDetailLayoutContent = () => {
   const { workflowId } = useParams()
+  const { pathname, search } = useLocation()
   const { org, install, href } = useInstallPage()
-  const { workflow, failedSteps, pendingApprovals } = useWorkflow()
-  const { hasResponded } = useRespondedApprovals()
+  const { workflow } = useWorkflow()
+  const [tabOrder] = useState(() => deploymentTabOrder(workflow.status?.status))
 
   const { data: deployment, isFetched: deploymentFetched } = useQuery({
     placeholderData: keepPreviousData,
@@ -51,7 +31,7 @@ const DeploymentDetailLayoutContent = () => {
         search: workflowId,
         limit: 20,
       })
-      return response.deployments.find((item) => item.id === workflowId)
+      return response.deployments.find((item) => item.id === workflowId) ?? null
     },
     enabled: !!org?.id && !!install?.id && !!workflowId,
   })
@@ -67,10 +47,12 @@ const DeploymentDetailLayoutContent = () => {
   const branchHref = branch
     ? `/${org?.id}/apps/${install?.app_id}/branches/${branch.id}`
     : undefined
-  const approvals = (pendingApprovals as TWorkflowStep[]).filter((step) =>
-    awaitingApproval(step, hasResponded)
+  const basePath = href(`/deployments/${workflowId}`)
+  const activeTabIndex = tabOrder.findIndex(
+    (key) =>
+      pathname ===
+      `${basePath}${DEPLOYMENT_TABS[key].path === '/' ? '' : DEPLOYMENT_TABS[key].path}`
   )
-
   return (
     <>
       <Breadcrumbs
@@ -83,23 +65,18 @@ const DeploymentDetailLayoutContent = () => {
         ]}
       />
       <DeploymentDetail
-        basePath={href(`/deployments/${workflowId}`)}
+        activeTabIndex={activeTabIndex}
+        basePath={basePath}
         branchHref={branchHref}
-        deployment={deployment}
+        deployment={deployment ?? undefined}
+        search={search}
+        tabOrder={tabOrder}
         workflow={workflow}
-        banners={
-          <>
-            <WorkflowAlertBanners
-              workflow={workflow}
-              failedSteps={failedSteps}
-            />
-            {approvals.map((step) => (
-              <ApprovalBanner key={step.id} step={step} />
-            ))}
-          </>
-        }
+        banners={<DeploymentAlerts />}
       >
-        <Outlet context={{ deployment, deploymentFetched }} />
+        <Outlet
+          context={{ deployment: deployment ?? undefined, deploymentFetched }}
+        />
       </DeploymentDetail>
     </>
   )
@@ -110,7 +87,7 @@ export const DeploymentDetailLayout = () => {
 
   return (
     <WorkflowProvider workflowId={workflowId!} shouldPoll>
-      <DeploymentDetailLayoutContent />
+      <DeploymentDetailLayoutContent key={workflowId} />
     </WorkflowProvider>
   )
 }
