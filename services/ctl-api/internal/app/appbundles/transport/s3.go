@@ -64,17 +64,26 @@ type S3Store struct {
 	now        func() time.Time
 }
 
-// NewStore returns a disabled store when no bucket is configured: portable
-// bundle publishing and downloads are opt-in per deployment and must never
-// silently fall back to the shared blob-storage bucket.
+// NewStore defaults to the control-plane blob-storage bucket when no dedicated
+// app bundle bucket is configured: that bucket is already versioned and covered
+// by the service IAM policy, so deployments need no extra setup. Explicit
+// app_bundle_storage_* settings always win, and the store stays disabled when
+// blob storage is not S3 (the bundle transport is S3-only).
 func NewStore(params S3Params) (Store, error) {
-	if params.Config == nil {
+	cfg := params.Config
+	if cfg == nil {
 		return nil, errors.New("app bundle storage config is required")
 	}
-	if strings.TrimSpace(params.Config.AppBundleStorageBucket) == "" {
+	if strings.TrimSpace(cfg.AppBundleStorageBucket) == "" && cfg.BlobStorageProvider == "s3" && strings.TrimSpace(cfg.BlobStorageBucket) != "" {
+		effective := *cfg
+		effective.AppBundleStorageBucket = cfg.BlobStorageBucket
+		effective.AppBundleStorageRegion = cfg.BlobStorageRegion
+		cfg = &effective
+	}
+	if strings.TrimSpace(cfg.AppBundleStorageBucket) == "" {
 		return NewDisabled(), nil
 	}
-	return NewS3(params)
+	return NewS3(S3Params{Config: cfg})
 }
 
 func NewS3(params S3Params) (*S3Store, error) {
@@ -91,7 +100,11 @@ func NewS3(params S3Params) (*S3Store, error) {
 	if strings.TrimSpace(bucket) == "" || strings.TrimSpace(region) == "" {
 		return nil, errors.New("app bundle storage bucket and region are required")
 	}
-	if cfg.AppBundleGrantTTL <= 0 || cfg.AppBundleGrantTTL > 7*24*time.Hour {
+	ttl := cfg.AppBundleGrantTTL
+	if ttl <= 0 {
+		ttl = 15 * time.Minute
+	}
+	if ttl > 7*24*time.Hour {
 		return nil, errors.New("portable bundle grant TTL must be positive and no greater than seven days")
 	}
 	if endpoint := cfg.AppBundleStorageEndpoint; endpoint != "" {
@@ -110,7 +123,7 @@ func NewS3(params S3Params) (*S3Store, error) {
 			options.BaseEndpoint = &cfg.AppBundleStorageEndpoint
 		}
 	})
-	store := newS3Store(bucket, region, prefix, cfg.AppBundleGrantTTL, manager.NewUploader(client), client, client, s3.NewPresignClient(client))
+	store := newS3Store(bucket, region, prefix, ttl, manager.NewUploader(client), client, client, s3.NewPresignClient(client))
 	store.delete = client
 	return store, nil
 }

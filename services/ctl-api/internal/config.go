@@ -571,8 +571,10 @@ type Config struct {
 	BlobStorageBucket string `config:"blob_storage_bucket" validate:"required"`
 	BlobStorageRegion string `config:"blob_storage_region" validate:"required"`
 
-	// AppBundleStorageBucket enables app bundle publishing/downloads per deployment;
-	// an empty value disables bundle routes with an explicit not-configured error.
+	// AppBundleStorage overrides where app bundle archives are stored. When
+	// AppBundleStorageBucket is empty (and blob storage is S3), bundles reuse
+	// the versioned blob bucket under the app_bundles/ prefix; set these to
+	// use a dedicated bucket instead.
 	AppBundleStorageBucket         string        `config:"app_bundle_storage_bucket"`
 	AppBundleStorageRegion         string        `config:"app_bundle_storage_region"`
 	AppBundleStorageEndpoint       string        `config:"app_bundle_storage_endpoint"`
