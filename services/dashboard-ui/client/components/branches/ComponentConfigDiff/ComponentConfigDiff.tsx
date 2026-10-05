@@ -285,11 +285,11 @@ export const SourceFilesPanel = ({
   const changed = files.filter(({ change }) => change !== 'unchanged')
 
   useEffect(() => {
-    if (!files.length) return
-    if (!files.some(({ path }) => path === selectedPath)) {
-      setSelectedPath(changed[0]?.path ?? files[0].path)
+    if (!changed.length) return
+    if (!changed.some(({ path }) => path === selectedPath)) {
+      setSelectedPath(changed[0].path)
     }
-  }, [changed, files, selectedPath])
+  }, [changed, selectedPath])
 
   useEffect(() => {
     if (selectedPath) onSelectPath?.(selectedPath)
@@ -324,17 +324,17 @@ export const SourceFilesPanel = ({
           </Badge>
         </div>
       </div>
-      {files.length ? (
+      {changed.length ? (
         <div
           ref={panelRef}
           className={cn(
             'flex flex-col overflow-hidden border rounded-md @3xl:flex-row',
-            files.length > 5 ? 'min-h-144' : 'min-h-96'
+            changed.length > 5 ? 'min-h-144' : 'min-h-96'
           )}
         >
           <div className="border-b p-3 @3xl:w-2/5 @3xl:border-b-0 @3xl:border-r">
             <ComponentSourceTree
-              files={files}
+              files={changed}
               onSelect={setSelectedPath}
               selectedPath={selectedPath}
               focus={focus}
@@ -358,7 +358,11 @@ export const SourceFilesPanel = ({
           </div>
         </div>
       ) : (
-        <Text theme="neutral">This component references no files.</Text>
+        <Text theme="neutral">
+          {files.length
+            ? 'No changed files in this component.'
+            : 'This component references no files.'}
+        </Text>
       )}
     </div>
   )
