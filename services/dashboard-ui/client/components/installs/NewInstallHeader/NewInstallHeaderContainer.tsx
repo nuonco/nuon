@@ -9,7 +9,9 @@ import { useCurrentAppBranchRun } from '@/hooks/use-current-app-branch-run'
 import { useInstallHref } from '@/hooks/use-install-path'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getBranchWorkflowRuns } from '@/lib'
+import { getAppBranch, getBranchWorkflowRuns } from '@/lib'
+import { latestBranchConfig } from '@/utils/branch-utils'
+import { vcsRepo } from '@/utils/vcs-urls'
 import { NewInstallHeader } from './NewInstallHeader'
 
 export const NewInstallHeaderContainer = () => {
@@ -20,6 +22,18 @@ export const NewInstallHeaderContainer = () => {
   const openSettings = useOpenInstallSettings()
 
   const branchId = install?.app_branch?.id
+
+  const { data: branch } = useQuery({
+    queryKey: ['install-header-branch', org?.id, install?.app_id, branchId],
+    queryFn: () =>
+      getAppBranch({
+        orgId: org!.id,
+        appId: install!.app_id!,
+        branchId: branchId!,
+        latestConfig: true,
+      }),
+    enabled: !!org?.id && !!install?.app_id && !!branchId,
+  })
 
   const { data: branchRuns, isLoading: isLoadingBranchRuns } = useQuery({
     queryKey: ['install-header-branch-run', org?.id, install?.app_id, branchId],
@@ -43,6 +57,9 @@ export const NewInstallHeaderContainer = () => {
   const branchRun = branchRuns?.data?.[0]?.app_branch_runs?.at(0)
   const run = appliedRun ?? branchRun
   const commit = run?.vcs_connection_commit
+  const repo =
+    vcsRepo(run?.app_branch_config) ??
+    (branch ? vcsRepo(latestBranchConfig(branch)) : undefined)
   const runBranchId = run?.app_branch?.id ?? branchId
   const runHref =
     org?.id && install.app_id && runBranchId && run?.id
@@ -63,6 +80,7 @@ export const NewInstallHeaderContainer = () => {
             author={commit?.author_name}
             avatarUrl={commit?.author_avatar_url}
             sha={commit?.sha ?? run.head_sha}
+            repo={repo}
             createdAt={run.created_at}
             showStatus={false}
           />
