@@ -193,7 +193,7 @@ describe('workflow-utils', () => {
       const badge = getStepBadge(step)
       expect(badge).toEqual({
         children: 'Plan denied',
-        theme: 'warn',
+        theme: 'neutral',
       })
     })
 
