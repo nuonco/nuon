@@ -2,6 +2,8 @@ package cloudformation
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 
 	"github.com/awslabs/goformation/v7/cloudformation/tags"
 )
@@ -53,10 +55,10 @@ func (t tagBuilder) apply(existing []tags.Tag, name string) []tags.Tag {
 	}
 
 	ret := []tags.Tag{}
-	for k, v := range existingMap {
+	for _, k := range slices.Sorted(maps.Keys(existingMap)) {
 		ret = append(ret, tags.Tag{
 			Key:   k,
-			Value: v,
+			Value: existingMap[k],
 		})
 	}
 

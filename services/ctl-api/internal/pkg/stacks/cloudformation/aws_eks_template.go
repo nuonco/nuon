@@ -2,11 +2,11 @@ package cloudformation
 
 import (
 	"maps"
+	"slices"
 
 	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/iancoleman/strcase"
 
-	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
@@ -150,13 +150,13 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 			"Label": map[string]any{
 				"default": "Runner Configuration",
 			},
-			"Parameters": pkggenerics.MapToKeys(runnerParams),
+			"Parameters": slices.Sorted(maps.Keys(runnerParams)),
 		},
 		{
 			"Label": map[string]any{
 				"default": "VPC Configuration",
 			},
-			"Parameters": pkggenerics.MapToKeys(vpcParams),
+			"Parameters": slices.Sorted(maps.Keys(vpcParams)),
 		},
 	}
 	if len(inp.AppCfg.SecretsConfig.Secrets) > 0 {
@@ -164,24 +164,24 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 			"Label": map[string]any{
 				"default": "Application Secrets",
 			},
-			"Parameters": pkggenerics.MapToKeys(t.getSecretsParameters(inp)),
+			"Parameters": slices.Sorted(maps.Keys(t.getSecretsParameters(inp))),
 		})
 	}
 	paramGroups = append(paramGroups, map[string]any{
 		"Label": map[string]any{
 			"default": "Access Permissions",
 		},
-		"Parameters": pkggenerics.MapToKeys(t.getRolesParameters(inp)),
+		"Parameters": slices.Sorted(maps.Keys(t.getRolesParameters(inp))),
 	})
 	pgs = append(pgs, paramGroups...)
 
 	// add app input parameter group if there are any install_stack sourced inputs
-	for groupName, installGroupParameters := range installGroupParameters {
+	for _, groupName := range slices.Sorted(maps.Keys(installGroupParameters)) {
 		pgs = append(pgs, map[string]any{
 			"Label": map[string]any{
 				"default": "Install Inputs: " + strcase.ToCamel(groupName),
 			},
-			"Parameters": pkggenerics.MapToKeys(installGroupParameters),
+			"Parameters": slices.Sorted(maps.Keys(installGroupParameters[groupName])),
 		})
 	}
 

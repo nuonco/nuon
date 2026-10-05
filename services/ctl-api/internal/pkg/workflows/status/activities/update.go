@@ -288,29 +288,18 @@ func (a *Activities) syncInstallActualAppConfigFromFlow(ctx context.Context, flw
 		return
 	}
 
-	var unapplied int64
+	var steps []app.WorkflowStep
 	if err := a.db.WithContext(ctx).
-		Model(&app.WorkflowStep{}).
+		Select("id", "idx", "group_idx", "workflow_step_group_id", "status", "retried").
 		Where(app.WorkflowStep{InstallWorkflowID: flw.ID}).
-		Where("((status->>'status' IN ?) OR (status->>'status' = ? AND retried = ?))",
-			[]string{
-				string(app.StatusError),
-				string(app.StatusUserSkipped),
-				string(app.StatusCancelled),
-				string(app.StatusNotAttempted),
-				string(app.WorkflowStepApprovalStatusApprovalDenied),
-				string(app.WorkflowStepApprovalStatusApprovalExpired),
-			},
-			string(app.StatusDiscarded), false,
-		).
-		Count(&unapplied).Error; err != nil {
+		Find(&steps).Error; err != nil {
 		a.l.Warn("unable to check workflow steps for install actual app config",
 			zap.String("workflow_id", flw.ID),
 			zap.Error(err),
 		)
 		return
 	}
-	if unapplied > 0 {
+	if hasUnappliedStep(steps) {
 		return
 	}
 
@@ -332,6 +321,47 @@ func (a *Activities) syncInstallActualAppConfigFromFlow(ctx context.Context, flw
 			zap.Error(err),
 		)
 	}
+}
+
+var unappliedStepStatuses = map[app.Status]bool{
+	app.StatusError:        true,
+	app.StatusUserSkipped:  true,
+	app.StatusCancelled:    true,
+	app.StatusNotAttempted: true,
+	app.Status(app.WorkflowStepApprovalStatusApprovalDenied):  true,
+	app.Status(app.WorkflowStepApprovalStatusApprovalExpired): true,
+}
+
+// hasUnappliedStep reports whether any step kept the workflow from applying its config. A step discarded because an
+// earlier step in its group auto-skipped (a no-op plan) changed nothing, so it does not count.
+func hasUnappliedStep(steps []app.WorkflowStep) bool {
+	for _, step := range steps {
+		if unappliedStepStatuses[step.Status.Status] {
+			return true
+		}
+		if step.Status.Status == app.StatusDiscarded && !step.Retried && !followsAutoSkip(steps, step) {
+			return true
+		}
+	}
+	return false
+}
+
+func followsAutoSkip(steps []app.WorkflowStep, discarded app.WorkflowStep) bool {
+	for _, step := range steps {
+		if step.Idx >= discarded.Idx || step.Status.Status != app.StatusAutoSkipped {
+			continue
+		}
+		if discarded.WorkflowStepGroupID != "" {
+			if step.WorkflowStepGroupID == discarded.WorkflowStepGroupID {
+				return true
+			}
+			continue
+		}
+		if step.GroupIdx == discarded.GroupIdx {
+			return true
+		}
+	}
+	return false
 }
 
 // @temporal-gen-v2 activity
