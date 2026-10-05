@@ -16,6 +16,7 @@ import (
 
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content/memory"
@@ -64,8 +65,10 @@ func (a *Activities) PublishBundle(ctx context.Context, req *PublishBundleReques
 		return fmt.Errorf("load app bundle: %w", err)
 	}
 	if published.ManifestDigest != "" && published.OCIRootDigest != "" && published.TransportChecksum != "" && published.VerifiedAt != nil {
+		a.l.Info("app bundle already published and verified; nothing to do", zap.String("bundle_id", published.ID))
 		return a.db.WithContext(ctx).Model(&app.AppBundle{ID: published.ID}).Updates(app.AppBundle{Status: app.AppBundleStatusActive, StatusDescription: "bundle published and verified"}).Error
 	}
+	a.l.Info("publishing app bundle", zap.String("bundle_id", published.ID), zap.String("app_id", published.AppID), zap.String("app_config_id", published.AppConfigID), zap.String("target_platform", published.TargetPlatform))
 	cfg, err := a.appsHelpers.GetAppBundleAppConfig(ctx, published.OrgID, published.AppID, published.AppConfigID)
 	if err != nil {
 		return err
@@ -74,11 +77,12 @@ func (a *Activities) PublishBundle(ctx context.Context, req *PublishBundleReques
 	if !report.Qualified {
 		return fmt.Errorf("app config does not qualify for bundle export")
 	}
-	envelope, err := appbundles.CompilePlanEnvelope(ctx, a.db, a.v, published.OrgID, published.AppID, cfg, published.SandboxBuildID, published.ComponentBuildIDs, published.Runbooks, &report)
+	a.l.Info("app bundle qualification passed; compiling plan envelope", zap.String("bundle_id", published.ID))
+	envelope, err := appbundles.CompilePlanEnvelope(ctx, a.db, a.v, a.l, published.OrgID, published.AppID, cfg, published.SandboxBuildID, published.ComponentBuildIDs, published.Runbooks, &report)
 	if err != nil {
 		return fmt.Errorf("compile plan envelope: %w", err)
 	}
-	logical, roots, provenance, err := a.bundleInputs(ctx, &published, cfg)
+	logical, roots, provenance, err := a.bundleInputs(ctx, &published, cfg, &report)
 	if err != nil {
 		return err
 	}
@@ -123,6 +127,7 @@ func (a *Activities) PublishBundle(ctx context.Context, req *PublishBundleReques
 	if err != nil {
 		return err
 	}
+	a.l.Info("app bundle archive generated", zap.String("bundle_id", published.ID), zap.Int64("size_bytes", stat.Size()))
 	indexDigest := digest.FromBytes(result.Index)
 	if a.store.Configured() {
 		if err := a.store.PublishBlob(ctx, published.OrgID, indexDigest.Encoded(), result.Index); err != nil {
@@ -143,6 +148,7 @@ func (a *Activities) PublishBundle(ctx context.Context, req *PublishBundleReques
 	if err := a.db.WithContext(ctx).Model(&app.AppBundle{ID: published.ID}).Updates(updates).Error; err != nil {
 		return err
 	}
+	a.l.Info("app bundle published and verified", zap.String("bundle_id", published.ID), zap.String("manifest_digest", result.ManifestDescriptor.Digest.String()), zap.String("transport_checksum", result.TransportSHA256), zap.Int64("size_bytes", stat.Size()))
 	return nil
 }
 
@@ -165,7 +171,7 @@ func (a *Activities) bundlePins(ctx context.Context, bundleRow *app.AppBundle, c
 	return pins, nil
 }
 
-func (a *Activities) bundleInputs(ctx context.Context, bundleRow *app.AppBundle, cfg *app.AppConfig) (bundle.LogicalManifest, []bundle.Root, map[string]any, error) {
+func (a *Activities) bundleInputs(ctx context.Context, bundleRow *app.AppBundle, cfg *app.AppConfig, report *appbundles.QualificationReport) (bundle.LogicalManifest, []bundle.Root, map[string]any, error) {
 	target, err := bundleTarget(bundleRow.TargetPlatform)
 	if err != nil {
 		return bundle.LogicalManifest{}, nil, nil, err
@@ -187,8 +193,9 @@ func (a *Activities) bundleInputs(ctx context.Context, bundleRow *app.AppBundle,
 		if buildID == "" {
 			return logical, nil, nil, fmt.Errorf("bundle has no pinned build for component %s", connection.ComponentName)
 		}
-		var build app.ComponentBuild
-		if err := a.db.WithContext(ctx).Where(app.ComponentBuild{ID: buildID, OrgID: bundleRow.OrgID, ComponentConfigConnectionID: connection.ID}).First(&build).Error; err != nil {
+		var build *app.ComponentBuild
+		build, err := appbundles.LoadPinnedComponentBuild(ctx, a.db, bundleRow.OrgID, buildID, connection)
+		if err != nil {
 			return logical, nil, nil, fmt.Errorf("load pinned build %s for component %s: %w", buildID, connection.ComponentName, err)
 		}
 		desc, err := repo.Resolve(ctx, build.ID)
@@ -307,9 +314,12 @@ func (a *Activities) bundleInputs(ctx context.Context, bundleRow *app.AppBundle,
 		logical.StackAssets = append(logical.StackAssets, bundle.StackAsset{Role: asset.role, SourceURL: asset.source, Digest: desc.Digest.String(), MediaType: desc.MediaType, Size: desc.Size})
 		roots = append(roots, bundle.Root{Descriptor: desc, Source: store})
 	}
-	rootTemplate, rootTemplateSource, err := a.rootTemplateInputs(ctx, bundleRow.OrgID, "", appbundles.VirtualInstallID(bundleRow.AppID), cfg, bundleRow.Runtime.RunnerImageTag)
+	rootTemplate, rootTemplateSource, findings, err := a.rootTemplateInputs(ctx, appbundles.VirtualInstallID(bundleRow.AppID), cfg, bundleRow.Runtime.RunnerImageTag)
 	if err != nil {
 		return logical, nil, nil, err
+	}
+	if report != nil {
+		report.Warnings = append(report.Warnings, findings...)
 	}
 	rootStore, rootDesc, err := packedArtifact(ctx, "application/vnd.nuon.app_bundle.stack.v1", stackAssetJSONMediaType, rootTemplate)
 	if err != nil {
@@ -319,14 +329,6 @@ func (a *Activities) bundleInputs(ctx context.Context, bundleRow *app.AppBundle,
 	roots = append(roots, bundle.Root{Descriptor: rootDesc, Source: rootStore})
 	platformRuntime, ok := bundleRow.Runtime.Platforms[bundleRow.TargetPlatform]
 	if ok {
-		if platformRuntime.PortalBinaryURL != "" {
-			portalRoot, portalAsset, err := a.portalInputs(ctx, platformRuntime.PortalBinaryURL)
-			if err != nil {
-				return logical, nil, nil, err
-			}
-			logical.StackAssets = append(logical.StackAssets, portalAsset)
-			roots = append(roots, portalRoot)
-		}
 		if platformRuntime.RunnerBinaryURL != "" {
 			runnerRoots, runner, err := a.runnerInputs(ctx, logical.Target, bundleRow.Runtime, platformRuntime.RunnerBinaryURL)
 			if err != nil {
@@ -343,20 +345,10 @@ func targetPlatformKey(platform string) string {
 	return platform
 }
 
-func (a *Activities) portalInputs(ctx context.Context, sourceURL string) (bundle.Root, bundle.StackAsset, error) {
-	data, err := fetchBinary(ctx, sourceURL)
-	if err != nil {
-		return bundle.Root{}, bundle.StackAsset{}, fmt.Errorf("fetch portal binary: %w", err)
-	}
-	store, desc, err := packedArtifact(ctx, "application/vnd.nuon.app_bundle.portal-binary.v1", bundle.RunnerBinaryMediaType, data)
-	if err != nil {
-		return bundle.Root{}, bundle.StackAsset{}, err
-	}
-	asset := bundle.StackAsset{Role: "portal_binary", SourceURL: sourceURL, Digest: desc.Digest.String(), MediaType: desc.MediaType, Size: desc.Size}
-	return bundle.Root{Descriptor: desc, Source: store}, asset, nil
-}
-
 func (a *Activities) runnerInputs(ctx context.Context, target bundle.Target, runtime app.AppBundleRuntime, runnerBinaryURL string) ([]bundle.Root, *bundle.Runner, error) {
+	if _, err := validateStackAssetURL(runnerBinaryURL, a.cfg.AWSCloudFormationStackTemplateBaseURL); err != nil {
+		return nil, nil, fmt.Errorf("runner binary URL: %w", err)
+	}
 	data, err := fetchBinary(ctx, runnerBinaryURL)
 	if err != nil {
 		return nil, nil, fmt.Errorf("fetch runner binary: %w", err)
@@ -472,14 +464,7 @@ func fetchBinary(ctx context.Context, source string) ([]byte, error) {
 		return nil, err
 	}
 	switch u.Scheme {
-	case "file":
-		f, err := os.Open(u.Path)
-		if err != nil {
-			return nil, err
-		}
-		defer f.Close()
-		return readAtMost(f, maxBinaryAsset)
-	case "https", "http":
+	case "https":
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, source, nil)
 		if err != nil {
 			return nil, err

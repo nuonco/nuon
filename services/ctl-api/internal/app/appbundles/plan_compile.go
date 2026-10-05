@@ -29,13 +29,13 @@ import (
 const compilePlanEnvelopeSource = "ctl-api app_bundle compile"
 
 var (
-	stackOutputReference          = regexp.MustCompile(`\.nuon\.install_stack\.outputs\.([A-Za-z0-9_-]+)`)
+	stackOutputReference          = regexp.MustCompile(`\.nuon\.install_stack\.outputs\.([A-Za-z0-9_.-]+)`)
 	sandboxOutputReference        = regexp.MustCompile(`\.nuon\.sandbox\.outputs\.([A-Za-z0-9_.-]+)`)
 	installSandboxOutputReference = regexp.MustCompile(`\.nuon\.install\.sandbox\.outputs\.([A-Za-z0-9_.-]+)`)
 	componentOutputRef            = regexp.MustCompile(`\.nuon\.components\.([A-Za-z0-9_-]+)\.outputs\.([A-Za-z0-9_.-]+)`)
 )
 
-func CompilePlanEnvelope(ctx context.Context, db *gorm.DB, v *validator.Validate, orgID, appID string, cfg *app.AppConfig, sandboxBuildID string, componentBuildIDs map[string]string, runbooks []appbundle.RunbookTemplate, report *QualificationReport) (*appbundle.Envelope, error) {
+func CompilePlanEnvelope(ctx context.Context, db *gorm.DB, v *validator.Validate, l *zap.Logger, orgID, appID string, cfg *app.AppConfig, sandboxBuildID string, componentBuildIDs map[string]string, runbooks []appbundle.RunbookTemplate, report *QualificationReport) (*appbundle.Envelope, error) {
 	if cfg == nil {
 		return nil, fmt.Errorf("app config is required")
 	}
@@ -78,7 +78,7 @@ func CompilePlanEnvelope(ctx context.Context, db *gorm.DB, v *validator.Validate
 	stack := compileStack(cfg, installID)
 	role := compileRoleSelection(cfg, stack)
 	planner := planpkg.NewPlanner(v)
-	logger := zap.NewNop()
+	logger := l
 
 	sandboxBuild, err := LoadPinnedSandboxBuild(ctx, db, orgID, appID, sandboxBuildID)
 	if err != nil {
@@ -126,7 +126,7 @@ func CompilePlanEnvelope(ctx context.Context, db *gorm.DB, v *validator.Validate
 		if buildID == "" {
 			return nil, fmt.Errorf("component config connection %s has no pinned build", connection.ID)
 		}
-		build, err := compileComponentBuild(ctx, db, orgID, buildID, connection)
+		build, err := LoadPinnedComponentBuild(ctx, db, orgID, buildID, connection)
 		if err != nil {
 			return nil, err
 		}
@@ -312,7 +312,15 @@ func compileState(orgID, appID, installID string, raw []byte, inputs []appbundle
 		stackOutputs[key] = "__NUON_CUSTOMER_MANAGED_STACK_" + key + "__"
 	}
 	for _, key := range uniqueMatches(stackOutputReference, raw) {
-		stackOutputs[key] = "__NUON_CUSTOMER_MANAGED_STACK_" + key + "__"
+		path := strings.Trim(key, ".")
+		token := "__NUON_CUSTOMER_MANAGED_STACK_" + strings.ReplaceAll(path, ".", "_") + "__"
+		if !strings.Contains(path, ".") {
+			stackOutputs[path] = token
+			continue
+		}
+		if err := seedPlaceholderPath(stackOutputs, path, token); err != nil {
+			return nil, nil, fmt.Errorf("stack output references: %w", err)
+		}
 	}
 	sandboxPaths := map[string]bool{}
 	for _, path := range uniqueMatches(sandboxOutputReference, raw) {
@@ -485,13 +493,19 @@ func compileConnections(ctx context.Context, db *gorm.DB, cfg *app.AppConfig) ([
 	return connections, nil
 }
 
-func compileComponentBuild(ctx context.Context, db *gorm.DB, orgID, id string, connection app.ComponentConfigConnection) (*app.ComponentBuild, error) {
+func LoadPinnedComponentBuild(ctx context.Context, db *gorm.DB, orgID, id string, connection app.ComponentConfigConnection) (*app.ComponentBuild, error) {
 	var build app.ComponentBuild
 	if err := db.WithContext(ctx).Where(app.ComponentBuild{ID: id, OrgID: orgID}).First(&build).Error; err != nil {
 		return nil, fmt.Errorf("load pinned component build %s: %w", id, err)
 	}
 	if build.ComponentConfigConnectionID != connection.ID {
-		return nil, fmt.Errorf("pinned build %s belongs to component config connection %s, not %s", id, build.ComponentConfigConnectionID, connection.ID)
+		var buildConnection app.ComponentConfigConnection
+		if err := db.WithContext(ctx).Where(app.ComponentConfigConnection{ID: build.ComponentConfigConnectionID, OrgID: orgID}).First(&buildConnection).Error; err != nil {
+			return nil, fmt.Errorf("load pinned build %s connection %s: %w", id, build.ComponentConfigConnectionID, err)
+		}
+		if buildConnection.ComponentID != connection.ComponentID {
+			return nil, fmt.Errorf("pinned build %s belongs to component %s, not %s", id, buildConnection.ComponentID, connection.ComponentID)
+		}
 	}
 	build.ComponentConfigConnection = connection
 	return &build, nil

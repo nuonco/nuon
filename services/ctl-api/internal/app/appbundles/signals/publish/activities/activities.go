@@ -3,6 +3,7 @@ package activities
 import (
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
@@ -18,6 +19,7 @@ type Params struct {
 	Store       transport.Store
 	Config      *internal.Config
 	AppsHelpers *appshelpers.Helpers
+	L           *zap.Logger
 }
 
 type Activities struct {
@@ -26,8 +28,9 @@ type Activities struct {
 	store       transport.Store
 	cfg         *internal.Config
 	appsHelpers *appshelpers.Helpers
+	l           *zap.Logger
 }
 
 func New(params Params) *Activities {
-	return &Activities{db: params.DB, v: params.V, store: params.Store, cfg: params.Config, appsHelpers: params.AppsHelpers}
+	return &Activities{db: params.DB, v: params.V, store: params.Store, cfg: params.Config, appsHelpers: params.AppsHelpers, l: params.L}
 }

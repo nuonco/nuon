@@ -19,3 +19,12 @@ func ComponentOutputPlaceholder(componentName, outputPath string) string {
 	sanitized := strings.NewReplacer(".", "_", "-", "_").Replace(componentName + "_" + outputPath)
 	return componentOutputPlaceholderPrefix + sanitized + "_" + hex.EncodeToString(sum[:])[:8] + "__"
 }
+
+// ParseInputPlaceholder returns the input name encoded by an exact
+// InputPlaceholder token, and whether value is one.
+func ParseInputPlaceholder(value string) (string, bool) {
+	if len(value) < len(InputPlaceholderPrefix)+3 || !strings.HasPrefix(value, InputPlaceholderPrefix) || !strings.HasSuffix(value, "__") {
+		return "", false
+	}
+	return strings.TrimSuffix(strings.TrimPrefix(value, InputPlaceholderPrefix), "__"), true
+}

@@ -17,7 +17,10 @@ func (h *Helpers) GetAppBundleAppConfig(ctx context.Context, orgID, appID, appCo
 		Where(app.AppConfig{ID: appConfigID, OrgID: orgID, AppID: appID}).
 		Scopes(
 			PreloadAppConfigSandboxConfig,
+			PreloadAppConfigPermissionsConfig,
 		).
+		Preload("StackConfig").
+		Preload("RunnerConfig").
 		Preload("ActionWorkflowConfigs").
 		Preload("ActionWorkflowConfigs.ActionWorkflow").
 		Preload("ActionWorkflowConfigs.Triggers").
@@ -58,7 +61,8 @@ func (h *Helpers) loadComponentConfigConnections(ctx context.Context, orgID stri
 	var direct []app.ComponentConfigConnection
 	if err := h.db.WithContext(ctx).
 		Scopes(PreloadComponentConfigConnection).
-		Where("org_id = ? AND id IN ?", orgID, configIDs).
+		Where(app.ComponentConfigConnection{OrgID: orgID}).
+		Where("id IN ?", configIDs).
 		Find(&direct).Error; err != nil {
 		return nil, fmt.Errorf("load component config connections: %w", err)
 	}

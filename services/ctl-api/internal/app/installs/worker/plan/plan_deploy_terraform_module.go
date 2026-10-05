@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/deployerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -117,7 +118,7 @@ func (p *Planner) RenderTerraformDeployPlan(
 			zap.Error(err),
 			zap.Any("state", in.StateData),
 		)
-		return nil, errors.Wrap(err, "unable to render config")
+		return nil, deployerrors.NewDeployPlanRenderFailed(err, "unable to render config")
 	}
 	vars := generics.ToStringMapAny(cfg.Variables)
 	if err := render.RenderMap(&vars, in.StateData); err != nil {
@@ -126,7 +127,7 @@ func (p *Planner) RenderTerraformDeployPlan(
 			zap.Error(err),
 			zap.Any("state", in.StateData),
 		)
-		return nil, errors.Wrap(err, "unable to render environment variables")
+		return nil, deployerrors.NewDeployPlanRenderFailed(err, "unable to render terraform variables")
 	}
 
 	envVars := generics.ToStringMap(cfg.EnvVars)
@@ -137,7 +138,7 @@ func (p *Planner) RenderTerraformDeployPlan(
 			zap.Error(err),
 			zap.Any("state", in.StateData),
 		)
-		return nil, errors.Wrap(err, "unable to render environment variables")
+		return nil, deployerrors.NewDeployPlanRenderFailed(err, "unable to render environment variables")
 	}
 
 	// Install-level Terraform vars override, carried via a reserved synthetic

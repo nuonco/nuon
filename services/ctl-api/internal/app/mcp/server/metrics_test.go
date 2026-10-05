@@ -50,6 +50,16 @@ func (w *capturingMetricsWriter) Timing(name string, value time.Duration, tags [
 }
 
 func (w *capturingMetricsWriter) timingForEndpoint(endpoint string) (capturedMetric, bool) {
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		if metric, ok := w.findTiming(endpoint); ok || time.Now().After(deadline) {
+			return metric, ok
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+}
+
+func (w *capturingMetricsWriter) findTiming(endpoint string) (capturedMetric, bool) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	for _, metric := range w.timings {

@@ -20,7 +20,6 @@ const (
 )
 
 type AppBundlePlatformRuntime struct {
-	PortalBinaryURL string `json:"portal_binary_url"`
 	RunnerBinaryURL string `json:"runner_binary_url"`
 }
 
@@ -48,7 +47,7 @@ type AppBundle struct {
 	Runbooks          []appbundle.RunbookTemplate `json:"-" gorm:"type:jsonb;serializer:json;<-:create"`
 	RunbooksDigest    string                      `json:"-" gorm:"notnull;default:'';uniqueIndex:idx_app_bundle_identity"`
 	Runtime           AppBundleRuntime            `json:"runtime" gorm:"type:jsonb;serializer:json;<-:create;notnull"`
-	RuntimeDigest     string                      `json:"runtime_digest" gorm:"notnull;default:''"`
+	RuntimeDigest     string                      `json:"runtime_digest" gorm:"notnull;default:'';uniqueIndex:idx_app_bundle_identity"`
 
 	TargetPlatform string `json:"target_platform" gorm:"notnull;uniqueIndex:idx_app_bundle_identity"`
 	SchemaVersion  int    `json:"schema_version" gorm:"notnull"`

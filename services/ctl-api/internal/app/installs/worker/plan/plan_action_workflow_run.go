@@ -216,6 +216,11 @@ func (p *Planner) RenderActionWorkflowRunPlan(l *zap.Logger, in *RenderActionWor
 	return plan, in.RoleSelection, nil
 }
 
+// setActionImagePlan decides how the runner gets the action's image. An image
+// that already lives in the install's own registry (a container_image
+// component's output, reached through templating) is pulled directly with the
+// install's cloud credentials. Everything else is treated as a public ref and
+// mirrored into the org registry first.
 func (p *Planner) setActionImagePlan(
 	ctx workflow.Context,
 	plan *plantypes.ActionWorkflowRunPlan,
@@ -239,6 +244,8 @@ func (p *Planner) setActionImagePlan(
 
 	loginServer := installRegistryLoginServer(stateMap, stack)
 	if loginServer != "" && reference.Domain(named) == loginServer {
+		// Mirroring exists to move an app-authored image somewhere the runner
+		// can reach. This one is already there, so a copy would be pure waste.
 		digested, ok := named.(reference.Digested)
 		if !ok {
 			return fmt.Errorf(
@@ -279,6 +286,10 @@ func (p *Planner) setActionImagePlan(
 	return nil
 }
 
+// actionImageTag derives the install-registry destination tag for a mirrored
+// action image. It includes the run ID so concurrent runs of the same source
+// ref never share a destination tag, which would let one run overwrite the tag
+// another run is about to pull (mutable-tag race).
 func actionImageTag(sourceImage, runID string) string {
 	sum := sha256.Sum256([]byte(sourceImage))
 	return fmt.Sprintf("action-%s-%s", hex.EncodeToString(sum[:])[:16], runID)

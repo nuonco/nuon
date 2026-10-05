@@ -20,6 +20,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/appbundles/transport"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 )
 
 type createBundleRequest struct {
@@ -48,6 +49,9 @@ type createBundleRequest struct {
 // @Failure			500	{object}	stderr.ErrResponse
 // @Router			/v1/apps/{app_id}/bundles [post]
 func (s *service) CreateBundle(ctx *gin.Context) {
+	if !s.requireBundleExport(ctx) {
+		return
+	}
 	if !s.store.Configured() {
 		ctx.Error(transport.ErrNotConfigured)
 		return
@@ -115,7 +119,10 @@ func (s *service) createBundle(ctx context.Context, orgID, appID string, req cre
 	}
 	var bundle app.AppBundle
 	err = s.db.WithContext(ctx).
-		Where(app.AppBundle{OrgID: orgID, AppID: appID, AppConfigID: cfg.ID, TargetPlatform: req.TargetPlatform, RunbooksDigest: runbooksDigest, RuntimeDigest: runtimeDigest}).
+		// Map-based Where, not a struct: GORM skips zero-valued struct fields,
+		// so an empty RunbooksDigest/RuntimeDigest would match a bundle that
+		// has runbooks or runtime pins.
+		Where(map[string]any{"org_id": orgID, "app_id": appID, "app_config_id": cfg.ID, "target_platform": req.TargetPlatform, "runbooks_digest": runbooksDigest, "runtime_digest": runtimeDigest}).
 		Order("created_at DESC").First(&bundle).Error
 	if err == nil {
 		if bundle.VerifiedAt != nil && bundle.OCIIndexDigest != "" {
@@ -162,7 +169,7 @@ func (s *service) createBundle(ctx context.Context, orgID, appID string, req cre
 	} else {
 		return nil, 0, err
 	}
-	q, err := s.queueClient.GetQueueByOwnerAndName(ctx, appID, "apps", "app-signals")
+	q, err := s.queueClient.GetQueueByOwnerAndName(ctx, appID, queuenames.OwnerApps, queuenames.AppSignalsQueueName)
 	if err != nil {
 		return nil, 0, fmt.Errorf("get app queue: %w", err)
 	}
@@ -194,8 +201,8 @@ func validateBundleRuntime(runtime app.AppBundleRuntime) error {
 	if !ok {
 		return fmt.Errorf("platform linux/amd64 is required")
 	}
-	if platform.PortalBinaryURL == "" || platform.RunnerBinaryURL == "" {
-		return fmt.Errorf("platform linux/amd64 requires portal_binary_url and runner_binary_url")
+	if platform.RunnerBinaryURL == "" {
+		return fmt.Errorf("platform linux/amd64 requires runner_binary_url")
 	}
 	return nil
 }

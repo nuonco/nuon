@@ -52,6 +52,9 @@ func responseFromBundle(bundle app.AppBundle) bundleResponse {
 // @Failure			500	{object}	stderr.ErrResponse
 // @Router			/v1/apps/{app_id}/bundles/{bundle_id} [get]
 func (s *service) GetBundle(ctx *gin.Context) {
+	if !s.requireBundleExport(ctx) {
+		return
+	}
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)

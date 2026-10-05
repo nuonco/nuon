@@ -32,6 +32,9 @@ func Qualify(cfg *app.AppConfig, platform string) QualificationReport {
 	if platform != "linux/amd64" {
 		add("platform.unsupported", platform, "immutable portable bundles support only linux/amd64")
 	}
+	if cfg != nil && cfg.RunnerConfig.Type.CloudPlatform() != app.CloudPlatformAWS {
+		add("stack.platform_unsupported", "stack", fmt.Sprintf("bundle compilation renders the AWS stack template; runner type %q is not supported", cfg.RunnerConfig.Type))
+	}
 	if cfg == nil {
 		add("app_config.missing", "app_config", "app config is required")
 		finish(&r)

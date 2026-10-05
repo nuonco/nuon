@@ -42,11 +42,15 @@ type downloadGrantResponse struct {
 // @Failure			500	{object}	stderr.ErrResponse
 // @Router			/v1/apps/{app_id}/bundles/{bundle_id}/download-grants [post]
 func (s *service) CreateDownloadGrant(ctx *gin.Context) {
+	// Never cached, including on the feature/store early-return error paths.
+	ctx.Header("Cache-Control", "no-store")
+	if !s.requireBundleExport(ctx) {
+		return
+	}
 	if !s.store.Configured() {
 		ctx.Error(transport.ErrNotConfigured)
 		return
 	}
-	ctx.Header("Cache-Control", "no-store")
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)

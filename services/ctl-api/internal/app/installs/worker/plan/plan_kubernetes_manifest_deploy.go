@@ -18,6 +18,7 @@ import (
 	types "github.com/nuonco/nuon/pkg/types/approvals"
 	statepkg "github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/deployerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
@@ -91,7 +92,7 @@ func (p *Planner) RenderKubernetesManifestDeployPlan(
 			zap.Error(err),
 			zap.Any("state", in.StateData),
 		)
-		return nil, errors.Wrap(err, "unable to render config")
+		return nil, deployerrors.NewDeployPlanRenderFailed(err, "unable to render config")
 	}
 
 	// Render namespace with install state - namespace supports template variables like {{.nuon.install.id}}
@@ -101,7 +102,7 @@ func (p *Planner) RenderKubernetesManifestDeployPlan(
 		l.Error("error rendering namespace",
 			zap.String("namespace", namespace),
 			zap.Error(err))
-		return nil, errors.Wrap(err, "unable to render namespace")
+		return nil, deployerrors.NewDeployPlanRenderFailed(err, "unable to render namespace")
 	}
 
 	manifest := cfg.Manifest
@@ -110,7 +111,7 @@ func (p *Planner) RenderKubernetesManifestDeployPlan(
 		l.Error("error rendering manifest",
 			zap.String("manifest", manifest),
 			zap.Error(err))
-		return nil, errors.Wrap(err, "unable to render namespace")
+		return nil, deployerrors.NewDeployPlanRenderFailed(err, "unable to render manifest")
 	}
 
 	// Build OCI artifact reference from the install deploy's synced artifact
