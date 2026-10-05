@@ -3,8 +3,17 @@ package monitor
 import (
 	"context"
 	"errors"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/registry"
+	"github.com/google/go-containerregistry/pkg/v1/random"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
@@ -61,4 +70,31 @@ func TestVerifyRunnerImageRequiresIdentity(t *testing.T) {
 		ContainerImageTag: "main",
 	})
 	require.ErrorContains(t, err, "issuer or identity")
+}
+
+func TestResolveRunnerImageDigestFallsBackToAnonymous(t *testing.T) {
+	srv := httptest.NewServer(registry.New())
+	t.Cleanup(srv.Close)
+	host := strings.TrimPrefix(srv.URL, "http://")
+
+	ref, err := name.ParseReference(host+"/runner:main", name.WeakValidation)
+	require.NoError(t, err)
+	img, err := random.Image(64, 1)
+	require.NoError(t, err)
+	require.NoError(t, remote.Write(ref, img))
+	want, err := img.Digest()
+	require.NoError(t, err)
+
+	dockerConfig := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dockerConfig, "config.json"),
+		[]byte(`{"credHelpers":{"`+host+`":"nuon-missing-helper"}}`), 0o600))
+	t.Setenv("DOCKER_CONFIG", dockerConfig)
+
+	_, err = remote.Head(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+	require.Error(t, err, "a broken credential helper should fail the keychain lookup")
+
+	got, opts, err := resolveRunnerImageDigest(context.Background(), ref)
+	require.NoError(t, err)
+	require.Equal(t, want.String(), got)
+	require.NotEmpty(t, opts)
 }

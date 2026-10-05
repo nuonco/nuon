@@ -79,12 +79,10 @@ func verifyRunnerImage(ctx context.Context, s *settings.Settings) (string, error
 	if err != nil {
 		return "", errors.Wrap(err, "unable to parse runner image reference")
 	}
-	remoteOpts := []remote.Option{remote.WithContext(ctx), remote.WithAuthFromKeychain(authn.DefaultKeychain)}
-	desc, err := remote.Head(ref, remoteOpts...)
+	digest, remoteOpts, err := resolveRunnerImageDigest(ctx, ref)
 	if err != nil {
-		return "", errors.Wrap(err, "unable to resolve runner image digest")
+		return "", err
 	}
-	digest := desc.Digest.String()
 	digestRef := ref.Context().Digest(digest)
 	key := digestRef.String() + "|" + s.ContainerImageSignatureIssuer + "|" + s.ContainerImageSignatureIdentityRegexp
 	if cached, ok := verifiedImages.Load(key); ok {
@@ -110,4 +108,22 @@ func verifyRunnerImage(ctx context.Context, s *settings.Settings) (string, error
 		return "", err
 	}
 	return digest, nil
+}
+
+// resolveRunnerImageDigest resolves ref with the VM's docker credentials, retrying anonymously when
+// they fail: a stale credential helper must not make a public runner image unverifiable. It returns
+// the registry options that worked so the signature is read the same way.
+func resolveRunnerImageDigest(ctx context.Context, ref name.Reference) (string, []remote.Option, error) {
+	keychainOpts := []remote.Option{remote.WithContext(ctx), remote.WithAuthFromKeychain(authn.DefaultKeychain)}
+	desc, keychainErr := remote.Head(ref, keychainOpts...)
+	if keychainErr == nil {
+		return desc.Digest.String(), keychainOpts, nil
+	}
+
+	anonymousOpts := []remote.Option{remote.WithContext(ctx), remote.WithAuth(authn.Anonymous)}
+	desc, err := remote.Head(ref, anonymousOpts...)
+	if err != nil {
+		return "", nil, errors.Wrapf(err, "unable to resolve runner image digest (with docker credentials: %v)", keychainErr)
+	}
+	return desc.Digest.String(), anonymousOpts, nil
 }
