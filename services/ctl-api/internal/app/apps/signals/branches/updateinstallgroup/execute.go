@@ -3,6 +3,7 @@ package updateinstallgroup
 import (
 	"fmt"
 
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -21,7 +22,10 @@ const (
 	statusInProgress = "in-progress"
 	statusSuccess    = "success"
 	statusError      = "error"
+	statusCancelled  = "cancelled"
 )
+
+const installGroupCancelAsCancelVersion = "install-group-cancel-as-cancel-v1"
 
 // installVersionStatusVersion gates the per-install config-version status
 // writes added by the diffing engine; in-flight histories never scheduled
@@ -129,14 +133,22 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	s.updateInstallMetadata(ctx, groupName, enqueued, nil)
 
-	completed, failed, failure, awaitErr := s.awaitInstallUpdates(ctx, groupName, enqueued, groupRunID, installEntries)
+	failure, awaitErr := s.awaitInstallUpdates(ctx, groupName, enqueued, groupRunID, installEntries)
 
 	// workflow.Now, not time.Now: wall-clock reads are non-deterministic across
 	// replay, so the recorded completion time has to come from workflow time.
 	now := workflow.Now(ctx)
+	completed, failed, cancelled := countInstallOutcomes(installEntries)
 	finalStatus := app.StatusSuccess
 	desc := fmt.Sprintf("%d/%d installs deployed", completed, len(enqueued))
-	if failed > 0 {
+	switch {
+	case cancelled > 0:
+		finalStatus = app.StatusCancelled
+		desc += fmt.Sprintf(" (%d cancelled)", cancelled)
+		if failed > 0 {
+			desc += fmt.Sprintf(" (%d failed)", failed)
+		}
+	case failed > 0:
 		finalStatus = app.StatusError
 		desc += fmt.Sprintf(" (%d failed)", failed)
 	}
@@ -160,6 +172,20 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	return awaitErr
+}
+
+func countInstallOutcomes(entries []app.InstallGroupRunInstall) (completed, failed, cancelled int) {
+	for _, e := range entries {
+		switch e.Status {
+		case statusSuccess:
+			completed++
+		case statusError:
+			failed++
+		case statusCancelled:
+			cancelled++
+		}
+	}
+	return
 }
 
 func (s *Signal) resolveInstallIDs(ctx workflow.Context) ([]string, string, error) {
@@ -230,13 +256,14 @@ func (s *Signal) awaitInstallUpdates(
 	enqueued []enqueuedInstall,
 	groupRunID string,
 	installEntries []app.InstallGroupRunInstall,
-) (int, int, *installUpdateFailure, error) {
+) (*installUpdateFailure, error) {
 	logger := workflow.GetLogger(ctx)
 
-	completed := 0
-	failed := 0
+	treatCancelAsCancel := workflow.GetVersion(ctx, installGroupCancelAsCancelVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+
 	results := make(map[string]string, len(enqueued))
 	var errs []error
+	var cancelledErr error
 	var failure *installUpdateFailure
 	noteFailure := func(installID, workflowID, detail string) {
 		if failure != nil {
@@ -248,15 +275,33 @@ func (s *Signal) awaitInstallUpdates(
 			detail:     detail,
 		}
 	}
+	markCancelled := func(i int, installID, detail string, cause error) {
+		results[installID] = statusCancelled
+		installEntries[i].Status = statusCancelled
+		s.updateInstallAppConfigVersionStatus(ctx, installID, app.StatusCancelled, detail)
+		if cancelledErr == nil {
+			if cause != nil {
+				cancelledErr = cause
+			} else {
+				cancelledErr = temporal.NewNonRetryableApplicationError(
+					detail,
+					callback.CancelledErrType,
+					nil,
+				)
+			}
+		}
+	}
 
 	for i, e := range enqueued {
 		res, err := callback.AwaitWithTimeout(ctx, e.cb, callback.FallbackAwaitTimeout)
 		switch {
+		case err != nil && treatCancelAsCancel && callback.IsCancelled(err):
+			markCancelled(i, e.installID, err.Error(), err)
+
 		case err != nil:
 			errs = append(errs, fmt.Errorf("install %s workflow %s: %w", e.installID, e.workflowID, err))
 			noteFailure(e.installID, e.workflowID, err.Error())
 			results[e.installID] = statusError
-			failed++
 			installEntries[i].Status = statusError
 			s.updateInstallAppConfigVersionStatus(ctx, e.installID, app.StatusError, err.Error())
 
@@ -269,16 +314,18 @@ func (s *Signal) awaitInstallUpdates(
 				status = res.Status
 			}
 			errMsg := fmt.Sprintf("install %s workflow %s: finished as %s", e.installID, e.workflowID, status)
+			if treatCancelAsCancel && status == statusCancelled {
+				markCancelled(i, e.installID, errMsg, nil)
+				break
+			}
 			errs = append(errs, fmt.Errorf("%s", errMsg))
 			noteFailure(e.installID, e.workflowID, errMsg)
 			results[e.installID] = statusError
-			failed++
 			installEntries[i].Status = statusError
 			s.updateInstallAppConfigVersionStatus(ctx, e.installID, app.StatusError, errMsg)
 
 		default:
 			results[e.installID] = statusSuccess
-			completed++
 			installEntries[i].Status = statusSuccess
 			s.updateInstallAppConfigVersionStatus(ctx, e.installID, app.StatusSuccess, "install workflow completed")
 
@@ -289,7 +336,11 @@ func (s *Signal) awaitInstallUpdates(
 			)
 		}
 
+		completed, failed, cancelled := countInstallOutcomes(installEntries)
 		desc := fmt.Sprintf("%d/%d installs deployed", completed, len(enqueued))
+		if cancelled > 0 {
+			desc += fmt.Sprintf(" (%d cancelled)", cancelled)
+		}
 		if failed > 0 {
 			desc += fmt.Sprintf(" (%d failed)", failed)
 		}
@@ -310,11 +361,15 @@ func (s *Signal) awaitInstallUpdates(
 		s.updateInstallMetadata(ctx, groupName, enqueued, results)
 	}
 
-	if len(errs) > 0 {
-		return completed, failed, failure, fmt.Errorf("update install group had %d errors: %v", len(errs), errs)
+	if cancelledErr != nil {
+		return nil, cancelledErr
 	}
 
-	return completed, failed, nil, nil
+	if len(errs) > 0 {
+		return failure, fmt.Errorf("update install group had %d errors: %v", len(errs), errs)
+	}
+
+	return nil, nil
 }
 
 func (s *Signal) recordInstallUpdateFailure(ctx workflow.Context, failure *installUpdateFailure) {
@@ -480,11 +535,22 @@ func (s *Signal) updateInstallMetadata(ctx workflow.Context, groupName string, e
 	}
 
 	installs := make([]any, 0, len(enqueued))
+	completed := 0
+	failed := 0
+	cancelled := 0
 	for _, e := range enqueued {
 		status := statusInProgress
 		if results != nil {
-			if s, ok := results[e.installID]; ok {
-				status = s
+			if st, ok := results[e.installID]; ok {
+				status = st
+				switch st {
+				case statusSuccess:
+					completed++
+				case statusError:
+					failed++
+				case statusCancelled:
+					cancelled++
+				}
 			}
 		}
 
@@ -495,22 +561,12 @@ func (s *Signal) updateInstallMetadata(ctx workflow.Context, groupName string, e
 		})
 	}
 
-	completed := 0
-	failed := 0
-	if results != nil {
-		for _, s := range results {
-			switch s {
-			case statusSuccess:
-				completed++
-			case statusError:
-				failed++
-			}
-		}
-	}
-
 	desc := fmt.Sprintf("deploying to %d installs", len(enqueued))
-	if completed > 0 || failed > 0 {
+	if completed > 0 || failed > 0 || cancelled > 0 {
 		desc = fmt.Sprintf("%d/%d installs deployed", completed, len(enqueued))
+		if cancelled > 0 {
+			desc += fmt.Sprintf(" (%d cancelled)", cancelled)
+		}
 		if failed > 0 {
 			desc += fmt.Sprintf(" (%d failed)", failed)
 		}
