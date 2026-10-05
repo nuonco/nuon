@@ -78,6 +78,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	queues := api.Group("/v1/queues")
 	{
 		queues.POST("/admin-cleanup-orphaned", s.AdminCleanupOrphanedQueues)
+		queues.POST("/admin-mark-old-signals", s.AdminMarkOldQueueSignals)
 		queues.POST("/:queue_id/admin-restart", s.RestartQueue)
 		queues.POST("/:queue_id/signals/:signal_id/admin-direct-execute", s.DirectExecuteSignal)
 	}
