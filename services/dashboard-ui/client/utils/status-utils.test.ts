@@ -30,10 +30,8 @@ describe('status-utils', () => {
     })
 
     test('should return warn theme for warning statuses', () => {
-      expect(getStatusTheme('approval-denied')).toBe('warn')
       expect(getStatusTheme('approval-awaiting')).toBe('warn')
       expect(getStatusTheme('awaiting-approval')).toBe('warn')
-      expect(getStatusTheme('cancelled')).toBe('warn')
       expect(getStatusTheme('outdated')).toBe('warn')
       expect(getStatusTheme('warn')).toBe('warn')
       expect(getStatusTheme('offline')).toBe('warn')
@@ -62,6 +60,9 @@ describe('status-utils', () => {
       expect(getStatusTheme('Not deployed')).toBe('neutral')
       expect(getStatusTheme('No build')).toBe('neutral')
       expect(getStatusTheme('not-attempted')).toBe('neutral')
+      expect(getStatusTheme('cancelled')).toBe('neutral')
+      expect(getStatusTheme('rejected')).toBe('neutral')
+      expect(getStatusTheme('approval-denied')).toBe('neutral')
       expect(getStatusTheme('deprovisioned')).toBe('warn')
       expect(getStatusTheme('skeleton')).toBe('neutral')
     })
@@ -96,10 +97,14 @@ describe('status-utils', () => {
     })
 
     test('should return Warning for warning statuses', () => {
-      expect(getStatusIconVariant('approval-denied')).toBe('WarningIcon')
       expect(getStatusIconVariant('awaiting-approval')).toBe('WarningIcon')
-      expect(getStatusIconVariant('cancelled')).toBe('WarningIcon')
       expect(getStatusIconVariant('outdated')).toBe('WarningIcon')
+    })
+
+    test('should return Prohibit for cancelled and rejected statuses', () => {
+      expect(getStatusIconVariant('cancelled')).toBe('ProhibitIcon')
+      expect(getStatusIconVariant('rejected')).toBe('ProhibitIcon')
+      expect(getStatusIconVariant('approval-denied')).toBe('ProhibitIcon')
     })
 
     test('should return Loading for info statuses', () => {
