@@ -7,7 +7,7 @@ import { BranchOverview } from '@/components/branches/BranchOverview/BranchOverv
 import { AppConfigFilesDiff, ComponentConfigDiff } from './ComponentConfigDiff'
 
 export default {
-  title: 'Branches/ComponentConfigDiff (exploration)',
+  title: 'Features / Branches / Component config diff',
 }
 
 const valuesBaseBefore = `replicaCount: 1
@@ -422,7 +422,6 @@ export const FullAppConfig = () => (
   </div>
 )
 
-// The branch overview renders this card full width below the run source card.
 export const InBranchOverview = () => (
   <BranchOverview
     hasPlan={false}
