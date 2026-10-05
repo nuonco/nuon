@@ -1,40 +1,46 @@
 import { useCallback } from 'react'
-import { useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
+import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import { useOrg } from '@/hooks/use-org'
-import type { TInstallWorkflow } from '@/types'
+import type { TInstallWorkflow, TInstallWorkflowStep } from '@/types'
 import { GroupActionButton } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
 import {
   BranchRunApproval,
   type IBranchRunApprovalItem,
 } from './BranchRunApproval'
+import { getGroupName, useGroupPlanHref } from './use-group-plan-href'
 
 interface IBranchRunApprovalContainer {
   run: TInstallWorkflow
 }
-
-const getGroupName = (name?: string) =>
-  name?.replace(/^plan install group:\s*/i, '').trim() || 'install group'
 
 export const BranchRunApprovalContainer = ({
   run,
 }: IBranchRunApprovalContainer) => {
   const { org } = useOrg()
   const orgId = org?.id ?? ''
+  const hasNewAppIA = useNewAppIA()
+  const navigate = useNavigate()
+  const groupPlanHref = useGroupPlanHref()
   const [, setSearchParams] = useSearchParams()
 
   const openStep = useCallback(
-    (stepId?: string) => {
+    (step: TInstallWorkflowStep) => {
+      if (hasNewAppIA) {
+        navigate(groupPlanHref(step.name))
+        return
+      }
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev)
           next.set('workflow', run.id ?? '')
-          if (stepId) next.set('step', stepId)
+          if (step.id) next.set('step', step.id)
           return next
         },
         { replace: true }
       )
     },
-    [run.id, setSearchParams]
+    [hasNewAppIA, navigate, groupPlanHref, run.id, setSearchParams]
   )
 
   if (run.status?.status === 'cancelled') {
@@ -54,7 +60,7 @@ export const BranchRunApprovalContainer = ({
       return {
         key: step.id ?? step.approval!.id!,
         groupName,
-        onReview: () => openStep(step.id),
+        onReview: () => openStep(step),
         actions: (
           <GroupActionButton
             action="approve"

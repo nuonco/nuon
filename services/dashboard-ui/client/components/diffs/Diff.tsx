@@ -72,7 +72,7 @@ export const Diff = ({
 }: IDiff) => {
   const { diffWrap } = useDashboardPreferences()
   const id = useId()
-  const viewer = useRef<CodeViewHandle<undefined>>(null)
+  const viewer = useRef<CodeViewHandle<undefined, undefined>>(null)
   const [query, setQuery] = useState('')
   const [matchIndex, setMatchIndex] = useState(0)
   const [wrap, setWrap] = useState(defaultWrap ?? diffWrap === 'wrap')

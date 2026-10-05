@@ -2,6 +2,7 @@ import { useMemo, memo } from 'react'
 import { useSearchParams } from 'react-router'
 import { type Node, type NodeProps } from '@xyflow/react'
 
+import { Button } from '@/components/common/Button'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Link } from '@/components/common/Link'
@@ -17,6 +18,8 @@ import { useInstallLink } from '@/hooks/use-install-path'
 
 const MAX_VISIBLE_INSTALLS = 3
 const MAX_VISIBLE_RUNBOOKS = 2
+const OVERFLOW_BUTTON_CLASS =
+  'nodrag self-start !px-1 -mx-1 !rounded !font-normal !text-[11px] text-cool-grey-500 hover:text-cool-grey-700 dark:hover:text-cool-grey-300'
 
 export interface GroupRunInstall {
   id: string
@@ -121,13 +124,14 @@ const GroupRunNode = memo(({ data }: NodeProps<Node<GroupRunNodeData>>) => {
             </div>
           ))}
           {hidden > 0 && (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="xs"
               onClick={openDetails}
-              className="nodrag self-start text-[11px] text-cool-grey-500 hover:text-cool-grey-700 dark:hover:text-cool-grey-300"
+              className={OVERFLOW_BUTTON_CLASS}
             >
               +{hidden} installs
-            </button>
+            </Button>
           )}
         </>
       )}
@@ -143,13 +147,14 @@ const GroupRunNode = memo(({ data }: NodeProps<Node<GroupRunNodeData>>) => {
             </span>
           ))}
           {hiddenRunbooks > 0 && (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="xs"
               onClick={openDetails}
-              className="nodrag self-start text-[11px] text-cool-grey-500 hover:text-cool-grey-700 dark:hover:text-cool-grey-300"
+              className={OVERFLOW_BUTTON_CLASS}
             >
               +{hiddenRunbooks} runbooks
-            </button>
+            </Button>
           )}
         </div>
       )}

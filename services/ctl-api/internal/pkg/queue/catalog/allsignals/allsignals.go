@@ -3,6 +3,9 @@
 package allsignals
 
 import (
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/signals/reverify"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/signals/verificationfailed"
+
 	// apps signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/appconfigsync"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/appconfigsynced"

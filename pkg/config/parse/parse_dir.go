@@ -232,7 +232,9 @@ func sourceMemberIdentity(group, path string, value any) (string, string) {
 		case "policies":
 			return "policy", "policies"
 		case "break_glass":
-			return "break_glass", "break-glass"
+			return "break_glass", "break_glass"
+		case "operation_roles":
+			return "operation_roles", "operation_roles"
 		case "sandbox", "stack", "runner":
 			return group, group
 		}
@@ -250,6 +252,8 @@ func sourceMemberIdentity(group, path string, value any) (string, string) {
 		kind = "permission"
 	case "permissions/policies":
 		kind = "permission_policy"
+	case "policies":
+		kind = "policy"
 	default:
 		return "", ""
 	}
@@ -268,11 +272,28 @@ func sourceMemberIdentity(group, path string, value any) (string, string) {
 	if !reflected.IsValid() || reflected.Kind() != reflect.Struct {
 		return "", ""
 	}
+
+	if kind == "permission" {
+		// Standard roles are identified by type (their name may be
+		// templated), which also maps them to permissions/<type>.toml.
+		if t := reflected.FieldByName("Type"); t.IsValid() && t.Kind() == reflect.String {
+			switch config.PermissionsRoleType(t.String()) {
+			case config.PermissionsRoleTypeProvision, config.PermissionsRoleTypeDeprovision, config.PermissionsRoleTypeMaintenance:
+				return kind, t.String()
+			}
+		}
+	}
+
 	field := reflected.FieldByName("Name")
 	if !field.IsValid() || field.Kind() != reflect.String {
 		return "", ""
 	}
-	return kind, field.String()
+	if name := field.String(); name != "" || kind != "policy" {
+		return kind, name
+	}
+	// Policy names may be derived from the file stem after this hook runs
+	// (SetNameFromSourceFile), so the Name field can still be empty here.
+	return kind, namedIAMPolicyMemberName(path)
 }
 
 func namedIAMPolicyMemberName(path string) string {

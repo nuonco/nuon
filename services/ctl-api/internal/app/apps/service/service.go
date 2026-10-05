@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -37,6 +38,7 @@ type Params struct {
 	EndpointAudit   *api.EndpointAudit
 	TemporalClient  temporalclient.Client
 	BlobService     blobstore.Service
+	MeterProvider   metric.MeterProvider `optional:"true"`
 }
 
 type service struct {
@@ -54,6 +56,7 @@ type service struct {
 	temporalClient  temporalclient.Client
 	queueClient     *queueclient.Client
 	blobSvc         blobstore.Service
+	sourceFileSize  metric.Int64Histogram
 }
 
 var _ api.Service = (*service)(nil)
@@ -96,6 +99,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			appConfigs.POST("/:config_id/sync", s.SyncAppConfig)
 			appConfigs.POST("/:config_id/build", s.BuildAppConfig)
 			appConfigs.GET("/:config_id/diff", s.GetAppConfigDiff)
+			appConfigs.GET("/:config_id/source-files/*path", s.GetAppConfigSourceFile)
 		}
 
 		// app sandbox builds
@@ -294,6 +298,15 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 }
 
 func New(params Params) *service {
+	var sourceFileSize metric.Int64Histogram
+	if params.MeterProvider != nil {
+		sourceFileSize, _ = params.MeterProvider.Meter("github.com/nuonco/nuon/services/ctl-api/internal/app/apps/service").Int64Histogram(
+			"nuon.apps.config_source_file.size",
+			metric.WithUnit("By"),
+			metric.WithDescription("Size of app config source archive files served."),
+			metric.WithExplicitBucketBoundaries(0, 128, 512, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216, 67108864),
+		)
+	}
 	return &service{
 		RouteRegister: api.RouteRegister{
 			EndpointAudit: params.EndpointAudit,
@@ -311,6 +324,7 @@ func New(params Params) *service {
 		temporalClient:  params.TemporalClient,
 		queueClient:     params.QueueClient,
 		blobSvc:         params.BlobService,
+		sourceFileSize:  sourceFileSize,
 	}
 }
 

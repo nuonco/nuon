@@ -211,7 +211,8 @@ func getStackVersionSteps(ctx workflow.Context, sg *stepGroup, installID string,
 	steps = append(steps, step)
 
 	step, err = sg.installSignalStep(ctx, installID, app.AwaitInstallStackStepName, pgtype.Hstore{}, &awaitinstallstackversionrun.Signal{
-		InstallStackID: stack.ID,
+		InstallStackID:     stack.ID,
+		CreateManagedStack: true,
 	}, planOnly, WithSkippable(false))
 	if err != nil {
 		return nil, err

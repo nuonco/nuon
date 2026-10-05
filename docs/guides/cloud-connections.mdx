@@ -1,0 +1,65 @@
+---
+title: "Cloud Connections"
+description: "Connect Nuon to AWS with short-lived OIDC credentials and an access preset."
+icon: "cloud"
+keywords: ["cloud connections", "OIDC", "AWS", "install stacks"]
+---
+
+A cloud connection gives Nuon access to an AWS account without storing a long-lived cloud credential. Connections belong to an organization. Choose one access preset:
+
+- **`stacks`** — setup includes a permissions policy for creating, updating, and deleting Nuon CloudFormation install stacks.
+- **`custom`** — setup includes only the OIDC trust configuration. Attach your own permissions policy to the IAM role before using it for stack operations.
+
+Only AWS connections are supported. A preset describes setup and verification behavior; it does not restrict the permissions you attach to the role.
+
+## OIDC trust model
+
+Nuon mints a short-lived OIDC token when it needs to perform an operation. The role trust policy must restrict these values:
+
+- **Issuer** — your Nuon control plane's public API URL.
+- **Subject** — `org:<org_id>:connection:<connection_id>`, unique to one connection.
+- **Audience** — `sts.amazonaws.com`.
+
+Create and get responses include the exact values and self-contained Terraform, AWS CLI, and CloudFormation setup material.
+
+## Create and configure a connection
+
+Create the connection first. This saves the connection in Nuon; it does not create the IAM role or OIDC provider in AWS.
+
+```bash
+nuon cloud-connections create \
+  --name acme-production \
+  --platform aws \
+  --target-id 123456789012 \
+  --principal arn:aws:iam::123456789012:role/nuon-cloud-connection \
+  --default-region us-west-2 \
+  --preset stacks
+```
+
+Open the setup link printed below the command's output. It takes you to **Run in your cloud**, where you can choose **AWS CLI**, **Terraform**, or **CloudFormation** and apply the generated setup in the target AWS account. You can also reach this page from **Settings → Cloud connections → select your connection → View setup runbook**.
+
+Each setup option creates an OIDC provider and an IAM role with a trust policy restricted to the connection. The `stacks` preset also includes an explicit action allowlist covering the resources in Nuon's install stack templates. It does not include image registry access. With `--preset custom`, no permissions policy is generated: attach your own policy.
+
+After applying the setup, verify the connection from the dashboard's **Verify** step or run:
+
+```bash
+nuon cloud-connections verify <connection-id>
+```
+
+The command waits for the result by default. Once the status is `verified`, the connection is available in the install creation wizard. For scripts, `create --output json` and `get <connection-id> --output json` include the generated setup material in `setup` without the human-readable next-step instructions.
+
+Verification exchanges a Nuon OIDC token for temporary AWS credentials, checks the returned identity, and confirms that a foreign connection subject cannot assume the role. For `stacks`, it also makes a read-only CloudFormation `DescribeStacks` probe. This probe does not prove that every stack operation is permitted. For `custom`, verification checks identity and trust only; you are responsible for the permissions required by your stacks.
+
+## Use connections for install stacks
+
+When creating an AWS install, select a **verified AWS connection** with either preset. The connection binding is immutable after creation: a connection cannot be added, replaced, or removed from an existing install. Nuon uses the pinned connection for CloudFormation stack creation, updates, and deletion. If no connection is selected at creation, the install remains customer-managed.
+
+A connection referenced by an install cannot be deleted; the API returns HTTP 409. Delete the referencing installs before deleting the connection.
+
+## CLI
+
+Use `nuon cloud-connections list|get|create|verify|delete`. Responses report the preset, status, status message, and last verification time.
+
+Nuon verifies connections on demand, not on a recurring schedule. The last verification time records the most recent verification attempt; a verified status does not guarantee that AWS trust or permissions have not changed since then. Use `verify` after changing the role or its policies. A failed verification updates the connection's status and emits `cloud-connection-verification-failed` for notification subscriptions.
+
+Stack operations still obtain temporary AWS credentials through the connection when needed. This does not repeat the full verification checks, including the foreign-subject trust check.

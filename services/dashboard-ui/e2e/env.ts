@@ -13,4 +13,10 @@ export const env = {
   },
   orgId: process.env.E2E_ORG_ID,
   appConfig: process.env.E2E_APP_CONFIG ?? "httpbin",
+  githubInstallId: process.env.E2E_GITHUB_INSTALL_ID,
+  onboardingRepo: {
+    aws: process.env.E2E_ONBOARDING_REPO_AWS,
+    gcp: process.env.E2E_ONBOARDING_REPO_GCP,
+    azure: process.env.E2E_ONBOARDING_REPO_AZURE,
+  },
 };

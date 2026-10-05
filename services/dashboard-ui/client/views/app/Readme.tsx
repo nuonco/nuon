@@ -1,3 +1,4 @@
+import { useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
 import { Markdown } from '@/components/common/Markdown'
@@ -7,31 +8,43 @@ import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
+import { useBranchScopedAppConfig } from '@/hooks/use-branch-scoped-app-config'
 import { useOrg } from '@/hooks/use-org'
 import { getAppConfig, getAppConfigs } from '@/lib'
 
 export const Readme = () => {
   const { org } = useOrg()
   const { app } = useApp()
+  const { branchId } = useParams()
 
   const { data: configs, isLoading: isLoadingConfigs } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['app-configs', org?.id, app?.id],
     queryFn: () => getAppConfigs({ orgId: org.id, appId: app.id, limit: 1 }),
-    enabled: !!org?.id && !!app?.id,
+    enabled: !!org?.id && !!app?.id && !branchId,
   })
 
   const appConfigId = configs?.at(0)?.id
 
-  const { data: appConfig, isLoading: isLoadingConfig } = useQuery({
+  const { data: latestAppConfig, isLoading: isLoadingConfig } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['app-config', org?.id, app?.id, appConfigId],
     queryFn: () =>
       getAppConfig({ orgId: org.id, appId: app.id, appConfigId }),
-    enabled: !!org?.id && !!app?.id && !!appConfigId,
+    enabled: !!org?.id && !!app?.id && !!appConfigId && !branchId,
   })
 
-  const isLoading = isLoadingConfigs || isLoadingConfig
+  const { appConfig: branchAppConfig, isLoading: isLoadingBranchConfig } =
+    useBranchScopedAppConfig({
+      orgId: org?.id,
+      appId: app?.id,
+      branchId,
+    })
+
+  const appConfig = branchId ? branchAppConfig : latestAppConfig
+  const isLoading = branchId
+    ? isLoadingBranchConfig
+    : isLoadingConfigs || isLoadingConfig
 
   return (
     <PageSection className="!pb-6">

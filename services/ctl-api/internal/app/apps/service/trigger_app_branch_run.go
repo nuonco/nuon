@@ -42,6 +42,27 @@ type TriggerAppBranchRunRequest struct {
 	BaseBranch string `json:"base_branch,omitempty"`
 
 	PreviewRun *PreviewRunRequest `json:"preview_run,omitempty"`
+
+	RunType TriggerAppBranchRunSource `json:"run_type,omitempty"`
+	RunRef  string                    `json:"run_ref,omitempty"`
+}
+
+// TriggerAppBranchRunSource is the git object a manual branch run is pinned to.
+type TriggerAppBranchRunSource string
+
+const (
+	TriggerAppBranchRunSourcePR     TriggerAppBranchRunSource = "pr"
+	TriggerAppBranchRunSourceTag    TriggerAppBranchRunSource = "tag"
+	TriggerAppBranchRunSourceCommit TriggerAppBranchRunSource = "commit"
+)
+
+func (t TriggerAppBranchRunSource) Valid() bool {
+	switch t {
+	case TriggerAppBranchRunSourcePR, TriggerAppBranchRunSourceTag, TriggerAppBranchRunSourceCommit:
+		return true
+	default:
+		return false
+	}
 }
 
 func (c *TriggerAppBranchRunRequest) Validate(v *validator.Validate) error {
@@ -60,6 +81,34 @@ func (c *TriggerAppBranchRunRequest) Validate(v *validator.Validate) error {
 		}
 		if c.PlanOnly {
 			return fmt.Errorf("plan_only cannot be combined with preview_run")
+		}
+	}
+	if err := c.validateRunSource(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *TriggerAppBranchRunRequest) validateRunSource() error {
+	if c.RunType == "" && c.RunRef == "" {
+		return nil
+	}
+	if c.RunType == "" || c.RunRef == "" {
+		return fmt.Errorf("run_type and run_ref must be set together")
+	}
+	if !c.RunType.Valid() {
+		return fmt.Errorf("run_type must be one of pr, tag, commit")
+	}
+	if c.PreviewRun != nil {
+		return fmt.Errorf("run_type cannot be combined with preview_run")
+	}
+	if c.PRNumber != nil || c.HeadSHA != "" || c.BaseBranch != "" {
+		return fmt.Errorf("run_type cannot be combined with pr_number, head_sha, or base_branch")
+	}
+	if c.RunType == TriggerAppBranchRunSourcePR {
+		n, err := strconv.Atoi(c.RunRef)
+		if err != nil || n <= 0 {
+			return fmt.Errorf("run_ref must be a positive integer when run_type is pr")
 		}
 	}
 	return nil
@@ -179,7 +228,6 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 	if req.SyncAppConfig {
 		workflowMeta["sync_app_config"] = "true"
 	}
-	// fetchcommit only honours HeadSHA on a git-preview run.
 	runType := app.AppBranchRunTypeManual
 	eventType := "manual"
 	planOnly := req.PlanOnly
@@ -226,6 +274,36 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 			eventType = "pull_request"
 		}
 	}
+
+	var gitRef string
+	var runMetadata app.AppBranchRunMetadata
+	if req.PreviewRun == nil && req.RunType != "" {
+		switch req.RunType {
+		case TriggerAppBranchRunSourcePR:
+			n, err := strconv.Atoi(req.RunRef)
+			if err != nil || n <= 0 {
+				ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("run_ref must be a positive integer when run_type is pr")))
+				return
+			}
+			prNumber = &n
+		case TriggerAppBranchRunSourceTag:
+			gitRef = req.RunRef
+		case TriggerAppBranchRunSourceCommit:
+			headSHA = req.RunRef
+			gitRef = req.RunRef
+		}
+		runMetadata = app.AppBranchRunMetadata{
+			Trigger:  app.AppBranchRunTriggerManual,
+			HeadSHA:  headSHA,
+			GitRef:   gitRef,
+			PRNumber: prNumber,
+		}
+		if req.RunType == TriggerAppBranchRunSourceTag {
+			runMetadata.Tag = req.RunRef
+		}
+		workflowMeta["run_type"] = string(req.RunType)
+		workflowMeta["run_ref"] = req.RunRef
+	}
 	workflowMeta["event_type"] = eventType
 
 	if prNumber != nil {
@@ -251,7 +329,9 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 			EventType:         eventType,
 			PRNumber:          prNumber,
 			HeadSHA:           headSHA,
+			GitRef:            gitRef,
 			BaseBranch:        baseBranch,
+			Metadata:          runMetadata,
 			Preview:           previewInput,
 		},
 		QueueID:        branch.Queue.ID,

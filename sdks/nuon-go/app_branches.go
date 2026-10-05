@@ -287,6 +287,20 @@ func (c *client) GetAppBranchRunBuilds(ctx context.Context, appID, appBranchID, 
 	return resp.Payload, nil
 }
 
+func (c *client) GetInstallGroupRuns(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppInstallGroupRun, error) {
+	resp, err := c.genClient.Operations.GetInstallGroupRuns(&operations.GetInstallGroupRunsParams{
+		Context:     ctx,
+		AppID:       appID,
+		AppBranchID: appBranchID,
+		RunID:       runID,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *client) GetAppBranchRunInstallGroups(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppInstallAppConfigVersion, error) {
 	resp, err := c.genClient.Operations.GetAppBranchRunInstallGroups(&operations.GetAppBranchRunInstallGroupsParams{
 		Context:     ctx,

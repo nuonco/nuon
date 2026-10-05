@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -15,6 +16,15 @@ import (
 )
 
 var githubAppSlugPattern = regexp.MustCompile(`[^a-z0-9]+`)
+
+var orgIDPattern = regexp.MustCompile(`^[a-z0-9]+$`)
+
+const onboardingStateMarker = "onboarding"
+
+func parseConnectState(state string) (orgID string, onboarding bool) {
+	orgID, marker, _ := strings.Cut(state, ":")
+	return orgID, marker == onboardingStateMarker
+}
 
 func githubAppSlug(name string) string {
 	slug := githubAppSlugPattern.ReplaceAllString(strings.ToLower(name), "-")
@@ -47,15 +57,25 @@ func (h *ConnectHandler) StartConnectGithub(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "github app not configured"})
 		return
 	}
-	target := fmt.Sprintf("https://github.com/apps/%s/installations/new?state=%s", githubAppSlug(h.cfg.GithubAppName), orgID)
+	state := orgID
+	if c.Query("onboarding") != "" {
+		state = orgID + ":" + onboardingStateMarker
+	}
+	target := fmt.Sprintf("https://github.com/apps/%s/installations/new?state=%s", githubAppSlug(h.cfg.GithubAppName), url.QueryEscape(state))
 	c.Redirect(http.StatusFound, target)
 }
 
 func (h *ConnectHandler) Handle(c *gin.Context) {
 	installationID := c.Query("installation_id")
-	orgID := c.Query("state")
+	orgID, onboarding := parseConnectState(c.Query("state"))
 
-	fallback := fmt.Sprintf("/%s/apps", orgID)
+	fallback := "/"
+	if orgIDPattern.MatchString(orgID) {
+		fallback = fmt.Sprintf("/%s/apps", orgID)
+	}
+	if onboarding {
+		fallback = "/onboarding?vcs-error=1"
+	}
 
 	token, err := c.Cookie(authCookie)
 	if err != nil || token == "" {
@@ -80,5 +100,9 @@ func (h *ConnectHandler) Handle(c *gin.Context) {
 		return
 	}
 
+	if onboarding {
+		c.Redirect(http.StatusFound, "/onboarding?vcs-connected="+url.QueryEscape(connection.ID))
+		return
+	}
 	c.Redirect(http.StatusFound, fmt.Sprintf("/%s/apps?vcs-connected=%s", orgID, connection.ID))
 }

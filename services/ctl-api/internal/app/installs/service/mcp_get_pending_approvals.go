@@ -18,12 +18,14 @@ type mcpGetPendingApprovalsInput struct {
 }
 
 type mcpPendingApprovalItem struct {
-	ID         string `json:"id"`
-	Type       string `json:"type"`
-	StepID     string `json:"step_id,omitempty"`
-	StepName   string `json:"step_name,omitempty"`
-	WorkflowID string `json:"workflow_id,omitempty"`
-	CreatedAt  string `json:"created_at"`
+	ID          string          `json:"id"`
+	Type        string          `json:"type"`
+	StepID      string          `json:"step_id,omitempty"`
+	StepName    string          `json:"step_name,omitempty"`
+	WorkflowID  string          `json:"workflow_id,omitempty"`
+	CreatedAt   string          `json:"created_at"`
+	NextActions []mcpNextAction `json:"next_actions,omitempty"`
+	mcpChangeCounts
 }
 
 type mcpGetPendingApprovalsResult struct {
@@ -47,7 +49,7 @@ func (s *service) mcpGetPendingApprovals(ctx context.Context, _ *mcp.CallToolReq
 
 	var approvals []app.WorkflowStepApproval
 	err = s.db.WithContext(ctx).
-		Select("id", "org_id", "type", "install_workflow_step_id", "created_at").
+		Select("id", "org_id", "type", "install_workflow_step_id", "created_at", "changes_state", "changes_create", "changes_update", "changes_delete", "changes_replace", "changes_noop").
 		Omit("contents").
 		Preload("InstallWorkflowStep", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id", "name", "install_workflow_id")
@@ -63,19 +65,23 @@ func (s *service) mcpGetPendingApprovals(ctx context.Context, _ *mcp.CallToolReq
 	}
 
 	approvals, hasMore := apiPkg.MCPClipList(approvals, limit)
+	workflows := s.mcpWorkflowsForApprovals(ctx, orgID, approvals)
 
 	out := make([]mcpPendingApprovalItem, 0, len(approvals))
 	for _, a := range approvals {
 		item := mcpPendingApprovalItem{
-			ID:        a.ID,
-			Type:      string(a.Type),
-			CreatedAt: apiPkg.MCPTime(a.CreatedAt),
+			ID:              a.ID,
+			Type:            string(a.Type),
+			CreatedAt:       apiPkg.MCPTime(a.CreatedAt),
+			mcpChangeCounts: mcpChangesFromApproval(&a),
 		}
 		item.StepID = a.InstallWorkflowStepID
 		if a.InstallWorkflowStep.ID != "" {
 			item.StepName = a.InstallWorkflowStep.Name
 			item.WorkflowID = a.InstallWorkflowStep.InstallWorkflowID
 		}
+		workflow := workflows[item.WorkflowID]
+		item.NextActions = mcpPendingApprovalActions(item.ID, item.WorkflowID, mcpWorkflowAllowsApproveAll(workflow))
 		out = append(out, item)
 	}
 

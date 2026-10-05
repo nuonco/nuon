@@ -33,6 +33,8 @@ export interface IUserDropdown
   onAddToast: (toast: React.ReactElement) => void
   user?: { name?: string; email?: string; picture?: string } | null
   isUserLoading: boolean
+  onboardingFirstRun?: boolean
+  onReopenOnboarding?: () => void
 }
 
 export const UserDropdown = ({
@@ -56,6 +58,8 @@ export const UserDropdown = ({
   onAddToast,
   user,
   isUserLoading,
+  onboardingFirstRun,
+  onReopenOnboarding,
   ...props
 }: IUserDropdown) => {
   return (
@@ -80,14 +84,17 @@ export const UserDropdown = ({
           </Text>
         )}
         {!hideOrgSettings && <InviteUserButton isMenuButton />}
-        {!hideOrgSettings && (isByoc || isDev) && (
-          <OrgTelemetryButton isMenuButton />
-        )}
-        {!hideOrgSettings && (
+        {!hideOrgSettings && <OrgTelemetryButton isMenuButton />}
+        {!hideOrgSettings && (isByoc || !onboardingFirstRun) && (
           <Link href={isByoc ? '/byoc-setup' : '/onboarding'}>
             {isByoc ? 'Setup guide' : 'Re-open onboarding'}{' '}
             <Icon variant="SignpostIcon" />
           </Link>
+        )}
+        {!hideOrgSettings && !isByoc && onboardingFirstRun && (
+          <Button onClick={onReopenOnboarding} isMenuButton>
+            Re-open onboarding <Icon variant="SignpostIcon" />
+          </Button>
         )}
         {!hideOrgSettings && <hr />}
         {!hideOrgSettings && isAdmin && (
@@ -136,7 +143,10 @@ export const UserDropdown = ({
             User settings
           </Text>
         )}
-        <Button onClick={() => onAddPanel(<UserPreferencesPanel />)} isMenuButton>
+        <Button
+          onClick={() => onAddPanel(<UserPreferencesPanel />)}
+          isMenuButton
+        >
           Preferences <Icon variant="SlidersHorizontalIcon" />
         </Button>
         {notificationsSupported && notificationPermission === 'granted' ? (

@@ -3,11 +3,13 @@ package service
 import (
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
@@ -103,6 +105,12 @@ type InstallDeploymentAffectedResources struct {
 	Images     []string `json:"images"`
 }
 
+type InstallDeploymentImage struct {
+	Repository  string `json:"repository"`
+	PreviousTag string `json:"previous_tag,omitempty"`
+	NextTag     string `json:"next_tag"`
+}
+
 // InstallDeployment is a normalized record representing a single change event on an install.
 type InstallDeployment struct {
 	ID        string                `json:"id"`
@@ -115,6 +123,7 @@ type InstallDeployment struct {
 	Workflow      *InstallDeploymentWorkflowRef  `json:"workflow,omitempty"`
 	AppBranch     *InstallDeploymentAppBranchRef `json:"app_branch,omitempty"`
 	ComponentName string                         `json:"component_name,omitempty"`
+	Image         *InstallDeploymentImage        `json:"image,omitempty"`
 
 	AffectedResources InstallDeploymentAffectedResources `json:"affected_resources"`
 	ChangeGroups      []InstallDeploymentChangeGroup     `json:"change_groups"`
@@ -216,7 +225,11 @@ func (s *service) getInstallDeployments(
 	createdAtGte, createdAtLte *time.Time,
 ) (*GetInstallDeploymentsResponse, error) {
 	fetchLimit := offset + limit + 1
-	workflowTypes := deploymentWorkflowTypes(filterTypes)
+	queryTypes := filterTypes
+	if containsString(filterTypes, string(InstallDeploymentTypeImageUpdate)) && !containsString(filterTypes, string(InstallDeploymentTypeComponentDeploy)) {
+		queryTypes = append(append([]string{}, filterTypes...), string(InstallDeploymentTypeComponentDeploy))
+	}
+	workflowTypes := deploymentWorkflowTypes(queryTypes)
 	if len(workflowTypes) == 0 {
 		return &GetInstallDeploymentsResponse{
 			Deployments: []InstallDeployment{},
@@ -229,7 +242,9 @@ func (s *service) getInstallDeployments(
 
 	query := s.db.WithContext(ctx).
 		Preload("CreatedBy").
-		Preload("InstallDeploys").
+		Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_deploys.created_at ASC").Order("install_deploys.id ASC")
+		}).
 		Preload("InstallDeploys.InstallComponent").
 		Preload("InstallDeploys.InstallComponent.Component").
 		Preload("InstallDeploys.ComponentBuild").
@@ -272,8 +287,16 @@ func (s *service) getInstallDeployments(
 				  AND d.deleted_at = 0
 				  AND ic.deleted_at = 0
 				  AND c.deleted_at = 0
-				  AND c.name = ?
-			)`, resource)
+				  AND (
+				c.name = ?
+				OR EXISTS (
+					SELECT 1 FROM component_builds cb
+					WHERE cb.id = d.component_build_id
+					  AND cb.deleted_at = 0
+					  AND (cb.source_image = ? OR cb.source_ref = ?)
+				)
+			  )
+			)`, resource, resource, resource)
 	}
 
 	for _, token := range strings.Fields(search) {
@@ -307,6 +330,8 @@ func (s *service) getInstallDeployments(
 			Preload("AppBranchRun.VCSConnectionCommit").
 			Where(app.InstallAppConfigVersion{OrgID: orgID, InstallID: installID}).
 			Where("workflow_id IN ?", workflowIDs).
+			Order("created_at ASC").
+			Order("id ASC").
 			Find(&versions).Error; err != nil {
 			return nil, fmt.Errorf("unable to query install app config versions: %w", err)
 		}
@@ -323,10 +348,23 @@ func (s *service) getInstallDeployments(
 		}
 	}
 
+	buildIDs := collectDiffBuildIDs(diffsByWorkflowID)
+	buildsByID, err := s.componentBuildsByID(ctx, buildIDs)
+	if err != nil {
+		return nil, err
+	}
+	fallbackBranch, err := s.installDeploymentBranch(ctx, orgID, installID)
+	if err != nil {
+		return nil, err
+	}
+
 	deployments := make([]InstallDeployment, 0, len(workflows))
 	for i := range workflows {
-		d := buildInstallDeployment(&workflows[i], versionsByWorkflowID[workflows[i].ID], diffsByWorkflowID[workflows[i].ID])
+		d := buildInstallDeployment(&workflows[i], versionsByWorkflowID[workflows[i].ID], diffsByWorkflowID[workflows[i].ID], buildsByID, fallbackBranch)
 		if d.Type == "" {
+			continue
+		}
+		if len(filterTypes) > 0 && !containsString(filterTypes, string(d.Type)) {
 			continue
 		}
 		deployments = append(deployments, d)
@@ -373,7 +411,7 @@ func deploymentWorkflowTypes(filterTypes []string) []app.WorkflowType {
 	return types
 }
 
-func buildInstallDeployment(wf *app.Workflow, version *app.InstallAppConfigVersion, configDiff *app.InstallConfigDiff) InstallDeployment {
+func buildInstallDeployment(wf *app.Workflow, version *app.InstallAppConfigVersion, configDiff *app.InstallConfigDiff, builds map[string]app.ComponentBuild, fallbackBranch *InstallDeploymentAppBranchRef) InstallDeployment {
 	status := wf.Status.Status
 	if status == "" {
 		status = "pending"
@@ -435,6 +473,10 @@ func buildInstallDeployment(wf *app.Workflow, version *app.InstallAppConfigVersi
 		}
 		d.AppBranch = branchRef
 	}
+	if d.AppBranch == nil && fallbackBranch != nil {
+		copied := *fallbackBranch
+		d.AppBranch = &copied
+	}
 
 	categoryGroups := changeGroupsForWorkflowType(wf.Type)
 	for _, cg := range categoryGroups {
@@ -449,7 +491,10 @@ func buildInstallDeployment(wf *app.Workflow, version *app.InstallAppConfigVersi
 			d.AffectedResources.Sandbox = true
 		}
 	}
-	applyInstallConfigDiff(&d, configDiff)
+	applyInstallConfigDiff(&d, configDiff, builds)
+	applyDeploymentImage(&d, wf)
+	sort.Strings(d.AffectedResources.Components)
+	sort.Strings(d.AffectedResources.Images)
 
 	return d
 }
@@ -493,7 +538,7 @@ func changeGroupsForWorkflowType(t app.WorkflowType) []InstallDeploymentChangeGr
 	}
 }
 
-func applyInstallConfigDiff(deployment *InstallDeployment, configDiff *app.InstallConfigDiff) {
+func applyInstallConfigDiff(deployment *InstallDeployment, configDiff *app.InstallConfigDiff, builds map[string]app.ComponentBuild) {
 	if configDiff == nil {
 		return
 	}
@@ -513,7 +558,7 @@ func applyInstallConfigDiff(deployment *InstallDeployment, configDiff *app.Insta
 				name = entry.ComponentID
 			}
 			deployment.AffectedResources.Components = appendUniqueString(deployment.AffectedResources.Components, name)
-			deployment.ChangeGroups = append(deployment.ChangeGroups, InstallDeploymentChangeGroup{
+			group := InstallDeploymentChangeGroup{
 				ID:           deployment.ID + "-component-" + entry.ComponentID,
 				Scope:        "component",
 				Label:        "Component",
@@ -525,8 +570,27 @@ func applyInstallConfigDiff(deployment *InstallDeployment, configDiff *app.Insta
 					PreviousValue: entry.OldBuildID,
 					NextValue:     entry.NewBuildID,
 				}},
-			})
+			}
+			if image := imageFromBuilds(builds[entry.OldBuildID], builds[entry.NewBuildID]); image != nil && app.ComponentType(entry.ComponentType).IsImage() {
+				deployment.Image = image
+				deployment.AffectedResources.Images = appendUniqueString(deployment.AffectedResources.Images, image.Repository)
+				if deployment.Type == InstallDeploymentTypeComponentDeploy && image.PreviousTag != "" && image.PreviousTag != image.NextTag {
+					deployment.Type = InstallDeploymentTypeImageUpdate
+				}
+			}
+			deployment.ChangeGroups = append(deployment.ChangeGroups, group)
 		}
+	}
+	if diffText := renderInstallConfigDiff(configDiff); diffText != "" {
+		deployment.ChangeGroups = append(deployment.ChangeGroups, InstallDeploymentChangeGroup{
+			ID:           deployment.ID + "-config-diff",
+			Scope:        "app_branch",
+			Label:        "Config diff",
+			Summary:      "App config changes",
+			Changes:      []InstallDeploymentConfigChange{},
+			FileDiff:     diffText,
+			DiffLanguage: "diff",
+		})
 	}
 
 	if configDiff.StackChanged {
@@ -572,6 +636,159 @@ func applyInstallConfigDiff(deployment *InstallDeployment, configDiff *app.Insta
 			Changes: changes,
 		})
 	}
+}
+
+func collectDiffBuildIDs(diffs map[string]*app.InstallConfigDiff) []string {
+	seen := map[string]struct{}{}
+	ids := make([]string, 0)
+	add := func(id string) {
+		if id == "" {
+			return
+		}
+		if _, ok := seen[id]; ok {
+			return
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+	for _, diff := range diffs {
+		if diff == nil {
+			continue
+		}
+		for _, entries := range [][]app.ComponentDiffEntry{diff.Added, diff.Changed, diff.Removed} {
+			for _, entry := range entries {
+				add(entry.OldBuildID)
+				add(entry.NewBuildID)
+			}
+		}
+	}
+	return ids
+}
+
+func (s *service) componentBuildsByID(ctx *gin.Context, ids []string) (map[string]app.ComponentBuild, error) {
+	builds := map[string]app.ComponentBuild{}
+	if len(ids) == 0 {
+		return builds, nil
+	}
+	var rows []app.ComponentBuild
+	if err := s.db.WithContext(ctx).Where("id IN ?", ids).Find(&rows).Error; err != nil {
+		return nil, fmt.Errorf("unable to query component builds: %w", err)
+	}
+	for i := range rows {
+		builds[rows[i].ID] = rows[i]
+	}
+	return builds, nil
+}
+
+func (s *service) installDeploymentBranch(ctx *gin.Context, orgID, installID string) (*InstallDeploymentAppBranchRef, error) {
+	var connection app.InstallAppBranchConnection
+	err := s.db.WithContext(ctx).
+		Preload("AppBranch").
+		Where(app.InstallAppBranchConnection{InstallID: installID, OrgID: orgID}).
+		First(&connection).Error
+	if isNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install app branch: %w", err)
+	}
+	return &InstallDeploymentAppBranchRef{
+		ID:   connection.AppBranchID,
+		Name: connection.AppBranch.Name,
+	}, nil
+}
+
+func imageFromBuilds(previous, next app.ComponentBuild) *InstallDeploymentImage {
+	if previous.ID == "" && next.ID == "" {
+		return nil
+	}
+	repo := next.SourceImage
+	if repo == "" {
+		repo = previous.SourceImage
+	}
+	nextTag := next.ResolvedTag
+	if nextTag == "" {
+		nextTag = tagFromImageRef(next.SourceRef)
+	}
+	prevTag := previous.ResolvedTag
+	if prevTag == "" {
+		prevTag = tagFromImageRef(previous.SourceRef)
+	}
+	if repo == "" && nextTag == "" {
+		return nil
+	}
+	return &InstallDeploymentImage{
+		Repository:  repo,
+		PreviousTag: prevTag,
+		NextTag:     nextTag,
+	}
+}
+
+func tagFromImageRef(ref string) string {
+	if i := strings.Index(ref, "@"); i >= 0 {
+		ref = ref[:i]
+	}
+	if i := strings.LastIndex(ref, ":"); i >= 0 {
+		return ref[i+1:]
+	}
+	return ""
+}
+
+func applyDeploymentImage(deployment *InstallDeployment, wf *app.Workflow) {
+	if deployment.Image != nil {
+		return
+	}
+	for i := range wf.InstallDeploys {
+		dep := &wf.InstallDeploys[i]
+		if !dep.InstallComponent.Component.Type.IsImage() {
+			continue
+		}
+		image := imageFromBuilds(app.ComponentBuild{}, dep.ComponentBuild)
+		if image == nil {
+			continue
+		}
+		deployment.Image = image
+		deployment.AffectedResources.Images = appendUniqueString(deployment.AffectedResources.Images, image.Repository)
+		return
+	}
+}
+
+func renderInstallConfigDiff(configDiff *app.InstallConfigDiff) string {
+	if configDiff == nil {
+		return ""
+	}
+	var b strings.Builder
+	writeEntries := func(prefix string, entries []app.ComponentDiffEntry) {
+		for _, entry := range entries {
+			name := entry.ComponentName
+			if name == "" {
+				name = entry.ComponentID
+			}
+			if name == "" {
+				continue
+			}
+			fmt.Fprintf(&b, "%s %s\n", prefix, name)
+		}
+	}
+	writeEntries("+", configDiff.Added)
+	writeEntries("~", configDiff.Changed)
+	writeEntries("-", configDiff.Removed)
+	if configDiff.StackChanged {
+		b.WriteString("~ stack\n")
+	}
+	if configDiff.SandboxChanged || configDiff.SandboxBuildChanged {
+		b.WriteString("~ sandbox\n")
+	}
+	return strings.TrimRight(b.String(), "\n")
+}
+
+func containsString(values []string, value string) bool {
+	for _, existing := range values {
+		if existing == value {
+			return true
+		}
+	}
+	return false
 }
 
 func appendUniqueString(values []string, value string) []string {

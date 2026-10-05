@@ -7,10 +7,17 @@
 export interface paths {
   "/.well-known/jwks.json": {
     /**
-     * Get telemetry JWT public keys
-     * @description Returns the public RSA keys used to verify BYOC telemetry access tokens.
+     * Get OIDC signing public keys
+     * @description Returns the public RSA keys used to verify cloud federation and telemetry tokens.
      */
     get: operations["GetTelemetryJWKS"];
+  };
+  "/.well-known/openid-configuration": {
+    /**
+     * Get OIDC discovery document
+     * @description Returns the OIDC discovery document cloud providers use to federate to this control plane.
+     */
+    get: operations["GetOpenIDConfiguration"];
   };
   "/slack/commands/nuon": {
     /**
@@ -675,6 +682,13 @@ export interface paths {
      */
     get: operations["GetAppConfigGraphV2"];
   };
+  "/v1/apps/{app_id}/configs/{config_id}/source-files/{path}": {
+    /**
+     * get a single file from an app config's source archive
+     * @description Returns the raw contents of one file captured in the config's source archive. The path must exactly match a captured file.
+     */
+    get: operations["GetAppConfigSourceFile"];
+  };
   "/v1/apps/{app_id}/configs/{config_id}/sync": {
     /**
      * @description Sync an app config that was created with an intermediate config.
@@ -1077,6 +1091,29 @@ export interface paths {
      * @description Returns all builds for the provided component.
      */
     get: operations["GetComponentBuilds"];
+  };
+  "/v1/cloud-connections": {
+    /** list cloud connections */
+    get: operations["ListCloudConnections"];
+    /**
+     * create a cloud connection
+     * @description Create an AWS connection using the stacks or custom preset. Custom renders trust only; attach your own permissions policy.
+     */
+    post: operations["CreateCloudConnection"];
+  };
+  "/v1/cloud-connections/{connection_id}": {
+    /** get a cloud connection */
+    get: operations["GetCloudConnection"];
+    /** delete a cloud connection */
+    delete: operations["DeleteCloudConnection"];
+  };
+  "/v1/cloud-connections/{connection_id}/setup": {
+    /** get cloud connection setup material */
+    get: operations["GetCloudConnectionSetup"];
+  };
+  "/v1/cloud-connections/{connection_id}/verify": {
+    /** verify a cloud connection */
+    post: operations["VerifyCloudConnection"];
   };
   "/v1/component-builds": {
     /** list component build history for the current organization */
@@ -1608,6 +1645,19 @@ export interface paths {
      */
     get: operations["GetInstallActionRecentRuns"];
   };
+  "/v1/installs/{install_id}/activity": {
+    /**
+     * get normalized activity feed for an install
+     * @description Returns a normalized, chronological activity feed for an install.
+     *
+     * Each record is a top-level operation that ran against the install rather than a change to it: a standalone action run, a runbook run, or an install-scoped policy check. Action runs executed as steps within another workflow are omitted. Policy checks recorded only against a component build, with no install, are also omitted.
+     *
+     * Records include a `type` (`action_run`, `runbook_run`, or `policy_check`), a `status` taken from that source, a human-readable `title` and `summary`, and a type-specific payload (`action`, `runbook`, or `policy`). Action and runbook records include a `workflow` reference when the run has one.
+     *
+     * Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `search`, `created_at_gte`, and `created_at_lte`. `status` matches each source's own status string. Action and runbook runs use values such as `queued`, `in-progress`, `finished`, and `error`. Policy checks use `success`, `warning`, and `error`.
+     */
+    get: operations["GetInstallActivity"];
+  };
   "/v1/installs/{install_id}/app-branch": {
     /**
      * move an install to another app branch
@@ -1910,7 +1960,7 @@ export interface paths {
      * get normalized deployment feed for an install
      * @description Returns a normalized, chronological deployment feed for an install.
      *
-     * Each record represents one install-owned workflow that caused a real change: provisioning, reprovisioning, component deploys, input updates, stack reprovisioning, sandbox reprovisioning, action runs, runbook runs, and install-config updates. Plan-only and preview records are excluded.
+     * Each record represents one install-owned workflow that caused a real change: provisioning, reprovisioning, component deploys, input updates, stack reprovisioning, sandbox reprovisioning, and install-config updates. Action runs, runbook runs, and policy checks are returned by the activity feed. Plan-only and preview records are excluded.
      *
      * Records include a `type`, unified `status`, human-readable `title` and `summary`, an optional `workflow` reference, an optional `app_branch` reference (when the change originated from a branch run), an optional primary `component` reference (for single-component operations), a flat `affected_resources` list of component names, and `change_groups` that group the affected resources by logical category.
      *
@@ -2119,6 +2169,13 @@ export interface paths {
     /** get a single cell run (includes log_stream_id for tailing) */
     get: operations["GetNotebookCellRun"];
   };
+  "/v1/installs/{install_id}/overview": {
+    /**
+     * install overview
+     * @description Returns branch tracking and config drift for an install. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
+     */
+    get: operations["GetInstallOverview"];
+  };
   "/v1/installs/{install_id}/phone-home/{phone_home_id}": {
     /**
      * phone home for an install
@@ -2270,6 +2327,13 @@ export interface paths {
      * @description Returns the state history for an install.
      */
     get: operations["GetInstallStateHistory"];
+  };
+  "/v1/installs/{install_id}/status": {
+    /**
+     * install status
+     * @description Returns deployment, resource, and health-check status for an install. Each axis is a composite status with counts in metadata. Deployment state stays on the component lifecycle, so a failed deploy remains failed after the workload is repaired. Resources and health checks are the latest observations.
+     */
+    get: operations["GetInstallStatus"];
   };
   "/v1/installs/{install_id}/sync-config": {
     /**
@@ -2573,7 +2637,10 @@ export interface paths {
     get: operations["GetOrgStats"];
   };
   "/v1/orgs/current/telemetry": {
-    /** Update current org telemetry settings */
+    /**
+     * Update current org telemetry settings
+     * @description Omitted fields are unchanged. Set relay_endpoint to null or an empty string to use the deployment default. Relay endpoints must be HTTPS OTLP base URLs.
+     */
     patch: operations["UpdateOrgTelemetry"];
   };
   "/v1/orgs/current/user": {
@@ -3401,7 +3468,6 @@ export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
     "app.AWSAccount": {
-      connection_id?: string;
       created_at?: string;
       created_by_id?: string;
       iam_role_arn?: string;
@@ -3496,6 +3562,7 @@ export interface components {
       id?: string;
       /** @description Image is an optional container image the action's steps run inside. */
       image?: string;
+      is_healthcheck?: boolean;
       /**
        * @description KubernetesContextName is the name of an AppKubernetesContextConfig on
        * the same AppConfig. Empty means fall back to the implicit sandbox
@@ -3784,6 +3851,7 @@ export interface components {
       head_run_id?: string;
       id?: string;
       org_id?: string;
+      source_diff?: components["schemas"]["blobstore.Blob"];
       updated_at?: string;
     };
     "app.AppBranchRunConfig": {
@@ -4332,6 +4400,29 @@ export interface components {
       subscription_id?: string;
       subscription_tenant_id?: string;
     };
+    "app.CloudConnection": {
+      created_at?: string;
+      created_by_id?: string;
+      default_region?: string;
+      id?: string;
+      last_verified_at?: string;
+      name?: string;
+      org_id?: string;
+      /** @enum {string} */
+      platform?: "aws";
+      preset?: components["schemas"]["app.CloudConnectionPreset"];
+      principal?: string;
+      queues?: components["schemas"]["app.Queue"][];
+      status?: components["schemas"]["app.CloudConnectionStatus"];
+      status_message?: string;
+      target_id?: string;
+      updated_at?: string;
+      verification_requested_at?: string;
+    };
+    /** @enum {string} */
+    "app.CloudConnectionPreset": "stacks" | "custom";
+    /** @enum {string} */
+    "app.CloudConnectionStatus": "pending" | "verified" | "error";
     /** @enum {string} */
     "app.CloudPlatform": "aws" | "azure" | "gcp" | "unknown";
     "app.CloudPlatformRegion": {
@@ -4783,6 +4874,8 @@ export interface components {
       app_sandbox_config?: components["schemas"]["app.AppSandboxConfig"];
       aws_account?: components["schemas"]["app.AWSAccount"];
       azure_account?: components["schemas"]["app.AzureAccount"];
+      cloud_connection?: components["schemas"]["app.CloudConnection"];
+      cloud_connection_id?: string;
       cloud_platform?: string;
       /**
        * @description CloudPlatformMetadata records the cloud account this install is expected to
@@ -5839,6 +5932,7 @@ export interface components {
     "app.OrgMemberStatus": "active" | "invited";
     "app.OrgTelemetrySettings": {
       enabled?: boolean;
+      relay_endpoint?: string | null;
     };
     "app.OtelLogRecord": {
       body?: string;
@@ -7156,6 +7250,21 @@ export interface components {
     "config.InstallTelemetry": {
       enabled?: boolean | null;
     };
+    "config.SourceArchiveDiff": {
+      files?: components["schemas"]["config.SourceFileDiff"][];
+      total_files?: number;
+      unchanged?: number;
+    };
+    "config.SourceFileDiff": {
+      after_sha256?: string;
+      after_size?: number;
+      before_sha256?: string;
+      before_size?: number;
+      op?: string;
+      patch?: string;
+      patch_truncated?: boolean;
+      path?: string;
+    };
     "configs.ACRAppRegistration": {
       clientCertificateName?: string;
       clientID?: string;
@@ -7310,7 +7419,6 @@ export interface components {
        * creation — there is deliberately no equivalent field on UpdateInstallRequest.
        */
       account_id?: string;
-      connection_id?: string;
       region?: string;
     };
     "helpers.CreateInstallAzureAccountParams": {
@@ -7407,6 +7515,22 @@ export interface components {
        * NOTE(JM): we are deprecating this
        */
       trusted_role_arn?: string;
+    };
+    "oidcissuer.DiscoveryDocument": {
+      claims_supported?: string[];
+      id_token_signing_alg_values_supported?: string[];
+      issuer?: string;
+      jwks_uri?: string;
+      response_types_supported?: string[];
+      subject_types_supported?: string[];
+    };
+    "oidcissuer.JWK": {
+      alg?: string;
+      e?: string;
+      kid?: string;
+      kty?: string;
+      n?: string;
+      use?: string;
     };
     "outputs.SecretSyncOutput": {
       arn?: string;
@@ -7950,8 +8074,11 @@ export interface components {
       head_run_id?: string;
       head_sha?: string;
       id?: string;
+      source_diff?: components["schemas"]["blobstore.BlobMetadata"];
+      source_diff_content?: unknown;
     };
     "service.AppBranchRunComparisonRunSummary": {
+      app_config_id?: string;
       base_branch?: string;
       created_at?: string;
       event_type?: string;
@@ -7966,6 +8093,8 @@ export interface components {
       config_id?: string;
       diff?: components["schemas"]["diff.Diff"];
       old_config_id?: string;
+      source?: components["schemas"]["config.SourceArchiveDiff"];
+      source_skipped?: boolean;
       summary?: components["schemas"]["diff.DiffSummary"];
     };
     "service.AppConfigTemplate": {
@@ -8169,12 +8298,59 @@ export interface components {
       gitRef?: string;
       repo: string;
     };
+    "service.ConnectionListResponse": {
+      created_at?: string;
+      created_by_id?: string;
+      default_region?: string;
+      id?: string;
+      last_verified_at?: string;
+      name?: string;
+      org_id?: string;
+      /** @enum {string} */
+      platform?: "aws";
+      preset?: components["schemas"]["app.CloudConnectionPreset"];
+      principal?: string;
+      queues?: components["schemas"]["app.Queue"][];
+      status?: components["schemas"]["app.CloudConnectionStatus"];
+      status_message?: string;
+      target_id?: string;
+      updated_at?: string;
+      used_by?: components["schemas"]["service.ConnectionUsage"];
+      verification_in_progress?: boolean;
+      verification_requested_at?: string;
+    };
+    "service.ConnectionResponse": {
+      created_at?: string;
+      created_by_id?: string;
+      default_region?: string;
+      id?: string;
+      last_verified_at?: string;
+      name?: string;
+      org_id?: string;
+      /** @enum {string} */
+      platform?: "aws";
+      preset?: components["schemas"]["app.CloudConnectionPreset"];
+      principal?: string;
+      queues?: components["schemas"]["app.Queue"][];
+      setup?: components["schemas"]["service.SetupResponse"];
+      status?: components["schemas"]["app.CloudConnectionStatus"];
+      status_message?: string;
+      target_id?: string;
+      updated_at?: string;
+      used_by?: components["schemas"]["service.ConnectionUsage"];
+      verification_in_progress?: boolean;
+      verification_requested_at?: string;
+    };
+    "service.ConnectionUsage": {
+      installs?: number;
+    };
     "service.CreateActionWorkflowConfigRequest": {
       app_config_id: string;
       break_glass_role_arn?: string;
       dependencies?: string[];
       enable_kube_config?: boolean | null;
       image?: string;
+      is_healthcheck?: boolean;
       kubernetes_context?: string;
       references?: string[];
       role?: string;
@@ -8572,6 +8748,7 @@ export interface components {
       app_branch_id?: string;
       aws_account?: components["schemas"]["helpers.CreateInstallAWSAccountParams"];
       azure_account?: components["schemas"]["helpers.CreateInstallAzureAccountParams"];
+      cloud_connection_id?: string;
       gcp_account?: components["schemas"]["helpers.CreateInstallGCPAccountParams"];
       inputs?: {
         [key: string]: string;
@@ -8604,6 +8781,7 @@ export interface components {
       app_id: string;
       aws_account?: components["schemas"]["helpers.CreateInstallAWSAccountParams"];
       azure_account?: components["schemas"]["helpers.CreateInstallAzureAccountParams"];
+      cloud_connection_id?: string;
       gcp_account?: components["schemas"]["helpers.CreateInstallGCPAccountParams"];
       inputs?: {
         [key: string]: string;
@@ -8748,6 +8926,15 @@ export interface components {
       skip_noops?: boolean;
       toggleable?: boolean;
       version?: string;
+    };
+    "service.CreateRequest": {
+      default_region?: string;
+      name?: string;
+      /** @enum {string} */
+      platform?: "aws";
+      preset?: components["schemas"]["app.CloudConnectionPreset"];
+      principal?: string;
+      target_id?: string;
     };
     "service.CreateRunbookConfigRequest": {
       app_config_id?: string;
@@ -8916,6 +9103,7 @@ export interface components {
     };
     "service.DeprovisionInstallRequest": {
       plan_only?: boolean;
+      role?: string;
     };
     "service.DeprovisionInstallSandboxRequest": {
       plan_only?: boolean;
@@ -8946,6 +9134,13 @@ export interface components {
     "service.ForceShutdownRequest": Record<string, never>;
     "service.ForgetInstallComponentRequest": Record<string, never>;
     "service.ForgetInstallRequest": Record<string, never>;
+    "service.GetInstallActivityResponse": {
+      activity?: components["schemas"]["service.InstallActivity"][];
+      has_more?: boolean;
+      limit?: number;
+      offset?: number;
+      page?: number;
+    };
     "service.GetInstallDeploymentsResponse": {
       deployments?: components["schemas"]["service.InstallDeployment"][];
       has_more?: boolean;
@@ -8980,6 +9175,45 @@ export interface components {
       repo_url: string;
       version?: string;
     };
+    "service.InstallActivity": {
+      action?: components["schemas"]["service.InstallActivityAction"];
+      created_at?: string;
+      id?: string;
+      policy?: components["schemas"]["service.InstallActivityPolicy"];
+      runbook?: components["schemas"]["service.InstallActivityRunbook"];
+      status?: string;
+      summary?: string;
+      title?: string;
+      type?: components["schemas"]["service.InstallActivityType"];
+      workflow?: components["schemas"]["service.InstallActivityWorkflowRef"];
+    };
+    "service.InstallActivityAction": {
+      action_workflow_id?: string;
+      name?: string;
+      run_id?: string;
+      trigger_type?: string;
+    };
+    "service.InstallActivityPolicy": {
+      component_name?: string;
+      deny_count?: number;
+      owner_id?: string;
+      owner_type?: string;
+      pass_count?: number;
+      report_id?: string;
+      warn_count?: number;
+    };
+    "service.InstallActivityRunbook": {
+      name?: string;
+      run_id?: string;
+      runbook_id?: string;
+    };
+    /** @enum {string} */
+    "service.InstallActivityType": "action_run" | "runbook_run" | "policy_check";
+    "service.InstallActivityWorkflowRef": {
+      id?: string;
+      name?: string;
+      type?: components["schemas"]["app.WorkflowType"];
+    };
     "service.InstallAppConfigUpdate": {
       diff?: components["schemas"]["app.InstallConfigDiff"];
       version?: components["schemas"]["app.InstallAppConfigVersion"];
@@ -8991,6 +9225,16 @@ export interface components {
       maintenance_role?: components["schemas"]["service.InstallPermissionsRoleStatus"];
       provision_role?: components["schemas"]["service.InstallPermissionsRoleStatus"];
     };
+    "service.InstallBranchTracking": {
+      applied_commit?: components["schemas"]["service.InstallOverviewCommit"];
+      branch_id?: string;
+      directory?: string;
+      expected_commit?: components["schemas"]["service.InstallOverviewCommit"];
+      git_branch?: string;
+      repo?: string;
+      status?: string;
+      target_branch?: string;
+    };
     "service.InstallComponentHealthSummary": {
       /**
        * @description ComponentID is what dashboard component routes are keyed by — a link
@@ -8998,6 +9242,7 @@ export interface components {
        */
       component_id?: string;
       component_name?: string;
+      component_type?: string;
       current_health?: string;
       install_component_id?: string;
       /**
@@ -9016,6 +9261,22 @@ export interface components {
       transitions?: components["schemas"]["service.HealthTransitionResponse"][];
       uptime_percent?: number;
     };
+    "service.InstallConfigDrift": {
+      components?: components["schemas"]["service.InstallConfigDriftComponent"][];
+      current_app_config_id?: string;
+      sandbox?: components["schemas"]["service.InstallConfigDriftResource"];
+      stack?: components["schemas"]["service.InstallConfigDriftResource"];
+    };
+    "service.InstallConfigDriftComponent": {
+      applied_app_config_id?: string;
+      component_id?: string;
+      drifted?: boolean;
+      name?: string;
+    };
+    "service.InstallConfigDriftResource": {
+      applied_app_config_id?: string;
+      drifted?: boolean;
+    };
     "service.InstallConfigUpdate": {
       version?: components["schemas"]["app.InstallConfigVersion"];
     };
@@ -9026,6 +9287,7 @@ export interface components {
       component_name?: string;
       created_at?: string;
       id?: string;
+      image?: components["schemas"]["service.InstallDeploymentImage"];
       status?: string;
       summary?: string;
       title?: string;
@@ -9061,6 +9323,11 @@ export interface components {
       operation?: string;
       path?: string;
       previous_value?: string;
+    };
+    "service.InstallDeploymentImage": {
+      next_tag?: string;
+      previous_tag?: string;
+      repository?: string;
     };
     /** @enum {string} */
     "service.InstallDeploymentType": "provision" | "reprovision" | "sandbox_reprovision" | "app_branch_update" | "component_deploy" | "image_update" | "stack_update" | "install_config_update";
@@ -9099,13 +9366,33 @@ export interface components {
       current_health?: string;
       daily?: components["schemas"]["service.dailyHealthBucket"][];
       days?: number;
+      healthchecks?: components["schemas"]["service.InstallHealthcheck"][];
       install_id?: string;
       observed_seconds?: number;
       uptime_percent?: number;
     };
+    "service.InstallHealthcheck": {
+      action_id?: string;
+      last_run_at?: string;
+      name?: string;
+      status?: string;
+      workflow_id?: string;
+    };
     "service.InstallInputsUpdate": {
       input_config_id?: string;
       keys?: string[];
+    };
+    "service.InstallOverviewCommit": {
+      author?: string;
+      created_at?: string;
+      message?: string;
+      run_id?: string;
+      run_status?: string;
+      sha?: string;
+    };
+    "service.InstallOverviewResponse": {
+      branch_tracking?: components["schemas"]["service.InstallBranchTracking"];
+      config_drift?: components["schemas"]["service.InstallConfigDrift"];
     };
     "service.InstallPermissionsRoleStatus": {
       app_config_id?: string;
@@ -9146,10 +9433,16 @@ export interface components {
       status?: components["schemas"]["app.CompositeStatus"];
       version_id?: string;
     };
+    "service.InstallStatusResponse": {
+      deployments?: components["schemas"]["app.CompositeStatus"];
+      health_checks?: components["schemas"]["app.CompositeStatus"];
+      resources?: components["schemas"]["app.CompositeStatus"];
+    };
     "service.InstallTelemetrySettings": {
       enabled?: boolean;
       org_default?: boolean;
       override?: boolean | null;
+      relay_configured?: boolean;
     };
     "service.InstallUpdate": {
       app_config?: components["schemas"]["service.InstallAppConfigUpdate"];
@@ -9417,6 +9710,21 @@ export interface components {
       passes?: number;
       warns?: number;
     };
+    "service.SetupResponse": {
+      audience?: string;
+      cli?: string;
+      cloudformation?: string;
+      issuer_url?: string;
+      permissions_policy?: {
+        [key: string]: unknown;
+      };
+      preset?: components["schemas"]["app.CloudConnectionPreset"];
+      subject?: string;
+      terraform?: string;
+      trust_policy?: {
+        [key: string]: unknown;
+      };
+    };
     "service.ShutdownRunnerProcessRequest": {
       shutdown_type: string;
     };
@@ -9451,16 +9759,8 @@ export interface components {
       plan_only?: boolean;
       role?: string;
     };
-    "service.TelemetryJSONWebKey": {
-      alg?: string;
-      e?: string;
-      kid?: string;
-      kty?: string;
-      n?: string;
-      use?: string;
-    };
     "service.TelemetryJSONWebKeySet": {
-      keys?: components["schemas"]["service.TelemetryJSONWebKey"][];
+      keys?: components["schemas"]["oidcissuer.JWK"][];
     };
     "service.TimeseriesBucket": {
       denies?: number;
@@ -9484,9 +9784,13 @@ export interface components {
       plan_only?: boolean;
       pr_number?: number;
       preview_run?: components["schemas"]["service.PreviewRunRequest"];
+      run_ref?: string;
+      run_type?: components["schemas"]["service.TriggerAppBranchRunSource"];
       skip_builds?: boolean;
       sync_app_config?: boolean;
     };
+    /** @enum {string} */
+    "service.TriggerAppBranchRunSource": "pr" | "tag" | "commit";
     "service.TriggerInstallConfigSyncRequest": {
       install_name?: string;
     };
@@ -9618,7 +9922,8 @@ export interface components {
       name: string;
     };
     "service.UpdateOrgTelemetryRequest": {
-      enabled: boolean;
+      enabled?: boolean | null;
+      relay_endpoint?: string | null;
     };
     "service.UpdateRunbookRequest": {
       description?: string;
@@ -9906,8 +10211,8 @@ export type external = Record<string, never>;
 export interface operations {
 
   /**
-   * Get telemetry JWT public keys
-   * @description Returns the public RSA keys used to verify BYOC telemetry access tokens.
+   * Get OIDC signing public keys
+   * @description Returns the public RSA keys used to verify cloud federation and telemetry tokens.
    */
   GetTelemetryJWKS: {
     responses: {
@@ -9915,6 +10220,26 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["service.TelemetryJSONWebKeySet"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get OIDC discovery document
+   * @description Returns the OIDC discovery document cloud providers use to federate to this control plane.
+   */
+  GetOpenIDConfiguration: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["oidcissuer.DiscoveryDocument"];
         };
       };
       /** @description Service Unavailable */
@@ -12737,7 +13062,7 @@ export interface operations {
   GetAppBranchRunComparison: {
     parameters: {
       query?: {
-        /** @description comma-separated: git,full,config */
+        /** @description comma-separated: git,full,config,source */
         include_diff?: string;
       };
       path: {
@@ -15198,6 +15523,8 @@ export interface operations {
       query?: {
         /** @description previous config ID to compare against */
         old_config_id?: string;
+        /** @description comma-separated extras: source */
+        include?: string;
       };
       path: {
         /** @description app ID */
@@ -15296,6 +15623,60 @@ export interface operations {
       500: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a single file from an app config's source archive
+   * @description Returns the raw contents of one file captured in the config's source archive. The path must exactly match a captured file.
+   */
+  GetAppConfigSourceFile: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description config ID */
+        config_id: string;
+        /** @description file path relative to the config root */
+        path: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/octet-stream": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
@@ -18773,6 +19154,157 @@ export interface operations {
       };
     };
   };
+  /** list cloud connections */
+  ListCloudConnections: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+        /** @description search by name, account, or role ARN */
+        q?: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.ConnectionListResponse"][];
+        };
+      };
+    };
+  };
+  /**
+   * create a cloud connection
+   * @description Create an AWS connection using the stacks or custom preset. Custom renders trust only; attach your own permissions policy.
+   */
+  CreateCloudConnection: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.ConnectionResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get a cloud connection */
+  GetCloudConnection: {
+    parameters: {
+      path: {
+        /** @description connection ID */
+        connection_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.ConnectionResponse"];
+        };
+      };
+    };
+  };
+  /** delete a cloud connection */
+  DeleteCloudConnection: {
+    parameters: {
+      path: {
+        /** @description connection ID */
+        connection_id: string;
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get cloud connection setup material */
+  GetCloudConnectionSetup: {
+    parameters: {
+      path: {
+        /** @description connection ID */
+        connection_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.SetupResponse"];
+        };
+      };
+    };
+  };
+  /** verify a cloud connection */
+  VerifyCloudConnection: {
+    parameters: {
+      path: {
+        /** @description connection ID */
+        connection_id: string;
+      };
+    };
+    responses: {
+      /** @description Accepted */
+      202: {
+        content: {
+          "application/json": components["schemas"]["service.ConnectionResponse"];
+        };
+      };
+    };
+  };
   /** list component build history for the current organization */
   ListOrgComponentBuilds: {
     parameters: {
@@ -20584,6 +21116,8 @@ export interface operations {
         labels?: string;
         /** @description filter by runner ID */
         runner_id?: string;
+        /** @description filter by cloud connection ID */
+        cloud_connection_id?: string;
         /** @description filter installs by branch name (comma-separated; use __none__ for installs with no branch) */
         branches?: string;
         /** @description include install components */
@@ -22091,6 +22625,80 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.InstallActionWorkflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get normalized activity feed for an install
+   * @description Returns a normalized, chronological activity feed for an install.
+   *
+   * Each record is a top-level operation that ran against the install rather than a change to it: a standalone action run, a runbook run, or an install-scoped policy check. Action runs executed as steps within another workflow are omitted. Policy checks recorded only against a component build, with no install, are also omitted.
+   *
+   * Records include a `type` (`action_run`, `runbook_run`, or `policy_check`), a `status` taken from that source, a human-readable `title` and `summary`, and a type-specific payload (`action`, `runbook`, or `policy`). Action and runbook records include a `workflow` reference when the run has one.
+   *
+   * Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `search`, `created_at_gte`, and `created_at_lte`. `status` matches each source's own status string. Action and runbook runs use values such as `queued`, `in-progress`, `finished`, and `error`. Policy checks use `success`, `warning`, and `error`.
+   */
+  GetInstallActivity: {
+    parameters: {
+      query?: {
+        /** @description page number */
+        page?: number;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description page size */
+        limit?: number;
+        /** @description filter by activity type (comma-separated: action_run, runbook_run, policy_check) */
+        type?: string;
+        /** @description filter by source status (comma-separated) */
+        status?: string;
+        /** @description case-insensitive substring match on id or title */
+        search?: string;
+        /** @description include activity created at or after this RFC3339 timestamp */
+        created_at_gte?: string;
+        /** @description include activity created at or before this RFC3339 timestamp */
+        created_at_lte?: string;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.GetInstallActivityResponse"];
         };
       };
       /** @description Bad Request */
@@ -23894,7 +24502,7 @@ export interface operations {
    * get normalized deployment feed for an install
    * @description Returns a normalized, chronological deployment feed for an install.
    *
-   * Each record represents one install-owned workflow that caused a real change: provisioning, reprovisioning, component deploys, input updates, stack reprovisioning, sandbox reprovisioning, action runs, runbook runs, and install-config updates. Plan-only and preview records are excluded.
+   * Each record represents one install-owned workflow that caused a real change: provisioning, reprovisioning, component deploys, input updates, stack reprovisioning, sandbox reprovisioning, and install-config updates. Action runs, runbook runs, and policy checks are returned by the activity feed. Plan-only and preview records are excluded.
    *
    * Records include a `type`, unified `status`, human-readable `title` and `summary`, an optional `workflow` reference, an optional `app_branch` reference (when the change originated from a branch run), an optional primary `component` reference (for single-component operations), a flat `affected_resources` list of component names, and `change_groups` that group the affected resources by logical category.
    *
@@ -25450,6 +26058,56 @@ export interface operations {
     };
   };
   /**
+   * install overview
+   * @description Returns branch tracking and config drift for an install. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
+   */
+  GetInstallOverview: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.InstallOverviewResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * phone home for an install
    * @description A public endpoint for phoning home from a runner AWS cloudformation stack upon successfully processing it.
    */
@@ -26741,6 +27399,56 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.InstallState"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * install status
+   * @description Returns deployment, resource, and health-check status for an install. Each axis is a composite status with counts in metadata. Deployment state stays on the component lifecycle, so a failed deploy remains failed after the workload is repaired. Resources and health checks are the latest observations.
+   */
+  GetInstallStatus: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.InstallStatusResponse"];
         };
       };
       /** @description Bad Request */
@@ -28702,7 +29410,10 @@ export interface operations {
       };
     };
   };
-  /** Update current org telemetry settings */
+  /**
+   * Update current org telemetry settings
+   * @description Omitted fields are unchanged. Set relay_endpoint to null or an empty string to use the deployment default. Relay endpoints must be HTTPS OTLP base URLs.
+   */
   UpdateOrgTelemetry: {
     /** @description Input */
     requestBody: {

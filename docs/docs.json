@@ -152,6 +152,7 @@
               "guides/toggleable-components",
               "guides/configuring-inputs-and-secrets",
               "guides/configuring-sandboxes",
+              "guides/cloud-connections",
               "guides/sandbox-builds",
               "guides/using-variables",
               "guides/vcs",

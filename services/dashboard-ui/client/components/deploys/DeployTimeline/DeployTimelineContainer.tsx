@@ -12,6 +12,7 @@ interface IDeployTimelineContainer {
   componentName: string
   componentId: string
   pollInterval?: number
+  openWorkflowPanel?: boolean
   shouldPoll?: boolean
   variant?: 'deploy' | 'sync'
 }
@@ -20,6 +21,7 @@ export const DeployTimelineContainer = ({
   componentName,
   componentId,
   pollInterval = 20000,
+  openWorkflowPanel,
   shouldPoll = false,
   variant = 'deploy',
 }: IDeployTimelineContainer) => {
@@ -30,7 +32,11 @@ export const DeployTimelineContainer = ({
 
   const onRefreshError = useRefreshErrorToast()
 
-  const { data: result, isLoading, error } = useSSETimelineQuery({
+  const {
+    data: result,
+    isLoading,
+    error,
+  } = useSSETimelineQuery({
     sseUrl:
       org?.id && install?.id && componentId
         ? `/api/orgs/${org.id}/installs/${install.id}/components/${componentId}/deploys/sse?limit=${LIMIT}&offset=${offset}`
@@ -66,6 +72,7 @@ export const DeployTimelineContainer = ({
       componentName={componentName}
       isLoading={isLoading}
       error={error}
+      openWorkflowPanel={openWorkflowPanel}
       variant={variant}
     />
   )

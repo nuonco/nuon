@@ -4,15 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	cloudformationtypes "github.com/aws/aws-sdk-go-v2/service/cloudformation/types"
-
-	assumerole "github.com/nuonco/nuon/pkg/aws/assume-role"
-	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type CreateManagedAWSCloudFormationStackRequest struct {
@@ -23,6 +19,7 @@ type CreateManagedAWSCloudFormationStackRequest struct {
 
 type cloudFormationCreateStackAPI interface {
 	CreateStack(context.Context, *cloudformation.CreateStackInput, ...func(*cloudformation.Options)) (*cloudformation.CreateStackOutput, error)
+	UpdateStack(context.Context, *cloudformation.UpdateStackInput, ...func(*cloudformation.Options)) (*cloudformation.UpdateStackOutput, error)
 	DescribeStackEvents(context.Context, *cloudformation.DescribeStackEventsInput, ...func(*cloudformation.Options)) (*cloudformation.DescribeStackEventsOutput, error)
 }
 
@@ -39,7 +36,19 @@ func createManagedStack(ctx context.Context, client cloudFormationCreateStackAPI
 	if _, err := client.CreateStack(ctx, input); err != nil {
 		var alreadyExists *cloudformationtypes.AlreadyExistsException
 		var tokenAlreadyExists *cloudformationtypes.TokenAlreadyExistsException
-		if !errors.As(err, &alreadyExists) && !errors.As(err, &tokenAlreadyExists) {
+		if errors.As(err, &alreadyExists) {
+			_, updateErr := client.UpdateStack(ctx, &cloudformation.UpdateStackInput{
+				StackName:          input.StackName,
+				TemplateURL:        input.TemplateURL,
+				ClientRequestToken: input.ClientRequestToken,
+				Capabilities:       input.Capabilities,
+			})
+			if updateErr != nil && !strings.Contains(updateErr.Error(), "No updates are to be performed") {
+				return updateErr
+			}
+			return nil
+		}
+		if !errors.As(err, &tokenAlreadyExists) {
 			return err
 		}
 
@@ -59,54 +68,18 @@ func createManagedStack(ctx context.Context, client cloudFormationCreateStackAPI
 
 // @temporal-gen-v2 activity
 func (a *Activities) CreateManagedAWSCloudFormationStack(ctx context.Context, req *CreateManagedAWSCloudFormationStackRequest) error {
-	if a.cfg.ManagementIAMRoleARN == "" {
-		return fmt.Errorf("management IAM role ARN is not configured")
-	}
-
-	var install app.Install
-	if result := a.db.WithContext(ctx).Preload("AWSAccount").First(&install, "id = ?", req.InstallID); result.Error != nil {
-		return fmt.Errorf("load install: %w", result.Error)
-	}
-	if install.AWSAccount == nil || install.AWSAccount.AWSAccountConnectionID == nil || *install.AWSAccount.AWSAccountConnectionID != req.ConnectionID {
-		return fmt.Errorf("install does not use aws account connection %s", req.ConnectionID)
-	}
-
-	var connection app.AWSAccountConnection
-	if result := a.db.WithContext(ctx).Where("id = ? AND org_id = ?", req.ConnectionID, install.OrgID).First(&connection); result.Error != nil {
-		return fmt.Errorf("load aws account connection: %w", result.Error)
-	}
-	if connection.VerificationStatus != app.AWSAccountConnectionVerificationVerified || connection.RoleARN == "" {
-		return fmt.Errorf("aws account connection %s is not verified and usable", connection.ID)
-	}
-
-	var version app.InstallStackVersion
-	if result := a.db.WithContext(ctx).First(&version, "id = ? AND install_id = ?", req.StackVersionID, install.ID); result.Error != nil {
-		return fmt.Errorf("load install stack version: %w", result.Error)
+	version, awsConfig, err := a.managedStackSession(ctx, req.InstallID, req.StackVersionID, req.ConnectionID, "nuon-install-stack")
+	if err != nil {
+		return err
 	}
 	if version.TemplateURL == "" {
 		return fmt.Errorf("install stack version %s has no template URL", version.ID)
 	}
-
 	if version.StackName == "" {
 		return fmt.Errorf("install stack version %s has no stack name", version.ID)
 	}
-
-	awsConfig, err := awscredentials.Fetch(ctx, &awscredentials.Config{
-		Region: install.AWSAccount.Region,
-		AssumeRole: &awscredentials.AssumeRoleConfig{
-			RoleARN:                connection.RoleARN,
-			ExternalID:             connection.ExternalID,
-			SessionName:            "nuon-install-stack",
-			SessionDurationSeconds: int(time.Hour.Seconds()),
-			TwoStepConfig:          &assumerole.TwoStepConfig{IAMRoleARN: a.cfg.ManagementIAMRoleARN},
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("assume aws account connection role: %w", err)
-	}
-
 	if err := createManagedStack(ctx, cloudformation.NewFromConfig(awsConfig), managedCreateStackInput(version.StackName, version.TemplateURL, version.ID)); err != nil {
-		return fmt.Errorf("create cloudformation stack %q (existing stacks are not updated): %w", version.StackName, err)
+		return fmt.Errorf("create or update cloudformation stack %q: %w", version.StackName, err)
 	}
 	return nil
 }

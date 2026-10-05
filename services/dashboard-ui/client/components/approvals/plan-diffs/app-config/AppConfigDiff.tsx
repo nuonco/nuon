@@ -33,6 +33,7 @@ const SECTION_CONFIG: Record<string, { displayName: string; icon: TIconVariant; 
   components: { displayName: 'Components', icon: 'CubeIcon', grouped: true },
   actions: { displayName: 'Actions', icon: 'LightningIcon', grouped: true },
   runbooks: { displayName: 'Runbooks', icon: 'BookOpenIcon', grouped: true },
+  policies: { displayName: 'Policies', icon: 'ShieldCheckIcon', grouped: true },
   inputs: { displayName: 'Install inputs', icon: 'ListBulletsIcon', grouped: true },
   secrets: { displayName: 'Secrets', icon: 'KeyIcon', grouped: true },
   sandbox: { displayName: 'Sandbox', icon: 'TerminalWindowIcon', grouped: false },
@@ -280,9 +281,11 @@ function findComponentType(node: TDiffNode): string | undefined {
   if (!node.children) return undefined
   for (const child of node.children) {
     if (child.key === 'type' && child.diff) {
-      const val = child.diff.diff
-      const matches = [...val.matchAll(/'([^']+)'/g)]
-      if (matches.length > 0) return matches[matches.length - 1][1]
+      // Add-diffs look like `'' -> 'container_image'`: the first quoted span
+      // can be the arrow itself, so parse the side after the last arrow.
+      const after = child.diff.diff.split('->').at(-1) ?? ''
+      const matches = [...after.matchAll(/'([^']*)'/g)]
+      if (matches.length > 0 && matches[0][1]) return matches[0][1]
     }
   }
   return undefined
@@ -318,7 +321,9 @@ export function extractSections(node?: TDiffNode): DiffSectionData[] {
         const componentType = child.key === 'components' ? findComponentType(entityNode) : undefined
 
         section.entities.push({
-          name: entityNode.key,
+          // Diff node keys are namespace-prefixed (`component.api`,
+          // `action.seed-db`); the comparison view shows bare names.
+          name: entityNode.key.replace(/^(component|action|policy|runbook)\./, ''),
           op,
           componentType,
           fields,

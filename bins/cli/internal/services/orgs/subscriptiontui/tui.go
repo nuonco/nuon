@@ -55,6 +55,8 @@ var (
 		"install_configurations",
 		"runners",
 		"actions",
+		"app_branches",
+		"cloud_connections",
 	}
 
 	// resourceOps mirrors interests.SubOps. Empty Ops in the wire
@@ -68,6 +70,8 @@ var (
 		"install_configurations": {"inputs", "secrets"},
 		"runners":                {"provision", "reprovision", "inactive", "unhealthy"},
 		"actions":                {"run"},
+		"app_branches":           {"run"},
+		"cloud_connections":      {"verification_failed"},
 	}
 
 	// driftSupported mirrors interests.SupportsDriftDetected: only

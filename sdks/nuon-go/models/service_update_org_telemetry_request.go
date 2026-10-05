@@ -8,10 +8,8 @@ package models
 import (
 	"context"
 
-	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 )
 
 // ServiceUpdateOrgTelemetryRequest service update org telemetry request
@@ -20,30 +18,14 @@ import (
 type ServiceUpdateOrgTelemetryRequest struct {
 
 	// enabled
-	// Required: true
-	Enabled *bool `json:"enabled"`
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// relay endpoint
+	RelayEndpoint *string `json:"relay_endpoint,omitempty"`
 }
 
 // Validate validates this service update org telemetry request
 func (m *ServiceUpdateOrgTelemetryRequest) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.validateEnabled(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *ServiceUpdateOrgTelemetryRequest) validateEnabled(formats strfmt.Registry) error {
-
-	if err := validate.Required("enabled", "body", m.Enabled); err != nil {
-		return err
-	}
-
 	return nil
 }
 

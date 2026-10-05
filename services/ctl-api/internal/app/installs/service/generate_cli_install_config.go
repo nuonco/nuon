@@ -98,6 +98,9 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 		installCfg.AppBranch = install.AppBranch.Name
 	}
 	installCfg.AppBranchGroup = install.AppBranchGroup
+	if install.CloudConnection != nil {
+		installCfg.CloudConnection = install.CloudConnection.Name
+	}
 
 	// The target identifiers must be echoed back, otherwise a config that legitimately
 	// declares them diffs against an upstream that never reports them and `apps sync`

@@ -8,7 +8,10 @@ import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { getAccount } from '@/lib/ctl-api/accounts'
-import { updateOrgTelemetry } from '@/lib/ctl-api/orgs'
+import {
+  updateOrgTelemetry,
+  type TOrgTelemetryUpdate,
+} from '@/lib/ctl-api/orgs'
 import type { TOrg } from '@/types'
 import { OrgTelemetryModal } from './OrgTelemetry'
 
@@ -20,8 +23,8 @@ export const OrgTelemetryModalContainer = ({
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const { mutate, isPending, error } = useMutation({
-    mutationFn: (enabled: boolean) =>
-      updateOrgTelemetry({ orgId: org.id, enabled }),
+    mutationFn: (settings: TOrgTelemetryUpdate) =>
+      updateOrgTelemetry({ orgId: org.id, ...settings }),
     onSuccess: (updatedOrg) => {
       queryClient.setQueryData(['org', org.id], updatedOrg)
       queryClient.invalidateQueries({ queryKey: ['org', org.id] })
@@ -30,10 +33,7 @@ export const OrgTelemetryModalContainer = ({
       queryClient.invalidateQueries({ queryKey: ['runner', org.id] })
       addToast(
         <Toast heading="Telemetry settings updated" theme="success">
-          <Text>
-            Installs using the org default will apply it on their next runner
-            refresh.
-          </Text>
+          <Text>Changes apply on the next runner settings refresh.</Text>
         </Toast>
       )
       removeModal(props.modalId)
@@ -44,6 +44,7 @@ export const OrgTelemetryModalContainer = ({
     <OrgTelemetryModal
       orgName={org.name || org.id}
       enabled={org.telemetry?.enabled ?? false}
+      relayEndpoint={org.telemetry?.relay_endpoint}
       isPending={isPending}
       error={error}
       onSubmit={mutate}

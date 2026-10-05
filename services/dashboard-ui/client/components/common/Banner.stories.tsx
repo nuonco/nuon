@@ -3,9 +3,36 @@ export default {
 }
 
 import { useState } from 'react'
-import { Banner } from './Banner'
+import { Banner, type TBannerTheme } from './Banner'
 import { Button } from './Button'
+import { Link } from './Link'
 import { Text } from './Text'
+
+export const Links = () => (
+  <div className="space-y-4">
+    {(
+      [
+        'default',
+        'neutral',
+        'info',
+        'warn',
+        'error',
+        'success',
+        'brand',
+      ] as TBannerTheme[]
+    ).map((theme) => (
+      <Banner key={theme} theme={theme}>
+        <div className="flex flex-col items-start gap-2">
+          <Text>Review the connection setup before trying again.</Text>
+          <Link href="#runbook">View runbook step 1</Link>
+          <Link href="https://example.com" isExternal>
+            View documentation
+          </Link>
+        </div>
+      </Banner>
+    ))}
+  </div>
+)
 
 export const AllThemes = () => (
   <div className="space-y-6">

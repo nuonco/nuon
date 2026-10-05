@@ -7,6 +7,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/services/apps"
 	"github.com/nuonco/nuon/bins/cli/internal/services/auth"
 	"github.com/nuonco/nuon/bins/cli/internal/services/builds"
+	"github.com/nuonco/nuon/bins/cli/internal/services/cloudconnections"
 	"github.com/nuonco/nuon/bins/cli/internal/services/components"
 	"github.com/nuonco/nuon/bins/cli/internal/services/docs"
 	"github.com/nuonco/nuon/bins/cli/internal/services/installs"
@@ -35,6 +36,7 @@ func (c *cli) populateDeps() error {
 			apps.New,
 			auth.New,
 			builds.New,
+			cloudconnections.New,
 			components.New,
 			docs.New,
 			installs.New,
@@ -53,6 +55,7 @@ func (c *cli) populateDeps() error {
 			&c.apps,
 			&c.auth,
 			&c.builds,
+			&c.cloudConnections,
 			&c.components,
 			&c.docs,
 			&c.installs,

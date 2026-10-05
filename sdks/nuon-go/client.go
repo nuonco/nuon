@@ -53,6 +53,13 @@ type Client interface {
 	ListStaticTokens(ctx context.Context) ([]*models.AppToken, error)
 	DeleteStaticToken(ctx context.Context, tokenID string) error
 
+	// cloud connections
+	CreateCloudConnection(ctx context.Context, req *models.ServiceCreateRequest) (*models.ServiceConnectionResponse, error)
+	ListCloudConnections(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.ServiceConnectionListResponse, bool, error)
+	GetCloudConnection(ctx context.Context, connectionID string) (*models.ServiceConnectionResponse, error)
+	VerifyCloudConnection(ctx context.Context, connectionID string) (*models.ServiceConnectionResponse, error)
+	DeleteCloudConnection(ctx context.Context, connectionID string) error
+
 	// roles and service accounts
 	ListRoles(ctx context.Context) ([]*models.AppRole, error)
 	ListServiceAccounts(ctx context.Context, includeRunners, includeStacks bool, query *models.GetPaginatedQuery) ([]*models.AppAccount, bool, error)
@@ -86,6 +93,7 @@ type Client interface {
 	GetAppBranchRunsWithQuery(ctx context.Context, appID, appBranchID string, query *GetAppBranchRunsQuery) ([]*models.AppWorkflow, bool, error)
 	GetAppBranchRunBuilds(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppComponentBuild, error)
 	GetAppBranchRunInstallGroups(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppInstallAppConfigVersion, error)
+	GetInstallGroupRuns(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppInstallGroupRun, error)
 
 	// app sandbox config methods
 	CreateAppSandboxConfig(ctx context.Context, appID string, req *models.ServiceCreateAppSandboxConfigRequest) (*models.AppAppSandboxConfig, error)

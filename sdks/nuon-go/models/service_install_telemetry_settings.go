@@ -25,6 +25,9 @@ type ServiceInstallTelemetrySettings struct {
 
 	// override
 	Override *bool `json:"override,omitempty"`
+
+	// relay configured
+	RelayConfigured bool `json:"relay_configured,omitempty"`
 }
 
 // Validate validates this service install telemetry settings

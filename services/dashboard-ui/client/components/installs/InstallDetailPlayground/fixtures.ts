@@ -1953,7 +1953,7 @@ export const resourceLagFixture: TPlaygroundInstall = {
   },
 }
 
-// ─── Scenario 4: Config current, infra drift on sandbox + cache ───────────────
+// ─── Scenario 4: Config current, infra drift on each resource kind ────────────
 
 export const infraDriftFixture: TPlaygroundInstall = {
   ...configCurrentFixture,
@@ -1968,8 +1968,28 @@ export const infraDriftFixture: TPlaygroundInstall = {
   configLag: CONFIG_LAG_CURRENT,
 
   driftedObjects: [
-    { id: 'dft-1', targetType: 'sandbox', componentName: undefined },
-    { id: 'dft-2', targetType: 'install_deploy', componentName: 'cache' },
+    {
+      id: 'dft-stack',
+      targetType: 'stack',
+      summary: 'IAM role policy differs from the last applied stack.',
+    },
+    {
+      id: 'dft-1',
+      targetType: 'sandbox',
+      summary: 'Security group rules were changed outside Nuon.',
+    },
+    {
+      id: 'dft-2',
+      targetType: 'install_deploy',
+      componentName: 'cache',
+      summary: 'Module outputs no longer match the applied module.',
+    },
+    {
+      id: 'dft-image',
+      targetType: 'image',
+      imageRepository: 'acme/api',
+      summary: 'Running digest does not match the built image.',
+    },
   ],
 
   activity: [
@@ -1978,8 +1998,8 @@ export const infraDriftFixture: TPlaygroundInstall = {
       type: 'drift_scan',
       status: 'warn',
       createdAt: h(2),
-      title: 'Drift detected: sandbox, cache',
-      details: 'Drift scan found 2 objects with unexpected state.',
+      title: 'Drift detected: stack, sandbox, cache, acme/api',
+      details: 'Drift scan found 4 objects with unexpected state.',
     },
     ...COMMON_ACTIVITY,
   ],

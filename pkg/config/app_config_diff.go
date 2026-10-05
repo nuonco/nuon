@@ -759,11 +759,15 @@ func diffOperationRoles(old, new *OperationRolesConfig) *diff.Diff {
 	if old == nil && new == nil {
 		return nil
 	}
+	// The parser defaults a missing [operation_roles] config to an empty
+	// matrix config, so nil must diff as that default rather than a zero
+	// value — otherwise every config shows a spurious type-only change.
+	parserDefault := &OperationRolesConfig{Type: OperationRuleConfigTypeMatrix}
 	if old == nil {
-		old = &OperationRolesConfig{}
+		old = parserDefault
 	}
 	if new == nil {
-		new = &OperationRolesConfig{}
+		new = parserDefault
 	}
 
 	children := []*diff.Diff{

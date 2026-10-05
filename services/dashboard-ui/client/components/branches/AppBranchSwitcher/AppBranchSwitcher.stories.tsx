@@ -39,6 +39,17 @@ export const Loading = () => (
   />
 )
 
+export const OnScopedSection = () => (
+  <AppBranchSwitcher
+    branches={mockBranches}
+    currentBranch={currentBranch}
+    orgId="org_1"
+    appId="app_1"
+    sectionPath="/runs"
+    isLoading={false}
+  />
+)
+
 export const WithSearch = () => (
   <AppBranchSwitcher
     branches={Array.from({ length: 12 }).map((_, i) => ({

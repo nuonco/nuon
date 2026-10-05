@@ -51,9 +51,13 @@ func (s *service) mcpRetryStep(ctx context.Context, _ *mcp.CallToolRequest, in m
 		return nil, nil, fmt.Errorf("retry step: %w", err)
 	}
 
-	return apiPkg.MCPJSONResult(map[string]any{
+	out := map[string]any{
 		"workflow_id": workflow.ID,
 		"step_id":     step.ID,
 		"retryable":   resp.Retryable,
-	})
+	}
+	if next := mcpWatchContinuation(workflow.ID); next != nil {
+		out["next_action"] = next
+	}
+	return apiPkg.MCPJSONResult(out)
 }

@@ -25,6 +25,10 @@ type ActionConfig struct {
 
 	EnableKubeConfig *bool `mapstructure:"enable_kube_config,omitempty" toml:"enable_kube_config,omitempty"`
 
+	// IsHealthcheck marks this action as an install health check. The install
+	// health timeline lists it, and a failed run makes the health axis unhealthy.
+	IsHealthcheck bool `mapstructure:"is_healthcheck,omitempty" toml:"is_healthcheck,omitempty"`
+
 	// Image is an optional container image the action's steps run inside. When
 	// set, Nuon mounts the actions-supervisor into the image and executes each
 	// step's command, inline_contents, or repo-backed script there.
@@ -84,6 +88,10 @@ func (a ActionConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("role").Short("IAM role name for action execution").
 		Long("Name of the IAM role to use when executing this action. The role must be defined in the CloudFormation stack deployed to the customer's AWS account. If not specified, the default maintenance role is used. This is the preferred way to specify custom roles; break_glass_role is deprecated").
 		Example("{{.nuon.install.id}}-maintenance").
+		Field("is_healthcheck").Short("whether this action is an install health check").
+		Long("When true, the install health view lists this action and a failed run marks the install unhealthy. Defaults to false").
+		Example("true").
+		Example("false").
 		Field("enable_kube_config").Short("whether to fetch and inject kubeconfig for this action").
 		Long("When set to false, the action runner will not fetch the install's kubeconfig or set the KUBECONFIG env var. Defaults to true. Set to false for actions that do not need Kubernetes access to avoid the overhead of fetching cluster credentials").
 		Example("true").

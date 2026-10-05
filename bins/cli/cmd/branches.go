@@ -65,8 +65,10 @@ func (c *cli) newBranchesCmd(deprecatedAlias bool) *cobra.Command {
 	branchesCmd.AddCommand(createCmd)
 
 	var (
-		force  bool
-		noWait bool
+		force   bool
+		noWait  bool
+		runType string
+		runRef  string
 	)
 	triggerCmd := &cobra.Command{
 		Use:         "trigger",
@@ -74,8 +76,10 @@ func (c *cli) newBranchesCmd(deprecatedAlias bool) *cobra.Command {
 		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			opts := apps.TriggerBranchRunOptions{
-				Force:  force,
-				NoWait: noWait,
+				Force:   force,
+				NoWait:  noWait,
+				RunType: runType,
+				RunRef:  runRef,
 			}
 			return c.apps.TriggerBranchRun(cmd.Context(), appID, branchID, opts, PrintJSON)
 		}),
@@ -84,6 +88,9 @@ func (c *cli) newBranchesCmd(deprecatedAlias bool) *cobra.Command {
 	triggerCmd.Flags().StringVarP(&branchID, "branch-id", "b", "", "The ID or name of the branch")
 	triggerCmd.Flags().BoolVar(&force, "force", false, "Force rebuild all components")
 	triggerCmd.Flags().BoolVar(&noWait, "no-wait", false, "Return immediately after triggering without launching the workflow viewer")
+	triggerCmd.Flags().StringVar(&runType, "run-type", "", "Git source to deploy: pr, tag, or commit")
+	triggerCmd.Flags().StringVar(&runRef, "run-ref", "", "Pull request number, tag name, or commit SHA, matching --run-type")
+	triggerCmd.MarkFlagsRequiredTogether("run-type", "run-ref")
 	branchesCmd.AddCommand(triggerCmd)
 
 	var (

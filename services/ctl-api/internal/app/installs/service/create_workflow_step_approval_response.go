@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -157,7 +158,7 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 // for lifecycle webhooks and retries. For app-branch workflows, it calls flowsClient.ApprovePlan
 // directly since the ApprovePlan activity is only registered on the installs worker.
 func (s *service) dispatchApprovalResponseSignal(
-	ctx *gin.Context,
+	ctx context.Context,
 	workflowID, stepID, approvalID, approvalResponseID string,
 	responseType app.WorkflowStepResponseType,
 ) error {
@@ -185,7 +186,7 @@ func (s *service) dispatchApprovalResponseSignal(
 }
 
 func (s *service) dispatchInstallApprovalSignal(
-	ctx *gin.Context,
+	ctx context.Context,
 	installID, workflowID, stepID, approvalID, approvalResponseID string,
 	responseType app.WorkflowStepResponseType,
 ) error {
@@ -205,7 +206,7 @@ func (s *service) dispatchInstallApprovalSignal(
 	return s.enqueueInstallSignal(ctx, queueID, sig, approvalResponseID, "workflow_step_approval_responses")
 }
 
-func (s *service) createWorkflowStepApprovalResponse(ctx *gin.Context, approvalID string, req *CreateWorkflowStepApprovalResponseRequest) (*app.WorkflowStepApprovalResponse, error) {
+func (s *service) createWorkflowStepApprovalResponse(ctx context.Context, approvalID string, req *CreateWorkflowStepApprovalResponseRequest) (*app.WorkflowStepApprovalResponse, error) {
 	response := app.WorkflowStepApprovalResponse{
 		InstallWorkflowStepApprovalID: approvalID,
 		Type:                          req.ResponseType,

@@ -21,6 +21,7 @@ func (h *Helpers) GetInstall(ctx context.Context, orgID, installID string) (*app
 		}).
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Runners").
+		Preload("CloudConnection").
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("GCPAccount").

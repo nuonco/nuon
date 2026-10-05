@@ -3,6 +3,7 @@ import { useConfig } from '@/hooks/use-config'
 import { useNotifications } from '@/hooks/use-notifications'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
+import { trackEvent } from '@/lib/posthog-analytics'
 import { UserDropdown, type IUserDropdown } from './UserDropdown'
 
 type IUserDropdownContainerProps = Omit<
@@ -23,16 +24,23 @@ type IUserDropdownContainerProps = Omit<
   | 'onAddToast'
   | 'user'
   | 'isUserLoading'
+  | 'onboardingFirstRun'
+  | 'onReopenOnboarding'
 >
 
 export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
   const { isAdmin, isNuonEmployee, user, isLoading } = useAuth()
-  const { apiUrl, authServiceUrl, adminDashboardUrl, isDev, isByoc } =
+  const { apiUrl, authServiceUrl, adminDashboardUrl, isDev, isByoc, onboardingFirstRun } =
     useConfig()
   const { addPanel } = useSurfaces()
   const { addToast } = useToast()
   const { permission, requestPermission, isSupported, muted, toggleMute } =
     useNotifications()
+  const reopenOnboarding = () => {
+    trackEvent({ event: 'onboarding_reopen', status: 'ok', user, props: {} })
+    window.location.assign('/onboarding')
+  }
+
   return (
     <UserDropdown
       isByoc={!!isByoc}
@@ -51,6 +59,8 @@ export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
       onAddToast={addToast}
       user={user}
       isUserLoading={isLoading}
+      onboardingFirstRun={onboardingFirstRun}
+      onReopenOnboarding={onboardingFirstRun ? reopenOnboarding : undefined}
       {...props}
     />
   )

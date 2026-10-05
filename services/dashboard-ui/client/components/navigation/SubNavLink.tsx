@@ -39,7 +39,7 @@ export const SubNavLink = ({
           }
         )}
       >
-        <span className="truncate">{text}</span>
+        <span className="min-w-0">{text}</span>
         {count != null ? (
           <Text variant="label" theme="neutral" className="ml-auto">
             {count}

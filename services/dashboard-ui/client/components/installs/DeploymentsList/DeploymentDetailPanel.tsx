@@ -1,3 +1,4 @@
+import { BranchRunChanges } from '@/components/branches/BranchRunChanges/BranchRunChanges'
 import { Badge } from '@/components/common/Badge'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Divider } from '@/components/common/Divider'
@@ -9,9 +10,10 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
+import { WorkflowPanelLink } from '@/components/workflows/InstallWorkflowPanel'
+import { AppProvider } from '@/providers/app-provider'
 import type { TInstallDeploymentRecord } from '@/types'
 import { humanize } from '@/utils/string-utils'
-import { useInstallLink } from '@/hooks/use-install-path'
 
 const CHANGE_THEME = {
   add: 'success',
@@ -125,17 +127,11 @@ export const DeploymentDetailPanel = ({
   deployment,
   orgId,
   appId,
-  installId,
   ...props
 }: IDeploymentDetailPanel) => {
-  const installLink = useInstallLink()
   const branchHref = deployment.app_branch
     ? `/${orgId}/apps/${appId}/branches/${deployment.app_branch.id}`
     : undefined
-  const workflowHref = deployment.workflow
-    ? installLink({ orgId: orgId, installId: installId, suffix: `/history/${deployment.workflow.id}` })
-    : undefined
-
   return (
     <Panel heading={deployment.title} size="half" {...props}>
       <div className="flex items-center gap-2 flex-wrap">
@@ -174,10 +170,12 @@ export const DeploymentDetailPanel = ({
             </span>
           </LabeledValue>
         )}
-        {deployment.workflow && workflowHref && (
+        {deployment.workflow && (
           <LabeledValue label="Workflow">
             <span className="flex items-center gap-2 flex-wrap">
-              <Link href={workflowHref}>{deployment.workflow.name}</Link>
+              <WorkflowPanelLink workflowId={deployment.workflow.id}>
+                {deployment.workflow.name}
+              </WorkflowPanelLink>
               <Badge size="sm" theme="neutral">
                 {humanize(deployment.workflow.type)}
               </Badge>
@@ -191,22 +189,36 @@ export const DeploymentDetailPanel = ({
         affectedResources={deployment.affected_resources}
       />
 
-      {deployment.change_groups.map((group) => (
-        <div key={group.id} className="flex flex-col gap-3">
-          <Divider dividerWord={group.label} />
-          {group.summary && (
-            <Text variant="subtext" theme="neutral">
-              {group.summary}
-            </Text>
-          )}
-          {group.changes.length > 0 && <ChangeRows changes={group.changes} />}
-          {group.file_diff && (
-            <CodeBlock language={group.diff_language ?? 'diff'} showCopy>
-              {group.file_diff}
-            </CodeBlock>
-          )}
-        </div>
-      ))}
+      {deployment.app_branch?.id && deployment.app_branch.run_id ? (
+        <>
+          <Divider dividerWord="Change set" />
+          <AppProvider appId={appId}>
+            <BranchRunChanges
+              branchId={deployment.app_branch.id}
+              appBranchRunId={deployment.app_branch.run_id}
+              showRunComparison={false}
+              title="Config changes"
+            />
+          </AppProvider>
+        </>
+      ) : (
+        deployment.change_groups.map((group) => (
+          <div key={group.id} className="flex flex-col gap-3">
+            <Divider dividerWord={group.label} />
+            {group.summary && (
+              <Text variant="subtext" theme="neutral">
+                {group.summary}
+              </Text>
+            )}
+            {group.changes.length > 0 && <ChangeRows changes={group.changes} />}
+            {group.file_diff && (
+              <CodeBlock language={group.diff_language ?? 'diff'} showCopy>
+                {group.file_diff}
+              </CodeBlock>
+            )}
+          </div>
+        ))
+      )}
     </Panel>
   )
 }

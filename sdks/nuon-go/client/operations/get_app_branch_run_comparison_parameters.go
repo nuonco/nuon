@@ -75,7 +75,7 @@ type GetAppBranchRunComparisonParams struct {
 
 	/* IncludeDiff.
 
-	   comma-separated: git,full,config
+	   comma-separated: git,full,config,source
 	*/
 	IncludeDiff *string
 

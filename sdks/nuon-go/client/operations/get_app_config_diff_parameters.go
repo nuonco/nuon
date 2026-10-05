@@ -73,6 +73,12 @@ type GetAppConfigDiffParams struct {
 	*/
 	ConfigID string
 
+	/* Include.
+
+	   comma-separated extras: source
+	*/
+	Include *string
+
 	/* OldConfigID.
 
 	   previous config ID to compare against
@@ -154,6 +160,17 @@ func (o *GetAppConfigDiffParams) SetConfigID(configID string) {
 	o.ConfigID = configID
 }
 
+// WithInclude adds the include to the get app config diff params
+func (o *GetAppConfigDiffParams) WithInclude(include *string) *GetAppConfigDiffParams {
+	o.SetInclude(include)
+	return o
+}
+
+// SetInclude adds the include to the get app config diff params
+func (o *GetAppConfigDiffParams) SetInclude(include *string) {
+	o.Include = include
+}
+
 // WithOldConfigID adds the oldConfigID to the get app config diff params
 func (o *GetAppConfigDiffParams) WithOldConfigID(oldConfigID *string) *GetAppConfigDiffParams {
 	o.SetOldConfigID(oldConfigID)
@@ -181,6 +198,23 @@ func (o *GetAppConfigDiffParams) WriteToRequest(r runtime.ClientRequest, reg str
 	// path param config_id
 	if err := r.SetPathParam("config_id", o.ConfigID); err != nil {
 		return err
+	}
+
+	if o.Include != nil {
+
+		// query param include
+		var qrInclude string
+
+		if o.Include != nil {
+			qrInclude = *o.Include
+		}
+		qInclude := qrInclude
+		if qInclude != "" {
+
+			if err := r.SetQueryParam("include", qInclude); err != nil {
+				return err
+			}
+		}
 	}
 
 	if o.OldConfigID != nil {

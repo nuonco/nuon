@@ -1,42 +1,54 @@
-import { useConfig } from '@/hooks/use-config'
+import { FirstRunProgress } from '@/components/onboarding/first-run/FirstRunProgress'
 import { useOnboardingJourney } from '@/hooks/use-onboarding-journey'
 import { useOnboardingWizard } from '@/hooks/use-onboarding-wizard'
 import {
   OnboardingWizardProvider,
   type IOnboardingWizardProps,
 } from '@/providers/onboarding-wizard-provider'
-import type { TOnboarding } from '@/types/ctl-api.types'
 import { OnboardingWizardLayout } from './OnboardingWizard'
+import { useWizardHistory } from './use-wizard-history'
 
-function ConnectedWizardLayout() {
-  const { onboardingV2 } = useConfig()
+function FirstRunSkipLayout({ onSkip }: { onSkip: (stepId: string) => void }) {
+  const { steps, currentStepIndex } = useOnboardingWizard()
+  const stepId = steps[currentStepIndex]?.id
 
-  if (onboardingV2) {
-    return <V2WizardLayout />
-  }
-
-  return <V1WizardLayout />
+  return (
+    <OnboardingWizardLayout onSkip={stepId ? () => onSkip(stepId) : undefined} />
+  )
 }
 
-function V1WizardLayout() {
+function ExistingSkipLayout() {
   const { orgId } = useOnboardingJourney()
   const skipHref = orgId ? `/${orgId}/apps` : null
 
   return <OnboardingWizardLayout skipHref={skipHref} />
 }
 
-function V2WizardLayout() {
-  const { sharedData } = useOnboardingWizard()
-  const orgId = (sharedData.onboarding as TOnboarding | undefined)?.org_id
-  const skipHref = orgId ? `/${orgId}` : null
-
-  return <OnboardingWizardLayout skipHref={skipHref} />
+function ConnectedWizardLayout({ onSkip }: { onSkip?: (stepId: string) => void }) {
+  if (onSkip) return <FirstRunSkipLayout onSkip={onSkip} />
+  return <ExistingSkipLayout />
 }
 
-export function OnboardingWizardContainer(props: IOnboardingWizardProps) {
+function WizardHistory({ onHistoryBack }: { onHistoryBack?: () => void }) {
+  const { currentStepIndex, goPrev } = useOnboardingWizard()
+  useWizardHistory(currentStepIndex, goPrev, onHistoryBack)
+  return null
+}
+
+export function OnboardingWizardContainer({
+  onSkip,
+  onHistoryBack,
+  rememberProgress,
+  ...props
+}: IOnboardingWizardProps & {
+  onSkip?: (stepId: string) => void
+  onHistoryBack?: () => void
+  rememberProgress?: boolean
+}) {
   return (
     <OnboardingWizardProvider {...props}>
-      <ConnectedWizardLayout />
+      {rememberProgress ? <FirstRunProgress /> : <WizardHistory onHistoryBack={onHistoryBack} />}
+      <ConnectedWizardLayout onSkip={onSkip} />
     </OnboardingWizardProvider>
   )
 }

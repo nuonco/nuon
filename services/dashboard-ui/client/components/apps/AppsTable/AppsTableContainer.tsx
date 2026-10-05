@@ -2,6 +2,7 @@ import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
+import { useConfig } from '@/hooks/use-config'
 import { useOrg } from '@/hooks/use-org'
 import { getApps } from '@/lib'
 import { AppsTable, parseAppsToTableData } from './AppsTable'
@@ -16,6 +17,7 @@ export const AppsTableContainer = ({
   shouldPoll?: boolean
 } = {}) => {
   const [searchParams] = useSearchParams()
+  const { onboardingFirstRun } = useConfig()
   const { org } = useOrg()
   const offset = Number(searchParams.get('offset') ?? 0)
 
@@ -36,7 +38,7 @@ export const AppsTableContainer = ({
       data={parseAppsToTableData(result?.data ?? [], org.id)}
       isLoading={isLoading}
       emptyStateAction={
-        <Button href={`/onboarding?org_id=${org.id}`}>
+        <Button href={onboardingFirstRun ? '/onboarding' : `/onboarding?org_id=${org.id}`}>
           <Icon variant="PlusIcon" size={16} />
           Create app
         </Button>

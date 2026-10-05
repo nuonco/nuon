@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { ActionTriggerType } from '@/components/actions/ActionTriggerType'
 import { Badge } from '@/components/common/Badge'
 import { EmptyState } from '@/components/common/EmptyState'
@@ -14,6 +15,7 @@ interface IInstallActionRunTimeline {
   runs: TInstallActionRun[]
   basePath: string
   pagination: { hasNext?: boolean; offset: number; limit: number }
+  renderTitle?: (run: TInstallActionRun) => ReactNode
 }
 
 export const InstallActionRunTimeline = ({
@@ -22,6 +24,7 @@ export const InstallActionRunTimeline = ({
   runs,
   basePath,
   pagination,
+  renderTitle,
 }: IInstallActionRunTimeline) => {
   if (runs.length === 0 && pagination.offset === 0) {
     return (
@@ -47,12 +50,16 @@ export const InstallActionRunTimeline = ({
           status={run?.status}
           title={
             <span className="flex items-center gap-2">
-              <Link
-                href={`${basePath}/actions/${actionId}/runs/${run.id}`}
-                variant="inline"
-              >
-                {actionName} run
-              </Link>
+              {renderTitle ? (
+                renderTitle(run)
+              ) : (
+                <Link
+                  href={`${basePath}/actions/${actionId}/runs/${run.id}`}
+                  variant="inline"
+                >
+                  {actionName} run
+                </Link>
+              )}
               {run?.status_v2?.status === 'drifted' ? (
                 <Badge variant="code" size="sm">
                   drift scan

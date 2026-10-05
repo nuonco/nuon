@@ -1,3 +1,4 @@
+import { Button } from '@/components/common/Button'
 import { Text } from '@/components/common/Text'
 import { statusAccent } from '@/components/branches/graph/accents'
 import {
@@ -9,6 +10,7 @@ import type { TTrackGroup } from './RolloutTrack'
 
 export interface IRolloutTiles {
   groups: TTrackGroup[]
+  selectedGroupId?: string
   onSelectGroup: (groupId: string) => void
 }
 
@@ -54,7 +56,7 @@ const tilesFor = (group: TTrackGroup) => {
   return tiles
 }
 
-const GroupTiles = ({ group }: { group: TTrackGroup }) => {
+export const GroupTiles = ({ group }: { group: TTrackGroup }) => {
   const tiles = tilesFor(group)
   if (tiles.length === 0) {
     return (
@@ -100,8 +102,12 @@ const GroupTiles = ({ group }: { group: TTrackGroup }) => {
   )
 }
 
-export const RolloutTiles = ({ groups, onSelectGroup }: IRolloutTiles) => (
-  <ol className="flex items-start overflow-x-auto">
+export const RolloutTiles = ({
+  groups,
+  selectedGroupId,
+  onSelectGroup,
+}: IRolloutTiles) => (
+  <ol className="-m-1 flex items-start overflow-x-auto p-1">
     {groups.map((group, index) => {
       const tiles = tilesFor(group)
       const done = tiles.filter(
@@ -110,18 +116,24 @@ export const RolloutTiles = ({ groups, onSelectGroup }: IRolloutTiles) => (
       const failed = tiles.some(
         (tile) => stepStatusCategory(tile.status) === 'error'
       )
+      const complete = tiles.length > 0 && done === tiles.length
+      const isSelected = group.id === selectedGroupId
       return (
         <li
           key={group.id}
           className="flex min-w-40 max-w-64 flex-1 items-start"
         >
           {index > 0 ? (
-            <span aria-hidden className="mt-2.5 w-6 shrink-0 border-t" />
+            <span aria-hidden className="mt-4 w-6 shrink-0 border-t" />
           ) : null}
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             onClick={() => onSelectGroup(group.id)}
-            className="flex w-full min-w-0 flex-col gap-2 rounded-md p-1 text-left hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
+            aria-pressed={selectedGroupId ? isSelected : undefined}
+            className={cn(
+              '!flex !h-auto !w-full min-w-0 !flex-col !items-stretch !gap-2 !rounded-md !p-2 text-left !font-normal !whitespace-normal',
+              isSelected && '!bg-black/5 dark:!bg-white/5'
+            )}
           >
             <span className="flex items-baseline justify-between gap-2">
               <Text variant="subtext" weight="strong" className="truncate">
@@ -130,13 +142,13 @@ export const RolloutTiles = ({ groups, onSelectGroup }: IRolloutTiles) => (
               <Text
                 variant="label"
                 family="mono"
-                theme={failed ? 'error' : 'neutral'}
+                theme={failed ? 'error' : complete ? 'success' : 'neutral'}
               >
                 {done}/{tiles.length}
               </Text>
             </span>
             <GroupTiles group={group} />
-          </button>
+          </Button>
         </li>
       )
     })}

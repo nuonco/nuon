@@ -21,6 +21,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/services/apps"
 	"github.com/nuonco/nuon/bins/cli/internal/services/auth"
 	"github.com/nuonco/nuon/bins/cli/internal/services/builds"
+	"github.com/nuonco/nuon/bins/cli/internal/services/cloudconnections"
 	"github.com/nuonco/nuon/bins/cli/internal/services/components"
 	"github.com/nuonco/nuon/bins/cli/internal/services/docs"
 	"github.com/nuonco/nuon/bins/cli/internal/services/installs"
@@ -41,21 +42,22 @@ type cli struct {
 	ctx       context.Context
 	cfg       *config.Config
 
-	actions         *actions.Service
-	apps            *apps.Service
-	auth            *auth.Service
-	builds          *builds.Service
-	components      *components.Service
-	docs            *docs.Service
-	installs        *installs.Service
-	orgs            *orgs.Service
-	roles           *roles.Service
-	runbooks        *runbooks.Service
-	secrets         *secrets.Service
-	serviceAccounts *serviceaccounts.Service
-	triggers        *triggers.Service
-	variables       *variables.Service
-	version         *version.Service
+	actions          *actions.Service
+	apps             *apps.Service
+	auth             *auth.Service
+	builds           *builds.Service
+	cloudConnections *cloudconnections.Service
+	components       *components.Service
+	docs             *docs.Service
+	installs         *installs.Service
+	orgs             *orgs.Service
+	roles            *roles.Service
+	runbooks         *runbooks.Service
+	secrets          *secrets.Service
+	serviceAccounts  *serviceaccounts.Service
+	triggers         *triggers.Service
+	variables        *variables.Service
+	version          *version.Service
 
 	currentUserOnce sync.Once
 	currentUser     *models.AppAccount
@@ -141,6 +143,9 @@ func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 
 	if err := c.initConfig(); err != nil {
 		return errors.Wrap(err, "unable to initialize config")
+	}
+	if cmd.Flags().Changed("config") || cmd.Flags().Changed("config-file") {
+		c.cfg.ConfigFlag = ConfigFile
 	}
 	if agentmode.Enabled() {
 		c.cfg.Interactive = false

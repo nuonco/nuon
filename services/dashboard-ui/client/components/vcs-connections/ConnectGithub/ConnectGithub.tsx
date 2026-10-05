@@ -9,6 +9,25 @@ import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
 
+export const githubAppSlug = (githubAppName: string) =>
+  githubAppName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+export const githubAppInstallUrl = ({
+  githubAppName,
+  orgId,
+  onboarding = false,
+}: {
+  githubAppName: string
+  orgId: string
+  onboarding?: boolean
+}) =>
+  `https://github.com/apps/${githubAppSlug(githubAppName)}/installations/new?state=${encodeURIComponent(
+    onboarding ? `${orgId}:onboarding` : orgId
+  )}`
+
 interface IConnectGithubModal extends Omit<IModal, 'onSubmit'> {
   githubAppName: string
   orgId: string
@@ -27,11 +46,6 @@ export const ConnectGithubModal = ({
 }: IConnectGithubModal) => {
   const [isManualMode, setIsManualMode] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
-
-  const githubAppSlug = githubAppName
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -76,7 +90,7 @@ export const ConnectGithubModal = ({
       {!isManualMode ? (
         <div className="flex flex-col gap-6">
           <Button
-            href={`https://github.com/apps/${githubAppSlug}/installations/new?state=${orgId}`}
+            href={githubAppInstallUrl({ githubAppName, orgId })}
             variant="ghost"
             className="flex flex-col items-center justify-center gap-4 !p-8 rounded !h-auto !text-center !border-cool-grey-400 dark:!border-dark-grey-500"
           >

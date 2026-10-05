@@ -112,7 +112,7 @@ export const SubNav = ({
         'md:overflow-visible md:relative md:transition-[width] md:duration-fastest md:ease-cubic md:border-b-0 md:border-r md:flex-none',
         {
           'md:w-[17.5rem]': isPageSidebarOpen,
-          'md:sticky md:top-0 md:h-[calc(100dvh-11rem)] md:max-h-[calc(100dvh-11rem)]':
+          'md:self-stretch md:items-start md:min-h-[calc(100dvh-11rem)]':
             pinLastGroup,
         }
       )}
@@ -121,7 +121,9 @@ export const SubNav = ({
         className={cn(
           'flex shrink-0 gap-8 px-4 py-3 h-16',
           'md:sticky md:top-0 md:flex-col md:gap-1 md:px-4 md:py-4 md:w-full',
-          pinLastGroup ? 'md:h-full md:overflow-y-auto' : 'md:h-auto'
+          pinLastGroup
+            ? 'md:sticky md:top-0 md:h-[calc(100dvh-11rem)] md:max-h-dvh md:overflow-y-auto'
+            : 'md:h-auto'
         )}
       >
         {groups.map((group, index) => {

@@ -18,7 +18,7 @@ export const normalizeInstallPlatform = (
 export interface InstallFormValues {
   name: string
   region: string
-  aws_connection_id: string
+  cloud_connection_id: string
   aws_account_id: string
   location: string
   azure_subscription_id: string
@@ -56,10 +56,7 @@ const inputFieldSchema = (input: TAppInput): z.ZodTypeAny => {
   }
   if (input?.required) {
     const label = input?.display_name || input?.name || 'This field'
-    return z
-      .string()
-      .trim()
-      .min(1, `${label} is required`)
+    return z.string().trim().min(1, `${label} is required`)
   }
   return z.string()
 }

@@ -2,7 +2,9 @@ export default {
   title: 'Features / Runbooks / Install runbooks list',
 }
 
+import { useState } from 'react'
 import { Button } from '@/components/common/Button'
+import type { TCollectionView } from '@/components/common/CollectionViewToggle'
 import { SearchInput } from '@/components/common/SearchInput'
 import { LatestRunbookRunCard } from '@/components/runbooks/LatestRunbookRunCard'
 import type { TInstallRunbookRun } from '@/lib/ctl-api/installs/runbooks'
@@ -96,6 +98,24 @@ export const Default = () => (
     pagination={{ hasNext: true, offset: 0, limit: 10 }}
   />
 )
+
+export const Grid = () => {
+  const [view, setView] = useState<TCollectionView>('grid')
+  return (
+    <InstallRunbooksList
+      items={items}
+      view={view}
+      onViewChange={setView}
+      search={
+        <SearchInput
+          placeholder="Search by name or ID..."
+          value=""
+          onChange={() => {}}
+        />
+      }
+    />
+  )
+}
 
 export const NeverRun = () => (
   <InstallRunbooksList items={[item({ latestRun: latestRun() })]} />

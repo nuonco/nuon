@@ -5,7 +5,7 @@ import { FormSelect } from '@/components/common/form/FormSelect'
 import { Text } from '@/components/common/Text'
 import { AWS_REGIONS, AZURE_REGIONS } from '@/configs/cloud-regions'
 import { getFlagEmoji } from '@/utils/string-utils'
-import type { TAWSAccountConnection } from '@/types'
+import type { TCloudConnectionSummary } from '@/types'
 import { FieldRow } from './FieldRow'
 import type { InstallFormApi } from './useInstallForm'
 import type { InstallPlatform } from './schema'
@@ -13,7 +13,7 @@ import type { InstallPlatform } from './schema'
 interface IInstallPlatformFields {
   form: InstallFormApi
   platform: InstallPlatform
-  awsAccountConnections?: TAWSAccountConnection[]
+  cloudConnections?: TCloudConnectionSummary[]
   requireTargetAccount?: boolean
   disabled?: boolean
 }
@@ -29,7 +29,7 @@ const PlatformLegend = ({ children }: { children: string }) => (
 
 const AwsFields = ({
   form,
-  awsAccountConnections,
+  cloudConnections,
   requireTargetAccount,
   disabled,
 }: Omit<IInstallPlatformFields, 'platform'>) => {
@@ -40,10 +40,10 @@ const AwsFields = ({
       : region.text,
   }))
 
-  const connectionId = useStore(form.store, (s) => s.values.aws_connection_id)
-  const connectionAccountId = awsAccountConnections?.find(
+  const connectionId = useStore(form.store, (s) => s.values.cloud_connection_id)
+  const connectionAccountId = cloudConnections?.find(
     (connection) => connection.id === connectionId
-  )?.account_id
+  )?.target_id
 
   useEffect(() => {
     if (connectionAccountId) {
@@ -69,22 +69,22 @@ const AwsFields = ({
         </form.Field>
       </FieldRow>
 
-      {awsAccountConnections ? (
+      {cloudConnections ? (
         <FieldRow
           labelText="AWS connection"
           optional
           helpText="Select an AWS connection for Nuon to apply the install stack. Leave as None if the customer will apply it."
         >
-          <form.Field name="aws_connection_id">
+          <form.Field name="cloud_connection_id">
             {(field) => (
               <FormSelect
                 field={field}
                 options={[
                   { value: '', label: 'None — customer will apply the stack' },
-                  ...awsAccountConnections.map((connection) => ({
+                  ...cloudConnections.map((connection) => ({
                     value: connection.id,
-                    label: `${connection.name} · ${connection.account_id} · ${connection.verification_status === 'verified' ? 'Verified' : connection.verification_status}`,
-                    disabled: connection.verification_status !== 'verified',
+                    label: `${connection.name} · ${connection.target_id} · ${connection.status === 'verified' ? 'Verified' : connection.status}`,
+                    disabled: connection.status !== 'verified',
                   })),
                 ]}
                 disabled={disabled}
@@ -123,7 +123,7 @@ const AzureFields = ({
   form,
   requireTargetAccount,
   disabled,
-}: Omit<IInstallPlatformFields, 'platform' | 'awsAccountConnections'>) => {
+}: Omit<IInstallPlatformFields, 'platform'>) => {
   const locationOptions = AZURE_REGIONS.map((region) => ({
     value: region.value,
     label: region?.iconVariant
@@ -172,7 +172,7 @@ const GcpFields = ({
   form,
   requireTargetAccount,
   disabled,
-}: Omit<IInstallPlatformFields, 'platform' | 'awsAccountConnections'>) => (
+}: Omit<IInstallPlatformFields, 'platform' | 'cloudConnections'>) => (
   <fieldset className="flex flex-col gap-6 border-t pt-6">
     <PlatformLegend>Set GCP configuration</PlatformLegend>
 
@@ -183,7 +183,11 @@ const GcpFields = ({
     >
       <form.Field name="gcp_project_id">
         {(field) => (
-          <FormInput field={field} placeholder="my-gcp-project" disabled={disabled} />
+          <FormInput
+            field={field}
+            placeholder="my-gcp-project"
+            disabled={disabled}
+          />
         )}
       </form.Field>
     </FieldRow>
@@ -193,7 +197,7 @@ const GcpFields = ({
 export const InstallPlatformFields = ({
   form,
   platform,
-  awsAccountConnections,
+  cloudConnections,
   requireTargetAccount,
   disabled,
 }: IInstallPlatformFields) => {
@@ -201,7 +205,7 @@ export const InstallPlatformFields = ({
     return (
       <AwsFields
         form={form}
-        awsAccountConnections={awsAccountConnections}
+        cloudConnections={cloudConnections}
         requireTargetAccount={requireTargetAccount}
         disabled={disabled}
       />

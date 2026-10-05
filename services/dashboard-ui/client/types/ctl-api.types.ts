@@ -630,9 +630,18 @@ export type TInstallHealthTimelineComponent = {
   install_component_id: string
   component_id?: string
   component_name: string
+  component_type?: TComponentType
   current_health: string
   uptime_percent: number
   observed_seconds?: number
+}
+
+export type TInstallHealthcheck = {
+  action_id: string
+  name: string
+  status: string
+  last_run_at?: string
+  workflow_id?: string
 }
 
 export type TInstallStatusAxis = {
@@ -642,6 +651,7 @@ export type TInstallStatusAxis = {
   metadata?: {
     counts?: Record<string, number>
     cluster_access_error?: string
+    config_drift?: number
   }
 }
 
@@ -658,6 +668,7 @@ export type TInstallHealthTimeline = {
   current_health: string
   cluster_access_error?: string
   components?: TInstallHealthTimelineComponent[]
+  healthchecks?: TInstallHealthcheck[]
   daily?: THealthTimelineDay[]
 }
 
@@ -832,24 +843,43 @@ export type TVCSConnectionReposResponse = {
   total_count: number
 }
 
-export type TAWSAccountConnection = {
+export type TCloudConnection = {
   id: string
+  org_id: string
   created_at: string
   updated_at: string
   name: string
-  account_id: string
-  default_region: string
-  role_arn?: string
-  verification_status: 'pending' | 'verified' | 'error'
-  verification_code?: string
-  verification_message?: string
-  last_checked_at?: string
-  verified_at?: string
-  verified_principal_arn?: string
-  external_id?: string
-  management_principal_arn?: string
-  trust_policy?: Record<string, unknown>
+  platform: 'aws'
+  target_id: string
+  principal: string
+  default_region?: string
+  status: 'pending' | 'verified' | 'error'
+  status_message?: string
+  last_verified_at?: string
+  verification_requested_at?: string
+  verification_in_progress: boolean
+  preset: 'stacks' | 'custom'
+  used_by: { installs: number }
+  setup: {
+    issuer_url: string
+    subject: string
+    audience: string
+    trust_policy: Record<string, unknown>
+    permissions_policy?: Record<string, unknown>
+    terraform: string
+    cli: string
+    cloudformation: string
+    preset: 'stacks' | 'custom'
+  }
 }
+
+export type TCloudConnectionSummary = Omit<TCloudConnection, 'setup'>
+
+export type TCloudConnectionSetup = TCloudConnection['setup']
+export type TCreateCloudConnectionRequest = Pick<
+  TCloudConnection,
+  'name' | 'platform' | 'target_id' | 'principal' | 'preset'
+>
 
 export type TVCSWebhookSubscription = {
   id: string
@@ -1408,6 +1438,50 @@ export type TInstallDeploymentRecord = {
 
 export type TInstallDeploymentsResponse = {
   deployments: TInstallDeploymentRecord[]
+  page: number
+  offset: number
+  limit: number
+  has_more: boolean
+}
+
+export type TInstallActivityType = 'action_run' | 'runbook_run' | 'policy_check'
+
+export type TInstallActivity = {
+  id: string
+  type: TInstallActivityType
+  status: string
+  created_at: string
+  title: string
+  summary: string
+  workflow?: {
+    id: string
+    type: string
+    name: string
+  }
+  action?: {
+    run_id: string
+    action_workflow_id?: string
+    name?: string
+    trigger_type?: string
+  }
+  runbook?: {
+    run_id: string
+    runbook_id?: string
+    name?: string
+  }
+  policy?: {
+    report_id: string
+    owner_type: string
+    owner_id: string
+    component_name?: string
+    deny_count: number
+    warn_count: number
+    pass_count: number
+  }
+}
+
+export type TInstallActivityResponse = {
+  activity: TInstallActivity[]
   page: number
   offset: number
   limit: number

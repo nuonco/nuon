@@ -647,19 +647,54 @@ const LagRow = ({ item }: { item: TLagItem }) => (
   </div>
 )
 
+export const driftTargetLabel = (obj: TDriftedObject) => {
+  switch (obj.targetType) {
+    case 'sandbox':
+      return 'Sandbox'
+    case 'stack':
+      return 'Stack'
+    case 'image':
+      return obj.imageRepository ?? 'Image'
+    case 'install_deploy':
+      return obj.componentName ?? 'Component'
+  }
+}
+
+export const resourceDrift = (
+  install: TPlaygroundInstall,
+  match: (obj: TDriftedObject) => boolean
+) => install.driftedObjects.find(match)
+
 const DriftRow = ({ obj }: { obj: TDriftedObject }) => (
   <div className="flex items-center justify-between gap-3 py-1.5">
     <div className="flex items-center gap-2">
       <Status status="warn" isWithoutText variant="timeline" iconSize={14} />
-      <Text variant="subtext">
-        {obj.targetType === 'sandbox'
-          ? 'Sandbox'
-          : (obj.componentName ?? 'Component')}
-      </Text>
+      <Text variant="subtext">{driftTargetLabel(obj)}</Text>
     </div>
     <Badge size="sm" theme="warn">
       Drift detected
     </Badge>
+  </div>
+)
+
+export const ResourceDrift = ({ drift }: { drift?: TDriftedObject }) => (
+  <div className="flex flex-col gap-1">
+    <div className="flex items-center gap-1.5">
+      <Status
+        status={drift ? 'warn' : 'active'}
+        isWithoutText
+        variant="timeline"
+        iconSize={14}
+      />
+      <Text variant="subtext" theme={drift ? undefined : 'neutral'}>
+        {drift ? 'Drift detected' : 'No drift detected'}
+      </Text>
+    </div>
+    {drift?.summary ? (
+      <Text variant="subtext" theme="neutral">
+        {drift.summary}
+      </Text>
+    ) : null}
   </div>
 )
 
@@ -1166,8 +1201,17 @@ export const DeploymentsTab = ({
 
 // ─── Resources sub-tabs ───────────────────────────────────────────────────────
 
-export const StackTab = ({ versions }: { versions: TStackVersion[] }) => (
+export const StackTab = ({
+  versions,
+  drift,
+}: {
+  versions: TStackVersion[]
+  drift?: TDriftedObject
+}) => (
   <div className="flex flex-col gap-2 p-4">
+    <Card className="!p-4 !gap-2">
+      <ResourceDrift drift={drift} />
+    </Card>
     {versions.map((v, index) => (
       <Card key={v.id} className="!p-4 !gap-4">
         <div className="flex items-center justify-between gap-3">
@@ -1202,7 +1246,13 @@ export const StackTab = ({ versions }: { versions: TStackVersion[] }) => (
   </div>
 )
 
-export const SandboxTab = ({ sandbox }: { sandbox?: TSandboxInfo }) => {
+export const SandboxTab = ({
+  sandbox,
+  drift,
+}: {
+  sandbox?: TSandboxInfo
+  drift?: TDriftedObject
+}) => {
   if (!sandbox) {
     return (
       <div className="p-4">
@@ -1233,6 +1283,7 @@ export const SandboxTab = ({ sandbox }: { sandbox?: TSandboxInfo }) => {
             </Button>
           </div>
         </div>
+        <ResourceDrift drift={drift} />
         <div className="flex flex-wrap gap-x-8 gap-y-3">
           <LabeledValue label="Run type">
             <Badge size="sm" theme="neutral">
@@ -1265,8 +1316,10 @@ export const SandboxTab = ({ sandbox }: { sandbox?: TSandboxInfo }) => {
 
 export const ComponentDetail = ({
   component,
+  drift,
 }: {
   component: TComponentEntry
+  drift?: TDriftedObject
 }) => (
   <div className="flex flex-col gap-4 p-4">
     <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -1291,6 +1344,10 @@ export const ComponentDetail = ({
         Deploy
       </Button>
     </div>
+
+    <Card className="!p-4 !gap-2">
+      <ResourceDrift drift={drift} />
+    </Card>
 
     <div className="flex flex-col gap-2">
       <Text variant="body" weight="strong">
@@ -1336,7 +1393,13 @@ export const ComponentDetail = ({
   </div>
 )
 
-export const ImageDetail = ({ image }: { image: TImageEntry }) => (
+export const ImageDetail = ({
+  image,
+  drift,
+}: {
+  image: TImageEntry
+  drift?: TDriftedObject
+}) => (
   <div className="flex flex-col gap-4 p-4">
     <div className="flex items-start justify-between gap-4 flex-wrap">
       <div className="flex items-center gap-2 flex-wrap min-w-0">
@@ -1351,6 +1414,7 @@ export const ImageDetail = ({ image }: { image: TImageEntry }) => (
       </Button>
     </div>
     <Card className="!p-4 !gap-4">
+      <ResourceDrift drift={drift} />
       <div className="flex flex-wrap gap-x-8 gap-y-3">
         <LabeledValue label="Tag">
           <Badge size="sm" variant="code" theme="neutral">
@@ -1458,12 +1522,22 @@ export const ResourcesTabPanel = ({
     {
       id: 'stack',
       label: 'Stack',
-      render: () => <StackTab versions={resources.stackVersions} />,
+      render: () => (
+        <StackTab
+          versions={resources.stackVersions}
+          drift={resourceDrift(install, (obj) => obj.targetType === 'stack')}
+        />
+      ),
     },
     {
       id: 'sandbox',
       label: 'Sandbox',
-      render: () => <SandboxTab sandbox={resources.sandbox} />,
+      render: () => (
+        <SandboxTab
+          sandbox={resources.sandbox}
+          drift={resourceDrift(install, (obj) => obj.targetType === 'sandbox')}
+        />
+      ),
     },
     {
       id: 'components',
@@ -1489,7 +1563,15 @@ export const ResourcesTabPanel = ({
           (entry) => entry.id === componentId
         )
         return component ? (
-          <ComponentDetail component={component} />
+          <ComponentDetail
+            component={component}
+            drift={resourceDrift(
+              install,
+              (obj) =>
+                obj.targetType === 'install_deploy' &&
+                obj.componentName === component.name
+            )}
+          />
         ) : (
           <div className="p-4">
             <Text variant="subtext" theme="neutral">
@@ -1513,7 +1595,15 @@ export const ResourcesTabPanel = ({
       render: (imageId) => {
         const image = resources.images.find((entry) => entry.id === imageId)
         return image ? (
-          <ImageDetail image={image} />
+          <ImageDetail
+            image={image}
+            drift={resourceDrift(
+              install,
+              (obj) =>
+                obj.targetType === 'image' &&
+                obj.imageRepository === image.repository
+            )}
+          />
         ) : (
           <div className="p-4">
             <Text variant="subtext" theme="neutral">

@@ -6,10 +6,12 @@ export default { title: 'Features / Orgs / Telemetry' }
 
 const Example = ({
   enabled = false,
+  relayEndpoint,
   isPending = false,
   error = null,
 }: {
   enabled?: boolean
+  relayEndpoint?: string
   isPending?: boolean
   error?: TAPIError | null
 }) => (
@@ -17,6 +19,7 @@ const Example = ({
     <OrgTelemetryModal
       orgName="acme"
       enabled={enabled}
+      relayEndpoint={relayEndpoint}
       isPending={isPending}
       error={error}
       onSubmit={() => {}}
@@ -26,7 +29,16 @@ const Example = ({
 
 export const Disabled = () => <Example />
 export const Enabled = () => <Example enabled />
-export const Saving = () => <Example enabled isPending />
+export const ConfiguredRelay = () => (
+  <Example enabled relayEndpoint="https://relay.example.com/telemetry" />
+)
+export const Saving = () => (
+  <Example
+    enabled
+    relayEndpoint="https://relay.example.com/telemetry"
+    isPending
+  />
+)
 export const SaveError = () => (
   <Example
     error={{
