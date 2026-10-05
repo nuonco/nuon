@@ -592,13 +592,47 @@ func latestActiveSandboxBuildID(ctx context.Context, db *gorm.DB, appConfigID st
 		}).
 		Order("created_at DESC").
 		First(&build).Error
+	if err == nil {
+		return build.ID, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return "", fmt.Errorf("unable to get active sandbox build for app config %s: %w", appConfigID, err)
+	}
+
+	var current app.AppSandboxConfig
+	err = db.WithContext(ctx).
+		Preload("ConnectedGithubVCSConfig").
+		Preload("PublicGitVCSConfig").
+		Where(app.AppSandboxConfig{AppConfigID: appConfigID}).
+		First(&current).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return "", nil
 	}
 	if err != nil {
-		return "", fmt.Errorf("unable to get active sandbox build for app config %s: %w", appConfigID, err)
+		return "", fmt.Errorf("unable to load sandbox config for app config %s: %w", appConfigID, err)
 	}
-	return build.ID, nil
+
+	var candidates []app.AppSandboxBuild
+	err = db.WithContext(ctx).
+		Preload("AppSandboxConfig").
+		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
+		Preload("AppSandboxConfig.PublicGitVCSConfig").
+		Where(app.AppSandboxBuild{
+			AppID:  current.AppID,
+			Status: app.AppSandboxBuildStatusActive,
+		}).
+		Order("created_at DESC").
+		Limit(25).
+		Find(&candidates).Error
+	if err != nil {
+		return "", fmt.Errorf("unable to list active sandbox builds for app %s: %w", current.AppID, err)
+	}
+	for i := range candidates {
+		if sandboxConfigEqual(candidates[i].AppSandboxConfig, current) {
+			return candidates[i].ID, nil
+		}
+	}
+	return "", nil
 }
 
 // sandboxContent is everything about a sandbox config that decides what gets
@@ -681,6 +715,10 @@ func sandboxContentOf(c app.AppSandboxConfig) sandboxContent {
 
 func sandboxConfigEqual(a, b app.AppSandboxConfig) bool {
 	return contentHashEqual(sandboxContentOf(a), sandboxContentOf(b))
+}
+
+func SandboxConfigsEqual(a, b app.AppSandboxConfig) bool {
+	return sandboxConfigEqual(a, b)
 }
 
 func stackConfigContent(c app.AppStackConfig) any {
