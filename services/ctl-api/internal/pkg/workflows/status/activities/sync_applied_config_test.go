@@ -143,3 +143,13 @@ func (s *syncAppliedConfigSuite) TestRetriedDiscardAdvances() {
 	)
 	s.Equal(newCfg, applied)
 }
+
+func (s *syncAppliedConfigSuite) TestRetriedErrorThenSuccessAdvances() {
+	applied, newCfg := s.runFlow(
+		seededStep{idx: 400, groupIdx: 4, status: app.StatusError, retried: true},
+		seededStep{idx: 401, groupIdx: 4, status: app.StatusError, retried: true},
+		seededStep{idx: 402, groupIdx: 4, status: app.StatusSuccess},
+		seededStep{idx: 500, groupIdx: 5, status: app.StatusSuccess},
+	)
+	s.Equal(newCfg, applied)
+}

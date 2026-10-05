@@ -332,14 +332,18 @@ var unappliedStepStatuses = map[app.Status]bool{
 	app.Status(app.WorkflowStepApprovalStatusApprovalExpired): true,
 }
 
-// hasUnappliedStep reports whether any step kept the workflow from applying its config. A step discarded because an
-// earlier step in its group auto-skipped (a no-op plan) changed nothing, so it does not count.
+// hasUnappliedStep reports whether any step kept the workflow from applying its config. A retried step is superseded by
+// its retry, and a step discarded because an earlier step in its group auto-skipped (a no-op plan) changed nothing, so
+// neither counts.
 func hasUnappliedStep(steps []app.WorkflowStep) bool {
 	for _, step := range steps {
+		if step.Retried {
+			continue
+		}
 		if unappliedStepStatuses[step.Status.Status] {
 			return true
 		}
-		if step.Status.Status == app.StatusDiscarded && !step.Retried && !followsAutoSkip(steps, step) {
+		if step.Status.Status == app.StatusDiscarded && !followsAutoSkip(steps, step) {
 			return true
 		}
 	}

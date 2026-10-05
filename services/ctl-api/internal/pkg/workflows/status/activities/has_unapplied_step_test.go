@@ -78,6 +78,22 @@ func TestHasUnappliedStep(t *testing.T) {
 			},
 		},
 		{
+			name: "retried error followed by success",
+			steps: []app.WorkflowStep{
+				step(400, 4, "", app.StatusError, true),
+				step(401, 4, "", app.StatusError, true),
+				step(402, 4, "", app.StatusSuccess, false),
+			},
+		},
+		{
+			name: "retried error whose retry also errored",
+			steps: []app.WorkflowStep{
+				step(400, 4, "", app.StatusError, true),
+				step(401, 4, "", app.StatusError, false),
+			},
+			want: true,
+		},
+		{
 			name: "error",
 			steps: []app.WorkflowStep{
 				step(400, 4, "", app.StatusAutoSkipped, false),
