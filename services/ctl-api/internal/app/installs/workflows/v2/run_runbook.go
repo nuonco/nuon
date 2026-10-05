@@ -246,6 +246,7 @@ func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, 
 		sg.nextGroupNamed(fmt.Sprintf("deploy: %s (sync)", name))
 		syncStep, err := sg.installSignalStep(ctx, installID, fmt.Sprintf("sync %s", name), pgtype.Hstore{}, &componentsyncimage.Signal{
 			InstallComponentID:          installComponentID,
+			InstallID:                   installID,
 			ComponentID:                 componentID,
 			ComponentConfigConnectionID: cccIDByComp[componentID],
 			Role:                        flw.Role,

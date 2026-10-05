@@ -43,6 +43,15 @@ type Signal struct {
 	runnerJobID string
 }
 
+func (s *Signal) getInstall(ctx workflow.Context) (*app.Install, error) {
+	id, err := activities.ResolveInstallComponentID(ctx, s.InstallComponentID, s.InstallID, s.ComponentID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to resolve install component")
+	}
+	s.InstallComponentID = id
+	return activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
+}
+
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
@@ -164,7 +173,7 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 
 func (s *Signal) Validate(ctx workflow.Context) error {
 	// Validate install component exists
-	_, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
+	_, err := s.getInstall(ctx)
 	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
 	}
@@ -172,7 +181,7 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	install, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
+	install, err := s.getInstall(ctx)
 	if err != nil {
 		s.updateDeployStatus(ctx, "", app.InstallDeployStatusError, "unable to get install from database")
 		return fmt.Errorf("unable to get install: %w", err)

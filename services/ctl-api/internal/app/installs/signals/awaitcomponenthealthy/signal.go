@@ -38,6 +38,7 @@ const (
 type Signal struct {
 	InstallID          string `json:"install_id"`
 	InstallComponentID string `json:"install_component_id"`
+	ComponentID        string `json:"component_id"`
 	WorkflowStepID     string `json:"workflow_step_id"`
 
 	v *validator.Validate
@@ -75,8 +76,8 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.InstallID == "" {
 		return errors.New("install_id is required")
 	}
-	if s.InstallComponentID == "" {
-		return errors.New("install_component_id is required")
+	if err := s.resolveInstallComponentID(ctx); err != nil {
+		return err
 	}
 
 	if _, err := activities.AwaitGetInstallComponentByID(ctx, s.InstallComponentID); err != nil {
@@ -86,9 +87,21 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	return nil
 }
 
+func (s *Signal) resolveInstallComponentID(ctx workflow.Context) error {
+	id, err := activities.ResolveInstallComponentID(ctx, s.InstallComponentID, s.InstallID, s.ComponentID)
+	if err != nil {
+		return errors.Wrap(err, "unable to resolve install component")
+	}
+	s.InstallComponentID = id
+	return nil
+}
+
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
+		return err
+	}
+	if err := s.resolveInstallComponentID(ctx); err != nil {
 		return err
 	}
 	l = l.With(
