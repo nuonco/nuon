@@ -203,11 +203,8 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 
 	deployedAppConfigID := install.DeployedAppConfigID()
 
-	diff, err := configdiff.ComputeInstallConfigDiff(ctx, h.db, deployedAppConfigID, input.NewAppConfigID)
+	diff, err := h.AppBranchConfigDiff(ctx, &install, input.NewAppConfigID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to compute config diff: %w", err)
-	}
-	if err := h.diffStackAgainstActiveStackVersion(ctx, install.ID, deployedAppConfigID, input.NewAppConfigID, diff); err != nil {
 		return nil, err
 	}
 
@@ -303,6 +300,20 @@ func (h *Helpers) SaveInstallConfigDiffBlob(ctx context.Context, installConfigVe
 	}
 
 	return nil
+}
+
+// AppBranchConfigDiff diffs the install's deployed app config against newAppConfigID, deciding the stack against the
+// active stack version.
+func (h *Helpers) AppBranchConfigDiff(ctx context.Context, install *app.Install, newAppConfigID string) (*app.InstallConfigDiff, error) {
+	deployedAppConfigID := install.DeployedAppConfigID()
+	diff, err := configdiff.ComputeInstallConfigDiff(ctx, h.db, deployedAppConfigID, newAppConfigID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to compute config diff: %w", err)
+	}
+	if err := h.diffStackAgainstActiveStackVersion(ctx, install.ID, deployedAppConfigID, newAppConfigID, diff); err != nil {
+		return nil, err
+	}
+	return diff, nil
 }
 
 // diffStackAgainstActiveStackVersion re-decides the stack fields of diff against the app config of the install's active
