@@ -13,10 +13,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/apiidem"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 )
 
 // @ID						CreateInstallActionWorkflowRun
@@ -113,7 +113,7 @@ type preparedInstallActionWorkflowRun struct {
 func (s *service) createIdempotentInstallActionWorkflowRun(ctx context.Context, installID string, req CreateInstallActionWorkflowRunRequest) (*createInstallActionWorkflowRunResult, error) {
 	hashReq := req
 	hashReq.RequestID = ""
-	hash, err := apiidem.Hash(hashReq)
+	hash, err := request.Hash(hashReq)
 	if err != nil {
 		return nil, err
 	}

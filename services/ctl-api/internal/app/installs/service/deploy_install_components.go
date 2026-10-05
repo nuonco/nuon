@@ -11,8 +11,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/apiidem"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 )
 
 type DeployInstallComponentsRequest struct {
@@ -58,7 +58,7 @@ func (s *service) DeployInstallComponents(ctx *gin.Context) {
 	if req.RequestID != "" {
 		hashReq := req
 		hashReq.RequestID = ""
-		hash, err := apiidem.Hash(hashReq)
+		hash, err := request.Hash(hashReq)
 		if err != nil {
 			ctx.Error(err)
 			return

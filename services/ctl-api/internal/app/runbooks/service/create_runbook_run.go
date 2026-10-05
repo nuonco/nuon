@@ -13,8 +13,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/apiidem"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 )
 
 type CreateRunbookRunRequest struct {
@@ -102,7 +102,7 @@ func (s *service) createRunbookRun(ctx context.Context, orgID, accountID, instal
 
 	requestHash := ""
 	if req.RequestID != "" {
-		requestHash, err = apiidem.Hash(struct {
+		requestHash, err = request.Hash(struct {
 			Runbook string                          `json:"runbook"`
 			Inputs  map[string]*string              `json:"inputs,omitempty"`
 			Steps   []CreateRunbookRunStepSelection `json:"steps,omitempty"`
@@ -119,7 +119,7 @@ func (s *service) createRunbookRun(ctx context.Context, orgID, accountID, instal
 			Type:      app.WorkflowTypeRunbookRun,
 		}).Where("request->>'request_id' = ?", req.RequestID).First(&existing).Error
 		if err == nil {
-			if err := apiidem.Check(existing.Request, requestHash, install.AppConfigID); err != nil {
+			if err := request.Check(existing.Request, requestHash, install.AppConfigID); err != nil {
 				return nil, err
 			}
 		} else if !errors.Is(err, gorm.ErrRecordNotFound) {

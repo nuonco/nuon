@@ -12,10 +12,10 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/apiidem"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 )
 
 type TriggerRunbookRunRequest struct {
@@ -59,7 +59,7 @@ type TriggerRunbookRunResponse struct {
 
 func (h *Helpers) TriggerRunbookRun(ctx context.Context, req TriggerRunbookRunRequest) (*TriggerRunbookRunResponse, error) {
 	resp, err := h.triggerRunbookRun(ctx, req)
-	if err == nil || req.RequestID == "" || !apiidem.IsDuplicateKey(err) {
+	if err == nil || req.RequestID == "" || !request.IsDuplicateKey(err) {
 		return resp, err
 	}
 	var lastErr error
@@ -75,7 +75,7 @@ func (h *Helpers) TriggerRunbookRun(ctx context.Context, req TriggerRunbookRunRe
 
 func (h *Helpers) triggerRunbookRun(ctx context.Context, req TriggerRunbookRunRequest) (*TriggerRunbookRunResponse, error) {
 	if req.RequestID != "" {
-		if err := apiidem.ValidateRequestID(req.RequestID); err != nil {
+		if err := request.ValidateRequestID(req.RequestID); err != nil {
 			return nil, err
 		}
 		if req.RequestHash == "" {
@@ -106,7 +106,7 @@ func (h *Helpers) triggerRunbookRun(ctx context.Context, req TriggerRunbookRunRe
 				return err
 			}
 			if err == nil {
-				if err := apiidem.Check(existing.Request, req.RequestHash, installRunbook.Install.AppConfigID); err != nil {
+				if err := request.Check(existing.Request, req.RequestHash, installRunbook.Install.AppConfigID); err != nil {
 					return err
 				}
 				runID := ""
@@ -231,7 +231,7 @@ func (h *Helpers) triggerRunbookRun(ctx context.Context, req TriggerRunbookRunRe
 		queueID = q.ID
 		dedupe = "runbook-run:" + run.ID
 		if req.RequestID != "" {
-			dedupe = apiidem.DedupeKey("runbook-run", req.RequestID)
+			dedupe = request.DedupeKey("runbook-run", req.RequestID)
 		}
 		var existing app.QueueSignal
 		if err := tx.Where(app.QueueSignal{QueueID: q.ID, DedupeKey: &dedupe}).First(&existing).Error; err == nil {
@@ -293,7 +293,7 @@ func (h *Helpers) replayAPIRequestRunbook(ctx context.Context, req TriggerRunboo
 	if err != nil {
 		return nil, err
 	}
-	if err := apiidem.Check(workflow.Request, req.RequestHash, installRunbook.Install.AppConfigID); err != nil {
+	if err := request.Check(workflow.Request, req.RequestHash, installRunbook.Install.AppConfigID); err != nil {
 		return nil, err
 	}
 	runID := ""
@@ -308,7 +308,7 @@ func (h *Helpers) replayAPIRequestRunbook(ctx context.Context, req TriggerRunboo
 	if err := h.db.WithContext(ctx).Where(app.Queue{OwnerID: installRunbook.InstallID, OwnerType: "installs", Name: "install-workflows"}).First(&q).Error; err != nil {
 		return nil, err
 	}
-	dedupe := apiidem.DedupeKey("runbook-run", req.RequestID)
+	dedupe := request.DedupeKey("runbook-run", req.RequestID)
 	resp, _ := h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{QueueID: q.ID, Signal: executeflow.NewSignal(workflow.ID), OwnerID: workflow.ID, OwnerType: "install_workflows", DedupeKey: &dedupe, Callback: req.Callback})
 	queueSignalID := ""
 	if resp != nil {

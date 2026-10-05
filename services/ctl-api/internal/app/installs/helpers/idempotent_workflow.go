@@ -11,10 +11,10 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/apiidem"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 )
 
 type IdempotentInstallWorkflowRequest struct {
@@ -36,7 +36,7 @@ type IdempotentInstallWorkflowHooks struct {
 }
 
 func (h *Helpers) RunIdempotentInstallWorkflow(ctx context.Context, req IdempotentInstallWorkflowRequest, hooks *IdempotentInstallWorkflowHooks) (*app.Workflow, bool, error) {
-	if err := apiidem.ValidateRequestID(req.RequestID); err != nil {
+	if err := request.ValidateRequestID(req.RequestID); err != nil {
 		return nil, false, err
 	}
 	if req.RequestID == "" {
@@ -59,7 +59,7 @@ func (h *Helpers) RunIdempotentInstallWorkflow(ctx context.Context, req Idempote
 	var err error
 	for attempt := 0; attempt < 5; attempt++ {
 		wf, created, err = h.attemptIdempotentInstallWorkflow(ctx, &install, req, hooks)
-		if err == nil || !apiidem.IsDuplicateKey(err) {
+		if err == nil || !request.IsDuplicateKey(err) {
 			break
 		}
 		time.Sleep(time.Duration(attempt+1) * 20 * time.Millisecond)
@@ -83,7 +83,7 @@ func (h *Helpers) RunIdempotentInstallWorkflow(ctx context.Context, req Idempote
 		}
 	}
 	if err != nil {
-		if apiidem.IsDuplicateKey(err) {
+		if request.IsDuplicateKey(err) {
 			return nil, false, stderr.ErrConflict{
 				Err:         fmt.Errorf("request_id is already in use"),
 				Description: "request_id is already in use",
@@ -92,7 +92,7 @@ func (h *Helpers) RunIdempotentInstallWorkflow(ctx context.Context, req Idempote
 		return nil, false, err
 	}
 
-	h.wakeIdempotentInstallWorkflow(ctx, install.ID, req.QueueName, wf.ID, apiidem.DedupeKey(req.Operation, req.RequestID))
+	h.wakeIdempotentInstallWorkflow(ctx, install.ID, req.QueueName, wf.ID, request.DedupeKey(req.Operation, req.RequestID))
 	return wf, created, nil
 }
 
@@ -151,7 +151,7 @@ func (h *Helpers) attemptIdempotentInstallWorkflow(ctx context.Context, install 
 		if err := tx.Where(app.Queue{OwnerID: install.ID, Name: req.QueueName}).First(&q).Error; err != nil {
 			return fmt.Errorf("unable to find %s queue for install %s: %w", req.QueueName, install.ID, err)
 		}
-		dedupe := apiidem.DedupeKey(req.Operation, req.RequestID)
+		dedupe := request.DedupeKey(req.Operation, req.RequestID)
 		if _, err := h.queueClient.EnqueueSignalInTransaction(ctx, tx, &queueclient.EnqueueSignalRequest{
 			QueueID:   q.ID,
 			Signal:    executeflow.NewSignal(createdWorkflow.ID),
@@ -172,7 +172,7 @@ func checkIdempotentWorkflow(idem *app.WorkflowRequest, req IdempotentInstallWor
 	if req.SkipAppConfigConflict && idem != nil {
 		currentAppConfigID = idem.PinnedAppConfigID
 	}
-	return apiidem.Check(idem, req.RequestHash, currentAppConfigID)
+	return request.Check(idem, req.RequestHash, currentAppConfigID)
 }
 
 func (h *Helpers) lookupIdempotentWorkflow(ctx context.Context, db *gorm.DB, install *app.Install, req IdempotentInstallWorkflowRequest) (*app.Workflow, error) {

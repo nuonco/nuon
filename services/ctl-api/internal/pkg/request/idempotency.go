@@ -1,4 +1,4 @@
-package apiidem
+package request
 
 import (
 	"crypto/sha256"
