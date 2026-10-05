@@ -72,6 +72,7 @@ const (
 	// record written during app config sync, and the dashboard install syncs tab.
 	OrgFeatureAppInstallSyncing OrgFeature = "app-install-syncing"
 	OrgFeatureDisableAppSync    OrgFeature = "disable-app-sync"
+	OrgFeatureAppBundleExport   OrgFeature = "app-bundle-export"
 )
 
 type OrgTelemetrySettings struct {
@@ -220,6 +221,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 // orgs, before the config-driven ForcedEnabledFeatures overrides.
 func DefaultFeatures() map[OrgFeature]bool {
 	return map[OrgFeature]bool{
+		OrgFeatureAppBundleExport: true,
 		// Disabled by default
 		OrgFeatureNotebooks:              false,
 		OrgFeaturePhoneHomeAuth:          false,
@@ -245,6 +247,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureOrgHealthcheckSweeps,
 		OrgFeatureAppInstallSyncing,
 		OrgFeatureDisableAppSync,
+		OrgFeatureAppBundleExport,
 	}
 }
 
@@ -270,6 +273,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureOrgHealthcheckSweeps:   "Replace per-runner and per-process healthcheck cron emitters with two per-org sweep emitters that check all runners/processes in paginated batches. Toggle via POST /v1/orgs/{org_id}/migrate-healthcheck-sweeps, which also migrates the emitters.",
 		OrgFeatureAppInstallSyncing:      "Enable app install config syncing: point an app at a git repo of per-install configs so pushes to that repo sync every install's config and create missing installs behind an approval step. Gates the install syncs API, the VCS push fan-out, and the dashboard install syncs tab.",
 		OrgFeatureDisableAppSync:         "Block standalone `nuon apps sync`. Config changes ship through config-managed app branches (`nuon branches sync`) instead; on a TTY the CLI offers a wizard that creates a branch config file and moves the app's installs onto it.",
+		OrgFeatureAppBundleExport:        "Enable the app bundle export API: package pinned sandbox and component builds for an app-config version into a portable OCI-layout tar.zst with presigned download grants.",
 	}
 }
 

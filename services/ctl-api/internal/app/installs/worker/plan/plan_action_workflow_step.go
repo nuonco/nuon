@@ -1,28 +1,19 @@
 package plan
 
 import (
-	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
-
-	"github.com/pkg/errors"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
-func (p *Planner) createStepPlan(ctx workflow.Context,
+// RenderActionWorkflowStepPlan renders an action workflow step plan with no Temporal dependency.
+func (p *Planner) RenderActionWorkflowStepPlan(l *zap.Logger,
 	step *app.InstallActionWorkflowRunStep,
 	stateMap map[string]any,
-	installID string,
+	gitSource *plantypes.GitSource,
 ) (*plantypes.ActionWorkflowRunStepPlan, error) {
-	l, err := log.WorkflowLogger(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	plan := &plantypes.ActionWorkflowRunStepPlan{
 		ID: step.ID,
 		Attrs: map[string]string{
@@ -30,16 +21,8 @@ func (p *Planner) createStepPlan(ctx workflow.Context,
 			"step.id":   step.Step.ID,
 		},
 		InterpolatedEnvVars: make(map[string]string, 0),
+		GitSource:           gitSource,
 	}
-
-	// step 1 - fetch token for repo
-	l.Debug("creating git source for config")
-	gitSource, err := activities.AwaitGetActionWorkflowStepGitSourceByStepID(ctx, step.Step.ID)
-	if err != nil {
-		l.Error("unable to  configure git source for step", zap.Error(err))
-		return nil, errors.Wrap(err, "unable to get git source")
-	}
-	plan.GitSource = gitSource
 
 	for k, v := range step.Step.EnvVars {
 		renderedVal, err := render.RenderV2(*v, stateMap)

@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"strings"
 
 	"github.com/distribution/reference"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -74,15 +73,7 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		return nil, nil, errors.Wrap(err, "unable to get override env vars")
 	}
 
-	attrs := make(map[string]string, 0)
-	if !run.ActionWorkflowConfigID.Empty() {
-		attrs["action.name"] = run.ActionWorkflowConfig.ActionWorkflow.Name
-		attrs["action.id"] = run.ActionWorkflowConfig.ActionWorkflow.ID
-	} else {
-		name := generics.FirstNonEmptyString(run.Steps[0].AdHocConfig.Name, "Adhoc Action")
-		attrs["action.name"] = name
-		attrs["action.id"] = run.ID
-	}
+	attrs := ActionWorkflowRunAttrs(run)
 
 	cloudAuth, roleSelection, err := p.getAuthForActionWorkflowRun(ctx, stack.InstallStackOutputs, run, appCfg, stack, state)
 	if err != nil {
@@ -99,17 +90,87 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		}
 	}
 
-	plan := &plantypes.ActionWorkflowRunPlan{
-		InstallID:       run.InstallID,
-		ID:              runID,
-		Steps:           make([]*plantypes.ActionWorkflowRunStepPlan, 0),
+	plan, selectedRole, err := p.RenderActionWorkflowRunPlan(l, &RenderActionWorkflowRunPlanInput{
+		RunID:           runID,
+		Run:             run,
+		SandboxMode:     slimInstall.SandboxMode.Bool,
+		AppConfig:       appCfg,
+		StateMap:        stateMap,
 		BuiltinEnvVars:  builtInEnvVars,
 		OverrideEnvVars: overrideEnvVars,
 		Attrs:           attrs,
+		CloudAuth:       cloudAuth,
+		RoleSelection:   roleSelection,
 		ClusterInfo:     clusterInfo,
-		AzureAuth:       cloudAuth.Azure,
-		AWSAuth:         cloudAuth.AWS,
-		GCPAuth:         cloudAuth.GCP,
+		GetStepGitSource: func(stepID string) (*plantypes.GitSource, error) {
+			return activities.AwaitGetActionWorkflowStepGitSourceByStepID(ctx, stepID)
+		},
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if !run.ActionWorkflowConfigID.Empty() && run.ActionWorkflowConfig.Image != "" {
+		sourceImage, err := RenderText(run.ActionWorkflowConfig.Image, stateMap)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "unable to render action image")
+		}
+
+		if err := p.setActionImagePlan(ctx, plan, sourceImage, runID, stack, stateMap, cloudAuth); err != nil {
+			return nil, nil, err
+		}
+	}
+
+	return plan, selectedRole, nil
+}
+
+// RenderActionWorkflowRunPlanInput carries the already-loaded data an action workflow run plan is rendered from.
+type RenderActionWorkflowRunPlanInput struct {
+	RunID            string
+	Run              *app.InstallActionWorkflowRun
+	SandboxMode      bool
+	AppConfig        *app.AppConfig
+	StateMap         map[string]any
+	BuiltinEnvVars   map[string]string
+	OverrideEnvVars  map[string]string
+	Attrs            map[string]string
+	CloudAuth        *CloudAuth
+	RoleSelection    *operationroles.RoleSelection
+	ClusterInfo      *kube.ClusterInfo
+	GetStepGitSource func(string) (*plantypes.GitSource, error)
+}
+
+// ActionWorkflowRunAttrs derives the run-level plan attributes from a run.
+// Connected workflows call it before auth resolution (its original position);
+// install-free callers use it to populate RenderActionWorkflowRunPlanInput.
+func ActionWorkflowRunAttrs(run *app.InstallActionWorkflowRun) map[string]string {
+	attrs := make(map[string]string, 0)
+	if !run.ActionWorkflowConfigID.Empty() {
+		attrs["action.name"] = run.ActionWorkflowConfig.ActionWorkflow.Name
+		attrs["action.id"] = run.ActionWorkflowConfig.ActionWorkflow.ID
+	} else {
+		name := generics.FirstNonEmptyString(run.Steps[0].AdHocConfig.Name, "Adhoc Action")
+		attrs["action.name"] = name
+		attrs["action.id"] = run.ID
+	}
+	return attrs
+}
+
+// RenderActionWorkflowRunPlan renders an action workflow run plan with no Temporal dependency.
+func (p *Planner) RenderActionWorkflowRunPlan(l *zap.Logger, in *RenderActionWorkflowRunPlanInput) (*plantypes.ActionWorkflowRunPlan, *operationroles.RoleSelection, error) {
+	run := in.Run
+
+	plan := &plantypes.ActionWorkflowRunPlan{
+		InstallID:       run.InstallID,
+		ID:              in.RunID,
+		Steps:           make([]*plantypes.ActionWorkflowRunStepPlan, 0),
+		BuiltinEnvVars:  in.BuiltinEnvVars,
+		OverrideEnvVars: in.OverrideEnvVars,
+		Attrs:           in.Attrs,
+		ClusterInfo:     in.ClusterInfo,
+		AzureAuth:       in.CloudAuth.Azure,
+		AWSAuth:         in.CloudAuth.AWS,
+		GCPAuth:         in.CloudAuth.GCP,
 	}
 
 	if !run.ActionWorkflowConfigID.Empty() {
@@ -118,7 +179,13 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		}
 		for idx, stepCfg := range run.Steps {
 			l.Debug(fmt.Sprintf("creating plan for step %d", idx))
-			stepPlan, err := p.createStepPlan(ctx, &stepCfg, stateMap, run.InstallID)
+			l.Debug("creating git source for config")
+			gitSource, err := in.GetStepGitSource(stepCfg.Step.ID)
+			if err != nil {
+				l.Error("unable to  configure git source for step", zap.Error(err))
+				return nil, nil, errors.Wrap(errors.Wrap(err, "unable to get git source"), fmt.Sprintf("unable to create plan for step %d", idx))
+			}
+			stepPlan, err := p.RenderActionWorkflowStepPlan(l, &stepCfg, in.StateMap, gitSource)
 			if err != nil {
 				return nil, nil, errors.Wrap(err, fmt.Sprintf("unable to create plan for step %d", idx))
 			}
@@ -129,32 +196,15 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		if run.Timeout > 0 {
 			plan.Timeout = run.Timeout
 		}
-		stepPlan, err := p.createAdhocStepPlan(ctx, &run.Steps[0], stateMap, run.InstallID)
+		stepPlan, err := p.RenderActionWorkflowAdhocStepPlan(l, &run.Steps[0], in.StateMap)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, fmt.Sprintf("unable to create adhoc step plan"))
 		}
 		plan.Steps = append(plan.Steps, stepPlan)
 	}
 
-	if !run.ActionWorkflowConfigID.Empty() && run.ActionWorkflowConfig.Image != "" {
-		sourceImage, err := RenderText(run.ActionWorkflowConfig.Image, stateMap)
-		if err != nil {
-			return nil, nil, fmt.Errorf(
-				"unable to resolve action image %q: %w; if it references a container_image component, that component has no build synced into this install yet",
-				run.ActionWorkflowConfig.Image, err,
-			)
-		}
-		if strings.TrimSpace(sourceImage) == "" {
-			return nil, nil, fmt.Errorf("action image %q rendered empty", run.ActionWorkflowConfig.Image)
-		}
-
-		if err := p.setActionImagePlan(ctx, plan, sourceImage, runID, stack, stateMap, cloudAuth); err != nil {
-			return nil, nil, err
-		}
-	}
-
-	if slimInstall.SandboxMode.Bool {
-		targetRefs := helpers.GetActionReferences(appCfg, run.ActionWorkflowConfig.ActionWorkflow.Name)
+	if in.SandboxMode {
+		targetRefs := helpers.GetActionReferences(in.AppConfig, run.ActionWorkflowConfig.ActionWorkflow.Name)
 
 		plan.SandboxMode = &plantypes.SandboxMode{
 			Enabled: true,
@@ -163,7 +213,7 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 	}
 
 	l.Info("successfully created plan")
-	return plan, roleSelection, nil
+	return plan, in.RoleSelection, nil
 }
 
 // setActionImagePlan decides how the runner gets the action's image. An image
