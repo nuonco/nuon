@@ -76,6 +76,11 @@ type Client interface {
 	UpdateApp(ctx context.Context, appID string, req *models.ServiceUpdateAppRequest) (*models.AppApp, error)
 	DeleteApp(ctx context.Context, appID string) (bool, error)
 
+	GetAppBundles(ctx context.Context, appID string, query *GetAppBundlesQuery) ([]*models.ServiceBundleResponse, bool, error)
+	GetAppBundle(ctx context.Context, appID, bundleID string) (*models.ServiceBundleResponse, error)
+	CreateAppBundle(ctx context.Context, appID string, req *models.ServiceCreateBundleRequest) (*models.ServiceBundleResponse, error)
+	CreateAppBundleDownloadGrant(ctx context.Context, appID, bundleID string) (*models.ServiceDownloadGrantResponse, error)
+
 	// app branch methods
 	GetOrgBranches(ctx context.Context) ([]*models.AppAppBranch, error)
 	GetAppBranches(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppBranch, bool, error)

@@ -90,6 +90,10 @@ func guardReadOnly(cmd *cobra.Command) error {
 	if _, ok := readOnlyCommands[cmd.Name()]; ok {
 		return nil
 	}
+	switch cmd.CommandPath() {
+	case "nuon apps bundles wait", "nuon apps bundles download":
+		return nil
+	}
 
 	return ui.PrintError(&ui.CLIUserError{
 		Msg: fmt.Sprintf("read-only mode: `%s` is disabled because it may modify state. Unset %s or drop --read-only to run it.", cmd.CommandPath(), readOnlyEnvVar),

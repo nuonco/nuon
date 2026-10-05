@@ -99,39 +99,27 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		}
 	}
 
-	plan := &plantypes.ActionWorkflowRunPlan{
-		InstallID:       run.InstallID,
-		ID:              runID,
-		Steps:           make([]*plantypes.ActionWorkflowRunStepPlan, 0),
+	plan, err := p.RenderActionWorkflowRunPlan(l, &RenderActionWorkflowRunPlanInput{
+		RunID:           runID,
+		Run:             run,
+		StateMap:        stateMap,
 		BuiltinEnvVars:  builtInEnvVars,
 		OverrideEnvVars: overrideEnvVars,
 		Attrs:           attrs,
+		CloudAuth:       cloudAuth,
 		ClusterInfo:     clusterInfo,
-		AzureAuth:       cloudAuth.Azure,
-		AWSAuth:         cloudAuth.AWS,
-		GCPAuth:         cloudAuth.GCP,
+		GetStepGitSource: func(stepID string) (*plantypes.GitSource, error) {
+			return activities.AwaitGetActionWorkflowStepGitSourceByStepID(ctx, stepID)
+		},
+	})
+	if err != nil {
+		return nil, nil, err
 	}
 
-	if !run.ActionWorkflowConfigID.Empty() {
-		if run.ActionWorkflowConfig.Timeout > 0 {
-			plan.Timeout = run.ActionWorkflowConfig.Timeout
-		}
-		for idx, stepCfg := range run.Steps {
-			l.Debug(fmt.Sprintf("creating plan for step %d", idx))
-			stepPlan, err := p.createStepPlan(ctx, &stepCfg, stateMap, run.InstallID)
-			if err != nil {
-				return nil, nil, errors.Wrap(err, fmt.Sprintf("unable to create plan for step %d", idx))
-			}
-
-			plan.Steps = append(plan.Steps, stepPlan)
-		}
-	} else {
-		if run.Timeout > 0 {
-			plan.Timeout = run.Timeout
-		}
+	if run.ActionWorkflowConfigID.Empty() {
 		stepPlan, err := p.createAdhocStepPlan(ctx, &run.Steps[0], stateMap, run.InstallID)
 		if err != nil {
-			return nil, nil, errors.Wrap(err, fmt.Sprintf("unable to create adhoc step plan"))
+			return nil, nil, errors.Wrap(err, "unable to create adhoc step plan")
 		}
 		plan.Steps = append(plan.Steps, stepPlan)
 	}
@@ -155,7 +143,6 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 
 	if slimInstall.SandboxMode.Bool {
 		targetRefs := helpers.GetActionReferences(appCfg, run.ActionWorkflowConfig.ActionWorkflow.Name)
-
 		plan.SandboxMode = &plantypes.SandboxMode{
 			Enabled: true,
 			Outputs: refs.GetFakeRefs(targetRefs),
@@ -164,6 +151,64 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 
 	l.Info("successfully created plan")
 	return plan, roleSelection, nil
+}
+
+// RenderActionWorkflowRunPlanInput carries the already-loaded data an action workflow run plan is rendered from.
+type RenderActionWorkflowRunPlanInput struct {
+	RunID            string
+	Run              *app.InstallActionWorkflowRun
+	StateMap         map[string]any
+	BuiltinEnvVars   map[string]string
+	OverrideEnvVars  map[string]string
+	Attrs            map[string]string
+	CloudAuth        *CloudAuth
+	ClusterInfo      *kube.ClusterInfo
+	GetStepGitSource func(string) (*plantypes.GitSource, error)
+}
+
+// RenderActionWorkflowRunPlan renders an action workflow run plan with no Temporal dependency.
+func (p *Planner) RenderActionWorkflowRunPlan(l *zap.Logger, in *RenderActionWorkflowRunPlanInput) (*plantypes.ActionWorkflowRunPlan, error) {
+	run := in.Run
+
+	plan := &plantypes.ActionWorkflowRunPlan{
+		InstallID:       run.InstallID,
+		ID:              in.RunID,
+		Steps:           make([]*plantypes.ActionWorkflowRunStepPlan, 0),
+		BuiltinEnvVars:  in.BuiltinEnvVars,
+		OverrideEnvVars: in.OverrideEnvVars,
+		Attrs:           in.Attrs,
+		ClusterInfo:     in.ClusterInfo,
+		AzureAuth:       in.CloudAuth.Azure,
+		AWSAuth:         in.CloudAuth.AWS,
+		GCPAuth:         in.CloudAuth.GCP,
+	}
+
+	if !run.ActionWorkflowConfigID.Empty() {
+		if run.ActionWorkflowConfig.Timeout > 0 {
+			plan.Timeout = run.ActionWorkflowConfig.Timeout
+		}
+		for idx, stepCfg := range run.Steps {
+			l.Debug(fmt.Sprintf("creating plan for step %d", idx))
+			l.Debug("creating git source for config")
+			gitSource, err := in.GetStepGitSource(stepCfg.Step.ID)
+			if err != nil {
+				l.Error("unable to  configure git source for step", zap.Error(err))
+				return nil, errors.Wrap(errors.Wrap(err, "unable to get git source"), fmt.Sprintf("unable to create plan for step %d", idx))
+			}
+			stepPlan, err := p.RenderActionWorkflowStepPlan(l, &stepCfg, in.StateMap, gitSource)
+			if err != nil {
+				return nil, errors.Wrap(err, fmt.Sprintf("unable to create plan for step %d", idx))
+			}
+
+			plan.Steps = append(plan.Steps, stepPlan)
+		}
+	} else {
+		if run.Timeout > 0 {
+			plan.Timeout = run.Timeout
+		}
+	}
+
+	return plan, nil
 }
 
 // setActionImagePlan decides how the runner gets the action's image. An image

@@ -58,6 +58,7 @@ const (
 	cloudEventTypeInstallConfigSync = "com.nuon.install.config_sync.v1"
 	cloudEventTypeLabelAdded        = "com.nuon.install.label_added.v1"
 	cloudEventTypeAppBranchChanged  = "com.nuon.install.app_branch_changed.v1"
+	cloudEventTypeAppBundlePublish  = "com.nuon.app.bundle_publish.v1"
 
 	kindWorkflow                          = "workflow"
 	kindWorkflowStep                      = "workflow_step"
@@ -75,6 +76,7 @@ const (
 	kindInstallConfigSync                 = "install_config_sync"
 	kindLabelAdded                        = "label_added"
 	kindAppBranchChanged                  = "app_branch_changed"
+	kindAppBundlePublish                  = "app_bundle_publish"
 )
 
 // Status values surfaced to webhook consumers in the *.lifecycle events.
@@ -161,6 +163,12 @@ const (
 	signalTypeInstallConfigSync signal.SignalType = "install-config-sync"
 	signalTypeLabelAdded        signal.SignalType = "label-added"
 	signalTypeAppBranchChanged  signal.SignalType = "app-branch-changed"
+
+	// signalTypeAppBundlePublish mirrors appbundlepublish.SignalType — the
+	// app-queue signal that assembles and uploads an app bundle archive. Its
+	// lifecycle events are how subscribers learn a multi-hour publish
+	// succeeded or failed without polling the bundle status route.
+	signalTypeAppBundlePublish signal.SignalType = "app_bundle_publish"
 )
 
 // approvalPlanExcerptMaxBytes caps the size of the plan excerpt embedded in
@@ -317,6 +325,7 @@ func (h *WebhookSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) boo
 		signalTypeInstallConfigSync,
 		signalTypeLabelAdded,
 		signalTypeAppBranchChanged,
+		signalTypeAppBundlePublish,
 		signalTypeCloudConnectionVerificationFailed:
 		return true
 	default:
@@ -699,6 +708,8 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 		ceType = cloudEventTypeLabelAdded
 	case kindAppBranchChanged:
 		ceType = cloudEventTypeAppBranchChanged
+	case kindAppBundlePublish:
+		ceType = cloudEventTypeAppBundlePublish
 	}
 	// Awaiting-retry shares kind=workflow_step with the normal step
 	// lifecycle but gets its own CloudEvent type so consumers can route the
@@ -820,7 +831,8 @@ func (h *WebhookSignalLifecycleHook) buildEventDataForSignal(ctx context.Context
 	switch event.SignalType {
 	case signalTypeStackRun, signalTypeRoleChange, signalTypeInputsUpdated:
 		return h.buildStackEventData(ctx, event, outcome)
-	case signalTypeAppConfigSynced:
+	case signalTypeAppConfigSynced,
+		signalTypeAppBundlePublish:
 		return h.buildAppConfigSyncedEventData(ctx, event, outcome)
 	case signalTypeUpdateAppConfig:
 		return h.buildUpdateAppConfigEventData(ctx, event, outcome)
@@ -984,9 +996,13 @@ func (h *WebhookSignalLifecycleHook) buildStackEventData(_ context.Context, even
 }
 
 func (h *WebhookSignalLifecycleHook) buildAppConfigSyncedEventData(_ context.Context, event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (lifecycleEventData, bool) {
+	kind := kindAppConfigSynced
+	if event.SignalType == signalTypeAppBundlePublish {
+		kind = kindAppBundlePublish
+	}
 	transition := mapTransition(event, outcome)
 	data := lifecycleEventData{
-		Kind:       kindAppConfigSynced,
+		Kind:       kind,
 		Transition: transition,
 		OrgID:      event.OrgID,
 		OrgName:    event.OrgName,

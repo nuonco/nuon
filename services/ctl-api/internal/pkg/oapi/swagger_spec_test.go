@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	accountsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/service"
 	actionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/service"
+	appbundlesservice "github.com/nuonco/nuon/services/ctl-api/internal/app/appbundles/service"
 	appsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/service"
 	cloudconnectionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/service"
 	componentsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/components/service"
@@ -56,6 +57,7 @@ func testDomainServices(t *testing.T, ea *api.EndpointAudit) []api.Service {
 	services := []api.Service{
 		accountsservice.New(accountsservice.Params{}),
 		actionsservice.New(actionsservice.Params{EndpointAudit: ea}),
+		appbundlesservice.New(appbundlesservice.Params{}),
 		cloudConnectionsService,
 		appsservice.New(appsservice.Params{EndpointAudit: ea}),
 		componentsservice.New(componentsservice.Params{EndpointAudit: ea}),
