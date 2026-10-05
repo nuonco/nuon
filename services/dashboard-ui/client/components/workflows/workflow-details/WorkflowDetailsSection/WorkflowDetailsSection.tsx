@@ -11,8 +11,13 @@ import { Time } from '@/components/common/Time'
 import { Modal } from '@/components/surfaces/Modal'
 import { humanize } from '@/utils/string-utils'
 import { getInputDisplayName } from '@/utils/install-utils'
+import {
+  getAccountDisplayName,
+  isServiceAccount,
+} from '@/utils/workflow-utils'
 import type { TWorkflow, TInstall } from '@/types'
 import { WorkflowMetadata } from '../WorkflowMetadata'
+import { Tooltip } from '@/components/common/Tooltip'
 
 type ChangedInput = {
   name: string
@@ -74,7 +79,20 @@ export const WorkflowDetailsSection = ({
       >
         <div className="flex items-center gap-1.5 min-w-0">
           <Text variant="base" weight="strong">
-            {workflow?.created_by?.email}
+            {isServiceAccount(workflow?.created_by) &&
+            workflow?.created_by?.email ? (
+              <Tooltip
+                tipContent={
+                  <Text variant="subtext" family="mono">
+                    {workflow.created_by.email}
+                  </Text>
+                }
+              >
+                {getAccountDisplayName(workflow.created_by)}
+              </Tooltip>
+            ) : (
+              getAccountDisplayName(workflow?.created_by)
+            )}
           </Text>
           <Text theme="neutral">
             initiated this workflow{' '}

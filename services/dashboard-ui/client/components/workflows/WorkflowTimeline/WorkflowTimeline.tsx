@@ -25,6 +25,7 @@ import {
 import type { TInstall, TInstallGroupRun, TWorkflow } from '@/types'
 import { manualRunPinLabel } from '@/utils/branch-utils'
 import {
+  getAccountDisplayName,
   getWorkflowBadge,
   getWorkflowPendingApprovals,
   isBranchRunWorkflow,
@@ -91,8 +92,9 @@ export const WorkflowTimeline = ({
             })
         const outcome = isBranchRun ? branchRunOutcome(workflow) : undefined
         const createdByAccount = workflow?.created_by
-        const createdBy = createdByAccount?.email ? (
-          isServiceAccount(createdByAccount) ? (
+        const createdByLabel = getAccountDisplayName(createdByAccount)
+        const createdBy = createdByLabel ? (
+          isServiceAccount(createdByAccount) && createdByAccount?.email ? (
             <Tooltip
               position="left"
               tipContent={
@@ -101,10 +103,10 @@ export const WorkflowTimeline = ({
                 </Text>
               }
             >
-              a service account
+              {createdByLabel}
             </Tooltip>
           ) : (
-            createdByAccount.email
+            createdByLabel
           )
         ) : undefined
 

@@ -84,6 +84,19 @@ export function isServiceAccount(account?: {
   return !!account.email?.endsWith('@serviceaccount.nuon.co')
 }
 
+/** Prefer service-account alias/name over the machine email. */
+export function getAccountDisplayName(account?: {
+  account_type?: string
+  email?: string
+  name?: string
+}): string | undefined {
+  if (!account) return undefined
+  if (isServiceAccount(account)) {
+    return account.name?.trim() || 'a service account'
+  }
+  return account.email || account.name || undefined
+}
+
 export function getApprovalHref(
   orgId: string,
   approval: TWorkflowStepApproval,
