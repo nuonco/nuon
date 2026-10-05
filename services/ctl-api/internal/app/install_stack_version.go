@@ -113,6 +113,10 @@ var PhoneHomeTokenEligibleStatuses = []Status{
 	InstallStackVersionStatusActive,
 }
 
+// InstallStackVersionDuplicateOfMetadataKey marks an outdated version whose template matched the active one, so it
+// was never handed to the user.
+const InstallStackVersionDuplicateOfMetadataKey = "duplicate_of_version_id"
+
 // Statuses whose templates were uploaded. Earlier ones carry URLs written at
 // creation, pointing at objects that never landed.
 var InstallStackVersionTemplateReadyStatuses = []Status{

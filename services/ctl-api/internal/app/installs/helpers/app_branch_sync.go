@@ -207,6 +207,9 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 	if err != nil {
 		return nil, fmt.Errorf("unable to compute config diff: %w", err)
 	}
+	if err := h.diffStackAgainstActiveStackVersion(ctx, install.ID, deployedAppConfigID, input.NewAppConfigID, diff); err != nil {
+		return nil, err
+	}
 
 	update := app.InstallAppConfigVersion{
 		InstallID:      input.InstallID,
@@ -299,5 +302,39 @@ func (h *Helpers) SaveInstallConfigDiffBlob(ctx context.Context, installConfigVe
 		return fmt.Errorf("unable to save diff: %w", res.Error)
 	}
 
+	return nil
+}
+
+// diffStackAgainstActiveStackVersion re-decides the stack fields of diff against the app config of the install's active
+// stack version. The applied config lags while an earlier rollout is still running after its stack was applied, and
+// diffing the stack against it re-detects a change that is already live.
+func (h *Helpers) diffStackAgainstActiveStackVersion(ctx context.Context, installID, deployedAppConfigID, newAppConfigID string, diff *app.InstallConfigDiff) error {
+	if diff == nil || !diff.StackChanged {
+		return nil
+	}
+
+	var active app.InstallStackVersion
+	res := h.db.WithContext(ctx).
+		Where(app.InstallStackVersion{InstallID: installID}).
+		Where("status->>'status' = ?", app.InstallStackVersionStatusActive).
+		Order("created_at DESC").
+		Limit(1).
+		Find(&active)
+	if res.Error != nil {
+		return fmt.Errorf("unable to get active stack version: %w", res.Error)
+	}
+	if res.RowsAffected == 0 || active.AppConfigID == "" || active.AppConfigID == deployedAppConfigID {
+		return nil
+	}
+
+	stackDiff, err := configdiff.ComputeInstallConfigDiff(ctx, h.db, active.AppConfigID, newAppConfigID)
+	if err != nil {
+		return fmt.Errorf("unable to compute stack diff against active stack version: %w", err)
+	}
+	diff.StackChanged = stackDiff.StackChanged
+	diff.StackOldID = stackDiff.StackOldID
+	diff.StackNewID = stackDiff.StackNewID
+	diff.StackImpacts = stackDiff.StackImpacts
+	diff.StackImpactReasons = stackDiff.StackImpactReasons
 	return nil
 }
