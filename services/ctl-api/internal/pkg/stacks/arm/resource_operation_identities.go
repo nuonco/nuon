@@ -3,6 +3,7 @@ package arm
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"sort"
@@ -138,9 +139,13 @@ func azureRoleLabel(id azureOperationIdentity) string {
 	return label
 }
 
-func azureRoleEnableParameters(ids []azureOperationIdentity) map[string]ARMParameter {
+func azureRoleEnableParameters(ids []azureOperationIdentity, applied map[string]any) map[string]ARMParameter {
 	params := make(map[string]ARMParameter, len(ids))
 	for _, id := range ids {
+		enabled := id.enabledByDefault
+		if prior, known := azureRoleAppliedState(id, applied); known {
+			enabled = prior
+		}
 		label := azureRoleLabel(id)
 		description := fmt.Sprintf("Create the %s.", label)
 		if id.description != "" {
@@ -148,11 +153,59 @@ func azureRoleEnableParameters(ids []azureOperationIdentity) map[string]ARMParam
 		}
 		params[azureRoleEnableParamName(id)] = ARMParameter{
 			Type:         "bool",
-			DefaultValue: id.enabledByDefault,
+			DefaultValue: enabled,
 			Metadata:     &ARMParameterMetadata{Description: description},
 		}
 	}
 	return params
+}
+
+// azureRoleAppliedState reads whether a role is on in the stack the customer last
+// applied, from the client IDs phone-home reported. Re-opening the quick link then
+// keeps their choices instead of resetting every toggle to enabled_in_stack. A role
+// phone-home has never reported on is unknown.
+func azureRoleAppliedState(id azureOperationIdentity, outputs map[string]any) (enabled, known bool) {
+	if outputs == nil {
+		return false, false
+	}
+	var raw any
+	var ok bool
+	switch id.kind {
+	case "provision", "maintenance", "deprovision":
+		raw, ok = outputs[id.kind+"_identity_client_id"]
+	case "custom", "breakglass":
+		key := "custom_identity_client_ids"
+		if id.kind == "breakglass" {
+			key = "break_glass_identity_client_ids"
+		}
+		raw, ok = nestedStringMap(outputs[key])[id.roleName]
+	}
+	if !ok {
+		return false, false
+	}
+	clientID, _ := raw.(string)
+	return clientID != "", true
+}
+
+// nestedStringMap accepts a map output as phone-home stores it: decoded, or still
+// the JSON text it is kept as in hstore.
+func nestedStringMap(v any) map[string]any {
+	switch m := v.(type) {
+	case map[string]any:
+		return m
+	case map[string]string:
+		out := make(map[string]any, len(m))
+		for k, val := range m {
+			out[k] = val
+		}
+		return out
+	case string:
+		var out map[string]any
+		if json.Unmarshal([]byte(m), &out) == nil {
+			return out
+		}
+	}
+	return nil
 }
 
 // azureRoleEnableLabels labels each role's checkbox in the quick-link form; the

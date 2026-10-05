@@ -127,7 +127,7 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 
 	if useOperationIdentities {
 		tmpl.Resources = append(tmpl.Resources, t.getOperationIdentityResources(operationIDs, scope)...)
-		for name, p := range azureRoleEnableParameters(operationIDs) {
+		for name, p := range azureRoleEnableParameters(operationIDs, appliedStackOutputs(inp)) {
 			tmpl.Parameters[name] = p
 		}
 	}
@@ -187,6 +187,15 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 	t.addStandardOutputs(tmpl, inp, scope)
 
 	return tmpl, nil
+}
+
+// appliedStackOutputs is what phone-home last reported for this install, or nil
+// before the first apply.
+func appliedStackOutputs(inp *stacks.TemplateInput) map[string]any {
+	if inp.InstallState == nil || inp.InstallState.InstallStack == nil {
+		return nil
+	}
+	return inp.InstallState.InstallStack.Outputs
 }
 
 // appendRunnerGrants emits the role assignments held by the runner's system
