@@ -26,17 +26,15 @@ func (s *Signal) OnSkip(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to find deploy step for skipped install group")
 	}
-
-	for _, stepID := range out.StepIDs {
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: stepID,
-			Status: app.CompositeStatus{
-				Status:                 app.StatusUserSkipped,
-				StatusHumanDescription: "install group plan skipped, deploy skipped",
-			},
-		}); err != nil {
-			return err
-		}
+	if len(out.StepIDs) == 0 {
+		return nil
 	}
-	return nil
+
+	return statusactivities.AwaitPkgStatusUpdateFlowStepStatuses(ctx, statusactivities.UpdateFlowStepStatusesRequest{
+		IDs: out.StepIDs,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusUserSkipped,
+			StatusHumanDescription: "install group plan skipped, deploy skipped",
+		},
+	}, &workflow.ActivityOptions{ScheduleToCloseTimeout: time.Minute})
 }

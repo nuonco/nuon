@@ -390,6 +390,28 @@ func (a *Activities) PkgStatusUpdateFlowStepStatus(ctx context.Context, req Upda
 	return nil
 }
 
+type UpdateFlowStepStatusesRequest struct {
+	IDs    []string            `json:"ids" validate:"required"`
+	Status app.CompositeStatus `json:"status" validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 1m
+func (a *Activities) PkgStatusUpdateFlowStepStatuses(ctx context.Context, req UpdateFlowStepStatusesRequest) error {
+	for _, id := range req.IDs {
+		if id == "" {
+			continue
+		}
+		if err := a.PkgStatusUpdateFlowStepStatus(ctx, UpdateStatusRequest{
+			ID:     id,
+			Status: req.Status,
+		}); err != nil {
+			return errors.Wrapf(err, "unable to update flow step %s", id)
+		}
+	}
+	return nil
+}
+
 // @temporal-gen-v2 activity
 func (a *Activities) PkgStatusUpdateFlowStepGroupStatus(ctx context.Context, req UpdateStatusRequest) error {
 	obj := app.WorkflowStepGroup{
