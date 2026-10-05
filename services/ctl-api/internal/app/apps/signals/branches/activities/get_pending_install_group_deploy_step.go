@@ -41,7 +41,7 @@ func (a *Activities) GetPendingInstallGroupDeployStep(ctx context.Context, input
 		Order("group_idx asc, created_at asc").
 		Find(&steps).Error
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to query install group follow-on steps")
+		return nil, errors.Wrap(err, "unable to query install group deploy step")
 	}
 
 	stepIDs := make([]string, 0, len(steps))
