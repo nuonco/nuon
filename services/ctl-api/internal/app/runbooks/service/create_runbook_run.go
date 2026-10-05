@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -56,7 +58,7 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 	}
 
 	var req CreateRunbookRunRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
