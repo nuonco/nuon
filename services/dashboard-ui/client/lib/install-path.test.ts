@@ -91,14 +91,9 @@ test('install pathname suffix keeps the page after the install id', () => {
   ).toBe('/resources/sandbox')
 })
 
-test('new install IA requires both flags', () => {
-  expect(
-    isNewInstallIAEnabled({
-      'app-branches-ui': true,
-      'new-install-ia': true,
-    })
-  ).toBe(true)
-  expect(isNewInstallIAEnabled({ 'new-install-ia': true })).toBe(false)
+test('new install IA follows new-app-ia', () => {
+  expect(isNewInstallIAEnabled({ 'new-app-ia': true })).toBe(true)
+  expect(isNewInstallIAEnabled({ 'new-app-ia': false })).toBe(false)
 })
 
 test('breadcrumbs gain the app when the new install IA is on', () => {

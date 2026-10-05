@@ -23,7 +23,6 @@ import (
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -218,12 +217,9 @@ func (s *SyncFieldsTestSuite) TestSandboxPersistsPulumiAndOperationRoles() {
 		{Operation: config.OperationType(app.OperationReprovision), RoleName: "maintenance"},
 	}
 
-	// The pulumi sandbox is feature gated; enable it for this org.
 	ctx := context.Background()
 	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
-	ctx, org := s.deps.Seed.EnsureOrg(ctx, s.T())
-	s.Require().NoError(s.deps.DB.Model(&app.Org{}).Where("id = ?", org.ID).
-		Update("features", types.StringBoolMap{string(app.OrgFeaturePulumiSandbox): true}).Error)
+	ctx, _ = s.deps.Seed.EnsureOrg(ctx, s.T())
 
 	testApp := s.deps.Seed.CreateApp(ctx, s.T())
 	appCfg := s.deps.Seed.CreateBareAppConfig(ctx, s.T(), testApp.ID)

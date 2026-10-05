@@ -99,6 +99,7 @@ func init() {
 	// if sandbox_enable_runners is set to true, all jobs require that you process them via a runner, which means
 	// running an org runner during seeding and then install runners, etc.
 	config.RegisterDefault("sandbox_mode_enable_runners", false)
+	config.RegisterDefault("enable_support_users", false)
 
 	// runner defaults; per-cloud overrides avoid cross-cloud egress against AWS ECR's pull quota.
 	config.RegisterDefault("runner_container_image_url", "public.ecr.aws/p7e3r5y0/runner")
@@ -135,6 +136,7 @@ func init() {
 	config.RegisterDefault("temporal_blob_s3_timeout", "30s")
 
 	config.RegisterDefault("forced_enabled_features", "")
+	config.RegisterDefault("auto_enabled_features", "")
 	config.RegisterDefault("enable_httpbin_debug_endpoints", false)
 	config.RegisterDefault("enable_endpoint_auditing", false)
 	config.RegisterDefault("org_default_user_journeys_enabled", false)
@@ -381,10 +383,14 @@ type Config struct {
 	ForceOnboardingSandboxMode bool          `config:"force_onboarding_sandbox_mode"`
 	SandboxModeSleep           time.Duration `config:"sandbox_mode_sleep" validate:"required"`
 	SandboxModeEnableRunners   bool          `config:"sandbox_mode_enable_runners"`
+	EnableSupportUsers         bool          `config:"enable_support_users"`
 
 	// ForcedEnabledFeatures lists flags this deployment pins on for every org: they
 	// resolve enabled regardless of the stored per-org value and cannot be toggled off.
 	ForcedEnabledFeatures string `config:"forced_enabled_features"`
+	// AutoEnabledFeatures lists flags stored true on newly created orgs. Unlike
+	// ForcedEnabledFeatures, they can still be toggled off.
+	AutoEnabledFeatures string `config:"auto_enabled_features"`
 
 	// flags for controlling creation of integration users
 	IntegrationGithubInstallID string `config:"integration_github_install_id" validate:"required"`
@@ -666,6 +672,7 @@ func NewConfig() (*Config, error) {
 	}
 
 	orgfeatures.SetForced(cfg.ForcedEnabledFeatures)
+	orgfeatures.SetAuto(cfg.AutoEnabledFeatures)
 
 	switch {
 	case cfg.IsGCP():

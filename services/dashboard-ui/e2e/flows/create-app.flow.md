@@ -4,7 +4,6 @@ Creates a new app from the apps page and verifies the redirect to its branches p
 
 ## Setup
 - env: E2E_ORG_ID (required)
-- note: global-setup enables the `app-branches-ui` org feature on the created test org
 - start: /:orgId/apps
 
 ## Steps
