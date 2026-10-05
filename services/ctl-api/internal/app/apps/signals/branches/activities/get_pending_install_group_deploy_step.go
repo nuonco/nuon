@@ -9,6 +9,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
+// installGroupDeploySignalType matches updateinstallgroup.SignalType.
+const installGroupDeploySignalType = "app-branch-update-install-group"
+
 type GetPendingInstallGroupDeployStepInput struct {
 	InstallWorkflowID string `json:"install_workflow_id" validate:"required"`
 	InstallGroupID    string `json:"install_group_id" validate:"required"`
@@ -27,6 +30,7 @@ func (a *Activities) GetPendingInstallGroupDeployStep(ctx context.Context, input
 			InstallWorkflowID: input.InstallWorkflowID,
 			ExecutionType:     app.WorkflowStepExecutionTypeSystem,
 		}).
+		Where("queue_signal->>'type' = ?", installGroupDeploySignalType).
 		Where("queue_signal->'data'->>'install_group_id' = ?", input.InstallGroupID).
 		Where("status->>'status' IN ?", []string{
 			string(app.StatusPending),

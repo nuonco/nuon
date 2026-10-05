@@ -1,6 +1,7 @@
 package executeworkflowstep
 
 import (
+	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -8,6 +9,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
+
+// onSkipHardFailVersion gates failing the skip when OnSkip returns an error.
+// Older histories logged a warning and continued, which could deploy a skipped plan.
+const onSkipHardFailVersion = "on-skip-hard-fail-v1"
 
 // handleSkipResponse processes a "skip current" response.
 // If the signal implements SignalWithSkipGroup and returns true, the entire
@@ -19,10 +24,17 @@ func (s *Signal) handleSkipResponse(ctx workflow.Context, l *zap.Logger, step *a
 		zap.String("workflow_id", flw.ID))
 
 	sig := stepSignal(step)
+	if sig != nil {
+		signal.ApplyStepContext(sig, step.ID, flw.ID)
+	}
 
 	if os, ok := sig.(signal.SignalWithOnSkip); ok {
 		if err := os.OnSkip(ctx); err != nil {
-			l.Warn("OnSkip hook failed", zap.Error(err))
+			if workflow.GetVersion(ctx, onSkipHardFailVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+				l.Warn("OnSkip hook failed", zap.Error(err))
+			} else {
+				return errors.Wrap(err, "OnSkip hook failed")
+			}
 		}
 	}
 
@@ -63,9 +75,18 @@ func (s *Signal) handleSkipDependentsResponse(ctx workflow.Context, l *zap.Logge
 		zap.String("step_id", step.ID),
 		zap.String("workflow_id", flw.ID))
 
-	if os, ok := stepSignal(step).(signal.SignalWithOnSkip); ok {
+	sig := stepSignal(step)
+	if sig != nil {
+		signal.ApplyStepContext(sig, step.ID, flw.ID)
+	}
+
+	if os, ok := sig.(signal.SignalWithOnSkip); ok {
 		if err := os.OnSkip(ctx); err != nil {
-			l.Warn("OnSkip hook failed", zap.Error(err))
+			if workflow.GetVersion(ctx, onSkipHardFailVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+				l.Warn("OnSkip hook failed", zap.Error(err))
+			} else {
+				return errors.Wrap(err, "OnSkip hook failed")
+			}
 		}
 	}
 

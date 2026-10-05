@@ -14,20 +14,35 @@ import (
 
 var _ signal.SignalWithOnSkip = (*Signal)(nil)
 
+// onSkipRequireDeployStepVersion gates failing when the paired deploy step is
+// missing; older histories treated an empty lookup as success and continued.
+const onSkipRequireDeployStepVersion = "plan-skip-require-deploy-step-v1"
+
 // OnSkip marks this install group's deploy step as user-skipped when the plan
 // approval is skipped. The plan and deploy steps live in separate step groups,
 // so the generic same-group skip logic never reaches the deploy — without this,
 // the workflow would continue straight into deploying the group the user skipped.
 func (s *Signal) OnSkip(ctx workflow.Context) error {
+	flowID := s.FlowID
+	if flowID == "" {
+		return errors.New("planinstallgroup signal missing flow_id; cannot mark deploy skipped")
+	}
+	if s.InstallGroupID == "" {
+		return errors.New("planinstallgroup signal missing install_group_id; cannot mark deploy skipped")
+	}
+
 	out, err := activities.AwaitGetPendingInstallGroupDeployStep(ctx, &activities.GetPendingInstallGroupDeployStepInput{
-		InstallWorkflowID: s.FlowID,
+		InstallWorkflowID: flowID,
 		InstallGroupID:    s.InstallGroupID,
 	}, &workflow.ActivityOptions{ScheduleToCloseTimeout: time.Minute})
 	if err != nil {
 		return errors.Wrap(err, "unable to find deploy step for skipped install group")
 	}
 	if out.StepID == "" {
-		return nil
+		if workflow.GetVersion(ctx, onSkipRequireDeployStepVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+			return nil
+		}
+		return errors.New("pending deploy step not found for skipped install group")
 	}
 
 	return statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
