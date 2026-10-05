@@ -24,6 +24,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/joberrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -218,6 +219,88 @@ func (s *CreateRunnerJobExecutionTestSuite) TestCreateRunnerJobExecution() {
 				var cancellationError joberrors.CancellationError
 				require.NoError(s.T(), json.Unmarshal(job.CompositeError.Data, &cancellationError))
 				assert.Equal(s.T(), joberrors.CancellationReasonAttemptsExhausted, cancellationError.Reason)
+			},
+		},
+		{
+			name: "job already claimed returns conflict",
+			setupFunc: func() string {
+				ctx := context.Background()
+				ctx = cctx.SetAccountContext(ctx, s.testAcc)
+
+				job := &app.RunnerJob{
+					ID:                domains.NewRunnerJobID(),
+					OrgID:             s.testOrg.ID,
+					RunnerID:          s.testRunner.ID,
+					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
+					Status:            app.RunnerJobStatusInProgress,
+					StatusDescription: "in-progress",
+					Group:             app.RunnerJobGroupSandbox,
+					Type:              app.RunnerJobTypeSandboxTerraform,
+					Operation:         app.RunnerJobOperationTypeApplyPlan,
+					QueueTimeout:      60,
+					AvailableTimeout:  60,
+					ExecutionTimeout:  300,
+					MaxExecutions:     3,
+				}
+				require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(job).Error)
+
+				s.T().Cleanup(func() {
+					s.service.DB.Unscoped().Where(app.RunnerJobExecution{RunnerJobID: job.ID}).Delete(&app.RunnerJobExecution{})
+					s.service.DB.Unscoped().Delete(job)
+				})
+
+				return job.ID
+			},
+			expectedCode:     http.StatusConflict,
+			expectedNotFound: true,
+			validateFunc: func(jobID string) {
+				var count int64
+				require.NoError(s.T(), s.service.DB.Model(&app.RunnerJobExecution{}).Where(app.RunnerJobExecution{RunnerJobID: jobID}).Count(&count).Error)
+				assert.Zero(s.T(), count)
+			},
+		},
+		{
+			name: "available job is claimed",
+			setupFunc: func() string {
+				ctx := context.Background()
+				ctx = cctx.SetAccountContext(ctx, s.testAcc)
+
+				job := &app.RunnerJob{
+					ID:                domains.NewRunnerJobID(),
+					OrgID:             s.testOrg.ID,
+					RunnerID:          s.testRunner.ID,
+					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
+					Status:            app.RunnerJobStatusAvailable,
+					StatusDescription: "available",
+					Group:             app.RunnerJobGroupSandbox,
+					Type:              app.RunnerJobTypeSandboxTerraform,
+					Operation:         app.RunnerJobOperationTypeApplyPlan,
+					QueueTimeout:      60,
+					AvailableTimeout:  60,
+					ExecutionTimeout:  300,
+					MaxExecutions:     3,
+				}
+				require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(job).Error)
+
+				s.T().Cleanup(func() {
+					s.service.DB.Unscoped().Where(app.RunnerJobExecution{RunnerJobID: job.ID}).Delete(&app.RunnerJobExecution{})
+					s.service.DB.Unscoped().Delete(job)
+				})
+
+				return job.ID
+			},
+			expectedCode: http.StatusCreated,
+			validateFunc: func(jobID string) {
+				var job app.RunnerJob
+				require.NoError(s.T(), s.service.DB.Scopes(scopes.WithDisableViews).First(&job, "id = ?", jobID).Error)
+				assert.Equal(s.T(), app.RunnerJobStatusInProgress, job.Status)
+
+				var count int64
+				require.NoError(s.T(), s.service.DB.Model(&app.RunnerJobExecution{}).Where(app.RunnerJobExecution{RunnerJobID: jobID}).Count(&count).Error)
+				assert.EqualValues(s.T(), 1, count)
+
+				rr := s.makeRequest("POST", "/v1/runner-jobs/"+jobID+"/executions", CreateRunnerJobExecutionRequest{})
+				assert.Equal(s.T(), http.StatusConflict, rr.Code)
 			},
 		},
 	}
