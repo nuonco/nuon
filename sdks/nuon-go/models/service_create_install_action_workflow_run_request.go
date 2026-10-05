@@ -23,6 +23,10 @@ type ServiceCreateInstallActionWorkflowRunRequest struct {
 	// Required: true
 	ActionWorkflowConfigID *string `json:"action_workflow_config_id"`
 
+	// RequestID is an optional idempotency key. The same id and body returns the original workflow. A different body, or an install that has moved to another app config, returns 409.
+	// Max Length: 255
+	RequestID string `json:"request_id,omitempty"`
+
 	// role
 	Role string `json:"role,omitempty"`
 
@@ -38,6 +42,10 @@ func (m *ServiceCreateInstallActionWorkflowRunRequest) Validate(formats strfmt.R
 		res = append(res, err)
 	}
 
+	if err := m.validateRequestID(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -47,6 +55,18 @@ func (m *ServiceCreateInstallActionWorkflowRunRequest) Validate(formats strfmt.R
 func (m *ServiceCreateInstallActionWorkflowRunRequest) validateActionWorkflowConfigID(formats strfmt.Registry) error {
 
 	if err := validate.Required("action_workflow_config_id", "body", m.ActionWorkflowConfigID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateInstallActionWorkflowRunRequest) validateRequestID(formats strfmt.Registry) error {
+	if swag.IsZero(m.RequestID) { // not required
+		return nil
+	}
+
+	if err := validate.MaxLength("request_id", "body", m.RequestID, 255); err != nil {
 		return err
 	}
 

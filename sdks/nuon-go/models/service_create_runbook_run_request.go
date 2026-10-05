@@ -13,6 +13,7 @@ import (
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // ServiceCreateRunbookRunRequest service create runbook run request
@@ -22,6 +23,10 @@ type ServiceCreateRunbookRunRequest struct {
 
 	// inputs
 	Inputs map[string]string `json:"inputs,omitempty"`
+
+	// RequestID is an optional idempotency key. The same id and body returns the original run. A different body, or an install that has moved to another app config, returns 409.
+	// Max Length: 255
+	RequestID string `json:"request_id,omitempty"`
 
 	// role
 	Role string `json:"role,omitempty"`
@@ -34,6 +39,10 @@ type ServiceCreateRunbookRunRequest struct {
 func (m *ServiceCreateRunbookRunRequest) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateRequestID(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateSteps(formats); err != nil {
 		res = append(res, err)
 	}
@@ -41,6 +50,18 @@ func (m *ServiceCreateRunbookRunRequest) Validate(formats strfmt.Registry) error
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ServiceCreateRunbookRunRequest) validateRequestID(formats strfmt.Registry) error {
+	if swag.IsZero(m.RequestID) { // not required
+		return nil
+	}
+
+	if err := validate.MaxLength("request_id", "body", m.RequestID, 255); err != nil {
+		return err
+	}
+
 	return nil
 }
 
