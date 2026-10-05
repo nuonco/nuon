@@ -454,16 +454,22 @@ func gcpRolesToSDKMap(rs []gcpstacks.GCPRoleRaw, enabled bool) map[string]app.In
 	return out
 }
 
+// azureRolesToSDKMap serves each role's enabled flag from enabled_in_stack, falling
+// back to the given default, so the Terraform module and the ARM stack agree.
 func azureRolesToSDKMap(rs []azurestacks.AzureRoleRaw, enabled bool) map[string]app.InstallerSDKAzureRole {
 	if len(rs) == 0 {
 		return nil
 	}
 	out := make(map[string]app.InstallerSDKAzureRole, len(rs))
 	for _, r := range rs {
+		roleEnabled := enabled
+		if r.EnabledInStack.Valid {
+			roleEnabled = r.EnabledInStack.Bool
+		}
 		out[r.Name] = app.InstallerSDKAzureRole{
 			Actions:      r.Actions,
 			BuiltInRoles: r.BuiltInRoles,
-			Enabled:      enabled,
+			Enabled:      roleEnabled,
 		}
 	}
 	return out
