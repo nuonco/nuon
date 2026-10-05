@@ -168,17 +168,17 @@ func (s *service) CreateAdHocAction(ctx *gin.Context) {
 
 	run.InstallWorkflowID = &workflow.ID
 	if err := s.db.WithContext(ctx).Save(run).Error; err != nil {
-		ctx.Error(err)
+		ctx.Error(fmt.Errorf("error queuing workflow %s: %w", workflow.ID, err))
 		return
 	}
 
 	queueID, err := s.getInstallActionWorkflowsQueueID(ctx, install.ID)
 	if err != nil {
-		ctx.Error(err)
+		ctx.Error(fmt.Errorf("error queuing workflow %s: %w", workflow.ID, err))
 		return
 	}
 	if err := s.enqueueInstallSignal(ctx, queueID, executeflow.NewSignal(workflow.ID), workflow.ID, "install_workflows"); err != nil {
-		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		ctx.Error(fmt.Errorf("error queuing workflow %s: %w", workflow.ID, err))
 		return
 	}
 

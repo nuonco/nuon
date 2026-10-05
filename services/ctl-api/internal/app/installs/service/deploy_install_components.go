@@ -96,11 +96,11 @@ func (s *service) DeployInstallComponents(ctx *gin.Context) {
 
 	queueID, err := s.getInstallWorkflowsQueueID(ctx, installID)
 	if err != nil {
-		ctx.Error(err)
+		ctx.Error(fmt.Errorf("error queuing workflow %s: %w", workflow.ID, err))
 		return
 	}
 	if err := s.enqueueInstallSignal(ctx, queueID, executeflow.NewSignal(workflow.ID), workflow.ID, "install_workflows"); err != nil {
-		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		ctx.Error(fmt.Errorf("error queuing workflow %s: %w", workflow.ID, err))
 		return
 	}
 

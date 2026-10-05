@@ -90,10 +90,10 @@ func (s *service) createInstallActionWorkflowRun(ctx context.Context, installID 
 
 	queueID, err := s.getInstallActionWorkflowsQueueID(ctx, prepared.InstallID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error queuing workflow %s: %w", workflow.ID, err)
 	}
 	if err := s.enqueueInstallSignal(ctx, queueID, executeflow.NewSignal(workflow.ID), workflow.ID, "install_workflows"); err != nil {
-		return nil, fmt.Errorf("enqueue signal: %w", err)
+		return nil, fmt.Errorf("error queuing workflow %s: %w", workflow.ID, err)
 	}
 
 	return &createInstallActionWorkflowRunResult{
