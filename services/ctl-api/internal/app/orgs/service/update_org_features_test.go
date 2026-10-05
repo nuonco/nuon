@@ -230,8 +230,8 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 					Features: map[string]bool{
 						string(app.OrgFeatureUserManagedFeatures): true,
 						string(app.OrgFeatureNotebooks):           false,
-						string(app.OrgFeatureNewAppIA):         true,
-						string(app.OrgFeatureDisableAppSync):         false,
+						string(app.OrgFeatureNewAppIA):            true,
+						string(app.OrgFeatureDisableAppSync):      false,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -254,8 +254,8 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			},
 			requestBody: UpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureNotebooks):   true,
-					string(app.OrgFeatureNewAppIA): false,
+					string(app.OrgFeatureNotebooks):      true,
+					string(app.OrgFeatureNewAppIA):       false,
 					string(app.OrgFeatureDisableAppSync): true,
 				},
 			},
@@ -670,8 +670,8 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 					Features: map[string]bool{
 						string(app.OrgFeatureUserManagedFeatures): true,
 						string(app.OrgFeatureNotebooks):           true,
-						string(app.OrgFeatureNewAppIA):         false,
-						string(app.OrgFeatureDisableAppSync):         true,
+						string(app.OrgFeatureNewAppIA):            false,
+						string(app.OrgFeatureDisableAppSync):      true,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error

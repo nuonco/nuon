@@ -216,8 +216,8 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
 					Features: map[string]bool{
-						string(app.OrgFeatureNotebooks):   false,
-						string(app.OrgFeatureNewAppIA): true,
+						string(app.OrgFeatureNotebooks):      false,
+						string(app.OrgFeatureNewAppIA):       true,
 						string(app.OrgFeatureDisableAppSync): false,
 					},
 				}
@@ -231,8 +231,8 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 			},
 			requestBody: AdminUpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureNotebooks):   true,
-					string(app.OrgFeatureNewAppIA): false,
+					string(app.OrgFeatureNotebooks):      true,
+					string(app.OrgFeatureNewAppIA):       false,
 					string(app.OrgFeatureDisableAppSync): true,
 				},
 			},
@@ -351,8 +351,8 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 					},
 					Features: map[string]bool{
 						string(app.OrgFeatureNotebooks):           false,
-						string(app.OrgFeatureNewAppIA):         false,
-						string(app.OrgFeatureDisableAppSync):         false,
+						string(app.OrgFeatureNewAppIA):            false,
+						string(app.OrgFeatureDisableAppSync):      false,
 						string(app.OrgFeatureUserManagedFeatures): false,
 					},
 				}
@@ -367,11 +367,11 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 			requestBody: AdminUpdateOrgFeaturesRequest{
 				Features: map[string]bool{
 					string(app.OrgFeatureNotebooks):           true,
-					string(app.OrgFeatureNewAppIA):         true,
-					string(app.OrgFeatureDisableAppSync):         true,
+					string(app.OrgFeatureNewAppIA):            true,
+					string(app.OrgFeatureDisableAppSync):      true,
 					string(app.OrgFeatureUserManagedFeatures): true,
-					string(app.OrgFeatureRunbookStudio):               true,
-					string(app.OrgFeatureAppInstallSyncing):       true,
+					string(app.OrgFeatureRunbookStudio):       true,
+					string(app.OrgFeatureAppInstallSyncing):   true,
 				},
 			},
 			expectedCode: http.StatusOK,
@@ -406,8 +406,8 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
 					Features: map[string]bool{
-						string(app.OrgFeatureNotebooks):   true,
-						string(app.OrgFeatureNewAppIA): false,
+						string(app.OrgFeatureNotebooks):      true,
+						string(app.OrgFeatureNewAppIA):       false,
 						string(app.OrgFeatureDisableAppSync): true,
 					},
 				}

@@ -296,7 +296,7 @@ func (s *OrgFeaturesTestSuite) TestGetCurrentOrgFeatures() {
 					Features: map[string]bool{
 						string(app.OrgFeatureUserManagedFeatures): true,
 						string(app.OrgFeatureNotebooks):           true,
-						string(app.OrgFeatureNewAppIA):         false,
+						string(app.OrgFeatureNewAppIA):            false,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -385,7 +385,7 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 					Features: map[string]bool{
 						string(app.OrgFeatureUserManagedFeatures): true, // ENABLED
 						string(app.OrgFeatureNotebooks):           false,
-						string(app.OrgFeatureNewAppIA):         true,
+						string(app.OrgFeatureNewAppIA):            true,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -408,8 +408,8 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			},
 			requestBody: UpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureNotebooks):   true,  // Toggle to true
-					string(app.OrgFeatureNewAppIA): false, // Toggle to false
+					string(app.OrgFeatureNotebooks): true,  // Toggle to true
+					string(app.OrgFeatureNewAppIA):  false, // Toggle to false
 				},
 			},
 			expectedCode: http.StatusOK,
@@ -625,8 +625,8 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 					Features: map[string]bool{
 						string(app.OrgFeatureUserManagedFeatures): true,
 						string(app.OrgFeatureNotebooks):           false,
-						string(app.OrgFeatureNewAppIA):         false,
-						string(app.OrgFeatureDisableAppSync):         false,
+						string(app.OrgFeatureNewAppIA):            false,
+						string(app.OrgFeatureDisableAppSync):      false,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -649,8 +649,8 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			},
 			requestBody: UpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureNotebooks):   true,
-					string(app.OrgFeatureNewAppIA): true,
+					string(app.OrgFeatureNotebooks):      true,
+					string(app.OrgFeatureNewAppIA):       true,
 					string(app.OrgFeatureDisableAppSync): true,
 				},
 			},
