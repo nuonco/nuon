@@ -1,15 +1,10 @@
 package routing
 
 import (
-	"fmt"
-
 	"gorm.io/gorm"
-)
 
-type viewModel interface {
-	UseView() bool
-	ViewVersion() string
-}
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
+)
 
 type TableACL struct {
 	Allow map[string]struct{}
@@ -96,8 +91,8 @@ func tableNamesFor(db *gorm.DB, model interface{}) []string {
 		return nil
 	}
 	out := []string{base}
-	if vm, ok := model.(viewModel); ok && vm.UseView() {
-		out = append(out, fmt.Sprintf("%s_view_%s", base, vm.ViewVersion()))
+	if vm, ok := model.(views.ViewModel); ok && vm.UseView() {
+		out = append(out, views.TableOrViewName(db, vm, ""))
 	}
 	return out
 }

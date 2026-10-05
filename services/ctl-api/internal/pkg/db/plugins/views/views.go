@@ -2,10 +2,18 @@ package views
 
 import (
 	"fmt"
+	"os"
 	"reflect"
+	"strings"
 
 	"gorm.io/gorm"
 )
+
+// EnvOverridePrefix replaces the automatic view for a model table. The suffix
+// is the table name, and the value is the full view name. Example:
+//
+//	GORM_VIEW_PLUGIN_OVERRIDE_component_config_connections=component_config_connections_view_v2
+const EnvOverridePrefix = "GORM_VIEW_PLUGIN_OVERRIDE_"
 
 var _ gorm.Plugin = (*viewsPlugin)(nil)
 
@@ -75,12 +83,20 @@ func (m *viewsPlugin) modelsToViewTables(db *gorm.DB) {
 		}
 
 		tableName := db.NamingStrategy.TableName(modelType.Name())
+		view := fmt.Sprintf("%s_view_%s", tableName, vm.ViewVersion())
 		m.viewModels[tableName] = viewModel{
 			model: model,
 			table: tableName,
-			view:  fmt.Sprintf("%s_view_%s", tableName, vm.ViewVersion()),
+			view:  applyTableViewOverride(tableName, view),
 		}
 	}
+}
+
+func applyTableViewOverride(tableName, computed string) string {
+	if to := strings.TrimSpace(os.Getenv(EnvOverridePrefix + tableName)); to != "" {
+		return to
+	}
+	return computed
 }
 
 // see note above
