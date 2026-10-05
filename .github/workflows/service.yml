@@ -85,6 +85,14 @@ jobs:
           fi
           CI=true nuonctl tests run-all ${{inputs.service}} "${CACHE_ARGS[@]}"
 
+      # nuonctl signs the pushed runner image keylessly; v2 writes the legacy .sig tags every
+      # verifier and our prune scripts understand.
+      - name: Install cosign
+        if: ${{ inputs.service == 'runner' && github.event_name != 'pull_request' }}
+        uses: sigstore/cosign-installer@v4.1.2
+        with:
+          cosign-release: v2.6.5
+
       - name: 📦 Build
         run: |
           CACHE_ARGS=()

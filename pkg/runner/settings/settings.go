@@ -50,6 +50,11 @@ type Settings struct {
 	ContainerImageTag string
 	ContainerImageURL string
 
+	// how the runner VM checks the runner image signature: disabled, warn or enforce
+	ContainerImageVerificationMode        string
+	ContainerImageSignatureIssuer         string
+	ContainerImageSignatureIdentityRegexp string
+
 	// platform
 	Platform string
 
