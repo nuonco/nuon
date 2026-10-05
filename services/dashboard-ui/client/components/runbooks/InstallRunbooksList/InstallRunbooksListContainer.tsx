@@ -2,8 +2,7 @@ import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { DebouncedSearchInput } from '@/components/common/DeboundedSearch'
 import { LatestRunbookRunCard } from '@/components/runbooks/LatestRunbookRunCard'
-import { RunbookReadmePanel } from '@/components/runbooks/RunbookReadmePanel'
-import { RunRunbookButton } from '@/components/runbooks/RunRunbook'
+import { InstallRunbookRowActions } from '@/components/runbooks/InstallRunbookRowActions'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
@@ -44,13 +43,20 @@ export const InstallRunbooksListContainer = () => {
   ): TInstallRunbookListItem => {
     const runbook = installRunbook.runbook
     const runbookId = installRunbook.runbook_id ?? installRunbook.id
-    const href = installLink({ installId: install?.id, appId: install?.app_id, suffix: `/runbooks/${runbookId}` })
-    const readme = runbook?.configs?.[0]?.readme
+    const href = installLink({
+      installId: install?.id,
+      appId: install?.app_id,
+      suffix: `/runbooks/${runbookId}`,
+    })
     const latestRun = installRunbook.runs?.[0]
     const workflowId =
       latestRun?.install_workflow_id ?? latestRun?.install_workflow?.id
     const runHref = workflowId
-      ? installLink({ installId: install?.id, appId: install?.app_id, suffix: `/history/${workflowId}` })
+      ? installLink({
+          installId: install?.id,
+          appId: install?.app_id,
+          suffix: `/history/${workflowId}`,
+        })
       : undefined
 
     return {
@@ -59,32 +65,8 @@ export const InstallRunbooksListContainer = () => {
       href,
       description: runbook?.description,
       stepCount: runbook?.configs?.[0]?.steps?.length,
-      actions: (
-        <div className="flex items-center gap-2">
-          {readme ? (
-            <RunbookReadmePanel
-              readme={readme}
-              runbookName={runbook?.name}
-              panelKey={`runbook-readme-${runbookId}`}
-              triggerButton={{
-                variant: 'secondary',
-                size: 'sm',
-                children: 'Readme',
-              }}
-            />
-          ) : null}
-          <RunRunbookButton
-            installRunbook={installRunbook}
-            size="sm"
-            variant="secondary"
-          >
-            Run runbook
-          </RunRunbookButton>
-        </div>
-      ),
-      latestRun: (
-        <LatestRunbookRunCard flush run={latestRun} href={runHref} />
-      ),
+      actions: <InstallRunbookRowActions installRunbook={installRunbook} />,
+      latestRun: <LatestRunbookRunCard flush run={latestRun} href={runHref} />,
     }
   }
 

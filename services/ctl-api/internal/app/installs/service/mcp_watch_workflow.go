@@ -2,7 +2,10 @@ package service
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -20,17 +23,23 @@ const (
 )
 
 type mcpWatchWorkflowInput struct {
-	WorkflowID      string `json:"workflow_id" jsonschema:"workflow ID to watch"`
-	LastKnownStatus string `json:"last_known_status,omitempty" jsonschema:"the status you already know about; returns when status differs from this"`
-	TimeoutSeconds  int    `json:"timeout_seconds,omitempty" jsonschema:"max seconds to wait for a change (default 30, max 60)"`
+	WorkflowID      string            `json:"workflow_id" jsonschema:"workflow ID to watch"`
+	Cursor          string            `json:"cursor,omitempty" jsonschema:"cursor from the previous watch_workflow response; returns when the workflow fingerprint differs"`
+	LastKnownStatus string            `json:"last_known_status,omitempty" jsonschema:"the status you already know about; used when cursor is omitted and returns when status differs"`
+	TimeoutSeconds  int               `json:"timeout_seconds,omitempty" jsonschema:"max seconds to wait for a change (default 30, max 60)"`
+	Reported        map[string]string `json:"reported,omitempty" jsonschema:"step id to status already shown; pass reported from the previous watch_workflow response"`
 }
 
 type mcpWatchWorkflowResult struct {
-	Changed  bool               `json:"changed"`
-	Workflow mcpWorkflowSummary `json:"workflow"`
+	Changed      bool               `json:"changed"`
+	Cursor       string             `json:"cursor"`
+	StepProgress string             `json:"step_progress"`
+	Reported     map[string]string  `json:"reported,omitempty"`
+	Workflow     mcpWorkflowSummary `json:"workflow"`
+	NextAction   *mcpNextAction     `json:"next_action,omitempty"`
 }
 
-func (s *service) mcpWatchWorkflow(ctx context.Context, _ *mcp.CallToolRequest, in mcpWatchWorkflowInput) (*mcp.CallToolResult, any, error) {
+func (s *service) mcpWatchWorkflow(ctx context.Context, req *mcp.CallToolRequest, in mcpWatchWorkflowInput) (*mcp.CallToolResult, any, error) {
 	orgID, err := require.Read(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -45,6 +54,8 @@ func (s *service) mcpWatchWorkflow(ctx context.Context, _ *mcp.CallToolRequest, 
 	}
 
 	deadline := time.Now().Add(timeout)
+	var notified string
+	var progress float64
 
 	for {
 		summary, err := s.fetchWorkflowSummary(ctx, orgID, in.WorkflowID)
@@ -52,19 +63,20 @@ func (s *service) mcpWatchWorkflow(ctx context.Context, _ *mcp.CallToolRequest, 
 			return nil, nil, err
 		}
 
-		currentStatus := summary.Status
-		if in.LastKnownStatus == "" || currentStatus != in.LastKnownStatus {
-			return apiPkg.MCPJSONResult(mcpWatchWorkflowResult{
-				Changed:  in.LastKnownStatus != "" && currentStatus != in.LastKnownStatus,
-				Workflow: *summary,
-			})
+		cursor := mcpWorkflowCursor(*summary)
+		if cursor != notified {
+			progress++
+			notifyWatchProgress(ctx, req, *summary, in.Reported, progress)
+			notified = cursor
 		}
 
-		if time.Now().After(deadline) {
-			return apiPkg.MCPJSONResult(mcpWatchWorkflowResult{
-				Changed:  false,
-				Workflow: *summary,
-			})
+		_, _, hasNew := mcpStepProgress(*summary, in.Reported)
+		snapshotOnly := in.Cursor == "" && in.LastKnownStatus == ""
+		// A cursor change that only repeats an in-progress step, or that only
+		// adds a pending step, is not worth returning. Keep polling until a
+		// step starts or finishes so that success is not dropped between calls.
+		if snapshotOnly || hasNew || !mcpShouldKeepWatching(*summary) || time.Now().After(deadline) {
+			return apiPkg.MCPJSONResult(mcpWatchResult(*summary, cursor, mcpWatchChanged(in, summary.Status, cursor), in.Reported))
 		}
 
 		select {
@@ -91,44 +103,183 @@ func (s *service) fetchWorkflowSummary(ctx context.Context, orgID, workflowID st
 		return nil, fmt.Errorf("unable to find workflow %q: %w", workflowID, err)
 	}
 
-	summary := &mcpWorkflowSummary{
-		ID:                workflow.ID,
-		Type:              string(workflow.Type),
-		Status:            string(workflow.Status.Status),
-		StatusDescription: workflow.Status.StatusHumanDescription,
-		OwnerID:           workflow.OwnerID,
-		OwnerName:         workflow.OwnerName,
-		CreatedAt:         apiPkg.MCPTime(workflow.CreatedAt),
+	summary := summarizeMCPWorkflow(workflow)
+	s.attachStackSetups(ctx, orgID, workflow.Steps, summary.Steps)
+	return &summary, nil
+}
+
+func mcpWatchChanged(in mcpWatchWorkflowInput, status, cursor string) bool {
+	if in.Cursor != "" {
+		return cursor != in.Cursor
 	}
+	return in.LastKnownStatus != "" && status != in.LastKnownStatus
+}
 
-	for _, step := range workflow.Steps {
-		summary.TotalSteps++
-		stepStatus := string(step.Status.Status)
-		if stepStatus == string(app.StatusSuccess) {
-			summary.CompletedSteps++
-		}
-
-		stepSummary := mcpWorkflowStepSummary{
-			ID:             step.ID,
-			Name:           step.Name,
-			Status:         stepStatus,
-			StepTargetType: step.StepTargetType,
-			StepTargetID:   step.StepTargetID,
-			HasLogs:        stepHasLogs(step.StepTargetType),
-		}
-		if step.ExecutionTime > 0 {
-			stepSummary.ExecutionTime = step.ExecutionTime.String()
-		}
-		summary.Steps = append(summary.Steps, stepSummary)
-
-		if step.Approval != nil && step.Approval.Response == nil {
-			summary.PendingApproval = &mcpPendingApprovalInfo{
-				ApprovalID: step.Approval.ID,
-				StepName:   step.Name,
-				Type:       string(step.Approval.Type),
-			}
+func mcpWatchResult(summary mcpWorkflowSummary, cursor string, changed bool, reported map[string]string) mcpWatchWorkflowResult {
+	stepProgress, nextReported, _ := mcpStepProgress(summary, reported)
+	for i := range summary.Steps {
+		summary.Steps[i].ExecutionTime = ""
+	}
+	result := mcpWatchWorkflowResult{
+		Changed:      changed,
+		Cursor:       cursor,
+		StepProgress: stepProgress,
+		Reported:     nextReported,
+		Workflow:     summary,
+	}
+	if mcpShouldKeepWatching(summary) {
+		result.NextAction = &mcpNextAction{
+			Action: "watch_workflow",
+			Label:  "Watch workflow",
+			Tool:   "watch_workflow",
+			Arguments: map[string]any{
+				"workflow_id": summary.ID,
+				"cursor":      cursor,
+				"reported":    nextReported,
+			},
 		}
 	}
+	return result
+}
 
-	return summary, nil
+func mcpStepProgress(summary mcpWorkflowSummary, reported map[string]string) (string, map[string]string, bool) {
+	next := make(map[string]string, len(reported)+len(summary.Steps))
+	for id, status := range reported {
+		next[id] = status
+	}
+	if len(summary.Steps) == 0 {
+		if summary.StatusDescription != "" {
+			return summary.StatusDescription, next, false
+		}
+		return "Generating steps", next, false
+	}
+	var b strings.Builder
+	shown := 0
+	hasNew := false
+	for i, step := range summary.Steps {
+		if !mcpShowStepProgress(step.Status, next[step.ID]) {
+			continue
+		}
+		if !mcpActiveStepStatus(step.Status) || next[step.ID] != step.Status {
+			hasNew = true
+		}
+		if shown > 0 {
+			b.WriteByte('\n')
+		}
+		shown++
+		fmt.Fprintf(&b, "%d. %s — %s", i+1, step.Name, step.Status)
+		next[step.ID] = step.Status
+	}
+	if len(next) == 0 {
+		next = nil
+	}
+	return b.String(), next, hasNew
+}
+
+func mcpShowStepProgress(status, reported string) bool {
+	switch app.Status(status) {
+	case app.StatusPending, app.StatusQueued, app.StatusNotAttempted:
+		return false
+	case app.StatusInProgress, app.StatusRetrying, app.StatusCheckPlan, app.StatusPlanning, app.StatusApplying:
+		return true
+	default:
+		return status != reported
+	}
+}
+
+func mcpActiveStepStatus(status string) bool {
+	switch app.Status(status) {
+	case app.StatusInProgress, app.StatusRetrying, app.StatusCheckPlan, app.StatusPlanning, app.StatusApplying:
+		return true
+	default:
+		return false
+	}
+}
+
+func notifyWatchProgress(ctx context.Context, req *mcp.CallToolRequest, summary mcpWorkflowSummary, reported map[string]string, progress float64) {
+	if req == nil || req.Params == nil || req.Session == nil {
+		return
+	}
+	token := req.Params.GetProgressToken()
+	if token == nil {
+		return
+	}
+	message, _, _ := mcpStepProgress(summary, reported)
+	if message == "" {
+		return
+	}
+	_ = req.Session.NotifyProgress(ctx, &mcp.ProgressNotificationParams{
+		ProgressToken: token,
+		Progress:      progress,
+		Message:       message,
+	})
+}
+
+func mcpShouldKeepWatching(summary mcpWorkflowSummary) bool {
+	switch app.Status(summary.Status) {
+	case app.StatusSuccess, app.StatusError, app.StatusCancelled, app.StatusNotAttempted, app.StatusDiscarded:
+		return false
+	}
+	return len(summary.PendingApprovals) == 0 && len(summary.NextActions) == 0
+}
+
+func mcpWorkflowCursor(summary mcpWorkflowSummary) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "status=%s\nsteps=%d/%d\n", summary.Status, summary.CompletedSteps, summary.TotalSteps)
+	for _, step := range summary.Steps {
+		fmt.Fprintf(&b, "step=%s status=%s\n", step.ID, step.Status)
+		if step.CompositeError != nil {
+			fmt.Fprintf(&b, "err=%s %s\n", step.CompositeError.Type, step.CompositeError.Message)
+		}
+		if step.StackSetup != nil {
+			fmt.Fprintf(&b, "stack=%s link=%t\n", step.StackSetup.Status, step.StackSetup.QuickLinkURL != "")
+		}
+		for _, action := range step.NextActions {
+			fmt.Fprintf(&b, "step-action=%s\n", action.Action)
+		}
+	}
+	for _, approval := range summary.PendingApprovals {
+		fmt.Fprintf(&b, "approval=%s %s %d %d %d %d\n",
+			approval.ApprovalID,
+			approval.ChangesState,
+			approval.ChangesCreate,
+			approval.ChangesUpdate,
+			approval.ChangesDelete,
+			approval.ChangesReplace,
+		)
+	}
+	sum := sha256.Sum256([]byte(b.String()))
+	return hex.EncodeToString(sum[:])
+}
+
+const mcpWatchAfterStart = "Returns workflow_id and next_action. Ask the user whether they want to watch the workflow. Call next_action only if they choose to watch. Once watching, each watch returns when a step starts or finishes. After every watch result, the next user-visible message is step_progress, then call watch again with the returned cursor. A row of watch calls with no step_progress between them is wrong."
+
+func mcpWatchStart(workflowID, lastKnownStatus string) *mcpNextAction {
+	if workflowID == "" {
+		return nil
+	}
+	args := map[string]any{"workflow_id": workflowID}
+	if lastKnownStatus != "" {
+		args["last_known_status"] = lastKnownStatus
+	}
+	return &mcpNextAction{
+		Action:    "watch_workflow",
+		Label:     "Watch workflow",
+		Tool:      "watch_workflow",
+		Arguments: args,
+	}
+}
+
+func mcpWatchContinuation(workflowID string) *mcpNextAction {
+	if workflowID == "" {
+		return nil
+	}
+	return &mcpNextAction{
+		Action: "watch_workflow",
+		Label:  "Watch workflow",
+		Tool:   "watch_workflow",
+		Arguments: map[string]any{
+			"workflow_id": workflowID,
+		},
+	}
 }

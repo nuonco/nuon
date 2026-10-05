@@ -92,6 +92,7 @@ export const HealthTimelineContainer = ({
         (component) => ({
           ...component,
           component_type:
+            (component.component_type as TComponentType | undefined) ??
             componentTypes.get(component.component_id ?? '') ??
             componentTypes.get(component.install_component_id),
         })
@@ -116,6 +117,18 @@ export const HealthTimelineContainer = ({
       }
       currentHealth={timeline?.current_health}
       components={components}
+      healthchecks={
+        isComponentScope ? undefined : installTimeline?.healthchecks
+      }
+      getHealthcheckHref={(check) =>
+        check.workflow_id
+          ? installLink({
+              installId: install?.id,
+              appId: install?.app_id,
+              suffix: `/deployments/${check.workflow_id}`,
+            })
+          : undefined
+      }
       groupByKind={groupByKind}
       componentBasePath={
         componentBasePath ??

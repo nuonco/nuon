@@ -1,41 +1,23 @@
-import { useCallback } from 'react'
-import { useSearchParams } from 'react-router'
 import { useOrg } from '@/hooks/use-org'
 import type { TInstallWorkflow } from '@/types'
 import { GroupActionButton } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
+import { useOpenWorkflowRunPanel } from '@/components/branches/WorkflowRunPanel'
 import {
   BranchRunApproval,
   type IBranchRunApprovalItem,
 } from './BranchRunApproval'
+import { getGroupName } from './use-group-plan-href'
 
 interface IBranchRunApprovalContainer {
   run: TInstallWorkflow
 }
-
-const getGroupName = (name?: string) =>
-  name?.replace(/^plan install group:\s*/i, '').trim() || 'install group'
 
 export const BranchRunApprovalContainer = ({
   run,
 }: IBranchRunApprovalContainer) => {
   const { org } = useOrg()
   const orgId = org?.id ?? ''
-  const [, setSearchParams] = useSearchParams()
-
-  const openStep = useCallback(
-    (stepId?: string) => {
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev)
-          next.set('workflow', run.id ?? '')
-          if (stepId) next.set('step', stepId)
-          return next
-        },
-        { replace: true }
-      )
-    },
-    [run.id, setSearchParams]
-  )
+  const openWorkflowRunPanel = useOpenWorkflowRunPanel()
 
   if (run.status?.status === 'cancelled') {
     return null
@@ -54,7 +36,7 @@ export const BranchRunApprovalContainer = ({
       return {
         key: step.id ?? step.approval!.id!,
         groupName,
-        onReview: () => openStep(step.id),
+        onReview: () => openWorkflowRunPanel(run.id ?? '', step.id),
         actions: (
           <GroupActionButton
             action="approve"

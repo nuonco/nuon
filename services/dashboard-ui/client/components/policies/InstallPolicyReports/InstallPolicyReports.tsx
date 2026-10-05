@@ -1,5 +1,11 @@
 import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
+import {
+  COLLECTION_VIEW_MODES,
+  COLLECTION_VIEW_STORAGE_KEY,
+  CollectionViewToggle,
+  type TCollectionView,
+} from '@/components/common/CollectionViewToggle'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
@@ -12,7 +18,9 @@ import {
   reportSubject,
   type IPolicyReportRow,
 } from '@/components/policies/PolicyReportsTable'
+import { useStoredViewMode } from '@/hooks/use-stored-view-mode'
 import type { TPolicyReport } from '@/types'
+import { cn } from '@/utils/classnames'
 
 const OWNER_TYPE_LABELS: Record<
   string,
@@ -55,9 +63,11 @@ export interface IInstallPolicyReports {
   filterActions?: React.ReactNode
   filtered?: boolean
   loading?: boolean
+  onViewChange?: (view: TCollectionView) => void
   orgId: string
   policyNameMap: Map<string, string>
   rows: IPolicyReportRow[]
+  view?: TCollectionView
 }
 
 const loadingRows = (count: number): IPolicyReportRow[] =>
@@ -71,29 +81,53 @@ export const InstallPolicyReports = ({
   filterActions,
   filtered = false,
   loading = false,
+  onViewChange,
   orgId,
   policyNameMap,
   rows,
+  view: viewProp,
 }: IInstallPolicyReports) => {
+  const [storedView, setStoredView] = useStoredViewMode<TCollectionView>(
+    COLLECTION_VIEW_STORAGE_KEY,
+    COLLECTION_VIEW_MODES,
+    'list'
+  )
+  const view = viewProp ?? storedView
+  const setView = (next: TCollectionView) => {
+    onViewChange?.(next)
+    if (viewProp === undefined) setStoredView(next)
+  }
+  const isGrid = view === 'grid'
   const isLoading = loading && !rows.length
   const items = isLoading ? loadingRows(3) : rows
 
   return (
     <div className="flex flex-col gap-4 md:gap-6">
-      {filterActions ? (
-        <div className="flex flex-row flex-wrap items-center justify-end gap-4">
+      <div className="flex flex-row flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-4 w-full md:w-fit">
           {filterActions}
         </div>
-      ) : null}
+        <div className="flex items-center gap-3 ml-auto">
+          <CollectionViewToggle value={view} onChange={setView} />
+        </div>
+      </div>
 
       {items.length ? (
-        <div className="flex flex-col gap-4">
+        <div
+          className={cn(
+            'flex flex-col gap-4',
+            isGrid && 'md:grid md:grid-cols-2'
+          )}
+        >
           {items.map(({ key, report, history }) => {
             const ownerType = report?.owner_type ?? ''
             const ownerMeta = OWNER_TYPE_LABELS[ownerType]
 
             return (
-              <Card key={key} className="!p-4 !gap-4">
+              <Card
+                key={key}
+                className={cn('!p-4 !gap-4', isGrid && 'md:h-full')}
+              >
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="flex flex-col gap-1.5 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap min-w-0">

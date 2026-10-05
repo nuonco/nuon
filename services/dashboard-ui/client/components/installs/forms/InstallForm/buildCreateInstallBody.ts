@@ -31,13 +31,13 @@ export const buildCreateInstallBody = (
     labels: Object.keys(labels).length > 0 ? labels : undefined,
     metadata: { managed_by: 'nuon/dashboard' },
     ...(values.stackOnly && { stack_only: true }),
+    cloud_connection_id: values.cloud_connection_id || undefined,
   }
 
   if (platform === 'aws' && values.region) {
     body.aws_account = {
       iam_role_arn: '',
       region: values.region,
-      connection_id: values.aws_connection_id || undefined,
       account_id: values.aws_account_id || undefined,
     }
   } else if (platform === 'azure' && values.location) {

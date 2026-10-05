@@ -1,4 +1,5 @@
 import { DeploymentsList } from '@/components/installs/DeploymentsList'
+import { InstallWorkflowPanelController } from '@/components/workflows/InstallWorkflowPanel'
 import { PageSection } from '@/components/layout/PageSection'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -29,6 +30,7 @@ export const Deployments = () => {
         description="View all deployments applied to this install, including config changes and affected resources."
       />
       <DeploymentsList shouldPoll />
+      <InstallWorkflowPanelController />
     </PageSection>
   )
 }

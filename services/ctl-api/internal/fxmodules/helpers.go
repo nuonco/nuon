@@ -6,6 +6,7 @@ import (
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	cloudconnectionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/helpers"
 	componentshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	generalhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/general/helpers"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
@@ -22,6 +23,7 @@ var HelpersModule = fx.Module("helpers",
 	fx.Provide(vcshelpers.New),
 	fx.Provide(actionshelpers.New),
 	fx.Provide(componentshelpers.New),
+	fx.Provide(cloudconnectionshelpers.New),
 	fx.Provide(orgshelpers.New),
 	fx.Provide(appshelpers.New),
 	fx.Provide(installshelpers.New),

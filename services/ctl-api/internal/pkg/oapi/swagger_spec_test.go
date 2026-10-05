@@ -17,13 +17,14 @@ import (
 	accountsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/service"
 	actionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/service"
 	appsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/service"
-	awsaccountconnectionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/aws-account-connections/service"
+	cloudconnectionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/service"
 	componentsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/components/service"
 	generalservice "github.com/nuonco/nuon/services/ctl-api/internal/app/general/service"
 	identityprovidersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/identity-providers/service"
 	installsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/service"
 	notebooksservice "github.com/nuonco/nuon/services/ctl-api/internal/app/notebooks/service"
 	oidcfederationservice "github.com/nuonco/nuon/services/ctl-api/internal/app/oidc-federation/service"
+	oidcservice "github.com/nuonco/nuon/services/ctl-api/internal/app/oidc/service"
 	onboardingservice "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/service"
 	orgsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/service"
 	policyreportsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/service"
@@ -47,11 +48,15 @@ func testDomainServices(t *testing.T, ea *api.EndpointAudit) []api.Service {
 	t.Helper()
 	runnersService, err := runnersservice.New(runnersservice.Params{EndpointAudit: ea})
 	require.NoError(t, err)
+	cloudConnectionsService, err := cloudconnectionsservice.New(cloudconnectionsservice.Params{EndpointAudit: ea})
+	require.NoError(t, err)
+	oidcSvc, err := oidcservice.New(oidcservice.Params{})
+	require.NoError(t, err)
 
-	return []api.Service{
+	services := []api.Service{
 		accountsservice.New(accountsservice.Params{}),
 		actionsservice.New(actionsservice.Params{EndpointAudit: ea}),
-		awsaccountconnectionsservice.New(awsaccountconnectionsservice.Params{EndpointAudit: ea}),
+		cloudConnectionsService,
 		appsservice.New(appsservice.Params{EndpointAudit: ea}),
 		componentsservice.New(componentsservice.Params{EndpointAudit: ea}),
 		generalservice.New(generalservice.Params{EndpointAudit: ea}),
@@ -72,7 +77,9 @@ func testDomainServices(t *testing.T, ea *api.EndpointAudit) []api.Service {
 		vcsservice.New(vcsservice.Params{}),
 		onboardingservice.New(onboardingservice.Params{EndpointAudit: ea}),
 		oidcfederationservice.New(oidcfederationservice.Params{}),
+		oidcSvc,
 	}
+	return services
 }
 
 // SwaggerSpec represents the structure of a Swagger/OpenAPI 2.0 specification
@@ -287,9 +294,22 @@ func TestSwaggerRoutesRegisteredInGin(t *testing.T) {
 			for path, pathItem := range swaggerSpec.Paths {
 				ginPath := swaggerPathToGinPath(path)
 				for _, method := range getPathMethods(pathItem) {
-					key := method + " " + ginPath
-					if _, ok := ginRoutes[key]; !ok {
-						missing = append(missing, key)
+					keys := []string{method + " " + ginPath}
+					// A trailing spec param may be registered as a gin
+					// catch-all (*path), which is required for params that
+					// contain slashes.
+					if i := strings.LastIndex(ginPath, "/:"); i >= 0 {
+						keys = append(keys, method+" "+ginPath[:i+1]+"*"+ginPath[i+2:])
+					}
+					registered := false
+					for _, key := range keys {
+						if _, ok := ginRoutes[key]; ok {
+							registered = true
+							break
+						}
+					}
+					if !registered {
+						missing = append(missing, keys[0])
 					}
 				}
 			}

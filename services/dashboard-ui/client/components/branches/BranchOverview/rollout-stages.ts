@@ -54,6 +54,8 @@ const CATEGORY_STATUS: Record<TStepStatusCategory, string> = {
 }
 
 const GROUP_STEP = /^(?:plan|deploy) install group:\s*(.+)$/i
+const PLAN_GROUP_STEP = /^plan install group:\s*(.+)$/i
+const DEPLOY_GROUP_STEP = /^deploy install group:\s*(.+)$/i
 const RUNBOOK_STEP = /^run post-deploy runbooks:\s*(.+)$/i
 
 export const pluralize = (count: number, noun: string) =>
@@ -73,6 +75,26 @@ const sameGroup = (stepName: string | undefined, groupName: string) => {
   const extracted = groupNameFromStep(stepName)
   return !!extracted && extracted.toLowerCase() === groupName.toLowerCase()
 }
+
+const stepForGroup = (
+  steps: TInstallWorkflowStep[],
+  pattern: RegExp,
+  groupName: string
+) =>
+  steps.find((step) => {
+    const name = step.name?.match(pattern)?.[1]?.trim()
+    return !!name && name.toLowerCase() === groupName.toLowerCase()
+  })
+
+export const planStepForGroup = (
+  steps: TInstallWorkflowStep[],
+  groupName: string
+) => stepForGroup(steps, PLAN_GROUP_STEP, groupName)
+
+export const deployStepForGroup = (
+  steps: TInstallWorkflowStep[],
+  groupName: string
+) => stepForGroup(steps, DEPLOY_GROUP_STEP, groupName)
 
 const normalizeInstallStatus = (status?: string) => {
   if (!status || status === 'deployed' || status === 'succeeded') {

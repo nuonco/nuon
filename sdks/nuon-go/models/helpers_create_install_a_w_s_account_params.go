@@ -22,9 +22,6 @@ type HelpersCreateInstallAWSAccountParams struct {
 	// creation — there is deliberately no equivalent field on UpdateInstallRequest.
 	AccountID string `json:"account_id,omitempty"`
 
-	// connection id
-	ConnectionID string `json:"connection_id,omitempty"`
-
 	// region
 	Region string `json:"region,omitempty"`
 }

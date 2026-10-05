@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/nuonco/nuon/bins/cli/internal/services/mcpserver"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (c *cli) agentsCmd() *cobra.Command {
@@ -98,7 +99,10 @@ which MCP URL resolves from your config.`,
 			if serverName != "" {
 				opts = append(opts, mcpserver.WithName(serverName))
 			}
-			return mcpserver.New(c.cfg, allowWrites, opts...).Run(cmd.Context())
+			if err := mcpserver.New(c.cfg, allowWrites, opts...).Run(cmd.Context()); err != nil {
+				return ui.PrintError(err)
+			}
+			return nil
 		}),
 	}
 	cmd.Flags().BoolVar(&allowWrites, "allow-writes", false, "expose mutating tools whose descriptions start with WRITE OPERATION:")
@@ -112,12 +116,14 @@ which MCP URL resolves from your config.`,
 var agentsContextDoc string
 
 type agentsContext struct {
-	Authed    string
-	APIURL    string
-	MCPURL    string
-	OrgID     string
-	AppID     string
-	InstallID string
+	Authed          string
+	APIURL          string
+	MCPURL          string
+	OrgID           string
+	AppID           string
+	InstallID       string
+	ConfigFile      string
+	CLIInstructions string
 }
 
 func (c *cli) agentsContextMarkdown() string {
@@ -151,6 +157,8 @@ func (c *cli) agentsContextMarkdown() string {
 			data.Authed = "yes (API token present in ~/.nuon)"
 		}
 	}
+	data.ConfigFile = mcpserver.CLIConfigFlag(cfg)
+	data.CLIInstructions = mcpserver.CLICommandInstructions(mcpserver.CLIBinary(), data.ConfigFile)
 
 	tmpl, err := template.New("agents_context").Parse(agentsContextDoc)
 	if err != nil {

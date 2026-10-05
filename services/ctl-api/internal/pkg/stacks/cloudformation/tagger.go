@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/awslabs/goformation/v7/cloudformation/tags"
+	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 )
 
 // TagKeyRunnerAssumable marks an IAM role that the runner is permitted to assume. The runner
@@ -53,10 +54,10 @@ func (t tagBuilder) apply(existing []tags.Tag, name string) []tags.Tag {
 	}
 
 	ret := []tags.Tag{}
-	for k, v := range existingMap {
+	for _, k := range pkggenerics.SortedMapToKeys(existingMap) {
 		ret = append(ret, tags.Tag{
 			Key:   k,
-			Value: v,
+			Value: existingMap[k],
 		})
 	}
 

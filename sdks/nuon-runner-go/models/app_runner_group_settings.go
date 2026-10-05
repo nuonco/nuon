@@ -39,11 +39,21 @@ type AppRunnerGroupSettings struct {
 	// configuration for managing the runner binary version (for mng mode, not the install runner)
 	BinaryVersion string `json:"binary_version,omitempty"`
 
+	// container image signature identity regexp
+	ContainerImageSignatureIdentityRegexp string `json:"container_image_signature_identity_regexp,omitempty"`
+
+	// container image signature issuer
+	ContainerImageSignatureIssuer string `json:"container_image_signature_issuer,omitempty"`
+
 	// container image tag
 	ContainerImageTag string `json:"container_image_tag,omitempty"`
 
 	// configuration for deploying the runner
 	ContainerImageURL string `json:"container_image_url,omitempty"`
+
+	// How the runner VM checks the runner image signature before running it. Not persisted;
+	// populated by the runner-settings handler from control plane config.
+	ContainerImageVerificationMode string `json:"container_image_verification_mode,omitempty"`
 
 	// container max uptime
 	ContainerMaxUptime int64 `json:"container_max_uptime,omitempty"`

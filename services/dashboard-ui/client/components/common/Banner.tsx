@@ -47,6 +47,7 @@ export const Banner = ({
     <div
       className={cn(
         'flex gap-4 h-fit w-full p-4 border rounded-lg',
+        '[&_.link]:!text-inherit [&_.link]:underline [&_.link]:underline-offset-2 [&_.link:hover]:decoration-2',
         THEME_CLASSES[theme],
         onDismiss && 'group',
         className

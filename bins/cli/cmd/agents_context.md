@@ -14,6 +14,8 @@
 | Org ID | `{{.OrgID}}` |
 | App ID | `{{.AppID}}` |
 | Install ID | `{{.InstallID}}` |
+{{if .ConfigFile}}| CLI config (`-C`) | `{{.ConfigFile}}` |
+{{end}}
 
 If auth or org is missing:
 
@@ -92,7 +94,7 @@ The upstream URL (`{{.MCPURL}}`) is derived from `api_url` in the CLI config, tu
 3. Typical create flow:
    - App config in a local directory → `nuon apps sync` (or ask the user to sync).
    - Installs: dashboard or CLI (`nuon installs create`).
-   - Deploys / workflow steps → list workflows and pending approvals, then approve/reject/retry/cancel as needed.
+   - Deploys, runbooks, and actions → the `run_runbook` description requires a prompt before the call: show every step from `get_runbook` as a checklist (number, name, type), all enabled, and let the user turn steps off. Omit `steps` to run all of them. To skip any, pass every `step_id` with `enabled` false for the ones to skip; a step left out of `steps` still runs. Offer an optional execution role from `list_available_roles` (`operation_type=trigger`), or omit `role` for the default. After `run_runbook`, `run_action`, `reprovision_install`, `reprovision_sandbox`, `deprovision_install`, `deprovision_sandbox`, `deploy_install_components`, `update_install_inputs`, or `preview_app_branch`, ask whether the user wants to watch and call `next_action` only if they do. Each watch returns when a step starts or finishes. After every watch result, the next user-visible message is `step_progress`, then call watch again with the returned `cursor`. A row of watch calls with no `step_progress` between them is wrong. Do not end the turn after printing the list. Only stop when the workflow is terminal or a step needs a decision. Runbooks and action runs are install workflows. When you stop for user input (approval, retry, or any `next_actions` menu), do not report only `completed_steps`/`total_steps`. List every step from the `steps` array by name and status so the user can see what already finished before the waiting step. Keep that list compact (name and status only). Present each waiting approval's `next_actions` as a menu. Plan review is optional: when the user chooses to review, call `get_approval_plan_diff` and follow `continue_review` until every page is loaded, then review those diffs together. Selecting approve, reject, or approve all is confirmation; call the selected tool immediately without loading diffs or asking again. Offer `approve_all` only when that action is present, and explain before presenting it that it applies every remaining plan in the workflow. Then watch the workflow for the next step. When a step includes `stack_setup`, show that install-stack setup (quick launch link, template URL, CLI commands, and Terraform files when present) and keep watching until the stack is applied. When a step includes `composite_error`, show its message, type, and each section before the retry menu. When a step is waiting for a retry, `next_actions` lists every menu choice: Show step logs, Retry step when the step is retryable, Skip step when the step is skippable, and Cancel workflow. Present every one of those actions. Call `get_workflow_step_logs` when presenting the menu. That does not retry, skip, or cancel. Selecting retry, skip, or cancel is confirmation: call that action's tool immediately, then watch again.
 4. Do not invent IDs; resolve names via `list_*` / `get_*` tools first.
 5. Keep responses trimmed; MCP tools already return compact JSON.
 
@@ -104,6 +106,10 @@ Tool JSON timestamps are UTC (Zulu) RFC3339 and always end in `Z`, for example `
 - Never say "today" or "yesterday" from the UTC date digits. The UTC calendar day can be a day ahead of local time.
 
 List tools are paginated (default 20, max 100). If `has_more` is true, tell the user there are more results. Do not keep paging until the list is complete unless they asked for everything; use `offset=next_offset` for the next page.
+
+## Nuon CLI commands
+
+{{.CLIInstructions}}
 
 ## IAM permission checks (local CLI extension)
 
@@ -124,9 +130,9 @@ Writes are hidden from the stdio proxy unless `--allow-writes` is set. Descripti
 | Domain | Read | Write |
 | --- | --- | --- |
 | Orgs | `whoami`, `list_orgs`, `select_org` | |
-| Apps | `list_apps`, `get_app`, `list_app_branches`, `get_app_branch`, `list_app_branch_runs`, `get_app_branch_run`, `list_app_branch_preview_sources` | `preview_app_branch` |
+| Apps | `list_apps`, `get_app`, `get_app_config_schema`, `list_app_branches`, `get_app_branch`, `list_app_branch_runs`, `get_app_branch_run`, `list_app_branch_preview_sources` | `preview_app_branch` |
 | Components | `list_components`, `get_component`, `list_builds`, `get_build` | |
-| Installs | `list_installs`, `get_install`, `get_install_readme`, `get_install_health`, `list_install_components`, `get_install_inputs`, `list_available_roles`, `list_workflows`, `get_workflow`, `get_workflow_step`, `watch_workflow`, `get_pending_approvals`, `list_deploys`, `get_deploy` | `update_install_inputs`, `deploy_install_components`, `reprovision_install`, `reprovision_sandbox`, `deprovision_install`, `deprovision_sandbox`, `approve_step`, `reject_step`, `retry_step`, `cancel_workflow` |
+| Installs | `list_installs`, `get_install`, `get_install_readme`, `get_install_health`, `list_install_components`, `get_install_inputs`, `list_available_roles`, `list_workflows`, `get_workflow`, `get_workflow_step`, `watch_workflow`, `get_pending_approvals`, `get_approval_plan_diff`, `list_deploys`, `get_deploy` | `update_install_inputs`, `deploy_install_components`, `reprovision_install`, `reprovision_sandbox`, `deprovision_install`, `deprovision_sandbox`, `approve_step`, `approve_all`, `reject_step`, `retry_step`, `skip_step`, `cancel_workflow` |
 | Actions | `list_install_actions`, `get_action` | `run_action` |
 | Logs | `get_workflow_step_logs`, `get_deploy_logs`, `get_build_logs` | |
 | Runbooks | `list_runbooks`, `get_runbook` | `run_runbook` |

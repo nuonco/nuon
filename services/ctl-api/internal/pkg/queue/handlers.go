@@ -27,7 +27,6 @@ func (w *queue) registerHandlers(ctx workflow.Context) error {
 		{StatusHandlerName, handlerTypeUpdate, w.statusHandler, nil},
 		{PauseHandlerName, handlerTypeUpdate, w.pauseHandler, nil},
 		{ResumeHandlerName, handlerTypeUpdate, w.resumeHandler, nil},
-		{StopUpdateName, handlerTypeUpdate, w.stopUpdateHandler, nil},
 		{DirectExecuteUpdateName, handlerTypeUpdate, w.directExecuteHandler, nil},
 		{CheckCANUpdateName, handlerTypeUpdate, w.checkCANHandler, nil},
 	}

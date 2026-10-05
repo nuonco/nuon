@@ -15,8 +15,15 @@ type OrgContextValue = {
 
 export const OrgContext = createContext<OrgContextValue | undefined>(undefined)
 
-export function OrgProvider({ children }: { children: React.ReactNode }) {
-  const { orgId } = useParams<{ orgId: string }>()
+export function OrgProvider({
+  children,
+  orgId: orgIdProp,
+}: {
+  children: React.ReactNode
+  orgId?: string
+}) {
+  const params = useParams<{ orgId: string }>()
+  const orgId = orgIdProp ?? params.orgId
 
   const { data: org, isLoading, error, refetch } = useQuery({
     placeholderData: keepPreviousData,

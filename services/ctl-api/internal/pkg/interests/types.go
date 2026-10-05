@@ -32,6 +32,7 @@ const (
 	ResourceRunners               ResourceKind = "runners"
 	ResourceActions               ResourceKind = "actions"
 	ResourceAppBranches           ResourceKind = "app_branches"
+	ResourceCloudConnections      ResourceKind = "cloud_connections"
 )
 
 // AllResources is the canonical, ordered list of resource kinds. UI code
@@ -45,6 +46,7 @@ var AllResources = []ResourceKind{
 	ResourceRunners,
 	ResourceActions,
 	ResourceAppBranches,
+	ResourceCloudConnections,
 }
 
 // Outcome filters lifecycle events on terminal status. Approval events are
@@ -87,6 +89,7 @@ var SubOps = map[ResourceKind][]string{
 	ResourceRunners:               {"provision", "reprovision", "inactive", "unhealthy"},
 	ResourceActions:               {"run"},
 	ResourceAppBranches:           {"run"},
+	ResourceCloudConnections:      {"verification_failed"},
 }
 
 // SupportsDriftDetected reports whether DriftDetected is meaningful for the

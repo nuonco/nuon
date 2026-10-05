@@ -58,3 +58,13 @@ export const InitPylonChat = ({ PYLON_APP_ID }: { PYLON_APP_ID: string }) => {
 
   return null
 }
+
+const SUPPORT_FALLBACK_URL = 'https://nuon.co/demo-request'
+
+export const openSupportChat = (text: string) => {
+  if (typeof window.Pylon === 'function') {
+    window.Pylon('showNewMessage', text)
+    return
+  }
+  window.open(SUPPORT_FALLBACK_URL, '_blank', 'noopener,noreferrer')
+}

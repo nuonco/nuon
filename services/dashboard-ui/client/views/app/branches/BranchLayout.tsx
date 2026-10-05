@@ -7,6 +7,7 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { SubNav } from '@/components/navigation/SubNav'
 import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
+import { useBranchNavCounts } from '@/hooks/use-branch-nav-counts'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import { useOrg } from '@/hooks/use-org'
 import { BranchProvider } from '@/providers/branch-provider'
@@ -14,7 +15,9 @@ import { AppBranchSwitcher } from '@/components/branches/AppBranchSwitcher'
 import { BranchDetailActions } from '@/components/branches/BranchDetailActions'
 import { BranchHeaderMeta } from '@/components/branches/BranchHeaderMeta'
 import { BranchPendingApprovals } from '@/components/branches/BranchRunApproval'
-import { getBranchWorkflowRuns } from '@/lib'
+import { WorkflowRunPanelHost } from '@/components/branches/WorkflowRunPanel'
+import { getRunTitle } from '@/components/branches/shared/run-title'
+import { getBranchWorkflowRun, getBranchWorkflowRuns } from '@/lib'
 import { latestBranchConfig } from '@/utils/branch-utils'
 import type { TAppBranchConfig, TNavItem } from '@/types'
 
@@ -45,6 +48,9 @@ const BranchTemplate = () => {
   const detailMatch = useMatch(
     '/:orgId/apps/:appId/branches/:branchId/:section/:detail/*'
   )
+  const runRolloutMatch = useMatch(
+    '/:orgId/apps/:appId/branches/:branchId/runs/:runId/rollout'
+  )
   const isDetailRoute = !!detailMatch && !params.runId
   const branchId = params.branchId as string
   const orgId = org.id!
@@ -65,17 +71,28 @@ const BranchTemplate = () => {
   })
 
   const latestRun = latestRunsResult?.data?.[0]
+  const { data: pinnedWorkflow } = useQuery({
+    queryKey: ['branch-run', orgId, appId, branchId, params.runId],
+    queryFn: () =>
+      getBranchWorkflowRun({
+        orgId,
+        appId,
+        branchId,
+        runId: params.runId!,
+      }),
+    enabled: !!orgId && !!appId && !!branchId && !!params.runId,
+  })
   const hasDeploymentPlan = (currentConfig?.install_groups?.length ?? 0) > 0
   const showTriggerNudge =
     hasDeploymentPlan && !isLoadingLatestRun && !latestRun
   const hasInstallSyncing = !!org?.features?.['app-install-syncing']
+  const navCounts = useBranchNavCounts({ orgId, appId, branchId })
 
   const navLinks: TNavItem[] = [
     { path: `/`, iconVariant: 'GraphIcon', text: 'Overview' },
+    { path: `/installs`, iconVariant: 'CubeIcon', text: 'Installs' },
     { path: `/rollout`, iconVariant: 'StackIcon', text: 'Rollout' },
     { path: `/runs`, iconVariant: 'ListIcon', text: 'Previous runs' },
-    { path: `/settings`, iconVariant: 'GearIcon', text: 'Settings' },
-    { path: `/installs`, iconVariant: 'CubeIcon', text: 'Installs' },
     ...(hasInstallSyncing
       ? [
           {
@@ -85,6 +102,7 @@ const BranchTemplate = () => {
           },
         ]
       : []),
+    { path: `/settings`, iconVariant: 'GearIcon', text: 'Settings' },
     {
       type: 'section',
       label: 'App template',
@@ -95,6 +113,7 @@ const BranchTemplate = () => {
       path: `/inputs`,
       iconVariant: 'ListChecksIcon',
       text: 'Inputs',
+      count: navCounts.inputs,
     },
     {
       path: `/components`,
@@ -119,11 +138,27 @@ const BranchTemplate = () => {
       iconVariant: 'ShippingContainerIcon',
       text: 'Sandboxes',
     },
-    { path: `/policies`, iconVariant: 'ShieldCheckIcon', text: 'Policies' },
-    { path: `/roles`, iconVariant: 'FileLockIcon', text: 'Roles' },
-    { path: `/labels`, iconVariant: 'TagIcon', text: 'Labels' },
+    {
+      path: `/policies`,
+      iconVariant: 'ShieldCheckIcon',
+      text: 'Policies',
+      count: navCounts.policies,
+    },
+    {
+      path: `/roles`,
+      iconVariant: 'FileLockIcon',
+      text: 'Roles',
+      count: navCounts.roles,
+    },
+    {
+      path: `/labels`,
+      iconVariant: 'TagIcon',
+      text: 'Labels',
+      count: navCounts.labels,
+    },
     { path: `/readme`, iconVariant: 'BookOpenIcon', text: 'README' },
   ]
+  const approvalRun = params.runId ? pinnedWorkflow : latestRun
 
   return (
     <>
@@ -134,6 +169,23 @@ const BranchTemplate = () => {
             { path: `/${orgId}/apps`, text: 'Apps' },
             { path: `/${orgId}/apps/${appId}`, text: app.name },
             { path: basePath, text: branch.name },
+            ...(params.runId
+              ? [
+                  { path: `${basePath}/runs`, text: 'Previous runs' },
+                  {
+                    path: `${basePath}/runs/${params.runId}`,
+                    text: pinnedWorkflow ? getRunTitle(pinnedWorkflow) : 'Run',
+                  },
+                ]
+              : []),
+            ...(runRolloutMatch
+              ? [
+                  {
+                    path: `${basePath}/runs/${params.runId}/rollout`,
+                    text: 'Rollout',
+                  },
+                ]
+              : []),
           ]}
         />
       ) : null}
@@ -168,16 +220,16 @@ const BranchTemplate = () => {
           pinLastGroup
         />
         <div className="flex flex-col flex-1 min-w-0">
-          {latestRun && params.runId !== latestRun.id ? (
+          {approvalRun ? (
             <BranchPendingApprovals
-              run={latestRun}
-              runHref={`${basePath}/runs/${latestRun.id}`}
+              run={approvalRun}
               className="px-4 md:px-6 pt-4 md:pt-6"
             />
           ) : null}
           <Outlet />
         </div>
       </PageContent>
+      <WorkflowRunPanelHost />
     </>
   )
 }

@@ -134,6 +134,53 @@ const overflowingInstalls: PlanInstallDiff[] = [
   },
 ]
 
+const excludedSections: DiffSectionData[] = [
+  {
+    name: 'Stack',
+    sectionKey: 'stack',
+    grouped: false,
+    additions: 0,
+    removals: 0,
+    changed: 1,
+    entities: [],
+    fields: [
+      { key: 'install_id', op: 'change', diff: "'inlold' -> 'inlnew'" },
+    ],
+  },
+  {
+    name: 'Install inputs',
+    sectionKey: 'inputs',
+    grouped: true,
+    additions: 0,
+    removals: 0,
+    changed: 1,
+    entities: [
+      {
+        name: 'region',
+        op: 'change',
+        fields: [{ key: 'value', op: 'change', diff: "'us-east-1' -> 'us-west-2'" }],
+      },
+    ],
+    fields: [],
+  },
+  {
+    name: 'Secrets',
+    sectionKey: 'secrets',
+    grouped: true,
+    additions: 1,
+    removals: 0,
+    changed: 0,
+    entities: [
+      {
+        name: 'API_KEY',
+        op: 'add',
+        fields: [{ key: 'value', op: 'add', diff: "'(set)'" }],
+      },
+    ],
+    fields: [],
+  },
+]
+
 const actions = (
   <>
     <Button variant="danger">Skip</Button>
@@ -172,6 +219,22 @@ export const SingleInstall = () => (
 export const WithLabels = () => (
   <StepInCard
     installs={labeledInstalls}
+    groupName="production"
+    hasResponse={false}
+    showApproveBar
+    isInProgress={false}
+    actions={actions}
+  />
+)
+
+export const ExcludedSectionsHidden = () => (
+  <StepInCard
+    installs={[
+      {
+        ...labeledInstalls[0],
+        sections: [...labeledInstalls[0].sections, ...excludedSections],
+      },
+    ]}
     groupName="production"
     hasResponse={false}
     showApproveBar

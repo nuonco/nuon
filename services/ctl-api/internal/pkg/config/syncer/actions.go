@@ -233,6 +233,7 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 		EnableKubeConfig:      action.EnableKubeConfig,
 		KubernetesContextName: action.KubernetesContext,
 		Image:                 action.Image,
+		IsHealthcheck:         action.IsHealthcheck,
 	})
 	built.Triggers = triggers
 	built.Steps = steps

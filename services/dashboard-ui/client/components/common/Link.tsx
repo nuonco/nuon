@@ -10,6 +10,7 @@ export interface ILink extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   isActive?: boolean
   isATag?: boolean
   isExternal?: boolean
+  showExternalIcon?: boolean
   variant?: TLinkVariant
   textVariant?: TTextVariant
   href?: string
@@ -35,7 +36,7 @@ const VARIANT_CLASSES: Record<TLinkVariant, string> = {
     'active:bg-cool-grey-100 active:dark:bg-white/15',
   ].join(' '),
   nav: [
-    'flex items-center gap-4 overflow-hidden rounded-md py-2.5 px-3 transition-colors w-full',
+    'flex items-center gap-4 overflow-hidden rounded-md px-3 transition-colors w-full',
     'text-[14px] h-[36px] leading-[21px] tracking-[-0.2px]',
     'hover:bg-black/5 hover:dark:bg-white/10',
   ].join(' '),
@@ -58,6 +59,7 @@ export const Link = ({
   isATag = false,
   isActive = false,
   isExternal = false,
+  showExternalIcon = true,
   variant = 'default',
   textVariant = 'subtext',
   ...props
@@ -110,7 +112,7 @@ export const Link = ({
       {...props}
     >
       {children}
-      {props.target !== '_self' && (
+      {showExternalIcon && props.target !== '_self' && (
         <Icon variant="ArrowSquareOutIcon" size="1em" />
       )}
     </a>

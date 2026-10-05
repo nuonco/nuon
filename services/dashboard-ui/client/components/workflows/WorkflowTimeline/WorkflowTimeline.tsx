@@ -13,6 +13,7 @@ import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
 import { Tooltip } from '@/components/common/Tooltip'
 import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
 import { RunDeploymentGraph } from '@/components/branches/RunDeploymentGraph'
+import { branchRunOutcome } from '@/components/branches/shared/run-outcome'
 import {
   getRunTitle,
   getRunTrigger,
@@ -22,6 +23,7 @@ import {
   isPreviewWorkflow,
 } from '@/components/branches/shared/preview-run-utils'
 import type { TInstall, TInstallGroupRun, TWorkflow } from '@/types'
+import { manualRunPinLabel } from '@/utils/branch-utils'
 import {
   getWorkflowBadge,
   getWorkflowPendingApprovals,
@@ -74,6 +76,7 @@ export const WorkflowTimeline = ({
         const isBranchRun = isBranchRunWorkflow(workflow)
         const branchRun = getBranchRunFromWorkflow(workflow)
         const trigger = getRunTrigger(branchRun)
+        const pinLabel = manualRunPinLabel(branchRun)
         const commit = branchRun?.vcs_connection_commit
         const runGraph = workflow.id
           ? branchRunGraphs?.[workflow.id]
@@ -86,6 +89,7 @@ export const WorkflowTimeline = ({
               appId: install?.app_id,
               suffix: `/workflows/${workflow.id}`,
             })
+        const outcome = isBranchRun ? branchRunOutcome(workflow) : undefined
         const createdByAccount = workflow?.created_by
         const createdBy = createdByAccount?.email ? (
           isServiceAccount(createdByAccount) ? (
@@ -148,9 +152,16 @@ export const WorkflowTimeline = ({
                       preview
                     </Badge>
                     {trigger === 'manual' ? (
-                      <Badge variant="code" size="sm">
-                        manual
-                      </Badge>
+                      <>
+                        <Badge variant="code" size="sm">
+                          manual
+                        </Badge>
+                        {pinLabel ? (
+                          <Badge variant="code" size="sm" theme="info">
+                            {pinLabel}
+                          </Badge>
+                        ) : null}
+                      </>
                     ) : branchRun?.preview?.source === 'commit' ? (
                       <Badge variant="code" size="sm">
                         commit
@@ -181,9 +192,16 @@ export const WorkflowTimeline = ({
                 {isBranchRun &&
                 !isPreviewWorkflow(workflow) &&
                 trigger === 'manual' ? (
-                  <Badge variant="code" size="sm">
-                    manual
-                  </Badge>
+                  <>
+                    <Badge variant="code" size="sm">
+                      manual
+                    </Badge>
+                    {pinLabel ? (
+                      <Badge variant="code" size="sm" theme="info">
+                        {pinLabel}
+                      </Badge>
+                    ) : null}
+                  </>
                 ) : null}
                 {isBranchRun &&
                 !isPreviewWorkflow(workflow) &&
@@ -210,6 +228,14 @@ export const WorkflowTimeline = ({
                         ? 'auto-approve (config)'
                         : 'auto-approve'}
                   </Badge>
+                ) : null}
+                {outcome ? (
+                  <Text
+                    variant="subtext"
+                    theme={outcome.failed ? 'error' : 'neutral'}
+                  >
+                    {outcome.text}
+                  </Text>
                 ) : null}
               </span>
             }

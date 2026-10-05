@@ -254,6 +254,8 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.GET("/app-config-versions", s.GetInstallAppConfigVersions)
 		installs.GET("/app-config-versions/:version_id/diff", s.GetInstallAppConfigVersionDiff)
 		installs.GET("/deployments", s.GetInstallDeployments)
+		installs.GET("/overview", s.GetInstallOverview)
+		installs.GET("/activity", s.GetInstallActivity)
 		installs.GET("/updates", s.GetInstallUpdates)
 		installs.GET("/config-versions", s.GetInstallConfigVersions)
 		installs.GET("/config-versions/:version_id/diff", s.GetInstallConfigVersionDiff)

@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/golang/mock/gomock"
 	"github.com/google/go-github/v50/github"
+	temporalmocks "go.temporal.io/sdk/mocks"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
 	"go.uber.org/zap"
@@ -217,8 +217,7 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 	if opts.Mocks != nil && opts.Mocks.MockTC != nil {
 		options = append(options, fx.Supply(fx.Annotate(opts.Mocks.MockTC, fx.As(new(temporalclient.Client)))))
 	} else if opts.T != nil {
-		ctrl := gomock.NewController(opts.T)
-		mockTC := temporalclient.NewMockClient(ctrl)
+		mockTC := temporalmocks.NewClient(opts.T)
 		options = append(options, fx.Supply(fx.Annotate(mockTC, fx.As(new(temporalclient.Client)))))
 	}
 

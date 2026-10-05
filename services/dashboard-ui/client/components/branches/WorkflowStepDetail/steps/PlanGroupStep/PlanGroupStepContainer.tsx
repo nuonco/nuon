@@ -6,6 +6,7 @@ import {
   extractSections,
   computeSummary,
 } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
+import { filterExcludedSections } from '../ConfigStep/lib'
 import type { TInstallWorkflowStep } from '@/types'
 import { PlanGroupStep, type PlanInstallDiff } from './PlanGroupStep'
 import { GroupApprovalActions } from './GroupApprovalActions'
@@ -14,12 +15,21 @@ interface IPlanGroupStepContainer {
   step: TInstallWorkflowStep
   metadata: Record<string, any>
   workflowStatus?: string
+  hideHeading?: boolean
+  onSelectInstall?: (installId: string) => void
+  installFacts?: Record<
+    string,
+    { labels?: Record<string, string>; region?: string }
+  >
 }
 
 export const PlanGroupStepContainer = ({
   step,
   metadata,
   workflowStatus,
+  hideHeading,
+  onSelectInstall,
+  installFacts,
 }: IPlanGroupStepContainer) => {
   const { org } = useOrg()
   const { app, labelColors } = useApp()
@@ -52,7 +62,8 @@ export const PlanGroupStepContainer = ({
     plan?.install_group ||
     metadata.install_group_name ||
     step.name?.replace(/^plan install group:\s*/i, '')
-  const showApproveBar = hasApproval && isAwaiting && !hasResponse && !isCancelled
+  const showApproveBar =
+    hasApproval && isAwaiting && !hasResponse && !isCancelled
 
   const diffQueries = useQueries({
     queries: rawInstalls.map((inst) => ({
@@ -76,7 +87,9 @@ export const PlanGroupStepContainer = ({
 
   const installs: PlanInstallDiff[] = rawInstalls.map((inst, i) => {
     const query = diffQueries[i]
-    const sections = query?.data?.diff ? extractSections(query.data.diff) : []
+    const sections = filterExcludedSections(
+      query?.data?.diff ? extractSections(query.data.diff) : []
+    )
     const summary =
       sections.length > 0
         ? computeSummary(sections)
@@ -108,6 +121,9 @@ export const PlanGroupStepContainer = ({
       responseType={step.approval?.response?.type}
       showApproveBar={showApproveBar}
       isInProgress={step.status?.status === 'in-progress'}
+      hideHeading={hideHeading}
+      onSelectInstall={onSelectInstall}
+      installFacts={installFacts}
       actions={
         showApproveBar ? (
           <GroupApprovalActions

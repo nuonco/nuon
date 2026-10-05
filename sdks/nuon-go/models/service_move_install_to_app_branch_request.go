@@ -26,6 +26,9 @@ type ServiceMoveInstallToAppBranchRequest struct {
 	// install's app and have an app config to deploy.
 	// Required: true
 	AppBranchID *string `json:"app_branch_id"`
+
+	// labels
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 // Validate validates this service move install to app branch request

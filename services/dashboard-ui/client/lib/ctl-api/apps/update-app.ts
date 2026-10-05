@@ -10,6 +10,8 @@ export const updateApp = ({
   orgId: string
   body: {
     label_colors?: Record<string, string>
+    config_repo?: string
+    config_directory?: string
   }
 }) =>
   api<TApp>({

@@ -231,7 +231,6 @@ export const RunRunbookForm = ({
             ]}
             currentStepIndex={page}
             completedSteps={new Set(['inputs', 'steps'].slice(0, page) as string[])}
-            skipHref={null}
             onGoToStep={(index) => {
               if (index <= page) setPage(index as 0 | 1 | 2)
             }}

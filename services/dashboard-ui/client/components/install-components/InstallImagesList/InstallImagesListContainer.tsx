@@ -50,14 +50,21 @@ export const InstallImagesListContainer = () => {
       (connection) => connection.component_id === componentId
     )
     const latestDeploy = installComponent.install_deploys?.[0]
+    const appliedConfigId = installComponent.app_config_ref?.applied_config_id
+    const behind =
+      !!appliedConfigId &&
+      !!install?.app_config_id &&
+      appliedConfigId !== install.app_config_id
 
     return {
       id: componentId || (installComponent.id ?? ''),
       name: component?.name ?? 'Image',
       type: component?.type,
+      behind,
       status: installComponent.status_v2?.status ?? installComponent.status,
       actions: component ? (
         <ResourceComponentActions
+          appliedConfigId={appliedConfigId}
           component={component}
           currentBuildId={latestDeploy?.build_id}
           currentDeployStatus={

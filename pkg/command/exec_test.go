@@ -10,6 +10,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func Test_command_ExecWithOutput_returnsOutputOnFailure(t *testing.T) {
+	cmd, err := New(validator.New(),
+		WithCmd("sh"),
+		WithArgs([]string{"-c", "echo boom; exit 1"}),
+		WithEnv(map[string]string{"KEY": "VALUE"}),
+		WithStdout(nil),
+		WithStderr(io.Discard),
+	)
+	assert.NoError(t, err)
+
+	output, err := cmd.ExecWithOutput(context.Background())
+	assert.Error(t, err)
+	assert.Equal(t, "boom\n", string(output))
+}
+
 func Test_command_buildCommand(t *testing.T) {
 	v := validator.New()
 

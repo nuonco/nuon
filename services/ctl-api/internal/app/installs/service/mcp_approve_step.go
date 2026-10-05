@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
-	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 )
 
 type mcpApproveStepInput struct {
@@ -50,24 +49,50 @@ func (s *service) mcpApproveStep(ctx context.Context, _ *mcp.CallToolRequest, in
 		return nil, nil, fmt.Errorf("unable to create approval response: %w", err)
 	}
 
-	stepID := approval.InstallWorkflowStepID
-	var step app.WorkflowStep
-	if err := s.db.WithContext(ctx).First(&step, "id = ?", stepID).Error; err != nil {
-		return nil, nil, fmt.Errorf("unable to find step: %w", err)
+	if err := s.notifyWorkflowOfApprovalResponse(ctx, approval, &response); err != nil {
+		return nil, nil, err
 	}
 
-	if err := s.flowsClient.ApprovePlan(ctx, &flowclient.ApprovePlanRequest{
-		InstallWorkflowID:  step.OwnerID,
-		StepID:             stepID,
-		ApprovalResponseID: response.ID,
-		ResponseType:       app.WorkflowStepApprovalResponseTypeApprove,
-	}); err != nil {
-		s.l.Warn("failed to dispatch approval", zap.Error(err))
-	}
-
-	return apiPkg.MCPJSONResult(map[string]string{
+	workflowID := approval.InstallWorkflowStep.InstallWorkflowID
+	out := map[string]any{
 		"status":      "approved",
 		"approval_id": approval.ID,
 		"response_id": response.ID,
-	})
+		"workflow_id": workflowID,
+	}
+	if next := mcpWatchContinuation(workflowID); next != nil {
+		out["next_action"] = next
+	}
+	return apiPkg.MCPJSONResult(out)
+}
+
+func (s *service) notifyWorkflowOfApprovalResponse(ctx context.Context, approval app.WorkflowStepApproval, response *app.WorkflowStepApprovalResponse) error {
+	workflowID := approval.InstallWorkflowStep.InstallWorkflowID
+	stepID := approval.InstallWorkflowStepID
+	if workflowID == "" && stepID != "" {
+		var step app.WorkflowStep
+		if err := s.db.WithContext(ctx).Select("install_workflow_id").First(&step, "id = ?", stepID).Error; err != nil {
+			return s.abandonApprovalResponse(ctx, response, fmt.Errorf("unable to find step: %w", err))
+		}
+		workflowID = step.InstallWorkflowID
+	}
+	if workflowID == "" {
+		return s.abandonApprovalResponse(ctx, response, fmt.Errorf("step %s has no workflow", stepID))
+	}
+
+	if err := s.dispatchApprovalResponseSignal(ctx, workflowID, stepID, approval.ID, response.ID, response.Type); err != nil {
+		return s.abandonApprovalResponse(ctx, response, err)
+	}
+	return nil
+}
+
+func (s *service) abandonApprovalResponse(ctx context.Context, response *app.WorkflowStepApprovalResponse, cause error) error {
+	if delErr := s.db.WithContext(ctx).Delete(response).Error; delErr != nil {
+		s.l.Warn("failed to roll back approval response after dispatch failure",
+			zap.String("response_id", response.ID),
+			zap.Error(delErr),
+		)
+		return fmt.Errorf("approval response %s was saved but the workflow was not notified: %w", response.ID, cause)
+	}
+	return fmt.Errorf("unable to notify the workflow; the approval is still pending: %w", cause)
 }

@@ -152,6 +152,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			l.Warn("unable to ensure vcs connection queue", zap.String("vcs_connection_id", conn.ID), zap.Error(err))
 		}
 	}
+	if err := activities.AwaitEnsureOrgCloudConnectionQueuesByOrgID(ctx, s.OrgID); err != nil {
+		return fmt.Errorf("unable to ensure cloud connection queues: %w", err)
+	}
 
 	// 6. Enable queues feature flag
 	l.Info("enabling queues feature flag", zap.String("org_id", s.OrgID))

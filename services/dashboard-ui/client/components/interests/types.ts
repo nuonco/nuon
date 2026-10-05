@@ -15,6 +15,7 @@ export type ResourceKind =
   | 'runners'
   | 'actions'
   | 'app_branches'
+  | 'cloud_connections'
 
 export type Outcome = 'none' | 'all' | 'completion' | 'failures'
 
@@ -64,6 +65,7 @@ export const ALL_RESOURCES: ResourceKind[] = [
   'runners',
   'actions',
   'app_branches',
+  'cloud_connections',
 ]
 
 export const RESOURCE_LABELS: Record<ResourceKind, string> = {
@@ -75,6 +77,7 @@ export const RESOURCE_LABELS: Record<ResourceKind, string> = {
   runners: 'Runners',
   actions: 'Actions',
   app_branches: 'App branches',
+  cloud_connections: 'Cloud connections',
 }
 
 export const RESOURCE_DESCRIPTIONS: Record<ResourceKind, string> = {
@@ -88,6 +91,7 @@ export const RESOURCE_DESCRIPTIONS: Record<ResourceKind, string> = {
   runners: 'Runner provision and reprovision.',
   actions: 'Action workflow runs.',
   app_branches: 'App branch runs triggered manually or by VCS updates.',
+  cloud_connections: 'Cloud connection verification failures.',
 }
 
 export const OUTCOME_LABELS: Record<Outcome, string> = {

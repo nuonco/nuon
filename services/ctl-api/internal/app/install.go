@@ -92,10 +92,12 @@ type Install struct {
 	// InstallRoles is a list of roles associated with that install at given app config ID
 	InstallRoles []InstallRoles `json:"install_roles,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_roles,omitzero,omitempty"`
 
-	InstallStack *InstallStack `json:"install_stack,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_stack,omitzero,omitempty"`
-	AWSAccount   *AWSAccount   `json:"aws_account,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"aws_account,omitzero,omitempty"`
-	AzureAccount *AzureAccount `json:"azure_account,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"azure_account,omitzero,omitempty"`
-	GCPAccount   *GCPAccount   `json:"gcp_account,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"gcp_account,omitzero,omitempty"`
+	InstallStack      *InstallStack    `json:"install_stack,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_stack,omitzero,omitempty"`
+	CloudConnectionID *string          `json:"cloud_connection_id,omitempty" gorm:"index" temporaljson:"cloud_connection_id,omitzero,omitempty"`
+	CloudConnection   *CloudConnection `json:"cloud_connection,omitempty" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" temporaljson:"cloud_connection,omitzero,omitempty"`
+	AWSAccount        *AWSAccount      `json:"aws_account,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"aws_account,omitzero,omitempty"`
+	AzureAccount      *AzureAccount    `json:"azure_account,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"azure_account,omitzero,omitempty"`
+	GCPAccount        *GCPAccount      `json:"gcp_account,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"gcp_account,omitzero,omitempty"`
 
 	RunnerGroup RunnerGroup `json:"-" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"runner_group,omitzero,omitempty"`
 

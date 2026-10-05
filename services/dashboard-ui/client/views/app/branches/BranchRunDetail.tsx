@@ -1,4 +1,3 @@
-import { useCallback, useState } from 'react'
 import { useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
@@ -15,6 +14,7 @@ import { PageSection } from '@/components/layout/PageSection'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { BranchOverview } from '@/components/branches/BranchOverview'
 import { BranchRunApproval } from '@/components/branches/BranchRunApproval'
 import { BranchRunChanges } from '@/components/branches/BranchRunChanges'
 import { BranchRunComparisonRuns } from '@/components/branches/BranchRunComparisonRuns'
@@ -33,19 +33,18 @@ import {
 import { getRunTitle } from '@/components/branches/shared/run-title'
 import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
 import { WorkflowChangesLink } from '@/components/workflows/WorkflowChangesSummary'
+import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import { useOrg } from '@/hooks/use-org'
 import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
 import { BranchProvider } from '@/providers/branch-provider'
-import {
-  ConfigDiffFocusContext,
-  type TConfigDiffFocus,
-} from '@/components/approvals/plan-diffs/config-diff-focus'
 import type { TAPIError } from '@/types'
+import { manualRunPinLabel } from '@/utils/branch-utils'
 import { getBranchRunComparison, getBranchWorkflowRun } from '@/lib'
 import type { TBranchRunComparisonRunSummary } from '@/lib/ctl-api/apps/branches/get-branch-run-comparison'
 
 const BranchRunDetailContent = () => {
+  const hasNewAppIA = useNewAppIA()
   const { org } = useOrg()
   const { app } = useApp()
   const { branch } = useBranch()
@@ -54,17 +53,6 @@ const BranchRunDetailContent = () => {
   const appId = params.appId as string
   const branchId = params.branchId as string
   const runId = params.runId as string
-  const [configFocus, setConfigFocus] = useState<TConfigDiffFocus | null>(null)
-  const requestConfigFocus = useCallback(
-    (sectionKey: string, entityName?: string) => {
-      setConfigFocus((prev) => ({
-        sectionKey,
-        entityName,
-        nonce: (prev?.nonce ?? 0) + 1,
-      }))
-    },
-    []
-  )
 
   const {
     data: run,
@@ -120,6 +108,10 @@ const BranchRunDetailContent = () => {
     previewModeLabel(branchRun?.preview) ??
     (branchRun?.plan_only ? 'Plan only' : undefined)
   const previewSource = previewSourceLabel(branchRun)
+  const pinLabel =
+    branchRun?.event_type === 'manual'
+      ? manualRunPinLabel(branchRun)
+      : undefined
   const previewInstall = branchRun?.preview?.install_name
   const isDraftMode =
     !!branchRun?.preview &&
@@ -166,10 +158,7 @@ const BranchRunDetailContent = () => {
       : undefined)
 
   return (
-    <ConfigDiffFocusContext.Provider
-      value={{ requestFocus: requestConfigFocus }}
-    >
-      <>
+    <>
         <PageTitle segments={[runTitle, app?.name]} />
         <Breadcrumbs
           breadcrumbs={[
@@ -238,6 +227,16 @@ const BranchRunDetailContent = () => {
                       manual
                     </Badge>
                   ) : null}
+                  {pinLabel ? (
+                    <Badge
+                      size="sm"
+                      theme="info"
+                      variant="code"
+                      className="shrink-0"
+                    >
+                      {pinLabel}
+                    </Badge>
+                  ) : null}
                 </>
               }
               id={run.id}
@@ -247,7 +246,9 @@ const BranchRunDetailContent = () => {
                     path={`/workflows/${run.id}`}
                     label="admin"
                   />
-                  <WorkflowRunPanelButton runId={run.id!} />
+                  {hasNewAppIA ? null : (
+                    <WorkflowRunPanelButton runId={run.id!} />
+                  )}
                   <CancelWorkflowButton workflow={run} />
                 </>
               }
@@ -333,7 +334,6 @@ const BranchRunDetailContent = () => {
               <BranchRunChanges
                 branchId={branchId}
                 appBranchRunId={branchRun.id}
-                focus={configFocus}
                 repoSlug={repoSlug}
                 showRunComparison={false}
               />
@@ -341,13 +341,15 @@ const BranchRunDetailContent = () => {
           </div>
         </DetailPage>
       </>
-    </ConfigDiffFocusContext.Provider>
   )
 }
 
 export const BranchRunDetail = () => {
+  const hasNewAppIA = useNewAppIA()
   const params = useParams()
   const branchId = params.branchId as string
+
+  if (hasNewAppIA) return <BranchOverview />
 
   return (
     <BranchProvider branchId={branchId}>

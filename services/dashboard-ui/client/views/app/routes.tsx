@@ -165,6 +165,7 @@ export const appRoutes: RouteObject[] = [
           { index: true, element: <BranchOverviewTab /> },
           { path: 'runs', element: <BranchRunsTab /> },
           { path: 'runs/:runId', element: <BranchRunDetail /> },
+          { path: 'runs/:runId/rollout', element: <BranchRolloutTab /> },
           { path: 'rollout', element: <BranchRolloutTab /> },
           { path: 'settings', element: <BranchSettingsTab /> },
           { path: 'plan', element: <BranchPlanTab /> },

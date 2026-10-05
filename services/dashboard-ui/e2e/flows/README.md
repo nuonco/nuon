@@ -13,6 +13,12 @@ Org-level:
 | [webhooks-crud](./webhooks-crud.flow.md) | `specs/webhooks.spec.ts` | Create, edit, and delete a webhook |
 | [create-api-token](./create-api-token.flow.md) | `specs/api-tokens.spec.ts` | Create an API token, confirm the reveal modal, then delete it |
 
+Onboarding (each spec makes its own account; see [README](../README.md#onboarding-specs)):
+
+| Flow | Spec | Covers |
+|------|------|--------|
+| [onboarding](./onboarding.flow.md) | `specs/onboarding/*.spec.ts` | First-run flow: example app on AWS and GCP, own app per cloud, skip, resume |
+
 Install-level:
 
 | Flow | Spec | Covers |

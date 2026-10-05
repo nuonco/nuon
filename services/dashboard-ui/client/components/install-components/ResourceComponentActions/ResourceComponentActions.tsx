@@ -7,11 +7,13 @@ import { BuildComponentButton } from '@/components/components/management/BuildCo
 import { DeployTimeline } from '@/components/deploys/DeployTimeline'
 import { DeployComponentButton } from '@/components/install-components/management/DeployComponent'
 import { TeardownComponentButton } from '@/components/install-components/management/TeardownComponent'
+import { ComponentConfigPanel } from '@/components/installs/InstallResourceConfig'
 import { Panel } from '@/components/surfaces/Panel'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TComponent } from '@/types'
 
 export interface IResourceComponentActions {
+  appliedConfigId?: string
   component: TComponent
   currentBuildId?: string
   currentDeployStatus?: string
@@ -19,6 +21,7 @@ export interface IResourceComponentActions {
 }
 
 export const ResourceComponentActions = ({
+  appliedConfigId,
   component,
   currentBuildId,
   currentDeployStatus,
@@ -42,6 +45,26 @@ export const ResourceComponentActions = ({
         <Button
           onClick={() =>
             addPanel(
+              <ComponentConfigPanel
+                appliedConfigId={appliedConfigId}
+                componentId={component.id}
+                emptyMessage={
+                  isImage
+                    ? 'This image is not in the app config this install is using.'
+                    : undefined
+                }
+                name={component.name}
+              />,
+              `component-config-${component.id}`
+            )
+          }
+        >
+          View config
+          <Icon variant="SlidersHorizontalIcon" />
+        </Button>
+        <Button
+          onClick={() =>
+            addPanel(
               <Panel
                 heading={`${component.name} ${
                   isImage ? 'sync' : 'deploy'
@@ -51,6 +74,7 @@ export const ResourceComponentActions = ({
                 <DeployTimeline
                   componentName={component.name}
                   componentId={component.id}
+                  openWorkflowPanel
                   shouldPoll
                   variant={isImage ? 'sync' : 'deploy'}
                 />

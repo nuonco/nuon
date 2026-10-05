@@ -38,6 +38,9 @@ type ServiceInstallDeployment struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// image
+	Image *ServiceInstallDeploymentImage `json:"image,omitempty"`
+
 	// status
 	Status string `json:"status,omitempty"`
 
@@ -67,6 +70,10 @@ func (m *ServiceInstallDeployment) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateChangeGroups(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateImage(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -160,6 +167,29 @@ func (m *ServiceInstallDeployment) validateChangeGroups(formats strfmt.Registry)
 	return nil
 }
 
+func (m *ServiceInstallDeployment) validateImage(formats strfmt.Registry) error {
+	if swag.IsZero(m.Image) { // not required
+		return nil
+	}
+
+	if m.Image != nil {
+		if err := m.Image.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("image")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("image")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *ServiceInstallDeployment) validateType(formats strfmt.Registry) error {
 	if swag.IsZero(m.Type) { // not required
 		return nil
@@ -217,6 +247,10 @@ func (m *ServiceInstallDeployment) ContextValidate(ctx context.Context, formats 
 	}
 
 	if err := m.contextValidateChangeGroups(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateImage(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -308,6 +342,31 @@ func (m *ServiceInstallDeployment) contextValidateChangeGroups(ctx context.Conte
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *ServiceInstallDeployment) contextValidateImage(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Image != nil {
+
+		if swag.IsZero(m.Image) { // not required
+			return nil
+		}
+
+		if err := m.Image.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("image")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("image")
+			}
+
+			return err
+		}
 	}
 
 	return nil

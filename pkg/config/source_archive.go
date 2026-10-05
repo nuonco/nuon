@@ -124,7 +124,9 @@ func sourceMemberKey(path string, contents []byte) (string, error) {
 	case "policies.toml":
 		return "policy:policies", nil
 	case "break_glass.toml":
-		return "break_glass:break-glass", nil
+		return "break_glass:break_glass", nil
+	case "operation_roles.toml":
+		return "operation_roles:operation_roles", nil
 	case "sandbox.toml":
 		return "sandbox:sandbox", nil
 	case "stack.toml":
@@ -140,11 +142,46 @@ func sourceMemberKey(path string, contents []byte) (string, error) {
 		}
 		return "permission_policy:" + stem, nil
 	}
+	if len(parts) == 2 && parts[0] == "policies" {
+		var header struct {
+			Name string `toml:"name"`
+		}
+		if err := toml.Unmarshal(contents, &header); err != nil {
+			return "", err
+		}
+		name := header.Name
+		if name == "" {
+			name = strings.TrimSuffix(parts[1], ".toml")
+		}
+		if name == "" {
+			return "", fmt.Errorf("source file %s has no name field", path)
+		}
+		return "policy:" + name, nil
+	}
+	if len(parts) == 2 && parts[0] == "permissions" {
+		var header struct {
+			Type string `toml:"type"`
+			Name string `toml:"name"`
+		}
+		if err := toml.Unmarshal(contents, &header); err != nil {
+			return "", err
+		}
+		switch PermissionsRoleType(header.Type) {
+		case PermissionsRoleTypeProvision, PermissionsRoleTypeDeprovision, PermissionsRoleTypeMaintenance:
+			// Standard roles are identified by type (their name may be
+			// templated), which also maps them to permissions/<type>.toml.
+			return "permission:" + header.Type, nil
+		}
+		if header.Name == "" {
+			return "", fmt.Errorf("source file %s has no name field", path)
+		}
+		return "permission:" + header.Name, nil
+	}
 	if len(parts) != 2 {
 		return "", nil
 	}
 	kind := strings.TrimSuffix(parts[0], "s")
-	if kind != "component" && kind != "action" && kind != "runbook" && kind != "permission" {
+	if kind != "component" && kind != "action" && kind != "runbook" {
 		return "", nil
 	}
 	var header struct {

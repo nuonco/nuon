@@ -1,5 +1,11 @@
 import { useEffect, type ReactNode } from 'react'
 import { Card } from '@/components/common/Card'
+import {
+  COLLECTION_VIEW_MODES,
+  COLLECTION_VIEW_STORAGE_KEY,
+  CollectionViewToggle,
+  type TCollectionView,
+} from '@/components/common/CollectionViewToggle'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
@@ -9,7 +15,9 @@ import { Text } from '@/components/common/Text'
 import { LatestActionRunCard } from '@/components/actions/LatestActionRunCard'
 import { RemovedFromAppConfigBadge } from '@/components/installs/RemovedFromAppConfig'
 import { usePagination } from '@/hooks/use-pagination'
+import { useStoredViewMode } from '@/hooks/use-stored-view-mode'
 import { PaginationProvider } from '@/providers/pagination-provider'
+import { cn } from '@/utils/classnames'
 
 export type TInstallActionListItem = {
   actions?: ReactNode
@@ -36,8 +44,10 @@ export interface IInstallActionsList {
   filtered?: boolean
   items: TInstallActionListItem[]
   loading?: boolean
+  onViewChange?: (view: TCollectionView) => void
   pagination?: Omit<IPagination, 'position'>
   search?: ReactNode
+  view?: TCollectionView
 }
 
 const InstallActionsListBase = ({
@@ -47,10 +57,23 @@ const InstallActionsListBase = ({
   filtered = false,
   items,
   loading = false,
+  onViewChange,
   pagination,
   search,
+  view: viewProp,
 }: IInstallActionsList) => {
   const { setIsPaginating } = usePagination()
+  const [storedView, setStoredView] = useStoredViewMode<TCollectionView>(
+    COLLECTION_VIEW_STORAGE_KEY,
+    COLLECTION_VIEW_MODES,
+    'list'
+  )
+  const view = viewProp ?? storedView
+  const setView = (next: TCollectionView) => {
+    onViewChange?.(next)
+    if (viewProp === undefined) setStoredView(next)
+  }
+  const isGrid = view === 'grid'
   const rows = loading && !items.length ? loadingItems(3) : items
 
   useEffect(() => {
@@ -60,22 +83,32 @@ const InstallActionsListBase = ({
   return (
     <div className="flex flex-col gap-4 md:gap-6">
       {banner}
-      {search || filterActions || actions ? (
-        <div className="flex flex-row flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-4 w-full md:w-fit">
-            {search}
-            {filterActions}
-          </div>
+      <div className="flex flex-row flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-4 w-full md:w-fit">
+          {search}
+          {filterActions}
+        </div>
+        <div className="flex items-center gap-3 ml-auto">
+          <CollectionViewToggle value={view} onChange={setView} />
           {actions}
         </div>
-      ) : null}
+      </div>
 
       {rows.length ? (
-        <div className="flex flex-col gap-4">
+        <div
+          className={cn(
+            'flex flex-col gap-4',
+            isGrid && 'md:grid md:grid-cols-2'
+          )}
+        >
           {rows.map((item) => (
             <Card
               key={item.id}
-              className={`!p-4 !gap-4 ${item.removed ? 'opacity-55' : ''}`}
+              className={cn(
+                '!p-4 !gap-4',
+                isGrid && 'md:h-full',
+                item.removed && 'opacity-55'
+              )}
             >
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="flex flex-col gap-1.5 min-w-0">

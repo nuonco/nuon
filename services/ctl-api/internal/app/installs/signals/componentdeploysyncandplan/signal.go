@@ -54,6 +54,15 @@ type Signal struct {
 	runnerJobID string
 }
 
+func (s *Signal) getInstall(ctx workflow.Context) (*app.Install, error) {
+	id, err := activities.ResolveInstallComponentID(ctx, s.InstallComponentID, s.InstallID, s.ComponentID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to resolve install component")
+	}
+	s.InstallComponentID = id
+	return activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
+}
+
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
@@ -140,7 +149,7 @@ func (s *Signal) Clone(ctx workflow.Context, stepName string) ([]signal.CloneSte
 }
 
 func (s *Signal) SkipNoops(ctx workflow.Context) bool {
-	install, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
+	install, err := s.getInstall(ctx)
 	if err != nil {
 		return false
 	}
@@ -159,7 +168,7 @@ func (s *Signal) SkipNoops(ctx workflow.Context) bool {
 }
 
 func (s *Signal) AutoApproveOnPoliciesPassing(ctx workflow.Context) bool {
-	install, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
+	install, err := s.getInstall(ctx)
 	if err != nil {
 		return false
 	}
@@ -198,7 +207,7 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 
 func (s *Signal) Validate(ctx workflow.Context) error {
 	// Validate install component exists
-	_, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
+	_, err := s.getInstall(ctx)
 	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
 	}
@@ -227,7 +236,7 @@ func (s *Signal) configConnectionID(ctx workflow.Context, install *app.Install) 
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	install, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
+	install, err := s.getInstall(ctx)
 	if err != nil {
 		s.updateDeployStatusWithoutStatusSync(ctx, s.DeployID, app.InstallDeployStatusError, "unable to get install from database")
 		return fmt.Errorf("unable to get install: %w", err)

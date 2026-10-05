@@ -5,7 +5,7 @@ import {
 } from '@/components/branches/BranchCards/BranchPlanDots'
 import { BranchRunCommit } from '@/components/branches/BranchRunCommit/BranchRunCommit'
 import { MiniDeploymentView } from '@/components/branches/MiniDeploymentView'
-import { Badge } from '@/components/common/Badge'
+import { Badge, type TBadgeTheme } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
@@ -15,6 +15,9 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { ToggleButton } from '@/components/common/ToggleButton'
+import { Tooltip } from '@/components/common/Tooltip'
+import { humanize } from '@/utils/string-utils'
 
 export type TActivityFilter =
   | 'all'
@@ -63,6 +66,7 @@ export interface TRunPendingApproval {
 export interface IBranchActivityFeed {
   items: TBranchActivityItem[]
   isLoading?: boolean
+  initialFilter?: TActivityFilter
 }
 
 const FILTERS: { label: string; value: TActivityFilter }[] = [
@@ -71,6 +75,12 @@ const FILTERS: { label: string; value: TActivityFilter }[] = [
   { label: 'Failed', value: 'failed' },
   { label: 'In progress', value: 'in-progress' },
 ]
+
+const FILTER_THEMES: Record<Exclude<TActivityFilter, 'all'>, TBadgeTheme> = {
+  'awaiting-approval': 'warn',
+  failed: 'error',
+  'in-progress': 'info',
+}
 
 const ATTENTION_STATUSES: Record<Exclude<TActivityFilter, 'all'>, string[]> = {
   'awaiting-approval': ['awaiting-approval', 'pending-approval'],
@@ -176,16 +186,21 @@ const RunPlan = ({ item }: { item: TBranchActivityItem }) => {
   )
 }
 
-const UpdateCard = ({ item }: { item: TBranchActivityItem }) => (
+export const UpdateCard = ({ item }: { item: TBranchActivityItem }) => (
   <Card className="gap-3 p-4 min-w-0" data-run-id={item.runId}>
     <div className="flex items-start justify-between gap-4">
       <div className="flex items-center gap-2 min-w-0">
-        <Status
-          status={item.runStatus}
-          variant="timeline"
-          isWithoutText
+        <Tooltip
+          position="top"
+          tipContent={
+            <Text variant="subtext" weight="strong">
+              {humanize(item.runStatus)}
+            </Text>
+          }
           className="shrink-0"
-        />
+        >
+          <Status status={item.runStatus} variant="timeline" isWithoutText />
+        </Tooltip>
         <span className="flex items-center gap-1.5 min-w-0 flex-wrap">
           {item.appHref ? (
             <Link href={item.appHref} variant="inline">
@@ -211,11 +226,6 @@ const UpdateCard = ({ item }: { item: TBranchActivityItem }) => (
         </span>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        {item.runHref ? (
-          <Button href={item.runHref} variant="secondary" size="sm">
-            View run
-          </Button>
-        ) : null}
         <Time
           time={item.runCreatedAt}
           format="relative"
@@ -223,6 +233,11 @@ const UpdateCard = ({ item }: { item: TBranchActivityItem }) => (
           theme="neutral"
           className="shrink-0"
         />
+        {item.runHref ? (
+          <Button href={item.runHref} variant="secondary">
+            View run
+          </Button>
+        ) : null}
       </div>
     </div>
 
@@ -244,8 +259,10 @@ const UpdateCard = ({ item }: { item: TBranchActivityItem }) => (
 export const BranchActivityFeed = ({
   items,
   isLoading = false,
+  initialFilter = 'all',
 }: IBranchActivityFeed) => {
-  const [activeFilter, setActiveFilter] = useState<TActivityFilter>('all')
+  const [activeFilter, setActiveFilter] =
+    useState<TActivityFilter>(initialFilter)
 
   const filtered = items.filter((item) => matchesFilter(item, activeFilter))
 
@@ -256,24 +273,32 @@ export const BranchActivityFeed = ({
 
   return (
     <div className="flex flex-col gap-4">
-      <div
-        className="flex items-center gap-1"
-        role="group"
-        aria-label="Filter branch activity"
-      >
-        {FILTERS.map(({ label, value }) => (
-          <Button
-            key={value}
-            variant="ghost"
-            size="sm"
-            isActive={activeFilter === value}
-            onClick={() => setActiveFilter(value)}
-            aria-pressed={activeFilter === value}
-          >
-            {label}
-          </Button>
-        ))}
-      </div>
+      <ToggleButton<TActivityFilter>
+        label="Filter branch activity"
+        size="md"
+        value={activeFilter}
+        onChange={setActiveFilter}
+        className="self-start"
+        options={FILTERS.map(({ label, value }) => {
+          const count =
+            value === 'all'
+              ? 0
+              : items.filter((item) => matchesFilter(item, value)).length
+          return {
+            value,
+            label: (
+              <span className="flex items-center gap-1.5">
+                {label}
+                {value !== 'all' && count > 0 ? (
+                  <Badge theme={FILTER_THEMES[value]} size="sm" variant="code">
+                    {count}
+                  </Badge>
+                ) : null}
+              </span>
+            ),
+          }
+        })}
+      />
 
       {isLoading ? (
         <div className="flex flex-col gap-3">

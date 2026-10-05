@@ -140,7 +140,7 @@ func diffNodeToSection(node *diff.Diff) *ConfigDiffSection {
 // stripDiffEntityPrefix turns diff tree keys like "component.api" into the
 // plain resource name used by source_changed lookups and the builds step.
 func stripDiffEntityPrefix(key string) string {
-	for _, prefix := range []string{"component.", "action.", "runbook."} {
+	for _, prefix := range []string{"component.", "action.", "runbook.", "policy.", "custom_role.", "named_policy."} {
 		if strings.HasPrefix(key, prefix) {
 			return strings.TrimPrefix(key, prefix)
 		}
@@ -213,7 +213,7 @@ func sectionDisplayNameAndGrouped(key string) (string, bool) {
 	case "runner":
 		return "Runner", false
 	case "permissions":
-		return "Permissions", false
+		return "Permissions", true
 	case "stack":
 		return "Stack", false
 	case "break_glass":

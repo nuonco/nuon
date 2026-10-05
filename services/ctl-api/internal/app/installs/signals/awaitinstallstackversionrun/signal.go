@@ -17,10 +17,16 @@ import (
 
 const SignalType signal.SignalType = "await-install-stack-version-run"
 
+const (
+	managedStackDeletionPollInterval    = 30 * time.Second
+	maxManagedStackDeletionPollAttempts = 240
+)
+
 type Signal struct {
 	InstallStackID     string
 	WorkflowStepID     string
 	CreateManagedStack bool
+	DeleteManagedStack bool
 
 	versionID string
 }
@@ -76,8 +82,7 @@ func shouldCreateManagedAWSCloudFormationStack(createManagedStack bool, install 
 	return createManagedStack &&
 		!install.SandboxMode.Bool &&
 		appCfg.RunnerConfig.Type == app.AppRunnerTypeAWS &&
-		install.AWSAccount != nil &&
-		install.AWSAccount.AWSAccountConnectionID != nil
+		install.CloudConnectionID != nil
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
@@ -93,10 +98,24 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get install version")
 	}
 	s.versionID = version.ID
+	if isDuplicateOfActive(version) {
+		l.Info("stack version matches the active version, nothing to apply", "version_id", version.ID)
+		return nil
+	}
 
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get app config")
+	}
+	if s.DeleteManagedStack && install.CloudConnectionID != nil && appCfg.RunnerConfig.Type == app.AppRunnerTypeAWS {
+		err = activities.AwaitDeleteManagedAWSCloudFormationStack(ctx, &activities.DeleteManagedAWSCloudFormationStackRequest{InstallID: install.ID, StackVersionID: version.ID, ConnectionID: *install.CloudConnectionID})
+		if err != nil {
+			return errors.Wrap(err, "unable to delete managed install stack")
+		}
+		if err := s.pollForManagedStackDeletion(ctx, install.ID, version.ID, *install.CloudConnectionID, version.StackName); err != nil {
+			return errors.Wrap(err, "unable to confirm managed install stack deletion")
+		}
+		return nil
 	}
 
 	if s.WorkflowStepID != "" {
@@ -121,7 +140,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		if err := activities.AwaitCreateManagedAWSCloudFormationStack(ctx, &activities.CreateManagedAWSCloudFormationStackRequest{
 			InstallID:      install.ID,
 			StackVersionID: version.ID,
-			ConnectionID:   *install.AWSAccount.AWSAccountConnectionID,
+			ConnectionID:   *install.CloudConnectionID,
 		}); err != nil {
 			return errors.Wrap(err, "unable to create managed cloudformation stack")
 		}
@@ -130,7 +149,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusProvisioning),
 		})
 	}
-
 	if install.SandboxMode.Bool {
 		l.Info("sandbox mode org")
 		workflow.Sleep(ctx, time.Second*5)
@@ -190,4 +208,38 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	l.Debug("callback received, stack run processed by stack-run signal")
 
 	return nil
+}
+
+func (s *Signal) pollForManagedStackDeletion(ctx workflow.Context, installID, versionID, connectionID, stackName string) error {
+	l := workflow.GetLogger(ctx)
+	req := &activities.DeleteManagedAWSCloudFormationStackRequest{
+		InstallID:      installID,
+		StackVersionID: versionID,
+		ConnectionID:   connectionID,
+	}
+	for attempt := 0; attempt < maxManagedStackDeletionPollAttempts; attempt++ {
+		status, err := activities.AwaitGetManagedAWSCloudFormationStackStatus(ctx, req)
+		if err != nil {
+			return errors.Wrap(err, "unable to check managed install stack deletion status")
+		}
+		if !status.Found || status.Status == activities.ManagedStackStatusDeleteComplete {
+			return nil
+		}
+		if status.Status == activities.ManagedStackStatusDeleteFailed {
+			return fmt.Errorf("cloudformation stack %q deletion failed: %s", stackName, status.Reason)
+		}
+		l.Info("managed install stack deletion in progress", "attempt", attempt+1, "status", status.Status)
+		if err := workflow.Sleep(ctx, managedStackDeletionPollInterval); err != nil {
+			return err
+		}
+	}
+	return fmt.Errorf("cloudformation stack %q was not deleted after %d polling attempts", stackName, maxManagedStackDeletionPollAttempts)
+}
+
+func isDuplicateOfActive(version *app.InstallStackVersion) bool {
+	if version.Status.Status != app.InstallStackVersionStatusOutdated {
+		return false
+	}
+	activeID, _ := version.Status.Metadata[app.InstallStackVersionDuplicateOfMetadataKey].(string)
+	return activeID != ""
 }

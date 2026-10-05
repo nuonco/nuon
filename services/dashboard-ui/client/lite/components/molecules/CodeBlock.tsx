@@ -65,7 +65,7 @@ export const CodeBlock = ({
   className,
 }: ICodeBlock) => {
   const generatedId = useId()
-  const viewer = useRef<CodeViewHandle<undefined>>(null)
+  const viewer = useRef<CodeViewHandle<undefined, undefined>>(null)
   const [query, setQuery] = useState('')
   const [matchIndex, setMatchIndex] = useState(0)
   const [wrap, setWrap] = useState(defaultWrap)

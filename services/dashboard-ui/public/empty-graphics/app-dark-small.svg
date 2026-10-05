@@ -9,41 +9,41 @@
 <g mask="url(#mask0_11005_173001)">
 <path d="M12 1.5H82C87.2467 1.5 91.5 5.7533 91.5 11V51C91.5 56.2467 87.2467 60.5 82 60.5H12C6.7533 60.5 2.5 56.2467 2.5 51V11C2.5 5.7533 6.7533 1.5 12 1.5Z" stroke="url(#paint2_linear_11005_173001)"/>
 <path d="M21 16C21 13.7909 22.7909 12 25 12H69C71.2091 12 73 13.7909 73 16V55C73 57.2091 71.2091 59 69 59H25C22.7909 59 21 57.2091 21 55V16Z" fill="#141217"/>
-<path d="M25 12.5H69C70.933 12.5 72.5 14.067 72.5 16V55C72.5 56.933 70.933 58.5 69 58.5H25C23.067 58.5 21.5 56.933 21.5 55V16C21.5 14.067 23.067 12.5 25 12.5Z" stroke="#8040BF" stroke-opacity="0.4"/>
-<rect x="31.4004" y="18" width="2" height="6.06667" rx="0.25" transform="rotate(90 31.4004 18)" fill="#8040BF"/>
+<path d="M25 12.5H69C70.933 12.5 72.5 14.067 72.5 16V55C72.5 56.933 70.933 58.5 69 58.5H25C23.067 58.5 21.5 56.933 21.5 55V16C21.5 14.067 23.067 12.5 25 12.5Z" stroke="var(--primary-600)" stroke-opacity="0.4"/>
+<rect x="31.4004" y="18" width="2" height="6.06667" rx="0.25" transform="rotate(90 31.4004 18)" fill="var(--primary-600)"/>
 <rect x="31.4004" y="23" width="3" height="6.06667" rx="0.25" transform="rotate(90 31.4004 23)" fill="#3A424A"/>
 <rect x="31.4004" y="29" width="2" height="6.06667" rx="0.25" transform="rotate(90 31.4004 29)" fill="#3A424A"/>
 <rect x="31.4004" y="34" width="3" height="6.06667" rx="0.25" transform="rotate(90 31.4004 34)" fill="#3A424A"/>
 <rect x="31.4004" y="40" width="2" height="6.06667" rx="0.25" transform="rotate(90 31.4004 40)" fill="#3A424A"/>
-<rect x="57.4004" y="18" width="2" height="22.5333" rx="0.25" transform="rotate(90 57.4004 18)" fill="#8040BF"/>
+<rect x="57.4004" y="18" width="2" height="22.5333" rx="0.25" transform="rotate(90 57.4004 18)" fill="var(--primary-600)"/>
 <rect x="57.4004" y="23" width="3" height="22.5333" rx="0.25" transform="rotate(90 57.4004 23)" fill="#3A424A"/>
 <rect x="57.4004" y="29" width="2" height="22.5333" rx="0.25" transform="rotate(90 57.4004 29)" fill="#3A424A"/>
 <rect x="57.4004" y="34" width="3" height="22.5333" rx="0.25" transform="rotate(90 57.4004 34)" fill="#3A424A"/>
 <rect x="57.4004" y="40" width="2" height="22.5333" rx="0.25" transform="rotate(90 57.4004 40)" fill="#3A424A"/>
-<rect x="70.4004" y="18" width="2" height="9.53333" rx="0.25" transform="rotate(90 70.4004 18)" fill="#8040BF"/>
+<rect x="70.4004" y="18" width="2" height="9.53333" rx="0.25" transform="rotate(90 70.4004 18)" fill="var(--primary-600)"/>
 <rect x="70.4004" y="23" width="3" height="9.53333" rx="0.25" transform="rotate(90 70.4004 23)" fill="#3A424A"/>
 <rect x="70.4004" y="29" width="2" height="9.53333" rx="0.25" transform="rotate(90 70.4004 29)" fill="#3A424A"/>
 <rect x="70.4004" y="34" width="3" height="9.53333" rx="0.25" transform="rotate(90 70.4004 34)" fill="#3A424A"/>
 <rect x="70.4004" y="40" width="2" height="9.53333" rx="0.25" transform="rotate(90 70.4004 40)" fill="#3A424A"/>
 <path d="M17 22C17 19.7909 18.7909 18 21 18H73C75.2091 18 77 19.7909 77 22V61C77 63.2091 75.2091 65 73 65H21C18.7909 65 17 63.2091 17 61V22Z" fill="#141217"/>
-<path d="M21 18.5H73C74.933 18.5 76.5 20.067 76.5 22V61C76.5 62.933 74.933 64.5 73 64.5H21C19.067 64.5 17.5 62.933 17.5 61V22C17.5 20.067 19.067 18.5 21 18.5Z" stroke="#8040BF" stroke-opacity="0.4"/>
-<rect x="28.8037" y="24" width="3" height="6.88525" rx="0.5" transform="rotate(90 28.8037 24)" fill="#8040BF"/>
+<path d="M21 18.5H73C74.933 18.5 76.5 20.067 76.5 22V61C76.5 62.933 74.933 64.5 73 64.5H21C19.067 64.5 17.5 62.933 17.5 61V22C17.5 20.067 19.067 18.5 21 18.5Z" stroke="var(--primary-600)" stroke-opacity="0.4"/>
+<rect x="28.8037" y="24" width="3" height="6.88525" rx="0.5" transform="rotate(90 28.8037 24)" fill="var(--primary-600)"/>
 <rect x="28.8037" y="29" width="3" height="6.88525" rx="0.5" transform="rotate(90 28.8037 29)" fill="#3A424A"/>
 <rect x="28.8037" y="35" width="3" height="6.88525" rx="0.5" transform="rotate(90 28.8037 35)" fill="#3A424A"/>
 <rect x="28.8037" y="40" width="3" height="6.88525" rx="0.5" transform="rotate(90 28.8037 40)" fill="#3A424A"/>
 <rect x="28.8037" y="46" width="3" height="6.88525" rx="0.5" transform="rotate(90 28.8037 46)" fill="#3A424A"/>
-<rect x="59.2949" y="24" width="3" height="26.5574" rx="0.5" transform="rotate(90 59.2949 24)" fill="#8040BF"/>
+<rect x="59.2949" y="24" width="3" height="26.5574" rx="0.5" transform="rotate(90 59.2949 24)" fill="var(--primary-600)"/>
 <rect x="59.2949" y="29" width="3" height="26.5574" rx="0.5" transform="rotate(90 59.2949 29)" fill="#3A424A"/>
 <rect x="59.2949" y="35" width="3" height="26.5574" rx="0.5" transform="rotate(90 59.2949 35)" fill="#3A424A"/>
 <rect x="59.2949" y="40" width="3" height="26.5574" rx="0.5" transform="rotate(90 59.2949 40)" fill="#3A424A"/>
 <rect x="59.2949" y="46" width="3" height="26.5574" rx="0.5" transform="rotate(90 59.2949 46)" fill="#3A424A"/>
-<rect x="74.0488" y="24" width="3" height="10.8197" rx="0.5" transform="rotate(90 74.0488 24)" fill="#8040BF"/>
+<rect x="74.0488" y="24" width="3" height="10.8197" rx="0.5" transform="rotate(90 74.0488 24)" fill="var(--primary-600)"/>
 <rect x="74.0488" y="29" width="3" height="10.8197" rx="0.5" transform="rotate(90 74.0488 29)" fill="#3A424A"/>
 <rect x="74.0488" y="35" width="3" height="10.8197" rx="0.5" transform="rotate(90 74.0488 35)" fill="#3A424A"/>
 <rect x="74.0488" y="40" width="3" height="10.8197" rx="0.5" transform="rotate(90 74.0488 40)" fill="#3A424A"/>
 <rect x="74.0488" y="46" width="3" height="10.8197" rx="0.5" transform="rotate(90 74.0488 46)" fill="#3A424A"/>
 <path d="M12 28C12 25.7909 13.7909 24 16 24H78C80.2091 24 82 25.7909 82 28V67C82 69.2091 80.2091 71 78 71H16C13.7909 71 12 69.2091 12 67V28Z" fill="#141217"/>
-<path d="M16 24.5H78C79.933 24.5 81.5 26.067 81.5 28V67C81.5 68.933 79.933 70.5 78 70.5H16C14.067 70.5 12.5 68.933 12.5 67V28C12.5 26.067 14.067 24.5 16 24.5Z" stroke="#8040BF" stroke-opacity="0.4"/>
+<path d="M16 24.5H78C79.933 24.5 81.5 26.067 81.5 28V67C81.5 68.933 79.933 70.5 78 70.5H16C14.067 70.5 12.5 68.933 12.5 67V28C12.5 26.067 14.067 24.5 16 24.5Z" stroke="var(--primary-600)" stroke-opacity="0.4"/>
 <g clip-path="url(#clip2_11005_173001)">
 <path d="M29.0195 40.0503V43.8746L32.3329 41.9636V38.1353L29.0195 40.0503Z" fill="#4040B2"/>
 <path d="M25.3437 38.1353L28.657 40.0503V43.8747L25.3437 41.9613V38.1353ZM21.667 36V39.8263L24.9803 41.7397V37.913L21.667 36ZM25.3437 46.208L28.657 48.1213V44.2947L25.3437 42.3817V46.208Z" fill="#5C4EE5"/>
@@ -102,7 +102,7 @@
 <feBlend mode="normal" in2="shape" result="effect2_innerShadow_11005_173001"/>
 </filter>
 <linearGradient id="paint0_linear_11005_173001" x1="45" y1="0" x2="45" y2="60" gradientUnits="userSpaceOnUse">
-<stop stop-color="#8040BF" stop-opacity="0.24"/>
+<stop stop-color="var(--primary-600)" stop-opacity="0.24"/>
 <stop offset="1" stop-color="#141217"/>
 </linearGradient>
 <linearGradient id="paint1_linear_11005_173001" x1="46.5946" y1="9.03571" x2="46.7716" y2="61.0008" gradientUnits="userSpaceOnUse">
@@ -110,7 +110,7 @@
 <stop offset="1" stop-color="white" stop-opacity="0.02"/>
 </linearGradient>
 <linearGradient id="paint2_linear_11005_173001" x1="10.4" y1="1" x2="22.1" y2="33.4" gradientUnits="userSpaceOnUse">
-<stop stop-color="#C494F4"/>
+<stop stop-color="var(--primary-400)"/>
 <stop offset="1" stop-color="white" stop-opacity="0.02"/>
 </linearGradient>
 <clipPath id="clip0_11005_173001">

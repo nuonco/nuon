@@ -2,9 +2,9 @@ import { api } from '@/lib/api'
 import type { TInstall } from '@/types'
 
 export type TCreateAppInstallBody = {
+  cloud_connection_id?: string
   aws_account?: {
     account_id?: string
-    connection_id?: string
     iam_role_arn: ''
     region: string
   }

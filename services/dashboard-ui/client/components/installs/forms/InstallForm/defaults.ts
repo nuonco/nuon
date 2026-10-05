@@ -43,7 +43,7 @@ export const buildInstallDefaults = ({
 }: BuildInstallDefaultsParams): InstallFormValues => ({
   name: install?.name ?? '',
   region: '',
-  aws_connection_id: '',
+  cloud_connection_id: '',
   aws_account_id: '',
   location: '',
   azure_subscription_id: '',

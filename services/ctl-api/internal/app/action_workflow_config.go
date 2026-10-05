@@ -60,6 +60,8 @@ type ActionWorkflowConfig struct {
 
 	EnableKubeConfig sql.NullBool `json:"enable_kube_config" gorm:"default:true" temporaljson:"enable_kube_config"`
 
+	IsHealthcheck bool `json:"is_healthcheck" gorm:"not null;default:false" temporaljson:"is_healthcheck,omitempty"`
+
 	// Image is an optional container image the action's steps run inside.
 	Image string `json:"image,omitzero" gorm:"default:null" temporaljson:"image,omitzero,omitempty"`
 

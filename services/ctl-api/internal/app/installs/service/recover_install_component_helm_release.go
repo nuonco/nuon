@@ -194,7 +194,7 @@ func (s *service) hasRunningDeployJob(ctx context.Context, installComponentID st
 		Where(app.InstallDeploy{InstallComponentID: installComponentID})
 
 	// Unqualified columns and a subquery, not a join: RunnerJob reads resolve to
-	// runner_jobs_view_v2, so naming the table breaks at runtime.
+	// runner_jobs_view_v3, so naming the table breaks at runtime.
 	var count int64
 	res := s.db.WithContext(ctx).
 		Model(&app.RunnerJob{}).

@@ -473,6 +473,7 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 				}
 				deployStep, err := dg.sg.installSignalStep(ctx, dg.installID, "sync "+comp.Name, componentStepMetadata(comp.Name), &componentsyncimage.Signal{
 					InstallComponentID:          installComponentID,
+					InstallID:                   dg.installID,
 					ComponentID:                 comp.ID,
 					BuildID:                     buildID,
 					ComponentConfigConnectionID: pinnedCCCID(dg, compID),
@@ -525,6 +526,7 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 					gateStep, err := dg.sg.installSignalStep(ctx, dg.installID, "verify health "+comp.Name, componentStepMetadata(comp.Name), &awaitcomponenthealthy.Signal{
 						InstallID:          dg.installID,
 						InstallComponentID: installComponentID,
+						ComponentID:        comp.ID,
 					}, dg.flw.PlanOnly, WithSkippable(false), WithMaxAutoRetries(3))
 					if err != nil {
 						return nil, errors.Wrap(err, "unable to create verify health step")
@@ -718,6 +720,7 @@ func getImageDepSyncStepsForIDs(
 
 		step, err := dg.sg.installSignalStep(ctx, dg.installID, "sync "+dep.Name+" (dep)", pgtype.Hstore{}, &componentsyncimage.Signal{
 			InstallComponentID: decision.InstallComponentID,
+			InstallID:          dg.installID,
 			ComponentID:        dep.ID,
 			BuildID:            decision.BuildID,
 			Role:               dg.flw.Role,

@@ -31,6 +31,7 @@ func (h *OrgStatusHandler) StreamOrgStatus(c *gin.Context) {
 	}
 
 	var runnerID string
+	unfinished := false
 
 	runSSEStream(c, sseStreamConfig{
 		ClientErrMsg: "failed to fetch org",
@@ -57,7 +58,7 @@ func (h *OrgStatusHandler) StreamOrgStatus(c *gin.Context) {
 			}
 
 			if workflows, err := client.GetOrgWorkflows(ctx, &nuon.GetOrgWorkflowsQuery{
-				Finished: false,
+				Finished: &unfinished,
 				Planonly: false,
 				Limit:    50,
 			}); err == nil {

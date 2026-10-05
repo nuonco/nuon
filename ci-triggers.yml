@@ -21,6 +21,7 @@ services: |
     - bins/runner/**
     - pkg/**
     - sdks/**
+    - .github/workflows/service.yml
 
   cli:
     - bins/cli/**

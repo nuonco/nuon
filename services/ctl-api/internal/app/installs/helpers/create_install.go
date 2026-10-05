@@ -6,6 +6,7 @@ import (
 	"regexp"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/labels"
@@ -25,8 +26,7 @@ type InstallMetadata struct {
 var awsAccountIDPattern = regexp.MustCompile(`^[0-9]{12}$`)
 
 type CreateInstallAWSAccountParams struct {
-	Region       string `json:"region"`
-	ConnectionID string `json:"connection_id,omitempty"`
+	Region string `json:"region"`
 
 	// AccountID is the AWS account this install targets. Required when the org has
 	// the phone-home-auth feature enabled, optional otherwise. Immutable after
@@ -50,7 +50,8 @@ type CreateInstallGCPAccountParams struct {
 }
 
 type CreateInstallParams struct {
-	Name string `json:"name" validate:"required"`
+	Name              string `json:"name" validate:"required"`
+	CloudConnectionID string `json:"cloud_connection_id,omitempty"`
 
 	AWSAccount *CreateInstallAWSAccountParams `json:"aws_account"`
 
@@ -200,6 +201,9 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	if runnerType == "" && len(parentApp.AppRunnerConfigs) > 0 {
 		runnerType = parentApp.AppRunnerConfigs[0].Type
 	}
+	if req.CloudConnectionID != "" && runnerType.CloudPlatform() != app.CloudPlatformAWS {
+		return nil, stderr.ErrUser{Err: fmt.Errorf("only AWS installs support cloud connections"), Description: "Only AWS installs support cloud connections"}
+	}
 	switch runnerType {
 	case app.AppRunnerTypeGCP, app.AppRunnerTypeGCPGKE:
 		if req.GCPAccount == nil {
@@ -243,28 +247,23 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		if req.AWSAccount.AccountID != "" {
 			targetSource = app.CloudPlatformTargetSourceUser
 		}
-		if req.AWSAccount.ConnectionID != "" {
-			if runnerType != app.AppRunnerTypeAWS {
-				return nil, stderr.ErrUser{
-					Err:         fmt.Errorf("AWS account connections are not supported for runner type %q", runnerType),
-					Description: "AWS account connections are only supported for AWS runner installs",
-				}
-			}
-			connection, err := s.validateAWSAccountConnection(ctx, req.AWSAccount.ConnectionID)
+		if req.CloudConnectionID != "" {
+			connection, err := validateCloudConnection(ctx, s.db, parentApp.OrgID, req.CloudConnectionID, app.CloudPlatformAWS)
 			if err != nil {
 				return nil, err
 			}
 
 			// The connection already names an account, so it is authoritative. An
 			// explicit account ID may agree with it but never override it.
-			if req.AWSAccount.AccountID != "" && req.AWSAccount.AccountID != connection.AccountID {
+			if req.AWSAccount.AccountID != "" && req.AWSAccount.AccountID != connection.TargetID {
 				return nil, stderr.ErrUser{
 					Err: fmt.Errorf("aws_account.account_id %q conflicts with connection %s account %q",
-						req.AWSAccount.AccountID, connection.ID, connection.AccountID),
-					Description: "aws_account.account_id does not match the account of the selected AWS account connection",
+						req.AWSAccount.AccountID, connection.ID, connection.TargetID),
+					Description: "aws_account.account_id does not match the account of the selected cloud connection",
 				}
 			}
-			req.AWSAccount.AccountID = connection.AccountID
+			req.AWSAccount.AccountID = connection.TargetID
+			install.CloudConnectionID = &req.CloudConnectionID
 			targetSource = app.CloudPlatformTargetSourceConnection
 		}
 		if requireTargetAccount && req.AWSAccount.AccountID == "" {
@@ -293,9 +292,6 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	if req.AWSAccount != nil {
 		install.AWSAccount = &app.AWSAccount{
 			Region: req.AWSAccount.Region,
-		}
-		if req.AWSAccount.ConnectionID != "" {
-			install.AWSAccount.AWSAccountConnectionID = &req.AWSAccount.ConnectionID
 		}
 		install.CloudPlatformMetadata.TargetAccountID = req.AWSAccount.AccountID
 	}
@@ -397,22 +393,23 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		appBranchGroupSource = source
 	}
 
-	if pin.BranchID == "" {
-		if err := s.db.WithContext(ctx).Create(&install).Error; err != nil {
-			return nil, fmt.Errorf("unable to create install: %w", err)
-		}
-	} else {
-		if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-			if err := tx.WithContext(ctx).Create(&install).Error; err != nil {
-				return fmt.Errorf("unable to create install: %w", err)
+	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if install.CloudConnectionID != nil {
+			if _, err := validateCloudConnection(ctx, tx.Clauses(clause.Locking{Strength: "UPDATE"}), parentApp.OrgID, *install.CloudConnectionID, app.CloudPlatformAWS); err != nil {
+				return err
 			}
+		}
+		if err := tx.Create(&install).Error; err != nil {
+			return fmt.Errorf("unable to create install: %w", err)
+		}
+		if pin.BranchID != "" {
 			if err := appshelpers.SetInstallAppBranchGroupAssignmentWithDB(ctx, tx, install.ID, pin.BranchID, install.AppBranchGroup, appBranchGroupSource); err != nil {
 				return fmt.Errorf("unable to add install to app branch: %w", err)
 			}
-			return nil
-		}); err != nil {
-			return nil, err
 		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 
 	s.mw.Incr("install.created", metrics.ToTags(map[string]string{

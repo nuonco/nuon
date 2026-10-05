@@ -1,12 +1,10 @@
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { Button } from '@/components/common/Button'
 import { DebouncedSearchInput } from '@/components/common/DeboundedSearch'
-import { Icon } from '@/components/common/Icon'
 import { TriggeredByFilter } from '@/components/actions/TriggeredByFilter'
 import { LatestActionRunCard } from '@/components/actions/LatestActionRunCard'
 import { ActionTriggerType } from '@/components/actions/ActionTriggerType'
-import { InstallActionManualRunButton } from '@/components/actions/InstallActionManualRun'
+import { InstallActionRowActions } from '@/components/actions/InstallActionRowActions'
 import { InstallCronOfflineBanner } from '@/components/installs/InstallCronOfflineBanner'
 import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocAction'
 import { useInstall } from '@/hooks/use-install'
@@ -66,15 +64,21 @@ export const InstallActionsListContainer = () => {
     const workflow = action.action_workflow
     const recentRun = action.runs?.[0]
     const config = workflow?.configs?.[0]
-    const actionConfigId = config?.id
-    const canRun = !!config?.triggers?.some((trigger) => trigger.type === 'manual')
     const removed = !isActionInAppConfig(appConfig, actionId)
     const href = actionId
-      ? installLink({ installId: install?.id, appId: install?.app_id, suffix: `/actions/${actionId}` })
+      ? installLink({
+          installId: install?.id,
+          appId: install?.app_id,
+          suffix: `/actions/${actionId}`,
+        })
       : undefined
     const runHref =
       recentRun?.id && actionId
-        ? installLink({ installId: install?.id, appId: install?.app_id, suffix: `/actions/${actionId}/runs/${recentRun.id}` })
+        ? installLink({
+            installId: install?.id,
+            appId: install?.app_id,
+            suffix: `/actions/${actionId}/runs/${recentRun.id}`,
+          })
         : undefined
 
     return {
@@ -82,33 +86,15 @@ export const InstallActionsListContainer = () => {
       name: workflow?.name ?? 'Action',
       href,
       removed,
-      actions: canRun ? (
-        removed ? (
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled
-            tooltipProps={{
-              position: 'left',
-              tipContent:
-                "This action is no longer in the install's app config version.",
-            }}
-          >
-            Run action
-            <Icon variant="PlayIcon" />
-          </Button>
-        ) : workflow && actionConfigId ? (
-          <InstallActionManualRunButton
-            action={workflow}
-            actionConfigId={actionConfigId}
-            size="sm"
-            variant="secondary"
-          >
-            Run action
-            <Icon variant="PlayIcon" />
-          </InstallActionManualRunButton>
-        ) : null
-      ) : null,
+      actions: (
+        <InstallActionRowActions
+          action={workflow}
+          actionId={actionId}
+          config={config}
+          name={workflow?.name ?? 'Action'}
+          removed={removed}
+        />
+      ),
       latestRun: (
         <LatestActionRunCard
           flush
@@ -120,7 +106,11 @@ export const InstallActionsListContainer = () => {
                 componentName={recentRun.run_env_vars?.COMPONENT_NAME}
                 componentPath={
                   recentRun.run_env_vars?.COMPONENT_ID
-                    ? installLink({ installId: install?.id, appId: install?.app_id, suffix: `/components/${recentRun.run_env_vars.COMPONENT_ID}` })
+                    ? installLink({
+                        installId: install?.id,
+                        appId: install?.app_id,
+                        suffix: `/components/${recentRun.run_env_vars.COMPONENT_ID}`,
+                      })
                     : undefined
                 }
                 triggerType={

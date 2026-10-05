@@ -20,7 +20,7 @@ export const SubNavButton = ({
       aria-current={isActive ? 'page' : undefined}
       className={cn(
         'link font-sans transition-colors cursor-pointer text-left',
-        'flex items-center gap-4 overflow-hidden rounded-md py-2.5 px-3 w-full',
+        'flex items-center gap-4 overflow-hidden rounded-md px-3 w-full',
         'text-[14px] h-[36px] leading-[21px] tracking-[-0.2px]',
         'hover:bg-black/5 hover:dark:bg-white/10',
         'focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-primary-400/80',

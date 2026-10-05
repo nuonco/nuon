@@ -4,6 +4,7 @@ import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { CheckboxFilterDropdown } from '@/components/common/CheckboxFilterDropdown'
 import { EmptyState } from '@/components/common/EmptyState'
+import { CommitLink } from '@/components/common/GitReferenceLink'
 import { Icon, type TIconVariant } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Pagination, type IPagination } from '@/components/common/Pagination'
@@ -12,8 +13,10 @@ import { SearchInput } from '@/components/common/SearchInput'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { WorkflowPanelLink } from '@/components/workflows/InstallWorkflowPanel'
+import { useInstallNested } from '@/hooks/use-install-path'
 import { usePagination } from '@/hooks/use-pagination'
-import { useSurfaces } from '@/hooks/use-surfaces'
+import { installHref } from '@/lib/install-path'
 import { PaginationProvider } from '@/providers/pagination-provider'
 import type {
   TAPIError,
@@ -27,8 +30,6 @@ import {
   type TWorkflowDatePreset,
   type TWorkflowStatusOption,
 } from '@/utils/workflow-filters'
-import { DeploymentDetailPanel } from './DeploymentDetailPanel'
-import { useInstallLink } from '@/hooks/use-install-path'
 
 export const DEPLOYMENT_TYPE_LABELS: Record<
   TInstallDeploymentRecordType,
@@ -61,7 +62,7 @@ interface IDeploymentCard {
   orgId: string
   appId: string
   installId: string
-  onViewDetails: () => void
+  repo?: string
 }
 
 const DeploymentCard = ({
@@ -69,14 +70,11 @@ const DeploymentCard = ({
   orgId,
   appId,
   installId,
-  onViewDetails,
+  repo,
 }: IDeploymentCard) => {
-  const installLink = useInstallLink()
+  const nested = useInstallNested()
   const branchHref = deployment.app_branch
     ? `/${orgId}/apps/${appId}/branches/${deployment.app_branch.id}`
-    : undefined
-  const workflowHref = deployment.workflow
-    ? installLink({ orgId: orgId, installId: installId, suffix: `/history/${deployment.workflow.id}` })
     : undefined
 
   const affectedResources = [
@@ -93,32 +91,29 @@ const DeploymentCard = ({
           <span className="mt-0.5 text-cool-grey-400 shrink-0">
             <Icon variant={DEPLOYMENT_TYPE_ICON[deployment.type]} size={16} />
           </span>
-          <div className="flex flex-col gap-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Text weight="strong">{deployment.title}</Text>
-              <Status status={deployment.status} variant="badge" />
-              <Badge size="sm" theme="neutral">
-                {DEPLOYMENT_TYPE_LABELS[deployment.type]}
-              </Badge>
-            </div>
-            {deployment.summary && (
-              <Text variant="subtext" theme="neutral">
-                {deployment.summary}
-              </Text>
-            )}
+          <div className="flex items-center gap-2 flex-wrap min-w-0">
+            <Link
+              href={installHref({
+                orgId,
+                appId,
+                installId,
+                nested,
+                suffix: `/deployments/${deployment.id}`,
+              })}
+              className="font-strong"
+            >
+              {deployment.title}
+            </Link>
+            <Status status={deployment.status} variant="badge" />
           </div>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <Time
-            time={deployment.created_at}
-            format="relative"
-            variant="subtext"
-            theme="neutral"
-          />
-          <Button variant="secondary" size="sm" onClick={onViewDetails}>
-            View details
-          </Button>
-        </div>
+        <Time
+          time={deployment.created_at}
+          format="relative"
+          variant="subtext"
+          theme="neutral"
+          className="shrink-0"
+        />
       </div>
 
       <div className="flex items-center gap-x-6 gap-y-2 flex-wrap">
@@ -132,21 +127,22 @@ const DeploymentCard = ({
             <Link href={branchHref} textVariant="subtext">
               {deployment.app_branch.name}
             </Link>
-            {deployment.app_branch.sha && (
-              <Badge size="sm" variant="code" theme="neutral">
-                {deployment.app_branch.sha.slice(0, 8)}
-              </Badge>
-            )}
+            {deployment.app_branch.sha ? (
+              <CommitLink sha={deployment.app_branch.sha} repo={repo} />
+            ) : null}
           </span>
         )}
-        {deployment.workflow && workflowHref && (
+        {deployment.workflow && (
           <span className="flex items-center gap-2">
             <Text as="span" variant="subtext" theme="neutral">
               Workflow
             </Text>
-            <Link href={workflowHref} textVariant="subtext">
+            <WorkflowPanelLink
+              workflowId={deployment.workflow.id}
+              textVariant="subtext"
+            >
               {deployment.workflow.name}
-            </Link>
+            </WorkflowPanelLink>
           </span>
         )}
       </div>
@@ -207,19 +203,12 @@ const DeploymentCardSkeleton = () => (
     <div className="flex items-start justify-between gap-4">
       <div className="flex items-start gap-3 min-w-0">
         <Text variant="subtext" loading loadingWidth={2} className="mt-0.5" />
-        <div className="flex flex-col gap-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Text loading loadingWidth={22} />
-            <Status loading variant="badge" loadingWidth={8} />
-            <Badge loading size="sm" loadingWidth={12} />
-          </div>
-          <Text variant="subtext" loading loadingWidth={44} />
+        <div className="flex items-center gap-2 flex-wrap min-w-0">
+          <Text loading loadingWidth={22} />
+          <Status loading variant="badge" loadingWidth={8} />
         </div>
       </div>
-      <div className="flex items-center gap-3 shrink-0">
-        <Text variant="subtext" loading loadingWidth={10} />
-        <Badge loading size="lg" loadingWidth={11} className="!rounded-lg" />
-      </div>
+      <Text variant="subtext" loading loadingWidth={10} className="shrink-0" />
     </div>
 
     <div className="flex items-center gap-x-6 gap-y-2 flex-wrap">
@@ -251,6 +240,7 @@ export interface IDeploymentsListPresenter {
   orgId: string
   appId: string
   installId: string
+  repo?: string
   search: string
   filter: IDeploymentFilter
   onSearchChange: (value: string) => void
@@ -269,6 +259,7 @@ const DeploymentsListBase = ({
   orgId,
   appId,
   installId,
+  repo,
   search,
   filter,
   onSearchChange,
@@ -278,7 +269,6 @@ const DeploymentsListBase = ({
   onDateChange,
   onClearFilters,
 }: IDeploymentsListPresenter) => {
-  const { addPanel } = useSurfaces()
   const { isPaginating, setIsPaginating } = usePagination()
 
   useEffect(() => {
@@ -402,16 +392,7 @@ const DeploymentsListBase = ({
               orgId={orgId}
               appId={appId}
               installId={installId}
-              onViewDetails={() =>
-                addPanel(
-                  <DeploymentDetailPanel
-                    deployment={deployment}
-                    orgId={orgId}
-                    appId={appId}
-                    installId={installId}
-                  />
-                )
-              }
+              repo={repo}
             />
           ))}
         </div>

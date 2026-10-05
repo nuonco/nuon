@@ -1,9 +1,12 @@
 package generics
 
 import (
+	"cmp"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
@@ -135,6 +138,10 @@ func MapToKeys[T comparable, V any](in map[T]V) []T {
 	}
 
 	return out
+}
+
+func SortedMapToKeys[T cmp.Ordered, V any](in map[T]V) []T {
+	return slices.Sorted(maps.Keys(in))
 }
 
 // Merges source and destination map, preferring values from the source map

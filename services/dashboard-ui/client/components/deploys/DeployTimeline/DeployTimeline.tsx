@@ -1,4 +1,5 @@
 import { Badge } from '@/components/common/Badge'
+import { WorkflowPanelLink } from '@/components/workflows/InstallWorkflowPanel'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
@@ -18,6 +19,7 @@ interface IDeployTimeline {
   componentName: string
   isLoading: boolean
   error: unknown
+  openWorkflowPanel?: boolean
   variant?: 'deploy' | 'sync'
 }
 
@@ -30,6 +32,7 @@ export const DeployTimeline = ({
   componentName,
   isLoading,
   error,
+  openWorkflowPanel,
   variant = 'deploy',
 }: IDeployTimeline) => {
   const installLink = useInstallLink()
@@ -66,17 +69,16 @@ export const DeployTimeline = ({
             status={deploy?.status}
             title={
               <span className="flex items-center gap-2">
-                <Link
-                  href={installLink({ orgId: orgId, installId: installId, suffix: `/components/${componentId}/deploys/${deploy.id}` })}
-                  variant="inline"
-                >
-                  {componentName}{' '}
-                  {deploy?.install_deploy_type === 'teardown'
-                    ? 'teardown'
-                    : isSync
-                      ? 'sync'
-                      : 'deploy'}
-                </Link>
+                <DeployTimelineTitle
+                  componentId={componentId}
+                  componentName={componentName}
+                  deploy={deploy}
+                  installId={installId}
+                  installLink={installLink}
+                  isSync={isSync}
+                  openWorkflowPanel={openWorkflowPanel}
+                  orgId={orgId}
+                />
                 {deploy?.status_v2?.status === 'drifted' ? (
                   <Badge variant="code" size="sm">
                     drift scan
@@ -86,13 +88,63 @@ export const DeployTimeline = ({
             }
             underline={
               <Text variant="label" theme="neutral">
-                {isSync ? 'Synced' : 'Deployed'} by:{' '}
-                {deploy?.created_by?.email}
+                {isSync ? 'Synced' : 'Deployed'} by: {deploy?.created_by?.email}
               </Text>
             }
           />
         )
       }}
     />
+  )
+}
+
+const DeployTimelineTitle = ({
+  componentId,
+  componentName,
+  deploy,
+  installId,
+  installLink,
+  isSync,
+  openWorkflowPanel,
+  orgId,
+}: {
+  componentId: string
+  componentName: string
+  deploy: TDeploy
+  installId: string
+  installLink: ReturnType<typeof useInstallLink>
+  isSync: boolean
+  openWorkflowPanel?: boolean
+  orgId: string
+}) => {
+  const label = `${componentName} ${
+    deploy.install_deploy_type === 'teardown'
+      ? 'teardown'
+      : isSync
+        ? 'sync'
+        : 'deploy'
+  }`
+  const workflowId = deploy.workflow_id || deploy.install_workflow_id
+
+  if (openWorkflowPanel) {
+    if (!workflowId) return <span>{label}</span>
+    return (
+      <WorkflowPanelLink variant="inline" workflowId={workflowId}>
+        {label}
+      </WorkflowPanelLink>
+    )
+  }
+
+  return (
+    <Link
+      href={installLink({
+        orgId,
+        installId,
+        suffix: `/components/${componentId}/deploys/${deploy.id}`,
+      })}
+      variant="inline"
+    >
+      {label}
+    </Link>
   )
 }
