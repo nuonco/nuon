@@ -1,10 +1,11 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { resolveInstallGroupMembership } from '@/components/branches/install-group-membership'
 import { getRunTitle } from '@/components/branches/shared/run-title'
 import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
+import { useInstallHref } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
 import {
   getAppInstalls,
@@ -38,9 +39,11 @@ const installRegion = (install?: TInstall) =>
   install?.gcp_account?.region ||
   install?.azure_account?.location
 
+type TInstallLinkFor = (installId: string, suffix?: string) => string
+
 const installSnapshot = (
   install: TInstall | undefined,
-  orgId?: string
+  installLink?: TInstallLinkFor
 ): Pick<
   TTrackInstall,
   'resources' | 'deployment' | 'health' | 'overviewHref' | 'labels' | 'region'
@@ -73,7 +76,7 @@ const installSnapshot = (
           detail: install.composite_health_status_description,
         }
       : undefined,
-    overviewHref: orgId ? `/${orgId}/installs/${install.id}` : undefined,
+    overviewHref: installLink?.(install.id) || undefined,
     labels: install.labels,
     region: installRegion(install),
   }
@@ -83,7 +86,7 @@ const fromGroupRun = (
   groupRun: TInstallGroupRun,
   groups: TAppBranchInstallGroup[],
   installsById: Record<string, TInstall>,
-  orgId?: string
+  installLink?: TInstallLinkFor
 ): TTrackGroup => {
   const group =
     groups.find((item) => item.id === groupRun.install_group_id) ??
@@ -105,11 +108,12 @@ const fromGroupRun = (
         detail: install.runbooks?.length
           ? `${install.runbooks.length} post-deploy runbooks`
           : undefined,
-        ...installSnapshot(installsById[id], orgId),
+        ...installSnapshot(installsById[id], installLink),
         workflowId: install.workflow_id,
         workflowHref:
-          id && orgId && install.workflow_id
-            ? `/${orgId}/installs/${id}/workflows/${install.workflow_id}`
+          id && install.workflow_id
+            ? installLink?.(id, `/workflows/${install.workflow_id}`) ||
+              undefined
             : undefined,
       }
     }),
@@ -150,7 +154,7 @@ export const mergeGroupRuns = (
   groupRuns: TInstallGroupRun[],
   groups: TAppBranchInstallGroup[],
   installsById: Record<string, TInstall>,
-  orgId?: string
+  installLink?: TInstallLinkFor
 ): TTrackGroup[] => {
   const used = new Set<TInstallGroupRun>()
   const merged = planned.map((group) => {
@@ -162,11 +166,11 @@ export const mergeGroupRuns = (
     )
     if (!groupRun) return group
     used.add(groupRun)
-    return fromGroupRun(groupRun, groups, installsById, orgId)
+    return fromGroupRun(groupRun, groups, installsById, installLink)
   })
   const extra = groupRuns
     .filter((run) => !used.has(run))
-    .map((run) => fromGroupRun(run, groups, installsById, orgId))
+    .map((run) => fromGroupRun(run, groups, installsById, installLink))
   return [...merged, ...extra]
 }
 
@@ -180,6 +184,11 @@ export const useRolloutGroups = () => {
   const branchId = params.branchId as string
   const pinnedWorkflowId = params.runId
   const basePath = `/${orgId}/apps/${appId}/branches/${branchId}`
+  const installHref = useInstallHref()
+  const installLink = useCallback<TInstallLinkFor>(
+    (installId, suffix) => installHref({ orgId, appId, installId, suffix }),
+    [installHref, orgId, appId]
+  )
 
   const currentConfig = useMemo(() => latestBranchConfig(branch), [branch])
   const groups = useMemo(
@@ -313,14 +322,21 @@ export const useRolloutGroups = () => {
             id: install.id,
             name: install.name,
             status: install.status,
-            ...installSnapshot(installsById[install.id], orgId),
+            ...installSnapshot(installsById[install.id], installLink),
           })),
         }
       })
     return groupRuns?.length
-      ? mergeGroupRuns(planned, groupRuns, groups, installsById, orgId)
+      ? mergeGroupRuns(planned, groupRuns, groups, installsById, installLink)
       : planned
-  }, [groupRuns, groups, installsById, rolloutRun?.steps, membership, orgId])
+  }, [
+    groupRuns,
+    groups,
+    installsById,
+    rolloutRun?.steps,
+    membership,
+    installLink,
+  ])
 
   const isHistoricalRun =
     !!pinnedWorkflowId && !!latestId && pinnedWorkflowId !== latestId
