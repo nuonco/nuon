@@ -68,7 +68,7 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 
 	basicsConfig := map[string]any{
 		"description": fmt.Sprintf(
-			"Deploys the Nuon install stack for `%s`. Re-running this for an existing install updates its deployment stack in place.",
+			"Deploys the Nuon install stack for `%s`. Re-running this for an existing install updates it in place. A role unticked here is detached from the runner; its identity is not deleted.",
 			inp.Install.ID,
 		),
 		"subscription": map[string]any{
