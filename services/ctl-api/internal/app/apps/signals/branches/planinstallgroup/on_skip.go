@@ -19,23 +19,15 @@ var _ signal.SignalWithOnSkip = (*Signal)(nil)
 // so the generic same-group skip logic never reaches the deploy — without this,
 // the workflow would continue straight into deploying the group the user skipped.
 func (s *Signal) OnSkip(ctx workflow.Context) error {
-	flowID := s.FlowID
-	if flowID == "" {
-		return errors.New("planinstallgroup signal missing flow_id; cannot mark deploy skipped")
-	}
-	if s.InstallGroupID == "" {
-		return errors.New("planinstallgroup signal missing install_group_id; cannot mark deploy skipped")
-	}
-
 	out, err := activities.AwaitGetPendingInstallGroupDeployStep(ctx, &activities.GetPendingInstallGroupDeployStepInput{
-		InstallWorkflowID: flowID,
+		InstallWorkflowID: s.FlowID,
 		InstallGroupID:    s.InstallGroupID,
 	}, &workflow.ActivityOptions{ScheduleToCloseTimeout: time.Minute})
 	if err != nil {
 		return errors.Wrap(err, "unable to find deploy step for skipped install group")
 	}
 	if out.StepID == "" {
-		return errors.New("pending deploy step not found for skipped install group")
+		return nil
 	}
 
 	return statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{

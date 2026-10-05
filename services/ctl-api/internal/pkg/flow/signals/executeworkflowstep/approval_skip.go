@@ -1,7 +1,6 @@
 package executeworkflowstep
 
 import (
-	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -20,13 +19,10 @@ func (s *Signal) handleSkipResponse(ctx workflow.Context, l *zap.Logger, step *a
 		zap.String("workflow_id", flw.ID))
 
 	sig := stepSignal(step)
-	if sig != nil {
-		signal.ApplyStepContext(sig, step.ID, flw.ID)
-	}
 
 	if os, ok := sig.(signal.SignalWithOnSkip); ok {
 		if err := os.OnSkip(ctx); err != nil {
-			return errors.Wrap(err, "OnSkip hook failed")
+			l.Warn("OnSkip hook failed", zap.Error(err))
 		}
 	}
 
@@ -67,14 +63,9 @@ func (s *Signal) handleSkipDependentsResponse(ctx workflow.Context, l *zap.Logge
 		zap.String("step_id", step.ID),
 		zap.String("workflow_id", flw.ID))
 
-	sig := stepSignal(step)
-	if sig != nil {
-		signal.ApplyStepContext(sig, step.ID, flw.ID)
-	}
-
-	if os, ok := sig.(signal.SignalWithOnSkip); ok {
+	if os, ok := stepSignal(step).(signal.SignalWithOnSkip); ok {
 		if err := os.OnSkip(ctx); err != nil {
-			return errors.Wrap(err, "OnSkip hook failed")
+			l.Warn("OnSkip hook failed", zap.Error(err))
 		}
 	}
 

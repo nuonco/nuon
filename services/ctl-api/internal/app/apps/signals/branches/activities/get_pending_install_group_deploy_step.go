@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// installGroupDeploySignalType matches updateinstallgroup.SignalType.
 const installGroupDeploySignalType = "app-branch-update-install-group"
 
 type GetPendingInstallGroupDeployStepInput struct {
