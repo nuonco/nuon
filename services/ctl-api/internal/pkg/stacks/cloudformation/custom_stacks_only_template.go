@@ -8,6 +8,7 @@ import (
 	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/iancoleman/strcase"
 
+	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
@@ -74,12 +75,12 @@ func (t *Templates) getAWSCustomStacksOnlyTemplate(inp *stacks.TemplateInput) (*
 	tmpl.Outputs = outputs
 
 	pgs := append([]map[string]any{}, customResult.paramGroups...)
-	for _, groupName := range slices.Sorted(maps.Keys(installGroupParameters)) {
+	for _, groupName := range pkggenerics.SortedMapToKeys(installGroupParameters) {
 		pgs = append(pgs, map[string]any{
 			"Label": map[string]any{
 				"default": "Install Inputs: " + strcase.ToCamel(groupName),
 			},
-			"Parameters": slices.Sorted(maps.Keys(installGroupParameters[groupName])),
+			"Parameters": pkggenerics.SortedMapToKeys(installGroupParameters[groupName]),
 		})
 	}
 	if len(pgs) > 0 || len(paramLabels) > 0 {

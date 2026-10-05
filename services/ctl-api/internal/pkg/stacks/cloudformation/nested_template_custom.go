@@ -12,6 +12,7 @@ import (
 	"github.com/iancoleman/strcase"
 
 	"github.com/nuonco/nuon/pkg/config"
+	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
@@ -155,7 +156,7 @@ func (tpl *Templates) getCustomNestedStacks(inp *stacks.TemplateInput, t tagBuil
 				"Label": map[string]any{
 					"default": stack.Name,
 				},
-				"Parameters": slices.Sorted(maps.Keys(defaultParams)),
+				"Parameters": pkggenerics.SortedMapToKeys(defaultParams),
 			})
 		}
 
