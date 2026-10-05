@@ -52,7 +52,7 @@ export const WORKFLOW_BADGE_MAP: Record<
   'auto-approved': { children: 'Auto approved', theme: 'neutral' },
   approved: { children: 'Plan approved', theme: 'success' },
   'approval-awaiting': { children: 'Awaiting approval', theme: 'warn' },
-  'approval-denied': { children: 'Plan denied', theme: 'warn' },
+  'approval-denied': { children: 'Plan denied', theme: 'neutral' },
   'approval-retry': { children: 'Plan retried', theme: 'info' },
   error: { children: 'Failed', theme: 'error' },
   'failed-pending-retry': {
@@ -61,7 +61,7 @@ export const WORKFLOW_BADGE_MAP: Record<
   },
   'not-attempted': { children: 'Not attempted' },
   noop: { children: 'NOOP' },
-  cancelled: { children: 'Cancelled', theme: 'warn' },
+  cancelled: { children: 'Cancelled', theme: 'neutral' },
   'stale-plan': { children: 'Plan stale', theme: 'warn' },
   superseded: { children: 'Plan superseded', theme: 'warn' },
 }
