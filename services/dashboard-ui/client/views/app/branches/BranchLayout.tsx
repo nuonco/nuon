@@ -51,7 +51,14 @@ const BranchTemplate = () => {
   const runRolloutMatch = useMatch(
     '/:orgId/apps/:appId/branches/:branchId/runs/:runId/rollout'
   )
-  const isDetailRoute = !!detailMatch && !params.runId
+  const rolloutGroupMatch = useMatch(
+    '/:orgId/apps/:appId/branches/:branchId/rollout/groups/:groupId'
+  )
+  const runRolloutGroupMatch = useMatch(
+    '/:orgId/apps/:appId/branches/:branchId/runs/:runId/rollout/groups/:groupId'
+  )
+  const isRolloutGroupRoute = !!rolloutGroupMatch || !!runRolloutGroupMatch
+  const isDetailRoute = !!detailMatch && !params.runId && !isRolloutGroupRoute
   const branchId = params.branchId as string
   const orgId = org.id!
   const appId = app.id!
@@ -87,6 +94,9 @@ const BranchTemplate = () => {
     hasDeploymentPlan && !isLoadingLatestRun && !latestRun
   const hasInstallSyncing = !!org?.features?.['app-install-syncing']
   const navCounts = useBranchNavCounts({ orgId, appId, branchId })
+  const groupName =
+    currentConfig?.install_groups?.find((group) => group.id === params.groupId)
+      ?.name ?? 'Group'
 
   const navLinks: TNavItem[] = [
     { path: `/`, iconVariant: 'GraphIcon', text: 'Overview' },
@@ -179,11 +189,28 @@ const BranchTemplate = () => {
                   },
                 ]
               : []),
-            ...(runRolloutMatch
+            ...(runRolloutMatch || runRolloutGroupMatch
               ? [
                   {
                     path: `${basePath}/runs/${params.runId}/rollout`,
                     text: 'Rollout',
+                  },
+                ]
+              : []),
+            ...(rolloutGroupMatch
+              ? [
+                  { path: `${basePath}/rollout`, text: 'Rollout' },
+                  {
+                    path: `${basePath}/rollout/groups/${params.groupId}`,
+                    text: groupName,
+                  },
+                ]
+              : []),
+            ...(runRolloutGroupMatch
+              ? [
+                  {
+                    path: `${basePath}/runs/${params.runId}/rollout/groups/${params.groupId}`,
+                    text: groupName,
                   },
                 ]
               : []),

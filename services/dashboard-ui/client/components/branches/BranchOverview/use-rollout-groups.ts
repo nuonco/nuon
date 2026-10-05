@@ -34,6 +34,32 @@ import { commitUrl, resolveRunSource } from './run-source'
 
 const TERMINAL = new Set(['success', 'failed', 'error', 'cancelled'])
 
+const installRolloutDetail = (
+  install: NonNullable<TInstallGroupRun['installs']>[number]
+) => {
+  if (install.status === 'pending_customer') {
+    switch (install.release_reason) {
+      case 'runner_offline':
+        return 'Runner offline'
+      case 'runner_error':
+        return 'Runner error'
+      case 'runner_disabled':
+        return 'Runner disabled'
+      default:
+        return 'Waiting on customer'
+    }
+  }
+  if (install.status === 'queued') {
+    return install.waiting_on_run_id
+      ? `Queued behind run ${install.waiting_on_run_id}`
+      : 'Queued behind an earlier run'
+  }
+  if (install.status === 'superseded') return 'Superseded by a later run'
+  return install.runbooks?.length
+    ? `${install.runbooks.length} post-deploy runbooks`
+    : undefined
+}
+
 const installRegion = (install?: TInstall) =>
   install?.aws_account?.region ||
   install?.gcp_account?.region ||
@@ -105,9 +131,7 @@ const fromGroupRun = (
         id,
         name: installsById[id]?.name ?? id,
         status: install.status || 'pending',
-        detail: install.runbooks?.length
-          ? `${install.runbooks.length} post-deploy runbooks`
-          : undefined,
+        detail: installRolloutDetail(install),
         ...installSnapshot(installsById[id], installLink),
         workflowId: install.workflow_id,
         workflowHref:
@@ -125,6 +149,12 @@ const sameName = (a?: string, b?: string) =>
 
 export const rolloutHrefForWorkflow = (basePath: string, workflowId?: string) =>
   workflowId ? `${basePath}/runs/${workflowId}/rollout` : `${basePath}/rollout`
+
+export const rolloutGroupHrefForWorkflow = (
+  basePath: string,
+  groupId: string,
+  workflowId?: string
+) => `${rolloutHrefForWorkflow(basePath, workflowId)}/groups/${groupId}`
 
 const groupBelongsToRun = (
   group: TTrackGroup,
@@ -388,6 +418,8 @@ export const useRolloutGroups = () => {
     repoSlug,
     pinnedWorkflowId,
     rolloutHref: rolloutHrefForWorkflow(basePath, pinnedWorkflowId),
+    groupHref: (groupId: string) =>
+      rolloutGroupHrefForWorkflow(basePath, groupId, pinnedWorkflowId),
     rolloutError,
     branchRunId,
     rollout,

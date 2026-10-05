@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { useNavigate } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { ProviderError } from '@/components/layout/ProviderError'
@@ -25,7 +24,6 @@ const isBuildStep = (name?: string) =>
 const NO_META_BUILDS: TBuildMeta[] = []
 
 export const BranchOverviewContainer = () => {
-  const navigate = useNavigate()
   const { addPanel, updatePanel, panels } = useSurfaces()
   const buildsPanelId = useRef<string | null>(null)
   const openBuildsPanelId =
@@ -38,6 +36,7 @@ export const BranchOverviewContainer = () => {
     branchId,
     pinnedWorkflowId,
     rolloutHref,
+    groupHref,
     rolloutError,
     branchRunId,
     branchRun,
@@ -99,10 +98,7 @@ export const BranchOverviewContainer = () => {
 
   useEffect(() => {
     if (!openBuildsPanelId) return
-    updatePanel(
-      openBuildsPanelId,
-      <RunBuildsPanel rows={changedBuilds} />
-    )
+    updatePanel(openBuildsPanelId, <RunBuildsPanel rows={changedBuilds} />)
   }, [openBuildsPanelId, changedBuilds, updatePanel])
 
   const openBuilds = () => {
@@ -173,9 +169,7 @@ export const BranchOverviewContainer = () => {
         installWorkflowHref={installFailureHref(compositeError, orgId)}
         failedBuilds={failedBuilds}
         rolloutHref={rolloutHref}
-        onSelectGroup={(groupId) =>
-          navigate(`${rolloutHref}?group=${encodeURIComponent(groupId)}`)
-        }
+        groupHref={groupHref}
       />
     </>
   )

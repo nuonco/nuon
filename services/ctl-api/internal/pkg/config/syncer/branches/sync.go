@@ -234,6 +234,14 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 			Err:         err,
 		}
 	}
+	policy := app.NormalizeInstallUpdatePolicy(branchCfg.InstallUpdatePolicy)
+	if err := db.WithContext(ctx).Model(&app.AppBranchConfig{ID: branchConfig.ID}).Update("install_update_policy", policy).Error; err != nil {
+		return sync.SyncInternalErr{
+			Description: fmt.Sprintf("unable to set install update policy for branch %q", branchCfg.Name),
+			Err:         err,
+		}
+	}
+	branchConfig.InstallUpdatePolicy = policy
 	if state != nil {
 		if state.Result == nil {
 			state.Result = &sync.Result{}

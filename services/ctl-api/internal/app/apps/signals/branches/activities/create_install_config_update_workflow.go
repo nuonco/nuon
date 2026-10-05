@@ -3,6 +3,7 @@ package activities
 import (
 	"context"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 )
@@ -24,6 +25,10 @@ type CreateInstallAppConfigVersionWorkflowOutput struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
 func (a *Activities) CreateInstallAppConfigVersionWorkflow(ctx context.Context, input *CreateInstallAppConfigVersionWorkflowInput) (*CreateInstallAppConfigVersionWorkflowOutput, error) {
+	deferDiff, err := a.applyInstallUpdatePolicy(ctx, input)
+	if err != nil {
+		return nil, err
+	}
 	update, err := a.installHelpers.CreateAppBranchConfigUpdateWorkflow(ctx, installhelpers.AppBranchConfigUpdateInput{
 		InstallID:      input.InstallID,
 		NewAppConfigID: input.NewAppConfigID,
@@ -31,6 +36,7 @@ func (a *Activities) CreateInstallAppConfigVersionWorkflow(ctx context.Context, 
 		InstallGroupID: input.InstallGroupID,
 		PlanOnly:       input.PlanOnly,
 		Callback:       input.Callback,
+		DeferDiff:      deferDiff,
 	})
 	if err != nil {
 		return nil, err
@@ -40,4 +46,28 @@ func (a *Activities) CreateInstallAppConfigVersionWorkflow(ctx context.Context, 
 		WorkflowID:                update.WorkflowID,
 		InstallAppConfigVersionID: update.InstallAppConfigVersionID,
 	}, nil
+}
+
+func (a *Activities) applyInstallUpdatePolicy(ctx context.Context, input *CreateInstallAppConfigVersionWorkflowInput) (bool, error) {
+	policy, err := a.installHelpers.InstallUpdatePolicyForRun(ctx, input.AppBranchRunID)
+	if err != nil {
+		return false, err
+	}
+	prior, err := a.installHelpers.PriorInFlightInstallUpdate(ctx, input.InstallID, "")
+	if err != nil {
+		return false, err
+	}
+	if prior == nil {
+		return false, nil
+	}
+	if policy == app.InstallUpdatePolicyQueue {
+		return true, nil
+	}
+	if err := a.CancelInstallWorkflow(ctx, &CancelInstallWorkflowInput{WorkflowID: prior.WorkflowID}); err != nil {
+		return false, err
+	}
+	if err := a.installHelpers.MarkInstallSupersededForInstall(ctx, prior.AppBranchRunID, input.InstallID, input.AppBranchRunID); err != nil {
+		return false, err
+	}
+	return false, nil
 }

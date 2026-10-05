@@ -23,6 +23,10 @@ type installPlanEntry struct {
 	NewAppConfigID string                 `json:"new_app_config_id,omitempty"`
 }
 
+// compositeInstallConfigDiffVersion gates plan diffs that use each entity's
+// applied app config. Older histories diff install.AppConfigID.
+const compositeInstallConfigDiffVersion = "composite-install-config-diff-v1"
+
 type installGroupPlan struct {
 	InstallGroup string             `json:"install_group"`
 	Installs     []installPlanEntry `json:"installs"`
@@ -71,10 +75,20 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			return fmt.Errorf("install %s: unable to get install: %w", installID, err)
 		}
 
-		diffResult, err := activities.AwaitComputeInstallConfigDiff(ctx, &activities.ComputeInstallConfigDiffInput{
+		useComposite := workflow.GetVersion(ctx, compositeInstallConfigDiffVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+		diffInput := &activities.ComputeInstallConfigDiffInput{
 			OldAppConfigID: install.AppConfigID,
 			NewAppConfigID: run.AppConfigID,
-		})
+		}
+		oldAppConfigID := install.AppConfigID
+		if useComposite {
+			diffInput = &activities.ComputeInstallConfigDiffInput{
+				InstallID:      installID,
+				NewAppConfigID: run.AppConfigID,
+			}
+			oldAppConfigID = install.DeployedAppConfigID()
+		}
+		diffResult, err := activities.AwaitComputeInstallConfigDiff(ctx, diffInput)
 		if err != nil {
 			entries[i].Status = "error"
 			s.updatePlanMetadata(ctx, groupName, entries)
@@ -84,7 +98,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		entries[i].Diff = diffResult.Diff
 		entries[i].InstallName = install.Name
 		entries[i].InstallLabels = install.Labels
-		entries[i].OldAppConfigID = install.AppConfigID
+		entries[i].OldAppConfigID = oldAppConfigID
 		entries[i].NewAppConfigID = run.AppConfigID
 
 		entries[i].Status = "success"

@@ -7,7 +7,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/configdiff"
 )
 
 type CreateInstallAppConfigVersionInput struct {
@@ -35,7 +34,7 @@ func (a *Activities) CreateInstallAppConfigVersion(ctx context.Context, input *C
 	}
 
 	oldAppConfigID := install.DeployedAppConfigID()
-	diff, err := configdiff.ComputeInstallConfigDiff(ctx, a.db, oldAppConfigID, input.NewAppConfigID)
+	diff, err := a.installHelpers.AppBranchConfigDiff(ctx, &install, input.NewAppConfigID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to compute config diff: %w", err)
 	}

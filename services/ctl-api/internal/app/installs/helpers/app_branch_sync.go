@@ -39,6 +39,7 @@ type AppBranchConfigUpdateInput struct {
 	InstallGroupID string
 	PlanOnly       bool
 	Callback       callback.Ref
+	DeferDiff      bool
 }
 
 // AppBranchConfigUpdate is the workflow and version created for a config update.
@@ -208,9 +209,13 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 
 	deployedAppConfigID := install.DeployedAppConfigID()
 
-	diff, err := h.AppBranchConfigDiff(ctx, &install, input.NewAppConfigID)
-	if err != nil {
-		return nil, err
+	var diff *app.InstallConfigDiff
+	if !input.DeferDiff {
+		computed, err := h.AppBranchConfigDiff(ctx, &install, input.NewAppConfigID)
+		if err != nil {
+			return nil, err
+		}
+		diff = computed
 	}
 
 	update := app.InstallAppConfigVersion{
@@ -229,8 +234,10 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 		return nil, fmt.Errorf("unable to create install config update: %w", err)
 	}
 
-	if err := h.SaveInstallConfigDiffBlob(ctx, update.ID, diff); err != nil {
-		h.l.Warn("unable to save config diff blob", zap.Error(err))
+	if diff != nil {
+		if err := h.SaveInstallConfigDiffBlob(ctx, update.ID, diff); err != nil {
+			h.l.Warn("unable to save config diff blob", zap.Error(err))
+		}
 	}
 
 	metadata := map[string]string{
@@ -242,6 +249,12 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 	}
 	if input.InstallGroupID != "" {
 		metadata["install_group_id"] = input.InstallGroupID
+	}
+	if input.Callback.WorkflowID != "" {
+		metadata["group_workflow_id"] = input.Callback.WorkflowID
+	}
+	if input.Callback.Namespace != "" {
+		metadata["group_workflow_namespace"] = input.Callback.Namespace
 	}
 	if diff != nil && diff.StackChanged {
 		metadata[app.WorkflowMetadataKeyStackChanged] = "true"
@@ -307,33 +320,66 @@ func (h *Helpers) SaveInstallConfigDiffBlob(ctx context.Context, installConfigVe
 	return nil
 }
 
-// AppBranchConfigDiff diffs the install's deployed app config against newAppConfigID. The stack is decided against the
-// active stack version's app config: the applied config lags while an earlier rollout is still running after its stack
-// was applied, and diffing the stack against it re-detects a change that is already live.
+// AppBranchConfigDiff diffs newAppConfigID against each entity's applied app
+// config. install.AppConfigID is the early pin and is not a baseline.
 func (h *Helpers) AppBranchConfigDiff(ctx context.Context, install *app.Install, newAppConfigID string) (*app.InstallConfigDiff, error) {
-	deployedAppConfigID := install.DeployedAppConfigID()
-	diff, err := configdiff.ComputeInstallConfigDiff(ctx, h.db, deployedAppConfigID, newAppConfigID)
-	if err != nil {
-		return nil, fmt.Errorf("unable to compute config diff: %w", err)
-	}
-	if !diff.StackChanged {
-		return diff, nil
-	}
-
-	active, err := h.getActiveStackVersion(ctx, install.ID)
+	baselines, err := h.installCompositeBaselines(ctx, install)
 	if err != nil {
 		return nil, err
 	}
-	if active == nil || active.AppConfigID == "" || active.AppConfigID == deployedAppConfigID {
-		return diff, nil
+	diff, err := configdiff.ComputeCompositeInstallConfigDiff(ctx, h.db, baselines, newAppConfigID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to compute config diff: %w", err)
+	}
+	return diff, nil
+}
+
+func (h *Helpers) installCompositeBaselines(ctx context.Context, install *app.Install) (configdiff.CompositeBaselines, error) {
+	fallback := install.DeployedAppConfigID()
+	baselines := configdiff.CompositeBaselines{
+		Fallback:   fallback,
+		Stack:      fallback,
+		Sandbox:    fallback,
+		Components: map[string]string{},
 	}
 
-	stackDiff, err := configdiff.ComputeInstallConfigDiff(ctx, h.db, active.AppConfigID, newAppConfigID)
-	if err != nil {
-		return nil, fmt.Errorf("unable to compute stack diff against active stack version %s: %w", active.ID, err)
+	var stack app.InstallStack
+	err := h.db.WithContext(ctx).Where(app.InstallStack{InstallID: install.ID}).First(&stack).Error
+	switch {
+	case err == nil && stack.AppConfigRef.AppliedConfigID != "":
+		baselines.Stack = stack.AppConfigRef.AppliedConfigID
+	case err == nil || errors.Is(err, gorm.ErrRecordNotFound):
+		active, activeErr := h.getActiveStackVersion(ctx, install.ID)
+		if activeErr != nil {
+			return baselines, activeErr
+		}
+		if active != nil && active.AppConfigID != "" {
+			baselines.Stack = active.AppConfigID
+		}
+	default:
+		return baselines, fmt.Errorf("unable to get install stack: %w", err)
 	}
-	useStackDiff(diff, stackDiff)
-	return diff, nil
+
+	var sandbox app.InstallSandbox
+	err = h.db.WithContext(ctx).Where(app.InstallSandbox{InstallID: install.ID}).First(&sandbox).Error
+	switch {
+	case err == nil && sandbox.AppConfigRef.AppliedConfigID != "":
+		baselines.Sandbox = sandbox.AppConfigRef.AppliedConfigID
+	case err == nil || errors.Is(err, gorm.ErrRecordNotFound):
+	default:
+		return baselines, fmt.Errorf("unable to get install sandbox: %w", err)
+	}
+
+	var components []app.InstallComponent
+	if err := h.db.WithContext(ctx).Where(app.InstallComponent{InstallID: install.ID}).Find(&components).Error; err != nil {
+		return baselines, fmt.Errorf("unable to get install components: %w", err)
+	}
+	for _, component := range components {
+		if component.AppConfigRef.AppliedConfigID != "" {
+			baselines.Components[component.ComponentID] = component.AppConfigRef.AppliedConfigID
+		}
+	}
+	return baselines, nil
 }
 
 func (h *Helpers) getActiveStackVersion(ctx context.Context, installID string) (*app.InstallStackVersion, error) {
@@ -350,12 +396,4 @@ func (h *Helpers) getActiveStackVersion(ctx context.Context, installID string) (
 		return nil, nil
 	}
 	return &versions[0], nil
-}
-
-func useStackDiff(diff, stackDiff *app.InstallConfigDiff) {
-	diff.StackChanged = stackDiff.StackChanged
-	diff.StackOldID = stackDiff.StackOldID
-	diff.StackNewID = stackDiff.StackNewID
-	diff.StackImpacts = stackDiff.StackImpacts
-	diff.StackImpactReasons = stackDiff.StackImpactReasons
 }

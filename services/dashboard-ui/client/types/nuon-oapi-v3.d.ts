@@ -5333,8 +5333,14 @@ export interface components {
       install_id?: string;
       /** @description Phase is which stage of the group the install is in: "deploy" or "runbook". */
       phase?: string;
+      /** @description ReleaseReason is why the group stopped waiting on this install. */
+      release_reason?: string;
       runbooks?: components["schemas"]["app.InstallGroupRunRunbook"][];
       status?: string;
+      /** @description SupersededByRunID is the later app branch run that cancelled this one. */
+      superseded_by_run_id?: string;
+      /** @description WaitingOnRunID is the app branch run this install is queued behind. */
+      waiting_on_run_id?: string;
       workflow_id?: string;
     };
     "app.InstallGroupRunRunbook": {
