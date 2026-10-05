@@ -98,6 +98,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get install version")
 	}
 	s.versionID = version.ID
+	if isDuplicateOfActive(version) {
+		l.Info("stack version matches the active version, nothing to apply", "version_id", version.ID)
+		return nil
+	}
 
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
@@ -230,4 +234,12 @@ func (s *Signal) pollForManagedStackDeletion(ctx workflow.Context, installID, ve
 		}
 	}
 	return fmt.Errorf("cloudformation stack %q was not deleted after %d polling attempts", stackName, maxManagedStackDeletionPollAttempts)
+}
+
+func isDuplicateOfActive(version *app.InstallStackVersion) bool {
+	if version.Status.Status != app.InstallStackVersionStatusOutdated {
+		return false
+	}
+	activeID, _ := version.Status.Metadata[app.InstallStackVersionDuplicateOfMetadataKey].(string)
+	return activeID != ""
 }

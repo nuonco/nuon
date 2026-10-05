@@ -156,7 +156,7 @@ func (tpl *Templates) getCustomNestedStacks(inp *stacks.TemplateInput, t tagBuil
 				"Label": map[string]any{
 					"default": stack.Name,
 				},
-				"Parameters": pkggenerics.MapToKeys(defaultParams),
+				"Parameters": pkggenerics.SortedMapToKeys(defaultParams),
 			})
 		}
 

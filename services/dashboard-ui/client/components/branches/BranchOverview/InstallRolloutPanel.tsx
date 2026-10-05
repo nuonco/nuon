@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
+import { CommitLink } from '@/components/common/GitReferenceLink'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
@@ -25,10 +26,12 @@ export const previousBranchRun = (
 const RunLine = ({
   label,
   run,
+  repo,
   emptyText,
 }: {
   label: string
   run?: TRunSummary
+  repo?: string
   emptyText?: string
 }) => {
   const sha = run?.vcs_connection_commit?.sha ?? run?.head_sha
@@ -46,9 +49,7 @@ const RunLine = ({
           </Text>
           <span className="flex items-center gap-2">
             {sha ? (
-              <Text variant="label" family="mono" theme="neutral">
-                {sha.slice(0, 7)}
-              </Text>
+              <CommitLink sha={sha} repo={repo} textVariant="label" />
             ) : null}
             {createdAt ? (
               <Time
@@ -94,12 +95,14 @@ export const InstallRolloutPanel = ({
   install,
   approval,
   orgId,
+  repo,
   branchRun,
   ...props
 }: IPanel & {
   install: TTrackInstall
   approval?: string
   orgId?: string
+  repo?: string
   branchRun?: TAppBranchRun
 }) => {
   const { data: steps, isLoading } = useQuery({
@@ -140,10 +143,11 @@ export const InstallRolloutPanel = ({
             </Text>
           ) : null}
           <div className="flex flex-col gap-2 border-t pt-3">
-            <RunLine label="Rolling out" run={branchRun} />
+            <RunLine label="Rolling out" run={branchRun} repo={repo} />
             <RunLine
               label="Previous run"
               run={previousRun}
+              repo={repo}
               emptyText={
                 isLoadingHistory ? 'Loading…' : 'No earlier branch run'
               }

@@ -150,13 +150,13 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 			"Label": map[string]any{
 				"default": "Runner Configuration",
 			},
-			"Parameters": pkggenerics.MapToKeys(runnerParams),
+			"Parameters": pkggenerics.SortedMapToKeys(runnerParams),
 		},
 		{
 			"Label": map[string]any{
 				"default": "VPC Configuration",
 			},
-			"Parameters": pkggenerics.MapToKeys(vpcParams),
+			"Parameters": pkggenerics.SortedMapToKeys(vpcParams),
 		},
 	}
 	if len(inp.AppCfg.SecretsConfig.Secrets) > 0 {
@@ -164,24 +164,24 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 			"Label": map[string]any{
 				"default": "Application Secrets",
 			},
-			"Parameters": pkggenerics.MapToKeys(t.getSecretsParameters(inp)),
+			"Parameters": pkggenerics.SortedMapToKeys(t.getSecretsParameters(inp)),
 		})
 	}
 	paramGroups = append(paramGroups, map[string]any{
 		"Label": map[string]any{
 			"default": "Access Permissions",
 		},
-		"Parameters": pkggenerics.MapToKeys(t.getRolesParameters(inp)),
+		"Parameters": pkggenerics.SortedMapToKeys(t.getRolesParameters(inp)),
 	})
 	pgs = append(pgs, paramGroups...)
 
 	// add app input parameter group if there are any install_stack sourced inputs
-	for groupName, installGroupParameters := range installGroupParameters {
+	for _, groupName := range pkggenerics.SortedMapToKeys(installGroupParameters) {
 		pgs = append(pgs, map[string]any{
 			"Label": map[string]any{
 				"default": "Install Inputs: " + strcase.ToCamel(groupName),
 			},
-			"Parameters": pkggenerics.MapToKeys(installGroupParameters),
+			"Parameters": pkggenerics.SortedMapToKeys(installGroupParameters[groupName]),
 		})
 	}
 

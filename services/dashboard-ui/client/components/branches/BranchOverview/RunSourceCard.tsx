@@ -1,8 +1,11 @@
-import type { ReactNode } from 'react'
 import { Avatar } from '@/components/common/Avatar'
 import { Badge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
-import { Link } from '@/components/common/Link'
+import {
+  CommitLink,
+  PullRequestLink,
+  TagLink,
+} from '@/components/common/GitReferenceLink'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -34,23 +37,17 @@ const TRIGGER_LABEL: Record<TRunSource['kind'], string> = {
   commit: 'Push',
 }
 
-const MaybeLink = ({ href, children }: { href?: string; children: ReactNode }) =>
-  href ? (
-    <Link href={href} isExternal>
-      {children}
-    </Link>
-  ) : (
-    <>{children}</>
-  )
-
 const SourceIdentity = ({ source }: { source: TRunSource }) => {
   if (source.kind === 'pull-request') {
     return (
       <span className="flex flex-wrap items-center gap-2">
-        <Text variant="body" weight="strong" flex>
-          <Icon variant="GitPullRequestIcon" />
-          <MaybeLink href={source.url}>Pull request #{source.number}</MaybeLink>
-        </Text>
+        <PullRequestLink
+          number={source.number}
+          href={source.url}
+          label={`Pull request #${source.number}`}
+          textVariant="body"
+          weight="strong"
+        />
         {source.baseBranch ? (
           <Text variant="subtext" theme="neutral">
             into{' '}
@@ -71,14 +68,12 @@ const SourceIdentity = ({ source }: { source: TRunSource }) => {
 
   if (source.kind === 'tag') {
     return (
-      <Text variant="body" weight="strong" flex>
-        <Icon variant="TagIcon" />
-        <MaybeLink href={source.url}>
-          <Text as="span" variant="body" weight="strong" family="mono">
-            {source.tag}
-          </Text>
-        </MaybeLink>
-      </Text>
+      <TagLink
+        tag={source.tag}
+        href={source.url}
+        textVariant="body"
+        weight="strong"
+      />
     )
   }
 
@@ -119,10 +114,7 @@ export const RunSourceCard = ({
         {commitSha || commitAuthor || commit?.createdAt ? (
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
             {commitSha ? (
-              <Text variant="subtext" family="mono" theme="neutral" flex>
-                <Icon variant="GitCommitIcon" />
-                <MaybeLink href={commitUrl}>{commitSha.slice(0, 7)}</MaybeLink>
-              </Text>
+              <CommitLink sha={commitSha} href={commitUrl} />
             ) : null}
             {commit?.avatarUrl ? (
               <Avatar
