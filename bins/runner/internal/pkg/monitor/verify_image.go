@@ -27,8 +27,7 @@ type imageConfig struct {
 	ContainerImageTag string
 }
 
-// failedVerificationTTL spaces out retries of a digest that failed, so an unsigned image does not
-// send every monitor loop to the registry and Sigstore.
+// retry a failed digest hourly, not every monitor loop
 const failedVerificationTTL = time.Hour
 
 type verificationResult struct {
@@ -36,15 +35,11 @@ type verificationResult struct {
 	at  time.Time
 }
 
-// verifiedImages caches verification results by digest reference and policy, so the monitor loop
-// only reaches the registry and Sigstore when the tag moves.
 var verifiedImages sync.Map
 
 type verifyImageFn func(ctx context.Context, s *settings.Settings) (string, error)
 
-// runnerImageConfig pins the runner image to the digest its tag resolves to once that digest's
-// signature verifies. Enforce mode returns an error instead of an unverified image, so the image
-// config the service runs from is left as it was.
+// enforce errors instead of writing an unverified image, keeping the last good one
 func runnerImageConfig(ctx context.Context, l *zap.Logger, s *settings.Settings, verify verifyImageFn) (imageConfig, error) {
 	cfg := imageConfig{ContainerImageURL: s.ContainerImageURL, ContainerImageTag: s.ContainerImageTag}
 	switch s.ContainerImageVerificationMode {
@@ -79,12 +74,10 @@ func verifyRunnerImage(ctx context.Context, s *settings.Settings) (string, error
 	if err != nil {
 		return "", errors.Wrap(err, "unable to parse runner image reference")
 	}
-	remoteOpts := []remote.Option{remote.WithContext(ctx), remote.WithAuthFromKeychain(authn.DefaultKeychain)}
-	desc, err := remote.Head(ref, remoteOpts...)
+	digest, remoteOpts, err := resolveRunnerImageDigest(ctx, ref)
 	if err != nil {
-		return "", errors.Wrap(err, "unable to resolve runner image digest")
+		return "", err
 	}
-	digest := desc.Digest.String()
 	digestRef := ref.Context().Digest(digest)
 	key := digestRef.String() + "|" + s.ContainerImageSignatureIssuer + "|" + s.ContainerImageSignatureIdentityRegexp
 	if cached, ok := verifiedImages.Load(key); ok {
@@ -110,4 +103,20 @@ func verifyRunnerImage(ctx context.Context, s *settings.Settings) (string, error
 		return "", err
 	}
 	return digest, nil
+}
+
+// a stale credential helper must not make a public runner image unverifiable
+func resolveRunnerImageDigest(ctx context.Context, ref name.Reference) (string, []remote.Option, error) {
+	keychainOpts := []remote.Option{remote.WithContext(ctx), remote.WithAuthFromKeychain(authn.DefaultKeychain)}
+	desc, keychainErr := remote.Head(ref, keychainOpts...)
+	if keychainErr == nil {
+		return desc.Digest.String(), keychainOpts, nil
+	}
+
+	anonymousOpts := []remote.Option{remote.WithContext(ctx), remote.WithAuth(authn.Anonymous)}
+	desc, err := remote.Head(ref, anonymousOpts...)
+	if err != nil {
+		return "", nil, errors.Wrapf(err, "unable to resolve runner image digest (with docker credentials: %v)", keychainErr)
+	}
+	return desc.Digest.String(), anonymousOpts, nil
 }
