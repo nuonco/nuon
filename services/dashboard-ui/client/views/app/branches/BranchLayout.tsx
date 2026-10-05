@@ -15,6 +15,7 @@ import { AppBranchSwitcher } from '@/components/branches/AppBranchSwitcher'
 import { BranchDetailActions } from '@/components/branches/BranchDetailActions'
 import { BranchHeaderMeta } from '@/components/branches/BranchHeaderMeta'
 import { BranchPendingApprovals } from '@/components/branches/BranchRunApproval'
+import { WorkflowRunPanelHost } from '@/components/branches/WorkflowRunPanel'
 import { getRunTitle } from '@/components/branches/shared/run-title'
 import { getBranchWorkflowRun, getBranchWorkflowRuns } from '@/lib'
 import { latestBranchConfig } from '@/utils/branch-utils'
@@ -228,6 +229,7 @@ const BranchTemplate = () => {
           <Outlet />
         </div>
       </PageContent>
+      <WorkflowRunPanelHost />
     </>
   )
 }
