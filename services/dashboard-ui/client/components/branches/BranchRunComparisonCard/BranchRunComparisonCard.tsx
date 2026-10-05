@@ -1,5 +1,6 @@
 import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
+import { PullRequestLink } from '@/components/common/GitReferenceLink'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
@@ -65,11 +66,11 @@ export const BranchRunComparisonCard = ({
           {(prLink || run.base_branch || run.event_type) && (
             <div className="flex items-center gap-2 flex-wrap">
               {prLink ? (
-                <Link href={prLink.url} isExternal>
-                  <Badge size="sm" theme="info">
-                    PR #{prLink.number}
-                  </Badge>
-                </Link>
+                <PullRequestLink
+                  number={prLink.number}
+                  href={prLink.url}
+                  repo={repoSlug}
+                />
               ) : null}
               {run.base_branch ? (
                 <Text variant="subtext" theme="neutral">
@@ -92,6 +93,7 @@ export const BranchRunComparisonCard = ({
             author={commit?.author_name}
             avatarUrl={commit?.author_avatar_url}
             sha={sha}
+            repo={repoSlug}
             createdAt={run.created_at}
           />
         </>

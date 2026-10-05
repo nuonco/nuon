@@ -2,11 +2,13 @@ import { Card } from '@/components/common/Card'
 import { Text } from '@/components/common/Text'
 import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
 import type { TAppBranchRun } from '@/types'
+import { vcsRepo } from '@/utils/vcs-urls'
 
 export interface ITrackedRunCard {
   emptyMessage: string
   href?: string
   label: string
+  repo?: string
   run?: TAppBranchRun
 }
 
@@ -14,9 +16,11 @@ export const TrackedRunCard = ({
   emptyMessage,
   href,
   label,
+  repo,
   run,
 }: ITrackedRunCard) => {
   const commit = run?.vcs_connection_commit
+  const commitRepo = vcsRepo(run?.app_branch_config) ?? repo
 
   return (
     <Card className="!p-4 !gap-3">
@@ -31,6 +35,7 @@ export const TrackedRunCard = ({
           author={commit?.author_name}
           avatarUrl={commit?.author_avatar_url}
           sha={commit?.sha ?? run.head_sha}
+          repo={commitRepo}
           createdAt={run.created_at}
         />
       ) : (

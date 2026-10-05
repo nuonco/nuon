@@ -4,6 +4,7 @@ import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { CheckboxFilterDropdown } from '@/components/common/CheckboxFilterDropdown'
 import { EmptyState } from '@/components/common/EmptyState'
+import { CommitLink } from '@/components/common/GitReferenceLink'
 import { Icon, type TIconVariant } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Pagination, type IPagination } from '@/components/common/Pagination'
@@ -61,6 +62,7 @@ interface IDeploymentCard {
   orgId: string
   appId: string
   installId: string
+  repo?: string
 }
 
 const DeploymentCard = ({
@@ -68,6 +70,7 @@ const DeploymentCard = ({
   orgId,
   appId,
   installId,
+  repo,
 }: IDeploymentCard) => {
   const nested = useInstallNested()
   const branchHref = deployment.app_branch
@@ -124,11 +127,9 @@ const DeploymentCard = ({
             <Link href={branchHref} textVariant="subtext">
               {deployment.app_branch.name}
             </Link>
-            {deployment.app_branch.sha && (
-              <Badge size="sm" variant="code" theme="neutral">
-                {deployment.app_branch.sha.slice(0, 8)}
-              </Badge>
-            )}
+            {deployment.app_branch.sha ? (
+              <CommitLink sha={deployment.app_branch.sha} repo={repo} />
+            ) : null}
           </span>
         )}
         {deployment.workflow && (
@@ -239,6 +240,7 @@ export interface IDeploymentsListPresenter {
   orgId: string
   appId: string
   installId: string
+  repo?: string
   search: string
   filter: IDeploymentFilter
   onSearchChange: (value: string) => void
@@ -257,6 +259,7 @@ const DeploymentsListBase = ({
   orgId,
   appId,
   installId,
+  repo,
   search,
   filter,
   onSearchChange,
@@ -389,6 +392,7 @@ const DeploymentsListBase = ({
               orgId={orgId}
               appId={appId}
               installId={installId}
+              repo={repo}
             />
           ))}
         </div>
