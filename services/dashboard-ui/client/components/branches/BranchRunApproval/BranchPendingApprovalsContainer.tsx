@@ -1,12 +1,12 @@
-import { useNavigate } from 'react-router'
 import { useOrg } from '@/hooks/use-org'
 import type { TInstallWorkflow } from '@/types'
 import { GroupActionButton } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
+import { useOpenWorkflowRunPanel } from '@/components/branches/WorkflowRunPanel'
 import {
   BranchRunApproval,
   type IBranchRunApprovalItem,
 } from './BranchRunApproval'
-import { getGroupName, useGroupPlanHref } from './use-group-plan-href'
+import { getGroupName } from './use-group-plan-href'
 
 interface IBranchPendingApprovalsContainer {
   run?: TInstallWorkflow
@@ -18,8 +18,7 @@ export const BranchPendingApprovalsContainer = ({
   className,
 }: IBranchPendingApprovalsContainer) => {
   const { org } = useOrg()
-  const navigate = useNavigate()
-  const groupPlanHref = useGroupPlanHref()
+  const openWorkflowRunPanel = useOpenWorkflowRunPanel()
   const orgId = org?.id ?? ''
 
   if (!run) return null
@@ -42,7 +41,7 @@ export const BranchPendingApprovalsContainer = ({
       return {
         key: step.id ?? step.approval!.id!,
         groupName,
-        onReview: () => navigate(groupPlanHref(step.name)),
+        onReview: () => openWorkflowRunPanel(run.id ?? '', step.id),
         actions: (
           <GroupActionButton
             action="approve"

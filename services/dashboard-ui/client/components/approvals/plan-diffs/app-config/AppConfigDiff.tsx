@@ -35,11 +35,13 @@ const SECTION_CONFIG: Record<string, { displayName: string; icon: TIconVariant; 
   runbooks: { displayName: 'Runbooks', icon: 'BookOpenIcon', grouped: true },
   policies: { displayName: 'Policies', icon: 'ShieldCheckIcon', grouped: true },
   inputs: { displayName: 'Install inputs', icon: 'ListBulletsIcon', grouped: true },
+  install_inputs: { displayName: 'Install inputs', icon: 'ListBulletsIcon', grouped: true },
   secrets: { displayName: 'Secrets', icon: 'KeyIcon', grouped: true },
   sandbox: { displayName: 'Sandbox', icon: 'TerminalWindowIcon', grouped: false },
   runner: { displayName: 'Runner', icon: 'GearIcon', grouped: false },
   permissions: { displayName: 'Permissions', icon: 'ShieldIcon', grouped: false },
   stack: { displayName: 'Stack', icon: 'StackIcon', grouped: false },
+  break_glass: { displayName: 'Break glass', icon: 'LockKeyOpenIcon', grouped: false },
 }
 
 const COMPONENT_TYPE_ICON: Record<string, { icon: TIconVariant; brandClass: string }> = {
@@ -242,8 +244,6 @@ function isFileNode(n: TDiffNode): boolean {
 
 const GENERIC_FILE_KEYS = new Set(['inline_contents', 'contents', 'content', 'file'])
 
-// Inline-content file nodes carry a generic/empty key (e.g. "inline_contents"),
-// so fall back to the parent node's key (e.g. "step.coder-health") for a label.
 function fileLabel(nodeKey: string, parentKey: string): string {
   if (nodeKey && !GENERIC_FILE_KEYS.has(nodeKey)) return nodeKey
   const fromParent = parentKey.replace(/^(step|component|action|app_config)\./, '')
@@ -281,8 +281,6 @@ function findComponentType(node: TDiffNode): string | undefined {
   if (!node.children) return undefined
   for (const child of node.children) {
     if (child.key === 'type' && child.diff) {
-      // Add-diffs look like `'' -> 'container_image'`: the first quoted span
-      // can be the arrow itself, so parse the side after the last arrow.
       const after = child.diff.diff.split('->').at(-1) ?? ''
       const matches = [...after.matchAll(/'([^']*)'/g)]
       if (matches.length > 0 && matches[0][1]) return matches[0][1]
@@ -321,8 +319,6 @@ export function extractSections(node?: TDiffNode): DiffSectionData[] {
         const componentType = child.key === 'components' ? findComponentType(entityNode) : undefined
 
         section.entities.push({
-          // Diff node keys are namespace-prefixed (`component.api`,
-          // `action.seed-db`); the comparison view shows bare names.
           name: entityNode.key.replace(/^(component|action|policy|runbook)\./, ''),
           op,
           componentType,
@@ -748,7 +744,6 @@ const SectionGroup = ({
   useEffect(() => {
     if (!focus || focus.sectionKey !== section.sectionKey) return
     setOpen(true)
-    // When a specific entity is targeted, the EntityRow handles scroll + highlight.
     if (focus.entityName) return
     setHighlighted(true)
     const raf = requestAnimationFrame(() => {
