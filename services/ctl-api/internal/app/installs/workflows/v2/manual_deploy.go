@@ -118,6 +118,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		sg.nextGroup() // component sync
 		deployStep, err := sg.installSignalStep(ctx, installID, "sync "+comp.Name, componentStepMetadata(comp.Name), &componentsyncimage.Signal{
 			InstallComponentID: installComp.ID,
+			InstallID:          installID,
 			DeployID:           generics.FromPtrStr(installDeployID),
 			ComponentID:        comp.ID,
 			FlowID:             "",
@@ -168,6 +169,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 				gateStep, err := sg.installSignalStep(ctx, installID, "verify health "+comp.Name, componentStepMetadata(comp.Name), &awaitcomponenthealthy.Signal{
 					InstallID:          installID,
 					InstallComponentID: installComp.ID,
+					ComponentID:        comp.ID,
 				}, flw.PlanOnly, WithSkippable(false), WithMaxAutoRetries(3))
 				if err != nil {
 					return nil, errors.Wrap(err, "unable to create verify health step")
