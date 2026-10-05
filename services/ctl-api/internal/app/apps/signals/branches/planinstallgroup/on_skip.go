@@ -14,10 +14,6 @@ import (
 
 var _ signal.SignalWithOnSkip = (*Signal)(nil)
 
-// onSkipRequireDeployStepVersion gates failing when the paired deploy step is
-// missing; older histories treated an empty lookup as success and continued.
-const onSkipRequireDeployStepVersion = "plan-skip-require-deploy-step-v1"
-
 // OnSkip marks this install group's deploy step as user-skipped when the plan
 // approval is skipped. The plan and deploy steps live in separate step groups,
 // so the generic same-group skip logic never reaches the deploy — without this,
@@ -39,9 +35,6 @@ func (s *Signal) OnSkip(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to find deploy step for skipped install group")
 	}
 	if out.StepID == "" {
-		if workflow.GetVersion(ctx, onSkipRequireDeployStepVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-			return nil
-		}
 		return errors.New("pending deploy step not found for skipped install group")
 	}
 

@@ -10,10 +10,6 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-// onSkipHardFailVersion gates failing the skip when OnSkip returns an error.
-// Older histories logged a warning and continued, which could deploy a skipped plan.
-const onSkipHardFailVersion = "on-skip-hard-fail-v1"
-
 // handleSkipResponse processes a "skip current" response.
 // If the signal implements SignalWithSkipGroup and returns true, the entire
 // remaining group is skipped (DirectiveSkipGroup). Otherwise only the current
@@ -30,11 +26,7 @@ func (s *Signal) handleSkipResponse(ctx workflow.Context, l *zap.Logger, step *a
 
 	if os, ok := sig.(signal.SignalWithOnSkip); ok {
 		if err := os.OnSkip(ctx); err != nil {
-			if workflow.GetVersion(ctx, onSkipHardFailVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-				l.Warn("OnSkip hook failed", zap.Error(err))
-			} else {
-				return errors.Wrap(err, "OnSkip hook failed")
-			}
+			return errors.Wrap(err, "OnSkip hook failed")
 		}
 	}
 
@@ -82,11 +74,7 @@ func (s *Signal) handleSkipDependentsResponse(ctx workflow.Context, l *zap.Logge
 
 	if os, ok := sig.(signal.SignalWithOnSkip); ok {
 		if err := os.OnSkip(ctx); err != nil {
-			if workflow.GetVersion(ctx, onSkipHardFailVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-				l.Warn("OnSkip hook failed", zap.Error(err))
-			} else {
-				return errors.Wrap(err, "OnSkip hook failed")
-			}
+			return errors.Wrap(err, "OnSkip hook failed")
 		}
 	}
 
