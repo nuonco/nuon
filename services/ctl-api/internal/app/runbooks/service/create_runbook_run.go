@@ -18,7 +18,6 @@ import (
 )
 
 type CreateRunbookRunRequest struct {
-	// RequestID is an optional idempotency key. The same id and body returns the original run. A different body, or an install that has moved to another app config, returns 409.
 	RequestID string                          `json:"request_id,omitempty" validate:"omitempty,max=255"`
 	Inputs    map[string]*string              `json:"inputs,omitempty"`
 	Steps     []CreateRunbookRunStepSelection `json:"steps,omitempty"`

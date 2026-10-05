@@ -1,0 +1,72 @@
+---
+title: "Retry install triggers"
+description: "Pass request_id on endpoints that create a workflow so a retry returns the original workflow instead of starting a second one."
+icon: "repeat"
+keywords: ["request_id", "idempotency", "retry", "duplicate workflow", "deploy-all", "reprovision", "action run", "runbook run", "programmatic", "API"]
+---
+
+Public API endpoints that create a workflow accept an optional `request_id` (JSON body field, at most 255 characters). Use it from your own automation when a lost response must not start a second workflow. Nuon stores that id with the workflow. Send the same id and the same body again and the API returns the original `workflow_id` (and run id where applicable).
+
+Calls that omit `request_id` start a new workflow every time. The CLI and the dashboard omit it.
+
+The id is unique for one org, one install, and one workflow type, for as long as that workflow exists. Generate a new id for each workflow you intend to start once, and store it before the POST so a timeout retry uses the same id.
+
+## Example
+
+Deploy all components on an install:
+
+<CodeGroup>
+```bash curl
+curl -X POST "https://api.nuon.co/v1/installs/$INSTALL_ID/components/deploy-all" \
+  -H "Authorization: Bearer $NUON_API_TOKEN" \
+  -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "request_id": "deploy-acme-prod-1",
+    "plan_only": false
+  }'
+```
+
+```go Go
+import "github.com/nuonco/nuon-go/models"
+
+// POST /v1/installs/{install_id}/components/deploy-all
+body := &models.ServiceDeployInstallComponentsRequest{
+    PlanOnly:  false,
+    RequestID: "deploy-acme-prod-1",
+}
+// 201: {"workflow_id":"inw..."}
+```
+</CodeGroup>
+
+Store the returned `workflow_id`. A later call with `deploy-acme-prod-1` and the same body returns that same id.
+
+The Go SDK helpers, such as `DeployInstallComponents`, do not send `request_id`. Set the field on the JSON body when you call the API yourself.
+
+## Different body
+
+The same id with a different body returns `409`:
+
+```json
+{
+  "error": "request_id was already used with a different request",
+  "user_error": true,
+  "description": "request_id was already used with a different request body"
+}
+```
+
+Changing `plan_only`, inputs, the action config, the adhoc command, or the runbook steps is a different body. Use a new `request_id` for that workflow.
+
+## Install moved to a new app config
+
+Nuon records the install's app config when it accepts the request. If the install is on a newer app config when you retry, the API returns `409` and names both config ids. That failure is permanent for this id. Starting a workflow against the new config takes a new `request_id`.
+
+An adhoc run does not use this check. The script or command in the body is the work being run.
+
+If the install's app config changes while a deploy, reprovision, action, or runbook workflow from that request is still generating steps, that workflow fails. An adhoc run keeps going.
+
+## A call that fails
+
+A call that fails before Nuon stores the workflow does not keep the id. Send the same `request_id` and body again.
+
+A `201` means the workflow is stored. Retrying returns it, including when the workflow is already running or finished.

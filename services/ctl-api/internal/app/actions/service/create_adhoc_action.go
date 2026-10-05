@@ -23,7 +23,6 @@ import (
 )
 
 type CreateAdHocActionRequest struct {
-	// RequestID is an optional idempotency key. The same id and body returns the original run. A different body returns 409.
 	RequestID        string            `json:"request_id,omitempty" validate:"omitempty,max=255"`
 	InlineContents   string            `json:"inline_contents" validate:"required_without=Command"`
 	Command          string            `json:"command" validate:"required_without=InlineContents"`

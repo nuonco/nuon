@@ -11,23 +11,27 @@ import (
 )
 
 func (s *Helpers) CreateComponentBuild(ctx context.Context, cmpID string, useLatest bool, gitRef *string) (*app.ComponentBuild, error) {
-	return s.createComponentBuild(ctx, s.db, "", cmpID, "", useLatest, gitRef)
+	return s.createComponentBuild(ctx, s.db, "", cmpID, "", useLatest, gitRef, nil)
+}
+
+func (s *Helpers) CreateComponentBuildWithRequest(ctx context.Context, cmpID string, useLatest bool, gitRef *string, wfRequest *app.WorkflowRequest) (*app.ComponentBuild, error) {
+	return s.createComponentBuild(ctx, s.db, "", cmpID, "", useLatest, gitRef, wfRequest)
 }
 
 func (s *Helpers) CreateComponentBuildWithID(ctx context.Context, buildID, cmpID string, useLatest bool, gitRef *string) (*app.ComponentBuild, error) {
-	return s.createComponentBuild(ctx, s.db, buildID, cmpID, "", useLatest, gitRef)
+	return s.createComponentBuild(ctx, s.db, buildID, cmpID, "", useLatest, gitRef, nil)
 }
 
 // CreateComponentBuildForConfigConnection creates a build attached to a specific
 // CCC (e.g. a branch run's app-config CCC) instead of the global LatestConfig.
 func (s *Helpers) CreateComponentBuildForConfigConnection(ctx context.Context, cmpID, componentConfigConnectionID string, gitRef *string) (*app.ComponentBuild, error) {
-	return s.createComponentBuild(ctx, s.db, "", cmpID, componentConfigConnectionID, false, gitRef)
+	return s.createComponentBuild(ctx, s.db, "", cmpID, componentConfigConnectionID, false, gitRef, nil)
 }
 
 // CreateComponentBuildInTx creates the build through the caller's transaction.
 // When componentConfigConnectionID is set, the build is attached to that CCC.
 func (s *Helpers) CreateComponentBuildInTx(ctx context.Context, tx *gorm.DB, cmpID, componentConfigConnectionID string, useLatest bool, gitRef *string) (*app.ComponentBuild, error) {
-	return s.createComponentBuild(ctx, tx, "", cmpID, componentConfigConnectionID, useLatest, gitRef)
+	return s.createComponentBuild(ctx, tx, "", cmpID, componentConfigConnectionID, useLatest, gitRef, nil)
 }
 
 func DockerBuildUnsupported() stderr.ErrUser {
@@ -39,7 +43,7 @@ func DockerBuildUnsupported() stderr.ErrUser {
 	}
 }
 
-func (s *Helpers) createComponentBuild(ctx context.Context, db *gorm.DB, buildID, cmpID, componentConfigConnectionID string, _ bool, gitRef *string) (*app.ComponentBuild, error) {
+func (s *Helpers) createComponentBuild(ctx context.Context, db *gorm.DB, buildID, cmpID, componentConfigConnectionID string, _ bool, gitRef *string, wfRequest *app.WorkflowRequest) (*app.ComponentBuild, error) {
 	cmp, err := s.getComponent(ctx, db, cmpID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get component: %w", err)
@@ -64,11 +68,13 @@ func (s *Helpers) createComponentBuild(ctx context.Context, db *gorm.DB, buildID
 		StatusDescription:           "queued and waiting for runner to pick up",
 		GitRef:                      gitRef,
 		ComponentConfigConnectionID: configConn.ID,
+		StoredComponentID:           cmp.ID,
+		Request:                     wfRequest,
 	}
 	res := db.WithContext(ctx).
 		Create(&bld)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create build for component: %v", res.Error)
+		return nil, fmt.Errorf("unable to create build for component: %w", res.Error)
 	}
 
 	if err := db.WithContext(ctx).

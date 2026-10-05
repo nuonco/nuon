@@ -29,6 +29,9 @@ func ReprovisionStack(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSte
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install")
 	}
+	if err := failIfPinnedAppConfigMoved(install, flw); err != nil {
+		return nil, err
+	}
 
 	stackSteps, err := getStackReprovisionSteps(ctx, sg, install, flw.PlanOnly)
 	if err != nil {

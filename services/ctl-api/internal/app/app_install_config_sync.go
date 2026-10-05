@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -40,6 +41,8 @@ type AppInstallConfigSync struct {
 
 	InstallConfigSyncs      []InstallConfigSync      `json:"install_config_syncs,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_config_syncs,omitzero,omitempty"`
 	InstallCreationApproval *InstallCreationApproval `json:"install_creation_approval,omitempty" gorm:"foreignKey:AppInstallConfigSyncID" temporaljson:"install_creation_approval,omitzero,omitempty"`
+
+	Request *WorkflowRequest `json:"-" gorm:"column:request;type:jsonb;serializer:json" swaggerignore:"true" temporaljson:"request,omitzero,omitempty"`
 }
 
 func (a *AppInstallConfigSync) Indexes(db *gorm.DB) []migrations.Index {
@@ -51,6 +54,16 @@ func (a *AppInstallConfigSync) Indexes(db *gorm.DB) []migrations.Index {
 		{
 			Name:    indexes.Name(db, &AppInstallConfigSync{}, "app_id"),
 			Columns: []string{"app_id"},
+		},
+		{
+			Name: "idx_app_install_config_syncs_request_id",
+			Columns: []string{
+				"org_id",
+				"app_id",
+				"(request->>'request_id')",
+			},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
+			Option:      "WHERE deleted_at = 0 AND request->>'request_id' IS NOT NULL",
 		},
 	}
 }

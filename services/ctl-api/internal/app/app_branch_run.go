@@ -119,6 +119,8 @@ type AppBranchRun struct {
 
 	QueueSignal *QueueSignal `json:"queue_signal,omitempty" gorm:"polymorphic:Owner;" temporaljson:"queue_signal,omitzero,omitempty"`
 
+	Request *WorkflowRequest `json:"-" gorm:"column:request;type:jsonb;serializer:json" swaggerignore:"true" temporaljson:"request,omitzero,omitempty"`
+
 	AwaitingApproval bool `json:"awaiting_approval,omitzero" gorm:"-" temporaljson:"awaiting_approval,omitzero,omitempty"`
 
 	labels.Labeled
@@ -228,6 +230,16 @@ func (a *AppBranchRun) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"vcs_connection_commit_id",
 			},
+		},
+		{
+			Name: "idx_app_branch_runs_request_id",
+			Columns: []string{
+				"org_id",
+				"app_branch_id",
+				"(request->>'request_id')",
+			},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
+			Option:      "WHERE deleted_at = 0 AND request->>'request_id' IS NOT NULL",
 		},
 	}
 }

@@ -17,7 +17,6 @@ import (
 )
 
 type ReprovisionInstallRequest struct {
-	// RequestID is an optional idempotency key. The same id and body returns the original workflow. A different body, or an install that has moved to another app config, returns 409.
 	RequestID string `json:"request_id,omitempty" validate:"omitempty,max=255"`
 	PlanOnly  bool   `json:"plan_only"`
 	Role      string `json:"role"`
