@@ -27,8 +27,7 @@ type imageConfig struct {
 	ContainerImageTag string
 }
 
-// failedVerificationTTL spaces out retries of a digest that failed, so an unsigned image does not
-// send every monitor loop to the registry and Sigstore.
+// retry a failed digest hourly, not every monitor loop
 const failedVerificationTTL = time.Hour
 
 type verificationResult struct {
@@ -36,15 +35,11 @@ type verificationResult struct {
 	at  time.Time
 }
 
-// verifiedImages caches verification results by digest reference and policy, so the monitor loop
-// only reaches the registry and Sigstore when the tag moves.
 var verifiedImages sync.Map
 
 type verifyImageFn func(ctx context.Context, s *settings.Settings) (string, error)
 
-// runnerImageConfig pins the runner image to the digest its tag resolves to once that digest's
-// signature verifies. Enforce mode returns an error instead of an unverified image, so the image
-// config the service runs from is left as it was.
+// enforce errors instead of writing an unverified image, keeping the last good one
 func runnerImageConfig(ctx context.Context, l *zap.Logger, s *settings.Settings, verify verifyImageFn) (imageConfig, error) {
 	cfg := imageConfig{ContainerImageURL: s.ContainerImageURL, ContainerImageTag: s.ContainerImageTag}
 	switch s.ContainerImageVerificationMode {
@@ -110,9 +105,7 @@ func verifyRunnerImage(ctx context.Context, s *settings.Settings) (string, error
 	return digest, nil
 }
 
-// resolveRunnerImageDigest resolves ref with the VM's docker credentials, retrying anonymously when
-// they fail: a stale credential helper must not make a public runner image unverifiable. It returns
-// the registry options that worked so the signature is read the same way.
+// a stale credential helper must not make a public runner image unverifiable
 func resolveRunnerImageDigest(ctx context.Context, ref name.Reference) (string, []remote.Option, error) {
 	keychainOpts := []remote.Option{remote.WithContext(ctx), remote.WithAuthFromKeychain(authn.DefaultKeychain)}
 	desc, keychainErr := remote.Head(ref, keychainOpts...)
