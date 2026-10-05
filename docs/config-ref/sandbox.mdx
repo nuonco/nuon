@@ -11,7 +11,7 @@ title: 'Sandbox'
 
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
-| **`type`**<br/>string | sandbox IaC type IaC type for this sandbox: 'terraform' (default) or 'pulumi'. 'pulumi' requires the pulumi-sandbox feature flag | **Optional** | `"terraform"`, `"pulumi"` |
+| **`type`**<br/>string | sandbox IaC type IaC type for this sandbox: 'terraform' (default) or 'pulumi'. | **Optional** | `"terraform"`, `"pulumi"` |
 | **`terraform_version`**<br/>string | Terraform version Version of Terraform to use for deployments. Required when type=terraform | **Optional** | `"1.5.0"`, `"1.6.0"`, `"latest"` |
 | **`runtime`**<br/>string | Pulumi runtime The Pulumi runtime to use for the program (go, nodejs, python). Required when type=pulumi | **Optional** | `"go"`, `"nodejs"`, `"python"` |
 | **`pulumi_version`**<br/>string | Pulumi version Version of the Pulumi CLI to use. If not specified, uses the latest version | **Optional** | `"3.100.0"` |

@@ -25,6 +25,10 @@ type ServiceCreateInstallAppConfigUpdateRequest struct {
 
 	// plan only
 	PlanOnly bool `json:"plan_only,omitempty"`
+
+	// request id
+	// Max Length: 255
+	RequestID string `json:"request_id,omitempty"`
 }
 
 // Validate validates this service create install app config update request
@@ -32,6 +36,10 @@ func (m *ServiceCreateInstallAppConfigUpdateRequest) Validate(formats strfmt.Reg
 	var res []error
 
 	if err := m.validateAppConfigID(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRequestID(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -44,6 +52,18 @@ func (m *ServiceCreateInstallAppConfigUpdateRequest) Validate(formats strfmt.Reg
 func (m *ServiceCreateInstallAppConfigUpdateRequest) validateAppConfigID(formats strfmt.Registry) error {
 
 	if err := validate.Required("app_config_id", "body", m.AppConfigID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateInstallAppConfigUpdateRequest) validateRequestID(formats strfmt.Registry) error {
+	if swag.IsZero(m.RequestID) { // not required
+		return nil
+	}
+
+	if err := validate.MaxLength("request_id", "body", m.RequestID, 255); err != nil {
 		return err
 	}
 

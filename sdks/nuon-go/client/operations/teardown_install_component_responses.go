@@ -55,6 +55,12 @@ func (o *TeardownInstallComponentReader) ReadResponse(response runtime.ClientRes
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewTeardownInstallComponentConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewTeardownInstallComponentInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *TeardownInstallComponentNotFound) GetPayload() *models.StderrErrRespons
 }
 
 func (o *TeardownInstallComponentNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewTeardownInstallComponentConflict creates a TeardownInstallComponentConflict with default headers values
+func NewTeardownInstallComponentConflict() *TeardownInstallComponentConflict {
+	return &TeardownInstallComponentConflict{}
+}
+
+/*
+TeardownInstallComponentConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type TeardownInstallComponentConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this teardown install component conflict response has a 2xx status code
+func (o *TeardownInstallComponentConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this teardown install component conflict response has a 3xx status code
+func (o *TeardownInstallComponentConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this teardown install component conflict response has a 4xx status code
+func (o *TeardownInstallComponentConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this teardown install component conflict response has a 5xx status code
+func (o *TeardownInstallComponentConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this teardown install component conflict response a status code equal to that given
+func (o *TeardownInstallComponentConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the teardown install component conflict response
+func (o *TeardownInstallComponentConflict) Code() int {
+	return 409
+}
+
+func (o *TeardownInstallComponentConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/components/{component_id}/teardown][%d] teardownInstallComponentConflict %s", 409, payload)
+}
+
+func (o *TeardownInstallComponentConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/components/{component_id}/teardown][%d] teardownInstallComponentConflict %s", 409, payload)
+}
+
+func (o *TeardownInstallComponentConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *TeardownInstallComponentConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

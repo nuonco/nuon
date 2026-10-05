@@ -23,7 +23,7 @@ type ServiceCreateInstallActionWorkflowRunRequest struct {
 	// Required: true
 	ActionWorkflowConfigID *string `json:"action_workflow_config_id"`
 
-	// RequestID is an optional idempotency key. The same id and body returns the original workflow. A different body, or an install that has moved to another app config, returns 409.
+	// request id
 	// Max Length: 255
 	RequestID string `json:"request_id,omitempty"`
 

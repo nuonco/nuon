@@ -35,7 +35,7 @@ type ServiceCreateAdHocActionRequest struct {
 	// Max Length: 255
 	Name string `json:"name,omitempty"`
 
-	// RequestID is an optional idempotency key. The same id and body returns the original run. A different body returns 409.
+	// request id
 	// Max Length: 255
 	RequestID string `json:"request_id,omitempty"`
 

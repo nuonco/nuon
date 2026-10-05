@@ -24,7 +24,7 @@ type ServiceCreateRunbookRunRequest struct {
 	// inputs
 	Inputs map[string]string `json:"inputs,omitempty"`
 
-	// RequestID is an optional idempotency key. The same id and body returns the original run. A different body, or an install that has moved to another app config, returns 409.
+	// request id
 	// Max Length: 255
 	RequestID string `json:"request_id,omitempty"`
 
