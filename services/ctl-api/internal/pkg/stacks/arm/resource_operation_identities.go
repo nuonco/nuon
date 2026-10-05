@@ -125,16 +125,26 @@ func ifRoleEnabled(id azureOperationIdentity, expr, otherwise string) string {
 	return fmt.Sprintf("[if(%s, %s, %s)]", azureRoleEnabledRef(id), inner, otherwise)
 }
 
+// azureRoleLabel names a role for the stack form, e.g. "dns manager role"; display
+// names usually already end in "role".
+func azureRoleLabel(id azureOperationIdentity) string {
+	label := id.displayName
+	if label == "" {
+		label = id.roleName
+	}
+	if !strings.HasSuffix(strings.ToLower(label), "role") {
+		label += " role"
+	}
+	return label
+}
+
 func azureRoleEnableParameters(ids []azureOperationIdentity) map[string]ARMParameter {
 	params := make(map[string]ARMParameter, len(ids))
 	for _, id := range ids {
-		label := id.displayName
-		if label == "" {
-			label = id.roleName
-		}
-		description := fmt.Sprintf("Create the %s role.", label)
+		label := azureRoleLabel(id)
+		description := fmt.Sprintf("Create the %s.", label)
 		if id.description != "" {
-			description = fmt.Sprintf("Create the %s role: %s", label, id.description)
+			description = fmt.Sprintf("Create the %s: %s", label, id.description)
 		}
 		params[azureRoleEnableParamName(id)] = ARMParameter{
 			Type:         "bool",
@@ -150,11 +160,7 @@ func azureRoleEnableParameters(ids []azureOperationIdentity) map[string]ARMParam
 func azureRoleEnableLabels(ids []azureOperationIdentity) map[string]string {
 	labels := make(map[string]string, len(ids))
 	for _, id := range ids {
-		label := id.displayName
-		if label == "" {
-			label = id.roleName
-		}
-		labels[azureRoleEnableParamName(id)] = fmt.Sprintf("Enable %s role", label)
+		labels[azureRoleEnableParamName(id)] = "Enable " + azureRoleLabel(id)
 	}
 	return labels
 }
