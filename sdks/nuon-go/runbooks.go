@@ -132,7 +132,7 @@ func (c *client) CreateInstallRunbookRun(ctx context.Context, installID, runbook
 		url.PathEscape(installID),
 		url.PathEscape(runbookID),
 	)
-	err := c.triggerRequest(ctx, http.MethodPost, path, nil, http.StatusCreated, &result)
+	err := c.triggerRequest(ctx, http.MethodPost, path, struct{}{}, http.StatusCreated, &result)
 	if err != nil {
 		return nil, err
 	}
