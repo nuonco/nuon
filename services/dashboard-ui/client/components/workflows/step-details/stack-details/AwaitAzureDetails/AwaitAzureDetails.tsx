@@ -7,11 +7,7 @@ import { Expand } from '@/components/common/Expand'
 import { Link } from '@/components/common/Link'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
-import type {
-  TAppInput,
-  TAppSecretConfig,
-  TStackDeploymentScope,
-} from '@/types'
+import type { TAppInput, TAppSecretConfig } from '@/types'
 import { createFileDownload } from '@/utils/file-download'
 import { TFModuleTab } from '../tf-module'
 import type { IMainTfParts } from '../tf-module'
@@ -28,7 +24,6 @@ interface IAwaitAzureDetails extends IStackDetails {
   // Presence only, never the value: sensitive inputs come back redacted, and the
   // value is not needed to know the template already carries a default for one.
   setInputNames?: Set<string>
-  deploymentScope?: TStackDeploymentScope
 }
 
 // Mirrors azureInputParamName in ctl-api's ARM renderer, which owns the mapping. The
@@ -63,7 +58,6 @@ export const AwaitAzureDetails = ({
   secrets,
   inputs,
   setInputNames,
-  deploymentScope,
   loading,
 }: IAwaitAzureDetails) => {
   if (loading) {
@@ -98,17 +92,12 @@ export const AwaitAzureDetails = ({
     )
   }
 
-  // The portal link wraps template_url, but it is never rebuilt from it here:
-  // the renderer owns the encoding, and a version generated before the link
-  // existed has none to show.
-  //
-  // A resource-group-scoped root template cannot be deployed from the portal —
-  // the customer has to create the resource group first — so the button is
-  // shown for subscription scope only.
-  const quickLink =
-    deploymentScope === 'subscription'
-      ? stack?.versions?.at(0)?.quick_link_url
-      : undefined
+  // ctl-api only writes a portal link for subscription scope, but versions
+  // rendered before Azure had one carry a CloudFormation link instead.
+  const versionQuickLink = stack?.versions?.at(0)?.quick_link_url
+  const quickLink = versionQuickLink?.startsWith('https://portal.azure.com/')
+    ? versionQuickLink
+    : undefined
 
   const customerInputs = (inputs ?? []).filter(
     (input) => !!input.name && input.source === 'customer'

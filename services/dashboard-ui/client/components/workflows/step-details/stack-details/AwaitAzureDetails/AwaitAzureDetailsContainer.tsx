@@ -47,13 +47,6 @@ export const AwaitAzureDetailsContainer = ({
     [currentInputs?.values]
   )
 
-  // The install's current app config is only the scope of this stack version if
-  // the version was rendered from it. A step viewed after the install repinned
-  // to a newer config would otherwise be judged against a scope its template
-  // never had.
-  const renderedFromCurrentConfig =
-    stack?.versions?.at(0)?.app_config_id === appConfig?.id
-
   return (
     <AwaitAzureDetails
       stack={stack}
@@ -66,11 +59,6 @@ export const AwaitAzureDetailsContainer = ({
       secrets={secretsConfig?.secrets}
       inputs={appConfig?.input?.inputs}
       setInputNames={setInputNames}
-      deploymentScope={
-        renderedFromCurrentConfig
-          ? appConfig?.stack?.deployment_scope
-          : undefined
-      }
     />
   )
 }
