@@ -1,7 +1,7 @@
 import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
-import { getAppConfigDiff } from '@/lib'
+import { getInstallAppConfigTreeDiff } from '@/lib'
 import {
   extractSections,
   computeSummary,
@@ -16,10 +16,17 @@ interface IPlanGroupStepContainer {
   metadata: Record<string, any>
   workflowStatus?: string
   hideHeading?: boolean
+  diffOnly?: boolean
   onSelectInstall?: (installId: string) => void
   installFacts?: Record<
     string,
-    { labels?: Record<string, string>; region?: string }
+    {
+      labels?: Record<string, string>
+      region?: string
+      status?: string
+      detail?: string
+      appliedConfigId?: string
+    }
   >
 }
 
@@ -28,13 +35,13 @@ export const PlanGroupStepContainer = ({
   metadata,
   workflowStatus,
   hideHeading,
+  diffOnly,
   onSelectInstall,
   installFacts,
 }: IPlanGroupStepContainer) => {
   const { org } = useOrg()
-  const { app, labelColors } = useApp()
+  const { labelColors } = useApp()
   const orgId = org?.id ?? ''
-  const appId = app?.id ?? ''
 
   const approvalId = step.approval?.id
   const hasApproval = step.execution_type === 'approval' && !!approvalId
@@ -63,26 +70,26 @@ export const PlanGroupStepContainer = ({
     metadata.install_group_name ||
     step.name?.replace(/^plan install group:\s*/i, '')
   const showApproveBar =
-    hasApproval && isAwaiting && !hasResponse && !isCancelled
+    !diffOnly && hasApproval && isAwaiting && !hasResponse && !isCancelled
 
   const diffQueries = useQueries({
-    queries: rawInstalls.map((inst) => ({
-      queryKey: [
-        'app-config-diff',
-        orgId,
-        appId,
-        inst.new_app_config_id,
-        inst.old_app_config_id,
-      ],
-      queryFn: () =>
-        getAppConfigDiff({
+    queries: rawInstalls.map((inst) => {
+      return {
+        queryKey: [
+          'install-app-config-tree-diff',
           orgId,
-          appId,
-          configId: inst.new_app_config_id,
-          oldConfigId: inst.old_app_config_id,
-        }),
-      enabled: !!orgId && !!appId && !!inst.new_app_config_id,
-    })),
+          inst.install_id,
+          inst.new_app_config_id,
+        ],
+        queryFn: () =>
+          getInstallAppConfigTreeDiff({
+            orgId,
+            installId: inst.install_id,
+            configId: inst.new_app_config_id,
+          }),
+        enabled: !!orgId && !!inst.install_id && !!inst.new_app_config_id,
+      }
+    }),
   })
 
   const installs: PlanInstallDiff[] = rawInstalls.map((inst, i) => {
@@ -117,7 +124,7 @@ export const PlanGroupStepContainer = ({
       groupName={groupName}
       labelColors={labelColors}
       orgId={orgId}
-      hasResponse={hasResponse}
+      hasResponse={diffOnly ? false : hasResponse}
       responseType={step.approval?.response?.type}
       showApproveBar={showApproveBar}
       isInProgress={step.status?.status === 'in-progress'}

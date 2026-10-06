@@ -9,8 +9,9 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"charm.land/lipgloss/v2"
-	"github.com/nuonco/nuon/bins/cli/internal/ui/teaprogram"
 	"golang.org/x/term"
+
+	"github.com/nuonco/nuon/bins/cli/internal/ui/teaprogram"
 
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )

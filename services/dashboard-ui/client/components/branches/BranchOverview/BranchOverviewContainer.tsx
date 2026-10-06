@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { useNavigate } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { ProviderError } from '@/components/layout/ProviderError'
@@ -17,6 +16,7 @@ import {
   overviewCompositeError,
 } from './overview-loading'
 import { RunBuildsPanel } from './RunBuildsPanel'
+import { useGroupPlanApprovals } from '@/components/branches/BranchRunApproval/use-group-plan-approvals'
 import { useRolloutGroups } from './use-rollout-groups'
 
 const isBuildStep = (name?: string) =>
@@ -25,7 +25,6 @@ const isBuildStep = (name?: string) =>
 const NO_META_BUILDS: TBuildMeta[] = []
 
 export const BranchOverviewContainer = () => {
-  const navigate = useNavigate()
   const { addPanel, updatePanel, panels } = useSurfaces()
   const buildsPanelId = useRef<string | null>(null)
   const openBuildsPanelId =
@@ -38,6 +37,7 @@ export const BranchOverviewContainer = () => {
     branchId,
     pinnedWorkflowId,
     rolloutHref,
+    groupHref,
     rolloutError,
     branchRunId,
     branchRun,
@@ -48,6 +48,16 @@ export const BranchOverviewContainer = () => {
     hasPlan,
     isLoading,
   } = useRolloutGroups()
+  const approvals = useGroupPlanApprovals(
+    rollout?.id
+      ? {
+          id: rollout.id,
+          status: { status: rollout.status },
+          steps: workflowSteps,
+        }
+      : undefined,
+    groups
+  )
 
   const { data: builds } = useQuery({
     queryKey: ['branch-run-builds', orgId, appId, branchId, branchRunId],
@@ -99,10 +109,7 @@ export const BranchOverviewContainer = () => {
 
   useEffect(() => {
     if (!openBuildsPanelId) return
-    updatePanel(
-      openBuildsPanelId,
-      <RunBuildsPanel rows={changedBuilds} />
-    )
+    updatePanel(openBuildsPanelId, <RunBuildsPanel rows={changedBuilds} />)
   }, [openBuildsPanelId, changedBuilds, updatePanel])
 
   const openBuilds = () => {
@@ -173,9 +180,8 @@ export const BranchOverviewContainer = () => {
         installWorkflowHref={installFailureHref(compositeError, orgId)}
         failedBuilds={failedBuilds}
         rolloutHref={rolloutHref}
-        onSelectGroup={(groupId) =>
-          navigate(`${rolloutHref}?group=${encodeURIComponent(groupId)}`)
-        }
+        groupHref={groupHref}
+        approvals={approvals}
       />
     </>
   )

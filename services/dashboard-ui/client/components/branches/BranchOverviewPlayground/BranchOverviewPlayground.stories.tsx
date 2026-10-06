@@ -46,6 +46,14 @@ export const RolloutFailed = () => (
 )
 RolloutFailed.storyName = 'Rollout failed'
 
+export const Group = () => (
+  <BranchOverviewPlayground
+    branch={rollingOutFixture}
+    initialView="rollout"
+    initialGroupId="grp_primary"
+  />
+)
+
 export const Settings = () => (
   <BranchOverviewPlayground branch={rollingOutFixture} initialView="settings" />
 )

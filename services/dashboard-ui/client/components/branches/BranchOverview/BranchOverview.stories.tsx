@@ -74,7 +74,7 @@ export const RollingOut = () => (
     changes={changes}
     groups={groups}
     rolloutHref="#rollout"
-    onSelectGroup={() => {}}
+    groupHref={(id) => `#rollout/groups/${id}`}
   />
 )
 RollingOut.storyName = 'Rolling out'
@@ -102,7 +102,7 @@ export const TagPush = () => (
       })),
     }))}
     rolloutHref="#rollout"
-    onSelectGroup={() => {}}
+    groupHref={(id) => `#rollout/groups/${id}`}
   />
 )
 TagPush.storyName = 'Tag push'
@@ -124,7 +124,7 @@ export const WaitingForWorkflow = () => (
     loadingStages={buildOverviewLoadingStages({ steps: [] })}
     groups={[]}
     rolloutHref="#rollout"
-    onSelectGroup={() => {}}
+    groupHref={(id) => `#rollout/groups/${id}`}
   />
 )
 WaitingForWorkflow.storyName = 'Waiting for workflow'
@@ -145,7 +145,7 @@ export const FetchingCommit = () => (
     })}
     groups={groups}
     rolloutHref="#rollout"
-    onSelectGroup={() => {}}
+    groupHref={(id) => `#rollout/groups/${id}`}
   />
 )
 FetchingCommit.storyName = 'Fetching commit'
@@ -179,7 +179,7 @@ export const CommitReady = () => (
     })}
     groups={groups}
     rolloutHref="#rollout"
-    onSelectGroup={() => {}}
+    groupHref={(id) => `#rollout/groups/${id}`}
   />
 )
 CommitReady.storyName = 'Commit ready'
@@ -230,7 +230,7 @@ export const BuildFailed = () => (
     ]}
     groups={groups}
     rolloutHref="#rollout"
-    onSelectGroup={() => {}}
+    groupHref={(id) => `#rollout/groups/${id}`}
   />
 )
 BuildFailed.storyName = 'Build failed'
@@ -268,7 +268,7 @@ export const LongCommitMessage = () => (
     changes={changes}
     groups={groups}
     rolloutHref="#rollout"
-    onSelectGroup={() => {}}
+    groupHref={(id) => `#rollout/groups/${id}`}
   />
 )
 LongCommitMessage.storyName = 'Long commit message'
@@ -278,7 +278,7 @@ export const NoPlan = () => (
     hasPlan={false}
     groups={[]}
     rolloutHref="#rollout"
-    onSelectGroup={() => {}}
+    groupHref={(id) => `#rollout/groups/${id}`}
   />
 )
 NoPlan.storyName = 'No deployment plan'

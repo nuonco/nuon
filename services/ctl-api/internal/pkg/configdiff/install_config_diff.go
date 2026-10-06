@@ -180,6 +180,299 @@ func ComputeInstallConfigDiff(ctx context.Context, db *gorm.DB, oldAppConfigID, 
 	return diff, nil
 }
 
+// CompositeBaselines is the applied app config for each install entity. An empty
+// id means that entity has never been applied. Callers resolve a missing entity
+// ref to the install's deployed config before calling, so a legacy install is
+// not treated as brand new.
+type CompositeBaselines struct {
+	Fallback   string
+	Stack      string
+	Sandbox    string
+	Components map[string]string
+}
+
+// ComputeCompositeInstallConfigDiff unions a stack slice, a sandbox slice, and
+// one slice per component. Each slice is diffed against that entity's baseline,
+// not against a single install pin.
+func ComputeCompositeInstallConfigDiff(ctx context.Context, db *gorm.DB, baselines CompositeBaselines, newAppConfigID string) (*app.InstallConfigDiff, error) {
+	var newAppCfg app.AppConfig
+	if err := preload(db.WithContext(ctx)).First(&newAppCfg, "id = ?", newAppConfigID).Error; err != nil {
+		return nil, fmt.Errorf("unable to get new app config: %w", err)
+	}
+
+	loaded, err := loadBaselineConfigs(ctx, db, baselines, newAppConfigID, &newAppCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	diff := &app.InstallConfigDiff{
+		Added:     []app.ComponentDiffEntry{},
+		Removed:   []app.ComponentDiffEntry{},
+		Changed:   []app.ComponentDiffEntry{},
+		Unchanged: []app.ComponentDiffEntry{},
+	}
+
+	graphs := map[string]*pkgdiff.Diff{}
+	graphBetween := func(oldID string) (*pkgdiff.Diff, error) {
+		if oldID == "" || oldID == newAppConfigID {
+			return nil, nil
+		}
+		if graph, ok := graphs[oldID]; ok {
+			return graph, nil
+		}
+		old := loaded[oldID]
+		if old == nil {
+			return nil, nil
+		}
+		graph, err := intermediateConfigDiff(ctx, old, &newAppCfg)
+		if err != nil {
+			return nil, err
+		}
+		graphs[oldID] = graph
+		return graph, nil
+	}
+
+	stackGraph, err := graphBetween(baselines.Stack)
+	if err != nil {
+		return nil, err
+	}
+	if err := fillStackSlice(diff, loaded[baselines.Stack], &newAppCfg, stackGraph); err != nil {
+		return nil, err
+	}
+	if err := fillSandboxSlice(ctx, db, diff, loaded[baselines.Sandbox], &newAppCfg, baselines.Sandbox, newAppConfigID); err != nil {
+		return nil, err
+	}
+
+	if err := fillComponentSlices(diff, baselines, loaded, &newAppCfg, graphBetween); err != nil {
+		return nil, err
+	}
+	sortComponentEntries(diff)
+	return diff, nil
+}
+
+func loadBaselineConfigs(ctx context.Context, db *gorm.DB, baselines CompositeBaselines, newAppConfigID string, newAppCfg *app.AppConfig) (map[string]*app.AppConfig, error) {
+	ids := map[string]struct{}{}
+	add := func(id string) {
+		if id != "" && id != newAppConfigID {
+			ids[id] = struct{}{}
+		}
+	}
+	add(baselines.Fallback)
+	add(baselines.Stack)
+	add(baselines.Sandbox)
+	for _, id := range baselines.Components {
+		add(id)
+	}
+
+	loaded := map[string]*app.AppConfig{newAppConfigID: newAppCfg}
+	for id := range ids {
+		var cfg app.AppConfig
+		err := preload(db.WithContext(ctx)).First(&cfg, "id = ?", id).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			continue
+		}
+		if err != nil {
+			return nil, fmt.Errorf("unable to get app config %s: %w", id, err)
+		}
+		copied := cfg
+		loaded[id] = &copied
+	}
+	return loaded, nil
+}
+
+func fillStackSlice(diff *app.InstallConfigDiff, oldCfg, newCfg *app.AppConfig, graphDiff *pkgdiff.Diff) error {
+	if oldCfg == nil {
+		if newCfg.StackConfig.ID != "" {
+			diff.StackChanged = true
+			diff.StackNewID = newCfg.StackConfig.ID
+			diff.StackImpacts = stackImpactChanges(nil, newCfg)
+		}
+		return nil
+	}
+	if graphDiff != nil {
+		stack := graphDiff.FindResource(config.StackResourceID)
+		if stack != nil && stack.Summary().HasChanged {
+			diff.StackImpacts = graphStackImpacts(stack, oldCfg, newCfg)
+			diff.StackImpactReasons = append([]pkgdiff.ImpactReason(nil), stack.ImpactReasons...)
+		}
+	} else {
+		diff.StackImpacts = stackImpactChanges(oldCfg, newCfg)
+	}
+	if len(diff.StackImpacts) > 0 {
+		diff.StackChanged = true
+		diff.StackOldID = oldCfg.StackConfig.ID
+		diff.StackNewID = newCfg.StackConfig.ID
+	}
+	return nil
+}
+
+func fillSandboxSlice(ctx context.Context, db *gorm.DB, diff *app.InstallConfigDiff, oldCfg, newCfg *app.AppConfig, oldID, newID string) error {
+	if oldCfg == nil {
+		if newCfg.SandboxConfig.ID != "" {
+			diff.SandboxChanged = true
+			diff.SandboxNewID = newCfg.SandboxConfig.ID
+		}
+		buildID, err := latestActiveSandboxBuildID(ctx, db, newID)
+		if err != nil {
+			return err
+		}
+		if buildID != "" {
+			diff.SandboxBuildChanged = true
+			diff.SandboxBuildNewID = buildID
+		}
+		return nil
+	}
+	if oldCfg.SandboxConfig.ID != newCfg.SandboxConfig.ID && !sandboxConfigEqual(oldCfg.SandboxConfig, newCfg.SandboxConfig) {
+		diff.SandboxChanged = true
+		diff.SandboxOldID = oldCfg.SandboxConfig.ID
+		diff.SandboxNewID = newCfg.SandboxConfig.ID
+	}
+	oldBuildID, err := latestActiveSandboxBuildID(ctx, db, oldID)
+	if err != nil {
+		return err
+	}
+	newBuildID, err := latestActiveSandboxBuildID(ctx, db, newID)
+	if err != nil {
+		return err
+	}
+	if oldBuildID != newBuildID {
+		diff.SandboxBuildChanged = true
+		diff.SandboxBuildOldID = oldBuildID
+		diff.SandboxBuildNewID = newBuildID
+	}
+	return nil
+}
+
+func fillComponentSlices(
+	diff *app.InstallConfigDiff,
+	baselines CompositeBaselines,
+	loaded map[string]*app.AppConfig,
+	newCfg *app.AppConfig,
+	graphBetween func(oldID string) (*pkgdiff.Diff, error),
+) error {
+	newByID := connsByComponentID(newCfg)
+	ids := map[string]struct{}{}
+	for id := range newByID {
+		ids[id] = struct{}{}
+	}
+	collectComponentIDs(ids, loaded[baselines.Fallback])
+	seenBaseline := map[string]struct{}{}
+	for _, baselineID := range baselines.Components {
+		if _, ok := seenBaseline[baselineID]; ok {
+			continue
+		}
+		seenBaseline[baselineID] = struct{}{}
+		collectComponentIDs(ids, loaded[baselineID])
+	}
+
+	ordered := make([]string, 0, len(ids))
+	for id := range ids {
+		ordered = append(ordered, id)
+	}
+	sort.Strings(ordered)
+
+	for _, id := range ordered {
+		baselineID := baselines.Components[id]
+		if baselineID == "" {
+			baselineID = baselines.Fallback
+		}
+		oldConn := connOn(loaded[baselineID], id)
+		if oldConn == nil && baselines.Components[id] == "" {
+			oldConn = connOnAnyBaseline(loaded, baselines, id)
+		}
+		newConn := newByID[id]
+		if oldConn == nil && newConn == nil {
+			continue
+		}
+		if newConn == nil {
+			diff.Removed = append(diff.Removed, app.ComponentDiffEntry{
+				ComponentID:   id,
+				ComponentName: oldConn.ComponentName,
+				ComponentType: string(oldConn.Type),
+				OldChecksum:   oldConn.Checksum,
+			})
+			continue
+		}
+		if oldConn == nil {
+			diff.Added = append(diff.Added, componentDiffEntry(nil, newConn))
+			continue
+		}
+		graph, err := graphBetween(baselineID)
+		if err != nil {
+			return err
+		}
+		entry := componentDiffEntry(oldConn, newConn)
+		if graph != nil {
+			if component := graph.FindResource(config.ComponentResourceID(entry.ComponentName)); component != nil && component.Impacted {
+				entry.ImpactReasons = append([]pkgdiff.ImpactReason(nil), component.ImpactReasons...)
+			}
+		}
+		if checksumsEqual(oldConn, newConn) && !entry.BuildChanged && len(entry.ImpactReasons) == 0 {
+			diff.Unchanged = append(diff.Unchanged, entry)
+			continue
+		}
+		diff.Changed = append(diff.Changed, entry)
+	}
+	return nil
+}
+
+func collectComponentIDs(ids map[string]struct{}, cfg *app.AppConfig) {
+	if cfg == nil {
+		return
+	}
+	for i := range cfg.ComponentConfigConnections {
+		ids[cfg.ComponentConfigConnections[i].ComponentID] = struct{}{}
+	}
+}
+
+func connsByComponentID(cfg *app.AppConfig) map[string]*app.ComponentConfigConnection {
+	if cfg == nil {
+		return nil
+	}
+	out := make(map[string]*app.ComponentConfigConnection, len(cfg.ComponentConfigConnections))
+	for i := range cfg.ComponentConfigConnections {
+		conn := &cfg.ComponentConfigConnections[i]
+		out[conn.ComponentID] = conn
+	}
+	return out
+}
+
+func connOn(cfg *app.AppConfig, componentID string) *app.ComponentConfigConnection {
+	if cfg == nil {
+		return nil
+	}
+	for i := range cfg.ComponentConfigConnections {
+		if cfg.ComponentConfigConnections[i].ComponentID == componentID {
+			return &cfg.ComponentConfigConnections[i]
+		}
+	}
+	return nil
+}
+
+func connOnAnyBaseline(loaded map[string]*app.AppConfig, baselines CompositeBaselines, componentID string) *app.ComponentConfigConnection {
+	if conn := connOn(loaded[baselines.Fallback], componentID); conn != nil {
+		return conn
+	}
+	for _, baselineID := range baselines.Components {
+		if conn := connOn(loaded[baselineID], componentID); conn != nil {
+			return conn
+		}
+	}
+	return nil
+}
+
+func sortComponentEntries(diff *app.InstallConfigDiff) {
+	less := func(entries []app.ComponentDiffEntry) {
+		sort.Slice(entries, func(i, j int) bool {
+			return entries[i].ComponentID < entries[j].ComponentID
+		})
+	}
+	less(diff.Added)
+	less(diff.Removed)
+	less(diff.Changed)
+	less(diff.Unchanged)
+}
+
 func intermediateConfigDiff(ctx context.Context, oldCfg, newCfg *app.AppConfig) (*pkgdiff.Diff, error) {
 	oldIntermediate, oldOK, err := loadIntermediateConfig(ctx, oldCfg)
 	if err != nil {
