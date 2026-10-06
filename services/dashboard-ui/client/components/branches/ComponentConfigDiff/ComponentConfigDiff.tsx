@@ -281,11 +281,14 @@ export const SourceFilesPanel = ({
   const [selectedPath, setSelectedPath] = useState<string | undefined>()
   const [flash, setFlash] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
-  const selected = files.find(({ path }) => path === selectedPath)
   const changed = files.filter(({ change }) => change !== 'unchanged')
+  const selected = changed.find(({ path }) => path === selectedPath)
 
   useEffect(() => {
-    if (!changed.length) return
+    if (!changed.length) {
+      if (selectedPath) setSelectedPath(undefined)
+      return
+    }
     if (!changed.some(({ path }) => path === selectedPath)) {
       setSelectedPath(changed[0].path)
     }
@@ -303,6 +306,14 @@ export const SourceFilesPanel = ({
     const timer = setTimeout(() => setFlash(false), 900)
     return () => clearTimeout(timer)
   }, [focus])
+
+  if (!changed.length) {
+    return (
+      <Text theme="neutral">
+        {files.length ? 'No files changed.' : 'This component references no files.'}
+      </Text>
+    )
+  }
 
   return (
     <div className="@container flex flex-col gap-3">
@@ -324,46 +335,38 @@ export const SourceFilesPanel = ({
           </Badge>
         </div>
       </div>
-      {changed.length ? (
+      <div
+        ref={panelRef}
+        className={cn(
+          'flex flex-col overflow-hidden border rounded-md @3xl:flex-row',
+          changed.length > 5 ? 'min-h-144' : 'min-h-96'
+        )}
+      >
+        <div className="border-b p-3 @3xl:w-2/5 @3xl:border-b-0 @3xl:border-r">
+          <ComponentSourceTree
+            files={changed}
+            onSelect={setSelectedPath}
+            selectedPath={selectedPath}
+            focus={focus}
+          />
+        </div>
         <div
-          ref={panelRef}
           className={cn(
-            'flex flex-col overflow-hidden border rounded-md @3xl:flex-row',
-            changed.length > 5 ? 'min-h-144' : 'min-h-96'
+            'min-w-0 overflow-auto p-4 transition-colors duration-500 @3xl:w-3/5',
+            flash && 'bg-primary-50 dark:bg-primary-900/20'
           )}
         >
-          <div className="border-b p-3 @3xl:w-2/5 @3xl:border-b-0 @3xl:border-r">
-            <ComponentSourceTree
-              files={changed}
-              onSelect={setSelectedPath}
-              selectedPath={selectedPath}
-              focus={focus}
-            />
-          </div>
-          <div
-            className={cn(
-              'min-w-0 overflow-auto p-4 transition-colors duration-500 @3xl:w-3/5',
-              flash && 'bg-primary-50 dark:bg-primary-900/20'
-            )}
-          >
-            {selected ? (
-              isLoadingFile ? (
-                <Loading />
-              ) : (
-                <SourceFileDiff file={selected} />
-              )
+          {selected ? (
+            isLoadingFile ? (
+              <Loading />
             ) : (
-              <Text theme="neutral">Select a file to inspect it.</Text>
-            )}
-          </div>
+              <SourceFileDiff file={selected} />
+            )
+          ) : (
+            <Text theme="neutral">Select a file to inspect it.</Text>
+          )}
         </div>
-      ) : (
-        <Text theme="neutral">
-          {files.length
-            ? 'No changed files in this component.'
-            : 'This component references no files.'}
-        </Text>
-      )}
+      </div>
     </div>
   )
 }
