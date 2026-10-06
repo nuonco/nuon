@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import {
+  getAccountDisplayName,
   getWorkflowBadge,
   getStepBadge,
   getStepButtons,
@@ -619,6 +620,36 @@ describe('workflow-utils', () => {
           step('c', 'pending'),
         ])
       ).toBe(false)
+    })
+  })
+
+  describe('getAccountDisplayName', () => {
+    test('uses the service account name instead of the synthetic email', () => {
+      expect(
+        getAccountDisplayName({
+          account_type: 'service',
+          name: 'test',
+          email: 'accobohpihwlqumrygm9ix39l1@serviceaccount.nuon.co',
+        })
+      ).toBe('test')
+    })
+
+    test('falls back to a service account when the name is missing', () => {
+      expect(
+        getAccountDisplayName({
+          account_type: 'service',
+          email: 'runner@serviceaccount.nuon.co',
+        })
+      ).toBe('a service account')
+    })
+
+    test('uses email for human accounts', () => {
+      expect(
+        getAccountDisplayName({
+          account_type: 'auth',
+          email: 'ada@example.com',
+        })
+      ).toBe('ada@example.com')
     })
   })
 })

@@ -14,6 +14,15 @@ const mockWorkflow = {
   metadata: {},
 } as any
 
+const serviceAccountWorkflow = {
+  ...mockWorkflow,
+  created_by: {
+    name: 'test',
+    email: 'accobohpihwlqumrygm9ix39l1@serviceaccount.nuon.co',
+    account_type: 'service',
+  },
+} as any
+
 const mockInstall = {
   app_id: 'app-123',
   app: { name: 'My App' },
@@ -53,6 +62,18 @@ export const WithChangedInputs = () => (
             }),
           },
         }}
+        orgId="org-123"
+        install={mockInstall}
+      />
+    </div>
+  </SurfacesProvider>
+)
+
+export const ServiceAccount = () => (
+  <SurfacesProvider>
+    <div className="max-w-2xl p-4">
+      <WorkflowDetailsSection
+        workflow={serviceAccountWorkflow}
         orgId="org-123"
         install={mockInstall}
       />
