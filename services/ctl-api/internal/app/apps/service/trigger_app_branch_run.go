@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -8,11 +9,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 )
 
 type PreviewRunRequest struct {
@@ -26,6 +29,7 @@ type PreviewRunRequest struct {
 }
 
 type TriggerAppBranchRunRequest struct {
+	RequestID   string `json:"request_id,omitempty" validate:"omitempty,max=255"`
 	ConfigID    string `json:"config_id"`
 	Force       bool   `json:"force"`
 	PlanOnly    bool   `json:"plan_only"`
@@ -128,6 +132,7 @@ func (c *TriggerAppBranchRunRequest) validateRunSource() error {
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.AppBranchRun
 // @Router					/v1/apps/{app_id}/branches/{app_branch_id}/runs [post]
@@ -150,6 +155,10 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
+	if err := request.ValidateRequestID(req.RequestID); err != nil {
+		ctx.Error(err)
+		return
+	}
 
 	// Verify branch exists and belongs to this org/app
 	var branch app.AppBranch
@@ -163,6 +172,35 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 	if res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to find app branch: %w", res.Error))
 		return
+	}
+
+	var requestHash string
+	var dedupe *string
+	if req.RequestID != "" {
+		requestHash, err = hashTriggerAppBranchRun(appID, appBranchID, req)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		d := request.DedupeKey("app-branch-run", req.RequestID)
+		dedupe = &d
+		existing, lookupErr := s.lookupAppBranchRunByRequestID(ctx, org.ID, appBranchID, req.RequestID)
+		if lookupErr == nil {
+			if err := request.Check(existing.Request, requestHash, ""); err != nil {
+				ctx.Error(err)
+				return
+			}
+			if err := s.wakeAppBranchRun(ctx, existing, branch.Queue.ID, dedupe, req.AutoApprove, appID); err != nil {
+				ctx.Error(fmt.Errorf("unable to trigger app branch run: %w", err))
+				return
+			}
+			s.writeAppBranchRun(ctx, existing.ID)
+			return
+		}
+		if !errors.Is(lookupErr, gorm.ErrRecordNotFound) {
+			ctx.Error(fmt.Errorf("unable to look up app branch run: %w", lookupErr))
+			return
+		}
 	}
 
 	// Validate app_config_id if provided
@@ -307,6 +345,14 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 
 	approvalOption := branchRunApprovalOption(req.AutoApprove)
 
+	var wfRequest *app.WorkflowRequest
+	if req.RequestID != "" {
+		wfRequest = &app.WorkflowRequest{
+			RequestID:         req.RequestID,
+			RequestHash:       requestHash,
+			PinnedAppConfigID: "",
+		}
+	}
 	triggerResp, err := s.helpers.TriggerAppBranchRun(ctx, &helpers.TriggerAppBranchRunRequest{
 		Run: helpers.CreateAppBranchRunRequest{
 			AppBranchID:       appBranchID,
@@ -322,11 +368,30 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 			BaseBranch:        baseBranch,
 			Metadata:          runMetadata,
 			Preview:           previewInput,
+			Request:           wfRequest,
 		},
 		QueueID:        branch.Queue.ID,
 		Metadata:       workflowMeta,
 		ApprovalOption: approvalOption,
+		DedupeKey:      dedupe,
 	})
+	if err != nil && req.RequestID != "" && request.IsDuplicateKey(err) {
+		existing, lookupErr := s.lookupAppBranchRunByRequestID(ctx, org.ID, appBranchID, req.RequestID)
+		if lookupErr != nil {
+			ctx.Error(fmt.Errorf("unable to look up app branch run: %w", lookupErr))
+			return
+		}
+		if err = request.Check(existing.Request, requestHash, ""); err != nil {
+			ctx.Error(err)
+			return
+		}
+		if err = s.wakeAppBranchRun(ctx, existing, branch.Queue.ID, dedupe, req.AutoApprove, appID); err != nil {
+			ctx.Error(fmt.Errorf("unable to trigger app branch run: %w", err))
+			return
+		}
+		s.writeAppBranchRun(ctx, existing.ID)
+		return
+	}
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to trigger app branch run: %w", err))
 		return
@@ -343,7 +408,56 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 		}
 	}
 
-	res = s.db.WithContext(ctx).
+	s.writeAppBranchRun(ctx, run.ID)
+}
+
+func hashTriggerAppBranchRun(appID, appBranchID string, req TriggerAppBranchRunRequest) (string, error) {
+	req.RequestID = ""
+	return request.Hash(struct {
+		TriggerAppBranchRunRequest
+		AppID       string `json:"app_id"`
+		AppBranchID string `json:"app_branch_id"`
+	}{
+		TriggerAppBranchRunRequest: req,
+		AppID:                      appID,
+		AppBranchID:                appBranchID,
+	})
+}
+
+func (s *service) lookupAppBranchRunByRequestID(ctx *gin.Context, orgID, appBranchID, requestID string) (*app.AppBranchRun, error) {
+	var existing app.AppBranchRun
+	err := s.db.WithContext(ctx).
+		Where(app.AppBranchRun{OrgID: orgID, AppBranchID: appBranchID}).
+		Where("request->>'request_id' = ?", requestID).
+		First(&existing).Error
+	if err != nil {
+		return nil, err
+	}
+	return &existing, nil
+}
+
+func (s *service) wakeAppBranchRun(ctx *gin.Context, run *app.AppBranchRun, queueID string, dedupe *string, autoApprove bool, appID string) error {
+	meta := map[string]string{
+		"app_id":     appID,
+		"config_id":  run.AppBranchConfigID,
+		"force":      strconv.FormatBool(run.Force),
+		"event_type": run.EventType,
+	}
+	if run.AppConfigID != "" {
+		meta["app_config_id"] = run.AppConfigID
+	}
+	_, err := s.helpers.ResumeAppBranchRun(ctx, run, &helpers.TriggerAppBranchRunRequest{
+		QueueID:        queueID,
+		DedupeKey:      dedupe,
+		Metadata:       meta,
+		ApprovalOption: branchRunApprovalOption(autoApprove),
+	})
+	return err
+}
+
+func (s *service) writeAppBranchRun(ctx *gin.Context, runID string) {
+	var run app.AppBranchRun
+	res := s.db.WithContext(ctx).
 		Preload("Workflow").
 		Preload("Workflow.Steps").
 		Preload("Workflow.CreatedBy").
@@ -351,12 +465,11 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 		Preload("AppBranchConfig").
 		Preload("CreatedBy").
 		Preload("Preview").
-		First(&run, "id = ?", run.ID)
+		First(&run, "id = ?", runID)
 	if res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to reload run: %w", res.Error))
 		return
 	}
-
 	ctx.JSON(http.StatusCreated, run)
 }
 

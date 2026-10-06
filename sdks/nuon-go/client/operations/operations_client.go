@@ -2273,6 +2273,7 @@ Provide **either** `inline_contents` (for multi-line bash scripts) **or** `comma
 - `env_vars` (object, optional): Environment variables as key-value pairs
 - `timeout` (integer, optional): Execution timeout in seconds (1-3600, default: 300)
 - `name` (string, optional): Display name for the action (max 255 chars)
+- `request_id` (string, optional): Idempotency key (max 255 chars). The same id and body returns the original run. A different body returns 409.
 
 ## Response
 

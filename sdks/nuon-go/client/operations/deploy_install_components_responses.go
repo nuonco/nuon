@@ -55,6 +55,12 @@ func (o *DeployInstallComponentsReader) ReadResponse(response runtime.ClientResp
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewDeployInstallComponentsConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewDeployInstallComponentsInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *DeployInstallComponentsNotFound) GetPayload() *models.StderrErrResponse
 }
 
 func (o *DeployInstallComponentsNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewDeployInstallComponentsConflict creates a DeployInstallComponentsConflict with default headers values
+func NewDeployInstallComponentsConflict() *DeployInstallComponentsConflict {
+	return &DeployInstallComponentsConflict{}
+}
+
+/*
+DeployInstallComponentsConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type DeployInstallComponentsConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this deploy install components conflict response has a 2xx status code
+func (o *DeployInstallComponentsConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this deploy install components conflict response has a 3xx status code
+func (o *DeployInstallComponentsConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this deploy install components conflict response has a 4xx status code
+func (o *DeployInstallComponentsConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this deploy install components conflict response has a 5xx status code
+func (o *DeployInstallComponentsConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this deploy install components conflict response a status code equal to that given
+func (o *DeployInstallComponentsConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the deploy install components conflict response
+func (o *DeployInstallComponentsConflict) Code() int {
+	return 409
+}
+
+func (o *DeployInstallComponentsConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/components/deploy-all][%d] deployInstallComponentsConflict %s", 409, payload)
+}
+
+func (o *DeployInstallComponentsConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/components/deploy-all][%d] deployInstallComponentsConflict %s", 409, payload)
+}
+
+func (o *DeployInstallComponentsConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *DeployInstallComponentsConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

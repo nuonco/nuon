@@ -14,6 +14,8 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 // NewDeleteInstallParams creates a new DeleteInstallParams object,
@@ -66,6 +68,12 @@ type DeleteInstallParams struct {
 	   install ID
 	*/
 	InstallID string
+
+	/* Req.
+
+	   Input
+	*/
+	Req *models.ServiceDeleteInstallRequest
 
 	timeout    time.Duration
 	Context    context.Context
@@ -131,6 +139,17 @@ func (o *DeleteInstallParams) SetInstallID(installID string) {
 	o.InstallID = installID
 }
 
+// WithReq adds the req to the delete install params
+func (o *DeleteInstallParams) WithReq(req *models.ServiceDeleteInstallRequest) *DeleteInstallParams {
+	o.SetReq(req)
+	return o
+}
+
+// SetReq adds the req to the delete install params
+func (o *DeleteInstallParams) SetReq(req *models.ServiceDeleteInstallRequest) {
+	o.Req = req
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *DeleteInstallParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -142,6 +161,11 @@ func (o *DeleteInstallParams) WriteToRequest(r runtime.ClientRequest, reg strfmt
 	// path param install_id
 	if err := r.SetPathParam("install_id", o.InstallID); err != nil {
 		return err
+	}
+	if o.Req != nil {
+		if err := r.SetBodyParam(o.Req); err != nil {
+			return err
+		}
 	}
 
 	if len(res) > 0 {

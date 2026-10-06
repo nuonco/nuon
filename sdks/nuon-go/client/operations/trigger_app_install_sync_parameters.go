@@ -14,6 +14,8 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 // NewTriggerAppInstallSyncParams creates a new TriggerAppInstallSyncParams object,
@@ -66,6 +68,12 @@ type TriggerAppInstallSyncParams struct {
 	   app ID
 	*/
 	AppID string
+
+	/* Req.
+
+	   Input
+	*/
+	Req *models.ServiceTriggerAppInstallSyncRequest
 
 	timeout    time.Duration
 	Context    context.Context
@@ -131,6 +139,17 @@ func (o *TriggerAppInstallSyncParams) SetAppID(appID string) {
 	o.AppID = appID
 }
 
+// WithReq adds the req to the trigger app install sync params
+func (o *TriggerAppInstallSyncParams) WithReq(req *models.ServiceTriggerAppInstallSyncRequest) *TriggerAppInstallSyncParams {
+	o.SetReq(req)
+	return o
+}
+
+// SetReq adds the req to the trigger app install sync params
+func (o *TriggerAppInstallSyncParams) SetReq(req *models.ServiceTriggerAppInstallSyncRequest) {
+	o.Req = req
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *TriggerAppInstallSyncParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -142,6 +161,11 @@ func (o *TriggerAppInstallSyncParams) WriteToRequest(r runtime.ClientRequest, re
 	// path param app_id
 	if err := r.SetPathParam("app_id", o.AppID); err != nil {
 		return err
+	}
+	if o.Req != nil {
+		if err := r.SetBodyParam(o.Req); err != nil {
+			return err
+		}
 	}
 
 	if len(res) > 0 {
