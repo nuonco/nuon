@@ -9,6 +9,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { PageSection } from '@/components/layout/PageSection'
 import { Panel } from '@/components/surfaces/Panel'
+import { ConfigChangesViewer } from './ConfigChanges'
 import type { TLatestRollout } from './fixtures'
 import { InstallGroupCards } from './InstallGroupCards'
 import { RolloutTimeline } from './RolloutTimeline'
@@ -122,9 +123,11 @@ export const RolloutPage = ({ rollout }: IRolloutPage) => (
             ),
           }}
         >
-          <Text variant="subtext" theme="neutral">
-            Config diff placeholder
-          </Text>
+          <ConfigChangesViewer
+            sections={rollout.configChanges.sections}
+            files={rollout.configChanges.files}
+            versionLabel={rollout.configChanges.versionLabel}
+          />
         </Panel>
       </div>
       <RolloutTimeline status={rollout.status} />

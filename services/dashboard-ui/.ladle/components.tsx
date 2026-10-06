@@ -116,15 +116,15 @@ export const Provider: GlobalProvider = ({ children, storyMeta }) => {
             <OrgContext.Provider value={{ org: mockOrg, refresh: () => {} }}>
               <InstallContext.Provider value={{ install: mockInstall, refresh: () => {} }}>
                 <InstallAppConfigProvider>
-                <ToastProvider>
-                  <SurfacesProvider>
-                   <ThemeProvider>
-                    <DashboardPreferencesProvider>
-                    {canvas(isFullBleed, children)}
-                    </DashboardPreferencesProvider>
-                   </ThemeProvider>
-                  </SurfacesProvider>
-                </ToastProvider>
+                  <ToastProvider>
+                    <ThemeProvider>
+                      <DashboardPreferencesProvider>
+                        <SurfacesProvider>
+                          {canvas(isFullBleed, children)}
+                        </SurfacesProvider>
+                      </DashboardPreferencesProvider>
+                    </ThemeProvider>
+                  </ToastProvider>
                 </InstallAppConfigProvider>
               </InstallContext.Provider>
             </OrgContext.Provider>

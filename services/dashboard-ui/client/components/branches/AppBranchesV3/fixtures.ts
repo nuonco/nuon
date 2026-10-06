@@ -1,6 +1,10 @@
-import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
 import type { TRunSource } from '@/components/branches/BranchOverview/run-source'
-import type { TAppBranchInstallGroup, TCompositeError } from '@/types'
+import type {
+  TAppBranchInstallGroup,
+  TAppConfigDiffSection,
+  TCompositeError,
+} from '@/types'
+import type { TConfigSourceFile } from './ConfigChanges/config-changes'
 
 export type TRolloutInstall = {
   id: string
@@ -63,7 +67,8 @@ export type TLatestRollout = {
   configChanges: {
     versionLabel: string
     summary: TConfigChangeSummary
-    sections: DiffSectionData[]
+    sections: TAppConfigDiffSection[]
+    files: TConfigSourceFile[]
   }
   installGroups: TRolloutInstallGroup[]
   commit: {
@@ -190,13 +195,13 @@ export const latestRolloutFixture: TLatestRollout = {
   },
   configChanges: {
     versionLabel: 'v13 → v14',
-    summary: { added: 1, removed: 0, changed: 2 },
+    summary: { added: 2, removed: 1, changed: 3 },
     sections: [
       {
         name: 'Components',
         sectionKey: 'components',
         additions: 1,
-        removals: 0,
+        removals: 1,
         changed: 2,
         grouped: true,
         fields: [],
@@ -204,24 +209,37 @@ export const latestRolloutFixture: TLatestRollout = {
           {
             name: 'cache',
             op: 'add',
-            componentType: 'terraform_module',
+            componentType: 'helm_chart',
             fields: [
+              { key: 'type', op: 'add', diff: "'helm_chart'" },
+              { key: 'chart_name', op: 'add', diff: "'cache'" },
+              { key: 'namespace', op: 'add', diff: "'acme'" },
               {
-                key: 'terraform.version',
+                key: 'public_repo.repo',
                 op: 'add',
-                diff: "'' -> '1.9.5'",
+                diff: "'acme/platform'",
+              },
+              {
+                key: 'public_repo.directory',
+                op: 'add',
+                diff: "'charts/cache'",
               },
             ],
           },
           {
             name: 'api',
             op: 'change',
-            componentType: 'docker_build',
+            componentType: 'helm_chart',
             fields: [
               {
-                key: 'image.tag',
+                key: 'public_repo.branch',
                 op: 'change',
-                diff: "'1.4.1' -> '1.4.2'",
+                diff: "'release-13' -> 'release-14'",
+              },
+              {
+                key: 'dependencies',
+                op: 'change',
+                diff: "'legacy-redis' -> 'cache'",
               },
             ],
           },
@@ -233,11 +251,83 @@ export const latestRolloutFixture: TLatestRollout = {
               {
                 key: 'values.cache_endpoint',
                 op: 'change',
-                diff: "'' -> '{{ .nuon.components.cache.outputs.endpoint }}'",
+                diff: "'{{ .nuon.components.legacy-redis.outputs.host }}' -> '{{ .nuon.components.cache.outputs.endpoint }}'",
               },
+              { key: 'values.replicas', op: 'change', diff: "'2' -> '3'" },
+            ],
+          },
+          {
+            name: 'legacy-redis',
+            op: 'remove',
+            componentType: 'helm_chart',
+            fields: [
+              { key: 'type', op: 'remove', diff: "'helm_chart'" },
+              { key: 'chart_name', op: 'remove', diff: "'redis'" },
+              { key: 'namespace', op: 'remove', diff: "'acme'" },
             ],
           },
         ],
+      },
+      {
+        name: 'Inputs',
+        sectionKey: 'inputs',
+        additions: 1,
+        removals: 0,
+        changed: 0,
+        grouped: true,
+        fields: [],
+        entities: [
+          {
+            name: 'cache_size',
+            op: 'add',
+            fields: [
+              { key: 'display_name', op: 'add', diff: "'Cache size'" },
+              { key: 'default', op: 'add', diff: "'2Gi'" },
+              { key: 'group', op: 'add', diff: "'cache'" },
+            ],
+          },
+        ],
+      },
+      {
+        name: 'Sandbox',
+        sectionKey: 'sandbox',
+        additions: 0,
+        removals: 0,
+        changed: 1,
+        grouped: false,
+        entities: [],
+        fields: [],
+        content: {
+          op: 'change',
+          before:
+            'terraform_version = "1.9.5"\n\n[public_repo]\nrepo = "acme/sandboxes"\ndirectory = "eks"\nbranch = "v3.2.0"\n\n[vars]\ncluster_version = "1.30"\nnode_count = 3\n',
+          after:
+            'terraform_version = "1.9.5"\n\n[public_repo]\nrepo = "acme/sandboxes"\ndirectory = "eks"\nbranch = "v3.3.0"\n\n[vars]\ncluster_version = "1.31"\nnode_count = 3\n',
+        },
+      },
+    ],
+    files: [
+      {
+        path: 'values/cache.yaml',
+        kind: 'helm values',
+        change: 'added',
+        after:
+          'replicaCount: 2\n\nresources:\n  requests:\n    memory: "{{ .nuon.inputs.inputs.cache_size }}"\n\nservice:\n  port: 6379\n',
+      },
+      {
+        path: 'values/api.yaml',
+        kind: 'helm values',
+        change: 'modified',
+        before:
+          'image:\n  repository: acme/api\n  tag: "1.4.1"\n\nenv:\n  REDIS_HOST: "{{ .nuon.components.legacy-redis.outputs.host }}"\n  LOG_LEVEL: info\n',
+        after:
+          'image:\n  repository: acme/api\n  tag: "1.4.2"\n\nenv:\n  CACHE_ENDPOINT: "{{ .nuon.components.cache.outputs.endpoint }}"\n  LOG_LEVEL: info\n',
+      },
+      {
+        path: 'values/legacy-redis.yaml',
+        kind: 'helm values',
+        change: 'removed',
+        before: 'architecture: standalone\n\nauth:\n  enabled: false\n',
       },
     ],
   },
