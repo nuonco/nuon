@@ -13,6 +13,13 @@ type ParseOptions struct {
 	Ext          string                                 `validate:"required"`
 	ParserFn     func(io.ReadCloser, string, any) error `validate:"required"`
 	OnParsedFile func(ParsedFile) error
+
+	// SkipDirs are name-tag directories whose files are not read.
+	SkipDirs []string
+
+	// IgnoreFileErrors are name-tag directories where a file that fails to
+	// decode is left out and the rest of the directory is still loaded.
+	IgnoreFileErrors []string
 }
 
 type ParsedFile struct {

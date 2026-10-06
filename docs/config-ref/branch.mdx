@@ -18,7 +18,6 @@ title: 'Branch'
 | **`preview`**<br/>[AppBranchPreviewConfig](#preview) | default preview run settings for this branch | **Optional** | - |
 | **`run`**<br/>[AppBranchRunConfig](#run) | controls which VCS events automatically run this branch | **Optional** | - |
 | **`post_deploy_runbooks`**<br/>array | names of runbooks to run on each install, in order, after its deploy succeeds; resolved to IDs at sync time | **Optional** | - |
-| **`install_update_policy`**<br/>string | what a new run does when an install update is still open: supersede (default) cancels it, queue waits to diff until it finishes | **Optional**<br/>`"supersede"`, `"queue"` | - |
 | **`ignore_changes_regex`**<br/>string | RE2 regex matched against every changed file path; a run whose entire changed file set matches is not attempted | **Optional** | - |
 | **`send_statuses_on_ignore`**<br/>boolean | whether to send a successful commit status when a run is ignored by ignore_changes_regex | **Optional** | - |
 

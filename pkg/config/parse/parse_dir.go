@@ -83,14 +83,21 @@ func parseDir(ctx context.Context, parseCfg ParseConfig, source *sourceCapture) 
 
 	// parse the directory
 	var obj ConfigDir
-	if err := dir.Parse(ctx, cfgFS, &obj, &dir.ParseOptions{
+	dirOpts := &dir.ParseOptions{
 		Root: fp,
 		Ext:  ".toml",
 		ParserFn: func(rc io.ReadCloser, s string, a any) error {
 			return parseTomlFile(rc, s, a, parseCfg.FileProcessor, fp)
 		},
 		OnParsedFile: sourceFileRecorder(source),
-	}); err != nil {
+	}
+	if parseCfg.SkipInstalls {
+		dirOpts.SkipDirs = []string{"installs"}
+	}
+	if parseCfg.SkipBranches {
+		dirOpts.IgnoreFileErrors = []string{"branches"}
+	}
+	if err := dir.Parse(ctx, cfgFS, &obj, dirOpts); err != nil {
 		return nil, errors.Wrap(err, "unable to parse directory")
 	}
 
