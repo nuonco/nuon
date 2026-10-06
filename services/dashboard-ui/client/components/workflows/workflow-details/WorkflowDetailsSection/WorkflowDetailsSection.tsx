@@ -8,16 +8,13 @@ import { Link } from '@/components/common/Link'
 import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { Tooltip } from '@/components/common/Tooltip'
 import { Modal } from '@/components/surfaces/Modal'
 import { humanize } from '@/utils/string-utils'
 import { getInputDisplayName } from '@/utils/install-utils'
-import {
-  getAccountDisplayName,
-  isServiceAccount,
-} from '@/utils/workflow-utils'
+import { getAccountDisplayName } from '@/utils/workflow-utils'
 import type { TWorkflow, TInstall } from '@/types'
 import { WorkflowMetadata } from '../WorkflowMetadata'
-import { Tooltip } from '@/components/common/Tooltip'
 
 type ChangedInput = {
   name: string
@@ -61,6 +58,8 @@ export const WorkflowDetailsSection = ({
 
   const [expanded, setExpanded] = useState(true)
   const toggleExpanded = () => setExpanded((prev) => !prev)
+  const createdByName = getAccountDisplayName(workflow?.created_by)
+  const createdByEmail = workflow?.created_by?.email
 
   return (
     <Card className="!p-4 !gap-4">
@@ -78,22 +77,25 @@ export const WorkflowDetailsSection = ({
         className="flex items-center justify-between gap-3 cursor-pointer select-none focus:outline-none"
       >
         <div className="flex items-center gap-1.5 min-w-0">
-          <Text variant="base" weight="strong">
-            {isServiceAccount(workflow?.created_by) &&
-            workflow?.created_by?.email ? (
-              <Tooltip
-                tipContent={
-                  <Text variant="subtext" family="mono">
-                    {workflow.created_by.email}
-                  </Text>
-                }
-              >
-                {getAccountDisplayName(workflow.created_by)}
-              </Tooltip>
-            ) : (
-              getAccountDisplayName(workflow?.created_by)
-            )}
-          </Text>
+          {createdByEmail && createdByEmail !== createdByName ? (
+            <Tooltip
+              position="top"
+              tipContent={
+                <Text variant="subtext" family="mono">
+                  {createdByEmail}
+                </Text>
+              }
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Text variant="base" weight="strong">
+                {createdByName}
+              </Text>
+            </Tooltip>
+          ) : (
+            <Text variant="base" weight="strong">
+              {createdByName}
+            </Text>
+          )}
           <Text theme="neutral">
             initiated this workflow{' '}
             <Time time={workflow.created_at} format="relative" />

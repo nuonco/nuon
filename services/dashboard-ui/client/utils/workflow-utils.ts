@@ -84,7 +84,6 @@ export function isServiceAccount(account?: {
   return !!account.email?.endsWith('@serviceaccount.nuon.co')
 }
 
-/** Prefer service-account alias/name over the machine email. */
 export function getAccountDisplayName(account?: {
   account_type?: string
   email?: string
