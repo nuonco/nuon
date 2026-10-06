@@ -63,7 +63,7 @@ func TestAzureTelemetryContract(t *testing.T) {
 }
 
 func TestDefaultRunnerTelemetryResources(t *testing.T) {
-	tmpl := (&Templates{}).getDefaultRunnerTemplate(nil)
+	tmpl := (&Templates{}).getDefaultRunnerTemplate(false)
 	resources := tmpl["resources"].([]any)
 	require.Len(t, resources, 2)
 	vmss := resources[0].(map[string]any)

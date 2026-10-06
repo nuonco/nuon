@@ -1,6 +1,8 @@
 package azure
 
 import (
+	"database/sql"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/azureroles"
 )
@@ -12,9 +14,10 @@ import (
 // them differently: Actions become a subscription-scoped custom role definition,
 // BuiltInRoles become direct assignments at resource-group scope.
 type AzureRoleRaw struct {
-	Name         string
-	Actions      []string
-	BuiltInRoles []string
+	Name           string
+	Actions        []string
+	BuiltInRoles   []string
+	EnabledInStack sql.NullBool
 }
 
 // AzureOpRoleRaw is the un-rendered payload for a standard operation role.
@@ -78,7 +81,7 @@ func ExtractAzureRolesRaw(roles []app.AppAWSIAMRoleConfig) []AzureRoleRaw {
 		if len(actions) == 0 && len(builtIn) == 0 {
 			continue
 		}
-		out = append(out, AzureRoleRaw{Name: role.Name, Actions: actions, BuiltInRoles: builtIn})
+		out = append(out, AzureRoleRaw{Name: role.Name, Actions: actions, BuiltInRoles: builtIn, EnabledInStack: role.EnabledInStack})
 	}
 	return out
 }

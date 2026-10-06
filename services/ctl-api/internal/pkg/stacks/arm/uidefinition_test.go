@@ -283,11 +283,12 @@ func TestQuickLinkUIDefinition_PromptsForEveryParameter(t *testing.T) {
 			t.Errorf("securestring parameter %q rendered as %v, want a PasswordBox", name, field.element["type"])
 		}
 		if name == "secretDbPassword" {
-			if field.sectionLabel != "" {
-				t.Errorf("secret rendered inside stack section %q", field.sectionLabel)
+			if field.sectionLabel != "Secrets" {
+				t.Errorf("secret section = %q, want Secrets", field.sectionLabel)
 			}
-			if got := field.element["label"]; got != "Database password" {
-				t.Errorf("secret label = %v, want the display name", got)
+			passwordLabel := field.element["label"].(map[string]any)["password"]
+			if passwordLabel != "Database password" {
+				t.Errorf("secret label = %v, want the display name", field.element["label"])
 			}
 			if got := field.element["toolTip"]; got != "Password for the app database." {
 				t.Errorf("secret toolTip = %v, want the description", got)
@@ -295,6 +296,115 @@ func TestQuickLinkUIDefinition_PromptsForEveryParameter(t *testing.T) {
 		}
 		if got, want := outputs[name], wantParameterOutput(field.ref, p); got != want {
 			t.Errorf("outputs[%q] = %v, want %v", name, got, want)
+		}
+	}
+}
+
+// Role toggles share one section. The three standard roles lead, in a fixed order,
+// even when the app config lists them differently; custom roles follow in config
+// order, then break-glass. Each one stays a checkbox.
+func TestQuickLinkUIDefinition_GroupsRoleToggles(t *testing.T) {
+	inp := azureRolesTemplateInput()
+	inp.AppCfg.PermissionsConfig.Roles = []app.AppAWSIAMRoleConfig{
+		{CloudPlatform: "azure", Type: app.AWSIAMRoleTypeRunnerDeprovision, Name: "deprovision", DisplayName: "Deprovision", Policies: []app.AppAWSIAMPolicyConfig{{AzureActions: []string{"Microsoft.Resources/*/delete"}}}},
+		{CloudPlatform: "azure", Type: app.AWSIAMRoleTypeCustom, Name: "db-admin", DisplayName: "DB Admin", Description: "Administer the database.", Policies: []app.AppAWSIAMPolicyConfig{{AzureBuiltInRoles: []string{"Reader"}}}},
+		{CloudPlatform: "azure", Type: app.AWSIAMRoleTypeCustom, Name: "dns", DisplayName: "DNS", Description: "Manage DNS zones.", Policies: []app.AppAWSIAMPolicyConfig{{AzureActions: []string{"Microsoft.Network/dnsZones/*"}}}},
+		{CloudPlatform: "azure", Type: app.AWSIAMRoleTypeRunnerProvision, Name: "provision", DisplayName: "Provision", Description: "Creates the install.", Policies: []app.AppAWSIAMPolicyConfig{{AzureActions: []string{"Microsoft.Resources/*"}}}},
+		{CloudPlatform: "azure", Type: app.AWSIAMRoleTypeRunnerMaintenance, Name: "maintenance", Policies: []app.AppAWSIAMPolicyConfig{{AzureActions: []string{"Microsoft.Compute/*"}}}},
+	}
+	inp.AppCfg.BreakGlassConfig.Roles = []app.AppAWSIAMRoleConfig{
+		{CloudPlatform: "azure", Type: app.AWSIAMRoleTypeBreakGlass, Name: "emergency", DisplayName: "Emergency", Policies: []app.AppAWSIAMPolicyConfig{{AzureBuiltInRoles: []string{"Owner"}}}},
+	}
+
+	_, params := renderUIDef(t, inp)
+	basics := params["basics"].([]any)
+
+	var roles map[string]any
+	for _, item := range basics {
+		el := item.(map[string]any)
+		if el["type"] == "Microsoft.Common.Section" && el["name"] == "roles" {
+			roles = el
+			break
+		}
+	}
+	if roles == nil {
+		t.Fatal("Roles section missing")
+	}
+	if roles["label"] != "Roles" {
+		t.Errorf("section label = %v, want Roles", roles["label"])
+	}
+
+	elements := roles["elements"].([]any)
+	got := make([]string, 0, len(elements))
+	byName := map[string]map[string]any{}
+	for _, item := range elements {
+		el := item.(map[string]any)
+		name := el["name"].(string)
+		got = append(got, name)
+		byName[name] = el
+		if el["type"] != "Microsoft.Common.CheckBox" {
+			t.Errorf("%s type = %v, want a CheckBox", name, el["type"])
+		}
+	}
+
+	ids := azureRolesForUI(azureOperationIdentities(inp.AppCfg))
+	if len(ids) != 6 || ids[0].kind != "provision" || ids[1].kind != "maintenance" || ids[2].kind != "deprovision" || ids[3].roleName != "db-admin" || ids[4].roleName != "dns" || ids[5].kind != "breakglass" {
+		t.Fatalf("role order = %#v", ids)
+	}
+	want := make([]string, len(ids))
+	for i, id := range ids {
+		want[i] = azureRoleEnableParamName(id)
+	}
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Errorf("rendered order = %v, want %v", got, want)
+	}
+
+	provision := byName[want[0]]
+	if provision["label"] != "Enable Provision role" {
+		t.Errorf("provision label = %v", provision["label"])
+	}
+	if provision["toolTip"] != "Create the Provision role: Creates the install." {
+		t.Errorf("provision toolTip = %v", provision["toolTip"])
+	}
+	if provision["defaultValue"] != true {
+		t.Errorf("provision default = %v, want true", provision["defaultValue"])
+	}
+
+	dbAdmin := byName[want[3]]
+	if dbAdmin["label"] != "Enable DB Admin role" {
+		t.Errorf("custom label = %v", dbAdmin["label"])
+	}
+	if dbAdmin["toolTip"] != "Create the DB Admin role: Administer the database." {
+		t.Errorf("custom toolTip = %v", dbAdmin["toolTip"])
+	}
+
+	if _, set := byName[want[5]]["defaultValue"]; set {
+		t.Errorf("break-glass default = %v, want unchecked", byName[want[5]]["defaultValue"])
+	}
+
+	if got, wantOut := params["outputs"].(map[string]any)[want[0]], "[basics('roles')."+want[0]+"]"; got != wantOut {
+		t.Errorf("provision output = %v, want %v", got, wantOut)
+	}
+
+	for _, item := range basics {
+		el := item.(map[string]any)
+		if el["name"] == "roles" {
+			continue
+		}
+		check := []map[string]any{el}
+		if el["type"] == "Microsoft.Common.Section" {
+			check = nil
+			for _, child := range el["elements"].([]any) {
+				check = append(check, child.(map[string]any))
+			}
+		}
+		for _, field := range check {
+			name, _ := field["name"].(string)
+			for _, roleName := range want {
+				if name == roleName {
+					t.Errorf("%s is also rendered outside the Roles section", name)
+				}
+			}
 		}
 	}
 }
