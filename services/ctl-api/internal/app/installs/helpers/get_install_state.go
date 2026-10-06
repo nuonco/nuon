@@ -11,7 +11,6 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/config"
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/types/outputs"
 	"github.com/nuonco/nuon/pkg/types/state"
@@ -475,24 +474,6 @@ func ToInputState(inputs *app.InstallInputs, cfg *app.AppConfig, redacted bool) 
 			val = &inp.Default
 		}
 		is.Inputs[inp.Name] = pkggenerics.FromPtrStr(val)
-	}
-	// Expose cleartext aliases for enabled toggles so templates can reference
-	// nuon_component_override_v1_enabled_<componentName> without hex-decoding.
-	// Prefer a value already stored under the alias; otherwise mirror the hex SoT.
-	for name, val := range is.Inputs {
-		kind, comp, ok := config.ParseComponentOverrideInputName(name)
-		if !ok || kind != config.ComponentOverrideKindEnabled {
-			continue
-		}
-		if name != config.EnabledOverrideInputName(comp) {
-			continue
-		}
-		alias := config.EnabledOverrideInputNameRaw(comp)
-		if stored, ok := inputValues[alias]; ok && pkggenerics.FromPtrStr(stored) != "" {
-			is.Inputs[alias] = pkggenerics.FromPtrStr(stored)
-			continue
-		}
-		is.Inputs[alias] = val
 	}
 	return is
 }
