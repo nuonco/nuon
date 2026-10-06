@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	pkgdiff "github.com/nuonco/nuon/pkg/config/diff"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -207,7 +208,7 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
-	deployedAppConfigID := install.DeployedAppConfigID()
+	oldAppConfigID := install.AppliedAppConfigID()
 
 	var diff *app.InstallConfigDiff
 	if !input.DeferDiff {
@@ -220,7 +221,7 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 
 	update := app.InstallAppConfigVersion{
 		InstallID:      input.InstallID,
-		OldAppConfigID: deployedAppConfigID,
+		OldAppConfigID: oldAppConfigID,
 		NewAppConfigID: input.NewAppConfigID,
 		Status:         app.NewCompositeStatus(ctx, app.StatusPending),
 	}
@@ -332,6 +333,20 @@ func (h *Helpers) AppBranchConfigDiff(ctx context.Context, install *app.Install,
 		return nil, fmt.Errorf("unable to compute config diff: %w", err)
 	}
 	return diff, nil
+}
+
+// CompositeAppConfigTree is the hierarchical diff for an install. Each entity
+// is compared to its own applied app config.
+func (h *Helpers) CompositeAppConfigTree(ctx context.Context, install *app.Install, newAppConfigID string) (*pkgdiff.Diff, error) {
+	baselines, err := h.installCompositeBaselines(ctx, install)
+	if err != nil {
+		return nil, err
+	}
+	tree, err := configdiff.ComputeCompositeAppConfigTree(ctx, h.db, baselines, newAppConfigID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to compute config diff: %w", err)
+	}
+	return tree, nil
 }
 
 func (h *Helpers) installCompositeBaselines(ctx context.Context, install *app.Install) (configdiff.CompositeBaselines, error) {

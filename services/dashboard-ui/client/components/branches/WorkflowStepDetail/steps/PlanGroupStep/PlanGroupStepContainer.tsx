@@ -1,7 +1,7 @@
 import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
-import { getAppConfigDiff } from '@/lib'
+import { getInstallAppConfigTreeDiff } from '@/lib'
 import {
   extractSections,
   computeSummary,
@@ -40,9 +40,8 @@ export const PlanGroupStepContainer = ({
   installFacts,
 }: IPlanGroupStepContainer) => {
   const { org } = useOrg()
-  const { app, labelColors } = useApp()
+  const { labelColors } = useApp()
   const orgId = org?.id ?? ''
-  const appId = app?.id ?? ''
 
   const approvalId = step.approval?.id
   const hasApproval = step.execution_type === 'approval' && !!approvalId
@@ -73,31 +72,22 @@ export const PlanGroupStepContainer = ({
   const showApproveBar =
     !diffOnly && hasApproval && isAwaiting && !hasResponse && !isCancelled
 
-  const oldConfigIdFor = (inst: { install_id?: string; old_app_config_id?: string }) => {
-    const facts = inst.install_id ? installFacts?.[inst.install_id] : undefined
-    if (facts) return facts.appliedConfigId || undefined
-    return inst.old_app_config_id || undefined
-  }
-
   const diffQueries = useQueries({
     queries: rawInstalls.map((inst) => {
-      const oldConfigId = oldConfigIdFor(inst)
       return {
         queryKey: [
-          'app-config-diff',
+          'install-app-config-tree-diff',
           orgId,
-          appId,
+          inst.install_id,
           inst.new_app_config_id,
-          oldConfigId ?? '',
         ],
         queryFn: () =>
-          getAppConfigDiff({
+          getInstallAppConfigTreeDiff({
             orgId,
-            appId,
+            installId: inst.install_id,
             configId: inst.new_app_config_id,
-            oldConfigId,
           }),
-        enabled: !!orgId && !!appId && !!inst.new_app_config_id,
+        enabled: !!orgId && !!inst.install_id && !!inst.new_app_config_id,
       }
     }),
   })

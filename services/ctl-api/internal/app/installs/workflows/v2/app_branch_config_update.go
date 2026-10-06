@@ -1,8 +1,6 @@
 package v2
 
 import (
-	"time"
-
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
@@ -29,7 +27,7 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 
 	useGroupDirective := workflow.GetVersion(ctx, appBranchGroupDirectiveVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
 	if useGroupDirective {
-		if err := classifyAndMaybeWait(ctx, flw, installID, newAppConfigID, installConfigUpdateID); err != nil {
+		if err := classifyAndMaybeWait(ctx, flw, installID, newAppConfigID); err != nil {
 			return nil, err
 		}
 	}
@@ -166,7 +164,7 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	return sg.Result(steps), nil
 }
 
-func classifyAndMaybeWait(ctx workflow.Context, flw *app.Workflow, installID, newAppConfigID, installConfigUpdateID string) error {
+func classifyAndMaybeWait(ctx workflow.Context, flw *app.Workflow, installID, newAppConfigID string) error {
 	decision, err := activities.AwaitClassifyInstallGroupDirective(ctx, activities.ClassifyInstallGroupDirectiveRequest{
 		InstallID:      installID,
 		WorkflowID:     flw.ID,
@@ -188,30 +186,6 @@ func classifyAndMaybeWait(ctx workflow.Context, flw *app.Workflow, installID, ne
 		}); err != nil {
 			return errors.Wrap(err, "unable to send install group directive")
 		}
-	}
-	if !decision.WaitForPrior {
-		return nil
-	}
-	for {
-		terminal, err := activities.AwaitInstallUpdateTerminal(ctx, activities.InstallUpdateTerminalRequest{
-			WorkflowID: decision.PriorWorkflowID,
-		})
-		if err != nil {
-			return errors.Wrap(err, "unable to check prior install update")
-		}
-		if terminal.Terminal {
-			break
-		}
-		if err := workflow.Sleep(ctx, 15*time.Second); err != nil {
-			return err
-		}
-	}
-	if _, err := activities.AwaitRecomputeInstallConfigDiff(ctx, activities.RecomputeInstallConfigDiffRequest{
-		InstallID:                 installID,
-		InstallAppConfigVersionID: installConfigUpdateID,
-		NewAppConfigID:            newAppConfigID,
-	}); err != nil {
-		return errors.Wrap(err, "unable to recompute install config diff")
 	}
 	return nil
 }

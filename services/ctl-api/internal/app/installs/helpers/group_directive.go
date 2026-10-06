@@ -5,11 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"gorm.io/gorm"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installgrouprelease"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
+	"gorm.io/gorm"
 )
 
 type PriorInstallUpdate struct {
@@ -22,25 +21,6 @@ type GroupDirectiveDecision struct {
 	Reason          string
 	WaitingOnRunID  string
 	PriorWorkflowID string
-	WaitForPrior    bool
-	DeferDiff       bool
-}
-
-func (h *Helpers) InstallUpdatePolicyForRun(ctx context.Context, appBranchRunID string) (string, error) {
-	if appBranchRunID == "" {
-		return app.InstallUpdatePolicySupersede, nil
-	}
-	var run app.AppBranchRun
-	err := h.db.WithContext(ctx).
-		Preload("AppBranchConfig").
-		First(&run, "id = ?", appBranchRunID).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return app.InstallUpdatePolicySupersede, nil
-	}
-	if err != nil {
-		return "", fmt.Errorf("unable to get app branch run: %w", err)
-	}
-	return app.NormalizeInstallUpdatePolicy(run.AppBranchConfig.InstallUpdatePolicy), nil
 }
 
 func (h *Helpers) PriorInFlightInstallUpdate(ctx context.Context, installID, excludeWorkflowID string) (*PriorInstallUpdate, error) {
@@ -103,36 +83,12 @@ func (h *Helpers) MarkInstallSupersededForInstall(ctx context.Context, appBranch
 	})
 }
 
-func (h *Helpers) ClassifyInstallGroupDirective(ctx context.Context, installID, workflowID, newAppConfigID, appBranchRunID string) (*GroupDirectiveDecision, error) {
+func (h *Helpers) ClassifyInstallGroupDirective(ctx context.Context, installID, _, newAppConfigID, _ string) (*GroupDirectiveDecision, error) {
 	decision := &GroupDirectiveDecision{Directive: installgrouprelease.DirectiveAwait}
 
 	var install app.Install
 	if err := h.db.WithContext(ctx).First(&install, "id = ?", installID).Error; err != nil {
 		return nil, fmt.Errorf("unable to get install: %w", err)
-	}
-
-	policy, err := h.InstallUpdatePolicyForRun(ctx, appBranchRunID)
-	if err != nil {
-		return nil, err
-	}
-	prior, err := h.PriorInFlightInstallUpdate(ctx, installID, workflowID)
-	if err != nil {
-		return nil, err
-	}
-	if prior != nil && policy == app.InstallUpdatePolicyQueue {
-		decision.PriorWorkflowID = prior.WorkflowID
-		decision.WaitForPrior = true
-		decision.DeferDiff = true
-		customer, err := h.priorWaitingOnCustomer(ctx, &install, prior.WorkflowID)
-		if err != nil {
-			return nil, err
-		}
-		if customer {
-			decision.Directive = installgrouprelease.DirectiveRelease
-			decision.Reason = installgrouprelease.ReasonQueuedBehindCustomer
-			decision.WaitingOnRunID = prior.AppBranchRunID
-		}
-		return decision, nil
 	}
 
 	diff, err := h.AppBranchConfigDiff(ctx, &install, newAppConfigID)
@@ -184,28 +140,6 @@ func installDiffNeedsRunner(diff *app.InstallConfigDiff) bool {
 		return false
 	}
 	return diff.SandboxChanged || diff.SandboxBuildChanged || len(diff.Added) > 0 || len(diff.Changed) > 0 || len(diff.Removed) > 0
-}
-
-func (h *Helpers) priorWaitingOnCustomer(ctx context.Context, install *app.Install, priorWorkflowID string) (bool, error) {
-	if install.SandboxMode.Bool {
-		return false, nil
-	}
-	var count int64
-	err := h.db.WithContext(ctx).
-		Model(&app.InstallGroupRun{}).
-		Where(
-			"installs @> ? OR installs @> ?",
-			fmt.Sprintf(`[{"workflow_id":"%s","status":"%s"}]`, priorWorkflowID, installgrouprelease.StatusPendingCustomer),
-			fmt.Sprintf(`[{"workflow_id":"%s","status":"%s"}]`, priorWorkflowID, installgrouprelease.StatusQueued),
-		).
-		Count(&count).Error
-	if err != nil {
-		return false, fmt.Errorf("unable to check queued install: %w", err)
-	}
-	if count > 0 {
-		return true, nil
-	}
-	return h.stackPendingCustomer(ctx, install.ID)
 }
 
 func (h *Helpers) stackPendingCustomer(ctx context.Context, installID string) (bool, error) {

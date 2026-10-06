@@ -39,7 +39,6 @@ func (a *Activities) ClassifyInstallGroupDirective(ctx context.Context, req Clas
 		Reason:          decision.Reason,
 		WaitingOnRunID:  decision.WaitingOnRunID,
 		PriorWorkflowID: decision.PriorWorkflowID,
-		WaitForPrior:    decision.WaitForPrior,
 	}, nil
 }
 

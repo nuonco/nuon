@@ -52,8 +52,8 @@ type AppBranchConfig struct {
 	// by IgnoreChangesRegex, so a required check does not block the pull request.
 	SendStatusesOnIgnore bool `json:"send_statuses_on_ignore,omitempty" temporaljson:"send_statuses_on_ignore,omitzero,omitempty"`
 
-	// InstallUpdatePolicy decides what a new app-branch run does when this install
-	// already has an update workflow open. Empty means supersede.
+	// InstallUpdatePolicy is unused. A new run always supersedes an open install
+	// update. The column stays so existing rows do not need a migration.
 	InstallUpdatePolicy string `json:"install_update_policy,omitempty" temporaljson:"install_update_policy,omitzero,omitempty"`
 
 	PreviewConfig *AppBranchPreviewConfig `json:"preview_config,omitempty" gorm:"type:jsonb;serializer:json;default:null" temporaljson:"preview_config,omitzero,omitempty"`
@@ -62,18 +62,6 @@ type AppBranchConfig struct {
 	Workflows []Workflow `json:"workflows,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"workflows,omitzero,omitempty"`
 
 	ConfigNumber int `json:"config_number,omitzero" gorm:"->;-:migration" temporaljson:"config_number,omitzero,omitempty"`
-}
-
-const (
-	InstallUpdatePolicySupersede = "supersede"
-	InstallUpdatePolicyQueue     = "queue"
-)
-
-func NormalizeInstallUpdatePolicy(policy string) string {
-	if policy == "" {
-		return InstallUpdatePolicySupersede
-	}
-	return policy
 }
 
 func (a *AppBranchConfig) Indexes(db *gorm.DB) []migrations.Index {

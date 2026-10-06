@@ -73,8 +73,6 @@ type AppBranchConfig struct {
 
 	PostDeployRunbooks []string `mapstructure:"post_deploy_runbooks,omitempty" toml:"post_deploy_runbooks,omitempty" json:"post_deploy_runbooks,omitempty"`
 
-	InstallUpdatePolicy string `mapstructure:"install_update_policy,omitempty" toml:"install_update_policy,omitempty" json:"install_update_policy,omitempty" jsonschema:"enum=supersede,enum=queue"`
-
 	IgnoreChangesRegex string `mapstructure:"ignore_changes_regex,omitempty" toml:"ignore_changes_regex,omitempty" json:"ignore_changes_regex,omitempty"`
 
 	SendStatusesOnIgnore bool `mapstructure:"send_statuses_on_ignore,omitempty" toml:"send_statuses_on_ignore,omitempty" json:"send_statuses_on_ignore,omitempty"`
@@ -88,7 +86,6 @@ func (c AppBranchConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "preview", "default preview run settings for this branch")
 	addDescription(schema, "run", "controls which VCS events automatically run this branch")
 	addDescription(schema, "post_deploy_runbooks", "names of runbooks to run on each install, in order, after its deploy succeeds; resolved to IDs at sync time")
-	addDescription(schema, "install_update_policy", "what a new run does when an install update is still open: supersede (default) cancels it, queue waits to diff until it finishes")
 	addDescription(schema, "ignore_changes_regex", "RE2 regex matched against every changed file path; a run whose entire changed file set matches is not attempted")
 	addDescription(schema, "send_statuses_on_ignore", "whether to send a successful commit status when a run is ignored by ignore_changes_regex")
 }
@@ -126,12 +123,6 @@ func (c *AppBranchConfig) Validate() error {
 		default:
 			return ErrConfig{Description: fmt.Sprintf("branch %q: unknown run mode %q (valid modes: push, on_tag, on_github_label, manual_only)", c.Name, mode)}
 		}
-	}
-
-	switch c.InstallUpdatePolicy {
-	case "", "supersede", "queue":
-	default:
-		return ErrConfig{Description: fmt.Sprintf("branch %q: unknown install_update_policy %q (valid values: supersede, queue)", c.Name, c.InstallUpdatePolicy)}
 	}
 
 	if c.IgnoreChangesRegex != "" {
