@@ -14,7 +14,6 @@ import { BranchProvider } from '@/providers/branch-provider'
 import { AppBranchSwitcher } from '@/components/branches/AppBranchSwitcher'
 import { BranchDetailActions } from '@/components/branches/BranchDetailActions'
 import { BranchHeaderMeta } from '@/components/branches/BranchHeaderMeta'
-import { BranchPendingApprovals } from '@/components/branches/BranchRunApproval'
 import { WorkflowRunPanelHost } from '@/components/branches/WorkflowRunPanel'
 import { getRunTitle } from '@/components/branches/shared/run-title'
 import { getBranchWorkflowRun, getBranchWorkflowRuns } from '@/lib'
@@ -168,8 +167,6 @@ const BranchTemplate = () => {
     },
     { path: `/readme`, iconVariant: 'BookOpenIcon', text: 'README' },
   ]
-  // Run detail renders its own BranchRunApproval; layout banner is for other routes.
-  const approvalRun = params.runId ? null : latestRun
 
   return (
     <>
@@ -248,12 +245,6 @@ const BranchTemplate = () => {
           pinLastGroup
         />
         <div className="flex flex-col flex-1 min-w-0">
-          {approvalRun ? (
-            <BranchPendingApprovals
-              run={approvalRun}
-              className="px-4 md:px-6 pt-4 md:pt-6"
-            />
-          ) : null}
           <Outlet />
         </div>
       </PageContent>

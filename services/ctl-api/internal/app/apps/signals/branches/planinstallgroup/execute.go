@@ -86,7 +86,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				InstallID:      installID,
 				NewAppConfigID: run.AppConfigID,
 			}
-			oldAppConfigID = install.DeployedAppConfigID()
+			oldAppConfigID = install.AppliedAppConfigID()
 		}
 		diffResult, err := activities.AwaitComputeInstallConfigDiff(ctx, diffInput)
 		if err != nil {

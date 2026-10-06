@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { PlanGroupStep } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep'
+import { useOpenWorkflowRunPanel } from '@/components/branches/WorkflowRunPanel/WorkflowRunPanelContainer'
+import { Button } from '@/components/common/Button'
 import { Link } from '@/components/common/Link'
 import { Loading } from '@/components/common/Loading'
 import { Text } from '@/components/common/Text'
@@ -23,6 +25,7 @@ export const BranchRolloutGroupContainer = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const installId = searchParams.get('install') ?? undefined
   const { addPanel, updatePanel, removePanel, panels } = useSurfaces()
+  const openWorkflowRunPanel = useOpenWorkflowRunPanel()
   const panelIdRef = useRef<string | null>(null)
   const openedFor = useRef<string | null>(null)
   const openPanelId =
@@ -144,7 +147,23 @@ export const BranchRolloutGroupContainer = () => {
       <SectionHeader
         title={group?.name ?? 'Group'}
         description={rollout?.activity}
-        actions={<Link href={rolloutHref}>Back to rollout</Link>}
+        actions={
+          <span className="flex items-center gap-3">
+            {planStep?.id && rollout?.id ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  if (!rollout?.id || !planStep?.id) return
+                  openWorkflowRunPanel(rollout.id, planStep.id)
+                }}
+              >
+                View plan
+              </Button>
+            ) : null}
+            <Link href={rolloutHref}>Back to rollout</Link>
+          </span>
+        }
       />
       {isLoading ? (
         <Loading />
@@ -181,7 +200,13 @@ export const BranchRolloutGroupContainer = () => {
                 installFacts={Object.fromEntries(
                   group.installs.map((install) => [
                     install.id,
-                    { labels: install.labels, region: install.region },
+                    {
+                      labels: install.labels,
+                      region: install.region,
+                      status: install.status,
+                      detail: install.detail,
+                      appliedConfigId: install.appliedConfigId,
+                    },
                   ])
                 )}
                 onSelectInstall={(id) => selectInstall(group.id, id)}

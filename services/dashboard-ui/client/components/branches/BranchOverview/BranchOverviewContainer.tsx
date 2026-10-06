@@ -16,6 +16,7 @@ import {
   overviewCompositeError,
 } from './overview-loading'
 import { RunBuildsPanel } from './RunBuildsPanel'
+import { useGroupPlanApprovals } from '@/components/branches/BranchRunApproval/use-group-plan-approvals'
 import { useRolloutGroups } from './use-rollout-groups'
 
 const isBuildStep = (name?: string) =>
@@ -47,6 +48,16 @@ export const BranchOverviewContainer = () => {
     hasPlan,
     isLoading,
   } = useRolloutGroups()
+  const approvals = useGroupPlanApprovals(
+    rollout?.id
+      ? {
+          id: rollout.id,
+          status: { status: rollout.status },
+          steps: workflowSteps,
+        }
+      : undefined,
+    groups
+  )
 
   const { data: builds } = useQuery({
     queryKey: ['branch-run-builds', orgId, appId, branchId, branchRunId],
@@ -170,6 +181,7 @@ export const BranchOverviewContainer = () => {
         failedBuilds={failedBuilds}
         rolloutHref={rolloutHref}
         groupHref={groupHref}
+        approvals={approvals}
       />
     </>
   )

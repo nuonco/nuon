@@ -335,7 +335,7 @@ func (h *Helpers) AppBranchConfigDiff(ctx context.Context, install *app.Install,
 }
 
 func (h *Helpers) installCompositeBaselines(ctx context.Context, install *app.Install) (configdiff.CompositeBaselines, error) {
-	fallback := install.DeployedAppConfigID()
+	fallback := install.AppliedAppConfigID()
 	baselines := configdiff.CompositeBaselines{
 		Fallback:   fallback,
 		Stack:      fallback,

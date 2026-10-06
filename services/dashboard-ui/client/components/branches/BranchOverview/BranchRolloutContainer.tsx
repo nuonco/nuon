@@ -8,6 +8,7 @@ import { Text } from '@/components/common/Text'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { type TOverviewRollout } from './BranchOverview'
+import { useGroupPlanApprovals } from '@/components/branches/BranchRunApproval/use-group-plan-approvals'
 import { RolloutGroupsCard } from './RolloutGroupsCard'
 import { useRolloutGroups } from './use-rollout-groups'
 
@@ -50,7 +51,18 @@ export const BranchRolloutContainer = () => {
     groups,
     hasPlan,
     isLoading,
+    workflowSteps,
   } = useRolloutGroups()
+  const approvals = useGroupPlanApprovals(
+    rollout?.id
+      ? {
+          id: rollout.id,
+          status: { status: rollout.status },
+          steps: workflowSteps,
+        }
+      : undefined,
+    groups
+  )
 
   useEffect(() => {
     if (!legacyGroupId) return
@@ -91,7 +103,11 @@ export const BranchRolloutContainer = () => {
           No runs yet. Push a commit or start a run.
         </Text>
       ) : (
-        <RolloutGroupsCard groups={groups} groupHref={groupHref} />
+        <RolloutGroupsCard
+          groups={groups}
+          groupHref={groupHref}
+          approvals={approvals}
+        />
       )}
     </div>
   )

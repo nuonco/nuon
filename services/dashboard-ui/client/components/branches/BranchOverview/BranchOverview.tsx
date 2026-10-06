@@ -7,7 +7,10 @@ import { SectionHeader } from '@/components/layout/SectionHeader'
 import type { TCompositeError } from '@/types'
 import { OverviewLoadingTrack } from './OverviewLoadingTrack'
 import type { TOverviewStage } from './overview-loading'
-import { RolloutGroupsCard } from './RolloutGroupsCard'
+import {
+  RolloutGroupsCard,
+  type IGroupPlanApproval,
+} from './RolloutGroupsCard'
 import type { TTrackGroup } from './RolloutTrack'
 import { RunSourceCard, type IRunSourceCard } from './RunSourceCard'
 
@@ -48,6 +51,7 @@ export interface IBranchOverview {
   compositeError?: TCompositeError
   installWorkflowHref?: string
   failedBuilds?: TFailedBuildLink[]
+  approvals?: IGroupPlanApproval[]
 }
 
 export const BranchOverview = ({
@@ -62,6 +66,7 @@ export const BranchOverview = ({
   compositeError,
   installWorkflowHref,
   failedBuilds,
+  approvals,
 }: IBranchOverview) => (
   <div className="flex flex-col gap-10 p-4 md:p-6">
     {loadingStages?.length ? (
@@ -122,7 +127,11 @@ export const BranchOverview = ({
           actions={<Link href={rolloutHref}>View rollout</Link>}
         />
         {groups.length ? (
-          <RolloutGroupsCard groups={groups} groupHref={groupHref} />
+          <RolloutGroupsCard
+            groups={groups}
+            groupHref={groupHref}
+            approvals={approvals}
+          />
         ) : (
           <Text variant="subtext" theme="neutral">
             No install groups in this run yet.

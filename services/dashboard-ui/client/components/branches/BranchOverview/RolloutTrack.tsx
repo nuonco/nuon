@@ -27,6 +27,7 @@ export type TTrackInstall = {
   workflowHref?: string
   labels?: Record<string, string>
   region?: string
+  appliedConfigId?: string
 }
 
 export type TGroupMatch = {

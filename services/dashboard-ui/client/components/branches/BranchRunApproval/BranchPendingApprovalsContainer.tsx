@@ -1,11 +1,12 @@
 import { useOrg } from '@/hooks/use-org'
+import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TInstallWorkflow } from '@/types'
 import { GroupActionButton } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
-import { useOpenWorkflowRunPanel } from '@/components/branches/WorkflowRunPanel'
 import {
   BranchRunApproval,
   type IBranchRunApprovalItem,
 } from './BranchRunApproval'
+import { PlanDiffPanel } from './PlanDiffPanel'
 import { getGroupName } from './use-group-plan-href'
 
 interface IBranchPendingApprovalsContainer {
@@ -18,7 +19,7 @@ export const BranchPendingApprovalsContainer = ({
   className,
 }: IBranchPendingApprovalsContainer) => {
   const { org } = useOrg()
-  const openWorkflowRunPanel = useOpenWorkflowRunPanel()
+  const { addPanel } = useSurfaces()
   const orgId = org?.id ?? ''
 
   if (!run) return null
@@ -41,7 +42,9 @@ export const BranchPendingApprovalsContainer = ({
       return {
         key: step.id ?? step.approval!.id!,
         groupName,
-        onReview: () => openWorkflowRunPanel(run.id ?? '', step.id),
+        onReview: () => {
+          addPanel(<PlanDiffPanel step={step} />, `plan-diff-${step.id}`)
+        },
         actions: (
           <GroupActionButton
             action="approve"

@@ -79,13 +79,12 @@ export const GroupHeading = ({ group }: { group: TTrackGroup }) => {
           {groupCaption(group)}
         </Text>
       </span>
-      {pace ? (
+      {group.match ? (
+        <InstallGroupMatch match={group.match} pace={pace || undefined} />
+      ) : pace ? (
         <Text variant="subtext" theme="neutral">
           {pace}
         </Text>
-      ) : null}
-      {group.match ? (
-        <InstallGroupMatch match={group.match} />
       ) : group.rules ? (
         <Text variant="subtext" theme="neutral">
           {group.rules}

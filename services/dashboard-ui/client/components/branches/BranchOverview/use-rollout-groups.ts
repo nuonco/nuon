@@ -72,7 +72,13 @@ const installSnapshot = (
   installLink?: TInstallLinkFor
 ): Pick<
   TTrackInstall,
-  'resources' | 'deployment' | 'health' | 'overviewHref' | 'labels' | 'region'
+  | 'resources'
+  | 'deployment'
+  | 'health'
+  | 'overviewHref'
+  | 'labels'
+  | 'region'
+  | 'appliedConfigId'
 > => {
   if (!install?.id) return {}
   const resourcesActive =
@@ -105,6 +111,7 @@ const installSnapshot = (
     overviewHref: installLink?.(install.id) || undefined,
     labels: install.labels,
     region: installRegion(install),
+    appliedConfigId: install.app_config_ref?.applied_config_id || undefined,
   }
 }
 

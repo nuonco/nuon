@@ -33,7 +33,7 @@ func (a *Activities) CreateInstallAppConfigVersion(ctx context.Context, input *C
 		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
-	oldAppConfigID := install.DeployedAppConfigID()
+	oldAppConfigID := install.AppliedAppConfigID()
 	diff, err := a.installHelpers.AppBranchConfigDiff(ctx, &install, input.NewAppConfigID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to compute config diff: %w", err)

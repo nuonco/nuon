@@ -310,6 +310,18 @@ func (s *AppBranchConfigDiffTestSuite) TestMixedPartial() {
 	s.NotContains(s.componentIDs(diff.Added), f.workerID)
 }
 
+func (s *AppBranchConfigDiffTestSuite) TestNeverApplied() {
+	f := s.seedPair()
+	s.pin(f.install, f.newID, "")
+
+	diff := s.diff(f)
+	s.True(diff.StackChanged)
+	s.True(diff.SandboxChanged)
+	s.ElementsMatch([]string{f.componentID, f.workerID}, s.componentIDs(diff.Added))
+	s.Empty(diff.Changed)
+	s.Empty(diff.Removed)
+}
+
 func (s *AppBranchConfigDiffTestSuite) TestEmptyStackRefUsesActiveStackVersion() {
 	f := s.seedPair()
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.AppStackConfig{}).
