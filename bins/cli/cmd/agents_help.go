@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/nuonco/nuon/bins/cli/internal/services/mcpserver"
+	"github.com/nuonco/nuon/pkg/agentclient"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
@@ -65,6 +66,10 @@ func agentsSetupGuide(st *agentsStatus) string {
 			b.WriteString(line)
 			b.WriteString("\n")
 		}
+	}
+
+	if client, ok := agentclient.Detect(); ok {
+		p("  "+styles.TextSuccess.Render("✓")+" agent ("+client.Name+") detected", "")
 	}
 
 	p(

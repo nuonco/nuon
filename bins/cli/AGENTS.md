@@ -196,6 +196,14 @@ command must be added to `readOnlyCommands` or it will be blocked in this mode. 
 `config`-style targeting, `init`, `generate-config`) are allowed; anything that creates/updates/deletes remote
 resources exits 2 with a clear error.
 
+### Agent detection
+
+`pkg/agentclient` reads the process environment and names the coding agent that launched the CLI. Cursor is `CURSOR_AGENT=1` or `CURSOR_INVOKED_AS=agent`. Claude Code is `CLAUDECODE=1`. `NUON_AGENT_CLIENT=cursor|claude` overrides that; `NUON_AGENT_CLIENT=off` disables it.
+
+When a client is detected, `nuon agents`, `nuon agents --help`, and `nuon agents help` print `✓ agent (cursor) detected` or `✓ agent (claude) detected` at the top of the setup guide. The same name is sent as `X-Nuon-Agent` on control-plane REST requests and on the MCP proxy. A normal terminal does not set these variables, so the line and the header are omitted.
+
+The first detected run for an agent writes `~/.nuon.agents/<agent>.yaml` (`agent`, `cli_version`, `app_id`, `first_seen`, `last_seen`). That write prints a one-time setup guide on stderr: docs, `nuon agents help`, the dashboard, and a short command flow. Later runs update `cli_version`, `app_id`, and `last_seen` and stay quiet. Agent requests also send `User-Agent: nuon-cli/<version> (<agent>)` and `X-Nuon-Command` set to the command path, with no arguments. The MCP proxy sends command `nuon agents mcp`.
+
 ### MCP (`nuon agents mcp`)
 
 Preferred LLM surface is **`nuon agents`**:

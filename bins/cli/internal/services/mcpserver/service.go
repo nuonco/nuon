@@ -15,6 +15,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/services/version"
+	"github.com/nuonco/nuon/pkg/agentclient"
 )
 
 type Service struct {
@@ -181,13 +182,23 @@ func (s *Service) connectUpstream(ctx context.Context) (*mcp.ClientSession, erro
 		return nil, err
 	}
 
+	agent := detectedAgent()
+	userAgent := ""
+	command := ""
+	if agent != "" {
+		userAgent = agentclient.UserAgent(version.Version, agent)
+		command = "nuon agents mcp"
+	}
 	transport := &mcp.StreamableClientTransport{
 		Endpoint: endpoint,
 		HTTPClient: &http.Client{
 			Transport: &authRoundTripper{
-				token: s.cfg.APIToken,
-				orgID: s.cfg.OrgID,
-				base:  http.DefaultTransport,
+				token:     s.cfg.APIToken,
+				orgID:     s.cfg.OrgID,
+				agent:     agent,
+				userAgent: userAgent,
+				command:   command,
+				base:      http.DefaultTransport,
 			},
 		},
 	}
@@ -361,9 +372,20 @@ func appendCLIInstructions(upstream, binary, configFlag string) string {
 }
 
 type authRoundTripper struct {
-	token string
-	orgID string
-	base  http.RoundTripper
+	token     string
+	orgID     string
+	agent     string
+	userAgent string
+	command   string
+	base      http.RoundTripper
+}
+
+func detectedAgent() string {
+	client, ok := agentclient.Detect()
+	if !ok {
+		return ""
+	}
+	return client.Name
 }
 
 func (a *authRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -373,6 +395,15 @@ func (a *authRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 	}
 	if a.orgID != "" {
 		req.Header.Set("X-Nuon-Org-ID", a.orgID)
+	}
+	if a.agent != "" {
+		req.Header.Set(agentclient.Header, a.agent)
+	}
+	if a.userAgent != "" {
+		req.Header.Set("User-Agent", a.userAgent)
+	}
+	if a.command != "" {
+		req.Header.Set(agentclient.CommandHeader, a.command)
 	}
 	return a.base.RoundTrip(req)
 }

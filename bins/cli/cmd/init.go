@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/httpdebug"
 	"github.com/nuonco/nuon/bins/cli/internal/services/version"
+	"github.com/nuonco/nuon/pkg/agentclient"
 )
 
 // Construct an API client for the services to use.
@@ -32,6 +33,13 @@ func newAPIClient(v *validator.Validate, cfg *config.Config) (nuon.Client, error
 		return nil, fmt.Errorf("unable to init API client: %w", err)
 	}
 	api.SetClientVersion(version.Version)
+	if client, ok := agentclient.Detect(); ok {
+		api.SetAgentClient(client.Name)
+		api.SetUserAgent(agentclient.UserAgent(version.Version, client.Name))
+		if cfg.AgentCommand != "" {
+			api.SetCommand(cfg.AgentCommand)
+		}
+	}
 
 	return api, nil
 }

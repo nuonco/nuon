@@ -150,6 +150,8 @@ func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 	if agentmode.Enabled() {
 		c.cfg.Interactive = false
 	}
+	c.cfg.AgentCommand = cmd.CommandPath()
+	c.recordAgentUse()
 
 	// The auth token must be resolved before the fx graph is built: services
 	// capture the API client at construction, so a client built with an empty
