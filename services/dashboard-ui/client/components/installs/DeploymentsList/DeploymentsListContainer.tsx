@@ -180,6 +180,7 @@ export const DeploymentsListContainer = ({
         queryFn: () => getWorkflow({ orgId: org!.id, workflowId }),
         enabled: !!org?.id,
         staleTime: pollInterval,
+        refetchOnWindowFocus: (query) => !query.state.data?.finished,
         refetchInterval: (query) =>
           shouldPoll && !query.state.data?.finished ? pollInterval : false,
       })

@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -224,10 +226,15 @@ func (s *service) getInstallDeployments(
 	search string,
 	createdAtGte, createdAtLte *time.Time,
 ) (*GetInstallDeploymentsResponse, error) {
-	fetchLimit := offset + limit + 1
+	fetchOffset, fetchLimit := 0, offset+limit+1
 	queryTypes := filterTypes
-	if containsString(filterTypes, string(InstallDeploymentTypeImageUpdate)) && !containsString(filterTypes, string(InstallDeploymentTypeComponentDeploy)) {
+	filtersImages := containsString(filterTypes, string(InstallDeploymentTypeImageUpdate))
+	filtersComponents := containsString(filterTypes, string(InstallDeploymentTypeComponentDeploy))
+	if filtersImages && !filtersComponents {
 		queryTypes = append(append([]string{}, filterTypes...), string(InstallDeploymentTypeComponentDeploy))
+	}
+	if filtersImages == filtersComponents {
+		fetchOffset, fetchLimit = offset, limit+1
 	}
 	workflowTypes := deploymentWorkflowTypes(queryTypes)
 	if len(workflowTypes) == 0 {
@@ -253,6 +260,8 @@ func (s *service) getInstallDeployments(
 		Where("plan_only = ?", false).
 		Where("type IN ?", workflowTypes).
 		Order("created_at DESC").
+		Order("id DESC").
+		Offset(fetchOffset).
 		Limit(fetchLimit)
 
 	if len(filterStatuses) > 0 {
@@ -335,16 +344,28 @@ func (s *service) getInstallDeployments(
 			Find(&versions).Error; err != nil {
 			return nil, fmt.Errorf("unable to query install app config versions: %w", err)
 		}
-		blobCtx := blobstore.WithBlobService(ctx.Request.Context(), s.blobSvc)
 		for i := range versions {
 			if versions[i].WorkflowID != nil {
 				versionsByWorkflowID[*versions[i].WorkflowID] = &versions[i]
-				diff, err := loadInstallConfigDiff(blobCtx, &versions[i])
-				if err != nil {
-					return nil, fmt.Errorf("unable to load install app config diff: %w", err)
-				}
-				diffsByWorkflowID[*versions[i].WorkflowID] = diff
 			}
+		}
+		var mu sync.Mutex
+		g, gctx := errgroup.WithContext(blobstore.WithBlobService(ctx.Request.Context(), s.blobSvc))
+		g.SetLimit(8)
+		for workflowID, version := range versionsByWorkflowID {
+			g.Go(func() error {
+				diff, err := loadInstallConfigDiff(gctx, version)
+				if err != nil {
+					return fmt.Errorf("unable to load install app config diff: %w", err)
+				}
+				mu.Lock()
+				diffsByWorkflowID[workflowID] = diff
+				mu.Unlock()
+				return nil
+			})
+		}
+		if err := g.Wait(); err != nil {
+			return nil, err
 		}
 	}
 
@@ -375,7 +396,7 @@ func (s *service) getInstallDeployments(
 		deployments = append(deployments, d)
 	}
 
-	start := offset
+	start := offset - fetchOffset
 	if start > len(deployments) {
 		start = len(deployments)
 	}
