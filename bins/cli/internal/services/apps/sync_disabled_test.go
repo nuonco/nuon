@@ -14,36 +14,75 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/parse"
-	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-func TestSanitizeBranchFileName(t *testing.T) {
-	tests := map[string]struct {
-		in   string
-		want string
-	}{
-		"default":          {in: "default", want: "default"},
-		"mixed case":       {in: "Prod-US", want: "prod-us"},
-		"spaces and slash": {in: " feature/new thing ", want: "feature-new-thing"},
-		"keeps dots":       {in: "v1.2", want: "v1.2"},
-		"trims separators": {in: "..-hidden-..", want: "hidden"},
-		"no usable chars":  {in: "///", want: ""},
-		"path traversal":   {in: "../../etc", want: "etc"},
+func TestMigrationBranchChoices(t *testing.T) {
+	values := func(current string) []string {
+		choices := migrationBranchChoices(current)
+		out := make([]string, len(choices))
+		for i, choice := range choices {
+			out[i] = choice.Value
+		}
+		return out
 	}
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			require.Equal(t, tc.want, sanitizeBranchFileName(tc.in))
-		})
-	}
+
+	require.Equal(t, []string{migrationDefaultBranch, branchChoiceAdd}, values(""))
+	require.Equal(t, []string{migrationDefaultBranch, branchChoiceAdd}, values("HEAD"))
+	require.Equal(t, []string{migrationDefaultBranch, branchChoiceAdd}, values("main"))
+
+	choices := migrationBranchChoices("feature/foo")
+	require.Equal(t, []string{migrationDefaultBranch, "feature/foo", branchChoiceAdd}, values("feature/foo"))
+	require.Equal(t, "feature/foo (current)", choices[1].Title)
+	require.Equal(t, "Add a branch", choices[2].Title)
 }
 
-func TestBranchConfigFilePath(t *testing.T) {
-	require.Equal(t, filepath.Join("apps", "acme", "branches", "feature-x.toml"), branchConfigFilePath(filepath.Join("apps", "acme"), "Feature/X"))
+func TestMigrationBranchConfigPath(t *testing.T) {
+	dir := filepath.Join("apps", "acme")
+
+	got, err := migrationBranchConfigPath(dir, "main")
+	require.NoError(t, err)
+	require.Equal(t, filepath.Join(dir, "branches", "main.toml"), got)
+
+	got, err = migrationBranchConfigPath(dir, "feature/foo")
+	require.NoError(t, err)
+	require.Equal(t, filepath.Join(dir, "branches", "feature", "foo.toml"), got)
+
+	_, err = migrationBranchConfigPath(dir, "../escape")
+	require.Error(t, err)
+	_, err = migrationBranchConfigPath(dir, "")
+	require.Error(t, err)
+}
+
+func TestRelativeRepoDirectory(t *testing.T) {
+	root := t.TempDir()
+	nested := filepath.Join(root, "apps", "platform")
+	require.NoError(t, os.MkdirAll(nested, 0o755))
+
+	got, err := relativeRepoDirectory(root, nested)
+	require.NoError(t, err)
+	require.Equal(t, "apps/platform", got)
+
+	got, err = relativeRepoDirectory(root, root)
+	require.NoError(t, err)
+	require.Equal(t, ".", got)
+
+	_, err = relativeRepoDirectory(nested, root)
+	require.Error(t, err)
+}
+
+func TestMatchConnectedRepo(t *testing.T) {
+	repos := []*models.ServiceVCSConnectionRepo{
+		{FullName: "acme/other"},
+		nil,
+		{FullName: "Acme/Platform"},
+	}
+	require.Equal(t, "Acme/Platform", matchConnectedRepo("acme/platform", repos))
+	require.Empty(t, matchConnectedRepo("acme/missing", repos))
 }
 
 func TestMigrationBranchConfigRoundTrips(t *testing.T) {
-	cfg := newMigrationBranchConfig("default", "acme/platform", ".", "main")
+	cfg := newMigrationBranchConfig("default", "acme/platform", ".", "main", false)
 
 	byts, err := renderBranchConfigTOML(cfg)
 	require.NoError(t, err)
@@ -59,17 +98,32 @@ func TestMigrationBranchConfigRoundTrips(t *testing.T) {
 	require.Nil(t, parsed.Preview)
 }
 
-func TestWriteBranchConfigFileCreatesBranchesDir(t *testing.T) {
-	dir := t.TempDir()
-	path := branchConfigFilePath(dir, "default")
+func TestMigrationBranchConfigPublicRoundTrips(t *testing.T) {
+	cfg := newMigrationBranchConfig("main", "acme/platform", "apps/platform", "main", true)
 
-	require.NoError(t, writeBranchConfigFile(path, newMigrationBranchConfig("default", "acme/platform", ".", "main")))
-
-	files, directory, err := parse.LoadAppBranchConfigs(filepath.Join(dir, "branches"))
+	byts, err := renderBranchConfigTOML(cfg)
 	require.NoError(t, err)
-	require.True(t, directory)
-	require.Len(t, files, 1)
-	require.Equal(t, "default", files[0].Config.Name)
+
+	parsed, err := parse.ParseAppBranchConfig(bytes.NewReader(byts))
+	require.NoError(t, err)
+	require.Equal(t, "main", parsed.Name)
+	require.Nil(t, parsed.ConnectedRepo)
+	require.Equal(t, &config.PublicRepoConfig{Repo: "acme/platform", Directory: "apps/platform", Branch: "main"}, parsed.PublicRepo)
+	require.NotNil(t, parsed.Run)
+	require.Equal(t, "push", parsed.Run.Mode)
+}
+
+func TestWriteBranchConfigFile(t *testing.T) {
+	dir := t.TempDir()
+	path, err := migrationBranchConfigPath(dir, "main")
+	require.NoError(t, err)
+
+	require.NoError(t, writeBranchConfigFile(path, newMigrationBranchConfig("main", "acme/platform", "apps/platform", "main", false)))
+
+	cfg, err := parse.ParseAppBranchConfigFile(path)
+	require.NoError(t, err)
+	require.Equal(t, "main", cfg.Name)
+	require.Equal(t, "apps/platform", cfg.ConnectedRepo.Directory)
 }
 
 func TestCheckEmbeddedBranches(t *testing.T) {
@@ -112,7 +166,9 @@ helm_driver = "configmap"
 init_script_url = "https://example.com/init.sh"
 `), 0o644))
 	require.NoError(t, os.Mkdir(filepath.Join(dir, "components"), 0o755))
-	require.NoError(t, writeBranchConfigFile(branchConfigFilePath(dir, "default"), newMigrationBranchConfig("default", "acme/platform", ".", "main")))
+	path, err := migrationBranchConfigPath(dir, "default")
+	require.NoError(t, err)
+	require.NoError(t, writeBranchConfigFile(path, newMigrationBranchConfig("default", "acme/platform", ".", "main", false)))
 
 	cfg, err := parse.ParseDir(context.Background(), parse.ParseConfig{
 		Dirname:       dir,
@@ -120,19 +176,6 @@ init_script_url = "https://example.com/init.sh"
 	})
 	require.NoError(t, err)
 	require.Error(t, checkEmbeddedBranches(cfg, dir))
-}
-
-type appSyncDisabledAPI struct {
-	nuon.Client
-	cliConfig *models.ServiceCLIConfig
-}
-
-func (a *appSyncDisabledAPI) GetAppBranches(_ context.Context, _ string, _ *models.GetPaginatedQuery) ([]*models.AppAppBranch, bool, error) {
-	return nil, false, nil
-}
-
-func (a *appSyncDisabledAPI) GetCLIConfig(_ context.Context) (*models.ServiceCLIConfig, error) {
-	return a.cliConfig, nil
 }
 
 func TestHandleAppSyncDisabledNonInteractive(t *testing.T) {
@@ -146,11 +189,7 @@ func TestHandleAppSyncDisabledNonInteractive(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			dir := t.TempDir()
-			api := &appSyncDisabledAPI{
-				cliConfig: &models.ServiceCLIConfig{DashboardURL: "https://app.nuon.co"},
-			}
 			s := &Service{
-				api: api,
 				cfg: &cliconfig.Config{Interactive: tc.interactive, OrgID: "org-1"},
 			}
 
@@ -159,9 +198,7 @@ func TestHandleAppSyncDisabledNonInteractive(t *testing.T) {
 			var userErr *ui.CLIUserError
 			require.ErrorAs(t, err, &userErr)
 			require.Contains(t, userErr.Msg, "disabled")
-			require.Contains(t, userErr.Msg, "nuon branches sync")
-			require.Contains(t, userErr.Msg, "move installs onto that branch")
-			require.Contains(t, userErr.Msg, "No app branches exist yet.")
+			require.Contains(t, userErr.Msg, "nuon branches sync --file branches/<name>.toml")
 			entries, readErr := os.ReadDir(dir)
 			require.NoError(t, readErr)
 			require.Empty(t, entries)
@@ -169,51 +206,14 @@ func TestHandleAppSyncDisabledNonInteractive(t *testing.T) {
 	}
 }
 
-func TestConfigManagedBranches(t *testing.T) {
+func TestFindBranchByName(t *testing.T) {
 	remotes := []*models.AppAppBranch{
 		{ID: "b1", Name: "default"},
-		{ID: "b2", Name: "prod", ManagedBy: appBranchManagedByConfig},
 		nil,
 		{ID: "b3", Name: "manual", ManagedBy: appBranchManagedByManually},
 	}
-	got := configManagedBranches(remotes)
-	require.Len(t, got, 1)
-	require.Equal(t, "b2", got[0].ID)
 	require.Equal(t, "b3", findBranchByName(remotes, "manual").ID)
 	require.Nil(t, findBranchByName(remotes, "missing"))
-}
-
-func TestRenderAppSyncBranchGuides(t *testing.T) {
-	got := renderAppSyncBranchGuides([]appSyncBranchGuide{{
-		Name:         "production",
-		ID:           "br-1",
-		ManagedBy:    appBranchManagedByConfig,
-		DashboardURL: "https://app.nuon.co/org-1/apps/app-1/branches/br-1",
-		ConfigPath:   "branches/production.toml",
-		Config:       "name = 'production'\n[run]\nmode = 'push'",
-	}})
-
-	require.Contains(t, got, "production (br-1, managed by config)")
-	require.Contains(t, got, "https://app.nuon.co/org-1/apps/app-1/branches/br-1")
-	require.Contains(t, got, "nuon branches sync --file branches/production.toml")
-	require.Contains(t, got, "name = 'production'")
-}
-
-func TestRepoAndGitBranchCandidates(t *testing.T) {
-	known := []config.ConnectedRepoConfig{
-		{Repo: "acme/platform", Branch: "main"},
-		{Repo: "acme/platform", Branch: "release"},
-		{Repo: "acme/other", Branch: "dev"},
-		{Repo: "", Branch: "ignored"},
-	}
-
-	require.Equal(t, []string{"acme/platform", "acme/other"}, repoCandidates("acme/platform", known))
-	require.Equal(t, []string{"acme/fork", "acme/platform", "acme/other"}, repoCandidates("acme/fork", known))
-	require.Nil(t, repoCandidates("", nil))
-
-	require.Equal(t, []string{"feature-x", "main", "release"}, gitBranchCandidates("acme/platform", "feature-x", known))
-	require.Equal(t, []string{"dev"}, gitBranchCandidates("ACME/other", "HEAD", known))
-	require.Nil(t, gitBranchCandidates("acme/unknown", "", known))
 }
 
 func TestGithubRepoFromRemoteURL(t *testing.T) {
@@ -244,6 +244,26 @@ func TestInstallsToMove(t *testing.T) {
 	require.Len(t, got, 2)
 	require.Equal(t, "i2", got[0].ID)
 	require.Equal(t, "i3", got[1].ID)
+}
+
+func TestInstallsForChoice(t *testing.T) {
+	pending := []*models.AppInstall{{ID: "i1"}, {ID: "i2"}, {ID: "i3"}}
+
+	batch, rest := installsForChoice(pending, installChoiceAll)
+	require.Equal(t, pending, batch)
+	require.Empty(t, rest)
+
+	batch, rest = installsForChoice(pending, installChoiceNone)
+	require.Nil(t, batch)
+	require.Equal(t, pending, rest)
+
+	batch, rest = installsForChoice(pending, "i2")
+	require.Equal(t, []*models.AppInstall{pending[1]}, batch)
+	require.Equal(t, []*models.AppInstall{pending[0], pending[2]}, rest)
+
+	batch, rest = installsForChoice(pending, "missing")
+	require.Nil(t, batch)
+	require.Equal(t, pending, rest)
 }
 
 func TestMoveInstallsToBranchReportsPartialFailures(t *testing.T) {

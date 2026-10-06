@@ -41,35 +41,14 @@ const (
 type OrgFeature string
 
 const (
-	OrgFeatureAppBranches         OrgFeature = "app-branches"
 	OrgFeatureUserManagedFeatures OrgFeature = "user-managed-features"
-	OrgFeatureSupportRole         OrgFeature = "support-role"
-	OrgFeatureInstallRename       OrgFeature = "install-rename"
-	// OrgFeatureTerraformProviderMirror enables build-time vendoring of
-	// terraform providers via `terraform providers mirror` and ships the
-	// resulting filesystem mirror inside the OCI artifact. The install
-	// runner auto-detects the mirror at unpack time, so toggling this
-	// flag only affects the build runner.
-	OrgFeatureTerraformProviderMirror OrgFeature = "terraform-provider-mirror"
-	OrgFeatureAppBranchesUI           OrgFeature = "app-branches-ui"
-	OrgFeatureTraceView               OrgFeature = "trace-view"
-	OrgFeatureAutoSkipNoop            OrgFeature = "auto-skip-noop"
-	OrgFeatureSlack                   OrgFeature = "slack"
-	OrgFeaturePulumiSandbox           OrgFeature = "pulumi-sandbox"
-	OrgFeaturePulumiUpdatePlans       OrgFeature = "pulumi-update-plans"
+	OrgFeatureAutoSkipNoop        OrgFeature = "auto-skip-noop"
 	// OrgFeatureNotebooks enables install-scoped Notebooks: a
 	// Jupyter-style execution surface where each cell runs a command on
 	// the install's runner via a long-lived, warm per-notebook Temporal
 	// workflow. Gates all `/v1/installs/:id/notebooks` endpoints and the
 	// dashboard notebooks UI.
-	OrgFeatureNotebooks  OrgFeature = "notebooks"
-	OrgFeatureVersionsUI OrgFeature = "enable-versions-ui"
-	// OrgFeatureSpaceliftInstallStacks surfaces the Spacelift options
-	// (blueprint and administrative stack) on the install stack "await"
-	// step in the dashboard, letting customers provision the Terraform
-	// install stack through Spacelift instead of running Terraform locally.
-	OrgFeatureSpaceliftInstallStacks   OrgFeature = "spacelift-install-stacks"
-	OrgFeatureServiceAccountsAndTokens OrgFeature = "service-accounts-and-tokens"
+	OrgFeatureNotebooks OrgFeature = "notebooks"
 	// OrgFeaturePhoneHomeAuth requires install phone-home requests to carry an
 	// HMAC signature derived from a per-install secret, and requires a target
 	// cloud account identifier at install creation.
@@ -92,14 +71,7 @@ const (
 	// and /installs-configs endpoints, the VCS push fan-out, the installs config
 	// record written during app config sync, and the dashboard install syncs tab.
 	OrgFeatureAppInstallSyncing OrgFeature = "app-install-syncing"
-	// OrgFeatureSandboxOCIArtifacts builds the app sandbox into an OCI artifact
-	// during branch runs and resolves sandbox runs against that artifact instead
-	// of cloning the sandbox git source. With it off, sandbox runs always clone
-	// git — the path every install used before artifacts existed.
-	OrgFeatureSandboxOCIArtifacts OrgFeature = "sandbox-oci-artifacts"
-	OrgFeatureDefaultAppBranches  OrgFeature = "default-app-branches"
-	OrgFeatureNewInstallIA        OrgFeature = "new-install-ia"
-	OrgFeatureDisableAppSync      OrgFeature = "disable-app-sync"
+	OrgFeatureDisableAppSync    OrgFeature = "disable-app-sync"
 )
 
 type OrgTelemetrySettings struct {
@@ -220,6 +192,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 
 	defaultFeatures := DefaultFeatures()
 	forced := ForcedFeatures()
+	auto := AutoFeatures()
 
 	for _, feature := range GetFeatures() {
 		if forced[string(feature)] {
@@ -227,6 +200,10 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 			continue
 		}
 		if _, ok := o.Features[string(feature)]; !ok {
+			if auto[string(feature)] {
+				o.Features[string(feature)] = true
+				continue
+			}
 			o.Features[string(feature)] = defaultFeatures[feature]
 		}
 	}
@@ -244,59 +221,29 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 func DefaultFeatures() map[OrgFeature]bool {
 	return map[OrgFeature]bool{
 		// Disabled by default
-		OrgFeatureInstallRename:           false,
-		OrgFeatureSupportRole:             false,
-		OrgFeatureTerraformProviderMirror: false,
-		OrgFeatureTraceView:               false,
-		OrgFeatureSlack:                   false,
-		OrgFeaturePulumiSandbox:           false,
-		OrgFeaturePulumiUpdatePlans:       false,
-		OrgFeatureNotebooks:               false,
-		OrgFeatureSpaceliftInstallStacks:  false,
-		OrgFeaturePhoneHomeAuth:           false,
-		OrgFeatureRunbookStudio:           false,
-		OrgFeatureCronNamespaceIsolation:  false,
-		OrgFeatureNewAppIA:                false,
-		OrgFeatureOrgHealthcheckSweeps:    false,
-		OrgFeatureAppInstallSyncing:       false,
-		OrgFeatureSandboxOCIArtifacts:     false,
-		OrgFeatureDefaultAppBranches:      false,
-		OrgFeatureNewInstallIA:            false,
-		OrgFeatureDisableAppSync:          false,
-
-		// Enabled by default
-		OrgFeatureAppBranches:   true,
-		OrgFeatureAppBranchesUI: true,
+		OrgFeatureNotebooks:              false,
+		OrgFeaturePhoneHomeAuth:          false,
+		OrgFeatureRunbookStudio:          false,
+		OrgFeatureCronNamespaceIsolation: false,
+		OrgFeatureNewAppIA:               false,
+		OrgFeatureOrgHealthcheckSweeps:   false,
+		OrgFeatureAppInstallSyncing:      false,
+		OrgFeatureDisableAppSync:         false,
 	}
 }
 
 // active feature flags for an orgs
 func GetFeatures() []OrgFeature {
 	return []OrgFeature{
-		OrgFeatureAppBranches,
 		OrgFeatureUserManagedFeatures,
-		OrgFeatureSupportRole,
-		OrgFeatureInstallRename,
-		OrgFeatureTerraformProviderMirror,
-		OrgFeatureAppBranchesUI,
-		OrgFeatureTraceView,
 		OrgFeatureAutoSkipNoop,
-		OrgFeatureSlack,
-		OrgFeaturePulumiSandbox,
-		OrgFeaturePulumiUpdatePlans,
 		OrgFeatureNotebooks,
-		OrgFeatureVersionsUI,
-		OrgFeatureSpaceliftInstallStacks,
-		OrgFeatureServiceAccountsAndTokens,
 		OrgFeaturePhoneHomeAuth,
 		OrgFeatureRunbookStudio,
 		OrgFeatureCronNamespaceIsolation,
 		OrgFeatureNewAppIA,
 		OrgFeatureOrgHealthcheckSweeps,
 		OrgFeatureAppInstallSyncing,
-		OrgFeatureSandboxOCIArtifacts,
-		OrgFeatureDefaultAppBranches,
-		OrgFeatureNewInstallIA,
 		OrgFeatureDisableAppSync,
 	}
 }
@@ -313,31 +260,16 @@ type OrgFeatureInfo struct {
 // GetFeatureDescriptions returns a map of feature names to their descriptions
 func GetFeatureDescriptions() map[OrgFeature]string {
 	return map[OrgFeature]string{
-		OrgFeatureAppBranches:              "Support for multiple application branches allowing parallel development and testing",
-		OrgFeatureUserManagedFeatures:      "Allow organization users to manage feature flags through the public API (admin-only flag)",
-		OrgFeatureSupportRole:              "Enable the support role option when inviting users to the organization",
-		OrgFeatureInstallRename:            "Allow renaming installs from the dashboard edit install modal",
-		OrgFeatureTerraformProviderMirror:  "Vendor terraform providers at build time and ship them inside the OCI artifact so install runners can `terraform init` without reaching registry.terraform.io",
-		OrgFeatureAppBranchesUI:            "Enable the app branches UI in the dashboard for managing and switching between app branches",
-		OrgFeatureTraceView:                "Enable the trace view tab on action runs, deploys, and sandbox runs to visualize OTEL spans emitted by the runner",
-		OrgFeatureAutoSkipNoop:             "Automatically skip noop plans without requiring approval, overriding per-component skip_noops settings",
-		OrgFeatureSlack:                    "Enable the Slack integration, including the Slack link in the dashboard sidebar and per-org Slack workspace/channel subscriptions",
-		OrgFeaturePulumiSandbox:            "Enable Pulumi-typed app sandboxes (sandbox type=pulumi) in addition to Terraform",
-		OrgFeaturePulumiUpdatePlans:        "Pin Pulumi applies to the approved preview via saved update plans; leave off for stacks using helm (the helm Release resource fails plan validation)",
-		OrgFeatureNotebooks:                "Enable install-scoped Notebooks — a Jupyter-style surface where each cell runs a command on the install's runner via a long-lived, warm per-notebook Temporal workflow, skipping the cold install-workflow step tree for near-real-time adhoc execution.",
-		OrgFeatureVersionsUI:               "Enable the install app config versions tab in the dashboard, showing the history of config updates and component diffs for each install.",
-		OrgFeatureSpaceliftInstallStacks:   "Surface the Spacelift options (blueprint and administrative stack) on the install stack await step, so customers can provision the Terraform install stack through Spacelift instead of running Terraform locally.",
-		OrgFeatureServiceAccountsAndTokens: "Enable the API tokens and service accounts management pages in the dashboard settings navigation.",
-		OrgFeaturePhoneHomeAuth:            "Require install phone-home requests to carry an HMAC signature derived from a per-install secret, and require a target cloud account identifier (AWS account ID, GCP project ID, or Azure subscription ID) at install creation. Depends on the phone-home CMK and management-role IAM grants being in place.",
-		OrgFeatureRunbookStudio:            "Enable the runbook studio in the dashboard — a literate editor for authoring runbook markdown around executable steps with a live install-state preview.",
-		OrgFeatureCronNamespaceIsolation:   "Route the org's runner-healthcheck and install cron queues into dedicated Temporal namespaces + task queues polled by their own workers, isolating cron load from the api task queue.",
-		OrgFeatureNewAppIA:                 "Enable the branch-centric app information architecture in the dashboard: branches as the app landing page, grouped navigation, and the app source header. Requires app-branches-ui.",
-		OrgFeatureOrgHealthcheckSweeps:     "Replace per-runner and per-process healthcheck cron emitters with two per-org sweep emitters that check all runners/processes in paginated batches. Toggle via POST /v1/orgs/{org_id}/migrate-healthcheck-sweeps, which also migrates the emitters.",
-		OrgFeatureAppInstallSyncing:        "Enable app install config syncing: point an app at a git repo of per-install configs so pushes to that repo sync every install's config and create missing installs behind an approval step. Gates the install syncs API, the VCS push fan-out, and the dashboard install syncs tab.",
-		OrgFeatureSandboxOCIArtifacts:      "Build the app sandbox into an OCI artifact during branch runs and resolve sandbox runs against that artifact instead of cloning the sandbox git source. With it off, sandbox runs always clone git.",
-		OrgFeatureDefaultAppBranches:       "Route `nuon apps sync` through an app branch run: every app gets a `default` branch covering all of its installs, and the sync hands its config to a run on that branch instead of the standalone config sync plus install rollout. Requires app-branches.",
-		OrgFeatureNewInstallIA:             "Enable the new install information architecture in the dashboard. Requires app-branches-ui.",
-		OrgFeatureDisableAppSync:           "Block standalone `nuon apps sync`. Config changes ship through config-managed app branches (`nuon branches sync`) instead; on a TTY the CLI offers a wizard that creates a branch config file and moves the app's installs onto it.",
+		OrgFeatureUserManagedFeatures:    "Allow organization users to manage feature flags through the public API (admin-only flag)",
+		OrgFeatureAutoSkipNoop:           "Automatically skip noop plans without requiring approval, overriding per-component skip_noops settings",
+		OrgFeatureNotebooks:              "Enable install-scoped Notebooks — a Jupyter-style surface where each cell runs a command on the install's runner via a long-lived, warm per-notebook Temporal workflow, skipping the cold install-workflow step tree for near-real-time adhoc execution.",
+		OrgFeaturePhoneHomeAuth:          "Require install phone-home requests to carry an HMAC signature derived from a per-install secret, and require a target cloud account identifier (AWS account ID, GCP project ID, or Azure subscription ID) at install creation. Depends on the phone-home CMK and management-role IAM grants being in place.",
+		OrgFeatureRunbookStudio:          "Enable the runbook studio in the dashboard — a literate editor for authoring runbook markdown around executable steps with a live install-state preview.",
+		OrgFeatureCronNamespaceIsolation: "Route the org's runner-healthcheck and install cron queues into dedicated Temporal namespaces + task queues polled by their own workers, isolating cron load from the api task queue.",
+		OrgFeatureNewAppIA:               "Enable the branch-centric app and install information architecture in the dashboard: branches as the app landing page, grouped navigation, the app source header, and the new install pages.",
+		OrgFeatureOrgHealthcheckSweeps:   "Replace per-runner and per-process healthcheck cron emitters with two per-org sweep emitters that check all runners/processes in paginated batches. Toggle via POST /v1/orgs/{org_id}/migrate-healthcheck-sweeps, which also migrates the emitters.",
+		OrgFeatureAppInstallSyncing:      "Enable app install config syncing: point an app at a git repo of per-install configs so pushes to that repo sync every install's config and create missing installs behind an approval step. Gates the install syncs API, the VCS push fan-out, and the dashboard install syncs tab.",
+		OrgFeatureDisableAppSync:         "Block standalone `nuon apps sync`. Config changes ship through config-managed app branches (`nuon branches sync`) instead; on a TTY the CLI offers a wizard that creates a branch config file and moves the app's installs onto it.",
 	}
 }
 

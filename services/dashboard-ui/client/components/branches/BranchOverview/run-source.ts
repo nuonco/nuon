@@ -1,7 +1,5 @@
-import {
-  githubCommitUrl,
-  resolvePrLink,
-} from '@/components/branches/shared/pr-link'
+import { resolvePrLink } from '@/components/branches/shared/pr-link'
+import { gitReferenceUrl } from '@/utils/vcs-urls'
 import type { TAppBranchRun } from '@/types'
 
 export type TRunSource =
@@ -19,9 +17,7 @@ export type TRunSource =
 const TAG_REF_PREFIX = 'refs/tags/'
 
 export const githubTagUrl = (repoSlug?: string, tag?: string) =>
-  repoSlug && tag
-    ? `https://github.com/${repoSlug}/releases/tag/${encodeURIComponent(tag)}`
-    : undefined
+  tag ? gitReferenceUrl(repoSlug, { type: 'tag', tag }) : undefined
 
 export const resolveRunSource = (
   branchRun?: TAppBranchRun,
@@ -63,4 +59,4 @@ export const resolveRunSource = (
 }
 
 export const commitUrl = (repoSlug?: string, sha?: string) =>
-  githubCommitUrl(repoSlug, sha)
+  sha ? gitReferenceUrl(repoSlug, { type: 'commit', sha }) : undefined

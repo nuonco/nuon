@@ -115,7 +115,6 @@ operation (log and continue).
 | Entry point | Flow |
 |-------------|------|
 | CLI `nuon apps sync` | `POST /configs` → `POST /configs/:id/sync` → `appconfigsync` signal |
-| CLI with default app branches | `POST /configs` + `app_branch_id` → branch run `sync_app_config` step |
 | VCS branch sync | branch run fetch step → `branches/activities.syncAppConfig` |
 
 The CLI does not walk per-resource `Create*Config` endpoints. Those remain public API but are not the sync path.

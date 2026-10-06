@@ -36,10 +36,9 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	// Optionally vendor providers into the source dir before packing so
 	// the resulting OCI artifact carries everything an install runner
-	// needs to `terraform init` offline. Gated by a server-side feature
-	// flag (`terraform-provider-mirror`) which the planner translates
-	// into `cfg.VendorProviders`. The install runner does not look at
-	// this flag — it auto-detects the mirror at unpack time.
+	// needs to `terraform init` offline. The planner sets
+	// `cfg.VendorProviders`. The install runner auto-detects the mirror
+	// at unpack time.
 	if h.state.cfg != nil && h.state.cfg.VendorProviders {
 		l.Info("vendoring terraform providers via filesystem mirror")
 		opVendorCtx, endVendor := op.Tool(ctx, "terraform", "vendor")

@@ -139,7 +139,7 @@ func (s *GetOrgFeaturesTestSuite) TestGetOrgFeatures() {
 		},
 		{
 			name:             "returns all defined features",
-			expectedMinCount: 16, // Based on GetFeatures() returning 16 features
+			expectedMinCount: 10, // Based on GetFeatures()
 			validateFunc: func(features []app.OrgFeatureInfo) {
 				expectedFeatures := app.GetFeatures()
 				assert.Len(s.T(), features, len(expectedFeatures), "should return all defined features")
@@ -298,10 +298,10 @@ func (s *GetOrgFeaturesTestSuite) TestGetOrgFeaturesKnownFeatureFlags() {
 
 		// Verify some known feature flags are present
 		knownFeatures := []string{
-			"app-branches",
+			"new-app-ia",
 			"user-managed-features",
-			"slack",
-			"trace-view",
+			"runbook-studio",
+			"notebooks",
 		}
 
 		for _, knownFeature := range knownFeatures {
