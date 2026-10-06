@@ -26,11 +26,9 @@ import type {
   TTemplateEntry,
   TTemplateItem,
 } from './fixtures'
-import {
-  RolloutTrack,
-  type TTrackGroup,
-} from '@/components/branches/BranchOverview/RolloutTrack'
-import { RolloutTiles } from '@/components/branches/BranchOverview/RolloutTiles'
+import { type TTrackGroup } from '@/components/branches/BranchOverview/RolloutTrack'
+import { RolloutGroupsCard } from '@/components/branches/BranchOverview/RolloutGroupsCard'
+import { RolloutGroupDetail } from '@/components/branches/BranchOverview/RolloutGroupDetail'
 import { RunSourceCard } from '@/components/branches/BranchOverview/RunSourceCard'
 
 const pluralize = (count: number, noun: string) =>
@@ -267,8 +265,9 @@ const Overview = ({
               </Button>
             }
           />
-          <RolloutTiles
+          <RolloutGroupsCard
             groups={trackGroups(branch)}
+            groupHref={(id) => `#groups/${id}`}
             onSelectGroup={onOpenRollout}
           />
         </section>
@@ -280,11 +279,15 @@ const Overview = ({
 const Rollout = ({
   branch,
   groupId,
+  onOpenGroup,
 }: {
   branch: TBranchOverview
   groupId?: string
+  onOpenGroup: (groupId: string) => void
 }) => {
   const rollout = branch.rollout
+  const groups = trackGroups(branch)
+  const selected = groups.find((group) => group.id === groupId)
   return (
     <div className="flex flex-col gap-3 p-4 md:p-6">
       <SectionHeader
@@ -296,11 +299,18 @@ const Rollout = ({
         <Text variant="subtext" theme="neutral">
           This branch has no install groups yet. Every install updates at once.
         </Text>
+      ) : selected ? (
+        <div className="flex flex-col gap-4">
+          <Link href="#rollout" onClick={() => onOpenGroup('')}>
+            Back to rollout
+          </Link>
+          <RolloutGroupDetail group={selected} />
+        </div>
       ) : (
-        <RolloutTrack
-          key={`${rollout?.id}-${groupId}`}
-          groups={trackGroups(branch)}
-          initialGroupId={groupId}
+        <RolloutGroupsCard
+          groups={groups}
+          groupHref={(id) => `#groups/${id}`}
+          onSelectGroup={onOpenGroup}
         />
       )}
     </div>
@@ -883,18 +893,20 @@ type TView = 'overview' | 'runs' | 'rollout' | 'settings' | 'template'
 export interface IBranchOverviewPlayground {
   branch: TBranchOverview
   initialView?: TView
+  initialGroupId?: string
 }
 
 export const BranchOverviewPlayground = ({
   branch,
   initialView = 'overview',
+  initialGroupId,
 }: IBranchOverviewPlayground) => {
   const [view, setView] = useState<TView>(initialView)
   const [templateId, setTemplateId] = useState(branch.template[0]?.id)
   const [templateEntryName, setTemplateEntryName] = useState<string>()
-  const [rolloutGroupId, setRolloutGroupId] = useState<string>()
+  const [rolloutGroupId, setRolloutGroupId] = useState(initialGroupId)
   const openRollout = (groupId?: string) => {
-    setRolloutGroupId(groupId)
+    setRolloutGroupId(groupId || undefined)
     setView('rollout')
   }
   const template =
@@ -1019,7 +1031,11 @@ export const BranchOverviewPlayground = ({
             />
           ) : null}
           {view === 'rollout' ? (
-            <Rollout branch={branch} groupId={rolloutGroupId} />
+            <Rollout
+              branch={branch}
+              groupId={rolloutGroupId}
+              onOpenGroup={openRollout}
+            />
           ) : null}
           {isOverview ? (
             <Overview branch={branch} onOpenRollout={openRollout} />

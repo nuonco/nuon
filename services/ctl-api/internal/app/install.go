@@ -194,6 +194,13 @@ func (i *Install) DeployedAppConfigID() string {
 	return i.AppConfigID
 }
 
+// AppliedAppConfigID is the config the install has actually applied. An empty
+// value means nothing has been applied, including when app_config_id was pinned
+// to a config the install has not run yet.
+func (i *Install) AppliedAppConfigID() string {
+	return i.AppConfigRef.AppliedConfigID
+}
+
 func (i *Install) UseView() bool {
 	return true
 }

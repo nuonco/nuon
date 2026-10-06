@@ -450,7 +450,7 @@ export const InBranchOverview = () => (
     }
     groups={[]}
     rolloutHref="#rollout"
-    onSelectGroup={() => {}}
+    groupHref={(id) => `#rollout/groups/${id}`}
   />
 )
 InBranchOverview.storyName = 'In branch overview'

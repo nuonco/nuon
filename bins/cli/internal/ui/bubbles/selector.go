@@ -9,6 +9,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/lithammer/fuzzysearch/fuzzy"
+
 	"github.com/nuonco/nuon/bins/cli/internal/ui/teaprogram"
 
 	"github.com/nuonco/nuon/pkg/cli/styles"

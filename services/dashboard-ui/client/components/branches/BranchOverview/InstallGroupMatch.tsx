@@ -15,8 +15,14 @@ export const installGroupMatch = (
   return { kind: 'pinned' }
 }
 
-export const InstallGroupMatch = ({ match }: { match: TGroupMatch }) => (
-  <div className="flex flex-col gap-2 rounded-xl border bg-white px-4 py-3 shadow-sm dark:bg-dark-grey-900">
+export const InstallGroupMatch = ({
+  match,
+  pace,
+}: {
+  match: TGroupMatch
+  pace?: string
+}) => (
+  <div className="flex w-fit max-w-md flex-col gap-2 rounded-xl border bg-white px-4 py-3 shadow-sm dark:bg-dark-grey-900">
     {match.kind === 'labels' ? (
       <>
         <Text variant="subtext" theme="neutral">
@@ -47,5 +53,10 @@ export const InstallGroupMatch = ({ match }: { match: TGroupMatch }) => (
         </Text>
       </>
     )}
+    {pace ? (
+      <Text variant="subtext" theme="neutral">
+        {pace}
+      </Text>
+    ) : null}
   </div>
 )
