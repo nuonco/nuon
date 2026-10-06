@@ -86,7 +86,7 @@ export interface IRunSourceCard {
   sha?: string
   shaUrl?: string
   author?: string
-  status: string
+  status?: string
   commit?: IRunCommit
   previewMode?: string
   baseline?: IRunBaseline
@@ -165,7 +165,7 @@ export const RunSourceCard = ({
         <Text variant="h3" weight="strong">
           Run information
         </Text>
-        <Status status={status} />
+        {status ? <Status status={status} /> : null}
       </header>
       <div className="flex flex-col gap-3 p-5 border-t">
         {hasIdentity ? <SourceIdentity source={source} /> : null}
