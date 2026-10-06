@@ -203,6 +203,7 @@ func (c *cli) appsCmd() *cobra.Command {
 	var (
 		buildAppID    string
 		buildConfigID string
+		requestID     string
 	)
 	buildCmd := &cobra.Command{
 		Use:         "build",
@@ -221,11 +222,12 @@ func (c *cli) appsCmd() *cobra.Command {
 		},
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.apps
-			return svc.Build(cmd.Context(), buildAppID, buildConfigID)
+			return svc.Build(cmd.Context(), buildAppID, buildConfigID, requestID)
 		}),
 	}
 	buildCmd.Flags().StringVarP(&buildAppID, "app-id", "a", "", "The ID or name of an app (default: current app)")
 	buildCmd.Flags().StringVar(&buildConfigID, "config-id", "", "The config ID to build (default: latest)")
+	addRequestIDFlag(buildCmd, &requestID)
 	appsCmd.AddCommand(buildCmd)
 
 	syncDirCmd := &cobra.Command{

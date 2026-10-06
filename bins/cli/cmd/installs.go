@@ -49,6 +49,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		disable             bool
 		dryRun              bool
 		skipConfirm         bool
+		requestID           string
 	)
 
 	installsCmds := &cobra.Command{
@@ -149,7 +150,7 @@ sandbox and components unprovisioned:
 				AWSAccountID:        awsAccountID,
 				AzureSubscriptionID: azureSubscriptionID,
 				GCPProjectID:        gcpProjectID,
-			}, inputs, labelArgs, PrintJSON, noSelect, stackOnly, appBranchID, installGroupID)
+			}, inputs, labelArgs, PrintJSON, noSelect, stackOnly, appBranchID, installGroupID, requestID)
 		}),
 	}
 	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to create this install for")
@@ -168,6 +169,7 @@ sandbox and components unprovisioned:
 	createCmd.Flags().BoolVar(&stackOnly, "stack-only", false, "Provision the install stack and runner only, stopping before the sandbox and components")
 	createCmd.Flags().StringVar(&appBranchID, "app-branch-id", "", "App branch that will own this install (omit to use the most recent config from `nuon apps sync`)")
 	createCmd.Flags().StringVar(&installGroupID, "install-group-id", "", "Label-based install group whose labels should be applied (requires --app-branch-id)")
+	addRequestIDFlag(createCmd, &requestID)
 	installsCmds.AddCommand(createCmd)
 
 	confirmDelete := false
@@ -177,11 +179,12 @@ sandbox and components unprovisioned:
 		Long:  "Delete an install by ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.Delete(cmd.Context(), id, PrintJSON)
+			return svc.Delete(cmd.Context(), id, requestID, PrintJSON)
 		}),
 	}
 	deleteCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
 	deleteCmd.Flags().BoolVar(&confirmDelete, "confirm", false, "Confirm you want to delete the install")
+	addRequestIDFlag(deleteCmd, &requestID)
 	deleteCmd.MarkFlagRequired("install-id")
 	deleteCmd.MarkFlagRequired("confirm")
 	installsCmds.AddCommand(deleteCmd)
@@ -364,7 +367,7 @@ sandbox and components unprovisioned:
 		Long:  "Deploy a single component on an install (alias for `nuon installs deploys create --type=deploy`). Uses the component's latest build unless --build-id is given.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.ComponentDeployCreate(cmd.Context(), id, componentID, deployID, deployDeps, deployDependencies, PrintJSON)
+			return svc.ComponentDeployCreate(cmd.Context(), id, componentID, deployID, deployDeps, deployDependencies, requestID, PrintJSON)
 		}),
 	}
 	componentsDeployCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
@@ -374,6 +377,7 @@ sandbox and components unprovisioned:
 	componentsDeployCmd.Flags().StringVarP(&deployID, "build-id", "b", "", "The build ID to deploy (defaults to the component's latest build)")
 	componentsDeployCmd.Flags().BoolVar(&deployDeps, "dependents", false, "Trigger a deploy for any component that depends on this component")
 	componentsDeployCmd.Flags().BoolVar(&deployDependencies, "dependency-images", false, "Sync any images that this component depends on")
+	addRequestIDFlag(componentsDeployCmd, &requestID)
 	componentsCmd.AddCommand(componentsDeployCmd)
 
 	componentsDeployAllCmd := &cobra.Command{
@@ -382,13 +386,14 @@ sandbox and components unprovisioned:
 		Long:  "Deploy all components to an install.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.DeployComponents(cmd.Context(), id, roleName, planOnly, PrintJSON)
+			return svc.DeployComponents(cmd.Context(), id, roleName, planOnly, requestID, PrintJSON)
 		}),
 	}
 	componentsDeployAllCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
 	componentsDeployAllCmd.MarkFlagRequired("install-id")
 	componentsDeployAllCmd.Flags().BoolVar(&planOnly, "plan-only", false, "Only plan, do not actually deploy")
 	componentsDeployAllCmd.Flags().StringVar(&roleName, "role-name", "", "IAM role name to use for component deploys")
+	addRequestIDFlag(componentsDeployAllCmd, &requestID)
 	componentsCmd.AddCommand(componentsDeployAllCmd)
 
 	componentsTeardownCmd := &cobra.Command{
@@ -397,7 +402,7 @@ sandbox and components unprovisioned:
 		Long:  "Teardown a deployed component on an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.TeardownComponent(cmd.Context(), id, componentID, roleName, PrintJSON)
+			return svc.TeardownComponent(cmd.Context(), id, componentID, roleName, requestID, PrintJSON)
 		}),
 	}
 	componentsTeardownCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
@@ -406,6 +411,7 @@ sandbox and components unprovisioned:
 	componentsTeardownCmd.MarkFlagRequired("component-id")
 	addInstallRoleFlag(componentsTeardownCmd, &roleName)
 	componentsTeardownCmd.Flags().StringVar(&roleName, "role-name", "", "IAM role name to use (alias for --role)")
+	addRequestIDFlag(componentsTeardownCmd, &requestID)
 	componentsCmd.AddCommand(componentsTeardownCmd)
 
 	var recoverAutoApprove bool
@@ -421,7 +427,7 @@ sandbox and components unprovisioned:
 			"afterwards to roll out the version you want.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.RecoverHelmRelease(cmd.Context(), id, componentID, roleName, recoverAutoApprove, PrintJSON)
+			return svc.RecoverHelmRelease(cmd.Context(), id, componentID, roleName, recoverAutoApprove, requestID, PrintJSON)
 		}),
 	}
 	componentsRecoverHelmReleaseCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
@@ -430,6 +436,7 @@ sandbox and components unprovisioned:
 	componentsRecoverHelmReleaseCmd.MarkFlagRequired("component-id")
 	componentsRecoverHelmReleaseCmd.Flags().StringVar(&roleName, "role-name", "", "IAM role name to use for the recovery")
 	componentsRecoverHelmReleaseCmd.Flags().BoolVarP(&recoverAutoApprove, "yes", "y", false, "Skip the confirmation prompt")
+	addRequestIDFlag(componentsRecoverHelmReleaseCmd, &requestID)
 	componentsCmd.AddCommand(componentsRecoverHelmReleaseCmd)
 
 	componentsTeardownAllCmd := &cobra.Command{
@@ -438,12 +445,13 @@ sandbox and components unprovisioned:
 		Long:  "Teardown all deployed components on an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.TeardownComponents(cmd.Context(), id, roleName, PrintJSON)
+			return svc.TeardownComponents(cmd.Context(), id, roleName, requestID, PrintJSON)
 		}),
 	}
 	componentsTeardownAllCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
 	componentsTeardownAllCmd.MarkFlagRequired("install-id")
 	addInstallRoleFlag(componentsTeardownAllCmd, &roleName)
+	addRequestIDFlag(componentsTeardownAllCmd, &requestID)
 	componentsCmd.AddCommand(componentsTeardownAllCmd)
 
 	componentsForgetCmd := &cobra.Command{
@@ -517,9 +525,9 @@ sandbox and components unprovisioned:
 			svc := c.installs
 			switch deployType {
 			case "deploy":
-				return svc.ComponentDeployCreate(cmd.Context(), id, componentID, deployID, deployDeps, deployDependencies, PrintJSON)
+				return svc.ComponentDeployCreate(cmd.Context(), id, componentID, deployID, deployDeps, deployDependencies, requestID, PrintJSON)
 			case "teardown":
-				return svc.TeardownComponent(cmd.Context(), id, componentID, roleName, PrintJSON)
+				return svc.TeardownComponent(cmd.Context(), id, componentID, roleName, requestID, PrintJSON)
 			default:
 				return fmt.Errorf("invalid --type %q: must be one of deploy, teardown", deployType)
 			}
@@ -536,6 +544,7 @@ sandbox and components unprovisioned:
 	deploysCreateCmd.Flags().BoolVar(&deployDependencies, "dependency-images", false, "Sync any images that this component depends on (--type=deploy only)")
 	deploysCreateCmd.Flags().StringVar(&roleName, "role", "", "IAM role name to use (--type=teardown only; omit to use the default)")
 	deploysCreateCmd.Flags().StringVar(&roleName, "role-name", "", "IAM role name to use (--type=teardown only; alias for --role)")
+	addRequestIDFlag(deploysCreateCmd, &requestID)
 	deploysCmd.AddCommand(deploysCreateCmd)
 
 	deploysCancelCmd := &cobra.Command{
@@ -596,7 +605,7 @@ sandbox and components unprovisioned:
 		Long:       "Create an install deploy by install ID and build ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.CreateDeploy(cmd.Context(), id, deployID, deployDeps, deployDependencies, PrintJSON)
+			return svc.CreateDeploy(cmd.Context(), id, deployID, deployDeps, deployDependencies, requestID, PrintJSON)
 		}),
 	}
 	createDeployCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
@@ -605,6 +614,7 @@ sandbox and components unprovisioned:
 	createDeployCmd.MarkFlagRequired("build-id")
 	createDeployCmd.Flags().BoolVar((&deployDeps), "dependents", false, "Trigger a deploy for any component that depends on this component")
 	createDeployCmd.Flags().BoolVar((&deployDependencies), "dependency-images", false, "Sync any images that this component depends on")
+	addRequestIDFlag(createDeployCmd, &requestID)
 	installsCmds.AddCommand(createDeployCmd)
 
 	deployLogsCmd := &cobra.Command{
@@ -695,9 +705,9 @@ sandbox and components unprovisioned:
 			svc := c.installs
 			switch sandboxRunType {
 			case "reprovision":
-				return svc.ReprovisionSandbox(cmd.Context(), id, sandboxSkipComponents, roleName, PrintJSON)
+				return svc.ReprovisionSandbox(cmd.Context(), id, sandboxSkipComponents, roleName, requestID, PrintJSON)
 			case "deprovision":
-				return svc.DeprovisionSandbox(cmd.Context(), id, roleName, PrintJSON)
+				return svc.DeprovisionSandbox(cmd.Context(), id, roleName, requestID, PrintJSON)
 			default:
 				return fmt.Errorf("invalid --type %q: must be one of reprovision, deprovision", sandboxRunType)
 			}
@@ -709,6 +719,7 @@ sandbox and components unprovisioned:
 	sandboxRunsCreateCmd.MarkFlagRequired("type")
 	sandboxRunsCreateCmd.Flags().BoolVar(&sandboxSkipComponents, "skip-components", false, "Skip deploying components after reprovisioning (--type=reprovision only)")
 	addInstallRoleFlag(sandboxRunsCreateCmd, &roleName)
+	addRequestIDFlag(sandboxRunsCreateCmd, &requestID)
 	sandboxRunsCmd.AddCommand(sandboxRunsCreateCmd)
 
 	sandboxRunsCancelCmd := &cobra.Command{
@@ -772,13 +783,14 @@ sandbox and components unprovisioned:
 		Long:  "Reprovision an install sandbox (alias for `nuon installs sandbox-runs create --type=reprovision`)",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.ReprovisionSandbox(cmd.Context(), id, sandboxSkipComponents, roleName, PrintJSON)
+			return svc.ReprovisionSandbox(cmd.Context(), id, sandboxSkipComponents, roleName, requestID, PrintJSON)
 		}),
 	}
 	sandboxReprovisionCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
 	sandboxReprovisionCmd.MarkFlagRequired("install-id")
 	sandboxReprovisionCmd.Flags().BoolVar(&sandboxSkipComponents, "skip-components", false, "Skip deploying components after reprovisioning the sandbox")
 	addInstallRoleFlag(sandboxReprovisionCmd, &roleName)
+	addRequestIDFlag(sandboxReprovisionCmd, &requestID)
 	sandboxCmd.AddCommand(sandboxReprovisionCmd)
 
 	sandboxDeprovisionCmd := &cobra.Command{
@@ -787,12 +799,13 @@ sandbox and components unprovisioned:
 		Long:  "Deprovision an install sandbox (alias for `nuon installs sandbox-runs create --type=deprovision`)",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.DeprovisionSandbox(cmd.Context(), id, roleName, PrintJSON)
+			return svc.DeprovisionSandbox(cmd.Context(), id, roleName, requestID, PrintJSON)
 		}),
 	}
 	sandboxDeprovisionCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
 	sandboxDeprovisionCmd.MarkFlagRequired("install-id")
 	addInstallRoleFlag(sandboxDeprovisionCmd, &roleName)
+	addRequestIDFlag(sandboxDeprovisionCmd, &requestID)
 	sandboxCmd.AddCommand(sandboxDeprovisionCmd)
 
 	installsCmds.AddCommand(sandboxCmd)
@@ -914,11 +927,12 @@ reprovisioning the sandbox.`,
 		Args: cobra.MinimumNArgs(1),
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			svc := c.installs
-			return svc.SetInputs(cmd.Context(), id, args, deployDependents, inputsOnly, PrintJSON)
+			return svc.SetInputs(cmd.Context(), id, args, deployDependents, inputsOnly, requestID, PrintJSON)
 		}),
 	}
 	inputsSetCmd.Flags().BoolVar(&deployDependents, "deploy-dependents", true, "Deploy components that depend on the updated inputs")
 	inputsSetCmd.Flags().BoolVar(&inputsOnly, "inputs-only", false, "Record the new input values without deploying components or reprovisioning the sandbox")
+	addRequestIDFlag(inputsSetCmd, &requestID)
 	inputsCmd.AddCommand(inputsSetCmd)
 
 	// `inputs edit` is a preview feature, gated behind NUON_PREVIEW.
@@ -988,15 +1002,16 @@ redeployed. This is the same as ` + "`nuon installs stacks reprovision`" + `.`,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
 			if reprovisionStackOnly {
-				return svc.ReprovisionStack(cmd.Context(), id, roleName, PrintJSON)
+				return svc.ReprovisionStack(cmd.Context(), id, roleName, requestID, PrintJSON)
 			}
-			return svc.Reprovision(cmd.Context(), id, roleName, PrintJSON)
+			return svc.Reprovision(cmd.Context(), id, roleName, requestID, PrintJSON)
 		}),
 	}
 	reprovisionInstallCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
 	reprovisionInstallCmd.MarkFlagRequired("install-id")
 	reprovisionInstallCmd.Flags().BoolVar(&reprovisionStackOnly, "stack-only", false, "Only reprovision the install stack, leaving the sandbox untouched")
 	addInstallRoleFlag(reprovisionInstallCmd, &roleName)
+	addRequestIDFlag(reprovisionInstallCmd, &requestID)
 	installsCmds.AddCommand(reprovisionInstallCmd)
 
 	deprovisionInstallCmd := &cobra.Command{
@@ -1005,12 +1020,13 @@ redeployed. This is the same as ` + "`nuon installs stacks reprovision`" + `.`,
 		Long:  "Deprovision an install sandbox",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.Deprovision(cmd.Context(), id, roleName, PrintJSON)
+			return svc.Deprovision(cmd.Context(), id, roleName, requestID, PrintJSON)
 		}),
 	}
 	deprovisionInstallCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
 	deprovisionInstallCmd.MarkFlagRequired("install-id")
 	addInstallRoleFlag(deprovisionInstallCmd, &roleName)
+	addRequestIDFlag(deprovisionInstallCmd, &requestID)
 	installsCmds.AddCommand(deprovisionInstallCmd)
 
 	teardownInstallComponentsCmd := &cobra.Command{
@@ -1021,12 +1037,13 @@ redeployed. This is the same as ` + "`nuon installs stacks reprovision`" + `.`,
 		Long:       "Teardown all deployed components on an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.TeardownComponents(cmd.Context(), id, roleName, PrintJSON)
+			return svc.TeardownComponents(cmd.Context(), id, roleName, requestID, PrintJSON)
 		}),
 	}
 	teardownInstallComponentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
 	teardownInstallComponentsCmd.MarkFlagRequired("install-id")
 	addInstallRoleFlag(teardownInstallComponentsCmd, &roleName)
+	addRequestIDFlag(teardownInstallComponentsCmd, &requestID)
 	installsCmds.AddCommand(teardownInstallComponentsCmd)
 
 	teardownInstallComponentCmd := &cobra.Command{
@@ -1037,7 +1054,7 @@ redeployed. This is the same as ` + "`nuon installs stacks reprovision`" + `.`,
 		Long:       "Teardown a deployed component on an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.TeardownComponent(cmd.Context(), id, componentID, roleName, PrintJSON)
+			return svc.TeardownComponent(cmd.Context(), id, componentID, roleName, requestID, PrintJSON)
 		}),
 	}
 	teardownInstallComponentCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
@@ -1046,6 +1063,7 @@ redeployed. This is the same as ` + "`nuon installs stacks reprovision`" + `.`,
 	teardownInstallComponentCmd.MarkFlagRequired("component-id")
 	teardownInstallComponentCmd.Flags().StringVar(&roleName, "role-name", "", "IAM role name to use (alias for --role)")
 	addInstallRoleFlag(teardownInstallComponentCmd, &roleName)
+	addRequestIDFlag(teardownInstallComponentCmd, &requestID)
 	installsCmds.AddCommand(teardownInstallComponentCmd)
 
 	forgetInstallComponentCmd := &cobra.Command{
@@ -1074,13 +1092,14 @@ redeployed. This is the same as ` + "`nuon installs stacks reprovision`" + `.`,
 		Long:       "Deploy all components to an install.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.DeployComponents(cmd.Context(), id, roleName, planOnly, PrintJSON)
+			return svc.DeployComponents(cmd.Context(), id, roleName, planOnly, requestID, PrintJSON)
 		}),
 	}
 	deployInstallComponentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
 	deployInstallComponentsCmd.MarkFlagRequired("install-id")
 	deployInstallComponentsCmd.Flags().BoolVar(&planOnly, "plan-only", false, "Only plan, do not actually deploy")
 	deployInstallComponentsCmd.Flags().StringVar(&roleName, "role-name", "", "IAM role name to use for component deploys")
+	addRequestIDFlag(deployInstallComponentsCmd, &requestID)
 	installsCmds.AddCommand(deployInstallComponentsCmd)
 
 	updateInputCmd := &cobra.Command{
@@ -1091,7 +1110,7 @@ redeployed. This is the same as ` + "`nuon installs stacks reprovision`" + `.`,
 		Long:       "Update an install input value",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.UpdateInput(cmd.Context(), id, inputs, deployDependents, PrintJSON)
+			return svc.UpdateInput(cmd.Context(), id, inputs, deployDependents, requestID, PrintJSON)
 		}),
 	}
 	updateInputCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to update")
@@ -1099,6 +1118,7 @@ redeployed. This is the same as ` + "`nuon installs stacks reprovision`" + `.`,
 	updateInputCmd.Flags().StringSliceVar(&inputs, "inputs", []string{}, "The app input values for the install")
 	updateInputCmd.MarkFlagRequired("inputs")
 	updateInputCmd.Flags().BoolVar(&deployDependents, "deploy-dependents", true, "Deploy components that depend on the updated inputs")
+	addRequestIDFlag(updateInputCmd, &requestID)
 	installsCmds.AddCommand(updateInputCmd)
 
 	deprovisionInstallSandboxCmd := &cobra.Command{
@@ -1109,12 +1129,13 @@ redeployed. This is the same as ` + "`nuon installs stacks reprovision`" + `.`,
 		Long:       "Deprovision an install sandbox",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.DeprovisionSandbox(cmd.Context(), id, roleName, PrintJSON)
+			return svc.DeprovisionSandbox(cmd.Context(), id, roleName, requestID, PrintJSON)
 		}),
 	}
 	deprovisionInstallSandboxCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
 	deprovisionInstallSandboxCmd.MarkFlagRequired("install-id")
 	addInstallRoleFlag(deprovisionInstallSandboxCmd, &roleName)
+	addRequestIDFlag(deprovisionInstallSandboxCmd, &requestID)
 	installsCmds.AddCommand(deprovisionInstallSandboxCmd)
 
 	var skipComponents bool
@@ -1136,12 +1157,13 @@ redeployed. This is the same as ` + "`nuon installs stacks reprovision`" + `.`,
 		},
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.ReprovisionSandbox(cmd.Context(), id, skipComponents, roleName, PrintJSON)
+			return svc.ReprovisionSandbox(cmd.Context(), id, skipComponents, roleName, requestID, PrintJSON)
 		}),
 	}
 	reprovisionInstallSandboxCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use (shows selector if omitted)")
 	reprovisionInstallSandboxCmd.Flags().BoolVar(&skipComponents, "skip-components", false, "Skip deploying components after reprovisioning the sandbox")
 	addInstallRoleFlag(reprovisionInstallSandboxCmd, &roleName)
+	addRequestIDFlag(reprovisionInstallSandboxCmd, &requestID)
 	installsCmds.AddCommand(reprovisionInstallSandboxCmd)
 
 	var autoRetry bool
@@ -1590,12 +1612,13 @@ Available service names: api, runner (or any service name present in the logs)`,
 		Long:  "Reprovision an install stack, recreating the runner and its infrastructure. Components are not redeployed.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.ReprovisionStack(cmd.Context(), id, roleName, PrintJSON)
+			return svc.ReprovisionStack(cmd.Context(), id, roleName, requestID, PrintJSON)
 		}),
 	}
 	stacksReprovisionCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
 	stacksReprovisionCmd.MarkFlagRequired("install-id")
 	addInstallRoleFlag(stacksReprovisionCmd, &roleName)
+	addRequestIDFlag(stacksReprovisionCmd, &requestID)
 	stacksCmd.AddCommand(stacksReprovisionCmd)
 
 	// NOTE(fd): this may not be the place where this ends up living

@@ -6,10 +6,10 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-func (s *Service) CreateRun(ctx context.Context, installID, runbookID string, asJSON bool) error {
+func (s *Service) CreateRun(ctx context.Context, installID, runbookID, requestID string, asJSON bool) error {
 	view := ui.NewGetView()
 
-	run, err := s.api.CreateInstallRunbookRun(ctx, installID, runbookID)
+	run, err := s.api.CreateInstallRunbookRun(ctx, installID, runbookID, requestID)
 	if err != nil {
 		return view.Error(err)
 	}

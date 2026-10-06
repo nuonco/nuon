@@ -7,13 +7,13 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-func (s *Service) TeardownComponents(ctx context.Context, installID string, role string, asJSON bool) error {
+func (s *Service) TeardownComponents(ctx context.Context, installID string, role string, requestID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
 		return ui.PrintError(err)
 	}
 
-	resp, err := s.api.TeardownInstallComponents(ctx, installID, role)
+	resp, err := s.api.TeardownInstallComponents(ctx, installID, role, requestID)
 	if err != nil {
 		return ui.PrintJSONError(err)
 	}

@@ -16,6 +16,7 @@ func (c *cli) runbooksCmd() *cobra.Command {
 		installID string
 		runbookID string
 		runID     string
+		requestID string
 		offset    int
 		limit     int
 	)
@@ -55,13 +56,14 @@ func (c *cli) runbooksCmd() *cobra.Command {
 		Long:  "Trigger a runbook run by Install ID and Runbook ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.runbooks
-			return svc.CreateRun(cmd.Context(), installID, runbookID, PrintJSON)
+			return svc.CreateRun(cmd.Context(), installID, runbookID, requestID, PrintJSON)
 		}),
 	}
 	createRunCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID or name of the install")
 	createRunCmd.MarkFlagRequired("install-id")
 	createRunCmd.Flags().StringVarP(&runbookID, "runbook-id", "r", "", "The ID or name of the runbook")
 	createRunCmd.MarkFlagRequired("runbook-id")
+	addRequestIDFlag(createRunCmd, &requestID)
 	runbooksCmd.AddCommand(createRunCmd)
 
 	recentRunsCmd := &cobra.Command{

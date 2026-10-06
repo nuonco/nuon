@@ -7,14 +7,14 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-func (s *Service) Delete(ctx context.Context, installID string, asJSON bool) error {
+func (s *Service) Delete(ctx context.Context, installID, requestID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
 		return ui.PrintError(err)
 	}
 
 	if asJSON {
-		resp, err := s.api.DeleteInstall(ctx, installID)
+		resp, err := s.api.DeleteInstall(ctx, installID, requestID)
 		if err != nil {
 			return ui.PrintJSONError(err)
 		}
@@ -33,7 +33,7 @@ func (s *Service) Delete(ctx context.Context, installID string, asJSON bool) err
 
 	view := ui.NewDeleteView("install", installID, s.cfg.Interactive)
 	view.Start()
-	_, err = s.api.DeleteInstall(ctx, installID)
+	_, err = s.api.DeleteInstall(ctx, installID, requestID)
 	if err != nil {
 		return view.Fail(err)
 	}
