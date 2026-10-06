@@ -150,7 +150,8 @@ func (c *InstallDeploy) Indexes(db *gorm.DB) []migrations.Index {
 			Option: "WHERE status = 'drifted'",
 		},
 		{
-			Name: indexes.Name(db, &InstallDeploy{}, "install_workflow_id_deleted_at"),
+			Name:         indexes.Name(db, &InstallDeploy{}, "install_workflow_id_deleted_at"),
+			Concurrently: true,
 			Columns: []string{
 				"install_workflow_id",
 				"deleted_at",

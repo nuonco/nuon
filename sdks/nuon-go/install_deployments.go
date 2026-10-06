@@ -14,6 +14,9 @@ type GetInstallDeploymentsQuery struct {
 	Search       string
 	CreatedAtGte string
 	CreatedAtLte string
+	State        string
+	Sort         string
+	Cursor       string
 	Limit        int
 	Offset       int
 }
@@ -44,6 +47,15 @@ func (c *client) GetInstallDeployments(ctx context.Context, installID string, qu
 		}
 		if query.CreatedAtLte != "" {
 			params.CreatedAtLte = &query.CreatedAtLte
+		}
+		if query.State != "" {
+			params.State = &query.State
+		}
+		if query.Sort != "" {
+			params.Sort = &query.Sort
+		}
+		if query.Cursor != "" {
+			params.Cursor = &query.Cursor
 		}
 		if query.Limit > 0 {
 			limit = query.Limit

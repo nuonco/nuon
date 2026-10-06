@@ -22,6 +22,7 @@ interface IDeploymentRow {
   onViewDetails: () => void
   children?: ReactNode
   scale?: 'auto' | 'comfortable' | 'compact'
+  history?: boolean
 }
 
 export const DeploymentRow = ({
@@ -31,8 +32,56 @@ export const DeploymentRow = ({
   onViewDetails,
   children,
   scale = 'auto',
+  history = false,
 }: IDeploymentRow) => {
   const awaiting = run.steps.some(isAwaitingDeploymentApproval)
+  if (history) {
+    return (
+      <article aria-label={title} className="relative flex gap-3 border-l">
+        <Status
+          status={run.status}
+          variant="timeline"
+          isWithoutText
+          iconSize={18}
+          className="-ml-3.5 mt-3 self-start bg-background"
+        />
+        <div className="grid min-w-0 flex-1 grid-cols-1 items-center gap-3 border-b py-3 @4xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+          <div className="flex min-w-0 flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <Text weight="strong" className="break-words">
+                {title}
+              </Text>
+              <Status status={run.status} />
+              <Time
+                time={createdAt}
+                format="relative"
+                variant="subtext"
+                theme="neutral"
+              />
+            </div>
+            {run.status === 'error' && run.activity ? (
+              <Text
+                variant="subtext"
+                theme="error"
+                className="whitespace-pre-wrap break-words"
+              >
+                {run.activity}
+              </Text>
+            ) : null}
+            {children}
+          </div>
+          <ResourceScopeSummary run={run} />
+          <Button
+            className="justify-self-end"
+            variant="secondary"
+            onClick={onViewDetails}
+          >
+            View details
+          </Button>
+        </div>
+      </article>
+    )
+  }
   return (
     <article
       aria-label={title}

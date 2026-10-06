@@ -1,6 +1,8 @@
 package service
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"sort"
@@ -11,8 +13,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -162,6 +166,89 @@ type GetInstallDeploymentsResponse struct {
 	Offset      int                        `json:"offset"`
 	Limit       int                        `json:"limit"`
 	HasMore     bool                       `json:"has_more"`
+	NextCursor  string                     `json:"next_cursor,omitempty"`
+	Total       *int64                     `json:"total,omitempty" extensions:"x-nullable"`
+}
+
+const (
+	installDeploymentsStateActive   = "active"
+	installDeploymentsStateFinished = "finished"
+	installDeploymentsSortAttention = "attention"
+
+	installDeploymentsStatusExpr = "COALESCE(status->>'status', '')"
+	installDeploymentsRankExpr   = "CASE " + installDeploymentsStatusExpr + " WHEN 'approval-awaiting' THEN 0 WHEN 'failed-pending-retry' THEN 1 ELSE 2 END"
+)
+
+var installDeploymentActiveStatuses = []string{
+	"",
+	string(app.StatusPending),
+	string(app.StatusQueued),
+	string(app.StatusInProgress),
+	string(app.StatusRetrying),
+	string(app.AwaitingApproval),
+	string(app.WorkflowStepApprovalStatusApproved),
+	string(app.StatusFailedPendingRetry),
+}
+
+func installDeploymentAttentionRank(status app.Status) int {
+	switch status {
+	case app.AwaitingApproval:
+		return 0
+	case app.StatusFailedPendingRetry:
+		return 1
+	default:
+		return 2
+	}
+}
+
+type installDeploymentsCursor struct {
+	State     string    `json:"st,omitempty"`
+	Sort      string    `json:"so,omitempty"`
+	Rank      *int      `json:"r,omitempty"`
+	CreatedAt time.Time `json:"t"`
+	ID        string    `json:"i"`
+}
+
+func encodeInstallDeploymentsCursor(c installDeploymentsCursor) (string, error) {
+	byts, err := json.Marshal(c)
+	if err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(byts), nil
+}
+
+func decodeInstallDeploymentsCursor(raw, state, sortBy string) (*installDeploymentsCursor, error) {
+	byts, err := base64.RawURLEncoding.DecodeString(raw)
+	if err != nil {
+		return nil, errors.New("cursor is not valid")
+	}
+	var c installDeploymentsCursor
+	if err := json.Unmarshal(byts, &c); err != nil {
+		return nil, errors.New("cursor is not valid")
+	}
+	if c.ID == "" || c.CreatedAt.IsZero() {
+		return nil, errors.New("cursor is not valid")
+	}
+	if c.State != state || c.Sort != sortBy {
+		return nil, errors.New("cursor does not match the requested state and sort")
+	}
+	if sortBy == installDeploymentsSortAttention {
+		if c.Rank == nil || *c.Rank < 0 || *c.Rank > 2 {
+			return nil, errors.New("cursor is not valid")
+		}
+	} else if c.Rank != nil {
+		return nil, errors.New("cursor is not valid")
+	}
+	return &c, nil
+}
+
+type installDeploymentsQuery struct {
+	page, offset, limit         int
+	filterTypes, filterStatuses []string
+	resource, search            string
+	createdAtGte, createdAtLte  *time.Time
+	state, sort                 string
+	cursor                      *installDeploymentsCursor
 }
 
 // @ID                    GetInstallDeployments
@@ -171,6 +258,9 @@ type GetInstallDeploymentsResponse struct {
 // @Param                 page            query  int     false  "page number"                                         Default(0)
 // @Param                 offset          query  int     false  "offset of results to return"                         Default(0)
 // @Param                 limit           query  int     false  "page size"                                           Default(20)
+// @Param                 cursor          query  string  false  "opaque cursor from a previous next_cursor; replaces page and offset"
+// @Param                 state           query  string  false  "filter by lifecycle state"                           Enums(active, finished)
+// @Param                 sort            query  string  false  "sort order; attention puts approvals and failed retries first"  Enums(attention)
 // @Param                 type            query  string  false  "filter by deployment type (comma-separated)"
 // @Param                 status          query  string  false  "filter by workflow status (comma-separated)"
 // @Param                 resource        query  string  false  "filter by affected stack, sandbox, or component name"
@@ -198,41 +288,81 @@ func (s *service) GetInstallDeployments(ctx *gin.Context) {
 
 	installID := ctx.Param("install_id")
 
-	limit := queryInt(ctx, "limit", 20, 1, 100)
-	page := queryInt(ctx, "page", 0, 0, 10_000)
-	offset := queryInt(ctx, "offset", 0, 0, 1_000_000)
+	q := installDeploymentsQuery{
+		limit:          queryInt(ctx, "limit", 20, 1, 100),
+		filterTypes:    parseCommaSeparated(ctx.Query("type")),
+		filterStatuses: parseCommaSeparated(ctx.Query("status")),
+		resource:       ctx.Query("resource"),
+		search:         ctx.Query("search"),
+		state:          ctx.Query("state"),
+		sort:           ctx.Query("sort"),
+	}
+	q.page = queryInt(ctx, "page", 0, 0, 10_000)
+	q.offset = queryInt(ctx, "offset", 0, 0, 1_000_000)
 	if ctx.Query("page") != "" {
-		offset = page * limit
+		q.offset = q.page * q.limit
 	} else {
-		page = offset / limit
+		q.page = q.offset / q.limit
 	}
 
-	filterTypes := parseCommaSeparated(ctx.Query("type"))
-	filterStatuses := parseCommaSeparated(ctx.Query("status"))
-	resource := ctx.Query("resource")
-	search := ctx.Query("search")
+	switch q.state {
+	case "", installDeploymentsStateActive, installDeploymentsStateFinished:
+	default:
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("invalid state %q", q.state),
+			Description: "state must be one of: active, finished",
+		})
+		return
+	}
 
-	var createdAtGte *time.Time
+	switch q.sort {
+	case "", installDeploymentsSortAttention:
+	default:
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("invalid sort %q", q.sort),
+			Description: "sort must be: attention",
+		})
+		return
+	}
+
+	if raw := ctx.Query("cursor"); raw != "" {
+		if q.offset > 0 {
+			ctx.Error(stderr.ErrUser{
+				Err:         errors.New("cursor cannot be combined with page or offset"),
+				Description: "use either cursor or page/offset",
+			})
+			return
+		}
+		cursor, err := decodeInstallDeploymentsCursor(raw, q.state, q.sort)
+		if err != nil {
+			ctx.Error(stderr.ErrUser{
+				Err:         err,
+				Description: "invalid cursor",
+			})
+			return
+		}
+		q.cursor = cursor
+	}
+
 	if raw := ctx.Query("created_at_gte"); raw != "" {
 		t, err := time.Parse(time.RFC3339, raw)
 		if err != nil {
 			ctx.Error(errors.Wrap(err, "invalid created_at_gte, must be RFC3339"))
 			return
 		}
-		createdAtGte = &t
+		q.createdAtGte = &t
 	}
 
-	var createdAtLte *time.Time
 	if raw := ctx.Query("created_at_lte"); raw != "" {
 		t, err := time.Parse(time.RFC3339, raw)
 		if err != nil {
 			ctx.Error(errors.Wrap(err, "invalid created_at_lte, must be RFC3339"))
 			return
 		}
-		createdAtLte = &t
+		q.createdAtLte = &t
 	}
 
-	resp, err := s.getInstallDeployments(ctx, org.ID, installID, page, offset, limit, filterTypes, filterStatuses, resource, search, createdAtGte, createdAtLte)
+	resp, err := s.getInstallDeployments(ctx, org.ID, installID, q)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install deployments: %w", err))
 		return
@@ -244,36 +374,40 @@ func (s *service) GetInstallDeployments(ctx *gin.Context) {
 func (s *service) getInstallDeployments(
 	ctx *gin.Context,
 	orgID, installID string,
-	page, offset, limit int,
-	filterTypes, filterStatuses []string,
-	resource string,
-	search string,
-	createdAtGte, createdAtLte *time.Time,
+	q installDeploymentsQuery,
 ) (*GetInstallDeploymentsResponse, error) {
-	workflowTypes := deploymentWorkflowTypes(filterTypes)
-	if len(workflowTypes) == 0 {
-		return &GetInstallDeploymentsResponse{
-			Deployments: []InstallDeploymentSummary{},
-			Page:        page,
-			Offset:      offset,
-			Limit:       limit,
-			HasMore:     false,
-		}, nil
+	resp := &GetInstallDeploymentsResponse{
+		Deployments: []InstallDeploymentSummary{},
+		Page:        q.page,
+		Offset:      q.offset,
+		Limit:       q.limit,
+	}
+	if q.state == installDeploymentsStateActive {
+		var zero int64
+		resp.Total = &zero
 	}
 
-	query := s.db.WithContext(ctx).
-		Select("id", "name", "type", "status", "created_at", "finished_at").
+	workflowTypes := deploymentWorkflowTypes(q.filterTypes)
+	if len(workflowTypes) == 0 {
+		return resp, nil
+	}
+
+	base := s.db.WithContext(ctx).
+		Model(&app.Workflow{}).
 		Where("owner_id = ?", installID).
 		Where("org_id = ?", orgID).
 		Where("plan_only = ?", false).
-		Where("type IN ?", workflowTypes).
-		Order("created_at DESC").
-		Order("id DESC").
-		Offset(offset).
-		Limit(limit + 1)
+		Where("type IN ?", workflowTypes)
 
-	if len(filterStatuses) > 0 {
-		query = query.Where("status->>'status' IN ?", filterStatuses)
+	switch q.state {
+	case installDeploymentsStateActive:
+		base = base.Where(installDeploymentsStatusExpr+" IN ?", installDeploymentActiveStatuses)
+	case installDeploymentsStateFinished:
+		base = base.Where(installDeploymentsStatusExpr+" NOT IN ?", installDeploymentActiveStatuses)
+	}
+
+	if len(q.filterStatuses) > 0 {
+		base = base.Where("status->>'status' IN ?", q.filterStatuses)
 	}
 
 	const stepExists = `
@@ -283,14 +417,14 @@ func (s *service) getInstallDeployments(
 			  AND s.deleted_at = 0
 			  AND s.execution_type IS DISTINCT FROM 'hidden'
 			  AND `
-	switch resource {
+	switch q.resource {
 	case "":
 	case "stack":
-		query = query.Where(stepExists+`(s.step_target_type = 'install_stack_versions' OR s.name ~* ?))`, `\m(install stack|stack policy)\M`)
+		base = base.Where(stepExists+`(s.step_target_type = 'install_stack_versions' OR s.name ~* ?))`, `\m(install stack|stack policy)\M`)
 	case "sandbox":
-		query = query.Where(stepExists+`(s.step_target_type = 'install_sandbox_runs' OR s.name ~* ?))`, `\msandbox\M`)
+		base = base.Where(stepExists+`(s.step_target_type = 'install_sandbox_runs' OR s.name ~* ?))`, `\msandbox\M`)
 	default:
-		query = query.Where(`(`+stepExists+`s.metadata -> 'component_name' = ?)
+		base = base.Where(`(`+stepExists+`s.metadata -> 'component_name' = ?)
 			OR EXISTS (
 				SELECT 1
 				FROM install_deploys d
@@ -309,28 +443,73 @@ func (s *service) getInstallDeployments(
 					  AND (cb.source_image = ? OR cb.source_ref = ?)
 				)
 			  )
-			))`, resource, resource, resource, resource)
+			))`, q.resource, q.resource, q.resource, q.resource)
 	}
 
-	for _, token := range strings.Fields(search) {
+	for _, token := range strings.Fields(q.search) {
 		like := "%" + token + "%"
-		query = query.Where("name ILIKE ? OR id ILIKE ?", like, like)
+		base = base.Where("name ILIKE ? OR id ILIKE ?", like, like)
 	}
 
-	if createdAtGte != nil {
-		query = query.Where("created_at >= ?", createdAtGte)
+	if q.createdAtGte != nil {
+		base = base.Where("created_at >= ?", q.createdAtGte)
 	}
-	if createdAtLte != nil {
-		query = query.Where("created_at <= ?", createdAtLte)
+	if q.createdAtLte != nil {
+		base = base.Where("created_at <= ?", q.createdAtLte)
+	}
+
+	if resp.Total != nil {
+		if err := base.Session(&gorm.Session{}).Count(resp.Total).Error; err != nil {
+			return nil, fmt.Errorf("unable to count workflows: %w", err)
+		}
+	}
+
+	query := base.Session(&gorm.Session{}).
+		Select("id", "name", "type", "status", "created_at", "finished_at")
+	if q.sort == installDeploymentsSortAttention {
+		query = query.Order(installDeploymentsRankExpr + " ASC")
+	}
+	query = query.
+		Order("created_at DESC").
+		Order("id DESC").
+		Limit(q.limit + 1)
+
+	if q.cursor != nil {
+		if q.sort == installDeploymentsSortAttention {
+			query = query.Where(
+				"("+installDeploymentsRankExpr+" > ? OR ("+installDeploymentsRankExpr+" = ? AND (created_at, id) < (?, ?)))",
+				*q.cursor.Rank, *q.cursor.Rank, q.cursor.CreatedAt, q.cursor.ID,
+			)
+		} else {
+			query = query.Where("(created_at, id) < (?, ?)", q.cursor.CreatedAt, q.cursor.ID)
+		}
+	} else {
+		query = query.Offset(q.offset)
 	}
 
 	var workflows []app.Workflow
 	if err := query.Find(&workflows).Error; err != nil {
 		return nil, fmt.Errorf("unable to query workflows: %w", err)
 	}
-	hasMore := len(workflows) > limit
-	if hasMore {
-		workflows = workflows[:limit]
+	resp.HasMore = len(workflows) > q.limit
+	if resp.HasMore {
+		workflows = workflows[:q.limit]
+		last := &workflows[len(workflows)-1]
+		next := installDeploymentsCursor{
+			State:     q.state,
+			Sort:      q.sort,
+			CreatedAt: last.CreatedAt,
+			ID:        last.ID,
+		}
+		if q.sort == installDeploymentsSortAttention {
+			rank := installDeploymentAttentionRank(last.Status.Status)
+			next.Rank = &rank
+		}
+		nextCursor, err := encodeInstallDeploymentsCursor(next)
+		if err != nil {
+			return nil, fmt.Errorf("unable to encode cursor: %w", err)
+		}
+		resp.NextCursor = nextCursor
 	}
 
 	workflowIDs := make([]string, 0, len(workflows))
@@ -342,18 +521,11 @@ func (s *service) getInstallDeployments(
 		return nil, err
 	}
 
-	deployments := make([]InstallDeploymentSummary, 0, len(workflows))
 	for i := range workflows {
-		deployments = append(deployments, buildInstallDeploymentSummary(&workflows[i], stepsByWorkflowID[workflows[i].ID]))
+		resp.Deployments = append(resp.Deployments, buildInstallDeploymentSummary(&workflows[i], stepsByWorkflowID[workflows[i].ID]))
 	}
 
-	return &GetInstallDeploymentsResponse{
-		Deployments: deployments,
-		Page:        page,
-		Offset:      offset,
-		Limit:       limit,
-		HasMore:     hasMore,
-	}, nil
+	return resp, nil
 }
 
 func buildInstallDeploymentSummary(wf *app.Workflow, steps []InstallDeploymentStep) InstallDeploymentSummary {

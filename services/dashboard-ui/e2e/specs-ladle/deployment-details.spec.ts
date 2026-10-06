@@ -1,7 +1,62 @@
 import { expect, test } from '@playwright/test'
 
 const STORY =
-  '/?story=views--installs--deployment-details--interactive-sandbox&mode=preview'
+  '/?story=playground--installs--deployments--interactive-sandbox&mode=preview'
+
+test('deployment stories separate routed views, feature scenarios and playground controls', async ({
+  request,
+}) => {
+  const response = await request.get('/meta.json')
+  expect(response.ok()).toBe(true)
+  const {
+    stories,
+  }: {
+    stories: Record<string, { filePath: string; meta: Record<string, unknown> }>
+  } = await response.json()
+
+  for (const [prefix, names, filePath] of [
+    [
+      'features--installs--deployment-details',
+      [
+        'running-components',
+        'components-not-started',
+        'pending-approval',
+        'partial-failure',
+        'stack-recovery',
+        'completed',
+      ],
+      'client/components/installs/DeploymentDetail/DeploymentDetail.stories.tsx',
+    ],
+    [
+      'playground--installs--deployments',
+      ['interactive-sandbox', 'layout-controls'],
+      'client/components/playground/installs/Deployments/Deployments.stories.tsx',
+    ],
+    [
+      'views--installs--deployment-details',
+      ['in-progress', 'awaiting-approval', 'succeeded', 'failed'],
+      'client/views/install/DeploymentDetail.stories.tsx',
+    ],
+    [
+      'views--installs--deployments',
+      ['loading', 'empty', 'results', 'filtered'],
+      'client/views/install/Deployments.stories.tsx',
+    ],
+  ] as const) {
+    const ids = Object.keys(stories).filter((id) =>
+      id.startsWith(`${prefix}--`)
+    )
+    expect(ids.sort()).toEqual(names.map((name) => `${prefix}--${name}`).sort())
+    for (const id of ids) {
+      expect(stories[id].filePath).toBe(filePath)
+      expect(stories[id].meta).toEqual(
+        prefix.startsWith('views--')
+          ? { fullBleed: true, installViews: true }
+          : {}
+      )
+    }
+  }
+})
 
 test('focused scenarios have shareable URLs and preserve their scope through details and filters', async ({
   page,
@@ -47,7 +102,7 @@ test('focused scenarios have shareable URLs and preserve their scope through det
     await expect(page).toHaveURL(
       (url) =>
         url.searchParams.get('story') ===
-          `views--installs--deployment-details--${story}` &&
+          `features--installs--deployment-details--${story}` &&
         url.searchParams.get('mode') === 'preview'
     )
     await expect(
@@ -99,6 +154,12 @@ test('focused scenarios have shareable URLs and preserve their scope through det
   await page
     .getByRole('option', { name: 'All deployments', exact: true })
     .click()
+  await expect(page).toHaveURL(
+    (url) =>
+      url.searchParams.get('story') ===
+        'playground--installs--deployments--interactive-sandbox' &&
+      url.searchParams.get('mode') === 'preview'
+  )
   await expect(page.getByRole('article')).toHaveCount(7)
   expect(errors).toEqual([])
 })
@@ -829,12 +890,17 @@ for (const width of [390, 1440]) {
         name: 'Update production install',
         exact: true,
       })
-      await expect(
-        row.getByRole('group', { name: 'Current step', exact: true })
-      ).toBeVisible()
-      await expect(
-        row.getByRole('group', { name: 'Next step', exact: true })
-      ).toBeVisible()
+      await expect(row).toBeVisible()
+      const section = page.getByRole('region', {
+        name: state === 'in-progress' ? 'In progress' : 'History',
+        exact: true,
+      })
+      await expect(section.getByRole('article')).toHaveCount(1)
+      for (const name of ['Current step', 'Next step']) {
+        const context = row.getByRole('group', { name, exact: true })
+        if (state === 'in-progress') await expect(context).toBeVisible()
+        else await expect(context).toHaveCount(0)
+      }
       for (const name of ['Status', 'Type', 'Resource', 'Date']) {
         await expect(
           page.getByRole('button', { name, exact: true })

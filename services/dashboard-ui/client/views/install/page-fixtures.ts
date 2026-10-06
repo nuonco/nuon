@@ -1,5 +1,6 @@
 import type { TFixture, TFixtureReply } from './install-fixture'
 import { VIEW_APP_ID, VIEW_INSTALL_ID } from './install-fixture'
+import { ACTIVE_DEPLOYMENT_STATUSES } from '@/components/installs/DeploymentDetail/deployment-progress'
 import {
   APP_CONFIG_ID,
   pendingReply,
@@ -205,22 +206,27 @@ const deploymentSummary = (record: {
   }
 }
 
-const deploymentPage = (rows: unknown[]) =>
+const deploymentPage = (rows: unknown[], total?: number) =>
   ok({
     deployments: rows,
     page: 0,
     offset: 0,
     limit: 20,
     has_more: false,
+    total,
   })
 
 export const deploymentsFixture = (
   state: 'loading' | 'empty' | 'results'
 ): TFixture =>
   withChrome(viewInstall(), (url) => {
-    const detail = deployments.find((item) => url.pathname.endsWith(`/deployments/${item.id}`))
+    const detail = deployments.find((item) =>
+      url.pathname.endsWith(`/deployments/${item.id}`)
+    )
     if (detail) return ok(detail)
-    const workflow = deployments.find((item) => url.pathname === `/v1/workflows/${item.id}`)
+    const workflow = deployments.find(
+      (item) => url.pathname === `/v1/workflows/${item.id}`
+    )
     if (workflow) {
       const summary = deploymentSummary(workflow)
       return ok({
@@ -229,7 +235,10 @@ export const deploymentsFixture = (
         type: summary.type,
         created_at: summary.created_at,
         finished: summary.finished,
-        status: { status: summary.status, status_human_description: summary.activity },
+        status: {
+          status: summary.status,
+          status_human_description: summary.activity,
+        },
         steps: summary.steps.map(({ status, component_name, ...step }) => ({
           ...step,
           status: { status },
@@ -243,14 +252,20 @@ export const deploymentsFixture = (
     const search = (url.searchParams.get('search') ?? '').toLowerCase()
     const status = url.searchParams.get('status') ?? ''
     const type = url.searchParams.get('type') ?? ''
+    const lifecycle = url.searchParams.get('state')
+    const rows = deployments.map(deploymentSummary).filter((item) => {
+      const active = ACTIVE_DEPLOYMENT_STATUSES.has(item.status)
+      if (lifecycle === 'active' && !active) return false
+      if (lifecycle === 'finished' && active) return false
+      const haystack = [item.id, item.title].join(' ').toLowerCase()
+      if (search && !haystack.includes(search)) return false
+      if (status && !status.split(',').includes(item.status)) return false
+      if (type && !type.split(',').includes(item.type)) return false
+      return true
+    })
     return deploymentPage(
-      deployments.map(deploymentSummary).filter((item) => {
-        const haystack = [item.id, item.title].join(' ').toLowerCase()
-        if (search && !haystack.includes(search)) return false
-        if (status && !status.split(',').includes(item.status)) return false
-        if (type && !type.split(',').includes(item.type)) return false
-        return true
-      })
+      rows,
+      lifecycle === 'active' ? rows.length : undefined
     )
   })
 
@@ -968,18 +983,34 @@ export const deploymentDetailFixture = (
   withChrome(viewInstall(), (url) => {
     const path = url.pathname
     const record = deploymentRecord(
-      state === 'awaiting' ? 'pending' : state === 'succeeded' ? 'success' : state === 'failed' ? 'error' : 'in-progress'
+      state === 'awaiting'
+        ? 'pending'
+        : state === 'succeeded'
+          ? 'success'
+          : state === 'failed'
+            ? 'error'
+            : 'in-progress'
     )
     if (path.endsWith(`/deployments/${record.id}`)) return ok(record)
     if (path.endsWith('/deployments')) {
       const search = url.searchParams.get('search') ?? ''
+      const active = ACTIVE_DEPLOYMENT_STATUSES.has(record.status)
+      const lifecycle = url.searchParams.get('state')
+      const matchesState =
+        !lifecycle || (lifecycle === 'active' ? active : !active)
+      const matchesSearch =
+        !search ||
+        record.id.includes(search) ||
+        record.title.toLowerCase().includes(search.toLowerCase())
+      const rows =
+        matchesState && matchesSearch ? [deploymentSummary(record)] : []
       return deploymentPage(
-        !search || record.id.includes(search) || record.title.toLowerCase().includes(search.toLowerCase())
-          ? [deploymentSummary(record)]
-          : []
+        rows,
+        lifecycle === 'active' ? rows.length : undefined
       )
     }
-    if (path === '/v1/workflows/wf-deploy-1') return ok(deploymentWorkflow(state))
+    if (path === '/v1/workflows/wf-deploy-1')
+      return ok(deploymentWorkflow(state))
     if (path.includes('/comparison')) {
       return ok({
         config_diff_content: '',

@@ -8,6 +8,7 @@ import { SearchInput } from '@/components/common/SearchInput'
 import { Text } from '@/components/common/Text'
 import { Timeline } from '@/components/common/Timeline'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import type { TDeploymentRun } from '@/components/installs/DeploymentDetail/DeploymentProgress'
 import {
   deploymentOutcomes,
@@ -30,6 +31,7 @@ import {
   type TWorkflowDatePreset,
   type TWorkflowStatusOption,
 } from '@/utils/workflow-filters'
+import { DeploymentCard } from './DeploymentCard'
 import { DeploymentDetailPanel } from './DeploymentDetailPanel'
 import { DeploymentRow } from './DeploymentRow'
 
@@ -73,6 +75,7 @@ interface IDeploymentRecordRow {
   installId: string
   repo?: string
   previousOutcomes: TDeploymentOutcome[][]
+  active?: boolean
 }
 
 const DeploymentRecordRow = ({
@@ -83,28 +86,41 @@ const DeploymentRecordRow = ({
   installId,
   repo,
   previousOutcomes,
+  active,
 }: IDeploymentRecordRow) => {
   const { addPanel } = useSurfaces()
   const recovered =
     run.status === 'success'
       ? recoveredDeploymentResources(run.outcomes, previousOutcomes)
       : []
+  const onViewDetails = () =>
+    addPanel(
+      <DeploymentDetailPanel
+        deployment={deployment}
+        orgId={orgId}
+        appId={appId}
+        installId={installId}
+        repo={repo}
+      />
+    )
+  if (active) {
+    return (
+      <DeploymentCard
+        run={run}
+        title={deployment.title}
+        typeLabel={DEPLOYMENT_TYPE_LABELS[deployment.type]}
+        createdAt={deployment.created_at}
+        onViewDetails={onViewDetails}
+      />
+    )
+  }
   return (
     <DeploymentRow
       run={run}
       title={deployment.title}
       createdAt={deployment.created_at}
-      onViewDetails={() =>
-        addPanel(
-          <DeploymentDetailPanel
-            deployment={deployment}
-            orgId={orgId}
-            appId={appId}
-            installId={installId}
-            repo={repo}
-          />
-        )
-      }
+      onViewDetails={onViewDetails}
+      history
     >
       {recovered.map((category) => (
         <Text key={category} variant="subtext" theme="neutral">
@@ -125,9 +141,20 @@ export interface IDeploymentFilter {
 
 export interface IDeploymentsListPresenter {
   deployments: TInstallDeploymentSummary[]
+  activeDeployments?: TInstallDeploymentSummary[]
+  activeTotal?: number
+  activeLoading?: boolean
+  activeError?: TAPIError | null
+  hasMoreActive?: boolean
+  showActive?: boolean
+  showHistory?: boolean
+  onLoadMoreActive?: () => void
   isLoading: boolean
   error?: TAPIError | null
-  pagination: Omit<IPagination, 'position'>
+  pagination: Omit<IPagination, 'position'> & {
+    onNext?: () => void
+    onPrevious?: () => void
+  }
   orgId: string
   appId: string
   installId: string
@@ -230,6 +257,14 @@ export const DeploymentsListFilters = ({
 
 export const DeploymentsListPresenter = ({
   deployments,
+  activeDeployments = [],
+  activeTotal,
+  activeLoading = false,
+  activeError,
+  hasMoreActive = false,
+  showActive = true,
+  showHistory = true,
+  onLoadMoreActive,
   isLoading,
   error,
   pagination,
@@ -247,18 +282,23 @@ export const DeploymentsListPresenter = ({
   onClearFilters,
 }: IDeploymentsListPresenter) => {
   const runs = useMemo(() => deployments.map(deploymentRun), [deployments])
+  const activeRuns = useMemo(
+    () => activeDeployments.map(deploymentRun),
+    [activeDeployments]
+  )
   const allResources = [
-    ...new Set(
-      runs.flatMap(({ resources }) => [
-        ...(resources.stack ? ['stack'] : []),
-        ...(resources.sandbox ? ['sandbox'] : []),
-        ...resources.components,
-      ])
-    ),
+    ...new Set([
+      'stack',
+      'sandbox',
+      ...(filter.resource ? [filter.resource] : []),
+      ...[...activeRuns, ...runs].flatMap(
+        ({ resources }) => resources.components
+      ),
+    ]),
   ]
   const hasActiveFilters = hasDeploymentFilters(filter)
   return (
-    <div className="flex flex-col gap-4">
+    <div className="@container flex flex-col gap-6">
       <DeploymentsListFilters
         resources={allResources}
         search={search}
@@ -270,48 +310,129 @@ export const DeploymentsListPresenter = ({
         onDateChange={onDateChange}
         onClearFilters={onClearFilters}
       />
-      {isLoading && deployments.length === 0 ? (
-        <TimelineSkeleton eventCount={pagination.limit ?? 5} />
-      ) : error ? (
-        <EmptyState
-          emptyTitle="Deployments failed to load"
-          emptyMessage="Unable to load deployments. Try refreshing the page."
-          className="my-12"
-        />
-      ) : deployments.length === 0 ? (
-        <EmptyState
-          emptyTitle={
-            hasActiveFilters ? 'No deployments found' : 'No deployments yet'
-          }
-          emptyMessage={
-            hasActiveFilters
-              ? 'No deployments match the current filters. Try adjusting or clearing them.'
-              : 'Deployments will appear here once a workflow deploys components to this install.'
-          }
-          className="my-12"
-        />
-      ) : (
-        <Timeline
-          className="w-full"
-          events={deployments}
-          groupByDate={false}
-          pagination={pagination}
-          getEventKey={(deployment) => deployment.id}
-          renderEvent={(deployment, index) => (
-            <DeploymentRecordRow
-              deployment={deployment}
-              run={runs[index].run}
-              orgId={orgId}
-              appId={appId}
-              installId={installId}
-              repo={repo}
-              previousOutcomes={runs
-                .slice(index + 1)
-                .map((previous) => previous.run.outcomes)}
+      {showActive ? (
+        <section aria-label="In progress" className="flex flex-col gap-3">
+          <SectionHeader
+            title={`In progress${activeTotal !== undefined ? ` (${activeTotal})` : ''}`}
+            description="Follow active deployments and rollouts."
+          />
+          {activeLoading && activeDeployments.length === 0 ? (
+            <TimelineSkeleton eventCount={4} />
+          ) : activeError ? (
+            <EmptyState
+              emptyTitle="Active deployments failed to load"
+              emptyMessage="Unable to load active deployments. Try refreshing the page."
+            />
+          ) : activeDeployments.length === 0 ? (
+            <Text variant="subtext" theme="neutral">
+              {hasActiveFilters
+                ? 'No in-progress deployments match these filters. Adjust or clear the filters to see more.'
+                : 'No deployments in progress. Start a deployment to follow its rollout here.'}
+            </Text>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-3 @4xl:grid-cols-2">
+                {activeDeployments.map((deployment, index) => (
+                  <DeploymentRecordRow
+                    key={deployment.id}
+                    deployment={deployment}
+                    run={activeRuns[index].run}
+                    orgId={orgId}
+                    appId={appId}
+                    installId={installId}
+                    repo={repo}
+                    previousOutcomes={[]}
+                    active
+                  />
+                ))}
+              </div>
+              {hasMoreActive ? (
+                <Button
+                  className="w-full justify-center"
+                  disabled={activeLoading}
+                  onClick={onLoadMoreActive}
+                >
+                  {activeLoading
+                    ? 'Loading deployments...'
+                    : `Show ${Math.max(0, (activeTotal ?? activeDeployments.length + 4) - activeDeployments.length)} more in progress`}
+                </Button>
+              ) : null}
+            </>
+          )}
+        </section>
+      ) : null}
+      {showHistory ? (
+        <section aria-label="History" className="flex flex-col gap-3">
+          <SectionHeader
+            title="History"
+            description="Review completed deployments and rollouts."
+          />
+          {isLoading && deployments.length === 0 ? (
+            <TimelineSkeleton eventCount={pagination.limit ?? 5} />
+          ) : error ? (
+            <EmptyState
+              emptyTitle="Deployments failed to load"
+              emptyMessage="Unable to load deployments. Try refreshing the page."
+              className="my-12"
+            />
+          ) : deployments.length === 0 ? (
+            <EmptyState
+              emptyTitle={
+                hasActiveFilters ? 'No deployments found' : 'No deployments yet'
+              }
+              emptyMessage={
+                hasActiveFilters
+                  ? 'No deployments match the current filters. Try adjusting or clearing them.'
+                  : 'Deployments will appear here once a workflow deploys components to this install.'
+              }
+              className="my-12"
+            />
+          ) : (
+            <Timeline
+              className="w-full"
+              events={deployments}
+              groupByDate={false}
+              pagination={{ hasNext: false, offset: 0 }}
+              getEventKey={(deployment) => deployment.id}
+              renderEvent={(deployment, index) => (
+                <DeploymentRecordRow
+                  deployment={deployment}
+                  run={runs[index].run}
+                  orgId={orgId}
+                  appId={appId}
+                  installId={installId}
+                  repo={repo}
+                  previousOutcomes={runs
+                    .slice(index + 1)
+                    .map((previous) => previous.run.outcomes)}
+                />
+              )}
             />
           )}
-        />
-      )}
+          {pagination.hasNext || (pagination.offset ?? 0) > 0 ? (
+            <div className="flex items-center justify-end gap-3">
+              <Button
+                disabled={isLoading || !pagination.offset}
+                onClick={pagination.onPrevious}
+              >
+                Previous
+              </Button>
+              <Text variant="subtext" theme="neutral">
+                Page{' '}
+                {Math.floor(
+                  (pagination.offset ?? 0) / (pagination.limit ?? 20)
+                ) + 1}
+              </Text>
+              <Button
+                disabled={isLoading || !pagination.hasNext}
+                onClick={pagination.onNext}
+              >
+                Next
+              </Button>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
     </div>
   )
 }

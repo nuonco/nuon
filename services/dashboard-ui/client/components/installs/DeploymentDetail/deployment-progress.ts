@@ -27,8 +27,25 @@ export const deploymentTabOrder = (status?: string): TDeploymentTab[] =>
     ? ['changes', 'workflow', 'template']
     : ['template', 'workflow', 'changes']
 
+export const ACTIVE_DEPLOYMENT_STATUSES = new Set([
+  '',
+  'pending',
+  'queued',
+  'in-progress',
+  'retrying',
+  'approved',
+  'approval-awaiting',
+  'failed-pending-retry',
+])
+
 export const isDeploymentRunning = (status: string) =>
-  ['in-progress', 'approval-awaiting', 'awaiting-approval'].includes(status)
+  [
+    'in-progress',
+    'retrying',
+    'approved',
+    'approval-awaiting',
+    'awaiting-approval',
+  ].includes(status)
 
 export const recoveredDeploymentResources = (
   outcomes: TDeploymentOutcome[],

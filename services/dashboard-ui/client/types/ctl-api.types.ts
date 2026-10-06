@@ -1366,7 +1366,13 @@ export type TInstallDeploymentRecordType =
 export type TInstallDeploymentStatus =
   | 'active'
   | 'pending'
+  | 'queued'
   | 'in-progress'
+  | 'retrying'
+  | 'approved'
+  | 'approval-awaiting'
+  | 'failed-pending-retry'
+  | 'cancelled'
   | 'error'
   | 'warn'
   | 'deprovisioned'
@@ -1467,6 +1473,8 @@ export type TInstallDeploymentsResponse = {
   offset: number
   limit: number
   has_more: boolean
+  next_cursor?: string
+  total?: number
 }
 
 export type TInstallActivityType = 'action_run' | 'runbook_run' | 'policy_check'

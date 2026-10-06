@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
 const STORY =
-  '/?story=views--installs--deployment-details--layout-controls&mode=preview'
+  '/?story=playground--installs--deployments--layout-controls&mode=preview'
 
 async function choose(page: Page, name: string, value: string) {
   const control = page.getByRole('combobox', { name, exact: true })

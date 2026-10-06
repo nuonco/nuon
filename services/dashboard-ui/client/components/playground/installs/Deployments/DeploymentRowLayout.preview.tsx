@@ -23,8 +23,8 @@ import {
   WORKFLOW_STATUS_GROUPS,
   type TWorkflowDatePreset,
 } from '@/utils/workflow-filters'
-import { ResourceOutcomes } from './DeploymentProgress'
-import type { TDeploymentOutcome } from './deployment-progress'
+import { ResourceOutcomes } from '@/components/installs/DeploymentDetail/DeploymentProgress'
+import type { TDeploymentOutcome } from '@/components/installs/DeploymentDetail/deployment-progress'
 
 const scenarios = {
   success: {
