@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/awslabs/goformation/v7/cloudformation/tags"
+
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 )
 

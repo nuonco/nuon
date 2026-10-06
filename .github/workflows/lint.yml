@@ -37,11 +37,28 @@ jobs:
       - name: Run ast-grep scan
         run: sg scan services/ pkg/ --filter no-fmt-println
 
+  go-fmt:
+    name: go fmt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install golangci-lint
+        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b "$HOME/.local/bin" v2.14.0
+
+      - name: Check formatting
+        run: |
+          if ! "$HOME/.local/bin/golangci-lint" fmt --diff; then
+            echo "::error::Go files are not formatted. Run: golangci-lint fmt"
+            exit 1
+          fi
+
   update_status:
     name: update status
     if: github.event_name == 'pull_request' && always()
     runs-on: ubuntu-latest
-    needs: [ast-grep]
+    needs: [ast-grep, go-fmt]
     steps:
       - name: Update status
         uses: ouzi-dev/commit-status-updater@v2.0.1

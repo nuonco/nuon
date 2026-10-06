@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"gorm.io/gorm"
+
 	configsync "github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"gorm.io/gorm"
 )
 
 func (h *Helpers) GetAppBundleAppConfig(ctx context.Context, orgID, appID, appConfigID string) (*app.AppConfig, error) {
