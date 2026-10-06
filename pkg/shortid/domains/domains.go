@@ -29,6 +29,10 @@ func NewAppBranchID() string {
 	return shortid.NewNanoID("abr")
 }
 
+func NewAppBundleID() string {
+	return shortid.NewNanoID("abb")
+}
+
 func NewAppBranchConfigID() string {
 	return shortid.NewNanoID("abc")
 }

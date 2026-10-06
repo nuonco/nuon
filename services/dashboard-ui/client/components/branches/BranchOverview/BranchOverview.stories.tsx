@@ -235,6 +235,44 @@ export const BuildFailed = () => (
 )
 BuildFailed.storyName = 'Build failed'
 
+const longCommit = [
+  'feat: map preview install configs onto branch groups (#104)',
+  '',
+  '* rename the ramp config to Customer A for the preview group',
+  '* rename the sony config to Customer B for the push group',
+  '* add Customer C install config for the manual group',
+  '* add Customer D install config for the tag group',
+  '* move prod install configs under install-configs/prod',
+  '* add a stage folder and Customer A install config',
+  '* pin AWS install configs to their app branches',
+].join('\n')
+
+export const LongCommitMessage = () => (
+  <BranchOverview
+    hasPlan
+    rollout={{
+      ...manualRollout,
+      status: 'error',
+      title: longCommit,
+      sha: 'e5aef07',
+      author: 'casey@example.com',
+      commit: {
+        message: longCommit,
+        author: 'casey@example.com',
+        sha: 'e5aef07c91b24d0a8f3310c0e5aef07c91b24d0a',
+        shaUrl:
+          'https://github.com/acme/platform/commit/e5aef07c91b24d0a8f3310c0e5aef07c91b24d0a',
+        createdAt: '2026-10-05T12:00:00Z',
+      },
+    }}
+    changes={changes}
+    groups={groups}
+    rolloutHref="#rollout"
+    onSelectGroup={() => {}}
+  />
+)
+LongCommitMessage.storyName = 'Long commit message'
+
 export const NoPlan = () => (
   <BranchOverview
     hasPlan={false}

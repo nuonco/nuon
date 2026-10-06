@@ -165,11 +165,7 @@ export const ComponentOverrideCard = ({
                 </CodeBlock>
               )}
             </Expand>
-          ) : (
-            <Text variant="subtext" theme="neutral">
-              No {config.label.toLowerCase()} override set.
-            </Text>
-          )
+          ) : null
         ) : (
           <Expand
             id={`override-${card.component}-config`}

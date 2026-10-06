@@ -2,7 +2,10 @@ import type { HTMLAttributes } from 'react'
 import type { TAppBranchRun, TWorkflow } from '@/types/ctl-api.types'
 import { manualRunPinLabel } from '@/utils/branch-utils'
 import type { TStatusTheme } from '@/utils/status-utils'
-import { WORKFLOW_BADGE_MAP, isServiceAccount } from '@/utils/workflow-utils'
+import {
+  WORKFLOW_BADGE_MAP,
+  getAccountDisplayName,
+} from '@/utils/workflow-utils'
 import { Badge, type TBadgeTone } from '../atoms/Badge'
 import { Status } from '../atoms/Status'
 import { Text } from '../atoms/Text'
@@ -160,14 +163,14 @@ const captionBadges = (
 
 const TriggeredBy = ({ workflow }: { workflow: TWorkflow }) => {
   const account = workflow?.created_by
-  const email = account?.email
-  if (!email) return null
+  const name = getAccountDisplayName(account)
+  if (!name) return null
 
-  if (isServiceAccount(account)) {
+  if (account?.email && name !== account.email) {
     return (
-      <Tooltip content={email}>
+      <Tooltip content={account.email}>
         <Text variant="caption" color="tertiary">
-          a service account
+          {name}
         </Text>
       </Tooltip>
     )
@@ -175,7 +178,7 @@ const TriggeredBy = ({ workflow }: { workflow: TWorkflow }) => {
 
   return (
     <Text variant="caption" color="tertiary" lines={1}>
-      {email}
+      {name}
     </Text>
   )
 }

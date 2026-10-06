@@ -334,6 +334,7 @@ func (c *cli) appsCmd() *cobra.Command {
 	appsCmd.AddCommand(variablesCmd)
 
 	appsCmd.AddCommand(c.newBranchesCmd(true))
+	appsCmd.AddCommand(c.appBundlesCmd())
 
 	return appsCmd
 }

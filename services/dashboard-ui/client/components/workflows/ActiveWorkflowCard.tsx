@@ -13,6 +13,7 @@ import type { TInstall, TWorkflow } from '@/types'
 import { cn } from '@/utils/classnames'
 import { humanize } from '@/utils/string-utils'
 import {
+  getAccountDisplayName,
   getWorkflowHref,
   getWorkflowPendingApprovals,
 } from '@/utils/workflow-utils'
@@ -157,7 +158,7 @@ export const ActiveWorkflowCard = ({
         {!compact && (
           <div className="flex items-end gap-6">
             <LabeledValue label="Initiated by" className="flex-1">
-              {workflow?.created_by?.email?.split('@')[0] ?? '—'}
+              {getAccountDisplayName(workflow?.created_by) ?? '—'}
             </LabeledValue>
             <LabeledValue label="Elapsed time" className="flex-1">
               <div className="flex items-center gap-1.5">
