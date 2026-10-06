@@ -6,7 +6,6 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
@@ -39,17 +38,8 @@ func (p *Planner) createSandboxBuildPlan(ctx workflow.Context, req *CreateSandbo
 			"app_id":               build.AppID,
 			"app_sandbox_build_id": build.ID,
 		},
-	}
-	mirrorEnabled, err := activities.AwaitOrgHasFeature(ctx, activities.OrgHasFeatureRequest{
-		OrgID:   build.OrgID,
-		Feature: string(app.OrgFeatureTerraformProviderMirror),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to check terraform provider mirror feature flag: %w", err)
-	}
-	if mirrorEnabled {
-		tfPlan.VendorProviders = true
-		tfPlan.TerraformVersion = build.AppSandboxConfig.TerraformVersion
+		VendorProviders:  true,
+		TerraformVersion: build.AppSandboxConfig.TerraformVersion,
 	}
 
 	plan := &plantypes.BuildPlan{

@@ -213,6 +213,57 @@ func TestEndpointOverride(t *testing.T) {
 	require.Equal(t, "https://example.com/mcp", got)
 }
 
+func TestProxyInstructionsIncludeCLIConfigOnlyWhenFlagSet(t *testing.T) {
+	upstream := instructionsUpstream(t)
+
+	withoutFlag := connectProxy(t, upstream, false)
+	instructions := withoutFlag.InitializeResult().Instructions
+	require.Contains(t, instructions, "upstream-instructions")
+	require.Contains(t, instructions, CLIBinary()+" apps validate")
+	require.NotContains(t, instructions, "-C")
+
+	withFlag := connectProxy(t, upstream, false, func(s *Service) {
+		s.cfg = &config.Config{ConfigFlag: "/tmp/acme.nuon"}
+	})
+	instructions = withFlag.InitializeResult().Instructions
+	require.Contains(t, instructions, "upstream-instructions")
+	require.Contains(t, instructions, `-C "/tmp/acme.nuon"`)
+	require.Contains(t, instructions, CLIBinary()+" -C \"/tmp/acme.nuon\" apps validate")
+}
+
+func instructionsUpstream(t *testing.T) *mcp.ClientSession {
+	t.Helper()
+	upstreamServer := mcp.NewServer(&mcp.Implementation{Name: "fake-upstream", Version: "0"}, &mcp.ServerOptions{
+		Instructions: "upstream-instructions",
+	})
+	st, ct := mcp.NewInMemoryTransports()
+	_, err := upstreamServer.Connect(context.Background(), st, nil)
+	require.NoError(t, err)
+	upstreamClient := mcp.NewClient(&mcp.Implementation{Name: "test-connector", Version: "0"}, nil)
+	upstream, err := upstreamClient.Connect(context.Background(), ct, nil)
+	require.NoError(t, err)
+	t.Cleanup(func() { upstream.Close() })
+	return upstream
+}
+
+func TestCLIConfigFlagEmptyWithoutFlag(t *testing.T) {
+	require.Equal(t, "", CLIConfigFlag(nil))
+	require.Equal(t, "", CLIConfigFlag(&config.Config{}))
+	got := CLICommandInstructions("nuon-dev", "")
+	require.NotContains(t, got, "-C")
+	require.Contains(t, got, "on behalf of this MCP server")
+	require.Contains(t, got, "other work")
+	require.Contains(t, got, "nuon-dev apps validate")
+}
+
+func TestCLIBinaryUsesInvokedCommand(t *testing.T) {
+	require.Equal(t, "nuon-dev", cliBinary([]string{"/usr/local/bin/nuon-dev", "agents", "mcp"}))
+	require.Equal(t, "nuon", cliBinary(nil))
+	got := CLICommandInstructions("nuon-dev", "/tmp/acme.nuon")
+	require.Contains(t, got, "on behalf of this MCP server")
+	require.Contains(t, got, "nuon-dev -C \"/tmp/acme.nuon\" apps validate")
+}
+
 func TestEndpointOverrideSkipsDerivation(t *testing.T) {
 	svc := New(
 		&config.Config{APIURL: "https://ctl.example.com"},

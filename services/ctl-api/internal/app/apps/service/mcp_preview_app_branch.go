@@ -28,28 +28,33 @@ type mcpPreviewAppBranchInput struct {
 }
 
 type mcpPreviewAppBranchResult struct {
-	RunID       string `json:"run_id"`
-	WorkflowID  string `json:"workflow_id,omitempty"`
-	AppID       string `json:"app_id"`
-	AppName     string `json:"app_name"`
-	BranchID    string `json:"branch_id"`
-	BranchName  string `json:"branch_name"`
-	InstallID   string `json:"install_id,omitempty"`
-	InstallName string `json:"install_name,omitempty"`
-	Source      string `json:"source"`
-	Mode        string `json:"mode,omitempty"`
-	PRNumber    *int   `json:"pr_number,omitempty"`
-	GitRef      string `json:"git_ref,omitempty"`
-	HeadSHA     string `json:"head_sha,omitempty"`
-	ConfigID    string `json:"config_id,omitempty"`
+	RunID       string         `json:"run_id"`
+	WorkflowID  string         `json:"workflow_id,omitempty"`
+	AppID       string         `json:"app_id"`
+	AppName     string         `json:"app_name"`
+	BranchID    string         `json:"branch_id"`
+	BranchName  string         `json:"branch_name"`
+	InstallID   string         `json:"install_id,omitempty"`
+	InstallName string         `json:"install_name,omitempty"`
+	Source      string         `json:"source"`
+	Mode        string         `json:"mode,omitempty"`
+	PRNumber    *int           `json:"pr_number,omitempty"`
+	GitRef      string         `json:"git_ref,omitempty"`
+	HeadSHA     string         `json:"head_sha,omitempty"`
+	ConfigID    string         `json:"config_id,omitempty"`
+	NextAction  *mcpNextAction `json:"next_action,omitempty"`
+}
+
+type mcpNextAction struct {
+	Action    string         `json:"action"`
+	Label     string         `json:"label"`
+	Tool      string         `json:"tool,omitempty"`
+	Arguments map[string]any `json:"arguments,omitempty"`
 }
 
 func (s *service) mcpPreviewAppBranch(ctx context.Context, _ *mcp.CallToolRequest, in mcpPreviewAppBranchInput) (*mcp.CallToolResult, any, error) {
 	orgID, err := require.Write(ctx)
 	if err != nil {
-		return nil, nil, err
-	}
-	if err := s.requireAppBranches(ctx); err != nil {
 		return nil, nil, err
 	}
 	if in.App == "" {
@@ -234,6 +239,21 @@ func (s *service) mcpPreviewAppBranch(ctx context.Context, _ *mcp.CallToolReques
 		result.WorkflowID = triggerResp.Workflow.ID
 	} else if run.WorkflowID != nil {
 		result.WorkflowID = *run.WorkflowID
+	}
+	if result.WorkflowID != "" {
+		status := string(app.StatusPending)
+		if triggerResp.Workflow != nil && triggerResp.Workflow.Status.Status != "" {
+			status = string(triggerResp.Workflow.Status.Status)
+		}
+		result.NextAction = &mcpNextAction{
+			Action: "watch_workflow",
+			Label:  "Watch workflow",
+			Tool:   "watch_workflow",
+			Arguments: map[string]any{
+				"workflow_id":       result.WorkflowID,
+				"last_known_status": status,
+			},
+		}
 	}
 	if resolvedInstall != nil {
 		result.InstallID = resolvedInstall.ID

@@ -335,12 +335,13 @@ const LabelSelectorEditor = ({
             {suggestedLabels.map(({ key, value }) => {
               const isActive = labels[key] === value
               return (
-                <button
+                <Button
                   key={`${key}=${value}`}
-                  type="button"
+                  variant="ghost"
+                  size="xs"
                   onClick={() => toggleSuggestion(key, value)}
                   disabled={disabled}
-                  className="disabled:opacity-50"
+                  className="!h-auto !p-0 !rounded-md"
                 >
                   <LabelBadge
                     labelKey={key}
@@ -349,7 +350,7 @@ const LabelSelectorEditor = ({
                     keyTheme={isActive ? 'brand' : 'neutral'}
                     theme={isActive ? 'brand' : 'default'}
                   />
-                </button>
+                </Button>
               )
             })}
           </div>

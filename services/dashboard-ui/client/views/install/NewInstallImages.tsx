@@ -1,5 +1,6 @@
 import { InstallImagesList } from '@/components/install-components/InstallImagesList'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { InstallWorkflowPanelController } from '@/components/workflows/InstallWorkflowPanel'
 import { useInstall } from '@/hooks/use-install'
 
 export const NewInstallImages = () => {
@@ -9,6 +10,7 @@ export const NewInstallImages = () => {
     <>
       <PageTitle segments={['Images', install?.name]} />
       <InstallImagesList />
+      <InstallWorkflowPanelController />
     </>
   )
 }

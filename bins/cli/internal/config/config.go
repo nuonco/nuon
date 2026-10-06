@@ -40,6 +40,9 @@ type Config struct {
 	APIURLSource  string `mapstructure:"-"`
 	Env           string `mapstructure:"-"`
 	UserID        string `mapstructure:"-"`
+	// ConfigFlag is the -C/--config value when that flag was passed. Empty
+	// when the process is using the default config file.
+	ConfigFlag string `mapstructure:"-"`
 }
 
 // NewConfig creates a new config instance.
@@ -151,7 +154,7 @@ func (c *Config) BindCobraFlags(cmd *cobra.Command) {
 	cmd.Flags().VisitAll(func(f *pflag.Flag) {
 		name := strings.ReplaceAll(f.Name, "-", "_")
 		// `preview` is the NUON_PREVIEW feature gate (config.Preview()), not a
-		// flag value; don't let it bleed into the plan-only `--preview` flags.
+		// cobra flag value.
 		if name == "preview" {
 			return
 		}

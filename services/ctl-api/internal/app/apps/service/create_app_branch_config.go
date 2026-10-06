@@ -13,7 +13,6 @@ import (
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 )
 
 type InstallGroupRequest struct {
@@ -182,17 +181,6 @@ func installGroupsFromRequest(reqGroups []InstallGroupRequest) []app.AppBranchIn
 // @Success				201	{object}	app.AppBranchConfig
 // @Router					/v1/apps/{app_id}/branches/{app_branch_id}/configs [post]
 func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
-	// Feature flag checks
-	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureAppBranches)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to check feature: %w", err))
-		return
-	}
-	if !enabled {
-		ctx.Error(features.ErrFeatureNotEnabled(app.OrgFeatureAppBranches))
-		return
-	}
-
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)

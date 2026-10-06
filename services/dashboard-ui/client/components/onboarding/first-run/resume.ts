@@ -9,6 +9,7 @@ import { getOrgSession, setOrgSession } from '@/lib/cookies'
 import { trackEvent } from '@/lib/posthog-analytics'
 import type { IUser, TAPIError, TOrg, TUserJourney } from '@/types'
 import { defaultRegion, isCloud, type TCloud, type TPath } from './constants'
+import type { IFirstRunSession } from './session'
 
 const statusOf = (error: unknown) => (error as TAPIError | undefined)?.status
 
@@ -61,37 +62,42 @@ const exists = async (check: () => Promise<unknown>) => {
   }
 }
 
+const readId = (value: unknown) => (typeof value === 'string' && value !== '' ? value : undefined)
+
 export async function resolveFirstRunResume({
   orgId,
   journey,
   metadata,
   forceStart,
+  session,
 }: {
   orgId: string
   journey?: TUserJourney
   metadata: TFirstRunMetadata
   forceStart: boolean
+  session?: IFirstRunSession
 }): Promise<IFirstRunResume> {
-  const path: TPath = metadata.path === 'own' ? 'own' : 'example'
-  const cloud: TCloud = isCloud(metadata.cloud) ? metadata.cloud : 'aws'
+  const path: TPath = session?.path ?? (metadata.path === 'own' ? 'own' : 'example')
+  const cloud: TCloud = session?.cloud ?? (isCloud(metadata.cloud) ? metadata.cloud : 'aws')
   const sharedData: Record<string, unknown> = {
     ...metadata,
+    ...session?.sharedData,
     path,
     cloud,
-    region: metadata.region ?? defaultRegion(cloud),
-    testCloud: path === 'own' && isCloud(metadata.cloud) ? metadata.cloud : undefined,
+    region: readId(session?.sharedData.region) ?? metadata.region ?? defaultRegion(cloud),
+    testCloud: path === 'own' && isCloud(cloud) ? cloud : undefined,
   }
 
   const hasProgress =
-    Object.keys(metadata).length > 0 || Boolean(journey?.steps?.some((step) => step.complete))
-  let step: TFirstRunStep = firstIncompleteStep(journey) ?? FIRST_RUN_STEPS[0].name
+    !!session?.started ||
+    Object.keys(metadata).length > 0 ||
+    Boolean(journey?.steps?.some((step) => step.complete))
+  let step: TFirstRunStep = session?.step ?? firstIncompleteStep(journey) ?? FIRST_RUN_STEPS[0].name
 
-  const appGone =
-    !!metadata.app_id && !(await exists(() => getApp({ orgId, appId: metadata.app_id! })))
-  const installGone =
-    !appGone &&
-    !!metadata.install_id &&
-    !(await exists(() => getInstall({ orgId, installId: metadata.install_id! })))
+  const appId = readId(sharedData.app_id)
+  const installId = readId(sharedData.install_id)
+  const appGone = !!appId && !(await exists(() => getApp({ orgId, appId })))
+  const installGone = !appGone && !!installId && !(await exists(() => getInstall({ orgId, installId })))
 
   if (appGone || installGone) {
     IDS_TIED_TO_APP.forEach((key) => delete sharedData[key])

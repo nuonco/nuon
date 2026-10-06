@@ -165,6 +165,8 @@ func selectedDiagnosticEvent(signalType signal.SignalType) string {
 		return "drift.detected"
 	case signalTypeAppConfigSynced:
 		return "app_config.synced"
+	case signalTypeAppBundlePublish:
+		return "app_bundle.publish"
 	case signalTypeUpdateAppConfig:
 		return "install.config_updated"
 	case signalTypeComponentUnhealthy:

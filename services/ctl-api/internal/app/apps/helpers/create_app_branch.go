@@ -13,10 +13,6 @@ import (
 )
 
 const (
-	// DefaultAppBranchName is the branch `nuon apps sync` routes through when the org
-	// has default-app-branches on; the CLI holds the same value in sync_branch.go.
-	DefaultAppBranchName = "default"
-
 	DefaultAppBranchInstallGroupName = "default"
 )
 

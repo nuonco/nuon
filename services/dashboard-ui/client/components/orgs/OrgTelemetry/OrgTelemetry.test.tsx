@@ -26,6 +26,7 @@ afterEach(() => {
 
 function setup({
   enabled = false,
+  relayEndpoint = null as string | null,
   role = 'org_admin',
   roleOrgId = orgId,
   renderCloudMenu = false,
@@ -37,7 +38,11 @@ function setup({
     },
   })
   clients.push(client)
-  const org = { id: orgId, name: 'acme', telemetry: { enabled } }
+  const org = {
+    id: orgId,
+    name: 'acme',
+    telemetry: { enabled, relay_endpoint: relayEndpoint },
+  }
   client.setQueryData(['account'], {
     roles: [{ org_id: roleOrgId, role_type: role }],
   })
@@ -124,7 +129,10 @@ test.each([false, true])(
         telemetry: { enabled: !enabled },
       })
     )
-    const { client, addToast } = setup({ enabled })
+    const { client, addToast } = setup({
+      enabled,
+      relayEndpoint: 'https://relay.example.com/telemetry',
+    })
     fireEvent.click(screen.getByRole('button', { name: 'Manage telemetry' }))
     const toggle = screen.getByRole('switch', {
       name: 'Enable telemetry by default',
@@ -175,9 +183,15 @@ test('keeps the attempted setting after a rejected save and supports retry', asy
   const { client, addToast } = setup()
   fireEvent.click(screen.getByRole('button', { name: 'Manage telemetry' }))
   fireEvent.click(screen.getByRole('switch'))
+  fireEvent.change(screen.getByRole('textbox'), {
+    target: { value: 'https://relay.example.com/telemetry/' },
+  })
   fireEvent.click(screen.getByRole('button', { name: 'Save settings' }))
   await screen.findByText('Only org admins can change the telemetry default')
   expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true')
+  expect(screen.getByRole('textbox')).toHaveValue(
+    'https://relay.example.com/telemetry/'
+  )
   expect(client.getQueryData<TOrg>(['org', orgId])?.telemetry?.enabled).toBe(
     false
   )
@@ -185,6 +199,12 @@ test('keeps the attempted setting after a rejected save and supports retry', asy
   fireEvent.click(screen.getByRole('button', { name: 'Save settings' }))
   await waitFor(() => expect(addToast).toHaveBeenCalledTimes(1))
   expect(fetch).toHaveBeenCalledTimes(2)
+  for (const [, options] of fetch.mock.calls) {
+    expect(JSON.parse(options?.body as string)).toEqual({
+      enabled: true,
+      relay_endpoint: 'https://relay.example.com/telemetry/',
+    })
+  }
 })
 
 test('disables editing during a pending save', async () => {
@@ -205,6 +225,7 @@ test('disables editing during a pending save', async () => {
   const saving = await screen.findByRole('button', { name: 'Saving...' })
   expect(saving).toBeDisabled()
   expect(screen.getByRole('switch')).toBeDisabled()
+  expect(screen.getByRole('textbox')).toBeDisabled()
   fireEvent.click(saving)
   expect(fetch).toHaveBeenCalledTimes(1)
   resolve!(Response.json({ id: orgId, telemetry: { enabled: true } }))
@@ -216,7 +237,79 @@ test('cancel does not persist a changed toggle', async () => {
   setup()
   fireEvent.click(screen.getByRole('button', { name: 'Manage telemetry' }))
   fireEvent.click(screen.getByRole('switch'))
+  fireEvent.change(screen.getByRole('textbox'), {
+    target: { value: 'https://relay.example.com/telemetry' },
+  })
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
   await waitFor(() => expect(screen.queryAllByRole('dialog').length).toBe(0))
   expect(fetch).not.toHaveBeenCalled()
+})
+
+test.each([
+  { previous: null, next: 'https://relay.example.com/telemetry/' },
+  {
+    previous: 'https://old.example.com/relay',
+    next: 'https://new.example.com/custom/@acme/',
+  },
+  { previous: 'https://relay.example.com/telemetry', next: '' },
+])('updates only the relay URL (%p)', async ({ previous, next }) => {
+  const updatedOrg = {
+    id: orgId,
+    telemetry: { enabled: true, relay_endpoint: next || null },
+  }
+  const fetch = spyOn(globalThis, 'fetch').mockResolvedValue(
+    Response.json(updatedOrg)
+  )
+  const { client, addToast } = setup({ enabled: true, relayEndpoint: previous })
+  fireEvent.click(screen.getByRole('button', { name: 'Manage telemetry' }))
+  const input = screen.getByRole('textbox', {
+    name: 'Telemetry relay URL (optional)',
+  })
+  expect(input).toHaveValue(previous ?? '')
+  expect(screen.getByRole('button', { name: 'Save settings' })).toHaveAttribute(
+    'aria-disabled',
+    'true'
+  )
+  fireEvent.change(input, { target: { value: next } })
+  fireEvent.click(screen.getByRole('button', { name: 'Save settings' }))
+  await waitFor(() => expect(addToast).toHaveBeenCalledTimes(1))
+  expect(fetch).toHaveBeenCalledTimes(1)
+  expect(JSON.parse(fetch.mock.calls[0][1]?.body as string)).toEqual({
+    relay_endpoint: next || null,
+  })
+  expect(client.getQueryData<TOrg>(['org', orgId])).toEqual(updatedOrg)
+  expect(
+    client.getQueryState(['install-telemetry', orgId, 'install-a'])
+      ?.isInvalidated
+  ).toBe(true)
+})
+
+test.each([
+  'not a URL',
+  'http://relay.example.com',
+  'https://',
+  'https://user:password@relay.example.com',
+  'https://@relay.example.com',
+  'https://relay.example.com?',
+  'https://relay.example.com#fragment',
+  'https://relay.example.com/with space',
+  'https://relay.example.com/${ENV}',
+  'https://relay.example.com/\\path',
+  `https://relay.example.com/${'a'.repeat(4096)}`,
+])('rejects an invalid relay URL: %s', async (value) => {
+  const fetch = spyOn(globalThis, 'fetch')
+  setup()
+  fireEvent.click(screen.getByRole('button', { name: 'Manage telemetry' }))
+  const input = screen.getByRole('textbox')
+  fireEvent.change(input, { target: { value } })
+  fireEvent.blur(input)
+  await waitFor(() => expect(input).toHaveAttribute('aria-invalid', 'true'))
+  expect(screen.getByRole('button', { name: 'Save settings' })).toBeDisabled()
+  fireEvent.submit(input.closest('form')!)
+  expect(fetch).not.toHaveBeenCalled()
+  fireEvent.change(input, {
+    target: { value: 'https://relay.example.com/telemetry' },
+  })
+  await waitFor(() => expect(input).toHaveAttribute('aria-invalid', 'false'))
+  expect(screen.getByRole('button', { name: 'Save settings' })).toBeEnabled()
 })

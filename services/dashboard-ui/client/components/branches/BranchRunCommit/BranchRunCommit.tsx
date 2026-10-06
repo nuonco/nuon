@@ -1,4 +1,5 @@
 import { Avatar } from '@/components/common/Avatar'
+import { CommitLink } from '@/components/common/GitReferenceLink'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
@@ -14,6 +15,7 @@ export interface IBranchRunCommit {
   author?: string
   avatarUrl?: string
   sha?: string
+  repo?: string
   createdAt?: string
   className?: string
   showStatus?: boolean
@@ -28,6 +30,7 @@ export const BranchRunCommit = ({
   author,
   avatarUrl,
   sha,
+  repo,
   createdAt,
   className,
   showStatus = true,
@@ -54,15 +57,12 @@ export const BranchRunCommit = ({
           />
         ) : null}
         {sha ? (
-          <Text
-            as="span"
-            variant="subtext"
-            theme="neutral"
-            family="mono"
+          <CommitLink
+            sha={sha}
+            repo={repo}
+            showIcon={false}
             className="shrink-0"
-          >
-            {sha.slice(0, 7)}
-          </Text>
+          />
         ) : null}
         {href ? (
           <Link
@@ -103,14 +103,12 @@ export const BranchRunCommit = ({
           />
         ) : null}
         {sha ? (
-          <Text
-            variant="subtext"
-            theme="neutral"
-            family="mono"
+          <CommitLink
+            sha={sha}
+            repo={repo}
+            showIcon={false}
             className="shrink-0"
-          >
-            {sha.slice(0, 7)}
-          </Text>
+          />
         ) : null}
         <div className="min-w-0 flex-1 text-[13px] leading-5">
           {href ? (

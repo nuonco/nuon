@@ -125,10 +125,10 @@ Replace names like `acme-prod` with your own install, app, or workflow IDs.
   </Accordion>
   <Accordion title="Run a runbook">
     ```
-    Run the <runbook> runbook on install acme-prod. Show its inputs and a checklist of every step, all enabled, and let me turn steps off. Ask me before triggering it, then follow its workflow.
+    Run the <runbook> runbook on install acme-prod. Show its inputs and a checklist of every step, all enabled, and let me turn steps off. Ask me before triggering it, then ask if I want to watch the workflow.
     ```
 
-    Write. The `run_runbook` description requires a prompt first: load the install-pinned runbook, confirm inputs, show the step checklist with every step enabled, and let the user turn steps off before triggering. Then call the returned `next_action`. Each `watch_workflow` returns when a step starts or finishes. After every result, show `step_progress`, then call watch again with `cursor`. A row of watch calls with no progress between them is wrong.
+    Write. The `run_runbook` description requires a prompt first: load the install-pinned runbook, confirm inputs, show the step checklist with every step enabled, and let the user turn steps off before triggering. Then ask whether the user wants to watch. Call the returned `next_action` only if they do. Each `watch_workflow` returns when a step starts or finishes. After every result, show `step_progress`, then call watch again with `cursor`. A row of watch calls with no progress between them is wrong.
   </Accordion>
 </AccordionGroup>
 
@@ -145,6 +145,13 @@ Replace names like `acme-prod` with your own install, app, or workflow IDs.
     Add a policy that blocks public S3 buckets on the rds_cluster component.
     ```
   </Accordion>
+  <Accordion title="Add a component">
+    ```
+    Add a helm component named api to this app config. Load the helm schema first, write components/api.toml with the #helm header, then validate the directory. Do not sync.
+    ```
+
+    Read. `get_app_config_schema` returns the file schema. When validating for this MCP server, use the Nuon CLI binary that started it, such as `nuon-dev apps validate` when the server is `nuon-dev`, and the same `-C` value if that server was started with `-C`. Do that only for work done for the MCP server.
+  </Accordion>
 </AccordionGroup>
 
 More on these: [Skills](/guides/agents/skills).
@@ -157,7 +164,7 @@ More on these: [Skills](/guides/agents/skills).
     Plan a reprovision of install acme-prod. Do not apply until I confirm. List available roles for reprovision first if I want a non-default IAM role. If I ask to deprovision, require an explicit confirm from me first.
     ```
 
-    Write. Deprovision requires `confirm=true`. `plan_only` does not.
+    Write. Deprovision requires `confirm=true`. `plan_only` does not. After the write, ask whether the user wants to watch. Call the returned `next_action` only if they do.
   </Accordion>
   <Accordion title="Inspect or update install inputs">
     ```

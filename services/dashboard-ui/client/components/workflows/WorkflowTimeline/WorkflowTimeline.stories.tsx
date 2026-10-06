@@ -219,6 +219,7 @@ const serviceAccountBranchRunWorkflow: TWorkflow = {
   ...previewBranchRunWorkflow,
   id: 'inwm6oxsvulflygj3z77xo55l',
   created_by: {
+    name: 'github-actions',
     email:
       'orgl9cvkaqh1g8yv2jqdb19247-oidc-accbx92unf2s9wi0ve72bwlfzi@serviceaccount.nuon.co',
     account_type: 'service',

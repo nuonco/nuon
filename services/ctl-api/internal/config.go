@@ -99,11 +99,15 @@ func init() {
 	// if sandbox_enable_runners is set to true, all jobs require that you process them via a runner, which means
 	// running an org runner during seeding and then install runners, etc.
 	config.RegisterDefault("sandbox_mode_enable_runners", false)
+	config.RegisterDefault("enable_support_users", false)
 
 	// runner defaults; per-cloud overrides avoid cross-cloud egress against AWS ECR's pull quota.
 	config.RegisterDefault("runner_container_image_url", "public.ecr.aws/p7e3r5y0/runner")
 	config.RegisterDefault("runner_container_image_url_gcp", "us-west1-docker.pkg.dev/nuon-public/runner/runner")
 	config.RegisterDefault("runner_container_image_url_azure", "")
+	config.RegisterDefault("runner_container_image_verification_mode", "warn")
+	config.RegisterDefault("runner_container_image_signature_issuer", "https://token.actions.githubusercontent.com")
+	config.RegisterDefault("runner_container_image_signature_identity_regexp", `^https://github\.com/nuonco/nuon/\.github/workflows/service\.yml@refs/heads/main$`)
 	config.RegisterDefault("runner_api_url", "http://localhost:8083")
 	config.RegisterDefault("public_api_url", "http://localhost:8081")
 	config.RegisterDefault("temporal_url", "https://app.nuon.co")
@@ -132,6 +136,7 @@ func init() {
 	config.RegisterDefault("temporal_blob_s3_timeout", "30s")
 
 	config.RegisterDefault("forced_enabled_features", "")
+	config.RegisterDefault("auto_enabled_features", "")
 	config.RegisterDefault("enable_httpbin_debug_endpoints", false)
 	config.RegisterDefault("enable_endpoint_auditing", false)
 	config.RegisterDefault("org_default_user_journeys_enabled", false)
@@ -378,10 +383,14 @@ type Config struct {
 	ForceOnboardingSandboxMode bool          `config:"force_onboarding_sandbox_mode"`
 	SandboxModeSleep           time.Duration `config:"sandbox_mode_sleep" validate:"required"`
 	SandboxModeEnableRunners   bool          `config:"sandbox_mode_enable_runners"`
+	EnableSupportUsers         bool          `config:"enable_support_users"`
 
 	// ForcedEnabledFeatures lists flags this deployment pins on for every org: they
 	// resolve enabled regardless of the stored per-org value and cannot be toggled off.
 	ForcedEnabledFeatures string `config:"forced_enabled_features"`
+	// AutoEnabledFeatures lists flags stored true on newly created orgs. Unlike
+	// ForcedEnabledFeatures, they can still be toggled off.
+	AutoEnabledFeatures string `config:"auto_enabled_features"`
 
 	// flags for controlling creation of integration users
 	IntegrationGithubInstallID string `config:"integration_github_install_id" validate:"required"`
@@ -411,6 +420,12 @@ type Config struct {
 	RunnerContainerImageURLAzure string `config:"runner_container_image_url_azure"`
 	RunnerContainerImageTag      string `config:"runner_container_image_tag" validate:"required"`
 	UseLocalRunners              bool   `config:"use_local_runners"`
+
+	// Runner VMs verify the runner image's keyless signature before running it: warn logs a failure,
+	// enforce refuses to run an image that fails.
+	RunnerContainerImageVerificationMode        string `config:"runner_container_image_verification_mode" validate:"omitempty,oneof=disabled warn enforce"`
+	RunnerContainerImageSignatureIssuer         string `config:"runner_container_image_signature_issuer"`
+	RunnerContainerImageSignatureIdentityRegexp string `config:"runner_container_image_signature_identity_regexp"`
 
 	// AWS IID auth
 	AWSIIDCertsDir string `config:"aws_iid_certs_dir"`
@@ -559,8 +574,18 @@ type Config struct {
 	// Blob storage configuration. Provider selects the backend: "s3" (default,
 	// AWS-hosted installs) or "gcs" (self-hosted control-plane installs on GCP,
 	// where BlobStorageBucket is a native GCS bucket rather than S3).
-	BlobStorageBucket   string `config:"blob_storage_bucket" validate:"required"`
-	BlobStorageRegion   string `config:"blob_storage_region" validate:"required"`
+	BlobStorageBucket string `config:"blob_storage_bucket" validate:"required"`
+	BlobStorageRegion string `config:"blob_storage_region" validate:"required"`
+
+	AppBundleStorageProvider          string        `config:"app_bundle_storage_provider" validate:"omitempty,oneof=s3 gcs"`
+	AppBundleStorageBucket            string        `config:"app_bundle_storage_bucket"`
+	AppBundleStorageRegion            string        `config:"app_bundle_storage_region"`
+	AppBundleStorageEndpoint          string        `config:"app_bundle_storage_endpoint"`
+	AppBundleStorageForcePathStyle    bool          `config:"app_bundle_storage_force_path_style"`
+	AppBundleStoragePrefix            string        `config:"app_bundle_storage_prefix"`
+	AppBundleStorageGCSServiceAccount string        `config:"app_bundle_storage_gcs_service_account"`
+	AppBundleGrantTTL                 time.Duration `config:"app_bundle_grant_ttl"`
+
 	BlobStorageProvider string `config:"blob_storage_provider" validate:"required,oneof=s3 gcs"`
 
 	// Enqueuer worker pool size — how many signals can be enqueued in parallel.
@@ -657,6 +682,7 @@ func NewConfig() (*Config, error) {
 	}
 
 	orgfeatures.SetForced(cfg.ForcedEnabledFeatures)
+	orgfeatures.SetAuto(cfg.AutoEnabledFeatures)
 
 	switch {
 	case cfg.IsGCP():

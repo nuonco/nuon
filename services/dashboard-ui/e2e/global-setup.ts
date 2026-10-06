@@ -163,12 +163,12 @@ export default async function globalSetup(_config: FullConfig) {
       log("support users added");
     }
 
-    log("enabling org features (app-branches-ui, notebooks)...");
+    log("enabling org features (new-app-ia, notebooks)...");
     try {
       await adminFetch(`/v1/orgs/${orgId}/admin-features`, {
         method: "PATCH",
         body: JSON.stringify({
-          features: { "app-branches-ui": true, notebooks: true },
+          features: { "new-app-ia": true, notebooks: true },
         }),
       });
       log("org features enabled");

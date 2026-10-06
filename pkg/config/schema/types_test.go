@@ -2,6 +2,7 @@ package schema
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/invopop/jsonschema"
@@ -49,6 +50,46 @@ func TestAllSchemasHaveJSONSchemaExtend(t *testing.T) {
 // TestPermissionVsPermissionsSchemas guards the singular/collection split: the
 // permissions/ directory form is a single AppAWSIAMRole per file ("permission"),
 // while permissions.toml is the PermissionsConfig collection ("permissions").
+func TestInstallSchemaRequiresAppBranch(t *testing.T) {
+	schema, err := InstallSchema()
+	if err != nil || schema == nil {
+		t.Fatalf("install schema unavailable: %v", err)
+	}
+	required := map[string]bool{}
+	for _, name := range collectSchemaRequired(schema, map[*jsonschema.Schema]bool{}) {
+		required[name] = true
+	}
+	for _, name := range []string{"name", "app_branch"} {
+		if !required[name] {
+			t.Fatalf("install schema required = %v, want %q", required, name)
+		}
+	}
+}
+
+func collectSchemaRequired(schema *jsonschema.Schema, seen map[*jsonschema.Schema]bool) []string {
+	if schema == nil || seen[schema] {
+		return nil
+	}
+	seen[schema] = true
+
+	var required []string
+	required = append(required, schema.Required...)
+	for _, branch := range schema.AllOf {
+		required = append(required, collectSchemaRequired(branch, seen)...)
+	}
+	if schema.Ref != "" && schema.Definitions != nil {
+		name := schema.Ref
+		if i := strings.LastIndex(name, "/"); i >= 0 {
+			name = name[i+1:]
+		}
+		required = append(required, collectSchemaRequired(schema.Definitions[name], seen)...)
+	}
+	for _, def := range schema.Definitions {
+		required = append(required, collectSchemaRequired(def, seen)...)
+	}
+	return required
+}
+
 func TestPermissionVsPermissionsSchemas(t *testing.T) {
 	single, err := LookupSchemaType("permission")
 	if err != nil || single == nil {

@@ -1,14 +1,12 @@
-import { useCallback } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
-import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import { useOrg } from '@/hooks/use-org'
-import type { TInstallWorkflow, TInstallWorkflowStep } from '@/types'
+import type { TInstallWorkflow } from '@/types'
 import { GroupActionButton } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
+import { useOpenWorkflowRunPanel } from '@/components/branches/WorkflowRunPanel'
 import {
   BranchRunApproval,
   type IBranchRunApprovalItem,
 } from './BranchRunApproval'
-import { getGroupName, useGroupPlanHref } from './use-group-plan-href'
+import { getGroupName } from './use-group-plan-href'
 
 interface IBranchRunApprovalContainer {
   run: TInstallWorkflow
@@ -19,29 +17,7 @@ export const BranchRunApprovalContainer = ({
 }: IBranchRunApprovalContainer) => {
   const { org } = useOrg()
   const orgId = org?.id ?? ''
-  const hasNewAppIA = useNewAppIA()
-  const navigate = useNavigate()
-  const groupPlanHref = useGroupPlanHref()
-  const [, setSearchParams] = useSearchParams()
-
-  const openStep = useCallback(
-    (step: TInstallWorkflowStep) => {
-      if (hasNewAppIA) {
-        navigate(groupPlanHref(step.name))
-        return
-      }
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev)
-          next.set('workflow', run.id ?? '')
-          if (step.id) next.set('step', step.id)
-          return next
-        },
-        { replace: true }
-      )
-    },
-    [hasNewAppIA, navigate, groupPlanHref, run.id, setSearchParams]
-  )
+  const openWorkflowRunPanel = useOpenWorkflowRunPanel()
 
   if (run.status?.status === 'cancelled') {
     return null
@@ -60,7 +36,7 @@ export const BranchRunApprovalContainer = ({
       return {
         key: step.id ?? step.approval!.id!,
         groupName,
-        onReview: () => openStep(step),
+        onReview: () => openWorkflowRunPanel(run.id ?? '', step.id),
         actions: (
           <GroupActionButton
             action="approve"

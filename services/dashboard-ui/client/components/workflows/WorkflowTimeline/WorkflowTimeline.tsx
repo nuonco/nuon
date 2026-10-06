@@ -13,6 +13,7 @@ import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
 import { Tooltip } from '@/components/common/Tooltip'
 import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
 import { RunDeploymentGraph } from '@/components/branches/RunDeploymentGraph'
+import { branchRunOutcome } from '@/components/branches/shared/run-outcome'
 import {
   getRunTitle,
   getRunTrigger,
@@ -24,10 +25,10 @@ import {
 import type { TInstall, TInstallGroupRun, TWorkflow } from '@/types'
 import { manualRunPinLabel } from '@/utils/branch-utils'
 import {
+  getAccountDisplayName,
   getWorkflowBadge,
   getWorkflowPendingApprovals,
   isBranchRunWorkflow,
-  isServiceAccount,
 } from '@/utils/workflow-utils'
 import { useInstallHref } from '@/hooks/use-install-path'
 import { useWorkflowApprovals } from '@/hooks/use-workflow-approvals'
@@ -88,21 +89,24 @@ export const WorkflowTimeline = ({
               appId: install?.app_id,
               suffix: `/workflows/${workflow.id}`,
             })
+        const outcome = isBranchRun ? branchRunOutcome(workflow) : undefined
         const createdByAccount = workflow?.created_by
-        const createdBy = createdByAccount?.email ? (
-          isServiceAccount(createdByAccount) ? (
+        const createdByName = getAccountDisplayName(createdByAccount)
+        const createdByEmail = createdByAccount?.email
+        const createdBy = createdByName ? (
+          createdByEmail && createdByEmail !== createdByName ? (
             <Tooltip
-              position="left"
+              position="top"
               tipContent={
                 <Text variant="subtext" family="mono">
-                  {createdByAccount.email}
+                  {createdByEmail}
                 </Text>
               }
             >
-              a service account
+              {createdByName}
             </Tooltip>
           ) : (
-            createdByAccount.email
+            createdByName
           )
         ) : undefined
 
@@ -226,6 +230,14 @@ export const WorkflowTimeline = ({
                         ? 'auto-approve (config)'
                         : 'auto-approve'}
                   </Badge>
+                ) : null}
+                {outcome ? (
+                  <Text
+                    variant="subtext"
+                    theme={outcome.failed ? 'error' : 'neutral'}
+                  >
+                    {outcome.text}
+                  </Text>
                 ) : null}
               </span>
             }

@@ -4,11 +4,8 @@ type TerraformBuildPlan struct {
 	Labels map[string]string
 
 	// VendorProviders enables build-time vendoring of terraform providers
-	// via `terraform providers mirror`. Gated by the
-	// `terraform-provider-mirror` org feature flag in ctl-api so we can
-	// roll the change out gradually without coupling install-runner
-	// behaviour to the flag (the install runner auto-detects whether a
-	// mirror is present in the OCI artifact).
+	// via `terraform providers mirror`. The install runner auto-detects
+	// whether a mirror is present in the OCI artifact.
 	VendorProviders bool `json:"vendor_providers,omitempty"`
 
 	// TerraformVersion is the version of the terraform CLI the build runner

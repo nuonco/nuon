@@ -47,7 +47,7 @@ func (a AppSandboxConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("source").Short("external configuration source").
 		Long("Path to an external file containing sandbox configuration (YAML, JSON, or TOML)").
 		Field("type").Short("sandbox IaC type").
-		Long("IaC type for this sandbox: 'terraform' (default) or 'pulumi'. 'pulumi' requires the pulumi-sandbox feature flag").
+		Long("IaC type for this sandbox: 'terraform' (default) or 'pulumi'.").
 		Example("terraform").
 		Example("pulumi").
 		Field("terraform_version").Short("Terraform version").

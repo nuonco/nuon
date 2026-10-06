@@ -1,3 +1,4 @@
+import { FirstRunProgress } from '@/components/onboarding/first-run/FirstRunProgress'
 import { useOnboardingJourney } from '@/hooks/use-onboarding-journey'
 import { useOnboardingWizard } from '@/hooks/use-onboarding-wizard'
 import {
@@ -37,14 +38,16 @@ function WizardHistory({ onHistoryBack }: { onHistoryBack?: () => void }) {
 export function OnboardingWizardContainer({
   onSkip,
   onHistoryBack,
+  rememberProgress,
   ...props
 }: IOnboardingWizardProps & {
   onSkip?: (stepId: string) => void
   onHistoryBack?: () => void
+  rememberProgress?: boolean
 }) {
   return (
     <OnboardingWizardProvider {...props}>
-      <WizardHistory onHistoryBack={onHistoryBack} />
+      {rememberProgress ? <FirstRunProgress /> : <WizardHistory onHistoryBack={onHistoryBack} />}
       <ConnectedWizardLayout onSkip={onSkip} />
     </OnboardingWizardProvider>
   )

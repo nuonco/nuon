@@ -9,7 +9,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
@@ -154,22 +153,7 @@ func (s *syncer) Sync(ctx context.Context) error {
 	return s.persistState(ctx)
 }
 
-func (s *syncer) validateFeatureCompatibility(ctx context.Context) error {
-	var org app.Org
-	res := s.db.WithContext(ctx).
-		Select("id", "features").
-		Where(&app.Org{ID: s.orgID}).
-		First(&org)
-	if res.Error != nil {
-		return sync.SyncInternalErr{
-			Description: "unable to check org feature compatibility",
-			Err:         res.Error,
-		}
-	}
-	if s.cfg.Sandbox != nil && s.cfg.Sandbox.Type == config.AppSandboxTypePulumi && !org.Features[string(app.OrgFeaturePulumiSandbox)] {
-		return sync.SyncErr{Resource: "app-sandbox", Description: "pulumi sandboxes are not enabled for this organization"}
-	}
-
+func (s *syncer) validateFeatureCompatibility(_ context.Context) error {
 	return sync.RejectDockerBuildComponentsForFeature(s.cfg)
 }
 

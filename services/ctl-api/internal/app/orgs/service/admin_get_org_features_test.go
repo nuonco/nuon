@@ -162,8 +162,8 @@ func (s *AdminGetOrgFeaturesTestSuite) TestAdminGetOrgFeatures() {
 				}
 
 				criticalFeatures := []app.OrgFeature{
-					app.OrgFeatureSupportRole,
-					app.OrgFeatureAppBranches,
+					app.OrgFeatureDisableAppSync,
+					app.OrgFeatureNewAppIA,
 					app.OrgFeatureUserManagedFeatures,
 				}
 

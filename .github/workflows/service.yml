@@ -85,6 +85,21 @@ jobs:
           fi
           CI=true nuonctl tests run-all ${{inputs.service}} "${CACHE_ARGS[@]}"
 
+      # nuonctl signs the runner image with this; a pinned download since cosign-installer needs envsubst.
+      - name: Install cosign
+        if: ${{ inputs.service == 'runner' && github.event_name != 'pull_request' }}
+        env:
+          COSIGN_VERSION: v2.6.5
+          COSIGN_SHA256: c3b4f5410e608af03a5eb0aaac84a4313d8da131248e08ff1759ac70c79d1644
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.cosign"
+          curl -sSfL -o "$HOME/.cosign/cosign" "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64"
+          echo "${COSIGN_SHA256}  $HOME/.cosign/cosign" | sha256sum -c -
+          chmod +x "$HOME/.cosign/cosign"
+          echo "$HOME/.cosign" >> "$GITHUB_PATH"
+          "$HOME/.cosign/cosign" version
+
       - name: 📦 Build
         run: |
           CACHE_ARGS=()

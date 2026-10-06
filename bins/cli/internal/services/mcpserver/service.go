@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -217,6 +220,7 @@ func (s *Service) buildProxyServer(ctx context.Context, upstream *mcp.ClientSess
 	if init := upstream.InitializeResult(); init != nil {
 		instructions = init.Instructions
 	}
+	instructions = appendCLIInstructions(instructions, CLIBinary(), CLIConfigFlag(s.cfg))
 
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    s.serverName(),
@@ -294,6 +298,66 @@ func (s *Service) proxyResources(ctx context.Context, upstream *mcp.ClientSessio
 
 func isWriteTool(tool *mcp.Tool) bool {
 	return strings.HasPrefix(tool.Description, "WRITE OPERATION:")
+}
+
+// CLIBinary is the command name used to start this process, such as nuon or nuon-dev.
+func CLIBinary() string {
+	return cliBinary(os.Args)
+}
+
+func cliBinary(args []string) string {
+	if len(args) == 0 {
+		return "nuon"
+	}
+	base := filepath.Base(args[0])
+	if base == "" || base == "." || base == string(filepath.Separator) {
+		return "nuon"
+	}
+	return base
+}
+
+// CLIConfigFlag is the -C value this process was started with. Empty when
+// the MCP server or CLI command was not given -C.
+func CLIConfigFlag(cfg *config.Config) string {
+	if cfg == nil {
+		return ""
+	}
+	return cfg.ConfigFlag
+}
+
+// CLICommandInstructions tells an agent which Nuon binary to use for local CLI
+// work this MCP server asks for. It includes -C only when that flag was passed.
+func CLICommandInstructions(binary, configFlag string) string {
+	name := commandName(binary)
+	if configFlag == "" {
+		return fmt.Sprintf(
+			"When you run a local Nuon CLI command on behalf of this MCP server, use the %s binary that started it. Do not apply that binary to Nuon CLI commands for other work. Validate an app config directory with `%s apps validate` from that directory, or pass the directory as the argument. Do not upload config files to validate them.",
+			name, name,
+		)
+	}
+	quoted := strconv.Quote(configFlag)
+	return fmt.Sprintf(
+		"When you run a local Nuon CLI command on behalf of this MCP server, use %s and pass -C %s, matching how this server was started. Do not apply that binary or -C to Nuon CLI commands for other work. Validate an app config directory with `%s -C %s apps validate` from that directory, or pass the directory as the argument. Do not upload config files to validate them.",
+		name, quoted, name, quoted,
+	)
+}
+
+func commandName(binary string) string {
+	if binary == "" {
+		return "nuon"
+	}
+	if strings.ContainsAny(binary, " \t\"'\\") {
+		return strconv.Quote(binary)
+	}
+	return binary
+}
+
+func appendCLIInstructions(upstream, binary, configFlag string) string {
+	cli := CLICommandInstructions(binary, configFlag)
+	if strings.TrimSpace(upstream) == "" {
+		return cli
+	}
+	return upstream + " " + cli
 }
 
 type authRoundTripper struct {

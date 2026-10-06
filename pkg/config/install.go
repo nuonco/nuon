@@ -162,7 +162,7 @@ func (s *InstallStackOverrides) HasOverrides() bool {
 // Install is a flattened configuration type that allows us to define installs for an app.
 type Install struct {
 	Name            string                `mapstructure:"name" toml:"name" comment:"install" jsonschema:"required"`
-	AppBranch       string                `mapstructure:"app_branch,omitempty" toml:"app_branch,omitempty"`
+	AppBranch       string                `mapstructure:"app_branch,omitempty" toml:"app_branch,omitempty" jsonschema:"required"`
 	AppBranchGroup  string                `mapstructure:"app_branch_group,omitempty" toml:"app_branch_group,omitempty"`
 	ApprovalOption  InstallApprovalOption `mapstructure:"approval_option,omitempty" toml:"approval_option,omitempty"`
 	Telemetry       *InstallTelemetry     `mapstructure:"telemetry,omitempty" toml:"telemetry,omitempty" json:",omitempty"`
@@ -223,8 +223,8 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("production").
 		Example("staging").
 		Example("customer-acme").
-		Field("app_branch").Short("app branch name or ID").
-		Long("App branch this install belongs to, by name or ID. Changing it moves the install and applies the branch's latest run. Required when disable-app-sync is enabled for the organization.").
+		Field("app_branch").Short("app branch name or ID").Required().
+		Long("App branch this install belongs to, by name or ID. Changing it moves the install and applies the branch's latest run.").
 		Example("main").
 		Field("app_branch_group").Short("app branch deployment group").
 		Long("Deployment group this install belongs to within its app branch. This explicit selection takes precedence over label matching.").

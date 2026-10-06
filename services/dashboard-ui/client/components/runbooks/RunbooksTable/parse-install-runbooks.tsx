@@ -7,7 +7,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { RunRunbookButton } from '@/components/runbooks/RunRunbook'
 import type { TInstallRunbook } from '@/lib/ctl-api/installs/runbooks'
-import type { TRunbookRow } from './RunbooksTable'
+import { runbookStepCount, type TRunbookRow } from './RunbooksTable'
 
 export function parseInstallRunbooksToTableData(
   runbooks: TInstallRunbook[],
@@ -71,6 +71,7 @@ export function parseInstallRunbooksToTableData(
       ) : (
         <Icon variant="MinusIcon" />
       ),
+      steps: runbookStepCount(runbook),
       lastRun: latestRun ? (
         <Text flex nowrap className="gap-2">
           <Icon variant="CalendarBlankIcon" />

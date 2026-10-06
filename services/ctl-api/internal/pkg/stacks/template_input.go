@@ -70,6 +70,11 @@ type TemplateInput struct {
 	// Switches the AWS renderer to custom-stacks-only mode.
 	CustomStacksOnly bool
 
+	// Switches the AWS renderer to app-bundle compile mode: install-input
+	// references in custom nested stack parameters are hoisted into top-level
+	// template parameters instead of baking synthetic compile-time values.
+	BundleCompile bool
+
 	// Each custom stack's Parameters as authored, keyed by stack name, before
 	// RenderCustomNestedStackParameters rewrites install-input references into
 	// literals.

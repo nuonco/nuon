@@ -9,6 +9,7 @@ import { File as DiffFile, MultiFileDiff } from '@pierre/diffs/react'
 import { FileTree, useFileTree } from '@pierre/trees/react'
 import type { GitStatusEntry } from '@pierre/trees'
 import { Badge, type TBadgeTheme } from '@/components/common/Badge'
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Loading } from '@/components/common/Loading'
@@ -280,15 +281,18 @@ export const SourceFilesPanel = ({
   const [selectedPath, setSelectedPath] = useState<string | undefined>()
   const [flash, setFlash] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
-  const selected = files.find(({ path }) => path === selectedPath)
   const changed = files.filter(({ change }) => change !== 'unchanged')
+  const selected = changed.find(({ path }) => path === selectedPath)
 
   useEffect(() => {
-    if (!files.length) return
-    if (!files.some(({ path }) => path === selectedPath)) {
-      setSelectedPath(changed[0]?.path ?? files[0].path)
+    if (!changed.length) {
+      if (selectedPath) setSelectedPath(undefined)
+      return
     }
-  }, [changed, files, selectedPath])
+    if (!changed.some(({ path }) => path === selectedPath)) {
+      setSelectedPath(changed[0].path)
+    }
+  }, [changed, selectedPath])
 
   useEffect(() => {
     if (selectedPath) onSelectPath?.(selectedPath)
@@ -302,6 +306,14 @@ export const SourceFilesPanel = ({
     const timer = setTimeout(() => setFlash(false), 900)
     return () => clearTimeout(timer)
   }, [focus])
+
+  if (!changed.length) {
+    return (
+      <Text theme="neutral">
+        {files.length ? 'No files changed.' : 'This component references no files.'}
+      </Text>
+    )
+  }
 
   return (
     <div className="@container flex flex-col gap-3">
@@ -323,42 +335,38 @@ export const SourceFilesPanel = ({
           </Badge>
         </div>
       </div>
-      {files.length ? (
+      <div
+        ref={panelRef}
+        className={cn(
+          'flex flex-col overflow-hidden border rounded-md @3xl:flex-row',
+          changed.length > 5 ? 'min-h-144' : 'min-h-96'
+        )}
+      >
+        <div className="border-b p-3 @3xl:w-2/5 @3xl:border-b-0 @3xl:border-r">
+          <ComponentSourceTree
+            files={changed}
+            onSelect={setSelectedPath}
+            selectedPath={selectedPath}
+            focus={focus}
+          />
+        </div>
         <div
-          ref={panelRef}
           className={cn(
-            'flex flex-col overflow-hidden border rounded-md @3xl:flex-row',
-            files.length > 5 ? 'min-h-144' : 'min-h-96'
+            'min-w-0 overflow-auto p-4 transition-colors duration-500 @3xl:w-3/5',
+            flash && 'bg-primary-50 dark:bg-primary-900/20'
           )}
         >
-          <div className="border-b p-3 @3xl:w-2/5 @3xl:border-b-0 @3xl:border-r">
-            <ComponentSourceTree
-              files={files}
-              onSelect={setSelectedPath}
-              selectedPath={selectedPath}
-              focus={focus}
-            />
-          </div>
-          <div
-            className={cn(
-              'min-w-0 overflow-auto p-4 transition-colors duration-500 @3xl:w-3/5',
-              flash && 'bg-primary-50 dark:bg-primary-900/20'
-            )}
-          >
-            {selected ? (
-              isLoadingFile ? (
-                <Loading />
-              ) : (
-                <SourceFileDiff file={selected} />
-              )
+          {selected ? (
+            isLoadingFile ? (
+              <Loading />
             ) : (
-              <Text theme="neutral">Select a file to inspect it.</Text>
-            )}
-          </div>
+              <SourceFileDiff file={selected} />
+            )
+          ) : (
+            <Text theme="neutral">Select a file to inspect it.</Text>
+          )}
         </div>
-      ) : (
-        <Text theme="neutral">This component references no files.</Text>
-      )}
+      </div>
     </div>
   )
 }
@@ -470,13 +478,13 @@ const EntityRow = ({
     )
   }
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
       onClick={() => onFocusFile(targetPath)}
-      className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-cool-grey-100 dark:hover:bg-dark-grey-700 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary-500"
+      className="!flex !h-auto !w-full justify-between !gap-2 !rounded-md !px-2 !py-1.5 text-left !font-normal !whitespace-normal"
     >
       {row}
-    </button>
+    </Button>
   )
 }
 

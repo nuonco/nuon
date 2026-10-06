@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 import { PlanGroupStep } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep'
+import { CommitLink } from '@/components/common/GitReferenceLink'
 import { Link } from '@/components/common/Link'
 import { Loading } from '@/components/common/Loading'
 import { Status } from '@/components/common/Status'
@@ -29,17 +30,7 @@ const RolloutRunCard = ({ rollout }: { rollout: TOverviewRollout }) => {
       </Text>
       {sha || author ? (
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          {sha ? (
-            <Text variant="subtext" family="mono" theme="neutral">
-              {shaUrl ? (
-                <Link href={shaUrl} isExternal>
-                  {sha.slice(0, 7)}
-                </Link>
-              ) : (
-                sha.slice(0, 7)
-              )}
-            </Text>
-          ) : null}
+          {sha ? <CommitLink sha={sha} href={shaUrl} /> : null}
           {author ? (
             <Text variant="subtext" theme="neutral">
               {author}
@@ -64,6 +55,7 @@ export const BranchRolloutContainer = () => {
     app,
     branch,
     orgId,
+    repoSlug,
     basePath,
     rollout,
     branchRun,
@@ -149,6 +141,7 @@ export const BranchRolloutContainer = () => {
         install={selectedInstall}
         approval={selected?.approval}
         orgId={orgId}
+        repo={repoSlug}
         branchRun={branchRun as TAppBranchRun | undefined}
         onClose={closeInstall}
       />
@@ -164,6 +157,7 @@ export const BranchRolloutContainer = () => {
     selectedInstall,
     selected?.approval,
     orgId,
+    repoSlug,
     branchRun,
     openPanelId,
     addPanel,
@@ -177,7 +171,15 @@ export const BranchRolloutContainer = () => {
       <PageTitle segments={['Rollout', branch?.name, app?.name]} />
       <SectionHeader
         title="Rollout"
-        actions={rollout ? <Status status={rollout.status} /> : undefined}
+        description={rollout?.activity}
+        actions={
+          rollout ? (
+            <span className="flex items-center gap-3">
+              <Status status={rollout.status} />
+              <Link href={rollout.href}>View run</Link>
+            </span>
+          ) : undefined
+        }
       />
       {rollout ? <RolloutRunCard rollout={rollout} /> : null}
       {isLoading ? (

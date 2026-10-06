@@ -57,6 +57,12 @@ type ServiceAppBranchRunComparisonResponse struct {
 
 	// id
 	ID string `json:"id,omitempty"`
+
+	// source diff
+	SourceDiff *BlobstoreBlobMetadata `json:"source_diff,omitempty"`
+
+	// source diff content
+	SourceDiffContent any `json:"source_diff_content,omitempty"`
 }
 
 // Validate validates this service app branch run comparison response
@@ -80,6 +86,10 @@ func (m *ServiceAppBranchRunComparisonResponse) Validate(formats strfmt.Registry
 	}
 
 	if err := m.validateHeadRun(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateSourceDiff(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -204,6 +214,29 @@ func (m *ServiceAppBranchRunComparisonResponse) validateHeadRun(formats strfmt.R
 	return nil
 }
 
+func (m *ServiceAppBranchRunComparisonResponse) validateSourceDiff(formats strfmt.Registry) error {
+	if swag.IsZero(m.SourceDiff) { // not required
+		return nil
+	}
+
+	if m.SourceDiff != nil {
+		if err := m.SourceDiff.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("source_diff")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("source_diff")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this service app branch run comparison response based on the context it is used
 func (m *ServiceAppBranchRunComparisonResponse) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -225,6 +258,10 @@ func (m *ServiceAppBranchRunComparisonResponse) ContextValidate(ctx context.Cont
 	}
 
 	if err := m.contextValidateHeadRun(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateSourceDiff(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -350,6 +387,31 @@ func (m *ServiceAppBranchRunComparisonResponse) contextValidateHeadRun(ctx conte
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("head_run")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceAppBranchRunComparisonResponse) contextValidateSourceDiff(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.SourceDiff != nil {
+
+		if swag.IsZero(m.SourceDiff) { // not required
+			return nil
+		}
+
+		if err := m.SourceDiff.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("source_diff")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("source_diff")
 			}
 
 			return err

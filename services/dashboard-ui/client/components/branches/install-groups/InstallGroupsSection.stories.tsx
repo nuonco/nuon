@@ -32,6 +32,7 @@ export const Default = () => (
             id: 'group-1',
             name: 'Canary',
             max_parallel: 1,
+            auto_approve_on_policies_passing: true,
             label_selector: { match_labels: { env: 'staging' } },
           },
           {

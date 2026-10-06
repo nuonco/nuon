@@ -11,6 +11,7 @@ interface IBuildSelectContainer {
   selectedBuildId?: string
   currentBuildId?: string
   currentDeployStatus?: string
+  installAppConfigId?: string
   onSelectBuild: (buildId: string) => void
   onClose: () => void
 }
@@ -21,6 +22,7 @@ export const BuildSelectContainer = ({
   selectedBuildId,
   currentBuildId,
   currentDeployStatus,
+  installAppConfigId,
   onSelectBuild,
   onClose,
 }: IBuildSelectContainer) => {
@@ -109,6 +111,7 @@ export const BuildSelectContainer = ({
       selectedBuildId={selectedBuildId}
       currentBuildId={currentBuildId}
       currentDeployStatus={currentDeployStatus}
+      installAppConfigId={installAppConfigId}
       onSelectBuild={onSelectBuild}
       builds={allBuilds}
       isLoading={isLoading}

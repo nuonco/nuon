@@ -6,6 +6,7 @@ import (
 	accountsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/service"
 	actionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/service"
 	admindashboardservice "github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service"
+	appbundlesservice "github.com/nuonco/nuon/services/ctl-api/internal/app/appbundles/service"
 	appsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/service"
 	authservice "github.com/nuonco/nuon/services/ctl-api/internal/app/auth/service"
 	cloudconnectionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/service"
@@ -51,6 +52,7 @@ var sharedServices = fx.Options(
 	fx.Provide(api.AsService(actionsservice.New)),
 	fx.Provide(api.AsService(cloudconnectionsservice.New)),
 	fx.Provide(api.AsService(appsservice.New)),
+	fx.Provide(api.AsService(appbundlesservice.New)),
 	fx.Provide(api.AsService(componentsservice.New)),
 	fx.Provide(api.AsService(triggersservice.New)),
 	fx.Provide(api.AsService(generalservice.New)),

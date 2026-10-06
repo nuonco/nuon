@@ -20,6 +20,14 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	), s.mcpGetApp)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
+		"get_app_config_schema",
+		"Get app config schema",
+		"Return the JSON schema for one app-config file type, the same schema the Nuon LSP uses. "+
+			"Pass type such as helm, action, or runbook. The response includes the required header comment and a suggested path. "+
+			"Omit type to list valid types. Use this schema when creating or editing an app config file. When you then validate the directory for this MCP server, use the Nuon CLI binary and -C value from the server instructions. This does not sync.",
+	), s.mcpGetAppConfigSchema)
+
+	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"list_app_branches",
 		"List app branches",
 		"List app branches for an app (name or ID). Returns each branch name, ID, and a summary of the latest run (status, whether it succeeded)."+apiPkg.MCPListToolHint,
@@ -56,7 +64,7 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 			"Pass pr_number (preview this PR against an install), git_ref, or app_config_id for a local synced config. "+
 			"Optional config_id selects a specific app branch config (defaults to latest). "+
 			"HTTP MCP cannot read the local workspace — sync with the CLI first, then pass app_config_id. "+
-			"Default mode is plan-only; ask before mode=apply. Returns run_id and workflow_id; follow that exact run with watch_workflow and get_app_branch_run.",
+			"Default mode is plan-only; ask before mode=apply. Returns run_id, workflow_id, and next_action. Ask the user whether they want to watch the workflow; call next_action only if they choose to watch. Once watching, each watch returns when a step starts or finishes. After every watch result, the next user-visible message is step_progress, then call watch again with the returned cursor. A row of watch calls with no step_progress between them is wrong. Use get_app_branch_run for that exact run.",
 		true,
 		false,
 	), s.mcpPreviewAppBranch)

@@ -119,12 +119,14 @@ export const InstallAppBranch = ({
           label="Expected / latest run"
           run={latestRun}
           href={latestRunHref}
+          repo={vcs?.repo}
           emptyMessage="This branch has not run yet."
         />
         <TrackedRunCard
           label="Currently applied"
           run={appliedRun}
           href={appliedRunHref}
+          repo={vcs?.repo}
           emptyMessage="No branch run has been applied to this install yet."
         />
       </div>

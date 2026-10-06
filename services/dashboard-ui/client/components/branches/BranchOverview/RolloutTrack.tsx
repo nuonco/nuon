@@ -47,6 +47,7 @@ export type TTrackGroup = {
   rules?: ReactNode
   match?: TGroupMatch
   approval?: string
+  maxParallel?: number
 }
 
 export interface IRolloutTrack {
@@ -118,31 +119,49 @@ const defaultGroupId = (groups: TTrackGroup[]) => {
   )?.id
 }
 
-const GroupHeading = ({ group }: { group: TTrackGroup }) => (
-  <div className="flex flex-col gap-1">
-    <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
-      <Text variant="base" weight="strong">
-        {group.name}
-      </Text>
-      <Status status={group.status} />
-      <Text
-        variant="subtext"
-        theme={
-          stepStatusCategory(group.status) === 'error' ? 'error' : 'neutral'
-        }
-      >
-        {groupCaption(group)}
-      </Text>
-    </span>
-    {group.match ? (
-      <InstallGroupMatch match={group.match} />
-    ) : group.rules ? (
-      <Text variant="subtext" theme="neutral">
-        {group.rules}
-      </Text>
-    ) : null}
-  </div>
-)
+const groupPace = (group: TTrackGroup) =>
+  [
+    group.maxParallel != null
+      ? `Up to ${group.maxParallel} at a time`
+      : undefined,
+    group.approval,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
+const GroupHeading = ({ group }: { group: TTrackGroup }) => {
+  const pace = groupPace(group)
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <Text variant="base" weight="strong">
+          {group.name}
+        </Text>
+        <Status status={group.status} />
+        <Text
+          variant="subtext"
+          theme={
+            stepStatusCategory(group.status) === 'error' ? 'error' : 'neutral'
+          }
+        >
+          {groupCaption(group)}
+        </Text>
+      </span>
+      {pace ? (
+        <Text variant="subtext" theme="neutral">
+          {pace}
+        </Text>
+      ) : null}
+      {group.match ? (
+        <InstallGroupMatch match={group.match} />
+      ) : group.rules ? (
+        <Text variant="subtext" theme="neutral">
+          {group.rules}
+        </Text>
+      ) : null}
+    </div>
+  )
+}
 
 const InstallList = ({
   group,
@@ -207,7 +226,7 @@ const InstallList = ({
               variant="secondary"
               onClick={() => onSelectInstall(group.id, install.id)}
             >
-              Details
+              View details
             </Button>
           ) : null}
         </li>

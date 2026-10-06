@@ -2,10 +2,12 @@ import { useMemo, memo } from 'react'
 import { useSearchParams } from 'react-router'
 import { type Node, type NodeProps } from '@xyflow/react'
 
+import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { Link } from '@/components/common/Link'
+import { installGroupApprovalLabel } from '@/components/branches/install-group-approval'
 import { resolveInstallGroupMembership } from '@/components/branches/install-group-membership'
 import { cn } from '@/utils/classnames'
 import type { TAppBranchConfig, TInstall } from '@/types'
@@ -36,6 +38,7 @@ interface GroupNodeData {
   labelEntries: [string, string][]
   isDefault: boolean
   maxParallel: number
+  approval?: string
   compact: boolean
   orgId: string
   panelKey: string
@@ -118,13 +121,14 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
                 +{hidden} more
               </span>
             ) : (
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="xs"
                 onClick={openDetails}
-                className="nodrag self-start text-[11px] text-cool-grey-500 hover:text-cool-grey-700 dark:hover:text-cool-grey-300"
+                className="nodrag self-start !px-1 -mx-1 !rounded !font-normal !text-[11px] text-cool-grey-500 hover:text-cool-grey-700 dark:hover:text-cool-grey-300"
               >
                 +{hidden} installs
-              </button>
+              </Button>
             ))}
         </>
       )}
@@ -136,6 +140,7 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
           installs={installs}
           orgId={orgId}
           maxParallel={data.maxParallel}
+          approval={data.approval}
           labelEntries={data.labelEntries}
         />
       )}
@@ -195,6 +200,7 @@ export const DeploymentPlanGraph = ({
           labelEntries,
           isDefault,
           maxParallel: group.max_parallel ?? 1,
+          approval: installGroupApprovalLabel(group),
           compact,
           orgId,
           panelKey: `install-group-plan:${groupId}`,

@@ -23,14 +23,10 @@ Exit codes:
 
 func (c *cli) syncCmd() *cobra.Command {
 	var (
-		create      bool
-		force       bool
-		appID       string
-		branch      string
-		appBranch   bool
-		preview     bool
-		autoApprove bool
-		noWait      bool
+		create bool
+		force  bool
+		appID  string
+		noWait bool
 	)
 	syncCmd := &cobra.Command{
 		Use:               "sync",
@@ -39,15 +35,11 @@ func (c *cli) syncCmd() *cobra.Command {
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			opts := apps.SyncOptions{
-				AppFlag:     appID,
-				Force:       force,
-				Create:      create,
-				Branch:      branch,
-				AppBranch:   appBranch,
-				Preview:     preview,
-				AutoApprove: autoApprove,
-				PrintJSON:   PrintJSON,
-				NoWait:      noWait,
+				AppFlag:   appID,
+				Force:     force,
+				Create:    create,
+				PrintJSON: PrintJSON,
+				NoWait:    noWait,
 			}
 			svc := c.apps
 			if create {
@@ -60,10 +52,6 @@ func (c *cli) syncCmd() *cobra.Command {
 	syncCmd.Flags().BoolVar(&create, "create", false, "Create the app if it doesn't exist")
 	syncCmd.Flags().BoolVar(&force, "force", false, "Sync to the configured app even if the directory name does not match")
 	syncCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to sync this config with (defaults to the selected app)")
-	syncCmd.Flags().StringVar(&branch, "branch", "", "Target a specific app branch for this sync")
-	syncCmd.Flags().BoolVar(&appBranch, "app-branch", false, "Select an app branch interactively and trigger a branch run after sync")
-	syncCmd.Flags().BoolVar(&preview, "preview", false, "Plan-only preview mode (no apply). Only used with --branch or --app-branch")
-	syncCmd.Flags().BoolVar(&autoApprove, "auto-approve", false, "Skip the branch run's approval gate before each install group deploys")
 	syncCmd.Flags().BoolVar(&noWait, "no-wait", false, "Do not wait for scheduled component builds to complete")
 
 	return syncCmd

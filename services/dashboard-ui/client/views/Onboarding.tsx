@@ -16,6 +16,7 @@ import {
   buildFirstRunSteps,
   resolveFirstRunOrg,
   resolveFirstRunResume,
+  readFirstRunSession,
   stepIndexFor,
   type TCloud,
   type TPath,
@@ -128,7 +129,7 @@ function FirstRunOnboarding() {
   }, [])
 
   const journey = useFirstRunJourney()
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
 
   const orgQuery = useQuery({
     queryKey: ['first-run-org'],
@@ -139,7 +140,7 @@ function FirstRunOnboarding() {
   const orgId = orgQuery.data?.id as string | undefined
 
   const resumeQuery = useQuery({
-    queryKey: ['first-run-resume', orgId],
+    queryKey: ['first-run-resume', orgId, user?.sub],
     queryFn: () =>
       resolveFirstRunResume({
         orgId: orgId!,
@@ -147,8 +148,9 @@ function FirstRunOnboarding() {
         metadata: journey.metadata,
         forceStart:
           !!params.vcsConnectionId || params.vcsError || params.reopen,
+        session: readFirstRunSession(user?.sub),
       }),
-    enabled: !!orgId && journey.isReady,
+    enabled: !!orgId && journey.isReady && !authLoading,
     ...ONCE,
   })
   const resume = resumeQuery.data
@@ -232,7 +234,7 @@ function FirstRunOnboarding() {
           {isStarted ? (
             <OnboardingWizard
               key={mounts}
-              onHistoryBack={started ? backToIntro : undefined}
+              rememberProgress
               steps={steps}
               initialStepIndex={
                 firstMount ? stepIndexFor(steps, resume.step) : 0

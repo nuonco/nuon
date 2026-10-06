@@ -48,7 +48,18 @@ func Verify(ctx context.Context, cfg *configs.OCIRegistryRepository, digest stri
 			Password: accessInfo.Auth.Password,
 		}))}
 	}
+	return VerifyReference(ctx, ref, nameOpts, remoteOpts, verification)
+}
+
+// VerifyReference verifies a digest reference against verification, reaching the registry with
+// remoteOpts, for callers that resolve registry access themselves.
+func VerifyReference(ctx context.Context, ref name.Reference, nameOpts []name.Option, remoteOpts []remote.Option, verification *signaturecfg.Verification) error {
+	if verification == nil || !verification.RequireSignature {
+		return nil
+	}
 	registryOpts := []cosignremote.Option{cosignremote.WithRemoteOptions(remoteOpts...)}
+
+	var err error
 
 	var trustedRoot root.TrustedMaterial
 	for _, authority := range verification.Authorities {

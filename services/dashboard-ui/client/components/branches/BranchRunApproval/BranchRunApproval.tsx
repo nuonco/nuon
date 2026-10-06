@@ -24,8 +24,8 @@ export const BranchRunApproval = ({ items, className }: IBranchRunApproval) => {
     <div className={cn('flex flex-col gap-3', className)}>
       {items.map((item) => (
         <Banner key={item.key} className="@container" theme="warn">
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col">
+          <div className="flex flex-col gap-3 @md:flex-row @md:items-center @md:justify-between">
+            <div className="flex min-w-0 flex-col">
               <Text weight="strong">
                 Plan for {item.groupName} requires approval
               </Text>
@@ -34,7 +34,7 @@ export const BranchRunApproval = ({ items, className }: IBranchRunApproval) => {
                 install group.
               </Text>
             </div>
-            <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
               <Button variant="secondary" onClick={item.onReview}>
                 <Icon variant="ListChecksIcon" size={16} />
                 Review changes
