@@ -114,6 +114,7 @@ func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, in
 			return db.Where(app.ActionWorkflowConfig{AppConfigID: install.AppConfigID})
 		}).
 		Preload("ActionWorkflow.Configs.Triggers").
+		Preload("ActionWorkflow.Configs.Steps").
 		Preload("Runs", func(db *gorm.DB) *gorm.DB {
 			db = db.Scopes(
 				scopes.WithOverrideTable("install_action_workflow_runs_latest_view_v1"),
