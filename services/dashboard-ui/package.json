@@ -8,6 +8,7 @@
     "dev:worker": "bun build node_modules/@pierre/diffs/dist/worker/worker.js --outdir=dist/assets --entry-naming='diffs-worker.[ext]' --define 'process.env.NODE_ENV=\"development\"' --watch",
     "dev:ladle": "ladle dev",
     "dev:ladle:lite": "ladle dev --config .ladle-lite",
+    "preview:ladle": "ladle build && ladle preview",
     "dev:stack": "bash scripts/dev-stack.sh",
     "dev:css": "bun scripts/build-css.js --watch",
     "dev:server": "bun scripts/dev-server.js",
