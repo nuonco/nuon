@@ -102,6 +102,7 @@ func (a *Activities) createOnboardingInstall(ctx context.Context, input *CreateO
 		app.WorkflowTypeProvision,
 		map[string]string{},
 		false,
+		nil,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create provision workflow: %w", err)

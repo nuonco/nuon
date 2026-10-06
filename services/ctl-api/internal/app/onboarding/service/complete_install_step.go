@@ -173,6 +173,7 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 		app.WorkflowTypeProvision,
 		map[string]string{},
 		false,
+		nil,
 	)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create provision workflow: %w", err))

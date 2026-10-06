@@ -133,6 +133,7 @@ func (s *service) CreateInstallAppConfigUpdate(ctx *gin.Context) {
 		app.WorkflowTypeAppBranchConfigUpdate,
 		metadata,
 		req.PlanOnly,
+		nil,
 	)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create workflow: %w", err))

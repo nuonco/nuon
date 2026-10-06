@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -19,11 +20,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/installvalidate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type UpdateInstallInputsRequest struct {
+	RequestID        string             `json:"request_id,omitempty" validate:"omitempty,max=255"`
 	Inputs           map[string]*string `json:"inputs" validate:"required,gte=1"`
 	Role             string             `json:"role"`
 	DeployDependents *bool              `json:"deploy_dependents,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
@@ -53,6 +56,7 @@ func (c *UpdateInstallInputsRequest) Validate(v *validator.Validate) error {
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.InstallInputs
 // @Router					/v1/installs/{install_id}/inputs [patch]
@@ -88,7 +92,12 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 	// historical always-deploy behavior; an explicit false is now respected.
 	deployDependents := req.DeployDependents == nil || *req.DeployDependents
 
-	inputs, err := s.applyInstallInputsUpdate(ctx, install, req.Inputs, req.Role, deployDependents, req.InputsOnly, false, app.WorkflowTypeInputUpdate)
+	workflowRequest, done := s.returnExistingInputUpdate(ctx, install, &req)
+	if done {
+		return
+	}
+
+	inputs, err := s.applyInstallInputsUpdate(ctx, install, req.Inputs, req.Role, deployDependents, req.InputsOnly, false, app.WorkflowTypeInputUpdate, workflowRequest)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -102,7 +111,7 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 // input-update workflow that reconciles the change. It is shared by the
 // inputs PATCH endpoint and any flow that drives install inputs (e.g. the
 // component enable/disable toggle, which writes the synthetic enabled input).
-func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Install, patch map[string]*string, role string, deployDependents bool, inputsOnly bool, planOnly bool, workflowType app.WorkflowType) (*app.InstallInputs, error) {
+func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Install, patch map[string]*string, role string, deployDependents bool, inputsOnly bool, planOnly bool, workflowType app.WorkflowType, request *app.WorkflowRequest) (*app.InstallInputs, error) {
 	var inputs *app.InstallInputs
 	var metadata map[string]string
 	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -113,6 +122,10 @@ func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Ins
 		return nil, err
 	}
 
+	installInputsID := ""
+	if request != nil {
+		installInputsID = inputs.ID
+	}
 	workflow, err := s.helpers.CreateAndStartInputUpdateWorkflow(
 		ctx,
 		install.ID,
@@ -123,6 +136,8 @@ func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Ins
 		inputsOnly,
 		planOnly,
 		workflowType,
+		request,
+		installInputsID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create install inputs: %w", err)
@@ -135,6 +150,62 @@ func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Ins
 
 	inputs.WorkflowID = &workflow.ID
 	return inputs, nil
+}
+
+func (s *service) returnExistingInputUpdate(ctx *gin.Context, install *app.Install, req *UpdateInstallInputsRequest) (*app.WorkflowRequest, bool) {
+	if req.RequestID == "" {
+		return nil, false
+	}
+	hashReq := *req
+	hashReq.RequestID = ""
+	hash, err := request.Hash(hashReq)
+	if err != nil {
+		ctx.Error(err)
+		return nil, true
+	}
+
+	var existing app.Workflow
+	err = s.db.WithContext(ctx).
+		Where(app.Workflow{
+			OrgID:     install.OrgID,
+			OwnerID:   install.ID,
+			OwnerType: "installs",
+			Type:      app.WorkflowTypeInputUpdate,
+		}).
+		Where("request->>'request_id' = ?", req.RequestID).
+		First(&existing).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return &app.WorkflowRequest{
+			RequestID:         req.RequestID,
+			RequestHash:       hash,
+			PinnedAppConfigID: install.AppConfigID,
+		}, false
+	}
+	if err != nil {
+		ctx.Error(err)
+		return nil, true
+	}
+	if err := request.Check(existing.Request, hash, install.AppConfigID); err != nil {
+		ctx.Error(err)
+		return nil, true
+	}
+
+	inputsID := ""
+	if existing.Metadata != nil && existing.Metadata["install_inputs_id"] != nil {
+		inputsID = *existing.Metadata["install_inputs_id"]
+	}
+	if inputsID == "" {
+		ctx.Error(fmt.Errorf("unable to load install inputs"))
+		return nil, true
+	}
+	inputs := &app.InstallInputs{}
+	if err := s.db.WithContext(ctx).Where(app.InstallInputs{ID: inputsID}).First(inputs).Error; err != nil {
+		ctx.Error(fmt.Errorf("unable to load install inputs: %w", err))
+		return nil, true
+	}
+	inputs.WorkflowID = &existing.ID
+	ctx.JSON(http.StatusOK, inputs)
+	return nil, true
 }
 
 func (s *service) persistInstallInputsUpdateTx(
