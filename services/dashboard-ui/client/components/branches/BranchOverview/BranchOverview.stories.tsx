@@ -268,7 +268,7 @@ export const LongCommitMessage = () => (
     changes={changes}
     groups={groups}
     rolloutHref="#rollout"
-    onSelectGroup={() => {}}
+    groupHref={(id) => `#rollout/groups/${id}`}
   />
 )
 LongCommitMessage.storyName = 'Long commit message'
