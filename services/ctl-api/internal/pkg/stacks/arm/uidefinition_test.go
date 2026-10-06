@@ -2,6 +2,7 @@ package arm
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -32,6 +33,46 @@ func renderUIDef(t *testing.T, inp *stacks.TemplateInput) (map[string]any, map[s
 		t.Fatalf("UI definition missing parameters: %v", out)
 	}
 	return out, params
+}
+
+type indexedBasicsElement struct {
+	element      map[string]any
+	ref          string
+	sectionLabel string
+}
+
+func indexBasicsElements(basics []any) map[string]indexedBasicsElement {
+	out := map[string]indexedBasicsElement{}
+	for _, item := range basics {
+		el := item.(map[string]any)
+		if el["type"] == "Microsoft.Common.Section" {
+			section := el["name"].(string)
+			label, _ := el["label"].(string)
+			for _, child := range el["elements"].([]any) {
+				childEl := child.(map[string]any)
+				name := childEl["name"].(string)
+				out[name] = indexedBasicsElement{
+					element:      childEl,
+					ref:          fmt.Sprintf("basics('%s').%s", section, name),
+					sectionLabel: label,
+				}
+			}
+			continue
+		}
+		name := el["name"].(string)
+		out[name] = indexedBasicsElement{
+			element: el,
+			ref:     fmt.Sprintf("basics('%s')", name),
+		}
+	}
+	return out
+}
+
+func wantParameterOutput(ref string, p ARMParameter) string {
+	if p.Type == "int" && len(p.AllowedValues) == 0 {
+		return fmt.Sprintf("[int(%s)]", ref)
+	}
+	return fmt.Sprintf("[%s]", ref)
 }
 
 func TestQuickLinkUIDefinition_Envelope(t *testing.T) {
@@ -211,13 +252,16 @@ func TestQuickLinkUIDefinition_PromptsForEveryParameter(t *testing.T) {
 	}
 
 	_, params := renderUIDef(t, inp)
-	basics := params["basics"].([]any)
 	outputs := params["outputs"].(map[string]any)
+	byName := indexBasicsElements(params["basics"].([]any))
 
-	byName := map[string]map[string]any{}
-	for _, b := range basics {
-		el := b.(map[string]any)
-		byName[el["name"].(string)] = el
+	runnerSize, ok := byName[runnerVmSizeParamName]
+	if !ok || runnerSize.sectionLabel != "Runner" || runnerSize.element["type"] != "Microsoft.Compute.SizeSelector" {
+		t.Fatalf("runnerVmSize = %#v, want a SizeSelector in the Runner section", runnerSize)
+	}
+	vnetCIDR, ok := byName["vnetCIDR"]
+	if !ok || vnetCIDR.sectionLabel != "VPC" || vnetCIDR.element["defaultValue"] != "10.128.0.0/16" {
+		t.Fatalf("vnetCIDR = %#v, want the built-in default in the VPC section", vnetCIDR)
 	}
 
 	for name, p := range wrapperParams {
@@ -230,15 +274,18 @@ func TestQuickLinkUIDefinition_PromptsForEveryParameter(t *testing.T) {
 			}
 			continue
 		}
-		el, present := byName[name]
+		field, present := byName[name]
 		if !present {
 			t.Errorf("parameter %q is not prompted for", name)
 			continue
 		}
-		if p.Type == "securestring" && el["type"] != "Microsoft.Common.PasswordBox" {
-			t.Errorf("securestring parameter %q rendered as %v, want a PasswordBox", name, el["type"])
+		if p.Type == "securestring" && field.element["type"] != "Microsoft.Common.PasswordBox" {
+			t.Errorf("securestring parameter %q rendered as %v, want a PasswordBox", name, field.element["type"])
 		}
-		if got, want := outputs[name], "[basics('"+name+"')]"; got != want {
+		if name == "secretDbPassword" && field.sectionLabel != "" {
+			t.Errorf("secret rendered inside stack section %q", field.sectionLabel)
+		}
+		if got, want := outputs[name], wantParameterOutput(field.ref, p); got != want {
 			t.Errorf("outputs[%q] = %v, want %v", name, got, want)
 		}
 	}
@@ -252,43 +299,44 @@ func TestQuickLinkUIDefinition_PrefillsHoistedParametersWithTheirDefaults(t *tes
 	inp := vnetInputWithTemplate(t, app.StackDeploymentScopeSubscription, hoistFixture)
 
 	_, params := renderUIDef(t, inp)
-
-	byName := map[string]map[string]any{}
-	for _, b := range params["basics"].([]any) {
-		el := b.(map[string]any)
-		byName[el["name"].(string)] = el
-	}
+	byName := indexBasicsElements(params["basics"].([]any))
 
 	addressSpace, present := byName["addressSpace"]
 	if !present {
 		t.Fatalf("hoisted parameter addressSpace is not prompted for; basics = %v", byName)
 	}
-	if got := addressSpace["defaultValue"]; got != "10.100.0.0/22" {
+	if addressSpace.sectionLabel != "VPC" {
+		t.Errorf("addressSpace section = %q, want VPC", addressSpace.sectionLabel)
+	}
+	if got := addressSpace.element["defaultValue"]; got != "10.100.0.0/22" {
 		t.Errorf("addressSpace.defaultValue = %v, want the template's default", got)
 	}
-	if got := addressSpace["type"]; got != "Microsoft.Common.DropDown" {
+	if got := addressSpace.element["type"]; got != "Microsoft.Common.DropDown" {
 		t.Errorf("addressSpace.type = %v, want a DropDown", got)
 	}
-	allowedValues := addressSpace["constraints"].(map[string]any)["allowedValues"].([]any)
+	allowedValues := addressSpace.element["constraints"].(map[string]any)["allowedValues"].([]any)
 	first := allowedValues[0].(map[string]any)
 	if first["label"] != "10.100.0.0/22" || first["value"] != "10.100.0.0/22" {
 		t.Errorf("first addressSpace option = %#v", first)
 	}
-	if got := params["outputs"].(map[string]any)["addressSpace"]; got != "[basics('addressSpace')]" {
+	if got := params["outputs"].(map[string]any)["addressSpace"]; got != "[basics('vpc').addressSpace]" {
 		t.Errorf("addressSpace output = %v", got)
 	}
 	// The portal spaces and title-cases parameter names itself when no UI
 	// definition is supplied; supplying one takes that over.
-	if got := addressSpace["label"]; got != "Address Space" {
+	if got := addressSpace.element["label"]; got != "Address Space" {
 		t.Errorf("addressSpace.label = %v, want %q", got, "Address Space")
 	}
 	// Clearing a prefilled field must not submit an empty string over the default.
-	if got := addressSpace["constraints"].(map[string]any)["required"]; got != true {
+	if got := addressSpace.element["constraints"].(map[string]any)["required"]; got != true {
 		t.Errorf("addressSpace.constraints.required = %v, want true", got)
 	}
 
-	if got := byName["peeringEnabled"]["type"]; got != "Microsoft.Common.CheckBox" {
+	if got := byName["peeringEnabled"].element["type"]; got != "Microsoft.Common.CheckBox" {
 		t.Errorf("bool parameter rendered as %v, want a CheckBox", got)
+	}
+	if byName["peeringEnabled"].sectionLabel != "VPC" {
+		t.Errorf("peeringEnabled section = %q, want VPC", byName["peeringEnabled"].sectionLabel)
 	}
 }
 
@@ -341,7 +389,7 @@ func TestBasicsElement_AllowedValuesRenderTypedDropDown(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			element, output, ok := basicsElement(test.name, test.parameter, "")
+			element, output, ok := basicsElement(test.name, test.parameter, "", "")
 			if !ok {
 				t.Fatal("parameter was not rendered")
 			}
@@ -400,7 +448,7 @@ func TestBasicsElement_SecureStringDoesNotExposeAllowedValues(t *testing.T) {
 	element, _, ok := basicsElement("secret", ARMParameter{
 		Type:          "securestring",
 		AllowedValues: []any{"first", "second"},
-	}, "")
+	}, "", "")
 	if !ok {
 		t.Fatal("securestring was not rendered")
 	}
@@ -424,7 +472,7 @@ func TestBasicsElement_WithoutAllowedValuesKeepsExistingControls(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		element, output, ok := basicsElement("value", test.parameter, "")
+		element, output, ok := basicsElement("value", test.parameter, "", "")
 		if !ok {
 			t.Fatalf("%s parameter was not rendered", test.parameter.Type)
 		}

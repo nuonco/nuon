@@ -27,9 +27,9 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 	vnetDeployment := scope.vnetDeploymentName(inp.Install.ID)
 
 	// Custom runner template — fetch and inspect declared parameters.
-	// Unlike the generic custom-nested-stack path we do NOT hoist arbitrary
-	// params. The runner template is Nuon-owned plumbing; every parameter
-	// is either baked by us or has a safe default in the template itself.
+	// Nuon-managed values are baked in. runnerVmSize and telemetry stay
+	// customer-facing when the template declares them. At subscription scope
+	// every other scalar parameter is hoisted as well.
 	armTmpl, err := fetchARMTemplate(templateURL)
 	if err != nil {
 		return nil, nil, fmt.Errorf("runner linked deployment: %w", err)
@@ -78,9 +78,6 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		if val, ok := managedParams[paramName]; ok {
 			deploymentParams[paramName] = map[string]any{"value": val}
 		}
-		// Parameters not in managedParams are left to their template
-		// defaults. If the template declares a required param we don't
-		// know about, ARM will surface a clear deployment error.
 	}
 
 	customerParams := map[string]ARMParameter{}
@@ -95,6 +92,12 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 			customerParams[name] = p
 		}
 		deploymentParams["enableTelemetryIngress"] = map[string]any{"value": "[parameters('enableTelemetryIngress')]"}
+	}
+	if scope.subscription {
+		for name, param := range runnerHoistedParameters(armTmpl) {
+			customerParams[name] = param
+			deploymentParams[name] = map[string]any{"value": fmt.Sprintf("[parameters('%s')]", name)}
+		}
 	}
 
 	dependsOn := append([]string{vnetDeployment}, uamiDependsOn...)
@@ -218,6 +221,34 @@ func containsValue(values []any, want string) bool {
 		}
 	}
 	return false
+}
+
+var runnerManagedParamNames = []string{
+	"nuonInstallID",
+	"nuonOrgID",
+	"nuonAppID",
+	"location",
+	"runnerId",
+	"runnerApiUrl",
+	"runnerInitScriptUrl",
+	"runnerSubnetId",
+	"customData",
+	"commonTags",
+	"userAssignedIdentities",
+	runnerVmSizeParamName,
+	"enableTelemetryIngress",
+}
+
+func runnerHoistedParameters(armTmpl *armTemplateShape) map[string]ARMParameter {
+	_, extra := extractARMParameters(armTmpl, runnerManagedParamNames)
+	out := map[string]ARMParameter{}
+	for name, param := range extra {
+		if !hoistableDefault(param.DefaultValue) || !portalScalarParameter(param.Type) {
+			continue
+		}
+		out[name] = param
+	}
+	return out
 }
 
 func runnerCustomerParameters(inp *stacks.TemplateInput) map[string]ARMParameter {

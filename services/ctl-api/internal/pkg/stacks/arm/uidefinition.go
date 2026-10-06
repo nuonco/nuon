@@ -40,10 +40,11 @@ import (
 // — get a field on the Basics step, since there is nowhere else for their value
 // to come from.
 func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, string, error) {
-	wrapperParams, err := t.quickLinkWrapperParameters(inp)
+	inner, err := t.getAzureTemplate(inp)
 	if err != nil {
 		return nil, "", err
 	}
+	wrapperParams := inner.Parameters
 
 	scope := scopeFor(inp)
 	location := inp.Install.AzureAccount.Location
@@ -107,18 +108,33 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 	}
 
 	inputLabels := azureInputLabels(inp)
+	claimed := map[string]bool{}
+	for _, group := range inner.stackParameterGroups {
+		elements := []any{}
+		for _, name := range sortedParamNames(group.Params) {
+			claimed[name] = true
+			element, output, ok := parameterElement(name, group.Params[name], inputLabels[name], group.Name)
+			if !ok {
+				continue
+			}
+			elements = append(elements, element)
+			outputs[name] = output
+		}
+		if len(elements) == 0 {
+			continue
+		}
+		basics = append(basics, map[string]any{
+			"name":     group.Name,
+			"type":     "Microsoft.Common.Section",
+			"label":    group.Label,
+			"elements": elements,
+		})
+	}
 	for _, name := range sortedParamNames(wrapperParams) {
-		if name == "location" || name == "deployTimestamp" {
+		if claimed[name] || name == "location" || name == "deployTimestamp" {
 			continue
 		}
-
-		if name == runnerVmSizeParamName {
-			basics = append(basics, runnerVMSizeUIElement(wrapperParams[name]))
-			outputs[name] = "[basics('" + runnerVmSizeParamName + "')]"
-			continue
-		}
-
-		element, output, ok := basicsElement(name, wrapperParams[name], inputLabels[name])
+		element, output, ok := parameterElement(name, wrapperParams[name], inputLabels[name], "")
 		if !ok {
 			continue
 		}
@@ -145,6 +161,20 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 
 	hash := sha256.Sum256(uiDefBytes)
 	return uiDefBytes, hex.EncodeToString(hash[:]), nil
+}
+
+func parameterElement(name string, p ARMParameter, label, section string) (map[string]any, string, bool) {
+	if name == runnerVmSizeParamName {
+		return runnerVMSizeUIElement(p), fmt.Sprintf("[%s]", parameterOutputRef(section, name)), true
+	}
+	return basicsElement(name, p, label, section)
+}
+
+func parameterOutputRef(section, name string) string {
+	if section == "" {
+		return fmt.Sprintf("basics('%s')", name)
+	}
+	return fmt.Sprintf("basics('%s').%s", section, name)
 }
 
 func runnerVMSizeUIElement(p ARMParameter) map[string]any {
@@ -239,7 +269,8 @@ func sortedParamNames(params map[string]ARMParameter) []string {
 // the wrapper's own default applies. Nothing currently reaches the root with those
 // types: a nested template's non-scalar default is either Nuon-managed or left
 // unhoisted.
-func basicsElement(name string, p ARMParameter, label string) (map[string]any, string, bool) {
+func basicsElement(name string, p ARMParameter, label, section string) (map[string]any, string, bool) {
+	ref := parameterOutputRef(section, name)
 	if label == "" {
 		label = humanizeParamName(name)
 	}
@@ -268,7 +299,7 @@ func basicsElement(name string, p ARMParameter, label string) (map[string]any, s
 		if p.DefaultValue != nil {
 			element["defaultValue"] = humanizeParamName(fmt.Sprintf("%v", p.DefaultValue))
 		}
-		return element, fmt.Sprintf("[basics('%s')]", name), true
+		return element, fmt.Sprintf("[%s]", ref), true
 	}
 
 	switch p.Type {
@@ -293,7 +324,7 @@ func basicsElement(name string, p ARMParameter, label string) (map[string]any, s
 		}
 		// The portal hands back every TextBox value as a string, and ARM will not
 		// coerce one into an int parameter.
-		return element, fmt.Sprintf("[int(basics('%s'))]", name), true
+		return element, fmt.Sprintf("[int(%s)]", ref), true
 	case "string":
 		element["type"] = "Microsoft.Common.TextBox"
 		def, hasDefault := p.DefaultValue.(string)
@@ -305,7 +336,7 @@ func basicsElement(name string, p ARMParameter, label string) (map[string]any, s
 		return nil, "", false
 	}
 
-	return element, fmt.Sprintf("[basics('%s')]", name), true
+	return element, fmt.Sprintf("[%s]", ref), true
 }
 
 // humanizeParamName turns a camelCase parameter name into the spaced, title-cased

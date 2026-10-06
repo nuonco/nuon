@@ -14,6 +14,14 @@ type ARMTemplate struct {
 	Variables      map[string]any          `json:"variables,omitempty"`
 	Resources      []any                   `json:"resources"`
 	Outputs        map[string]ARMOutput    `json:"outputs,omitempty"`
+
+	stackParameterGroups []stackParameterGroup `json:"-"`
+}
+
+type stackParameterGroup struct {
+	Name   string
+	Label  string
+	Params map[string]ARMParameter
 }
 
 type ARMParameter struct {
@@ -121,8 +129,11 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		return nil, err
 	}
 	tmpl.Resources = append(tmpl.Resources, vnetDeployment)
-	for k, v := range vnetParams {
-		tmpl.Parameters[k] = v
+
+	paramOwners := map[string]string{}
+	usedSections := map[string]struct{}{"vpc": {}, "runner": {}}
+	if err := tmpl.addParameterGroup(stackParameterGroup{Name: "vpc", Label: "VPC", Params: vnetParams}, paramOwners); err != nil {
+		return nil, err
 	}
 
 	if useOperationIdentities {
@@ -137,8 +148,8 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 			return nil, err
 		}
 		tmpl.Resources = append(tmpl.Resources, runnerDeployment)
-		for k, v := range runnerParams {
-			tmpl.Parameters[k] = v
+		if err := tmpl.addParameterGroup(stackParameterGroup{Name: "runner", Label: "Runner", Params: runnerParams}, paramOwners); err != nil {
+			return nil, err
 		}
 		if _, supported := runnerParams["enableTelemetryIngress"]; supported {
 			telemetryEndpoint = "[reference('runnerDeployment').outputs.telemetryEndpoint.value]"
@@ -151,14 +162,21 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 	// Custom linked deployments (before phone home, which reports their outputs)
 	var customOutputs []customDeploymentOutputs
 	if len(inp.AppCfg.StackConfig.CustomNestedStacks) > 0 {
-		customResources, customParams, customIdentities, customOutputsMeta, err := t.getCustomLinkedDeployments(inp)
+		customResources, _, customIdentities, customOutputsMeta, err := t.getCustomLinkedDeployments(inp)
 		if err != nil {
 			return nil, err
 		}
 		customOutputs = customOutputsMeta
 		tmpl.Resources = append(tmpl.Resources, customResources...)
-		for k, v := range customParams {
-			tmpl.Parameters[k] = v
+		for _, meta := range customOutputs {
+			base := sanitizeDeploymentName(meta.StackName)
+			if err := tmpl.addParameterGroup(stackParameterGroup{
+				Name:   takeSectionName(base, usedSections),
+				Label:  meta.StackName,
+				Params: meta.HoistedParameters,
+			}, paramOwners); err != nil {
+				return nil, err
+			}
 		}
 
 		// Create subscription-level role assignments for any managed
@@ -184,6 +202,40 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 	t.addStandardOutputs(tmpl, inp, scope)
 
 	return tmpl, nil
+}
+
+func (tmpl *ARMTemplate) addParameterGroup(group stackParameterGroup, owners map[string]string) error {
+	if len(group.Params) == 0 {
+		return nil
+	}
+	for _, name := range sortedParamNames(group.Params) {
+		if owner, ok := owners[name]; ok {
+			return fmt.Errorf("parameter %q conflicts between stacks %q and %q", name, owner, group.Label)
+		}
+		if _, exists := tmpl.Parameters[name]; exists {
+			return fmt.Errorf("parameter %q on stack %q conflicts with an existing parameter", name, group.Label)
+		}
+	}
+	for name, param := range group.Params {
+		tmpl.Parameters[name] = param
+		owners[name] = group.Label
+	}
+	tmpl.stackParameterGroups = append(tmpl.stackParameterGroups, group)
+	return nil
+}
+
+func takeSectionName(base string, used map[string]struct{}) string {
+	if base == "" {
+		base = "stack"
+	}
+	name := base
+	for n := 2; ; n++ {
+		if _, ok := used[name]; !ok {
+			used[name] = struct{}{}
+			return name
+		}
+		name = fmt.Sprintf("%s%d", base, n)
+	}
 }
 
 // appendRunnerGrants emits the role assignments held by the runner's system
