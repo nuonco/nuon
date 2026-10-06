@@ -68,14 +68,22 @@ export const rolloutStageStatus = (
   return 'in-progress'
 }
 
+export type TPreviewProgress = 'build-only' | 'plan-only' | 'apply'
+
+const isPlanPreview = (name?: string) => !!name && /plan preview/i.test(name)
+
+const isApplyPreview = (name?: string) => !!name && /apply preview/i.test(name)
+
 export const buildOverviewLoadingStages = ({
   steps,
   sha,
   groupStatuses = [],
+  previewMode,
 }: {
   steps: TInstallWorkflowStep[]
   sha?: string
   groupStatuses?: string[]
+  previewMode?: TPreviewProgress
 }): TOverviewStage[] => {
   const fetchCommit = findStep(steps, isFetchCommit)
   const appConfig = findStep(steps, isAppConfig)
@@ -84,7 +92,7 @@ export const buildOverviewLoadingStages = ({
   const fetchCommitStatus: TOverviewStageStatus =
     fetchStatus === 'success' ? (sha ? 'success' : 'in-progress') : fetchStatus
 
-  return [
+  const stages: TOverviewStage[] = [
     {
       id: 'starting',
       label: 'Starting workflow',
@@ -105,6 +113,30 @@ export const buildOverviewLoadingStages = ({
       label: 'Build components',
       status: stepStageStatus(build),
     },
+  ]
+  if (previewMode === 'build-only') return stages
+  if (previewMode === 'plan-only') {
+    return [
+      ...stages,
+      {
+        id: 'plan',
+        label: 'Plan',
+        status: stepStageStatus(findStep(steps, isPlanPreview)),
+      },
+    ]
+  }
+  if (previewMode === 'apply') {
+    return [
+      ...stages,
+      {
+        id: 'apply',
+        label: 'Apply',
+        status: stepStageStatus(findStep(steps, isApplyPreview)),
+      },
+    ]
+  }
+  return [
+    ...stages,
     {
       id: 'rollout',
       label: 'Rollout',

@@ -2,6 +2,7 @@ package activities
 
 import (
 	"path/filepath"
+	"sort"
 	"strings"
 
 	pkgconfig "github.com/nuonco/nuon/pkg/config"
@@ -11,6 +12,7 @@ type componentSource struct {
 	Name      string
 	Repo      string
 	Directory string
+	Branch    string
 }
 
 // normalizeRepoPath cleans a repo-relative path for prefix matching.
@@ -151,6 +153,74 @@ func enrichConfigDiffWithSourceChanged(
 	}
 
 	return out
+}
+
+// componentTracksRun reports whether the component is built from the same repo
+// and branch as the app branch run, across connected and public git configs.
+func componentTracksRun(src componentSource, repo, branch string) bool {
+	if !repoURLsEqual(src.Repo, repo) || src.Branch == "" || branch == "" {
+		return false
+	}
+	return src.Branch == branch
+}
+
+// applySourceCommitComparison marks a component source-changed when the commit
+// stored on the base config's build differs from the commit this run would
+// build. Components missing from the config diff are added so a source-only
+// change is visible.
+func applySourceCommitComparison(out *ConfigDiffWithSourceOutput, baseSHAs, currentSHAs map[string]string) {
+	if out == nil {
+		return
+	}
+	if out.ComponentSourceChanged == nil {
+		out.ComponentSourceChanged = map[string]bool{}
+	}
+
+	names := make([]string, 0, len(currentSHAs))
+	for name, current := range currentSHAs {
+		if name == "" || current == "" || baseSHAs[name] == current {
+			continue
+		}
+		out.ComponentSourceChanged[name] = true
+		names = append(names, name)
+	}
+	if len(names) == 0 {
+		return
+	}
+	sort.Strings(names)
+
+	idx := -1
+	for i := range out.Sections {
+		if out.Sections[i].Name == "Components" {
+			idx = i
+			break
+		}
+	}
+	if idx == -1 {
+		out.Sections = append(out.Sections, ConfigDiffSectionWithSource{Name: "Components"})
+		idx = len(out.Sections) - 1
+	}
+
+	present := make(map[string]int, len(out.Sections[idx].Entries))
+	for i, entry := range out.Sections[idx].Entries {
+		present[entry.Name] = i
+	}
+
+	added := 0
+	for _, name := range names {
+		if i, ok := present[name]; ok {
+			out.Sections[idx].Entries[i].SourceChanged = true
+			continue
+		}
+		out.Sections[idx].Entries = append(out.Sections[idx].Entries, ConfigDiffEntryWithSource{
+			Op:            "change",
+			Name:          name,
+			SourceChanged: true,
+		})
+		added++
+	}
+	out.Sections[idx].Changed += added
+	out.Changed += added
 }
 
 // sectionMemberFallbackKeys returns extra member keys to try for a section

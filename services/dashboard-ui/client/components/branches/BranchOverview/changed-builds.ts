@@ -12,6 +12,7 @@ export interface TRunBuildRef {
   component_id?: string
   component_name?: string
   status?: string
+  change_reason?: string
 }
 
 export interface TChangedBuildRow {
@@ -19,16 +20,23 @@ export interface TChangedBuildRow {
   name: string
   status: string
   href?: string
+  changeReason?: string
 }
 
 const isSandbox = (build: TBuildMeta) =>
   build.component_type === 'sandbox' || build.component_id === 'sandbox'
 
+export const changeReasonFor = (build: TBuildMeta) =>
+  build.change_reason ||
+  (build.skipped || build.status === 'skipped' ? 'no_changes' : 'source_changed')
+
 export const buildChanged = (build: TBuildMeta) => {
-  const reason =
-    build.change_reason ||
-    (build.skipped || build.status === 'skipped' ? 'no_changes' : 'source_changed')
-  return reason === 'source_changed' || reason === 'config_changed'
+  const reason = changeReasonFor(build)
+  return (
+    reason === 'source_changed' ||
+    reason === 'config_changed' ||
+    reason === 'source_and_config'
+  )
 }
 
 const componentHref = (orgId: string, appId: string, componentId: string, buildId: string) =>
@@ -57,6 +65,7 @@ export const changedBuildRows = ({
           id: build.id,
           name: build.component_name || build.component_id || 'Component',
           status: build.status || 'unknown',
+          changeReason: build.change_reason,
           href: build.component_id
             ? componentHref(orgId, appId, build.component_id, build.id)
             : undefined,
@@ -81,6 +90,7 @@ export const changedBuildRows = ({
           id: sandboxBuildId || 'sandbox',
           name: build.component_name || 'Sandbox',
           status: build.status || 'unknown',
+          changeReason: changeReasonFor(build),
           href: sandboxBuildId
             ? `/${orgId}/apps/${appId}/sandbox/builds/${sandboxBuildId}`
             : undefined,
@@ -95,6 +105,7 @@ export const changedBuildRows = ({
         id: buildId || build.component_id || `build-${index}`,
         name: build.component_name || build.component_id || 'Component',
         status: build.status || 'unknown',
+        changeReason: changeReasonFor(build),
         href:
           build.component_id && buildId
             ? componentHref(orgId, appId, build.component_id, buildId)

@@ -209,6 +209,18 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 	}
 
 	configDiff := a.computeAndEnrichConfigDiff(ctx, branch, fullDiff, componentSources, changedPaths, headRun.AppConfigID, baseRun.AppConfigID)
+	if configDiff != nil {
+		baseSHAs := map[string]string{}
+		if !noBase && baseRun.AppConfigID != "" {
+			loaded, shaErr := a.loadComponentBuildSHAs(ctx, baseRun.AppConfigID)
+			if shaErr != nil {
+				a.l.Warn("unable to load base component build commits", zap.Error(shaErr))
+			} else {
+				baseSHAs = loaded
+			}
+		}
+		applySourceCommitComparison(configDiff, baseSHAs, currentComponentSHAs(componentSources, branch, headSHA))
+	}
 	if err := a.uploadComparisonBlob(ctx, comparison.ID, "config_diff", configDiff, &comparison.ConfigDiff); err != nil {
 		return nil, fmt.Errorf("unable to store config diff blob: %w", err)
 	}
@@ -245,17 +257,92 @@ func runCommitSHA(run *app.AppBranchRun) string {
 }
 
 func branchRepo(branch *app.AppBranch) string {
+	repo, _ := branchRepoAndBranch(branch)
+	return repo
+}
+
+func branchRepoAndBranch(branch *app.AppBranch) (string, string) {
 	if branch == nil || len(branch.Configs) == 0 {
-		return ""
+		return "", ""
 	}
 	cfg := branch.Configs[0]
 	if cfg.ConnectedGithubVCSConfig != nil {
-		return cfg.ConnectedGithubVCSConfig.Repo
+		return cfg.ConnectedGithubVCSConfig.Repo, cfg.ConnectedGithubVCSConfig.Branch
 	}
 	if cfg.PublicGitVCSConfig != nil {
-		return cfg.PublicGitVCSConfig.Repo
+		return cfg.PublicGitVCSConfig.Repo, cfg.PublicGitVCSConfig.Branch
 	}
-	return ""
+	return "", ""
+}
+
+func currentComponentSHAs(sources []componentSource, branch *app.AppBranch, headSHA string) map[string]string {
+	out := map[string]string{}
+	if headSHA == "" {
+		return out
+	}
+	repo, branchName := branchRepoAndBranch(branch)
+	for _, src := range sources {
+		if componentTracksRun(src, repo, branchName) {
+			out[src.Name] = headSHA
+		}
+	}
+	return out
+}
+
+func (a *Activities) loadComponentBuildSHAs(ctx context.Context, appConfigID string) (map[string]string, error) {
+	out := map[string]string{}
+	if appConfigID == "" {
+		return out, nil
+	}
+
+	var conns []app.ComponentConfigConnection
+	err := a.db.WithContext(ctx).
+		Preload("Component").
+		Where(app.ComponentConfigConnection{AppConfigID: appConfigID}).
+		Find(&conns).Error
+	if err != nil {
+		return nil, err
+	}
+
+	nameByBuild := map[string]string{}
+	buildIDs := make([]string, 0, len(conns))
+	for i := range conns {
+		c := &conns[i]
+		if !c.LatestBuildID.Valid || c.LatestBuildID.String == "" {
+			continue
+		}
+		name := c.ComponentName
+		if name == "" {
+			name = c.Component.Name
+		}
+		if name == "" {
+			continue
+		}
+		nameByBuild[c.LatestBuildID.String] = name
+		buildIDs = append(buildIDs, c.LatestBuildID.String)
+	}
+	if len(buildIDs) == 0 {
+		return out, nil
+	}
+
+	var builds []app.ComponentBuild
+	err = a.db.WithContext(ctx).
+		Preload("VCSConnectionCommit").
+		Where("id IN ?", buildIDs).
+		Find(&builds).Error
+	if err != nil {
+		return nil, err
+	}
+	for i := range builds {
+		b := &builds[i]
+		if b.VCSConnectionCommit == nil || b.VCSConnectionCommit.SHA == "" {
+			continue
+		}
+		if name := nameByBuild[b.ID]; name != "" {
+			out[name] = b.VCSConnectionCommit.SHA
+		}
+	}
+	return out, nil
 }
 
 func branchVCSConfigID(branch *app.AppBranch) string {
@@ -352,6 +439,36 @@ func (a *Activities) persistComparisonBlobs(ctx context.Context, comparison *app
 	return nil
 }
 
+// componentRepoDirectory reads the repo from the preloaded typed config.
+// AfterQuery copies those pointers onto the connection before preloads run,
+// so the connection-level fields are still empty here.
+func componentRepoDirectory(c *app.ComponentConfigConnection) (string, string, string) {
+	switch {
+	case c.HelmComponentConfig != nil:
+		return vcsRepoDirectory(c.HelmComponentConfig.ConnectedGithubVCSConfig, c.HelmComponentConfig.PublicGitVCSConfig)
+	case c.TerraformModuleComponentConfig != nil:
+		return vcsRepoDirectory(c.TerraformModuleComponentConfig.ConnectedGithubVCSConfig, c.TerraformModuleComponentConfig.PublicGitVCSConfig)
+	case c.DockerBuildComponentConfig != nil:
+		return vcsRepoDirectory(c.DockerBuildComponentConfig.ConnectedGithubVCSConfig, c.DockerBuildComponentConfig.PublicGitVCSConfig)
+	case c.KubernetesManifestComponentConfig != nil:
+		return vcsRepoDirectory(c.KubernetesManifestComponentConfig.ConnectedGithubVCSConfig, c.KubernetesManifestComponentConfig.PublicGitVCSConfig)
+	case c.PulumiComponentConfig != nil:
+		return vcsRepoDirectory(c.PulumiComponentConfig.ConnectedGithubVCSConfig, c.PulumiComponentConfig.PublicGitVCSConfig)
+	default:
+		return vcsRepoDirectory(c.ConnectedGithubVCSConfig, c.PublicGitVCSConfig)
+	}
+}
+
+func vcsRepoDirectory(github *app.ConnectedGithubVCSConfig, public *app.PublicGitVCSConfig) (string, string, string) {
+	if github != nil && github.Repo != "" {
+		return github.Repo, github.Directory, github.Branch
+	}
+	if public != nil && public.Repo != "" {
+		return public.Repo, public.Directory, public.Branch
+	}
+	return "", "", ""
+}
+
 func (a *Activities) loadComponentSources(ctx context.Context, appConfigID string) ([]componentSource, error) {
 	var conns []app.ComponentConfigConnection
 	err := a.db.WithContext(ctx).
@@ -383,13 +500,7 @@ func (a *Activities) loadComponentSources(ctx context.Context, appConfigID strin
 			continue
 		}
 		src := componentSource{Name: name}
-		if c.ConnectedGithubVCSConfig != nil {
-			src.Repo = c.ConnectedGithubVCSConfig.Repo
-			src.Directory = c.ConnectedGithubVCSConfig.Directory
-		} else if c.PublicGitVCSConfig != nil {
-			src.Repo = c.PublicGitVCSConfig.Repo
-			src.Directory = c.PublicGitVCSConfig.Directory
-		}
+		src.Repo, src.Directory, src.Branch = componentRepoDirectory(c)
 		if c.KubernetesManifestComponentConfig != nil &&
 			c.KubernetesManifestComponentConfig.Kustomize != nil &&
 			c.KubernetesManifestComponentConfig.Kustomize.Path != "" {

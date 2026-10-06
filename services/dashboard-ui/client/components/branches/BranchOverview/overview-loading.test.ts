@@ -34,6 +34,36 @@ describe('buildOverviewLoadingStages', () => {
     ])
   })
 
+  test('drops the rollout stage for a build and validate preview', () => {
+    const stages = buildOverviewLoadingStages({
+      steps: [step('building components and sandbox', 'success')],
+      sha: 'abc',
+      previewMode: 'build-only',
+    })
+    expect(stages.map((stage) => stage.id)).toEqual([
+      'starting',
+      'fetch-commit',
+      'app-config',
+      'build-components',
+    ])
+  })
+
+  test('ends a plan preview on the plan stage', () => {
+    const stages = buildOverviewLoadingStages({
+      steps: [step('plan preview install', 'in-progress')],
+      previewMode: 'plan-only',
+    })
+    expect(stages.at(-1)).toMatchObject({ id: 'plan', status: 'in-progress' })
+  })
+
+  test('ends an apply preview on the apply stage', () => {
+    const stages = buildOverviewLoadingStages({
+      steps: [step('apply preview install', 'success')],
+      previewMode: 'apply',
+    })
+    expect(stages.at(-1)).toMatchObject({ id: 'apply', status: 'success' })
+  })
+
   test('summarizes install groups in the rollout stage', () => {
     const rollout = (groupStatuses: string[]) =>
       buildOverviewLoadingStages({ steps: [], groupStatuses }).find(

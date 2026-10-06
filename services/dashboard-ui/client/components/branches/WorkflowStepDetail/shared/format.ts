@@ -26,7 +26,7 @@ export function getInitials(name?: string): string {
 
 export function changeReasonBadgeTheme(reason?: string) {
   if (reason === 'no_changes') return 'success'
-  if (reason === 'config_changed') return 'warn'
+  if (reason === 'config_changed' || reason === 'source_and_config') return 'warn'
   if (reason === 'source_changed') return 'info'
   return 'neutral'
 }
@@ -39,6 +39,8 @@ export function changeReasonLabel(reason?: string) {
       return 'Config changed'
     case 'source_changed':
       return 'Source changed'
+    case 'source_and_config':
+      return 'Source and config changed'
     default:
       return reason || ''
   }

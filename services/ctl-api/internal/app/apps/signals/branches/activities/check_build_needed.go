@@ -21,19 +21,30 @@ type CheckBuildNeededOutput struct {
 }
 
 const (
-	ChangeReasonNoChanges     = "no_changes"
-	ChangeReasonConfigChanged = "config_changed"
-	ChangeReasonSourceChanged = "source_changed"
+	ChangeReasonNoChanges       = "no_changes"
+	ChangeReasonConfigChanged   = "config_changed"
+	ChangeReasonSourceChanged   = "source_changed"
+	ChangeReasonSourceAndConfig = "source_and_config"
 )
 
-func buildChangeReason(needsBuild bool, oldChecksum, newChecksum string) string {
-	if !needsBuild {
-		return ChangeReasonNoChanges
-	}
-	if oldChecksum != "" && newChecksum != "" && oldChecksum != newChecksum {
+func configChecksumChanged(oldChecksum, newChecksum string) bool {
+	return oldChecksum != "" && newChecksum != "" && oldChecksum != newChecksum
+}
+
+func sourceCommitChanged(input *CheckBuildNeededInput) bool {
+	return input != nil && input.SourceChanged != nil && *input.SourceChanged
+}
+
+func buildChangeReason(sourceChanged bool, oldChecksum, newChecksum string) string {
+	configChanged := configChecksumChanged(oldChecksum, newChecksum)
+	switch {
+	case sourceChanged && configChanged:
+		return ChangeReasonSourceAndConfig
+	case configChanged:
 		return ChangeReasonConfigChanged
+	default:
+		return ChangeReasonSourceChanged
 	}
-	return ChangeReasonSourceChanged
 }
 
 func reuseExistingBuild(existingBuildID string) *CheckBuildNeededOutput {
@@ -76,8 +87,25 @@ func (a *Activities) CheckBuildNeeded(ctx context.Context, input *CheckBuildNeed
 
 	if build.RequiresFreshBuild(&newConfigConnection) {
 		return &CheckBuildNeededOutput{
-			NeedsBuild:   true,
-			ChangeReason: buildChangeReason(true, oldConn.Checksum, newConfigConnection.Checksum),
+			NeedsBuild: true,
+			ChangeReason: buildChangeReason(
+				sourceCommitChanged(input),
+				oldConn.Checksum,
+				newConfigConnection.Checksum,
+			),
+		}, nil
+	}
+
+	// Sync pins the previous build when the config checksum is unchanged. A
+	// source-only change still has to build, so this runs before that pin.
+	if sourceCommitChanged(input) {
+		return &CheckBuildNeededOutput{
+			NeedsBuild: true,
+			ChangeReason: buildChangeReason(
+				true,
+				oldConn.Checksum,
+				newConfigConnection.Checksum,
+			),
 		}, nil
 	}
 
@@ -94,7 +122,7 @@ func (a *Activities) CheckBuildNeeded(ctx context.Context, input *CheckBuildNeed
 	}
 
 	if oldConn.Checksum != "" && newConfigConnection.Checksum != "" && oldConn.Checksum == newConfigConnection.Checksum {
-		if input.SourceChanged != nil && *input.SourceChanged {
+		if sourceCommitChanged(input) {
 			return &CheckBuildNeededOutput{
 				NeedsBuild:   true,
 				ChangeReason: ChangeReasonSourceChanged,
@@ -116,6 +144,6 @@ func (a *Activities) CheckBuildNeeded(ctx context.Context, input *CheckBuildNeed
 
 	return &CheckBuildNeededOutput{
 		NeedsBuild:   true,
-		ChangeReason: buildChangeReason(true, oldConn.Checksum, newConfigConnection.Checksum),
+		ChangeReason: buildChangeReason(sourceCommitChanged(input), oldConn.Checksum, newConfigConnection.Checksum),
 	}, nil
 }
