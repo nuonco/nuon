@@ -19,8 +19,7 @@ const viewOrg = {
   id: VIEW_ORG_ID,
   name: 'Acme',
   features: {
-    'app-branches-ui': true,
-    'new-install-ia': true,
+    'new-app-ia': true,
   },
 }
 
