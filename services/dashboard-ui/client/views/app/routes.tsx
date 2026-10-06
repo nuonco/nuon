@@ -40,6 +40,7 @@ import { BranchOverviewTab } from './branches/tabs/BranchOverviewTab'
 import { BranchRunsTab } from './branches/tabs/BranchRunsTab'
 import { BranchPlanTab } from './branches/tabs/BranchPlanTab'
 import { BranchRolloutTab } from './branches/tabs/BranchRolloutTab'
+import { BranchRolloutGroupTab } from './branches/tabs/BranchRolloutGroupTab'
 import { BranchSettingsTab } from './branches/tabs/BranchSettingsTab'
 import { BranchConfigsTab } from './branches/tabs/BranchConfigsTab'
 import { BranchInputs } from './branches/scoped/BranchInputs'
@@ -166,7 +167,15 @@ export const appRoutes: RouteObject[] = [
           { path: 'runs', element: <BranchRunsTab /> },
           { path: 'runs/:runId', element: <BranchRunDetail /> },
           { path: 'runs/:runId/rollout', element: <BranchRolloutTab /> },
+          {
+            path: 'runs/:runId/rollout/groups/:groupId',
+            element: <BranchRolloutGroupTab />,
+          },
           { path: 'rollout', element: <BranchRolloutTab /> },
+          {
+            path: 'rollout/groups/:groupId',
+            element: <BranchRolloutGroupTab />,
+          },
           { path: 'settings', element: <BranchSettingsTab /> },
           { path: 'plan', element: <BranchPlanTab /> },
           {

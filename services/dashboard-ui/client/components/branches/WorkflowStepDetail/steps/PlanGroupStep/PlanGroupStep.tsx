@@ -4,6 +4,7 @@ import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { Link } from '@/components/common/Link'
+import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Expand } from '@/components/common/Expand'
 import { ChangeCountSummary } from '@/components/approvals/plan-diffs/ChangeCountSummary'
@@ -44,7 +45,13 @@ interface IPlanGroupStep {
   onSelectInstall?: (installId: string) => void
   installFacts?: Record<
     string,
-    { labels?: Record<string, string>; region?: string }
+    {
+      labels?: Record<string, string>
+      region?: string
+      status?: string
+      detail?: string
+      appliedConfigId?: string
+    }
   >
 }
 
@@ -179,11 +186,25 @@ export const PlanGroupStep = ({
                   {region}
                 </Text>
               ) : null}
+              {facts?.status || facts?.detail ? (
+                <span className="ml-auto flex shrink-0 items-center gap-2">
+                  {facts.status ? <Status status={facts.status} /> : null}
+                  {facts.detail ? (
+                    <Text variant="subtext" theme="neutral">
+                      {facts.detail}
+                    </Text>
+                  ) : null}
+                </span>
+              ) : null}
               {onSelectInstall ? (
                 <Button
                   size="sm"
                   variant="secondary"
-                  className="ml-auto shrink-0"
+                  className={
+                    facts?.status || facts?.detail
+                      ? 'shrink-0'
+                      : 'ml-auto shrink-0'
+                  }
                   onClick={(event) => {
                     event.stopPropagation()
                     onSelectInstall(inst.installId)

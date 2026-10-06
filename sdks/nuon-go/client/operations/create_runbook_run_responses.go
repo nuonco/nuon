@@ -55,6 +55,12 @@ func (o *CreateRunbookRunReader) ReadResponse(response runtime.ClientResponse, c
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateRunbookRunConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateRunbookRunInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateRunbookRunNotFound) GetPayload() *models.StderrErrResponse {
 }
 
 func (o *CreateRunbookRunNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateRunbookRunConflict creates a CreateRunbookRunConflict with default headers values
+func NewCreateRunbookRunConflict() *CreateRunbookRunConflict {
+	return &CreateRunbookRunConflict{}
+}
+
+/*
+CreateRunbookRunConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateRunbookRunConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create runbook run conflict response has a 2xx status code
+func (o *CreateRunbookRunConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create runbook run conflict response has a 3xx status code
+func (o *CreateRunbookRunConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create runbook run conflict response has a 4xx status code
+func (o *CreateRunbookRunConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create runbook run conflict response has a 5xx status code
+func (o *CreateRunbookRunConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create runbook run conflict response a status code equal to that given
+func (o *CreateRunbookRunConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create runbook run conflict response
+func (o *CreateRunbookRunConflict) Code() int {
+	return 409
+}
+
+func (o *CreateRunbookRunConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/runbooks/{runbook_id}/runs][%d] createRunbookRunConflict %s", 409, payload)
+}
+
+func (o *CreateRunbookRunConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/runbooks/{runbook_id}/runs][%d] createRunbookRunConflict %s", 409, payload)
+}
+
+func (o *CreateRunbookRunConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateRunbookRunConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

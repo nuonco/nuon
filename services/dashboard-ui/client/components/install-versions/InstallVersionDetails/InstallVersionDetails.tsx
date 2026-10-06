@@ -59,13 +59,6 @@ export const InstallVersionDetails = ({
         <LabeledValue label="Version">
           <ID>{version?.id}</ID>
         </LabeledValue>
-        <LabeledValue label="Old config">
-          {version?.old_app_config_id ? (
-            <ID>{version.old_app_config_id}</ID>
-          ) : (
-            <Icon variant="MinusIcon" />
-          )}
-        </LabeledValue>
         <LabeledValue label="New config">
           {version?.new_app_config_id ? (
             <ID>{version.new_app_config_id}</ID>
@@ -132,7 +125,8 @@ export const InstallVersionDetails = ({
           <Divider dividerWord="Config diff" />
           <AppConfigDiff
             appConfigId={version.new_app_config_id}
-            oldConfigId={version.old_app_config_id}
+            installId={installId}
+            oldConfigId={installId ? undefined : version?.old_app_config_id}
             appId={appId}
           />
         </>

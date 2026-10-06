@@ -52,6 +52,10 @@ type AppBranchConfig struct {
 	// by IgnoreChangesRegex, so a required check does not block the pull request.
 	SendStatusesOnIgnore bool `json:"send_statuses_on_ignore,omitempty" temporaljson:"send_statuses_on_ignore,omitzero,omitempty"`
 
+	// InstallUpdatePolicy is unused. A new run always supersedes an open install
+	// update. The column stays so existing rows do not need a migration.
+	InstallUpdatePolicy string `json:"install_update_policy,omitempty" temporaljson:"install_update_policy,omitzero,omitempty"`
+
 	PreviewConfig *AppBranchPreviewConfig `json:"preview_config,omitempty" gorm:"type:jsonb;serializer:json;default:null" temporaljson:"preview_config,omitzero,omitempty"`
 	RunConfig     *AppBranchRunConfig     `json:"run_config,omitempty" gorm:"type:jsonb;serializer:json;default:null" temporaljson:"run_config,omitzero,omitempty"`
 

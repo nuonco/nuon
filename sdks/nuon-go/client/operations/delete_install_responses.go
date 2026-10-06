@@ -55,6 +55,12 @@ func (o *DeleteInstallReader) ReadResponse(response runtime.ClientResponse, cons
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewDeleteInstallConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewDeleteInstallInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *DeleteInstallNotFound) GetPayload() *models.StderrErrResponse {
 }
 
 func (o *DeleteInstallNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewDeleteInstallConflict creates a DeleteInstallConflict with default headers values
+func NewDeleteInstallConflict() *DeleteInstallConflict {
+	return &DeleteInstallConflict{}
+}
+
+/*
+DeleteInstallConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type DeleteInstallConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this delete install conflict response has a 2xx status code
+func (o *DeleteInstallConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete install conflict response has a 3xx status code
+func (o *DeleteInstallConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete install conflict response has a 4xx status code
+func (o *DeleteInstallConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete install conflict response has a 5xx status code
+func (o *DeleteInstallConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete install conflict response a status code equal to that given
+func (o *DeleteInstallConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the delete install conflict response
+func (o *DeleteInstallConflict) Code() int {
+	return 409
+}
+
+func (o *DeleteInstallConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[DELETE /v1/installs/{install_id}][%d] deleteInstallConflict %s", 409, payload)
+}
+
+func (o *DeleteInstallConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[DELETE /v1/installs/{install_id}][%d] deleteInstallConflict %s", 409, payload)
+}
+
+func (o *DeleteInstallConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *DeleteInstallConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

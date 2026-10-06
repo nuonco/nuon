@@ -24,6 +24,9 @@ type CreateInstallAppConfigVersionWorkflowOutput struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
 func (a *Activities) CreateInstallAppConfigVersionWorkflow(ctx context.Context, input *CreateInstallAppConfigVersionWorkflowInput) (*CreateInstallAppConfigVersionWorkflowOutput, error) {
+	if err := a.supersedePriorInstallUpdate(ctx, input); err != nil {
+		return nil, err
+	}
 	update, err := a.installHelpers.CreateAppBranchConfigUpdateWorkflow(ctx, installhelpers.AppBranchConfigUpdateInput{
 		InstallID:      input.InstallID,
 		NewAppConfigID: input.NewAppConfigID,
@@ -40,4 +43,18 @@ func (a *Activities) CreateInstallAppConfigVersionWorkflow(ctx context.Context, 
 		WorkflowID:                update.WorkflowID,
 		InstallAppConfigVersionID: update.InstallAppConfigVersionID,
 	}, nil
+}
+
+func (a *Activities) supersedePriorInstallUpdate(ctx context.Context, input *CreateInstallAppConfigVersionWorkflowInput) error {
+	prior, err := a.installHelpers.PriorInFlightInstallUpdate(ctx, input.InstallID, "")
+	if err != nil {
+		return err
+	}
+	if prior == nil {
+		return nil
+	}
+	if err := a.CancelInstallWorkflow(ctx, &CancelInstallWorkflowInput{WorkflowID: prior.WorkflowID}); err != nil {
+		return err
+	}
+	return a.installHelpers.MarkInstallSupersededForInstall(ctx, prior.AppBranchRunID, input.InstallID, input.AppBranchRunID)
 }

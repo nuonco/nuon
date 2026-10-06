@@ -10,13 +10,16 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 )
 
 type ReprovisionInstallRequest struct {
-	PlanOnly bool   `json:"plan_only"`
-	Role     string `json:"role"`
+	RequestID string `json:"request_id,omitempty" validate:"omitempty,max=255"`
+	PlanOnly  bool   `json:"plan_only"`
+	Role      string `json:"role"`
 }
 
 // @ID						ReprovisionInstall
@@ -33,6 +36,7 @@ type ReprovisionInstallRequest struct {
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.WorkflowResponse
 // @Router					/v1/installs/{install_id}/reprovision [post]
@@ -51,6 +55,38 @@ func (s *service) ReprovisionInstall(ctx *gin.Context) {
 		return
 	}
 
+	if req.RequestID != "" {
+		hashReq := req
+		hashReq.RequestID = ""
+		hash, err := request.Hash(hashReq)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		workflow, _, err := s.helpers.RunIdempotentInstallWorkflow(ctx, installhelpers.IdempotentInstallWorkflowRequest{
+			InstallID:    install.ID,
+			WorkflowType: app.WorkflowTypeReprovision,
+			Metadata:     map[string]string{},
+			PlanOnly:     req.PlanOnly,
+			Role:         req.Role,
+			RequestID:    req.RequestID,
+			RequestHash:  hash,
+			Operation:    "reprovision",
+			QueueName:    installhelpers.InstallWorkflowsQueueName,
+		}, nil)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		s.logFlowAPIAction(ctx, "workflow.reprovision_requested",
+			zap.String("workflow_id", workflow.ID),
+			zap.String("install_id", install.ID),
+			zap.Bool("plan_only", req.PlanOnly),
+		)
+		ctx.JSON(http.StatusCreated, app.WorkflowResponse{WorkflowID: workflow.ID})
+		return
+	}
+
 	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
 		install.ID,
 		app.WorkflowTypeReprovision,
@@ -64,11 +100,11 @@ func (s *service) ReprovisionInstall(ctx *gin.Context) {
 	}
 	queueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
 	if err != nil {
-		ctx.Error(err)
+		ctx.Error(fmt.Errorf("error queuing workflow %s: %w", workflow.ID, err))
 		return
 	}
 	if err := s.enqueueInstallSignal(ctx, queueID, executeflow.NewSignal(workflow.ID), workflow.ID, "install_workflows"); err != nil {
-		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		ctx.Error(fmt.Errorf("error queuing workflow %s: %w", workflow.ID, err))
 		return
 	}
 

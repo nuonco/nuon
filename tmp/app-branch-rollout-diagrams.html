@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>App branch group — await and release</title>
+  <style>
+    :root {
+      --bg: #f4f1ea;
+      --ink: #1c1b19;
+      --muted: #5e584e;
+      --rule: #d8d1c4;
+      --card: #fffdf8;
+      --accent: #1f5c4d;
+      --await: #8a5a12;
+      --await-bg: #f8ecd6;
+      --release: #1f5c4d;
+      --release-bg: #e5f2ec;
+      --wait: #9a3412;
+      --wait-bg: #fde8dc;
+      --ok: #1f5c4d;
+      --ok-bg: #e7f5ee;
+      --err: #9f1239;
+      --err-bg: #fde8ee;
+      --wire: #c9c1b3;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse at top left, #ebe4d6 0%, transparent 46%),
+        linear-gradient(180deg, var(--bg), #efeae1);
+      font-family: "Iowan Old Style", Palatino, Georgia, serif;
+      line-height: 1.4;
+    }
+    header, main { max-width: 1180px; margin: 0 auto; padding: 1.6rem 1.4rem 0; }
+    header h1 { margin: 0 0 0.3rem; font-size: 1.7rem; letter-spacing: -0.02em; color: var(--accent); }
+    header p { margin: 0; max-width: 46rem; color: var(--muted); }
+    .controls {
+      display: flex; flex-wrap: wrap; gap: 0.55rem; align-items: center;
+      margin: 1rem 0 0.8rem;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+    }
+    button, select {
+      font: inherit; font-size: 0.82rem;
+      border: 1px solid var(--rule); background: white; color: var(--ink);
+      border-radius: 999px; padding: 0.38rem 0.8rem; cursor: pointer;
+    }
+    button:hover, select:hover { border-color: var(--accent); }
+    button[aria-pressed="true"] { background: var(--accent); color: white; border-color: var(--accent); }
+    button:disabled { opacity: 0.45; cursor: default; }
+    .speed { color: var(--muted); display: flex; align-items: center; gap: 0.4rem; }
+    .stage {
+      background: var(--card);
+      border: 1px solid var(--rule);
+      border-radius: 12px;
+      padding: 1rem 1rem 0.8rem;
+    }
+    .narration {
+      min-height: 3.2rem;
+      margin: 0 0 0.8rem;
+      font-size: 1.02rem;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: minmax(230px, 280px) minmax(180px, 1fr) minmax(250px, 320px);
+      gap: 0.35rem 0;
+      align-items: stretch;
+    }
+    .group {
+      grid-column: 1;
+      grid-row: 1 / -1;
+      align-self: center;
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      padding: 0.85rem 0.9rem;
+      background: #faf7f1;
+    }
+    .group.waiting { box-shadow: 0 0 0 2px #f0c9a0; }
+    .group.complete { box-shadow: 0 0 0 2px #b7d8c8; }
+    .group h2, .install h2 {
+      margin: 0 0 0.15rem;
+      font-size: 1rem;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+    }
+    .kicker {
+      margin: 0 0 0.55rem;
+      color: var(--muted);
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.3rem; min-height: 1.6rem; }
+    .chip {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.72rem;
+      border-radius: 999px;
+      padding: 0.15rem 0.5rem;
+      background: var(--wait-bg);
+      color: var(--wait);
+    }
+    .chip.wait { animation: pulse 1.4s ease-in-out infinite; }
+    .chip.ok { background: var(--ok-bg); color: var(--ok); animation: none; }
+    .chip.rel { background: var(--release-bg); color: var(--release); animation: none; }
+    .chip.err { background: var(--err-bg); color: var(--err); animation: none; }
+    .lane-wire, .install { min-height: 118px; }
+    .lane-wire {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .lane-wire::before {
+      content: "";
+      position: absolute;
+      left: 8px; right: 8px; top: 50%;
+      height: 2px;
+      background: repeating-linear-gradient(90deg, var(--wire) 0 8px, transparent 8px 14px);
+    }
+    .packet {
+      position: absolute;
+      top: 50%;
+      z-index: 2;
+      transform: translateY(-50%);
+      max-width: 70%;
+      padding: 0.28rem 0.55rem;
+      border-radius: 999px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.72rem;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .packet.show { opacity: 1; }
+    .packet.start { background: #ece7df; color: var(--ink); left: 0; }
+    .packet.await { background: var(--await-bg); color: var(--await); right: 0; }
+    .packet.release { background: var(--release-bg); color: var(--release); right: 0; }
+    .packet.success { background: var(--ok-bg); color: var(--ok); right: 0; }
+    .packet.error { background: var(--err-bg); color: var(--err); right: 0; }
+    .packet.to-install { animation: fly-right 0.55s ease-in-out forwards; }
+    .packet.to-group { animation: fly-left 0.55s ease-in-out forwards; }
+    .install {
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      padding: 0.7rem 0.8rem;
+      background: white;
+    }
+    .install.working { box-shadow: inset 3px 0 0 #c4842a; }
+    .install.released { box-shadow: inset 3px 0 0 var(--accent); }
+    .install.success { box-shadow: inset 3px 0 0 var(--ok); }
+    .install.error { box-shadow: inset 3px 0 0 var(--err); }
+    .install .meta {
+      margin: 0.25rem 0 0;
+      color: var(--muted);
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.78rem;
+    }
+    .badge {
+      display: inline-block;
+      margin-top: 0.35rem;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.72rem;
+      border-radius: 999px;
+      padding: 0.12rem 0.45rem;
+    }
+    .badge.await { background: var(--await-bg); color: var(--await); }
+    .badge.release { background: var(--release-bg); color: var(--release); }
+    .badge.success { background: var(--ok-bg); color: var(--ok); }
+    .badge.error { background: var(--err-bg); color: var(--err); }
+    .still {
+      display: inline-block;
+      margin-left: 0.35rem;
+      color: var(--accent);
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    .scrub {
+      display: flex; gap: 0.35rem; flex-wrap: wrap;
+      margin: 0.85rem 0 0.2rem;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+    }
+    .scrub button {
+      border-radius: 8px;
+      text-align: left;
+      max-width: 100%;
+    }
+    .scrub button.current { border-color: var(--accent); background: #eef6f2; }
+    .log {
+      margin: 0.8rem 0 0;
+      padding: 0.6rem 0.2rem 0.2rem;
+      list-style: none;
+      max-height: 9.5rem;
+      overflow: auto;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .log li.current { color: var(--ink); }
+    footer {
+      max-width: 1180px; margin: 0 auto;
+      padding: 0.8rem 1.4rem 2rem;
+      color: var(--muted);
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.78rem;
+    }
+    @keyframes fly-right {
+      from { left: 0; opacity: 0; }
+      12% { opacity: 1; }
+      to { left: calc(100% - 9.5rem); opacity: 1; }
+    }
+    @keyframes fly-left {
+      from { right: 0; opacity: 0; }
+      12% { opacity: 1; }
+      to { right: calc(100% - 9.5rem); opacity: 1; }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.45; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .packet.to-install, .packet.to-group, .chip.wait, .still { animation: none; }
+    }
+    .views { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.9rem; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .diff-banner, .run-card, .class-card, .union {
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      background: white;
+    }
+    .diff-banner {
+      display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+      padding: 0.75rem 0.9rem; margin-bottom: 0.75rem; background: #faf7f1;
+      font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.84rem;
+    }
+    .diff-banner strong { font-family: "Iowan Old Style", Palatino, Georgia, serif; font-size: 1rem; }
+    .empty-diff { color: var(--err); }
+    .diff-table { width: 100%; border-collapse: collapse; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.84rem; }
+    .diff-table th { text-align: left; font-size: 0.72rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 0.35rem 0.45rem; }
+    .diff-table td { padding: 0.55rem 0.45rem; border-top: 1px solid var(--rule); vertical-align: middle; }
+    .diff-table tr.lit { background: #f8f4ea; }
+    .diff-table tr.dim { opacity: 0.38; }
+    .tag { display: inline-block; border-radius: 999px; padding: 0.08rem 0.45rem; font-size: 0.72rem; }
+    .tag.old { background: var(--await-bg); color: var(--await); }
+    .tag.new { background: #ece7df; }
+    .tag.changed { background: var(--await-bg); color: var(--await); }
+    .tag.same { background: var(--ok-bg); color: var(--ok); }
+    .tag.added { background: var(--release-bg); color: var(--release); }
+    .tag.removed { background: var(--err-bg); color: var(--err); }
+    .union { margin-top: 0.75rem; padding: 0.75rem 0.9rem; }
+    .union h2 { margin: 0 0 0.35rem; font-size: 1rem; }
+    .run-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .run-card { padding: 0.8rem 0.9rem; min-height: 220px; }
+    .run-card h2 { margin: 0 0 0.2rem; font-size: 1.05rem; }
+    .run-card .kicker { margin-bottom: 0.6rem; }
+    .run-row { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.4rem 0; border-top: 1px solid var(--rule); font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.82rem; }
+    .class-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+    .class-card { padding: 0.7rem 0.75rem; text-align: left; border-radius: 10px; width: 100%; }
+    .class-card.current { border-color: var(--accent); background: #eef6f2; }
+    .class-card b { display: block; font-family: "Iowan Old Style", Palatino, Georgia, serif; font-size: 0.98rem; }
+    .class-card span { color: var(--muted); font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.75rem; }
+    .class-detail { margin-top: 0.75rem; }
+    @media (max-width: 860px) {
+      .board { grid-template-columns: 1fr; }
+      .group { grid-row: auto; grid-column: 1; }
+      .lane-wire { min-height: 46px; }
+      .run-grid, .class-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 id="page-title">App-branch group, firing and waiting</h1>
+    <p id="page-lede">
+      The group starts every install workflow. Each workflow sends <code>await</code> or <code>release</code>.
+      The group keeps waiting only on <code>await</code>. A completion callback is still success, error, or cancelled.
+    </p>
+    <nav class="views" id="views">
+      <button type="button" data-view="group" aria-pressed="true">Group directives</button>
+      <button type="button" data-view="diff">Entity diff</button>
+      <button type="button" data-view="runs">Superseded runs</button>
+      <button type="button" data-view="classes">Change classes</button>
+    </nav>
+    <div class="controls" id="group-controls">
+      <label>Scenario
+        <select id="scenario"></select>
+      </label>
+      <button id="play" type="button">Play</button>
+      <button id="step" type="button">Step</button>
+      <button id="reset" type="button">Reset</button>
+      <label class="speed">Speed
+        <input id="speed" type="range" min="0.6" max="2.2" step="0.2" value="1" />
+      </label>
+    </div>
+  </header>
+  <main>
+    <section class="stage panel active" id="view-group">
+      <p class="narration" id="narration">Press play. The group has not started anyone yet.</p>
+      <div class="board" id="board"></div>
+      <div class="scrub" id="scrub"></div>
+      <ol class="log" id="log"></ol>
+    </section>
+
+    <section class="stage panel" id="view-diff" hidden>
+      <div class="controls">
+        <button id="diff-play" type="button">Play</button>
+        <button id="diff-step" type="button">Step</button>
+        <button id="diff-reset" type="button">Reset</button>
+      </div>
+      <p class="narration" id="diff-narration"></p>
+      <div class="diff-banner">
+        <div>
+          <strong>install.app_config_id = cfg_new</strong>
+          <div>Pinned at the start of the last workflow. This is not a baseline.</div>
+        </div>
+        <div id="single-result"><span class="empty-diff">Single-id diff is empty.</span> cfg_new compared with itself.</div>
+      </div>
+      <table class="diff-table">
+        <thead>
+          <tr>
+            <th>Entity</th>
+            <th>Applied ref</th>
+            <th>Compared with</th>
+            <th>Slice</th>
+          </tr>
+        </thead>
+        <tbody id="diff-rows"></tbody>
+      </table>
+      <div class="union">
+        <h2>Union</h2>
+        <div id="diff-union"></div>
+      </div>
+      <div class="scrub" id="diff-scrub"></div>
+    </section>
+
+    <section class="stage panel" id="view-runs" hidden>
+      <div class="controls">
+        <button id="run-play" type="button">Play</button>
+        <button id="run-step" type="button">Step</button>
+        <button id="run-reset" type="button">Reset</button>
+      </div>
+      <p class="narration" id="run-narration"></p>
+      <div class="run-grid">
+        <article class="run-card" id="run-supersede"></article>
+        <article class="run-card" id="run-queue"></article>
+      </div>
+      <div class="scrub" id="run-scrub"></div>
+    </section>
+
+    <section class="stage panel" id="view-classes" hidden>
+      <p class="narration">Every case has <code>install.app_config_id</code> already equal to cfg_new. A single-id diff would be empty. The composite diff still reports the class whose applied ref is behind.</p>
+      <div class="class-grid" id="class-grid"></div>
+      <div class="union class-detail" id="class-detail"></div>
+    </section>
+  </main>
+  <footer>
+    Space plays and pauses. Right arrow steps. <code>release</code> does not consume the completion callback, so the workflow can keep waiting on the customer after the group moves on.
+  </footer>
+  <script>
+    const scenarios = {
+      stacks: {
+        label: "Outstanding stacks",
+        installs: [
+          { id: "a", name: "Install A", blurb: "Component deploy. Runner is healthy." },
+          { id: "b", name: "Install B", blurb: "Stack change. Template still has to be generated." },
+          { id: "c", name: "Install C", blurb: "Stack is already pending_user." },
+        ],
+        events: [
+          {
+            id: "start-a", lane: "a", dir: "to-install", kind: "start", packet: "start workflow",
+            narration: "The group starts A’s workflow. No directive yet, so silence counts as await and A enters the wait set.",
+            log: "group → A  start workflow",
+            apply: (s) => { s.installs.a.phase = "started"; s.group.wait.push("a"); s.group.status = "waiting"; },
+          },
+          {
+            id: "start-b", lane: "b", dir: "to-install", kind: "start", packet: "start workflow",
+            narration: "The group starts B the same way. B is in the wait set before it has classified itself.",
+            log: "group → B  start workflow",
+            apply: (s) => { s.installs.b.phase = "started"; s.group.wait.push("b"); },
+          },
+          {
+            id: "start-c", lane: "c", dir: "to-install", kind: "start", packet: "start workflow",
+            narration: "The group starts C too. Every install workflow is running. The group is waiting on all three.",
+            log: "group → C  start workflow",
+            apply: (s) => { s.installs.c.phase = "started"; s.group.wait.push("c"); },
+          },
+          {
+            id: "await-a", lane: "a", dir: "to-group", kind: "await", packet: "directive await",
+            narration: "A sends await. The next work is a component deploy, which the group owns, so A stays in the wait set.",
+            log: "A → group  directive await · vendor deploy",
+            apply: (s) => { s.installs.a.phase = "working"; s.installs.a.directive = "await"; s.installs.a.reason = "vendor deploy"; },
+          },
+          {
+            id: "await-b", lane: "b", dir: "to-group", kind: "await", packet: "directive await",
+            narration: "B sends await while it generates the stack template. Generating is vendor work, so the group keeps waiting on B.",
+            log: "B → group  directive await · generating stack",
+            apply: (s) => { s.installs.b.phase = "working"; s.installs.b.directive = "await"; s.installs.b.reason = "generating stack"; },
+          },
+          {
+            id: "release-c", lane: "c", dir: "to-group", kind: "release", packet: "directive release",
+            narration: "C sends release. The stack is already pending_user. C leaves the wait set and keeps waiting on the customer.",
+            log: "C → group  directive release · stack_pending_customer",
+            apply: (s) => {
+              s.installs.c.phase = "released";
+              s.installs.c.directive = "release";
+              s.installs.c.reason = "stack_pending_customer";
+              s.installs.c.note = "Still waiting on the customer";
+              drop(s, "c");
+            },
+          },
+          {
+            id: "done-a", lane: "a", dir: "to-group", kind: "success", packet: "completion success",
+            narration: "A’s completion callback arrives: success. That callback means the workflow finished. The group is now waiting only on B.",
+            log: "A → group  completion success",
+            apply: (s) => {
+              s.installs.a.phase = "success";
+              s.installs.a.directive = "success";
+              s.installs.a.reason = "workflow finished";
+              finish(s, "a", "success");
+            },
+          },
+          {
+            id: "release-b", lane: "b", dir: "to-group", kind: "release", packet: "directive release",
+            narration: "B reaches pending_user and sends release, overriding the earlier await. The wait set is empty, so the group step completes. B’s workflow is still running.",
+            log: "B → group  directive release · pending_user",
+            apply: (s) => {
+              s.installs.b.phase = "released";
+              s.installs.b.directive = "release";
+              s.installs.b.reason = "pending_user";
+              s.installs.b.note = "Still waiting on the customer";
+              drop(s, "b");
+              if (s.group.wait.length === 0) s.group.status = "complete";
+            },
+          },
+          {
+            id: "later-b", lane: "b", dir: "local", kind: "success", packet: "writes group-run row",
+            narration: "The customer applies B’s stack later. B writes its own group-run row and enqueues post-deploy runbooks. The group step does not reopen.",
+            log: "B  customer applies · row → success · group stays complete",
+            apply: (s) => {
+              s.installs.b.phase = "success";
+              s.installs.b.directive = "success";
+              s.installs.b.reason = "wrote the row after the group finished";
+              s.installs.b.note = "";
+              const rel = s.group.released.find((x) => x.id === "b");
+              if (rel) rel.outcome = "success";
+            },
+          },
+        ],
+      },
+      gates: {
+        label: "Runner and release window",
+        installs: [
+          { id: "a", name: "Install A", blurb: "Runner is offline. The next step needs it." },
+          { id: "b", name: "Install B", blurb: "Release window opens tonight." },
+          { id: "c", name: "Install C", blurb: "Healthy runner, window open, component deploy." },
+        ],
+        events: [
+          {
+            id: "start-all", lane: "a", dir: "to-install", kind: "start", packet: "start workflow",
+            narration: "The group starts A, then will start the others. Each one is in the wait set until its own directive arrives.",
+            log: "group → A  start workflow",
+            apply: (s) => { s.installs.a.phase = "started"; s.group.wait.push("a"); s.group.status = "waiting"; },
+          },
+          {
+            id: "start-b", lane: "b", dir: "to-install", kind: "start", packet: "start workflow",
+            narration: "B’s workflow is started. The group is waiting.",
+            log: "group → B  start workflow",
+            apply: (s) => { s.installs.b.phase = "started"; s.group.wait.push("b"); },
+          },
+          {
+            id: "start-c", lane: "c", dir: "to-install", kind: "start", packet: "start workflow",
+            narration: "C’s workflow is started. Three workflows are in flight.",
+            log: "group → C  start workflow",
+            apply: (s) => { s.installs.c.phase = "started"; s.group.wait.push("c"); },
+          },
+          {
+            id: "release-a", lane: "a", dir: "to-group", kind: "release", packet: "directive release",
+            narration: "A sends release. The runner is offline and this step needs it. A arms its own recheck and leaves the wait set.",
+            log: "A → group  directive release · runner_offline",
+            apply: (s) => {
+              s.installs.a.phase = "released";
+              s.installs.a.directive = "release";
+              s.installs.a.reason = "runner_offline";
+              s.installs.a.note = "Workflow owns the recheck";
+              drop(s, "a");
+            },
+          },
+          {
+            id: "release-b", lane: "b", dir: "to-group", kind: "release", packet: "directive release",
+            narration: "B sends release. The release window is closed. B arms a timer for the next open time. The group is now waiting only on C.",
+            log: "B → group  directive release · release_window_closed",
+            apply: (s) => {
+              s.installs.b.phase = "released";
+              s.installs.b.directive = "release";
+              s.installs.b.reason = "release_window_closed";
+              s.installs.b.note = "Timer armed until the window opens";
+              drop(s, "b");
+            },
+          },
+          {
+            id: "await-c", lane: "c", dir: "to-group", kind: "await", packet: "directive await",
+            narration: "C sends await. Runner and window are fine, and the next step is a component deploy. The group stays blocked on C.",
+            log: "C → group  directive await · vendor deploy",
+            apply: (s) => { s.installs.c.phase = "working"; s.installs.c.directive = "await"; s.installs.c.reason = "vendor deploy"; },
+          },
+          {
+            id: "done-c", lane: "c", dir: "to-group", kind: "success", packet: "completion success",
+            narration: "C completes. The wait set is empty, so the group step finishes. A and B are still parked inside their own workflows.",
+            log: "C → group  completion success · group step completes",
+            apply: (s) => {
+              s.installs.c.phase = "success";
+              s.installs.c.directive = "success";
+              s.installs.c.reason = "workflow finished";
+              finish(s, "c", "success");
+              if (s.group.wait.length === 0) s.group.status = "complete";
+            },
+          },
+        ],
+      },
+    };
+
+    function drop(s, id) {
+      s.group.wait = s.group.wait.filter((x) => x !== id);
+      if (!s.group.released.some((x) => x.id === id)) s.group.released.push({ id, outcome: "running" });
+    }
+    function finish(s, id, outcome) {
+      s.group.wait = s.group.wait.filter((x) => x !== id);
+      s.group.released = s.group.released.filter((x) => x.id !== id);
+      s.group.done.push({ id, outcome });
+    }
+
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const el = {
+      scenario: document.querySelector("#scenario"),
+      play: document.querySelector("#play"),
+      step: document.querySelector("#step"),
+      reset: document.querySelector("#reset"),
+      speed: document.querySelector("#speed"),
+      narration: document.querySelector("#narration"),
+      board: document.querySelector("#board"),
+      scrub: document.querySelector("#scrub"),
+      log: document.querySelector("#log"),
+    };
+
+    let scenarioKey = "stacks";
+    let cursor = -1;
+    let playing = false;
+    let flying = false;
+    let timer = 0;
+
+    function scenario() { return scenarios[scenarioKey]; }
+
+    function blankState() {
+      const installs = {};
+      for (const item of scenario().installs) {
+        installs[item.id] = { phase: "idle", directive: "", reason: "", note: "" };
+      }
+      return { group: { status: "idle", wait: [], released: [], done: [] }, installs, log: [] };
+    }
+
+    function replay(through) {
+      const state = blankState();
+      const events = scenario().events;
+      const last = Math.min(through, events.length - 1);
+      for (let i = 0; i <= last; i++) {
+        events[i].apply(state);
+        state.log.push(events[i].log);
+      }
+      return state;
+    }
+
+    function nameOf(id) {
+      return scenario().installs.find((item) => item.id === id)?.name ?? id;
+    }
+
+    function render() {
+      const events = scenario().events;
+      const state = cursor < 0 ? blankState() : replay(cursor);
+      const current = cursor >= 0 ? events[cursor] : null;
+      el.narration.textContent = current ? current.narration : "Press play. The group has not started anyone yet.";
+
+      const rows = scenario().installs.map((_, i) => `${i + 1}`).join(" ");
+      const groupClass = state.group.status === "complete" ? "complete" : state.group.status === "waiting" ? "waiting" : "";
+      const chips = [
+        ...state.group.wait.map((id) => `<span class="chip wait">${nameOf(id)} · awaiting</span>`),
+        ...state.group.released.map((item) => `<span class="chip rel">${nameOf(item.id)} · released</span>`),
+        ...state.group.done.map((item) => `<span class="chip ${item.outcome === "error" ? "err" : "ok"}">${nameOf(item.id)} · ${item.outcome}</span>`),
+      ].join("") || `<span class="kicker">Wait set is empty</span>`;
+
+      const groupStatus = state.group.status === "idle"
+        ? "Not started"
+        : state.group.status === "complete"
+          ? "Group step complete"
+          : "Waiting on the wait set";
+
+      const installHtml = scenario().installs.map((item) => {
+        const inst = state.installs[item.id];
+        const badge = inst.directive
+          ? `<span class="badge ${inst.directive}">${inst.directive}${inst.reason ? " · " + inst.reason : ""}</span>`
+          : "";
+        const still = inst.phase === "released" ? `<span class="still">still running</span>` : "";
+        return `
+          <div class="lane-wire" data-lane="${item.id}"><div class="packet" hidden></div></div>
+          <article class="install ${inst.phase}" data-install="${item.id}">
+            <h2>${item.name}${still}</h2>
+            <p class="meta">${inst.note || item.blurb}</p>
+            ${badge}
+          </article>`;
+      }).join("");
+
+      el.board.style.gridTemplateRows = `repeat(${scenario().installs.length}, minmax(118px, auto))`;
+      el.board.innerHTML = `
+        <section class="group ${groupClass}">
+          <p class="kicker">App-branch group</p>
+          <h2>${groupStatus}</h2>
+          <p class="kicker" style="margin-top:0.7rem">Wait set</p>
+          <div class="chips">${chips}</div>
+        </section>
+        ${installHtml}`;
+
+      el.scrub.innerHTML = events.map((event, i) => `
+        <button type="button" data-index="${i}" class="${i === cursor ? "current" : ""}">${i + 1}. ${event.packet}</button>
+      `).join("");
+
+      el.log.innerHTML = state.log.map((line, i) => `<li class="${i === state.log.length - 1 ? "current" : ""}">${line}</li>`).join("");
+      el.log.scrollTop = el.log.scrollHeight;
+      el.step.disabled = flying || cursor >= events.length - 1;
+      el.play.setAttribute("aria-pressed", playing ? "true" : "false");
+      el.play.textContent = playing ? "Pause" : cursor >= events.length - 1 ? "Replay" : "Play";
+    }
+
+    function hold() {
+      return reduced ? 0 : 700 / Number(el.speed.value);
+    }
+    function flight() {
+      return reduced ? 0 : 560 / Number(el.speed.value);
+    }
+
+    function fly(event) {
+      const packet = el.board.querySelector(`[data-lane="${event.lane}"] .packet`);
+      if (!packet || event.dir === "local" || reduced) return Promise.resolve();
+      packet.hidden = false;
+      packet.className = `packet show ${event.kind} ${event.dir}`;
+      packet.textContent = event.packet;
+      void packet.offsetWidth;
+      return new Promise((resolve) => {
+        const done = () => { packet.hidden = true; resolve(); };
+        packet.addEventListener("animationend", done, { once: true });
+        timer = window.setTimeout(done, flight() + 80);
+      });
+    }
+
+    async function advance() {
+      const events = scenario().events;
+      if (flying || cursor >= events.length - 1) {
+        playing = false;
+        render();
+        return;
+      }
+      flying = true;
+      const event = events[cursor + 1];
+      el.narration.textContent = event.narration;
+      await fly(event);
+      window.clearTimeout(timer);
+      cursor += 1;
+      flying = false;
+      render();
+    }
+
+    async function playLoop() {
+      while (playing) {
+        await advance();
+        if (!playing) break;
+        if (cursor >= scenario().events.length - 1) {
+          playing = false;
+          render();
+          break;
+        }
+        await new Promise((resolve) => { timer = window.setTimeout(resolve, hold()); });
+      }
+    }
+
+    function stop() {
+      playing = false;
+      flying = false;
+      window.clearTimeout(timer);
+    }
+
+    function loadScenario(key, autoplay) {
+      stop();
+      scenarioKey = key;
+      cursor = -1;
+      render();
+      if (autoplay) {
+        playing = true;
+        render();
+        playLoop();
+      }
+    }
+
+    for (const [key, item] of Object.entries(scenarios)) {
+      const option = document.createElement("option");
+      option.value = key;
+      option.textContent = item.label;
+      el.scenario.append(option);
+    }
+
+    el.scenario.addEventListener("change", () => loadScenario(el.scenario.value, false));
+    el.play.addEventListener("click", () => {
+      if (playing) {
+        stop();
+        render();
+        return;
+      }
+      if (cursor >= scenario().events.length - 1) cursor = -1;
+      playing = true;
+      render();
+      playLoop();
+    });
+    el.step.addEventListener("click", () => { stop(); advance(); });
+    el.reset.addEventListener("click", () => loadScenario(scenarioKey, false));
+    el.scrub.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-index]");
+      if (!button) return;
+      stop();
+      cursor = Number(button.dataset.index);
+      render();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.target.matches("input, select, textarea")) return;
+      const view = document.querySelector("#views button[aria-pressed='true']")?.dataset.view ?? "group";
+      if (event.code === "Space") {
+        event.preventDefault();
+        if (view === "diff") document.querySelector("#diff-play").click();
+        else if (view === "runs") document.querySelector("#run-play").click();
+        else if (view === "group") el.play.click();
+      }
+      if (event.code === "ArrowRight") {
+        event.preventDefault();
+        if (view === "diff") document.querySelector("#diff-step").click();
+        else if (view === "runs") document.querySelector("#run-step").click();
+        else if (view === "group") el.step.click();
+      }
+    });
+
+    render();
+
+    const diffEntities = [
+      { id: "stack", name: "Stack", ref: "cfg_new", slice: "unchanged", tag: "same", note: "Already applied" },
+      { id: "sandbox", name: "Sandbox", ref: "cfg_old", slice: "config and build changed", tag: "changed", note: "Source and config both behind" },
+      { id: "api", name: "Component api", ref: "cfg_old", slice: "checksum changed", tag: "changed", note: "Config change" },
+      { id: "worker", name: "Component worker", ref: "cfg_new", slice: "unchanged", tag: "same", note: "Build already applied" },
+      { id: "billing", name: "Component billing", ref: "none", slice: "added", tag: "added", note: "No applied ref" },
+      { id: "legacy", name: "Component legacy", ref: "cfg_old", slice: "removed", tag: "removed", note: "Present only on the old ref" },
+    ];
+    const diffBeats = [
+      { lit: -1, narration: "The install pin already equals cfg_new, so a diff of install.app_config_id against cfg_new is empty. The failed component would be skipped." },
+      ...diffEntities.map((entity, i) => ({
+        lit: i,
+        narration: `${entity.name} is compared with its own applied ref (${entity.ref === "none" ? "none" : entity.ref}), not the install pin. Slice: ${entity.slice}.`,
+      })),
+      { lit: diffEntities.length, narration: "The union keeps only the slices that changed. Stack and worker stay out. Sandbox, api, billing, and legacy are the diff." },
+    ];
+    let diffCursor = 0;
+    let diffPlaying = false;
+    let diffTimer = 0;
+
+    function renderDiff() {
+      const beat = diffBeats[diffCursor];
+      document.querySelector("#diff-narration").textContent = beat.narration;
+      const showAll = beat.lit >= diffEntities.length;
+      document.querySelector("#diff-rows").innerHTML = diffEntities.map((entity, i) => {
+        const lit = showAll || i <= beat.lit;
+        const cls = beat.lit === i ? "lit" : lit ? "" : "dim";
+        const ref = !lit ? "…" : entity.ref === "none" ? "no applied ref" : entity.ref;
+        const slice = !lit ? "…" : entity.slice;
+        const tag = !lit ? "" : `<span class="tag ${entity.tag}">${entity.slice}</span>`;
+        return `<tr class="${cls}"><td>${entity.name}</td><td>${ref === "…" ? ref : `<span class="tag ${entity.ref === "cfg_new" ? "new" : "old"}">${ref}</span>`}</td><td>cfg_new</td><td>${tag || slice}</td></tr>`;
+      }).join("");
+      const revealed = showAll ? diffEntities : diffEntities.slice(0, Math.max(0, beat.lit + 1));
+      const changed = revealed.filter((entity) => entity.tag !== "same");
+      document.querySelector("#diff-union").innerHTML = changed.length
+        ? changed.map((entity) => `<span class="tag ${entity.tag}">${entity.name}: ${entity.slice}</span> `).join("")
+        : "Nothing in the union yet.";
+      document.querySelector("#diff-scrub").innerHTML = diffBeats.map((item, i) =>
+        `<button type="button" data-diff="${i}" class="${i === diffCursor ? "current" : ""}">${i === 0 ? "Pin" : i > diffEntities.length ? "Union" : diffEntities[i - 1].name}</button>`
+      ).join("");
+      document.querySelector("#diff-play").textContent = diffPlaying ? "Pause" : diffCursor >= diffBeats.length - 1 ? "Replay" : "Play";
+      document.querySelector("#diff-play").setAttribute("aria-pressed", diffPlaying ? "true" : "false");
+    }
+
+    function stopDiff() { diffPlaying = false; window.clearTimeout(diffTimer); }
+    async function playDiff() {
+      while (diffPlaying && diffCursor < diffBeats.length - 1) {
+        diffCursor += 1;
+        renderDiff();
+        await new Promise((resolve) => { diffTimer = window.setTimeout(resolve, 900); });
+      }
+      diffPlaying = false;
+      renderDiff();
+    }
+
+    const runBeats = [
+      {
+        narration: "Run 1 left this install pending_customer. Its workflow is still open, waiting on the stack. Run 2 has not reached it.",
+        supersede: [["Run 1", "pending_customer"], ["Run 2", "not started"], ["Diff", "not computed"]],
+        queue: [["Run 1", "pending_customer"], ["Run 2", "not started"], ["Diff", "not computed"]],
+      },
+      {
+        narration: "Run 2 reaches the install. Supersede cancels run 1, including its pending stack. Queue does not touch run 1.",
+        supersede: [["Run 1", "cancelling"], ["Run 2", "taking over"], ["Diff", "waiting for cancel"]],
+        queue: [["Run 1", "pending_customer"], ["Run 2", "queued behind run 1"], ["Diff", "not yet"]],
+      },
+      {
+        narration: "Supersede marks run 1 superseded and diffs cfg_new against what each entity has actually applied. Queue records queued and does not block the group.",
+        supersede: [["Run 1", "superseded"], ["Run 2", "diffing applied refs"], ["Diff", "composite, from applied refs"]],
+        queue: [["Run 1", "still waiting on customer"], ["Run 2", "queued"], ["Group", "does not wait"]],
+      },
+      {
+        narration: "Supersede starts run 2 from that composite diff. A stack that already phone-homed is not a change. A component run 1 never applied still is. Queue still has no diff.",
+        supersede: [["Run 1", "superseded"], ["Run 2", "workflow started"], ["Baseline", "entity applied refs"]],
+        queue: [["Run 1", "pending_customer"], ["Run 2", "queued"], ["Diff", "blocked until run 1 is terminal"]],
+      },
+      {
+        narration: "Run 1’s customer wait ends. Supersede already moved on, so this does not restart run 1. Queue now computes the composite diff and starts run 2. A run 3 would stay queued until run 2’s workflow finishes.",
+        supersede: [["Run 1", "superseded"], ["Run 2", "in progress"], ["Run 3", "would supersede run 2"]],
+        queue: [["Run 1", "finished"], ["Run 2", "diff, then start"], ["Run 3", "stays queued behind run 2"]],
+      },
+    ];
+    let runCursor = 0;
+    let runPlaying = false;
+    let runTimer = 0;
+
+    function renderRuns() {
+      const beat = runBeats[runCursor];
+      document.querySelector("#run-narration").textContent = beat.narration;
+      const card = (title, rows) => `
+        <p class="kicker">${title}</p>
+        <h2>${title === "supersede" ? "install_update_policy = supersede" : "install_update_policy = queue"}</h2>
+        ${rows.map(([k, v]) => `<div class="run-row"><span>${k}</span><span class="tag ${/superseded|queued|cancel/.test(v) ? "old" : /started|diff|progress|finished/.test(v) ? "added" : "new"}">${v}</span></div>`).join("")}`;
+      document.querySelector("#run-supersede").innerHTML = card("supersede", beat.supersede);
+      document.querySelector("#run-queue").innerHTML = card("queue", beat.queue);
+      document.querySelector("#run-scrub").innerHTML = runBeats.map((_, i) =>
+        `<button type="button" data-run="${i}" class="${i === runCursor ? "current" : ""}">${i + 1}</button>`
+      ).join("");
+      document.querySelector("#run-play").textContent = runPlaying ? "Pause" : runCursor >= runBeats.length - 1 ? "Replay" : "Play";
+      document.querySelector("#run-play").setAttribute("aria-pressed", runPlaying ? "true" : "false");
+    }
+    function stopRuns() { runPlaying = false; window.clearTimeout(runTimer); }
+    async function playRuns() {
+      while (runPlaying && runCursor < runBeats.length - 1) {
+        runCursor += 1;
+        renderRuns();
+        await new Promise((resolve) => { runTimer = window.setTimeout(resolve, 1100); });
+      }
+      runPlaying = false;
+      renderRuns();
+    }
+
+    const classes = [
+      { name: "Stack config", detail: "Stack applied ref is cfg_old. Sandbox and components already match cfg_new.", expect: "StackChanged only" },
+      { name: "Sandbox config", detail: "Sandbox config content differs. Sandbox build id is the same.", expect: "SandboxChanged, not SandboxBuildChanged" },
+      { name: "Sandbox source", detail: "Sandbox config content matches. The active sandbox build id differs.", expect: "SandboxBuildChanged only" },
+      { name: "Component config", detail: "api checksum differs. Build id is unchanged.", expect: "api in Changed, BuildChanged false" },
+      { name: "Component source", detail: "api checksum matches. Latest build id differs.", expect: "api in Changed, BuildChanged true" },
+      { name: "Component added", detail: "billing exists on cfg_new and has no applied ref.", expect: "billing in Added" },
+      { name: "Component removed", detail: "legacy exists only on its applied ref.", expect: "legacy in Removed" },
+      { name: "Mixed partial", detail: "Stack and worker applied refs equal cfg_new. Sandbox and api refs are cfg_old.", expect: "Only sandbox and api. Stack and worker do not reappear." },
+    ];
+    let classIndex = 7;
+    function renderClasses() {
+      document.querySelector("#class-grid").innerHTML = classes.map((item, i) =>
+        `<button type="button" class="class-card ${i === classIndex ? "current" : ""}" data-class="${i}"><b>${i + 1}. ${item.name}</b><span>${item.expect}</span></button>`
+      ).join("");
+      const item = classes[classIndex];
+      document.querySelector("#class-detail").innerHTML = `<h2>${item.name}</h2><p>${item.detail}</p><p><span class="tag changed">${item.expect}</span></p>`;
+    }
+
+    const pages = {
+      group: ["App-branch group, firing and waiting", "The group starts every install workflow. Each workflow sends await or release. The group keeps waiting only on await."],
+      diff: ["Entity diff", "Each field is compared with that entity’s applied app config. The slices are unioned. The install pin is not the baseline."],
+      runs: ["Superseded runs", "A second run finds the same install still open. Supersede cancels it and diffs from applied refs. Queue waits to diff, and does not block the group on a customer."],
+      classes: ["Change classes", "Eight classes, all with the install pin already on the new config."],
+    };
+
+    function showView(name) {
+      stop();
+      stopDiff();
+      stopRuns();
+      render();
+      for (const button of document.querySelectorAll("#views button")) {
+        button.setAttribute("aria-pressed", button.dataset.view === name ? "true" : "false");
+      }
+      for (const panel of document.querySelectorAll(".panel")) {
+        const on = panel.id === `view-${name}`;
+        panel.hidden = !on;
+        panel.classList.toggle("active", on);
+      }
+      document.querySelector("#group-controls").hidden = name !== "group";
+      document.querySelector("#page-title").textContent = pages[name][0];
+      document.querySelector("#page-lede").textContent = pages[name][1];
+      if (name === "diff") renderDiff();
+      if (name === "runs") renderRuns();
+      if (name === "classes") renderClasses();
+    }
+
+    document.querySelector("#views").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-view]");
+      if (button) showView(button.dataset.view);
+    });
+    document.querySelector("#diff-play").addEventListener("click", () => {
+      if (diffPlaying) { stopDiff(); renderDiff(); return; }
+      if (diffCursor >= diffBeats.length - 1) diffCursor = 0;
+      diffPlaying = true;
+      renderDiff();
+      playDiff();
+    });
+    document.querySelector("#diff-step").addEventListener("click", () => {
+      stopDiff();
+      if (diffCursor < diffBeats.length - 1) diffCursor += 1;
+      renderDiff();
+    });
+    document.querySelector("#diff-reset").addEventListener("click", () => { stopDiff(); diffCursor = 0; renderDiff(); });
+    document.querySelector("#diff-scrub").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-diff]");
+      if (!button) return;
+      stopDiff();
+      diffCursor = Number(button.dataset.diff);
+      renderDiff();
+    });
+    document.querySelector("#run-play").addEventListener("click", () => {
+      if (runPlaying) { stopRuns(); renderRuns(); return; }
+      if (runCursor >= runBeats.length - 1) runCursor = 0;
+      runPlaying = true;
+      renderRuns();
+      playRuns();
+    });
+    document.querySelector("#run-step").addEventListener("click", () => {
+      stopRuns();
+      if (runCursor < runBeats.length - 1) runCursor += 1;
+      renderRuns();
+    });
+    document.querySelector("#run-reset").addEventListener("click", () => { stopRuns(); runCursor = 0; renderRuns(); });
+    document.querySelector("#run-scrub").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-run]");
+      if (!button) return;
+      stopRuns();
+      runCursor = Number(button.dataset.run);
+      renderRuns();
+    });
+    document.querySelector("#class-grid").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-class]");
+      if (!button) return;
+      classIndex = Number(button.dataset.class);
+      renderClasses();
+    });
+  </script>
+</body>
+</html>

@@ -7,7 +7,10 @@ import { SectionHeader } from '@/components/layout/SectionHeader'
 import type { TCompositeError } from '@/types'
 import { OverviewLoadingTrack } from './OverviewLoadingTrack'
 import type { TOverviewStage } from './overview-loading'
-import { RolloutTiles } from './RolloutTiles'
+import {
+  RolloutGroupsCard,
+  type IGroupPlanApproval,
+} from './RolloutGroupsCard'
 import type { TTrackGroup } from './RolloutTrack'
 import { RunSourceCard, type IRunSourceCard } from './RunSourceCard'
 
@@ -43,11 +46,12 @@ export interface IBranchOverview {
   changes?: ReactNode
   groups: TTrackGroup[]
   rolloutHref: string
-  onSelectGroup: (groupId: string) => void
+  groupHref: (groupId: string) => string
   loadingStages?: TOverviewStage[]
   compositeError?: TCompositeError
   installWorkflowHref?: string
   failedBuilds?: TFailedBuildLink[]
+  approvals?: IGroupPlanApproval[]
 }
 
 export const BranchOverview = ({
@@ -57,11 +61,12 @@ export const BranchOverview = ({
   changes,
   groups,
   rolloutHref,
-  onSelectGroup,
+  groupHref,
   loadingStages,
   compositeError,
   installWorkflowHref,
   failedBuilds,
+  approvals,
 }: IBranchOverview) => (
   <div className="flex flex-col gap-10 p-4 md:p-6">
     {loadingStages?.length ? (
@@ -122,7 +127,11 @@ export const BranchOverview = ({
           actions={<Link href={rolloutHref}>View rollout</Link>}
         />
         {groups.length ? (
-          <RolloutTiles groups={groups} onSelectGroup={onSelectGroup} />
+          <RolloutGroupsCard
+            groups={groups}
+            groupHref={groupHref}
+            approvals={approvals}
+          />
         ) : (
           <Text variant="subtext" theme="neutral">
             No install groups in this run yet.

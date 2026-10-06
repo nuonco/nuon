@@ -55,6 +55,12 @@ func (o *BuildAppConfigReader) ReadResponse(response runtime.ClientResponse, con
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewBuildAppConfigConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewBuildAppConfigInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *BuildAppConfigNotFound) GetPayload() *models.StderrErrResponse {
 }
 
 func (o *BuildAppConfigNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewBuildAppConfigConflict creates a BuildAppConfigConflict with default headers values
+func NewBuildAppConfigConflict() *BuildAppConfigConflict {
+	return &BuildAppConfigConflict{}
+}
+
+/*
+BuildAppConfigConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type BuildAppConfigConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this build app config conflict response has a 2xx status code
+func (o *BuildAppConfigConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this build app config conflict response has a 3xx status code
+func (o *BuildAppConfigConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this build app config conflict response has a 4xx status code
+func (o *BuildAppConfigConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this build app config conflict response has a 5xx status code
+func (o *BuildAppConfigConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this build app config conflict response a status code equal to that given
+func (o *BuildAppConfigConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the build app config conflict response
+func (o *BuildAppConfigConflict) Code() int {
+	return 409
+}
+
+func (o *BuildAppConfigConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/configs/{config_id}/build][%d] buildAppConfigConflict %s", 409, payload)
+}
+
+func (o *BuildAppConfigConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/configs/{config_id}/build][%d] buildAppConfigConflict %s", 409, payload)
+}
+
+func (o *BuildAppConfigConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *BuildAppConfigConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 
