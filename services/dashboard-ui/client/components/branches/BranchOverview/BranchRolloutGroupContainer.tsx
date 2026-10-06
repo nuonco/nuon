@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
+import { PlanDiffPanel } from '@/components/branches/BranchRunApproval/PlanDiffPanel'
 import { PlanGroupStep } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep'
-import { useOpenWorkflowRunPanel } from '@/components/branches/WorkflowRunPanel/WorkflowRunPanelContainer'
 import { Button } from '@/components/common/Button'
 import { Link } from '@/components/common/Link'
 import { Loading } from '@/components/common/Loading'
@@ -25,7 +25,6 @@ export const BranchRolloutGroupContainer = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const installId = searchParams.get('install') ?? undefined
   const { addPanel, updatePanel, removePanel, panels } = useSurfaces()
-  const openWorkflowRunPanel = useOpenWorkflowRunPanel()
   const panelIdRef = useRef<string | null>(null)
   const openedFor = useRef<string | null>(null)
   const openPanelId =
@@ -154,8 +153,29 @@ export const BranchRolloutGroupContainer = () => {
                 size="sm"
                 variant="secondary"
                 onClick={() => {
-                  if (!rollout?.id || !planStep?.id) return
-                  openWorkflowRunPanel(rollout.id, planStep.id)
+                  if (!planStep) return
+                  addPanel(
+                    <PlanDiffPanel
+                      step={planStep}
+                      installFacts={
+                        group
+                          ? Object.fromEntries(
+                              group.installs.map((install) => [
+                                install.id,
+                                {
+                                  labels: install.labels,
+                                  region: install.region,
+                                  status: install.status,
+                                  detail: install.detail,
+                                  appliedConfigId: install.appliedConfigId,
+                                },
+                              ])
+                            )
+                          : undefined
+                      }
+                    />,
+                    `plan-diff-${planStep.id}`
+                  )
                 }}
               >
                 View plan

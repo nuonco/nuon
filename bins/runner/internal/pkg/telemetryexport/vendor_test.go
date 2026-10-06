@@ -8,8 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 )
 
 type fakeTokenLifecycle struct {

@@ -8,8 +8,9 @@ import (
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/nuonco/nuon/bins/cli/internal/ui/teaprogram"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/bins/cli/internal/ui/teaprogram"
 
 	"github.com/nuonco/nuon/sdks/nuon-go"
 
