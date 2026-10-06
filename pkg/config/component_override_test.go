@@ -68,6 +68,13 @@ func TestParseComponentOverrideInputName_NonOverride(t *testing.T) {
 	}
 }
 
+func TestParseComponentOverrideInputName_RejectsCleartextEnabled(t *testing.T) {
+	name := ComponentOverrideInputPrefix + "enabled_grafana_lgtm"
+	if _, _, ok := ParseComponentOverrideInputName(name); ok {
+		t.Fatalf("ParseComponentOverrideInputName(%q) ok=true, want false", name)
+	}
+}
+
 func TestSyntheticComponentOverrideInputs(t *testing.T) {
 	components := ComponentList{
 		{Name: "vpc", Type: TerraformModuleComponentType},

@@ -95,9 +95,8 @@ func (s *service) ToggleInstallComponent(ctx *gin.Context) {
 	// Enabled-state is the synthetic enabled install input. Writing it through
 	// the normal install-input update flow lets the input-update workflow
 	// reconcile the deploy/teardown (and enable/disable lifecycle) for us.
-	enabledInputName := config.EnabledOverrideInputName(component.Name)
 	patch := map[string]*string{
-		enabledInputName: generics.ToPtr(strconv.FormatBool(*req.Enabled)),
+		config.EnabledOverrideInputName(component.Name): generics.ToPtr(strconv.FormatBool(*req.Enabled)),
 	}
 
 	// Drive the toggle through the shared install-inputs update flow, but tag

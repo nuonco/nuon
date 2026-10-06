@@ -83,6 +83,7 @@ func TFVarsOverrideInputName(componentName string) string {
 
 // EnabledOverrideInputName returns the reserved synthetic input name that carries
 // the install-level enabled/disabled toggle for the named toggleable component.
+// The component name is hex-encoded so the key stays TOML-safe and collision-proof.
 func EnabledOverrideInputName(componentName string) string {
 	return componentOverrideInputName(ComponentOverrideKindEnabled, componentName)
 }

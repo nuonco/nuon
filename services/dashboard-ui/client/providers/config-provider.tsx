@@ -8,6 +8,7 @@ export type TRuntimeConfig = {
   runnerApiUrl?: string
 
   temporalUiUrl?: string
+  grafanaUiUrl?: string
   authServiceUrl?: string
   appUrl: string
   githubAppName: string
