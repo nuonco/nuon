@@ -1,9 +1,10 @@
 import { Badge } from '@/components/common/Badge'
+import {
+  CommitLink,
+  PullRequestLink,
+} from '@/components/common/GitReferenceLink'
 import { Icon } from '@/components/common/Icon'
-import { ID } from '@/components/common/ID'
-import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
-import { buildCommitUrl } from '@/utils/vcs-urls'
 import { getInitials } from '../../shared/format'
 import { StepStatePlaceholder } from '../../shared/StepStatePlaceholder'
 import { StepBlock, StepRow, StepRowList } from '../../shared/StepLayout'
@@ -18,7 +19,6 @@ export const CommitStep = ({ metadata }: ICommitStep) => {
   const authorName = metadata.author_name as string | undefined
   const branch = metadata.branch as string | undefined
   const repo = metadata.repo as string | undefined
-  const commitUrl = buildCommitUrl(repo, commitSha)
 
   const prNumber = metadata.pr_number as number | undefined
   const prUrl = metadata.pr_url as string | undefined
@@ -52,26 +52,21 @@ export const CommitStep = ({ metadata }: ICommitStep) => {
               className="leading-snug"
             >
               {title}
-              {prNumber && (
+              {prNumber ? (
                 <>
                   {' ('}
-                  {prUrl ? (
-                    <Link
-                      href={prUrl}
-                      isExternal
-                      className="font-semibold"
-                      variant="inline"
-                    >
-                      #{prNumber}
-                    </Link>
-                  ) : (
-                    <span className="text-cool-grey-500 dark:text-cool-grey-400">
-                      #{prNumber}
-                    </span>
-                  )}
+                  <PullRequestLink
+                    number={prNumber}
+                    repo={repo}
+                    href={prUrl}
+                    label={`#${prNumber}`}
+                    showIcon={false}
+                    variant="inline"
+                    weight="strong"
+                  />
                   {')'}
                 </>
-              )}
+              ) : null}
             </Text>
             {body && (
               <Text
@@ -90,17 +85,7 @@ export const CommitStep = ({ metadata }: ICommitStep) => {
                 {branch}
               </Badge>
             )}
-            <ID className="text-[12.5px] font-mono">
-              {commitSha?.substring(0, 7)}
-            </ID>
-            {commitUrl && (
-              <Link
-                href={commitUrl}
-                isExternal
-                aria-label="View commit"
-                className="text-cool-grey-400 hover:text-cool-grey-600 dark:text-cool-grey-500 dark:hover:text-cool-grey-300"
-              />
-            )}
+            <CommitLink sha={commitSha} repo={repo} />
           </div>
         </div>
 

@@ -123,20 +123,6 @@ func (s *service) CreateAppConfig(ctx *gin.Context) {
 
 func (s *service) validateAppConfigBranch(ctx context.Context, appID string, req *CreateAppConfigRequest) error {
 	if req.AppBranchID == "" {
-		if req.SkipNotification {
-			return nil
-		}
-		enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureDefaultAppBranches)
-		if err != nil {
-			return fmt.Errorf("unable to check feature: %w", err)
-		}
-		if enabled {
-			return stderr.ErrUser{
-				Err:         fmt.Errorf("app_branch_id is required when %s is enabled", app.OrgFeatureDefaultAppBranches),
-				Description: "This org syncs app configs through app branches. Set app_branch_id, or upgrade the CLI so `nuon apps sync` targets the default branch.",
-				Code:        "app_branch_id_required",
-			}
-		}
 		return nil
 	}
 

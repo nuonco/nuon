@@ -178,3 +178,53 @@ Outputs:
 		})
 	}
 }
+
+func TestGetAWSTemplate_Deterministic(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/yaml")
+		w.Write([]byte(mockVPCTemplateYAML))
+	}))
+	defer server.Close()
+
+	var inputs []app.AppInput
+	var groups []app.AppInputGroup
+	for _, g := range []string{"zeta", "alpha", "mid"} {
+		groups = append(groups, app.AppInputGroup{ID: "grp-" + g, Name: g})
+		for _, n := range []string{"one", "two", "three", "four"} {
+			inputs = append(inputs, app.AppInput{
+				AppInputGroupID:              "grp-" + g,
+				Name:                         g + "_" + n,
+				Source:                       app.AppInputSourceCustomer,
+				Type:                         app.AppInputTypeString,
+				CloudFormationStackParamName: strings.ToUpper(g[:1]) + g[1:] + strings.ToUpper(n[:1]) + n[1:],
+			})
+		}
+	}
+
+	render := func() string {
+		tpl := &Templates{cfg: &internal.Config{UseLocalRunners: true}}
+		tmpl, err := tpl.getAWSTemplate(&stacks.TemplateInput{
+			Install:                    &app.Install{ID: "inl123", AppID: "app123", OrgID: "org123"},
+			CloudFormationStackVersion: &app.InstallStackVersion{PhoneHomeURL: server.URL + "/phone-home"},
+			AppCfg: &app.AppConfig{
+				StackConfig: app.AppStackConfig{
+					VPCNestedTemplateURL:    server.URL + "/vpc.yaml",
+					RunnerNestedTemplateURL: server.URL + "/runner.yaml",
+				},
+				InputConfig: app.AppInputConfig{AppInputGroups: groups, AppInputs: inputs},
+			},
+			Runner:          &app.Runner{ID: "run123"},
+			Settings:        &app.RunnerGroupSettings{},
+			PhonehomeScript: "print('phone home')",
+		})
+		require.NoError(t, err)
+		byts, err := json.Marshal(tmpl)
+		require.NoError(t, err)
+		return string(byts)
+	}
+
+	first := render()
+	for range 20 {
+		require.Equal(t, first, render())
+	}
+}

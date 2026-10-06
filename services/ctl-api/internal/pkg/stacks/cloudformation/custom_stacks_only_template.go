@@ -75,12 +75,12 @@ func (t *Templates) getAWSCustomStacksOnlyTemplate(inp *stacks.TemplateInput) (*
 	tmpl.Outputs = outputs
 
 	pgs := append([]map[string]any{}, customResult.paramGroups...)
-	for groupName, installGroupParameter := range installGroupParameters {
+	for _, groupName := range pkggenerics.SortedMapToKeys(installGroupParameters) {
 		pgs = append(pgs, map[string]any{
 			"Label": map[string]any{
 				"default": "Install Inputs: " + strcase.ToCamel(groupName),
 			},
-			"Parameters": pkggenerics.MapToKeys(installGroupParameter),
+			"Parameters": pkggenerics.SortedMapToKeys(installGroupParameters[groupName]),
 		})
 	}
 	if len(pgs) > 0 || len(paramLabels) > 0 {

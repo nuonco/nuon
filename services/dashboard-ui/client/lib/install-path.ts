@@ -10,7 +10,7 @@ export type TInstallHrefInput = {
 
 export const isNewInstallIAEnabled = (
   features?: { [key: string]: boolean } | null
-) => !!features?.['app-branches-ui'] && !!features?.['new-install-ia']
+) => !!features?.['new-app-ia']
 
 const workflowDetailSuffix = (suffix: string) =>
   suffix.replace(

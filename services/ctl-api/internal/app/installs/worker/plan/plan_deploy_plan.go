@@ -74,22 +74,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		return nil, nil, errors.Wrap(err, "unable to get install registry repository config")
 	}
 
-	// Address the install-registry artifact by its content (manifest
-	// digest) rather than the synthetic install-deploy ID. The sync plan
-	// copies image-type builds into the install registry under their
-	// ResolvedTag; using the digest as SrcTag here is correct because
-	// oras.Copy resolves both tags and digests, and the digest is the
-	// immutable identity of the artifact.
-	//
-	// For non-image builds and image builds without SourceDigest, the sync
-	// plan tags the install-registry copy with installRegistryTag, so we read
-	// it back under the same tag.
-	srcTag := installRegistryTag(deploy)
-	srcDigest := ""
-	if build.SourceDigest != "" {
-		srcTag = build.SourceDigest
-		srcDigest = build.SourceDigest
-	}
+	srcTag, srcDigest := DeploySrcRef(deploy, build)
 
 	plan := &plantypes.DeployPlan{
 		Src:       ociConfig,
@@ -143,12 +128,10 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 
 	if install.SandboxMode.Bool {
 		targetRefs := helpers.GetComponentReferences(appCfg, installDeploy.ComponentName)
-
 		plan.SandboxMode = &plantypes.SandboxMode{
 			Enabled: true,
 			Outputs: refs.GetFakeRefs(targetRefs),
 		}
-
 		switch build.ComponentConfigConnection.Type {
 		case app.ComponentTypeHelmChart:
 			plan.SandboxMode.Helm = p.createHelmDeploySandboxMode(ctx, plan.HelmDeployPlan)
@@ -157,14 +140,12 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 			if err != nil {
 				return nil, nil, errors.Wrap(err, "unable to create sandbox plan")
 			}
-
 			plan.SandboxMode.KubernetesManifest = sandboxPlan
 		case app.ComponentTypeTerraformModule:
 			sandboxPlan, err := p.createTerraformDeploySandboxMode(ctx, plan.TerraformDeployPlan)
 			if err != nil {
 				return nil, nil, errors.Wrap(err, "unable to create sandbox plan")
 			}
-
 			plan.SandboxMode.Terraform = sandboxPlan
 		case app.ComponentTypePulumi:
 			plan.SandboxMode.Pulumi = p.createPulumiDeploySandboxMode()
@@ -172,6 +153,28 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 	}
 
 	return plan, roleSelection, nil
+}
+
+// DeploySrcRef returns the tag and digest a deploy plan should use to address
+// the component artifact in the install registry.
+//
+// Address the install-registry artifact by its content (manifest
+// digest) rather than the synthetic install-deploy ID. The sync plan
+// copies image-type builds into the install registry under their
+// ResolvedTag; using the digest as SrcTag here is correct because
+// oras.Copy resolves both tags and digests, and the digest is the
+// immutable identity of the artifact.
+//
+// For non-image builds and image builds without SourceDigest, the sync
+// plan tags the install-registry copy with installRegistryTag, so we read it
+// back under the same tag.
+func DeploySrcRef(deploy *app.InstallDeploy, build *app.ComponentBuild) (srcTag, srcDigest string) {
+	srcTag = installRegistryTag(deploy)
+	if build.SourceDigest != "" {
+		srcTag = build.SourceDigest
+		srcDigest = build.SourceDigest
+	}
+	return srcTag, srcDigest
 }
 
 func (p *Planner) getRoleForDeploy(
@@ -189,8 +192,8 @@ func (p *Planner) getRoleForDeploy(
 
 // installWorkflowForRoleDefault returns the parent install workflow used to
 // derive a step's lowest-precedence default role, or nil when workflow-type
-// defaulting should not apply. It returns nil when the legacy opt-out is set
-// (USE_LEGACY_MAINTENANCE_ROLE_DEFAULT) or the workflow can't be resolved, so the
+// defaulting should not apply. It returns nil when the global config flag is
+// off (WORKFLOW_DEFAULT_ROLE_ENABLED) or the workflow can't be resolved, so the
 // operation-roles package falls back to the maintenance role and planning never
 // fails on role defaulting.
 func (p *Planner) installWorkflowForRoleDefault(
@@ -241,6 +244,17 @@ func (p *Planner) getAuthForDeploy(
 		return nil, err
 	}
 
+	return p.AuthForDeploy(l, roleSelection, stack, sessionName)
+}
+
+// AuthForDeploy is the pure core of getAuthForDeploy, usable outside a
+// Temporal workflow by callers that have already resolved a role selection.
+func (p *Planner) AuthForDeploy(
+	l *zap.Logger,
+	roleSelection *operationroles.RoleSelection,
+	stack *app.InstallStack,
+	sessionName string,
+) (*CloudAuth, error) {
 	l.Info("using selected role for component deploy auth",
 		zap.String("role_name", roleSelection.RoleName),
 		zap.String("role_arn", roleSelection.RoleARN),

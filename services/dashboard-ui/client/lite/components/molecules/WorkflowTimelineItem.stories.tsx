@@ -42,7 +42,7 @@ export const Overview = () => (
       'The chip label and theme come from WORKFLOW_BADGE_MAP, falling back to an in-flight label for statuses the map does not cover.',
       'Preview markers only render for branch runs; drift markers only render for install workflows.',
       'A preview run says preview once. Plan-only is not badged separately because preview already implies it.',
-      'A service-account trigger renders as "a service account" with the email in a tooltip.',
+      'A service-account trigger renders as the account name (falling back to "a service account") with the email in a tooltip.',
       'Duration renders only once the run has finished.',
       'loading keeps the marker and spacing and replaces text with skeletons.',
     ]}
@@ -182,7 +182,11 @@ export const ServiceAccountTrigger = () => (
   <List>
     <WorkflowTimelineItem
       workflow={run({
-        created_by: { email: 'runner@serviceaccount.nuon.co' },
+        created_by: {
+          name: 'test',
+          email: 'runner@serviceaccount.nuon.co',
+          account_type: 'service',
+        },
       } as Partial<TWorkflow>)}
     />
   </List>

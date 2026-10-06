@@ -56,6 +56,7 @@ func AllModels() []any {
 		&app.App{},
 		&app.AppRepository{},
 		&app.AppConfig{},
+		&app.AppBundle{},
 		&app.AppBranch{},
 		&app.AppBranchConfig{},
 		&app.AppBranchInstallGroup{},

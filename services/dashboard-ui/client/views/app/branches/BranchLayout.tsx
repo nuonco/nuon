@@ -158,7 +158,8 @@ const BranchTemplate = () => {
     },
     { path: `/readme`, iconVariant: 'BookOpenIcon', text: 'README' },
   ]
-  const approvalRun = params.runId ? pinnedWorkflow : latestRun
+  // Run detail renders its own BranchRunApproval; layout banner is for other routes.
+  const approvalRun = params.runId ? null : latestRun
 
   return (
     <>

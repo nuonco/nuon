@@ -246,18 +246,6 @@ func (a *Activities) GetOrgVCSConnections(ctx context.Context, req GetOrgVCSConn
 	return conns, nil
 }
 
-type EnableQueuesFeatureFlagRequest struct {
-	OrgID string `validate:"required"`
-}
-
-// @temporal-gen-v2 activity
-// @by-field OrgID
-func (a *Activities) EnableQueuesFeatureFlag(ctx context.Context, req EnableQueuesFeatureFlagRequest) error {
-	return a.features.Enable(ctx, req.OrgID, map[string]bool{
-		string(app.OrgFeatureAppBranches): true,
-	})
-}
-
 type UpdateOrgStatusV2MetadataRequest struct {
 	OrgID string         `validate:"required"`
 	Data  map[string]any `validate:"required"`
