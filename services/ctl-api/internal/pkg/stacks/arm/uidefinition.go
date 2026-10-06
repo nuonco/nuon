@@ -108,6 +108,9 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 	}
 
 	inputLabels := azureInputLabels(inp)
+	for name, label := range azureSecretLabels(inp) {
+		inputLabels[name] = label
+	}
 	claimed := map[string]bool{}
 	for _, group := range inner.stackParameterGroups {
 		elements := []any{}

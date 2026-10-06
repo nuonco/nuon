@@ -242,7 +242,7 @@ func TestQuickLinkUIDefinition_PromptsForEveryParameter(t *testing.T) {
 	inp := minimalTemplateInput()
 	inp.DeploymentScope = app.StackDeploymentScopeSubscription
 	inp.AppCfg.SecretsConfig.Secrets = []app.AppSecretConfig{
-		{Name: "db_password", Required: true},
+		{Name: "db_password", DisplayName: "Database password", Description: "Password for the app database.", Required: true},
 	}
 
 	tmpl := &Templates{cfg: &internal.Config{}}
@@ -282,8 +282,16 @@ func TestQuickLinkUIDefinition_PromptsForEveryParameter(t *testing.T) {
 		if p.Type == "securestring" && field.element["type"] != "Microsoft.Common.PasswordBox" {
 			t.Errorf("securestring parameter %q rendered as %v, want a PasswordBox", name, field.element["type"])
 		}
-		if name == "secretDbPassword" && field.sectionLabel != "" {
-			t.Errorf("secret rendered inside stack section %q", field.sectionLabel)
+		if name == "secretDbPassword" {
+			if field.sectionLabel != "" {
+				t.Errorf("secret rendered inside stack section %q", field.sectionLabel)
+			}
+			if got := field.element["label"]; got != "Database password" {
+				t.Errorf("secret label = %v, want the display name", got)
+			}
+			if got := field.element["toolTip"]; got != "Password for the app database." {
+				t.Errorf("secret toolTip = %v, want the description", got)
+			}
 		}
 		if got, want := outputs[name], wantParameterOutput(field.ref, p); got != want {
 			t.Errorf("outputs[%q] = %v, want %v", name, got, want)
