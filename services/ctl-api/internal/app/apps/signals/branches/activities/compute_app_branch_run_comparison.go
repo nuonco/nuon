@@ -146,25 +146,20 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 	case headSHA != "" && baseSHA != "":
 		vcsConfigID := branchVCSConfigID(branch)
 		if vcsConfigID == "" {
-			a.l.Warn("no VCS config for git diff",
-				zap.String("app_branch_id", input.AppBranchID),
-				zap.String("run_id", input.RunID))
-		} else {
-			workspaceID := fmt.Sprintf("app-branch-run-comparison-%s", comparison.ID)
-			gitDiff, gitErr := a.computeGitDiffBetweenSHAs(ctx, vcsConfigID, baseSHA, headSHA, workspaceID)
-			if gitErr != nil {
-				a.l.Warn("git diff failed; continuing with config diffs",
-					zap.String("run_id", input.RunID),
-					zap.Error(gitErr))
-			} else if gitDiff != nil {
-				changedPaths = gitDiff.ChangedPaths
-				out.FilesChanged = gitDiff.FilesChanged
-				if err := a.uploadComparisonBlob(ctx, comparison.ID, "git_diff", gitDiff, &comparison.GitDiff); err != nil {
-					a.l.Warn("unable to store git diff blob", zap.Error(err))
-				} else {
-					out.GitDiffStored = true
-				}
+			return nil, fmt.Errorf("no VCS config for git diff on run %s", input.RunID)
+		}
+		workspaceID := fmt.Sprintf("app-branch-run-comparison-%s", comparison.ID)
+		gitDiff, gitErr := a.computeGitDiffBetweenSHAs(ctx, vcsConfigID, baseSHA, headSHA, workspaceID)
+		if gitErr != nil {
+			return nil, fmt.Errorf("unable to diff %s..%s: %w", baseSHA, headSHA, gitErr)
+		}
+		if gitDiff != nil {
+			changedPaths = gitDiff.ChangedPaths
+			out.FilesChanged = gitDiff.FilesChanged
+			if err := a.uploadComparisonBlob(ctx, comparison.ID, "git_diff", gitDiff, &comparison.GitDiff); err != nil {
+				return nil, fmt.Errorf("unable to store git diff: %w", err)
 			}
+			out.GitDiffStored = true
 		}
 	default:
 		a.l.Warn("missing commit SHAs for git diff",
@@ -204,8 +199,7 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 
 	componentSources, dirErr := a.loadComponentSources(ctx, headRun.AppConfigID)
 	if dirErr != nil {
-		a.l.Warn("unable to load component sources for source_changed", zap.Error(dirErr))
-		componentSources = nil
+		return nil, fmt.Errorf("unable to load component sources: %w", dirErr)
 	}
 
 	configDiff := a.computeAndEnrichConfigDiff(ctx, branch, fullDiff, componentSources, changedPaths, headRun.AppConfigID, baseRun.AppConfigID)
@@ -214,12 +208,13 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 		if !noBase && baseRun.AppConfigID != "" {
 			loaded, shaErr := a.loadComponentBuildSHAs(ctx, baseRun.AppConfigID)
 			if shaErr != nil {
-				a.l.Warn("unable to load base component build commits", zap.Error(shaErr))
-			} else {
-				baseSHAs = loaded
+				return nil, fmt.Errorf("unable to load base component build commits: %w", shaErr)
 			}
+			baseSHAs = loaded
 		}
-		applySourceCommitComparison(configDiff, baseSHAs, currentComponentSHAs(componentSources, branch, headSHA))
+		if err := a.applyExternalSourceChanges(ctx, componentSources, branchRepo(branch), configDiff, baseSHAs); err != nil {
+			return nil, err
+		}
 	}
 	if err := a.uploadComparisonBlob(ctx, comparison.ID, "config_diff", configDiff, &comparison.ConfigDiff); err != nil {
 		return nil, fmt.Errorf("unable to store config diff blob: %w", err)
@@ -273,20 +268,6 @@ func branchRepoAndBranch(branch *app.AppBranch) (string, string) {
 		return cfg.PublicGitVCSConfig.Repo, cfg.PublicGitVCSConfig.Branch
 	}
 	return "", ""
-}
-
-func currentComponentSHAs(sources []componentSource, branch *app.AppBranch, headSHA string) map[string]string {
-	out := map[string]string{}
-	if headSHA == "" {
-		return out
-	}
-	repo, branchName := branchRepoAndBranch(branch)
-	for _, src := range sources {
-		if componentTracksRun(src, repo, branchName) {
-			out[src.Name] = headSHA
-		}
-	}
-	return out
 }
 
 func (a *Activities) loadComponentBuildSHAs(ctx context.Context, appConfigID string) (map[string]string, error) {
@@ -442,7 +423,7 @@ func (a *Activities) persistComparisonBlobs(ctx context.Context, comparison *app
 // componentRepoDirectory reads the repo from the preloaded typed config.
 // AfterQuery copies those pointers onto the connection before preloads run,
 // so the connection-level fields are still empty here.
-func componentRepoDirectory(c *app.ComponentConfigConnection) (string, string, string) {
+func componentRepoDirectory(c *app.ComponentConfigConnection) (string, string, string, string) {
 	switch {
 	case c.HelmComponentConfig != nil:
 		return vcsRepoDirectory(c.HelmComponentConfig.ConnectedGithubVCSConfig, c.HelmComponentConfig.PublicGitVCSConfig)
@@ -459,14 +440,14 @@ func componentRepoDirectory(c *app.ComponentConfigConnection) (string, string, s
 	}
 }
 
-func vcsRepoDirectory(github *app.ConnectedGithubVCSConfig, public *app.PublicGitVCSConfig) (string, string, string) {
+func vcsRepoDirectory(github *app.ConnectedGithubVCSConfig, public *app.PublicGitVCSConfig) (string, string, string, string) {
 	if github != nil && github.Repo != "" {
-		return github.Repo, github.Directory, github.Branch
+		return github.Repo, github.Directory, github.Branch, github.ID
 	}
 	if public != nil && public.Repo != "" {
-		return public.Repo, public.Directory, public.Branch
+		return public.Repo, public.Directory, public.Branch, public.ID
 	}
-	return "", "", ""
+	return "", "", "", ""
 }
 
 func (a *Activities) loadComponentSources(ctx context.Context, appConfigID string) ([]componentSource, error) {
@@ -500,7 +481,7 @@ func (a *Activities) loadComponentSources(ctx context.Context, appConfigID strin
 			continue
 		}
 		src := componentSource{Name: name}
-		src.Repo, src.Directory, src.Branch = componentRepoDirectory(c)
+		src.Repo, src.Directory, src.Branch, src.VCSConfigID = componentRepoDirectory(c)
 		if c.KubernetesManifestComponentConfig != nil &&
 			c.KubernetesManifestComponentConfig.Kustomize != nil &&
 			c.KubernetesManifestComponentConfig.Kustomize.Path != "" {

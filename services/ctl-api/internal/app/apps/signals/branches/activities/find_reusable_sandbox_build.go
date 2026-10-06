@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -35,44 +36,9 @@ func (a *Activities) FindReusableSandboxBuild(ctx context.Context, input *FindRe
 		return out, nil
 	}
 
-	sha, err := a.sandboxSourceSHA(ctx, input.RunID, cfg)
-	if err != nil || sha == "" {
-		return out, nil
-	}
-
-	var builds []app.AppSandboxBuild
-	err = a.db.WithContext(ctx).
-		Preload("VCSConnectionCommit").
-		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
-		Preload("AppSandboxConfig.PublicGitVCSConfig").
-		Where(app.AppSandboxBuild{
-			AppID:  input.AppID,
-			Status: app.AppSandboxBuildStatusActive,
-		}).
-		Order("created_at DESC").
-		Limit(25).
-		Find(&builds).Error
+	run, err := a.getAppBranchRunByID(ctx, input.RunID)
 	if err != nil {
-		return out, nil
-	}
-
-	for i := range builds {
-		build := &builds[i]
-		if build.VCSConnectionCommit == nil || build.VCSConnectionCommit.SHA != sha {
-			continue
-		}
-		if sandboxConfigsEquivalent(cfg, &build.AppSandboxConfig) {
-			out.BuildID = build.ID
-			return out, nil
-		}
-	}
-	return out, nil
-}
-
-func (a *Activities) sandboxSourceSHA(ctx context.Context, runID string, cfg *app.AppSandboxConfig) (string, error) {
-	run, err := a.getAppBranchRunByID(ctx, runID)
-	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	sandboxRepo, sandboxVCSID := sandboxConfigRepo(cfg)
@@ -82,27 +48,77 @@ func (a *Activities) sandboxSourceSHA(ctx context.Context, runID string, cfg *ap
 	} else if run.AppBranchConfig.PublicGitVCSConfig != nil {
 		branchRepo = run.AppBranchConfig.PublicGitVCSConfig.Repo
 	}
+	directory := sandboxConfigDirectory(cfg)
+
 	if repoURLsEqual(sandboxRepo, branchRepo) {
-		if run.VCSConnectionCommit != nil && run.VCSConnectionCommit.SHA != "" {
-			return run.VCSConnectionCommit.SHA, nil
+		paths, ok, pathErr := a.comparisonChangedPaths(ctx, input.RunID)
+		if pathErr != nil {
+			return nil, pathErr
 		}
-		return run.HeadSHA, nil
+		if !ok || anyPathMatchesDirectory(paths, directory) {
+			return out, nil
+		}
+		build, findErr := a.latestEquivalentSandboxBuild(ctx, input.AppID, cfg)
+		if findErr != nil {
+			return nil, findErr
+		}
+		if build != nil {
+			out.BuildID = build.ID
+		}
+		return out, nil
 	}
 
-	gitSource, err := a.GetSandboxBuildGitSource(ctx, GetSandboxBuildGitSourceRequest{
-		SandboxConfigID: cfg.ID,
-	})
-	if err != nil || gitSource == nil || gitSource.Ref == "" || sandboxVCSID == "" {
-		return "", err
+	if sandboxVCSID == "" {
+		return nil, fmt.Errorf("sandbox source %s has no vcs config", sandboxRepo)
 	}
-	commit, err := a.FetchCommitBySHA(ctx, &FetchCommitBySHAInput{
-		VcsConfigID: sandboxVCSID,
-		SHA:         gitSource.Ref,
-	})
-	if err != nil || commit == nil {
-		return "", err
+	latest, err := a.latestVCSCommitSHA(ctx, sandboxVCSID, sandboxConfigBranch(cfg))
+	if err != nil {
+		return nil, fmt.Errorf("unable to resolve sandbox commit: %w", err)
 	}
-	return commit.SHA, nil
+	build, err := a.latestEquivalentSandboxBuild(ctx, input.AppID, cfg)
+	if err != nil {
+		return nil, err
+	}
+	if build == nil || build.VCSConnectionCommit == nil || build.VCSConnectionCommit.SHA == "" {
+		return out, nil
+	}
+	previous := build.VCSConnectionCommit.SHA
+	if previous != latest {
+		paths, pathErr := a.changedPathsBetween(ctx, sandboxVCSID, previous, latest)
+		if pathErr != nil {
+			return nil, pathErr
+		}
+		if anyPathMatchesDirectory(paths, directory) {
+			return out, nil
+		}
+	}
+	out.BuildID = build.ID
+	return out, nil
+}
+
+func (a *Activities) latestEquivalentSandboxBuild(ctx context.Context, appID string, cfg *app.AppSandboxConfig) (*app.AppSandboxBuild, error) {
+	var builds []app.AppSandboxBuild
+	err := a.db.WithContext(ctx).
+		Preload("VCSConnectionCommit").
+		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
+		Preload("AppSandboxConfig.PublicGitVCSConfig").
+		Where(app.AppSandboxBuild{
+			AppID:  appID,
+			Status: app.AppSandboxBuildStatusActive,
+		}).
+		Order("created_at DESC").
+		Limit(25).
+		Find(&builds).Error
+	if err != nil {
+		return nil, fmt.Errorf("unable to list sandbox builds: %w", err)
+	}
+	for i := range builds {
+		if sandboxConfigsEquivalent(cfg, &builds[i].AppSandboxConfig) {
+			build := builds[i]
+			return &build, nil
+		}
+	}
+	return nil, nil
 }
 
 func sandboxConfigsEquivalent(a, b *app.AppSandboxConfig) bool {

@@ -2,17 +2,17 @@ package activities
 
 import (
 	"path/filepath"
-	"sort"
 	"strings"
 
 	pkgconfig "github.com/nuonco/nuon/pkg/config"
 )
 
 type componentSource struct {
-	Name      string
-	Repo      string
-	Directory string
-	Branch    string
+	Name        string
+	Repo        string
+	Directory   string
+	Branch      string
+	VCSConfigID string
 }
 
 // normalizeRepoPath cleans a repo-relative path for prefix matching.
@@ -155,39 +155,16 @@ func enrichConfigDiffWithSourceChanged(
 	return out
 }
 
-// componentTracksRun reports whether the component is built from the same repo
-// and branch as the app branch run, across connected and public git configs.
-func componentTracksRun(src componentSource, repo, branch string) bool {
-	if !repoURLsEqual(src.Repo, repo) || src.Branch == "" || branch == "" {
-		return false
-	}
-	return src.Branch == branch
-}
-
-// applySourceCommitComparison marks a component source-changed when the commit
-// stored on the base config's build differs from the commit this run would
-// build. Components missing from the config diff are added so a source-only
-// change is visible.
-func applySourceCommitComparison(out *ConfigDiffWithSourceOutput, baseSHAs, currentSHAs map[string]string) {
-	if out == nil {
+// markComponentSourceChanged records a source-only change. Components missing
+// from the config diff are added so the change is visible.
+func markComponentSourceChanged(out *ConfigDiffWithSourceOutput, name string) {
+	if out == nil || name == "" {
 		return
 	}
 	if out.ComponentSourceChanged == nil {
 		out.ComponentSourceChanged = map[string]bool{}
 	}
-
-	names := make([]string, 0, len(currentSHAs))
-	for name, current := range currentSHAs {
-		if name == "" || current == "" || baseSHAs[name] == current {
-			continue
-		}
-		out.ComponentSourceChanged[name] = true
-		names = append(names, name)
-	}
-	if len(names) == 0 {
-		return
-	}
-	sort.Strings(names)
+	out.ComponentSourceChanged[name] = true
 
 	idx := -1
 	for i := range out.Sections {
@@ -201,26 +178,19 @@ func applySourceCommitComparison(out *ConfigDiffWithSourceOutput, baseSHAs, curr
 		idx = len(out.Sections) - 1
 	}
 
-	present := make(map[string]int, len(out.Sections[idx].Entries))
 	for i, entry := range out.Sections[idx].Entries {
-		present[entry.Name] = i
-	}
-
-	added := 0
-	for _, name := range names {
-		if i, ok := present[name]; ok {
+		if entry.Name == name {
 			out.Sections[idx].Entries[i].SourceChanged = true
-			continue
+			return
 		}
-		out.Sections[idx].Entries = append(out.Sections[idx].Entries, ConfigDiffEntryWithSource{
-			Op:            "change",
-			Name:          name,
-			SourceChanged: true,
-		})
-		added++
 	}
-	out.Sections[idx].Changed += added
-	out.Changed += added
+	out.Sections[idx].Entries = append(out.Sections[idx].Entries, ConfigDiffEntryWithSource{
+		Op:            "change",
+		Name:          name,
+		SourceChanged: true,
+	})
+	out.Sections[idx].Changed++
+	out.Changed++
 }
 
 // sectionMemberFallbackKeys returns extra member keys to try for a section

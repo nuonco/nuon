@@ -104,20 +104,14 @@ func TestEnrichConfigDiffWithSourceChanged(t *testing.T) {
 	require.False(t, out.ComponentSourceChanged["charts"])
 }
 
-func TestApplySourceCommitComparisonAddsSourceOnlyComponent(t *testing.T) {
+func TestMarkComponentSourceChangedAddsSourceOnlyComponent(t *testing.T) {
 	out := &ConfigDiffWithSourceOutput{
 		Sections: []ConfigDiffSectionWithSource{
 			{Name: "Inputs", Entries: []ConfigDiffEntryWithSource{{Op: "change", Name: "dns"}}},
 		},
 		ComponentSourceChanged: map[string]bool{},
 	}
-	applySourceCommitComparison(out, map[string]string{
-		"application_load_balancer": "e5aef07",
-		"unchanged":                 "e5aef07",
-	}, map[string]string{
-		"application_load_balancer": "d555f378",
-		"unchanged":                 "e5aef07",
-	})
+	markComponentSourceChanged(out, "application_load_balancer")
 
 	require.True(t, out.ComponentSourceChanged["application_load_balancer"])
 	require.False(t, out.ComponentSourceChanged["unchanged"])
