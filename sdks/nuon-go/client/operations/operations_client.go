@@ -19784,7 +19784,7 @@ func (a *Client) MngVMShutDown(params *MngVMShutDownParams, authInfo runtime.Cli
 /*
 MoveInstallToAppBranch moves an install to another app branch
 
-Moves the install to the given app branch and reconciles it onto that branch's current app config. An install belongs to exactly one app branch and this is the only way to change which one; labels and install group selectors decide which group inside the owning branch deploys it. The destination branch must belong to the same app and have an active, non-preview app config. There is no way to move an install off a branch without naming another.
+Moves the install to the given app branch and reconciles it onto that branch's current app config when one exists. An install belongs to exactly one app branch and this is the only way to change which one; labels and install group selectors decide which group inside the owning branch deploys it. The destination branch must belong to the same app. A branch with no completed run still accepts the install, and the deploy waits until a branch run completes. There is no way to move an install off a branch without naming another.
 */
 func (a *Client) MoveInstallToAppBranch(params *MoveInstallToAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MoveInstallToAppBranchOK, error) {
 	// NOTE: parameters are not validated before sending
