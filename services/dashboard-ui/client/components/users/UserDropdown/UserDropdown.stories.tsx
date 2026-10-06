@@ -39,6 +39,7 @@ export const Admin = () => (
         isDev={false}
         apiUrl="https://api.nuon.co"
         adminDashboardUrl="https://admin.nuon.co"
+        grafanaUiUrl="https://app.nuon.co/admin/grafana"
         authServiceUrl="https://auth.nuon.co"
         notificationsSupported
         notificationPermission="granted"

@@ -58,6 +58,7 @@ type clientConfig struct {
 	APIUrl                 string `json:"apiUrl"`
 	RunnerAPIUrl           string `json:"runnerApiUrl,omitempty"`
 	TemporalUIUrl          string `json:"temporalUiUrl,omitempty"`
+	GrafanaUIUrl           string `json:"grafanaUiUrl,omitempty"`
 	AuthServiceUrl         string `json:"authServiceUrl,omitempty"`
 	AppUrl                 string `json:"appUrl"`
 	GithubAppName          string `json:"githubAppName"`
@@ -88,6 +89,7 @@ func buildClientConfig(cfg *internal.Config) clientConfig {
 		APIUrl:                 cfg.APIUrl,
 		RunnerAPIUrl:           cfg.RunnerAPIUrl,
 		TemporalUIUrl:          cfg.TemporalUIUrl,
+		GrafanaUIUrl:           cfg.GrafanaUIUrl,
 		AuthServiceUrl:         cfg.AuthServiceUrl,
 		AppUrl:                 cfg.AppUrl,
 		GithubAppName:          cfg.GithubAppName,
