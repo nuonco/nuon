@@ -68,25 +68,10 @@ func TestParseComponentOverrideInputName_NonOverride(t *testing.T) {
 	}
 }
 
-func TestEnabledOverrideInputNameRaw_RoundTrip(t *testing.T) {
-	comp := "grafana_lgtm"
-	raw := EnabledOverrideInputNameRaw(comp)
-	if raw != ComponentOverrideInputPrefix+"enabled_"+comp {
-		t.Fatalf("raw = %q", raw)
-	}
-	if !IsEnabledOverrideInputNameRaw(raw) {
-		t.Fatalf("IsEnabledOverrideInputNameRaw(%q) = false", raw)
-	}
-	if IsEnabledOverrideInputNameRaw(EnabledOverrideInputName(comp)) {
-		t.Fatalf("hex SoT key should not be reported as raw alias")
-	}
-
-	kind, got, ok := ParseComponentOverrideInputName(raw)
-	if !ok {
-		t.Fatal("parse raw ok=false")
-	}
-	if kind != ComponentOverrideKindEnabled || got != comp {
-		t.Fatalf("got kind=%q comp=%q", kind, got)
+func TestParseComponentOverrideInputName_RejectsCleartextEnabled(t *testing.T) {
+	name := ComponentOverrideInputPrefix + "enabled_grafana_lgtm"
+	if _, _, ok := ParseComponentOverrideInputName(name); ok {
+		t.Fatalf("ParseComponentOverrideInputName(%q) ok=true, want false", name)
 	}
 }
 
