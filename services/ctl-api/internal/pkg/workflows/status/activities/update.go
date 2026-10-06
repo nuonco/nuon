@@ -945,6 +945,9 @@ type UpdateDeployStatusV2Request struct {
 	Status            app.Status `validate:"required"`
 	StatusDescription string     `validate:"required"`
 	SkipStatusSync    bool
+	// SyncStatusUnlessLive overrides SkipStatusSync when the install
+	// component's status is not live (see InstallComponentStatus.KeepsStatusOnPlan).
+	SyncStatusUnlessLive bool
 }
 
 // @temporal-gen-v2 activity
@@ -968,7 +971,7 @@ func (a *Activities) UpdateDeployStatusV2(ctx context.Context, req UpdateDeployS
 	if err != nil {
 		return fmt.Errorf("unable to update install deploy: %w", err)
 	}
-	if req.SkipStatusSync {
+	if req.SkipStatusSync && !req.SyncStatusUnlessLive {
 		return nil
 	}
 
@@ -979,6 +982,9 @@ func (a *Activities) UpdateDeployStatusV2(ctx context.Context, req UpdateDeployS
 		First(&extantInstallDeploy)
 	if res.Error != nil {
 		return fmt.Errorf("unable to get install deploy: %w", res.Error)
+	}
+	if req.SkipStatusSync && extantInstallDeploy.InstallComponent.Status.KeepsStatusOnPlan() {
+		return nil
 	}
 
 	compositeStatus = app.NewCompositeStatus(ctx, req.Status)

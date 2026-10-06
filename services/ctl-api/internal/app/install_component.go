@@ -58,6 +58,21 @@ func (s InstallComponentStatus) HasDeployed() bool {
 	return false
 }
 
+// KeepsStatusOnPlan reports whether a sync-and-plan step leaves the component's
+// status alone: a component whose last deploy is live (or that is disabled)
+// keeps it until an apply changes it, so a failed re-plan or drift plan
+// doesn't mark a running component failed. Other components, such as one that
+// has never deployed or whose last deploy failed, take the plan step's status.
+func (s InstallComponentStatus) KeepsStatusOnPlan() bool {
+	switch s {
+	case InstallComponentStatusActive,
+		InstallComponentStatusNoop,
+		InstallComponentStatusDisabled:
+		return true
+	}
+	return false
+}
+
 // EverDeployed reports whether a deploy has ever run, staying true mid-redeploy
 // (previous workload still serving) using a prior health verdict as proof.
 func (ic *InstallComponent) EverDeployed() bool {

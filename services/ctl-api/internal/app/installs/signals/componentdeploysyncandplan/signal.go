@@ -303,7 +303,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	err = s.pollForDeployableBuild(ctx, installDeploy.ID, installDeploy.ComponentBuildID)
 	if err != nil {
 		if s.recordBuildFailureCompositeError(ctx, installDeploy.ID, installDeploy.ComponentBuildID) {
-			s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "component build failed")
+			s.updateDeployFailed(ctx, installDeploy.ID, "component build failed")
 		} else {
 			s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusNoop, "build is not deployable")
 		}
@@ -312,7 +312,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	defer func() {
 		if pan := recover(); pan != nil {
-			s.updateDeployStatusWithoutStatusSync(ctx, s.DeployID, app.InstallDeployStatusError, "internal error")
+			s.updateDeployFailed(ctx, s.DeployID, "internal error")
 			panic(pan)
 		}
 	}()
@@ -331,6 +331,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return err
 	}
 
+	// execSync and execPlan record why they failed with updateDeployFailed; the
+	// generic messages below only replace the deploy's, so the install
+	// component keeps the specific one.
 	l.Info("syncing oci artifact")
 	if err := s.execSync(ctx, install, installDeploy, s.SandboxMode); err != nil {
 		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to sync")
@@ -444,7 +447,7 @@ func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDep
 
 	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
 	if err != nil {
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get component build")
+		s.updateDeployFailed(ctx, installDeploy.ID, "unable to get component build")
 		return fmt.Errorf("unable to get build: %w", err)
 	}
 
@@ -468,7 +471,7 @@ func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDep
 		},
 	})
 	if err != nil {
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")
+		s.updateDeployFailed(ctx, installDeploy.ID, "unable to create runner job")
 		return fmt.Errorf("unable to create runner job: %w", err)
 	}
 	s.runnerJobID = runnerJob.ID
@@ -481,7 +484,7 @@ func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDep
 		WorkflowID: fmt.Sprintf("%s-create-oci-sync-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
+		s.updateDeployFailed(ctx, installDeploy.ID, "unable to store runner job plan")
 		return errors.Wrap(err, "unable to create plan")
 	}
 
@@ -498,7 +501,7 @@ func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDep
 			SyncOCIPlan: runPlan,
 		},
 	}); err != nil {
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
+		s.updateDeployFailed(ctx, installDeploy.ID, "unable to store runner job plan")
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
@@ -511,7 +514,7 @@ func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDep
 		WorkflowID: fmt.Sprintf("%s-execute-job", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, job.JobErrorMessage(err, "sync job failed"))
+		s.updateDeployFailed(ctx, installDeploy.ID, job.JobErrorMessage(err, "sync job failed"))
 		l.Error("error polling sync image job", zap.Error(err))
 		return fmt.Errorf("unable to poll job: %w", err)
 	}
@@ -551,7 +554,7 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 
 	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
 	if err != nil {
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get component build")
+		s.updateDeployFailed(ctx, installDeploy.ID, "unable to get component build")
 		return fmt.Errorf("unable to get build: %w", err)
 	}
 
@@ -588,7 +591,7 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 		},
 	})
 	if err != nil {
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")
+		s.updateDeployFailed(ctx, installDeploy.ID, "unable to create runner job")
 		return fmt.Errorf("unable to create runner job: %w", err)
 	}
 	s.runnerJobID = runnerJob.ID
@@ -607,7 +610,7 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 		WorkflowID: fmt.Sprintf("%s-create-deploy-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create deploy plan")
+		s.updateDeployFailed(ctx, installDeploy.ID, "unable to create deploy plan")
 		if planCompositeErrorsEnabled && deployerrors.IsDeployPlanRenderFailed(err) {
 			_ = activities.AwaitSetInstallDeployPlanCompositeError(ctx, activities.SetInstallDeployPlanCompositeErrorRequest{
 				InstallDeployID: installDeploy.ID,
@@ -621,7 +624,7 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 
 	planJSON, err := json.Marshal(deployPlan.Plan)
 	if err != nil {
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create json from deploy plan")
+		s.updateDeployFailed(ctx, installDeploy.ID, "unable to create json from deploy plan")
 		return errors.Wrap(err, "unable to create json from plan")
 	}
 
@@ -632,7 +635,7 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 			DeployPlan: deployPlan.Plan,
 		},
 	}); err != nil {
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
+		s.updateDeployFailed(ctx, installDeploy.ID, "unable to store runner job plan")
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
@@ -641,7 +644,7 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 		RunnerJobID:   runnerJob.ID,
 		RoleSelection: deployPlan.RoleSelection,
 	}); err != nil {
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to record install role usage")
+		s.updateDeployFailed(ctx, installDeploy.ID, "unable to record install role usage")
 		return fmt.Errorf("unable to record install role usage: %w", err)
 	}
 
@@ -656,7 +659,7 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 	})
 	if err != nil {
 		msg := job.JobErrorMessage(err, "plan job failed")
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, msg)
+		s.updateDeployFailed(ctx, installDeploy.ID, msg)
 		l.Error("job did not succeed", zap.Error(err))
 		return fmt.Errorf("unable to get install: %w", err)
 	}
@@ -712,6 +715,37 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 	}
 
 	return nil
+}
+
+// updateDeployFailed marks the deploy failed. The install component takes the
+// error too unless its last deploy is live: a component that has never
+// deployed, or whose last deploy failed, would otherwise keep showing the
+// status it had before this step, since only the apply step syncs status.
+func (s *Signal) updateDeployFailed(ctx workflow.Context, deployID string, message string) {
+	l := workflow.GetLogger(ctx)
+	if err := activities.AwaitUpdateDeployStatus(ctx, activities.UpdateDeployStatusRequest{
+		DeployID:             deployID,
+		Status:               app.InstallDeployStatusError,
+		StatusDescription:    message,
+		SkipStatusSync:       true,
+		SyncStatusUnlessLive: true,
+	}); err != nil {
+		l.Error("unable to update deploy status",
+			zap.String("deploy-id", deployID),
+			zap.Error(err))
+	}
+
+	if err := statusactivities.AwaitUpdateDeployStatusV2(ctx, statusactivities.UpdateDeployStatusV2Request{
+		DeployID:             deployID,
+		Status:               app.Status(app.InstallDeployStatusError),
+		StatusDescription:    message,
+		SkipStatusSync:       true,
+		SyncStatusUnlessLive: true,
+	}); err != nil {
+		l.Error("unable to update deploy status v2",
+			zap.String("deploy-id", deployID),
+			zap.Error(err))
+	}
 }
 
 func (s *Signal) updateDeployStatusWithoutStatusSync(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string) {

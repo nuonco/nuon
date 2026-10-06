@@ -14,6 +14,9 @@ type UpdateDeployStatusRequest struct {
 	Status            app.InstallDeployStatus `validate:"required"`
 	StatusDescription string                  `validate:"required"`
 	SkipStatusSync    bool
+	// SyncStatusUnlessLive overrides SkipStatusSync when the install
+	// component's status is not live (see InstallComponentStatus.KeepsStatusOnPlan).
+	SyncStatusUnlessLive bool
 }
 
 // @temporal-gen-v2 activity
@@ -41,7 +44,9 @@ func (a *Activities) UpdateDeployStatus(ctx context.Context, req UpdateDeploySta
 		return fmt.Errorf("unable to get install deploy: %w", res.Error)
 	}
 
-	if !req.SkipStatusSync {
+	syncStatus := !req.SkipStatusSync ||
+		(req.SyncStatusUnlessLive && !extantInstallDeploy.InstallComponent.Status.KeepsStatusOnPlan())
+	if syncStatus {
 		installComponent := app.InstallComponent{
 			ID: extantInstallDeploy.InstallComponent.ID,
 		}
