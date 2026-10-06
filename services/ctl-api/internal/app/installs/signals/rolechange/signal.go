@@ -1,15 +1,17 @@
 package rolechange
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/actions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/actionworkflowrun"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/executeactionworkflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 const SignalType signal.SignalType = "role-change"
@@ -66,35 +68,67 @@ func (s *Signal) Validate(_ workflow.Context) error {
 	return nil
 }
 
+// Execute enqueues an actionworkflowrun signal for each install action with a
+// matching role-enabled/role-disabled trigger.
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
 	triggerType := s.triggerType()
 
-	runEnvVars := map[string]*string{
-		"TRIGGER_TYPE": strPtr(string(triggerType)),
-		"ROLE_NAME":    strPtr(s.RoleName),
-		"ROLE_TYPE":    strPtr(s.RoleType),
-		"CHANGE_TYPE":  strPtr(s.ChangeType),
-		"ROLE_ID":      strPtr(s.RoleID),
-		"ROLE_ARN":     strPtr(s.RoleID),
+	runEnvVars := map[string]string{
+		"TRIGGER_TYPE": string(triggerType),
+		"ROLE_NAME":    s.RoleName,
+		"ROLE_TYPE":    s.RoleType,
+		"CHANGE_TYPE":  s.ChangeType,
+		"ROLE_ID":      s.RoleID,
+		"ROLE_ARN":     s.RoleID,
 	}
 
-	wfID := fmt.Sprintf("role-change-actions-%s-%s-%s", s.InstallID, s.ChangeType, s.RoleName)
-	if err := actions.AwaitLifecycleActionWorkflows(ctx, &actions.LifecycleActionWorkflowsRequest{
-		InstallID:   s.InstallID,
-		TriggerType: triggerType,
-		RunEnvVars:  runEnvVars,
-	}, &workflow.ChildWorkflowOptions{
-		WorkflowID: wfID,
-	}); err != nil {
-		l.Warn("unable to execute role-change action workflows",
-			zap.String("install_id", s.InstallID),
-			zap.String("change_type", s.ChangeType),
-			zap.Error(err))
+	installActions, err := activities.AwaitGetActionWorkflowsByInstallID(ctx, s.InstallID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get install action workflows")
+	}
+
+	for _, installAction := range installActions {
+		cfg, err := activities.AwaitGetActionWorkflowLatestConfigByActionWorkflowID(ctx, installAction.ActionWorkflowID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get action workflow config")
+		}
+		if !hasLifecycleTrigger(cfg, triggerType) {
+			continue
+		}
+
+		if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+			OwnerID:   s.InstallID,
+			OwnerType: "installs",
+			QueueName: queuenames.InstallActionWorkflowsQueueName,
+			Signal: &executeactionworkflow.Signal{
+				Signal: &actionworkflowrun.Signal{
+					InstallID:               s.InstallID,
+					InstallActionWorkflowID: installAction.ID,
+					TriggerType:             triggerType,
+					TriggeredByType:         string(triggerType),
+					RunEnvVars:              runEnvVars,
+				},
+			},
+		}); err != nil {
+			l.Warn("unable to enqueue role-change action run",
+				zap.String("install_id", s.InstallID),
+				zap.String("install_action_workflow_id", installAction.ID),
+				zap.Error(err))
+		}
 	}
 
 	return nil
+}
+
+func hasLifecycleTrigger(cfg *app.ActionWorkflowConfig, triggerType app.ActionWorkflowTriggerType) bool {
+	for _, trigger := range cfg.LifecycleTriggers {
+		if trigger.Type == triggerType {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Signal) triggerType() app.ActionWorkflowTriggerType {
@@ -102,8 +136,4 @@ func (s *Signal) triggerType() app.ActionWorkflowTriggerType {
 		return app.ActionWorkflowTriggerTypeRoleEnabled
 	}
 	return app.ActionWorkflowTriggerTypeRoleDisabled
-}
-
-func strPtr(s string) *string {
-	return &s
 }
