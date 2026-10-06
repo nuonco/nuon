@@ -215,6 +215,7 @@ export const BranchOverviewContainer = () => {
             <BranchRunChangesSummary
               branchId={branchId}
               appBranchRunId={branchRunId}
+              builds={metaBuilds}
               title="Template and source changes"
               isPending={changesPending}
               headerAction={

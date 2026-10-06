@@ -32,12 +32,19 @@ export const changeReasonFor = (build: TBuildMeta) =>
 
 export const buildChanged = (build: TBuildMeta) => {
   const reason = changeReasonFor(build)
-  return (
-    reason === 'source_changed' ||
-    reason === 'config_changed' ||
-    reason === 'source_and_config'
-  )
+  return isConfigChange(reason) || isSourceChange(reason)
 }
+
+export const isConfigChange = (reason?: string) =>
+  reason === 'config_changed' || reason === 'source_and_config'
+
+export const isSourceChange = (reason?: string) =>
+  reason === 'source_changed' || reason === 'source_and_config'
+
+export const splitChangedBuilds = (rows: TChangedBuildRow[]) => ({
+  config: rows.filter((row) => isConfigChange(row.changeReason)),
+  source: rows.filter((row) => isSourceChange(row.changeReason)),
+})
 
 const componentHref = (orgId: string, appId: string, componentId: string, buildId: string) =>
   `/${orgId}/apps/${appId}/components/${componentId}/builds/${buildId}`
