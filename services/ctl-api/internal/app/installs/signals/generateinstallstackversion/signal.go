@@ -28,6 +28,8 @@ import (
 // histories (DefaultVersion) skip it to stay deterministic.
 const compositeErrorVersion = "generate-install-stack-version-composite-error-v1"
 
+const dedupeVersion = "generate-install-stack-version-dedupe-v1"
+
 const SignalType signal.SignalType = "generate-install-stack-version"
 
 const (
@@ -436,6 +438,22 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		Checksum: checksum,
 	}); err != nil {
 		return errors.Wrap(err, "unable to save cloudformation stack")
+	}
+
+	if workflow.GetVersion(ctx, dedupeVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		active, err := activities.AwaitGetActiveInstallStackVersionByInstallID(ctx, install.ID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get active stack version")
+		}
+		if active != nil && SameTemplate(tmplByts, stackVersion, active.Contents, active) {
+			statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: stackVersion.ID,
+				Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusOutdated, map[string]any{
+					app.InstallStackVersionDuplicateOfMetadataKey: active.ID,
+				}),
+			})
+			return nil
+		}
 	}
 
 	statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{

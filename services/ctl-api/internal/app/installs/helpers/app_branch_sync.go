@@ -98,9 +98,12 @@ func AppBranchRunResolveActivityError(err error) error {
 
 func (h *Helpers) ResolveAppBranchRunForInstall(ctx context.Context, appBranchID string, install *app.Install) (*AppBranchRunForInstall, error) {
 	run, err := h.LatestDeployableAppBranchRun(ctx, appBranchID)
-	if err != nil {
+	if err != nil && !errors.Is(err, ErrNoDeployableAppBranchRun) {
 		return nil, err
 	}
+	// A new branch can own installs before its first completed run. The pin
+	// still records the group; the deploy waits until a run exists.
+	noRun := err != nil
 
 	// Membership follows the branch's latest config (what the API and dashboard
 	// expose). Group rows are minted per config version, so a pin to a group
@@ -121,13 +124,20 @@ func (h *Helpers) ResolveAppBranchRunForInstall(ctx context.Context, appBranchID
 		}
 	}
 
-	installGroupID := ""
+	resolved := &AppBranchRunForInstall{
+		InstallGroupName:             group.Name,
+		InstallGroupAssignmentSource: source,
+	}
+	if noRun {
+		return resolved, nil
+	}
+
 	var runGroup app.AppBranchInstallGroup
 	err = h.db.WithContext(ctx).
 		Where(app.AppBranchInstallGroup{AppBranchConfigID: run.AppBranchConfigID, Name: group.Name}).
 		First(&runGroup).Error
 	if err == nil {
-		installGroupID = runGroup.ID
+		resolved.InstallGroupID = runGroup.ID
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("unable to get install group for app branch run: %w", err)
 	}
@@ -136,15 +146,10 @@ func (h *Helpers) ResolveAppBranchRunForInstall(ctx context.Context, appBranchID
 	if err != nil {
 		return nil, err
 	}
-
-	return &AppBranchRunForInstall{
-		AppBranchRunID:               run.ID,
-		AppConfigID:                  run.AppConfigID,
-		InstallGroupID:               installGroupID,
-		InstallGroupName:             group.Name,
-		InstallGroupAssignmentSource: source,
-		AlreadyCurrent:               alreadyCurrent,
-	}, nil
+	resolved.AppBranchRunID = run.ID
+	resolved.AppConfigID = run.AppConfigID
+	resolved.AlreadyCurrent = alreadyCurrent
+	return resolved, nil
 }
 
 func (h *Helpers) LatestDeployableAppBranchRun(ctx context.Context, appBranchID string) (*app.AppBranchRun, error) {
@@ -203,9 +208,9 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 
 	deployedAppConfigID := install.DeployedAppConfigID()
 
-	diff, err := configdiff.ComputeInstallConfigDiff(ctx, h.db, deployedAppConfigID, input.NewAppConfigID)
+	diff, err := h.AppBranchConfigDiff(ctx, &install, input.NewAppConfigID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to compute config diff: %w", err)
+		return nil, err
 	}
 
 	update := app.InstallAppConfigVersion{
@@ -300,4 +305,57 @@ func (h *Helpers) SaveInstallConfigDiffBlob(ctx context.Context, installConfigVe
 	}
 
 	return nil
+}
+
+// AppBranchConfigDiff diffs the install's deployed app config against newAppConfigID. The stack is decided against the
+// active stack version's app config: the applied config lags while an earlier rollout is still running after its stack
+// was applied, and diffing the stack against it re-detects a change that is already live.
+func (h *Helpers) AppBranchConfigDiff(ctx context.Context, install *app.Install, newAppConfigID string) (*app.InstallConfigDiff, error) {
+	deployedAppConfigID := install.DeployedAppConfigID()
+	diff, err := configdiff.ComputeInstallConfigDiff(ctx, h.db, deployedAppConfigID, newAppConfigID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to compute config diff: %w", err)
+	}
+	if !diff.StackChanged {
+		return diff, nil
+	}
+
+	active, err := h.getActiveStackVersion(ctx, install.ID)
+	if err != nil {
+		return nil, err
+	}
+	if active == nil || active.AppConfigID == "" || active.AppConfigID == deployedAppConfigID {
+		return diff, nil
+	}
+
+	stackDiff, err := configdiff.ComputeInstallConfigDiff(ctx, h.db, active.AppConfigID, newAppConfigID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to compute stack diff against active stack version %s: %w", active.ID, err)
+	}
+	useStackDiff(diff, stackDiff)
+	return diff, nil
+}
+
+func (h *Helpers) getActiveStackVersion(ctx context.Context, installID string) (*app.InstallStackVersion, error) {
+	var versions []app.InstallStackVersion
+	if err := h.db.WithContext(ctx).
+		Where(app.InstallStackVersion{InstallID: installID}).
+		Where("status->>'status' = ?", app.InstallStackVersionStatusActive).
+		Order("created_at DESC").
+		Limit(1).
+		Find(&versions).Error; err != nil {
+		return nil, fmt.Errorf("unable to get active stack version: %w", err)
+	}
+	if len(versions) == 0 {
+		return nil, nil
+	}
+	return &versions[0], nil
+}
+
+func useStackDiff(diff, stackDiff *app.InstallConfigDiff) {
+	diff.StackChanged = stackDiff.StackChanged
+	diff.StackOldID = stackDiff.StackOldID
+	diff.StackNewID = stackDiff.StackNewID
+	diff.StackImpacts = stackDiff.StackImpacts
+	diff.StackImpactReasons = stackDiff.StackImpactReasons
 }

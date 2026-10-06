@@ -57,10 +57,7 @@ const SandboxRunLayoutInner = () => {
     step?.approval && !step?.approval?.response && !responded && !isTerminal && stepStatus !== 'auto-skipped'
 
   const basePath = href(`/sandbox/runs/${runId}`)
-  const traceEnabled = !!org?.features?.['trace-view']
-  const tabs = sandboxTabs
-    .filter((t) => traceEnabled || t.path !== '/trace')
-    .map((t) => ({ ...t }))
+  const tabs = sandboxTabs.map((t) => ({ ...t }))
 
   if (pendingApproval && !isAutoApprove) {
     const planTab = tabs.find((t) => t.path === '/plan')

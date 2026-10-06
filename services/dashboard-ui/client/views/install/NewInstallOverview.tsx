@@ -10,6 +10,43 @@ import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallReadme } from '@/lib'
 
+export const NewInstallOverviewBody = ({
+  readme,
+  warnings,
+}: {
+  readme?: string
+  warnings?: string[]
+}) => {
+  if (!readme) {
+    // An `original` README still needs live install data to template
+    // against, so an empty render means "not ready yet", not "none exists".
+    return (
+      <Banner theme="info">
+        The readme will render after the install is active and live.
+      </Banner>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <ReadmeWarnings warnings={warnings} />
+      {warnings?.length ? (
+        <Expand
+          id="incomplete-readme"
+          heading="View incomplete README"
+          className="border rounded-lg"
+        >
+          <div className="p-4 border-t max-h-[32rem] overflow-y-auto">
+            <Markdown content={readme} mode="install" />
+          </div>
+        </Expand>
+      ) : (
+        <Markdown content={readme} mode="install" />
+      )}
+    </div>
+  )
+}
+
 export const NewInstallOverview = () => {
   const { org } = useOrg()
   const { install } = useInstall()
@@ -30,30 +67,7 @@ export const NewInstallOverview = () => {
           { path: `/${org?.id}/installs/${install?.id}`, text: install?.name },
         ]}
       />
-      {readme?.readme ? (
-        <div className="flex flex-col gap-4">
-          <ReadmeWarnings warnings={readme.warnings} />
-          {readme.warnings?.length ? (
-            <Expand
-              id="incomplete-readme"
-              heading="View incomplete README"
-              className="border rounded-lg"
-            >
-              <div className="p-4 border-t max-h-[32rem] overflow-y-auto">
-                <Markdown content={readme.readme} mode="install" />
-              </div>
-            </Expand>
-          ) : (
-            <Markdown content={readme.readme} mode="install" />
-          )}
-        </div>
-      ) : (
-        // An `original` README still needs live install data to template
-        // against, so an empty render means "not ready yet", not "none exists".
-        <Banner theme="info">
-          The readme will render after the install is active and live.
-        </Banner>
-      )}
+      <NewInstallOverviewBody readme={readme?.readme} warnings={readme?.warnings} />
     </PageSection>
   )
 }

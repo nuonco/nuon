@@ -1,5 +1,6 @@
 import { BranchRunChanges } from '@/components/branches/BranchRunChanges/BranchRunChanges'
 import { Badge } from '@/components/common/Badge'
+import { CommitLink } from '@/components/common/GitReferenceLink'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Divider } from '@/components/common/Divider'
 import { Icon } from '@/components/common/Icon'
@@ -121,12 +122,14 @@ export interface IDeploymentDetailPanel extends IPanel {
   orgId: string
   appId: string
   installId: string
+  repo?: string
 }
 
 export const DeploymentDetailPanel = ({
   deployment,
   orgId,
   appId,
+  repo,
   ...props
 }: IDeploymentDetailPanel) => {
   const branchHref = deployment.app_branch
@@ -162,11 +165,9 @@ export const DeploymentDetailPanel = ({
           <LabeledValue label="App branch">
             <span className="flex items-center gap-2 flex-wrap">
               <Link href={branchHref}>{deployment.app_branch.name}</Link>
-              {deployment.app_branch.sha && (
-                <Badge size="sm" variant="code" theme="neutral">
-                  {deployment.app_branch.sha.slice(0, 8)}
-                </Badge>
-              )}
+              {deployment.app_branch.sha ? (
+                <CommitLink sha={deployment.app_branch.sha} repo={repo} />
+              ) : null}
             </span>
           </LabeledValue>
         )}

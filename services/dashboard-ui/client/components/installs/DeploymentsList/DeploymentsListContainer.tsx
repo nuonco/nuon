@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
-import { getInstallDeployments } from '@/lib'
+import { getAppBranch, getInstallDeployments } from '@/lib'
+import { latestBranchConfig } from '@/utils/branch-utils'
+import { vcsRepo } from '@/utils/vcs-urls'
 import { useSSETimelineQuery } from '@/lib/sse/use-sse-timeline-query'
 import type { TInstallDeploymentRecordType } from '@/types'
 import {
@@ -49,6 +52,20 @@ export const DeploymentsListContainer = ({
   const { org } = useOrg()
   const { install } = useInstall()
   const [searchParams, setSearchParams] = useSearchParams()
+  const branchId = install?.app_branch?.id
+  const { data: branch } = useQuery({
+    placeholderData: keepPreviousData,
+    queryKey: ['install-branch-repo', org?.id, install?.app_id, branchId],
+    queryFn: () =>
+      getAppBranch({
+        orgId: org!.id,
+        appId: install!.app_id!,
+        branchId: branchId!,
+        latestConfig: true,
+      }),
+    enabled: !!org?.id && !!install?.app_id && !!branchId,
+  })
+  const repo = branch ? vcsRepo(latestBranchConfig(branch)) : undefined
 
   const offset = Number(searchParams.get('offset') ?? 0)
   const since = searchParams.get('since')
@@ -197,6 +214,7 @@ export const DeploymentsListContainer = ({
       orgId={org?.id ?? ''}
       appId={install?.app_id ?? ''}
       installId={install?.id ?? ''}
+      repo={repo}
       search={search}
       filter={filter}
       onSearchChange={handleSearchChange}

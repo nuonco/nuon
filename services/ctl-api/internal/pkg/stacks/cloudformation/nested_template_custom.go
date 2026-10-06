@@ -11,6 +11,7 @@ import (
 	nestedcloudformation "github.com/awslabs/goformation/v7/cloudformation/cloudformation"
 	"github.com/iancoleman/strcase"
 
+	appbundle "github.com/nuonco/nuon/pkg/appbundle"
 	"github.com/nuonco/nuon/pkg/config"
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -156,7 +157,7 @@ func (tpl *Templates) getCustomNestedStacks(inp *stacks.TemplateInput, t tagBuil
 				"Label": map[string]any{
 					"default": stack.Name,
 				},
-				"Parameters": pkggenerics.MapToKeys(defaultParams),
+				"Parameters": pkggenerics.SortedMapToKeys(defaultParams),
 			})
 		}
 
@@ -267,6 +268,23 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 
 	for cfnParamName, templateValue := range stack.Parameters {
 		explicitlyConfigured[cfnParamName] = true
+		if inp.BundleCompile && strings.Contains(templateValue, appbundle.InputPlaceholderPrefix) {
+			inputName, ok := appbundle.ParseInputPlaceholder(templateValue)
+			if !ok {
+				return nil, nil, nil, nil, nil, fmt.Errorf("parameter %q embeds install input %q inside a larger value; reference the input as the entire parameter value so it can be exported as a CloudFormation parameter", cfnParamName, templateValue)
+			}
+			topLevelParamName := logicalID + cfnParamName
+			if _, collision := roleParams[topLevelParamName]; collision {
+				return nil, nil, nil, nil, nil, fmt.Errorf("parameter %q references install input %q, which collides with role parameter %q", cfnParamName, inputName, topLevelParamName)
+			}
+			if _, reserved := reservedParamNames[topLevelParamName]; reserved {
+				return nil, nil, nil, nil, nil, fmt.Errorf("parameter %q references install input %q, but parameter %q is already taken by another resource", cfnParamName, inputName, topLevelParamName)
+			}
+			hoistedParams[topLevelParamName] = inputName
+			parameters[cfnParamName] = cloudformation.Ref(topLevelParamName)
+			delete(defaultParameters, cfnParamName)
+			continue
+		}
 		if inp.CustomStacksOnly {
 			if unrendered, ok := inp.UnrenderedCustomStackParameters[stack.Name][cfnParamName]; ok {
 				if inputName, err := config.ParseInstallInputReference(unrendered); err == nil {

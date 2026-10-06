@@ -174,18 +174,8 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		return nil, fmt.Errorf("unable to get app sandbox: %w", res.Error)
 	}
 
-	sandboxType, err := build.ResolveSandboxType(req.Type, req.TerraformVersion, req.Runtime)
-	if err != nil {
+	if _, err := build.ResolveSandboxType(req.Type, req.TerraformVersion, req.Runtime); err != nil {
 		return nil, stderr.NewInvalidRequest(err)
-	}
-	if sandboxType == config.AppSandboxTypePulumi {
-		enabled, err := s.featuresClient.OrgHasFeature(ctx, parentApp.OrgID, app.OrgFeaturePulumiSandbox)
-		if err != nil {
-			return nil, fmt.Errorf("unable to check pulumi-sandbox feature flag: %w", err)
-		}
-		if !enabled {
-			return nil, stderr.NewInvalidRequest(fmt.Errorf("pulumi sandboxes are not enabled for this organization"))
-		}
 	}
 
 	// Build VCS configs

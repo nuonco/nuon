@@ -94,3 +94,13 @@ func TestLegacyHstoreFormatStillDecodes(t *testing.T) {
 		t.Fatalf("legacy decode mismatch: %v", got)
 	}
 }
+
+func TestSortedMapToKeys(t *testing.T) {
+	got := SortedMapToKeys(map[string]int{"c": 3, "a": 1, "b": 2})
+	if want := []string{"a", "b", "c"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+	if got := SortedMapToKeys(map[string]int{}); len(got) != 0 {
+		t.Fatalf("got %v, want empty", got)
+	}
+}

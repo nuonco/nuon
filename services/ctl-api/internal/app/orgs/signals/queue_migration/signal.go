@@ -156,12 +156,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to ensure cloud connection queues: %w", err)
 	}
 
-	// 6. Enable queues feature flag
-	l.Info("enabling queues feature flag", zap.String("org_id", s.OrgID))
-	if err := activities.AwaitEnableQueuesFeatureFlagByOrgID(ctx, s.OrgID); err != nil {
-		return fmt.Errorf("unable to enable queues feature flag: %w", err)
-	}
-
 	// Mark migration finished
 	if err := activities.AwaitUpdateOrgStatusV2Metadata(ctx, activities.UpdateOrgStatusV2MetadataRequest{
 		OrgID: s.OrgID,

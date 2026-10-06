@@ -8,19 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 )
-
-func (s *service) requireAppBranches(ctx context.Context) error {
-	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureAppBranches)
-	if err != nil {
-		return err
-	}
-	if !enabled {
-		return features.ErrFeatureNotEnabled(app.OrgFeatureAppBranches)
-	}
-	return nil
-}
 
 func (s *service) findAppRef(ctx context.Context, orgID, appRef string) (*app.App, error) {
 	var a app.App

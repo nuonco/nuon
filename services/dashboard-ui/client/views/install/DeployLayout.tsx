@@ -108,10 +108,7 @@ const DeployLayoutInner = () => {
   const basePath = href(
     `/components/${componentId}/deploys/${deployId}`
   )
-  const tabs = getTabsForComponentType(
-    component?.type,
-    org?.features?.['trace-view']
-  )
+  const tabs = getTabsForComponentType(component?.type, true)
 
   if (pendingApproval && !isAutoApprove) {
     const planTab = tabs.find((t) => t.path === '/plan')
