@@ -267,8 +267,6 @@ func (s *service) newInstallInputs(
 
 // mergeInstallInputs overlays the provided subset onto the install's existing input
 // values and drops any inputs no longer defined in the pinned app input config.
-// Cleartext enabled-toggle aliases (EnabledOverrideInputNameRaw) are kept when
-// the corresponding hex SoT input is still declared.
 func mergeInstallInputs(existing map[string]*string, patch map[string]*string, appInputConfig *app.AppInputConfig) map[string]*string {
 	merged := map[string]*string{}
 	for k, v := range existing {
@@ -283,13 +281,9 @@ func mergeInstallInputs(existing map[string]*string, patch map[string]*string, a
 		appInputNames[input.Name] = struct{}{}
 	}
 	for k := range merged {
-		if _, ok := appInputNames[k]; ok {
-			continue
+		if _, ok := appInputNames[k]; !ok {
+			delete(merged, k)
 		}
-		if isAllowedEnabledOverrideAlias(k, appInputNames) {
-			continue
-		}
-		delete(merged, k)
 	}
 
 	return merged
@@ -297,18 +291,13 @@ func mergeInstallInputs(existing map[string]*string, patch map[string]*string, a
 
 func (s *service) validateVendorSourceInputs(appInputConfig *app.AppInputConfig, inputs map[string]*string) error {
 	appInputSources := map[string]app.AppInputSource{}
-	appInputNames := map[string]struct{}{}
 	for _, input := range appInputConfig.AppInputs {
 		appInputSources[input.Name] = input.Source
-		appInputNames[input.Name] = struct{}{}
 	}
 
 	for name := range inputs {
 		source, ok := appInputSources[name]
 		if !ok {
-			if isAllowedEnabledOverrideAlias(name, appInputNames) {
-				continue
-			}
 			return stderr.ErrUser{
 				Err:         fmt.Errorf("input %s is not defined in app input config", name),
 				Description: "input " + name + " does not exist in the app inputs",
@@ -325,20 +314,6 @@ func (s *service) validateVendorSourceInputs(appInputConfig *app.AppInputConfig,
 	}
 
 	return nil
-}
-
-// isAllowedEnabledOverrideAlias reports whether name is a cleartext enabled-toggle
-// alias whose hex SoT counterpart is a declared app input.
-func isAllowedEnabledOverrideAlias(name string, appInputNames map[string]struct{}) bool {
-	if !config.IsEnabledOverrideInputNameRaw(name) {
-		return false
-	}
-	_, comp, ok := config.ParseComponentOverrideInputName(name)
-	if !ok {
-		return false
-	}
-	_, declared := appInputNames[config.EnabledOverrideInputName(comp)]
-	return declared
 }
 
 // validateInstallToggles rejects an inputs update that would leave the install
