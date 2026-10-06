@@ -27,21 +27,20 @@ type GetPhoneHomeScriptRequest struct {
 	URL string `json:"url,omitempty"`
 }
 
-// GetPhoneHomeScriptRaw fetches the phone-home Lambda source to embed in the rendered
-// stack template.
+// FetchPhoneHomeScriptRaw is the single resolution + fetch path for the phone-home
+// Lambda source. It is package-level so non-Temporal callers (e.g. app bundle
+// compilation) share the exact precedence and pin that install stack versions get.
 //
 // Resolution is app override, then environment override, then the pinned default. The
-// precedence lives here rather than in the two callers so both generation paths cannot
+// precedence lives here rather than in the callers so the generation paths cannot
 // disagree about which script an install gets.
-//
-// @temporal-gen-v2 activity
-func (a *Activities) GetPhoneHomeScriptRaw(ctx context.Context, req *GetPhoneHomeScriptRequest) ([]byte, error) {
+func FetchPhoneHomeScriptRaw(ctx context.Context, appURL, envURL string) ([]byte, error) {
 	url := DefaultAWSPhoneHomeScript
 	switch {
-	case req != nil && req.URL != "":
-		url = req.URL
-	case a.cfg.PhoneHomeScriptURL != "":
-		url = a.cfg.PhoneHomeScriptURL
+	case appURL != "":
+		url = appURL
+	case envURL != "":
+		url = envURL
 	}
 
 	r, err := http.NewRequest(http.MethodGet, url, nil)
@@ -74,4 +73,13 @@ func (a *Activities) GetPhoneHomeScriptRaw(ctx context.Context, req *GetPhoneHom
 	}
 
 	return byts, nil
+}
+
+// @temporal-gen-v2 activity
+func (a *Activities) GetPhoneHomeScriptRaw(ctx context.Context, req *GetPhoneHomeScriptRequest) ([]byte, error) {
+	var appURL string
+	if req != nil {
+		appURL = req.URL
+	}
+	return FetchPhoneHomeScriptRaw(ctx, appURL, a.cfg.PhoneHomeScriptURL)
 }

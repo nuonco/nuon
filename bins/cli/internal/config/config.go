@@ -154,7 +154,7 @@ func (c *Config) BindCobraFlags(cmd *cobra.Command) {
 	cmd.Flags().VisitAll(func(f *pflag.Flag) {
 		name := strings.ReplaceAll(f.Name, "-", "_")
 		// `preview` is the NUON_PREVIEW feature gate (config.Preview()), not a
-		// flag value; don't let it bleed into the plan-only `--preview` flags.
+		// cobra flag value.
 		if name == "preview" {
 			return
 		}

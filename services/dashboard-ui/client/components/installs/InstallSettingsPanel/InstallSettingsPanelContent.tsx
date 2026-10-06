@@ -8,7 +8,6 @@ import { ShutdownRunnerControl } from '@/components/runners/management/ShutdownR
 import { ReprovisionSandboxButton } from '@/components/sandbox/management/ReprovisionSandbox'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { useOrgFeatureFlag } from '@/hooks/use-org-feature-flag'
 import { getInstallTelemetrySettings } from '@/lib/ctl-api/installs/get-install-telemetry-settings'
 import { RunnerProvider } from '@/providers/runner-provider'
 import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocAction/RunAdhocActionContainer'
@@ -64,7 +63,7 @@ const ActionCard = ({
 const InstallSettingsPanelContentInner = () => {
   const { install } = useInstall()
   const { org } = useOrg()
-  const canRenameInstall = useOrgFeatureFlag('install-rename')
+  const canRenameInstall = true
   const { data: telemetry } = useQuery({
     queryKey: ['install-telemetry', org?.id, install?.id],
     queryFn: () =>

@@ -174,7 +174,7 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 					},
 					Features: map[string]bool{
 						string(app.OrgFeatureUserManagedFeatures): true,
-						string(app.OrgFeatureTraceView):           false,
+						string(app.OrgFeatureNotebooks):           false,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -197,21 +197,21 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			},
 			requestBody: UpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureTraceView): true,
+					string(app.OrgFeatureNotebooks): true,
 				},
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
 				require.NotNil(s.T(), org)
 				assert.Equal(s.T(), "test-update-single", org.Name)
-				assert.True(s.T(), org.Features[string(app.OrgFeatureTraceView)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureNotebooks)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureUserManagedFeatures)])
 			},
 			checkDBFunc: func(org *app.Org) {
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
-				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureTraceView)])
+				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureNotebooks)])
 			},
 		},
 		{
@@ -229,9 +229,9 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 					},
 					Features: map[string]bool{
 						string(app.OrgFeatureUserManagedFeatures): true,
-						string(app.OrgFeatureTraceView):           false,
-						string(app.OrgFeatureAppBranches):         true,
-						string(app.OrgFeatureSupportRole):         false,
+						string(app.OrgFeatureNotebooks):           false,
+						string(app.OrgFeatureNewAppIA):            true,
+						string(app.OrgFeatureDisableAppSync):      false,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -254,26 +254,26 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			},
 			requestBody: UpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureTraceView):   true,
-					string(app.OrgFeatureAppBranches): false,
-					string(app.OrgFeatureSupportRole): true,
+					string(app.OrgFeatureNotebooks):      true,
+					string(app.OrgFeatureNewAppIA):       false,
+					string(app.OrgFeatureDisableAppSync): true,
 				},
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
 				require.NotNil(s.T(), org)
-				assert.True(s.T(), org.Features[string(app.OrgFeatureTraceView)])
-				assert.False(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
-				assert.True(s.T(), org.Features[string(app.OrgFeatureSupportRole)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureNotebooks)])
+				assert.False(s.T(), org.Features[string(app.OrgFeatureNewAppIA)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureDisableAppSync)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureUserManagedFeatures)])
 			},
 			checkDBFunc: func(org *app.Org) {
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
-				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureTraceView)])
-				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureAppBranches)])
-				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureSupportRole)])
+				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureNotebooks)])
+				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureNewAppIA)])
+				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureDisableAppSync)])
 			},
 		},
 		{
@@ -313,7 +313,7 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			},
 			requestBody: UpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureTraceView): true,
+					string(app.OrgFeatureNotebooks): true,
 				},
 			},
 			expectedCode:  http.StatusBadRequest,
@@ -354,7 +354,7 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			},
 			requestBody: UpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureTraceView): true,
+					string(app.OrgFeatureNotebooks): true,
 				},
 			},
 			expectedCode:  http.StatusBadRequest,
@@ -669,9 +669,9 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 					},
 					Features: map[string]bool{
 						string(app.OrgFeatureUserManagedFeatures): true,
-						string(app.OrgFeatureTraceView):           true,
-						string(app.OrgFeatureAppBranches):         false,
-						string(app.OrgFeatureSupportRole):         true,
+						string(app.OrgFeatureNotebooks):           true,
+						string(app.OrgFeatureNewAppIA):            false,
+						string(app.OrgFeatureDisableAppSync):      true,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -694,17 +694,17 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			},
 			requestBody: UpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureTraceView): false, // Toggle this one
+					string(app.OrgFeatureNotebooks): false, // Toggle this one
 				},
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
 				require.NotNil(s.T(), org)
 				// Modified feature
-				assert.False(s.T(), org.Features[string(app.OrgFeatureTraceView)])
+				assert.False(s.T(), org.Features[string(app.OrgFeatureNotebooks)])
 				// Unmodified features should be preserved
-				assert.False(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
-				assert.True(s.T(), org.Features[string(app.OrgFeatureSupportRole)])
+				assert.False(s.T(), org.Features[string(app.OrgFeatureNewAppIA)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureDisableAppSync)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureUserManagedFeatures)])
 			},
 			checkDBFunc: func(org *app.Org) {
@@ -712,9 +712,9 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
 				// Verify database state matches
-				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureTraceView)])
-				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureAppBranches)])
-				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureSupportRole)])
+				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureNotebooks)])
+				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureNewAppIA)])
+				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureDisableAppSync)])
 			},
 		},
 		{
@@ -732,7 +732,7 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 					},
 					Features: map[string]bool{
 						string(app.OrgFeatureUserManagedFeatures): true,
-						string(app.OrgFeatureTraceView):           true,
+						string(app.OrgFeatureNotebooks):           true,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -755,19 +755,19 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			},
 			requestBody: UpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureTraceView): false,
+					string(app.OrgFeatureNotebooks): false,
 				},
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
 				require.NotNil(s.T(), org)
-				assert.False(s.T(), org.Features[string(app.OrgFeatureTraceView)])
+				assert.False(s.T(), org.Features[string(app.OrgFeatureNotebooks)])
 			},
 			checkDBFunc: func(org *app.Org) {
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
-				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureTraceView)])
+				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureNotebooks)])
 			},
 		},
 		{
@@ -785,7 +785,7 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 					},
 					Features: map[string]bool{
 						string(app.OrgFeatureUserManagedFeatures): true,
-						string(app.OrgFeatureTraceView):           false,
+						string(app.OrgFeatureNotebooks):           false,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -808,19 +808,19 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			},
 			requestBody: UpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureTraceView): true,
+					string(app.OrgFeatureNotebooks): true,
 				},
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
 				require.NotNil(s.T(), org)
-				assert.True(s.T(), org.Features[string(app.OrgFeatureTraceView)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureNotebooks)])
 			},
 			checkDBFunc: func(org *app.Org) {
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
-				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureTraceView)])
+				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureNotebooks)])
 			},
 		},
 	}

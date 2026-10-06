@@ -12,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 )
 
 // @ID						GetAppBranches
@@ -39,16 +38,6 @@ func (s *service) GetAppBranches(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
-		return
-	}
-
-	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureAppBranches)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to check feature: %w", err))
-		return
-	}
-	if !enabled {
-		ctx.Error(features.ErrFeatureNotEnabled(app.OrgFeatureAppBranches))
 		return
 	}
 

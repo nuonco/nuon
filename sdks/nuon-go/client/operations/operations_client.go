@@ -180,6 +180,10 @@ type ClientService interface {
 
 	CreateAppBreakGlassConfig(params *CreateAppBreakGlassConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppBreakGlassConfigCreated, error)
 
+	CreateAppBundle(params *CreateAppBundleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppBundleOK, *CreateAppBundleAccepted, error)
+
+	CreateAppBundleDownloadGrant(params *CreateAppBundleDownloadGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppBundleDownloadGrantOK, error)
+
 	CreateAppComponentBuild(params *CreateAppComponentBuildParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppComponentBuildCreated, error)
 
 	CreateAppConfig(params *CreateAppConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppConfigCreated, error)
@@ -427,6 +431,10 @@ type ClientService interface {
 	GetAppBranches(params *GetAppBranchesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchesOK, error)
 
 	GetAppBreakGlassConfig(params *GetAppBreakGlassConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBreakGlassConfigOK, error)
+
+	GetAppBundle(params *GetAppBundleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBundleOK, error)
+
+	GetAppBundles(params *GetAppBundlesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBundlesOK, error)
 
 	GetAppComponent(params *GetAppComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppComponentOK, error)
 
@@ -2608,6 +2616,98 @@ func (a *Client) CreateAppBreakGlassConfig(params *CreateAppBreakGlassConfigPara
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateAppBreakGlassConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateAppBundle creates and publish an immutable app bundle from an app config
+
+Resolves the app config's successful sandbox and component builds once, pins them on the bundle, and enqueues an asynchronous publish that assembles an OCI-layout .tar.zst archive. Retries reuse the pinned builds and never select newer builds.
+*/
+func (a *Client) CreateAppBundle(params *CreateAppBundleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppBundleOK, *CreateAppBundleAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateAppBundleParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateAppBundle",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/bundles",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateAppBundleReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// several success responses have to be checked
+	switch value := result.(type) {
+	case *CreateAppBundleOK:
+		return value, nil, nil
+	case *CreateAppBundleAccepted:
+		return nil, value, nil
+	}
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for operations: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateAppBundleDownloadGrant creates a download grant for a published app bundle
+
+Returns a short-lived presigned URL that serves the bundle archive bytes directly from storage; requests never pass through ctl-api. Requires the bundle to be published with a verified upload.
+*/
+func (a *Client) CreateAppBundleDownloadGrant(params *CreateAppBundleDownloadGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppBundleDownloadGrantOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateAppBundleDownloadGrantParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateAppBundleDownloadGrant",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/bundles/{bundle_id}/download-grants",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateAppBundleDownloadGrantReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateAppBundleDownloadGrantOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateAppBundleDownloadGrant: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -8345,6 +8445,96 @@ func (a *Client) GetAppBreakGlassConfig(params *GetAppBreakGlassConfigParams, au
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetAppBreakGlassConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetAppBundle gets an app bundle
+
+Returns the bundle's publish status and any output metadata (manifest digests, archive checksum, size, verification timestamp) once publishing has completed.
+*/
+func (a *Client) GetAppBundle(params *GetAppBundleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBundleOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppBundleParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppBundle",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/bundles/{bundle_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppBundleReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppBundleOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppBundle: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetAppBundles lists app bundles
+*/
+func (a *Client) GetAppBundles(params *GetAppBundlesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBundlesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppBundlesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppBundles",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/bundles",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppBundlesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppBundlesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppBundles: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

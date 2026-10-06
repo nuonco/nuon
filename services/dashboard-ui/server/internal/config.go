@@ -29,6 +29,7 @@ func init() {
 	// docker-compose's kafka-ui, which serves under the same /admin/kafka context
 	// path it does in the cluster
 	config.RegisterDefault("nuon_kafka_ui_url", "http://localhost:8092")
+	config.RegisterDefault("nuon_grafana_ui_url", "")
 }
 
 type Config struct {
@@ -48,6 +49,7 @@ type Config struct {
 	AdminAPIUrl            string `config:"nuon_admin_api_url"`
 	TemporalUIUrl          string `config:"nuon_temporal_ui_url"`
 	KafkaUIUrl             string `config:"nuon_kafka_ui_url"`
+	GrafanaUIUrl           string `config:"nuon_grafana_ui_url"`
 	AuthServiceUrl         string `config:"nuon_auth_service_url"`
 	AppUrl                 string `config:"nuon_app_url"`
 	GithubAppName          string `config:"github_app_name"`
