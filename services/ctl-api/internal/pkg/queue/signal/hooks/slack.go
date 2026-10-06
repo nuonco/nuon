@@ -190,7 +190,8 @@ func (h *SlackSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) bool 
 		signalTypeSyncInstalls,
 		signalTypeInstallConfigSync,
 		signalTypeLabelAdded,
-		signalTypeCloudConnectionVerificationFailed:
+		signalTypeCloudConnectionVerificationFailed,
+		signalTypeAppBundlePublish:
 		return true
 	default:
 		return false

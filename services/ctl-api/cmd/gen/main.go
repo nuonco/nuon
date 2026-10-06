@@ -137,7 +137,7 @@ func generatePublicSchema(ctx context.Context) error {
 		"--parseInternal",
 		"-g", "public.go",
 		"--markdownFiles", "docs/public/descriptions",
-		"-t", "auth,accounts,apps,actions,cloud-connections,components,installs,installers,general,notebooks,oidc,oidc_federation,onboarding,orgs,policy-reports,releases,runbooks,sandboxes,slack,stacks,vcs,runners,queues",
+		"-t", "auth,accounts,apps,app-bundles,actions,cloud-connections,components,installs,installers,general,notebooks,oidc,oidc_federation,onboarding,orgs,policy-reports,releases,runbooks,sandboxes,slack,stacks,vcs,runners,queues",
 	}
 
 	cmd, err := command.New(v,

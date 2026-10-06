@@ -574,8 +574,18 @@ type Config struct {
 	// Blob storage configuration. Provider selects the backend: "s3" (default,
 	// AWS-hosted installs) or "gcs" (self-hosted control-plane installs on GCP,
 	// where BlobStorageBucket is a native GCS bucket rather than S3).
-	BlobStorageBucket   string `config:"blob_storage_bucket" validate:"required"`
-	BlobStorageRegion   string `config:"blob_storage_region" validate:"required"`
+	BlobStorageBucket string `config:"blob_storage_bucket" validate:"required"`
+	BlobStorageRegion string `config:"blob_storage_region" validate:"required"`
+
+	AppBundleStorageProvider          string        `config:"app_bundle_storage_provider" validate:"omitempty,oneof=s3 gcs"`
+	AppBundleStorageBucket            string        `config:"app_bundle_storage_bucket"`
+	AppBundleStorageRegion            string        `config:"app_bundle_storage_region"`
+	AppBundleStorageEndpoint          string        `config:"app_bundle_storage_endpoint"`
+	AppBundleStorageForcePathStyle    bool          `config:"app_bundle_storage_force_path_style"`
+	AppBundleStoragePrefix            string        `config:"app_bundle_storage_prefix"`
+	AppBundleStorageGCSServiceAccount string        `config:"app_bundle_storage_gcs_service_account"`
+	AppBundleGrantTTL                 time.Duration `config:"app_bundle_grant_ttl"`
+
 	BlobStorageProvider string `config:"blob_storage_provider" validate:"required,oneof=s3 gcs"`
 
 	// Enqueuer worker pool size — how many signals can be enqueued in parallel.

@@ -105,6 +105,9 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 		tmpl.Resources[k] = v
 	}
 	maps.Copy(tmpl.Parameters, customResult.params)
+	if inp.BundleCompile && len(customResult.inputParameters) > 0 {
+		tmpl.Metadata[customStacksInputParametersMetadataKey] = customResult.inputParameters
+	}
 
 	// Phone home Lambda + props — AFTER custom stacks so we have their output metadata
 	if err := validatePhoneHomeScript(inp.PhonehomeScript); err != nil {
@@ -118,6 +121,10 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 		Value:       telemetryEndpoint,
 	}
 	tmpl.Resources["RunnerPhoneHome"] = t.getRunnerPhoneHomeLambda(inp, tb)
+	if inp.BundleCompile {
+		maps.Copy(tmpl.Parameters, t.getPhoneHomeS3Parameters())
+		maps.Copy(tmpl.Conditions, t.getPhoneHomeS3Conditions())
+	}
 	tmpl.Resources["RunnerPhoneHomeRole"] = t.getRunnerPhoneHomeLambdaRole(inp, tb)
 
 	// NOTE(fd): if there are no secrets in the config, the section is not rendered.
