@@ -22,7 +22,15 @@ export const ComponentOverridesList = ({
   muteDisabled = false,
   typeVariant = 'badge',
 }: IComponentOverridesList) => {
-  const cards = groupComponentOverrideInputs(inputs || [])
+  const cards = groupComponentOverrideInputs(inputs || []).filter((card) => {
+    const configValue =
+      card.configInput?.name != null
+        ? (values?.[card.configInput.name] ?? card.configInput?.default)
+        : undefined
+    // Hide always-deployed components with no config override — they add noise.
+    if (configValue) return true
+    return !!card.enabledInput
+  })
 
   if (cards.length === 0) {
     return (
