@@ -27,6 +27,7 @@ type Signal struct {
 	StepID string `json:"step_id,omitempty"`
 
 	childWorkflowIDs []string
+	directiveCh      workflow.Channel
 }
 
 var _ signal.Signal = (*Signal)(nil)

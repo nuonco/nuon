@@ -172,6 +172,10 @@ func (s *appBranchConfigUpdateSuite) SetupTest() {
 		"GetActionWorkflows":                   a.GetActionWorkflows,
 		"GetInstallComponentsBatch":            a.GetInstallComponentsBatch,
 		"GetInstallStack":                      a.GetInstallStack,
+		"ClassifyInstallGroupDirective":        a.ClassifyInstallGroupDirective,
+		"SendInstallGroupDirective":            a.SendInstallGroupDirective,
+		"InstallUpdateTerminal":                a.InstallUpdateTerminal,
+		"RecomputeInstallConfigDiff":           a.RecomputeInstallConfigDiff,
 	} {
 		s.env.RegisterActivityWithOptions(fn, activity.RegisterOptions{Name: name})
 	}
@@ -216,6 +220,14 @@ func (s *appBranchConfigUpdateSuite) mockActivities(diff *app.InstallConfigDiff,
 
 	s.env.OnActivity("GetInstallStack", mock.Anything, mock.Anything).Return(
 		&app.InstallStack{ID: "stk-1"}, nil).Maybe()
+	s.env.OnActivity("ClassifyInstallGroupDirective", mock.Anything, mock.Anything).Return(
+		&activities.ClassifyInstallGroupDirectiveResponse{Directive: "await"}, nil)
+	s.env.OnActivity("SendInstallGroupDirective", mock.Anything, mock.Anything).Return(
+		&activities.SendInstallGroupDirectiveResponse{}, nil).Maybe()
+	s.env.OnActivity("InstallUpdateTerminal", mock.Anything, mock.Anything).Return(
+		&activities.InstallUpdateTerminalResponse{Terminal: true}, nil).Maybe()
+	s.env.OnActivity("RecomputeInstallConfigDiff", mock.Anything, mock.Anything).Return(
+		&activities.RecomputeInstallConfigDiffResponse{}, nil).Maybe()
 
 	s.env.OnActivity("GetAppGraph", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {

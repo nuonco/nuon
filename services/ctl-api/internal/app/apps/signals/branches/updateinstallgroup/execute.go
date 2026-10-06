@@ -46,6 +46,8 @@ const installUpdateFailedCompositeErrorVersion = "install-update-failed-composit
 // app branch run, which the branch overview reads.
 const installUpdateFailedBranchRunErrorVersion = "install-update-failed-branch-run-error-v1"
 
+const installGroupDirectiveVersion = "install-group-directive-v1"
+
 const statusPending = "pending"
 
 type enqueuedInstall struct {
@@ -93,6 +95,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.writePendingInstallMetadata(ctx, groupName, installIDs)
 	}
 
+	releaseInstalls := workflow.GetVersion(ctx, installGroupDirectiveVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+	if releaseInstalls {
+		if err := s.registerDirectiveHandler(ctx); err != nil {
+			return err
+		}
+	}
+
 	enqueued, err := s.enqueueInstallUpdates(ctx, installIDs, run)
 	if err != nil {
 		return err
@@ -133,7 +142,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	s.updateInstallMetadata(ctx, groupName, enqueued, nil)
 
-	failure, awaitErr := s.awaitInstallUpdates(ctx, groupName, enqueued, groupRunID, installEntries)
+	var failure *installUpdateFailure
+	var awaitErr error
+	if releaseInstalls {
+		failure, awaitErr = s.awaitInstallUpdatesReleased(ctx, groupName, enqueued, groupRunID, installEntries)
+	} else {
+		failure, awaitErr = s.awaitInstallUpdates(ctx, groupName, enqueued, groupRunID, installEntries)
+	}
 
 	// workflow.Now, not time.Now: wall-clock reads are non-deterministic across
 	// replay, so the recorded completion time has to come from workflow time.

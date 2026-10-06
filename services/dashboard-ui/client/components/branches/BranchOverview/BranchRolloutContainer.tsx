@@ -1,21 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { useSearchParams } from 'react-router'
-import { PlanGroupStep } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep'
+import { useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router'
 import { CommitLink } from '@/components/common/GitReferenceLink'
 import { Link } from '@/components/common/Link'
 import { Loading } from '@/components/common/Loading'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
-import { SkipStepButton } from '@/components/workflows/step-details/SkipStep/SkipStepContainer'
-import type { TAppBranchRun, TWorkflowStep } from '@/types'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { PageTitle } from '@/components/navigation/PageTitle'
-import { useSurfaces } from '@/hooks/use-surfaces'
-import { InstallFailureNotice, type TOverviewRollout } from './BranchOverview'
-import { InstallRolloutPanel } from './InstallRolloutPanel'
-import { installFailureHref, overviewCompositeError } from './overview-loading'
-import { deployStepForGroup, planStepForGroup } from './rollout-stages'
-import { RolloutTrack, selectedTrackGroup } from './RolloutTrack'
+import { type TOverviewRollout } from './BranchOverview'
+import { useGroupPlanApprovals } from '@/components/branches/BranchRunApproval/use-group-plan-approvals'
+import { RolloutGroupsCard } from './RolloutGroupsCard'
 import { useRolloutGroups } from './use-rollout-groups'
 
 const RolloutRunCard = ({ rollout }: { rollout: TOverviewRollout }) => {
@@ -43,128 +37,43 @@ const RolloutRunCard = ({ rollout }: { rollout: TOverviewRollout }) => {
 }
 
 export const BranchRolloutContainer = () => {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const groupId = searchParams.get('group') ?? undefined
-  const installId = searchParams.get('install') ?? undefined
-  const { addPanel, updatePanel, removePanel, panels } = useSurfaces()
-  const panelIdRef = useRef<string | null>(null)
-  const openedFor = useRef<string | null>(null)
-  const openPanelId =
-    panels.find((panel) => panel?.id === panelIdRef.current)?.id ?? null
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const legacyGroupId = searchParams.get('group')
+  const legacyInstallId = searchParams.get('install')
   const {
     app,
     branch,
-    orgId,
-    repoSlug,
     basePath,
+    rolloutHref,
+    groupHref,
     rollout,
-    branchRun,
-    workflowSteps,
     groups,
     hasPlan,
     isLoading,
-  } = useRolloutGroups()
-
-  const selected = selectedTrackGroup(groups, groupId)
-  const planStep = selected
-    ? planStepForGroup(workflowSteps, selected.name)
-    : undefined
-  const deployStep = selected
-    ? deployStepForGroup(workflowSteps, selected.name)
-    : undefined
-  const canSkipDeploy =
-    !!deployStep?.skippable &&
-    deployStep.status?.status === 'error' &&
-    !!deployStep.install_workflow_id
-  const compositeError = overviewCompositeError(
     workflowSteps,
-    branchRun?.composite_error
+  } = useRolloutGroups()
+  const approvals = useGroupPlanApprovals(
+    rollout?.id
+      ? {
+          id: rollout.id,
+          status: { status: rollout.status },
+          steps: workflowSteps,
+        }
+      : undefined,
+    groups
   )
-  const selectedInstall = useMemo(() => {
-    const found = groups
-      .flatMap((group) => group.installs)
-      .find((install) => install.id === installId)
-    if (found) return found
-    if (!installId) return undefined
-    return { id: installId, name: installId, status: 'pending' }
-  }, [groups, installId])
-
-  const closeInstall = useCallback(() => {
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev)
-        next.delete('install')
-        next.delete('plan')
-        return next
-      },
-      { replace: true }
-    )
-  }, [setSearchParams])
-
-  const selectGroup = (id: string) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev)
-      next.set('group', id)
-      next.delete('install')
-      next.delete('plan')
-      return next
-    })
-  }
-
-  const selectInstall = (nextGroupId: string, nextInstallId: string) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev)
-      next.set('group', nextGroupId)
-      next.set('install', nextInstallId)
-      next.delete('plan')
-      return next
-    })
-  }
 
   useEffect(() => {
-    if (!installId || !selectedInstall) {
-      if (openPanelId) {
-        removePanel(openPanelId)
-        panelIdRef.current = null
-        openedFor.current = null
-      }
-      return
-    }
-    if (openPanelId && openedFor.current !== installId) {
-      removePanel(openPanelId)
-      panelIdRef.current = null
-      openedFor.current = null
-      return
-    }
-    const panel = (
-      <InstallRolloutPanel
-        install={selectedInstall}
-        approval={selected?.approval}
-        orgId={orgId}
-        repo={repoSlug}
-        branchRun={branchRun as TAppBranchRun | undefined}
-        onClose={closeInstall}
-      />
+    if (!legacyGroupId) return
+    const next = new URLSearchParams()
+    if (legacyInstallId) next.set('install', legacyInstallId)
+    const query = next.toString()
+    navigate(
+      `${rolloutHref}/groups/${encodeURIComponent(legacyGroupId)}${query ? `?${query}` : ''}`,
+      { replace: true }
     )
-    if (openPanelId) {
-      updatePanel(openPanelId, panel)
-      return
-    }
-    openedFor.current = installId
-    panelIdRef.current = addPanel(panel)
-  }, [
-    installId,
-    selectedInstall,
-    selected?.approval,
-    orgId,
-    repoSlug,
-    branchRun,
-    openPanelId,
-    addPanel,
-    updatePanel,
-    removePanel,
-    closeInstall,
-  ])
+  }, [legacyGroupId, legacyInstallId, navigate, rolloutHref])
 
   return (
     <div className="flex flex-col gap-3 p-4 md:p-6">
@@ -189,54 +98,15 @@ export const BranchRolloutContainer = () => {
           This branch has no install groups yet. Every install updates at once.{' '}
           <Link href={`${basePath}/settings`}>Create a deployment plan</Link>
         </Text>
+      ) : groups.length === 0 ? (
+        <Text variant="subtext" theme="neutral">
+          No runs yet. Push a commit or start a run.
+        </Text>
       ) : (
-        <RolloutTrack
+        <RolloutGroupsCard
           groups={groups}
-          selectedGroupId={groupId}
-          onSelectGroup={selectGroup}
-          onSelectInstall={selectInstall}
-          emptyMessage="No runs yet. Push a commit or start a run."
-          notice={
-            compositeError ? (
-              <InstallFailureNotice
-                error={compositeError}
-                href={installFailureHref(compositeError, orgId)}
-              />
-            ) : undefined
-          }
-          summary={
-            planStep ? (
-              <PlanGroupStep
-                step={planStep}
-                metadata={
-                  (planStep.status?.metadata ?? {}) as Record<string, any>
-                }
-                workflowStatus={rollout?.status}
-                hideHeading
-                installFacts={Object.fromEntries(
-                  (selected?.installs ?? []).map((install) => [
-                    install.id,
-                    { labels: install.labels, region: install.region },
-                  ])
-                )}
-                onSelectInstall={(id) =>
-                  selected ? selectInstall(selected.id, id) : undefined
-                }
-              />
-            ) : undefined
-          }
-          footer={
-            canSkipDeploy && deployStep ? (
-              <div className="flex flex-col items-start gap-2">
-                <Text variant="subtext" theme="neutral">
-                  Skip this group to continue the rollout.
-                </Text>
-                <SkipStepButton step={deployStep as TWorkflowStep}>
-                  Skip and continue
-                </SkipStepButton>
-              </div>
-            ) : undefined
-          }
+          groupHref={groupHref}
+          approvals={approvals}
         />
       )}
     </div>

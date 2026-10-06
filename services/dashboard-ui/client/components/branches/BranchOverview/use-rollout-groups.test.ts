@@ -4,6 +4,7 @@ import type { TTrackGroup } from './RolloutTrack'
 import {
   historicalRunGroups,
   mergeGroupRuns,
+  rolloutGroupHrefForWorkflow,
   rolloutHrefForWorkflow,
 } from './use-rollout-groups'
 
@@ -45,6 +46,46 @@ describe('mergeGroupRuns', () => {
   })
 })
 
+describe('mergeGroupRuns install detail', () => {
+  test('describes customer waits, queues, and superseded runs', () => {
+    const [group] = mergeGroupRuns(
+      [],
+      [
+        {
+          id: 'group-run-1',
+          install_group_id: 'primary',
+          installs: [
+            {
+              install_id: 'ins_wait',
+              status: 'pending_customer',
+              release_reason: 'stack_pending_customer',
+            },
+            {
+              install_id: 'ins_runner',
+              status: 'pending_customer',
+              release_reason: 'runner_offline',
+            },
+            {
+              install_id: 'ins_queue',
+              status: 'queued',
+              waiting_on_run_id: 'run_earlier',
+            },
+            { install_id: 'ins_old', status: 'superseded' },
+          ],
+        } as TInstallGroupRun,
+      ],
+      [],
+      {}
+    )
+    expect(group.installs.map((install) => install.detail)).toEqual([
+      'Waiting on customer',
+      'Runner offline',
+      'Queued behind run run_earlier',
+      'Superseded by a later run',
+    ])
+  })
+})
+
 describe('rolloutHrefForWorkflow', () => {
   test('opens the branch rollout for the current run', () => {
     expect(rolloutHrefForWorkflow('/org-1/apps/app-1/branches/branch-1')).toBe(
@@ -56,6 +97,29 @@ describe('rolloutHrefForWorkflow', () => {
     expect(
       rolloutHrefForWorkflow('/org-1/apps/app-1/branches/branch-1', 'wf-1')
     ).toBe('/org-1/apps/app-1/branches/branch-1/runs/wf-1/rollout')
+  })
+})
+
+describe('rolloutGroupHrefForWorkflow', () => {
+  test('opens a group under the branch rollout', () => {
+    expect(
+      rolloutGroupHrefForWorkflow(
+        '/org-1/apps/app-1/branches/branch-1',
+        'canary'
+      )
+    ).toBe('/org-1/apps/app-1/branches/branch-1/rollout/groups/canary')
+  })
+
+  test('keeps a previous run on that run group page', () => {
+    expect(
+      rolloutGroupHrefForWorkflow(
+        '/org-1/apps/app-1/branches/branch-1',
+        'canary',
+        'wf-1'
+      )
+    ).toBe(
+      '/org-1/apps/app-1/branches/branch-1/runs/wf-1/rollout/groups/canary'
+    )
   })
 })
 

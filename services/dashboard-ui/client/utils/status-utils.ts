@@ -42,6 +42,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   'approval-denied': 'neutral',
   'approval-awaiting': 'warn',
   'awaiting-approval': 'warn',
+  'pending-customer': 'warn',
   cancelled: 'neutral',
   rejected: 'neutral',
   outdated: 'warn',
