@@ -1,5 +1,7 @@
 import type {
+  TInstallDeploymentAffectedResources,
   TInstallDeploymentRecord,
+  TInstallDeploymentSummary,
   TWorkflow,
   TWorkflowStep,
 } from '@/types'
@@ -48,8 +50,79 @@ export const recoveredDeploymentResources = (
   ),
 ]
 
-export const deploymentSteps = (workflow?: TWorkflow): TWorkflowStep[] => {
-  const steps = (workflow?.steps ?? []).filter(
+export type TDeploymentStep = {
+  id?: string
+  name?: string
+  status?: { status?: string }
+  execution_type?: string
+  retried?: boolean
+  group_idx?: number
+  group_retry_idx?: number
+  idx?: number
+  step_target_type?: string
+  metadata?: { component_name?: string }
+  approval?: { type?: string; response?: unknown }
+}
+
+export type TDeploymentEvidence<S extends TDeploymentStep = TDeploymentStep> =
+  {
+    finished?: boolean
+    plan_only?: boolean
+    steps?: S[]
+  }
+
+export const summaryDeploymentEvidence = (
+  deployment: TInstallDeploymentSummary
+): Required<Pick<TDeploymentEvidence, 'finished' | 'steps'>> => ({
+  finished: !!deployment.finished,
+  steps: deployment.steps.map((step) => ({
+    id: step.id,
+    name: step.name,
+    status: { status: step.status },
+    execution_type: step.execution_type,
+    retried: step.retried,
+    group_idx: step.group_idx || undefined,
+    group_retry_idx: step.group_retry_idx ?? 0,
+    idx: step.idx || undefined,
+    step_target_type: step.step_target_type,
+    metadata: step.component_name
+      ? { component_name: step.component_name }
+      : undefined,
+    approval: step.approval_response_id
+      ? { response: { id: step.approval_response_id } }
+      : undefined,
+  })),
+})
+
+const isStackStep = (step: TDeploymentStep) =>
+  step.step_target_type === 'install_stack_versions' ||
+  /\b(install stack|stack policy)\b/i.test(step.name ?? '')
+
+const isSandboxStep = (step: TDeploymentStep) =>
+  step.step_target_type === 'install_sandbox_runs' ||
+  /\bsandbox\b/i.test(step.name ?? '')
+
+export const stepAffectedResources = (
+  steps: TDeploymentStep[]
+): TInstallDeploymentAffectedResources => ({
+  stack: steps.some(isStackStep),
+  sandbox: steps.some(isSandboxStep),
+  components: [
+    ...new Set(
+      steps.flatMap((step) =>
+        step.metadata?.component_name ? [step.metadata.component_name] : []
+      )
+    ),
+  ],
+  images: [],
+})
+
+export function deploymentSteps(workflow?: TWorkflow): TWorkflowStep[]
+export function deploymentSteps<S extends TDeploymentStep>(
+  run?: TDeploymentEvidence<S>
+): S[]
+export function deploymentSteps(run?: TDeploymentEvidence): TDeploymentStep[] {
+  const steps = (run?.steps ?? []).filter(
     (step) => step.execution_type !== 'hidden' && !step.retried
   )
   const rounds = new Map<number, number>()
@@ -60,7 +133,7 @@ export const deploymentSteps = (workflow?: TWorkflow): TWorkflowStep[] => {
         Math.max(rounds.get(step.group_idx) ?? 0, step.group_retry_idx ?? 0)
       )
   }
-  const kinds = new Map<string, TWorkflowStep[]>()
+  const kinds = new Map<string, TDeploymentStep[]>()
   for (const step of steps) {
     if (
       step.group_idx != null &&
@@ -77,10 +150,10 @@ export const deploymentSteps = (workflow?: TWorkflow): TWorkflowStep[] => {
     .sort((a, b) => (a.idx ?? a.group_idx ?? 0) - (b.idx ?? b.group_idx ?? 0))
 }
 
-export const isPendingDeploymentStep = (step: TWorkflowStep) =>
+export const isPendingDeploymentStep = (step: TDeploymentStep) =>
   ['pending', 'not-attempted'].includes(step.status?.status ?? '')
 
-export const isAwaitingDeploymentApproval = (step: TWorkflowStep) =>
+export const isAwaitingDeploymentApproval = (step: TDeploymentStep) =>
   step.status?.status === 'approval-awaiting' && !step.approval?.response
 
 const FAILED_STATUSES = new Set([
@@ -90,9 +163,9 @@ const FAILED_STATUSES = new Set([
   'approval-expired',
 ])
 
-export const deploymentStepContext = (
+export const deploymentStepContext = <S extends TDeploymentStep>(
   status: string,
-  steps: TWorkflowStep[]
+  steps: S[]
 ) => {
   const awaiting = steps.some(isAwaitingDeploymentApproval)
   const current = isDeploymentRunning(status)
@@ -111,7 +184,7 @@ export const deploymentStepContext = (
   return { current, next }
 }
 
-const isAppliedDeploymentStep = (step: TWorkflowStep) =>
+const isAppliedDeploymentStep = (step: TDeploymentStep) =>
   ['system', 'user'].includes(step.execution_type ?? '') &&
   step.status?.status === 'success' &&
   (/^(apply |await install stack$|(?:re)?provision sandbox apply plan$)/i.test(
@@ -123,9 +196,9 @@ const isAppliedDeploymentStep = (step: TWorkflowStep) =>
 const outcomeForSteps = (
   category: TDeploymentOutcome['category'],
   name: string,
-  steps: TWorkflowStep[],
-  workflow: TWorkflow,
-  history: TWorkflowStep[]
+  steps: TDeploymentStep[],
+  workflow: TDeploymentEvidence,
+  history: TDeploymentStep[]
 ): TDeploymentOutcome => {
   const failed = steps.find((step) => FAILED_STATUSES.has(step.status?.status))
   const current = steps.find((step) => step.status?.status === 'in-progress')
@@ -190,8 +263,11 @@ const outcomeForSteps = (
 }
 
 export const deploymentOutcomes = (
-  deployment?: TInstallDeploymentRecord,
-  workflow?: TWorkflow
+  deployment?: Pick<
+    TInstallDeploymentRecord,
+    'affected_resources' | 'image' | 'component_name'
+  >,
+  workflow?: TDeploymentEvidence
 ): TDeploymentOutcome[] => {
   if (!deployment || !workflow) return []
   const steps = deploymentSteps(workflow)
@@ -200,7 +276,7 @@ export const deploymentOutcomes = (
   const resourceOutcome = (
     category: TDeploymentOutcome['category'],
     name: string,
-    belongsToResource: (step: TWorkflowStep) => boolean
+    belongsToResource: (step: TDeploymentStep) => boolean
   ) =>
     outcomeForSteps(
       category,
@@ -211,23 +287,11 @@ export const deploymentOutcomes = (
     )
   if (resources.stack)
     outcomes.push(
-      resourceOutcome(
-        'Stack',
-        'Stack',
-        (step) =>
-          step.step_target_type === 'install_stack_versions' ||
-          /\b(install stack|stack policy)\b/i.test(step.name ?? '')
-      )
+      resourceOutcome('Stack', 'Stack', isStackStep)
     )
   if (resources.sandbox)
     outcomes.push(
-      resourceOutcome(
-        'Sandbox',
-        'Sandbox',
-        (step) =>
-          step.step_target_type === 'install_sandbox_runs' ||
-          /\bsandbox\b/i.test(step.name ?? '')
-      )
+      resourceOutcome('Sandbox', 'Sandbox', isSandboxStep)
     )
   const componentNames = new Set([
     ...(resources.components ?? []),

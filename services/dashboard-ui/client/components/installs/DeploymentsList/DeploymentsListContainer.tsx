@@ -1,19 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import {
-  keepPreviousData,
-  queryOptions,
-  useQueries,
-  useQuery,
-} from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
-import { getAppBranch, getInstallDeployments, getWorkflow } from '@/lib'
+import { getAppBranch, getInstallDeployments } from '@/lib'
 import { latestBranchConfig } from '@/utils/branch-utils'
 import { vcsRepo } from '@/utils/vcs-urls'
 import { useSSETimelineQuery } from '@/lib/sse/use-sse-timeline-query'
-import type { TInstallDeploymentRecordType, TWorkflow } from '@/types'
 import {
   datePresetQueryParameter,
   statusFilterParameter,
@@ -23,7 +17,7 @@ import {
   type TWorkflowStatusOption,
 } from '@/utils/workflow-filters'
 import {
-  DEPLOYMENT_TYPE_LABELS,
+  DEPLOYMENT_FILTER_TYPES,
   DeploymentsListPresenter,
   type IDeploymentFilter,
 } from './DeploymentsListPresenter'
@@ -81,11 +75,7 @@ export const DeploymentsListContainer = ({
       'status',
       workflowStatusOptions()
     ),
-    type: readSet(
-      searchParams,
-      'type',
-      Object.keys(DEPLOYMENT_TYPE_LABELS) as TInstallDeploymentRecordType[]
-    ),
+    type: readSet(searchParams, 'type', DEPLOYMENT_FILTER_TYPES),
     resource: searchParams.get('resource') ?? undefined,
     date:
       since && since in WORKFLOW_DATE_LABELS
@@ -167,30 +157,6 @@ export const DeploymentsListContainer = ({
     onError: onRefreshError,
   })
 
-  const workflowQueries = useQueries({
-    queries: [
-      ...new Set(
-        (data?.deployments ?? []).flatMap((deployment) =>
-          deployment.workflow?.id ? [deployment.workflow.id] : []
-        )
-      ),
-    ].map((workflowId) =>
-      queryOptions({
-        queryKey: ['workflow', org?.id, workflowId],
-        queryFn: () => getWorkflow({ orgId: org!.id, workflowId }),
-        enabled: !!org?.id,
-        staleTime: pollInterval,
-        refetchOnWindowFocus: (query) => !query.state.data?.finished,
-        refetchInterval: (query) =>
-          shouldPoll && !query.state.data?.finished ? pollInterval : false,
-      })
-    ),
-  })
-  const workflowsById: Record<string, TWorkflow> = {}
-  for (const query of workflowQueries) {
-    if (query.data?.id) workflowsById[query.data.id] = query.data
-  }
-
   const writeParam = (key: string, value?: string) => {
     setSearchParams(
       (current) => {
@@ -233,7 +199,6 @@ export const DeploymentsListContainer = ({
   return (
     <DeploymentsListPresenter
       deployments={data?.deployments ?? []}
-      workflowsById={workflowsById}
       isLoading={isLoading}
       error={error}
       pagination={{

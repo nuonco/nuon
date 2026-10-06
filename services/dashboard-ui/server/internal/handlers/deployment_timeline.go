@@ -60,7 +60,7 @@ func (h *DeploymentTimelineHandler) StreamDeploymentTimeline(c *gin.Context) {
 					return sseFetchResult{}, err
 				}
 				deployments = &models.ServiceGetInstallDeploymentsResponse{
-					Deployments: []*models.ServiceInstallDeployment{},
+					Deployments: []*models.ServiceInstallDeploymentSummary{},
 					Limit:       int64(query.Limit),
 					Offset:      int64(query.Offset),
 				}

@@ -11,7 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
@@ -131,13 +130,38 @@ type InstallDeployment struct {
 	ChangeGroups      []InstallDeploymentChangeGroup     `json:"change_groups"`
 }
 
+type InstallDeploymentStep struct {
+	ID                 string `json:"id"`
+	Name               string `json:"name"`
+	Status             string `json:"status"`
+	Idx                int    `json:"idx"`
+	GroupIdx           int    `json:"group_idx"`
+	GroupRetryIdx      int    `json:"group_retry_idx"`
+	Retried            bool   `json:"retried,omitempty"`
+	ExecutionType      string `json:"execution_type"`
+	StepTargetType     string `json:"step_target_type,omitempty"`
+	ComponentName      string `json:"component_name,omitempty"`
+	ApprovalResponseID string `json:"approval_response_id,omitempty"`
+}
+
+type InstallDeploymentSummary struct {
+	ID        string                  `json:"id"`
+	Type      InstallDeploymentType   `json:"type"`
+	Title     string                  `json:"title"`
+	CreatedAt time.Time               `json:"created_at"`
+	Status    string                  `json:"status"`
+	Activity  string                  `json:"activity"`
+	Finished  bool                    `json:"finished"`
+	Steps     []InstallDeploymentStep `json:"steps"`
+}
+
 // GetInstallDeploymentsResponse is the paginated response body for the deployments endpoint.
 type GetInstallDeploymentsResponse struct {
-	Deployments []InstallDeployment `json:"deployments"`
-	Page        int                 `json:"page"`
-	Offset      int                 `json:"offset"`
-	Limit       int                 `json:"limit"`
-	HasMore     bool                `json:"has_more"`
+	Deployments []InstallDeploymentSummary `json:"deployments"`
+	Page        int                        `json:"page"`
+	Offset      int                        `json:"offset"`
+	Limit       int                        `json:"limit"`
+	HasMore     bool                       `json:"has_more"`
 }
 
 // @ID                    GetInstallDeployments
@@ -226,20 +250,10 @@ func (s *service) getInstallDeployments(
 	search string,
 	createdAtGte, createdAtLte *time.Time,
 ) (*GetInstallDeploymentsResponse, error) {
-	fetchOffset, fetchLimit := 0, offset+limit+1
-	queryTypes := filterTypes
-	filtersImages := containsString(filterTypes, string(InstallDeploymentTypeImageUpdate))
-	filtersComponents := containsString(filterTypes, string(InstallDeploymentTypeComponentDeploy))
-	if filtersImages && !filtersComponents {
-		queryTypes = append(append([]string{}, filterTypes...), string(InstallDeploymentTypeComponentDeploy))
-	}
-	if filtersImages == filtersComponents {
-		fetchOffset, fetchLimit = offset, limit+1
-	}
-	workflowTypes := deploymentWorkflowTypes(queryTypes)
+	workflowTypes := deploymentWorkflowTypes(filterTypes)
 	if len(workflowTypes) == 0 {
 		return &GetInstallDeploymentsResponse{
-			Deployments: []InstallDeployment{},
+			Deployments: []InstallDeploymentSummary{},
 			Page:        page,
 			Offset:      offset,
 			Limit:       limit,
@@ -248,21 +262,15 @@ func (s *service) getInstallDeployments(
 	}
 
 	query := s.db.WithContext(ctx).
-		Preload("CreatedBy").
-		Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_deploys.created_at ASC").Order("install_deploys.id ASC")
-		}).
-		Preload("InstallDeploys.InstallComponent").
-		Preload("InstallDeploys.InstallComponent.Component").
-		Preload("InstallDeploys.ComponentBuild").
+		Select("id", "name", "type", "status", "created_at", "finished_at").
 		Where("owner_id = ?", installID).
 		Where("org_id = ?", orgID).
 		Where("plan_only = ?", false).
 		Where("type IN ?", workflowTypes).
 		Order("created_at DESC").
 		Order("id DESC").
-		Offset(fetchOffset).
-		Limit(fetchLimit)
+		Offset(offset).
+		Limit(limit + 1)
 
 	if len(filterStatuses) > 0 {
 		query = query.Where("status->>'status' IN ?", filterStatuses)
@@ -324,7 +332,127 @@ func (s *service) getInstallDeployments(
 	if err := query.Find(&workflows).Error; err != nil {
 		return nil, fmt.Errorf("unable to query workflows: %w", err)
 	}
+	hasMore := len(workflows) > limit
+	if hasMore {
+		workflows = workflows[:limit]
+	}
 
+	workflowIDs := make([]string, 0, len(workflows))
+	for i := range workflows {
+		workflowIDs = append(workflowIDs, workflows[i].ID)
+	}
+	stepsByWorkflowID, err := s.installDeploymentSteps(ctx, workflowIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	deployments := make([]InstallDeploymentSummary, 0, len(workflows))
+	for i := range workflows {
+		deployments = append(deployments, buildInstallDeploymentSummary(&workflows[i], stepsByWorkflowID[workflows[i].ID]))
+	}
+
+	return &GetInstallDeploymentsResponse{
+		Deployments: deployments,
+		Page:        page,
+		Offset:      offset,
+		Limit:       limit,
+		HasMore:     hasMore,
+	}, nil
+}
+
+func buildInstallDeploymentSummary(wf *app.Workflow, steps []InstallDeploymentStep) InstallDeploymentSummary {
+	status := string(wf.Status.Status)
+	if status == "" {
+		status = "pending"
+	}
+	title := wf.Name
+	if title == "" {
+		title = wf.Type.Name()
+	}
+	activity := wf.Status.StatusHumanDescription
+	if activity == "" {
+		activity = wf.Type.Description()
+	}
+	if steps == nil {
+		steps = []InstallDeploymentStep{}
+	}
+	return InstallDeploymentSummary{
+		ID:        wf.ID,
+		Type:      workflowTypeToDeploymentType(wf.Type),
+		Title:     title,
+		CreatedAt: wf.CreatedAt,
+		Status:    status,
+		Activity:  activity,
+		Finished:  wf.Finished,
+		Steps:     steps,
+	}
+}
+
+func (s *service) installDeploymentSteps(ctx *gin.Context, workflowIDs []string) (map[string][]InstallDeploymentStep, error) {
+	stepsByWorkflowID := make(map[string][]InstallDeploymentStep, len(workflowIDs))
+	if len(workflowIDs) == 0 {
+		return stepsByWorkflowID, nil
+	}
+
+	var steps []app.WorkflowStep
+	if err := s.db.WithContext(ctx).
+		Select("id", "install_workflow_id", "name", "status", "idx", "group_idx", "group_retry_idx", "retried", "execution_type", "step_target_type", "metadata").
+		Where("install_workflow_id IN ?", workflowIDs).
+		Where("execution_type IS DISTINCT FROM ?", app.WorkflowStepExecutionTypeHidden).
+		Order("group_idx, group_retry_idx, idx, created_at asc").
+		Find(&steps).Error; err != nil {
+		return nil, fmt.Errorf("unable to query workflow steps: %w", err)
+	}
+
+	awaitingStepIDs := make([]string, 0)
+	for i := range steps {
+		if steps[i].Status.Status == app.AwaitingApproval {
+			awaitingStepIDs = append(awaitingStepIDs, steps[i].ID)
+		}
+	}
+	responseIDs := make(map[string]string, len(awaitingStepIDs))
+	if len(awaitingStepIDs) > 0 {
+		var responses []struct {
+			StepID     string
+			ResponseID string
+		}
+		if err := s.db.WithContext(ctx).
+			Model(&app.WorkflowStepApproval{}).
+			Select("install_workflow_step_approvals.install_workflow_step_id AS step_id, r.id AS response_id").
+			Joins("JOIN install_workflow_step_approval_responses r ON r.install_workflow_step_approval_id = install_workflow_step_approvals.id AND r.deleted_at = 0").
+			Where("install_workflow_step_approvals.install_workflow_step_id IN ?", awaitingStepIDs).
+			Scan(&responses).Error; err != nil {
+			return nil, fmt.Errorf("unable to query workflow step approval responses: %w", err)
+		}
+		for _, response := range responses {
+			responseIDs[response.StepID] = response.ResponseID
+		}
+	}
+
+	for i := range steps {
+		step := &steps[i]
+		componentName := ""
+		if name, ok := step.Metadata["component_name"]; ok && name != nil {
+			componentName = *name
+		}
+		stepsByWorkflowID[step.InstallWorkflowID] = append(stepsByWorkflowID[step.InstallWorkflowID], InstallDeploymentStep{
+			ID:                 step.ID,
+			Name:               step.Name,
+			Status:             string(step.Status.Status),
+			Idx:                step.Idx,
+			GroupIdx:           step.GroupIdx,
+			GroupRetryIdx:      step.GroupRetryIdx,
+			Retried:            step.Retried,
+			ExecutionType:      string(step.ExecutionType),
+			StepTargetType:     step.StepTargetType,
+			ComponentName:      componentName,
+			ApprovalResponseID: responseIDs[step.ID],
+		})
+	}
+	return stepsByWorkflowID, nil
+}
+
+func (s *service) buildInstallDeployments(ctx *gin.Context, orgID, installID string, workflows []app.Workflow) ([]InstallDeployment, error) {
 	workflowIDs := make([]string, 0, len(workflows))
 	for i := range workflows {
 		workflowIDs = append(workflowIDs, workflows[i].ID)
@@ -390,29 +518,9 @@ func (s *service) getInstallDeployments(
 		if d.Type == "" {
 			continue
 		}
-		if len(filterTypes) > 0 && !containsString(filterTypes, string(d.Type)) {
-			continue
-		}
 		deployments = append(deployments, d)
 	}
-
-	start := offset - fetchOffset
-	if start > len(deployments) {
-		start = len(deployments)
-	}
-	end := start + limit
-	hasMore := end < len(deployments)
-	if end > len(deployments) {
-		end = len(deployments)
-	}
-
-	return &GetInstallDeploymentsResponse{
-		Deployments: deployments[start:end],
-		Page:        page,
-		Offset:      offset,
-		Limit:       limit,
-		HasMore:     hasMore,
-	}, nil
+	return deployments, nil
 }
 
 func deploymentWorkflowTypes(filterTypes []string) []app.WorkflowType {

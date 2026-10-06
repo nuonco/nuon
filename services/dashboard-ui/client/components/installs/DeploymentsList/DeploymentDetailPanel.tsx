@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useLocation } from 'react-router'
+import { useQuery } from '@tanstack/react-query'
 import { EmptyState } from '@/components/common/EmptyState'
 import { CommitLink } from '@/components/common/GitReferenceLink'
 import { ID } from '@/components/common/ID'
@@ -27,12 +28,13 @@ import {
 } from '@/components/installs/DeploymentDetail/deployment-progress'
 import { useWorkflow } from '@/hooks/use-workflow'
 import { useInstallNested } from '@/hooks/use-install-path'
+import { getInstallDeployment } from '@/lib'
 import { installHref } from '@/lib/install-path'
 import { WorkflowProvider } from '@/providers/workflow-provider'
-import type { TInstallDeploymentRecord, TWorkflow } from '@/types'
+import type { TInstallDeploymentSummary, TWorkflow } from '@/types'
 
 export interface IDeploymentDetailPanel extends IPanel {
-  deployment: TInstallDeploymentRecord
+  deployment: TInstallDeploymentSummary
   orgId: string
   appId: string
   installId: string
@@ -49,14 +51,21 @@ const DeploymentPanelContent = ({
 }: IDeploymentDetailPanel & { workflow?: TWorkflow }) => {
   const { search } = useLocation()
   const nested = useInstallNested()
-  const branchHref = deployment.app_branch
-    ? `/${orgId}/apps/${appId}/branches/${deployment.app_branch.id}`
+  const { data: record, isFetched: recordFetched } = useQuery({
+    queryKey: ['install-deployment', orgId, installId, deployment.id],
+    queryFn: () =>
+      getInstallDeployment({ orgId, installId, workflowId: deployment.id }),
+    enabled: !!orgId && !!installId,
+  })
+  const branchHref = record?.app_branch
+    ? `/${orgId}/apps/${appId}/branches/${record.app_branch.id}`
     : undefined
   const run = {
     status: workflow?.status?.status ?? deployment.status,
-    activity: workflow?.status?.status_human_description ?? deployment.summary,
+    activity:
+      workflow?.status?.status_human_description ?? deployment.activity ?? '',
     steps: deploymentSteps(workflow),
-    outcomes: deploymentOutcomes(deployment, workflow),
+    outcomes: deploymentOutcomes(record, workflow),
   }
   const [tabOrder] = useState(() => deploymentTabOrder(run.status))
   const basePath = installHref({
@@ -75,14 +84,15 @@ const DeploymentPanelContent = ({
   const content = {
     template: (
       <DeploymentTemplateContent
-        deployment={deployment}
+        deployment={record}
         appId={appId}
         workflow={workflow}
+        isLoading={!recordFetched}
       />
     ),
     workflow: workflow ? <DeploymentWorkflowContent /> : noWorkflow,
     changes: workflow ? (
-      <DeploymentChangesContent deployment={deployment} />
+      <DeploymentChangesContent deployment={record} />
     ) : (
       noWorkflow
     ),
@@ -104,11 +114,11 @@ const DeploymentPanelContent = ({
       >
         {run.activity}
       </Text>
-      {deployment.app_branch && branchHref ? (
+      {record?.app_branch && branchHref ? (
         <LabeledValue label="App branch">
           <span className="flex flex-wrap items-center gap-2">
-            <Link href={branchHref}>{deployment.app_branch.name}</Link>
-            <CommitLink sha={deployment.app_branch.sha} repo={repo} />
+            <Link href={branchHref}>{record.app_branch.name}</Link>
+            <CommitLink sha={record.app_branch.sha} repo={repo} />
           </span>
         </LabeledValue>
       ) : null}
@@ -126,15 +136,13 @@ const DeploymentPanelContent = ({
           tabOrder.map((key) => [
             key,
             <div key={key} className="flex flex-col gap-4">
-              {deployment.workflow ? (
-                <div className="flex justify-end">
-                  <Link
-                    href={`${basePath}${DEPLOYMENT_TABS[key].path === '/' ? '' : DEPLOYMENT_TABS[key].path}${search}`}
-                  >
-                    Open full page
-                  </Link>
-                </div>
-              ) : null}
+              <div className="flex justify-end">
+                <Link
+                  href={`${basePath}${DEPLOYMENT_TABS[key].path === '/' ? '' : DEPLOYMENT_TABS[key].path}${search}`}
+                >
+                  Open full page
+                </Link>
+              </div>
               {content[key]}
             </div>,
           ])
@@ -159,13 +167,9 @@ export const DeploymentDetailPanel = (props: IDeploymentDetailPanel) => {
       aria-label="Deployment details"
       {...panelProps}
     >
-      {deployment.workflow?.id ? (
-        <WorkflowProvider workflowId={deployment.workflow.id} shouldPoll>
-          <WorkflowDeploymentPanelContent {...detailProps} />
-        </WorkflowProvider>
-      ) : (
-        <DeploymentPanelContent {...detailProps} />
-      )}
+      <WorkflowProvider workflowId={deployment.id} shouldPoll>
+        <WorkflowDeploymentPanelContent {...detailProps} />
+      </WorkflowProvider>
     </Panel>
   )
 }

@@ -21,7 +21,7 @@ import (
 type ServiceGetInstallDeploymentsResponse struct {
 
 	// deployments
-	Deployments []*ServiceInstallDeployment `json:"deployments"`
+	Deployments []*ServiceInstallDeploymentSummary `json:"deployments"`
 
 	// has more
 	HasMore bool `json:"has_more,omitempty"`

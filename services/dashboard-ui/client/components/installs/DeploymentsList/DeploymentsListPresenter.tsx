@@ -1,26 +1,27 @@
+import { useMemo } from 'react'
 import { Button } from '@/components/common/Button'
 import { CheckboxFilterDropdown } from '@/components/common/CheckboxFilterDropdown'
 import { EmptyState } from '@/components/common/EmptyState'
-import { CommitLink } from '@/components/common/GitReferenceLink'
-import { Link } from '@/components/common/Link'
 import type { IPagination } from '@/components/common/Pagination'
 import { RadioFilterDropdown } from '@/components/common/RadioFilterDropdown'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Text } from '@/components/common/Text'
 import { Timeline } from '@/components/common/Timeline'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
+import type { TDeploymentRun } from '@/components/installs/DeploymentDetail/DeploymentProgress'
 import {
   deploymentOutcomes,
   deploymentSteps,
   recoveredDeploymentResources,
+  stepAffectedResources,
+  summaryDeploymentEvidence,
   type TDeploymentOutcome,
 } from '@/components/installs/DeploymentDetail/deployment-progress'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type {
   TAPIError,
-  TInstallDeploymentRecord,
   TInstallDeploymentRecordType,
-  TWorkflow,
+  TInstallDeploymentSummary,
 } from '@/types'
 import {
   WORKFLOW_DATE_LABELS,
@@ -46,35 +47,44 @@ export const DEPLOYMENT_TYPE_LABELS: Record<
   install_config_update: 'Install config update',
 }
 
+export const DEPLOYMENT_FILTER_TYPES = (
+  Object.keys(DEPLOYMENT_TYPE_LABELS) as TInstallDeploymentRecordType[]
+).filter((type) => type !== 'image_update')
+
+const deploymentRun = (deployment: TInstallDeploymentSummary) => {
+  const evidence = summaryDeploymentEvidence(deployment)
+  const resources = stepAffectedResources(evidence.steps)
+  return {
+    resources,
+    run: {
+      status: deployment.status,
+      activity: deployment.activity ?? '',
+      steps: deploymentSteps(evidence),
+      outcomes: deploymentOutcomes({ affected_resources: resources }, evidence),
+    },
+  }
+}
+
 interface IDeploymentRecordRow {
-  deployment: TInstallDeploymentRecord
+  deployment: TInstallDeploymentSummary
+  run: TDeploymentRun
   orgId: string
   appId: string
   installId: string
   repo?: string
-  workflow?: TWorkflow
   previousOutcomes: TDeploymentOutcome[][]
 }
 
 const DeploymentRecordRow = ({
   deployment,
+  run,
   orgId,
   appId,
   installId,
   repo,
-  workflow,
   previousOutcomes,
 }: IDeploymentRecordRow) => {
   const { addPanel } = useSurfaces()
-  const branchHref = deployment.app_branch
-    ? `/${orgId}/apps/${appId}/branches/${deployment.app_branch.id}`
-    : undefined
-  const run = {
-    status: workflow?.status?.status ?? deployment.status,
-    activity: workflow?.status?.status_human_description ?? deployment.summary,
-    steps: deploymentSteps(workflow),
-    outcomes: deploymentOutcomes(deployment, workflow),
-  }
   const recovered =
     run.status === 'success'
       ? recoveredDeploymentResources(run.outcomes, previousOutcomes)
@@ -101,35 +111,6 @@ const DeploymentRecordRow = ({
           Previous {category.toLowerCase()} update failed
         </Text>
       ))}
-      {deployment.app_branch && branchHref ? (
-        <span className="flex flex-wrap items-center gap-2">
-          <Text as="span" variant="subtext" theme="neutral">
-            {deployment.type === 'provision'
-              ? 'Originally configured with'
-              : 'App branch'}
-          </Text>
-          <Link href={branchHref} textVariant="subtext">
-            {deployment.app_branch.name}
-          </Link>
-          {deployment.app_branch.sha ? (
-            <CommitLink sha={deployment.app_branch.sha} repo={repo} />
-          ) : null}
-        </span>
-      ) : null}
-      {deployment.image ? (
-        <Text variant="subtext" family="mono">
-          {deployment.image.repository}:{' '}
-          {deployment.image.previous_tag
-            ? `${deployment.image.previous_tag} → `
-            : ''}
-          {deployment.image.next_tag}
-        </Text>
-      ) : null}
-      {!workflow && deployment.workflow ? (
-        <Text variant="subtext" theme="neutral">
-          Resource outcomes unavailable
-        </Text>
-      ) : null}
     </DeploymentRow>
   )
 }
@@ -143,8 +124,7 @@ export interface IDeploymentFilter {
 }
 
 export interface IDeploymentsListPresenter {
-  deployments: TInstallDeploymentRecord[]
-  workflowsById?: Record<string, TWorkflow>
+  deployments: TInstallDeploymentSummary[]
   isLoading: boolean
   error?: TAPIError | null
   pagination: Omit<IPagination, 'position'>
@@ -213,9 +193,10 @@ export const DeploymentsListFilters = ({
     <CheckboxFilterDropdown
       id="deployments-filter-type"
       label="Type"
-      options={(
-        Object.keys(DEPLOYMENT_TYPE_LABELS) as TInstallDeploymentRecordType[]
-      ).map((value) => ({ value, label: DEPLOYMENT_TYPE_LABELS[value] }))}
+      options={DEPLOYMENT_FILTER_TYPES.map((value) => ({
+        value,
+        label: DEPLOYMENT_TYPE_LABELS[value],
+      }))}
       selected={filter.type}
       onChange={(value) =>
         onTypeChange(value as Set<TInstallDeploymentRecordType>)
@@ -249,7 +230,6 @@ export const DeploymentsListFilters = ({
 
 export const DeploymentsListPresenter = ({
   deployments,
-  workflowsById = {},
   isLoading,
   error,
   pagination,
@@ -266,13 +246,13 @@ export const DeploymentsListPresenter = ({
   onDateChange,
   onClearFilters,
 }: IDeploymentsListPresenter) => {
+  const runs = useMemo(() => deployments.map(deploymentRun), [deployments])
   const allResources = [
     ...new Set(
-      deployments.flatMap((deployment) => [
-        ...(deployment.affected_resources.stack ? ['stack'] : []),
-        ...(deployment.affected_resources.sandbox ? ['sandbox'] : []),
-        ...(deployment.affected_resources.components ?? []),
-        ...(deployment.affected_resources.images ?? []),
+      runs.flatMap(({ resources }) => [
+        ...(resources.stack ? ['stack'] : []),
+        ...(resources.sandbox ? ['sandbox'] : []),
+        ...resources.components,
       ])
     ),
   ]
@@ -320,34 +300,14 @@ export const DeploymentsListPresenter = ({
           renderEvent={(deployment, index) => (
             <DeploymentRecordRow
               deployment={deployment}
-              workflow={
-                deployment.workflow
-                  ? workflowsById[deployment.workflow.id]
-                  : undefined
-              }
+              run={runs[index].run}
               orgId={orgId}
               appId={appId}
               installId={installId}
               repo={repo}
-              previousOutcomes={
-                deployments
-                  .slice(index + 1)
-                  .every(
-                    (previous) =>
-                      !previous.workflow || workflowsById[previous.workflow.id]
-                  )
-                  ? deployments
-                      .slice(index + 1)
-                      .map((previous) =>
-                        deploymentOutcomes(
-                          previous,
-                          previous.workflow
-                            ? workflowsById[previous.workflow.id]
-                            : undefined
-                        )
-                      )
-                  : []
-              }
+              previousOutcomes={runs
+                .slice(index + 1)
+                .map((previous) => previous.run.outcomes)}
             />
           )}
         />

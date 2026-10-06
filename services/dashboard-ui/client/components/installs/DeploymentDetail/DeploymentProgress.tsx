@@ -2,19 +2,19 @@ import { Badge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
-import type { TWorkflowStep } from '@/types'
 import { humanize } from '@/utils/string-utils'
 import {
   deploymentStepContext,
   isAwaitingDeploymentApproval,
   isDeploymentRunning,
   type TDeploymentOutcome,
+  type TDeploymentStep,
 } from './deployment-progress'
 
 export type TDeploymentRun = {
   status: string
   activity: string
-  steps: TWorkflowStep[]
+  steps: TDeploymentStep[]
   outcomes: TDeploymentOutcome[]
 }
 

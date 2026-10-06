@@ -10,7 +10,7 @@ import {
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { useInstallPage } from '@/hooks/use-install-path'
 import { useWorkflow } from '@/hooks/use-workflow'
-import { getInstallDeployments } from '@/lib'
+import { getInstallDeployment } from '@/lib'
 import { WorkflowProvider } from '@/providers/workflow-provider'
 import { humanize } from '@/utils/string-utils'
 
@@ -24,15 +24,12 @@ const DeploymentDetailLayoutContent = () => {
   const { data: deployment, isFetched: deploymentFetched } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['install-deployment', org?.id, install?.id, workflowId],
-    queryFn: async () => {
-      const response = await getInstallDeployments({
+    queryFn: () =>
+      getInstallDeployment({
         orgId: org!.id,
         installId: install!.id,
-        search: workflowId,
-        limit: 20,
-      })
-      return response.deployments.find((item) => item.id === workflowId) ?? null
-    },
+        workflowId: workflowId!,
+      }),
     enabled: !!org?.id && !!install?.id && !!workflowId,
   })
 

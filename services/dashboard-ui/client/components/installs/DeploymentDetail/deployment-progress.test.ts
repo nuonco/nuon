@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 import type {
   TInstallDeploymentRecord,
+  TInstallDeploymentSummary,
   TWorkflow,
   TWorkflowStep,
 } from '@/types'
@@ -12,6 +13,8 @@ import {
   deploymentTabOrder,
   isAwaitingDeploymentApproval,
   recoveredDeploymentResources,
+  stepAffectedResources,
+  summaryDeploymentEvidence,
 } from './deployment-progress'
 
 const deployment: TInstallDeploymentRecord = {
@@ -427,4 +430,79 @@ test('missing step evidence does not misidentify successful work as the failure'
   expect(
     deploymentStepContext('error', [step('Sync configuration', 'success', 1)])
   ).toEqual({ current: undefined, next: undefined })
+})
+
+test('overview step summaries produce the same outcomes as full workflow steps', () => {
+  const summary: TInstallDeploymentSummary = {
+    id: deployment.id,
+    type: 'provision',
+    title: deployment.title,
+    status: 'error',
+    created_at: deployment.created_at,
+    finished: true,
+    steps: [
+      {
+        id: 'stack',
+        name: 'await install stack',
+        status: 'success',
+        group_idx: 1,
+        execution_type: 'system',
+        step_target_type: 'install_stack_versions',
+      },
+      {
+        id: 'sandbox',
+        name: 'provision sandbox apply plan',
+        status: 'success',
+        group_idx: 2,
+        execution_type: 'system',
+      },
+      {
+        id: 'plan-api',
+        name: 'plan api',
+        status: 'approval-awaiting',
+        group_idx: 3,
+        execution_type: 'approval',
+        component_name: 'api',
+        approval_response_id: 'response-1',
+      },
+      {
+        id: 'apply-worker',
+        name: 'apply worker',
+        status: 'error',
+        group_idx: 4,
+        execution_type: 'system',
+        component_name: 'worker',
+      },
+    ],
+  }
+  const evidence = summaryDeploymentEvidence(summary)
+  const resources = stepAffectedResources(evidence.steps)
+  expect(resources).toEqual({
+    stack: true,
+    sandbox: true,
+    components: ['api', 'worker'],
+    images: [],
+  })
+  const full = workflow(
+    [
+      step('await install stack', 'success', 1, {
+        id: 'stack',
+        step_target_type: 'install_stack_versions',
+      }),
+      step('provision sandbox apply plan', 'success', 2, { id: 'sandbox' }),
+      component('plan api', 'approval-awaiting', 3, 'api', {
+        id: 'plan-api',
+        execution_type: 'approval',
+        approval: { response: { id: 'response-1' } },
+      }),
+      component('apply worker', 'error', 4, 'worker', { id: 'apply-worker' }),
+    ],
+    { finished: true }
+  )
+  expect(
+    deploymentOutcomes({ affected_resources: resources }, evidence)
+  ).toEqual(deploymentOutcomes({ affected_resources: resources }, full))
+  expect(
+    deploymentStepContext('error', deploymentSteps(evidence)).current?.id
+  ).toBe('apply-worker')
 })
