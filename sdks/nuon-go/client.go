@@ -76,6 +76,11 @@ type Client interface {
 	UpdateApp(ctx context.Context, appID string, req *models.ServiceUpdateAppRequest) (*models.AppApp, error)
 	DeleteApp(ctx context.Context, appID string) (bool, error)
 
+	GetAppBundles(ctx context.Context, appID string, query *GetAppBundlesQuery) ([]*models.ServiceBundleResponse, bool, error)
+	GetAppBundle(ctx context.Context, appID, bundleID string) (*models.ServiceBundleResponse, error)
+	CreateAppBundle(ctx context.Context, appID string, req *models.ServiceCreateBundleRequest) (*models.ServiceBundleResponse, error)
+	CreateAppBundleDownloadGrant(ctx context.Context, appID, bundleID string) (*models.ServiceDownloadGrantResponse, error)
+
 	// app branch methods
 	GetOrgBranches(ctx context.Context) ([]*models.AppAppBranch, error)
 	GetAppBranches(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppBranch, bool, error)
@@ -209,6 +214,7 @@ type Client interface {
 	CreateVCSConnectionCallback(ctx context.Context, req *models.ServiceCreateConnectionCallbackRequest) (*models.AppVCSConnection, error)
 	GetVCSConnections(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppVCSConnection, bool, error)
 	GetVCSConnection(ctx context.Context, connID string) (*models.AppVCSConnection, error)
+	GetVCSConnectionRepos(ctx context.Context, connID string) (*models.ServiceVCSConnectionReposResponse, error)
 	DeleteVCSConnection(ctx context.Context, connID string) error
 
 	// installs

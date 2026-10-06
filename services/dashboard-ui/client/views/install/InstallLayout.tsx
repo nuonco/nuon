@@ -106,7 +106,6 @@ const InstallTemplate = () => {
     useInstallPage()
   const { pathname } = useLocation()
   const hasNotebooks = !!org?.features?.notebooks
-  const hasAppBranchesUI = !!org?.features?.['app-branches-ui']
   const installBasePath = href()
   const openSettings = useOpenInstallSettings()
   const [searchParams] = useSearchParams()
@@ -294,31 +293,29 @@ const InstallTemplate = () => {
                         </Text>
                       </LabeledValue>
                     )}
-                    {hasAppBranchesUI && (
-                      <LabeledValue label="Branch">
-                        <span className="flex items-center gap-2">
-                          {install.app_branch ? (
-                            <Link
-                              href={`/${org?.id}/apps/${install?.app_id}/branches/${install.app_branch.id}`}
-                            >
-                              <span className="flex items-center gap-1">
-                                <Icon variant="GitBranchIcon" size={14} />
-                                {install.app_branch.name}
-                              </span>
-                            </Link>
-                          ) : (
-                            <Text variant="subtext" theme="neutral">
-                              None
-                            </Text>
-                          )}
-                          <ChangeAppBranchButton
-                            compact
-                            install={install}
-                            onSuccess={refresh}
-                          />
-                        </span>
-                      </LabeledValue>
-                    )}
+                    <LabeledValue label="Branch">
+                      <span className="flex items-center gap-2">
+                        {install.app_branch ? (
+                          <Link
+                            href={`/${org?.id}/apps/${install?.app_id}/branches/${install.app_branch.id}`}
+                          >
+                            <span className="flex items-center gap-1">
+                              <Icon variant="GitBranchIcon" size={14} />
+                              {install.app_branch.name}
+                            </span>
+                          </Link>
+                        ) : (
+                          <Text variant="subtext" theme="neutral">
+                            None
+                          </Text>
+                        )}
+                        <ChangeAppBranchButton
+                          compact
+                          install={install}
+                          onSuccess={refresh}
+                        />
+                      </span>
+                    </LabeledValue>
                     <LabeledValue label="App">
                       <Link href={`/${org.id}/apps/${install.app_id}`}>
                         {install?.app?.name}
