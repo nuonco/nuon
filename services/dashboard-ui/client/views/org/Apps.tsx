@@ -7,7 +7,6 @@ import { useOrg } from '@/hooks/use-org'
 
 export const Apps = () => {
   const { org } = useOrg()
-  const hasAppBranchesUI = !!org?.features?.['app-branches-ui']
 
   return (
     <>
@@ -29,7 +28,7 @@ export const Apps = () => {
         title="Apps"
         description="Manage your applications here."
         createAction={
-          hasAppBranchesUI ? <CreateAppButton variant="primary" /> : null
+          <CreateAppButton variant="primary" />
         }
       >
         <AppsTable shouldPoll />

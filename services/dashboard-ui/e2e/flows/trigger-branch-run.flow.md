@@ -6,7 +6,6 @@ so the toast is the durable signal here.
 
 ## Setup
 - fixtures: orgId
-- feature: app-branches-ui (enabled on the e2e org in global-setup)
 - isolation: `nuon apps sync` does NOT create a branch for httpbin, so the spec seeds one
   via the API (helpers.createTriggerableBranch): it creates its own throwaway install, a
   branch, and a branch config with one install group (an install can only belong to one

@@ -8,6 +8,8 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
+const defaultInstallGroupName = "default"
+
 func canonicalizeLocalBranch(ctx context.Context, resolver *branchNameResolver, in *config.AppBranchConfig) (*config.AppBranchConfig, error) {
 	out := cloneAppBranchConfig(in)
 	if out.Preview != nil {
