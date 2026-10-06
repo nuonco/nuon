@@ -8,23 +8,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updated"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type ToggleInstallComponentRequest struct {
-	RequestID string `json:"request_id,omitempty" validate:"omitempty,max=255"`
-	Enabled   *bool  `json:"enabled" validate:"required"`
-	PlanOnly  bool   `json:"plan_only"`
+	Enabled  *bool `json:"enabled" validate:"required"`
+	PlanOnly bool  `json:"plan_only"`
 }
 
 func (c *ToggleInstallComponentRequest) Validate(v *validator.Validate) error {
@@ -112,61 +107,6 @@ func (s *service) ToggleInstallComponent(ctx *gin.Context) {
 	workflowType := app.WorkflowTypeComponentEnabled
 	if !*req.Enabled {
 		workflowType = app.WorkflowTypeComponentDisabled
-	}
-
-	if req.RequestID != "" {
-		hash, err := request.Hash(struct {
-			Enabled     bool   `json:"enabled"`
-			PlanOnly    bool   `json:"plan_only"`
-			ComponentID string `json:"component_id"`
-		}{
-			Enabled:     *req.Enabled,
-			PlanOnly:    req.PlanOnly,
-			ComponentID: component.ID,
-		})
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-
-		workflow, created, err := s.helpers.RunIdempotentInstallWorkflow(ctx, installhelpers.IdempotentInstallWorkflowRequest{
-			InstallID:    install.ID,
-			WorkflowType: workflowType,
-			PlanOnly:     req.PlanOnly,
-			RequestID:    req.RequestID,
-			RequestHash:  hash,
-			Operation:    "toggle-component",
-			QueueName:    installhelpers.InstallWorkflowsQueueName,
-		}, &installhelpers.IdempotentInstallWorkflowHooks{
-			Prepare: func(tx *gorm.DB) (map[string]string, error) {
-				_, metadata, err := s.persistInstallInputsUpdateTx(ctx, tx, install, patch, true, false)
-				if err != nil {
-					return nil, err
-				}
-				return metadata, nil
-			},
-		})
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-
-		if created {
-			signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
-			if err != nil {
-				ctx.Error(err)
-				return
-			}
-			if err := s.enqueueInstallSignal(ctx, signalsQueueID, &updated.Signal{
-				InstallID: install.ID,
-			}, "", ""); err != nil {
-				ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-				return
-			}
-		}
-
-		ctx.JSON(http.StatusCreated, app.WorkflowResponse{WorkflowID: workflow.ID})
-		return
 	}
 
 	inputs, err := s.applyInstallInputsUpdate(ctx, install, patch, "", true, false, req.PlanOnly, workflowType)
