@@ -10,15 +10,18 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type TeardownInstallComponentRequest struct {
-	Role     string `json:"role,omitempty"`
-	PlanOnly bool   `json:"plan_only"`
+	RequestID string `json:"request_id,omitempty" validate:"omitempty,max=255"`
+	Role      string `json:"role,omitempty"`
+	PlanOnly  bool   `json:"plan_only"`
 }
 
 func (c *TeardownInstallComponentRequest) Validate(v *validator.Validate) error {
@@ -43,6 +46,7 @@ func (c *TeardownInstallComponentRequest) Validate(v *validator.Validate) error 
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.WorkflowResponse
 // @Router					/v1/installs/{install_id}/components/{component_id}/teardown [post]
@@ -88,13 +92,48 @@ func (s *service) TeardownInstallComponent(ctx *gin.Context) {
 		return
 	}
 
+	metadata := map[string]string{
+		app.WorkflowMetadataKeyWorkflowNameSuffix: component.Name,
+		"component_id": component.ID,
+	}
+
+	if req.RequestID != "" {
+		hashBody := req
+		hashBody.RequestID = ""
+		hash, err := request.Hash(struct {
+			TeardownInstallComponentRequest
+			ComponentID string `json:"component_id"`
+		}{
+			TeardownInstallComponentRequest: hashBody,
+			ComponentID:                     component.ID,
+		})
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		workflow, _, err := s.helpers.RunIdempotentInstallWorkflow(ctx, installhelpers.IdempotentInstallWorkflowRequest{
+			InstallID:    install.ID,
+			WorkflowType: app.WorkflowTypeTeardownComponent,
+			Metadata:     metadata,
+			PlanOnly:     req.PlanOnly,
+			Role:         req.Role,
+			RequestID:    req.RequestID,
+			RequestHash:  hash,
+			Operation:    "teardown-component",
+			QueueName:    installhelpers.InstallWorkflowsQueueName,
+		}, nil)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		ctx.JSON(http.StatusCreated, app.WorkflowResponse{WorkflowID: workflow.ID})
+		return
+	}
+
 	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
 		install.ID,
 		app.WorkflowTypeTeardownComponent,
-		map[string]string{
-			app.WorkflowMetadataKeyWorkflowNameSuffix: component.Name,
-			"component_id": component.ID,
-		},
+		metadata,
 		req.PlanOnly,
 		req.Role,
 	)

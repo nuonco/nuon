@@ -5,13 +5,17 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 )
 
 type CreateInstallAppConfigUpdateRequest struct {
+	RequestID   string `json:"request_id,omitempty" validate:"omitempty,max=255"`
 	AppConfigID string `json:"app_config_id" validate:"required"`
 	PlanOnly    bool   `json:"plan_only"`
 }
@@ -30,6 +34,7 @@ type CreateInstallAppConfigUpdateRequest struct {
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.InstallAppConfigVersion
 // @Router					/v1/installs/{install_id}/app-config-updates [post]
@@ -56,6 +61,64 @@ func (s *service) CreateInstallAppConfigUpdate(ctx *gin.Context) {
 	var appConfig app.AppConfig
 	if err := s.db.WithContext(ctx).First(&appConfig, "id = ?", req.AppConfigID).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to find app config: %w", err))
+		return
+	}
+
+	if req.RequestID != "" {
+		hashReq := req
+		hashReq.RequestID = ""
+		hash, err := request.Hash(hashReq)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+
+		var createdVersion *app.InstallAppConfigVersion
+		workflow, _, err := s.helpers.RunIdempotentInstallWorkflow(ctx, installhelpers.IdempotentInstallWorkflowRequest{
+			InstallID:    install.ID,
+			WorkflowType: app.WorkflowTypeAppBranchConfigUpdate,
+			Metadata: map[string]string{
+				"new_app_config_id": req.AppConfigID,
+			},
+			PlanOnly:    req.PlanOnly,
+			RequestID:   req.RequestID,
+			RequestHash: hash,
+			Operation:   "app-config-update",
+			QueueName:   installhelpers.InstallWorkflowsQueueName,
+		}, &installhelpers.IdempotentInstallWorkflowHooks{
+			AfterCreate: func(tx *gorm.DB, wf *app.Workflow) error {
+				update := app.InstallAppConfigVersion{
+					InstallID:      installID,
+					OldAppConfigID: install.AppConfigID,
+					NewAppConfigID: req.AppConfigID,
+					WorkflowID:     &wf.ID,
+					Status:         app.NewCompositeStatus(ctx, app.StatusPending),
+				}
+				if err := tx.WithContext(ctx).Create(&update).Error; err != nil {
+					return fmt.Errorf("unable to create install config update: %w", err)
+				}
+				createdVersion = &update
+				return nil
+			},
+		})
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+
+		if createdVersion != nil {
+			ctx.JSON(http.StatusCreated, createdVersion)
+			return
+		}
+
+		var update app.InstallAppConfigVersion
+		if err := s.db.WithContext(ctx).
+			Where("workflow_id = ?", workflow.ID).
+			First(&update).Error; err != nil {
+			ctx.Error(fmt.Errorf("unable to load install config update: %w", err))
+			return
+		}
+		ctx.JSON(http.StatusCreated, update)
 		return
 	}
 

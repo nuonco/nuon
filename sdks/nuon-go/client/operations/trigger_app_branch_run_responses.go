@@ -55,6 +55,12 @@ func (o *TriggerAppBranchRunReader) ReadResponse(response runtime.ClientResponse
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewTriggerAppBranchRunConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewTriggerAppBranchRunInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *TriggerAppBranchRunNotFound) GetPayload() *models.StderrErrResponse {
 }
 
 func (o *TriggerAppBranchRunNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewTriggerAppBranchRunConflict creates a TriggerAppBranchRunConflict with default headers values
+func NewTriggerAppBranchRunConflict() *TriggerAppBranchRunConflict {
+	return &TriggerAppBranchRunConflict{}
+}
+
+/*
+TriggerAppBranchRunConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type TriggerAppBranchRunConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this trigger app branch run conflict response has a 2xx status code
+func (o *TriggerAppBranchRunConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this trigger app branch run conflict response has a 3xx status code
+func (o *TriggerAppBranchRunConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this trigger app branch run conflict response has a 4xx status code
+func (o *TriggerAppBranchRunConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this trigger app branch run conflict response has a 5xx status code
+func (o *TriggerAppBranchRunConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this trigger app branch run conflict response a status code equal to that given
+func (o *TriggerAppBranchRunConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the trigger app branch run conflict response
+func (o *TriggerAppBranchRunConflict) Code() int {
+	return 409
+}
+
+func (o *TriggerAppBranchRunConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/branches/{app_branch_id}/runs][%d] triggerAppBranchRunConflict %s", 409, payload)
+}
+
+func (o *TriggerAppBranchRunConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/branches/{app_branch_id}/runs][%d] triggerAppBranchRunConflict %s", 409, payload)
+}
+
+func (o *TriggerAppBranchRunConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *TriggerAppBranchRunConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

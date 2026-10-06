@@ -8,8 +8,10 @@ package models
 import (
 	"context"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // ServiceCreateInstallDeployRequest service create install deploy request
@@ -29,12 +31,37 @@ type ServiceCreateInstallDeployRequest struct {
 	// plan only
 	PlanOnly bool `json:"plan_only,omitempty"`
 
+	// request id
+	// Max Length: 255
+	RequestID string `json:"request_id,omitempty"`
+
 	// role
 	Role string `json:"role,omitempty"`
 }
 
 // Validate validates this service create install deploy request
 func (m *ServiceCreateInstallDeployRequest) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateRequestID(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ServiceCreateInstallDeployRequest) validateRequestID(formats strfmt.Registry) error {
+	if swag.IsZero(m.RequestID) { // not required
+		return nil
+	}
+
+	if err := validate.MaxLength("request_id", "body", m.RequestID, 255); err != nil {
+		return err
+	}
+
 	return nil
 }
 

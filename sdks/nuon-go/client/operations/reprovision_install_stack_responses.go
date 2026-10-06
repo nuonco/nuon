@@ -55,6 +55,12 @@ func (o *ReprovisionInstallStackReader) ReadResponse(response runtime.ClientResp
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewReprovisionInstallStackConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewReprovisionInstallStackInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *ReprovisionInstallStackNotFound) GetPayload() *models.StderrErrResponse
 }
 
 func (o *ReprovisionInstallStackNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewReprovisionInstallStackConflict creates a ReprovisionInstallStackConflict with default headers values
+func NewReprovisionInstallStackConflict() *ReprovisionInstallStackConflict {
+	return &ReprovisionInstallStackConflict{}
+}
+
+/*
+ReprovisionInstallStackConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type ReprovisionInstallStackConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this reprovision install stack conflict response has a 2xx status code
+func (o *ReprovisionInstallStackConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this reprovision install stack conflict response has a 3xx status code
+func (o *ReprovisionInstallStackConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this reprovision install stack conflict response has a 4xx status code
+func (o *ReprovisionInstallStackConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this reprovision install stack conflict response has a 5xx status code
+func (o *ReprovisionInstallStackConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this reprovision install stack conflict response a status code equal to that given
+func (o *ReprovisionInstallStackConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the reprovision install stack conflict response
+func (o *ReprovisionInstallStackConflict) Code() int {
+	return 409
+}
+
+func (o *ReprovisionInstallStackConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/reprovision-stack][%d] reprovisionInstallStackConflict %s", 409, payload)
+}
+
+func (o *ReprovisionInstallStackConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/reprovision-stack][%d] reprovisionInstallStackConflict %s", 409, payload)
+}
+
+func (o *ReprovisionInstallStackConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *ReprovisionInstallStackConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

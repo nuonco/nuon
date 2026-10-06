@@ -14,24 +14,18 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// ServiceCreateComponentBuildRequest service create component build request
+// ServiceDeleteInstallRequest service delete install request
 //
-// swagger:model service.CreateComponentBuildRequest
-type ServiceCreateComponentBuildRequest struct {
-
-	// git ref
-	GitRef string `json:"git_ref,omitempty"`
+// swagger:model service.DeleteInstallRequest
+type ServiceDeleteInstallRequest struct {
 
 	// request id
 	// Max Length: 255
 	RequestID string `json:"request_id,omitempty"`
-
-	// use latest
-	UseLatest bool `json:"use_latest,omitempty"`
 }
 
-// Validate validates this service create component build request
-func (m *ServiceCreateComponentBuildRequest) Validate(formats strfmt.Registry) error {
+// Validate validates this service delete install request
+func (m *ServiceDeleteInstallRequest) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateRequestID(formats); err != nil {
@@ -44,7 +38,7 @@ func (m *ServiceCreateComponentBuildRequest) Validate(formats strfmt.Registry) e
 	return nil
 }
 
-func (m *ServiceCreateComponentBuildRequest) validateRequestID(formats strfmt.Registry) error {
+func (m *ServiceDeleteInstallRequest) validateRequestID(formats strfmt.Registry) error {
 	if swag.IsZero(m.RequestID) { // not required
 		return nil
 	}
@@ -56,13 +50,13 @@ func (m *ServiceCreateComponentBuildRequest) validateRequestID(formats strfmt.Re
 	return nil
 }
 
-// ContextValidate validates this service create component build request based on context it is used
-func (m *ServiceCreateComponentBuildRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validates this service delete install request based on context it is used
+func (m *ServiceDeleteInstallRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *ServiceCreateComponentBuildRequest) MarshalBinary() ([]byte, error) {
+func (m *ServiceDeleteInstallRequest) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -70,8 +64,8 @@ func (m *ServiceCreateComponentBuildRequest) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *ServiceCreateComponentBuildRequest) UnmarshalBinary(b []byte) error {
-	var res ServiceCreateComponentBuildRequest
+func (m *ServiceDeleteInstallRequest) UnmarshalBinary(b []byte) error {
+	var res ServiceDeleteInstallRequest
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

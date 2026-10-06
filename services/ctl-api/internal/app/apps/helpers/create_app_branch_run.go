@@ -25,6 +25,7 @@ type CreateAppBranchRunRequest struct {
 	Labels                 labels.Labels
 	TriggerEventDispatchID *string
 	Preview                *PreviewRunInput
+	Request                *app.WorkflowRequest
 }
 
 func (h *Helpers) CreateAppBranchRun(ctx context.Context, req *CreateAppBranchRunRequest) (*app.AppBranchRun, error) {
@@ -67,6 +68,7 @@ func (h *Helpers) CreateAppBranchRun(ctx context.Context, req *CreateAppBranchRu
 		Status:                 "pending",
 		WorkflowID:             nil,
 		Labeled:                labels.Labeled{Labels: req.Labels},
+		Request:                req.Request,
 	}
 
 	previewInput := MapLegacyPlanOnlyToPreviewInput(req)
