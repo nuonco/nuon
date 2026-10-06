@@ -1,4 +1,5 @@
 import { Status } from '@/components/common/Status'
+import { Text } from '@/components/common/Text'
 import type { TRolloutInstall, TRolloutInstallGroup } from './fixtures'
 
 const STATUS_COUNTS = [
@@ -22,12 +23,20 @@ export const InstallStatusCounts = ({
     const key = countKey(install)
     counts.set(key, (counts.get(key) ?? 0) + 1)
   }
+  const total = group.installs.length
 
-  return STATUS_COUNTS.filter((item) => counts.get(item.status)).map((item) => (
-    <Status key={item.status} status={item.status}>
-      <span className="font-normal">
-        {counts.get(item.status)} {item.label}
-      </span>
-    </Status>
-  ))
+  return (
+    <>
+      <Text variant="subtext" theme="neutral">
+        {total} {total === 1 ? 'install' : 'installs'}
+      </Text>
+      {STATUS_COUNTS.filter((item) => counts.get(item.status)).map((item) => (
+        <Status key={item.status} status={item.status}>
+          <span className="font-normal">
+            {counts.get(item.status)} {item.label}
+          </span>
+        </Status>
+      ))}
+    </>
+  )
 }

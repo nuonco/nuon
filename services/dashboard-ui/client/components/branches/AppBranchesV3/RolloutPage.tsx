@@ -95,7 +95,7 @@ export const RolloutPage = ({ rollout }: IRolloutPage) => (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="flex flex-wrap items-center gap-3">
-          <Text variant="base" weight="strong" level={2}>
+          <Text variant="h3" weight="stronger" level={2}>
             Rollout
           </Text>
           <Status status={rollout.status} />
