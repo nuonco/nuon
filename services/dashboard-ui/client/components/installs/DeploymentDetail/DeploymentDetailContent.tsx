@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
 import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
 import { BranchRunChanges } from '@/components/branches/BranchRunChanges/BranchRunChanges'
+import { Button } from '@/components/common/Button'
+import { EmptyState } from '@/components/common/EmptyState'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Text } from '@/components/common/Text'
 import { WorkflowChangesSummaryContainer } from '@/components/workflows/WorkflowChangesSummary'
@@ -24,11 +26,15 @@ export const DeploymentTemplateContent = ({
   appId,
   workflow,
   isLoading = false,
+  isError = false,
+  onRetry,
 }: {
   deployment?: TInstallDeploymentRecord
   appId?: string
   workflow?: TWorkflow
   isLoading?: boolean
+  isError?: boolean
+  onRetry?: () => void
 }) => {
   const branch = deployment?.app_branch
   const scope = useMemo(() => {
@@ -54,6 +60,20 @@ export const DeploymentTemplateContent = ({
     }
   }, [deployment, workflow])
   if (isLoading) return <Text loading loadingWidth={32} />
+  if (isError)
+    return (
+      <EmptyState
+        emptyTitle="Template updates failed to load"
+        emptyMessage="Unable to load this deployment's changes."
+        action={
+          onRetry ? (
+            <Button variant="secondary" onClick={onRetry}>
+              Try again
+            </Button>
+          ) : undefined
+        }
+      />
+    )
   return branch?.id && branch.run_id && appId ? (
     <AppProvider appId={appId}>
       <BranchRunChanges

@@ -9,10 +9,13 @@ import { humanize } from '@/utils/string-utils'
 export const DeploymentTemplateTab = () => {
   const { install } = useInstallPage()
   const { workflow } = useWorkflow()
-  const { deployment, deploymentFetched } = useOutletContext<{
-    deployment?: TInstallDeploymentRecord
-    deploymentFetched: boolean
-  }>()
+  const { deployment, deploymentFetched, deploymentError, refetchDeployment } =
+    useOutletContext<{
+      deployment?: TInstallDeploymentRecord
+      deploymentFetched: boolean
+      deploymentError: boolean
+      refetchDeployment: () => void
+    }>()
   const title =
     deployment?.title ||
     workflow?.name ||
@@ -27,6 +30,8 @@ export const DeploymentTemplateTab = () => {
         appId={install?.app_id}
         workflow={workflow}
         isLoading={!deploymentFetched}
+        isError={deploymentError}
+        onRetry={refetchDeployment}
       />
     </>
   )

@@ -21,7 +21,12 @@ const DeploymentDetailLayoutContent = () => {
   const { workflow } = useWorkflow()
   const [tabOrder] = useState(() => deploymentTabOrder(workflow.status?.status))
 
-  const { data: deployment, isFetched: deploymentFetched } = useQuery({
+  const {
+    data: deployment,
+    isFetched: deploymentFetched,
+    isError: deploymentError,
+    refetch: refetchDeployment,
+  } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['install-deployment', org?.id, install?.id, workflowId],
     queryFn: () =>
@@ -72,7 +77,12 @@ const DeploymentDetailLayoutContent = () => {
         banners={<DeploymentAlerts />}
       >
         <Outlet
-          context={{ deployment: deployment ?? undefined, deploymentFetched }}
+          context={{
+            deployment: deployment ?? undefined,
+            deploymentFetched,
+            deploymentError,
+            refetchDeployment,
+          }}
         />
       </DeploymentDetail>
     </>

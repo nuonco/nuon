@@ -276,26 +276,22 @@ func (s *service) getInstallDeployments(
 		query = query.Where("status->>'status' IN ?", filterStatuses)
 	}
 
+	const stepExists = `
+		EXISTS (
+			SELECT 1 FROM install_workflow_steps s
+			WHERE s.install_workflow_id = install_workflows.id
+			  AND s.deleted_at = 0
+			  AND s.execution_type IS DISTINCT FROM 'hidden'
+			  AND `
 	switch resource {
 	case "":
 	case "stack":
-		query = query.Where("type IN ?", []app.WorkflowType{
-			app.WorkflowTypeProvision,
-			app.WorkflowTypeReprovision,
-			app.WorkflowTypeReprovisionStack,
-			app.WorkflowTypeInputUpdate,
-		})
+		query = query.Where(stepExists+`(s.step_target_type = 'install_stack_versions' OR s.name ~* ?))`, `\m(install stack|stack policy)\M`)
 	case "sandbox":
-		query = query.Where("type IN ?", []app.WorkflowType{
-			app.WorkflowTypeProvision,
-			app.WorkflowTypeReprovision,
-			app.WorkflowTypeReprovisionSandbox,
-			app.WorkflowTypeDriftRunReprovisionSandbox,
-			app.WorkflowTypeInputUpdate,
-		})
+		query = query.Where(stepExists+`(s.step_target_type = 'install_sandbox_runs' OR s.name ~* ?))`, `\msandbox\M`)
 	default:
-		query = query.Where(`
-			EXISTS (
+		query = query.Where(`(`+stepExists+`s.metadata -> 'component_name' = ?)
+			OR EXISTS (
 				SELECT 1
 				FROM install_deploys d
 				JOIN install_components ic ON ic.id = d.install_component_id
@@ -313,7 +309,7 @@ func (s *service) getInstallDeployments(
 					  AND (cb.source_image = ? OR cb.source_ref = ?)
 				)
 			  )
-			)`, resource, resource, resource)
+			))`, resource, resource, resource, resource)
 	}
 
 	for _, token := range strings.Fields(search) {

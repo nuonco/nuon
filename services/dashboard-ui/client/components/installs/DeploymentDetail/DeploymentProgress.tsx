@@ -4,9 +4,12 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { humanize } from '@/utils/string-utils'
 import {
+  activeStepDetail,
   deploymentStepContext,
   isAwaitingDeploymentApproval,
+  isCompletedDeploymentStep,
   isDeploymentRunning,
+  isQueuedDeployment,
   type TDeploymentOutcome,
   type TDeploymentStep,
 } from './deployment-progress'
@@ -44,29 +47,38 @@ export const ResourceScopeSummary = ({ run }: { run: TDeploymentRun }) => (
           (outcome) => outcome.status === 'success'
         )
         const partial =
-          !completed && outcomes.some((outcome) => outcome.status === 'success')
+          !completed &&
+          outcomes.some((outcome) =>
+            ['success', 'warn'].includes(outcome.status)
+          )
+        const every = (...statuses: string[]) =>
+          outcomes.every((outcome) => statuses.includes(outcome.status))
         const status = completed
           ? 'success'
-          : outcomes.some((outcome) => outcome.status === 'in-progress')
+          : outcomes.some((outcome) => outcome.status === 'in-progress') ||
+              (partial && isDeploymentRunning(run.status))
             ? 'in-progress'
             : partial
               ? 'warn'
               : outcomes.some((outcome) => outcome.status === 'error')
                 ? 'error'
-                : outcomes.every((outcome) => outcome.status === 'not-started')
+                : every('not-started')
                   ? 'not-started'
-                  : 'unknown'
-        const label = completed
-          ? 'Completed'
-          : status === 'in-progress'
-            ? 'In progress'
-            : partial
-              ? 'Partial rollout'
-              : status === 'error'
-                ? 'Failed'
-                : status === 'not-started'
-                  ? 'Not started'
-                  : 'Outcome unknown'
+                  : every('cancelled', 'not-started')
+                    ? 'cancelled'
+                    : every('user-skipped')
+                      ? 'user-skipped'
+                      : 'unknown'
+        const label = {
+          success: 'Completed',
+          'in-progress': 'In progress',
+          warn: 'Partial rollout',
+          error: 'Failed',
+          'not-started': 'Not started',
+          cancelled: 'Cancelled',
+          'user-skipped': 'Skipped',
+          unknown: 'Outcome unknown',
+        }[status]
         return (
           <span
             key={category}
@@ -74,7 +86,7 @@ export const ResourceScopeSummary = ({ run }: { run: TDeploymentRun }) => (
             aria-label={`${category}: ${label}`}
             className="flex items-center gap-2"
           >
-            {partial && status !== 'in-progress' ? (
+            {status === 'warn' ? (
               <Icon variant="CircleHalfIcon" theme="warn" />
             ) : (
               <Status
@@ -139,6 +151,8 @@ export const ResourceOutcomes = ({ run }: { run: TDeploymentRun }) =>
 
 export const StepContext = ({ run }: { run: TDeploymentRun }) => {
   const { current, next } = deploymentStepContext(run.status, run.steps)
+  const preparing = !run.steps.length && isQueuedDeployment(run.status)
+  const activeDetail = activeStepDetail(current)
   return (
     <div className="grid grid-cols-1 gap-4 @sm:grid-cols-2">
       <div
@@ -158,11 +172,22 @@ export const StepContext = ({ run }: { run: TDeploymentRun }) => {
           {current?.name ??
             (isDeploymentRunning(run.status)
               ? run.activity
-              : 'Step unavailable')}
+              : preparing
+                ? 'Preparing steps'
+                : 'Step unavailable')}
         </Text>
+        {current && isDeploymentRunning(run.status) && activeDetail ? (
+          <Text variant="subtext" theme="neutral">
+            {activeDetail.charAt(0).toUpperCase() + activeDetail.slice(1)}
+          </Text>
+        ) : null}
         {current && !isDeploymentRunning(run.status) ? (
           <Text variant="subtext" theme="neutral">
-            {run.status === 'success' ? 'Completed' : 'Failed'}
+            {run.status === 'success'
+              ? 'Completed'
+              : run.status === 'cancelled'
+                ? 'Cancelled'
+                : 'Failed'}
           </Text>
         ) : null}
       </div>
@@ -176,9 +201,13 @@ export const StepContext = ({ run }: { run: TDeploymentRun }) => {
         </Text>
         <Text variant="base" theme="neutral" className="break-words">
           {next?.name ??
-            (run.steps.length ? 'No remaining steps' : 'Step unavailable')}
+            (run.steps.length
+              ? 'No remaining steps'
+              : preparing
+                ? 'Waiting for steps'
+                : 'Step unavailable')}
         </Text>
-        {next && run.status === 'error' ? (
+        {next && ['error', 'cancelled'].includes(run.status) ? (
           <Text variant="subtext" theme="neutral">
             Not started — deployment stopped
           </Text>
@@ -190,9 +219,7 @@ export const StepContext = ({ run }: { run: TDeploymentRun }) => {
 
 export const StepProgress = ({ run }: { run: TDeploymentRun }) => {
   if (!run.steps.length || !isDeploymentRunning(run.status)) return null
-  const completed = run.steps.filter(
-    (step) => step.status?.status === 'success'
-  ).length
+  const completed = run.steps.filter(isCompletedDeploymentStep).length
   const description = run.steps
     .map((step) => `${step.name}: ${humanize(step.status?.status)}`)
     .join('; ')
@@ -207,7 +234,7 @@ export const StepProgress = ({ run }: { run: TDeploymentRun }) => {
         {run.steps.map((step) => (
           <span
             key={step.id}
-            className={`h-1 flex-1 rounded-sm ${step.status?.status === 'success' ? 'bg-green-500' : 'bg-cool-grey-200 dark:bg-dark-grey-600'}`}
+            className={`h-1 flex-1 rounded-sm ${isCompletedDeploymentStep(step) ? 'bg-green-500' : 'bg-cool-grey-200 dark:bg-dark-grey-600'}`}
           />
         ))}
       </div>

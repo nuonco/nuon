@@ -51,7 +51,12 @@ const DeploymentPanelContent = ({
 }: IDeploymentDetailPanel & { workflow?: TWorkflow }) => {
   const { search } = useLocation()
   const nested = useInstallNested()
-  const { data: record, isFetched: recordFetched } = useQuery({
+  const {
+    data: record,
+    isPending: recordPending,
+    isError: recordError,
+    refetch: refetchRecord,
+  } = useQuery({
     queryKey: ['install-deployment', orgId, installId, deployment.id],
     queryFn: () =>
       getInstallDeployment({ orgId, installId, workflowId: deployment.id }),
@@ -87,7 +92,9 @@ const DeploymentPanelContent = ({
         deployment={record}
         appId={appId}
         workflow={workflow}
-        isLoading={!recordFetched}
+        isLoading={recordPending}
+        isError={recordError}
+        onRetry={() => refetchRecord()}
       />
     ),
     workflow: workflow ? <DeploymentWorkflowContent /> : noWorkflow,

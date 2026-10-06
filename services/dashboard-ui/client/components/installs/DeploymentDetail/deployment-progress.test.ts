@@ -49,6 +49,7 @@ const workflow = (
   steps: TWorkflowStep[],
   props: Partial<TWorkflow> = {}
 ): TWorkflow => ({ id: deployment.id, steps, ...props })
+const isApi = ({ name }: { name: string }) => name === 'api'
 const component = (
   name: string,
   status: NonNullable<TWorkflowStep['status']>['status'],
@@ -127,9 +128,9 @@ test('configuration sync and skipped applies are not applied resources', () => {
     component('sync and plan api', 'success', 3, 'api'),
     component('apply api', 'success', 3, 'api', { execution_type: 'skipped' }),
   ]) {
-    expect(deploymentOutcomes(deployment, workflow([apply]))[2].status).toBe(
-      'unknown'
-    )
+    expect(
+      deploymentOutcomes(deployment, workflow([apply])).find(isApi)?.status
+    ).toBe('unknown')
   }
 })
 
@@ -143,12 +144,29 @@ test('image sync outcomes use the deployment component association', () => {
       images: ['example.com/acme/api'],
     },
   }
-  expect(
-    deploymentOutcomes(
-      imageDeployment,
-      workflow([component('sync api', 'success', 3, 'api')])
-    ).map(({ status }) => status)
-  ).toEqual(['success', 'success'])
+  const outcomes = deploymentOutcomes(
+    imageDeployment,
+    workflow([component('sync api', 'success', 3, 'api')])
+  )
+  expect(outcomes.map(({ status }) => status)).toEqual(['success', 'success'])
+  expect(outcomes[0]).toMatchObject({ detail: 'Image synced' })
+  expect(outcomes[0].applied).toBeFalsy()
+})
+
+test('an image sync is not an apply while a later plan awaits approval', () => {
+  const outcomes = deploymentOutcomes(
+    { ...deployment, affected_resources: { components: [], images: [] } },
+    workflow([
+      component('sync api', 'success', 3, 'api'),
+      component('sync and plan api', 'approval-awaiting', 3, 'api', {
+        execution_type: 'approval',
+      }),
+    ])
+  )
+  expect(outcomes[0]).toMatchObject({
+    status: 'not-started',
+    detail: 'Not started — awaiting plan approval',
+  })
 })
 
 test('a failed readiness action retains the preceding successful apply', () => {
@@ -175,9 +193,12 @@ test('an approval wait is distinct from an applied change', () => {
     approval: { type: 'helm_approval' },
   })
   expect(isAwaitingDeploymentApproval(awaiting)).toBe(true)
-  expect(deploymentOutcomes(deployment, workflow([awaiting]))[2]).toMatchObject(
-    { status: 'not-started', detail: 'Not started — awaiting plan approval' }
-  )
+  expect(
+    deploymentOutcomes(deployment, workflow([awaiting])).find(isApi)
+  ).toMatchObject({
+    status: 'not-started',
+    detail: 'Not started — awaiting plan approval',
+  })
   expect(
     isAwaitingDeploymentApproval({
       ...awaiting,
@@ -192,9 +213,9 @@ test('a failed retry followed by success reports recovery', () => {
     component('apply api', 'success', 3, 'api', { idx: 101, retry_index: 1 }),
   ]
   expect(deploymentSteps(workflow(steps))).toHaveLength(1)
-  expect(deploymentOutcomes(deployment, workflow(steps))[2].status).toBe(
-    'success'
-  )
+  expect(
+    deploymentOutcomes(deployment, workflow(steps)).find(isApi)?.status
+  ).toBe('success')
 })
 
 test('a failed retry round does not erase an earlier successful apply', () => {
@@ -216,7 +237,7 @@ test('a failed retry round does not erase an earlier successful apply', () => {
     { finished: true, status: { status: 'error' } }
   )
   const outcomes = deploymentOutcomes(deployment, run)
-  expect(outcomes[2]).toMatchObject({
+  expect(outcomes.find(isApi)).toMatchObject({
     status: 'error',
     applied: true,
     detail: 'Applied; plan api failed',
@@ -282,7 +303,9 @@ test('only the current group retry round contributes outcomes and progress', () 
     component('apply api', 'pending', 3, 'api', { group_retry_idx: 1 }),
   ]
   expect(deploymentSteps(workflow(steps))).toHaveLength(2)
-  expect(deploymentOutcomes(deployment, workflow(steps))[2]).toMatchObject({
+  expect(
+    deploymentOutcomes(deployment, workflow(steps)).find(isApi)
+  ).toMatchObject({
     status: 'not-started',
     detail: 'Planned; not applied',
   })
@@ -324,7 +347,7 @@ test('plan-only workflows never report a resource as applied', () => {
           ],
           { plan_only: true }
         )
-      )[2]
+      ).find(isApi)
     ).toMatchObject({ status: 'not-started', detail: 'Planned; not applied' })
   }
 })
@@ -480,6 +503,8 @@ test('overview step summaries produce the same outcomes as full workflow steps',
   expect(resources).toEqual({
     stack: true,
     sandbox: true,
+    inputs: false,
+    secrets: false,
     components: ['api', 'worker'],
     images: [],
   })
@@ -505,4 +530,334 @@ test('overview step summaries produce the same outcomes as full workflow steps',
   expect(
     deploymentStepContext('error', deploymentSteps(evidence)).current?.id
   ).toBe('apply-worker')
+})
+
+test('auto-approved plans count as completed steps', () => {
+  const outcomes = deploymentOutcomes(
+    deployment,
+    workflow(
+      [
+        step('await install stack', 'success', 1),
+        step('provision sandbox apply plan', 'success', 2),
+        component('plan api', 'approved', 3, 'api', {
+          execution_type: 'approval',
+        }),
+        component('apply api', 'success', 3, 'api'),
+        component('plan worker', 'approved', 4, 'worker', {
+          execution_type: 'approval',
+        }),
+        component('apply worker', 'success', 4, 'worker'),
+      ],
+      { finished: true }
+    )
+  )
+  expect(outcomes.map(({ status }) => status)).toEqual([
+    'success',
+    'success',
+    'success',
+    'success',
+  ])
+})
+
+test('sandbox reprovisions and component teardowns count as applied', () => {
+  const reprovision = deploymentOutcomes(
+    {
+      ...deployment,
+      affected_resources: { sandbox: true, components: [], images: [] },
+    },
+    workflow(
+      [
+        step('reprovision sandbox plan', 'approved', 1, {
+          execution_type: 'approval',
+        }),
+        step('reprovision sandbox apply', 'success', 1),
+      ],
+      { finished: true }
+    )
+  )
+  expect(reprovision[0]).toMatchObject({
+    category: 'Sandbox',
+    status: 'success',
+  })
+  const teardown = deploymentOutcomes(
+    { ...deployment, affected_resources: { components: [], images: [] } },
+    workflow(
+      [
+        component('teardown plan api', 'approved', 1, 'api', {
+          execution_type: 'approval',
+        }),
+        component('teardown apply plan api', 'success', 1, 'api'),
+      ],
+      { finished: true }
+    )
+  )
+  expect(teardown[0]).toMatchObject({ name: 'api', status: 'success' })
+})
+
+test('a group retry keeps later groups as upcoming work', () => {
+  const steps = deploymentSteps(
+    workflow([
+      step('apply api', 'error', 1, { idx: 100, group_retry_idx: 0 }),
+      step('apply api', 'in-progress', 1, { idx: 300, group_retry_idx: 1 }),
+      step('apply worker', 'pending', 2, { idx: 200 }),
+    ])
+  )
+  expect(steps.map(({ name }) => name)).toEqual(['apply api', 'apply worker'])
+  expect(deploymentStepContext('in-progress', steps).next?.name).toBe(
+    'apply worker'
+  )
+})
+
+test('a workflow awaiting a manual retry is not described as running', () => {
+  const parked = workflow(
+    [
+      step('await install stack', 'success', 1),
+      component('apply api', 'failed-pending-retry', 3, 'api'),
+    ],
+    {
+      finished: false,
+      status: { status: 'failed-pending-retry' },
+    }
+  )
+  expect(
+    deploymentChangeDescription(parked, deploymentOutcomes(deployment, parked))
+  ).not.toContain('still running')
+})
+
+test('bulk component teardowns count as applied', () => {
+  const outcomes = deploymentOutcomes(
+    { ...deployment, affected_resources: { components: [], images: [] } },
+    workflow(
+      [
+        component('teardown plan api', 'approved', 1, 'api', {
+          execution_type: 'approval',
+        }),
+        component('teardown api', 'success', 1, 'api'),
+      ],
+      { finished: true }
+    )
+  )
+  expect(outcomes[0]).toMatchObject({ name: 'api', status: 'success' })
+})
+
+test('step evidence adds resources the detail record omits and replaces a missing record', () => {
+  const run = workflow(
+    [
+      step('reprovision sandbox plan', 'approved', 1, {
+        execution_type: 'approval',
+      }),
+      step('reprovision sandbox apply', 'success', 1),
+    ],
+    { finished: true }
+  )
+  const withRecord = deploymentOutcomes(
+    {
+      ...deployment,
+      affected_resources: { components: [], images: [] },
+    },
+    run
+  )
+  expect(withRecord.map(({ category }) => category)).toEqual(['Sandbox'])
+  expect(deploymentOutcomes(undefined, run)).toEqual(withRecord)
+})
+
+test('a cancelled resource is cancelled, not unknown', () => {
+  const run = workflow(
+    [
+      step('await install stack', 'success', 1),
+      step('reprovision sandbox plan', 'cancelled', 2, {
+        execution_type: 'approval',
+      }),
+      step('reprovision sandbox apply plan', 'not-attempted', 2),
+    ],
+    { finished: true, status: { status: 'cancelled' } }
+  )
+  expect(deploymentOutcomes(deployment, run).slice(0, 2)).toMatchObject([
+    { category: 'Stack', status: 'success' },
+    { category: 'Sandbox', status: 'cancelled', detail: 'Cancelled' },
+  ])
+  expect(
+    deploymentStepContext('cancelled', deploymentSteps(run))
+  ).toMatchObject({
+    current: { name: 'reprovision sandbox plan' },
+    next: { name: 'reprovision sandbox apply plan' },
+  })
+})
+
+test('a no-op plan reports no changes', () => {
+  const outcomes = deploymentOutcomes(
+    { ...deployment, affected_resources: { components: [], images: [] } },
+    workflow(
+      [
+        component('sync and plan api', 'auto-skipped', 1, 'api', {
+          execution_type: 'approval',
+        }),
+        component('apply api', 'auto-skipped', 1, 'api'),
+      ],
+      { finished: true }
+    )
+  )
+  expect(outcomes[0]).toMatchObject({ status: 'success', detail: 'No changes' })
+})
+
+test('an operator-skipped apply is reported as skipped', () => {
+  const outcomes = deploymentOutcomes(
+    { ...deployment, affected_resources: { components: [], images: [] } },
+    workflow(
+      [
+        component('sync and plan api', 'approved', 1, 'api', {
+          execution_type: 'approval',
+        }),
+        component('apply api', 'user-skipped', 1, 'api'),
+      ],
+      { finished: true }
+    )
+  )
+  expect(outcomes[0]).toMatchObject({
+    status: 'user-skipped',
+    detail: 'Skipped by operator',
+  })
+})
+
+test('an answered approval is in progress until the step advances', () => {
+  const answered = component(
+    'sync and plan api',
+    'approval-awaiting',
+    1,
+    'api',
+    {
+      execution_type: 'approval',
+      approval: { response: { type: 'approve' } },
+    }
+  )
+  const steps = [answered, component('apply api', 'pending', 1, 'api')]
+  expect(
+    deploymentOutcomes(
+      { ...deployment, affected_resources: { components: [], images: [] } },
+      workflow(steps)
+    )[0]
+  ).toMatchObject({ status: 'in-progress' })
+  expect(deploymentStepContext('in-progress', steps).current).toBe(answered)
+})
+
+test('a helm release recovery reports the release as recovered', () => {
+  const outcomes = deploymentOutcomes(
+    { ...deployment, affected_resources: { components: [], images: [] } },
+    workflow([component('recover helm release api', 'success', 1, 'api')], {
+      finished: true,
+    })
+  )
+  expect(outcomes[0]).toMatchObject({
+    status: 'success',
+    detail: 'Helm release recovered',
+  })
+})
+
+test('record resources without matching steps are ignored once steps exist', () => {
+  const stackOnly = workflow(
+    [
+      step('generate install stack', 'success', 1, {
+        step_target_type: 'install_stack_versions',
+      }),
+      step('await install stack', 'success', 1),
+      step('runner healthy', 'success', 2),
+    ],
+    { finished: true }
+  )
+  expect(
+    deploymentOutcomes(
+      {
+        ...deployment,
+        affected_resources: {
+          stack: true,
+          sandbox: true,
+          components: [],
+          images: [],
+        },
+      },
+      stackOnly
+    ).map(({ category }) => category)
+  ).toEqual(['Stack'])
+  expect(
+    deploymentOutcomes(
+      {
+        ...deployment,
+        affected_resources: {
+          stack: true,
+          sandbox: true,
+          components: [],
+          images: [],
+        },
+      },
+      workflow([])
+    ).map(({ category }) => category)
+  ).toEqual(['Stack', 'Sandbox'])
+})
+
+test('a denied plan says denied', () => {
+  expect(
+    deploymentOutcomes(
+      { ...deployment, affected_resources: { components: [], images: [] } },
+      workflow(
+        [
+          step('reprovision sandbox plan', 'approval-denied', 1, {
+            execution_type: 'approval',
+          }),
+        ],
+        { finished: true }
+      )
+    )[0]
+  ).toMatchObject({
+    category: 'Sandbox',
+    status: 'error',
+    detail: 'reprovision sandbox plan denied',
+  })
+})
+
+test('queued, checking-plan and approval-retry steps are active', () => {
+  for (const [status, detail] of [
+    ['queued', 'apply api queued'],
+    ['checking-plan', 'apply api checking plan'],
+    ['approval-retry', 'apply api re-planning'],
+  ] as const) {
+    const active = component('apply api', status as never, 1, 'api')
+    const steps = [active, component('verify health api', 'pending', 1, 'api')]
+    expect(
+      deploymentOutcomes(
+        { ...deployment, affected_resources: { components: [], images: [] } },
+        workflow(steps)
+      )[0]
+    ).toMatchObject({ status: 'in-progress', detail })
+    expect(deploymentStepContext('in-progress', steps)).toMatchObject({
+      current: active,
+      next: { name: 'verify health api' },
+    })
+  }
+})
+
+test('inputs and secrets steps produce their own outcomes', () => {
+  const run = workflow(
+    [
+      step('runner healthy', 'success', 1),
+      step('update install state inputs', 'success', 2),
+      step('rotate Action Run (pre-secrets-sync)', 'success', 3),
+      step('sync secrets', 'success', 4),
+      step('restart_pods Action Run (post-secrets-sync)', 'error', 5),
+    ],
+    { finished: true }
+  )
+  expect(
+    deploymentOutcomes(undefined, run).map(({ category, status, detail }) => ({
+      category,
+      status,
+      detail,
+    }))
+  ).toEqual([
+    { category: 'Inputs', status: 'success', detail: 'Completed' },
+    {
+      category: 'Secrets',
+      status: 'error',
+      detail: 'Applied; restart_pods Action Run (post-secrets-sync) failed',
+    },
+  ])
 })

@@ -168,6 +168,43 @@ const deployments = [
   ),
 ]
 
+const deploymentSummary = (record: {
+  id: string
+  type: string
+  status: string
+  created_at: string
+  title: string
+  summary: string
+  affected_resources: { components: string[]; stack?: boolean; sandbox?: boolean }
+}) => {
+  const resources = record.affected_resources
+  const targets: { name: string; step_target_type: string; component_name?: string }[] = [
+    ...(resources.stack ? [{ name: 'await install stack', step_target_type: 'install_stack_versions' }] : []),
+    ...(resources.sandbox ? [{ name: 'provision sandbox apply plan', step_target_type: 'install_sandbox_runs' }] : []),
+    ...resources.components.map((component) => ({
+      name: `apply ${component}`,
+      step_target_type: 'install_deploys',
+      component_name: component,
+    })),
+  ]
+  return {
+    id: record.id,
+    type: record.type === 'image_update' ? 'component_deploy' : record.type,
+    status: record.status,
+    created_at: record.created_at,
+    title: record.title,
+    activity: record.summary,
+    finished: record.status === 'success' || record.status === 'error',
+    steps: targets.map((target, index) => ({
+      ...target,
+      id: `${record.id}-step-${index}`,
+      group_idx: index + 1,
+      execution_type: 'system',
+      status: record.status === 'success' || index < targets.length - 1 ? 'success' : record.status,
+    })),
+  }
+}
+
 const deploymentPage = (rows: unknown[]) =>
   ok({
     deployments: rows,
@@ -181,6 +218,25 @@ export const deploymentsFixture = (
   state: 'loading' | 'empty' | 'results'
 ): TFixture =>
   withChrome(viewInstall(), (url) => {
+    const detail = deployments.find((item) => url.pathname.endsWith(`/deployments/${item.id}`))
+    if (detail) return ok(detail)
+    const workflow = deployments.find((item) => url.pathname === `/v1/workflows/${item.id}`)
+    if (workflow) {
+      const summary = deploymentSummary(workflow)
+      return ok({
+        id: summary.id,
+        name: summary.title,
+        type: summary.type,
+        created_at: summary.created_at,
+        finished: summary.finished,
+        status: { status: summary.status, status_human_description: summary.activity },
+        steps: summary.steps.map(({ status, component_name, ...step }) => ({
+          ...step,
+          status: { status },
+          metadata: component_name ? { component_name } : undefined,
+        })),
+      })
+    }
     if (!url.pathname.endsWith('/deployments')) return undefined
     if (state === 'loading') return pendingReply()
     if (state === 'empty') return deploymentPage([])
@@ -188,18 +244,8 @@ export const deploymentsFixture = (
     const status = url.searchParams.get('status') ?? ''
     const type = url.searchParams.get('type') ?? ''
     return deploymentPage(
-      deployments.filter((item) => {
-        const resources = item.affected_resources
-        const haystack = [
-          item.title,
-          item.summary,
-          item.component_name,
-          ...(resources.components ?? []),
-          ...(resources.images ?? []),
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase()
+      deployments.map(deploymentSummary).filter((item) => {
+        const haystack = [item.id, item.title].join(' ').toLowerCase()
         if (search && !haystack.includes(search)) return false
         if (status && !status.split(',').includes(item.status)) return false
         if (type && !type.split(',').includes(item.type)) return false
@@ -921,14 +967,15 @@ export const deploymentDetailFixture = (
 ): TFixture =>
   withChrome(viewInstall(), (url) => {
     const path = url.pathname
+    const record = deploymentRecord(
+      state === 'awaiting' ? 'pending' : state === 'succeeded' ? 'success' : state === 'failed' ? 'error' : 'in-progress'
+    )
+    if (path.endsWith(`/deployments/${record.id}`)) return ok(record)
     if (path.endsWith('/deployments')) {
-      const record = deploymentRecord(
-        state === 'awaiting' ? 'pending' : state === 'succeeded' ? 'success' : state === 'failed' ? 'error' : 'in-progress'
-      )
       const search = url.searchParams.get('search') ?? ''
       return deploymentPage(
         !search || record.id.includes(search) || record.title.toLowerCase().includes(search.toLowerCase())
-          ? [record]
+          ? [deploymentSummary(record)]
           : []
       )
     }

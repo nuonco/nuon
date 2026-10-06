@@ -8,7 +8,7 @@ import type {
 import { getStepKind, isRetryChain } from '@/utils/workflow-utils'
 
 export type TDeploymentOutcome = {
-  category: 'Stack' | 'Sandbox' | 'Components' | 'Images'
+  category: 'Stack' | 'Sandbox' | 'Inputs' | 'Secrets' | 'Components' | 'Images'
   name: string
   status: string
   detail: string
@@ -64,17 +64,18 @@ export type TDeploymentStep = {
   approval?: { type?: string; response?: unknown }
 }
 
-export type TDeploymentEvidence<S extends TDeploymentStep = TDeploymentStep> =
-  {
-    finished?: boolean
-    plan_only?: boolean
-    steps?: S[]
-  }
+export type TDeploymentEvidence<S extends TDeploymentStep = TDeploymentStep> = {
+  finished?: boolean
+  plan_only?: boolean
+  status?: { status?: string }
+  steps?: S[]
+}
 
 export const summaryDeploymentEvidence = (
   deployment: TInstallDeploymentSummary
-): Required<Pick<TDeploymentEvidence, 'finished' | 'steps'>> => ({
+): Required<Pick<TDeploymentEvidence, 'finished' | 'status' | 'steps'>> => ({
   finished: !!deployment.finished,
+  status: { status: deployment.status },
   steps: deployment.steps.map((step) => ({
     id: step.id,
     name: step.name,
@@ -102,11 +103,24 @@ const isSandboxStep = (step: TDeploymentStep) =>
   step.step_target_type === 'install_sandbox_runs' ||
   /\bsandbox\b/i.test(step.name ?? '')
 
+const isInputsStep = (step: TDeploymentStep) =>
+  step.name === 'update install state inputs' ||
+  /\((pre|post)-update-inputs\)$/.test(step.name ?? '')
+
+const isSecretsStep = (step: TDeploymentStep) =>
+  step.name === 'sync secrets' ||
+  /\((pre|post)-secrets-sync\)$/.test(step.name ?? '')
+
 export const stepAffectedResources = (
   steps: TDeploymentStep[]
-): TInstallDeploymentAffectedResources => ({
+): TInstallDeploymentAffectedResources & {
+  inputs: boolean
+  secrets: boolean
+} => ({
   stack: steps.some(isStackStep),
   sandbox: steps.some(isSandboxStep),
+  inputs: steps.some(isInputsStep),
+  secrets: steps.some(isSecretsStep),
   components: [
     ...new Set(
       steps.flatMap((step) =>
@@ -147,14 +161,49 @@ export function deploymentSteps(run?: TDeploymentEvidence): TDeploymentStep[] {
     .flatMap((attempts) =>
       isRetryChain(attempts) ? [attempts[attempts.length - 1]] : attempts
     )
-    .sort((a, b) => (a.idx ?? a.group_idx ?? 0) - (b.idx ?? b.group_idx ?? 0))
+    .sort(
+      (a, b) =>
+        (a.group_idx ?? 0) - (b.group_idx ?? 0) || (a.idx ?? 0) - (b.idx ?? 0)
+    )
 }
 
 export const isPendingDeploymentStep = (step: TDeploymentStep) =>
   ['pending', 'not-attempted'].includes(step.status?.status ?? '')
 
+export const isCompletedDeploymentStep = (step: TDeploymentStep) =>
+  ['success', 'auto-skipped', 'user-skipped'].includes(
+    step.status?.status ?? ''
+  ) ||
+  (step.execution_type === 'approval' && step.status?.status === 'approved')
+
+export const isAwaitingDeploymentRetry = (status?: string) =>
+  status === 'failed-pending-retry'
+
+export const isQueuedDeployment = (status: string) =>
+  ['pending', 'queued'].includes(status)
+
 export const isAwaitingDeploymentApproval = (step: TDeploymentStep) =>
   step.status?.status === 'approval-awaiting' && !step.approval?.response
+
+const ACTIVE_STEP_DETAILS: Record<string, string> = {
+  queued: 'queued',
+  'checking-plan': 'checking plan',
+  'approval-retry': 're-planning',
+}
+
+export const activeStepDetail = (step?: TDeploymentStep) =>
+  step?.status?.status && Object.hasOwn(ACTIVE_STEP_DETAILS, step.status.status)
+    ? ACTIVE_STEP_DETAILS[step.status.status]
+    : undefined
+
+const isActiveDeploymentStep = (step: TDeploymentStep) =>
+  step.status?.status === 'in-progress' ||
+  !!activeStepDetail(step) ||
+  (step.status?.status === 'approval-awaiting' && !!step.approval?.response)
+
+const isOperatorSkippedStep = (step: TDeploymentStep) =>
+  step.status?.status === 'user-skipped' &&
+  ['system', 'user'].includes(step.execution_type ?? '')
 
 const FAILED_STATUSES = new Set([
   'error',
@@ -172,11 +221,14 @@ export const deploymentStepContext = <S extends TDeploymentStep>(
     ? steps.find((step) =>
         awaiting
           ? isAwaitingDeploymentApproval(step)
-          : step.status?.status === 'in-progress'
+          : isActiveDeploymentStep(step)
       )
     : status === 'success'
-      ? steps.findLast((step) => step.status?.status === 'success')
-      : steps.find((step) => FAILED_STATUSES.has(step.status?.status))
+      ? steps.findLast(isCompletedDeploymentStep)
+      : status === 'cancelled'
+        ? (steps.find((step) => step.status?.status === 'cancelled') ??
+          steps.findLast((step) => !isPendingDeploymentStep(step)))
+        : steps.find((step) => FAILED_STATUSES.has(step.status?.status))
   const currentIndex = current ? steps.indexOf(current) : -1
   const next = steps.find(
     (step, index) => isPendingDeploymentStep(step) && index > currentIndex
@@ -187,11 +239,23 @@ export const deploymentStepContext = <S extends TDeploymentStep>(
 const isAppliedDeploymentStep = (step: TDeploymentStep) =>
   ['system', 'user'].includes(step.execution_type ?? '') &&
   step.status?.status === 'success' &&
-  (/^(apply |await install stack$|(?:re)?provision sandbox apply plan$)/i.test(
+  (/^(apply |teardown apply plan |await install stack$|(?:re)?provision sandbox apply( plan)?$|sync secrets$|update install state inputs$)/i.test(
     step.name ?? ''
   ) ||
     (!!step.metadata?.component_name &&
-      step.name === `sync ${step.metadata.component_name}`))
+      step.name === `teardown ${step.metadata.component_name}`))
+
+const isImageSyncStep = (step: TDeploymentStep) =>
+  ['system', 'user'].includes(step.execution_type ?? '') &&
+  step.status?.status === 'success' &&
+  !!step.metadata?.component_name &&
+  step.name === `sync ${step.metadata.component_name}`
+
+const isHelmRecoveryStep = (step: TDeploymentStep) =>
+  ['system', 'user'].includes(step.execution_type ?? '') &&
+  step.status?.status === 'success' &&
+  !!step.metadata?.component_name &&
+  step.name === `recover helm release ${step.metadata.component_name}`
 
 const outcomeForSteps = (
   category: TDeploymentOutcome['category'],
@@ -201,19 +265,28 @@ const outcomeForSteps = (
   history: TDeploymentStep[]
 ): TDeploymentOutcome => {
   const failed = steps.find((step) => FAILED_STATUSES.has(step.status?.status))
-  const current = steps.find((step) => step.status?.status === 'in-progress')
+  const current = steps.find(isActiveDeploymentStep)
   const awaiting = steps.find(isAwaitingDeploymentApproval)
+  const cancelled = steps.find((step) => step.status?.status === 'cancelled')
+  const skipped = steps.find(isOperatorSkippedStep)
   const applied = !workflow.plan_only && history.some(isAppliedDeploymentStep)
   const currentApplied =
     !workflow.plan_only && steps.some(isAppliedDeploymentStep)
-  const completed =
-    steps.length > 0 && steps.every((step) => step.status?.status === 'success')
+  const completed = steps.length > 0 && steps.every(isCompletedDeploymentStep)
+  const stopped =
+    workflow.finished || isAwaitingDeploymentRetry(workflow.status?.status)
   if (failed)
     return {
       category,
       name,
       status: 'error',
-      detail: `${applied ? 'Applied; ' : ''}${failed.name ?? 'Resource step'} failed`,
+      detail: `${applied ? 'Applied; ' : ''}${failed.name ?? 'Resource step'} ${
+        failed.status?.status === 'approval-denied'
+          ? 'denied'
+          : failed.status?.status === 'approval-expired'
+            ? 'approval expired'
+            : 'failed'
+      }`,
       applied,
     }
   if (current)
@@ -221,7 +294,12 @@ const outcomeForSteps = (
       category,
       name,
       status: 'in-progress',
-      detail: current.name ?? 'In progress',
+      detail:
+        current.status?.status === 'approval-awaiting'
+          ? 'Plan approved; continuing'
+          : activeStepDetail(current)
+            ? `${current.name ?? 'Step'} ${activeStepDetail(current)}`
+            : (current.name ?? 'In progress'),
       applied,
     }
   if (awaiting)
@@ -234,15 +312,51 @@ const outcomeForSteps = (
         : 'Not started — awaiting plan approval',
       applied,
     }
+  if (cancelled)
+    return applied
+      ? {
+          category,
+          name,
+          status: 'warn',
+          detail: 'Applied; cancelled before finishing',
+          applied,
+        }
+      : { category, name, status: 'cancelled', detail: 'Cancelled' }
+  if (skipped)
+    return currentApplied
+      ? {
+          category,
+          name,
+          status: 'warn',
+          detail: `Applied; ${skipped.name ?? 'a step'} skipped`,
+          applied,
+        }
+      : {
+          category,
+          name,
+          status: 'user-skipped',
+          detail: 'Skipped by operator',
+        }
   if (completed && currentApplied)
     return { category, name, status: 'success', detail: 'Completed' }
+  if (completed && !workflow.plan_only && steps.some(isImageSyncStep))
+    return { category, name, status: 'success', detail: 'Image synced' }
+  if (completed && !workflow.plan_only && steps.some(isHelmRecoveryStep))
+    return {
+      category,
+      name,
+      status: 'success',
+      detail: 'Helm release recovered',
+    }
+  if (completed && steps.some((step) => step.status?.status === 'auto-skipped'))
+    return { category, name, status: 'success', detail: 'No changes' }
   if (!applied && steps.length && steps.every(isPendingDeploymentStep))
     return { category, name, status: 'not-started', detail: 'Not started' }
   if (applied)
     return {
       category,
       name,
-      status: workflow.finished ? 'warn' : 'in-progress',
+      status: stopped ? 'warn' : 'in-progress',
       detail: 'Applied; remaining steps not completed',
       applied: true,
     }
@@ -269,9 +383,17 @@ export const deploymentOutcomes = (
   >,
   workflow?: TDeploymentEvidence
 ): TDeploymentOutcome[] => {
-  if (!deployment || !workflow) return []
+  if (!workflow) return []
   const steps = deploymentSteps(workflow)
-  const resources = deployment.affected_resources
+  const stepResources = stepAffectedResources(workflow.steps ?? [])
+  const recordResources = deployment?.affected_resources
+  const hasSteps = steps.length > 0
+  const resources = {
+    stack: stepResources.stack || (!hasSteps && !!recordResources?.stack),
+    sandbox: stepResources.sandbox || (!hasSteps && !!recordResources?.sandbox),
+    components: recordResources?.components ?? [],
+    images: recordResources?.images ?? [],
+  }
   const outcomes: TDeploymentOutcome[] = []
   const resourceOutcome = (
     category: TDeploymentOutcome['category'],
@@ -286,13 +408,13 @@ export const deploymentOutcomes = (
       (workflow.steps ?? []).filter(belongsToResource)
     )
   if (resources.stack)
-    outcomes.push(
-      resourceOutcome('Stack', 'Stack', isStackStep)
-    )
+    outcomes.push(resourceOutcome('Stack', 'Stack', isStackStep))
   if (resources.sandbox)
-    outcomes.push(
-      resourceOutcome('Sandbox', 'Sandbox', isSandboxStep)
-    )
+    outcomes.push(resourceOutcome('Sandbox', 'Sandbox', isSandboxStep))
+  if (stepResources.inputs)
+    outcomes.push(resourceOutcome('Inputs', 'Inputs', isInputsStep))
+  if (stepResources.secrets)
+    outcomes.push(resourceOutcome('Secrets', 'Secrets', isSecretsStep))
   const componentNames = new Set([
     ...(resources.components ?? []),
     ...steps.flatMap((step) =>
@@ -324,7 +446,7 @@ export const deploymentOutcomes = (
         'Images',
         name,
         (step) =>
-          name === deployment.image?.repository &&
+          name === deployment?.image?.repository &&
           !!deployment.component_name &&
           step.metadata?.component_name === deployment.component_name
       )
@@ -337,7 +459,7 @@ export const deploymentChangeDescription = (
   workflow: TWorkflow,
   outcomes: TDeploymentOutcome[]
 ) => {
-  if (!workflow.finished)
+  if (!workflow.finished && !isAwaitingDeploymentRetry(workflow.status?.status))
     return 'Planned changes. This deployment is still running; these are not final results.'
   if (workflow.plan_only)
     return 'No changes applied. This was a plan-only deployment.'
