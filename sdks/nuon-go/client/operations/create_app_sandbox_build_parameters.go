@@ -14,6 +14,8 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 // NewCreateAppSandboxBuildParams creates a new CreateAppSandboxBuildParams object,
@@ -66,6 +68,12 @@ type CreateAppSandboxBuildParams struct {
 	   app ID
 	*/
 	AppID string
+
+	/* Req.
+
+	   Input
+	*/
+	Req *models.ServiceCreateAppSandboxBuildRequest
 
 	timeout    time.Duration
 	Context    context.Context
@@ -131,6 +139,17 @@ func (o *CreateAppSandboxBuildParams) SetAppID(appID string) {
 	o.AppID = appID
 }
 
+// WithReq adds the req to the create app sandbox build params
+func (o *CreateAppSandboxBuildParams) WithReq(req *models.ServiceCreateAppSandboxBuildRequest) *CreateAppSandboxBuildParams {
+	o.SetReq(req)
+	return o
+}
+
+// SetReq adds the req to the create app sandbox build params
+func (o *CreateAppSandboxBuildParams) SetReq(req *models.ServiceCreateAppSandboxBuildRequest) {
+	o.Req = req
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *CreateAppSandboxBuildParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -142,6 +161,11 @@ func (o *CreateAppSandboxBuildParams) WriteToRequest(r runtime.ClientRequest, re
 	// path param app_id
 	if err := r.SetPathParam("app_id", o.AppID); err != nil {
 		return err
+	}
+	if o.Req != nil {
+		if err := r.SetBodyParam(o.Req); err != nil {
+			return err
+		}
 	}
 
 	if len(res) > 0 {

@@ -8,16 +8,21 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type CreateInstallComponentDeployRequest struct {
+	RequestID          string `json:"request_id,omitempty" validate:"omitempty,max=255"`
 	BuildID            string `json:"build_id"`
 	DeployDependents   bool   `json:"deploy_dependents"`
 	DeployDependencies bool   `json:"deploy_dependencies"`
@@ -90,6 +95,16 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 		return
 	}
 
+	if req.RequestID != "" {
+		deploy, err := s.createIdempotentInstallDeploy(ctx, installID, &req, componentID, component.Name)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		ctx.JSON(http.StatusCreated, deploy)
+		return
+	}
+
 	deploy, err := s.createInstallDeploy(ctx, installID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install: %w", err))
@@ -139,6 +154,7 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 }
 
 type CreateInstallDeployRequest struct {
+	RequestID          string `json:"request_id,omitempty" validate:"omitempty,max=255"`
 	BuildID            string `json:"build_id"`
 	DeployDependents   bool   `json:"deploy_dependents"`
 	DeployDependencies bool   `json:"deploy_dependencies"`
@@ -179,6 +195,16 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 	var req CreateInstallDeployRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(stderr.NewInvalidRequest(err))
+		return
+	}
+
+	if req.RequestID != "" {
+		deploy, err := s.createIdempotentInstallDeploy(ctx, installID, &req, "", "")
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		ctx.JSON(http.StatusCreated, deploy)
 		return
 	}
 
@@ -230,22 +256,130 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, deploy)
 }
 
-func (s *service) createInstallDeploy(ctx context.Context, installID string, req *CreateInstallDeployRequest) (*app.InstallDeploy, error) {
-	var build app.ComponentBuild
-	res := s.db.WithContext(ctx).
-		Preload("ComponentConfigConnection").
-		First(&build, "id = ?", req.BuildID)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get build %s: %w", req.BuildID, res.Error)
+func (s *service) createIdempotentInstallDeploy(
+	ctx context.Context,
+	installID string,
+	req *CreateInstallDeployRequest,
+	pathComponentID string,
+	componentNameHint string,
+) (*app.InstallDeploy, error) {
+	hashReq := *req
+	hashReq.RequestID = ""
+	var hash string
+	var err error
+	if pathComponentID != "" {
+		hash, err = request.Hash(struct {
+			CreateInstallDeployRequest
+			ComponentID string `json:"component_id"`
+		}{
+			CreateInstallDeployRequest: hashReq,
+			ComponentID:                pathComponentID,
+		})
+	} else {
+		hash, err = request.Hash(hashReq)
+	}
+	if err != nil {
+		return nil, err
 	}
 
+	var createdDeploy *app.InstallDeploy
+	var createdComponentID string
+	var createdInstallComponentID string
+	workflow, created, err := s.helpers.RunIdempotentInstallWorkflow(ctx, installhelpers.IdempotentInstallWorkflowRequest{
+		InstallID:    installID,
+		WorkflowType: app.WorkflowTypeManualDeploy,
+		PlanOnly:     req.PlanOnly,
+		Role:         req.Role,
+		RequestID:    req.RequestID,
+		RequestHash:  hash,
+		Operation:    "manual-deploy",
+		QueueName:    installhelpers.InstallWorkflowsQueueName,
+	}, &installhelpers.IdempotentInstallWorkflowHooks{
+		Prepare: func(tx *gorm.DB) (map[string]string, error) {
+			deploy, componentID, componentName, installComponentID, err := s.insertInstallDeploy(ctx, tx, installID, req)
+			if err != nil {
+				return nil, err
+			}
+			createdDeploy = deploy
+			createdComponentID = componentID
+			createdInstallComponentID = installComponentID
+			nameSuffix := componentNameHint
+			if nameSuffix == "" {
+				nameSuffix = componentName
+			}
+			return map[string]string{
+				app.WorkflowMetadataKeyWorkflowNameSuffix: nameSuffix,
+				"install_deploy_id":                       deploy.ID,
+				"deploy_dependents":                       strconv.FormatBool(req.DeployDependents),
+				"deploy_dependencies":                     strconv.FormatBool(req.DeployDependencies),
+			}, nil
+		},
+		AfterCreate: func(tx *gorm.DB, wf *app.Workflow) error {
+			if createdDeploy == nil {
+				return fmt.Errorf("install deploy was not created")
+			}
+			return tx.WithContext(ctx).Model(&app.InstallDeploy{}).
+				Where("id = ?", createdDeploy.ID).
+				Update("install_workflow_id", wf.ID).Error
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if created && createdDeploy != nil {
+		s.emitInstallDeployAudit(ctx, installID, createdDeploy.ID, req.BuildID, createdComponentID, createdInstallComponentID, createdDeploy.Type)
+	}
+
+	deployID := ""
+	if createdDeploy != nil {
+		deployID = createdDeploy.ID
+	} else {
+		deployID = generics.FromPtrStr(workflow.Metadata["install_deploy_id"])
+	}
+
+	deploy, err := s.getInstallDeploy(ctx, installID, deployID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install deploy %s: %w", deployID, err)
+	}
+	deploy.WorkflowID = &workflow.ID
+	return deploy, nil
+}
+
+func (s *service) createInstallDeploy(ctx context.Context, installID string, req *CreateInstallDeployRequest) (*app.InstallDeploy, error) {
+	deploy, componentID, _, installComponentID, err := s.insertInstallDeploy(ctx, s.db, installID, req)
+	if err != nil {
+		return nil, err
+	}
+	s.emitInstallDeployAudit(ctx, installID, deploy.ID, req.BuildID, componentID, installComponentID, deploy.Type)
+	return deploy, nil
+}
+
+func (s *service) insertInstallDeploy(
+	ctx context.Context,
+	db *gorm.DB,
+	installID string,
+	req *CreateInstallDeployRequest,
+) (*app.InstallDeploy, string, string, string, error) {
+	var build app.ComponentBuild
+	res := db.WithContext(ctx).
+		Preload("ComponentConfigConnection").
+		Preload("ComponentConfigConnection.Component").
+		First(&build, "id = ?", req.BuildID)
+	if res.Error != nil {
+		return nil, "", "", "", fmt.Errorf("unable to get build %s: %w", req.BuildID, res.Error)
+	}
+
+	componentID := build.ComponentConfigConnection.ComponentID
+	componentName := build.ComponentConfigConnection.Component.Name
+
 	var installCmp app.InstallComponent
-	res = s.db.WithContext(ctx).Where(app.InstallComponent{
+	res = db.WithContext(ctx).Where(app.InstallComponent{
 		InstallID:   installID,
-		ComponentID: build.ComponentConfigConnection.ComponentID,
+		ComponentID: componentID,
 	}).First(&installCmp)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create install component: %w", res.Error)
+		return nil, "", "", "", fmt.Errorf("unable to create install component: %w", res.Error)
 	}
 
 	typ := app.InstallDeployTypeApply
@@ -258,26 +392,32 @@ func (s *service) createInstallDeploy(ctx context.Context, installID string, req
 		Role:               req.Role,
 	}
 
-	res = s.db.WithContext(ctx).Create(&deploy)
+	res = db.WithContext(ctx).Create(&deploy)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create install deploy: %w", res.Error)
+		return nil, "", "", "", fmt.Errorf("unable to create install deploy: %w", res.Error)
 	}
 
+	return &deploy, componentID, componentName, installCmp.ID, nil
+}
+
+func (s *service) emitInstallDeployAudit(
+	ctx context.Context,
+	installID, deployID, buildID, componentID, installComponentID string,
+	typ app.InstallDeployType,
+) {
 	s.audit.Emit(ctx, audit.Event{
 		Type:        audit.EventInstallDeploy,
 		Message:     "install deploy created",
 		Outcome:     audit.OutcomeStarted,
 		InstallID:   installID,
-		ComponentID: build.ComponentConfigConnection.ComponentID,
-		SubjectID:   deploy.ID,
+		ComponentID: componentID,
+		SubjectID:   deployID,
 		SubjectType: "install_deploys",
 		Attrs: map[string]string{
-			"deploy.id":            deploy.ID,
+			"deploy.id":            deployID,
 			"deploy.type":          string(typ),
-			"component_build.id":   req.BuildID,
-			"install_component.id": installCmp.ID,
+			"component_build.id":   buildID,
+			"install_component.id": installComponentID,
 		},
 	})
-
-	return &deploy, nil
 }

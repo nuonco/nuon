@@ -9,13 +9,16 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 )
 
 type DeployInstallComponentsRequest struct {
-	Role     string `json:"role,omitempty"`
-	PlanOnly bool   `json:"plan_only"`
+	RequestID string `json:"request_id,omitempty" validate:"omitempty,max=255"`
+	Role      string `json:"role,omitempty"`
+	PlanOnly  bool   `json:"plan_only"`
 }
 
 // @ID						DeployInstallComponents
@@ -32,6 +35,7 @@ type DeployInstallComponentsRequest struct {
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.WorkflowResponse
 // @Router					/v1/installs/{install_id}/components/deploy-all [post]
@@ -44,9 +48,36 @@ func (s *service) DeployInstallComponents(ctx *gin.Context) {
 		return
 	}
 
-	_, err := s.getInstall(ctx, installID)
+	install, err := s.getInstall(ctx, installID)
 	if err != nil {
 		ctx.Error(err)
+		return
+	}
+
+	if req.RequestID != "" {
+		hashReq := req
+		hashReq.RequestID = ""
+		hash, err := request.Hash(hashReq)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		workflow, _, err := s.helpers.RunIdempotentInstallWorkflow(ctx, installhelpers.IdempotentInstallWorkflowRequest{
+			InstallID:    install.ID,
+			WorkflowType: app.WorkflowTypeDeployComponents,
+			Metadata:     map[string]string{},
+			PlanOnly:     req.PlanOnly,
+			Role:         req.Role,
+			RequestID:    req.RequestID,
+			RequestHash:  hash,
+			Operation:    "deploy-all",
+			QueueName:    installhelpers.InstallWorkflowsQueueName,
+		}, nil)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		ctx.JSON(http.StatusCreated, app.WorkflowResponse{WorkflowID: workflow.ID})
 		return
 	}
 
@@ -64,11 +95,11 @@ func (s *service) DeployInstallComponents(ctx *gin.Context) {
 
 	queueID, err := s.getInstallWorkflowsQueueID(ctx, installID)
 	if err != nil {
-		ctx.Error(err)
+		ctx.Error(fmt.Errorf("error queuing workflow %s: %w", workflow.ID, err))
 		return
 	}
 	if err := s.enqueueInstallSignal(ctx, queueID, executeflow.NewSignal(workflow.ID), workflow.ID, "install_workflows"); err != nil {
-		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		ctx.Error(fmt.Errorf("error queuing workflow %s: %w", workflow.ID, err))
 		return
 	}
 

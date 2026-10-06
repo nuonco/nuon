@@ -9,17 +9,21 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type RecoverInstallComponentHelmReleaseRequest struct {
-	Role string `json:"role,omitempty"`
+	RequestID string `json:"request_id,omitempty" validate:"omitempty,max=255"`
+	Role      string `json:"role,omitempty"`
 }
 
 func (c *RecoverInstallComponentHelmReleaseRequest) Validate(v *validator.Validate) error {
@@ -114,11 +118,71 @@ func (s *service) RecoverInstallComponentHelmRelease(ctx *gin.Context) {
 		return
 	}
 
-	recoveryDeploy, err := s.createRecoveryDeploy(ctx, installComponent.ID, deploy.ComponentBuildID, component.ID, installID, req.Role)
+	if req.RequestID != "" {
+		hashBody := req
+		hashBody.RequestID = ""
+		hash, err := request.Hash(struct {
+			RecoverInstallComponentHelmReleaseRequest
+			ComponentID string `json:"component_id"`
+		}{
+			RecoverInstallComponentHelmReleaseRequest: hashBody,
+			ComponentID: component.ID,
+		})
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+
+		var createdDeploy *app.InstallDeploy
+		workflow, created, err := s.helpers.RunIdempotentInstallWorkflow(ctx, installhelpers.IdempotentInstallWorkflowRequest{
+			InstallID:    install.ID,
+			WorkflowType: app.WorkflowTypeRecoverHelmRelease,
+			Role:         req.Role,
+			RequestID:    req.RequestID,
+			RequestHash:  hash,
+			Operation:    "recover-helm-release",
+			QueueName:    installhelpers.InstallWorkflowsQueueName,
+		}, &installhelpers.IdempotentInstallWorkflowHooks{
+			Prepare: func(tx *gorm.DB) (map[string]string, error) {
+				recoveryDeploy, err := s.createRecoveryDeploy(ctx, tx, installComponent.ID, deploy.ComponentBuildID, req.Role)
+				if err != nil {
+					return nil, err
+				}
+				createdDeploy = recoveryDeploy
+				return map[string]string{
+					app.WorkflowMetadataKeyWorkflowNameSuffix: component.Name,
+					"component_id":      component.ID,
+					"install_deploy_id": recoveryDeploy.ID,
+				}, nil
+			},
+			AfterCreate: func(tx *gorm.DB, wf *app.Workflow) error {
+				if createdDeploy == nil {
+					return fmt.Errorf("recovery deploy was not created")
+				}
+				return tx.WithContext(ctx).Model(&app.InstallDeploy{}).
+					Where("id = ?", createdDeploy.ID).
+					Update("install_workflow_id", wf.ID).Error
+			},
+		})
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+
+		if created && createdDeploy != nil {
+			s.emitRecoveryDeployAudit(ctx, installID, component.ID, createdDeploy.ID, deploy.ComponentBuildID, installComponent.ID)
+		}
+
+		ctx.JSON(http.StatusCreated, app.WorkflowResponse{WorkflowID: workflow.ID})
+		return
+	}
+
+	recoveryDeploy, err := s.createRecoveryDeploy(ctx, s.db, installComponent.ID, deploy.ComponentBuildID, req.Role)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create recovery deploy: %w", err))
 		return
 	}
+	s.emitRecoveryDeployAudit(ctx, installID, component.ID, recoveryDeploy.ID, deploy.ComponentBuildID, installComponent.ID)
 
 	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
 		install.ID,
@@ -210,11 +274,10 @@ func (s *service) hasRunningDeployJob(ctx context.Context, installComponentID st
 }
 
 func (s *service) createRecoveryDeploy(
-	ctx *gin.Context,
+	ctx context.Context,
+	db *gorm.DB,
 	installComponentID string,
 	buildID string,
-	componentID string,
-	installID string,
 	role string,
 ) (*app.InstallDeploy, error) {
 	deploy := app.InstallDeploy{
@@ -226,25 +289,30 @@ func (s *service) createRecoveryDeploy(
 		Role:               role,
 	}
 
-	if res := s.db.WithContext(ctx).Create(&deploy); res.Error != nil {
+	if res := db.WithContext(ctx).Create(&deploy); res.Error != nil {
 		return nil, fmt.Errorf("unable to create install deploy: %w", res.Error)
 	}
 
+	return &deploy, nil
+}
+
+func (s *service) emitRecoveryDeployAudit(
+	ctx context.Context,
+	installID, componentID, deployID, buildID, installComponentID string,
+) {
 	s.audit.Emit(ctx, audit.Event{
 		Type:        audit.EventInstallDeploy,
 		Message:     "helm release recovery started",
 		Outcome:     audit.OutcomeStarted,
 		InstallID:   installID,
 		ComponentID: componentID,
-		SubjectID:   deploy.ID,
+		SubjectID:   deployID,
 		SubjectType: "install_deploys",
 		Attrs: map[string]string{
-			"deploy.id":            deploy.ID,
+			"deploy.id":            deployID,
 			"deploy.type":          string(app.InstallDeployTypeRecover),
 			"component_build.id":   buildID,
 			"install_component.id": installComponentID,
 		},
 	})
-
-	return &deploy, nil
 }

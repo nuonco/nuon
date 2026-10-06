@@ -25,6 +25,10 @@ type ServiceToggleInstallComponentRequest struct {
 
 	// plan only
 	PlanOnly bool `json:"plan_only,omitempty"`
+
+	// request id
+	// Max Length: 255
+	RequestID string `json:"request_id,omitempty"`
 }
 
 // Validate validates this service toggle install component request
@@ -32,6 +36,10 @@ func (m *ServiceToggleInstallComponentRequest) Validate(formats strfmt.Registry)
 	var res []error
 
 	if err := m.validateEnabled(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRequestID(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -44,6 +52,18 @@ func (m *ServiceToggleInstallComponentRequest) Validate(formats strfmt.Registry)
 func (m *ServiceToggleInstallComponentRequest) validateEnabled(formats strfmt.Registry) error {
 
 	if err := validate.Required("enabled", "body", m.Enabled); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ServiceToggleInstallComponentRequest) validateRequestID(formats strfmt.Registry) error {
+	if swag.IsZero(m.RequestID) { // not required
+		return nil
+	}
+
+	if err := validate.MaxLength("request_id", "body", m.RequestID, 255); err != nil {
 		return err
 	}
 

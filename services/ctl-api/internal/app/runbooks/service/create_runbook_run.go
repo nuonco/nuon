@@ -14,12 +14,14 @@ import (
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 )
 
 type CreateRunbookRunRequest struct {
-	Inputs map[string]*string              `json:"inputs,omitempty"`
-	Steps  []CreateRunbookRunStepSelection `json:"steps,omitempty"`
-	Role   string                          `json:"role,omitempty"`
+	RequestID string                          `json:"request_id,omitempty" validate:"omitempty,max=255"`
+	Inputs    map[string]*string              `json:"inputs,omitempty"`
+	Steps     []CreateRunbookRunStepSelection `json:"steps,omitempty"`
+	Role      string                          `json:"role,omitempty"`
 }
 
 type CreateRunbookRunStepSelection struct {
@@ -42,6 +44,7 @@ type CreateRunbookRunStepSelection struct {
 // @Failure		401			{object}	stderr.ErrResponse
 // @Failure		403			{object}	stderr.ErrResponse
 // @Failure		404			{object}	stderr.ErrResponse
+// @Failure		409			{object}	stderr.ErrResponse
 // @Failure		500			{object}	stderr.ErrResponse
 // @Router			/v1/installs/{install_id}/runbooks/{runbook_id}/runs [post]
 func (s *service) CreateRunbookRun(ctx *gin.Context) {
@@ -96,6 +99,33 @@ func (s *service) createRunbookRun(ctx context.Context, orgID, accountID, instal
 		return nil, fmt.Errorf("unable to get install runbook: %w", err)
 	}
 
+	requestHash := ""
+	if req.RequestID != "" {
+		requestHash, err = request.Hash(struct {
+			Runbook string                          `json:"runbook"`
+			Inputs  map[string]*string              `json:"inputs,omitempty"`
+			Steps   []CreateRunbookRunStepSelection `json:"steps,omitempty"`
+			Role    string                          `json:"role,omitempty"`
+		}{Runbook: runbookRef, Inputs: req.Inputs, Steps: req.Steps, Role: req.Role})
+		if err != nil {
+			return nil, err
+		}
+		var existing app.Workflow
+		err = s.db.WithContext(ctx).Where(app.Workflow{
+			OrgID:     orgID,
+			OwnerID:   install.ID,
+			OwnerType: "installs",
+			Type:      app.WorkflowTypeRunbookRun,
+		}).Where("request->>'request_id' = ?", req.RequestID).First(&existing).Error
+		if err == nil {
+			if err := request.Check(existing.Request, requestHash, install.AppConfigID); err != nil {
+				return nil, err
+			}
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+	}
+
 	var runbookConfig app.RunbookConfig
 	configQuery := s.db.WithContext(ctx).
 		Preload("Steps", func(tx *gorm.DB) *gorm.DB {
@@ -137,7 +167,7 @@ func (s *service) createRunbookRun(ctx context.Context, orgID, accountID, instal
 			inputs[name] = *value
 		}
 	}
-	triggered, err := s.helpers.TriggerRunbookRun(ctx, runbookshelpers.TriggerRunbookRunRequest{InstallRunbookID: installRunbook.ID, RunbookConfigID: runbookConfig.ID, TriggeredByID: accountID, Inputs: inputs, StepSelections: stepSelections, Role: req.Role})
+	triggered, err := s.helpers.TriggerRunbookRun(ctx, runbookshelpers.TriggerRunbookRunRequest{InstallRunbookID: installRunbook.ID, RunbookConfigID: runbookConfig.ID, TriggeredByID: accountID, Inputs: inputs, StepSelections: stepSelections, Role: req.Role, RequestID: req.RequestID, RequestHash: requestHash})
 	if err != nil {
 		return nil, err
 	}
