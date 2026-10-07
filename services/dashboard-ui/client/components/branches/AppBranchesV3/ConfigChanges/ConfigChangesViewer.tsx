@@ -49,9 +49,9 @@ const OutlineItem = ({ section, active, onSelect }: IOutlineItem) => {
       type="button"
       onClick={() => onSelect(section.id)}
       className={cn(
-        'flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left transition-colors',
+        'flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-left transition-colors',
         'hover:bg-cool-grey-500/8 active:bg-cool-grey-500/16',
-        'focus-visible:outline-1 focus-visible:-outline-offset-2 focus-visible:outline-primary-400/80',
+        'focus-visible:[--tw-outline-style:solid] focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-primary-400/80',
         active && 'bg-cool-grey-500/12'
       )}
     >
@@ -89,12 +89,16 @@ export interface IConfigChangesViewer {
   sections: TAppConfigDiffSection[]
   files?: TConfigSourceFile[]
   versionLabel?: string
+  previousSha?: string
+  sha?: string
 }
 
 export const ConfigChangesViewer = ({
   sections,
   files,
   versionLabel,
+  previousSha,
+  sha,
 }: IConfigChangesViewer) => {
   const changes = useMemo(
     () => configChanges(sections, files),
@@ -116,19 +120,22 @@ export const ConfigChangesViewer = ({
   const select = (id: string) => {
     setSectionOpen(id, true)
     setActiveId(id)
-    listRef.current
-      ?.querySelector(`[data-config-change="${CSS.escape(id)}"]`)
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const section = listRef.current?.querySelector(
+      `[data-config-change="${CSS.escape(id)}"]`
+    )
+    if (!(section instanceof HTMLElement)) return
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    section.querySelector('button')?.focus({ preventScroll: true })
   }
 
   if (!changes.sections.length) {
     return (
       <div className="rounded-lg bg-cool-grey-100 dark:bg-dark-grey-800 px-4 py-8 text-center">
         <Text as="p" variant="body" weight="strong">
-          No config changes
+          No template changes
         </Text>
         <Text as="p" variant="subtext" theme="neutral">
-          This config matches the previous version.
+          This template matches the previous version.
         </Text>
       </div>
     )
@@ -137,9 +144,17 @@ export const ConfigChangesViewer = ({
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <Text variant="subtext" theme="neutral" family="mono">
-          {versionLabel}
-        </Text>
+        <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <Text variant="subtext" theme="neutral" family="mono">
+            {versionLabel}
+          </Text>
+          {previousSha && sha ? (
+            <Text variant="subtext" theme="neutral" family="mono" flex>
+              <Icon variant="GitCommitIcon" />
+              {previousSha.slice(0, 7)} → {sha.slice(0, 7)}
+            </Text>
+          ) : null}
+        </span>
         <DiffSummary
           summary={changes.summary}
           operations={CONFIG_CHANGE_OPERATIONS}
@@ -148,7 +163,7 @@ export const ConfigChangesViewer = ({
 
       <div className="grid gap-6 md:grid-cols-[15rem_minmax(0,1fr)]">
         <nav
-          aria-label="Config changes outline"
+          aria-label="Template changes"
           className="flex flex-col gap-4 self-start md:sticky md:top-0"
         >
           {groups.map(({ group, icon, items }) => (
@@ -189,7 +204,7 @@ export const ConfigChangesViewer = ({
                 selectedCount={filter.selectedCount}
                 totalCount={filter.totalCount}
                 searchValue={filter.searchQuery}
-                searchPlaceholder="Search config and files"
+                searchPlaceholder="Search template and files"
                 onSearchChange={filter.setSearchQuery}
                 onOperationToggle={filter.toggleOperation}
                 onOperationOnly={filter.onlyOperation}

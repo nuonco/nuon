@@ -61,6 +61,7 @@ export type TConfigChangeSummary = {
 }
 
 export type TLatestRollout = {
+  id: string
   status: string
   title: string
   source: TRunSource
@@ -75,6 +76,7 @@ export type TLatestRollout = {
     message: string
     author: string
     sha: string
+    previousSha: string
     shaUrl: string
     createdAt: string
   }
@@ -86,6 +88,7 @@ const ago = (minutes: number) =>
   new Date(Date.now() - minutes * MINUTE).toISOString()
 
 export const latestRolloutFixture: TLatestRollout = {
+  id: 'run-latest',
   status: 'in-progress',
   installGroups: [
     {
@@ -123,9 +126,44 @@ export const latestRolloutFixture: TLatestRollout = {
       ],
     },
     {
+      id: 'grp-eu-west',
+      name: 'EU west',
+      order: 3,
+      max_parallel: 3,
+      auto_approve_on_policies_passing: true,
+      label_selector: { match_labels: { env: 'prod', region: 'eu-west-1' } },
+      status: 'in-progress',
+      installs: [
+        install('inst-kilo', 'kilo', 'success'),
+        install('inst-lima', 'lima', 'success'),
+        install('inst-mike', 'mike', 'success'),
+        install('inst-november', 'november', 'success'),
+        install('inst-oscar', 'oscar', 'success'),
+        install('inst-papa', 'papa', 'in-progress', true),
+      ],
+    },
+    {
+      id: 'grp-staging',
+      name: 'Staging',
+      order: 4,
+      max_parallel: 2,
+      auto_approve_on_policies_passing: true,
+      label_selector: { match_labels: { env: 'staging' } },
+      status: 'in-progress',
+      installs: [
+        install('inst-quebec', 'quebec', 'success'),
+        {
+          ...install('inst-romeo', 'romeo', 'error'),
+          compositeError: cacheDeployError,
+        },
+        install('inst-sierra', 'sierra', 'in-progress'),
+        install('inst-tango', 'tango', 'in-progress'),
+      ],
+    },
+    {
       id: 'grp-dedicated',
       name: 'Dedicated enterprise tenants in regulated regions',
-      order: 3,
+      order: 5,
       max_parallel: 1,
       auto_approve_on_policies_passing: false,
       label_selector: {
@@ -161,7 +199,7 @@ export const latestRolloutFixture: TLatestRollout = {
     {
       id: 'grp-default',
       name: 'Remaining',
-      order: 4,
+      order: 6,
       max_parallel: 4,
       default: true,
       auto_approve_on_policies_passing: true,
@@ -189,6 +227,7 @@ export const latestRolloutFixture: TLatestRollout = {
       'Add cache component\n\nAdds a shared cache module and wires the api and worker charts to it.',
     author: 'jane@example.com',
     sha: 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678',
+    previousSha: '9f8e7d6c5b4a39281706f5e4d3c2b1a098765432',
     shaUrl:
       'https://github.com/acme/platform/commit/a1b2c3d4e5f60718293a4b5c6d7e8f9012345678',
     createdAt: ago(12),
@@ -332,3 +371,161 @@ export const latestRolloutFixture: TLatestRollout = {
     ],
   },
 }
+
+type TInstallOutcome = (
+  install: TRolloutInstall,
+  group: TRolloutInstallGroup
+) => string
+
+const finishedGroups = (
+  version: number,
+  outcome: TInstallOutcome
+): TRolloutInstallGroup[] =>
+  latestRolloutFixture.installGroups.map((group) => {
+    const installs = group.installs.map((install) => {
+      const status = outcome(install, group)
+      return {
+        id: install.id,
+        name: install.name,
+        status,
+        configVersion: status === 'success' ? version : version - 1,
+        targetConfigVersion: version,
+      }
+    })
+    const statuses = new Set(installs.map(({ status }) => status))
+    return {
+      ...group,
+      installs,
+      status: statuses.has('error')
+        ? 'error'
+        : statuses.has('success')
+          ? 'success'
+          : 'cancelled',
+    }
+  })
+
+type TOlderRollout = {
+  id: string
+  version: number
+  sha: string
+  previousSha: string
+  message: string
+  author: string
+  minutesAgo: number
+  source: TRunSource
+  status: string
+  outcome: TInstallOutcome
+  summary: TConfigChangeSummary
+}
+
+const olderRollout = ({
+  id,
+  version,
+  sha,
+  previousSha,
+  message,
+  author,
+  minutesAgo,
+  source,
+  status,
+  outcome,
+  summary,
+}: TOlderRollout): TLatestRollout => ({
+  ...latestRolloutFixture,
+  id,
+  status,
+  title: message.split('\n')[0],
+  source,
+  commit: {
+    message,
+    author,
+    sha,
+    previousSha,
+    shaUrl: `https://github.com/acme/platform/commit/${sha}`,
+    createdAt: ago(minutesAgo),
+  },
+  configChanges: {
+    ...latestRolloutFixture.configChanges,
+    versionLabel: `v${version - 1} → v${version}`,
+    summary,
+  },
+  installGroups: finishedGroups(version, outcome),
+})
+
+const HOUR = 60
+const DAY = 24 * HOUR
+
+const NEVER_APPROVED = new Set(['inst-echo', 'inst-foxtrot', 'inst-papa'])
+
+export const previousRolloutFixtures: TLatestRollout[] = [
+  olderRollout({
+    id: 'run-13',
+    version: 13,
+    sha: '9f8e7d6c5b4a39281706f5e4d3c2b1a098765432',
+    previousSha: '5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f',
+    message:
+      'Bump worker replicas\n\nRaises the default worker replica count for the queue backlog.',
+    author: 'sam@example.com',
+    minutesAgo: 3 * HOUR,
+    source: {
+      kind: 'pull-request',
+      number: 478,
+      url: 'https://github.com/acme/platform/pull/478',
+      baseBranch: 'main',
+    },
+    status: 'success',
+    outcome: (install) =>
+      NEVER_APPROVED.has(install.id) ? 'cancelled' : 'success',
+    summary: { added: 0, removed: 0, changed: 1 },
+  }),
+  olderRollout({
+    id: 'run-12',
+    version: 12,
+    sha: '5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f',
+    previousSha: '1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d',
+    message:
+      'Move sandbox to eks module v3.2.0\n\nPicks up the node group autoscaling fix.',
+    author: 'jane@example.com',
+    minutesAgo: 2 * DAY,
+    source: { kind: 'tag', tag: 'v2.8.0' },
+    status: 'error',
+    outcome: (install, group) => {
+      if (install.id === 'inst-delta' || install.id === 'inst-romeo') {
+        return 'error'
+      }
+      if (group.id === 'grp-dedicated') return 'cancelled'
+      return 'success'
+    },
+    summary: { added: 0, removed: 0, changed: 2 },
+  }),
+  olderRollout({
+    id: 'run-11',
+    version: 11,
+    sha: '1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d',
+    previousSha: '0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c',
+    message: 'Add region input',
+    author: 'sam@example.com',
+    minutesAgo: 5 * DAY,
+    source: { kind: 'manual' },
+    status: 'success',
+    outcome: () => 'success',
+    summary: { added: 1, removed: 0, changed: 0 },
+  }),
+  olderRollout({
+    id: 'run-10',
+    version: 10,
+    sha: '0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c',
+    previousSha: '7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d',
+    message:
+      'Remove legacy cron action\n\nThe nightly cleanup now runs inside the worker.',
+    author: 'alex@example.com',
+    minutesAgo: 9 * DAY,
+    source: { kind: 'commit' },
+    status: 'success',
+    outcome: (install, group) =>
+      group.id === 'grp-primary' && NEVER_APPROVED.has(install.id)
+        ? 'cancelled'
+        : 'success',
+    summary: { added: 0, removed: 1, changed: 0 },
+  }),
+]

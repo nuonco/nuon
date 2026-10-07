@@ -39,7 +39,7 @@ export const InstallGroupPanelBody = ({
         </div>
         <GroupLabels group={group} />
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <InstallStatusCounts group={group} />
+          <InstallStatusCounts installs={group.installs} />
         </div>
       </div>
 
@@ -67,7 +67,7 @@ export const InstallGroupPanelBody = ({
           <ul className="flex flex-col gap-2">
             {installs.map((install) => (
               <li key={install.id}>
-                <InstallRolloutPanel install={install} />
+                <InstallRolloutPanel install={install} commit={commit} />
               </li>
             ))}
           </ul>

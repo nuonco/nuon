@@ -10,6 +10,11 @@ import type { TLatestRollout, TRolloutInstallGroup } from './fixtures'
 import { GroupLabels } from './GroupLabels'
 import { InstallGroupPanelBody } from './InstallGroupPanelBody'
 import { InstallStatusCounts } from './InstallStatusCounts'
+import {
+  InstallStatusTiles,
+  installStatusClass,
+  installStatusKey,
+} from './InstallStatusTiles'
 
 const InstallGroupCard = ({
   group,
@@ -47,9 +52,10 @@ const InstallGroupCard = ({
                 <Status status={group.status} />
               </span>
             </div>
+            <InstallStatusTiles group={group} />
             <GroupLabels group={group} max={3} />
             <span className="flex w-full flex-wrap items-center gap-x-3 gap-y-1">
-              <InstallStatusCounts group={group} />
+              <InstallStatusCounts installs={group.installs} />
               <Text variant="subtext" theme="neutral">
                 Up to {group.max_parallel ?? 1} at a time ·{' '}
                 {group.auto_approve_on_policies_passing
@@ -69,55 +75,90 @@ const InstallGroupCard = ({
 const orderedGroups = (groups: TRolloutInstallGroup[]) =>
   [...groups].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 
-const rolledOut = (group: TRolloutInstallGroup) =>
-  group.installs.filter((install) => install.status === 'success').length
+const STATUS_SLICES = [
+  { status: 'success', label: 'success' },
+  { status: 'error', label: 'failed' },
+  { status: 'in-progress', label: 'in progress' },
+  { status: 'approval-awaiting', label: 'awaiting approval' },
+  { status: 'cancelled', label: 'cancelled' },
+  { status: 'pending', label: 'pending' },
+]
 
-const GroupProgress = ({
+const statusSlices = (group: TRolloutInstallGroup) => {
+  const counts = new Map<string, number>()
+  for (const install of group.installs) {
+    const key = installStatusKey(install)
+    counts.set(key, (counts.get(key) ?? 0) + 1)
+  }
+  return STATUS_SLICES.flatMap((slice) => {
+    const count = counts.get(slice.status) ?? 0
+    return count ? [{ ...slice, count }] : []
+  })
+}
+
+export const GroupStatusBar = ({
   groups,
-  onHover,
+  onHover = () => {},
 }: {
   groups: TRolloutInstallGroup[]
-  onHover: (groupId: string, open: boolean) => void
+  onHover?: (groupId: string, open: boolean) => void
 }) => (
-  <div
-    className="flex h-2 items-center gap-1"
-    aria-label="Install group progress"
-  >
+  <div className="flex h-3 items-stretch gap-1" aria-label="Install groups">
     {groups.map((group) => {
       const total = group.installs.length
-      const done = rolledOut(group)
+      const slices = statusSlices(group)
+      const summary = slices
+        .map((slice) => `${slice.count} ${slice.label}`)
+        .join(', ')
       return (
         <Tooltip
           key={group.id}
           position="top"
-          className="!w-auto min-w-0"
+          className="!flex h-full min-w-0 !w-auto"
           onOpenChange={(open) => {
             if (group.id) onHover(group.id, open)
           }}
-          style={{ flexGrow: Math.max(total, 1) }}
-          tipContentClassName="whitespace-normal"
+          style={{ flex: `${Math.max(total, 1)} 1 0%` }}
           tipContent={
             <span className="flex flex-col gap-1">
-              <Text variant="subtext" weight="strong">
-                {group.name}
-              </Text>
               <span className="flex items-center gap-2">
+                <Text variant="subtext" weight="strong">
+                  {group.name}
+                </Text>
                 <Status status={group.status} />
                 <Text variant="subtext" theme="neutral">
-                  {done} of {total}
+                  {total} {total === 1 ? 'install' : 'installs'}
                 </Text>
+              </span>
+              <span className="flex items-center gap-3">
+                <InstallStatusCounts
+                  installs={group.installs}
+                  showTotal={false}
+                />
               </span>
             </span>
           }
         >
           <span
-            aria-label={`${group.name}: ${group.status}, ${done} of ${total}`}
-            className="block h-2 overflow-hidden rounded-sm bg-black/10 transition-[height] duration-fast ease-cubic hover:h-3.5 dark:bg-white/15"
+            aria-label={`${group.name}: ${total} installs, ${summary}`}
+            className="flex h-full w-full items-stretch overflow-hidden rounded-sm"
           >
-            <span
-              className="block h-full bg-green-600 dark:bg-green-500"
-              style={{ width: total ? `${(done / total) * 100}%` : 0 }}
-            />
+            {slices.length ? (
+              slices.map((slice) => (
+                <span
+                  key={slice.status}
+                  className={cn(
+                    'h-full min-w-0',
+                    installStatusClass(slice.status)
+                  )}
+                  style={{ flex: `${slice.count} 1 0%` }}
+                />
+              ))
+            ) : (
+              <span
+                className={cn('h-full w-full', installStatusClass('pending'))}
+              />
+            )}
           </span>
         </Tooltip>
       )
@@ -137,15 +178,17 @@ export const InstallGroupCards = ({
 
   return (
     <section className="flex flex-col gap-3">
-      <SectionHeader title="Install groups" />
-      <GroupProgress
-        groups={ordered}
-        onHover={(groupId, open) =>
-          setHoveredId((current) =>
-            open ? groupId : current === groupId ? undefined : current
-          )
-        }
-      />
+      <div className="flex flex-col gap-3">
+        <SectionHeader title="Install groups" />
+        <GroupStatusBar
+          groups={ordered}
+          onHover={(groupId, open) =>
+            setHoveredId((current) =>
+              open ? groupId : current === groupId ? undefined : current
+            )
+          }
+        />
+      </div>
       <ol className="flex flex-col gap-3">
         {ordered.map((group) => (
           <li key={group.id}>

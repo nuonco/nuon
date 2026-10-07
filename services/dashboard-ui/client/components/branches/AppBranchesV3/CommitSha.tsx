@@ -15,7 +15,7 @@ export const CommitSha = ({ commit }: { commit: TLatestRollout['commit'] }) => (
         </Text>
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <Text variant="subtext" family="mono" theme="neutral">
-            {commit.sha.slice(0, 7)}
+            {commit.previousSha.slice(0, 7)} → {commit.sha.slice(0, 7)}
           </Text>
           <Text variant="subtext" theme="neutral">
             {commit.author}
@@ -32,7 +32,7 @@ export const CommitSha = ({ commit }: { commit: TLatestRollout['commit'] }) => (
   >
     <Text variant="subtext" theme="neutral" family="mono" flex>
       <Icon variant="GitCommitIcon" />
-      {commit.sha.slice(0, 7)}
+      {commit.previousSha.slice(0, 7)} → {commit.sha.slice(0, 7)}
     </Text>
   </Tooltip>
 )

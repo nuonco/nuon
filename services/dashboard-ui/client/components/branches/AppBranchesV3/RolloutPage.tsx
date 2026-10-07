@@ -4,6 +4,8 @@ import {
   PullRequestLink,
   TagLink,
 } from '@/components/common/GitReferenceLink'
+import { Icon } from '@/components/common/Icon'
+import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -89,11 +91,18 @@ const CommitInfo = ({ rollout }: { rollout: TLatestRollout }) => {
 
 export interface IRolloutPage {
   rollout: TLatestRollout
+  backHref?: string
 }
 
-export const RolloutPage = ({ rollout }: IRolloutPage) => (
+export const RolloutPage = ({ rollout, backHref }: IRolloutPage) => (
   <PageSection>
     <div className="flex flex-col gap-3">
+      {backHref ? (
+        <Link href={backHref}>
+          <Icon variant="ArrowLeftIcon" />
+          Previous runs
+        </Link>
+      ) : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="flex flex-wrap items-center gap-3">
           <Text variant="h3" weight="stronger" level={2}>
@@ -107,13 +116,13 @@ export const RolloutPage = ({ rollout }: IRolloutPage) => (
         <Panel
           panelKey="rollout-config-changes"
           size="3/4"
-          heading="Config changes"
+          heading="Template changes"
           triggerButton={{
             variant: 'secondary',
             className: 'gap-3',
             children: (
               <>
-                Config changes
+                Template changes
                 <ChangeCountSummary
                   added={rollout.configChanges.summary.added}
                   updated={rollout.configChanges.summary.changed}
@@ -127,6 +136,8 @@ export const RolloutPage = ({ rollout }: IRolloutPage) => (
             sections={rollout.configChanges.sections}
             files={rollout.configChanges.files}
             versionLabel={rollout.configChanges.versionLabel}
+            previousSha={rollout.commit.previousSha}
+            sha={rollout.commit.sha}
           />
         </Panel>
       </div>

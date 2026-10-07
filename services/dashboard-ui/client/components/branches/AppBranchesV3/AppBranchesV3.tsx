@@ -11,7 +11,8 @@ import { PageSection } from '@/components/layout/PageSection'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { SubNav } from '@/components/navigation/SubNav'
 import type { TNavItem } from '@/types'
-import { latestRolloutFixture } from './fixtures'
+import { latestRolloutFixture, previousRolloutFixtures } from './fixtures'
+import { PreviousRunsPage } from './PreviousRunsPage'
 import { RolloutPage } from './RolloutPage'
 
 const BASE_PATH = '/org-1/apps/app-1/branches/brn-1'
@@ -24,18 +25,31 @@ const PAGE_TITLES: Record<string, string> = {
   settings: 'Settings',
 }
 
-const pageKey = (pathname: string) =>
+const pageSegments = (pathname: string) =>
   pathname
     .replace(/\/{2,}/g, '/')
     .slice(BASE_PATH.length)
     .replace(/^\/|\/$/g, '')
-    .split('/')[0]
+    .split('/')
 
 const PagePlaceholder = () => {
   const { pathname } = useLocation()
-  const key = pageKey(pathname)
+  const [key, runId] = pageSegments(pathname)
   const title = PAGE_TITLES[key]
   if (key === 'rollout') return <RolloutPage rollout={latestRolloutFixture} />
+  if (key === 'runs') {
+    const run = runId
+      ? previousRolloutFixtures.find(({ id }) => id === runId)
+      : undefined
+    return run ? (
+      <RolloutPage rollout={run} backHref={`${BASE_PATH}/runs`} />
+    ) : (
+      <PreviousRunsPage
+        rollouts={previousRolloutFixtures}
+        basePath={BASE_PATH}
+      />
+    )
+  }
   if (!title) return null
 
   return (
