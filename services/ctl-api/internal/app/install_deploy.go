@@ -219,3 +219,11 @@ func (i *InstallDeploy) Views(db *gorm.DB) []migrations.View {
 		},
 	}
 }
+
+// InPlanOnlyWorkflow reports whether the deploy belongs to a plan-only
+// workflow, such as a drift check or a preview, which plans without intending
+// to deploy. It needs InstallWorkflow loaded; a deploy without a workflow is
+// not plan-only.
+func (d *InstallDeploy) InPlanOnlyWorkflow() bool {
+	return d.InstallWorkflow != nil && d.InstallWorkflow.PlanOnly
+}

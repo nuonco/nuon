@@ -17,8 +17,9 @@ import (
 )
 
 // updateDeployStatusTestSuite covers how a deploy's status reaches its install
-// component: always, never (SkipStatusSync), or unless the component is live
-// (SyncStatusUnlessLive, which the sync-and-plan step uses for failures).
+// component: always, never (SkipStatusSync), or unless the deploy is in a
+// plan-only workflow (SyncStatusUnlessPlanOnly, which the sync-and-plan step
+// uses for failures).
 type updateDeployStatusTestSuite struct {
 	tests.BaseDBTestSuite
 
@@ -50,9 +51,9 @@ func (s *updateDeployStatusTestSuite) TearDownSuite() {
 	require.NoError(s.T(), db.Close())
 }
 
-// seedDeploy returns a pending deploy of a component whose install component
-// has componentStatus.
-func (s *updateDeployStatusTestSuite) seedDeploy(componentStatus app.InstallComponentStatus) (context.Context, *app.InstallDeploy, *app.InstallComponent) {
+// seedDeploy returns a planning deploy, in a workflow that is plan-only or
+// not, of a component whose install component has componentStatus.
+func (s *updateDeployStatusTestSuite) seedDeploy(componentStatus app.InstallComponentStatus, planOnly bool) (context.Context, *app.InstallDeploy, *app.InstallComponent) {
 	t := s.T()
 	ctx, _ := s.seeder.EnsureAccount(context.Background(), t)
 	ctx, _ = s.seeder.EnsureOrg(ctx, t)
@@ -70,31 +71,37 @@ func (s *updateDeployStatusTestSuite) seedDeploy(componentStatus app.InstallComp
 		"status_v2": app.NewCompositeStatus(ctx, app.Status(componentStatus)),
 	}).Error)
 
+	flw := s.seeder.CreateWorkflow(ctx, t, install.ID, app.WorkflowTypeManualDeploy, func(w *app.Workflow) {
+		w.PlanOnly = planOnly
+	})
 	deploy := s.seeder.CreateInstallDeploy(ctx, t, ic.ID, build.ID)
-	require.NoError(t, s.db.WithContext(ctx).Model(deploy).Update("status", app.InstallDeployStatusPlanning).Error)
+	require.NoError(t, s.db.WithContext(ctx).Model(deploy).Updates(map[string]any{
+		"status":              app.InstallDeployStatusPlanning,
+		"install_workflow_id": flw.ID,
+	}).Error)
 	return ctx, deploy, ic
 }
 
 // fail marks the deploy failed through both status activities, the way the
 // sync-and-plan step does.
-func (s *updateDeployStatusTestSuite) fail(ctx context.Context, deployID string, skip, syncUnlessLive bool) {
+func (s *updateDeployStatusTestSuite) fail(ctx context.Context, deployID string, skip, syncUnlessPlanOnly bool) {
 	t := s.T()
 	acts := &Activities{db: s.db}
 	require.NoError(t, acts.UpdateDeployStatus(ctx, UpdateDeployStatusRequest{
-		DeployID:             deployID,
-		Status:               app.InstallDeployStatusError,
-		StatusDescription:    "plan job failed",
-		SkipStatusSync:       skip,
-		SyncStatusUnlessLive: syncUnlessLive,
+		DeployID:                 deployID,
+		Status:                   app.InstallDeployStatusError,
+		StatusDescription:        "plan job failed",
+		SkipStatusSync:           skip,
+		SyncStatusUnlessPlanOnly: syncUnlessPlanOnly,
 	}))
 
 	statusActs := statusactivities.New(statusactivities.Params{DB: s.db})
 	require.NoError(t, statusActs.UpdateDeployStatusV2(ctx, statusactivities.UpdateDeployStatusV2Request{
-		DeployID:             deployID,
-		Status:               app.Status(app.InstallDeployStatusError),
-		StatusDescription:    "plan job failed",
-		SkipStatusSync:       skip,
-		SyncStatusUnlessLive: syncUnlessLive,
+		DeployID:                 deployID,
+		Status:                   app.Status(app.InstallDeployStatusError),
+		StatusDescription:        "plan job failed",
+		SkipStatusSync:           skip,
+		SyncStatusUnlessPlanOnly: syncUnlessPlanOnly,
 	}))
 }
 
@@ -122,7 +129,7 @@ func (s *updateDeployStatusTestSuite) deploy(ctx context.Context, id string) app
 }
 
 func (s *updateDeployStatusTestSuite) TestSkipLeavesComponent() {
-	ctx, deploy, ic := s.seedDeploy(app.InstallComponentStatusPending)
+	ctx, deploy, ic := s.seedDeploy(app.InstallComponentStatusPending, false)
 	s.fail(ctx, deploy.ID, true, false)
 
 	s.Equal(app.InstallDeployStatusError, s.deploy(ctx, deploy.ID).Status)
@@ -131,15 +138,17 @@ func (s *updateDeployStatusTestSuite) TestSkipLeavesComponent() {
 	s.Equal(app.Status(app.InstallComponentStatusPending), got.StatusV2)
 }
 
-func (s *updateDeployStatusTestSuite) TestSyncUnlessLiveFailsUndeployedComponent() {
+func (s *updateDeployStatusTestSuite) TestSyncUnlessPlanOnlyFailsComponent() {
 	for _, status := range []app.InstallComponentStatus{
 		"", // created with the install, never deployed
 		app.InstallComponentStatusPending,
 		app.InstallComponentStatusError,
 		app.InstallComponentStatusInactive,
+		app.InstallComponentStatusActive,
+		app.InstallComponentStatusNoop,
 	} {
 		s.Run("status="+string(status), func() {
-			ctx, deploy, ic := s.seedDeploy(status)
+			ctx, deploy, ic := s.seedDeploy(status, false)
 			s.fail(ctx, deploy.ID, true, true)
 
 			got := s.component(ctx, ic.ID)
@@ -150,14 +159,13 @@ func (s *updateDeployStatusTestSuite) TestSyncUnlessLiveFailsUndeployedComponent
 	}
 }
 
-func (s *updateDeployStatusTestSuite) TestSyncUnlessLiveKeepsLiveComponent() {
+func (s *updateDeployStatusTestSuite) TestSyncUnlessPlanOnlyKeepsComponentInPlanOnlyWorkflow() {
 	for _, status := range []app.InstallComponentStatus{
+		"",
 		app.InstallComponentStatusActive,
-		app.InstallComponentStatusNoop,
-		app.InstallComponentStatusDisabled,
 	} {
 		s.Run("status="+string(status), func() {
-			ctx, deploy, ic := s.seedDeploy(status)
+			ctx, deploy, ic := s.seedDeploy(status, true)
 			s.fail(ctx, deploy.ID, true, true)
 
 			s.Equal(app.InstallDeployStatusError, s.deploy(ctx, deploy.ID).Status)
@@ -168,8 +176,16 @@ func (s *updateDeployStatusTestSuite) TestSyncUnlessLiveKeepsLiveComponent() {
 	}
 }
 
+func (s *updateDeployStatusTestSuite) TestSyncUnlessPlanOnlyWithoutWorkflow() {
+	ctx, deploy, ic := s.seedDeploy(app.InstallComponentStatusActive, false)
+	require.NoError(s.T(), s.db.WithContext(ctx).Model(deploy).Update("install_workflow_id", nil).Error)
+	s.fail(ctx, deploy.ID, true, true)
+
+	s.Equal(app.InstallComponentStatusError, s.component(ctx, ic.ID).Status)
+}
+
 func (s *updateDeployStatusTestSuite) TestNoSkipAlwaysSyncs() {
-	ctx, deploy, ic := s.seedDeploy(app.InstallComponentStatusActive)
+	ctx, deploy, ic := s.seedDeploy(app.InstallComponentStatusActive, true)
 	s.fail(ctx, deploy.ID, false, false)
 
 	got := s.component(ctx, ic.ID)

@@ -945,9 +945,10 @@ type UpdateDeployStatusV2Request struct {
 	Status            app.Status `validate:"required"`
 	StatusDescription string     `validate:"required"`
 	SkipStatusSync    bool
-	// SyncStatusUnlessLive overrides SkipStatusSync when the install
-	// component's status is not live (see InstallComponentStatus.KeepsStatusOnPlan).
-	SyncStatusUnlessLive bool
+	// SyncStatusUnlessPlanOnly overrides SkipStatusSync unless the deploy
+	// belongs to a plan-only workflow (a drift check or preview), so a deploy
+	// that fails before its apply step still updates the install component.
+	SyncStatusUnlessPlanOnly bool
 }
 
 // @temporal-gen-v2 activity
@@ -971,19 +972,20 @@ func (a *Activities) UpdateDeployStatusV2(ctx context.Context, req UpdateDeployS
 	if err != nil {
 		return fmt.Errorf("unable to update install deploy: %w", err)
 	}
-	if req.SkipStatusSync && !req.SyncStatusUnlessLive {
+	if req.SkipStatusSync && !req.SyncStatusUnlessPlanOnly {
 		return nil
 	}
 
 	extantInstallDeploy := app.InstallDeploy{}
 	res := a.db.WithContext(ctx).
 		Preload("InstallComponent").
+		Preload("InstallWorkflow").
 		Where("id = ?", req.DeployID).
 		First(&extantInstallDeploy)
 	if res.Error != nil {
 		return fmt.Errorf("unable to get install deploy: %w", res.Error)
 	}
-	if req.SkipStatusSync && extantInstallDeploy.InstallComponent.Status.KeepsStatusOnPlan() {
+	if req.SkipStatusSync && extantInstallDeploy.InPlanOnlyWorkflow() {
 		return nil
 	}
 

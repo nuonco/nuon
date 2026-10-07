@@ -717,18 +717,18 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 	return nil
 }
 
-// updateDeployFailed marks the deploy failed. The install component takes the
-// error too unless its last deploy is live: a component that has never
-// deployed, or whose last deploy failed, would otherwise keep showing the
-// status it had before this step, since only the apply step syncs status.
+// updateDeployFailed marks the deploy failed. Unless this is a plan-only
+// workflow (a drift check or preview), the install component takes the error
+// too: the deploy fails here, so its apply step, which otherwise syncs the
+// component's status, never runs.
 func (s *Signal) updateDeployFailed(ctx workflow.Context, deployID string, message string) {
 	l := workflow.GetLogger(ctx)
 	if err := activities.AwaitUpdateDeployStatus(ctx, activities.UpdateDeployStatusRequest{
-		DeployID:             deployID,
-		Status:               app.InstallDeployStatusError,
-		StatusDescription:    message,
-		SkipStatusSync:       true,
-		SyncStatusUnlessLive: true,
+		DeployID:                 deployID,
+		Status:                   app.InstallDeployStatusError,
+		StatusDescription:        message,
+		SkipStatusSync:           true,
+		SyncStatusUnlessPlanOnly: true,
 	}); err != nil {
 		l.Error("unable to update deploy status",
 			zap.String("deploy-id", deployID),
@@ -736,11 +736,11 @@ func (s *Signal) updateDeployFailed(ctx workflow.Context, deployID string, messa
 	}
 
 	if err := statusactivities.AwaitUpdateDeployStatusV2(ctx, statusactivities.UpdateDeployStatusV2Request{
-		DeployID:             deployID,
-		Status:               app.Status(app.InstallDeployStatusError),
-		StatusDescription:    message,
-		SkipStatusSync:       true,
-		SyncStatusUnlessLive: true,
+		DeployID:                 deployID,
+		Status:                   app.Status(app.InstallDeployStatusError),
+		StatusDescription:        message,
+		SkipStatusSync:           true,
+		SyncStatusUnlessPlanOnly: true,
 	}); err != nil {
 		l.Error("unable to update deploy status v2",
 			zap.String("deploy-id", deployID),
