@@ -48,7 +48,8 @@ func parseGARRepositoryURL(raw string) (*garRepository, error) {
 }
 
 // @temporal-gen-v2 activity
-// @schedule-to-close-timeout 5m
+// @schedule-to-close-timeout 30m
+// @start-to-close-timeout 30m
 func (a *Activities) DeleteGARPackage(ctx context.Context, req *DeleteGARPackageRequest) (*DeleteGARPackageResponse, error) {
 	if err := req.validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate request: %w", err)

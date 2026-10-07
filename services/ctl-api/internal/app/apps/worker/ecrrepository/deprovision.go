@@ -16,7 +16,7 @@ type DeprovisionECRRepositoryResponse struct{}
 // TODO: rename this package and its workflows to be cloud agnostic; they also handle GAR and ACR.
 //
 // @temporal-gen-v2 workflow
-// @execution-timeout 30m
+// @execution-timeout 1h
 // @task-timeout 15m
 // @id-template {{.CallerID}}-deprovision-ecr-repo
 func (w Wkflow) DeprovisionECRRepository(ctx workflow.Context, req *DeprovisionECRRepositoryRequest) (*DeprovisionECRRepositoryResponse, error) {
