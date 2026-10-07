@@ -26,8 +26,14 @@ type ParseConfig struct {
 	FieldTimeout time.Duration
 
 	// SkipBranches loads embedded branch configs without validating them, for
-	// callers that never sync branches from the app config.
+	// callers that never sync branches from the app config. A branches/ file
+	// that fails to decode is skipped instead of failing the directory.
 	SkipBranches bool
+
+	// SkipInstalls does not read installs/*.toml. installs.toml, the pointer to
+	// a separate installs repo, is still parsed. Callers that apply install
+	// files leave this unset.
+	SkipInstalls bool
 }
 
 func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
@@ -89,6 +95,10 @@ func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
 			Description: "error decoding config",
 			Err:         err,
 		}
+	}
+
+	if parseCfg.SkipInstalls {
+		cfg.Installs = nil
 	}
 
 	err = cfg.Parse(config.WithRootDir(rootDir))

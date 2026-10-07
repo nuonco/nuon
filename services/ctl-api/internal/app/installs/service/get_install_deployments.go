@@ -357,10 +357,15 @@ func (s *service) getInstallDeployments(
 	if err != nil {
 		return nil, err
 	}
+	pinnedBranch, err := s.pinnedAppConfigBranch(ctx, orgID, installID)
+	if err != nil {
+		return nil, err
+	}
 
 	deployments := make([]InstallDeployment, 0, len(workflows))
 	for i := range workflows {
 		d := buildInstallDeployment(&workflows[i], versionsByWorkflowID[workflows[i].ID], diffsByWorkflowID[workflows[i].ID], buildsByID, fallbackBranch)
+		applyPinnedConfigBranch(&d, pinnedBranch)
 		if d.Type == "" {
 			continue
 		}
@@ -678,6 +683,65 @@ func (s *service) componentBuildsByID(ctx *gin.Context, ids []string) (map[strin
 		builds[rows[i].ID] = rows[i]
 	}
 	return builds, nil
+}
+
+// applyPinnedConfigBranch fills a provision or reprovision that has no
+// version-linked run with the branch run that wrote the install's pinned app config.
+func applyPinnedConfigBranch(d *InstallDeployment, pinned *InstallDeploymentAppBranchRef) {
+	if pinned == nil || pinned.RunID == "" {
+		return
+	}
+	if d.Type != InstallDeploymentTypeProvision && d.Type != InstallDeploymentTypeReprovision {
+		return
+	}
+	if d.AppBranch != nil && d.AppBranch.RunID != "" {
+		return
+	}
+	copied := *pinned
+	d.AppBranch = &copied
+}
+
+func (s *service) pinnedAppConfigBranch(ctx *gin.Context, orgID, installID string) (*InstallDeploymentAppBranchRef, error) {
+	var install app.Install
+	err := s.db.WithContext(ctx).
+		Where(app.Install{ID: installID, OrgID: orgID}).
+		First(&install).Error
+	if isNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install app config: %w", err)
+	}
+	if install.AppConfigID == "" {
+		return nil, nil
+	}
+
+	var run app.AppBranchRun
+	err = s.db.WithContext(ctx).
+		Preload("AppBranch").
+		Preload("VCSConnectionCommit").
+		Where(app.AppBranchRun{OrgID: orgID, AppConfigID: install.AppConfigID}).
+		Order("created_at DESC").
+		First(&run).Error
+	if isNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("unable to get app config branch run: %w", err)
+	}
+
+	ref := &InstallDeploymentAppBranchRef{
+		ID:    run.AppBranchID,
+		Name:  run.AppBranch.Name,
+		RunID: run.ID,
+	}
+	meta := run.RunMetadata()
+	ref.GitRef = meta.GitRef
+	ref.CommitSHA = meta.HeadSHA
+	if ref.CommitSHA == "" && run.VCSConnectionCommit != nil {
+		ref.CommitSHA = run.VCSConnectionCommit.SHA
+	}
+	return ref, nil
 }
 
 func (s *service) installDeploymentBranch(ctx *gin.Context, orgID, installID string) (*InstallDeploymentAppBranchRef, error) {

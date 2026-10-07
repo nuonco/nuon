@@ -40,6 +40,8 @@ func TestExecuteAddsSandboxBuildIDToStepMetadata(t *testing.T) {
 		}, nil)
 	env.OnActivity((*branchactivities.Activities).GetAppConfigByID, mock.Anything, mock.Anything, mock.Anything).
 		Return(&app.AppConfig{ID: "config-1", AppID: "app-1"}, nil)
+	env.OnActivity((*branchactivities.Activities).FindReusableSandboxBuild, mock.Anything, mock.Anything, mock.Anything).
+		Return(&branchactivities.FindReusableSandboxBuildOutput{}, nil)
 	env.OnActivity((*branchactivities.Activities).GetSandboxBuildConfig, mock.Anything, mock.Anything, mock.Anything).
 		Return(&branchactivities.GetSandboxBuildConfigOutput{
 			SandboxConfig: &app.AppSandboxConfig{ID: "sandbox-config-1"},

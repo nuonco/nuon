@@ -68,10 +68,13 @@ export type DiffFileEntry = {
   after?: string
 }
 
+export type DiffChangeKind = 'source' | 'config'
+
 export type DiffEntityEntry = {
   name: string
   op: 'add' | 'remove' | 'change'
   componentType?: string
+  changeKinds?: DiffChangeKind[]
   fields: DiffFieldEntry[]
   files?: DiffFileEntry[]
 }
@@ -603,7 +606,16 @@ const EntityRow = ({
           )}
         </div>
         {!isSnapshot && (
-          <div className="flex items-center pr-4 self-center">
+          <div className="flex items-center gap-2 pr-4 self-center">
+            {entity.changeKinds?.map((kind) => (
+              <Badge
+                key={kind}
+                theme={kind === 'source' ? 'info' : 'warn'}
+                size="sm"
+              >
+                {kind === 'source' ? 'Source' : 'Config'}
+              </Badge>
+            ))}
             <Badge theme={OP_BADGE_THEME[entity.op] || 'neutral'} size="sm">
               {humanize(entity.op)}
             </Badge>

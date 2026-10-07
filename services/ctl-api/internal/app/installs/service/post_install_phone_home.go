@@ -207,6 +207,7 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, stackVersion *app.
 	}
 	res := s.db.WithContext(ctx).
 		Model(&updatedStack).
+		Where("status->>'status' <> ?", app.StatusCancelled).
 		Updates(app.InstallStackVersion{
 			Status: app.NewCompositeStatus(ctx, app.InstallStackVersionStatusActive),
 			Runs: []app.InstallStackVersionRun{
@@ -217,6 +218,15 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, stackVersion *app.
 		})
 	if res.Error != nil {
 		return errors.Wrap(res.Error, "unable to update stack version")
+	}
+	if res.RowsAffected == 0 {
+		var current app.InstallStackVersion
+		if err := s.db.WithContext(ctx).First(&current, "id = ?", stackVersion.ID).Error; err != nil {
+			return errors.Wrap(err, "unable to reload stack version")
+		}
+		if current.Status.Status == app.StatusCancelled {
+			return nil
+		}
 	}
 
 	run := app.InstallStackVersionRun{

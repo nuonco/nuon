@@ -11,6 +11,7 @@ import (
 	"go.uber.org/fx/fxtest"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
@@ -70,12 +71,30 @@ func (s *FindBaseAppBranchRunTestSuite) TestPreviewUsesLatestRunOnTargetBranch()
 	s.Require().NoError(s.deps.DB.WithContext(ctx).Create(previewConfig).Error)
 
 	completedAt := time.Now().UTC().Add(-time.Minute)
-	mainRun := &app.AppBranchRun{
+	older := &app.AppBranchRun{
 		AppBranchID:       mainBranch.ID,
 		AppBranchConfigID: mainConfig.ID,
 		RunType:           app.AppBranchRunTypeGit,
 		Status:            "success",
+		AppConfigID:       "appolder000000000000000000",
 		CompletedAt:       &completedAt,
+		Labeled: labels.Labeled{Labels: labels.Labels{
+			app.AppBranchRunLabelBuildsCompleted: "true",
+		}},
+	}
+	s.Require().NoError(s.deps.DB.WithContext(ctx).Create(older).Error)
+
+	failedAt := time.Now().UTC()
+	mainRun := &app.AppBranchRun{
+		AppBranchID:       mainBranch.ID,
+		AppBranchConfigID: mainConfig.ID,
+		RunType:           app.AppBranchRunTypeManual,
+		Status:            "failed",
+		AppConfigID:       "appparsed00000000000000000",
+		CompletedAt:       &failedAt,
+		Labeled: labels.Labeled{Labels: labels.Labels{
+			app.AppBranchRunLabelBuildsCompleted: "true",
+		}},
 	}
 	s.Require().NoError(s.deps.DB.WithContext(ctx).Create(mainRun).Error)
 

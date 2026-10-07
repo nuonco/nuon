@@ -54,6 +54,11 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 			ID:     s.versionID,
 			Status: app.NewCompositeTemporalStatus(cancelCtx, app.StatusCancelled),
 		})
+		if err := activities.AwaitClearInstallStackVersionCallback(cancelCtx, activities.ClearInstallStackVersionCallbackRequest{
+			VersionID: s.versionID,
+		}); err != nil {
+			return err
+		}
 	}
 	return nil
 }

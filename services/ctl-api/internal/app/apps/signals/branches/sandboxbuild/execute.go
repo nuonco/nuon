@@ -15,6 +15,7 @@ import (
 )
 
 const sourceAfterBuildVersion = "app-branch-sandbox-build-source-after-build-v1"
+const reuseSandboxBuildVersion = "app-branch-sandbox-build-reuse-v1"
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
@@ -67,6 +68,35 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	appConfig, err := activities.AwaitGetAppConfigByIDByAppConfigID(ctx, run.AppConfigID)
 	if err != nil {
 		return fmt.Errorf("unable to get app config: %w", err)
+	}
+
+	if workflow.GetVersion(ctx, reuseSandboxBuildVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		reused, reuseErr := activities.AwaitFindReusableSandboxBuild(ctx, &activities.FindReusableSandboxBuildInput{
+			AppID:       appConfig.AppID,
+			AppConfigID: run.AppConfigID,
+			RunID:       s.RunID,
+		})
+		if reuseErr != nil {
+			return fmt.Errorf("unable to look up an existing sandbox build: %w", reuseErr)
+		}
+		if reused != nil && reused.BuildID != "" {
+			l.Info("reusing sandbox build", "build_id", reused.BuildID)
+			if s.StepID != "" {
+				if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+					ID: s.StepID,
+					Status: app.CompositeStatus{
+						Status:                 app.StatusSuccess,
+						StatusHumanDescription: "reusing sandbox build",
+						Metadata: map[string]any{
+							"sandbox_build_id": reused.BuildID,
+						},
+					},
+				}); err != nil {
+					l.Warn("unable to record reused sandbox build", "error", err, "build_id", reused.BuildID)
+				}
+			}
+			return nil
+		}
 	}
 
 	createReq := activities.CreateSandboxBuildRequest{
