@@ -39,16 +39,16 @@ export function OrgProvider({
     }
   }, [orgId])
 
-  // If the org doesn't exist (404/403), clear the stale session cookie
-  // and redirect to / so the BFF can resolve a valid org via GetOrgs.
+  const status = (error as TAPIError | undefined)?.status
+  const inaccessible = status === 404 || status === 403
+
   useEffect(() => {
-    if (!error) return
-    const status = (error as TAPIError)?.status
-    if (status === 404 || status === 403) {
-      clearOrgSession()
-      window.location.href = '/'
-    }
-  }, [error])
+    if (!inaccessible) return
+    clearOrgSession()
+    window.location.href = '/'
+  }, [inaccessible])
+
+  if (inaccessible) return <ProviderLoading />
 
   if (error && !org) return <ProviderError error={error} />
 

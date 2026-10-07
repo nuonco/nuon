@@ -199,7 +199,7 @@ content — `Button` cannot represent it. For ordinary actions, always use `Butt
   role="button" tabIndex={0} aria-expanded={expanded}
   onClick={() => setExpanded(p => !p)}
   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(p => !p) } }}
-  className="flex items-center justify-between gap-3 cursor-pointer select-none focus:outline-none"
+  className="flex items-center justify-between gap-3 cursor-pointer select-none rounded-md transition-colors hover:bg-black/5 dark:hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400/80"
 >
   <div className="flex items-center gap-1.5 min-w-0">…</div>
   <Text
@@ -249,6 +249,10 @@ inside `labelProps`:
 ```
 
 ### Buttons
+- Use `Button`. A raw `<button>` is only for a control `Button` cannot represent, such as a
+  full-width disclosure row. It still needs `cursor-pointer`, a hover background in both themes,
+  and a visible focus state. The browser's default arrow cursor is not acceptable, and
+  `focus:outline-none` with nothing in its place is not a focus state.
 - Variants: `primary | secondary | ghost | danger | tab | icon`.
 - `icon` = square, icon-only (`aspect-square rounded-md !p-0`, ghost-style hover/focus). Use for
   caret/arrow affordances next to a row instead of a bordered button.

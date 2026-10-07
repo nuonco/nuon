@@ -76,11 +76,17 @@ export const resolveLanguage = (language?: string): TSyntaxLanguage => {
 
 let registered = false
 
+const claimedLanguages: Set<string> = ((
+  globalThis as { __nuonClaimedSyntaxLanguages?: Set<string> }
+).__nuonClaimedSyntaxLanguages ??= new Set())
+
 export const registerSyntax = () => {
   if (registered) return
   registered = true
 
   registerCustomCSSVariableTheme(LITE_SYNTAX_THEME, TOKEN_DEFAULTS)
+  if (claimedLanguages.has('rego')) return
+  claimedLanguages.add('rego')
   registerCustomLanguage(
     'rego',
     () =>
