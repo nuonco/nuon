@@ -7,19 +7,22 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-type GetInstallDeploymentsQuery struct {
+type GetInstallDeploymentSummariesQuery struct {
 	Type         string
 	Status       string
 	Resource     string
 	Search       string
 	CreatedAtGte string
 	CreatedAtLte string
+	State        string
+	Sort         string
+	Cursor       string
 	Limit        int
 	Offset       int
 }
 
-func (c *client) GetInstallDeployments(ctx context.Context, installID string, query *GetInstallDeploymentsQuery) (*models.ServiceGetInstallDeploymentsResponse, error) {
-	params := &operations.GetInstallDeploymentsParams{
+func (c *client) GetInstallDeploymentSummaries(ctx context.Context, installID string, query *GetInstallDeploymentSummariesQuery) (*models.ServiceGetInstallDeploymentSummariesResponse, error) {
+	params := &operations.GetInstallDeploymentSummariesParams{
 		Context:   ctx,
 		InstallID: installID,
 	}
@@ -45,6 +48,15 @@ func (c *client) GetInstallDeployments(ctx context.Context, installID string, qu
 		if query.CreatedAtLte != "" {
 			params.CreatedAtLte = &query.CreatedAtLte
 		}
+		if query.State != "" {
+			params.State = &query.State
+		}
+		if query.Sort != "" {
+			params.Sort = &query.Sort
+		}
+		if query.Cursor != "" {
+			params.Cursor = &query.Cursor
+		}
 		if query.Limit > 0 {
 			limit = query.Limit
 		}
@@ -56,7 +68,7 @@ func (c *client) GetInstallDeployments(ctx context.Context, installID string, qu
 	params.Limit = &l
 	params.Offset = &o
 
-	resp, err := c.genClient.Operations.GetInstallDeployments(params, c.getOrgIDAuthInfo())
+	resp, err := c.genClient.Operations.GetInstallDeploymentSummaries(params, c.getOrgIDAuthInfo())
 	if err != nil {
 		return nil, err
 	}

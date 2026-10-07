@@ -4,7 +4,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
-import { getAppBranch, getInstallDeployments } from '@/lib'
+import { getAppBranch, getInstallDeploymentSummaries } from '@/lib'
 import { latestBranchConfig } from '@/utils/branch-utils'
 import { vcsRepo } from '@/utils/vcs-urls'
 import { useSSETimelineQuery } from '@/lib/sse/use-sse-timeline-query'
@@ -148,15 +148,6 @@ export const DeploymentsListContainer = ({
 
   return (
     <DeploymentFeeds
-      key={JSON.stringify([
-        org?.id,
-        install?.id,
-        status,
-        type,
-        filter.resource,
-        createdAtGte,
-        filter.search,
-      ])}
       query={{
         orgId: org?.id ?? '',
         installId: install?.id ?? '',
@@ -187,7 +178,7 @@ export const DeploymentsListContainer = ({
 }
 
 const useDeploymentSection = (
-  query: Parameters<typeof getInstallDeployments>[0],
+  query: Parameters<typeof getInstallDeploymentSummaries>[0],
   visible: boolean,
   shouldPoll: boolean,
   pollInterval: number
@@ -195,7 +186,7 @@ const useDeploymentSection = (
   const onError = useRefreshErrorToast()
   const sseUrl =
     visible && query.orgId && query.installId
-      ? `/api/orgs/${query.orgId}/installs/${query.installId}/deployments/sse${buildQueryParams(
+      ? `/api/orgs/${query.orgId}/installs/${query.installId}/deployment-summaries/sse${buildQueryParams(
           {
             state: query.state,
             sort: query.sort,
@@ -211,7 +202,7 @@ const useDeploymentSection = (
       : undefined
   return useSSETimelineQuery({
     queryKey: ['install-deployments', query],
-    queryFn: () => getInstallDeployments(query),
+    queryFn: () => getInstallDeploymentSummaries(query),
     sseUrl,
     enabled: !!query.orgId && !!query.installId && visible,
     shouldPoll: shouldPoll && visible,
@@ -228,7 +219,7 @@ const DeploymentFeeds = ({
   shouldPoll,
   pollInterval,
 }: {
-  query: Parameters<typeof getInstallDeployments>[0]
+  query: Parameters<typeof getInstallDeploymentSummaries>[0]
   presenterProps: Omit<
     IDeploymentsListPresenter,
     'deployments' | 'isLoading' | 'pagination'
@@ -236,10 +227,17 @@ const DeploymentFeeds = ({
   shouldPoll: boolean
   pollInterval: number
 }) => {
+  const filterKey = JSON.stringify(query)
+  const [previousFilterKey, setPreviousFilterKey] = useState(filterKey)
   const [activeLimit, setActiveLimit] = useState(ACTIVE_PAGE_LIMIT)
   const [historyCursors, setHistoryCursors] = useState<(string | undefined)[]>([
     undefined,
   ])
+  if (filterKey !== previousFilterKey) {
+    setPreviousFilterKey(filterKey)
+    setActiveLimit(ACTIVE_PAGE_LIMIT)
+    setHistoryCursors([undefined])
+  }
   const statuses = query.status?.split(',')
   const showActive =
     !statuses ||

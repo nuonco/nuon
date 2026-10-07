@@ -929,3 +929,46 @@ for (const width of [390, 1440]) {
     expect(errors).toEqual([])
   })
 }
+
+test('routed deployment search keeps focus after debounced filter changes', async ({
+  page,
+}) => {
+  await page.goto(
+    '/?story=views--installs--deployments--results&mode=preview',
+    { waitUntil: 'domcontentloaded' }
+  )
+  await expect(page.getByRole('article')).toHaveCount(8, { timeout: 15000 })
+  const search = page.getByRole('textbox', { name: 'Search deployments' })
+  await search.fill('Deploy')
+  await expect(page.getByRole('article')).toHaveCount(2)
+  await expect(search).toBeFocused()
+  await page.keyboard.type(' worker')
+  await expect(page.getByRole('article')).toHaveCount(1)
+  await expect(
+    page.getByRole('article', { name: 'Deploy worker image', exact: true })
+  ).toBeVisible()
+  await expect(search).toHaveValue('Deploy worker')
+  await expect(search).toBeFocused()
+})
+
+test('routed deployment status dropdown stays open across multi-selection', async ({
+  page,
+}) => {
+  await page.goto(
+    '/?story=views--installs--deployments--results&mode=preview',
+    { waitUntil: 'domcontentloaded' }
+  )
+  await page.getByRole('button', { name: 'Status', exact: true }).click()
+  const succeeded = page.locator(
+    'input[name="deployments-filter-status-succeeded"]'
+  )
+  await succeeded.click()
+  await expect(page.getByRole('article')).toHaveCount(4)
+  await expect(succeeded).toBeVisible()
+  await expect(succeeded).toBeChecked()
+  const failed = page.locator('input[name="deployments-filter-status-failed"]')
+  await failed.click()
+  await expect(page.getByRole('article')).toHaveCount(6)
+  await expect(succeeded).toBeChecked()
+  await expect(failed).toBeChecked()
+})

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -17,9 +16,8 @@ import (
 )
 
 type Index struct {
-	Name         string
-	Columns      []string
-	Concurrently bool
+	Name    string
+	Columns []string
 
 	UniqueValue  sql.NullBool
 	PrimaryValue sql.NullBool
@@ -137,9 +135,6 @@ func (m *Migrator) applyIndex(ctx context.Context, obj any, idx Index) error {
 	}
 	if idx.PrimaryValue.Valid && idx.PrimaryValue.Bool {
 		tmpl = m.opts.CreatePKIndexTmpl
-	}
-	if idx.Concurrently {
-		tmpl = strings.Replace(tmpl, "INDEX ", "INDEX CONCURRENTLY ", 1)
 	}
 
 	if idx.Type != "" {

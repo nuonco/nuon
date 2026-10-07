@@ -23,6 +23,7 @@ func NewDeploymentTimelineHandler(cfg *internal.Config, l *zap.Logger) *Deployme
 
 func (h *DeploymentTimelineHandler) RegisterRoutes(e *gin.Engine) error {
 	e.GET("/api/orgs/:orgId/installs/:installId/deployments/sse", h.StreamDeploymentTimeline)
+	e.GET("/api/orgs/:orgId/installs/:installId/deployment-summaries/sse", h.StreamDeploymentSummaryTimeline)
 	return nil
 }
 
@@ -30,8 +31,22 @@ const deploymentsPageLimit = 100
 
 func deploymentTimelineQuery(c *gin.Context) *nuon.GetInstallDeploymentsQuery {
 	limit, offset := timelineQuery(c)
-	limit = max(limit, 1)
 	return &nuon.GetInstallDeploymentsQuery{
+		Type:         c.Query("type"),
+		Status:       c.Query("status"),
+		Resource:     c.Query("resource"),
+		Search:       c.Query("search"),
+		CreatedAtGte: c.Query("created_at_gte"),
+		CreatedAtLte: c.Query("created_at_lte"),
+		Limit:        limit,
+		Offset:       offset,
+	}
+}
+
+func deploymentSummaryTimelineQuery(c *gin.Context) *nuon.GetInstallDeploymentSummariesQuery {
+	limit, offset := timelineQuery(c)
+	limit = max(limit, 1)
+	return &nuon.GetInstallDeploymentSummariesQuery{
 		Type:         c.Query("type"),
 		Status:       c.Query("status"),
 		Resource:     c.Query("resource"),
@@ -60,12 +75,47 @@ func (h *DeploymentTimelineHandler) StreamDeploymentTimeline(c *gin.Context) {
 		PollInterval: sseTimelinePollInterval,
 		Log:          h.l,
 		Fetch: func(ctx context.Context) (sseFetchResult, error) {
-			deployments, err := fetchDeploymentWindow(ctx, client, installID, query)
+			deployments, err := client.GetInstallDeployments(ctx, installID, query)
 			if err != nil {
 				if !isNotFoundErr(err) {
 					return sseFetchResult{}, err
 				}
 				deployments = &models.ServiceGetInstallDeploymentsResponse{
+					Deployments: []*models.ServiceInstallDeployment{},
+					Limit:       int64(query.Limit),
+					Offset:      int64(query.Offset),
+				}
+			}
+
+			ev, err := marshalEvent("deployments", deployments)
+			if err != nil {
+				return sseFetchResult{}, fmt.Errorf("marshal deployments: %v: %w", err, errSSESilentRetry)
+			}
+			return sseFetchResult{Events: []sseEvent{ev}}, nil
+		},
+	})
+}
+
+func (h *DeploymentTimelineHandler) StreamDeploymentSummaryTimeline(c *gin.Context) {
+	installID := c.Param("installId")
+	query := deploymentSummaryTimelineQuery(c)
+
+	client, _, ok := sseAuth(c, h.cfg, h.l)
+	if !ok {
+		return
+	}
+
+	runSSEStream(c, sseStreamConfig{
+		ClientErrMsg: "failed to fetch deployments",
+		PollInterval: sseTimelinePollInterval,
+		Log:          h.l,
+		Fetch: func(ctx context.Context) (sseFetchResult, error) {
+			deployments, err := fetchDeploymentWindow(ctx, client, installID, query)
+			if err != nil {
+				if !isNotFoundErr(err) {
+					return sseFetchResult{}, err
+				}
+				deployments = &models.ServiceGetInstallDeploymentSummariesResponse{
 					Deployments: []*models.ServiceInstallDeploymentSummary{},
 					Limit:       int64(query.Limit),
 					Offset:      int64(query.Offset),
@@ -81,10 +131,10 @@ func (h *DeploymentTimelineHandler) StreamDeploymentTimeline(c *gin.Context) {
 	})
 }
 
-func fetchDeploymentWindow(ctx context.Context, client nuon.Client, installID string, query *nuon.GetInstallDeploymentsQuery) (*models.ServiceGetInstallDeploymentsResponse, error) {
+func fetchDeploymentWindow(ctx context.Context, client nuon.Client, installID string, query *nuon.GetInstallDeploymentSummariesQuery) (*models.ServiceGetInstallDeploymentSummariesResponse, error) {
 	chunk := *query
 	chunk.Limit = min(query.Limit, deploymentsPageLimit)
-	window, err := client.GetInstallDeployments(ctx, installID, &chunk)
+	window, err := client.GetInstallDeploymentSummaries(ctx, installID, &chunk)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +147,7 @@ func fetchDeploymentWindow(ctx context.Context, client nuon.Client, installID st
 		chunk.Cursor = window.NextCursor
 		chunk.Offset = 0
 		chunk.Limit = min(remaining, deploymentsPageLimit)
-		next, err := client.GetInstallDeployments(ctx, installID, &chunk)
+		next, err := client.GetInstallDeploymentSummaries(ctx, installID, &chunk)
 		if err != nil {
 			return nil, err
 		}

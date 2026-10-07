@@ -1468,6 +1468,14 @@ export type TInstallDeploymentSummary = {
 }
 
 export type TInstallDeploymentsResponse = {
+  deployments: TInstallDeploymentRecord[]
+  page: number
+  offset: number
+  limit: number
+  has_more: boolean
+}
+
+export type TInstallDeploymentSummariesResponse = {
   deployments: TInstallDeploymentSummary[]
   page: number
   offset: number

@@ -246,7 +246,8 @@ export const deploymentsFixture = (
         })),
       })
     }
-    if (!url.pathname.endsWith('/deployments')) return undefined
+    if (url.pathname.endsWith('/deployments')) return deploymentPage(deployments)
+    if (!url.pathname.endsWith('/deployment-summaries')) return undefined
     if (state === 'loading') return pendingReply()
     if (state === 'empty') return deploymentPage([])
     const search = (url.searchParams.get('search') ?? '').toLowerCase()
@@ -992,7 +993,8 @@ export const deploymentDetailFixture = (
             : 'in-progress'
     )
     if (path.endsWith(`/deployments/${record.id}`)) return ok(record)
-    if (path.endsWith('/deployments')) {
+    if (path.endsWith('/deployments')) return deploymentPage([record])
+    if (path.endsWith('/deployment-summaries')) {
       const search = url.searchParams.get('search') ?? ''
       const active = ACTIVE_DEPLOYMENT_STATUSES.has(record.status)
       const lifecycle = url.searchParams.get('state')

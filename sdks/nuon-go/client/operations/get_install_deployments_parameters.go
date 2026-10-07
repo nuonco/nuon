@@ -74,12 +74,6 @@ type GetInstallDeploymentsParams struct {
 	*/
 	CreatedAtLte *string
 
-	/* Cursor.
-
-	   opaque cursor from a previous next_cursor; replaces page and offset
-	*/
-	Cursor *string
-
 	/* InstallID.
 
 	   install ID
@@ -117,18 +111,6 @@ type GetInstallDeploymentsParams struct {
 	   case-insensitive substring match on id or title
 	*/
 	Search *string
-
-	/* Sort.
-
-	   sort order; attention puts approvals and failed retries first
-	*/
-	Sort *string
-
-	/* State.
-
-	   filter by lifecycle state
-	*/
-	State *string
 
 	/* Status.
 
@@ -234,17 +216,6 @@ func (o *GetInstallDeploymentsParams) SetCreatedAtLte(createdAtLte *string) {
 	o.CreatedAtLte = createdAtLte
 }
 
-// WithCursor adds the cursor to the get install deployments params
-func (o *GetInstallDeploymentsParams) WithCursor(cursor *string) *GetInstallDeploymentsParams {
-	o.SetCursor(cursor)
-	return o
-}
-
-// SetCursor adds the cursor to the get install deployments params
-func (o *GetInstallDeploymentsParams) SetCursor(cursor *string) {
-	o.Cursor = cursor
-}
-
 // WithInstallID adds the installID to the get install deployments params
 func (o *GetInstallDeploymentsParams) WithInstallID(installID string) *GetInstallDeploymentsParams {
 	o.SetInstallID(installID)
@@ -311,28 +282,6 @@ func (o *GetInstallDeploymentsParams) SetSearch(search *string) {
 	o.Search = search
 }
 
-// WithSort adds the sort to the get install deployments params
-func (o *GetInstallDeploymentsParams) WithSort(sort *string) *GetInstallDeploymentsParams {
-	o.SetSort(sort)
-	return o
-}
-
-// SetSort adds the sort to the get install deployments params
-func (o *GetInstallDeploymentsParams) SetSort(sort *string) {
-	o.Sort = sort
-}
-
-// WithState adds the state to the get install deployments params
-func (o *GetInstallDeploymentsParams) WithState(state *string) *GetInstallDeploymentsParams {
-	o.SetState(state)
-	return o
-}
-
-// SetState adds the state to the get install deployments params
-func (o *GetInstallDeploymentsParams) SetState(state *string) {
-	o.State = state
-}
-
 // WithStatus adds the status to the get install deployments params
 func (o *GetInstallDeploymentsParams) WithStatus(status *string) *GetInstallDeploymentsParams {
 	o.SetStatus(status)
@@ -392,23 +341,6 @@ func (o *GetInstallDeploymentsParams) WriteToRequest(r runtime.ClientRequest, re
 		if qCreatedAtLte != "" {
 
 			if err := r.SetQueryParam("created_at_lte", qCreatedAtLte); err != nil {
-				return err
-			}
-		}
-	}
-
-	if o.Cursor != nil {
-
-		// query param cursor
-		var qrCursor string
-
-		if o.Cursor != nil {
-			qrCursor = *o.Cursor
-		}
-		qCursor := qrCursor
-		if qCursor != "" {
-
-			if err := r.SetQueryParam("cursor", qCursor); err != nil {
 				return err
 			}
 		}
@@ -499,40 +431,6 @@ func (o *GetInstallDeploymentsParams) WriteToRequest(r runtime.ClientRequest, re
 		if qSearch != "" {
 
 			if err := r.SetQueryParam("search", qSearch); err != nil {
-				return err
-			}
-		}
-	}
-
-	if o.Sort != nil {
-
-		// query param sort
-		var qrSort string
-
-		if o.Sort != nil {
-			qrSort = *o.Sort
-		}
-		qSort := qrSort
-		if qSort != "" {
-
-			if err := r.SetQueryParam("sort", qSort); err != nil {
-				return err
-			}
-		}
-	}
-
-	if o.State != nil {
-
-		// query param state
-		var qrState string
-
-		if o.State != nil {
-			qrState = *o.State
-		}
-		qState := qrState
-		if qState != "" {
-
-			if err := r.SetQueryParam("state", qState); err != nil {
 				return err
 			}
 		}

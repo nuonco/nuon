@@ -15,13 +15,13 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ServiceGetInstallDeploymentsResponse service get install deployments response
+// ServiceGetInstallDeploymentSummariesResponse service get install deployment summaries response
 //
-// swagger:model service.GetInstallDeploymentsResponse
-type ServiceGetInstallDeploymentsResponse struct {
+// swagger:model service.GetInstallDeploymentSummariesResponse
+type ServiceGetInstallDeploymentSummariesResponse struct {
 
 	// deployments
-	Deployments []*ServiceInstallDeployment `json:"deployments"`
+	Deployments []*ServiceInstallDeploymentSummary `json:"deployments"`
 
 	// has more
 	HasMore bool `json:"has_more,omitempty"`
@@ -29,15 +29,21 @@ type ServiceGetInstallDeploymentsResponse struct {
 	// limit
 	Limit int64 `json:"limit,omitempty"`
 
+	// next cursor
+	NextCursor string `json:"next_cursor,omitempty"`
+
 	// offset
 	Offset int64 `json:"offset,omitempty"`
 
 	// page
 	Page int64 `json:"page,omitempty"`
+
+	// total
+	Total *int64 `json:"total,omitempty"`
 }
 
-// Validate validates this service get install deployments response
-func (m *ServiceGetInstallDeploymentsResponse) Validate(formats strfmt.Registry) error {
+// Validate validates this service get install deployment summaries response
+func (m *ServiceGetInstallDeploymentSummariesResponse) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateDeployments(formats); err != nil {
@@ -50,7 +56,7 @@ func (m *ServiceGetInstallDeploymentsResponse) Validate(formats strfmt.Registry)
 	return nil
 }
 
-func (m *ServiceGetInstallDeploymentsResponse) validateDeployments(formats strfmt.Registry) error {
+func (m *ServiceGetInstallDeploymentSummariesResponse) validateDeployments(formats strfmt.Registry) error {
 	if swag.IsZero(m.Deployments) { // not required
 		return nil
 	}
@@ -80,8 +86,8 @@ func (m *ServiceGetInstallDeploymentsResponse) validateDeployments(formats strfm
 	return nil
 }
 
-// ContextValidate validate this service get install deployments response based on the context it is used
-func (m *ServiceGetInstallDeploymentsResponse) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this service get install deployment summaries response based on the context it is used
+func (m *ServiceGetInstallDeploymentSummariesResponse) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateDeployments(ctx, formats); err != nil {
@@ -94,7 +100,7 @@ func (m *ServiceGetInstallDeploymentsResponse) ContextValidate(ctx context.Conte
 	return nil
 }
 
-func (m *ServiceGetInstallDeploymentsResponse) contextValidateDeployments(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceGetInstallDeploymentSummariesResponse) contextValidateDeployments(ctx context.Context, formats strfmt.Registry) error {
 
 	for i := 0; i < len(m.Deployments); i++ {
 
@@ -124,7 +130,7 @@ func (m *ServiceGetInstallDeploymentsResponse) contextValidateDeployments(ctx co
 }
 
 // MarshalBinary interface implementation
-func (m *ServiceGetInstallDeploymentsResponse) MarshalBinary() ([]byte, error) {
+func (m *ServiceGetInstallDeploymentSummariesResponse) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -132,8 +138,8 @@ func (m *ServiceGetInstallDeploymentsResponse) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *ServiceGetInstallDeploymentsResponse) UnmarshalBinary(b []byte) error {
-	var res ServiceGetInstallDeploymentsResponse
+func (m *ServiceGetInstallDeploymentSummariesResponse) UnmarshalBinary(b []byte) error {
+	var res ServiceGetInstallDeploymentSummariesResponse
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

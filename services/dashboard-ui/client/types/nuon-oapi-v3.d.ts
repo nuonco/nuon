@@ -1955,9 +1955,9 @@ export interface paths {
      */
     patch: operations["UpdateInstallConfig"];
   };
-  "/v1/installs/{install_id}/deployments": {
+  "/v1/installs/{install_id}/deployment-summaries": {
     /**
-     * get normalized deployment feed for an install
+     * get lightweight deployment summaries for an install
      * @description Returns a lightweight, chronological deployment feed for an install.
      *
      * Each record represents one install-owned workflow that caused a real change: provisioning, reprovisioning, component deploys, input updates, stack reprovisioning, sandbox reprovisioning, and install-config updates. Action runs, runbook runs, and policy checks are returned by the activity feed. Plan-only and preview records are excluded.
@@ -1965,6 +1965,27 @@ export interface paths {
      * Records include a `type`, workflow `status`, `title`, `activity`, `finished`, and slim workflow `steps` for progress and resource outcomes. Use the single deployment endpoint for app branch, image, affected resource, and change details.
      *
      * Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `resource`, `search`, `created_at_gte`, and `created_at_lte`.
+     *
+     * `state=active` returns deployments whose workflow status is pending, queued, in progress, retrying, awaiting approval, approved, or failed pending retry. `state=finished` returns every other status. When `state=active`, `total` counts all matching active deployments, ignoring `limit` and `cursor`.
+     *
+     * `sort=attention` orders deployments awaiting approval first, failed pending retry second, then all others. Each group is ordered newest first. The default order is newest first.
+     *
+     * When `has_more` is true, `next_cursor` is an opaque cursor for the next page. Pass it back as `cursor` with the same `state` and `sort`. A cursor cannot be combined with a non-zero `page` or `offset`. An invalid `state`, `sort`, or `cursor` returns 400.
+     */
+    get: operations["GetInstallDeploymentSummaries"];
+  };
+  "/v1/installs/{install_id}/deployments": {
+    /**
+     * get normalized deployment feed for an install
+     * @description Returns a normalized, chronological deployment feed for an install.
+     *
+     * Each record represents one install-owned workflow that caused a real change: provisioning, reprovisioning, component deploys, input updates, stack reprovisioning, sandbox reprovisioning, and install-config updates. Action runs, runbook runs, and policy checks are returned by the activity feed. Plan-only and preview records are excluded.
+     *
+     * Records include a `type`, workflow `status`, `title`, `summary`, workflow and app branch references, affected resources, and change groups. Component and image details are included when applicable.
+     *
+     * Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `resource`, `search`, `created_at_gte`, and `created_at_lte`.
+     *
+     * Use the deployment summaries endpoint for lightweight progress lists with lifecycle filtering and cursor pagination.
      */
     get: operations["GetInstallDeployments"];
   };
@@ -9162,7 +9183,7 @@ export interface components {
       offset?: number;
       page?: number;
     };
-    "service.GetInstallDeploymentsResponse": {
+    "service.GetInstallDeploymentSummariesResponse": {
       deployments?: components["schemas"]["service.InstallDeploymentSummary"][];
       has_more?: boolean;
       limit?: number;
@@ -9170,6 +9191,13 @@ export interface components {
       offset?: number;
       page?: number;
       total?: number | null;
+    };
+    "service.GetInstallDeploymentsResponse": {
+      deployments?: components["schemas"]["service.InstallDeployment"][];
+      has_more?: boolean;
+      limit?: number;
+      offset?: number;
+      page?: number;
     };
     "service.GetInstallURLResponse": {
       url?: string;
@@ -24545,7 +24573,7 @@ export interface operations {
     };
   };
   /**
-   * get normalized deployment feed for an install
+   * get lightweight deployment summaries for an install
    * @description Returns a lightweight, chronological deployment feed for an install.
    *
    * Each record represents one install-owned workflow that caused a real change: provisioning, reprovisioning, component deploys, input updates, stack reprovisioning, sandbox reprovisioning, and install-config updates. Action runs, runbook runs, and policy checks are returned by the activity feed. Plan-only and preview records are excluded.
@@ -24553,8 +24581,14 @@ export interface operations {
    * Records include a `type`, workflow `status`, `title`, `activity`, `finished`, and slim workflow `steps` for progress and resource outcomes. Use the single deployment endpoint for app branch, image, affected resource, and change details.
    *
    * Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `resource`, `search`, `created_at_gte`, and `created_at_lte`.
+   *
+   * `state=active` returns deployments whose workflow status is pending, queued, in progress, retrying, awaiting approval, approved, or failed pending retry. `state=finished` returns every other status. When `state=active`, `total` counts all matching active deployments, ignoring `limit` and `cursor`.
+   *
+   * `sort=attention` orders deployments awaiting approval first, failed pending retry second, then all others. Each group is ordered newest first. The default order is newest first.
+   *
+   * When `has_more` is true, `next_cursor` is an opaque cursor for the next page. Pass it back as `cursor` with the same `state` and `sort`. A cursor cannot be combined with a non-zero `page` or `offset`. An invalid `state`, `sort`, or `cursor` returns 400.
    */
-  GetInstallDeployments: {
+  GetInstallDeploymentSummaries: {
     parameters: {
       query?: {
         /** @description page number */
@@ -24569,6 +24603,84 @@ export interface operations {
         state?: "active" | "finished";
         /** @description sort order; attention puts approvals and failed retries first */
         sort?: "attention";
+        /** @description filter by deployment type (comma-separated) */
+        type?: string;
+        /** @description filter by workflow status (comma-separated) */
+        status?: string;
+        /** @description filter by affected stack, sandbox, or component name */
+        resource?: string;
+        /** @description case-insensitive substring match on id or title */
+        search?: string;
+        /** @description include deployments created at or after this RFC3339 timestamp */
+        created_at_gte?: string;
+        /** @description include deployments created at or before this RFC3339 timestamp */
+        created_at_lte?: string;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.GetInstallDeploymentSummariesResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get normalized deployment feed for an install
+   * @description Returns a normalized, chronological deployment feed for an install.
+   *
+   * Each record represents one install-owned workflow that caused a real change: provisioning, reprovisioning, component deploys, input updates, stack reprovisioning, sandbox reprovisioning, and install-config updates. Action runs, runbook runs, and policy checks are returned by the activity feed. Plan-only and preview records are excluded.
+   *
+   * Records include a `type`, workflow `status`, `title`, `summary`, workflow and app branch references, affected resources, and change groups. Component and image details are included when applicable.
+   *
+   * Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `resource`, `search`, `created_at_gte`, and `created_at_lte`.
+   *
+   * Use the deployment summaries endpoint for lightweight progress lists with lifecycle filtering and cursor pagination.
+   */
+  GetInstallDeployments: {
+    parameters: {
+      query?: {
+        /** @description page number */
+        page?: number;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description page size */
+        limit?: number;
         /** @description filter by deployment type (comma-separated) */
         type?: string;
         /** @description filter by workflow status (comma-separated) */
