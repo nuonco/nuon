@@ -74,8 +74,8 @@ export const CreateInstallFormFields = ({
     storageKey: `install-draft:${app.id}`,
     onSubmit: async (values) => {
       try {
-        await onSubmit(values)
-        clearDraft()
+        const result = await onSubmit(values)
+        if (result !== false) clearDraft()
       } catch {
         return
       }

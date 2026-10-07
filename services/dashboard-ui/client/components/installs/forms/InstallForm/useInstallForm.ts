@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm, useStore } from '@tanstack/react-form'
 import type { FormValidateOrFn } from '@tanstack/form-core'
 import { useDraftPersistence } from '@/hooks/use-draft-persistence'
@@ -61,9 +61,10 @@ export function useInstallForm({
   )
 
   const validator = schema as unknown as FormValidateOrFn<InstallFormValues>
+  const [restoredValues, setRestoredValues] = useState<InstallFormValues>()
 
   const form = useForm({
-    defaultValues: defaults,
+    defaultValues: restoredValues ?? defaults,
     validators: { onMount: validator, onChange: validator },
     onSubmit: ({ value }) => onSubmit(value),
   })
@@ -82,8 +83,13 @@ export function useInstallForm({
     })
 
   const restoreDraft = useCallback(() => {
-    form.reset(mergeDraftValues(defaults, draftValues))
-  }, [form, defaults, draftValues])
+    setRestoredValues(mergeDraftValues(defaults, draftValues))
+  }, [defaults, draftValues])
+
+  useEffect(() => {
+    if (!restoredValues) return
+    void form.validate('mount')
+  }, [form, restoredValues])
 
   return {
     form,
