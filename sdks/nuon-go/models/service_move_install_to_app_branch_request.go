@@ -23,7 +23,7 @@ type ServiceMoveInstallToAppBranchRequest struct {
 	AppBranchGroup string `json:"app_branch_group,omitempty"`
 
 	// AppBranchID is the branch to move the install to. It must belong to the
-	// install's app and have an app config to deploy.
+	// install's app. A branch with no completed run still accepts the install.
 	// Required: true
 	AppBranchID *string `json:"app_branch_id"`
 

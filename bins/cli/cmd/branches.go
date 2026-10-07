@@ -143,6 +143,8 @@ and installation. Use flags with --output json or --output agent for scripting.`
 	previewCmd.Flags().BoolVar(&previewAutoApprove, "auto-approve", false, "Skip the approval gate before deploy steps")
 	previewCmd.Flags().BoolVar(&previewWait, "wait", false, "Block until the preview workflow completes")
 	previewCmd.Flags().BoolVar(&previewNoWait, "no-wait", false, "Return after triggering without opening the workflow viewer")
+	previewCmd.MarkFlagsMutuallyExclusive("pr-number", "git-ref")
+	previewCmd.MarkFlagsMutuallyExclusive("wait", "no-wait")
 	branchesCmd.AddCommand(previewCmd)
 
 	var confirmDelete bool
