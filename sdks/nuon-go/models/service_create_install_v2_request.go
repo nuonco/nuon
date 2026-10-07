@@ -62,6 +62,10 @@ type ServiceCreateInstallV2Request struct {
 	// Required: true
 	Name *string `json:"name"`
 
+	// request id
+	// Max Length: 255
+	RequestID string `json:"request_id,omitempty"`
+
 	// StackOnly provisions the install stack and runner, then stops. The sandbox
 	// and components stay unprovisioned until the install is provisioned again.
 	StackOnly bool `json:"stack_only,omitempty"`
@@ -96,6 +100,10 @@ func (m *ServiceCreateInstallV2Request) Validate(formats strfmt.Registry) error 
 	}
 
 	if err := m.validateName(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRequestID(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -232,6 +240,18 @@ func (m *ServiceCreateInstallV2Request) validateMetadata(formats strfmt.Registry
 func (m *ServiceCreateInstallV2Request) validateName(formats strfmt.Registry) error {
 
 	if err := validate.Required("name", "body", m.Name); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateInstallV2Request) validateRequestID(formats strfmt.Registry) error {
+	if swag.IsZero(m.RequestID) { // not required
+		return nil
+	}
+
+	if err := validate.MaxLength("request_id", "body", m.RequestID, 255); err != nil {
 		return err
 	}
 

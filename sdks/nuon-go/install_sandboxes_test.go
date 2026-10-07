@@ -35,14 +35,14 @@ func TestReprovisionInstallSandboxSkipComponents(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := client.ReprovisionInstallSandbox(context.Background(), "install-id"); err != nil {
+	if _, err := client.ReprovisionInstallSandbox(context.Background(), "install-id", false, ""); err != nil {
 		t.Fatal(err)
 	}
 	if req := <-requests; req.SkipComponents {
 		t.Fatal("skip_components = true without option")
 	}
 
-	if _, err := client.ReprovisionInstallSandbox(context.Background(), "install-id", true); err != nil {
+	if _, err := client.ReprovisionInstallSandbox(context.Background(), "install-id", true, ""); err != nil {
 		t.Fatal(err)
 	}
 	if req := <-requests; !req.SkipComponents {

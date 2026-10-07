@@ -66,7 +66,7 @@ func (s *Service) ComponentDeploysList(ctx context.Context, installID, component
 	return nil
 }
 
-func (s *Service) ComponentDeployCreate(ctx context.Context, installID, componentID, buildID string, deployDeps, deployDependencies, asJSON bool) error {
+func (s *Service) ComponentDeployCreate(ctx context.Context, installID, componentID, buildID string, deployDeps, deployDependencies bool, requestID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
 		return ui.PrintError(err)
@@ -93,6 +93,7 @@ func (s *Service) ComponentDeployCreate(ctx context.Context, installID, componen
 		BuildID:            buildID,
 		DeployDependents:   deployDeps,
 		DeployDependencies: deployDependencies,
+		RequestID:          requestID,
 	}
 
 	aid, err := s.api.CreateInstallDeploy(ctx, installID, req)
