@@ -10,6 +10,10 @@ import {
   type DiffSectionData,
 } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
 import type { TBuildMeta } from '@/components/branches/BranchOverview/changed-builds'
+import {
+  scopedComparisonConfigDiff,
+  type TComparisonScope,
+} from '@/components/branches/BranchRunChanges/comparison-scope'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Text } from '@/components/common/Text'
 import { AppConfigDiff } from '@/components/diffs/plan-diff-switch'
@@ -216,6 +220,7 @@ interface IBranchRunChangesSummary {
   title?: string
   headerAction?: ReactNode
   isPending?: boolean
+  scope?: TComparisonScope
 }
 
 export const BranchRunChangesSummary = ({
@@ -226,6 +231,7 @@ export const BranchRunChangesSummary = ({
   title = 'Config Changes',
   headerAction,
   isPending,
+  scope,
 }: IBranchRunChangesSummary) => {
   const { org } = useOrg()
   const { app } = useApp()
@@ -270,11 +276,11 @@ export const BranchRunChangesSummary = ({
 
   const sections = useMemo(() => {
     const summary = summarySectionsFromComparisonConfigDiff(
-      data?.config_diff_content
+      scopedComparisonConfigDiff(data?.config_diff_content, scope)
     )
     const detailed = configDiff?.diff ? extractSections(configDiff.diff) : []
     return withBuildChangeKinds(overlaySectionDetail(summary, detailed), builds)
-  }, [data?.config_diff_content, configDiff?.diff, builds])
+  }, [data?.config_diff_content, configDiff?.diff, builds, scope])
 
   const visibleSections = isError ? [] : sections
   const summary =

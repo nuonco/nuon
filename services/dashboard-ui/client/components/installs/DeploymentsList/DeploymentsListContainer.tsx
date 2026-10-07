@@ -4,11 +4,12 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
-import { getAppBranch, getInstallDeployments } from '@/lib'
+import { getAppBranch, getInstallDeploymentSummaries } from '@/lib'
 import { latestBranchConfig } from '@/utils/branch-utils'
 import { vcsRepo } from '@/utils/vcs-urls'
 import { useSSETimelineQuery } from '@/lib/sse/use-sse-timeline-query'
-import type { TInstallDeploymentRecordType } from '@/types'
+import { buildQueryParams } from '@/utils/build-query-params'
+import { ACTIVE_DEPLOYMENT_STATUSES } from '@/components/installs/DeploymentDetail/deployment-progress'
 import {
   datePresetQueryParameter,
   statusFilterParameter,
@@ -18,12 +19,14 @@ import {
   type TWorkflowStatusOption,
 } from '@/utils/workflow-filters'
 import {
-  DEPLOYMENT_TYPE_LABELS,
+  DEPLOYMENT_FILTER_TYPES,
   DeploymentsListPresenter,
   type IDeploymentFilter,
+  type IDeploymentsListPresenter,
 } from './DeploymentsListPresenter'
 
 const PAGE_LIMIT = 20
+const ACTIVE_PAGE_LIMIT = 4
 const SEARCH_DEBOUNCE_MS = 300
 const FILTER_PARAMS = ['search', 'status', 'type', 'resource', 'since']
 
@@ -67,7 +70,6 @@ export const DeploymentsListContainer = ({
   })
   const repo = branch ? vcsRepo(latestBranchConfig(branch)) : undefined
 
-  const offset = Number(searchParams.get('offset') ?? 0)
   const since = searchParams.get('since')
   const filter: IDeploymentFilter = {
     search: searchParams.get('search') ?? '',
@@ -76,54 +78,20 @@ export const DeploymentsListContainer = ({
       'status',
       workflowStatusOptions()
     ),
-    type: readSet(
-      searchParams,
-      'type',
-      Object.keys(DEPLOYMENT_TYPE_LABELS) as TInstallDeploymentRecordType[]
-    ),
+    type: readSet(searchParams, 'type', DEPLOYMENT_FILTER_TYPES),
     resource: searchParams.get('resource') ?? undefined,
     date:
       since && since in WORKFLOW_DATE_LABELS
         ? (since as TWorkflowDatePreset)
         : undefined,
   }
-  const status = statusFilterParameter(filter.status)
+  const status = filter.status.has('running')
+    ? [statusFilterParameter(filter.status), 'approval-awaiting', 'approved']
+        .filter(Boolean)
+        .join(',')
+    : statusFilterParameter(filter.status)
   const type = filter.type.size ? [...filter.type].join(',') : undefined
   const createdAtGte = useMemo(() => datePresetQueryParameter(since), [since])
-  const queryKey = [
-    'install-deployments',
-    org?.id,
-    install?.id,
-    offset,
-    status,
-    type,
-    filter.resource,
-    createdAtGte,
-    filter.search,
-  ]
-  const sseUrl = useMemo(() => {
-    if (!org?.id || !install?.id) return undefined
-
-    const params = new URLSearchParams({
-      limit: String(PAGE_LIMIT),
-      offset: String(offset),
-    })
-    if (status) params.set('status', status)
-    if (type) params.set('type', type)
-    if (filter.resource) params.set('resource', filter.resource)
-    if (createdAtGte) params.set('created_at_gte', createdAtGte)
-    if (filter.search) params.set('search', filter.search)
-    return `/api/orgs/${org.id}/installs/${install.id}/deployments/sse?${params}`
-  }, [
-    createdAtGte,
-    filter.resource,
-    filter.search,
-    install?.id,
-    offset,
-    org?.id,
-    status,
-    type,
-  ])
 
   const [search, setSearch] = useState(filter.search)
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -138,29 +106,6 @@ export const DeploymentsListContainer = ({
     },
     []
   )
-
-  const onRefreshError = useRefreshErrorToast()
-  const { data, isLoading, error } = useSSETimelineQuery({
-    sseUrl,
-    queryKey,
-    queryFn: () =>
-      getInstallDeployments({
-        orgId: org!.id,
-        installId: install!.id,
-        offset,
-        limit: PAGE_LIMIT,
-        status,
-        type,
-        resource: filter.resource,
-        createdAtGte,
-        search: filter.search || undefined,
-      }),
-    enabled: !!org?.id && !!install?.id,
-    shouldPoll,
-    pollInterval,
-    eventName: 'deployments',
-    onError: onRefreshError,
-  })
 
   const writeParam = (key: string, value?: string) => {
     setSearchParams(
@@ -202,27 +147,153 @@ export const DeploymentsListContainer = ({
   }
 
   return (
-    <DeploymentsListPresenter
-      deployments={data?.deployments ?? []}
-      isLoading={isLoading}
-      error={error}
-      pagination={{
-        hasNext: data?.has_more ?? false,
-        offset,
-        limit: PAGE_LIMIT,
+    <DeploymentFeeds
+      query={{
+        orgId: org?.id ?? '',
+        installId: install?.id ?? '',
+        status,
+        type,
+        resource: filter.resource,
+        createdAtGte,
+        search: filter.search || undefined,
       }}
-      orgId={org?.id ?? ''}
-      appId={install?.app_id ?? ''}
-      installId={install?.id ?? ''}
-      repo={repo}
-      search={search}
-      filter={filter}
-      onSearchChange={handleSearchChange}
-      onStatusChange={(value) => writeSet('status', value)}
-      onTypeChange={(value) => writeSet('type', value)}
-      onResourceChange={(value) => writeParam('resource', value)}
-      onDateChange={(value) => writeParam('since', value)}
-      onClearFilters={handleClearFilters}
+      shouldPoll={shouldPoll}
+      pollInterval={pollInterval}
+      presenterProps={{
+        orgId: org?.id ?? '',
+        appId: install?.app_id ?? '',
+        installId: install?.id ?? '',
+        repo,
+        search,
+        filter,
+        onSearchChange: handleSearchChange,
+        onStatusChange: (value) => writeSet('status', value),
+        onTypeChange: (value) => writeSet('type', value),
+        onResourceChange: (value) => writeParam('resource', value),
+        onDateChange: (value) => writeParam('since', value),
+        onClearFilters: handleClearFilters,
+      }}
+    />
+  )
+}
+
+const useDeploymentSection = (
+  query: Parameters<typeof getInstallDeploymentSummaries>[0],
+  visible: boolean,
+  shouldPoll: boolean,
+  pollInterval: number
+) => {
+  const onError = useRefreshErrorToast()
+  const sseUrl =
+    visible && query.orgId && query.installId
+      ? `/api/orgs/${query.orgId}/installs/${query.installId}/deployment-summaries/sse${buildQueryParams(
+          {
+            state: query.state,
+            sort: query.sort,
+            cursor: query.cursor,
+            limit: query.limit,
+            status: query.status,
+            type: query.type,
+            resource: query.resource,
+            created_at_gte: query.createdAtGte,
+            search: query.search,
+          }
+        )}`
+      : undefined
+  return useSSETimelineQuery({
+    queryKey: ['install-deployments', query],
+    queryFn: () => getInstallDeploymentSummaries(query),
+    sseUrl,
+    enabled: !!query.orgId && !!query.installId && visible,
+    shouldPoll: shouldPoll && visible,
+    pollInterval,
+    eventName: 'deployments',
+    retainPreviousData: true,
+    onError,
+  })
+}
+
+const DeploymentFeeds = ({
+  query,
+  presenterProps,
+  shouldPoll,
+  pollInterval,
+}: {
+  query: Parameters<typeof getInstallDeploymentSummaries>[0]
+  presenterProps: Omit<
+    IDeploymentsListPresenter,
+    'deployments' | 'isLoading' | 'pagination'
+  >
+  shouldPoll: boolean
+  pollInterval: number
+}) => {
+  const filterKey = JSON.stringify(query)
+  const [previousFilterKey, setPreviousFilterKey] = useState(filterKey)
+  const [activeLimit, setActiveLimit] = useState(ACTIVE_PAGE_LIMIT)
+  const [historyCursors, setHistoryCursors] = useState<(string | undefined)[]>([
+    undefined,
+  ])
+  if (filterKey !== previousFilterKey) {
+    setPreviousFilterKey(filterKey)
+    setActiveLimit(ACTIVE_PAGE_LIMIT)
+    setHistoryCursors([undefined])
+  }
+  const statuses = query.status?.split(',')
+  const showActive =
+    !statuses ||
+    statuses.some((status) => ACTIVE_DEPLOYMENT_STATUSES.has(status))
+  const showHistory =
+    !statuses ||
+    statuses.some((status) => !ACTIVE_DEPLOYMENT_STATUSES.has(status))
+  const active = useDeploymentSection(
+    { ...query, state: 'active', sort: 'attention', limit: activeLimit },
+    showActive,
+    shouldPoll,
+    pollInterval
+  )
+  const history = useDeploymentSection(
+    {
+      ...query,
+      state: 'finished',
+      cursor: historyCursors.at(-1),
+      limit: PAGE_LIMIT,
+    },
+    showHistory,
+    shouldPoll,
+    pollInterval
+  )
+  return (
+    <DeploymentsListPresenter
+      {...presenterProps}
+      activeDeployments={active.data?.deployments ?? []}
+      activeTotal={active.data?.total}
+      activeLoading={active.isLoading || active.isPlaceholderData}
+      activeError={active.error}
+      hasMoreActive={active.data?.has_more}
+      showActive={showActive}
+      showHistory={showHistory}
+      onLoadMoreActive={() =>
+        setActiveLimit((limit) => limit + ACTIVE_PAGE_LIMIT)
+      }
+      deployments={history.data?.deployments ?? []}
+      isLoading={history.isLoading || history.isPlaceholderData}
+      error={history.error}
+      pagination={{
+        hasNext: !!history.data?.next_cursor && history.data.has_more,
+        offset: (historyCursors.length - 1) * PAGE_LIMIT,
+        limit: PAGE_LIMIT,
+        onNext: () => {
+          if (history.data?.next_cursor)
+            setHistoryCursors((cursors) => [
+              ...cursors,
+              history.data!.next_cursor,
+            ])
+        },
+        onPrevious: () =>
+          setHistoryCursors((cursors) =>
+            cursors.length > 1 ? cursors.slice(0, -1) : cursors
+          ),
+      }}
     />
   )
 }

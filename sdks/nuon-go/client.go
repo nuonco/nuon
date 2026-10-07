@@ -273,6 +273,7 @@ type Client interface {
 	CreateInstallInputs(ctx context.Context, installID string, req *models.ServiceCreateInstallInputsRequest) (*models.AppInstallInputs, error)
 	UpdateInstallInputs(ctx context.Context, installID string, req *models.ServiceUpdateInstallInputsRequest) (*models.AppInstallInputs, error)
 	GetInstallDeployments(ctx context.Context, installID string, query *GetInstallDeploymentsQuery) (*models.ServiceGetInstallDeploymentsResponse, error)
+	GetInstallDeploymentSummaries(ctx context.Context, installID string, query *GetInstallDeploymentSummariesQuery) (*models.ServiceGetInstallDeploymentSummariesResponse, error)
 
 	// workflows
 	GetWorkflows(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppWorkflow, bool, error)

@@ -1,27 +1,28 @@
-import { useEffect } from 'react'
-import { Badge } from '@/components/common/Badge'
+import { useMemo } from 'react'
 import { Button } from '@/components/common/Button'
-import { Card } from '@/components/common/Card'
 import { CheckboxFilterDropdown } from '@/components/common/CheckboxFilterDropdown'
 import { EmptyState } from '@/components/common/EmptyState'
-import { CommitLink } from '@/components/common/GitReferenceLink'
-import { Icon, type TIconVariant } from '@/components/common/Icon'
-import { Link } from '@/components/common/Link'
-import { Pagination, type IPagination } from '@/components/common/Pagination'
+import type { IPagination } from '@/components/common/Pagination'
 import { RadioFilterDropdown } from '@/components/common/RadioFilterDropdown'
 import { SearchInput } from '@/components/common/SearchInput'
-import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
-import { Time } from '@/components/common/Time'
-import { WorkflowPanelLink } from '@/components/workflows/InstallWorkflowPanel'
-import { useInstallNested } from '@/hooks/use-install-path'
-import { usePagination } from '@/hooks/use-pagination'
-import { installHref } from '@/lib/install-path'
-import { PaginationProvider } from '@/providers/pagination-provider'
+import { Timeline } from '@/components/common/Timeline'
+import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
+import { SectionHeader } from '@/components/layout/SectionHeader'
+import type { TDeploymentRun } from '@/components/installs/DeploymentDetail/DeploymentProgress'
+import {
+  deploymentOutcomes,
+  deploymentSteps,
+  recoveredDeploymentResources,
+  stepAffectedResources,
+  summaryDeploymentEvidence,
+  type TDeploymentOutcome,
+} from '@/components/installs/DeploymentDetail/deployment-progress'
+import { useSurfaces } from '@/hooks/use-surfaces'
 import type {
   TAPIError,
-  TInstallDeploymentRecord,
   TInstallDeploymentRecordType,
+  TInstallDeploymentSummary,
 } from '@/types'
 import {
   WORKFLOW_DATE_LABELS,
@@ -30,6 +31,9 @@ import {
   type TWorkflowDatePreset,
   type TWorkflowStatusOption,
 } from '@/utils/workflow-filters'
+import { DeploymentCard } from './DeploymentCard'
+import { DeploymentDetailPanel } from './DeploymentDetailPanel'
+import { DeploymentRow } from './DeploymentRow'
 
 export const DEPLOYMENT_TYPE_LABELS: Record<
   TInstallDeploymentRecordType,
@@ -45,184 +49,87 @@ export const DEPLOYMENT_TYPE_LABELS: Record<
   install_config_update: 'Install config update',
 }
 
-const DEPLOYMENT_TYPE_ICON: Record<TInstallDeploymentRecordType, TIconVariant> =
-  {
-    provision: 'CardsIcon',
-    reprovision: 'CardsIcon',
-    sandbox_reprovision: 'ShippingContainerIcon',
-    app_branch_update: 'GitBranchIcon',
-    component_deploy: 'CardsIcon',
-    image_update: 'PackageIcon',
-    stack_update: 'StackIcon',
-    install_config_update: 'FileCodeIcon',
-  }
+export const DEPLOYMENT_FILTER_TYPES = (
+  Object.keys(DEPLOYMENT_TYPE_LABELS) as TInstallDeploymentRecordType[]
+).filter((type) => type !== 'image_update')
 
-interface IDeploymentCard {
-  deployment: TInstallDeploymentRecord
+const deploymentRun = (deployment: TInstallDeploymentSummary) => {
+  const evidence = summaryDeploymentEvidence(deployment)
+  const resources = stepAffectedResources(evidence.steps)
+  return {
+    resources,
+    run: {
+      status: deployment.status,
+      activity: deployment.activity ?? '',
+      steps: deploymentSteps(evidence),
+      outcomes: deploymentOutcomes({ affected_resources: resources }, evidence),
+    },
+  }
+}
+
+interface IDeploymentRecordRow {
+  deployment: TInstallDeploymentSummary
+  run: TDeploymentRun
   orgId: string
   appId: string
   installId: string
   repo?: string
+  previousOutcomes: TDeploymentOutcome[][]
+  active?: boolean
 }
 
-const DeploymentCard = ({
+const DeploymentRecordRow = ({
   deployment,
+  run,
   orgId,
   appId,
   installId,
   repo,
-}: IDeploymentCard) => {
-  const nested = useInstallNested()
-  const branchHref = deployment.app_branch
-    ? `/${orgId}/apps/${appId}/branches/${deployment.app_branch.id}`
-    : undefined
-
-  const affectedResources = [
-    ...(deployment.affected_resources.stack ? ['stack'] : []),
-    ...(deployment.affected_resources.sandbox ? ['sandbox'] : []),
-    ...deployment.affected_resources.components,
-    ...deployment.affected_resources.images,
-  ]
-
+  previousOutcomes,
+  active,
+}: IDeploymentRecordRow) => {
+  const { addPanel } = useSurfaces()
+  const recovered =
+    run.status === 'success'
+      ? recoveredDeploymentResources(run.outcomes, previousOutcomes)
+      : []
+  const onViewDetails = () =>
+    addPanel(
+      <DeploymentDetailPanel
+        deployment={deployment}
+        orgId={orgId}
+        appId={appId}
+        installId={installId}
+        repo={repo}
+      />
+    )
+  if (active) {
+    return (
+      <DeploymentCard
+        run={run}
+        title={deployment.title}
+        typeLabel={DEPLOYMENT_TYPE_LABELS[deployment.type]}
+        createdAt={deployment.created_at}
+        onViewDetails={onViewDetails}
+      />
+    )
+  }
   return (
-    <Card className="!p-4 !gap-3 !shadow-none">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3 min-w-0">
-          <span className="mt-0.5 text-cool-grey-400 shrink-0">
-            <Icon variant={DEPLOYMENT_TYPE_ICON[deployment.type]} size={16} />
-          </span>
-          <div className="flex items-center gap-2 flex-wrap min-w-0">
-            <Link
-              href={installHref({
-                orgId,
-                appId,
-                installId,
-                nested,
-                suffix: `/deployments/${deployment.id}`,
-              })}
-              className="font-strong"
-            >
-              {deployment.title}
-            </Link>
-            <Status status={deployment.status} variant="badge" />
-          </div>
-        </div>
-        <Time
-          time={deployment.created_at}
-          format="relative"
-          variant="subtext"
-          theme="neutral"
-          className="shrink-0"
-        />
-      </div>
-
-      <div className="flex items-center gap-x-6 gap-y-2 flex-wrap">
-        {deployment.app_branch && branchHref && (
-          <span className="flex items-center gap-2">
-            <Text as="span" variant="subtext" theme="neutral">
-              {deployment.type === 'provision'
-                ? 'Originally configured with'
-                : 'App branch'}
-            </Text>
-            <Link href={branchHref} textVariant="subtext">
-              {deployment.app_branch.name}
-            </Link>
-            {deployment.app_branch.sha ? (
-              <CommitLink sha={deployment.app_branch.sha} repo={repo} />
-            ) : null}
-          </span>
-        )}
-        {deployment.workflow && (
-          <span className="flex items-center gap-2">
-            <Text as="span" variant="subtext" theme="neutral">
-              Workflow
-            </Text>
-            <WorkflowPanelLink
-              workflowId={deployment.workflow.id}
-              textVariant="subtext"
-            >
-              {deployment.workflow.name}
-            </WorkflowPanelLink>
-          </span>
-        )}
-      </div>
-
-      {deployment.image && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <Text variant="subtext" family="mono">
-            {deployment.image.repository}
-          </Text>
-          {deployment.image.previous_tag && (
-            <>
-              <Badge size="sm" variant="code" theme="neutral">
-                {deployment.image.previous_tag}
-              </Badge>
-              <Icon
-                variant="ArrowRightIcon"
-                size={12}
-                className="text-cool-grey-400"
-              />
-            </>
-          )}
-          <Badge size="sm" variant="code" theme="neutral">
-            {deployment.image.next_tag}
-          </Badge>
-        </div>
-      )}
-
-      {affectedResources.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {deployment.affected_resources.stack && (
-            <Badge size="sm" theme="neutral">
-              Stack
-            </Badge>
-          )}
-          {deployment.affected_resources.sandbox && (
-            <Badge size="sm" theme="neutral">
-              Sandbox
-            </Badge>
-          )}
-          {deployment.affected_resources.components.map((c) => (
-            <Badge key={c} size="sm" variant="code" theme="neutral">
-              {c}
-            </Badge>
-          ))}
-          {deployment.affected_resources.images.map((img) => (
-            <Badge key={img} size="sm" variant="code" theme="neutral">
-              {img}
-            </Badge>
-          ))}
-        </div>
-      )}
-    </Card>
+    <DeploymentRow
+      run={run}
+      title={deployment.title}
+      createdAt={deployment.created_at}
+      onViewDetails={onViewDetails}
+      history
+    >
+      {recovered.map((category) => (
+        <Text key={category} variant="subtext" theme="neutral">
+          Previous {category.toLowerCase()} update failed
+        </Text>
+      ))}
+    </DeploymentRow>
   )
 }
-
-const DeploymentCardSkeleton = () => (
-  <Card className="!p-4 !gap-3 !shadow-none">
-    <div className="flex items-start justify-between gap-4">
-      <div className="flex items-start gap-3 min-w-0">
-        <Text variant="subtext" loading loadingWidth={2} className="mt-0.5" />
-        <div className="flex items-center gap-2 flex-wrap min-w-0">
-          <Text loading loadingWidth={22} />
-          <Status loading variant="badge" loadingWidth={8} />
-        </div>
-      </div>
-      <Text variant="subtext" loading loadingWidth={10} className="shrink-0" />
-    </div>
-
-    <div className="flex items-center gap-x-6 gap-y-2 flex-wrap">
-      <Text variant="subtext" loading loadingWidth={16} />
-      <Text variant="subtext" loading loadingWidth={20} />
-    </div>
-
-    <div className="flex flex-wrap gap-2">
-      <Badge loading size="sm" variant="code" loadingWidth={9} />
-      <Badge loading size="sm" variant="code" loadingWidth={7} />
-      <Badge loading size="sm" variant="code" loadingWidth={11} />
-    </div>
-  </Card>
-)
 
 export interface IDeploymentFilter {
   search: string
@@ -233,10 +140,21 @@ export interface IDeploymentFilter {
 }
 
 export interface IDeploymentsListPresenter {
-  deployments: TInstallDeploymentRecord[]
+  deployments: TInstallDeploymentSummary[]
+  activeDeployments?: TInstallDeploymentSummary[]
+  activeTotal?: number
+  activeLoading?: boolean
+  activeError?: TAPIError | null
+  hasMoreActive?: boolean
+  showActive?: boolean
+  showHistory?: boolean
+  onLoadMoreActive?: () => void
   isLoading: boolean
   error?: TAPIError | null
-  pagination: Omit<IPagination, 'position'>
+  pagination: Omit<IPagination, 'position'> & {
+    onNext?: () => void
+    onPrevious?: () => void
+  }
   orgId: string
   appId: string
   installId: string
@@ -251,8 +169,102 @@ export interface IDeploymentsListPresenter {
   onClearFilters: () => void
 }
 
-const DeploymentsListBase = ({
+const hasDeploymentFilters = (filter: IDeploymentFilter) =>
+  filter.search !== '' ||
+  filter.status.size > 0 ||
+  filter.type.size > 0 ||
+  !!filter.resource ||
+  !!filter.date
+
+type TDeploymentsListFilters = Pick<
+  IDeploymentsListPresenter,
+  | 'search'
+  | 'filter'
+  | 'onSearchChange'
+  | 'onStatusChange'
+  | 'onTypeChange'
+  | 'onResourceChange'
+  | 'onDateChange'
+  | 'onClearFilters'
+> & { resources: string[] }
+
+export const DeploymentsListFilters = ({
+  resources,
+  search,
+  filter,
+  onSearchChange,
+  onStatusChange,
+  onTypeChange,
+  onResourceChange,
+  onDateChange,
+  onClearFilters,
+}: TDeploymentsListFilters) => (
+  <div className="flex min-w-0 flex-wrap items-center gap-2">
+    <SearchInput
+      aria-label="Search deployments"
+      placeholder="Search deployments"
+      value={search}
+      onChange={onSearchChange}
+      onClear={() => onSearchChange('')}
+    />
+    <CheckboxFilterDropdown
+      id="deployments-filter-status"
+      label="Status"
+      options={workflowStatusOptions().map((value) => ({
+        value,
+        label: WORKFLOW_STATUS_LABELS[value],
+      }))}
+      selected={filter.status}
+      onChange={(value) => onStatusChange(value as Set<TWorkflowStatusOption>)}
+    />
+    <CheckboxFilterDropdown
+      id="deployments-filter-type"
+      label="Type"
+      options={DEPLOYMENT_FILTER_TYPES.map((value) => ({
+        value,
+        label: DEPLOYMENT_TYPE_LABELS[value],
+      }))}
+      selected={filter.type}
+      onChange={(value) =>
+        onTypeChange(value as Set<TInstallDeploymentRecordType>)
+      }
+    />
+    {resources.length > 0 ? (
+      <RadioFilterDropdown
+        id="deployments-filter-resource"
+        label="Resource"
+        options={resources.map((value) => ({ value, label: value }))}
+        selected={filter.resource}
+        onChange={onResourceChange}
+      />
+    ) : null}
+    <RadioFilterDropdown
+      id="deployments-filter-date"
+      label="Date"
+      options={(Object.keys(WORKFLOW_DATE_LABELS) as TWorkflowDatePreset[]).map(
+        (value) => ({ value, label: WORKFLOW_DATE_LABELS[value] })
+      )}
+      selected={filter.date}
+      onChange={onDateChange}
+    />
+    {hasDeploymentFilters(filter) ? (
+      <Button variant="ghost" onClick={onClearFilters}>
+        Clear filters
+      </Button>
+    ) : null}
+  </div>
+)
+
+export const DeploymentsListPresenter = ({
   deployments,
+  activeDeployments = [],
+  activeTotal,
+  activeLoading = false,
+  activeError,
+  hasMoreActive = false,
+  showActive = true,
+  showHistory = true,
+  onLoadMoreActive,
   isLoading,
   error,
   pagination,
@@ -269,144 +281,158 @@ const DeploymentsListBase = ({
   onDateChange,
   onClearFilters,
 }: IDeploymentsListPresenter) => {
-  const { isPaginating, setIsPaginating } = usePagination()
-
-  useEffect(() => {
-    setIsPaginating(false)
-  }, [deployments])
-
-  const allComponents = Array.from(
-    new Set(
-      deployments.flatMap((d) => [
-        ...(d.affected_resources.stack ? ['stack'] : []),
-        ...(d.affected_resources.sandbox ? ['sandbox'] : []),
-        ...d.affected_resources.components,
-        ...d.affected_resources.images,
-      ])
-    )
+  const runs = useMemo(() => deployments.map(deploymentRun), [deployments])
+  const activeRuns = useMemo(
+    () => activeDeployments.map(deploymentRun),
+    [activeDeployments]
   )
-
-  const hasActiveFilters =
-    filter.search !== '' ||
-    filter.status.size > 0 ||
-    filter.type.size > 0 ||
-    !!filter.resource ||
-    !!filter.date
-
+  const allResources = [
+    ...new Set([
+      'stack',
+      'sandbox',
+      ...(filter.resource ? [filter.resource] : []),
+      ...[...activeRuns, ...runs].flatMap(
+        ({ resources }) => resources.components
+      ),
+    ]),
+  ]
+  const hasActiveFilters = hasDeploymentFilters(filter)
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex min-w-0 flex-wrap items-center gap-2">
-        <SearchInput
-          aria-label="Search deployments"
-          placeholder="Search deployments"
-          value={search}
-          onChange={onSearchChange}
-          onClear={() => onSearchChange('')}
-        />
-        <CheckboxFilterDropdown
-          id="deployments-filter-status"
-          label="Status"
-          options={workflowStatusOptions().map((value) => ({
-            value,
-            label: WORKFLOW_STATUS_LABELS[value],
-          }))}
-          selected={filter.status}
-          onChange={(value) =>
-            onStatusChange(value as Set<TWorkflowStatusOption>)
-          }
-        />
-        <CheckboxFilterDropdown
-          id="deployments-filter-type"
-          label="Type"
-          options={(
-            Object.keys(
-              DEPLOYMENT_TYPE_LABELS
-            ) as TInstallDeploymentRecordType[]
-          ).map((value) => ({
-            value,
-            label: DEPLOYMENT_TYPE_LABELS[value],
-          }))}
-          selected={filter.type}
-          onChange={(value) =>
-            onTypeChange(value as Set<TInstallDeploymentRecordType>)
-          }
-        />
-        {allComponents.length > 0 && (
-          <RadioFilterDropdown
-            id="deployments-filter-resource"
-            label="Resource"
-            options={allComponents.map((value) => ({ value, label: value }))}
-            selected={filter.resource}
-            onChange={onResourceChange}
+    <div className="@container flex flex-col gap-6">
+      <DeploymentsListFilters
+        resources={allResources}
+        search={search}
+        filter={filter}
+        onSearchChange={onSearchChange}
+        onStatusChange={onStatusChange}
+        onTypeChange={onTypeChange}
+        onResourceChange={onResourceChange}
+        onDateChange={onDateChange}
+        onClearFilters={onClearFilters}
+      />
+      {showActive ? (
+        <section aria-label="In progress" className="flex flex-col gap-3">
+          <SectionHeader
+            title={`In progress${activeTotal !== undefined ? ` (${activeTotal})` : ''}`}
+            description="Follow active deployments and rollouts."
           />
-        )}
-        <RadioFilterDropdown
-          id="deployments-filter-date"
-          label="Date"
-          options={(
-            Object.keys(WORKFLOW_DATE_LABELS) as TWorkflowDatePreset[]
-          ).map((value) => ({
-            value,
-            label: WORKFLOW_DATE_LABELS[value],
-          }))}
-          selected={filter.date}
-          onChange={onDateChange}
-        />
-        {hasActiveFilters && (
-          <Button variant="ghost" onClick={onClearFilters}>
-            Clear filters
-          </Button>
-        )}
-      </div>
-
-      {isPaginating || (isLoading && deployments.length === 0) ? (
-        <div className="flex flex-col gap-3">
-          {Array.from({ length: pagination.limit ?? 5 }).map((_, index) => (
-            <DeploymentCardSkeleton key={index} />
-          ))}
-        </div>
-      ) : error ? (
-        <EmptyState
-          emptyTitle="Deployments failed to load"
-          emptyMessage="Unable to load deployments. Try refreshing the page."
-          className="my-12"
-        />
-      ) : deployments.length === 0 ? (
-        <EmptyState
-          emptyTitle={
-            hasActiveFilters ? 'No deployments found' : 'No deployments yet'
-          }
-          emptyMessage={
-            hasActiveFilters
-              ? 'No deployments match the current filters. Try adjusting or clearing them.'
-              : 'Deployments will appear here once a workflow deploys components to this install.'
-          }
-          className="my-12"
-        />
-      ) : (
-        <div className="flex flex-col gap-3">
-          {deployments.map((deployment) => (
-            <DeploymentCard
-              key={deployment.id}
-              deployment={deployment}
-              orgId={orgId}
-              appId={appId}
-              installId={installId}
-              repo={repo}
+          {activeLoading && activeDeployments.length === 0 ? (
+            <TimelineSkeleton eventCount={4} />
+          ) : activeError ? (
+            <EmptyState
+              emptyTitle="Active deployments failed to load"
+              emptyMessage="Unable to load active deployments. Try refreshing the page."
             />
-          ))}
-        </div>
-      )}
-
-      {pagination.hasNext || pagination.offset !== 0 ? (
-        <Pagination {...pagination} />
+          ) : activeDeployments.length === 0 ? (
+            <Text variant="subtext" theme="neutral">
+              {hasActiveFilters
+                ? 'No in-progress deployments match these filters. Adjust or clear the filters to see more.'
+                : 'No deployments in progress. Start a deployment to follow its rollout here.'}
+            </Text>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-3 @4xl:grid-cols-2">
+                {activeDeployments.map((deployment, index) => (
+                  <DeploymentRecordRow
+                    key={deployment.id}
+                    deployment={deployment}
+                    run={activeRuns[index].run}
+                    orgId={orgId}
+                    appId={appId}
+                    installId={installId}
+                    repo={repo}
+                    previousOutcomes={[]}
+                    active
+                  />
+                ))}
+              </div>
+              {hasMoreActive ? (
+                <Button
+                  className="w-full justify-center"
+                  disabled={activeLoading}
+                  onClick={onLoadMoreActive}
+                >
+                  {activeLoading
+                    ? 'Loading deployments...'
+                    : `Show ${Math.max(0, (activeTotal ?? activeDeployments.length + 4) - activeDeployments.length)} more in progress`}
+                </Button>
+              ) : null}
+            </>
+          )}
+        </section>
+      ) : null}
+      {showHistory ? (
+        <section aria-label="History" className="flex flex-col gap-3">
+          <SectionHeader
+            title="History"
+            description="Review completed deployments and rollouts."
+          />
+          {isLoading && deployments.length === 0 ? (
+            <TimelineSkeleton eventCount={pagination.limit ?? 5} />
+          ) : error ? (
+            <EmptyState
+              emptyTitle="Deployments failed to load"
+              emptyMessage="Unable to load deployments. Try refreshing the page."
+              className="my-12"
+            />
+          ) : deployments.length === 0 ? (
+            <EmptyState
+              emptyTitle={
+                hasActiveFilters ? 'No deployments found' : 'No deployments yet'
+              }
+              emptyMessage={
+                hasActiveFilters
+                  ? 'No deployments match the current filters. Try adjusting or clearing them.'
+                  : 'Deployments will appear here once a workflow deploys components to this install.'
+              }
+              className="my-12"
+            />
+          ) : (
+            <Timeline
+              className="w-full"
+              events={deployments}
+              groupByDate={false}
+              pagination={{ hasNext: false, offset: 0 }}
+              getEventKey={(deployment) => deployment.id}
+              renderEvent={(deployment, index) => (
+                <DeploymentRecordRow
+                  deployment={deployment}
+                  run={runs[index].run}
+                  orgId={orgId}
+                  appId={appId}
+                  installId={installId}
+                  repo={repo}
+                  previousOutcomes={runs
+                    .slice(index + 1)
+                    .map((previous) => previous.run.outcomes)}
+                />
+              )}
+            />
+          )}
+          {pagination.hasNext || (pagination.offset ?? 0) > 0 ? (
+            <div className="flex items-center justify-end gap-3">
+              <Button
+                disabled={isLoading || !pagination.offset}
+                onClick={pagination.onPrevious}
+              >
+                Previous
+              </Button>
+              <Text variant="subtext" theme="neutral">
+                Page{' '}
+                {Math.floor(
+                  (pagination.offset ?? 0) / (pagination.limit ?? 20)
+                ) + 1}
+              </Text>
+              <Button
+                disabled={isLoading || !pagination.hasNext}
+                onClick={pagination.onNext}
+              >
+                Next
+              </Button>
+            </div>
+          ) : null}
+        </section>
       ) : null}
     </div>
   )
 }
-
-export const DeploymentsListPresenter = (props: IDeploymentsListPresenter) => (
-  <PaginationProvider>
-    <DeploymentsListBase {...props} />
-  </PaginationProvider>
-)

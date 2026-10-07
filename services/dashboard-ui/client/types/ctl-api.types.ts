@@ -1366,7 +1366,13 @@ export type TInstallDeploymentRecordType =
 export type TInstallDeploymentStatus =
   | 'active'
   | 'pending'
+  | 'queued'
   | 'in-progress'
+  | 'retrying'
+  | 'approved'
+  | 'approval-awaiting'
+  | 'failed-pending-retry'
+  | 'cancelled'
   | 'error'
   | 'warn'
   | 'deprovisioned'
@@ -1436,12 +1442,47 @@ export type TInstallDeploymentRecord = {
   change_groups: TInstallDeploymentChangeGroup[]
 }
 
+export type TInstallDeploymentStepSummary = {
+  id: string
+  name?: string
+  status?: string
+  idx?: number
+  group_idx?: number
+  group_retry_idx?: number
+  retried?: boolean
+  execution_type?: string
+  step_target_type?: string
+  component_name?: string
+  approval_response_id?: string
+}
+
+export type TInstallDeploymentSummary = {
+  id: string
+  type: TInstallDeploymentRecordType
+  title: string
+  created_at: string
+  status: TInstallDeploymentStatus
+  activity?: string
+  finished?: boolean
+  steps: TInstallDeploymentStepSummary[]
+}
+
 export type TInstallDeploymentsResponse = {
   deployments: TInstallDeploymentRecord[]
   page: number
   offset: number
   limit: number
   has_more: boolean
+}
+
+export type TInstallDeploymentSummariesResponse = {
+  deployments: TInstallDeploymentSummary[]
+  page: number
+  offset: number
+  limit: number
+  has_more: boolean
+  next_cursor?: string
+  total?: number
 }
 
 export type TInstallActivityType = 'action_run' | 'runbook_run' | 'policy_check'
