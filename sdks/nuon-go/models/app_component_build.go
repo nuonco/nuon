@@ -118,6 +118,9 @@ type AppComponentBuild struct {
 		AppRunnerJob
 	} `json:"runner_job,omitempty"`
 
+	// SignatureVerification is empty when the outcome is unknown (older builds, or failures before verification ran).
+	SignatureVerification string `json:"signature_verification,omitempty"`
+
 	// checksum of the component's source directory at build time
 	SourceChecksum string `json:"source_checksum,omitempty"`
 

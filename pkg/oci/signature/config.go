@@ -8,6 +8,9 @@ import (
 	"github.com/invopop/jsonschema"
 )
 
+// VerifyStep is the error-result step a build reports when signature verification rejects an image.
+const VerifyStep = "verify image signature"
+
 type AuthorityType string
 
 const (
