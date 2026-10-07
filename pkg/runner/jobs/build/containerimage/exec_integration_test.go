@@ -5,7 +5,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -46,17 +45,18 @@ func (c *recordingCopier) CopyFromLocalRegistry(context.Context, string, *config
 	return nil, nil
 }
 
-func runSignedImageBuild(t *testing.T, subject string) (*models.ServiceCreateRunnerJobExecutionResultRequest, bool, error) {
-	ctrl := gomock.NewController(t)
-	client := nuonrunner.NewMockClient(ctrl)
+type resultClient struct {
+	nuonrunner.Client
+	result *models.ServiceCreateRunnerJobExecutionResultRequest
+}
 
-	var result *models.ServiceCreateRunnerJobExecutionResultRequest
-	client.EXPECT().
-		CreateJobExecutionResult(gomock.Any(), "job-1", "exec-1", gomock.Any()).
-		DoAndReturn(func(_ context.Context, _, _ string, req *models.ServiceCreateRunnerJobExecutionResultRequest) (*models.AppRunnerJobExecutionResult, error) {
-			result = req
-			return &models.AppRunnerJobExecutionResult{}, nil
-		})
+func (c *resultClient) CreateJobExecutionResult(_ context.Context, _, _ string, req *models.ServiceCreateRunnerJobExecutionResultRequest) (*models.AppRunnerJobExecutionResult, error) {
+	c.result = req
+	return &models.AppRunnerJobExecutionResult{}, nil
+}
+
+func runSignedImageBuild(t *testing.T, subject string) (*models.ServiceCreateRunnerJobExecutionResultRequest, bool, error) {
+	client := &resultClient{}
 
 	copier := &recordingCopier{}
 	h := &handler{
@@ -91,7 +91,7 @@ func runSignedImageBuild(t *testing.T, subject string) (*models.ServiceCreateRun
 
 	ctx := pkgctx.SetLogger(context.Background(), zap.NewNop())
 	err := h.Exec(ctx, &models.AppRunnerJob{ID: "job-1"}, &models.AppRunnerJobExecution{ID: "exec-1"})
-	return result, copier.copied, err
+	return client.result, copier.copied, err
 }
 
 func TestExecReportsSignatureOutcome(t *testing.T) {
