@@ -2,6 +2,7 @@ package arm
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -32,6 +33,46 @@ func renderUIDef(t *testing.T, inp *stacks.TemplateInput) (map[string]any, map[s
 		t.Fatalf("UI definition missing parameters: %v", out)
 	}
 	return out, params
+}
+
+type indexedBasicsElement struct {
+	element      map[string]any
+	ref          string
+	sectionLabel string
+}
+
+func indexBasicsElements(basics []any) map[string]indexedBasicsElement {
+	out := map[string]indexedBasicsElement{}
+	for _, item := range basics {
+		el := item.(map[string]any)
+		if el["type"] == "Microsoft.Common.Section" {
+			section := el["name"].(string)
+			label, _ := el["label"].(string)
+			for _, child := range el["elements"].([]any) {
+				childEl := child.(map[string]any)
+				name := childEl["name"].(string)
+				out[name] = indexedBasicsElement{
+					element:      childEl,
+					ref:          fmt.Sprintf("basics('%s').%s", section, name),
+					sectionLabel: label,
+				}
+			}
+			continue
+		}
+		name := el["name"].(string)
+		out[name] = indexedBasicsElement{
+			element: el,
+			ref:     fmt.Sprintf("basics('%s')", name),
+		}
+	}
+	return out
+}
+
+func wantParameterOutput(ref string, p ARMParameter) string {
+	if p.Type == "int" && len(p.AllowedValues) == 0 {
+		return fmt.Sprintf("[int(%s)]", ref)
+	}
+	return fmt.Sprintf("[%s]", ref)
 }
 
 func TestQuickLinkUIDefinition_Envelope(t *testing.T) {
@@ -201,7 +242,7 @@ func TestQuickLinkUIDefinition_PromptsForEveryParameter(t *testing.T) {
 	inp := minimalTemplateInput()
 	inp.DeploymentScope = app.StackDeploymentScopeSubscription
 	inp.AppCfg.SecretsConfig.Secrets = []app.AppSecretConfig{
-		{Name: "db_password", Required: true},
+		{Name: "db_password", DisplayName: "Database password", Description: "Password for the app database.", Required: true},
 	}
 
 	tmpl := &Templates{cfg: &internal.Config{}}
@@ -211,13 +252,16 @@ func TestQuickLinkUIDefinition_PromptsForEveryParameter(t *testing.T) {
 	}
 
 	_, params := renderUIDef(t, inp)
-	basics := params["basics"].([]any)
 	outputs := params["outputs"].(map[string]any)
+	byName := indexBasicsElements(params["basics"].([]any))
 
-	byName := map[string]map[string]any{}
-	for _, b := range basics {
-		el := b.(map[string]any)
-		byName[el["name"].(string)] = el
+	runnerSize, ok := byName[runnerVmSizeParamName]
+	if !ok || runnerSize.sectionLabel != "Runner" || runnerSize.element["type"] != "Microsoft.Compute.SizeSelector" {
+		t.Fatalf("runnerVmSize = %#v, want a SizeSelector in the Runner section", runnerSize)
+	}
+	vnetCIDR, ok := byName["vnetCIDR"]
+	if !ok || vnetCIDR.sectionLabel != "VPC" || vnetCIDR.element["defaultValue"] != "10.128.0.0/16" {
+		t.Fatalf("vnetCIDR = %#v, want the built-in default in the VPC section", vnetCIDR)
 	}
 
 	for name, p := range wrapperParams {
@@ -230,16 +274,137 @@ func TestQuickLinkUIDefinition_PromptsForEveryParameter(t *testing.T) {
 			}
 			continue
 		}
-		el, present := byName[name]
+		field, present := byName[name]
 		if !present {
 			t.Errorf("parameter %q is not prompted for", name)
 			continue
 		}
-		if p.Type == "securestring" && el["type"] != "Microsoft.Common.PasswordBox" {
-			t.Errorf("securestring parameter %q rendered as %v, want a PasswordBox", name, el["type"])
+		if p.Type == "securestring" && field.element["type"] != "Microsoft.Common.PasswordBox" {
+			t.Errorf("securestring parameter %q rendered as %v, want a PasswordBox", name, field.element["type"])
 		}
-		if got, want := outputs[name], "[basics('"+name+"')]"; got != want {
+		if name == "secretDbPassword" {
+			if field.sectionLabel != "Secrets" {
+				t.Errorf("secret section = %q, want Secrets", field.sectionLabel)
+			}
+			passwordLabel := field.element["label"].(map[string]any)["password"]
+			if passwordLabel != "Database password" {
+				t.Errorf("secret label = %v, want the display name", field.element["label"])
+			}
+			if got := field.element["toolTip"]; got != "Password for the app database." {
+				t.Errorf("secret toolTip = %v, want the description", got)
+			}
+		}
+		if got, want := outputs[name], wantParameterOutput(field.ref, p); got != want {
 			t.Errorf("outputs[%q] = %v, want %v", name, got, want)
+		}
+	}
+}
+
+// Role toggles share one section. The three standard roles lead, in a fixed order,
+// even when the app config lists them differently; custom roles follow in config
+// order, then break-glass. Each one stays a checkbox.
+func TestQuickLinkUIDefinition_GroupsRoleToggles(t *testing.T) {
+	inp := azureRolesTemplateInput()
+	inp.AppCfg.PermissionsConfig.Roles = []app.AppAWSIAMRoleConfig{
+		{CloudPlatform: "azure", Type: app.AWSIAMRoleTypeRunnerDeprovision, Name: "deprovision", DisplayName: "Deprovision", Policies: []app.AppAWSIAMPolicyConfig{{AzureActions: []string{"Microsoft.Resources/*/delete"}}}},
+		{CloudPlatform: "azure", Type: app.AWSIAMRoleTypeCustom, Name: "db-admin", DisplayName: "DB Admin", Description: "Administer the database.", Policies: []app.AppAWSIAMPolicyConfig{{AzureBuiltInRoles: []string{"Reader"}}}},
+		{CloudPlatform: "azure", Type: app.AWSIAMRoleTypeCustom, Name: "dns", DisplayName: "DNS", Description: "Manage DNS zones.", Policies: []app.AppAWSIAMPolicyConfig{{AzureActions: []string{"Microsoft.Network/dnsZones/*"}}}},
+		{CloudPlatform: "azure", Type: app.AWSIAMRoleTypeRunnerProvision, Name: "provision", DisplayName: "Provision", Description: "Creates the install.", Policies: []app.AppAWSIAMPolicyConfig{{AzureActions: []string{"Microsoft.Resources/*"}}}},
+		{CloudPlatform: "azure", Type: app.AWSIAMRoleTypeRunnerMaintenance, Name: "maintenance", Policies: []app.AppAWSIAMPolicyConfig{{AzureActions: []string{"Microsoft.Compute/*"}}}},
+	}
+	inp.AppCfg.BreakGlassConfig.Roles = []app.AppAWSIAMRoleConfig{
+		{CloudPlatform: "azure", Type: app.AWSIAMRoleTypeBreakGlass, Name: "emergency", DisplayName: "Emergency", Policies: []app.AppAWSIAMPolicyConfig{{AzureBuiltInRoles: []string{"Owner"}}}},
+	}
+
+	_, params := renderUIDef(t, inp)
+	basics := params["basics"].([]any)
+
+	var roles map[string]any
+	for _, item := range basics {
+		el := item.(map[string]any)
+		if el["type"] == "Microsoft.Common.Section" && el["name"] == "roles" {
+			roles = el
+			break
+		}
+	}
+	if roles == nil {
+		t.Fatal("Roles section missing")
+	}
+	if roles["label"] != "Roles" {
+		t.Errorf("section label = %v, want Roles", roles["label"])
+	}
+
+	elements := roles["elements"].([]any)
+	got := make([]string, 0, len(elements))
+	byName := map[string]map[string]any{}
+	for _, item := range elements {
+		el := item.(map[string]any)
+		name := el["name"].(string)
+		got = append(got, name)
+		byName[name] = el
+		if el["type"] != "Microsoft.Common.CheckBox" {
+			t.Errorf("%s type = %v, want a CheckBox", name, el["type"])
+		}
+	}
+
+	ids := azureRolesForUI(azureOperationIdentities(inp.AppCfg))
+	if len(ids) != 6 || ids[0].kind != "provision" || ids[1].kind != "maintenance" || ids[2].kind != "deprovision" || ids[3].roleName != "db-admin" || ids[4].roleName != "dns" || ids[5].kind != "breakglass" {
+		t.Fatalf("role order = %#v", ids)
+	}
+	want := make([]string, len(ids))
+	for i, id := range ids {
+		want[i] = azureRoleEnableParamName(id)
+	}
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Errorf("rendered order = %v, want %v", got, want)
+	}
+
+	provision := byName[want[0]]
+	if provision["label"] != "Enable Provision role" {
+		t.Errorf("provision label = %v", provision["label"])
+	}
+	if provision["toolTip"] != "Create the Provision role: Creates the install." {
+		t.Errorf("provision toolTip = %v", provision["toolTip"])
+	}
+	if provision["defaultValue"] != true {
+		t.Errorf("provision default = %v, want true", provision["defaultValue"])
+	}
+
+	dbAdmin := byName[want[3]]
+	if dbAdmin["label"] != "Enable DB Admin role" {
+		t.Errorf("custom label = %v", dbAdmin["label"])
+	}
+	if dbAdmin["toolTip"] != "Create the DB Admin role: Administer the database." {
+		t.Errorf("custom toolTip = %v", dbAdmin["toolTip"])
+	}
+
+	if _, set := byName[want[5]]["defaultValue"]; set {
+		t.Errorf("break-glass default = %v, want unchecked", byName[want[5]]["defaultValue"])
+	}
+
+	if got, wantOut := params["outputs"].(map[string]any)[want[0]], "[basics('roles')."+want[0]+"]"; got != wantOut {
+		t.Errorf("provision output = %v, want %v", got, wantOut)
+	}
+
+	for _, item := range basics {
+		el := item.(map[string]any)
+		if el["name"] == "roles" {
+			continue
+		}
+		check := []map[string]any{el}
+		if el["type"] == "Microsoft.Common.Section" {
+			check = nil
+			for _, child := range el["elements"].([]any) {
+				check = append(check, child.(map[string]any))
+			}
+		}
+		for _, field := range check {
+			name, _ := field["name"].(string)
+			for _, roleName := range want {
+				if name == roleName {
+					t.Errorf("%s is also rendered outside the Roles section", name)
+				}
+			}
 		}
 	}
 }
@@ -252,43 +417,44 @@ func TestQuickLinkUIDefinition_PrefillsHoistedParametersWithTheirDefaults(t *tes
 	inp := vnetInputWithTemplate(t, app.StackDeploymentScopeSubscription, hoistFixture)
 
 	_, params := renderUIDef(t, inp)
-
-	byName := map[string]map[string]any{}
-	for _, b := range params["basics"].([]any) {
-		el := b.(map[string]any)
-		byName[el["name"].(string)] = el
-	}
+	byName := indexBasicsElements(params["basics"].([]any))
 
 	addressSpace, present := byName["addressSpace"]
 	if !present {
 		t.Fatalf("hoisted parameter addressSpace is not prompted for; basics = %v", byName)
 	}
-	if got := addressSpace["defaultValue"]; got != "10.100.0.0/22" {
+	if addressSpace.sectionLabel != "VPC" {
+		t.Errorf("addressSpace section = %q, want VPC", addressSpace.sectionLabel)
+	}
+	if got := addressSpace.element["defaultValue"]; got != "10.100.0.0/22" {
 		t.Errorf("addressSpace.defaultValue = %v, want the template's default", got)
 	}
-	if got := addressSpace["type"]; got != "Microsoft.Common.DropDown" {
+	if got := addressSpace.element["type"]; got != "Microsoft.Common.DropDown" {
 		t.Errorf("addressSpace.type = %v, want a DropDown", got)
 	}
-	allowedValues := addressSpace["constraints"].(map[string]any)["allowedValues"].([]any)
+	allowedValues := addressSpace.element["constraints"].(map[string]any)["allowedValues"].([]any)
 	first := allowedValues[0].(map[string]any)
 	if first["label"] != "10.100.0.0/22" || first["value"] != "10.100.0.0/22" {
 		t.Errorf("first addressSpace option = %#v", first)
 	}
-	if got := params["outputs"].(map[string]any)["addressSpace"]; got != "[basics('addressSpace')]" {
+	if got := params["outputs"].(map[string]any)["addressSpace"]; got != "[basics('vpc').addressSpace]" {
 		t.Errorf("addressSpace output = %v", got)
 	}
 	// The portal spaces and title-cases parameter names itself when no UI
 	// definition is supplied; supplying one takes that over.
-	if got := addressSpace["label"]; got != "Address Space" {
+	if got := addressSpace.element["label"]; got != "Address Space" {
 		t.Errorf("addressSpace.label = %v, want %q", got, "Address Space")
 	}
 	// Clearing a prefilled field must not submit an empty string over the default.
-	if got := addressSpace["constraints"].(map[string]any)["required"]; got != true {
+	if got := addressSpace.element["constraints"].(map[string]any)["required"]; got != true {
 		t.Errorf("addressSpace.constraints.required = %v, want true", got)
 	}
 
-	if got := byName["peeringEnabled"]["type"]; got != "Microsoft.Common.CheckBox" {
+	if got := byName["peeringEnabled"].element["type"]; got != "Microsoft.Common.CheckBox" {
 		t.Errorf("bool parameter rendered as %v, want a CheckBox", got)
+	}
+	if byName["peeringEnabled"].sectionLabel != "VPC" {
+		t.Errorf("peeringEnabled section = %q, want VPC", byName["peeringEnabled"].sectionLabel)
 	}
 }
 
@@ -341,7 +507,7 @@ func TestBasicsElement_AllowedValuesRenderTypedDropDown(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			element, output, ok := basicsElement(test.name, test.parameter, "")
+			element, output, ok := basicsElement(test.name, test.parameter, "", "")
 			if !ok {
 				t.Fatal("parameter was not rendered")
 			}
@@ -400,7 +566,7 @@ func TestBasicsElement_SecureStringDoesNotExposeAllowedValues(t *testing.T) {
 	element, _, ok := basicsElement("secret", ARMParameter{
 		Type:          "securestring",
 		AllowedValues: []any{"first", "second"},
-	}, "")
+	}, "", "")
 	if !ok {
 		t.Fatal("securestring was not rendered")
 	}
@@ -424,7 +590,7 @@ func TestBasicsElement_WithoutAllowedValuesKeepsExistingControls(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		element, output, ok := basicsElement("value", test.parameter, "")
+		element, output, ok := basicsElement("value", test.parameter, "", "")
 		if !ok {
 			t.Fatalf("%s parameter was not rendered", test.parameter.Type)
 		}
