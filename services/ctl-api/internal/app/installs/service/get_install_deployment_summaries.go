@@ -134,18 +134,25 @@ type InstallDeployment struct {
 	ChangeGroups      []InstallDeploymentChangeGroup     `json:"change_groups"`
 }
 
+type InstallDeploymentPolicySummary struct {
+	DenyCount        int    `json:"deny_count"`
+	WarnCount        int    `json:"warn_count"`
+	FirstWarnMessage string `json:"first_warn_message,omitempty"`
+}
+
 type InstallDeploymentStep struct {
-	ID                 string `json:"id"`
-	Name               string `json:"name"`
-	Status             string `json:"status"`
-	Idx                int    `json:"idx"`
-	GroupIdx           int    `json:"group_idx"`
-	GroupRetryIdx      int    `json:"group_retry_idx"`
-	Retried            bool   `json:"retried,omitempty"`
-	ExecutionType      string `json:"execution_type"`
-	StepTargetType     string `json:"step_target_type,omitempty"`
-	ComponentName      string `json:"component_name,omitempty"`
-	ApprovalResponseID string `json:"approval_response_id,omitempty"`
+	ID                 string                          `json:"id"`
+	Name               string                          `json:"name"`
+	Status             string                          `json:"status"`
+	Idx                int                             `json:"idx"`
+	GroupIdx           int                             `json:"group_idx"`
+	GroupRetryIdx      int                             `json:"group_retry_idx"`
+	Retried            bool                            `json:"retried,omitempty"`
+	ExecutionType      string                          `json:"execution_type"`
+	StepTargetType     string                          `json:"step_target_type,omitempty"`
+	ComponentName      string                          `json:"component_name,omitempty"`
+	ApprovalResponseID string                          `json:"approval_response_id,omitempty"`
+	Policy             *InstallDeploymentPolicySummary `json:"policy,omitempty"`
 }
 
 type InstallDeploymentSummary struct {
@@ -614,9 +621,27 @@ func (s *service) installDeploymentSteps(ctx *gin.Context, workflowIDs []string)
 			StepTargetType:     step.StepTargetType,
 			ComponentName:      componentName,
 			ApprovalResponseID: responseIDs[step.ID],
+			Policy:             installDeploymentPolicySummary(step.Status.Metadata),
 		})
 	}
 	return stepsByWorkflowID, nil
+}
+
+func installDeploymentPolicySummary(metadata map[string]any) *InstallDeploymentPolicySummary {
+	denials, _ := metadata["deny_violations"].([]any)
+	warnings, _ := metadata["warn_violations"].([]any)
+	if len(denials)+len(warnings) == 0 {
+		return nil
+	}
+	summary := &InstallDeploymentPolicySummary{
+		DenyCount: len(denials),
+		WarnCount: len(warnings),
+	}
+	if len(warnings) > 0 {
+		first, _ := warnings[0].(map[string]any)
+		summary.FirstWarnMessage, _ = first["message"].(string)
+	}
+	return summary
 }
 
 func (s *service) buildInstallDeployments(ctx *gin.Context, orgID, installID string, workflows []app.Workflow) ([]InstallDeployment, error) {

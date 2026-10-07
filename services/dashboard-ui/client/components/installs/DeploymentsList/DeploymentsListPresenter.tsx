@@ -1,6 +1,11 @@
 import { useMemo } from 'react'
 import { Button } from '@/components/common/Button'
 import { CheckboxFilterDropdown } from '@/components/common/CheckboxFilterDropdown'
+import {
+  COLLECTION_VIEW_MODES,
+  CollectionViewToggle,
+  type TCollectionView,
+} from '@/components/common/CollectionViewToggle'
 import { EmptyState } from '@/components/common/EmptyState'
 import type { IPagination } from '@/components/common/Pagination'
 import { RadioFilterDropdown } from '@/components/common/RadioFilterDropdown'
@@ -18,12 +23,14 @@ import {
   summaryDeploymentEvidence,
   type TDeploymentOutcome,
 } from '@/components/installs/DeploymentDetail/deployment-progress'
+import { useStoredViewMode } from '@/hooks/use-stored-view-mode'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type {
   TAPIError,
   TInstallDeploymentRecordType,
   TInstallDeploymentSummary,
 } from '@/types'
+import { cn } from '@/utils/classnames'
 import {
   WORKFLOW_DATE_LABELS,
   WORKFLOW_STATUS_LABELS,
@@ -33,6 +40,7 @@ import {
 } from '@/utils/workflow-filters'
 import { DeploymentCard } from './DeploymentCard'
 import { DeploymentDetailPanel } from './DeploymentDetailPanel'
+import { DeploymentPolicySummary } from './DeploymentPolicySummary'
 import { DeploymentRow } from './DeploymentRow'
 
 export const DEPLOYMENT_TYPE_LABELS: Record<
@@ -76,6 +84,7 @@ interface IDeploymentRecordRow {
   repo?: string
   previousOutcomes: TDeploymentOutcome[][]
   active?: boolean
+  view?: TCollectionView
 }
 
 const DeploymentRecordRow = ({
@@ -87,6 +96,7 @@ const DeploymentRecordRow = ({
   repo,
   previousOutcomes,
   active,
+  view = 'grid',
 }: IDeploymentRecordRow) => {
   const { addPanel } = useSurfaces()
   const recovered =
@@ -103,7 +113,7 @@ const DeploymentRecordRow = ({
         repo={repo}
       />
     )
-  if (active) {
+  if (active && view === 'grid') {
     return (
       <DeploymentCard
         run={run}
@@ -111,7 +121,9 @@ const DeploymentRecordRow = ({
         typeLabel={DEPLOYMENT_TYPE_LABELS[deployment.type]}
         createdAt={deployment.created_at}
         onViewDetails={onViewDetails}
-      />
+      >
+        <DeploymentPolicySummary steps={run.steps} />
+      </DeploymentCard>
     )
   }
   return (
@@ -120,8 +132,9 @@ const DeploymentRecordRow = ({
       title={deployment.title}
       createdAt={deployment.created_at}
       onViewDetails={onViewDetails}
-      history
+      history={!active}
     >
+      <DeploymentPolicySummary steps={run.steps} history={!active} />
       {recovered.map((category) => (
         <Text key={category} variant="subtext" theme="neutral">
           Previous {category.toLowerCase()} update failed
@@ -281,6 +294,11 @@ export const DeploymentsListPresenter = ({
   onDateChange,
   onClearFilters,
 }: IDeploymentsListPresenter) => {
+  const [view, setView] = useStoredViewMode<TCollectionView>(
+    'nuon:deployments-view',
+    COLLECTION_VIEW_MODES,
+    'grid'
+  )
   const runs = useMemo(() => deployments.map(deploymentRun), [deployments])
   const activeRuns = useMemo(
     () => activeDeployments.map(deploymentRun),
@@ -315,6 +333,7 @@ export const DeploymentsListPresenter = ({
           <SectionHeader
             title={`In progress${activeTotal !== undefined ? ` (${activeTotal})` : ''}`}
             description="Follow active deployments and rollouts."
+            actions={<CollectionViewToggle value={view} onChange={setView} />}
           />
           {activeLoading && activeDeployments.length === 0 ? (
             <TimelineSkeleton eventCount={4} />
@@ -332,7 +351,15 @@ export const DeploymentsListPresenter = ({
             </Text>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-3 @4xl:grid-cols-2">
+              <div
+                className={cn(
+                  'grid grid-cols-1',
+                  view === 'grid' ? 'gap-3' : 'pl-4',
+                  view === 'grid' &&
+                    activeDeployments.length > 1 &&
+                    '@4xl:grid-cols-2'
+                )}
+              >
                 {activeDeployments.map((deployment, index) => (
                   <DeploymentRecordRow
                     key={deployment.id}
@@ -344,6 +371,7 @@ export const DeploymentsListPresenter = ({
                     repo={repo}
                     previousOutcomes={[]}
                     active
+                    view={view}
                   />
                 ))}
               </div>

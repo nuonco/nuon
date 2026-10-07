@@ -1,6 +1,7 @@
 import type {
   TInstallDeploymentAffectedResources,
   TInstallDeploymentRecord,
+  TInstallDeploymentStepSummary,
   TInstallDeploymentSummary,
   TWorkflow,
   TWorkflowStep,
@@ -79,6 +80,7 @@ export type TDeploymentStep = {
   step_target_type?: string
   metadata?: { component_name?: string }
   approval?: { type?: string; response?: unknown }
+  policy?: TInstallDeploymentStepSummary['policy']
 }
 
 export type TDeploymentEvidence<S extends TDeploymentStep = TDeploymentStep> = {
@@ -103,6 +105,7 @@ export const summaryDeploymentEvidence = (
     group_retry_idx: step.group_retry_idx ?? 0,
     idx: step.idx || undefined,
     step_target_type: step.step_target_type,
+    policy: step.policy,
     metadata: step.component_name
       ? { component_name: step.component_name }
       : undefined,
