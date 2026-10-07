@@ -41,6 +41,31 @@ test('shows the latest run deployment bars expanded by default', () => {
   expect(screen.getByLabelText('production-acme: Success')).toBeTruthy()
 })
 
+test('shows the install count, rollout squares, and status counts', () => {
+  render(
+    <MemoryRouter>
+      <BranchCard
+        card={{
+          ...card,
+          installCount: 14,
+          rolloutInstalls: Array.from({ length: 14 }, (_, index) => ({
+            id: `install-${index}`,
+            name: `acme-${index}`,
+            status: index < 11 ? 'success' : 'in-progress',
+          })),
+        }}
+      />
+    </MemoryRouter>
+  )
+
+  expect(screen.getByText('14 installs')).toBeTruthy()
+  expect(screen.getByText('11 success')).toBeTruthy()
+  expect(screen.getByText('3 in progress')).toBeTruthy()
+  expect(screen.getByLabelText('acme-0: Success')).toBeTruthy()
+  expect(screen.queryByLabelText('acme-12: In progress')).toBeNull()
+  expect(screen.getByText('2 more')).toBeTruthy()
+})
+
 test('shows pull request metadata for the latest run', () => {
   render(
     <MemoryRouter>
