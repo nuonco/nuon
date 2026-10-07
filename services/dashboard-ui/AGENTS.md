@@ -152,6 +152,7 @@ Before building UI: check `common/` and domain dirs; read `.stories.tsx` first.
 - Loading: primitive `loading` props / `<Table isLoading>` / `<Loading>` — no hand-built skeletons
 - Icons: only `Icon` from `@/components/common/Icon`
 - Links: `Link` from `@/components/common/Link` (`href`, not `to`)
+- Actions: `Button` from `@/components/common/Button`. A raw `<button>` is only for a control `Button` cannot represent (a full row that contains other content). It still needs `cursor-pointer`, a hover background in both themes, and a visible focus state. `focus:outline-none` alone is not a focus state.
 - Disabled button reasons: `tooltipProps` on `Button`
 - Admin tools: `AdminDashboardLink` / `TemporalLink` from `client/components/admin/`
 - Modals/panels: `Modal` / `Panel` from `surfaces/` — never `*Base`
