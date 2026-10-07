@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	"github.com/nuonco/nuon/pkg/oci/imageref"
+	signaturecfg "github.com/nuonco/nuon/pkg/oci/signature"
 	"github.com/nuonco/nuon/pkg/oci/updatepolicy"
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	signatureverify "github.com/nuonco/nuon/pkg/runner/oci/signature"
@@ -68,7 +69,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	resolvedDigest := string(desc.Digest)
 	if err := signatureverify.Verify(ctx, srcCfg, resolvedDigest, h.state.cfg.Verification); err != nil {
-		h.writeErrorResult(ctx, "verify image signature", err)
+		h.writeErrorResult(ctx, signaturecfg.VerifyStep, err)
 		return fmt.Errorf("unable to verify image signature: %w", err)
 	}
 	if h.state.cfg.Verification != nil && h.state.cfg.Verification.RequireSignature {

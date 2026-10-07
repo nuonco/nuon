@@ -25,6 +25,14 @@ const (
 	ComponentBuildStatusPolicyFailed ComponentBuildStatus = "policy_failed"
 )
 
+type ComponentBuildSignatureVerification string
+
+const (
+	ComponentBuildSignatureVerificationNotRequired ComponentBuildSignatureVerification = "not_required"
+	ComponentBuildSignatureVerificationVerified    ComponentBuildSignatureVerification = "verified"
+	ComponentBuildSignatureVerificationRejected    ComponentBuildSignatureVerification = "rejected"
+)
+
 type ComponentBuild struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -113,6 +121,9 @@ type ComponentBuild struct {
 	//     SourceDigest is already present in the install registry from the
 	//     prior build.
 	NoOp bool `json:"no_op,omitzero" gorm:"default false" temporaljson:"no_op,omitzero,omitempty"`
+
+	// SignatureVerification is empty when the outcome is unknown (older builds, or failures before verification ran).
+	SignatureVerification ComponentBuildSignatureVerification `json:"signature_verification,omitzero" gorm:"default null" swaggertype:"string" temporaljson:"signature_verification,omitzero,omitempty"`
 
 	AppBranchRunID *string       `json:"app_branch_run_id,omitempty" temporaljson:"app_branch_run_id,omitzero,omitempty"`
 	AppBranchRun   *AppBranchRun `faker:"-" json:"app_branch_run,omitempty" temporaljson:"app_branch_run,omitzero,omitempty"`
