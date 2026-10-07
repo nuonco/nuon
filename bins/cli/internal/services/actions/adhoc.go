@@ -26,6 +26,7 @@ type AdHocParams struct {
 	Role             string
 	EnableKubeConfig bool
 	Wait             bool
+	RequestID        string
 }
 
 // Kafka-backed log ingestion can trail stream closure by up to five seconds.
@@ -73,6 +74,7 @@ func (s *Service) CreateAdHocRun(ctx context.Context, params AdHocParams, asJSON
 		Name:             params.Name,
 		Role:             params.Role,
 		EnableKubeConfig: &params.EnableKubeConfig,
+		RequestID:        params.RequestID,
 	}
 
 	run, err := s.api.CreateAdHocAction(ctx, installID, req)

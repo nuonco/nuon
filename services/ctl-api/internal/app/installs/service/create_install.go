@@ -1,12 +1,14 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/lifecyclephase"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -17,6 +19,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -77,10 +80,18 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 	}
 	req.SandboxMode = org.SandboxMode
 
+	workflowRequest, done := s.returnExistingProvisionInstall(ctx, org.ID, req.AppID, &req.CreateInstallParams)
+	if done {
+		return
+	}
+
 	install, err := s.helpers.CreateInstall(ctx, req.AppID, &req.CreateInstallParams)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install: %w", err))
 		return
+	}
+	if workflowRequest != nil {
+		workflowRequest.PinnedAppConfigID = install.AppConfigID
 	}
 
 	workflow, err := s.helpers.CreateWorkflow(ctx,
@@ -88,6 +99,7 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 		app.WorkflowTypeProvision,
 		provisionWorkflowMetadata(req.StackOnly),
 		false,
+		workflowRequest,
 	)
 	if err != nil {
 		ctx.Error(err)
@@ -206,10 +218,18 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 	}
 	req.SandboxMode = org.SandboxMode
 
+	workflowRequest, done := s.returnExistingProvisionInstall(ctx, org.ID, appID, &req.CreateInstallParams)
+	if done {
+		return
+	}
+
 	install, err := s.helpers.CreateInstall(ctx, appID, &req.CreateInstallParams)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install: %w", err))
 		return
+	}
+	if workflowRequest != nil {
+		workflowRequest.PinnedAppConfigID = install.AppConfigID
 	}
 
 	workflow, err := s.helpers.CreateWorkflow(ctx,
@@ -217,6 +237,7 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		app.WorkflowTypeProvision,
 		provisionWorkflowMetadata(req.StackOnly),
 		false,
+		workflowRequest,
 	)
 	if err != nil {
 		ctx.Error(err)
@@ -273,4 +294,67 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 
 	install.WorkflowID = &workflow.ID
 	ctx.JSON(http.StatusCreated, install)
+}
+
+func (s *service) returnExistingProvisionInstall(ctx *gin.Context, orgID, appID string, params *helpers.CreateInstallParams) (*app.WorkflowRequest, bool) {
+	if params.RequestID == "" {
+		return nil, false
+	}
+	hashParams := *params
+	hashParams.RequestID = ""
+	hashParams.SandboxMode = false
+	hash, err := request.Hash(struct {
+		AppID  string                      `json:"app_id"`
+		Params helpers.CreateInstallParams `json:"params"`
+	}{AppID: appID, Params: hashParams})
+	if err != nil {
+		ctx.Error(err)
+		return nil, true
+	}
+	existing, err := s.lookupProvisionWorkflow(ctx, orgID, params.RequestID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return &app.WorkflowRequest{
+			RequestID:   params.RequestID,
+			RequestHash: hash,
+		}, false
+	}
+	if err != nil {
+		ctx.Error(err)
+		return nil, true
+	}
+	install, err := s.replayProvisionInstall(ctx, existing, hash)
+	if err != nil {
+		ctx.Error(err)
+		return nil, true
+	}
+	ctx.JSON(http.StatusCreated, install)
+	return nil, true
+}
+
+func (s *service) lookupProvisionWorkflow(ctx *gin.Context, orgID, requestID string) (*app.Workflow, error) {
+	var existing app.Workflow
+	err := s.db.WithContext(ctx).
+		Where(app.Workflow{
+			OrgID:     orgID,
+			OwnerType: "installs",
+			Type:      app.WorkflowTypeProvision,
+		}).
+		Where("request->>'request_id' = ?", requestID).
+		First(&existing).Error
+	if err != nil {
+		return nil, err
+	}
+	return &existing, nil
+}
+
+func (s *service) replayProvisionInstall(ctx *gin.Context, workflow *app.Workflow, hash string) (*app.Install, error) {
+	var install app.Install
+	if err := s.db.WithContext(ctx).Where(app.Install{ID: workflow.OwnerID}).First(&install).Error; err != nil {
+		return nil, fmt.Errorf("unable to get install: %w", err)
+	}
+	if err := request.Check(workflow.Request, hash, install.AppConfigID); err != nil {
+		return nil, err
+	}
+	install.WorkflowID = &workflow.ID
+	return &install, nil
 }

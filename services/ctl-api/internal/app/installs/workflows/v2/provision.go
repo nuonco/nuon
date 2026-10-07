@@ -31,6 +31,9 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install")
 	}
+	if err := failIfPinnedAppConfigMoved(install, flw); err != nil {
+		return nil, err
+	}
 
 	sg.nextGroupEager()
 	stateSignal := &statepartialgenerate.Signal{

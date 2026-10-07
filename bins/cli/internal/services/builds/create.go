@@ -19,7 +19,7 @@ const (
 	statusPolicyFailed = "policy_failed"
 )
 
-func (s *Service) Create(ctx context.Context, appID, compID string, asJSON bool) error {
+func (s *Service) Create(ctx context.Context, appID, compID, requestID string, asJSON bool) error {
 	compID, err := lookup.ComponentID(ctx, s.api, appID, compID)
 	if err != nil {
 		return ui.PrintError(err)
@@ -31,6 +31,7 @@ func (s *Service) Create(ctx context.Context, appID, compID string, asJSON bool)
 			compID,
 			&models.ServiceCreateComponentBuildRequest{
 				UseLatest: true,
+				RequestID: requestID,
 			},
 		)
 		if err != nil {
@@ -50,6 +51,7 @@ func (s *Service) Create(ctx context.Context, appID, compID string, asJSON bool)
 		compID,
 		&models.ServiceCreateComponentBuildRequest{
 			UseLatest: true,
+			RequestID: requestID,
 		},
 	)
 	if err != nil {

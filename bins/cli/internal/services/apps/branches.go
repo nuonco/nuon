@@ -104,10 +104,11 @@ func (s *Service) CreateBranch(ctx context.Context, appID, name string, asJSON b
 // TriggerBranchRunOptions carries the optional inputs for a branch run. Preview
 // inputs live on `branches preview` instead.
 type TriggerBranchRunOptions struct {
-	Force   bool
-	NoWait  bool
-	RunType string
-	RunRef  string
+	Force     bool
+	NoWait    bool
+	RunType   string
+	RunRef    string
+	RequestID string
 }
 
 func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, opts TriggerBranchRunOptions, asJSON bool) error {
@@ -129,9 +130,10 @@ func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, 
 	}
 
 	req := &models.ServiceTriggerAppBranchRunRequest{
-		Force:   opts.Force,
-		RunType: runType,
-		RunRef:  opts.RunRef,
+		Force:     opts.Force,
+		RunType:   runType,
+		RunRef:    opts.RunRef,
+		RequestID: opts.RequestID,
 	}
 
 	run, err := s.api.TriggerAppBranchRun(ctx, appID, branchID, req)

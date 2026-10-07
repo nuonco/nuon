@@ -42,7 +42,7 @@ type TargetAccount struct {
 	GCPProjectID        string
 }
 
-func (s *Service) Create(ctx context.Context, appID, name, region string, target TargetAccount, inputs, labelArgs []string, asJSON, noSelect, stackOnly bool, appBranchID, installGroupID string) error {
+func (s *Service) Create(ctx context.Context, appID, name, region string, target TargetAccount, inputs, labelArgs []string, asJSON, noSelect, stackOnly bool, appBranchID, installGroupID, requestID string) error {
 	if appID == "" {
 		selectedID, err := appselector.App(ctx, s.cfg, s.api)
 		if err != nil {
@@ -76,7 +76,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, target
 		}
 	}
 
-	if s.cfg.Preview && !asJSON {
+	if s.cfg.Preview && !asJSON && requestID == "" {
 		var inputConfig *models.AppAppInputConfig
 		if branchID != "" {
 			inputConfig, err = installcreate.ResolveInputConfig(ctx, s.api, appID, branchID)
@@ -117,7 +117,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, target
 	}
 
 	// Outside the creator TUI the group picker is a standalone prompt.
-	if branch.groupLabels == nil && len(branch.groups) > 0 && !asJSON && s.cfg.Interactive {
+	if branch.groupLabels == nil && len(branch.groups) > 0 && !asJSON && s.cfg.Interactive && requestID == "" {
 		groupLabels, err := promptInstallGroup(branch.groups, s.cfg.Interactive)
 		if err != nil {
 			return ui.PrintError(err)
@@ -138,6 +138,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, target
 		return ui.PrintError(err)
 	}
 	req.StackOnly = stackOnly
+	req.RequestID = requestID
 
 	if asJSON {
 		install, err := s.api.CreateInstall(ctx, appID, req)

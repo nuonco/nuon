@@ -126,6 +126,8 @@ func (h *Helpers) SetInstallInputsFromStack(ctx context.Context, install *app.In
 		false,
 		false,
 		app.WorkflowTypeInputUpdate,
+		nil,
+		"",
 	)
 	if err != nil {
 		// A stack reports inputs while provisioning, before the runner it is
