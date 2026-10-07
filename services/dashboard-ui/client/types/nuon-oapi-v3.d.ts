@@ -4508,6 +4508,8 @@ export interface components {
       resolved_tag?: string;
       /** @description runner details */
       runner_job?: components["schemas"]["app.RunnerJob"];
+      /** @description SignatureVerification is empty when the outcome is unknown (older builds, or failures before verification ran). */
+      signature_verification?: string;
       /** @description checksum of the component's source directory at build time */
       source_checksum?: string;
       /**

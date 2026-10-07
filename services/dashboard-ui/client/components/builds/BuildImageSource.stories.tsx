@@ -12,6 +12,7 @@ const build = {
     'sha256:9f1c4a0b1e2d3c4b5a6978d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f7081920a3b',
   source_media_type: 'application/vnd.oci.image.index.v1+json',
   resolved_at: '2026-08-24T10:12:00Z',
+  signature_verification: 'verified',
 } as unknown as TBuild
 
 export const Default = () => <BuildImageSource build={build} />

@@ -88,6 +88,17 @@ After verification succeeds, Nuon copies the resolved image and its attached OCI
 
 This preserves the metadata so the copied image can be inspected and verified in its destination registry. Registry credentials configured on the component are used for both image discovery and signature verification.
 
+## Verification status
+
+Each `container_image` build records its outcome, shown as a badge on the build in the dashboard and as `signature_verification` in the API:
+
+| Value | Meaning |
+| --- | --- |
+| `verified` | A configured authority verified the image signature. |
+| `rejected` | No configured authority verified the signature, so the build failed. |
+| `not_required` | The component does not set `require_signature`. |
+| _empty_ | Unknown: the build failed before verification ran, or predates this field. |
+
 ## Signature verification and OPA policies
 
 Native signature verification and [external image policies](/guides/external-image-policies) solve different problems:
