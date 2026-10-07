@@ -198,7 +198,11 @@ resources exits 2 with a clear error.
 
 ### Agent detection
 
-`pkg/agentclient` reads the process environment and names the coding agent that launched the CLI. Cursor is `CURSOR_AGENT=1` or `CURSOR_INVOKED_AS=agent`. Claude Code is `CLAUDECODE=1`. `NUON_AGENT_CLIENT=cursor|claude` overrides that; `NUON_AGENT_CLIENT=off` disables it.
+`pkg/agentclient` reads the process environment and names the coding agent that launched the CLI. Cursor is `CURSOR_AGENT=1` or `CURSOR_INVOKED_AS=agent`. Claude Code is `CLAUDECODE=1`. Those win over `AI_AGENT`. When they are unset, `AI_AGENT` is the fallback name (`amp`, `claude-code`, `cursor-cli@1.2.3`; the slug before `@` is used). An `AI_AGENT` that is not a slug, such as `1` or `true`, is ignored. `NUON_AGENT_CLIENT=cursor|claude` overrides all of that; `NUON_AGENT_CLIENT=off` disables it.
+
+Detection runs once in the persistent pre-run (`applyAgentMode` in `cmd/agent_use.go`). A match sets `Config.Agent` to the name and forces `Config.Interactive = false` for that process. Neither is written to `~/.nuon`. Commands check `cfg.Agent != ""` to take a prompt-free path instead of calling `agentclient.Detect()` again; the state file, REST attribution, and the MCP proxy all read `cfg.Agent`. This does not turn on the JSON envelope — that still needs `--output agent`. `nuon auth login` in this mode skips the deployment selector and URL confirm: it uses the configured `api_url` / `NUON_API_URL`, or `https://api.nuon.co` when none is set, then runs the normal browser sign-in.
+
+Attribution headers are set by `internal/attribution.Apply`. Any code that builds its own `nuon.New` client (login does, twice) must call it, or those requests go out unattributed.
 
 When a client is detected, `nuon agents`, `nuon agents --help`, and `nuon agents help` print `✓ agent (cursor) detected` or `✓ agent (claude) detected` at the top of the setup guide. The same name is sent as `X-Nuon-Agent` on control-plane REST requests and on the MCP proxy. A normal terminal does not set these variables, so the line and the header are omitted.
 

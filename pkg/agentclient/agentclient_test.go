@@ -60,6 +60,63 @@ func TestDetectEnv(t *testing.T) {
 			env:  []string{"NUON_AGENT_CLIENT=OFF", "CURSOR_INVOKED_AS=agent"},
 			ok:   false,
 		},
+		{
+			name: "ai agent slug",
+			env:  []string{"AI_AGENT=amp"},
+			want: "amp",
+			ok:   true,
+		},
+		{
+			name: "ai agent drops version",
+			env:  []string{"AI_AGENT=claude-code@2.1.0"},
+			want: "claude-code",
+			ok:   true,
+		},
+		{
+			name: "product variables win over ai agent",
+			env:  []string{"AI_AGENT=amp", "CLAUDECODE=1"},
+			want: Claude,
+			ok:   true,
+		},
+		{
+			name: "nuon override wins over ai agent",
+			env:  []string{"NUON_AGENT_CLIENT=cursor", "AI_AGENT=amp"},
+			want: Cursor,
+			ok:   true,
+		},
+		{
+			name: "off disables ai agent",
+			env:  []string{"NUON_AGENT_CLIENT=off", "AI_AGENT=amp"},
+			ok:   false,
+		},
+		{
+			name: "non-slug ai agent falls through",
+			env:  []string{"AI_AGENT=1", "CURSOR_AGENT=1"},
+			want: Cursor,
+			ok:   true,
+		},
+		{
+			name: "boolean ai agent falls through",
+			env:  []string{"AI_AGENT=true", "CLAUDECODE=1"},
+			want: Claude,
+			ok:   true,
+		},
+		{
+			name: "empty ai agent falls through",
+			env:  []string{"AI_AGENT=", "CLAUDECODE=1"},
+			want: Claude,
+			ok:   true,
+		},
+		{
+			name: "non-slug ai agent alone is not an agent",
+			env:  []string{"AI_AGENT=1"},
+			ok:   false,
+		},
+		{
+			name: "boolean ai agent alone is not an agent",
+			env:  []string{"AI_AGENT=true"},
+			ok:   false,
+		},
 	}
 
 	for _, tt := range tests {

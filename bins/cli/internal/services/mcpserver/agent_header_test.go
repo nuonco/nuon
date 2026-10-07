@@ -65,11 +65,3 @@ func TestAuthRoundTripperOmitsEmptyAgent(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, present)
 }
-
-func TestDetectedAgent(t *testing.T) {
-	t.Setenv(agentclient.EnvVar, agentclient.Claude)
-	require.Equal(t, agentclient.Claude, detectedAgent())
-
-	t.Setenv(agentclient.EnvVar, "off")
-	require.Empty(t, detectedAgent())
-}

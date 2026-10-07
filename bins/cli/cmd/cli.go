@@ -150,6 +150,7 @@ func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 	if agentmode.Enabled() {
 		c.cfg.Interactive = false
 	}
+	c.applyAgentMode()
 	c.cfg.AgentCommand = cmd.CommandPath()
 	c.recordAgentUse()
 

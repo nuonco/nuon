@@ -182,7 +182,7 @@ func (s *Service) connectUpstream(ctx context.Context) (*mcp.ClientSession, erro
 		return nil, err
 	}
 
-	agent := detectedAgent()
+	agent := s.cfg.Agent
 	userAgent := ""
 	command := ""
 	if agent != "" {
@@ -378,14 +378,6 @@ type authRoundTripper struct {
 	userAgent string
 	command   string
 	base      http.RoundTripper
-}
-
-func detectedAgent() string {
-	client, ok := agentclient.Detect()
-	if !ok {
-		return ""
-	}
-	return client.Name
 }
 
 func (a *authRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {

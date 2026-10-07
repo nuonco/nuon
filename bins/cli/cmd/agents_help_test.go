@@ -37,6 +37,7 @@ func TestAgentsSetupGuideDetectsAgent(t *testing.T) {
 		t.Setenv("CURSOR_AGENT", "")
 		t.Setenv("CURSOR_INVOKED_AS", "")
 		t.Setenv("CLAUDECODE", "")
+		t.Setenv(agentclient.AIAgentEnvVar, "")
 		guide := agentsSetupGuide(nil)
 		if strings.Contains(guide, "agent (") {
 			t.Fatalf("guide showed a detection line with no agent:\n%s", guide)

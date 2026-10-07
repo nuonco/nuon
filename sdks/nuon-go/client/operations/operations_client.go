@@ -608,6 +608,8 @@ type ClientService interface {
 
 	GetInstallActivity(params *GetInstallActivityParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActivityOK, error)
 
+	GetInstallAppConfigTreeDiff(params *GetInstallAppConfigTreeDiffParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAppConfigTreeDiffOK, error)
+
 	GetInstallAppConfigVersionDiff(params *GetInstallAppConfigVersionDiffParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAppConfigVersionDiffOK, error)
 
 	GetInstallAppConfigVersions(params *GetInstallAppConfigVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAppConfigVersionsOK, error)
@@ -12575,6 +12577,52 @@ func (a *Client) GetInstallActivity(params *GetInstallActivityParams, authInfo r
 }
 
 /*
+GetInstallAppConfigTreeDiff diffs an app config against an install s applied entities
+
+Compares a new app config to the install. Stack, runner, sandbox, and each component use that entity's applied app config. An empty applied config compares that entity to nothing.
+*/
+func (a *Client) GetInstallAppConfigTreeDiff(params *GetInstallAppConfigTreeDiffParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAppConfigTreeDiffOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallAppConfigTreeDiffParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallAppConfigTreeDiff",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/app-configs/{config_id}/diff",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallAppConfigTreeDiffReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallAppConfigTreeDiffOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallAppConfigTreeDiff: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetInstallAppConfigVersionDiff gets the diff for an install app config version
 
 Returns the component diff for a specific app config version transition.
@@ -19785,7 +19833,7 @@ func (a *Client) MngVMShutDown(params *MngVMShutDownParams, authInfo runtime.Cli
 /*
 MoveInstallToAppBranch moves an install to another app branch
 
-Moves the install to the given app branch and reconciles it onto that branch's current app config. An install belongs to exactly one app branch and this is the only way to change which one; labels and install group selectors decide which group inside the owning branch deploys it. The destination branch must belong to the same app and have an active, non-preview app config. There is no way to move an install off a branch without naming another.
+Moves the install to the given app branch and reconciles it onto that branch's current app config when one exists. An install belongs to exactly one app branch and this is the only way to change which one; labels and install group selectors decide which group inside the owning branch deploys it. The destination branch must belong to the same app. A branch with no completed run still accepts the install, and the deploy waits until a branch run completes. There is no way to move an install off a branch without naming another.
 */
 func (a *Client) MoveInstallToAppBranch(params *MoveInstallToAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MoveInstallToAppBranchOK, error) {
 	// NOTE: parameters are not validated before sending

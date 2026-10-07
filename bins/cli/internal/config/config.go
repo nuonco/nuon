@@ -45,6 +45,9 @@ type Config struct {
 	ConfigFlag string `mapstructure:"-"`
 	// AgentCommand is the cobra command path for this process. Not persisted.
 	AgentCommand string `mapstructure:"-"`
+	// Agent is the coding agent that launched this process, or empty for a
+	// person. When set, Interactive is false. Not persisted.
+	Agent string `mapstructure:"-"`
 }
 
 // NewConfig creates a new config instance.
