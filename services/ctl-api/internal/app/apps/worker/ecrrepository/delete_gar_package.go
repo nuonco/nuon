@@ -65,12 +65,7 @@ func (a *Activities) DeleteGARPackage(ctx context.Context, req *DeleteGARPackage
 		return nil, fmt.Errorf("unable to create artifact registry client: %w", err)
 	}
 
-	name := fmt.Sprintf(
-		"projects/%s/locations/%s/repositories/%s/packages/%s",
-		repo.project, repo.location, repo.name, url.PathEscape(req.OrgID+"/"+req.AppID),
-	)
-
-	op, found, err := deleteGARPackage(ctx, name)
+	op, found, err := deleteGARPackage(ctx, repo.packageName(req.OrgID, req.AppID))
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete gar package: %w", err)
 	}
@@ -101,13 +96,24 @@ func (a *Activities) DeleteGARPackage(ctx context.Context, req *DeleteGARPackage
 	return &DeleteGARPackageResponse{}, nil
 }
 
+func (r *garRepository) packageName(orgID, appID string) string {
+	return fmt.Sprintf(
+		"projects/%s/locations/%s/repositories/%s/packages/%s",
+		r.project, r.location, r.name, url.PathEscape(orgID+"/"+appID),
+	)
+}
+
+func newGARDeleteRequest(ctx context.Context, name string) (*http.Request, error) {
+	return http.NewRequestWithContext(ctx, http.MethodDelete, "https://artifactregistry.googleapis.com/v1/"+name, nil)
+}
+
 func deleteGARPackage(ctx context.Context, name string) (*artifactregistry.Operation, bool, error) {
 	client, err := google.DefaultClient(ctx, artifactregistry.CloudPlatformScope)
 	if err != nil {
 		return nil, false, fmt.Errorf("unable to create gcp http client: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, "https://artifactregistry.googleapis.com/v1/"+name, nil)
+	req, err := newGARDeleteRequest(ctx, name)
 	if err != nil {
 		return nil, false, fmt.Errorf("unable to create request: %w", err)
 	}

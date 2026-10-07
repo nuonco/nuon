@@ -11,21 +11,21 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 )
 
-type DeleteRepositoryRequest struct {
+type DeleteECRRepositoryRequest struct {
 	OrgID string `validate:"required" json:"org_id"`
 	AppID string `validate:"required" json:"app_id"`
 }
 
-func (r DeleteRepositoryRequest) validate() error {
+func (r DeleteECRRepositoryRequest) validate() error {
 	validate := validator.New()
 	return validate.Struct(r)
 }
 
-type DeleteRepositoryResponse struct{}
+type DeleteECRRepositoryResponse struct{}
 
 // @temporal-gen-v2 activity
 // @schedule-to-close-timeout 1m
-func (a *Activities) DeleteRepository(ctx context.Context, req *DeleteRepositoryRequest) (*DeleteRepositoryResponse, error) {
+func (a *Activities) DeleteECRRepository(ctx context.Context, req *DeleteECRRepositoryRequest) (*DeleteECRRepositoryResponse, error) {
 	if err := req.validate(); err != nil {
 		return nil, fmt.Errorf("failed to validate request: %w", err)
 	}
@@ -49,5 +49,5 @@ func (a *Activities) DeleteRepository(ctx context.Context, req *DeleteRepository
 		return nil, fmt.Errorf("failed to delete ecr repo: %w", err)
 	}
 
-	return &DeleteRepositoryResponse{}, nil
+	return &DeleteECRRepositoryResponse{}, nil
 }

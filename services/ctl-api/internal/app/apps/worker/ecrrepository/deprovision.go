@@ -45,7 +45,7 @@ func (w Wkflow) DeprovisionECRRepository(ctx workflow.Context, req *DeprovisionE
 	default:
 		cloud = "aws"
 		l.Debug("destroying ecr repository")
-		_, err = AwaitDeleteRepository(ctx, &DeleteRepositoryRequest{
+		_, err = AwaitDeleteECRRepository(ctx, &DeleteECRRepositoryRequest{
 			OrgID: req.OrgID,
 			AppID: req.AppID,
 		})
