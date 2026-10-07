@@ -53,6 +53,10 @@ type AppAppBranchConfig struct {
 	// install groups
 	InstallGroups []*AppAppBranchInstallGroup `json:"install_groups"`
 
+	// InstallUpdatePolicy is unused. A new run always supersedes an open install
+	// update. The column stays so existing rows do not need a migration.
+	InstallUpdatePolicy string `json:"install_update_policy,omitempty"`
+
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
