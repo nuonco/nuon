@@ -62,6 +62,7 @@ type customDeploymentOutputs struct {
 	DeploymentName       string
 	OutputKeys           []string
 	ParameterDefinitions map[string]ARMParameter
+	HoistedParameters    map[string]ARMParameter
 }
 
 func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any, map[string]ARMParameter, []customDeploymentIdentity, []customDeploymentOutputs, error) {
@@ -275,6 +276,7 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 		}
 
 		// Merge hoisted params
+		outputsMeta[len(outputsMeta)-1].HoistedParameters = maps.Clone(defaultParams)
 		for k, v := range defaultParams {
 			hoistedParams[k] = v
 		}

@@ -9,6 +9,41 @@
         "description": "Force re-run of deployment scripts on each deploy."
       }
     },
+    "enableBga70431fdRole": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Create the emergency role."
+      }
+    },
+    "enableCustom39cc0214Role": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Create the db-admin role."
+      }
+    },
+    "enableDeprovisionRole": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Create the deprovision role."
+      }
+    },
+    "enableMaintenanceRole": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Create the maintenance role."
+      }
+    },
+    "enableProvisionRole": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Create the provision role."
+      }
+    },
     "enableTelemetryIngress": {
       "type": "bool",
       "defaultValue": true,
@@ -540,6 +575,7 @@
     },
     {
       "apiVersion": "2023-01-31",
+      "condition": "[parameters('enableProvisionRole')]",
       "location": "[parameters('location')]",
       "name": "[format('{0}-provision', parameters('nuonInstallID'))]",
       "tags": "[variables('commonTags')]",
@@ -547,6 +583,7 @@
     },
     {
       "apiVersion": "2023-01-31",
+      "condition": "[parameters('enableMaintenanceRole')]",
       "location": "[parameters('location')]",
       "name": "[format('{0}-maintenance', parameters('nuonInstallID'))]",
       "tags": "[variables('commonTags')]",
@@ -554,6 +591,7 @@
     },
     {
       "apiVersion": "2023-01-31",
+      "condition": "[parameters('enableDeprovisionRole')]",
       "location": "[parameters('location')]",
       "name": "[format('{0}-deprovision', parameters('nuonInstallID'))]",
       "tags": "[variables('commonTags')]",
@@ -561,6 +599,7 @@
     },
     {
       "apiVersion": "2023-01-31",
+      "condition": "[parameters('enableCustom39cc0214Role')]",
       "location": "[parameters('location')]",
       "name": "[format('{0}-custom-db-admin', parameters('nuonInstallID'))]",
       "tags": "[variables('commonTags')]",
@@ -568,6 +607,7 @@
     },
     {
       "apiVersion": "2023-01-31",
+      "condition": "[parameters('enableBga70431fdRole')]",
       "location": "[parameters('location')]",
       "name": "[format('{0}-bg-emergency', parameters('nuonInstallID'))]",
       "tags": "[variables('commonTags')]",
@@ -575,6 +615,7 @@
     },
     {
       "apiVersion": "2022-09-01",
+      "condition": "[parameters('enableProvisionRole')]",
       "dependsOn": [
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-provision', parameters('nuonInstallID')))]"
       ],
@@ -587,7 +628,7 @@
         "mode": "Incremental",
         "parameters": {
           "principalID": {
-            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-provision', parameters('nuonInstallID'))), '2023-01-31').principalId]"
+            "value": "[if(parameters('enableProvisionRole'), reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-provision', parameters('nuonInstallID'))), '2023-01-31').principalId, '')]"
           },
           "roleName": {
             "value": "[format('{0}-provision-role', parameters('nuonInstallID'))]"
@@ -649,6 +690,7 @@
     },
     {
       "apiVersion": "2022-09-01",
+      "condition": "[parameters('enableMaintenanceRole')]",
       "dependsOn": [
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-maintenance', parameters('nuonInstallID')))]"
       ],
@@ -661,7 +703,7 @@
         "mode": "Incremental",
         "parameters": {
           "principalID": {
-            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-maintenance', parameters('nuonInstallID'))), '2023-01-31').principalId]"
+            "value": "[if(parameters('enableMaintenanceRole'), reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-maintenance', parameters('nuonInstallID'))), '2023-01-31').principalId, '')]"
           },
           "roleName": {
             "value": "[format('{0}-maintenance-role', parameters('nuonInstallID'))]"
@@ -723,6 +765,7 @@
     },
     {
       "apiVersion": "2022-09-01",
+      "condition": "[parameters('enableDeprovisionRole')]",
       "dependsOn": [
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-deprovision', parameters('nuonInstallID')))]"
       ],
@@ -735,7 +778,7 @@
         "mode": "Incremental",
         "parameters": {
           "principalID": {
-            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-deprovision', parameters('nuonInstallID'))), '2023-01-31').principalId]"
+            "value": "[if(parameters('enableDeprovisionRole'), reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-deprovision', parameters('nuonInstallID'))), '2023-01-31').principalId, '')]"
           },
           "roleName": {
             "value": "[format('{0}-deprovision-role', parameters('nuonInstallID'))]"
@@ -797,6 +840,7 @@
     },
     {
       "apiVersion": "2022-09-01",
+      "condition": "[parameters('enableCustom39cc0214Role')]",
       "dependsOn": [
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-custom-db-admin', parameters('nuonInstallID')))]"
       ],
@@ -809,7 +853,7 @@
         "mode": "Incremental",
         "parameters": {
           "principalID": {
-            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-custom-db-admin', parameters('nuonInstallID'))), '2023-01-31').principalId]"
+            "value": "[if(parameters('enableCustom39cc0214Role'), reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-custom-db-admin', parameters('nuonInstallID'))), '2023-01-31').principalId, '')]"
           },
           "roleName": {
             "value": "[format('{0}-custom-db-admin-role', parameters('nuonInstallID'))]"
@@ -870,6 +914,7 @@
     },
     {
       "apiVersion": "2022-04-01",
+      "condition": "[parameters('enableCustom39cc0214Role')]",
       "dependsOn": [
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-custom-db-admin', parameters('nuonInstallID')))]"
       ],
@@ -883,6 +928,7 @@
     },
     {
       "apiVersion": "2022-09-01",
+      "condition": "[parameters('enableBga70431fdRole')]",
       "dependsOn": [
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bg-emergency', parameters('nuonInstallID')))]"
       ],
@@ -895,7 +941,7 @@
         "mode": "Incremental",
         "parameters": {
           "principalID": {
-            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bg-emergency', parameters('nuonInstallID'))), '2023-01-31').principalId]"
+            "value": "[if(parameters('enableBga70431fdRole'), reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bg-emergency', parameters('nuonInstallID'))), '2023-01-31').principalId, '')]"
           },
           "roleName": {
             "value": "[format('{0}-bg-emergency-role', parameters('nuonInstallID'))]"
@@ -956,6 +1002,7 @@
     },
     {
       "apiVersion": "2022-04-01",
+      "condition": "[parameters('enableBga70431fdRole')]",
       "dependsOn": [
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bg-emergency', parameters('nuonInstallID')))]"
       ],
@@ -1004,6 +1051,9 @@
           },
           "runnerVmSize": {
             "value": "[parameters('runnerVmSize')]"
+          },
+          "userAssignedIdentities": {
+            "value": "[union(createObject(), if(parameters('enableProvisionRole'), createObject(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-provision', parameters('nuonInstallID'))), createObject()), createObject()), if(parameters('enableMaintenanceRole'), createObject(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-maintenance', parameters('nuonInstallID'))), createObject()), createObject()), if(parameters('enableDeprovisionRole'), createObject(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-deprovision', parameters('nuonInstallID'))), createObject()), createObject()), if(parameters('enableCustom39cc0214Role'), createObject(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-custom-db-admin', parameters('nuonInstallID'))), createObject()), createObject()), if(parameters('enableBga70431fdRole'), createObject(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bg-emergency', parameters('nuonInstallID'))), createObject()), createObject()))]"
           }
         },
         "template": {
@@ -1045,6 +1095,9 @@
             },
             "runnerVmSize": {
               "type": "string"
+            },
+            "userAssignedIdentities": {
+              "type": "object"
             }
           },
           "resources": [
@@ -1054,14 +1107,8 @@
                 "[resourceId('Microsoft.Network/loadBalancers', format('{0}-telemetry', parameters('nuonInstallID')))]"
               ],
               "identity": {
-                "type": "SystemAssigned, UserAssigned",
-                "userAssignedIdentities": {
-                  "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bg-emergency', parameters('nuonInstallID')))]": {},
-                  "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-custom-db-admin', parameters('nuonInstallID')))]": {},
-                  "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-deprovision', parameters('nuonInstallID')))]": {},
-                  "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-maintenance', parameters('nuonInstallID')))]": {},
-                  "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-provision', parameters('nuonInstallID')))]": {}
-                }
+                "type": "[if(empty(parameters('userAssignedIdentities')), 'SystemAssigned', 'SystemAssigned, UserAssigned')]",
+                "userAssignedIdentities": "[if(empty(parameters('userAssignedIdentities')), null(), parameters('userAssignedIdentities'))]"
               },
               "location": "[parameters('location')]",
               "name": "[format('{0}-vmss', parameters('nuonInstallID'))]",
@@ -1398,23 +1445,23 @@
           },
           {
             "name": "PROVISION_IDENTITY_CLIENT_ID",
-            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-provision', parameters('nuonInstallID'))), '2023-01-31').clientId]"
+            "value": "[if(parameters('enableProvisionRole'), reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-provision', parameters('nuonInstallID'))), '2023-01-31').clientId, '')]"
           },
           {
             "name": "MAINTENANCE_IDENTITY_CLIENT_ID",
-            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-maintenance', parameters('nuonInstallID'))), '2023-01-31').clientId]"
+            "value": "[if(parameters('enableMaintenanceRole'), reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-maintenance', parameters('nuonInstallID'))), '2023-01-31').clientId, '')]"
           },
           {
             "name": "DEPROVISION_IDENTITY_CLIENT_ID",
-            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-deprovision', parameters('nuonInstallID'))), '2023-01-31').clientId]"
+            "value": "[if(parameters('enableDeprovisionRole'), reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-deprovision', parameters('nuonInstallID'))), '2023-01-31').clientId, '')]"
           },
           {
             "name": "CUSTOM_DB_ADMIN_IDENTITY_CLIENT_ID",
-            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-custom-db-admin', parameters('nuonInstallID'))), '2023-01-31').clientId]"
+            "value": "[if(parameters('enableCustom39cc0214Role'), reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-custom-db-admin', parameters('nuonInstallID'))), '2023-01-31').clientId, '')]"
           },
           {
             "name": "BG_EMERGENCY_IDENTITY_CLIENT_ID",
-            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bg-emergency', parameters('nuonInstallID'))), '2023-01-31').clientId]"
+            "value": "[if(parameters('enableBga70431fdRole'), reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-bg-emergency', parameters('nuonInstallID'))), '2023-01-31').clientId, '')]"
           }
         ],
         "forceUpdateTag": "[parameters('deployTimestamp')]",
