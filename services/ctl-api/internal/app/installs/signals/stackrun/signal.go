@@ -85,6 +85,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return err
 	}
+	if version.Status.Status == app.StatusCancelled {
+		if err := activities.AwaitClearInstallStackVersionCallback(ctx, activities.ClearInstallStackVersionCallbackRequest{
+			VersionID: version.ID,
+		}); err != nil {
+			l.Warn("unable to clear callback ref for cancelled stack version", zap.Error(err))
+		}
+		return nil
+	}
 
 	runType := s.determineRunType(ctx, version, install)
 
@@ -146,6 +154,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 }
 
 func (s *Signal) determineRunType(ctx workflow.Context, version *app.InstallStackVersion, install *app.Install) app.StackVersionRunType {
+	if version.Status.Status == app.StatusCancelled {
+		return app.StackVersionRunTypeOutOfBand
+	}
+
 	cbResp, err := activities.AwaitGetInstallStackVersionCallback(ctx, activities.GetInstallStackVersionCallbackRequest{
 		VersionID: version.ID,
 	})
@@ -235,6 +247,15 @@ func (s *Signal) resolveVersion(ctx workflow.Context, install *app.Install) (*ap
 }
 
 func (s *Signal) handleProvisionComplete(ctx workflow.Context, install *app.Install, version *app.InstallStackVersion, l log.Logger) {
+	if version.Status.Status == app.StatusCancelled {
+		if err := activities.AwaitClearInstallStackVersionCallback(ctx, activities.ClearInstallStackVersionCallbackRequest{
+			VersionID: version.ID,
+		}); err != nil {
+			l.Warn("unable to clear callback ref for cancelled stack version", zap.Error(err))
+		}
+		return
+	}
+
 	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   install.RunnerID,
 		OwnerType: "runners",

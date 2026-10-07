@@ -173,27 +173,34 @@ func buildRepoRef(connected *app.ConnectedGithubVCSConfig, public *app.PublicGit
 	return "", ""
 }
 
+func runBranchRepo(run *app.AppBranchRun) (repo, branch string) {
+	if run == nil {
+		return "", ""
+	}
+	if cfg := run.AppBranchConfig.ConnectedGithubVCSConfig; cfg != nil {
+		return cfg.Repo, cfg.Branch
+	}
+	if cfg := run.AppBranchConfig.PublicGitVCSConfig; cfg != nil {
+		return cfg.Repo, cfg.Branch
+	}
+	return "", ""
+}
+
 func buildTracksBranchSource(run *app.AppBranchRun, build *app.ComponentBuild) bool {
-	connectedCfg, publicCfg := buildVCSConfigs(build)
-
-	if branchCfg, cmpCfg := run.AppBranchConfig.ConnectedGithubVCSConfig, connectedCfg; branchCfg != nil && cmpCfg != nil {
-		return strings.EqualFold(branchCfg.Repo, cmpCfg.Repo) && branchCfg.Branch == cmpCfg.Branch
+	branchRepo, branchName := runBranchRepo(run)
+	cmpRepo, cmpBranch := buildRepoRef(buildVCSConfigs(build))
+	if branchRepo == "" || cmpRepo == "" || branchName == "" || cmpBranch == "" {
+		return false
 	}
-
-	if branchCfg, cmpCfg := run.AppBranchConfig.PublicGitVCSConfig, publicCfg; branchCfg != nil && cmpCfg != nil {
-		return strings.EqualFold(branchCfg.Repo, cmpCfg.Repo) && branchCfg.Branch == cmpCfg.Branch
-	}
-
-	return false
+	return strings.EqualFold(branchRepo, cmpRepo) && branchName == cmpBranch
 }
 
 func buildRefCanBePinned(build *app.ComponentBuild) bool {
-	if build.GitRef == nil {
+	if build.GitRef == nil || *build.GitRef == "" {
 		return true
 	}
-
-	_, cfg := buildVCSConfigs(build)
-	return cfg != nil && *build.GitRef == cfg.Branch
+	_, branch := buildRepoRef(buildVCSConfigs(build))
+	return branch != "" && *build.GitRef == branch
 }
 
 func buildVCSConfigs(build *app.ComponentBuild) (*app.ConnectedGithubVCSConfig, *app.PublicGitVCSConfig) {

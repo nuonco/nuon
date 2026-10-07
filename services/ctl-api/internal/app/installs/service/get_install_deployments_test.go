@@ -30,3 +30,28 @@ func TestBuildInstallDeploymentSortsAffectedResources(t *testing.T) {
 
 	assert.Equal(t, []string{"api", "beta", "cache", "worker", "zeta"}, d.AffectedResources.Components)
 }
+
+func TestApplyPinnedConfigBranchFillsProvisionWithoutRun(t *testing.T) {
+	pinned := &InstallDeploymentAppBranchRef{ID: "br_1", Name: "continuous-release", RunID: "run_1", CommitSHA: "abc"}
+	provision := InstallDeployment{
+		Type:      InstallDeploymentTypeProvision,
+		AppBranch: &InstallDeploymentAppBranchRef{ID: "br_1", Name: "continuous-release"},
+	}
+	applyPinnedConfigBranch(&provision, pinned)
+	assert.Equal(t, "run_1", provision.AppBranch.RunID)
+	assert.Equal(t, "abc", provision.AppBranch.CommitSHA)
+
+	linked := InstallDeployment{
+		Type:      InstallDeploymentTypeProvision,
+		AppBranch: &InstallDeploymentAppBranchRef{ID: "br_1", Name: "continuous-release", RunID: "run_existing"},
+	}
+	applyPinnedConfigBranch(&linked, pinned)
+	assert.Equal(t, "run_existing", linked.AppBranch.RunID)
+
+	deploy := InstallDeployment{
+		Type:      InstallDeploymentTypeComponentDeploy,
+		AppBranch: &InstallDeploymentAppBranchRef{ID: "br_1", Name: "continuous-release"},
+	}
+	applyPinnedConfigBranch(&deploy, pinned)
+	assert.Empty(t, deploy.AppBranch.RunID)
+}

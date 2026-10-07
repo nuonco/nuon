@@ -6,7 +6,9 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { BranchRunChangesSummary } from '@/components/branches/BranchRunChangesSummary'
 import { stepStatusCategory } from '@/components/branches/shared/step-status'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { getBranchRunBuilds } from '@/lib'
+import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
+import { getBranchRunBuilds, getBranchRunComparison } from '@/lib'
+import { commitUrl } from './run-source'
 import type { TAPIError } from '@/types'
 import { BranchOverview, type TFailedBuildLink } from './BranchOverview'
 import { changedBuildRows, type TBuildMeta } from './changed-builds'
@@ -46,6 +48,9 @@ export const BranchOverviewContainer = () => {
     showLoadingTrack,
     groups,
     hasPlan,
+    showInstalls,
+    previewMode,
+    repoSlug,
     isLoading,
   } = useRolloutGroups()
   const approvals = useGroupPlanApprovals(
@@ -58,6 +63,40 @@ export const BranchOverviewContainer = () => {
       : undefined,
     groups
   )
+
+  const { data: comparison } = useQuery({
+    queryKey: [
+      'branch-run-comparison',
+      orgId,
+      appId,
+      branchId,
+      branchRunId,
+      'config',
+    ],
+    queryFn: () =>
+      getBranchRunComparison({
+        orgId: orgId!,
+        appId: appId!,
+        branchId,
+        runId: branchRunId!,
+        includeDiff: ['config'],
+      }),
+    enabled: !!previewMode && !!orgId && !!appId && !!branchRunId,
+    placeholderData: keepPreviousData,
+    retry: 1,
+  })
+  const baseSha = comparison?.base_run?.vcs_connection_commit?.sha
+  const baseline = previewMode
+    ? comparison
+      ? {
+          sha: baseSha,
+          shaUrl: commitUrl(repoSlug, baseSha),
+          runHref: comparison.base_run?.workflow_id
+            ? `/${orgId}/apps/${appId}/branches/${branchId}/runs/${comparison.base_run.workflow_id}`
+            : undefined,
+        }
+      : undefined
+    : undefined
 
   const { data: builds } = useQuery({
     queryKey: ['branch-run-builds', orgId, appId, branchId, branchRunId],
@@ -122,6 +161,7 @@ export const BranchOverviewContainer = () => {
         steps: workflowSteps,
         sha: rollout?.sha,
         groupStatuses: groups.map((group) => group.status),
+        previewMode,
       })
     : undefined
   const appConfigStage = loadingStages?.find(
@@ -155,13 +195,27 @@ export const BranchOverviewContainer = () => {
       />
       <BranchOverview
         hasPlan={hasPlan}
+        showInstalls={showInstalls}
+        showRolloutLink={!previewMode}
+        previewMode={previewMode}
         isLoading={isLoading}
-        rollout={rollout}
+        rollout={
+          rollout
+            ? {
+                ...rollout,
+                previewMode: previewMode
+                  ? previewModeDisplayLabel(previewMode)
+                  : undefined,
+                baseline,
+              }
+            : undefined
+        }
         changes={
           branchRunId ? (
             <BranchRunChangesSummary
               branchId={branchId}
               appBranchRunId={branchRunId}
+              builds={metaBuilds}
               title="Template and source changes"
               isPending={changesPending}
               headerAction={

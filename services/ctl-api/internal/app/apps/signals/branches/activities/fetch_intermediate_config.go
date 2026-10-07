@@ -29,6 +29,7 @@ func (a *Activities) fetchIntermediateConfig(ctx context.Context, sourceDir stri
 		V:             v,
 		FileProcessor: func(name string, obj map[string]any) map[string]any { return obj },
 		SkipBranches:  true,
+		SkipInstalls:  true,
 	})
 	if err != nil {
 		var configErr config.ErrConfig

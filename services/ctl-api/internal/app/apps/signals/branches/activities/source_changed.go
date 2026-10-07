@@ -8,9 +8,11 @@ import (
 )
 
 type componentSource struct {
-	Name      string
-	Repo      string
-	Directory string
+	Name        string
+	Repo        string
+	Directory   string
+	Branch      string
+	VCSConfigID string
 }
 
 // normalizeRepoPath cleans a repo-relative path for prefix matching.
@@ -151,6 +153,44 @@ func enrichConfigDiffWithSourceChanged(
 	}
 
 	return out
+}
+
+// markComponentSourceChanged records a source-only change. Components missing
+// from the config diff are added so the change is visible.
+func markComponentSourceChanged(out *ConfigDiffWithSourceOutput, name string) {
+	if out == nil || name == "" {
+		return
+	}
+	if out.ComponentSourceChanged == nil {
+		out.ComponentSourceChanged = map[string]bool{}
+	}
+	out.ComponentSourceChanged[name] = true
+
+	idx := -1
+	for i := range out.Sections {
+		if out.Sections[i].Name == "Components" {
+			idx = i
+			break
+		}
+	}
+	if idx == -1 {
+		out.Sections = append(out.Sections, ConfigDiffSectionWithSource{Name: "Components"})
+		idx = len(out.Sections) - 1
+	}
+
+	for i, entry := range out.Sections[idx].Entries {
+		if entry.Name == name {
+			out.Sections[idx].Entries[i].SourceChanged = true
+			return
+		}
+	}
+	out.Sections[idx].Entries = append(out.Sections[idx].Entries, ConfigDiffEntryWithSource{
+		Op:            "change",
+		Name:          name,
+		SourceChanged: true,
+	})
+	out.Sections[idx].Changed++
+	out.Changed++
 }
 
 // sectionMemberFallbackKeys returns extra member keys to try for a section

@@ -155,6 +155,98 @@ order = 1
 	require.Equal(t, "default", cfg.Branches[0].Name)
 }
 
+func TestParseDirSkipBranchesIgnoresUnparseableBranchFile(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.Mkdir(filepath.Join(dir, "branches"), 0755))
+	require.NoError(t, os.Mkdir(filepath.Join(dir, "components"), 0755))
+	files := map[string]string{
+		"metadata.toml": `version = "v2"`,
+		"sandbox.toml": `terraform_version = "1.11.3"
+[public_repo]
+repo = "nuonco/aws-eks-sandbox"
+directory = "."
+branch = "main"
+`,
+		"runner.toml": `runner_type = "aws"
+helm_driver = "configmap"
+init_script_url = "https://example.com/init.sh"
+`,
+		"branches/default.toml": `name = "default"
+
+[[install_groups]]
+name = "everyone"
+order = 1
+default = true
+`,
+		"branches/broken.toml": "this is not toml {{{",
+	}
+	for name, contents := range files {
+		require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte(contents), 0644))
+	}
+	fileProcessor := func(_ string, obj map[string]any) map[string]any { return obj }
+
+	_, err := ParseDir(context.Background(), ParseConfig{
+		Dirname:       dir,
+		FileProcessor: fileProcessor,
+	})
+	require.Error(t, err)
+
+	cfg, err := ParseDir(context.Background(), ParseConfig{
+		Dirname:       dir,
+		FileProcessor: fileProcessor,
+		SkipBranches:  true,
+	})
+	require.NoError(t, err)
+	require.Len(t, cfg.Branches, 1)
+	require.Equal(t, "default", cfg.Branches[0].Name)
+}
+
+func TestParseDirSkipInstallsIgnoresInstallFiles(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.Mkdir(filepath.Join(dir, "installs"), 0755))
+	require.NoError(t, os.Mkdir(filepath.Join(dir, "components"), 0755))
+	files := map[string]string{
+		"metadata.toml": `version = "v2"`,
+		"sandbox.toml": `terraform_version = "1.11.3"
+[public_repo]
+repo = "nuonco/aws-eks-sandbox"
+directory = "."
+branch = "main"
+`,
+		"runner.toml": `runner_type = "aws"
+helm_driver = "configmap"
+init_script_url = "https://example.com/init.sh"
+`,
+		"installs.toml": `[connected_repo]
+repo = "acme"
+directory = "."
+branch = "main"
+`,
+		"installs/foo.toml": "this is not toml {{{",
+	}
+	for name, contents := range files {
+		require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte(contents), 0644))
+	}
+	fileProcessor := func(_ string, obj map[string]any) map[string]any { return obj }
+
+	_, err := ParseDir(context.Background(), ParseConfig{
+		Dirname:       dir,
+		FileProcessor: fileProcessor,
+	})
+	require.Error(t, err)
+
+	cfg, err := ParseDir(context.Background(), ParseConfig{
+		Dirname:       dir,
+		FileProcessor: fileProcessor,
+		SkipInstalls:  true,
+	})
+	require.NoError(t, err)
+	require.Empty(t, cfg.Installs)
+	require.NotNil(t, cfg.InstallsConfig)
+	require.NotNil(t, cfg.InstallsConfig.ConnectedRepo)
+	require.Equal(t, "acme", cfg.InstallsConfig.ConnectedRepo.Repo)
+}
+
 func TestParseDirResolvesHelmValuesFromConfigRoot(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.MkdirAll(filepath.Join(dir, "components"), 0755))
