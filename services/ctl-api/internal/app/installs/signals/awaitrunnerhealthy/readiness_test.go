@@ -70,6 +70,65 @@ func TestRequireActiveFailsImmediatelyWhenProcessIsNotActive(t *testing.T) {
 	env.AssertExpectations(t)
 }
 
+func TestRequireActiveWaitsForStartingRunner(t *testing.T) {
+	for _, status := range []app.RunnerStatus{app.RunnerStatusAwaitingHeartbeat, app.RunnerStatusProvisioning, app.RunnerStatusReprovisioning} {
+		t.Run(string(status), func(t *testing.T) {
+			env, sig, runner := readinessTestEnvironment(t, ModeRequireActive)
+			startedAt := env.Now()
+			runner.Status = status
+
+			env.OnActivity((*activities.Activities).GetCurrentRunnerProcess, mock.Anything, mock.Anything, mock.Anything).
+				Return(nil, temporal.NewNonRetryableApplicationError("not found", "not found", nil)).
+				Once()
+			env.OnActivity((*activities.Activities).GetCurrentRunnerProcess, mock.Anything, mock.Anything, mock.Anything).
+				Return(testRunnerProcess(app.RunnerProcessStatusActive), nil).
+				Once()
+
+			env.ExecuteWorkflow(func(ctx workflow.Context) error { return sig.Execute(ctx) })
+
+			require.True(t, env.IsWorkflowCompleted())
+			require.NoError(t, env.GetWorkflowError())
+			require.GreaterOrEqual(t, env.Now().Sub(startedAt), 14*time.Second)
+			env.AssertExpectations(t)
+		})
+	}
+}
+
+func TestRequireActiveStillFailsFastForOfflineRunner(t *testing.T) {
+	env, sig, runner := readinessTestEnvironment(t, ModeRequireActive)
+	startedAt := env.Now()
+	runner.Status = app.RunnerStatusOffline
+
+	env.OnActivity((*activities.Activities).GetCurrentRunnerProcess, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil, temporal.NewNonRetryableApplicationError("not found", "not found", nil)).
+		Once()
+
+	env.ExecuteWorkflow(func(ctx workflow.Context) error { return sig.Execute(ctx) })
+
+	require.True(t, env.IsWorkflowCompleted())
+	require.ErrorContains(t, env.GetWorkflowError(), "runner has no active process")
+	require.Equal(t, startedAt, env.Now())
+	env.AssertExpectations(t)
+}
+
+func TestExistingHistoryKeepsRequireActiveFailFastForStartingRunner(t *testing.T) {
+	env, sig, runner := readinessTestEnvironment(t, ModeRequireActive)
+	runner.Status = app.RunnerStatusAwaitingHeartbeat
+	env.OnGetVersion(requireActiveAwaitsStartingRunnerVersion, workflow.DefaultVersion, 1).
+		Return(workflow.DefaultVersion).
+		Once()
+
+	env.OnActivity((*activities.Activities).GetCurrentRunnerProcess, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil, temporal.NewNonRetryableApplicationError("not found", "not found", nil)).
+		Once()
+
+	env.ExecuteWorkflow(func(ctx workflow.Context) error { return sig.Execute(ctx) })
+
+	require.True(t, env.IsWorkflowCompleted())
+	require.ErrorContains(t, env.GetWorkflowError(), "runner has no active process")
+	env.AssertExpectations(t)
+}
+
 func TestDisabledRunnerSkipsProcessReadiness(t *testing.T) {
 	env, sig, runner := readinessTestEnvironment(t, ModeRequireActive)
 	runner.Status = app.RunnerStatusActive
