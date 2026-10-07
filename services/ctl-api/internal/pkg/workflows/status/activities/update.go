@@ -121,7 +121,7 @@ func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app
 	if err != nil {
 		return err
 	}
-	status, err = nextCompositeStatus(ctx, existingStatus, status)
+	status, err = NextCompositeStatus(ctx, existingStatus, status)
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app
 	return nil
 }
 
-func nextCompositeStatus(ctx context.Context, existingStatus, status app.CompositeStatus) (app.CompositeStatus, error) {
+func NextCompositeStatus(ctx context.Context, existingStatus, status app.CompositeStatus) (app.CompositeStatus, error) {
 	createdBy, err := cctx.AccountIDFromContext(ctx)
 	if err != nil {
 		return app.CompositeStatus{}, errors.Wrap(err, "unable to get created by")
