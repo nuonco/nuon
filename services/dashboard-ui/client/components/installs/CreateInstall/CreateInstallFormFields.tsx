@@ -31,7 +31,7 @@ interface ICreateInstallFormFields {
   autoApproveDescription?: string
   submitError?: TAPIError | null
   validateName?: (name: string) => Promise<string | undefined>
-  onSubmit: (values: InstallFormValues) => Promise<unknown> | void
+  onSubmit: (values: InstallFormValues) => Promise<unknown> | false | void
   onStateChange: (state: ICreateFormTriggerState) => void
 }
 
