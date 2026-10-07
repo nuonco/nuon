@@ -506,6 +506,15 @@ func (i *Workflow) Indexes(db *gorm.DB) []migrations.Index {
 			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 			Option:      "WHERE deleted_at = 0 AND request->>'request_id' IS NOT NULL",
 		},
+		{
+			Name: "idx_install_workflows_provision_request_lookup",
+			Columns: []string{
+				"org_id",
+				"type",
+				"(request->>'request_id')",
+			},
+			Option: "WHERE deleted_at = 0 AND type = 'provision' AND request->>'request_id' IS NOT NULL",
+		},
 	}
 }
 

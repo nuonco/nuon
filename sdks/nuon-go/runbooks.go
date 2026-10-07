@@ -124,7 +124,7 @@ func (c *client) GetInstallRunbookRun(ctx context.Context, installID, runID stri
 }
 
 // CreateInstallRunbookRun triggers a runbook run on an install.
-func (c *client) CreateInstallRunbookRun(ctx context.Context, installID, runbookID string) (*models.AppInstallRunbookRun, error) {
+func (c *client) CreateInstallRunbookRun(ctx context.Context, installID, runbookID string, requestID ...string) (*models.AppInstallRunbookRun, error) {
 	var result models.AppInstallRunbookRun
 	path := fmt.Sprintf(
 		"%s/v1/installs/%s/runbooks/%s/runs",
@@ -132,7 +132,11 @@ func (c *client) CreateInstallRunbookRun(ctx context.Context, installID, runbook
 		url.PathEscape(installID),
 		url.PathEscape(runbookID),
 	)
-	err := c.triggerRequest(ctx, http.MethodPost, path, struct{}{}, http.StatusCreated, &result)
+	body := any(struct{}{})
+	if id := optionalRequestID(requestID); id != "" {
+		body = &models.ServiceCreateRunbookRunRequest{RequestID: id}
+	}
+	err := c.triggerRequest(ctx, http.MethodPost, path, body, http.StatusCreated, &result)
 	if err != nil {
 		return nil, err
 	}

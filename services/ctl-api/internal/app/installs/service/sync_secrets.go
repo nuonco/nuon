@@ -85,6 +85,7 @@ func (s *service) SyncSecrets(ctx *gin.Context) {
 		app.WorkflowTypeSyncSecrets,
 		map[string]string{},
 		req.PlanOnly,
+		nil,
 	)
 	if err != nil {
 		ctx.Error(err)

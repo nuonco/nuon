@@ -62,7 +62,7 @@ func (s *service) mcpUpdateInstallInputs(ctx context.Context, _ *mcp.CallToolReq
 
 	deployDependents := in.DeployDependents == nil || *in.DeployDependents
 
-	inputs, err := s.applyInstallInputsUpdate(ctx, install, patch, in.Role, deployDependents, in.InputsOnly, in.PlanOnly, app.WorkflowTypeInputUpdate)
+	inputs, err := s.applyInstallInputsUpdate(ctx, install, patch, in.Role, deployDependents, in.InputsOnly, in.PlanOnly, app.WorkflowTypeInputUpdate, nil)
 	if err != nil {
 		return nil, nil, err
 	}

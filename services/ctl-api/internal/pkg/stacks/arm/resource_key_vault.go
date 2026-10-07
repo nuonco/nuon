@@ -23,20 +23,17 @@ func azureKeyVaultSecretName(name string) string {
 	return strings.ReplaceAll(name, "_", "-")
 }
 
-// azureSecretParamName turns an app-config secret name into an ARM parameter name:
-// db_password reads as "Secret Db Password" on the portal's deployment form.
+// azureSecretParamName turns an app-config secret name into an ARM parameter name.
 func azureSecretParamName(name string) string {
 	return camelParamName("secret", name)
 }
 
 type azureSecret struct {
-	name      string
-	kvName    string
-	paramName string
-	// description is what the customer reads next to the field in the portal.
-	description string
-	// defaultValue empty means the customer has to supply one; ARM then refuses to
-	// deploy without it rather than writing a blank secret.
+	name         string
+	kvName       string
+	paramName    string
+	displayName  string
+	description  string
 	defaultValue string
 }
 
@@ -55,15 +52,12 @@ func azureCustomerSecrets(appCfg *app.AppConfig) []azureSecret {
 		if s.AutoGenerate {
 			continue
 		}
-		desc := s.Description
-		if desc == "" {
-			desc = s.DisplayName
-		}
 		out = append(out, azureSecret{
 			name:         s.Name,
 			kvName:       azureKeyVaultSecretName(s.Name),
 			paramName:    azureSecretParamName(s.Name),
-			description:  desc,
+			displayName:  s.DisplayName,
+			description:  s.Description,
 			defaultValue: s.Default,
 		})
 	}
@@ -96,6 +90,19 @@ func azureSecretParameters(inp *stacks.TemplateInput, scope armScope) map[string
 	}
 
 	return params
+}
+
+func azureSecretLabels(inp *stacks.TemplateInput) map[string]string {
+	if inp == nil {
+		return nil
+	}
+	labels := map[string]string{}
+	for _, s := range azureCustomerSecrets(inp.AppCfg) {
+		if s.displayName != "" {
+			labels[s.paramName] = s.displayName
+		}
+	}
+	return labels
 }
 
 // getKeyVaultResources creates the install Key Vault and the customer's secrets in

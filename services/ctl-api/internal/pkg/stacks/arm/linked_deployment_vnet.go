@@ -50,6 +50,62 @@ func hoistableDefault(def any) bool {
 	return !strings.HasPrefix(s, "[")
 }
 
+func portalScalarParameter(typ string) bool {
+	switch typ {
+	case "string", "securestring", "int", "bool":
+		return true
+	default:
+		return false
+	}
+}
+
+type vnetCIDRDefault struct {
+	name        string
+	value       string
+	description string
+}
+
+func builtinVNetCIDRs() []vnetCIDRDefault {
+	return []vnetCIDRDefault{
+		{"vnetCIDR", "10.128.0.0/16", "IP range (CIDR notation) for this VNet."},
+		{"publicSubnet1CIDR", "10.128.0.0/26", "IP range (CIDR notation) for the public subnet."},
+		{"publicSubnet2CIDR", "10.128.0.64/26", "IP range (CIDR notation) for the public subnet in the second zone (optional)."},
+		{"publicSubnet3CIDR", "10.128.0.128/26", "IP range (CIDR notation) for the public subnet in the third zone (optional)."},
+		{"runnerSubnetCIDR", "10.128.128.0/24", "IP range (CIDR notation) for the dedicated private subnet for the runner."},
+		{"privateSubnet1CIDR", "10.128.130.0/24", "IP range (CIDR notation) for the private subnet."},
+		{"privateSubnet2CIDR", "10.128.132.0/24", "IP range (CIDR notation) for the private subnet in the second zone (optional)."},
+		{"privateSubnet3CIDR", "10.128.134.0/24", "IP range (CIDR notation) for the private subnet in the third zone (optional)."},
+	}
+}
+
+func defaultVNetCustomerParameters() map[string]ARMParameter {
+	params := make(map[string]ARMParameter, len(builtinVNetCIDRs()))
+	for _, cidr := range builtinVNetCIDRs() {
+		params[cidr.name] = ARMParameter{
+			Type:         "string",
+			DefaultValue: cidr.value,
+			Metadata:     &ARMParameterMetadata{Description: cidr.description},
+		}
+	}
+	return params
+}
+
+func defaultVNetTemplateParameters() map[string]any {
+	parameters := map[string]any{
+		"nuonInstallID": map[string]any{"type": "string"},
+		"location":      map[string]any{"type": "string"},
+		"commonTags":    map[string]any{"type": "object"},
+	}
+	for _, cidr := range builtinVNetCIDRs() {
+		parameters[cidr.name] = map[string]any{
+			"type":         "string",
+			"defaultValue": cidr.value,
+			"metadata":     map[string]any{"description": cidr.description},
+		}
+	}
+	return parameters
+}
+
 // vnetContractOutputs are the output names the root template and the phone-home
 // read off vnetDeployment. A custom VNet template has to emit every one of them;
 // see vnetPassthroughOutputs for what happens to the rest.
@@ -94,8 +150,16 @@ func vnetPassthroughOutputs(declared map[string]struct{}) []string {
 func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput, scope armScope) (map[string]any, map[string]ARMParameter, []string, error) {
 	templateURL := inp.VPCNestedStackTemplateURL
 	if templateURL == "" {
-		// No custom VNet template - build inline default VNet resources
-		return t.getDefaultVNetDeployment(inp, scope), nil, nil, nil
+		deployment := t.getDefaultVNetDeployment(inp, scope)
+		if !scope.subscription {
+			return deployment, nil, nil, nil
+		}
+		params := defaultVNetCustomerParameters()
+		deploymentParams := deployment["properties"].(map[string]any)["parameters"].(map[string]any)
+		for name := range params {
+			deploymentParams[name] = map[string]any{"value": fmt.Sprintf("[parameters('%s')]", name)}
+		}
+		return deployment, params, nil, nil
 	}
 
 	// Custom VNet template — fetch and inspect declared parameters.
@@ -163,17 +227,12 @@ func (t *Templates) getDefaultVNetDeployment(inp *stacks.TemplateInput, scope ar
 	location := scope.rootLocationRef()
 
 	defaultParams := map[string]any{
-		"vnetCIDR":           map[string]any{"value": "10.128.0.0/16"},
-		"publicSubnet1CIDR":  map[string]any{"value": "10.128.0.0/26"},
-		"publicSubnet2CIDR":  map[string]any{"value": "10.128.0.64/26"},
-		"publicSubnet3CIDR":  map[string]any{"value": "10.128.0.128/26"},
-		"runnerSubnetCIDR":   map[string]any{"value": "10.128.128.0/24"},
-		"privateSubnet1CIDR": map[string]any{"value": "10.128.130.0/24"},
-		"privateSubnet2CIDR": map[string]any{"value": "10.128.132.0/24"},
-		"privateSubnet3CIDR": map[string]any{"value": "10.128.134.0/24"},
-		"nuonInstallID":      map[string]any{"value": installID},
-		"location":           map[string]any{"value": location},
-		"commonTags":         map[string]any{"value": "[variables('commonTags')]"},
+		"nuonInstallID": map[string]any{"value": installID},
+		"location":      map[string]any{"value": location},
+		"commonTags":    map[string]any{"value": "[variables('commonTags')]"},
+	}
+	for _, cidr := range builtinVNetCIDRs() {
+		defaultParams[cidr.name] = map[string]any{"value": cidr.value}
 	}
 
 	deployment := map[string]any{
@@ -308,27 +367,7 @@ func (t *Templates) getDefaultVNetTemplate() map[string]any {
 	return map[string]any{
 		"$schema":        "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
 		"contentVersion": "1.0.0.0",
-		"parameters": map[string]any{
-			"nuonInstallID": map[string]any{"type": "string"},
-			"location":      map[string]any{"type": "string"},
-			"commonTags":    map[string]any{"type": "object"},
-			"vnetCIDR": map[string]any{"type": "string", "defaultValue": "10.128.0.0/16",
-				"metadata": map[string]any{"description": "IP range (CIDR notation) for this VNet."}},
-			"publicSubnet1CIDR": map[string]any{"type": "string", "defaultValue": "10.128.0.0/26",
-				"metadata": map[string]any{"description": "IP range (CIDR notation) for the public subnet."}},
-			"publicSubnet2CIDR": map[string]any{"type": "string", "defaultValue": "10.128.0.64/26",
-				"metadata": map[string]any{"description": "IP range (CIDR notation) for the public subnet in the second zone (optional)."}},
-			"publicSubnet3CIDR": map[string]any{"type": "string", "defaultValue": "10.128.0.128/26",
-				"metadata": map[string]any{"description": "IP range (CIDR notation) for the public subnet in the third zone (optional)."}},
-			"runnerSubnetCIDR": map[string]any{"type": "string", "defaultValue": "10.128.128.0/24",
-				"metadata": map[string]any{"description": "IP range (CIDR notation) for the dedicated private subnet for the runner."}},
-			"privateSubnet1CIDR": map[string]any{"type": "string", "defaultValue": "10.128.130.0/24",
-				"metadata": map[string]any{"description": "IP range (CIDR notation) for the private subnet."}},
-			"privateSubnet2CIDR": map[string]any{"type": "string", "defaultValue": "10.128.132.0/24",
-				"metadata": map[string]any{"description": "IP range (CIDR notation) for the private subnet in the second zone (optional)."}},
-			"privateSubnet3CIDR": map[string]any{"type": "string", "defaultValue": "10.128.134.0/24",
-				"metadata": map[string]any{"description": "IP range (CIDR notation) for the private subnet in the third zone (optional)."}},
-		},
+		"parameters":     defaultVNetTemplateParameters(),
 		"variables": map[string]any{
 			"createPublicSubnet2":  "[not(empty(parameters('publicSubnet2CIDR')))]",
 			"createPublicSubnet3":  "[not(empty(parameters('publicSubnet3CIDR')))]",

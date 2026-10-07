@@ -27,9 +27,9 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 	vnetDeployment := scope.vnetDeploymentName(inp.Install.ID)
 
 	// Custom runner template — fetch and inspect declared parameters.
-	// Unlike the generic custom-nested-stack path we do NOT hoist arbitrary
-	// params. The runner template is Nuon-owned plumbing; every parameter
-	// is either baked by us or has a safe default in the template itself.
+	// Nuon-managed values are baked in. runnerVmSize and telemetry stay
+	// customer-facing when the template declares them. At subscription scope
+	// every other scalar parameter is hoisted as well.
 	armTmpl, err := fetchARMTemplate(templateURL)
 	if err != nil {
 		return nil, nil, fmt.Errorf("runner linked deployment: %w", err)
@@ -44,8 +44,8 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 	// found" at deploy time — so we reject that combination up front.
 	// Read from the root: the map is a parameter value the outer scope evaluates
 	// before handing it to the custom template.
-	userAssigned, uamiDependsOn := operationIdentityAttachment(operationIDs, scope)
-	if len(userAssigned) > 0 {
+	userAssigned, hasIdentities, uamiDependsOn := operationIdentityAttachment(operationIDs, scope)
+	if hasIdentities {
 		if _, ok := armTmpl.Parameters["userAssignedIdentities"]; !ok {
 			return nil, nil, fmt.Errorf(
 				"runner linked deployment: custom runner template %q must declare a 'userAssignedIdentities' object parameter to receive the per-operation managed identities this app's permissions define; omit runner_nested_template_url to use the built-in runner instead",
@@ -69,7 +69,7 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		"commonTags":          "[variables('commonTags')]",
 	}
 
-	if len(userAssigned) > 0 {
+	if hasIdentities {
 		managedParams["userAssignedIdentities"] = userAssigned
 	}
 
@@ -78,9 +78,6 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		if val, ok := managedParams[paramName]; ok {
 			deploymentParams[paramName] = map[string]any{"value": val}
 		}
-		// Parameters not in managedParams are left to their template
-		// defaults. If the template declares a required param we don't
-		// know about, ARM will surface a clear deployment error.
 	}
 
 	customerParams := map[string]ARMParameter{}
@@ -95,6 +92,12 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 			customerParams[name] = p
 		}
 		deploymentParams["enableTelemetryIngress"] = map[string]any{"value": "[parameters('enableTelemetryIngress')]"}
+	}
+	if scope.subscription {
+		for name, param := range runnerHoistedParameters(armTmpl) {
+			customerParams[name] = param
+			deploymentParams[name] = map[string]any{"value": fmt.Sprintf("[parameters('%s')]", name)}
+		}
 	}
 
 	dependsOn := append([]string{vnetDeployment}, uamiDependsOn...)
@@ -129,8 +132,20 @@ func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operat
 
 	// VMSS references the operation identities, so they must exist first.
 	dependsOn := []string{vnetDeployment}
-	if _, uamiDependsOn := operationIdentityAttachment(operationIDs, scope); len(uamiDependsOn) > 0 {
-		dependsOn = append(dependsOn, uamiDependsOn...)
+	userAssigned, hasIdentities, uamiDependsOn := operationIdentityAttachment(operationIDs, scope)
+	dependsOn = append(dependsOn, uamiDependsOn...)
+
+	runnerParams := map[string]any{
+		"enableTelemetryIngress": map[string]any{"value": "[parameters('enableTelemetryIngress')]"},
+		"nuonInstallID":          map[string]any{"value": scope.nuonIDRef("nuonInstallID")},
+		"location":               map[string]any{"value": scope.rootLocationRef()},
+		"runnerSubnetId":         map[string]any{"value": fmt.Sprintf("[reference('%s').outputs.runnerSubnetId.value]", vnetDeployment)},
+		"customData":             map[string]any{"value": customData},
+		"commonTags":             map[string]any{"value": "[variables('commonTags')]"},
+		runnerVmSizeParamName:    map[string]any{"value": "[parameters('" + runnerVmSizeParamName + "')]"},
+	}
+	if hasIdentities {
+		runnerParams["userAssignedIdentities"] = map[string]any{"value": userAssigned}
 	}
 
 	deployment := map[string]any{
@@ -143,16 +158,8 @@ func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operat
 			"expressionEvaluationOptions": map[string]any{
 				"scope": "inner",
 			},
-			"parameters": map[string]any{
-				"enableTelemetryIngress": map[string]any{"value": "[parameters('enableTelemetryIngress')]"},
-				"nuonInstallID":          map[string]any{"value": scope.nuonIDRef("nuonInstallID")},
-				"location":               map[string]any{"value": scope.rootLocationRef()},
-				"runnerSubnetId":         map[string]any{"value": fmt.Sprintf("[reference('%s').outputs.runnerSubnetId.value]", vnetDeployment)},
-				"customData":             map[string]any{"value": customData},
-				"commonTags":             map[string]any{"value": "[variables('commonTags')]"},
-				runnerVmSizeParamName:    map[string]any{"value": "[parameters('" + runnerVmSizeParamName + "')]"},
-			},
-			"template": t.getDefaultRunnerTemplate(operationIDs),
+			"parameters": runnerParams,
+			"template":   t.getDefaultRunnerTemplate(hasIdentities),
 		},
 	}
 
@@ -220,35 +227,65 @@ func containsValue(values []any, want string) bool {
 	return false
 }
 
+var runnerManagedParamNames = []string{
+	"nuonInstallID",
+	"nuonOrgID",
+	"nuonAppID",
+	"location",
+	"runnerId",
+	"runnerApiUrl",
+	"runnerInitScriptUrl",
+	"runnerSubnetId",
+	"customData",
+	"commonTags",
+	"userAssignedIdentities",
+	runnerVmSizeParamName,
+	"enableTelemetryIngress",
+}
+
+func runnerHoistedParameters(armTmpl *armTemplateShape) map[string]ARMParameter {
+	_, extra := extractARMParameters(armTmpl, runnerManagedParamNames)
+	out := map[string]ARMParameter{}
+	for name, param := range extra {
+		if !hoistableDefault(param.DefaultValue) || !portalScalarParameter(param.Type) {
+			continue
+		}
+		out[name] = param
+	}
+	return out
+}
+
 func runnerCustomerParameters(inp *stacks.TemplateInput) map[string]ARMParameter {
 	params := telemetryIngressParameters()
 	params[runnerVmSizeParamName] = hoistedRunnerVMSizeParameter(inp, nil, nil, "")
 	return params
 }
 
-func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdentity) map[string]any {
+func (t *Templates) getDefaultRunnerTemplate(hasIdentities bool) map[string]any {
+	params := map[string]any{
+		"enableTelemetryIngress": map[string]any{"type": "bool", "defaultValue": true},
+		"nuonInstallID":          map[string]any{"type": "string"},
+		"location":               map[string]any{"type": "string"},
+		"runnerSubnetId":         map[string]any{"type": "string"},
+		"customData":             map[string]any{"type": "string"},
+		"commonTags":             map[string]any{"type": "object"},
+		runnerVmSizeParamName:    map[string]any{"type": "string"},
+	}
 	identity := map[string]any{"type": "SystemAssigned"}
-	// The runner deployment is RG-targeted, so its inline template reads the
-	// identities at resource-group scope alongside them.
-	if userAssigned, _ := operationIdentityAttachment(operationIDs, armScope{}); len(userAssigned) > 0 {
+	// The attachment arrives already filtered to the enabled roles, so it can be empty
+	// even when the app declares roles; the VMSS rejects UserAssigned with no entries.
+	if hasIdentities {
+		params["userAssignedIdentities"] = map[string]any{"type": "object"}
 		identity = map[string]any{
-			"type":                   "SystemAssigned, UserAssigned",
-			"userAssignedIdentities": userAssigned,
+			"type":                   "[if(empty(parameters('userAssignedIdentities')), 'SystemAssigned', 'SystemAssigned, UserAssigned')]",
+			"userAssignedIdentities": "[if(empty(parameters('userAssignedIdentities')), null(), parameters('userAssignedIdentities'))]",
 		}
 	}
 
 	return map[string]any{
 		"$schema":        "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
 		"contentVersion": "1.0.0.0",
-		"parameters": map[string]any{
-			"enableTelemetryIngress": map[string]any{"type": "bool", "defaultValue": true},
-			"nuonInstallID":          map[string]any{"type": "string"},
-			"location":               map[string]any{"type": "string"},
-			"runnerSubnetId":         map[string]any{"type": "string"},
-			"customData":             map[string]any{"type": "string"},
-			"commonTags":             map[string]any{"type": "object"},
-			runnerVmSizeParamName:    map[string]any{"type": "string"},
-		},
+		"parameters":     params,
 		"resources": []any{
 			map[string]any{
 				"type":       "Microsoft.Compute/virtualMachineScaleSets",

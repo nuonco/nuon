@@ -114,11 +114,15 @@ func (c *client) MoveInstallToAppBranch(ctx context.Context, installID, appBranc
 	return resp.Payload, nil
 }
 
-func (c *client) DeleteInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error) {
-	resp, err := c.genClient.Operations.DeleteInstall(&operations.DeleteInstallParams{
+func (c *client) DeleteInstall(ctx context.Context, installID string, requestID ...string) (*models.AppWorkflowResponse, error) {
+	params := &operations.DeleteInstallParams{
 		InstallID: installID,
 		Context:   ctx,
-	}, c.getOrgIDAuthInfo())
+	}
+	if id := optionalRequestID(requestID); id != "" {
+		params.Req = &models.ServiceDeleteInstallRequest{RequestID: id}
+	}
+	resp, err := c.genClient.Operations.DeleteInstall(params, c.getOrgIDAuthInfo())
 	if err != nil {
 		return nil, err
 	}
@@ -138,12 +142,13 @@ func (c *client) ForgetInstall(ctx context.Context, installID string) (bool, err
 	return true, nil
 }
 
-func (c *client) ReprovisionInstall(ctx context.Context, installID string, role string) (*models.AppWorkflowResponse, error) {
+func (c *client) ReprovisionInstall(ctx context.Context, installID string, role string, requestID ...string) (*models.AppWorkflowResponse, error) {
 	resp, err := c.genClient.Operations.ReprovisionInstall(&operations.ReprovisionInstallParams{
 		InstallID: installID,
 		Context:   ctx,
 		Req: &models.ServiceReprovisionInstallRequest{
-			Role: role,
+			Role:      role,
+			RequestID: optionalRequestID(requestID),
 		},
 	}, c.getOrgIDAuthInfo())
 	if err != nil {
@@ -153,13 +158,14 @@ func (c *client) ReprovisionInstall(ctx context.Context, installID string, role 
 	return resp.Payload, nil
 }
 
-func (c *client) ReprovisionInstallStack(ctx context.Context, installID string, role string) (*models.AppWorkflowResponse, error) {
+func (c *client) ReprovisionInstallStack(ctx context.Context, installID string, role string, requestID ...string) (*models.AppWorkflowResponse, error) {
 	resp, err := c.genClient.Operations.ReprovisionInstallStack(&operations.ReprovisionInstallStackParams{
 		InstallID: installID,
 		Context:   ctx,
 		Req: &models.ServiceReprovisionInstallStackRequest{
-			PlanOnly: false,
-			Role:     role,
+			PlanOnly:  false,
+			Role:      role,
+			RequestID: optionalRequestID(requestID),
 		},
 	}, c.getOrgIDAuthInfo())
 	if err != nil {
@@ -169,10 +175,13 @@ func (c *client) ReprovisionInstallStack(ctx context.Context, installID string, 
 	return resp.Payload, nil
 }
 
-func (c *client) DeprovisionInstall(ctx context.Context, installID string, role string) (*models.AppWorkflowResponse, error) {
+func (c *client) DeprovisionInstall(ctx context.Context, installID string, role string, requestID ...string) (*models.AppWorkflowResponse, error) {
 	var result models.AppWorkflowResponse
 	path := fmt.Sprintf("%s/v1/installs/%s/deprovision", c.APIURL, url.PathEscape(installID))
-	err := c.triggerRequest(ctx, http.MethodPost, path, &models.ServiceDeprovisionInstallRequest{Role: role}, http.StatusCreated, &result)
+	err := c.triggerRequest(ctx, http.MethodPost, path, &models.ServiceDeprovisionInstallRequest{
+		Role:      role,
+		RequestID: optionalRequestID(requestID),
+	}, http.StatusCreated, &result)
 	if err != nil {
 		return nil, err
 	}

@@ -30,6 +30,10 @@ type ServiceUpdateInstallInputsRequest struct {
 	// reprovisioning the sandbox, or running update-input lifecycle actions.
 	InputsOnly bool `json:"inputs_only,omitempty"`
 
+	// request id
+	// Max Length: 255
+	RequestID string `json:"request_id,omitempty"`
+
 	// role
 	Role string `json:"role,omitempty"`
 }
@@ -42,6 +46,10 @@ func (m *ServiceUpdateInstallInputsRequest) Validate(formats strfmt.Registry) er
 		res = append(res, err)
 	}
 
+	if err := m.validateRequestID(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -51,6 +59,18 @@ func (m *ServiceUpdateInstallInputsRequest) Validate(formats strfmt.Registry) er
 func (m *ServiceUpdateInstallInputsRequest) validateInputs(formats strfmt.Registry) error {
 
 	if err := validate.Required("inputs", "body", m.Inputs); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ServiceUpdateInstallInputsRequest) validateRequestID(formats strfmt.Registry) error {
+	if swag.IsZero(m.RequestID) { // not required
+		return nil
+	}
+
+	if err := validate.MaxLength("request_id", "body", m.RequestID, 255); err != nil {
 		return err
 	}
 

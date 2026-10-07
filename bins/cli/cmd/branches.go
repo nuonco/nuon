@@ -65,10 +65,11 @@ func (c *cli) newBranchesCmd(deprecatedAlias bool) *cobra.Command {
 	branchesCmd.AddCommand(createCmd)
 
 	var (
-		force   bool
-		noWait  bool
-		runType string
-		runRef  string
+		force     bool
+		noWait    bool
+		runType   string
+		runRef    string
+		requestID string
 	)
 	triggerCmd := &cobra.Command{
 		Use:         "trigger",
@@ -76,10 +77,11 @@ func (c *cli) newBranchesCmd(deprecatedAlias bool) *cobra.Command {
 		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			opts := apps.TriggerBranchRunOptions{
-				Force:   force,
-				NoWait:  noWait,
-				RunType: runType,
-				RunRef:  runRef,
+				Force:     force,
+				NoWait:    noWait,
+				RunType:   runType,
+				RunRef:    runRef,
+				RequestID: requestID,
 			}
 			return c.apps.TriggerBranchRun(cmd.Context(), appID, branchID, opts, PrintJSON)
 		}),
@@ -91,6 +93,7 @@ func (c *cli) newBranchesCmd(deprecatedAlias bool) *cobra.Command {
 	triggerCmd.Flags().StringVar(&runType, "run-type", "", "Git source to deploy: pr, tag, or commit")
 	triggerCmd.Flags().StringVar(&runRef, "run-ref", "", "Pull request number, tag name, or commit SHA, matching --run-type")
 	triggerCmd.MarkFlagsRequiredTogether("run-type", "run-ref")
+	addRequestIDFlag(triggerCmd, &requestID)
 	branchesCmd.AddCommand(triggerCmd)
 
 	var (
@@ -143,6 +146,8 @@ and installation. Use flags with --output json or --output agent for scripting.`
 	previewCmd.Flags().BoolVar(&previewAutoApprove, "auto-approve", false, "Skip the approval gate before deploy steps")
 	previewCmd.Flags().BoolVar(&previewWait, "wait", false, "Block until the preview workflow completes")
 	previewCmd.Flags().BoolVar(&previewNoWait, "no-wait", false, "Return after triggering without opening the workflow viewer")
+	previewCmd.MarkFlagsMutuallyExclusive("pr-number", "git-ref")
+	previewCmd.MarkFlagsMutuallyExclusive("wait", "no-wait")
 	branchesCmd.AddCommand(previewCmd)
 
 	var confirmDelete bool

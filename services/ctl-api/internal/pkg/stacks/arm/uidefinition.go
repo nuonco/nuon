@@ -40,10 +40,11 @@ import (
 // — get a field on the Basics step, since there is nowhere else for their value
 // to come from.
 func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, string, error) {
-	wrapperParams, err := t.quickLinkWrapperParameters(inp)
+	inner, err := t.getAzureTemplate(inp)
 	if err != nil {
 		return nil, "", err
 	}
+	wrapperParams := inner.Parameters
 
 	scope := scopeFor(inp)
 	location := inp.Install.AzureAccount.Location
@@ -66,11 +67,20 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 		"message":    "You need permission to create deployment stacks in this subscription.",
 	})
 
+	description := fmt.Sprintf(
+		"Deploys the Nuon install stack for `%s`. Re-running this for an existing install updates its deployment stack in place.",
+		inp.Install.ID,
+	)
+	var roleIDs []azureOperationIdentity
+	if inp.AppCfg != nil {
+		roleIDs = azureOperationIdentities(inp.AppCfg)
+	}
+	if len(roleIDs) > 0 {
+		description += " A role unticked here is detached from the runner; its identity is not deleted."
+	}
+
 	basicsConfig := map[string]any{
-		"description": fmt.Sprintf(
-			"Deploys the Nuon install stack for `%s`. Re-running this for an existing install updates its deployment stack in place.",
-			inp.Install.ID,
-		),
+		"description": description,
 		"subscription": map[string]any{
 			"constraints":       map[string]any{"validations": subscriptionValidations},
 			"resourceProviders": []string{"Microsoft.Compute"},
@@ -107,24 +117,62 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 	}
 
 	inputLabels := azureInputLabels(inp)
+	for name, label := range azureSecretLabels(inp) {
+		inputLabels[name] = label
+	}
+	claimed := map[string]bool{}
+	for _, group := range inner.stackParameterGroups {
+		elements := []any{}
+		for _, name := range sortedParamNames(group.Params) {
+			claimed[name] = true
+			element, output, ok := parameterElement(name, group.Params[name], inputLabels[name], group.Name)
+			if !ok {
+				continue
+			}
+			elements = append(elements, element)
+			outputs[name] = output
+		}
+		if len(elements) == 0 {
+			continue
+		}
+		basics = append(basics, map[string]any{
+			"name":     group.Name,
+			"type":     "Microsoft.Common.Section",
+			"label":    group.Label,
+			"elements": elements,
+		})
+	}
+	basics = appendRolesSection(basics, outputs, claimed, wrapperParams, roleIDs)
+	secretElements := []any{}
+	rest := []any{}
 	for _, name := range sortedParamNames(wrapperParams) {
-		if name == "location" || name == "deployTimestamp" {
+		if claimed[name] || name == "location" || name == "deployTimestamp" {
 			continue
 		}
-
-		if name == runnerVmSizeParamName {
-			basics = append(basics, runnerVMSizeUIElement(wrapperParams[name]))
-			outputs[name] = "[basics('" + runnerVmSizeParamName + "')]"
-			continue
+		section := ""
+		if wrapperParams[name].Type == "securestring" {
+			section = "secrets"
 		}
-
-		element, output, ok := basicsElement(name, wrapperParams[name], inputLabels[name])
+		element, output, ok := parameterElement(name, wrapperParams[name], inputLabels[name], section)
 		if !ok {
 			continue
 		}
-		basics = append(basics, element)
 		outputs[name] = output
+		if section == "secrets" {
+			secretElements = append(secretElements, element)
+			continue
+		}
+		rest = append(rest, element)
 	}
+	if len(secretElements) > 0 {
+		basics = append(basics, map[string]any{
+			"name":     "secrets",
+			"type":     "Microsoft.Common.Section",
+			"label":    "Secrets",
+			"elements": secretElements,
+		})
+	}
+	basics = append(basics, rest...)
 
 	uiDef := map[string]any{
 		"$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
@@ -145,6 +193,51 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 
 	hash := sha256.Sum256(uiDefBytes)
 	return uiDefBytes, hex.EncodeToString(hash[:]), nil
+}
+
+// appendRolesSection groups every role toggle under one section. Provision,
+// maintenance, and deprovision come first, then custom roles, then break-glass.
+// Each toggle stays a checkbox; unticking one detaches that role from the runner.
+func appendRolesSection(basics []any, outputs map[string]any, claimed map[string]bool, params map[string]ARMParameter, ids []azureOperationIdentity) []any {
+	labels := azureRoleEnableLabels(ids)
+	elements := []any{}
+	for _, id := range azureRolesForUI(ids) {
+		name := azureRoleEnableParamName(id)
+		p, declared := params[name]
+		if !declared {
+			continue
+		}
+		claimed[name] = true
+		element, output, ok := parameterElement(name, p, labels[name], "roles")
+		if !ok {
+			continue
+		}
+		elements = append(elements, element)
+		outputs[name] = output
+	}
+	if len(elements) == 0 {
+		return basics
+	}
+	return append(basics, map[string]any{
+		"name":     "roles",
+		"type":     "Microsoft.Common.Section",
+		"label":    "Roles",
+		"elements": elements,
+	})
+}
+
+func parameterElement(name string, p ARMParameter, label, section string) (map[string]any, string, bool) {
+	if name == runnerVmSizeParamName {
+		return runnerVMSizeUIElement(p), fmt.Sprintf("[%s]", parameterOutputRef(section, name)), true
+	}
+	return basicsElement(name, p, label, section)
+}
+
+func parameterOutputRef(section, name string) string {
+	if section == "" {
+		return fmt.Sprintf("basics('%s')", name)
+	}
+	return fmt.Sprintf("basics('%s').%s", section, name)
 }
 
 func runnerVMSizeUIElement(p ARMParameter) map[string]any {
@@ -239,7 +332,8 @@ func sortedParamNames(params map[string]ARMParameter) []string {
 // the wrapper's own default applies. Nothing currently reaches the root with those
 // types: a nested template's non-scalar default is either Nuon-managed or left
 // unhoisted.
-func basicsElement(name string, p ARMParameter, label string) (map[string]any, string, bool) {
+func basicsElement(name string, p ARMParameter, label, section string) (map[string]any, string, bool) {
+	ref := parameterOutputRef(section, name)
 	if label == "" {
 		label = humanizeParamName(name)
 	}
@@ -268,12 +362,16 @@ func basicsElement(name string, p ARMParameter, label string) (map[string]any, s
 		if p.DefaultValue != nil {
 			element["defaultValue"] = humanizeParamName(fmt.Sprintf("%v", p.DefaultValue))
 		}
-		return element, fmt.Sprintf("[basics('%s')]", name), true
+		return element, fmt.Sprintf("[%s]", ref), true
 	}
 
 	switch p.Type {
 	case "securestring":
 		element["type"] = "Microsoft.Common.PasswordBox"
+		element["label"] = map[string]any{
+			"password":        label,
+			"confirmPassword": "Confirm " + label,
+		}
 		element["constraints"] = map[string]any{"required": true}
 		element["options"] = map[string]any{"hideConfirmation": true}
 	case "bool":
@@ -293,7 +391,7 @@ func basicsElement(name string, p ARMParameter, label string) (map[string]any, s
 		}
 		// The portal hands back every TextBox value as a string, and ARM will not
 		// coerce one into an int parameter.
-		return element, fmt.Sprintf("[int(basics('%s'))]", name), true
+		return element, fmt.Sprintf("[int(%s)]", ref), true
 	case "string":
 		element["type"] = "Microsoft.Common.TextBox"
 		def, hasDefault := p.DefaultValue.(string)
@@ -305,7 +403,7 @@ func basicsElement(name string, p ARMParameter, label string) (map[string]any, s
 		return nil, "", false
 	}
 
-	return element, fmt.Sprintf("[basics('%s')]", name), true
+	return element, fmt.Sprintf("[%s]", ref), true
 }
 
 // humanizeParamName turns a camelCase parameter name into the spaced, title-cased

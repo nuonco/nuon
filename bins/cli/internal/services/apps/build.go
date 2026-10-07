@@ -12,7 +12,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-func (s *Service) Build(ctx context.Context, appID, configID string) error {
+func (s *Service) Build(ctx context.Context, appID, configID, requestID string) error {
 	if appID == "" {
 		appID = s.getAppID()
 	}
@@ -35,7 +35,7 @@ func (s *Service) Build(ctx context.Context, appID, configID string) error {
 
 	ui.PrintLn(fmt.Sprintf("building app config %s", configID))
 
-	wf, err := s.api.BuildAppConfig(ctx, appID, configID)
+	wf, err := s.api.BuildAppConfig(ctx, appID, configID, requestID)
 	if err != nil {
 		return ui.PrintError(errors.Wrap(err, "unable to start build"))
 	}

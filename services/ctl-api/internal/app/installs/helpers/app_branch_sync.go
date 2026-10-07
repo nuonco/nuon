@@ -261,7 +261,7 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 		metadata[app.WorkflowMetadataKeyStackChanged] = "true"
 	}
 
-	wf, err := h.CreateWorkflow(ctx, input.InstallID, app.WorkflowTypeAppBranchConfigUpdate, metadata, input.PlanOnly)
+	wf, err := h.CreateWorkflow(ctx, input.InstallID, app.WorkflowTypeAppBranchConfigUpdate, metadata, input.PlanOnly, nil)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create install config update workflow: %w", err)
 	}
