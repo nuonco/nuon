@@ -41,10 +41,18 @@ func escapeDataString(s string) string {
 }
 
 func azureUIDefBucketKey(templateKey string) string {
+	return azureSiblingBucketKey(templateKey, "-ui.json")
+}
+
+func azureQuickLinkBucketKey(templateKey string) string {
+	return azureSiblingBucketKey(templateKey, "-quicklink.json")
+}
+
+func azureSiblingBucketKey(templateKey, suffix string) string {
 	if !strings.HasSuffix(templateKey, ".json") {
 		return ""
 	}
-	return strings.TrimSuffix(templateKey, ".json") + "-ui.json"
+	return strings.TrimSuffix(templateKey, ".json") + suffix
 }
 
 func firstNonEmpty(vals ...string) string {
@@ -62,11 +70,11 @@ type templateLocations struct {
 }
 
 // stackTemplateLocations derives the S3 URL of a stack version's template and the
-// console link that deploys it. Both platforms point their link at the template
-// itself; they differ in when there is a link at all. CloudFormation's
-// quick-create always has one, while the Azure portal can only deploy a root
-// template that declares its own resource group — at resource group scope the
-// customer has to create the group first, so there is nothing to link to.
+// console link that deploys it. CloudFormation's quick-create always has one and
+// points at the template itself. The Azure portal can only deploy a root template
+// that declares its own resource group, so only subscription scope gets a link,
+// and it points at the deployment-stack wrapper so a role unticked on a later
+// deploy is deleted rather than left behind.
 func stackTemplateLocations(configuredBaseURL, bucketKey string, req *CreateInstallStackVersionRequest) templateLocations {
 	baseURL := strings.TrimSuffix(configuredBaseURL, "/")
 	loc := templateLocations{templateURL: fmt.Sprintf("%s/%s", baseURL, bucketKey)}
@@ -76,7 +84,11 @@ func stackTemplateLocations(configuredBaseURL, bucketKey string, req *CreateInst
 			return loc
 		}
 
-		loc.quickLinkURL = azurePortalCustomDeployBaseURL + escapeDataString(loc.templateURL)
+		wrapperURL := loc.templateURL
+		if wrapperKey := azureQuickLinkBucketKey(bucketKey); wrapperKey != "" {
+			wrapperURL = fmt.Sprintf("%s/%s", baseURL, wrapperKey)
+		}
+		loc.quickLinkURL = azurePortalCustomDeployBaseURL + escapeDataString(wrapperURL)
 		if uiDefKey := azureUIDefBucketKey(bucketKey); uiDefKey != "" {
 			uiDefURL := fmt.Sprintf("%s/%s", baseURL, uiDefKey)
 			loc.quickLinkURL += "/createUIDefinitionUri/" + escapeDataString(uiDefURL)
@@ -139,6 +151,7 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 			obj.TemplateURL = loc.templateURL
 			obj.QuickLinkURL = loc.quickLinkURL
 			if req.Platform == string(app.AppRunnerTypeAzure) && req.DeploymentScope == string(app.StackDeploymentScopeSubscription) {
+				obj.QuickLinkBucketKey = azureQuickLinkBucketKey(obj.AWSBucketKey)
 				obj.QuickLinkUIDefBucketKey = azureUIDefBucketKey(obj.AWSBucketKey)
 			}
 
