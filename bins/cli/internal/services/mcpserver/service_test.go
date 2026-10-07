@@ -254,6 +254,12 @@ func TestCLIConfigFlagEmptyWithoutFlag(t *testing.T) {
 	require.Contains(t, got, "on behalf of this MCP server")
 	require.Contains(t, got, "other work")
 	require.Contains(t, got, "nuon-dev apps validate")
+	require.Contains(t, got, "nuon-dev api --raw")
+	require.Contains(t, got, "if that command is already available")
+	require.Contains(t, got, "Do not install the api extension")
+	require.NotContains(t, got, "ext install")
+	require.Contains(t, got, "curl only as a last resort")
+	require.NotContains(t, got, "do not call the HTTP API")
 }
 
 func TestCLIBinaryUsesInvokedCommand(t *testing.T) {
@@ -262,6 +268,9 @@ func TestCLIBinaryUsesInvokedCommand(t *testing.T) {
 	got := CLICommandInstructions("nuon-dev", "/tmp/acme.nuon")
 	require.Contains(t, got, "on behalf of this MCP server")
 	require.Contains(t, got, "nuon-dev -C \"/tmp/acme.nuon\" apps validate")
+	require.Contains(t, got, "nuon-dev -C \"/tmp/acme.nuon\" api --raw")
+	require.Contains(t, got, "Do not install the api extension")
+	require.NotContains(t, got, "ext install")
 }
 
 func TestEndpointOverrideSkipsDerivation(t *testing.T) {
