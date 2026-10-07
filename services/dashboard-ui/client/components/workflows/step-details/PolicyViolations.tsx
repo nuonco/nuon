@@ -22,7 +22,7 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
   }
 
   return (
-    <Card className="!p-0 overflow-hidden">
+    <Card className="!p-0 shrink-0 overflow-hidden">
       <div className="flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-cool-grey-200 dark:border-dark-grey-600">
           <Text weight="strong" variant="body">
