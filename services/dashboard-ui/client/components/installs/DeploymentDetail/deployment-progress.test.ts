@@ -102,6 +102,73 @@ test('completed infrastructure does not imply pending components completed', () 
   ])
 })
 
+test('component outcomes follow current workflow order instead of record order', () => {
+  const outcomes = deploymentOutcomes(
+    {
+      ...deployment,
+      affected_resources: {
+        stack: true,
+        sandbox: true,
+        components: ['api_gateway', 'certificate', 'lambda_function'],
+        images: [],
+      },
+    },
+    workflow([
+      component('apply api_gateway', 'in-progress', 6, 'api_gateway'),
+      component('hidden api_gateway', 'pending', 0, 'api_gateway', {
+        execution_type: 'hidden',
+      }),
+      component('apply api_gateway', 'error', 0, 'api_gateway', {
+        retried: true,
+      }),
+      step('sync secrets', 'success', 3),
+      component('apply lambda_function', 'success', 5, 'lambda_function'),
+      component(
+        'sync and plan lambda_function',
+        'approved',
+        5,
+        'lambda_function',
+        {
+          execution_type: 'approval',
+        }
+      ),
+      component('apply certificate', 'success', 4, 'certificate'),
+      step('await install stack', 'success', 1),
+      step('reprovision sandbox apply plan', 'success', 2),
+    ])
+  )
+  expect(outcomes.map(({ name, status }) => ({ name, status }))).toEqual([
+    { name: 'Stack', status: 'success' },
+    { name: 'Sandbox', status: 'success' },
+    { name: 'Secrets', status: 'success' },
+    { name: 'certificate', status: 'success' },
+    { name: 'lambda_function', status: 'success' },
+    { name: 'api_gateway', status: 'in-progress' },
+  ])
+})
+
+test('component outcomes retain record-only resources after workflow components', () => {
+  const record = {
+    ...deployment,
+    affected_resources: {
+      components: ['api', 'database', 'worker'],
+      images: [],
+    },
+  }
+  expect(
+    deploymentOutcomes(
+      record,
+      workflow([
+        component('apply worker', 'success', 1, 'worker'),
+        component('apply api', 'pending', 2, 'api'),
+      ])
+    ).map(({ name }) => name)
+  ).toEqual(['worker', 'api', 'database'])
+  expect(
+    deploymentOutcomes(record, workflow([])).map(({ name }) => name)
+  ).toEqual(['api', 'database', 'worker'])
+})
+
 test('planned components remain visible before deploy records exist', () => {
   const outcomes = deploymentOutcomes(
     {

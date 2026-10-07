@@ -436,10 +436,10 @@ export const deploymentOutcomes = (
   if (stepResources.secrets)
     outcomes.push(resourceOutcome('Secrets', 'Secrets', isSecretsStep))
   const componentNames = new Set([
-    ...(resources.components ?? []),
     ...steps.flatMap((step) =>
       step.metadata?.component_name ? [step.metadata.component_name] : []
     ),
+    ...(resources.components ?? []),
   ])
   for (const name of componentNames) {
     const componentSteps = steps.filter(
