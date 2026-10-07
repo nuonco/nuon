@@ -76,7 +76,7 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 		roleIDs = azureOperationIdentities(inp.AppCfg)
 	}
 	if len(roleIDs) > 0 {
-		description += " A role unticked here is detached from the runner; its identity is not deleted."
+		description += " A role unticked here is removed: its identity, role definition and assignments are deleted."
 	}
 
 	basicsConfig := map[string]any{
