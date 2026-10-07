@@ -1,5 +1,9 @@
-import { useEffect, useState } from 'react'
-import { createMemoryRouter, RouterProvider } from 'react-router'
+import { useEffect, useState, type ReactNode } from 'react'
+import {
+  createMemoryRouter,
+  RouterProvider,
+  type RouteObject,
+} from 'react-router'
 import { useQueryClient, type QueryKey } from '@tanstack/react-query'
 import { queryClient } from '@/lib/query-client'
 import { orgRoutes } from '@/views/org/routes'
@@ -13,10 +17,12 @@ export const InstallView = ({
   fixture,
   path,
   initialQueryData = [],
+  routeElements = {},
 }: {
   fixture: TFixture
   path: string
   initialQueryData?: Array<{ queryKey: QueryKey; data: unknown }>
+  routeElements?: Record<string, ReactNode>
 }) => {
   const client = useQueryClient()
   const [session] = useState(() => {
@@ -27,9 +33,22 @@ export const InstallView = ({
       if (client !== queryClient) queryClient.setQueryData(queryKey, data)
     }
     const generation = beginInstallFixture(fixture)
+    const previewRoutes = (routes: RouteObject[]): RouteObject[] =>
+      routes.map(
+        (route) =>
+          ({
+            ...route,
+            element: routeElements[route.path || ''] ?? route.element,
+            ...(route.children
+              ? { children: previewRoutes(route.children) }
+              : {}),
+          }) as RouteObject
+      )
     return {
       generation,
-      router: createMemoryRouter(orgRoutes, { initialEntries: [path] }),
+      router: createMemoryRouter(previewRoutes(orgRoutes), {
+        initialEntries: [path],
+      }),
     }
   })
 

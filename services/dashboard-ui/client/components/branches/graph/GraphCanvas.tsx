@@ -1,4 +1,11 @@
-import { memo, useEffect, useMemo } from 'react'
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  type CSSProperties,
+} from 'react'
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -15,7 +22,7 @@ import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { cn } from '@/utils/classnames'
 
-const GraphControls = () => {
+const GraphControls = ({ onFit }: { onFit?: () => void }) => {
   const { zoomIn, zoomOut, fitView } = useReactFlow()
 
   return (
@@ -32,7 +39,7 @@ const GraphControls = () => {
       </Button>
       <Button
         variant="icon"
-        onClick={() => fitView({ padding: 0.2 })}
+        onClick={() => (onFit ? onFit() : fitView({ padding: 0.2 }))}
         aria-label="Fit to view"
       >
         <Icon variant="CornersOutIcon" size={14} />
@@ -47,8 +54,11 @@ interface IGraphCanvas {
   nodeTypes: NodeTypes
   height: number
   compact?: boolean
+  minZoom?: number
   maxZoom?: number
   fitPadding?: number
+  alignStart?: boolean
+  style?: CSSProperties
 }
 
 const GraphCanvasInner = ({
@@ -57,15 +67,49 @@ const GraphCanvasInner = ({
   nodeTypes,
   height,
   compact,
+  minZoom,
   maxZoom,
   fitPadding,
+  alignStart,
+  style,
 }: IGraphCanvas) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
-  const { fitView } = useReactFlow()
+  const { fitView, getNodes, getViewport, setViewport } = useReactFlow()
+  const container = useRef<HTMLDivElement>(null)
 
   const resolvedMaxZoom = maxZoom ?? (compact ? 1 : 1.5)
   const resolvedPadding = fitPadding ?? (compact ? 0.15 : 0.25)
+  const fit = useCallback(async () => {
+    await fitView({ padding: resolvedPadding })
+    if (!alignStart || !container.current) return
+    const current = getNodes()
+    if (!current.length) return
+    const left = Math.min(...current.map((node) => node.position.x))
+    const right = Math.max(
+      ...current.map(
+        (node) => node.position.x + (node.measured?.width ?? node.width ?? 0)
+      )
+    )
+    const top = Math.min(...current.map((node) => node.position.y))
+    const bottom = Math.max(
+      ...current.map(
+        (node) => node.position.y + (node.measured?.height ?? node.height ?? 0)
+      )
+    )
+    const viewport = getViewport()
+    await setViewport({
+      ...viewport,
+      x:
+        (right - left) * viewport.zoom > container.current.clientWidth - 48
+          ? 24 - left * viewport.zoom
+          : viewport.x,
+      y:
+        (bottom - top) * viewport.zoom > container.current.clientHeight - 96
+          ? 64 - top * viewport.zoom
+          : viewport.y,
+    })
+  }, [alignStart, fitView, getNodes, getViewport, setViewport, resolvedPadding])
 
   useEffect(() => {
     setNodes(initialNodes)
@@ -74,21 +118,32 @@ const GraphCanvasInner = ({
 
   const nodeSignature = initialNodes.map((n) => n.id).join('|')
   useEffect(() => {
-    const raf = requestAnimationFrame(() =>
-      fitView({ padding: resolvedPadding })
-    )
-    return () => cancelAnimationFrame(raf)
-  }, [nodeSignature, fitView, resolvedPadding])
+    let raf = 0
+    const refit = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => {
+        void fit()
+      })
+    }
+    refit()
+    const observer = alignStart ? new ResizeObserver(refit) : undefined
+    if (container.current) observer?.observe(container.current)
+    return () => {
+      observer?.disconnect()
+      cancelAnimationFrame(raf)
+    }
+  }, [nodeSignature, fit, alignStart])
 
   const memoizedNodeTypes = useMemo(() => nodeTypes, [nodeTypes])
 
   return (
     <div
+      ref={container}
       className={cn(
         'relative w-full overflow-hidden border',
         compact ? 'rounded' : 'rounded-lg'
       )}
-      style={{ height, background: 'var(--background-neutral)' }}
+      style={{ height, background: 'var(--background-neutral)', ...style }}
     >
       <ReactFlow
         nodes={nodes}
@@ -98,12 +153,12 @@ const GraphCanvasInner = ({
         onEdgesChange={onEdgesChange}
         fitView
         fitViewOptions={{ padding: resolvedPadding }}
-        minZoom={compact ? 0.6 : 0.5}
+        minZoom={minZoom ?? (compact ? 0.6 : 0.5)}
         maxZoom={resolvedMaxZoom}
         nodesConnectable={false}
         proOptions={{ hideAttribution: true }}
       >
-        {!compact && <GraphControls />}
+        {!compact && <GraphControls onFit={alignStart ? fit : undefined} />}
       </ReactFlow>
     </div>
   )

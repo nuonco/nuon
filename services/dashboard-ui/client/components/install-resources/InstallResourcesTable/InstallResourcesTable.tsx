@@ -17,6 +17,8 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Tooltip } from '@/components/common/Tooltip'
 import { InstallResourceDetailPanelButton } from '@/components/install-resources/InstallResourceDetailPanel'
+import { ResourceKind } from '@/components/install-resources/ResourceKind'
+import { panelTriggerClass } from '@/components/surfaces/panel-trigger'
 import { RemovedFromAppConfigBadge } from '@/components/installs/RemovedFromAppConfig/RemovedFromAppConfig'
 import { Badge } from '@/components/common/Badge'
 import type { TAPIError, TInstallResource } from '@/types'
@@ -31,6 +33,7 @@ import {
   HEALTH_UNHEALTHY,
   HEALTH_UNKNOWN,
   isFailingHealth,
+  isIdentityOnlyResource,
   worstHealth,
 } from '@/utils/health-utils'
 import { humanize } from '@/utils/string-utils'
@@ -72,12 +75,7 @@ function healthFilterLabel(value: string): string {
   return humanize(value)
 }
 
-// Cloud identity rows (aws/gcp/azure) never bear a verdict — mirrors the
-// evaluator's bearsVerdict. Staleness is meaningless for them: they are a
-// snapshot of what terraform manages, refreshed at apply time.
-export function isIdentityOnlyResource(resource: TInstallResource): boolean {
-  return ['aws', 'gcp', 'azure'].includes(resource?.provider || '')
-}
+export { isIdentityOnlyResource } from '@/utils/health-utils'
 
 export function hasHealthSignal(resource: TInstallResource): boolean {
   return (
@@ -292,28 +290,28 @@ function buildColumns({
 }: { hideStaleBadge?: boolean } = {}): ColumnDef<TInstallResourceRow>[] {
   return [
   {
-    accessorKey: 'kind',
-    header: 'Kind',
-    cell: (info) => <Text>{info.getValue() as string}</Text>,
+    accessorKey: 'name',
+    header: 'Resource',
+    cell: (info) => (
+      <InstallResourceDetailPanelButton
+        installResource={info.row.original.resource}
+        className={panelTriggerClass}
+        aria-label={`Inspect ${info.row.original.kind} ${info.row.original.name}`}
+      >
+        <ResourceKind resource={info.row.original.resource} />
+        <Text family="mono" weight="strong">{info.getValue() as string}</Text>
+      </InstallResourceDetailPanelButton>
+    ),
   },
   {
     accessorKey: 'namespace',
     header: 'Namespace',
     cell: (info) =>
       info.getValue() ? (
-        <Text>{info.getValue() as string}</Text>
+        <Text family="mono" variant="subtext">{info.getValue() as string}</Text>
       ) : (
         <Icon variant="MinusIcon" />
       ),
-  },
-  {
-    accessorKey: 'name',
-    header: 'Name',
-    cell: (info) => (
-      <Text variant="body" weight="strong">
-        {info.getValue() as string}
-      </Text>
-    ),
   },
   {
     accessorKey: 'health',
@@ -361,26 +359,6 @@ function buildColumns({
         <Icon variant="MinusIcon" />
       ),
     enableSorting: false,
-  },
-  {
-    accessorKey: 'observedAt',
-    header: 'Age',
-    cell: (info) =>
-      info.getValue() ? (
-        <Time variant="subtext" time={info.getValue() as string} format="relative" />
-      ) : (
-        <Icon variant="MinusIcon" />
-      ),
-  },
-  {
-    id: 'action',
-    enableSorting: false,
-    header: '',
-    cell: (info) => (
-      <InstallResourceDetailPanelButton
-        installResource={info.row.original.resource}
-      />
-    ),
   },
   ]
 }
@@ -587,10 +565,6 @@ const InstallResourceGroupTable = ({
             </Badge>
           </Tooltip>
         ) : null}
-        {/* Everything in this section is live, matching the filter chips and the
-            rows. The debounced verdict is the badge in the 90-day card above —
-            keeping the two time bases apart is what stops them reading as a
-            contradiction. */}
         {group.fullyStale ? (
           <Tooltip
             position="top"
@@ -624,8 +598,7 @@ const InstallResourceGroupTable = ({
             tipContent={
               <Text variant="subtext">
                 Live resources currently degraded or unhealthy in this group.
-                The component's health verdict is the badge in the 90-day card
-                above: it is debounced, so it can lag these rows.
+                Component health is debounced, so it can lag these rows.
               </Text>
             }
           >
