@@ -320,6 +320,7 @@ export const DeploymentsListPresenter = ({
             <TimelineSkeleton eventCount={4} />
           ) : activeError ? (
             <EmptyState
+              variant="history"
               emptyTitle="Active deployments failed to load"
               emptyMessage="Unable to load active deployments. Try refreshing the page."
             />
@@ -371,12 +372,14 @@ export const DeploymentsListPresenter = ({
             <TimelineSkeleton eventCount={pagination.limit ?? 5} />
           ) : error ? (
             <EmptyState
+              variant="history"
               emptyTitle="Deployments failed to load"
               emptyMessage="Unable to load deployments. Try refreshing the page."
               className="my-12"
             />
           ) : deployments.length === 0 ? (
             <EmptyState
+              variant={hasActiveFilters ? 'search' : 'history'}
               emptyTitle={
                 hasActiveFilters ? 'No deployments found' : 'No deployments yet'
               }

@@ -213,6 +213,21 @@ const useDeploymentSection = (
   })
 }
 
+const useStableSection = <E,>(section: {
+  data?: unknown
+  error: E
+  isLoading: boolean
+}) => {
+  const heldError = useRef<E | null>(null)
+  if (section.data !== undefined) heldError.current = null
+  else if (section.error) heldError.current = section.error
+  const error = section.data === undefined ? (section.error ?? heldError.current) : section.error
+  return {
+    error,
+    isLoading: section.isLoading && section.data === undefined && error == null,
+  }
+}
+
 const DeploymentFeeds = ({
   query,
   presenterProps,
@@ -262,13 +277,15 @@ const DeploymentFeeds = ({
     shouldPoll,
     pollInterval
   )
+  const activeSection = useStableSection(active)
+  const historySection = useStableSection(history)
   return (
     <DeploymentsListPresenter
       {...presenterProps}
       activeDeployments={active.data?.deployments ?? []}
       activeTotal={active.data?.total}
-      activeLoading={active.isLoading || active.isPlaceholderData}
-      activeError={active.error}
+      activeLoading={activeSection.isLoading}
+      activeError={activeSection.error}
       hasMoreActive={active.data?.has_more}
       showActive={showActive}
       showHistory={showHistory}
@@ -276,8 +293,8 @@ const DeploymentFeeds = ({
         setActiveLimit((limit) => limit + ACTIVE_PAGE_LIMIT)
       }
       deployments={history.data?.deployments ?? []}
-      isLoading={history.isLoading || history.isPlaceholderData}
-      error={history.error}
+      isLoading={historySection.isLoading}
+      error={historySection.error}
       pagination={{
         hasNext: !!history.data?.next_cursor && history.data.has_more,
         offset: (historyCursors.length - 1) * PAGE_LIMIT,
