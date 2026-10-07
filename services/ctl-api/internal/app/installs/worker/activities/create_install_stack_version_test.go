@@ -25,7 +25,8 @@ func TestStackTemplateLocations_AzureSubscriptionScope(t *testing.T) {
 	}
 
 	uiDefURL := testBaseURL + "/" + strings.TrimSuffix(testBucketKey, ".json") + "-ui.json"
-	want := azurePortalCustomDeployBaseURL + escapeDataString(loc.templateURL) + "/createUIDefinitionUri/" + escapeDataString(uiDefURL)
+	wrapperURL := testBaseURL + "/" + strings.TrimSuffix(testBucketKey, ".json") + "-quicklink.json"
+	want := azurePortalCustomDeployBaseURL + escapeDataString(wrapperURL) + "/createUIDefinitionUri/" + escapeDataString(uiDefURL)
 	if loc.quickLinkURL != want {
 		t.Errorf("quickLinkURL = %q, want %q", loc.quickLinkURL, want)
 	}
