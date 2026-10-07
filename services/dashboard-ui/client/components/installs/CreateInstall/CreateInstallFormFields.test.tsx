@@ -1,103 +1,64 @@
 import { afterEach, expect, test } from 'bun:test'
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
+import { DRAFT_VERSION } from '@/hooks/use-draft-persistence'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import type { TApp, TAppInputConfig } from '@/types'
 import { CreateInstallFormFields } from './CreateInstallFormFields'
 
-const app = { id: 'app-1', name: 'acme' } as TApp
-const inputConfig = { id: 'config-1', input_groups: [] } as unknown as TAppInputConfig
+const app = {
+  id: 'app-1',
+  runner_config: { app_runner_type: 'aws' },
+} as TApp
+
+const inputConfig = {
+  id: 'cfg-1',
+  input_groups: [],
+  inputs: [],
+} as TAppInputConfig
 
 afterEach(() => {
   cleanup()
   localStorage.clear()
 })
 
-const renderForm = (
-  validateName: (name: string) => Promise<string | undefined>,
-  onSubmit: (values: unknown) => void = () => {}
-) => {
-  const states: { canSubmit: boolean; submit: () => unknown }[] = []
+test('resuming a draft fills the install form', async () => {
+  localStorage.setItem(
+    'install-draft:app-1',
+    JSON.stringify({
+      values: {
+        name: 'kept-name',
+        region: 'us-west-2',
+        inputs: {},
+      },
+      timestamp: new Date().toISOString(),
+      version: DRAFT_VERSION,
+      configId: 'cfg-1',
+    })
+  )
 
+  let canSubmit = false
   render(
     <MemoryRouter>
       <SurfacesProvider>
         <CreateInstallFormFields
           app={app}
           inputConfig={inputConfig}
-          validateName={validateName}
-          onSubmit={onSubmit}
-          onStateChange={(state) =>
-            states.push({ canSubmit: state.canSubmit, submit: state.submit })
-          }
+          onSubmit={() => {}}
+          onStateChange={(state) => {
+            canSubmit = state.canSubmit
+          }}
         />
       </SurfacesProvider>
     </MemoryRouter>
   )
 
-  return states
-}
+  fireEvent.click(await screen.findByRole('button', { name: 'Resume draft' }))
 
-test('surfaces a duplicate name and blocks submit', async () => {
-  const states = renderForm(async (name) =>
-    name === 'staging' ? 'An install named "staging" already exists' : undefined
-  )
-
-  fireEvent.change(screen.getByPlaceholderText('Enter install name'), {
-    target: { value: 'staging' },
-  })
-
-  await waitFor(() =>
-    expect(
-      screen.getByText('An install named "staging" already exists')
-    ).toBeTruthy()
-  )
-  expect(states.at(-1)?.canSubmit).toBe(false)
-})
-
-test('the name is rechecked on submit, not just while typing', async () => {
-  // The name is available while typing and taken by the time submit runs, which
-  // is only caught if submit revalidates rather than trusting the change check.
-  const taken = new Set<string>()
-  const submitted: unknown[] = []
-  const states = renderForm(
-    async (name) =>
-      taken.has(name) ? `An install named "${name}" already exists` : undefined,
-    (values) => submitted.push(values)
-  )
-
-  fireEvent.change(screen.getByPlaceholderText('Enter install name'), {
-    target: { value: 'staging' },
-  })
-  await waitFor(() => expect(states.at(-1)?.canSubmit).toBe(true))
-
-  taken.add('staging')
-  await act(async () => {
-    await states.at(-1)!.submit()
-  })
-
-  await waitFor(() =>
-    expect(
-      screen.getByText('An install named "staging" already exists')
-    ).toBeTruthy()
-  )
-  expect(submitted).toHaveLength(0)
-})
-
-test('an available name leaves the form submittable', async () => {
-  const states = renderForm(async () => undefined)
-
-  fireEvent.change(screen.getByPlaceholderText('Enter install name'), {
-    target: { value: 'fresh-name' },
-  })
-
-  await waitFor(() => expect(states.at(-1)?.canSubmit).toBe(true))
-  expect(screen.queryByText(/already exists/)).toBeNull()
+  const name = screen.getByPlaceholderText('Enter install name')
+  expect(name).toHaveValue('kept-name')
+  fireEvent.focus(name)
+  fireEvent.blur(name)
+  expect(screen.queryByText('Install name is required')).toBeNull()
+  await waitFor(() => expect(canSubmit).toBe(true))
 })

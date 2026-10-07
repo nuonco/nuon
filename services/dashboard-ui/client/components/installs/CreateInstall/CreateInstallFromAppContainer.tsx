@@ -154,7 +154,6 @@ export const CreateInstallFromAppContainer = ({
     setInitialBranchApplied(true)
   }, [initialBranchApplied, branchesLoading, branchList, initialBranchId])
 
-  // Derive phase
   const phase: CreateInstallPhase = (() => {
     if (!initialBranchApplied) return 'select-branch'
     if (hasBranches && !branchDecisionMade) return 'select-branch'
@@ -274,6 +273,11 @@ export const CreateInstallFromAppContainer = ({
           </Text>
         </Toast>
       )
+      try {
+        localStorage.removeItem(`install-draft:${app.id}`)
+      } catch (error) {
+        console.warn('Failed to clear form draft:', error)
+      }
       queryClient.invalidateQueries({ queryKey: ['installs'] })
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
       queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
@@ -421,9 +425,7 @@ export const CreateInstallFromAppContainer = ({
       return
     }
 
-    // form phase
     if (selectedBranch) {
-      // form submit → advance to pick-group, don't call API yet
       onStateChange({
         canSubmit: formReady ? fields.canSubmit : false,
         submit: fields.submit,
@@ -530,7 +532,6 @@ export const CreateInstallFromAppContainer = ({
     )
   }
 
-  // form phase
   return (
     <div className="flex flex-col gap-6">
       {backButton}
@@ -577,8 +578,8 @@ export const CreateInstallFromAppContainer = ({
           onSubmit={
             selectedBranch
               ? (values) => {
-                  // Don't call API yet — advance to group picker
                   setPendingFormValues(values)
+                  return false
                 }
               : (values) =>
                   mutateAsync(
