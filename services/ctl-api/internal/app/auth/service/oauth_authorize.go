@@ -16,6 +16,8 @@ import (
 
 const oauthAuthorizationCodeExpiry = 10 * time.Minute
 
+var errOAuthRequestCompleted = errors.New("authorization request already completed")
+
 // OAuthAuthorize handles GET /oauth/authorize — the OAuth 2.0 authorization-code
 // endpoint with PKCE (RFC 6749 §4.1, RFC 7636). It validates the client request,
 // persists it, and hands the user off to the existing identity-provider login
@@ -163,10 +165,28 @@ func (s *service) OAuthConsent(c *gin.Context) {
 	authCode.Code = code
 	authCode.AccountID = tokenInfo.AccountID
 	authCode.Scope = scope
-	if err := s.db.WithContext(c.Request.Context()).
-		Model(&authCode).
-		Select("code", "account_id", "scope").
-		Updates(&authCode).Error; err != nil {
+	authCode.SourceTokenID = tokenInfo.TokenID
+	err = s.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		if err := lockGrantSource(tx, tokenInfo.AccountID, tokenInfo.TokenID, false); err != nil {
+			return err
+		}
+		res := tx.Model(&authCode).
+			Where(map[string]any{"code": "", "consumed": false}).
+			Select("code", "account_id", "scope", "source_token_id").
+			Updates(&authCode)
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected != 1 {
+			return errOAuthRequestCompleted
+		}
+		return nil
+	})
+	if errors.Is(err, errOAuthRequestCompleted) {
+		s.respondError(c, http.StatusBadRequest, err)
+		return
+	}
+	if err != nil {
 		s.l.Error("failed to issue authorization code", zap.Error(err))
 		s.redirectOAuthError(c, authCode.RedirectURI, authCode.ClientState, "server_error", "failed to issue code")
 		return
@@ -206,7 +226,7 @@ func (s *service) loadPendingAuthCode(c *gin.Context, requestID string) (app.OAu
 	}
 
 	if authCode.Consumed || authCode.Code != "" {
-		s.respondError(c, http.StatusBadRequest, fmt.Errorf("authorization request already completed"))
+		s.respondError(c, http.StatusBadRequest, errOAuthRequestCompleted)
 		return authCode, false
 	}
 	if time.Now().After(authCode.ExpiresAt) {
