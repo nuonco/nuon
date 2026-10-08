@@ -141,7 +141,7 @@ func (s *service) redeemOAuthGrant(c *gin.Context, model any, grantID string, gr
 	var access *app.Token
 	var refreshValue string
 	err := s.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
-		if err := lockToken(tx.Unscoped(), grant.SourceTokenID); err != nil {
+		if err := lockGrantSource(tx, grant.AccountID, grant.SourceTokenID, true); err != nil {
 			return err
 		}
 

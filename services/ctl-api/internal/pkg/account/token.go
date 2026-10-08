@@ -44,8 +44,9 @@ func (c *Client) InvalidateTokens(ctx context.Context, subjectOrEmail string) er
 		return pkgerrors.Wrap(err, "unable to get account")
 	}
 
-	_, err = c.revokeTokens(ctx, c.db.Where(app.Token{AccountID: acct.ID}))
-	return err
+	return c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return revokeAccountCredentials(tx, acct.ID)
+	})
 }
 
 func (c *Client) InvalidateOldTokens(ctx context.Context, subjectOrEmail string) (int64, error) {

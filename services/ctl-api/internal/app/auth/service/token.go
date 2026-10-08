@@ -63,13 +63,28 @@ func tokenSource(sourceTokenID string) (app.TokenSourceType, string) {
 	return app.TokenSourceTypeToken, sourceTokenID
 }
 
-func lockToken(tx *gorm.DB, tokenID string) error {
+func lockGrantSource(tx *gorm.DB, accountID, tokenID string, historical bool) error {
+	var account app.Account
+	err := tx.Clauses(clause.Locking{Strength: "KEY SHARE"}).
+		Select("id").
+		Where(app.Account{ID: accountID}).
+		First(&account).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return errTokenNotFound
+	}
+	if err != nil {
+		return err
+	}
+
 	if tokenID == "" {
 		return nil
 	}
+	if historical {
+		tx = tx.Unscoped()
+	}
 
 	var token app.Token
-	err := tx.Clauses(clause.Locking{Strength: "SHARE"}).
+	err = tx.Clauses(clause.Locking{Strength: "SHARE"}).
 		Select("id").
 		Where(app.Token{ID: tokenID}).
 		First(&token).Error

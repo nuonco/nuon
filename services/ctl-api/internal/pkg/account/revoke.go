@@ -8,6 +8,30 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
+func revokeAccountCredentials(tx *gorm.DB, accountID string) error {
+	var acct app.Account
+	if err := tx.Unscoped().Clauses(clause.Locking{Strength: "UPDATE"}).
+		Select("id").
+		Where(app.Account{ID: accountID}).
+		First(&acct).Error; err != nil {
+		return errors.Wrap(err, "unable to lock account for revocation")
+	}
+
+	if res := tx.Where(app.Token{AccountID: accountID}).Delete(&app.Token{}); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to revoke account tokens")
+	}
+	if res := tx.Where(app.OAuthRefreshToken{AccountID: accountID}).Delete(&app.OAuthRefreshToken{}); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to revoke account refresh tokens")
+	}
+	if res := tx.Where(app.OAuthAuthorizationCode{AccountID: accountID}).Delete(&app.OAuthAuthorizationCode{}); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to revoke account authorization codes")
+	}
+	if res := tx.Where(app.DeviceCode{AccountID: accountID}).Delete(&app.DeviceCode{}); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to revoke account device codes")
+	}
+	return nil
+}
+
 func RevokeDerivedCredentials(tx *gorm.DB, sourceType app.TokenSourceType, sourceIDs []string) error {
 	if len(sourceIDs) == 0 {
 		return nil

@@ -164,7 +164,7 @@ func (s *service) DeviceCodeApprove(c *gin.Context) {
 	}
 
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		if err := lockToken(tx, tokenInfo.TokenID); err != nil {
+		if err := lockGrantSource(tx, account.ID, tokenInfo.TokenID, false); err != nil {
 			return err
 		}
 		return tx.Create(deviceCode).Error
@@ -259,7 +259,7 @@ func (s *service) DeviceCodeToken(c *gin.Context) {
 
 	var tokenValue string
 	err = s.db.Transaction(func(tx *gorm.DB) error {
-		if err := lockToken(tx.Unscoped(), deviceCode.SourceTokenID); err != nil {
+		if err := lockGrantSource(tx, account.ID, deviceCode.SourceTokenID, true); err != nil {
 			return err
 		}
 
