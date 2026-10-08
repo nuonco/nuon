@@ -134,17 +134,73 @@ const isSourceOnlyEntity = (entity: DiffEntityEntry) =>
 const isSandboxBuild = (build: TBuildMeta) =>
   build.component_type === 'sandbox' || build.component_id === 'sandbox'
 
-// Config-diff rows stay. Components the build step rebuilt for source, and that
-// the config diff omitted, are added and marked Source, Config, or both.
+const mergeEntityKinds = (
+  entity: DiffEntityEntry,
+  extra: Set<DiffChangeKind>
+): DiffEntityEntry => {
+  const kinds = new Set<DiffChangeKind>()
+  if (isSourceOnlyEntity(entity)) kinds.add('source')
+  else if (entity.fields.length > 0 || (entity.files?.length ?? 0) > 0) {
+    kinds.add('config')
+  }
+  for (const kind of entity.changeKinds ?? []) kinds.add(kind)
+  for (const kind of extra) kinds.add(kind)
+  return { ...entity, changeKinds: orderedKinds(kinds) }
+}
+
+const ensureGroupedSandboxSection = (
+  sections: DiffSectionData[]
+): DiffSectionData => {
+  let sandbox = sections.find((section) => section.sectionKey === 'sandbox')
+  if (!sandbox) {
+    sandbox = {
+      name: 'Sandbox',
+      sectionKey: 'sandbox',
+      additions: 0,
+      removals: 0,
+      changed: 0,
+      grouped: true,
+      entities: [],
+      fields: [],
+    }
+    sections.push(sandbox)
+    return sandbox
+  }
+  if (sandbox.grouped) return sandbox
+
+  sandbox.grouped = true
+  if (sandbox.entities.length === 0) {
+    const op: DiffEntityEntry['op'] =
+      sandbox.additions > 0 ? 'add' : sandbox.removals > 0 ? 'remove' : 'change'
+    sandbox.entities = [
+      {
+        name: 'Sandbox',
+        op,
+        fields: sandbox.fields,
+        files: sandbox.files,
+      },
+    ]
+    sandbox.fields = []
+    sandbox.files = undefined
+  }
+  return sandbox
+}
+
+// Config-diff rows stay. Builds the config diff omitted (source-only components
+// and sandbox) are added and marked Source, Config, or both.
 export function withBuildChangeKinds(
   sections: DiffSectionData[],
   builds: TBuildMeta[] = []
 ): DiffSectionData[] {
   const byName = new Map<string, Set<DiffChangeKind>>()
+  const sandboxKinds = new Set<DiffChangeKind>()
   for (const build of builds) {
-    if (isSandboxBuild(build)) continue
     const kinds = kindsForReason(build.change_reason)
     if (kinds.length === 0) continue
+    if (isSandboxBuild(build)) {
+      for (const kind of kinds) sandboxKinds.add(kind)
+      continue
+    }
     const name = build.component_name || build.component_id
     if (!name) continue
     const set = byName.get(name) ?? new Set<DiffChangeKind>()
@@ -171,27 +227,40 @@ export function withBuildChangeKinds(
     }
     next.unshift(components)
   }
-  if (!components) return next
 
-  const seen = new Set<string>()
-  components.entities = components.entities.map((entity) => {
-    seen.add(entity.name)
-    const kinds = new Set<DiffChangeKind>()
-    if (isSourceOnlyEntity(entity)) kinds.add('source')
-    else kinds.add('config')
-    for (const kind of byName.get(entity.name) ?? []) kinds.add(kind)
-    return { ...entity, changeKinds: orderedKinds(kinds) }
-  })
-
-  for (const [name, kinds] of byName) {
-    if (seen.has(name)) continue
-    components.entities.push({
-      name,
-      op: 'change',
-      changeKinds: orderedKinds(kinds),
-      fields: [],
+  if (components) {
+    const seen = new Set<string>()
+    components.entities = components.entities.map((entity) => {
+      seen.add(entity.name)
+      return mergeEntityKinds(entity, byName.get(entity.name) ?? new Set())
     })
-    components.changed += 1
+
+    for (const [name, kinds] of byName) {
+      if (seen.has(name)) continue
+      components.entities.push({
+        name,
+        op: 'change',
+        changeKinds: orderedKinds(kinds),
+        fields: [],
+      })
+      components.changed += 1
+    }
+  }
+
+  if (sandboxKinds.size > 0) {
+    const sandbox = ensureGroupedSandboxSection(next)
+    const existing = sandbox.entities.find((entity) => entity.name === 'Sandbox')
+    if (existing) {
+      Object.assign(existing, mergeEntityKinds(existing, sandboxKinds))
+    } else {
+      sandbox.entities.push({
+        name: 'Sandbox',
+        op: 'change',
+        changeKinds: orderedKinds(sandboxKinds),
+        fields: [],
+      })
+      sandbox.changed += 1
+    }
   }
 
   return next

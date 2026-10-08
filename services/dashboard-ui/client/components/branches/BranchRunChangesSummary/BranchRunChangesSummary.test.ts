@@ -92,6 +92,24 @@ describe('withBuildChangeKinds', () => {
 
     expect(next[0]?.entities[0]?.changeKinds).toEqual(['source', 'config'])
   })
+
+  test('adds source-only sandbox when config diff omitted it', () => {
+    const next = withBuildChangeKinds([], [
+      {
+        component_id: 'sandbox',
+        component_type: 'sandbox',
+        component_name: 'Sandbox',
+        change_reason: 'source_changed',
+      },
+    ])
+
+    const sandbox = next.find((section) => section.sectionKey === 'sandbox')
+    expect(sandbox?.grouped).toBe(true)
+    expect(
+      sandbox?.entities.map((entity) => [entity.name, entity.changeKinds])
+    ).toEqual([['Sandbox', ['source']]])
+    expect(sandbox?.changed).toBe(1)
+  })
 })
 
 describe('configDiagnosticLines', () => {
