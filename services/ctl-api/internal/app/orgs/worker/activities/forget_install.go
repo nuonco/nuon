@@ -124,10 +124,6 @@ func (a *Activities) ForgetInstall(ctx context.Context, req ForgetInstallRequest
 }
 
 func (a *Activities) cancelOpenInstallWorkflows(ctx context.Context, installID, installOwnerType string) error {
-	if a.flowsClient == nil {
-		return nil
-	}
-
 	var workflows []app.Workflow
 	if err := a.db.WithContext(ctx).
 		Where(app.Workflow{
@@ -155,7 +151,6 @@ func isCancelableWorkflowStatus(status app.Status) bool {
 	case app.StatusInProgress,
 		app.StatusPending,
 		app.AwaitingApproval,
-		app.Status("awaiting-approval"),
 		app.StatusFailedPendingRetry:
 		return true
 	default:
@@ -176,11 +171,34 @@ func (a *Activities) cancelInstallWorkflow(ctx context.Context, wf *app.Workflow
 		}
 		return fmt.Errorf("unable to cancel workflow %s: %w", wf.ID, err)
 	}
+	return a.markForgottenCancelReason(ctx, wf.ID)
+}
+
+const forgottenInstallCancelReason = "cancelled because install was forgotten"
+
+func forgottenInstallCancelStatus(ctx context.Context) app.CompositeStatus {
+	status := app.NewCompositeStatus(ctx, app.StatusCancelled)
+	status.StatusHumanDescription = forgottenInstallCancelReason
+	return status
+}
+
+func (a *Activities) markForgottenCancelReason(ctx context.Context, workflowID string) error {
+	var wf app.Workflow
+	if err := a.db.WithContext(ctx).First(&wf, "id = ?", workflowID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return fmt.Errorf("unable to load workflow %s after cancel: %w", workflowID, err)
+	}
+	wf.Status.StatusHumanDescription = forgottenInstallCancelReason
+	if err := a.db.WithContext(ctx).Save(&wf).Error; err != nil {
+		return fmt.Errorf("unable to set forget cancel reason on workflow %s: %w", workflowID, err)
+	}
 	return nil
 }
 
 func (a *Activities) cancelWorkflowInDB(ctx context.Context, wf *app.Workflow) error {
-	wf.Status = app.NewCompositeStatus(ctx, app.StatusCancelled)
+	wf.Status = forgottenInstallCancelStatus(ctx)
 	wf.FinishedAt = time.Now()
 	if err := a.db.WithContext(ctx).Save(wf).Error; err != nil {
 		return fmt.Errorf("unable to cancel workflow %s in db: %w", wf.ID, err)
