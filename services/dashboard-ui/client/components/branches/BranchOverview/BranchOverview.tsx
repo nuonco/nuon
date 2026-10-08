@@ -56,6 +56,7 @@ export interface IBranchOverview {
   installWorkflowHref?: string
   failedBuilds?: TFailedBuildLink[]
   approvals?: IGroupPlanApproval[]
+  runHeaderAction?: ReactNode
 }
 
 export const BranchOverview = ({
@@ -74,10 +75,16 @@ export const BranchOverview = ({
   installWorkflowHref,
   failedBuilds,
   approvals,
+  runHeaderAction,
 }: IBranchOverview) => (
   <div className="flex flex-col gap-10 p-4 md:p-6">
     {loadingStages?.length ? (
-      <OverviewLoadingTrack stages={loadingStages} />
+      <div className="flex items-center justify-between gap-4">
+        <OverviewLoadingTrack stages={loadingStages} />
+        {runHeaderAction ? (
+          <span className="shrink-0">{runHeaderAction}</span>
+        ) : null}
+      </div>
     ) : isLoading ? (
       <Loading />
     ) : null}
