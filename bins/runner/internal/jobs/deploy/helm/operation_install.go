@@ -87,7 +87,7 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 
 	l.Info("running helm install")
 	client.DryRun = false
-	rel, err := helm.HelmInstallWithLogStreaming(ctx, client, chart, values, kubeCfg, l)
+	rel, err := helm.HelmInstallWithLogStreaming(ctx, client, chart, values, kubeCfg, resources, l)
 	if err != nil {
 		return nil, fmt.Errorf("unable to upgrade helm release: %w", err)
 	}

@@ -15,6 +15,7 @@ func HelmInstallWithLogStreaming(
 	ctx context.Context,
 	client *action.Install, chart *chart.Chart, values map[string]interface{},
 	kubeCfg *rest.Config,
+	resources []Resource,
 	l *zap.Logger,
 ) (*release.Release, error) {
 	// these are the things we use for filtering the deployments and statefulsets
@@ -36,7 +37,7 @@ func HelmInstallWithLogStreaming(
 	streamer := NewLogStreamer(k8sClient, l)
 
 	// the bulk of the work is here
-	go streamLogs(streamCtx, cancelStreaming, streamer, k8sClient, client.Namespace, labelSelector, annotationSelectorKey, annotationSelectorValue, l)
+	go streamLogs(streamCtx, cancelStreaming, streamer, k8sClient, podLogTargets(resources, client.Namespace), labelSelector, annotationSelectorKey, annotationSelectorValue, l)
 
 	// execute the upgrade
 	rel, err := client.RunWithContext(ctx, chart, values)
