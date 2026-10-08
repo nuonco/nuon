@@ -41,7 +41,7 @@ export function getApprovalResponseType(
 const RESPONSE_THEME: Record<TWorkflowStepApprovalResponse['type'], TTheme> = {
   approve: 'success',
   'auto-approve': 'success',
-  deny: 'warn',
+  deny: 'neutral',
   'deny-skip-current': 'default',
   'deny-skip-current-and-dependents': 'default',
   retry: 'info',
