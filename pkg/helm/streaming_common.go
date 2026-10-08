@@ -16,6 +16,7 @@ func streamLogs(
 	streamCtx context.Context, cancelStreaming func(),
 	streamer *LogStreamer,
 	k8sClient *kubernetes.Clientset,
+	namespace string,
 	labelSelector string,
 	annotationSelectorKey string,
 	annotationSelectorValue string,
@@ -38,69 +39,72 @@ func streamLogs(
 			pods := []*corev1.Pod{}
 
 			// get deployment pods
-			deployments, err := k8sClient.AppsV1().Deployments("").List(streamCtx, metav1.ListOptions{
+			deployments, err := k8sClient.AppsV1().Deployments(namespace).List(streamCtx, metav1.ListOptions{
 				LabelSelector: labelSelector,
 			})
 			if err != nil {
-				l.Error("failed to fetch deployments", zap.String("label_selector", labelSelector))
-			}
-			for _, dpl := range deployments.Items {
-				value, ok := dpl.Annotations[annotationSelectorKey]
-				if !ok || value != annotationSelectorValue {
-					// the deployment does not have the relevant annotations
-					continue
-				}
-				// in this case, we do have the right annotations
-				set := labels.Set(dpl.Spec.Selector.MatchLabels)
-				dplPods, err := k8sClient.CoreV1().Pods(dpl.Namespace).List(streamCtx, metav1.ListOptions{LabelSelector: set.AsSelector().String()})
-				if err != nil {
-					l.Error(
-						"failed to fetch pods for deployment",
-						zap.String("label_selector", labelSelector),
-						zap.String("deployment", fmt.Sprintf("%s.%s", dpl.Namespace, dpl.Name)),
-					)
-				}
-				for _, pod := range dplPods.Items {
-					if pod.CreationTimestamp.Time.Before(now) {
-						// the pod was created before now - not by this release
+				l.Error("failed to fetch deployments", zap.String("namespace", namespace), zap.String("label_selector", labelSelector))
+			} else {
+				for _, dpl := range deployments.Items {
+					value, ok := dpl.Annotations[annotationSelectorKey]
+					if !ok || value != annotationSelectorValue {
+						// the deployment does not have the relevant annotations
 						continue
 					}
-					pods = append(pods, &pod)
+					// in this case, we do have the right annotations
+					set := labels.Set(dpl.Spec.Selector.MatchLabels)
+					dplPods, err := k8sClient.CoreV1().Pods(dpl.Namespace).List(streamCtx, metav1.ListOptions{LabelSelector: set.AsSelector().String()})
+					if err != nil {
+						l.Error(
+							"failed to fetch pods for deployment",
+							zap.String("label_selector", labelSelector),
+							zap.String("deployment", fmt.Sprintf("%s.%s", dpl.Namespace, dpl.Name)),
+						)
+					}
+					for _, pod := range dplPods.Items {
+						if pod.CreationTimestamp.Time.Before(now) {
+							// the pod was created before now - not by this release
+							continue
+						}
+						pods = append(pods, &pod)
+					}
 				}
 			}
 
 			// get stateful set pods
-			statefulsets, err := k8sClient.AppsV1().StatefulSets("").List(streamCtx, metav1.ListOptions{
+			statefulsets, err := k8sClient.AppsV1().StatefulSets(namespace).List(streamCtx, metav1.ListOptions{
 				LabelSelector: labelSelector,
 			})
 			if err != nil {
-				l.Error("failed to fetch statefulsets", zap.String("label_selector", labelSelector))
-			}
-			for _, sfs := range statefulsets.Items {
-				value, ok := sfs.Annotations[annotationSelectorKey]
-				if !ok || value != annotationSelectorValue {
-					continue
-				}
-				// in this case, we do have the right annotations
-				set := labels.Set(sfs.Spec.Selector.MatchLabels)
-				sfsPods, err := k8sClient.CoreV1().Pods(sfs.Namespace).List(streamCtx, metav1.ListOptions{LabelSelector: set.AsSelector().String()})
-				if err != nil {
-					l.Error(
-						"failed to fetch pods for statefulset",
-						zap.String("label_selector", labelSelector),
-						zap.String("statefulset", fmt.Sprintf("%s.%s", sfs.Namespace, sfs.Name)),
-					)
-				}
-				for _, pod := range sfsPods.Items {
-					if pod.CreationTimestamp.Time.Before(now) {
-						// the pod was created before now - not by this release
+				l.Error("failed to fetch statefulsets", zap.String("namespace", namespace), zap.String("label_selector", labelSelector))
+			} else {
+				for _, sfs := range statefulsets.Items {
+					value, ok := sfs.Annotations[annotationSelectorKey]
+					if !ok || value != annotationSelectorValue {
 						continue
 					}
-					pods = append(pods, &pod)
+					// in this case, we do have the right annotations
+					set := labels.Set(sfs.Spec.Selector.MatchLabels)
+					sfsPods, err := k8sClient.CoreV1().Pods(sfs.Namespace).List(streamCtx, metav1.ListOptions{LabelSelector: set.AsSelector().String()})
+					if err != nil {
+						l.Error(
+							"failed to fetch pods for statefulset",
+							zap.String("label_selector", labelSelector),
+							zap.String("statefulset", fmt.Sprintf("%s.%s", sfs.Namespace, sfs.Name)),
+						)
+					}
+					for _, pod := range sfsPods.Items {
+						if pod.CreationTimestamp.Time.Before(now) {
+							// the pod was created before now - not by this release
+							continue
+						}
+						pods = append(pods, &pod)
+					}
 				}
 			}
 
 			l.Info(fmt.Sprintf("streaming logs for %d pods", len(pods)),
+				zap.String("namespace", namespace),
 				zap.String("label_selector", labelSelector),
 				zap.String("annotation", fmt.Sprintf("%s=%s", annotationSelectorKey, annotationSelectorValue)),
 				zap.String("created_on.gte", now.String()),

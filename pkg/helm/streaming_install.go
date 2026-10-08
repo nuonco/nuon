@@ -36,7 +36,7 @@ func HelmInstallWithLogStreaming(
 	streamer := NewLogStreamer(k8sClient, l)
 
 	// the bulk of the work is here
-	go streamLogs(streamCtx, cancelStreaming, streamer, k8sClient, labelSelector, annotationSelectorKey, annotationSelectorValue, l)
+	go streamLogs(streamCtx, cancelStreaming, streamer, k8sClient, client.Namespace, labelSelector, annotationSelectorKey, annotationSelectorValue, l)
 
 	// execute the upgrade
 	rel, err := client.RunWithContext(ctx, chart, values)
