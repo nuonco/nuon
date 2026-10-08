@@ -45,7 +45,7 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 		}
 
 		if redacted {
-			if err := h.redactInputs(ctx, installID, es); err != nil {
+			if err := h.RedactStateInputs(ctx, installID, es); err != nil {
 				return nil, errors.Wrap(err, "unable to redact inputs")
 			}
 		}
@@ -363,12 +363,8 @@ func (h *Helpers) regenerateStalePartials(ctx context.Context, row *app.InstallS
 	return is, nil
 }
 
-// redactInputs masks sensitive values at read time; persisted state always holds the real values.
-func (h *Helpers) redactInputs(ctx context.Context, installID string, es *state.State) error {
-	if es == nil || es.Inputs == nil || len(es.Inputs.Inputs) == 0 {
-		return nil
-	}
-
+// RedactStateInputs masks sensitive inputs at read time; persisted state always holds the real values.
+func (h *Helpers) RedactStateInputs(ctx context.Context, installID string, states ...*state.State) error {
 	var inputs app.InstallInputs
 	res := h.db.WithContext(ctx).
 		Where(app.InstallInputs{InstallID: installID}).
@@ -383,16 +379,27 @@ func (h *Helpers) redactInputs(ctx context.Context, installID string, es *state.
 		if pkggenerics.FromPtrStr(masked) != redactedInputValue {
 			continue
 		}
-		if _, ok := es.Inputs.Inputs[name]; ok {
-			es.Inputs.Inputs[name] = redactedInputValue
-		}
-		if es.Install != nil {
-			if _, ok := es.Install.Inputs[name]; ok {
-				es.Install.Inputs[name] = redactedInputValue
-			}
+		for _, es := range states {
+			redactStateInput(es, name)
 		}
 	}
 	return nil
+}
+
+func redactStateInput(es *state.State, name string) {
+	if es == nil {
+		return
+	}
+	if es.Inputs != nil {
+		if _, ok := es.Inputs.Inputs[name]; ok {
+			es.Inputs.Inputs[name] = redactedInputValue
+		}
+	}
+	if es.Install != nil {
+		if _, ok := es.Install.Inputs[name]; ok {
+			es.Install.Inputs[name] = redactedInputValue
+		}
+	}
 }
 
 // redactedInputValue matches the mask install_inputs_view_v1 writes for sensitive inputs.
