@@ -239,6 +239,7 @@
         "icon": "robot",
         "pages": [
           "guides/agents/overview",
+          "guides/agents/setup",
           "guides/agents/mcp-walkthrough",
           "guides/agents/tools",
           "guides/agents/skills",
