@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 )
 
 type CreateInstallAppConfigVersionInput struct {
@@ -40,14 +41,18 @@ func (a *Activities) CreateInstallAppConfigVersion(ctx context.Context, input *C
 	}
 
 	update := app.InstallAppConfigVersion{
-		AppBranchRunID: &input.AppBranchRunID,
-		InstallGroupID: &input.InstallGroupID,
 		InstallID:      input.InstallID,
 		OldAppConfigID: oldAppConfigID,
 		NewAppConfigID: input.NewAppConfigID,
 		Status:         app.NewCompositeStatus(ctx, app.StatusPending),
 	}
-	if err := a.db.WithContext(ctx).Create(&update).Error; err != nil {
+	if input.AppBranchRunID != "" {
+		update.AppBranchRunID = &input.AppBranchRunID
+	}
+	if input.InstallGroupID != "" {
+		update.InstallGroupID = &input.InstallGroupID
+	}
+	if err := installhelpers.CreateInstallAppConfigVersionRow(ctx, a.db, &update); err != nil {
 		return nil, fmt.Errorf("unable to create install config update: %w", err)
 	}
 

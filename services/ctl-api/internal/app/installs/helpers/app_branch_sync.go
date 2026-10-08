@@ -200,6 +200,14 @@ func (h *Helpers) installOnAppConfig(ctx context.Context, install *app.Install, 
 	return inFlight > 0, nil
 }
 
+func CreateInstallAppConfigVersionRow(ctx context.Context, db *gorm.DB, version *app.InstallAppConfigVersion) error {
+	q := db.WithContext(ctx)
+	if version.OldAppConfigID == "" {
+		q = q.Omit("OldAppConfigID")
+	}
+	return q.Create(version).Error
+}
+
 // CreateAppBranchConfigUpdateWorkflow records an install app config version for
 // the new config and enqueues the workflow that rolls the install onto it.
 func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input AppBranchConfigUpdateInput) (*AppBranchConfigUpdate, error) {
@@ -231,7 +239,7 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 	if input.InstallGroupID != "" {
 		update.InstallGroupID = &input.InstallGroupID
 	}
-	if err := h.db.WithContext(ctx).Create(&update).Error; err != nil {
+	if err := CreateInstallAppConfigVersionRow(ctx, h.db, &update); err != nil {
 		return nil, fmt.Errorf("unable to create install config update: %w", err)
 	}
 
