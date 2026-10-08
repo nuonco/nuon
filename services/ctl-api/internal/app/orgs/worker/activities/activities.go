@@ -14,6 +14,7 @@ import (
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
+	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/salesforce"
 )
 
@@ -32,6 +33,7 @@ type Params struct {
 	Features                *features.Features
 	Salesforce              salesforce.Client
 	AcctClient              *account.Client
+	FlowsClient             *flowclient.Client
 }
 
 type Activities struct {
@@ -46,6 +48,7 @@ type Activities struct {
 	features                *features.Features
 	salesforce              salesforce.Client
 	acctClient              *account.Client
+	flowsClient             *flowclient.Client
 	enableSupportUsers      bool
 }
 
@@ -62,6 +65,7 @@ func New(params Params) (*Activities, error) {
 		features:                params.Features,
 		salesforce:              params.Salesforce,
 		acctClient:              params.AcctClient,
+		flowsClient:             params.FlowsClient,
 		enableSupportUsers:      params.Cfg != nil && params.Cfg.EnableSupportUsers,
 	}, nil
 }

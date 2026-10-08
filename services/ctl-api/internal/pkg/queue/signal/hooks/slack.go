@@ -268,6 +268,17 @@ func (h *SlackSignalLifecycleHook) publish(ctx context.Context, event signal.Sig
 		return nil
 	}
 
+	if installID := eventInstallOwnerID(event); installID != "" {
+		forgotten, err := isForgottenInstall(ctx, h.db, installID)
+		if err != nil {
+			h.emitError(ctx, phasePrefix)
+			return fmt.Errorf("unable to check forgotten install for slack lifecycle: %w", err)
+		}
+		if forgotten {
+			return nil
+		}
+	}
+
 	// Resolve verified org-links and active installations BEFORE the
 	// expensive buildEventData enrichment. Both are cheap indexed lookups
 	// (org_id / team_id IN); enrichment runs several JOIN queries against

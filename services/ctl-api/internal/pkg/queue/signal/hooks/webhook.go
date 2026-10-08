@@ -639,6 +639,17 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 		zap.String("signal_type", string(event.SignalType)),
 	)
 
+	if installID := eventInstallOwnerID(event); installID != "" {
+		forgotten, err := isForgottenInstall(ctx, h.db, installID)
+		if err != nil {
+			h.emitError(ctx, phasePrefix)
+			return fmt.Errorf("unable to check forgotten install for webhook lifecycle: %w", err)
+		}
+		if forgotten {
+			return nil
+		}
+	}
+
 	// Resolve dispatch targets BEFORE the expensive buildEventData
 	// enrichment. listOrgWebhookTargets is a single SELECT on the
 	// webhooks table filtered by org_id; the enrichment chain
