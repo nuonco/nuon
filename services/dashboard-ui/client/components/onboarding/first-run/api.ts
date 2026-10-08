@@ -63,18 +63,29 @@ export async function ensureDefaultBranch({
     (await createAppBranch({ appId, orgId, body: { name: DEFAULT_BRANCH_NAME } }))
   const branchId = branch.id as string
 
-  try {
-    await getBranchLatestConfig({ appId, branchId, orgId })
-    return branchId
-  } catch (error) {
-    if (statusOf(error) !== 404) throw error
-  }
-
   const vcs = {
     repo: source.repo,
     directory: source.directory ?? CONFIG_DIRECTORY,
     branch: TRACKED_GIT_BRANCH,
   }
+
+  // Keep the existing config only if it already tracks this source. A config
+  // left from an older layout (Kitchen Sink moved its directories) is
+  // replaced, and the new config starts a fresh branch run.
+  try {
+    const latest = await getBranchLatestConfig({ appId, branchId, orgId })
+    const current = latest.public_git_vcs_config ?? latest.connected_github_vcs_config
+    if (
+      current?.repo === vcs.repo &&
+      current?.directory === vcs.directory &&
+      current?.branch === vcs.branch
+    ) {
+      return branchId
+    }
+  } catch (error) {
+    if (statusOf(error) !== 404) throw error
+  }
+
   await createBranchConfig({
     appId,
     branchId,
