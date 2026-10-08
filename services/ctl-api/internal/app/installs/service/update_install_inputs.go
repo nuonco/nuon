@@ -112,6 +112,14 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 // inputs PATCH endpoint and any flow that drives install inputs (e.g. the
 // component enable/disable toggle, which writes the synthetic enabled input).
 func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Install, patch map[string]*string, role string, deployDependents bool, inputsOnly bool, planOnly bool, workflowType app.WorkflowType, request *app.WorkflowRequest) (*app.InstallInputs, error) {
+	checkMetadata := map[string]string{}
+	if inputsOnly {
+		checkMetadata[app.WorkflowMetadataKeyInputsOnly] = strconv.FormatBool(true)
+	}
+	if err := s.helpers.CheckInstallRunnerForWorkflow(ctx, install.ID, workflowType, checkMetadata); err != nil {
+		return nil, err
+	}
+
 	var inputs *app.InstallInputs
 	var metadata map[string]string
 	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {

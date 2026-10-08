@@ -30,17 +30,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	steps := make([]*app.WorkflowStep, 0)
 
 	sg.nextGroupEager()
-	step, err := sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-		InstallID: installID,
-		Mode:      awaitrunnerhealthy.ModeRequireActive,
-	}, flw.PlanOnly)
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
-
-	sg.nextGroup()
-	step, err = stateInputsRefreshStep(ctx, sg, install, flw.PlanOnly)
+	step, err := stateInputsRefreshStep(ctx, sg, install, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -73,12 +63,6 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	}
 
 	dg := newGenCtx(sg, flw, installID, appConfig, awData, WithInstallInputs(install.CurrentInstallInputs))
-
-	lifecycleSteps, err := getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreUpdateInputs)
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, lifecycleSteps...)
 
 	var changedRefs []refs.Ref
 	for _, input := range changedInputs {
@@ -135,6 +119,29 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to check if sandbox needs reprovision")
 	}
+
+	needsRunner := sandboxNeedsReprovision ||
+		len(componentIDs) > 0 ||
+		len(disableComps) > 0 ||
+		len(filterActionWorkflowsByTrigger(awData, app.ActionWorkflowTriggerTypePreUpdateInputs, "", appConfig)) > 0 ||
+		len(filterActionWorkflowsByTrigger(awData, app.ActionWorkflowTriggerTypePostUpdateInputs, "", appConfig)) > 0
+	if needsRunner {
+		sg.nextGroupEager()
+		step, err = sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+			InstallID: installID,
+			Mode:      awaitrunnerhealthy.ModeRequireActive,
+		}, flw.PlanOnly)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
+	}
+
+	lifecycleSteps, err := getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreUpdateInputs)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
 
 	preEnableSteps, err := componentEnableLifecycleSteps(ctx, dg, enableComps, app.ActionWorkflowTriggerTypePreEnableComponent)
 	if err != nil {

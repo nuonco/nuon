@@ -36,12 +36,18 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 		}
 		switch {
 		case !latestState.StaleAt.Empty() && len(latestState.StalePartials) > 0:
-			es, err = h.regenerateStalePartials(ctx, latestState, redacted, skipVersionCheck)
+			es, err = h.regenerateStalePartials(ctx, latestState, skipVersionCheck)
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to regenerate stale partials")
 			}
 		case !latestState.StaleAt.Empty():
 			es.StaleAt = &latestState.StaleAt.Time
+		}
+
+		if redacted {
+			if err := h.redactInputs(ctx, installID, es); err != nil {
+				return nil, errors.Wrap(err, "unable to redact inputs")
+			}
 		}
 
 		// Labels are mutable and not persisted in the state snapshot,
@@ -319,7 +325,7 @@ func (h *Helpers) getLatestInstallStateRow(ctx context.Context, installID string
 
 // regenerateStalePartials regenerates only the partials listed in row.StalePartials, merges them into
 // the cached state, persists the result in place (clearing the stale markers), and returns it.
-func (h *Helpers) regenerateStalePartials(ctx context.Context, row *app.InstallState, redacted, skipVersionCheck bool) (*state.State, error) {
+func (h *Helpers) regenerateStalePartials(ctx context.Context, row *app.InstallState, skipVersionCheck bool) (*state.State, error) {
 	is, fromBlob := row.GetState(ctx, h.cfg.BlobReadEnabled)
 	if fromBlob {
 		cctx.GetLogger(ctx, h.l).Debug("read install state from blob (stale partials)",
@@ -337,7 +343,7 @@ func (h *Helpers) regenerateStalePartials(ctx context.Context, row *app.InstallS
 	is.Name = install.Name
 
 	for _, partial := range row.StalePartials {
-		if err := h.regenerateStalePartial(ctx, install, partial, is, redacted, skipVersionCheck); err != nil {
+		if err := h.regenerateStalePartial(ctx, install, partial, is, false, skipVersionCheck); err != nil {
 			return nil, errors.Wrapf(err, "unable to regenerate partial %s", partial)
 		}
 	}
@@ -356,6 +362,41 @@ func (h *Helpers) regenerateStalePartials(ctx context.Context, row *app.InstallS
 
 	return is, nil
 }
+
+// redactInputs masks sensitive values at read time; persisted state always holds the real values.
+func (h *Helpers) redactInputs(ctx context.Context, installID string, es *state.State) error {
+	if es == nil || es.Inputs == nil || len(es.Inputs.Inputs) == 0 {
+		return nil
+	}
+
+	var inputs app.InstallInputs
+	res := h.db.WithContext(ctx).
+		Where(app.InstallInputs{InstallID: installID}).
+		Order(views.TableOrViewName(h.db, &app.InstallInputs{}, ".created_at DESC")).
+		Limit(1).
+		Find(&inputs)
+	if res.Error != nil {
+		return errors.Wrap(res.Error, "unable to get install inputs")
+	}
+
+	for name, masked := range inputs.ValuesRedacted {
+		if pkggenerics.FromPtrStr(masked) != redactedInputValue {
+			continue
+		}
+		if _, ok := es.Inputs.Inputs[name]; ok {
+			es.Inputs.Inputs[name] = redactedInputValue
+		}
+		if es.Install != nil {
+			if _, ok := es.Install.Inputs[name]; ok {
+				es.Install.Inputs[name] = redactedInputValue
+			}
+		}
+	}
+	return nil
+}
+
+// redactedInputValue matches the mask install_inputs_view_v1 writes for sensitive inputs.
+const redactedInputValue = "********"
 
 // regenerateStalePartial refreshes a single partial into state, reusing the same data fetch path as state gen signal.
 func (h *Helpers) regenerateStalePartial(ctx context.Context, install *app.Install, partial pkgstate.PartialName, is *state.State, redacted, skipVersionCheck bool) error {

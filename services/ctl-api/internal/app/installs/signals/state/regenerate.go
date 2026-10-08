@@ -16,6 +16,7 @@ import (
 )
 
 func Regenerate(ctx workflow.Context, req *state.ExecuteRegenerationRequest) (*state.ExecuteRegenerationResponse, error) {
+	refreshStartedAt := workflow.Now(ctx)
 	lastModifiedAt := make(map[state.PartialName]time.Time, len(req.LastModifiedAt))
 	for k, v := range req.LastModifiedAt {
 		lastModifiedAt[k] = v
@@ -89,11 +90,13 @@ func Regenerate(ctx workflow.Context, req *state.ExecuteRegenerationRequest) (*s
 		helpers.MapLegacyFields(is)
 
 		if _, err := installactivities.AwaitSaveState(ctx, &installactivities.SaveStateRequest{
-			State:           is,
-			InstallID:       req.InstallID,
-			TriggeredByID:   req.TriggeredByID,
-			TriggeredByType: req.TriggeredByType,
-			GeneratedBy:     app.InstallStateGenerateSourceStateManager,
+			State:             is,
+			InstallID:         req.InstallID,
+			TriggeredByID:     req.TriggeredByID,
+			TriggeredByType:   req.TriggeredByType,
+			GeneratedBy:       app.InstallStateGenerateSourceStateManager,
+			RefreshedPartials: updatedPartials,
+			RefreshStartedAt:  refreshStartedAt,
 		}); err != nil {
 			return nil, errors.Wrap(err, "error while saving state")
 		}

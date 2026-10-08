@@ -14,8 +14,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 const SignalType signal.SignalType = "update-install-stack-outputs"
@@ -187,14 +190,28 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to fetch install input values from stack outputs")
 	}
 	if len(installInputValues) > 0 {
-		if _, err := activities.AwaitUpdateInstallInputsFromStack(ctx, &activities.UpdateInstallInputsFromStackRequest{
+		inputResp, err := activities.AwaitUpdateInstallInputsFromStack(ctx, &activities.UpdateInstallInputsFromStackRequest{
 			InstallID:               install.ID,
 			InputConfigID:           appCfg.InputConfig.ID,
 			InputValues:             installInputValues,
 			InstallStackVersionID:   version.ID,
 			SkipInputUpdateWorkflow: s.SkipInputUpdateWorkflow,
-		}); err != nil {
+		})
+		if err != nil {
 			return errors.Wrap(err, "unable to update install inputs from stack outputs")
+		}
+
+		if inputResp != nil && inputResp.WorkflowID != "" {
+			if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+				OwnerID:         install.ID,
+				OwnerType:       "installs",
+				QueueName:       queuenames.InstallWorkflowsQueueName,
+				Signal:          executeflow.NewSignal(inputResp.WorkflowID),
+				SignalOwnerID:   inputResp.WorkflowID,
+				SignalOwnerType: (&app.Workflow{}).TableName(),
+			}); err != nil {
+				return errors.Wrap(err, "unable to enqueue input update workflow signal")
+			}
 		}
 	}
 
