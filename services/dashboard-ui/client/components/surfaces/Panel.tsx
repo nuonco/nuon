@@ -71,7 +71,7 @@ export const PanelBase = ({
         <section
           className={cn(
             'panel fixed h-screen top-0 right-0 border flex flex-col shadow-2xl overflow-hidden',
-            'bg-white dark:bg-dark-grey-900',
+            'bg-elevation-2',
             {
               'w-screen md:w-104': size === 'default',
               'w-screen md:w-1/2': size === 'half',
@@ -162,7 +162,7 @@ export const PanelBase = ({
             {children}
           </div>
           {footer ? (
-            <footer className="flex shrink-0 items-center justify-end gap-4 border-t px-4 md:px-6 py-4 bg-white dark:bg-dark-grey-900">
+            <footer className="flex shrink-0 items-center justify-end gap-4 border-t px-4 md:px-6 py-4 bg-elevation-2">
               {footer}
             </footer>
           ) : null}

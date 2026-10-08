@@ -30,7 +30,7 @@ export const SearchInput = forwardRef<HTMLInputElement, ISearchInput>(
           ref={ref}
           className={cn(
             'rounded-md pl-8 pr-3.5 py-1.5 h-[36px] font-sans md:min-w-80 border text-sm',
-            'bg-white dark:bg-dark-grey-900 placeholder:text-cool-grey-500 dark:placeholder:text-cool-grey-700',
+            'bg-black/6 dark:bg-white/6 !border-field-border placeholder:text-cool-grey-500 dark:placeholder:text-cool-grey-700',
             className
           )}
           type="text"

@@ -7,6 +7,56 @@ import { Text } from './Text'
 import { Button } from './Button'
 import { Badge } from './Badge'
 import { Icon } from './Icon'
+import { Input } from './form/Input'
+
+const STEPS = [
+  { level: '0', className: 'bg-elevation-0', where: 'Page' },
+  { level: '1', className: 'bg-elevation-1', where: 'Card on the page' },
+  { level: '2', className: 'bg-elevation-2', where: 'Panel and modal' },
+  { level: '3', className: 'bg-elevation-3', where: 'Card inside a panel or modal' },
+] as const
+
+export const Elevation = () => (
+  <div className="flex flex-col gap-6">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {STEPS.map((step) => (
+        <div
+          key={step.level}
+          className={`flex flex-col gap-3 rounded-md border p-4 ${step.className}`}
+        >
+          <Text weight="strong">{step.level}</Text>
+          <Text variant="subtext" theme="neutral">
+            {step.where}
+          </Text>
+          <Text>Body copy stays on the foreground color.</Text>
+          <Button variant="secondary" size="sm">
+            Action
+          </Button>
+          <Input placeholder="Field" />
+        </div>
+      ))}
+    </div>
+
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <Card>
+        <Text weight="strong">Default</Text>
+        <Text theme="neutral">
+          Inherits the page. Same choice inside a panel or modal.
+        </Text>
+      </Card>
+      <Card elevation="1">
+        <Text weight="strong">Elevation 1</Text>
+        <Text theme="neutral">
+          Separates a group from the page. Nested content climbs to 2.
+        </Text>
+        <Card elevation="2" className="!p-4 !gap-4">
+          <Text weight="strong">Elevation 2</Text>
+          <Text theme="neutral">One step above its parent, same fill as a panel.</Text>
+        </Card>
+      </Card>
+    </div>
+  </div>
+)
 
 export const BasicUsage = () => (
   <div className="space-y-6">

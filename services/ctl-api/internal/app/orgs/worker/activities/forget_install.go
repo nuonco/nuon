@@ -2,12 +2,17 @@ package activities
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"time"
 
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
+	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 )
 
 type ForgetInstallRequest struct {
@@ -18,6 +23,13 @@ type ForgetInstallRequest struct {
 // @by-field InstallID
 func (a *Activities) ForgetInstall(ctx context.Context, req ForgetInstallRequest) error {
 	installOwnerType := plugins.TableName(a.db, app.Install{})
+
+	// Cancel open install workflows before soft-deleting queue signals so
+	// flowsClient can still find the execute-flow signal. Otherwise forgotten
+	// installs leave hanging Temporal WFs that keep emitting lifecycle noise.
+	if err := a.cancelOpenInstallWorkflows(ctx, req.InstallID, installOwnerType); err != nil {
+		return err
+	}
 
 	// must run before the cascade delete below soft-deletes the queues
 	var queueIDs []string
@@ -108,5 +120,88 @@ func (a *Activities) ForgetInstall(ctx context.Context, req ForgetInstallRequest
 		return dbgenerics.TemporalGormError(res.Error, "unable to delete install: %w")
 	}
 
+	return nil
+}
+
+func (a *Activities) cancelOpenInstallWorkflows(ctx context.Context, installID, installOwnerType string) error {
+	var workflows []app.Workflow
+	if err := a.db.WithContext(ctx).
+		Where(app.Workflow{
+			OwnerID:   installID,
+			OwnerType: installOwnerType,
+		}).
+		Find(&workflows).Error; err != nil {
+		return dbgenerics.TemporalGormError(err, "unable to list install workflows: %w")
+	}
+
+	for i := range workflows {
+		wf := &workflows[i]
+		if !isCancelableWorkflowStatus(wf.Status.Status) {
+			continue
+		}
+		if err := a.cancelInstallWorkflow(ctx, wf); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func isCancelableWorkflowStatus(status app.Status) bool {
+	switch status {
+	case app.StatusInProgress,
+		app.StatusPending,
+		app.AwaitingApproval,
+		app.StatusFailedPendingRetry:
+		return true
+	default:
+		return false
+	}
+}
+
+func (a *Activities) cancelInstallWorkflow(ctx context.Context, wf *app.Workflow) error {
+	if wf.Status.Status == app.StatusPending {
+		return a.cancelWorkflowInDB(ctx, wf)
+	}
+
+	if _, err := a.flowsClient.CancelWorkflow(ctx, &flowclient.CancelWorkflowRequest{
+		InstallWorkflowID: wf.ID,
+	}); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return a.cancelWorkflowInDB(ctx, wf)
+		}
+		return fmt.Errorf("unable to cancel workflow %s: %w", wf.ID, err)
+	}
+	return a.markForgottenCancelReason(ctx, wf.ID)
+}
+
+const forgottenInstallCancelReason = "cancelled because install was forgotten"
+
+func forgottenInstallCancelStatus(ctx context.Context) app.CompositeStatus {
+	status := app.NewCompositeStatus(ctx, app.StatusCancelled)
+	status.StatusHumanDescription = forgottenInstallCancelReason
+	return status
+}
+
+func (a *Activities) markForgottenCancelReason(ctx context.Context, workflowID string) error {
+	var wf app.Workflow
+	if err := a.db.WithContext(ctx).First(&wf, "id = ?", workflowID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return fmt.Errorf("unable to load workflow %s after cancel: %w", workflowID, err)
+	}
+	wf.Status.StatusHumanDescription = forgottenInstallCancelReason
+	if err := a.db.WithContext(ctx).Save(&wf).Error; err != nil {
+		return fmt.Errorf("unable to set forget cancel reason on workflow %s: %w", workflowID, err)
+	}
+	return nil
+}
+
+func (a *Activities) cancelWorkflowInDB(ctx context.Context, wf *app.Workflow) error {
+	wf.Status = forgottenInstallCancelStatus(ctx)
+	wf.FinishedAt = time.Now()
+	if err := a.db.WithContext(ctx).Save(wf).Error; err != nil {
+		return fmt.Errorf("unable to cancel workflow %s in db: %w", wf.ID, err)
+	}
 	return nil
 }

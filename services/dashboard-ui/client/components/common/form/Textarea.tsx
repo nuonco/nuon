@@ -144,7 +144,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, ITextarea>(
 
     const baseClasses = cn(
       'w-full rounded-md border transition-colors duration-200 resize-vertical',
-      'bg-white dark:bg-dark-grey-900',
+      'bg-black/6 dark:bg-white/6',
       'shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08)]',
       'placeholder:text-cool-grey-500 dark:placeholder:text-cool-grey-600',
       'font-sans',
@@ -162,7 +162,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, ITextarea>(
       },
 
       {
-        'border-cool-grey-500/24 dark:border-cool-grey-500/24': !error && !disabled && !isInvalid,
+        '!border-field-border': !error && !disabled && !isInvalid,
         'text-cool-grey-900 dark:text-cool-grey-100': !disabled,
 
         '!border-red-500 dark:!border-red-400': error || isInvalid,
