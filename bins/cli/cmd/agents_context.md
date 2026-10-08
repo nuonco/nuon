@@ -1,8 +1,8 @@
 # Nuon agent context
 
-**Purpose:** this document is for you, the agent. It templates out the current CLI selection, how to reach Nuon over MCP, the tool catalog, and links for everything else Nuon. Read it before creating or changing Nuon resources.
+**Purpose:** this document is for you, the agent. `nuon agents help` prints it when it detects an agent. It templates out the current CLI selection, how to reach Nuon over MCP, the tool catalog, and links for everything else Nuon. Read it before creating or changing Nuon resources.
 
-`nuon agents help` is the human-facing companion: the same setup, written for the person you are working with, checked against their config. Point them at it rather than improvising setup steps.
+A person running `nuon agents help` in a normal terminal gets the setup guide instead of this document. Point them at that rather than improvising setup steps.
 
 ## Current CLI selection
 
@@ -89,7 +89,7 @@ The upstream URL (`{{.MCPURL}}`) is derived from `api_url` in the CLI config, tu
 
 ## Creating something new (starter checklist)
 
-1. Confirm org/app context (`nuon agents context` / `whoami`).
+1. Confirm org/app context from the table above, or call `whoami`.
 2. Prefer MCP tools for reads; use `--allow-writes` (or a write-scoped token) only when mutating.
 3. Typical create flow:
    - App config in a local directory → `nuon apps sync` (or ask the user to sync).

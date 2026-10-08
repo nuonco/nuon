@@ -368,7 +368,6 @@ export const BranchRunChangesSummary = ({
     return (
       <ConfigParseFailure
         className={className}
-        title={title}
         headerAction={headerAction}
         lines={configDiagnosticLines(configError)}
       />

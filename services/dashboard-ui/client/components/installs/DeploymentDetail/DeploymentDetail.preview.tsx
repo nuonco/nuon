@@ -1231,6 +1231,7 @@ export const DeploymentsPreview = ({
                   run={run}
                   title={run.title}
                   createdAt={run.created_at}
+                  href={`/deployments/${run.id}`}
                   onViewDetails={() => addPanel(<PreviewPanel run={run} />)}
                 >
                   {run.note ? (

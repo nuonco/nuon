@@ -6,7 +6,7 @@ icon: "route"
 
 ## Prerequisites
 
-- [Nuon CLI](/cli) installed and authenticated (`nuon auth login`, `nuon orgs select`)
+- [Nuon CLI](/cli) installed and authenticated (`nuon auth login`)
 - An LLM client that supports MCP (Cursor, Claude Code, etc.)
 
 ## Steps
@@ -73,19 +73,9 @@ agent mcp enable nuon
 
 Examples include `--allow-writes` so mutating tools are available. That flag only lists write tools; the identity still needs [Admin](/concepts/access-control) (`org_admin`), not Read-only.
 
-The proxy derives its URL from the configured API hostname (`api.<hostname>` becomes `mcp.<hostname>/mcp`). Pass `--url` when the MCP URL does not follow from the API URL, for example a self-hosted or Nuon BYOC control plane, or any deployment where the hostnames differ. Use `--name` to rename it in the client's MCP list. Full examples: [Connect](/guides/agents/overview#connect) and [Overriding the MCP URL](/guides/agents/overview#overriding-the-mcp-url).
+The proxy derives its URL from the configured API hostname (`api.<hostname>` becomes `mcp.<hostname>/mcp`). Pass `--url` when the MCP URL does not follow from the API URL, for example a self-hosted or Nuon BYOC control plane, or any deployment where the hostnames differ. Use `--name` to rename it in the client's MCP list. Full examples: [Connect](/guides/agents/setup#connect) and [Overriding the MCP URL](/guides/agents/setup#overriding-the-mcp-url).
 
 `nuon agents help` prints all of this against your own config.
-
-</Step>
-
-<Step title="Verify context">
-
-```bash
-nuon agents context
-```
-
-Confirm you are authenticated and an org is selected. If not, run `nuon auth login` and `nuon orgs select`.
 
 </Step>
 
