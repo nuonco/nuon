@@ -2,10 +2,6 @@ package activities
 
 import (
 	"context"
-	"errors"
-	"fmt"
-
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/configdiff"
@@ -19,54 +15,5 @@ type GetLatestActiveSandboxBuildRequest struct {
 // @by-field AppConfigID
 // @start-to-close-timeout 30s
 func (a *Activities) GetLatestActiveSandboxBuild(ctx context.Context, req GetLatestActiveSandboxBuildRequest) (*app.AppSandboxBuild, error) {
-	var build app.AppSandboxBuild
-	res := a.db.WithContext(ctx).
-		Where(app.AppSandboxBuild{
-			AppConfigID: req.AppConfigID,
-			Status:      app.AppSandboxBuildStatusActive,
-		}).
-		Order("created_at DESC").
-		First(&build)
-	if res.Error == nil {
-		return &build, nil
-	}
-	if !errors.Is(res.Error, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("unable to get latest active sandbox build: %w", res.Error)
-	}
-
-	var current app.AppSandboxConfig
-	err := a.db.WithContext(ctx).
-		Preload("ConnectedGithubVCSConfig").
-		Preload("PublicGitVCSConfig").
-		Where(app.AppSandboxConfig{AppConfigID: req.AppConfigID}).
-		First(&current).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("unable to load sandbox config for app config %s: %w", req.AppConfigID, err)
-	}
-
-	var candidate app.AppSandboxBuild
-	err = a.db.WithContext(ctx).
-		Preload("AppSandboxConfig").
-		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
-		Preload("AppSandboxConfig.PublicGitVCSConfig").
-		Where(app.AppSandboxBuild{
-			AppID:  current.AppID,
-			Status: app.AppSandboxBuildStatusActive,
-		}).
-		Order("created_at DESC").
-		First(&candidate).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("unable to get latest active sandbox build for app %s: %w", current.AppID, err)
-	}
-	if configdiff.SandboxConfigsEqual(candidate.AppSandboxConfig, current) {
-		return &candidate, nil
-	}
-
-	return nil, nil
+	return configdiff.LatestActiveSandboxBuild(ctx, a.db, req.AppConfigID)
 }

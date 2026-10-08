@@ -48,11 +48,7 @@ func (a *Activities) CheckSandboxBuildNeeded(ctx context.Context, input *CheckSa
 		return &CheckSandboxBuildNeededOutput{NeedsBuild: true, ChangeReason: ChangeReasonSourceChanged}, nil
 	}
 
-	reused, reuseErr := a.FindReusableSandboxBuild(ctx, &FindReusableSandboxBuildInput{
-		AppID:       newCfg.AppID,
-		AppConfigID: input.NewAppConfigID,
-		RunID:       input.RunID,
-	})
+	reused, reuseErr := a.findReusableSandboxBuild(ctx, newCfg.AppID, input.RunID, newCfg)
 	if reuseErr != nil {
 		return nil, fmt.Errorf("unable to check sandbox source reuse: %w", reuseErr)
 	}

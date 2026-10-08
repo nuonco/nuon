@@ -38,7 +38,13 @@ func (a *Activities) FindReusableSandboxBuild(ctx context.Context, input *FindRe
 		return out, nil
 	}
 
-	run, err := a.getAppBranchRunByID(ctx, input.RunID)
+	return a.findReusableSandboxBuild(ctx, input.AppID, input.RunID, cfg)
+}
+
+func (a *Activities) findReusableSandboxBuild(ctx context.Context, appID, runID string, cfg *app.AppSandboxConfig) (*FindReusableSandboxBuildOutput, error) {
+	out := &FindReusableSandboxBuildOutput{}
+
+	run, err := a.getAppBranchRunByID(ctx, runID)
 	if err != nil {
 		return nil, err
 	}
@@ -53,14 +59,14 @@ func (a *Activities) FindReusableSandboxBuild(ctx context.Context, input *FindRe
 	directory := sandboxConfigDirectory(cfg)
 
 	if repoURLsEqual(sandboxRepo, branchRepo) {
-		paths, ok, pathErr := a.comparisonChangedPaths(ctx, input.RunID)
+		paths, ok, pathErr := a.comparisonChangedPaths(ctx, runID)
 		if pathErr != nil {
 			return nil, pathErr
 		}
 		if !ok || anyPathMatchesDirectory(paths, directory) {
 			return out, nil
 		}
-		build, findErr := a.latestEquivalentSandboxBuild(ctx, input.AppID, cfg)
+		build, findErr := a.latestEquivalentSandboxBuild(ctx, appID, cfg)
 		if findErr != nil {
 			return nil, findErr
 		}
@@ -77,7 +83,7 @@ func (a *Activities) FindReusableSandboxBuild(ctx context.Context, input *FindRe
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve sandbox commit: %w", err)
 	}
-	build, err := a.latestEquivalentSandboxBuild(ctx, input.AppID, cfg)
+	build, err := a.latestEquivalentSandboxBuild(ctx, appID, cfg)
 	if err != nil {
 		return nil, err
 	}
