@@ -14,6 +14,8 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 // NewBuildAppConfigParams creates a new BuildAppConfigParams object,
@@ -72,6 +74,12 @@ type BuildAppConfigParams struct {
 	   app config ID
 	*/
 	ConfigID string
+
+	/* Req.
+
+	   Input
+	*/
+	Req *models.ServiceBuildAppConfigRequest
 
 	timeout    time.Duration
 	Context    context.Context
@@ -148,6 +156,17 @@ func (o *BuildAppConfigParams) SetConfigID(configID string) {
 	o.ConfigID = configID
 }
 
+// WithReq adds the req to the build app config params
+func (o *BuildAppConfigParams) WithReq(req *models.ServiceBuildAppConfigRequest) *BuildAppConfigParams {
+	o.SetReq(req)
+	return o
+}
+
+// SetReq adds the req to the build app config params
+func (o *BuildAppConfigParams) SetReq(req *models.ServiceBuildAppConfigRequest) {
+	o.Req = req
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *BuildAppConfigParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -164,6 +183,11 @@ func (o *BuildAppConfigParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 	// path param config_id
 	if err := r.SetPathParam("config_id", o.ConfigID); err != nil {
 		return err
+	}
+	if o.Req != nil {
+		if err := r.SetBodyParam(o.Req); err != nil {
+			return err
+		}
 	}
 
 	if len(res) > 0 {

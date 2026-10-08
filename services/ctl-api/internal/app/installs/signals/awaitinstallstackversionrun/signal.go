@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installgrouprelease"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -53,6 +54,11 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 			ID:     s.versionID,
 			Status: app.NewCompositeTemporalStatus(cancelCtx, app.StatusCancelled),
 		})
+		if err := activities.AwaitClearInstallStackVersionCallback(cancelCtx, activities.ClearInstallStackVersionCallbackRequest{
+			VersionID: s.versionID,
+		}); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -177,6 +183,18 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			Data:        data,
 		}); err != nil {
 			return errors.Wrap(err, "unable to fire sandbox phone home")
+		}
+	}
+
+	if workflow.GetVersion(ctx, "stack-wait-release-group-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion &&
+		!shouldCreateManagedAWSCloudFormationStack(s.CreateManagedStack, install, appCfg) &&
+		!install.SandboxMode.Bool {
+		if _, err := activities.AwaitSendInstallGroupDirective(ctx, activities.SendInstallGroupDirectiveRequest{
+			InstallID: install.ID,
+			Directive: installgrouprelease.DirectiveRelease,
+			Reason:    installgrouprelease.ReasonStackPendingCustomer,
+		}); err != nil {
+			return errors.Wrap(err, "unable to release install group")
 		}
 	}
 

@@ -9,16 +9,17 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
 
-// FindBaseAppBranchRun returns the most recent deploy run on the same app branch
-// with labels.builds_completed=true. Preview runs (git-preview-run, plan-only)
-// are excluded from the candidate pool.
+// FindBaseAppBranchRun returns the most recent non-preview run on the app
+// branch that parsed an app config and finished component builds. The run's
+// overall status is not required to be success: a later deploy failure still
+// leaves a usable baseline.
 func (h *Helpers) FindBaseAppBranchRun(ctx context.Context, appBranchID string) (*app.AppBranchRun, error) {
-	return h.findLatestBaseRun(ctx, appBranchID, "", true)
+	return h.findLatestBaseRun(ctx, appBranchID, "")
 }
 
 // FindBaseAppBranchRunForHead resolves preview baselines from the git branch a
-// pull request targets. Regular branch runs continue to compare with their
-// previous completed build on the same app branch.
+// pull request targets. Regular branch runs compare with the previous parsed
+// build on the same app branch.
 func (h *Helpers) FindBaseAppBranchRunForHead(ctx context.Context, headRun *app.AppBranchRun) (*app.AppBranchRun, error) {
 	if headRun == nil {
 		return nil, gorm.ErrRecordNotFound
@@ -32,53 +33,25 @@ func (h *Helpers) FindBaseAppBranchRunForHead(ctx context.Context, headRun *app.
 		return nil, err
 	}
 
-	baseRun, err := h.findLatestBaseRun(ctx, targetBranchID, headRun.ID, false)
-	if err != gorm.ErrRecordNotFound {
-		return baseRun, err
-	}
-
-	return h.findLatestCompletedBaseRun(ctx, targetBranchID, headRun.ID)
+	return h.findLatestBaseRun(ctx, targetBranchID, headRun.ID)
 }
 
-func (h *Helpers) findLatestBaseRun(ctx context.Context, appBranchID, excludedRunID string, requireBuildsCompleted bool) (*app.AppBranchRun, error) {
+func (h *Helpers) findLatestBaseRun(ctx context.Context, appBranchID, excludedRunID string) (*app.AppBranchRun, error) {
 	query := h.db.WithContext(ctx).
-		Where(app.AppBranchRun{
-			AppBranchID: appBranchID,
-			Status:      "success",
-		})
+		Where(app.AppBranchRun{AppBranchID: appBranchID}).
+		Where("app_config_id <> ''").
+		Where("labels->>'builds_completed' = ?", "true").
+		Where("run_type IN ?", []app.AppBranchRunType{
+			app.AppBranchRunTypeGit,
+			app.AppBranchRunTypeManual,
+		}).
+		Where("plan_only = ?", false)
 	if excludedRunID != "" {
 		query = query.Not(app.AppBranchRun{ID: excludedRunID})
-	}
-	if requireBuildsCompleted {
-		query = query.Where("labels->>'builds_completed' = ?", "true")
 	}
 
 	var baseRun app.AppBranchRun
 	err := query.
-		Where("run_type IN ?", []app.AppBranchRunType{
-			app.AppBranchRunTypeGit,
-			app.AppBranchRunTypeManual,
-		}).
-		Where("plan_only = ?", false).
-		Order("created_at DESC").
-		First(&baseRun).Error
-	if err != nil {
-		return nil, err
-	}
-	return &baseRun, nil
-}
-
-func (h *Helpers) findLatestCompletedBaseRun(ctx context.Context, appBranchID, excludedRunID string) (*app.AppBranchRun, error) {
-	var baseRun app.AppBranchRun
-	err := h.db.WithContext(ctx).
-		Where(app.AppBranchRun{AppBranchID: appBranchID}).
-		Not(app.AppBranchRun{ID: excludedRunID}).
-		Where("run_type IN ?", []app.AppBranchRunType{
-			app.AppBranchRunTypeGit,
-			app.AppBranchRunTypeManual,
-		}).
-		Where("plan_only = ?", false).
-		Where("completed_at IS NOT NULL").
 		Order("created_at DESC").
 		First(&baseRun).Error
 	if err != nil {
@@ -159,7 +132,7 @@ func shouldCreateComparison(runType app.AppBranchRunType, planOnly bool) bool {
 }
 
 // createAppBranchRunComparison creates a comparison row for headRun.
-// BaseRunID is set when a prior deploy with builds_completed=true exists; otherwise nil.
+// BaseRunID is set when a prior run parsed an app config and finished builds; otherwise nil.
 // Ownership is HeadRunID on the comparison (has-one from the run); no column on AppBranchRun.
 func (h *Helpers) createAppBranchRunComparison(ctx context.Context, headRun *app.AppBranchRun) error {
 	var baseRunID *string

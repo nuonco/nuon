@@ -7,6 +7,7 @@ import {
 } from '@/components/branches/ComponentConfigDiff/ComponentConfigDiff'
 import { BranchRunComparisonRuns } from '@/components/branches/BranchRunComparisonRuns'
 import { Card } from '@/components/common/Card'
+import { EmptyState } from '@/components/common/EmptyState'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import {
@@ -15,6 +16,11 @@ import {
   type TSourceArchiveFileDiff,
   type TBranchRunComparisonConfigDiff,
 } from '@/lib'
+import {
+  scopedComparisonConfigDiff,
+  scopedComparisonFiles,
+  type TComparisonScope,
+} from './comparison-scope'
 
 const GROUPED_SECTIONS = new Set([
   'Components',
@@ -29,12 +35,13 @@ const GROUPED_SECTIONS = new Set([
 const EXCLUDED_SECTIONS = new Set(['Stack', 'Install inputs', 'Secrets'])
 
 export function sectionsFromComparisonConfigDiff(
-  content?: TBranchRunComparisonConfigDiff | null
+  content?: TBranchRunComparisonConfigDiff | null,
+  scope?: TComparisonScope
 ): DiffSectionData[] {
   if (!content?.sections?.length) return []
 
-  return content.sections
-    .filter((sec) => !EXCLUDED_SECTIONS.has(sec.name))
+  return (scopedComparisonConfigDiff(content, scope)?.sections ?? [])
+    .filter((sec) => scope || !EXCLUDED_SECTIONS.has(sec.name))
     .map((sec) => {
       const grouped = GROUPED_SECTIONS.has(sec.name)
       const entityOp = (op: string): 'add' | 'remove' | 'change' =>
@@ -98,6 +105,7 @@ interface IBranchRunChanges {
   title?: string
   headerAction?: ReactNode
   isPending?: boolean
+  scope?: TComparisonScope
 }
 
 export const BranchRunChanges = ({
@@ -109,6 +117,7 @@ export const BranchRunChanges = ({
   title,
   headerAction,
   isPending,
+  scope,
 }: IBranchRunChanges) => {
   const { org } = useOrg()
   const { app } = useApp()
@@ -135,13 +144,20 @@ export const BranchRunChanges = ({
   })
 
   const sections = useMemo(
-    () => sectionsFromComparisonConfigDiff(data?.config_diff_content),
-    [data?.config_diff_content]
+    () => sectionsFromComparisonConfigDiff(data?.config_diff_content, scope),
+    [data?.config_diff_content, scope]
   )
 
   const sourceFiles = useMemo(
-    () => sourceFilesFromDiff(data?.source_diff_content?.files),
-    [data?.source_diff_content?.files]
+    () =>
+      sourceFilesFromDiff(
+        scopedComparisonFiles(
+          data?.source_diff_content?.files,
+          data?.config_diff_content,
+          scope
+        )
+      ),
+    [data?.source_diff_content?.files, data?.config_diff_content, scope]
   )
   const [selectedPath, setSelectedPath] = useState<string | undefined>()
   const selectedFile = data?.source_diff_content?.files.find(
@@ -230,14 +246,9 @@ export const BranchRunChanges = ({
 
   if (isError) {
     return (
-      <AppConfigFilesDiff
-        title={title}
-        headerAction={headerAction}
-        isPending={isPending}
-        previousVersion={data?.base_sha?.slice(0, 7) ?? ''}
-        currentVersion={data?.head_sha?.slice(0, 7) ?? ''}
-        configSections={[]}
-        files={[]}
+      <EmptyState
+        emptyTitle="Template updates failed to load"
+        emptyMessage="Unable to load the app branch comparison. Try refreshing the page."
         className={className}
       />
     )
@@ -261,7 +272,7 @@ export const BranchRunChanges = ({
       <AppConfigFilesDiff
         title={title}
         headerAction={headerAction}
-        isPending={isPending}
+        isPending={isPending || isLoading}
         previousVersion={data?.base_sha?.slice(0, 7) ?? ''}
         currentVersion={data?.head_sha?.slice(0, 7) ?? ''}
         configSections={sections}

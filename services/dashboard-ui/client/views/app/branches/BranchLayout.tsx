@@ -14,7 +14,6 @@ import { BranchProvider } from '@/providers/branch-provider'
 import { AppBranchSwitcher } from '@/components/branches/AppBranchSwitcher'
 import { BranchDetailActions } from '@/components/branches/BranchDetailActions'
 import { BranchHeaderMeta } from '@/components/branches/BranchHeaderMeta'
-import { BranchPendingApprovals } from '@/components/branches/BranchRunApproval'
 import { WorkflowRunPanelHost } from '@/components/branches/WorkflowRunPanel'
 import { getRunTitle } from '@/components/branches/shared/run-title'
 import { getBranchWorkflowRun, getBranchWorkflowRuns } from '@/lib'
@@ -51,7 +50,14 @@ const BranchTemplate = () => {
   const runRolloutMatch = useMatch(
     '/:orgId/apps/:appId/branches/:branchId/runs/:runId/rollout'
   )
-  const isDetailRoute = !!detailMatch && !params.runId
+  const rolloutGroupMatch = useMatch(
+    '/:orgId/apps/:appId/branches/:branchId/rollout/groups/:groupId'
+  )
+  const runRolloutGroupMatch = useMatch(
+    '/:orgId/apps/:appId/branches/:branchId/runs/:runId/rollout/groups/:groupId'
+  )
+  const isRolloutGroupRoute = !!rolloutGroupMatch || !!runRolloutGroupMatch
+  const isDetailRoute = !!detailMatch && !params.runId && !isRolloutGroupRoute
   const branchId = params.branchId as string
   const orgId = org.id!
   const appId = app.id!
@@ -87,6 +93,9 @@ const BranchTemplate = () => {
     hasDeploymentPlan && !isLoadingLatestRun && !latestRun
   const hasInstallSyncing = !!org?.features?.['app-install-syncing']
   const navCounts = useBranchNavCounts({ orgId, appId, branchId })
+  const groupName =
+    currentConfig?.install_groups?.find((group) => group.id === params.groupId)
+      ?.name ?? 'Group'
 
   const navLinks: TNavItem[] = [
     { path: `/`, iconVariant: 'GraphIcon', text: 'Overview' },
@@ -158,8 +167,6 @@ const BranchTemplate = () => {
     },
     { path: `/readme`, iconVariant: 'BookOpenIcon', text: 'README' },
   ]
-  // Run detail renders its own BranchRunApproval; layout banner is for other routes.
-  const approvalRun = params.runId ? null : latestRun
 
   return (
     <>
@@ -179,11 +186,28 @@ const BranchTemplate = () => {
                   },
                 ]
               : []),
-            ...(runRolloutMatch
+            ...(runRolloutMatch || runRolloutGroupMatch
               ? [
                   {
                     path: `${basePath}/runs/${params.runId}/rollout`,
                     text: 'Rollout',
+                  },
+                ]
+              : []),
+            ...(rolloutGroupMatch
+              ? [
+                  { path: `${basePath}/rollout`, text: 'Rollout' },
+                  {
+                    path: `${basePath}/rollout/groups/${params.groupId}`,
+                    text: groupName,
+                  },
+                ]
+              : []),
+            ...(runRolloutGroupMatch
+              ? [
+                  {
+                    path: `${basePath}/runs/${params.runId}/rollout/groups/${params.groupId}`,
+                    text: groupName,
                   },
                 ]
               : []),
@@ -221,12 +245,6 @@ const BranchTemplate = () => {
           pinLastGroup
         />
         <div className="flex flex-col flex-1 min-w-0">
-          {approvalRun ? (
-            <BranchPendingApprovals
-              run={approvalRun}
-              className="px-4 md:px-6 pt-4 md:pt-6"
-            />
-          ) : null}
           <Outlet />
         </div>
       </PageContent>

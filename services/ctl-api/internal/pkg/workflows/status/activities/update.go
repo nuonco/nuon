@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/pkg/lifecyclephase"
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installgrouprelease"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
@@ -120,7 +121,7 @@ func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app
 	if err != nil {
 		return err
 	}
-	status, err = nextCompositeStatus(ctx, existingStatus, status)
+	status, err = NextCompositeStatus(ctx, existingStatus, status)
 	if err != nil {
 		return err
 	}
@@ -149,7 +150,7 @@ func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app
 	return nil
 }
 
-func nextCompositeStatus(ctx context.Context, existingStatus, status app.CompositeStatus) (app.CompositeStatus, error) {
+func NextCompositeStatus(ctx context.Context, existingStatus, status app.CompositeStatus) (app.CompositeStatus, error) {
 	createdBy, err := cctx.AccountIDFromContext(ctx)
 	if err != nil {
 		return app.CompositeStatus{}, errors.Wrap(err, "unable to get created by")
@@ -228,6 +229,9 @@ func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateSt
 	if req.Status.Status == app.StatusSuccess {
 		a.syncInstallActualAppConfigFromFlow(ctx, &loaded)
 	}
+	if req.Status.Status == app.StatusSuccess || req.Status.Status == app.StatusError || req.Status.Status == app.StatusCancelled {
+		a.syncReleasedInstallGroupRun(ctx, &loaded, string(req.Status.Status))
+	}
 
 	if a.notifier != nil {
 		a.notifier.FlowStatusUpdated(ctx, req)
@@ -273,6 +277,35 @@ func (a *Activities) syncInstallAppConfigVersionFromFlowStatus(ctx context.Conte
 			zap.String("workflow_id", workflowID),
 			zap.Error(res.Error),
 		)
+	}
+}
+
+func (a *Activities) syncReleasedInstallGroupRun(ctx context.Context, flw *app.Workflow, status string) {
+	if flw.OwnerType != "installs" || flw.Type != app.WorkflowTypeAppBranchConfigUpdate {
+		return
+	}
+	runID := ""
+	if v, ok := flw.Metadata["app_branch_run_id"]; ok && v != nil {
+		runID = *v
+	}
+	succeeded := false
+	if err := installgrouprelease.SetInstallStatus(ctx, a.db, runID, flw.OwnerID, func(install *app.InstallGroupRunInstall) {
+		switch install.Status {
+		case installgrouprelease.StatusPendingCustomer, installgrouprelease.StatusQueued:
+			if status == string(app.StatusSuccess) {
+				succeeded = true
+			}
+			install.Status = status
+		}
+	}); err != nil {
+		a.l.Warn("unable to record released install group outcome",
+			zap.String("workflow_id", flw.ID),
+			zap.Error(err),
+		)
+		return
+	}
+	if succeeded && !flw.PlanOnly && a.released != nil {
+		a.released.ReleasedInstallSucceeded(ctx, flw.ID, runID, flw.OwnerID)
 	}
 }
 

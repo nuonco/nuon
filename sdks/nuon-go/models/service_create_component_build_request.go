@@ -8,8 +8,10 @@ package models
 import (
 	"context"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // ServiceCreateComponentBuildRequest service create component build request
@@ -20,12 +22,37 @@ type ServiceCreateComponentBuildRequest struct {
 	// git ref
 	GitRef string `json:"git_ref,omitempty"`
 
+	// request id
+	// Max Length: 255
+	RequestID string `json:"request_id,omitempty"`
+
 	// use latest
 	UseLatest bool `json:"use_latest,omitempty"`
 }
 
 // Validate validates this service create component build request
 func (m *ServiceCreateComponentBuildRequest) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateRequestID(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ServiceCreateComponentBuildRequest) validateRequestID(formats strfmt.Registry) error {
+	if swag.IsZero(m.RequestID) { // not required
+		return nil
+	}
+
+	if err := validate.MaxLength("request_id", "body", m.RequestID, 255); err != nil {
+		return err
+	}
+
 	return nil
 }
 

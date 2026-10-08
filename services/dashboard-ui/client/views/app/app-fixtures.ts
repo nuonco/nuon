@@ -13,9 +13,7 @@ const appOrg = {
   id: VIEW_ORG_ID,
   name: 'Acme',
   features: {
-    'app-branches-ui': true,
     'new-app-ia': true,
-    'new-install-ia': true,
   },
 }
 
@@ -180,6 +178,101 @@ const installs = [
   install('inst-acme', 'acme-prod', 'customers', 'us-east-1', 'active', '2026-06-12T00:00:00Z'),
   install('inst-globex', 'globex-prod', 'customers', 'eu-west-1', 'degraded', '2026-07-03T00:00:00Z'),
 ]
+
+type TPickerGroup = { name: string; statuses: Record<string, number> }
+
+const pickerRollouts: Record<string, TPickerGroup[]> = {
+  'br-1': [
+    { name: 'staging', statuses: { success: 3 } },
+    { name: 'canary', statuses: { success: 5, error: 1 } },
+    {
+      name: 'customers',
+      statuses: { success: 7, 'in-progress': 3, queued: 8 },
+    },
+  ],
+  'br-2': [
+    { name: 'customers-us', statuses: { success: 8 } },
+    {
+      name: 'customers-eu',
+      statuses: { success: 4, 'approval-awaiting': 6 },
+    },
+    { name: 'enterprise', statuses: { pending: 5 } },
+  ],
+  'br-3': [
+    { name: 'previews', statuses: { success: 2, error: 1, cancelled: 1 } },
+    { name: 'qa', statuses: { success: 3, error: 2, pending: 1 } },
+  ],
+}
+
+const pickerGroupInstalls = (branchId: string, group: TPickerGroup) =>
+  Object.entries(group.statuses).flatMap(([status, count]) =>
+    Array.from({ length: count }, (_, index) => ({
+      id: `inst-${branchId}-${group.name}-${status}-${index + 1}`,
+      name: `${group.name}-${status}-${index + 1}`,
+      status,
+    }))
+  )
+
+const pickerInstalls = Object.entries(pickerRollouts).flatMap(
+  ([branchId, groups]) =>
+    groups.flatMap((group) =>
+      pickerGroupInstalls(branchId, group).map((item) => ({
+        ...install(
+          item.id,
+          item.name,
+          group.name,
+          'us-east-1',
+          'active',
+          '2026-08-01T00:00:00Z'
+        ),
+        app_branch_id: branchId,
+        app_branch: { id: branchId },
+      }))
+    )
+)
+
+const pickerGroupRuns = (branchId: string) =>
+  (pickerRollouts[branchId] ?? []).map((group) => {
+    const groupInstalls = pickerGroupInstalls(branchId, group)
+    return {
+      id: `igr-${branchId}-${group.name}`,
+      install_group_id: `grp-${branchId}-${group.name}`,
+      install_group_name: group.name,
+      status: { status: 'in-progress' },
+      completed_installs: groupInstalls.filter(
+        (item) => item.status === 'success'
+      ).length,
+      total_installs: groupInstalls.length,
+      installs: groupInstalls.map((item) => ({
+        install_id: item.id,
+        workflow_id: `wf-${item.id}`,
+        status: item.status,
+      })),
+    }
+  })
+
+const pickerBranch = (
+  base: ReturnType<typeof branchRecord>,
+  status: string,
+  awaitingApproval = false
+) => ({
+  ...base,
+  configs: [
+    {
+      ...base.configs[0],
+      install_groups: (pickerRollouts[base.id] ?? []).map((group, index) => ({
+        id: `grp-${base.id}-${group.name}`,
+        name: group.name,
+        order: index,
+      })),
+    },
+  ],
+  latest_run: {
+    ...base.latest_run,
+    status,
+    awaiting_approval: awaitingApproval,
+  },
+})
 
 const workflowRun = {
   id: 'wf-run-1',
@@ -769,15 +862,9 @@ export const appFixture = (state: string): TFixture =>
           ? []
           : state === 'picker'
             ? [
-                mainBranch,
-                {
-                  ...releaseBranch,
-                  latest_run: { ...releaseBranch.latest_run, status: 'in-progress' },
-                },
-                {
-                  ...previewBranch,
-                  latest_run: { ...previewBranch.latest_run, status: 'error' },
-                },
+                pickerBranch(mainBranch, 'in-progress'),
+                pickerBranch(releaseBranch, 'in-progress', true),
+                pickerBranch(previewBranch, 'error'),
               ]
             : [branch]
       const query = params.get('q') ?? ''
@@ -802,6 +889,10 @@ export const appFixture = (state: string): TFixture =>
     if (path.endsWith('/runs/wf-run-1') || path.endsWith('/runs/wf-run-0')) {
       if (path.endsWith('wf-run-0')) return ok(olderRun)
       return ok(rollout === 'succeeded' ? workflowRun : current.run)
+    }
+    if (state === 'picker' && path.includes('/install-group-runs')) {
+      const branchId = path.match(/\/branches\/([^/]+)\//)?.[1] ?? ''
+      return ok(pickerGroupRuns(branchId))
     }
     if (path.includes('/install-group-runs')) {
       return ok(rollout === 'no-runs' || rollout === 'no-plan' || rollout === 'loading' ? [] : current.groups)
@@ -828,6 +919,9 @@ export const appFixture = (state: string): TFixture =>
           status_human_description: degraded ? 'A check is failing.' : 'Passing',
         },
       })
+    }
+    if (state === 'picker' && path === `/v1/apps/${VIEW_APP_ID}/installs`) {
+      return ok(pickerInstalls, true)
     }
     if (path === `/v1/apps/${VIEW_APP_ID}/installs` || path === '/v1/installs') {
       return listReply(state, 'installs', installs) ?? ok(installs, true)

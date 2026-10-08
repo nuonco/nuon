@@ -1,7 +1,9 @@
 import { useCallback, useMemo } from 'react'
 import { useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { matchesSelector } from '@/components/match/matches'
 import { resolveInstallGroupMembership } from '@/components/branches/install-group-membership'
+import { isPreviewBranchRun } from '@/components/branches/shared/preview-run-utils'
 import { getRunTitle } from '@/components/branches/shared/run-title'
 import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
@@ -16,6 +18,7 @@ import {
 import { latestBranchConfig } from '@/utils/branch-utils'
 import type {
   TAppBranchInstallGroup,
+  TAppBranchRun,
   TInstall,
   TInstallGroupRun,
   TInstallWorkflowStep,
@@ -23,7 +26,7 @@ import type {
 import type { TOverviewRollout } from './BranchOverview'
 import { installGroupApprovalLabel } from '@/components/branches/install-group-approval'
 import { installGroupMatch } from './InstallGroupMatch'
-import { fetchCommitReady } from './overview-loading'
+import type { TPreviewProgress } from './overview-loading'
 import {
   buildRolloutStages,
   deployStepForGroup,
@@ -33,6 +36,32 @@ import type { TTrackGroup, TTrackInstall } from './RolloutTrack'
 import { commitUrl, resolveRunSource } from './run-source'
 
 const TERMINAL = new Set(['success', 'failed', 'error', 'cancelled'])
+
+const installRolloutDetail = (
+  install: NonNullable<TInstallGroupRun['installs']>[number]
+) => {
+  if (install.status === 'pending_customer') {
+    switch (install.release_reason) {
+      case 'runner_offline':
+        return 'Runner offline'
+      case 'runner_error':
+        return 'Runner error'
+      case 'runner_disabled':
+        return 'Runner disabled'
+      default:
+        return 'Waiting on customer'
+    }
+  }
+  if (install.status === 'queued') {
+    return install.waiting_on_run_id
+      ? `Queued behind run ${install.waiting_on_run_id}`
+      : 'Queued behind an earlier run'
+  }
+  if (install.status === 'superseded') return 'Superseded by a later run'
+  return install.runbooks?.length
+    ? `${install.runbooks.length} post-deploy runbooks`
+    : undefined
+}
 
 const installRegion = (install?: TInstall) =>
   install?.aws_account?.region ||
@@ -46,7 +75,13 @@ const installSnapshot = (
   installLink?: TInstallLinkFor
 ): Pick<
   TTrackInstall,
-  'resources' | 'deployment' | 'health' | 'overviewHref' | 'labels' | 'region'
+  | 'resources'
+  | 'deployment'
+  | 'health'
+  | 'overviewHref'
+  | 'labels'
+  | 'region'
+  | 'appliedConfigId'
 > => {
   if (!install?.id) return {}
   const resourcesActive =
@@ -79,6 +114,7 @@ const installSnapshot = (
     overviewHref: installLink?.(install.id) || undefined,
     labels: install.labels,
     region: installRegion(install),
+    appliedConfigId: install.app_config_ref?.applied_config_id || undefined,
   }
 }
 
@@ -105,9 +141,7 @@ const fromGroupRun = (
         id,
         name: installsById[id]?.name ?? id,
         status: install.status || 'pending',
-        detail: install.runbooks?.length
-          ? `${install.runbooks.length} post-deploy runbooks`
-          : undefined,
+        detail: installRolloutDetail(install),
         ...installSnapshot(installsById[id], installLink),
         workflowId: install.workflow_id,
         workflowHref:
@@ -126,6 +160,12 @@ const sameName = (a?: string, b?: string) =>
 export const rolloutHrefForWorkflow = (basePath: string, workflowId?: string) =>
   workflowId ? `${basePath}/runs/${workflowId}/rollout` : `${basePath}/rollout`
 
+export const rolloutGroupHrefForWorkflow = (
+  basePath: string,
+  groupId: string,
+  workflowId?: string
+) => `${rolloutHrefForWorkflow(basePath, workflowId)}/groups/${groupId}`
+
 const groupBelongsToRun = (
   group: TTrackGroup,
   steps: TInstallWorkflowStep[]
@@ -142,6 +182,46 @@ const groupBelongsToRun = (
     !!planStepForGroup(steps, group.name) ||
     !!deployStepForGroup(steps, group.name)
   )
+}
+
+export const historyPreviewMode = (
+  branchRun: TAppBranchRun | undefined,
+  pinned: boolean
+): TPreviewProgress | undefined => {
+  if (!pinned || !isPreviewBranchRun(branchRun)) return undefined
+  const mode = branchRun?.preview?.mode
+  if (mode === 'build-only' || mode === 'plan-only' || mode === 'apply') {
+    return mode
+  }
+  return 'plan-only'
+}
+
+export const previewAffectedInstalls = (
+  installs: TInstall[],
+  branchRun?: TAppBranchRun
+): TInstall[] => {
+  const preview = branchRun?.preview
+  const resolved = preview?.resolved_preview_config
+  const installId = preview?.install_id || resolved?.install_id
+  const installName = preview?.install_name || resolved?.install_name
+  if (installId) {
+    const match = installs.find((install) => install.id === installId)
+    if (match) return [match]
+    return [
+      {
+        id: installId,
+        name: installName || installId,
+      } as TInstall,
+    ]
+  }
+  if (installName) {
+    return installs.filter((install) => install.name === installName)
+  }
+  const selector = resolved?.label_selector
+  if (Object.keys(selector?.match_labels ?? {}).length > 0) {
+    return installs.filter((install) => matchesSelector(install.labels, selector))
+  }
+  return []
 }
 
 export const historicalRunGroups = (
@@ -214,7 +294,7 @@ export const useRolloutGroups = () => {
   })
 
   const { data: latestResult, isLoading: isLoadingLatest } = useQuery({
-    queryKey: ['branch-latest-run', orgId, appId, branchId],
+    queryKey: ['branch-latest-run', orgId, appId, branchId, 'rollout'],
     queryFn: () =>
       getBranchWorkflowRuns({
         orgId: orgId!,
@@ -222,6 +302,7 @@ export const useRolloutGroups = () => {
         branchId,
         limit: 1,
         offset: 0,
+        preview: false,
       }),
     enabled: !!orgId && !!appId && !!branchId,
     refetchInterval: 5000,
@@ -338,17 +419,53 @@ export const useRolloutGroups = () => {
     installLink,
   ])
 
+  const previewMode = historyPreviewMode(branchRun, !!pinnedWorkflowId)
   const isHistoricalRun =
     !!pinnedWorkflowId && !!latestId && pinnedWorkflowId !== latestId
-  const visibleGroups = useMemo(
-    () =>
-      isHistoricalRun
-        ? historicalRunGroups(trackGroups, rolloutRun?.steps ?? [])
-        : trackGroups,
-    [isHistoricalRun, trackGroups, rolloutRun?.steps]
-  )
+  const visibleGroups = useMemo<TTrackGroup[]>(() => {
+    if (previewMode === 'build-only') return []
+    if (previewMode === 'plan-only' || previewMode === 'apply') {
+      const previewRuns = (groupRuns ?? []).filter((run) =>
+        sameName(run.install_group_name, 'preview')
+      )
+      if (previewRuns.length) {
+        return previewRuns.map((run) =>
+          fromGroupRun(run, groups, installsById, installLink)
+        )
+      }
+      const affected = previewAffectedInstalls(installs, branchRun)
+      return [
+        {
+          id: 'preview',
+          name: 'Preview',
+          status: 'pending',
+          installs: affected.map((install) => ({
+            id: install.id ?? '',
+            name: install.name ?? install.id ?? 'Install',
+            status: 'pending',
+            ...installSnapshot(install, installLink),
+          })),
+        },
+      ]
+    }
+    return isHistoricalRun
+      ? historicalRunGroups(trackGroups, rolloutRun?.steps ?? [])
+      : trackGroups
+  }, [
+    previewMode,
+    groupRuns,
+    groups,
+    installsById,
+    installLink,
+    installs,
+    branchRun,
+    isHistoricalRun,
+    trackGroups,
+    rolloutRun?.steps,
+  ])
 
   const sha = branchRun?.vcs_connection_commit?.sha ?? branchRun?.head_sha
+  const commitMessage = branchRun?.vcs_connection_commit?.message
   const rollout: TOverviewRollout | undefined = rolloutRun?.id
     ? {
         id: rolloutRun.id,
@@ -360,16 +477,17 @@ export const useRolloutGroups = () => {
         author: branchRun?.vcs_connection_commit?.author_name,
         status: rolloutRun.status?.status || 'unknown',
         activity: rolloutRun.status?.status_human_description,
-        commit: fetchCommitReady(rolloutRun.steps ?? [], sha)
-          ? {
-              message: branchRun?.vcs_connection_commit?.message,
-              author: branchRun?.vcs_connection_commit?.author_name,
-              avatarUrl: branchRun?.vcs_connection_commit?.author_avatar_url,
-              sha,
-              shaUrl: commitUrl(repoSlug, sha),
-              createdAt: branchRun?.vcs_connection_commit?.created_at,
-            }
-          : undefined,
+        commit:
+          sha || commitMessage
+            ? {
+                message: commitMessage,
+                author: branchRun?.vcs_connection_commit?.author_name,
+                avatarUrl: branchRun?.vcs_connection_commit?.author_avatar_url,
+                sha,
+                shaUrl: commitUrl(repoSlug, sha),
+                createdAt: branchRun?.vcs_connection_commit?.created_at,
+              }
+            : undefined,
       }
     : undefined
 
@@ -388,6 +506,8 @@ export const useRolloutGroups = () => {
     repoSlug,
     pinnedWorkflowId,
     rolloutHref: rolloutHrefForWorkflow(basePath, pinnedWorkflowId),
+    groupHref: (groupId: string) =>
+      rolloutGroupHrefForWorkflow(basePath, groupId, pinnedWorkflowId),
     rolloutError,
     branchRunId,
     rollout,
@@ -396,6 +516,15 @@ export const useRolloutGroups = () => {
     showLoadingTrack: isLoading || !!rollout,
     groups: visibleGroups,
     hasPlan: isHistoricalRun ? visibleGroups.length > 0 : groups.length > 0,
+    showInstalls:
+      previewMode === 'build-only'
+        ? false
+        : previewMode === 'plan-only' || previewMode === 'apply'
+          ? true
+          : isHistoricalRun
+            ? visibleGroups.length > 0
+            : groups.length > 0,
+    previewMode,
     isLoading,
   }
 }

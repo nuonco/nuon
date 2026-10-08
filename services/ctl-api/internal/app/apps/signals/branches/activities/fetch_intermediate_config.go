@@ -2,8 +2,6 @@ package activities
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"os"
 
 	"github.com/go-playground/validator/v10"
@@ -29,33 +27,25 @@ func (a *Activities) fetchIntermediateConfig(ctx context.Context, sourceDir stri
 		V:             v,
 		FileProcessor: func(name string, obj map[string]any) map[string]any { return obj },
 		SkipBranches:  true,
+		SkipInstalls:  true,
 	})
 	if err != nil {
-		var configErr config.ErrConfig
-		var parseErr parse.ParseErr
-		if errors.As(err, &configErr) || errors.As(err, &parseErr) {
-			return nil, temporal.NewNonRetryableApplicationError(
-				err.Error(),
-				branchrunerrors.ConfigValidationFailedTemporalType,
-				err,
-			)
-		}
-		return nil, fmt.Errorf("unable to parse config from repo: %w", err)
+		return nil, configValidationFailed(err)
 	}
 	cfg := parseResult.Config
 	cfg.SourceArchive = parseResult.Source
 
 	if err := validate.Validate(ctx, v, cfg); err != nil {
-		var configErr config.ErrConfig
-		if errors.As(err, &configErr) {
-			return nil, temporal.NewNonRetryableApplicationError(
-				configErr.Description,
-				branchrunerrors.ConfigValidationFailedTemporalType,
-				err,
-			)
-		}
-		return nil, err
+		return nil, configValidationFailed(err)
 	}
 
 	return cfg, nil
+}
+
+func configValidationFailed(err error) error {
+	return temporal.NewNonRetryableApplicationError(
+		branchrunerrors.UserDetail(err),
+		branchrunerrors.ConfigValidationFailedTemporalType,
+		err,
+	)
 }

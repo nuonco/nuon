@@ -8,12 +8,12 @@ import { Disclosure, type IDisclosure } from './Disclosure'
 export type { TDiffOperation } from '@/lib/diffs'
 
 const RAIL_CLASSES: Record<TDiffOperation, string> = {
-  create: 'border-l-diff-add',
-  update: 'border-l-diff-change',
-  replace: 'border-l-primary-500',
-  delete: 'border-l-diff-remove',
-  read: 'border-l-diff-neutral',
-  'no-op': 'border-l-diff-neutral',
+  create: '!border-l-diff-add',
+  update: '!border-l-diff-change',
+  replace: '!border-l-primary-500',
+  delete: '!border-l-diff-remove',
+  read: '!border-l-diff-neutral',
+  'no-op': '!border-l-diff-neutral',
 }
 
 const TINT_CLASSES: Record<TDiffOperation, string> = {

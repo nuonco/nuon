@@ -90,6 +90,21 @@ az stack group create --name {{install_id}}-stack --resource-group {{install_id}
 Each install stack version gets its own template, so the `--template-uri` changes whenever a new stack version is
 generated. The dashboard renders this command with the current template URL filled in.
 
+### Deploy to Azure Quick Link
+
+Subscription-scoped installs also get a Deploy to Azure quick link. It deploys the same template through a deployment
+stack named `{{install_id}}-stack`, so it converges with the CLI path rather than creating a second stack. Find it under
+**Subscription › Deployment stacks**; it is not listed with the install's resource group.
+
+The form shows a checkbox per role. A role unticked on a later deploy is removed: its identity, role definition and
+assignments are deleted, and Nuon marks it not provisioned.
+
+<Warning>
+  To delete an install, delete the stack and choose **Delete resources** (or run
+  `az stack sub delete --name {{install_id}}-stack --action-on-unmanage deleteAll`). The portal's default detaches
+  the resources instead, leaving them orphaned in the subscription.
+</Warning>
+
 ### Customer Inputs
 
 Every app input declared with `source = "customer"` is a parameter on the install stack template, named

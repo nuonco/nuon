@@ -11,7 +11,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-func (s *Service) UpdateInput(ctx context.Context, installID string, inputs []string, deployDependents bool, printJSON bool) error {
+func (s *Service) UpdateInput(ctx context.Context, installID string, inputs []string, deployDependents bool, requestID string, printJSON bool) error {
 	inputsMap := make(map[string]string)
 	for _, kv := range inputs {
 		kvT := strings.Split(kv, "=")
@@ -20,6 +20,7 @@ func (s *Service) UpdateInput(ctx context.Context, installID string, inputs []st
 	request := &models.ServiceUpdateInstallInputsRequest{
 		Inputs:           inputsMap,
 		DeployDependents: &deployDependents,
+		RequestID:        requestID,
 	}
 	if config.Debug() {
 		ui.PrintJSON(request)

@@ -1,7 +1,15 @@
 import { useMemo } from 'react'
-import { useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+  type QueryKey,
+} from '@tanstack/react-query'
 import { useResourceSSE } from '@/lib/sse/use-resource-sse'
-import { createSSEQueryListener, type TSSEListenerMap } from '@/lib/sse-listeners'
+import {
+  createSSEQueryListener,
+  type TSSEListenerMap,
+} from '@/lib/sse-listeners'
 
 const SUSPENDED_POLL_MS = 30_000
 
@@ -16,6 +24,7 @@ interface IUseSSETimelineQuery<TData> {
   transform?: (eventData: any) => unknown
   extraListeners?: TSSEListenerMap
   onError?: (message: string) => void
+  retainPreviousData?: boolean
 }
 
 export function useSSETimelineQuery<TData>({
@@ -29,6 +38,7 @@ export function useSSETimelineQuery<TData>({
   transform,
   extraListeners,
   onError,
+  retainPreviousData = false,
 }: IUseSSETimelineQuery<TData>) {
   const queryClient = useQueryClient()
 
@@ -47,9 +57,10 @@ export function useSSETimelineQuery<TData>({
     onError,
   })
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, isFetching, isPlaceholderData, error } = useQuery({
     queryKey,
     queryFn,
+    placeholderData: retainPreviousData ? keepPreviousData : undefined,
     refetchOnMount: 'always',
     refetchInterval:
       !shouldPoll || sseConnected
@@ -60,5 +71,5 @@ export function useSSETimelineQuery<TData>({
     enabled,
   })
 
-  return { data, isLoading, error, sseConnected }
+  return { data, isLoading, isFetching, isPlaceholderData, error, sseConnected }
 }

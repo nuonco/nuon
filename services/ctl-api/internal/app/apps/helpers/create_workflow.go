@@ -30,7 +30,7 @@ func (s *Helpers) CreateWorkflow(ctx context.Context,
 	planOnly bool,
 ) (*app.Workflow, error) {
 	metadata["app_branch_id"] = appBranchID
-	return s.createWorkflow(ctx, appBranchID, "app_branches", workflowType, metadata, planOnly)
+	return s.createWorkflow(ctx, appBranchID, "app_branches", workflowType, metadata, planOnly, nil)
 }
 
 func (s *Helpers) CreateAppWorkflow(ctx context.Context,
@@ -39,7 +39,17 @@ func (s *Helpers) CreateAppWorkflow(ctx context.Context,
 	metadata map[string]string,
 	planOnly bool,
 ) (*app.Workflow, error) {
-	return s.createWorkflow(ctx, appID, "apps", workflowType, metadata, planOnly)
+	return s.createWorkflow(ctx, appID, "apps", workflowType, metadata, planOnly, nil)
+}
+
+func (s *Helpers) CreateAppWorkflowWithRequest(ctx context.Context,
+	appID string,
+	workflowType app.WorkflowType,
+	metadata map[string]string,
+	planOnly bool,
+	wfRequest *app.WorkflowRequest,
+) (*app.Workflow, error) {
+	return s.createWorkflow(ctx, appID, "apps", workflowType, metadata, planOnly, wfRequest)
 }
 
 func (s *Helpers) createWorkflow(ctx context.Context,
@@ -47,8 +57,9 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 	workflowType app.WorkflowType,
 	metadata map[string]string,
 	planOnly bool,
+	wfRequest *app.WorkflowRequest,
 ) (*app.Workflow, error) {
-	return s.createWorkflowWithDB(ctx, s.db, ownerID, ownerType, workflowType, metadata, planOnly, app.InstallApprovalOptionPrompt, "")
+	return s.createWorkflowWithDB(ctx, s.db, ownerID, ownerType, workflowType, metadata, planOnly, app.InstallApprovalOptionPrompt, "", wfRequest)
 }
 
 func (s *Helpers) createWorkflowWithDB(ctx context.Context, db *gorm.DB,
@@ -58,6 +69,7 @@ func (s *Helpers) createWorkflowWithDB(ctx context.Context, db *gorm.DB,
 	planOnly bool,
 	approvalOption app.InstallApprovalOption,
 	role string,
+	wfRequest *app.WorkflowRequest,
 ) (*app.Workflow, error) {
 	status := app.NewCompositeStatus(ctx, app.StatusPending)
 	if approvalOption == app.InstallApprovalOptionApproveAll {
@@ -74,6 +86,7 @@ func (s *Helpers) createWorkflowWithDB(ctx context.Context, db *gorm.DB,
 		ApprovalOption:    approvalOption,
 		PlanOnly:          planOnly,
 		Role:              role,
+		Request:           wfRequest,
 		GenerateStepsSignal: &signaldb.SignalData{
 			Signal: &generateStepsSignal{},
 		},
@@ -88,5 +101,5 @@ func (s *Helpers) createWorkflowWithDB(ctx context.Context, db *gorm.DB,
 }
 
 func (s *Helpers) CreateWorkflowWithDB(ctx context.Context, db *gorm.DB, ownerID, ownerType string, workflowType app.WorkflowType, metadata map[string]string, planOnly bool, approvalOption app.InstallApprovalOption, role string) (*app.Workflow, error) {
-	return s.createWorkflowWithDB(ctx, db, ownerID, ownerType, workflowType, metadata, planOnly, approvalOption, role)
+	return s.createWorkflowWithDB(ctx, db, ownerID, ownerType, workflowType, metadata, planOnly, approvalOption, role, nil)
 }

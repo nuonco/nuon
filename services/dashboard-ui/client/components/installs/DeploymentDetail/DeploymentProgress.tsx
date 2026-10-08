@@ -1,0 +1,263 @@
+import { Badge } from '@/components/common/Badge'
+import { Icon } from '@/components/common/Icon'
+import { Status } from '@/components/common/Status'
+import { Text } from '@/components/common/Text'
+import { humanize } from '@/utils/string-utils'
+import {
+  activeStepDetail,
+  deploymentStepContext,
+  isAwaitingDeploymentApproval,
+  isAwaitingDeploymentRetry,
+  isCompletedDeploymentStep,
+  isDeploymentRunning,
+  isQueuedDeployment,
+  type TDeploymentOutcome,
+  type TDeploymentStep,
+} from './deployment-progress'
+
+export type TDeploymentRun = {
+  status: string
+  activity: string
+  steps: TDeploymentStep[]
+  outcomes: TDeploymentOutcome[]
+}
+
+export const DeploymentRunStatus = ({ run }: { run: TDeploymentRun }) => (
+  <span className="flex flex-wrap items-center gap-2">
+    <Status status={run.status} variant="badge" />
+    {run.steps.some(isAwaitingDeploymentApproval) ? (
+      <Badge size="sm" theme="warn">
+        Pending approval
+      </Badge>
+    ) : null}
+  </span>
+)
+
+const CATEGORY_LABELS = {
+  success: 'Completed',
+  'in-progress': 'In progress',
+  warn: 'Partial rollout',
+  error: 'Failed',
+  'not-started': 'Not started',
+  cancelled: 'Cancelled',
+  'user-skipped': 'Skipped',
+  unknown: 'Outcome unknown',
+}
+
+export type TResourceCategory = {
+  category: TDeploymentOutcome['category']
+  status: keyof typeof CATEGORY_LABELS
+  label: string
+}
+
+export const resourceCategories = (run: TDeploymentRun): TResourceCategory[] =>
+  [...new Set(run.outcomes.map((outcome) => outcome.category))].map(
+    (category) => {
+      const outcomes = run.outcomes.filter(
+        (outcome) => outcome.category === category
+      )
+      const completed = outcomes.every(
+        (outcome) => outcome.status === 'success'
+      )
+      const partial =
+        !completed &&
+        outcomes.some((outcome) => ['success', 'warn'].includes(outcome.status))
+      const every = (...statuses: string[]) =>
+        outcomes.every((outcome) => statuses.includes(outcome.status))
+      const status: TResourceCategory['status'] = completed
+        ? 'success'
+        : outcomes.some((outcome) => outcome.status === 'in-progress') ||
+            (partial && isDeploymentRunning(run.status))
+          ? 'in-progress'
+          : partial
+            ? 'warn'
+            : outcomes.some((outcome) => outcome.status === 'error')
+              ? 'error'
+              : every('not-started')
+                ? 'not-started'
+                : every('cancelled', 'not-started')
+                  ? 'cancelled'
+                  : every('user-skipped')
+                    ? 'user-skipped'
+                    : 'unknown'
+      return { category, status, label: CATEGORY_LABELS[status] }
+    }
+  )
+
+export const ResourceCategoryIcon = ({
+  status,
+  size = 14,
+}: {
+  status: TResourceCategory['status']
+  size?: number
+}) =>
+  status === 'warn' ? (
+    <Icon variant="CircleHalfIcon" theme="warn" size={size} />
+  ) : (
+    <Status status={status} variant="timeline" isWithoutText iconSize={size} />
+  )
+
+export const ResourceScopeSummary = ({ run }: { run: TDeploymentRun }) => (
+  <div
+    role="group"
+    aria-label="Resource outcomes"
+    className="flex flex-wrap items-center gap-x-5 gap-y-2"
+  >
+    {resourceCategories(run).map(({ category, status, label }) => (
+      <span
+        key={category}
+        role="group"
+        aria-label={`${category}: ${label}`}
+        className="flex items-center gap-2"
+      >
+        <ResourceCategoryIcon status={status} />
+        <Text>
+          {category}
+          {status !== 'success' ? ` — ${label}` : ''}
+        </Text>
+      </span>
+    ))}
+  </div>
+)
+
+export const ResourceOutcomes = ({ run }: { run: TDeploymentRun }) =>
+  run.outcomes.length ? (
+    <section
+      aria-label="Resource rollout outcomes"
+      className="flex flex-col gap-3"
+    >
+      <Text weight="strong">Resource outcomes</Text>
+      <ul className="flex flex-col gap-2">
+        {run.outcomes.map((outcome) => (
+          <li
+            key={`${outcome.category}-${outcome.name}`}
+            aria-label={`${outcome.name}: ${outcome.detail}`}
+            className="flex items-start gap-3"
+          >
+            <Status
+              status={outcome.status}
+              variant="timeline"
+              isWithoutText
+              iconSize={14}
+            />
+            <div className="flex min-w-0 flex-wrap items-baseline gap-x-3">
+              <Text
+                family={
+                  outcome.category === 'Components' ||
+                  outcome.category === 'Images'
+                    ? 'mono'
+                    : 'sans'
+                }
+                weight="strong"
+              >
+                {outcome.name}
+              </Text>
+              <Text theme={outcome.status === 'error' ? 'error' : 'neutral'}>
+                {outcome.detail}
+              </Text>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ) : null
+
+export const StepContext = ({ run }: { run: TDeploymentRun }) => {
+  const { current, next } = deploymentStepContext(run.status, run.steps)
+  const preparing = !run.steps.length && isQueuedDeployment(run.status)
+  const activeDetail = activeStepDetail(current)
+  return (
+    <div className="grid grid-cols-1 gap-4 @sm:grid-cols-2">
+      <div
+        role="group"
+        aria-label="Current step"
+        className="flex min-w-0 flex-col gap-1"
+      >
+        <Text variant="body" theme="neutral">
+          Current step
+        </Text>
+        <Text
+          variant="base"
+          weight="strong"
+          theme={run.status === 'error' ? 'error' : 'default'}
+          className="break-words"
+        >
+          {current?.name ??
+            (isDeploymentRunning(run.status)
+              ? run.activity
+              : preparing
+                ? 'Preparing steps'
+                : 'Step unavailable')}
+        </Text>
+        {current && isDeploymentRunning(run.status) && activeDetail ? (
+          <Text variant="subtext" theme="neutral">
+            {activeDetail.charAt(0).toUpperCase() + activeDetail.slice(1)}
+          </Text>
+        ) : null}
+        {current && !isDeploymentRunning(run.status) ? (
+          <Text variant="subtext" theme="neutral">
+            {run.status === 'success'
+              ? 'Completed'
+              : run.status === 'cancelled'
+                ? 'Cancelled'
+                : 'Failed'}
+          </Text>
+        ) : null}
+      </div>
+      <div
+        role="group"
+        aria-label="Next step"
+        className="flex min-w-0 flex-col gap-1 @sm:border-l @sm:pl-4"
+      >
+        <Text variant="body" theme="neutral">
+          Up next
+        </Text>
+        <Text variant="base" theme="neutral" className="break-words">
+          {next?.name ??
+            (run.steps.length
+              ? 'No remaining steps'
+              : preparing
+                ? 'Waiting for steps'
+                : 'Step unavailable')}
+        </Text>
+        {next && ['error', 'cancelled'].includes(run.status) ? (
+          <Text variant="subtext" theme="neutral">
+            Not started — deployment stopped
+          </Text>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+export const StepProgress = ({ run }: { run: TDeploymentRun }) => {
+  if (
+    !run.steps.length ||
+    (!isDeploymentRunning(run.status) && !isAwaitingDeploymentRetry(run.status))
+  )
+    return null
+  const completed = run.steps.filter(isCompletedDeploymentStep).length
+  const description = run.steps
+    .map((step) => `${step.name}: ${humanize(step.status?.status)}`)
+    .join('; ')
+  return (
+    <div
+      className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3"
+      role="group"
+      aria-label={`Workflow steps: ${completed} of ${run.steps.length} complete. ${description}`}
+      title={description}
+    >
+      <div className="flex min-w-0 gap-1" aria-hidden="true">
+        {run.steps.map((step) => (
+          <span
+            key={step.id}
+            className={`h-1 flex-1 rounded-sm ${isCompletedDeploymentStep(step) ? 'bg-green-500' : 'bg-cool-grey-200 dark:bg-dark-grey-600'}`}
+          />
+        ))}
+      </div>
+      <Text variant="subtext" theme="neutral">
+        {completed}/{run.steps.length} steps complete
+      </Text>
+    </div>
+  )
+}

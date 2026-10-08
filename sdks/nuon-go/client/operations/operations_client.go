@@ -608,6 +608,8 @@ type ClientService interface {
 
 	GetInstallActivity(params *GetInstallActivityParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActivityOK, error)
 
+	GetInstallAppConfigTreeDiff(params *GetInstallAppConfigTreeDiffParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAppConfigTreeDiffOK, error)
+
 	GetInstallAppConfigVersionDiff(params *GetInstallAppConfigVersionDiffParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAppConfigVersionDiffOK, error)
 
 	GetInstallAppConfigVersions(params *GetInstallAppConfigVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAppConfigVersionsOK, error)
@@ -643,6 +645,10 @@ type ClientService interface {
 	GetInstallConfigVersions(params *GetInstallConfigVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallConfigVersionsOK, error)
 
 	GetInstallDeploy(params *GetInstallDeployParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeployOK, error)
+
+	GetInstallDeployment(params *GetInstallDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeploymentOK, error)
+
+	GetInstallDeploymentSummaries(params *GetInstallDeploymentSummariesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeploymentSummariesOK, error)
 
 	GetInstallDeployments(params *GetInstallDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeploymentsOK, error)
 
@@ -2273,6 +2279,7 @@ Provide **either** `inline_contents` (for multi-line bash scripts) **or** `comma
 - `env_vars` (object, optional): Environment variables as key-value pairs
 - `timeout` (integer, optional): Execution timeout in seconds (1-3600, default: 300)
 - `name` (string, optional): Display name for the action (max 255 chars)
+- `request_id` (string, optional): Idempotency key (max 255 chars). The same id and body returns the original run. A different body returns 409.
 
 ## Response
 
@@ -12574,6 +12581,52 @@ func (a *Client) GetInstallActivity(params *GetInstallActivityParams, authInfo r
 }
 
 /*
+GetInstallAppConfigTreeDiff diffs an app config against an install s applied entities
+
+Compares a new app config to the install. Stack, runner, sandbox, and each component use that entity's applied app config. An empty applied config compares that entity to nothing.
+*/
+func (a *Client) GetInstallAppConfigTreeDiff(params *GetInstallAppConfigTreeDiffParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAppConfigTreeDiffOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallAppConfigTreeDiffParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallAppConfigTreeDiff",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/app-configs/{config_id}/diff",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallAppConfigTreeDiffReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallAppConfigTreeDiffOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallAppConfigTreeDiff: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetInstallAppConfigVersionDiff gets the diff for an install app config version
 
 Returns the component diff for a specific app config version transition.
@@ -13402,15 +13455,123 @@ func (a *Client) GetInstallDeploy(params *GetInstallDeployParams, authInfo runti
 }
 
 /*
+	GetInstallDeployment gets a single normalized deployment for an install
+
+	Returns one normalized deployment record for an install, identified by its backing workflow ID.
+
+The record includes the `app_branch` reference, image changes, `affected_resources`, and `change_groups` derived from the install's app config diff. Use the deployments feed for lightweight overview rows.
+*/
+func (a *Client) GetInstallDeployment(params *GetInstallDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeploymentOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallDeploymentParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallDeployment",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/deployments/{workflow_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallDeploymentReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallDeploymentOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallDeployment: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	GetInstallDeploymentSummaries gets lightweight deployment summaries for an install
+
+	Returns a lightweight, chronological deployment feed for an install.
+
+Each record represents one install-owned workflow that caused a real change: provisioning, reprovisioning, component deploys, input updates, stack reprovisioning, sandbox reprovisioning, and install-config updates. Action runs, runbook runs, and policy checks are returned by the activity feed. Plan-only and preview records are excluded.
+
+Records include a `type`, workflow `status`, `title`, `activity`, `finished`, and slim workflow `steps` for progress and resource outcomes. Use the single deployment endpoint for app branch, image, affected resource, and change details.
+
+Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `resource`, `search`, `created_at_gte`, and `created_at_lte`.
+
+`state=active` returns deployments whose workflow status is pending, queued, in progress, retrying, awaiting approval, approved, or failed pending retry. `state=finished` returns every other status. When `state=active`, `total` counts all matching active deployments, ignoring `limit` and `cursor`.
+
+`sort=attention` orders deployments awaiting approval first, failed pending retry second, then all others. Each group is ordered newest first. The default order is newest first.
+
+When `has_more` is true, `next_cursor` is an opaque cursor for the next page. Pass it back as `cursor` with the same `state` and `sort`. A cursor cannot be combined with a non-zero `page` or `offset`. An invalid `state`, `sort`, or `cursor` returns 400.
+*/
+func (a *Client) GetInstallDeploymentSummaries(params *GetInstallDeploymentSummariesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeploymentSummariesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallDeploymentSummariesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallDeploymentSummaries",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/deployment-summaries",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallDeploymentSummariesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallDeploymentSummariesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallDeploymentSummaries: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 	GetInstallDeployments gets normalized deployment feed for an install
 
 	Returns a normalized, chronological deployment feed for an install.
 
 Each record represents one install-owned workflow that caused a real change: provisioning, reprovisioning, component deploys, input updates, stack reprovisioning, sandbox reprovisioning, and install-config updates. Action runs, runbook runs, and policy checks are returned by the activity feed. Plan-only and preview records are excluded.
 
-Records include a `type`, unified `status`, human-readable `title` and `summary`, an optional `workflow` reference, an optional `app_branch` reference (when the change originated from a branch run), an optional primary `component` reference (for single-component operations), a flat `affected_resources` list of component names, and `change_groups` that group the affected resources by logical category.
+Records include a `type`, workflow `status`, `title`, `summary`, workflow and app branch references, affected resources, and change groups. Component and image details are included when applicable.
 
-Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `search`, `created_at_gte`, and `created_at_lte`.
+Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `resource`, `search`, `created_at_gte`, and `created_at_lte`.
+
+Use the deployment summaries endpoint for lightweight progress lists with lifecycle filtering and cursor pagination.
 */
 func (a *Client) GetInstallDeployments(params *GetInstallDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeploymentsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -19784,7 +19945,7 @@ func (a *Client) MngVMShutDown(params *MngVMShutDownParams, authInfo runtime.Cli
 /*
 MoveInstallToAppBranch moves an install to another app branch
 
-Moves the install to the given app branch and reconciles it onto that branch's current app config. An install belongs to exactly one app branch and this is the only way to change which one; labels and install group selectors decide which group inside the owning branch deploys it. The destination branch must belong to the same app and have an active, non-preview app config. There is no way to move an install off a branch without naming another.
+Moves the install to the given app branch and reconciles it onto that branch's current app config when one exists. An install belongs to exactly one app branch and this is the only way to change which one; labels and install group selectors decide which group inside the owning branch deploys it. The destination branch must belong to the same app. A branch with no completed run still accepts the install, and the deploy waits until a branch run completes. There is no way to move an install off a branch without naming another.
 */
 func (a *Client) MoveInstallToAppBranch(params *MoveInstallToAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MoveInstallToAppBranchOK, error) {
 	// NOTE: parameters are not validated before sending

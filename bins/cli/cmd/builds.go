@@ -7,11 +7,12 @@ import (
 // newBuildsCmd constructs a new builds command
 func (c *cli) buildsCmd() *cobra.Command {
 	var (
-		buildID string
-		compID  string
-		appID   string
-		offset  int
-		limit   int
+		buildID   string
+		compID    string
+		appID     string
+		requestID string
+		offset    int
+		limit     int
 	)
 
 	buildsCmd := &cobra.Command{
@@ -63,13 +64,14 @@ func (c *cli) buildsCmd() *cobra.Command {
 		Long:  "Create a build of an app component",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.builds
-			return svc.Create(cmd.Context(), appID, compID, PrintJSON)
+			return svc.Create(cmd.Context(), appID, compID, requestID, PrintJSON)
 		}),
 	}
 	createCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID or name of the component you want to create a build for")
 	createCmd.MarkFlagRequired("component-id")
 	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app the component belongs to")
 	createCmd.MarkFlagRequired("app-id")
+	addRequestIDFlag(createCmd, &requestID)
 	buildsCmd.AddCommand(createCmd)
 
 	logsCmd := &cobra.Command{

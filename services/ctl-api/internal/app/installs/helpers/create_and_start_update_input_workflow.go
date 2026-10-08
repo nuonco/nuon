@@ -18,6 +18,8 @@ func (h *Helpers) CreateAndStartInputUpdateWorkflow(
 	inputsOnly bool,
 	planOnly bool,
 	workflowType app.WorkflowType,
+	request *app.WorkflowRequest,
+	installInputsID string,
 ) (*app.Workflow, error) {
 	metadata := map[string]string{
 		// NOTE(jm): this metadata field is not really designed to be used for anything serious, outside of
@@ -32,14 +34,18 @@ func (h *Helpers) CreateAndStartInputUpdateWorkflow(
 	if changedInputValues != "" {
 		metadata[app.WorkflowMetadataKeyChangedInputValues] = changedInputValues
 	}
+	if installInputsID != "" {
+		metadata["install_inputs_id"] = installInputsID
+	}
 
-	workflow, err := h.CreateWorkflowWithRole(
+	workflow, err := h.createWorkflow(
 		ctx,
 		installID,
 		workflowType,
 		metadata,
 		planOnly,
 		role,
+		request,
 	)
 	if err != nil {
 		return nil, err

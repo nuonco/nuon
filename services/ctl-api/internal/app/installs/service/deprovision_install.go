@@ -12,14 +12,17 @@ import (
 
 	"github.com/nuonco/nuon/pkg/lifecyclephase"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type DeprovisionInstallRequest struct {
-	PlanOnly bool   `json:"plan_only"`
-	Role     string `json:"role,omitempty"`
+	RequestID string `json:"request_id,omitempty" validate:"omitempty,max=255"`
+	PlanOnly  bool   `json:"plan_only"`
+	Role      string `json:"role,omitempty"`
 }
 
 func (c *DeprovisionInstallRequest) Validate(v *validator.Validate) error {
@@ -43,6 +46,7 @@ func (c *DeprovisionInstallRequest) Validate(v *validator.Validate) error {
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.WorkflowResponse
 // @Router					/v1/installs/{install_id}/deprovision [post]
@@ -58,6 +62,43 @@ func (s *service) DeprovisionInstall(ctx *gin.Context) {
 	var req DeprovisionInstallRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		ctx.Error(stderr.NewInvalidRequest(err))
+		return
+	}
+
+	if req.RequestID != "" {
+		hashReq := req
+		hashReq.RequestID = ""
+		hash, err := request.Hash(hashReq)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		workflow, created, err := s.helpers.RunIdempotentInstallWorkflow(ctx, installhelpers.IdempotentInstallWorkflowRequest{
+			InstallID:    install.ID,
+			WorkflowType: app.WorkflowTypeDeprovision,
+			Metadata:     map[string]string{},
+			PlanOnly:     req.PlanOnly,
+			Role:         req.Role,
+			RequestID:    req.RequestID,
+			RequestHash:  hash,
+			Operation:    "deprovision",
+			QueueName:    installhelpers.InstallWorkflowsQueueName,
+		}, nil)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		if created {
+			lp := lifecyclephase.New(lifecyclephase.Deprovisioning, "Tearing down components and cloud resources")
+			s.db.WithContext(ctx).Model(&app.Install{ID: install.ID}).Updates(map[string]any{
+				"lifecycle_phase": lp,
+			})
+		}
+		s.logFlowAPIAction(ctx, "workflow.deprovision_requested",
+			zap.String("workflow_id", workflow.ID),
+			zap.String("install_id", install.ID),
+		)
+		ctx.JSON(http.StatusCreated, app.WorkflowResponse{WorkflowID: workflow.ID})
 		return
 	}
 

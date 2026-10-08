@@ -74,12 +74,10 @@ type InstallStackVersion struct {
 	// root template needs, so there is no link to offer.
 	QuickLinkURL string `json:"quick_link_url,omitzero" temporaljson:"quick_link_url,omitzero,omitempty"`
 
-	// QuickLinkBucketKey held the wrapper template an earlier Azure quick link
-	// pointed at. Nothing writes it now. QuickLinkUIDefBucketKey is the
-	// createUiDefinition uploaded for an Azure subscription-scoped quick link and
-	// appended as createUIDefinitionUri, so the portal pins the install's
-	// subscription and region. Rows created while the wrapper shipped still carry
-	// QuickLinkBucketKey.
+	// QuickLinkBucketKey is the deployment-stack wrapper an Azure subscription-scoped
+	// quick link points at (see arm.QuickLinkWrapper). QuickLinkUIDefBucketKey is
+	// the createUiDefinition appended as createUIDefinitionUri, so the portal pins
+	// the install's subscription and region.
 	QuickLinkBucketKey      string `json:"quick_link_bucket_key,omitzero" temporaljson:"quick_link_bucket_key,omitzero,omitempty"`
 	QuickLinkUIDefBucketKey string `json:"quick_link_ui_def_bucket_key,omitzero" temporaljson:"quick_link_ui_def_bucket_key,omitzero,omitempty"`
 

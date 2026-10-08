@@ -50,6 +50,8 @@ type CreateInstallGCPAccountParams struct {
 }
 
 type CreateInstallParams struct {
+	RequestID string `json:"request_id,omitempty" validate:"omitempty,max=255"`
+
 	Name              string `json:"name" validate:"required"`
 	CloudConnectionID string `json:"cloud_connection_id,omitempty"`
 

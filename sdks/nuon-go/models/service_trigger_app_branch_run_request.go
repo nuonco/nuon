@@ -12,6 +12,7 @@ import (
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // ServiceTriggerAppBranchRunRequest service trigger app branch run request
@@ -46,6 +47,10 @@ type ServiceTriggerAppBranchRunRequest struct {
 	// preview run
 	PreviewRun *ServicePreviewRunRequest `json:"preview_run,omitempty"`
 
+	// request id
+	// Max Length: 255
+	RequestID string `json:"request_id,omitempty"`
+
 	// run ref
 	RunRef string `json:"run_ref,omitempty"`
 
@@ -64,6 +69,10 @@ func (m *ServiceTriggerAppBranchRunRequest) Validate(formats strfmt.Registry) er
 	var res []error
 
 	if err := m.validatePreviewRun(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRequestID(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -95,6 +104,18 @@ func (m *ServiceTriggerAppBranchRunRequest) validatePreviewRun(formats strfmt.Re
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *ServiceTriggerAppBranchRunRequest) validateRequestID(formats strfmt.Registry) error {
+	if swag.IsZero(m.RequestID) { // not required
+		return nil
+	}
+
+	if err := validate.MaxLength("request_id", "body", m.RequestID, 255); err != nil {
+		return err
 	}
 
 	return nil

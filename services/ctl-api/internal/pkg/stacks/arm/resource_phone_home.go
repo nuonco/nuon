@@ -237,9 +237,8 @@ fi
 	for _, co := range customOutputs {
 		dependsOn = append(dependsOn, co.DeploymentName)
 	}
-	if _, uamiDependsOn := operationIdentityAttachment(operationIDs, scope); len(uamiDependsOn) > 0 {
-		dependsOn = append(dependsOn, uamiDependsOn...)
-	}
+	_, _, uamiDependsOn := operationIdentityAttachment(operationIDs, scope)
+	dependsOn = append(dependsOn, uamiDependsOn...)
 	dependsOn = append(dependsOn, operationIdentitySetupDependencies(operationIDs, scope)...)
 	// The payload reports the vault's ID and a URI per secret, so it must not run
 	// before they exist.

@@ -9,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 )
 
-func (s *Service) RecoverHelmRelease(ctx context.Context, installID, componentID, roleName string, autoApprove, asJSON bool) error {
+func (s *Service) RecoverHelmRelease(ctx context.Context, installID, componentID, roleName string, autoApprove bool, requestID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
 		return ui.PrintError(err)
@@ -34,7 +34,7 @@ func (s *Service) RecoverHelmRelease(ctx context.Context, installID, componentID
 		}
 	}
 
-	resp, err := s.api.RecoverInstallComponentHelmRelease(ctx, installID, componentID, roleName)
+	resp, err := s.api.RecoverInstallComponentHelmRelease(ctx, installID, componentID, roleName, requestID)
 	if err != nil {
 		return ui.PrintJSONError(err)
 	}

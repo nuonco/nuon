@@ -48,8 +48,9 @@ func (h *Helpers) RecordStackPhoneHome(
 	updatedStack := app.InstallStackVersion{
 		ID: stackVersion.ID,
 	}
-	if res := h.db.WithContext(ctx).
+	res := h.db.WithContext(ctx).
 		Model(&updatedStack).
+		Where("status->>'status' <> ?", app.StatusCancelled).
 		Updates(app.InstallStackVersion{
 			Status: app.NewCompositeStatus(ctx, app.InstallStackVersionStatusActive),
 			Runs: []app.InstallStackVersionRun{
@@ -57,8 +58,18 @@ func (h *Helpers) RecordStackPhoneHome(
 					Data: hstoreData,
 				},
 			},
-		}); res.Error != nil {
+		})
+	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update stack version: %w", res.Error)
+	}
+	if res.RowsAffected == 0 {
+		var current app.InstallStackVersion
+		if err := h.db.WithContext(ctx).First(&current, "id = ?", stackVersion.ID).Error; err != nil {
+			return nil, fmt.Errorf("unable to reload stack version: %w", err)
+		}
+		if current.Status.Status == app.StatusCancelled {
+			return nil, nil
+		}
 	}
 
 	run := app.InstallStackVersionRun{

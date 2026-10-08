@@ -27,7 +27,7 @@ const HEADER_CLASSES =
   'flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left ' +
   'text-cool-grey-800 dark:text-white/70 outline-none transition-colors ' +
   'hover:bg-cool-grey-500/8 hover:text-foreground active:bg-cool-grey-500/16 ' +
-  'focus-visible:outline-1 focus-visible:-outline-offset-2 focus-visible:outline-primary-400/80'
+  'focus-visible:[--tw-outline-style:solid] focus-visible:outline-1 focus-visible:-outline-offset-2 focus-visible:outline-primary-400/80'
 
 export const Disclosure = ({
   title,

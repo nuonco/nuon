@@ -4,6 +4,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -35,6 +36,20 @@ func (w *Workflows) updateBuildStatus(ctx workflow.Context, bldID string, status
 		return
 	}
 
+}
+
+func (w *Workflows) updateBuildSignatureVerification(ctx workflow.Context, bldID, jobID string, pullPlan *plantypes.ContainerImagePullPlan, jobSucceeded bool) {
+	err := activities.AwaitUpdateBuildSignatureVerification(ctx, &activities.UpdateBuildSignatureVerificationRequest{
+		BuildID:      bldID,
+		JobID:        jobID,
+		Required:     pullPlan.Verification != nil && pullPlan.Verification.RequireSignature,
+		JobSucceeded: jobSucceeded,
+	})
+	if err != nil {
+		workflow.GetLogger(ctx).Error("unable to update build signature verification",
+			zap.String("build-id", bldID),
+			zap.Error(err))
+	}
 }
 
 func (w *Workflows) failRunnerJob(ctx workflow.Context, jobID, description string) {

@@ -17,6 +17,9 @@ func DeployAllComponents(ctx workflow.Context, flw *app.Workflow) (*app.Generate
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install")
 	}
+	if err := failIfPinnedAppConfigMoved(install, flw); err != nil {
+		return nil, err
+	}
 
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup(flw)

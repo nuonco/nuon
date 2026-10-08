@@ -156,6 +156,10 @@ func (s *service) PostStackPhoneHome(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("record stack phone home: %w", err))
 		return
 	}
+	if run == nil {
+		ctx.JSON(http.StatusCreated, app.EmptyResponse{})
+		return
+	}
 
 	reqCtx := cctx.SetOrgIDContext(ctx.Request.Context(), version.OrgID)
 	reqCtx = cctx.SetAccountIDContext(reqCtx, version.CreatedByID)

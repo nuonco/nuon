@@ -8,7 +8,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-func (s *Service) CreateRun(ctx context.Context, installID, actionWorkflowID string, roleName string, asJSON bool) error {
+func (s *Service) CreateRun(ctx context.Context, installID, actionWorkflowID string, roleName string, requestID string, asJSON bool) error {
 	if roleName != "" {
 		roles, err := s.api.GetAvailableRoles(ctx, installID)
 		if err != nil {
@@ -31,6 +31,7 @@ func (s *Service) CreateRun(ctx context.Context, installID, actionWorkflowID str
 	req := &models.ServiceCreateInstallActionWorkflowRunRequest{
 		ActionWorkflowConfigID: &awc.ID,
 		Role:                   roleName,
+		RequestID:              requestID,
 	}
 
 	err = s.api.CreateInstallActionWorkflowRun(ctx, installID, req)

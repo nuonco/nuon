@@ -134,7 +134,7 @@ func TestOperationIdentities_RootReadsIdentitiesAcrossTheWrapper(t *testing.T) {
 	}
 
 	principal := role["properties"].(map[string]any)["parameters"].(map[string]any)["principalID"].(map[string]any)["value"].(string)
-	want := "[reference('identitiesDeployment').outputs.provisionPrincipalId.value]"
+	want := "[if(parameters('enableProvisionRole'), reference('identitiesDeployment').outputs.provisionPrincipalId.value, '')]"
 	if principal != want {
 		t.Errorf("principalID:\n got: %s\nwant: %s", principal, want)
 	}
@@ -179,20 +179,30 @@ func TestOperationIdentities_EveryRootReadHasAMatchingOutput(t *testing.T) {
 	}
 }
 
-// The runner's inline template lives in the install resource group alongside the
-// identities, so it reads them at resource-group scope; the root passes the map to
-// a custom runner template and must read them at its own scope.
+// The attachment is evaluated where the runner deployment is declared, so its keys
+// must be qualified for the reader's scope.
 func TestOperationIdentityAttachment_ScopeOfTheReader(t *testing.T) {
 	ids := identityFixture()
 
-	innerMap, _ := operationIdentityAttachment(ids, armScope{})
-	if _, ok := innerMap[uamiResourceIDExpr(ids[0].suffix, armScope{})]; !ok {
-		t.Errorf("inner attachment map is not keyed at resource-group scope: %v", innerMap)
+	inner, ok, _ := operationIdentityAttachment(ids, armScope{})
+	if !ok || !strings.Contains(inner, armScope{}.rgResourceIDInner(uamiResourceType, uamiNameInner(ids[0].suffix, armScope{}))) {
+		t.Errorf("resource-group attachment is not keyed at resource-group scope: %s", inner)
 	}
 
-	rootMap, _ := operationIdentityAttachment(ids, armScope{subscription: true})
-	if _, ok := rootMap[uamiResourceIDExpr(ids[0].suffix, armScope{subscription: true})]; !ok {
-		t.Errorf("root attachment map is not fully qualified: %v", rootMap)
+	sub := armScope{subscription: true}
+	root, ok, _ := operationIdentityAttachment(ids, sub)
+	if !ok || !strings.Contains(root, sub.rgResourceIDInner(uamiResourceType, uamiNameInner(ids[0].suffix, sub))) {
+		t.Errorf("root attachment is not fully qualified: %s", root)
+	}
+}
+
+func TestOperationIdentityAttachment_GatedPerRole(t *testing.T) {
+	ids := identityFixture()
+	attachment, _, _ := operationIdentityAttachment(ids, armScope{})
+	for _, id := range ids {
+		if !strings.Contains(attachment, "if("+azureRoleEnabledRef(id)+", ") {
+			t.Errorf("identity %s is attached without checking %s: %s", id.suffix, azureRoleEnableParamName(id), attachment)
+		}
 	}
 }
 
@@ -202,12 +212,12 @@ func TestOperationIdentityAttachment_RootDependsOnWrapperOnce(t *testing.T) {
 		t.Fatalf("fixture needs multiple identities, got %d", len(ids))
 	}
 
-	_, deps := operationIdentityAttachment(ids, armScope{subscription: true})
+	_, _, deps := operationIdentityAttachment(ids, armScope{subscription: true})
 	if len(deps) != 1 || deps[0] != identitiesDeploymentName {
 		t.Errorf("root should depend on %s exactly once, got %v", identitiesDeploymentName, deps)
 	}
 
-	_, rgDeps := operationIdentityAttachment(ids, armScope{})
+	_, _, rgDeps := operationIdentityAttachment(ids, armScope{})
 	if len(rgDeps) != len(ids) {
 		t.Errorf("resource-group scope should depend on each identity: got %d, want %d", len(rgDeps), len(ids))
 	}

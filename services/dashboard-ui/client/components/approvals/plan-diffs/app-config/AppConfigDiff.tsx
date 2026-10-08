@@ -68,10 +68,13 @@ export type DiffFileEntry = {
   after?: string
 }
 
+export type DiffChangeKind = 'source' | 'config'
+
 export type DiffEntityEntry = {
   name: string
   op: 'add' | 'remove' | 'change'
   componentType?: string
+  changeKinds?: DiffChangeKind[]
   fields: DiffFieldEntry[]
   files?: DiffFileEntry[]
 }
@@ -603,7 +606,16 @@ const EntityRow = ({
           )}
         </div>
         {!isSnapshot && (
-          <div className="flex items-center pr-4 self-center">
+          <div className="flex items-center gap-2 pr-4 self-center">
+            {entity.changeKinds?.map((kind) => (
+              <Badge
+                key={kind}
+                theme={kind === 'source' ? 'info' : 'warn'}
+                size="sm"
+              >
+                {kind === 'source' ? 'Source' : 'Config'}
+              </Badge>
+            ))}
             <Badge theme={OP_BADGE_THEME[entity.op] || 'neutral'} size="sm">
               {humanize(entity.op)}
             </Badge>
@@ -768,7 +780,7 @@ const SectionGroup = ({
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className={`w-full flex items-center justify-between gap-3 px-4 sm:px-6 py-3 text-left transition-colors hover:bg-black/5 dark:hover:bg-white/5 ${open ? 'border-b' : ''}`}
+        className={`w-full flex cursor-pointer items-center justify-between gap-3 px-4 sm:px-6 py-3 text-left transition-colors hover:bg-black/5 dark:hover:bg-white/5 ${open ? 'border-b' : ''}`}
       >
         <Text flex className="gap-2 items-center" variant="base" weight="strong">
           {sectionIcon && <Icon variant={sectionIcon} size="16" />}

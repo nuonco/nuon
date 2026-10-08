@@ -92,13 +92,26 @@ func TestBuildTracksBranchSource(t *testing.T) {
 		require.True(t, buildTracksBranchSource(run, build))
 	})
 
-	t.Run("mixed vcs types never match", func(t *testing.T) {
-		run := &app.AppBranchRun{
-			AppBranchConfig: app.AppBranchConfig{
-				PublicGitVCSConfig: &app.PublicGitVCSConfig{Repo: "acme/infra", Branch: "main"},
+	t.Run("connected app branch and public component in the same repo", func(t *testing.T) {
+		build := &app.ComponentBuild{
+			ComponentConfigConnection: app.ComponentConfigConnection{
+				HelmComponentConfig: &app.HelmComponentConfig{
+					PublicGitVCSConfig: &app.PublicGitVCSConfig{Repo: "Acme/Infra", Branch: "main"},
+				},
 			},
 		}
-		require.False(t, buildTracksBranchSource(run, connectedBuild("acme/infra", "main")))
+		require.True(t, buildTracksBranchSource(connectedRun("acme/infra", "main"), build))
+	})
+
+	t.Run("mixed vcs types in different repos", func(t *testing.T) {
+		build := &app.ComponentBuild{
+			ComponentConfigConnection: app.ComponentConfigConnection{
+				HelmComponentConfig: &app.HelmComponentConfig{
+					PublicGitVCSConfig: &app.PublicGitVCSConfig{Repo: "acme/charts", Branch: "main"},
+				},
+			},
+		}
+		require.False(t, buildTracksBranchSource(connectedRun("acme/infra", "main"), build))
 	})
 
 	t.Run("component with no vcs config", func(t *testing.T) {
@@ -134,6 +147,13 @@ func TestBuildRefCanBePinned(t *testing.T) {
 				},
 			},
 		}
+		require.True(t, buildRefCanBePinned(build))
+	})
+
+	t.Run("connected configured branch", func(t *testing.T) {
+		ref := "main"
+		build := connectedBuild("acme/infra", "main")
+		build.GitRef = &ref
 		require.True(t, buildRefCanBePinned(build))
 	})
 

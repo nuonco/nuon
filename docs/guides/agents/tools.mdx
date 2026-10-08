@@ -30,6 +30,10 @@ For prompts to paste into a client, see [Sample queries](/guides/agents/sample-q
 
 `get_app_config_schema` returns the file schema. When validation is done for this MCP server, use the Nuon CLI binary that started it, for example `nuon-dev apps validate` when the server command is `nuon-dev`, and the same `-C` value when that server was started with `-C`. That match is only for local CLI work done for the MCP server. There is no MCP tool that accepts config file contents.
 
+## Fallback
+
+Use an MCP tool when one covers the operation. When none does, use the Nuon CLI that started this server, including the same `-C` value. When the CLI has no command for it, use `nuon api --raw` if that command is already available. Ask before installing the api extension if missing. Call the HTTP API with curl only as a last resort. The stdio proxy repeats this in its server instructions, with the binary and `-C` filled in.
+
 ## Writes
 
 Mutating tools are prefixed with `WRITE OPERATION:` in their descriptions. The stdio proxy hides them unless you pass `--allow-writes`. The identity still needs [Admin](/concepts/access-control) (`org_admin`), not Read-only.

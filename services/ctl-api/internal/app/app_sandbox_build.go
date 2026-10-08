@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -58,6 +59,8 @@ type AppSandboxBuild struct {
 	CompositeError    *compositeerrors.CompositeErrorData `json:"composite_error,omitempty" gorm:"type:jsonb" temporaljson:"composite_error,omitzero,omitempty"`
 
 	AppBranchID string `gorm:"-" json:"app_branch_id,omitzero" temporaljson:"app_branch_id,omitzero,omitempty"`
+
+	Request *WorkflowRequest `json:"-" gorm:"column:request;type:jsonb;serializer:json" swaggerignore:"true" temporaljson:"request,omitzero,omitempty"`
 }
 
 func (a *AppSandboxBuild) Indexes(db *gorm.DB) []migrations.Index {
@@ -85,6 +88,16 @@ func (a *AppSandboxBuild) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"app_branch_run_id",
 			},
+		},
+		{
+			Name: "idx_app_sandbox_builds_request_id",
+			Columns: []string{
+				"org_id",
+				"app_id",
+				"(request->>'request_id')",
+			},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
+			Option:      "WHERE deleted_at = 0 AND request->>'request_id' IS NOT NULL",
 		},
 	}
 }

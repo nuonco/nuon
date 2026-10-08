@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -405,6 +406,14 @@ type Workflow struct {
 	WorkflowRuns              []WorkflowRun              `json:"workflow_runs,omitzero" gorm:"foreignKey:WorkflowID;constraint:OnDelete:CASCADE;" temporaljson:"workflow_runs,omitzero,omitempty"`
 
 	Links map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
+
+	Request *WorkflowRequest `json:"-" gorm:"column:request;type:jsonb;serializer:json" swaggerignore:"true" temporaljson:"request,omitzero,omitempty"`
+}
+
+type WorkflowRequest struct {
+	RequestID         string `json:"request_id" temporaljson:"request_id"`
+	RequestHash       string `json:"request_hash" temporaljson:"request_hash"`
+	PinnedAppConfigID string `json:"pinned_app_config_id" temporaljson:"pinned_app_config_id"`
 }
 
 func (i *Workflow) TableName() string {
@@ -485,6 +494,26 @@ func (i *Workflow) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 			Option: "WHERE finished_at IS NULL AND deleted_at = 0 AND approval_option = 'prompt'",
+		},
+		{
+			Name: "idx_install_workflows_request_id",
+			Columns: []string{
+				"org_id",
+				"owner_id",
+				"type",
+				"(request->>'request_id')",
+			},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
+			Option:      "WHERE deleted_at = 0 AND request->>'request_id' IS NOT NULL",
+		},
+		{
+			Name: "idx_install_workflows_provision_request_lookup",
+			Columns: []string{
+				"org_id",
+				"type",
+				"(request->>'request_id')",
+			},
+			Option: "WHERE deleted_at = 0 AND type = 'provision' AND request->>'request_id' IS NOT NULL",
 		},
 	}
 }

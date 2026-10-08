@@ -2,8 +2,11 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -17,11 +20,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/installvalidate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
 	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type UpdateInstallInputsRequest struct {
+	RequestID        string             `json:"request_id,omitempty" validate:"omitempty,max=255"`
 	Inputs           map[string]*string `json:"inputs" validate:"required,gte=1"`
 	Role             string             `json:"role"`
 	DeployDependents *bool              `json:"deploy_dependents,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
@@ -51,6 +56,7 @@ func (c *UpdateInstallInputsRequest) Validate(v *validator.Validate) error {
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.InstallInputs
 // @Router					/v1/installs/{install_id}/inputs [patch]
@@ -86,7 +92,12 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 	// historical always-deploy behavior; an explicit false is now respected.
 	deployDependents := req.DeployDependents == nil || *req.DeployDependents
 
-	inputs, err := s.applyInstallInputsUpdate(ctx, install, req.Inputs, req.Role, deployDependents, req.InputsOnly, false, app.WorkflowTypeInputUpdate)
+	workflowRequest, done := s.returnExistingInputUpdate(ctx, install, &req)
+	if done {
+		return
+	}
+
+	inputs, err := s.applyInstallInputsUpdate(ctx, install, req.Inputs, req.Role, deployDependents, req.InputsOnly, false, app.WorkflowTypeInputUpdate, workflowRequest)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -100,13 +111,117 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 // input-update workflow that reconciles the change. It is shared by the
 // inputs PATCH endpoint and any flow that drives install inputs (e.g. the
 // component enable/disable toggle, which writes the synthetic enabled input).
-func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Install, patch map[string]*string, role string, deployDependents bool, inputsOnly bool, planOnly bool, workflowType app.WorkflowType) (*app.InstallInputs, error) {
+func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Install, patch map[string]*string, role string, deployDependents bool, inputsOnly bool, planOnly bool, workflowType app.WorkflowType, request *app.WorkflowRequest) (*app.InstallInputs, error) {
+	var inputs *app.InstallInputs
+	var metadata map[string]string
+	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var err error
+		inputs, metadata, err = s.persistInstallInputsUpdateTx(ctx, tx, install, patch, deployDependents, inputsOnly)
+		return err
+	}); err != nil {
+		return nil, err
+	}
+
+	installInputsID := ""
+	if request != nil {
+		installInputsID = inputs.ID
+	}
+	workflow, err := s.helpers.CreateAndStartInputUpdateWorkflow(
+		ctx,
+		install.ID,
+		splitCSV(metadata["inputs"]),
+		metadata[app.WorkflowMetadataKeyChangedInputValues],
+		role,
+		deployDependents,
+		inputsOnly,
+		planOnly,
+		workflowType,
+		request,
+		installInputsID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create install inputs: %w", err)
+	}
+
+	// Enqueue queue signals so the input-update workflow runs.
+	if err := s.enqueueInstallInputsUpdateSignals(ctx, install.ID, workflow.ID); err != nil {
+		return nil, err
+	}
+
+	inputs.WorkflowID = &workflow.ID
+	return inputs, nil
+}
+
+func (s *service) returnExistingInputUpdate(ctx *gin.Context, install *app.Install, req *UpdateInstallInputsRequest) (*app.WorkflowRequest, bool) {
+	if req.RequestID == "" {
+		return nil, false
+	}
+	hashReq := *req
+	hashReq.RequestID = ""
+	hash, err := request.Hash(hashReq)
+	if err != nil {
+		ctx.Error(err)
+		return nil, true
+	}
+
+	var existing app.Workflow
+	err = s.db.WithContext(ctx).
+		Where(app.Workflow{
+			OrgID:     install.OrgID,
+			OwnerID:   install.ID,
+			OwnerType: "installs",
+			Type:      app.WorkflowTypeInputUpdate,
+		}).
+		Where("request->>'request_id' = ?", req.RequestID).
+		First(&existing).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return &app.WorkflowRequest{
+			RequestID:         req.RequestID,
+			RequestHash:       hash,
+			PinnedAppConfigID: install.AppConfigID,
+		}, false
+	}
+	if err != nil {
+		ctx.Error(err)
+		return nil, true
+	}
+	if err := request.Check(existing.Request, hash, install.AppConfigID); err != nil {
+		ctx.Error(err)
+		return nil, true
+	}
+
+	inputsID := ""
+	if existing.Metadata != nil && existing.Metadata["install_inputs_id"] != nil {
+		inputsID = *existing.Metadata["install_inputs_id"]
+	}
+	if inputsID == "" {
+		ctx.Error(fmt.Errorf("unable to load install inputs"))
+		return nil, true
+	}
+	inputs := &app.InstallInputs{}
+	if err := s.db.WithContext(ctx).Where(app.InstallInputs{ID: inputsID}).First(inputs).Error; err != nil {
+		ctx.Error(fmt.Errorf("unable to load install inputs: %w", err))
+		return nil, true
+	}
+	inputs.WorkflowID = &existing.ID
+	ctx.JSON(http.StatusOK, inputs)
+	return nil, true
+}
+
+func (s *service) persistInstallInputsUpdateTx(
+	ctx context.Context,
+	tx *gorm.DB,
+	install *app.Install,
+	patch map[string]*string,
+	deployDependents bool,
+	inputsOnly bool,
+) (*app.InstallInputs, map[string]string, error) {
 	pinnedAppInputConfig, err := s.helpers.GetPinnedAppInputConfig(ctx, install.AppID, install.AppConfigID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get latest app input config: %w", err)
+		return nil, nil, fmt.Errorf("unable to get latest app input config: %w", err)
 	}
 	if pinnedAppInputConfig == nil {
-		return nil, stderr.ErrUser{
+		return nil, nil, stderr.ErrUser{
 			Err:         fmt.Errorf("invalid install inputs provided"),
 			Description: "inputs provided on install, that are not defined on the app",
 		}
@@ -116,84 +231,90 @@ func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Ins
 	// This intentionally operates ONLY on the subset the caller sent — existing
 	// customer-sourced values carried over by the merge are preserved, not re-validated.
 	if err := s.validateVendorSourceInputs(pinnedAppInputConfig, patch); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-
-	var inputs *app.InstallInputs
-	var changedInputs *[]string
-	var changedInputValues string
 
 	// read-modify-append, so serialized against the other inputs writers
-	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := helpers.LockInstallInputs(ctx, tx, install.ID); err != nil {
-			return err
-		}
-
-		latest, err := s.getLatestInstallInputsTx(ctx, tx, install.ID)
-		if err != nil {
-			return fmt.Errorf("unable to get latest install inputs: %w", err)
-		}
-
-		// Merge the provided subset over the install's current inputs, then validate the
-		// full resulting set so required inputs remain satisfied after a partial update.
-		merged := mergeInstallInputs(latest.Values, patch, pinnedAppInputConfig)
-		if err := s.helpers.ValidateInstallInputs(ctx, pinnedAppInputConfig, merged); err != nil {
-			return err
-		}
-
-		// Reject an inputs update that would leave the install in an inconsistent
-		// component-enablement state (e.g. an enabled component depending on a
-		// disabled one). Validated against the full resulting desired state.
-		if err := s.validateInstallToggles(ctx, install, patch, merged); err != nil {
-			return err
-		}
-
-		inputs, changedInputs, changedInputValues, err = s.newInstallInputs(ctx, tx, latest, pinnedAppInputConfig, merged, patch)
-		if err != nil {
-			return fmt.Errorf("unable to create install inputs: %w", err)
-		}
-		// stale_at alone is inert: the partial has to be named or state (and the
-		// updated signal's label render) serves the old inputs
-		return s.helpers.MarkInstallStatePartialsStale(ctx, tx, install.ID, pkgstate.PartialInputs)
-	}); err != nil {
-		return nil, err
+	if err := helpers.LockInstallInputs(ctx, tx, install.ID); err != nil {
+		return nil, nil, err
 	}
 
-	workflow, err := s.helpers.CreateAndStartInputUpdateWorkflow(
-		ctx,
-		install.ID,
-		*changedInputs,
-		changedInputValues,
-		role,
-		deployDependents,
-		inputsOnly,
-		planOnly,
-		workflowType,
-	)
+	latest, err := s.getLatestInstallInputsTx(ctx, tx, install.ID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create install inputs: %w", err)
+		return nil, nil, fmt.Errorf("unable to get latest install inputs: %w", err)
 	}
 
-	// Enqueue queue signals so the input-update workflow runs.
-	signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
-	if err != nil {
-		return nil, err
+	// Merge the provided subset over the install's current inputs, then validate the
+	// full resulting set so required inputs remain satisfied after a partial update.
+	merged := mergeInstallInputs(latest.Values, patch, pinnedAppInputConfig)
+	if err := s.helpers.ValidateInstallInputs(ctx, pinnedAppInputConfig, merged); err != nil {
+		return nil, nil, err
 	}
-	workflowsQueueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
+
+	// Reject an inputs update that would leave the install in an inconsistent
+	// component-enablement state (e.g. an enabled component depending on a
+	// disabled one). Validated against the full resulting desired state.
+	if err := s.validateInstallToggles(ctx, install, patch, merged); err != nil {
+		return nil, nil, err
+	}
+
+	inputs, changedInputs, changedInputValues, err := s.newInstallInputs(ctx, tx, latest, pinnedAppInputConfig, merged, patch)
 	if err != nil {
-		return nil, err
+		return nil, nil, fmt.Errorf("unable to create install inputs: %w", err)
+	}
+	// stale_at alone is inert: the partial has to be named or state (and the
+	// updated signal's label render) serves the old inputs
+	if err := s.helpers.MarkInstallStatePartialsStale(ctx, tx, install.ID, pkgstate.PartialInputs); err != nil {
+		return nil, nil, err
+	}
+
+	metadata := map[string]string{
+		"inputs":            strings.Join(*changedInputs, ","),
+		"deploy_dependents": strconv.FormatBool(deployDependents),
+	}
+	if inputsOnly {
+		metadata[app.WorkflowMetadataKeyInputsOnly] = strconv.FormatBool(true)
+	}
+	if changedInputValues != "" {
+		metadata[app.WorkflowMetadataKeyChangedInputValues] = changedInputValues
+	}
+
+	return inputs, metadata, nil
+}
+
+func (s *service) enqueueInstallInputsUpdateSignals(ctx context.Context, installID, workflowID string) error {
+	signalsQueueID, err := s.getInstallSignalsQueueID(ctx, installID)
+	if err != nil {
+		return err
+	}
+	workflowsQueueID, err := s.getInstallWorkflowsQueueID(ctx, installID)
+	if err != nil {
+		return err
 	}
 	if err := s.enqueueInstallSignal(ctx, signalsQueueID, &updated.Signal{
-		InstallID: install.ID,
+		InstallID: installID,
 	}, "", ""); err != nil {
-		return nil, fmt.Errorf("enqueue signal: %w", err)
+		return fmt.Errorf("enqueue signal: %w", err)
 	}
-	if err := s.enqueueInstallSignal(ctx, workflowsQueueID, executeflow.NewSignal(workflow.ID), workflow.ID, "install_workflows"); err != nil {
-		return nil, fmt.Errorf("enqueue signal: %w", err)
+	if err := s.enqueueInstallSignal(ctx, workflowsQueueID, executeflow.NewSignal(workflowID), workflowID, "install_workflows"); err != nil {
+		return fmt.Errorf("enqueue signal: %w", err)
 	}
+	return nil
+}
 
-	inputs.WorkflowID = &workflow.ID
-	return inputs, nil
+func splitCSV(s string) []string {
+	if s == "" {
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if p == "" {
+			continue
+		}
+		out = append(out, p)
+	}
+	return out
 }
 
 func (s *service) getLatestInstallInputs(ctx context.Context, installID string) (*app.InstallInputs, error) {

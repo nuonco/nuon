@@ -104,6 +104,30 @@ func TestEnrichConfigDiffWithSourceChanged(t *testing.T) {
 	require.False(t, out.ComponentSourceChanged["charts"])
 }
 
+func TestMarkComponentSourceChangedAddsSourceOnlyComponent(t *testing.T) {
+	out := &ConfigDiffWithSourceOutput{
+		Sections: []ConfigDiffSectionWithSource{
+			{Name: "Inputs", Entries: []ConfigDiffEntryWithSource{{Op: "change", Name: "dns"}}},
+		},
+		ComponentSourceChanged: map[string]bool{},
+	}
+	markComponentSourceChanged(out, "application_load_balancer")
+
+	require.True(t, out.ComponentSourceChanged["application_load_balancer"])
+	require.False(t, out.ComponentSourceChanged["unchanged"])
+	require.Equal(t, 1, out.Changed)
+
+	var components *ConfigDiffSectionWithSource
+	for i := range out.Sections {
+		if out.Sections[i].Name == "Components" {
+			components = &out.Sections[i]
+		}
+	}
+	require.NotNil(t, components)
+	require.Equal(t, "application_load_balancer", components.Entries[0].Name)
+	require.True(t, components.Entries[0].SourceChanged)
+}
+
 func TestEnrichConfigDiffSourceOnlyComponent(t *testing.T) {
 	full := &ComputeAppConfigDiffOutput{
 		Sections: []ConfigDiffSection{

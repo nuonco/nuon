@@ -71,6 +71,19 @@ export const mockBranchCards: TBranchCardData[] = [
       { name: 'enterprise', installs: 10, hasSelector: false },
     ],
     latestRunInstalls: mainGroupInstalls,
+    installCount: 40,
+    rolloutInstalls: Array.from({ length: 40 }, (_, index) => ({
+      id: `install-acme-${index + 1}`,
+      name: `acme-${index + 1}`,
+      status:
+        index < 30
+          ? 'success'
+          : index < 35
+            ? 'in-progress'
+            : index < 38
+              ? 'approval-awaiting'
+              : 'failed',
+    })),
   },
   {
     branchId: 'br-002',

@@ -35,6 +35,9 @@ type AppInstallerSDKGCPConfig struct {
 	// deprovision predefined role
 	DeprovisionPredefinedRole string `json:"deprovision_predefined_role,omitempty"`
 
+	// deprovision predefined roles
+	DeprovisionPredefinedRoles []string `json:"deprovision_predefined_roles"`
+
 	// maintenance permissions
 	MaintenancePermissions []string `json:"maintenance_permissions"`
 
@@ -43,6 +46,9 @@ type AppInstallerSDKGCPConfig struct {
 
 	// maintenance predefined role
 	MaintenancePredefinedRole string `json:"maintenance_predefined_role,omitempty"`
+
+	// maintenance predefined roles
+	MaintenancePredefinedRoles []string `json:"maintenance_predefined_roles"`
 
 	// Empty until the install has a recorded GCP target: unlike AWS, a GCP install
 	// can be created without one, and the first provision's phone home records it.
@@ -58,6 +64,10 @@ type AppInstallerSDKGCPConfig struct {
 
 	// provision predefined role
 	ProvisionPredefinedRole string `json:"provision_predefined_role,omitempty"`
+
+	// Every predefined role per operation role. The singular fields above carry
+	// only the last one for stack modules that predate these.
+	ProvisionPredefinedRoles []string `json:"provision_predefined_roles"`
 
 	// region
 	Region string `json:"region,omitempty"`

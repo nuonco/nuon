@@ -294,7 +294,9 @@ export function getStepBadge(
  * attempt(s), so callers can group attempts together (e.g. to only show retry
  * controls on the latest attempt of a kind).
  */
-export function getStepKind(step: TWorkflowStep): string {
+export function getStepKind(
+  step: Pick<TWorkflowStep, 'group_idx' | 'step_target_type' | 'name' | 'id'>
+): string {
   return `${step?.group_idx ?? ''}:${step?.step_target_type ?? ''}:${step?.name ?? step?.id ?? ''}`
 }
 
@@ -307,7 +309,9 @@ export function getStepKind(step: TWorkflowStep): string {
  * cannot be attempts of each other, which is what a workflow emitting the same
  * step name twice in one group produces.
  */
-export function isRetryChain(kindSteps: TWorkflowStep[]): boolean {
+export function isRetryChain(
+  kindSteps: Array<{ status?: { status?: string } }>
+): boolean {
   if (kindSteps.length < 2) return false
   return kindSteps
     .slice(0, -1)

@@ -40,14 +40,17 @@ func (c *client) GetInstallSandboxRun(ctx context.Context, installID, runID stri
 	return resp.Payload, nil
 }
 
-func (c *client) DeprovisionInstallSandbox(ctx context.Context, installID string, role string) (*models.AppWorkflowResponse, error) {
+func (c *client) DeprovisionInstallSandbox(ctx context.Context, installID string, role string, requestID ...string) (*models.AppWorkflowResponse, error) {
 	var result models.AppWorkflowResponse
 	path := fmt.Sprintf("%s/v1/installs/%s/deprovision-sandbox", c.APIURL, url.PathEscape(installID))
 	err := c.triggerRequest(
 		ctx,
 		http.MethodPost,
 		path,
-		&models.ServiceDeprovisionInstallSandboxRequest{Role: role},
+		&models.ServiceDeprovisionInstallSandboxRequest{
+			Role:      role,
+			RequestID: optionalRequestID(requestID),
+		},
 		http.StatusCreated,
 		&result,
 	)
@@ -57,7 +60,7 @@ func (c *client) DeprovisionInstallSandbox(ctx context.Context, installID string
 	return &result, nil
 }
 
-func (c *client) ReprovisionInstallSandbox(ctx context.Context, installID string, skipComponents bool, role string) (*models.AppWorkflowResponse, error) {
+func (c *client) ReprovisionInstallSandbox(ctx context.Context, installID string, skipComponents bool, role string, requestID ...string) (*models.AppWorkflowResponse, error) {
 	var result models.AppWorkflowResponse
 	path := fmt.Sprintf("%s/v1/installs/%s/reprovision-sandbox", c.APIURL, url.PathEscape(installID))
 	err := c.triggerRequest(
@@ -68,6 +71,7 @@ func (c *client) ReprovisionInstallSandbox(ctx context.Context, installID string
 			PlanOnly:       false,
 			SkipComponents: skipComponents,
 			Role:           role,
+			RequestID:      optionalRequestID(requestID),
 		},
 		http.StatusCreated,
 		&result,

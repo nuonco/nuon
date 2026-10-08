@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
@@ -28,6 +29,7 @@ func (s *Helpers) CreateWorkflowWithRole(
 		metadata,
 		planOnly,
 		role,
+		nil,
 	)
 }
 
@@ -37,6 +39,7 @@ func (s *Helpers) CreateWorkflow(
 	workflowType app.WorkflowType,
 	metadata map[string]string,
 	planOnly bool,
+	request *app.WorkflowRequest,
 ) (*app.Workflow, error) {
 	return s.createWorkflow(
 		ctx,
@@ -45,6 +48,7 @@ func (s *Helpers) CreateWorkflow(
 		metadata,
 		planOnly,
 		"",
+		request,
 	)
 }
 
@@ -54,6 +58,19 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 	metadata map[string]string,
 	planOnly bool,
 	role string,
+	request *app.WorkflowRequest,
+) (*app.Workflow, error) {
+	return s.insertInstallWorkflow(ctx, s.db, installID, workflowType, metadata, planOnly, role, request)
+}
+
+func (s *Helpers) insertInstallWorkflow(ctx context.Context,
+	db *gorm.DB,
+	installID string,
+	workflowType app.WorkflowType,
+	metadata map[string]string,
+	planOnly bool,
+	role string,
+	request *app.WorkflowRequest,
 ) (*app.Workflow, error) {
 	if workflowType.RequiresInstallRunner() && !stackChangeDefersRunnerGate(workflowType, metadata) {
 		disabled, err := s.IsRunnerDisabled(ctx, installID)
@@ -112,12 +129,13 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 		ApprovalOption:    approvalOption,
 		PlanOnly:          planOnly,
 		Role:              role,
+		Request:           request,
 		GenerateStepsSignal: &signaldb.SignalData{
 			Signal: &generateworkflowsteps.Signal{},
 		},
 	}
 
-	res := s.db.WithContext(ctx).Create(&installWorkflow)
+	res := db.WithContext(ctx).Create(&installWorkflow)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create install workflow")
 	}

@@ -48,6 +48,14 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		return handleAdhocActionRun(ctx, flw, installID, adhocActionRunID, sg, steps)
 	}
 
+	install, err := activities.AwaitGetByInstallID(ctx, installID)
+	if err != nil {
+		return nil, err
+	}
+	if err := failIfPinnedAppConfigMoved(install, flw); err != nil {
+		return nil, err
+	}
+
 	installActionWorkflowID, ok := flw.Metadata["install_action_workflow_id"]
 	if !ok {
 		return nil, errors.New("install action workflow is not set on the install workflow for a manual deploy")

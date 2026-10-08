@@ -30,21 +30,31 @@ type PreviewBranchRunOptions struct {
 func (s *Service) PreviewBranchRun(ctx context.Context, appID, branchID string, opts PreviewBranchRunOptions, asJSON bool) error {
 	view := ui.NewGetView()
 
+	if err := validatePreviewBranchRunOptions(opts); err != nil {
+		return view.Error(err)
+	}
+
 	appID, err := s.resolveAppID(ctx, appID)
 	if err != nil {
 		return view.Error(err)
 	}
 
-	if s.cfg.Interactive && !asJSON {
-		return s.previewBranchRunInteractive(ctx, appID, branchID, opts)
-	}
-
-	if branchID == "" {
+	// Resolve a provided branch before the wizard or the trigger so a bad
+	// --branch-id fails here, where the error is printed.
+	if branchID != "" {
+		branchID, err = s.resolveAppBranchID(ctx, appID, branchID)
+		if err != nil {
+			return view.Error(err)
+		}
+	} else if !s.cfg.Interactive || asJSON {
 		return view.Error(fmt.Errorf("app branch required: use --branch-id or run interactively"))
 	}
-	branchID, err = s.selectBranchID(ctx, appID, branchID)
-	if err != nil {
-		return view.Error(err)
+
+	if s.cfg.Interactive && !asJSON {
+		if err := s.previewBranchRunInteractive(ctx, appID, branchID, opts); err != nil {
+			return view.Error(err)
+		}
+		return nil
 	}
 
 	configID := opts.ConfigID
@@ -100,22 +110,13 @@ func (s *Service) PreviewBranchRun(ctx context.Context, appID, branchID string, 
 }
 
 func (s *Service) previewBranchRunInteractive(ctx context.Context, appID, branchID string, opts PreviewBranchRunOptions) error {
-	if opts.PRNumber != nil && opts.GitRef != "" {
-		return fmt.Errorf("specify either --pr-number or --git-ref, not both")
-	}
 	mode, err := parsePreviewMode(opts.Mode)
 	if err != nil {
 		return err
 	}
 
 	branches := make([]previewui.Branch, 0)
-	if branchID != "" {
-		resolved, err := s.resolveAppBranchID(ctx, appID, branchID)
-		if err != nil {
-			return err
-		}
-		branchID = resolved
-	} else {
+	if branchID == "" {
 		appBranches, err := nuon.GetAllAppBranches(ctx, s.api, appID)
 		if err != nil {
 			return fmt.Errorf("unable to list app branches: %w", err)
@@ -273,6 +274,22 @@ func (s *Service) resolvePreviewMode(ctx context.Context, flagMode, configID, ap
 	}
 
 	return models.AppAppBranchRunPreviewModePlanDashOnly, nil
+}
+
+func validatePreviewBranchRunOptions(opts PreviewBranchRunOptions) error {
+	if _, err := parsePreviewMode(opts.Mode); err != nil {
+		return err
+	}
+	if opts.PRNumber != nil && opts.GitRef != "" {
+		return fmt.Errorf("specify either --pr-number or --git-ref, not both")
+	}
+	if opts.PRNumber != nil && *opts.PRNumber <= 0 {
+		return fmt.Errorf("--pr-number must be a positive integer")
+	}
+	if opts.Wait && opts.NoWait {
+		return fmt.Errorf("specify either --wait or --no-wait, not both")
+	}
+	return nil
 }
 
 func parsePreviewMode(mode string) (models.AppAppBranchRunPreviewMode, error) {

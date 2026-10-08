@@ -28,10 +28,10 @@ const Diagnostic = ({ diagnostic }: { diagnostic: IPlanDiffDiagnostic }) => (
     className={cn(
       'rounded-r-md border-l-4 px-3 py-2',
       diagnostic.severity === 'error'
-        ? 'border-l-diff-remove bg-diff-remove-section'
+        ? '!border-l-diff-remove bg-diff-remove-section'
         : diagnostic.severity === 'warning'
-          ? 'border-l-diff-change bg-diff-change-section'
-          : 'border-l-diff-neutral bg-diff-neutral-section'
+          ? '!border-l-diff-change bg-diff-change-section'
+          : '!border-l-diff-neutral bg-diff-neutral-section'
     )}
   >
     <Text as="p" variant="subtext" family="mono">

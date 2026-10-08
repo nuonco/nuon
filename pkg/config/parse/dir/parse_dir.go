@@ -7,6 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
+
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 // sourceFileSetter is implemented by config types that can track their source file path.
@@ -53,6 +55,9 @@ func (p *parser) parseDir(path string, typ reflect.Type) (any, error) {
 
 		parsed, err := p.parseFile(f, path, obj)
 		if err != nil {
+			if generics.SliceContains(path, p.opts.IgnoreFileErrors) {
+				continue
+			}
 			return nil, errors.Wrap(err, "unable to parse file "+f)
 		}
 

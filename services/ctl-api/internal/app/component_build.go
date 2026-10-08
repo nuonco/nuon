@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -22,6 +23,14 @@ const (
 	ComponentBuildStatusActive       ComponentBuildStatus = "active"
 	ComponentBuildStatusDeleting     ComponentBuildStatus = "deleting"
 	ComponentBuildStatusPolicyFailed ComponentBuildStatus = "policy_failed"
+)
+
+type ComponentBuildSignatureVerification string
+
+const (
+	ComponentBuildSignatureVerificationNotRequired ComponentBuildSignatureVerification = "not_required"
+	ComponentBuildSignatureVerificationVerified    ComponentBuildSignatureVerification = "verified"
+	ComponentBuildSignatureVerificationRejected    ComponentBuildSignatureVerification = "rejected"
 )
 
 type ComponentBuild struct {
@@ -113,11 +122,18 @@ type ComponentBuild struct {
 	//     prior build.
 	NoOp bool `json:"no_op,omitzero" gorm:"default false" temporaljson:"no_op,omitzero,omitempty"`
 
+	// SignatureVerification is empty when the outcome is unknown (older builds, or failures before verification ran).
+	SignatureVerification ComponentBuildSignatureVerification `json:"signature_verification,omitzero" gorm:"default null" swaggertype:"string" temporaljson:"signature_verification,omitzero,omitempty"`
+
 	AppBranchRunID *string       `json:"app_branch_run_id,omitempty" temporaljson:"app_branch_run_id,omitzero,omitempty"`
 	AppBranchRun   *AppBranchRun `faker:"-" json:"app_branch_run,omitempty" temporaljson:"app_branch_run,omitzero,omitempty"`
 
 	// QueueSignal is the signal enqueued when this build was created via the queue path
 	QueueSignal *QueueSignal `json:"queue_signal,omitempty" gorm:"polymorphic:Owner;" temporaljson:"queue_signal,omitzero,omitempty"`
+
+	StoredComponentID string `json:"-" gorm:"column:component_id" swaggerignore:"true" temporaljson:"-"`
+
+	Request *WorkflowRequest `json:"-" gorm:"column:request;type:jsonb;serializer:json" swaggerignore:"true" temporaljson:"request,omitzero,omitempty"`
 }
 
 func (c *ComponentBuild) Indexes(db *gorm.DB) []migrations.Index {
@@ -142,6 +158,16 @@ func (c *ComponentBuild) Indexes(db *gorm.DB) []migrations.Index {
 				"created_at DESC",
 				"id DESC",
 			},
+		},
+		{
+			Name: "idx_component_builds_request_id",
+			Columns: []string{
+				"org_id",
+				"component_id",
+				"(request->>'request_id')",
+			},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
+			Option:      "WHERE deleted_at = 0 AND request->>'request_id' IS NOT NULL",
 		},
 	}
 }
