@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/nuonco/nuon/bins/cli/internal/services/mcpserver"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/pager"
 	"github.com/nuonco/nuon/pkg/agentclient"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
@@ -75,12 +76,11 @@ func agentsSetupGuide(st *agentsStatus) string {
 	p(
 		"Drive Nuon with an LLM agent.",
 		"",
-		"  nuon agents help      For humans: get set up. This guide.",
-		"  nuon agents context   For your agent: orientation, tool catalog, sample",
-		"                        queries, current org/app/install selection.",
+		"  nuon agents help      This guide. An agent running it gets orientation",
+		"                        markdown for the current org, app, and install.",
 		"  nuon agents mcp       The stdio MCP proxy a client runs. Registered below.",
 		"",
-		"1. Sign in and select an org",
+		"1. Sign in",
 		"",
 	)
 
@@ -99,13 +99,10 @@ func agentsSetupGuide(st *agentsStatus) string {
 	}
 
 	p(
-		"  Both are required:",
-		"",
 		"    nuon auth login    writes api_token to ~/.nuon",
-		"    nuon orgs select   writes org_id to ~/.nuon",
 		"",
-		"  Everything below reads both from ~/.nuon, so no token or org ID goes",
-		"  into your agent's config.",
+		"  Everything below reads the token and org from ~/.nuon, so no token or",
+		"  org ID goes into your agent's config.",
 		"",
 		"2. Register the MCP server with your agent",
 		"",
@@ -156,9 +153,8 @@ func agentsSetupGuide(st *agentsStatus) string {
 		"",
 		"3. Check it works",
 		"",
-		"    nuon agents context",
-		"",
-		"  Then ask your agent to run the whoami tool.",
+		"  Ask your agent: \"Who am I, and what installs are in this org?\"",
+		"  It should call whoami and list_installs.",
 		"",
 		"Overriding the MCP URL",
 		"",
@@ -188,28 +184,44 @@ func agentsSetupGuide(st *agentsStatus) string {
 
 	p(
 		"  A non-default CLI config carries its own token, org, and api_url: put -C",
-		"  on the registered command too (Cursor and Amp: inside args).",
+		"  on the registered command too (inside args when the client is configured",
+		"  by file).",
 		"",
-		"Docs: https://docs.nuon.co/guides/agents",
+		"Docs: https://docs.nuon.co/guides/agents/setup",
 	)
 
 	return b.String()
 }
 
+// agentsHelpText is the body of "nuon agents help". An agent, detected the
+// same way as "nuon auth login" (cfg.Agent), gets the orientation markdown.
+// A normal terminal gets the setup guide.
+func (c *cli) agentsHelpText() string {
+	if c.cfg != nil && c.cfg.Agent != "" {
+		return c.agentsContextMarkdown()
+	}
+	return agentsSetupGuide(c.agentsStatus())
+}
+
 func (c *cli) agentsHelpCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "help",
-		Short: "Set up an agent to work with Nuon (for humans)",
-		Long: `Print the agent setup guide: signing in, selecting an org, registering the
-MCP server with Claude Code, Cursor, or Amp, and overriding the derived MCP URL.
+		Short: "Set up an agent to work with Nuon",
+		Long: `Print the agent setup guide: signing in, registering the
+MCP server with your client, and overriding the derived MCP URL.
 
 Same guide as "nuon agents --help", plus your own sign-in, org, and resolved
-MCP URL. For the document to hand your agent, use "nuon agents context".`,
+MCP URL. When an agent runs this command, the output is orientation markdown
+instead of this guide.`,
 		PersistentPreRunE: c.persistentPreRunE,
-		Annotations:       annotations(skipAuthAnnotation(), outputsAnnotation(OutputTable)),
+		Annotations:       annotations(skipAuthAnnotation(), tuiAnnotation(TUIAltScreen), outputsAnnotation(OutputTable)),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			// cobra's cmd.Print* writes to stderr; this guide is the output.
-			fmt.Fprintln(cmd.OutOrStdout(), agentsSetupGuide(c.agentsStatus()))
+			text := c.agentsHelpText()
+			// Agents and pipes need the full text. A terminal pages it.
+			if c.cfg != nil && c.cfg.Interactive && pager.NeedsPager(text) {
+				return pager.Run(text)
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), text)
 			return nil
 		}),
 	}
