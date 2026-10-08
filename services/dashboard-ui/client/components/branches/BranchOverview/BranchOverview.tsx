@@ -56,6 +56,7 @@ export interface IBranchOverview {
   installWorkflowHref?: string
   failedBuilds?: TFailedBuildLink[]
   approvals?: IGroupPlanApproval[]
+  runHeaderAction?: ReactNode
 }
 
 export const BranchOverview = ({
@@ -74,6 +75,7 @@ export const BranchOverview = ({
   installWorkflowHref,
   failedBuilds,
   approvals,
+  runHeaderAction,
 }: IBranchOverview) => (
   <div className="flex flex-col gap-10 p-4 md:p-6">
     {loadingStages?.length ? (
@@ -126,6 +128,7 @@ export const BranchOverview = ({
           commit={rollout.commit}
           previewMode={rollout.previewMode}
           baseline={rollout.baseline}
+          headerAction={runHeaderAction}
         />
         <div className="min-w-0">{changes}</div>
       </section>

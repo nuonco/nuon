@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { AnimatedHeight } from '@/components/common/AnimatedHeight'
 import { Avatar } from '@/components/common/Avatar'
 import { Badge } from '@/components/common/Badge'
@@ -90,6 +90,7 @@ export interface IRunSourceCard {
   commit?: IRunCommit
   previewMode?: string
   baseline?: IRunBaseline
+  headerAction?: ReactNode
 }
 
 const TRIGGER_LABEL: Record<TRunSource['kind'], string> = {
@@ -152,6 +153,7 @@ export const RunSourceCard = ({
   commit,
   previewMode,
   baseline,
+  headerAction,
 }: IRunSourceCard) => {
   const commitSha = commit?.sha ?? sha
   const commitUrl = commit?.shaUrl ?? shaUrl
@@ -165,7 +167,12 @@ export const RunSourceCard = ({
         <Text variant="h3" weight="strong">
           Run information
         </Text>
-        {status ? <Status status={status} /> : null}
+        {headerAction || status ? (
+          <span className="flex items-center gap-3">
+            {headerAction}
+            {status ? <Status status={status} /> : null}
+          </span>
+        ) : null}
       </header>
       <div className="flex flex-col gap-3 p-5 border-t">
         {hasIdentity ? <SourceIdentity source={source} /> : null}

@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { Button } from '@/components/common/Button'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { BranchRunChangesSummary } from '@/components/branches/BranchRunChangesSummary'
+import { isConfigValidationError } from '@/components/branches/BranchRunChangesSummary/config-diagnostics'
 import { stepStatusCategory } from '@/components/branches/shared/step-status'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
@@ -170,10 +172,12 @@ export const BranchOverviewContainer = () => {
   const changesPending =
     appConfigStage?.status === 'pending' ||
     appConfigStage?.status === 'in-progress'
-  const compositeError = overviewCompositeError(
+  const failure = overviewCompositeError(
     workflowSteps,
     branchRun?.composite_error
   )
+  const configError = isConfigValidationError(failure) ? failure : undefined
+  const compositeError = configError ? undefined : failure
 
   if (pinnedWorkflowId && rolloutError && !rollout) {
     return (
@@ -218,6 +222,7 @@ export const BranchOverviewContainer = () => {
               builds={metaBuilds}
               title="Template and source changes"
               isPending={changesPending}
+              configError={configError}
               headerAction={
                 hasBuilds ? (
                   <Button size="sm" onClick={openBuilds}>
@@ -236,6 +241,11 @@ export const BranchOverviewContainer = () => {
         rolloutHref={rolloutHref}
         groupHref={groupHref}
         approvals={approvals}
+        runHeaderAction={
+          rollout?.id ? (
+            <AdminDashboardLink path={`/workflows/${rollout.id}`} />
+          ) : null
+        }
       />
     </>
   )
