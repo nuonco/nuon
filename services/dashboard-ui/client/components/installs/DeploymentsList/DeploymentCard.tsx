@@ -58,9 +58,15 @@ export const DeploymentCard = ({
         />
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <Text weight="strong" className="break-words">
-              {title}
-            </Text>
+            <button
+              type="button"
+              onClick={onViewDetails}
+              className="min-w-0 cursor-pointer break-words text-left hover:underline focus-visible:underline"
+            >
+              <Text weight="strong" className="break-words">
+                {title}
+              </Text>
+            </button>
             <Badge size="sm" theme="neutral">
               {typeLabel}
             </Badge>

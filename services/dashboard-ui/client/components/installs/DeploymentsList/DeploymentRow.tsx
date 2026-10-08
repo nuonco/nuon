@@ -48,9 +48,15 @@ export const DeploymentRow = ({
         <div className="grid min-w-0 flex-1 grid-cols-1 items-center gap-3 border-b py-3 @4xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
           <div className="flex min-w-0 flex-col gap-1">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <Text weight="strong" className="break-words">
-                {title}
-              </Text>
+              <button
+                type="button"
+                onClick={onViewDetails}
+                className="min-w-0 cursor-pointer break-words text-left hover:underline focus-visible:underline"
+              >
+                <Text weight="strong" className="break-words">
+                  {title}
+                </Text>
+              </button>
               <Status status={run.status} />
               <Time
                 time={createdAt}
@@ -98,9 +104,15 @@ export const DeploymentRow = ({
         <div className="density-header">
           <div className="density-identity flex min-w-0 flex-col gap-3 break-words">
             <div className="density-run-heading">
-              <Text variant="h3" weight="strong">
-                {title}
-              </Text>
+              <button
+                type="button"
+                onClick={onViewDetails}
+                className="min-w-0 cursor-pointer text-left hover:underline focus-visible:underline"
+              >
+                <Text variant="h3" weight="strong">
+                  {title}
+                </Text>
+              </button>
               <div className="density-run-meta flex flex-wrap items-center gap-2">
                 <Status
                   status={awaiting ? 'approval-awaiting' : run.status}
