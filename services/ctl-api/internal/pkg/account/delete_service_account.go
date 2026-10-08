@@ -30,6 +30,10 @@ func (c *Client) DeleteServiceAccount(ctx context.Context, svcAcctID string) err
 	}
 
 	return c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := revokeAccountCredentials(tx, acct.ID); err != nil {
+			return err
+		}
+
 		// Before deleteAccountRecords: the bindings are how the roles are found.
 		if err := authz.DeleteStackInstallRoles(tx, acct.ID); err != nil {
 			return err
@@ -47,12 +51,6 @@ func deleteAccountRecords(tx *gorm.DB, accountID string) error {
 		Where(app.AccountRole{AccountID: accountID}).
 		Delete(&app.AccountRole{}); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to remove account roles")
-	}
-
-	if res := tx.
-		Where(app.Token{AccountID: accountID}).
-		Delete(&app.Token{}); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to delete tokens")
 	}
 
 	if res := tx.Delete(&app.Account{ID: accountID}); res.Error != nil {

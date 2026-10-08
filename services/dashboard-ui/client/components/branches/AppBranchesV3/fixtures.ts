@@ -4,7 +4,7 @@ import type {
   TAppConfigDiffSection,
   TCompositeError,
 } from '@/types'
-import type { TConfigSourceFile } from './ConfigChanges/config-changes'
+import type { TConfigSourceFile } from '@/components/branches/ConfigChanges'
 
 export type TRolloutInstall = {
   id: string

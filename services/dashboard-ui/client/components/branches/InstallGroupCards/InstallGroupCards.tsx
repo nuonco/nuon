@@ -1,30 +1,54 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Tooltip } from '@/components/common/Tooltip'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Panel } from '@/components/surfaces/Panel'
 import { cn } from '@/utils/classnames'
-import { CommitSha } from './CommitSha'
-import type { TLatestRollout, TRolloutInstallGroup } from './fixtures'
+import type {
+  TTrackGroup,
+  TTrackInstall,
+} from '@/components/branches/BranchOverview/RolloutTrack'
+import type { IGroupPlanApproval } from '@/components/branches/BranchOverview/RolloutGroupsCard'
+import { CommitRange, type ICommitRange } from './CommitRange'
 import { GroupLabels } from './GroupLabels'
 import { InstallGroupPanelBody } from './InstallGroupPanelBody'
 import { InstallStatusCounts } from './InstallStatusCounts'
+import { InstallStatusTiles } from './InstallStatusTiles'
 import {
-  InstallStatusTiles,
   installStatusClass,
-  installStatusKey,
-} from './InstallStatusTiles'
+  statusSlices,
+  withQueuedInstalls,
+} from './install-status'
+
+const pace = (group: TTrackGroup) =>
+  [
+    group.maxParallel != null
+      ? `Up to ${group.maxParallel} at a time`
+      : undefined,
+    group.approval,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
 const InstallGroupCard = ({
   group,
+  order,
   commit,
   highlighted,
+  approval,
+  onSelectInstall,
 }: {
-  group: TRolloutInstallGroup
-  commit: TLatestRollout['commit']
+  group: TTrackGroup
+  order: number
+  commit?: ICommitRange
   highlighted: boolean
+  approval?: ReactNode
+  onSelectInstall?: (install: TTrackInstall) => void
 }) => {
+  const installs = withQueuedInstalls(group.installs, group.plannedCount)
+  const cadence = pace(group)
+
   return (
     <Panel
       panelKey={`install-group-${group.id}`}
@@ -41,72 +65,53 @@ const InstallGroupCard = ({
             <div className="flex w-full items-center justify-between gap-3">
               <span className="flex min-w-0 items-center gap-2">
                 <Text variant="subtext" theme="neutral" family="mono">
-                  {group.order}
+                  {order}
                 </Text>
                 <Text variant="body" weight="strong" className="truncate">
                   {group.name}
                 </Text>
               </span>
               <span className="flex shrink-0 items-center gap-3">
-                <CommitSha commit={commit} />
+                {commit ? <CommitRange commit={commit} /> : null}
                 <Status status={group.status} />
               </span>
             </div>
-            <InstallStatusTiles group={group} />
-            <GroupLabels group={group} max={3} />
+            <InstallStatusTiles installs={installs} />
+            <GroupLabels match={group.match} max={3} />
             <span className="flex w-full flex-wrap items-center gap-x-3 gap-y-1">
-              <InstallStatusCounts installs={group.installs} />
-              <Text variant="subtext" theme="neutral">
-                Up to {group.max_parallel ?? 1} at a time ·{' '}
-                {group.auto_approve_on_policies_passing
-                  ? 'Auto-approve'
-                  : 'Manual approval'}
-              </Text>
+              <InstallStatusCounts installs={installs} />
+              {cadence ? (
+                <Text variant="subtext" theme="neutral">
+                  {cadence}
+                </Text>
+              ) : null}
             </span>
           </>
         ),
       }}
     >
-      <InstallGroupPanelBody group={group} commit={commit} />
+      <InstallGroupPanelBody
+        group={group}
+        commit={commit}
+        approval={approval}
+        onSelectInstall={onSelectInstall}
+      />
     </Panel>
   )
-}
-
-const orderedGroups = (groups: TRolloutInstallGroup[]) =>
-  [...groups].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-
-const STATUS_SLICES = [
-  { status: 'success', label: 'success' },
-  { status: 'error', label: 'failed' },
-  { status: 'in-progress', label: 'in progress' },
-  { status: 'approval-awaiting', label: 'awaiting approval' },
-  { status: 'cancelled', label: 'cancelled' },
-  { status: 'pending', label: 'pending' },
-]
-
-const statusSlices = (group: TRolloutInstallGroup) => {
-  const counts = new Map<string, number>()
-  for (const install of group.installs) {
-    const key = installStatusKey(install)
-    counts.set(key, (counts.get(key) ?? 0) + 1)
-  }
-  return STATUS_SLICES.flatMap((slice) => {
-    const count = counts.get(slice.status) ?? 0
-    return count ? [{ ...slice, count }] : []
-  })
 }
 
 export const GroupStatusBar = ({
   groups,
   onHover = () => {},
 }: {
-  groups: TRolloutInstallGroup[]
+  groups: TTrackGroup[]
   onHover?: (groupId: string, open: boolean) => void
 }) => (
   <div className="flex h-3 items-stretch gap-1" aria-label="Install groups">
     {groups.map((group) => {
-      const total = group.installs.length
-      const slices = statusSlices(group)
+      const installs = withQueuedInstalls(group.installs, group.plannedCount)
+      const total = installs.length
+      const slices = statusSlices(installs)
       const summary = slices
         .map((slice) => `${slice.count} ${slice.label}`)
         .join(', ')
@@ -131,10 +136,7 @@ export const GroupStatusBar = ({
                 </Text>
               </span>
               <span className="flex items-center gap-3">
-                <InstallStatusCounts
-                  installs={group.installs}
-                  showTotal={false}
-                />
+                <InstallStatusCounts installs={installs} showTotal={false} />
               </span>
             </span>
           }
@@ -166,14 +168,23 @@ export const GroupStatusBar = ({
   </div>
 )
 
+const approvalFor = (
+  approvals: IGroupPlanApproval[] | undefined,
+  name: string
+) =>
+  approvals?.find((item) => item.groupName.toLowerCase() === name.toLowerCase())
+
 export const InstallGroupCards = ({
   groups,
   commit,
+  approvals,
+  onSelectInstall,
 }: {
-  groups: TRolloutInstallGroup[]
-  commit: TLatestRollout['commit']
+  groups: TTrackGroup[]
+  commit?: ICommitRange
+  approvals?: IGroupPlanApproval[]
+  onSelectInstall?: (install: TTrackInstall) => void
 }) => {
-  const ordered = orderedGroups(groups)
   const [hoveredId, setHoveredId] = useState<string>()
 
   return (
@@ -181,7 +192,7 @@ export const InstallGroupCards = ({
       <div className="flex flex-col gap-3">
         <SectionHeader title="Install groups" />
         <GroupStatusBar
-          groups={ordered}
+          groups={groups}
           onHover={(groupId, open) =>
             setHoveredId((current) =>
               open ? groupId : current === groupId ? undefined : current
@@ -190,12 +201,15 @@ export const InstallGroupCards = ({
         />
       </div>
       <ol className="flex flex-col gap-3">
-        {ordered.map((group) => (
+        {groups.map((group, index) => (
           <li key={group.id}>
             <InstallGroupCard
               group={group}
+              order={index + 1}
               commit={commit}
               highlighted={group.id === hoveredId}
+              approval={approvalFor(approvals, group.name)?.banner}
+              onSelectInstall={onSelectInstall}
             />
           </li>
         ))}

@@ -96,7 +96,7 @@ export const AppBranchSwitcher = ({
                     size={14}
                     className="shrink-0"
                   />
-                  <span className="truncate">{b.name}</span>
+                  <span className="min-w-0 truncate !leading-5">{b.name}</span>
                 </span>
                 {isCurrent ? (
                   <Icon variant="CheckIcon" size={14} className="shrink-0" />

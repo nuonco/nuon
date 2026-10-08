@@ -77,6 +77,7 @@ export type DiffEntityEntry = {
   changeKinds?: DiffChangeKind[]
   fields: DiffFieldEntry[]
   files?: DiffFileEntry[]
+  content?: { op: 'add' | 'remove' | 'change'; before?: string; after?: string }
 }
 
 export type DiffSectionData = {
@@ -317,7 +318,15 @@ export function extractSections(node?: TDiffNode): DiffSectionData[] {
       for (const entityNode of child.children) {
         const op = getEntityOp(entityNode)
         const { fields, files } = collectEntries(entityNode)
-        if (fields.length === 0 && files.length === 0) continue
+        const content =
+          entityNode.diff && isFileNode(entityNode)
+            ? {
+                op: entityNode.diff.op as 'add' | 'remove' | 'change',
+                before: entityNode.diff.before,
+                after: entityNode.diff.after,
+              }
+            : undefined
+        if (fields.length === 0 && files.length === 0 && !content) continue
 
         const componentType = child.key === 'components' ? findComponentType(entityNode) : undefined
 
@@ -327,6 +336,7 @@ export function extractSections(node?: TDiffNode): DiffSectionData[] {
           componentType,
           fields,
           files,
+          content,
         })
 
         if (op === 'add') section.additions++
@@ -563,7 +573,8 @@ const EntityRow = ({
     ? '!border-l-cool-grey-200 dark:!border-l-dark-grey-600'
     : getOpBorderColor(entity.op)
   const isComponent = sectionKey === 'components'
-  const hasDetail = entity.fields.length > 0 || (entity.files?.length ?? 0) > 0
+  const hasDetail =
+    entity.fields.length > 0 || (entity.files?.length ?? 0) > 0 || !!entity.content
   const entityId = `${sectionKey}-${entity.name}-${idx}`
   const isFocused = !!focus && focus.sectionKey === sectionKey && focus.entityName === entity.name
 
@@ -651,6 +662,7 @@ const EntityRow = ({
       headerClassName={`w-full px-4 py-3 gap-3 text-left focus:outline-none ${bgColor}`}
       heading={heading}
     >
+      {entity.content && <SectionContent content={entity.content} />}
       {entity.fields.length > 0 && <FieldsDiff fields={entity.fields} />}
       {(entity.files ?? []).map((file, i) => (
         <FileDiffRow

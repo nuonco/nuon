@@ -20,11 +20,7 @@ export const PlanDiffPanel = ({
     }
   >
 }) => (
-  <Panel
-    {...props}
-    size="3/4"
-    heading={`Plan for ${getGroupName(step.name)}`}
-  >
+  <Panel {...props} size="3/4" heading={`Plan for ${getGroupName(step.name)}`}>
     <PlanGroupStep
       step={step}
       metadata={(step.status?.metadata ?? {}) as Record<string, any>}

@@ -144,7 +144,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, ITextarea>(
 
     const baseClasses = cn(
       'w-full rounded-md border transition-colors duration-200 resize-vertical',
-      'bg-black/6 dark:bg-white/6',
+      'bg-black/6 dark:bg-black/40',
       'shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08)]',
       'placeholder:text-cool-grey-500 dark:placeholder:text-cool-grey-600',
       'font-sans',
