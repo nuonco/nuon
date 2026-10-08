@@ -23,6 +23,7 @@ import {
 } from './api'
 import {
   CLOUD_SANDBOX,
+  KITCHEN_SINK_VARIANTS,
   KITCHEN_SINK_APP,
   KITCHEN_SINK_LABEL,
   TRACKED_GIT_BRANCH,
@@ -65,7 +66,9 @@ const InstallSummaryCard = ({
       label: 'Nuon sandbox',
       value: (
         <>
-          <RepoChip repo={CLOUD_SANDBOX[cloud]} />
+          <RepoChip
+            repo={own || cloud === 'azure' ? CLOUD_SANDBOX[cloud] : KITCHEN_SINK_VARIANTS[cloud].sandbox}
+          />
           {own ? (
             <Text variant="subtext" theme="neutral">
               from sandbox.toml

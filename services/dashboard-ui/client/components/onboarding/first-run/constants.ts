@@ -104,9 +104,12 @@ export const SANDBOX_CLUSTER: Record<TCloud, string> = {
 export const SANDBOX_PARTS = ['cluster', 'registry', 'ingress', 'namespaces']
 
 export const KITCHEN_SINK_APP = 'kitchen-sink'
-export const KITCHEN_SINK_VARIANTS: Record<TExampleCloud, { appName: string; directory: string }> = {
-  aws: { appName: KITCHEN_SINK_APP, directory: '.' },
-  gcp: { appName: `${KITCHEN_SINK_APP}-gcp`, directory: 'gcp' },
+export const KITCHEN_SINK_VARIANTS: Record<
+  TExampleCloud,
+  { appName: string; directory: string; sandbox: string }
+> = {
+  aws: { appName: KITCHEN_SINK_APP, directory: 'kitchen-sink-aws', sandbox: 'nuonco/aws-eks-sandbox' },
+  gcp: { appName: `${KITCHEN_SINK_APP}-gcp`, directory: 'kitchen-sink-gcp', sandbox: 'nuonco/gcp-gke-sandbox' },
 }
 export const KITCHEN_SINK_REPO = 'nuonco/kitchen-sink'
 export const KITCHEN_SINK_URL = `https://github.com/${KITCHEN_SINK_REPO}`
