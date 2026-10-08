@@ -226,7 +226,7 @@ export const BranchOverviewContainer = () => {
               headerAction={
                 hasBuilds ? (
                   <Button size="sm" onClick={openBuilds}>
-                    View builds
+                    View details
                   </Button>
                 ) : null
               }

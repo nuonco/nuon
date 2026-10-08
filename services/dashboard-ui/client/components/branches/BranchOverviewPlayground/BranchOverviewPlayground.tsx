@@ -180,7 +180,7 @@ const Changes = ({ changes }: { changes: TChange[] }) => {
         title="What's changed"
         actions={
           <span className="flex items-center gap-4">
-            <Link href="#builds">View builds</Link>
+            <Link href="#builds">View details</Link>
             <ChangeCountSummary
               added={added}
               updated={updated}

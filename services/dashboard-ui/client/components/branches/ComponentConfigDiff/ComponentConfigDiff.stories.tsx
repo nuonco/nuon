@@ -443,7 +443,7 @@ export const InBranchOverview = () => (
         files={fullAppFiles}
         headerAction={
           <Text as="span" variant="subtext" className="text-link">
-            View builds
+            View details
           </Text>
         }
       />

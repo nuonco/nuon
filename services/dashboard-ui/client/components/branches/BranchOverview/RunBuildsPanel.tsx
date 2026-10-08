@@ -75,7 +75,7 @@ export const RunBuildsPanel = ({
   rows,
   ...props
 }: IPanel & { rows: TChangedBuildRow[] }) => (
-  <Panel {...props} size="half" heading="Builds">
+  <Panel {...props} size="half" heading="Details">
     <BuildChangeCards rows={rows} />
   </Panel>
 )
