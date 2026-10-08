@@ -2,7 +2,7 @@ import { Badge } from '@/components/common/Badge'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { Text } from '@/components/common/Text'
 import { Tooltip } from '@/components/common/Tooltip'
-import type { TRolloutInstallGroup } from './fixtures'
+import type { TGroupMatch } from '@/components/branches/BranchOverview/RolloutTrack'
 
 const Label = ({ labelKey, value }: { labelKey: string; value: string }) => (
   <LabelBadge
@@ -14,18 +14,22 @@ const Label = ({ labelKey, value }: { labelKey: string; value: string }) => (
 )
 
 export const GroupLabels = ({
-  group,
+  match,
   max,
 }: {
-  group: TRolloutInstallGroup
+  match?: TGroupMatch
   max?: number
 }) => {
-  const labels = Object.entries(group.label_selector?.match_labels ?? {})
+  const labels = Object.entries(match?.labels ?? {})
 
   if (!labels.length) {
     return (
       <Text variant="subtext" theme="neutral">
-        {group.default ? 'Every other install' : 'No label selector'}
+        {match?.kind === 'default'
+          ? 'Every other install'
+          : match?.kind === 'pinned'
+            ? 'Pinned installs'
+            : 'No label selector'}
       </Text>
     )
   }

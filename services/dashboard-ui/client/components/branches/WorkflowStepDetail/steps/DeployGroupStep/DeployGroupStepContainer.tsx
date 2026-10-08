@@ -63,7 +63,11 @@ export const DeployGroupStepContainer = ({
         : undefined,
     workflowHref:
       org?.id && entry.install_id && entry.workflow_id
-        ? installLink({ orgId: org.id, installId: entry.install_id, suffix: `/workflows/${entry.workflow_id}` })
+        ? installLink({
+            orgId: org.id,
+            installId: entry.install_id,
+            suffix: `/workflows/${entry.workflow_id}`,
+          })
         : undefined,
   }))
 

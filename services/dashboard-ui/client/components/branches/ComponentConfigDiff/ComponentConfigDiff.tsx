@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { File as DiffFile, MultiFileDiff } from '@pierre/diffs/react'
 import { FileTree, useFileTree } from '@pierre/trees/react'
 import type { GitStatusEntry } from '@pierre/trees'
@@ -310,7 +304,9 @@ export const SourceFilesPanel = ({
   if (!changed.length) {
     return (
       <Text theme="neutral">
-        {files.length ? 'No files changed.' : 'This component references no files.'}
+        {files.length
+          ? 'No files changed.'
+          : 'This component references no files.'}
       </Text>
     )
   }

@@ -5,6 +5,7 @@ import {
   fetchCommitReady,
   installFailureHref,
   overviewCompositeError,
+  preRolloutCompositeError,
 } from './overview-loading'
 
 const step = (
@@ -157,6 +158,32 @@ describe('buildOverviewLoadingStages', () => {
       runError
     )
     expect(error?.message).toBe('delta failed during deploy')
+  })
+
+  test('keeps pre-rollout failures for the page banner', () => {
+    const error = preRolloutCompositeError([
+      step('fetch commit', 'success'),
+      step('build components', 'error', { message: 'Build failed' }),
+    ])
+    expect(error?.message).toBe('Build failed')
+  })
+
+  test('leaves rollout install failures to the install group cards', () => {
+    const steps = [
+      step('fetch commit', 'success'),
+      step('fetch app config', 'success'),
+      step('build components', 'success'),
+      step('deploy install group: canary', 'error', {
+        message: 'acme-prod failed during deploy',
+      }),
+    ]
+    expect(preRolloutCompositeError(steps)).toBeUndefined()
+    expect(
+      preRolloutCompositeError(steps.slice(0, 3), {
+        type: 'install_group.install_update_failed',
+        message: 'acme-prod failed during deploy',
+      } as TCompositeError)
+    ).toBeUndefined()
   })
 
   test('links an install update failure to the install workflow', () => {

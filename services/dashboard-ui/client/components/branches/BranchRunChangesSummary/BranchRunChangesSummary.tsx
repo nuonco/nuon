@@ -102,8 +102,7 @@ export function summarySectionsFromComparisonConfigDiff(
     return {
       name: sec.name,
       sectionKey:
-        SECTION_KEYS[sec.name] ??
-        sec.name.toLowerCase().replace(/\s+/g, '_'),
+        SECTION_KEYS[sec.name] ?? sec.name.toLowerCase().replace(/\s+/g, '_'),
       additions: sec.additions,
       removals: sec.removals,
       changed: sec.changed,
@@ -129,13 +128,12 @@ const orderedKinds = (kinds: Set<DiffChangeKind>): DiffChangeKind[] => {
 }
 
 const isSourceOnlyEntity = (entity: DiffEntityEntry) =>
-  entity.fields.length > 0 && entity.fields.every((field) => field.key === 'source')
+  entity.fields.length > 0 &&
+  entity.fields.every((field) => field.key === 'source')
 
 const isSandboxBuild = (build: TBuildMeta) =>
   build.component_type === 'sandbox' || build.component_id === 'sandbox'
 
-// Config-diff rows stay. Components the build step rebuilt for source, and that
-// the config diff omitted, are added and marked Source, Config, or both.
 export function withBuildChangeKinds(
   sections: DiffSectionData[],
   builds: TBuildMeta[] = []
@@ -202,10 +200,32 @@ export function overlaySectionDetail(
   detailed: DiffSectionData[]
 ): DiffSectionData[] {
   if (!detailed.length) return summary
-  const byKey = new Map(detailed.map((section) => [section.sectionKey, section]))
+  const byKey = new Map(
+    detailed.map((section) => [section.sectionKey, section])
+  )
   return summary.map((section) => {
-    if (section.grouped) return section
     const detail = byKey.get(section.sectionKey)
+    if (section.grouped) {
+      if (!detail?.entities.length) return section
+      const detailByName = new Map(
+        detail.entities.map((entity) => [entity.name, entity])
+      )
+      return {
+        ...section,
+        entities: section.entities.map((entity) => {
+          const match = detailByName.get(entity.name)
+          return match
+            ? {
+                ...entity,
+                componentType: entity.componentType ?? match.componentType,
+                fields: match.fields,
+                files: match.files,
+                content: match.content,
+              }
+            : entity
+        }),
+      }
+    }
     if (!detail?.content && !detail?.fields.length && !detail?.files?.length) {
       return section
     }
@@ -216,6 +236,93 @@ export function overlaySectionDetail(
       content: detail.content,
     }
   })
+}
+
+interface IBranchConfigSections {
+  branchId?: string
+  appBranchRunId?: string
+  builds?: TBuildMeta[]
+  scope?: TComparisonScope
+  enabled?: boolean
+}
+
+export const useBranchConfigSections = ({
+  branchId,
+  appBranchRunId,
+  builds = [],
+  scope,
+  enabled = true,
+}: IBranchConfigSections) => {
+  const { org } = useOrg()
+  const { app } = useApp()
+
+  const { data, isLoading, isError } = useQuery({
+    placeholderData: keepPreviousData,
+    queryKey: [
+      'branch-run-comparison',
+      org?.id,
+      app?.id,
+      branchId,
+      appBranchRunId,
+      'config',
+    ],
+    queryFn: () =>
+      getBranchRunComparison({
+        orgId: org!.id,
+        appId: app!.id,
+        branchId: branchId!,
+        runId: appBranchRunId!,
+        includeDiff: ['config'],
+      }),
+    enabled:
+      enabled && !!org?.id && !!app?.id && !!branchId && !!appBranchRunId,
+    retry: 1,
+  })
+
+  const headConfigId = data?.head_run?.app_config_id
+  const baseConfigId = data?.base_run?.app_config_id
+  const { data: configDiff, isLoading: detailLoading } = useQuery({
+    placeholderData: keepPreviousData,
+    queryKey: ['app-config-diff', org?.id, app?.id, headConfigId, baseConfigId],
+    queryFn: () =>
+      getAppConfigDiff({
+        orgId: org!.id,
+        appId: app!.id,
+        configId: headConfigId!,
+        oldConfigId: baseConfigId,
+      }),
+    enabled: !!org?.id && !!app?.id && !!headConfigId,
+    retry: 1,
+  })
+
+  const sections = useMemo(() => {
+    const summary = summarySectionsFromComparisonConfigDiff(
+      scopedComparisonConfigDiff(data?.config_diff_content, scope)
+    )
+    const detailed = configDiff?.diff ? extractSections(configDiff.diff) : []
+    return withBuildChangeKinds(overlaySectionDetail(summary, detailed), builds)
+  }, [data?.config_diff_content, configDiff?.diff, builds, scope])
+
+  const visibleSections = isError ? [] : sections
+  const summary =
+    visibleSections.length > 0 ? computeSummary(visibleSections) : null
+
+  return {
+    comparison: data,
+    sections: visibleSections,
+    summary,
+    isLoading:
+      (!isError && isLoading && !data) || (!!headConfigId && detailLoading),
+    isError,
+    previousSha: (() => {
+      const head = data?.head_sha ?? data?.head_run?.vcs_connection_commit?.sha
+      const base = data?.base_run?.vcs_connection_commit?.sha ?? data?.base_sha
+      return base && base !== head ? base : undefined
+    })(),
+    sha: data?.head_sha ?? data?.head_run?.vcs_connection_commit?.sha,
+    headConfigId,
+    baseConfigId,
+  }
 }
 
 interface IBranchRunChangesSummary {
@@ -241,59 +348,16 @@ export const BranchRunChangesSummary = ({
   scope,
   configError,
 }: IBranchRunChangesSummary) => {
-  const { org } = useOrg()
-  const { app } = useApp()
-
-  const { data, isLoading, isError } = useQuery({
-    placeholderData: keepPreviousData,
-    queryKey: [
-      'branch-run-comparison',
-      org?.id,
-      app?.id,
-      branchId,
-      appBranchRunId,
-      'config',
-    ],
-    queryFn: () =>
-      getBranchRunComparison({
-        orgId: org!.id,
-        appId: app!.id,
-        branchId,
-        runId: appBranchRunId,
-        includeDiff: ['config'],
-      }),
-    enabled: !!org?.id && !!app?.id && !!branchId && !!appBranchRunId,
-    retry: 1,
+  const {
+    sections: visibleSections,
+    summary,
+    isLoading: loading,
+  } = useBranchConfigSections({
+    branchId,
+    appBranchRunId,
+    builds,
+    scope,
   })
-
-  const headConfigId = data?.head_run?.app_config_id
-  const baseConfigId = data?.base_run?.app_config_id
-  const { data: configDiff } = useQuery({
-    placeholderData: keepPreviousData,
-    queryKey: ['app-config-diff', org?.id, app?.id, headConfigId, baseConfigId],
-    queryFn: () =>
-      getAppConfigDiff({
-        orgId: org!.id,
-        appId: app!.id,
-        configId: headConfigId!,
-        oldConfigId: baseConfigId,
-      }),
-    enabled: !!org?.id && !!app?.id && !!headConfigId,
-    retry: 1,
-  })
-
-  const sections = useMemo(() => {
-    const summary = summarySectionsFromComparisonConfigDiff(
-      scopedComparisonConfigDiff(data?.config_diff_content, scope)
-    )
-    const detailed = configDiff?.diff ? extractSections(configDiff.diff) : []
-    return withBuildChangeKinds(overlaySectionDetail(summary, detailed), builds)
-  }, [data?.config_diff_content, configDiff?.diff, builds, scope])
-
-  const visibleSections = isError ? [] : sections
-  const summary =
-    visibleSections.length > 0 ? computeSummary(visibleSections) : null
-  const loading = !isError && isLoading && !data
   const showPending = isPending && visibleSections.length === 0
   const showConfigError =
     isConfigValidationError(configError) &&

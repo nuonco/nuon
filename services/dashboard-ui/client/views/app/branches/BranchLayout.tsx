@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Outlet, useMatch, useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { Badge } from '@/components/common/Badge'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { PageContent } from '@/components/layout/PageContent'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -29,9 +30,27 @@ const triggerLabel = (config?: TAppBranchConfig) => {
   switch (mode) {
     case 'on_tag':
     case 'on_tag_prefix':
-      return `Tags matching ${config?.run_config?.tag_prefix ?? 'the configured prefix'}`
+      return config?.run_config?.tag_prefix ? (
+        <>
+          Tags matching
+          <Badge size="sm" variant="code">
+            {config.run_config.tag_prefix}
+          </Badge>
+        </>
+      ) : (
+        'Tags matching the configured prefix'
+      )
     case 'on_github_label':
-      return `Merged pull requests labeled ${config?.run_config?.github_label ?? 'with the configured label'}`
+      return config?.run_config?.github_label ? (
+        <>
+          Merged pull requests labeled
+          <Badge size="sm" variant="code">
+            {config.run_config.github_label}
+          </Badge>
+        </>
+      ) : (
+        'Merged pull requests labeled with the configured label'
+      )
     case 'manual_only':
       return 'Manual runs'
     default:
