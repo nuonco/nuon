@@ -116,6 +116,7 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 		app.WorkflowTypeDeprovision,
 		map[string]string{},
 		false,
+		nil,
 	)
 	if err != nil {
 		ctx.Error(err)

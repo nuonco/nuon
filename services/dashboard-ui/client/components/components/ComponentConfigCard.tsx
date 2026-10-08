@@ -27,6 +27,7 @@ import {
   PulumiConfigModal,
   PulumiEnvVarsModal,
 } from '@/components/components/configs/PulumiConfig'
+import { BuildSignatureBadge } from '@/components/builds/BuildSignatureBadge'
 import { SignatureVerification } from '@/components/components/configs/SignatureVerification'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TBuild, TComponentConfig } from '@/types'
@@ -309,6 +310,7 @@ const LatestResolvedImage = ({ build }: { build: TBuild }) => {
             no-op
           </Badge>
         ) : null}
+        <BuildSignatureBadge build={build} />
       </span>
       <div className="grid gap-4 md:grid-cols-2">
         {build.source_ref ? (

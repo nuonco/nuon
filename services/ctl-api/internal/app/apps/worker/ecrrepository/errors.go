@@ -16,5 +16,18 @@ func isEntityExistsException(err error) bool {
 		return true
 	}
 
-	return true
+	return false
+}
+
+func isRepositoryNotFoundException(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	notFoundErr := &ecr_types.RepositoryNotFoundException{}
+	if errors.As(err, &notFoundErr) {
+		return true
+	}
+
+	return false
 }

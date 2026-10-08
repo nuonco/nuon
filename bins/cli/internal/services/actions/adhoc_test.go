@@ -109,6 +109,21 @@ func TestCreateAdHocRunUsesSelectedInstallAndBuildsRequest(t *testing.T) {
 	require.Equal(t, "maintenance", api.request.Role)
 	require.NotNil(t, api.request.EnableKubeConfig)
 	require.False(t, *api.request.EnableKubeConfig)
+	require.Empty(t, api.request.RequestID)
+}
+
+func TestCreateAdHocRunForwardsRequestID(t *testing.T) {
+	api := &adHocAPI{}
+	service := New(validator.New(), api, &config.Config{Viper: viper.New()})
+
+	err := service.CreateAdHocRun(context.Background(), AdHocParams{
+		InstallID: "inst_123",
+		Command:   "echo hello",
+		Timeout:   time.Minute,
+		RequestID: "retry-1",
+	}, true)
+	require.NoError(t, err)
+	require.Equal(t, "retry-1", api.request.RequestID)
 }
 
 func TestCreateAdHocRunRejectsUnknownRole(t *testing.T) {

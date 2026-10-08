@@ -1,0 +1,140 @@
+.deployment-row .density-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+}
+
+.deployment-row .density-identity {
+  container: identity / inline-size;
+}
+
+.deployment-row .density-run-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem 1rem;
+  align-items: baseline;
+}
+
+@container identity (min-width: 32rem) {
+  .deployment-row .density-run-heading {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .deployment-row .density-run-meta {
+    justify-self: end;
+  }
+}
+
+.deployment-row .density-resources {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
+}
+
+.deployment-row .density-action {
+  grid-column: 1;
+  grid-row: 3;
+  justify-self: end;
+}
+
+.deployment-row .density-resources > [aria-label='Resource outcomes'] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.deployment-row .density-resources span[role='group'] {
+  container: outcome / inline-size;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+.deployment-row .density-resources span[role='group'] > span:last-child {
+  min-width: 0;
+  font-size: var(--outcome-font, var(--text-sm));
+  line-height: 1.5;
+}
+
+.deployment-row .density-resources span[role='group'] .status-icon,
+.deployment-row .density-resources span[role='group'] > svg {
+  width: var(--outcome-icon, 0.875rem);
+  height: var(--outcome-icon, 0.875rem);
+  flex-shrink: 0;
+}
+
+.deployment-row
+  .density-resources
+  span[role='group']
+  > span:first-child
+  > span:first-child {
+  width: calc(var(--outcome-icon, 0.875rem) + 0.5rem) !important;
+  height: calc(var(--outcome-icon, 0.875rem) + 0.5rem) !important;
+}
+
+@container outcome (min-width: 9rem) {
+  .deployment-row.density-auto
+    .density-resources
+    span[role='group']
+    > span:last-child {
+    --outcome-font: var(--text-base);
+  }
+  .deployment-row.density-auto
+    .density-resources
+    span[role='group']
+    > span:first-child,
+  .deployment-row.density-auto .density-resources span[role='group'] > svg {
+    --outcome-icon: 1.125rem;
+  }
+}
+
+@container outcome (min-width: 13rem) {
+  .deployment-row.density-auto
+    .density-resources
+    span[role='group']
+    > span:last-child {
+    --outcome-font: var(--text-lg);
+  }
+  .deployment-row.density-auto
+    .density-resources
+    span[role='group']
+    > span:first-child,
+  .deployment-row.density-auto .density-resources span[role='group'] > svg {
+    --outcome-icon: 1.375rem;
+  }
+}
+
+.deployment-row.density-comfortable .density-resources {
+  --outcome-font: var(--text-lg);
+  --outcome-icon: 1.375rem;
+}
+
+@container deployment (min-width: 48rem) {
+  .deployment-row .density-header {
+    grid-template-columns:
+      minmax(0, var(--workflow-share, 60fr))
+      minmax(0, var(--resource-share, 40fr)) 10rem;
+    column-gap: 1.5rem;
+  }
+  .deployment-row .density-resources {
+    grid-column: 2;
+    grid-row: 1;
+    padding-left: 1.5rem;
+    border-left: 1px solid var(--border-color);
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+  }
+  .deployment-row .density-resources > [aria-label='Resource outcomes'] {
+    width: 100%;
+  }
+  .deployment-row .density-action {
+    grid-column: 3;
+    grid-row: 1;
+    padding-left: 1.5rem;
+    border-left: 1px solid var(--border-color);
+    align-self: stretch;
+    justify-self: stretch;
+    display: flex;
+    align-items: center;
+  }
+}

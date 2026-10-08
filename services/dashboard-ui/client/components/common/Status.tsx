@@ -126,12 +126,15 @@ export const Status = ({
   const theme = getStatusTheme(status ?? '')
   const iconVariant =
     variant === 'timeline' ? getStatusIconVariant(status ?? '') : null
+  const isPulsing =
+    variant !== 'timeline' && getStatusIconVariant(status ?? '') === 'Loading'
 
   const rootClass = cn(VARIANT_CLASSES[variant], className)
   const indicatorClass = cn(
     INDICATOR_BASE,
     INDICATOR_SIZE[variant],
-    INDICATOR_THEME_CLASSES[variant][theme]
+    INDICATOR_THEME_CLASSES[variant][theme],
+    isPulsing && 'relative'
   )
   const indicatorStyle =
     variant === 'timeline'
@@ -142,6 +145,12 @@ export const Status = ({
   return (
     <span className={rootClass} {...props}>
       <span className={indicatorClass} style={indicatorStyle}>
+        {isPulsing ? (
+          <span
+            aria-hidden
+            className="absolute inset-0 rounded-full bg-inherit opacity-75 motion-safe:animate-ping"
+          />
+        ) : null}
         {iconVariant && iconVariant !== 'none' ? (
           <Icon
             className={cn(

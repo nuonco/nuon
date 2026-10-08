@@ -32,7 +32,7 @@ type InstallAppConfigVersion struct {
 	InstallID string  `json:"install_id,omitzero" gorm:"not null" temporaljson:"install_id,omitzero,omitempty"`
 	Install   Install `faker:"-" json:"-" temporaljson:"install,omitzero,omitempty"`
 
-	OldAppConfigID string    `json:"old_app_config_id,omitzero" temporaljson:"old_app_config_id,omitzero,omitempty"`
+	OldAppConfigID string    `json:"old_app_config_id,omitzero" gorm:"default:null" temporaljson:"old_app_config_id,omitzero,omitempty"`
 	OldAppConfig   AppConfig `faker:"-" json:"-" temporaljson:"old_app_config,omitzero,omitempty"`
 
 	NewAppConfigID string    `json:"new_app_config_id,omitzero" gorm:"not null" temporaljson:"new_app_config_id,omitzero,omitempty"`

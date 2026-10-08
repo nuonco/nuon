@@ -15,6 +15,7 @@ import { ComponentConfigContextTooltip } from '@/components/components/Component
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { RunnerJobPlanButton } from '@/components/runners/RunnerJobPlan'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
+import { BuildSignatureBadge } from '@/components/builds/BuildSignatureBadge'
 import { CancelBuildModal } from '@/components/builds/CancelBuild'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
@@ -74,11 +75,16 @@ export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
       icon={<ComponentType type={component?.type} displayVariant="icon-only" />}
       title={`${component?.name} build`}
       status={
-        build?.no_op ? (
-          <Badge variant="code" size="sm" theme="neutral">
-            no-op
-          </Badge>
-        ) : null
+        <>
+          {build?.no_op ? (
+            <Badge variant="code" size="sm" theme="neutral">
+              no-op
+            </Badge>
+          ) : null}
+          {component?.type === 'external_image' ? (
+            <BuildSignatureBadge build={build} />
+          ) : null}
+        </>
       }
       id={build?.id}
       identity={

@@ -112,7 +112,7 @@ func (c *client) ToggleInstallComponent(ctx context.Context, installID, componen
 	return resp.Payload, nil
 }
 
-func (c *client) TeardownInstallComponent(ctx context.Context, installID, componentID string, roleName string) (*models.AppWorkflowResponse, error) {
+func (c *client) TeardownInstallComponent(ctx context.Context, installID, componentID string, roleName string, requestID ...string) (*models.AppWorkflowResponse, error) {
 	var result models.AppWorkflowResponse
 	path := fmt.Sprintf(
 		"%s/v1/installs/%s/components/%s/teardown",
@@ -125,7 +125,8 @@ func (c *client) TeardownInstallComponent(ctx context.Context, installID, compon
 		http.MethodPost,
 		path,
 		&models.ServiceTeardownInstallComponentRequest{
-			Role: roleName,
+			Role:      roleName,
+			RequestID: optionalRequestID(requestID),
 		},
 		http.StatusCreated,
 		&result,
@@ -136,13 +137,14 @@ func (c *client) TeardownInstallComponent(ctx context.Context, installID, compon
 	return &result, nil
 }
 
-func (c *client) RecoverInstallComponentHelmRelease(ctx context.Context, installID, componentID string, roleName string) (*models.AppWorkflowResponse, error) {
+func (c *client) RecoverInstallComponentHelmRelease(ctx context.Context, installID, componentID string, roleName string, requestID ...string) (*models.AppWorkflowResponse, error) {
 	resp, err := c.genClient.Operations.RecoverInstallComponentHelmRelease(&operations.RecoverInstallComponentHelmReleaseParams{
 		InstallID:   installID,
 		ComponentID: componentID,
 		Context:     ctx,
 		Req: &models.ServiceRecoverInstallComponentHelmReleaseRequest{
-			Role: roleName,
+			Role:      roleName,
+			RequestID: optionalRequestID(requestID),
 		},
 	}, c.getOrgIDAuthInfo())
 	if err != nil {
@@ -162,14 +164,17 @@ func (c *client) ForgetInstallComponent(ctx context.Context, installID, componen
 	return err
 }
 
-func (c *client) TeardownInstallComponents(ctx context.Context, installID string, role string) (*models.AppWorkflowResponse, error) {
+func (c *client) TeardownInstallComponents(ctx context.Context, installID string, role string, requestID ...string) (*models.AppWorkflowResponse, error) {
 	var result models.AppWorkflowResponse
 	path := fmt.Sprintf("%s/v1/installs/%s/components/teardown-all", c.APIURL, url.PathEscape(installID))
 	err := c.triggerRequest(
 		ctx,
 		http.MethodPost,
 		path,
-		&models.ServiceTeardownInstallComponentsRequest{Role: role},
+		&models.ServiceTeardownInstallComponentsRequest{
+			Role:      role,
+			RequestID: optionalRequestID(requestID),
+		},
 		http.StatusCreated,
 		&result,
 	)
@@ -179,7 +184,7 @@ func (c *client) TeardownInstallComponents(ctx context.Context, installID string
 	return &result, nil
 }
 
-func (c *client) DeployInstallComponents(ctx context.Context, installID string, roleName string, planOnly bool) (*models.AppWorkflowResponse, error) {
+func (c *client) DeployInstallComponents(ctx context.Context, installID string, roleName string, planOnly bool, requestID ...string) (*models.AppWorkflowResponse, error) {
 	var result models.AppWorkflowResponse
 	path := fmt.Sprintf("%s/v1/installs/%s/components/deploy-all", c.APIURL, url.PathEscape(installID))
 	err := c.triggerRequest(
@@ -187,8 +192,9 @@ func (c *client) DeployInstallComponents(ctx context.Context, installID string, 
 		http.MethodPost,
 		path,
 		&models.ServiceDeployInstallComponentsRequest{
-			PlanOnly: planOnly,
-			Role:     roleName,
+			PlanOnly:  planOnly,
+			Role:      roleName,
+			RequestID: optionalRequestID(requestID),
 		},
 		http.StatusCreated,
 		&result,

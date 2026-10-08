@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Banner } from '@/components/common/Banner'
 import { CompositeError } from '@/components/common/CompositeError'
 import { Link } from '@/components/common/Link'
 import { Loading } from '@/components/common/Loading'
@@ -6,7 +7,7 @@ import { Text } from '@/components/common/Text'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import type { TCompositeError } from '@/types'
 import { OverviewLoadingTrack } from './OverviewLoadingTrack'
-import type { TOverviewStage } from './overview-loading'
+import type { TOverviewStage, TPreviewProgress } from './overview-loading'
 import {
   RolloutGroupsCard,
   type IGroupPlanApproval,
@@ -41,6 +42,9 @@ export interface TFailedBuildLink {
 
 export interface IBranchOverview {
   hasPlan: boolean
+  showInstalls?: boolean
+  showRolloutLink?: boolean
+  previewMode?: TPreviewProgress
   isLoading?: boolean
   rollout?: TOverviewRollout
   changes?: ReactNode
@@ -52,10 +56,14 @@ export interface IBranchOverview {
   installWorkflowHref?: string
   failedBuilds?: TFailedBuildLink[]
   approvals?: IGroupPlanApproval[]
+  runHeaderAction?: ReactNode
 }
 
 export const BranchOverview = ({
   hasPlan,
+  showInstalls,
+  showRolloutLink = true,
+  previewMode,
   isLoading,
   rollout,
   changes,
@@ -67,10 +75,16 @@ export const BranchOverview = ({
   installWorkflowHref,
   failedBuilds,
   approvals,
+  runHeaderAction,
 }: IBranchOverview) => (
   <div className="flex flex-col gap-10 p-4 md:p-6">
     {loadingStages?.length ? (
-      <OverviewLoadingTrack stages={loadingStages} />
+      <div className="flex items-center justify-between gap-4">
+        <OverviewLoadingTrack stages={loadingStages} />
+        {runHeaderAction ? (
+          <span className="shrink-0">{runHeaderAction}</span>
+        ) : null}
+      </div>
     ) : isLoading ? (
       <Loading />
     ) : null}
@@ -98,6 +112,15 @@ export const BranchOverview = ({
       </div>
     ) : null}
 
+    {previewMode === 'build-only' ? (
+      <Banner theme="info">This preview will not update any install.</Banner>
+    ) : null}
+    {previewMode === 'plan-only' ? (
+      <Banner theme="info">
+        This preview will plan the selected install. It will not roll out to the branch.
+      </Banner>
+    ) : null}
+
     {rollout ? (
       <section className="grid items-start gap-6 lg:grid-cols-2">
         <RunSourceCard
@@ -108,6 +131,8 @@ export const BranchOverview = ({
           author={rollout.author}
           status={rollout.status}
           commit={rollout.commit}
+          previewMode={rollout.previewMode}
+          baseline={rollout.baseline}
         />
         <div className="min-w-0">{changes}</div>
       </section>
@@ -119,12 +144,16 @@ export const BranchOverview = ({
       </Text>
     ) : null}
 
-    {hasPlan && !isLoading ? (
+    {(showInstalls ?? hasPlan) && !isLoading ? (
       <section className="flex flex-col gap-3">
         <SectionHeader
           title="Installs"
           description={rollout?.activity}
-          actions={<Link href={rolloutHref}>View rollout</Link>}
+          actions={
+            showRolloutLink ? (
+              <Link href={rolloutHref}>View rollout</Link>
+            ) : undefined
+          }
         />
         {groups.length ? (
           <RolloutGroupsCard

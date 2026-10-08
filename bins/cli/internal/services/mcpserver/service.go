@@ -337,19 +337,20 @@ func CLIConfigFlag(cfg *config.Config) string {
 }
 
 // CLICommandInstructions tells an agent which Nuon binary to use for local CLI
-// work this MCP server asks for. It includes -C only when that flag was passed.
+// work this MCP server asks for, and how to reach the HTTP API when neither MCP
+// nor the CLI has a command. It includes -C only when that flag was passed.
 func CLICommandInstructions(binary, configFlag string) string {
 	name := commandName(binary)
-	if configFlag == "" {
-		return fmt.Sprintf(
-			"When you run a local Nuon CLI command on behalf of this MCP server, use the %s binary that started it. Do not apply that binary to Nuon CLI commands for other work. Validate an app config directory with `%s apps validate` from that directory, or pass the directory as the argument. Do not upload config files to validate them.",
-			name, name,
-		)
+	cmd := name
+	intro := fmt.Sprintf("When you run a local Nuon CLI command on behalf of this MCP server, use the %s binary that started it. Do not apply that binary to Nuon CLI commands for other work.", name)
+	if configFlag != "" {
+		quoted := strconv.Quote(configFlag)
+		cmd = name + " -C " + quoted
+		intro = fmt.Sprintf("When you run a local Nuon CLI command on behalf of this MCP server, use %s and pass -C %s, matching how this server was started. Do not apply that binary or -C to Nuon CLI commands for other work.", name, quoted)
 	}
-	quoted := strconv.Quote(configFlag)
 	return fmt.Sprintf(
-		"When you run a local Nuon CLI command on behalf of this MCP server, use %s and pass -C %s, matching how this server was started. Do not apply that binary or -C to Nuon CLI commands for other work. Validate an app config directory with `%s -C %s apps validate` from that directory, or pass the directory as the argument. Do not upload config files to validate them.",
-		name, quoted, name, quoted,
+		"%s Validate an app config directory with `%s apps validate` from that directory, or pass the directory as the argument. Do not upload config files to validate them. When no MCP tool covers the operation, use that same CLI. When the CLI has no command for it, use `%s api --raw` if that command is already available. Do not install the api extension. Call the HTTP API with curl only as a last resort.",
+		intro, cmd, cmd,
 	)
 }
 

@@ -91,6 +91,9 @@ func (p *parser) parse(ctx context.Context) error {
 			}
 		}
 		if field.Type.Kind() == reflect.Slice {
+			if generics.SliceContains(fieldOpts.Name, p.opts.SkipDirs) {
+				continue
+			}
 			objs, err := p.parseDir(fieldOpts.Name, field.Type)
 			if err != nil {
 				return errors.Wrap(err, "unable to load subdir "+fieldOpts.Name)

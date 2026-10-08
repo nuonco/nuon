@@ -39,8 +39,21 @@ func TestCreateRunRejectsUnknownRole(t *testing.T) {
 	}}
 	service := New(validator.New(), api, &config.Config{Viper: viper.New()})
 
-	err := service.CreateRun(context.Background(), "inst_123", "action_123", "provision", false)
+	err := service.CreateRun(context.Background(), "inst_123", "action_123", "provision", "", false)
 
 	require.EqualError(t, err, `role "provision" is not available; available roles: install-maintenance, install-provision`)
 	require.Nil(t, api.request)
+}
+
+func TestCreateRunForwardsRequestID(t *testing.T) {
+	api := &createRunAPI{roles: []*models.ServiceAvailableRole{{Name: "install-maintenance"}}}
+	service := New(validator.New(), api, &config.Config{Viper: viper.New()})
+
+	err := service.CreateRun(context.Background(), "inst_123", "action_123", "install-maintenance", "retry-1", false)
+	require.NoError(t, err)
+	require.Equal(t, "retry-1", api.request.RequestID)
+
+	err = service.CreateRun(context.Background(), "inst_123", "action_123", "install-maintenance", "", false)
+	require.NoError(t, err)
+	require.Empty(t, api.request.RequestID)
 }

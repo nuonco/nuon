@@ -31,7 +31,7 @@ interface ICreateInstallFormFields {
   autoApproveDescription?: string
   submitError?: TAPIError | null
   validateName?: (name: string) => Promise<string | undefined>
-  onSubmit: (values: InstallFormValues) => Promise<unknown> | void
+  onSubmit: (values: InstallFormValues) => Promise<unknown> | false | void
   onStateChange: (state: ICreateFormTriggerState) => void
 }
 
@@ -74,8 +74,8 @@ export const CreateInstallFormFields = ({
     storageKey: `install-draft:${app.id}`,
     onSubmit: async (values) => {
       try {
-        await onSubmit(values)
-        clearDraft()
+        const result = await onSubmit(values)
+        if (result !== false) clearDraft()
       } catch {
         return
       }

@@ -9,6 +9,7 @@ import {
   PullRequestLink,
   TagLink,
 } from '@/components/common/GitReferenceLink'
+import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -73,14 +74,22 @@ export interface IRunCommit {
   createdAt?: string
 }
 
+export interface IRunBaseline {
+  sha?: string
+  shaUrl?: string
+  runHref?: string
+}
+
 export interface IRunSourceCard {
   source: TRunSource
   title: string
   sha?: string
   shaUrl?: string
   author?: string
-  status: string
+  status?: string
   commit?: IRunCommit
+  previewMode?: string
+  baseline?: IRunBaseline
 }
 
 const TRIGGER_LABEL: Record<TRunSource['kind'], string> = {
@@ -141,6 +150,8 @@ export const RunSourceCard = ({
   author,
   status,
   commit,
+  previewMode,
+  baseline,
 }: IRunSourceCard) => {
   const commitSha = commit?.sha ?? sha
   const commitUrl = commit?.shaUrl ?? shaUrl
@@ -154,7 +165,7 @@ export const RunSourceCard = ({
         <Text variant="h3" weight="strong">
           Run information
         </Text>
-        <Status status={status} />
+        {status ? <Status status={status} /> : null}
       </header>
       <div className="flex flex-col gap-3 p-5 border-t">
         {hasIdentity ? <SourceIdentity source={source} /> : null}
@@ -192,7 +203,29 @@ export const RunSourceCard = ({
             Triggered by
           </Text>
           <Text variant="subtext">{TRIGGER_LABEL[source.kind]}</Text>
+          {previewMode ? (
+            <Badge size="sm" theme="info">
+              {previewMode}
+            </Badge>
+          ) : null}
         </span>
+        {baseline ? (
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <Text variant="label" theme="neutral">
+              Comparing against
+            </Text>
+            {baseline.sha ? (
+              <CommitLink sha={baseline.sha} href={baseline.shaUrl} />
+            ) : (
+              <Text variant="subtext" theme="neutral">
+                No previous run
+              </Text>
+            )}
+            {baseline.runHref ? (
+              <Link href={baseline.runHref}>Previous run</Link>
+            ) : null}
+          </span>
+        ) : null}
       </div>
     </section>
   )

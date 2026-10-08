@@ -31,6 +31,10 @@ const failFastUnhealthyRunnerVersion = "await-runner-healthy-failfast-unhealthy-
 // Existing histories must retain the aggregate-status fail-fast behavior they recorded.
 const processReadinessPolicyVersion = "await-runner-healthy-process-readiness-v1"
 
+// A runner that has not reported in yet is starting, not down, so require-active
+// waits for it instead of failing fast.
+const requireActiveAwaitsStartingRunnerVersion = "await-runner-healthy-require-active-starting-v1"
+
 type Mode string
 
 const (
@@ -168,6 +172,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return s.awaitActiveProcess(ctx, processReq)
 	}
 	if s.Mode == ModeRequireActive {
+		awaitStarting := workflow.GetVersion(ctx, requireActiveAwaitsStartingRunnerVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+		if awaitStarting && runnerStarting(runner.Status) {
+			return s.awaitActiveProcess(ctx, processReq)
+		}
 		return requireActiveProcess(ctx, processReq)
 	}
 	return s.awaitActiveProcess(ctx, processReq)
@@ -223,6 +231,14 @@ func (s *Signal) awaitActiveProcess(ctx workflow.Context, processReq activities.
 
 func runnerDisabled(runner *app.Runner) bool {
 	return runner.Status == app.RunnerStatusDisabled || runner.StatusV2.Status == app.Status(app.RunnerStatusDisabled)
+}
+
+func runnerStarting(status app.RunnerStatus) bool {
+	switch status {
+	case app.RunnerStatusAwaitingHeartbeat, app.RunnerStatusProvisioning, app.RunnerStatusReprovisioning:
+		return true
+	}
+	return false
 }
 
 func runnerCannotBecomeHealthy(status app.RunnerStatus) bool {

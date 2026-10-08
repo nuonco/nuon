@@ -3,11 +3,15 @@ import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { SectionHeader } from '@/components/layout/SectionHeader'
+import { BuildSignatureBadge } from './BuildSignatureBadge'
 import type { TBuild } from '@/types'
 
 export const BuildImageSource = ({ build }: { build: TBuild }) => (
   <div className="flex flex-col gap-4">
-    <SectionHeader title="Image source" />
+    <SectionHeader
+      title="Image source"
+      status={<BuildSignatureBadge build={build} />}
+    />
     <div className="grid gap-4 md:grid-cols-2">
       {build?.source_ref ? (
         <LabeledValue label="Source ref">

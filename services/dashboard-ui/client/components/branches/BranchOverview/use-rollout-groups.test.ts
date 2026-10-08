@@ -1,9 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 import type { TInstallGroupRun, TInstallWorkflowStep } from '@/types'
 import type { TTrackGroup } from './RolloutTrack'
+import type { TAppBranchRun, TInstall } from '@/types'
 import {
   historicalRunGroups,
+  historyPreviewMode,
   mergeGroupRuns,
+  previewAffectedInstalls,
   rolloutGroupHrefForWorkflow,
   rolloutHrefForWorkflow,
 } from './use-rollout-groups'
@@ -146,5 +149,55 @@ describe('historicalRunGroups', () => {
       []
     )
     expect(groups.map((group) => group.id)).toEqual(['canary'])
+  })
+})
+
+describe('historyPreviewMode', () => {
+  test('ignores a preview unless the run is opened from history', () => {
+    expect(
+      historyPreviewMode(
+        { preview: { mode: 'build-only' } } as TAppBranchRun,
+        false
+      )
+    ).toBeUndefined()
+  })
+
+  test('keeps build and validate, plan, and apply', () => {
+    expect(
+      historyPreviewMode(
+        { preview: { mode: 'build-only' } } as TAppBranchRun,
+        true
+      )
+    ).toBe('build-only')
+    expect(
+      historyPreviewMode({ preview: { mode: 'apply' } } as TAppBranchRun, true)
+    ).toBe('apply')
+  })
+})
+
+describe('previewAffectedInstalls', () => {
+  const installs = [
+    { id: 'ins_a', name: 'alpha', labels: { tier: 'canary' } },
+    { id: 'ins_b', name: 'bravo', labels: { tier: 'prod' } },
+  ] as TInstall[]
+
+  test('returns the named install', () => {
+    expect(
+      previewAffectedInstalls(installs, {
+        preview: { install_id: 'ins_b' },
+      } as TAppBranchRun).map((install) => install.id)
+    ).toEqual(['ins_b'])
+  })
+
+  test('returns installs matching the preview selector', () => {
+    expect(
+      previewAffectedInstalls(installs, {
+        preview: {
+          resolved_preview_config: {
+            label_selector: { match_labels: { tier: 'canary' } },
+          },
+        },
+      } as TAppBranchRun).map((install) => install.id)
+    ).toEqual(['ins_a'])
   })
 })

@@ -17,6 +17,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 )
 
+const signatureVerificationVersion = "exec-build-signature-verification-v1"
+
 func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, currentApp *app.App, sandboxMode bool) (retErr error) {
 	comp, err := activities.AwaitGetComponent(ctx, activities.GetComponentRequest{
 		ComponentID: compID,
@@ -103,6 +105,10 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 	err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: runnerJob.ID}, &workflow.ChildWorkflowOptions{
 		WorkflowID: fmt.Sprintf("control-plane-%s-execute-job-%s", comp.ID, runnerJob.ID),
 	})
+	if runPlan.ContainerImagePullPlan != nil &&
+		workflow.GetVersion(ctx, signatureVerificationVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		w.updateBuildSignatureVerification(ctx, buildID, runnerJob.ID, runPlan.ContainerImagePullPlan, err == nil)
+	}
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "build did not complete successfully")
 		return fmt.Errorf("build job failed: %w", err)

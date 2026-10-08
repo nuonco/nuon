@@ -45,7 +45,9 @@ export const CurrentComponentBuild = ({
         statusDescription={build.status_description}
       />
 
-      {isImageBuild(build) ? <BuildImageSource build={build} /> : null}
+      {isImageBuild(build) || build.signature_verification ? (
+        <BuildImageSource build={build} />
+      ) : null}
 
       <LogsPanel logStream={build.log_stream} />
 

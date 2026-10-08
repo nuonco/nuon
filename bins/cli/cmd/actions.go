@@ -41,6 +41,7 @@ func (c *cli) actionsCmd() *cobra.Command {
 	installID := ""
 	actionWorkflowID := ""
 	roleName := ""
+	requestID := ""
 	recentRunsCmd := &cobra.Command{
 		Use:   "recent-runs",
 		Short: "Get action's most recent runs",
@@ -93,7 +94,7 @@ func (c *cli) actionsCmd() *cobra.Command {
 		Long:  "Run an action by Install ID and Action Workflow ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.actions
-			return svc.CreateRun(cmd.Context(), installID, actionWorkflowID, roleName, PrintJSON)
+			return svc.CreateRun(cmd.Context(), installID, actionWorkflowID, roleName, requestID, PrintJSON)
 		}),
 	}
 
@@ -102,6 +103,7 @@ func (c *cli) actionsCmd() *cobra.Command {
 	runCmd.Flags().StringVarP(&actionWorkflowID, "action-workflow-id", "w", "", "The ID of the action workflow you want to view recent runs for")
 	runCmd.MarkFlagRequired("action-workflow-id")
 	runCmd.Flags().StringVar(&roleName, "role-name", "", "IAM role name to use for action workflow")
+	addRequestIDFlag(runCmd, &requestID)
 	actionsCmd.AddCommand(runCmd)
 
 	var adhocParams actions.AdHocParams
@@ -127,6 +129,7 @@ func (c *cli) actionsCmd() *cobra.Command {
 	adhocCmd.Flags().StringVar(&adhocParams.Role, "role", "", "IAM role to use for the action")
 	adhocCmd.Flags().BoolVar(&adhocParams.EnableKubeConfig, "enable-kube-config", true, "Provide Kubernetes configuration to the action")
 	adhocCmd.Flags().BoolVar(&adhocParams.Wait, "wait", false, "Wait for completion and print raw action logs")
+	addRequestIDFlag(adhocCmd, &adhocParams.RequestID)
 	actionsCmd.AddCommand(adhocCmd)
 
 	return actionsCmd

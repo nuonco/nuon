@@ -29,6 +29,7 @@ func (s *Helpers) CreateWorkflowWithRole(
 		metadata,
 		planOnly,
 		role,
+		nil,
 	)
 }
 
@@ -38,6 +39,7 @@ func (s *Helpers) CreateWorkflow(
 	workflowType app.WorkflowType,
 	metadata map[string]string,
 	planOnly bool,
+	request *app.WorkflowRequest,
 ) (*app.Workflow, error) {
 	return s.createWorkflow(
 		ctx,
@@ -46,6 +48,7 @@ func (s *Helpers) CreateWorkflow(
 		metadata,
 		planOnly,
 		"",
+		request,
 	)
 }
 
@@ -55,8 +58,9 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 	metadata map[string]string,
 	planOnly bool,
 	role string,
+	request *app.WorkflowRequest,
 ) (*app.Workflow, error) {
-	return s.insertInstallWorkflow(ctx, s.db, installID, workflowType, metadata, planOnly, role, nil)
+	return s.insertInstallWorkflow(ctx, s.db, installID, workflowType, metadata, planOnly, role, request)
 }
 
 func (s *Helpers) insertInstallWorkflow(ctx context.Context,

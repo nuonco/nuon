@@ -4,9 +4,16 @@ import { ChangeCountSummary } from '@/components/approvals/plan-diffs/ChangeCoun
 import {
   computeSummary,
   extractSections,
+  type DiffChangeKind,
+  type DiffEntityEntry,
   type DiffFieldEntry,
   type DiffSectionData,
 } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
+import type { TBuildMeta } from '@/components/branches/BranchOverview/changed-builds'
+import {
+  scopedComparisonConfigDiff,
+  type TComparisonScope,
+} from '@/components/branches/BranchRunChanges/comparison-scope'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Text } from '@/components/common/Text'
 import { AppConfigDiff } from '@/components/diffs/plan-diff-switch'
@@ -18,7 +25,13 @@ import {
   type TBranchRunComparisonConfigDiff,
   type TBranchRunComparisonConfigDiffEntry,
 } from '@/lib'
+import type { TCompositeError } from '@/types'
 import { cn } from '@/utils/classnames'
+import {
+  configDiagnosticLines,
+  isConfigValidationError,
+} from './config-diagnostics'
+import { ConfigParseFailure } from './ConfigParseFailure'
 
 const GROUPED_SECTIONS = new Set([
   'Components',
@@ -101,6 +114,89 @@ export function summarySectionsFromComparisonConfigDiff(
   })
 }
 
+const kindsForReason = (reason?: string): DiffChangeKind[] => {
+  if (reason === 'source_changed') return ['source']
+  if (reason === 'config_changed') return ['config']
+  if (reason === 'source_and_config') return ['source', 'config']
+  return []
+}
+
+const orderedKinds = (kinds: Set<DiffChangeKind>): DiffChangeKind[] => {
+  const out: DiffChangeKind[] = []
+  if (kinds.has('source')) out.push('source')
+  if (kinds.has('config')) out.push('config')
+  return out
+}
+
+const isSourceOnlyEntity = (entity: DiffEntityEntry) =>
+  entity.fields.length > 0 && entity.fields.every((field) => field.key === 'source')
+
+const isSandboxBuild = (build: TBuildMeta) =>
+  build.component_type === 'sandbox' || build.component_id === 'sandbox'
+
+// Config-diff rows stay. Components the build step rebuilt for source, and that
+// the config diff omitted, are added and marked Source, Config, or both.
+export function withBuildChangeKinds(
+  sections: DiffSectionData[],
+  builds: TBuildMeta[] = []
+): DiffSectionData[] {
+  const byName = new Map<string, Set<DiffChangeKind>>()
+  for (const build of builds) {
+    if (isSandboxBuild(build)) continue
+    const kinds = kindsForReason(build.change_reason)
+    if (kinds.length === 0) continue
+    const name = build.component_name || build.component_id
+    if (!name) continue
+    const set = byName.get(name) ?? new Set<DiffChangeKind>()
+    for (const kind of kinds) set.add(kind)
+    byName.set(name, set)
+  }
+
+  const next = sections.map((section) => ({
+    ...section,
+    entities: section.entities.map((entity) => ({ ...entity })),
+  }))
+
+  let components = next.find((section) => section.sectionKey === 'components')
+  if (!components && byName.size > 0) {
+    components = {
+      name: 'Components',
+      sectionKey: 'components',
+      additions: 0,
+      removals: 0,
+      changed: 0,
+      grouped: true,
+      entities: [],
+      fields: [],
+    }
+    next.unshift(components)
+  }
+  if (!components) return next
+
+  const seen = new Set<string>()
+  components.entities = components.entities.map((entity) => {
+    seen.add(entity.name)
+    const kinds = new Set<DiffChangeKind>()
+    if (isSourceOnlyEntity(entity)) kinds.add('source')
+    else kinds.add('config')
+    for (const kind of byName.get(entity.name) ?? []) kinds.add(kind)
+    return { ...entity, changeKinds: orderedKinds(kinds) }
+  })
+
+  for (const [name, kinds] of byName) {
+    if (seen.has(name)) continue
+    components.entities.push({
+      name,
+      op: 'change',
+      changeKinds: orderedKinds(kinds),
+      fields: [],
+    })
+    components.changed += 1
+  }
+
+  return next
+}
+
 export function overlaySectionDetail(
   summary: DiffSectionData[],
   detailed: DiffSectionData[]
@@ -125,19 +221,25 @@ export function overlaySectionDetail(
 interface IBranchRunChangesSummary {
   branchId: string
   appBranchRunId: string
+  builds?: TBuildMeta[]
   className?: string
   title?: string
   headerAction?: ReactNode
   isPending?: boolean
+  scope?: TComparisonScope
+  configError?: TCompositeError
 }
 
 export const BranchRunChangesSummary = ({
   branchId,
   appBranchRunId,
+  builds = [],
   className,
   title = 'Config Changes',
   headerAction,
   isPending,
+  scope,
+  configError,
 }: IBranchRunChangesSummary) => {
   const { org } = useOrg()
   const { app } = useApp()
@@ -182,17 +284,32 @@ export const BranchRunChangesSummary = ({
 
   const sections = useMemo(() => {
     const summary = summarySectionsFromComparisonConfigDiff(
-      data?.config_diff_content
+      scopedComparisonConfigDiff(data?.config_diff_content, scope)
     )
     const detailed = configDiff?.diff ? extractSections(configDiff.diff) : []
-    return overlaySectionDetail(summary, detailed)
-  }, [data?.config_diff_content, configDiff?.diff])
+    return withBuildChangeKinds(overlaySectionDetail(summary, detailed), builds)
+  }, [data?.config_diff_content, configDiff?.diff, builds, scope])
 
   const visibleSections = isError ? [] : sections
   const summary =
     visibleSections.length > 0 ? computeSummary(visibleSections) : null
   const loading = !isError && isLoading && !data
   const showPending = isPending && visibleSections.length === 0
+  const showConfigError =
+    isConfigValidationError(configError) &&
+    !showPending &&
+    visibleSections.length === 0
+
+  if (showConfigError) {
+    return (
+      <ConfigParseFailure
+        className={className}
+        title={title}
+        headerAction={headerAction}
+        lines={configDiagnosticLines(configError)}
+      />
+    )
+  }
 
   return (
     <section

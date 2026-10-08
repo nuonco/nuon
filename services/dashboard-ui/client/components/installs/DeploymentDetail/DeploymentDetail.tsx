@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
-import { Status } from '@/components/common/Status'
 import { Time } from '@/components/common/Time'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import {
@@ -10,12 +9,18 @@ import {
 } from '@/components/layout/DetailPage'
 import type { TInstallDeploymentRecord, TNavLink, TWorkflow } from '@/types'
 import { humanize } from '@/utils/string-utils'
+import { DeploymentRunStatus, ResourceOutcomes } from './DeploymentProgress'
+import {
+  DEPLOYMENT_TABS,
+  deploymentOutcomes,
+  deploymentSteps,
+  deploymentTabOrder,
+  type TDeploymentTab,
+} from './deployment-progress'
 
-export const DEPLOYMENT_DETAIL_TABS: TNavLink[] = [
-  { path: '/', text: 'Changes' },
-  { path: '/template-updates', text: 'Template updates' },
-  { path: '/workflow', text: 'Workflow' },
-]
+export const DEPLOYMENT_DETAIL_TABS: TNavLink[] = deploymentTabOrder().map(
+  (key) => DEPLOYMENT_TABS[key]
+)
 
 interface IDeploymentDetail {
   activeTabIndex?: number
@@ -24,6 +29,8 @@ interface IDeploymentDetail {
   branchHref?: string
   children: ReactNode
   deployment?: TInstallDeploymentRecord
+  search?: string
+  tabOrder?: TDeploymentTab[]
   variant?: TDetailPageVariant
   workflow: TWorkflow
 }
@@ -35,6 +42,8 @@ export const DeploymentDetail = ({
   branchHref,
   children,
   deployment,
+  search = '',
+  tabOrder,
   variant = 'section',
   workflow,
 }: IDeploymentDetail) => {
@@ -44,19 +53,24 @@ export const DeploymentDetail = ({
     humanize(workflow?.type) ||
     'Deployment'
   const branch = deployment?.app_branch
+  const run = {
+    status: workflow?.status?.status ?? deployment?.status ?? 'unknown',
+    activity:
+      workflow?.status?.status_human_description ?? deployment?.summary ?? '',
+    steps: deploymentSteps(workflow),
+    outcomes: deploymentOutcomes(deployment, workflow),
+  }
 
   return (
     <DetailPage
       variant={variant}
+      className="[&>.tab-nav]:gap-2 md:[&>.tab-nav]:gap-6 [&>.tab-nav>a]:px-1 md:[&>.tab-nav>a]:px-3"
       header={
         <DetailHeader
+          backLink={false}
           title={title}
-          status={
-            <Status
-              status={deployment?.status || workflow?.status?.status}
-              variant="badge"
-            />
-          }
+          description={run.activity}
+          status={<DeploymentRunStatus run={run} />}
           id={workflow?.id}
           identity={
             <Time
@@ -78,13 +92,29 @@ export const DeploymentDetail = ({
               ) : null}
             </>
           }
-        />
+        >
+          <Link
+            href={`${basePath.replace(/\/deployments\/[^/]+$/, '/deployments')}${search}`}
+          >
+            Back to deployments
+          </Link>
+        </DetailHeader>
       }
-      banners={banners}
+      banners={
+        <>
+          <ResourceOutcomes run={run} />
+          {banners}
+        </>
+      }
       tabNav={{
         activeIndex: activeTabIndex,
         basePath,
-        tabs: DEPLOYMENT_DETAIL_TABS,
+        tabs: (tabOrder ?? deploymentTabOrder(run.status)).map((key) => ({
+          ...DEPLOYMENT_TABS[key],
+          path: search
+            ? `${DEPLOYMENT_TABS[key].path === '/' ? '' : DEPLOYMENT_TABS[key].path}${search}`
+            : DEPLOYMENT_TABS[key].path,
+        })),
       }}
     >
       {children}
