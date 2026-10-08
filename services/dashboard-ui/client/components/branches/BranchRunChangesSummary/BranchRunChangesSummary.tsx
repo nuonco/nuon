@@ -102,8 +102,7 @@ export function summarySectionsFromComparisonConfigDiff(
     return {
       name: sec.name,
       sectionKey:
-        SECTION_KEYS[sec.name] ??
-        sec.name.toLowerCase().replace(/\s+/g, '_'),
+        SECTION_KEYS[sec.name] ?? sec.name.toLowerCase().replace(/\s+/g, '_'),
       additions: sec.additions,
       removals: sec.removals,
       changed: sec.changed,
@@ -129,13 +128,12 @@ const orderedKinds = (kinds: Set<DiffChangeKind>): DiffChangeKind[] => {
 }
 
 const isSourceOnlyEntity = (entity: DiffEntityEntry) =>
-  entity.fields.length > 0 && entity.fields.every((field) => field.key === 'source')
+  entity.fields.length > 0 &&
+  entity.fields.every((field) => field.key === 'source')
 
 const isSandboxBuild = (build: TBuildMeta) =>
   build.component_type === 'sandbox' || build.component_id === 'sandbox'
 
-// Config-diff rows stay. Components the build step rebuilt for source, and that
-// the config diff omitted, are added and marked Source, Config, or both.
 export function withBuildChangeKinds(
   sections: DiffSectionData[],
   builds: TBuildMeta[] = []
@@ -202,7 +200,9 @@ export function overlaySectionDetail(
   detailed: DiffSectionData[]
 ): DiffSectionData[] {
   if (!detailed.length) return summary
-  const byKey = new Map(detailed.map((section) => [section.sectionKey, section]))
+  const byKey = new Map(
+    detailed.map((section) => [section.sectionKey, section])
+  )
   return summary.map((section) => {
     if (section.grouped) return section
     const detail = byKey.get(section.sectionKey)
@@ -218,29 +218,21 @@ export function overlaySectionDetail(
   })
 }
 
-interface IBranchRunChangesSummary {
-  branchId: string
-  appBranchRunId: string
+interface IBranchConfigSections {
+  branchId?: string
+  appBranchRunId?: string
   builds?: TBuildMeta[]
-  className?: string
-  title?: string
-  headerAction?: ReactNode
-  isPending?: boolean
   scope?: TComparisonScope
-  configError?: TCompositeError
+  enabled?: boolean
 }
 
-export const BranchRunChangesSummary = ({
+export const useBranchConfigSections = ({
   branchId,
   appBranchRunId,
   builds = [],
-  className,
-  title = 'Config Changes',
-  headerAction,
-  isPending,
   scope,
-  configError,
-}: IBranchRunChangesSummary) => {
+  enabled = true,
+}: IBranchConfigSections) => {
   const { org } = useOrg()
   const { app } = useApp()
 
@@ -258,11 +250,12 @@ export const BranchRunChangesSummary = ({
       getBranchRunComparison({
         orgId: org!.id,
         appId: app!.id,
-        branchId,
-        runId: appBranchRunId,
+        branchId: branchId!,
+        runId: appBranchRunId!,
         includeDiff: ['config'],
       }),
-    enabled: !!org?.id && !!app?.id && !!branchId && !!appBranchRunId,
+    enabled:
+      enabled && !!org?.id && !!app?.id && !!branchId && !!appBranchRunId,
     retry: 1,
   })
 
@@ -293,7 +286,57 @@ export const BranchRunChangesSummary = ({
   const visibleSections = isError ? [] : sections
   const summary =
     visibleSections.length > 0 ? computeSummary(visibleSections) : null
-  const loading = !isError && isLoading && !data
+
+  return {
+    comparison: data,
+    sections: visibleSections,
+    summary,
+    isLoading: !isError && isLoading && !data,
+    isError,
+    previousSha: (() => {
+      const head = data?.head_sha ?? data?.head_run?.vcs_connection_commit?.sha
+      const base = data?.base_run?.vcs_connection_commit?.sha ?? data?.base_sha
+      return base && base !== head ? base : undefined
+    })(),
+    sha: data?.head_sha ?? data?.head_run?.vcs_connection_commit?.sha,
+    headConfigId,
+    baseConfigId,
+  }
+}
+
+interface IBranchRunChangesSummary {
+  branchId: string
+  appBranchRunId: string
+  builds?: TBuildMeta[]
+  className?: string
+  title?: string
+  headerAction?: ReactNode
+  isPending?: boolean
+  scope?: TComparisonScope
+  configError?: TCompositeError
+}
+
+export const BranchRunChangesSummary = ({
+  branchId,
+  appBranchRunId,
+  builds = [],
+  className,
+  title = 'Config Changes',
+  headerAction,
+  isPending,
+  scope,
+  configError,
+}: IBranchRunChangesSummary) => {
+  const {
+    sections: visibleSections,
+    summary,
+    isLoading: loading,
+  } = useBranchConfigSections({
+    branchId,
+    appBranchRunId,
+    builds,
+    scope,
+  })
   const showPending = isPending && visibleSections.length === 0
   const showConfigError =
     isConfigValidationError(configError) &&

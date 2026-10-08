@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { cn } from '@/utils/classnames'
 import { changeCounts, type TDiffOperation } from '@/lib/diffs'
-import type { TAppConfigDiffSection } from '@/types'
+import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { DiffEmptyState } from '@/components/diffs/DiffEmptyState'
@@ -86,7 +86,7 @@ const OutlineItem = ({ section, active, onSelect }: IOutlineItem) => {
 }
 
 export interface IConfigChangesViewer {
-  sections: TAppConfigDiffSection[]
+  sections: DiffSectionData[]
   files?: TConfigSourceFile[]
   versionLabel?: string
   previousSha?: string

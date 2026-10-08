@@ -4,7 +4,11 @@ import type { TConfigDiffFocus } from '@/components/approvals/plan-diffs/config-
 import { useOrg } from '@/hooks/use-org'
 import { AppContext } from '@/providers/app-provider'
 import { scrollElementIntoView } from '@/utils/scroll'
-import { getAppConfigs, getAppConfigDiff, getInstallAppConfigTreeDiff } from '@/lib'
+import {
+  getAppConfigs,
+  getAppConfigDiff,
+  getInstallAppConfigTreeDiff,
+} from '@/lib'
 import {
   extractSections,
   computeSummary,

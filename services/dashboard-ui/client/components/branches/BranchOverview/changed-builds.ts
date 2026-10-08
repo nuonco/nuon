@@ -28,7 +28,9 @@ const isSandbox = (build: TBuildMeta) =>
 
 export const changeReasonFor = (build: TBuildMeta) =>
   build.change_reason ||
-  (build.skipped || build.status === 'skipped' ? 'no_changes' : 'source_changed')
+  (build.skipped || build.status === 'skipped'
+    ? 'no_changes'
+    : 'source_changed')
 
 export const buildChanged = (build: TBuildMeta) => {
   const reason = changeReasonFor(build)
@@ -46,8 +48,12 @@ export const splitChangedBuilds = (rows: TChangedBuildRow[]) => ({
   source: rows.filter((row) => isSourceChange(row.changeReason)),
 })
 
-const componentHref = (orgId: string, appId: string, componentId: string, buildId: string) =>
-  `/${orgId}/apps/${appId}/components/${componentId}/builds/${buildId}`
+const componentHref = (
+  orgId: string,
+  appId: string,
+  componentId: string,
+  buildId: string
+) => `/${orgId}/apps/${appId}/components/${componentId}/builds/${buildId}`
 
 export const changedBuildRows = ({
   metaBuilds,

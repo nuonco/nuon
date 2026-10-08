@@ -3,17 +3,18 @@ import { Banner } from '@/components/common/Banner'
 import { CompositeError } from '@/components/common/CompositeError'
 import { Link } from '@/components/common/Link'
 import { Loading } from '@/components/common/Loading'
+import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
-import { SectionHeader } from '@/components/layout/SectionHeader'
+import {
+  CommitRange,
+  InstallGroupCards,
+} from '@/components/branches/InstallGroupCards'
 import type { TCompositeError } from '@/types'
 import { OverviewLoadingTrack } from './OverviewLoadingTrack'
 import type { TOverviewStage, TPreviewProgress } from './overview-loading'
-import {
-  RolloutGroupsCard,
-  type IGroupPlanApproval,
-} from './RolloutGroupsCard'
-import type { TTrackGroup } from './RolloutTrack'
-import { RunSourceCard, type IRunSourceCard } from './RunSourceCard'
+import type { IGroupPlanApproval } from './RolloutGroupsCard'
+import type { TTrackGroup, TTrackInstall } from './RolloutTrack'
+import { RunCommitSummary, type IRunSourceCard } from './RunSourceCard'
 
 export const InstallFailureNotice = ({
   error,
@@ -57,73 +58,107 @@ export interface IBranchOverview {
   failedBuilds?: TFailedBuildLink[]
   approvals?: IGroupPlanApproval[]
   runHeaderAction?: ReactNode
+  versionLabel?: string
+  previousSha?: string
+  onSelectInstall?: (install: TTrackInstall) => void
 }
 
 export const BranchOverview = ({
   hasPlan,
   showInstalls,
-  showRolloutLink = true,
   previewMode,
   isLoading,
   rollout,
   changes,
   groups,
-  rolloutHref,
-  groupHref,
   loadingStages,
   compositeError,
   installWorkflowHref,
   failedBuilds,
   approvals,
   runHeaderAction,
-}: IBranchOverview) => (
-  <div className="flex flex-col gap-10 p-4 md:p-6">
-    {loadingStages?.length ? (
-      <div className="flex items-center justify-between gap-4">
-        <OverviewLoadingTrack stages={loadingStages} />
-        {runHeaderAction ? (
-          <span className="shrink-0">{runHeaderAction}</span>
-        ) : null}
-      </div>
-    ) : isLoading ? (
-      <Loading />
-    ) : null}
+  versionLabel,
+  previousSha,
+  onSelectInstall,
+}: IBranchOverview) => {
+  const commit = rollout
+    ? {
+        message: rollout.commit?.message,
+        author: rollout.commit?.author ?? rollout.author,
+        sha: rollout.commit?.sha ?? rollout.sha,
+        previousSha,
+        createdAt: rollout.commit?.createdAt,
+      }
+    : undefined
 
-    {compositeError ? (
-      <InstallFailureNotice error={compositeError} href={installWorkflowHref} />
-    ) : null}
-
-    {failedBuilds?.length ? (
-      <div className="flex flex-col gap-2">
-        <Text variant="subtext" weight="strong">
-          Failed builds
-        </Text>
-        <ul className="flex flex-col gap-1">
-          {failedBuilds.map((build) => (
-            <li key={build.id}>
-              <Link href={build.href} textVariant="subtext">
-                <Text as="span" variant="subtext" family="mono">
-                  {build.name}
+  return (
+    <div className="flex flex-col gap-8 p-4 md:p-6">
+      {rollout ? (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="flex flex-wrap items-center gap-3">
+              <Status status={rollout.status} />
+              {versionLabel ? (
+                <Text variant="subtext" theme="neutral" family="mono">
+                  {versionLabel}
                 </Text>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-    ) : null}
+              ) : null}
+              {commit ? <CommitRange commit={commit} /> : null}
+              {runHeaderAction}
+            </span>
+            {changes}
+          </div>
+          {loadingStages?.length ? (
+            <OverviewLoadingTrack stages={loadingStages} />
+          ) : null}
+        </div>
+      ) : loadingStages?.length ? (
+        <div className="flex items-center justify-between gap-4">
+          <OverviewLoadingTrack stages={loadingStages} />
+          {runHeaderAction}
+        </div>
+      ) : isLoading ? (
+        <Loading />
+      ) : null}
 
-    {previewMode === 'build-only' ? (
-      <Banner theme="info">This preview will not update any install.</Banner>
-    ) : null}
-    {previewMode === 'plan-only' ? (
-      <Banner theme="info">
-        This preview will plan the selected install. It will not roll out to the branch.
-      </Banner>
-    ) : null}
+      {compositeError ? (
+        <InstallFailureNotice
+          error={compositeError}
+          href={installWorkflowHref}
+        />
+      ) : null}
 
-    {rollout ? (
-      <section className="grid items-start gap-6 lg:grid-cols-2">
-        <RunSourceCard
+      {failedBuilds?.length ? (
+        <div className="flex flex-col gap-2">
+          <Text variant="subtext" weight="strong">
+            Failed builds
+          </Text>
+          <ul className="flex flex-col gap-1">
+            {failedBuilds.map((build) => (
+              <li key={build.id}>
+                <Link href={build.href} textVariant="subtext">
+                  <Text as="span" variant="subtext" family="mono">
+                    {build.name}
+                  </Text>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {previewMode === 'build-only' ? (
+        <Banner theme="info">This preview will not update any install.</Banner>
+      ) : null}
+      {previewMode === 'plan-only' ? (
+        <Banner theme="info">
+          This preview will plan the selected install. It will not roll out to
+          the branch.
+        </Banner>
+      ) : null}
+
+      {rollout ? (
+        <RunCommitSummary
           source={rollout.source}
           title={rollout.title}
           sha={rollout.sha}
@@ -134,39 +169,28 @@ export const BranchOverview = ({
           previewMode={rollout.previewMode}
           baseline={rollout.baseline}
         />
-        <div className="min-w-0">{changes}</div>
-      </section>
-    ) : !isLoading ? (
-      <Text variant="subtext" theme="neutral">
-        {hasPlan
-          ? 'No runs yet. Push a commit or start a run.'
-          : 'This branch has no install groups yet. Every install updates at once.'}
-      </Text>
-    ) : null}
+      ) : !isLoading ? (
+        <Text variant="subtext" theme="neutral">
+          {hasPlan
+            ? 'No runs yet. Push a commit or start a run.'
+            : 'This branch has no install groups yet. Every install updates at once.'}
+        </Text>
+      ) : null}
 
-    {(showInstalls ?? hasPlan) && !isLoading ? (
-      <section className="flex flex-col gap-3">
-        <SectionHeader
-          title="Installs"
-          description={rollout?.activity}
-          actions={
-            showRolloutLink ? (
-              <Link href={rolloutHref}>View rollout</Link>
-            ) : undefined
-          }
-        />
-        {groups.length ? (
-          <RolloutGroupsCard
+      {(showInstalls ?? hasPlan) && !isLoading ? (
+        groups.length ? (
+          <InstallGroupCards
             groups={groups}
-            groupHref={groupHref}
+            commit={commit}
             approvals={approvals}
+            onSelectInstall={onSelectInstall}
           />
         ) : (
           <Text variant="subtext" theme="neutral">
             No install groups in this run yet.
           </Text>
-        )}
-      </section>
-    ) : null}
-  </div>
-)
+        )
+      ) : null}
+    </div>
+  )
+}

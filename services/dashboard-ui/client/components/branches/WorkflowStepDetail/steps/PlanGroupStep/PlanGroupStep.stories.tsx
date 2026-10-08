@@ -143,9 +143,7 @@ const excludedSections: DiffSectionData[] = [
     removals: 0,
     changed: 1,
     entities: [],
-    fields: [
-      { key: 'install_id', op: 'change', diff: "'inlold' -> 'inlnew'" },
-    ],
+    fields: [{ key: 'install_id', op: 'change', diff: "'inlold' -> 'inlnew'" }],
   },
   {
     name: 'Install inputs',
@@ -158,7 +156,9 @@ const excludedSections: DiffSectionData[] = [
       {
         name: 'region',
         op: 'change',
-        fields: [{ key: 'value', op: 'change', diff: "'us-east-1' -> 'us-west-2'" }],
+        fields: [
+          { key: 'value', op: 'change', diff: "'us-east-1' -> 'us-west-2'" },
+        ],
       },
     ],
     fields: [],

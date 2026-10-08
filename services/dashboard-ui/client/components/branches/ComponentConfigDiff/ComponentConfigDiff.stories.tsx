@@ -410,8 +410,8 @@ const Callout = ({ children }: { children: string }) => (
 export const FullAppConfig = () => (
   <div className="mx-auto max-w-5xl p-8">
     <Callout>
-      App scope: every section of the app config diff, with the referenced
-      files of all components collected into one tree.
+      App scope: every section of the app config diff, with the referenced files
+      of all components collected into one tree.
     </Callout>
     <AppConfigFilesDiff
       previousVersion="#118"
@@ -568,7 +568,12 @@ export const NoChanges = () => (
       previousVersion="#118"
       currentVersion="#118"
       configSections={[]}
-      files={helmValuesFiles.map((file) => ({ ...file, change: 'unchanged' as const, before: undefined, after: file.after ?? file.before }))}
+      files={helmValuesFiles.map((file) => ({
+        ...file,
+        change: 'unchanged' as const,
+        before: undefined,
+        after: file.after ?? file.before,
+      }))}
     />
   </div>
 )

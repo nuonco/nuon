@@ -46,10 +46,22 @@ describe('changedBuildRows', () => {
     })
 
     expect(rows.map((row) => [row.name, row.changeReason, row.href])).toEqual([
-      ['api', 'source_changed', '/org/apps/app/components/cmp_api/builds/bld_api'],
-      ['worker', 'config_changed', '/org/apps/app/components/cmp_worker/builds/bld_worker'],
+      [
+        'api',
+        'source_changed',
+        '/org/apps/app/components/cmp_api/builds/bld_api',
+      ],
+      [
+        'worker',
+        'config_changed',
+        '/org/apps/app/components/cmp_worker/builds/bld_worker',
+      ],
       ['Sandbox', 'source_changed', '/org/apps/app/sandbox/builds/sb_1'],
-      ['job', 'source_changed', '/org/apps/app/components/cmp_job/builds/bld_job'],
+      [
+        'job',
+        'source_changed',
+        '/org/apps/app/components/cmp_job/builds/bld_job',
+      ],
     ])
   })
 

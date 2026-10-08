@@ -8,11 +8,11 @@ import {
   type TDiffOperation,
 } from '@/lib/diffs'
 import type {
-  TAppConfigDiffEntity,
-  TAppConfigDiffField,
-  TAppConfigDiffFile,
-  TAppConfigDiffSection,
-} from '@/types'
+  DiffEntityEntry,
+  DiffFieldEntry,
+  DiffFileEntry,
+  DiffSectionData,
+} from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
 
 export const CONFIG_CHANGE_OPERATIONS = ['create', 'update', 'delete'] as const
 
@@ -77,7 +77,7 @@ const unquote = (value: string) => value.trim().replace(/^'([\s\S]*)'$/, '$1')
 const tomlValue = (value: string) =>
   /^(true|false|-?\d+(\.\d+)?)$/.test(value) ? value : JSON.stringify(value)
 
-const splitField = ({ diff, op }: TAppConfigDiffField) => {
+const splitField = ({ diff, op }: DiffFieldEntry) => {
   const index = diff.indexOf(' -> ')
   if (index < 0) {
     return op === 'remove'
@@ -92,7 +92,7 @@ const splitField = ({ diff, op }: TAppConfigDiffField) => {
 
 const tomlBlock = (
   name: string | undefined,
-  fields: TAppConfigDiffField[],
+  fields: DiffFieldEntry[],
   side: 'before' | 'after'
 ) => {
   const lines = fields.flatMap((field) => {
@@ -111,7 +111,7 @@ const complete = (section: TConfigChangeSection): TConfigChangeSection =>
     : { ...section, error: MISSING_DIFF_ERROR }
 
 const fileSection = (
-  file: TAppConfigDiffFile,
+  file: DiffFileEntry,
   id: string,
   group: string,
   icon: TIconVariant,
@@ -133,8 +133,8 @@ const fileSection = (
   })
 
 const entitySections = (
-  section: TAppConfigDiffSection,
-  entity: TAppConfigDiffEntity,
+  section: DiffSectionData,
+  entity: DiffEntityEntry,
   icon: TIconVariant
 ): TConfigChangeSection[] => {
   const id = `${section.sectionKey}/${entity.name}`
@@ -163,9 +163,7 @@ const entitySections = (
   return [config, ...files]
 }
 
-const sectionChanges = (
-  section: TAppConfigDiffSection
-): TConfigChangeSection[] => {
+const sectionChanges = (section: DiffSectionData): TConfigChangeSection[] => {
   const icon = SECTION_ICONS[section.sectionKey] ?? 'CubeIcon'
 
   if (section.grouped) {
@@ -232,7 +230,7 @@ const sourceFileSections = (
   )
 
 export const configChanges = (
-  sections: TAppConfigDiffSection[],
+  sections: DiffSectionData[],
   files: TConfigSourceFile[] = []
 ): TConfigChanges => {
   const all = [

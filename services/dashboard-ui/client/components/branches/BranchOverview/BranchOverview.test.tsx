@@ -19,7 +19,9 @@ const base = {
 }
 
 test('tells a build-and-validate preview that it will not update installs', () => {
-  render(<BranchOverview {...base} previewMode="build-only" showInstalls={false} />)
+  render(
+    <BranchOverview {...base} previewMode="build-only" showInstalls={false} />
+  )
 
   expect(
     screen.getByText('This preview will not update any install.')
@@ -27,7 +29,9 @@ test('tells a build-and-validate preview that it will not update installs', () =
 })
 
 test('tells a plan-only preview that it plans the selected install', () => {
-  render(<BranchOverview {...base} previewMode="plan-only" showInstalls={false} />)
+  render(
+    <BranchOverview {...base} previewMode="plan-only" showInstalls={false} />
+  )
 
   expect(
     screen.getByText(
@@ -45,7 +49,5 @@ test('omits the preview banner for a rollout run', () => {
   expect(
     screen.queryByText('This preview will not update any install.')
   ).toBeNull()
-  expect(
-    screen.queryByText(/will plan the selected install/)
-  ).toBeNull()
+  expect(screen.queryByText(/will plan the selected install/)).toBeNull()
 })

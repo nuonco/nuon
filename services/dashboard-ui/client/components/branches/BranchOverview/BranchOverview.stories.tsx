@@ -4,8 +4,7 @@ export default {
 }
 
 import { ConfigParseFailure } from '@/components/branches/BranchRunChangesSummary/ConfigParseFailure'
-import { Text } from '@/components/common/Text'
-import { SectionHeader } from '@/components/layout/SectionHeader'
+import { TemplateChangesButton } from '@/components/branches/ConfigChanges'
 import type { TCompositeError } from '@/types'
 import { BranchOverview, type TOverviewRollout } from './BranchOverview'
 import { buildOverviewLoadingStages } from './overview-loading'
@@ -60,12 +59,43 @@ const rollout: TOverviewRollout = {
 }
 
 const changes = (
-  <div className="flex flex-col gap-3">
-    <SectionHeader title="Template and source changes" />
-    <Text variant="subtext" theme="neutral">
-      cache added, api image tag 1.4.2
-    </Text>
-  </div>
+  <TemplateChangesButton
+    summary={{ added: 1, removed: 0, changed: 1 }}
+    versionLabel="v13 → v14"
+    previousSha="9f8e7d6c5b4a"
+    sha="a1b2c3d4e5f6"
+    sections={[
+      {
+        name: 'Components',
+        sectionKey: 'components',
+        additions: 1,
+        removals: 0,
+        changed: 1,
+        grouped: true,
+        fields: [],
+        entities: [
+          {
+            name: 'cache',
+            op: 'add',
+            componentType: 'helm_chart',
+            fields: [{ key: 'chart_name', op: 'add', diff: "'cache'" }],
+          },
+          {
+            name: 'api',
+            op: 'change',
+            componentType: 'helm_chart',
+            fields: [
+              {
+                key: 'image.tag',
+                op: 'change',
+                diff: "'1.4.1' -> '1.4.2'",
+              },
+            ],
+          },
+        ],
+      },
+    ]}
+  />
 )
 
 export const RollingOut = () => (

@@ -4,12 +4,18 @@ import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { Button } from '@/components/common/Button'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { PageTitle } from '@/components/navigation/PageTitle'
-import { BranchRunChangesSummary } from '@/components/branches/BranchRunChangesSummary'
-import { isConfigValidationError } from '@/components/branches/BranchRunChangesSummary/config-diagnostics'
+import { useBranchConfigSections } from '@/components/branches/BranchRunChangesSummary'
+import {
+  configDiagnosticLines,
+  isConfigValidationError,
+} from '@/components/branches/BranchRunChangesSummary/config-diagnostics'
+import { ConfigParseFailure } from '@/components/branches/BranchRunChangesSummary/ConfigParseFailure'
+import { TemplateChangesButton } from '@/components/branches/ConfigChanges'
+import { InstallDeploymentPanel } from '@/components/installs/InstallDeploymentPanel'
 import { stepStatusCategory } from '@/components/branches/shared/step-status'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
-import { getBranchRunBuilds, getBranchRunComparison } from '@/lib'
+import { getAppConfig, getBranchRunBuilds } from '@/lib'
 import { commitUrl } from './run-source'
 import type { TAPIError } from '@/types'
 import { BranchOverview, type TFailedBuildLink } from './BranchOverview'
@@ -66,40 +72,6 @@ export const BranchOverviewContainer = () => {
     groups
   )
 
-  const { data: comparison } = useQuery({
-    queryKey: [
-      'branch-run-comparison',
-      orgId,
-      appId,
-      branchId,
-      branchRunId,
-      'config',
-    ],
-    queryFn: () =>
-      getBranchRunComparison({
-        orgId: orgId!,
-        appId: appId!,
-        branchId,
-        runId: branchRunId!,
-        includeDiff: ['config'],
-      }),
-    enabled: !!previewMode && !!orgId && !!appId && !!branchRunId,
-    placeholderData: keepPreviousData,
-    retry: 1,
-  })
-  const baseSha = comparison?.base_run?.vcs_connection_commit?.sha
-  const baseline = previewMode
-    ? comparison
-      ? {
-          sha: baseSha,
-          shaUrl: commitUrl(repoSlug, baseSha),
-          runHref: comparison.base_run?.workflow_id
-            ? `/${orgId}/apps/${appId}/branches/${branchId}/runs/${comparison.base_run.workflow_id}`
-            : undefined,
-        }
-      : undefined
-    : undefined
-
   const { data: builds } = useQuery({
     queryKey: ['branch-run-builds', orgId, appId, branchId, branchRunId],
     queryFn: () =>
@@ -147,6 +119,47 @@ export const BranchOverviewContainer = () => {
     [metaBuilds, builds, orgId, appId, buildMetadata.sandbox_build_id]
   )
   const hasBuilds = metaBuilds.length > 0 || (builds?.length ?? 0) > 0
+  const configSections = useBranchConfigSections({
+    branchId,
+    appBranchRunId: branchRunId,
+    builds: metaBuilds,
+  })
+  const versionQuery = (configId?: string) => ({
+    queryKey: ['app-config-version', orgId, appId, configId],
+    queryFn: () =>
+      getAppConfig({
+        orgId: orgId!,
+        appId: appId!,
+        appConfigId: configId!,
+      }),
+    enabled: !!orgId && !!appId && !!configId,
+    select: (config: { version?: number }) => config.version,
+  })
+  const { data: nextVersion } = useQuery(
+    versionQuery(configSections.headConfigId)
+  )
+  const { data: previousVersion } = useQuery(
+    versionQuery(configSections.baseConfigId)
+  )
+  const versionLabel =
+    nextVersion == null
+      ? undefined
+      : previousVersion == null || previousVersion === nextVersion
+        ? `v${nextVersion}`
+        : `v${previousVersion} → v${nextVersion}`
+  const comparison = configSections.comparison
+  const baseSha = configSections.previousSha
+  const baseline = previewMode
+    ? comparison
+      ? {
+          sha: baseSha,
+          shaUrl: commitUrl(repoSlug, baseSha),
+          runHref: comparison.base_run?.workflow_id
+            ? `/${orgId}/apps/${appId}/branches/${branchId}/runs/${comparison.base_run.workflow_id}`
+            : undefined,
+        }
+      : undefined
+    : undefined
 
   useEffect(() => {
     if (!openBuildsPanelId) return
@@ -215,22 +228,28 @@ export const BranchOverviewContainer = () => {
             : undefined
         }
         changes={
-          branchRunId ? (
-            <BranchRunChangesSummary
-              branchId={branchId}
-              appBranchRunId={branchRunId}
-              builds={metaBuilds}
-              title="Template and source changes"
-              isPending={changesPending}
-              configError={configError}
-              headerAction={
-                hasBuilds ? (
-                  <Button size="sm" onClick={openBuilds}>
-                    View builds
-                  </Button>
-                ) : null
-              }
+          configError ? (
+            <ConfigParseFailure
+              className="w-full basis-full"
+              title="Template changes"
+              lines={configDiagnosticLines(configError)}
             />
+          ) : branchRunId ? (
+            <span className="flex items-center gap-3">
+              {hasBuilds ? (
+                <Button onClick={openBuilds}>View builds</Button>
+              ) : null}
+              <TemplateChangesButton
+                summary={configSections.summary}
+                sections={configSections.sections}
+                versionLabel={versionLabel}
+                previousSha={configSections.previousSha}
+                sha={configSections.sha ?? rollout?.sha}
+                isPending={changesPending}
+                isLoading={configSections.isLoading}
+                isError={configSections.isError}
+              />
+            </span>
           ) : null
         }
         groups={groups}
@@ -241,6 +260,22 @@ export const BranchOverviewContainer = () => {
         rolloutHref={rolloutHref}
         groupHref={groupHref}
         approvals={approvals}
+        versionLabel={versionLabel}
+        previousSha={configSections.previousSha}
+        onSelectInstall={(install) =>
+          install.workflowId
+            ? addPanel(
+                <InstallDeploymentPanel
+                  orgId={orgId}
+                  appId={appId}
+                  installId={install.id}
+                  workflowId={install.workflowId}
+                  title={install.name}
+                  repo={repoSlug}
+                />
+              )
+            : undefined
+        }
         runHeaderAction={
           rollout?.id ? (
             <AdminDashboardLink path={`/workflows/${rollout.id}`} />
