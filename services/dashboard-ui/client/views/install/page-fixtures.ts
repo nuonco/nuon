@@ -19,12 +19,6 @@ const fail = (error: string): TFixtureReply => ({
   status: 500,
 })
 
-const isoDay = (daysAgo: number) => {
-  const date = new Date()
-  date.setUTCDate(date.getUTCDate() - daysAgo)
-  return date.toISOString().slice(0, 10)
-}
-
 const readme = [
   '# Payments',
   '',
@@ -271,29 +265,6 @@ export const deploymentsFixture = (
     )
   })
 
-const healthComponent = (
-  name: string,
-  health: string,
-  uptime = 99.9,
-  observed = 30 * 86400
-) => ({
-  install_component_id: `instcmp-${name}`,
-  component_id: `cmp-${name}`,
-  component_name: name,
-  current_health: health,
-  uptime_percent: uptime,
-  observed_seconds: observed,
-})
-
-const healthDay = (health: string, index: number) => ({
-  date: isoDay(29 - index),
-  health,
-  unhealthy_seconds: health === 'unhealthy' ? 3600 : 0,
-  degraded_seconds: health === 'degraded' ? 1800 : 0,
-  unknown_seconds: health === 'unknown' ? 86400 : 0,
-  observed_seconds: health === 'unknown' ? 0 : 86400,
-})
-
 const healthResource = (
   name: string,
   kind: string,
@@ -392,132 +363,96 @@ type THealthState =
   | 'loading'
 
 export const healthFixture = (state: THealthState): TFixture =>
-  withChrome(viewInstall(), (url) => {
-    const path = url.pathname
-    if (path.endsWith('/status')) {
-      const status =
-        state === 'healthy' || state === 'empty'
-          ? 'healthy'
-          : state === 'degraded' || state === 'unhealthy'
-            ? state
-            : 'unknown'
-      return ok({
-        deployments: {
-          status: 'success',
-          status_human_description: 'Up to date',
-        },
-        resources: { status, status_human_description: status },
-        health_checks: {
-          status: ['healthy', 'degraded', 'unhealthy'].includes(state)
-            ? 'active'
-            : 'unknown',
-          status_human_description: [
-            'healthy',
-            'degraded',
-            'unhealthy',
-          ].includes(state)
-            ? 'Passing'
-            : 'No observations',
-        },
-      })
-    }
-    const resourcesPath = path.endsWith('/resources')
-    const timelinePath = path.endsWith('/health/timeline')
-    const componentsPath = path.endsWith('/components')
-    if (!resourcesPath && !timelinePath && !componentsPath) return undefined
-    if (state === 'loading') return pendingReply()
+  withChrome(
+    viewInstall({
+      health_cluster_error:
+        state === 'access-error'
+          ? 'The runner cannot list Pods in the acme namespace.'
+          : undefined,
+    }),
+    (url) => {
+      const path = url.pathname
+      if (path.endsWith('/status')) {
+        const status =
+          state === 'healthy' || state === 'empty'
+            ? 'healthy'
+            : state === 'degraded' || state === 'unhealthy'
+              ? state
+              : 'unknown'
+        return ok({
+          deployments: {
+            status: 'success',
+            status_human_description: 'Up to date',
+          },
+          resources: { status, status_human_description: status },
+          health_checks: {
+            status: ['healthy', 'degraded', 'unhealthy'].includes(state)
+              ? 'active'
+              : 'unknown',
+            status_human_description: [
+              'healthy',
+              'degraded',
+              'unhealthy',
+            ].includes(state)
+              ? 'Passing'
+              : 'No observations',
+          },
+        })
+      }
+      const resourcesPath = path.endsWith('/resources')
+      const componentsPath = path.endsWith('/components')
+      if (!resourcesPath && !componentsPath) return undefined
+      if (state === 'loading') return pendingReply()
 
-    if (componentsPath) {
-      return ok(
-        ['api', 'worker', 'ledger', 'webhooks'].map((name) => ({
-          id: `instcmp-${name}`,
-          component: { id: `cmp-${name}`, name },
-        })),
-        true
-      )
-    }
+      if (componentsPath) {
+        return ok(
+          ['api', 'worker', 'ledger', 'webhooks'].map((name) => ({
+            id: `instcmp-${name}`,
+            component: { id: `cmp-${name}`, name },
+          })),
+          true
+        )
+      }
 
-    if (resourcesPath) {
-      const sample = healthPreviewFixture(state)
-      const rows = ['healthy', 'degraded', 'unhealthy'].includes(state)
-        ? [
-            ...sample.groups.flatMap((group) =>
-              group.items.map((item) => item.resource)
-            ),
-            ...sample.checks,
-            healthResource('cert-manager', 'Deployment', 'healthy', 'sandbox'),
-            {
-              ...healthResource(
+      if (resourcesPath) {
+        const sample = healthPreviewFixture(state)
+        const rows = ['healthy', 'degraded', 'unhealthy'].includes(state)
+          ? [
+              ...sample.groups.flatMap((group) =>
+                group.items.map((item) => item.resource)
+              ),
+              ...sample.checks,
+              healthResource(
                 'cert-manager',
-                'Certificate',
-                'unknown',
+                'Deployment',
+                'healthy',
                 'sandbox'
               ),
-              api_group: 'cert-manager.io',
-            },
-            {
-              name: 'primary',
-              kind: 'aws_db_instance',
-              provider: 'aws',
-              source: 'component',
-              install_component_id: 'instcmp-ledger',
-              health: 'not-applicable',
-              observed_at: new Date(Date.now() - 86_400_000).toISOString(),
-            },
-          ]
-        : []
-      const health = url.searchParams.get('health')
-      return ok(health ? rows.filter((row) => row.health === health) : rows)
+              {
+                ...healthResource(
+                  'cert-manager',
+                  'Certificate',
+                  'unknown',
+                  'sandbox'
+                ),
+                api_group: 'cert-manager.io',
+              },
+              {
+                name: 'primary',
+                kind: 'aws_db_instance',
+                provider: 'aws',
+                source: 'component',
+                install_component_id: 'instcmp-ledger',
+                health: 'not-applicable',
+                observed_at: new Date(Date.now() - 86_400_000).toISOString(),
+              },
+            ]
+          : []
+        const health = url.searchParams.get('health')
+        return ok(health ? rows.filter((row) => row.health === health) : rows)
+      }
     }
-
-    const current =
-      state === 'degraded'
-        ? 'degraded'
-        : state === 'unhealthy'
-          ? 'unhealthy'
-          : state === 'healthy' || state === 'empty'
-            ? 'healthy'
-            : 'unknown'
-    const components =
-      state === 'access-error'
-        ? []
-        : state === 'no-observations'
-          ? [healthComponent('api', 'unknown', 0, 0)]
-          : state === 'degraded'
-            ? [
-                healthComponent('api', 'degraded', 98.7),
-                healthComponent('worker', 'healthy', 99.91),
-              ]
-            : state === 'unhealthy'
-              ? [healthComponent('api', 'unhealthy', 97.4)]
-              : state === 'empty'
-                ? [
-                    healthComponent('api', 'healthy'),
-                    healthComponent('worker', 'healthy', 99.91),
-                  ]
-                : [
-                    healthComponent('api', 'healthy', 99.98),
-                    healthComponent('worker', 'healthy', 99.91),
-                  ]
-
-    return ok({
-      days: Number(url.searchParams.get('days') || 30),
-      uptime_percent: current === 'unknown' ? 0 : 99.9,
-      observed_seconds: components.reduce(
-        (total, component) => total + component.observed_seconds,
-        0
-      ),
-      current_health: current,
-      cluster_access_error:
-        state === 'access-error'
-          ? 'The runner cannot list pods in the payments namespace.'
-          : undefined,
-      components,
-      daily: Array.from({ length: 30 }, (_, index) =>
-        healthDay(current, index)
-      ),
-    })
-  })
+  )
 
 const componentCatalog = [
   ['cmp-api', 'api', 'helm_chart', 'ghcr.io/acme/api:1.3.0'],
