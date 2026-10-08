@@ -21,6 +21,7 @@ export interface TChangedBuildRow {
   status: string
   href?: string
   changeReason?: string
+  kind?: 'component' | 'sandbox'
 }
 
 const isSandbox = (build: TBuildMeta) =>
@@ -79,6 +80,7 @@ export const changedBuildRows = ({
           name: build.component_name || build.component_id || 'Component',
           status: build.status || 'unknown',
           changeReason: build.change_reason,
+          kind: 'component' as const,
           href: build.component_id
             ? componentHref(orgId, appId, build.component_id, build.id)
             : undefined,
@@ -95,7 +97,7 @@ export const changedBuildRows = ({
     )
   )
 
-  return metaBuilds.flatMap((build, index) => {
+  return metaBuilds.flatMap<TChangedBuildRow>((build, index) => {
     if (!buildChanged(build)) return []
     if (isSandbox(build)) {
       return [
@@ -104,6 +106,7 @@ export const changedBuildRows = ({
           name: build.component_name || 'Sandbox',
           status: build.status || 'unknown',
           changeReason: changeReasonFor(build),
+          kind: 'sandbox' as const,
           href: sandboxBuildId
             ? `/${orgId}/apps/${appId}/sandbox/builds/${sandboxBuildId}`
             : undefined,
@@ -119,6 +122,7 @@ export const changedBuildRows = ({
         name: build.component_name || build.component_id || 'Component',
         status: build.status || 'unknown',
         changeReason: changeReasonFor(build),
+        kind: 'component' as const,
         href:
           build.component_id && buildId
             ? componentHref(orgId, appId, build.component_id, buildId)

@@ -14,7 +14,11 @@ import { OverviewLoadingTrack } from './OverviewLoadingTrack'
 import type { TOverviewStage, TPreviewProgress } from './overview-loading'
 import type { IGroupPlanApproval } from './RolloutGroupsCard'
 import type { TTrackGroup, TTrackInstall } from './RolloutTrack'
-import { RunCommitSummary, type IRunSourceCard } from './RunSourceCard'
+import {
+  RunCommitSummary,
+  RunSourceMark,
+  type IRunSourceCard,
+} from './RunSourceCard'
 
 export const InstallFailureNotice = ({
   error,
@@ -54,7 +58,6 @@ export interface IBranchOverview {
   groupHref: (groupId: string) => string
   loadingStages?: TOverviewStage[]
   compositeError?: TCompositeError
-  installWorkflowHref?: string
   failedBuilds?: TFailedBuildLink[]
   approvals?: IGroupPlanApproval[]
   runHeaderAction?: ReactNode
@@ -73,7 +76,6 @@ export const BranchOverview = ({
   groups,
   loadingStages,
   compositeError,
-  installWorkflowHref,
   failedBuilds,
   approvals,
   runHeaderAction,
@@ -104,6 +106,9 @@ export const BranchOverview = ({
                 </Text>
               ) : null}
               {commit ? <CommitRange commit={commit} /> : null}
+              {rollout.source ? (
+                <RunSourceMark source={rollout.source} />
+              ) : null}
               {runHeaderAction}
             </span>
             {changes}
@@ -121,12 +126,7 @@ export const BranchOverview = ({
         <Loading />
       ) : null}
 
-      {compositeError ? (
-        <InstallFailureNotice
-          error={compositeError}
-          href={installWorkflowHref}
-        />
-      ) : null}
+      {compositeError ? <CompositeError error={compositeError} /> : null}
 
       {failedBuilds?.length ? (
         <div className="flex flex-col gap-2">

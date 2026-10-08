@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { cn } from '@/utils/classnames'
 import { changeCounts, type TDiffOperation } from '@/lib/diffs'
 import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
+import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { DiffEmptyState } from '@/components/diffs/DiffEmptyState'
@@ -10,11 +11,16 @@ import { DiffSection } from '@/components/diffs/DiffSection'
 import { DiffSections } from '@/components/diffs/DiffSections'
 import { DiffSummary } from '@/components/diffs/DiffSummary'
 import { usePlanDiffFilter } from '@/components/diffs/use-plan-diff-filter'
+import { CommitRange } from '@/components/branches/InstallGroupCards'
+import { RunSourceMark } from '@/components/branches/BranchOverview/RunSourceCard'
+import type { TRunSource } from '@/components/branches/BranchOverview/run-source'
+import { BuildChangeDetail } from './BuildChangeDetail'
 import {
   CONFIG_CHANGE_OPERATIONS,
   configChanges,
   type TConfigChangeSection,
   type TConfigSourceFile,
+  type TTemplateBuildChange,
 } from './config-changes'
 
 const DOT_CLASSES: Record<TDiffOperation, string> = {
@@ -64,8 +70,9 @@ const OutlineItem = ({ section, active, onSelect }: IOutlineItem) => {
       />
       <Text
         variant="subtext"
+        theme="neutral"
         family={section.kind === 'file' ? 'mono' : undefined}
-        className="min-w-0 flex-1 truncate"
+        className={cn('min-w-0 flex-1 truncate', active && 'text-foreground')}
       >
         {section.title}
       </Text>
@@ -88,21 +95,31 @@ const OutlineItem = ({ section, active, onSelect }: IOutlineItem) => {
 export interface IConfigChangesViewer {
   sections: DiffSectionData[]
   files?: TConfigSourceFile[]
+  builds?: TTemplateBuildChange[]
   versionLabel?: string
   previousSha?: string
   sha?: string
+  message?: string
+  author?: string
+  createdAt?: string
+  source?: TRunSource
 }
 
 export const ConfigChangesViewer = ({
   sections,
   files,
+  builds,
   versionLabel,
   previousSha,
   sha,
+  message,
+  author,
+  createdAt,
+  source,
 }: IConfigChangesViewer) => {
   const changes = useMemo(
-    () => configChanges(sections, files),
-    [files, sections]
+    () => configChanges(sections, files, builds),
+    [builds, files, sections]
   )
   const filter = usePlanDiffFilter(changes.sections, CONFIG_CHANGE_OPERATIONS)
   const filtered = filter.filteredSections as TConfigChangeSection[]
@@ -132,28 +149,30 @@ export const ConfigChangesViewer = ({
     return (
       <div className="rounded-lg bg-cool-grey-100 dark:bg-dark-grey-800 px-4 py-8 text-center">
         <Text as="p" variant="body" weight="strong">
-          No template changes
+          No changes
         </Text>
         <Text as="p" variant="subtext" theme="neutral">
-          This template matches the previous version.
+          This run matches the previous version.
         </Text>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+    <div className="flex flex-col gap-6 md:min-h-0 md:flex-1">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          <Text variant="subtext" theme="neutral" family="mono">
-            {versionLabel}
-          </Text>
-          {previousSha && sha ? (
-            <Text variant="subtext" theme="neutral" family="mono" flex>
-              <Icon variant="GitCommitIcon" />
-              {previousSha.slice(0, 7)} → {sha.slice(0, 7)}
+          {versionLabel ? (
+            <Text variant="subtext" theme="neutral" family="mono">
+              {versionLabel}
             </Text>
           ) : null}
+          {sha || previousSha ? (
+            <CommitRange
+              commit={{ sha, previousSha, message, author, createdAt }}
+            />
+          ) : null}
+          {source ? <RunSourceMark source={source} /> : null}
         </span>
         <DiffSummary
           summary={changes.summary}
@@ -161,40 +180,53 @@ export const ConfigChangesViewer = ({
         />
       </header>
 
-      <div className="grid gap-6 md:grid-cols-[15rem_minmax(0,1fr)]">
+      <div className="grid gap-6 md:min-h-0 md:flex-1 md:grid-cols-[15rem_minmax(0,1fr)]">
         <nav
-          aria-label="Template changes"
-          className="flex flex-col gap-4 self-start md:sticky md:top-0"
+          aria-label="Changes"
+          className="flex flex-col gap-3 md:min-h-0 md:overflow-y-auto md:overscroll-y-contain"
         >
           {groups.map(({ group, icon, items }) => (
-            <div key={group} className="flex flex-col gap-1">
-              <span className="flex items-center gap-1.5 px-2">
-                <Icon
-                  variant={icon}
-                  size={14}
-                  aria-hidden
-                  className="text-cool-grey-600 dark:text-white/50"
-                />
-                <Text variant="label" theme="neutral" weight="strong">
-                  {group}
-                </Text>
-                <Text variant="label" theme="neutral">
-                  {items.length}
-                </Text>
-              </span>
-              {items.map((section) => (
-                <OutlineItem
-                  key={section.id}
-                  section={section}
-                  active={section.id === activeId}
-                  onSelect={select}
-                />
-              ))}
-            </div>
+            <Expand
+              key={group}
+              id={`changes-nav-${group.toLowerCase().replace(/\W+/g, '-')}`}
+              isOpen
+              isIconBeforeHeading
+              className="rounded-md"
+              headerClassName="rounded-md px-2 py-1.5 text-left"
+              heading={
+                <span className="flex min-w-0 flex-1 items-center gap-2">
+                  <Icon variant={icon} size={16} aria-hidden />
+                  <Text
+                    variant="subtext"
+                    weight="stronger"
+                    className="min-w-0 flex-1 truncate"
+                  >
+                    {group}
+                  </Text>
+                  <Text variant="label" theme="neutral">
+                    {items.length}
+                  </Text>
+                </span>
+              }
+            >
+              <div className="flex flex-col gap-0.5 pt-1 pl-6">
+                {items.map((section) => (
+                  <OutlineItem
+                    key={section.id}
+                    section={section}
+                    active={section.id === activeId}
+                    onSelect={select}
+                  />
+                ))}
+              </div>
+            </Expand>
           ))}
         </nav>
 
-        <div ref={listRef} className="min-w-0">
+        <div
+          ref={listRef}
+          className="min-w-0 md:min-h-0 md:overflow-y-auto md:overscroll-y-contain"
+        >
           <DiffSections
             toolbar={
               <DiffFilter
@@ -204,7 +236,7 @@ export const ConfigChangesViewer = ({
                 selectedCount={filter.selectedCount}
                 totalCount={filter.totalCount}
                 searchValue={filter.searchQuery}
-                searchPlaceholder="Search template and files"
+                searchPlaceholder="Search changes"
                 onSearchChange={filter.setSearchQuery}
                 onOperationToggle={filter.toggleOperation}
                 onOperationOnly={filter.onlyOperation}
@@ -237,6 +269,11 @@ export const ConfigChangesViewer = ({
                     language={section.language}
                     filename={section.filename}
                     error={section.error}
+                    note={
+                      section.build ? (
+                        <BuildChangeDetail build={section.build} />
+                      ) : undefined
+                    }
                     className={cn(
                       'scroll-mt-2',
                       section.id === activeId &&

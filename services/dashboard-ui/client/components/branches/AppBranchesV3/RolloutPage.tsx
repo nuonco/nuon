@@ -88,12 +88,15 @@ export const RolloutPage = ({ rollout, backHref }: IRolloutPage) => (
       }}
       changes={
         <TemplateChangesButton
-          summary={rollout.configChanges.summary}
           sections={rollout.configChanges.sections}
           files={rollout.configChanges.files}
           versionLabel={rollout.configChanges.versionLabel}
           previousSha={rollout.commit.previousSha}
           sha={rollout.commit.sha}
+          message={rollout.commit.message}
+          author={rollout.commit.author}
+          createdAt={rollout.commit.createdAt}
+          source={rollout.source}
         />
       }
     />

@@ -24,10 +24,26 @@ export type TConfigSourceFile = {
   after?: string
 }
 
+export type TTemplateBuildChange = {
+  id: string
+  name: string
+  kind: 'component' | 'sandbox'
+  status: string
+  changeReason?: string
+  href?: string
+  commit?: {
+    sha: string
+    message?: string
+    author?: string
+    repo?: string
+  }
+}
+
 export type TConfigChangeSection = IPlanDiffSection & {
   group: string
   icon: TIconVariant
   kind: 'config' | 'file'
+  build?: TTemplateBuildChange
 }
 
 export type TConfigChanges = {
@@ -49,6 +65,159 @@ const SECTION_ICONS: Record<string, TIconVariant> = {
 }
 
 const SOURCE_FILES_GROUP = 'Source files'
+const COMPONENTS_GROUP = 'Components'
+const SANDBOX_GROUP = 'Sandbox'
+
+const sourceOnlyConfig = (entity: DiffEntityEntry) => {
+  if (entity.content) return false
+  if (entity.changeKinds?.includes('config')) return false
+  if (entity.changeKinds?.includes('source')) return true
+  return (
+    entity.fields.length > 0 &&
+    entity.fields.every((field) => field.key === 'source')
+  )
+}
+
+const awaitingBuild = (section: TConfigChangeSection) =>
+  section.kind === 'config' &&
+  !section.before &&
+  !section.after &&
+  !section.error
+
+const withBuild = (
+  section: TConfigChangeSection,
+  build: TTemplateBuildChange
+): TConfigChangeSection => ({
+  ...section,
+  build,
+  searchable: [
+    ...section.searchable,
+    build.changeReason ?? '',
+    build.commit?.sha ?? '',
+    build.commit?.message ?? '',
+    build.commit?.author ?? '',
+  ],
+})
+
+const componentBuildSection = (
+  build: TTemplateBuildChange
+): TConfigChangeSection => ({
+  id: `components/${build.name}`,
+  kind: 'config',
+  title: build.name,
+  operation: 'update',
+  before: '',
+  after: '',
+  language: 'toml',
+  group: COMPONENTS_GROUP,
+  icon: 'CubeIcon',
+  build,
+  searchable: [
+    COMPONENTS_GROUP,
+    build.name,
+    build.changeReason ?? '',
+    build.commit?.sha ?? '',
+    build.commit?.message ?? '',
+    build.commit?.author ?? '',
+  ],
+})
+
+const sandboxBuildSection = (
+  build: TTemplateBuildChange,
+  id = 'sandbox'
+): TConfigChangeSection => ({
+  id,
+  kind: 'config',
+  title: build.name || SANDBOX_GROUP,
+  operation: 'update',
+  before: '',
+  after: '',
+  language: 'toml',
+  group: SANDBOX_GROUP,
+  icon: SECTION_ICONS.sandbox,
+  build,
+  searchable: [
+    SANDBOX_GROUP,
+    build.name,
+    build.changeReason ?? '',
+    build.commit?.sha ?? '',
+    build.commit?.message ?? '',
+    build.commit?.author ?? '',
+  ],
+})
+
+const insertIntoGroup = (
+  sections: TConfigChangeSection[],
+  items: TConfigChangeSection[],
+  group: string
+) => {
+  if (!items.length) return sections
+  let last = -1
+  for (let index = 0; index < sections.length; index++) {
+    if (sections[index].group === group) last = index
+  }
+  if (last >= 0) {
+    return [
+      ...sections.slice(0, last + 1),
+      ...items,
+      ...sections.slice(last + 1),
+    ]
+  }
+  if (group === COMPONENTS_GROUP) return [...items, ...sections]
+  const source = sections.findIndex(
+    (section) => section.group === SOURCE_FILES_GROUP
+  )
+  if (source < 0) return [...sections, ...items]
+  return [...sections.slice(0, source), ...items, ...sections.slice(source)]
+}
+
+const attachBuilds = (
+  sections: TConfigChangeSection[],
+  builds: TTemplateBuildChange[]
+): TConfigChangeSection[] => {
+  const components = new Map<string, TTemplateBuildChange>()
+  const sandboxes: TTemplateBuildChange[] = []
+  for (const build of builds) {
+    if (build.kind === 'sandbox') sandboxes.push(build)
+    else if (!components.has(build.name)) components.set(build.name, build)
+  }
+
+  const attached: TConfigChangeSection[] = []
+  for (const section of sections) {
+    const component =
+      section.id === `components/${section.title}`
+        ? components.get(section.title)
+        : undefined
+    if (component) {
+      components.delete(section.title)
+      attached.push(withBuild(section, component))
+      continue
+    }
+    const sandbox = section.id === 'sandbox' ? sandboxes.shift() : undefined
+    if (sandbox) {
+      attached.push(withBuild(section, sandbox))
+      continue
+    }
+    if (awaitingBuild(section)) continue
+    attached.push(section)
+  }
+
+  const sandboxAttached = attached.some((section) => section.id === 'sandbox')
+  return insertIntoGroup(
+    insertIntoGroup(
+      attached,
+      [...components.values()].map(componentBuildSection),
+      COMPONENTS_GROUP
+    ),
+    sandboxes.map((build, index) =>
+      sandboxBuildSection(
+        build,
+        !sandboxAttached && index === 0 ? 'sandbox' : `sandbox/${build.id}`
+      )
+    ),
+    SANDBOX_GROUP
+  )
+}
 
 const SOURCE_FILE_OPERATION: Record<
   Exclude<TConfigSourceFile['change'], 'unchanged'>,
@@ -138,14 +307,37 @@ const entitySections = (
   icon: TIconVariant
 ): TConfigChangeSection[] => {
   const id = `${section.sectionKey}/${entity.name}`
+  const files = (entity.files ?? []).map((file) =>
+    fileSection(file, `${id}/${file.name}`, section.name, icon, entity.name)
+  )
+  if (sourceOnlyConfig(entity)) {
+    return [
+      {
+        id,
+        kind: 'config',
+        title: entity.name,
+        description: entity.componentType?.replace(/_/g, ' '),
+        operation: 'update',
+        before: '',
+        after: '',
+        language: 'toml',
+        group: section.name,
+        icon,
+        searchable: [section.name, entity.name, entity.componentType ?? ''],
+      },
+      ...files,
+    ]
+  }
   const config = complete({
     id,
     kind: 'config',
     title: entity.name,
     description: entity.componentType?.replace(/_/g, ' '),
     operation: operationFor(entity.op),
-    before: tomlBlock(entity.name, entity.fields, 'before'),
-    after: tomlBlock(entity.name, entity.fields, 'after'),
+    before:
+      entity.content?.before ?? tomlBlock(entity.name, entity.fields, 'before'),
+    after:
+      entity.content?.after ?? tomlBlock(entity.name, entity.fields, 'after'),
     language: 'toml',
     filename: `${id}.toml`,
     group: section.name,
@@ -157,9 +349,6 @@ const entitySections = (
       ...entity.fields.flatMap(({ key, diff }) => [key, diff]),
     ],
   })
-  const files = (entity.files ?? []).map((file) =>
-    fileSection(file, `${id}/${file.name}`, section.name, icon, entity.name)
-  )
   return [config, ...files]
 }
 
@@ -167,9 +356,17 @@ const sectionChanges = (section: DiffSectionData): TConfigChangeSection[] => {
   const icon = SECTION_ICONS[section.sectionKey] ?? 'CubeIcon'
 
   if (section.grouped) {
-    return section.entities.flatMap((entity) =>
-      entitySections(section, entity, icon)
-    )
+    return section.entities
+      .filter(
+        (entity) =>
+          sourceOnlyConfig(entity) ||
+          entity.fields.length ||
+          entity.files?.length ||
+          entity.content ||
+          !entity.changeKinds ||
+          entity.changeKinds.includes('config')
+      )
+      .flatMap((entity) => entitySections(section, entity, icon))
   }
 
   const op = section.content?.op ?? section.fields[0]?.op ?? 'change'
@@ -231,14 +428,15 @@ const sourceFileSections = (
 
 export const configChanges = (
   sections: DiffSectionData[],
-  files: TConfigSourceFile[] = []
+  files: TConfigSourceFile[] = [],
+  builds: TTemplateBuildChange[] = []
 ): TConfigChanges => {
-  const all = [
-    ...sections.flatMap(sectionChanges),
-    ...sourceFileSections(files),
-  ]
+  const all = attachBuilds(
+    [...sections.flatMap(sectionChanges), ...sourceFileSections(files)],
+    builds
+  )
   const summary = all
-    .filter((section) => section.kind === 'config')
+    .filter((section) => section.kind !== 'file')
     .reduce((counts, section) => {
       counts[section.operation] += 1
       return counts

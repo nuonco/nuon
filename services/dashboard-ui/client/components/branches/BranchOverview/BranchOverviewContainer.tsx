@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useMemo } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
-import { Button } from '@/components/common/Button'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useBranchConfigSections } from '@/components/branches/BranchRunChangesSummary'
@@ -10,22 +9,24 @@ import {
   isConfigValidationError,
 } from '@/components/branches/BranchRunChangesSummary/config-diagnostics'
 import { ConfigParseFailure } from '@/components/branches/BranchRunChangesSummary/ConfigParseFailure'
-import { TemplateChangesButton } from '@/components/branches/ConfigChanges'
+import {
+  TemplateChangesButton,
+  type TTemplateBuildChange,
+} from '@/components/branches/ConfigChanges'
 import { InstallDeploymentPanel } from '@/components/installs/InstallDeploymentPanel'
 import { stepStatusCategory } from '@/components/branches/shared/step-status'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
-import { getAppConfig, getBranchRunBuilds } from '@/lib'
+import { getAppConfig, getBranchRunBuilds, getSandboxBuild } from '@/lib'
+import { vcsRepo } from '@/utils/vcs-urls'
 import { commitUrl } from './run-source'
 import type { TAPIError } from '@/types'
 import { BranchOverview, type TFailedBuildLink } from './BranchOverview'
 import { changedBuildRows, type TBuildMeta } from './changed-builds'
 import {
   buildOverviewLoadingStages,
-  installFailureHref,
-  overviewCompositeError,
+  preRolloutCompositeError,
 } from './overview-loading'
-import { RunBuildsPanel } from './RunBuildsPanel'
 import { useGroupPlanApprovals } from '@/components/branches/BranchRunApproval/use-group-plan-approvals'
 import { useRolloutGroups } from './use-rollout-groups'
 
@@ -35,10 +36,7 @@ const isBuildStep = (name?: string) =>
 const NO_META_BUILDS: TBuildMeta[] = []
 
 export const BranchOverviewContainer = () => {
-  const { addPanel, updatePanel, panels } = useSurfaces()
-  const buildsPanelId = useRef<string | null>(null)
-  const openBuildsPanelId =
-    panels.find((panel) => panel?.id === buildsPanelId.current)?.id ?? null
+  const { addPanel } = useSurfaces()
   const {
     app,
     branch,
@@ -118,7 +116,36 @@ export const BranchOverviewContainer = () => {
       }),
     [metaBuilds, builds, orgId, appId, buildMetadata.sandbox_build_id]
   )
-  const hasBuilds = metaBuilds.length > 0 || (builds?.length ?? 0) > 0
+  const { data: sandboxBuild } = useQuery({
+    queryKey: ['sandbox-build', orgId, appId, buildMetadata.sandbox_build_id],
+    queryFn: () =>
+      getSandboxBuild({
+        orgId: orgId!,
+        appId: appId!,
+        buildId: buildMetadata.sandbox_build_id!,
+      }),
+    enabled: !!orgId && !!appId && !!buildMetadata.sandbox_build_id,
+  })
+  const templateBuilds = useMemo<TTemplateBuildChange[]>(
+    () =>
+      changedBuilds.map((row) => {
+        const commit = sandboxBuild?.vcs_connection_commit
+        return {
+          ...row,
+          kind: row.kind ?? 'component',
+          commit:
+            row.kind === 'sandbox' && commit?.sha
+              ? {
+                  sha: commit.sha,
+                  message: commit.message,
+                  author: commit.author_name,
+                  repo: vcsRepo(app?.sandbox_config),
+                }
+              : undefined,
+        }
+      }),
+    [changedBuilds, sandboxBuild, app?.sandbox_config]
+  )
   const configSections = useBranchConfigSections({
     branchId,
     appBranchRunId: branchRunId,
@@ -161,16 +188,6 @@ export const BranchOverviewContainer = () => {
       : undefined
     : undefined
 
-  useEffect(() => {
-    if (!openBuildsPanelId) return
-    updatePanel(openBuildsPanelId, <RunBuildsPanel rows={changedBuilds} />)
-  }, [openBuildsPanelId, changedBuilds, updatePanel])
-
-  const openBuilds = () => {
-    if (openBuildsPanelId) return
-    buildsPanelId.current = addPanel(<RunBuildsPanel rows={changedBuilds} />)
-  }
-
   const loadingStages = showLoadingTrack
     ? buildOverviewLoadingStages({
         steps: workflowSteps,
@@ -185,7 +202,7 @@ export const BranchOverviewContainer = () => {
   const changesPending =
     appConfigStage?.status === 'pending' ||
     appConfigStage?.status === 'in-progress'
-  const failure = overviewCompositeError(
+  const failure = preRolloutCompositeError(
     workflowSteps,
     branchRun?.composite_error
   )
@@ -231,31 +248,29 @@ export const BranchOverviewContainer = () => {
           configError ? (
             <ConfigParseFailure
               className="w-full basis-full"
-              title="Template changes"
+              title="Changes"
               lines={configDiagnosticLines(configError)}
             />
           ) : branchRunId ? (
-            <span className="flex items-center gap-3">
-              {hasBuilds ? (
-                <Button onClick={openBuilds}>View builds</Button>
-              ) : null}
-              <TemplateChangesButton
-                summary={configSections.summary}
-                sections={configSections.sections}
-                versionLabel={versionLabel}
-                previousSha={configSections.previousSha}
-                sha={configSections.sha ?? rollout?.sha}
-                isPending={changesPending}
-                isLoading={configSections.isLoading}
-                isError={configSections.isError}
-              />
-            </span>
+            <TemplateChangesButton
+              sections={configSections.sections}
+              builds={templateBuilds}
+              versionLabel={versionLabel}
+              previousSha={configSections.previousSha}
+              sha={configSections.sha ?? rollout?.sha}
+              message={rollout?.commit?.message}
+              author={rollout?.commit?.author ?? rollout?.author}
+              createdAt={rollout?.commit?.createdAt}
+              source={rollout?.source}
+              isPending={changesPending}
+              isLoading={configSections.isLoading}
+              isError={configSections.isError}
+            />
           ) : null
         }
         groups={groups}
         loadingStages={loadingStages}
         compositeError={compositeError}
-        installWorkflowHref={installFailureHref(compositeError, orgId)}
         failedBuilds={failedBuilds}
         rolloutHref={rolloutHref}
         groupHref={groupHref}

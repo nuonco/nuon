@@ -142,6 +142,32 @@ const SourceIdentity = ({ source }: { source: TRunSource }) => {
   return null
 }
 
+export const RunSourceMark = ({ source }: { source: TRunSource }) => {
+  if (source.kind === 'tag') {
+    return <TagLink tag={source.tag} href={source.url} textVariant="subtext" />
+  }
+
+  if (source.kind === 'pull-request') {
+    return (
+      <span className="flex flex-wrap items-center gap-2">
+        <PullRequestLink
+          number={source.number}
+          href={source.url}
+          textVariant="subtext"
+        />
+        {source.label ? (
+          <Badge size="sm" theme="neutral">
+            <Icon variant="TagIcon" size={12} />
+            {source.label}
+          </Badge>
+        ) : null}
+      </span>
+    )
+  }
+
+  return null
+}
+
 export const RunCommitSummary = ({
   source,
   title,

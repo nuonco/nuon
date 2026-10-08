@@ -60,7 +60,6 @@ const rollout: TOverviewRollout = {
 
 const changes = (
   <TemplateChangesButton
-    summary={{ added: 1, removed: 0, changed: 1 }}
     versionLabel="v13 → v14"
     previousSha="9f8e7d6c5b4a"
     sha="a1b2c3d4e5f6"

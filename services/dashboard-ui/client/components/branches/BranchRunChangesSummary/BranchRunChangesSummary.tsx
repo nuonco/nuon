@@ -204,8 +204,28 @@ export function overlaySectionDetail(
     detailed.map((section) => [section.sectionKey, section])
   )
   return summary.map((section) => {
-    if (section.grouped) return section
     const detail = byKey.get(section.sectionKey)
+    if (section.grouped) {
+      if (!detail?.entities.length) return section
+      const detailByName = new Map(
+        detail.entities.map((entity) => [entity.name, entity])
+      )
+      return {
+        ...section,
+        entities: section.entities.map((entity) => {
+          const match = detailByName.get(entity.name)
+          return match
+            ? {
+                ...entity,
+                componentType: entity.componentType ?? match.componentType,
+                fields: match.fields,
+                files: match.files,
+                content: match.content,
+              }
+            : entity
+        }),
+      }
+    }
     if (!detail?.content && !detail?.fields.length && !detail?.files?.length) {
       return section
     }
@@ -261,7 +281,7 @@ export const useBranchConfigSections = ({
 
   const headConfigId = data?.head_run?.app_config_id
   const baseConfigId = data?.base_run?.app_config_id
-  const { data: configDiff } = useQuery({
+  const { data: configDiff, isLoading: detailLoading } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['app-config-diff', org?.id, app?.id, headConfigId, baseConfigId],
     queryFn: () =>
@@ -291,7 +311,8 @@ export const useBranchConfigSections = ({
     comparison: data,
     sections: visibleSections,
     summary,
-    isLoading: !isError && isLoading && !data,
+    isLoading:
+      (!isError && isLoading && !data) || (!!headConfigId && detailLoading),
     isError,
     previousSha: (() => {
       const head = data?.head_sha ?? data?.head_run?.vcs_connection_commit?.sha

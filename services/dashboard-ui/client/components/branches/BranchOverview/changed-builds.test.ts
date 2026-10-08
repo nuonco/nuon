@@ -84,6 +84,7 @@ describe('changedBuildRows', () => {
         id: 'bld_api',
         name: 'api',
         status: 'in-progress',
+        kind: 'component',
         href: '/org/apps/app/components/cmp_api/builds/bld_api',
       },
     ])
