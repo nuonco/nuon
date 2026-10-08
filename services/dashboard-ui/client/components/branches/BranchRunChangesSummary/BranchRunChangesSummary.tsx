@@ -25,7 +25,13 @@ import {
   type TBranchRunComparisonConfigDiff,
   type TBranchRunComparisonConfigDiffEntry,
 } from '@/lib'
+import type { TCompositeError } from '@/types'
 import { cn } from '@/utils/classnames'
+import {
+  configDiagnosticLines,
+  isConfigValidationError,
+} from './config-diagnostics'
+import { ConfigParseFailure } from './ConfigParseFailure'
 
 const GROUPED_SECTIONS = new Set([
   'Components',
@@ -221,6 +227,7 @@ interface IBranchRunChangesSummary {
   headerAction?: ReactNode
   isPending?: boolean
   scope?: TComparisonScope
+  configError?: TCompositeError
 }
 
 export const BranchRunChangesSummary = ({
@@ -232,6 +239,7 @@ export const BranchRunChangesSummary = ({
   headerAction,
   isPending,
   scope,
+  configError,
 }: IBranchRunChangesSummary) => {
   const { org } = useOrg()
   const { app } = useApp()
@@ -287,6 +295,21 @@ export const BranchRunChangesSummary = ({
     visibleSections.length > 0 ? computeSummary(visibleSections) : null
   const loading = !isError && isLoading && !data
   const showPending = isPending && visibleSections.length === 0
+  const showConfigError =
+    isConfigValidationError(configError) &&
+    !showPending &&
+    visibleSections.length === 0
+
+  if (showConfigError) {
+    return (
+      <ConfigParseFailure
+        className={className}
+        title={title}
+        headerAction={headerAction}
+        lines={configDiagnosticLines(configError)}
+      />
+    )
+  }
 
   return (
     <section

@@ -1,9 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
+import type { TCompositeError } from '@/types'
 import {
   summarySectionsFromComparisonConfigDiff,
   withBuildChangeKinds,
 } from './BranchRunChangesSummary'
+import { configDiagnosticLines } from './config-diagnostics'
 
 const components = (
   entries: DiffSectionData['entities']
@@ -89,5 +91,36 @@ describe('withBuildChangeKinds', () => {
     )
 
     expect(next[0]?.entities[0]?.changeKinds).toEqual(['source', 'config'])
+  })
+})
+
+describe('configDiagnosticLines', () => {
+  test('splits the validation code section into lines', () => {
+    const error = {
+      type: 'app_branch_run.config_validation_failed',
+      message: 'App configuration validation failed',
+      sections: [
+        { kind: 'markdown', heading: 'Why', body: 'The branch run stopped.' },
+        {
+          kind: 'code',
+          heading: 'Validation errors',
+          body: 'components/api.toml: toml: line 4: expected key\n\ncomponents/worker.toml: image is required\n',
+        },
+      ],
+    } as TCompositeError
+
+    expect(configDiagnosticLines(error)).toEqual([
+      'components/api.toml: toml: line 4: expected key',
+      'components/worker.toml: image is required',
+    ])
+  })
+
+  test('ignores other composite errors', () => {
+    expect(
+      configDiagnosticLines({
+        type: 'install_group.install_update_failed',
+        sections: [{ kind: 'code', body: 'deploy failed' }],
+      } as TCompositeError)
+    ).toEqual([])
   })
 })

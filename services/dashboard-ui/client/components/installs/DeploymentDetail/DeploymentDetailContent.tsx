@@ -15,6 +15,7 @@ import { Text } from '@/components/common/Text'
 import { WorkflowChangesSummaryContainer } from '@/components/workflows/WorkflowChangesSummary'
 import { WorkflowAlertBanners } from '@/components/workflows/WorkflowDetails'
 import { WorkflowSteps } from '@/components/workflows/WorkflowSteps'
+import { PolicyViolations } from '@/components/workflows/step-details/PolicyViolations'
 import { WorkflowActionButtons } from '@/components/workflows/workflow-details/WorkflowActionButtons'
 import { useOrg } from '@/hooks/use-org'
 import { useRespondedApprovals } from '@/hooks/use-responded-approvals'
@@ -22,6 +23,7 @@ import { useWorkflow } from '@/hooks/use-workflow'
 import { getBranchRunBuilds, getBranchWorkflowRun } from '@/lib'
 import { AppProvider } from '@/providers/app-provider'
 import type { TInstallDeploymentRecord, TWorkflow } from '@/types'
+import { getPolicyViolationCounts } from '@/utils/workflow-utils'
 import { DeploymentConfigChanges } from './DeploymentConfigChanges'
 import {
   deploymentChangeDescription,
@@ -193,7 +195,8 @@ export const DeploymentTemplateContent = ({
 export const DeploymentAlerts = () => {
   const { workflow, failedSteps } = useWorkflow()
   const { hasResponded } = useRespondedApprovals()
-  const approvals = deploymentSteps(workflow).filter(
+  const steps = deploymentSteps(workflow)
+  const approvals = steps.filter(
     (step) =>
       isAwaitingDeploymentApproval(step) &&
       step.approval?.type &&
@@ -206,6 +209,20 @@ export const DeploymentAlerts = () => {
       {approvals.map((step) => (
         <ApprovalBanner key={step.id} step={step} />
       ))}
+      {steps
+        .filter(
+          (step) =>
+            getPolicyViolationCounts(step).hasViolations &&
+            !failedSteps.some((failed) => failed.id === step.id)
+        )
+        .map((step) => (
+          <div key={step.id} className="flex shrink-0 flex-col gap-2">
+            <Text variant="subtext" weight="strong">
+              {step.name}
+            </Text>
+            <PolicyViolations step={step} />
+          </div>
+        ))}
     </>
   )
 }

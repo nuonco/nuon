@@ -22,6 +22,7 @@ func parseTomlFile(rw io.ReadCloser, name string, out any, processor FileProcess
 		return ParseErr{
 			Filename:    name,
 			Description: "unable to parse configuration file",
+			Err:         err,
 		}
 	}
 
