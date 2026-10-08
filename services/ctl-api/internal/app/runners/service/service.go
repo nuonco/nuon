@@ -21,6 +21,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/heartbeater"
@@ -297,42 +298,47 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	s.tailMetrics = newRunnerJobTailMetrics(s.meterProvider)
 	s.executionResults = newRunnerJobExecutionResults(s.meterProvider)
-	api.POST("/v1/telemetry/access-token", s.CreateTelemetryAccessToken)
+	org := require.OrgRoute(api)
+	org.POST("/v1/telemetry/access-token", s.CreateTelemetryAccessToken)
 
 	runners := api.Group("/v1/runners/:runner_id")
-	runners.POST("/health-checks", s.CreateRunnerHealthCheck)
-	runners.POST("/heart-beats", s.CreateRunnerHeartBeat)
-	runners.POST("/component-health", s.CreateComponentHealth)
-	runners.GET("/install-components", s.GetRunnerInstallComponents)
-	runners.PUT("/component-health-context", s.PutComponentHealthContext)
-	runners.GET("/component-health-context", s.GetComponentHealthContext)
-	runners.GET("", s.GetRunner)
-	runners.GET("/jobs", s.GetRunnerJobs)
-	runners.GET("/jobs/tail", s.TailRunnerJobs)
-	runners.GET("/settings", s.GetRunnerSettings)
+	runnerRoutes := require.OrgRoute(runners)
+	runnerRoutes.POST("/health-checks", s.CreateRunnerHealthCheck)
+	runnerRoutes.POST("/heart-beats", s.CreateRunnerHeartBeat)
+	runnerRoutes.POST("/component-health", s.CreateComponentHealth)
+	runnerRoutes.GET("/install-components", s.GetRunnerInstallComponents)
+	runnerRoutes.PUT("/component-health-context", s.PutComponentHealthContext)
+	runnerRoutes.GET("/component-health-context", s.GetComponentHealthContext)
+	runnerRoutes.GET("", s.GetRunner)
+	runnerRoutes.GET("/jobs", s.GetRunnerJobs)
+	runnerRoutes.GET("/jobs/tail", s.TailRunnerJobs)
+	runnerRoutes.GET("/settings", s.GetRunnerSettings)
 	runners.GET("/public-settings", s.GetRunnerPublicSettings)
-	runners.POST("/traces", s.OtelWriteTraces)
-	runners.POST("/metrics", s.OtelWriteMetrics)
-	runners.GET("/jobs/:job_id/plan", s.GetRunnerJobPlanV2)
-	runners.GET("/jobs/:job_id", s.GetRunnerJobV2)
-	runners.PATCH("/jobs/:job_id", s.UpdateRunnerJobV2)
+	runnerRoutes.POST("/traces", s.OtelWriteTraces)
+	runnerRoutes.POST("/metrics", s.OtelWriteMetrics)
+	runnerRoutes.GET("/jobs/:job_id/plan", s.GetRunnerJobPlanV2)
+	runnerRoutes.GET("/jobs/:job_id", s.GetRunnerJobV2)
+	runnerRoutes.PATCH("/jobs/:job_id", s.UpdateRunnerJobV2)
 
 	// sandbox configs
-	runners.GET("/sandbox-configs", s.GetRunnerSandboxConfigs)
-	runners.GET("/sandbox-config", s.GetRunnerSandboxConfig)
+	runnerRoutes.GET("/sandbox-configs", s.GetRunnerSandboxConfigs)
+	runnerRoutes.GET("/sandbox-config", s.GetRunnerSandboxConfig)
 
 	// runner process lifecycle
-	runners.POST("/processes", s.CreateRunnerProcess)
-	runners.GET("/processes/:process_id", s.GetRunnerProcess)
-	runners.PATCH("/processes/:process_id", s.UpdateRunnerProcess)
+	runnerRoutes.POST("/processes", s.CreateRunnerProcess)
+	runnerRoutes.GET("/processes/:process_id", s.GetRunnerProcess)
+	runnerRoutes.PATCH("/processes/:process_id", s.UpdateRunnerProcess)
 	runners.GET("/processes/:process_id/shutdowns", s.GetRunnerProcessShutdowns)
-	runners.POST("/processes/:process_id/shutdowns/:shutdown_id/complete", s.CompleteRunnerProcessShutdown)
-	runners.POST("/processes/:process_id/terminating", s.ReportRunnerProcessTerminating)
+	runnerRoutes.POST("/processes/:process_id/shutdowns/:shutdown_id/complete", s.CompleteRunnerProcessShutdown)
+	runnerRoutes.POST("/processes/:process_id/terminating", s.ReportRunnerProcessTerminating)
 
-	runnerJobs := api.Group("/v1/runner-jobs/:runner_job_id")
-	s.GET(runnerJobs, "", s.GetRunnerJob, apiPkg.APIContextTypeRunner, true)
-	s.PATCH(runnerJobs, "", s.UpdateRunnerJob, apiPkg.APIContextTypeRunner, true)
-	s.GET(runnerJobs, "/plan", s.GetRunnerJobPlan, apiPkg.APIContextTypeRunner, true)
+	runnerJobs := org.Group("/v1/runner-jobs/:runner_job_id")
+	runnerJobs.GET("", s.GetRunnerJob)
+	runnerJobs.PATCH("", s.UpdateRunnerJob)
+	runnerJobs.GET("/plan", s.GetRunnerJobPlan)
+	s.EndpointAudit.Add("GET", string(apiPkg.APIContextTypeRunner), runnerJobs.BasePath())
+	s.EndpointAudit.Add("PATCH", string(apiPkg.APIContextTypeRunner), runnerJobs.BasePath())
+	s.EndpointAudit.Add("GET", string(apiPkg.APIContextTypeRunner), runnerJobs.BasePath()+"/plan")
 	runnerJobs.GET("/composite-plan", s.GetRunnerJobCompositePlan)
 
 	executions := runnerJobs.Group("/executions")
@@ -344,18 +350,18 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	executions.POST("/:runner_job_execution_id/outputs", s.CreateRunnerJobExecutionOutputs)
 
 	// Terraform backend
-	tfBackend := api.Group("/v1/terraform-backend")
+	tfBackend := org.Group("/v1/terraform-backend")
 	tfBackend.GET("", s.GetTerraformCurrentStateData)
 	tfBackend.POST("", s.UpdateTerraformState)
 	tfBackend.DELETE("", s.DeleteTerraformState)
 
 	// pulumi state
-	pulumiState := api.Group("/v1/runners/pulumi-state")
+	pulumiState := org.Group("/v1/runners/pulumi-state")
 	pulumiState.GET("/:workspace_id", s.GetPulumiState)
 	pulumiState.POST("/:workspace_id", s.UpdatePulumiState)
 
 	// terraform workspaces
-	tfWorkspaces := api.Group("/v1/terraform-workspaces")
+	tfWorkspaces := org.Group("/v1/terraform-workspaces")
 	tfWorkspaces.GET("", s.GetTerraformWorkpaces)
 	tfWorkspaces.POST("", s.CreateTerraformWorkspace)
 	tfWorkspaces.GET("/:workspace_id", s.GetTerraformWorkpace)
@@ -368,18 +374,18 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 
 	// helm release api
 	helmReleasePath := "/v1/helm-releases/:helm_chart_id/releases/"
-	api.GET(helmReleasePath+":namespace", s.GetHelmReleases)
-	api.GET(helmReleasePath+":namespace/:key", s.GetHelmRelease)
-	api.GET(helmReleasePath+":namespace/query", s.QueryHelmRelease)
-	api.POST(helmReleasePath+":namespace/:key", s.CreateHelmRelease)
-	api.PUT(helmReleasePath+":namespace/:key", s.UpdateHelmRelease)
-	api.DELETE(helmReleasePath+":namespace/:key", s.DeleteHelmRelease)
+	org.GET(helmReleasePath+":namespace", s.GetHelmReleases)
+	org.GET(helmReleasePath+":namespace/:key", s.GetHelmRelease)
+	org.GET(helmReleasePath+":namespace/query", s.QueryHelmRelease)
+	org.POST(helmReleasePath+":namespace/:key", s.CreateHelmRelease)
+	org.PUT(helmReleasePath+":namespace/:key", s.UpdateHelmRelease)
+	org.DELETE(helmReleasePath+":namespace/:key", s.DeleteHelmRelease)
 
 	// TODO(jm): these will be moved to the otel namespace
-	api.POST("/v1/log-streams/:log_stream_id/logs", s.LogStreamWriteLogs)
+	org.POST("/v1/log-streams/:log_stream_id/logs", s.LogStreamWriteLogs)
 
 	// installs
-	installs := api.Group("/v1/installs")
+	installs := org.Group("/v1/installs")
 	installs.GET("/:install_id/:component_id/last-active-plan", s.GetInstallComponenetLastActivePlan)
 
 	return nil
