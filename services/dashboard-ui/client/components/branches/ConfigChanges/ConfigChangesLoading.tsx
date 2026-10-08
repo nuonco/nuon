@@ -1,3 +1,4 @@
+import { Card } from '@/components/common/Card'
 import { Text } from '@/components/common/Text'
 
 const NAV_GROUPS = [
@@ -43,29 +44,34 @@ export const ConfigChangesLoading = () => (
         ))}
       </div>
 
-      <div className="flex min-w-0 flex-col gap-3">
+      <div className="flex min-w-0 flex-col gap-2 md:min-h-0">
         <div className="flex items-center gap-2 pb-2">
           <Text loading loadingWidth={40} />
         </div>
-        {SECTIONS.map((section, index) => (
-          <div
-            key={index}
-            className="flex flex-col gap-3 rounded-r-md border-l-4 border-l-cool-grey-500/30 bg-cool-grey-500/5 p-3"
-          >
-            <Text weight="strong" loading loadingWidth={section.title} />
-            <div className="flex flex-col gap-2 rounded-md bg-white p-3 dark:bg-dark-grey-800">
-              {section.lines.map((width, lineIndex) => (
-                <Text
-                  key={lineIndex}
-                  variant="subtext"
-                  family="mono"
-                  loading
-                  loadingWidth={width}
-                />
-              ))}
+        <Card
+          elevation="0"
+          className="gap-1 overflow-hidden bg-elevation-0 p-0 md:min-h-0 md:flex-1"
+        >
+          {SECTIONS.map((section, index) => (
+            <div
+              key={index}
+              className="flex flex-col gap-3 rounded-r-md border-l-4 border-l-cool-grey-500/30 bg-cool-grey-500/5 p-3"
+            >
+              <Text weight="strong" loading loadingWidth={section.title} />
+              <div className="flex flex-col gap-2 rounded-md bg-white p-3 dark:bg-dark-grey-800">
+                {section.lines.map((width, lineIndex) => (
+                  <Text
+                    key={lineIndex}
+                    variant="subtext"
+                    family="mono"
+                    loading
+                    loadingWidth={width}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </Card>
       </div>
     </div>
   </div>

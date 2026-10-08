@@ -22,6 +22,7 @@ export interface IDiffSections
   toolbar?: ReactNode
   defaultOpen?: boolean
   defaultView?: TDiffView
+  renderBody?: (sections: ReactNode) => ReactNode
 }
 
 interface IDiffControls {
@@ -41,9 +42,7 @@ const DiffControls = ({ view, setView, divider = false }: IDiffControls) => {
       aria-label="Diff controls"
       className="ml-auto flex items-center gap-0.5"
     >
-      {divider ? (
-        <span aria-hidden className="mx-1.5 h-4 border-l" />
-      ) : null}
+      {divider ? <span aria-hidden className="mx-1.5 h-4 border-l" /> : null}
       <ExpandAllButton />
       <Button
         size="sm"
@@ -69,13 +68,12 @@ export const DiffSections = ({
   toolbar,
   defaultOpen,
   defaultView,
+  renderBody,
   className,
   ...props
 }: IDiffSections) => {
   const { diffView, planSections } = useDashboardPreferences()
-  const [localView, setLocalView] = useState<TDiffView>(
-    defaultView ?? diffView
-  )
+  const [localView, setLocalView] = useState<TDiffView>(defaultView ?? diffView)
 
   useEffect(() => {
     if (defaultView === undefined) setLocalView(diffView)
@@ -93,7 +91,7 @@ export const DiffSections = ({
       className={cn('gap-1', className)}
       {...props}
     >
-      <div className="flex flex-wrap items-center gap-2 pb-2">
+      <div className="flex shrink-0 flex-wrap items-center gap-2 pb-2">
         {toolbar}
         <DiffControls
           view={localView}
@@ -101,7 +99,7 @@ export const DiffSections = ({
           divider={!!toolbar}
         />
       </div>
-      {sections}
+      {renderBody ? renderBody(sections) : sections}
     </DisclosureGroup>
   )
 }

@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { cn } from '@/utils/classnames'
 import { changeCounts, type TDiffOperation } from '@/lib/diffs'
 import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
+import { Card } from '@/components/common/Card'
 import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -223,11 +224,17 @@ export const ConfigChangesViewer = ({
           ))}
         </nav>
 
-        <div
-          ref={listRef}
-          className="min-w-0 md:min-h-0 md:overflow-y-auto md:overscroll-y-contain"
-        >
+        <div ref={listRef} className="flex min-w-0 flex-col md:min-h-0">
           <DiffSections
+            className="md:min-h-0 md:flex-1"
+            renderBody={(body) => (
+              <Card
+                elevation="0"
+                className="gap-1 bg-elevation-0 p-0 md:min-h-0 md:flex-1 md:overflow-y-auto md:overscroll-y-contain"
+              >
+                {body}
+              </Card>
+            )}
             toolbar={
               <DiffFilter
                 title="changes"
@@ -248,7 +255,7 @@ export const ConfigChangesViewer = ({
               groups.flatMap(({ group, icon, items }) => [
                 <span
                   key={`group-${group}`}
-                  className="flex items-center gap-2 px-1 pt-4 pb-1.5 first:pt-0"
+                  className="flex shrink-0 items-center gap-2 px-1 pt-4 pb-1.5 first:pt-0"
                 >
                   <Icon variant={icon} size={16} aria-hidden />
                   <Text as="h4" variant="body" weight="stronger">
@@ -275,7 +282,7 @@ export const ConfigChangesViewer = ({
                       ) : undefined
                     }
                     className={cn(
-                      'scroll-mt-2',
+                      'shrink-0 scroll-mt-2',
                       section.id === activeId &&
                         'outline outline-1 outline-primary-400/60'
                     )}
