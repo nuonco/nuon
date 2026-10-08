@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/lib/pq"
 	pkgerrors "github.com/pkg/errors"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -90,7 +91,7 @@ func (c *Client) revokeTokens(ctx context.Context, where *gorm.DB) (int64, error
 			return nil
 		}
 
-		res := tx.Where("id IN ?", ids).Delete(&app.Token{})
+		res := tx.Where("id = ANY(?)", pq.Array(ids)).Delete(&app.Token{})
 		if res.Error != nil {
 			return pkgerrors.Wrap(res.Error, "unable to delete tokens")
 		}

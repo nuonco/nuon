@@ -1,6 +1,7 @@
 package account
 
 import (
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -61,13 +62,13 @@ func RevokeDerivedCredentials(tx *gorm.DB, sourceType app.TokenSourceType, sourc
 			return nil
 		}
 
-		if res := tx.Where("source_token_id IN ?", batch).Delete(&app.OAuthAuthorizationCode{}); res.Error != nil {
+		if res := tx.Where("source_token_id = ANY(?)", pq.Array(batch)).Delete(&app.OAuthAuthorizationCode{}); res.Error != nil {
 			return errors.Wrap(res.Error, "unable to revoke derived authorization codes")
 		}
-		if res := tx.Where("source_token_id IN ?", batch).Delete(&app.OAuthRefreshToken{}); res.Error != nil {
+		if res := tx.Where("source_token_id = ANY(?)", pq.Array(batch)).Delete(&app.OAuthRefreshToken{}); res.Error != nil {
 			return errors.Wrap(res.Error, "unable to revoke derived refresh tokens")
 		}
-		if res := tx.Where("source_token_id IN ?", batch).Delete(&app.DeviceCode{}); res.Error != nil {
+		if res := tx.Where("source_token_id = ANY(?)", pq.Array(batch)).Delete(&app.DeviceCode{}); res.Error != nil {
 			return errors.Wrap(res.Error, "unable to revoke derived device codes")
 		}
 
@@ -85,7 +86,7 @@ func deleteTokensFromSources(tx *gorm.DB, sourceType app.TokenSourceType, source
 	var ids []string
 	if res := tx.Unscoped().Model(&app.Token{}).
 		Clauses(clause.Locking{Strength: "UPDATE"}).
-		Where("source_type = ? AND source_id IN ?", sourceType, sourceIDs).
+		Where("source_type = ? AND source_id = ANY(?)", sourceType, pq.Array(sourceIDs)).
 		Order("id").
 		Pluck("id", &ids); res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to look up derived tokens")
@@ -94,7 +95,7 @@ func deleteTokensFromSources(tx *gorm.DB, sourceType app.TokenSourceType, source
 		return nil, nil
 	}
 
-	if res := tx.Where("id IN ?", ids).Delete(&app.Token{}); res.Error != nil {
+	if res := tx.Where("id = ANY(?)", pq.Array(ids)).Delete(&app.Token{}); res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to revoke derived tokens")
 	}
 
