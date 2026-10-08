@@ -249,6 +249,7 @@ const LayoutRow = ({ run, scale }: { run: TLayoutRun; scale: TScale }) => {
       run={run}
       title={run.title}
       createdAt={run.created_at}
+      href={`/deployments/${run.id}`}
       scale={scale}
       onViewDetails={() => addPanel(<LayoutDetails run={run} />)}
     />
