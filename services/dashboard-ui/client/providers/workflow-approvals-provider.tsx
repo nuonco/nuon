@@ -80,7 +80,7 @@ export function WorkflowApprovalsProvider({
         addToast(
           <Toast
             heading={installName ? `${installName} — ${heading}` : heading}
-            theme="warn"
+            theme="neutral"
           >
             <Text>Workflow step needs approved.</Text>
             {workflowUrl ? (
