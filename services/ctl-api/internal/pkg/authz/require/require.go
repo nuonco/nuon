@@ -82,3 +82,17 @@ func Route(kind permissions.ResourceKind, verb permissions.Permission, paramName
 		ctx.Next()
 	}
 }
+
+const scopedRouteKey = "nuon.authz.scoped_route"
+
+func Scoped(group *gin.RouterGroup, method, path string, kind permissions.ResourceKind, verb permissions.Permission, paramName string, handlers ...gin.HandlerFunc) {
+	route := group.Group("")
+	route.Handlers = append(gin.HandlersChain{func(ctx *gin.Context) {
+		ctx.Set(scopedRouteKey, true)
+	}}, route.Handlers...)
+	route.Handle(method, path, append(gin.HandlersChain{Route(kind, verb, paramName)}, handlers...)...)
+}
+
+func IsScoped(ctx *gin.Context) bool {
+	return ctx.GetBool(scopedRouteKey)
+}

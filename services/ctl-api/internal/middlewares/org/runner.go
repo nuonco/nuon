@@ -9,6 +9,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -72,6 +74,15 @@ func (m *runnerMiddleware) Handler() gin.HandlerFunc {
 
 		cctx.SetOrgIDGinContext(ctx, acct.OrgIDs[0])
 		cctx.SetOrgGinContext(ctx, acct.Orgs[0])
+
+		if !require.IsScoped(ctx) {
+			perm := permissions.FromRequest(ctx)
+			if err := acct.AllPermissions.CanPerform(acct.OrgIDs[0], perm); err != nil {
+				ctx.Error(permissionDeniedError(acct, acct.OrgIDs[0], perm, scopeFromPath(ctx.FullPath())))
+				ctx.Abort()
+				return
+			}
+		}
 	}
 }
 
