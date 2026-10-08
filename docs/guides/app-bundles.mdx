@@ -1,0 +1,167 @@
+---
+title: "Share deployment assets with app bundles"
+description: "Provide your end customers with a digest-identified, reviewable inventory of the assets packaged for deployment in their environment."
+icon: "box-archive"
+keywords: ["app bundles", "deployment assets", "customer security review", "asset inventory", "air-gap bundles"]
+---
+
+An **app bundle** packages the deployment assets for a specific [app config](/configuration-files) into an immutable, downloadable OCI archive (`.tar.zst`). Its internal manifest identifies packaged artifacts by digest, allowing platform and security teams to review a fixed release rather than mutable image tags or Git branches.
+
+This guide covers creating a bundle, verifying its checksum, inspecting the inventory, and delivering a customer review package. Downloading or inspecting a bundle does not deploy anything.
+
+## What's included in a bundle
+
+The bundle contains an OCI layout with a `bundle-manifest.json` describing the release:
+
+| Asset | What to review |
+| --- | --- |
+| Components | Terraform modules, Helm charts, Kubernetes manifests, and external image components. The manifest records names, types, sources, and artifact digests. |
+| Container images | Pinned application and supporting images. |
+| Sandbox and stacks | Terraform sandbox artifacts and CloudFormation templates used to provision infrastructure and bootstrap deployments. |
+| Runner | The Nuon runner binary and optional runner image, when included. The runner executes deployment work in the customer's environment; check the manifest rather than assuming it is packaged. |
+| Actions and runbooks | Included operational scripts and definitions, including their triggers and roles. Inclusion does not mean every action runs during installation. |
+
+The archive also includes provenance, a qualification report, and a plan envelope describing installation steps and inputs. Review these for context and warnings before the handoff.
+
+<Warning>
+  A bundle is an inventory of packaged deployment assets, not an SBOM, vulnerability scan, or final list of cloud resources. Resource names, counts, and changes depend on customer inputs and the target environment. Review environment-specific Terraform and CloudFormation plans separately before applying them.
+</Warning>
+
+## Prerequisites
+
+App bundle commands are built into the Nuon CLI under `nuon apps bundles`; no extension installation is required.
+
+- **Nuon CLI:** Authenticated with your vendor organization selected. See [Nuon CLI](/cli).
+- **App config:** An app configuration that has successfully synced to Nuon.
+- **Target support:** AWS with a Terraform sandbox on `linux/amd64`.
+
+**Limitations:**
+
+- Docker-build, Pulumi, and job components are not currently supported.
+- Publish custom images to a registry and reference them as [external image components](/guides/container-image-components).
+- Container-image actions are not currently supported.
+- Cron action steps must be inline.
+- Git-backed non-cron actions are excluded from the bundle.
+
+<Warning>
+  Images referenced only in Helm chart values or Kubernetes manifests are not automatically detected or bundled. Declare the images you need as external image components, and check the resulting inventory against your application's dependencies. Review any additional downloads performed by Terraform modules or scripts rather than assuming the bundle captures them.
+</Warning>
+
+## Step-by-step implementation guide
+
+### Step 1: Select the target release
+
+Prepare your release through your [app-branch workflow](/guides/app-branches), ensure its app config has successfully synced, and list the available configs:
+
+```bash
+nuon apps configs list --app-id acme
+```
+
+Replace `acme` with your app name and record the specific `<app-config-id>`. Using it explicitly locks the review to the intended release, not whichever config is latest later.
+
+### Step 2: Create, wait for, and download the bundle
+
+Start publication for the selected config:
+
+```bash
+nuon apps bundles create \
+  --app-id acme \
+  --config-id <app-config-id> \
+  --platform linux/amd64
+```
+
+`create` returns immediately with a bundle ID. Use that ID as `<bundle-id>` and wait for publication to finish:
+
+```bash
+nuon apps bundles wait --app-id acme --bundle-id <bundle-id>
+```
+
+Publication progresses through `queued` and `publishing` to `active`, or reports an `error`. A timeout or Ctrl+C stops waiting, not publication. Run `wait` again with the same ID to resume checking. To inspect a failure, run:
+
+```bash
+nuon apps bundles get --app-id acme --bundle-id <bundle-id>
+```
+
+Once publication succeeds, download the archive:
+
+```bash
+nuon apps bundles download \
+  --app-id acme \
+  --bundle-id <bundle-id> \
+  --file acme-release.oci.tar.zst
+```
+
+The download command verifies the archive against its published size and checksum. Interrupted downloads resume when you repeat the command with the same destination.
+
+Save the metadata with the archive for your handoff:
+
+```bash
+nuon apps bundles get \
+  --app-id acme \
+  --bundle-id <bundle-id> \
+  --output json > acme-bundle-metadata.json
+```
+
+This records the bundle and app config IDs, target platform, archive size, transport checksum, and manifest digest. `get` shows publication metadata, not the asset inventory inside the archive.
+
+### Step 3: Verify checksum integrity
+
+The download command already verifies the archive. You or your customer can independently check its checksum before handoff or after transfer with `shasum`:
+
+```bash
+shasum -a 256 acme-release.oci.tar.zst
+```
+
+Compare the digest printed by this command with `transport_checksum` in `acme-bundle-metadata.json`, ignoring a `sha256:` prefix if present. They must match. If they do not, stop and obtain a matching archive before continuing.
+
+The checksum identifies the **compressed archive**. Check it before decompressing, not against the extracted files. Share the expected checksum through a trusted release channel; this check confirms archive integrity, not publisher identity.
+
+### Step 4: Inspect the asset inventory
+
+Extract the manifest and qualification report to audit the contents locally. These commands require `zstd` and `tar`:
+
+```bash
+zstd -dc acme-release.oci.tar.zst \
+  | tar -xOf - bundle-manifest.json > acme-manifest.json
+zstd -dc acme-release.oci.tar.zst \
+  | tar -xOf - qualification-report.json > acme-qualification.json
+```
+
+The manifest is the asset inventory: it includes full artifact digests and the included action and runbook definitions. The qualification report records publication warnings. Reading these files does not deploy anything or require customer AWS credentials or a Nuon API token.
+
+**Pre-flight audit checklist:**
+
+- Verify all expected components, images, supporting workloads, and runner assets are present.
+- Confirm source revisions and digests match the intended release.
+- Ensure stack templates, sandbox definitions, and IAM permissions match your documentation.
+- Review included actions and runbooks, their triggers, and their roles.
+- Explain qualification warnings, excluded functionality, and additional dependencies.
+- Check scripts, definitions, and defaults for sensitive credentials or vendor secrets.
+
+Do not describe the package as complete until you have checked it against your app's actual dependencies.
+
+### Step 5: Deliver the review package
+
+Send the archive through your approved release channel, along with:
+
+- **Release identity:** your product version, bundle ID, app config ID, platform, archive checksum, and manifest digest.
+- **Asset inventory:** `acme-manifest.json`, the qualification report, and a short explanation of each component's purpose.
+- **Infrastructure and permissions:** the sandbox and stack definitions, expected cloud services, IAM permissions, and any environment-specific planning still required.
+- **Operational behavior:** included actions and runbooks, their triggers, and which permissions they need.
+- **Customer configuration:** required install inputs and choices the customer must make, without including credentials in the review package.
+- **Additional requirements:** external dependencies, network access, exclusions, and any separate SBOMs, scan results, or licensing information your review process requires.
+
+## Sample customer-facing introduction
+
+Adapt this text to match your release's actual inventory:
+
+> This review package contains the deployment assets for Acme's proposed release in your AWS environment. The attached inventory identifies the packaged application and supporting images, infrastructure definitions, bootstrap templates, Nuon runner, and included operational scripts by digest.
+>
+> Downloading or inspecting the package does not deploy anything. Before installation, we will confirm your environment-specific inputs and review the resulting infrastructure plans with you. Additional dependencies and network requirements are listed separately.
+
+Keep the approved bundle ID and digests with your release records. If the assets change, create a new bundle and share its inventory for review rather than replacing the approved package.
+
+## Next steps
+
+- Review [Positioning Safety of BYOC](/guides/vendor-customers) to discuss the broader security model with your customer.
+- Explore [Stacks](/concepts/stacks) and [operation roles](/concepts/operation-roles) to explain infrastructure and permissions.
