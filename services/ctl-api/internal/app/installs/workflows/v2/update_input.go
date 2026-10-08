@@ -1,6 +1,7 @@
 package v2
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 
@@ -121,7 +122,10 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	}
 
 	needsRunner := sandboxNeedsReprovision ||
-		len(componentIDs) > 0 ||
+		slices.ContainsFunc(componentIDs, func(id string) bool {
+			_, ok := dg.cccByComp[id]
+			return !ok || dg.effectiveEnabled(id)
+		}) ||
 		len(disableComps) > 0 ||
 		len(filterActionWorkflowsByTrigger(awData, app.ActionWorkflowTriggerTypePreUpdateInputs, "", appConfig)) > 0 ||
 		len(filterActionWorkflowsByTrigger(awData, app.ActionWorkflowTriggerTypePostUpdateInputs, "", appConfig)) > 0
