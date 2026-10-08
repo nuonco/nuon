@@ -11,13 +11,10 @@ import (
 
 func clearAgentEnv(t *testing.T) {
 	t.Helper()
-	for _, key := range []string{
-		agentclient.EnvVar,
-		agentclient.AIAgentEnvVar,
-		"CURSOR_AGENT",
-		"CURSOR_INVOKED_AS",
-		"CLAUDECODE",
-	} {
+	for _, key := range append(
+		[]string{agentclient.EnvVar, agentclient.AIAgentEnvVar},
+		agentclient.ProductEnvKeys()...,
+	) {
 		t.Setenv(key, "")
 	}
 }

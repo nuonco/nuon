@@ -18,8 +18,17 @@ const (
 	// with @version: amp, claude-code, cursor-cli@1.2.3.
 	AIAgentEnvVar = "AI_AGENT"
 
-	Cursor = "cursor"
-	Claude = "claude"
+	Amp         = "amp"
+	Cursor      = "cursor"
+	Gemini      = "gemini"
+	Codex       = "codex"
+	Antigravity = "antigravity"
+	Augment     = "augment-cli"
+	OpenCode    = "opencode"
+	Cowork      = "cowork"
+	Claude      = "claude"
+	Replit      = "replit"
+	Copilot     = "github-copilot"
 )
 
 // UserAgent is the HTTP User-Agent for an agent-driven CLI request.
@@ -40,8 +49,8 @@ func Detect() (Client, bool) {
 }
 
 // DetectEnv reports the coding agent described by env. Entries are KEY=VALUE.
-// NUON_AGENT_CLIENT and the Cursor and Claude Code variables win. A named
-// AI_AGENT is the fallback.
+// NUON_AGENT_CLIENT wins, then product variables, then a named AI_AGENT.
+// Amp is checked before Claude Code because Amp also sets CLAUDECODE.
 func DetectEnv(env []string) (Client, bool) {
 	vals := envValues(env)
 	switch strings.ToLower(strings.TrimSpace(vals[EnvVar])) {
@@ -53,16 +62,72 @@ func DetectEnv(env []string) (Client, bool) {
 		return Client{Name: Claude}, true
 	}
 
-	if vals["CURSOR_AGENT"] == "1" || vals["CURSOR_INVOKED_AS"] == "agent" {
-		return Client{Name: Cursor}, true
-	}
-	if vals["CLAUDECODE"] == "1" {
-		return Client{Name: Claude}, true
+	if client, ok := detectProduct(vals); ok {
+		return client, true
 	}
 	if name, ok := aiAgentName(vals[AIAgentEnvVar]); ok {
 		return Client{Name: name}, true
 	}
 	return Client{}, false
+}
+
+// ProductEnvKeys are the variables detectProduct reads. Tests clear them so a
+// developer shell does not leak into a "no agent" case.
+func ProductEnvKeys() []string {
+	return []string{
+		"AMP_CURRENT_THREAD_ID", "AGENT",
+		"CURSOR_AGENT", "CURSOR_INVOKED_AS", "CURSOR_EXTENSION_HOST_ROLE", "CURSOR_TRACE_ID",
+		"GEMINI_CLI",
+		"CODEX_THREAD_ID", "CODEX_SANDBOX", "CODEX_CI",
+		"ANTIGRAVITY_AGENT",
+		"AUGMENT_AGENT",
+		"OPENCODE_CLIENT",
+		"CLAUDECODE", "CLAUDE_CODE", "CLAUDE_CODE_CHILD_SESSION", "CLAUDE_CODE_IS_COWORK",
+		"REPL_ID",
+		"COPILOT_MODEL", "COPILOT_ALLOW_ALL", "COPILOT_GITHUB_TOKEN",
+	}
+}
+
+func detectProduct(vals map[string]string) (Client, bool) {
+	if set(vals["AMP_CURRENT_THREAD_ID"]) || strings.EqualFold(strings.TrimSpace(vals["AGENT"]), Amp) {
+		return Client{Name: Amp}, true
+	}
+	if vals["CURSOR_AGENT"] == "1" || vals["CURSOR_INVOKED_AS"] == "agent" ||
+		vals["CURSOR_EXTENSION_HOST_ROLE"] == "agent-exec" || set(vals["CURSOR_TRACE_ID"]) {
+		return Client{Name: Cursor}, true
+	}
+	if vals["GEMINI_CLI"] == "1" {
+		return Client{Name: Gemini}, true
+	}
+	if set(vals["CODEX_THREAD_ID"]) || set(vals["CODEX_SANDBOX"]) || set(vals["CODEX_CI"]) {
+		return Client{Name: Codex}, true
+	}
+	if set(vals["ANTIGRAVITY_AGENT"]) {
+		return Client{Name: Antigravity}, true
+	}
+	if vals["AUGMENT_AGENT"] == "1" {
+		return Client{Name: Augment}, true
+	}
+	if set(vals["OPENCODE_CLIENT"]) {
+		return Client{Name: OpenCode}, true
+	}
+	if vals["CLAUDECODE"] == "1" || vals["CLAUDE_CODE"] == "1" || vals["CLAUDE_CODE_CHILD_SESSION"] == "1" {
+		if set(vals["CLAUDE_CODE_IS_COWORK"]) {
+			return Client{Name: Cowork}, true
+		}
+		return Client{Name: Claude}, true
+	}
+	if set(vals["REPL_ID"]) {
+		return Client{Name: Replit}, true
+	}
+	if set(vals["COPILOT_MODEL"]) || set(vals["COPILOT_ALLOW_ALL"]) || set(vals["COPILOT_GITHUB_TOKEN"]) {
+		return Client{Name: Copilot}, true
+	}
+	return Client{}, false
+}
+
+func set(v string) bool {
+	return strings.TrimSpace(v) != ""
 }
 
 // aiAgentName returns the slug from AI_AGENT. A @version suffix is dropped.
