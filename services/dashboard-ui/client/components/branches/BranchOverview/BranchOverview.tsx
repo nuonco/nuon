@@ -79,7 +79,12 @@ export const BranchOverview = ({
 }: IBranchOverview) => (
   <div className="flex flex-col gap-10 p-4 md:p-6">
     {loadingStages?.length ? (
-      <OverviewLoadingTrack stages={loadingStages} />
+      <div className="flex items-center justify-between gap-4">
+        <OverviewLoadingTrack stages={loadingStages} />
+        {runHeaderAction ? (
+          <span className="shrink-0">{runHeaderAction}</span>
+        ) : null}
+      </div>
     ) : isLoading ? (
       <Loading />
     ) : null}
@@ -128,7 +133,6 @@ export const BranchOverview = ({
           commit={rollout.commit}
           previewMode={rollout.previewMode}
           baseline={rollout.baseline}
-          headerAction={runHeaderAction}
         />
         <div className="min-w-0">{changes}</div>
       </section>
