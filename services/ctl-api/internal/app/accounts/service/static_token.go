@@ -225,7 +225,7 @@ func (s *service) DeleteStaticToken(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.db.WithContext(ctx).Delete(&token).Error; err != nil {
+	if err := s.acctClient.RevokeToken(ctx, token.ID); err != nil {
 		ctx.Error(fmt.Errorf("unable to delete static token: %w", err))
 		return
 	}
