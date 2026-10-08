@@ -15,6 +15,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/agentclient"
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -345,6 +346,15 @@ func (s *Server) authContextMiddleware(next http.Handler) http.Handler {
 
 		orgID := s.resolveOrg(acct, tok.ID, r.Header.Get("X-Nuon-Org-ID"))
 		s.touchOrgSelection(tok.ID)
+		if agent := r.Header.Get(agentclient.Header); agent != "" {
+			l.Info("nuon cli agent",
+				zap.String("agent", agent),
+				zap.String("command", r.Header.Get(agentclient.CommandHeader)),
+				zap.String("account_id", acct.ID),
+				zap.String("method", r.Method),
+				zap.String("path", r.URL.Path),
+			)
+		}
 
 		ctx = cctx.SetAccountContext(ctx, acct)
 		ctx = context.WithValue(ctx, keys.OrgIDCtxKey, orgID)

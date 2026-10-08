@@ -196,6 +196,18 @@ command must be added to `readOnlyCommands` or it will be blocked in this mode. 
 `config`-style targeting, `init`, `generate-config`) are allowed; anything that creates/updates/deletes remote
 resources exits 2 with a clear error.
 
+### Agent detection
+
+`pkg/agentclient` reads the process environment and names the coding agent that launched the CLI. Product variables win over `AI_AGENT`. Amp is checked first (`AMP_CURRENT_THREAD_ID`, or `AGENT=amp`) because it also sets `CLAUDECODE`. Then Cursor (`CURSOR_AGENT=1`, `CURSOR_INVOKED_AS=agent`, `CURSOR_EXTENSION_HOST_ROLE=agent-exec`, `CURSOR_TRACE_ID`), Gemini (`GEMINI_CLI=1`), Codex (`CODEX_THREAD_ID`, `CODEX_SANDBOX`, `CODEX_CI`), Antigravity (`ANTIGRAVITY_AGENT`), Augment (`AUGMENT_AGENT=1`), OpenCode (`OPENCODE_CLIENT`), Claude Code (`CLAUDECODE=1`, `CLAUDE_CODE=1`, `CLAUDE_CODE_CHILD_SESSION=1`; `CLAUDE_CODE_IS_COWORK` names it `cowork`), Replit (`REPL_ID`), and Copilot (`COPILOT_MODEL`, `COPILOT_ALLOW_ALL`, `COPILOT_GITHUB_TOKEN`). When none of those are set, `AI_AGENT` is the fallback name (`amp`, `claude-code`, `cursor-cli@1.2.3`; the slug before `@` is used). An `AI_AGENT` that is not a slug, such as `1` or `true`, is ignored. `NUON_AGENT_CLIENT=cursor|claude` overrides all of that; `NUON_AGENT_CLIENT=off` disables it. Devin is not detected.
+
+Detection runs once in the persistent pre-run (`applyAgentMode` in `cmd/agent_use.go`). A match sets `Config.Agent` to the name and forces `Config.Interactive = false` for that process. Neither is written to `~/.nuon`. Commands check `cfg.Agent != ""` to take a prompt-free path instead of calling `agentclient.Detect()` again; the state file, REST attribution, and the MCP proxy all read `cfg.Agent`. This does not turn on the JSON envelope — that still needs `--output agent`. `nuon auth login` in this mode skips the deployment selector and URL confirm: it uses the configured `api_url` / `NUON_API_URL`, or `https://api.nuon.co` when none is set, then runs the normal browser sign-in.
+
+Attribution headers are set by `internal/attribution.Apply`. Any code that builds its own `nuon.New` client (login does, twice) must call it, or those requests go out unattributed.
+
+When a client is detected, `nuon agents`, `nuon agents --help`, and `nuon agents help` print `✓ agent (cursor) detected` or `✓ agent (claude) detected` at the top of the setup guide. The same name is sent as `X-Nuon-Agent` on control-plane REST requests and on the MCP proxy. A normal terminal does not set these variables, so the line and the header are omitted.
+
+The first detected run for an agent writes `~/.nuon.agents/<agent>.yaml` (`agent`, `cli_version`, `app_id`, `first_seen`, `last_seen`). That write prints a one-time setup guide on stderr: docs, `nuon agents help`, the dashboard, and a short command flow. Later runs update `cli_version`, `app_id`, and `last_seen` and stay quiet. Agent requests also send `User-Agent: nuon-cli/<version> (<agent>)` and `X-Nuon-Command` set to the command path, with no arguments. The MCP proxy sends command `nuon agents mcp`.
+
 ### MCP (`nuon agents mcp`)
 
 Preferred LLM surface is **`nuon agents`**:
