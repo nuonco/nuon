@@ -44,8 +44,9 @@ export const branchRunOutcome = (
   const updated = groups.reduce(
     (sum, group) =>
       sum +
-      group.installs.filter((status) => stepStatusCategory(status) === 'success')
-        .length,
+      group.installs.filter(
+        (status) => stepStatusCategory(status) === 'success'
+      ).length,
     0
   )
   if (updated === total) {

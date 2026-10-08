@@ -9,7 +9,7 @@ export interface IBranchHeaderMeta {
   repo?: string
   gitBranch?: string
   directory?: string
-  trigger?: string
+  trigger?: ReactNode
 }
 
 const repoHref = (repo: string) =>

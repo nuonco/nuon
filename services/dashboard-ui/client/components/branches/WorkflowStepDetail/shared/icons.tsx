@@ -76,7 +76,9 @@ export const DetailStatusIcon = ({ status }: { status?: string }) => {
     )
   }
   if (status === 'pending' || status === 'queued') {
-    return <Status status={status} variant="timeline" isWithoutText iconSize={18} />
+    return (
+      <Status status={status} variant="timeline" isWithoutText iconSize={18} />
+    )
   }
   return (
     <div

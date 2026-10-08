@@ -400,7 +400,7 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
               'focus:!ring-transparent focus:!border-cool-grey-300 dark:focus:!border-dark-grey-600':
                 disabled,
 
-              'bg-black/6 dark:bg-white/6 text-cool-grey-900 dark:text-cool-grey-100':
+              'bg-black/6 dark:bg-black/40 text-cool-grey-900 dark:text-cool-grey-100':
                 !disabled && !error && !isInvalid,
               '!border-field-border':
                 !disabled && !error && !isInvalid,

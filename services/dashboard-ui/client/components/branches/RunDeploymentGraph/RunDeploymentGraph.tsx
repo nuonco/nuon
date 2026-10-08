@@ -113,7 +113,11 @@ const GroupRunNode = memo(({ data }: NodeProps<Node<GroupRunNodeData>>) => {
               <Link
                 href={
                   inst.workflowId
-                    ? installLink({ orgId: orgId, installId: inst.id, suffix: `/workflows/${inst.workflowId}` })
+                    ? installLink({
+                        orgId: orgId,
+                        installId: inst.id,
+                        suffix: `/workflows/${inst.workflowId}`,
+                      })
                     : installLink({ orgId: orgId, installId: inst.id })
                 }
                 className="nodrag w-auto min-w-0 flex-1 truncate"
