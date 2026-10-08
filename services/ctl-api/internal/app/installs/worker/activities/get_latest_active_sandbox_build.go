@@ -47,7 +47,7 @@ func (a *Activities) GetLatestActiveSandboxBuild(ctx context.Context, req GetLat
 		return nil, fmt.Errorf("unable to load sandbox config for app config %s: %w", req.AppConfigID, err)
 	}
 
-	var candidates []app.AppSandboxBuild
+	var candidate app.AppSandboxBuild
 	err = a.db.WithContext(ctx).
 		Preload("AppSandboxConfig").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
@@ -57,15 +57,15 @@ func (a *Activities) GetLatestActiveSandboxBuild(ctx context.Context, req GetLat
 			Status: app.AppSandboxBuildStatusActive,
 		}).
 		Order("created_at DESC").
-		Limit(25).
-		Find(&candidates).Error
+		First(&candidate).Error
 	if err != nil {
-		return nil, fmt.Errorf("unable to list active sandbox builds for app %s: %w", current.AppID, err)
-	}
-	for i := range candidates {
-		if configdiff.SandboxConfigsEqual(candidates[i].AppSandboxConfig, current) {
-			return &candidates[i], nil
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
 		}
+		return nil, fmt.Errorf("unable to get latest active sandbox build for app %s: %w", current.AppID, err)
+	}
+	if configdiff.SandboxConfigsEqual(candidate.AppSandboxConfig, current) {
+		return &candidate, nil
 	}
 
 	return nil, nil

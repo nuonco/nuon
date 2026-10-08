@@ -100,6 +100,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	check, checkErr := activities.AwaitCheckSandboxBuildNeeded(ctx, &activities.CheckSandboxBuildNeededInput{
 		NewAppConfigID: run.AppConfigID,
 		OldAppConfigID: previousAppConfigID,
+		RunID:          s.RunID,
 		Force:          run.Force,
 	})
 	if checkErr != nil {

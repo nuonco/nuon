@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/lib/pq"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -97,7 +99,7 @@ func (a *Activities) FindReusableSandboxBuild(ctx context.Context, input *FindRe
 }
 
 func (a *Activities) latestEquivalentSandboxBuild(ctx context.Context, appID string, cfg *app.AppSandboxConfig) (*app.AppSandboxBuild, error) {
-	var builds []app.AppSandboxBuild
+	var build app.AppSandboxBuild
 	err := a.db.WithContext(ctx).
 		Preload("VCSConnectionCommit").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
@@ -107,16 +109,15 @@ func (a *Activities) latestEquivalentSandboxBuild(ctx context.Context, appID str
 			Status: app.AppSandboxBuildStatusActive,
 		}).
 		Order("created_at DESC").
-		Limit(25).
-		Find(&builds).Error
+		First(&build).Error
 	if err != nil {
-		return nil, fmt.Errorf("unable to list sandbox builds: %w", err)
-	}
-	for i := range builds {
-		if sandboxConfigsEquivalent(cfg, &builds[i].AppSandboxConfig) {
-			build := builds[i]
-			return &build, nil
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
 		}
+		return nil, fmt.Errorf("unable to get latest sandbox build: %w", err)
+	}
+	if sandboxConfigsEquivalent(cfg, &build.AppSandboxConfig) {
+		return &build, nil
 	}
 	return nil, nil
 }

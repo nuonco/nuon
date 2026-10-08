@@ -2,18 +2,15 @@ package activities
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
-	"gorm.io/gorm"
-
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/configdiff"
 )
 
 type CheckSandboxBuildNeededInput struct {
 	NewAppConfigID string `json:"new_app_config_id"`
 	OldAppConfigID string `json:"old_app_config_id"`
+	RunID          string `json:"run_id"`
 	Force          bool   `json:"force"`
 }
 
@@ -47,37 +44,20 @@ func (a *Activities) CheckSandboxBuildNeeded(ctx context.Context, input *CheckSa
 		}, nil
 	}
 
-	var existing app.AppSandboxBuild
-	err = a.db.WithContext(ctx).
-		Where(app.AppSandboxBuild{
-			AppConfigID: input.OldAppConfigID,
-			Status:      app.AppSandboxBuildStatusActive,
-		}).
-		Order("created_at DESC").
-		First(&existing).Error
-	if err == nil {
-		return reuseExistingSandboxBuild(existing.ID), nil
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("unable to look up active sandbox build: %w", err)
+	if input.RunID == "" {
+		return &CheckSandboxBuildNeededOutput{NeedsBuild: true, ChangeReason: ChangeReasonSourceChanged}, nil
 	}
 
-	var candidate app.AppSandboxBuild
-	err = a.db.WithContext(ctx).
-		Preload("AppSandboxConfig").
-		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
-		Preload("AppSandboxConfig.PublicGitVCSConfig").
-		Where(app.AppSandboxBuild{
-			AppID:  newCfg.AppID,
-			Status: app.AppSandboxBuildStatusActive,
-		}).
-		Order("created_at DESC").
-		First(&candidate).Error
-	if err != nil {
-		return nil, fmt.Errorf("unable to list active sandbox builds: %w", err)
+	reused, reuseErr := a.FindReusableSandboxBuild(ctx, &FindReusableSandboxBuildInput{
+		AppID:       newCfg.AppID,
+		AppConfigID: input.NewAppConfigID,
+		RunID:       input.RunID,
+	})
+	if reuseErr != nil {
+		return nil, fmt.Errorf("unable to check sandbox source reuse: %w", reuseErr)
 	}
-	if configdiff.SandboxConfigsEqual(candidate.AppSandboxConfig, *newCfg) {
-		return reuseExistingSandboxBuild(candidate.ID), nil
+	if reused != nil && reused.BuildID != "" {
+		return reuseExistingSandboxBuild(reused.BuildID), nil
 	}
 
 	return &CheckSandboxBuildNeededOutput{NeedsBuild: true, ChangeReason: ChangeReasonSourceChanged}, nil
