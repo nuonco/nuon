@@ -780,7 +780,7 @@ const SectionGroup = ({
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className={`w-full flex items-center justify-between gap-3 px-4 sm:px-6 py-3 text-left transition-colors hover:bg-black/5 dark:hover:bg-white/5 ${open ? 'border-b' : ''}`}
+        className={`w-full flex cursor-pointer items-center justify-between gap-3 px-4 sm:px-6 py-3 text-left transition-colors hover:bg-black/5 dark:hover:bg-white/5 ${open ? 'border-b' : ''}`}
       >
         <Text flex className="gap-2 items-center" variant="base" weight="strong">
           {sectionIcon && <Icon variant={sectionIcon} size="16" />}

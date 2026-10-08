@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
@@ -23,12 +24,14 @@ export const DeploymentCard = ({
   typeLabel,
   createdAt,
   onViewDetails,
+  children,
 }: {
   run: TDeploymentRun
   title: string
   typeLabel: string
   createdAt: string
   onViewDetails: () => void
+  children?: ReactNode
 }) => {
   const awaiting =
     run.status === 'approval-awaiting' ||
@@ -103,6 +106,7 @@ export const DeploymentCard = ({
           </Text>
         </div>
       </div>
+      {children}
       <StepProgress run={run} />
       <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
         <div

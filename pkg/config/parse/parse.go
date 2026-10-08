@@ -72,6 +72,7 @@ func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
 		return nil, ParseErr{
 			Filename:    parseCfg.Filename,
 			Description: "unable to parse configuration file",
+			Err:         err,
 		}
 	}
 

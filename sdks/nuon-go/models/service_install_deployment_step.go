@@ -7,7 +7,9 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -41,6 +43,9 @@ type ServiceInstallDeploymentStep struct {
 	// name
 	Name string `json:"name,omitempty"`
 
+	// policy
+	Policy *ServiceInstallDeploymentPolicySummary `json:"policy,omitempty"`
+
 	// retried
 	Retried bool `json:"retried,omitempty"`
 
@@ -53,11 +58,77 @@ type ServiceInstallDeploymentStep struct {
 
 // Validate validates this service install deployment step
 func (m *ServiceInstallDeploymentStep) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validatePolicy(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this service install deployment step based on context it is used
+func (m *ServiceInstallDeploymentStep) validatePolicy(formats strfmt.Registry) error {
+	if swag.IsZero(m.Policy) { // not required
+		return nil
+	}
+
+	if m.Policy != nil {
+		if err := m.Policy.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("policy")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("policy")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this service install deployment step based on the context it is used
 func (m *ServiceInstallDeploymentStep) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidatePolicy(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ServiceInstallDeploymentStep) contextValidatePolicy(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Policy != nil {
+
+		if swag.IsZero(m.Policy) { // not required
+			return nil
+		}
+
+		if err := m.Policy.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("policy")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("policy")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

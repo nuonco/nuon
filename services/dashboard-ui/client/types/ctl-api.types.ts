@@ -1454,6 +1454,11 @@ export type TInstallDeploymentStepSummary = {
   step_target_type?: string
   component_name?: string
   approval_response_id?: string
+  policy?: {
+    deny_count: number
+    warn_count: number
+    first_warn_message?: string
+  }
 }
 
 export type TInstallDeploymentSummary = {

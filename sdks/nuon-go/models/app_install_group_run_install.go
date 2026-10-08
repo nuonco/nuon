@@ -26,11 +26,20 @@ type AppInstallGroupRunInstall struct {
 	// Phase is which stage of the group the install is in: "deploy" or "runbook".
 	Phase string `json:"phase,omitempty"`
 
+	// ReleaseReason is why the group stopped waiting on this install.
+	ReleaseReason string `json:"release_reason,omitempty"`
+
 	// runbooks
 	Runbooks []*AppInstallGroupRunRunbook `json:"runbooks"`
 
 	// status
 	Status string `json:"status,omitempty"`
+
+	// SupersededByRunID is the later app branch run that cancelled this one.
+	SupersededByRunID string `json:"superseded_by_run_id,omitempty"`
+
+	// WaitingOnRunID is the app branch run this install is queued behind.
+	WaitingOnRunID string `json:"waiting_on_run_id,omitempty"`
 
 	// workflow id
 	WorkflowID string `json:"workflow_id,omitempty"`

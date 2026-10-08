@@ -12,6 +12,10 @@ import {
   type TMiniDeployInstall,
 } from '@/components/branches/MiniDeploymentView'
 import { BranchPlanDots, type TBranchPlanGroup } from './BranchPlanDots'
+import {
+  BranchRolloutStatus,
+  type TBranchRolloutInstall,
+} from './BranchRolloutStatus'
 
 export type TBranchRunTrigger =
   | 'manual'
@@ -81,6 +85,9 @@ export type TBranchCardData = {
   }
   planGroups?: TBranchPlanGroup[]
   latestRunInstalls?: TMiniDeployInstall[]
+  rolloutInstalls?: TBranchRolloutInstall[]
+  installCount?: number
+  installCountIsPartial?: boolean
   action?: ReactNode
 }
 
@@ -88,12 +95,15 @@ export const BranchCard = ({ card }: { card: TBranchCardData }) => {
   const {
     action,
     href,
+    installCount,
+    installCountIsPartial,
     latestRun,
     latestRunInstalls,
     name,
     planGroups,
     repo,
     repoBranch,
+    rolloutInstalls,
   } = card
   const hasPlan = Boolean(planGroups && planGroups.length > 0)
   const canExpand = Boolean(
@@ -173,6 +183,12 @@ export const BranchCard = ({ card }: { card: TBranchCardData }) => {
       ) : hasPlan ? (
         <BranchPlanDots groups={planGroups!} />
       ) : null}
+
+      <BranchRolloutStatus
+        installs={rolloutInstalls}
+        installCount={installCount}
+        installCountIsPartial={installCountIsPartial}
+      />
     </Card>
   )
 }

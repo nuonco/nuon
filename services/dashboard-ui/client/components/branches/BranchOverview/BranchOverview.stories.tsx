@@ -3,6 +3,7 @@ export default {
   fullBleed: true,
 }
 
+import { ConfigParseFailure } from '@/components/branches/BranchRunChangesSummary/ConfigParseFailure'
 import { Text } from '@/components/common/Text'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import type { TCompositeError } from '@/types'
@@ -234,6 +235,49 @@ export const BuildFailed = () => (
   />
 )
 BuildFailed.storyName = 'Build failed'
+
+export const ConfigUnparseable = () => (
+  <BranchOverview
+    hasPlan
+    showInstalls={false}
+    rollout={{
+      ...manualRollout,
+      status: 'error',
+      sha: 'a1b2c3d4e5f6',
+      author: 'jane@example.com',
+      commit: {
+        message: 'Add cache component',
+        author: 'jane@example.com',
+        sha: 'a1b2c3d4e5f6',
+        shaUrl: 'https://github.com/acme/platform/commit/a1b2c3d4e5f6',
+      },
+    }}
+    changes={
+      <ConfigParseFailure
+        title="Template and source changes"
+        lines={[
+          'components/api.toml: unable to parse configuration file: toml: line 4: expected key but found end of file',
+          'components/worker.toml: image is required',
+        ]}
+      />
+    }
+    loadingStages={buildOverviewLoadingStages({
+      steps: [
+        { id: 'fetch', name: 'fetch commit', status: { status: 'success' } },
+        {
+          id: 'config',
+          name: 'sync app config',
+          status: { status: 'error' },
+        },
+      ],
+      sha: 'a1b2c3d4e5f6',
+    })}
+    groups={[]}
+    rolloutHref="#rollout"
+    groupHref={(id) => `#rollout/groups/${id}`}
+  />
+)
+ConfigUnparseable.storyName = 'Config could not be parsed'
 
 const longCommit = [
   'feat: map preview install configs onto branch groups (#104)',
