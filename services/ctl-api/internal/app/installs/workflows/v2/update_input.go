@@ -239,20 +239,14 @@ func classifyEnabledTransitions(ctx workflow.Context, dg *genCtx, appConfig *app
 	}
 
 	for _, compID := range affected {
-		effEnabled := dg.effectiveEnabled(compID)
-		active := false
-		if ic, ok := installComps[compID]; ok && ic != nil {
-			active = ic.Status == app.InstallComponentStatusActive
-		}
-		switch {
-		case effEnabled && !active:
+		_, toggled := toggledSet[compID]
+		switch toggleTransitionFor(dg.effectiveEnabled(compID), installComps[compID], toggled) {
+		case toggleEnable:
 			enable = append(enable, compID)
-		case !effEnabled && active:
+		case toggleDisable:
 			disable = append(disable, compID)
-		case !effEnabled && !active:
-			if _, ok := toggledSet[compID]; ok {
-				skip = append(skip, compID)
-			}
+		case toggleSkip:
+			skip = append(skip, compID)
 		}
 	}
 
@@ -403,4 +397,36 @@ func checkSandboxNeedsReprovision(ctx workflow.Context, appCfg *app.AppConfig, c
 	}
 
 	return false, nil
+}
+
+type toggleTransition int
+
+const (
+	toggleNone toggleTransition = iota
+	toggleEnable
+	toggleDisable
+	toggleSkip
+)
+
+// toggleTransitionFor decides what a component toggle does. Enabling deploys a
+// component that isn't active. Disabling tears down a component that is active
+// or may still be running: one whose last deploy failed, including a failed
+// plan, can still be serving a previous release. ic is nil when the install
+// has no record of the component.
+func toggleTransitionFor(effEnabled bool, ic *app.InstallComponent, toggled bool) toggleTransition {
+	active, deployed := false, false
+	if ic != nil {
+		active = ic.Status == app.InstallComponentStatusActive
+		deployed = active || ic.EverDeployed()
+	}
+
+	switch {
+	case effEnabled && !active:
+		return toggleEnable
+	case !effEnabled && deployed:
+		return toggleDisable
+	case !effEnabled && toggled:
+		return toggleSkip
+	}
+	return toggleNone
 }
