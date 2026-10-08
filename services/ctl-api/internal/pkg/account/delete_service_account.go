@@ -55,6 +55,18 @@ func deleteAccountRecords(tx *gorm.DB, accountID string) error {
 		return errors.Wrap(res.Error, "unable to delete tokens")
 	}
 
+	if res := tx.Where(app.OAuthRefreshToken{AccountID: accountID}).Delete(&app.OAuthRefreshToken{}); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to delete oauth refresh tokens")
+	}
+
+	if res := tx.Where(app.OAuthAuthorizationCode{AccountID: accountID}).Delete(&app.OAuthAuthorizationCode{}); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to delete oauth authorization codes")
+	}
+
+	if res := tx.Where(app.DeviceCode{AccountID: accountID}).Delete(&app.DeviceCode{}); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to delete device codes")
+	}
+
 	if res := tx.Delete(&app.Account{ID: accountID}); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to delete account")
 	}

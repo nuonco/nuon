@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -19,31 +20,79 @@ var (
 
 // TokenInfo represents the validated token information.
 type TokenInfo struct {
+	TokenID   string
 	AccountID string
 	Email     string
 	Username  string
 }
 
-// createToken creates a new auth token for the account and stores it in the database.
-func (s *service) createToken(account *app.Account) (string, error) {
+type accessToken struct {
+	AccountID  string
+	Role       string
+	TokenType  app.TokenType
+	TTL        time.Duration
+	SourceType app.TokenSourceType
+	SourceID   string
+}
+
+func (s *service) createAccessToken(tx *gorm.DB, spec accessToken) (*app.Token, error) {
 	now := time.Now()
-	tokenValue := domains.NewUserTokenID()
-
 	token := app.Token{
-		CreatedByID: account.ID,
-		AccountID:   account.ID,
-		Token:       tokenValue,
-		TokenType:   app.TokenTypeNuon,
-		ExpiresAt:   now.Add(time.Duration(s.cfg.NuonAuthTokenTTL) * time.Minute),
-		IssuedAt:    now,
+		Token:       domains.NewUserTokenID(),
+		TokenType:   spec.TokenType,
+		AccountID:   spec.AccountID,
+		CreatedByID: spec.AccountID,
+		Role:        spec.Role,
 		Issuer:      s.domain,
+		IssuedAt:    now,
+		ExpiresAt:   now.Add(spec.TTL),
+		SourceType:  spec.SourceType,
+		SourceID:    spec.SourceID,
+	}
+	if err := tx.Create(&token).Error; err != nil {
+		return nil, fmt.Errorf("failed to create token: %w", err)
 	}
 
-	if err := s.db.Create(&token).Error; err != nil {
-		return "", fmt.Errorf("failed to create token: %w", err)
+	return &token, nil
+}
+
+func tokenSource(sourceTokenID string) (app.TokenSourceType, string) {
+	if sourceTokenID == "" {
+		return "", ""
+	}
+	return app.TokenSourceTypeToken, sourceTokenID
+}
+
+func lockToken(tx *gorm.DB, tokenID string) error {
+	if tokenID == "" {
+		return nil
 	}
 
-	return tokenValue, nil
+	var token app.Token
+	err := tx.Clauses(clause.Locking{Strength: "SHARE"}).
+		Select("id").
+		Where(app.Token{ID: tokenID}).
+		First(&token).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return errTokenNotFound
+	}
+	return err
+}
+
+func (s *service) createToken(tx *gorm.DB, account *app.Account, sourceTokenID string) (string, error) {
+	sourceType, sourceID := tokenSource(sourceTokenID)
+	token, err := s.createAccessToken(tx, accessToken{
+		AccountID:  account.ID,
+		TokenType:  app.TokenTypeNuon,
+		TTL:        time.Duration(s.cfg.NuonAuthTokenTTL) * time.Minute,
+		SourceType: sourceType,
+		SourceID:   sourceID,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return token.Token, nil
 }
 
 // validateToken looks up a token in the database and returns the associated account info.
@@ -83,6 +132,7 @@ func (s *service) validateToken(tokenValue string) (*TokenInfo, error) {
 	}
 
 	return &TokenInfo{
+		TokenID:   token.ID,
 		AccountID: account.ID,
 		Email:     account.Email,
 		Username:  account.Email, // Account doesn't have a separate username field

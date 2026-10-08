@@ -12,7 +12,6 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -74,14 +73,12 @@ func (s *service) oauthTokenAuthorizationCode(c *gin.Context) {
 		return
 	}
 
-	// Consume the code (single use).
-	if err := s.db.WithContext(ctx).Model(&authCode).Update("consumed", true).Error; err != nil {
-		s.l.Error("failed to consume authorization code", zap.Error(err))
-		oauthError(c, http.StatusInternalServerError, "server_error", "failed to exchange code")
-		return
-	}
-
-	s.issueOAuthTokens(c, authCode.AccountID, authCode.ClientID, authCode.Scope)
+	s.redeemOAuthGrant(c, &app.OAuthAuthorizationCode{}, authCode.ID, oauthGrant{
+		AccountID:     authCode.AccountID,
+		ClientID:      authCode.ClientID,
+		Scope:         authCode.Scope,
+		SourceTokenID: authCode.SourceTokenID,
+	}, "authorization code already used")
 }
 
 func (s *service) oauthTokenRefresh(c *gin.Context) {
@@ -119,68 +116,95 @@ func (s *service) oauthTokenRefresh(c *gin.Context) {
 		return
 	}
 
-	// Rotate: consume the old refresh token before issuing a new pair.
-	if err := s.db.WithContext(ctx).Model(&refresh).Update("consumed", true).Error; err != nil {
-		s.l.Error("failed to rotate refresh token", zap.Error(err))
-		oauthError(c, http.StatusInternalServerError, "server_error", "failed to refresh")
-		return
-	}
-
-	s.issueOAuthTokens(c, refresh.AccountID, refresh.ClientID, refresh.Scope)
+	s.redeemOAuthGrant(c, &app.OAuthRefreshToken{}, refresh.ID, oauthGrant{
+		AccountID:     refresh.AccountID,
+		ClientID:      refresh.ClientID,
+		Scope:         refresh.Scope,
+		SourceTokenID: refresh.SourceTokenID,
+	}, "refresh token already used")
 }
 
-// issueOAuthTokens creates an access token (in the tokens table) and a refresh
-// token, then writes the RFC 6749 token response.
-func (s *service) issueOAuthTokens(c *gin.Context, accountID, clientID, scope string) {
-	ctx := c.Request.Context()
-	now := time.Now()
+type oauthGrant struct {
+	AccountID     string
+	ClientID      string
+	Scope         string
+	SourceTokenID string
+}
 
+var errOAuthGrantConsumed = errors.New("oauth grant already consumed")
+
+func (s *service) redeemOAuthGrant(c *gin.Context, model any, grantID string, grant oauthGrant, consumedDesc string) {
 	accessTTL := time.Duration(s.cfg.OAuthAccessTokenTTL) * time.Minute
 	refreshTTL := time.Duration(s.cfg.OAuthRefreshTokenTTL) * time.Minute
+	sourceType, sourceID := tokenSource(grant.SourceTokenID)
 
-	accessToken := app.Token{
-		Token:       domains.NewUserTokenID(),
-		TokenType:   app.TokenTypeOAuth,
-		Role:        oauthScopeToRole(scope),
-		AccountID:   accountID,
-		CreatedByID: accountID,
-		Issuer:      s.domain,
-		IssuedAt:    now,
-		ExpiresAt:   now.Add(accessTTL),
-	}
-	if err := s.db.WithContext(ctx).Create(&accessToken).Error; err != nil {
-		s.l.Error("failed to create oauth access token", zap.Error(err))
-		oauthError(c, http.StatusInternalServerError, "server_error", "failed to issue token")
+	var access *app.Token
+	var refreshValue string
+	err := s.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		if err := lockToken(tx.Unscoped(), grant.SourceTokenID); err != nil {
+			return err
+		}
+
+		res := tx.Model(model).
+			Where("id = ? AND consumed = ?", grantID, false).
+			Update("consumed", true)
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return errOAuthGrantConsumed
+		}
+
+		var err error
+		access, err = s.createAccessToken(tx, accessToken{
+			AccountID:  grant.AccountID,
+			Role:       oauthScopeToRole(grant.Scope),
+			TokenType:  app.TokenTypeOAuth,
+			TTL:        accessTTL,
+			SourceType: sourceType,
+			SourceID:   sourceID,
+		})
+		if err != nil {
+			return err
+		}
+
+		refreshValue, err = generateStateNonce()
+		if err != nil {
+			return err
+		}
+		return tx.Create(&app.OAuthRefreshToken{
+			Token:         refreshValue,
+			ClientID:      grant.ClientID,
+			Scope:         grant.Scope,
+			AccountID:     grant.AccountID,
+			ExpiresAt:     time.Now().Add(refreshTTL),
+			SourceTokenID: grant.SourceTokenID,
+		}).Error
+	})
+	if errors.Is(err, errOAuthGrantConsumed) {
+		oauthError(c, http.StatusBadRequest, "invalid_grant", consumedDesc)
 		return
 	}
-
-	refreshValue, err := generateStateNonce()
+	if errors.Is(err, errTokenNotFound) {
+		oauthError(c, http.StatusBadRequest, "invalid_grant", "credential source no longer exists")
+		return
+	}
 	if err != nil {
-		s.l.Error("failed to generate refresh token", zap.Error(err))
-		oauthError(c, http.StatusInternalServerError, "server_error", "failed to issue token")
-		return
-	}
-	refresh := app.OAuthRefreshToken{
-		Token:     refreshValue,
-		ClientID:  clientID,
-		Scope:     scope,
-		AccountID: accountID,
-		ExpiresAt: now.Add(refreshTTL),
-	}
-	if err := s.db.WithContext(ctx).Create(&refresh).Error; err != nil {
-		s.l.Error("failed to create oauth refresh token", zap.Error(err))
+		s.l.Error("failed to issue oauth tokens", zap.Error(err))
 		oauthError(c, http.StatusInternalServerError, "server_error", "failed to issue token")
 		return
 	}
 
-	s.l.Info("oauth tokens issued", zap.String("account_id", accountID), zap.String("client_id", clientID))
+	s.l.Info("oauth tokens issued", zap.String("account_id", grant.AccountID), zap.String("client_id", grant.ClientID))
 
+	c.Header("Cache-Control", "no-store")
+	c.Header("Pragma", "no-cache")
 	c.JSON(http.StatusOK, gin.H{
-		"access_token":  accessToken.Token,
+		"access_token":  access.Token,
 		"token_type":    "Bearer",
 		"expires_in":    int(accessTTL.Seconds()),
 		"refresh_token": refreshValue,
-		"scope":         scope,
+		"scope":         grant.Scope,
 	})
 }
 

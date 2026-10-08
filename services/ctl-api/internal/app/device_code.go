@@ -27,6 +27,8 @@ type DeviceCode struct {
 
 	ExpiresAt time.Time `gorm:"not null"`      // 2 min from approval
 	Consumed  bool      `gorm:"default:false"` // Token issued?
+
+	SourceTokenID string `gorm:"index" json:"-" temporaljson:"source_token_id,omitzero,omitempty"`
 }
 
 func (a *DeviceCode) BeforeCreate(tx *gorm.DB) error {

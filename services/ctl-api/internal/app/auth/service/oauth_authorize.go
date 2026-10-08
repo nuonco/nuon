@@ -163,10 +163,15 @@ func (s *service) OAuthConsent(c *gin.Context) {
 	authCode.Code = code
 	authCode.AccountID = tokenInfo.AccountID
 	authCode.Scope = scope
-	if err := s.db.WithContext(c.Request.Context()).
-		Model(&authCode).
-		Select("code", "account_id", "scope").
-		Updates(&authCode).Error; err != nil {
+	authCode.SourceTokenID = tokenInfo.TokenID
+	if err := s.db.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		if err := lockToken(tx, tokenInfo.TokenID); err != nil {
+			return err
+		}
+		return tx.Model(&authCode).
+			Select("code", "account_id", "scope", "source_token_id").
+			Updates(&authCode).Error
+	}); err != nil {
 		s.l.Error("failed to issue authorization code", zap.Error(err))
 		s.redirectOAuthError(c, authCode.RedirectURI, authCode.ClientState, "server_error", "failed to issue code")
 		return
