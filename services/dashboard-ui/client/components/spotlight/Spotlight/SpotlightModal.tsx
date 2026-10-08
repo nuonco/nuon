@@ -121,7 +121,7 @@ export const SpotlightModal = ({ orgId, onClose, onNavigate, onAddModal, ...prop
       >
         <div className="relative">
           {liveParsed.prefix && rawPrefix ? (
-            <label className="relative w-full flex items-center rounded-md border h-[36px] bg-white dark:bg-dark-grey-900">
+            <label className="relative w-full flex items-center rounded-md border !border-field-border h-[36px] bg-black/6 dark:bg-white/6">
               <Icon
                 variant="MagnifyingGlassIcon"
                 className="text-cool-grey-500 dark:text-cool-grey-700 ml-2 shrink-0"

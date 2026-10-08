@@ -101,17 +101,37 @@ Defined in `styles.css` via `@theme inline` and `:root` (light) + `prefers-color
 
 ### Semantic / theme-aware tokens (preferred over picking a raw scale step)
 - Page background: `--background` · neutral surface: `--background-neutral`
+- Elevation fills: `--elevation-0` … `--elevation-3` (utilities `bg-elevation-0` … `bg-elevation-3`)
 - Text: `--foreground`
 - Border: `--border-color` (light `#dee3e7` / dark `#27252a`)
 - Code surface: `--bg-code`
 - Brand gradient (text): `.text-gradient`
 
 ### Surface convention (light ↔ dark must always be paired)
-- Default surface: page `--background`.
+- Default surface: page `--background` (`--elevation-0`).
 - Secondary surface (e.g. table headers, subtle fills): `bg-cool-grey-100 dark:bg-dark-grey-700`.
 - Borders/separators: rely on the border token (see §4) — light `cool-grey`/dark `dark-grey` family.
 - Accent / interactive text: `text-primary-600 dark:text-primary-400`.
 - Focus ring (purple): `rgba(128,64,191,0.64)`.
+
+### Elevation
+
+A fill step, not a shadow and not a z-index. `Card`'s `shadow-sm` is unchanged. Each step moves a little away from the page — slightly darker in light mode, slightly lighter in dark mode — and stays inside the contrast of `--foreground` and `Text theme="neutral"`, and on the page side of `--border-color`, so type and dividers still read.
+
+Only the default light and dark themes step. Classic, high contrast, and monochrome keep every step equal to the page.
+
+| Step | Fill | Use |
+| --- | --- | --- |
+| `0` | Page (`--background`) | The page, and anything that should match its parent. `Card` defaults here and paints nothing, so it inherits. |
+| `1` | `--elevation-1` | A card on the page that should read as its own surface. `Card elevation="1"`. |
+| `2` | `--elevation-2` | `Panel` and `Modal`, which share one fill; the overlay and shadow separate a modal stacked on a panel. Also a card nested inside a step-1 card. |
+| `3` | `--elevation-3` | A card inside a panel or modal that needs its own fill. |
+
+- Climb one step from the parent. Page → `1`. A step-1 card → `2`. A panel or modal → `3`. A step-2 or step-3 card on the page reads as an overlay that isn't one.
+- Form fields are tinted, not filled: `bg-black/6` in light mode and `bg-white/6` in dark mode, so they sit a little darker or lighter than whatever they are on. Their border is `--field-border` (`cool-grey-400` / `dark-grey-200`), darker or lighter than that tint, because the page border token sits on top of the tint and disappears. Don't give a field an opaque dark fill; on a raised surface it reads as a hole.
+- Don't put a lower step inside a higher one. It cuts a hole back toward the page. Inside a panel or modal, leave cards at the default so they inherit that surface; separate them with spacing, type, or the border.
+- Same-step neighbors don't separate by fill. Use spacing or a border.
+- Don't fake a step with `bg-cool-grey-*` / `bg-dark-grey-*`. Use the `Card` prop or `bg-elevation-*`.
 
 ### Type
 - Sans: **Inter** (`font-sans`), Mono: **Hack** (`font-mono`).

@@ -89,9 +89,9 @@ export const ChannelSelect = ({
           {
             '!bg-cool-grey-200 text-cool-grey-500 dark:!bg-dark-grey-600 dark:text-dark-grey-900 cursor-not-allowed':
               disabled,
-            'bg-white dark:bg-dark-grey-900 text-cool-grey-900 dark:text-cool-grey-100':
+            'bg-black/6 dark:bg-white/6 text-cool-grey-900 dark:text-cool-grey-100':
               !disabled,
-            'border-cool-grey-500/24 dark:border-cool-grey-500/24': !disabled,
+            '!border-field-border': !disabled,
           }
         )}
       >
