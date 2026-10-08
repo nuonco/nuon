@@ -24,7 +24,7 @@ type Workflows struct {
 }
 
 func (w *Workflows) All() []any {
-	var wkflow ecrrepository.Wkflow
+	wkflow := ecrrepository.NewWorkflow(w.cfg)
 	wkflows := []any{
 		wkflow.ProvisionECRRepository,
 		wkflow.DeprovisionECRRepository,
