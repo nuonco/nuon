@@ -1,19 +1,16 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oauthclients"
 )
 
 // oauthIssuer returns the base URL the auth service is served at, used as the
 // OAuth 2.0 issuer identifier and to build absolute endpoint URLs.
 func (s *service) oauthIssuer() string {
-	if s.cfg.RootDomain == "localhost" {
-		return "http://localhost:8084"
-	}
-	return fmt.Sprintf("https://%s", s.domain)
+	return oauthclients.Issuer(s.cfg)
 }
 
 // oauthScopesSupported lists the scopes clients may request. They map to the

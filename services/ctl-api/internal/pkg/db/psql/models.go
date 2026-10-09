@@ -21,6 +21,7 @@ func AllModels() []any {
 		&app.DeviceCode{},
 		&app.OIDCTrustPolicy{},
 		&app.OAuthClient{},
+		&app.OAuthClientSecret{},
 		&app.OAuthAuthorizationCode{},
 		&app.OAuthRefreshToken{},
 

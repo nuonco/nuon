@@ -426,13 +426,8 @@ func (s *service) DeleteServiceAccount(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.authzClient.RemoveAccountOrgRoles(ctx, org.ID, acct.ID); err != nil {
-		ctx.Error(fmt.Errorf("unable to remove roles: %w", err))
-		return
-	}
-
-	if err := s.acctClient.InvalidateTokens(ctx, acct.Email); err != nil {
-		ctx.Error(fmt.Errorf("unable to invalidate tokens: %w", err))
+	if err := s.acctClient.RemoveServiceAccountFromOrg(ctx.Request.Context(), org.ID, acct.ID); err != nil {
+		ctx.Error(fmt.Errorf("unable to remove service account: %w", err))
 		return
 	}
 

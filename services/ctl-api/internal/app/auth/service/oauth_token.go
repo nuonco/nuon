@@ -16,15 +16,32 @@ import (
 )
 
 // OAuthToken handles POST /oauth/token — the OAuth 2.0 token endpoint (RFC 6749).
-// Supports the authorization_code grant (with PKCE) and the refresh_token grant.
+// Supports public authorization_code/refresh_token grants and service-account
+// client_credentials grants authenticated with client_secret_basic.
 func (s *service) OAuthToken(c *gin.Context) {
-	switch c.PostForm("grant_type") {
+	grantType := c.PostForm("grant_type")
+	if (grantType == "authorization_code" || grantType == "refresh_token") && c.PostForm("client_id") != "" {
+		var client app.OAuthClient
+		err := s.db.WithContext(c.Request.Context()).Where(app.OAuthClient{ID: c.PostForm("client_id")}).First(&client).Error
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			s.l.Error("failed to look up oauth client", zap.Error(err))
+			oauthError(c, http.StatusInternalServerError, "server_error", "failed to exchange token")
+			return
+		}
+		if err == nil && client.TokenEndpointAuthMethod == app.OAuthTokenEndpointAuthMethodClientSecretBasic {
+			oauthError(c, http.StatusBadRequest, "unauthorized_client", "client only supports client_credentials")
+			return
+		}
+	}
+	switch grantType {
 	case "authorization_code":
 		s.oauthTokenAuthorizationCode(c)
 	case "refresh_token":
 		s.oauthTokenRefresh(c)
+	case app.OAuthGrantTypeClientCredentials:
+		s.oauthTokenClientCredentials(c)
 	default:
-		oauthError(c, http.StatusBadRequest, "unsupported_grant_type", "grant_type must be authorization_code or refresh_token")
+		oauthError(c, http.StatusBadRequest, "unsupported_grant_type", "grant_type must be authorization_code, refresh_token, or client_credentials")
 	}
 }
 

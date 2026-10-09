@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -16,6 +17,12 @@ func revokeAccountCredentials(tx *gorm.DB, accountID string) error {
 		Where(app.Account{ID: accountID}).
 		First(&acct).Error; err != nil {
 		return errors.Wrap(err, "unable to lock account for revocation")
+	}
+
+	clients := tx.Model(&app.OAuthClient{}).
+		Select("id").Where(app.OAuthClient{AccountID: generics.NewNullString(accountID)})
+	if res := tx.Where("client_id IN (?)", clients).Delete(&app.OAuthClientSecret{}); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to revoke account oauth client secrets")
 	}
 
 	if res := tx.Where(app.Token{AccountID: accountID}).Delete(&app.Token{}); res.Error != nil {
