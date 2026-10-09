@@ -17,6 +17,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
@@ -307,4 +308,73 @@ func (s *AuthStateTestSuite) TestAuthStateRedirectFlow() {
 		// This will fail at OAuth token exchange in test
 		s.T().Logf("Response: code=%d", rr.Code)
 	})
+}
+
+type fakeMailchimp struct {
+	emails []string
+	err    error
+}
+
+func (f *fakeMailchimp) UpsertListMember(_ context.Context, email string) error {
+	f.emails = append(f.emails, email)
+	return f.err
+}
+
+func TestRecordMarketingConsent(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err)
+
+	// Hand-written minimal schema: the Account model's Postgres-specific tags break
+	// AutoMigrate on sqlite (see conventions/testing.md).
+	require.NoError(t, db.Exec(`CREATE TABLE accounts (
+		id TEXT PRIMARY KEY,
+		updated_at DATETIME,
+		deleted_at INTEGER NOT NULL DEFAULT 0,
+		marketing_consent BOOLEAN NOT NULL DEFAULT FALSE
+	)`).Error)
+	require.NoError(t, db.Exec(`INSERT INTO accounts (id) VALUES ('acct-1')`).Error)
+
+	mc := &fakeMailchimp{}
+	svc := &service{db: db, l: zap.NewNop(), mailchimp: mc}
+
+	consent := func() bool {
+		var got bool
+		require.NoError(t, db.Raw(`SELECT marketing_consent FROM accounts WHERE id = 'acct-1'`).Scan(&got).Error)
+		return got
+	}
+
+	svc.recordMarketingConsent(context.Background(), &SessionData{MarketingConsent: false}, &app.Account{ID: "acct-1", Email: "acct-1@example.com"})
+	assert.False(t, consent(), "unchecked box must not set consent")
+	assert.Empty(t, mc.emails, "unchecked box must not sync to mailchimp")
+
+	svc.recordMarketingConsent(context.Background(), &SessionData{MarketingConsent: true}, &app.Account{ID: "acct-1", Email: "acct-1@example.com"})
+	assert.True(t, consent(), "checked box must set consent")
+	assert.Equal(t, []string{"acct-1@example.com"}, mc.emails, "checked box must sync to mailchimp")
+
+	svc.recordMarketingConsent(context.Background(), &SessionData{MarketingConsent: false}, &app.Account{ID: "acct-1", MarketingConsent: true, Email: "acct-1@example.com"})
+	assert.True(t, consent(), "an unchecked box on a later login is not a revocation")
+	assert.Len(t, mc.emails, 1, "already-consented accounts must not re-sync")
+}
+
+func TestRecordMarketingConsentMailchimpErrorIsBestEffort(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err)
+
+	require.NoError(t, db.Exec(`CREATE TABLE accounts (
+		id TEXT PRIMARY KEY,
+		updated_at DATETIME,
+		deleted_at INTEGER NOT NULL DEFAULT 0,
+		marketing_consent BOOLEAN NOT NULL DEFAULT FALSE
+	)`).Error)
+	require.NoError(t, db.Exec(`INSERT INTO accounts (id) VALUES ('acct-1')`).Error)
+
+	mc := &fakeMailchimp{err: fmt.Errorf("mailchimp is down")}
+	svc := &service{db: db, l: zap.NewNop(), mailchimp: mc}
+
+	svc.recordMarketingConsent(context.Background(), &SessionData{MarketingConsent: true}, &app.Account{ID: "acct-1", Email: "acct-1@example.com"})
+
+	var got bool
+	require.NoError(t, db.Raw(`SELECT marketing_consent FROM accounts WHERE id = 'acct-1'`).Scan(&got).Error)
+	assert.True(t, got, "a mailchimp failure must not lose the consent bit")
+	assert.Len(t, mc.emails, 1)
 }
