@@ -283,7 +283,6 @@ export const ConfigUnparseable = () => (
     }}
     changes={
       <ConfigParseFailure
-        title="Template and source changes"
         lines={[
           'components/api.toml: unable to parse configuration file: toml: line 4: expected key but found end of file',
           'components/worker.toml: image is required',

@@ -1,0 +1,121 @@
+---
+title: "Setup"
+description: "Sign in and register the Nuon MCP server with your LLM client."
+icon: "gear"
+keywords: ["MCP", "agents", "Claude Code", "Cursor", "Amp", "nuon agents mcp"]
+---
+
+## Prerequisites
+
+Sign in. This writes the token every setup below reads:
+
+```bash
+nuon auth login    # writes api_token to ~/.nuon
+```
+
+`nuon agents help` prints this page, checked against your own config. When an agent runs that command, it prints markdown instead.
+
+## Connect
+
+**Recommended:** register the stdio proxy so the client runs `nuon agents mcp --allow-writes`. Token and org stay in `~/.nuon`, so nothing secret goes into the client config. The proxy derives its URL from the configured API hostname (`api.<hostname>` becomes `mcp.<hostname>/mcp`) and registers as `nuon`.
+
+### Setup (stdio)
+
+Each client has its own config file, JSON key, and (sometimes) an add command. Check that client's MCP docs rather than assuming a shared schema. The process every client should spawn is `nuon` with arguments `agents`, `mcp`, and `--allow-writes`.
+
+Examples include `--allow-writes` so mutating tools are available. That flag only lists write tools; the identity still needs [Admin](/concepts/access-control) (`org_admin`), not Read-only. Omit the flag only if you want a read-only proxy.
+
+You do not need `select_org` when the org is already in the CLI config (the stdio proxy sends `X-Nuon-Org-ID`).
+
+#### Claude Code
+
+```bash
+claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes
+```
+
+Or `.mcp.json` in a project:
+
+```json
+{
+  "mcpServers": {
+    "nuon": {
+      "command": "nuon",
+      "args": ["agents", "mcp", "--allow-writes"]
+    }
+  }
+}
+```
+
+#### Cursor
+
+Cursor has no `mcp add`. Save this as `~/.cursor/mcp.json` (all projects) or `.cursor/mcp.json` (one project), then enable it:
+
+```json
+{
+  "mcpServers": {
+    "nuon": {
+      "command": "nuon",
+      "args": ["agents", "mcp", "--allow-writes"]
+    }
+  }
+}
+```
+
+```bash
+agent mcp enable nuon
+```
+
+#### Amp
+
+```bash
+amp mcp add nuon -- nuon agents mcp --allow-writes
+
+# this workspace only
+amp mcp add nuon --workspace -- nuon agents mcp --allow-writes
+```
+
+Or `~/.config/amp/settings.json` (user) / `.amp/settings.json` (workspace). Amp's key is `amp.mcpServers`:
+
+```json
+{
+  "amp.mcpServers": {
+    "nuon": {
+      "command": "nuon",
+      "args": ["agents", "mcp", "--allow-writes"]
+    }
+  }
+}
+```
+
+#### Other clients
+
+Use that client's MCP docs for the file path and JSON key. Point it at the `nuon` binary with arguments `agents`, `mcp`, and `--allow-writes`.
+
+### Overriding the MCP URL
+
+The proxy derives its upstream URL from `api_url` in your CLI config when the hostname starts with `api.` or `app.` (`https://api.nuon.co` and `https://app.nuon.co` both resolve to `https://mcp.nuon.co/mcp`). Pass `--url` when the MCP URL does not follow from the API URL, for example a self-hosted or Nuon BYOC control plane, or any deployment where the two hostnames differ. To change the name in the client's MCP list, pass `--name`. Put those flags on the command the client runs, next to `--allow-writes`:
+
+```bash
+nuon agents mcp --allow-writes --url https://mcp.example.nuon.co/mcp --name nuon-example
+claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes --url https://mcp.example.nuon.co/mcp --name nuon-example
+amp mcp add nuon -- nuon agents mcp --allow-writes --url https://mcp.example.nuon.co/mcp --name nuon-example
+```
+
+For a client configured by file, extra flags go inside `args`. Use that client's JSON key (examples above):
+
+```json
+{
+  "mcpServers": {
+    "nuon": {
+      "command": "nuon",
+      "args": ["agents", "mcp", "--allow-writes", "--url", "https://mcp.example.nuon.co/mcp"]
+    }
+  }
+}
+```
+
+A non-default CLI config (`nuon -C /path/to/config agents mcp --allow-writes`) carries its own token, org, and `api_url`. Put `-C` and `--allow-writes` on the registered command (in `args` when the client is configured by file).
+
+Run `nuon agents help` to confirm which MCP URL resolves before registering.
+
+After the client is connected, paste a first prompt from [Sample queries](/guides/agents/sample-queries).

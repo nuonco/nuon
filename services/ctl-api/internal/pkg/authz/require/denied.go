@@ -1,4 +1,4 @@
-package org
+package require
 
 import (
 	"fmt"
@@ -9,10 +9,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
-// permissionDeniedError phrases a 403 in terms of the access level the
+// PermissionDeniedError phrases a 403 in terms of the access level the
 // request needs rather than the raw permission key, so the message reads
 // sensibly from any action that triggered the check.
-func permissionDeniedError(acct *app.Account, orgID string, perm permissions.Permission, scope string) stderr.ErrAuthorization {
+func PermissionDeniedError(acct *app.Account, orgID string, perm permissions.Permission, scope string) stderr.ErrAuthorization {
 	level := "write"
 	if perm == permissions.PermissionRead {
 		level = "read"
@@ -54,10 +54,10 @@ var scopeOverrides = map[string]string{
 	"vcs":                   "VCS connections in this organization",
 }
 
-// scopeFromPath derives the denied-error scope from the route, naming the
+// ScopeFromPath derives the denied-error scope from the route, naming the
 // resource the request operates on: /v1/service-accounts/:id becomes
 // "service accounts in this organization".
-func scopeFromPath(fullPath string) string {
+func ScopeFromPath(fullPath string) string {
 	path, ok := strings.CutPrefix(fullPath, "/v1/")
 	if !ok || path == "" {
 		return "this organization"

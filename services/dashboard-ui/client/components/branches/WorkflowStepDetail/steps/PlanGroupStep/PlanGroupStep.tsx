@@ -26,6 +26,12 @@ export interface PlanInstallDiff {
   sections: DiffSectionData[]
   summary: { added: number; removed: number; changed: number } | null
   isLoading?: boolean
+  versionLabel?: string
+  previousSha?: string
+  sha?: string
+  message?: string
+  author?: string
+  createdAt?: string
 }
 
 const INSTALL_CARD =

@@ -1,9 +1,12 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { Badge } from '@/components/common/Badge'
+import { Icon } from '@/components/common/Icon'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Tooltip } from '@/components/common/Tooltip'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Panel } from '@/components/surfaces/Panel'
+import { useSurfaces } from '@/hooks/use-surfaces'
 import { cn } from '@/utils/classnames'
 import type {
   TTrackGroup,
@@ -48,10 +51,31 @@ const InstallGroupCard = ({
 }) => {
   const installs = withQueuedInstalls(group.installs, group.plannedCount)
   const cadence = pace(group)
+  const panelKey = `install-group-${group.id}`
+  const { updatePanel, panels } = useSurfaces()
+  const openPanelId =
+    panels.find((panel) => panel?.key === panelKey && panel.isVisible)?.id ??
+    null
+  const needsApproval = approval ? '1' : '0'
+
+  useEffect(() => {
+    if (!openPanelId) return
+    updatePanel(
+      openPanelId,
+      <Panel panelKey={panelKey} size="half" heading={group.name}>
+        <InstallGroupPanelBody
+          group={group}
+          commit={commit}
+          approval={approval}
+          onSelectInstall={onSelectInstall}
+        />
+      </Panel>
+    )
+  }, [openPanelId, needsApproval, updatePanel])
 
   return (
     <Panel
-      panelKey={`install-group-${group.id}`}
+      panelKey={panelKey}
       size="half"
       heading={group.name}
       triggerButton={{
@@ -73,6 +97,12 @@ const InstallGroupCard = ({
               </span>
               <span className="flex shrink-0 items-center gap-3">
                 {commit ? <CommitRange commit={commit} /> : null}
+                {approval ? (
+                  <Badge size="sm" theme="warn">
+                    <Icon variant="ListChecksIcon" size={12} />
+                    Needs approval
+                  </Badge>
+                ) : null}
                 <Status status={group.status} />
               </span>
             </div>
