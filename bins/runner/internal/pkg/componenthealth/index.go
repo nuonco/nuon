@@ -99,6 +99,20 @@ func (i *index) componentsOfType(componentType string) []string {
 	return out
 }
 
+// helmNamespaces returns the configured namespace of every chart component.
+func (i *index) helmNamespaces() []string {
+	i.mu.RLock()
+	defer i.mu.RUnlock()
+
+	out := make([]string, 0, len(i.components))
+	for _, e := range i.components {
+		if e.helmNamespace != "" {
+			out = append(out, e.helmNamespace)
+		}
+	}
+	return out
+}
+
 // probeTargets returns the declared probes per component id.
 func (i *index) probeTargets() map[string][]probeSpec {
 	i.mu.RLock()

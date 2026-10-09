@@ -29,11 +29,13 @@ type warningEvent struct {
 // latestWarnings returns, keyed by resource identity, the resources whose latest
 // recent event is a Warning — surfacing controller-side failures that never
 // show in the object's own status. Listed on demand, no informer or cache.
-func (e *Engine) latestWarnings(ctx context.Context, dynClient dynamic.Interface) map[string]warningEvent {
-	list, err := dynClient.Resource(eventsGVR).List(ctx, metav1.ListOptions{FieldSelector: "type=Warning"})
+func (e *Engine) latestWarnings(ctx context.Context, dynClient dynamic.Interface, namespaces []string) map[string]warningEvent {
+	items, err := listScoped(ctx, dynClient, eventsGVR, metav1.ListOptions{FieldSelector: "type=Warning"}, namespaces)
 	if err != nil {
 		e.l.Warn("unable to list warning events for component health", zap.Error(err))
-		return nil
+		if len(items) == 0 {
+			return nil
+		}
 	}
 
 	cutoff := time.Now().Add(-eventWarningWindow)
@@ -43,8 +45,8 @@ func (e *Engine) latestWarnings(ctx context.Context, dynClient dynamic.Interface
 		message string
 	}
 	byObject := map[string]latest{}
-	for i := range list.Items {
-		u := &list.Items[i]
+	for i := range items {
+		u := &items[i]
 		key, ok := eventObjectKey(u)
 		if !ok {
 			continue

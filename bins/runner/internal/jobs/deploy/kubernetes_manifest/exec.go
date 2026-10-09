@@ -70,7 +70,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	// resources is invisible to health otherwise, since nothing knows to list
 	// them.
 	if h.manifestKinds != nil {
-		h.manifestKinds.Set(h.state.plan.ComponentID, h.state.plan.KubernetesManifestDeployPlan.Manifest)
+		h.manifestKinds.Set(h.state.plan.ComponentID, h.state.plan.KubernetesManifestDeployPlan.Manifest, h.state.plan.KubernetesManifestDeployPlan.Namespace)
 	}
 
 	l.Debug("Starting Exec function",
