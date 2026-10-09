@@ -54,6 +54,8 @@ type Settings struct {
 	ContainerImageVerificationMode        string
 	ContainerImageSignatureIssuer         string
 	ContainerImageSignatureIdentityRegexp string
+	// short-lived credentials for pulling the runner image from a private registry
+	ContainerImageRegistryAuth *RegistryAuth
 
 	// platform
 	Platform string
@@ -89,4 +91,11 @@ func New(params Params) (*Settings, error) {
 	}
 
 	return settings, nil
+}
+
+type RegistryAuth struct {
+	Registry  string
+	Username  string
+	Password  string
+	ExpiresAt time.Time
 }

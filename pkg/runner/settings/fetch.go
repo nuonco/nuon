@@ -40,6 +40,16 @@ func (s *Settings) fetch(ctx context.Context) error {
 	s.ContainerImageVerificationMode = settings.ContainerImageVerificationMode
 	s.ContainerImageSignatureIssuer = settings.ContainerImageSignatureIssuer
 	s.ContainerImageSignatureIdentityRegexp = settings.ContainerImageSignatureIdentityRegexp
+	s.ContainerImageRegistryAuth = nil
+	if auth := settings.ContainerImageRegistryAuth; auth != nil {
+		expiresAt, _ := time.Parse(time.RFC3339Nano, auth.ExpiresAt)
+		s.ContainerImageRegistryAuth = &RegistryAuth{
+			Registry:  auth.Registry,
+			Username:  auth.Username,
+			Password:  auth.Password,
+			ExpiresAt: expiresAt,
+		}
+	}
 
 	// NOTE: we add a few additional fields into the metadata so they appear on all tags, but can not be set by the
 	// API.
