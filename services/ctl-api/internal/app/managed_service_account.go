@@ -13,7 +13,10 @@ import (
 
 type ManagedServiceAccountPurpose string
 
-const ManagedServiceAccountPurposeStack ManagedServiceAccountPurpose = "stack"
+const (
+	ManagedServiceAccountPurposeStack              ManagedServiceAccountPurpose = "stack"
+	ManagedServiceAccountPurposeTelemetryCollector ManagedServiceAccountPurpose = "telemetry_collector"
+)
 
 type ManagedServiceAccount struct {
 	AccountID string  `gorm:"primarykey" json:"account_id,omitzero" temporaljson:"account_id,omitzero,omitempty"`
