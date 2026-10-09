@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
-import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
@@ -18,6 +17,8 @@ import {
   isAwaitingDeploymentRetry,
   isDeploymentRunning,
 } from '@/components/installs/DeploymentDetail/deployment-progress'
+import type { TWorkflow } from '@/types'
+import { DeploymentViewDetails } from './DeploymentActions'
 
 export const DeploymentCard = ({
   run,
@@ -26,6 +27,7 @@ export const DeploymentCard = ({
   createdAt,
   href,
   onViewDetails,
+  workflow,
   children,
 }: {
   run: TDeploymentRun
@@ -34,6 +36,7 @@ export const DeploymentCard = ({
   createdAt: string
   href: string
   onViewDetails: () => void
+  workflow?: TWorkflow
   children?: ReactNode
 }) => {
   const awaiting =
@@ -139,9 +142,10 @@ export const DeploymentCard = ({
             </span>
           ))}
         </div>
-        <Button variant="secondary" onClick={onViewDetails}>
-          View details
-        </Button>
+        <DeploymentViewDetails
+          workflow={workflow}
+          onViewDetails={onViewDetails}
+        />
       </div>
     </Card>
   )

@@ -40,6 +40,7 @@ export const CancelWorkflowModalContainer = ({
       )
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
       queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
+      queryClient.invalidateQueries({ queryKey: ['install-deployments'] })
       removeModal(props.modalId)
     },
     onError: (err) => {

@@ -1,7 +1,5 @@
 import type { ReactNode } from 'react'
-import { Button } from '@/components/common/Button'
 import { Link } from '@/components/common/Link'
-import { Icon } from '@/components/common/Icon'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -15,6 +13,8 @@ import {
   isAwaitingDeploymentApproval,
   isDeploymentRunning,
 } from '@/components/installs/DeploymentDetail/deployment-progress'
+import type { TWorkflow } from '@/types'
+import { DeploymentViewDetails } from './DeploymentActions'
 
 interface IDeploymentRow {
   run: TDeploymentRun
@@ -22,6 +22,7 @@ interface IDeploymentRow {
   createdAt: string
   href: string
   onViewDetails: () => void
+  workflow?: TWorkflow
   children?: ReactNode
   scale?: 'auto' | 'comfortable' | 'compact'
   history?: boolean
@@ -33,6 +34,7 @@ export const DeploymentRow = ({
   createdAt,
   href,
   onViewDetails,
+  workflow,
   children,
   scale = 'auto',
   history = false,
@@ -76,13 +78,11 @@ export const DeploymentRow = ({
             {children}
           </div>
           <ResourceScopeSummary run={run} />
-          <Button
+          <DeploymentViewDetails
             className="justify-self-end"
-            variant="secondary"
-            onClick={onViewDetails}
-          >
-            View details
-          </Button>
+            workflow={workflow}
+            onViewDetails={onViewDetails}
+          />
         </div>
       </article>
     )
@@ -152,9 +152,12 @@ export const DeploymentRow = ({
             <ResourceScopeSummary run={run} />
           </div>
           <div className="density-action">
-            <Button size="lg" variant="secondary" onClick={onViewDetails}>
-              View details <Icon variant="ArrowRightIcon" size={18} />
-            </Button>
+            <DeploymentViewDetails
+              workflow={workflow}
+              onViewDetails={onViewDetails}
+              size="lg"
+              showArrow
+            />
           </div>
         </div>
       </div>
