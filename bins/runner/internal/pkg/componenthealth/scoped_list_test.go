@@ -199,3 +199,13 @@ func TestManifestKindsRendersInSurvivesRestart(t *testing.T) {
 	assert.True(t, restored.RendersIn("control", ingress))
 	assert.False(t, restored.RendersIn("apps", ingress))
 }
+
+func TestManifestKindsRendersInLegacyEntries(t *testing.T) {
+	cluster := NewClusterProvider(ProviderParams{L: zap.NewNop()})
+	cluster.SetComponentKinds([]string{"cmp-1|apps/v1/Deployment", namespaceEntryPrefix + "cmp-1|web"})
+	p := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: cluster})
+	p.Load()
+
+	assert.True(t, p.RendersIn("web", schema.GroupKind{Group: "apps", Kind: "Deployment"}))
+	assert.False(t, p.RendersIn("web", schema.GroupKind{Group: "apps", Kind: "StatefulSet"}))
+}
