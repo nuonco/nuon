@@ -964,6 +964,18 @@ export type TStackServiceAccount =
 export type TWaitlist = components['schemas']['app.Waitlist']
 
 export type TAccount = components['schemas']['app.Account'] & { name?: string }
+
+export type TServiceAccountManagement = 'user' | 'system' | 'all'
+
+export type TServiceAccountOwnership =
+  components['schemas']['service.ServiceAccountOwnership']
+
+export type TServiceAccount = Omit<
+  components['schemas']['service.ServiceAccount'],
+  'managed_service_account'
+> & {
+  managed_service_account?: TServiceAccountOwnership | null
+}
 export type TInvite = components['schemas']['app.OrgInvite']
 
 export interface TStaticToken {
