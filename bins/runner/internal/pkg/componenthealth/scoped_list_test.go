@@ -89,3 +89,20 @@ func TestManifestKindsNamespaces(t *testing.T) {
 	p.Set("cmp-a", "", "app")
 	assert.Equal(t, []string{"tf-ns"}, p.Namespaces(), "an empty manifest clears the component's namespaces")
 }
+
+func TestRequiredKind(t *testing.T) {
+	statefulsets := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "statefulsets"}
+	pods := schema.GroupVersionResource{Version: "v1", Resource: "pods"}
+	nodePools := schema.GroupVersionResource{Group: "karpenter.sh", Version: "v1", Resource: "nodepools"}
+
+	p := NewManifestKindsProvider(ManifestKindsProviderParams{})
+	e := &Engine{manifestKinds: p}
+
+	assert.True(t, e.requiredKind(statefulsets), "nothing recorded yet means nothing can be ruled out")
+
+	p.Set("cmp-a", "---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: api\n", "app")
+	assert.True(t, e.requiredKind(deploymentsGVR), "a rendered kind is required")
+	assert.False(t, e.requiredKind(statefulsets), "a core kind nothing renders is not")
+	assert.True(t, e.requiredKind(pods), "pods are always required")
+	assert.True(t, e.requiredKind(nodePools), "discovered kinds are rendered by definition")
+}
