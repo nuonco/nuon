@@ -26,6 +26,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 	controlplanemetrics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/productanalytics"
 )
 
 type Params struct {
@@ -38,6 +39,7 @@ type Params struct {
 	Cfg         *internal.Config
 	MW          metrics.Writer
 	HTTPMetrics *controlplanemetrics.HTTPMetrics
+	Analytics   *productanalytics.Client
 	Services    []api.Service `group:"services"`
 }
 
@@ -102,6 +104,7 @@ func New(params Params) *Server {
 		params.Cfg,
 		params.MW,
 		params.HTTPMetrics,
+		params.Analytics,
 		mcpServices,
 		params.Cfg.MCPHTTPPort,
 		"nuon-ctl",
@@ -120,6 +123,7 @@ func NewNuonctl(params NuonctlParams) *Server {
 		params.Cfg,
 		params.MW,
 		params.HTTPMetrics,
+		nil,
 		params.Services,
 		params.Cfg.NuonctlMCPHTTPPort,
 		"nuonctl",
@@ -137,6 +141,7 @@ func newServer(
 	cfg *internal.Config,
 	mw metrics.Writer,
 	httpMetrics *controlplanemetrics.HTTPMetrics,
+	analyticsClient *productanalytics.Client,
 	mcpServices []api.MCPService,
 	port string,
 	implementationName string,
@@ -160,11 +165,7 @@ func newServer(
 		stopJanitor:        make(chan struct{}),
 	}
 
-	if !requireEmployee {
-		ph, err := newPostHogClient(cfg.PostHogKey, cfg.PostHogHost)
-		if err != nil {
-			s.l.Error("unable to create posthog client, MCP analytics disabled", zap.Error(err))
-		}
+	if ph := analyticsClient.PostHog(); ph != nil && !requireEmployee {
 		s.posthog = ph
 		s.posthogMiddleware = s.newPostHogMiddleware()
 	}
@@ -197,13 +198,7 @@ func newServer(
 		OnStop: func(ctx context.Context) error {
 			s.l.Info("stopping MCP server")
 			close(s.stopJanitor)
-			err := s.httpServer.Shutdown(ctx)
-			if s.posthog != nil {
-				if cerr := s.posthog.Close(); cerr != nil {
-					s.l.Warn("unable to flush posthog events", zap.Error(cerr))
-				}
-			}
-			return err
+			return s.httpServer.Shutdown(ctx)
 		},
 	})
 

@@ -31,6 +31,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/notifications"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/productanalytics"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
@@ -160,6 +161,7 @@ var InfrastructureModule = fx.Module("infrastructure",
 	fx.Provide(account.New),
 	fx.Provide(analytics.New),
 	fx.Provide(analytics.NewTemporal),
+	fx.Provide(productanalytics.New),
 	fx.Provide(cloudformation.NewTemplates),
 	fx.Provide(arm.NewTemplates),
 	fx.Provide(secretsmanager.NewService),

@@ -98,6 +98,21 @@ can be helpful to share with us, while debugging any issues.
 NUON_DEBUG=true nuon apps list
 ```
 
+### Usage telemetry
+
+After each command, the CLI reports usage to the Nuon control plane it is logged into. The report contains the command
+path without arguments or flag values, the CLI version, whether the command succeeded, how long it took, and the
+operating system and architecture. The control plane records it only when it has product analytics configured.
+
+To turn this off, set either environment variable:
+
+```bash
+export DO_NOT_TRACK=1
+export NUON_DISABLE_TELEMETRY=true
+```
+
+Or add `disable_telemetry: true` to your CLI config file.
+
 ### Using the CLI against a BYOC Instance
 
 If you are using a Nuon BYOC instance, i.e., a self-hosted Nuon control plane running in your own infrastructure, you

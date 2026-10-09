@@ -1,0 +1,1 @@
+Records one CLI command run (command path without arguments, CLI version, outcome, duration, OS and architecture) for product analytics. The CLI skips this call when telemetry is disabled with `DO_NOT_TRACK=1`, `NUON_DISABLE_TELEMETRY=true` or `disable_telemetry: true` in the CLI config. The event is dropped when the control plane has no analytics key configured.
