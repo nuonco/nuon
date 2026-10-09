@@ -505,7 +505,7 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 				BuildID:                     buildID,
 				ComponentConfigConnectionID: pinnedCCCID(dg, compID),
 				Role:                        dg.flw.Role,
-			}, dg.flw.PlanOnly, WithSkippable(false))
+			}, dg.flw.PlanOnly)
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create image sync")
 			}
