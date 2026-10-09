@@ -102,8 +102,14 @@ export const NEW_INSTALL_NAV_LINKS: TNavItem[] = [
 const NEW_INSTALL_TAB_SECTIONS = ['resources', 'operations', 'configuration']
 
 const InstallTemplate = () => {
-  const { org, install, labelColors, refresh, href, nested: hasNewInstallIA } =
-    useInstallPage()
+  const {
+    org,
+    install,
+    labelColors,
+    refresh,
+    href,
+    nested: hasNewInstallIA,
+  } = useInstallPage()
   const { pathname } = useLocation()
   const hasNotebooks = !!org?.features?.notebooks
   const installBasePath = href()
@@ -228,13 +234,16 @@ const InstallTemplate = () => {
   return (
     <>
       <InstallSettingsPanel />
-      <PageLayout>
+      <PageLayout
+        className={hasNewInstallIA ? '[container-type:size]' : undefined}
+      >
         {isChildRoute ? (
           <PageContent className="border-t" variant="row">
             <SubNav
               basePath={installBasePath}
               links={navLinks}
               storageKey="subnav:install"
+              sticky={hasNewInstallIA}
             />
             <div className="flex flex-col flex-1 min-w-0">
               <ErrorBoundary key={pathname} fallback={<InstallContentError />}>
@@ -331,6 +340,7 @@ const InstallTemplate = () => {
                 basePath={installBasePath}
                 links={navLinks}
                 storageKey="subnav:install"
+                sticky={hasNewInstallIA}
               />
               <div className="flex flex-col flex-1 min-w-0">
                 <ErrorBoundary
