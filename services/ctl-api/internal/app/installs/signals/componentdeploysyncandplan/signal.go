@@ -87,7 +87,10 @@ var (
 	_ signal.SignalWithAutoApproveOnPoliciesPassing = (*Signal)(nil)
 	_ signal.SignalWithOnRetry                      = (*Signal)(nil)
 	_ signal.SignalWithApprovalValidation           = (*Signal)(nil)
+	_ signal.SignalWithSkipGroup                    = (*Signal)(nil)
 )
+
+func (s *Signal) SkipGroup() bool { return true }
 
 func (s *Signal) ValidateApproval(ctx workflow.Context) error {
 	if s.DeployID == "" {

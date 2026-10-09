@@ -10,6 +10,7 @@ import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
+import { DeploymentDetailLoading } from './DeploymentDetailLoading'
 import {
   DeploymentAlerts,
   DeploymentChangesContent,
@@ -164,9 +165,30 @@ const WorkflowDeploymentPanelContent = (props: IDeploymentDetailPanel) => {
   return <DeploymentPanelContent {...props} workflow={workflow} />
 }
 
+export type TDeploymentDetailBody = Pick<
+  IDeploymentDetailPanel,
+  'deployment' | 'orgId' | 'appId' | 'installId' | 'repo'
+>
+
+export const DeploymentDetailBody = (props: TDeploymentDetailBody) => (
+  <WorkflowProvider
+    workflowId={props.deployment.id}
+    shouldPoll
+    loadingElement={
+      <DeploymentDetailLoading
+        activity={props.deployment.activity}
+        createdAt={props.deployment.created_at}
+        id={props.deployment.id}
+        status={props.deployment.status}
+      />
+    }
+  >
+    <WorkflowDeploymentPanelContent {...props} />
+  </WorkflowProvider>
+)
+
 export const DeploymentDetailPanel = (props: IDeploymentDetailPanel) => {
   const { deployment, orgId, appId, installId, repo, ...panelProps } = props
-  const detailProps = { deployment, orgId, appId, installId, repo }
   return (
     <Panel
       heading={deployment.title}
@@ -174,9 +196,13 @@ export const DeploymentDetailPanel = (props: IDeploymentDetailPanel) => {
       aria-label="Deployment details"
       {...panelProps}
     >
-      <WorkflowProvider workflowId={deployment.id} shouldPoll>
-        <WorkflowDeploymentPanelContent {...detailProps} />
-      </WorkflowProvider>
+      <DeploymentDetailBody
+        deployment={deployment}
+        orgId={orgId}
+        appId={appId}
+        installId={installId}
+        repo={repo}
+      />
     </Panel>
   )
 }

@@ -42,7 +42,8 @@ export const InstallComponentLatestDeploy = ({
 
   const latestDeploy = installComponent?.install_deploys?.[0]
   const build = showBuild ? latestDeploy?.component_build : undefined
-  const title = heading ?? (variant === 'sync' ? 'Latest sync' : 'Latest deploy')
+  const title =
+    heading ?? (variant === 'sync' ? 'Latest sync' : 'Latest deploy')
 
   return (
     <>
@@ -63,7 +64,11 @@ export const InstallComponentLatestDeploy = ({
           }
           href={
             latestDeploy?.id
-              ? installLink({ installId: install?.id, appId: install?.app_id, suffix: `/components/${componentId}/deploys/${latestDeploy.id}` })
+              ? installLink({
+                  installId: install?.id,
+                  appId: install?.app_id,
+                  suffix: `/components/${componentId}/deploys/${latestDeploy.id}`,
+                })
               : undefined
           }
         />

@@ -3,6 +3,7 @@ package permissions
 type ResourceKind string
 
 const (
+	KindOrg     ResourceKind = "org"
 	KindApp     ResourceKind = "app"
 	KindInstall ResourceKind = "install"
 	KindStack   ResourceKind = "stack"

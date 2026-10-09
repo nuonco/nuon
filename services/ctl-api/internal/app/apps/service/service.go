@@ -16,6 +16,7 @@ import (
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -285,7 +286,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
-	api.GET("/v1/apps/:app_id/config/:app_config_id", s.GetRunnerAppConfig)
+	require.OrgRoute(api).GET("/v1/apps/:app_id/config/:app_config_id", s.GetRunnerAppConfig)
 	return nil
 }
 

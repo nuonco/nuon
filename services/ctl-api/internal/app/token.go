@@ -25,6 +25,10 @@ const (
 	TokenTypeOAuth       TokenType = "oauth"
 )
 
+type TokenSourceType string
+
+const TokenSourceTypeToken TokenSourceType = "token"
+
 type Token struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -47,6 +51,9 @@ type Token struct {
 	ExpiresAt time.Time `json:"expires_at,omitzero" gorm:"notnull" temporaljson:"expires_at,omitzero,omitempty"`
 	IssuedAt  time.Time `json:"issued_at,omitzero" gorm:"notnull" temporaljson:"issued_at,omitzero,omitempty"`
 	Issuer    string    `json:"issuer,omitzero" gorm:"notnull;default null" temporaljson:"issuer,omitzero,omitempty"`
+
+	SourceType TokenSourceType `json:"source_type,omitzero" swaggertype:"string" temporaljson:"source_type,omitzero,omitempty"`
+	SourceID   string          `json:"source_id,omitzero" temporaljson:"source_id,omitzero,omitempty"`
 }
 
 func (a *Token) BeforeCreate(tx *gorm.DB) error {
@@ -63,6 +70,11 @@ func (a *Token) Indexes(db *gorm.DB) []migrations.Index {
 				"created_at",
 			},
 			Option: "WHERE deleted_at = 0",
+		},
+		{
+			Name:    indexes.Name(db, &Token{}, "source_type_source_id"),
+			Columns: []string{"source_type", "source_id"},
+			Option:  "WHERE source_id IS NOT NULL AND source_id <> ''",
 		},
 	}
 }

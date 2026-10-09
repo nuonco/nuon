@@ -23,6 +23,7 @@ import {
   summaryDeploymentEvidence,
   type TDeploymentOutcome,
 } from '@/components/installs/DeploymentDetail/deployment-progress'
+import { useInstallHref } from '@/hooks/use-install-path'
 import { useStoredViewMode } from '@/hooks/use-stored-view-mode'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type {
@@ -99,6 +100,13 @@ const DeploymentRecordRow = ({
   view = 'grid',
 }: IDeploymentRecordRow) => {
   const { addPanel } = useSurfaces()
+  const installHref = useInstallHref()
+  const detailsHref = installHref({
+    orgId,
+    appId,
+    installId,
+    suffix: `/deployments/${deployment.id}`,
+  })
   const recovered =
     run.status === 'success'
       ? recoveredDeploymentResources(run.outcomes, previousOutcomes)
@@ -120,6 +128,7 @@ const DeploymentRecordRow = ({
         title={deployment.title}
         typeLabel={DEPLOYMENT_TYPE_LABELS[deployment.type]}
         createdAt={deployment.created_at}
+        href={detailsHref}
         onViewDetails={onViewDetails}
       >
         <DeploymentPolicySummary steps={run.steps} />
@@ -131,6 +140,7 @@ const DeploymentRecordRow = ({
       run={run}
       title={deployment.title}
       createdAt={deployment.created_at}
+      href={detailsHref}
       onViewDetails={onViewDetails}
       history={!active}
     >

@@ -254,6 +254,7 @@ export const DeploymentPoliciesPreview = () => {
                 title={run.title}
                 typeLabel="Component deploy"
                 createdAt={run.created_at}
+                href={`/deployments/${run.id}`}
                 onViewDetails={() => addPanel(<PolicyDetails run={run} />)}
               >
                 {summaries(run)}
@@ -276,6 +277,7 @@ export const DeploymentPoliciesPreview = () => {
                 run={run}
                 title={run.title}
                 createdAt={run.created_at}
+                href={`/deployments/${run.id}`}
                 onViewDetails={() => addPanel(<PolicyDetails run={run} />)}
                 history
               >

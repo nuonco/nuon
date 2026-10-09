@@ -205,9 +205,7 @@ export const PreviewDefaultsEditor = ({
                   ? 'grid-rows-[1fr]'
                   : 'grid-rows-[0fr]'
               )}
-              aria-hidden={
-                value.mode === 'none' || value.mode === 'build-only'
-              }
+              aria-hidden={value.mode === 'none' || value.mode === 'build-only'}
             >
               <div className="overflow-hidden">
                 <div className="flex flex-col gap-2">

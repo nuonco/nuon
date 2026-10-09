@@ -1,4 +1,4 @@
-package org
+package require
 
 import (
 	"testing"
@@ -20,13 +20,13 @@ func TestPermissionDeniedError(t *testing.T) {
 		},
 	}
 
-	err := permissionDeniedError(acct, "org_one", permissions.PermissionCreate, "installs in this organization")
+	err := PermissionDeniedError(acct, "org_one", permissions.PermissionCreate, "installs in this organization")
 	require.Equal(t, "this action requires write access to installs in this organization", err.Error())
 	require.Equal(t,
 		"Your role (Read-only) does not have write access to installs in this organization. Ask an organization admin to assign a role that does.",
 		err.Description)
 
-	err = permissionDeniedError(acct, "org_one", permissions.PermissionRead, "resources in this organization")
+	err = PermissionDeniedError(acct, "org_one", permissions.PermissionRead, "resources in this organization")
 	require.Equal(t, "this action requires read access to resources in this organization", err.Error())
 
 	multi := &app.Account{
@@ -35,7 +35,7 @@ func TestPermissionDeniedError(t *testing.T) {
 			{Org: orgOne, RoleType: app.RoleTypeInstaller},
 		},
 	}
-	err = permissionDeniedError(multi, "org_one", permissions.PermissionDelete, "resources in this organization")
+	err = PermissionDeniedError(multi, "org_one", permissions.PermissionDelete, "resources in this organization")
 	require.Equal(t,
 		"Your roles (Read-only, installer) do not have write access to resources in this organization. Ask an organization admin to assign a role that does.",
 		err.Description)
@@ -60,11 +60,11 @@ func TestPermissionDeniedError(t *testing.T) {
 		"":                                           "this organization",
 	}
 	for path, want := range scopes {
-		require.Equal(t, want, scopeFromPath(path), "path %q", path)
+		require.Equal(t, want, ScopeFromPath(path), "path %q", path)
 	}
 
 	noRoles := &app.Account{}
-	err = permissionDeniedError(noRoles, "org_one", permissions.PermissionUpdate, "apps in this organization")
+	err = PermissionDeniedError(noRoles, "org_one", permissions.PermissionUpdate, "apps in this organization")
 	require.Equal(t,
 		"Ask an organization admin to assign you a role with write access to apps in this organization.",
 		err.Description)

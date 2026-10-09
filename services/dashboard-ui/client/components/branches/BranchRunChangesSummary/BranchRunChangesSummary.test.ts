@@ -7,9 +7,7 @@ import {
 } from './BranchRunChangesSummary'
 import { configDiagnosticLines } from './config-diagnostics'
 
-const components = (
-  entries: DiffSectionData['entities']
-): DiffSectionData => ({
+const components = (entries: DiffSectionData['entities']): DiffSectionData => ({
   name: 'Components',
   sectionKey: 'components',
   additions: 1,
@@ -63,7 +61,10 @@ describe('withBuildChangeKinds', () => {
       (section) => section.sectionKey === 'components'
     )
     expect(
-      componentSection?.entities.map((entity) => [entity.name, entity.changeKinds])
+      componentSection?.entities.map((entity) => [
+        entity.name,
+        entity.changeKinds,
+      ])
     ).toEqual([
       ['img_nginx', ['config']],
       ['alb', ['source']],

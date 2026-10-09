@@ -5,8 +5,10 @@ import (
 	"errors"
 	"time"
 
+	"github.com/lib/pq"
 	pkgerrors "github.com/pkg/errors"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -43,16 +45,9 @@ func (c *Client) InvalidateTokens(ctx context.Context, subjectOrEmail string) er
 		return pkgerrors.Wrap(err, "unable to get account")
 	}
 
-	res := c.db.WithContext(ctx).
-		Where(app.Token{
-			AccountID: acct.ID,
-		}).
-		Delete(&app.Token{})
-	if res.Error != nil {
-		return pkgerrors.Wrap(res.Error, "unable to delete tokens")
-	}
-
-	return nil
+	return c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return revokeAccountCredentials(tx, acct.ID)
+	})
 }
 
 func (c *Client) InvalidateOldTokens(ctx context.Context, subjectOrEmail string) (int64, error) {
@@ -73,14 +68,38 @@ func (c *Client) InvalidateOldTokens(ctx context.Context, subjectOrEmail string)
 		return 0, pkgerrors.Wrap(res.Error, "unable to find latest token")
 	}
 
-	res = c.db.WithContext(ctx).
-		Where("account_id = ? AND created_at < ?", acct.ID, latestToken.CreatedAt).
-		Delete(&app.Token{})
-	if res.Error != nil {
-		return 0, pkgerrors.Wrap(res.Error, "unable to delete old tokens")
-	}
+	return c.revokeTokens(ctx, c.db.Where("account_id = ? AND created_at < ?", acct.ID, latestToken.CreatedAt))
+}
 
-	return res.RowsAffected, nil
+func (c *Client) RevokeToken(ctx context.Context, tokenID string) error {
+	_, err := c.revokeTokens(ctx, c.db.Where(app.Token{ID: tokenID}))
+	return err
+}
+
+func (c *Client) revokeTokens(ctx context.Context, where *gorm.DB) (int64, error) {
+	var revoked int64
+	err := c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var ids []string
+		if res := tx.Unscoped().Model(&app.Token{}).
+			Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where(where).
+			Order("id").
+			Pluck("id", &ids); res.Error != nil {
+			return pkgerrors.Wrap(res.Error, "unable to look up tokens")
+		}
+		if len(ids) == 0 {
+			return nil
+		}
+
+		res := tx.Where("id = ANY(?)", pq.Array(ids)).Delete(&app.Token{})
+		if res.Error != nil {
+			return pkgerrors.Wrap(res.Error, "unable to delete tokens")
+		}
+		revoked = res.RowsAffected
+
+		return RevokeDerivedCredentials(tx, app.TokenSourceTypeToken, ids)
+	})
+	return revoked, err
 }
 
 func (c *Client) ExtendToken(ctx context.Context, subjectOrEmail string, dur time.Duration) error {
