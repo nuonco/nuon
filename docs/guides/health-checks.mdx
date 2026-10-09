@@ -5,6 +5,14 @@ icon: "heart-pulse"
 keywords: ["health checks", "health check", "healthcheck", "healthchecks", "health-check", "health checking", "component health", "component health check", "kubernetes health check", "helm health check", "terraform health check", "install health", "liveness", "readiness", "probe", "probes", "http probe", "tcp probe", "exec probe", "custom health check", "required checks", "verified deploys", "deploy gate", "block_deploy", "stabilization window", "uptime", "uptime monitoring", "canary", "bake period", "degraded", "unhealthy", "monitoring", "alerting", "resource explorer"]
 ---
 
+import { AskYourAgent } from "/snippets/ask-your-agent.jsx";
+
+<AskYourAgent
+  title="Check an install's health"
+  tool="get_install_health"
+  prompt={`Check the health of Nuon install <install name or ID>. List every component that isn't healthy, with its health description and when it last reported, and tell me about any cluster access errors.`}
+/>
+
 Nuon checks the components running on each install regularly, so you can see their live status.
 
 <CardGroup cols={2}>
