@@ -182,7 +182,7 @@ const (
 	installDeploymentsSortAttention = "attention"
 
 	installDeploymentsStatusExpr = "COALESCE(status->>'status', '')"
-	installDeploymentsRankExpr   = "CASE " + installDeploymentsStatusExpr + " WHEN 'approval-awaiting' THEN 0 WHEN 'failed-pending-retry' THEN 1 ELSE 2 END"
+	installDeploymentsRankExpr   = "CASE " + installDeploymentsStatusExpr + " WHEN 'in-progress' THEN 0 WHEN 'retrying' THEN 0 WHEN 'approval-awaiting' THEN 1 WHEN 'failed-pending-retry' THEN 2 ELSE 3 END"
 )
 
 var installDeploymentActiveStatuses = []string{
@@ -193,17 +193,18 @@ var installDeploymentActiveStatuses = []string{
 	string(app.StatusRetrying),
 	string(app.AwaitingApproval),
 	string(app.WorkflowStepApprovalStatusApproved),
-	string(app.StatusFailedPendingRetry),
 }
 
 func installDeploymentAttentionRank(status app.Status) int {
 	switch status {
-	case app.AwaitingApproval:
+	case app.StatusInProgress, app.StatusRetrying:
 		return 0
-	case app.StatusFailedPendingRetry:
+	case app.AwaitingApproval:
 		return 1
-	default:
+	case app.StatusFailedPendingRetry:
 		return 2
+	default:
+		return 3
 	}
 }
 
@@ -239,7 +240,7 @@ func decodeInstallDeploymentsCursor(raw, state, sortBy string) (*installDeployme
 		return nil, errors.New("cursor does not match the requested state and sort")
 	}
 	if sortBy == installDeploymentsSortAttention {
-		if c.Rank == nil || *c.Rank < 0 || *c.Rank > 2 {
+		if c.Rank == nil || *c.Rank < 0 || *c.Rank > 3 {
 			return nil, errors.New("cursor is not valid")
 		}
 	} else if c.Rank != nil {
@@ -266,7 +267,7 @@ type installDeploymentsQuery struct {
 // @Param                 limit           query  int     false  "page size"                                           Default(20)
 // @Param                 cursor          query  string  false  "opaque cursor from a previous next_cursor; replaces page and offset"
 // @Param                 state           query  string  false  "filter by lifecycle state"                           Enums(active, finished)
-// @Param                 sort            query  string  false  "sort order; attention puts approvals and failed retries first"  Enums(attention)
+// @Param                 sort            query  string  false  "sort order; attention puts running deployments first"  Enums(attention)
 // @Param                 type            query  string  false  "filter by deployment type (comma-separated)"
 // @Param                 status          query  string  false  "filter by workflow status (comma-separated)"
 // @Param                 resource        query  string  false  "filter by affected stack, sandbox, or component name"
