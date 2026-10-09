@@ -16,8 +16,8 @@ import (
 
 const (
 	registryAuthUsername = "oauth2accesstoken"
-	// runners re-fetch settings every few seconds, so never hand out a token close to expiry
-	registryAuthMinRemaining = 15 * time.Minute
+	// must exceed the runner's keep window (20m) so a runner swapping tokens always gets one it will keep
+	registryAuthMinRemaining = 30 * time.Minute
 	registryAuthMintTimeout  = 10 * time.Second
 )
 
