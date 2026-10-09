@@ -193,7 +193,6 @@ var installDeploymentActiveStatuses = []string{
 	string(app.StatusRetrying),
 	string(app.AwaitingApproval),
 	string(app.WorkflowStepApprovalStatusApproved),
-	string(app.StatusFailedPendingRetry),
 }
 
 func installDeploymentAttentionRank(status app.Status) int {
