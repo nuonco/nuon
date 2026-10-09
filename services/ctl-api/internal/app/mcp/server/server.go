@@ -11,6 +11,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	posthog "github.com/posthog/posthog-go"
+	"github.com/posthog/posthog-go/posthogmcpsdk"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -70,6 +72,9 @@ type Server struct {
 	mcpServices []api.MCPService
 	httpServer  *http.Server
 	schemaCache *mcp.SchemaCache
+	posthog     posthog.Client
+
+	posthogMiddleware *posthogmcpsdk.Middleware
 
 	implementationName string
 	requireEmployee    bool
@@ -155,6 +160,15 @@ func newServer(
 		stopJanitor:        make(chan struct{}),
 	}
 
+	if !requireEmployee {
+		ph, err := newPostHogClient(cfg.PostHogKey, cfg.PostHogHost)
+		if err != nil {
+			s.l.Error("unable to create posthog client, MCP analytics disabled", zap.Error(err))
+		}
+		s.posthog = ph
+		s.posthogMiddleware = s.newPostHogMiddleware()
+	}
+
 	mcpHandler := s.newMCPHandler()
 
 	mux := http.NewServeMux()
@@ -183,7 +197,13 @@ func newServer(
 		OnStop: func(ctx context.Context) error {
 			s.l.Info("stopping MCP server")
 			close(s.stopJanitor)
-			return s.httpServer.Shutdown(ctx)
+			err := s.httpServer.Shutdown(ctx)
+			if s.posthog != nil {
+				if cerr := s.posthog.Close(); cerr != nil {
+					s.l.Warn("unable to flush posthog events", zap.Error(cerr))
+				}
+			}
+			return err
 		},
 	})
 
@@ -226,6 +246,7 @@ func (s *Server) getServerForRequest(r *http.Request) *mcp.Server {
 		Instructions: fmt.Sprintf("%s Authenticated as account %s in org %q. %s %s %s %s %s %s", s.serverPurpose, accountID, orgID, s.orgInstructions, api.MCPTimeInstructions, api.MCPPoliciesInstructions, api.MCPWatchInstructions, api.MCPAppConfigInstructions, skills.Instructions),
 	})
 	server.AddReceivingMiddleware(s.receivingMetricsMiddleware, s.loggingMiddleware)
+	s.instrumentPostHog(server)
 
 	for _, svc := range s.mcpServices {
 		svc.RegisterMCPTools(server)
