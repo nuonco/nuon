@@ -168,6 +168,11 @@ func (e *Engine) collectCluster(
 			scope = namespaces
 		}
 		items, err := listScoped(ctx, dynClient, gvr, metav1.ListOptions{}, scope)
+		if err != nil && len(scope) > 0 && apierrors.IsForbidden(err) && !e.requiredKind(gvr) {
+			e.l.Debug("skipping kind no component deploys and the identity may not list",
+				zap.String("resource", gvr.String()), zap.Error(err))
+			err = nil
+		}
 		if err != nil {
 			e.l.Warn("unable to list resources for component health",
 				zap.String("resource", gvr.String()), zap.Error(err))
@@ -252,6 +257,42 @@ func (e *Engine) scopedNamespaces() []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+// coreKinds names the always-watched resources so they can be matched against
+// the kinds components actually render.
+var coreKinds = map[schema.GroupVersionResource]schema.GroupKind{
+	{Group: "apps", Version: "v1", Resource: "deployments"}:            {Group: "apps", Kind: "Deployment"},
+	{Group: "apps", Version: "v1", Resource: "statefulsets"}:           {Group: "apps", Kind: "StatefulSet"},
+	{Group: "apps", Version: "v1", Resource: "daemonsets"}:             {Group: "apps", Kind: "DaemonSet"},
+	{Group: "", Version: "v1", Resource: "services"}:                   {Kind: "Service"},
+	{Group: "", Version: "v1", Resource: "persistentvolumeclaims"}:     {Kind: "PersistentVolumeClaim"},
+	{Group: "networking.k8s.io", Version: "v1", Resource: "ingresses"}: {Group: "networking.k8s.io", Kind: "Ingress"},
+	{Group: "batch", Version: "v1", Resource: "jobs"}:                  {Group: "batch", Kind: "Job"},
+}
+
+// requiredKind reports whether losing a kind is a real gap. A namespace-scoped
+// role grants only what the install deploys, so a forbidden list of a core kind
+// nothing renders is not one. Pods are always required: every workload rolls up
+// to them.
+func (e *Engine) requiredKind(gvr schema.GroupVersionResource) bool {
+	gk, isCore := coreKinds[gvr]
+	if !isCore {
+		return true
+	}
+	if e.manifestKinds == nil {
+		return true
+	}
+	rendered := e.manifestKinds.DiscoveredGVKs()
+	if len(rendered) == 0 {
+		return true
+	}
+	for _, gvk := range rendered {
+		if gvk.GroupKind() == gk {
+			return true
+		}
+	}
+	return false
 }
 
 // listScoped lists cluster-wide, falling back to each of namespaces when that
