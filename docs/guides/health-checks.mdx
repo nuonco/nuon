@@ -42,6 +42,21 @@ None of this requires configuration. The rest of this page covers optional setti
 the default checks.
 </Note>
 
+## Ask your agent
+
+With the [Nuon MCP server](/guides/agents/setup) connected, you can check an install's health from
+chat. Paste this into Claude Code, Cursor or any MCP client:
+
+```text Prompt
+Check the health of Nuon install <install name or ID>. List every component that isn't healthy,
+with its health description and when it last reported, and tell me about any cluster access errors.
+```
+
+The agent calls `get_install_health`, which is read-only, so this works without `--allow-writes`.
+Not connected yet? Run `nuon auth login`, then
+`claude mcp add --transport stdio nuon -- nuon agents mcp`, or see [Setup](/guides/agents/setup) for
+other clients.
+
 ## What you get with no configuration
 
 Helm chart and Kubernetes manifest components are checked automatically, about once a minute.
