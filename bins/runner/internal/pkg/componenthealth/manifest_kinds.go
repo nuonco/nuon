@@ -317,9 +317,8 @@ func (p *ManifestKindsProvider) Set(componentID, manifest, defaultNamespace stri
 }
 
 // RendersIn reports whether a recorded component renders gk in ns. It answers
-// true whenever it cannot rule that out: nothing recorded, a namespace no
-// recorded component deploys into, or a component recorded before per-namespace
-// kinds were.
+// true whenever it cannot rule that out: nothing recorded, or a namespace no
+// recorded component deploys into.
 func (p *ManifestKindsProvider) RendersIn(ns string, gk schema.GroupKind) bool {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -334,12 +333,21 @@ func (p *ManifestKindsProvider) RendersIn(ns string, gk schema.GroupKind) bool {
 			continue
 		}
 		covered = true
-		byNS, ok := p.nsKinds[componentID]
-		if !ok {
+		if byNS, ok := p.nsKinds[componentID]; ok {
+			if _, ok := byNS[ns][gk]; ok {
+				return true
+			}
+			continue
+		}
+		// Recorded before per-namespace kinds were: judge by everything it renders.
+		gvks := p.gvks[componentID]
+		if len(gvks) == 0 {
 			return true
 		}
-		if _, ok := byNS[ns][gk]; ok {
-			return true
+		for _, gvk := range gvks {
+			if gvk.GroupKind() == gk {
+				return true
+			}
 		}
 	}
 	for key := range p.objects {
