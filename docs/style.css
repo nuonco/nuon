@@ -46,3 +46,154 @@ wistia-player[media-id='tsb1nu547c']:not(:defined) {
   filter: blur(5px);
   padding-top: 56.25%;
 }
+
+/* Ask your agent: per-page MCP prompt bar (snippets/ask-your-agent.jsx) */
+.nuon-ask-agent {
+  --ask-accent: #256a7f;
+  --ask-accent-soft: rgba(37, 106, 127, 0.08);
+  --ask-border: rgba(37, 106, 127, 0.28);
+  --ask-text: #1f2937;
+  --ask-muted: #6b7280;
+  --ask-bg: linear-gradient(90deg, rgba(76, 201, 240, 0.10), rgba(37, 106, 127, 0.04) 60%, transparent);
+  margin: 0 0 1.75rem;
+  border: 1px solid var(--ask-border);
+  border-radius: 12px;
+  background: var(--ask-bg);
+  font-size: 0.875rem;
+  color: var(--ask-text);
+}
+.dark .nuon-ask-agent {
+  --ask-accent: #4cc9f0;
+  --ask-accent-soft: rgba(76, 201, 240, 0.12);
+  --ask-border: rgba(76, 201, 240, 0.3);
+  --ask-text: #e5e7eb;
+  --ask-muted: #9ca3af;
+  --ask-bg: linear-gradient(90deg, rgba(76, 201, 240, 0.10), rgba(76, 201, 240, 0.02) 60%, transparent);
+}
+.nuon-ask-agent-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+}
+.nuon-ask-agent-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.nuon-ask-agent-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--ask-accent-soft);
+  color: var(--ask-accent);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.nuon-ask-agent-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nuon-ask-agent-chevron {
+  flex-shrink: 0;
+  color: var(--ask-muted);
+  transition: transform 0.15s;
+}
+.nuon-ask-agent[data-open="true"] .nuon-ask-agent-chevron {
+  transform: rotate(180deg);
+}
+.nuon-ask-agent-actions {
+  display: flex;
+  gap: 0.375rem;
+  flex-shrink: 0;
+}
+.nuon-ask-agent-btn {
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--ask-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ask-text);
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.nuon-ask-agent-btn:hover {
+  background: var(--ask-accent-soft);
+}
+.nuon-ask-agent-primary {
+  border-color: var(--ask-accent);
+  background: var(--ask-accent);
+  color: #fff;
+}
+.dark .nuon-ask-agent-primary {
+  color: #0b1d24;
+}
+.nuon-ask-agent-primary:hover {
+  background: var(--ask-accent);
+  opacity: 0.9;
+}
+.nuon-ask-agent-body {
+  padding: 0 0.75rem 0.75rem;
+}
+.nuon-ask-agent-prompt {
+  margin: 0 0 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 8px;
+  background: var(--ask-accent-soft);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.nuon-ask-agent-note {
+  margin: 0;
+  color: var(--ask-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+.nuon-ask-agent-note a {
+  color: var(--ask-accent);
+  text-decoration: underline;
+}
+.nuon-ask-agent-note code {
+  font-size: 0.75rem;
+}
+@media (max-width: 640px) {
+  .nuon-ask-agent-row {
+    flex-wrap: wrap;
+  }
+  .nuon-ask-agent-actions {
+    width: 100%;
+  }
+  .nuon-ask-agent-btn {
+    flex: 1;
+    text-align: center;
+  }
+}
+.nuon-ask-agent-link {
+  display: inline-block;
+  margin: 0 0 0.5rem;
+  color: var(--ask-accent);
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+.nuon-ask-agent-link:hover {
+  text-decoration: underline;
+}
