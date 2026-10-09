@@ -10,6 +10,8 @@ import (
 
 	"github.com/sourcegraph/conc"
 	"go.uber.org/zap"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -144,7 +146,8 @@ func (e *Engine) collectCluster(
 		return fmt.Errorf("unable to build dynamic client: %w", err)
 	}
 
-	warnings := e.latestWarnings(ctx, dynClient)
+	namespaces := e.scopedNamespaces()
+	warnings := e.latestWarnings(ctx, dynClient, namespaces)
 
 	type listedObject struct {
 		gvr schema.GroupVersionResource
@@ -158,8 +161,13 @@ func (e *Engine) collectCluster(
 	var failedKinds []string
 	var firstListErr error
 
-	for _, gvr := range e.watchList(ctx, restCfg) {
-		list, err := dynClient.Resource(gvr).List(ctx, metav1.ListOptions{})
+	watched, clusterScoped := e.watchList(ctx, restCfg)
+	for _, gvr := range watched {
+		var scope []string
+		if _, ok := clusterScoped[gvr]; !ok {
+			scope = namespaces
+		}
+		items, err := listScoped(ctx, dynClient, gvr, metav1.ListOptions{}, scope)
 		if err != nil {
 			e.l.Warn("unable to list resources for component health",
 				zap.String("resource", gvr.String()), zap.Error(err))
@@ -167,10 +175,9 @@ func (e *Engine) collectCluster(
 			if firstListErr == nil {
 				firstListErr = err
 			}
-			continue
 		}
-		for i := range list.Items {
-			u := &list.Items[i]
+		for i := range items {
+			u := &items[i]
 			objects = append(objects, listedObject{gvr: gvr, u: u})
 			byKey[resourceKey(u.GetKind(), u.GetNamespace(), u.GetName())] = u
 		}
@@ -226,6 +233,60 @@ func (e *Engine) collectCluster(
 	return nil
 }
 
+// scopedNamespaces are the namespaces this install's components deploy into,
+// listed one by one when the identity may not list cluster-wide.
+func (e *Engine) scopedNamespaces() []string {
+	seen := map[string]struct{}{}
+	for _, ns := range e.idx.helmNamespaces() {
+		seen[ns] = struct{}{}
+	}
+	if e.manifestKinds != nil {
+		for _, ns := range e.manifestKinds.Namespaces() {
+			seen[ns] = struct{}{}
+		}
+	}
+
+	out := make([]string, 0, len(seen))
+	for ns := range seen {
+		out = append(out, ns)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// listScoped lists cluster-wide, falling back to each of namespaces when that
+// is forbidden — namespace-scoped RBAC is a supported install posture. Items
+// from namespaces that did list are returned alongside the first error.
+func listScoped(
+	ctx context.Context,
+	dynClient dynamic.Interface,
+	gvr schema.GroupVersionResource,
+	opts metav1.ListOptions,
+	namespaces []string,
+) ([]unstructured.Unstructured, error) {
+	list, err := dynClient.Resource(gvr).List(ctx, opts)
+	if err == nil {
+		return list.Items, nil
+	}
+	if !apierrors.IsForbidden(err) || len(namespaces) == 0 {
+		return nil, err
+	}
+
+	var items []unstructured.Unstructured
+	var firstErr error
+	for _, ns := range namespaces {
+		nsList, err := dynClient.Resource(gvr).Namespace(ns).List(ctx, opts)
+		if err != nil {
+			if firstErr == nil {
+				firstErr = fmt.Errorf("namespace %s: %w", ns, err)
+			}
+			continue
+		}
+		items = append(items, nsList.Items...)
+	}
+	return items, firstErr
+}
+
 // watchList is the core workload kinds plus any kind this install's components
 // actually deploy. Without it a component shipping only CRs (a Karpenter
 // NodePool, a ClickHouseInstallation) reports nothing at all, because nobody
@@ -238,27 +299,31 @@ func (e *Engine) collectCluster(
 //
 // Resolving kind to a listable resource needs the cluster's own discovery data,
 // so an unresolvable kind is simply skipped rather than guessed at.
-func (e *Engine) watchList(ctx context.Context, restCfg *rest.Config) []schema.GroupVersionResource {
+//
+// The second return holds the cluster-scoped kinds, which have no namespace to
+// fall back to.
+func (e *Engine) watchList(ctx context.Context, restCfg *rest.Config) ([]schema.GroupVersionResource, map[schema.GroupVersionResource]struct{}) {
 	out := make([]schema.GroupVersionResource, 0, len(watchedGVRs)+8)
 	out = append(out, watchedGVRs...)
+	clusterScoped := map[schema.GroupVersionResource]struct{}{}
 
 	var discovered []schema.GroupVersionKind
 	if e.manifestKinds != nil {
 		discovered = e.manifestKinds.DiscoveredGVKs()
 	}
 	if len(discovered) == 0 {
-		return out
+		return out, clusterScoped
 	}
 
 	disco, err := discovery.NewDiscoveryClientForConfig(restCfg)
 	if err != nil {
 		e.l.Warn("unable to build discovery client for dynamic kinds", zap.Error(err))
-		return out
+		return out, clusterScoped
 	}
 	groups, err := restmapper.GetAPIGroupResources(disco)
 	if err != nil {
 		e.l.Warn("unable to fetch api group resources for dynamic kinds", zap.Error(err))
-		return out
+		return out, clusterScoped
 	}
 	mapper := restmapper.NewDiscoveryRESTMapper(groups)
 
@@ -278,9 +343,12 @@ func (e *Engine) watchList(ctx context.Context, restCfg *rest.Config) []schema.G
 		}
 		seen[m.Resource] = struct{}{}
 		out = append(out, m.Resource)
+		if m.Scope.Name() == meta.RESTScopeNameRoot {
+			clusterScoped[m.Resource] = struct{}{}
+		}
 	}
 
-	return out
+	return out, clusterScoped
 }
 
 // maxOwnerHops bounds the ownerReferences walk so a cyclic chain cannot spin.

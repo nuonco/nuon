@@ -38,6 +38,9 @@ type ManifestKindsProvider struct {
 	// chart component and carries no nuon labels, so losing this makes every one
 	// of its workloads unowned and the component reads not-applicable forever.
 	releases map[string]string
+	// namespaces records where each component's objects live, so health can
+	// list per namespace when the identity is not allowed to list cluster-wide.
+	namespaces map[string][]string
 }
 
 type ManifestKindsProviderParams struct {
@@ -49,11 +52,12 @@ type ManifestKindsProviderParams struct {
 
 func NewManifestKindsProvider(params ManifestKindsProviderParams) *ManifestKindsProvider {
 	return &ManifestKindsProvider{
-		l:        params.L,
-		cluster:  params.Cluster,
-		gvks:     map[string][]schema.GroupVersionKind{},
-		objects:  map[string]string{},
-		releases: map[string]string{},
+		l:          params.L,
+		cluster:    params.Cluster,
+		gvks:       map[string][]schema.GroupVersionKind{},
+		objects:    map[string]string{},
+		releases:   map[string]string{},
+		namespaces: map[string][]string{},
 	}
 }
 
@@ -121,7 +125,15 @@ func (p *ManifestKindsProvider) Load() {
 	restored := map[string][]schema.GroupVersionKind{}
 	restoredObjects := map[string]string{}
 	restoredReleases := map[string]string{}
+	restoredNamespaces := map[string][]string{}
 	for _, entry := range p.cluster.ComponentKinds() {
+		if after, isNamespace := strings.CutPrefix(entry, namespaceEntryPrefix); isNamespace {
+			componentID, ns, found := strings.Cut(after, "|")
+			if found && componentID != "" && ns != "" {
+				restoredNamespaces[componentID] = append(restoredNamespaces[componentID], ns)
+			}
+			continue
+		}
 		if after, isObject := strings.CutPrefix(entry, objectEntryPrefix); isObject {
 			componentID, key, found := strings.Cut(after, "|")
 			if found && componentID != "" && key != "" {
@@ -160,6 +172,11 @@ func (p *ManifestKindsProvider) Load() {
 			p.releases[release] = componentID
 		}
 	}
+	for componentID, namespaces := range restoredNamespaces {
+		if _, live := p.namespaces[componentID]; !live {
+			p.namespaces[componentID] = namespaces
+		}
+	}
 }
 
 // objectEntryPrefix marks a persisted entry as object ownership rather than a
@@ -168,6 +185,9 @@ const objectEntryPrefix = "obj:"
 
 // releaseEntryPrefix marks a persisted entry as helm-release ownership.
 const releaseEntryPrefix = "rel:"
+
+// namespaceEntryPrefix marks a persisted entry as a namespace a component deploys into.
+const namespaceEntryPrefix = "ns:"
 
 // persist mirrors every recorded kind so a restart does not lose them. Encoded
 // flat as "componentID|group/version/Kind" to keep the stored shape a plain
@@ -200,6 +220,11 @@ func (p *ManifestKindsProvider) persist() {
 	for release, componentID := range p.releases {
 		out = append(out, releaseEntryPrefix+componentID+"|"+release)
 	}
+	for componentID, namespaces := range p.namespaces {
+		for _, ns := range namespaces {
+			out = append(out, namespaceEntryPrefix+componentID+"|"+ns)
+		}
+	}
 	p.mu.RUnlock()
 
 	sort.Strings(out)
@@ -222,14 +247,15 @@ func decodeComponentKind(entry string) (string, schema.GroupVersionKind, bool) {
 	return componentID, gv.WithKind(rest[idx+1:]), true
 }
 
-// Set replaces the kinds recorded for a component from a freshly rendered
-// release manifest. An empty manifest clears them.
-func (p *ManifestKindsProvider) Set(componentID, manifest string) {
+// Set replaces the kinds and namespaces recorded for a component from a freshly
+// rendered release manifest. An empty manifest clears them. Documents without a
+// namespace land in defaultNamespace, as they do when applied.
+func (p *ManifestKindsProvider) Set(componentID, manifest, defaultNamespace string) {
 	if componentID == "" {
 		return
 	}
 
-	gvks := gvksFromManifest(manifest)
+	gvks, namespaces := parseManifest(manifest, defaultNamespace)
 
 	p.mu.Lock()
 	if len(gvks) == 0 {
@@ -237,8 +263,39 @@ func (p *ManifestKindsProvider) Set(componentID, manifest string) {
 	} else {
 		p.gvks[componentID] = gvks
 	}
+	if len(namespaces) == 0 {
+		delete(p.namespaces, componentID)
+	} else {
+		p.namespaces[componentID] = namespaces
+	}
 	p.mu.Unlock()
 	p.persist()
+}
+
+// Namespaces returns every namespace a recorded component deployed into.
+func (p *ManifestKindsProvider) Namespaces() []string {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	seen := map[string]struct{}{}
+	for _, namespaces := range p.namespaces {
+		for _, ns := range namespaces {
+			seen[ns] = struct{}{}
+		}
+	}
+	for key := range p.objects {
+		parts := strings.SplitN(key, "/", 3)
+		if len(parts) == 3 && parts[1] != "" {
+			seen[parts[1]] = struct{}{}
+		}
+	}
+
+	out := make([]string, 0, len(seen))
+	for ns := range seen {
+		out = append(out, ns)
+	}
+	sort.Strings(out)
+	return out
 }
 
 // DiscoveredGVKs returns every kind the recorded releases rendered.
@@ -260,12 +317,19 @@ func (p *ManifestKindsProvider) DiscoveredGVKs() []schema.GroupVersionKind {
 	return out
 }
 
-// gvksFromManifest reads apiVersion/kind out of each document. Unparseable or
-// incomplete documents are skipped: a missed kind costs coverage, a wrong one
-// costs a failing list call every cycle.
 func gvksFromManifest(manifest string) []schema.GroupVersionKind {
+	gvks, _ := parseManifest(manifest, "")
+	return gvks
+}
+
+// parseManifest reads apiVersion/kind and namespace out of each document.
+// Unparseable or incomplete documents are skipped: a missed kind costs
+// coverage, a wrong one costs a failing list call every cycle.
+func parseManifest(manifest, defaultNamespace string) ([]schema.GroupVersionKind, []string) {
 	var out []schema.GroupVersionKind
 	seen := map[schema.GroupVersionKind]struct{}{}
+	var namespaces []string
+	seenNS := map[string]struct{}{}
 
 	for _, doc := range strings.Split(manifest, "\n---") {
 		if strings.TrimSpace(doc) == "" {
@@ -274,6 +338,9 @@ func gvksFromManifest(manifest string) []schema.GroupVersionKind {
 		var head struct {
 			APIVersion string `json:"apiVersion"`
 			Kind       string `json:"kind"`
+			Metadata   struct {
+				Namespace string `json:"namespace"`
+			} `json:"metadata"`
 		}
 		if err := yaml.Unmarshal([]byte(doc), &head); err != nil {
 			continue
@@ -285,6 +352,14 @@ func gvksFromManifest(manifest string) []schema.GroupVersionKind {
 		if err != nil {
 			continue
 		}
+		ns := head.Metadata.Namespace
+		if ns == "" {
+			ns = defaultNamespace
+		}
+		if _, dup := seenNS[ns]; ns != "" && !dup {
+			seenNS[ns] = struct{}{}
+			namespaces = append(namespaces, ns)
+		}
 		gvk := gv.WithKind(head.Kind)
 		if _, dup := seen[gvk]; dup {
 			continue
@@ -292,5 +367,5 @@ func gvksFromManifest(manifest string) []schema.GroupVersionKind {
 		seen[gvk] = struct{}{}
 		out = append(out, gvk)
 	}
-	return out
+	return out, namespaces
 }
