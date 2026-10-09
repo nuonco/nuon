@@ -39,11 +39,21 @@ func Disabled(cfg *config.Config) bool {
 	return cfg != nil && cfg.GetBool("disable_telemetry")
 }
 
-// Send reports a finished command. Local development builds never report.
-// It never returns an error and gives up after a short timeout so it cannot
+// enabledForDev reports whether a development build opted in by setting
+// disable_telemetry to false explicitly.
+func enabledForDev(cfg *config.Config) bool {
+	return cfg.IsSet("disable_telemetry") && !cfg.GetBool("disable_telemetry")
+}
+
+// Send reports a finished command. Local development builds report only when
+// disable_telemetry is explicitly false (NUON_DISABLE_TELEMETRY=false). It
+// never returns an error and gives up after a short timeout so it cannot
 // hold up the CLI.
 func Send(cfg *config.Config, success bool, duration time.Duration) {
-	if cfg == nil || cfg.APIToken == "" || cfg.AgentCommand == "" || version.IsDev() || Disabled(cfg) {
+	if cfg == nil || cfg.APIToken == "" || cfg.AgentCommand == "" || Disabled(cfg) {
+		return
+	}
+	if version.IsDev() && !enabledForDev(cfg) {
 		return
 	}
 
