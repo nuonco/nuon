@@ -1,6 +1,7 @@
 package componenthealth
 
 import (
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -41,6 +42,9 @@ type ManifestKindsProvider struct {
 	// namespaces records where each component's objects live, so health can
 	// list per namespace when the identity is not allowed to list cluster-wide.
 	namespaces map[string][]string
+	// nsKinds records which kinds each component renders in each namespace, so
+	// a namespace-level 403 can be told apart from one that hides real objects.
+	nsKinds map[string]map[string]map[schema.GroupKind]struct{}
 }
 
 type ManifestKindsProviderParams struct {
@@ -58,6 +62,7 @@ func NewManifestKindsProvider(params ManifestKindsProviderParams) *ManifestKinds
 		objects:    map[string]string{},
 		releases:   map[string]string{},
 		namespaces: map[string][]string{},
+		nsKinds:    map[string]map[string]map[schema.GroupKind]struct{}{},
 	}
 }
 
@@ -126,7 +131,15 @@ func (p *ManifestKindsProvider) Load() {
 	restoredObjects := map[string]string{}
 	restoredReleases := map[string]string{}
 	restoredNamespaces := map[string][]string{}
+	restoredNSKinds := map[string]map[string]map[schema.GroupKind]struct{}{}
 	for _, entry := range p.cluster.ComponentKinds() {
+		if after, isNSKind := strings.CutPrefix(entry, namespaceKindEntryPrefix); isNSKind {
+			parts := strings.SplitN(after, "|", 3)
+			if len(parts) == 3 && parts[0] != "" && parts[1] != "" && parts[2] != "" {
+				addNSKind(restoredNSKinds, parts[0], parts[1], schema.ParseGroupKind(parts[2]))
+			}
+			continue
+		}
 		if after, isNamespace := strings.CutPrefix(entry, namespaceEntryPrefix); isNamespace {
 			componentID, ns, found := strings.Cut(after, "|")
 			if found && componentID != "" && ns != "" {
@@ -177,6 +190,21 @@ func (p *ManifestKindsProvider) Load() {
 			p.namespaces[componentID] = namespaces
 		}
 	}
+	for componentID, kinds := range restoredNSKinds {
+		if _, live := p.nsKinds[componentID]; !live {
+			p.nsKinds[componentID] = kinds
+		}
+	}
+}
+
+func addNSKind(m map[string]map[string]map[schema.GroupKind]struct{}, componentID, ns string, gk schema.GroupKind) {
+	if m[componentID] == nil {
+		m[componentID] = map[string]map[schema.GroupKind]struct{}{}
+	}
+	if m[componentID][ns] == nil {
+		m[componentID][ns] = map[schema.GroupKind]struct{}{}
+	}
+	m[componentID][ns][gk] = struct{}{}
 }
 
 // objectEntryPrefix marks a persisted entry as object ownership rather than a
@@ -188,6 +216,10 @@ const releaseEntryPrefix = "rel:"
 
 // namespaceEntryPrefix marks a persisted entry as a namespace a component deploys into.
 const namespaceEntryPrefix = "ns:"
+
+// namespaceKindEntryPrefix marks a persisted entry as a kind a component renders
+// in a namespace, encoded "componentID|namespace|Kind.group".
+const namespaceKindEntryPrefix = "nk:"
 
 // persist mirrors every recorded kind so a restart does not lose them. Encoded
 // flat as "componentID|group/version/Kind" to keep the stored shape a plain
@@ -225,6 +257,13 @@ func (p *ManifestKindsProvider) persist() {
 			out = append(out, namespaceEntryPrefix+componentID+"|"+ns)
 		}
 	}
+	for componentID, byNS := range p.nsKinds {
+		for ns, kinds := range byNS {
+			for gk := range kinds {
+				out = append(out, namespaceKindEntryPrefix+componentID+"|"+ns+"|"+gk.String())
+			}
+		}
+	}
 	p.mu.RUnlock()
 
 	sort.Strings(out)
@@ -255,7 +294,7 @@ func (p *ManifestKindsProvider) Set(componentID, manifest, defaultNamespace stri
 		return
 	}
 
-	gvks, namespaces := parseManifest(manifest, defaultNamespace)
+	gvks, namespaces, nsKinds := parseManifest(manifest, defaultNamespace)
 
 	p.mu.Lock()
 	if len(gvks) == 0 {
@@ -268,8 +307,52 @@ func (p *ManifestKindsProvider) Set(componentID, manifest, defaultNamespace stri
 	} else {
 		p.namespaces[componentID] = namespaces
 	}
+	if len(nsKinds) == 0 {
+		delete(p.nsKinds, componentID)
+	} else {
+		p.nsKinds[componentID] = nsKinds
+	}
 	p.mu.Unlock()
 	p.persist()
+}
+
+// RendersIn reports whether a recorded component renders gk in ns. It answers
+// true whenever it cannot rule that out: nothing recorded, a namespace no
+// recorded component deploys into, or a component recorded before per-namespace
+// kinds were.
+func (p *ManifestKindsProvider) RendersIn(ns string, gk schema.GroupKind) bool {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	if len(p.gvks) == 0 && len(p.objects) == 0 {
+		return true
+	}
+
+	covered := false
+	for componentID, namespaces := range p.namespaces {
+		if !slices.Contains(namespaces, ns) {
+			continue
+		}
+		covered = true
+		byNS, ok := p.nsKinds[componentID]
+		if !ok {
+			return true
+		}
+		if _, ok := byNS[ns][gk]; ok {
+			return true
+		}
+	}
+	for key := range p.objects {
+		parts := strings.SplitN(key, "/", 3)
+		if len(parts) != 3 || parts[1] != ns {
+			continue
+		}
+		covered = true
+		if parts[0] == gk.Kind {
+			return true
+		}
+	}
+	return !covered
 }
 
 // Namespaces returns every namespace a recorded component deployed into.
@@ -318,18 +401,19 @@ func (p *ManifestKindsProvider) DiscoveredGVKs() []schema.GroupVersionKind {
 }
 
 func gvksFromManifest(manifest string) []schema.GroupVersionKind {
-	gvks, _ := parseManifest(manifest, "")
+	gvks, _, _ := parseManifest(manifest, "")
 	return gvks
 }
 
 // parseManifest reads apiVersion/kind and namespace out of each document.
 // Unparseable or incomplete documents are skipped: a missed kind costs
 // coverage, a wrong one costs a failing list call every cycle.
-func parseManifest(manifest, defaultNamespace string) ([]schema.GroupVersionKind, []string) {
+func parseManifest(manifest, defaultNamespace string) ([]schema.GroupVersionKind, []string, map[string]map[schema.GroupKind]struct{}) {
 	var out []schema.GroupVersionKind
 	seen := map[schema.GroupVersionKind]struct{}{}
 	var namespaces []string
 	seenNS := map[string]struct{}{}
+	nsKinds := map[string]map[schema.GroupKind]struct{}{}
 
 	for _, doc := range strings.Split(manifest, "\n---") {
 		if strings.TrimSpace(doc) == "" {
@@ -361,11 +445,17 @@ func parseManifest(manifest, defaultNamespace string) ([]schema.GroupVersionKind
 			namespaces = append(namespaces, ns)
 		}
 		gvk := gv.WithKind(head.Kind)
+		if ns != "" {
+			if nsKinds[ns] == nil {
+				nsKinds[ns] = map[schema.GroupKind]struct{}{}
+			}
+			nsKinds[ns][gvk.GroupKind()] = struct{}{}
+		}
 		if _, dup := seen[gvk]; dup {
 			continue
 		}
 		seen[gvk] = struct{}{}
 		out = append(out, gvk)
 	}
-	return out, namespaces
+	return out, namespaces, nsKinds
 }
