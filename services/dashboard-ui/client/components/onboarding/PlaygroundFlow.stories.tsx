@@ -762,7 +762,7 @@ const contactUs = () => {
   window.open(DEMO_REQUEST, '_blank', 'noopener,noreferrer')
 }
 
-const DOCS_MCP = 'https://docs.nuon.co/guides/agents/mcp-walkthrough'
+const DOCS_MCP = 'https://docs.nuon.co/guides/agents/setup'
 const PROMPT_TXT_URL = 'https://nuon.co/llms.txt'
 const DOCS_APPS = 'https://docs.nuon.co/concepts/apps'
 const DOCS_RUNNERS = 'https://docs.nuon.co/concepts/runners'
@@ -1289,7 +1289,7 @@ const Footnotes = ({
             {MCP_ADD_CLAUDE}
           </CodeBlock>
           <Link href={DOCS_MCP} isExternal textVariant="subtext">
-            docs.nuon.co/guides/agents/mcp-walkthrough
+            docs.nuon.co/guides/agents/setup
           </Link>
         </div>
       ) : null}
