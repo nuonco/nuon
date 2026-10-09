@@ -91,7 +91,7 @@ export const PlanGroupStep = ({
           )}
 
           {showApproveBar && (
-            <Banner className="@container" theme="neutral">
+            <Banner className="@container" theme="info">
               <div className="flex flex-col gap-3 @md:flex-row @md:items-center @md:justify-between">
                 <div className="flex min-w-0 flex-col">
                   <Text weight="strong">
