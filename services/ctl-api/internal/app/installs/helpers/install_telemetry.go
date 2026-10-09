@@ -2,11 +2,15 @@ package helpers
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetrytoken"
 )
 
 type InstallTelemetryConfig struct {
@@ -33,6 +37,24 @@ func (h *Helpers) GetInstallTelemetryConfig(ctx context.Context, orgID, installI
 		Where(app.Install{ID: installID, OrgID: orgID}).
 		Take(&config).Error
 	return &config, err
+}
+
+func (h *Helpers) GetInstallTelemetryTokenPrincipal(ctx context.Context, orgID, installID, accountID string) (telemetrytoken.Principal, error) {
+	config, err := h.GetInstallTelemetryConfig(ctx, orgID, installID)
+	if err != nil {
+		return telemetrytoken.Principal{}, fmt.Errorf("get install telemetry config: %w", err)
+	}
+	installConfig := app.InstallConfig{TelemetryEnabled: config.TelemetryEnabled}
+	if config.AppID == "" || !installConfig.IsTelemetryEnabled(config.OrgTelemetryEnabled) {
+		return telemetrytoken.Principal{}, stderr.ErrAuthorization{
+			Err: errors.New("install telemetry is disabled"), Description: "install telemetry is disabled",
+		}
+	}
+	orgTelemetry := app.OrgTelemetrySettings{RelayEndpoint: config.OrgRelayEndpoint}
+	return telemetrytoken.Principal{
+		OrgID: orgID, AppID: config.AppID, InstallID: installID, AccountID: accountID,
+		RelayEndpoint: orgTelemetry.ResolveRelayEndpoint(h.cfg.TelemetryRelayEndpoint),
+	}, nil
 }
 
 func (c *InstallTelemetryConfig) ResourceAttributes() map[string]string {

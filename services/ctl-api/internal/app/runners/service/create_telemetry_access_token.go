@@ -60,7 +60,7 @@ func (s *service) CreateTelemetryAccessToken(ctx *gin.Context) {
 		return
 	}
 
-	accessToken, err := s.telemetryTokenIssuer.Issue(principal, requestedEndpoint != "")
+	accessToken, err := s.telemetryTokenIssuer.IssueLegacyRunner(principal, acct.Subject, requestedEndpoint != "")
 	if err != nil {
 		ctx.Error(stderr.ErrSystem{
 			Err:         fmt.Errorf("create telemetry access token: %w", err),

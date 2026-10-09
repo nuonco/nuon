@@ -165,11 +165,9 @@ func (e *telemetryJWTAuthExtension) verify(ctx context.Context, raw string) (Pri
 	}
 
 	principal := Principal{
-		OrgID:       claims.OrgID,
-		AppID:       claims.AppID,
-		InstallID:   claims.InstallID,
-		RunnerID:    claims.RunnerID,
-		CollectorID: claims.CollectorID,
+		OrgID:     claims.OrgID,
+		AppID:     claims.AppID,
+		InstallID: claims.InstallID,
 	}
 	if err := validateClaims(claims, principal); err != nil {
 		return Principal{}, errAuthenticationFailed
@@ -190,28 +188,31 @@ func validateClaims(claims *telemetryClaims, principal Principal) error {
 	if !validPrincipal(principal) {
 		return errAuthenticationFailed
 	}
-	kind, clientID := "runner", principal.RunnerID
-	if principal.CollectorID != "" {
+	if claims.RunnerID == "" && claims.CollectorID == "" {
+		if !validID(claims.Subject, "acc") || claims.ClientID != claims.Subject || claims.Audience[0] == legacyAudience {
+			return errAuthenticationFailed
+		}
+		return nil
+	}
+	if claims.RunnerID != "" && claims.CollectorID != "" {
+		return errAuthenticationFailed
+	}
+	kind, clientID, prefix := "runner", claims.RunnerID, "run"
+	if claims.CollectorID != "" {
 		if claims.Audience[0] == legacyAudience {
 			return errAuthenticationFailed
 		}
-		kind, clientID = "collector", principal.CollectorID
+		kind, clientID, prefix = "collector", claims.CollectorID, "acc"
 	}
 	expectedSubject := fmt.Sprintf("org:%s:install:%s:%s:%s", principal.OrgID, principal.InstallID, kind, clientID)
-	if claims.ClientID != clientID || claims.Subject != expectedSubject {
+	if !validID(clientID, prefix) || claims.ClientID != clientID || claims.Subject != expectedSubject {
 		return errAuthenticationFailed
 	}
 	return nil
 }
 
 func validPrincipal(principal Principal) bool {
-	if !validID(principal.OrgID, "org") || !validID(principal.AppID, "app") || !validID(principal.InstallID, "inl") {
-		return false
-	}
-	if principal.CollectorID != "" {
-		return principal.RunnerID == "" && validID(principal.CollectorID, "acc")
-	}
-	return validID(principal.RunnerID, "run")
+	return validID(principal.OrgID, "org") && validID(principal.AppID, "app") && validID(principal.InstallID, "inl")
 }
 
 func validID(value, prefix string) bool {

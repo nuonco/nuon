@@ -92,15 +92,16 @@ func newTelemetryTestTokenIssuer(t *testing.T) (*telemetrytoken.Issuer, *rsa.Pri
 
 func TestTelemetryTokenIssuerIssuesScopedAccessToken(t *testing.T) {
 	issuer, key, now := newTelemetryTestTokenIssuer(t)
+	runnerID := "runner-test"
 	principal := telemetrytoken.Principal{
 		OrgID:         "org-test",
 		AppID:         "app-test",
 		InstallID:     "install-test",
-		RunnerID:      "runner-test",
+		AccountID:     "account-test",
 		RelayEndpoint: "https://relay.example.com/acme",
 	}
 
-	raw, err := issuer.Issue(principal, true)
+	raw, err := issuer.IssueLegacyRunner(principal, runnerID, true)
 	require.NoError(t, err)
 
 	claims := &struct {
@@ -121,11 +122,11 @@ func TestTelemetryTokenIssuerIssuesScopedAccessToken(t *testing.T) {
 	require.Equal(t, "at+jwt", token.Header["typ"])
 	require.Equal(t, "telemetry-key-1", token.Header["kid"])
 	require.Equal(t, "telemetry:write", claims.Scope)
-	require.Equal(t, principal.RunnerID, claims.ClientID)
+	require.Equal(t, runnerID, claims.ClientID)
 	require.Equal(t, principal.OrgID, claims.OrgID)
 	require.Equal(t, principal.AppID, claims.AppID)
 	require.Equal(t, principal.InstallID, claims.InstallID)
-	require.Equal(t, principal.RunnerID, claims.RunnerID)
+	require.Equal(t, runnerID, claims.RunnerID)
 	require.Equal(t, "org:org-test:install:install-test:runner:runner-test", claims.Subject)
 	require.WithinDuration(t, now, claims.IssuedAt.Time, 2*time.Second)
 	require.True(t, claims.IssuedAt.Equal(claims.NotBefore.Time))

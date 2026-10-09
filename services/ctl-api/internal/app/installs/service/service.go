@@ -390,7 +390,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	require.Route(api, permissions.KindTelemetry, permissions.PermissionRead, "install_id").
 		GET("/v1/installs/:install_id/telemetry/collector-settings", s.GetInstallTelemetryCollectorSettings)
 	require.Route(api, permissions.KindTelemetry, permissions.PermissionCreate, "install_id").
-		POST("/v1/installs/:install_id/telemetry/collector-access-token", s.CreateInstallTelemetryCollectorAccessToken)
+		POST("/v1/installs/:install_id/telemetry/access-token", s.CreateInstallTelemetryAccessToken)
 	return nil
 }
 

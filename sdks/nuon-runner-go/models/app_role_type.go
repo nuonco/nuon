@@ -53,6 +53,9 @@ const (
 
 	// AppRoleTypeStack captures enum value "stack"
 	AppRoleTypeStack AppRoleType = "stack"
+
+	// AppRoleTypeTelemetryCollector captures enum value "telemetry_collector"
+	AppRoleTypeTelemetryCollector AppRoleType = "telemetry_collector"
 )
 
 // for schema
@@ -60,7 +63,7 @@ var appRoleTypeEnum []any
 
 func init() {
 	var res []AppRoleType
-	if err := json.Unmarshal([]byte(`["org_admin","org_support","org_read_only","org_builder","installer","runner","hosted-installer","stack"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["org_admin","org_support","org_read_only","org_builder","installer","runner","hosted-installer","stack","telemetry_collector"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

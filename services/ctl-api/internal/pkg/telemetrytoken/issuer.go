@@ -22,8 +22,7 @@ type Principal struct {
 	OrgID         string
 	AppID         string
 	InstallID     string
-	RunnerID      string
-	CollectorID   string
+	AccountID     string
 	RelayEndpoint string
 }
 
@@ -57,35 +56,41 @@ func New(cfg *internal.Config) (*Issuer, error) {
 	return &Issuer{signer: signer}, nil
 }
 
-func (i *Issuer) Issue(principal Principal, endpointBound bool) (string, error) {
-	if principal.OrgID == "" || principal.AppID == "" || principal.InstallID == "" || principal.RelayEndpoint == "" || (principal.RunnerID == "") == (principal.CollectorID == "") {
-		return "", fmt.Errorf("telemetry principal requires an org, app, install, relay endpoint and exactly one runner or collector")
+func (i *Issuer) Issue(principal Principal) (string, error) {
+	claims, err := principal.claims()
+	if err != nil {
+		return "", err
 	}
-	if principal.CollectorID != "" && !endpointBound {
-		return "", fmt.Errorf("collector telemetry tokens must be relay-bound")
-	}
+	return i.signer.MintAccessToken(principal.AccountID, principal.RelayEndpoint, Lifetime, claims)
+}
 
+func (i *Issuer) IssueLegacyRunner(principal Principal, runnerID string, endpointBound bool) (string, error) {
+	if runnerID == "" {
+		return "", fmt.Errorf("legacy telemetry token requires a runner")
+	}
+	claims, err := principal.claims()
+	if err != nil {
+		return "", err
+	}
 	audience := LegacyAudience
 	if endpointBound {
 		audience = principal.RelayEndpoint
 	}
-	kind, clientID := "runner", principal.RunnerID
-	if principal.CollectorID != "" {
-		kind, clientID = "collector", principal.CollectorID
-	}
-	claims := jwt.MapClaims{
-		"client_id":       clientID,
-		"scope":           Scope,
-		"nuon_org_id":     principal.OrgID,
-		"nuon_app_id":     principal.AppID,
-		"nuon_install_id": principal.InstallID,
-	}
-	if principal.RunnerID != "" {
-		claims["nuon_runner_id"] = principal.RunnerID
-	}
-	if principal.CollectorID != "" {
-		claims["nuon_collector_id"] = principal.CollectorID
-	}
-	subject := fmt.Sprintf("org:%s:install:%s:%s:%s", principal.OrgID, principal.InstallID, kind, clientID)
+	claims["client_id"] = runnerID
+	claims["nuon_runner_id"] = runnerID
+	subject := fmt.Sprintf("org:%s:install:%s:runner:%s", principal.OrgID, principal.InstallID, runnerID)
 	return i.signer.MintAccessToken(subject, audience, Lifetime, claims)
+}
+
+func (p Principal) claims() (jwt.MapClaims, error) {
+	if p.OrgID == "" || p.AppID == "" || p.InstallID == "" || p.AccountID == "" || p.RelayEndpoint == "" {
+		return nil, fmt.Errorf("telemetry principal requires an org, app, install, account and relay endpoint")
+	}
+	return jwt.MapClaims{
+		"client_id":       p.AccountID,
+		"scope":           Scope,
+		"nuon_org_id":     p.OrgID,
+		"nuon_app_id":     p.AppID,
+		"nuon_install_id": p.InstallID,
+	}, nil
 }
