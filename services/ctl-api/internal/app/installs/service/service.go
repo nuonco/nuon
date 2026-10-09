@@ -13,6 +13,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
@@ -216,6 +218,9 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		// install runner group
 		installs.GET("/runner-group", s.GetInstallRunnerGroup)
 		installs.GET("/telemetry", s.GetInstallTelemetrySettings)
+		installs.POST("/telemetry/collector", s.EnsureInstallTelemetryCollector)
+		installs.GET("/telemetry/collector", s.GetInstallTelemetryCollector)
+		installs.DELETE("/telemetry/collector", s.DeleteInstallTelemetryCollector)
 
 		// phone home
 		installs.POST("/phone-home/:phone_home_id", s.InstallPhoneHome)
@@ -378,6 +383,8 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	// per-stack-version phone_home_id in the URL path is the secret; the route
 	// is already in the public whitelist, so no runner token is required.
 	api.POST("/v1/installs/:install_id/phone-home/:phone_home_id", s.InstallPhoneHome)
+	require.Route(api, permissions.KindTelemetry, permissions.PermissionRead, "install_id").
+		GET("/v1/installs/:install_id/telemetry/collector-settings", s.GetInstallTelemetryCollectorSettings)
 	return nil
 }
 
