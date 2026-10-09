@@ -3,6 +3,7 @@ package monitor
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -105,4 +106,62 @@ func TestRegistryAuthenticatorMatchesRegistry(t *testing.T) {
 	require.NoError(t, err)
 	_, ok = registryAuthenticator(s, ecr)
 	require.False(t, ok)
+}
+
+func TestWriteRegistryAuthConfigKeepsTokenAcrossReplicas(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "docker")
+	path := filepath.Join(dir, "config.json")
+	token := func(password string, expiresIn time.Duration) *settings.Settings {
+		return &settings.Settings{ContainerImageRegistryAuth: &settings.RegistryAuth{
+			Registry:  "europe-west4-docker.pkg.dev",
+			Username:  "oauth2accesstoken",
+			Password:  password,
+			ExpiresAt: time.Now().Add(expiresIn),
+		}}
+	}
+	written := func() string {
+		contents, err := os.ReadFile(path)
+		require.NoError(t, err)
+		var cfg dockerConfig
+		require.NoError(t, json.Unmarshal(contents, &cfg))
+		decoded, err := base64.StdEncoding.DecodeString(cfg.Auths["europe-west4-docker.pkg.dev"].Auth)
+		require.NoError(t, err)
+		return strings.TrimPrefix(string(decoded), "oauth2accesstoken:")
+	}
+
+	require.NoError(t, writeRegistryAuthConfig(dir, token("replica-a", time.Hour)))
+	require.Equal(t, "replica-a", written())
+
+	// another replica's fresh token must not replace one with plenty of time left
+	require.NoError(t, writeRegistryAuthConfig(dir, token("replica-b", 55*time.Minute)))
+	require.Equal(t, "replica-a", written())
+
+	writtenRegistryAuthMu.Lock()
+	nearExpiry := writtenRegistryAuth[dir]
+	nearExpiry.ExpiresAt = time.Now().Add(10 * time.Minute)
+	writtenRegistryAuth[dir] = nearExpiry
+	writtenRegistryAuthMu.Unlock()
+
+	// near expiry, a token that expires sooner is not an improvement
+	require.NoError(t, writeRegistryAuthConfig(dir, token("replica-c", 5*time.Minute)))
+	require.Equal(t, "replica-a", written())
+
+	// near expiry, a later-expiring token replaces it
+	require.NoError(t, writeRegistryAuthConfig(dir, token("replica-d", time.Hour)))
+	require.Equal(t, "replica-d", written())
+
+	// a missing file is rewritten even when the remembered token is still fresh
+	require.NoError(t, os.Remove(path))
+	require.NoError(t, writeRegistryAuthConfig(dir, token("replica-e", time.Hour)))
+	require.Equal(t, "replica-e", written())
+}
+
+func TestKeepWrittenRegistryAuthRegistryChange(t *testing.T) {
+	written := settings.RegistryAuth{Registry: "europe-west4-docker.pkg.dev", Username: "oauth2accesstoken", Password: "a", ExpiresAt: time.Now().Add(time.Hour)}
+	offered := written
+	offered.Registry = "us-central1-docker.pkg.dev"
+	require.False(t, keepWrittenRegistryAuth(written, offered))
+
+	noExpiry := settings.RegistryAuth{Registry: written.Registry, Username: written.Username, Password: "b"}
+	require.False(t, keepWrittenRegistryAuth(written, noExpiry), "without expiries fall back to comparing tokens")
 }

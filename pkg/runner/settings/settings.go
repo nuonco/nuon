@@ -94,7 +94,8 @@ func New(params Params) (*Settings, error) {
 }
 
 type RegistryAuth struct {
-	Registry string
-	Username string
-	Password string
+	Registry  string
+	Username  string
+	Password  string
+	ExpiresAt time.Time
 }

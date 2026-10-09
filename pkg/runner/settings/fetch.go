@@ -42,10 +42,12 @@ func (s *Settings) fetch(ctx context.Context) error {
 	s.ContainerImageSignatureIdentityRegexp = settings.ContainerImageSignatureIdentityRegexp
 	s.ContainerImageRegistryAuth = nil
 	if auth := settings.ContainerImageRegistryAuth; auth != nil {
+		expiresAt, _ := time.Parse(time.RFC3339Nano, auth.ExpiresAt)
 		s.ContainerImageRegistryAuth = &RegistryAuth{
-			Registry: auth.Registry,
-			Username: auth.Username,
-			Password: auth.Password,
+			Registry:  auth.Registry,
+			Username:  auth.Username,
+			Password:  auth.Password,
+			ExpiresAt: expiresAt,
 		}
 	}
 
