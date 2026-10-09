@@ -12,6 +12,7 @@ import (
 
 // Org returns the selected org ID from context. Empty org means the caller must
 // select_org or pass X-Nuon-Org-ID. Use for non-Gin callers (MCP tool handlers).
+// It does not check permissions; use Read or Write for authorization.
 func Org(ctx context.Context) (string, error) {
 	orgID := keys.OrgIDFromContext(ctx)
 	if orgID == "" {
