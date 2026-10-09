@@ -239,11 +239,16 @@
         "icon": "robot",
         "pages": [
           "guides/agents/overview",
-          "guides/agents/setup",
-          "guides/agents/mcp-walkthrough",
-          "guides/agents/tools",
+          {
+            "group": "MCP",
+            "expanded": true,
+            "pages": [
+              "guides/agents/setup",
+              "guides/agents/tools",
+              "guides/agents/sample-queries"
+            ]
+          },
           "guides/agents/skills",
-          "guides/agents/sample-queries",
           "guides/agents/ai-and-apps"
         ]
       },
@@ -508,6 +513,10 @@
     {
       "source": "/guides/ai-and-apps",
       "destination": "/guides/agents/ai-and-apps"
+    },
+    {
+      "source": "/guides/agents/mcp-walkthrough",
+      "destination": "/guides/agents/setup"
     }
   ]
 }
