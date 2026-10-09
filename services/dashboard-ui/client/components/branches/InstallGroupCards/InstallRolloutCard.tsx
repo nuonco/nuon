@@ -7,7 +7,7 @@ import { CommitRange, type ICommitRange } from './CommitRange'
 import type { TTrackInstall } from '@/components/branches/BranchOverview/RolloutTrack'
 
 const CARD_CLASS =
-  'flex w-full items-center justify-between gap-3 rounded-md border bg-white px-4 py-3 text-left shadow-sm dark:bg-dark-grey-900'
+  'flex w-full items-center justify-between gap-3 rounded-md border bg-elevation-2 px-4 py-3 text-left shadow-sm'
 
 const InstallCardFace = ({
   install,
@@ -63,7 +63,7 @@ export const InstallRolloutCard = ({
   return (
     <Button
       variant="ghost"
-      className="!h-auto !w-full !whitespace-normal !justify-between !gap-3 !px-4 !py-3 text-left !rounded-md !shadow-sm !bg-white dark:!bg-dark-grey-900 !text-inherit !border !border-[color:var(--border-color)] !transition-[background-color] !duration-fast !ease-cubic hover:!bg-cool-grey-50 dark:hover:!bg-white/5"
+      className="!h-auto !w-full !whitespace-normal !justify-between !gap-3 !px-4 !py-3 text-left !rounded-md !shadow-sm !bg-elevation-2 !text-inherit !border !border-[color:var(--border-color)] !transition-[background-color] !duration-fast !ease-cubic hover:!bg-elevation-3"
       onClick={() => onSelect(install)}
     >
       <InstallCardFace install={install} commit={commit} />

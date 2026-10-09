@@ -13,7 +13,10 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 
+	"github.com/nuonco/nuon/pkg/agentclient"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -211,4 +214,46 @@ func TestMCPMetricsRecordsPanics(t *testing.T) {
 	assert.True(t, hasTag(metric.tags, "status:err"))
 	assert.True(t, hasTag(metric.tags, "status_code_class:5xx"))
 	assert.True(t, hasTag(metric.tags, "is_panic:true"))
+}
+
+func TestLoggingMiddlewareLogsOperation(t *testing.T) {
+	core, logs := observer.New(zap.InfoLevel)
+	s := &Server{l: zap.New(core)}
+	ctx := cctx.SetAccountIDContext(context.Background(), "acc_test")
+	ctx = context.WithValue(ctx, mcpHTTPRequestKey{}, mcpHTTPRequest{method: http.MethodPost, path: "/mcp"})
+	req := &mcp.CallToolRequest{
+		Params: &mcp.CallToolParamsRaw{Name: "whoami"},
+		Extra: &mcp.RequestExtra{Header: http.Header{
+			agentclient.Header: []string{"amp-mcp-client"},
+		}},
+	}
+
+	handler := s.loggingMiddleware(func(context.Context, string, mcp.Request) (mcp.Result, error) {
+		return &mcp.CallToolResult{}, nil
+	})
+	_, err := handler(ctx, "tools/call", req)
+	require.NoError(t, err)
+
+	require.Equal(t, 1, logs.Len())
+	entry := logs.All()[0]
+	assert.Equal(t, "nuon cli agent", entry.Message)
+	assert.Equal(t, "amp-mcp-client", entry.ContextMap()["agent"])
+	assert.Equal(t, "tools/call/whoami", entry.ContextMap()["command"])
+	assert.Equal(t, http.MethodPost, entry.ContextMap()["method"])
+	assert.Equal(t, "/mcp", entry.ContextMap()["path"])
+	assert.Equal(t, "acc_test", entry.ContextMap()["account_id"])
+}
+
+func TestLoggingMiddlewareSkipsWithoutHeader(t *testing.T) {
+	core, logs := observer.New(zap.InfoLevel)
+	s := &Server{l: zap.New(core)}
+	req := &mcp.CallToolRequest{
+		Params: &mcp.CallToolParamsRaw{Name: "whoami"},
+	}
+	handler := s.loggingMiddleware(func(context.Context, string, mcp.Request) (mcp.Result, error) {
+		return &mcp.CallToolResult{}, nil
+	})
+	_, err := handler(context.Background(), "tools/call", req)
+	require.NoError(t, err)
+	assert.Equal(t, 0, logs.Len())
 }
