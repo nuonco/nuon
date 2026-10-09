@@ -23,12 +23,14 @@ import {
   summaryDeploymentEvidence,
   type TDeploymentOutcome,
 } from '@/components/installs/DeploymentDetail/deployment-progress'
+import { useInstallHref } from '@/hooks/use-install-path'
 import { useStoredViewMode } from '@/hooks/use-stored-view-mode'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type {
   TAPIError,
   TInstallDeploymentRecordType,
   TInstallDeploymentSummary,
+  TWorkflow,
 } from '@/types'
 import { cn } from '@/utils/classnames'
 import {
@@ -99,10 +101,24 @@ const DeploymentRecordRow = ({
   view = 'grid',
 }: IDeploymentRecordRow) => {
   const { addPanel } = useSurfaces()
+  const installHref = useInstallHref()
+  const detailsHref = installHref({
+    orgId,
+    appId,
+    installId,
+    suffix: `/deployments/${deployment.id}`,
+  })
   const recovered =
     run.status === 'success'
       ? recoveredDeploymentResources(run.outcomes, previousOutcomes)
       : []
+  const workflow = {
+    id: deployment.id,
+    name: deployment.title,
+    type: DEPLOYMENT_TYPE_LABELS[deployment.type],
+    finished: deployment.finished,
+    status: { status: deployment.status },
+  } as TWorkflow
   const onViewDetails = () =>
     addPanel(
       <DeploymentDetailPanel
@@ -120,7 +136,9 @@ const DeploymentRecordRow = ({
         title={deployment.title}
         typeLabel={DEPLOYMENT_TYPE_LABELS[deployment.type]}
         createdAt={deployment.created_at}
+        href={detailsHref}
         onViewDetails={onViewDetails}
+        workflow={workflow}
       >
         <DeploymentPolicySummary steps={run.steps} />
       </DeploymentCard>
@@ -131,7 +149,9 @@ const DeploymentRecordRow = ({
       run={run}
       title={deployment.title}
       createdAt={deployment.created_at}
+      href={detailsHref}
       onViewDetails={onViewDetails}
+      workflow={workflow}
       history={!active}
     >
       <DeploymentPolicySummary steps={run.steps} history={!active} />

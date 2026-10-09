@@ -225,7 +225,7 @@ func (s *Server) getServerForRequest(r *http.Request) *mcp.Server {
 		SchemaCache:  s.schemaCache,
 		Instructions: fmt.Sprintf("%s Authenticated as account %s in org %q. %s %s %s %s %s %s", s.serverPurpose, accountID, orgID, s.orgInstructions, api.MCPTimeInstructions, api.MCPPoliciesInstructions, api.MCPWatchInstructions, api.MCPAppConfigInstructions, skills.Instructions),
 	})
-	server.AddReceivingMiddleware(s.receivingMetricsMiddleware)
+	server.AddReceivingMiddleware(s.receivingMetricsMiddleware, s.loggingMiddleware)
 
 	for _, svc := range s.mcpServices {
 		svc.RegisterMCPTools(server)
@@ -346,15 +346,6 @@ func (s *Server) authContextMiddleware(next http.Handler) http.Handler {
 
 		orgID := s.resolveOrg(acct, tok.ID, r.Header.Get("X-Nuon-Org-ID"))
 		s.touchOrgSelection(tok.ID)
-		if agent := r.Header.Get(agentclient.Header); agent != "" {
-			l.Info("nuon cli agent",
-				zap.String("agent", agent),
-				zap.String("command", r.Header.Get(agentclient.CommandHeader)),
-				zap.String("account_id", acct.ID),
-				zap.String("method", r.Method),
-				zap.String("path", r.URL.Path),
-			)
-		}
 
 		ctx = cctx.SetAccountContext(ctx, acct)
 		ctx = context.WithValue(ctx, keys.OrgIDCtxKey, orgID)
@@ -363,6 +354,54 @@ func (s *Server) authContextMiddleware(next http.Handler) http.Handler {
 		ctx = keys.WithOrgSelector(ctx, func(newOrgID string) {
 			s.setOrgSelection(tok.ID, newOrgID)
 		})
+		ctx = context.WithValue(ctx, mcpHTTPRequestKey{}, mcpHTTPRequest{
+			method: r.Method,
+			path:   r.URL.Path,
+		})
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+// mcpHTTPRequest is the HTTP request that carried an MCP call. The agent log
+// is written later, once the JSON-RPC method is known, and still includes these.
+type mcpHTTPRequest struct {
+	method string
+	path   string
+}
+
+type mcpHTTPRequestKey struct{}
+
+// loggingMiddleware writes the public API's "nuon cli agent" line once the
+// JSON-RPC method is known. command is the MCP operation, such as
+// tools/call/whoami, matching the metric endpoint name.
+func (s *Server) loggingMiddleware(next mcp.MethodHandler) mcp.MethodHandler {
+	return func(ctx context.Context, method string, req mcp.Request) (mcp.Result, error) {
+		s.logAgentOperation(ctx, req, mcpRPCEndpoint(method, mcpToolName(req)))
+		return next(ctx, method, req)
+	}
+}
+
+func (s *Server) logAgentOperation(ctx context.Context, req mcp.Request, command string) {
+	if s == nil || s.l == nil || req == nil || command == "" {
+		return
+	}
+	extra := req.GetExtra()
+	if extra == nil {
+		return
+	}
+	agent := extra.Header.Get(agentclient.Header)
+	if agent == "" {
+		return
+	}
+	fields := []zap.Field{
+		zap.String("agent", agent),
+		zap.String("command", command),
+	}
+	if info, ok := ctx.Value(mcpHTTPRequestKey{}).(mcpHTTPRequest); ok {
+		fields = append(fields,
+			zap.String("method", info.method),
+			zap.String("path", info.path),
+		)
+	}
+	cctx.GetLogger(ctx, s.l).Info("nuon cli agent", fields...)
 }

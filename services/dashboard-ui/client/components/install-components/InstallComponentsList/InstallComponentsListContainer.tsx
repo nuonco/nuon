@@ -10,9 +10,12 @@ import {
 import { ManageAllDropdown } from '@/components/install-components/management/ManageAllDropdown'
 import { ResourceComponentActions } from '@/components/install-components/ResourceComponentActions'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallLink } from '@/hooks/use-install-path'
 import { useOrg } from '@/hooks/use-org'
+import { useSurfaces } from '@/hooks/use-surfaces'
 import { getInstallComponents } from '@/lib'
 import type { TComponentType, TInstallComponent } from '@/types'
+import { InstallComponentDetailPanel } from './InstallComponentDetailPanel'
 import { InstallComponentLatestDeploy } from './InstallComponentLatestDeploy'
 import {
   InstallComponentsList,
@@ -50,6 +53,8 @@ const enabledRank = (enabled?: boolean | null) => {
 export const InstallComponentsListContainer = () => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const { addPanel } = useSurfaces()
+  const installLink = useInstallLink()
   const [searchParams, setSearchParams] = useSearchParams()
   const showHealth = !!org?.features?.['component-health']
 
@@ -107,8 +112,24 @@ export const InstallComponentsListContainer = () => {
         behind,
         enabled: installComponent.enabled,
         status: installComponent.status_v2?.status ?? installComponent.status,
+        href: componentId
+          ? installLink({
+              installId: install?.id,
+              appId: install?.app_id,
+              suffix: `/components/${componentId}`,
+            })
+          : undefined,
         actions: component ? (
           <ResourceComponentActions
+            onViewDetails={() =>
+              addPanel(
+                <InstallComponentDetailPanel
+                  componentId={componentId}
+                  name={component.name}
+                />,
+                `install-component-${componentId}`
+              )
+            }
             appliedConfigId={appliedConfigId}
             component={component}
             currentBuildId={latestDeploy?.build_id}
@@ -145,6 +166,8 @@ export const InstallComponentsListContainer = () => {
     install?.app_id,
     install?.app_config_id,
     showHealth,
+    addPanel,
+    installLink,
   ])
 
   return (

@@ -119,7 +119,6 @@ const BranchTemplate = () => {
   const navLinks: TNavItem[] = [
     { path: `/`, iconVariant: 'GraphIcon', text: 'Overview' },
     { path: `/installs`, iconVariant: 'CubeIcon', text: 'Installs' },
-    { path: `/rollout`, iconVariant: 'StackIcon', text: 'Rollout' },
     { path: `/runs`, iconVariant: 'ListIcon', text: 'Previous runs' },
     ...(hasInstallSyncing
       ? [

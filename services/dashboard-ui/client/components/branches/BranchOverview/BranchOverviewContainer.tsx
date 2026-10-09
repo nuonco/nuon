@@ -247,8 +247,7 @@ export const BranchOverviewContainer = () => {
         changes={
           configError ? (
             <ConfigParseFailure
-              className="w-full basis-full"
-              title="Changes"
+              className="w-full"
               lines={configDiagnosticLines(configError)}
             />
           ) : branchRunId ? (
