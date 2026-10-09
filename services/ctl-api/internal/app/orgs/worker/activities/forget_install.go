@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
@@ -106,21 +107,17 @@ func (a *Activities) ForgetInstall(ctx context.Context, req ForgetInstallRequest
 		}
 	}
 
-	// must run before the cascade delete below; see the helper's doc comment.
-	if err := a.acctClient.DeleteInstallStackServiceAccounts(ctx, req.InstallID); err != nil {
-		return err
-	}
+	return a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := account.New(account.Params{DB: tx}).DeleteInstallServiceAccounts(ctx, req.InstallID); err != nil {
+			return err
+		}
 
-	res := a.db.WithContext(ctx).
-		Select(clause.Associations).
-		Delete(&app.Install{
-			ID: req.InstallID,
-		})
-	if res.Error != nil {
-		return dbgenerics.TemporalGormError(res.Error, "unable to delete install: %w")
-	}
-
-	return nil
+		res := tx.Select(clause.Associations).Delete(&app.Install{ID: req.InstallID})
+		if res.Error != nil {
+			return dbgenerics.TemporalGormError(res.Error, "unable to delete install: %w")
+		}
+		return nil
+	})
 }
 
 func (a *Activities) cancelOpenInstallWorkflows(ctx context.Context, installID, installOwnerType string) error {

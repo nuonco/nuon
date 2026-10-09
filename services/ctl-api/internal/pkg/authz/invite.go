@@ -17,20 +17,23 @@ func (h *Client) AcceptInvite(ctx context.Context, invite *app.OrgInvite, acct *
 		roleType = app.RoleTypeOrgAdmin
 	}
 
-	// add the role to the user
-	if err := h.AddAccountOrgRole(ctx, roleType, invite.OrgID, acct.ID); err != nil {
-		return fmt.Errorf("unable to add account role: %w", err)
-	}
-
-	// update invite object
-	res := h.db.WithContext(ctx).
-		Model(&app.OrgInvite{ID: invite.ID}).
-		Updates(app.OrgInvite{Status: app.OrgInviteStatusAccepted})
-	if res.Error != nil {
-		return fmt.Errorf("unable to update invite: %w", res.Error)
-	}
-	if res.RowsAffected < 1 {
-		return fmt.Errorf("invite not found %w", gorm.ErrRecordNotFound)
+	if err := h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := RequireUserManaged(tx, acct.ID); err != nil {
+			return err
+		}
+		if err := New(Params{DB: tx}).AddAccountOrgRole(ctx, roleType, invite.OrgID, acct.ID); err != nil {
+			return fmt.Errorf("unable to add account role: %w", err)
+		}
+		res := tx.Model(&app.OrgInvite{ID: invite.ID}).Updates(app.OrgInvite{Status: app.OrgInviteStatusAccepted})
+		if res.Error != nil {
+			return fmt.Errorf("unable to update invite: %w", res.Error)
+		}
+		if res.RowsAffected < 1 {
+			return fmt.Errorf("invite not found %w", gorm.ErrRecordNotFound)
+		}
+		return nil
+	}); err != nil {
+		return err
 	}
 
 	// send a notification to the correct org event flow that it was accepted

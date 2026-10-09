@@ -4,8 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
 
 type EnsureInstallStackServiceAccountRequest struct {
@@ -39,21 +44,24 @@ func (a *Activities) EnsureInstallStackServiceAccount(
 		return nil, generics.TemporalGormError(res.Error, "unable to load install stack: %w")
 	}
 
-	acct, err := a.acctClient.EnsureServiceAccount(ctx, stack.ID, "")
-	if err != nil {
-		return nil, fmt.Errorf("unable to ensure stack service account: %w", err)
+	var accountID string
+	if err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		binding, err := account.New(account.Params{DB: tx}).EnsureManagedServiceAccount(ctx, account.ManagedServiceAccountRequest{
+			OrgID: stack.OrgID, OwnerType: plugins.TableName(tx, app.InstallStack{}), OwnerID: stack.ID,
+			Purpose: app.ManagedServiceAccountPurposeStack, InstanceKey: "default", Subject: stack.ID,
+		})
+		if err != nil {
+			return fmt.Errorf("unable to ensure stack service account: %w", err)
+		}
+		accountID = binding.AccountID
+		authzClient := authz.New(authz.Params{DB: tx})
+		if err := authzClient.EnsureStackInstallRole(ctx, stack.OrgID, stack.InstallID, accountID); err != nil {
+			return fmt.Errorf("unable to ensure stack service account role: %w", err)
+		}
+		return authzClient.RemoveAccountOrgRoleByType(ctx, app.RoleTypeOrgAdmin, stack.OrgID, accountID)
+	}); err != nil {
+		return nil, err
 	}
 
-	// Grant before revoke: a crash in between leaves the account over-privileged
-	// rather than locked out, and the next call converges.
-	if err := a.authzClient.EnsureStackInstallRole(ctx, stack.OrgID, stack.InstallID, acct.ID); err != nil {
-		return nil, fmt.Errorf("unable to ensure stack service account role: %w", err)
-	}
-
-	// Stacks provisioned before the scoped role existed hold org admin.
-	if err := a.authzClient.RemoveAccountOrgRoleByType(ctx, app.RoleTypeOrgAdmin, stack.OrgID, acct.ID); err != nil {
-		return nil, fmt.Errorf("unable to revoke stack service account org admin: %w", err)
-	}
-
-	return &EnsureInstallStackServiceAccountResponse{AccountID: acct.ID}, nil
+	return &EnsureInstallStackServiceAccountResponse{AccountID: accountID}, nil
 }

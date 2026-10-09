@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -342,8 +343,15 @@ func (s *service) createStaticToken(ctx context.Context, acct *app.Account, orgI
 		AccountID:   acct.ID,
 	}
 
-	if res := s.db.WithContext(ctx).Create(&token); res.Error != nil {
-		return nil, fmt.Errorf("unable to create static token: %w", res.Error)
+	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var liveAccount struct{ ID string }
+		if err := tx.Model(&app.Account{}).Select("id").Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where(app.Account{ID: acct.ID}).Take(&liveAccount).Error; err != nil {
+			return fmt.Errorf("lock account for token issuance: %w", err)
+		}
+		return tx.Create(&token).Error
+	}); err != nil {
+		return nil, fmt.Errorf("unable to create static token: %w", err)
 	}
 
 	return &token, nil
