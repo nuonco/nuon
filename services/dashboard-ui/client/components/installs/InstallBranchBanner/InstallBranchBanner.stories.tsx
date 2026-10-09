@@ -26,11 +26,16 @@ const commit = (index: number): TInstallOverviewCommit => ({
   message: messages[index % messages.length],
   author: 'Example Developer',
   created_at: new Date(Date.now() - (index + 1) * 3_600_000).toISOString(),
-  run_status: index === 0 ? 'in-progress' : 'success',
+  run_status:
+    index < 2
+      ? 'running'
+      : index === 2
+        ? 'pending'
+        : ['success', 'failed', 'cancelled', 'not-attempted'][(index - 3) % 4],
   awaiting_approval: index === 1,
 })
 
-const page = (count?: number, error = false) => {
+const page = (count?: number, error = false, hasActiveRuns = true) => {
   const base = resourcesFixture('active')
   const deployments = deploymentsFixture('results')
   const tracking: TInstallBranchTracking = {
@@ -50,7 +55,14 @@ const page = (count?: number, error = false) => {
     commits_behind: count,
     pending_commits: Array.from(
       { length: Math.min(count ?? 0, 50) },
-      (_, index) => commit(index)
+      (_, index) =>
+        hasActiveRuns
+          ? commit(index)
+          : {
+              ...commit(index),
+              run_status: 'cancelled',
+              awaiting_approval: false,
+            }
     ),
   }
   const fixture: TFixture = (url, init) => {
@@ -77,4 +89,5 @@ export const Current = () => page(0)
 export const UnknownProvenance = () => page()
 export const TwentyFiveCommitsBehind = () => page(25)
 export const ManyCommitsBehind = () => page(64)
+export const NoActiveRuns = () => page(3, false, false)
 export const LoadFailed = () => page(0, true)

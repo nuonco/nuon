@@ -1,10 +1,13 @@
+import { useState } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
 import { Card } from '@/components/common/Card'
+import { EmptyState } from '@/components/common/EmptyState'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
+import { ToggleButton } from '@/components/common/ToggleButton'
 import type { TInstallOverviewCommit } from '@/types'
 
 export interface IPendingCommits {
@@ -24,6 +27,14 @@ export const PendingCommits = ({
   repo,
   selectedCommit,
 }: IPendingCommits) => {
+  const [filter, setFilter] = useState('active')
+  const visibleCommits =
+    filter === 'active'
+      ? commits.filter(
+          (commit) =>
+            commit.run_status === 'pending' || commit.run_status === 'running'
+        )
+      : commits
   const hidden = (commitsBehind ?? commits.length) - commits.length
   const selectedHref = hrefFor(selectedCommit)
 
@@ -47,7 +58,29 @@ export const PendingCommits = ({
         These app configuration changes are newer than the install’s selected
         commit. View a branch run to review its changes and rollout status.
       </Text>
-      {commits.map((commit) => {
+      <ToggleButton
+        label="Branch run filter"
+        value={filter}
+        onChange={setFilter}
+        options={[
+          { value: 'active', label: 'Active runs' },
+          { value: 'all', label: 'All commits' },
+        ]}
+      />
+      {visibleCommits.length === 0 ? (
+        <EmptyState
+          variant="history"
+          emptyTitle={filter === 'active' ? 'No active runs' : 'No commits'}
+          emptyMessage={
+            filter === 'active'
+              ? hidden > 0
+                ? 'No active runs in the newest commits. Choose All commits to review their history.'
+                : 'No branch runs are pending or running. Choose All commits to review their history.'
+              : 'There are no newer app configuration changes to show.'
+          }
+        />
+      ) : null}
+      {visibleCommits.map((commit) => {
         const href = hrefFor(commit)
         return (
           <Card
@@ -84,7 +117,10 @@ export const PendingCommits = ({
       })}
       {hidden > 0 ? (
         <Text variant="subtext" theme="neutral">
-          Showing the newest {commits.length} of {commitsBehind} commits on{' '}
+          {filter === 'active'
+            ? 'Showing active runs from the newest'
+            : 'Showing the newest'}{' '}
+          {commits.length} of {commitsBehind} commits on{' '}
           {branchName ?? 'this branch'}.
         </Text>
       ) : null}
