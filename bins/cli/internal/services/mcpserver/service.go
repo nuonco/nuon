@@ -252,6 +252,10 @@ func (s *Service) buildProxyServer(ctx context.Context, upstream *mcp.ClientSess
 				Arguments: req.Params.Arguments,
 			}
 			if token := req.Params.GetProgressToken(); token != nil {
+				// JSON numbers decode as float64, which SetProgressToken panics on.
+				if f, ok := token.(float64); ok {
+					token = int64(f)
+				}
 				params.SetProgressToken(token)
 				defer s.progress.listen(token, func(ctx context.Context, p *mcp.ProgressNotificationParams) {
 					_ = req.Session.NotifyProgress(ctx, &mcp.ProgressNotificationParams{
