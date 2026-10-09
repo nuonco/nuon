@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -118,6 +120,15 @@ func (s *service) getOrgServiceAccount(ctx context.Context, orgID, accountID str
 // instead lets the planner walk the whole accounts table in email order to
 // satisfy the ORDER BY and LIMIT, which took tens of seconds on a cold cache.
 func (s *service) orgServiceAccountIDs(ctx context.Context, orgID string, includeRunners, includeStacks bool) ([]string, error) {
+	accountIDs := []string{}
+	if err := s.orgServiceAccounts(ctx, orgID, includeRunners, includeStacks).Pluck("account_roles.account_id", &accountIDs).Error; err != nil {
+		return nil, fmt.Errorf("unable to list service account ids for org %s: %w", orgID, err)
+	}
+
+	return accountIDs, nil
+}
+
+func (s *service) orgServiceAccounts(ctx context.Context, orgID string, includeRunners, includeStacks bool) *gorm.DB {
 	tx := s.db.WithContext(ctx).
 		Model(&app.AccountRole{}).
 		Joins("JOIN accounts ON accounts.id = account_roles.account_id AND accounts.deleted_at = 0 AND accounts.account_type = ?", app.AccountTypeService).
@@ -136,12 +147,212 @@ func (s *service) orgServiceAccountIDs(ctx context.Context, orgID string, includ
 			Where("roles.role_type NOT IN ?", excludedRoleTypes)
 	}
 
-	accountIDs := []string{}
-	if err := tx.Distinct().Pluck("account_roles.account_id", &accountIDs).Error; err != nil {
-		return nil, fmt.Errorf("unable to list service account ids for org %s: %w", orgID, err)
+	return tx.Distinct("account_roles.account_id")
+}
+
+type ServiceAccountOwnership struct {
+	OwnerType   string `json:"owner_type"`
+	OwnerID     string `json:"owner_id"`
+	Purpose     string `json:"purpose"`
+	InstanceKey string `json:"instance_key"`
+	OwnerName   string `json:"owner_name,omitempty"`
+	InstallID   string `json:"install_id,omitempty"`
+}
+
+type ServiceAccount struct {
+	app.Account
+
+	SystemAccount         bool                     `json:"system_account"`
+	Purposes              []string                 `json:"purposes"`
+	ManagedServiceAccount *ServiceAccountOwnership `json:"managed_service_account,omitempty"`
+}
+
+type serviceAccountClass struct {
+	System   bool
+	Purposes []string
+	Managed  *ServiceAccountOwnership
+}
+
+type serviceAccountClasses map[string]serviceAccountClass
+
+func (c serviceAccountClasses) get(accountID string) serviceAccountClass {
+	if class, ok := c[accountID]; ok {
+		return class
+	}
+	return serviceAccountClass{Purposes: []string{}}
+}
+
+func (s *service) classifyServiceAccounts(ctx context.Context, orgID string, accounts any) (serviceAccountClasses, error) {
+	var roles []struct {
+		AccountID string
+		RoleType  app.RoleType
+	}
+	if err := s.db.WithContext(ctx).
+		Model(&app.AccountRole{}).
+		Select("account_roles.account_id", "roles.role_type").
+		Joins("JOIN roles ON roles.id = account_roles.role_id AND roles.deleted_at = 0").
+		Where(app.AccountRole{OrgID: generics.NewNullString(orgID)}).
+		Where("account_roles.account_id IN (?)", accounts).
+		Where("roles.role_type IN ?", []app.RoleType{app.RoleTypeRunner, app.RoleTypeStack}).
+		Scan(&roles).Error; err != nil {
+		return nil, fmt.Errorf("unable to load service account roles for org %s: %w", orgID, err)
+	}
+	legacyPurposes := map[string][]string{}
+	for _, role := range roles {
+		if !slices.Contains(legacyPurposes[role.AccountID], string(role.RoleType)) {
+			legacyPurposes[role.AccountID] = append(legacyPurposes[role.AccountID], string(role.RoleType))
+		}
 	}
 
-	return accountIDs, nil
+	var managed []app.ManagedServiceAccount
+	if err := s.db.WithContext(ctx).
+		Select("account_id", "owner_type", "owner_id", "purpose", "instance_key").
+		Where(app.ManagedServiceAccount{OrgID: orgID}).
+		Where("account_id IN (?)", accounts).
+		Find(&managed).Error; err != nil {
+		return nil, fmt.Errorf("unable to load managed service accounts for org %s: %w", orgID, err)
+	}
+	ownership := make(map[string]*ServiceAccountOwnership, len(managed))
+	for _, binding := range managed {
+		ownership[binding.AccountID] = &ServiceAccountOwnership{
+			OwnerType:   binding.OwnerType,
+			OwnerID:     binding.OwnerID,
+			Purpose:     string(binding.Purpose),
+			InstanceKey: binding.InstanceKey,
+		}
+	}
+
+	classes := make(serviceAccountClasses, len(legacyPurposes)+len(ownership))
+	for accountID, purposes := range legacyPurposes {
+		slices.Sort(purposes)
+		classes[accountID] = serviceAccountClass{System: true, Purposes: purposes}
+	}
+	for accountID, owner := range ownership {
+		classes[accountID] = serviceAccountClass{System: true, Purposes: []string{owner.Purpose}, Managed: owner}
+	}
+
+	return classes, nil
+}
+
+func (s *service) enrichServiceAccountOwners(ctx context.Context, org *app.Org, owners []*ServiceAccountOwnership) error {
+	orgType := plugins.TableName(s.db, app.Org{})
+	installType := plugins.TableName(s.db, app.Install{})
+	stackType := plugins.TableName(s.db, app.InstallStack{})
+
+	var installIDs, stackIDs []string
+	for _, owner := range owners {
+		switch owner.OwnerType {
+		case installType:
+			installIDs = append(installIDs, owner.OwnerID)
+		case stackType:
+			stackIDs = append(stackIDs, owner.OwnerID)
+		}
+	}
+
+	stackInstalls := map[string]string{}
+	if len(stackIDs) > 0 {
+		var stacks []struct{ ID, InstallID string }
+		if err := s.db.WithContext(ctx).
+			Model(&app.InstallStack{}).
+			Select("id", "install_id").
+			Where(app.InstallStack{OrgID: org.ID}).
+			Where("id IN ?", stackIDs).
+			Find(&stacks).Error; err != nil {
+			return fmt.Errorf("unable to load service account owner stacks for org %s: %w", org.ID, err)
+		}
+		for _, stack := range stacks {
+			stackInstalls[stack.ID] = stack.InstallID
+			installIDs = append(installIDs, stack.InstallID)
+		}
+	}
+
+	installNames := map[string]string{}
+	if len(installIDs) > 0 {
+		var installs []struct{ ID, Name string }
+		if err := s.db.WithContext(ctx).
+			Model(&app.Install{}).
+			Scopes(scopes.WithDisableViews).
+			Select("id", "name").
+			Where(app.Install{OrgID: org.ID}).
+			Where("id IN ?", installIDs).
+			Find(&installs).Error; err != nil {
+			return fmt.Errorf("unable to load service account owner installs for org %s: %w", org.ID, err)
+		}
+		for _, install := range installs {
+			installNames[install.ID] = install.Name
+		}
+	}
+
+	for _, owner := range owners {
+		switch owner.OwnerType {
+		case orgType:
+			if owner.OwnerID == org.ID {
+				owner.OwnerName = org.Name
+			}
+		case installType:
+			owner.OwnerName = installNames[owner.OwnerID]
+		case stackType:
+			if name, ok := installNames[stackInstalls[owner.OwnerID]]; ok {
+				owner.OwnerName = name
+				owner.InstallID = stackInstalls[owner.OwnerID]
+			}
+		}
+	}
+
+	return nil
+}
+
+func serviceAccountOwners(classes serviceAccountClasses, accountIDs []string) []*ServiceAccountOwnership {
+	owners := []*ServiceAccountOwnership{}
+	for _, accountID := range accountIDs {
+		if owner := classes.get(accountID).Managed; owner != nil {
+			owners = append(owners, owner)
+		}
+	}
+	return owners
+}
+
+func (s *service) searchServiceAccounts(ctx context.Context, org *app.Org, scope *gorm.DB, accountIDs []string, classes serviceAccountClasses, query string) ([]string, error) {
+	if len(accountIDs) == 0 {
+		return accountIDs, nil
+	}
+
+	var accounts []struct{ ID, Email, Name string }
+	if err := s.db.WithContext(ctx).
+		Model(&app.Account{}).
+		Select("id", "email", "name").
+		Where("id IN (?)", scope).
+		Find(&accounts).Error; err != nil {
+		return nil, fmt.Errorf("unable to load service accounts for org %s: %w", org.ID, err)
+	}
+
+	if err := s.enrichServiceAccountOwners(ctx, org, serviceAccountOwners(classes, accountIDs)); err != nil {
+		return nil, err
+	}
+
+	candidates := make(map[string]bool, len(accountIDs))
+	for _, accountID := range accountIDs {
+		candidates[accountID] = true
+	}
+
+	matched := make([]string, 0, len(accountIDs))
+	for _, acct := range accounts {
+		if !candidates[acct.ID] {
+			continue
+		}
+		fields := []string{acct.ID, acct.Email, acct.Name}
+		if owner := classes.get(acct.ID).Managed; owner != nil {
+			fields = append(fields, owner.OwnerID, owner.OwnerName)
+		}
+		for _, field := range fields {
+			if strings.Contains(strings.ToLower(field), query) {
+				matched = append(matched, acct.ID)
+				break
+			}
+		}
+	}
+
+	return matched, nil
 }
 
 // @ID						ListServiceAccounts
@@ -150,17 +361,21 @@ func (s *service) orgServiceAccountIDs(ctx context.Context, orgID string, includ
 // @Param					offset			query	int		false	"offset of results to return"	Default(0)
 // @Param					limit			query	int		false	"limit of results to return"	Default(10)
 // @Param					page			query	int		false	"page number of results to return"	Default(0)
-// @Param					include_runners	query	bool	false	"include service accounts with the runner role (excluded by default)"
-// @Param					include_stacks	query	bool	false	"include service accounts with the stack role (excluded by default)"
+// @Param					include_runners	query	bool	false	"include service accounts with the runner role (excluded by default; ignored when management is set)"
+// @Param					include_stacks	query	bool	false	"include service accounts with the stack role (excluded by default; ignored when management is set)"
+// @Param					management		query	string	false	"filter by who manages the account"	Enums(user, system, all)
+// @Param					purpose			query	string	false	"filter to service accounts with this exact purpose"
+// @Param					q				query	string	false	"case-insensitive substring match on name, email, ID, or owner name and ID"
 // @Tags					accounts
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{object}	[]app.Account
+// @Success				200	{object}	[]ServiceAccount
 // @Router					/v1/service-accounts [GET]
 func (s *service) ListServiceAccounts(ctx *gin.Context) {
 	org, err := s.requireOrgAdmin(ctx)
@@ -169,13 +384,59 @@ func (s *service) ListServiceAccounts(ctx *gin.Context) {
 		return
 	}
 
+	management := ctx.Query("management")
 	includeRunners := ctx.Query("include_runners") == "true"
 	includeStacks := ctx.Query("include_stacks") == "true"
+	switch management {
+	case "":
+	case "user", "system", "all":
+		includeRunners, includeStacks = true, true
+	default:
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("invalid management filter %q", management),
+			Description: "management must be one of user, system or all",
+		})
+		return
+	}
+	purpose := ctx.Query("purpose")
+	query := strings.ToLower(ctx.Query("q"))
 
 	accountIDs, err := s.orgServiceAccountIDs(ctx, org.ID, includeRunners, includeStacks)
 	if err != nil {
 		ctx.Error(err)
 		return
+	}
+
+	filtered := management == "user" || management == "system" || purpose != "" || query != ""
+	var classes serviceAccountClasses
+	if filtered {
+		scope := s.orgServiceAccounts(ctx, org.ID, includeRunners, includeStacks)
+		classes, err = s.classifyServiceAccounts(ctx, org.ID, scope)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+
+		candidates := make([]string, 0, len(accountIDs))
+		for _, accountID := range accountIDs {
+			class := classes.get(accountID)
+			if (management == "user" && class.System) || (management == "system" && !class.System) {
+				continue
+			}
+			if purpose != "" && !slices.Contains(class.Purposes, purpose) {
+				continue
+			}
+			candidates = append(candidates, accountID)
+		}
+		accountIDs = candidates
+
+		if query != "" {
+			accountIDs, err = s.searchServiceAccounts(ctx, org, scope, accountIDs, classes, query)
+			if err != nil {
+				ctx.Error(err)
+				return
+			}
+		}
 	}
 
 	accounts := []app.Account{}
@@ -202,7 +463,70 @@ func (s *service) ListServiceAccounts(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, accounts)
+	pageIDs := make([]string, 0, len(accounts))
+	for _, acct := range accounts {
+		pageIDs = append(pageIDs, acct.ID)
+	}
+	if !filtered {
+		classes, err = s.classifyServiceAccounts(ctx, org.ID, pageIDs)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+	}
+	if query == "" {
+		if err := s.enrichServiceAccountOwners(ctx, org, serviceAccountOwners(classes, pageIDs)); err != nil {
+			ctx.Error(err)
+			return
+		}
+	}
+
+	resp := make([]ServiceAccount, 0, len(accounts))
+	for _, acct := range accounts {
+		class := classes.get(acct.ID)
+		resp = append(resp, ServiceAccount{
+			Account:               acct,
+			SystemAccount:         class.System,
+			Purposes:              class.Purposes,
+			ManagedServiceAccount: class.Managed,
+		})
+	}
+
+	ctx.JSON(http.StatusOK, resp)
+}
+
+// @ID						ListServiceAccountPurposes
+// @Summary				List the purposes of the current org's service accounts
+// @Description.markdown	list_service_account_purposes.md
+// @Tags					accounts
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{array}		string
+// @Router					/v1/service-accounts/purposes [GET]
+func (s *service) ListServiceAccountPurposes(ctx *gin.Context) {
+	org, err := s.requireOrgAdmin(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	classes, err := s.classifyServiceAccounts(ctx, org.ID, s.orgServiceAccounts(ctx, org.ID, true, true))
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	purposes := []string{}
+	for _, class := range classes {
+		purposes = append(purposes, class.Purposes...)
+	}
+	slices.Sort(purposes)
+
+	ctx.JSON(http.StatusOK, slices.Compact(purposes))
 }
 
 type CreateServiceAccountRequest struct {
