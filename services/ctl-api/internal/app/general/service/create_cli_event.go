@@ -53,6 +53,11 @@ func (s *service) CreateCLIEvent(ctx *gin.Context) {
 		return
 	}
 
+	if req.CLIVersion == "development" {
+		ctx.Status(http.StatusAccepted)
+		return
+	}
+
 	distinctID := acct.Email
 	if distinctID == "" {
 		distinctID = acct.Subject
