@@ -92,26 +92,24 @@ func TestManifestKindsNamespaces(t *testing.T) {
 	assert.Equal(t, []string{"tf-ns"}, p.Namespaces(), "an empty manifest clears the component's namespaces")
 }
 
-func TestRequiredKind(t *testing.T) {
-	statefulsets := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "statefulsets"}
-	pods := schema.GroupVersionResource{Version: "v1", Resource: "pods"}
-	nodePools := schema.GroupVersionResource{Group: "karpenter.sh", Version: "v1", Resource: "nodepools"}
-
-	p := NewManifestKindsProvider(ManifestKindsProviderParams{})
-	e := &Engine{manifestKinds: p}
-
-	assert.True(t, e.requiredKind(statefulsets), "nothing recorded yet means nothing can be ruled out")
-
-	p.Set("cmp-a", "---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: api\n", "app")
-	assert.True(t, e.requiredKind(deploymentsGVR), "a rendered kind is required")
-	assert.False(t, e.requiredKind(statefulsets), "a core kind nothing renders is not")
-	assert.True(t, e.requiredKind(pods), "pods are always required")
-	assert.True(t, e.requiredKind(nodePools), "discovered kinds are rendered by definition")
-}
-
-func TestForgivePodlessNamespaces(t *testing.T) {
-	forbidden := func(ns string) error {
-		return apierrors.NewForbidden(schema.GroupResource{Resource: "pods"}, ns, nil)
+func TestForgiveForbidden(t *testing.T) {
+	forbidden := func(resource, ns string) error {
+		return apierrors.NewForbidden(schema.GroupResource{Resource: resource}, ns, nil)
+	}
+	listErr := func(resource string, namespaces ...string) error {
+		failed := map[string]error{}
+		for _, ns := range namespaces {
+			failed[ns] = forbidden(resource, ns)
+		}
+		return &namespaceListError{failed: failed}
+	}
+	failedNamespaces := func(t *testing.T, err error) []string {
+		if err == nil {
+			return nil
+		}
+		var nsErr *namespaceListError
+		require.ErrorAs(t, err, &nsErr)
+		return nsErr.namespaces()
 	}
 	helmDeployment := func(name, ns, release string) *unstructured.Unstructured {
 		u := controller("Deployment", name, ns, "", "")
@@ -119,21 +117,15 @@ func TestForgivePodlessNamespaces(t *testing.T) {
 		u.SetAnnotations(map[string]string{helmReleaseNameAnnotation: release})
 		return u
 	}
-	listErr := func() error {
-		return &namespaceListError{failed: map[string]error{
-			"control": forbidden("control"),
-			"apps":    forbidden("apps"),
-			"sandbox": forbidden("sandbox"),
-		}}
-	}
-	objects := []listedObject{
-		{gvr: deploymentsGVR, u: helmDeployment("proxy", "control", "runtime")},
-		{gvr: deploymentsGVR, u: helmDeployment("customer-app", "apps", "someone-else")},
-	}
 
+	// A chart running a Deployment in control and only dropping a
+	// ServiceAccount into apps, whose Role grants no workload reads.
+	const chart = "---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: proxy\n---\napiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: storage\n  namespace: apps\n"
 	newEngine := func(manifest string) *Engine {
 		kinds := NewManifestKindsProvider(ManifestKindsProviderParams{})
-		kinds.Set("cmp-1", manifest, "control")
+		if manifest != "" {
+			kinds.Set("cmp-1", manifest, "control")
+		}
 		e := &Engine{
 			l:             zap.NewNop(),
 			idx:           newIndex(),
@@ -145,29 +137,65 @@ func TestForgivePodlessNamespaces(t *testing.T) {
 		})
 		return e
 	}
+	objects := []listedObject{
+		{gvr: deploymentsGVR, u: helmDeployment("proxy", "control", "runtime")},
+		{gvr: deploymentsGVR, u: helmDeployment("customer-app", "apps", "someone-else")},
+	}
+	ingresses := schema.GroupVersionResource{Group: "networking.k8s.io", Version: "v1", Resource: "ingresses"}
 
-	t.Run("keeps only namespaces running a component workload", func(t *testing.T) {
-		e := newEngine("---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: proxy\n")
-		err := e.forgivePodlessNamespaces("ins-1", listErr(), objects)
-
-		var nsErr *namespaceListError
-		require.ErrorAs(t, err, &nsErr)
-		assert.Equal(t, []string{"control"}, nsErr.namespaces())
+	t.Run("a kind is only a gap where a component renders it", func(t *testing.T) {
+		e := newEngine(chart)
+		err := e.forgiveForbidden("ins-1", deploymentsGVR, coreKinds[deploymentsGVR], listErr("deployments", "control", "apps"), objects)
+		assert.Equal(t, []string{"control"}, failedNamespaces(t, err))
 		assert.True(t, apierrors.IsForbidden(err))
+
+		err = e.forgiveForbidden("ins-1", ingresses, coreKinds[ingresses], listErr("ingresses", "control", "apps"), objects)
+		assert.NoError(t, err, "nothing renders an Ingress")
 	})
 
-	t.Run("nothing left is no error", func(t *testing.T) {
-		e := newEngine("---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: proxy\n")
-		err := e.forgivePodlessNamespaces("ins-1", listErr(), objects[1:])
+	t.Run("pods are a gap only where a component workload runs", func(t *testing.T) {
+		e := newEngine(chart)
+		err := e.forgiveForbidden("ins-1", podsGVR, coreKinds[podsGVR], listErr("pods", "control", "apps"), objects)
+		assert.Equal(t, []string{"control"}, failedNamespaces(t, err))
+
+		err = e.forgiveForbidden("ins-1", podsGVR, coreKinds[podsGVR], listErr("pods", "control", "apps"), objects[1:])
 		assert.NoError(t, err)
 	})
 
-	t.Run("a rendered bare pod keeps every namespace", func(t *testing.T) {
-		e := newEngine("---\napiVersion: v1\nkind: Pod\nmetadata:\n  name: once\n")
-		err := e.forgivePodlessNamespaces("ins-1", listErr(), objects)
-
-		var nsErr *namespaceListError
-		require.ErrorAs(t, err, &nsErr)
-		assert.Len(t, nsErr.namespaces(), 3)
+	t.Run("a rendered bare pod keeps its namespace", func(t *testing.T) {
+		e := newEngine("---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: cfg\n---\napiVersion: v1\nkind: Pod\nmetadata:\n  name: once\n  namespace: apps\n")
+		err := e.forgiveForbidden("ins-1", podsGVR, coreKinds[podsGVR], listErr("pods", "control", "apps"), nil)
+		assert.Equal(t, []string{"apps"}, failedNamespaces(t, err))
 	})
+
+	t.Run("identity kinds are never a gap", func(t *testing.T) {
+		e := newEngine(chart)
+		namespaces := schema.GroupVersionResource{Version: "v1", Resource: "namespaces"}
+		err := e.forgiveForbidden("ins-1", namespaces, schema.GroupKind{Kind: "Namespace"}, forbidden("namespaces", ""), objects)
+		assert.NoError(t, err)
+	})
+
+	t.Run("nothing recorded rules nothing out", func(t *testing.T) {
+		e := newEngine("")
+		err := e.forgiveForbidden("ins-1", ingresses, coreKinds[ingresses], listErr("ingresses", "control", "apps"), objects)
+		assert.Equal(t, []string{"apps", "control"}, failedNamespaces(t, err))
+	})
+
+	t.Run("a namespace no recorded component covers rules nothing out", func(t *testing.T) {
+		e := newEngine(chart)
+		err := e.forgiveForbidden("ins-1", ingresses, coreKinds[ingresses], listErr("ingresses", "legacy"), objects)
+		assert.Equal(t, []string{"legacy"}, failedNamespaces(t, err))
+	})
+}
+
+func TestManifestKindsRendersInSurvivesRestart(t *testing.T) {
+	cluster := NewClusterProvider(ProviderParams{L: zap.NewNop()})
+	p := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: cluster})
+	p.Set("cmp-1", "---\napiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: web\n---\napiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: sa\n  namespace: apps\n", "control")
+
+	restored := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: cluster})
+	restored.Load()
+	ingress := schema.GroupKind{Group: "networking.k8s.io", Kind: "Ingress"}
+	assert.True(t, restored.RendersIn("control", ingress))
+	assert.False(t, restored.RendersIn("apps", ingress))
 }
