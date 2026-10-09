@@ -39,10 +39,11 @@ func Disabled(cfg *config.Config) bool {
 	return cfg != nil && cfg.GetBool("disable_telemetry")
 }
 
-// Send reports a finished command. It never returns an error and gives up
-// after a short timeout so it cannot hold up the CLI.
+// Send reports a finished command. Local development builds never report.
+// It never returns an error and gives up after a short timeout so it cannot
+// hold up the CLI.
 func Send(cfg *config.Config, success bool, duration time.Duration) {
-	if cfg == nil || cfg.APIToken == "" || cfg.AgentCommand == "" || Disabled(cfg) {
+	if cfg == nil || cfg.APIToken == "" || cfg.AgentCommand == "" || version.IsDev() || Disabled(cfg) {
 		return
 	}
 
