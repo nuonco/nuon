@@ -11,6 +11,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	posthog "github.com/posthog/posthog-go"
+	"github.com/posthog/posthog-go/posthogmcpsdk"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -24,6 +26,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 	controlplanemetrics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/productanalytics"
 )
 
 type Params struct {
@@ -36,6 +39,7 @@ type Params struct {
 	Cfg         *internal.Config
 	MW          metrics.Writer
 	HTTPMetrics *controlplanemetrics.HTTPMetrics
+	Analytics   *productanalytics.Client
 	Services    []api.Service `group:"services"`
 }
 
@@ -70,6 +74,9 @@ type Server struct {
 	mcpServices []api.MCPService
 	httpServer  *http.Server
 	schemaCache *mcp.SchemaCache
+	posthog     posthog.Client
+
+	posthogMiddleware *posthogmcpsdk.Middleware
 
 	implementationName string
 	requireEmployee    bool
@@ -97,6 +104,7 @@ func New(params Params) *Server {
 		params.Cfg,
 		params.MW,
 		params.HTTPMetrics,
+		params.Analytics,
 		mcpServices,
 		params.Cfg.MCPHTTPPort,
 		"nuon-ctl",
@@ -115,6 +123,7 @@ func NewNuonctl(params NuonctlParams) *Server {
 		params.Cfg,
 		params.MW,
 		params.HTTPMetrics,
+		nil,
 		params.Services,
 		params.Cfg.NuonctlMCPHTTPPort,
 		"nuonctl",
@@ -132,6 +141,7 @@ func newServer(
 	cfg *internal.Config,
 	mw metrics.Writer,
 	httpMetrics *controlplanemetrics.HTTPMetrics,
+	analyticsClient *productanalytics.Client,
 	mcpServices []api.MCPService,
 	port string,
 	implementationName string,
@@ -153,6 +163,11 @@ func newServer(
 		orgInstructions:    orgInstructions,
 		orgSelections:      make(map[string]*orgSelection),
 		stopJanitor:        make(chan struct{}),
+	}
+
+	if ph := analyticsClient.PostHog(); ph != nil && !requireEmployee {
+		s.posthog = ph
+		s.posthogMiddleware = s.newPostHogMiddleware()
 	}
 
 	mcpHandler := s.newMCPHandler()
@@ -226,6 +241,7 @@ func (s *Server) getServerForRequest(r *http.Request) *mcp.Server {
 		Instructions: fmt.Sprintf("%s Authenticated as account %s in org %q. %s %s %s %s %s %s", s.serverPurpose, accountID, orgID, s.orgInstructions, api.MCPTimeInstructions, api.MCPPoliciesInstructions, api.MCPWatchInstructions, api.MCPAppConfigInstructions, skills.Instructions),
 	})
 	server.AddReceivingMiddleware(s.receivingMetricsMiddleware, s.loggingMiddleware)
+	s.instrumentPostHog(server)
 
 	for _, svc := range s.mcpServices {
 		svc.RegisterMCPTools(server)
