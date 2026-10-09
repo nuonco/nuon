@@ -53,9 +53,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		// TODO: Add org_url - requires app URL config which is not available in signal context
 	})
 
-	// TODO: Add analytics tracking for OrgCreated event
-	// temporalanalytics.Writer is not available in the signal context.
-	// Original code: w.analytics.Track(ctx, events.OrgCreated, map[string]any{"org_id": org.ID, "org_type": org.OrgType})
+	if _, err := activities.AwaitSendOrgCreatedEvent(ctx, activities.SendOrgCreatedEventRequest{
+		OrgID:  s.OrgID,
+		Source: s.Source,
+	}); err != nil {
+		l := workflow.GetLogger(ctx)
+		l.Error("unable to send posthog org created event",
+			zap.Error(err),
+			zap.String("org_id", s.OrgID))
+	}
 
 	onCreate, err := activities.AwaitSupportUsersOnOrgCreate(ctx, activities.SupportUsersOnOrgCreateRequest{})
 	if err != nil {
