@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/productanalytics"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
@@ -31,6 +32,8 @@ type service struct {
 	queueClient    *queueclient.Client
 	generalHelpers *generalhelpers.Helpers
 	codecs         []converter.PayloadCodec
+
+	productAnalytics *productanalytics.Client
 }
 
 var _ apiPkg.Service = (*service)(nil)
@@ -44,6 +47,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		general.GET("/config-schema", s.GetConfigSchema)
 		general.GET("/config-schema/:type", s.GetConfigSchemaByType)
 		general.POST("/waitlist", s.CreateWaitlist)
+		general.POST("/cli-events", s.CreateCLIEvent)
 	}
 
 	return nil
@@ -123,6 +127,7 @@ type Params struct {
 	TemporalCodecGzip         converter.PayloadCodec `name:"gzip"`
 	TemporalCodecLargePayload converter.PayloadCodec `name:"largepayload"`
 	EndpointAudit             *apiPkg.EndpointAudit
+	ProductAnalytics          *productanalytics.Client
 }
 
 func New(params Params) *service {
@@ -130,16 +135,17 @@ func New(params Params) *service {
 		RouteRegister: apiPkg.RouteRegister{
 			EndpointAudit: params.EndpointAudit,
 		},
-		l:              params.L,
-		v:              params.V,
-		mw:             params.Mw,
-		db:             params.DB,
-		temporalClient: params.TemporalClient,
-		cfg:            params.Cfg,
-		authzClient:    params.AuthzClient,
-		acctClient:     params.AcctClient,
-		queueClient:    params.QueueClient,
-		generalHelpers: params.GeneralHelpers,
+		l:                params.L,
+		v:                params.V,
+		mw:               params.Mw,
+		db:               params.DB,
+		temporalClient:   params.TemporalClient,
+		cfg:              params.Cfg,
+		authzClient:      params.AuthzClient,
+		acctClient:       params.AcctClient,
+		queueClient:      params.QueueClient,
+		generalHelpers:   params.GeneralHelpers,
+		productAnalytics: params.ProductAnalytics,
 		codecs: []converter.PayloadCodec{
 			params.TemporalCodecGzip,
 			params.TemporalCodecLargePayload,

@@ -3,8 +3,11 @@ package cmd
 import (
 	"errors"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
+
+	"github.com/nuonco/nuon/bins/cli/internal/telemetry"
 )
 
 type (
@@ -17,7 +20,7 @@ type (
 func (c *cli) wrapCmd(f cobraRunECommand) cobraRunCommand {
 	return func(cmd *cobra.Command, args []string) {
 		if err := f(cmd, args); err != nil {
-			os.Exit(exitCodeForErr(err))
+			c.exit(exitCodeForErr(err))
 		}
 	}
 }
@@ -39,11 +42,18 @@ func (c *cli) wrapCmdWithExitCode(f cobraRunECommandExitCode) cobraRunCommand {
 	wrapped := func(cmd *cobra.Command, args []string) error {
 		exitCode, err := f(cmd, args)
 		if exitCode != 0 {
-			os.Exit(exitCode)
+			c.exit(exitCode)
 		}
 		return err
 	}
 	return func(cmd *cobra.Command, args []string) {
 		_ = wrapped(cmd, args)
 	}
+}
+
+// exit reports the failed command before exiting, because os.Exit skips the
+// report in Execute.
+func (c *cli) exit(code int) {
+	telemetry.Send(c.cfg, false, time.Since(c.start))
+	os.Exit(code)
 }
