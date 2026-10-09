@@ -238,6 +238,41 @@ State reads through `GetInstallState` and saves through `SaveState` emit:
 Outcomes describe the returned result, including successful database fallback after
 a blob-read failure.
 
+### Install fleet state
+
+Set `INSTALL_STATE_METRICS_ENABLED=true` to export the current state of every install
+as observable gauges. The internal API process (and the all-in-one `api` process)
+reads PostgreSQL at each export, so a deleted install drops out on the next export.
+Every replica reports the same values; aggregate with `max without (instance)`.
+`INSTALL_STATE_METRICS_LABELS` is a list of install label keys to copy onto
+`nuon.install.info` as `nuon.install.label.<key>`.
+
+Per-install gauges carry `nuon.org.id`, `nuon.app.id` and `nuon.install.id`:
+
+| Metric | Unit | Value | Additional dimensions |
+| --- | --- | --- | --- |
+| `nuon.install.info` | | 1 | `nuon.install.name`, `nuon.app_branch.name`, allowlisted labels |
+| `nuon.install.health.status` | | 1 | `nuon.health.status` (composite; `unset` before the first verdict) |
+| `nuon.install.components` | components | Count | `nuon.health.status` |
+| `nuon.install.health.last_report` | seconds | Unix time of the last component health report | |
+| `nuon.install.runner.status` | | 1 | `nuon.runner.status` |
+| `nuon.install.sandbox.status` | | 1 | `nuon.sandbox.status` |
+| `nuon.install.app_config.version` | | App config version the install runs | |
+| `nuon.install.deploy.latest.status` | | 1 | `nuon.workflow.type`, `nuon.workflow.status` of the newest deploy workflow |
+| `nuon.install.deploy.latest.created` | seconds | Unix time the newest deploy workflow was created | |
+| `nuon.install.deploy.latest.finished` | seconds | Unix time it finished; absent while it runs | |
+
+Per-branch gauges carry `nuon.org.id`, `nuon.app.id` and `nuon.app_branch.name`:
+
+| Metric | Unit | Value |
+| --- | --- | --- |
+| `nuon.app_branch.latest_config.version` | | Version of the newest app config on the branch |
+| `nuon.app_branch.latest_config.created` | seconds | Unix time it was created |
+
+Deploy workflows are provision, reprovision, sandbox and stack reprovision, manual and
+component deploys, component enablement, and app branch runs. A failed read omits that
+read's gauges for the export and logs a warning.
+
 ### Blob storage
 
 The shared blob service emits metrics for both S3 and GCS:
