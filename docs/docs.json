@@ -238,18 +238,24 @@
         "tab": "Agents",
         "icon": "robot",
         "pages": [
-          "guides/agents/overview",
           {
-            "group": "MCP",
+            "group": "Agents",
+            "root": "guides/agents/overview",
             "expanded": true,
             "pages": [
-              "guides/agents/setup",
-              "guides/agents/tools",
-              "guides/agents/sample-queries"
+              {
+                "group": "MCP",
+                "expanded": true,
+                "pages": [
+                  "guides/agents/setup",
+                  "guides/agents/tools",
+                  "guides/agents/sample-queries"
+                ]
+              },
+              "guides/agents/skills",
+              "guides/agents/ai-and-apps"
             ]
-          },
-          "guides/agents/skills",
-          "guides/agents/ai-and-apps"
+          }
         ]
       },
       {
