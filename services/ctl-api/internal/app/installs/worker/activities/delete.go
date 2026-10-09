@@ -3,9 +3,11 @@ package activities
 import (
 	"context"
 
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
@@ -17,12 +19,6 @@ type DeleteRequest struct {
 // @temporal-gen-v2 activity
 // @by-field InstallID
 func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
-	// Stack service accounts are only reachable by naming convention while the
-	// stack rows still exist; see DeleteInstallStackServiceAccounts.
-	if err := a.acctClient.DeleteInstallStackServiceAccounts(ctx, req.InstallID); err != nil {
-		return err
-	}
-
 	var queueIDs []string
 	if res := a.db.WithContext(ctx).
 		Model(&app.Queue{}).
@@ -48,14 +44,15 @@ func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
 		}
 	}
 
-	res := a.db.WithContext(ctx).
-		Select(clause.Associations).
-		Delete(&app.Install{
-			ID: req.InstallID,
-		})
-	if res.Error != nil {
-		return dbgenerics.TemporalGormError(res.Error, "unable to delete install: %w")
-	}
+	return a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := account.New(account.Params{DB: tx}).DeleteInstallServiceAccounts(ctx, req.InstallID); err != nil {
+			return err
+		}
 
-	return nil
+		res := tx.Select(clause.Associations).Delete(&app.Install{ID: req.InstallID})
+		if res.Error != nil {
+			return dbgenerics.TemporalGormError(res.Error, "unable to delete install: %w")
+		}
+		return nil
+	})
 }

@@ -30,10 +30,15 @@ func (c *Client) CreateToken(ctx context.Context, subjectOrEmail string, dur tim
 		AccountID:   acct.ID,
 	}
 
-	res := c.db.WithContext(ctx).
-		Create(&token)
-	if res.Error != nil {
-		return nil, pkgerrors.Wrap(res.Error, "unable to create token")
+	if err := c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var liveAccount struct{ ID string }
+		if err := tx.Model(&app.Account{}).Select("id").Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where(app.Account{ID: acct.ID}).Take(&liveAccount).Error; err != nil {
+			return pkgerrors.Wrap(err, "unable to lock account for token issuance")
+		}
+		return tx.Create(&token).Error
+	}); err != nil {
+		return nil, pkgerrors.Wrap(err, "unable to create token")
 	}
 
 	return &token, nil

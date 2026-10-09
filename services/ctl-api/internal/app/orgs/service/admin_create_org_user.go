@@ -7,9 +7,11 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 )
 
 type AdminCreateOrgUserRequest struct {
@@ -59,5 +61,10 @@ func (s *service) createUserByEmail(ctx context.Context, org *app.Org, email str
 		return fmt.Errorf("unable to create user: %w", err)
 	}
 
-	return s.authzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, org.ID, acct.ID)
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := authz.RequireUserManaged(tx, acct.ID); err != nil {
+			return err
+		}
+		return authz.New(authz.Params{DB: tx}).AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, org.ID, acct.ID)
+	})
 }
