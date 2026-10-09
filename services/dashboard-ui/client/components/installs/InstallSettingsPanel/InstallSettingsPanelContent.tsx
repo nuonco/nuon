@@ -4,6 +4,7 @@ import { Card } from '@/components/common/Card'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { InstallTelemetry } from '@/components/installs/InstallTelemetry'
+import { AutoApproveToggle } from '@/components/installs/management/EnableAutoApprove'
 import { ShutdownRunnerControl } from '@/components/runners/management/ShutdownRunnerControl'
 import { ReprovisionSandboxButton } from '@/components/sandbox/management/ReprovisionSandbox'
 import { useInstall } from '@/hooks/use-install'
@@ -34,7 +35,7 @@ const Section = ({
     <Text theme="neutral" weight="strong">
       {label}
     </Text>
-    <div className="grid grid-cols-1 @lg:grid-cols-2 @4xl:grid-cols-3 @6xl:grid-cols-4 gap-3">
+    <div className="grid grid-cols-1 items-start @lg:grid-cols-2 @4xl:grid-cols-3 @6xl:grid-cols-4 gap-3">
       {children}
     </div>
   </section>
@@ -107,6 +108,12 @@ const InstallSettingsPanelContentInner = () => {
             <InstallTelemetry />
           </ActionCard>
         ) : null}
+        <ActionCard
+          title="Auto approval"
+          description="Approve all workflow changes for this install without manual review."
+        >
+          <AutoApproveToggle />
+        </ActionCard>
       </Section>
 
       <Section label="Controls">
