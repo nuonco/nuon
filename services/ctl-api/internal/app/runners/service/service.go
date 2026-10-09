@@ -434,7 +434,7 @@ func New(params Params) (*service, error) {
 		emitterClient:          params.EmitterClient,
 		queueClient:            params.QueueClient,
 		telemetryTokenIssuer:   telemetryTokenIssuer,
-		registryAuthIssuer:     newRegistryAuthIssuer(params.Cfg.RunnerContainerImagePullServiceAccount),
+		registryAuthIssuer:     newRegistryAuthIssuer(params.Cfg),
 		telemetryRelayEndpoint: telemetryRelayEndpoint,
 		logStreamCache:         expirable.NewLRU[string, *app.LogStream](logStreamCacheSize, nil, logStreamCacheTTL),
 	}, nil

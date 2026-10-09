@@ -10,6 +10,7 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/api/impersonate"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -30,12 +31,12 @@ type registryAuthIssuer struct {
 	token *oauth2.Token
 }
 
-func newRegistryAuthIssuer(serviceAccount string) *registryAuthIssuer {
-	if serviceAccount == "" {
+func newRegistryAuthIssuer(cfg *internal.Config) *registryAuthIssuer {
+	if cfg == nil || cfg.RunnerContainerImagePullServiceAccount == "" {
 		return nil
 	}
 	return &registryAuthIssuer{
-		serviceAccount: serviceAccount,
+		serviceAccount: cfg.RunnerContainerImagePullServiceAccount,
 		newTokenSource: impersonatedTokenSource,
 	}
 }

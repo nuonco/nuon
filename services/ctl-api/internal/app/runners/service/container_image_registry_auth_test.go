@@ -8,6 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
 type countingTokenSource struct {
@@ -34,7 +36,8 @@ func testIssuer(calls *int, expiry time.Duration, err error) *registryAuthIssuer
 }
 
 func TestRegistryAuthIssuerDisabledWithoutServiceAccount(t *testing.T) {
-	issuer := newRegistryAuthIssuer("")
+	require.Nil(t, newRegistryAuthIssuer(nil))
+	issuer := newRegistryAuthIssuer(&internal.Config{})
 	require.Nil(t, issuer)
 
 	auth, err := issuer.auth("europe-west4-docker.pkg.dev/acme/acme-runner/runner")
