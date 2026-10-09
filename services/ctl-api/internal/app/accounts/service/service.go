@@ -5,6 +5,7 @@ import (
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
@@ -14,12 +15,14 @@ import (
 type Params struct {
 	fx.In
 
+	Cfg         *internal.Config
 	DB          *gorm.DB `name:"psql"`
 	AcctClient  *account.Client
 	AuthzClient *authz.Client
 }
 
 type service struct {
+	cfg         *internal.Config
 	db          *gorm.DB
 	acctClient  *account.Client
 	authzClient *authz.Client
@@ -29,6 +32,7 @@ var _ api.Service = (*service)(nil)
 
 func New(params Params) *service {
 	return &service{
+		cfg:         params.Cfg,
 		db:          params.DB,
 		acctClient:  params.AcctClient,
 		authzClient: params.AuthzClient,
@@ -67,6 +71,11 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		serviceAccounts.PATCH("/:account_id/role", s.UpdateServiceAccountRole)
 		serviceAccounts.DELETE("/:account_id", s.DeleteServiceAccount)
 		serviceAccounts.POST("/:account_id/tokens", s.CreateServiceAccountToken)
+		serviceAccounts.GET("/:account_id/oauth-clients", s.ListServiceAccountOAuthClients)
+		serviceAccounts.POST("/:account_id/oauth-clients", s.CreateServiceAccountOAuthClient)
+		serviceAccounts.DELETE("/:account_id/oauth-clients/:client_id", s.DeleteServiceAccountOAuthClient)
+		serviceAccounts.POST("/:account_id/oauth-clients/:client_id/secrets", s.CreateServiceAccountOAuthClientSecret)
+		serviceAccounts.DELETE("/:account_id/oauth-clients/:client_id/secrets/:secret_id", s.DeleteServiceAccountOAuthClientSecret)
 	}
 
 	// auth/me - registered here instead of authservice so it's available in PublicServicesModule

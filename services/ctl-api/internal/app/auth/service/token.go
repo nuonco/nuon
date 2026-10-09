@@ -28,6 +28,8 @@ type TokenInfo struct {
 
 type accessToken struct {
 	AccountID  string
+	OrgID      string
+	Name       string
 	Role       string
 	TokenType  app.TokenType
 	TTL        time.Duration
@@ -41,6 +43,8 @@ func (s *service) createAccessToken(tx *gorm.DB, spec accessToken) (*app.Token, 
 		Token:       domains.NewUserTokenID(),
 		TokenType:   spec.TokenType,
 		AccountID:   spec.AccountID,
+		OrgID:       spec.OrgID,
+		Name:        spec.Name,
 		CreatedByID: spec.AccountID,
 		Role:        spec.Role,
 		Issuer:      s.domain,

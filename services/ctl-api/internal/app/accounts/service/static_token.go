@@ -225,13 +225,21 @@ func (s *service) DeleteStaticToken(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.acctClient.RevokeToken(ctx, token.ID); err != nil {
-		ctx.Error(fmt.Errorf("unable to delete static token: %w", err))
-		return
-	}
+	err = s.db.WithContext(ctx.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		var acct app.Account
+		err := tx.Where(app.Account{ID: token.AccountID}).First(&acct).Error
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("unable to look up token account: %w", err)
+		}
 
-	if err := s.deleteTokenServiceAccount(ctx, org.ID, token.AccountID); err != nil {
-		ctx.Error(fmt.Errorf("unable to delete service account: %w", err))
+		acctClient := account.New(account.Params{DB: tx})
+		if err == nil && acct.AccountType == app.AccountTypeService && strings.HasPrefix(acct.Subject, dedicatedTokenSubjectPrefix(org.ID)) {
+			return acctClient.DeleteServiceAccount(ctx.Request.Context(), acct.ID)
+		}
+		return acctClient.RevokeToken(ctx.Request.Context(), token.ID)
+	})
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to delete static token: %w", err))
 		return
 	}
 
@@ -251,8 +259,8 @@ func (s *service) requireOrgAdmin(ctx *gin.Context) (*app.Org, error) {
 
 	if !s.isOrgAdmin(acct, org.ID) {
 		return nil, stderr.ErrAuthorization{
-			Err:         fmt.Errorf("only org admins can manage static tokens"),
-			Description: "only org admins can manage static tokens",
+			Err:         fmt.Errorf("only org admins can manage credentials"),
+			Description: "only org admins can manage credentials",
 		}
 	}
 
@@ -292,40 +300,6 @@ func (s *service) createTokenServiceAccount(ctx context.Context, orgID string, r
 	}
 
 	return &newAcct, nil
-}
-
-func (s *service) deleteTokenServiceAccount(ctx context.Context, orgID, accountID string) error {
-	var acct app.Account
-	res := s.db.WithContext(ctx).Where(app.Account{ID: accountID}).First(&acct)
-	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-		return nil
-	}
-	if res.Error != nil {
-		return fmt.Errorf("unable to look up token account: %w", res.Error)
-	}
-
-	// never remove roles from or delete a personal token's real user account
-	if acct.AccountType != app.AccountTypeService {
-		return nil
-	}
-
-	// Only accounts created to hold this one token: revoking a stack's or runner's token
-	// must not take the identity with it.
-	if !strings.HasPrefix(acct.Subject, dedicatedTokenSubjectPrefix(orgID)) {
-		return nil
-	}
-
-	if err := s.authzClient.RemoveAccountOrgRoles(ctx, orgID, accountID); err != nil {
-		return fmt.Errorf("unable to remove service account roles: %w", err)
-	}
-
-	if err := s.db.WithContext(ctx).
-		Where(app.Account{ID: accountID, AccountType: app.AccountTypeService}).
-		Delete(&app.Account{}).Error; err != nil {
-		return fmt.Errorf("unable to delete service account: %w", err)
-	}
-
-	return nil
 }
 
 func (s *service) createStaticToken(ctx context.Context, acct *app.Account, orgID, createdByID, name string, role app.RoleType, duration time.Duration) (*app.Token, error) {

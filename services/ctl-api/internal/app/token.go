@@ -27,7 +27,10 @@ const (
 
 type TokenSourceType string
 
-const TokenSourceTypeToken TokenSourceType = "token"
+const (
+	TokenSourceTypeToken             TokenSourceType = "token"
+	TokenSourceTypeOAuthClientSecret TokenSourceType = "oauth_client_secret"
+)
 
 type Token struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`

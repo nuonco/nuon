@@ -358,13 +358,15 @@ func (s *service) DeleteOIDCTrustPolicy(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.db.WithContext(ctx).Delete(policy).Error; err != nil {
+	err = s.db.WithContext(ctx.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		acctClient := account.New(account.Params{DB: tx})
+		if err := acctClient.DeleteServiceAccount(ctx.Request.Context(), policy.ServiceAccountID); err != nil {
+			return fmt.Errorf("unable to delete service account: %w", err)
+		}
+		return tx.Delete(policy).Error
+	})
+	if err != nil {
 		ctx.Error(fmt.Errorf("unable to delete trust policy: %w", err))
-		return
-	}
-
-	if err := s.deletePolicyServiceAccount(ctx, org.ID, policy.ServiceAccountID); err != nil {
-		ctx.Error(fmt.Errorf("unable to delete service account: %w", err))
 		return
 	}
 
@@ -455,18 +457,4 @@ func (s *service) createPolicyServiceAccount(ctx context.Context, orgID string, 
 	}
 
 	return &newAcct, nil
-}
-
-func (s *service) deletePolicyServiceAccount(ctx context.Context, orgID, accountID string) error {
-	if err := s.authzClient.RemoveAccountOrgRoles(ctx, orgID, accountID); err != nil {
-		return fmt.Errorf("unable to remove service account roles: %w", err)
-	}
-
-	if err := s.db.WithContext(ctx).
-		Where(app.Account{ID: accountID, AccountType: app.AccountTypeService}).
-		Delete(&app.Account{}).Error; err != nil {
-		return fmt.Errorf("unable to delete service account: %w", err)
-	}
-
-	return nil
 }

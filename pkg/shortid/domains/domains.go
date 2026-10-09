@@ -89,6 +89,10 @@ func NewOAuthClientID() string {
 	return shortid.NewNanoID("oac")
 }
 
+func NewOAuthClientSecretID() string {
+	return shortid.NewNanoID("ocs")
+}
+
 func NewOAuthAuthorizationCodeID() string {
 	return shortid.NewNanoID("ocd")
 }

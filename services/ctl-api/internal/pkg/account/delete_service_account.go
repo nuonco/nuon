@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 )
@@ -13,9 +14,10 @@ import (
 // DeleteServiceAccount removes an account's role bindings, stack roles, tokens, and
 // the row itself. A missing account is success — delete workflows retry.
 func (c *Client) DeleteServiceAccount(ctx context.Context, svcAcctID string) error {
-	email := ServiceAccountEmail(svcAcctID)
-
-	acct, err := c.FindAccount(ctx, email)
+	acct, err := c.FindAccount(ctx, svcAcctID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		acct, err = c.FindAccount(ctx, ServiceAccountEmail(svcAcctID))
+	}
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
@@ -39,21 +41,47 @@ func (c *Client) DeleteServiceAccount(ctx context.Context, svcAcctID string) err
 			return err
 		}
 
-		return deleteAccountRecords(tx, acct.ID)
+		return deleteAccountRecords(tx, acct)
+	})
+}
+
+func (c *Client) RemoveServiceAccountFromOrg(ctx context.Context, orgID, accountID string) error {
+	return c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := revokeAccountCredentials(tx, accountID); err != nil {
+			return err
+		}
+		if err := authz.RemoveAccountOrgRoles(tx, orgID, accountID); err != nil {
+			return err
+		}
+		if res := tx.Where(app.OAuthClient{OrgID: generics.NewNullString(orgID), AccountID: generics.NewNullString(accountID)}).
+			Delete(&app.OAuthClient{}); res.Error != nil {
+			return errors.Wrap(res.Error, "unable to delete org service account oauth clients")
+		}
+		return nil
 	})
 }
 
 // Role bindings are hard-deleted: the many2many's OnDelete:CASCADE never fires on a
 // soft delete. Soft-deleting tokens and the account is enough to break auth, since
 // FindAccount cannot see soft-deleted rows.
-func deleteAccountRecords(tx *gorm.DB, accountID string) error {
+func deleteAccountRecords(tx *gorm.DB, acct *app.Account) error {
 	if res := tx.Unscoped().
-		Where(app.AccountRole{AccountID: accountID}).
+		Where(app.AccountRole{AccountID: acct.ID}).
 		Delete(&app.AccountRole{}); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to remove account roles")
 	}
 
-	if res := tx.Delete(&app.Account{ID: accountID}); res.Error != nil {
+	if res := tx.Unscoped().Where(app.OrgInvite{Email: acct.Email}).
+		Delete(&app.OrgInvite{}); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to remove account invites")
+	}
+
+	if res := tx.Where(app.OAuthClient{AccountID: generics.NewNullString(acct.ID)}).
+		Delete(&app.OAuthClient{}); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to delete account oauth clients")
+	}
+
+	if res := tx.Delete(&app.Account{ID: acct.ID}); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to delete account")
 	}
 
