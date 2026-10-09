@@ -13,22 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
 
-func newPostHogClient(key, host string) (posthog.Client, error) {
-	if key == "" {
-		return nil, nil
-	}
-	return posthog.NewWithConfig(key, posthog.Config{
-		Endpoint: host,
-		BeforeSend: func(msg posthog.Message) posthog.Message {
-			if c, ok := msg.(posthog.Capture); ok {
-				delete(c.Properties, "$mcp_error_message")
-				return c
-			}
-			return msg
-		},
-	})
-}
-
 func (s *Server) instrumentPostHog(server *mcp.Server) {
 	if s.posthogMiddleware == nil {
 		return

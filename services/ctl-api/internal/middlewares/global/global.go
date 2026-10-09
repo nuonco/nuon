@@ -14,6 +14,7 @@ import (
 var globalEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"POST", "/v1/orgs"}:                                                  {},
 	{"GET", "/v1/orgs"}:                                                   {},
+	{"POST", "/v1/general/cli-events"}:                                    {},
 	{"POST", "/v1/general/metrics"}:                                       {},
 	{"GET", "/v1/general/current-user"}:                                   {},
 	{"GET", "/v1/sandboxes"}:                                              {},
