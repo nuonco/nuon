@@ -2,6 +2,7 @@ package componenthealth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -127,6 +128,11 @@ func (e *Engine) bound(resources []*models.ServiceComponentHealthResource, owner
 	return resources[:maxResourcesPerComponent], true
 }
 
+type listedObject struct {
+	gvr schema.GroupVersionResource
+	u   *unstructured.Unstructured
+}
+
 // collectCluster lists the watched kinds plus current warning events, assesses
 // each object, and groups it under the component or sandbox release owning it.
 func (e *Engine) collectCluster(
@@ -149,10 +155,6 @@ func (e *Engine) collectCluster(
 	namespaces := e.scopedNamespaces()
 	warnings := e.latestWarnings(ctx, dynClient, namespaces)
 
-	type listedObject struct {
-		gvr schema.GroupVersionResource
-		u   *unstructured.Unstructured
-	}
 	objects := make([]listedObject, 0, 256)
 	byKey := map[string]*unstructured.Unstructured{}
 
@@ -168,6 +170,9 @@ func (e *Engine) collectCluster(
 			scope = namespaces
 		}
 		items, err := listScoped(ctx, dynClient, gvr, metav1.ListOptions{}, scope)
+		if gvr == podsGVR && err != nil {
+			err = e.forgivePodlessNamespaces(installID, err, objects)
+		}
 		if err != nil && len(scope) > 0 && apierrors.IsForbidden(err) && !e.requiredKind(gvr) {
 			e.l.Debug("skipping kind no component deploys and the identity may not list",
 				zap.String("resource", gvr.String()), zap.Error(err))
@@ -273,13 +278,19 @@ var coreKinds = map[schema.GroupVersionResource]schema.GroupKind{
 
 // requiredKind reports whether losing a kind is a real gap. A namespace-scoped
 // role grants only what the install deploys, so a forbidden list of a core kind
-// nothing renders is not one. Pods are always required: every workload rolls up
-// to them.
+// nothing renders is not one. Pods are always required here; namespaces with no
+// component workload are forgiven separately.
 func (e *Engine) requiredKind(gvr schema.GroupVersionResource) bool {
 	gk, isCore := coreKinds[gvr]
 	if !isCore {
 		return true
 	}
+	return e.rendersKind(gk)
+}
+
+// rendersKind reports whether a recorded manifest renders gk, or whether
+// nothing is recorded yet and so nothing can be ruled out.
+func (e *Engine) rendersKind(gk schema.GroupKind) bool {
 	if e.manifestKinds == nil {
 		return true
 	}
@@ -297,7 +308,7 @@ func (e *Engine) requiredKind(gvr schema.GroupVersionResource) bool {
 
 // listScoped lists cluster-wide, falling back to each of namespaces when that
 // is forbidden — namespace-scoped RBAC is a supported install posture. Items
-// from namespaces that did list are returned alongside the first error.
+// from namespaces that did list are returned alongside a *namespaceListError.
 func listScoped(
 	ctx context.Context,
 	dynClient dynamic.Interface,
@@ -314,18 +325,91 @@ func listScoped(
 	}
 
 	var items []unstructured.Unstructured
-	var firstErr error
+	failed := map[string]error{}
 	for _, ns := range namespaces {
 		nsList, err := dynClient.Resource(gvr).Namespace(ns).List(ctx, opts)
 		if err != nil {
-			if firstErr == nil {
-				firstErr = fmt.Errorf("namespace %s: %w", ns, err)
-			}
+			failed[ns] = err
 			continue
 		}
 		items = append(items, nsList.Items...)
 	}
-	return items, firstErr
+	if len(failed) == 0 {
+		return items, nil
+	}
+	return items, &namespaceListError{failed: failed}
+}
+
+// namespaceListError holds the namespaces a fallback list failed in.
+type namespaceListError struct {
+	failed map[string]error
+}
+
+func (e *namespaceListError) namespaces() []string {
+	out := make([]string, 0, len(e.failed))
+	for ns := range e.failed {
+		out = append(out, ns)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func (e *namespaceListError) Error() string {
+	first := e.namespaces()[0]
+	return fmt.Sprintf("namespace %s: %v", first, e.failed[first])
+}
+
+func (e *namespaceListError) Unwrap() []error {
+	out := make([]error, 0, len(e.failed))
+	for _, ns := range e.namespaces() {
+		out = append(out, e.failed[ns])
+	}
+	return out
+}
+
+var podOwnerKinds = map[string]struct{}{
+	"Deployment":  {},
+	"StatefulSet": {},
+	"DaemonSet":   {},
+	"ReplicaSet":  {},
+	"Job":         {},
+}
+
+// forgivePodlessNamespaces drops forbidden pod lists in namespaces where no
+// component runs a workload: a chart may only drop a ServiceAccount into a
+// namespace whose Role grants no pod reads.
+func (e *Engine) forgivePodlessNamespaces(installID string, err error, objects []listedObject) error {
+	var nsErr *namespaceListError
+	if !errors.As(err, &nsErr) || e.rendersKind(schema.GroupKind{Kind: "Pod"}) {
+		return err
+	}
+
+	withWorkloads := map[string]struct{}{}
+	for _, obj := range objects {
+		if _, ok := podOwnerKinds[obj.u.GetKind()]; !ok {
+			continue
+		}
+		if _, owned := e.componentFor(installID, obj.u); !owned {
+			if _, owned = e.sandboxReleaseFor(obj.u); !owned {
+				continue
+			}
+		}
+		withWorkloads[obj.u.GetNamespace()] = struct{}{}
+	}
+
+	kept := map[string]error{}
+	for ns, listErr := range nsErr.failed {
+		if _, needed := withWorkloads[ns]; needed || !apierrors.IsForbidden(listErr) {
+			kept[ns] = listErr
+			continue
+		}
+		e.l.Debug("skipping pods in a namespace with no component workload the identity may not list",
+			zap.String("namespace", ns), zap.Error(listErr))
+	}
+	if len(kept) == 0 {
+		return nil
+	}
+	return &namespaceListError{failed: kept}
 }
 
 // watchList is the core workload kinds plus any kind this install's components

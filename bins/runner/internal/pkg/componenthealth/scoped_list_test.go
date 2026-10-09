@@ -6,8 +6,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	k8stesting "k8s.io/client-go/testing"
@@ -105,4 +107,67 @@ func TestRequiredKind(t *testing.T) {
 	assert.False(t, e.requiredKind(statefulsets), "a core kind nothing renders is not")
 	assert.True(t, e.requiredKind(pods), "pods are always required")
 	assert.True(t, e.requiredKind(nodePools), "discovered kinds are rendered by definition")
+}
+
+func TestForgivePodlessNamespaces(t *testing.T) {
+	forbidden := func(ns string) error {
+		return apierrors.NewForbidden(schema.GroupResource{Resource: "pods"}, ns, nil)
+	}
+	helmDeployment := func(name, ns, release string) *unstructured.Unstructured {
+		u := controller("Deployment", name, ns, "", "")
+		u.SetLabels(map[string]string{helmManagedByLabel: helmManagedByValue})
+		u.SetAnnotations(map[string]string{helmReleaseNameAnnotation: release})
+		return u
+	}
+	listErr := func() error {
+		return &namespaceListError{failed: map[string]error{
+			"control": forbidden("control"),
+			"apps":    forbidden("apps"),
+			"sandbox": forbidden("sandbox"),
+		}}
+	}
+	objects := []listedObject{
+		{gvr: deploymentsGVR, u: helmDeployment("proxy", "control", "runtime")},
+		{gvr: deploymentsGVR, u: helmDeployment("customer-app", "apps", "someone-else")},
+	}
+
+	newEngine := func(manifest string) *Engine {
+		kinds := NewManifestKindsProvider(ManifestKindsProviderParams{})
+		kinds.Set("cmp-1", manifest, "control")
+		e := &Engine{
+			l:             zap.NewNop(),
+			idx:           newIndex(),
+			cluster:       NewClusterProvider(ProviderParams{L: zap.NewNop()}),
+			manifestKinds: kinds,
+		}
+		e.idx.replace("ins-1", []componentEntry{
+			{installComponentID: "ic-1", componentID: "cmp-1", componentType: "helm_chart", helmReleaseName: "runtime"},
+		})
+		return e
+	}
+
+	t.Run("keeps only namespaces running a component workload", func(t *testing.T) {
+		e := newEngine("---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: proxy\n")
+		err := e.forgivePodlessNamespaces("ins-1", listErr(), objects)
+
+		var nsErr *namespaceListError
+		require.ErrorAs(t, err, &nsErr)
+		assert.Equal(t, []string{"control"}, nsErr.namespaces())
+		assert.True(t, apierrors.IsForbidden(err))
+	})
+
+	t.Run("nothing left is no error", func(t *testing.T) {
+		e := newEngine("---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: proxy\n")
+		err := e.forgivePodlessNamespaces("ins-1", listErr(), objects[1:])
+		assert.NoError(t, err)
+	})
+
+	t.Run("a rendered bare pod keeps every namespace", func(t *testing.T) {
+		e := newEngine("---\napiVersion: v1\nkind: Pod\nmetadata:\n  name: once\n")
+		err := e.forgivePodlessNamespaces("ins-1", listErr(), objects)
+
+		var nsErr *namespaceListError
+		require.ErrorAs(t, err, &nsErr)
+		assert.Len(t, nsErr.namespaces(), 3)
+	})
 }
