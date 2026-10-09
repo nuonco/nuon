@@ -1,6 +1,6 @@
 // Package telemetry reports one event per CLI command run to the control plane
 // the CLI is logged into. It sends the command path without arguments, the CLI
-// version, the outcome, and the duration. Opt out with DO_NOT_TRACK=1,
+// version, the outcome, the duration, and the OS. Opt out with DO_NOT_TRACK=1,
 // NUON_DISABLE_TELEMETRY=true, or disable_telemetry: true in the CLI config.
 // Local builds (version "development") send nothing unless
 // NUON_ENABLE_TELEMETRY=true.
@@ -29,7 +29,6 @@ type event struct {
 	Success    bool   `json:"success"`
 	DurationMS int64  `json:"duration_ms"`
 	OS         string `json:"os"`
-	Arch       string `json:"arch"`
 	Agent      string `json:"agent,omitempty"`
 }
 
@@ -64,7 +63,6 @@ func Send(cfg *config.Config, success bool, duration time.Duration) {
 		Success:    success,
 		DurationMS: duration.Milliseconds(),
 		OS:         runtime.GOOS,
-		Arch:       runtime.GOARCH,
 		Agent:      cfg.Agent,
 	})
 	if err != nil {

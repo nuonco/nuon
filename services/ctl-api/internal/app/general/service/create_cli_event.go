@@ -17,7 +17,6 @@ type CreateCLIEventRequest struct {
 	Success    bool   `json:"success"`
 	DurationMS int64  `json:"duration_ms" validate:"gte=0"`
 	OS         string `json:"os" validate:"max=32"`
-	Arch       string `json:"arch" validate:"max=32"`
 	Agent      string `json:"agent" validate:"max=64"`
 }
 
@@ -68,7 +67,6 @@ func (s *service) CreateCLIEvent(ctx *gin.Context) {
 		Set("success", req.Success).
 		Set("duration_ms", req.DurationMS).
 		Set("os", req.OS).
-		Set("arch", req.Arch).
 		Set("agent", req.Agent))
 
 	ctx.Status(http.StatusAccepted)

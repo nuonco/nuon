@@ -25,7 +25,9 @@ func New(lc fx.Lifecycle, cfg *internal.Config, l *zap.Logger) *Client {
 		Endpoint: cfg.PostHogHost,
 		BeforeSend: func(msg posthog.Message) posthog.Message {
 			if capture, ok := msg.(posthog.Capture); ok {
-				delete(capture.Properties, "$mcp_error_message")
+				for _, key := range []string{"$mcp_error_message", "$mcp_client_user_agent"} {
+					delete(capture.Properties, key)
+				}
 				return capture
 			}
 			return msg
