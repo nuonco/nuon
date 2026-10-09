@@ -17,7 +17,16 @@ func newPostHogClient(key, host string) (posthog.Client, error) {
 	if key == "" {
 		return nil, nil
 	}
-	return posthog.NewWithConfig(key, posthog.Config{Endpoint: host})
+	return posthog.NewWithConfig(key, posthog.Config{
+		Endpoint: host,
+		BeforeSend: func(msg posthog.Message) posthog.Message {
+			if c, ok := msg.(posthog.Capture); ok {
+				delete(c.Properties, "$mcp_error_message")
+				return c
+			}
+			return msg
+		},
+	})
 }
 
 func (s *Server) instrumentPostHog(server *mcp.Server) {
@@ -33,8 +42,13 @@ func (s *Server) newPostHogMiddleware() *posthogmcpsdk.Middleware {
 		return nil
 	}
 
-	m := posthogmcpsdk.NewMiddleware(posthogmcp.New(s.posthog),
+	m := posthogmcpsdk.NewMiddleware(posthogmcp.New(s.posthog, posthogmcp.WithExceptionAutocapture(false)),
 		posthogmcpsdk.WithServerInfo(s.implementationName, "1.0.0"),
+		posthogmcpsdk.WithContextParameter(false),
+		posthogmcpsdk.WithCaptureModel(false),
+		posthogmcpsdk.WithConversationID(false),
+		posthogmcpsdk.WithCaptureParameters(false),
+		posthogmcpsdk.WithCaptureResponses(false),
 		posthogmcpsdk.WithIdentity(func(ctx context.Context, _ *mcp.CallToolRequest) (posthogmcpsdk.Identity, error) {
 			acct, err := cctx.AccountFromContext(ctx)
 			if err != nil {
