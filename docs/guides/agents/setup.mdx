@@ -13,7 +13,7 @@ Sign in. This writes the token every setup below reads:
 nuon auth login    # writes api_token to ~/.nuon
 ```
 
-`nuon agents help` prints this page, checked against your own config. When an agent runs that command, it prints orientation markdown instead: auth, selected org/app/install, the MCP HTTP URL, the tool catalog, and how to read timestamps (UTC/`Z`, convert to local before naming a day or clock time).
+`nuon agents help` prints this page, checked against your own config. When an agent runs that command, it prints markdown instead.
 
 ## Connect
 
@@ -117,3 +117,5 @@ For a client configured by file, extra flags go inside `args`. Use that client's
 A non-default CLI config (`nuon -C /path/to/config agents mcp --allow-writes`) carries its own token, org, and `api_url`. Put `-C` and `--allow-writes` on the registered command (in `args` when the client is configured by file).
 
 Run `nuon agents help` to confirm which MCP URL resolves before registering.
+
+After the client is connected, paste a first prompt from [Sample queries](/guides/agents/sample-queries).

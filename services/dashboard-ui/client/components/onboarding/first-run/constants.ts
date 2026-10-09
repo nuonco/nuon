@@ -137,7 +137,7 @@ export const DEMO_REQUEST = 'https://nuon.co/demo-request'
 export const CONTACT_MESSAGE = 'I would like help writing the app config for my first install.'
 
 export const DOCS_URL = 'https://docs.nuon.co'
-export const DOCS_MCP = 'https://docs.nuon.co/guides/agents/mcp-walkthrough'
+export const DOCS_MCP = 'https://docs.nuon.co/guides/agents/setup'
 export const DOCS_APPS = 'https://docs.nuon.co/concepts/apps'
 export const DOCS_RUNNERS = 'https://docs.nuon.co/concepts/runners'
 export const DOCS_SANDBOXES = 'https://docs.nuon.co/concepts/sandboxes'
