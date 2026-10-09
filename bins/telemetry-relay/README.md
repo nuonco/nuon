@@ -1,11 +1,12 @@
 # Nuon BYOC Telemetry Relay
 
-An OpenTelemetry Collector distribution that forwards logs, metrics, and traces from Nuon install runners and
-the environment hosting the relay to an OTLP/HTTP backend. Both ingestion paths are enabled by default.
+An OpenTelemetry Collector distribution that forwards logs, metrics, and traces from Nuon install runners,
+in-cluster collectors, and the environment hosting the relay to an OTLP/HTTP backend. Both ingestion paths
+are enabled by default.
 
 | Path | Default listener | Processing |
 |---|---|---|
-| Install | `0.0.0.0:4318` | Verify runner JWT, check optional org allowlist, replace the four identity IDs with verified values, apply install resource attributes |
+| Install | `0.0.0.0:4318` | Verify runner or collector JWT, check optional org allowlist, replace identity IDs with verified values, apply install resource attributes |
 | Environment | `0.0.0.0:5318` | No authentication or identity validation; preserve incoming attributes except configured resource changes |
 
 Both paths accept `/v1/logs`, `/v1/metrics`, and `/v1/traces`. The environment path supports application,
@@ -25,7 +26,7 @@ The supplied [Collector configuration](config.yaml) uses these environment varia
 |---|---|
 | `NUON_TELEMETRY_ISSUER` | Expected JWT issuer |
 | `NUON_TELEMETRY_AUDIENCE` | Required JWT audience: the exact public relay endpoint configured in the control plane, whether deployment-default or org-specific. |
-| `NUON_TELEMETRY_ALLOW_LEGACY_AUDIENCE` | Also accept tokens with the legacy audience `urn:nuon:telemetry`; defaults to `true`. Set to `false` to require endpoint-bound tokens. |
+| `NUON_TELEMETRY_ALLOW_LEGACY_AUDIENCE` | Also accept runner tokens with the legacy audience `urn:nuon:telemetry`; defaults to `true`. Collector tokens always require endpoint binding. Set to `false` to require it for runners too. |
 | `NUON_TELEMETRY_JWKS_URL` | Issuer's public signing-key URL |
 | `NUON_TELEMETRY_JWKS_ALLOW_INSECURE` | Permit HTTP issuer and JWKS URLs; defaults to `false` |
 | `NUON_TELEMETRY_ALLOWED_ORG_IDS` | YAML/JSON list of allowed JWT org IDs for install telemetry; unset or `[]` allows all verified orgs |
@@ -72,10 +73,46 @@ for the new endpoint. A stale token request is rejected; the runner refreshes se
 switch does not resume sending to the old destination. Existing disk-queued telemetry may be forwarded to the
 new destination; endpoint changes are not a queue-drain or lossless-cutover mechanism.
 
+## In-cluster collector authentication
+
+A collector uses two credentials:
+
+- An opaque Nuon API token for the install's managed `telemetry_collector` service account, used to fetch
+  settings and request relay credentials from the control plane's runner API.
+- A short-lived JWT, used to send telemetry to the relay's install listener.
+
+Authenticate runner API requests with `Authorization: Bearer <Nuon API token>`:
+
+1. Poll `GET /v1/installs/:install_id/telemetry/collector-settings`. The response contains `enabled`,
+   `relay_endpoint`, and `resource_attributes`. Stop forwarding when `enabled` is false, but continue polling
+   so the collector can detect re-enablement.
+2. When enabled, request credentials with
+   `POST /v1/installs/:install_id/telemetry/collector-access-token?relay_endpoint=<URL-encoded relay_endpoint>`.
+   Supply the exact endpoint returned by settings. A stale endpoint returns HTTP 409; refresh settings before retrying.
+3. Use the returned `access_token` in `Authorization: Bearer <access_token>` for OTLP requests to the relay.
+   The response includes `token_type: "Bearer"` and `expires_in: 600`; renew before expiry.
+
+Token issuance requires create permission on the install's telemetry resource and a live managed-account binding
+for that install and collector purpose. A runner or org admin cannot obtain a collector JWT using their own identity.
+Telemetry must be enabled and the relay configured. Settings require read permission and remain accessible while
+forwarding is disabled.
+
+Collector JWTs are RS256-signed, use `typ=at+jwt`, carry only `telemetry:write`, and have a ten-minute lifetime.
+Their single audience is the exact relay endpoint. The subject is
+`org:<org_id>:install:<install_id>:collector:<account_id>`; `client_id` and `nuon_collector_id` identify the
+managed account, and `nuon_runner_id` is absent. Org, app, and install IDs are resolved by the control plane.
+Collectors cannot use legacy-audience tokens, even when the relay accepts those tokens for runners.
+
+The relay verifies JWTs without consulting the control plane. Disabling telemetry, revoking the Nuon API token,
+or removing the managed account prevents new JWTs but does not invalidate those already issued. They remain valid
+until expiry, including the relay's 30-second clock-skew allowance. The relay must support collector identities;
+a relay that only accepts runner identities rejects collector JWTs.
+
 ## Install identity and organization filtering
 
-`nuonidentity` stamps JWT-verified `nuon.org.id`, `nuon.app.id`, `nuon.install.id`, and `nuon.runner.id` on each
-resource. It first removes these keys from all resource, scope, record, span/event/link, metric metadata/datapoint,
+`nuonidentity` stamps JWT-verified `nuon.org.id`, `nuon.app.id`, and `nuon.install.id` on each resource,
+plus either `nuon.runner.id` or `nuon.collector.id`. The other identity key is absent. It first removes all
+five keys from resource, scope, record, span/event/link, metric metadata/datapoint,
 and exemplar attribute maps, matching case-insensitively and including fully underscored aliases such as
 `nuon_org_id`. Other attributes, including unrelated Nuon IDs and `*.name` labels, are preserved.
 
@@ -130,7 +167,7 @@ Override lists replace rather than append: retain the source-marker action and a
 
 Preserve producer identity (`service.*`, host/cloud/Kubernetes attributes) rather than assigning the relay's values
 to every source. `nuon.control_plane.id` is optional and source-owned. Install resource actions run after
-`nuonidentity`, so avoid overwriting the four verified IDs. Operator configuration is trusted.
+`nuonidentity`, so avoid overwriting the verified IDs. Operator configuration is trusted.
 
 ### Backend filtering
 

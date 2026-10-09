@@ -12,6 +12,7 @@ import (
 type InstallTelemetryConfig struct {
 	Name                string
 	Labels              labels.Labels
+	AppID               string
 	AppName             string  `gorm:"column:App__name"`
 	OrgName             string  `gorm:"column:Org__name"`
 	TelemetryEnabled    *bool   `gorm:"column:InstallConfig__telemetry_enabled"`
@@ -25,7 +26,7 @@ func (h *Helpers) GetInstallTelemetryConfig(ctx context.Context, orgID, installI
 	err := h.db.WithContext(ctx).
 		Model(&app.Install{}).
 		Scopes(scopes.WithDisableViews).
-		Select(table+".name", table+".labels").
+		Select(table+".name", table+".labels", table+".app_id").
 		Joins("App", h.db.Select("name")).
 		Joins("InstallConfig", h.db.Select("telemetry_enabled")).
 		Joins("Org", h.db.Select("name", "telemetry_enabled", "telemetry_relay_endpoint")).

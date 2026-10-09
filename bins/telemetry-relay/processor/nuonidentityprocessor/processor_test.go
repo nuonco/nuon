@@ -39,6 +39,7 @@ func addUntrustedAttributes(attributes pcommon.Map) {
 	for _, key := range []string{
 		"nuon.org.id", "nuon.app.id", "nuon.install.id", "nuon.runner.id",
 		"nuon_org_id", "nuon_app_id", "nuon_install_id", "nuon_runner_id",
+		"nuon.collector.id", "nuon_collector_id", "NUON.Collector.ID",
 		"Nuon_Org_ID", "NUON.Runner.ID",
 	} {
 		attributes.PutStr(key, "forged")
@@ -72,17 +73,24 @@ func requireOnlyUnreservedAttributes(t *testing.T, attributes pcommon.Map) {
 	}, attributes.AsRaw())
 }
 
-func requireStampedResource(t *testing.T, attributes pcommon.Map) {
+func requireStampedResource(t *testing.T, attributes pcommon.Map, principal nuonjwtauthextension.Principal) {
 	t.Helper()
-	principal := identityTestPrincipal()
 	requireAttribute(t, attributes, "keep", "value")
 	requireAttribute(t, attributes, "nuon.org.id", principal.OrgID)
 	requireAttribute(t, attributes, "nuon.app.id", principal.AppID)
 	requireAttribute(t, attributes, "nuon.install.id", principal.InstallID)
-	requireAttribute(t, attributes, "nuon.runner.id", principal.RunnerID)
+	if principal.CollectorID != "" {
+		requireAttribute(t, attributes, "nuon.collector.id", principal.CollectorID)
+		_, present := attributes.Get("nuon.runner.id")
+		require.False(t, present)
+	} else {
+		requireAttribute(t, attributes, "nuon.runner.id", principal.RunnerID)
+		_, present := attributes.Get("nuon.collector.id")
+		require.False(t, present)
+	}
 	preserved := pcommon.NewMap()
 	attributes.CopyTo(preserved)
-	for _, key := range []string{"nuon.org.id", "nuon.app.id", "nuon.install.id", "nuon.runner.id"} {
+	for _, key := range []string{"nuon.org.id", "nuon.app.id", "nuon.install.id", "nuon.runner.id", "nuon.collector.id"} {
 		preserved.Remove(key)
 	}
 	requireOnlyUnreservedAttributes(t, preserved)
@@ -106,7 +114,7 @@ func TestProcessLogsStripsReservedAttributesAndStampsResources(t *testing.T) {
 
 	require.NoError(t, processLogs(identityTestContext(), logs, nil))
 
-	requireStampedResource(t, resourceLogs.Resource().Attributes())
+	requireStampedResource(t, resourceLogs.Resource().Attributes(), identityTestPrincipal())
 	requireOnlyUnreservedAttributes(t, scopeLogs.Scope().Attributes())
 	requireOnlyUnreservedAttributes(t, record.Attributes())
 }
@@ -126,7 +134,7 @@ func TestProcessTracesStripsReservedAttributesAndStampsResources(t *testing.T) {
 
 	require.NoError(t, processTraces(identityTestContext(), traces, nil))
 
-	requireStampedResource(t, resourceSpans.Resource().Attributes())
+	requireStampedResource(t, resourceSpans.Resource().Attributes(), identityTestPrincipal())
 	requireOnlyUnreservedAttributes(t, scopeSpans.Scope().Attributes())
 	requireOnlyUnreservedAttributes(t, span.Attributes())
 	requireOnlyUnreservedAttributes(t, event.Attributes())
@@ -180,7 +188,7 @@ func TestProcessMetricsStripsEveryMetricAttributeLocation(t *testing.T) {
 
 	require.NoError(t, processMetrics(identityTestContext(), metrics, nil))
 
-	requireStampedResource(t, resourceMetrics.Resource().Attributes())
+	requireStampedResource(t, resourceMetrics.Resource().Attributes(), identityTestPrincipal())
 	requireOnlyUnreservedAttributes(t, scopeMetrics.Scope().Attributes())
 	for _, attributes := range []pcommon.Map{
 		gauge.Metadata(), gaugePoint.Attributes(), gaugePoint.Exemplars().At(0).FilteredAttributes(),
@@ -212,80 +220,87 @@ func TestFactoryEnforcesAllowedOrgs(t *testing.T) {
 		{name: "payload org cannot grant access", orgIDs: []string{"forged"}},
 		{name: "exact match required", orgIDs: []string{"org", "ORG-TEST", "org-test-extra"}},
 	} {
-		for _, signal := range []string{"logs", "metrics", "traces"} {
-			t.Run(tc.name+"/"+signal, func(t *testing.T) {
-				cfg := &Config{AllowedOrgIDs: tc.orgIDs}
-				settings := processortest.NewNopSettings(componentType)
-				factory := NewFactory()
-				ctx := identityTestContext()
-				forwarded := 0
-				var attributes pcommon.Map
-				var consumeErr error
+		for _, principal := range []nuonjwtauthextension.Principal{
+			identityTestPrincipal(),
+			{OrgID: "org-test", AppID: "app-test", InstallID: "install-test", CollectorID: "account-test"},
+		} {
+			for _, signal := range []string{"logs", "metrics", "traces"} {
+				t.Run(tc.name+"/"+principal.RunnerID+principal.CollectorID+"/"+signal, func(t *testing.T) {
+					cfg := &Config{AllowedOrgIDs: tc.orgIDs}
+					settings := processortest.NewNopSettings(componentType)
+					factory := NewFactory()
+					info := client.FromContext(context.Background())
+					info.Auth = nuonjwtauthextension.NewAuthData(principal)
+					ctx := client.NewContext(context.Background(), info)
+					forwarded := 0
+					var attributes pcommon.Map
+					var consumeErr error
 
-				switch signal {
-				case "logs":
-					logs := plog.NewLogs()
-					rsrc := logs.ResourceLogs().AppendEmpty()
-					attributes = rsrc.Resource().Attributes()
-					addUntrustedAttributes(attributes)
-					rsrc.ScopeLogs().AppendEmpty().LogRecords().AppendEmpty().Body().SetStr("example log")
-					sink, err := consumer.NewLogs(func(_ context.Context, data plog.Logs) error {
-						forwarded += data.LogRecordCount()
-						requireStampedResource(t, data.ResourceLogs().At(0).Resource().Attributes())
-						return nil
-					})
-					require.NoError(t, err)
-					proc, err := factory.CreateLogs(context.Background(), settings, cfg, sink)
-					require.NoError(t, err)
-					t.Cleanup(func() { require.NoError(t, proc.Shutdown(context.Background())) })
-					consumeErr = proc.ConsumeLogs(ctx, logs)
-				case "metrics":
-					metrics := pmetric.NewMetrics()
-					rsrc := metrics.ResourceMetrics().AppendEmpty()
-					attributes = rsrc.Resource().Attributes()
-					addUntrustedAttributes(attributes)
-					metric := rsrc.ScopeMetrics().AppendEmpty().Metrics().AppendEmpty()
-					metric.SetName("example.gauge")
-					metric.SetEmptyGauge().DataPoints().AppendEmpty().SetIntValue(7)
-					sink, err := consumer.NewMetrics(func(_ context.Context, data pmetric.Metrics) error {
-						forwarded += data.DataPointCount()
-						requireStampedResource(t, data.ResourceMetrics().At(0).Resource().Attributes())
-						return nil
-					})
-					require.NoError(t, err)
-					proc, err := factory.CreateMetrics(context.Background(), settings, cfg, sink)
-					require.NoError(t, err)
-					t.Cleanup(func() { require.NoError(t, proc.Shutdown(context.Background())) })
-					consumeErr = proc.ConsumeMetrics(ctx, metrics)
-				case "traces":
-					traces := ptrace.NewTraces()
-					rsrc := traces.ResourceSpans().AppendEmpty()
-					attributes = rsrc.Resource().Attributes()
-					addUntrustedAttributes(attributes)
-					rsrc.ScopeSpans().AppendEmpty().Spans().AppendEmpty().SetName("example span")
-					sink, err := consumer.NewTraces(func(_ context.Context, data ptrace.Traces) error {
-						forwarded += data.SpanCount()
-						requireStampedResource(t, data.ResourceSpans().At(0).Resource().Attributes())
-						return nil
-					})
-					require.NoError(t, err)
-					proc, err := factory.CreateTraces(context.Background(), settings, cfg, sink)
-					require.NoError(t, err)
-					t.Cleanup(func() { require.NoError(t, proc.Shutdown(context.Background())) })
-					consumeErr = proc.ConsumeTraces(ctx, traces)
-				}
+					switch signal {
+					case "logs":
+						logs := plog.NewLogs()
+						rsrc := logs.ResourceLogs().AppendEmpty()
+						attributes = rsrc.Resource().Attributes()
+						addUntrustedAttributes(attributes)
+						rsrc.ScopeLogs().AppendEmpty().LogRecords().AppendEmpty().Body().SetStr("example log")
+						sink, err := consumer.NewLogs(func(_ context.Context, data plog.Logs) error {
+							forwarded += data.LogRecordCount()
+							requireStampedResource(t, data.ResourceLogs().At(0).Resource().Attributes(), principal)
+							return nil
+						})
+						require.NoError(t, err)
+						proc, err := factory.CreateLogs(context.Background(), settings, cfg, sink)
+						require.NoError(t, err)
+						t.Cleanup(func() { require.NoError(t, proc.Shutdown(context.Background())) })
+						consumeErr = proc.ConsumeLogs(ctx, logs)
+					case "metrics":
+						metrics := pmetric.NewMetrics()
+						rsrc := metrics.ResourceMetrics().AppendEmpty()
+						attributes = rsrc.Resource().Attributes()
+						addUntrustedAttributes(attributes)
+						metric := rsrc.ScopeMetrics().AppendEmpty().Metrics().AppendEmpty()
+						metric.SetName("example.gauge")
+						metric.SetEmptyGauge().DataPoints().AppendEmpty().SetIntValue(7)
+						sink, err := consumer.NewMetrics(func(_ context.Context, data pmetric.Metrics) error {
+							forwarded += data.DataPointCount()
+							requireStampedResource(t, data.ResourceMetrics().At(0).Resource().Attributes(), principal)
+							return nil
+						})
+						require.NoError(t, err)
+						proc, err := factory.CreateMetrics(context.Background(), settings, cfg, sink)
+						require.NoError(t, err)
+						t.Cleanup(func() { require.NoError(t, proc.Shutdown(context.Background())) })
+						consumeErr = proc.ConsumeMetrics(ctx, metrics)
+					case "traces":
+						traces := ptrace.NewTraces()
+						rsrc := traces.ResourceSpans().AppendEmpty()
+						attributes = rsrc.Resource().Attributes()
+						addUntrustedAttributes(attributes)
+						rsrc.ScopeSpans().AppendEmpty().Spans().AppendEmpty().SetName("example span")
+						sink, err := consumer.NewTraces(func(_ context.Context, data ptrace.Traces) error {
+							forwarded += data.SpanCount()
+							requireStampedResource(t, data.ResourceSpans().At(0).Resource().Attributes(), principal)
+							return nil
+						})
+						require.NoError(t, err)
+						proc, err := factory.CreateTraces(context.Background(), settings, cfg, sink)
+						require.NoError(t, err)
+						t.Cleanup(func() { require.NoError(t, proc.Shutdown(context.Background())) })
+						consumeErr = proc.ConsumeTraces(ctx, traces)
+					}
 
-				if tc.allowed {
-					require.NoError(t, consumeErr)
-					require.Equal(t, 1, forwarded)
-				} else {
-					require.ErrorIs(t, consumeErr, errOrgNotAllowed)
-					require.True(t, consumererror.IsPermanent(consumeErr))
-					require.Equal(t, codes.PermissionDenied, status.Code(consumeErr))
-					require.Zero(t, forwarded)
-					requireAttribute(t, attributes, "nuon.org.id", "forged")
-				}
-			})
+					if tc.allowed {
+						require.NoError(t, consumeErr)
+						require.Equal(t, 1, forwarded)
+					} else {
+						require.ErrorIs(t, consumeErr, errOrgNotAllowed)
+						require.True(t, consumererror.IsPermanent(consumeErr))
+						require.Equal(t, codes.PermissionDenied, status.Code(consumeErr))
+						require.Zero(t, forwarded)
+						requireAttribute(t, attributes, "nuon.org.id", "forged")
+					}
+				})
+			}
 		}
 	}
 }

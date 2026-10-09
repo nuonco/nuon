@@ -18,8 +18,8 @@ const (
 	JWKSPath = "/.well-known/jwks.json"
 )
 
-// Issuer mints short-lived RS256 OIDC tokens signed with the control plane's
-// signing key, for clouds to federate to via (issuer, subject) trust.
+// Issuer mints short-lived RS256 federation and access tokens signed with
+// the control plane's signing key.
 type Issuer struct {
 	issuer     string
 	keyID      string
@@ -47,10 +47,30 @@ func New(issuer string, privateKey *rsa.PrivateKey, keyID string) (*Issuer, erro
 	}, nil
 }
 
+func NewFromJWKS(issuerURL, keySet string) (*Issuer, JWKS, error) {
+	privateKey, keyID, publicKeys, err := ParseJWKS(keySet)
+	if err != nil {
+		return nil, JWKS{}, err
+	}
+	issuer, err := New(issuerURL, privateKey, keyID)
+	if err != nil {
+		return nil, JWKS{}, err
+	}
+	return issuer, publicKeys, nil
+}
+
 // Mint returns a signed token with iss, sub, aud, iat, exp, nbf, and jti
 // claims, signed with the configured key. The issuer matches the discovery
 // document exactly, as OIDC federation requires.
 func (i *Issuer) Mint(ctx context.Context, subject, audience string, ttl time.Duration) (string, error) {
+	return i.mint(subject, audience, ttl, "JWT", nil)
+}
+
+func (i *Issuer) MintAccessToken(subject, audience string, ttl time.Duration, customClaims jwt.MapClaims) (string, error) {
+	return i.mint(subject, audience, ttl, "at+jwt", customClaims)
+}
+
+func (i *Issuer) mint(subject, audience string, ttl time.Duration, tokenType string, customClaims jwt.MapClaims) (string, error) {
 	if subject == "" {
 		return "", fmt.Errorf("OIDC token subject is required")
 	}
@@ -61,19 +81,26 @@ func (i *Issuer) Mint(ctx context.Context, subject, audience string, ttl time.Du
 		return "", fmt.Errorf("OIDC token TTL must be positive")
 	}
 
-	now := i.now().UTC()
-	claims := jwt.RegisteredClaims{
-		Issuer:    i.issuer,
-		Subject:   subject,
-		Audience:  jwt.ClaimStrings{audience},
-		ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
-		NotBefore: jwt.NewNumericDate(now),
-		IssuedAt:  jwt.NewNumericDate(now),
-		ID:        uuid.NewString(),
+	claims := make(jwt.MapClaims, len(customClaims)+7)
+	for name, value := range customClaims {
+		switch name {
+		case "iss", "sub", "aud", "iat", "exp", "nbf", "jti":
+			return "", fmt.Errorf("custom claims cannot override %q", name)
+		}
+		claims[name] = value
 	}
+
+	now := i.now().UTC()
+	claims["iss"] = i.issuer
+	claims["sub"] = subject
+	claims["aud"] = jwt.ClaimStrings{audience}
+	claims["exp"] = jwt.NewNumericDate(now.Add(ttl))
+	claims["nbf"] = jwt.NewNumericDate(now)
+	claims["iat"] = jwt.NewNumericDate(now)
+	claims["jti"] = uuid.NewString()
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 	token.Header["kid"] = i.keyID
-	token.Header["typ"] = "JWT"
+	token.Header["typ"] = tokenType
 
 	signed, err := token.SignedString(i.privateKey)
 	if err != nil {

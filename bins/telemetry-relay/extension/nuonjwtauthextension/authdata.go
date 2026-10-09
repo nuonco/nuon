@@ -5,10 +5,11 @@ import "go.opentelemetry.io/collector/client"
 const principalAttribute = "nuon.telemetry.principal"
 
 type Principal struct {
-	OrgID     string
-	AppID     string
-	InstallID string
-	RunnerID  string
+	OrgID       string
+	AppID       string
+	InstallID   string
+	RunnerID    string
+	CollectorID string
 }
 
 type AuthData struct {

@@ -1,6 +1,8 @@
 package service
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
@@ -19,6 +21,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetrytoken"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workloadjwt"
 
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
@@ -56,26 +59,27 @@ type Params struct {
 
 type service struct {
 	api.RouteRegister
-	v                *validator.Validate
-	l                *zap.Logger
-	db               *gorm.DB
-	chDB             *gorm.DB
-	mw               metrics.Writer
-	cfg              *internal.Config
-	componentHelpers *componenthelpers.Helpers
-	helpers          *helpers.Helpers
-	accountsHelpers  *accountshelpers.Helpers
-	acctClient       *account.Client
-	appsHelpers      *appshelpers.Helpers
-	orgsHelpers      *orgshelpers.Helpers
-	runnersHelpers   *runnershelpers.Helpers
-	actionsHelpers   *actionshelpers.Helpers
-	featuresClient   *features.Features
-	queueClient      *queueclient.Client
-	flowsClient      *flowclient.Client
-	blobSvc          blobstore.Service
-	audit            *audit.Emitter
-	workloadJWT      *workloadjwt.Verifier
+	v                    *validator.Validate
+	l                    *zap.Logger
+	db                   *gorm.DB
+	chDB                 *gorm.DB
+	mw                   metrics.Writer
+	cfg                  *internal.Config
+	componentHelpers     *componenthelpers.Helpers
+	helpers              *helpers.Helpers
+	accountsHelpers      *accountshelpers.Helpers
+	acctClient           *account.Client
+	appsHelpers          *appshelpers.Helpers
+	orgsHelpers          *orgshelpers.Helpers
+	runnersHelpers       *runnershelpers.Helpers
+	actionsHelpers       *actionshelpers.Helpers
+	featuresClient       *features.Features
+	queueClient          *queueclient.Client
+	flowsClient          *flowclient.Client
+	blobSvc              blobstore.Service
+	audit                *audit.Emitter
+	workloadJWT          *workloadjwt.Verifier
+	telemetryTokenIssuer *telemetrytoken.Issuer
 }
 
 var _ api.Service = (*service)(nil)
@@ -385,6 +389,8 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	api.POST("/v1/installs/:install_id/phone-home/:phone_home_id", s.InstallPhoneHome)
 	require.Route(api, permissions.KindTelemetry, permissions.PermissionRead, "install_id").
 		GET("/v1/installs/:install_id/telemetry/collector-settings", s.GetInstallTelemetryCollectorSettings)
+	require.Route(api, permissions.KindTelemetry, permissions.PermissionCreate, "install_id").
+		POST("/v1/installs/:install_id/telemetry/collector-access-token", s.CreateInstallTelemetryCollectorAccessToken)
 	return nil
 }
 
@@ -396,32 +402,38 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	return nil
 }
 
-func New(params Params) *service {
+func New(params Params) (*service, error) {
+	issuer, err := telemetrytoken.New(params.Cfg)
+	if err != nil {
+		return nil, fmt.Errorf("initialize telemetry token issuer: %w", err)
+	}
+
 	return &service{
 		RouteRegister: api.RouteRegister{
 			EndpointAudit: params.EndpointAudit,
 		},
-		cfg:              params.Cfg,
-		l:                params.L,
-		v:                params.V,
-		db:               params.DB,
-		chDB:             params.CHDB,
-		mw:               params.MW,
-		componentHelpers: params.ComponentHelpers,
-		helpers:          params.Helpers,
-		accountsHelpers:  params.AccountsHelpers,
-		acctClient:       params.AcctClient,
-		queueClient:      params.QueueClient,
-		appsHelpers:      params.AppsHelpers,
-		orgsHelpers:      params.OrgsHelpers,
-		runnersHelpers:   params.RunnersHelpers,
-		actionsHelpers:   params.ActionsHelpers,
-		featuresClient:   params.FeaturesClient,
-		flowsClient:      params.FlowsClient,
-		blobSvc:          params.BlobService,
-		audit:            params.Audit,
-		workloadJWT:      workloadjwt.NewVerifier(),
-	}
+		cfg:                  params.Cfg,
+		l:                    params.L,
+		v:                    params.V,
+		db:                   params.DB,
+		chDB:                 params.CHDB,
+		mw:                   params.MW,
+		componentHelpers:     params.ComponentHelpers,
+		helpers:              params.Helpers,
+		accountsHelpers:      params.AccountsHelpers,
+		acctClient:           params.AcctClient,
+		queueClient:          params.QueueClient,
+		appsHelpers:          params.AppsHelpers,
+		orgsHelpers:          params.OrgsHelpers,
+		runnersHelpers:       params.RunnersHelpers,
+		actionsHelpers:       params.ActionsHelpers,
+		featuresClient:       params.FeaturesClient,
+		flowsClient:          params.FlowsClient,
+		blobSvc:              params.BlobService,
+		audit:                params.Audit,
+		workloadJWT:          workloadjwt.NewVerifier(),
+		telemetryTokenIssuer: issuer,
+	}, nil
 }
 
 func (s *service) RegisterSlackRoutes(api *gin.Engine) error {

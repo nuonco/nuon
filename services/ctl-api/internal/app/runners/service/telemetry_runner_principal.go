@@ -12,20 +12,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetrytoken"
 )
 
 var errTelemetryRunnerUnauthorized = errors.New("runner is not authorized to export telemetry")
 
-type telemetryRunnerPrincipal struct {
-	OrgID         string
-	AppID         string
-	InstallID     string
-	RunnerID      string
-	RelayEndpoint string
-}
-
-func (s *service) resolveTelemetryRunnerPrincipal(ctx context.Context, acct *app.Account) (telemetryRunnerPrincipal, error) {
-	var principal telemetryRunnerPrincipal
+func (s *service) resolveTelemetryRunnerPrincipal(ctx context.Context, acct *app.Account) (telemetrytoken.Principal, error) {
+	var principal telemetrytoken.Principal
 
 	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {
@@ -80,7 +73,7 @@ func (s *service) resolveTelemetryRunnerPrincipal(ctx context.Context, acct *app
 		return principal, err
 	}
 
-	return telemetryRunnerPrincipal{
+	return telemetrytoken.Principal{
 		OrgID:         orgID,
 		AppID:         install.AppID,
 		InstallID:     install.ID,
