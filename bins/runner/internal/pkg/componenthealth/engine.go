@@ -37,12 +37,15 @@ var watchedGVRs = []schema.GroupVersionResource{
 	{Group: "apps", Version: "v1", Resource: "deployments"},
 	{Group: "apps", Version: "v1", Resource: "statefulsets"},
 	{Group: "apps", Version: "v1", Resource: "daemonsets"},
-	{Group: "", Version: "v1", Resource: "pods"},
 	{Group: "", Version: "v1", Resource: "services"},
 	{Group: "", Version: "v1", Resource: "persistentvolumeclaims"},
 	{Group: "networking.k8s.io", Version: "v1", Resource: "ingresses"},
 	{Group: "batch", Version: "v1", Resource: "jobs"},
+	// Last: which namespaces need pods is read off the workloads listed before.
+	podsGVR,
 }
+
+var podsGVR = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
 
 type Params struct {
 	fx.In
