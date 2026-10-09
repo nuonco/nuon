@@ -1,20 +1,19 @@
 import type { ReactNode } from 'react'
-import { Card } from '@/components/common/Card'
-import { Text } from '@/components/common/Text'
+import { Banner } from '@/components/common/Banner'
 
 export interface IInstallHealth {
   resources: ReactNode
-  timeline: ReactNode
+  clusterAccessError?: string
 }
 
-export const InstallHealth = ({ resources, timeline }: IInstallHealth) => (
+export const InstallHealth = ({
+  resources,
+  clusterAccessError,
+}: IInstallHealth) => (
   <div className="flex flex-col gap-6">
-    <Card>{timeline}</Card>
-    <div className="flex flex-col gap-4">
-      <Text variant="body" weight="strong">
-        Resource health
-      </Text>
-      {resources}
-    </div>
+    {clusterAccessError ? (
+      <Banner theme="warn">Cluster access failed: {clusterAccessError}</Banner>
+    ) : null}
+    {resources}
   </div>
 )
