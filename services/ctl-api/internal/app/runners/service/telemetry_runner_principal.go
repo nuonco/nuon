@@ -12,20 +12,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetrytoken"
 )
 
 var errTelemetryRunnerUnauthorized = errors.New("runner is not authorized to export telemetry")
 
-type telemetryRunnerPrincipal struct {
-	OrgID         string
-	AppID         string
-	InstallID     string
-	RunnerID      string
-	RelayEndpoint string
-}
-
-func (s *service) resolveTelemetryRunnerPrincipal(ctx context.Context, acct *app.Account) (telemetryRunnerPrincipal, error) {
-	var principal telemetryRunnerPrincipal
+func (s *service) resolveTelemetryRunnerPrincipal(ctx context.Context, acct *app.Account) (telemetrytoken.Principal, error) {
+	var principal telemetrytoken.Principal
 
 	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {
@@ -56,37 +49,20 @@ func (s *service) resolveTelemetryRunnerPrincipal(ctx context.Context, acct *app
 		return principal, telemetryRunnerAuthorizationError()
 	}
 
-	var install app.Install
-	err = s.db.WithContext(ctx).
-		Preload("InstallConfig").
-		Preload("Org").
-		Where(app.Install{ID: group.OwnerID, OrgID: orgID}).
-		First(&install).Error
+	principal, err = s.installsHelpers.GetInstallTelemetryTokenPrincipal(ctx, orgID, group.OwnerID, acct.ID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return principal, telemetryRunnerAuthorizationError()
 		}
 		return principal, fmt.Errorf("get telemetry runner install: %w", err)
 	}
-	if install.AppID == "" || !install.InstallConfig.IsTelemetryEnabled(install.Org.Telemetry.Enabled) {
-		return principal, telemetryRunnerAuthorizationError()
-	}
-
-	endpoint := install.Org.Telemetry.ResolveRelayEndpoint(s.telemetryRelayEndpoint)
-	if endpoint == "" {
+	if principal.RelayEndpoint == "" {
 		return principal, stderr.ErrUser{Err: fmt.Errorf("telemetry relay is not configured"), Description: "telemetry relay is not configured"}
 	}
-	if err := app.ValidateTelemetryRelayEndpoint(endpoint); err != nil {
+	if err := app.ValidateTelemetryRelayEndpoint(principal.RelayEndpoint); err != nil {
 		return principal, err
 	}
-
-	return telemetryRunnerPrincipal{
-		OrgID:         orgID,
-		AppID:         install.AppID,
-		InstallID:     install.ID,
-		RunnerID:      runner.ID,
-		RelayEndpoint: endpoint,
-	}, nil
+	return principal, nil
 }
 
 func hasTelemetryRunnerRole(acct *app.Account, orgID string) bool {

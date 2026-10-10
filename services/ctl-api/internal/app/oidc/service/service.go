@@ -29,11 +29,7 @@ func New(params Params) (*service, error) {
 	if params.Cfg == nil || params.Cfg.TelemetryJWKS == "" {
 		return s, nil
 	}
-	privateKey, keyID, publicKeys, err := oidcissuer.ParseJWKS(params.Cfg.TelemetryJWKS)
-	if err != nil {
-		return nil, fmt.Errorf("initialize OIDC public keys: %w", err)
-	}
-	issuer, err := oidcissuer.New(params.Cfg.PublicAPIURL, privateKey, keyID)
+	issuer, publicKeys, err := oidcissuer.NewFromJWKS(params.Cfg.PublicAPIURL, params.Cfg.TelemetryJWKS)
 	if err != nil {
 		return nil, fmt.Errorf("initialize OIDC issuer: %w", err)
 	}

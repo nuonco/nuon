@@ -53,6 +53,8 @@ func testDomainServices(t *testing.T, ea *api.EndpointAudit) []api.Service {
 	require.NoError(t, err)
 	oidcSvc, err := oidcservice.New(oidcservice.Params{})
 	require.NoError(t, err)
+	installsSvc, err := installsservice.New(installsservice.Params{EndpointAudit: ea})
+	require.NoError(t, err)
 
 	services := []api.Service{
 		accountsservice.New(accountsservice.Params{}),
@@ -63,7 +65,7 @@ func testDomainServices(t *testing.T, ea *api.EndpointAudit) []api.Service {
 		componentsservice.New(componentsservice.Params{EndpointAudit: ea}),
 		generalservice.New(generalservice.Params{EndpointAudit: ea}),
 		identityprovidersservice.New(identityprovidersservice.Params{}),
-		installsservice.New(installsservice.Params{EndpointAudit: ea}),
+		installsSvc,
 		notebooksservice.New(notebooksservice.Params{EndpointAudit: ea}),
 		orgsservice.New(orgsservice.Params{EndpointAudit: ea}),
 		policyreportsservice.New(policyreportsservice.Params{EndpointAudit: ea}),

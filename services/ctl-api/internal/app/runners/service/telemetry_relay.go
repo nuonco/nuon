@@ -5,9 +5,10 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetrytoken"
 )
 
-func newTelemetryRelayEndpoint(cfg *internal.Config, issuer *telemetryTokenIssuer) (string, error) {
+func newTelemetryRelayEndpoint(cfg *internal.Config, issuer *telemetrytoken.Issuer) (string, error) {
 	if cfg == nil || cfg.TelemetryRelayEndpoint == "" {
 		return "", nil
 	}

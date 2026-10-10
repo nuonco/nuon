@@ -76,8 +76,9 @@ type VendorSupervisor struct {
 }
 
 func NewVendor(params VendorParams) *VendorSupervisor {
+	installID := params.Settings.Metadata["install.id"]
 	s := &VendorSupervisor{
-		installID: params.Settings.Metadata["install.id"],
+		installID: installID,
 		initialSettings: vendorSettings{
 			enabled:    params.Settings.VendorTelemetryEnabled,
 			endpoint:   params.Settings.TelemetryRelayEndpoint,
@@ -85,7 +86,7 @@ func NewVendor(params VendorParams) *VendorSupervisor {
 		},
 		local:   params.Settings.Cfg.IsNuonctl,
 		logger:  params.Logger,
-		tokens:  newTokenManager(params.APIClient, params.Logger),
+		tokens:  newTokenManager(params.APIClient, installID, params.Logger),
 		done:    make(chan struct{}),
 		backoff: time.Second,
 	}

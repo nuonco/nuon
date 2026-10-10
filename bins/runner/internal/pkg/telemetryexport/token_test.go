@@ -15,7 +15,7 @@ import (
 )
 
 type tokenClientResult struct {
-	response *models.ServiceCreateTelemetryAccessTokenResponse
+	response *models.ServiceCreateInstallTelemetryAccessTokenResponse
 	err      error
 }
 
@@ -26,7 +26,7 @@ type fakeTokenClient struct {
 	endpoints []string
 }
 
-func (c *fakeTokenClient) CreateTelemetryAccessToken(_ context.Context, endpoint string) (*models.ServiceCreateTelemetryAccessTokenResponse, error) {
+func (c *fakeTokenClient) CreateInstallTelemetryAccessToken(_ context.Context, _ string, endpoint string) (*models.ServiceCreateInstallTelemetryAccessTokenResponse, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.endpoints = append(c.endpoints, endpoint)
@@ -42,8 +42,8 @@ func (c *fakeTokenClient) CreateTelemetryAccessToken(_ context.Context, endpoint
 	return result.response, result.err
 }
 
-func validTokenResponse(token string) *models.ServiceCreateTelemetryAccessTokenResponse {
-	return &models.ServiceCreateTelemetryAccessTokenResponse{AccessToken: token, TokenType: "Bearer", ExpiresIn: 600}
+func validTokenResponse(token string) *models.ServiceCreateInstallTelemetryAccessTokenResponse {
+	return &models.ServiceCreateInstallTelemetryAccessTokenResponse{AccessToken: token, TokenType: "Bearer", ExpiresIn: 600}
 }
 
 func testTokenManager(t *testing.T, client *fakeTokenClient) *tokenManager {
@@ -52,6 +52,7 @@ func testTokenManager(t *testing.T, client *fakeTokenClient) *tokenManager {
 	return &tokenManager{
 		client:       client,
 		logger:       zap.NewNop(),
+		installID:    "install-test",
 		directory:    directory,
 		path:         filepath.Join(directory, "access-token"),
 		renewalDelay: func(time.Duration) time.Duration { return time.Hour },
@@ -152,7 +153,7 @@ func TestTokenManagerRetainsCurrentTokenAfterRenewalFailure(t *testing.T) {
 }
 
 func TestTokenManagerRejectsInvalidResponsesWithoutLeavingCredentials(t *testing.T) {
-	tests := map[string]*models.ServiceCreateTelemetryAccessTokenResponse{
+	tests := map[string]*models.ServiceCreateInstallTelemetryAccessTokenResponse{
 		"nil":               nil,
 		"empty token":       {TokenType: "Bearer", ExpiresIn: 600},
 		"token whitespace":  {AccessToken: "invalid token", TokenType: "Bearer", ExpiresIn: 600},

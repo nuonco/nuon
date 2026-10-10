@@ -8,7 +8,6 @@ type Principal struct {
 	OrgID     string
 	AppID     string
 	InstallID string
-	RunnerID  string
 }
 
 type AuthData struct {

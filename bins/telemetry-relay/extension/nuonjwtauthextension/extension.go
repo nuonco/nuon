@@ -33,12 +33,13 @@ var (
 )
 
 type telemetryClaims struct {
-	ClientID  string `json:"client_id"`
-	Scope     string `json:"scope"`
-	OrgID     string `json:"nuon_org_id"`
-	AppID     string `json:"nuon_app_id"`
-	InstallID string `json:"nuon_install_id"`
-	RunnerID  string `json:"nuon_runner_id"`
+	ClientID    string `json:"client_id"`
+	Scope       string `json:"scope"`
+	OrgID       string `json:"nuon_org_id"`
+	AppID       string `json:"nuon_app_id"`
+	InstallID   string `json:"nuon_install_id"`
+	RunnerID    string `json:"nuon_runner_id,omitempty"`
+	CollectorID string `json:"nuon_collector_id,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -167,7 +168,6 @@ func (e *telemetryJWTAuthExtension) verify(ctx context.Context, raw string) (Pri
 		OrgID:     claims.OrgID,
 		AppID:     claims.AppID,
 		InstallID: claims.InstallID,
-		RunnerID:  claims.RunnerID,
 	}
 	if err := validateClaims(claims, principal); err != nil {
 		return Principal{}, errAuthenticationFailed
@@ -182,24 +182,37 @@ func validateClaims(claims *telemetryClaims, principal Principal) error {
 	if claims.ExpiresAt.Sub(claims.IssuedAt.Time) > tokenLifetime || !claims.ExpiresAt.After(claims.IssuedAt.Time) || claims.NotBefore.After(claims.ExpiresAt.Time) {
 		return errAuthenticationFailed
 	}
-	if len(claims.Audience) != 1 || claims.Scope != tokenScope || claims.ClientID != principal.RunnerID {
+	if len(claims.Audience) != 1 || claims.Scope != tokenScope {
 		return errAuthenticationFailed
 	}
 	if !validPrincipal(principal) {
 		return errAuthenticationFailed
 	}
-	expectedSubject := fmt.Sprintf("org:%s:install:%s:runner:%s", principal.OrgID, principal.InstallID, principal.RunnerID)
-	if claims.Subject != expectedSubject {
+	if claims.RunnerID == "" && claims.CollectorID == "" {
+		if !validID(claims.Subject, "acc") || claims.ClientID != claims.Subject || claims.Audience[0] == legacyAudience {
+			return errAuthenticationFailed
+		}
+		return nil
+	}
+	if claims.RunnerID != "" && claims.CollectorID != "" {
+		return errAuthenticationFailed
+	}
+	kind, clientID, prefix := "runner", claims.RunnerID, "run"
+	if claims.CollectorID != "" {
+		if claims.Audience[0] == legacyAudience {
+			return errAuthenticationFailed
+		}
+		kind, clientID, prefix = "collector", claims.CollectorID, "acc"
+	}
+	expectedSubject := fmt.Sprintf("org:%s:install:%s:%s:%s", principal.OrgID, principal.InstallID, kind, clientID)
+	if !validID(clientID, prefix) || claims.ClientID != clientID || claims.Subject != expectedSubject {
 		return errAuthenticationFailed
 	}
 	return nil
 }
 
 func validPrincipal(principal Principal) bool {
-	return validID(principal.OrgID, "org") &&
-		validID(principal.AppID, "app") &&
-		validID(principal.InstallID, "inl") &&
-		validID(principal.RunnerID, "run")
+	return validID(principal.OrgID, "org") && validID(principal.AppID, "app") && validID(principal.InstallID, "inl")
 }
 
 func validID(value, prefix string) bool {

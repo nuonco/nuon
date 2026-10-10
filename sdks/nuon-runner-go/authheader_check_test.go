@@ -25,7 +25,7 @@ func TestPublicEndpointsSendNoAuthHeader(t *testing.T) {
 			w.Write([]byte(`{}`))
 			return
 		}
-		if r.URL.Path == "/v1/telemetry/access-token" {
+		if r.URL.Path == "/v1/telemetry/access-token" || r.URL.Path == "/v1/installs/inl_test/telemetry/access-token" {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`{"access_token":"access.jwt","token_type":"Bearer","expires_in":600}`))
 			return
@@ -54,6 +54,9 @@ func TestPublicEndpointsSendNoAuthHeader(t *testing.T) {
 	if _, err := c.CreateTelemetryAccessToken(ctx, "https://relay.example.com/acme"); err != nil {
 		t.Fatalf("CreateTelemetryAccessToken: %v", err)
 	}
+	if _, err := c.CreateInstallTelemetryAccessToken(ctx, "inl_test", "https://relay.example.com/acme"); err != nil {
+		t.Fatalf("CreateInstallTelemetryAccessToken: %v", err)
+	}
 	if _, err := c.GetSettings(ctx); err != nil {
 		t.Fatalf("GetSettings: %v", err)
 	}
@@ -74,6 +77,12 @@ func TestPublicEndpointsSendNoAuthHeader(t *testing.T) {
 	}
 	if got := queryByPath["/v1/telemetry/access-token"]; got != "relay_endpoint=https%3A%2F%2Frelay.example.com%2Facme" {
 		t.Errorf("token request was not bound to the selected relay: %q", got)
+	}
+	if got := authByPath["/v1/installs/inl_test/telemetry/access-token"]; got != "Bearer secret-token" {
+		t.Errorf("install telemetry access token: got Authorization %q, want %q", got, "Bearer secret-token")
+	}
+	if got := queryByPath["/v1/installs/inl_test/telemetry/access-token"]; got != "relay_endpoint=https%3A%2F%2Frelay.example.com%2Facme" {
+		t.Errorf("install token request was not bound to the selected relay: %q", got)
 	}
 	if got := queryByPath["/v1/runners/rnr_test/settings"]; got != "" {
 		t.Errorf("settings request has unexpected query parameters: %q", got)

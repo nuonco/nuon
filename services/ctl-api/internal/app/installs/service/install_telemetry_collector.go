@@ -182,7 +182,7 @@ func (s *service) GetInstallTelemetryCollectorSettings(ctx *gin.Context) {
 	installConfig := app.InstallConfig{TelemetryEnabled: config.TelemetryEnabled}
 	orgTelemetry := app.OrgTelemetrySettings{RelayEndpoint: config.OrgRelayEndpoint}
 	endpoint := orgTelemetry.ResolveRelayEndpoint(s.cfg.TelemetryRelayEndpoint)
-	if installConfig.IsTelemetryEnabled(config.OrgTelemetryEnabled) && s.cfg.TelemetryJWKS != "" && app.ValidateTelemetryRelayEndpoint(endpoint) == nil {
+	if installConfig.IsTelemetryEnabled(config.OrgTelemetryEnabled) && s.telemetryTokenIssuer != nil && app.ValidateTelemetryRelayEndpoint(endpoint) == nil {
 		settings.Enabled = true
 		settings.RelayEndpoint = endpoint
 		settings.ResourceAttributes = config.ResourceAttributes()

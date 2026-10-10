@@ -25,7 +25,7 @@ const (
 )
 
 type telemetryAccessTokenClient interface {
-	CreateTelemetryAccessToken(context.Context, string) (*models.ServiceCreateTelemetryAccessTokenResponse, error)
+	CreateInstallTelemetryAccessToken(context.Context, string, string) (*models.ServiceCreateInstallTelemetryAccessTokenResponse, error)
 }
 
 type tokenLifecycle interface {
@@ -36,6 +36,7 @@ type tokenLifecycle interface {
 type tokenManager struct {
 	client       telemetryAccessTokenClient
 	logger       *zap.Logger
+	installID    string
 	directory    string
 	path         string
 	renewalDelay func(time.Duration) time.Duration
@@ -48,10 +49,11 @@ type tokenManager struct {
 	endpoint string
 }
 
-func newTokenManager(client telemetryAccessTokenClient, logger *zap.Logger) *tokenManager {
+func newTokenManager(client telemetryAccessTokenClient, installID string, logger *zap.Logger) *tokenManager {
 	return &tokenManager{
 		client:       client,
 		logger:       logger,
+		installID:    installID,
 		directory:    vendorTokenDir,
 		path:         vendorTokenPath,
 		renewalDelay: randomizedRenewalDelay,
@@ -146,7 +148,7 @@ func (m *tokenManager) issue(ctx context.Context, endpoint string) (time.Duratio
 	requestCtx, cancel := context.WithTimeout(ctx, telemetryTokenRequestTimeout)
 	defer cancel()
 
-	response, err := m.client.CreateTelemetryAccessToken(requestCtx, endpoint)
+	response, err := m.client.CreateInstallTelemetryAccessToken(requestCtx, m.installID, endpoint)
 	if err != nil {
 		return 0, fmt.Errorf("create telemetry access token: %w", err)
 	}
