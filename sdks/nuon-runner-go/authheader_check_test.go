@@ -4,6 +4,10 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
 	"sync"
 	"testing"
 
@@ -96,5 +100,68 @@ func TestPublicEndpointsSendNoAuthHeader(t *testing.T) {
 	authPath := "/v1/runner-auth/aws"
 	if got := authByPath[authPath]; got != "" {
 		t.Errorf("public runner-auth: got Authorization %q, want empty", got)
+	}
+}
+
+func TestAuthTokenFileRotationAndFailure(t *testing.T) {
+	var headers []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		headers = append(headers, r.Header.Get("Authorization"))
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodPost {
+			w.Write([]byte(`{"access_token":"relay.jwt","token_type":"Bearer","expires_in":600}`))
+			return
+		}
+		w.Write([]byte(`{"enabled":true,"relay_endpoint":"https://relay.example.com","resource_attributes":{"nuon.install.name":"acme"}}`))
+	}))
+	defer srv.Close()
+
+	directory := t.TempDir()
+	path := filepath.Join(directory, "token")
+	for name, token := range map[string]string{"before": "old-token\n", "after": "new-token\n"} {
+		if err := os.WriteFile(filepath.Join(directory, name), []byte(token), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.Symlink("before", path); err != nil {
+		t.Fatal(err)
+	}
+	c, err := New(WithURL(srv.URL), WithAuthToken("must-not-fall-back"), WithAuthTokenFile(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	settings, err := c.GetInstallTelemetryCollectorSettings(context.Background(), "inl_test")
+	if err != nil || !settings.Enabled || settings.ResourceAttributes["nuon.install.name"] != "acme" {
+		t.Fatalf("get collector settings: settings=%v error=%v", settings, err)
+	}
+	if err := os.Symlink("after", path+".next"); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(path+".next", path); err != nil {
+		t.Fatal(err)
+	}
+	token, err := c.CreateInstallTelemetryAccessToken(context.Background(), "inl_test", settings.RelayEndpoint)
+	if err != nil || token.AccessToken != "relay.jwt" {
+		t.Fatalf("issue token: response=%v error=%v", token, err)
+	}
+	if !slices.Equal(headers, []string{"Bearer old-token", "Bearer new-token"}) {
+		t.Fatalf("projected credential rotation not picked up: %v", headers)
+	}
+	for _, invalid := range []string{"", "secret token", strings.Repeat("x", 16*1024+1)} {
+		if err := os.WriteFile(filepath.Join(directory, "after"), []byte(invalid), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := c.GetInstallTelemetryCollectorSettings(context.Background(), "inl_test"); err == nil {
+			t.Fatal("invalid file did not fail closed")
+		}
+	}
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.GetInstallTelemetryCollectorSettings(context.Background(), "inl_test"); err == nil {
+		t.Fatal("missing file did not fail closed")
+	}
+	if len(headers) != 2 {
+		t.Fatalf("invalid credential sent an authenticated request: %v", headers)
 	}
 }
