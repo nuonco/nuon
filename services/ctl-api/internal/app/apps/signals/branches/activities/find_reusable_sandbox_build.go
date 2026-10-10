@@ -15,6 +15,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildselection"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/configdiff"
 )
 
 type FindReusableSandboxBuildInput struct {
@@ -48,17 +50,47 @@ func (a *Activities) findReusableSandboxBuild(ctx context.Context, appID, runID 
 	if err != nil {
 		return nil, err
 	}
+	if run.Force {
+		return out, nil
+	}
+	var appConfig app.AppConfig
+	if err := a.db.WithContext(ctx).Where(app.AppConfig{ID: cfg.AppConfigID}).First(&appConfig).Error; err != nil {
+		return nil, err
+	}
+	var build *app.AppSandboxBuild
+	if appConfig.BuildsPinned {
+		if run.Comparison == nil || run.Comparison.BaseRun == nil || run.Comparison.BaseRun.AppConfigID == "" {
+			return out, nil
+		}
+		build, err = configdiff.LatestActiveSandboxBuild(ctx, a.db, run.Comparison.BaseRun.AppConfigID)
+		if err != nil || build == nil || !configdiff.SandboxConfigsEqual(*cfg, build.AppSandboxConfig) {
+			return out, nil
+		}
+		if err := a.db.WithContext(ctx).Preload("VCSConnectionCommit").Where(app.AppSandboxBuild{ID: build.ID}).First(build).Error; err != nil {
+			return nil, err
+		}
+	} else {
+		build, err = a.latestEquivalentSandboxBuild(ctx, appID, cfg)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if build == nil {
+		return out, nil
+	}
 
 	sandboxRepo, sandboxVCSID := sandboxConfigRepo(cfg)
-	branchRepo := ""
+	branchRepo, branchName := "", ""
 	if run.AppBranchConfig.ConnectedGithubVCSConfig != nil {
 		branchRepo = run.AppBranchConfig.ConnectedGithubVCSConfig.Repo
+		branchName = run.AppBranchConfig.ConnectedGithubVCSConfig.Branch
 	} else if run.AppBranchConfig.PublicGitVCSConfig != nil {
 		branchRepo = run.AppBranchConfig.PublicGitVCSConfig.Repo
+		branchName = run.AppBranchConfig.PublicGitVCSConfig.Branch
 	}
 	directory := sandboxConfigDirectory(cfg)
 
-	if repoURLsEqual(sandboxRepo, branchRepo) {
+	if repoURLsEqual(sandboxRepo, branchRepo) && sandboxConfigBranch(cfg) == branchName {
 		paths, ok, pathErr := a.comparisonChangedPaths(ctx, runID)
 		if pathErr != nil {
 			return nil, pathErr
@@ -66,14 +98,8 @@ func (a *Activities) findReusableSandboxBuild(ctx context.Context, appID, runID 
 		if !ok || anyPathMatchesDirectory(paths, directory) {
 			return out, nil
 		}
-		build, findErr := a.latestEquivalentSandboxBuild(ctx, appID, cfg)
-		if findErr != nil {
-			return nil, findErr
-		}
-		if build != nil {
-			out.BuildID = build.ID
-		}
-		return out, nil
+		out.BuildID = build.ID
+		return out, buildselection.PinSandbox(ctx, a.db, cfg.AppConfigID, build.ID)
 	}
 
 	if sandboxVCSID == "" {
@@ -83,11 +109,7 @@ func (a *Activities) findReusableSandboxBuild(ctx context.Context, appID, runID 
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve sandbox commit: %w", err)
 	}
-	build, err := a.latestEquivalentSandboxBuild(ctx, appID, cfg)
-	if err != nil {
-		return nil, err
-	}
-	if build == nil || build.VCSConnectionCommit == nil || build.VCSConnectionCommit.SHA == "" {
+	if build.VCSConnectionCommit == nil || build.VCSConnectionCommit.SHA == "" {
 		return out, nil
 	}
 	previous := build.VCSConnectionCommit.SHA
@@ -101,7 +123,7 @@ func (a *Activities) findReusableSandboxBuild(ctx context.Context, appID, runID 
 		}
 	}
 	out.BuildID = build.ID
-	return out, nil
+	return out, buildselection.PinSandbox(ctx, a.db, cfg.AppConfigID, build.ID)
 }
 
 func (a *Activities) latestEquivalentSandboxBuild(ctx context.Context, appID string, cfg *app.AppSandboxConfig) (*app.AppSandboxBuild, error) {

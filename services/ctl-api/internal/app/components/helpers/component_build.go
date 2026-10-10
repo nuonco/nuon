@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildselection"
 )
 
 func (s *Helpers) CreateComponentBuild(ctx context.Context, cmpID string, useLatest bool, gitRef *string) (*app.ComponentBuild, error) {
@@ -71,17 +72,30 @@ func (s *Helpers) createComponentBuild(ctx context.Context, db *gorm.DB, buildID
 		StoredComponentID:           cmp.ID,
 		Request:                     wfRequest,
 	}
-	res := db.WithContext(ctx).
-		Create(&bld)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create build for component: %w", res.Error)
+	create := func(tx *gorm.DB, cfg *app.AppConfig) error {
+		if cfg.BuildsPinned && componentConfigConnectionID == "" {
+			return stderr.ErrUser{
+				Err:         fmt.Errorf("manual builds cannot change branch-run app configs"),
+				Description: "Trigger an app branch run to rebuild this component.",
+			}
+		}
+		if err := tx.Create(&bld).Error; err != nil {
+			return fmt.Errorf("unable to create build for component: %w", err)
+		}
+		if err := tx.Model(&app.ComponentConfigConnection{}).
+			Where(app.ComponentConfigConnection{ID: configConn.ID}).
+			Update("latest_build_id", bld.ID).Error; err != nil {
+			return fmt.Errorf("unable to set latest_build_id on config connection: %w", err)
+		}
+		return nil
 	}
-
-	if err := db.WithContext(ctx).
-		Model(&app.ComponentConfigConnection{}).
-		Where("id = ?", configConn.ID).
-		Update("latest_build_id", bld.ID).Error; err != nil {
-		return nil, fmt.Errorf("unable to set latest_build_id on config connection: %w", err)
+	if configConn.AppConfigID == "" {
+		err = db.WithContext(ctx).Transaction(func(tx *gorm.DB) error { return create(tx, &app.AppConfig{}) })
+	} else {
+		err = buildselection.WithMutableConfig(ctx, db, configConn.AppConfigID, create)
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	return &bld, nil

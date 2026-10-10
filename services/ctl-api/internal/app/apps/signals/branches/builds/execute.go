@@ -64,13 +64,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return fmt.Errorf("unable to get app config: %w", err)
 	}
+	if appConfig.BuildsLocked {
+		return nil
+	}
 
 	l.Info("triggering builds",
 		"app_branch_id", s.AppBranchID,
 		"app_config_id", run.AppConfigID,
 		"component_count", len(appConfig.ComponentIDs))
 
-	if len(appConfig.ComponentIDs) == 0 {
+	if len(appConfig.ComponentIDs) == 0 && workflow.GetVersion(ctx, "sandbox-build-without-components-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
 		l.Info("no components to build")
 		_ = s.markBuildsCompleted(ctx, l, true)
 		return nil
@@ -148,7 +151,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.finalizePreview(ctx, l, run, builds, nil)
 	}
 
-	_ = s.markBuildsCompleted(ctx, l, true)
+	if appConfig.BuildsPinned {
+		if _, err := activities.AwaitUpdateAppBranchRunBuildsCompleted(ctx, &activities.UpdateAppBranchRunBuildsCompletedInput{
+			RunID:           s.RunID,
+			BuildsCompleted: true,
+		}); err != nil {
+			return fmt.Errorf("unable to finalize selected builds: %w", err)
+		}
+	} else {
+		_ = s.markBuildsCompleted(ctx, l, true)
+	}
 	s.finalizeBuildMetadata(ctx, builds, true, nil)
 	l.Info("all builds completed successfully")
 	return nil

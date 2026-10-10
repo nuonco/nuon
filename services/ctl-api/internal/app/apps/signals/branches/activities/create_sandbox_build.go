@@ -5,7 +5,9 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildselection"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"gorm.io/gorm"
 )
 
 type CreateSandboxBuildRequest struct {
@@ -39,8 +41,13 @@ func (a *Activities) CreateSandboxBuild(ctx context.Context, req CreateSandboxBu
 		build.AppBranchRunID = &req.AppBranchRunID
 	}
 
-	if res := a.db.WithContext(ctx).Create(&build); res.Error != nil {
-		return nil, fmt.Errorf("unable to create sandbox build: %w", res.Error)
+	if err := buildselection.WithMutableConfig(ctx, a.db, req.AppConfigID, func(tx *gorm.DB, cfg *app.AppConfig) error {
+		if err := tx.Create(&build).Error; err != nil {
+			return fmt.Errorf("unable to create sandbox build: %w", err)
+		}
+		return buildselection.PinSandbox(ctx, tx, req.AppConfigID, build.ID)
+	}); err != nil {
+		return nil, err
 	}
 
 	return &build, nil

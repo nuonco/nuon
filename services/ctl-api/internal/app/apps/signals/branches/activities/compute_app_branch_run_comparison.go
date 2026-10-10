@@ -212,7 +212,15 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 			}
 			baseSHAs = loaded
 		}
-		if err := a.applyExternalSourceChanges(ctx, componentSources, branchRepo(branch), configDiff, baseSHAs); err != nil {
+		repo, branchName := branchRepoAndBranch(branch)
+		if !out.GitDiffStored {
+			for _, src := range componentSources {
+				if repoURLsEqual(src.Repo, repo) && src.Branch == branchName {
+					markComponentSourceChanged(configDiff, src.Name)
+				}
+			}
+		}
+		if err := a.applyExternalSourceChanges(ctx, componentSources, repo, branchName, configDiff, baseSHAs); err != nil {
 			return nil, err
 		}
 	}

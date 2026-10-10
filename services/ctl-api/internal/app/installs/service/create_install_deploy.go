@@ -361,6 +361,17 @@ func (s *service) insertInstallDeploy(
 	installID string,
 	req *CreateInstallDeployRequest,
 ) (*app.InstallDeploy, string, string, string, error) {
+	var install app.Install
+	if err := db.WithContext(ctx).Preload("AppConfig").Where(app.Install{ID: installID}).First(&install).Error; err != nil {
+		return nil, "", "", "", err
+	}
+	if install.AppConfig.BuildsPinned {
+		return nil, "", "", "", stderr.ErrUser{
+			Err:         fmt.Errorf("manual build selection is not supported for branch-run app configs"),
+			Description: "Use an app branch run to deploy changes to this install.",
+		}
+	}
+
 	var build app.ComponentBuild
 	res := db.WithContext(ctx).
 		Preload("ComponentConfigConnection").

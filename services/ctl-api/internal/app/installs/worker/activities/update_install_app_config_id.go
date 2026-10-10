@@ -17,6 +17,13 @@ type UpdateInstallAppConfigIDInput struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 30s
 func (a *Activities) UpdateInstallAppConfigID(ctx context.Context, input *UpdateInstallAppConfigIDInput) error {
+	var cfg app.AppConfig
+	if err := a.db.WithContext(ctx).Where(app.AppConfig{ID: input.NewAppConfigID}).First(&cfg).Error; err != nil {
+		return err
+	}
+	if cfg.BuildsPinned && !cfg.BuildsLocked {
+		return fmt.Errorf("app config %s builds are not ready for rollout", cfg.ID)
+	}
 	res := a.db.WithContext(ctx).
 		Model(&app.Install{}).
 		Where(app.Install{ID: input.InstallID}).

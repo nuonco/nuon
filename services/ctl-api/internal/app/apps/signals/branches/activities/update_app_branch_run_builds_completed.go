@@ -6,10 +6,12 @@ import (
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildselection"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
@@ -46,10 +48,14 @@ func (a *Activities) UpdateAppBranchRunBuildsCompleted(ctx context.Context, inpu
 		app.AppBranchRunLabelBuildsCompleted: value,
 	})
 
-	if err := a.db.WithContext(ctx).
-		Model(&run).
-		Select("labels").
-		Updates(&run).Error; err != nil {
+	if err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if input.BuildsCompleted && run.AppConfigID != "" {
+			if err := buildselection.Freeze(ctx, tx, run.AppConfigID); err != nil {
+				return err
+			}
+		}
+		return tx.Model(&run).Select("labels").Updates(&run).Error
+	}); err != nil {
 		return nil, fmt.Errorf("unable to update builds_completed label on run %s: %w", input.RunID, err)
 	}
 
