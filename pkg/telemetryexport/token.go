@@ -49,13 +49,13 @@ type tokenManager struct {
 	endpoint string
 }
 
-func newTokenManager(client telemetryAccessTokenClient, installID string, logger *zap.Logger) *tokenManager {
+func newTokenManager(client telemetryAccessTokenClient, installID string, directory string, logger *zap.Logger) *tokenManager {
 	return &tokenManager{
 		client:       client,
 		logger:       logger,
 		installID:    installID,
-		directory:    vendorTokenDir,
-		path:         vendorTokenPath,
+		directory:    directory,
+		path:         filepath.Join(directory, "access-token"),
 		renewalDelay: randomizedRenewalDelay,
 		retryInitial: tokenRetryInitial,
 		retryMax:     tokenRetryMax,

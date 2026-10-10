@@ -19,26 +19,15 @@ import (
 var headerNamePattern = regexp.MustCompile(`^[!#$%&'*+.^_` + "`" + `|~0-9A-Za-z-]+$`)
 
 const (
-	configVersionV1              = "v1"
-	auditFileStorageExtensionID  = "file_storage/audit"
-	vendorFileStorageExtensionID = "file_storage/vendor"
-	vendorBearerAuthExtensionID  = "bearertokenauth/vendor"
-	collectorStorageDir          = "/var/lib/nuon/telemetry-export"
-	vendorStorageDir             = collectorStorageDir + "/vendor"
-	vendorTokenDir               = collectorStorageDir + "/vendor-auth"
-	vendorTokenPath              = vendorTokenDir + "/access-token"
-	vendorOTLPGRPCAddress        = "0.0.0.0:4317"
-	vendorOTLPHTTPAddress        = "0.0.0.0:4318"
-	vendorCollectorHealthAddress = "127.0.0.1:13134"
-	auditQueueSize               = 10_000
-	auditQueueConsumers          = 2
-	vendorQueueSizeBytes         = 1 << 30
-	vendorQueueConsumers         = 2
-	maxOTLPRequestBodySize       = 4 << 20
-	maxSecretSize                = 64 * 1024
-	maxEndpointLen               = 4096
-	maxHeaders                   = 32
-	maxHeaderLen                 = 4096
+	configVersionV1             = "v1"
+	auditFileStorageExtensionID = "file_storage/audit"
+	collectorStorageDir         = "/var/lib/nuon/telemetry-export"
+	auditQueueSize              = 10_000
+	auditQueueConsumers         = 2
+	maxSecretSize               = 64 * 1024
+	maxEndpointLen              = 4096
+	maxHeaders                  = 32
+	maxHeaderLen                = 4096
 )
 
 type configEnvelope struct {
@@ -200,65 +189,6 @@ func collectorConfig(cfg config) ([]byte, []string, error) {
 
 	contents, err := yaml.Marshal(document)
 	return contents, environment, err
-}
-
-func vendorCollectorConfig(endpoint string, attributes map[string]string) ([]byte, error) {
-	if err := validateOTLPHTTPExporter(otlpHTTPExporter{Endpoint: endpoint}); err != nil {
-		return nil, fmt.Errorf("invalid vendor OTLP/HTTP exporter: %w", err)
-	}
-
-	receiver := map[string]any{"protocols": map[string]any{
-		"grpc": map[string]any{"endpoint": vendorOTLPGRPCAddress, "max_recv_msg_size_mib": maxOTLPRequestBodySize >> 20},
-		"http": map[string]any{"endpoint": vendorOTLPHTTPAddress, "max_request_body_size": maxOTLPRequestBodySize},
-	}}
-	exporter := map[string]any{
-		"endpoint": endpoint, "compression": "gzip", "timeout": "30s",
-		"auth":             map[string]any{"authenticator": vendorBearerAuthExtensionID},
-		"sending_queue":    map[string]any{"enabled": true, "sizer": "bytes", "queue_size": vendorQueueSizeBytes, "num_consumers": vendorQueueConsumers, "storage": vendorFileStorageExtensionID, "block_on_overflow": false},
-		"retry_on_failure": map[string]any{"enabled": true, "initial_interval": "1s", "max_interval": "30s", "max_elapsed_time": "0s"},
-	}
-	pipeline := map[string]any{"receivers": []string{"otlp"}, "processors": []string{"memory_limiter"}, "exporters": []string{"otlp_http/vendor"}}
-	processors := map[string]any{"memory_limiter": map[string]any{"check_interval": "1s", "limit_mib": 128, "spike_limit_mib": 32}}
-	// Older APIs omit the snapshot; preserve their existing passthrough behavior.
-	if len(attributes) > 0 {
-		keys := make([]string, 0, len(attributes))
-		for key := range attributes {
-			keys = append(keys, key)
-		}
-		sort.Strings(keys)
-		actions := []map[string]any{{"action": "delete", "pattern": `^nuon\.install\.labels\.`}}
-		for _, key := range keys {
-			// Confmap expands environment references even in quoted YAML strings.
-			actions = append(actions, map[string]any{
-				"action": "upsert",
-				"key":    strings.ReplaceAll(key, "$", "$$"),
-				"value":  strings.ReplaceAll(attributes[key], "$", "$$"),
-			})
-		}
-		processors["resource/install"] = map[string]any{"attributes": actions}
-		pipeline["processors"] = []string{"memory_limiter", "resource/install"}
-	}
-	document := map[string]any{
-		"extensions": map[string]any{
-			"health_check":               map[string]any{"endpoint": vendorCollectorHealthAddress},
-			vendorFileStorageExtensionID: fileStorageConfig(vendorStorageDir),
-			vendorBearerAuthExtensionID:  map[string]any{"filename": vendorTokenPath},
-		},
-		"receivers":  map[string]any{"otlp": receiver},
-		"processors": processors,
-		"exporters":  map[string]any{"otlp_http/vendor": exporter},
-		"service": map[string]any{
-			"extensions": []string{"health_check", vendorFileStorageExtensionID, vendorBearerAuthExtensionID},
-			"pipelines": map[string]any{
-				"logs":    pipeline,
-				"metrics": pipeline,
-				"traces":  pipeline,
-			},
-			"telemetry": map[string]any{"logs": map[string]any{"level": "warn"}},
-		},
-	}
-
-	return yaml.Marshal(document)
 }
 
 func headerEnvironment(values map[string]string, prefix string) (map[string]string, []string) {
