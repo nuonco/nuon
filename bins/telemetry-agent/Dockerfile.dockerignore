@@ -1,0 +1,16 @@
+.git
+.amp
+.agents
+.claude
+**/node_modules
+**/otelcol-build
+**/.env
+sdks/*/client
+sdks/*/models
+sdks/*/mock.go
+sdks/*/.swagger.stamp
+services/ctl-api/docs/**/swagger*.json
+services/ctl-api/docs/**/runner_swagger*
+services/ctl-api/docs/**/runner_docs.go
+plans
+specs
