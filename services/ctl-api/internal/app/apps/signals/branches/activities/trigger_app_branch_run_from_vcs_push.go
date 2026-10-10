@@ -194,7 +194,7 @@ func (a *Activities) evaluateBranchRunConfig(ctx context.Context, config *app.Ap
 
 	switch req.EventType {
 	case "pull_request":
-		return metadata, runConfig.Mode == app.AppBranchRunModePush, nil
+		return metadata, runConfig.Mode == app.AppBranchRunModePush || runConfig.Mode == app.AppBranchRunModeTagPrefix, nil
 	case "tag":
 		if runConfig.Mode != app.AppBranchRunModeTagPrefix || !strings.HasPrefix(req.HeadRef, runConfig.TagPrefix) {
 			return metadata, false, nil

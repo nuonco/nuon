@@ -211,7 +211,7 @@ func matchesRunConfig(config app.AppBranchRunConfig, req fanOutRequest) bool {
 	config.Normalize()
 	switch req.EventType {
 	case "pull_request":
-		return config.Mode == app.AppBranchRunModePush
+		return config.Mode == app.AppBranchRunModePush || config.Mode == app.AppBranchRunModeTagPrefix
 	case "tag":
 		return config.Mode == app.AppBranchRunModeTagPrefix && strings.HasPrefix(req.HeadRef, config.TagPrefix)
 	case "push":
