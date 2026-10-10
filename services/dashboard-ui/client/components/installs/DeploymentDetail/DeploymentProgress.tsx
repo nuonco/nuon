@@ -22,7 +22,11 @@ export type TDeploymentRun = {
   outcomes: TDeploymentOutcome[]
 }
 
-export const DeploymentRunStatus = ({ run }: { run: TDeploymentRun }) => (
+export const DeploymentRunStatus = ({
+  run,
+}: {
+  run: Pick<TDeploymentRun, 'status' | 'steps'>
+}) => (
   <span className="flex flex-wrap items-center gap-2">
     <Status status={run.status} variant="badge" />
     {run.steps.some(isAwaitingDeploymentApproval) ? (
@@ -119,48 +123,6 @@ export const ResourceScopeSummary = ({ run }: { run: TDeploymentRun }) => (
     ))}
   </div>
 )
-
-export const ResourceOutcomes = ({ run }: { run: TDeploymentRun }) =>
-  run.outcomes.length ? (
-    <section
-      aria-label="Resource rollout outcomes"
-      className="flex flex-col gap-3"
-    >
-      <Text weight="strong">Resource outcomes</Text>
-      <ul className="flex flex-col gap-2">
-        {run.outcomes.map((outcome) => (
-          <li
-            key={`${outcome.category}-${outcome.name}`}
-            aria-label={`${outcome.name}: ${outcome.detail}`}
-            className="flex items-start gap-3"
-          >
-            <Status
-              status={outcome.status}
-              variant="timeline"
-              isWithoutText
-              iconSize={14}
-            />
-            <div className="flex min-w-0 flex-wrap items-baseline gap-x-3">
-              <Text
-                family={
-                  outcome.category === 'Components' ||
-                  outcome.category === 'Images'
-                    ? 'mono'
-                    : 'sans'
-                }
-                weight="strong"
-              >
-                {outcome.name}
-              </Text>
-              <Text theme={outcome.status === 'error' ? 'error' : 'neutral'}>
-                {outcome.detail}
-              </Text>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </section>
-  ) : null
 
 export const StepContext = ({ run }: { run: TDeploymentRun }) => {
   const { current, next } = deploymentStepContext(run.status, run.steps)

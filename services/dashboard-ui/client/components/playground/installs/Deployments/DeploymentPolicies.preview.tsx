@@ -3,10 +3,7 @@ import { DateTime } from 'luxon'
 import { Text } from '@/components/common/Text'
 import { Timeline } from '@/components/common/Timeline'
 import { Select } from '@/components/common/form/Select'
-import {
-  ResourceOutcomes,
-  type TDeploymentRun,
-} from '@/components/installs/DeploymentDetail/DeploymentProgress'
+import type { TDeploymentRun } from '@/components/installs/DeploymentDetail/DeploymentProgress'
 import {
   ACTIVE_DEPLOYMENT_STATUSES,
   deploymentOutcomes,
@@ -159,7 +156,6 @@ const PolicyDetails = ({
       Fixture data only. Denials stop the deployment before apply; warnings do
       not block deployment.
     </Text>
-    <ResourceOutcomes run={run} />
     {run.steps
       .filter((step) => getPolicyViolationCounts(step).hasViolations)
       .map((step) => (

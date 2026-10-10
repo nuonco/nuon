@@ -23,7 +23,6 @@ import {
   WORKFLOW_STATUS_GROUPS,
   type TWorkflowDatePreset,
 } from '@/utils/workflow-filters'
-import { ResourceOutcomes } from '@/components/installs/DeploymentDetail/DeploymentProgress'
 import type { TDeploymentOutcome } from '@/components/installs/DeploymentDetail/deployment-progress'
 
 const scenarios = {
@@ -238,7 +237,6 @@ const LayoutDetails = ({ run, ...props }: IPanel & { run: TLayoutRun }) => (
     <Text variant="base" theme={run.status === 'error' ? 'error' : 'neutral'}>
       {run.activity}
     </Text>
-    <ResourceOutcomes run={run} />
   </Panel>
 )
 
