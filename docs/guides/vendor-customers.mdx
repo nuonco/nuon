@@ -9,6 +9,10 @@ Bring Your Own Cloud (BYOC), or allowing vendors to install and manage their sof
 
 For a technical overview of all security properties, see the [Security](/security) page.
 
+### Share Deployment Assets Before Installation
+
+Use an [app bundle](/guides/app-bundles) to show your customer the assets you intend to deploy in their environment. A bundle packages a specific app config's deployment assets into an immutable archive with a digest-pinned inventory. Share it with your customer's platform and security teams alongside the infrastructure definitions, requested permissions, and any additional dependencies. Customers can inspect the package without deploying it; environment-specific resource changes still need a separate plan review.
+
 ### Secrets and Sensitive Values
 
 In Nuon, secrets and sensitive values are entered by the customer, not the vendor, when they deploy the [Stack](/concepts/stacks). They are then stored in AWS Secrets Manager, Azure Key Vault, or GCP Secret Manager and are retrieved programmatically by the Nuon [Runner](/concepts/runners) in the customer cloud account to insert into [components](/concepts/components) as the vendor's software is provisioned or updated.
