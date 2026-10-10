@@ -489,7 +489,7 @@ export const deploymentChangeDescription = (
         (outcome) => outcome.applied || outcome.status === 'success'
       )
     )
-      return 'Some changes were applied. Review resource outcomes for what completed and what failed.'
+      return 'Some changes were applied. Review workflow steps for what completed and what failed.'
     if (
       outcomes.every((outcome) =>
         ['error', 'not-started'].includes(outcome.status)
@@ -497,5 +497,5 @@ export const deploymentChangeDescription = (
     )
       return 'No completed resource changes were confirmed. A failed apply may have made partial changes.'
   }
-  return 'Resource plans from this deployment. Check resource outcomes for what was applied.'
+  return 'Resource plans from this deployment. Check workflow steps for what was applied.'
 }

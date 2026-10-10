@@ -16,23 +16,30 @@ import (
 )
 
 type InstallOverviewCommit struct {
-	SHA       string     `json:"sha,omitempty"`
-	RunID     string     `json:"run_id,omitempty"`
-	Message   string     `json:"message,omitempty"`
-	Author    string     `json:"author,omitempty"`
-	CreatedAt *time.Time `json:"created_at,omitempty"`
-	RunStatus string     `json:"run_status,omitempty"`
+	SHA              string     `json:"sha,omitempty"`
+	RunID            string     `json:"run_id,omitempty"`
+	WorkflowID       string     `json:"workflow_id,omitempty"`
+	BranchID         string     `json:"branch_id,omitempty"`
+	AppConfigID      string     `json:"app_config_id,omitempty"`
+	Message          string     `json:"message,omitempty"`
+	Author           string     `json:"author,omitempty"`
+	CreatedAt        *time.Time `json:"created_at,omitempty"`
+	RunStatus        string     `json:"run_status,omitempty"`
+	AwaitingApproval bool       `json:"awaiting_approval,omitempty"`
 }
 
 type InstallBranchTracking struct {
-	BranchID       string                 `json:"branch_id,omitempty"`
-	TargetBranch   string                 `json:"target_branch,omitempty"`
-	Repo           string                 `json:"repo,omitempty"`
-	GitBranch      string                 `json:"git_branch,omitempty"`
-	Directory      string                 `json:"directory,omitempty"`
-	Status         string                 `json:"status"`
-	ExpectedCommit *InstallOverviewCommit `json:"expected_commit,omitempty"`
-	AppliedCommit  *InstallOverviewCommit `json:"applied_commit,omitempty"`
+	BranchID       string                  `json:"branch_id,omitempty"`
+	TargetBranch   string                  `json:"target_branch,omitempty"`
+	Repo           string                  `json:"repo,omitempty"`
+	GitBranch      string                  `json:"git_branch,omitempty"`
+	Directory      string                  `json:"directory,omitempty"`
+	Status         string                  `json:"status"`
+	ExpectedCommit *InstallOverviewCommit  `json:"expected_commit,omitempty"`
+	AppliedCommit  *InstallOverviewCommit  `json:"applied_commit,omitempty"`
+	SelectedCommit *InstallOverviewCommit  `json:"selected_commit,omitempty"`
+	CommitsBehind  *int64                  `json:"commits_behind,omitempty" extensions:"x-nullable"`
+	PendingCommits []InstallOverviewCommit `json:"pending_commits"`
 }
 
 type InstallConfigDriftResource struct {
@@ -61,7 +68,7 @@ type InstallOverviewResponse struct {
 
 // @ID						GetInstallOverview
 // @Summary				install overview
-// @Description			Returns branch tracking and config drift for an install. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
+// @Description			Returns branch tracking and config drift for an install. commits_behind counts distinct newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. pending_commits includes the newest 50 configurations and their latest branch runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
 // @Param					install_id	path	string	true	"install ID"
 // @Tags					installs
 // @Accept					json
@@ -194,12 +201,13 @@ func (d InstallConfigDrift) driftedCount() int {
 }
 
 func (s *service) installBranchTracking(ctx context.Context, install *app.Install) (InstallBranchTracking, error) {
-	tracking := InstallBranchTracking{Status: "current"}
+	tracking := InstallBranchTracking{Status: "current", PendingCommits: []InstallOverviewCommit{}}
 
 	var connection app.InstallAppBranchConnection
 	err := s.db.WithContext(ctx).
 		Preload("AppBranch").
-		Where(app.InstallAppBranchConnection{InstallID: install.ID, OrgID: install.OrgID}).
+		Where(app.InstallAppBranchConnection{InstallID: install.ID, OrgID: install.OrgID, Active: true}).
+		Order("created_at DESC, id DESC").
 		First(&connection).Error
 	if err != nil && !isNotFound(err) {
 		return tracking, fmt.Errorf("unable to get install app branch: %w", err)
@@ -227,7 +235,113 @@ func (s *service) installBranchTracking(ctx context.Context, install *app.Instal
 	tracking.ExpectedCommit = commitFromRun(expected)
 	tracking.AppliedCommit = commitFromRun(applied)
 	tracking.Status = branchTrackingStatus(expected, applied)
+	if err := s.installPendingCommits(ctx, install, &tracking); err != nil {
+		return tracking, err
+	}
 	return tracking, nil
+}
+
+func installTrackingRuns(db *gorm.DB, orgID, branchID string) *gorm.DB {
+	return db.Model(&app.AppBranchRun{}).
+		Where(app.AppBranchRun{OrgID: orgID, AppBranchID: branchID}).
+		Where("app_branch_runs.no_config_changes = ?", false).
+		Where("app_branch_runs.plan_only = ?", false).
+		Where("app_branch_runs.run_type IS DISTINCT FROM ?", app.AppBranchRunTypeGitPreview).
+		Where("NOT EXISTS (SELECT 1 FROM app_branch_run_previews p WHERE p.app_branch_run_id = app_branch_runs.id AND p.deleted_at = 0)")
+}
+
+func (s *service) installPendingCommits(ctx context.Context, install *app.Install, tracking *InstallBranchTracking) error {
+	if tracking.BranchID == "" || install.AppConfigID == "" {
+		return nil
+	}
+	var selectedRun app.AppBranchRun
+	err := installTrackingRuns(s.db.WithContext(ctx), install.OrgID, tracking.BranchID).
+		Where(app.AppBranchRun{AppConfigID: install.AppConfigID}).
+		Preload("VCSConnectionCommit").
+		Order("created_at DESC, id DESC").
+		First(&selectedRun).Error
+	if isNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("unable to get selected app branch run: %w", err)
+	}
+
+	var selectedConfig app.AppConfig
+	err = s.db.WithContext(ctx).
+		Select("id, created_at").
+		Where(app.AppConfig{ID: install.AppConfigID, OrgID: install.OrgID, AppID: install.AppID}).
+		First(&selectedConfig).Error
+	if isNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("unable to get selected app config: %w", err)
+	}
+	tracking.SelectedCommit = commitFromRun(&selectedRun)
+
+	newerConfigs := s.db.WithContext(ctx).Model(&app.AppConfig{}).
+		Where(app.AppConfig{OrgID: install.OrgID, AppID: install.AppID}).
+		Where("created_at > ? OR (created_at = ? AND id > ?)", selectedConfig.CreatedAt, selectedConfig.CreatedAt, selectedConfig.ID).
+		Where("id IN (?)", installTrackingRuns(s.db.WithContext(ctx), install.OrgID, tracking.BranchID).Select("app_config_id"))
+	var count int64
+	if err := newerConfigs.Session(&gorm.Session{}).Count(&count).Error; err != nil {
+		return fmt.Errorf("unable to count newer app configs: %w", err)
+	}
+	tracking.CommitsBehind = &count
+	if count == 0 {
+		return nil
+	}
+
+	var configIDs []string
+	if err := newerConfigs.Order("created_at DESC, id DESC").Limit(50).Pluck("id", &configIDs).Error; err != nil {
+		return fmt.Errorf("unable to list newer app configs: %w", err)
+	}
+	var runs []app.AppBranchRun
+	if err := installTrackingRuns(s.db.WithContext(ctx), install.OrgID, tracking.BranchID).
+		Select("DISTINCT ON (app_config_id) app_branch_runs.*").
+		Where("app_config_id IN ?", configIDs).
+		Preload("VCSConnectionCommit").
+		Order("app_config_id, created_at DESC, id DESC").
+		Find(&runs).Error; err != nil {
+		return fmt.Errorf("unable to get pending app branch runs: %w", err)
+	}
+	workflowIDs := make([]string, 0, len(runs))
+	for _, run := range runs {
+		if run.WorkflowID != nil {
+			workflowIDs = append(workflowIDs, *run.WorkflowID)
+		}
+	}
+	var awaitingWorkflowIDs []string
+	if len(workflowIDs) > 0 {
+		if err := s.db.WithContext(ctx).Model(&app.WorkflowStep{}).
+			Distinct().
+			Joins("JOIN install_workflow_step_approvals approvals ON approvals.install_workflow_step_id = install_workflow_steps.id AND approvals.deleted_at = 0").
+			Joins("LEFT JOIN install_workflow_step_approval_responses responses ON responses.install_workflow_step_approval_id = approvals.id AND responses.deleted_at = 0").
+			Where("install_workflow_steps.install_workflow_id IN ?", workflowIDs).
+			Where("install_workflow_steps.execution_type = ?", app.WorkflowStepExecutionTypeApproval).
+			Where("install_workflow_steps.status->>'status' = ?", string(app.AwaitingApproval)).
+			Where("responses.id IS NULL").
+			Pluck("install_workflow_steps.install_workflow_id", &awaitingWorkflowIDs).Error; err != nil {
+			return fmt.Errorf("unable to get pending branch approvals: %w", err)
+		}
+	}
+	awaiting := make(map[string]bool, len(awaitingWorkflowIDs))
+	for _, id := range awaitingWorkflowIDs {
+		awaiting[id] = true
+	}
+	commits := make(map[string]*InstallOverviewCommit, len(runs))
+	for i := range runs {
+		commit := commitFromRun(&runs[i])
+		commit.AwaitingApproval = awaiting[commit.WorkflowID]
+		commits[commit.AppConfigID] = commit
+	}
+	for _, id := range configIDs {
+		if commit := commits[id]; commit != nil {
+			tracking.PendingCommits = append(tracking.PendingCommits, *commit)
+		}
+	}
+	return nil
 }
 
 func (s *service) branchRepo(ctx context.Context, branchID string) (repo, gitBranch, directory string, err error) {
@@ -304,9 +418,14 @@ func commitFromRun(run *app.AppBranchRun) *InstallOverviewCommit {
 		return nil
 	}
 	commit := &InstallOverviewCommit{
-		RunID:     run.ID,
-		RunStatus: run.Status,
-		SHA:       run.RunMetadata().HeadSHA,
+		RunID:       run.ID,
+		BranchID:    run.AppBranchID,
+		AppConfigID: run.AppConfigID,
+		RunStatus:   run.Status,
+		SHA:         run.RunMetadata().HeadSHA,
+	}
+	if run.WorkflowID != nil {
+		commit.WorkflowID = *run.WorkflowID
 	}
 	if commit.SHA == "" {
 		commit.SHA = run.HeadSHA

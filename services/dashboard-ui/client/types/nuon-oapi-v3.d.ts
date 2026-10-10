@@ -2233,7 +2233,7 @@ export interface paths {
   "/v1/installs/{install_id}/overview": {
     /**
      * install overview
-     * @description Returns branch tracking and config drift for an install. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
+     * @description Returns branch tracking and config drift for an install. commits_behind counts distinct newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. pending_commits includes the newest 50 configurations and their latest branch runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
      */
     get: operations["GetInstallOverview"];
   };
@@ -6898,6 +6898,8 @@ export interface components {
       name?: string;
       org_id?: string;
       role?: string;
+      source_id?: string;
+      source_type?: string;
       token_type?: components["schemas"]["app.TokenType"];
       updated_at?: string;
     };
@@ -9393,10 +9395,13 @@ export interface components {
     "service.InstallBranchTracking": {
       applied_commit?: components["schemas"]["service.InstallOverviewCommit"];
       branch_id?: string;
+      commits_behind?: number | null;
       directory?: string;
       expected_commit?: components["schemas"]["service.InstallOverviewCommit"];
       git_branch?: string;
+      pending_commits?: components["schemas"]["service.InstallOverviewCommit"][];
       repo?: string;
+      selected_commit?: components["schemas"]["service.InstallOverviewCommit"];
       status?: string;
       target_branch?: string;
     };
@@ -9494,6 +9499,11 @@ export interface components {
       previous_tag?: string;
       repository?: string;
     };
+    "service.InstallDeploymentPolicySummary": {
+      deny_count?: number;
+      first_warn_message?: string;
+      warn_count?: number;
+    };
     "service.InstallDeploymentStep": {
       approval_response_id?: string;
       component_name?: string;
@@ -9503,6 +9513,7 @@ export interface components {
       id?: string;
       idx?: number;
       name?: string;
+      policy?: components["schemas"]["service.InstallDeploymentPolicySummary"];
       retried?: boolean;
       status?: string;
       step_target_type?: string;
@@ -9571,12 +9582,16 @@ export interface components {
       keys?: string[];
     };
     "service.InstallOverviewCommit": {
+      app_config_id?: string;
       author?: string;
+      awaiting_approval?: boolean;
+      branch_id?: string;
       created_at?: string;
       message?: string;
       run_id?: string;
       run_status?: string;
       sha?: string;
+      workflow_id?: string;
     };
     "service.InstallOverviewResponse": {
       branch_tracking?: components["schemas"]["service.InstallBranchTracking"];
@@ -26777,7 +26792,7 @@ export interface operations {
   };
   /**
    * install overview
-   * @description Returns branch tracking and config drift for an install. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
+   * @description Returns branch tracking and config drift for an install. commits_behind counts distinct newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. pending_commits includes the newest 50 configurations and their latest branch runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
    */
   GetInstallOverview: {
     parameters: {

@@ -1545,3 +1545,10 @@ export type TInstallActivityResponse = {
   limit: number
   has_more: boolean
 }
+
+export type TInstallOverview =
+  components['schemas']['service.InstallOverviewResponse']
+export type TInstallBranchTracking =
+  components['schemas']['service.InstallBranchTracking']
+export type TInstallOverviewCommit =
+  components['schemas']['service.InstallOverviewCommit']

@@ -332,7 +332,7 @@ test('finished summaries distinguish unapplied, partially applied and unknown ch
       failed,
       deploymentOutcomes(deployment, workflow([]))
     )
-  ).toContain('Check resource outcomes')
+  ).toContain('Check workflow steps')
   expect(
     deploymentChangeDescription({ ...failed, plan_only: true }, [])
   ).toContain('plan-only deployment')
