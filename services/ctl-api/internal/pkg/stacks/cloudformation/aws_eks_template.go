@@ -75,6 +75,10 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 				cloudformation.GetAtt("RunnerAutoScalingGroup", "Outputs.TelemetryEndpoint"), "")
 		}
 
+		if err := t.applyNestedStackParameters(inp, "RunnerAutoScalingGroup", inp.AppCfg.StackConfig.RunnerNestedTemplateURL, runnerASG.Parameters, nil); err != nil {
+			return nil, err
+		}
+
 		// CloudWatch: logs
 		tmpl.Resources["RunnerCloudWatchLogGroup"] = t.getRunnerCloudWatchLogGroup(inp, tb)
 		tmpl.Resources["RunnerCloudWatchLogStream"] = t.getRunnerCloudWatchLogStream(inp, tb)

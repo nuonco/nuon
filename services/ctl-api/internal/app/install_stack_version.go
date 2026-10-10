@@ -62,6 +62,8 @@ type InstallStackVersion struct {
 	AWSBucketName string `json:"aws_bucket_name,omitzero" temporaljson:"aws_bucket_name,omitzero,omitempty"`
 	AWSBucketKey  string `json:"aws_bucket_key,omitzero" temporaljson:"aws_bucket_key,omitzero,omitempty"`
 
+	AWSStackParameters map[string]string `json:"-" gorm:"type:jsonb;serializer:json" temporaljson:"aws_stack_parameters,omitzero,omitempty"`
+
 	CustomStacksTemplateURL        string                       `json:"custom_stacks_template_url,omitzero" temporaljson:"custom_stacks_template_url,omitzero,omitempty"`
 	CustomStacksAWSBucketKey       string                       `json:"custom_stacks_aws_bucket_key,omitzero" temporaljson:"custom_stacks_aws_bucket_key,omitzero,omitempty"`
 	CustomStacksOutputMap          map[string]map[string]string `json:"custom_stacks_output_map,omitzero" gorm:"type:jsonb;serializer:json" swaggertype:"object" temporaljson:"custom_stacks_output_map,omitzero,omitempty"`

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"sort"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -14,6 +15,9 @@ import (
 // parameter group lists are compared as sets, since versions rendered before they were sorted list them in random order.
 func SameTemplate(a []byte, aVersion *app.InstallStackVersion, b []byte, bVersion *app.InstallStackVersion) bool {
 	if len(a) == 0 || len(b) == 0 || aVersion == nil || bVersion == nil {
+		return false
+	}
+	if !maps.Equal(aVersion.AWSStackParameters, bVersion.AWSStackParameters) {
 		return false
 	}
 	ca, ok := canonicalTemplate(a, aVersion)
