@@ -209,6 +209,8 @@ func init() {
 	// orgs with USE_LEGACY_MAINTENANCE_ROLE_DEFAULT=true. Overrides and sandbox
 	// operation defaults are unaffected.
 	config.RegisterDefault("use_legacy_maintenance_role_default", false)
+
+	config.RegisterDefault("install_state_metrics_enabled", false)
 }
 
 type Config struct {
@@ -221,6 +223,9 @@ type Config struct {
 	DisableMetrics           bool     `config:"disable_metrics"`
 	OTELExporterOTLPEndpoint string   `config:"otel_exporter_otlp_endpoint"`
 	OTELExporterOTLPProtocol string   `config:"otel_exporter_otlp_protocol"`
+
+	InstallStateMetricsEnabled bool     `config:"install_state_metrics_enabled"`
+	InstallStateMetricsLabels  []string `config:"install_state_metrics_labels"`
 
 	ServiceName       string `config:"service_name" validate:"required"`
 	ServiceType       string `config:"service_type" validate:"required"`
