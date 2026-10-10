@@ -49,15 +49,15 @@ func TestGvksFromManifestDeduplicates(t *testing.T) {
 func TestManifestKindsProviderSetAndDiscover(t *testing.T) {
 	p := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop()})
 
-	p.Set("cmp-a", nodePoolManifest)
+	p.Set("cmp-a", nodePoolManifest, "")
 	assert.Len(t, p.DiscoveredGVKs(), 3)
 
 	// A chart that no longer renders anything stops contributing kinds, so a
 	// removed CR does not keep costing a list call every cycle.
-	p.Set("cmp-a", "")
+	p.Set("cmp-a", "", "")
 	assert.Empty(t, p.DiscoveredGVKs())
 
-	p.Set("", nodePoolManifest)
+	p.Set("", nodePoolManifest, "")
 	assert.Empty(t, p.DiscoveredGVKs(), "an empty component id records nothing")
 }
 
@@ -84,7 +84,7 @@ func TestManifestKindsRoundTripsThroughPersistence(t *testing.T) {
 	store := &ClusterProvider{l: zap.NewNop(), sandboxReleases: map[string]struct{}{}}
 
 	first := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: store})
-	first.Set("cmp-a", nodePoolManifest)
+	first.Set("cmp-a", nodePoolManifest, "")
 	assert.Len(t, first.DiscoveredGVKs(), 3)
 	assert.Len(t, store.ComponentKinds(), 3, "kinds should have been handed to the store")
 
@@ -101,12 +101,12 @@ func TestPersistDoesNotClobberOtherComponents(t *testing.T) {
 	store := &ClusterProvider{l: zap.NewNop(), sandboxReleases: map[string]struct{}{}}
 
 	a := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: store})
-	a.Set("cmp-a", "---\napiVersion: karpenter.sh/v1\nkind: NodePool\nmetadata:\n  name: n\n")
+	a.Set("cmp-a", "---\napiVersion: karpenter.sh/v1\nkind: NodePool\nmetadata:\n  name: n\n", "")
 	assert.Len(t, store.ComponentKinds(), 1)
 
 	// Fresh process; a deploy for a different component arrives with no Load yet.
 	b := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: store})
-	b.Set("cmp-b", "---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: c\n")
+	b.Set("cmp-b", "---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: c\n", "")
 
 	assert.Len(t, store.ComponentKinds(), 2, "cmp-a's kind must survive cmp-b's deploy")
 	assert.Len(t, b.DiscoveredGVKs(), 2)
@@ -157,7 +157,7 @@ func TestReleaseOwnershipCoexistsWithKindsAndObjects(t *testing.T) {
 	store := &ClusterProvider{l: zap.NewNop(), sandboxReleases: map[string]struct{}{}}
 	p := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: store})
 
-	p.Set("cmp-chart", nodePoolManifest)
+	p.Set("cmp-chart", nodePoolManifest, "")
 	p.SetKinds("cmp-tf", nil, []string{"ConfigMap//cm"}, []string{"rel"})
 
 	restarted := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: store})

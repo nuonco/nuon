@@ -270,7 +270,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	// it, which is how a component picks up its kinds without being redeployed.
 	if h.manifestKinds != nil {
 		if manifest := renderedManifest(rel, helmPlan); manifest != "" {
-			h.manifestKinds.Set(h.state.plan.ComponentID, manifest)
+			h.manifestKinds.Set(h.state.plan.ComponentID, manifest, h.state.plan.HelmDeployPlan.Namespace)
 		}
 	}
 
