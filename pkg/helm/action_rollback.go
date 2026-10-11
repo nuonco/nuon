@@ -16,7 +16,7 @@ func DefaultRollback(actionCfg *action.Configuration) *action.Rollback {
 func ConfigureDefaultRollback(client *action.Rollback) *action.Rollback {
 	client.CleanupOnFail = false
 	client.DisableHooks = false
-	client.DryRun = false
+	client.DryRunStrategy = action.DryRunNone
 	client.ForceReplace = false
 	client.MaxHistory = 0
 

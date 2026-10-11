@@ -29,8 +29,8 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 		zap.String("name", prevRel.Name),
 		zap.String("namespace", prevRel.Namespace),
 		zap.Int("version", prevRel.Version),
-		zap.Time("first_deployed", prevRel.Info.FirstDeployed.Time),
-		zap.Time("last_deployed", prevRel.Info.LastDeployed.Time),
+		zap.Time("first_deployed", prevRel.Info.FirstDeployed),
+		zap.Time("last_deployed", prevRel.Info.LastDeployed),
 	)
 
 	l.Debug("loading chart options")
@@ -51,7 +51,7 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 
 	client := helm.DefaultUpgrade(actionCfg)
 	// configure the client with additional, chart and context -specific values
-	client.DryRun = true
+	client.DryRunStrategy = action.DryRunServer
 	// wait logic
 	client.Devel = true
 	client.Namespace = h.state.plan.HelmDeployPlan.Namespace
@@ -83,9 +83,13 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to execute with dry-run")
 		}
-		rendered = rel.Manifest
+		dryRun, err := helm.AsRelease(rel)
+		if err != nil {
+			return nil, err
+		}
+		rendered = dryRun.Manifest
 		prevMapping := manifest.Parse(prevRel.Manifest, prevRel.Namespace, true)
-		newMapping := manifest.Parse(rel.Manifest, rel.Namespace, true)
+		newMapping := manifest.Parse(dryRun.Manifest, dryRun.Namespace, true)
 		if err := h.logDiff(l, prevMapping, newMapping); err != nil {
 			return nil, errors.Wrap(err, "unable to execute with dry-run")
 		}
@@ -102,7 +106,7 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	l.Info("upgrading helm release")
 	client = helm.DefaultUpgrade(actionCfg)
 
-	client.DryRun = false
+	client.DryRunStrategy = action.DryRunNone
 	client.ServerSideApply = "false"
 	client.Devel = true
 	client.Namespace = h.state.plan.HelmDeployPlan.Namespace

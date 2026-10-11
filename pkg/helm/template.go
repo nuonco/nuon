@@ -14,8 +14,7 @@ func TemplateChart(chart *chart.Chart, values map[string]interface{}) (string, e
 	}
 
 	client := action.NewInstall(&action.Configuration{})
-	client.DryRun = true
-	client.ClientOnly = true
+	client.DryRunStrategy = action.DryRunClient
 	client.IncludeCRDs = true
 	client.Namespace = "default"
 	client.ReleaseName = "policy-input"
@@ -24,8 +23,12 @@ func TemplateChart(chart *chart.Chart, values map[string]interface{}) (string, e
 	if err != nil {
 		return "", errors.Wrap(err, "unable to render helm templates")
 	}
+	got, err := AsRelease(rel)
+	if err != nil {
+		return "", err
+	}
 
-	return rel.Manifest, nil
+	return got.Manifest, nil
 }
 
 // RenderManifest renders a chart on the client, using the release name and
@@ -45,8 +48,7 @@ func RenderManifest(ch *chart.Chart, values map[string]interface{}, releaseName,
 	}
 
 	client := action.NewInstall(&action.Configuration{})
-	client.DryRun = true
-	client.ClientOnly = true
+	client.DryRunStrategy = action.DryRunClient
 	client.IncludeCRDs = true
 	client.Namespace = namespace
 	client.ReleaseName = releaseName
@@ -55,5 +57,9 @@ func RenderManifest(ch *chart.Chart, values map[string]interface{}, releaseName,
 	if err != nil {
 		return "", errors.Wrap(err, "unable to render helm templates")
 	}
-	return rel.Manifest, nil
+	got, err := AsRelease(rel)
+	if err != nil {
+		return "", err
+	}
+	return got.Manifest, nil
 }

@@ -53,5 +53,5 @@ func HelmUpgradeWithLogStreaming(
 	// NOTE(fd): we dont' have to worry about the tail end of the logs since we just care that helm said we're good to go.
 	// if we did though, we would sleep here for a few second to let the remaining logs drain - e.g. short lived initContainer
 
-	return rel, nil
+	return AsRelease(rel)
 }

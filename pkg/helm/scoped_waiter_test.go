@@ -1,13 +1,9 @@
 package helm
 
 import (
-	"context"
 	"testing"
+	"time"
 
-	"github.com/fluxcd/cli-utils/pkg/kstatus/polling/event"
-	"github.com/fluxcd/cli-utils/pkg/kstatus/status"
-	"github.com/fluxcd/cli-utils/pkg/kstatus/watcher"
-	"github.com/fluxcd/cli-utils/pkg/object"
 	"helm.sh/helm/v4/pkg/kube"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -18,11 +14,12 @@ import (
 	"k8s.io/cli-runtime/pkg/resource"
 )
 
-func TestWaitListsServicesInReleaseAndObservedNamespaces(t *testing.T) {
+func TestGetWaiterWithOptionsStampsNamespaces(t *testing.T) {
 	paused := true
 	resources := kubeResourceList(
 		serviceInfo("whoami", ""),
 		serviceInfo("edge", "sourdough"),
+		secretInfo("token", "rye"),
 		&resource.Info{
 			Name: "paused",
 			Mapping: &meta.RESTMapping{
@@ -48,49 +45,59 @@ func TestWaitListsServicesInReleaseAndObservedNamespaces(t *testing.T) {
 		},
 	)
 
-	capture := &captureWatcher{}
-	waiter := &scopedStatusWaiter{namespace: "persimmon"}
-	if err := waiter.wait(context.Background(), resources, capture, true, status.CurrentStatus); err != nil {
+	// GetWaiter and GetWaiterWithOptions both return this waiter around Helm's.
+	inner := &recordingWaiter{}
+	waiter, err := wrapNamespaceWaiter(inner, nil, "persimmon")
+	if err != nil {
+		t.Fatalf("wrap waiter: %v", err)
+	}
+	if err := waiter.Wait(resources, time.Second); err != nil {
 		t.Fatalf("wait: %v", err)
 	}
 
-	if capture.opts.RESTScopeStrategy != watcher.RESTScopeNamespace {
-		t.Fatalf("scope strategy = %v, want namespace", capture.opts.RESTScopeStrategy)
+	if got := resources[0].Namespace; got != "persimmon" {
+		t.Fatalf("omitted service namespace = %q, want release namespace", got)
 	}
-
-	got := map[string]string{}
-	for _, id := range capture.ids {
-		got[id.GroupKind.Kind+"/"+id.Name] = id.Namespace
+	if got := resources[0].Object.(*corev1.Service).Namespace; got != "persimmon" {
+		t.Fatalf("omitted service object namespace = %q, want release namespace", got)
 	}
-	want := map[string]string{
-		"Service/whoami":    "persimmon",
-		"Service/edge":      "sourdough",
-		"ClusterRole/admin": "",
+	if got := resources[1].Object.(*corev1.Service).Namespace; got != "sourdough" {
+		t.Fatalf("observed service namespace = %q, want sourdough", got)
 	}
-	if len(got) != len(want) {
-		t.Fatalf("watched %#v, want %#v", got, want)
+	if got := resources[2].Object.(*corev1.Secret).Namespace; got != "rye" {
+		t.Fatalf("secret namespace = %q, want rye", got)
 	}
-	for key, namespace := range want {
-		if got[key] != namespace {
-			t.Fatalf("%s namespace = %q, want %q", key, got[key], namespace)
-		}
+	deployment := resources[3].Object.(*appsv1.Deployment)
+	if deployment.Namespace != "persimmon" || !deployment.Spec.Paused {
+		t.Fatalf("paused deployment = namespace %q paused %v, want persimmon and still paused", deployment.Namespace, deployment.Spec.Paused)
 	}
-	if resources[0].Namespace != "persimmon" {
-		t.Fatalf("service info namespace = %q, want release namespace", resources[0].Namespace)
+	if got := resources[4].Object.(*rbacv1.ClusterRole).Namespace; got != "" {
+		t.Fatalf("cluster role namespace = %q, want empty", got)
+	}
+	if inner.resources[2].Object.(*corev1.Secret).Namespace != "rye" {
+		t.Fatalf("helm waiter saw secret namespace %q, want rye", inner.resources[2].Object.(*corev1.Secret).Namespace)
 	}
 }
 
-type captureWatcher struct {
-	ids  object.ObjMetadataSet
-	opts watcher.Options
+type recordingWaiter struct {
+	resources kube.ResourceList
 }
 
-func (c *captureWatcher) Watch(_ context.Context, ids object.ObjMetadataSet, opts watcher.Options) <-chan event.Event {
-	c.ids = append(object.ObjMetadataSet{}, ids...)
-	c.opts = opts
-	ch := make(chan event.Event)
-	close(ch)
-	return ch
+func (w *recordingWaiter) Wait(resources kube.ResourceList, _ time.Duration) error {
+	w.resources = resources
+	return nil
+}
+
+func (w *recordingWaiter) WaitWithJobs(resources kube.ResourceList, timeout time.Duration) error {
+	return w.Wait(resources, timeout)
+}
+
+func (w *recordingWaiter) WaitForDelete(resources kube.ResourceList, timeout time.Duration) error {
+	return w.Wait(resources, timeout)
+}
+
+func (w *recordingWaiter) WatchUntilReady(resources kube.ResourceList, timeout time.Duration) error {
+	return w.Wait(resources, timeout)
 }
 
 func serviceInfo(name, namespace string) *resource.Info {
@@ -104,6 +111,21 @@ func serviceInfo(name, namespace string) *resource.Info {
 		Object: &corev1.Service{
 			TypeMeta:   metav1.TypeMeta{APIVersion: "v1", Kind: "Service"},
 			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		},
+	}
+}
+
+func secretInfo(name, namespace string) *resource.Info {
+	return &resource.Info{
+		Name:      name,
+		Namespace: namespace,
+		Mapping: &meta.RESTMapping{
+			GroupVersionKind: schema.GroupVersionKind{Version: "v1", Kind: "Secret"},
+			Scope:            meta.RESTScopeNamespace,
+		},
+		Object: &corev1.Secret{
+			TypeMeta:   metav1.TypeMeta{APIVersion: "v1", Kind: "Secret"},
+			ObjectMeta: metav1.ObjectMeta{Name: name},
 		},
 	}
 }

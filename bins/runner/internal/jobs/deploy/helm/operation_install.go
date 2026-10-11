@@ -43,7 +43,7 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.TakeOwnership = h.state.plan.HelmDeployPlan.TakeOwnership
 	client.SkipCRDs = h.state.plan.HelmDeployPlan.SkipCRDs
 	client.Timeout = h.state.timeout
-	client.DryRun = true
+	client.DryRunStrategy = action.DryRunServer
 
 	// determine if we're going to calculate the diff
 	var rendered string
@@ -69,8 +69,12 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to execute with dry-run")
 		}
-		rendered = rel.Manifest
-		newMapping := manifest.Parse(rel.Manifest, rel.Namespace, true)
+		dryRun, err := helm.AsRelease(rel)
+		if err != nil {
+			return nil, err
+		}
+		rendered = dryRun.Manifest
+		newMapping := manifest.Parse(dryRun.Manifest, dryRun.Namespace, true)
 		if err := h.logDiff(l, map[string]*manifest.MappingResult{}, newMapping); err != nil {
 			return nil, errors.Wrap(err, "unable to execute with dry-run")
 		}
@@ -86,7 +90,7 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 	}
 
 	l.Info("running helm install")
-	client.DryRun = false
+	client.DryRunStrategy = action.DryRunNone
 	rel, err := helm.HelmInstallWithLogStreaming(ctx, client, chart, values, kubeCfg, resources, l)
 	if err != nil {
 		return nil, fmt.Errorf("unable to upgrade helm release: %w", err)

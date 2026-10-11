@@ -47,5 +47,5 @@ func HelmInstallWithLogStreaming(
 		return nil, err
 	}
 
-	return rel, nil
+	return AsRelease(rel)
 }
