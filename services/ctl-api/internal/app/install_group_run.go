@@ -1,9 +1,15 @@
 package app
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"reflect"
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
@@ -69,7 +75,7 @@ type InstallGroupRun struct {
 
 	Status CompositeStatus `json:"status,omitzero" gorm:"type:jsonb" temporaljson:"status,omitzero,omitempty"`
 
-	Installs []InstallGroupRunInstall `json:"installs,omitempty" gorm:"type:jsonb;serializer:json" temporaljson:"installs,omitzero,omitempty"`
+	Installs []InstallGroupRunInstall `json:"installs,omitempty" gorm:"type:jsonb;serializer:install_group_run_installs" temporaljson:"installs,omitzero,omitempty"`
 
 	TotalInstalls     int `json:"total_installs,omitzero" temporaljson:"total_installs,omitzero,omitempty"`
 	CompletedInstalls int `json:"completed_installs,omitzero" temporaljson:"completed_installs,omitzero,omitempty"`
@@ -115,4 +121,59 @@ func (i *InstallGroupRun) BeforeCreate(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+func init() {
+	schema.RegisterSerializer("install_group_run_installs", installGroupRunInstallsSerializer{})
+}
+
+// installGroupRunInstallsSerializer matches encoding/json for a slice, and also
+// accepts a single JSON object. GORM Update of a one-element slice stored that
+// object, and the stock json serializer cannot scan it back into the slice.
+type installGroupRunInstallsSerializer struct{}
+
+func (installGroupRunInstallsSerializer) Scan(ctx context.Context, field *schema.Field, dst reflect.Value, dbValue interface{}) error {
+	fieldValue := reflect.New(field.FieldType)
+	if dbValue != nil {
+		var raw []byte
+		switch v := dbValue.(type) {
+		case []byte:
+			raw = v
+		case string:
+			raw = []byte(v)
+		default:
+			return fmt.Errorf("failed to unmarshal install group run installs: %#v", dbValue)
+		}
+		if err := unmarshalInstallGroupRunInstalls(raw, fieldValue.Interface()); err != nil {
+			return err
+		}
+	}
+	field.ReflectValueOf(ctx, dst).Set(fieldValue.Elem())
+	return nil
+}
+
+func (installGroupRunInstallsSerializer) Value(ctx context.Context, field *schema.Field, dst reflect.Value, fieldValue interface{}) (interface{}, error) {
+	result, err := json.Marshal(fieldValue)
+	if string(result) == "null" {
+		if field.TagSettings["NOT NULL"] != "" {
+			return "", nil
+		}
+		return nil, err
+	}
+	return string(result), err
+}
+
+func unmarshalInstallGroupRunInstalls(raw []byte, dest any) error {
+	raw = bytes.TrimSpace(raw)
+	if len(raw) == 0 || bytes.Equal(raw, []byte("null")) {
+		return nil
+	}
+	if raw[0] == '{' {
+		if bytes.Equal(raw, []byte("{}")) {
+			raw = []byte("[]")
+		} else {
+			raw = append(append([]byte{'['}, raw...), ']')
+		}
+	}
+	return json.Unmarshal(raw, dest)
 }
