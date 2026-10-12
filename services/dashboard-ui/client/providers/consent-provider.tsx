@@ -1,4 +1,4 @@
-import { createContext, useCallback, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useState, type ReactNode } from 'react'
 import { DateTime } from 'luxon'
 
 export type TConsentStatus = 'unknown' | 'granted' | 'denied'
@@ -19,20 +19,19 @@ export const ConsentContext = createContext<ConsentContextType | null>(null)
 const STORAGE_KEY = 'analytics_consent'
 
 export function ConsentProvider({ children }: { children: ReactNode }) {
-  const [consent, setConsent] = useState<TConsentStatus>('unknown')
-
-  useEffect(() => {
+  const [consent, setConsent] = useState<TConsentStatus>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
-      if (!stored) return
+      if (!stored) return 'unknown'
       const parsed = JSON.parse(stored) as ConsentSettings
       if (parsed.status === 'granted' || parsed.status === 'denied') {
-        setConsent(parsed.status)
+        return parsed.status
       }
     } catch (error) {
       console.warn('Failed to load analytics consent from localStorage:', error)
     }
-  }, [])
+    return 'unknown'
+  })
 
   const persist = useCallback((status: 'granted' | 'denied') => {
     try {
