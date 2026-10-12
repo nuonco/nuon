@@ -335,6 +335,7 @@ interface IBranchRunChangesSummary {
   isPending?: boolean
   scope?: TComparisonScope
   configError?: TCompositeError
+  bare?: boolean
 }
 
 export const BranchRunChangesSummary = ({
@@ -347,6 +348,7 @@ export const BranchRunChangesSummary = ({
   isPending,
   scope,
   configError,
+  bare = false,
 }: IBranchRunChangesSummary) => {
   const {
     sections: visibleSections,
@@ -373,6 +375,37 @@ export const BranchRunChangesSummary = ({
       />
     )
   }
+
+  const changes = (
+    <div
+      className={
+        bare
+          ? 'max-h-[70vh] overflow-y-auto'
+          : 'border-t max-h-[70vh] overflow-y-auto'
+      }
+    >
+      {showPending ? (
+        <div className="px-4 py-6 text-center">
+          <EmptyState
+            emptyTitle="Changes pending"
+            emptyMessage="Changes appear after the app config builds."
+            variant="diagram"
+            size="sm"
+          />
+        </div>
+      ) : (
+        <AppConfigDiff
+          sections={visibleSections}
+          summary={null}
+          isLoading={loading}
+          defaultSectionsOpen={false}
+          embedded
+        />
+      )}
+    </div>
+  )
+
+  if (bare) return <div className={className}>{changes}</div>
 
   return (
     <section
@@ -401,26 +434,7 @@ export const BranchRunChangesSummary = ({
           {headerAction}
         </div>
       </header>
-      <div className="border-t max-h-[70vh] overflow-y-auto">
-        {showPending ? (
-          <div className="px-4 py-6 text-center">
-            <EmptyState
-              emptyTitle="Changes pending"
-              emptyMessage="Changes appear after the app config builds."
-              variant="diagram"
-              size="sm"
-            />
-          </div>
-        ) : (
-          <AppConfigDiff
-            sections={visibleSections}
-            summary={null}
-            isLoading={loading}
-            defaultSectionsOpen={false}
-            embedded
-          />
-        )}
-      </div>
+      {changes}
     </section>
   )
 }

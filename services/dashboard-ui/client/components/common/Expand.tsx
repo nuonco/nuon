@@ -13,6 +13,9 @@ export interface IExpand extends React.HTMLAttributes<HTMLDivElement> {
   headerClassName?: string
   id: string
   interactiveHeading?: boolean
+  // The header row toggles expansion. Clicks inside nested controls do not,
+  // so those controls must stop propagation.
+  headerToggle?: boolean
   onExpandedChange?: (isExpanded: boolean) => void
   toggleLabel?: string
   toggleContent?: React.ReactNode
@@ -28,6 +31,7 @@ export const Expand = ({
   isIconBeforeHeading = false,
   isOpen = false,
   interactiveHeading = false,
+  headerToggle = false,
   onExpandedChange,
   toggleLabel,
   toggleContent,
@@ -71,9 +75,12 @@ export const Expand = ({
             'flex items-start gap-2 p-2 w-full',
             {
               'justify-between': !isIconBeforeHeading,
+              'cursor-pointer hover:bg-black/5 dark:hover:bg-white/5':
+                headerToggle,
             },
             headerClassName
           )}
+          onClick={headerToggle ? toggle : undefined}
         >
           {isIconBeforeHeading && (
             <button
@@ -83,7 +90,10 @@ export const Expand = ({
               aria-controls={`${id}-content`}
               aria-label={toggleLabel}
               id={id}
-              onClick={toggle}
+              onClick={(event) => {
+                event.stopPropagation()
+                toggle()
+              }}
             >
               {expandIcon}
               {toggleContent}
@@ -98,7 +108,10 @@ export const Expand = ({
               aria-controls={`${id}-content`}
               aria-label={toggleLabel}
               id={id}
-              onClick={toggle}
+              onClick={(event) => {
+                event.stopPropagation()
+                toggle()
+              }}
             >
               {toggleContent}
               {expandIcon}

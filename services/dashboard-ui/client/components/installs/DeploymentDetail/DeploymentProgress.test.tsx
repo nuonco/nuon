@@ -4,30 +4,6 @@ import { ResourceScopeSummary, StepContext } from './DeploymentProgress'
 
 afterEach(cleanup)
 
-test('a partially applied resource is labelled as a partial rollout', () => {
-  render(
-    <ResourceScopeSummary
-      run={{
-        status: 'failed-pending-retry',
-        activity: '',
-        steps: [],
-        outcomes: [
-          {
-            category: 'Sandbox',
-            name: 'Sandbox',
-            status: 'warn',
-            detail: 'Applied; remaining steps not completed',
-            applied: true,
-          },
-        ],
-      }}
-    />
-  )
-  expect(
-    screen.getByRole('group', { name: 'Sandbox: Partial rollout' })
-  ).toBeTruthy()
-})
-
 test('a queued deployment without steps shows that steps are being prepared', () => {
   render(
     <StepContext
@@ -38,13 +14,49 @@ test('a queued deployment without steps shows that steps are being prepared', ()
   expect(screen.getByText('Waiting for steps')).toBeTruthy()
 })
 
+test('category summaries stay on one line of labels', () => {
+  render(
+    <ResourceScopeSummary
+      run={{
+        status: 'error',
+        outcomes: [
+          {
+            category: 'Sandbox',
+            name: 'Sandbox',
+            status: 'warn',
+            detail: 'Partial rollout',
+          },
+          {
+            category: 'Secrets',
+            name: 'Secrets',
+            status: 'error',
+            detail: 'Failed',
+          },
+          {
+            category: 'Components',
+            name: 'api',
+            status: 'not-started',
+            detail: 'Not started',
+          },
+        ],
+      }}
+    />
+  )
+  expect(
+    screen.getByRole('group', { name: 'Sandbox: Partial rollout' })
+  ).toBeTruthy()
+  expect(screen.getByRole('group', { name: 'Secrets: Failed' })).toBeTruthy()
+  expect(
+    screen.getByRole('group', { name: 'Components: Not started' })
+  ).toBeTruthy()
+  expect(screen.queryByRole('listitem')).toBeNull()
+})
+
 test('cancelled and skipped categories are labelled explicitly', () => {
   render(
     <ResourceScopeSummary
       run={{
         status: 'cancelled',
-        activity: '',
-        steps: [],
         outcomes: [
           {
             category: 'Sandbox',
