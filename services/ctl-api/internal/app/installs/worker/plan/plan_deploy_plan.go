@@ -104,6 +104,14 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 			return nil, nil, errors.Wrap(err, "unable to create terraform deploy plan")
 		}
 		plan.TerraformDeployPlan = tfPlan
+
+		if installDeploy.Type == app.InstallDeployTypeTeardown {
+			teardownPlan, err := p.createTeardownPlan(ctx, appCfg, build, installState)
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "unable to create teardown plan")
+			}
+			plan.Teardown = teardownPlan
+		}
 	case app.ComponentTypeHelmChart:
 		l.Info("generating helm plan")
 		helmPlan, err := p.createHelmDeployPlan(ctx, req, appCfg, stack, installState, installDeploy, roleSelection)
