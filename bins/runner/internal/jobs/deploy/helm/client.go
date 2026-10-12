@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/pkg/helm"
 	nuondriver "github.com/nuonco/nuon/pkg/helm/driver"
 	"github.com/nuonco/nuon/pkg/kube"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 )
 
 func (h *handler) actionInit(ctx context.Context, l *zap.Logger) (*action.Configuration, *rest.Config, error) {
@@ -39,7 +40,7 @@ func (h *handler) getHelmReleaseStore(ctx context.Context, kubeCfg *rest.Config)
 	}
 
 	var store *storage.Storage
-	switch h.state.plan.HelmDeployPlan.StorageDriver {
+	switch plantypes.NormalizeHelmStorageDriver(h.state.plan.HelmDeployPlan.StorageDriver) {
 	case "configmap", "configmaps":
 		// corev1.ConfigMapInterface
 		configmaps := k8sClient.CoreV1().ConfigMaps(h.state.plan.HelmDeployPlan.Namespace)
