@@ -19,7 +19,7 @@ const DeploymentDetailLayoutContent = () => {
   const { pathname, search } = useLocation()
   const { org, install, href } = useInstallPage()
   const { workflow } = useWorkflow()
-  const [tabOrder] = useState(() => deploymentTabOrder(workflow.status?.status))
+  const [tabOrder] = useState(() => deploymentTabOrder(workflow.type))
 
   const {
     data: deployment,
