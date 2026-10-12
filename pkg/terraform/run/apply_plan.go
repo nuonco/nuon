@@ -85,6 +85,14 @@ func (r *run) getApplyPlanPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: applyCb,
 	})
 
+	if len(r.teardownRetain) > 0 {
+		pipe.AddStep(&pipeline.Step{
+			Name:       "remove retained resources from state",
+			ExecFn:     execmappers.MapInitLog(r.removeRetainedFromState),
+			CallbackFn: callbackmappers.Noop,
+		})
+	}
+
 	outputCb, err := r.outputCallback("output.json")
 	if err != nil {
 		return nil, fmt.Errorf("unable to create output callback: %w", err)

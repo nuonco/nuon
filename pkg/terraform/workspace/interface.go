@@ -43,11 +43,15 @@ type Workspace interface {
 	StatePull(ctx context.Context, log hclog.Logger) (string, error)
 	// StateMv renames a resource address in state without touching infra.
 	StateMv(ctx context.Context, log hclog.Logger, source, destination string) error
+	// StateRm removes resource addresses from state without touching infra.
+	StateRm(ctx context.Context, log hclog.Logger, addrs []string) error
 	Validate(context.Context, hclog.Logger) (*tfjson.ValidateOutput, error)
 	// Writes plan to plan.json
 	WriteTFPlan(context.Context, hclog.Logger) ([]byte, error)
 	CompressTFPlan(context.Context, hclog.Logger) ([]byte, error)
 	PlanDestroy(context.Context, hclog.Logger) ([]byte, error)
+	PlanDestroyTargets(ctx context.Context, log hclog.Logger, targets []string) ([]byte, error)
+	PlanRefreshOnly(context.Context, hclog.Logger) ([]byte, error)
 	GetTfplan(ctx context.Context, log hclog.Logger) ([]byte, error)
 	GetTfplanCompressed(ctx context.Context, log hclog.Logger) ([]byte, error)
 	GetTfplanJsonCompressed(ctx context.Context, log hclog.Logger) ([]byte, error)

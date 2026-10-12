@@ -167,4 +167,6 @@ type Terraform interface {
 	StatePull(ctx context.Context, opts ...tfexec.StatePullOption) (string, error)
 	// StateMv represents the terraform state mv subcommand.
 	StateMv(ctx context.Context, source, destination string, opts ...tfexec.StateMvCmdOption) error
+	// StateRm represents the terraform state rm subcommand.
+	StateRm(ctx context.Context, address string, opts ...tfexec.StateRmCmdOption) error
 }
