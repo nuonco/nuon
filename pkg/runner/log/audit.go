@@ -29,9 +29,10 @@ const (
 // changes onto the event types used by the install_audit_logs view, so the
 // streamed audit log stays consistent with the one customers download today.
 var auditEventTypes = map[models.AppRunnerJobGroup]string{
-	models.AppRunnerJobGroupDeploy:  "install_deploy",
-	models.AppRunnerJobGroupActions: "install_action_workflow_run",
-	models.AppRunnerJobGroupSandbox: "install_sandbox_run",
+	models.AppRunnerJobGroupDeploy:          "install_deploy",
+	models.AppRunnerJobGroupActions:         "install_action_workflow_run",
+	models.AppRunnerJobGroupCronDashActions: "install_action_workflow_run",
+	models.AppRunnerJobGroupSandbox:         "install_sandbox_run",
 }
 
 func AuditEventType(job *models.AppRunnerJob) string {

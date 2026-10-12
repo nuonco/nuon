@@ -20,3 +20,13 @@ type JobLoopParams struct {
 func NewJobLoop(params JobLoopParams) jobloop.JobLoop {
 	return jobloop.New(params.Handlers, runnerJobGroup, params.BaseParams)
 }
+
+type CronJobLoopParams struct {
+	jobloop.BaseParams
+
+	Handlers []jobs.JobHandler `group:"cron-actions"`
+}
+
+func NewCronJobLoop(params CronJobLoopParams) jobloop.JobLoop {
+	return jobloop.New(params.Handlers, models.AppRunnerJobGroupCronDashActions, params.BaseParams)
+}

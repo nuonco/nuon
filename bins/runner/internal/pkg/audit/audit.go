@@ -46,9 +46,10 @@ const (
 var ErrUnavailable = errors.New("customer audit export is unavailable")
 
 var jobEventTypes = map[models.AppRunnerJobGroup]string{
-	models.AppRunnerJobGroupDeploy:  "install_deploy",
-	models.AppRunnerJobGroupActions: "install_action_workflow_run",
-	models.AppRunnerJobGroupSandbox: "install_sandbox_run",
+	models.AppRunnerJobGroupDeploy:          "install_deploy",
+	models.AppRunnerJobGroupActions:         "install_action_workflow_run",
+	models.AppRunnerJobGroupCronDashActions: "install_action_workflow_run",
+	models.AppRunnerJobGroupSandbox:         "install_sandbox_run",
 }
 
 type Event struct {

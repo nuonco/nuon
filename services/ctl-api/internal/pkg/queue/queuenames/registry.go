@@ -80,6 +80,7 @@ const (
 	RunnerOperationsQueueName       = "operations"
 	RunnerManagementQueueName       = "management"
 	RunnerActionsQueueName          = "actions"
+	RunnerCronActionsQueueName      = "cron-actions"
 	RunnerImageActionsQueueName     = "image-actions"
 )
 
@@ -143,6 +144,7 @@ var registry = map[string][]Spec{
 		{Name: RunnerOperationsQueueName, MaxDepth: 100},
 		{Name: RunnerManagementQueueName, MaxDepth: 100},
 		{Name: RunnerActionsQueueName, MaxDepth: 100},
+		{Name: RunnerCronActionsQueueName, MaxDepth: 100},
 		{Name: RunnerImageActionsQueueName, MaxDepth: 100},
 	},
 }

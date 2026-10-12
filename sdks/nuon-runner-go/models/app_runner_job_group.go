@@ -57,6 +57,9 @@ const (
 	// AppRunnerJobGroupActions captures enum value "actions"
 	AppRunnerJobGroupActions AppRunnerJobGroup = "actions"
 
+	// AppRunnerJobGroupCronDashActions captures enum value "cron-actions"
+	AppRunnerJobGroupCronDashActions AppRunnerJobGroup = "cron-actions"
+
 	// AppRunnerJobGroupImageDashActions captures enum value "image-actions"
 	AppRunnerJobGroupImageDashActions AppRunnerJobGroup = "image-actions"
 
@@ -72,7 +75,7 @@ var appRunnerJobGroupEnum []any
 
 func init() {
 	var res []AppRunnerJobGroup
-	if err := json.Unmarshal([]byte(`["health-checks","sync","build","deploy","sandbox","runner","operations","management","actions","image-actions","","any"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["health-checks","sync","build","deploy","sandbox","runner","operations","management","actions","cron-actions","image-actions","","any"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

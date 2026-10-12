@@ -39,7 +39,11 @@ func (a *Activities) PkgWorkflowsJobGetRunnerJobGroupQueue(ctx context.Context, 
 		return &GetRunnerJobGroupQueueResponse{}, nil
 	}
 
-	q := runner.GetQueueForGroup(job.Type.Group())
+	group := job.Group
+	if group == "" {
+		group = job.Type.Group()
+	}
+	q := runner.GetQueueForGroup(group)
 	if q == nil {
 		return &GetRunnerJobGroupQueueResponse{}, nil
 	}

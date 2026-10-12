@@ -131,3 +131,24 @@ func (h *Helpers) EnsureRunnerJobGroupQueues(ctx context.Context, runner *app.Ru
 
 	return nil
 }
+
+func (h *Helpers) EnsureRunnerJobGroupQueue(ctx context.Context, runner *app.Runner, settings *app.RunnerGroupSettings, group app.RunnerJobGroup) error {
+	for _, spec := range queuenames.RunnerJobGroupSpecs() {
+		if spec.Name != string(group) {
+			continue
+		}
+		_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+			OwnerID:     runner.ID,
+			OwnerType:   "runners",
+			Namespace:   "runners",
+			Name:        spec.Name,
+			MaxInFlight: settings.MaxInFlightForGroup(group),
+			MaxDepth:    spec.MaxDepth,
+		})
+		if err != nil {
+			return fmt.Errorf("unable to ensure queue for job group %s: %w", group, err)
+		}
+		return nil
+	}
+	return fmt.Errorf("unknown runner job group %s", group)
+}
