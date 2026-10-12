@@ -33,6 +33,7 @@ var (
 	stackOutputReference          = regexp.MustCompile(`\.nuon\.install_stack\.outputs\.([A-Za-z0-9_.-]+)`)
 	sandboxOutputReference        = regexp.MustCompile(`\.nuon\.sandbox\.outputs\.([A-Za-z0-9_.-]+)`)
 	installSandboxOutputReference = regexp.MustCompile(`\.nuon\.install\.sandbox\.outputs\.([A-Za-z0-9_.-]+)`)
+	sandboxOutputRangeReference   = regexp.MustCompile(`\{\{-?\s*range\s+(?:\$[A-Za-z_][A-Za-z0-9_]*(?:\s*,\s*\$[A-Za-z_][A-Za-z0-9_]*)?\s*(?::=|=)\s*)?\.nuon\.(?:install\.)?sandbox\.outputs\.([A-Za-z0-9_.-]+)\s*-?\}\}`)
 	componentOutputRef            = regexp.MustCompile(`\.nuon\.components\.([A-Za-z0-9_-]+)\.outputs\.([A-Za-z0-9_.-]+)`)
 )
 
@@ -244,6 +245,7 @@ func templateReferenceData(cfg *app.AppConfig, sources ...[]byte) []byte {
 		appendSource(source)
 	}
 	for _, actionCfg := range cfg.ActionWorkflowConfigs {
+		appendSource([]byte(actionCfg.Image))
 		for _, stepCfg := range actionCfg.Steps {
 			appendSource([]byte(stepCfg.Command))
 			appendSource([]byte(stepCfg.InlineContents))
@@ -330,8 +332,15 @@ func compileState(orgID, appID, installID string, raw []byte, inputs []appbundle
 	for _, path := range uniqueMatches(installSandboxOutputReference, raw) {
 		sandboxPaths[strings.Trim(path, ".")] = true
 	}
+	sandboxRangePaths := map[string]bool{}
+	for _, path := range uniqueMatches(sandboxOutputRangeReference, raw) {
+		sandboxRangePaths[strings.Trim(path, ".")] = true
+	}
 	for _, path := range sortedKeys(sandboxPaths) {
-		token := "__NUON_CUSTOMER_MANAGED_SANDBOX_" + strings.ReplaceAll(path, ".", "_") + "__"
+		var token any = "__NUON_CUSTOMER_MANAGED_SANDBOX_" + strings.ReplaceAll(path, ".", "_") + "__"
+		if sandboxRangePaths[path] {
+			token = []string{}
+		}
 		if err := seedPlaceholderPath(sandboxOutputs, path, token); err != nil {
 			return nil, nil, fmt.Errorf("sandbox output references: %w", err)
 		}
@@ -692,9 +701,6 @@ func compileActionTemplates(cfg *app.AppConfig, planner *planpkg.Planner, l *zap
 				fmt.Sprintf("action %s was excluded from the bundle: step %s sources its contents from Git, and portable bundle actions must be inline-only", actionCfg.ActionWorkflow.Name, step))
 			continue
 		}
-		if actionCfg.Image != "" {
-			return nil, fmt.Errorf("action %s uses an unsupported container image", actionCfg.ActionWorkflowID)
-		}
 		run := &app.InstallActionWorkflowRun{
 			ID: actionCfg.ID, InstallID: installID,
 			ActionWorkflowConfigID: generics.NewNullString(actionCfg.ID),
@@ -729,6 +735,25 @@ func compileActionTemplates(cfg *app.AppConfig, planner *planpkg.Planner, l *zap
 		if err != nil {
 			return nil, fmt.Errorf("render action %s: %w", actionCfg.ActionWorkflowID, err)
 		}
+		jobGroup := "actions"
+		if actionCfg.Image != "" {
+			plan.SourceImage, err = planpkg.RenderText(actionCfg.Image, stateData)
+			if err != nil {
+				return nil, fmt.Errorf("render image for action %s: %w", actionCfg.ActionWorkflowID, err)
+			}
+			plan.SourceImage = strings.TrimSpace(plan.SourceImage)
+			if plan.SourceImage == "" {
+				return nil, fmt.Errorf("image for action %s must resolve to a non-empty reference", actionCfg.ActionWorkflowID)
+			}
+			plan.ImageRegistry, err = planner.RenderInstallRegistryRepository(l, &planpkg.RenderInstallRegistryRepositoryInput{
+				InstallDeploy: &app.InstallDeploy{ComponentName: "action-" + actionCfg.ActionWorkflowID},
+				Stack:         stack, StateData: stateData, CloudAuth: auth,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("render image registry for action %s: %w", actionCfg.ActionWorkflowID, err)
+			}
+			jobGroup = "image-actions"
+		}
 		composite, err := compositeJSON(&plantypes.CompositePlan{ActionWorkflowRunPlan: plan})
 		if err != nil {
 			return nil, err
@@ -740,7 +765,7 @@ func compileActionTemplates(cfg *app.AppConfig, planner *planpkg.Planner, l *zap
 				break
 			}
 		}
-		result = append(result, appbundle.ActionTemplate{ID: actionCfg.ActionWorkflowID, Name: actionCfg.ActionWorkflow.Name, CronSchedule: cron, JobType: "actions-workflow", JobGroup: "actions", JobOperation: "exec", CompositePlan: composite})
+		result = append(result, appbundle.ActionTemplate{ID: actionCfg.ActionWorkflowID, Name: actionCfg.ActionWorkflow.Name, CronSchedule: cron, JobType: "actions-workflow", JobGroup: jobGroup, JobOperation: "exec", CompositePlan: composite})
 	}
 	sort.Slice(result, func(i, j int) bool { return result[i].ID < result[j].ID })
 	return result, nil
