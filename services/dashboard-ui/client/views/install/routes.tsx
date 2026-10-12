@@ -90,6 +90,7 @@ import { ViewState } from './ViewState'
 import { WorkflowDetail } from './WorkflowDetail'
 import { DeploymentDetailLayout } from './DeploymentDetailLayout'
 import { DeploymentChangesTab } from './deployment-tabs/DeploymentChangesTab'
+import { DeploymentDefaultTab } from './deployment-tabs/DeploymentDefaultTab'
 import { DeploymentTemplateTab } from './deployment-tabs/DeploymentTemplateTab'
 import { DeploymentWorkflowTab } from './deployment-tabs/DeploymentWorkflowTab'
 import { RunnerJobDetail } from './RunnerJobDetail'
@@ -179,12 +180,16 @@ const installChildren = (): RouteObject[] => [
         loader: redirectWorkflowDetailRoute,
         element: <DeploymentDetailLayout />,
         children: [
-          { index: true, element: <DeploymentChangesTab /> },
+          { index: true, element: <DeploymentDefaultTab /> },
+          { path: 'workflow', element: <DeploymentWorkflowTab /> },
+          {
+            path: 'changes',
+            element: <DeploymentChangesTab />,
+          },
           {
             path: 'template-updates',
             element: <DeploymentTemplateTab />,
           },
-          { path: 'workflow', element: <DeploymentWorkflowTab /> },
         ],
       },
       {

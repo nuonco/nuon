@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useLocation } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { EmptyState } from '@/components/common/EmptyState'
 import { CommitLink } from '@/components/common/GitReferenceLink'
@@ -17,16 +16,18 @@ import {
   DeploymentTemplateContent,
   DeploymentWorkflowContent,
 } from '@/components/installs/DeploymentDetail/DeploymentDetailContent'
-import { DeploymentRunStatus } from '@/components/installs/DeploymentDetail/DeploymentProgress'
+import {
+  DeploymentRunStatus,
+  ResourceScopeSummary,
+} from '@/components/installs/DeploymentDetail/DeploymentProgress'
 import {
   DEPLOYMENT_TABS,
+  deploymentOutcomes,
   deploymentSteps,
   deploymentTabOrder,
 } from '@/components/installs/DeploymentDetail/deployment-progress'
 import { useWorkflow } from '@/hooks/use-workflow'
-import { useInstallNested } from '@/hooks/use-install-path'
 import { getInstallDeployment } from '@/lib'
-import { installHref } from '@/lib/install-path'
 import { WorkflowProvider } from '@/providers/workflow-provider'
 import type { TInstallDeploymentSummary, TWorkflow } from '@/types'
 
@@ -46,8 +47,6 @@ const DeploymentPanelContent = ({
   repo,
   workflow,
 }: IDeploymentDetailPanel & { workflow?: TWorkflow }) => {
-  const { search } = useLocation()
-  const nested = useInstallNested()
   const {
     data: record,
     isPending: recordPending,
@@ -68,14 +67,7 @@ const DeploymentPanelContent = ({
       workflow?.status?.status_human_description ?? deployment.activity ?? '',
     steps: deploymentSteps(workflow),
   }
-  const [tabOrder] = useState(() => deploymentTabOrder(run.status))
-  const basePath = installHref({
-    orgId,
-    appId,
-    installId,
-    nested,
-    suffix: `/deployments/${deployment.id}`,
-  })
+  const [tabOrder] = useState(() => deploymentTabOrder(workflow?.type))
   const noWorkflow = (
     <EmptyState
       emptyTitle="No workflow"
@@ -111,12 +103,11 @@ const DeploymentPanelContent = ({
           variant="subtext"
         />
       </div>
-      <Text
-        variant="subtext"
-        theme={run.status === 'error' ? 'error' : 'neutral'}
-      >
-        {run.activity}
-      </Text>
+      {run.activity && run.status !== 'error' ? (
+        <Text variant="subtext" theme="neutral">
+          {run.activity}
+        </Text>
+      ) : null}
       {record?.app_branch && branchHref ? (
         <LabeledValue label="App branch">
           <span className="flex flex-wrap items-center gap-2">
@@ -125,10 +116,16 @@ const DeploymentPanelContent = ({
           </span>
         </LabeledValue>
       ) : null}
+      <ResourceScopeSummary
+        run={{
+          status: run.status,
+          outcomes: deploymentOutcomes(record, workflow),
+        }}
+      />
       {workflow ? <DeploymentAlerts /> : null}
       <Tabs
         naturalHeight
-        initActiveTab={run.status === 'success' ? 'changes' : 'workflow'}
+        initActiveTab={tabOrder[0]}
         tabsClassName="mt-4"
         tabControlsClassName="!gap-2 md:!gap-6 [&>button]:px-1 md:[&>button]:px-3"
         tabLabels={Object.fromEntries(
@@ -138,13 +135,6 @@ const DeploymentPanelContent = ({
           tabOrder.map((key) => [
             key,
             <div key={key} className="flex flex-col gap-4">
-              <div className="flex justify-end">
-                <Link
-                  href={`${basePath}${DEPLOYMENT_TABS[key].path === '/' ? '' : DEPLOYMENT_TABS[key].path}${search}`}
-                >
-                  Open full page
-                </Link>
-              </div>
               {content[key]}
             </div>,
           ])
@@ -174,6 +164,7 @@ export const DeploymentDetailBody = (props: TDeploymentDetailBody) => (
         createdAt={props.deployment.created_at}
         id={props.deployment.id}
         status={props.deployment.status}
+        workflowType={props.deployment.type}
       />
     }
   >
