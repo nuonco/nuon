@@ -38,9 +38,7 @@ The proxy sets `X-Nuon-Org-ID`. Do not call `select_org` unless that header is m
 
 ### Registering the proxy with a client
 
-Each client has its own config file, JSON key, and (sometimes) an add command. Check that client's MCP docs rather than assuming a shared schema. The process to spawn is `nuon` with arguments `agents`, `mcp`, and `--allow-writes`.
-
-`--allow-writes` exposes the mutating tools (descriptions start with `WRITE OPERATION:`). That flag only lists them; the identity still needs org Admin (`org_admin`), not Read-only. See https://docs.nuon.co/concepts/access-control. Every example below includes it; omit it only for a read-only proxy.
+Nuon MCP uses stdio. The client starts a local process and exchanges MCP messages on that process's standard input and output. Every MCP connection should spawn `nuon` with arguments `agents`, `mcp`, and `--allow-writes`.
 
 **Claude Code.** `claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes`, or `.mcp.json` in a project:
 
@@ -115,7 +113,7 @@ List tools are paginated (default 20, max 100). If `has_more` is true, tell the 
 
 These checks are not MCP tools. They run on the app directory via the `policies` CLI extension.
 
-Before `nuon apps sync` after authoring or changing `permissions/` or `break_glass/`:
+After authoring or changing `permissions/` or `break_glass/`, before syncing:
 
 1. If `nuon policies --help` fails: `nuon ext install nuonco/nuon-ext-policies`
 2. From the app directory (or pass `--app-dir`):
