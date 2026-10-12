@@ -1,5 +1,4 @@
-import { useMemo } from 'react'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -9,31 +8,22 @@ import {
   isConfigValidationError,
 } from '@/components/branches/BranchRunChangesSummary/config-diagnostics'
 import { ConfigParseFailure } from '@/components/branches/BranchRunChangesSummary/ConfigParseFailure'
-import {
-  TemplateChangesButton,
-  type TTemplateBuildChange,
-} from '@/components/branches/ConfigChanges'
+import { TemplateChangesButton } from '@/components/branches/ConfigChanges'
 import { InstallDeploymentPanel } from '@/components/installs/InstallDeploymentPanel'
 import { stepStatusCategory } from '@/components/branches/shared/step-status'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
-import { getAppConfig, getBranchRunBuilds, getSandboxBuild } from '@/lib'
-import { vcsRepo } from '@/utils/vcs-urls'
+import { getAppConfig } from '@/lib'
 import { commitUrl } from './run-source'
 import type { TAPIError } from '@/types'
 import { BranchOverview, type TFailedBuildLink } from './BranchOverview'
-import { changedBuildRows, type TBuildMeta } from './changed-builds'
 import {
   buildOverviewLoadingStages,
   preRolloutCompositeError,
 } from './overview-loading'
 import { useGroupPlanApprovals } from '@/components/branches/BranchRunApproval/use-group-plan-approvals'
 import { useRolloutGroups } from './use-rollout-groups'
-
-const isBuildStep = (name?: string) =>
-  !!name && /build/i.test(name) && !/(?:fetch|sync) app config/i.test(name)
-
-const NO_META_BUILDS: TBuildMeta[] = []
+import { useRunTemplateBuilds } from './use-run-template-builds'
 
 export const BranchOverviewContainer = () => {
   const { addPanel } = useSurfaces()
@@ -70,17 +60,12 @@ export const BranchOverviewContainer = () => {
     groups
   )
 
-  const { data: builds } = useQuery({
-    queryKey: ['branch-run-builds', orgId, appId, branchId, branchRunId],
-    queryFn: () =>
-      getBranchRunBuilds({
-        orgId: orgId!,
-        appId: appId!,
-        branchId,
-        runId: branchRunId!,
-      }),
-    enabled: !!orgId && !!appId && !!branchRunId,
-    placeholderData: keepPreviousData,
+  const { builds, metaBuilds, templateBuilds } = useRunTemplateBuilds({
+    orgId,
+    appId,
+    branchId,
+    branchRunId,
+    workflowSteps,
   })
   const failedBuilds: TFailedBuildLink[] = (builds ?? []).flatMap((build) => {
     const status = build.status_v2?.status || build.status
@@ -94,58 +79,6 @@ export const BranchOverviewContainer = () => {
       },
     ]
   })
-  const buildStep = workflowSteps.find((step) => isBuildStep(step.name))
-  const buildMetadata = (buildStep?.status?.metadata ?? {}) as {
-    builds?: TBuildMeta[]
-    sandbox_build_id?: string
-  }
-  const metaBuilds = buildMetadata.builds ?? NO_META_BUILDS
-  const changedBuilds = useMemo(
-    () =>
-      changedBuildRows({
-        metaBuilds,
-        runBuilds: (builds ?? []).map((build) => ({
-          id: build.id,
-          component_id: build.component_id,
-          component_name: build.component_name,
-          status: build.status_v2?.status || build.status,
-        })),
-        orgId,
-        appId,
-        sandboxBuildId: buildMetadata.sandbox_build_id,
-      }),
-    [metaBuilds, builds, orgId, appId, buildMetadata.sandbox_build_id]
-  )
-  const { data: sandboxBuild } = useQuery({
-    queryKey: ['sandbox-build', orgId, appId, buildMetadata.sandbox_build_id],
-    queryFn: () =>
-      getSandboxBuild({
-        orgId: orgId!,
-        appId: appId!,
-        buildId: buildMetadata.sandbox_build_id!,
-      }),
-    enabled: !!orgId && !!appId && !!buildMetadata.sandbox_build_id,
-  })
-  const templateBuilds = useMemo<TTemplateBuildChange[]>(
-    () =>
-      changedBuilds.map((row) => {
-        const commit = sandboxBuild?.vcs_connection_commit
-        return {
-          ...row,
-          kind: row.kind ?? 'component',
-          commit:
-            row.kind === 'sandbox' && commit?.sha
-              ? {
-                  sha: commit.sha,
-                  message: commit.message,
-                  author: commit.author_name,
-                  repo: vcsRepo(app?.sandbox_config),
-                }
-              : undefined,
-        }
-      }),
-    [changedBuilds, sandboxBuild, app?.sandbox_config]
-  )
   const configSections = useBranchConfigSections({
     branchId,
     appBranchRunId: branchRunId,

@@ -9,7 +9,11 @@ import { Menu } from '@/components/common/Menu'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
-import { ConfigChangesViewer } from '@/components/branches/ConfigChanges'
+import {
+  ConfigChangesViewer,
+  configChanges,
+  type TTemplateBuildChange,
+} from '@/components/branches/ConfigChanges'
 import { ConfigChangesLoading } from '@/components/branches/ConfigChanges/ConfigChangesLoading'
 import type { PlanInstallDiff } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/PlanGroupStep'
 import { cn } from '@/utils/classnames'
@@ -27,27 +31,49 @@ export type TPlanInstallFacts = Record<
 
 export interface IPlanInstallChanges {
   installs: PlanInstallDiff[]
+  builds?: TTemplateBuildChange[]
   installFacts?: TPlanInstallFacts
   labelColors?: Record<string, string>
   isLoading?: boolean
 }
 
-const InstallCounts = ({ install }: { install: PlanInstallDiff }) =>
-  install.isLoading ? (
-    <Text variant="label" theme="neutral">
-      Loading
-    </Text>
-  ) : (
+const NO_BUILDS: TTemplateBuildChange[] = []
+
+const buildsFor = (install: PlanInstallDiff, builds: TTemplateBuildChange[]) =>
+  install.alreadyApplied ? NO_BUILDS : builds
+
+const InstallCounts = ({
+  install,
+  builds,
+}: {
+  install: PlanInstallDiff
+  builds: TTemplateBuildChange[]
+}) => {
+  if (install.isLoading) {
+    return (
+      <Text variant="label" theme="neutral">
+        Loading
+      </Text>
+    )
+  }
+  const { summary } = configChanges(
+    install.sections,
+    [],
+    buildsFor(install, builds)
+  )
+  return (
     <ChangeCountSummary
-      added={install.summary?.added ?? 0}
-      updated={install.summary?.changed ?? 0}
-      removed={install.summary?.removed ?? 0}
+      added={summary.create}
+      updated={summary.update}
+      removed={summary.delete}
       emptyText="No changes"
     />
   )
+}
 
 export const PlanInstallChanges = ({
   installs,
+  builds = NO_BUILDS,
   installFacts,
   labelColors,
   isLoading,
@@ -135,7 +161,7 @@ export const PlanInstallChanges = ({
                         </Text>
                       ) : null}
                     </span>
-                    <InstallCounts install={install} />
+                    <InstallCounts install={install} builds={builds} />
                   </Button>
                 ))}
               </div>
@@ -164,16 +190,22 @@ export const PlanInstallChanges = ({
       </div>
       {selected.isLoading ? (
         <ConfigChangesLoading />
+      ) : selected.isError ? (
+        <Text variant="subtext" theme="neutral">
+          Changes could not be loaded.
+        </Text>
       ) : (
         <ConfigChangesViewer
           key={selected.installId}
           sections={selected.sections}
+          builds={buildsFor(selected, builds)}
           versionLabel={selected.versionLabel}
           previousSha={selected.previousSha}
           sha={selected.sha}
           message={selected.message}
           author={selected.author}
           createdAt={selected.createdAt}
+          emptyMessage="This install already runs this config."
         />
       )}
     </div>
