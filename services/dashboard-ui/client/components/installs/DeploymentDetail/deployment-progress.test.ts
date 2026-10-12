@@ -450,18 +450,19 @@ test('recovery notes follow the latest earlier outcome for the same resource', (
   expect(recoveredDeploymentResources(completed, [[]])).toEqual([])
 })
 
-test('completed runs lead with change summary and other runs lead with template updates', () => {
-  expect(deploymentTabOrder('success')).toEqual([
-    'changes',
-    'workflow',
+test('branch config updates open on template updates and other runs open on workflow', () => {
+  expect(deploymentTabOrder('app_branch_config_update')).toEqual([
     'template',
+    'workflow',
+    'changes',
   ])
-  for (const status of ['in-progress', 'error', 'approval-awaiting'])
-    expect(deploymentTabOrder(status)).toEqual([
-      'template',
-      'workflow',
-      'changes',
-    ])
+  expect(deploymentTabOrder('app_branch_update')).toEqual([
+    'template',
+    'workflow',
+    'changes',
+  ])
+  for (const type of ['reprovision_sandbox', 'component_deploy', undefined])
+    expect(deploymentTabOrder(type)).toEqual(['workflow', 'changes'])
 })
 
 test('failed deployment context selects the failed step and only later unstarted work', () => {
