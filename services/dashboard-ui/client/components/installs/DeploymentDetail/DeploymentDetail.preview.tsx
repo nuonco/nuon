@@ -26,7 +26,10 @@ import { DetailPage } from '@/components/layout/DetailPage'
 import { ListPage } from '@/components/layout/ListPage'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { DeploymentDetail } from '@/components/installs/DeploymentDetail'
-import { DeploymentRunStatus as PreviewRunStatus } from './DeploymentProgress'
+import {
+  DeploymentRunStatus as PreviewRunStatus,
+  ResourceScopeSummary,
+} from './DeploymentProgress'
 import { DeploymentRow } from '@/components/installs/DeploymentsList/DeploymentRow'
 import {
   DEPLOYMENT_TYPE_LABELS,
@@ -790,7 +793,10 @@ const PreviewTabContent = ({
   if (tab === 'workflow')
     return (
       <div className="flex flex-col gap-4">
-        <SectionHeader title="Workflow steps" description={run.activity} />
+        <SectionHeader
+          title="Workflow steps"
+          description={run.status === 'error' ? undefined : run.activity}
+        />
         {previewStatus(run) === 'awaiting-approval' ? (
           <PreviewApprovalBanner />
         ) : null}
@@ -948,12 +954,12 @@ const PreviewPanel = ({ run, ...props }: IPanel & { run: TPreviewRun }) => (
       <ID>{run.id}</ID>
       <Time time={run.created_at} format="relative" variant="subtext" />
     </div>
-    <Text
-      variant="subtext"
-      theme={run.status === 'error' ? 'error' : 'neutral'}
-    >
-      {run.activity}
-    </Text>
+    {run.activity && run.status !== 'error' ? (
+      <Text variant="subtext" theme="neutral">
+        {run.activity}
+      </Text>
+    ) : null}
+    <ResourceScopeSummary run={run} />
     <Tabs
       naturalHeight
       initActiveTab={run.status === 'success' ? 'changes' : 'workflow'}
@@ -1105,35 +1111,34 @@ export const DeploymentsPreview = ({
         ) : null}
       </div>
       {selected ? (
-        <>
-          <Button className="self-start" variant="ghost" href="/">
-            <Icon variant="ArrowLeftIcon" /> Back to deployments
-          </Button>
-          <main aria-label="Deployment full page">
-            <DetailPage
-              className="[&>.tab-nav]:gap-2 md:[&>.tab-nav]:gap-6 [&>.tab-nav>a]:px-1 md:[&>.tab-nav>a]:px-3"
-              header={
-                <DetailHeader
-                  backLink={false}
-                  title={selected.title}
-                  status={<PreviewRunStatus run={selected} />}
-                  id={selected.id}
-                  description={selected.activity}
-                />
-              }
-              tabNav={{
-                basePath: detailBase(selected),
-                tabs: tabOrder(selected).map((tab) => previewTabs[tab]),
-              }}
-            >
-              <PreviewTabContent
-                key={`${selected.id}-${activeTab}`}
-                run={selected}
-                tab={activeTab}
-              />
-            </DetailPage>
-          </main>
-        </>
+        <main aria-label="Deployment full page">
+          <DetailPage
+            className="[&>.tab-nav]:gap-2 md:[&>.tab-nav]:gap-6 [&>.tab-nav>a]:px-1 md:[&>.tab-nav>a]:px-3"
+            header={
+              <DetailHeader
+                backLink={false}
+                title={selected.title}
+                status={<PreviewRunStatus run={selected} />}
+                id={selected.id}
+                description={
+                  selected.status === 'error' ? undefined : selected.activity
+                }
+              >
+                <ResourceScopeSummary run={selected} />
+              </DetailHeader>
+            }
+            tabNav={{
+              basePath: detailBase(selected),
+              tabs: tabOrder(selected).map((tab) => previewTabs[tab]),
+            }}
+          >
+            <PreviewTabContent
+              key={`${selected.id}-${activeTab}`}
+              run={selected}
+              tab={activeTab}
+            />
+          </DetailPage>
+        </main>
       ) : (
         <ListPage
           title="Deployments"

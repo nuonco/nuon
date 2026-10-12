@@ -34,8 +34,8 @@ export const DeploymentDetailLoading = ({
         <Time loading format="relative" variant="subtext" loadingWidth={10} />
       )}
     </div>
-    {activity ? (
-      <Text variant="subtext" theme={status === 'error' ? 'error' : 'neutral'}>
+    {status === 'error' ? null : activity ? (
+      <Text variant="subtext" theme="neutral">
         {activity}
       </Text>
     ) : (

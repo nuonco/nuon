@@ -17,9 +17,13 @@ import {
   DeploymentTemplateContent,
   DeploymentWorkflowContent,
 } from '@/components/installs/DeploymentDetail/DeploymentDetailContent'
-import { DeploymentRunStatus } from '@/components/installs/DeploymentDetail/DeploymentProgress'
+import {
+  DeploymentRunStatus,
+  ResourceScopeSummary,
+} from '@/components/installs/DeploymentDetail/DeploymentProgress'
 import {
   DEPLOYMENT_TABS,
+  deploymentOutcomes,
   deploymentSteps,
   deploymentTabOrder,
 } from '@/components/installs/DeploymentDetail/deployment-progress'
@@ -111,12 +115,11 @@ const DeploymentPanelContent = ({
           variant="subtext"
         />
       </div>
-      <Text
-        variant="subtext"
-        theme={run.status === 'error' ? 'error' : 'neutral'}
-      >
-        {run.activity}
-      </Text>
+      {run.activity && run.status !== 'error' ? (
+        <Text variant="subtext" theme="neutral">
+          {run.activity}
+        </Text>
+      ) : null}
       {record?.app_branch && branchHref ? (
         <LabeledValue label="App branch">
           <span className="flex flex-wrap items-center gap-2">
@@ -125,6 +128,12 @@ const DeploymentPanelContent = ({
           </span>
         </LabeledValue>
       ) : null}
+      <ResourceScopeSummary
+        run={{
+          status: run.status,
+          outcomes: deploymentOutcomes(record, workflow),
+        }}
+      />
       {workflow ? <DeploymentAlerts /> : null}
       <Tabs
         naturalHeight

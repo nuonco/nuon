@@ -1,4 +1,5 @@
 import { Badge } from '@/components/common/Badge'
+import { Icon } from '@/components/common/Icon'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { humanize } from '@/utils/string-utils'
@@ -35,6 +36,103 @@ export const DeploymentRunStatus = ({
     ) : null}
   </span>
 )
+
+const CATEGORY_LABELS = {
+  success: 'Completed',
+  'in-progress': 'In progress',
+  warn: 'Partial rollout',
+  error: 'Failed',
+  'not-started': 'Not started',
+  cancelled: 'Cancelled',
+  'user-skipped': 'Skipped',
+  unknown: 'Outcome unknown',
+}
+
+export type TResourceCategory = {
+  category: TDeploymentOutcome['category']
+  status: keyof typeof CATEGORY_LABELS
+  label: string
+}
+
+export const resourceCategories = (
+  run: Pick<TDeploymentRun, 'status' | 'outcomes'>
+): TResourceCategory[] =>
+  [...new Set(run.outcomes.map((outcome) => outcome.category))].map(
+    (category) => {
+      const outcomes = run.outcomes.filter(
+        (outcome) => outcome.category === category
+      )
+      const completed = outcomes.every(
+        (outcome) => outcome.status === 'success'
+      )
+      const partial =
+        !completed &&
+        outcomes.some((outcome) => ['success', 'warn'].includes(outcome.status))
+      const every = (...statuses: string[]) =>
+        outcomes.every((outcome) => statuses.includes(outcome.status))
+      const status: TResourceCategory['status'] = completed
+        ? 'success'
+        : outcomes.some((outcome) => outcome.status === 'in-progress') ||
+            (partial && isDeploymentRunning(run.status))
+          ? 'in-progress'
+          : partial
+            ? 'warn'
+            : outcomes.some((outcome) => outcome.status === 'error')
+              ? 'error'
+              : every('not-started')
+                ? 'not-started'
+                : every('cancelled', 'not-started')
+                  ? 'cancelled'
+                  : every('user-skipped')
+                    ? 'user-skipped'
+                    : 'unknown'
+      return { category, status, label: CATEGORY_LABELS[status] }
+    }
+  )
+
+export const ResourceCategoryIcon = ({
+  status,
+  size = 14,
+}: {
+  status: TResourceCategory['status']
+  size?: number
+}) =>
+  status === 'warn' ? (
+    <Icon variant="CircleHalfIcon" theme="warn" size={size} />
+  ) : (
+    <Status status={status} variant="timeline" isWithoutText iconSize={size} />
+  )
+
+export const ResourceScopeSummary = ({
+  run,
+}: {
+  run: Pick<TDeploymentRun, 'status' | 'outcomes'>
+}) => {
+  const categories = resourceCategories(run)
+  if (!categories.length) return null
+  return (
+    <div
+      role="group"
+      aria-label="Resource outcomes"
+      className="flex flex-wrap items-center gap-x-5 gap-y-2"
+    >
+      {categories.map(({ category, status, label }) => (
+        <span
+          key={category}
+          role="group"
+          aria-label={`${category}: ${label}`}
+          className="flex items-center gap-2"
+        >
+          <ResourceCategoryIcon status={status} />
+          <Text>
+            {category}
+            {status !== 'success' ? ` — ${label}` : ''}
+          </Text>
+        </span>
+      ))}
+    </div>
+  )
+}
 
 export const StepContext = ({ run }: { run: TDeploymentRun }) => {
   const { current, next } = deploymentStepContext(run.status, run.steps)

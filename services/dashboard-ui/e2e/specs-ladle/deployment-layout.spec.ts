@@ -74,7 +74,7 @@ for (const width of [390, 768, 1024, 1440, 1920, 2560]) {
       const row = page.getByRole('article')
       await expect(
         row.getByRole('group', { name: 'Resource outcomes', exact: true })
-      ).toHaveCount(0)
+      ).toBeVisible()
       await page
         .getByRole('textbox', { name: 'Deployment title', exact: true })
         .fill(

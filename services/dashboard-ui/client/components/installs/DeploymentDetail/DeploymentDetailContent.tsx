@@ -233,7 +233,11 @@ export const DeploymentWorkflowContent = () => {
     <div className="flex flex-col gap-4">
       <SectionHeader
         title="Workflow steps"
-        description={workflow.status?.status_human_description}
+        description={
+          workflow.status?.status === 'error'
+            ? undefined
+            : workflow.status?.status_human_description
+        }
         actions={<WorkflowActionButtons />}
       />
       <WorkflowSteps

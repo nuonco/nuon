@@ -6,6 +6,7 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import {
+  ResourceScopeSummary,
   StepProgress,
   type TDeploymentRun,
 } from '@/components/installs/DeploymentDetail/DeploymentProgress'
@@ -114,6 +115,7 @@ export const DeploymentCard = ({
       </div>
       {children}
       <StepProgress run={run} />
+      <ResourceScopeSummary run={run} />
       <div className="flex justify-end border-t pt-3">
         <DeploymentViewDetails
           workflow={workflow}

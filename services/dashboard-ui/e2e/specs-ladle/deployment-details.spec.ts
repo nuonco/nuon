@@ -134,15 +134,6 @@ test('focused scenarios have shareable URLs and preserve their scope through det
     await expect(
       fullPage.getByRole('heading', { name: titles[0], exact: true })
     ).toBeVisible()
-    await page.getByRole('link', { name: 'Back to deployments' }).click()
-    await expect(page.getByRole('article')).toHaveCount(titles.length)
-    await page
-      .getByRole('link', { name: 'Preview an existing full-page link' })
-      .click()
-    await expect(
-      fullPage.getByRole('heading', { name: titles[0], exact: true })
-    ).toBeVisible()
-    await page.getByRole('link', { name: 'Back to deployments' }).click()
   }
   await page.reload({ waitUntil: 'domcontentloaded' })
   await expect(page.getByRole('article')).toHaveCount(1)
@@ -205,7 +196,7 @@ for (const width of [1440, 1920, 2560, 390]) {
     expect(actionBox.x + actionBox.width).toBeLessThanOrEqual(width)
     await expect(
       row.getByRole('group', { name: 'Resource outcomes', exact: true })
-    ).toHaveCount(0)
+    ).toBeVisible()
     if (width >= 1440) {
       expect(dividerWidths).toEqual([1])
       expect(actionBox.x).toBeGreaterThanOrEqual(
@@ -259,7 +250,7 @@ for (const width of [1440, 1920, 2560, 390]) {
   })
 }
 
-test('compact feed opens a panel, preserves selected tab in full page, and restores filters', async ({
+test('compact feed opens a panel and preserves the selected tab in full page', async ({
   page,
 }) => {
   const apiRequests: string[] = []
@@ -372,18 +363,6 @@ test('compact feed opens a panel, preserves selected tab in full page, and resto
     .getByRole('link', { name: 'Change summary', exact: true })
     .click()
   await expect(fullPage.getByText(/these are not final results/)).toBeVisible()
-  await page.getByRole('link', { name: 'Back to deployments' }).click()
-  await expect(search).toHaveValue('api + worker')
-  await page.getByRole('button', { name: 'Status (1)', exact: true }).click()
-  await expect(
-    page.locator('input[name="deployments-filter-status-running"]')
-  ).toBeChecked()
-  await page.getByRole('button', { name: 'Status (1)', exact: true }).click()
-  await expect(page.getByRole('article')).toHaveCount(1)
-  await running.getByRole('button', { name: 'View details' }).click()
-  await page.keyboard.press('Escape')
-  await expect(panel).toHaveCount(0)
-  await expect(search).toHaveValue('api + worker')
   expect(apiRequests).toEqual([])
   expect(errors).toEqual([])
 })
@@ -440,6 +419,17 @@ test('completed and failed details stay distinct, and direct full-page links byp
     panel.getByRole('button', { name: 'api helm chart modified' })
   ).toHaveCount(0)
   await panel.getByRole('button', { name: 'Close panel' }).click()
+  await expect(page.getByRole('article')).toHaveCount(7)
+  await page.getByRole('button', { name: 'Status', exact: true }).click()
+  await page.locator('input[name="deployments-filter-status-failed"]').check()
+  await page.getByRole('button', { name: 'Status (1)', exact: true }).click()
+  await expect(page.getByRole('article')).toHaveCount(2)
+  await page
+    .getByRole('textbox', { name: 'Search deployments' })
+    .fill('does not exist')
+  await expect(
+    page.getByText('No deployments found', { exact: true })
+  ).toBeVisible()
   await page
     .getByRole('link', { name: 'Preview an existing full-page link' })
     .click()
@@ -462,18 +452,6 @@ test('completed and failed details stay distinct, and direct full-page links byp
   await expect(fullPage.getByRole('code')).toContainText('t3.large')
   await fullPage.getByRole('link', { name: 'Workflow', exact: true }).click()
   await expect(fullPage.getByText(/^Completed in/)).toHaveCount(6)
-  await page.getByRole('link', { name: 'Back to deployments' }).click()
-  await expect(page.getByRole('article')).toHaveCount(7)
-  await page.getByRole('button', { name: 'Status', exact: true }).click()
-  await page.locator('input[name="deployments-filter-status-failed"]').check()
-  await page.getByRole('button', { name: 'Status (1)', exact: true }).click()
-  await expect(page.getByRole('article')).toHaveCount(2)
-  await page
-    .getByRole('textbox', { name: 'Search deployments' })
-    .fill('does not exist')
-  await expect(
-    page.getByText('No deployments found', { exact: true })
-  ).toBeVisible()
 })
 
 test('original type, resource and date filters combine and clear', async ({
@@ -544,7 +522,7 @@ test('completed infrastructure with unstarted components remains in progress', a
   await expect(run).not.toContainText(/Partial rollout|Failed|Error/)
   await expect(
     run.getByRole('group', { name: 'Resource outcomes', exact: true })
-  ).toHaveCount(0)
+  ).toBeVisible()
   await expect(
     run.getByRole('group', { name: 'Current step', exact: true })
   ).toContainText('Prepare component deployment')
@@ -555,6 +533,9 @@ test('completed infrastructure with unstarted components remains in progress', a
   await run.getByRole('button', { name: 'View details' }).click()
   const panel = page.getByRole('complementary', { name: 'Deployment details' })
   await expect(
+    panel.getByRole('group', { name: 'Resource outcomes', exact: true })
+  ).toBeVisible()
+  await expect(
     panel.getByRole('region', { name: 'Resource rollout outcomes' })
   ).toHaveCount(0)
   await expect(
@@ -562,6 +543,9 @@ test('completed infrastructure with unstarted components remains in progress', a
   ).toBeVisible()
   await panel.getByRole('link', { name: 'Open full page' }).click()
   const fullPage = page.getByRole('main', { name: 'Deployment full page' })
+  await expect(
+    fullPage.getByRole('group', { name: 'Resource outcomes', exact: true })
+  ).toBeVisible()
   await expect(
     fullPage.getByRole('region', { name: 'Resource rollout outcomes' })
   ).toHaveCount(0)
@@ -656,11 +640,14 @@ for (const width of [1280, 390]) {
     )
     await expect(
       partial.getByRole('group', { name: 'Resource outcomes', exact: true })
-    ).toHaveCount(0)
+    ).toBeVisible()
     await partial.getByRole('button', { name: 'View details' }).click()
     const panel = page.getByRole('complementary', {
       name: 'Deployment details',
     })
+    await expect(
+      panel.getByRole('group', { name: 'Resource outcomes', exact: true })
+    ).toBeVisible()
     await expect(
       panel.getByRole('region', { name: 'Resource rollout outcomes' })
     ).toHaveCount(0)
@@ -675,6 +662,9 @@ for (const width of [1280, 390]) {
     await expect(fullPageLink).toHaveCount(1)
     await fullPageLink.click()
     const fullPage = page.getByRole('main', { name: 'Deployment full page' })
+    await expect(
+      fullPage.getByRole('group', { name: 'Resource outcomes', exact: true })
+    ).toBeVisible()
     await expect(
       fullPage.getByRole('region', { name: 'Resource rollout outcomes' })
     ).toHaveCount(0)
@@ -772,7 +762,8 @@ for (const width of [390, 1440]) {
       await tabs.getByRole('link', { name: 'Workflow', exact: true }).click()
       await expect(page.getByPlaceholder('Search workflow steps')).toBeVisible()
       await page
-        .getByRole('link', { name: 'Back to deployments', exact: true })
+        .getByRole('link', { name: 'Deployments', exact: true })
+        .first()
         .click()
       const row = page.getByRole('article', {
         name: 'Update production install',

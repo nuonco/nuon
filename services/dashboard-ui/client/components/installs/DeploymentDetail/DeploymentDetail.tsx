@@ -9,9 +9,10 @@ import {
 } from '@/components/layout/DetailPage'
 import type { TInstallDeploymentRecord, TNavLink, TWorkflow } from '@/types'
 import { humanize } from '@/utils/string-utils'
-import { DeploymentRunStatus } from './DeploymentProgress'
+import { DeploymentRunStatus, ResourceScopeSummary } from './DeploymentProgress'
 import {
   DEPLOYMENT_TABS,
+  deploymentOutcomes,
   deploymentSteps,
   deploymentTabOrder,
   type TDeploymentTab,
@@ -57,6 +58,7 @@ export const DeploymentDetail = ({
     activity:
       workflow?.status?.status_human_description ?? deployment?.summary ?? '',
     steps: deploymentSteps(workflow),
+    outcomes: deploymentOutcomes(deployment, workflow),
   }
 
   return (
@@ -67,7 +69,7 @@ export const DeploymentDetail = ({
         <DetailHeader
           backLink={false}
           title={title}
-          description={run.activity}
+          description={run.status === 'error' ? undefined : run.activity}
           status={<DeploymentRunStatus run={run} />}
           id={workflow?.id}
           identity={
@@ -91,11 +93,7 @@ export const DeploymentDetail = ({
             </>
           }
         >
-          <Link
-            href={`${basePath.replace(/\/deployments\/[^/]+$/, '/deployments')}${search}`}
-          >
-            Back to deployments
-          </Link>
+          <ResourceScopeSummary run={run} />
         </DetailHeader>
       }
       banners={banners}

@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
+import { StatusWithDescription } from '@/components/common/StatusWithDescription'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import {
+  ResourceScopeSummary,
   StepContext,
   StepProgress,
   type TDeploymentRun,
@@ -49,15 +51,22 @@ export const DeploymentRow = ({
           iconSize={18}
           className="-ml-3.5 mt-3 self-start bg-background"
         />
-        <div className="grid min-w-0 flex-1 grid-cols-1 items-center gap-3 border-b py-3 @4xl:grid-cols-[minmax(0,1fr)_auto]">
-          <div className="flex min-w-0 flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <div className="flex min-w-0 flex-1 flex-col gap-1 border-b py-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
               <Link href={href} className="min-w-0 break-words">
                 <Text weight="strong" className="break-words">
                   {title}
                 </Text>
               </Link>
-              <Status status={run.status} />
+              <StatusWithDescription
+                statusProps={{ status: run.status, variant: 'default' }}
+                tooltipProps={
+                  run.status === 'error' && run.activity
+                    ? { tipContent: run.activity }
+                    : undefined
+                }
+              />
               <Time
                 time={createdAt}
                 format="relative"
@@ -65,22 +74,14 @@ export const DeploymentRow = ({
                 theme="neutral"
               />
             </div>
-            {run.status === 'error' && run.activity ? (
-              <Text
-                variant="subtext"
-                theme="error"
-                className="whitespace-pre-wrap break-words"
-              >
-                {run.activity}
-              </Text>
-            ) : null}
-            {children}
+            <DeploymentViewDetails
+              className="shrink-0"
+              workflow={workflow}
+              onViewDetails={onViewDetails}
+            />
           </div>
-          <DeploymentViewDetails
-            className="justify-self-end"
-            workflow={workflow}
-            onViewDetails={onViewDetails}
-          />
+          <ResourceScopeSummary run={run} />
+          {children}
         </div>
       </article>
     )
@@ -145,6 +146,7 @@ export const DeploymentRow = ({
               ) : null}
             </div>
             {children}
+            <ResourceScopeSummary run={run} />
           </div>
           <div className="density-action">
             <DeploymentViewDetails
