@@ -10,7 +10,6 @@ import { Expand } from '@/components/common/Expand'
 import { ChangeCountSummary } from '@/components/approvals/plan-diffs/ChangeCountSummary'
 import { type DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
 import { AppConfigDiff } from '@/components/diffs/plan-diff-switch'
-import { filterExcludedSections } from '../ConfigStep/lib'
 import { STEP_GUTTER, StepBlock, StepRowList } from '../../shared/StepLayout'
 import { cn } from '@/utils/classnames'
 import { useInstallLink } from '@/hooks/use-install-path'
@@ -26,6 +25,8 @@ export interface PlanInstallDiff {
   sections: DiffSectionData[]
   summary: { added: number; removed: number; changed: number } | null
   isLoading?: boolean
+  isError?: boolean
+  alreadyApplied?: boolean
   versionLabel?: string
   previousSha?: string
   sha?: string
@@ -129,7 +130,7 @@ export const PlanGroupStep = ({
 
       <StepRowList className={hideHeading ? 'gap-2 divide-y-0' : undefined}>
         {installs.map((inst) => {
-          const sections = filterExcludedSections(inst.sections)
+          const sections = inst.sections
           const total =
             (inst.summary?.added ?? 0) +
             (inst.summary?.removed ?? 0) +
