@@ -66,9 +66,6 @@ func (a *Activities) findReusableSandboxBuild(ctx context.Context, appID, runID 
 		if err != nil || build == nil || !configdiff.SandboxConfigsEqual(*cfg, build.AppSandboxConfig) {
 			return out, nil
 		}
-		if err := a.db.WithContext(ctx).Preload("VCSConnectionCommit").Where(app.AppSandboxBuild{ID: build.ID}).First(build).Error; err != nil {
-			return nil, err
-		}
 	} else {
 		build, err = a.latestEquivalentSandboxBuild(ctx, appID, cfg)
 		if err != nil {

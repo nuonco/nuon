@@ -602,6 +602,7 @@ func LatestActiveSandboxBuild(ctx context.Context, db *gorm.DB, appConfigID stri
 	}
 	var build app.AppSandboxBuild
 	err := db.WithContext(ctx).
+		Preload("VCSConnectionCommit").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
 		Preload("AppSandboxConfig.PublicGitVCSConfig").
 		Where(app.AppSandboxBuild{
@@ -651,6 +652,7 @@ func appSandboxConfigByAppConfigID(ctx context.Context, db *gorm.DB, appConfigID
 func latestActiveSandboxBuildForApp(ctx context.Context, db *gorm.DB, appID string) (*app.AppSandboxBuild, error) {
 	var build app.AppSandboxBuild
 	err := db.WithContext(ctx).
+		Preload("VCSConnectionCommit").
 		Preload("AppSandboxConfig").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
 		Preload("AppSandboxConfig.PublicGitVCSConfig").

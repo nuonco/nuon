@@ -62,9 +62,9 @@ func PinSandbox(ctx context.Context, db *gorm.DB, appConfigID, buildID string) e
 	})
 }
 
-func Freeze(ctx context.Context, db *gorm.DB, appConfigID string) error {
+func FreezeInTx(ctx context.Context, tx *gorm.DB, appConfigID string) error {
 	var cfg app.AppConfig
-	if err := db.WithContext(ctx).Scopes(scopes.WithDisableViews).
+	if err := tx.WithContext(ctx).Scopes(scopes.WithDisableViews).
 		Clauses(clause.Locking{Strength: "UPDATE"}).
 		Where(app.AppConfig{ID: appConfigID}).First(&cfg).Error; err != nil {
 		return err
@@ -73,7 +73,7 @@ func Freeze(ctx context.Context, db *gorm.DB, appConfigID string) error {
 		return nil
 	}
 	var conns []app.ComponentConfigConnection
-	if err := db.WithContext(ctx).Where(app.ComponentConfigConnection{AppConfigID: appConfigID}).Find(&conns).Error; err != nil {
+	if err := tx.WithContext(ctx).Where(app.ComponentConfigConnection{AppConfigID: appConfigID}).Find(&conns).Error; err != nil {
 		return err
 	}
 	for _, componentID := range cfg.ComponentIDs {
@@ -82,7 +82,7 @@ func Freeze(ctx context.Context, db *gorm.DB, appConfigID string) error {
 			if ccc.ComponentID != componentID {
 				continue
 			}
-			if _, err := Component(ctx, db, ccc.ID); err != nil {
+			if _, err := Component(ctx, tx, ccc.ID); err != nil {
 				return err
 			}
 			found = true
@@ -93,13 +93,13 @@ func Freeze(ctx context.Context, db *gorm.DB, appConfigID string) error {
 		}
 	}
 	var sandbox app.AppSandboxConfig
-	if err := db.WithContext(ctx).Where(app.AppSandboxConfig{AppConfigID: appConfigID}).First(&sandbox).Error; err != nil {
+	if err := tx.WithContext(ctx).Where(app.AppSandboxConfig{AppConfigID: appConfigID}).First(&sandbox).Error; err != nil {
 		return err
 	}
-	if _, err := Sandbox(ctx, db, &cfg); err != nil {
+	if _, err := Sandbox(ctx, tx, &cfg); err != nil {
 		return err
 	}
-	return db.WithContext(ctx).Model(&app.AppConfig{}).Where(app.AppConfig{ID: appConfigID}).Update("builds_locked", true).Error
+	return tx.WithContext(ctx).Model(&app.AppConfig{}).Where(app.AppConfig{ID: appConfigID}).Update("builds_locked", true).Error
 }
 
 func Sandbox(ctx context.Context, db *gorm.DB, cfg *app.AppConfig) (*app.AppSandboxBuild, error) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/buildselection"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -42,10 +43,17 @@ func (a *Activities) CreateSandboxBuild(ctx context.Context, req CreateSandboxBu
 	}
 
 	if err := buildselection.WithMutableConfig(ctx, a.db, req.AppConfigID, func(tx *gorm.DB, cfg *app.AppConfig) error {
+		if cfg.BuildsPinned && build.AppID != cfg.AppID {
+			return gorm.ErrRecordNotFound
+		}
 		if err := tx.Create(&build).Error; err != nil {
 			return fmt.Errorf("unable to create sandbox build: %w", err)
 		}
-		return buildselection.PinSandbox(ctx, tx, req.AppConfigID, build.ID)
+		if !cfg.BuildsPinned {
+			return nil
+		}
+		return tx.Model(&app.AppConfig{}).Where(app.AppConfig{ID: cfg.ID}).
+			Update("sandbox_build_id", generics.NewNullString(build.ID)).Error
 	}); err != nil {
 		return nil, err
 	}

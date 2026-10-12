@@ -50,7 +50,7 @@ func (a *Activities) UpdateAppBranchRunBuildsCompleted(ctx context.Context, inpu
 
 	if err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if input.BuildsCompleted && run.AppConfigID != "" {
-			if err := buildselection.Freeze(ctx, tx, run.AppConfigID); err != nil {
+			if err := buildselection.FreezeInTx(ctx, tx, run.AppConfigID); err != nil {
 				return err
 			}
 		}

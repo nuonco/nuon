@@ -103,6 +103,13 @@ func (s *Helpers) createComponentBuild(ctx context.Context, db *gorm.DB, buildID
 }
 
 func (s *Helpers) resolveBuildConfigConnection(ctx context.Context, db *gorm.DB, cmp *app.Component, componentConfigConnectionID string) (*app.ComponentConfigConnection, error) {
+	query := db.WithContext(ctx).
+		Preload("TerraformModuleComponentConfig.PublicGitVCSConfig").
+		Preload("HelmComponentConfig.PublicGitVCSConfig").
+		Preload("DockerBuildComponentConfig.PublicGitVCSConfig").
+		Preload("KubernetesManifestComponentConfig.PublicGitVCSConfig").
+		Preload("PulumiComponentConfig.PublicGitVCSConfig").
+		Where(app.ComponentConfigConnection{ID: componentConfigConnectionID, ComponentID: cmp.ID})
 	if componentConfigConnectionID == "" {
 		if cmp.LatestConfig == nil {
 			return nil, stderr.ErrUser{
@@ -113,42 +120,22 @@ func (s *Helpers) resolveBuildConfigConnection(ctx context.Context, db *gorm.DB,
 		if cmp.LatestConfig.AppConfigID == "" {
 			return cmp.LatestConfig, nil
 		}
-		var cfg app.AppConfig
-		if err := db.WithContext(ctx).Where(app.AppConfig{ID: cmp.LatestConfig.AppConfigID}).First(&cfg).Error; err != nil {
-			return nil, err
-		}
-		if !cfg.BuildsPinned {
-			return cmp.LatestConfig, nil
-		}
-		legacyConfigs := db.Model(&app.AppConfig{}).Select("id").Where(map[string]any{"builds_pinned": false})
-		var legacy app.ComponentConfigConnection
-		err := db.WithContext(ctx).Select("id").
-			Where(app.ComponentConfigConnection{ComponentID: cmp.ID}).
+		legacyConfigs := db.WithContext(ctx).Model(&app.AppConfig{}).Select("id").Where(map[string]any{"builds_pinned": false})
+		query = query.
 			Where("(app_config_id IN (?) OR app_config_id IS NULL OR app_config_id = '')", legacyConfigs).
-			Order("created_at DESC, id DESC").First(&legacy).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+			Order("created_at DESC, id DESC")
+	}
+
+	var ccc app.ComponentConfigConnection
+	err := query.First(&ccc).Error
+	if err != nil {
+		if componentConfigConnectionID == "" && errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, stderr.ErrUser{
 				Err:         fmt.Errorf("manual builds cannot change branch-run app configs"),
 				Description: "Trigger an app branch run to rebuild this component.",
 			}
 		}
-		if err != nil {
-			return nil, fmt.Errorf("unable to get legacy component config: %w", err)
-		}
-		componentConfigConnectionID = legacy.ID
-	}
-
-	var ccc app.ComponentConfigConnection
-	res := db.WithContext(ctx).
-		Preload("TerraformModuleComponentConfig.PublicGitVCSConfig").
-		Preload("HelmComponentConfig.PublicGitVCSConfig").
-		Preload("DockerBuildComponentConfig.PublicGitVCSConfig").
-		Preload("KubernetesManifestComponentConfig.PublicGitVCSConfig").
-		Preload("PulumiComponentConfig.PublicGitVCSConfig").
-		Where(app.ComponentConfigConnection{ID: componentConfigConnectionID, ComponentID: cmp.ID}).
-		First(&ccc)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get component config connection: %w", res.Error)
+		return nil, fmt.Errorf("unable to get component config connection: %w", err)
 	}
 	return &ccc, nil
 }
