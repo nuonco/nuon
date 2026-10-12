@@ -70,6 +70,7 @@ func CanonicalActionDefinition(actionConfig app.ActionWorkflowConfig, connection
 		componentNames[connection.ComponentID] = connection.ComponentName
 	}
 	definition := bundle.ActionDefinition{
+		Image:                 actionConfig.Image,
 		TimeoutNanos:          actionConfig.Timeout.Nanoseconds(),
 		Role:                  actionConfig.Role,
 		BreakGlassRoleARN:     actionConfig.BreakGlassRoleARN.ValueString(),

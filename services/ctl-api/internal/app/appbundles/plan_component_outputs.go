@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 
@@ -163,7 +164,7 @@ func seedComponentOutputs(refs []componentOutputRefKey) (map[string]any, error) 
 // seedPlaceholderPath sets a placeholder token at a dotted path inside a
 // nested map, creating intermediate maps as needed. Conflicting references
 // (a path that is both a leaf and a prefix of a deeper path) are rejected.
-func seedPlaceholderPath(root map[string]any, path, token string) error {
+func seedPlaceholderPath(root map[string]any, path string, token any) error {
 	node := root
 	segments := strings.Split(path, ".")
 	for i, segment := range segments {
@@ -171,7 +172,7 @@ func seedPlaceholderPath(root map[string]any, path, token string) error {
 		existing, exists := node[segment]
 		if last {
 			if exists {
-				if existing == token {
+				if reflect.DeepEqual(existing, token) {
 					return nil
 				}
 				return fmt.Errorf("conflicting references under %s", strings.Join(segments[:i+1], "."))
