@@ -4,7 +4,10 @@ import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { SectionHeader } from '@/components/layout/SectionHeader'
-import { DEPLOYMENT_TABS } from '@/components/installs/DeploymentDetail/deployment-progress'
+import {
+  DEPLOYMENT_TABS,
+  deploymentTabOrder,
+} from '@/components/installs/DeploymentDetail/deployment-progress'
 import { WorkflowStepsSkeleton } from '@/components/workflows/WorkflowSteps'
 
 export const DeploymentDetailLoading = ({
@@ -12,11 +15,13 @@ export const DeploymentDetailLoading = ({
   createdAt,
   id,
   status,
+  workflowType,
 }: {
   activity?: string
   createdAt?: string
   id?: string
   status?: string
+  workflowType?: string
 }) => (
   <>
     <div className="flex flex-wrap items-center gap-3">
@@ -43,33 +48,37 @@ export const DeploymentDetailLoading = ({
     )}
     <Tabs
       naturalHeight
-      initActiveTab="workflow"
+      initActiveTab={deploymentTabOrder(workflowType)[0]}
       tabsClassName="mt-4"
       tabControlsClassName="!gap-2 md:!gap-6 [&>button]:px-1 md:[&>button]:px-3"
       tabLabels={Object.fromEntries(
-        Object.entries(DEPLOYMENT_TABS).map(([key, tab]) => [key, tab.text])
+        deploymentTabOrder(workflowType).map((key) => [
+          key,
+          DEPLOYMENT_TABS[key].text,
+        ])
       )}
-      tabs={{
-        template: null,
-        workflow: (
-          <div className="flex flex-col gap-4">
-            <div className="flex justify-end">
-              <Text loading loadingWidth={14} />
+      tabs={Object.fromEntries(
+        deploymentTabOrder(workflowType).map((key) => [
+          key,
+          key === 'workflow' ? (
+            <div key={key} className="flex flex-col gap-4">
+              <div className="flex justify-end">
+                <Text loading loadingWidth={14} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <SectionHeader title="Workflow steps" />
+                <Text
+                  variant="subtext"
+                  theme="neutral"
+                  loading
+                  loadingWidth={28}
+                />
+              </div>
+              <WorkflowStepsSkeleton />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <SectionHeader title="Workflow steps" />
-              <Text
-                variant="subtext"
-                theme="neutral"
-                loading
-                loadingWidth={28}
-              />
-            </div>
-            <WorkflowStepsSkeleton />
-          </div>
-        ),
-        changes: null,
-      }}
+          ) : null,
+        ])
+      )}
     />
   </>
 )

@@ -3,6 +3,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
 import {
   AppConfigFilesDiff,
+  SourceFilesSkeleton,
   type TComponentSourceFile,
 } from '@/components/branches/ComponentConfigDiff/ComponentConfigDiff'
 import { BranchRunComparisonRuns } from '@/components/branches/BranchRunComparisonRuns'
@@ -106,6 +107,8 @@ interface IBranchRunChanges {
   headerAction?: ReactNode
   isPending?: boolean
   scope?: TComparisonScope
+  showConfigChanges?: boolean
+  bare?: boolean
 }
 
 export const BranchRunChanges = ({
@@ -118,11 +121,13 @@ export const BranchRunChanges = ({
   headerAction,
   isPending,
   scope,
+  showConfigChanges = true,
+  bare = false,
 }: IBranchRunChanges) => {
   const { org } = useOrg()
   const { app } = useApp()
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isError } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: [
       'branch-run-comparison',
@@ -269,17 +274,23 @@ export const BranchRunChanges = ({
         </Card>
       ) : null}
 
-      <AppConfigFilesDiff
-        title={title}
-        headerAction={headerAction}
-        isPending={isPending || isLoading}
-        previousVersion={data?.base_sha?.slice(0, 7) ?? ''}
-        currentVersion={data?.head_sha?.slice(0, 7) ?? ''}
-        configSections={sections}
-        files={filesWithContents}
-        onSelectPath={setSelectedPath}
-        isLoadingFile={loadingFile}
-      />
+      {!data ? (
+        <SourceFilesSkeleton />
+      ) : (
+        <AppConfigFilesDiff
+          title={title}
+          headerAction={headerAction}
+          isPending={isPending}
+          previousVersion={data?.base_sha?.slice(0, 7) ?? ''}
+          currentVersion={data?.head_sha?.slice(0, 7) ?? ''}
+          configSections={sections}
+          showConfigSections={showConfigChanges}
+          bare={bare}
+          files={filesWithContents}
+          onSelectPath={setSelectedPath}
+          isLoadingFile={loadingFile}
+        />
+      )}
     </div>
   )
 }

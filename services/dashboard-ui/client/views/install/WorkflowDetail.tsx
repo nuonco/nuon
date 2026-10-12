@@ -54,7 +54,7 @@ const WorkflowDetailContent = () => {
         ]}
       />
 
-      <DetailPage header={<WorkflowDetails />}>
+      <DetailPage header={<WorkflowDetails showChangesTrigger={false} />}>
         <div className="flex flex-col gap-6">
           <SectionHeader title="Workflow steps" />
 

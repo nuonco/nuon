@@ -330,23 +330,20 @@ test('compact feed opens a panel and preserves the selected tab in full page', a
     panel.getByRole('heading', { name: 'Workflow steps' })
   ).toBeVisible()
   await expect(panel.locator('.tab-group button')).toHaveText([
-    'Template updates',
     'Workflow',
     'Change summary',
   ])
-  await panel
-    .getByRole('button', { name: 'Template updates', exact: true })
-    .click()
-  await expect(panel.getByRole('code')).toContainText('replicaCount: 3')
   await expect(
-    panel.getByRole('button', { name: 'Sandbox modified' })
+    panel.getByRole('button', { name: 'Template updates', exact: true })
   ).toHaveCount(0)
-  await panel.getByRole('button', { name: 'worker docker build added' }).click()
-  await expect(panel.getByRole('code')).toContainText('/usr/local/bin/worker')
+  await panel
+    .getByRole('button', { name: 'Change summary', exact: true })
+    .click()
+  await expect(panel.getByText(/these are not final results/)).toBeVisible()
   const openFullPage = panel.getByRole('link', { name: 'Open full page' })
   await expect(openFullPage).toHaveAttribute(
     'href',
-    /wf-preview-running\/template-updates$/
+    /wf-preview-running\/changes$/
   )
   await openFullPage.click()
   await expect(panel).toHaveCount(0)
@@ -354,15 +351,11 @@ test('compact feed opens a panel and preserves the selected tab in full page', a
   await expect(
     fullPage.getByRole('heading', { name: 'Deploy api + worker', exact: true })
   ).toBeVisible()
-  await expect(fullPage.getByRole('code')).toContainText('replicaCount: 3')
+  await expect(fullPage.getByText(/these are not final results/)).toBeVisible()
   await fullPage.getByRole('link', { name: 'Workflow', exact: true }).click()
   await expect(
     fullPage.getByRole('heading', { name: 'Workflow steps' })
   ).toBeVisible()
-  await fullPage
-    .getByRole('link', { name: 'Change summary', exact: true })
-    .click()
-  await expect(fullPage.getByText(/these are not final results/)).toBeVisible()
   expect(apiRequests).toEqual([])
   expect(errors).toEqual([])
 })
@@ -402,21 +395,14 @@ test('completed and failed details stay distinct, and direct full-page links byp
   await panel.getByRole('button', { name: 'Close panel' }).click()
   await stackRuns.first().getByRole('button', { name: 'View details' }).click()
   await expect(panel.locator('.tab-group button')).toHaveText([
-    'Change summary',
     'Workflow',
-    'Template updates',
+    'Change summary',
   ])
   await expect(
-    panel.getByRole('heading', { name: 'Change summary', exact: true })
+    panel.getByRole('heading', { name: 'Workflow steps' })
   ).toBeVisible()
-  await panel
-    .getByRole('button', { name: 'Template updates', exact: true })
-    .click()
-  await expect(panel.getByRole('code')).toContainText(
-    'arn:aws:s3:::acme-artifacts/*'
-  )
   await expect(
-    panel.getByRole('button', { name: 'api helm chart modified' })
+    panel.getByRole('button', { name: 'Template updates', exact: true })
   ).toHaveCount(0)
   await panel.getByRole('button', { name: 'Close panel' }).click()
   await expect(page.getByRole('article')).toHaveCount(7)
@@ -441,9 +427,9 @@ test('completed and failed details stay distinct, and direct full-page links byp
     })
   ).toBeVisible()
   await expect(fullPage.getByRole('navigation').getByRole('link')).toHaveText([
-    'Change summary',
-    'Workflow',
     'Template updates',
+    'Workflow',
+    'Change summary',
   ])
   await fullPage
     .getByRole('link', { name: 'Template updates', exact: true })
@@ -538,6 +524,7 @@ test('completed infrastructure with unstarted components remains in progress', a
   await expect(
     panel.getByRole('region', { name: 'Resource rollout outcomes' })
   ).toHaveCount(0)
+  await panel.getByRole('button', { name: 'Workflow', exact: true }).click()
   await expect(
     panel.getByRole('heading', { name: 'Workflow steps' })
   ).toBeVisible()
@@ -610,7 +597,7 @@ test('approval wait is distinct from execution and stays fixture-only', async ({
   await expect(
     panel.getByText(/Component changes are planned and awaiting approval/)
   ).toBeVisible()
-  const openFullPage = panel.locator('a[href$="/wf-preview-approval"]')
+  const openFullPage = panel.locator('a[href$="/wf-preview-approval/changes"]')
   await openFullPage.click()
   const fullPage = page.getByRole('main', { name: 'Deployment full page' })
   await expect(
@@ -710,7 +697,7 @@ test('all detail tabs fit on mobile in both panel and full-page views', async ({
     })
     .toBeLessThanOrEqual(390)
   await lastTab.click()
-  const openFullPage = panel.locator('a[href$="/wf-preview-running"]')
+  const openFullPage = panel.locator('a[href$="/wf-preview-running/changes"]')
   await expect(openFullPage).toHaveAccessibleName('Open full page')
   await openFullPage.click()
   const fullPage = page.getByRole('main', { name: 'Deployment full page' })

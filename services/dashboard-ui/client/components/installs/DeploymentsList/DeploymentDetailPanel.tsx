@@ -72,7 +72,7 @@ const DeploymentPanelContent = ({
       workflow?.status?.status_human_description ?? deployment.activity ?? '',
     steps: deploymentSteps(workflow),
   }
-  const [tabOrder] = useState(() => deploymentTabOrder(run.status))
+  const [tabOrder] = useState(() => deploymentTabOrder(workflow?.type))
   const basePath = installHref({
     orgId,
     appId,
@@ -97,7 +97,11 @@ const DeploymentPanelContent = ({
         onRetry={() => refetchRecord()}
       />
     ),
-    workflow: workflow ? <DeploymentWorkflowContent /> : noWorkflow,
+    workflow: workflow ? (
+      <DeploymentWorkflowContent showChangesTrigger />
+    ) : (
+      noWorkflow
+    ),
     changes: workflow ? (
       <DeploymentChangesContent deployment={record} />
     ) : (
@@ -137,7 +141,7 @@ const DeploymentPanelContent = ({
       {workflow ? <DeploymentAlerts /> : null}
       <Tabs
         naturalHeight
-        initActiveTab={run.status === 'success' ? 'changes' : 'workflow'}
+        initActiveTab={tabOrder[0]}
         tabsClassName="mt-4"
         tabControlsClassName="!gap-2 md:!gap-6 [&>button]:px-1 md:[&>button]:px-3"
         tabLabels={Object.fromEntries(
@@ -183,6 +187,7 @@ export const DeploymentDetailBody = (props: TDeploymentDetailBody) => (
         createdAt={props.deployment.created_at}
         id={props.deployment.id}
         status={props.deployment.status}
+        workflowType={props.deployment.type}
       />
     }
   >

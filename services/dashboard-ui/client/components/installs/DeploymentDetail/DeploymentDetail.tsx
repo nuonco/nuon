@@ -100,7 +100,7 @@ export const DeploymentDetail = ({
       tabNav={{
         activeIndex: activeTabIndex,
         basePath,
-        tabs: (tabOrder ?? deploymentTabOrder(run.status)).map((key) => ({
+        tabs: (tabOrder ?? deploymentTabOrder(workflow?.type)).map((key) => ({
           ...DEPLOYMENT_TABS[key],
           path: search
             ? `${DEPLOYMENT_TABS[key].path === '/' ? '' : DEPLOYMENT_TABS[key].path}${search}`

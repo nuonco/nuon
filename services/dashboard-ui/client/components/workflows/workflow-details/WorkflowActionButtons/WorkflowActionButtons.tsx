@@ -8,12 +8,14 @@ export interface IWorkflowActionButtons {
   workflow: TWorkflow
   canShowApproveAll: boolean
   canShowCancel: boolean
+  showChangesTrigger?: boolean
 }
 
 export const WorkflowActionButtons = ({
   workflow,
   canShowApproveAll,
   canShowCancel,
+  showChangesTrigger = true,
 }: IWorkflowActionButtons) => {
   return (
     <div className="flex items-center gap-4">
@@ -24,7 +26,9 @@ export const WorkflowActionButtons = ({
         />
       )}
 
-      <WorkflowChangesTrigger workflow={workflow} />
+      {showChangesTrigger ? (
+        <WorkflowChangesTrigger workflow={workflow} />
+      ) : null}
 
       {canShowApproveAll && <ApproveAllButton workflow={workflow} />}
 

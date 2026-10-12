@@ -4,8 +4,10 @@ import { WorkflowHeader } from './WorkflowHeader'
 
 export const WorkflowHeaderContainer = ({
   backLink = true,
+  showChangesTrigger = true,
 }: {
   backLink?: boolean
+  showChangesTrigger?: boolean
 }) => {
   const { install } = useInstall()
   const { workflow } = useWorkflow()
@@ -13,6 +15,11 @@ export const WorkflowHeaderContainer = ({
   if (!workflow) return null
 
   return (
-    <WorkflowHeader workflow={workflow} install={install} backLink={backLink} />
+    <WorkflowHeader
+      workflow={workflow}
+      install={install}
+      backLink={backLink}
+      showChangesTrigger={showChangesTrigger}
+    />
   )
 }
