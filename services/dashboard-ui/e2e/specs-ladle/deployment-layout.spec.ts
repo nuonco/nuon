@@ -22,56 +22,14 @@ async function choose(page: Page, name: string, value: string) {
 async function layoutMetrics(page: Page, row?: Locator) {
   return (row ?? page.getByRole('article')).evaluate((element) => {
     const identity = element.querySelector('.density-identity')!
-    const resources = element.querySelector('.density-resources')!
     const action = element.querySelector('.density-action')!
     const header = element.querySelector('.density-header')!
     const bounds = element.getBoundingClientRect()
-    const cells = [
-      ...resources.querySelectorAll<HTMLSpanElement>('span[role="group"]'),
-    ].map((cell) => {
-      const label = cell.lastElementChild!
-      const icon = cell.querySelector('svg')!
-      const range = document.createRange()
-      range.selectNodeContents(label)
-      const text = [...range.getClientRects()].map((rect) => ({
-        left: rect.left,
-        right: rect.right,
-        top: rect.top,
-        bottom: rect.bottom,
-      }))
-      const fragmentedWords: string[] = []
-      const walker = document.createTreeWalker(label, NodeFilter.SHOW_TEXT)
-      while (walker.nextNode()) {
-        const node = walker.currentNode
-        for (const word of (node.textContent ?? '').matchAll(/\S+/g)) {
-          range.setStart(node, word.index)
-          range.setEnd(node, word.index + word[0].length)
-          if (range.getClientRects().length > 1) fragmentedWords.push(word[0])
-        }
-      }
-      const cellBounds = cell.getBoundingClientRect()
-      const iconBounds = icon.getBoundingClientRect()
-      return {
-        font: parseFloat(getComputedStyle(label).fontSize),
-        iconSize: iconBounds.width,
-        left: cellBounds.left,
-        right: cellBounds.right,
-        top: cellBounds.top,
-        bottom: cellBounds.bottom,
-        iconRight: iconBounds.right,
-        text,
-        fragmentedWords,
-      }
-    })
     return {
       left: bounds.left,
       right: bounds.right,
       identityWidth: identity.getBoundingClientRect().width,
       identityRight: identity.getBoundingClientRect().right,
-      resourcesWidth: resources.getBoundingClientRect().width,
-      resourcesLeft: resources.getBoundingClientRect().left,
-      resourcesTop: resources.getBoundingClientRect().top,
-      resourcesBottom: resources.getBoundingClientRect().bottom,
       headerTop: header.getBoundingClientRect().top,
       headerBottom: header.getBoundingClientRect().bottom,
       currentStepInIdentity: !!identity.querySelector(
@@ -81,10 +39,9 @@ async function layoutMetrics(page: Page, row?: Locator) {
         '[aria-label^="Workflow steps:"]'
       ),
       actionRight: action.getBoundingClientRect().right,
-      dividerWidths: [resources, action].map((node) =>
+      dividerWidths: [action].map((node) =>
         parseFloat(getComputedStyle(node).borderLeftWidth)
       ),
-      cells,
     }
   })
 }
@@ -106,30 +63,22 @@ for (const width of [390, 768, 1024, 1440, 1920, 2560]) {
       page.getByRole('heading', { name: 'Deployment row layout' })
     ).toBeVisible()
     await choose(page, 'Workflow list', 'Single workflow')
-    for (const [index, situation] of [
+    for (const situation of [
       'Success',
       'Failure before apply',
       'Partial rollout',
       'Running',
       'Pending approval',
-    ].entries()) {
+    ]) {
       await choose(page, 'Workflow situation', situation)
-      const count = (index % 3) + 1
-      await choose(
-        page,
-        'Resource categories',
-        `${count} ${count === 1 ? 'category' : 'categories'}`
-      )
       const row = page.getByRole('article')
       await expect(
-        row
-          .getByRole('group', { name: 'Resource outcomes', exact: true })
-          .locator(':scope > span[role="group"]')
-      ).toHaveCount(count)
+        row.getByRole('group', { name: 'Resource outcomes', exact: true })
+      ).toHaveCount(0)
       await page
         .getByRole('textbox', { name: 'Deployment title', exact: true })
         .fill(
-          index % 2
+          situation === 'Success'
             ? 'Provision the production install and update all requested resources safely'
             : 'Provisioned install'
         )
@@ -153,10 +102,9 @@ for (const width of [390, 768, 1024, 1440, 1920, 2560]) {
       const metrics = await layoutMetrics(page)
       expect(metrics.right).toBeLessThanOrEqual(width)
       expect(metrics.actionRight).toBeLessThanOrEqual(metrics.right + 1)
-      expect(metrics.dividerWidths).toEqual(width >= 1024 ? [1, 1] : [0, 0])
+      expect(metrics.dividerWidths).toEqual(width >= 1024 ? [1] : [0])
       if (width >= 1024) {
-        expect(metrics.identityWidth).toBeGreaterThan(metrics.resourcesWidth)
-        expect(metrics.identityRight).toBeLessThan(metrics.resourcesLeft)
+        expect(metrics.identityRight).toBeLessThan(metrics.actionRight)
       }
       const ongoing =
         situation === 'Running' || situation === 'Pending approval'
@@ -165,23 +113,6 @@ for (const width of [390, 768, 1024, 1440, 1920, 2560]) {
         row.getByRole('group', { name: 'Next step', exact: true })
       ).toBeVisible()
       expect(metrics.progressInIdentity).toBe(ongoing)
-      for (const [cellIndex, cell] of metrics.cells.entries()) {
-        expect(cell.fragmentedWords).toEqual([])
-        expect(cell.font).toBeGreaterThanOrEqual(14)
-        expect(cell.font).toBeLessThanOrEqual(18)
-        expect(cell.iconSize).toBeGreaterThanOrEqual(14)
-        expect(cell.iconSize).toBeLessThanOrEqual(22)
-        expect(cell.right).toBeLessThanOrEqual(metrics.right + 1)
-        if (cellIndex) {
-          const previous = metrics.cells[cellIndex - 1]
-          expect(cell.left).toBeCloseTo(previous.left, 0)
-          expect(cell.top).toBeGreaterThanOrEqual(previous.bottom + 11)
-        }
-        for (const rect of cell.text) {
-          expect(rect.left).toBeGreaterThanOrEqual(cell.iconRight - 1)
-          expect(rect.right).toBeLessThanOrEqual(cell.right + 1)
-        }
-      }
     }
     expect(errors).toEqual([])
     expect(apiRequests).toEqual([])
@@ -208,107 +139,19 @@ test('column widths stay fixed across states and long content', async ({
     )
   const failure = await layoutMetrics(page)
   expect(failure.identityWidth).toBeCloseTo(success.identityWidth, 0)
-  expect(failure.resourcesLeft).toBeCloseTo(success.resourcesLeft, 0)
-  expect(failure.resourcesWidth).toBeCloseTo(success.resourcesWidth, 0)
-  for (const [index, cell] of failure.cells.entries())
-    expect(cell.font).toEqual(success.cells[index].font)
   await page
     .getByRole('textbox', { name: 'Deployment title', exact: true })
     .fill(
-      'A much longer deployment title that must not move the resource column'
+      'A much longer deployment title that must stay inside the workflow row'
     )
-  await choose(page, 'Resource categories', '1 category')
-  const single = await layoutMetrics(page)
-  expect(single.identityWidth).toBeCloseTo(success.identityWidth, 0)
-  expect(single.resourcesLeft).toBeCloseTo(success.resourcesLeft, 0)
-  expect(single.resourcesWidth).toBeCloseTo(success.resourcesWidth, 0)
-  await choose(page, 'Resource categories', '3 categories')
+  const titled = await layoutMetrics(page)
+  expect(titled.identityWidth).toBeCloseTo(success.identityWidth, 0)
   await choose(page, 'Workflow situation', 'Success')
   const restored = await layoutMetrics(page)
-  expect(restored.cells.map((cell) => cell.font)).toEqual(
-    success.cells.map((cell) => cell.font)
-  )
+  expect(restored.identityWidth).toBeCloseTo(success.identityWidth, 0)
 })
 
-for (const width of [390, 768, 1024, 1440, 1920, 2560]) {
-  test(`column balance preserves vertical outcomes and shares space proportionally at ${width}px`, async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width, height: 1100 })
-    await page.goto(STORY, { waitUntil: 'domcontentloaded' })
-    const rows = page.getByRole('article')
-    await expect(rows).toHaveCount(5)
-    await expect(
-      page.getByRole('combobox', { name: 'Column balance', exact: true })
-    ).toHaveText('Resources 40% / Workflow 60%')
-    const original = await layoutMetrics(page, rows.first())
-    if (width >= 1024)
-      expect(
-        original.resourcesWidth /
-          (original.identityWidth + original.resourcesWidth)
-      ).toBeCloseTo(0.4, 3)
-    for (const [label, resourceShare] of [
-      ['Resources 35% / Workflow 65%', 0.35],
-      ['Resources 40% / Workflow 60%', 0.4],
-      ['Resources 45% / Workflow 55%', 0.45],
-    ] as const) {
-      await choose(page, 'Column balance', label)
-      const first = await layoutMetrics(page, rows.first())
-      for (const row of await rows.all()) {
-        const metrics = await layoutMetrics(page, row)
-        expect(metrics.identityWidth).toBeCloseTo(first.identityWidth, 0)
-        expect(metrics.resourcesLeft).toBeCloseTo(first.resourcesLeft, 0)
-        expect(metrics.resourcesWidth).toBeCloseTo(first.resourcesWidth, 0)
-        expect(metrics.actionRight).toBeCloseTo(original.actionRight, 0)
-        for (const [index, cell] of metrics.cells.entries()) {
-          expect(cell.fragmentedWords).toEqual([])
-          expect(cell.right).toBeLessThanOrEqual(metrics.right + 1)
-          if (index) {
-            expect(cell.left).toBeCloseTo(metrics.cells[index - 1].left, 0)
-            expect(cell.top).toBeGreaterThan(metrics.cells[index - 1].bottom)
-          }
-        }
-        if (width >= 1024) {
-          expect(metrics.identityWidth).toBeGreaterThan(metrics.resourcesWidth)
-          expect(
-            metrics.resourcesWidth /
-              (metrics.identityWidth + metrics.resourcesWidth)
-          ).toBeCloseTo(resourceShare, 3)
-          expect(metrics.dividerWidths).toEqual([1, 1])
-          expect(metrics.resourcesLeft - metrics.identityRight).toBeCloseTo(
-            24,
-            0
-          )
-          expect(metrics.cells[0].left - metrics.resourcesLeft).toBeCloseTo(
-            25,
-            0
-          )
-          expect(metrics.resourcesTop).toBeCloseTo(metrics.headerTop, 0)
-          expect(metrics.resourcesBottom).toBeCloseTo(metrics.headerBottom, 0)
-        } else {
-          expect(metrics.resourcesWidth).toBeCloseTo(original.resourcesWidth, 0)
-        }
-      }
-      if (width >= 1440)
-        expect(first.identityWidth + first.resourcesWidth).toBeCloseTo(
-          original.identityWidth + original.resourcesWidth,
-          0
-        )
-    }
-    await page
-      .getByRole('button', { name: 'Reset preview', exact: true })
-      .click()
-    await expect(
-      page.getByRole('combobox', { name: 'Column balance', exact: true })
-    ).toHaveText('Resources 40% / Workflow 60%')
-    expect((await layoutMetrics(page, rows.first())).identityWidth).toBeCloseTo(
-      original.identityWidth,
-      0
-    )
-  })
-}
-
-test('width, sizing, text, theme and details controls work without API access', async ({
+test('width, text, theme and details controls work without API access', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1920, height: 1100 })
@@ -319,16 +162,8 @@ test('width, sizing, text, theme and details controls work without API access', 
   await expect(page.getByRole('status')).toContainText(
     'Actual preview width: 390px'
   )
-  expect((await layoutMetrics(page)).dividerWidths).toEqual([0, 0])
+  expect((await layoutMetrics(page)).dividerWidths).toEqual([0])
   await choose(page, 'Preview width', 'Available canvas width')
-  await choose(page, 'Outcome sizing', 'Compact (14px / 14px icons)')
-  expect((await layoutMetrics(page)).cells.map((cell) => cell.font)).toEqual([
-    14, 14, 14,
-  ])
-  await choose(page, 'Outcome sizing', 'Comfortable (18px / 22px icons)')
-  expect((await layoutMetrics(page)).cells.map((cell) => cell.font)).toEqual([
-    18, 18, 18,
-  ])
   for (const theme of ['Light', 'Dark']) {
     await choose(page, 'Theme', theme)
     await expect(page.locator('html')).toHaveAttribute(
@@ -356,9 +191,6 @@ test('width, sizing, text, theme and details controls work without API access', 
   await expect(
     page.getByRole('article', { name: 'Provisioned install', exact: true })
   ).toBeVisible()
-  await expect(
-    page.getByRole('combobox', { name: 'Outcome sizing', exact: true })
-  ).toHaveText('Automatic (fit each sector)')
   await expect(page.getByRole('article')).toHaveCount(5)
 })
 
@@ -391,13 +223,9 @@ for (const width of [390, 1024, 1920]) {
       const metrics = await layoutMetrics(page, row)
       expect(metrics.right).toBeLessThanOrEqual(width)
       expect(metrics.actionRight).toBeLessThanOrEqual(metrics.right + 1)
-      for (const cell of metrics.cells) expect(cell.fragmentedWords).toEqual([])
       if (width >= 1024) {
-        expect(metrics.identityWidth).toBeGreaterThan(metrics.resourcesWidth)
         expect(metrics.identityWidth).toBeCloseTo(completed.identityWidth, 0)
-        expect(metrics.resourcesLeft).toBeCloseTo(completed.resourcesLeft, 0)
-        expect(metrics.resourcesWidth).toBeCloseTo(completed.resourcesWidth, 0)
-        expect(metrics.dividerWidths).toEqual([1, 1])
+        expect(metrics.dividerWidths).toEqual([1])
       }
     }
     await choose(page, 'Workflow list', '3 workflows')

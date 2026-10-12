@@ -4,7 +4,6 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import {
-  ResourceScopeSummary,
   StepContext,
   StepProgress,
   type TDeploymentRun,
@@ -50,7 +49,7 @@ export const DeploymentRow = ({
           iconSize={18}
           className="-ml-3.5 mt-3 self-start bg-background"
         />
-        <div className="grid min-w-0 flex-1 grid-cols-1 items-center gap-3 border-b py-3 @4xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+        <div className="grid min-w-0 flex-1 grid-cols-1 items-center gap-3 border-b py-3 @4xl:grid-cols-[minmax(0,1fr)_auto]">
           <div className="flex min-w-0 flex-col gap-1">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <Link href={href} className="min-w-0 break-words">
@@ -77,7 +76,6 @@ export const DeploymentRow = ({
             ) : null}
             {children}
           </div>
-          <ResourceScopeSummary run={run} />
           <DeploymentViewDetails
             className="justify-self-end"
             workflow={workflow}
@@ -147,9 +145,6 @@ export const DeploymentRow = ({
               ) : null}
             </div>
             {children}
-          </div>
-          <div className="density-resources">
-            <ResourceScopeSummary run={run} />
           </div>
           <div className="density-action">
             <DeploymentViewDetails

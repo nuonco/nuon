@@ -186,23 +186,12 @@ for (const width of [1440, 1920, 2560, 390]) {
     })
     const rowBox = (await row.boundingBox())!
     const identityBox = (await row.locator('.density-identity').boundingBox())!
-    const resourcesBox = (await row
-      .locator('.density-resources')
-      .boundingBox())!
-    const outcomesBox = (await row
-      .getByRole('group', { name: 'Resource outcomes', exact: true })
-      .boundingBox())!
     const actionBox = (await row
       .getByRole('button', { name: 'View details' })
       .boundingBox())!
     const dividerWidths = await row.evaluate((element) => {
-      const outcomes = element.querySelector(
-        '[aria-label="Resource outcomes"]'
-      )!
-      const action = element.querySelector('button')!
-      return [outcomes, action].map((node) =>
-        parseFloat(getComputedStyle(node.parentElement!).borderLeftWidth)
-      )
+      const action = element.querySelector('.density-action')!
+      return [parseFloat(getComputedStyle(action).borderLeftWidth)]
     })
     const details = row.getByRole('button', { name: 'View details' })
     expect(
@@ -214,38 +203,18 @@ for (const width of [1440, 1920, 2560, 390]) {
 
     expect(Math.abs(rowBox.width - availableWidth)).toBeLessThan(2)
     expect(actionBox.x + actionBox.width).toBeLessThanOrEqual(width)
+    await expect(
+      row.getByRole('group', { name: 'Resource outcomes', exact: true })
+    ).toHaveCount(0)
     if (width >= 1440) {
-      expect(dividerWidths).toEqual([1, 1])
-      expect(
-        resourcesBox.width / (identityBox.width + resourcesBox.width)
-      ).toBeCloseTo(0.4, 3)
-      expect(resourcesBox.x - (identityBox.x + identityBox.width)).toBeCloseTo(
-        24,
-        0
-      )
-      expect(outcomesBox.x - resourcesBox.x).toBeCloseTo(25, 0)
+      expect(dividerWidths).toEqual([1])
       expect(actionBox.x).toBeGreaterThanOrEqual(
-        outcomesBox.x + outcomesBox.width
+        identityBox.x + identityBox.width
       )
     } else {
-      expect(dividerWidths).toEqual([0, 0])
-      expect(outcomesBox.y).toBeGreaterThanOrEqual(
-        identityBox.y + identityBox.height
-      )
+      expect(dividerWidths).toEqual([0])
       expect(actionBox.y).toBeGreaterThanOrEqual(
-        outcomesBox.y + outcomesBox.height
-      )
-      expect(outcomesBox.x + outcomesBox.width).toBeLessThanOrEqual(width)
-    }
-    const categories = row
-      .getByRole('group', { name: 'Resource outcomes', exact: true })
-      .locator(':scope > span[role="group"]')
-    for (let index = 1; index < (await categories.count()); index++) {
-      const previous = (await categories.nth(index - 1).boundingBox())!
-      const current = (await categories.nth(index).boundingBox())!
-      expect(current.x).toBeCloseTo(previous.x, 0)
-      expect(current.y).toBeGreaterThanOrEqual(
-        previous.y + previous.height + 11
+        identityBox.y + identityBox.height
       )
     }
     for (const label of ['Current step', 'Next step']) {
@@ -278,13 +247,6 @@ for (const width of [1440, 1920, 2560, 390]) {
     await expect(
       failed.getByRole('group', { name: 'Next step', exact: true })
     ).toContainText('No remaining steps')
-    if (width >= 1440) {
-      const failedResourcesBox = (await failed
-        .locator('.density-resources')
-        .boundingBox())!
-      expect(failedResourcesBox.x).toBeCloseTo(resourcesBox.x, 0)
-      expect(failedResourcesBox.width).toBeCloseTo(resourcesBox.width, 0)
-    }
     await details.focus()
     await page.keyboard.press('Enter')
     await expect(
@@ -578,15 +540,11 @@ test('completed infrastructure with unstarted components remains in progress', a
     name: 'Roll out template v14',
     exact: true,
   })
-  for (const name of [
-    'Stack: Completed',
-    'Sandbox: Completed',
-    'Components: Not started',
-  ]) {
-    await expect(run.getByRole('group', { name, exact: true })).toBeVisible()
-  }
   await expect(run).toContainText('Running now')
   await expect(run).not.toContainText(/Partial rollout|Failed|Error/)
+  await expect(
+    run.getByRole('group', { name: 'Resource outcomes', exact: true })
+  ).toHaveCount(0)
   await expect(
     run.getByRole('group', { name: 'Current step', exact: true })
   ).toContainText('Prepare component deployment')
@@ -596,29 +554,19 @@ test('completed infrastructure with unstarted components remains in progress', a
   await expect(run).toContainText('4/9 steps complete')
   await run.getByRole('button', { name: 'View details' }).click()
   const panel = page.getByRole('complementary', { name: 'Deployment details' })
-  const outcomes = panel.getByRole('region', {
-    name: 'Resource rollout outcomes',
-  })
-  for (const name of [
-    'Stack: Update completed',
-    'Sandbox: Update completed',
-    'api: Not started',
-    'worker: Not started',
-    'legacy: Removal not started',
-  ]) {
-    await expect(
-      outcomes.getByRole('listitem', { name, exact: true })
-    ).toBeVisible()
-  }
+  await expect(
+    panel.getByRole('region', { name: 'Resource rollout outcomes' })
+  ).toHaveCount(0)
   await expect(
     panel.getByRole('heading', { name: 'Workflow steps' })
   ).toBeVisible()
   await panel.getByRole('link', { name: 'Open full page' }).click()
   const fullPage = page.getByRole('main', { name: 'Deployment full page' })
   await expect(
-    fullPage
-      .getByRole('region', { name: 'Resource rollout outcomes' })
-      .getByRole('listitem', { name: 'api: Not started', exact: true })
+    fullPage.getByRole('region', { name: 'Resource rollout outcomes' })
+  ).toHaveCount(0)
+  await expect(
+    fullPage.getByRole('heading', { name: 'Workflow steps' })
   ).toBeVisible()
 })
 
@@ -648,13 +596,6 @@ test('approval wait is distinct from execution and stays fixture-only', async ({
   await expect(
     run.getByRole('group', { name: 'Next step', exact: true })
   ).toHaveText('Up nextDeploy api')
-  for (const name of [
-    'Stack: Completed',
-    'Sandbox: Completed',
-    'Components: Not started',
-  ]) {
-    await expect(run.getByRole('group', { name, exact: true })).toBeVisible()
-  }
   await expect(run.locator('footer .bg-orange-500')).toHaveCount(0)
   await expect(run.locator('footer .bg-blue-500')).toHaveCount(0)
   await expect(run.locator('footer .bg-green-500')).toHaveCount(4)
@@ -679,12 +620,6 @@ test('approval wait is distinct from execution and stays fixture-only', async ({
       `${label} simulated. The fixture is unchanged.`
     )
   }
-  await expect(
-    panel.getByRole('listitem', {
-      name: 'api: Not started — awaiting plan approval',
-      exact: true,
-    })
-  ).toBeVisible()
   await panel
     .getByRole('button', { name: 'Change summary', exact: true })
     .click()
@@ -707,73 +642,28 @@ test('approval wait is distinct from execution and stays fixture-only', async ({
 })
 
 for (const width of [1280, 390]) {
-  test(`resource outcomes distinguish partial failure from unapplied changes at ${width}px`, async ({
+  test(`partial failure still explains applied changes at ${width}px`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 1000 })
     await page.goto(STORY, { waitUntil: 'domcontentloaded' })
-    const completed = page.getByRole('article', {
-      name: 'Roll out template v12',
-      exact: true,
-    })
-    for (const category of ['Stack', 'Sandbox', 'Components']) {
-      await expect(
-        completed.getByRole('group', {
-          name: `${category}: Completed`,
-          exact: true,
-        })
-      ).toBeVisible()
-    }
-    await expect(completed).not.toContainText(
-      /updates completed|steps complete/
-    )
-    const stack = page
-      .getByRole('article', { name: 'Update stack permissions', exact: true })
-      .first()
-    await expect(
-      stack.getByRole('group', { name: 'Stack: Completed', exact: true })
-    ).toBeVisible()
-    await expect(stack).not.toContainText(/Sandbox|Components/)
-
     const partial = page.getByRole('article', {
       name: 'Roll out template v13',
       exact: true,
     })
-    for (const category of ['Stack', 'Sandbox']) {
-      await expect(
-        partial.getByRole('group', {
-          name: `${category}: Completed`,
-          exact: true,
-        })
-      ).toBeVisible()
-    }
-    await expect(
-      partial.getByRole('group', {
-        name: 'Components: Partial rollout',
-        exact: true,
-      })
-    ).toBeVisible()
     await expect(partial).toContainText(
       'worker: post-deploy readiness check failed'
     )
-    await expect(partial).not.toContainText(/steps complete|scheduler/)
+    await expect(
+      partial.getByRole('group', { name: 'Resource outcomes', exact: true })
+    ).toHaveCount(0)
     await partial.getByRole('button', { name: 'View details' }).click()
     const panel = page.getByRole('complementary', {
       name: 'Deployment details',
     })
-    const outcomes = panel.getByRole('region', {
-      name: 'Resource rollout outcomes',
-    })
-    await expect(outcomes.getByRole('listitem')).toHaveCount(5)
-    for (const name of [
-      'api: Rollout completed',
-      'worker: Deployed; readiness check failed',
-      'scheduler: Not started',
-    ]) {
-      await expect(
-        outcomes.getByRole('listitem', { name, exact: true })
-      ).toBeVisible()
-    }
+    await expect(
+      panel.getByRole('region', { name: 'Resource rollout outcomes' })
+    ).toHaveCount(0)
     await panel
       .getByRole('button', { name: 'Change summary', exact: true })
       .click()
@@ -786,10 +676,8 @@ for (const width of [1280, 390]) {
     await fullPageLink.click()
     const fullPage = page.getByRole('main', { name: 'Deployment full page' })
     await expect(
-      fullPage
-        .getByRole('region', { name: 'Resource rollout outcomes' })
-        .getByRole('listitem', { name: 'scheduler: Not started' })
-    ).toBeVisible()
+      fullPage.getByRole('region', { name: 'Resource rollout outcomes' })
+    ).toHaveCount(0)
     await expect(fullPage.getByText(/Some changes were applied/)).toBeVisible()
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth)
