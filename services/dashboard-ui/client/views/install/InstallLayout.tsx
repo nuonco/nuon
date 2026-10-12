@@ -13,6 +13,7 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { PageSection } from '@/components/layout/PageSection'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
 import { NewInstallHeader } from '@/components/installs/NewInstallHeader'
+import { InstallBranchBanner } from '@/components/installs/InstallBranchBanner'
 import { ChangeAppBranchButton } from '@/components/installs/management/ChangeAppBranch'
 import {
   InstallSettingsPanel,
@@ -238,19 +239,25 @@ const InstallTemplate = () => {
         className={hasNewInstallIA ? '[container-type:size]' : undefined}
       >
         {isChildRoute ? (
-          <PageContent className="border-t" variant="row">
-            <SubNav
-              basePath={installBasePath}
-              links={navLinks}
-              storageKey="subnav:install"
-              sticky={hasNewInstallIA}
-            />
-            <div className="flex flex-col flex-1 min-w-0">
-              <ErrorBoundary key={pathname} fallback={<InstallContentError />}>
-                <Outlet />
-              </ErrorBoundary>
-            </div>
-          </PageContent>
+          <>
+            <InstallBranchBanner className="px-4 md:px-6 py-3 border-t" />
+            <PageContent className="border-t" variant="row">
+              <SubNav
+                basePath={installBasePath}
+                links={navLinks}
+                storageKey="subnav:install"
+                sticky={hasNewInstallIA}
+              />
+              <div className="flex flex-col flex-1 min-w-0">
+                <ErrorBoundary
+                  key={pathname}
+                  fallback={<InstallContentError />}
+                >
+                  <Outlet />
+                </ErrorBoundary>
+              </div>
+            </PageContent>
+          </>
         ) : (
           <>
             {hasNewInstallIA ? (
@@ -335,6 +342,7 @@ const InstallTemplate = () => {
                 </div>
               </PageHeader>
             )}
+            <InstallBranchBanner className="px-4 md:px-6 pb-4" />
             <PageContent className="border-t" variant="row">
               <SubNav
                 basePath={installBasePath}

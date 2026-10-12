@@ -17,13 +17,9 @@ import {
   DeploymentTemplateContent,
   DeploymentWorkflowContent,
 } from '@/components/installs/DeploymentDetail/DeploymentDetailContent'
-import {
-  DeploymentRunStatus,
-  ResourceOutcomes,
-} from '@/components/installs/DeploymentDetail/DeploymentProgress'
+import { DeploymentRunStatus } from '@/components/installs/DeploymentDetail/DeploymentProgress'
 import {
   DEPLOYMENT_TABS,
-  deploymentOutcomes,
   deploymentSteps,
   deploymentTabOrder,
 } from '@/components/installs/DeploymentDetail/deployment-progress'
@@ -71,7 +67,6 @@ const DeploymentPanelContent = ({
     activity:
       workflow?.status?.status_human_description ?? deployment.activity ?? '',
     steps: deploymentSteps(workflow),
-    outcomes: deploymentOutcomes(record, workflow),
   }
   const [tabOrder] = useState(() => deploymentTabOrder(run.status))
   const basePath = installHref({
@@ -130,7 +125,6 @@ const DeploymentPanelContent = ({
           </span>
         </LabeledValue>
       ) : null}
-      <ResourceOutcomes run={run} />
       {workflow ? <DeploymentAlerts /> : null}
       <Tabs
         naturalHeight
