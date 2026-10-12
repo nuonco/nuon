@@ -16,6 +16,7 @@ export const TERRAFORM_DIFF_OPERATIONS = [
   'replace',
   'delete',
   'read',
+  'forget',
   'no-op',
 ] as const
 
@@ -24,13 +25,18 @@ export const TERRAFORM_DEFAULT_DIFF_OPERATIONS = [
   'update',
   'replace',
   'delete',
+  'forget',
 ] as const
 
 export const TERRAFORM_READ_NOTE =
   'Terraform will refresh this resource from the provider.'
 
+export const TERRAFORM_FORGET_NOTE =
+  'This resource is retained on teardown. It will be removed from Terraform state and left in place, and Nuon will no longer manage it.'
+
 const NOTES: Partial<Record<TDiffOperation, string>> = {
   read: TERRAFORM_READ_NOTE,
+  forget: TERRAFORM_FORGET_NOTE,
   'no-op': NO_OP_NOTE,
 }
 

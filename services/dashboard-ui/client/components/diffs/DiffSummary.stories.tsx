@@ -10,6 +10,7 @@ const summary = {
   replace: 1,
   delete: 2,
   read: 0,
+  forget: 0,
   'no-op': 12,
 }
 
