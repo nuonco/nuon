@@ -213,6 +213,9 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 			baseSHAs = loaded
 		}
 		repo, branchName := branchRepoAndBranch(branch)
+		if headRun.Preview != nil && headRun.Preview.GitRef != "" {
+			branchName = headRun.Preview.GitRef
+		}
 		if !out.GitDiffStored {
 			for _, src := range componentSources {
 				if repoURLsEqual(src.Repo, repo) && src.Branch == branchName {

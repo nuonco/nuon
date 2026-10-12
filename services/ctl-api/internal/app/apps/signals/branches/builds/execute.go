@@ -65,7 +65,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get app config: %w", err)
 	}
 	if appConfig.BuildsLocked {
-		return nil
+		if workflow.GetVersion(ctx, "locked-builds-completed-v1", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+			return nil
+		}
+		_, err := activities.AwaitUpdateAppBranchRunBuildsCompleted(ctx, &activities.UpdateAppBranchRunBuildsCompletedInput{
+			RunID:           s.RunID,
+			BuildsCompleted: true,
+		})
+		return err
 	}
 
 	l.Info("triggering builds",
@@ -156,6 +163,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			RunID:           s.RunID,
 			BuildsCompleted: true,
 		}); err != nil {
+			if workflow.GetVersion(ctx, "selected-builds-finalize-failure-v1", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+				buildsErr := s.markBuildsCompleted(ctx, l, false)
+				s.finalizeBuildMetadata(ctx, builds, false, buildsErr)
+				if isPreview && run.PRNumber != nil {
+					s.finalizePreview(ctx, l, run, builds, err)
+				}
+			}
 			return fmt.Errorf("unable to finalize selected builds: %w", err)
 		}
 	} else {

@@ -88,6 +88,9 @@ func (a *Activities) findReusableSandboxBuild(ctx context.Context, appID, runID 
 		branchRepo = run.AppBranchConfig.PublicGitVCSConfig.Repo
 		branchName = run.AppBranchConfig.PublicGitVCSConfig.Branch
 	}
+	if run.Preview != nil && run.Preview.GitRef != "" {
+		branchName = run.Preview.GitRef
+	}
 	directory := sandboxConfigDirectory(cfg)
 
 	if repoURLsEqual(sandboxRepo, branchRepo) && sandboxConfigBranch(cfg) == branchName {

@@ -13,6 +13,9 @@ import (
 )
 
 func Component(ctx context.Context, db *gorm.DB, cccID string) (*app.ComponentBuild, error) {
+	if cccID == "" {
+		return nil, fmt.Errorf("component config connection ID is required")
+	}
 	var ccc app.ComponentConfigConnection
 	if err := db.WithContext(ctx).
 		Preload("AppConfig").
@@ -38,30 +41,33 @@ func Component(ctx context.Context, db *gorm.DB, cccID string) (*app.ComponentBu
 	if ccc.AppConfig.BuildsPinned {
 		return nil, fmt.Errorf("app config %s has no successful selected build for component %s", ccc.AppConfigID, ccc.ComponentID)
 	}
-	if ccc.Checksum == "" {
-		return nil, nil
-	}
 
 	var build app.ComponentBuild
-	viewOrTable := views.TableOrViewName(db, &app.ComponentConfigConnection{}, "")
-	err := db.WithContext(ctx).
+	query := db.WithContext(ctx).
 		Select("component_builds.id", "component_builds.status", "component_builds.component_config_connection_id").
-		Joins(fmt.Sprintf("JOIN %s ON %s.id = component_builds.component_config_connection_id", viewOrTable, viewOrTable)).
-		Where(fmt.Sprintf("%s.component_id = ?", viewOrTable), ccc.ComponentID).
-		Where(fmt.Sprintf("%s.checksum = ?", viewOrTable), ccc.Checksum).
-		Where(app.ComponentBuild{Status: app.ComponentBuildStatusActive}).
-		Order("component_builds.created_at DESC").
-		First(&build).Error
+		Where(app.ComponentBuild{Status: app.ComponentBuildStatusActive})
+	if ccc.Checksum == "" {
+		query = query.Where(app.ComponentBuild{ComponentConfigConnectionID: ccc.ID})
+	} else {
+		viewOrTable := views.TableOrViewName(db, &app.ComponentConfigConnection{}, "")
+		query = query.Joins(fmt.Sprintf("JOIN %s ON %s.id = component_builds.component_config_connection_id", viewOrTable, viewOrTable)).
+			Where(fmt.Sprintf("%s.component_id = ?", viewOrTable), ccc.ComponentID).
+			Where(fmt.Sprintf("%s.checksum = ?", viewOrTable), ccc.Checksum)
+	}
+	err := query.Order("component_builds.created_at DESC").First(&build).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("unable to load active build for config checksum: %w", err)
+		return nil, fmt.Errorf("unable to load active build for component config: %w", err)
 	}
 	return &build, nil
 }
 
 func ValidateComponent(ctx context.Context, db *gorm.DB, appConfigID, componentID, buildID string) error {
+	if appConfigID == "" {
+		return nil
+	}
 	var cfg app.AppConfig
 	if err := db.WithContext(ctx).Where(app.AppConfig{ID: appConfigID}).First(&cfg).Error; err != nil {
 		return err
@@ -71,6 +77,9 @@ func ValidateComponent(ctx context.Context, db *gorm.DB, appConfigID, componentI
 	}
 	if !cfg.BuildsLocked {
 		return fmt.Errorf("app config %s has not completed its builds", appConfigID)
+	}
+	if componentID == "" || buildID == "" {
+		return fmt.Errorf("component ID and build ID are required")
 	}
 	var ccc app.ComponentConfigConnection
 	if err := db.WithContext(ctx).

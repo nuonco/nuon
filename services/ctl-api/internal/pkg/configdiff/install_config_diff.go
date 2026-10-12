@@ -602,6 +602,8 @@ func LatestActiveSandboxBuild(ctx context.Context, db *gorm.DB, appConfigID stri
 	}
 	var build app.AppSandboxBuild
 	err := db.WithContext(ctx).
+		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
+		Preload("AppSandboxConfig.PublicGitVCSConfig").
 		Where(app.AppSandboxBuild{
 			AppConfigID: appConfigID,
 			Status:      app.AppSandboxBuildStatusActive,

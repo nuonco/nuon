@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -109,7 +110,32 @@ func (s *Helpers) resolveBuildConfigConnection(ctx context.Context, db *gorm.DB,
 				Description: "please create a component config before building",
 			}
 		}
-		return cmp.LatestConfig, nil
+		if cmp.LatestConfig.AppConfigID == "" {
+			return cmp.LatestConfig, nil
+		}
+		var cfg app.AppConfig
+		if err := db.WithContext(ctx).Where(app.AppConfig{ID: cmp.LatestConfig.AppConfigID}).First(&cfg).Error; err != nil {
+			return nil, err
+		}
+		if !cfg.BuildsPinned {
+			return cmp.LatestConfig, nil
+		}
+		legacyConfigs := db.Model(&app.AppConfig{}).Select("id").Where(map[string]any{"builds_pinned": false})
+		var legacy app.ComponentConfigConnection
+		err := db.WithContext(ctx).Select("id").
+			Where(app.ComponentConfigConnection{ComponentID: cmp.ID}).
+			Where("(app_config_id IN (?) OR app_config_id IS NULL OR app_config_id = '')", legacyConfigs).
+			Order("created_at DESC, id DESC").First(&legacy).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, stderr.ErrUser{
+				Err:         fmt.Errorf("manual builds cannot change branch-run app configs"),
+				Description: "Trigger an app branch run to rebuild this component.",
+			}
+		}
+		if err != nil {
+			return nil, fmt.Errorf("unable to get legacy component config: %w", err)
+		}
+		componentConfigConnectionID = legacy.ID
 	}
 
 	var ccc app.ComponentConfigConnection

@@ -17,6 +17,9 @@ type UpdateInstallAppConfigIDInput struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 30s
 func (a *Activities) UpdateInstallAppConfigID(ctx context.Context, input *UpdateInstallAppConfigIDInput) error {
+	if input.InstallID == "" || input.NewAppConfigID == "" {
+		return fmt.Errorf("install ID and app config ID are required")
+	}
 	var cfg app.AppConfig
 	if err := a.db.WithContext(ctx).Where(app.AppConfig{ID: input.NewAppConfigID}).First(&cfg).Error; err != nil {
 		return err
