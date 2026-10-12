@@ -8,13 +8,10 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetrytoken"
 )
 
-type CreateTelemetryAccessTokenResponse struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	ExpiresIn   int64  `json:"expires_in"`
-}
+type CreateTelemetryAccessTokenResponse = telemetrytoken.AccessTokenResponse
 
 // @ID CreateTelemetryAccessToken
 // @Summary Create a telemetry access token
@@ -63,7 +60,7 @@ func (s *service) CreateTelemetryAccessToken(ctx *gin.Context) {
 		return
 	}
 
-	accessToken, err := s.telemetryTokenIssuer.issue(principal, requestedEndpoint != "")
+	accessToken, err := s.telemetryTokenIssuer.IssueLegacyRunner(principal, acct.Subject, requestedEndpoint != "")
 	if err != nil {
 		ctx.Error(stderr.ErrSystem{
 			Err:         fmt.Errorf("create telemetry access token: %w", err),
@@ -77,6 +74,6 @@ func (s *service) CreateTelemetryAccessToken(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, CreateTelemetryAccessTokenResponse{
 		AccessToken: accessToken,
 		TokenType:   "Bearer",
-		ExpiresIn:   int64(telemetryTokenLifetime.Seconds()),
+		ExpiresIn:   int64(telemetrytoken.Lifetime.Seconds()),
 	})
 }

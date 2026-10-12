@@ -27,8 +27,9 @@ const (
 	PolicyNameRunner     PolicyName = "runner"
 
 	// policy names for service accounts
-	PolicyNameHostedInstaller PolicyName = "hosted_installer"
-	PolicyNameStack           PolicyName = "stack"
+	PolicyNameHostedInstaller    PolicyName = "hosted_installer"
+	PolicyNameStack              PolicyName = "stack"
+	PolicyNameTelemetryCollector PolicyName = "telemetry_collector"
 )
 
 type Policy struct {

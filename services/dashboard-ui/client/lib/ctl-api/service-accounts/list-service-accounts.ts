@@ -1,24 +1,31 @@
 import { api } from '@/lib/api'
-import type { TAccount, TPaginationParams } from '@/types'
+import type {
+  TPaginationParams,
+  TServiceAccount,
+  TServiceAccountManagement,
+} from '@/types'
 import { buildQueryParams } from '@/utils/build-query-params'
 
 export const listServiceAccounts = ({
   orgId,
   limit,
   offset,
-  includeRunners,
-  includeStacks,
+  management,
+  purpose,
+  q,
 }: {
   orgId: string
-  includeRunners?: boolean
-  includeStacks?: boolean
+  management?: TServiceAccountManagement
+  purpose?: string
+  q?: string
 } & TPaginationParams) =>
-  api<TAccount[]>({
+  api<TServiceAccount[]>({
     path: `service-accounts${buildQueryParams({
       limit,
       offset,
-      include_runners: includeRunners ? 'true' : undefined,
-      include_stacks: includeStacks ? 'true' : undefined,
+      management,
+      purpose: purpose || undefined,
+      q: q || undefined,
     })}`,
     orgId,
   })

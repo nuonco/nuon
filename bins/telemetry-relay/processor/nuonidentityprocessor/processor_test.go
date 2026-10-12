@@ -24,7 +24,6 @@ func identityTestPrincipal() nuonjwtauthextension.Principal {
 		OrgID:     "org-test",
 		AppID:     "app-test",
 		InstallID: "install-test",
-		RunnerID:  "runner-test",
 	}
 }
 
@@ -39,6 +38,7 @@ func addUntrustedAttributes(attributes pcommon.Map) {
 	for _, key := range []string{
 		"nuon.org.id", "nuon.app.id", "nuon.install.id", "nuon.runner.id",
 		"nuon_org_id", "nuon_app_id", "nuon_install_id", "nuon_runner_id",
+		"nuon.collector.id", "nuon_collector_id", "NUON.Collector.ID",
 		"Nuon_Org_ID", "NUON.Runner.ID",
 	} {
 		attributes.PutStr(key, "forged")
@@ -72,17 +72,15 @@ func requireOnlyUnreservedAttributes(t *testing.T, attributes pcommon.Map) {
 	}, attributes.AsRaw())
 }
 
-func requireStampedResource(t *testing.T, attributes pcommon.Map) {
+func requireStampedResource(t *testing.T, attributes pcommon.Map, principal nuonjwtauthextension.Principal) {
 	t.Helper()
-	principal := identityTestPrincipal()
 	requireAttribute(t, attributes, "keep", "value")
 	requireAttribute(t, attributes, "nuon.org.id", principal.OrgID)
 	requireAttribute(t, attributes, "nuon.app.id", principal.AppID)
 	requireAttribute(t, attributes, "nuon.install.id", principal.InstallID)
-	requireAttribute(t, attributes, "nuon.runner.id", principal.RunnerID)
 	preserved := pcommon.NewMap()
 	attributes.CopyTo(preserved)
-	for _, key := range []string{"nuon.org.id", "nuon.app.id", "nuon.install.id", "nuon.runner.id"} {
+	for _, key := range []string{"nuon.org.id", "nuon.app.id", "nuon.install.id"} {
 		preserved.Remove(key)
 	}
 	requireOnlyUnreservedAttributes(t, preserved)
@@ -106,7 +104,7 @@ func TestProcessLogsStripsReservedAttributesAndStampsResources(t *testing.T) {
 
 	require.NoError(t, processLogs(identityTestContext(), logs, nil))
 
-	requireStampedResource(t, resourceLogs.Resource().Attributes())
+	requireStampedResource(t, resourceLogs.Resource().Attributes(), identityTestPrincipal())
 	requireOnlyUnreservedAttributes(t, scopeLogs.Scope().Attributes())
 	requireOnlyUnreservedAttributes(t, record.Attributes())
 }
@@ -126,7 +124,7 @@ func TestProcessTracesStripsReservedAttributesAndStampsResources(t *testing.T) {
 
 	require.NoError(t, processTraces(identityTestContext(), traces, nil))
 
-	requireStampedResource(t, resourceSpans.Resource().Attributes())
+	requireStampedResource(t, resourceSpans.Resource().Attributes(), identityTestPrincipal())
 	requireOnlyUnreservedAttributes(t, scopeSpans.Scope().Attributes())
 	requireOnlyUnreservedAttributes(t, span.Attributes())
 	requireOnlyUnreservedAttributes(t, event.Attributes())
@@ -180,7 +178,7 @@ func TestProcessMetricsStripsEveryMetricAttributeLocation(t *testing.T) {
 
 	require.NoError(t, processMetrics(identityTestContext(), metrics, nil))
 
-	requireStampedResource(t, resourceMetrics.Resource().Attributes())
+	requireStampedResource(t, resourceMetrics.Resource().Attributes(), identityTestPrincipal())
 	requireOnlyUnreservedAttributes(t, scopeMetrics.Scope().Attributes())
 	for _, attributes := range []pcommon.Map{
 		gauge.Metadata(), gaugePoint.Attributes(), gaugePoint.Exemplars().At(0).FilteredAttributes(),
@@ -200,6 +198,7 @@ func TestProcessorsRequireVerifiedPrincipal(t *testing.T) {
 }
 
 func TestFactoryEnforcesAllowedOrgs(t *testing.T) {
+	principal := identityTestPrincipal()
 	for _, tc := range []struct {
 		name    string
 		orgIDs  []string
@@ -217,7 +216,9 @@ func TestFactoryEnforcesAllowedOrgs(t *testing.T) {
 				cfg := &Config{AllowedOrgIDs: tc.orgIDs}
 				settings := processortest.NewNopSettings(componentType)
 				factory := NewFactory()
-				ctx := identityTestContext()
+				info := client.FromContext(context.Background())
+				info.Auth = nuonjwtauthextension.NewAuthData(principal)
+				ctx := client.NewContext(context.Background(), info)
 				forwarded := 0
 				var attributes pcommon.Map
 				var consumeErr error
@@ -231,7 +232,7 @@ func TestFactoryEnforcesAllowedOrgs(t *testing.T) {
 					rsrc.ScopeLogs().AppendEmpty().LogRecords().AppendEmpty().Body().SetStr("example log")
 					sink, err := consumer.NewLogs(func(_ context.Context, data plog.Logs) error {
 						forwarded += data.LogRecordCount()
-						requireStampedResource(t, data.ResourceLogs().At(0).Resource().Attributes())
+						requireStampedResource(t, data.ResourceLogs().At(0).Resource().Attributes(), principal)
 						return nil
 					})
 					require.NoError(t, err)
@@ -249,7 +250,7 @@ func TestFactoryEnforcesAllowedOrgs(t *testing.T) {
 					metric.SetEmptyGauge().DataPoints().AppendEmpty().SetIntValue(7)
 					sink, err := consumer.NewMetrics(func(_ context.Context, data pmetric.Metrics) error {
 						forwarded += data.DataPointCount()
-						requireStampedResource(t, data.ResourceMetrics().At(0).Resource().Attributes())
+						requireStampedResource(t, data.ResourceMetrics().At(0).Resource().Attributes(), principal)
 						return nil
 					})
 					require.NoError(t, err)
@@ -265,7 +266,7 @@ func TestFactoryEnforcesAllowedOrgs(t *testing.T) {
 					rsrc.ScopeSpans().AppendEmpty().Spans().AppendEmpty().SetName("example span")
 					sink, err := consumer.NewTraces(func(_ context.Context, data ptrace.Traces) error {
 						forwarded += data.SpanCount()
-						requireStampedResource(t, data.ResourceSpans().At(0).Resource().Attributes())
+						requireStampedResource(t, data.ResourceSpans().At(0).Resource().Attributes(), principal)
 						return nil
 					})
 					require.NoError(t, err)

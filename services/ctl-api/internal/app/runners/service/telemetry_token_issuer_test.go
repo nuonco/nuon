@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetrytoken"
 )
 
 func telemetryTestRSAKey(t *testing.T) *rsa.PrivateKey {
@@ -73,11 +74,12 @@ func telemetryTestJWKS(t *testing.T, keys ...telemetryTestPrivateJWK) string {
 	return string(contents)
 }
 
-func newTelemetryTestTokenIssuer(t *testing.T) (*telemetryTokenIssuer, time.Time) {
+func newTelemetryTestTokenIssuer(t *testing.T) (*telemetrytoken.Issuer, *rsa.PrivateKey, time.Time) {
 	t.Helper()
 
 	key := telemetryTestRSAKey(t)
-	issuer, err := newTelemetryTokenIssuer(&internal.Config{
+	now := time.Now().UTC()
+	issuer, err := telemetrytoken.New(&internal.Config{
 		PublicAPIURL: "https://ctl.example.com/",
 		TelemetryJWKS: telemetryTestJWKS(t,
 			telemetryTestJWK(key, "telemetry-key-1", true),
@@ -85,42 +87,50 @@ func newTelemetryTestTokenIssuer(t *testing.T) (*telemetryTokenIssuer, time.Time
 	})
 	require.NoError(t, err)
 
-	now := time.Date(2026, time.August, 28, 20, 0, 0, 0, time.UTC)
-	issuer.now = func() time.Time { return now }
-	return issuer, now
+	return issuer, key, now
 }
 
 func TestTelemetryTokenIssuerIssuesScopedAccessToken(t *testing.T) {
-	issuer, now := newTelemetryTestTokenIssuer(t)
-	principal := telemetryRunnerPrincipal{
+	issuer, key, now := newTelemetryTestTokenIssuer(t)
+	runnerID := "runner-test"
+	principal := telemetrytoken.Principal{
 		OrgID:         "org-test",
 		AppID:         "app-test",
 		InstallID:     "install-test",
-		RunnerID:      "runner-test",
+		AccountID:     "account-test",
 		RelayEndpoint: "https://relay.example.com/acme",
 	}
 
-	raw, err := issuer.issue(principal, true)
+	raw, err := issuer.IssueLegacyRunner(principal, runnerID, true)
 	require.NoError(t, err)
 
-	claims := &telemetryAccessTokenClaims{}
+	claims := &struct {
+		ClientID    string `json:"client_id"`
+		Scope       string `json:"scope"`
+		OrgID       string `json:"nuon_org_id"`
+		AppID       string `json:"nuon_app_id"`
+		InstallID   string `json:"nuon_install_id"`
+		RunnerID    string `json:"nuon_runner_id,omitempty"`
+		CollectorID string `json:"nuon_collector_id,omitempty"`
+		jwt.RegisteredClaims
+	}{}
 	token, err := jwt.ParseWithClaims(raw, claims, func(token *jwt.Token) (any, error) {
-		return &issuer.privateKey.PublicKey, nil
-	}, jwt.WithValidMethods([]string{jwt.SigningMethodRS256.Alg()}), jwt.WithIssuer(issuer.issuer), jwt.WithAudience("https://relay.example.com/acme"), jwt.WithTimeFunc(func() time.Time { return now }))
+		return &key.PublicKey, nil
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodRS256.Alg()}), jwt.WithIssuer("https://ctl.example.com"), jwt.WithAudience("https://relay.example.com/acme"))
 	require.NoError(t, err)
 	require.True(t, token.Valid)
 	require.Equal(t, "at+jwt", token.Header["typ"])
 	require.Equal(t, "telemetry-key-1", token.Header["kid"])
-	require.Equal(t, telemetryTokenScope, claims.Scope)
-	require.Equal(t, principal.RunnerID, claims.ClientID)
+	require.Equal(t, "telemetry:write", claims.Scope)
+	require.Equal(t, runnerID, claims.ClientID)
 	require.Equal(t, principal.OrgID, claims.OrgID)
 	require.Equal(t, principal.AppID, claims.AppID)
 	require.Equal(t, principal.InstallID, claims.InstallID)
-	require.Equal(t, principal.RunnerID, claims.RunnerID)
+	require.Equal(t, runnerID, claims.RunnerID)
 	require.Equal(t, "org:org-test:install:install-test:runner:runner-test", claims.Subject)
-	require.True(t, now.Equal(claims.IssuedAt.Time))
-	require.True(t, now.Equal(claims.NotBefore.Time))
-	require.True(t, now.Add(telemetryTokenLifetime).Equal(claims.ExpiresAt.Time))
+	require.WithinDuration(t, now, claims.IssuedAt.Time, 2*time.Second)
+	require.True(t, claims.IssuedAt.Equal(claims.NotBefore.Time))
+	require.Equal(t, 10*time.Minute, claims.ExpiresAt.Sub(claims.IssuedAt.Time))
 	require.NotEmpty(t, claims.ID)
 
 	parts := strings.Split(raw, ".")
@@ -136,7 +146,7 @@ func TestTelemetryTokenIssuerRequiresOnePrivateSigningKey(t *testing.T) {
 	key := telemetryTestRSAKey(t)
 
 	t.Run("public keys only", func(t *testing.T) {
-		_, err := newTelemetryTokenIssuer(&internal.Config{
+		_, err := telemetrytoken.New(&internal.Config{
 			PublicAPIURL: "https://ctl.example.com",
 			TelemetryJWKS: telemetryTestJWKS(t,
 				telemetryTestJWK(key, "public-key", false),
@@ -146,7 +156,7 @@ func TestTelemetryTokenIssuerRequiresOnePrivateSigningKey(t *testing.T) {
 	})
 
 	t.Run("multiple private keys", func(t *testing.T) {
-		_, err := newTelemetryTokenIssuer(&internal.Config{
+		_, err := telemetrytoken.New(&internal.Config{
 			PublicAPIURL: "https://ctl.example.com",
 			TelemetryJWKS: telemetryTestJWKS(t,
 				telemetryTestJWK(key, "key-1", true),

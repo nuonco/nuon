@@ -28,6 +28,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetrytoken"
 )
 
 type Params struct {
@@ -78,7 +79,7 @@ type service struct {
 	blobSvc                blobstore.Service
 	emitterClient          *emitterclient.Client
 	queueClient            *queueclient.Client
-	telemetryTokenIssuer   *telemetryTokenIssuer
+	telemetryTokenIssuer   *telemetrytoken.Issuer
 	telemetryRelayEndpoint string
 	// logStreamCache hits in front of getLogStream on the OTLP ingest
 	// hot path. The fields the writer reads (OwnerType, ParentLogStreamID)
@@ -400,7 +401,7 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 }
 
 func New(params Params) (*service, error) {
-	telemetryTokenIssuer, err := newTelemetryTokenIssuer(params.Cfg)
+	telemetryTokenIssuer, err := telemetrytoken.New(params.Cfg)
 	if err != nil {
 		return nil, fmt.Errorf("initialize telemetry token issuer: %w", err)
 	}
