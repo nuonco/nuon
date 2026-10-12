@@ -12,7 +12,6 @@ import {
   extractSections,
   computeSummary,
 } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
-import { filterExcludedSections } from '../ConfigStep/lib'
 import type { TInstallWorkflowStep } from '@/types'
 import type { PlanInstallDiff } from './PlanGroupStep'
 
@@ -135,9 +134,7 @@ export const usePlanGroupInstalls = (
     const previousCommit = inst.old_app_config_id
       ? commitByConfigId.get(inst.old_app_config_id)
       : undefined
-    const sections = filterExcludedSections(
-      query?.data?.diff ? extractSections(query.data.diff) : []
-    )
+    const sections = query?.data?.diff ? extractSections(query.data.diff) : []
     const summary =
       sections.length > 0
         ? computeSummary(sections)
@@ -156,6 +153,10 @@ export const usePlanGroupInstalls = (
       sections,
       summary,
       isLoading: !!query?.isLoading,
+      isError: !!query?.isError,
+      alreadyApplied:
+        !!inst.old_app_config_id &&
+        inst.old_app_config_id === inst.new_app_config_id,
       versionLabel:
         nextVersion == null
           ? undefined
