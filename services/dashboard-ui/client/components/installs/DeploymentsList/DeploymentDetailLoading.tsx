@@ -7,8 +7,6 @@ import { SectionHeader } from '@/components/layout/SectionHeader'
 import { DEPLOYMENT_TABS } from '@/components/installs/DeploymentDetail/deployment-progress'
 import { WorkflowStepsSkeleton } from '@/components/workflows/WorkflowSteps'
 
-const OUTCOME_WIDTHS = [16, 22, 14, 26, 18]
-
 export const DeploymentDetailLoading = ({
   activity,
   createdAt,
@@ -43,23 +41,6 @@ export const DeploymentDetailLoading = ({
     ) : (
       <Text variant="subtext" loading loadingWidth={42} />
     )}
-    <section
-      aria-label="Resource rollout outcomes"
-      className="flex flex-col gap-3"
-    >
-      <Text weight="strong">Resource outcomes</Text>
-      <ul className="flex flex-col gap-2">
-        {OUTCOME_WIDTHS.map((width) => (
-          <li key={width} className="flex items-start gap-3">
-            <Status loading variant="timeline" isWithoutText iconSize={14} />
-            <div className="flex min-w-0 flex-wrap items-baseline gap-x-3">
-              <Text weight="strong" loading loadingWidth={width} />
-              <Text theme="neutral" loading loadingWidth={12} />
-            </div>
-          </li>
-        ))}
-      </ul>
-    </section>
     <Tabs
       naturalHeight
       initActiveTab="workflow"

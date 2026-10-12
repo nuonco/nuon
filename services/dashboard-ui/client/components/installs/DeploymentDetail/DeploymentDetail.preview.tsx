@@ -26,10 +26,7 @@ import { DetailPage } from '@/components/layout/DetailPage'
 import { ListPage } from '@/components/layout/ListPage'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { DeploymentDetail } from '@/components/installs/DeploymentDetail'
-import {
-  DeploymentRunStatus as PreviewRunStatus,
-  ResourceOutcomes,
-} from './DeploymentProgress'
+import { DeploymentRunStatus as PreviewRunStatus } from './DeploymentProgress'
 import { DeploymentRow } from '@/components/installs/DeploymentsList/DeploymentRow'
 import {
   DEPLOYMENT_TYPE_LABELS,
@@ -957,7 +954,6 @@ const PreviewPanel = ({ run, ...props }: IPanel & { run: TPreviewRun }) => (
     >
       {run.activity}
     </Text>
-    <ResourceOutcomes run={run} />
     <Tabs
       naturalHeight
       initActiveTab={run.status === 'success' ? 'changes' : 'workflow'}
@@ -1116,7 +1112,6 @@ export const DeploymentsPreview = ({
           <main aria-label="Deployment full page">
             <DetailPage
               className="[&>.tab-nav]:gap-2 md:[&>.tab-nav]:gap-6 [&>.tab-nav>a]:px-1 md:[&>.tab-nav>a]:px-3"
-              banners={<ResourceOutcomes run={selected} />}
               header={
                 <DetailHeader
                   backLink={false}
