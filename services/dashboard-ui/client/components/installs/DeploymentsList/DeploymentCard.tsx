@@ -6,8 +6,7 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import {
-  resourceCategories,
-  ResourceCategoryIcon,
+  ResourceScopeSummary,
   StepProgress,
   type TDeploymentRun,
 } from '@/components/installs/DeploymentDetail/DeploymentProgress'
@@ -116,32 +115,8 @@ export const DeploymentCard = ({
       </div>
       {children}
       <StepProgress run={run} />
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
-        <div
-          role="group"
-          aria-label="Resource outcomes"
-          className="flex flex-wrap gap-x-4 gap-y-2"
-        >
-          {resourceCategories(run).map(({ category, status, label }) => (
-            <span
-              key={category}
-              role="group"
-              aria-label={`${category}: ${label}`}
-              className="flex items-center gap-2"
-            >
-              <ResourceCategoryIcon status={status} size={18} />
-              <span className="flex flex-col">
-                <Text variant="subtext">{category}</Text>
-                <Text
-                  variant="subtext"
-                  theme={status === 'error' ? 'error' : 'neutral'}
-                >
-                  {label}
-                </Text>
-              </span>
-            </span>
-          ))}
-        </div>
+      <ResourceScopeSummary run={run} />
+      <div className="flex justify-end border-t pt-3">
         <DeploymentViewDetails
           workflow={workflow}
           onViewDetails={onViewDetails}

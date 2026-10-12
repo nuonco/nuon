@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
 import {
@@ -10,6 +10,9 @@ import { BranchRunChanges } from '@/components/branches/BranchRunChanges/BranchR
 import { BranchRunChangesSummary } from '@/components/branches/BranchRunChangesSummary'
 import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
+import { Expand } from '@/components/common/Expand'
+import { Icon } from '@/components/common/Icon'
+import { ToggleButton } from '@/components/common/ToggleButton'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Text } from '@/components/common/Text'
 import { WorkflowChangesSummaryContainer } from '@/components/workflows/WorkflowChangesSummary'
@@ -20,7 +23,12 @@ import { WorkflowActionButtons } from '@/components/workflows/workflow-details/W
 import { useOrg } from '@/hooks/use-org'
 import { useRespondedApprovals } from '@/hooks/use-responded-approvals'
 import { useWorkflow } from '@/hooks/use-workflow'
-import { getBranchRunBuilds, getBranchWorkflowRun } from '@/lib'
+import {
+  getAppConfigDiff,
+  getBranchRunBuilds,
+  getBranchRunComparison,
+  getBranchWorkflowRun,
+} from '@/lib'
 import { AppProvider } from '@/providers/app-provider'
 import type { TInstallDeploymentRecord, TWorkflow } from '@/types'
 import { getPolicyViolationCounts } from '@/utils/workflow-utils'
@@ -36,6 +44,79 @@ const isBuildStep = (name?: string) =>
   !!name && /build/i.test(name) && !/(?:fetch|sync) app config/i.test(name)
 
 const NO_BUILDS: TBuildMeta[] = []
+
+const TemplateUpdateBlock = ({
+  id,
+  title,
+  children,
+  flush = false,
+  actions,
+  isOpen = false,
+}: {
+  id: string
+  title: string
+  children: ReactNode
+  flush?: boolean
+  actions?: ReactNode
+  isOpen?: boolean
+}) => (
+  <Expand
+    id={id}
+    heading={
+      <div className="flex flex-1 items-center justify-between gap-3">
+        <Text variant="h3" weight="strong">
+          {title}
+        </Text>
+        {actions ? (
+          <span onClick={(event) => event.stopPropagation()}>{actions}</span>
+        ) : null}
+      </div>
+    }
+    isOpen={isOpen}
+    interactiveHeading={!!actions}
+    headerToggle={!!actions}
+    className="rounded-xl border"
+    headerClassName="items-center px-5 py-4"
+  >
+    <div className={flush ? 'border-t' : 'border-t p-4'}>{children}</div>
+  </Expand>
+)
+
+type TTemplateView = 'template' | 'source'
+
+const TemplateViewToggle = ({
+  view,
+  onChange,
+}: {
+  view: TTemplateView
+  onChange: (view: TTemplateView) => void
+}) => (
+  <ToggleButton
+    value={view}
+    onChange={onChange}
+    label="Template updates view"
+    options={[
+      {
+        value: 'template',
+        label: (
+          <>
+            <Icon variant="ListBulletsIcon" size={14} />
+            List
+          </>
+        ),
+      },
+      {
+        value: 'source',
+        label: (
+          <>
+            <Icon variant="TreeStructureIcon" size={14} />
+            Tree
+          </>
+        ),
+      },
+    ]}
+  />
+)
 
 export const DeploymentTemplateContent = ({
   deployment,
@@ -53,6 +134,7 @@ export const DeploymentTemplateContent = ({
   onRetry?: () => void
 }) => {
   const { org } = useOrg()
+  const [view, setView] = useState<TTemplateView>('template')
   const branch = deployment?.app_branch
   const ready = !!branch?.id && !!branch.run_id && !!appId && !!org?.id
   const { data: branchRun } = useQuery({
@@ -85,6 +167,52 @@ export const DeploymentTemplateContent = ({
       }),
     enabled: ready && !isLoading && !isError,
   })
+  // The template blocks start collapsed and unmount their content, so warm
+  // the caches their queries read before the user expands them.
+  const comparisonKey = [
+    'branch-run-comparison',
+    org?.id,
+    appId,
+    branch?.id,
+    branch?.run_id,
+  ]
+  const comparisonArgs = {
+    orgId: org?.id ?? '',
+    appId: appId ?? '',
+    branchId: branch?.id ?? '',
+    runId: branch?.run_id ?? '',
+  }
+  useQuery({
+    queryKey: comparisonKey,
+    queryFn: () =>
+      getBranchRunComparison({
+        ...comparisonArgs,
+        includeDiff: ['config', 'source'],
+      }),
+    enabled: ready && !isLoading && !isError,
+    retry: 1,
+  })
+  const { data: configComparison } = useQuery({
+    queryKey: [...comparisonKey, 'config'],
+    queryFn: () =>
+      getBranchRunComparison({ ...comparisonArgs, includeDiff: ['config'] }),
+    enabled: ready && !isLoading && !isError,
+    retry: 1,
+  })
+  const headConfigId = configComparison?.head_run?.app_config_id
+  const baseConfigId = configComparison?.base_run?.app_config_id
+  useQuery({
+    queryKey: ['app-config-diff', org?.id, appId, headConfigId, baseConfigId],
+    queryFn: () =>
+      getAppConfigDiff({
+        orgId: org!.id,
+        appId: appId!,
+        configId: headConfigId!,
+        oldConfigId: baseConfigId,
+      }),
+    enabled: !!org?.id && !!appId && !!headConfigId,
+    retry: 1,
+  })
   const scope = useMemo(() => {
     const resources = deployment?.affected_resources
     const components = [
@@ -99,6 +227,7 @@ export const DeploymentTemplateContent = ({
       sections: [
         ...(resources?.stack ? ['Stack', 'Permissions', 'Policies'] : []),
         ...(resources?.sandbox ? ['Sandbox'] : []),
+        'Actions',
         ...(components.length ? ['Components'] : []),
         ...(deployment?.type === 'install_config_update'
           ? ['Install inputs', 'Secrets']
@@ -170,21 +299,35 @@ export const DeploymentTemplateContent = ({
   return branch?.id && branch.run_id && appId ? (
     <AppProvider appId={appId}>
       <div className="flex flex-col gap-4">
-        <BranchRunChangesSummary
-          branchId={branch.id}
-          appBranchRunId={branch.run_id}
-          builds={metaBuilds}
+        <TemplateUpdateBlock
+          id="deployment-template-updates"
           title="Template updates"
-          scope={scope}
-        />
-        <BuildChangeCards rows={changedBuilds} />
-        <BranchRunChanges
-          branchId={branch.id}
-          appBranchRunId={branch.run_id}
-          showRunComparison={false}
-          title="Source files"
-          scope={scope}
-        />
+          isOpen
+          flush
+          actions={<TemplateViewToggle view={view} onChange={setView} />}
+        >
+          {view === 'template' ? (
+            <BranchRunChangesSummary
+              branchId={branch.id}
+              appBranchRunId={branch.run_id}
+              builds={metaBuilds}
+              scope={scope}
+              bare
+            />
+          ) : (
+            <BranchRunChanges
+              branchId={branch.id}
+              appBranchRunId={branch.run_id}
+              showRunComparison={false}
+              showConfigChanges={false}
+              bare
+              scope={scope}
+            />
+          )}
+        </TemplateUpdateBlock>
+        <TemplateUpdateBlock id="deployment-builds" title="Builds">
+          <BuildChangeCards rows={changedBuilds} bare />
+        </TemplateUpdateBlock>
       </div>
     </AppProvider>
   ) : (
@@ -233,7 +376,11 @@ export const DeploymentWorkflowContent = () => {
     <div className="flex flex-col gap-4">
       <SectionHeader
         title="Workflow steps"
-        description={workflow.status?.status_human_description}
+        description={
+          workflow.status?.status === 'error'
+            ? undefined
+            : workflow.status?.status_human_description
+        }
         actions={<WorkflowActionButtons />}
       />
       <WorkflowSteps

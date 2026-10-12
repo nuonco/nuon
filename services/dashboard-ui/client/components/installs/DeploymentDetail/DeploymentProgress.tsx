@@ -54,7 +54,9 @@ export type TResourceCategory = {
   label: string
 }
 
-export const resourceCategories = (run: TDeploymentRun): TResourceCategory[] =>
+export const resourceCategories = (
+  run: Pick<TDeploymentRun, 'status' | 'outcomes'>
+): TResourceCategory[] =>
   [...new Set(run.outcomes.map((outcome) => outcome.category))].map(
     (category) => {
       const outcomes = run.outcomes.filter(
@@ -101,28 +103,36 @@ export const ResourceCategoryIcon = ({
     <Status status={status} variant="timeline" isWithoutText iconSize={size} />
   )
 
-export const ResourceScopeSummary = ({ run }: { run: TDeploymentRun }) => (
-  <div
-    role="group"
-    aria-label="Resource outcomes"
-    className="flex flex-wrap items-center gap-x-5 gap-y-2"
-  >
-    {resourceCategories(run).map(({ category, status, label }) => (
-      <span
-        key={category}
-        role="group"
-        aria-label={`${category}: ${label}`}
-        className="flex items-center gap-2"
-      >
-        <ResourceCategoryIcon status={status} />
-        <Text>
-          {category}
-          {status !== 'success' ? ` — ${label}` : ''}
-        </Text>
-      </span>
-    ))}
-  </div>
-)
+export const ResourceScopeSummary = ({
+  run,
+}: {
+  run: Pick<TDeploymentRun, 'status' | 'outcomes'>
+}) => {
+  const categories = resourceCategories(run)
+  if (!categories.length) return null
+  return (
+    <div
+      role="group"
+      aria-label="Resource outcomes"
+      className="flex flex-wrap items-center gap-x-5 gap-y-2"
+    >
+      {categories.map(({ category, status, label }) => (
+        <span
+          key={category}
+          role="group"
+          aria-label={`${category}: ${label}`}
+          className="flex items-center gap-2"
+        >
+          <ResourceCategoryIcon status={status} />
+          <Text>
+            {category}
+            {status !== 'success' ? ` — ${label}` : ''}
+          </Text>
+        </span>
+      ))}
+    </div>
+  )
+}
 
 export const StepContext = ({ run }: { run: TDeploymentRun }) => {
   const { current, next } = deploymentStepContext(run.status, run.steps)
