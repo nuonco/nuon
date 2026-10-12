@@ -458,6 +458,69 @@ func TestQuickLinkUIDefinition_PrefillsHoistedParametersWithTheirDefaults(t *tes
 	}
 }
 
+// Compiled templates spell parameter types as String and Array. ARM accepts that,
+// but a case-sensitive match against "string" dropped the whole VPC section.
+func TestQuickLinkUIDefinition_RendersPascalCaseVNetParameters(t *testing.T) {
+	const body = `{
+	  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+	  "contentVersion": "1.0.0.0",
+	  "languageVersion": "2.0",
+	  "parameters": {
+	    "nuonInstallID": {"type": "String"},
+	    "location": {"type": "String"},
+	    "commonTags": {"type": "Object", "defaultValue": {}},
+	    "addressSpace": {"type": "String", "defaultValue": "10.100.0.0/22",
+	      "metadata": {"description": "VNet address space."}},
+	    "availabilityZones": {"type": "Array", "defaultValue": ["1", "2", "3"]},
+	    "networkProfile": {"type": "String", "defaultValue": "PublicNoFirewall",
+	      "allowedValues": ["PrivateWithFirewall", "PrivateNoFirewall", "PublicNoFirewall"]}
+	  },
+	  "resources": [],
+	  "outputs": {}
+	}`
+	inp := vnetInputWithTemplate(t, app.StackDeploymentScopeSubscription, body)
+
+	_, params := renderUIDef(t, inp)
+	byName := indexBasicsElements(params["basics"].([]any))
+	outputs := params["outputs"].(map[string]any)
+
+	addressSpace, present := byName["addressSpace"]
+	if !present {
+		t.Fatalf("addressSpace is not prompted for; basics = %v", byName)
+	}
+	if addressSpace.sectionLabel != "VPC" {
+		t.Errorf("addressSpace section = %q, want VPC", addressSpace.sectionLabel)
+	}
+	if got := addressSpace.element["type"]; got != "Microsoft.Common.TextBox" {
+		t.Errorf("addressSpace.type = %v, want a TextBox", got)
+	}
+	if got := addressSpace.element["defaultValue"]; got != "10.100.0.0/22" {
+		t.Errorf("addressSpace.defaultValue = %v", got)
+	}
+	if got := outputs["addressSpace"]; got != "[basics('vpc').addressSpace]" {
+		t.Errorf("addressSpace output = %v", got)
+	}
+
+	zones, present := byName["availabilityZones"]
+	if !present {
+		t.Fatal("availabilityZones is not prompted for")
+	}
+	if got := zones.element["defaultValue"]; got != "1,2,3" {
+		t.Errorf("availabilityZones.defaultValue = %v, want the array joined for the text box", got)
+	}
+	if got := outputs["availabilityZones"]; got != "[if(empty(basics('vpc').availabilityZones), parse('[]'), split(basics('vpc').availabilityZones, ','))]" {
+		t.Errorf("availabilityZones output = %v", got)
+	}
+
+	profile := byName["networkProfile"].element
+	if got := profile["type"]; got != "Microsoft.Common.DropDown" {
+		t.Errorf("networkProfile.type = %v, want a DropDown", got)
+	}
+	if got := profile["defaultValue"]; got != "Public No Firewall" {
+		t.Errorf("networkProfile.defaultValue = %v", got)
+	}
+}
+
 func TestBasicsElement_AllowedValuesRenderTypedDropDown(t *testing.T) {
 	tests := []struct {
 		name           string
