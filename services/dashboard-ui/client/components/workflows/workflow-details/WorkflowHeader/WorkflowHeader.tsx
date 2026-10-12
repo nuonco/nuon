@@ -8,14 +8,12 @@ interface IWorkflowHeader {
   workflow: TWorkflow
   install?: TInstall
   backLink?: boolean
-  showChangesTrigger?: boolean
 }
 
 export const WorkflowHeader = ({
   workflow,
   install,
   backLink = true,
-  showChangesTrigger = true,
 }: IWorkflowHeader) => {
   const hasDrift =
     install?.drifted_objects?.length &&
@@ -54,9 +52,7 @@ export const WorkflowHeader = ({
         </>
       }
       id={workflow?.id}
-      actions={
-        <WorkflowActionButtons showChangesTrigger={showChangesTrigger} />
-      }
+      actions={<WorkflowActionButtons />}
     />
   )
 }

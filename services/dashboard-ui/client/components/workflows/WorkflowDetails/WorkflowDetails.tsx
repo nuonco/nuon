@@ -22,7 +22,6 @@ interface IWorkflowDetails {
   failedSteps: TWorkflowStep[]
   showBanners?: boolean
   backLink?: boolean
-  showChangesTrigger?: boolean
 }
 
 export const WorkflowAlertBanners = ({
@@ -94,7 +93,6 @@ export const WorkflowDetails = ({
   failedSteps,
   showBanners = true,
   backLink = true,
-  showChangesTrigger = true,
 }: IWorkflowDetails) => {
   return (
     <div className="flex flex-col gap-2">
@@ -102,10 +100,7 @@ export const WorkflowDetails = ({
         <WorkflowAlertBanners workflow={workflow} failedSteps={failedSteps} />
       ) : null}
 
-      <WorkflowHeaderContainer
-        backLink={backLink}
-        showChangesTrigger={showChangesTrigger}
-      />
+      <WorkflowHeaderContainer backLink={backLink} />
 
       <WorkflowMetricsContainer />
 

@@ -370,11 +370,7 @@ export const DeploymentAlerts = () => {
   )
 }
 
-export const DeploymentWorkflowContent = ({
-  showChangesTrigger = false,
-}: {
-  showChangesTrigger?: boolean
-}) => {
+export const DeploymentWorkflowContent = () => {
   const { workflow } = useWorkflow()
   return (
     <div className="flex flex-col gap-4">
@@ -385,9 +381,7 @@ export const DeploymentWorkflowContent = ({
             ? undefined
             : workflow.status?.status_human_description
         }
-        actions={
-          <WorkflowActionButtons showChangesTrigger={showChangesTrigger} />
-        }
+        actions={<WorkflowActionButtons />}
       />
       <WorkflowSteps
         approvalPrompt={workflow.approval_option === 'prompt'}

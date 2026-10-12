@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useLocation } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { EmptyState } from '@/components/common/EmptyState'
 import { CommitLink } from '@/components/common/GitReferenceLink'
@@ -28,9 +27,7 @@ import {
   deploymentTabOrder,
 } from '@/components/installs/DeploymentDetail/deployment-progress'
 import { useWorkflow } from '@/hooks/use-workflow'
-import { useInstallNested } from '@/hooks/use-install-path'
 import { getInstallDeployment } from '@/lib'
-import { installHref } from '@/lib/install-path'
 import { WorkflowProvider } from '@/providers/workflow-provider'
 import type { TInstallDeploymentSummary, TWorkflow } from '@/types'
 
@@ -50,8 +47,6 @@ const DeploymentPanelContent = ({
   repo,
   workflow,
 }: IDeploymentDetailPanel & { workflow?: TWorkflow }) => {
-  const { search } = useLocation()
-  const nested = useInstallNested()
   const {
     data: record,
     isPending: recordPending,
@@ -73,13 +68,6 @@ const DeploymentPanelContent = ({
     steps: deploymentSteps(workflow),
   }
   const [tabOrder] = useState(() => deploymentTabOrder(workflow?.type))
-  const basePath = installHref({
-    orgId,
-    appId,
-    installId,
-    nested,
-    suffix: `/deployments/${deployment.id}`,
-  })
   const noWorkflow = (
     <EmptyState
       emptyTitle="No workflow"
@@ -97,11 +85,7 @@ const DeploymentPanelContent = ({
         onRetry={() => refetchRecord()}
       />
     ),
-    workflow: workflow ? (
-      <DeploymentWorkflowContent showChangesTrigger />
-    ) : (
-      noWorkflow
-    ),
+    workflow: workflow ? <DeploymentWorkflowContent /> : noWorkflow,
     changes: workflow ? (
       <DeploymentChangesContent deployment={record} />
     ) : (
@@ -151,13 +135,6 @@ const DeploymentPanelContent = ({
           tabOrder.map((key) => [
             key,
             <div key={key} className="flex flex-col gap-4">
-              <div className="flex justify-end">
-                <Link
-                  href={`${basePath}${DEPLOYMENT_TABS[key].path === '/' ? '' : DEPLOYMENT_TABS[key].path}${search}`}
-                >
-                  Open full page
-                </Link>
-              </div>
               {content[key]}
             </div>,
           ])

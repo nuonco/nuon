@@ -124,12 +124,8 @@ test('focused scenarios have shareable URLs and preserve their scope through det
     await page
       .getByRole('article')
       .first()
-      .getByRole('button', { name: 'View details' })
+      .getByRole('link', { name: titles[0], exact: true })
       .click()
-    const panel = page.getByRole('complementary', {
-      name: 'Deployment details',
-    })
-    await panel.getByRole('link', { name: 'Open full page' }).click()
     const fullPage = page.getByRole('main', { name: 'Deployment full page' })
     await expect(
       fullPage.getByRole('heading', { name: titles[0], exact: true })
@@ -340,17 +336,17 @@ test('compact feed opens a panel and preserves the selected tab in full page', a
     .getByRole('button', { name: 'Change summary', exact: true })
     .click()
   await expect(panel.getByText(/these are not final results/)).toBeVisible()
-  const openFullPage = panel.getByRole('link', { name: 'Open full page' })
-  await expect(openFullPage).toHaveAttribute(
-    'href',
-    /wf-preview-running\/changes$/
-  )
-  await openFullPage.click()
+  await running
+    .getByRole('link', { name: 'Deploy api + worker', exact: true })
+    .click()
   await expect(panel).toHaveCount(0)
   await expect(fullPage).toBeVisible()
   await expect(
     fullPage.getByRole('heading', { name: 'Deploy api + worker', exact: true })
   ).toBeVisible()
+  await fullPage
+    .getByRole('link', { name: 'Change summary', exact: true })
+    .click()
   await expect(fullPage.getByText(/these are not final results/)).toBeVisible()
   await fullPage.getByRole('link', { name: 'Workflow', exact: true }).click()
   await expect(
@@ -528,7 +524,9 @@ test('completed infrastructure with unstarted components remains in progress', a
   await expect(
     panel.getByRole('heading', { name: 'Workflow steps' })
   ).toBeVisible()
-  await panel.getByRole('link', { name: 'Open full page' }).click()
+  await run
+    .getByRole('link', { name: 'Roll out template v14', exact: true })
+    .click()
   const fullPage = page.getByRole('main', { name: 'Deployment full page' })
   await expect(
     fullPage.getByRole('group', { name: 'Resource outcomes', exact: true })
@@ -536,6 +534,7 @@ test('completed infrastructure with unstarted components remains in progress', a
   await expect(
     fullPage.getByRole('region', { name: 'Resource rollout outcomes' })
   ).toHaveCount(0)
+  await fullPage.getByRole('link', { name: 'Workflow', exact: true }).click()
   await expect(
     fullPage.getByRole('heading', { name: 'Workflow steps' })
   ).toBeVisible()
@@ -645,9 +644,9 @@ for (const width of [1280, 390]) {
     await expect(
       panel.getByText('No changes applied', { exact: true })
     ).toHaveCount(0)
-    const fullPageLink = panel.getByRole('link', { name: 'Open full page' })
-    await expect(fullPageLink).toHaveCount(1)
-    await fullPageLink.click()
+    await partial
+      .getByRole('link', { name: 'Roll out template v13', exact: true })
+      .click()
     const fullPage = page.getByRole('main', { name: 'Deployment full page' })
     await expect(
       fullPage.getByRole('group', { name: 'Resource outcomes', exact: true })
@@ -655,6 +654,9 @@ for (const width of [1280, 390]) {
     await expect(
       fullPage.getByRole('region', { name: 'Resource rollout outcomes' })
     ).toHaveCount(0)
+    await fullPage
+      .getByRole('link', { name: 'Change summary', exact: true })
+      .click()
     await expect(fullPage.getByText(/Some changes were applied/)).toBeVisible()
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth)
@@ -697,9 +699,9 @@ test('all detail tabs fit on mobile in both panel and full-page views', async ({
     })
     .toBeLessThanOrEqual(390)
   await lastTab.click()
-  const openFullPage = panel.locator('a[href$="/wf-preview-running/changes"]')
-  await expect(openFullPage).toHaveAccessibleName('Open full page')
-  await openFullPage.click()
+  await running
+    .getByRole('link', { name: 'Deploy api + worker', exact: true })
+    .click()
   const fullPage = page.getByRole('main', { name: 'Deployment full page' })
   const pageTab = fullPage.getByRole('link', {
     name: 'Change summary',

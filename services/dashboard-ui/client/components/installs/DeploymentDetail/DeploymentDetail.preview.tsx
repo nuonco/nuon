@@ -971,11 +971,6 @@ const PreviewPanel = ({ run, ...props }: IPanel & { run: TPreviewRun }) => (
         tabOrder(run).map((tab) => [
           tab,
           <div key={tab} className="flex flex-col gap-4">
-            <div className="flex justify-end">
-              <Button href={detailHref(run, tab)} variant="ghost" size="sm">
-                Open full page <Icon variant="ArrowSquareOutIcon" />
-              </Button>
-            </div>
             <PreviewTabContent run={run} tab={tab} />
           </div>,
         ])
