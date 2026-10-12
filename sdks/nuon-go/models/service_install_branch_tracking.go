@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 	stderrors "errors"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -25,6 +26,9 @@ type ServiceInstallBranchTracking struct {
 	// branch id
 	BranchID string `json:"branch_id,omitempty"`
 
+	// commits behind
+	CommitsBehind *int64 `json:"commits_behind,omitempty"`
+
 	// directory
 	Directory string `json:"directory,omitempty"`
 
@@ -34,8 +38,14 @@ type ServiceInstallBranchTracking struct {
 	// git branch
 	GitBranch string `json:"git_branch,omitempty"`
 
+	// pending commits
+	PendingCommits []*ServiceInstallOverviewCommit `json:"pending_commits"`
+
 	// repo
 	Repo string `json:"repo,omitempty"`
+
+	// selected commit
+	SelectedCommit *ServiceInstallOverviewCommit `json:"selected_commit,omitempty"`
 
 	// status
 	Status string `json:"status,omitempty"`
@@ -53,6 +63,14 @@ func (m *ServiceInstallBranchTracking) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateExpectedCommit(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePendingCommits(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateSelectedCommit(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -108,6 +126,59 @@ func (m *ServiceInstallBranchTracking) validateExpectedCommit(formats strfmt.Reg
 	return nil
 }
 
+func (m *ServiceInstallBranchTracking) validatePendingCommits(formats strfmt.Registry) error {
+	if swag.IsZero(m.PendingCommits) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.PendingCommits); i++ {
+		if swag.IsZero(m.PendingCommits[i]) { // not required
+			continue
+		}
+
+		if m.PendingCommits[i] != nil {
+			if err := m.PendingCommits[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("pending_commits" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("pending_commits" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *ServiceInstallBranchTracking) validateSelectedCommit(formats strfmt.Registry) error {
+	if swag.IsZero(m.SelectedCommit) { // not required
+		return nil
+	}
+
+	if m.SelectedCommit != nil {
+		if err := m.SelectedCommit.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("selected_commit")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("selected_commit")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this service install branch tracking based on the context it is used
 func (m *ServiceInstallBranchTracking) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -117,6 +188,14 @@ func (m *ServiceInstallBranchTracking) ContextValidate(ctx context.Context, form
 	}
 
 	if err := m.contextValidateExpectedCommit(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePendingCommits(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateSelectedCommit(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -167,6 +246,60 @@ func (m *ServiceInstallBranchTracking) contextValidateExpectedCommit(ctx context
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("expected_commit")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceInstallBranchTracking) contextValidatePendingCommits(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.PendingCommits); i++ {
+
+		if m.PendingCommits[i] != nil {
+
+			if swag.IsZero(m.PendingCommits[i]) { // not required
+				return nil
+			}
+
+			if err := m.PendingCommits[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("pending_commits" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("pending_commits" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *ServiceInstallBranchTracking) contextValidateSelectedCommit(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.SelectedCommit != nil {
+
+		if swag.IsZero(m.SelectedCommit) { // not required
+			return nil
+		}
+
+		if err := m.SelectedCommit.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("selected_commit")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("selected_commit")
 			}
 
 			return err

@@ -17,8 +17,17 @@ import (
 // swagger:model service.InstallOverviewCommit
 type ServiceInstallOverviewCommit struct {
 
+	// app config id
+	AppConfigID string `json:"app_config_id,omitempty"`
+
 	// author
 	Author string `json:"author,omitempty"`
+
+	// awaiting approval
+	AwaitingApproval bool `json:"awaiting_approval,omitempty"`
+
+	// branch id
+	BranchID string `json:"branch_id,omitempty"`
 
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
@@ -34,6 +43,9 @@ type ServiceInstallOverviewCommit struct {
 
 	// sha
 	Sha string `json:"sha,omitempty"`
+
+	// workflow id
+	WorkflowID string `json:"workflow_id,omitempty"`
 }
 
 // Validate validates this service install overview commit
