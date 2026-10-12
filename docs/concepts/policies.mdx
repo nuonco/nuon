@@ -27,7 +27,7 @@ Nuon supports policies for different component types, each with its own input fo
 | Type | Applies To | Engine | Evaluation Phase | Input Format |
 |------|------------|--------|------------------|--------------|
 | `container_image` | External container images | OPA | Build | Image metadata (SBOM, signatures, attestations) |
-| `helm_chart` | Helm chart components | OPA | Deploy | Kubernetes AdmissionReview |
+| `helm_chart` | Helm chart components | OPA | Build + Deploy | Kubernetes AdmissionReview |
 | `kubernetes_manifest` | Kubernetes manifest components | OPA | Deploy | Kubernetes AdmissionReview |
 | `terraform_module` | Terraform module components | OPA | Deploy | Terraform JSON plan |
 | `kubernetes_cluster` | Kubernetes cluster resources | Kyverno | Deploy | Kubernetes resources |
@@ -143,6 +143,7 @@ Note that unlike components, policies do not need to be built, they are evaluate
 Build-time policies are evaluated during the component build process:
 
 - **`container_image`**: Policies evaluate image metadata (SBOM, signatures, attestations) fetched from the registry
+- **`helm_chart`**: The chart is rendered during the build and policies evaluate the resulting Kubernetes AdmissionReview objects. This catches problems before the chart reaches any install.
 
 If a `deny` rule matches during build-time evaluation, the build fails with status `policy_failed`.
 

@@ -93,9 +93,9 @@ warn contains msg if {
 }
 ```
 
-## Add a Helm Chart Policy (Deploy-time)
+## Add a Helm Chart Policy (Build-time and Deploy-time)
 
-Helm chart policies validate rendered Kubernetes manifests. This example requires CPU and memory limits on all containers.
+Helm chart policies validate rendered Kubernetes manifests. They run when the component is built and again when it is deployed to an install. This example requires CPU and memory limits on all containers.
 
 Create `policies/require-resource-limits.rego`:
 
@@ -145,7 +145,7 @@ engine     = "opa"
 components = ["*"]
 contents   = "./policies/require-encryption.rego"
 
-# Helm chart policy - evaluated at deploy time
+# Helm chart policy - evaluated at build time and deploy time
 [[policy]]
 type       = "helm_chart"
 engine     = "opa"
@@ -198,7 +198,7 @@ Syncing app...
 
 ## Observe Build-Time Evaluation
 
-Container image policies are evaluated when you create a build. Trigger a build for your image component:
+Container image and Helm chart policies are evaluated when you create a build. Trigger a build for your image component:
 
 ```sh
 nuon builds create -c api_image
