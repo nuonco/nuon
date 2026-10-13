@@ -60,9 +60,9 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	if !ok {
 		return nil, errors.New("install action workflow is not set on the install workflow for a manual deploy")
 	}
-	triggeredByID, ok := flw.Metadata["triggerred_by_id"]
+	triggeredByID, ok := flw.TriggeredByID()
 	if !ok {
-		return nil, errors.New("triggerred by id is not set on the install workflow for a manual deploy")
+		return nil, errors.New("triggered by id is not set on the install workflow for a manual deploy")
 	}
 
 	iaw, err := activities.AwaitGetInstallActionWorkflowByID(ctx, generics.FromPtrStr(installActionWorkflowID))
@@ -83,7 +83,7 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	runEnvVars["TRIGGER_TYPE"] = string(app.ActionWorkflowTriggerTypeManual)
 
 	sg.nextGroup()
-	step, err := createActionWorkflowStep(ctx, installID, iaw, generics.FromPtrStr(triggeredByID), runEnvVars, flw.Role, sg)
+	step, err := createActionWorkflowStep(ctx, installID, iaw, triggeredByID, runEnvVars, flw.Role, sg)
 	if err != nil {
 		return nil, err
 	}
