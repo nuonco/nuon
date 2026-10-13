@@ -3,31 +3,21 @@ package telemetryexport
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"net/url"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	"go.uber.org/zap/zapio"
 
 	"github.com/nuonco/nuon/pkg/runner/settings"
+	"github.com/nuonco/nuon/pkg/telemetryexport"
 )
 
 const (
-	collectorBinary             = "/bin/nuon-runner-otelcol"
-	collectorHealthURL          = "http://127.0.0.1:13133/"
-	collectorStartTimeout       = 5 * time.Second
-	collectorHealthPollInterval = 50 * time.Millisecond
-	secretSyncInterval          = 30 * time.Second
+	collectorBinary    = "/bin/nuon-runner-otelcol"
+	collectorHealthURL = "http://127.0.0.1:13133/"
+	secretSyncInterval = 30 * time.Second
 )
 
 type Params struct {
@@ -47,7 +37,7 @@ type Supervisor struct {
 	cancel           context.CancelFunc
 	done             chan struct{}
 	mu               sync.Mutex
-	child            *childProcess
+	child            *telemetryexport.Collector
 	active           string
 	rejectedConfig   string
 	restartConfig    string
@@ -56,16 +46,8 @@ type Supervisor struct {
 	reported         bool
 	collectorEnabled bool
 
-	replaceChildFn func(config) error
+	replaceChildFn func(context.Context, config) error
 	stopChildFn    func()
-}
-
-type childProcess struct {
-	cmd           *exec.Cmd
-	tempDir       string
-	done          chan struct{}
-	startedAt     time.Time
-	outputWriters []io.Closer
 }
 
 func New(params Params) *Supervisor {
@@ -89,7 +71,7 @@ func (s *Supervisor) stop(ctx context.Context) error {
 		select {
 		case <-s.done:
 		case <-ctx.Done():
-			s.stopChildFn()
+			return fmt.Errorf("audit telemetry export supervisor did not stop: %w", ctx.Err())
 		}
 	}
 	return nil
@@ -104,27 +86,29 @@ func (s *Supervisor) run(ctx context.Context) {
 	if source == nil {
 		return
 	}
+	defer s.stopChildFn()
 	updates := source.Watch(ctx, secretSyncInterval)
 	crash := time.NewTicker(time.Second)
 	defer crash.Stop()
 	for {
 		select {
 		case <-ctx.Done():
-			s.stopChildFn()
 			return
 		case update, ok := <-updates:
 			if !ok {
-				s.stopChildFn()
 				return
 			}
-			s.reconcile(update)
+			s.reconcile(ctx, update)
 		case <-crash.C:
 			s.restartCrashed(ctx)
 		}
 	}
 }
 
-func (s *Supervisor) reconcile(update configUpdate) {
+func (s *Supervisor) reconcile(ctx context.Context, update configUpdate) {
+	if ctx.Err() != nil {
+		return
+	}
 	switch update.state {
 	case configNotFound:
 		s.disable("secret not found")
@@ -163,12 +147,15 @@ func (s *Supervisor) reconcile(update configUpdate) {
 		s.logger.Warn("telemetry export configuration is invalid")
 		return
 	}
-	if err := s.replaceChildFn(cfg); err != nil {
+	if err := s.replaceChildFn(ctx, cfg); err != nil {
+		if ctx.Err() != nil {
+			return
+		}
 		s.logger.Warn("telemetry export collector failed to start")
 		if s.active != "" {
 			s.rejectedConfig = value
 			if previous, parseErr := parseSecret(s.active); parseErr == nil {
-				if rollbackErr := s.replaceChildFn(previous); rollbackErr != nil {
+				if rollbackErr := s.replaceChildFn(ctx, previous); rollbackErr != nil {
 					s.scheduleRestart(s.active)
 				} else {
 					s.restartConfig = ""
@@ -222,78 +209,22 @@ func (s *Supervisor) logEnabled(cfg config) {
 	s.collectorEnabled = true
 }
 
-func (s *Supervisor) replaceChild(cfg config) error {
-	if _, err := os.Stat(collectorBinary); err != nil {
-		return err
-	}
+func (s *Supervisor) replaceChild(ctx context.Context, cfg config) error {
 	contents, environment, err := collectorConfig(cfg)
 	if err != nil {
 		return err
 	}
-	tempDir, err := os.MkdirTemp("", "nuon-telemetry-export-")
-	if err != nil {
-		return err
-	}
-	path := filepath.Join(tempDir, "collector.yaml")
-	if err := os.WriteFile(path, contents, 0o600); err != nil {
-		os.RemoveAll(tempDir)
-		return err
-	}
-	cmd := exec.Command(collectorBinary, "--config", path, "--feature-gates=service.AllowNoPipelines")
-	cmd.Env = childEnvironment(environment)
-	stdout := &zapio.Writer{Log: s.logger.Named("telemetry-export-collector").With(zap.String("stream", "stdout")), Level: zapcore.WarnLevel}
-	stderr := &zapio.Writer{Log: s.logger.Named("telemetry-export-collector").With(zap.String("stream", "stderr")), Level: zapcore.WarnLevel}
-	cmd.Stdout = stdout
-	cmd.Stderr = stderr
-	s.stopChild()
-	if err := cmd.Start(); err != nil {
-		_ = stdout.Close()
-		_ = stderr.Close()
-		os.RemoveAll(tempDir)
-		return err
-	}
-	child := &childProcess{cmd: cmd, tempDir: tempDir, done: make(chan struct{}), startedAt: time.Now(), outputWriters: []io.Closer{stdout, stderr}}
+	s.mu.Lock()
+	previous := s.child
+	s.mu.Unlock()
+	child, err := telemetryexport.StartCollector(ctx, previous, telemetryexport.CollectorOptions{
+		Binary: collectorBinary, Config: contents, HealthURL: collectorHealthURL, Environment: environment,
+		Args: []string{"--feature-gates=service.AllowNoPipelines"}, Logger: s.logger.Named("telemetry-export-collector"),
+	})
 	s.mu.Lock()
 	s.child = child
 	s.mu.Unlock()
-	go func() {
-		_ = cmd.Wait()
-		for _, writer := range child.outputWriters {
-			_ = writer.Close()
-		}
-		close(child.done)
-	}()
-	if err := waitForCollector(context.Background(), child, collectorHealthURL); err != nil {
-		s.stopChild()
-		return err
-	}
-	return nil
-}
-
-func waitForCollector(ctx context.Context, child *childProcess, healthURL string) error {
-	ctx, cancel := context.WithTimeout(ctx, collectorStartTimeout)
-	defer cancel()
-	client := &http.Client{Timeout: collectorHealthPollInterval}
-	for {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, healthURL, nil)
-		if err != nil {
-			return err
-		}
-		resp, err := client.Do(req)
-		if err == nil {
-			_ = resp.Body.Close()
-			if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
-				return nil
-			}
-		}
-		select {
-		case <-child.done:
-			return fmt.Errorf("telemetry export collector exited before becoming healthy")
-		case <-ctx.Done():
-			return fmt.Errorf("telemetry export collector did not become healthy: %w", ctx.Err())
-		case <-time.After(collectorHealthPollInterval):
-		}
-	}
+	return err
 }
 
 func (s *Supervisor) stopChild() {
@@ -301,31 +232,22 @@ func (s *Supervisor) stopChild() {
 	child := s.child
 	s.child = nil
 	s.mu.Unlock()
-	if child == nil {
-		return
-	}
-	if child.cmd.Process != nil {
-		_ = child.cmd.Process.Signal(syscall.SIGTERM)
-		select {
-		case <-child.done:
-		case <-time.After(5 * time.Second):
-			_ = child.cmd.Process.Kill()
-			<-child.done
-		}
-	}
-	_ = os.RemoveAll(child.tempDir)
+	child.Stop()
 }
 
-func (s *Supervisor) restartCrashed(_ context.Context) {
+func (s *Supervisor) restartCrashed(ctx context.Context) {
+	if ctx.Err() != nil {
+		return
+	}
 	s.mu.Lock()
 	child := s.child
 	s.mu.Unlock()
 	if child != nil {
 		select {
-		case <-child.done:
+		case <-child.Done():
 			s.stopChild()
 			s.logger.Warn("telemetry export collector exited; scheduling restart")
-			if time.Since(child.startedAt) >= 30*time.Second {
+			if time.Since(child.StartedAt()) >= 30*time.Second {
 				s.backoff = time.Second
 			}
 			s.scheduleRestart(s.active)
@@ -346,7 +268,7 @@ func (s *Supervisor) restartCrashed(_ context.Context) {
 		}
 	}
 	s.nextStart = time.Now().Add(s.backoff)
-	if err := s.replaceChildFn(cfg); err != nil {
+	if err := s.replaceChildFn(ctx, cfg); err != nil {
 		s.logger.Warn("telemetry export collector restart failed")
 		return
 	}
@@ -359,23 +281,4 @@ func (s *Supervisor) restartCrashed(_ context.Context) {
 func (s *Supervisor) scheduleRestart(value string) {
 	s.restartConfig = value
 	s.nextStart = time.Now().Add(s.backoff)
-}
-
-func childEnvironment(secretHeaders []string) []string {
-	allowed := map[string]struct{}{
-		"SSL_CERT_FILE": {}, "SSL_CERT_DIR": {},
-		"HTTP_PROXY": {}, "HTTPS_PROXY": {}, "NO_PROXY": {},
-		"http_proxy": {}, "https_proxy": {}, "no_proxy": {},
-	}
-	environment := make([]string, 0, len(secretHeaders)+len(allowed))
-	for _, value := range os.Environ() {
-		name, _, ok := strings.Cut(value, "=")
-		if !ok {
-			continue
-		}
-		if _, ok := allowed[name]; ok {
-			environment = append(environment, value)
-		}
-	}
-	return append(environment, secretHeaders...)
 }
