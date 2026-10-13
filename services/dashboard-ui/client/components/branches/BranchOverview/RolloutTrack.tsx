@@ -4,6 +4,7 @@ import {
   stepStatusCategory,
   type TStepStatusCategory,
 } from '@/components/branches/shared/step-status'
+import type { TCompositeError } from '@/types'
 import { RolloutGroupDetail } from './RolloutGroupDetail'
 import { RolloutGroupsCard } from './RolloutGroupsCard'
 
@@ -45,6 +46,7 @@ export type TTrackGroup = {
   match?: TGroupMatch
   approval?: string
   maxParallel?: number
+  error?: TCompositeError
 }
 
 export interface IRolloutTrack {
