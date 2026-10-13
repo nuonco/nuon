@@ -187,23 +187,24 @@ export const Tabs = ({
               }
         }
       >
-        {tabKeys.map((tabKey, idx) => (
-          <TransitionDiv
-            ref={(el) => {
-              contentRefs.current[tabKey] = el
-            }}
-            className={cn(
-              'w-full tab-content',
-              naturalHeight && tabKey === activeTab
-                ? 'relative'
-                : 'absolute top-0 left-0'
-            )}
-            key={`${tabKey}-${idx}-tab`}
-            isVisible={tabKey === activeTab}
-          >
-            {tabs[tabKey]}
-          </TransitionDiv>
-        ))}
+        {naturalHeight
+          ? activeTab && (
+              <div key={activeTab} className="w-full tab-content-natural">
+                {tabs[activeTab]}
+              </div>
+            )
+          : tabKeys.map((tabKey, idx) => (
+              <TransitionDiv
+                ref={(el) => {
+                  contentRefs.current[tabKey] = el
+                }}
+                className="absolute top-0 left-0 w-full tab-content"
+                key={`${tabKey}-${idx}-tab`}
+                isVisible={tabKey === activeTab}
+              >
+                {tabs[tabKey]}
+              </TransitionDiv>
+            ))}
       </div>
     </div>
   )

@@ -4,8 +4,9 @@ import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { Badge } from '@/components/common/Badge'
 import { Kbd } from '@/components/common/Kbd'
+import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import { toSentenceCase } from '@/utils/string-utils'
-import { COMMANDS_BY_PREFIX, COMMAND_DESCRIPTIONS, FILTER_PREFIXES } from '../types'
+import { COMMAND_DESCRIPTIONS, FILTER_PREFIXES, spotlightCommands } from '../types'
 
 const Combo = ({ children }: { children: React.ReactNode }) => (
   <span className="flex items-center gap-1">{children}</span>
@@ -48,6 +49,7 @@ const Section = ({ title, shortcuts }: ISection) => (
 )
 
 export const HelpModal = ({ ...props }: IModal) => {
+  const newAppIA = useNewAppIA()
   const mac = useMemo(isMac, [])
   const mod = mac ? '⌘' : 'Ctrl'
   const alt = mac ? '⌥' : 'Alt'
@@ -187,7 +189,7 @@ export const HelpModal = ({ ...props }: IModal) => {
     [mod, alt, shift]
   )
 
-  const commandEntries = Object.entries(COMMANDS_BY_PREFIX) as [
+  const commandEntries = Object.entries(spotlightCommands(newAppIA)) as [
     string,
     string[],
   ][]
