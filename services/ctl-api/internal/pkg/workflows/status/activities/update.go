@@ -225,6 +225,10 @@ func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateSt
 		return err
 	}
 
+	if err := a.finishFailedWorkflow(ctx, req.ID, req.Status); err != nil {
+		return err
+	}
+
 	a.syncInstallAppConfigVersionFromFlowStatus(ctx, req.ID, req.Status)
 	if req.Status.Status == app.StatusSuccess {
 		a.syncInstallActualAppConfigFromFlow(ctx, &loaded)
@@ -238,6 +242,57 @@ func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateSt
 	}
 
 	a.logWorkflowError(ctx, loaded, loaded.Status, req.Status)
+	return nil
+}
+
+func failedWorkflowShouldFinish(status app.CompositeStatus) bool {
+	if status.Status != app.StatusError {
+		return false
+	}
+	awaiting, _ := status.Metadata["awaiting_retry"].(bool)
+	return !awaiting
+}
+
+func (a *Activities) finishFailedWorkflow(ctx context.Context, id string, status app.CompositeStatus) error {
+	if !failedWorkflowShouldFinish(status) {
+		return nil
+	}
+
+	var current app.Workflow
+	if err := a.db.WithContext(ctx).Where(app.Workflow{ID: id}).Take(&current).Error; err != nil {
+		return errors.Wrap(err, "unable to load workflow")
+	}
+	if !current.FinishedAt.IsZero() {
+		return nil
+	}
+
+	current.FinishedAt = time.Now()
+	if err := a.db.WithContext(ctx).Save(&current).Error; err != nil {
+		return errors.Wrap(err, "unable to set workflow finished at")
+	}
+
+	if current.OwnerType != "installs" {
+		return nil
+	}
+	newPhase := current.InstallLifecyclePhase()
+	if newPhase == nil {
+		return nil
+	}
+
+	var install app.Install
+	if err := a.db.WithContext(ctx).Where(app.Install{ID: current.OwnerID}).First(&install).Error; err != nil {
+		return nil
+	}
+	transitioned := lifecyclephase.Transition(install.LifecyclePhase, newPhase.Phase, newPhase.Description)
+	res := a.db.WithContext(ctx).Model(&app.Install{ID: current.OwnerID}).Updates(map[string]any{
+		"lifecycle_phase": transitioned,
+	})
+	if res.Error != nil {
+		a.l.Warn("unable to update install lifecycle phase for failed workflow",
+			zap.String("workflow_id", id),
+			zap.Error(res.Error),
+		)
+	}
 	return nil
 }
 
