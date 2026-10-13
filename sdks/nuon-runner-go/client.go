@@ -65,6 +65,7 @@ type Client interface {
 	SetAuthToken(token string)
 
 	GetSettings(ctx context.Context) (*models.AppRunnerGroupSettings, error)
+	GetInstallTelemetryCollectorSettings(ctx context.Context, installID string) (*models.ServiceInstallTelemetryCollectorSettings, error)
 
 	// heartbeat and health checks
 	CreateHeartBeat(ctx context.Context, req *models.ServiceCreateRunnerHeartBeatRequest) (*models.AppRunnerHeartBeat, error)
@@ -143,6 +144,7 @@ type client struct {
 
 	APIURL         string `validate:"required"`
 	APIToken       string
+	APITokenFile   string
 	RunnerID       string
 	RequestTimeout time.Duration
 
@@ -181,8 +183,9 @@ func New(opts ...clientOption) (*client, error) {
 
 	base := newDefaultTransport()
 	appTransport := &appTransport{
-		authToken: c.APIToken,
-		transport: base,
+		authToken:     c.APIToken,
+		authTokenFile: c.APITokenFile,
+		transport:     base,
 	}
 	c.appTransport = appTransport
 
@@ -213,6 +216,20 @@ func New(opts ...clientOption) (*client, error) {
 func WithAuthToken(token string) clientOption {
 	return func(c *client) error {
 		c.APIToken = token
+		return nil
+	}
+}
+
+// WithAuthTokenFile reads the bearer credential before each authenticated request.
+// It takes precedence over WithAuthToken and fails closed if the file cannot be read
+// or is invalid. Mount Kubernetes Secrets as directories, not subPath files, so
+// projected Secret updates become visible without restarting the client.
+func WithAuthTokenFile(path string) clientOption {
+	return func(c *client) error {
+		if path == "" {
+			return fmt.Errorf("auth token file path is required")
+		}
+		c.APITokenFile = path
 		return nil
 	}
 }

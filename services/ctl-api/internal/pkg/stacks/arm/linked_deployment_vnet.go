@@ -51,7 +51,7 @@ func hoistableDefault(def any) bool {
 }
 
 func portalScalarParameter(typ string) bool {
-	switch typ {
+	switch canonicalARMType(typ) {
 	case "string", "securestring", "int", "bool":
 		return true
 	default:

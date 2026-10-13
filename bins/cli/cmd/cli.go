@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
@@ -41,6 +42,7 @@ type cli struct {
 	apiClient nuon.Client
 	ctx       context.Context
 	cfg       *config.Config
+	start     time.Time
 
 	actions          *actions.Service
 	apps             *apps.Service
