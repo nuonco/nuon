@@ -149,6 +149,7 @@ const (
 	WorkflowMetadataKeyStackChanged       = "stack_changed"
 	WorkflowMetadataKeyTriggeredByID      = "triggered_by_id"
 
+	// misspelled key written by workflows created before triggered_by_id; remove once none remain in flight.
 	workflowMetadataKeyTriggeredByIDLegacy = "triggerred_by_id"
 )
 
