@@ -23,8 +23,155 @@ export const STATIC_PAGES: SpotlightResult[] = [
   { label: 'Team', path: '/team', icon: 'UsersThreeIcon' },
   { label: 'Build runner', path: '/runner', icon: 'HammerIcon' },
   { label: 'Settings', path: '/settings', icon: 'GearIcon' },
-  { label: 'Webhooks', path: '/settings/webhooks', icon: 'WebhooksLogoIcon' },
 ]
+
+const NEW_APP_IA_HIDDEN_ORG_PAGES = new Set(['/installs', '/runner'])
+
+export const spotlightOrgPages = (newAppIA: boolean) =>
+  newAppIA
+    ? STATIC_PAGES.filter((page) => !NEW_APP_IA_HIDDEN_ORG_PAGES.has(page.path))
+    : STATIC_PAGES
+
+export const spotlightAppNavigation = ({
+  appId,
+  appName,
+  branches = [],
+  newAppIA,
+  query,
+  subPages,
+}: {
+  appId: string
+  appName: string
+  branches?: { id?: string; name?: string }[]
+  newAppIA: boolean
+  query: string
+  subPages: string[]
+}): SpotlightResult[] => {
+  const items: SpotlightResult[] = [
+    {
+      label: appName,
+      tag: 'app',
+      path: `/apps/${appId}`,
+      icon: 'AppWindowIcon',
+    },
+  ]
+
+  if (newAppIA) {
+    for (const branch of branches) {
+      if (!branch.id) continue
+      items.push({
+        label: `${appName} › ${branch.name ?? branch.id}`,
+        tag: 'branch',
+        path: `/apps/${appId}/branches/${branch.id}`,
+        icon: 'GitBranchIcon',
+      })
+    }
+    return items
+  }
+
+  for (const sub of subPages) {
+    const entry: SpotlightResult = {
+      label: `${appName} › ${sub}`,
+      tag: 'app',
+      path: `/apps/${appId}/${sub.toLowerCase()}`,
+      icon: 'AppWindowIcon',
+    }
+    if (query && !tokenMatch(entry.label, query)) continue
+    items.push(entry)
+  }
+
+  return items
+}
+
+export const spotlightInstallPath = ({
+  appId,
+  installId,
+  newAppIA,
+  suffix = '',
+}: {
+  appId?: string
+  installId: string
+  newAppIA: boolean
+  suffix?: string
+}) => {
+  const base =
+    newAppIA && appId
+      ? `/apps/${appId}/installs/${installId}`
+      : `/installs/${installId}`
+  return `${base}${suffix}`
+}
+
+const IMAGE_COMPONENT_TYPES = new Set(['docker_build', 'external_image'])
+
+export const isSpotlightImageComponent = (type?: string) =>
+  !!type && IMAGE_COMPONENT_TYPES.has(type)
+
+export const NEW_INSTALL_IA_SUB_PAGES: { label: string; suffix: string }[] = [
+  { label: 'Components', suffix: '/resources/components' },
+  { label: 'Images', suffix: '/resources/images' },
+  { label: 'Actions', suffix: '/operations/actions' },
+  { label: 'Runner', suffix: '/operations/runner' },
+  { label: 'Deployments', suffix: '/deployments' },
+  { label: 'Stack', suffix: '/resources' },
+  { label: 'Inputs', suffix: '/configuration/inputs' },
+  { label: 'State', suffix: '/configuration/state' },
+]
+
+export const spotlightInstallComponentPath = ({
+  appId,
+  componentId,
+  installId,
+  name,
+  newAppIA,
+  type,
+}: {
+  appId?: string
+  componentId: string
+  installId: string
+  name: string
+  newAppIA: boolean
+  type?: string
+}) => {
+  if (!newAppIA) {
+    return spotlightInstallPath({
+      appId,
+      installId,
+      newAppIA,
+      suffix: `/components/${componentId}`,
+    })
+  }
+  const page = isSpotlightImageComponent(type)
+    ? '/resources/images'
+    : '/resources/components'
+  return spotlightInstallPath({
+    appId,
+    installId,
+    newAppIA,
+    suffix: `${page}?q=${encodeURIComponent(name)}`,
+  })
+}
+
+export const spotlightInstallActionPath = ({
+  actionId,
+  appId,
+  installId,
+  name,
+  newAppIA,
+}: {
+  actionId: string
+  appId?: string
+  installId: string
+  name: string
+  newAppIA: boolean
+}) =>
+  spotlightInstallPath({
+    appId,
+    installId,
+    newAppIA,
+    suffix: newAppIA
+      ? `/operations/actions?q=${encodeURIComponent(name)}`
+      : `/actions/${actionId}`,
+  })
 
 export const INSTALL_SUB_PAGES = [
   'Components',
@@ -79,8 +226,18 @@ export const COMMANDS_BY_PREFIX: Partial<Record<NonNullable<ParsedQuery['prefix'
   ],
 }
 
+export const spotlightCommands = (newAppIA: boolean) => {
+  if (!newAppIA) return COMMANDS_BY_PREFIX
+  return {
+    ...COMMANDS_BY_PREFIX,
+    app: ['trigger run'],
+    component: ['deploy', 'drift scan', 'teardown'],
+  }
+}
+
 export const COMMAND_DESCRIPTIONS: Record<string, string> = {
   'build all components': 'Trigger a build for every component in the app',
+  'trigger run': 'Start a new run for the app branch',
   'run': 'Manually trigger an action workflow run',
   'build': 'Trigger a build for the component',
   'deploy': 'Deploy the component to the install',
@@ -133,7 +290,7 @@ const GLOBAL_COMMANDS = [
   'sync secrets',
 ]
 
-export function getAutocompletion(input: string): string | null {
+export function getAutocompletion(input: string, newAppIA = false): string | null {
   if (!input) return null
   if (input.includes('/')) {
     const parsed = parseQuery(input)
@@ -146,7 +303,7 @@ export function getAutocompletion(input: string): string | null {
       }
       return null
     }
-    const commands = COMMANDS_BY_PREFIX[parsed.prefix]
+    const commands = spotlightCommands(newAppIA)[parsed.prefix]
     if (!commands) return null
     const slashIdx = input.indexOf('/')
     const before = input.slice(0, slashIdx + 1)
