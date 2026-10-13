@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/nuonco/nuon/bins/cli/internal/httpdebug"
+	"github.com/nuonco/nuon/bins/cli/internal/telemetry"
 )
 
 // Building the description calls the API, so only do it when root help will
@@ -43,6 +44,7 @@ func Execute() {
 	if err != nil {
 		os.Exit(2)
 	}
+	c.start = start
 
 	// Kill CLI immediately when user types Ctrl-C.
 	// Including SIGTERM to ensure consistent behavior.
@@ -62,6 +64,8 @@ func Execute() {
 		fang.WithColorSchemeFunc(fang.AnsiColorScheme),
 		fang.WithoutVersion(),
 	)
+
+	telemetry.Send(c.cfg, err == nil, time.Since(start))
 
 	if Debug {
 		httpdebug.PrintSummary(os.Stderr, time.Since(start))

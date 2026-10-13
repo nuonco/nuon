@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/productanalytics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/salesforce"
 )
 
@@ -32,6 +33,7 @@ type Params struct {
 	CloudConnectionsHelpers *cloudconnectionshelpers.Helpers
 	Features                *features.Features
 	Salesforce              salesforce.Client
+	ProductAnalytics        *productanalytics.Client
 	AcctClient              *account.Client
 	FlowsClient             *flowclient.Client
 }
@@ -47,6 +49,7 @@ type Activities struct {
 	cloudConnectionsHelpers *cloudconnectionshelpers.Helpers
 	features                *features.Features
 	salesforce              salesforce.Client
+	productAnalytics        *productanalytics.Client
 	acctClient              *account.Client
 	flowsClient             *flowclient.Client
 	enableSupportUsers      bool
@@ -64,6 +67,7 @@ func New(params Params) (*Activities, error) {
 		cloudConnectionsHelpers: params.CloudConnectionsHelpers,
 		features:                params.Features,
 		salesforce:              params.Salesforce,
+		productAnalytics:        params.ProductAnalytics,
 		acctClient:              params.AcctClient,
 		flowsClient:             params.FlowsClient,
 		enableSupportUsers:      params.Cfg != nil && params.Cfg.EnableSupportUsers,
