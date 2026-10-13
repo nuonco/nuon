@@ -1,131 +1,77 @@
 # Telemetry agent
 
-A standalone edge telemetry agent for one Nuon install. It supervises an
-OpenTelemetry Collector that receives OTLP logs, metrics, and traces from
-existing application or infrastructure collectors and forwards them to the
-install's configured telemetry relay. It does not scrape Kubernetes, read node
-log files, or require Kubernetes API permissions.
-
-The controller uses an install-scoped opaque Nuon API token to poll the runner
-API's `GET /v1/installs/{install_id}/telemetry/collector-settings` every 15 seconds,
-including while telemetry is disabled. When enabled, it exchanges that credential
-for a short-lived relay JWT at
-`POST /v1/installs/{install_id}/telemetry/access-token?relay_endpoint=...`.
-JWTs are renewed with jitter at 60–70% of their lifetime and stored atomically in
-a protected file. The bootstrap credential is never sent to the relay.
+Forwards OTLP logs, metrics, and traces from existing producers to a Nuon install's
+configured telemetry relay. It does not scrape Kubernetes, read node logs, or
+require Kubernetes API access.
 
 ## Bootstrap and deployment
 
-Use the **public API** as an org administrator to prepare the identity:
+The agent requires:
 
-1. `POST /v1/installs/{install_id}/telemetry/collector` with no body creates or
-   reconciles the managed account. Read `account_id` from the response. This
-   operation neither enables telemetry nor issues a credential.
-2. `POST /v1/service-accounts/{account_id}/tokens` with
-   `{"name":"telemetry agent","duration":"8760h","invalidate":false}`
-   creates an opaque credential. Save the response's `token` to a protected file;
-   do not put it in source control, Helm values, or command-line arguments.
-3. Create the deployment namespace if needed, then create a Secret from that
-   file. Remove the local credential file when it is no longer needed:
+- A reachable HTTPS Nuon **runner API** and an install ID.
+- An opaque API token for the install's managed telemetry service account.
+  Prepare the account and issue its token through the Nuon public API. Do not
+  substitute an org-wide runner or administrator credential.
+- A container image accessible to the cluster.
 
-   ```sh
-   kubectl -n telemetry create secret generic nuon-telemetry-agent-bootstrap \
-     --from-file=token=/protected/path/bootstrap-token
-   ```
-
-The managed account's permissions cover only that install's telemetry resource.
-Do not substitute an org-wide runner or administrator token.
-
-Build the image from the repository root and publish it to a registry accessible
-by the customer cluster:
+Store the bootstrap token in a protected file or Kubernetes Secret, never in
+source control, Helm values, or command-line arguments. Build the image from the
+repository root:
 
 ```sh
-docker build -f bins/telemetry-agent/Dockerfile \
+docker build --target final -f bins/telemetry-agent/Dockerfile \
+  --build-arg AGENT_SOURCE=bins/telemetry-agent \
+  --build-arg BUILD_IMAGE=golang:1.25.8-alpine \
+  --build-arg RUNTIME_IMAGE=alpine:3.21 \
   -t registry.example.com/nuon-telemetry-agent:0.1.0 .
 ```
 
 Deploy using the [telemetry-agent Helm chart](https://github.com/nuonco/charts/tree/main/charts/telemetry-agent).
-Its documentation covers required values, Secret mounting, producer endpoints,
-and persistent storage. `apiURL` is the **runner API**, not the public API used
-for bootstrap. Enable forwarding through the install's Nuon telemetry settings;
-creating the account or deploying the chart does not enable it.
+The chart documentation covers Secret creation, required values, producer
+endpoints, and persistent storage. Enable forwarding in the install's Nuon
+telemetry settings; creating an account or deploying the chart does not enable it.
 
-**Ingress is unauthenticated cluster-local OTLP.** Restrict it with cluster
-network policy to trusted producers for this install. Do not expose the Service
-publicly or use this gateway to aggregate unrelated installs. Outbound relay
-connections always require HTTPS and certificate verification. Restrict health
-port 13133 to cluster operations as well.
+## Operational notes
 
-## Settings, credentials, and durability
+- **OTLP ingress is unauthenticated.** Restrict it to trusted producers for this
+  install with network policy. Do not expose it publicly or aggregate unrelated
+  installs. Outbound relay connections require HTTPS with certificate verification.
+- Disabled agents remain healthy and continue checking settings, but do not accept
+  new telemetry. Producers must retry during disabled periods and brief
+  interruptions when configuration changes.
+- Disk-backed buffers are bounded to 1 GiB per signal. Budget additional space for
+  storage overhead. Use a dedicated PVC to retain data across Pod replacement;
+  the chart's default `emptyDir` does not provide that durability. Producers must
+  retry requests rejected when buffers are full. Permanent relay rejection can
+  discard accepted data; delivery is not exactly-once.
+- Rotate the bootstrap token before expiry. Issue a replacement, update the Secret,
+  then revoke the old token after the projected update is visible. Rotation does
+  not require an agent restart. Already-issued relay credentials remain valid
+  until expiry after bootstrap revocation.
+- Liveness checks controller availability, not relay availability. Do not restart
+  the agent merely because the relay is unreachable.
 
-- Disablement stops the OTLP child process and JWT renewal, removes the JWT
-  directory, and continues settings polling. `/livez` and `/readyz` remain healthy
-  for an intentionally disabled controller. Producers should retry during
-  disabled periods; the gateway does not accept or buffer new input then.
-- Successful name or label updates restart the child and may briefly interrupt
-  ingestion. The current `nuon.org.name`, `nuon.app.name`, `nuon.install.name`, and
-  `nuon.install.labels.*` resource attributes are applied without modifying other
-  producer attributes. Labels must not contain secrets. Queued records keep
-  their original metadata.
-- Failed settings fetches retain the active configuration. Metadata-only start
-  failures can restore the previous configuration. Destination changes stop the
-  old child and renewal before requesting credentials for the new destination;
-  a failed switch never resumes the old destination.
-- Logs, metrics, and traces use fsynced persistent exporter queues, bounded to
-  1 GiB per signal, with retries for transient failures. Queue overflow rejects
-  input, so producers must honor OTLP errors and retry. Permanent relay rejection
-  can discard records; delivery is not exactly-once. Queued records resume with
-  the current destination after disablement or endpoint changes.
-- The default `emptyDir` survives container/child restarts, **not Pod replacement**.
-  Set the chart's `persistence.existingClaim` to a dedicated writable PVC for durability
-  across Pod replacement. Budget space for all three queues, storage overhead,
-  and compaction; queue byte limits do not cap filesystem usage. The chart uses
-  one replica and `Recreate` to avoid concurrent access to queue files. Protect
-  the volume as sensitive telemetry storage.
-- Rotate the bootstrap token before expiry by issuing another account token,
-  updating the existing Secret, and then revoking the old token after the
-  projected update is visible. `invalidate:true` revokes existing account tokens
-  before issuing the replacement and can cause a temporary interruption.
-  Each authenticated request reopens the file, so projected updates are picked
-  up without restarting. Invalid or missing files fail closed. Revocation blocks
-  new JWT issuance; already-issued relay JWTs remain valid until expiry.
+`SSL_CERT_FILE` supplies additional relay CA trust without replacing system roots;
+Linux also supports `SSL_CERT_DIR`. `--allow-insecure-api` is for trusted local
+development only and never permits an HTTP relay.
 
-`/readyz` returns 503 before settings load or when an enabled child cannot start;
-`/livez` tracks the controller, not relay availability. Relay outages must not
-cause Kubernetes to restart the pod and discard an `emptyDir` queue.
+## Development and verification
 
-## Local development and verification
+From the repository root:
 
 ```sh
-NUON_GEN_TARGETS=runner go generate ./services/ctl-api
-go -C sdks/nuon-runner-go generate .
-go -C bins/telemetry-agent run go.opentelemetry.io/collector/cmd/builder@v0.150.0 \
-  --config build-config.yaml --skip-compilation
-go build -C bins/telemetry-agent/otelcol-build -o /tmp/nuon-otelcol
-go build -o /tmp/nuon-telemetry-agent ./bins/telemetry-agent
-
-/tmp/nuon-telemetry-agent --api-url=http://localhost:8083 --allow-insecure-api \
-  --install-id=inl_example --token-file=/protected/path/bootstrap-token \
-  --collector-binary=/tmp/nuon-otelcol --data-dir=/tmp/nuon-agent-state \
-  --otlp-grpc-address=127.0.0.1:14317 --otlp-http-address=127.0.0.1:14318 \
-  --health-address=127.0.0.1:14333 --collector-health-address=127.0.0.1:14334
+docker build --target test -f bins/telemetry-agent/Dockerfile \
+  --build-arg AGENT_SOURCE=bins/telemetry-agent \
+  --build-arg BUILD_IMAGE=golang:1.25.8-alpine \
+  --build-arg RUNTIME_IMAGE=alpine:3.21 .
 ```
 
-`--allow-insecure-api` is for a trusted development API only; it never permits
-an HTTP relay. TLS/proxy environment variables are allowlisted for the child;
-parent bootstrap and cloud credentials are not passed through. `SSL_CERT_FILE`
-can supply an additional relay CA bundle without replacing the system trust
-pool. On Linux, the pool also includes roots from `SSL_CERT_DIR`.
+The Docker test target builds both binaries and runs end-to-end tests without a
+cluster or cloud account. Use it on macOS as well: combined file/directory CA trust
+is tested on Linux. The [Dockerfile](Dockerfile) is the build recipe, including SDK
+generation and the Collector build configuration.
 
-The integration test runs the actual controller and pinned Collector against a
-local simulated control plane and HTTPS OTLP receivers on isolated loopback ports.
-It does not contact a cluster or cloud account. The end-to-end test requires
-Linux to exercise combined file/directory CA trust; use the Docker target on macOS:
-
-```sh
-NUON_TEST_TELEMETRY_AGENT=/tmp/nuon-telemetry-agent \
-NUON_TEST_OTELCOL=/tmp/nuon-otelcol \
-  go test -race -count=1 -v ./bins/telemetry-agent
-
-docker build --target test -f bins/telemetry-agent/Dockerfile .
-```
+The `lint` target runs Go vet. The `artifacts` target exports downloadable agent
+and Collector binaries for Linux amd64 and arm64 under `/artifacts`, including
+gzip copies. When running outside the image, download both for the same
+architecture and use `--collector-binary` to point the agent at the Collector.
