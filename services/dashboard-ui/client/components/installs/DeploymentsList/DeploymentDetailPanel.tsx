@@ -1,10 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { EmptyState } from '@/components/common/EmptyState'
-import { CommitLink } from '@/components/common/GitReferenceLink'
 import { ID } from '@/components/common/ID'
-import { LabeledValue } from '@/components/common/LabeledValue'
-import { Link } from '@/components/common/Link'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -16,6 +13,10 @@ import {
   DeploymentTemplateContent,
   DeploymentWorkflowContent,
 } from '@/components/installs/DeploymentDetail/DeploymentDetailContent'
+import {
+  useDeploymentRunBranch,
+  DeploymentMeta,
+} from '@/components/installs/DeploymentDetail/DeploymentMeta'
 import {
   DeploymentRunStatus,
   ResourceScopeSummary,
@@ -58,9 +59,15 @@ const DeploymentPanelContent = ({
       getInstallDeployment({ orgId, installId, workflowId: deployment.id }),
     enabled: !!orgId && !!installId,
   })
-  const branchHref = record?.app_branch
-    ? `/${orgId}/apps/${appId}/branches/${record.app_branch.id}`
-    : undefined
+  const type = record?.type || deployment.type || workflow?.type
+  const branch = useDeploymentRunBranch({
+    orgId,
+    appId,
+    type,
+    deployment: record,
+    workflow,
+    repo,
+  })
   const run = {
     status: workflow?.status?.status ?? deployment.status,
     activity:
@@ -108,14 +115,7 @@ const DeploymentPanelContent = ({
           {run.activity}
         </Text>
       ) : null}
-      {record?.app_branch && branchHref ? (
-        <LabeledValue label="App branch">
-          <span className="flex flex-wrap items-center gap-2">
-            <Link href={branchHref}>{record.app_branch.name}</Link>
-            <CommitLink sha={record.app_branch.sha} repo={repo} />
-          </span>
-        </LabeledValue>
-      ) : null}
+      <DeploymentMeta framed type={type} branch={branch} />
       <ResourceScopeSummary
         run={{
           status: run.status,

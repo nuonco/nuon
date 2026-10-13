@@ -3,6 +3,7 @@ import { Outlet, useLocation, useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { DeploymentDetail } from '@/components/installs/DeploymentDetail'
 import { DeploymentAlerts } from '@/components/installs/DeploymentDetail/DeploymentDetailContent'
+import { useDeploymentRunBranch } from '@/components/installs/DeploymentDetail/DeploymentMeta'
 import {
   DEPLOYMENT_TABS,
   deploymentTabOrder,
@@ -45,10 +46,13 @@ const DeploymentDetailLayoutContent = () => {
     'Deployment'
   const installRoot = `/${org?.id}/installs/${install?.id}`
   const page = `${installRoot}/deployments/${workflowId}`
-  const branch = deployment?.app_branch
-  const branchHref = branch
-    ? `/${org?.id}/apps/${install?.app_id}/branches/${branch.id}`
-    : undefined
+  const branch = useDeploymentRunBranch({
+    orgId: org?.id,
+    appId: install?.app_id,
+    type: deployment?.type || workflow?.type,
+    deployment,
+    workflow,
+  })
   const basePath = href(`/deployments/${workflowId}`)
   const activeTabIndex = tabOrder.findIndex(
     (key) =>
@@ -69,7 +73,7 @@ const DeploymentDetailLayoutContent = () => {
       <DeploymentDetail
         activeTabIndex={activeTabIndex}
         basePath={basePath}
-        branchHref={branchHref}
+        branch={branch}
         deployment={deployment ?? undefined}
         search={search}
         tabOrder={tabOrder}

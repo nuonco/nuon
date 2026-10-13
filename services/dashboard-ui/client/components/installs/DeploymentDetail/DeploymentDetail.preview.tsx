@@ -170,7 +170,15 @@ const Page = ({
       activeTabIndex={activeTabIndex}
       banners={<ApprovalBanner step={approvalStep} />}
       basePath="/deployments/wf-deploy-1"
-      branchHref="/branches/branch-main"
+      branch={{
+        name: 'main',
+        href: '/branches/branch-main',
+        runHref: '/branches/branch-main/runs/run-main-42',
+        sha: 'abc123def456',
+        message: 'Apply the latest template',
+        author: 'Ada',
+        createdAt: '2026-10-02T15:58:00Z',
+      }}
       deployment={deployment}
       workflow={workflow}
     >
