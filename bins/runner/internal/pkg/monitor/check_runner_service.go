@@ -140,6 +140,9 @@ func EnsureImageConfigFile(ctx context.Context, l *zap.Logger, settings *setting
 	// NOTE(fd): this method just writes the settings no matter what
 	// TODO: we should really be comparing the settings to the contents of the file and writing only when they have changed
 	l.Debug(fmt.Sprintf("ensuring runner image config file exists: %s", ImageConfigFilename))
+	if err := writeRegistryAuthConfig(DockerConfigDirectory, settings); err != nil {
+		return err
+	}
 	image, err := runnerImageConfig(ctx, l, settings, verifyRunnerImage)
 	if err != nil {
 		return err

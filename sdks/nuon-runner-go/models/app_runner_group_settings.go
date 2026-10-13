@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 	"encoding/json"
+	stderrors "errors"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -38,6 +39,9 @@ type AppRunnerGroupSettings struct {
 
 	// configuration for managing the runner binary version (for mng mode, not the install runner)
 	BinaryVersion string `json:"binary_version,omitempty"`
+
+	// container image registry auth
+	ContainerImageRegistryAuth *AppRunnerContainerImageRegistryAuth `json:"container_image_registry_auth,omitempty"`
 
 	// container image signature identity regexp
 	ContainerImageSignatureIdentityRegexp string `json:"container_image_signature_identity_regexp,omitempty"`
@@ -159,6 +163,10 @@ func (m *AppRunnerGroupSettings) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateContainerImageRegistryAuth(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -207,8 +215,65 @@ func (m *AppRunnerGroupSettings) validateAwsAuthMethod(formats strfmt.Registry) 
 	return nil
 }
 
-// ContextValidate validates this app runner group settings based on context it is used
+func (m *AppRunnerGroupSettings) validateContainerImageRegistryAuth(formats strfmt.Registry) error {
+	if swag.IsZero(m.ContainerImageRegistryAuth) { // not required
+		return nil
+	}
+
+	if m.ContainerImageRegistryAuth != nil {
+		if err := m.ContainerImageRegistryAuth.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("container_image_registry_auth")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("container_image_registry_auth")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this app runner group settings based on the context it is used
 func (m *AppRunnerGroupSettings) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateContainerImageRegistryAuth(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AppRunnerGroupSettings) contextValidateContainerImageRegistryAuth(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ContainerImageRegistryAuth != nil {
+
+		if swag.IsZero(m.ContainerImageRegistryAuth) { // not required
+			return nil
+		}
+
+		if err := m.ContainerImageRegistryAuth.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("container_image_registry_auth")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("container_image_registry_auth")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
