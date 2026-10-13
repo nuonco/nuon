@@ -34,7 +34,7 @@ func New(threshold time.Duration, setDirective func(workflow.Context, string, di
 func (c *Check) Name() string { return "stale-plan" }
 
 func (c *Check) ShouldRun(step *app.WorkflowStep, flw *app.Workflow, resp *app.WorkflowStepApprovalResponse) bool {
-	return resp.Type == app.WorkflowStepApprovalResponseTypeApprove
+	return resp.Type.IsApproval()
 }
 
 func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, resp *app.WorkflowStepApprovalResponse) (directive.CheckResult, error) {

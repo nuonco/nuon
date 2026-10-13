@@ -48,6 +48,8 @@ const installUpdateFailedBranchRunErrorVersion = "install-update-failed-branch-r
 
 const installGroupDirectiveVersion = "install-group-directive-v1"
 
+const installGroupConfigOnlyVersion = "install-group-config-only-v1"
+
 const statusPending = "pending"
 
 type enqueuedInstall struct {
@@ -102,7 +104,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	enqueued, err := s.enqueueInstallUpdates(ctx, installIDs, run)
+	configOnly, err := s.isConfigOnly(ctx)
+	if err != nil {
+		return err
+	}
+
+	enqueued, err := s.enqueueInstallUpdates(ctx, installIDs, run, configOnly)
 	if err != nil {
 		return err
 	}
@@ -189,6 +196,23 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return awaitErr
 }
 
+func (s *Signal) isConfigOnly(ctx workflow.Context) (bool, error) {
+	if s.InstallGroupID == "" || s.FlowID == "" {
+		return false, nil
+	}
+	if workflow.GetVersion(ctx, installGroupConfigOnlyVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		return false, nil
+	}
+	resp, err := activities.AwaitGetInstallGroupPlanResponseType(ctx, &activities.GetInstallGroupPlanResponseTypeInput{
+		InstallWorkflowID: s.FlowID,
+		InstallGroupID:    s.InstallGroupID,
+	})
+	if err != nil {
+		return false, fmt.Errorf("unable to get install group plan response: %w", err)
+	}
+	return resp.ResponseType == app.WorkflowStepApprovalResponseTypeApproveConfigOnly, nil
+}
+
 func countInstallOutcomes(entries []app.InstallGroupRunInstall) (completed, failed, cancelled int) {
 	for _, e := range entries {
 		switch e.Status {
@@ -226,6 +250,7 @@ func (s *Signal) enqueueInstallUpdates(
 	ctx workflow.Context,
 	installIDs []string,
 	run *app.AppBranchRun,
+	configOnly bool,
 ) ([]enqueuedInstall, error) {
 	logger := workflow.GetLogger(ctx)
 
@@ -239,6 +264,7 @@ func (s *Signal) enqueueInstallUpdates(
 			AppBranchRunID: s.RunID,
 			InstallGroupID: s.InstallGroupID,
 			PlanOnly:       run.PreviewInstallPlanOnly(),
+			ConfigOnly:     configOnly,
 			Callback:       cb,
 		})
 		if err != nil {

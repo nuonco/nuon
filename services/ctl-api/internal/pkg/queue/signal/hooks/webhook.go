@@ -1318,6 +1318,7 @@ func (h *WebhookSignalLifecycleHook) buildApprovalEventData(ctx context.Context,
 func mapApprovalResponseTransition(t app.WorkflowStepResponseType) string {
 	switch t {
 	case app.WorkflowStepApprovalResponseTypeApprove,
+		app.WorkflowStepApprovalResponseTypeApproveConfigOnly,
 		app.WorkflowStepApprovalResponseTypeAutoApprove:
 		return transitionApproved
 	case app.WorkflowStepApprovalResponseTypeDeny,

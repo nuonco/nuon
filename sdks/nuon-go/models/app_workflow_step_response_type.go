@@ -45,6 +45,9 @@ const (
 	// AppWorkflowStepResponseTypeRetry captures enum value "retry"
 	AppWorkflowStepResponseTypeRetry AppWorkflowStepResponseType = "retry"
 
+	// AppWorkflowStepResponseTypeApproveDashConfigDashOnly captures enum value "approve-config-only"
+	AppWorkflowStepResponseTypeApproveDashConfigDashOnly AppWorkflowStepResponseType = "approve-config-only"
+
 	// AppWorkflowStepResponseTypeAutoDashApprove captures enum value "auto-approve"
 	AppWorkflowStepResponseTypeAutoDashApprove AppWorkflowStepResponseType = "auto-approve"
 )
@@ -54,7 +57,7 @@ var appWorkflowStepResponseTypeEnum []any
 
 func init() {
 	var res []AppWorkflowStepResponseType
-	if err := json.Unmarshal([]byte(`["deny","approve","deny-skip-current","deny-skip-current-and-dependents","retry","auto-approve"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["deny","approve","deny-skip-current","deny-skip-current-and-dependents","retry","approve-config-only","auto-approve"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

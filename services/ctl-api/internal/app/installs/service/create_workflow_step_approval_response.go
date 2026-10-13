@@ -80,7 +80,7 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 	stepID := ctx.Param("step_id")
 	approvalID := ctx.Param("approval_id")
 
-	_, err = s.getWorkflowStep(ctx, org.ID, workflowID, stepID)
+	step, err := s.getWorkflowStep(ctx, org.ID, workflowID, stepID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			ctx.Error(stderr.ErrNotFound{
@@ -90,6 +90,14 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 			return
 		}
 		ctx.Error(errors.Wrap(err, "unable to get workflow step"))
+		return
+	}
+
+	if req.ResponseType == app.WorkflowStepApprovalResponseTypeApproveConfigOnly && !isInstallGroupPlanStep(step) {
+		ctx.Error(stderr.ErrUser{
+			Description: "approve-config-only is only valid on an install group plan step",
+			Err:         errors.New("approve-config-only is only valid on an install group plan step"),
+		})
 		return
 	}
 
@@ -219,4 +227,11 @@ func (s *service) createWorkflowStepApprovalResponse(ctx context.Context, approv
 	}
 
 	return &response, nil
+}
+
+func isInstallGroupPlanStep(step *app.WorkflowStep) bool {
+	if step.QueueSignal == nil || step.QueueSignal.Signal == nil {
+		return false
+	}
+	return step.QueueSignal.Signal.Type() == "app-branch-plan-install-group"
 }

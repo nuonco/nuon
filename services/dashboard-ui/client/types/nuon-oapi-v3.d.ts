@@ -7278,7 +7278,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.WorkflowStepResponseType": "deny" | "approve" | "deny-skip-current" | "deny-skip-current-and-dependents" | "retry" | "auto-approve";
+    "app.WorkflowStepResponseType": "deny" | "approve" | "deny-skip-current" | "deny-skip-current-and-dependents" | "retry" | "approve-config-only" | "auto-approve";
     /** @enum {string} */
     "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "app_branch_config_update" | "app_install_sync" | "reprovision" | "reprovision_stack" | "app_config_build" | "runbook_run" | "component_enabled" | "component_disabled" | "recover_helm_release";
     "appbundle.Finding": {

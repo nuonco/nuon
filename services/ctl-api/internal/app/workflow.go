@@ -147,6 +147,7 @@ const (
 	WorkflowMetadataKeyStackOnly          = "stack_only"
 	WorkflowMetadataKeyInputsOnly         = "inputs_only"
 	WorkflowMetadataKeyStackChanged       = "stack_changed"
+	WorkflowMetadataKeyConfigOnly         = "config_only"
 )
 
 // AwaitInstallStackStepName is the install workflow step that waits for a stack
@@ -168,6 +169,10 @@ func (w *Workflow) IsStackOnly() bool {
 // deploying anything against them.
 func (w *Workflow) IsInputsOnly() bool {
 	return generics.FromPtrStr(w.Metadata[WorkflowMetadataKeyInputsOnly]) == "true"
+}
+
+func (w *Workflow) IsConfigOnly() bool {
+	return generics.FromPtrStr(w.Metadata[WorkflowMetadataKeyConfigOnly]) == "true"
 }
 
 // IsStackChanged reports whether this app-branch config update includes a stack
