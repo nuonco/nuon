@@ -7,6 +7,7 @@ import { LogsSkeleton } from '@/components/log-stream/SSELogs'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { SSELogs } from '@/components/log-stream/SSELogs'
 import { TraceView } from '@/components/spans/TraceView'
+import { usePrefetchLogStreamSpans } from '@/hooks/use-prefetch-log-stream-spans'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import type { TInstallDeploy } from '@/types'
 
@@ -15,6 +16,8 @@ export const DeployApply = ({
 }: {
   initDeploy?: TInstallDeploy
 }) => {
+  usePrefetchLogStreamSpans(deploy?.log_stream?.id)
+
   return (
     <>
       {!deploy ? (
