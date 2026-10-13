@@ -23,11 +23,11 @@ func newOsParser(t *testing.T, dir string) *parser {
 func TestListDir_FollowsSymlinkedDir(t *testing.T) {
 	root := t.TempDir()
 
-	// shared/components/images/bauleiter.toml, symlinked into the app dir as
+	// shared/components/images/worker.toml, symlinked into the app dir as
 	// app/components/images -- the layout that broke `nuon apps sync`.
 	shared := filepath.Join(root, "shared", "components", "images")
 	require.NoError(t, os.MkdirAll(shared, 0o755))
-	require.NoError(t, os.WriteFile(filepath.Join(shared, "bauleiter.toml"), []byte("name = \"img_bauleiter\"\n"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(shared, "worker.toml"), []byte("name = \"img_worker\"\n"), 0o644))
 
 	app := filepath.Join(root, "app")
 	require.NoError(t, os.MkdirAll(filepath.Join(app, "components"), 0o755))
@@ -41,7 +41,7 @@ func TestListDir_FollowsSymlinkedDir(t *testing.T) {
 	require.NoError(t, err)
 	require.ElementsMatch(t, []string{
 		"components/0-vpc.toml",
-		"components/images/bauleiter.toml",
+		"components/images/worker.toml",
 	}, files)
 }
 
