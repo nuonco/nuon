@@ -5,10 +5,11 @@ import (
 	"errors"
 	"fmt"
 
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installgrouprelease"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
-	"gorm.io/gorm"
 )
 
 type PriorInstallUpdate struct {
