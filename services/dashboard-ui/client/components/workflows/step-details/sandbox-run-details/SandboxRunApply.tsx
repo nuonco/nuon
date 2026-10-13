@@ -7,6 +7,7 @@ import { LogsSkeleton } from '@/components/log-stream/SSELogs'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { SSELogs } from '@/components/log-stream/SSELogs'
 import { TraceView } from '@/components/spans/TraceView'
+import { usePrefetchLogStreamSpans } from '@/hooks/use-prefetch-log-stream-spans'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import type { TWorkflowStep, TSandboxRun } from '@/types'
 
@@ -16,6 +17,8 @@ export const SandboxRunApply = ({
   step?: TWorkflowStep
   sandboxRun?: TSandboxRun
 }) => {
+  usePrefetchLogStreamSpans(sandboxRun?.log_stream?.id)
+
   return (
     <>
       {!sandboxRun ? (
