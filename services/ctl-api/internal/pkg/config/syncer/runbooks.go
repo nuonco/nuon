@@ -77,8 +77,12 @@ func (s *syncer) syncRunbook(ctx context.Context, runbook *config.RunbookConfig)
 		}
 	}
 
-	triggers := make([]app.RunbookTriggerConfig, 0, len(runbook.Triggers))
-	for _, trigger := range runbook.Triggers {
+	configured := runbook.Triggers
+	if len(configured) == 0 {
+		configured = []config.RunbookTrigger{{Type: config.RunbookTriggerTypeManual}}
+	}
+	triggers := make([]app.RunbookTriggerConfig, 0, len(configured))
+	for _, trigger := range configured {
 		if err := validation.ValidateCronSchedule(trigger.CronSchedule); err != nil {
 			return sync.SyncErr{
 				Resource:    fmt.Sprintf("runbook-%s", runbook.Name),

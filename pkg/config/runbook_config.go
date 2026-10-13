@@ -173,9 +173,6 @@ func (r *RunbookConfig) parse() error {
 		return nil
 	}
 
-	if len(r.Triggers) == 0 {
-		r.Triggers = []RunbookTrigger{{Type: RunbookTriggerTypeManual}}
-	}
 	triggerTypes := make(map[RunbookTriggerType]struct{}, len(r.Triggers))
 	for _, trigger := range r.Triggers {
 		if _, exists := triggerTypes[trigger.Type]; exists {

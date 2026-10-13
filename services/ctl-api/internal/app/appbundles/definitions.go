@@ -139,6 +139,9 @@ func CanonicalRunbookDefinition(runbookConfig app.RunbookConfig, actionConfigs [
 		definition.ReadmeDigest = digest.FromString(runbookConfig.Readme).String()
 	}
 	for _, trigger := range runbookConfig.Triggers {
+		if trigger.Type == app.RunbookTriggerTypeManual && trigger.CronSchedule == "" && len(runbookConfig.Triggers) == 1 {
+			continue
+		}
 		definition.Triggers = append(definition.Triggers, bundle.RunbookTriggerDefinition{
 			Type: string(trigger.Type), CronSchedule: trigger.CronSchedule,
 		})
