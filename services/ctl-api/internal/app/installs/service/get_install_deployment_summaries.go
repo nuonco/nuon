@@ -15,6 +15,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
@@ -1075,68 +1076,31 @@ func (s *service) sandboxConfigBranches(ctx *gin.Context, orgID string, workflow
 		return refs, nil
 	}
 
-	var sandboxRuns []app.InstallSandboxRun
+	var provenance []struct {
+		WorkflowID  string
+		AppConfigID string
+	}
 	err := s.db.WithContext(ctx).
-		Select("install_workflow_id", "app_sandbox_config_id", "created_at").
-		Where("install_workflow_id IN ?", workflowIDs).
-		Where("app_sandbox_config_id <> ''").
-		Order("created_at ASC").
-		Find(&sandboxRuns).Error
+		Table("install_sandbox_runs AS run").
+		Select("DISTINCT ON (run.install_workflow_id) run.install_workflow_id AS workflow_id, cfg.app_config_id").
+		Joins("JOIN app_sandbox_configs AS cfg ON cfg.id = run.app_sandbox_config_id").
+		Where("run.install_workflow_id IN ?", workflowIDs).
+		Where("run.deleted_at = 0 AND cfg.deleted_at = 0").
+		Where("cfg.app_config_id <> ''").
+		Order("run.install_workflow_id, run.created_at ASC").
+		Scan(&provenance).Error
 	if err != nil {
-		return nil, fmt.Errorf("unable to query install sandbox runs: %w", err)
+		return nil, fmt.Errorf("unable to query sandbox config provenance: %w", err)
 	}
-	if len(sandboxRuns) == 0 {
+	if len(provenance) == 0 {
 		return refs, nil
 	}
 
-	configIDByWorkflow := map[string]string{}
-	configIDs := make([]string, 0)
-	seenConfig := map[string]struct{}{}
-	for i := range sandboxRuns {
-		run := &sandboxRuns[i]
-		if run.InstallWorkflowID == nil || run.AppSandboxConfigID == "" {
-			continue
-		}
-		workflowID := *run.InstallWorkflowID
-		if _, ok := configIDByWorkflow[workflowID]; ok {
-			continue
-		}
-		configIDByWorkflow[workflowID] = run.AppSandboxConfigID
-		if _, ok := seenConfig[run.AppSandboxConfigID]; ok {
-			continue
-		}
-		seenConfig[run.AppSandboxConfigID] = struct{}{}
-		configIDs = append(configIDs, run.AppSandboxConfigID)
+	appConfigIDs := make([]string, 0, len(provenance))
+	for _, item := range provenance {
+		appConfigIDs = append(appConfigIDs, item.AppConfigID)
 	}
-	if len(configIDs) == 0 {
-		return refs, nil
-	}
-
-	var configs []app.AppSandboxConfig
-	err = s.db.WithContext(ctx).
-		Select("id", "app_config_id").
-		Where("id IN ?", configIDs).
-		Find(&configs).Error
-	if err != nil {
-		return nil, fmt.Errorf("unable to query app sandbox configs: %w", err)
-	}
-	appConfigBySandbox := map[string]string{}
-	appConfigIDs := make([]string, 0)
-	seenAppConfig := map[string]struct{}{}
-	for i := range configs {
-		if configs[i].AppConfigID == "" {
-			continue
-		}
-		appConfigBySandbox[configs[i].ID] = configs[i].AppConfigID
-		if _, ok := seenAppConfig[configs[i].AppConfigID]; ok {
-			continue
-		}
-		seenAppConfig[configs[i].AppConfigID] = struct{}{}
-		appConfigIDs = append(appConfigIDs, configs[i].AppConfigID)
-	}
-	if len(appConfigIDs) == 0 {
-		return refs, nil
-	}
+	appConfigIDs = generics.UniqueSlice(appConfigIDs)
 
 	var branchRuns []app.AppBranchRun
 	err = s.db.WithContext(ctx).
@@ -1159,12 +1123,12 @@ func (s *service) sandboxConfigBranches(ctx *gin.Context, orgID string, workflow
 		refByAppConfig[branchRuns[i].AppConfigID] = branchRefFromRun(&branchRuns[i])
 	}
 
-	for workflowID, sandboxConfigID := range configIDByWorkflow {
-		ref := refByAppConfig[appConfigBySandbox[sandboxConfigID]]
+	for _, item := range provenance {
+		ref := refByAppConfig[item.AppConfigID]
 		if ref == nil {
 			continue
 		}
-		refs[workflowID] = ref
+		refs[item.WorkflowID] = ref
 	}
 	return refs, nil
 }
