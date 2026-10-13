@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -12,11 +13,24 @@ import (
 type GetLatestDeployRequest struct {
 	ComponentID string `json:"component_root_id" validate:"required"`
 	InstallID   string `json:"install_id" validate:"required"`
+	// PreferApplied returns the latest apply whose plan reached the cluster,
+	// falling back to the latest apply of any status when none did.
+	PreferApplied bool `json:"prefer_applied,omitempty"`
 }
 
 // @temporal-gen-v2 activity
 func (a *Activities) GetLatestDeploy(ctx context.Context, req GetLatestDeployRequest) (*app.InstallDeploy, error) {
-	installCmpDeploy, err := a.getLatestDeploy(ctx, req.InstallID, req.ComponentID)
+	if req.PreferApplied {
+		applied, err := a.getLatestDeploy(ctx, req.InstallID, req.ComponentID, app.AppliedDeployStatuses())
+		if err == nil && applied != nil {
+			return applied, nil
+		}
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("unable to get latest applied deploy: %w", err)
+		}
+	}
+
+	installCmpDeploy, err := a.getLatestDeploy(ctx, req.InstallID, req.ComponentID, nil)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get latest deploy: %w", err)
 	}
@@ -24,13 +38,17 @@ func (a *Activities) GetLatestDeploy(ctx context.Context, req GetLatestDeployReq
 	return installCmpDeploy, nil
 }
 
-func (a *Activities) getLatestDeploy(ctx context.Context, installID, componentID string) (*app.InstallDeploy, error) {
+func (a *Activities) getLatestDeploy(ctx context.Context, installID, componentID string, statuses []app.InstallDeployStatus) (*app.InstallDeploy, error) {
 	installCmp := app.InstallComponent{}
 	res := a.db.WithContext(ctx).
 		Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
-			return db.Where(app.InstallDeploy{
+			db = db.Where(app.InstallDeploy{
 				Type: app.InstallDeployTypeApply,
-			}).Order("install_deploys.created_at DESC").Limit(1)
+			})
+			if len(statuses) > 0 {
+				db = db.Where("status IN ?", statuses)
+			}
+			return db.Order("install_deploys.created_at DESC").Limit(1)
 		}).
 		Where(&app.InstallComponent{
 			InstallID:   installID,
