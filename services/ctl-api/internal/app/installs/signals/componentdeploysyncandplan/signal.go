@@ -29,6 +29,9 @@ const SignalType signal.SignalType = "component-deploy-sync-and-plan"
 
 const planCompositeErrorVersion = "deploy-sync-and-plan-composite-error-v1"
 
+// Histories that cloned before this version did not look up the deploy's build.
+const clonePinsDeployBuildVersion = "deploy-sync-and-plan-clone-pins-deploy-build-v1"
+
 type Signal struct {
 	signal.LifecycleBase
 
@@ -132,6 +135,18 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 }
 
 func (s *Signal) Clone(ctx workflow.Context, stepName string) ([]signal.CloneStepDef, error) {
+	buildID := s.BuildID
+	// Manual deploys record the requested build only on the deploy, which the
+	// clone drops, so Execute would otherwise fall back to the app config's build.
+	if buildID == "" && s.DeployID != "" &&
+		workflow.GetVersion(ctx, clonePinsDeployBuildVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		deploy, err := activities.AwaitGetDeployByDeployID(ctx, s.DeployID)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get deploy to pin its build for retry")
+		}
+		buildID = deploy.ComponentBuildID
+	}
+
 	// Return a clean signal — Execute() will create a fresh deploy.
 	// OnRetry() handles marking the old deploy as retried.
 	return []signal.CloneStepDef{
@@ -140,7 +155,7 @@ func (s *Signal) Clone(ctx workflow.Context, stepName string) ([]signal.CloneSte
 				InstallComponentID:          s.InstallComponentID,
 				InstallID:                   s.InstallID,
 				ComponentID:                 s.ComponentID,
-				BuildID:                     s.BuildID,
+				BuildID:                     buildID,
 				ComponentConfigConnectionID: s.ComponentConfigConnectionID,
 				SandboxMode:                 s.SandboxMode,
 				Role:                        s.Role,
