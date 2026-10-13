@@ -72,24 +72,8 @@ func (s *Helpers) insertInstallWorkflow(ctx context.Context,
 	role string,
 	request *app.WorkflowRequest,
 ) (*app.Workflow, error) {
-	if workflowType.RequiresInstallRunner() && !stackChangeDefersRunnerGate(workflowType, metadata) {
-		disabled, err := s.IsRunnerDisabled(ctx, installID)
-		if err != nil {
-			return nil, err
-		}
-		if disabled {
-			return nil, NewRunnerDisabledConflict()
-		}
-	}
-
-	if requiresLiveInstallRunner(workflowType, metadata) {
-		active, err := s.HasActiveRunner(ctx, installID)
-		if err != nil {
-			return nil, err
-		}
-		if !active {
-			return nil, NewNoActiveRunnerConflict()
-		}
+	if err := s.CheckInstallRunnerForWorkflow(ctx, installID, workflowType, metadata); err != nil {
+		return nil, err
 	}
 
 	approvalOption := app.InstallApprovalOptionPrompt
@@ -152,8 +136,41 @@ func (s *Helpers) insertInstallWorkflow(ctx context.Context,
 	return &installWorkflow, nil
 }
 
+// CheckInstallRunnerForWorkflow returns the conflict that creating this
+// workflow would hit, so callers can reject before persisting anything.
+func (s *Helpers) CheckInstallRunnerForWorkflow(ctx context.Context, installID string, workflowType app.WorkflowType, metadata map[string]string) error {
+	if inputsOnlyUpdate(workflowType, metadata) {
+		return nil
+	}
+
+	if workflowType.RequiresInstallRunner() && !stackChangeDefersRunnerGate(workflowType, metadata) {
+		disabled, err := s.IsRunnerDisabled(ctx, installID)
+		if err != nil {
+			return err
+		}
+		if disabled {
+			return NewRunnerDisabledConflict()
+		}
+	}
+
+	if requiresLiveInstallRunner(workflowType, metadata) {
+		active, err := s.HasActiveRunner(ctx, installID)
+		if err != nil {
+			return err
+		}
+		if !active {
+			return NewNoActiveRunnerConflict()
+		}
+	}
+	return nil
+}
+
+func inputsOnlyUpdate(workflowType app.WorkflowType, metadata map[string]string) bool {
+	return workflowType == app.WorkflowTypeInputUpdate && metadata[app.WorkflowMetadataKeyInputsOnly] == "true"
+}
+
 func requiresLiveInstallRunner(workflowType app.WorkflowType, metadata map[string]string) bool {
-	if workflowType == app.WorkflowTypeInputUpdate && metadata[app.WorkflowMetadataKeyInputsOnly] == "true" {
+	if inputsOnlyUpdate(workflowType, metadata) {
 		return false
 	}
 	if stackChangeDefersRunnerGate(workflowType, metadata) {

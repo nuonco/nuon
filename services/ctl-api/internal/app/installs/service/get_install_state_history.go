@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	_ "github.com/nuonco/nuon/pkg/types/state"
+	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -56,14 +56,20 @@ func (s *service) getInstallStateHistory(ctx *gin.Context, installID string) ([]
 		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
+	contents := make([]*state.State, 0, len(states))
 	for _, st := range states {
-		contents, fromBlob := st.GetState(ctx, s.cfg.BlobReadEnabled)
-		st.State = contents
+		c, fromBlob := st.GetState(ctx, s.cfg.BlobReadEnabled)
+		st.State = c
+		contents = append(contents, c)
 		if fromBlob {
 			s.l.Debug("read install state from blob",
 				zap.String("install_id", installID),
 				zap.String("state_id", st.ID))
 		}
+	}
+
+	if err := s.helpers.RedactStateInputs(ctx, installID, contents...); err != nil {
+		return nil, fmt.Errorf("unable to redact install states: %w", err)
 	}
 
 	return states, nil
