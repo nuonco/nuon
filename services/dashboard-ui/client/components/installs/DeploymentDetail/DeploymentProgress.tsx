@@ -22,7 +22,11 @@ export type TDeploymentRun = {
   outcomes: TDeploymentOutcome[]
 }
 
-export const DeploymentRunStatus = ({ run }: { run: TDeploymentRun }) => (
+export const DeploymentRunStatus = ({
+  run,
+}: {
+  run: Pick<TDeploymentRun, 'status' | 'steps'>
+}) => (
   <span className="flex flex-wrap items-center gap-2">
     <Status status={run.status} variant="badge" />
     {run.steps.some(isAwaitingDeploymentApproval) ? (
@@ -50,7 +54,9 @@ export type TResourceCategory = {
   label: string
 }
 
-export const resourceCategories = (run: TDeploymentRun): TResourceCategory[] =>
+export const resourceCategories = (
+  run: Pick<TDeploymentRun, 'status' | 'outcomes'>
+): TResourceCategory[] =>
   [...new Set(run.outcomes.map((outcome) => outcome.category))].map(
     (category) => {
       const outcomes = run.outcomes.filter(
@@ -97,70 +103,36 @@ export const ResourceCategoryIcon = ({
     <Status status={status} variant="timeline" isWithoutText iconSize={size} />
   )
 
-export const ResourceScopeSummary = ({ run }: { run: TDeploymentRun }) => (
-  <div
-    role="group"
-    aria-label="Resource outcomes"
-    className="flex flex-wrap items-center gap-x-5 gap-y-2"
-  >
-    {resourceCategories(run).map(({ category, status, label }) => (
-      <span
-        key={category}
-        role="group"
-        aria-label={`${category}: ${label}`}
-        className="flex items-center gap-2"
-      >
-        <ResourceCategoryIcon status={status} />
-        <Text>
-          {category}
-          {status !== 'success' ? ` — ${label}` : ''}
-        </Text>
-      </span>
-    ))}
-  </div>
-)
-
-export const ResourceOutcomes = ({ run }: { run: TDeploymentRun }) =>
-  run.outcomes.length ? (
-    <section
-      aria-label="Resource rollout outcomes"
-      className="flex flex-col gap-3"
+export const ResourceScopeSummary = ({
+  run,
+}: {
+  run: Pick<TDeploymentRun, 'status' | 'outcomes'>
+}) => {
+  const categories = resourceCategories(run)
+  if (!categories.length) return null
+  return (
+    <div
+      role="group"
+      aria-label="Resource outcomes"
+      className="flex flex-wrap items-center gap-x-5 gap-y-2"
     >
-      <Text weight="strong">Resource outcomes</Text>
-      <ul className="flex flex-col gap-2">
-        {run.outcomes.map((outcome) => (
-          <li
-            key={`${outcome.category}-${outcome.name}`}
-            aria-label={`${outcome.name}: ${outcome.detail}`}
-            className="flex items-start gap-3"
-          >
-            <Status
-              status={outcome.status}
-              variant="timeline"
-              isWithoutText
-              iconSize={14}
-            />
-            <div className="flex min-w-0 flex-wrap items-baseline gap-x-3">
-              <Text
-                family={
-                  outcome.category === 'Components' ||
-                  outcome.category === 'Images'
-                    ? 'mono'
-                    : 'sans'
-                }
-                weight="strong"
-              >
-                {outcome.name}
-              </Text>
-              <Text theme={outcome.status === 'error' ? 'error' : 'neutral'}>
-                {outcome.detail}
-              </Text>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </section>
-  ) : null
+      {categories.map(({ category, status, label }) => (
+        <span
+          key={category}
+          role="group"
+          aria-label={`${category}: ${label}`}
+          className="flex items-center gap-2"
+        >
+          <ResourceCategoryIcon status={status} />
+          <Text>
+            {category}
+            {status !== 'success' ? ` — ${label}` : ''}
+          </Text>
+        </span>
+      ))}
+    </div>
+  )
+}
 
 export const StepContext = ({ run }: { run: TDeploymentRun }) => {
   const { current, next } = deploymentStepContext(run.status, run.steps)

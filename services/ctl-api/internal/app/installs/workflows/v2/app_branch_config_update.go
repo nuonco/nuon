@@ -73,10 +73,36 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	}
 
 	stackChanged := diff != nil && diff.StackChanged
+	sandboxChanged := diff != nil && (diff.SandboxChanged || diff.SandboxBuildChanged)
+
+	newAppCfg, err := activities.AwaitGetAppConfigByID(ctx, newAppConfigID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get new app config")
+	}
+
+	awData, err := activities.AwaitGetActionWorkflows(ctx, &activities.GetActionWorkflows{
+		InstallID: installID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get action workflows")
+	}
+
+	// Order against the config being rolled out, not the one the install is
+	// still pinned to: a component this update adds has no vertex in the old
+	// graph, and would otherwise never get a deploy step.
+	componentIDs, err := activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
+		InstallID:   install.ID,
+		AppConfigID: newAppConfigID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install graph")
+	}
+
+	deployComponentIDs := filterComponentsByDiff(componentIDs, newAppCfg, diff)
 
 	// A stack change recycles the runner, so gating on the outgoing one would
 	// block the apply that brings its replacement up.
-	if !stackChanged {
+	if !stackChanged && (sandboxChanged || len(deployComponentIDs) > 0) {
 		sg.nextGroupEager()
 		step, err := sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 			InstallID: installID,
@@ -106,22 +132,11 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		steps = append(steps, step)
 	}
 
-	if diff != nil && (diff.SandboxChanged || diff.SandboxBuildChanged) {
+	dg := newGenCtx(sg, flw, installID, newAppCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
+
+	if sandboxChanged {
 		flw.Metadata["skip_components"] = generics.ToPtr("true")
 
-		newAppCfg, err := activities.AwaitGetAppConfigByID(ctx, newAppConfigID)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get new app config")
-		}
-
-		awData, err := activities.AwaitGetActionWorkflows(ctx, &activities.GetActionWorkflows{
-			InstallID: installID,
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get action workflows")
-		}
-
-		dg := newGenCtx(sg, flw, installID, newAppCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
 		sandboxSteps, err := getSandboxReprovisionSteps(ctx, dg, install, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to generate sandbox reprovision steps")
@@ -129,32 +144,6 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		steps = append(steps, sandboxSteps...)
 	}
 
-	newAppCfg, err := activities.AwaitGetAppConfigByID(ctx, newAppConfigID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get new app config")
-	}
-
-	awData, err := activities.AwaitGetActionWorkflows(ctx, &activities.GetActionWorkflows{
-		InstallID: installID,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get action workflows")
-	}
-
-	// Order against the config being rolled out, not the one the install is
-	// still pinned to: a component this update adds has no vertex in the old
-	// graph, and would otherwise never get a deploy step.
-	componentIDs, err := activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
-		InstallID:   install.ID,
-		AppConfigID: newAppConfigID,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install graph")
-	}
-
-	deployComponentIDs := filterComponentsByDiff(componentIDs, newAppCfg, diff)
-
-	dg := newGenCtx(sg, flw, installID, newAppCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
 	deploySteps, err := getComponentDeploySteps(ctx, dg, deployComponentIDs)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to generate component deploy steps")

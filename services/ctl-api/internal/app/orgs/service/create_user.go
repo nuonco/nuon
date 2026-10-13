@@ -5,9 +5,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -46,7 +48,12 @@ func (s *service) CreateUser(ctx *gin.Context) {
 	}
 
 	// Add the authenticated user to the org (UserID field is ignored)
-	if err := s.authzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, org.ID, acct.ID); err != nil {
+	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := authz.RequireUserManaged(tx, acct.ID); err != nil {
+			return err
+		}
+		return authz.New(authz.Params{DB: tx}).AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, org.ID, acct.ID)
+	}); err != nil {
 		ctx.Error(err)
 		return
 	}

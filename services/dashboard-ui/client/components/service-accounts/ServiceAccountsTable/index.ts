@@ -2,6 +2,7 @@ export { ServiceAccountsTableContainer as ServiceAccountsTable } from './Service
 export {
   ServiceAccountsTable as ServiceAccountsTableComponent,
   SERVICE_ACCOUNTS_TABLE_LIMIT,
-  roleTitleLookup,
   parseServiceAccountsToTableData,
+  serviceAccountOwner,
+  serviceAccountRoleLabels,
 } from './ServiceAccountsTable'

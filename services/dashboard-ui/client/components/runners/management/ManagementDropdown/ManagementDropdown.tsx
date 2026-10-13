@@ -29,6 +29,7 @@ export const ManagementDropdown = ({
       <Menu>
         {!isInstallRunner ? (
           <UpdateRunnerButton
+            runner={runner}
             settings={settings}
             field="container_image_tag"
             label="Update runner tag"
@@ -41,6 +42,7 @@ export const ManagementDropdown = ({
         ) : (
           <>
             <UpdateRunnerButton
+              runner={runner}
               settings={settings}
               field="binary_version"
               label="Update manager version"
@@ -51,6 +53,7 @@ export const ManagementDropdown = ({
               isMenuButton
             />
             <UpdateRunnerButton
+              runner={runner}
               settings={settings}
               field="container_image_tag"
               label="Update instance version"

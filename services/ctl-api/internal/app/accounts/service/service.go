@@ -62,6 +62,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	serviceAccounts := api.Group("/v1/service-accounts")
 	{
 		serviceAccounts.GET("", s.ListServiceAccounts)
+		serviceAccounts.GET("/purposes", s.ListServiceAccountPurposes)
 		serviceAccounts.POST("", s.CreateServiceAccount)
 		serviceAccounts.PATCH("/:account_id", s.UpdateServiceAccount)
 		serviceAccounts.PATCH("/:account_id/role", s.UpdateServiceAccountRole)

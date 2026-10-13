@@ -1,6 +1,7 @@
 import type { TFixture, TFixtureReply } from './install-fixture'
-import { VIEW_APP_ID, VIEW_INSTALL_ID } from './install-fixture'
+import { VIEW_APP_ID } from './install-fixture'
 import { ACTIVE_DEPLOYMENT_STATUSES } from '@/components/installs/DeploymentDetail/deployment-progress'
+import { healthPreviewFixture } from '@/components/installs/InstallHealth/health-preview-fixtures'
 import {
   APP_CONFIG_ID,
   pendingReply,
@@ -17,12 +18,6 @@ const fail = (error: string): TFixtureReply => ({
   body: { error },
   status: 500,
 })
-
-const isoDay = (daysAgo: number) => {
-  const date = new Date()
-  date.setUTCDate(date.getUTCDate() - daysAgo)
-  return date.toISOString().slice(0, 10)
-}
 
 const readme = [
   '# Payments',
@@ -270,29 +265,6 @@ export const deploymentsFixture = (
     )
   })
 
-const healthComponent = (
-  name: string,
-  health: string,
-  uptime = 99.9,
-  observed = 30 * 86400
-) => ({
-  install_component_id: `instcmp-${name}`,
-  component_id: `cmp-${name}`,
-  component_name: name,
-  current_health: health,
-  uptime_percent: uptime,
-  observed_seconds: observed,
-})
-
-const healthDay = (health: string, index: number) => ({
-  date: isoDay(29 - index),
-  health,
-  unhealthy_seconds: health === 'unhealthy' ? 3600 : 0,
-  degraded_seconds: health === 'degraded' ? 1800 : 0,
-  unknown_seconds: health === 'unknown' ? 86400 : 0,
-  observed_seconds: health === 'unknown' ? 0 : 86400,
-})
-
 const healthResource = (
   name: string,
   kind: string,
@@ -309,6 +281,71 @@ const healthResource = (
   health,
   provider: 'kubernetes',
   observed_at: new Date(Date.now() - 60_000).toISOString(),
+  details: JSON.stringify(
+    kind === 'Deployment'
+      ? {
+          spec: {
+            replicas: 3,
+            selector: { matchLabels: { app: name } },
+            strategy: { type: 'RollingUpdate' },
+          },
+          status: {
+            replicas: 3,
+            readyReplicas:
+              health === 'unhealthy' ? 0 : health === 'degraded' ? 2 : 3,
+            availableReplicas:
+              health === 'unhealthy' ? 0 : health === 'degraded' ? 2 : 3,
+            updatedReplicas: 3,
+            conditions: [
+              {
+                type: 'Available',
+                status: health === 'healthy' ? 'True' : 'False',
+                reason:
+                  health === 'healthy'
+                    ? 'MinimumReplicasAvailable'
+                    : 'MinimumReplicasUnavailable',
+                message:
+                  health === 'healthy'
+                    ? 'Deployment has minimum availability.'
+                    : 'Deployment does not have minimum availability.',
+              },
+            ],
+          },
+        }
+      : kind === 'Service'
+        ? {
+            spec: {
+              type: 'ClusterIP',
+              clusterIP: '10.0.0.42',
+              selector: { app: name },
+              ports: [
+                { name: 'http', port: 80, targetPort: 8080, protocol: 'TCP' },
+              ],
+            },
+          }
+        : kind === 'Ingress'
+          ? {
+              spec: {
+                ingressClassName: 'nginx',
+                rules: [
+                  {
+                    host: 'api.example.com',
+                    http: {
+                      paths: [
+                        {
+                          path: '/',
+                          backend: {
+                            service: { name: 'api', port: { number: 80 } },
+                          },
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            }
+          : { status: { conditions: [{ type: 'Ready', status: 'True' }] } }
+  ),
   ...(health === 'unhealthy'
     ? { message: 'Available replicas are below the desired count.' }
     : health === 'degraded'
@@ -326,86 +363,96 @@ type THealthState =
   | 'loading'
 
 export const healthFixture = (state: THealthState): TFixture =>
-  withChrome(viewInstall(), (url) => {
-    const path = url.pathname
-    const resourcesPath = path.endsWith('/resources')
-    const timelinePath = path.endsWith('/health/timeline')
-    const componentsPath = path.endsWith('/components')
-    if (!resourcesPath && !timelinePath && !componentsPath) return undefined
-    if (state === 'loading') return pendingReply()
-
-    if (componentsPath) {
-      return ok(
-        ['api', 'worker', 'ledger', 'webhooks'].map((name) => ({
-          id: `instcmp-${name}`,
-          component: { id: `cmp-${name}`, name },
-        })),
-        true
-      )
-    }
-
-    if (resourcesPath) {
-      const rows =
-        state === 'healthy'
-          ? [
-              healthResource('api', 'Deployment', 'healthy'),
-              healthResource('api', 'Service', 'healthy'),
-              healthResource('worker', 'Deployment', 'healthy'),
-              healthResource('worker', 'Service', 'healthy'),
-              healthResource('ledger', 'Deployment', 'healthy'),
-              healthResource('webhooks', 'Ingress', 'healthy'),
-              healthResource('cert-manager', 'Deployment', 'healthy', 'sandbox'),
-              healthResource('cert-manager', 'Certificate', 'healthy', 'sandbox'),
-            ]
-          : state === 'degraded'
-            ? [
-                healthResource('api', 'Deployment', 'degraded'),
-                healthResource('worker', 'Deployment', 'healthy'),
-              ]
-            : state === 'unhealthy'
-              ? [healthResource('api', 'Deployment', 'unhealthy')]
-              : []
-      const health = url.searchParams.get('health')
-      return ok(health ? rows.filter((row) => row.health === health) : rows)
-    }
-
-    const current =
-      state === 'degraded'
-        ? 'degraded'
-        : state === 'unhealthy'
-          ? 'unhealthy'
-          : state === 'healthy' || state === 'empty'
-            ? 'healthy'
-            : 'unknown'
-    const components =
-      state === 'access-error'
-        ? []
-        : state === 'no-observations'
-          ? [healthComponent('api', 'unknown', 0, 0)]
-          : state === 'degraded'
-            ? [healthComponent('api', 'degraded', 98.7), healthComponent('worker', 'healthy', 99.91)]
-            : state === 'unhealthy'
-              ? [healthComponent('api', 'unhealthy', 97.4)]
-              : state === 'empty'
-                ? [healthComponent('api', 'healthy'), healthComponent('worker', 'healthy', 99.91)]
-                : [healthComponent('api', 'healthy', 99.98), healthComponent('worker', 'healthy', 99.91)]
-
-    return ok({
-      days: 30,
-      uptime_percent: current === 'unknown' ? 0 : 99.9,
-      observed_seconds: components.reduce(
-        (total, component) => total + component.observed_seconds,
-        0
-      ),
-      current_health: current,
-      cluster_access_error:
+  withChrome(
+    viewInstall({
+      health_cluster_error:
         state === 'access-error'
-          ? 'The runner cannot list pods in the payments namespace.'
+          ? 'The runner cannot list Pods in the acme namespace.'
           : undefined,
-      components,
-      daily: Array.from({ length: 30 }, (_, index) => healthDay(current, index)),
-    })
-  })
+    }),
+    (url) => {
+      const path = url.pathname
+      if (path.endsWith('/status')) {
+        const status =
+          state === 'healthy' || state === 'empty'
+            ? 'healthy'
+            : state === 'degraded' || state === 'unhealthy'
+              ? state
+              : 'unknown'
+        return ok({
+          deployments: {
+            status: 'success',
+            status_human_description: 'Up to date',
+          },
+          resources: { status, status_human_description: status },
+          health_checks: {
+            status: ['healthy', 'degraded', 'unhealthy'].includes(state)
+              ? 'active'
+              : 'unknown',
+            status_human_description: [
+              'healthy',
+              'degraded',
+              'unhealthy',
+            ].includes(state)
+              ? 'Passing'
+              : 'No observations',
+          },
+        })
+      }
+      const resourcesPath = path.endsWith('/resources')
+      const componentsPath = path.endsWith('/components')
+      if (!resourcesPath && !componentsPath) return undefined
+      if (state === 'loading') return pendingReply()
+
+      if (componentsPath) {
+        return ok(
+          ['api', 'worker', 'ledger', 'webhooks'].map((name) => ({
+            id: `instcmp-${name}`,
+            component: { id: `cmp-${name}`, name },
+          })),
+          true
+        )
+      }
+
+      if (resourcesPath) {
+        const sample = healthPreviewFixture(state)
+        const rows = ['healthy', 'degraded', 'unhealthy'].includes(state)
+          ? [
+              ...sample.groups.flatMap((group) =>
+                group.items.map((item) => item.resource)
+              ),
+              ...sample.checks,
+              healthResource(
+                'cert-manager',
+                'Deployment',
+                'healthy',
+                'sandbox'
+              ),
+              {
+                ...healthResource(
+                  'cert-manager',
+                  'Certificate',
+                  'unknown',
+                  'sandbox'
+                ),
+                api_group: 'cert-manager.io',
+              },
+              {
+                name: 'primary',
+                kind: 'aws_db_instance',
+                provider: 'aws',
+                source: 'component',
+                install_component_id: 'instcmp-ledger',
+                health: 'not-applicable',
+                observed_at: new Date(Date.now() - 86_400_000).toISOString(),
+              },
+            ]
+          : []
+        const health = url.searchParams.get('health')
+        return ok(health ? rows.filter((row) => row.health === health) : rows)
+      }
+    }
+  )
 
 const componentCatalog = [
   ['cmp-api', 'api', 'helm_chart', 'ghcr.io/acme/api:1.3.0'],

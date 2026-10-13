@@ -2,6 +2,7 @@ package installgrouprelease
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -69,10 +70,16 @@ func SetInstallStatus(ctx context.Context, db *gorm.DB, appBranchRunID, installI
 		if !changed {
 			continue
 		}
+		// GORM Update skips the field serializer. A one-element slice is then
+		// stored as a JSON object, and the next read fails.
+		payload, err := json.Marshal(runs[i].Installs)
+		if err != nil {
+			return fmt.Errorf("unable to marshal install group run %s installs: %w", runs[i].ID, err)
+		}
 		if err := db.WithContext(ctx).
 			Model(&app.InstallGroupRun{}).
 			Where(app.InstallGroupRun{ID: runs[i].ID}).
-			Update("installs", runs[i].Installs).Error; err != nil {
+			Update("installs", string(payload)).Error; err != nil {
 			return fmt.Errorf("unable to update install group run %s: %w", runs[i].ID, err)
 		}
 	}

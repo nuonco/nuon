@@ -109,6 +109,7 @@ type Action struct {
 }
 
 type ActionDefinition struct {
+	Image                 string                    `json:"image,omitempty"`
 	TimeoutNanos          int64                     `json:"timeout_nanos,omitempty"`
 	Role                  string                    `json:"role,omitempty"`
 	BreakGlassRoleARN     string                    `json:"break_glass_role_arn,omitempty"`

@@ -1,4 +1,5 @@
 export * from './list-service-accounts'
+export * from './list-service-account-purposes'
 export * from './create-service-account'
 export * from './update-service-account-role'
 export * from './update-service-account'

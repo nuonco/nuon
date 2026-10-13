@@ -31,6 +31,12 @@ func (o *ListServiceAccountsReader) ReadResponse(response runtime.ClientResponse
 			return nil, err
 		}
 		return result, nil
+	case 400:
+		result := NewListServiceAccountsBadRequest()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 401:
 		result := NewListServiceAccountsUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -65,7 +71,7 @@ ListServiceAccountsOK describes a response with status code 200, with default he
 OK
 */
 type ListServiceAccountsOK struct {
-	Payload []*models.AppAccount
+	Payload []*models.ServiceServiceAccount
 }
 
 // IsSuccess returns true when this list service accounts o k response has a 2xx status code
@@ -108,7 +114,7 @@ func (o *ListServiceAccountsOK) String() string {
 	return fmt.Sprintf("[GET /v1/service-accounts][%d] listServiceAccountsOK %s", 200, payload)
 }
 
-func (o *ListServiceAccountsOK) GetPayload() []*models.AppAccount {
+func (o *ListServiceAccountsOK) GetPayload() []*models.ServiceServiceAccount {
 	return o.Payload
 }
 
@@ -116,6 +122,76 @@ func (o *ListServiceAccountsOK) readResponse(response runtime.ClientResponse, co
 
 	// response payload
 	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewListServiceAccountsBadRequest creates a ListServiceAccountsBadRequest with default headers values
+func NewListServiceAccountsBadRequest() *ListServiceAccountsBadRequest {
+	return &ListServiceAccountsBadRequest{}
+}
+
+/*
+ListServiceAccountsBadRequest describes a response with status code 400, with default header values.
+
+Bad Request
+*/
+type ListServiceAccountsBadRequest struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this list service accounts bad request response has a 2xx status code
+func (o *ListServiceAccountsBadRequest) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list service accounts bad request response has a 3xx status code
+func (o *ListServiceAccountsBadRequest) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list service accounts bad request response has a 4xx status code
+func (o *ListServiceAccountsBadRequest) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list service accounts bad request response has a 5xx status code
+func (o *ListServiceAccountsBadRequest) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list service accounts bad request response a status code equal to that given
+func (o *ListServiceAccountsBadRequest) IsCode(code int) bool {
+	return code == 400
+}
+
+// Code gets the status code for the list service accounts bad request response
+func (o *ListServiceAccountsBadRequest) Code() int {
+	return 400
+}
+
+func (o *ListServiceAccountsBadRequest) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[GET /v1/service-accounts][%d] listServiceAccountsBadRequest %s", 400, payload)
+}
+
+func (o *ListServiceAccountsBadRequest) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[GET /v1/service-accounts][%d] listServiceAccountsBadRequest %s", 400, payload)
+}
+
+func (o *ListServiceAccountsBadRequest) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *ListServiceAccountsBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
 		return err
 	}
 

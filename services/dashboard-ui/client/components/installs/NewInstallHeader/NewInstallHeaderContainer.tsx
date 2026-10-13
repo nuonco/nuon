@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useLocation } from 'react-router'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
@@ -17,6 +18,7 @@ import { NewInstallHeader } from './NewInstallHeader'
 export const NewInstallHeaderContainer = () => {
   const { org } = useOrg()
   const { install, labelColors, refresh } = useInstall()
+  const { pathname } = useLocation()
   const installHref = useInstallHref()
   const { run: appliedRun, isLoading: isLoadingRun } = useCurrentAppBranchRun()
   const openSettings = useOpenInstallSettings()
@@ -105,7 +107,9 @@ export const NewInstallHeaderContainer = () => {
           <Icon variant="GearIcon" size={16} />
         </Button>
       }
-      statuses={<InstallStatusSummary />}
+      statuses={
+        /\/health\/?$/.test(pathname) ? undefined : <InstallStatusSummary />
+      }
     />
   )
 }

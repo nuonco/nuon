@@ -104,6 +104,7 @@ export interface IConfigChangesViewer {
   author?: string
   createdAt?: string
   source?: TRunSource
+  emptyMessage?: string
 }
 
 export const ConfigChangesViewer = ({
@@ -117,6 +118,7 @@ export const ConfigChangesViewer = ({
   author,
   createdAt,
   source,
+  emptyMessage = 'This run matches the previous version.',
 }: IConfigChangesViewer) => {
   const changes = useMemo(
     () => configChanges(sections, files, builds),
@@ -153,7 +155,7 @@ export const ConfigChangesViewer = ({
           No changes
         </Text>
         <Text as="p" variant="subtext" theme="neutral">
-          This run matches the previous version.
+          {emptyMessage}
         </Text>
       </div>
     )

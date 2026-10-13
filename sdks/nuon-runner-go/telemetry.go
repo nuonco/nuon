@@ -18,3 +18,16 @@ func (c *client) CreateTelemetryAccessToken(ctx context.Context, relayEndpoint s
 
 	return resp.Payload, nil
 }
+
+func (c *client) CreateInstallTelemetryAccessToken(ctx context.Context, installID, relayEndpoint string) (*models.ServiceCreateInstallTelemetryAccessTokenResponse, error) {
+	resp, err := c.genClient.Operations.CreateInstallTelemetryAccessToken(&operations.CreateInstallTelemetryAccessTokenParams{
+		Context:       ctx,
+		InstallID:     installID,
+		RelayEndpoint: relayEndpoint,
+	}, c.getAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}

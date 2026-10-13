@@ -1,14 +1,12 @@
 import type { ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
-import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import {
-  resourceCategories,
-  ResourceCategoryIcon,
+  ResourceScopeSummary,
   StepProgress,
   type TDeploymentRun,
 } from '@/components/installs/DeploymentDetail/DeploymentProgress'
@@ -18,6 +16,8 @@ import {
   isAwaitingDeploymentRetry,
   isDeploymentRunning,
 } from '@/components/installs/DeploymentDetail/deployment-progress'
+import type { TWorkflow } from '@/types'
+import { DeploymentViewDetails } from './DeploymentActions'
 
 export const DeploymentCard = ({
   run,
@@ -26,6 +26,7 @@ export const DeploymentCard = ({
   createdAt,
   href,
   onViewDetails,
+  workflow,
   children,
 }: {
   run: TDeploymentRun
@@ -34,6 +35,7 @@ export const DeploymentCard = ({
   createdAt: string
   href: string
   onViewDetails: () => void
+  workflow?: TWorkflow
   children?: ReactNode
 }) => {
   const awaiting =
@@ -113,35 +115,12 @@ export const DeploymentCard = ({
       </div>
       {children}
       <StepProgress run={run} />
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
-        <div
-          role="group"
-          aria-label="Resource outcomes"
-          className="flex flex-wrap gap-x-4 gap-y-2"
-        >
-          {resourceCategories(run).map(({ category, status, label }) => (
-            <span
-              key={category}
-              role="group"
-              aria-label={`${category}: ${label}`}
-              className="flex items-center gap-2"
-            >
-              <ResourceCategoryIcon status={status} size={18} />
-              <span className="flex flex-col">
-                <Text variant="subtext">{category}</Text>
-                <Text
-                  variant="subtext"
-                  theme={status === 'error' ? 'error' : 'neutral'}
-                >
-                  {label}
-                </Text>
-              </span>
-            </span>
-          ))}
-        </div>
-        <Button variant="secondary" onClick={onViewDetails}>
-          View details
-        </Button>
+      <ResourceScopeSummary run={run} />
+      <div className="flex justify-end border-t pt-3">
+        <DeploymentViewDetails
+          workflow={workflow}
+          onViewDetails={onViewDetails}
+        />
       </div>
     </Card>
   )

@@ -11,6 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 )
 
 type AdminForgetOrgRequest struct{}
@@ -41,20 +42,25 @@ func (s *service) AdminForgetOrg(ctx *gin.Context) {
 		return
 	}
 
-	// Soft delete roles (and their join-table entries) so the Account AfterQuery
-	// hook no longer tries to dereference the now-deleted org.
-	if err := s.db.WithContext(ctx).Where("org_id = ?", org.ID).Delete(&app.Role{}).Error; err != nil {
-		ctx.Error(fmt.Errorf("unable to forget org roles: %w", err))
-		return
-	}
-
-	res := s.db.WithContext(ctx).Delete(&app.Org{ID: org.ID})
-	if res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to forget org: %w", res.Error))
-		return
-	}
-	if res.RowsAffected < 1 {
-		ctx.Error(fmt.Errorf("org not found %w", gorm.ErrRecordNotFound))
+	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := account.New(account.Params{DB: tx}).DeleteOrgServiceAccounts(ctx, org.ID); err != nil {
+			return err
+		}
+		// Soft delete roles (and their join-table entries) so the Account AfterQuery
+		// hook no longer tries to dereference the now-deleted org.
+		if err := tx.Where("org_id = ?", org.ID).Delete(&app.Role{}).Error; err != nil {
+			return fmt.Errorf("unable to forget org roles: %w", err)
+		}
+		res := tx.Delete(&app.Org{ID: org.ID})
+		if res.Error != nil {
+			return fmt.Errorf("unable to forget org: %w", res.Error)
+		}
+		if res.RowsAffected < 1 {
+			return fmt.Errorf("org not found %w", gorm.ErrRecordNotFound)
+		}
+		return nil
+	}); err != nil {
+		ctx.Error(err)
 		return
 	}
 

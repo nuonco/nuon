@@ -3,9 +3,11 @@ package permissions
 type ResourceKind string
 
 const (
-	KindApp     ResourceKind = "app"
-	KindInstall ResourceKind = "install"
-	KindStack   ResourceKind = "stack"
+	KindOrg       ResourceKind = "org"
+	KindApp       ResourceKind = "app"
+	KindInstall   ResourceKind = "install"
+	KindStack     ResourceKind = "stack"
+	KindTelemetry ResourceKind = "telemetry"
 )
 
 // Object is the grant key for a resource-scoped permission: "<orgID>:<kind>/<id>".

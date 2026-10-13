@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -72,6 +73,15 @@ func (m *runnerMiddleware) Handler() gin.HandlerFunc {
 
 		cctx.SetOrgIDGinContext(ctx, acct.OrgIDs[0])
 		cctx.SetOrgGinContext(ctx, acct.Orgs[0])
+
+		if ctx.FullPath() != "" && !require.IsDeclared(ctx) {
+			ctx.Error(stderr.ErrSystem{
+				Err:         fmt.Errorf("runner route has no authorization declaration: %s %s", ctx.Request.Method, ctx.FullPath()),
+				Description: "invalid runner route configuration",
+			})
+			ctx.Abort()
+			return
+		}
 	}
 }
 

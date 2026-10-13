@@ -48,18 +48,17 @@ func (s *service) GetInstallTelemetrySettings(ctx *gin.Context) {
 }
 
 func (s *service) getInstallTelemetrySettings(ctx context.Context, orgID, installID string) (*InstallTelemetrySettings, error) {
-	var install app.Install
-	if err := s.db.WithContext(ctx).Preload("InstallConfig").Preload("Org").
-		Where(app.Install{ID: installID, OrgID: orgID}).First(&install).Error; err != nil {
+	config, err := s.helpers.GetInstallTelemetryConfig(ctx, orgID, installID)
+	if err != nil {
 		return nil, err
 	}
+	installConfig := app.InstallConfig{TelemetryEnabled: config.TelemetryEnabled}
+	orgTelemetry := app.OrgTelemetrySettings{RelayEndpoint: config.OrgRelayEndpoint}
 	settings := &InstallTelemetrySettings{
-		Enabled:         install.InstallConfig.IsTelemetryEnabled(install.Org.Telemetry.Enabled),
-		OrgDefault:      install.Org.Telemetry.Enabled,
-		RelayConfigured: app.ValidateTelemetryRelayEndpoint(install.Org.Telemetry.ResolveRelayEndpoint(s.cfg.TelemetryRelayEndpoint)) == nil,
-	}
-	if install.InstallConfig != nil {
-		settings.Override = install.InstallConfig.TelemetryEnabled
+		Enabled:         installConfig.IsTelemetryEnabled(config.OrgTelemetryEnabled),
+		Override:        config.TelemetryEnabled,
+		OrgDefault:      config.OrgTelemetryEnabled,
+		RelayConfigured: app.ValidateTelemetryRelayEndpoint(orgTelemetry.ResolveRelayEndpoint(s.cfg.TelemetryRelayEndpoint)) == nil,
 	}
 	return settings, nil
 }

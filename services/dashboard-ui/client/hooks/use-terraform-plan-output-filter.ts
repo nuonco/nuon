@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
 
-// Default selected actions (all except read and noop)
+// Default selected actions (all except read)
 const DEFAULT_SELECTED_ACTIONS = new Set([
   'create',
   'update',
   'delete',
   'replace',
+  'no-op',
 ])
 
 export interface TerraformOutputFilterableItem {

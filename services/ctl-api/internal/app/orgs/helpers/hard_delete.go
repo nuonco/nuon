@@ -7,10 +7,12 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 )
 
 func (h *Helpers) HardDelete(ctx context.Context, orgID string) error {
 	childObjs := []interface{}{
+		&app.ManagedServiceAccount{},
 		&app.EventDispatch{},
 		&app.TriggerRule{},
 		&app.EventRunbookWaiter{},
@@ -84,25 +86,24 @@ func (h *Helpers) HardDelete(ctx context.Context, orgID string) error {
 		&app.QueueEmitter{},
 		&app.Queue{},
 	}
-	for _, obj := range childObjs {
-		res := h.db.WithContext(ctx).Unscoped().
-			Where("org_id = ?", orgID).
-			Delete(obj)
-		if res.Error != nil {
-			return fmt.Errorf("unable to delete %T for org: %w", obj, res.Error)
+	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := account.New(account.Params{DB: tx}).DeleteOrgServiceAccounts(ctx, orgID); err != nil {
+			return err
 		}
-	}
+		for _, obj := range childObjs {
+			res := tx.Unscoped().Where("org_id = ?", orgID).Delete(obj)
+			if res.Error != nil {
+				return fmt.Errorf("unable to delete %T for org: %w", obj, res.Error)
+			}
+		}
 
-	// delete org
-	res := h.db.WithContext(ctx).Unscoped().Delete(&app.Org{
-		ID: orgID,
+		res := tx.Unscoped().Delete(&app.Org{ID: orgID})
+		if res.Error != nil {
+			return fmt.Errorf("unable to delete org: %w", res.Error)
+		}
+		if res.RowsAffected != 1 {
+			return fmt.Errorf("org not found %w", gorm.ErrRecordNotFound)
+		}
+		return nil
 	})
-	if res.Error != nil {
-		return fmt.Errorf("unable to delete org: %w", res.Error)
-	}
-	if res.RowsAffected != 1 {
-		return fmt.Errorf("org not found %w", gorm.ErrRecordNotFound)
-	}
-
-	return nil
 }
