@@ -39,8 +39,6 @@ func TestInstallStateTimezones(t *testing.T) {
 }
 
 func (s *InstallStateIntegrationSuite) TestMarkerTimestampsPreserveInstants() {
-	baseline, err := s.activities.GetInstallState(s.ctx, &installactivities.GetInstallStateRequest{InstallID: s.install.ID})
-	require.NoError(s.T(), err)
 	for _, mark := range []struct {
 		name string
 		run  func() error
@@ -50,7 +48,14 @@ func (s *InstallStateIntegrationSuite) TestMarkerTimestampsPreserveInstants() {
 			return s.deps.Helpers.MarkInstallStatePartialsStale(s.ctx, s.deps.DB, s.install.ID, pkgstate.PartialInputs)
 		}},
 		{name: "carried_partial", run: func() error {
-			_, err := s.activities.SaveState(s.ctx, &installactivities.SaveStateRequest{
+			if err := s.deps.Helpers.MarkInstallStatePartialsStale(s.ctx, s.deps.DB, s.install.ID, pkgstate.PartialInputs); err != nil {
+				return err
+			}
+			baseline, err := s.deps.Helpers.GetInstallStateBaseline(s.ctx, s.install.ID)
+			if err != nil {
+				return err
+			}
+			_, err = s.activities.SaveState(s.ctx, &installactivities.SaveStateRequest{
 				State: baseline, InstallID: s.install.ID, TriggeredByID: s.install.ID, TriggeredByType: "installs",
 				GeneratedBy:       app.InstallStateGenerateSourceStateManager,
 				RefreshedPartials: []pkgstate.PartialName{pkgstate.PartialComponents},
@@ -59,12 +64,15 @@ func (s *InstallStateIntegrationSuite) TestMarkerTimestampsPreserveInstants() {
 			return err
 		}},
 	} {
-		before := time.Now().UTC().Add(-time.Millisecond)
+		_, err := s.activities.GetInstallState(s.ctx, &installactivities.GetInstallStateRequest{InstallID: s.install.ID})
+		require.NoError(s.T(), err)
+		var before, after time.Time
+		require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Raw("SELECT clock_timestamp()").Scan(&before).Error)
 		require.NoError(s.T(), mark.run())
-		after := time.Now().UTC().Add(time.Millisecond)
-		var latest app.InstallState
+		require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Raw("SELECT clock_timestamp()").Scan(&after).Error)
+		var latest app.InstallStateHead
 		require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
-			Where(app.InstallState{InstallID: s.install.ID}).Order("created_at DESC").First(&latest).Error)
+			Where(app.InstallStateHead{InstallID: s.install.ID}).First(&latest).Error)
 		require.False(s.T(), latest.StaleAt.Empty())
 		assert.True(s.T(), !latest.StaleAt.Time.Before(before) && !latest.StaleAt.Time.After(after),
 			"%s marker %s must represent the actual invalidation instant between %s and %s in TZ=%s",

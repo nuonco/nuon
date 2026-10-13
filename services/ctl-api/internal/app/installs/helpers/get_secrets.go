@@ -22,6 +22,9 @@ func (h *Helpers) getSecrets(ctx context.Context, installID, runnerID string) (*
 }
 
 func (h *Helpers) getSecretsSyncRunnerJob(ctx context.Context, installID, runnerID string) (*app.RunnerJob, error) {
+	if runnerID == "" {
+		return nil, gorm.ErrRecordNotFound
+	}
 	job := app.RunnerJob{}
 	res := h.db.WithContext(ctx).
 		Where(app.RunnerJob{

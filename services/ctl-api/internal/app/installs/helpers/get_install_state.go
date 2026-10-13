@@ -2,216 +2,48 @@ package helpers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/conc/pool"
+	"go.temporal.io/sdk/temporal"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
-	"github.com/nuonco/nuon/pkg/types/outputs"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/routing"
 	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 // GetInstallState reads the current state of the install from the DB, and returns it in a structure that can be used for variable interpolation.
 func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacted bool, skipVersionCheck bool) (result *state.State, err error) {
+	ctx = routing.WithoutReplica(ctx)
 	started := time.Now()
 	defer func() { h.stateMetrics.Record(ctx, "get", started, err) }()
 	cctx.GetLogger(ctx, h.l).Info("getting install state", zap.String("install_id", installID))
 
-	latestState, err := h.getLatestInstallStateRow(ctx, h.db, installID)
-	if err == nil {
-		es, fromBlob := latestState.GetState(ctx, h.cfg.BlobReadEnabled)
-		if fromBlob {
-			cctx.GetLogger(ctx, h.l).Debug("read install state from blob",
-				zap.String("install_id", installID),
-				zap.String("state_id", latestState.ID))
-		}
-		switch {
-		case !latestState.StaleAt.Empty() && len(latestState.StalePartials) > 0:
-			es, err = h.regenerateStalePartials(ctx, installID, skipVersionCheck)
-			if err != nil {
-				return nil, errors.Wrap(err, "unable to regenerate stale partials")
-			}
-		case !latestState.StaleAt.Empty():
-			es.StaleAt = &latestState.StaleAt.Time
-		}
-
-		if redacted {
-			if err := h.RedactStateInputs(ctx, installID, es); err != nil {
-				return nil, errors.Wrap(err, "unable to redact inputs")
-			}
-		}
-
-		if err := h.hydrateInstallMetadata(ctx, installID, es); err != nil {
-			return nil, errors.Wrap(err, "unable to hydrate install metadata")
-		}
-		return es, nil
+	snapshot, err := h.regenerateStalePartials(ctx, installID, skipVersionCheck)
+	if err != nil {
+		return nil, err
 	}
-
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, errors.Wrap(err, "unable to get install state from db")
+	if redacted {
+		if err := h.RedactStateInputs(ctx, installID, snapshot); err != nil {
+			return nil, err
+		}
 	}
-
-	is := state.New()
-
-	var (
-		install      *app.Install
-		appCfg       *app.AppConfig
-		installComps []app.InstallComponent
-		stack        *app.InstallStack
-		sandboxRuns  []app.InstallSandboxRun
-		actions      []app.InstallActionWorkflow
-		secrets      *outputs.SyncSecretsOutput
-	)
-
-	p := pool.New().WithErrors()
-
-	// collect all data up front e
-	p.Go(func() error {
-		var err error
-		install, err = h.getStateInstall(ctx, h.db, installID)
-		if err != nil {
-			return errors.Wrap(err, "unable to get install")
-		}
-
-		return nil
-	})
-	p.Go(func() error {
-		var err error
-		install, err := h.getStateInstall(ctx, h.db, installID)
-		if err != nil {
-			return errors.Wrap(err, "unable to get install")
-		}
-
-		appCfg, err = h.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, skipVersionCheck)
-		if err != nil {
-			return errors.Wrap(err, "unable to get app config")
-		}
-
-		return nil
-	})
-	p.Go(func() error {
-		var err error
-		installComps, err = h.getInstallComponentsState(ctx, installID)
-		if err != nil {
-			return errors.Wrap(err, "unable to get install components")
-		}
-		return nil
-	})
-	p.Go(func() error {
-		var err error
-		stack, err = h.getInstallStack(ctx, installID)
-		if err != nil {
-			if !errors.Is(err, gorm.ErrRecordNotFound) {
-				return errors.Wrap(err, "unable to get install stack")
-			}
-		}
-		return nil
-	})
-	p.Go(func() error {
-		var err error
-		sandboxRuns, err = h.getInstallSandboxRuns(ctx, installID)
-		if err != nil {
-			return errors.Wrap(err, "unable to get install sandbox runs")
-		}
-		return nil
-	})
-
-	p.Go(func() error {
-		var err error
-		actions, err = h.getInstallActionWorkflows(ctx, installID)
-		if err != nil {
-			return errors.Wrap(err, "unable to get actions")
-		}
-
-		return nil
-	})
-	p.Go(func() error {
-		var err error
-		install, err := h.getStateInstall(ctx, h.db, installID)
-		if err != nil {
-			return errors.Wrap(err, "unable to get install")
-		}
-
-		secrets, err = h.getSecrets(ctx, installID, install.RunnerID)
-		if err != nil {
-			if !errors.Is(err, gorm.ErrRecordNotFound) {
-				return errors.Wrap(err, "unable to get secrets")
-			}
-		}
-
-		return nil
-	})
-	if err := p.Wait(); err != nil {
-		return nil, errors.Wrap(err, "unable to get data for state")
+	if err := h.hydrateInstallMetadata(ctx, installID, snapshot); err != nil {
+		return nil, err
 	}
-
-	// build the state with all the resources here
-	is.ID = install.ID
-	is.Name = install.Name
-	is.Inputs = h.ToInputState(install.CurrentInstallInputs, appCfg, redacted)
-	is.Cloud = h.ToCloudAccount(install)
-
-	comps := h.ToComponents(installComps)
-	is.Components = make(map[string]any, 0)
-	for name, c := range comps.Components {
-		cMap, err := state.AsMap(c)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to create map")
-		}
-
-		is.Components[name] = cMap
-	}
-
-	is.App = h.ToAppState(install.App)
-	is.Org = h.ToOrgState(install.Org)
-
-	if len(install.RunnerGroup.Runners) > 0 {
-		is.Runner = h.ToRunnerState(install.RunnerGroup.Runners[0])
-	}
-
-	is.Sandbox = h.ToSandboxesState(sandboxRuns)
-	if len(sandboxRuns) > 0 {
-		is.Domain = h.ToDomainState(&sandboxRuns[0])
-	} else {
-		is.Domain = h.ToDomainState(nil)
-	}
-
-	is.Actions = h.ToActions(actions)
-	is.InstallStack = h.ToInstallStackState(stack)
-	is.Secrets = secrets
-	h.applyInstallMetadata(install, is)
-	// NOTE(JM): this is purely for historical and legacy reasons, and will be removed once we migrate all users to
-	// the flattened structure
-	is.Install = &state.InstallState{
-		Populated: true,
-		ID:        install.ID,
-		Name:      install.Name,
-		Sandbox:   *is.Sandbox,
-	}
-	if is.Domain != nil {
-		is.Install.PublicDomain = is.Domain.PublicDomain
-		is.Install.InternalDomain = is.Domain.InternalDomain
-	}
-
-	if is.Inputs != nil {
-		is.Install.Inputs = is.Inputs.Inputs
-	}
-
-	return is, nil
+	return snapshot, nil
 }
 
 func (h *Helpers) GetInstallInputsState(ctx context.Context, db *gorm.DB, installID string, redacted, skipVersionCheck bool) (*state.InputsState, error) {
+	ctx = routing.WithoutReplica(ctx)
 	var inputs app.InstallInputs
 	if err := db.WithContext(ctx).Where(app.InstallInputs{InstallID: installID}).Order("created_at DESC").First(&inputs).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -240,7 +72,6 @@ func (h *Helpers) getStateInstall(ctx context.Context, db *gorm.DB, installID st
 		Preload("AppRunnerConfig").
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Runners").
-		Preload("RunnerGroup.Settings").
 		Preload("AzureAccount").
 		Preload("GCPAccount").
 		Preload("AWSAccount").
@@ -343,79 +174,47 @@ func (h *Helpers) applyInstallMetadata(install *app.Install, is *state.State) {
 	}
 }
 
-func (h *Helpers) getLatestInstallStateRow(ctx context.Context, db *gorm.DB, installID string) (*app.InstallState, error) {
-	var is app.InstallState
-	res := db.WithContext(ctx).
-		Where(app.InstallState{InstallID: installID}).
-		Order("created_at DESC").
-		First(&is)
-	if res.Error != nil {
-		return nil, res.Error
-	}
-
-	return &is, nil
-}
-
-// regenerateStalePartials regenerates only the partials listed in row.StalePartials, merges them into
-// the cached state, persists the result in place (clearing the stale markers), and returns it.
 func (h *Helpers) regenerateStalePartials(ctx context.Context, installID string, skipVersionCheck bool) (*state.State, error) {
-	var result *state.State
-	err := h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := LockInstallInputs(ctx, tx, installID); err != nil {
-			return err
-		}
-		row, err := h.getLatestInstallStateRow(ctx, tx, installID)
+	for attempt := 0; attempt < 5; attempt++ {
+		is, err := h.GetInstallStateBaseline(ctx, installID)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		is, _ := row.GetState(ctx, h.cfg.BlobReadEnabled)
-		if is == nil {
-			is = state.New()
+		partials := make([]pkgstate.PartialName, 0, len(is.StalePartials))
+		for _, partial := range is.StalePartials {
+			partials = append(partials, pkgstate.PartialName(partial))
 		}
-		result = is
-		if row.StaleAt.Empty() || len(row.StalePartials) == 0 {
-			if !row.StaleAt.Empty() {
-				is.StaleAt = &row.StaleAt.Time
-			}
-			return nil
+		if is.ID == "" || (is.StaleAt != nil && len(partials) == 0) {
+			partials = pkgstate.AllPartials
 		}
-		install, err := h.getStateInstall(ctx, tx, installID)
+		if len(partials) == 0 {
+			return is, nil
+		}
+		install, err := h.getStateInstall(ctx, h.db, installID)
 		if err != nil {
-			return errors.Wrap(err, "unable to get install")
+			return nil, errors.Wrap(err, "unable to get install")
 		}
 		is.ID = install.ID
 		is.Name = install.Name
-		for _, partial := range row.StalePartials {
-			if err := h.regenerateStalePartial(ctx, tx, install, partial, is, skipVersionCheck); err != nil {
-				return errors.Wrapf(err, "unable to regenerate partial %s", partial)
+		for _, partial := range partials {
+			if err := h.regenerateStalePartial(ctx, h.db, install, partial, is, skipVersionCheck); err != nil {
+				return nil, errors.Wrapf(err, "unable to regenerate partial %s", partial)
 			}
 		}
 		MapLegacyFields(is)
-		stateJSON, err := json.Marshal(is)
+		published, err := h.PublishInstallState(ctx, &app.InstallState{
+			InstallID: installID, State: is, GeneratedBy: app.InstallStateGenerateSourceStateManager,
+			TriggeredByID: installID, TriggeredByType: "installs",
+		}, partials)
+		if IsInstallStateConflict(err) {
+			continue
+		}
 		if err != nil {
-			return errors.Wrap(err, "unable to marshal regenerated state")
+			return nil, err
 		}
-		stateBlob := &blobstore.Blob{}
-		stateBlob.Set(string(stateJSON))
-		if err := stateBlob.BeforeCreate(tx.WithContext(cctx.SetOrgIDContext(ctx, row.OrgID))); err != nil {
-			return err
-		}
-		if row.StateBlob != nil && row.StateBlob.BlobID() != "" && stateBlob.BlobID() == "" {
-			return errors.New("blob writes must be enabled to refresh blob-backed state")
-		}
-		if err := tx.Model(row).
-			Select("state", "state_blob", "stale_at", "stale_partials").
-			Updates(app.InstallState{
-				State:         is,
-				StateBlob:     stateBlob,
-				StaleAt:       pkggenerics.NullTime{},
-				StalePartials: []pkgstate.PartialName{},
-			}).Error; err != nil {
-			return errors.Wrap(err, "unable to persist regenerated state")
-		}
-		return nil
-	})
-	return result, err
+		return published.State, nil
+	}
+	return nil, temporal.NewNonRetryableApplicationError("install state kept changing during refresh", InstallStateConflict, nil)
 }
 
 // RedactStateInputs masks sensitive inputs at read time; persisted state always holds the real values.
@@ -468,6 +267,7 @@ func (h *Helpers) regenerateStalePartial(ctx context.Context, db *gorm.DB, insta
 	case pkgstate.PartialApp:
 		is.App = h.ToAppState(install.App)
 	case pkgstate.PartialRunner:
+		is.Runner = nil
 		if len(install.RunnerGroup.Runners) > 0 {
 			is.Runner = h.ToRunnerState(install.RunnerGroup.Runners[0])
 		}

@@ -47,6 +47,7 @@ type InstallState struct {
 	State     *state.State    `json:"contents,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"-"`
 	StateBlob *blobstore.Blob `json:"-" temporaljson:"-"`
 	Version   int             `json:"version,omitzero" gorm:"->;-:migration" temporaljson:"version,omitzero,omitempty"`
+	Revision  int64           `json:"-" gorm:"not null;default:0" temporaljson:"-"`
 
 	TriggeredByID   string `json:"triggered_by_id,omitzero" gorm:"type:text;check:triggered_by_id_checker,char_length(id)=26"`
 	TriggeredByType string `json:"triggered_by_type,omitzero" gorm:"type:text;"`

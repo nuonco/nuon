@@ -248,5 +248,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "143-activity-feed-indexes",
 			Fn:   m.Migration143ActivityFeedIndexes,
 		},
+		{
+			Name: "143-install-state-invalidation-triggers",
+			Fn:   m.Migration143InstallStateInvalidationTriggers,
+		},
 	}
 }

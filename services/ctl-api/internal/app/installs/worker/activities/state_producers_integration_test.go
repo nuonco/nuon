@@ -27,13 +27,16 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeployapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionrunner"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionsandboxapplyplan"
+	statesignals "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/syncsecrets"
 	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/propagator"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -352,4 +355,39 @@ func (s *InstallStateIntegrationSuite) TestProducerActionCompletionPublishesActi
 		}
 		return snapshot.Actions.Workflows[definition.Name].Status == string(app.InstallActionRunStatusFinished)
 	})
+}
+
+func (s *InstallStateIntegrationSuite) TestBackgroundGenerationRebuildsFromCurrentBaseline() {
+	older, err := s.deps.Helpers.GetInstallStateBaseline(s.ctx, s.install.ID)
+	require.NoError(s.T(), err)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.App{ID: s.install.AppID}).Update("name", "before-upload").Error)
+	var once sync.Once
+	ctx := blobstore.WithBlobService(s.ctx, publicationBlobService{
+		Service: s.deps.Blobs,
+		afterUpload: func() error {
+			var err error
+			once.Do(func() {
+				err = s.deps.DB.WithContext(s.ctx).Model(&app.App{ID: s.install.AppID}).Update("name", "during-upload").Error
+			})
+			return err
+		},
+	})
+	h := s.newProducerHarness()
+	h.env.SetWorkerOptions(worker.Options{BackgroundActivityContext: ctx, DeadlockDetectionTimeout: time.Minute})
+	h.env.ExecuteWorkflow(statesignals.Regenerate, &pkgstate.ExecuteRegenerationRequest{
+		InstallID: s.install.ID, TriggeredByID: s.install.ID, TriggeredByType: "installs",
+		CachedState: older, Targets: []pkgstate.PartialTarget{{Name: pkgstate.PartialInputs}},
+	})
+	require.True(s.T(), h.env.IsWorkflowCompleted())
+	require.NoError(s.T(), h.env.GetWorkflowError())
+	var result pkgstate.ExecuteRegenerationResponse
+	require.NoError(s.T(), h.env.GetWorkflowResult(&result))
+	require.Equal(s.T(), "during-upload", result.State.App.Name)
+	require.Contains(s.T(), result.UpdatedPartials, pkgstate.PartialApp)
+	require.NotNil(s.T(), result.State.Revision)
+	current, err := s.deps.Helpers.GetInstallStateBaseline(s.ctx, s.install.ID)
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), result.State.Revision, current.Revision)
+	require.Equal(s.T(), "during-upload", current.App.Name)
+	require.Nil(s.T(), current.StaleAt)
 }

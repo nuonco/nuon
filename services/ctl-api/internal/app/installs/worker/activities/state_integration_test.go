@@ -2,6 +2,7 @@ package activities_test
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"os"
 	"testing"
@@ -145,6 +146,9 @@ func (s *InstallStateIntegrationSuite) SetupTest() {
 		Inputs: &state.InputsState{Inputs: map[string]string{"region": "us-east-1"}},
 	}
 	helpers.MapLegacyFields(snapshot)
+	baseline, err := s.deps.Helpers.GetInstallStateBaseline(s.ctx, s.install.ID)
+	require.NoError(s.T(), err)
+	snapshot.Revision = baseline.Revision
 	row, err := s.saveState(snapshot)
 	require.NoError(s.T(), err)
 	var reloaded app.InstallState
@@ -258,7 +262,7 @@ func (s *InstallStateIntegrationSuite) TestRedactedRefreshPreservesCanonicalInpu
 	require.NoError(s.T(), err)
 	require.Equal(s.T(), map[string]string{"region": "example-secret", "replicas": "3"}, canonical.Inputs.Inputs)
 	_, err = s.saveState(older)
-	require.NoError(s.T(), err)
+	require.True(s.T(), helpers.IsInstallStateConflict(err), "%v", err)
 	canonical, err = s.activities.GetInstallState(s.ctx, &installactivities.GetInstallStateRequest{InstallID: s.install.ID})
 	require.NoError(s.T(), err)
 	require.Equal(s.T(), map[string]string{"region": "example-secret", "replicas": "3"}, canonical.Inputs.Inputs)
@@ -266,8 +270,28 @@ func (s *InstallStateIntegrationSuite) TestRedactedRefreshPreservesCanonicalInpu
 
 func (s *InstallStateIntegrationSuite) TestFailedBlobPublicationLeavesInputsStale() {
 	s.updateInput()
-	_, err := s.activities.GetInstallState(blobstore.WithBlobWriteEnabled(s.ctx, false), &installactivities.GetInstallStateRequest{InstallID: s.install.ID})
-	require.Error(s.T(), err)
+	baseline, err := s.deps.Helpers.GetInstallStateBaseline(s.ctx, s.install.ID)
+	require.NoError(s.T(), err)
+	contexts := map[string]context.Context{
+		"write_disabled": blobstore.WithBlobWriteEnabled(s.ctx, false),
+		"upload_failed": blobstore.WithBlobService(s.ctx, publicationBlobService{
+			Service: s.deps.Blobs,
+			afterUpload: func() error {
+				return fmt.Errorf("injected blob upload failure")
+			},
+		}),
+	}
+	for name, ctx := range contexts {
+		s.Run(name, func() {
+			_, err := s.activities.GetInstallState(ctx, &installactivities.GetInstallStateRequest{InstallID: s.install.ID})
+			require.Error(s.T(), err)
+			pending, err := s.deps.Helpers.GetInstallStateBaseline(s.ctx, s.install.ID)
+			require.NoError(s.T(), err)
+			require.Equal(s.T(), baseline.Revision, pending.Revision)
+			require.NotNil(s.T(), pending.StaleAt)
+			require.Equal(s.T(), "us-east-1", pending.Inputs.Inputs["region"])
+		})
+	}
 	for read := 0; read < 2; read++ {
 		snapshot, err := s.activities.GetInstallState(s.ctx, &installactivities.GetInstallStateRequest{InstallID: s.install.ID})
 		require.NoError(s.T(), err)

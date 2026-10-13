@@ -45,7 +45,7 @@ func (s *InstallStateIntegrationSuite) TestOutOfBandStackRunRendersRoleNameFromU
 
 	var workflowSuite testsuite.WorkflowTestSuite
 	env := workflowSuite.NewTestWorkflowEnvironment()
-	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
+	env.SetWorkerOptions(worker.Options{BackgroundActivityContext: s.ctx, DeadlockDetectionTimeout: time.Minute})
 	env.SetTestTimeout(2 * time.Minute)
 	env.SetDataConverter(converter.NewCompositeDataConverter(
 		signaldb.NewPayloadConverter(),

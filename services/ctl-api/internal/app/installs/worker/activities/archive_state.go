@@ -13,22 +13,25 @@ type ArchiveStateRequest struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) ArchiveState(ctx context.Context, req *ArchiveStateRequest) error {
-	retainCount := 50 // Number of states to retain
+	retainCount := 50
 
 	err := a.db.WithContext(ctx).
-		Where("install_id = ? AND archived = false AND id NOT IN (?)",
+		Scopes(scopes.WithDisableViews).
+		Where("revision = 0 OR EXISTS (SELECT 1 FROM install_state_publications WHERE state_id = install_states.id)").
+		Where("install_id = ? AND archived = false AND id NOT IN (?) AND id NOT IN (?)",
 			req.InstallID,
 			a.db.Model(&app.InstallState{}).
-				Scopes(scopes.WithDisableViews).
 				Select("id").
 				Where("install_id = ?", req.InstallID).
 				Order("created_at DESC").
 				Limit(retainCount),
+			a.db.Model(&app.InstallStateHead{}).
+				Select("current_state_id").Where(app.InstallStateHead{InstallID: req.InstallID}),
 		).
 		Select("archived", "state").
 		Updates(&app.InstallState{
 			Archived: true,
-			State:    nil, // Clear the state to avoid keeping large data in archived states
+			State:    nil,
 		}).Error
 	if err != nil {
 		return err
