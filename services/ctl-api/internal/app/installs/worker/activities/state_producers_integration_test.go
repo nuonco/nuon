@@ -1,393 +1,378 @@
 package activities_test
 
 import (
-	"context"
 	"encoding/json"
 	"sync"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/worker"
-	"go.temporal.io/sdk/workflow"
-	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/generics"
-	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	pkgdataconverter "github.com/nuonco/nuon/pkg/temporal/dataconverter"
-	"github.com/nuonco/nuon/pkg/types/outputs"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/actionworkflowrun"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeployapplyplan"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionrunner"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionsandboxapplyplan"
 	statesignals "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/syncsecrets"
-	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/propagator"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
-	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
-	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-type producerEnqueue struct {
-	OwnerID   string
-	OwnerType string
-	QueueName string
-}
-
-type producerHarness struct {
-	s      *InstallStateIntegrationSuite
-	env    *testsuite.TestWorkflowEnvironment
-	status *statusactivities.Activities
-
-	mu            sync.Mutex
-	onRunnerQueue func(ctx context.Context, req *producerEnqueue) error
-	hinted        bool
-	workerRead    *state.State
-	apiRead       *state.State
-	readErr       error
-}
-
-func (s *InstallStateIntegrationSuite) newProducerHarness() *producerHarness {
-	var ws testsuite.WorkflowTestSuite
-	h := &producerHarness{
-		s:      s,
-		env:    ws.NewTestWorkflowEnvironment(),
-		status: statusactivities.New(statusactivities.Params{DB: s.deps.DB, MW: s.deps.MW}),
-	}
-	h.env.SetTestTimeout(time.Minute)
-	dc := converter.NewCompositeDataConverter(
-		converter.NewNilPayloadConverter(),
-		converter.NewByteSlicePayloadConverter(),
-		pkgdataconverter.NewJSONConverter(),
-	)
-	h.env.SetDataConverter(dc)
-	h.env.SetContextPropagators([]workflow.ContextPropagator{propagator.New(propagator.Params{L: zap.NewNop(), DataConverter: dc})})
-	h.env.SetWorkerOptions(worker.Options{BackgroundActivityContext: s.ctx, DeadlockDetectionTimeout: time.Minute})
-	h.env.RegisterActivityWithOptions(s.activities, activity.RegisterOptions{SkipInvalidStructFunctions: true})
-
-	for name, fn := range map[string]any{
-		"UpdateDeployStatusV2":             h.status.UpdateDeployStatusV2,
-		"UpdateRunStatusV2":                h.status.UpdateRunStatusV2,
-		"UpdateInstallWorkflowRunStatusV2": h.status.UpdateInstallWorkflowRunStatusV2,
-		"EnqueueSignalToOwner":             h.enqueueSignalToOwner,
-		"CreateLogStream": func(ctx context.Context, req installactivities.CreateLogStreamRequest) (*app.LogStream, error) {
-			ls := &app.LogStream{ID: domains.NewLogStreamID(), OrgID: s.install.OrgID, OwnerID: req.StepID, OwnerType: "install_workflow_steps"}
-			if req.ActionWorkflowRunID != "" {
-				ls.OwnerID = req.ActionWorkflowRunID
-				ls.OwnerType = "install_action_workflow_runs"
-			}
-			return ls, s.deps.DB.WithContext(ctx).Create(ls).Error
-		},
-		"GetLogStream": func(_ context.Context, req installactivities.GetLogStreamRequest) (*app.LogStream, error) {
-			return &app.LogStream{ID: domains.NewLogStreamID(), OrgID: s.install.OrgID, RunnerAPIURL: "http://127.0.0.1:9"}, nil
-		},
-		"CloseLogStream": func(context.Context, installactivities.CloseLogStreamRequest) error { return nil },
-		"GetLatestJob": func(context.Context, *installactivities.GetLatestJobRequest) (*app.RunnerJob, error) {
-			return &app.RunnerJob{Execution: &app.RunnerJobExecution{Result: &app.RunnerJobExecutionResult{}}}, nil
-		},
-		"CreateDeployJob": func(_ context.Context, req *installactivities.CreateDeployJobRequest) (*app.RunnerJob, error) {
-			return &app.RunnerJob{ID: domains.NewRunnerJobID(), RunnerID: req.RunnerID, Type: req.Type, Operation: req.Op}, nil
-		},
-		"CreateSandboxJob": func(_ context.Context, req *installactivities.CreateSandboxJobRequest) (*app.RunnerJob, error) {
-			return &app.RunnerJob{ID: domains.NewRunnerJobID(), RunnerID: req.RunnerID, Type: req.JobType, Operation: req.Op}, nil
-		},
-		"SaveRunnerJobPlan":      func(context.Context, *installactivities.SaveRunnerJobPlanRequest) error { return nil },
-		"RecordInstallRoleUsage": func(context.Context, *installactivities.RecordInstallRoleUsageRequest) error { return nil },
-	} {
-		h.env.RegisterActivityWithOptions(fn, activity.RegisterOptions{Name: name, DisableAlreadyRegisteredCheck: true})
-	}
-
-	for name, fn := range map[string]any{
-		"CreateDeployPlan": func(workflow.Context, *plan.CreateDeployPlanRequest) (plan.CreateDeployPlanResponse, error) {
-			return plan.CreateDeployPlanResponse{Plan: &plantypes.DeployPlan{}}, nil
-		},
-		"CreateSandboxRunPlan": func(workflow.Context, *plan.CreateSandboxRunPlanRequest) (plan.CreateSandboxPlanResponse, error) {
-			return plan.CreateSandboxPlanResponse{Plan: &plantypes.SandboxRunPlan{}}, nil
-		},
-		"ExecuteJob": func(workflow.Context, *job.ExecuteJobRequest) (app.RunnerJobStatus, error) {
-			return app.RunnerJobStatusFinished, nil
-		},
-	} {
-		h.env.RegisterWorkflowWithOptions(fn, workflow.RegisterOptions{Name: name, DisableAlreadyRegisteredCheck: true})
-	}
-	return h
-}
-
-func (h *producerHarness) enqueueSignalToOwner(ctx context.Context, req *producerEnqueue) (*sharedactivities.EnqueueSignalToOwnerResponse, error) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	switch req.QueueName {
-	case helpers.InstallStateManagerQueueName:
-		if !h.hinted {
-			h.hinted = true
-			h.workerRead, h.readErr = h.s.activities.GetInstallState(ctx, &installactivities.GetInstallStateRequest{InstallID: h.s.install.ID})
-			if h.readErr == nil {
-				h.apiRead, h.readErr = h.s.deps.Helpers.GetInstallState(ctx, h.s.install.ID, true, false)
-			}
-		}
-	case queuenames.RunnerSignalsQueueName:
-		if h.onRunnerQueue != nil {
-			if err := h.onRunnerQueue(ctx, req); err != nil {
-				return nil, err
-			}
-		}
-	}
-	return &sharedactivities.EnqueueSignalToOwnerResponse{QueueSignalID: domains.NewQueueSignalID()}, nil
-}
-
-func (h *producerHarness) execute(sig signal.Signal) {
-	accountID, err := cctx.AccountIDFromContext(h.s.ctx)
-	require.NoError(h.s.T(), err)
-	h.env.ExecuteWorkflow(func(ctx workflow.Context) error {
-		ctx = cctx.SetAccountIDWorkflowContext(ctx, accountID)
-		ctx = cctx.SetOrgIDWorkflowContext(ctx, h.s.install.OrgID)
-		return sig.Execute(ctx)
-	})
-	require.True(h.s.T(), h.env.IsWorkflowCompleted())
-	require.ErrorContains(h.s.T(), h.env.GetWorkflowError(), "unable to await state generation")
-}
-
-func (h *producerHarness) requirePendingReadsFreshOrStale(what string, fresh func(*state.State) bool) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	require.True(h.s.T(), h.hinted, "the signal must reach the queued state regeneration: %v", h.env.GetWorkflowError())
-	require.NoError(h.s.T(), h.readErr)
-	for reader, snapshot := range map[string]*state.State{"worker": h.workerRead, "api": h.apiRead} {
-		require.NotNil(h.s.T(), snapshot)
-		assert.True(h.s.T(), fresh(snapshot) || snapshot.StaleAt != nil,
-			"%s reader returned %s from before the mutation without a stale marker while regeneration was pending", reader, what)
-	}
-}
-
-func (s *InstallStateIntegrationSuite) saveBaseline(mutate func(*state.State)) {
-	current, err := s.activities.GetInstallState(s.ctx, &installactivities.GetInstallStateRequest{InstallID: s.install.ID})
-	require.NoError(s.T(), err)
-	mutate(current)
-	helpers.MapLegacyFields(current)
-	_, err = s.saveState(current)
-	require.NoError(s.T(), err)
-}
-
-func (s *InstallStateIntegrationSuite) TestProducerDeployCompletionPublishesComponentState() {
-	t := s.T()
+func (s *InstallStateIntegrationSuite) componentConnection() app.ComponentConfigConnection {
+	s.T().Helper()
 	var connection app.ComponentConfigConnection
-	require.NoError(t, s.deps.DB.WithContext(s.ctx).Preload("Component").
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Preload("Component").
 		Where(app.ComponentConfigConnection{AppConfigID: s.install.AppConfigID, Type: app.ComponentTypeTerraformModule}).
 		First(&connection).Error)
-	component := connection.Component
-	build := s.deps.Seeder.CreateComponentBuild(s.ctx, t, connection.ID)
-	installComponent := s.deps.Seeder.CreateInstallComponent(s.ctx, t, s.install.ID, component.ID)
-	flow := s.deps.Seeder.CreateWorkflow(s.ctx, t, s.install.ID, app.WorkflowTypeDeployComponents)
-	step := s.deps.Seeder.CreateWorkflowStep(s.ctx, t, flow.ID)
-	deploy := s.deps.Seeder.CreateInstallDeploy(s.ctx, t, installComponent.ID, build.ID)
-	require.NoError(t, s.deps.DB.WithContext(s.ctx).Model(&app.InstallDeploy{ID: deploy.ID}).
-		Updates(app.InstallDeploy{InstallWorkflowID: generics.ToPtr(flow.ID), Status: app.InstallDeployStatusPlanning}).Error)
-	s.saveBaseline(func(snapshot *state.State) {
-		snapshot.Components = map[string]any{component.Name: map[string]any{
-			"populated": true, "name": component.Name, "component_id": component.ID,
-			"install_component_id": installComponent.ID, "status": string(app.InstallDeployStatusPlanning),
-		}}
-	})
-
-	h := s.newProducerHarness()
-	h.execute(&componentdeployapplyplan.Signal{
-		InstallComponentID: installComponent.ID, InstallID: s.install.ID, ComponentID: component.ID,
-		FlowID: flow.ID, FlowStepID: step.ID, InstallWorkflowStepID: step.ID,
-	})
-
-	var applied app.InstallDeploy
-	require.NoError(t, s.deps.DB.WithContext(s.ctx).Where(app.InstallDeploy{ID: deploy.ID}).First(&applied).Error)
-	require.Equal(t, app.InstallDeployStatusActive, applied.Status)
-	h.requirePendingReadsFreshOrStale("the component deploy status", func(snapshot *state.State) bool {
-		comp, ok := snapshot.Components[component.Name].(map[string]any)
-		return ok && comp["status"] == string(app.InstallDeployStatusActive)
-	})
+	return connection
 }
 
-func (s *InstallStateIntegrationSuite) TestProducerSandboxProvisionPublishesSandboxState() {
-	t := s.T()
-	flow := s.deps.Seeder.CreateWorkflow(s.ctx, t, s.install.ID, app.WorkflowTypeProvision)
-	step := s.deps.Seeder.CreateWorkflowStep(s.ctx, t, flow.ID)
-	run := &app.InstallSandboxRun{
-		InstallID: s.install.ID, InstallWorkflowID: generics.ToPtr(flow.ID),
-		AppSandboxConfigID: s.install.AppSandboxConfigID, RunType: app.SandboxRunTypeProvision,
-		Status: app.SandboxRunStatusApplying, StatusDescription: "applying plan",
+func (s *InstallStateIntegrationSuite) create(objs ...any) {
+	s.T().Helper()
+	for _, obj := range objs {
+		require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(obj).Error)
 	}
-	require.NoError(t, s.deps.DB.WithContext(s.ctx).Create(run).Error)
-	s.saveBaseline(func(snapshot *state.State) {
-		snapshot.Sandbox = &state.SandboxState{Populated: true, Status: string(app.SandboxRunStatusApplying)}
-	})
-
-	h := s.newProducerHarness()
-	sig := &provisionsandboxapplyplan.Signal{
-		InstallSandboxID: s.install.InstallSandbox.ID, InstallID: s.install.ID,
-		FlowID: flow.ID, FlowStepID: step.ID, InstallWorkflowID: flow.ID,
-	}
-	sig.WithParams(&signal.Params{Cfg: s.deps.Cfg})
-	h.execute(sig)
-
-	var applied app.InstallSandboxRun
-	require.NoError(t, s.deps.DB.WithContext(s.ctx).Where(app.InstallSandboxRun{ID: run.ID}).First(&applied).Error)
-	require.Equal(t, app.SandboxRunStatusActive, applied.Status)
-	h.requirePendingReadsFreshOrStale("the sandbox run status", func(snapshot *state.State) bool {
-		return snapshot.Sandbox != nil && snapshot.Sandbox.Status == string(app.SandboxRunStatusActive)
-	})
 }
 
-func (s *InstallStateIntegrationSuite) TestProducerRunnerProvisionPublishesRunnerState() {
-	t := s.T()
-	runner := s.createProducerRunner(app.RunnerStatusProvisioning)
-	s.saveBaseline(func(snapshot *state.State) {
-		snapshot.Runner = helpers.ToRunnerState(*runner)
-	})
-
-	h := s.newProducerHarness()
-	h.onRunnerQueue = func(ctx context.Context, req *producerEnqueue) error {
-		_, err := h.status.TransitionRunnerStatus(ctx, statusactivities.TransitionRunnerStatusRequest{
-			RunnerID: req.OwnerID, Status: app.RunnerStatusAwaitingInstallStackRun, StatusDescription: "awaiting stack run",
-		})
-		return err
-	}
-	h.execute(&provisionrunner.Signal{InstallID: s.install.ID})
-
-	var provisioned app.Runner
-	require.NoError(t, s.deps.DB.WithContext(s.ctx).Where(app.Runner{ID: runner.ID}).First(&provisioned).Error)
-	require.Equal(t, app.RunnerStatusAwaitingInstallStackRun, provisioned.Status)
-	h.requirePendingReadsFreshOrStale("the runner status", func(snapshot *state.State) bool {
-		return snapshot.Runner != nil && snapshot.Runner.Status == string(app.RunnerStatusAwaitingInstallStackRun)
-	})
-}
-
-func (s *InstallStateIntegrationSuite) createProducerRunner(status app.RunnerStatus) *app.Runner {
-	t := s.T()
+func (s *InstallStateIntegrationSuite) createRunner(status app.RunnerStatus) *app.Runner {
 	group := &app.RunnerGroup{
 		ID: domains.NewRunnerGroupID(), OrgID: s.install.OrgID, OwnerID: s.install.ID, OwnerType: "installs",
 		Type: app.RunnerGroupTypeInstall, Platform: app.AppRunnerTypeAWS,
 	}
-	require.NoError(t, s.deps.DB.WithContext(s.ctx).Create(group).Error)
 	runner := &app.Runner{
 		ID: domains.NewRunnerID(), OrgID: s.install.OrgID, Name: "example-runner", DisplayName: "Example Runner",
 		Status: status, RunnerGroupID: group.ID,
 	}
-	require.NoError(t, s.deps.DB.WithContext(s.ctx).Create(runner).Error)
+	s.create(group, runner)
 	return runner
 }
 
-func (s *InstallStateIntegrationSuite) TestProducerSecretSyncPublishesSecretState() {
-	runner := s.createProducerRunner(app.RunnerStatusActive)
-	flow := s.deps.Seeder.CreateWorkflow(s.ctx, s.T(), s.install.ID, app.WorkflowTypeProvision)
-	step := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), flow.ID)
-	s.saveBaseline(func(snapshot *state.State) {
-		snapshot.Secrets = generics.ToPtr(state.NewSecretsState())
-	})
-	h := s.newProducerHarness()
-	h.env.RegisterWorkflowWithOptions(func(workflow.Context, *plan.CreateSyncSecretsPlanRequest) (*plantypes.SyncSecretsPlan, error) {
-		return &plantypes.SyncSecretsPlan{KubernetesSecrets: []plantypes.KubernetesSecretSync{{SecretName: "example", Namespace: "default", Name: "example", KeyName: "key"}}}, nil
-	}, workflow.RegisterOptions{Name: "CreateSyncSecretsPlan"})
-	secretOutputs := outputs.SyncSecretsOutput{"example": {Name: "example", Exists: true, KubernetesName: "example", KubernetesKey: "key"}}
-	encoded, err := json.Marshal(secretOutputs)
-	require.NoError(s.T(), err)
-	h.env.RegisterActivityWithOptions(func(ctx context.Context, req *job.ExecuteJobRequest) (app.RunnerJobStatus, error) {
-		execution := &app.RunnerJobExecution{RunnerJobID: req.JobID, Status: app.RunnerJobExecutionStatusFinished}
-		if err := s.deps.DB.WithContext(ctx).Create(execution).Error; err != nil {
-			return "", err
-		}
-		if err := s.deps.DB.WithContext(ctx).Create(&app.RunnerJobExecutionOutputs{RunnerJobExecutionID: execution.ID, Outputs: encoded}).Error; err != nil {
-			return "", err
-		}
-		return app.RunnerJobStatusFinished, nil
-	}, activity.RegisterOptions{Name: "FinishSecretSyncJob"})
-	h.env.RegisterWorkflowWithOptions(func(ctx workflow.Context, req *job.ExecuteJobRequest) (app.RunnerJobStatus, error) {
-		var status app.RunnerJobStatus
-		ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{StartToCloseTimeout: time.Minute})
-		err := workflow.ExecuteActivity(ctx, "FinishSecretSyncJob", req).Get(ctx, &status)
-		return status, err
-	}, workflow.RegisterOptions{Name: "ExecuteJob", DisableAlreadyRegisteredCheck: true})
-	h.execute(&syncsecrets.Signal{InstallID: s.install.ID, WorkflowStepID: step.ID})
-
-	var completed app.RunnerJob
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Where(app.RunnerJob{RunnerID: runner.ID, Type: app.RunnerJobTypeSandboxSyncSecrets}).First(&completed).Error)
-	require.Equal(s.T(), true, completed.ParsedOutputs["example"].(map[string]any)["exists"])
-	h.requirePendingReadsFreshOrStale("the synced secret metadata", func(snapshot *state.State) bool {
-		return snapshot.Secrets != nil && (*snapshot.Secrets)["example"].Exists
-	})
+func (s *InstallStateIntegrationSuite) createExecution(runnerID, ownerID, ownerType string, jobType app.RunnerJobType, status app.RunnerJobExecutionStatus) *app.RunnerJobExecution {
+	logStream := &app.LogStream{ID: domains.NewLogStreamID(), OrgID: s.install.OrgID, OwnerID: ownerID, OwnerType: ownerType}
+	s.create(logStream)
+	job := &app.RunnerJob{
+		LogStreamID: &logStream.ID, RunnerID: runnerID, OwnerID: ownerID, OwnerType: ownerType, Type: jobType,
+		Status: app.RunnerJobStatusFinished, Group: app.RunnerJobGroupDeploy,
+		Operation: app.RunnerJobOperationTypeApplyPlan, MaxExecutions: 1,
+	}
+	s.create(job)
+	execution := &app.RunnerJobExecution{RunnerJobID: job.ID, Status: status}
+	s.create(execution)
+	return execution
 }
 
-func (s *InstallStateIntegrationSuite) TestProducerActionCompletionPublishesActionState() {
-	s.createProducerRunner(app.RunnerStatusActive)
+func executionOutputs(executionID string, outputs map[string]any) *app.RunnerJobExecutionOutputs {
+	encoded, err := json.Marshal(outputs)
+	if err != nil {
+		panic(err)
+	}
+	return &app.RunnerJobExecutionOutputs{RunnerJobExecutionID: executionID, Outputs: encoded}
+}
+
+func (s *InstallStateIntegrationSuite) createDeploy(installComponentID, connectionID string, status app.InstallDeployStatus) *app.InstallDeploy {
+	build := s.deps.Seeder.CreateComponentBuild(s.ctx, s.T(), connectionID)
+	deploy := &app.InstallDeploy{
+		InstallComponentID: installComponentID, ComponentBuildID: build.ID,
+		Status: status, Type: app.InstallDeployTypeApply,
+	}
+	s.create(deploy)
+	return deploy
+}
+
+func componentState(t require.TestingT, snapshot *state.State, name string) map[string]any {
+	component, ok := snapshot.Components[name].(map[string]any)
+	require.True(t, ok, "component %s missing from %v", name, snapshot.Components)
+	return component
+}
+
+func (s *InstallStateIntegrationSuite) TestSourceCommitsReachStrictFreshReads() {
+	connection := s.componentConnection()
 	definition := s.deps.Seeder.CreateActionWorkflow(s.ctx, s.T(), s.install.AppID)
 	s.deps.Seeder.CreateActionWorkflowConfig(s.ctx, s.T(), s.install.AppID, s.install.AppConfigID, definition.ID)
-	installed := &app.InstallActionWorkflow{InstallID: s.install.ID, ActionWorkflowID: definition.ID}
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(installed).Error)
-	s.saveBaseline(func(snapshot *state.State) {
-		snapshot.Actions = state.NewActionsState()
-		snapshot.Actions.Workflows[definition.Name] = &state.ActionWorkflowState{ID: definition.ID, Status: string(app.InstallActionRunStatusUnknown)}
-	})
-	h := s.newProducerHarness()
-	h.env.RegisterWorkflowWithOptions(func(workflow.Context, *plan.CreateActionRunPlanRequest) (plan.CreateActionPlanResponse, error) {
-		return plan.CreateActionPlanResponse{Plan: &plantypes.ActionWorkflowRunPlan{}}, nil
-	}, workflow.RegisterOptions{Name: "CreateActionWorkflowRunPlan"})
-	h.execute(&actionworkflowrun.Signal{
-		InstallID: s.install.ID, InstallActionWorkflowID: installed.ID,
-		TriggerType: app.ActionWorkflowTriggerTypeManual, TriggeredByID: s.install.ID, TriggeredByType: "installs",
-	})
-	var completed app.InstallActionWorkflowRun
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
-		Where(app.InstallActionWorkflowRun{InstallID: s.install.ID, InstallActionWorkflowID: generics.NewNullString(installed.ID)}).First(&completed).Error)
-	require.Equal(s.T(), app.InstallActionRunStatusFinished, completed.Status)
-	h.requirePendingReadsFreshOrStale("the action run status", func(snapshot *state.State) bool {
-		if snapshot.Actions == nil || snapshot.Actions.Workflows[definition.Name] == nil {
-			return false
-		}
-		return snapshot.Actions.Workflows[definition.Name].Status == string(app.InstallActionRunStatusFinished)
-	})
+	var (
+		runner          *app.Runner
+		deploy          *app.InstallDeploy
+		deployExec      *app.RunnerJobExecution
+		sandboxExec     *app.RunnerJobExecution
+		installedAction *app.InstallActionWorkflow
+		actionExec      *app.RunnerJobExecution
+		secretsExec     *app.RunnerJobExecution
+	)
+	for _, step := range []struct {
+		name   string
+		commit func()
+		check  func(*state.State)
+	}{
+		{
+			name:   "runner_created",
+			commit: func() { runner = s.createRunner(app.RunnerStatusProvisioning) },
+			check: func(snapshot *state.State) {
+				require.Equal(s.T(), runner.ID, snapshot.Runner.ID)
+				require.Equal(s.T(), string(app.RunnerStatusProvisioning), snapshot.Runner.Status)
+			},
+		},
+		{
+			name: "runner_status",
+			commit: func() {
+				require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(runner).Update("status", app.RunnerStatusActive).Error)
+			},
+			check: func(snapshot *state.State) {
+				require.Equal(s.T(), string(app.RunnerStatusActive), snapshot.Runner.Status)
+			},
+		},
+		{
+			name: "component_deploy",
+			commit: func() {
+				installed := s.deps.Seeder.CreateInstallComponent(s.ctx, s.T(), s.install.ID, connection.ComponentID)
+				deploy = s.createDeploy(installed.ID, connection.ID, app.InstallDeployStatusActive)
+				deployExec = s.createExecution(runner.ID, deploy.ID, "install_deploys", app.RunnerJobTypeTerraformDeploy, app.RunnerJobExecutionStatusFinished)
+			},
+			check: func(snapshot *state.State) {
+				component := componentState(s.T(), snapshot, connection.Component.Name)
+				require.Equal(s.T(), string(app.InstallDeployStatusActive), component["status"])
+				require.Equal(s.T(), deploy.ComponentBuildID, component["build_id"])
+				require.Empty(s.T(), component["outputs"])
+			},
+		},
+		{
+			name:   "component_outputs",
+			commit: func() { s.create(executionOutputs(deployExec.ID, map[string]any{"endpoint": "api.example.com"})) },
+			check: func(snapshot *state.State) {
+				component := componentState(s.T(), snapshot, connection.Component.Name)
+				require.Equal(s.T(), map[string]any{"endpoint": "api.example.com"}, component["outputs"])
+			},
+		},
+		{
+			name: "sandbox_run",
+			commit: func() {
+				run := &app.InstallSandboxRun{
+					InstallID: s.install.ID, AppSandboxConfigID: s.install.AppSandboxConfigID,
+					RunType: app.SandboxRunTypeProvision, Status: app.SandboxRunStatusActive, StatusDescription: "active",
+				}
+				s.create(run)
+				sandboxExec = s.createExecution(runner.ID, run.ID, "install_sandbox_runs", app.RunnerJobTypeSandboxTerraform, app.RunnerJobExecutionStatusFinished)
+			},
+			check: func(snapshot *state.State) {
+				require.Equal(s.T(), string(app.SandboxRunStatusActive), snapshot.Sandbox.Status)
+				require.Empty(s.T(), snapshot.Domain.PublicDomain)
+			},
+		},
+		{
+			name: "sandbox_outputs",
+			commit: func() {
+				s.create(executionOutputs(sandboxExec.ID, map[string]any{"public_domain": "acme.example.com", "internal_domain": "acme.internal"}))
+			},
+			check: func(snapshot *state.State) {
+				require.Equal(s.T(), "acme.example.com", snapshot.Sandbox.Outputs["public_domain"])
+				require.Equal(s.T(), "acme.example.com", snapshot.Domain.PublicDomain)
+				require.Equal(s.T(), "acme.internal", snapshot.Install.InternalDomain)
+			},
+		},
+		{
+			name: "action_installed",
+			commit: func() {
+				installedAction = &app.InstallActionWorkflow{InstallID: s.install.ID, ActionWorkflowID: definition.ID}
+				s.create(installedAction)
+			},
+			check: func(snapshot *state.State) {
+				require.Equal(s.T(), string(app.InstallActionRunStatusUnknown), snapshot.Actions.Workflows[definition.Name].Status)
+			},
+		},
+		{
+			name: "action_run_finished",
+			commit: func() {
+				run := &app.InstallActionWorkflowRun{
+					InstallID: s.install.ID, InstallActionWorkflowID: generics.NewNullString(installedAction.ID),
+					Status: app.InstallActionRunStatusFinished, StatusDescription: "finished",
+					TriggerType: app.ActionWorkflowTriggerTypeManual,
+				}
+				s.create(run)
+				actionExec = s.createExecution(runner.ID, run.ID, "install_action_workflow_runs", app.RunnerJobTypeTerraformDeploy, app.RunnerJobExecutionStatusFinished)
+			},
+			check: func(snapshot *state.State) {
+				require.Equal(s.T(), string(app.InstallActionRunStatusFinished), snapshot.Actions.Workflows[definition.Name].Status)
+				require.Empty(s.T(), snapshot.Actions.Workflows[definition.Name].Outputs)
+			},
+		},
+		{
+			name:   "action_outputs",
+			commit: func() { s.create(executionOutputs(actionExec.ID, map[string]any{"token_id": "example"})) },
+			check: func(snapshot *state.State) {
+				require.Equal(s.T(), "example", snapshot.Actions.Workflows[definition.Name].Outputs["token_id"])
+			},
+		},
+		{
+			name: "stack_version",
+			commit: func() {
+				s.deps.Seeder.CreateInstallStackVersion(s.ctx, s.T(), s.install.ID, s.install.InstallStack.ID, s.install.AppConfigID)
+			},
+			check: func(snapshot *state.State) {
+				require.NotNil(s.T(), snapshot.InstallStack)
+				require.Equal(s.T(), "test-checksum", snapshot.InstallStack.Checksum)
+				require.Empty(s.T(), snapshot.InstallStack.Outputs)
+			},
+		},
+		{
+			name: "stack_outputs",
+			commit: func() {
+				require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.InstallStackOutputs{}).
+					Where(app.InstallStackOutputs{InstallStackID: s.install.InstallStack.ID}).
+					Update("data", pgtype.Hstore{"vpc_id": generics.ToPtr("vpc-0example")}).Error)
+			},
+			check: func(snapshot *state.State) {
+				encoded, err := json.Marshal(snapshot.InstallStack.Outputs)
+				require.NoError(s.T(), err)
+				require.JSONEq(s.T(), `{"vpc_id":"vpc-0example"}`, string(encoded))
+			},
+		},
+		{
+			name: "secrets_sync_job",
+			commit: func() {
+				secretsExec = s.createExecution(runner.ID, s.install.ID, "installs", app.RunnerJobTypeSandboxSyncSecrets, app.RunnerJobExecutionStatusFinished)
+			},
+			check: func(snapshot *state.State) {
+				require.NotNil(s.T(), snapshot.Secrets)
+				require.Empty(s.T(), *snapshot.Secrets)
+			},
+		},
+		{
+			name: "secrets_sync_outputs",
+			commit: func() {
+				s.create(executionOutputs(secretsExec.ID, map[string]any{"example": map[string]any{"name": "example", "exists": true}}))
+			},
+			check: func(snapshot *state.State) {
+				require.True(s.T(), (*snapshot.Secrets)["example"].Exists)
+			},
+		},
+	} {
+		s.Run(step.name, func() {
+			step.commit()
+			for range 2 {
+				step.check(s.fresh())
+			}
+		})
+	}
 }
 
-func (s *InstallStateIntegrationSuite) TestBackgroundGenerationRebuildsFromCurrentBaseline() {
-	older, err := s.deps.Helpers.GetInstallStateBaseline(s.ctx, s.install.ID)
-	require.NoError(s.T(), err)
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(&app.App{ID: s.install.AppID}).Update("name", "before-upload").Error)
-	var once sync.Once
-	ctx := blobstore.WithBlobService(s.ctx, publicationBlobService{
-		Service: s.deps.Blobs,
-		afterUpload: func() error {
-			var err error
-			once.Do(func() {
-				err = s.deps.DB.WithContext(s.ctx).Model(&app.App{ID: s.install.AppID}).Update("name", "during-upload").Error
-			})
-			return err
+func (s *InstallStateIntegrationSuite) raceSourceCommits(first, second func(*gorm.DB) error) {
+	tx := s.deps.DB.WithContext(s.ctx).Begin()
+	require.NoError(s.T(), tx.Error)
+	defer tx.Rollback()
+	require.NoError(s.T(), first(tx))
+	pid := s.backendPID(tx)
+
+	done := make(chan struct{})
+	var secondErr error
+	go func() {
+		defer close(done)
+		secondErr = s.deps.DB.WithContext(s.ctx).Transaction(second)
+	}()
+	if s.blockedBy(pid, done) {
+		s.T().Log("second source transaction waited for the first transaction's head invalidation")
+	} else {
+		require.NoError(s.T(), secondErr)
+		s.fresh()
+	}
+	require.NoError(s.T(), tx.Commit().Error)
+	s.await(done)
+	require.NoError(s.T(), secondErr)
+}
+
+func (s *InstallStateIntegrationSuite) TestOutputRacesInvalidateAfterBothCommits() {
+	connection := s.componentConnection()
+	runner := s.createRunner(app.RunnerStatusActive)
+	installed := s.deps.Seeder.CreateInstallComponent(s.ctx, s.T(), s.install.ID, connection.ComponentID)
+	for _, tc := range []struct {
+		name      string
+		deploy    app.InstallDeployStatus
+		execution app.RunnerJobExecutionStatus
+		endpoint  string
+		first     func(tx *gorm.DB, execution *app.RunnerJobExecution, outputs *app.RunnerJobExecutionOutputs) error
+		second    func(tx *gorm.DB, deploy *app.InstallDeploy, execution *app.RunnerJobExecution) error
+	}{
+		{
+			name: "outputs_begun_while_deploy_not_active", deploy: app.InstallDeployStatusPlanning,
+			execution: app.RunnerJobExecutionStatusFinished, endpoint: "activated.example.com",
+			first: func(tx *gorm.DB, _ *app.RunnerJobExecution, outputs *app.RunnerJobExecutionOutputs) error {
+				return tx.Create(outputs).Error
+			},
+			second: func(tx *gorm.DB, deploy *app.InstallDeploy, _ *app.RunnerJobExecution) error {
+				return tx.Model(deploy).Update("status", app.InstallDeployStatusActive).Error
+			},
 		},
+		{
+			name: "execution_completes_before_outputs_visible", deploy: app.InstallDeployStatusActive,
+			execution: app.RunnerJobExecutionStatusInProgress, endpoint: "completed.example.com",
+			first: func(tx *gorm.DB, execution *app.RunnerJobExecution, _ *app.RunnerJobExecutionOutputs) error {
+				return tx.Model(execution).Update("status", app.RunnerJobExecutionStatusFinished).Error
+			},
+			second: func(tx *gorm.DB, _ *app.InstallDeploy, execution *app.RunnerJobExecution) error {
+				return tx.Create(executionOutputs(execution.ID, map[string]any{"endpoint": "completed.example.com"})).Error
+			},
+		},
+	} {
+		s.Run(tc.name, func() {
+			deploy := s.createDeploy(installed.ID, connection.ID, tc.deploy)
+			execution := s.createExecution(runner.ID, deploy.ID, "install_deploys", app.RunnerJobTypeTerraformDeploy, app.RunnerJobExecutionStatusFinished)
+			if tc.execution != app.RunnerJobExecutionStatusFinished {
+				s.create(executionOutputs(execution.ID, map[string]any{"endpoint": "previous.example.com"}))
+				execution = &app.RunnerJobExecution{RunnerJobID: execution.RunnerJobID, Status: tc.execution}
+				s.create(execution)
+			}
+			s.fresh()
+			s.raceSourceCommits(
+				func(tx *gorm.DB) error {
+					return tc.first(tx, execution, executionOutputs(execution.ID, map[string]any{"endpoint": tc.endpoint}))
+				},
+				func(tx *gorm.DB) error { return tc.second(tx, deploy, execution) },
+			)
+			for range 2 {
+				component := componentState(s.T(), s.fresh(), connection.Component.Name)
+				require.Equal(s.T(), deploy.ComponentBuildID, component["build_id"])
+				require.Equal(s.T(), map[string]any{"endpoint": tc.endpoint}, component["outputs"])
+			}
+		})
+	}
+}
+
+func (s *InstallStateIntegrationSuite) TestRegenerateWorkflowRepublishesFromCurrentHead() {
+	require.NoError(s.T(), s.renameApp("before-upload"))
+	var once sync.Once
+	ctx := s.withUploadHook(func() error {
+		var err error
+		once.Do(func() { err = s.renameApp("during-upload") })
+		return err
 	})
-	h := s.newProducerHarness()
-	h.env.SetWorkerOptions(worker.Options{BackgroundActivityContext: ctx, DeadlockDetectionTimeout: time.Minute})
-	h.env.ExecuteWorkflow(statesignals.Regenerate, &pkgstate.ExecuteRegenerationRequest{
+	var workflowSuite testsuite.WorkflowTestSuite
+	env := workflowSuite.NewTestWorkflowEnvironment()
+	env.SetTestTimeout(time.Minute)
+	env.SetDataConverter(converter.NewCompositeDataConverter(
+		converter.NewNilPayloadConverter(),
+		converter.NewByteSlicePayloadConverter(),
+		pkgdataconverter.NewJSONConverter(),
+	))
+	env.SetWorkerOptions(worker.Options{BackgroundActivityContext: ctx, DeadlockDetectionTimeout: time.Minute})
+	env.RegisterActivityWithOptions(s.activities, activity.RegisterOptions{SkipInvalidStructFunctions: true})
+	env.ExecuteWorkflow(statesignals.Regenerate, &pkgstate.ExecuteRegenerationRequest{
 		InstallID: s.install.ID, TriggeredByID: s.install.ID, TriggeredByType: "installs",
-		CachedState: older, Targets: []pkgstate.PartialTarget{{Name: pkgstate.PartialInputs}},
+		Targets: []pkgstate.PartialTarget{{Name: pkgstate.PartialInputs}},
 	})
-	require.True(s.T(), h.env.IsWorkflowCompleted())
-	require.NoError(s.T(), h.env.GetWorkflowError())
+	require.True(s.T(), env.IsWorkflowCompleted())
+	require.NoError(s.T(), env.GetWorkflowError())
 	var result pkgstate.ExecuteRegenerationResponse
-	require.NoError(s.T(), h.env.GetWorkflowResult(&result))
+	require.NoError(s.T(), env.GetWorkflowResult(&result))
 	require.Equal(s.T(), "during-upload", result.State.App.Name)
 	require.Contains(s.T(), result.UpdatedPartials, pkgstate.PartialApp)
-	require.NotNil(s.T(), result.State.Revision)
-	current, err := s.deps.Helpers.GetInstallStateBaseline(s.ctx, s.install.ID)
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), result.State.Revision, current.Revision)
-	require.Equal(s.T(), "during-upload", current.App.Name)
-	require.Nil(s.T(), current.StaleAt)
+
+	head := s.head()
+	require.True(s.T(), head.StaleAt.Empty())
+	stored, fromBlob := s.currentRow().GetState(s.ctx, true)
+	require.True(s.T(), fromBlob)
+	require.Equal(s.T(), "during-upload", stored.App.Name)
+	require.Equal(s.T(), "during-upload", s.fresh().App.Name)
+	require.Equal(s.T(), head, s.head(), "a strict read of the published head must not republish")
 }

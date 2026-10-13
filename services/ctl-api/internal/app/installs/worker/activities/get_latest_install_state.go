@@ -14,5 +14,9 @@ type GetLatestInstallStateRequest struct {
 // @by-field InstallID
 // @start-to-close-timeout 10s
 func (a *Activities) GetLatestInstallState(ctx context.Context, req *GetLatestInstallStateRequest) (*pkgstate.State, error) {
-	return a.helpers.GetInstallStateBaseline(ctx, req.InstallID)
+	baseline, err := a.helpers.GetInstallStateBaseline(ctx, req.InstallID)
+	if err != nil {
+		return nil, err
+	}
+	return baseline.State, nil
 }

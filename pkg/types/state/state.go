@@ -29,9 +29,7 @@ type State struct {
 	Install *InstallState `json:"install"`
 
 	// loaded from the database but not part of the state itself
-	StaleAt       *time.Time `json:"stale_at"`
-	Revision      *int64     `json:"-" temporaljson:"state_revision,omitempty"`
-	StalePartials []string   `json:"-" temporaljson:"stale_partials,omitempty"`
+	StaleAt *time.Time `json:"stale_at"`
 }
 
 func New() *State {

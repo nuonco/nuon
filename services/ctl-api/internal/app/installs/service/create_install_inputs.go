@@ -14,7 +14,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	installupdated "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updated"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -121,11 +120,7 @@ func (s *service) createInstallInputs(ctx context.Context, install *app.Install,
 		if err := helpers.LockInstallInputs(ctx, tx, install.ID); err != nil {
 			return err
 		}
-		if err := tx.WithContext(ctx).Create(&obj).Error; err != nil {
-			return err
-		}
-		// stale_at alone is inert: the partial has to be named or state serves the old inputs
-		return s.helpers.MarkInstallStatePartialsStale(ctx, tx, install.ID, pkgstate.PartialInputs)
+		return tx.WithContext(ctx).Create(&obj).Error
 	}); err != nil {
 		return nil, fmt.Errorf("unable to create install inputs: %w", err)
 	}

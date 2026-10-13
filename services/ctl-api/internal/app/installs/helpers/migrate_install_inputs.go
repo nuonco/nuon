@@ -10,7 +10,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 // MigrateInstallInputsToNewConfig creates new InstallInputs records for installs
@@ -57,12 +56,6 @@ func (h *Helpers) MigrateInstallInputsToNewConfig(
 			}
 			if err := h.migrateInstallInputs(ctx, tx, installID, newAppConfig.InputConfig.ID, validInputs); err != nil {
 				return fmt.Errorf("unable to migrate inputs for install %s: %w", installID, err)
-			}
-
-			// config-derived partials go stale even when no value moved
-			if err := h.MarkInstallStatePartialsStale(ctx, tx, installID,
-				state.HintToPartials[state.HintAppConfigUpdated]...); err != nil {
-				return fmt.Errorf("unable to mark state partials stale for install %s: %w", installID, err)
 			}
 		}
 		return nil

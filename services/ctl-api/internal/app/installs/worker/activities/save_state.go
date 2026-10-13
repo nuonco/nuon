@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
+	"go.temporal.io/sdk/temporal"
 )
 
 type SaveStateRequest struct {
@@ -24,17 +25,5 @@ type SaveStateRequest struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) SaveState(ctx context.Context, req *SaveStateRequest) (result *app.InstallState, err error) {
-	started := time.Now()
-	defer func() { a.stateMetrics.Record(ctx, "save", started, err) }()
-	inputs, err := a.helpers.GetInstallInputsState(ctx, a.db, req.InstallID, false, false)
-	if err != nil {
-		return nil, err
-	}
-	snapshot := *req.State
-	snapshot.Inputs = inputs
-	helpers.MapLegacyFields(&snapshot)
-	return a.helpers.PublishInstallState(ctx, &app.InstallState{
-		InstallID: req.InstallID, TriggeredByID: req.TriggeredByID, TriggeredByType: req.TriggeredByType,
-		State: &snapshot, GeneratedBy: req.GeneratedBy,
-	}, req.RefreshedPartials)
+	return nil, temporal.NewNonRetryableApplicationError("legacy state generation must restart with a revision baseline", helpers.InstallStateConflict, nil)
 }

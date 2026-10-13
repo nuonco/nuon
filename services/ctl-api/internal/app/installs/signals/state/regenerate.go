@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/pkg/metrics"
@@ -20,81 +19,21 @@ func Regenerate(ctx workflow.Context, req *state.ExecuteRegenerationRequest) (*s
 	if workflow.GetVersion(ctx, "install-state-publication", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
 		return regenerateLegacy(ctx, req)
 	}
-	for attempt := 0; attempt < 5; attempt++ {
-		is, err := installactivities.AwaitGetLatestInstallStateByInstallID(ctx, req.InstallID)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get install state baseline")
-		}
-		install, err := installactivities.AwaitGetByInstallID(ctx, req.InstallID)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get install")
-		}
-		selected := make(map[state.PartialName]bool)
-		for _, target := range req.Targets {
-			selected[target.Name] = true
-		}
-		for _, partial := range is.StalePartials {
-			selected[state.PartialName(partial)] = true
-		}
-		if is.ID == "" || req.ForceAll || (is.StaleAt != nil && len(is.StalePartials) == 0) {
-			for _, partial := range state.AllPartials {
-				selected[partial] = true
-			}
-		}
-		is.ID, is.Name = install.ID, install.Name
-		lastModifiedAt := make(map[state.PartialName]time.Time, len(req.LastModifiedAt))
-		for partial, modified := range req.LastModifiedAt {
-			lastModifiedAt[partial] = modified
-		}
-		updated := make([]state.PartialName, 0, len(selected))
-		for _, partial := range state.AllPartials {
-			if !selected[partial] {
-				continue
-			}
-			partialStart := workflow.Now(ctx)
-			if partial == state.PartialRunner && install.RunnerID == "" {
-				is.Runner = nil
-			} else if err := fetchPartialWithTargets(ctx, req.InstallID, partial, nil, is); err != nil {
-				return nil, errors.Wrapf(err, "error fetching partial %s", partial)
-			}
-			if req.MetricsWriter != nil && !workflow.IsReplaying(ctx) {
-				req.MetricsWriter.Timing("nuon.state.regenerate.partial.fetch.duration", workflow.Now(ctx).Sub(partialStart),
-					metrics.ToTags(map[string]string{
-						"install_id": req.InstallID, "partial": string(partial),
-						"app_id": install.AppID, "app_name": install.App.Name, "app_config_id": install.AppConfigID,
-					}))
-			}
-			lastModifiedAt[partial] = workflow.Now(ctx)
-			updated = append(updated, partial)
-		}
-		if len(updated) > 0 {
-			helpers.MapLegacyFields(is)
-			_, err := installactivities.AwaitSaveState(ctx, &installactivities.SaveStateRequest{
-				State: is, InstallID: req.InstallID, TriggeredByID: req.TriggeredByID, TriggeredByType: req.TriggeredByType,
-				GeneratedBy: app.InstallStateGenerateSourceStateManager, RefreshedPartials: updated,
-			})
-			if helpers.IsInstallStateConflict(err) {
-				continue
-			}
-			if err != nil {
-				return nil, errors.Wrap(err, "error while publishing state")
-			}
-			revision := *is.Revision + 1
-			is.Revision = &revision
-			is.StaleAt, is.StalePartials = nil, nil
-			if err := installactivities.AwaitArchiveState(ctx, &installactivities.ArchiveStateRequest{InstallID: req.InstallID}); err != nil {
-				return nil, errors.Wrap(err, "error while archiving state")
-			}
-			if err := installactivities.AwaitRenderInstallLabels(ctx, &installactivities.RenderInstallLabelsRequest{InstallID: req.InstallID}); err != nil {
-				workflow.GetLogger(ctx).Warn("unable to render install label templates", "install_id", req.InstallID, "error", err)
-			}
-		}
-		return &state.ExecuteRegenerationResponse{
-			State: is, UpdatedPartials: updated, LastModifiedAt: lastModifiedAt, GeneratedAt: workflow.Now(ctx),
-			AppID: install.AppID, AppName: install.App.Name, AppConfigID: install.AppConfigID,
-		}, nil
+	activityReq := *req
+	activityReq.CachedState, activityReq.MetricsWriter = nil, nil
+	resp, err := installactivities.AwaitRegenerateInstallState(ctx, &activityReq)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to regenerate install state")
 	}
-	return nil, temporal.NewNonRetryableApplicationError("install state kept changing during generation", helpers.InstallStateConflict, nil)
+	if len(resp.UpdatedPartials) > 0 {
+		if err := installactivities.AwaitArchiveState(ctx, &installactivities.ArchiveStateRequest{InstallID: req.InstallID}); err != nil {
+			return nil, errors.Wrap(err, "error while archiving state")
+		}
+		if err := installactivities.AwaitRenderInstallLabels(ctx, &installactivities.RenderInstallLabelsRequest{InstallID: req.InstallID}); err != nil {
+			workflow.GetLogger(ctx).Warn("unable to render install label templates", "install_id", req.InstallID, "error", err)
+		}
+	}
+	return resp, nil
 }
 
 func regenerateLegacy(ctx workflow.Context, req *state.ExecuteRegenerationRequest) (*state.ExecuteRegenerationResponse, error) {

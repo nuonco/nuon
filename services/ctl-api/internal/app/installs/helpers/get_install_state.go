@@ -27,10 +27,13 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 	defer func() { h.stateMetrics.Record(ctx, "get", started, err) }()
 	cctx.GetLogger(ctx, h.l).Info("getting install state", zap.String("install_id", installID))
 
-	snapshot, err := h.regenerateStalePartials(ctx, installID, skipVersionCheck)
+	resp, err := h.RegenerateInstallState(ctx, &pkgstate.ExecuteRegenerationRequest{
+		InstallID: installID, TriggeredByID: installID, TriggeredByType: "installs",
+	}, skipVersionCheck)
 	if err != nil {
 		return nil, err
 	}
+	snapshot := resp.State
 	if redacted {
 		if err := h.RedactStateInputs(ctx, installID, snapshot); err != nil {
 			return nil, err
@@ -174,45 +177,67 @@ func (h *Helpers) applyInstallMetadata(install *app.Install, is *state.State) {
 	}
 }
 
-func (h *Helpers) regenerateStalePartials(ctx context.Context, installID string, skipVersionCheck bool) (*state.State, error) {
+func (h *Helpers) RegenerateInstallState(ctx context.Context, req *pkgstate.ExecuteRegenerationRequest, skipVersionCheck bool) (*pkgstate.ExecuteRegenerationResponse, error) {
+	ctx = routing.WithoutReplica(ctx)
 	for attempt := 0; attempt < 5; attempt++ {
-		is, err := h.GetInstallStateBaseline(ctx, installID)
+		baseline, err := h.GetInstallStateBaseline(ctx, req.InstallID)
 		if err != nil {
 			return nil, err
 		}
-		partials := make([]pkgstate.PartialName, 0, len(is.StalePartials))
-		for _, partial := range is.StalePartials {
-			partials = append(partials, pkgstate.PartialName(partial))
+		is := baseline.State
+		selected := make(map[pkgstate.PartialName]bool)
+		for _, target := range req.Targets {
+			selected[target.Name] = true
 		}
-		if is.ID == "" || (is.StaleAt != nil && len(partials) == 0) {
-			partials = pkgstate.AllPartials
+		for _, partial := range baseline.Head.StalePartials {
+			selected[partial] = true
 		}
-		if len(partials) == 0 {
-			return is, nil
+		if is.ID == "" || req.ForceAll || (is.StaleAt != nil && len(baseline.Head.StalePartials) == 0) {
+			for _, partial := range pkgstate.AllPartials {
+				selected[partial] = true
+			}
 		}
-		install, err := h.getStateInstall(ctx, h.db, installID)
+		resp := &pkgstate.ExecuteRegenerationResponse{State: is, LastModifiedAt: make(map[pkgstate.PartialName]time.Time)}
+		for partial, modified := range req.LastModifiedAt {
+			resp.LastModifiedAt[partial] = modified
+		}
+		if len(selected) == 0 {
+			resp.GeneratedAt = time.Now().UTC()
+			return resp, nil
+		}
+		install, err := h.getStateInstall(ctx, h.db, req.InstallID)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get install")
 		}
 		is.ID = install.ID
 		is.Name = install.Name
-		for _, partial := range partials {
+		resp.AppID, resp.AppName, resp.AppConfigID = install.AppID, install.App.Name, install.AppConfigID
+		for _, partial := range pkgstate.AllPartials {
+			if !selected[partial] {
+				continue
+			}
+			started := time.Now()
 			if err := h.regenerateStalePartial(ctx, h.db, install, partial, is, skipVersionCheck); err != nil {
 				return nil, errors.Wrapf(err, "unable to regenerate partial %s", partial)
 			}
+			h.stateMetrics.Record(ctx, "partial."+string(partial), started, nil)
+			resp.LastModifiedAt[partial] = time.Now().UTC()
+			resp.UpdatedPartials = append(resp.UpdatedPartials, partial)
 		}
 		MapLegacyFields(is)
 		published, err := h.PublishInstallState(ctx, &app.InstallState{
-			InstallID: installID, State: is, GeneratedBy: app.InstallStateGenerateSourceStateManager,
-			TriggeredByID: installID, TriggeredByType: "installs",
-		}, partials)
+			InstallID: req.InstallID, State: is, GeneratedBy: app.InstallStateGenerateSourceStateManager,
+			TriggeredByID: req.TriggeredByID, TriggeredByType: req.TriggeredByType,
+		}, baseline.Head, resp.UpdatedPartials)
 		if IsInstallStateConflict(err) {
 			continue
 		}
 		if err != nil {
 			return nil, err
 		}
-		return published.State, nil
+		resp.State = published.State
+		resp.GeneratedAt = time.Now().UTC()
+		return resp, nil
 	}
 	return nil, temporal.NewNonRetryableApplicationError("install state kept changing during refresh", InstallStateConflict, nil)
 }

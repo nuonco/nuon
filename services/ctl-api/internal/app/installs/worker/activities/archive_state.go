@@ -17,7 +17,6 @@ func (a *Activities) ArchiveState(ctx context.Context, req *ArchiveStateRequest)
 
 	err := a.db.WithContext(ctx).
 		Scopes(scopes.WithDisableViews).
-		Where("revision = 0 OR EXISTS (SELECT 1 FROM install_state_publications WHERE state_id = install_states.id)").
 		Where("install_id = ? AND archived = false AND id NOT IN (?) AND id NOT IN (?)",
 			req.InstallID,
 			a.db.Model(&app.InstallState{}).

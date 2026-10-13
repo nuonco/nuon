@@ -106,7 +106,6 @@ func AllModels() []any {
 		&app.GCPAccount{},
 		&app.Install{},
 		&app.InstallStateHead{},
-		&app.InstallStatePublication{},
 		&app.InstallState{},
 		&app.InstallEvent{},
 		&app.InstallInputs{},

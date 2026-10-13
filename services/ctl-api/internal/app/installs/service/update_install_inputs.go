@@ -21,7 +21,6 @@ import (
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/installvalidate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/request"
-	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -269,11 +268,6 @@ func (s *service) persistInstallInputsUpdateTx(
 	inputs, changedInputs, changedInputValues, err := s.newInstallInputs(ctx, tx, latest, pinnedAppInputConfig, merged, patch)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to create install inputs: %w", err)
-	}
-	// stale_at alone is inert: the partial has to be named or state (and the
-	// updated signal's label render) serves the old inputs
-	if err := s.helpers.MarkInstallStatePartialsStale(ctx, tx, install.ID, pkgstate.PartialInputs); err != nil {
-		return nil, nil, err
 	}
 
 	metadata := map[string]string{
