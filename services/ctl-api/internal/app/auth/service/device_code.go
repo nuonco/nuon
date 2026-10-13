@@ -156,13 +156,19 @@ func (s *service) DeviceCodeApprove(c *gin.Context) {
 
 	// Create the approved device code record
 	deviceCode := &app.DeviceCode{
-		Code:      code,
-		AccountID: account.ID,
-		ExpiresAt: time.Now().Add(deviceCodeExpiry),
-		Consumed:  false,
+		Code:          code,
+		AccountID:     account.ID,
+		ExpiresAt:     time.Now().Add(deviceCodeExpiry),
+		Consumed:      false,
+		SourceTokenID: tokenInfo.TokenID,
 	}
 
-	if err := s.db.Create(deviceCode).Error; err != nil {
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := lockGrantSource(tx, account.ID, tokenInfo.TokenID, false); err != nil {
+			return err
+		}
+		return tx.Create(deviceCode).Error
+	}); err != nil {
 		s.l.Error("failed to create device code",
 			zap.String("account_id", account.ID),
 			zap.Error(err))
@@ -251,8 +257,40 @@ func (s *service) DeviceCodeToken(c *gin.Context) {
 		return
 	}
 
-	// Create a new API token for the CLI
-	tokenValue, err := s.createToken(&account)
+	var tokenValue string
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		if err := lockGrantSource(tx, account.ID, deviceCode.SourceTokenID, true); err != nil {
+			return err
+		}
+
+		res := tx.Model(&app.DeviceCode{}).
+			Where("id = ? AND consumed = ?", deviceCode.ID, false).
+			Update("consumed", true)
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return errDeviceCodeConsumed
+		}
+
+		var err error
+		tokenValue, err = s.createToken(tx, &account, deviceCode.SourceTokenID)
+		return err
+	})
+	if errors.Is(err, errDeviceCodeConsumed) {
+		c.JSON(http.StatusOK, gin.H{
+			"error":             "access_denied",
+			"error_description": "device code has already been used",
+		})
+		return
+	}
+	if errors.Is(err, errTokenNotFound) {
+		c.JSON(http.StatusOK, gin.H{
+			"error":             "access_denied",
+			"error_description": "credential source no longer exists",
+		})
+		return
+	}
 	if err != nil {
 		s.l.Error("failed to create token for device code", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -260,12 +298,6 @@ func (s *service) DeviceCodeToken(c *gin.Context) {
 			"error_description": "failed to create token",
 		})
 		return
-	}
-
-	// Mark the device code as consumed
-	if err := s.db.Model(&deviceCode).Update("consumed", true).Error; err != nil {
-		s.l.Error("failed to mark device code as consumed", zap.Error(err))
-		// Continue anyway - token was created successfully
 	}
 
 	s.l.Info("device code token issued",

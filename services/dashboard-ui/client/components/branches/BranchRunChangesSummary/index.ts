@@ -1,1 +1,4 @@
-export { BranchRunChangesSummary } from './BranchRunChangesSummary'
+export {
+  BranchRunChangesSummary,
+  useBranchConfigSections,
+} from './BranchRunChangesSummary'

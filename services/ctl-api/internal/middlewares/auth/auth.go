@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/agentclient"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
@@ -100,6 +101,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 
 			cctx.SetAccountGinContext(ctx, acct)
 			m.detectCLIUsage(ctx, acct)
+			m.logAgentRequest(ctx, acct.ID)
 			ctx.Next()
 			return
 		}
@@ -125,6 +127,20 @@ func (m *middleware) detectCLIUsage(ctx *gin.Context, acct *app.Account) {
 			zap.Error(err),
 		)
 	}
+}
+
+func (m *middleware) logAgentRequest(ctx *gin.Context, accountID string) {
+	agent := ctx.GetHeader(agentclient.Header)
+	if agent == "" {
+		return
+	}
+	m.l.Info("nuon cli agent",
+		zap.String("agent", agent),
+		zap.String("command", ctx.GetHeader(agentclient.CommandHeader)),
+		zap.String("account_id", accountID),
+		zap.String("method", ctx.Request.Method),
+		zap.String("path", ctx.FullPath()),
+	)
 }
 
 func (m *middleware) Name() string {

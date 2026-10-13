@@ -60,21 +60,21 @@ func testPrincipal() Principal {
 		OrgID:     "org" + strings.Repeat("a", 23),
 		AppID:     "app" + strings.Repeat("b", 23),
 		InstallID: "inl" + strings.Repeat("c", 23),
-		RunnerID:  "run" + strings.Repeat("d", 23),
 	}
 }
 
 func testClaims(now time.Time, principal Principal) *telemetryClaims {
+	runnerID := "run" + strings.Repeat("d", 23)
 	return &telemetryClaims{
-		ClientID:  principal.RunnerID,
+		ClientID:  runnerID,
 		Scope:     tokenScope,
 		OrgID:     principal.OrgID,
 		AppID:     principal.AppID,
 		InstallID: principal.InstallID,
-		RunnerID:  principal.RunnerID,
+		RunnerID:  runnerID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "https://ctl.example.com",
-			Subject:   "org:" + principal.OrgID + ":install:" + principal.InstallID + ":runner:" + principal.RunnerID,
+			Subject:   "org:" + principal.OrgID + ":install:" + principal.InstallID + ":runner:" + runnerID,
 			Audience:  jwt.ClaimStrings{testRelayEndpoint},
 			ExpiresAt: jwt.NewNumericDate(now.Add(tokenLifetime)),
 			NotBefore: jwt.NewNumericDate(now),
@@ -141,6 +141,98 @@ func TestAuthenticateAttachesVerifiedPrincipal(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, principal, authData.Principal())
 	require.NotContains(t, authData.GetAttributeNames(), "raw")
+}
+
+func TestAuthenticateCollectorTokens(t *testing.T) {
+	key := testRSAKey(t)
+	var contents atomic.Value
+	contents.Store(testJWKS(t, map[string]*rsa.PrivateKey{"key-1": key}))
+	extension, _ := newTestExtension(t, &contents)
+	extension.config.AllowLegacyAudience = true
+	principal := testPrincipal()
+	collectorID := "acc" + strings.Repeat("e", 23)
+
+	for name, mutate := range map[string]func(*telemetryClaims){
+		"relay-bound collector": nil,
+		"both identities":       func(c *telemetryClaims) { c.RunnerID = "run" + strings.Repeat("d", 23) },
+		"neither identity":      func(c *telemetryClaims) { c.CollectorID = "" },
+		"wrong client":          func(c *telemetryClaims) { c.ClientID = "acc" + strings.Repeat("f", 23) },
+		"wrong identity prefix": func(c *telemetryClaims) { c.CollectorID = "run" + strings.Repeat("d", 23); c.ClientID = c.CollectorID },
+		"runner subject": func(c *telemetryClaims) {
+			c.Subject = "org:" + principal.OrgID + ":install:" + principal.InstallID + ":runner:" + collectorID
+		},
+		"other install subject": func(c *telemetryClaims) {
+			c.Subject = "org:" + principal.OrgID + ":install:inl" + strings.Repeat("f", 23) + ":collector:" + collectorID
+		},
+		"legacy audience": func(c *telemetryClaims) { c.Audience = jwt.ClaimStrings{legacyAudience} },
+		"other relay":     func(c *telemetryClaims) { c.Audience = jwt.ClaimStrings{"https://other.example.com"} },
+		"excessive scope": func(c *telemetryClaims) { c.Scope = "telemetry:write admin" },
+	} {
+		t.Run(name, func(t *testing.T) {
+			claims := testClaims(time.Now().UTC().Truncate(time.Second), testPrincipal())
+			claims.RunnerID = ""
+			claims.CollectorID = collectorID
+			claims.ClientID = collectorID
+			claims.Subject = "org:" + principal.OrgID + ":install:" + principal.InstallID + ":collector:" + collectorID
+			if mutate != nil {
+				mutate(claims)
+			}
+			raw := signTestToken(t, key, "key-1", claims, nil)
+			ctx, err := extension.Authenticate(context.Background(), map[string][]string{"Authorization": {"Bearer " + raw}})
+			if mutate != nil {
+				require.ErrorIs(t, err, errAuthenticationFailed)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, principal, client.FromContext(ctx).Auth.(*AuthData).Principal())
+		})
+	}
+}
+
+func TestAuthenticateAccountTokens(t *testing.T) {
+	key := testRSAKey(t)
+	var contents atomic.Value
+	contents.Store(testJWKS(t, map[string]*rsa.PrivateKey{"key-1": key}))
+	extension, _ := newTestExtension(t, &contents)
+	extension.config.AllowLegacyAudience = true
+	principal := testPrincipal()
+	accountID := "acc" + strings.Repeat("e", 23)
+
+	for name, mutate := range map[string]func(*telemetryClaims){
+		"relay-bound account": nil,
+		"wrong client":        func(c *telemetryClaims) { c.ClientID = "acc" + strings.Repeat("f", 23) },
+		"empty subject":       func(c *telemetryClaims) { c.Subject = "" },
+		"wrong prefix":        func(c *telemetryClaims) { c.Subject = "run" + strings.Repeat("e", 23); c.ClientID = c.Subject },
+		"runner claim":        func(c *telemetryClaims) { c.RunnerID = "run" + strings.Repeat("d", 23) },
+		"collector claim":     func(c *telemetryClaims) { c.CollectorID = accountID },
+		"legacy audience":     func(c *telemetryClaims) { c.Audience = jwt.ClaimStrings{legacyAudience} },
+		"other relay":         func(c *telemetryClaims) { c.Audience = jwt.ClaimStrings{"https://other.example.com"} },
+		"excessive scope":     func(c *telemetryClaims) { c.Scope = "telemetry:write admin" },
+		"invalid install":     func(c *telemetryClaims) { c.InstallID = "invalid" },
+		"expired": func(c *telemetryClaims) {
+			c.IssuedAt = jwt.NewNumericDate(time.Now().Add(-2 * time.Minute))
+			c.NotBefore = c.IssuedAt
+			c.ExpiresAt = jwt.NewNumericDate(time.Now().Add(-time.Minute))
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			claims := testClaims(time.Now().UTC().Truncate(time.Second), principal)
+			claims.RunnerID = ""
+			claims.Subject = accountID
+			claims.ClientID = accountID
+			if mutate != nil {
+				mutate(claims)
+			}
+			raw := signTestToken(t, key, "key-1", claims, nil)
+			ctx, err := extension.Authenticate(context.Background(), map[string][]string{"Authorization": {"Bearer " + raw}})
+			if mutate != nil {
+				require.ErrorIs(t, err, errAuthenticationFailed)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, principal, client.FromContext(ctx).Auth.(*AuthData).Principal())
+		})
+	}
 }
 
 func TestAuthenticateRequiresConfiguredRelayAudience(t *testing.T) {

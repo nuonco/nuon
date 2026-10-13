@@ -9,6 +9,7 @@ import {
 } from '@/components/common/CollectionViewToggle'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ID } from '@/components/common/ID'
+import { Link } from '@/components/common/Link'
 import { Pagination, type IPagination } from '@/components/common/Pagination'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
@@ -26,6 +27,7 @@ export type TInstallComponentListItem = {
   behind?: boolean
   enabled?: boolean | null
   id: string
+  href?: string
   latestDeploy: ReactNode
   name: string
   status?: string
@@ -59,7 +61,7 @@ const InstallComponentsListBase = ({
   const [storedView, setStoredView] = useStoredViewMode<TCollectionView>(
     COLLECTION_VIEW_STORAGE_KEY,
     COLLECTION_VIEW_MODES,
-    'list',
+    'list'
   )
   const view = viewProp ?? storedView
   const setView = (next: TCollectionView) => {
@@ -90,7 +92,7 @@ const InstallComponentsListBase = ({
         <div
           className={cn(
             'flex flex-col gap-4',
-            isGrid && 'md:grid md:grid-cols-2',
+            isGrid && 'md:grid md:grid-cols-2'
           )}
         >
           <Skeleton height="14rem" width="100%" />
@@ -106,7 +108,7 @@ const InstallComponentsListBase = ({
         <div
           className={cn(
             'flex flex-col gap-4',
-            isGrid && 'md:grid md:grid-cols-2',
+            isGrid && 'md:grid md:grid-cols-2'
           )}
         >
           {components.map((component) => {
@@ -118,7 +120,7 @@ const InstallComponentsListBase = ({
                 className={cn(
                   '!p-4 !gap-4',
                   disabled && 'opacity-55',
-                  isGrid && 'md:h-full',
+                  isGrid && 'md:h-full'
                 )}
               >
                 <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -132,15 +134,29 @@ const InstallComponentsListBase = ({
                           colorVariant={disabled ? 'mono' : 'color'}
                         />
                       ) : null}
-                      <Text
-                        variant="body"
-                        weight="stronger"
-                        role="heading"
-                        level={3}
-                        theme={disabled ? 'neutral' : undefined}
-                      >
-                        {component.name}
-                      </Text>
+                      {component.href ? (
+                        <Link href={component.href} className="min-w-0">
+                          <Text
+                            variant="body"
+                            weight="stronger"
+                            role="heading"
+                            level={3}
+                            theme={disabled ? 'neutral' : undefined}
+                          >
+                            {component.name}
+                          </Text>
+                        </Link>
+                      ) : (
+                        <Text
+                          variant="body"
+                          weight="stronger"
+                          role="heading"
+                          level={3}
+                          theme={disabled ? 'neutral' : undefined}
+                        >
+                          {component.name}
+                        </Text>
+                      )}
                       {disabled ? (
                         <Badge size="sm" theme="neutral">
                           Disabled

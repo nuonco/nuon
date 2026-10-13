@@ -26,6 +26,8 @@ type OAuthRefreshToken struct {
 
 	ExpiresAt time.Time `gorm:"not null" json:"expires_at,omitzero" temporaljson:"expires_at,omitzero,omitempty"`
 	Consumed  bool      `gorm:"default:false" json:"consumed,omitempty" temporaljson:"consumed,omitempty"`
+
+	SourceTokenID string `gorm:"index" json:"-" temporaljson:"source_token_id,omitzero,omitempty"`
 }
 
 func (a *OAuthRefreshToken) BeforeCreate(tx *gorm.DB) error {

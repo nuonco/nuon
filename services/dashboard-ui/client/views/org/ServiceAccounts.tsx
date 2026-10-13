@@ -3,8 +3,6 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { ServiceAccountsTable } from '@/components/service-accounts/ServiceAccountsTable'
 import { CreateServiceAccountButton } from '@/components/service-accounts/CreateServiceAccount'
-import { ShowRunnerAccountsContainer as ShowRunnerAccounts } from '@/components/service-accounts/filters/ShowRunnerAccounts'
-import { ShowStackAccountsContainer as ShowStackAccounts } from '@/components/service-accounts/filters/ShowStackAccounts'
 
 import { useOrg } from '@/hooks/use-org'
 
@@ -35,10 +33,6 @@ export const ServiceAccounts = () => {
         description="Manage machine users."
         createAction={<CreateServiceAccountButton variant="primary" />}
       >
-        <div className="flex items-center justify-end">
-          <ShowStackAccounts />
-          <ShowRunnerAccounts />
-        </div>
         <ServiceAccountsTable shouldPoll />
       </ListPage>
     </>

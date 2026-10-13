@@ -17,6 +17,7 @@ export interface IResourceComponentActions {
   component: TComponent
   currentBuildId?: string
   currentDeployStatus?: string
+  onViewDetails?: () => void
   variant?: 'component' | 'image'
 }
 
@@ -25,89 +26,94 @@ export const ResourceComponentActions = ({
   component,
   currentBuildId,
   currentDeployStatus,
+  onViewDetails,
   variant = 'component',
 }: IResourceComponentActions) => {
   const { addPanel } = useSurfaces()
   const isImage = variant === 'image'
 
   return (
-    <Dropdown
-      alignment="right"
-      buttonText=""
-      buttonClassName="!p-1"
-      icon={<Icon variant="DotsThreeVerticalIcon" />}
-      id={`resource-component-actions-${component.id}`}
-      variant="ghost"
-      aria-label={`More actions for ${component.name}`}
-      tooltipProps={{ tipContent: 'More actions' }}
-    >
-      <Menu>
-        <Button
-          onClick={() =>
-            addPanel(
-              <ComponentConfigPanel
-                appliedConfigId={appliedConfigId}
-                componentId={component.id}
-                emptyMessage={
-                  isImage
-                    ? 'This image is not in the app config this install is using.'
-                    : undefined
-                }
-                name={component.name}
-              />,
-              `component-config-${component.id}`
-            )
-          }
-        >
-          View config
-          <Icon variant="SlidersHorizontalIcon" />
+    <div className="flex items-center gap-2">
+      {onViewDetails ? (
+        <Button variant="secondary" onClick={onViewDetails}>
+          View details
         </Button>
-        <Button
-          onClick={() =>
-            addPanel(
-              <Panel
-                heading={`${component.name} ${
-                  isImage ? 'sync' : 'deploy'
-                } history`}
-                size="half"
-              >
-                <DeployTimeline
-                  componentName={component.name}
+      ) : null}
+      <Dropdown
+        alignment="right"
+        buttonText=""
+        buttonClassName="!p-1"
+        icon={<Icon variant="DotsThreeVerticalIcon" />}
+        id={`resource-component-actions-${component.id}`}
+        variant="ghost"
+        aria-label={`More actions for ${component.name}`}
+        tooltipProps={{ tipContent: 'More actions' }}
+      >
+        <Menu>
+          <Button
+            onClick={() =>
+              addPanel(
+                <ComponentConfigPanel
+                  appliedConfigId={appliedConfigId}
                   componentId={component.id}
-                  openWorkflowPanel
-                  shouldPoll
-                  variant={isImage ? 'sync' : 'deploy'}
-                />
-              </Panel>
-            )
-          }
-        >
-          View history
-          <Icon variant="ClockCounterClockwiseIcon" />
-        </Button>
-        <Text>Controls</Text>
-        <DeployComponentButton
-          component={component}
-          currentBuildId={currentBuildId}
-          currentDeployStatus={currentDeployStatus}
-          isMenuButton
-        >
-          {isImage ? 'Sync' : 'Deploy'}
-        </DeployComponentButton>
-        <BuildComponentButton
-          component={component}
-          isMenuButton
-          redirectOnSuccess={false}
-        >
-          Rebuild
-        </BuildComponentButton>
-        <hr />
-        <TeardownComponentButton
-          component={component}
-          isMenuButton
-          variant="danger"
-        />
-      </Menu>
-    </Dropdown>
+                  emptyMessage={
+                    isImage
+                      ? 'This image is not in the app config this install is using.'
+                      : undefined
+                  }
+                  name={component.name}
+                />,
+                `component-config-${component.id}`
+              )
+            }
+          >
+            View config
+            <Icon variant="SlidersHorizontalIcon" />
+          </Button>
+          {isImage ? (
+            <Button
+              onClick={() =>
+                addPanel(
+                  <Panel heading={`${component.name} sync history`} size="half">
+                    <DeployTimeline
+                      componentName={component.name}
+                      componentId={component.id}
+                      openWorkflowPanel
+                      shouldPoll
+                      variant="sync"
+                    />
+                  </Panel>
+                )
+              }
+            >
+              View history
+              <Icon variant="ClockCounterClockwiseIcon" />
+            </Button>
+          ) : null}
+          <Text>Controls</Text>
+          <DeployComponentButton
+            component={component}
+            currentBuildId={currentBuildId}
+            currentDeployStatus={currentDeployStatus}
+            isMenuButton
+          >
+            {isImage ? 'Sync' : 'Deploy'}
+          </DeployComponentButton>
+          <BuildComponentButton
+            component={component}
+            isMenuButton
+            redirectOnSuccess={false}
+          >
+            Rebuild
+          </BuildComponentButton>
+          <hr />
+          <TeardownComponentButton
+            component={component}
+            isMenuButton
+            variant="danger"
+          />
+        </Menu>
+      </Dropdown>
+    </div>
   )
 }

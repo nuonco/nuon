@@ -97,27 +97,52 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return buildsFailure("component builds failed", buildsErr, err)
 	}
 
-	sandboxEntry := buildEntry{
-		ComponentID:   activities.SandboxComponentID,
-		ComponentName: "Sandbox",
-		ComponentType: "sandbox",
-		Status:        "in-progress",
-		ChangeReason:  activities.ChangeReasonSourceChanged,
+	check, checkErr := activities.AwaitCheckSandboxBuildNeeded(ctx, &activities.CheckSandboxBuildNeededInput{
+		NewAppConfigID: run.AppConfigID,
+		OldAppConfigID: previousAppConfigID,
+		RunID:          s.RunID,
+		Force:          run.Force,
+	})
+	if checkErr != nil {
+		return fmt.Errorf("unable to check whether sandbox build is needed: %w", checkErr)
 	}
-	builds = append(builds, sandboxEntry)
-	s.updateBuildMetadata(ctx, builds)
 
-	if err := s.buildSandbox(ctx, l); err != nil {
-		s.setBuildStatus(builds, activities.SandboxComponentID, "error")
-		buildsErr := s.markBuildsCompleted(ctx, l, false)
-		s.finalizeBuildMetadata(ctx, builds, false, buildsErr)
-		if isPreview && run.PRNumber != nil {
-			s.finalizePreview(ctx, l, run, builds, err)
+	if !check.NeedsBuild {
+		l.Info("skipping sandbox build; sandbox content unchanged",
+			"existing_build_id", check.ExistingBuildID)
+		builds = append(builds, buildEntry{
+			BuildID:       check.ExistingBuildID,
+			ComponentID:   activities.SandboxComponentID,
+			ComponentName: "Sandbox",
+			ComponentType: "sandbox",
+			Status:        "skipped",
+			Skipped:       true,
+			ChangeReason:  activities.ChangeReasonNoChanges,
+		})
+		s.updateBuildMetadata(ctx, builds)
+	} else {
+		sandboxEntry := buildEntry{
+			ComponentID:   activities.SandboxComponentID,
+			ComponentName: "Sandbox",
+			ComponentType: "sandbox",
+			Status:        "in-progress",
+			ChangeReason:  check.ChangeReason,
 		}
-		return buildsFailure("sandbox build failed", buildsErr, err)
+		builds = append(builds, sandboxEntry)
+		s.updateBuildMetadata(ctx, builds)
+
+		if err := s.buildSandbox(ctx, l); err != nil {
+			s.setBuildStatus(builds, activities.SandboxComponentID, "error")
+			buildsErr := s.markBuildsCompleted(ctx, l, false)
+			s.finalizeBuildMetadata(ctx, builds, false, buildsErr)
+			if isPreview && run.PRNumber != nil {
+				s.finalizePreview(ctx, l, run, builds, err)
+			}
+			return buildsFailure("sandbox build failed", buildsErr, err)
+		}
+		s.setBuildStatus(builds, activities.SandboxComponentID, "success")
+		s.updateBuildMetadata(ctx, builds)
 	}
-	s.setBuildStatus(builds, activities.SandboxComponentID, "success")
-	s.updateBuildMetadata(ctx, builds)
 
 	if isPreview && run.PRNumber != nil {
 		s.finalizePreview(ctx, l, run, builds, nil)

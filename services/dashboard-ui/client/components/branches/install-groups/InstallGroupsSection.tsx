@@ -29,41 +29,41 @@ const InstallListRow = ({
   const installHref = useInstallHref()
 
   return (
-  <div className="flex items-center justify-between gap-4 px-3 py-2 rounded-md bg-cool-grey-50 dark:bg-dark-grey-700">
-    <div className="min-w-0">
-      {install ? (
-        <Link
-          href={installHref({
-            orgId,
-            installId: install.id,
-            appId: install.app_id,
-          })}
-          className="truncate"
-        >
-          {install.name}
-        </Link>
-      ) : (
-        <Text
-          variant="subtext"
-          theme="neutral"
-          family="mono"
-          className="truncate"
-        >
-          {installId}
-        </Text>
+    <div className="flex items-center justify-between gap-4 px-3 py-2 rounded-md bg-cool-grey-50 dark:bg-dark-grey-700">
+      <div className="min-w-0">
+        {install ? (
+          <Link
+            href={installHref({
+              orgId,
+              installId: install.id,
+              appId: install.app_id,
+            })}
+            className="truncate"
+          >
+            {install.name}
+          </Link>
+        ) : (
+          <Text
+            variant="subtext"
+            theme="neutral"
+            family="mono"
+            className="truncate"
+          >
+            {installId}
+          </Text>
+        )}
+      </div>
+      {install && (
+        <div className="shrink-0">
+          <InstallStatuses
+            install={install}
+            isLabelHidden
+            lazyComponents
+            tooltipPosition="top"
+          />
+        </div>
       )}
     </div>
-    {install && (
-      <div className="shrink-0">
-        <InstallStatuses
-          install={install}
-          isLabelHidden
-          lazyComponents
-          tooltipPosition="top"
-        />
-      </div>
-    )}
-  </div>
   )
 }
 

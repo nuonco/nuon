@@ -165,6 +165,30 @@ export const overviewCompositeError = (
   )?.status?.composite_error
 }
 
+const isRolloutError = (error?: TCompositeError) =>
+  !!error?.type?.startsWith('install_group.')
+
+export const preRolloutCompositeError = (
+  steps: TInstallWorkflowStep[],
+  runError?: TCompositeError
+): TCompositeError | undefined => {
+  const failed = [
+    findStep(steps, isFetchCommit),
+    findStep(steps, isAppConfig),
+    findStep(steps, isBuildComponents),
+  ].find((step) => step && stepStageStatus(step) === 'error')
+  if (failed) {
+    return runError?.message || runError?.type
+      ? runError
+      : failed.status?.composite_error
+  }
+  const rolloutFailed = steps.some(
+    (step) => isDeployGroup(step.name) && stepStageStatus(step) === 'error'
+  )
+  if (rolloutFailed || isRolloutError(runError)) return undefined
+  return runError?.message || runError?.type ? runError : undefined
+}
+
 export const installFailureHref = (
   error: TCompositeError | undefined,
   orgId?: string

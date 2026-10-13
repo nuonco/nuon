@@ -175,7 +175,7 @@ Stateless Streamable HTTP MCP at port 8088 (`internal/app/mcp/server/`). Employe
 - Timestamps: UTC RFC3339 `Z`
 
 Adding a tool: [.agents/skills/mcp-api-tool/SKILL.md](../../.agents/skills/mcp-api-tool/SKILL.md). Keep
-`docs/guides/agents/tools.mdx` and CLI agent context in sync.
+`docs/guides/agents/tools.mdx` and the orientation markdown in `bins/cli/cmd/agents_context.md` in sync.
 
 ## Swagger and Code Generation
 

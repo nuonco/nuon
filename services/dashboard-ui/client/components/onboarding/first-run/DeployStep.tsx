@@ -23,6 +23,7 @@ import {
 } from './api'
 import {
   CLOUD_SANDBOX,
+  KITCHEN_SINK_VARIANTS,
   KITCHEN_SINK_APP,
   KITCHEN_SINK_LABEL,
   TRACKED_GIT_BRANCH,
@@ -65,7 +66,9 @@ const InstallSummaryCard = ({
       label: 'Nuon sandbox',
       value: (
         <>
-          <RepoChip repo={CLOUD_SANDBOX[cloud]} />
+          <RepoChip
+            repo={own || cloud === 'azure' ? CLOUD_SANDBOX[cloud] : KITCHEN_SINK_VARIANTS[cloud].sandbox}
+          />
           {own ? (
             <Text variant="subtext" theme="neutral">
               from sandbox.toml
@@ -136,6 +139,7 @@ export interface IDeployStepView {
   cloud: TCloud
   region: string
   onRegion?: (region: string) => void
+  onAutoApprove?: (value: boolean) => void
   autoApprove?: boolean
   phase: TDeployPhase
   installCreated: boolean
@@ -153,6 +157,7 @@ export const DeployStepView = ({
   cloud,
   region,
   onRegion,
+  onAutoApprove,
   autoApprove = true,
   phase,
   installCreated,
@@ -207,7 +212,7 @@ export const DeployStepView = ({
               id="first-run-region"
               options={regionOptions(cloud)}
               labelProps={{ labelText: regionFieldLabel(cloud) }}
-              disabled={busy || installCreated}
+              disabled={busy}
               searchable
               placeholder={
                 cloud === 'azure'
@@ -219,11 +224,14 @@ export const DeployStepView = ({
             />
           )}
         </form.Field>
-        <form.Field name="autoApprove">
+        <form.Field
+          name="autoApprove"
+          listeners={{ onChange: ({ value }) => onAutoApprove?.(value) }}
+        >
           {(field) => (
             <FormToggle
               field={field}
-              disabled={busy || installCreated}
+              disabled={busy}
               label="Auto-approve"
               description="Applies each plan as soon as it is ready. On by default for a faster first run."
             />
@@ -363,6 +371,14 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
     run()
   }, [phase, activeConfig, orgId, appId, appName, branchId, cloud, journey, setSharedData, onAdvance, path, user])
 
+  // Changing a setting after the install exists drops it from the flow, so
+  // the button creates a new install with the new settings.
+  const clearInstall = () => {
+    if (!installId) return
+    setSharedData('install_id', '')
+    setSharedData('workflow_id', '')
+  }
+
   const onCreate = (values: DeployValues) => {
     choice.current = values
     if (values.region !== region) setSharedData('region', values.region)
@@ -382,7 +398,11 @@ export const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: I
       repo={repo}
       cloud={cloud}
       region={region}
-      onRegion={(value) => setSharedData('region', value)}
+      onRegion={(value) => {
+        if (value !== region) clearInstall()
+        setSharedData('region', value)
+      }}
+      onAutoApprove={clearInstall}
       phase={phase}
       installCreated={!!installId}
       missingInputs={missingInputs}

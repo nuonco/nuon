@@ -110,10 +110,11 @@ export const GroupTiles = ({ group }: { group: TTrackGroup }) => {
   )
 }
 
-const approvalFor = (approvals: IGroupPlanApproval[] | undefined, name: string) =>
-  approvals?.find(
-    (item) => item.groupName.toLowerCase() === name.toLowerCase()
-  )
+const approvalFor = (
+  approvals: IGroupPlanApproval[] | undefined,
+  name: string
+) =>
+  approvals?.find((item) => item.groupName.toLowerCase() === name.toLowerCase())
 
 export const RolloutGroupsCard = ({
   groups,

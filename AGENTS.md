@@ -61,7 +61,7 @@ account/RBAC models.
 ## Agents and MCP
 
 - Prefer the **Nuon MCP** when the client has it configured (read-only by default unless writes are enabled).
-- Otherwise use the CLI: `nuon agents context` for orientation; `nuon agents mcp` as the stdio MCP proxy;
+- Otherwise use the CLI: `nuon agents help` for orientation (an agent receives the markdown briefing); `nuon agents mcp` as the stdio MCP proxy;
   `--output agent` for a single JSON envelope on stdout; `--read-only` / `NUON_READ_ONLY=1` unless the task needs
   writes.
 - Public walkthrough: https://docs.nuon.co and `docs/guides/agents/` in this repo.

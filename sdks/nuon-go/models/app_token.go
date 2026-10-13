@@ -49,6 +49,12 @@ type AppToken struct {
 	// role
 	Role string `json:"role,omitempty"`
 
+	// source id
+	SourceID string `json:"source_id,omitempty"`
+
+	// source type
+	SourceType string `json:"source_type,omitempty"`
+
 	// token type
 	TokenType AppTokenType `json:"token_type,omitempty"`
 

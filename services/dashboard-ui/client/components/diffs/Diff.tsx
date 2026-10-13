@@ -97,6 +97,11 @@ export const Diff = ({
     })
     return parseDiffFromFile(file(beforeText), file(afterText))
   }, [afterText, beforeText, lang, name])
+  const viewKey = useMemo(
+    () =>
+      `${fileCacheKey(name, lang, beforeText)}:${fileCacheKey(name, lang, afterText)}`,
+    [afterText, beforeText, lang, name]
+  )
 
   const lineCount = useMemo(
     () =>
@@ -282,6 +287,7 @@ export const Diff = ({
         </div>
       ) : null}
       <CodeView
+        key={viewKey}
         ref={viewer}
         items={items}
         options={options}

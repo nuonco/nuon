@@ -1,18 +1,9 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react'
-import { File as DiffFile, MultiFileDiff } from '@pierre/diffs/react'
-import { FileTree, useFileTree } from '@pierre/trees/react'
-import type { GitStatusEntry } from '@pierre/trees'
-import { Badge, type TBadgeTheme } from '@/components/common/Badge'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
-import { Loading } from '@/components/common/Loading'
+import { Skeleton } from '@/components/common/Skeleton'
 import { Icon, type TIconVariant } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import {
@@ -20,6 +11,9 @@ import {
   type DiffSectionData,
 } from '@/components/branches/AppConfigDiff'
 import { ChangeCountSummary } from '@/components/approvals/plan-diffs/ChangeCountSummary'
+import { CodeBlock } from '@/components/diffs/CodeBlock'
+import { Diff } from '@/components/diffs/Diff'
+import { DiffFileTree } from '@/components/diffs/DiffFileTree'
 import { cn } from '@/utils/classnames'
 
 type TFileChange = 'added' | 'modified' | 'removed' | 'unchanged'
@@ -60,13 +54,8 @@ export type IAppConfigFilesDiff = {
   headerAction?: ReactNode
   // Matches AppConfigDiffCard: only shown as "Pending" while no sections exist.
   isPending?: boolean
-}
-
-const changeTheme: Record<TFileChange, TBadgeTheme> = {
-  added: 'success',
-  modified: 'warn',
-  removed: 'error',
-  unchanged: 'neutral',
+  showConfigSections?: boolean
+  bare?: boolean
 }
 
 const componentIcons: Record<string, TIconVariant> = {
@@ -74,17 +63,22 @@ const componentIcons: Record<string, TIconVariant> = {
   terraform_module: 'Terraform',
 }
 
-const diffOptions = {
-  diffStyle: 'unified',
-  expandUnchanged: false,
-  lineDiffType: 'word',
-  overflow: 'scroll',
-  themeType: 'system',
-} as const
+const sourceLanguage = (path: string) => {
+  const name = path.toLowerCase()
+  if (name.endsWith('.yaml') || name.endsWith('.yml')) return 'yaml'
+  if (name.endsWith('.json')) return 'json'
+  if (name.endsWith('.tf') || name.endsWith('.tfvars')) return 'hcl'
+  if (name.endsWith('.toml')) return 'toml'
+  if (name.endsWith('.md')) return 'markdown'
+  if (name.endsWith('dockerfile') || name.endsWith('.sh')) return 'bash'
+  return 'text'
+}
 
-const fileOptions = {
-  overflow: 'scroll',
-  themeType: 'system',
+const TREE_STATUS = {
+  added: 'added',
+  modified: 'modified',
+  removed: 'deleted',
+  unchanged: 'unchanged',
 } as const
 
 const ComponentSourceTree = ({
@@ -98,172 +92,47 @@ const ComponentSourceTree = ({
   selectedPath?: string
   focus?: TDiffFocus
 }) => {
-  const filesRef = useRef(files)
-  filesRef.current = files
-  const treeSelectedPath = useRef<string | undefined>(undefined)
-  const resetKeyRef = useRef<string | undefined>(undefined)
-  const paths = useMemo(() => files.map(({ path }) => path), [files])
-  const gitStatus = useMemo<GitStatusEntry[]>(
+  const entries = useMemo(
     () =>
-      files.flatMap(({ change, path }) =>
-        change === 'unchanged'
-          ? []
-          : [
-              {
-                path,
-                status:
-                  change === 'removed'
-                    ? 'deleted'
-                    : change === 'added'
-                      ? 'added'
-                      : 'modified',
-              },
-            ]
-      ),
+      files.map(({ path, change }) => ({ path, status: TREE_STATUS[change] })),
     [files]
   )
-  const { model } = useFileTree({
-    fileTreeSearchMode: 'expand-matches',
-    flattenEmptyDirectories: true,
-    gitStatus,
-    icons: 'standard',
-    initialExpansion: 'open',
-    initialSelectedPaths: selectedPath ? [selectedPath] : [],
-    onSelectionChange: (selectedPaths) => {
-      const path = selectedPaths.at(-1)
-      treeSelectedPath.current = path
-      if (path && filesRef.current.some((file) => file.path === path)) {
-        onSelect(path)
-      }
-    },
-    paths,
-    search: true,
-  })
-
-  // `files` changes identity whenever lazy content fetches resolve, but the
-  // path set usually stays the same. resetPaths rebuilds the store with
-  // initialExpansion applied, so only reset when paths or statuses change.
-  const pathsKey = paths.join('\n')
-  const gitStatusKey = gitStatus
-    .map(({ path, status }) => `${path}:${status}`)
-    .join('\n')
-  const pathsRef = useRef(paths)
-  pathsRef.current = paths
-  const gitStatusRef = useRef(gitStatus)
-  gitStatusRef.current = gitStatus
-
-  useEffect(() => {
-    if (resetKeyRef.current === `${pathsKey}\n${gitStatusKey}`) return
-    resetKeyRef.current = `${pathsKey}\n${gitStatusKey}`
-    model.resetPaths(pathsRef.current)
-    model.setGitStatus(gitStatusRef.current)
-  }, [gitStatusKey, model, pathsKey])
-
-  // Sync a parent-driven selection (initial default or focus target) into the
-  // tree. Tree-driven selections already live in the model; scrolling for them
-  // would fight the user's own scrolling and expansion.
-  useEffect(() => {
-    if (!selectedPath || selectedPath === treeSelectedPath.current) return
-    model.getItem(selectedPath)?.select()
-  }, [model, selectedPath])
-
-  useEffect(() => {
-    if (!focus) return
-    if (!filesRef.current.some((file) => file.path === focus.path)) return
-    // Expand ancestors so scrollToPath can see the target even when its
-    // folder is collapsed (canonical directory paths end with '/').
-    const segments = focus.path.split('/')
-    for (let i = 1; i < segments.length; i++) {
-      const dir = model.getItem(`${segments.slice(0, i).join('/')}/`)
-      if (dir != null && 'expand' in dir) dir.expand()
-    }
-    model.getItem(focus.path)?.select()
-    model.scrollToPath(focus.path, { offset: 'nearest' })
-  }, [focus, model])
-
   return (
-    <FileTree
-      model={model}
-      // The tree overwrites its host's class attribute, so size it via style.
-      style={
-        {
-          height: files.length > 5 ? '36rem' : '24rem',
-          '--trees-bg-override': 'var(--background)',
-          '--trees-border-color-override': 'var(--border-color)',
-          '--trees-fg-override': 'var(--foreground)',
-          '--trees-selected-bg-override': 'var(--background-neutral)',
-        } as React.CSSProperties
-      }
+    <DiffFileTree
+      files={entries}
+      onSelect={onSelect}
+      selectedPath={selectedPath}
+      focus={focus}
     />
   )
 }
 
 const SourceFileDiff = ({ file }: { file: TComponentSourceFile }) => {
-  const lang =
-    file.path.endsWith('.yaml') || file.path.endsWith('.yml')
-      ? 'yaml'
-      : undefined
-
-  if (file.change === 'unchanged') {
-    return (
-      <div className="flex flex-col gap-2">
-        <Badge theme="neutral">{file.kind}</Badge>
-        <DiffFile
-          key={file.path}
-          file={{
-            cacheKey: file.path,
-            contents: file.after ?? '',
-            lang,
-            name: file.path,
-          }}
-          options={fileOptions}
-        />
-      </div>
-    )
+  if (file.before === undefined && file.after === undefined) {
+    return <Text theme="neutral">Unable to load file contents.</Text>
   }
 
-  // A failed or still-undelivered content fetch leaves both sides undefined;
-  // MultiFileDiff throws when neither side is passed.
-  if (file.before === undefined && file.after === undefined) {
+  const language = sourceLanguage(file.path)
+  if (file.change === 'unchanged') {
     return (
-      <div className="flex flex-col gap-2">
-        <Badge theme={changeTheme[file.change]}>{file.change}</Badge>
-        <Text theme="neutral">Unable to load file contents.</Text>
-      </div>
+      <CodeBlock
+        value={file.after ?? file.before ?? ''}
+        language={language}
+        filename={file.path}
+        className="rounded-none border-0"
+      />
     )
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <Badge theme={changeTheme[file.change]}>{file.change}</Badge>
-        <Badge variant="code">{file.kind}</Badge>
-      </div>
-      <MultiFileDiff
-        key={`${file.path}:${file.before?.length ?? 0}:${file.after?.length ?? 0}`}
-        newFile={
-          file.after !== undefined
-            ? {
-                cacheKey: file.path,
-                contents: file.after,
-                lang,
-                name: file.path,
-              }
-            : undefined
-        }
-        oldFile={
-          file.before !== undefined
-            ? {
-                cacheKey: file.path,
-                contents: file.before,
-                lang,
-                name: file.path,
-              }
-            : undefined
-        }
-        options={diffOptions}
-      />
-    </div>
+    <Diff
+      before={file.before ?? ''}
+      after={file.after ?? ''}
+      language={language}
+      filename={file.path}
+      search={false}
+      className="rounded-none border-0"
+    />
   )
 }
 
@@ -272,11 +141,15 @@ export const SourceFilesPanel = ({
   focus,
   onSelectPath,
   isLoadingFile,
+  showHeading = true,
+  framed = true,
 }: {
   files: TComponentSourceFile[]
   focus?: TDiffFocus
   onSelectPath?: (path: string) => void
   isLoadingFile?: boolean
+  showHeading?: boolean
+  framed?: boolean
 }) => {
   const [selectedPath, setSelectedPath] = useState<string | undefined>()
   const [flash, setFlash] = useState(false)
@@ -310,39 +183,43 @@ export const SourceFilesPanel = ({
   if (!changed.length) {
     return (
       <Text theme="neutral">
-        {files.length ? 'No files changed.' : 'This component references no files.'}
+        {files.length
+          ? 'No files changed.'
+          : 'This component references no files.'}
       </Text>
     )
   }
 
   return (
     <div className="@container flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Text variant="label" theme="neutral">
-          Referenced files
-        </Text>
-        <div className="flex items-center gap-1.5">
-          <Badge theme="success">
-            {changed.filter(({ change }) => change === 'added').length} added
-          </Badge>
-          <Badge theme="warn">
-            {changed.filter(({ change }) => change === 'modified').length}{' '}
-            modified
-          </Badge>
-          <Badge theme="error">
-            {changed.filter(({ change }) => change === 'removed').length}{' '}
-            removed
-          </Badge>
+      {showHeading ? (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Text variant="label" theme="neutral">
+            Referenced files
+          </Text>
+          <div className="flex items-center gap-1.5">
+            <Badge theme="success">
+              {changed.filter(({ change }) => change === 'added').length} added
+            </Badge>
+            <Badge theme="warn">
+              {changed.filter(({ change }) => change === 'modified').length}{' '}
+              modified
+            </Badge>
+            <Badge theme="error">
+              {changed.filter(({ change }) => change === 'removed').length}{' '}
+              removed
+            </Badge>
+          </div>
         </div>
-      </div>
+      ) : null}
       <div
         ref={panelRef}
         className={cn(
-          'flex flex-col overflow-hidden border rounded-md @3xl:flex-row',
-          changed.length > 5 ? 'min-h-144' : 'min-h-96'
+          'flex max-h-[70vh] flex-col overflow-hidden @3xl:h-144 @3xl:flex-row',
+          framed && 'border rounded-md'
         )}
       >
-        <div className="border-b p-3 @3xl:w-2/5 @3xl:border-b-0 @3xl:border-r">
+        <div className="h-72 overflow-auto border-b bg-code pt-4 @3xl:h-full @3xl:w-2/5 @3xl:border-b-0 @3xl:border-r">
           <ComponentSourceTree
             files={changed}
             onSelect={setSelectedPath}
@@ -352,13 +229,14 @@ export const SourceFilesPanel = ({
         </div>
         <div
           className={cn(
-            'min-w-0 overflow-auto p-4 transition-colors duration-500 @3xl:w-3/5',
+            'max-h-[36rem] min-w-0 overflow-auto overscroll-contain transition-colors duration-500 @3xl:h-full @3xl:max-h-none @3xl:w-3/5',
+            (!selected || isLoadingFile) && 'p-4',
             flash && 'bg-primary-50 dark:bg-primary-900/20'
           )}
         >
           {selected ? (
             isLoadingFile ? (
-              <Loading />
+              <Skeleton lines={8} height="0.75rem" width="90%" />
             ) : (
               <SourceFileDiff file={selected} />
             )
@@ -554,6 +432,23 @@ const SectionSummary = ({
   )
 }
 
+export const SourceFilesSkeleton = () => (
+  <div className="flex h-144 max-h-[70vh] flex-col @3xl:flex-row">
+    <div className="flex flex-col gap-3 border-b bg-code p-4 @3xl:w-2/5 @3xl:border-b-0 @3xl:border-r">
+      <Skeleton height="2rem" />
+      <Skeleton
+        lines={8}
+        height="0.75rem"
+        width={['72%', '56%', '80%', '44%', '68%', '52%', '76%', '48%']}
+      />
+    </div>
+    <div className="flex min-w-0 flex-1 flex-col gap-3 p-4">
+      <Skeleton height="1rem" width="16rem" />
+      <Skeleton lines={10} height="0.75rem" width="92%" />
+    </div>
+  </div>
+)
+
 export const AppConfigFilesDiff = ({
   previousVersion,
   currentVersion,
@@ -566,28 +461,36 @@ export const AppConfigFilesDiff = ({
   title = 'App configuration',
   headerAction,
   isPending = false,
+  showConfigSections = true,
+  bare = false,
 }: IAppConfigFilesDiff) => {
   const [focus, setFocus] = useState<TDiffFocus | undefined>()
   const focusFile = (path: string) =>
     setFocus((current) => ({ path, nonce: (current?.nonce ?? 0) + 1 }))
   const showPending = isPending && configSections.length === 0
+  const Shell = bare ? 'div' : Card
 
   return (
-    <Card className={cn('flex flex-col gap-4', className)}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Text weight="strong">{title}</Text>
-        {showPending ? (
-          <Text variant="subtext" theme="neutral">
-            Pending
-          </Text>
-        ) : (
-          previousVersion &&
-          currentVersion && (
-            <VersionRange previous={previousVersion} current={currentVersion} />
-          )
-        )}
-        {headerAction}
-      </div>
+    <Shell className={cn('flex flex-col gap-4', className)}>
+      {bare ? null : (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Text weight="strong">{title}</Text>
+          {showPending ? (
+            <Text variant="subtext" theme="neutral">
+              Pending
+            </Text>
+          ) : (
+            previousVersion &&
+            currentVersion && (
+              <VersionRange
+                previous={previousVersion}
+                current={currentVersion}
+              />
+            )
+          )}
+          {headerAction}
+        </div>
+      )}
 
       {showPending ? (
         <div className="px-4 py-3 text-center">
@@ -600,16 +503,18 @@ export const AppConfigFilesDiff = ({
         </div>
       ) : (
         <>
-          <div className="gap-3 sm:columns-2">
-            {configSections.map((section) => (
-              <SectionSummary
-                key={section.sectionKey}
-                section={section}
-                onFocusFile={focusFile}
-                snapshot={snapshot}
-              />
-            ))}
-          </div>
+          {showConfigSections ? (
+            <div className="gap-3 sm:columns-2">
+              {configSections.map((section) => (
+                <SectionSummary
+                  key={section.sectionKey}
+                  section={section}
+                  onFocusFile={focusFile}
+                  snapshot={snapshot}
+                />
+              ))}
+            </div>
+          ) : null}
 
           {(files.length > 0 || !snapshot) && (
             <SourceFilesPanel
@@ -617,10 +522,12 @@ export const AppConfigFilesDiff = ({
               focus={focus}
               onSelectPath={onSelectPath}
               isLoadingFile={isLoadingFile}
+              showHeading={!bare}
+              framed={!bare}
             />
           )}
         </>
       )}
-    </Card>
+    </Shell>
   )
 }

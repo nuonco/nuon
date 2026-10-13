@@ -10,10 +10,11 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetrytoken"
 )
 
 func TestNewTelemetryRelayEndpoint(t *testing.T) {
-	issuer := &telemetryTokenIssuer{}
+	issuer := &telemetrytoken.Issuer{}
 
 	t.Run("disabled", func(t *testing.T) {
 		endpoint, err := newTelemetryRelayEndpoint(&internal.Config{}, nil)
@@ -61,7 +62,7 @@ func TestNewRejectsInvalidTelemetryRelayConfiguration(t *testing.T) {
 
 func TestCreateTelemetryAccessTokenRequiresAccountWithoutDeploymentRelay(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	issuer, _ := newTelemetryTestTokenIssuer(t)
+	issuer, _, _ := newTelemetryTestTokenIssuer(t)
 	svc := &service{telemetryTokenIssuer: issuer}
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)

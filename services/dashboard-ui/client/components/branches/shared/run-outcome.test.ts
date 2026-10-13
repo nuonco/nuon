@@ -2,15 +2,10 @@ import { describe, expect, test } from 'bun:test'
 import type { TWorkflow } from '@/types'
 import { branchRunOutcome } from './run-outcome'
 
-const workflow = (
-  steps: NonNullable<TWorkflow['steps']>
-): TWorkflow => ({ steps }) as TWorkflow
+const workflow = (steps: NonNullable<TWorkflow['steps']>): TWorkflow =>
+  ({ steps }) as TWorkflow
 
-const deploy = (
-  name: string,
-  stepStatus: string,
-  installs: string[]
-) =>
+const deploy = (name: string, stepStatus: string, installs: string[]) =>
   ({
     name: `deploy install group: ${name}`,
     status: {

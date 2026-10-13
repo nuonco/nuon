@@ -28,6 +28,7 @@ func AllModels() []any {
 
 		// org basics
 		&app.Org{},
+		&app.ManagedServiceAccount{},
 		&app.Webhook{},
 		&app.OrgInvite{},
 		&app.CloudConnection{},

@@ -448,7 +448,7 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
   if (status === 'cancelled') {
     return {
       copy: `Step was cancelled: ${status_human_description}`,
-      theme: 'warn',
+      theme: 'neutral',
       title: `Step ${step?.name} cancelled`,
     }
   }

@@ -91,7 +91,10 @@ export const BranchRolloutStatus = ({
       ) : null}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         {installCount !== undefined ? (
-          <InstallCount count={installCount} isPartial={installCountIsPartial} />
+          <InstallCount
+            count={installCount}
+            isPartial={installCountIsPartial}
+          />
         ) : null}
         {statusCounts(installs).map(([status, count]) => (
           <Status key={status} status={status}>

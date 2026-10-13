@@ -86,8 +86,8 @@ saved place. Resume still starts over at Start if a saved app or install returns
 | Stack | `GET /v1/installs/:id/stack` every 3 seconds |
 | Provision | None until Finish |
 
-Kitchen Sink's repo root is AWS-only, so the example path uses `kitchen-sink` (directory `.`) for AWS and
-`kitchen-sink-gcp` (directory `gcp`) for GCP.
+Kitchen Sink keeps one config per cloud, so the example path uses `kitchen-sink` (directory `kitchen-sink-aws`,
+sandbox `nuonco/aws-eks-sandbox`) for AWS and `kitchen-sink-gcp` (directory `kitchen-sink-gcp`) for GCP.
 
 ## Analytics
 

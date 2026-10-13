@@ -456,6 +456,16 @@ const chrome = (
   }
   if (path === `/v1/installs/${VIEW_INSTALL_ID}`) return reply(install)
   if (path === `/v1/installs/${VIEW_INSTALL_ID}/status`) return reply(installStatus)
+  if (path === `/v1/installs/${VIEW_INSTALL_ID}/overview`) {
+    return reply({
+      branch_tracking: {
+        status: 'current',
+        commits_behind: 0,
+        pending_commits: [],
+      },
+      config_drift: { components: [] },
+    })
+  }
   if (path === `/v1/apps/${VIEW_APP_ID}`) {
     return reply({ id: VIEW_APP_ID, name: 'Payments' })
   }

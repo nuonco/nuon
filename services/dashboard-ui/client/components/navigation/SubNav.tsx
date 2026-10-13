@@ -58,6 +58,7 @@ interface ISubNav {
   links: Array<TNavItem>
   storageKey?: string
   pinLastGroup?: boolean
+  sticky?: boolean
 }
 
 export const SubNav = ({
@@ -65,6 +66,7 @@ export const SubNav = ({
   links,
   storageKey = 'subnav-sections',
   pinLastGroup = false,
+  sticky = false,
 }: ISubNav) => {
   const {
     isPageSidebarOpen,
@@ -114,6 +116,8 @@ export const SubNav = ({
           'md:w-[17.5rem]': isPageSidebarOpen,
           'md:self-stretch md:items-start md:min-h-[calc(100dvh-11rem)]':
             pinLastGroup,
+          'sticky top-0 z-10 self-start bg-background md:sticky md:h-[100cqh] md:max-h-[100cqh]':
+            sticky,
         }
       )}
     >

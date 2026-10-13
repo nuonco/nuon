@@ -2,9 +2,9 @@ package authz
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
 
 // stackInstallRole is the role an install stack's account holds: every stack
@@ -23,16 +24,13 @@ func stackInstallRole(orgID, installID string) *app.Role {
 		RoleType:    app.RoleTypeStack,
 		Title:       "Stack",
 		Description: "Scoped access to install-stack endpoints for a single install.",
-		Managed:     false,
-		Policies: []app.Policy{
-			{
-				OrgID: generics.NewNullString(orgID),
-				Name:  app.PolicyNameStack,
-				Permissions: pgtype.Hstore(map[string]*string{
-					permissions.StackObject(orgID, installID): permissions.PermissionAll.ToStrPtr(),
-				}),
+		Policies: []app.Policy{{
+			OrgID: generics.NewNullString(orgID),
+			Name:  app.PolicyNameStack,
+			Permissions: pgtype.Hstore{
+				permissions.StackObject(orgID, installID): permissions.PermissionAll.ToStrPtr(),
 			},
-		},
+		}},
 	}
 }
 
@@ -40,102 +38,74 @@ func stackInstallRole(orgID, installID string) *app.Role {
 // one policy, on this install's stack object. Looked up through the account's own
 // binding, since the account is already per-install.
 func (h *Client) EnsureStackInstallRole(ctx context.Context, orgID, installID, accountID string) error {
-	// No account in context from a temporal activity, so the account is its own creator.
 	ctx = cctx.SetAccountIDContext(ctx, accountID)
-
-	var existing []app.Role
-	if res := h.db.WithContext(ctx).
-		Joins("JOIN account_roles ON account_roles.role_id = roles.id AND account_roles.deleted_at = 0").
-		Preload("Policies").
-		Where("account_roles.account_id = ?", accountID).
-		Where("roles.org_id = ? AND roles.role_type = ?", orgID, app.RoleTypeStack).
-		Find(&existing); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to look up stack install role")
-	}
-
-	want := permissions.StackObject(orgID, installID)
-	wantVerb := string(permissions.PermissionAll)
-	for _, role := range existing {
-		if len(role.Policies) != 1 {
-			continue
+	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var acct app.Account
+		if err := tx.Select("id", "account_type", "subject").Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where(app.Account{ID: accountID}).Take(&acct).Error; err != nil {
+			return fmt.Errorf("lock stack service account: %w", err)
 		}
-		verb, ok := role.Policies[0].Permissions[want]
-		if !ok {
-			continue
+		if acct.AccountType != app.AccountTypeService {
+			return fmt.Errorf("stack roles require a service account")
 		}
-		// Roles from before the grant widened still hold the old verb; this converges them.
-		if verb == nil || *verb != wantVerb {
-			if res := h.db.WithContext(ctx).
-				Model(&app.Policy{}).
-				Where("id = ?", role.Policies[0].ID).
-				Update("permissions", pgtype.Hstore(map[string]*string{
-					want: permissions.PermissionAll.ToStrPtr(),
-				})); res.Error != nil {
-				return errors.Wrap(res.Error, "unable to converge stack install role policy")
+		var binding app.ManagedServiceAccount
+		if err := tx.Where(app.ManagedServiceAccount{AccountID: accountID}).Find(&binding).Error; err != nil {
+			return fmt.Errorf("load stack service account ownership: %w", err)
+		}
+		if binding.AccountID != "" {
+			if binding.OrgID != orgID || binding.OwnerType != plugins.TableName(tx, app.InstallStack{}) || binding.Purpose != app.ManagedServiceAccountPurposeStack || binding.OwnerID != acct.Subject {
+				return fmt.Errorf("service account is not owned by this stack")
+			}
+			var stack struct{ ID string }
+			if err := tx.Model(&app.InstallStack{}).Select("id").
+				Where(app.InstallStack{ID: binding.OwnerID, OrgID: orgID, InstallID: installID}).Take(&stack).Error; err != nil {
+				return fmt.Errorf("validate stack permission target: %w", err)
 			}
 		}
 
-		return nil
-	}
-
-	role := stackInstallRole(orgID, installID)
-	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if res := tx.Create(role); res.Error != nil {
-			return errors.Wrap(res.Error, "unable to create stack install role")
+		want := stackInstallRole(orgID, installID)
+		if binding.PrivateRoleID == nil {
+			var existing []app.Role
+			if err := tx.Joins("JOIN account_roles ON account_roles.role_id = roles.id AND account_roles.deleted_at = 0").
+				Preload("Policies").Where("account_roles.account_id = ?", accountID).
+				Where(app.Role{OrgID: generics.NewNullString(orgID), RoleType: app.RoleTypeStack}).Find(&existing).Error; err != nil {
+				return fmt.Errorf("load legacy stack roles: %w", err)
+			}
+			if len(existing) > 1 {
+				return fmt.Errorf("stack service account has multiple legacy stack roles")
+			}
+			if len(existing) == 1 {
+				role := existing[0]
+				if len(role.Policies) != 1 || len(role.Policies[0].Permissions) != 1 {
+					return fmt.Errorf("legacy stack role has an unexpected policy")
+				}
+				if _, ok := role.Policies[0].Permissions[permissions.StackObject(orgID, installID)]; !ok {
+					return fmt.Errorf("legacy stack role targets a different resource")
+				}
+				want.ID = role.ID
+			}
 		}
-
-		binding := &app.AccountRole{
-			OrgID:     generics.NewNullString(orgID),
-			RoleID:    role.ID,
-			AccountID: accountID,
+		if binding.AccountID != "" {
+			return New(Params{DB: tx}).EnsureManagedServiceAccountRole(ctx, accountID, want)
 		}
-		if res := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(binding); res.Error != nil {
-			return errors.Wrap(res.Error, "unable to bind stack install role")
-		}
-
-		return nil
+		return ensurePrivateRole(tx, accountID, want)
 	})
 }
 
-// DeleteStackInstallRoles hard-deletes the stack roles bound to an account, and
-// their policies. They are per-account garbage once the account is gone, and a
-// soft delete would keep the unique policy-per-role index occupied.
-//
-// tx is expected to be a transaction.
 func DeleteStackInstallRoles(tx *gorm.DB, accountID string) error {
-	var roleIDs []string
-	if res := tx.Unscoped().
-		Model(&app.Role{}).
-		Joins("JOIN account_roles ON account_roles.role_id = roles.id").
-		Where("account_roles.account_id = ?", accountID).
-		Where("roles.role_type = ?", app.RoleTypeStack).
-		Distinct().
-		Pluck("roles.id", &roleIDs); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to look up stack roles for account")
+	var roles []app.Role
+	if err := tx.Unscoped().Joins("JOIN account_roles ON account_roles.role_id = roles.id").
+		Where("account_roles.account_id = ?", accountID).Where(app.Role{RoleType: app.RoleTypeStack}).
+		Distinct("roles.*").Find(&roles).Error; err != nil {
+		return fmt.Errorf("load legacy stack roles for deletion: %w", err)
 	}
-
-	if len(roleIDs) == 0 {
-		return nil
+	for _, role := range roles {
+		if err := validatePrivateRole(tx, accountID, role.OrgID.ValueString(), &role); err != nil {
+			return err
+		}
+		if err := deletePrivateRole(tx, accountID, role.ID); err != nil {
+			return err
+		}
 	}
-
-	// Bindings first: account_roles has a foreign key to roles.
-	if res := tx.Unscoped().
-		Where("role_id IN ?", roleIDs).
-		Delete(&app.AccountRole{}); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to remove stack role bindings")
-	}
-
-	if res := tx.Unscoped().
-		Where("role_id IN ?", roleIDs).
-		Delete(&app.Policy{}); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to delete stack role policies")
-	}
-
-	if res := tx.Unscoped().
-		Where("id IN ?", roleIDs).
-		Delete(&app.Role{}); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to delete stack roles")
-	}
-
 	return nil
 }

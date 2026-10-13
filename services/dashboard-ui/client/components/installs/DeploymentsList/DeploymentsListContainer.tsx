@@ -221,7 +221,10 @@ const useStableSection = <E,>(section: {
   const heldError = useRef<E | null>(null)
   if (section.data !== undefined) heldError.current = null
   else if (section.error) heldError.current = section.error
-  const error = section.data === undefined ? (section.error ?? heldError.current) : section.error
+  const error =
+    section.data === undefined
+      ? (section.error ?? heldError.current)
+      : section.error
   return {
     error,
     isLoading: section.isLoading && section.data === undefined && error == null,

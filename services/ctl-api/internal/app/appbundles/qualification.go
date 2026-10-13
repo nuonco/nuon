@@ -113,9 +113,6 @@ func Qualify(cfg *app.AppConfig, platform string) QualificationReport {
 		if a.ActionWorkflowID == "" || !actionMembers[a.ActionWorkflowID] {
 			add("action.membership_mismatch", member, "action config is not an exact AppConfig action member")
 		}
-		if a.Image != "" && firstGitSourcedActionStep(*a) == "" {
-			add("action.image_unsupported", member, "container-image actions are not supported by portable bundles")
-		}
 		hasCron := a.HasTrigger(app.ActionWorkflowTriggerTypeCron)
 		for j := range a.Steps {
 			s := &a.Steps[j]
