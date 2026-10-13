@@ -9,6 +9,7 @@ import (
 	"github.com/posthog/posthog-go/posthogmcpsdk"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/agentclient"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
@@ -47,9 +48,27 @@ func (s *Server) newPostHogMiddleware() *posthogmcpsdk.Middleware {
 			}
 			return id, nil
 		}),
+		posthogmcpsdk.WithProperties(attributionProperties),
 		posthogmcpsdk.WithErrorHandler(func(_ context.Context, err error) {
 			s.l.Warn("posthog mcp analytics", zap.Error(err))
 		}),
 	)
 	return &m
+}
+
+func attributionProperties(_ context.Context, req *mcp.CallToolRequest, _ *mcp.CallToolResult, _ error) (posthog.Properties, error) {
+	if req == nil || req.Extra == nil {
+		return nil, nil
+	}
+	props := posthog.NewProperties()
+	if agent := req.Extra.Header.Get(agentclient.Header); agent != "" {
+		props.Set("agent", agent)
+	}
+	if command := req.Extra.Header.Get(agentclient.CommandHeader); command != "" {
+		props.Set("command", command)
+	}
+	if len(props) == 0 {
+		return nil, nil
+	}
+	return props, nil
 }
