@@ -13,7 +13,8 @@ import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Skeleton } from '@/components/common/Skeleton'
-import { FILTER_PREFIXES, COMMANDS_BY_PREFIX, parseQuery, getAutocompletion } from '../types'
+import { useNewAppIA } from '@/hooks/use-new-app-ia'
+import { FILTER_PREFIXES, parseQuery, getAutocompletion, spotlightCommands } from '../types'
 import { useSpotlightResults } from '../use-spotlight-results'
 import { SpotlightResultItem } from '../SpotlightResultItem'
 import type { SpotlightResult } from '../types'
@@ -26,10 +27,12 @@ interface ISpotlightModal extends IModal {
 }
 
 export const SpotlightModal = ({ orgId, onClose, onNavigate, onAddModal, ...props }: ISpotlightModal) => {
+  const newAppIA = useNewAppIA()
+  const commandsByPrefix = spotlightCommands(newAppIA)
   const [raw, setRaw] = useState('')
   const [debouncedRaw, setDebouncedRaw] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
-  const autocompletion = useMemo(() => getAutocompletion(raw), [raw])
+  const autocompletion = useMemo(() => getAutocompletion(raw, newAppIA), [raw, newAppIA])
   const listRef = useRef<HTMLDivElement>(null)
   const inputWrapperRef = useRef<HTMLDivElement>(null)
 
@@ -198,7 +201,7 @@ export const SpotlightModal = ({ orgId, onClose, onNavigate, onAddModal, ...prop
             ))}
           </div>
         )}
-        {liveParsed.prefix && COMMANDS_BY_PREFIX[liveParsed.prefix] && liveParsed.command === null && (
+        {liveParsed.prefix && commandsByPrefix[liveParsed.prefix] && liveParsed.command === null && (
           <div className="px-2 py-1 flex items-center gap-1.5">
             <Text variant="subtext" className="text-cool-grey-600" flex>
               Type

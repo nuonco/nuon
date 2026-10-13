@@ -4,6 +4,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { TIconVariant } from '@/components/common/Icon'
 import { getOrgs } from '@/lib/ctl-api/orgs/get-orgs'
 import { getApps } from '@/lib/ctl-api/apps/get-apps'
+import { getAppBranches } from '@/lib/ctl-api/apps/branches/get-app-branches'
 import { getInstalls } from '@/lib/ctl-api/installs/get-installs'
 import { getComponents } from '@/lib/ctl-api/apps/components/get-components'
 import { getActions } from '@/lib/ctl-api/apps/actions/get-actions'
@@ -30,16 +31,32 @@ import {
 } from '../ComponentCommandModals'
 import { SpotlightRunActionModal } from '../ActionCommandModals'
 import { RestartRunnerModalContainer as RestartRunnerModal } from '../RestartRunnerModal'
+import { TriggerBranchRunModal } from '@/components/branches/TriggerBranchRunModal'
 import { useInstallLink } from '@/hooks/use-install-path'
+import type { TAppBranchConfig } from '@/types'
+import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import {
   type SpotlightResult,
   type ParsedQuery,
-  STATIC_PAGES,
   INSTALL_SUB_PAGES,
+  NEW_INSTALL_IA_SUB_PAGES,
   APP_SUB_PAGES,
   APP_BRANCH_SUB_PAGES,
+  spotlightAppNavigation,
+  isSpotlightImageComponent,
+  spotlightInstallActionPath,
+  spotlightInstallComponentPath,
+  spotlightInstallPath,
+  spotlightOrgPages,
   tokenMatch,
 } from '../types'
+
+const latestBranchConfig = (configs?: TAppBranchConfig[]) => {
+  if (!configs?.length) return undefined
+  return [...configs].sort(
+    (a, b) => (b.config_number || 0) - (a.config_number || 0)
+  )[0]
+}
 
 export function useSpotlightResults(
   parsed: ParsedQuery,
@@ -51,6 +68,8 @@ export function useSpotlightResults(
 ) {
   const installLink = useInstallLink()
   const navigate = useNavigate()
+  const newAppIA = useNewAppIA()
+  const orgPages = useMemo(() => spotlightOrgPages(newAppIA), [newAppIA])
 
   const appSubPages = useMemo(
     () => hasAppBranches ? [...APP_SUB_PAGES, ...APP_BRANCH_SUB_PAGES] : APP_SUB_PAGES,
@@ -62,6 +81,32 @@ export function useSpotlightResults(
     queryKey: ['spotlight', 'apps', parsed.query, orgId],
     queryFn: () => getApps({ orgId, q: parsed.query || undefined, limit: 5 }),
     enabled: (parsed.prefix === 'app' || (parsed.prefix === null && parsed.query.length > 0)) && !!orgId,
+  })
+
+  const spotlightAppIds = (appsResult?.data ?? []).flatMap((app) =>
+    app.id ? [app.id] : []
+  )
+  const { data: appBranchesResult, isFetching: appBranchesFetching } = useQuery({
+    placeholderData: keepPreviousData,
+    queryKey: ['spotlight', 'app-branches', orgId, spotlightAppIds],
+    queryFn: async () => {
+      const results = await Promise.allSettled(
+        spotlightAppIds.map((appId) =>
+          getAppBranches({ appId, orgId, limit: 20 }).then((res) => ({
+            appId,
+            branches: res.data ?? [],
+          }))
+        )
+      )
+      return results.flatMap((result) =>
+        result.status === 'fulfilled' ? [result.value] : []
+      )
+    },
+    enabled:
+      newAppIA &&
+      parsed.prefix === 'app' &&
+      spotlightAppIds.length > 0 &&
+      !!orgId,
   })
 
   const isRunnerIdQuery = parsed.query.startsWith('run')
@@ -184,7 +229,7 @@ export function useSpotlightResults(
 
   const results = useMemo((): SpotlightResult[] => {
     if (liveParsed.prefix === null) {
-      const pages = STATIC_PAGES
+      const pages = orgPages
       if (!liveParsed.query) return pages
       const matched = pages.filter((p) => tokenMatch(p.label, liveParsed.query))
       const apps = (appsResult?.data ?? []).map((app): SpotlightResult => ({
@@ -205,14 +250,23 @@ export function useSpotlightResults(
         label: `${install.name ?? install.id!} › Runner`,
         subtitle: install.app?.name,
         tag: 'install',
-        path: `/installs/${install.id}/runner`,
+        path: spotlightInstallPath({
+          appId: install.app_id,
+          installId: install.id!,
+          newAppIA,
+          suffix: newAppIA ? '/operations/runner' : '/runner',
+        }),
         icon: 'CubeIcon',
       }))
       const installs = allInstalls.map((install): SpotlightResult => ({
         label: install.name ?? install.id!,
         subtitle: install.app?.name,
         tag: 'install',
-        path: `/installs/${install.id}`,
+        path: spotlightInstallPath({
+          appId: install.app_id,
+          installId: install.id!,
+          newAppIA,
+        }),
         icon: 'CubeIcon',
       }))
       if (isGlobalCommand) {
@@ -278,36 +332,61 @@ export function useSpotlightResults(
       for (const app of apps) {
         const appId = app.id!
         const name = app.name ?? appId
+        const branches =
+          appBranchesResult?.find((entry) => entry.appId === appId)?.branches ?? []
         if (parsed.command === null) {
-          items.push({
-            label: name,
-            tag: 'app',
-            path: `/apps/${appId}`,
-            icon: 'AppWindowIcon',
-          })
-          for (const sub of appSubPages) {
-            const entry = {
-              label: `${name} › ${sub}`,
-              tag: 'app',
-              path: `/apps/${appId}/${sub.toLowerCase()}`,
-              icon: 'AppWindowIcon' as TIconVariant,
-            }
-            if (parsed.query && !tokenMatch(entry.label, parsed.query)) continue
-            items.push(entry)
-          }
+          items.push(
+            ...spotlightAppNavigation({
+              appId,
+              appName: name,
+              branches,
+              newAppIA,
+              query: parsed.query,
+              subPages: appSubPages,
+            })
+          )
         }
-        const commands: SpotlightResult[] = [
-          {
-            label: `${name} › Build all components`,
-            tag: 'command',
-            icon: 'LightningIcon',
-            action: () => addModal?.(<AppBuildAllComponentsModal appId={appId} />),
-          },
-        ]
-        for (const cmd of commands) {
-          const cmdName = cmd.label.split(' › ')[1]
-          if (parsed.command === null || !parsed.command || tokenMatch(cmdName, parsed.command)) {
-            items.push(cmd)
+        if (newAppIA) {
+          for (const branch of branches) {
+            if (!branch.id) continue
+            const branchName = branch.name ?? branch.id
+            if (
+              parsed.command !== null &&
+              parsed.command &&
+              !tokenMatch('Trigger run', parsed.command)
+            ) {
+              continue
+            }
+            items.push({
+              label: `${name} › ${branchName} › Trigger run`,
+              tag: 'command',
+              icon: 'LightningIcon',
+              action: () =>
+                addModal?.(
+                  <TriggerBranchRunModal
+                    appId={appId}
+                    branch={branch}
+                    currentConfig={latestBranchConfig(branch.configs)}
+                    orgId={orgId}
+                    planOnly={false}
+                  />
+                ),
+            })
+          }
+        } else {
+          const commands: SpotlightResult[] = [
+            {
+              label: `${name} › Build all components`,
+              tag: 'command',
+              icon: 'LightningIcon',
+              action: () => addModal?.(<AppBuildAllComponentsModal appId={appId} />),
+            },
+          ]
+          for (const cmd of commands) {
+            const cmdName = cmd.label.split(' › ')[1]
+            if (parsed.command === null || !parsed.command || tokenMatch(cmdName, parsed.command)) {
+              items.push(cmd)
+            }
           }
         }
       }
@@ -334,7 +413,12 @@ export function useSpotlightResults(
               label: `${name} › Runner`,
               subtitle: install.app?.name,
               tag: 'install',
-              path: `/installs/${installId}/runner`,
+              path: spotlightInstallPath({
+                appId: install.app_id,
+                installId,
+                newAppIA,
+                suffix: newAppIA ? '/operations/runner' : '/runner',
+              }),
               icon: 'CubeIcon',
             })
           }
@@ -342,15 +426,30 @@ export function useSpotlightResults(
             label: name,
             subtitle: install.app?.name,
             tag: 'install',
-            path: `/installs/${installId}`,
+            path: spotlightInstallPath({
+              appId: install.app_id,
+              installId,
+              newAppIA,
+            }),
             icon: 'CubeIcon',
           })
-          for (const sub of INSTALL_SUB_PAGES) {
+          const subPages = newAppIA
+            ? NEW_INSTALL_IA_SUB_PAGES
+            : INSTALL_SUB_PAGES.map((sub) => ({
+                label: sub,
+                suffix: `/${sub.toLowerCase()}`,
+              }))
+          for (const sub of subPages) {
             const entry = {
-              label: `${name} › ${sub}`,
+              label: `${name} › ${sub.label}`,
               subtitle: install.app?.name,
               tag: 'install',
-              path: `/installs/${installId}/${sub.toLowerCase()}`,
+              path: spotlightInstallPath({
+                appId: install.app_id,
+                installId,
+                newAppIA,
+                suffix: sub.suffix,
+              }),
               icon: 'CubeIcon' as TIconVariant,
             }
             if (parsed.query && !tokenMatch(entry.label, parsed.query)) continue
@@ -472,7 +571,7 @@ export function useSpotlightResults(
       }
       for (const { app, actions } of actionResults.appActions) {
         for (const action of actions) {
-          if (parsed.command === null) {
+          if (parsed.command === null && !newAppIA) {
             items.push({
               label: `${app.name} › ${action.name}`,
               tag: 'action',
@@ -492,7 +591,13 @@ export function useSpotlightResults(
               label: `${install.name} › ${name}`,
               subtitle: install.app?.name,
               tag: 'action',
-              path: `/installs/${install.id}/actions/${action.action_workflow_id}`,
+              path: spotlightInstallActionPath({
+                actionId: action.action_workflow_id ?? '',
+                appId: install.app_id,
+                installId: install.id!,
+                name,
+                newAppIA,
+              }),
               icon: 'CubeIcon',
             })
           }
@@ -526,7 +631,7 @@ export function useSpotlightResults(
       const items: SpotlightResult[] = []
       for (const { app, components } of componentResults.appComps) {
         for (const comp of components) {
-          if (parsed.command === null) {
+          if (parsed.command === null && !newAppIA) {
             items.push({
               label: `${app.name} › ${comp.name}`,
               tag: 'component',
@@ -534,16 +639,18 @@ export function useSpotlightResults(
               icon: 'AppWindowIcon',
             })
           }
-          const buildCmd: SpotlightResult = {
-            label: `${app.name} › ${comp.name} › Build`,
-            subtitle: app.name,
-            tag: 'command',
-            icon: 'LightningIcon',
-            action: () => addModal?.(<SpotlightBuildComponentModal appId={app.id!} component={comp} />),
-          }
-          const cmdName = 'Build'
-          if (parsed.command === null || !parsed.command || tokenMatch(cmdName, parsed.command)) {
-            items.push(buildCmd)
+          if (!newAppIA) {
+            const buildCmd: SpotlightResult = {
+              label: `${app.name} › ${comp.name} › Build`,
+              subtitle: app.name,
+              tag: 'command',
+              icon: 'LightningIcon',
+              action: () => addModal?.(<SpotlightBuildComponentModal appId={app.id!} component={comp} />),
+            }
+            const cmdName = 'Build'
+            if (parsed.command === null || !parsed.command || tokenMatch(cmdName, parsed.command)) {
+              items.push(buildCmd)
+            }
           }
         }
       }
@@ -554,8 +661,18 @@ export function useSpotlightResults(
           if (parsed.command === null) {
             items.push({
               label: `${install.name} › ${compName}`,
-              tag: 'component',
-              path: `/installs/${installId}/components/${comp.component_id}`,
+              tag:
+                newAppIA && isSpotlightImageComponent(comp.component?.type)
+                  ? 'image'
+                  : 'component',
+              path: spotlightInstallComponentPath({
+                appId: install.app_id,
+                componentId: comp.component_id ?? '',
+                installId,
+                name: compName ?? '',
+                newAppIA,
+                type: comp.component?.type,
+              }),
               icon: 'CubeIcon',
             })
           }
@@ -597,9 +714,9 @@ export function useSpotlightResults(
     }
 
     return []
-  }, [liveParsed, parsed, appsResult, installsResult, runnerInstallsResult, globalCommandInstalls, orgsResult, actionResults, componentResults, appSubPages, addModal, isGlobalCommand, navigate, orgId])
+  }, [liveParsed, parsed, appsResult, appBranchesResult, installsResult, runnerInstallsResult, globalCommandInstalls, orgsResult, actionResults, componentResults, appSubPages, addModal, isGlobalCommand, navigate, newAppIA, orgId, orgPages])
 
-  const isFetching = appsFetching || installsFetching || runnerInstallsFetching || globalCommandInstallsFetching || orgsFetching || actionsFetching || componentsFetching
+  const isFetching = appsFetching || appBranchesFetching || installsFetching || runnerInstallsFetching || globalCommandInstallsFetching || orgsFetching || actionsFetching || componentsFetching
 
   return { results, isFetching }
 }

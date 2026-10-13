@@ -7,6 +7,7 @@ import { InstallActionRunOutputsComponent } from '@/components/actions/InstallAc
 import { SSELogs } from '@/components/log-stream/SSELogs'
 import { LogsSkeleton } from '@/components/log-stream/SSELogs'
 import { TraceView } from '@/components/spans/TraceView'
+import { usePrefetchLogStreamSpans } from '@/hooks/use-prefetch-log-stream-spans'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import type { IActionRunLogs } from './types'
@@ -16,6 +17,8 @@ export const ActionRunLogs = ({
   isAdhoc,
   loading,
 }: IActionRunLogs) => {
+  usePrefetchLogStreamSpans(actionRun?.log_stream?.id)
+
   if (loading) {
     return (
       <div className="flex flex-col gap-4">
