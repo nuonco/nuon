@@ -3,46 +3,12 @@ package telemetryexport
 import (
 	"context"
 	"errors"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
 )
-
-func TestWaitForCollector(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer server.Close()
-
-	if err := waitForCollector(context.Background(), &childProcess{done: make(chan struct{})}, server.URL); err != nil {
-		t.Fatalf("waitForCollector() error = %v", err)
-	}
-}
-
-func TestWaitForCollectorDetectsExitedProcess(t *testing.T) {
-	done := make(chan struct{})
-	close(done)
-	if err := waitForCollector(context.Background(), &childProcess{done: done}, "http://127.0.0.1:0"); err == nil {
-		t.Fatal("waitForCollector() returned nil for exited process")
-	}
-}
-
-func TestWaitForCollectorHonorsCancellation(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		cancel()
-		w.WriteHeader(http.StatusServiceUnavailable)
-	}))
-	defer server.Close()
-	defer cancel()
-	if err := waitForCollector(ctx, &childProcess{done: make(chan struct{})}, server.URL); !errors.Is(err, context.Canceled) {
-		t.Fatalf("health wait did not honor cancellation: %v", err)
-	}
-}
 
 func TestStopStopsCollector(t *testing.T) {
 	stopped := false
@@ -72,28 +38,28 @@ func TestReconcilePreservesLastKnownGoodConfiguration(t *testing.T) {
 		installID: "inst-test",
 		logger:    zap.NewNop(),
 		active:    valid,
-		replaceChildFn: func(config) error {
+		replaceChildFn: func(context.Context, config) error {
 			replacements++
 			return nil
 		},
 		stopChildFn: func() { stops++ },
 	}
 
-	s.reconcile(configUpdate{state: configAvailable, value: invalid})
+	s.reconcile(context.Background(), configUpdate{state: configAvailable, value: invalid})
 	if replacements != 0 || stops != 0 || s.active != valid || s.rejectedConfig != invalid {
 		t.Fatal("invalid update changed the active collector")
 	}
-	s.reconcile(configUpdate{state: configAvailable, value: invalid})
+	s.reconcile(context.Background(), configUpdate{state: configAvailable, value: invalid})
 	if replacements != 0 || stops != 0 {
 		t.Fatal("unchanged invalid update was retried")
 	}
 
-	s.reconcile(configUpdate{state: configLookupFailed, err: errors.New("temporary failure")})
+	s.reconcile(context.Background(), configUpdate{state: configLookupFailed, err: errors.New("temporary failure")})
 	if replacements != 0 || stops != 0 || s.active != valid {
 		t.Fatal("transient lookup failure changed the active collector")
 	}
 
-	s.reconcile(configUpdate{state: configNotFound})
+	s.reconcile(context.Background(), configUpdate{state: configNotFound})
 	if replacements != 0 || stops != 1 || s.active != "" {
 		t.Fatal("missing secret did not disable the collector")
 	}
@@ -105,15 +71,15 @@ func TestReconcileAppliesChangedValidConfigurationOnce(t *testing.T) {
 	s := &Supervisor{
 		installID: "inst-test",
 		logger:    zap.NewNop(),
-		replaceChildFn: func(config) error {
+		replaceChildFn: func(context.Context, config) error {
 			replacements++
 			return nil
 		},
 		stopChildFn: func() {},
 	}
 
-	s.reconcile(configUpdate{state: configAvailable, value: valid})
-	s.reconcile(configUpdate{state: configAvailable, value: valid})
+	s.reconcile(context.Background(), configUpdate{state: configAvailable, value: valid})
+	s.reconcile(context.Background(), configUpdate{state: configAvailable, value: valid})
 	if replacements != 1 || s.active != valid || s.rejectedConfig != "" {
 		t.Fatal("valid configuration was not applied exactly once")
 	}
@@ -127,13 +93,13 @@ func TestReconcileSchedulesRestartWhenUpdateAndRollbackFail(t *testing.T) {
 		logger:    zap.NewNop(),
 		active:    current,
 		backoff:   time.Second,
-		replaceChildFn: func(config) error {
+		replaceChildFn: func(context.Context, config) error {
 			return errors.New("start failed")
 		},
 		stopChildFn: func() {},
 	}
 
-	s.reconcile(configUpdate{state: configAvailable, value: updated})
+	s.reconcile(context.Background(), configUpdate{state: configAvailable, value: updated})
 	if s.nextStart.IsZero() || s.active != current || s.rejectedConfig != updated || s.restartConfig != current {
 		t.Fatal("failed rollback did not schedule recovery of the last-known-good configuration")
 	}
@@ -146,15 +112,15 @@ func TestReconcileSchedulesRestartAfterInitialStartFailure(t *testing.T) {
 		installID: "inst-test",
 		logger:    zap.NewNop(),
 		backoff:   time.Second,
-		replaceChildFn: func(config) error {
+		replaceChildFn: func(context.Context, config) error {
 			attempts++
 			return errors.New("start failed")
 		},
 		stopChildFn: func() {},
 	}
 
-	s.reconcile(configUpdate{state: configAvailable, value: value})
-	s.reconcile(configUpdate{state: configAvailable, value: value})
+	s.reconcile(context.Background(), configUpdate{state: configAvailable, value: value})
+	s.reconcile(context.Background(), configUpdate{state: configAvailable, value: value})
 	if attempts != 1 || s.active != "" || s.restartConfig != value || s.nextStart.IsZero() {
 		t.Fatalf("initial failure did not schedule restart: active=%q restart=%q next=%s", s.active, s.restartConfig, s.nextStart)
 	}
@@ -169,7 +135,7 @@ func TestRestartActivatesPendingConfiguration(t *testing.T) {
 		restartConfig: value,
 		nextStart:     time.Now().Add(-time.Second),
 		backoff:       time.Second,
-		replaceChildFn: func(config) error {
+		replaceChildFn: func(context.Context, config) error {
 			restarts++
 			return nil
 		},
@@ -191,7 +157,7 @@ func TestReconcileFailedUpdateRestoresLastKnownGoodCollector(t *testing.T) {
 		logger:           zap.NewNop(),
 		active:           current,
 		collectorEnabled: true,
-		replaceChildFn: func(cfg config) error {
+		replaceChildFn: func(_ context.Context, cfg config) error {
 			endpoints = append(endpoints, cfg.OTLPHTTP.Endpoint)
 			if cfg.OTLPHTTP.Endpoint == "https://updated.example.com" {
 				return errors.New("start failed")
@@ -201,8 +167,8 @@ func TestReconcileFailedUpdateRestoresLastKnownGoodCollector(t *testing.T) {
 		stopChildFn: func() {},
 	}
 
-	s.reconcile(configUpdate{state: configAvailable, value: updated})
-	s.reconcile(configUpdate{state: configAvailable, value: updated})
+	s.reconcile(context.Background(), configUpdate{state: configAvailable, value: updated})
+	s.reconcile(context.Background(), configUpdate{state: configAvailable, value: updated})
 	if s.active != current || s.rejectedConfig != updated || len(endpoints) != 2 || endpoints[0] != "https://updated.example.com" || endpoints[1] != "https://current.example.com" {
 		t.Fatalf("failed update did not restore the active collector: active=%q endpoints=%q", s.active, endpoints)
 	}
@@ -217,7 +183,7 @@ func TestReconcileRetriesRejectedConfigurationAfterSecretChanges(t *testing.T) {
 		installID: "inst-test",
 		logger:    zap.NewNop(),
 		active:    current,
-		replaceChildFn: func(cfg config) error {
+		replaceChildFn: func(_ context.Context, cfg config) error {
 			endpoints = append(endpoints, cfg.OTLPHTTP.Endpoint)
 			if cfg.OTLPHTTP.Endpoint == "https://rejected.example.com" {
 				return errors.New("start failed")
@@ -227,8 +193,8 @@ func TestReconcileRetriesRejectedConfigurationAfterSecretChanges(t *testing.T) {
 		stopChildFn: func() {},
 	}
 
-	s.reconcile(configUpdate{state: configAvailable, value: rejected})
-	s.reconcile(configUpdate{state: configAvailable, value: corrected})
+	s.reconcile(context.Background(), configUpdate{state: configAvailable, value: rejected})
+	s.reconcile(context.Background(), configUpdate{state: configAvailable, value: corrected})
 	if s.active != corrected || s.rejectedConfig != "" || len(endpoints) != 3 {
 		t.Fatalf("changed secret did not replace a rejected configuration: active=%q rejected=%q endpoints=%q", s.active, s.rejectedConfig, endpoints)
 	}
@@ -249,7 +215,7 @@ func TestReconcileDisablesUnavailableSecret(t *testing.T) {
 		stopChildFn:      func() { stops++ },
 	}
 
-	s.reconcile(configUpdate{state: configUnavailable})
+	s.reconcile(context.Background(), configUpdate{state: configUnavailable})
 	if stops != 1 || s.active != "" || s.rejectedConfig != "" || s.restartConfig != "" || !s.nextStart.IsZero() || s.collectorEnabled {
 		t.Fatal("unavailable secret did not disable the collector")
 	}
@@ -268,14 +234,14 @@ func TestReconcileKeepsCollectorWithoutAuditPipeline(t *testing.T) {
 		nextStart:        time.Now().Add(time.Minute),
 		collectorEnabled: true,
 		reported:         true,
-		replaceChildFn: func(config) error {
+		replaceChildFn: func(context.Context, config) error {
 			replacements++
 			return nil
 		},
 		stopChildFn: func() { stops++ },
 	}
 
-	s.reconcile(configUpdate{state: configAvailable, value: disabledAudit})
+	s.reconcile(context.Background(), configUpdate{state: configAvailable, value: disabledAudit})
 	if replacements != 1 || stops != 0 || s.active != disabledAudit || s.restartConfig != "" || !s.nextStart.IsZero() || !s.collectorEnabled {
 		t.Fatal("disabled audit logs did not leave the collector running without the audit pipeline")
 	}
@@ -302,14 +268,14 @@ func TestEmptySecretDoesNotStartCollector(t *testing.T) {
 	s := &Supervisor{
 		installID: "inst-test",
 		logger:    zap.NewNop(),
-		replaceChildFn: func(config) error {
+		replaceChildFn: func(context.Context, config) error {
 			replacements++
 			return nil
 		},
 		stopChildFn: func() {},
 	}
 
-	s.reconcile(configUpdate{state: configAvailable})
+	s.reconcile(context.Background(), configUpdate{state: configAvailable})
 	if replacements != 0 || s.active != "" || s.collectorEnabled {
 		t.Fatal("empty secret started the telemetry export collector")
 	}
@@ -322,15 +288,15 @@ func TestReconcileLogsEnabledBackendAndDisabledTransition(t *testing.T) {
 	s := &Supervisor{
 		installID: "inst-test",
 		logger:    logger,
-		replaceChildFn: func(config) error {
+		replaceChildFn: func(context.Context, config) error {
 			return nil
 		},
 		stopChildFn: func() {},
 	}
 
-	s.reconcile(configUpdate{state: configAvailable, value: valid})
-	s.reconcile(configUpdate{state: configNotFound})
-	s.reconcile(configUpdate{state: configNotFound})
+	s.reconcile(context.Background(), configUpdate{state: configAvailable, value: valid})
+	s.reconcile(context.Background(), configUpdate{state: configNotFound})
+	s.reconcile(context.Background(), configUpdate{state: configNotFound})
 
 	entries := observed.All()
 	if len(entries) != 2 {
@@ -354,13 +320,13 @@ func TestReconcileLogsCollectorWithoutAuditPipeline(t *testing.T) {
 	s := &Supervisor{
 		installID: "inst-test",
 		logger:    zap.New(core),
-		replaceChildFn: func(config) error {
+		replaceChildFn: func(context.Context, config) error {
 			return nil
 		},
 		stopChildFn: func() {},
 	}
 
-	s.reconcile(configUpdate{state: configAvailable, value: "version: v1\n"})
+	s.reconcile(context.Background(), configUpdate{state: configAvailable, value: "version: v1\n"})
 
 	entries := observed.All()
 	if len(entries) != 1 {

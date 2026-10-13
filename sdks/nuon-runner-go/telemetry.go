@@ -31,3 +31,14 @@ func (c *client) CreateInstallTelemetryAccessToken(ctx context.Context, installI
 
 	return resp.Payload, nil
 }
+
+func (c *client) GetInstallTelemetryCollectorSettings(ctx context.Context, installID string) (*models.ServiceInstallTelemetryCollectorSettings, error) {
+	resp, err := c.genClient.Operations.GetInstallTelemetryCollectorSettings(&operations.GetInstallTelemetryCollectorSettingsParams{
+		Context:   ctx,
+		InstallID: installID,
+	}, c.getAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+	return resp.Payload, nil
+}
