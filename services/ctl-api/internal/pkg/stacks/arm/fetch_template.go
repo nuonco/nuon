@@ -149,7 +149,7 @@ func extractARMParameters(tmpl *armTemplateShape, reservedNames []string) (map[s
 		}
 
 		hp := ARMParameter{
-			Type:          param.Type,
+			Type:          canonicalARMType(param.Type),
 			DefaultValue:  param.DefaultValue,
 			AllowedValues: param.AllowedValues,
 		}
@@ -162,6 +162,31 @@ func extractARMParameters(tmpl *armTemplateShape, reservedNames []string) (map[s
 	}
 
 	return params, hoistedParams
+}
+
+// canonicalARMType folds a parameter type onto the spelling the rest of the
+// renderer matches. ARM treats type names as case-insensitive, and compiled
+// templates ship both "string" and "String". Leaving the original spelling in
+// place drops the parameter from the portal form.
+func canonicalARMType(typ string) string {
+	switch strings.ToLower(typ) {
+	case "string":
+		return "string"
+	case "securestring":
+		return "securestring"
+	case "int":
+		return "int"
+	case "bool":
+		return "bool"
+	case "object":
+		return "object"
+	case "secureobject":
+		return "secureObject"
+	case "array":
+		return "array"
+	default:
+		return typ
+	}
 }
 
 // validateARMTemplate performs structural validation on a custom nested stack
