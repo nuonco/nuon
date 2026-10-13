@@ -6,12 +6,11 @@ import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
-import { useRunner } from '@/hooks/use-runner'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { updateRunner, updateMngRunner } from '@/lib'
 import { trackEvent } from '@/lib/posthog-analytics'
-import type { TRunnerSettings } from '@/types'
+import type { TRunner, TRunnerSettings } from '@/types'
 import {
   UpdateRunnerModal as UpdateRunnerModalComponent,
   UpdateRunnerButton as UpdateRunnerButtonComponent,
@@ -20,6 +19,7 @@ import {
 export type UpdateField = 'container_image_tag' | 'binary_version'
 
 interface IUpdateRunnerButtonProps extends IButtonAsButton {
+  runner: TRunner
   settings: TRunnerSettings
   field?: UpdateField
   label?: string
@@ -30,6 +30,7 @@ interface IUpdateRunnerButtonProps extends IButtonAsButton {
 }
 
 export const UpdateRunnerButton = ({
+  runner,
   settings,
   field = 'container_image_tag',
   label = 'Update runner version',
@@ -42,6 +43,7 @@ export const UpdateRunnerButton = ({
   const { addModal } = useSurfaces()
   const modal = (
     <UpdateRunnerModal
+      runner={runner}
       settings={settings}
       field={field}
       modalHeading={modalHeading}
@@ -60,6 +62,7 @@ export const UpdateRunnerButton = ({
 }
 
 export const UpdateRunnerModal = ({
+  runner,
   settings,
   field = 'container_image_tag',
   modalHeading,
@@ -68,6 +71,7 @@ export const UpdateRunnerModal = ({
   submitLabel,
   ...props
 }: Omit<IModal, 'onSubmit'> & {
+  runner: TRunner
   settings: TRunnerSettings
   field?: UpdateField
   modalHeading?: string
@@ -77,7 +81,6 @@ export const UpdateRunnerModal = ({
 }) => {
   const { user } = useAuth()
   const { org } = useOrg()
-  const { runner } = useRunner()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
 

@@ -1,8 +1,8 @@
 # Nuon agent context
 
-**Purpose:** this document is for you, the agent. It templates out the current CLI selection, how to reach Nuon over MCP, the tool catalog, and links for everything else Nuon. Read it before creating or changing Nuon resources.
+**Purpose:** this document is for you, the agent. `nuon agents help` prints it when it detects an agent. It templates out the current CLI selection, how to reach Nuon over MCP, the tool catalog, and links for everything else Nuon. Read it before creating or changing Nuon resources.
 
-`nuon agents help` is the human-facing companion: the same setup, written for the person you are working with, checked against their config. Point them at it rather than improvising setup steps.
+A person running `nuon agents help` in a normal terminal gets the setup guide instead of this document. Point them at that rather than improvising setup steps.
 
 ## Current CLI selection
 
@@ -38,9 +38,7 @@ The proxy sets `X-Nuon-Org-ID`. Do not call `select_org` unless that header is m
 
 ### Registering the proxy with a client
 
-Each client has its own config file, JSON key, and (sometimes) an add command. Check that client's MCP docs rather than assuming a shared schema. The process to spawn is `nuon` with arguments `agents`, `mcp`, and `--allow-writes`.
-
-`--allow-writes` exposes the mutating tools (descriptions start with `WRITE OPERATION:`). That flag only lists them; the identity still needs org Admin (`org_admin`), not Read-only. See https://docs.nuon.co/concepts/access-control. Every example below includes it; omit it only for a read-only proxy.
+Nuon MCP uses stdio. The client starts a local process and exchanges MCP messages on that process's standard input and output. Every MCP connection should spawn `nuon` with arguments `agents`, `mcp`, and `--allow-writes`.
 
 **Claude Code.** `claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes`, or `.mcp.json` in a project:
 
@@ -89,7 +87,7 @@ The upstream URL (`{{.MCPURL}}`) is derived from `api_url` in the CLI config, tu
 
 ## Creating something new (starter checklist)
 
-1. Confirm org/app context (`nuon agents context` / `whoami`).
+1. Confirm org/app context from the table above, or call `whoami`.
 2. Prefer MCP tools for reads; use `--allow-writes` (or a write-scoped token) only when mutating.
 3. Typical create flow:
    - App config in a local directory → `nuon apps sync` (or ask the user to sync).
@@ -115,7 +113,7 @@ List tools are paginated (default 20, max 100). If `has_more` is true, tell the 
 
 These checks are not MCP tools. They run on the app directory via the `policies` CLI extension.
 
-Before `nuon apps sync` after authoring or changing `permissions/` or `break_glass/`:
+After authoring or changing `permissions/` or `break_glass/`, before syncing:
 
 1. If `nuon policies --help` fails: `nuon ext install nuonco/nuon-ext-policies`
 2. From the app directory (or pass `--app-dir`):

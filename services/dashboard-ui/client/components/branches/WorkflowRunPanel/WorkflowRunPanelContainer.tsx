@@ -154,7 +154,9 @@ const useWorkflowRunPanelSync = (
 
   useEffect(() => {
     const target =
-      enabled && workflowParam && (!runIdFilter || workflowParam === runIdFilter)
+      enabled &&
+      workflowParam &&
+      (!runIdFilter || workflowParam === runIdFilter)
         ? workflowParam
         : null
 

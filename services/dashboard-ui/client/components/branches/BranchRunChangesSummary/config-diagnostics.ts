@@ -1,6 +1,7 @@
 import type { TCompositeError } from '@/types'
 
-export const CONFIG_VALIDATION_FAILED = 'app_branch_run.config_validation_failed'
+export const CONFIG_VALIDATION_FAILED =
+  'app_branch_run.config_validation_failed'
 
 export const isConfigValidationError = (error?: TCompositeError) =>
   error?.type === CONFIG_VALIDATION_FAILED

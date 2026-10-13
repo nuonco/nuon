@@ -106,6 +106,8 @@ type ClientService interface {
 
 	CreateHelmRelease(params *CreateHelmReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateHelmReleaseOK, error)
 
+	CreateInstallTelemetryAccessToken(params *CreateInstallTelemetryAccessTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallTelemetryAccessTokenOK, error)
+
 	CreateRunnerHealthCheck(params *CreateRunnerHealthCheckParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerHealthCheckCreated, error)
 
 	CreateRunnerHeartBeat(params *CreateRunnerHeartBeatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerHeartBeatCreated, error)
@@ -141,6 +143,8 @@ type ClientService interface {
 	GetInstallActionWorkflowRun(params *GetInstallActionWorkflowRunParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActionWorkflowRunOK, error)
 
 	GetInstallComponenetLastActivePlan(params *GetInstallComponenetLastActivePlanParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponenetLastActivePlanOK, error)
+
+	GetInstallTelemetryCollectorSettings(params *GetInstallTelemetryCollectorSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTelemetryCollectorSettingsOK, error)
 
 	GetPulumiState(params *GetPulumiStateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPulumiStateOK, *GetPulumiStateNoContent, error)
 
@@ -360,6 +364,52 @@ func (a *Client) CreateHelmRelease(params *CreateHelmReleaseParams, authInfo run
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateHelmRelease: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateInstallTelemetryAccessToken creates a relay access token for an install
+
+Requires create permission on the install's telemetry resource. Returns a ten-minute telemetry:write JWT identifying the authenticated account and install, bound to the current relay endpoint. Disabled telemetry refuses issuance; existing JWTs remain valid until expiry.
+*/
+func (a *Client) CreateInstallTelemetryAccessToken(params *CreateInstallTelemetryAccessTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallTelemetryAccessTokenOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateInstallTelemetryAccessTokenParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateInstallTelemetryAccessToken",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/telemetry/access-token",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateInstallTelemetryAccessTokenReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateInstallTelemetryAccessTokenOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateInstallTelemetryAccessToken: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -1188,6 +1238,52 @@ func (a *Client) GetInstallComponenetLastActivePlan(params *GetInstallComponenet
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetInstallComponenetLastActivePlan: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallTelemetryCollectorSettings gets effective forwarding settings for an install s telemetry collector
+
+Requires read permission on the install's telemetry resource. Returns enabled=false when telemetry, relay configuration, or token issuance is unavailable; polling remains accessible while disabled. Does not expose runner settings or backend credentials.
+*/
+func (a *Client) GetInstallTelemetryCollectorSettings(params *GetInstallTelemetryCollectorSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTelemetryCollectorSettingsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallTelemetryCollectorSettingsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallTelemetryCollectorSettings",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/telemetry/collector-settings",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallTelemetryCollectorSettingsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallTelemetryCollectorSettingsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallTelemetryCollectorSettings: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

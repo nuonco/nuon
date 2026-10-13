@@ -274,7 +274,7 @@ const Footnotes = ({
             {MCP_ADD_CLAUDE}
           </CodeBlock>
           <Link href={DOCS_MCP} isExternal textVariant="subtext">
-            docs.nuon.co/guides/agents/mcp-walkthrough
+            docs.nuon.co/guides/agents/setup
           </Link>
         </div>
       ) : null}

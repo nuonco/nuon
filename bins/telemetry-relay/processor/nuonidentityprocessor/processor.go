@@ -107,7 +107,7 @@ func principalFromContext(ctx context.Context, allowedOrgIDs []string) (nuonjwta
 		return nuonjwtauthextension.Principal{}, errMissingPrincipal
 	}
 	principal := authData.Principal()
-	if principal.OrgID == "" || principal.AppID == "" || principal.InstallID == "" || principal.RunnerID == "" {
+	if principal.OrgID == "" || principal.AppID == "" || principal.InstallID == "" {
 		return nuonjwtauthextension.Principal{}, errMissingPrincipal
 	}
 	if len(allowedOrgIDs) > 0 && !slices.Contains(allowedOrgIDs, principal.OrgID) {
@@ -121,14 +121,13 @@ func stampResource(attributes pcommon.Map, principal nuonjwtauthextension.Princi
 	attributes.PutStr("nuon.org.id", principal.OrgID)
 	attributes.PutStr("nuon.app.id", principal.AppID)
 	attributes.PutStr("nuon.install.id", principal.InstallID)
-	attributes.PutStr("nuon.runner.id", principal.RunnerID)
 }
 
 func stripReserved(attributes pcommon.Map) {
 	attributes.RemoveIf(func(key string, _ pcommon.Value) bool {
 		switch strings.ToLower(key) {
-		case "nuon.org.id", "nuon.app.id", "nuon.install.id", "nuon.runner.id",
-			"nuon_org_id", "nuon_app_id", "nuon_install_id", "nuon_runner_id":
+		case "nuon.org.id", "nuon.app.id", "nuon.install.id", "nuon.runner.id", "nuon.collector.id",
+			"nuon_org_id", "nuon_app_id", "nuon_install_id", "nuon_runner_id", "nuon_collector_id":
 			return true
 		default:
 			return false

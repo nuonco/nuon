@@ -140,9 +140,7 @@ export const BranchRolloutGroupContainer = () => {
 
   return (
     <div className="flex flex-col gap-3 p-4 md:p-6">
-      <PageTitle
-        segments={[group?.name ?? 'Group', app?.name]}
-      />
+      <PageTitle segments={[group?.name ?? 'Group', app?.name]} />
       <SectionHeader
         title={group?.name ?? 'Group'}
         description={rollout?.activity}

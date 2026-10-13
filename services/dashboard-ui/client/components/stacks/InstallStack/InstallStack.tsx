@@ -3,6 +3,7 @@ import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
+import { Group } from '@/components/common/Group'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
@@ -57,10 +58,10 @@ export const InstallStack = ({
       <SectionHeader
         title="Current stack"
         actions={
-          <>
+          <Group gap={2}>
             {versionsAction}
             {configAction}
-          </>
+          </Group>
         }
       />
 

@@ -85,11 +85,7 @@ export const StepCard = ({ step, children }: IStepCard) => {
             {step.name || 'Step details'}
           </Text>
 
-          <Status
-            status={displayStatus}
-            variant="badge"
-            className="shrink-0"
-          />
+          <Status status={displayStatus} variant="badge" className="shrink-0" />
           <div className="flex-1" />
           <div className="flex items-center gap-3 shrink-0">
             {step.started_at && (

@@ -15,6 +15,16 @@ services: |
   telemetry-relay:
     - bins/telemetry-relay/**
 
+  telemetry-agent:
+    - bins/telemetry-agent/**
+    - go.mod
+    - go.sum
+    - pkg/**
+    - sdks/**
+    - services/ctl-api/**
+    - .github/workflows/service.yml
+    - ci-triggers.yml
+
   runner:
     - go.mod
     - go.sum

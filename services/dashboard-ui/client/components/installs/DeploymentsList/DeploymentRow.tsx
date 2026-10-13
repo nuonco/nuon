@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
-import { Button } from '@/components/common/Button'
-import { Icon } from '@/components/common/Icon'
+import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
+import { StatusWithDescription } from '@/components/common/StatusWithDescription'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import {
@@ -14,12 +14,16 @@ import {
   isAwaitingDeploymentApproval,
   isDeploymentRunning,
 } from '@/components/installs/DeploymentDetail/deployment-progress'
+import type { TWorkflow } from '@/types'
+import { DeploymentViewDetails } from './DeploymentActions'
 
 interface IDeploymentRow {
   run: TDeploymentRun
   title: string
   createdAt: string
+  href: string
   onViewDetails: () => void
+  workflow?: TWorkflow
   children?: ReactNode
   scale?: 'auto' | 'comfortable' | 'compact'
   history?: boolean
@@ -29,7 +33,9 @@ export const DeploymentRow = ({
   run,
   title,
   createdAt,
+  href,
   onViewDetails,
+  workflow,
   children,
   scale = 'auto',
   history = false,
@@ -45,13 +51,22 @@ export const DeploymentRow = ({
           iconSize={18}
           className="-ml-3.5 mt-3 self-start bg-background"
         />
-        <div className="grid min-w-0 flex-1 grid-cols-1 items-center gap-3 border-b py-3 @4xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
-          <div className="flex min-w-0 flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <Text weight="strong" className="break-words">
-                {title}
-              </Text>
-              <Status status={run.status} />
+        <div className="flex min-w-0 flex-1 flex-col gap-1 border-b py-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+              <Link href={href} className="min-w-0 break-words">
+                <Text weight="strong" className="break-words">
+                  {title}
+                </Text>
+              </Link>
+              <StatusWithDescription
+                statusProps={{ status: run.status, variant: 'default' }}
+                tooltipProps={
+                  run.status === 'error' && run.activity
+                    ? { tipContent: run.activity }
+                    : undefined
+                }
+              />
               <Time
                 time={createdAt}
                 format="relative"
@@ -59,25 +74,14 @@ export const DeploymentRow = ({
                 theme="neutral"
               />
             </div>
-            {run.status === 'error' && run.activity ? (
-              <Text
-                variant="subtext"
-                theme="error"
-                className="whitespace-pre-wrap break-words"
-              >
-                {run.activity}
-              </Text>
-            ) : null}
-            {children}
+            <DeploymentViewDetails
+              className="shrink-0"
+              workflow={workflow}
+              onViewDetails={onViewDetails}
+            />
           </div>
           <ResourceScopeSummary run={run} />
-          <Button
-            className="justify-self-end"
-            variant="secondary"
-            onClick={onViewDetails}
-          >
-            View details
-          </Button>
+          {children}
         </div>
       </article>
     )
@@ -98,9 +102,11 @@ export const DeploymentRow = ({
         <div className="density-header">
           <div className="density-identity flex min-w-0 flex-col gap-3 break-words">
             <div className="density-run-heading">
-              <Text variant="h3" weight="strong">
-                {title}
-              </Text>
+              <Link href={href} className="min-w-0 break-words">
+                <Text variant="h3" weight="strong">
+                  {title}
+                </Text>
+              </Link>
               <div className="density-run-meta flex flex-wrap items-center gap-2">
                 <Status
                   status={awaiting ? 'approval-awaiting' : run.status}
@@ -140,14 +146,15 @@ export const DeploymentRow = ({
               ) : null}
             </div>
             {children}
-          </div>
-          <div className="density-resources">
             <ResourceScopeSummary run={run} />
           </div>
           <div className="density-action">
-            <Button size="lg" variant="secondary" onClick={onViewDetails}>
-              View details <Icon variant="ArrowRightIcon" size={18} />
-            </Button>
+            <DeploymentViewDetails
+              workflow={workflow}
+              onViewDetails={onViewDetails}
+              size="lg"
+              showArrow
+            />
           </div>
         </div>
       </div>

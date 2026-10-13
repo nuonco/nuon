@@ -14,6 +14,7 @@ import (
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
@@ -148,14 +149,14 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	// action workflows
-	actionWorkflows := api.Group("/v1/action-workflows")
+	actionWorkflows := require.OrgRoute(api).Group("/v1/action-workflows")
 	{
 		actionWorkflows.GET("/:workflow_id/latest-config", s.GetActionWorkflowLatestConfig)
 		actionWorkflows.GET("/configs/:action_workflow_config_id", s.GetActionWorkflowConfig)
 	}
 
 	// installs
-	installs := api.Group("/v1/installs/:install_id")
+	installs := require.OrgRoute(api).Group("/v1/installs/:install_id")
 	{
 		installs.PUT("/action-workflow-runs/:workflow_run_id/steps/:step_id", s.UpdateInstallActionWorkflowRunStep)
 		installs.GET("/action-workflows/runs/:run_id", s.GetInstallActionWorkflowRun)

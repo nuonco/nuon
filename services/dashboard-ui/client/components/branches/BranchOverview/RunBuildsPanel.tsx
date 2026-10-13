@@ -50,7 +50,13 @@ const ChangeCard = ({
   </div>
 )
 
-export const BuildChangeCards = ({ rows }: { rows: TChangedBuildRow[] }) => {
+export const BuildChangeCards = ({
+  rows,
+  bare = false,
+}: {
+  rows: TChangedBuildRow[]
+  bare?: boolean
+}) => {
   const { config, source } = splitChangedBuilds(rows)
   if (config.length === 0 && source.length === 0) {
     if (rows.length === 0) {
@@ -61,6 +67,15 @@ export const BuildChangeCards = ({ rows }: { rows: TChangedBuildRow[] }) => {
       )
     }
     return <BuildRows rows={rows} />
+  }
+
+  if (bare) {
+    return (
+      <div className="-mx-4 flex flex-col">
+        {config.length ? <BuildRows rows={config} /> : null}
+        {source.length ? <BuildRows rows={source} /> : null}
+      </div>
+    )
   }
 
   return (

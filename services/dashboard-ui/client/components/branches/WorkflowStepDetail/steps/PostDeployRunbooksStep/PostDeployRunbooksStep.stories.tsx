@@ -1,5 +1,6 @@
 export default {
-  title: 'Features / Branches / Workflow step detail / Post deploy runbooks step',
+  title:
+    'Features / Branches / Workflow step detail / Post deploy runbooks step',
 }
 
 import type { ComponentProps } from 'react'

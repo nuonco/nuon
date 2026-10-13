@@ -12,6 +12,11 @@ type appTransport struct {
 	authToken     string
 	orgID         string
 	clientVersion string
+	// agentClient is the X-Nuon-Agent value. The name matches pkg/agentclient.Header.
+	agentClient string
+	userAgent   string
+	// command is the X-Nuon-Command value. The name matches pkg/agentclient.CommandHeader.
+	command string
 
 	transport http.RoundTripper
 }
@@ -24,6 +29,15 @@ func (t *appTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	if t.clientVersion != "" {
 		req.Header.Set("X-Nuon-Client-Version", t.clientVersion)
+	}
+	if t.agentClient != "" {
+		req.Header.Set("X-Nuon-Agent", t.agentClient)
+	}
+	if t.userAgent != "" {
+		req.Header.Set("User-Agent", t.userAgent)
+	}
+	if t.command != "" {
+		req.Header.Set("X-Nuon-Command", t.command)
 	}
 
 	resp, err := t.transport.RoundTrip(req)
@@ -78,4 +92,19 @@ func (c *client) SetOrgID(orgID string) {
 
 func (c *client) SetClientVersion(version string) {
 	c.appTransport.clientVersion = fmt.Sprintf("nuoncli:%s", version)
+}
+
+// SetAgentClient sets the X-Nuon-Agent attribution header. Empty clears it.
+func (c *client) SetAgentClient(name string) {
+	c.appTransport.agentClient = name
+}
+
+// SetUserAgent sets the User-Agent header. Empty leaves the transport default.
+func (c *client) SetUserAgent(userAgent string) {
+	c.appTransport.userAgent = userAgent
+}
+
+// SetCommand sets the X-Nuon-Command header to the CLI command path.
+func (c *client) SetCommand(command string) {
+	c.appTransport.command = command
 }

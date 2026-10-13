@@ -1,15 +1,8 @@
-import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { useApp } from '@/hooks/use-app'
-import { useOrg } from '@/hooks/use-org'
-import { getInstallAppConfigTreeDiff } from '@/lib'
-import {
-  extractSections,
-  computeSummary,
-} from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
-import { filterExcludedSections } from '../ConfigStep/lib'
 import type { TInstallWorkflowStep } from '@/types'
-import { PlanGroupStep, type PlanInstallDiff } from './PlanGroupStep'
+import { PlanGroupStep } from './PlanGroupStep'
 import { GroupApprovalActions } from './GroupApprovalActions'
+import { usePlanGroupInstalls } from './use-plan-group-installs'
 
 interface IPlanGroupStepContainer {
   step: TInstallWorkflowStep
@@ -39,84 +32,19 @@ export const PlanGroupStepContainer = ({
   onSelectInstall,
   installFacts,
 }: IPlanGroupStepContainer) => {
-  const { org } = useOrg()
   const { labelColors } = useApp()
-  const orgId = org?.id ?? ''
+  const { orgId, approvalId, groupName, installs } = usePlanGroupInstalls(
+    step,
+    metadata
+  )
 
-  const approvalId = step.approval?.id
   const hasApproval = step.execution_type === 'approval' && !!approvalId
   const hasResponse = !!step.approval?.response
   const isAwaiting = step.status?.status === 'approval-awaiting'
   const isCancelled =
     workflowStatus === 'cancelled' || step.status?.status === 'cancelled'
-
-  const { data: plan } = useQuery({
-    placeholderData: keepPreviousData,
-    queryKey: ['approval-plan', orgId, step.id, approvalId],
-    queryFn: async () => {
-      const res = await fetch(
-        `/api/orgs/${orgId}/workflows/${step.install_workflow_id}/steps/${step.id}/approvals/${approvalId}/contents`
-      )
-      if (!res.ok)
-        throw new Error(`Failed to fetch approval contents: ${res.status}`)
-      return res.json()
-    },
-    enabled: !!orgId && !!step.id && !!step.install_workflow_id && !!approvalId,
-  })
-
-  const rawInstalls = (plan?.installs || metadata.installs || []) as any[]
-  const groupName =
-    plan?.install_group ||
-    metadata.install_group_name ||
-    step.name?.replace(/^plan install group:\s*/i, '')
   const showApproveBar =
     !diffOnly && hasApproval && isAwaiting && !hasResponse && !isCancelled
-
-  const diffQueries = useQueries({
-    queries: rawInstalls.map((inst) => {
-      return {
-        queryKey: [
-          'install-app-config-tree-diff',
-          orgId,
-          inst.install_id,
-          inst.new_app_config_id,
-        ],
-        queryFn: () =>
-          getInstallAppConfigTreeDiff({
-            orgId,
-            installId: inst.install_id,
-            configId: inst.new_app_config_id,
-          }),
-        enabled: !!orgId && !!inst.install_id && !!inst.new_app_config_id,
-      }
-    }),
-  })
-
-  const installs: PlanInstallDiff[] = rawInstalls.map((inst, i) => {
-    const query = diffQueries[i]
-    const sections = filterExcludedSections(
-      query?.data?.diff ? extractSections(query.data.diff) : []
-    )
-    const summary =
-      sections.length > 0
-        ? computeSummary(sections)
-        : query?.data?.summary
-          ? {
-              added: query.data.summary.added,
-              removed: query.data.summary.removed,
-              changed: query.data.summary.changed,
-            }
-          : null
-
-    return {
-      installId: inst.install_id,
-      installName: inst.install_name || inst.install_id,
-      installLabels: inst.install_labels,
-      sections,
-      summary,
-      isLoading: !!query?.isLoading,
-    }
-  })
 
   return (
     <PlanGroupStep

@@ -22,18 +22,29 @@ const (
 )
 
 // run drives the middleware as the engine does: account and org already resolved.
-func run(t *testing.T, mw gin.HandlerFunc, method string, perms permissions.Set, orgID, installID string) *gin.Context {
+func run(t *testing.T, kind permissions.ResourceKind, verb permissions.Permission, method string, perms permissions.Set, orgID, installID string) *gin.Context {
 	t.Helper()
 
 	gin.SetMode(gin.TestMode)
-	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
-	ctx.Request = httptest.NewRequest(method, "/v1/stacks/"+installID+"/config", nil)
-	ctx.Params = gin.Params{{Key: "install_id", Value: installID}}
-
-	cctx.SetAccountGinContext(ctx, &app.Account{ID: "acct_one", AllPermissions: perms})
-	cctx.SetOrgIDGinContext(ctx, orgID)
-
-	mw(ctx)
+	engine := gin.New()
+	var ctx *gin.Context
+	engine.Use(func(c *gin.Context) {
+		ctx = c
+		if perms != nil {
+			cctx.SetAccountGinContext(c, &app.Account{ID: "acct_one", AllPermissions: perms})
+		}
+		if orgID != "" {
+			cctx.SetOrgIDGinContext(c, orgID)
+		}
+	})
+	path := "/v1/stacks/config"
+	requestPath := path
+	if installID != "" {
+		path = "/v1/stacks/:install_id/config"
+		requestPath = "/v1/stacks/" + installID + "/config"
+	}
+	Route(engine, kind, verb, "install_id").Handle(method, path, func(*gin.Context) {})
+	engine.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(method, requestPath, nil))
 
 	return ctx
 }
@@ -41,7 +52,7 @@ func run(t *testing.T, mw gin.HandlerFunc, method string, perms permissions.Set,
 func readStack(t *testing.T, perms permissions.Set, orgID, installID string) *gin.Context {
 	t.Helper()
 
-	return run(t, Route(permissions.KindStack, permissions.PermissionRead, "install_id"),
+	return run(t, permissions.KindStack, permissions.PermissionRead,
 		http.MethodGet, perms, orgID, installID)
 }
 
@@ -110,21 +121,12 @@ func TestRoute(t *testing.T) {
 	})
 
 	t.Run("missing account", func(t *testing.T) {
-		gin.SetMode(gin.TestMode)
-		ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
-		ctx.Request = httptest.NewRequest(http.MethodGet, "/v1/stacks/"+installID+"/config", nil)
-
-		Route(permissions.KindStack, permissions.PermissionRead, "install_id")(ctx)
+		ctx := readStack(t, nil, orgID, installID)
 		assertNotFound(t, ctx, "install not found")
 	})
 
 	t.Run("missing org", func(t *testing.T) {
-		gin.SetMode(gin.TestMode)
-		ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
-		ctx.Request = httptest.NewRequest(http.MethodGet, "/v1/stacks/"+installID+"/config", nil)
-		cctx.SetAccountGinContext(ctx, &app.Account{ID: "acct_one", AllPermissions: permissions.Set(permissions.NewSet())})
-
-		Route(permissions.KindStack, permissions.PermissionRead, "install_id")(ctx)
+		ctx := readStack(t, permissions.Set(permissions.NewSet()), "", installID)
 		assertNotFound(t, ctx, "install not found")
 	})
 
@@ -134,7 +136,7 @@ func TestRoute(t *testing.T) {
 	})
 
 	t.Run("kind names the resource in the error", func(t *testing.T) {
-		ctx := run(t, Route(permissions.KindApp, permissions.PermissionRead, "install_id"),
+		ctx := run(t, permissions.KindApp, permissions.PermissionRead,
 			http.MethodGet, permissions.Set(permissions.NewSet()), orgID, installID)
 		assertNotFound(t, ctx, "app not found")
 	})
@@ -142,23 +144,21 @@ func TestRoute(t *testing.T) {
 
 // The declared verb is checked, not the one FromRequest infers from the method.
 func TestRouteEnforcesDeclaredVerb(t *testing.T) {
-	update := Route(permissions.KindStack, permissions.PermissionUpdate, "install_id")
-
 	t.Run("declared update passes on an update-only grant", func(t *testing.T) {
 		set := scopedStack(t, orgID, installID, permissions.PermissionUpdate)
-		assertAllowed(t, run(t, update, http.MethodPost, set, orgID, installID))
+		assertAllowed(t, run(t, permissions.KindStack, permissions.PermissionUpdate, http.MethodPost, set, orgID, installID))
 	})
 
 	// The method's inferred verb must not stand in for the declared one.
 	t.Run("declared update denied on a create-only grant", func(t *testing.T) {
 		set := scopedStack(t, orgID, installID, permissions.PermissionCreate)
-		assertNotFound(t, run(t, update, http.MethodPost, set, orgID, installID), "install not found")
+		assertNotFound(t, run(t, permissions.KindStack, permissions.PermissionUpdate, http.MethodPost, set, orgID, installID), "install not found")
 	})
 
 	// And a read-declared route is not widened by a mutating method.
 	t.Run("declared read passes on a read-only grant despite a POST", func(t *testing.T) {
 		set := scopedStack(t, orgID, installID, permissions.PermissionRead)
-		ctx := run(t, Route(permissions.KindStack, permissions.PermissionRead, "install_id"),
+		ctx := run(t, permissions.KindStack, permissions.PermissionRead,
 			http.MethodPost, set, orgID, installID)
 		assertAllowed(t, ctx)
 	})

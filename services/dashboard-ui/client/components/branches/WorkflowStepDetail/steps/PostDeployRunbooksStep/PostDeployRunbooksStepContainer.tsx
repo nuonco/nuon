@@ -56,7 +56,11 @@ export const PostDeployRunbooksStepContainer = ({
         status: runbook.status,
         workflowHref:
           org?.id && entry.install_id && runbook.workflow_id
-            ? installLink({ orgId: org.id, installId: entry.install_id, suffix: `/workflows/${runbook.workflow_id}` })
+            ? installLink({
+                orgId: org.id,
+                installId: entry.install_id,
+                suffix: `/workflows/${runbook.workflow_id}`,
+              })
             : undefined,
       })),
     }))

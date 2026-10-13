@@ -1,3 +1,5 @@
+import type { TInstallResource } from '@/types'
+
 export const HEALTH_UNHEALTHY = 'unhealthy'
 export const HEALTH_DEGRADED = 'degraded'
 export const HEALTH_PROGRESSING = 'progressing'
@@ -21,6 +23,11 @@ export function healthSeverity(health?: string): number {
 
 export function isFailingHealth(health?: string): boolean {
   return health === HEALTH_UNHEALTHY || health === HEALTH_DEGRADED
+}
+
+// Cloud identity snapshots are refreshed at apply time, not by health polling.
+export function isIdentityOnlyResource(resource: TInstallResource): boolean {
+  return ['aws', 'gcp', 'azure'].includes(resource?.provider || '')
 }
 
 export function bearsHealthVerdict(health?: string): boolean {

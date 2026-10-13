@@ -94,7 +94,7 @@ func (s *service) CreateInstallAppConfigUpdate(ctx *gin.Context) {
 					WorkflowID:     &wf.ID,
 					Status:         app.NewCompositeStatus(ctx, app.StatusPending),
 				}
-				if err := tx.WithContext(ctx).Create(&update).Error; err != nil {
+				if err := installhelpers.CreateInstallAppConfigVersionRow(ctx, tx, &update); err != nil {
 					return fmt.Errorf("unable to create install config update: %w", err)
 				}
 				createdVersion = &update
@@ -148,7 +148,7 @@ func (s *service) CreateInstallAppConfigUpdate(ctx *gin.Context) {
 		WorkflowID:     &wf.ID,
 		Status:         app.NewCompositeStatus(ctx, app.StatusPending),
 	}
-	if err := s.db.WithContext(ctx).Create(&update).Error; err != nil {
+	if err := installhelpers.CreateInstallAppConfigVersionRow(ctx, s.db, &update); err != nil {
 		ctx.Error(fmt.Errorf("unable to create install config update: %w", err))
 		return
 	}

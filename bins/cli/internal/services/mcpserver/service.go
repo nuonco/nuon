@@ -15,7 +15,10 @@ import (
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/services/version"
+	"github.com/nuonco/nuon/pkg/agentclient"
 )
+
+const proxyCommand = "nuon agents mcp"
 
 type Service struct {
 	cfg         *config.Config
@@ -23,6 +26,7 @@ type Service struct {
 	endpoint    string
 	name        string
 	progress    progressRelay
+	auth        *authRoundTripper
 }
 
 // progressRelay forwards upstream progress notifications to the stdio client
@@ -181,14 +185,16 @@ func (s *Service) connectUpstream(ctx context.Context) (*mcp.ClientSession, erro
 		return nil, err
 	}
 
+	auth := &authRoundTripper{
+		token: s.cfg.APIToken,
+		orgID: s.cfg.OrgID,
+		base:  http.DefaultTransport,
+	}
+	s.auth = auth
 	transport := &mcp.StreamableClientTransport{
 		Endpoint: endpoint,
 		HTTPClient: &http.Client{
-			Transport: &authRoundTripper{
-				token: s.cfg.APIToken,
-				orgID: s.cfg.OrgID,
-				base:  http.DefaultTransport,
-			},
+			Transport: auth,
 		},
 	}
 
@@ -227,6 +233,12 @@ func (s *Service) buildProxyServer(ctx context.Context, upstream *mcp.ClientSess
 		Version: version.Version,
 	}, &mcp.ServerOptions{
 		Instructions: instructions,
+		InitializedHandler: func(_ context.Context, req *mcp.InitializedRequest) {
+			if req == nil {
+				return
+			}
+			s.noteClient(req.ClientInfo())
+		},
 	})
 
 	for _, tool := range res.Tools {
@@ -236,11 +248,18 @@ func (s *Service) buildProxyServer(ctx context.Context, upstream *mcp.ClientSess
 
 		toolCopy := *tool
 		mcp.AddTool(server, &toolCopy, func(ctx context.Context, req *mcp.CallToolRequest, _ struct{}) (*mcp.CallToolResult, any, error) {
+			if req != nil {
+				s.noteClient(req.ClientInfo())
+			}
 			params := &mcp.CallToolParams{
 				Name:      req.Params.Name,
 				Arguments: req.Params.Arguments,
 			}
 			if token := req.Params.GetProgressToken(); token != nil {
+				// JSON numbers decode as float64, which SetProgressToken panics on.
+				if f, ok := token.(float64); ok {
+					token = int64(f)
+				}
 				params.SetProgressToken(token)
 				defer s.progress.listen(token, func(ctx context.Context, p *mcp.ProgressNotificationParams) {
 					_ = req.Session.NotifyProgress(ctx, &mcp.ProgressNotificationParams{
@@ -278,6 +297,9 @@ func (s *Service) proxyResources(ctx context.Context, upstream *mcp.ClientSessio
 	for _, resource := range resources.Resources {
 		resourceCopy := *resource
 		server.AddResource(&resourceCopy, func(ctx context.Context, req *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
+			if req != nil {
+				s.noteClient(req.ClientInfo())
+			}
 			return upstream.ReadResource(ctx, &mcp.ReadResourceParams{URI: req.Params.URI})
 		})
 	}
@@ -289,6 +311,9 @@ func (s *Service) proxyResources(ctx context.Context, upstream *mcp.ClientSessio
 	for _, tmpl := range templates.ResourceTemplates {
 		tmplCopy := *tmpl
 		server.AddResourceTemplate(&tmplCopy, func(ctx context.Context, req *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
+			if req != nil {
+				s.noteClient(req.ClientInfo())
+			}
 			return upstream.ReadResource(ctx, &mcp.ReadResourceParams{URI: req.Params.URI})
 		})
 	}
@@ -361,10 +386,47 @@ func appendCLIInstructions(upstream, binary, configFlag string) string {
 	return upstream + " " + cli
 }
 
+// noteClient fills attribution from the stdio client's clientInfo.name.
+// Environment detection still sets cfg.Agent for ordinary CLI commands; the
+// proxy does not use it. NUON_AGENT_CLIENT=off disables this.
+func (s *Service) noteClient(info *mcp.Implementation) {
+	if s == nil || s.auth == nil || info == nil {
+		return
+	}
+	if strings.EqualFold(strings.TrimSpace(os.Getenv(agentclient.EnvVar)), "off") {
+		return
+	}
+	// A newline would make the upstream HTTP request invalid.
+	name := strings.TrimSpace(info.Name)
+	if name == "" || strings.ContainsAny(name, "\r\n") {
+		return
+	}
+	s.auth.setAgent(name, agentclient.UserAgent(version.Version, name), proxyCommand)
+}
+
 type authRoundTripper struct {
 	token string
 	orgID string
 	base  http.RoundTripper
+
+	mu        sync.Mutex
+	agent     string
+	userAgent string
+	command   string
+}
+
+func (a *authRoundTripper) setAgent(agent, userAgent, command string) {
+	if a == nil || agent == "" {
+		return
+	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.agent != "" {
+		return
+	}
+	a.agent = agent
+	a.userAgent = userAgent
+	a.command = command
 }
 
 func (a *authRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -374,6 +436,18 @@ func (a *authRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 	}
 	if a.orgID != "" {
 		req.Header.Set("X-Nuon-Org-ID", a.orgID)
+	}
+	a.mu.Lock()
+	agent, userAgent, command := a.agent, a.userAgent, a.command
+	a.mu.Unlock()
+	if agent != "" {
+		req.Header.Set(agentclient.Header, agent)
+	}
+	if userAgent != "" {
+		req.Header.Set("User-Agent", userAgent)
+	}
+	if command != "" {
+		req.Header.Set(agentclient.CommandHeader, command)
 	}
 	return a.base.RoundTrip(req)
 }

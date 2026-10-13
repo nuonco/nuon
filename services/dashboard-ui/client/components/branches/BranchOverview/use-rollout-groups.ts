@@ -157,7 +157,10 @@ const fromGroupRun = (
 const sameName = (a?: string, b?: string) =>
   !!a && !!b && a.toLowerCase() === b.toLowerCase()
 
-export const rolloutHrefForWorkflow = (basePath: string, workflowId?: string) =>
+export const rolloutHrefForWorkflow = (
+  basePath: string,
+  workflowId?: string
+) =>
   workflowId ? `${basePath}/runs/${workflowId}/rollout` : `${basePath}/rollout`
 
 export const rolloutGroupHrefForWorkflow = (
@@ -219,7 +222,9 @@ export const previewAffectedInstalls = (
   }
   const selector = resolved?.label_selector
   if (Object.keys(selector?.match_labels ?? {}).length > 0) {
-    return installs.filter((install) => matchesSelector(install.labels, selector))
+    return installs.filter((install) =>
+      matchesSelector(install.labels, selector)
+    )
   }
   return []
 }

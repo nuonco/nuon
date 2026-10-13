@@ -13,5 +13,7 @@ const EXCLUDED_SECTION_KEYS = new Set(['stack', 'inputs', 'secrets'])
 export function filterExcludedSections(
   sections: DiffSectionData[]
 ): DiffSectionData[] {
-  return sections.filter(({ sectionKey }) => !EXCLUDED_SECTION_KEYS.has(sectionKey))
+  return sections.filter(
+    ({ sectionKey }) => !EXCLUDED_SECTION_KEYS.has(sectionKey)
+  )
 }

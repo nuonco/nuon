@@ -33,6 +33,11 @@
 
 @theme inline {
   --color-background: var(--background);
+  --color-elevation-0: var(--elevation-0);
+  --color-elevation-1: var(--elevation-1);
+  --color-elevation-2: var(--elevation-2);
+  --color-elevation-3: var(--elevation-3);
+  --color-field-border: var(--field-border);
   --color-foreground: var(--foreground);
   --color-link: var(--link);
   --color-link-hover: var(--link-hover);
@@ -753,6 +758,11 @@
   --font-hack: 'Hack', monospace;
 
   --background: light-dark(var(--color-white), var(--color-dark-grey-900));
+  --elevation-0: var(--background);
+  --elevation-1: var(--background);
+  --elevation-2: var(--background);
+  --elevation-3: var(--background);
+  --field-border: var(--border-color);
   --background-neutral: light-dark(
     var(--color-cool-grey-100),
     var(--color-dark-grey-950)
@@ -852,6 +862,21 @@
   --app-color-scheme: light;
 }
 
+:root[data-theme='light'],
+:root:not([data-theme]) {
+  --elevation-1: #f6f6f6;
+  --elevation-2: #f0f0f0;
+  --elevation-3: #e9e9e9;
+  --field-border: var(--cool-grey-400);
+}
+
+:root[data-theme='dark'] {
+  --elevation-1: #101011;
+  --elevation-2: #141415;
+  --elevation-3: #1a1a1b;
+  --field-border: var(--dark-grey-200);
+}
+
 :root[data-theme='dark'],
 :root[data-theme='classic'],
 :root[data-theme='high-contrast'],
@@ -864,6 +889,10 @@
   :root:not([data-theme]) {
     --bg-gradient: var(--bg-gradient-dark);
     --landing-graphic: url('../../public/login-graphics/landing-graphic.svg');
+    --elevation-1: #101011;
+    --elevation-2: #141415;
+    --elevation-3: #1a1a1b;
+    --field-border: var(--dark-grey-200);
   }
 }
 

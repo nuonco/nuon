@@ -1,6 +1,4 @@
 import type { ReactNode } from 'react'
-import { LabeledValue } from '@/components/common/LabeledValue'
-import { Link } from '@/components/common/Link'
 import { Time } from '@/components/common/Time'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import {
@@ -9,7 +7,8 @@ import {
 } from '@/components/layout/DetailPage'
 import type { TInstallDeploymentRecord, TNavLink, TWorkflow } from '@/types'
 import { humanize } from '@/utils/string-utils'
-import { DeploymentRunStatus, ResourceOutcomes } from './DeploymentProgress'
+import { DeploymentMeta, type TDeploymentBranchMeta } from './DeploymentMeta'
+import { DeploymentRunStatus, ResourceScopeSummary } from './DeploymentProgress'
 import {
   DEPLOYMENT_TABS,
   deploymentOutcomes,
@@ -26,7 +25,7 @@ interface IDeploymentDetail {
   activeTabIndex?: number
   banners?: ReactNode
   basePath: string
-  branchHref?: string
+  branch?: TDeploymentBranchMeta
   children: ReactNode
   deployment?: TInstallDeploymentRecord
   search?: string
@@ -39,7 +38,7 @@ export const DeploymentDetail = ({
   activeTabIndex,
   banners,
   basePath,
-  branchHref,
+  branch,
   children,
   deployment,
   search = '',
@@ -52,7 +51,7 @@ export const DeploymentDetail = ({
     workflow?.name ||
     humanize(workflow?.type) ||
     'Deployment'
-  const branch = deployment?.app_branch
+  const deploymentType = deployment?.type || workflow?.type
   const run = {
     status: workflow?.status?.status ?? deployment?.status ?? 'unknown',
     activity:
@@ -69,7 +68,7 @@ export const DeploymentDetail = ({
         <DetailHeader
           backLink={false}
           title={title}
-          description={run.activity}
+          description={run.status === 'error' ? undefined : run.activity}
           status={<DeploymentRunStatus run={run} />}
           id={workflow?.id}
           identity={
@@ -81,35 +80,19 @@ export const DeploymentDetail = ({
             />
           }
           metadata={
-            <>
-              <LabeledValue label="Type">
-                {humanize(deployment?.type || workflow?.type)}
-              </LabeledValue>
-              {branch && branchHref ? (
-                <LabeledValue label="App branch">
-                  <Link href={branchHref}>{branch.name}</Link>
-                </LabeledValue>
-              ) : null}
-            </>
+            deploymentType || branch ? (
+              <DeploymentMeta type={deploymentType} branch={branch} />
+            ) : undefined
           }
         >
-          <Link
-            href={`${basePath.replace(/\/deployments\/[^/]+$/, '/deployments')}${search}`}
-          >
-            Back to deployments
-          </Link>
+          <ResourceScopeSummary run={run} />
         </DetailHeader>
       }
-      banners={
-        <>
-          <ResourceOutcomes run={run} />
-          {banners}
-        </>
-      }
+      banners={banners}
       tabNav={{
         activeIndex: activeTabIndex,
         basePath,
-        tabs: (tabOrder ?? deploymentTabOrder(run.status)).map((key) => ({
+        tabs: (tabOrder ?? deploymentTabOrder(workflow?.type)).map((key) => ({
           ...DEPLOYMENT_TABS[key],
           path: search
             ? `${DEPLOYMENT_TABS[key].path === '/' ? '' : DEPLOYMENT_TABS[key].path}${search}`

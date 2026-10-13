@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/lib/pq"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -36,7 +38,13 @@ func (a *Activities) FindReusableSandboxBuild(ctx context.Context, input *FindRe
 		return out, nil
 	}
 
-	run, err := a.getAppBranchRunByID(ctx, input.RunID)
+	return a.findReusableSandboxBuild(ctx, input.AppID, input.RunID, cfg)
+}
+
+func (a *Activities) findReusableSandboxBuild(ctx context.Context, appID, runID string, cfg *app.AppSandboxConfig) (*FindReusableSandboxBuildOutput, error) {
+	out := &FindReusableSandboxBuildOutput{}
+
+	run, err := a.getAppBranchRunByID(ctx, runID)
 	if err != nil {
 		return nil, err
 	}
@@ -51,14 +59,14 @@ func (a *Activities) FindReusableSandboxBuild(ctx context.Context, input *FindRe
 	directory := sandboxConfigDirectory(cfg)
 
 	if repoURLsEqual(sandboxRepo, branchRepo) {
-		paths, ok, pathErr := a.comparisonChangedPaths(ctx, input.RunID)
+		paths, ok, pathErr := a.comparisonChangedPaths(ctx, runID)
 		if pathErr != nil {
 			return nil, pathErr
 		}
 		if !ok || anyPathMatchesDirectory(paths, directory) {
 			return out, nil
 		}
-		build, findErr := a.latestEquivalentSandboxBuild(ctx, input.AppID, cfg)
+		build, findErr := a.latestEquivalentSandboxBuild(ctx, appID, cfg)
 		if findErr != nil {
 			return nil, findErr
 		}
@@ -75,7 +83,7 @@ func (a *Activities) FindReusableSandboxBuild(ctx context.Context, input *FindRe
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve sandbox commit: %w", err)
 	}
-	build, err := a.latestEquivalentSandboxBuild(ctx, input.AppID, cfg)
+	build, err := a.latestEquivalentSandboxBuild(ctx, appID, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +105,7 @@ func (a *Activities) FindReusableSandboxBuild(ctx context.Context, input *FindRe
 }
 
 func (a *Activities) latestEquivalentSandboxBuild(ctx context.Context, appID string, cfg *app.AppSandboxConfig) (*app.AppSandboxBuild, error) {
-	var builds []app.AppSandboxBuild
+	var build app.AppSandboxBuild
 	err := a.db.WithContext(ctx).
 		Preload("VCSConnectionCommit").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
@@ -107,16 +115,15 @@ func (a *Activities) latestEquivalentSandboxBuild(ctx context.Context, appID str
 			Status: app.AppSandboxBuildStatusActive,
 		}).
 		Order("created_at DESC").
-		Limit(25).
-		Find(&builds).Error
+		First(&build).Error
 	if err != nil {
-		return nil, fmt.Errorf("unable to list sandbox builds: %w", err)
-	}
-	for i := range builds {
-		if sandboxConfigsEquivalent(cfg, &builds[i].AppSandboxConfig) {
-			build := builds[i]
-			return &build, nil
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
 		}
+		return nil, fmt.Errorf("unable to get latest sandbox build: %w", err)
+	}
+	if sandboxConfigsEquivalent(cfg, &build.AppSandboxConfig) {
+		return &build, nil
 	}
 	return nil, nil
 }

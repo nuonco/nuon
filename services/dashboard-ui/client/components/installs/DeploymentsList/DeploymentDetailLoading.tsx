@@ -1,0 +1,84 @@
+import { ID } from '@/components/common/ID'
+import { Status } from '@/components/common/Status'
+import { Tabs } from '@/components/common/Tabs'
+import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
+import { SectionHeader } from '@/components/layout/SectionHeader'
+import {
+  DEPLOYMENT_TABS,
+  deploymentTabOrder,
+} from '@/components/installs/DeploymentDetail/deployment-progress'
+import { WorkflowStepsSkeleton } from '@/components/workflows/WorkflowSteps'
+
+export const DeploymentDetailLoading = ({
+  activity,
+  createdAt,
+  id,
+  status,
+  workflowType,
+}: {
+  activity?: string
+  createdAt?: string
+  id?: string
+  status?: string
+  workflowType?: string
+}) => (
+  <>
+    <div className="flex flex-wrap items-center gap-3">
+      {status ? (
+        <Status status={status} variant="badge" />
+      ) : (
+        <Status loading variant="badge" loadingWidth={8} />
+      )}
+      <ID loading={!id} loadingWidth={16}>
+        {id}
+      </ID>
+      {createdAt ? (
+        <Time time={createdAt} format="relative" variant="subtext" />
+      ) : (
+        <Time loading format="relative" variant="subtext" loadingWidth={10} />
+      )}
+    </div>
+    {status === 'error' ? null : activity ? (
+      <Text variant="subtext" theme="neutral">
+        {activity}
+      </Text>
+    ) : (
+      <Text variant="subtext" loading loadingWidth={42} />
+    )}
+    <Tabs
+      naturalHeight
+      initActiveTab={deploymentTabOrder(workflowType)[0]}
+      tabsClassName="mt-4"
+      tabControlsClassName="!gap-2 md:!gap-6 [&>button]:px-1 md:[&>button]:px-3"
+      tabLabels={Object.fromEntries(
+        deploymentTabOrder(workflowType).map((key) => [
+          key,
+          DEPLOYMENT_TABS[key].text,
+        ])
+      )}
+      tabs={Object.fromEntries(
+        deploymentTabOrder(workflowType).map((key) => [
+          key,
+          key === 'workflow' ? (
+            <div key={key} className="flex flex-col gap-4">
+              <div className="flex justify-end">
+                <Text loading loadingWidth={14} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <SectionHeader title="Workflow steps" />
+                <Text
+                  variant="subtext"
+                  theme="neutral"
+                  loading
+                  loadingWidth={28}
+                />
+              </div>
+              <WorkflowStepsSkeleton />
+            </div>
+          ) : null,
+        ])
+      )}
+    />
+  </>
+)

@@ -409,7 +409,10 @@ export const BuildStep = ({
       } else if (reason === 'config_changed') {
         counts.config_changed++
         counts.built++
-      } else if (reason === 'source_changed' || reason === 'source_and_config') {
+      } else if (
+        reason === 'source_changed' ||
+        reason === 'source_and_config'
+      ) {
         counts.source_changed++
         counts.built++
       }

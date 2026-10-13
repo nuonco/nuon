@@ -9,10 +9,8 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID						GetRunnerSettings
@@ -50,24 +48,7 @@ func (s *service) GetRunnerSettings(ctx *gin.Context) {
 	settings.ContainerImageSignatureIdentityRegexp = s.cfg.RunnerContainerImageSignatureIdentityRegexp
 	installTable := plugins.TableName(s.db, app.Install{})
 	if runner.RunnerGroup.Type == app.RunnerGroupTypeInstall && runner.RunnerGroup.OwnerType == installTable && runner.Status != app.RunnerStatusDisabled && runner.Status != app.RunnerStatusDeprovisioned {
-		// A projection avoids model AfterQuery hooks, which also run with SkipHooks.
-		var install struct {
-			Name                string
-			Labels              labels.Labels
-			AppName             string  `gorm:"column:App__name"`
-			TelemetryEnabled    *bool   `gorm:"column:InstallConfig__telemetry_enabled"`
-			OrgTelemetryEnabled bool    `gorm:"column:Org__telemetry_enabled"`
-			OrgRelayEndpoint    *string `gorm:"column:Org__telemetry_relay_endpoint"`
-		}
-		err := s.db.WithContext(ctx).
-			Model(&app.Install{}).
-			Scopes(scopes.WithDisableViews).
-			Select(installTable+".name", installTable+".labels").
-			Joins("App", s.db.Select("name")).
-			Joins("InstallConfig", s.db.Select("telemetry_enabled")).
-			Joins("Org", s.db.Select("telemetry_enabled", "telemetry_relay_endpoint")).
-			Where(app.Install{ID: runner.RunnerGroup.OwnerID, OrgID: runner.OrgID}).
-			Take(&install).Error
+		install, err := s.installsHelpers.GetInstallTelemetryConfig(ctx, runner.OrgID, runner.RunnerGroup.OwnerID)
 		if err == nil {
 			orgTelemetry := app.OrgTelemetrySettings{RelayEndpoint: install.OrgRelayEndpoint}
 			endpoint := orgTelemetry.ResolveRelayEndpoint(s.telemetryRelayEndpoint)
@@ -91,14 +72,7 @@ func (s *service) GetRunnerSettings(ctx *gin.Context) {
 				return
 			}
 			settings.TelemetryRelayEndpoint = endpoint
-			settings.VendorTelemetryResourceAttributes = map[string]string{
-				"nuon.org.name":     runner.Org.Name,
-				"nuon.app.name":     install.AppName,
-				"nuon.install.name": install.Name,
-			}
-			for key, value := range install.Labels {
-				settings.VendorTelemetryResourceAttributes["nuon.install.labels."+key] = value
-			}
+			settings.VendorTelemetryResourceAttributes = install.ResourceAttributes()
 		} else if errors.Is(err, gorm.ErrRecordNotFound) {
 			settings.VendorTelemetryEnabled = false
 			s.l.Warn("vendor telemetry disabled: owner install not found in runner org",

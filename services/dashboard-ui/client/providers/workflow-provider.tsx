@@ -27,16 +27,20 @@ interface WorkflowContextValue {
   policyViolationsCount: number
 }
 
-export const WorkflowContext = createContext<WorkflowContextValue | undefined>(undefined)
+export const WorkflowContext = createContext<WorkflowContextValue | undefined>(
+  undefined
+)
 
 export const WorkflowProvider = ({
   children,
   workflowId,
   shouldPoll = false,
+  loadingElement = <ProviderLoading />,
 }: {
   children: ReactNode
   workflowId: string
   shouldPoll?: boolean
+  loadingElement?: ReactNode
 }) => {
   const { org } = useOrg()
   const queryClient = useQueryClient()
@@ -44,10 +48,16 @@ export const WorkflowProvider = ({
 
   const onRefreshError = useRefreshErrorToast()
 
-  const { data: workflow, isLoading, error, disconnect } = useSSEResourceQuery<TWorkflow>({
-    sseUrl: org?.id && workflowId
-      ? `/api/orgs/${org.id}/workflows/${workflowId}/sse`
-      : undefined,
+  const {
+    data: workflow,
+    isLoading,
+    error,
+    disconnect,
+  } = useSSEResourceQuery<TWorkflow>({
+    sseUrl:
+      org?.id && workflowId
+        ? `/api/orgs/${org.id}/workflows/${workflowId}/sse`
+        : undefined,
     queryKey: ['workflow', org?.id, workflowId],
     queryFn: () => getWorkflow({ orgId: org!.id, workflowId }),
     enabled: !!org?.id && !!workflowId,
@@ -86,7 +96,7 @@ export const WorkflowProvider = ({
   }, [queryClient, org?.id, workflowId, workflow])
 
   if (error && !workflow) return <ProviderError error={error} />
-  if (isLoading || !workflow) return <ProviderLoading />
+  if (isLoading || !workflow) return loadingElement
 
   const value: WorkflowContextValue = {
     workflow,

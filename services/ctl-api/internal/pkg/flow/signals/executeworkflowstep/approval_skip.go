@@ -46,8 +46,9 @@ func (s *Signal) handleSkipResponse(ctx workflow.Context, l *zap.Logger, step *a
 
 	if skipGroup {
 		return writeDirective(ctx, step.ID, DirectiveSkipGroup, map[string]any{
-			"step_idx": step.Idx,
-			"status":   "skipped",
+			"step_idx":       step.Idx,
+			"status":         "skipped",
+			"sibling_status": string(app.StatusUserSkipped),
 		})
 	}
 

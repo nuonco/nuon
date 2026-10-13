@@ -2,7 +2,6 @@ package cmd
 
 import (
 	_ "embed"
-	"fmt"
 	"strings"
 	"text/template"
 
@@ -16,9 +15,9 @@ func (c *cli) agentsCmd() *cobra.Command {
 	agentsCmd := &cobra.Command{
 		Use:   "agents",
 		Short: "Agent-facing helpers for driving Nuon with LLMs",
-		// Same guide as "nuon agents help", which adds the live sign-in, org,
-		// and resolved MCP URL. Whichever a user reaches for, they get all of
-		// the setup, not a pointer to the other one.
+		// Same guide as "nuon agents help" for a person, which adds the live
+		// sign-in, org, and resolved MCP URL. An agent running "nuon agents help"
+		// gets orientation markdown instead.
 		Long:        agentsSetupGuide(nil),
 		GroupID:     AdditionalGroup.ID,
 		Annotations: annotations(skipAuthAnnotation(), outputsAnnotation(OutputTable)),
@@ -28,27 +27,9 @@ func (c *cli) agentsCmd() *cobra.Command {
 	}
 
 	agentsCmd.AddCommand(c.agentsHelpCmd())
-	agentsCmd.AddCommand(c.agentsContextCmd())
 	agentsCmd.AddCommand(c.agentsMCPCmd())
 
 	return agentsCmd
-}
-
-func (c *cli) agentsContextCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "context",
-		Short: "Print agent orientation markdown for the current CLI context",
-		Long: `Print a large markdown document describing the current Nuon CLI context
-and how an agent should interact with Nuon (local MCP proxy vs HTTP API MCP).
-
-Intended for LLM agents: run this first when asked to work with Nuon.`,
-		PersistentPreRunE: c.persistentPreRunE,
-		Annotations:       annotations(skipAuthAnnotation(), outputsAnnotation(OutputTable)),
-		Run: c.wrapCmd(func(_ *cobra.Command, _ []string) error {
-			fmt.Print(c.agentsContextMarkdown())
-			return nil
-		}),
-	}
 }
 
 func (c *cli) agentsMCPCmd() *cobra.Command {
@@ -84,8 +65,8 @@ Example, override the derived MCP URL when it does not match the API URL:
 
   nuon agents mcp --allow-writes --url https://mcp.example.nuon.co/mcp --name nuon-example
 
-Run "nuon agents help" for per-client setup and "nuon agents context" to see
-which MCP URL resolves from your config.`,
+Run "nuon agents help" for per-client setup. An agent running that command
+sees which MCP URL resolves from your config.`,
 		PersistentPreRunE: c.persistentPreRunE,
 		Annotations:       outputsAnnotation(OutputTable),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {

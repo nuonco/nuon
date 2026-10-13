@@ -438,7 +438,7 @@ describe('workflow-utils', () => {
       const banner = getStepBanner(step)
       expect(banner).toEqual({
         copy: 'Step was cancelled: User cancelled',
-        theme: 'warn',
+        theme: 'neutral',
         title: 'Step undefined cancelled',
       })
     })

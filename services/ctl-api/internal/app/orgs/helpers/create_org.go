@@ -6,11 +6,13 @@ import (
 	"strings"
 
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 )
 
@@ -57,8 +59,25 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 		org.DebugMode = true
 	}
 
-	if err := h.db.WithContext(ctx).Create(&org).Error; err != nil {
-		return nil, fmt.Errorf("unable to create org: %w", err)
+	if err := h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := authz.RequireUserManaged(tx, acct.ID); err != nil {
+			return err
+		}
+		if err := tx.Create(&org).Error; err != nil {
+			return fmt.Errorf("unable to create org: %w", err)
+		}
+		// make sure the notifications config orgID is set
+		if res := tx.Where(&app.NotificationsConfig{OwnerID: org.ID}).
+			Updates(app.NotificationsConfig{OrgID: org.ID}); res.Error != nil {
+			return fmt.Errorf("unable to set org ID on notifications config: %w", res.Error)
+		}
+		authzClient := authz.New(authz.Params{DB: tx})
+		if err := authzClient.CreateOrgRoles(ctx, org.ID); err != nil {
+			return fmt.Errorf("unable to create org roles: %w", err)
+		}
+		return authzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, org.ID, acct.ID)
+	}); err != nil {
+		return nil, err
 	}
 
 	h.mw.Incr("org.created", metrics.ToTags(map[string]string{
@@ -66,25 +85,6 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 		"org_type":     string(org.OrgType),
 		"account_type": string(acct.AccountType),
 	}))
-
-	// make sure the notifications config orgID is set
-	if res := h.db.WithContext(ctx).
-		Where(&app.NotificationsConfig{
-			OwnerID: org.ID,
-		}).
-		Updates(app.NotificationsConfig{
-			OrgID: org.ID,
-		}); res.Error != nil {
-		return nil, fmt.Errorf("unable to set org ID on notifications config: %w", res.Error)
-	}
-
-	if err := h.authzClient.CreateOrgRoles(ctx, org.ID); err != nil {
-		return nil, fmt.Errorf("unable to create org roles: %w", err)
-	}
-
-	if err := h.authzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, org.ID, acct.ID); err != nil {
-		return nil, fmt.Errorf("unable to add user to org: %w", err)
-	}
 
 	if err := h.EnsureOrgQueue(ctx, org.ID); err != nil {
 		return nil, fmt.Errorf("unable to create org-signals queue: %w", err)

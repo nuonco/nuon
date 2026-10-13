@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { InstallHealth } from '@/components/installs/InstallHealth'
 import { PageSection } from '@/components/layout/PageSection'
 import { SectionHeader } from '@/components/layout/SectionHeader'
@@ -6,7 +7,7 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 
-export const NewInstallHealth = () => {
+export const NewInstallHealth = ({ children }: { children?: ReactNode }) => {
   const { org } = useOrg()
   const { install } = useInstall()
   const path = `/${org?.id}/installs/${install?.id}/health`
@@ -24,9 +25,9 @@ export const NewInstallHealth = () => {
       />
       <SectionHeader
         title="Health"
-        description="Install, component, and managed resource health."
+        description="Inspect the latest health of components and managed resources."
       />
-      <InstallHealth />
+      {children ?? <InstallHealth />}
     </PageSection>
   )
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
+	"github.com/nuonco/nuon/bins/cli/internal/attribution"
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
@@ -75,6 +76,7 @@ func (a *Service) Login(ctx context.Context) error {
 	if err != nil {
 		return ui.PrintError(fmt.Errorf("unable to init API client: %w", err))
 	}
+	attribution.Apply(api, a.cfg)
 	a.api = api
 
 	// If user only has a single org, select it
@@ -115,6 +117,15 @@ func (a *Service) selectAPIURL() (string, error) {
 	// The struct default is set directly, not via viper, so GetString returns ""
 	// when no explicit value was provided.
 	configuredURL := a.cfg.GetString("api_url")
+
+	// An agent cannot answer these prompts.
+	if a.cfg.Agent != "" {
+		if configuredURL == "" {
+			configuredURL = nuonCloudURL
+		}
+		fmt.Println(styles.TextDim.Render(fmt.Sprintf("  %s (agent: %s)", configuredURL, a.cfg.Agent)))
+		return configuredURL, nil
+	}
 
 	// No URL configured — show deployment type selector (first-time user)
 	if configuredURL == "" {
@@ -209,6 +220,7 @@ func (a *Service) updateAPIClient(apiURL string, cliCfg *config.Config) error {
 	if err != nil {
 		return fmt.Errorf("unable to create API client with URL %s: %w", apiURL, err)
 	}
+	attribution.Apply(api, cliCfg)
 
 	// Update the service's API client
 	a.api = api

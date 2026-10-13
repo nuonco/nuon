@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
@@ -30,13 +31,52 @@ func (c *Client) DeleteServiceAccount(ctx context.Context, svcAcctID string) err
 	}
 
 	return c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Before deleteAccountRecords: the bindings are how the roles are found.
-		if err := authz.DeleteStackInstallRoles(tx, acct.ID); err != nil {
-			return err
+		var locked struct{ ID string }
+		if err := tx.Unscoped().Model(&app.Account{}).Select("id").
+			Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.Account{ID: acct.ID}).Take(&locked).Error; err != nil {
+			return errors.Wrap(err, "unable to lock service account")
 		}
-
-		return deleteAccountRecords(tx, acct.ID)
+		var binding app.ManagedServiceAccount
+		if err := tx.Unscoped().Where(app.ManagedServiceAccount{AccountID: acct.ID}).Find(&binding).Error; err != nil {
+			return errors.Wrap(err, "unable to load service account ownership")
+		}
+		if binding.AccountID == "" {
+			if err := authz.DeleteStackInstallRoles(tx, acct.ID); err != nil {
+				return err
+			}
+		}
+		return deleteServiceAccount(tx, acct.ID)
 	})
+}
+
+func (c *Client) DeleteServiceAccountByID(ctx context.Context, accountID string) error {
+	return c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return deleteServiceAccount(tx, accountID)
+	})
+}
+
+func deleteServiceAccount(tx *gorm.DB, accountID string) error {
+	var acct app.Account
+	if err := tx.Unscoped().Select("id", "account_type").
+		Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.Account{ID: accountID}).Take(&acct).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return errors.Wrap(err, "unable to lock service account for deletion")
+	}
+	if acct.AccountType != app.AccountTypeService {
+		return errors.Errorf("account %s is not a service account", accountID)
+	}
+	if err := revokeAccountCredentials(tx, accountID); err != nil {
+		return err
+	}
+	if err := authz.DeleteManagedServiceAccountRole(tx, accountID); err != nil {
+		return err
+	}
+	if err := tx.Where(app.ManagedServiceAccount{AccountID: accountID}).Delete(&app.ManagedServiceAccount{}).Error; err != nil {
+		return errors.Wrap(err, "unable to remove managed service account binding")
+	}
+	return deleteAccountRecords(tx, accountID)
 }
 
 // Role bindings are hard-deleted: the many2many's OnDelete:CASCADE never fires on a
@@ -47,12 +87,6 @@ func deleteAccountRecords(tx *gorm.DB, accountID string) error {
 		Where(app.AccountRole{AccountID: accountID}).
 		Delete(&app.AccountRole{}); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to remove account roles")
-	}
-
-	if res := tx.
-		Where(app.Token{AccountID: accountID}).
-		Delete(&app.Token{}); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to delete tokens")
 	}
 
 	if res := tx.Delete(&app.Account{ID: accountID}); res.Error != nil {
@@ -68,9 +102,10 @@ func deleteAccountRecords(tx *gorm.DB, accountID string) error {
 // IDs are unrecoverable afterwards.
 func (c *Client) DeleteInstallStackServiceAccounts(ctx context.Context, installID string) error {
 	var stackIDs []string
-	if res := c.db.WithContext(ctx).
+	if res := c.db.WithContext(ctx).Unscoped().
 		Model(&app.InstallStack{}).
 		Where(app.InstallStack{InstallID: installID}).
+		Order("id").
 		Pluck("id", &stackIDs); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to list install stacks")
 	}

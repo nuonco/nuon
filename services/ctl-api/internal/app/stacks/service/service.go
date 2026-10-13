@@ -51,12 +51,8 @@ func (s *service) RegisterRunnerRoutes(ge *gin.Engine) error {
 	// Per-route: reporting is a write, and the declared verb is authoritative.
 	stacks := ge.Group("/v1/stacks/:install_id")
 	{
-		stacks.GET("/config",
-			require.Route(permissions.KindStack, permissions.PermissionRead, "install_id"),
-			s.GetStackConfig)
-		stacks.POST("/phone-home",
-			require.Route(permissions.KindStack, permissions.PermissionCreate, "install_id"),
-			s.PostStackPhoneHome)
+		require.Route(stacks, permissions.KindStack, permissions.PermissionRead, "install_id").GET("/config", s.GetStackConfig)
+		require.Route(stacks, permissions.KindStack, permissions.PermissionCreate, "install_id").POST("/phone-home", s.PostStackPhoneHome)
 	}
 
 	return nil

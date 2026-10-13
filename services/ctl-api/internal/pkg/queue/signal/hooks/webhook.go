@@ -671,6 +671,17 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 		return nil
 	}
 
+	if installID := eventInstallOwnerID(event); installID != "" {
+		forgotten, err := isForgottenInstall(ctx, h.db, installID)
+		if err != nil {
+			h.emitError(ctx, phasePrefix)
+			return fmt.Errorf("unable to check forgotten install for webhook lifecycle: %w", err)
+		}
+		if forgotten {
+			return nil
+		}
+	}
+
 	data, ok := h.buildEventData(ctx, event, outcome)
 	if !ok {
 		return nil

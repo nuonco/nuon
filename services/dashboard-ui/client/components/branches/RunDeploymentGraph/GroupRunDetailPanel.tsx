@@ -86,7 +86,11 @@ const GroupRunDetailContent = memo(
 
                 {inst.workflowId && (
                   <Link
-                    href={installLink({ orgId: orgId, installId: inst.id, suffix: `/workflows/${inst.workflowId}` })}
+                    href={installLink({
+                      orgId: orgId,
+                      installId: inst.id,
+                      suffix: `/workflows/${inst.workflowId}`,
+                    })}
                     className="flex w-fit items-center gap-1"
                   >
                     View workflow

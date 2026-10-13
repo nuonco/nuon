@@ -328,11 +328,14 @@ func sortedParamNames(params map[string]ARMParameter) []string {
 // label overrides the name-derived one, for parameters whose config carries a
 // display name of its own. Empty falls back to the derived label.
 //
-// Object and array parameters have no sensible Basics element and are skipped, so
-// the wrapper's own default applies. Nothing currently reaches the root with those
-// types: a nested template's non-scalar default is either Nuon-managed or left
-// unhoisted.
+// Object parameters, and arrays whose elements are not plain strings, have no
+// Basics control that round-trips the value, so they are skipped and the
+// wrapper default applies. A string array is a comma-separated text box; the
+// portal splits it back into an array. The portal has no string-array element,
+// and createUiDefinition's split is what turns the text back into the array
+// the nested template declared.
 func basicsElement(name string, p ARMParameter, label, section string) (map[string]any, string, bool) {
+	p.Type = canonicalARMType(p.Type)
 	ref := parameterOutputRef(section, name)
 	if label == "" {
 		label = humanizeParamName(name)
@@ -399,11 +402,46 @@ func basicsElement(name string, p ARMParameter, label, section string) (map[stri
 		if hasDefault {
 			element["defaultValue"] = def
 		}
+	case "array":
+		joined, ok := joinStringArray(p.DefaultValue)
+		if !ok {
+			return nil, "", false
+		}
+		element["type"] = "Microsoft.Common.TextBox"
+		element["constraints"] = map[string]any{"required": p.DefaultValue == nil || joined != ""}
+		if joined != "" {
+			element["defaultValue"] = joined
+		}
+		// split('') is [""], not []. An optional array left blank has to arrive
+		// empty, or the nested template sees a one-element array of an empty string.
+		return element, fmt.Sprintf("[if(empty(%s), parse('[]'), split(%s, ','))]", ref, ref), true
 	default:
 		return nil, "", false
 	}
 
 	return element, fmt.Sprintf("[%s]", ref), true
+}
+
+// joinStringArray renders a string-array default as the comma-separated text a
+// portal text box can hold. A non-string element, or one that itself contains a
+// comma, cannot survive that round trip.
+func joinStringArray(def any) (string, bool) {
+	if def == nil {
+		return "", true
+	}
+	arr, ok := def.([]any)
+	if !ok {
+		return "", false
+	}
+	parts := make([]string, 0, len(arr))
+	for _, value := range arr {
+		text, ok := value.(string)
+		if !ok || strings.Contains(text, ",") {
+			return "", false
+		}
+		parts = append(parts, text)
+	}
+	return strings.Join(parts, ","), true
 }
 
 // humanizeParamName turns a camelCase parameter name into the spaced, title-cased

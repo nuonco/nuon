@@ -196,27 +196,39 @@ command must be added to `readOnlyCommands` or it will be blocked in this mode. 
 `config`-style targeting, `init`, `generate-config`) are allowed; anything that creates/updates/deletes remote
 resources exits 2 with a clear error.
 
+### Agent detection
+
+`pkg/agentclient` reads the process environment and names the coding agent that launched the CLI. Product variables win over `AI_AGENT`. Amp is checked first (`AMP_CURRENT_THREAD_ID`, or `AGENT=amp`) because it also sets `CLAUDECODE`. Then Cursor (`CURSOR_AGENT=1`, `CURSOR_INVOKED_AS=agent`, `CURSOR_EXTENSION_HOST_ROLE=agent-exec`, `CURSOR_TRACE_ID`), Gemini (`GEMINI_CLI=1`), Codex (`CODEX_THREAD_ID`, `CODEX_SANDBOX`, `CODEX_CI`), Antigravity (`ANTIGRAVITY_AGENT`), Augment (`AUGMENT_AGENT=1`), OpenCode (`OPENCODE_CLIENT`), Claude Code (`CLAUDECODE=1`, `CLAUDE_CODE=1`, `CLAUDE_CODE_CHILD_SESSION=1`; `CLAUDE_CODE_IS_COWORK` names it `cowork`), Replit (`REPL_ID`), and Copilot (`COPILOT_MODEL`, `COPILOT_ALLOW_ALL`, `COPILOT_GITHUB_TOKEN`). When none of those are set, `AI_AGENT` is the fallback name (`amp`, `claude-code`, `cursor-cli@1.2.3`; the slug before `@` is used). An `AI_AGENT` that is not a slug, such as `1` or `true`, is ignored. `NUON_AGENT_CLIENT=cursor|claude` overrides all of that; `NUON_AGENT_CLIENT=off` disables it. Devin is not detected.
+
+Detection runs once in the persistent pre-run (`applyAgentMode` in `cmd/agent_use.go`). A match sets `Config.Agent` to the name and forces `Config.Interactive = false` for that process. Neither is written to `~/.nuon`. Commands check `cfg.Agent != ""` to take a prompt-free path instead of calling `agentclient.Detect()` again; the state file and REST attribution read `cfg.Agent`. The MCP proxy does not. This does not turn on the JSON envelope — that still needs `--output agent`. `nuon auth login` in this mode skips the deployment selector and URL confirm: it uses the configured `api_url` / `NUON_API_URL`, or `https://api.nuon.co` when none is set, then runs the normal browser sign-in.
+
+Attribution headers are set by `internal/attribution.Apply`. Any code that builds its own `nuon.New` client (login does, twice) must call it, or those requests go out unattributed.
+
+When a client is detected, `nuon agents` and `nuon agents --help` print `✓ agent (cursor) detected` or `✓ agent (claude) detected` at the top of the setup guide. `nuon agents help` prints the orientation markdown instead of that guide. The same name is sent as `X-Nuon-Agent` on control-plane REST requests. A normal terminal does not set these variables, so the line and the header are omitted and `nuon agents help` prints the setup guide.
+
+The first detected run for an agent writes `~/.nuon.agents/<agent>.yaml` (`agent`, `cli_version`, `app_id`, `first_seen`, `last_seen`). That write prints a one-time setup guide on stderr: docs, `nuon agents help`, the dashboard, and a short command flow. Later runs update `cli_version`, `app_id`, and `last_seen` and stay quiet. Agent requests also send `User-Agent: nuon-cli/<version> (<agent>)` and `X-Nuon-Command` set to the command path, with no arguments. The MCP proxy sends command `nuon agents mcp`. Its `X-Nuon-Agent` value is the stdio client's `clientInfo.name`, unchanged (`Cursor`, `claude-code`, `Amp MCP Client`). `NUON_AGENT_CLIENT=off` disables that header. Environment detection does not set it. The proxy connects upstream and lists tools before the stdio handshake, so those first HTTP requests stay unattributed.
+
 ### MCP (`nuon agents mcp`)
 
 Preferred LLM surface is **`nuon agents`**:
 
-- `nuon agents help`: the **human** setup guide (`cmd/agents_help.go`). `agentsSetupGuide` is the single source: it
-  backs both this command and the `agents` group's `Long`, so `nuon agents`, `nuon agents --help`, and
-  `nuon agents help` all print the same instructions (the subcommand additionally renders the live sign-in, org, and
-  resolved MCP URL). Extend the guide, not one of its callers. Document each client on its own (Claude Code, Cursor,
-  Amp, and a catch-all that tells people to check that client's MCP docs). Do not present `mcpServers` as a
-  universal schema. Every runnable example carries `--allow-writes`. `--url` is a general override when the MCP URL
-  does not follow from the API URL (self-hosted and Nuon BYOC are examples).
+- `nuon agents help`: the **human** setup guide (`cmd/agents_help.go`) when `cfg.Agent` is empty, the same check
+  `nuon auth login` uses. On an interactive terminal the guide opens in an alt-screen pager (`internal/ui/pager`,
+  Bubble Tea viewport). Agents and pipes still get the full text. `agentsSetupGuide` backs this command and the
+  `agents` group's `Long`, so `nuon agents`
+  and `nuon agents --help` print the same instructions (the help subcommand additionally renders the live sign-in,
+  org, and resolved MCP URL). When `cfg.Agent` is set, `nuon agents help` prints the orientation markdown instead.
+  That document lives in `cmd/agents_context.md`, embedded with `go:embed` and rendered as a `text/template` against
+  the fields of `agentsContext` (`Authed`, `APIURL`, `MCPURL`, `OrgID`, `AppID`, `InstallID`) — edit the markdown,
+  not Go string literals. Keep its tool table and timestamp rules in sync with `docs/guides/agents/tools.mdx`, and
+  its per-client registration in sync with the setup guide. Both documents state their purpose up top (human vs.
+  agent) because that split is what users get confused about. Do not duplicate client setup recipes, sample
+  queries, or the deprecated `nuon mcp` alias in the markdown — those live in `docs/guides/agents/` and `cmd/mcp.go`.
+  MCP timestamps are UTC RFC3339 (`…Z`); agents localize before naming a day or clock time. Extend the setup guide,
+  not one of its callers. Document each client on its own (Claude Code, Cursor, Amp, and a catch-all that tells people to check that client's MCP docs). Do not
+  present `mcpServers` as a universal schema. Every runnable example carries `--allow-writes`. `--url` is a general
+  override when the MCP URL does not follow from the API URL (self-hosted and Nuon BYOC are examples).
   `mcpClientJSON` renders a block for a given key; reuse it rather than retyping JSON.
-- `nuon agents context` — markdown orientation (auth, selection, MCP URL, timestamps). The document lives in
-  `cmd/agents_context.md`, embedded with `go:embed` and rendered as a `text/template` against the fields of
-  `agentsContext` (`Authed`, `APIURL`, `MCPURL`, `OrgID`, `AppID`, `InstallID`) — edit the markdown, not Go string
-  literals. Keep its tool table and timestamp rules in sync with `docs/guides/agents/tools.mdx`, and its per-client
-  registration in sync with `nuon agents help`. Both documents state their purpose up top
-  (human vs. agent) because that split is what users get confused about. Do not duplicate
-  client setup recipes, sample queries, or the deprecated `nuon mcp` alias here — those live in
-  `docs/guides/agents/` and `cmd/mcp.go`. MCP timestamps are UTC RFC3339 (`…Z`); agents localize before naming a
-  day or clock time.
 - `nuon agents mcp` — stdio proxy to ctl-api MCP (`internal/services/mcpserver/`). Auth from `~/.nuon`
   (`Authorization` + `X-Nuon-Org-ID`). Read-only unless `--allow-writes`. Register with the client:
   `claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes`, `amp mcp add nuon -- nuon agents mcp --allow-writes`,

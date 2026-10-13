@@ -150,6 +150,14 @@ func (c *clientAdapter) CreateTelemetryAccessToken(context.Context, string) (*mo
 	return nil, unsupported("CreateTelemetryAccessToken")
 }
 
+func (c *clientAdapter) CreateInstallTelemetryAccessToken(context.Context, string, string) (*models.ServiceCreateInstallTelemetryAccessTokenResponse, error) {
+	return nil, unsupported("CreateInstallTelemetryAccessToken")
+}
+
+func (c *clientAdapter) GetInstallTelemetryCollectorSettings(context.Context, string) (*models.ServiceInstallTelemetryCollectorSettings, error) {
+	return nil, unsupported("GetInstallTelemetryCollectorSettings")
+}
+
 func (c *clientAdapter) GetSandboxConfigs(context.Context) ([]*nuonrunner.SandboxConfig, error) {
 	return nil, unsupported("GetSandboxConfigs")
 }

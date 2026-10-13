@@ -76,7 +76,7 @@ export const ModalBase = ({
         />
         <div
           className={cn(
-            'modal bg-white dark:bg-dark-grey-900 border flex flex-col m-auto rounded-lg shadow-lg w-full max-h-[80vh]',
+            'modal bg-elevation-2 border flex flex-col m-auto rounded-lg shadow-lg w-full max-h-[80vh]',
             {
               'max-w-[400px]': size === 'sm',
               'max-w-[600px]': size === 'default',

@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -83,7 +84,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 		perm := permissions.FromRequest(ctx)
 		err = acct.AllPermissions.CanPerform(org.ID, perm)
 		if err != nil {
-			ctx.Error(permissionDeniedError(acct, org.ID, perm, scopeFromPath(ctx.FullPath())))
+			ctx.Error(require.PermissionDeniedError(acct, org.ID, perm, require.ScopeFromPath(ctx.FullPath())))
 			ctx.Abort()
 			return
 		}

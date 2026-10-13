@@ -142,6 +142,93 @@ const SourceIdentity = ({ source }: { source: TRunSource }) => {
   return null
 }
 
+export const RunSourceMark = ({ source }: { source: TRunSource }) => {
+  if (source.kind === 'tag') {
+    return <TagLink tag={source.tag} href={source.url} textVariant="subtext" />
+  }
+
+  if (source.kind === 'pull-request') {
+    return (
+      <span className="flex flex-wrap items-center gap-2">
+        <PullRequestLink
+          number={source.number}
+          href={source.url}
+          textVariant="subtext"
+        />
+        {source.label ? (
+          <Badge size="sm" theme="neutral">
+            <Icon variant="TagIcon" size={12} />
+            {source.label}
+          </Badge>
+        ) : null}
+      </span>
+    )
+  }
+
+  return null
+}
+
+export const RunCommitSummary = ({
+  source,
+  title,
+  sha,
+  shaUrl,
+  author,
+  commit,
+  previewMode,
+}: IRunSourceCard) => {
+  const commitSha = commit?.sha ?? sha
+  const commitHref = commit?.shaUrl ?? shaUrl
+  const commitAuthor = commit?.author ?? author
+  const message = commit?.message || title
+  const [subject, ...rest] = message.split('\n')
+  const description = rest.join('\n').trim()
+
+  return (
+    <div className="flex min-w-0 flex-col gap-2">
+      <SourceIdentity source={source} />
+      <Text variant="body" weight="strong" className="break-words">
+        {subject}
+      </Text>
+      {description ? (
+        <CommitMessage key={description} text={description} />
+      ) : null}
+      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        {commitSha ? <CommitLink sha={commitSha} href={commitHref} /> : null}
+        {commit?.avatarUrl ? (
+          <Avatar
+            src={commit.avatarUrl}
+            alt={commitAuthor ?? ''}
+            size="xs"
+            shape="circle"
+          />
+        ) : null}
+        {commitAuthor ? (
+          <Text variant="subtext" theme="neutral">
+            {commitAuthor}
+          </Text>
+        ) : null}
+        {commit?.createdAt ? (
+          <Time
+            variant="subtext"
+            theme="neutral"
+            time={commit.createdAt}
+            format="relative"
+          />
+        ) : null}
+        <Text variant="subtext" theme="neutral">
+          · {TRIGGER_LABEL[source.kind]}
+        </Text>
+        {previewMode ? (
+          <Badge size="sm" theme="info">
+            {previewMode}
+          </Badge>
+        ) : null}
+      </span>
+    </div>
+  )
+}
+
 export const RunSourceCard = ({
   source,
   title,
@@ -172,9 +259,7 @@ export const RunSourceCard = ({
         <CommitMessage key={message || title} text={message || title} />
         {commitSha || commitAuthor || commit?.createdAt ? (
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            {commitSha ? (
-              <CommitLink sha={commitSha} href={commitUrl} />
-            ) : null}
+            {commitSha ? <CommitLink sha={commitSha} href={commitUrl} /> : null}
             {commit?.avatarUrl ? (
               <Avatar
                 src={commit.avatarUrl}

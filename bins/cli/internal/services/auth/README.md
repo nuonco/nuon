@@ -38,6 +38,10 @@ The source label is tracked by `Config.APIURLSource` which is either the config 
 
 Declining the confirmation prompts for a new URL.
 
+**If a coding agent launched the CLI** (`Config.Agent` is set), there are no prompts. Login uses the configured
+`api_url` / `NUON_API_URL`, or `https://api.nuon.co` when none is set, and prints that URL with the agent name. Use
+`NUON_API_URL` to log an agent into a BYOC control plane.
+
 ### 2. Authentication
 
 The CLI fetches auth configuration from the API (`GetCLIConfig`) and gets a device code flow against the Nuon auth

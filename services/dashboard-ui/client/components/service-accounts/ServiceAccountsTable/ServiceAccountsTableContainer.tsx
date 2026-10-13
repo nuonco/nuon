@@ -1,10 +1,11 @@
-import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
-import { listRoles, listServiceAccounts } from '@/lib'
+import { useServiceAccountFilters } from '@/hooks/use-service-account-filters'
+import { listServiceAccounts } from '@/lib'
+import { ServiceAccountFiltersContainer } from '@/components/service-accounts/ServiceAccountFilters'
+import type { TAPIError } from '@/types'
 import {
   ServiceAccountsTable,
-  roleTitleLookup,
   SERVICE_ACCOUNTS_TABLE_LIMIT,
 } from './ServiceAccountsTable'
 
@@ -15,35 +16,28 @@ export const ServiceAccountsTableContainer = ({
   pollInterval?: number
   shouldPoll?: boolean
 } = {}) => {
-  const [searchParams] = useSearchParams()
   const { org } = useOrg()
-  const offset = Number(searchParams.get('offset') ?? 0)
-  const includeRunners = searchParams.get('runners') === 'true'
-  const includeStacks = searchParams.get('stacks') === 'true'
+  const orgId = org?.id
+  const { management, purpose, q, offset } = useServiceAccountFilters()
 
-  const { data: result, isLoading } = useQuery({
-    queryKey: [
-      'service-accounts',
-      org.id,
-      offset,
-      includeRunners,
-      includeStacks,
-    ],
+  const {
+    data: result,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['service-accounts', orgId, { management, purpose, q, offset }],
     queryFn: () =>
       listServiceAccounts({
-        orgId: org.id,
+        orgId: orgId!,
         offset,
         limit: SERVICE_ACCOUNTS_TABLE_LIMIT + 1,
-        includeRunners,
-        includeStacks,
+        management,
+        purpose,
+        q,
       }),
+    enabled: !!orgId,
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
-  })
-
-  const { data: roles } = useQuery({
-    queryKey: ['roles', org.id],
-    queryFn: () => listRoles({ orgId: org.id }),
   })
 
   const accounts = (result ?? []).slice(0, SERVICE_ACCOUNTS_TABLE_LIMIT)
@@ -52,8 +46,16 @@ export const ServiceAccountsTableContainer = ({
   return (
     <ServiceAccountsTable
       data={accounts}
-      roleTitles={roleTitleLookup(roles ?? [])}
+      orgId={orgId ?? ''}
       isLoading={isLoading}
+      error={
+        error
+          ? (error as TAPIError).description || 'Refresh the page to try again.'
+          : undefined
+      }
+      management={management}
+      hasActiveFilters={!!purpose || !!q}
+      filterActions={<ServiceAccountFiltersContainer />}
       pagination={{ hasNext, offset, limit: SERVICE_ACCOUNTS_TABLE_LIMIT }}
     />
   )

@@ -9,9 +9,9 @@ import (
 
 	"github.com/nuonco/nuon/sdks/nuon-go"
 
+	"github.com/nuonco/nuon/bins/cli/internal/attribution"
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/httpdebug"
-	"github.com/nuonco/nuon/bins/cli/internal/services/version"
 )
 
 // Construct an API client for the services to use.
@@ -31,7 +31,7 @@ func newAPIClient(v *validator.Validate, cfg *config.Config) (nuon.Client, error
 	if err != nil {
 		return nil, fmt.Errorf("unable to init API client: %w", err)
 	}
-	api.SetClientVersion(version.Version)
+	attribution.Apply(api, cfg)
 
 	return api, nil
 }

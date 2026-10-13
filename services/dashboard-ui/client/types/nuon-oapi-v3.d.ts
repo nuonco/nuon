@@ -2233,7 +2233,7 @@ export interface paths {
   "/v1/installs/{install_id}/overview": {
     /**
      * install overview
-     * @description Returns branch tracking and config drift for an install. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
+     * @description Returns branch tracking and config drift for an install. commits_behind counts distinct newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. pending_commits includes the newest 50 configurations and their latest branch runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
      */
     get: operations["GetInstallOverview"];
   };
@@ -3104,6 +3104,15 @@ export interface paths {
      * List service accounts for the current org
      * @description List the service accounts that belong to the current organization, along with
      * their roles. Supports offset-based pagination.
+     *
+     * Each account reports whether it is a system account, its purposes, and, for
+     * accounts managed by a resource, the owning resource.
+     *
+     * - `management` filters to `user` accounts, `system` accounts, or `all`. When set,
+     *   it replaces `include_runners` and `include_stacks`.
+     * - `purpose` filters to accounts with that exact purpose.
+     * - `q` matches a case-insensitive substring of the account name, email, or ID, or
+     *   of the owning resource's name or ID.
      */
     get: operations["ListServiceAccounts"];
     /**
@@ -3115,6 +3124,15 @@ export interface paths {
      * are `org_admin`, `installer`, and `runner`.
      */
     post: operations["CreateServiceAccount"];
+  };
+  "/v1/service-accounts/purposes": {
+    /**
+     * List the purposes of the current org's service accounts
+     * @description List the distinct purposes of the current organization's service accounts,
+     * sorted alphabetically. Use these values with the `purpose` filter on
+     * `GET /v1/service-accounts`.
+     */
+    get: operations["ListServiceAccountPurposes"];
   };
   "/v1/service-accounts/{account_id}": {
     /**
@@ -6880,6 +6898,8 @@ export interface components {
       name?: string;
       org_id?: string;
       role?: string;
+      source_id?: string;
+      source_type?: string;
       token_type?: components["schemas"]["app.TokenType"];
       updated_at?: string;
     };
@@ -9375,10 +9395,13 @@ export interface components {
     "service.InstallBranchTracking": {
       applied_commit?: components["schemas"]["service.InstallOverviewCommit"];
       branch_id?: string;
+      commits_behind?: number | null;
       directory?: string;
       expected_commit?: components["schemas"]["service.InstallOverviewCommit"];
       git_branch?: string;
+      pending_commits?: components["schemas"]["service.InstallOverviewCommit"][];
       repo?: string;
+      selected_commit?: components["schemas"]["service.InstallOverviewCommit"];
       status?: string;
       target_branch?: string;
     };
@@ -9476,6 +9499,11 @@ export interface components {
       previous_tag?: string;
       repository?: string;
     };
+    "service.InstallDeploymentPolicySummary": {
+      deny_count?: number;
+      first_warn_message?: string;
+      warn_count?: number;
+    };
     "service.InstallDeploymentStep": {
       approval_response_id?: string;
       component_name?: string;
@@ -9485,6 +9513,7 @@ export interface components {
       id?: string;
       idx?: number;
       name?: string;
+      policy?: components["schemas"]["service.InstallDeploymentPolicySummary"];
       retried?: boolean;
       status?: string;
       step_target_type?: string;
@@ -9553,12 +9582,16 @@ export interface components {
       keys?: string[];
     };
     "service.InstallOverviewCommit": {
+      app_config_id?: string;
       author?: string;
+      awaiting_approval?: boolean;
+      branch_id?: string;
       created_at?: string;
       message?: string;
       run_id?: string;
       run_status?: string;
       sha?: string;
+      workflow_id?: string;
     };
     "service.InstallOverviewResponse": {
       branch_tracking?: components["schemas"]["service.InstallBranchTracking"];
@@ -9883,6 +9916,31 @@ export interface components {
       };
       passes?: number;
       warns?: number;
+    };
+    "service.ServiceAccount": {
+      account_type?: components["schemas"]["app.AccountType"];
+      created_at?: string;
+      email?: string;
+      id?: string;
+      managed_service_account?: components["schemas"]["service.ServiceAccountOwnership"];
+      name?: string;
+      /** @description ReadOnly Fields */
+      org_ids?: string[];
+      permissions?: components["schemas"]["permissions.Set"];
+      purposes?: string[];
+      roles?: components["schemas"]["app.Role"][];
+      subject?: string;
+      system_account?: boolean;
+      updated_at?: string;
+      user_journeys?: components["schemas"]["app.UserJourney"][];
+    };
+    "service.ServiceAccountOwnership": {
+      install_id?: string;
+      instance_key?: string;
+      owner_id?: string;
+      owner_name?: string;
+      owner_type?: string;
+      purpose?: string;
     };
     "service.SetupResponse": {
       audience?: string;
@@ -26734,7 +26792,7 @@ export interface operations {
   };
   /**
    * install overview
-   * @description Returns branch tracking and config drift for an install. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
+   * @description Returns branch tracking and config drift for an install. commits_behind counts distinct newer app configurations on the tracked branch relative to the install's selected app_config_id, excluding previews and no-config-change runs. It is omitted when selected branch provenance is unknown. pending_commits includes the newest 50 configurations and their latest branch runs. A stack, sandbox, or component is drifted when its applied app config is set and is not the install's current app config.
    */
   GetInstallOverview: {
     parameters: {
@@ -32959,6 +33017,15 @@ export interface operations {
    * List service accounts for the current org
    * @description List the service accounts that belong to the current organization, along with
    * their roles. Supports offset-based pagination.
+   *
+   * Each account reports whether it is a system account, its purposes, and, for
+   * accounts managed by a resource, the owning resource.
+   *
+   * - `management` filters to `user` accounts, `system` accounts, or `all`. When set,
+   *   it replaces `include_runners` and `include_stacks`.
+   * - `purpose` filters to accounts with that exact purpose.
+   * - `q` matches a case-insensitive substring of the account name, email, or ID, or
+   *   of the owning resource's name or ID.
    */
   ListServiceAccounts: {
     parameters: {
@@ -32969,17 +33036,29 @@ export interface operations {
         limit?: number;
         /** @description page number of results to return */
         page?: number;
-        /** @description include service accounts with the runner role (excluded by default) */
+        /** @description include service accounts with the runner role (excluded by default; ignored when management is set) */
         include_runners?: boolean;
-        /** @description include service accounts with the stack role (excluded by default) */
+        /** @description include service accounts with the stack role (excluded by default; ignored when management is set) */
         include_stacks?: boolean;
+        /** @description filter by who manages the account */
+        management?: "user" | "system" | "all";
+        /** @description filter to service accounts with this exact purpose */
+        purpose?: string;
+        /** @description case-insensitive substring match on name, email, ID, or owner name and ID */
+        q?: string;
       };
     };
     responses: {
       /** @description OK */
       200: {
         content: {
-          "application/json": components["schemas"]["app.Account"][];
+          "application/json": components["schemas"]["service.ServiceAccount"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
       /** @description Unauthorized */
@@ -33028,6 +33107,40 @@ export interface operations {
       400: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * List the purposes of the current org's service accounts
+   * @description List the distinct purposes of the current organization's service accounts,
+   * sorted alphabetically. Use these values with the `purpose` filter on
+   * `GET /v1/service-accounts`.
+   */
+  ListServiceAccountPurposes: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": string[];
         };
       };
       /** @description Unauthorized */
