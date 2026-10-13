@@ -15,6 +15,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
@@ -703,10 +704,20 @@ func (s *service) buildInstallDeployments(ctx *gin.Context, orgID, installID str
 	if err != nil {
 		return nil, err
 	}
+	sandboxBranches, err := s.sandboxConfigBranches(ctx, orgID, workflowIDs)
+	if err != nil {
+		return nil, err
+	}
 
 	deployments := make([]InstallDeployment, 0, len(workflows))
 	for i := range workflows {
 		d := buildInstallDeployment(&workflows[i], versionsByWorkflowID[workflows[i].ID], diffsByWorkflowID[workflows[i].ID], buildsByID, fallbackBranch)
+		if d.AppBranch == nil || d.AppBranch.RunID == "" {
+			if ref := sandboxBranches[workflows[i].ID]; ref != nil {
+				copied := *ref
+				d.AppBranch = &copied
+			}
+		}
 		applyPinnedConfigBranch(&d, pinnedBranch)
 		if d.Type == "" {
 			continue
@@ -786,19 +797,7 @@ func buildInstallDeployment(wf *app.Workflow, version *app.InstallAppConfigVersi
 	}
 
 	if version != nil && version.AppBranchRunID != nil {
-		run := &version.AppBranchRun
-		branchRef := &InstallDeploymentAppBranchRef{
-			ID:    run.AppBranchID,
-			Name:  run.AppBranch.Name,
-			RunID: run.ID,
-		}
-		meta := run.RunMetadata()
-		branchRef.GitRef = meta.GitRef
-		branchRef.CommitSHA = meta.HeadSHA
-		if branchRef.CommitSHA == "" && run.VCSConnectionCommit != nil {
-			branchRef.CommitSHA = run.VCSConnectionCommit.SHA
-		}
-		d.AppBranch = branchRef
+		d.AppBranch = branchRefFromRun(&version.AppBranchRun)
 	}
 	if d.AppBranch == nil && fallbackBranch != nil {
 		copied := *fallbackBranch
@@ -1050,6 +1049,13 @@ func (s *service) pinnedAppConfigBranch(ctx *gin.Context, orgID, installID strin
 		return nil, fmt.Errorf("unable to get app config branch run: %w", err)
 	}
 
+	return branchRefFromRun(&run), nil
+}
+
+func branchRefFromRun(run *app.AppBranchRun) *InstallDeploymentAppBranchRef {
+	if run == nil || run.AppBranchID == "" {
+		return nil
+	}
 	ref := &InstallDeploymentAppBranchRef{
 		ID:    run.AppBranchID,
 		Name:  run.AppBranch.Name,
@@ -1061,7 +1067,70 @@ func (s *service) pinnedAppConfigBranch(ctx *gin.Context, orgID, installID strin
 	if ref.CommitSHA == "" && run.VCSConnectionCommit != nil {
 		ref.CommitSHA = run.VCSConnectionCommit.SHA
 	}
-	return ref, nil
+	return ref
+}
+
+func (s *service) sandboxConfigBranches(ctx *gin.Context, orgID string, workflowIDs []string) (map[string]*InstallDeploymentAppBranchRef, error) {
+	refs := map[string]*InstallDeploymentAppBranchRef{}
+	if len(workflowIDs) == 0 {
+		return refs, nil
+	}
+
+	var provenance []struct {
+		WorkflowID  string
+		AppConfigID string
+	}
+	err := s.db.WithContext(ctx).
+		Table("install_sandbox_runs AS run").
+		Select("DISTINCT ON (run.install_workflow_id) run.install_workflow_id AS workflow_id, cfg.app_config_id").
+		Joins("JOIN app_sandbox_configs AS cfg ON cfg.id = run.app_sandbox_config_id").
+		Where("run.install_workflow_id IN ?", workflowIDs).
+		Where("run.deleted_at = 0 AND cfg.deleted_at = 0").
+		Where("cfg.app_config_id <> ''").
+		Order("run.install_workflow_id, run.created_at ASC").
+		Scan(&provenance).Error
+	if err != nil {
+		return nil, fmt.Errorf("unable to query sandbox config provenance: %w", err)
+	}
+	if len(provenance) == 0 {
+		return refs, nil
+	}
+
+	appConfigIDs := make([]string, 0, len(provenance))
+	for _, item := range provenance {
+		appConfigIDs = append(appConfigIDs, item.AppConfigID)
+	}
+	appConfigIDs = generics.UniqueSlice(appConfigIDs)
+
+	var branchRuns []app.AppBranchRun
+	err = s.db.WithContext(ctx).
+		Preload("AppBranch").
+		Preload("VCSConnectionCommit").
+		Where("org_id = ? AND app_config_id IN ?", orgID, appConfigIDs).
+		Order("created_at DESC").
+		Find(&branchRuns).Error
+	if err != nil {
+		return nil, fmt.Errorf("unable to query sandbox config branch runs: %w", err)
+	}
+	refByAppConfig := map[string]*InstallDeploymentAppBranchRef{}
+	for i := range branchRuns {
+		if branchRuns[i].AppConfigID == "" {
+			continue
+		}
+		if _, ok := refByAppConfig[branchRuns[i].AppConfigID]; ok {
+			continue
+		}
+		refByAppConfig[branchRuns[i].AppConfigID] = branchRefFromRun(&branchRuns[i])
+	}
+
+	for _, item := range provenance {
+		ref := refByAppConfig[item.AppConfigID]
+		if ref == nil {
+			continue
+		}
+		refs[item.WorkflowID] = ref
+	}
+	return refs, nil
 }
 
 func (s *service) installDeploymentBranch(ctx *gin.Context, orgID, installID string) (*InstallDeploymentAppBranchRef, error) {

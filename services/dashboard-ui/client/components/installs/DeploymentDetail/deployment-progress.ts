@@ -31,8 +31,11 @@ const BRANCH_RUN_TYPES = new Set([
   'app_branch_update',
 ])
 
+export const isBranchRunDeployment = (type?: string) =>
+  !!type && BRANCH_RUN_TYPES.has(type)
+
 export const deploymentTabOrder = (type?: string): TDeploymentTab[] =>
-  type && BRANCH_RUN_TYPES.has(type)
+  isBranchRunDeployment(type)
     ? ['template', 'workflow', 'changes']
     : ['workflow', 'changes']
 
